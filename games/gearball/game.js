@@ -37,7 +37,9 @@
     // arrival becomes the socket. The switches are the machine's own. SPACE
     // opens the gate that is closest to overflowing; 1-6 move the socket to
     // the arrivals left to right, Q W E R T Y open the gates.
-    intro: { logo: null, demo: "tap", caption: "" },
+    intro: { logo: null, demo: "tap", caption: "",
+             // on a desk: the mouse — a lock, then an arrival (shell.js, Demo)
+             desk: [{ mouse: ["click"] }] },
     keyboard: true,
 
     /* The round's notices stay at the top, under the HUD: the foot of the

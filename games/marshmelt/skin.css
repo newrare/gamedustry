@@ -131,6 +131,15 @@
     z-index:4; left:50%; bottom:14px;
     animation:demoPoint 2.8s ease-in-out infinite;
   }
+  /* on a DESK one wave per click, one per rock (shell.js, Demo) */
+  .demo-tap .demo-hand .demo-click { animation:mmClick 2.8s ease-out infinite; }
+  @keyframes mmClick {
+    0%,2.9% { transform:scale(.2); opacity:0; }
+    3% { transform:scale(.2); opacity:1; }
+    12%,52.9% { transform:scale(1.5); opacity:0; }
+    53% { transform:scale(.2); opacity:1; }
+    62%,100% { transform:scale(1.5); opacity:0; }
+  }
   @keyframes demoPoint {
     0%       { transform:translate(96px,-58px);  opacity:1; }
     4%       { transform:translate(96px,-80px);  opacity:1; }

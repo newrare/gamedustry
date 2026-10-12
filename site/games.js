@@ -55,6 +55,19 @@ window.GAMES = [
     }
   },
   {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
+      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
+    },
+    en: {
+      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
+      tags: ["Swipe to sort", "Jokers", "Poker hands"]
+    }
+  },
+  {
     slug: "blight",
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
@@ -91,19 +104,6 @@ window.GAMES = [
     en: {
       tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
       tags: ["Tap to swerve", "Endless", "Armour"]
-    }
-  },
-  {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
-    fr: {
-      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
-      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
-    },
-    en: {
-      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
-      tags: ["Swipe to sort", "Jokers", "Poker hands"]
     }
   },
   {
@@ -221,6 +221,19 @@ window.GAMES = [
     en: {
       tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
       tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
+    }
+  },
+  {
+    slug: "bridgessa",
+    name: "Bridgessa",
+    accent: ["#ff7a59", "#2ec4b6"],
+    fr: {
+      tagline: "Le bridge sans les enchères : joue tes deux mains et réussis ton contrat face à une défense qui ne laisse rien passer.",
+      tags: ["Bridge", "Jeu de la carte", "Problèmes"]
+    },
+    en: {
+      tagline: "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
+      tags: ["Bridge", "Card play", "Puzzles"]
     }
   }
 ];

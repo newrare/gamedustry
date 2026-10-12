@@ -179,6 +179,7 @@
     en: { tapClose: "Tap to close" },
     fr: { tapClose: "Touche pour fermer" }
   };
+  W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
   var LANG = "en";
   function tapCopy(key) { return (STRINGS[LANG] || STRINGS.en)[key]; }
 

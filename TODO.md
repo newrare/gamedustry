@@ -217,6 +217,48 @@ ______________________________________________________________________
 
 ## The games — content pass on the fifteen
 
+- [ ] **`bridgessa`, the seventeenth game, v0.6.0, on the site since 2026-10-09** (12
+  captures by its own `shoot-screens.mjs` pilot, which plays the solver's best card): bridge
+  without the bidding — the player is always the declarer, plays South and the
+  dummy, against a defence played by a double-dummy solver in section 6. A
+  deal is an ENDING of 2 → 7 cards a hand, seeded by the level and its place;
+  the contract is the solver's value over the real layout and five redrawn
+  ones, and from level 3 a deal is kept only if the naive line fails. A level
+  is a TOURNÉE (2 → 4 deals, three lives) with forty FAVOURS picked one of three
+  per contract made (not « atouts »: in French that is the trump). **v0.5.0
+  landed the art and the five BIOMES** — the beach, the lagoon, the terrace,
+  the olive grove, the lantern square: a painted cloth per biome behind the
+  round (`background-phone-<place>`, web only — the playable paints its own
+  table), a stretch of the bed each, a card the first time a table is reached,
+  and a DISCOVERY card on every level that brings favours in (its first pick
+  always deals one of them). The forty medallions are cut from six family
+  sheets on a grid (`favour-<family>NN`, PERKS order, encode-art's FAVOUR box);
+  the village stands on six terraces (lighthouse = options, grand hotel = map,
+  jeweller = the favours' codex, bandstand = ranking, a fountain, a lit terrace
+  = play). What is left:
+
+  - [x] MAIN — the stickers (20), CODE — `web.meta` (v0.6.0): the sheet cut on a
+    5x4 grid, twenty bridge names (Grand Slam = 90/90, Bidding Box = the
+    machine's legendary), `coinsPer` 100; the village got its three doors —
+    `home02` boutique = shop, `home03` kiosk = album, `home05` post office =
+    daily on the free terrace — the fountain became PLAY and the lighthouse
+    (`home06`) OPTIONS, standing on the jetty. `make test bridgessa` still fails
+    "the last one going resumes the round" (tips hold the round, as on slipdeck)
+  - [ ] CODE — the codex house reads CARDS (the shell's shared word,
+    `packages/webshell/codex.js`); a game override (`codex.label`) would let it
+    read FAVOURS
+  - [ ] CODE — 8 cards and more: the solver takes 0.5–2 s from 9 cards a hand
+    up, so the late levels need deals CURATED offline (a tool that runs the same
+    generator and bakes the seeds) before the climb can reach a full 13-card deal
+  - [ ] CODE — suit contracts at 7 cards rarely beat the naive line (levels 19,
+    25, 29 are made by cashing): curate them, or teach the filter a smarter naive
+    line that draws trumps
+  - [ ] CODE — the daily deal: one seeded problem a day for everyone, the
+    duplicate idea the game is pitched on
+  - [ ] CODE — balance the forty favours by hand (a human pilot, not the
+    solver's), and a codex of them for the village's `cards` house
+  - [ ] MAIN — art for the favours (a sheet of forty, or one per family)
+
 - [ ] **`grudgeon`, the sixteenth game, on the site since v0.2.1** (12
   captures by its own `shoot-screens.mjs` pilot): a Japanese-horror dungeon crawler built on old-pawko's exploration
   grid — a 7 x 7..12 map lit one room at a time, rooms holding a yokai (a
@@ -446,9 +488,76 @@ ______________________________________________________________________
     30 and judge the four looks and the rule rates (`ruleRate`, `gapRate`,
     `gapOpen`), tuned against a scripted bench pilot only; listen to the
     six new keys in `make events`. v1.4.0: one track per biome (below)
+  - `orbinity` (v1.3.0): five worlds, one body each and a second rule from
+    their fourth level — inner system (walls cost nothing; ORBITS: a planet
+    on an ellipse round a mini black hole, from 4), MOONS (a hit is a wall,
+    a graze an eclipse; asteroid STREAMS from 10: a lane glows red for 1 s,
+    then rocks sweep it for 1-3 s), PULSARS (one second of an electric
+    shield per cycle bounces the comet off without cutting the chain), a
+    BLACK HOLE (the horizon eats the chain, a skim is a slingshot), the RIFT
+    (side walls open and an asteroid BELT down the middle: the way over is
+    a side). The landing hint predicts all of it. Rounds 60-75 s on the web
+    (playable 30 s), objective 500 → 2600, world 1 has its own goals
+    (4500-4900, 3500-3900 with orbits) through `Game.levelGoal`. Each world
+    painted: `orbinity-space-<world>.png` and the sheets
+    `orbinity-object-<world>-planet.png`, `-pulsar-star`, `-pulsar-orb`,
+    `-abyss-hole`; the moons are the three cratered cuts of the lunar sheet
+    (`--as lunar-moon`) — a sheet of real moons would read better. All of it
+    web-only, 256 px a body (2.1 MB). Left: MAIN — play the 30 and judge the
+    rates and the objectives (benched with a scripted pilot only); listen to
+    the new keys (`sling`, `eclipse`, `swallow`, `shield`, `rock`, `stream`)
+    in `make events`
+  - `marshmelt` (v1.3.0): five biomes out of `CONFIG.ladder`, read by
+    `applyLevel` — the CALDERA (as shipped, fireballs from level 3), FROZEN
+    SULPHUR (ice rocks throw the body straight up after 0.3 s and take a
+    shade of toast off), GEYSERS (1 to 3 vents whose steam lifts the body
+    and the rocks; the aim preview sees the column), FAULT LINES (cracked
+    rocks split into three fresh pieces, crumbling ones fall to dust, bombs
+    blow 2 s after a landing and throw the body out of a dashed reach), the
+    CORE (lava surges and drops that set rocks on fire, plus two earlier
+    rocks per level). The lava rise and the fast lane are eased on each
+    biome's first two levels (`ladder.ease`); the endless run gets all of
+    it. Left: MAIN — play the 30 and judge the rates and the objective
+    (benched with a crude scripted pilot only: a pilot run lasts 30 s on
+    level 1 and 11-14 s from 26 on); listen to the seven new keys (`ice`,
+    `geyser`, `shatter`, `dust`, `fuse`, `boom`, `surge`) in `make events`;
+    the bed is now cut per biome (the music line below).
+    Painted since: five 6x4 sheets (`marshmelt-object-mallow` and
+    `-rock-{ice,cracked,crumbling,bomb}`), all 120 cuts adopted and encoded at
+    one fixed scale per sheet (`scale` profiles in encode-art, so a pose or a
+    state swaps in place); the body's six poses x four toasts ship in every
+    build, the 96 rocks on the web only; a rock's silhouette is read off its
+    picture (`measure`), the fourth rows are the steam, the pieces, the dust
+    and the blast. The plain rocks are painted too: three sheets
+    (`-rock-classic-{a,b,c}`), six materials x six designs, fresh and claimed
+    (`rock-<material>-NN`, the obsidian new and paint-only); the playable
+    carries boulders and slabs, the web all six. Each biome has its scene
+    (`marshmelt-background-phone-01..05`: lava cave, crystal cave, jungle,
+    dead forest, serpent temple), moved by `Art.backdrop` in reset(); the
+    desk background is still the one picture. Rounds were 5-20 s (the third
+    star, which ends the round, came at 4-21 s): the toast is now the life (a
+    touch of lava throws the body back up a shade browner, charred it melts;
+    ice and every 10th rock give a shade back; a fireball burns only the body
+    that stays until it is thrown), the pressure is eased and every level
+    has a MEASURED objective (`goal` on the row, `levelGoal`): a pilot's
+    third star at 48-93 s, its survival median >= 52 s. Fireballs wear a
+    red / yellow / violet aura instead of flames, vents are lava bubbles
+    over an added glow, and the band over the crust shimmers (`haze`).
+    Left: MAIN — play it: a human scores maybe half the pilot's rate, so
+    check the first star lands around a minute; check `haze` with
+    `?perf=1` on a phone. Then six more hands, one row field each: giant
+    lava BUBBLES to ride up (`orbs`, jungle), COLD WATER that sets a crust
+    on the lake and puts fires out (`water`, crystal cave), MAGNET crystals
+    that bend a jump (`magnets`), ASH GUSTS (`wind`, dead forest), the LAVA
+    SERPENT (`serpent`, temple) and S'MORES on every level from 2 (a biscuit
+    and a chocolate: a shade healed, or 10 s of double points); goals
+    re-measured (pilot's third star 45-73 s). Burning rocks wear the painted
+    flames (`marshmelt-object-flame`, cut with `--pad 90` so a split crown
+    stays one cut; the playable carries the full-blaze row). Left: MAIN —
+    see the serpent leap and the crust on a phone; listen to the five new
+    keys (`pickup`, `smore`, `wind`, `pop`, `serpent`)
   - to finish or rethink: `spinshock`
-  - to do: `orbinity`, `triverse`, `stratideck`, `pawko`,
-    `marshmelt`
+  - to do: `triverse`, `stratideck`, `pawko`
   - `slipdeck` came with its rebuild (v1.3.0, above: `stageFor` brings a
     joker family, a special card or a higher pair floor every few levels);
     `bouncetry` comes with its ghost (below)
@@ -478,7 +587,11 @@ ______________________________________________________________________
     MAIN — play the five whole-track levels and judge their objective),
     `slipdeck` (v1.5.0: five map bands + menu off a new 149 s master, one
     felt per band)
-  - to finish or rethink: `spinshock`, `marshmelt`
+  - `marshmelt` (v1.3.0): five biomes + menu off a new 177 s master, cut on
+    the arrangement's changes (12, 44.75, 69.75, 96.5, 121.75 s; the menu is
+    the opening, 0-38.75 s, at 0.85 / 0.5); the playable keeps the caldera's
+    window. Left: MAIN — listen to the five windows and the menu
+  - to finish or rethink: `spinshock`
   - to do: `orbinity`, `triverse`, `gearball`
 
 - [ ] MAIN — **proofread and validate every text, all fifteen games.** Every
@@ -508,7 +621,13 @@ ______________________________________________________________________
   frame** (under the thumb; the board under the HUD, gates 56 px high) and a
   card dropped casts its effect as orbs (`castFx`): check on a phone that the
   reach up to the board is comfortable, and that the cast (~0.7–1 s before
-  the wave) does not feel like a wait.
+  the wave) does not feel like a wait. **Since v0.7.0 a peg card turns a
+  SHARE of the board** (`pct`, 5–30 %, written on the card) instead of 2–10
+  pegs, Reverb blows a bomb twice, Unison needs half the board, and Echo /
+  Mirror no longer count as the hand's two guaranteed peg cards. Same pilot
+  bench, 12 seeds × 30 levels: score / objective 1.15 → 2.08 (geometric
+  mean), mean stars 0.99 → 1.69, levels at 0 stars 11 → 5. The objective
+  ladder was NOT moved — decide by hand whether to raise it (~×1.5–1.8).
 
 - [ ] MAIN — **`pawko`, listen to the six music windows** (`CONFIG.bands`,
   `CONFIG.music.menu`): the seams were placed on the RMS profile of
@@ -567,14 +686,58 @@ ______________________________________________________________________
       update never ticks under the probe — the test needs `?first=0`-style
       tips off, or to close the tip first. It predates the pot.
 
+- [ ] MAIN — **`slipdeck` v1.8.0, try the Fate drags on a phone.** A Fate
+  joker is now played with a drag and the tap only reads it (FATE GESTURES
+  in `game.js`): the card lifted into Reshuffle or dropped in the Pocket's
+  slot, Rewind dragged onto the hand, Compass and Called shot dragged off
+  the rail onto the suits / hands they lay over the card. The rail never
+  moves the card any more, and a tap on a joker deals its own card again,
+  grown out of its medallion (`jokerShow`), instead of a text card. A tap
+  on a chevron nudges the card instead of opening the basics, a light runs
+  through the chevrons, and after 2.5 s idle a faint gold aura (HINT)
+  breathes over everything a tap explains, with a dotted path for each
+  ready Fate drag. Benched headless over CDP (every gesture, the nudge, a
+  plain keep); not yet felt under a finger — judge `LIFT` (200), the
+  130 px target radius and `HINT_IDLE` / `HINT_EVERY` (2.5 s / 5 s). Same
+  version: a ROYAL FLUSH category (10 to ace in one suit, 150 × 10, gauge
+  +10) over the straight flush, and the poker hands chart no longer lists
+  high card — judge the royal's base by hand, `GOALS` were not re-benched
+  (it is rare enough not to move a median).
+
+  - **v1.9.0 replaced the four drags with one** (2026-10-09, chosen in
+    `lab/slipdeck-fate.html`, proposal F): left bins, right keeps, UP plays
+    a Fate joker — the card pushed up onto the joker on the rail; Compass
+    and Called shot then lay their choices under the rail and the finger
+    slides down onto one. The rail only reads (a tap), the pocket's slot is
+    no longer a target, and a push up while no Fate joker is ready sends
+    the card back instead of binning it. Benched headless over CDP (the
+    five jokers, a spent one, a keep, up-then-bin); judge on a phone
+    `UP_START` (110) and the choices' place under the rail.
+  - **v1.10.0: a hand that makes two hands pays both** (2026-10-09). The
+    ranks (pair → quads) and the line (straight, flush and up) are read
+    apart in `evalHand`, and when a wild card, Four fingers or Smeared
+    makes both — pair + flush, two pair + flush, flush + full house, pair +
+    straight flush — `scoreHand` runs one whole count per hand (base, its
+    own scoring cards, the special cards, the jokers), weakest first, and
+    pays the sum. The pot goes once, to the strongest; a glass or lucky
+    roll is thrown once per card; the gauge fills by both; a low pair beside
+    a flush is dropped rather than busting. The tally plays the counts one
+    after the other ("+ FLUSH" for the second), the value line shows both
+    chips × mult (or the total when the line is too short), and a "Two hands
+    in one" tip explains it the first time. Unit-checked in node; not seen
+    on a phone, and `GOALS` were not re-benched.
+
 - [ ] MAIN — **`slipdeck`, listen to the six music windows and see the five
-  tables** (`CONFIG.bands`, `CONFIG.music.menu`): the seams sit on a 90 bpm
-  bar grid (first beat 0.055 s) read off the RMS profile of
-  `assets/audio/music/slipdeck.mp3` (body at 10.7 s, breakdown 74.7–95.4,
-  fade from 143.4), never checked by ear. Only four new felts for five bands:
-  band 1 keeps the original table, then green, blue, red, purple — two greens
-  in a row, and Meltdown (25–30) replays the whole 96–141 s finale that
-  Squeeze and Overdrive split.
+  tables** (`CONFIG.bands`, `CONFIG.music.menu`): the master was replaced
+  on 2026-10-09 (170.9 s, ~127.6 bpm, not beat-locked) and the windows re-cut
+  on its seams, read off the RMS profile at 0.25 s and never checked by ear:
+  menu = the intro (0–22.5, ×0.85), Warm-up 22.75–45.5 (the beat comes in),
+  Pressure 45.5–81.75, Squeeze the breakdown 81.75–103.75, Overdrive
+  103.75–139.5, Meltdown 103.75–162.5 (that body plus the outro); the web
+  cut stops at the last hit (162.5) before the reverb tail. Squeeze is the
+  quiet one of the five — judge whether a breakdown suits levels 13–18. Only
+  four new felts for five bands: band 1 keeps the original table, then green,
+  blue, red, purple — two greens in a row.
 
 - [ ] MAIN — **`bouncetry`, listen to the six music windows** (`BIOMES[].music`,
   `CONFIG.music.menu`): the seams were placed on a 126 bpm bar grid read off

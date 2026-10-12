@@ -1291,6 +1291,102 @@
   .demo-aim .demo-hand { animation:handSweep 2.6s ease-in-out infinite; }
   @keyframes handSweep { 0%,100%{transform:translateX(-56px);} 50%{transform:translateX(56px);} }
 
+  /* ---- The demo on a DESK (shell.js, Demo) ---------------------------------
+     <html class="is-desk"> is a device played with a mouse (engine, Desk).
+     There the finger is a lie, so the stage acts the game's own input:
+       .desk-mouse   the finger becomes a mouse CURSOR — a child of the hand,
+                     so it keeps the SKIN's choreography and is painted over
+                     whatever the hand carries — and a WAVE leaves its tip on
+                     every click
+       .desk-keys    the finger goes and the KEYS are pressed where it was
+     and the legend under the stage names every control. On a phone none of
+     it is there. The `!important`s are the one way past a SKIN's own
+     `.demo-<kind> .demo-hand` and past the painted hand the web shell sets
+     inline. */
+  .demo-keys, .demo-legend, .demo-cursor { display:none; }
+  .is-desk .desk-keys .demo-hand { display:none !important; }
+  .is-desk .desk-mouse .demo-hand { background-image:none !important; }
+
+  /* the cursor fills the hand's box, its tip where the fingertip was */
+  .is-desk .desk-mouse .demo-cursor {
+    display:block; position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 74 92'%3E%3Cpath d='M37 5v48l12-11 8.4 19.4 8.4-3.6-8.4-19.2H72z' fill='%23f2f6ff' stroke='%230b1024' stroke-width='3.4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center top/contain;
+  }
+  /* the click: a ring out of the tip, once per cycle of the hand, at
+     --click-at into a --click-dur cycle (the motor's handTap by default) */
+  .demo-click {
+    position:absolute; left:50%; top:5%; width:62px; height:62px; margin:-31px 0 0 -31px;
+    border-radius:50%; border:4px solid var(--click-ring, var(--accent));
+    box-shadow:0 0 16px var(--click-ring, var(--accent)), inset 0 0 10px var(--click-ring, var(--accent));
+    opacity:0; transform:scale(.2);
+    animation:demoClick var(--click-dur, 1.6s) ease-out var(--click-at, .6s) infinite;
+  }
+  @keyframes demoClick {
+    0%       { transform:scale(.2);  opacity:1; }
+    12%      { opacity:.9; }
+    32%,100% { transform:scale(1.5); opacity:0; }
+  }
+
+  /* The keys on the stage: a keycap the colour of the finger, which goes down
+     and lights in the accent when it is pressed. Two states, and every
+     keyframe below is written on them — a SKIN writing its own copies them. */
+  .is-desk .desk-keys .demo-keys {
+    display:flex; position:absolute; left:50%; bottom:24px; transform:translateX(-50%);
+    gap:12px; z-index:6; pointer-events:none;
+  }
+  .demo-key, .legend-key {
+    --key-face:#f2f6ff; --key-side:#7d86ad; --key-hit:var(--accent);
+    display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+    border:3px solid #0b1024; color:#0b1024; background-color:var(--key-face);
+    font-family:inherit; font-weight:900; line-height:1; white-space:nowrap;
+  }
+  .demo-key {
+    min-width:64px; height:58px; padding:0 14px; border-radius:13px; font-size:26px; letter-spacing:1px;
+    transform:translateY(0); box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.45);
+  }
+  .demo-key.key-wide { min-width:170px; font-size:22px; letter-spacing:2px; }
+  /* keyUp:   transform:translateY(0);   background-color:var(--key-face);
+              box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.45);
+     keyDown: transform:translateY(6px); background-color:var(--key-hit);
+              box-shadow:0 1px 0 var(--key-side), 0 4px 8px rgba(0,0,0,.4); */
+  @keyframes keyTap {
+    0%,30%,58%,100% { transform:translateY(0); background-color:var(--key-face);
+                      box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.45); }
+    37%,48%         { transform:translateY(6px); background-color:var(--key-hit);
+                      box-shadow:0 1px 0 var(--key-side), 0 4px 8px rgba(0,0,0,.4); }
+  }
+  @keyframes keyHold {
+    0%,6%,94%,100% { transform:translateY(0); background-color:var(--key-face);
+                     box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.45); }
+    14%,86%        { transform:translateY(6px); background-color:var(--key-hit);
+                     box-shadow:0 1px 0 var(--key-side), 0 4px 8px rgba(0,0,0,.4); }
+  }
+  /* timed on the motor's own fingers: handTap, holdCharge, handFlick */
+  .demo-tap  .demo-key.k0 { animation:keyTap 1.6s ease-in-out infinite; }
+  .demo-hold .demo-key.k0 { animation:keyHold 1.8s ease-in-out infinite; }
+  .demo-swipe .demo-key.key-right { animation:keyTap 1.6s ease-in-out infinite; }
+
+  /* The legend: one row per control — keys, "or", the mouse actions drawn as
+     the house button (a plate: it says what to do, it is not the offer), and
+     what the row does. Capitals (upper) and bold, so 18px is the floor; all
+     of it sits above. */
+  .is-desk .demo-legend {
+    display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:20px;
+  }
+  .demo-legend-row { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; }
+  .legend-key {
+    min-width:46px; height:44px; padding:0 11px; border-radius:10px; font-size:20px; letter-spacing:1px;
+    border-width:2px; box-shadow:0 4px 0 var(--key-side);
+  }
+  .legend-key.key-wide { min-width:96px; }
+  .demo-chip {
+    --h:50px; --fs:20px; gap:9px; padding:0 18px 0 14px;
+    cursor:default; pointer-events:none;
+  }
+  .demo-chip > svg { width:26px; height:26px; color:var(--accent); }
+  .legend-or { font-size:20px; font-weight:800; letter-spacing:2px; color:var(--muted); margin:0 2px; }
+  .legend-does { margin-left:6px; font-size:22px; font-weight:800; letter-spacing:2px; color:var(--text); }
+
   /* ---- End screen: staggered cinematic reveal ---- */
   #screen-end { justify-content:center; background:rgba(6,7,18,.86); }
   /* A painted end screen carries its scrim in .screen-art::after, so the flat

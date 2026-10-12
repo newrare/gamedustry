@@ -47,22 +47,27 @@
   .pop-alert { --fill:linear-gradient(180deg,#ffe2e8,#ff5d86); }
   .pop-danger { --fill:linear-gradient(180deg,#ffe2e8,#ff3d6e); }
 
-  /* ---- intro: a locked gate, a tap, the queue runs home -------------------
-     "Unlock the gates in time and steer the electric marbles to their socket"
-     — and the stage plays exactly that, once every 4 s, in a 420x300 box:
+  /* ---- intro: a lock, then an arrival — the two clicks of a round ---------
+     "Unlock the gates in time and move the socket under the electric marble"
+     — and the stage plays exactly those two clicks, once every 4 s, in a
+     420x300 box:
 
-       a rail runs across at y 196 into a receptacle on the right (the
-       stage's ::before), which is the electric arrival: a cyan socket with
-       its bolt sign floating above it (the ::after). Three marbles wait on
-       the rail behind a LOCKED gate at x 250: two posts and an amber bar (the
-       ARROW). Its padlock hangs above at (250, 80) — the TARGET, with the
+       a rail runs across at y 117 and turns down a chute at x 262 into
+       ARRIVAL A (the TRACK node, a funnel); ARRIVAL B stands beside it at
+       x 368 (the stage's ::before). The SOCKET — the bolt sign and the cyan
+       bulb at the bottom of a funnel, the stage's ::after — starts under B,
+       where nothing will fall. The electric marble waits on the rail behind
+       a LOCKED gate at x 150 (two posts and the amber bar, the ARROW); the
+       padlock hangs above at (150, 38) — the TARGET, with the
        shackle as its ::before and the body as its ::after.
 
-     The shared finger taps the padlock at 32 %: the ring turns green, the
-     shackle springs, the bar slides back into its post, and the queue (the
-     BEAM) rolls on into the receptacle, the electric marble last, which is
-     when the socket flashes. Then the rail refills from the left and the gate
-     locks again, so the loop starts where it began. */
+     The finger (the cursor, on a desk) clicks the padlock at 20 %: the ring
+     turns green, the shackle springs, the bar slides into its post and the
+     marble (the BEAM) rolls to the chute. Then it clicks ARRIVAL A at 42 %:
+     the socket slides over from B, just in time for the marble to drop into
+     A — which is when A flashes. Each click leaves a
+     wave (the hand's ::after, so it rides the tip on both devices), then the
+     next marble rolls in, the lock closes and the socket goes back. */
   .demo-caption { display:none; }
   #intro-tagline { margin-top:18px; font-size:29px; font-weight:700; color:#ffffff; line-height:1.25; }
   #intro-tagline .w-lock { color:var(--lock); text-shadow:0 0 18px rgba(255,180,79,.85); }
@@ -74,103 +79,104 @@
     width:420px; height:300px; overflow:hidden;
     background:
       /* the dashed cable from the padlock down to the gate's upper post */
-      repeating-linear-gradient(180deg, rgba(255,180,79,.6) 0 6px, transparent 6px 12px) 248px 114px / 4px 56px no-repeat,
+      repeating-linear-gradient(180deg, rgba(255,180,79,.6) 0 6px, transparent 6px 12px) 148px 76px / 4px 16px no-repeat,
       /* the gate's two posts, either side of the rail */
-      radial-gradient(circle 8px at 250px 171px, #ffb44f 0 5px, #0b0720 5px 8px, transparent 8px),
-      radial-gradient(circle 8px at 250px 221px, #ffb44f 0 5px, #0b0720 5px 8px, transparent 8px),
-      /* the two rails, a chrome line on a steel body */
-      linear-gradient(180deg, transparent 180px, #3d3079 180px 182px, #d8d0ff 182px 184px, #3d3079 184px 186px, transparent 186px 206px,
-                              #3d3079 206px 208px, #d8d0ff 208px 210px, #3d3079 210px 212px, transparent 212px) 0 0 / 336px 300px no-repeat,
+      radial-gradient(circle 8px at 150px 97px, #ffb44f 0 5px, #0b0720 5px 8px, transparent 8px),
+      radial-gradient(circle 8px at 150px 137px, #ffb44f 0 5px, #0b0720 5px 8px, transparent 8px),
+      /* the rail: the outer line runs on and turns down the chute, the inner
+         one turns down a marble's width before it */
+      linear-gradient(180deg, #3d3079 0 2px, #d8d0ff 2px 4px, #3d3079 4px 6px) 0 101px / 280px 6px no-repeat,
+      linear-gradient(180deg, #3d3079 0 2px, #d8d0ff 2px 4px, #3d3079 4px 6px) 0 127px / 250px 6px no-repeat,
+      linear-gradient(90deg,  #3d3079 0 2px, #d8d0ff 2px 4px, #3d3079 4px 6px) 274px 101px / 6px 108px no-repeat,
+      linear-gradient(90deg,  #3d3079 0 2px, #d8d0ff 2px 4px, #3d3079 4px 6px) 244px 127px / 6px 82px no-repeat,
       /* the sleepers under them */
-      repeating-linear-gradient(90deg, #4a3b8e 0 5px, transparent 5px 24px) 6px 175px / 330px 42px no-repeat,
+      repeating-linear-gradient(90deg, #4a3b8e 0 5px, transparent 5px 24px) 6px 96px / 240px 42px no-repeat,
+      repeating-linear-gradient(180deg, #4a3b8e 0 5px, transparent 5px 24px) 240px 140px / 44px 66px no-repeat,
       /* the rail's dark bed */
-      linear-gradient(180deg, transparent 170px, rgba(10,5,28,.8) 170px 222px, transparent 222px) 0 0 / 336px 300px no-repeat,
-      /* the cyan charge glowing round the electric arrival */
-      radial-gradient(80px 70px at 366px 250px, rgba(126,249,255,.35), transparent 100%),
+      linear-gradient(180deg, rgba(10,5,28,.8), rgba(10,5,28,.8)) 0 92px / 284px 50px no-repeat,
+      linear-gradient(180deg, rgba(10,5,28,.8), rgba(10,5,28,.8)) 238px 92px / 46px 116px no-repeat,
       radial-gradient(300px 250px at 45% 45%, rgba(78,56,140,.55), rgba(10,7,24,0) 74%),
       #0c0820;
     box-shadow:inset 0 0 0 3px rgba(143,166,216,.16);
   }
 
-  /* THE RECEPTACLE — the stage's ::before: a steel box with a cyan socket
-     behind its glass. It sits over the rail's end, so a marble rolling in
-     goes behind the glass the way it does in the game. */
-  .demo-stage::before {
-    content:""; position:absolute; left:320px; top:206px; width:92px; height:84px; z-index:3;
+  /* THE TWO ARRIVALS — steel funnels behind glass, A under the chute (the
+     TRACK) and B beside it (the stage's ::before). A marble dropping in goes
+     behind the glass, the way it does in the game. */
+  .demo-tap .demo-track, .demo-stage::before {
+    display:block; position:absolute; top:206px; width:92px; height:84px; z-index:4;
+    border:0; margin:0; right:auto; bottom:auto;
     clip-path:polygon(0 0, 100% 0, 71% 62%, 64% 100%, 36% 100%, 29% 62%);
     background:
-      radial-gradient(ellipse 44px 7px at 50% 8px, #05030f 0 72%, #e8fdff 76%, #7ef9ff 86% 100%, transparent 104%),
-      radial-gradient(circle 14px at 50% 72px, #ffffff 0, #7ef9ff 40%, #1fb8ff 70%, transparent 100%),
-      linear-gradient(180deg, rgba(179,137,255,.6), #1c1344 42%, #07041a);
-    animation:gbBox 4s ease-out infinite;
+      radial-gradient(ellipse 44px 7px at 50% 8px, #05030f 0 72%, #d9ccff 76%, #8f7fd6 86% 100%, transparent 104%),
+      linear-gradient(180deg, rgba(179,137,255,.6), rgba(28,19,68,.8) 42%, rgba(7,4,26,.62));
   }
-  @keyframes gbBox {
-    0%,58%   { filter:brightness(1); }
-    62%      { filter:brightness(2.2); }
-    78%,100% { filter:brightness(1); }
+  .demo-tap .demo-track { left:216px; animation:gbArrive 4s ease-out infinite; }
+  .demo-stage::before   { content:""; left:322px; }
+  @keyframes gbArrive {
+    0%,51%   { filter:brightness(1); }
+    55%      { filter:brightness(2.4) drop-shadow(0 0 16px #7ef9ff); }
+    72%,100% { filter:brightness(1); }
   }
-  /* the bolt sign floating over it */
-  .demo-stage::after {
-    content:""; position:absolute; left:346px; top:140px; width:40px; height:40px; z-index:3;
-    border-radius:50%; border:3px solid #7ef9ff;
-    background:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cpath fill='%23e8fdff' d='M.12-.62-.28.06h.26L-.16.62.28-.1H.03z'/%3E%3C/svg%3E") center / 28px 28px no-repeat,
-      #07243f;
-    box-shadow:0 0 18px rgba(126,249,255,.7);
-    animation:gbSign 2s ease-in-out infinite;
-  }
-  @keyframes gbSign { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
 
-  /* THE QUEUE — three marbles behind the gate: violet glass at its head,
-     chrome, then the electric one. It rolls into the receptacle once the
-     gate opens, and the rail refills from the left. */
-  .demo-tap .demo-beam {
-    display:block; left:145px; top:181px; width:92px; height:30px; margin:0; z-index:1;
-    transform:none; transform-origin:50% 50%;
+  /* THE SOCKET — the bolt sign over a funnel and the cyan bulb at its foot,
+     one box that slides from B to A on the second click and back at the end.
+     It stands BEHIND the marble and the glass: the marble drops past its sign
+     and the bulb glows through the funnel. */
+  .demo-stage::after {
+    content:""; position:absolute; left:348px; top:150px; width:40px; height:142px; z-index:2;
     background:
-      radial-gradient(circle at 73px 11px, #f1e4ff 0, #b389ff 5px, #5a28c4 12px, #240b5c 18px, transparent 18.5px),
-      radial-gradient(circle at 42px 11px, #ffffff 0, #dcd8f0 4.5px, #8b84ad 9px, #35304f 14px, #b9b2dc 18px, transparent 18.5px),
-      radial-gradient(circle at 12px 12px, #ffffff 0, #c8fdff 4px, #3fd6ff 9px, #135a8c 14px, #07243f 19px, transparent 19.5px);
-    -webkit-mask:
-      radial-gradient(circle 13px at 77px 15px, #000 99%, transparent 100%),
-      radial-gradient(circle 13px at 46px 15px, #000 99%, transparent 100%),
-      radial-gradient(circle 15px at 15px 15px, #000 99%, transparent 100%);
-            mask:
-      radial-gradient(circle 13px at 77px 15px, #000 99%, transparent 100%),
-      radial-gradient(circle 13px at 46px 15px, #000 99%, transparent 100%),
-      radial-gradient(circle 15px at 15px 15px, #000 99%, transparent 100%);
-    filter:drop-shadow(0 3px 3px rgba(0,0,0,.5));
-    animation:gbQueue 4s linear infinite;
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-1 -1 2 2'%3E%3Cpath fill='%23e8fdff' d='M.12-.62-.28.06h.26L-.16.62.28-.1H.03z'/%3E%3C/svg%3E") 50% 6px / 28px 28px no-repeat,
+      radial-gradient(circle 20px at 50% 20px, #07243f 0 16px, #7ef9ff 16.5px 19.5px, transparent 20px),
+      radial-gradient(circle 15px at 50% 128px, #ffffff 0, #b8fcff 35%, #3fd6ff 65%, transparent 100%);
+    filter:drop-shadow(0 0 10px rgba(126,249,255,.75));
+    animation:gbSocket 4s ease-in-out infinite;
   }
-  @keyframes gbQueue {
-    0%,38%   { transform:translateX(0);      opacity:1; }
-    54%      { transform:translateX(150px);  opacity:1; }
-    61%      { transform:translate(176px,34px); opacity:0; }
-    62%      { transform:translateX(206px);  opacity:0; }
-    63%      { transform:translateX(-150px); opacity:0; }
-    72%      { transform:translateX(-150px); opacity:1; }
-    86%,100% { transform:translateX(0);      opacity:1; }
+  @keyframes gbSocket {
+    0%,42%   { transform:translateX(0); }
+    48%,86%  { transform:translateX(-106px); }
+    94%,100% { transform:translateX(0); }
+  }
+
+  /* THE ELECTRIC MARBLE — one, waiting behind the gate. Once the gate is open
+     it rolls to the chute and drops into A, where the socket is waiting. */
+  .demo-tap .demo-beam {
+    display:block; left:102px; top:100px; bottom:auto; width:34px; height:34px; margin:0; z-index:3;
+    transform:none; border-radius:50%;
+    background:radial-gradient(circle at 38% 34%, #ffffff 0, #c8fdff 12%, #3fd6ff 34%, #135a8c 62%, #07243f 100%);
+    box-shadow:0 0 14px rgba(126,249,255,.85), 0 3px 4px rgba(0,0,0,.5);
+    animation:gbMarble 4s linear infinite;
+  }
+  @keyframes gbMarble {
+    0%,26%   { transform:translate(0,0);       opacity:1; }
+    40%      { transform:translate(143px,0);   opacity:1; }
+    43%      { transform:translate(143px,6px); opacity:1; }
+    56%      { transform:translate(143px,150px); opacity:1; }
+    57%      { transform:translate(143px,150px); opacity:0; }
+    58%      { transform:translate(-90px,0);   opacity:0; }
+    72%      { transform:translate(-90px,0);   opacity:1; }
+    86%,100% { transform:translate(0,0);       opacity:1; }
   }
 
   /* THE GATE'S BAR — the arrow node, recycled: amber across the rail, it
      slides back into the upper post as the gate opens. */
   .demo-tap .demo-arrow {
-    display:block; left:247px; top:171px; width:6px; height:50px; margin:0; z-index:2;
+    display:block; left:147px; top:97px; width:6px; height:40px; margin:0; z-index:2;
     border:0; border-radius:3px; background:#ffb44f;
     box-shadow:0 0 0 3px #0b0720, 0 0 16px rgba(255,180,79,.8);
     transform-origin:50% 0; animation:gbBar 4s ease-in-out infinite;
   }
   @keyframes gbBar {
-    0%,33%   { transform:scaleY(1); opacity:1; }
-    40%      { transform:scaleY(0); opacity:0; }
-    84%      { transform:scaleY(0); opacity:0; }
-    90%,100% { transform:scaleY(1); opacity:1; }
+    0%,21%   { transform:scaleY(1); opacity:1; }
+    27%      { transform:scaleY(0); opacity:0; }
+    86%      { transform:scaleY(0); opacity:0; }
+    92%,100% { transform:scaleY(1); opacity:1; }
   }
 
   /* THE PADLOCK — the target: an amber button that pulses while locked and
-     turns green the moment it is tapped. */
+     turns green the moment it is clicked. */
   .demo-tap .demo-target {
-    display:block; left:216px; top:46px; width:68px; height:68px; margin:0; z-index:2;
+    display:block; left:116px; top:4px; width:68px; height:68px; margin:0; z-index:2;
     border:5px solid #ffb44f; border-radius:50%;
     background:radial-gradient(circle at 36% 32%, #5a3a1c, #1d0f14 70%);
     box-shadow:0 0 0 3px #0b0720, 0 0 26px rgba(255,180,79,.7);
@@ -178,23 +184,23 @@
   }
   @keyframes gbLock {
     0%       { transform:scale(1);    border-color:#ffb44f; box-shadow:0 0 0 3px #0b0720, 0 0 22px rgba(255,180,79,.6); }
-    12%      { transform:scale(1.06); }
-    24%      { transform:scale(1); }
-    31%      { transform:scale(1.06); border-color:#ffb44f; box-shadow:0 0 0 3px #0b0720, 0 0 30px rgba(255,180,79,.9); }
-    34%      { transform:scale(.9);   border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 40px rgba(109,255,176,.95); }
-    44%      { transform:scale(.62);  border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 18px rgba(109,255,176,.6); }
-    86%      { transform:scale(.62);  border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 18px rgba(109,255,176,.6); }
+    8%       { transform:scale(1.06); }
+    14%      { transform:scale(1); }
+    19%      { transform:scale(1.06); border-color:#ffb44f; box-shadow:0 0 0 3px #0b0720, 0 0 30px rgba(255,180,79,.9); }
+    22%      { transform:scale(.9);   border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 40px rgba(109,255,176,.95); }
+    30%      { transform:scale(.72);  border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 18px rgba(109,255,176,.6); }
+    86%      { transform:scale(.72);  border-color:#6dffb0; box-shadow:0 0 0 3px #0b0720, 0 0 18px rgba(109,255,176,.6); }
     92%,100% { transform:scale(1);    border-color:#ffb44f; box-shadow:0 0 0 3px #0b0720, 0 0 22px rgba(255,180,79,.6); }
   }
-  /* the shackle, which springs open on the tap */
+  /* the shackle, which springs open on the click */
   .demo-tap .demo-target::before {
     content:""; position:absolute; left:17px; top:10px; width:14px; height:17px;
     border:5px solid #ffe3b0; border-bottom:0; border-radius:12px 12px 0 0;
     transform-origin:100% 100%; animation:gbShackle 4s ease-in-out infinite;
   }
   @keyframes gbShackle {
-    0%,32%   { transform:translateY(0) rotate(0); }
-    36%      { transform:translateY(-8px) rotate(-28deg); }
+    0%,20%   { transform:translateY(0) rotate(0); }
+    24%      { transform:translateY(-8px) rotate(-28deg); }
     86%      { transform:translateY(-8px) rotate(-28deg); }
     92%,100% { transform:translateY(0) rotate(0); }
   }
@@ -207,22 +213,41 @@
     animation:gbFlash 4s ease-out infinite; }
   .demo-tap .demo-ripple.d2 { animation-delay:.12s; }
   @keyframes gbFlash {
-    0%,31%   { transform:scale(.6); opacity:0; }
-    34%      { opacity:.95; }
-    50%,100% { transform:scale(2.2); opacity:0; }
+    0%,20%   { transform:scale(.6); opacity:0; }
+    22%      { opacity:.95; }
+    36%,100% { transform:scale(2.2); opacity:0; }
   }
 
-  /* THE SHARED FINGER — one tap, on the padlock. */
+  /* THE SHARED FINGER — the cursor on a desk — two clicks: the padlock at
+     20 %, then arrival A at 42 % */
   .demo-tap .demo-hand {
-    width:48px; height:62px; margin-left:-24px; left:50%; bottom:14px; z-index:4;
+    width:48px; height:62px; margin-left:-24px; left:50%; bottom:14px; z-index:5;
     animation:gbTap 4s ease-in-out infinite;
   }
   @keyframes gbTap {
-    0%,14%   { transform:translate(64px,-40px);  opacity:0; }
-    24%      { transform:translate(46px,-118px); opacity:1; }
-    32%      { transform:translate(40px,-136px); opacity:1; }   /* the tap */
-    40%      { transform:translate(46px,-112px); opacity:1; }
-    50%,100% { transform:translate(64px,-60px);  opacity:0; }
+    0%,4%    { transform:translate(70px,-60px);   opacity:0; }
+    14%      { transform:translate(-60px,-182px); opacity:1; }
+    20%      { transform:translate(-60px,-186px); opacity:1; }   /* the lock   */
+    26%      { transform:translate(-60px,-182px); opacity:1; }
+    36%      { transform:translate(52px,0);       opacity:1; }
+    42%      { transform:translate(52px,-4px);    opacity:1; }   /* arrival A  */
+    48%      { transform:translate(52px,0);       opacity:1; }
+    56%,100% { transform:translate(90px,30px);    opacity:0; }
+  }
+  /* the wave each click leaves, on the tip, on both devices — so the motor's
+     own desk wave stands down */
+  .demo-tap .demo-hand .demo-click { display:none; }
+  .demo-tap .demo-hand::after {
+    content:""; position:absolute; left:50%; top:4%; width:58px; height:58px; margin:-29px 0 0 -29px;
+    border-radius:50%; border:4px solid #7ef9ff; box-shadow:0 0 14px #7ef9ff;
+    opacity:0; animation:gbClick 4s ease-out infinite;
+  }
+  @keyframes gbClick {
+    0%,19.9%    { transform:scale(.2);  opacity:0; }
+    20%         { transform:scale(.2);  opacity:1; }
+    29%,41.9%   { transform:scale(1.5); opacity:0; }
+    42%         { transform:scale(.2);  opacity:1; }
+    51%,100%    { transform:scale(1.5); opacity:0; }
   }
 
   /* ---- the upgrade cards: the deal, over the stopped machine --------------

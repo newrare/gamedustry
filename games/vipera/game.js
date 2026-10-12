@@ -28,7 +28,9 @@
 
     // One finger, one gesture: every tap flips the steering side. No caption —
     // the tagline is the sentence and the stage is the demonstration.
-    intro: { logo: "logo", demo: "tap", caption: "" },
+    intro: { logo: "logo", demo: "tap", caption: "",
+             // on a desk: SPACE or a click (shell.js, Demo)
+             desk: [{ keys: ["space"], mouse: ["click"] }] },
 
     // Desktop: SPACE starts, taps and replays. A "tap" demo is exactly the
     // case the engine can fake, so the game owns no keyboard code.
@@ -3476,6 +3478,100 @@
       sh = BIO.share;
       T.hazardShare = sh[0] + (sh[1] - sh[0]) * levelK / 5;
     }
+
+    /* THE VIPER OF THE DEMO STAGE. The how-to-play stage is CSS, and a viper
+       drawn in CSS is a stack of coloured discs — which read as a worm. So the
+       stage's viper is painted ONCE, here, by the very sprites the round draws
+       with: the painted head (or its drawn fallback) and the first tier's
+       scale blocks along a gentle S, tapering into the tail. It goes into the
+       stage's target node as a canvas; the SKIN sizes that node to DEMO_W x
+       DEMO_H and swings it about the head (DEMO_PIVOT), so the body follows
+       the head the way it does on the canvas. */
+    var DEMO_W = 84, DEMO_H = 200, DEMO_PIVOT = 46, DEMO_K = 3;
+    function dressDemo() {
+      var host = document.querySelector("#intro-demo .demo-target");
+      if (!host || host.querySelector(".vp-snake")) return;
+      var cv = document.createElement("canvas"), c = cv.getContext("2d");
+      cv.className = "vp-snake";
+      cv.width = DEMO_W * DEMO_K; cv.height = DEMO_H * DEMO_K;
+      host.appendChild(cv);
+
+      var r = 17, sp = r * 1.08, n = 9, cx = DEMO_W * 0.5, i, t, br, kx, ky, shade, a;
+      var xs = [], ys = [], ang = [], plates = [], drawnHead = null;
+      for (i = 0; i < n; i++) {
+        xs.push(cx + Math.sin(i * 0.62) * 9 * Math.min(1, i / 3));
+        ys.push(DEMO_PIVOT + i * sp);
+      }
+      for (i = 0; i < n; i++) {
+        a = i ? Math.atan2(ys[i - 1] - ys[i], xs[i - 1] - xs[i]) : -Math.PI / 2;
+        ang.push(a);
+      }
+      for (i = 0; i < 3; i++) plates.push(buildTierPlate(TIERS[0], i));
+      ky = sp * PLATE_LEN / (PLATE_F + PLATE_B);
+
+      function paint(img) {
+        var w, h, sn, tx, ty, nx, ny, tr, ta;
+        c.setTransform(DEMO_K, 0, 0, DEMO_K, 0, 0);
+        c.clearRect(0, 0, DEMO_W, DEMO_H);
+        // the tail tip, as drawTailTip draws it
+        i = n - 1; tr = r * (0.92 - 0.42) * 0.6; ta = ang[i] + Math.PI;
+        tx = xs[i] + Math.cos(ta) * sp * 1.15; ty = ys[i] + Math.sin(ta) * sp * 1.15;
+        nx = -Math.sin(ta); ny = Math.cos(ta);
+        c.beginPath();
+        c.moveTo(xs[i] + nx * tr, ys[i] + ny * tr);
+        c.quadraticCurveTo(tx + nx * tr * 0.35, ty + ny * tr * 0.35, tx, ty);
+        c.quadraticCurveTo(tx - nx * tr * 0.35, ty - ny * tr * 0.35, xs[i] - nx * tr, ys[i] - ny * tr);
+        c.closePath();
+        c.fillStyle = darker(TIERS[0].stops[2], 0.6); c.fill();
+        c.lineWidth = 1.2; c.strokeStyle = rgba(darker(TIERS[0].stops[2], 0.25), 0.9); c.stroke();
+        // the blocks, tail first: that order IS the imbrication
+        for (i = n - 1; i >= 1; i--) {
+          t = i / (n - 1);
+          shade = t < 0.42 ? 0 : t < 0.76 ? 1 : 2;
+          br = r * (0.92 - 0.42 * Math.pow(Math.max(0, t - 0.62) / 0.38, 1.4));
+          kx = br * 1.06 / PLATE_HW;
+          c.save();
+          c.translate(xs[i], ys[i]); c.rotate(ang[i] + Math.PI / 2); c.scale(kx, ky);
+          c.drawImage(plates[shade], -PLATE_PX * 0.5, -PLATE_PX * 0.5, PLATE_PX, PLATE_PX);
+          c.restore();
+        }
+        // the head, as drawHead draws it, pointing up
+        c.save();
+        c.translate(xs[0], ys[0]);
+        if (img) {
+          w = PAINT_W * r / PAINT_FILL;
+          h = w * img.naturalHeight / img.naturalWidth;
+          sn = h * (PAINT_SNOUT - PAINT_PIVOT);
+          c.save(); c.rotate(Math.PI); c.drawImage(img, -w * 0.5, -h * PAINT_PIVOT, w, h); c.restore();
+        } else {
+          // not headSprite: buildSkin reads a set one as "the skin is built"
+          drawnHead = drawnHead || buildHead();
+          w = r * HEAD_K / HEAD_R;
+          sn = SNOUT * w;
+          c.drawImage(drawnHead, -HEAD_PX * 0.5 * w, -HEAD_PX * 0.5 * w, HEAD_PX * w, HEAD_PX * w);
+        }
+        // the forked tongue, out of the snout
+        w = r * HEAD_K;
+        c.lineCap = "round"; c.lineJoin = "round";
+        c.beginPath();
+        c.moveTo(0, -sn); c.lineTo(0, -sn - w * 0.42);
+        c.moveTo(0, -sn - w * 0.42); c.lineTo(-w * 0.16, -sn - w * 0.6);
+        c.moveTo(0, -sn - w * 0.42); c.lineTo(w * 0.16, -sn - w * 0.6);
+        c.lineWidth = w * 0.15; c.strokeStyle = "#173a08"; c.stroke();
+        c.lineWidth = w * 0.085; c.strokeStyle = "#ff5d8f"; c.stroke();
+        c.restore();
+      }
+
+      var src = CONFIG.art && CONFIG.art.headNeutral, img;
+      paint(null);
+      if (src) {
+        img = new Image();
+        img.onload = function () { paint(img); };
+        img.src = src;
+      }
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", dressDemo);
+    else dressDemo();
 
     return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
              levelProgress: levelProgress, levelWon: die, applyLevel: applyLevel };

@@ -48,7 +48,14 @@
     // shared finger acts out the gesture on a stage the SKIN dresses as the
     // game itself. caption is the fallback label for a stage that cannot say
     // it on its own; leave it empty and the tagline carries the sentence.
-    intro: { logo: null, demo: "tap", caption: "" },
+    // desk is what a DESK plays with, one row per control (shell.js, Demo):
+    // keys (left right up down space, or a label as written) and/or mouse
+    // actions (aim click hold drag grab), plus what the row `does`. The first
+    // row decides the stage — any mouse and the finger becomes a clicking
+    // cursor, keys alone and the keys are pressed. Left out, it follows the
+    // demo's gesture.
+    intro: { logo: null, demo: "tap", caption: "",
+             desk: [{ keys: ["space"], mouse: ["click"] }] },
 
     // Desktop fallbacks: SPACE acts as a tap (start, play, replay) for the
     // "tap" and "hold" demos, and the LEFT/RIGHT arrows fire a lateral flick

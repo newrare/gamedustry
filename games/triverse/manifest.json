@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.7.3",
+  "version": "1.7.5",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -216,7 +216,9 @@
           "Threaded!": "Au millimètre !",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "x2 over": "Fin du x2"
+          "x2 over": "Fin du x2",
+          "Change path": "Changer de voie",
+          "Jump": "Sauter"
         }
       }
     },
@@ -260,6 +262,15 @@
         "play.lives": [
           4,
           2
+        ]
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
         ]
       }
     },

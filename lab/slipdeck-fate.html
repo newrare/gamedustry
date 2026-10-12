@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — slipdeck Fate gestures</title>
+<meta name="lab-group" content="prototype">
+<meta name="lab-game" content="slipdeck">
+<style>
+/* ===========================================================================
+   SLIPDECK — FATE GESTURES. One way to play every Fate joker.
+
+   The five Fate jokers of games/slipdeck (Compass, Reshuffle, Pocket,
+   Rewind, Called shot) are played today (v1.8.0) with four different
+   drags: the card lifted into a joker, the card into the pocket's slot, a
+   joker dragged onto the hand, a joker dragged onto choices laid over the
+   card. Each one says what it does, and together they are four gestures to
+   learn for one family. This page puts that next to six proposals where
+   the player learns ONE action and every Fate joker answers it, two of
+   them (Compass, Called shot) with a choice at the end of the same action.
+
+   The table is a mock, not the game: the card in play is swiped left (bin)
+   and right (keep) for real, the hand resolves at five cards, and each
+   Fate joker does a simplified version of what it does in the game, so a
+   gesture is felt in the middle of a run rather than on an empty stage.
+   ▶ on a row of the panel plays that joker's gesture with a ghost finger,
+   through the same input path a real finger takes — what it shows is what
+   the proposal does. The measures under it (touches, travel, time) are
+   taken on every use, the ghost's and yours.
+
+   F (swipe up) won it and ships in games/slipdeck v1.9.0 (FATE GESTURES);
+   the others are the record of what it beat.
+
+   #p=<key> opens a proposal (now onto tap hold ring up deal).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 400px; height:100vh; overflow-y:auto;
+  padding:20px 18px 40px; background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:6px 0 16px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:18px 0 8px; font-size:11px; letter-spacing:1.5px; color:#7c7c9c; text-transform:uppercase; }
+
+.props { display:flex; flex-direction:column; gap:6px; }
+.prop {
+  display:block; width:100%; text-align:left; padding:8px 10px;
+  background:#171726; color:#cfcde6; border:1px solid #26263d; border-radius:8px;
+  font:inherit; cursor:pointer;
+}
+.prop b { color:#fff; }
+.prop small { display:block; font-weight:500; color:#8b8ba7; font-size:12px; }
+.prop .n { float:right; font-size:11px; padding:1px 7px; border-radius:10px; background:#23233a; color:#9c9cba; }
+.prop.on { border-color:#4f9bff; background:#14213a; }
+.prop.on .n { background:#4f9bff; color:#0b0b12; }
+
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+td { padding:6px 4px; border-top:1px solid #22223a; vertical-align:top; }
+td.j { width:92px; color:#fff; white-space:nowrap; }
+td.j i { display:inline-block; width:8px; height:8px; border-radius:4px; margin-right:6px; background:#4f9bff; }
+td.how { color:#bdbbd8; font-weight:500; }
+td.go { width:34px; text-align:right; }
+td.go button {
+  width:28px; height:24px; border:0; border-radius:6px; background:#4f9bff; color:#0b0b12;
+  font:700 11px/1 inherit; cursor:pointer;
+}
+ul.pc { list-style:none; font-weight:500; font-size:12.5px; color:#bdbbd8; }
+ul.pc li { padding:3px 0 3px 18px; position:relative; }
+ul.pc li::before { position:absolute; left:2px; font-weight:800; }
+ul.pc li.pro::before { content:"+"; color:#3ddc97; }
+ul.pc li.con::before { content:"−"; color:#ff6b6b; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; color:#9c9cba; }
+.row select {
+  width:100%; margin-top:4px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit;
+}
+.btns { display:flex; gap:6px; }
+.btns button {
+  flex:1; padding:7px 8px; background:#23233a; color:#e8e6f5; border:0; border-radius:8px;
+  font:700 12px/1 inherit; cursor:pointer;
+}
+#log { font-size:12px; font-weight:500; color:#bdbbd8; }
+#log div { padding:3px 0; border-top:1px solid #1d1d30; }
+#log div b { color:#fff; }
+#log .avg { color:#4f9bff; font-weight:700; }
+
+#stage { flex:1; display:flex; align-items:center; justify-content:center; padding:16px; background:#07070c; }
+canvas { display:block; border-radius:18px; box-shadow:0 18px 50px rgba(0,0,0,.6); touch-action:none; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Slipdeck — Fate gestures</h1>
+  <p class="hint">One action for every Fate joker: pick a proposal, play it on the table, compare.</p>
+
+  <h2>Proposals</h2>
+  <div class="props" id="props"></div>
+
+  <h2>How each joker is played</h2>
+  <table id="how"></table>
+
+  <h2>For and against</h2>
+  <ul class="pc" id="pc"></ul>
+
+  <h2>Table</h2>
+  <div class="row">
+    <label for="rail">Rail</label>
+    <select id="rail">
+      <option value="0">All five Fate jokers</option>
+      <option value="1">Compass, Reshuffle, Pocket (3 slots)</option>
+      <option value="2">Rewind, Called shot, Pocket (3 slots)</option>
+      <option value="3">Called shot, Compass, a scoring joker (3 slots)</option>
+    </select>
+  </div>
+  <div class="row">
+    <label><span>Once per hand, as in the game</span><input type="checkbox" id="once" checked></label>
+  </div>
+  <div class="row btns">
+    <button id="recharge">Recharge</button>
+    <button id="newhand">New hand</button>
+    <button id="binone">Bin a card</button>
+  </div>
+
+  <h2>Measured</h2>
+  <div id="log"><div>Play a Fate joker: each use is measured here.</div></div>
+</div>
+
+<div id="stage"><canvas id="view" width="720" height="1280"></canvas></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ===========================================================================
+     1. THE TABLE — the game's own layout at the 720×1280 design size, with the
+     web foot taken off the bottom (games/slipdeck/game.js, layout()).
+     =========================================================================== */
+  const W = 720, H = 1280;
+  const T = { top:150, left:26, right:694, cx:360, bottom:1182 };
+  const L = {
+    railY:156, medalY:200, R:40,
+    cardW:325, cardH:454, cardCX:360, cardCY:527,
+    slotW:123, slotH:172, slotGap:13, slotY:1066, valueY:950, binsY:822
+  };
+  L.slotX0 = T.cx - (5 * L.slotW + 4 * L.slotGap) / 2 + L.slotW / 2;
+  const slotX = (i) => L.slotX0 + i * (L.slotW + L.slotGap);
+
+  const FATE = "#4f9bff", GOLD = "#ffd54a", KEEP = "#3ddc97", BIN = "#ff9a4a", RED_INK = "#c8283c", INK = "#1b1d22";
+  const SUITS = ["♠", "♥", "♦", "♣"], SUIT_RED = [false, true, true, false];
+  const RANKS = ["2","3","4","5","6","7","8","9","10","J","Q","K","A"];
+  const CATS = ["high","pair","twoPair","trips","straight","flush","fullHouse","quads","straightFlush"];
+  const CAT_NAME = { high:"High card", pair:"Pair", twoPair:"Two pair", trips:"Three of a kind", straight:"Straight",
+                     flush:"Flush", fullHouse:"Full house", quads:"Four of a kind", straightFlush:"Straight flush" };
+  const CALLS = ["pair","twoPair","trips","straight","flush","fullHouse","quads"];
+  const CALL_SHORT = { pair:"Pair", twoPair:"2 pair", trips:"Trips", straight:"Straight", flush:"Flush", fullHouse:"Full", quads:"Quads" };
+  const CALL_X = { pair:1.5, twoPair:2, trips:2.5, straight:3, flush:3, fullHouse:4, quads:5 };
+
+  /* The five Fate jokers that ask for an action, with the painted piece the
+     game ships for each (joker<NN> is its place in JOKERS). */
+  const JOK = {
+    compass:   { name:"Compass",     art:"joker21", choice:true,  text:"Pick a suit: the next card is of that suit" },
+    reshuffle: { name:"Reshuffle",   art:"joker22", choice:false, text:"The card in play goes back into the deck, no bin spent" },
+    pocket:    { name:"Pocket",      art:"joker23", choice:false, text:"Put the card in play aside, or swap it with the one put aside" },
+    rewind:    { name:"Rewind",      art:"joker24", choice:false, text:"The last card you binned comes back into your hand, with its bin" },
+    called:    { name:"Called shot", art:"joker26", choice:true,  text:"Before your third card, name a hand: make it for ×mult, miss it and it busts" },
+    spade:     { name:"Spade lover", art:"joker01", passive:true, text:"+3 mult for every ♠ in the hand" }
+  };
+  const ORDER = ["compass","reshuffle","pocket","rewind","called"];
+  const RAILS = [ORDER.slice(), ["compass","reshuffle","pocket"], ["rewind","called","pocket"], ["called","compass","spade"]];
+
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var s = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+    var out = "", i, c, k;
+    for (i = 0; i < s.length; i++) { c = s.charAt(i); if (PAIR[c]) { out += PAIR[c]; continue; } k = FROM.indexOf(c); out += k >= 0 ? TO.charAt(k) : c; }
+    return out;
+  }
+
+  /* ---- art: the painted jokers and the felt, read out of assets/ ---------- */
+  const IMG = {};
+  function load(key, src) { const im = new Image(); im.src = src; IMG[key] = im; }
+  Object.keys(JOK).forEach((id) => load(JOK[id].art, "../assets/image/embed/slipdeck-" + JOK[id].art + ".webp"));
+  load("bg", "../assets/image/embed/slipdeck-background-phone.webp");
+  const ok = (im) => im && im.complete && im.naturalWidth > 0;
+
+  /* ===========================================================================
+     2. THE RUN — a deck, the card in play, the hand, the bins, and what the
+     five jokers change of it. Simplified: no chips, no pot, no gauge.
+     =========================================================================== */
+  const S = {};
+  function newDeck() {
+    const d = [];
+    for (let s = 0; s < 4; s++) for (let r = 0; r < 13; r++) d.push({ r, s });
+    for (let i = d.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [d[i], d[j]] = [d[j], d[i]]; }
+    return d;
+  }
+  function resetRun() {
+    S.deck = newDeck(); S.hand = []; S.bins = 0; S.lastBin = null; S.pocket = null;
+    S.used = {}; S.called = null; S.steer = null; S.cur = null; S.dealWait = 0.2;
+    S.fly = []; S.toast = null; S.resolving = 0; S.score = 0;
+  }
+  function deal() {
+    if (!S.deck.length) S.deck = newDeck();
+    let c;
+    if (S.steer != null) {
+      const k = S.deck.findIndex((x) => x.s === S.steer);
+      c = k >= 0 ? S.deck.splice(k, 1)[0] : S.deck.shift();
+      S.steer = null;
+    } else c = S.deck.shift();
+    S.cur = { card:c, x:0, y:0, rot:0, in:0, sc:1 };
+  }
+  const cardReady = () => !!(S.cur && S.cur.in >= 1 && !S.resolving);
+  function toast(text, sub, col) { S.toast = { text, sub, col: col || "#ffffff", t:0 }; }
+
+  function evalHand(cards) {
+    const cnt = {}, suits = {};
+    cards.forEach((c) => { cnt[c.r] = (cnt[c.r] || 0) + 1; suits[c.s] = (suits[c.s] || 0) + 1; });
+    const n = Object.values(cnt).sort((a, b) => b - a);
+    const flush = cards.length === 5 && Object.keys(suits).length === 1;
+    const rs = Object.keys(cnt).map(Number).sort((a, b) => a - b);
+    let straight = false;
+    if (rs.length === 5) straight = rs[4] - rs[0] === 4 || rs.join() === "0,1,2,3,12";
+    if (straight && flush) return "straightFlush";
+    if (n[0] === 4) return "quads";
+    if (n[0] === 3 && n[1] === 2) return "fullHouse";
+    if (flush) return "flush";
+    if (straight) return "straight";
+    if (n[0] === 3) return "trips";
+    if (n[0] === 2 && n[1] === 2) return "twoPair";
+    if (n[0] === 2) return "pair";
+    return "high";
+  }
+  function resolveHand() {
+    const cat = evalHand(S.hand);
+    if (S.called && CATS.indexOf(cat) < CATS.indexOf(S.called)) toast("Bust", "Called " + CAT_NAME[S.called] + ", made " + CAT_NAME[cat], "#ff6b6b");
+    else if (S.called) toast(CAT_NAME[cat], "Called shot ×" + CALL_X[S.called], GOLD);
+    else toast(CAT_NAME[cat], cat === "high" ? "Pays nothing" : "Paid", cat === "high" ? "#bdbbd8" : KEEP);
+    S.resolving = 1.1;
+  }
+  function endHand() {
+    S.hand = []; S.bins = 0; S.lastBin = null; S.used = {}; S.called = null; S.resolving = 0;
+    if (!S.cur) S.dealWait = 0.15;
+  }
+  function keepCard() {
+    const c = S.cur.card;
+    S.fly.push({ card:c, x:L.cardCX + S.cur.x, y:L.cardCY + S.cur.y, vx:1600, vy:300, rot:S.cur.rot, spin:2, a:1, sc:1 });
+    S.cur = null; S.hand.push(c);
+    if (S.hand.length >= 5) resolveHand(); else S.dealWait = 0.25;
+  }
+  function binCard() {
+    if (S.bins >= 3) { toast("No bin left", "Keep it, or play a Fate joker", "#ff6b6b"); return false; }
+    const c = S.cur.card;
+    S.fly.push({ card:c, x:L.cardCX + S.cur.x, y:L.cardCY + S.cur.y, vx:-1600, vy:300, rot:S.cur.rot, spin:-2, a:1, sc:1 });
+    S.cur = null; S.bins++; S.lastBin = c; S.dealWait = 0.25;
+    return true;
+  }
+
+  /* ---- the Fate jokers: when one is ready, and what it does --------------- */
+  function rail() { return RAILS[+document.getElementById("rail").value]; }
+  const isFate = (id) => !!(JOK[id] && !JOK[id].passive);
+  const railX = (i) => { const n = rail().length, w = (T.right - T.left - (n - 1) * 12) / n; return T.left + i * (w + 12) + w / 2; };
+  const railW = () => { const n = rail().length; return (T.right - T.left - (n - 1) * 12) / n; };
+  const railIdx = (id) => rail().indexOf(id);
+  function railAt(p) {
+    if (p.y < L.railY - 6 || p.y > L.railY + 120) return -1;
+    const r = rail();
+    for (let i = 0; i < r.length; i++) if (Math.abs(p.x - railX(i)) < railW() / 2) return i;
+    return -1;
+  }
+  function why(id) {
+    if (!isFate(id)) return "Not a Fate joker: it counts on its own";
+    if (S.used[id] && document.getElementById("once").checked) return "Used this hand — ready on the next one";
+    if (id === "called") {
+      if (S.called) return "Called: " + CAT_NAME[S.called];
+      if (S.hand.length > 2) return "Too late: call before your third card";
+    }
+    if (!cardReady()) return "Wait for the next card";
+    if (id === "rewind" && !S.lastBin) return "Bin a card first";
+    return "";
+  }
+  const ready = (id) => !why(id);
+
+  function choiceData(id) {
+    if (id === "compass") return SUITS.map((g, s) => ({ val:s, label:g, col: SUIT_RED[s] ? "#ff5a6e" : "#e8e6f5", big:true }));
+    if (id === "called") return CALLS.map((c) => ({ val:c, label:CALL_SHORT[c], sub:"×" + CALL_X[c] }));
+    return [];
+  }
+
+  function play(id, val) {
+    if (why(id)) { toast(why(id), JOK[id].name, "#ff6b6b"); return; }
+    S.used[id] = 1;
+    if (id === "compass") { S.steer = val; toast("Next card: " + SUITS[val], "Compass", FATE); }
+    else if (id === "reshuffle") {
+      const c = S.cur.card;
+      S.fly.push({ card:c, x:L.cardCX + S.cur.x, y:L.cardCY + S.cur.y, vx:0, vy:-1500, rot:S.cur.rot, spin:2.4, a:1, sc:S.cur.sc });
+      S.deck.splice((Math.random() * S.deck.length) | 0, 0, c);
+      S.cur = null; S.dealWait = 0.3; toast("Back in the deck", "Reshuffle", FATE);
+    } else if (id === "pocket") {
+      const c = S.cur.card;
+      if (!S.pocket) { S.pocket = c; S.cur = null; S.dealWait = 0.3; toast("Put aside", "Pocket", FATE); }
+      else { const p = S.pocket; S.pocket = c; S.cur = { card:p, x:0, y:0, rot:0, in:0.4, sc:1 }; toast("Swapped", "Pocket", FATE); }
+    } else if (id === "rewind") {
+      const c = S.lastBin; S.lastBin = null; S.bins = Math.max(0, S.bins - 1);
+      S.hand.push(c); toast("Back in your hand", "Rewind", FATE);
+      if (S.hand.length >= 5) resolveHand();
+    } else if (id === "called") {
+      S.called = val; toast("Called: " + CAT_NAME[val], "×" + CALL_X[val] + " mult if you make it, a bust if you miss", GOLD);
+    }
+    burst(id);
+    metricDone(id);
+  }
+
+  /* ===========================================================================
+     3. DRAWING — the felt, the rail, the card, the hand, and the pieces every
+     proposal lays over them (a dragged joker, choices, a sheet, a ring).
+     =========================================================================== */
+  const cv = document.getElementById("view"), ctx = cv.getContext("2d");
+  const font = (px, w) => (w || 800) + " " + px + "px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function rr(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function text(str, x, y, px, col, w, align) {
+    ctx.font = font(px, w); ctx.fillStyle = col; ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    ctx.fillText(str, x, y);
+  }
+  function wrap(str, x, y, maxW, px, col, lh, w) {
+    ctx.font = font(px, w || 500); ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const words = str.split(" "); let line = "", lines = [];
+    words.forEach((wd) => { const t = line ? line + " " + wd : wd; if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = wd; } else line = t; });
+    if (line) lines.push(line);
+    lines.forEach((l, i) => ctx.fillText(l, x, y + i * lh));
+    return lines.length * lh;
+  }
+
+  function drawBg() {
+    if (ok(IMG.bg)) {
+      const im = IMG.bg, k = Math.max(W / im.naturalWidth, H / im.naturalHeight);
+      ctx.drawImage(im, (W - im.naturalWidth * k) / 2, (H - im.naturalHeight * k) / 2, im.naturalWidth * k, im.naturalHeight * k);
+      ctx.fillStyle = "rgba(4,11,8,.55)"; ctx.fillRect(0, 0, W, H);
+    } else {
+      const g = ctx.createRadialGradient(T.cx, H * 0.36, 40, T.cx, H * 0.36, 900);
+      g.addColorStop(0, "#17402f"); g.addColorStop(0.56, "#0b2419"); g.addColorStop(1, "#040b08");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawCardAt(c, x, y, w, rot, alpha) {
+    const h = w * 1.4, r = w * 0.085;
+    ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.globalAlpha = alpha == null ? 1 : alpha;
+    if (w > 150) { rr(-w / 2 + 6, -h / 2 + 12, w, h, r); ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fill(); }
+    rr(-w / 2, -h / 2, w, h, r);
+    const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, "#fbf7ec"); g.addColorStop(1, "#ece2c9");
+    ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = Math.max(2, w * 0.022); ctx.strokeStyle = "#c9a24a"; ctx.stroke();
+    const col = SUIT_RED[c.s] ? RED_INK : INK;
+    text(SUITS[c.s], 0, h * 0.04, w * 0.5, col, 900);
+    text(RANKS[c.r], -w / 2 + w * 0.15, -h / 2 + w * 0.14, w * 0.17, col, 900);
+    text(SUITS[c.s], -w / 2 + w * 0.15, -h / 2 + w * 0.3, w * 0.14, col, 900);
+    ctx.restore();
+  }
+
+  function medal(id, x, y, R, opt) {
+    opt = opt || {};
+    const J = JOK[id], col = J.passive ? "#3fa0ff" : FATE;
+    ctx.save(); ctx.globalAlpha = opt.alpha == null ? 1 : opt.alpha;
+    if (opt.glow) {
+      for (let j = 0; j < 3; j++) { ctx.beginPath(); ctx.arc(x, y, R + 6 + j * 7, 0, Math.PI * 2); ctx.strokeStyle = rgba(opt.glowCol || GOLD, opt.glow * [0.5, 0.25, 0.1][j]); ctx.lineWidth = 5; ctx.stroke(); }
+    }
+    ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2);
+    const mg = ctx.createRadialGradient(x, y - 10, 4, x, y, R); mg.addColorStop(0, rgba(col, 0.5)); mg.addColorStop(1, "#130f26");
+    ctx.fillStyle = mg; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+    if (ok(IMG[J.art])) {
+      const im = IMG[J.art], s = R * 1.7, k = Math.min(s / im.naturalWidth, s / im.naturalHeight);
+      ctx.drawImage(im, x - im.naturalWidth * k / 2, y - im.naturalHeight * k / 2, im.naturalWidth * k, im.naturalHeight * k);
+    }
+    if (opt.dot) { ctx.beginPath(); ctx.arc(x + R * 0.72, y - R * 0.72, 9, 0, Math.PI * 2); ctx.fillStyle = KEEP; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#0b2419"; ctx.stroke(); }
+    if (opt.name) text(upper(J.name), x, y + R + 22, 18, "#e8e6f5", 800);
+    ctx.restore();
+  }
+
+  function drawRail() {
+    rail().forEach((id, i) => {
+      const x = railX(i), dim = isFate(id) && S.used[id] && document.getElementById("once").checked;
+      const held = (P.held && P.held() === id);
+      medal(id, x, L.medalY, L.R, { alpha: held ? 0.3 : dim ? 0.4 : 1, dot: isFate(id) && ready(id), name:true,
+        glow: P.railGlow ? P.railGlow(id) : 0, glowCol: FATE });
+    });
+  }
+
+  function drawChevrons() {
+    const lean = S.cur ? S.cur.x / 150 : 0;
+    const lbl = P.gateLabels ? P.gateLabels() : ["Bin", "Keep"];
+    [[-1, T.left + 62, BIN, lbl[0], Math.max(0, -lean)], [1, T.right - 62, KEEP, lbl[1], Math.max(0, lean)]].forEach(([side, x, col, label, lit]) => {
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (let i = 0; i < 3; i++) {
+        const cx = x + side * (i * 18 - 18);
+        ctx.beginPath(); ctx.moveTo(cx - side * 9, L.cardCY - 24); ctx.lineTo(cx + side * 9, L.cardCY); ctx.lineTo(cx - side * 9, L.cardCY + 24);
+        ctx.lineWidth = 7; ctx.strokeStyle = rgba(col, Math.min(1, 0.25 + 0.18 * i + Math.min(1, lit) * 0.6)); ctx.stroke();
+      }
+      text(upper(label), x, L.cardCY + 50, 20, rgba(col, 0.85), 900);
+    });
+  }
+
+  const pocketOn = () => railIdx("pocket") >= 0 || !!S.pocket;
+  const pocketBox = () => ({ x:T.right - 56, y:L.cardCY - 64 - 64, w:92, h:129 });
+  function drawPocket(hot) {
+    if (!pocketOn()) return;
+    const b = pocketBox();
+    rr(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h, 10);
+    ctx.fillStyle = rgba(FATE, hot ? 0.3 : 0.08); ctx.fill();
+    ctx.setLineDash([7, 6]); ctx.lineWidth = hot ? 4 : 2; ctx.strokeStyle = rgba(FATE, hot ? 1 : 0.6); ctx.stroke(); ctx.setLineDash([]);
+    if (S.pocket) drawCardAt(S.pocket, b.x, b.y, b.w - 8, 0, 1);
+    else text(upper("Pocket"), b.x, b.y, 18, rgba(FATE, 0.8), 800);
+  }
+
+  function drawHand() {
+    for (let i = 0; i < 5; i++) {
+      const k = i - 2, x = slotX(i), y = L.slotY + k * k * 7 - 4;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(k * 0.07);
+      if (S.hand[i]) { ctx.restore(); drawCardAt(S.hand[i], x, y, L.slotW, k * 0.07, 1); continue; }
+      rr(-L.slotW / 2, -L.slotH / 2, L.slotW, L.slotH, 10);
+      ctx.fillStyle = "rgba(255,255,255,.04)"; ctx.fill(); ctx.setLineDash([7, 7]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.2)"; ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+    }
+    if (S.called) {
+      const s = upper("Called: " + CAT_NAME[S.called] + " ×" + CALL_X[S.called]);
+      ctx.font = font(20, 900); const w = ctx.measureText(s).width + 36;
+      rr(T.cx - w / 2, L.valueY - 20, w, 40, 20); ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = GOLD; ctx.stroke();
+      text(s, T.cx, L.valueY + 1, 20, GOLD, 900);
+    }
+  }
+  function drawBins() {
+    text(upper("Bins"), T.cx - 70, L.binsY, 18, rgba(BIN, 0.9), 900, "right");
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(T.cx - 40 + i * 34, L.binsY, 11, 0, Math.PI * 2);
+      ctx.fillStyle = i < 3 - S.bins ? BIN : "rgba(255,255,255,.1)"; ctx.fill();
+    }
+    if (S.lastBin) { text(upper("Last binned"), T.cx + 120, L.binsY, 18, "rgba(255,255,255,.55)", 800, "left"); drawCardAt(S.lastBin, T.cx + 290, L.binsY, 40, -0.1, 0.8); }
+  }
+  function drawCur() {
+    if (!S.cur) return;
+    const c = S.cur, e = 1 - Math.pow(1 - Math.min(1, c.in), 3);
+    if (P.drawCur && P.drawCur(c, e)) return;
+    drawCardAt(c.card, L.cardCX + c.x, L.cardCY + c.y - (1 - e) * 80, L.cardW * c.sc, c.rot, e);
+  }
+  function drawFly() { S.fly.forEach((f) => drawCardAt(f.card, f.x, f.y, L.cardW * f.sc, f.rot, f.a)); }
+
+  function drawToast() {
+    const t = S.toast; if (!t) return;
+    const a = Math.min(1, t.t * 6, (2.4 - t.t) * 3); if (a <= 0) return;
+    ctx.save(); ctx.globalAlpha = a;
+    const s = upper(t.text); ctx.font = font(26, 900);
+    const w = Math.max(ctx.measureText(s).width, t.sub ? (ctx.font = font(20, 600), ctx.measureText(t.sub).width) : 0) + 48;
+    rr(T.cx - w / 2, 40, w, t.sub ? 90 : 60, 20); ctx.fillStyle = "rgba(6,10,20,.85)"; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = rgba(t.col.length === 7 ? t.col : "#ffffff", 0.8); ctx.stroke();
+    text(s, T.cx, t.sub ? 70 : 71, 26, t.col, 900);
+    if (t.sub) text(t.sub, T.cx, 106, 20, "#cfd3e6", 600);
+    ctx.restore();
+  }
+
+  /* The choices a Compass or a Called shot asks for, wherever a proposal
+     lays them: { val, label, sub, col, x, y, r } (a disc) or { …, w, h }. */
+  function drawChoices(list, hover) {
+    list.forEach((c) => {
+      const on = hover === c;
+      ctx.save();
+      if (c.r) {
+        ctx.beginPath(); ctx.arc(c.x, c.y, c.r * (on ? 1.12 : 1), 0, Math.PI * 2);
+        ctx.fillStyle = on ? rgba(FATE, 0.95) : "rgba(10,16,34,.9)"; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = on ? "#ffffff" : FATE; ctx.stroke();
+        if (c.big) text(c.label, c.x, c.y + 3, c.r * 1.05, on ? "#ffffff" : c.col, 900);
+        else { text(upper(c.label), c.x, c.y - (c.sub ? 11 : 0), 18, "#ffffff", 900); if (c.sub) text(c.sub, c.x, c.y + 14, 20, on ? "#ffffff" : GOLD, 900); }
+      } else {
+        rr(c.x - c.w / 2, c.y - c.h / 2, c.w, c.h, Math.min(16, c.h / 2));
+        ctx.fillStyle = on ? rgba(FATE, 0.95) : c.sel ? rgba(FATE, 0.55) : "rgba(10,16,34,.9)"; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = on || c.sel ? "#ffffff" : FATE; ctx.stroke();
+        if (c.big) text(c.label, c.x, c.y + 3, Math.min(c.h * 0.7, 60), on ? "#ffffff" : c.col, 900);
+        else {
+          text(upper(c.label), c.x - (c.sub ? 26 : 0), c.y + 1, 20, "#ffffff", 900);
+          if (c.sub) text(c.sub, c.x + c.w / 2 - 44, c.y + 1, 20, on || c.sel ? "#ffffff" : GOLD, 900);
+        }
+      }
+      ctx.restore();
+    });
+  }
+  function hitChoice(list, p, pad) {
+    pad = pad || 6;
+    for (const c of list) {
+      if (c.r ? Math.hypot(p.x - c.x, p.y - c.y) < c.r + pad : Math.abs(p.x - c.x) < c.w / 2 + pad && Math.abs(p.y - c.y) < c.h / 2 + pad) return c;
+    }
+    return null;
+  }
+
+  /* Choice layouts, one per place a proposal puts them. */
+  function choicesOverCard(id) {                    // today's: over the card in play
+    const d = choiceData(id);
+    if (id === "compass") return d.map((c, k) => Object.assign(c, { x:L.cardCX + (k % 2 ? 84 : -84), y:L.cardCY + (k < 2 ? -84 : 84), r:66 }));
+    const step = Math.min(66, (L.cardH + 60) / d.length), w = 400;
+    return d.map((c, k) => Object.assign(c, { x:L.cardCX, y:L.cardCY + (k - (d.length - 1) / 2) * step, w, h:step - 10 }));
+  }
+  function choicesRow(id, y) {                      // a row under the rail
+    const d = choiceData(id), r = id === "compass" ? 56 : 42, gap = id === "compass" ? 28 : 10;
+    const tot = d.length * 2 * r + (d.length - 1) * gap;
+    return d.map((c, k) => Object.assign(c, { x:T.cx - tot / 2 + r + k * (2 * r + gap), y, r }));
+  }
+  function choicesArc(id, cx, cy, ang, rad) {       // an arc, outward from a direction
+    const d = choiceData(id), r = id === "compass" ? 52 : 44, step = (2 * r + 10) / rad;
+    return d.map((c, k) => {
+      const a = ang + (k - (d.length - 1) / 2) * step;
+      return Object.assign(c, { x:Math.max(r + 6, Math.min(W - r - 6, cx + Math.cos(a) * rad)), y:Math.max(r + 6, Math.min(H - r - 6, cy + Math.sin(a) * rad)), r });
+    });
+  }
+
+  function dashed(ax, ay, bx, by, col, a) {
+    ctx.save(); ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+    ctx.setLineDash([2, 16]); ctx.lineCap = "round"; ctx.lineWidth = 5; ctx.strokeStyle = rgba(col, a); ctx.stroke(); ctx.restore();
+  }
+  function veil(a) { ctx.fillStyle = "rgba(2,6,14," + a + ")"; ctx.fillRect(0, 0, W, H); }
+
+  /* A tap on a joker reads it: a strip under the rail, the way the game's
+     own joker card says what it does and whether it is ready. */
+  let info = null;
+  function showInfo(id) { info = { id, t:0 }; }
+  function drawInfo() {
+    if (!info) return;
+    const a = Math.min(1, info.t * 6, (2.8 - info.t) * 3); if (a <= 0) return;
+    const J = JOK[info.id], w = why(info.id), y = L.railY + 150;
+    ctx.save(); ctx.globalAlpha = a;
+    rr(50, y, W - 100, 150, 18); ctx.fillStyle = "rgba(6,10,24,.92)"; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = FATE; ctx.stroke();
+    text(upper(J.name), T.cx, y + 30, 24, "#ffffff", 900);
+    wrap(J.text, T.cx, y + 66, W - 160, 22, "#cfd3e6", 28);
+    text(w || "Ready", T.cx, y + 126, 20, w ? "#ff8a8a" : KEEP, 700);
+    ctx.restore();
+  }
+
+  /* Juice, kept to one burst: what matters here is the gesture. */
+  const parts = [];
+  function burst(id) {
+    const i = railIdx(id), x = i >= 0 ? railX(i) : T.cx, y = L.medalY;
+    for (let k = 0; k < 18; k++) { const a = Math.random() * Math.PI * 2, s = 150 + Math.random() * 250; parts.push({ x, y, vx:Math.cos(a) * s, vy:Math.sin(a) * s, t:0, c: k % 2 ? FATE : "#ffffff" }); }
+  }
+  function drawParts(dt) {
+    for (let k = parts.length - 1; k >= 0; k--) {
+      const p = parts[k]; p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 400 * dt;
+      if (p.t > 0.5) { parts.splice(k, 1); continue; }
+      ctx.globalAlpha = 1 - p.t / 0.5; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /* ===========================================================================
+     4. SHARED INPUT — the card swipe every proposal keeps, and the joker
+     lifted off the rail most of them use.
+     =========================================================================== */
+  const SWIPE = 150;
+  let cd = null;          // card drag { sx, sy, x, y, t, moved, mode }
+  let jd = null;          // joker drag { id, i, sx, sy, x, y, on, t }
+
+  const cardHit = (p) => cardReady() && Math.abs(p.x - L.cardCX - S.cur.x) < L.cardW / 2 && Math.abs(p.y - L.cardCY - S.cur.y) < L.cardH / 2;
+  function cardStart(p) { if (!cardHit(p)) return false; cd = { sx:p.x, sy:p.y, x:p.x, y:p.y, t:0, moved:false, mode:"swipe" }; return true; }
+  function cardMove(p, freeY) {
+    if (!cd || !S.cur) return;
+    cd.x = p.x; cd.y = p.y;
+    if (Math.hypot(p.x - cd.sx, p.y - cd.sy) > 14) cd.moved = true;
+    S.cur.x = p.x - cd.sx; S.cur.y = (p.y - cd.sy) * (freeY ? 1 : 0.25); S.cur.rot = S.cur.x * 0.0009;
+  }
+  function cardRelease() {
+    if (!cd) return;
+    cd = null;
+    if (!S.cur) return;
+    if (S.cur.x < -SWIPE) { if (binCard()) metricReset(); }
+    else if (S.cur.x > SWIPE) { keepCard(); metricReset(); }
+  }
+  function jokerStart(p) {
+    const i = railAt(p); if (i < 0) return false;
+    jd = { id:rail()[i], i, sx:p.x, sy:p.y, x:p.x, y:p.y, on:false, t:0 };
+    return true;
+  }
+  function jokerMove(p) {
+    if (!jd) return;
+    jd.x = p.x; jd.y = p.y;
+    if (!jd.on && Math.hypot(p.x - jd.sx, p.y - jd.sy) > 14) {
+      if (!ready(jd.id)) { toast(why(jd.id), JOK[jd.id].name, "#ff6b6b"); jd = null; return; }
+      jd.on = true;
+    }
+  }
+  const draggedJoker = () => (jd && jd.on ? jd.id : null);
+  function drawDraggedJoker() { if (jd && jd.on) medal(jd.id, jd.x, jd.y - 60, L.R * 1.15, { glow:0.6, glowCol:FATE }); }
+
+  /* ===========================================================================
+     5. THE PROPOSALS — each owns down / move / up and what it draws over the
+     table; `how` is the row the panel prints for each joker, `n` how many
+     gestures a player has to learn for the five.
+     =========================================================================== */
+  const PROPS = {};
+
+  /* ---- A · today (v1.8.0), the reference --------------------------------- */
+  PROPS.now = {
+    name:"A · Today (v1.8)", line:"Each joker its own drag", n:4,
+    how: {
+      compass:"Drag the joker off the rail, drop it on a suit laid over the card",
+      reshuffle:"Lift the card up into the joker (or drag the joker onto the card)",
+      pocket:"Drag the card into the pocket slot (or the joker onto the card)",
+      rewind:"Drag the joker down onto the hand",
+      called:"Drag the joker off the rail, drop it on a hand laid over the card"
+    },
+    pros:["Each drag says what the joker does: the card goes INTO Reshuffle, the binned card comes back INTO the hand",
+          "Every action is one gesture, choices included"],
+    cons:["Four gestures to learn for one family, with two directions (card → joker, joker → target)",
+          "The card lifted up toward the rail is half a swipe: a lift can end as a bin or a keep",
+          "Nothing on the rail says which drag a joker wants until the hint aura runs"],
+    held: () => draggedJoker(),
+    lift: () => {
+      const out = [];
+      let i = railIdx("reshuffle"); if (i >= 0 && ready("reshuffle")) out.push({ id:"reshuffle", x:railX(i), y:L.cardCY - 200 });
+      i = railIdx("pocket"); if (i >= 0 && ready("pocket")) { const b = pocketBox(); out.push({ id:"pocket", x:b.x, y:b.y }); }
+      return out;
+    },
+    liftTarget() {
+      if (!cd || !S.cur || S.cur.y > -60) return null;
+      const cx = L.cardCX + S.cur.x, cy = L.cardCY + S.cur.y; let best = null, bd = 130;
+      this.lift().forEach((t) => { const d = Math.hypot(cx - t.x, cy - t.y); if (d < bd) { bd = d; best = t; } });
+      return best;
+    },
+    drop(p) {
+      const id = jd.id;
+      if (JOK[id].choice) return hitChoice(choicesOverCard(id), p);
+      if (id === "rewind") return p.y > L.valueY - 50 ? { val:true } : null;
+      return S.cur && Math.abs(p.x - L.cardCX) < L.cardW / 2 + 20 && Math.abs(p.y - L.cardCY) < L.cardH / 2 + 20 ? { val:true } : null;
+    },
+    down(p) { if (!jokerStart(p)) cardStart(p); },
+    move(p) { if (jd) jokerMove(p); else cardMove(p, true); },
+    up(p) {
+      if (jd) { if (!jd.on) showInfo(jd.id); else { const h = this.drop({ x:jd.x, y:jd.y - 60 }); if (h) play(jd.id, h.val); } jd = null; return; }
+      const t = this.liftTarget();
+      if (t) { cd = null; play(t.id); return; }
+      cardRelease();
+    },
+    draw() {
+      const id = draggedJoker();
+      if (id) {
+        if (JOK[id].choice) { const l = choicesOverCard(id); drawChoices(l, hitChoice(l, { x:jd.x, y:jd.y - 60 })); }
+        else if (id === "rewind") { rr(T.left, L.valueY - 50, T.right - T.left, L.slotH + 90, 18); ctx.fillStyle = rgba(FATE, 0.12); ctx.fill(); }
+        else { rr(L.cardCX - L.cardW / 2 - 10, L.cardCY - L.cardH / 2 - 10, L.cardW + 20, L.cardH + 20, 30); ctx.lineWidth = 4; ctx.strokeStyle = FATE; ctx.stroke(); }
+      }
+      if (cd && S.cur && S.cur.y < -30) {
+        const t = this.liftTarget();
+        this.lift().forEach((x) => dashed(L.cardCX + S.cur.x, L.cardCY + S.cur.y, x.x, x.y, FATE, t === x ? 0.8 : 0.35));
+      }
+      drawDraggedJoker();
+    },
+    pocketHot() { const t = this.liftTarget(); return !!(t && t.id === "pocket"); },
+    railGlow(id) { const t = this.liftTarget(); return t && t.id === id ? 1 : 0; },
+    demo(id) {
+      const i = railIdx(id), jx = railX(i), my = L.medalY;
+      if (id === "reshuffle") return [down(L.cardCX, L.cardCY), to(jx, L.cardCY - 200, 0.5), up()];
+      if (id === "pocket") { const b = pocketBox(); return [down(L.cardCX, L.cardCY), to(L.cardCX + (b.x - L.cardCX), L.cardCY + (b.y - L.cardCY), 0.55), up()]; }
+      if (id === "rewind") return [down(jx, my), to(slotX(2), L.slotY + 60, 0.6), up()];
+      return [down(jx, my), to(() => { const c = choicesOverCard(id)[0]; return { x:c.x, y:c.y + 60 }; }, 0.6), up()];
+    }
+  };
+
+  /* ---- B · onto the card, always ----------------------------------------- */
+  PROPS.onto = {
+    name:"B · Onto the card", line:"Every joker dragged onto the card in play", n:1,
+    how: {
+      compass:"Drag the joker onto the card: four suits bloom around it, slide on to one",
+      reshuffle:"Drag the joker onto the card",
+      pocket:"Drag the joker onto the card",
+      rewind:"Drag the joker onto the card",
+      called:"Drag the joker onto the card: the hands bloom around it, slide on to one"
+    },
+    pros:["One target for the five: the card the player is already looking at",
+          "Same direction every time — rail → card — so the rail reads as a row of tools",
+          "The card never moves toward the rail: a swipe stays a swipe"],
+    cons:["Rewind dropped on the card acts on the hand: the gesture no longer says what it does",
+          "A choice is a second leg of the drag, the finger must keep going past the card"],
+    held: () => draggedJoker(),
+    open: false,
+    onCard(p) { return S.cur && Math.abs(p.x - L.cardCX) < L.cardW / 2 + 20 && Math.abs(p.y - L.cardCY) < L.cardH / 2 + 20; },
+    choices(id) {
+      const d = choiceData(id);
+      if (id === "compass") return d.map((c, k) => Object.assign(c, { x:L.cardCX + [-1, 1, -1, 1][k] * 250, y:L.cardCY + [-1, -1, 1, 1][k] * 150, r:62 }));
+      return d.map((c, k) => Object.assign(c, { x:k % 2 ? L.cardCX + 252 : L.cardCX - 252, y:L.cardCY - 210 + k * 70, r:44 }));
+    },
+    down(p) { this.open = false; if (!jokerStart(p)) cardStart(p); },
+    move(p) {
+      if (jd) { jokerMove(p); if (jd && jd.on && JOK[jd.id].choice && this.onCard({ x:jd.x, y:jd.y - 60 })) this.open = true; return; }
+      cardMove(p);
+    },
+    up() {
+      if (jd) {
+        const q = { x:jd.x, y:jd.y - 60 };
+        if (!jd.on) showInfo(jd.id);
+        else if (JOK[jd.id].choice) { const h = this.open && hitChoice(this.choices(jd.id), q, 10); if (h) play(jd.id, h.val); }
+        else if (this.onCard(q)) play(jd.id);
+        jd = null; this.open = false; return;
+      }
+      cardRelease();
+    },
+    draw() {
+      const id = draggedJoker();
+      if (id) {
+        const q = { x:jd.x, y:jd.y - 60 }, over = this.onCard(q);
+        rr(L.cardCX - L.cardW / 2 - 10, L.cardCY - L.cardH / 2 - 10, L.cardW + 20, L.cardH + 20, 30);
+        ctx.lineWidth = over ? 6 : 3; ctx.strokeStyle = rgba(FATE, over ? 1 : 0.5); ctx.stroke();
+        if (JOK[id].choice && this.open) { const l = this.choices(id); drawChoices(l, hitChoice(l, q, 10)); }
+      }
+      drawDraggedJoker();
+    },
+    demo(id) {
+      const jx = railX(railIdx(id)), steps = [down(jx, L.medalY), to(L.cardCX, L.cardCY + 60, 0.55)];
+      if (JOK[id].choice) steps.push(to(() => { const c = this.choices(id)[id === "compass" ? 1 : 3]; return { x:c.x, y:c.y + 60 }; }, 0.45));
+      steps.push(up());
+      return steps;
+    }
+  };
+
+  /* ---- C · tap, then choose ---------------------------------------------- */
+  PROPS.tap = {
+    name:"C · Tap, then choose", line:"Tap the joker, its card opens with the buttons", n:1,
+    how: {
+      compass:"Tap the joker, then tap a suit on its card",
+      reshuffle:"Tap the joker, then Play",
+      pocket:"Tap the joker, then Play",
+      rewind:"Tap the joker, then Play",
+      called:"Tap the joker, then tap a hand on its card"
+    },
+    pros:["Nothing to learn: the tap that reads a joker is the one that plays it",
+          "The rule and the button are on the same card, read before acting",
+          "The easiest to make right on a desk, a keyboard and for accessibility"],
+    cons:["Always two taps, even for the three jokers that ask nothing",
+          "Says nothing about what the joker does to the table: a menu, not a gesture",
+          "Covers the card in play while it is open"],
+    sheet:null,
+    box() { return { x:60, y:300, w:W - 120 }; },
+    buttons() {
+      const id = this.sheet, b = this.box(), y0 = b.y + 270;
+      if (!JOK[id].choice) return [{ val:true, label:why(id) ? "Not now" : "Play", x:T.cx, y:y0 + 50, w:360, h:84, off:!!why(id) }];
+      const d = choiceData(id);
+      if (id === "compass") return d.map((c, k) => Object.assign(c, { x:T.cx + (k - 1.5) * 140, y:y0 + 60, w:120, h:110 }));
+      return d.map((c, k) => Object.assign(c, { x:T.cx, y:y0 + 30 + k * 66, w:440, h:56 }));
+    },
+    height() { return this.sheet && JOK[this.sheet].choice && this.sheet === "called" ? 760 : 430; },
+    down(p) {
+      if (this.sheet) {
+        const h = hitChoice(this.buttons(), p, 0), b = this.box();
+        if (h && !h.off) { const id = this.sheet; this.sheet = null; play(id, h.val); }
+        else if (!(p.x > b.x && p.x < b.x + b.w && p.y > b.y && p.y < b.y + this.height())) this.sheet = null;
+        return;
+      }
+      const i = railAt(p);
+      if (i >= 0) { const id = rail()[i]; if (isFate(id)) this.sheet = id; else showInfo(id); return; }
+      cardStart(p);
+    },
+    move(p) { cardMove(p); },
+    up() { cardRelease(); },
+    draw() {
+      if (!this.sheet) return;
+      const id = this.sheet, J = JOK[id], b = this.box(), h = this.height(), w = why(id);
+      veil(0.55);
+      rr(b.x, b.y, b.w, h, 26); ctx.fillStyle = "rgba(8,14,32,.96)"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = FATE; ctx.stroke();
+      medal(id, T.cx, b.y + 70, 52, {});
+      text(upper(J.name), T.cx, b.y + 150, 28, "#ffffff", 900);
+      wrap(J.text, T.cx, b.y + 192, b.w - 80, 22, "#cfd3e6", 28);
+      if (w) text(w, T.cx, b.y + 250, 20, "#ff8a8a", 700);
+      const l = this.buttons();
+      if (!J.choice) {
+        const c = l[0]; rr(c.x - c.w / 2, c.y - c.h / 2, c.w, c.h, 42);
+        ctx.fillStyle = c.off ? "rgba(255,255,255,.08)" : KEEP; ctx.fill();
+        text(upper(c.label), c.x, c.y + 2, 30, c.off ? "rgba(255,255,255,.4)" : "#062016", 900);
+      } else if (!w) drawChoices(l, null);
+      text("Tap outside to close", T.cx, b.y + h - 26, 20, "rgba(255,255,255,.45)", 600);
+    },
+    demo(id) {
+      const jx = railX(railIdx(id));
+      return [tap(jx, L.medalY), wait(0.5), tap(() => { const c = this.buttons()[id === "called" ? 4 : id === "compass" ? 2 : 0]; return { x:c.x, y:c.y }; })];
+    }
+  };
+
+  /* ---- D · hold the joker ------------------------------------------------ */
+  const HOLD = 0.45;
+  PROPS.hold = {
+    name:"D · Hold the joker", line:"Press and hold until it charges, let go", n:1,
+    how: {
+      compass:"Hold the joker until it charges, slide down onto a suit, let go",
+      reshuffle:"Hold the joker until it charges, let go",
+      pocket:"Hold the joker until it charges, let go",
+      rewind:"Hold the joker until it charges, let go",
+      called:"Hold the joker until it charges, slide down onto a hand, let go"
+    },
+    pros:["One gesture, felt in the thumb: a charge is a decision, not an accident",
+          "A short tap still reads the joker — read and play live on one object",
+          "Choices are a slide from where the finger already is (a marking menu)"],
+    cons:["Half a second of waiting on every use, and the charge has to be taught",
+          "Says nothing about what the joker does to the table",
+          "A long press on a phone can fight the OS (text selection, haptics)"],
+    armed:false,
+    row(id) { return choicesRow(id, L.medalY + 190); },
+    down(p) { this.armed = false; if (!jokerStart(p)) cardStart(p); },
+    move(p) { if (jd) { jd.x = p.x; jd.y = p.y; if (!this.armed && Math.hypot(p.x - jd.sx, p.y - jd.sy) > 30) jd = null; return; } cardMove(p); },
+    tick(dt) {
+      if (!jd || this.armed) return;
+      jd.t += dt;
+      if (jd.t >= HOLD) {
+        if (!ready(jd.id)) { toast(why(jd.id), JOK[jd.id].name, "#ff6b6b"); jd = null; return; }
+        this.armed = true;
+      }
+    },
+    up() {
+      if (jd) {
+        const id = jd.id, p = { x:jd.x, y:jd.y };
+        if (!this.armed) showInfo(id);
+        else if (JOK[id].choice) { const h = hitChoice(this.row(id), p, 10); if (h) play(id, h.val); }
+        else if (Math.hypot(p.x - railX(jd.i), p.y - L.medalY) < 120) play(id);
+        jd = null; this.armed = false; return;
+      }
+      cardRelease();
+    },
+    railGlow(id) { return jd && jd.id === id ? (this.armed ? 1 : Math.min(1, jd.t / HOLD) * 0.6) : 0; },
+    draw() {
+      if (!jd) return;
+      const x = railX(jd.i), y = L.medalY, u = Math.min(1, jd.t / HOLD);
+      ctx.beginPath(); ctx.arc(x, y, L.R + 14, -Math.PI / 2, -Math.PI / 2 + u * Math.PI * 2);
+      ctx.lineWidth = 8; ctx.lineCap = "round"; ctx.strokeStyle = this.armed ? GOLD : FATE; ctx.stroke(); ctx.lineCap = "butt";
+      if (this.armed && JOK[jd.id].choice) {
+        const l = this.row(jd.id);
+        l.forEach((c) => dashed(x, y + L.R, c.x, c.y - c.r, FATE, 0.18));
+        drawChoices(l, hitChoice(l, jd, 10));
+      } else if (this.armed) text(upper("Let go"), x, y + L.R + 60, 20, GOLD, 900);
+    },
+    demo(id) {
+      const jx = railX(railIdx(id)), steps = [down(jx, L.medalY), wait(HOLD + 0.15)];
+      if (JOK[id].choice) steps.push(to(() => { const c = this.row(id)[id === "compass" ? 0 : 4]; return { x:c.x, y:c.y }; }, 0.45));
+      steps.push(up());
+      return steps;
+    }
+  };
+
+  /* ---- E · hold the card, a ring of jokers -------------------------------- */
+  const RING_HOLD = 0.35;
+  PROPS.ring = {
+    name:"E · Hold the card", line:"Press the card still: the ready jokers ring the finger", n:1,
+    how: {
+      compass:"Hold the card, slide to Compass on the ring, then on to a suit",
+      reshuffle:"Hold the card, slide to Reshuffle on the ring, let go",
+      pocket:"Hold the card, slide to Pocket on the ring, let go",
+      rewind:"Hold the card, slide to Rewind on the ring, let go",
+      called:"Hold the card, slide to Called shot on the ring, then on to a hand"
+    },
+    pros:["Everything starts where the eyes already are: the card in play",
+          "The ring shows only what is ready — no dead joker to try",
+          "Choices sit on the same ring, one more slide outward (a marking menu)"],
+    cons:["Shares the card with the swipe: a held card must not move for a third of a second",
+          "The rail at the top becomes a display, two places for one joker",
+          "Hidden until discovered: nothing says the card can be held"],
+    ring:null, open:null,
+    items() {
+      if (!this.ring) return [];
+      const ids = rail().filter((id) => isFate(id) && ready(id)), c = this.ring, n = ids.length;
+      return ids.map((id, k) => { const a = -Math.PI / 2 + (n > 1 ? (k - (n - 1) / 2) * (Math.PI * 2 / Math.max(n, 5)) * 1.0 : 0); return { id, a, x:c.x + Math.cos(a) * 160, y:c.y + Math.sin(a) * 160 }; });
+    },
+    choices(it) { return choicesArc(it.id, this.ring.x, this.ring.y, it.a, 300); },
+    down(p) { this.ring = null; this.open = null; const i = railAt(p); if (i >= 0) { showInfo(rail()[i]); return; } cardStart(p); },
+    tick() {
+      if (cd && !cd.moved && !this.ring && cd.t >= RING_HOLD) {
+        if (!rail().some((id) => isFate(id) && ready(id))) { toast("No Fate joker ready", "", "#ff6b6b"); cd.moved = true; return; }
+        this.ring = { x:cd.sx, y:cd.sy }; S.cur.x = 0; S.cur.y = 0; S.cur.rot = 0;
+      }
+    },
+    move(p) {
+      if (this.ring) {
+        cd.x = p.x; cd.y = p.y;
+        const hit = this.items().find((it) => Math.hypot(p.x - it.x, p.y - it.y) < 56);
+        if (hit && JOK[hit.id].choice) this.open = hit;
+        return;
+      }
+      cardMove(p);
+    },
+    up() {
+      if (this.ring) {
+        const p = { x:cd.x, y:cd.y }, hit = this.items().find((it) => Math.hypot(p.x - it.x, p.y - it.y) < 56);
+        if (hit && !JOK[hit.id].choice) play(hit.id);
+        else if (this.open) { const h = hitChoice(this.choices(this.open), p, 10); if (h) play(this.open.id, h.val); }
+        this.ring = null; this.open = null; cd = null; return;
+      }
+      cardRelease();
+    },
+    draw() {
+      if (cd && !cd.moved && !this.ring && cd.t > 0.08) {
+        const u = Math.min(1, cd.t / RING_HOLD);
+        ctx.beginPath(); ctx.arc(cd.sx, cd.sy, 60, -Math.PI / 2, -Math.PI / 2 + u * Math.PI * 2); ctx.lineWidth = 8; ctx.strokeStyle = FATE; ctx.stroke();
+      }
+      if (!this.ring) return;
+      veil(0.5);
+      const c = this.ring, p = { x:cd.x, y:cd.y };
+      ctx.beginPath(); ctx.arc(c.x, c.y, 26, 0, Math.PI * 2); ctx.fillStyle = rgba(FATE, 0.5); ctx.fill();
+      this.items().forEach((it) => {
+        const on = Math.hypot(p.x - it.x, p.y - it.y) < 56 || (this.open && this.open.id === it.id);
+        dashed(c.x, c.y, it.x, it.y, FATE, 0.25);
+        medal(it.id, it.x, it.y, on ? 54 : 46, { glow: on ? 1 : 0, glowCol:FATE, name:true });
+      });
+      if (this.open) { const l = this.choices(this.open); drawChoices(l, hitChoice(l, p, 10)); }
+    },
+    demo(id) {
+      const steps = [down(L.cardCX, L.cardCY), wait(RING_HOLD + 0.2),
+        to(() => { const it = this.items().find((x) => x.id === id); return it ? { x:it.x, y:it.y } : { x:L.cardCX, y:L.cardCY }; }, 0.4)];
+      if (JOK[id].choice) steps.push(to(() => { const it = this.items().find((x) => x.id === id); if (!it) return { x:L.cardCX, y:L.cardCY }; const l = this.choices(it); const k = id === "compass" ? 1 : 3; return { x:l[k].x, y:l[k].y }; }, 0.4));
+      steps.push(up());
+      return steps;
+    }
+  };
+
+  /* ---- F · swipe up, the third way ---------------------------------------- */
+  PROPS.up = {
+    name:"F · Swipe up", line:"Left bins, right keeps, UP plays a joker", n:1,
+    how: {
+      compass:"Push the card up onto Compass, then down onto a suit",
+      reshuffle:"Push the card up onto Reshuffle",
+      pocket:"Push the card up onto Pocket",
+      rewind:"Push the card up onto Rewind",
+      called:"Push the card up onto Called shot, then down onto a hand"
+    },
+    pros:["The game already speaks in swipes: up joins left and right as the third answer",
+          "The card goes INTO the joker — the rail reads as three more gates",
+          "Says the most with the least: one surface, three directions"],
+    cons:["Compass, Rewind and Called shot do not act on the card, yet the card is what moves",
+          "Up must be told from a sloppy left or right: the angle has to be generous",
+          "A choice is a second leg, back down from the rail"],
+    open:null, upMode:false,
+    row(id) { return choicesRow(id, L.medalY + 190); },
+    target(p) {
+      if (p.y > L.railY + 130) return null;
+      const i = railAt({ x:p.x, y:Math.max(p.y, L.railY) }); if (i < 0) return null;
+      const id = rail()[i]; return isFate(id) && ready(id) ? id : null;
+    },
+    down(p) { this.open = null; this.upMode = false; const i = railAt(p); if (i >= 0) { showInfo(rail()[i]); return; } cardStart(p); },
+    move(p) {
+      if (!cd) return;
+      cardMove(p, true);
+      if (!this.upMode && S.cur.y < -90 && -S.cur.y > Math.abs(S.cur.x) * 1.2) this.upMode = true;
+      // a choice joker stays open until another choice joker is hovered:
+      // the slide down to its row may cross a neighbour
+      if (this.upMode) { const t = this.target(p); if (t && JOK[t].choice) this.open = t; }
+    },
+    up() {
+      if (this.upMode && cd) {
+        const p = { x:cd.x, y:cd.y }, t = this.target(p);
+        cd = null;
+        if (t && !JOK[t].choice) { if (S.cur) { S.cur.x = 0; S.cur.y = 0; } play(t); }
+        else if (this.open) { const h = hitChoice(this.row(this.open), p, 10); if (h) play(this.open, h.val); }
+        if (S.cur) { S.cur.sc = 1; }
+        this.upMode = false; this.open = null; return;
+      }
+      this.upMode = false; cardRelease();
+    },
+    railGlow(id) { return this.upMode && ready(id) && isFate(id) ? (cd && this.target({ x:cd.x, y:cd.y }) === id || this.open === id ? 1 : 0.35) : 0; },
+    drawCur(c) {
+      if (!this.upMode || !cd) return false;
+      const k = Math.max(0.35, Math.min(1, (cd.y - L.railY) / (L.cardCY - L.railY)));
+      c.sc = k;
+      drawCardAt(c.card, cd.x, cd.y + L.cardH * k * 0.25, L.cardW * k, c.rot * 0.3, 0.85);
+      return true;
+    },
+    draw() {
+      if (this.upMode) rail().forEach((id, i) => { if (isFate(id) && ready(id) && cd) dashed(cd.x, cd.y, railX(i), L.medalY + L.R, FATE, 0.18); });
+      if (this.open && cd) { const l = this.row(this.open); drawChoices(l, hitChoice(l, { x:cd.x, y:cd.y }, 10)); }
+      if (cd && S.cur && !this.upMode && S.cur.y < -30) text(upper("Up: a joker"), L.cardCX, L.cardCY - L.cardH / 2 - 22, 20, FATE, 900);
+    },
+    demo(id) {
+      const jx = railX(railIdx(id)), steps = [down(L.cardCX, L.cardCY), to(L.cardCX + (jx - L.cardCX) * 0.3, L.cardCY - 200, 0.3), to(jx, L.medalY, 0.35)];
+      if (JOK[id].choice) steps.push(to(() => { const c = this.row(id)[id === "compass" ? 2 : 1]; return { x:c.x, y:c.y }; }, 0.4));
+      steps.push(up());
+      return steps;
+    }
+  };
+
+  /* ---- G · the joker dealt as a card -------------------------------------- */
+  PROPS.deal = {
+    name:"G · The joker is dealt", line:"Tap: the joker becomes the card, swipe it like one", n:1,
+    how: {
+      compass:"Tap the joker, tap a suit on its card, swipe it right",
+      reshuffle:"Tap the joker, swipe its card right",
+      pocket:"Tap the joker, swipe its card right",
+      rewind:"Tap the joker, swipe its card right",
+      called:"Tap the joker, tap a hand on its card, swipe it right"
+    },
+    pros:["Uses the one verb the game already teaches: right is yes, left is no",
+          "The joker's rule is on the card the player swipes, read before deciding",
+          "A misplay costs nothing: swipe it left and it goes back to the rail"],
+    cons:["Three steps for a choice joker (tap, pick, swipe)",
+          "The card in play is pushed back for a moment: the table changes state",
+          "Right means keep for a card and play for a joker — close, not the same"],
+    fc:null,
+    box() { const f = this.fc; return { x:L.cardCX + f.x, y:L.cardCY + f.y }; },
+    tiles() {
+      const id = this.fc.id, b = this.box(), d = choiceData(id);
+      if (id === "compass") return d.map((c, k) => Object.assign(c, { x:b.x + (k % 2 ? 66 : -66), y:b.y + 40 + (k < 2 ? 0 : 126), w:118, h:112, sel:this.fc.sel === c.val }));
+      return d.map((c, k) => Object.assign(c, { x:b.x, y:b.y - 66 + k * 42, w:L.cardW - 34, h:38, sel:this.fc.sel === c.val }));
+    },
+    gateLabels() { return this.fc ? ["Back", "Play"] : ["Bin", "Keep"]; },
+    down(p) {
+      const i = railAt(p);
+      if (i >= 0) {
+        const id = rail()[i];
+        if (!isFate(id)) { showInfo(id); return; }
+        if (!ready(id)) { toast(why(id), JOK[id].name, "#ff6b6b"); return; }
+        this.fc = { id, x:0, y:0, rot:0, in:0, sel: JOK[id].choice ? choiceData(id)[0].val : null };
+        return;
+      }
+      if (this.fc) {
+        const b = this.box();
+        if (Math.abs(p.x - b.x) < L.cardW / 2 && Math.abs(p.y - b.y) < L.cardH / 2) {
+          if (JOK[this.fc.id].choice) { const t = hitChoice(this.tiles(), p, 0); if (t) { this.fc.sel = t.val; return; } }
+          cd = { sx:p.x, sy:p.y, x:p.x, y:p.y, t:0, moved:false };
+        }
+        return;
+      }
+      cardStart(p);
+    },
+    move(p) {
+      if (this.fc && cd) { this.fc.x = p.x - cd.sx; this.fc.y = (p.y - cd.sy) * 0.25; this.fc.rot = this.fc.x * 0.0009; return; }
+      cardMove(p);
+    },
+    up() {
+      if (this.fc && cd) {
+        cd = null;
+        const f = this.fc;
+        if (f.x > SWIPE) { this.fc = null; play(f.id, f.sel); }
+        else if (f.x < -SWIPE) { this.fc = null; toast("Back to the rail", JOK[f.id].name, "#bdbbd8"); }
+        else { f.x = 0; f.y = 0; f.rot = 0; }
+        return;
+      }
+      cardRelease();
+    },
+    tick(dt) { if (this.fc) { this.fc.in = Math.min(1, this.fc.in + dt / 0.22); if (!cd) { this.fc.x *= 0.8; this.fc.y *= 0.8; this.fc.rot *= 0.8; } } },
+    held() { return this.fc ? this.fc.id : null; },
+    drawCur(c, e) {
+      if (!this.fc) return false;
+      drawCardAt(c.card, L.cardCX, L.cardCY + 30, L.cardW * 0.92, 0, 0.4 * e);
+      return true;
+    },
+    draw() {
+      if (!this.fc) return;
+      const f = this.fc, J = JOK[f.id], e = 1 - Math.pow(1 - f.in, 3);
+      const i = railIdx(f.id), sx = railX(i), x = sx + (L.cardCX + f.x - sx) * e, y = L.medalY + (L.cardCY + f.y - L.medalY) * e, w = L.cardW * (0.3 + 0.7 * e), h = w * 1.4;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(f.rot);
+      rr(-w / 2 + 6, -h / 2 + 12, w, h, 26); ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fill();
+      rr(-w / 2, -h / 2, w, h, 26);
+      const g = ctx.createLinearGradient(0, -h / 2, 0, h / 2); g.addColorStop(0, "#1b2a55"); g.addColorStop(1, "#0b1230");
+      ctx.fillStyle = g; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = FATE; ctx.stroke();
+      ctx.restore();
+      if (e < 0.98) return;
+      const b = this.box();
+      if (!J.choice) {
+        medal(f.id, b.x, b.y - 90, 74, {});
+        text(upper(J.name), b.x, b.y + 20, 26, "#ffffff", 900);
+        wrap(J.text, b.x, b.y + 62, L.cardW - 50, 22, "#cfd3e6", 28);
+      } else {
+        medal(f.id, b.x, b.y - (f.id === "called" ? 178 : 160), 40, {});
+        text(upper(J.name), b.x, b.y - (f.id === "called" ? 116 : 90), 24, "#ffffff", 900);
+        if (f.id === "compass") text("Tap a suit", b.x, b.y - 52, 20, "#cfd3e6", 600);
+        drawChoices(this.tiles(), null);
+      }
+    },
+    demo(id) {
+      const jx = railX(railIdx(id)), steps = [tap(jx, L.medalY), wait(0.45)];
+      if (JOK[id].choice) steps.push(tap(() => { const t = this.tiles()[id === "compass" ? 3 : 2]; return { x:t.x, y:t.y }; }), wait(0.25));
+      steps.push(down(L.cardCX + 120, L.cardCY - 140), to(L.cardCX + 400, L.cardCY - 130, 0.35), up());
+      return steps;
+    }
+  };
+
+  /* ===========================================================================
+     6. MEASURES — every use of a Fate joker: how many touches, how far the
+     finger travelled, how long from the first touch. Reset by a swipe.
+     =========================================================================== */
+  let M = null;
+  const hist = [];
+  function metricTouch(p) { if (!M) M = { touches:0, travel:0, t0:performance.now(), last:p }; M.touches++; M.last = p; }
+  function metricMove(p) { if (M && M.last) { M.travel += Math.hypot(p.x - M.last.x, p.y - M.last.y); M.last = p; } }
+  function metricReset() { M = null; }
+  function metricDone(id) {
+    if (!M) return;
+    hist.unshift({ p:curKey, id, touches:M.touches, travel:Math.round(M.travel), sec:(performance.now() - M.t0) / 1000, ghost:!!ghost });
+    if (hist.length > 40) hist.pop();
+    M = null; renderLog();
+  }
+  function renderLog() {
+    const el = document.getElementById("log"), mine = hist.filter((h) => h.p === curKey);
+    if (!mine.length) { el.innerHTML = "<div>Play a Fate joker: each use is measured here.</div>"; return; }
+    const avg = (k) => mine.reduce((s, h) => s + h[k], 0) / mine.length;
+    el.innerHTML = "<div class='avg'>" + PROPS[curKey].name + " — average of " + mine.length + ": " + avg("touches").toFixed(1) + " touches · " +
+      Math.round(avg("travel")) + " px · " + avg("sec").toFixed(2) + " s</div>" +
+      mine.slice(0, 8).map((h) => "<div><b>" + JOK[h.id].name + "</b> · " + h.touches + (h.touches > 1 ? " touches" : " touch") + " · " + h.travel + " px · " +
+        h.sec.toFixed(2) + " s" + (h.ghost ? " (ghost)" : "") + "</div>").join("");
+  }
+
+  /* ===========================================================================
+     7. THE GHOST — ▶ plays a joker's gesture through the same input path a
+     finger takes, so the demo is the proposal and not a drawing of it.
+     =========================================================================== */
+  function down(x, y) { return { kind:"down", at: typeof x === "function" ? x : () => ({ x, y }) }; }
+  function to(x, y, dur) { if (typeof x === "function") return { kind:"move", at:x, dur:y }; return { kind:"move", at:() => ({ x, y }), dur }; }
+  function up() { return { kind:"up" }; }
+  function wait(s) { return { kind:"wait", dur:s }; }
+  function tap(x, y) { return { kind:"tap", at: typeof x === "function" ? x : () => ({ x, y }) }; }
+
+  let ghost = null;
+  function runDemo(id) {
+    if (!S.cur || S.cur.in < 1 || S.resolving) { toast("Wait for the next card", "", "#ff6b6b"); return; }
+    if (railIdx(id) < 0) { toast("Not on the rail", "Pick a rail that holds " + JOK[id].name, "#ff6b6b"); return; }
+    if (id === "rewind" && !S.lastBin) {               // a rewind needs a binned card: bin one first
+      ghost = { steps:[down(L.cardCX, L.cardCY), to(L.cardCX - 260, L.cardCY + 10, 0.35), up(), wait(0.7)].concat(P.demo(id)), k:-1, t:0, pos:{ x:L.cardCX, y:L.cardCY + 300 }, isDown:false };
+    } else ghost = { steps:P.demo(id), k:-1, t:0, pos:{ x:L.cardCX, y:L.cardCY + 300 }, isDown:false };
+    nextStep();
+  }
+  function nextStep() {
+    ghost.k++; ghost.t = 0;
+    const s = ghost.steps[ghost.k];
+    if (!s) { ghost = null; return; }
+    if (s.kind === "down") { ghost.pos = s.at(); ghost.isDown = true; input("down", ghost.pos); ghost.hold = 0.12; }
+    else if (s.kind === "tap") { ghost.pos = s.at(); input("down", ghost.pos); input("up", ghost.pos); ghost.hold = 0.3; ghost.pulse = 0; }
+    else if (s.kind === "up") { ghost.isDown = false; input("up", ghost.pos); ghost.hold = 0.35; }
+    else if (s.kind === "move") { ghost.from = { x:ghost.pos.x, y:ghost.pos.y }; ghost.hold = 0; }
+    else ghost.hold = 0;
+  }
+  function tickGhost(dt) {
+    if (!ghost) return;
+    const s = ghost.steps[ghost.k];
+    ghost.t += dt; if (ghost.pulse != null) ghost.pulse += dt;
+    if (s.kind === "move") {
+      const u = Math.min(1, ghost.t / s.dur), e = u < 0.5 ? 2 * u * u : 1 - 2 * (1 - u) * (1 - u), b = s.at();
+      ghost.pos = { x:ghost.from.x + (b.x - ghost.from.x) * e, y:ghost.from.y + (b.y - ghost.from.y) * e };
+      input("move", ghost.pos);
+      if (u >= 1) nextStep();
+    } else if (ghost.t >= (s.kind === "wait" ? s.dur : ghost.hold)) nextStep();
+  }
+  function drawGhost() {
+    if (!ghost) return;
+    const p = ghost.pos;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(p.x, p.y, ghost.isDown ? 30 : 36, 0, Math.PI * 2);
+    ctx.fillStyle = ghost.isDown ? "rgba(255,255,255,.45)" : "rgba(255,255,255,.18)"; ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.stroke();
+    if (ghost.pulse != null && ghost.pulse < 0.4) { ctx.beginPath(); ctx.arc(p.x, p.y, 36 + ghost.pulse * 120, 0, Math.PI * 2); ctx.strokeStyle = "rgba(255,255,255," + (1 - ghost.pulse / 0.4) + ")"; ctx.stroke(); }
+    ctx.restore();
+  }
+
+  /* ===========================================================================
+     8. WIRING — pointer → design space → the proposal, the panel, the loop.
+     =========================================================================== */
+  let curKey = "now", P = PROPS.now, pressed = false;
+  function input(type, p) {
+    if (type === "down") { if (info) info = null; metricTouch(p); P.down(p); }
+    else if (type === "move") { metricMove(p); P.move(p); }
+    else P.up(p);
+  }
+  function pt(e) { const r = cv.getBoundingClientRect(); return { x:(e.clientX - r.left) * W / r.width, y:(e.clientY - r.top) * H / r.height }; }
+  cv.addEventListener("pointerdown", (e) => { if (ghost) return; pressed = true; cv.setPointerCapture(e.pointerId); input("down", pt(e)); });
+  cv.addEventListener("pointermove", (e) => { if (ghost || !pressed) return; input("move", pt(e)); });
+  const release = (e) => { if (ghost || !pressed) return; pressed = false; input("up", pt(e)); };
+  cv.addEventListener("pointerup", release);
+  cv.addEventListener("pointercancel", release);
+
+  function select(key) {
+    curKey = PROPS[key] ? key : "now"; P = PROPS[curKey];
+    cd = null; jd = null; ghost = null; info = null; M = null;
+    Object.values(PROPS).forEach((q) => { q.sheet = null; q.fc = null; q.ring = null; q.open = q.open === undefined ? undefined : null; q.armed = false; q.upMode = false; });
+    if (S.cur) { S.cur.x = 0; S.cur.y = 0; S.cur.rot = 0; S.cur.sc = 1; }
+    try { history.replaceState(null, "", "#p=" + curKey); } catch (e) { /* file:// may refuse */ }
+    renderPanel();
+  }
+  function renderPanel() {
+    document.getElementById("props").innerHTML = Object.keys(PROPS).map((k) =>
+      "<button class='prop" + (k === curKey ? " on" : "") + "' data-k='" + k + "'><span class='n'>" + PROPS[k].n + (PROPS[k].n > 1 ? " gestures" : " gesture") + "</span><b>" +
+      PROPS[k].name + "</b><small>" + PROPS[k].line + "</small></button>").join("");
+    document.getElementById("how").innerHTML = ORDER.map((id) =>
+      "<tr><td class='j'><i></i>" + JOK[id].name + "</td><td class='how'>" + P.how[id] + "</td><td class='go'><button data-demo='" + id + "' title='Play it with a ghost finger'>▶</button></td></tr>").join("");
+    document.getElementById("pc").innerHTML = P.pros.map((t) => "<li class='pro'>" + t + "</li>").join("") + P.cons.map((t) => "<li class='con'>" + t + "</li>").join("");
+    renderLog();
+  }
+  document.getElementById("props").addEventListener("click", (e) => { const b = e.target.closest("[data-k]"); if (b) select(b.dataset.k); });
+  document.getElementById("how").addEventListener("click", (e) => { const b = e.target.closest("[data-demo]"); if (b && !ghost) runDemo(b.dataset.demo); });
+  document.getElementById("recharge").addEventListener("click", () => { S.used = {}; S.called = null; toast("Jokers recharged", "", FATE); });
+  document.getElementById("newhand").addEventListener("click", () => { endHand(); S.cur = null; S.dealWait = 0.1; });
+  document.getElementById("binone").addEventListener("click", () => { if (cardReady() && !ghost) { S.cur.x = -1; binCard(); } });
+  document.getElementById("rail").addEventListener("change", () => select(curKey));
+
+  function fit() {
+    const st = document.getElementById("stage"), h = st.clientHeight - 32, w = st.clientWidth - 32, k = Math.min(h / H, w / W);
+    cv.style.width = Math.round(W * k) + "px"; cv.style.height = Math.round(H * k) + "px";
+  }
+  window.addEventListener("resize", fit);
+
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (S.toast) { S.toast.t += dt; if (S.toast.t > 2.4) S.toast = null; }
+    if (info) { info.t += dt; if (info.t > 2.8) info = null; }
+    if (S.resolving) { S.resolving -= dt; if (S.resolving <= 0) endHand(); }
+    if (!S.cur && !S.resolving) { S.dealWait -= dt; if (S.dealWait <= 0) deal(); }
+    if (S.cur) {
+      S.cur.in = Math.min(1, S.cur.in + dt / 0.25);
+      if (!cd) { const k = Math.min(1, dt * 14); S.cur.x -= S.cur.x * k; S.cur.y -= S.cur.y * k; S.cur.rot -= S.cur.rot * k; S.cur.sc += (1 - S.cur.sc) * k; }
+    }
+    if (cd) cd.t += dt;
+    for (let k = S.fly.length - 1; k >= 0; k--) { const f = S.fly[k]; f.x += f.vx * dt; f.y += f.vy * dt; f.rot += f.spin * dt; f.a -= dt * 2.2; if (f.a <= 0) S.fly.splice(k, 1); }
+    if (P.tick) P.tick(dt);
+    tickGhost(dt);
+
+    drawBg();
+    drawRail(); drawPocket(P.pocketHot ? P.pocketHot() : false); drawChevrons(); drawBins(); drawHand();
+    drawFly(); drawCur();
+    P.draw(); drawInfo(); drawParts(dt); drawToast(); drawGhost();
+    requestAnimationFrame(frame);
+  }
+
+  resetRun();
+  const m = /p=(\w+)/.exec(location.hash);
+  select(m ? m[1] : "now");
+  fit();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -26,7 +26,10 @@
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 30 },
 
     // The mechanic is a lateral flick, so the intro shows the swipe demo.
-    intro: { logo: "logo", demo: "swipe", caption: "" },
+    intro: { logo: "logo", demo: "swipe", caption: "",
+             // on a desk: the arrows (shell.js, Demo)
+             desk: [{ keys: ["left", "right"], does: "Change path" },
+                    { keys: ["up"], does: "Jump" }] },
 
     // Desktop: SPACE starts and replays, and the LEFT/RIGHT arrows (or A/D)
     // fire the lateral flick — the engine synthesizes the whole gesture, so the

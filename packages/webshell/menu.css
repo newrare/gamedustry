@@ -374,14 +374,33 @@ img.art-i {
   width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.7;
 }
 .web-help-rules b { color:var(--text); font-weight:900; }
-#screen-intro #intro-demo { margin:0 auto; }
-.web-keys { margin-top:20px; display:flex; align-items:center; justify-content:center; gap:12px; }
-.web-key {
-  border:2px solid var(--panel-line); border-radius:13px; background:rgba(0,0,0,.4);
-  padding:11px 22px; font-size:26px; letter-spacing:1px; color:var(--text);
-  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 800);
+
+/* THE AURA, NAMED (menu.js, fillHelp). The example object loops the hint's
+   two rings — a bright one hugging it, a faint one further out — on its own
+   outline: box-shadow follows the node's border-radius, a card or a disc
+   alike. A SKIN tints it with --help-aura / --help-aura-soft, the colours its
+   canvas hint strokes with. */
+.web-help-aura {
+  display:flex; align-items:center; gap:26px;
+  margin:18px 0 0; padding:16px 22px; border-radius:18px;
+  background:rgba(255,255,255,.05);
 }
-.web-keys-lbl { font-size:22px; letter-spacing:3px; color:var(--muted); text-align:center; margin:6px 0 12px; }
+.web-help-aura p { margin:0; font-size:22px; line-height:1.35; color:var(--muted); text-align:left; }
+.web-help-aura p b { color:var(--text); font-weight:900; }
+.web-help-aura-ex { flex:none; margin:12px; animation:web-aura 1.3s ease-in-out infinite; }
+.web-help-aura-pill {
+  width:60px; height:60px; border-radius:50%; display:grid; place-items:center;
+  font-size:30px; font-weight:900; color:var(--text);
+  background:rgba(0,0,0,.3); border:2px solid rgba(255,255,255,.25);
+}
+@keyframes web-aura {
+  0%, 100% { box-shadow:0 0 0 3px transparent, 0 0 0 10px transparent; }
+  45%      { box-shadow:0 0 0 3px var(--help-aura, rgba(255,212,59,.7)), 0 0 0 10px var(--help-aura-soft, rgba(255,212,59,.22)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .web-help-aura-ex { animation:none; box-shadow:0 0 0 3px var(--help-aura, rgba(255,212,59,.7)); }
+}
+#screen-intro #intro-demo { margin:0 auto; }
 
 /* =========================================================================
    THE GAME VIEW — the two controls a finished game needs in a round

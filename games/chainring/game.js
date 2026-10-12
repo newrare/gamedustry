@@ -22,7 +22,9 @@
        ball are always the brightest, most saturated things in the frame. A
        picture under the arena could not promise that. */
     sceneArt: false,
-    intro: { logo: "logo", demo: "tap", caption: "" },
+    intro: { logo: "logo", demo: "tap", caption: "",
+             // on a desk: SPACE or a click (shell.js, Demo)
+             desk: [{ keys: ["space"], mouse: ["click"] }] },
     hud: { score: true, timer: true },
     /* The bed is the metronome: the track runs at a dead-steady 128 BPM (a beat
        every 0.469 s), its first kick lands 0.43 s into the file and its musical

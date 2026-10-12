@@ -93,6 +93,7 @@
       catchTitle: "Jour manqué"
     }
   };
+  W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
 
   /* Which of them the screen SHOUTS. Every string above is written in normal
      case, like the rest of the repo; the ones listed here are set in capitals

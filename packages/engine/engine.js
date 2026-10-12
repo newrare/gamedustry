@@ -900,6 +900,128 @@
 
     return { get: get, set: set, del: del };
   })();
+
+  /* --- Desk: a device played with a mouse ---------------------------------
+
+     A desk is a device whose main pointer hovers and is precise —
+     `(hover: hover) and (pointer: fine)`, followed live; `?desk=1` / `?desk=0`
+     forces it for a bench. Two things follow from it, and both live here so
+     every screen agrees:
+
+       - the how-to-play stage acts keys or a mouse cursor instead of a finger
+         (packages/shell, Demo), switched by the class `is-desk` on <html>;
+       - THE VERB. A desk has no "tap": every word the player reads says
+         "click" there instead — Tap to play, Tap to close, "Tape en rythme",
+         "Touche un cadenas". `words` rewrites a finished string, in either
+         language, and `Lang.t` runs it on everything it hands back, so a game
+         writes "Tap" once and is right on both devices. Markup is stepped over
+         (a class named `w-tap` stays one). In French only the IMPERATIVE is a
+         tap — "Touche un cadenas" becomes "Clique sur un cadenas", while "une
+         bille touche un anneau" is left alone — which is why the French rule
+         reads the start of the sentence rather than the word. */
+  var Desk = (function () {
+    var m = /[?&]desk=([01])/.exec(location.search);
+    var forced = m ? m[1] === "1" : null;
+    var mq = window.matchMedia ? window.matchMedia("(hover: hover) and (pointer: fine)") : null;
+    var cache = {};
+
+    function on() { return forced !== null ? forced : !!(mq && mq.matches); }
+    function watch(fn) {
+      if (!mq) return;
+      if (mq.addEventListener) mq.addEventListener("change", fn);
+      else if (mq.addListener) mq.addListener(fn);
+    }
+
+    // `word` in the case of `first`, the letter it replaces
+    function cased(first, word) {
+      return first === first.toUpperCase() ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+    }
+    var L = "A-Za-zÀ-ÖØ-öø-ÿ";
+    function rx(body, tail) { return new RegExp("(^|[^" + L + "])" + body + "(?![" + L + (tail || "") + "])", "g"); }
+
+    var EN = rx("([Tt])ap(s|ped|ping)?");
+    var EN_SUFFIX = { "": "", s: "s", ped: "ed", ping: "ing" };
+    function en(t) {
+      return t.replace(EN, function (all, pre, f, suf) { return pre + cased(f, "click") + EN_SUFFIX[suf || ""]; });
+    }
+
+    var FR_EN_UNE = rx("([Tt])ouche-en une");
+    var FR_PRON   = rx("([Tt])(?:ouche|ape)-(?:le|la|les)");
+    var FR_NEG    = rx("([Nn])e touche pas");
+    var FR_TAPE   = rx("([Tt])ape", "-");
+    var FR_TAPS   = rx("([Tt])aps");
+    var FR_TAP    = rx("([Tt])ap");
+    var FR_TOUCHE = rx("([Tt])ouche", "-");
+    // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
+    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var carry = false;                 // a "sur" owed to the next run of text
+    function fr(t, prev, next) {
+      t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })
+           .replace(FR_PRON,   function (a, p, f) { return p + cased(f, "clique") + " dessus"; })
+           .replace(FR_NEG,    function (a, p, f) { return p + f + "e clique pas"; })
+           .replace(FR_TAPE,   function (a, p, f) { return p + cased(f, "clique"); })
+           .replace(FR_TAPS,   function (a, p, f) { return p + cased(f, "clics"); })
+           .replace(FR_TAP,    function (a, p, f) { return p + cased(f, "clic"); });
+      // "Touche", the imperative: only where a sentence starts
+      var out = "", last = 0, k, at, before, rest, again;
+      FR_TOUCHE.lastIndex = 0;
+      while ((k = FR_TOUCHE.exec(t))) {
+        at = k.index + k[1].length;
+        before = (prev + out + t.slice(last, at)).replace(/\s+$/, "");
+        if (before && !/[.:;!?…—(«]$/.test(before)) continue;
+        rest = t.slice(at + 6);
+        again = /^ de nouveau /.test(rest);
+        out += t.slice(last, at) + cased(k[2], "clique");
+        if (again && OBJ.test(rest.slice(12))) { out += " de nouveau sur"; last = at + 17; }
+        else if (!again && rest && OBJ.test(rest.slice(1))) { out += " sur"; last = at + 6; }
+        // the verb closes a run of markup ("<b>Touche</b> une salle"): the
+        // "sur" goes outside it, at the start of the next run
+        else if (!rest && OBJ.test(next.replace(/^\s+/, ""))) { carry = true; last = at + 6; }
+        else last = at + 6;
+      }
+      return out + t.slice(last);
+    }
+
+    /* A finished string, rewritten for a desk. `lang` defaults to the one
+       Lang is set to. Off a desk, or with nothing to rewrite, it is the
+       string itself. */
+    function words(s, lang) {
+      if (typeof s !== "string" || !on() || !/[Tt]ap|ouche/.test(s)) return s;
+      lang = lang || Lang.code();
+      var id = lang + "|" + s;
+      if (cache.hasOwnProperty(id)) return cache[id];
+      var parts = s.split(/(<[^>]*>)/), prev = "", i, j, next;
+      carry = false;
+      for (i = 0; i < parts.length; i += 2) {
+        if (lang === "fr") {
+          if (carry) { parts[i] = " sur" + parts[i]; carry = false; }
+          for (next = "", j = i + 2; j < parts.length; j += 2) next += parts[j];
+          parts[i] = fr(parts[i], prev, next);
+        } else parts[i] = en(parts[i]);
+        prev += parts[i];
+      }
+      return (cache[id] = parts.join(""));
+    }
+
+    /* A table of strings per language — `{ en: {...}, fr: {...} }`, the
+       shape every layer of the web shell keeps its words in — rewritten in
+       place, once, where it is defined. */
+    function table(t) {
+      if (!on() || !t) return t;
+      function walk(o, lang) {
+        for (var k in o) {
+          if (!o.hasOwnProperty(k)) continue;
+          if (typeof o[k] === "string") o[k] = words(o[k], lang);
+          else if (o[k] && typeof o[k] === "object") walk(o[k], lang);
+        }
+      }
+      for (var lang in t) if (t.hasOwnProperty(lang) && t[lang] && typeof t[lang] === "object") walk(t[lang], lang);
+      return t;
+    }
+
+    return { on: on, watch: watch, words: words, table: table };
+  })();
+
   /* --- Lang: the one place a word is translated --------------------------
 
      A game is WRITTEN in English — `CONFIG.copy`, every `Pop.show` word, every
@@ -929,11 +1051,12 @@
 
     /* Anything that is not a string is handed back untouched: the HUD's own
        value is a number more often than not, and a game should never have to
-       ask whether a slot holds a word before it fills it. */
+       ask whether a slot holds a word before it fills it. On a desk the word
+       then says "click" where it said "tap" (Desk, above). */
     function t(s) {
-      if (!dict || typeof s !== "string") return s;
-      var v = dict[s];
-      return typeof v === "string" ? v : s;
+      if (typeof s !== "string") return s;
+      var v = dict ? dict[s] : null;
+      return Desk.words(typeof v === "string" ? v : s, code);
     }
 
     return { set: set, t: t, code: function () { return code; } };

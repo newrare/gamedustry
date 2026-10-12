@@ -141,3 +141,6 @@
     42%      { transform:translateY(-24px); }
     58%,100% { transform:translateY(0); }
   }
+
+  /* on a DESK the cursor's wave lands on this tap: 42 % of 1.8 s (shell.js, Demo) */
+  .demo-tap .demo-hand { --click-dur:1.8s; --click-at:.76s; }

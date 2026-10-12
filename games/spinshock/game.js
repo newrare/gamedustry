@@ -15,7 +15,9 @@
     },
     designWidth: 720, designHeight: 1280, bg: "#08081c",
     layout: { hudHeight: 160, ctaHeight: 118, sideMargin: 26 },
-    intro: { logo: "logo", demo: "tap", caption: "" },
+    intro: { logo: "logo", demo: "tap", caption: "",
+             // on a desk: SPACE or a click (shell.js, Demo)
+             desk: [{ keys: ["space"], mouse: ["click"] }] },
     /* No clock: the right-hand slot carries the spin percentage instead, which is
        the only number that can end the run — and the tall segmented bar drawn
        down the right edge of the play area is the same reading, in colour. */

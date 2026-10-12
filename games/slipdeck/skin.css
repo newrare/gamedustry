@@ -32,6 +32,24 @@
   /* the lives pill, and its last-life state */
   #hud-right .hud-pill { letter-spacing:2px; color:#ff9aad; }
   #hud-right .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
+  /* the deck and the lives answer a tap: now and then they glow with the
+     table's aura (game.js, HINT) */
+  #hud-left.sd-hint .hud-pill, #hud-right.sd-hint .hud-pill { animation:sd-hint 1.4s ease-in-out; }
+  @keyframes sd-hint { 50% { box-shadow:0 0 0 2px rgba(245,196,81,.3), 0 0 14px rgba(245,196,81,.3); } }
+  @media (prefers-reduced-motion: reduce) { #hud-left.sd-hint .hud-pill, #hud-right.sd-hint .hud-pill { animation:none; } }
+  /* the Help card's example of it (Game.helpAura): a joker's medallion,
+     wearing the hint's gold */
+  :root { --help-aura:rgba(245,196,81,.75); --help-aura-soft:rgba(245,196,81,.25); }
+  .sd-medal {
+    width:80px; height:80px; border-radius:50%; box-sizing:border-box;
+    display:grid; place-items:center; overflow:hidden;
+    border:4px solid var(--c);
+    background:radial-gradient(circle at 50% 38%, var(--c) -40%, #130f26 100%);
+  }
+  .sd-medal img { width:68px; height:68px; object-fit:contain; }
+  .sd-medal span { font-size:34px; font-weight:900; color:#fff; }
+  /* its sentence is read like a tip's, not shouted in the display face */
+  .web-help-aura p { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
      The motor's "swipe" variant lends its flicking hand; the target becomes
@@ -129,6 +147,16 @@
     100%     { transform:translateX(-44px); opacity:0; }
   }
 
+  /* on a DESK the mouse holds the card and flicks it: one wave per press (shell.js, Demo) */
+  .demo-swipe .demo-hand .demo-click { animation:sdClick 3.4s ease-out infinite; }
+  @keyframes sdClick {
+    0%,7.9% { transform:scale(.2); opacity:0; }
+    8% { transform:scale(.2); opacity:1; }
+    17%,57.9% { transform:scale(1.5); opacity:0; }
+    58% { transform:scale(.2); opacity:1; }
+    67%,100% { transform:scale(1.5); opacity:0; }
+  }
+
   /* ---- the tips: a card the first time an idea lands on the table --------
      The motor's CARD (.mt-card) on a veil over the held round (Game.held):
      eyebrow, title, a few lines of rules, the tap line. A tap anywhere puts
@@ -145,6 +173,18 @@
   .sd-tip .sd-tc { max-width:600px; transform:translateY(30px) scale(.94); transition:transform .3s cubic-bezier(.2,1.3,.4,1); }
   .sd-tip.on .sd-tc { transform:none; }
   .sd-tc .mt-h { font-size:44px; color:var(--tc, var(--accent)); }
+  /* a joker read again: its card, grown out of its medallion (jokerShow) */
+  .sd-jshow.mt-card { display:flex; flex-direction:column; align-items:center; gap:14px;
+    background:none; box-shadow:none; padding:0; border:0;
+    transform:translate(var(--fx, 0), var(--fy, 0)) scale(.2); opacity:0;
+    transition:transform .34s cubic-bezier(.2,1.25,.4,1), opacity .18s ease; }
+  .sd-jshow.mt-card::before { content:none; }
+  .sd-tip.on .sd-jshow { transform:none; opacity:1; }
+  .sd-jshow .sd-jnow { margin:0; padding:6px 18px 5px; border-radius:999px; background:rgba(10,8,24,.78);
+    font-size:22px; font-weight:600; color:#e4ddfb; text-align:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .sd-jshow .sd-jnow.ready { color:#3ddc97; }
+  .sd-jshow .mt-tap { margin-top:6px; }
   .sd-tc .mt-body { gap:16px; }
   /* The rules are prose, read in normal case: never in the web build's
      display face (Bebas Neue has no lowercase, and its capitals would keep
@@ -154,7 +194,7 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     letter-spacing:0; text-transform:none; color:#e4f1ea;
   }
-  @media (prefers-reduced-motion: reduce) { .sd-tip .sd-tc { transition:none; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { .sd-tip .sd-tc, .sd-jshow { transition:none; transform:none; } }
 
   /* ---- the chart of the poker hands: nine rows, strongest on top ----------
      Five small cards drawn on a canvas (the table's own inks), then the
@@ -180,7 +220,6 @@
   .sd-hfig i { font-style:normal; color:#fff; padding:2px 12px; border-radius:9px; min-width:26px; text-align:center; }
   .sd-hfig i.c { background:#2f6fc4; }
   .sd-hfig i.m { background:#c42f48; }
-  .sd-hfig.bust { color:#ff4a5e; letter-spacing:.5px; }
   .sd-hname em { font-style:normal; font-size:20px; font-weight:700; color:#9fe8c6; }
   /* the pot's share of each hand, after its chips × mult */
   .sd-hfig .sd-hpot { margin-left:8px; font-size:20px; font-weight:700; color:#f5c451; }
@@ -203,11 +242,7 @@
   /* ---- a Fate joker's card: its actions under its rule --------------------
      The status line says whether it is ready; the buttons are the motor's
      own (.btn), the suits of the Compass set in their ink. */
-  .sd-tc .mt-body p.sd-status { color:#9fe8c6; font-weight:800; }
   .sd-btns { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:6px; }
-  .sd-btns.many { gap:10px; }
-  .sd-btns .sd-suit { min-width:96px; font-size:40px; line-height:1; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-  .sd-btns .sd-suit.s1, .sd-btns .sd-suit.s2 { color:#ffb3bd; }
 
   /* ---- the pick: two jokers (three with Third option), one taken ----------
      The motor's CARD with no plate behind it, on the tips' veil: the eyebrow

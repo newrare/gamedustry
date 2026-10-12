@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — table layout</title>
+<meta name="lab-group" content="tools">
+<meta name="lab-game" content="bridgessa">
+<style>
+/* ===========================================================================
+   BRIDGESSA — THE TABLE. Where everything stands in the round's 720 x 1280
+   frame: the dummy, the deal / dummy / lives row, the two defenders, the
+   trick, the Counter / Compass panel, the rail of favours, the player's hand
+   — and what the frame keeps for itself: the HUD band on top, and at the foot
+   either the playable's install bar or the web's two corners (the level pill
+   bottom-left, the round's controls bottom-right, WEB_FOOT above them).
+
+   Every measure of games/bridgessa/game.js `layout()` is a knob here, and the
+   placements it cannot express are choices (the rail above the hand, under
+   it, under the dummy or down the right edge; the defenders on the flanks,
+   in the top corners or as a single tag). Presets name whole layouts; A is
+   what ships in v0.5. The cards, the backs, the tags and the rail are drawn
+   by the game's OWN code, copied below (font … drawCard, buildBack), so a
+   card here is the card in the round.
+
+   The panel lists every pair of elements that OVERLAP — the one thing a
+   layout must not do and the eye misses on a busy table. Copy settings hands
+   the knobs over as JSON, which is what `layout()` is then rewritten from.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#panel { flex:0 0 310px; padding:18px 16px; background:#12121c; border-right:1px solid #23233a; height:100vh; overflow:auto; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+details { margin-bottom:10px; border:1px solid #23233a; border-radius:8px; padding:6px 10px; }
+summary { cursor:pointer; font-size:12px; color:#cfcfe6; letter-spacing:.5px; }
+.row { margin:8px 0; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.row select { width:100%; margin-top:4px; padding:5px 8px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; }
+.seg { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+.seg button { flex:1 1 auto; width:auto; margin:0; background:#1d1d2e; color:#cfcfe6; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+.check { display:flex; align-items:center; gap:8px; font-size:12px; color:#cfcfe6; margin:6px 0; cursor:pointer; }
+button { width:100%; margin-top:6px; padding:8px 10px; background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 12px/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:.4px; cursor:pointer; }
+button.ghostbtn { background:#1d1d2e; color:#cfcfe6; }
+#warn { margin-top:10px; font-size:12px; line-height:1.4; }
+#warn .ok { color:#8fd694; }
+#warn .bad { color:#ff8a7a; }
+#note { font-size:12px; color:#8fd694; min-height:18px; }
+#stage { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:20px; overflow:auto;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+canvas { border-radius:22px; box-shadow:0 18px 50px rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Table layout</h1>
+  <p class="hint">Where does each piece of a Bridgessa round stand? Presets, then every measure of layout(); overlaps are listed under the buttons.</p>
+  <div class="row"><label>Preset</label><div class="seg" id="presets"></div></div>
+  <div class="row"><button id="copy">Copy settings</button><div id="note"></div><div id="warn"></div></div>
+  <div id="knobs"></div>
+</div>
+<div id="stage"><canvas id="view"></canvas></div>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const cv = $("view"), ctx = cv.getContext("2d");
+
+  /* ---- the motor's helpers the game's drawing code calls ----------------- */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var shouted = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) { c = shouted.charAt(i); k = FROM.indexOf(c); out += k < 0 ? c : TO.charAt(k); }
+    return out;
+  }
+  function rgba(hex, a) {
+    var h = hex.replace("#", ""), n = parseInt(h.length === 3 ? h.replace(/(.)/g, "$1$1") : h, 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  var view = { dpr: 2 };
+  function freeCanvas() { return null; }
+  var RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+  var SUIT_RED = [false, true, true, false];
+  function suitOf(c) { return (c / 13) | 0; }
+  function rankOf(c) { return c % 13; }
+  var L = {}, backKey = "", backSprite = null;
+
+  /* ---- the game's own drawing code (games/bridgessa/game.js, copied) ----- */
+    var PIP_LAYOUT = [
+      [[0,0]],
+      [[0,-1],[0,1]],
+      [[0,-1],[0,0],[0,1]],
+      [[-1,-1],[1,-1],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[0,-0.5],[-1,0],[1,0],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[0,-0.5],[-1,0],[1,0],[0,0.5],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[-1,-0.3333],[1,-0.3333],[0,0],
+       [-1,0.3333],[1,0.3333],[-1,1],[1,1]],
+      [[-1,-1],[1,-1],[0,-0.6667],[-1,-0.3333],[1,-0.3333],
+       [-1,0.3333],[1,0.3333],[0,0.6667],[-1,1],[1,1]]
+    ];
+
+    /* The Riviera palette: an ivory card, navy and coral inks, a turquoise
+       sea for a table, the sun for what shines. */
+    var FACE_A = "#fffaf0", FACE_B = "#f3e8cc";
+    var INK_NAVY = "#1d2b4f", INK_CORAL = "#d9472f";
+    var CORAL = "#ff7a59", SEA = "#2ec4b6", SUN = "#f2c14e", IVORY = "#fbf4e2";
+    function ink(c) { return SUIT_RED[suitOf(c)] ? INK_CORAL : INK_NAVY; }
+    function font(size, weight, serif) {
+      return (weight || 800) + " " + Math.round(size) + "px " +
+        (serif ? "Georgia,'Times New Roman',serif" : "-apple-system,Segoe UI,Roboto,sans-serif");
+    }
+    function roundRectOn(g, x, y, w, h, r) {
+      g.beginPath();
+      g.moveTo(x + r, y);
+      g.arcTo(x + w, y, x + w, y + h, r);
+      g.arcTo(x + w, y + h, x, y + h, r);
+      g.arcTo(x, y + h, x, y, r);
+      g.arcTo(x, y, x + w, y, r);
+      g.closePath();
+    }
+    function roundRect(x, y, w, h, r) { roundRectOn(ctx, x, y, w, h, r); }
+
+    /* --- the four suits, as paths (slipdeck's) ----------------------------- */
+    function heartInto(g, r, sy) {
+      g.moveTo(0, sy * r * 0.92);
+      g.bezierCurveTo(-r * 1.32, sy * -r * 0.18, -r * 0.60, sy * -r * 1.12, 0, sy * -r * 0.40);
+      g.bezierCurveTo(r * 0.60, sy * -r * 1.12, r * 1.32, sy * -r * 0.18, 0, sy * r * 0.92);
+      g.closePath();
+    }
+    function stemInto(g, r) {
+      g.moveTo(-r * 0.36, r * 0.98);
+      g.bezierCurveTo(-r * 0.11, r * 0.66, -r * 0.07, r * 0.34, -r * 0.06, r * 0.12);
+      g.lineTo(r * 0.06, r * 0.12);
+      g.bezierCurveTo(r * 0.07, r * 0.34, r * 0.11, r * 0.66, r * 0.36, r * 0.98);
+      g.closePath();
+    }
+    function lobeInto(g, cx, cy, rr) { g.moveTo(cx + rr, cy); g.arc(cx, cy, rr, 0, Math.PI * 2); }
+    function pipPath(g, suit, s) {
+      var r = s / 2;
+      g.beginPath();
+      if (suit === 2) { g.moveTo(0, -r); g.lineTo(r * 0.70, 0); g.lineTo(0, r); g.lineTo(-r * 0.70, 0); g.closePath(); }
+      else if (suit === 1) heartInto(g, r, 1);
+      else if (suit === 0) { heartInto(g, r, -1); stemInto(g, r); }
+      else { lobeInto(g, 0, -r * 0.46, r * 0.40); lobeInto(g, -r * 0.44, r * 0.18, r * 0.40); lobeInto(g, r * 0.44, r * 0.18, r * 0.40); stemInto(g, r); }
+    }
+    function pip(suit, x, y, s, col) {
+      ctx.save(); ctx.translate(x, y); ctx.fillStyle = col; pipPath(ctx, suit, s); ctx.fill(); ctx.restore();
+    }
+
+    /* A soft shadow with no shadowBlur: three widening dark shapes. */
+    function shadowUnder(x, y, w, h, r, a) {
+      for (var i = 3; i >= 1; i--) {
+        roundRect(x - i * 2, y - i * 2 + 7, w + i * 4, h + i * 4, r + i * 2);
+        ctx.fillStyle = "rgba(4,18,28," + a + ")"; ctx.fill();
+      }
+    }
+
+    /* One card face, the RIVIERA face: ivory, a navy rim with a thin coral
+       line inside it, the index in a serif at the top-left (the only corner
+       an overlapped hand shows), pips for the numbers, a framed letter for
+       the court. `o`: dim, glow (a colour), star (the Masters mark). */
+    function drawCard(c, x, y, w, h, rot, o) {
+      o = o || {};
+      var s = suitOf(c), rk = rankOf(c), col = ink(c), r = w * 0.09, i, lay, q;
+      ctx.save();
+      ctx.translate(x, y);
+      if (rot) ctx.rotate(rot);
+      if (o.alpha != null) ctx.globalAlpha = o.alpha;
+      shadowUnder(-w / 2, -h / 2, w, h, r, 0.12);
+      if (o.glow) {
+        roundRect(-w / 2 - 7, -h / 2 - 7, w + 14, h + 14, r + 7);
+        ctx.fillStyle = rgba(o.glow, 0.55); ctx.fill();
+      }
+      roundRect(-w / 2, -h / 2, w, h, r);
+      var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
+      g.addColorStop(0, FACE_A); g.addColorStop(1, FACE_B);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = Math.max(2, w * 0.022); ctx.strokeStyle = INK_NAVY; ctx.stroke();
+      roundRect(-w / 2 + w * 0.05, -h / 2 + w * 0.05, w * 0.9, h - w * 0.1, r * 0.6);
+      ctx.lineWidth = Math.max(1, w * 0.01); ctx.strokeStyle = rgba(INK_CORAL, 0.45); ctx.stroke();
+
+      if (o.mini) {                                    // a defender's card shown: its index only, readable in its strip
+        ctx.fillStyle = col; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.font = font(Math.max(20, w * 0.34), 700, true);
+        ctx.fillText(RANKS[rk], -w / 2 + w * 0.1, -h / 2 + w * 0.25);
+        pip(s, w * 0.26, -h / 2 + w * 0.25, Math.max(16, w * 0.26), col);
+        ctx.restore();
+        return;
+      }
+      // the index: rank over pip, top-left, mirrored bottom-right
+      ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      for (q = 0; q < 2; q++) {
+        ctx.save();
+        if (q) ctx.rotate(Math.PI);
+        ctx.font = font(w * (rk === 8 ? 0.27 : 0.32), 700, true);
+        ctx.fillText(RANKS[rk], -w / 2 + w * 0.2, -h / 2 + w * 0.22);
+        ctx.translate(-w / 2 + w * 0.2, -h / 2 + w * 0.5);
+        pipPath(ctx, s, w * 0.2); ctx.fill();
+        ctx.restore();
+      }
+      // the body
+      if (rk === 12) pip(s, 0, 0, w * 0.46, col);
+      else if (rk >= 9) {
+        var iw = w * 0.5, ih = h * 0.5;
+        roundRect(-iw / 2, -ih / 2, iw, ih, w * 0.05);
+        ctx.fillStyle = rgba(col, 0.08); ctx.fill();
+        ctx.lineWidth = Math.max(1.5, w * 0.014); ctx.strokeStyle = rgba(col, 0.6); ctx.stroke();
+        ctx.fillStyle = col; ctx.font = font(h * 0.24, 700, true);
+        ctx.fillText(RANKS[rk], 0, -ih * 0.12);
+        pip(s, 0, ih * 0.28, w * 0.13, col);
+      } else {
+        lay = PIP_LAYOUT[rk + 1];
+        for (i = 0; i < lay.length; i++) {
+          ctx.save();
+          ctx.translate(lay[i][0] * w * 0.17, lay[i][1] * h * 0.27);
+          if (lay[i][1] > 0.001) ctx.rotate(Math.PI);
+          ctx.fillStyle = col; pipPath(ctx, s, w * 0.15); ctx.fill();
+          ctx.restore();
+        }
+      }
+      if (o.star) {                                      // Masters: a sun on the corner
+        ctx.beginPath(); ctx.arc(w / 2 - w * 0.16, -h / 2 + w * 0.16, w * 0.12, 0, Math.PI * 2);
+        ctx.fillStyle = SUN; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = INK_NAVY; ctx.stroke();
+      }
+      if (o.dim) { roundRect(-w / 2, -h / 2, w, h, r); ctx.fillStyle = "rgba(13,44,58,.42)"; ctx.fill(); }
+      ctx.restore();
+    }
+
+    function tag(x, y, txt, col, lit) {
+      ctx.font = font(20, 800);
+      var w = ctx.measureText(txt).width + 30, h = 34;
+      roundRect(x - w / 2, y - h / 2, w, h, h / 2);
+      ctx.fillStyle = lit ? col : "rgba(13,44,58,.72)"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = lit ? IVORY : rgba(col, 0.6); ctx.stroke();
+      ctx.fillStyle = lit ? INK_NAVY : IVORY;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(txt, x, y + 1);
+    }
+
+    var tableArt = false;
+    function buildBack() {
+      var w = L.bW, h = L.bH, key = w + "x" + h + "@" + view.dpr;
+      if (key === backKey) return;
+      backKey = key;
+      backSprite = freeCanvas(backSprite);
+      var c = document.createElement("canvas"), g, r = w * 0.1, i, a;
+      c.width = Math.round(w * view.dpr); c.height = Math.round(h * view.dpr);
+      g = c.getContext("2d"); g.scale(view.dpr, view.dpr);
+      roundRectOn(g, 0.5, 0.5, w - 1, h - 1, r);
+      g.fillStyle = INK_NAVY; g.fill();
+      g.lineWidth = 2; g.strokeStyle = IVORY; g.stroke();
+      g.save();
+      roundRectOn(g, 5, 5, w - 10, h - 10, r * 0.6); g.clip();
+      g.fillStyle = "#24365f"; g.fillRect(0, 0, w, h);
+      for (i = 0; i < 9; i++) {
+        a = Math.PI + (i + 0.5) * Math.PI / 9;
+        g.beginPath(); g.moveTo(w / 2, h * 0.86);
+        g.lineTo(w / 2 + Math.cos(a - 0.08) * h, h * 0.86 + Math.sin(a - 0.08) * h);
+        g.lineTo(w / 2 + Math.cos(a + 0.08) * h, h * 0.86 + Math.sin(a + 0.08) * h);
+        g.closePath(); g.fillStyle = i % 2 ? "rgba(255,122,89,.55)" : "rgba(251,244,226,.16)"; g.fill();
+      }
+      g.beginPath(); g.arc(w / 2, h * 0.86, w * 0.2, 0, Math.PI * 2); g.fillStyle = SUN; g.fill();
+      g.restore();
+      backSprite = c;
+    }
+
+
+
+  /* ---- the frame ----------------------------------------------------------- */
+  const W = 720, H = 1280, HUD = 150, SIDE = 26, SAFE = 26, CTA = 112, WEB_FOOT = 72;
+  const TABLES = ["beach", "lagoon", "terrace", "olive", "lanterns", "flat"];
+  const IMG = {};
+  function img(key) {
+    if (!IMG[key]) { IMG[key] = new Image(); IMG[key].onload = draw; IMG[key].src = "../assets/image/embed/" + key + ".webp"; }
+    return IMG[key].complete && IMG[key].naturalWidth ? IMG[key] : null;
+  }
+  const RAIL = [["Compass", "favour-vision06", "#7cc6fe"], ["Golden finesse", "favour-points02", "#f2c14e"],
+                ["Mistral", "favour-hand01", "#2ec4b6"], ["Clairvoyance", "favour-vision08", "#7cc6fe"]];
+
+  /* ---- the knobs ------------------------------------------------------------- */
+  const KNOBS = [
+    ["The frame", [
+      ["target", "seg", ["web", "playable"]], ["table", "seg", TABLES], ["overlays", "check", "Show the bands and boxes"]]],
+    ["The deal", [
+      ["n", "range", 2, 7, 1, "cards a hand"], ["trick", "range", 0, 4, 1, "cards on the table"],
+      ["count", "seg", ["off", "counter", "compass"]], ["shown", "check", "Defenders show cards (Wink, Lorgnette)"]]],
+    ["Sizes", [
+      ["dScale", "range", 0.7, 1.3, 0.05, "dummy & trick cards"], ["sScale", "range", 0.7, 1.4, 0.05, "your hand"],
+      ["bScale", "range", 0.7, 1.4, 0.05, "defenders' backs"]]],
+    ["Top", [
+      ["northTop", "range", 0, 60, 2, "dummy below the HUD"], ["tags", "check", "Deal / dummy / lives row"],
+      ["tagGap", "range", 10, 50, 2, "row under the dummy"]]],
+    ["The trick", [
+      ["trickDY", "range", -120, 120, 4, "centre, up / down"], ["slotDX", "range", 0.8, 1.6, 0.02, "east / west spread"],
+      ["slotDY", "range", 0.3, 0.9, 0.02, "north / south spread"]]],
+    ["The defenders", [
+      ["defenders", "seg", ["sides", "corners", "tags"]], ["defInset", "range", 0, 60, 2, "from the edge"],
+      ["fanStep", "range", 12, 40, 1, "fan step"], ["defDY", "range", -200, 200, 4, "up / down"]]],
+    ["The rail of favours", [
+      ["railPos", "seg", ["above", "below", "top", "right"]], ["railH", "range", 48, 84, 2, "height"],
+      ["railGap", "range", 6, 60, 2, "gap to the hand / row"], ["countPos", "seg", ["below", "top"]]]],
+    ["Your hand", [
+      ["southGap", "range", 0, 60, 2, "above the foot"], ["fan", "range", 0, 12, 0.5, "fan curve"],
+      ["rot", "range", 0, 0.08, 0.005, "fan turn"], ["lift", "range", 0, 30, 2, "playable cards lift"]]]
+  ];
+  const BASE = { target:"web", table:"terrace", overlays:true, n:7, trick:3, count:"compass", shown:true,
+    dScale:1, sScale:1, bScale:1, northTop:8, tags:true, tagGap:22, trickDY:0, slotDX:1.12, slotDY:0.6,
+    defenders:"sides", defInset:6, fanStep:26, defDY:0, railPos:"above", railH:60, railGap:34, countPos:"below",
+    southGap:10, fan:3, rot:0.025, lift:16 };
+  /* What ships since v0.5.3 (games/bridgessa/game.js, TABLE); the v0.5 one
+     before it is kept as the record of what it replaced. */
+  const SHIPPED = { overlays:false, bScale:1.2, northTop:0, tagGap:46, fanStep:34, railPos:"below", railGap:50, southGap:30, rot:0.08, lift:18 };
+  const PRESETS = {
+    "Shipped (v0.5.3)": SHIPPED,
+    "A · v0.5": {},
+    "B · Rail on top": { railPos:"top", railGap:14, countPos:"below", sScale:1.15, southGap:18, trickDY:10 },
+    "C · Defenders up": { defenders:"corners", dScale:0.95, slotDX:1.3, trickDY:-10, defInset:4 },
+    "D · Side rail": { railPos:"right", railH:72, sScale:1.12, slotDX:1.0, countPos:"top" },
+    "E · Big hands": { sScale:1.3, dScale:1.12, railPos:"below", railGap:10, defenders:"tags", slotDX:1.25, count:"counter" }
+  };
+  const S = Object.assign({}, BASE);
+  try { Object.assign(S, JSON.parse(localStorage.getItem("lab:bridgessa-table") || "{}")); } catch (e) {}
+
+  /* ---- a sample deal, the same on every load ------------------------------- */
+  function seeded(seed) { return function () { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }; }
+  const DECK = (function () { const d = [], R = seeded(42); for (let i = 0; i < 52; i++) d.push(i);
+    for (let i = 51; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; } return d; })();
+  function hand(p, n) { return DECK.filter((_, i) => i % 4 === p).slice(0, n).sort((a, b) => suitOf(a) - suitOf(b) || b - a); }
+
+  /* ---- the layout: games/bridgessa/game.js layout(), every number a knob ---- */
+  function layout() {
+    const web = S.target === "web", top = HUD, foot = web ? H - SAFE - WEB_FOOT : H - CTA, left = SIDE, right = W - SIDE;
+    const k = clamp((foot - top) / 1000, 0.74, 1.08);
+    Object.assign(L, { top, foot, left, right, k,
+      dW:Math.round(96 * k * S.dScale), dH:Math.round(136 * k * S.dScale), sW:Math.round(118 * k * S.sScale), sH:Math.round(168 * k * S.sScale),
+      bW:Math.round(58 * k * S.bScale), bH:Math.round(82 * k * S.bScale), aidH:S.railH });
+    L.dLeft = left; L.dRight = right;
+    if (S.defenders === "corners") { L.dLeft = left + L.bW + 22; L.dRight = right - L.bW - 22; }
+    L.northY = top + S.northTop + L.dH / 2;
+    L.tagY = L.northY + L.dH / 2 + S.tagGap;
+    let zoneTop = S.tags ? L.tagY + 17 + 10 : L.northY + L.dH / 2 + 10;
+    L.southY = foot - S.southGap - L.sH / 2;
+    let zoneBot = L.southY - L.sH / 2 - S.lift - 10;
+    L.railX0 = left; L.railW = right - left; L.railVertical = false;
+    if (S.railPos === "above") { L.aidY = L.southY - L.sH / 2 - S.lift - S.railGap - S.railH / 2; zoneBot = L.aidY - S.railH / 2 - 10; }
+    else if (S.railPos === "below") { L.aidY = foot - S.railH / 2 - 2; L.southY = L.aidY - S.railH / 2 - S.railGap - L.sH / 2; zoneBot = L.southY - L.sH / 2 - S.lift - 10; }
+    else if (S.railPos === "top") { L.aidY = zoneTop + S.railGap + S.railH / 2 - 10; zoneTop = L.aidY + S.railH / 2 + 10; }
+    else { L.railVertical = true; L.railCX = right - S.railH / 2; }
+    const rows = S.count === "compass" ? 2 : 1;
+    L.countH = rows * 40 + 8;
+    if (S.count !== "off") {
+      if (S.countPos === "below") { L.countY = zoneBot - L.countH / 2; zoneBot -= L.countH + 8; }
+      else { L.countY = zoneTop + L.countH / 2; zoneTop += L.countH + 8; }
+    }
+    L.cx = W / 2 - (L.railVertical ? S.railH / 2 + 6 : 0);
+    L.cy = (zoneTop + zoneBot) / 2 + S.trickDY;
+    L.slotDY = L.dH * S.slotDY; L.slotDX = L.dW * S.slotDX;
+    if (L.railVertical) { const span = 4 * S.railH + 3 * 12; L.railY0 = L.cy - span / 2; }
+    L.fanStep = Math.round(S.fanStep * k);
+  }
+  function slot(p) {
+    if (p === 0) return { x:L.cx, y:L.cy - L.slotDY };
+    if (p === 2) return { x:L.cx, y:L.cy + L.slotDY };
+    return { x:L.cx + (p === 1 ? 1 : -1) * L.slotDX, y:L.cy };
+  }
+  function handPose(p, i, count) {
+    if (p & 1) {
+      let x = p === 1 ? L.right - L.bW / 2 - S.defInset : L.left + L.bW / 2 + S.defInset, y0;
+      if (S.defenders === "corners") y0 = L.top + 14 + L.bH / 2 + S.defDY;
+      else y0 = L.cy - (count - 1) * L.fanStep / 2 - L.bH * 0.15 + S.defDY;
+      if (L.railVertical && p === 1) x = L.right - S.railH - 8 - L.bW / 2;
+      return { x, y:y0 + i * L.fanStep, w:L.bW, h:L.bH };
+    }
+    const w = p === 2 ? L.sW : L.dW, x0r = p === 0 ? L.dLeft : L.left, x1r = p === 0 ? L.dRight : (L.railVertical ? L.right - S.railH - 10 : L.right);
+    const room = x1r - x0r, step = count > 1 ? Math.min(w + 8, (room - w) / (count - 1)) : 0, x0 = (x0r + x1r) / 2 - step * (count - 1) / 2;
+    if (p === 0) return { x:x0 + i * step, y:L.northY, w:L.dW, h:L.dH, r:0 };
+    const kk = i - (count - 1) / 2;
+    return { x:x0 + i * step, y:L.southY + kk * kk * S.fan, w:L.sW, h:L.sH, r:kk * S.rot };
+  }
+  function railRect(i) {
+    if (L.railVertical) return { x:L.railCX - S.railH / 2, y:L.railY0 + i * (S.railH + 12), w:S.railH, h:S.railH };
+    const w = (L.railW - 3 * 12) / 4;
+    return { x:L.railX0 + i * (w + 12), y:L.aidY - S.railH / 2, w, h:S.railH };
+  }
+
+  /* ---- drawing ---------------------------------------------------------------- */
+  const boxes = [];
+  function box(name, x, y, w, h) { boxes.push({ name, x, y, w, h }); }
+  function drawFrame() {
+    const t = S.table;
+    if (t === "flat") {
+      const g = ctx.createRadialGradient(W / 2, L.cy, 40, W / 2, L.cy, 900);
+      g.addColorStop(0, "#2a8d8f"); g.addColorStop(0.55, "#1a5f6a"); g.addColorStop(1, "#0d2c3a");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    } else {
+      const im = img("bridgessa-background-phone-" + t);
+      if (im) { const s = Math.max(W / im.naturalWidth, H / im.naturalHeight); ctx.drawImage(im, (W - im.naturalWidth * s) / 2, (H - im.naturalHeight * s) / 2, im.naturalWidth * s, im.naturalHeight * s); }
+      else { ctx.fillStyle = "#0f3440"; ctx.fillRect(0, 0, W, H); }
+    }
+  }
+  function pill(x, y, w, h, lbl, val) {
+    roundRect(x, y, w, h, 18); ctx.fillStyle = "rgba(10,20,30,.55)"; ctx.fill();
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(251,244,226,.7)"; ctx.font = font(20, 800); ctx.fillText(lbl, x + 20, y + 26);
+    ctx.fillStyle = "#fbf4e2"; ctx.font = font(34, 900); ctx.fillText(val, x + 20, y + 62);
+  }
+  function drawHUD() {
+    pill(10, 10, 190, 88, "CONTRACT", "2 / 5");
+    pill(W - 150, 10, 140, 88, "TRUMP", "♥");
+    ctx.textAlign = "center"; ctx.fillStyle = "#fbf4e2"; ctx.font = font(78, 900); ctx.fillText("1 250", W / 2, 58);
+    ctx.font = font(20, 800); ctx.fillStyle = "rgba(251,244,226,.6)"; ctx.fillText("SCORE", W / 2, 116);
+    box("HUD", 0, 0, W, HUD);
+    if (S.target === "web") {
+      roundRect(SIDE, H - SAFE - 58, 240, 58, 29); ctx.fillStyle = "rgba(10,20,30,.7)"; ctx.fill();
+      ctx.fillStyle = "#f2c14e"; ctx.font = font(26, 900); ctx.textAlign = "left"; ctx.fillText("★ ★ ☆   LV 21", SIDE + 22, H - SAFE - 28);
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(W - SIDE - 29 - i * 70, H - SAFE - 29, 29, 0, 7); ctx.fillStyle = "rgba(10,20,30,.7)"; ctx.fill(); }
+      box("Level pill", SIDE, H - SAFE - 58, 240, 58); box("Round controls", W - SIDE - 210, H - SAFE - 58, 210, 58);
+    } else {
+      ctx.fillStyle = "rgba(5,14,20,.85)"; ctx.fillRect(0, H - CTA, W, CTA);
+      roundRect(W / 2 - 110, H - CTA + 28, 220, 56, 28); ctx.fillStyle = "#f2a541"; ctx.fill();
+      ctx.fillStyle = "#2a1a06"; ctx.font = font(24, 900); ctx.textAlign = "center"; ctx.fillText("INSTALL NOW", W / 2, H - CTA + 57);
+      box("Install bar", 0, H - CTA, W, CTA);
+    }
+  }
+  function drawRailNow() {
+    for (let i = 0; i < 4; i++) {
+      const r = railRect(i), [name, key, col] = RAIL[i], im = img("bridgessa-" + key);
+      roundRect(r.x, r.y, r.w, r.h, Math.min(r.w, r.h) / 2);
+      ctx.fillStyle = "rgba(13,44,58,.82)"; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      const ic = r.h + 4;
+      if (im) ctx.drawImage(im, r.x - 2, r.y - 2, ic, ic);
+      if (!L.railVertical) {
+        const tx = r.x + (im ? ic - 6 : 8), tw = r.x + r.w - tx - 8, mid = tx + tw / 2, label = upper(name);
+        ctx.fillStyle = "#fbf4e2"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = font(20, 800);
+        if (ctx.measureText(label).width <= tw) ctx.fillText(label, mid, r.y + r.h / 2 + 1);
+        else {
+          const words = label.split(" "); ctx.font = font(18, 800);
+          if (words.length > 1 && words.every((w) => ctx.measureText(w).width <= tw)) {
+            ctx.fillText(words[0], mid, r.y + r.h / 2 - 10); ctx.fillText(words.slice(1).join(" "), mid, r.y + r.h / 2 + 12);
+          }
+        }
+      }
+      box("Rail", r.x, r.y, r.w, r.h);
+    }
+  }
+  function drawCountNow() {
+    const rows = S.count === "compass" ? ["W", "E"] : ["W+E"], w = 128, x0 = L.cx - w * 2 + 20, h = L.countH;
+    roundRect(x0 - 60, L.countY - h / 2, w * 4 + 76, h, 24);
+    ctx.fillStyle = "rgba(13,44,58,.72)"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = rgba("#7cc6fe", 0.6); ctx.stroke();
+    rows.forEach((lab, j) => {
+      const y = L.countY - (rows.length - 1) * 20 + j * 40;
+      ctx.fillStyle = "rgba(251,244,226,.7)"; ctx.font = font(20, 800); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(lab, x0 - 26, y + 1);
+      for (let i = 0; i < 4; i++) {
+        const x = x0 + i * w + w / 2;
+        pip(i, x - 18, y, 26, SUIT_RED[i] ? "#ff9a85" : "#fbf4e2");
+        ctx.fillStyle = "#fbf4e2"; ctx.font = font(26, 800); ctx.textAlign = "left"; ctx.fillText(String((i * 3 + j) % 4), x + 2, y + 1);
+      }
+    });
+    box("Count", x0 - 60, L.countY - h / 2, w * 4 + 76, h);
+  }
+  function drawDefender(p) {
+    const n = S.n, a = handPose(p, 0, n), b = handPose(p, n - 1, n);
+    if (S.defenders === "tags") {
+      const x = p === 1 ? L.right - 60 : L.left + 60;
+      tag(x, L.cy + S.defDY, upper(p === 1 ? "East " + n : "West " + n), "#ff7a59", false);
+      box(p === 1 ? "East" : "West", x - 60, L.cy + S.defDY - 17, 120, 34);
+      return;
+    }
+    for (let i = 0; i < n; i++) {
+      const ps = handPose(p, i, n), c = DECK[40 + i + p];
+      if (S.shown && i < 3) drawCard(c, ps.x, ps.y, ps.w, ps.h, 0, { mini:true });
+      else { ctx.save(); ctx.translate(ps.x, ps.y); ctx.drawImage(backSprite, -L.bW / 2, -L.bH / 2, L.bW, L.bH); ctx.restore(); }
+    }
+    tag(b.x + (p === 1 ? -14 : 14), b.y + L.bH / 2 + 18, upper(p === 1 ? "East" : "West"), "#ff7a59", p === 3);
+    box(p === 1 ? "East" : "West", a.x - L.bW / 2, a.y - L.bH / 2, L.bW, b.y - a.y + L.bH + 36);
+  }
+  function drawHandNow(p) {
+    const cards = hand(p, S.n);
+    cards.forEach((c, i) => {
+      const ps = handPose(p, i, cards.length), lift = p === 2 && suitOf(c) === suitOf(cards[0]) ? S.lift : 0;
+      drawCard(c, ps.x, ps.y - lift, ps.w, ps.h, ps.r || 0, { dim:p === 0 });
+    });
+    const a = handPose(p, 0, cards.length), b = handPose(p, cards.length - 1, cards.length), w = p === 2 ? L.sW : L.dW, h = p === 2 ? L.sH : L.dH;
+    box(p === 2 ? "Your hand" : "Dummy", a.x - w / 2, Math.min(a.y, b.y) - h / 2 - (p === 2 ? S.lift : 0), b.x - a.x + w, h + (p === 2 ? S.lift + S.fan * 4 : 0));
+  }
+  function drawTrickNow() {
+    const order = [3, 0, 1, 2];
+    for (let i = 0; i < S.trick; i++) { const p = order[i], s = slot(p); drawCard(DECK[30 + i], s.x, s.y, L.dW, L.dH, (p - 1.5) * 0.04, {}); }
+    box("Trick", L.cx - L.slotDX - L.dW / 2, L.cy - L.slotDY - L.dH / 2, L.slotDX * 2 + L.dW, L.slotDY * 2 + L.dH);
+  }
+  function overlays() {
+    if (!S.overlays) return;
+    ctx.save(); ctx.setLineDash([8, 8]); ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.strokeRect(L.left, L.top, L.right - L.left, L.foot - L.top);
+    boxes.forEach((b) => { if (b.name === "HUD" || b.name === "Install bar") return; ctx.strokeStyle = "rgba(126,166,255,.55)"; ctx.strokeRect(b.x, b.y, b.w, b.h); });
+    ctx.restore();
+  }
+  function overlaps() {
+    const out = [], seen = {};
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i], b = boxes[j];
+      if (a.name === b.name) continue;
+      const ix = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x), iy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      if (ix > 4 && iy > 4) { const k = [a.name, b.name].sort().join(" × "); if (!seen[k]) { seen[k] = 1; out.push(k + " (" + Math.round(Math.min(ix, iy)) + " px)"); } }
+    }
+    $("warn").innerHTML = out.length ? out.map((t) => '<div class="bad">' + t + "</div>").join("") : '<div class="ok">No overlap</div>';
+  }
+
+  function draw() {
+    const k = Math.min(1, (window.innerHeight - 40) / H, ($("stage").clientWidth - 40) / W);
+    cv.width = W * 2; cv.height = H * 2; cv.style.width = W * k + "px"; cv.style.height = H * k + "px";
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    boxes.length = 0;
+    layout(); backKey = ""; buildBack();
+    drawFrame();
+    drawHandNow(0);
+    if (S.tags) {
+      tag(W / 2, L.tagY, upper("Dummy"), "#2ec4b6", false);
+      tag(L.left + 80, L.tagY, upper("Deal 2/4"), "#f2c14e", false);
+      tag(L.right - 80, L.tagY, "♥♥♡", "#ff7a59", false);
+      box("Tags", L.left, L.tagY - 17, L.right - L.left, 34);
+    }
+    drawDefender(3); drawDefender(1);
+    if (S.count !== "off") drawCountNow();
+    drawRailNow();
+    drawHandNow(2);
+    drawTrickNow();
+    drawHUD();
+    overlays(); overlaps();
+    try { localStorage.setItem("lab:bridgessa-table", JSON.stringify(S)); } catch (e) {}
+  }
+
+  /* ---- the panel --------------------------------------------------------------- */
+  const refresh = [];
+  KNOBS.forEach(([title, list], gi) => {
+    const d = document.createElement("details"); if (gi < 2) d.open = true;
+    d.innerHTML = "<summary>" + title + "</summary>";
+    list.forEach(([key, kind, a, b, step, lbl]) => {
+      const row = document.createElement("div"); row.className = "row";
+      if (kind === "range") {
+        row.innerHTML = '<label>' + lbl + ' <b></b></label><input type="range" min="' + a + '" max="' + b + '" step="' + step + '">';
+        const inp = row.querySelector("input"), out = row.querySelector("b");
+        inp.oninput = () => { S[key] = +inp.value; out.textContent = S[key]; draw(); };
+        refresh.push(() => { inp.value = S[key]; out.textContent = S[key]; });
+      } else if (kind === "seg") {
+        row.innerHTML = "<label>" + key + "</label><div class='seg'></div>";
+        a.forEach((v) => { const bt = document.createElement("button"); bt.textContent = v; bt.onclick = () => { S[key] = v; sync(); draw(); }; row.querySelector(".seg").appendChild(bt); });
+        refresh.push(() => row.querySelectorAll("button").forEach((bt) => bt.classList.toggle("on", bt.textContent === S[key])));
+      } else {
+        row.innerHTML = '<label class="check"><input type="checkbox"> ' + a + "</label>";
+        const inp = row.querySelector("input"); inp.onchange = () => { S[key] = inp.checked; draw(); };
+        refresh.push(() => { inp.checked = !!S[key]; });
+      }
+      d.appendChild(row);
+    });
+    $("knobs").appendChild(d);
+  });
+  function sync() { refresh.forEach((f) => f()); }
+  Object.keys(PRESETS).forEach((name) => {
+    const b = document.createElement("button"); b.textContent = name; b.className = "ghostbtn";
+    b.onclick = () => { Object.assign(S, BASE, PRESETS[name]); sync(); draw(); };
+    $("presets").appendChild(b);
+  });
+  $("copy").onclick = () => navigator.clipboard.writeText(JSON.stringify(S, null, 2)).then(
+    () => { $("note").textContent = "Settings copied"; setTimeout(() => { $("note").textContent = ""; }, 1500); },
+    () => { $("note").textContent = "Clipboard refused"; });
+  window.addEventListener("resize", draw);
+  sync(); draw();
+})();
+</script>
+</body>
+</html>

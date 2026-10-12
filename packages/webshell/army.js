@@ -5517,6 +5517,7 @@
       evBoard: "Nouvelles missions au tableau", evLate: "+{h} de retard"
     }
   };
+  W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
   var LANG = "en", T = STRINGS.en;
 
   function setLang(code) {

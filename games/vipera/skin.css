@@ -96,49 +96,22 @@
     74%,100% { transform:rotate(45deg) scale(1);    opacity:1; }
   }
 
-  /* the viper: one node, four body blocks behind it as stacked shadows. They
-     OVERLAP — a chain of separated beads is the one thing that makes a snake
-     read as a worm, in the demo exactly as on the canvas. The head is the app
-     icon's lime face over a cream muzzle, the body the canvas's rainbow, red at
-     the nape. The turn is the fast part of the
-     keyframe — 7 % of the cycle to flip the lean, then the whole carve across
-     the burrow. */
+  /* the viper: the TARGET node holds a canvas the game paints once with its
+     own sprites — the painted head and the first tier's scales along a
+     gentle S (dressDemo, game.js). The node is that picture's size and swings
+     about the head (46 px down it), so the body trails the head the way it
+     does on the canvas. The halo is the round's own faint disc. The turn is
+     the fast part of the keyframe — 7 % of the cycle to flip the lean, then
+     the whole carve across the burrow. */
   .demo-tap .demo-target {
-    z-index:2; top:64px; bottom:auto; width:52px; height:52px; margin-left:-26px;
-    border:0; border-radius:52% 52% 44% 44% / 60% 60% 40% 40%;
-    /* the canvas face: lime hide lit from the top left, cream muzzle below */
-    background:
-      radial-gradient(ellipse 74% 46% at 50% 84%, #fff6c0 0 97%, transparent 100%),
-      radial-gradient(circle at 36% 28%, #d4f763 0%, #8fd62a 50%, #3f9a18 100%);
-    /* Each body block is TWO shadows: the plate, then a slightly larger dark one
-       painted behind it. That rim is the imbrication the canvas body draws with
-       real scutes — without it the chain reads as a caterpillar. */
-    box-shadow:
-      0 0 0 2px #173a08, 0 0 20px rgba(77,255,155,.6),
-      0 17px 0 -2px  #ff3b4e, 0 17px 0 0     rgba(3,17,12,.55),
-      0 32px 0 -5px  #ff9a1f, 0 32px 0 -3px  rgba(3,17,12,.55),
-      0 45px 0 -9px  #ffd21f, 0 45px 0 -7px  rgba(3,17,12,.55),
-      0 56px 0 -13px #3fd16a, 0 56px 0 -11px rgba(3,17,12,.55);
+    z-index:2; top:44px; bottom:auto; width:84px; height:200px; margin-left:-42px;
+    border:0; border-radius:0; box-shadow:none;
+    background:radial-gradient(circle 46px at 42px 46px, rgba(141,255,191,.2), rgba(141,255,191,0) 100%);
+    transform-origin:42px 46px;
     animation:demoWeave 2.4s ease-in-out infinite;
   }
-  /* The head needs a face, or a 16 deg lean reads as nothing. The two ripples are
-     recycled into it: the first is the pair of amber eyes — the same eyes the
-     canvas face wears — and the second is the open grin under them, so the intro
-     promises the same friendly viper the canvas draws. Both ride the rotation
-     with the head. */
+  .demo-tap .vp-snake { position:absolute; left:0; top:0; width:100%; height:100%; }
   .demo-tap .demo-ripple { display:none; }
-  .demo-tap .demo-ripple:first-child {
-    display:block; inset:auto; left:12px; top:13px; width:8px; height:8px;
-    border:2px solid #0b0600; border-radius:50%; background:#ffd43b;
-    opacity:1; animation:none;
-    box-shadow:17px 0 0 #ffd43b, 17px 0 0 2px #0b0600;
-  }
-  .demo-tap .demo-ripple.d2 {
-    display:block; inset:auto; left:16px; top:29px; width:20px; height:11px;
-    border:2px solid #173a08; border-radius:3px 3px 50% 50% / 3px 3px 100% 100%;
-    background:linear-gradient(180deg, #5a0a16 55%, #ff6f8e 56%);
-    opacity:1; animation:none;
-  }
   @keyframes demoWeave {
     0%   { transform:translateX(-66px) rotate(-16deg); }
     7%   { transform:translateX(-64px) rotate(16deg); }   /* tap: lean right */
@@ -153,6 +126,10 @@
     z-index:3; left:318px; margin-left:0; bottom:4px;
     animation:handTap 1.2s ease-in-out -.48s infinite;
   }
+
+  /* on a DESK the cursor clicks where the finger tapped, and the beam above
+     is already its wave: the motor's own stands down (shell.js, Demo) */
+  .demo-tap .demo-hand .demo-click { display:none; }
   /* its shockwave rides the motor's beam, centred on the fingertip */
   .demo-tap .demo-beam {
     display:block; z-index:2; left:327px; top:120px; bottom:auto;

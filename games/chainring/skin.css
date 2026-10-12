@@ -113,6 +113,9 @@
     border-color:transparent; box-shadow:none;
   }
   .demo-ripple { animation-name:demoTapWave; }
+  /* on a DESK the cursor clicks where the finger tapped, and these ripples
+     are already its wave: the motor's own stands down (shell.js, Demo) */
+  .demo-tap .demo-hand .demo-click { display:none; }
   @keyframes demoTapWave {
     0%,36% { transform:scale(.26); opacity:0; }
     44%    { opacity:.95; }

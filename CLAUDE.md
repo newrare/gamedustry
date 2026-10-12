@@ -147,6 +147,10 @@ development pages and answer only to the short rules in their own sections.
    `games/<slug>/index.html` by hand** — it is the build output.
 1. Edit **`CONFIG`** (section 1 of `game.js`): `title`, `tagline`, `gameSeconds`, store URLs,
    `bg`, `layout` bands, `intro.demo` (`tap | hold | drag | swipe | aim`),
+   `intro.desk` (what a desk plays with — mouse actions and/or keys, which
+   turn the demo's finger into a clicking cursor or pressed keys and fill the
+   legend under it; see
+   [docs/ENGINE.md](docs/ENGINE.md#on-a-desk-the-stage-clicks--and-the-copy-says-click)),
    `copy`, then your own tunables.
 1. Write the intro to the house rules: **one sentence** in `tagline` (never two,
    and `intro.caption` stays `""`), its two or three key words wrapped in

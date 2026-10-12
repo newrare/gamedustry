@@ -136,6 +136,8 @@
     left:123px; bottom:-26px; margin-left:0; z-index:2;
     animation:demoAimHand 2.4s ease-in-out infinite;
   }
+  /* on a DESK the cursor's wave is the press that starts the aim (shell.js, Demo) */
+  .demo-aim .demo-hand { --click-dur:2.4s; --click-at:0s; }
   @keyframes demoAimHand {
     0%,6%    { transform:translateX(-30px); opacity:1; }
     40%      { transform:translate(0,0); opacity:1; }

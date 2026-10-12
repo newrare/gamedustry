@@ -117,6 +117,8 @@
     left:60px; margin-left:-37px; bottom:auto; top:236px; z-index:2;
     animation:demoCardHand 3s ease-in-out infinite;
   }
+  /* on a DESK the cursor's wave is the press that grabs the card (shell.js, Demo) */
+  .demo-drag .demo-hand { --click-dur:3s; --click-at:.3s; }
   @keyframes demoCardHand {
     0%       { transform:translate(-50px,40px); opacity:0; }
     10%      { transform:translate(0,4px); opacity:1; }
@@ -137,6 +139,10 @@
 
   /* WAVE 2/5 — the velvet ribbon */
   .pop-ribbon { --fill:linear-gradient(180deg,#fff3c4 0%,#ffb830 100%); --band:#7a0f22; --ink:#2a0a14; }
+  /* ...and slim: a strip across the chute, not a banner over the board */
+  .pop-ribbon.pk-wave { --sz:40px; --track:3px; --stroke:7px; --band-h:66px; }
+  .pk-wave .pop-d-band { border-width:4px; box-shadow:0 6px 0 rgba(0,0,0,.3); }
+  .pk-wave .pop-ltr { text-shadow:0 3px 0 var(--ink), 0 6px 0 rgba(0,0,0,.4); }
   /* BOOM! — the bomb's orange */
   .pop-combo {
     --fill:linear-gradient(180deg,#ffffff 0%,#ffd166 40%,#ff7a1a 100%);
@@ -147,11 +153,22 @@
     --fill:linear-gradient(180deg,#ffffff 0%,#ffd3dc 40%,#ff4d6d 100%);
     --glow:rgba(255,77,109,.8); --ink:#2a0009;
   }
-  /* the card played — a poster in ivory and brass */
-  .pop-manifest {
-    --fill:linear-gradient(180deg,#fff8dd 0%,#ffcf5a 60%,#ff8c1a 100%);
-    --glow:rgba(255,184,48,.75); --ink:#2a1400;
+  /* the card played — a discreet plate over the hand, ringed in the colour
+     of its kind (KINDS in game.js): no shockwave, no dashes, no tilt */
+  .pop-combo.pk-cast {
+    --sz:32px; --track:2px; --chip:rgba(34,6,15,.92);
+    --fill:linear-gradient(180deg,#ffffff 0%,#ffe6a8 100%);
   }
+  .pop-combo.pk-k-peg   { --chip-line:#ff8a3c; }
+  .pop-combo.pk-k-wave  { --chip-line:#5ad8ff; }
+  .pop-combo.pk-k-charm { --chip-line:#c46bff; }
+  .pop-combo.pk-k-meta  { --chip-line:#e8e2d0; }
+  .pk-cast .pop-d-ring, .pk-cast .pop-d-dash { display:none; }
+  .pop-combo.pk-cast .pop-body {
+    padding:8px 18px 10px; border-radius:14px; border-width:3px;
+    box-shadow:0 5px 0 rgba(0,0,0,.4);
+  }
+  .pop-combo.pk-cast .pop-sub { font-size:20px; letter-spacing:1px; margin-top:4px; }
   /* OBJECTIVE REACHED — gold, as the gauge turns */
   .pop-perfect { --fill:linear-gradient(180deg,#ffffff 0%,#ffe08a 45%,#ffb830 100%); --glow:rgba(255,184,48,.85); --ink:#2a1400; }
 

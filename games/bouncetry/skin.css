@@ -235,6 +235,17 @@
     left:138px; bottom:-34px; margin-left:0; z-index:2;
     animation:demoAimHand 5.6s ease-in-out infinite;
   }
+  /* on a DESK one wave per click: the aim's press, then the two button taps (shell.js, Demo) */
+  .demo-aim .demo-hand .demo-click { animation:btClick 5.6s ease-out infinite; }
+  @keyframes btClick {
+    0%,0.9% { transform:scale(.2); opacity:0; }
+    1% { transform:scale(.2); opacity:1; }
+    10%,29.9% { transform:scale(1.5); opacity:0; }
+    30% { transform:scale(.2); opacity:1; }
+    39%,78.9% { transform:scale(1.5); opacity:0; }
+    79% { transform:scale(.2); opacity:1; }
+    88%,100% { transform:scale(1.5); opacity:0; }
+  }
   @keyframes demoAimHand {
     0%,3%    { transform:translate(-34px,0) scale(1); opacity:1; }
     18%      { transform:translate(26px,0) scale(1); opacity:1; }

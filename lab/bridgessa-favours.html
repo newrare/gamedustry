@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — favour cards</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="bridgessa">
+<style>
+/* ===========================================================================
+   BRIDGESSA — THE FAVOUR CARD. Six looks for the card a favour is picked on
+   (the pick of three, the collection), all on ONE structure, so the look that
+   wins moves into games/bridgessa (perkNode + the SKIN) by renaming the
+   classes and nothing else:
+
+     .fv            206 x 420 design px, the card; --c the family's colour,
+                    --r the rarity's, r-1..r-4 the rarity, .ghost, .act
+       .fv-fam      the family
+       .fv-ico      the medallion (assets/image/embed/bridgessa-favour-*.webp)
+       .fv-name     the favour's name
+       .fv-text     what it does
+       .fv-act      "once per deal" — only on a favour used with a tap
+       .fv-rar      the rarity
+       .fv-new      NEW, the first time it is dealt
+
+   Every look is a <style data-style="key"> block scoped `.fv.s-<key>`; COPY
+   CSS hands over the block of the look on screen. Three views: the PICK as
+   the round shows it (720 x 1280, over a biome's table, under the veil),
+   ALL forty in one look, and ONE favour in every look. The data is a
+   snapshot of PERKS / FAM / RARITY (games/bridgessa/game.js) and of the
+   French in its manifest, taken 2026-10-09 — a favour added since is not
+   here until the snapshot is retaken.
+
+   Same rules as the game: every string normal case, capitals by upper()
+   (the motor's, copied below), no text under its floor — 18 px in capitals
+   bold, 20 bold, 22 regular — at the card's own size.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#panel { flex:0 0 290px; padding:20px 18px; background:#12121c; border-right:1px solid #23233a;
+  height:100vh; overflow:auto; position:sticky; top:0; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+.row { margin-bottom:14px; }
+.row > label, .row > span { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row select { width:100%; padding:6px 8px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; }
+.seg { display:flex; flex-wrap:wrap; gap:6px; }
+.seg button { flex:1 1 auto; width:auto; margin:0; background:#1d1d2e; color:#cfcfe6; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; }
+.styles button { flex:1 1 45%; }
+.check { display:flex; align-items:center; gap:8px; font-size:12px; color:#cfcfe6; margin-bottom:6px; cursor:pointer; }
+button { width:100%; margin-top:6px; padding:8px 10px; background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:.5px; cursor:pointer; }
+button.ghostbtn { background:#1d1d2e; color:#cfcfe6; }
+#note { font-size:12px; color:#8fd694; min-height:18px; margin-top:6px; }
+
+#stage { flex:1; padding:28px; overflow:auto;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+
+/* --- the 720 x 1280 frame of the PICK view, scaled to fit ----------------- */
+#frameWrap { position:relative; margin:0 auto; }
+#frame { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; overflow:hidden;
+  border-radius:24px; box-shadow:0 18px 50px rgba(0,0,0,.6); background:#0f3440 center/cover no-repeat;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#frame .veil { position:absolute; inset:0; background:radial-gradient(70% 55% at 50% 48%, rgba(13,44,58,.7), rgba(5,18,26,.92)); }
+#frame .pick { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+#frame .eye { font-size:22px; font-weight:800; letter-spacing:3px; color:rgba(251,244,226,.8); }
+#frame .ttl { font-size:54px; font-weight:900; letter-spacing:1px; color:#f2c14e; text-shadow:0 0 22px rgba(242,193,78,.45); }
+#frame .deal { display:flex; gap:14px; justify-content:center; }
+
+/* --- the ALL and ONE views ----------------------------------------------- */
+.grid { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.cell small { font-size:11px; color:#e8e6f5; font-weight:700; padding:2px 8px; border-radius:6px; background:rgba(11,11,18,.75); }
+.box { position:relative; flex:none; }
+.box > .fv { position:absolute; left:0; top:0; transform:scale(var(--sk,1)); transform-origin:0 0; }
+.ground { padding:18px; border-radius:18px; background:#0f3440 center/cover no-repeat; }
+
+/* ===========================================================================
+   THE SHARED SKELETON — what every look starts from. A look overrides it.
+   =========================================================================== */
+.fv { position:relative; width:206px; min-height:420px; display:flex; flex-direction:column; align-items:center;
+  text-align:center; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#fbf4e2; }
+.fv-ico { display:grid; place-items:center; flex:none; }
+.fv-ico img { width:100%; height:100%; object-fit:contain; }
+.fv-text { font-style:normal; }
+.fv-act, .fv-new { display:none; }
+.fv.act .fv-act { display:block; }
+.fv.fresh .fv-new { display:block; }
+.fv.ghost .fv-ico img { filter:brightness(0) invert(1); opacity:.18; }
+</style>
+<!-- ==========================================================================
+     THE LOOKS. One block each, scoped .fv.s-<key>; COPY CSS hands one over.
+     ========================================================================== -->
+<style data-style="riviera" data-name="A · Riviera (v0.5)">
+/* What ships in v0.5.0: a navy card, the family as a band across the top,
+   the medallion, the name in the family's colour, the rarity as a pill. */
+.fv.s-riviera { padding:16px 14px 56px; gap:10px; border-radius:22px; border:4px solid var(--r); overflow:hidden;
+  background:linear-gradient(180deg,#1d2b4f,#0f1a33); box-shadow:0 16px 30px rgba(0,0,0,.5); }
+.fv.s-riviera::before { content:""; position:absolute; left:0; right:0; top:0; height:44px; background:var(--c); opacity:.9; }
+.fv.s-riviera .fv-fam { position:relative; font-size:18px; font-weight:900; letter-spacing:2px; color:#1d2b4f; line-height:12px; }
+.fv.s-riviera .fv-ico { position:relative; width:112px; height:112px; margin-top:14px; }
+.fv.s-riviera .fv-name { position:relative; font-size:28px; line-height:1.05; font-weight:800; color:var(--c); }
+.fv.s-riviera .fv-text { font-size:20px; line-height:1.25; font-weight:600; color:#e6f3ef; }
+.fv.s-riviera .fv-act { font-size:18px; font-weight:800; letter-spacing:1px; color:var(--c); }
+.fv.s-riviera .fv-rar { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); white-space:nowrap;
+  padding:4px 14px 3px; border-radius:999px; background:var(--r); color:#1d2b4f; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-riviera.fresh { padding-bottom:88px; }
+.fv.s-riviera .fv-new { position:absolute; left:50%; bottom:50px; transform:translateX(-50%); padding:3px 12px 2px; border-radius:999px;
+  background:#2ec4b6; color:#06231f; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-riviera.r-3, .fv.s-riviera.r-4 { box-shadow:0 0 24px color-mix(in srgb,var(--r) 60%,transparent), 0 16px 30px rgba(0,0,0,.5); }
+.fv.s-riviera.ghost { background:linear-gradient(180deg,#1a2238,#0e1424); }
+</style>
+
+<style data-style="postcard" data-name="B · Postcard">
+/* A holiday postcard: ivory paper, the medallion as the STAMP in the corner,
+   the name written in coral, the rarity as the postmark. */
+.fv.s-postcard { padding:16px 16px 92px; align-items:flex-start; text-align:left; gap:8px; color:#1d2b4f; border-radius:10px;
+  background:linear-gradient(180deg,#fffaf0,#f3e8cc); box-shadow:0 14px 28px rgba(0,0,0,.45); }
+.fv.s-postcard::before { content:""; position:absolute; inset:8px; border:2px solid rgba(29,43,79,.22); border-radius:6px; pointer-events:none; }
+.fv.s-postcard .fv-fam { position:relative; max-width:92px; font-size:18px; line-height:1.1; font-weight:900; letter-spacing:2px;
+  color:color-mix(in srgb,var(--c) 55%,#1d2b4f); }
+.fv.s-postcard .fv-ico { position:absolute; right:12px; top:12px; width:92px; height:92px; padding:6px; background:#fffaf0;
+  border:3px dashed color-mix(in srgb,var(--c) 70%,#1d2b4f); transform:rotate(6deg); }
+.fv.s-postcard .fv-name { position:relative; max-width:100%; margin-top:58px; font-family:Georgia,"Times New Roman",serif; font-style:italic;
+  font-size:30px; line-height:1.02; font-weight:700; color:#e04f3a; }
+.fv.s-postcard .fv-text { position:relative; font-size:20px; line-height:1.25; font-weight:600; color:#1d2b4f; }
+.fv.s-postcard .fv-act { position:relative; font-size:18px; font-weight:800; letter-spacing:1px; color:#1a6f73; }
+.fv.s-postcard .fv-rar { position:absolute; right:8px; bottom:14px; width:132px; height:60px; border-radius:50%; display:grid; place-items:center;
+  border:3px double var(--r); color:color-mix(in srgb,var(--r) 75%,#1d2b4f); font-size:18px; font-weight:900; letter-spacing:1px;
+  transform:rotate(-12deg); background:rgba(255,255,255,.4); }
+.fv.s-postcard.r-1 .fv-rar { border-color:#6b5b3a; color:#6b5b3a; }
+/* NEW is a sticker slapped on the foot, over whatever is there: it moves
+   nothing, and it reads NEW in every language */
+.fv.s-postcard .fv-new { position:absolute; z-index:3; left:-10px; bottom:14px; padding:5px 12px 4px; border-radius:8px; transform:rotate(-9deg);
+  background:#2ec4b6; color:#06231f; border:3px solid #fffaf0; font-size:20px; font-weight:900; letter-spacing:2px; white-space:nowrap;
+  box-shadow:0 4px 8px rgba(0,0,0,.35); }
+.fv.s-postcard.r-4 { box-shadow:0 0 0 3px #f2c14e, 0 0 26px rgba(242,193,78,.6), 0 14px 28px rgba(0,0,0,.45); }
+.fv.s-postcard.r-3 { box-shadow:0 0 0 3px #c58cff, 0 14px 28px rgba(0,0,0,.45); }
+</style>
+
+<style data-style="card" data-name="C · Playing card">
+/* A card of the deck it is played with: ivory face, a double rim in the
+   family's colour, the family read up the left edge, the name on a ribbon
+   wider than the card, the rule in the deck's serif. */
+.fv.s-card { padding:22px 18px 58px; gap:10px; color:#1d2b4f; border-radius:18px; border:3px solid #1d2b4f;
+  background:linear-gradient(180deg,#fffaf0,#f1e6c8);
+  box-shadow:inset 0 0 0 6px #fffaf0, inset 0 0 0 9px var(--c), 0 14px 28px rgba(0,0,0,.45); }
+.fv.s-card .fv-fam { position:absolute; left:14px; top:16px; writing-mode:vertical-rl; transform:rotate(180deg);
+  font-size:18px; font-weight:900; letter-spacing:3px; color:color-mix(in srgb,var(--c) 55%,#1d2b4f); }
+.fv.s-card .fv-ico { width:122px; height:122px; margin-top:4px; }
+.fv.s-card .fv-name { position:relative; width:calc(100% + 44px); padding:7px 18px 6px; background:var(--c); color:#1d2b4f;
+  font-size:24px; line-height:1.05; font-weight:900; letter-spacing:1px; box-shadow:0 4px 0 rgba(29,43,79,.25);
+  clip-path:polygon(0 0,100% 0,95% 50%,100% 100%,0 100%,5% 50%); }
+.fv.s-card .fv-text { font-family:Georgia,"Times New Roman",serif; font-size:20px; line-height:1.25; font-weight:700; color:#1d2b4f; }
+.fv.s-card .fv-act { font-size:18px; font-weight:800; letter-spacing:1px; color:#d9472f; }
+.fv.s-card .fv-rar { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); white-space:nowrap; padding:3px 14px 2px;
+  border-radius:999px; border:3px solid var(--r); color:#1d2b4f; background:#fffaf0; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-card .fv-new { position:absolute; right:-10px; top:-12px; padding:4px 12px 3px; border-radius:999px; transform:rotate(8deg);
+  background:#e04f3a; color:#fffaf0; font-size:18px; font-weight:900; letter-spacing:2px; box-shadow:0 4px 8px rgba(0,0,0,.3); }
+.fv.s-card.r-4 { border-color:#c9a24a; box-shadow:inset 0 0 0 6px #fffaf0, inset 0 0 0 9px var(--c), 0 0 26px rgba(242,193,78,.65), 0 14px 28px rgba(0,0,0,.45); }
+.fv.s-card.ghost .fv-name { background:#cfc6b0; }
+</style>
+
+<style data-style="badge" data-name="D · Enamel badge">
+/* No card at all: the medallion IS the favour, big, its name on a ribbon
+   across its foot, the rule on an ivory plate hung under it. */
+.fv.s-badge { padding:0; gap:0; }
+.fv.s-badge .fv-fam { font-size:18px; font-weight:900; letter-spacing:3px; color:var(--c); text-shadow:0 2px 0 #0b1426; margin-bottom:4px; }
+.fv.s-badge .fv-ico { position:relative; z-index:2; width:170px; height:170px; filter:drop-shadow(0 10px 14px rgba(0,0,0,.45)); }
+.fv.s-badge .fv-name { position:relative; z-index:3; margin-top:-28px; width:calc(100% + 16px); padding:8px 16px 7px;
+  background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 70%,#1d2b4f)); color:#1d2b4f;
+  font-size:24px; line-height:1.05; font-weight:900; letter-spacing:1px; box-shadow:0 6px 12px rgba(0,0,0,.35);
+  clip-path:polygon(0 0,100% 0,96% 50%,100% 100%,0 100%,4% 50%); }
+.fv.s-badge .fv-text { position:relative; z-index:1; flex:1; width:100%; margin-top:-8px; padding:20px 12px 18px; background:#fbf4e2; color:#1d2b4f;
+  border:3px solid var(--r); border-top:0; border-radius:0 0 18px 18px; font-size:20px; line-height:1.25; font-weight:600; }
+.fv.s-badge .fv-act { position:relative; z-index:1; width:100%; padding:0 12px 6px; margin-top:-22px; font-size:18px; font-weight:800; letter-spacing:1px; color:#d9472f; }
+.fv.s-badge .fv-rar { margin-top:10px; padding:3px 14px 2px; border-radius:999px; background:var(--r); color:#1d2b4f; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-badge .fv-new { position:absolute; z-index:4; right:0; top:22px; padding:4px 12px 3px; border-radius:999px; transform:rotate(10deg);
+  background:#2ec4b6; color:#06231f; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-badge.r-4 .fv-ico { filter:drop-shadow(0 0 16px rgba(242,193,78,.8)) drop-shadow(0 10px 14px rgba(0,0,0,.45)); }
+</style>
+
+<style data-style="ticket" data-name="E · Ferry ticket">
+/* A ticket for the boat to the islands: the top in the family's colour, a
+   perforated tear line with its two notches, the stub in ivory, and the
+   rarity as the CLASS band along the foot. */
+.fv.s-ticket { padding:14px 14px 50px; gap:8px; color:#1d2b4f; border-radius:16px;
+  background:linear-gradient(180deg,var(--c) 0 252px,#fbf4e2 252px); box-shadow:0 14px 28px rgba(0,0,0,.45);
+  -webkit-mask:radial-gradient(circle 13px at 0 252px,transparent 97%,#000) left/51% 100% no-repeat,
+               radial-gradient(circle 13px at 100% 252px,transparent 97%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 13px at 0 252px,transparent 97%,#000) left/51% 100% no-repeat,
+               radial-gradient(circle 13px at 100% 252px,transparent 97%,#000) right/51% 100% no-repeat; }
+.fv.s-ticket::after { content:""; position:absolute; left:18px; right:18px; top:251px; border-top:3px dashed rgba(29,43,79,.4); }
+.fv.s-ticket .fv-fam { font-size:18px; font-weight:900; letter-spacing:3px; color:#1d2b4f; }
+.fv.s-ticket .fv-ico { width:110px; height:110px; }
+.fv.s-ticket .fv-name { height:56px; display:flex; align-items:center; justify-content:center; font-size:24px; line-height:1.05; font-weight:900; color:#1d2b4f; }
+.fv.s-ticket .fv-text { margin-top:22px; font-size:20px; line-height:1.25; font-weight:600; }
+.fv.s-ticket .fv-act { font-size:18px; font-weight:800; letter-spacing:1px; color:#d9472f; }
+.fv.s-ticket .fv-rar { position:absolute; left:0; right:0; bottom:0; padding:8px 0 7px; background:var(--r); color:#1d2b4f;
+  font-size:18px; font-weight:900; letter-spacing:3px; }
+.fv.s-ticket.fresh { padding-bottom:84px; }
+.fv.s-ticket .fv-new { position:absolute; left:50%; bottom:44px; transform:translateX(-50%); padding:3px 12px 2px; border-radius:999px;
+  background:#1d2b4f; color:#fbf4e2; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-ticket.ghost { background:linear-gradient(180deg,#8d97a3 0 252px,#e8e2d3 252px); }
+</style>
+
+<style data-style="deco" data-name="F · Lantern night">
+/* The lantern square at night: a deep navy card under a double gold rim, a
+   sunburst behind the medallion in the family's light, the name in a gold
+   serif, the rarity between two gold rules. */
+.fv.s-deco { padding:18px 16px 60px; gap:10px; border-radius:8px; color:#fbf4e2; border:2px solid #c9a24a;
+  background:radial-gradient(120% 70% at 50% 0%,color-mix(in srgb,var(--c) 38%,#0b1426) 0%,#0b1426 62%);
+  box-shadow:inset 0 0 0 5px #0b1426, inset 0 0 0 7px rgba(201,162,74,.55), 0 16px 30px rgba(0,0,0,.55); }
+.fv.s-deco::before { content:""; position:absolute; left:50%; top:22px; width:260px; height:260px; transform:translateX(-50%); pointer-events:none;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb,var(--c) 30%,transparent) 0deg 5deg, transparent 5deg 15deg);
+  -webkit-mask:radial-gradient(circle,#000 30%,transparent 68%); mask:radial-gradient(circle,#000 30%,transparent 68%); }
+.fv.s-deco .fv-fam { position:relative; font-size:18px; font-weight:800; letter-spacing:4px; color:#c9a24a; }
+.fv.s-deco .fv-ico { position:relative; width:122px; height:122px; }
+.fv.s-deco .fv-name { position:relative; font-family:Georgia,"Times New Roman",serif; font-size:28px; line-height:1.05; font-weight:700; color:#f2c14e; letter-spacing:1px; }
+.fv.s-deco .fv-name::after { content:""; display:block; width:60px; height:2px; margin:8px auto 0; background:var(--c); }
+.fv.s-deco .fv-text { position:relative; font-size:20px; line-height:1.28; font-weight:600; color:#e6e1d0; }
+.fv.s-deco .fv-act { position:relative; font-size:18px; font-weight:800; letter-spacing:1px; color:var(--c); }
+.fv.s-deco .fv-rar { position:absolute; left:50%; bottom:16px; transform:translateX(-50%); white-space:nowrap; padding:4px 10px 3px;
+  font-size:18px; font-weight:800; letter-spacing:3px; color:var(--r); border-top:1px solid rgba(201,162,74,.6); border-bottom:1px solid rgba(201,162,74,.6); }
+.fv.s-deco.r-1 .fv-rar { color:#d8cdb0; }
+.fv.s-deco.fresh { padding-bottom:96px; }
+.fv.s-deco .fv-new { position:absolute; left:50%; bottom:56px; transform:translateX(-50%); padding:3px 12px 2px; border-radius:999px;
+  background:#c9a24a; color:#0b1426; font-size:18px; font-weight:900; letter-spacing:2px; }
+.fv.s-deco.r-4 { box-shadow:inset 0 0 0 5px #0b1426, inset 0 0 0 7px #f2c14e, 0 0 30px rgba(242,193,78,.55), 0 16px 30px rgba(0,0,0,.55); }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Favour cards</h1>
+  <p class="hint">Which card does a Bridgessa favour wear? Six looks on one structure, tried on the real pick, on the forty, and side by side.</p>
+
+  <div class="row"><span>Look</span><div class="seg styles" id="styles"></div></div>
+  <div class="row"><span>View</span><div class="seg" id="views">
+    <button data-v="pick" class="on">Pick</button><button data-v="all">All forty</button><button data-v="one">One, every look</button>
+  </div></div>
+  <div class="row"><span>Language</span><div class="seg" id="langs">
+    <button data-l="en" class="on">EN</button><button data-l="fr">FR</button>
+  </div></div>
+  <div class="row"><label for="fav">Favour (one / first of the pick)</label><select id="fav"></select></div>
+  <div class="row"><label for="bg">Table behind the pick</label><select id="bg"></select></div>
+  <div class="row">
+    <label class="check"><input type="checkbox" id="fresh" checked> NEW on the pick</label>
+    <label class="check"><input type="checkbox" id="ghost"> Ghost (not taken yet)</label>
+    <label class="check"><input type="checkbox" id="actmark" checked> "Used with a tap" line</label>
+  </div>
+  <div class="row"><button id="deal" class="ghostbtn">Deal another pick</button></div>
+  <div class="row"><button id="copycss">Copy CSS of this look</button><button id="copyset" class="ghostbtn">Copy settings</button><div id="note"></div></div>
+</div>
+<div id="stage"></div>
+
+<script>
+/* ===========================================================================
+   Lab code — ES6 is fine here (it runs in your browser, not in a WebView).
+   =========================================================================== */
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  /* ---- the motor's upper(), copied from packages/engine/engine.js -------- */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* ---- the data: a snapshot of games/bridgessa (see the header) ---------- */
+  const DATA = {"fams":{"vision":{"col":"#7cc6fe","en":"Vision","fr":"Vision"},"hand":{"col":"#2ec4b6","en":"Hand","fr":"Main"},"rule":{"col":"#ff7a59","en":"Rule","fr":"Règle"},"points":{"col":"#f2c14e","en":"Points","fr":"Points"},"survive":{"col":"#8fd694","en":"Safety","fr":"Survie"},"foe":{"col":"#c3a6ff","en":"Defence","fr":"Défense"}},"rar":[{"col":"#e6dcc3","en":"Common","fr":"Commune"},{"col":"#5fb4ff","en":"Rare","fr":"Rare"},{"col":"#c58cff","en":"Epic","fr":"Épique"},{"col":"#f2c14e","en":"Legendary","fr":"Légendaire"}],"perks":[{"id":"counter","fam":"vision","r":1,"lv":3,"act":false,"img":"bridgessa-favour-vision01","en":{"name":"Counter","text":"Shows how many cards of each suit the defence still holds."},"fr":{"name":"Compteur","text":"Montre combien de cartes de chaque couleur la défense a encore."}},{"id":"glasses","fam":"vision","r":1,"lv":4,"act":false,"img":"bridgessa-favour-vision02","en":{"name":"Spectacles","text":"A sun marks every card of yours nobody can beat."},"fr":{"name":"Lunettes","text":"Un soleil marque chacune de tes cartes que personne ne peut battre."}},{"id":"wink","fam":"vision","r":2,"lv":7,"act":false,"img":"bridgessa-favour-vision03","en":{"name":"Wink","text":"West shows you its longest suit, face up."},"fr":{"name":"Œillade","text":"Ouest te montre sa couleur la plus longue, face visible."}},{"id":"herald","fam":"vision","r":1,"lv":9,"act":false,"img":"bridgessa-favour-vision04","en":{"name":"Herald","text":"At every deal, tells you how many points West and East hold."},"fr":{"name":"Héraut","text":"À chaque donne, te dit combien de points ont Ouest et Est."}},{"id":"lorgnette","fam":"vision","r":2,"lv":11,"act":false,"img":"bridgessa-favour-vision05","en":{"name":"Lorgnette","text":"At every deal, one card of East is shown to you."},"fr":{"name":"Lorgnette","text":"À chaque donne, une carte d'Est t'est montrée."}},{"id":"compass","fam":"vision","r":2,"lv":14,"act":false,"img":"bridgessa-favour-vision06","en":{"name":"Compass","text":"Shows how many cards of each suit West and East hold, one by one."},"fr":{"name":"Boussole","text":"Montre combien de cartes de chaque couleur ont Ouest et Est, chacun séparément."}},{"id":"advice","fam":"vision","r":3,"lv":20,"act":true,"img":"bridgessa-favour-vision07","en":{"name":"Advice","text":"Once per deal: lights the best card to play."},"fr":{"name":"Conseil","text":"Une fois par donne : éclaire la meilleure carte à jouer."}},{"id":"clairvoyance","fam":"vision","r":4,"lv":26,"act":false,"img":"bridgessa-favour-vision08","en":{"name":"Clairvoyance","text":"The defence plays the first trick of every deal face up."},"fr":{"name":"Voyance","text":"La défense joue la première levée de chaque donne cartes sur table."}},{"id":"mistral","fam":"hand","r":1,"lv":8,"act":true,"img":"bridgessa-favour-hand01","en":{"name":"Mistral","text":"Once per deal: swap a card of your hand with a card of the dummy."},"fr":{"name":"Mistral","text":"Une fois par donne : échange une carte de ta main avec une carte du mort."}},{"id":"promotion","fam":"hand","r":2,"lv":10,"act":false,"img":"bridgessa-favour-hand02","en":{"name":"Promotion","text":"At every deal, your lowest card climbs to the highest free rank of its suit."},"fr":{"name":"Promotion","text":"À chaque donne, ta plus petite carte monte au plus haut rang libre de sa couleur."}},{"id":"talon","fam":"hand","r":2,"lv":13,"act":true,"img":"bridgessa-favour-hand03","en":{"name":"Talon","text":"Once per deal: trade one of your cards for a card from outside the deal."},"fr":{"name":"Talon","text":"Une fois par donne : échange une de tes cartes contre une carte hors de la donne."}},{"id":"pickpocket","fam":"hand","r":3,"lv":17,"act":true,"img":"bridgessa-favour-hand04","en":{"name":"Pickpocket","text":"Once per deal: trade one of your cards for a random card of West."},"fr":{"name":"Pickpocket","text":"Une fois par donne : échange une de tes cartes contre une carte d'Ouest au hasard."}},{"id":"reinforcement","fam":"hand","r":2,"lv":21,"act":false,"img":"bridgessa-favour-hand05","en":{"name":"Reinforcement","text":"At every deal, the dummy's lowest card becomes a free honour of its suit, if one is left."},"fr":{"name":"Renfort","text":"À chaque donne, la plus petite carte du mort devient un honneur libre de sa couleur, s'il en reste un."}},{"id":"royaltrump","fam":"hand","r":4,"lv":28,"act":false,"img":"bridgessa-favour-hand06","en":{"name":"Royal trump","text":"At every deal, your lowest card becomes the highest free trump — of your longest suit at no trump."},"fr":{"name":"Atout royal","text":"À chaque donne, ta plus petite carte devient le plus gros atout libre — de ta couleur la plus longue à sans-atout."}},{"id":"lead","fam":"rule","r":2,"lv":16,"act":false,"img":"bridgessa-favour-rule01","en":{"name":"Opening lead","text":"You lead the first trick of every deal, instead of West."},"fr":{"name":"Entame","text":"C'est toi qui entames la première levée de chaque donne, à la place d'Ouest."}},{"id":"freediscard","fam":"rule","r":1,"lv":18,"act":true,"img":"bridgessa-favour-rule02","en":{"name":"Free discard","text":"Once per deal: the next card you play need not follow suit."},"fr":{"name":"Défausse libre","text":"Une fois par donne : ta prochaine carte n'a pas besoin de fournir."}},{"id":"switch","fam":"rule","r":2,"lv":19,"act":true,"img":"bridgessa-favour-rule03","en":{"name":"Switch","text":"Before the first trick: a trump deal turns to no trump, a no trump deal to your longest suit as trump."},"fr":{"name":"Bascule","text":"Avant la première levée : une donne à l'atout passe à sans-atout, une donne à sans-atout prend ta couleur la plus longue comme atout."}},{"id":"miracle","fam":"rule","r":3,"lv":22,"act":true,"img":"bridgessa-favour-rule04","en":{"name":"Little miracle","text":"Once per deal: the next 2 you play wins the trick."},"fr":{"name":"Petit miracle","text":"Une fois par donne : le prochain 2 que tu joues remporte la levée."}},{"id":"sparetrump","fam":"rule","r":2,"lv":23,"act":true,"img":"bridgessa-favour-rule05","en":{"name":"Spare trump","text":"Once per deal: the next card you discard counts as a trump."},"fr":{"name":"Atout de secours","text":"Une fois par donne : ta prochaine défausse compte comme un atout."}},{"id":"lastword","fam":"rule","r":4,"lv":25,"act":false,"img":"bridgessa-favour-rule06","en":{"name":"Last word","text":"Winning the last trick of a deal counts as two tricks."},"fr":{"name":"Dernier mot","text":"Remporter la dernière levée d'une donne compte pour deux levées."}},{"id":"double","fam":"points","r":1,"lv":3,"act":true,"img":"bridgessa-favour-points01","en":{"name":"Double","text":"Before the first trick: a made contract pays ×2, a down costs two lives."},"fr":{"name":"Contre","text":"Avant la première levée : un contrat réussi rapporte ×2, une chute coûte deux vies."}},{"id":"goldenfinesse","fam":"points","r":1,"lv":4,"act":false,"img":"bridgessa-favour-points02","en":{"name":"Golden finesse","text":"A finesse pays 150 instead of 50."},"fr":{"name":"Impasse dorée","text":"Une impasse rapporte 150 au lieu de 50."}},{"id":"royalruff","fam":"points","r":1,"lv":5,"act":false,"img":"bridgessa-favour-points03","en":{"name":"Royal ruff","text":"A ruff pays 100 more."},"fr":{"name":"Coupe royale","text":"Une coupe rapporte 100 de plus."}},{"id":"streak","fam":"points","r":2,"lv":7,"act":false,"img":"bridgessa-favour-points04","en":{"name":"Streak","text":"Every trick won in a row pays 25 % more than the one before."},"fr":{"name":"Série","text":"Chaque levée gagnée d'affilée rapporte 25 % de plus que la précédente."}},{"id":"honours","fam":"points","r":2,"lv":12,"act":false,"img":"bridgessa-favour-points05","en":{"name":"Honours","text":"Every ace, king, queen or jack in a trick you win pays 50."},"fr":{"name":"Honneurs","text":"Chaque as, roi, dame ou valet d'une levée que tu remportes rapporte 50."}},{"id":"slam","fam":"points","r":3,"lv":15,"act":false,"img":"bridgessa-favour-points06","en":{"name":"Slam","text":"A deal where you win every trick pays ×3."},"fr":{"name":"Chelem","text":"Une donne où tu remportes toutes les levées rapporte ×3."}},{"id":"jackpot","fam":"points","r":3,"lv":22,"act":false,"img":"bridgessa-favour-points07","en":{"name":"Jackpot","text":"An overtrick pays 450 instead of 150."},"fr":{"name":"Jackpot","text":"Une levée de mieux rapporte 450 au lieu de 150."}},{"id":"redouble","fam":"points","r":4,"lv":27,"act":true,"img":"bridgessa-favour-points08","en":{"name":"Redouble","text":"Before the first trick: a made contract pays ×4, a down costs three lives."},"fr":{"name":"Surcontre","text":"Avant la première levée : un contrat réussi rapporte ×4, une chute coûte trois vies."}},{"id":"pearl","fam":"survive","r":1,"lv":5,"act":false,"img":"bridgessa-favour-survive01","en":{"name":"Pearl","text":"The first contract you go down on costs no life."},"fr":{"name":"Perle","text":"Le premier contrat que tu chutes ne coûte aucune vie."}},{"id":"rewind","fam":"survive","r":1,"lv":6,"act":true,"img":"bridgessa-favour-survive02","en":{"name":"Rewind","text":"Once per deal: take the trick back."},"fr":{"name":"Retour","text":"Une fois par donne : reprends la levée."}},{"id":"spareheart","fam":"survive","r":2,"lv":8,"act":false,"img":"bridgessa-favour-survive03","en":{"name":"Spare heart","text":"One more life, as soon as it is taken."},"fr":{"name":"Cœur de rechange","text":"Une vie de plus, dès qu'elle est prise."}},{"id":"safetynet","fam":"survive","r":2,"lv":10,"act":false,"img":"bridgessa-favour-survive04","en":{"name":"Safety net","text":"Every contract asks one trick less, and pays 25 % less."},"fr":{"name":"Filet","text":"Chaque contrat demande une levée de moins, et rapporte 25 % de moins."}},{"id":"secondchance","fam":"survive","r":3,"lv":13,"act":false,"img":"bridgessa-favour-survive05","en":{"name":"Second chance","text":"Once per tournée, a deal you go down on is dealt again."},"fr":{"name":"Seconde chance","text":"Une fois par tournée, une donne que tu chutes est redistribuée."}},{"id":"insurance","fam":"survive","r":3,"lv":18,"act":false,"img":"bridgessa-favour-survive06","en":{"name":"Insurance","text":"Going down by a single trick costs no life."},"fr":{"name":"Assurance","text":"Chuter d'une seule levée ne coûte aucune vie."}},{"id":"fog","fam":"foe","r":1,"lv":12,"act":false,"img":"bridgessa-favour-foe01","en":{"name":"Fog","text":"The defence plays its first two cards of every deal like a human, not perfectly."},"fr":{"name":"Brouillard","text":"La défense joue ses deux premières cartes de chaque donne comme un humain, pas parfaitement."}},{"id":"distraction","fam":"foe","r":1,"lv":14,"act":false,"img":"bridgessa-favour-foe02","en":{"name":"Distraction","text":"West leads its lowest card to the first trick."},"fr":{"name":"Distraction","text":"Ouest entame la première levée avec sa plus petite carte."}},{"id":"pressure","fam":"foe","r":2,"lv":17,"act":false,"img":"bridgessa-favour-foe03","en":{"name":"Pressure","text":"A defender who leads must lead its longest suit."},"fr":{"name":"Pression","text":"Un défenseur qui entame doit jouer sa couleur la plus longue."}},{"id":"silence","fam":"foe","r":2,"lv":21,"act":false,"img":"bridgessa-favour-foe04","en":{"name":"Silence","text":"At every deal, the first time a defender could ruff, it discards instead."},"fr":{"name":"Silence","text":"À chaque donne, la première fois qu'un défenseur pourrait couper, il se défausse."}},{"id":"bribe","fam":"foe","r":3,"lv":24,"act":true,"img":"bridgessa-favour-foe05","en":{"name":"Bribe","text":"Once per deal: the next defender to play plays its lowest card."},"fr":{"name":"Pot-de-vin","text":"Une fois par donne : le prochain défenseur à jouer joue sa plus petite carte."}},{"id":"dazzle","fam":"foe","r":3,"lv":26,"act":false,"img":"bridgessa-favour-foe06","en":{"name":"Dazzle","text":"When the dummy plays an honour, the next defender plays its lowest card."},"fr":{"name":"Éblouissement","text":"Quand le mort joue un honneur, le défenseur suivant joue sa plus petite carte."}}],"ui":{"Pick a favour":"Choisis une faveur","Your tournée begins":"Ta tournée commence","New":"Nouveau","Once per deal":"Once per deal"}};
+  const UI = {
+    en: { eye:"Your tournée begins", title:"Pick a favour", fresh:"New", act:"Used with a tap" },
+    fr: { eye:"Ta tournée commence", title:"Choisis une faveur", fresh:"New", act:"S'utilise d'un toucher" }
+  };
+  const IMG = (k) => "../assets/image/embed/" + k + ".webp";
+  const TABLES = [
+    ["beach", "The beach"], ["lagoon", "The lagoon"], ["terrace", "The terrace"],
+    ["olive", "The olive grove"], ["lanterns", "The lantern square"], ["", "Intro scene"], ["flat", "Flat sea"]
+  ];
+
+  const S = { look:"riviera", view:"pick", lang:"en", fav:0, bg:"beach", fresh:true, ghost:false, actmark:true, deal:[0, 9, 21] };
+  try { Object.assign(S, JSON.parse(localStorage.getItem("lab:bridgessa-favours") || "{}")); } catch (e) {}
+  const save = () => { try { localStorage.setItem("lab:bridgessa-favours", JSON.stringify(S)); } catch (e) {} };
+
+  const LOOKS = [...document.querySelectorAll("style[data-style]")].map((n) => ({ key:n.dataset.style, name:n.dataset.name, node:n }));
+
+  /* ---- one card ------------------------------------------------------------ */
+  function card(i, look, opt) {
+    const P = DATA.perks[i], F = DATA.fams[P.fam], R = DATA.rar[P.r - 1], L = S.lang, ghost = opt && opt.ghost;
+    const n = document.createElement("div");
+    n.className = "fv s-" + look + " r-" + P.r + (ghost ? " ghost" : "") + (opt && opt.fresh && !ghost ? " fresh" : "") +
+                  (P.act && S.actmark && !ghost ? " act" : "");
+    n.style.setProperty("--c", F.col); n.style.setProperty("--r", R.col);
+    n.innerHTML = '<span class="fv-fam"></span><span class="fv-ico"><img alt="" draggable="false"></span>' +
+                  '<b class="fv-name"></b><i class="fv-text"></i><span class="fv-act"></span>' +
+                  '<span class="fv-rar"></span><span class="fv-new"></span>';
+    n.querySelector(".fv-fam").textContent = upper(F[L]);
+    n.querySelector("img").src = IMG(P.img);
+    n.querySelector(".fv-name").textContent = ghost ? "???" : upper(P[L].name);
+    n.querySelector(".fv-text").textContent = ghost ? "" : P[L].text;
+    n.querySelector(".fv-act").textContent = upper(UI[L].act);
+    n.querySelector(".fv-rar").textContent = upper(R[L]);
+    n.querySelector(".fv-new").textContent = upper(UI[L].fresh);
+    return n;
+  }
+  /* a card at a scale, in a box the size it takes (its height is its own) */
+  function boxed(i, look, k, opt) {
+    const box = document.createElement("div"), c = card(i, look, opt);
+    box.className = "box"; box.style.setProperty("--sk", k); c.style.setProperty("--sk", k);
+    box.appendChild(c);
+    requestAnimationFrame(() => { box.style.width = 206 * k + "px"; box.style.height = c.offsetHeight * k + "px"; });
+    box.style.width = 206 * k + "px"; box.style.height = 420 * k + "px";
+    return box;
+  }
+
+  /* ---- the three views ------------------------------------------------------ */
+  function tableBg(key) {
+    if (key === "flat") return "radial-gradient(900px 860px at 50% 40%,#2a8d8f 0%,#1a5f6a 55%,#0d2c3a 100%)";
+    return "url(" + IMG("bridgessa-background-phone" + (key ? "-" + key : "")) + ")";
+  }
+  function viewPick(stage) {
+    const wrap = document.createElement("div"), fr = document.createElement("div");
+    const k = Math.min(1, (window.innerHeight - 56) / 1280, (stage.clientWidth - 56) / 720);
+    wrap.id = "frameWrap"; wrap.style.width = 720 * k + "px"; wrap.style.height = 1280 * k + "px";
+    fr.id = "frame"; fr.style.transform = "scale(" + k + ")"; fr.style.backgroundImage = tableBg(S.bg);
+    fr.innerHTML = '<div class="veil"></div><div class="pick"><div class="eye"></div><div class="ttl"></div><div class="deal"></div></div>';
+    fr.querySelector(".eye").textContent = upper(UI[S.lang].eye);
+    fr.querySelector(".ttl").textContent = upper(UI[S.lang].title);
+    const deal = fr.querySelector(".deal"), ids = [S.fav].concat(S.deal.filter((d) => d !== S.fav)).slice(0, 3);
+    ids.forEach((id, j) => deal.appendChild(card(id, S.look, { fresh:S.fresh && j === 0, ghost:S.ghost })));
+    wrap.appendChild(fr); stage.appendChild(wrap);
+  }
+  function viewAll(stage) {
+    const g = document.createElement("div"); g.className = "grid ground"; g.style.background = tableBg(S.bg) + " center/cover";
+    DATA.perks.forEach((P, i) => {
+      const cell = document.createElement("div"); cell.className = "cell";
+      cell.appendChild(boxed(i, S.look, 0.82, { ghost:S.ghost }));
+      const s = document.createElement("small"); s.textContent = P.id + " · lv " + P.lv; cell.appendChild(s);
+      g.appendChild(cell);
+    });
+    stage.appendChild(g);
+  }
+  function viewOne(stage) {
+    const g = document.createElement("div"); g.className = "grid ground"; g.style.background = tableBg(S.bg) + " center/cover";
+    LOOKS.forEach((L) => {
+      const cell = document.createElement("div"); cell.className = "cell";
+      cell.appendChild(boxed(S.fav, L.key, 1, { fresh:S.fresh, ghost:S.ghost }));
+      const s = document.createElement("small"); s.textContent = L.name; cell.appendChild(s);
+      g.appendChild(cell);
+    });
+    stage.appendChild(g);
+  }
+
+  function paint() {
+    const stage = $("stage"); stage.innerHTML = "";
+    ({ pick:viewPick, all:viewAll, one:viewOne })[S.view](stage);
+    /* the game's fitName: a name shrinks to its longest word, never under 20 */
+    document.querySelectorAll(".fv-name").forEach((e) => {
+      let size = parseFloat(getComputedStyle(e).fontSize);
+      while (size > 20 && e.scrollWidth > e.clientWidth - 6) { size--; e.style.fontSize = size + "px"; }
+    });
+    document.querySelectorAll("#styles button").forEach((b) => b.classList.toggle("on", b.dataset.k === S.look));
+    document.querySelectorAll("#views button").forEach((b) => b.classList.toggle("on", b.dataset.v === S.view));
+    document.querySelectorAll("#langs button").forEach((b) => b.classList.toggle("on", b.dataset.l === S.lang));
+    $("fav").value = S.fav; $("bg").value = S.bg;
+    $("fresh").checked = S.fresh; $("ghost").checked = S.ghost; $("actmark").checked = S.actmark;
+    save();
+  }
+
+  /* ---- the panel -------------------------------------------------------------- */
+  LOOKS.forEach((L) => {
+    const b = document.createElement("button"); b.textContent = L.name; b.dataset.k = L.key;
+    b.onclick = () => { S.look = L.key; paint(); };
+    $("styles").appendChild(b);
+  });
+  document.querySelectorAll("#views button").forEach((b) => b.onclick = () => { S.view = b.dataset.v; paint(); });
+  document.querySelectorAll("#langs button").forEach((b) => b.onclick = () => { S.lang = b.dataset.l; paint(); });
+  DATA.perks.forEach((P, i) => { const o = document.createElement("option"); o.value = i; o.textContent = P.en.name + " (" + P.fam + ", lv " + P.lv + ")"; $("fav").appendChild(o); });
+  TABLES.forEach(([k, name]) => { const o = document.createElement("option"); o.value = k; o.textContent = name; $("bg").appendChild(o); });
+  $("fav").onchange = (e) => { S.fav = +e.target.value; paint(); };
+  $("bg").onchange = (e) => { S.bg = e.target.value; paint(); };
+  ["fresh", "ghost", "actmark"].forEach((k) => $(k).onchange = (e) => { S[k] = e.target.checked; paint(); });
+  $("deal").onclick = () => {
+    const pool = DATA.perks.map((_, i) => i).filter((i) => i !== S.fav);
+    S.deal = []; while (S.deal.length < 2) S.deal.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    paint();
+  };
+  function note(t) { $("note").textContent = t; setTimeout(() => { $("note").textContent = ""; }, 1800); }
+  $("copycss").onclick = () => {
+    const L = LOOKS.find((x) => x.key === S.look);
+    navigator.clipboard.writeText(L.node.textContent.trim() + "\n").then(() => note("Copied: " + L.name), () => note("Clipboard refused"));
+  };
+  $("copyset").onclick = () => {
+    navigator.clipboard.writeText(JSON.stringify(S, null, 2)).then(() => note("Settings copied"), () => note("Clipboard refused"));
+  };
+  window.addEventListener("resize", () => { if (S.view === "pick") paint(); });
+  paint();
+})();
+</script>
+</body>
+</html>

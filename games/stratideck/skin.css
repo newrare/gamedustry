@@ -126,6 +126,12 @@
     58%      { transform:scale(1);    opacity:1; }
     66%,100% { opacity:0; }
   }
+  /* on a DESK the cursor holds the card it carries: drawn OVER it (the motor
+     paints the cursor after the hand's ::before), its tip in the middle of
+     the card, and its wave is the press that picks the card up (shell.js,
+     Demo) */
+  .demo-drag .demo-hand { --click-dur:3.2s; --click-at:.2s; }
+  .demo-drag .demo-cursor { top:-24px; }
 
   /* ---- THE CARDS -----------------------------------------------------------
      What follows, between THE CARD ITSELF and END OF THE CARD, is THE card

@@ -368,6 +368,8 @@
     left:236px; bottom:-38px; margin-left:0; z-index:6;
     animation:emHand 4.6s ease-in-out infinite;
   }
+  /* on a DESK the cursor's wave is the press that starts the aim (shell.js, Demo) */
+  .demo-aim .demo-hand { --click-dur:4.6s; --click-at:0s; }
   @keyframes emHand {
     0%,4%          { transform:translate(-6px,0); opacity:1; }
     42.39%          { transform:translate(62px,0); opacity:1; }

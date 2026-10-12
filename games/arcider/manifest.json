@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.26",
+  "version": "1.10.27",
   "tagline": "Lean your ship left or right to take places and never break your shield",
   "order": 70,
   "draft": false,
@@ -204,7 +204,8 @@
           "Top ": "Top ",
           "Reach <b>{n} m</b>": "Atteins <b>{n} m</b>",
           "Cross the <b>finish line</b>": "Franchis la <b>ligne d'arrivée</b>",
-          "Win the race in <b>first place</b>": "Termine la course <b>en tête</b>"
+          "Win the race in <b>first place</b>": "Termine la course <b>en tête</b>",
+          "Turn": "Tourner"
         }
       }
     },

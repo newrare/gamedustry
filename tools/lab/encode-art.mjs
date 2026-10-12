@@ -310,9 +310,38 @@ var HAZARD = { w: 256, h: 256, q: 0.8 };
 var JOKER = { w: 256, h: 256, q: 0.8 };
 var MARK = { w: 160, h: 160, q: 0.8 };
 
+/* bridgessa's favours (`favour-<family>NN`): forty enamel medallions, ~120
+   design px across on a pick card and ~40 on the rail, and all forty ride in
+   every build, the playable included. 192 covers the card on a 3x phone at
+   about 6 KB apiece; the generic 320x400 box tripled that for nothing. */
+var FAVOUR = { w: 192, h: 192, q: 0.8 };
+
+/* games/marshmelt's SPRITES: `mallowNN`, the marshmallow in six poses and
+   four shades of toast, and `rock-<ice|cracked|crumbling|bomb>NN`, the four
+   special rocks in six designs and four states — each cut out of a 6x4 grid —
+   and `rock-<material>-NN`, the six plain materials, six designs fresh
+   (01-06) and the same six claimed (07-12) — and `flameNN`, the fire a rock
+   wears once the lava has caught it, four states of six looping frames.
+   A state is a FRAME swapped in place (the idle body for the jump, the fresh
+   rock for the one about to blow), so every cut of a sheet has to keep the
+   scale it was painted at: a box fits each cut on its own, and a pose that
+   happens to be taller would come out smaller than the one it replaces. So
+   these are not boxed but SCALED, all of them by one factor. The body is
+   drawn ~70 design px wide and a rock up to ~210, so 0.8 and 0.85 of the
+   master's ~250 px cells keep about 2x a phone's ratio on the body and 1x on
+   the biggest rock, which is soft painted stone with nothing to read in it. */
+var MALLOW = { scale: 0.8, q: 0.82 };
+var ROCK_SPRITE = { scale: 0.85, q: 0.8 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
+
+/* games/orbinity's painted bodies (see profileFor): a planet is drawn at most
+   ~175 design px across, its glow included — ~95 css px on a phone, ~285
+   device px at 3x — and the web build decodes all seventy-seven at boot, so
+   256 is the size: 384 was 3.6 MB of art for a menu to wait on. */
+var ORBIT_BODY = { w: 256, h: 256, q: 0.8 };
 
 /* A master is whatever an image tool wrote: the model returns PNG, but a
    panorama exported out of an editor arrives as a JPEG and there is no reason
@@ -343,12 +372,22 @@ function profileFor(role, slug) {
   if (/^(peak|trap-peak|trap-fire)\d+$/.test(role)) return HAZARD;
   if (/^joker\d+$/.test(role)) return JOKER;
   if (/^mark\d+$/.test(role)) return MARK;
+  if (/^favour-[a-z]+\d+$/.test(role)) return FAVOUR;
+  if (/^mallow\d+$/.test(role)) return MALLOW;
+  if (/^rock-(ice|cracked|crumbling|bomb)\d+$/.test(role)) return ROCK_SPRITE;
+  if (/^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role)) return ROCK_SPRITE;
+  if (/^flame\d+$/.test(role)) return ROCK_SPRITE;
   if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
      would squash a 3:1 picture into a portrait thumbnail. */
   if (role.indexOf("sky") === 0) return PROFILE.sky;
+  /* games/orbinity's worlds: `space-<world>` is the round's portrait backdrop,
+     cut like a phone background, and `<world>-<body>NN` a painted planet,
+     moon, pulsar or black hole, drawn up to ~190 design px across. */
+  if (/^space-[a-z]+$/.test(role)) return PROFILE["background-phone"];
+  if (/^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/.test(role)) return ORBIT_BODY;
   /* `background-phone-blue`, `background-phone-green`, ... — the same thing
      one role up: a game whose SCENE changes per biome keeps one painting per
      band (games/echomaze, five of them over the thirty levels). A variant is
@@ -436,7 +475,7 @@ function objects(all) {
 }
 
 function knownRole(role) {
-  return !!PROFILE[role] || role.indexOf("card-") === 0 ||
+  return !!PROFILE[role] || /^favour-[a-z]+\d+$/.test(role) || role.indexOf("card-") === 0 ||
          role.indexOf("decor") === 0 || role.indexOf("sky") === 0 ||
          role.indexOf("ball-") === 0 || role.indexOf("sticker") === 0 ||
          /^brick-[a-z]+-\d+$/.test(role) || /^button-(on|off)-\d+$/.test(role) ||
@@ -444,7 +483,10 @@ function knownRole(role) {
          role.indexOf("cloud-") === 0 || /^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role) ||
          role.indexOf("ground-") === 0 || role.indexOf("bank-") === 0 ||
          /^tree\d+$/.test(role) || role.indexOf("eagle-") === 0 ||
-         /^lightning\d+$/.test(role) || /^(peak|trap-peak|trap-fire)\d+$/.test(role);
+         /^lightning\d+$/.test(role) || /^(peak|trap-peak|trap-fire)\d+$/.test(role) ||
+         /^space-[a-z]+$/.test(role) || /^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/.test(role) ||
+         /^mallow\d+$/.test(role) || /^rock-(ice|cracked|crumbling|bomb)\d+$/.test(role) ||
+         /^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role) || /^flame\d+$/.test(role);
 }
 
 function masters(all) {
@@ -696,7 +738,7 @@ function encodeJs(b64, box, mime) {
     'const img = new Image();' +
     'img.src = "data:' + mime + ';base64,' + b64 + '";' +
     "await img.decode();" +
-    "const s = Math.min(1, " + box.w + " / img.width, " + box.h + " / img.height);" +
+    "const s = " + (box.scale ? box.scale : "Math.min(1, " + box.w + " / img.width, " + box.h + " / img.height)") + ";" +
     "const w = Math.max(1, Math.round(img.width * s));" +
     "const h = Math.max(1, Math.round(img.height * s));" +
     'const c = document.createElement("canvas"); c.width = w; c.height = h;' +

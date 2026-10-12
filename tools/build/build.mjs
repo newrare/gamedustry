@@ -239,7 +239,7 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
      does can change without touching the motor or this builder. ---- */
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
-    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, upper: upper,
+    Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, Desk: Desk, upper: upper,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
     Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
@@ -450,8 +450,32 @@ const WEB_ONLY_LIGHTNING = /^lightning\d+$/;
 const WEB_ONLY_FOE = /^foe-[a-z]+\d+$/;
 const PLAYABLE_FOE = /^foe-(hanako|teketeke|jinmenken|akamanto)\d+$/;
 
+/* games/orbinity's five WORLDS: a backdrop per world (`space-<world>`) and a sheet of bodies per
+   world or per special (`lunar-moon`, `pulsar-star`, `abyss-hole`). A playable
+   is the game with no level, which paints its own nebula and its own planets,
+   so all of it is web-only — the first world's twelve planets included, which
+   would be half a megabyte of base64 in a creative that never shows them. */
+const WEB_ONLY_ORBIT = /^space-(inner|lunar|pulsar|abyss|rift)$|^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/;
+
+/* games/marshmelt's SPECIAL ROCKS: ice, cracked, crumbling and bomb, six
+   designs in four states each (`rock-<kind>NN`). Only a row of the web
+   climb puts one in the fall — the playable is the caldera as it shipped —
+   so all ninety-six are web-only. Its marshmallow (`mallowNN`) is not. */
+const WEB_ONLY_ROCK = /^rock-(ice|cracked|crumbling|bomb)\d+$/;
+/* ...and four of its six plain materials. The playable's fall is boulders and
+   slabs only: twenty-four pictures instead of seventy-two keeps the creative
+   near its 2 MB target, and the game draws whichever materials a build carries. */
+const WEB_ONLY_ROCK_MATERIAL = /^rock-(crystal|shard|pumice|obsidian)-\d+$/;
+/* ...and three of the four rows of its FLAMES: the playable burns its rocks
+   with the full blaze alone (flame07-12), the web build walks the four. */
+const WEB_ONLY_FLAME = /^flame(0[1-6]|1[3-9]|2[0-4])$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
+  if (WEB_ONLY_ROCK.test(role)) return true;
+  if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;
+  if (WEB_ONLY_FLAME.test(role)) return true;
+  if (WEB_ONLY_ORBIT.test(role)) return true;
   if (WEB_ONLY_FOE.test(role) && !PLAYABLE_FOE.test(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;
   if (WEB_ONLY_HOUSE.test(role)) return true;

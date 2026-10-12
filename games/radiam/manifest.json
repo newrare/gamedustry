@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.5.22",
+  "version": "1.5.23",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -250,8 +250,8 @@
   },
   "android": {
     "appId": "com.newrare.radiam",
-    "versionName": "1.4.5",
-    "versionCode": 14,
+    "versionName": "1.5.23",
+    "versionCode": 15,
     "ads": {
       "rewarded": false,
       "interstitial": false

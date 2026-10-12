@@ -1509,6 +1509,66 @@ Every game shares it — never replace it with a hand of your own. Its fingertip
 sits at the **top edge** of the box, so a variant that has to reach a target
 moves the whole element (`transform: translate…`) rather than resizing it.
 
+### On a desk, the stage clicks — and the copy says "click"
+
+The finger is the truth on a phone and a lie on a desk, so the stage is acted
+for the device (`Demo`, packages/shell/shell.js). A desk is a device whose main
+pointer hovers and is precise — `(hover: hover) and (pointer: fine)`, followed
+live (`Desk`, packages/engine) — and the answer is one class, `is-desk` on
+`<html>`; `?desk=1` / `?desk=0` forces it for a bench. On a phone nothing
+changes. On a desk:
+
+- **the finger becomes a mouse cursor** on the very same choreography —
+  `.demo-cursor`, a child of `.demo-hand`, so it rides the SKIN's keyframes and
+  is painted over whatever the hand carries in its `::before` (stratideck's
+  card) — and **every click leaves a wave** off its tip (`.demo-click`);
+- **a game played with the keyboard alone** (`arcider`, `triverse`) hides the
+  finger and presses its keys where it was (`.demo-keys`, one `.demo-key` per
+  key, classed `key-<name>` and `k<i>`);
+- **the legend** under the stage (`.demo-legend`, inside `#intro-demo`, so it
+  travels into the web shell's Help card) names every control: key caps, "or",
+  and each mouse action drawn as the house button with its pictogram.
+
+What the desk plays with is `CONFIG.intro.desk`, the game's own word, one row
+per control:
+
+```js
+desk: [{ keys: ["space"], mouse: ["click"] }]       // SPACE or [click]
+desk: [{ mouse: ["aim", "click"] }]                 // [aim] [click]
+desk: [{ keys: ["left", "right"], does: "Change path" },
+       { keys: ["up"], does: "Jump" }]
+```
+
+`keys` are named (`left right up down space`) or printed as written (`"Q–Y"`);
+`mouse` are actions — `aim click hold drag grab`, `grab` reading *Click, hold
+and release*. `does` is English and translated by `web.copy.fr.strings` (the
+copy desk lists it as *Desk control*); the key names and the actions are the
+motor's own words and the web shell translates them. **The first row decides
+the stage**: any mouse in it and the cursor acts, keys alone and the keys do.
+Left out, the field follows the gesture — SPACE or a click for `tap`, SPACE or
+a hold for `hold`, the arrows for `swipe`, *Click, hold and release* for
+`drag`, aim and click for `aim`.
+
+**The wave is timed by two tokens set beside the hand**: `--click-dur` (the
+hand's cycle) and `--click-at` (when in it the click lands), 1.6 s and 0.6 s for
+the motor's own `handTap`. A choreography that clicks more than once gives
+`.demo-click` keyframes of its own (`games/bouncetry`, `games/marshmelt`,
+`games/slipdeck`), and a stage that already has a wave at the fingertip stands
+the motor's down (`games/vipera`, `games/orbinity`, `games/chainring`,
+`games/gearball`). A hand that turns about a point turns its cursor back so it
+stays upright (`games/radiam`). The keys are timed on the motor's `keyTap` /
+`keyHold`, or on keyframes of the SKIN's written on the two states motor.css
+spells out (`games/arcider`, `games/triverse`).
+
+**The words follow the device too.** A desk has no tap: `Desk.words` rewrites a
+finished string — "Tap to play" → *Click to play*, "Touche un cadenas" →
+*Clique sur un cadenas*, "Tape en rythme" → *Clique en rythme* — stepping over
+markup, and in French touching only the imperative ("une bille touche un
+anneau" stays). `Lang.t` runs it on everything it returns, the intro sentence
+goes through it, and every string table of the web shell is passed through
+`Desk.table` where it is defined — so a game writes "Tap" and is right on both
+devices.
+
 ## Theming — the SKIN block
 
 A game's stylesheet is **the motor stylesheet, unchanged, plus one skin block at

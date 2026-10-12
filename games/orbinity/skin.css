@@ -100,6 +100,10 @@
     left:263px; margin-left:0; bottom:8px; z-index:2;
     animation:handTap 2.4s ease-in-out infinite;
   }
+
+  /* on a DESK the cursor clicks where the finger tapped, and the beam above
+     is already its wave: the motor's own stands down (shell.js, Demo) */
+  .demo-tap .demo-hand .demo-click { display:none; }
   .demo-tap .demo-beam {
     display:block; z-index:1; left:270px; top:134px; bottom:auto;
     width:60px; height:60px; margin-left:0; border-radius:50%;

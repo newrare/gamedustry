@@ -427,6 +427,19 @@ function scanGameJs(src, out, push) {
       const intro = fieldsOf(clean, { start: top.intro.start, end: top.intro.end });
       put(intro.caption, { id: 'config.intro.caption', lang: 'en', group: 'intro',
         context: 'Demo caption', hint: 'the house rules keep it empty — the tagline is the sentence' });
+      /* The desk legend under the demo: one `does` per row of `intro.desk`,
+         the action its controls perform (packages/shell, Demo). */
+      if (intro.desk && clean[intro.desk.start] === '[') {
+        const re = /\bdoes\s*:\s*/g;
+        re.lastIndex = intro.desk.start;
+        let d, n = 0;
+        while ((d = re.exec(clean)) && d.index < intro.desk.end) {
+          const lit = literalsIn(clean, d.index + d[0].length, intro.desk.end)[0];
+          if (!lit || lit.start !== d.index + d[0].length) continue;
+          put({ start: lit.start, end: lit.end }, { id: 'config.intro.desk.' + (n++), lang: 'en', group: 'intro',
+            context: 'Desk control', hint: 'what the keys of this row do, read beside them on a desk' });
+        }
+      }
     }
 
     if (top.copy && clean[top.copy.start] === '{') {

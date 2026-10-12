@@ -1453,6 +1453,168 @@
     screen.appendChild(sig);
   }
 
+  /* --- Demo: the how-to-play stage, acted for the hand the player holds ----
+
+     The stage (#intro-demo, page.html) acts a GESTURE with the shared finger,
+     which is the truth on a phone and a lie on a desk (Desk, packages/engine):
+     there, the round is played with a mouse or with keys. So the stage is
+     acted for the device, and the device is followed live:
+
+       touch   the finger, as it always was, and no legend at all
+       desk    a MOUSE CURSOR on the finger's very choreography, a WAVE where
+               it clicks — or, for a game played with the keyboard alone, the
+               KEYS pressed where the finger was — and a LEGEND under the stage
+               naming every control the round takes
+
+     WHAT THE DESK PLAYS WITH is `CONFIG.intro.desk`, the game's own word, one
+     row per control:
+
+       desk: [{ keys: ["space"], mouse: ["click"] }]          SPACE or [click]
+       desk: [{ mouse: ["aim", "click"] }]                    [aim] [click]
+       desk: [{ keys: ["left", "right"], does: "Turn" },
+              { keys: ["up"], does: "Jump" }]
+
+     `keys` are named keys (`left right up down space`) or printed as written
+     ("Q–Y"); `mouse` are actions — `aim click hold drag grab` (grab: click,
+     hold and release) — drawn as a button with its pictogram; a row with both
+     reads "keys OR mouse". `does` is English, translated like every word a
+     game writes. The FIRST row decides the stage: any mouse in it and the
+     cursor acts, keys alone and the keys do. A game that declares nothing
+     gets what its gesture is played with (`DEFAULTS`).
+
+     The cursor is `.demo-cursor`, a child of `.demo-hand` — it rides the
+     SKIN's choreography and is painted over anything the hand carries in its
+     own ::before — and the wave `.demo-click` sits on its tip. The wave is
+     timed by two tokens a SKIN sets beside its own hand: `--click-dur` (the
+     hand's cycle) and `--click-at` (when in that cycle the click lands); a
+     choreography that clicks twice gives `.demo-click` keyframes of its own.
+     The keys are `.demo-key`, classed `key-<name>`, on the motor's `keyTap`
+     / `keyHold` or on keyframes of the SKIN's. */
+  var Demo = (function () {
+    var NAMED = { space: "Space", left: "←", right: "→", up: "↑", down: "↓" };
+    var ACT = { aim: "Aim", click: "Click", hold: "Hold", drag: "Drag", grab: "Click, hold and release" };
+    function svg(body) {
+      return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+    }
+    // a mouse with its left button pressed: the press, held or not
+    var MOUSE_DOWN = '<rect x="6" y="3" width="12" height="18" rx="6"/><path d="M12 3v7"/>' +
+      '<path d="M7.4 9.6V8.6A4.6 4.6 0 0 1 12 4v6H7.4z" fill="currentColor"/>';
+    var ICON = {
+      aim:   svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/>' +
+               '<path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/>'),
+      click: svg('<path d="M14 4.1 12 6M5.1 8l-2.9-.8M6 12l-1.9 2M7.2 2.2 8 5.1"/>' +
+               '<path d="M9.04 9.69a.5.5 0 0 1 .65-.65l11 4.5a.5.5 0 0 1-.07.95l-4.35 1.04a1 1 0 0 0-.74.74l-1.04 4.35a.5.5 0 0 1-.95.07z"/>'),
+      hold:  svg(MOUSE_DOWN + '<circle cx="12" cy="15.5" r="1.4" fill="currentColor"/>'),
+      drag:  svg('<path d="M2 12h20M5 9l-3 3 3 3M19 9l3 3-3 3"/><path d="M12 6v12"/>'),
+      grab:  svg(MOUSE_DOWN + '<path d="M9.5 15.5h5M12.5 13.5l2 2-2 2"/>')
+    };
+    /* What a gesture is played with when the game says nothing: the keys the
+       bootstrap binds for it (section 7) and the mouse that always works. */
+    var DEFAULTS = {
+      tap:   [{ keys: ["space"], mouse: ["click"] }],
+      hold:  [{ keys: ["space"], mouse: ["hold"] }],
+      swipe: [{ keys: ["left", "right"] }],
+      drag:  [{ mouse: ["grab"] }],
+      aim:   [{ mouse: ["aim", "click"] }]
+    };
+
+    function kind() { return CONFIG.intro.demo || "tap"; }
+
+    function rows() {
+      var d = CONFIG.intro.desk, k = kind(), list, i, r, out = [];
+      if (d && d.length) return d;
+      list = DEFAULTS[k] || DEFAULTS.tap;
+      for (i = 0; i < list.length; i++) {
+        r = { mouse: list[i].mouse };
+        // a key the bootstrap does not bind is a key that does nothing
+        if (CONFIG.keyboard !== false) r.keys = k === "swipe" && CONFIG.swipeUp ? ["left", "right", "up"] : list[i].keys;
+        out.push(r);
+      }
+      return out;
+    }
+
+    function apply() {
+      var root = document.documentElement;
+      if (Desk.on()) root.classList.add("is-desk"); else root.classList.remove("is-desk");
+    }
+
+    function node(tag, cls) { var n = document.createElement(tag); n.className = cls; return n; }
+    function cap(name, cls) {
+      var c = node("span", cls + " key-" + (NAMED[name] ? name : "x") + (name === "space" ? " key-wide" : ""));
+      c.setAttribute("data-key", name);
+      return c;
+    }
+    function chip(act) {
+      var c = node("span", "btn btn-sm btn-plate demo-chip act-" + act);
+      c.innerHTML = ICON[act] || ICON.click;
+      var w = node("span", "chip-word");
+      w.setAttribute("data-word", ACT[act] || act);
+      c.appendChild(w);
+      return c;
+    }
+    function word(text, cls) {
+      var w = node("span", cls);
+      w.setAttribute("data-word", text);
+      return w;
+    }
+
+    function build() {
+      var demo = $("intro-demo"), stage = demo && demo.querySelector(".demo-stage");
+      if (!stage || demo.querySelector(".demo-legend")) return;
+      var list = rows(), first = list[0] || {}, mouse = !!(first.mouse && first.mouse.length), i, j, r;
+      demo.classList.add(mouse ? "desk-mouse" : "desk-keys");
+
+      if (mouse) {
+        // the cursor and its wave, inside the hand so they ride its choreography
+        var hand = stage.querySelector(".demo-hand");
+        if (hand) {
+          var cur = node("i", "demo-cursor");
+          cur.appendChild(node("i", "demo-click"));
+          hand.appendChild(cur);
+        }
+      } else {
+        var keys = node("div", "demo-keys");
+        for (i = 0; i < (first.keys || []).length; i++) keys.appendChild(cap(first.keys[i], "demo-key k" + i));
+        stage.appendChild(keys);
+      }
+
+      // The legend sits between the stage and the caption, inside #intro-demo,
+      // so it travels with the stage into the web shell's Help card.
+      var legend = node("div", "demo-legend");
+      for (r = 0; r < list.length; r++) {
+        var row = node("div", "demo-legend-row"), ks = list[r].keys || [], ms = list[r].mouse || [];
+        for (j = 0; j < ks.length; j++) row.appendChild(cap(ks[j], "legend-key"));
+        if (ks.length && ms.length) row.appendChild(word("or", "legend-or"));
+        for (j = 0; j < ms.length; j++) row.appendChild(chip(ms[j]));
+        if (list[r].does) row.appendChild(word(list[r].does, "legend-does"));
+        legend.appendChild(row);
+      }
+      var caption = $("demo-caption");
+      demo.insertBefore(legend, caption && caption.parentNode === demo ? caption : null);
+
+      Desk.watch(apply);
+      apply();
+    }
+
+    /* Every word on the stage and in the legend, in the player's language.
+       Called from applyCopy, which is what a language change comes back
+       through. A named key is a word ("Space" → ESPACE) or a glyph; any
+       other key is printed as the game wrote it. */
+    function relabel() {
+      var demo = $("intro-demo");
+      if (!demo) return;
+      var caps = demo.querySelectorAll("[data-key]"), words = demo.querySelectorAll("[data-word]"), i, name;
+      for (i = 0; i < caps.length; i++) {
+        name = caps[i].getAttribute("data-key");
+        caps[i].textContent = upper(NAMED[name] ? Lang.t(NAMED[name]) : name);
+      }
+      for (i = 0; i < words.length; i++) words[i].textContent = upper(Lang.t(words[i].getAttribute("data-word")));
+    }
+
+    return { build: build, relabel: relabel, rows: rows };
+  })();
+
   // --- Intro: logo, copy and the animated how-to-play demo ----------------
   function buildIntro() {
     /* The painted screens come first: the title image below replaces the icon,
@@ -1471,9 +1633,10 @@
     var img = $("app-icon");
     if (logo) { img.src = logo; img.alt = CONFIG.title; } else { img.style.display = "none"; }
     if (!hasArtTitle) $("intro-title").textContent = upper(CONFIG.title);
-    $("intro-tagline").innerHTML = CONFIG.tagline;
+    $("intro-tagline").innerHTML = Desk.words(CONFIG.tagline);
     $("intro-demo").className = "demo-" + (CONFIG.intro.demo || "tap");
     $("demo-caption").textContent = CONFIG.intro.caption || "";
+    Demo.build();
     applyCopy();
   }
 
@@ -1489,6 +1652,7 @@
     $("btn-replay").textContent = Lang.t(CONFIG.copy.replay);
     $("hud-score-lbl").textContent = upper(Lang.t(CONFIG.copy.scoreLabel));
     $("eo-scorelbl").textContent = upper(Lang.t(CONFIG.copy.endScore));
+    Demo.relabel();
   }
 
   // --- End screen: the cinematic reveal ----------------------------------

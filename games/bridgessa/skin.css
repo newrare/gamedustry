@@ -1,0 +1,233 @@
+  /* =========================================================================
+     SKIN — BRIDGESSA. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     The French Riviera, 1960: a turquoise terrace table, ivory cards inked
+     in navy and coral, the sun for whatever shines — a travel poster rather
+     than a casino, on purpose (slipdeck is the casino).
+     ========================================================================= */
+  :root {
+    --bg:#0f3440; --text:#fbf4e2; --muted:#9cc9c4;
+    --accent:#ff7a59; --cta-a:#ffd27a; --cta-b:#f2a541; --cta-text:#2a1a06;
+    --danger:#ff5a4a; --gold:#f2c14e; --good:#2ec4b6;
+    /* the three words of the intro sentence, shared with the canvas */
+    --hands:#2ec4b6; --tricks:#f2c14e; --contract:#ff7a59;
+
+    /* The level pill keeps the shell's own corner: on the web the table
+       stops above the bottom row (WEB_FOOT in game.js). */
+  }
+  html, body { background:radial-gradient(900px 860px at 50% 40%, #2a8d8f 0%, #1a5f6a 55%, #0d2c3a 100%); }
+
+  #app-icon { box-shadow:0 14px 44px rgba(0,0,0,.5), 0 0 46px rgba(255,122,89,.3); }
+
+  /* The CSS title, until the painted logotype lands: an ivory serif with a
+     navy rim and a coral shadow set off it — the poster's lettering. */
+  #intro-title {
+    font-family:Georgia, "Times New Roman", serif; font-weight:700;
+    font-size:94px; letter-spacing:2px; color:#fbf4e2;
+    text-shadow:3px 3px 0 #1d2b4f, -2px -2px 0 #1d2b4f, 2px -2px 0 #1d2b4f, -2px 2px 0 #1d2b4f,
+                9px 9px 0 #e04f3a;
+  }
+  #cta-bar { border-top:1px solid rgba(242,193,78,.2); }
+  #hud-score { text-shadow:0 0 16px rgba(242,193,78,.45); }
+  #hud-right .hud-pill { font-size:30px; }
+  #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,8,4,.45); }
+  /* the HINT's aura on the two HUD pills, which a tap explains too */
+  #hud-left.bs-hint .hud-pill, #hud-right.bs-hint .hud-pill { animation:bs-hint 1.4s ease-in-out; }
+  @keyframes bs-hint { 50% { box-shadow:0 0 0 2px rgba(242,193,78,.3), 0 0 14px rgba(242,193,78,.3); } }
+  @media (prefers-reduced-motion: reduce) { #hud-left.bs-hint .hud-pill, #hud-right.bs-hint .hud-pill { animation:none; } }
+  /* the Help card's example of it (Game.helpAura) wears the same sun */
+  :root { --help-aura:rgba(242,193,78,.75); --help-aura-soft:rgba(242,193,78,.25); }
+
+  /* ---- intro: one sentence, and a stage that plays one trick -------------
+     The motor's "tap" variant lends its finger. The stage is the table seen
+     from above: three cards are already in the trick (the stage's ::before,
+     one card and its two box-shadow copies), the target is the card of the
+     hand the finger taps, and the track is the rest of the hand.
+
+     One 3.2 s loop: the finger taps (18-28 %), the card flies up into the
+     trick (to 34 %), the four sit a beat, then the whole trick is swept to
+     its winner (62-78 %) and the next hand is dealt back in. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#e6f3ef; }
+  #intro-tagline .w-hands    { color:var(--hands);    text-shadow:0 0 18px rgba(46,196,182,.7); }
+  #intro-tagline .w-tricks   { color:var(--tricks);   text-shadow:0 0 18px rgba(242,193,78,.7); }
+  #intro-tagline .w-contract { color:var(--contract); text-shadow:0 0 18px rgba(255,122,89,.75); }
+
+  .demo-stage {
+    width:420px; height:270px; overflow:hidden;
+    background:radial-gradient(260px 200px at 50% 40%, rgba(42,141,143,.75), rgba(13,44,58,.7));
+    border-color:rgba(251,244,226,.22);
+  }
+  /* the trick on the table: North, then West and East as two copies */
+  .demo-stage::before {
+    content:""; position:absolute; left:184px; top:12px; width:52px; height:74px;
+    border-radius:7px; background:#fbf4e2; border:2px solid #1d2b4f;
+    box-shadow:-74px 50px 0 -2px #fbf4e2, 74px 50px 0 -2px #fbf4e2;
+    animation:bsSweepTable 3.2s ease-in-out infinite;
+  }
+  /* the rest of the hand, either side of the card that is played */
+  .demo-tap .demo-track {
+    display:block; left:106px; right:106px; top:186px; bottom:auto; height:74px; border:0;
+    background-image:linear-gradient(#fbf4e2, #fbf4e2), linear-gradient(#fbf4e2, #fbf4e2);
+    background-size:52px 74px, 52px 74px;
+    background-position:0 0, 100% 0;
+    background-repeat:no-repeat;
+    border-radius:7px;
+  }
+  /* the card the finger plays: an ace of hearts in the hand */
+  .demo-tap .demo-target {
+    z-index:2; left:184px; top:186px; margin:0; width:52px; height:74px;
+    border:2px solid #1d2b4f; border-radius:7px; background:#fffaf0;
+    box-shadow:0 8px 18px rgba(0,0,0,.4);
+    animation:bsPlay 3.2s cubic-bezier(.3,.9,.3,1) infinite;
+  }
+  /* the motor's ripple span, re-dressed as the card's coral pip */
+  .demo-tap .demo-ripple {
+    inset:auto; left:50%; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px;
+    border:0; border-radius:3px; background:#e04f3a; opacity:1;
+    transform:rotate(45deg); animation:none; box-shadow:none;
+  }
+  .demo-tap .demo-ripple.d2, .demo-tap .demo-arrow, .demo-tap .demo-beam { display:none; }
+  @keyframes bsPlay {
+    0%, 20%  { transform:translate(0, 0);         opacity:1; }
+    34%, 62% { transform:translate(0, -66px);     opacity:1; }
+    78%      { transform:translate(150px, -66px); opacity:0; }
+    79%, 90% { transform:translate(0, 0);         opacity:0; }
+    100%     { transform:translate(0, 0);         opacity:1; }
+  }
+  @keyframes bsSweepTable {
+    0%, 62%  { transform:translateX(0);     opacity:1; }
+    78%      { transform:translateX(150px); opacity:0; }
+    79%, 90% { transform:translateX(0);     opacity:0; }
+    100%     { transform:translateX(0);     opacity:1; }
+  }
+  /* the finger: comes up under the card, taps it, and leaves with it */
+  .demo-tap .demo-hand { bottom:-34px; z-index:3; animation:bsTap 3.2s ease-in-out infinite;
+    --click-dur:3.2s; --click-at:.68s; }   /* the cursor's wave, on a desk */
+  @keyframes bsTap {
+    0%       { transform:translateY(24px);  opacity:0; }
+    12%      { transform:translateY(0);     opacity:1; }
+    22%      { transform:translateY(-14px); opacity:1; }
+    28%      { transform:translateY(0);     opacity:1; }
+    36%, 100%{ transform:translateY(20px);  opacity:0; }
+  }
+
+  /* ---- the tips: a card the first time an idea lands on the table --------
+     The motor's CARD (.mt-card) on a veil over the held round (Game.held). A
+     tap anywhere puts it away, so the veil is the one layer of the round that
+     takes a pointer. */
+  .bs-tip {
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center; padding:0 44px;
+    background:radial-gradient(70% 55% at 50% 48%, rgba(13,44,58,.62), rgba(5,18,26,.88));
+    opacity:0; transition:opacity .22s ease; cursor:pointer;
+  }
+  .bs-tip.on { opacity:1; }
+  .bs-tip.off { opacity:0; pointer-events:none; }
+  .bs-tip .bs-tc { max-width:600px; transform:translateY(30px) scale(.94); transition:transform .3s cubic-bezier(.2,1.3,.4,1); }
+  .bs-tip.on .bs-tc { transform:none; }
+  .bs-tc .mt-h { font-size:44px; color:var(--accent); }
+  .bs-tc .mt-body { gap:16px; }
+  /* the rules are prose, read in normal case and in the system face */
+  .bs-tc .mt-body p {
+    margin:0; text-align:center; font-size:26px; line-height:1.38; font-weight:600;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    letter-spacing:0; text-transform:none; color:#e6f3ef;
+  }
+  @media (prefers-reduced-motion: reduce) { .bs-tip .bs-tc { transition:none; transform:none; } }
+
+  /* the tips sit over the pick, so the atouts' tip is read before choosing */
+  .bs-tip { z-index:32; }
+  .bs-tc .mt-h { color:var(--tc, var(--accent)); }
+  .bs-tc .mt-body p.bs-status { color:#9fe8c6; font-weight:800; }
+  .bs-btns { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:6px; }
+  /* a favour of the rail opens on its postcard, with no plate behind it */
+  .bs-tc.bs-tpost { background:none; box-shadow:none; padding:0; }
+  .bs-tc.bs-tpost::before { content:none; }
+  .bs-tpost .mt-body { align-items:center; }
+
+  /* ---- the pick: one atout of three ---------------------------------------
+     The motor's CARD with no plate behind it, on a veil: the eyebrow says why,
+     the title what to do, the atouts ARE the controls. */
+  .bs-pick {
+    position:absolute; inset:0; z-index:30;
+    display:flex; align-items:center; justify-content:center; padding:0 18px;
+    background:radial-gradient(70% 55% at 50% 48%, rgba(13,44,58,.7), rgba(5,18,26,.92));
+    opacity:0; transition:opacity .22s ease;
+  }
+  .bs-pick.on { opacity:1; }
+  .bs-pick.off { opacity:0; pointer-events:none; transition-duration:.3s; }
+  .bs-pick .bs-pc { gap:22px; max-width:700px; }
+  .bs-pick:not(.bs-swap) .bs-pc { background:none; box-shadow:none; padding:0; }
+  .bs-pick:not(.bs-swap) .bs-pc::before { content:none; }
+  .bs-pick .mt-h { color:var(--gold); }
+  .bs-pick .mt-body { align-items:center; gap:16px; }
+  .bs-deal { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; }
+
+  /* ---- a favour, on a POSTCARD (chosen in lab/bridgessa-favours.html, B) --
+     Ivory paper inside a thin navy frame; the medallion is the STAMP in the
+     corner, the family written beside it, the name in coral italic, the rule
+     in navy, "used with a tap" in sea green, and the rarity as the POSTMARK
+     at the foot. */
+  .bs-perk {
+    position:relative; width:206px; min-height:420px; margin:0; padding:16px 16px 92px;
+    display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left;
+    border:0; border-radius:10px; color:#1d2b4f;
+    background:linear-gradient(180deg, #fffaf0, #f3e8cc);
+    box-shadow:0 14px 28px rgba(0,0,0,.45);
+    font:inherit; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+  }
+  .bs-perk::before { content:""; position:absolute; inset:8px; border:2px solid rgba(29,43,79,.22); border-radius:6px; pointer-events:none; }
+  .bs-perk.r-3 { box-shadow:0 0 0 3px #c58cff, 0 14px 28px rgba(0,0,0,.45); }
+  .bs-perk.r-4 { box-shadow:0 0 0 3px #f2c14e, 0 0 26px rgba(242,193,78,.6), 0 14px 28px rgba(0,0,0,.45); }
+  .bs-pfam { position:relative; max-width:92px; font-size:18px; line-height:1.1; font-weight:900; letter-spacing:2px;
+    color:color-mix(in srgb, var(--c) 55%, #1d2b4f); }
+  .bs-pico { position:absolute; right:12px; top:12px; width:92px; height:92px; padding:6px; display:grid; place-items:center;
+    background:#fffaf0; border:3px dashed color-mix(in srgb, var(--c) 70%, #1d2b4f); transform:rotate(6deg); }
+  .bs-pico img { width:100%; height:100%; object-fit:contain; }
+  /* the name is fitted to its longest word (fitName, game.js), never under 20 */
+  .bs-pname { position:relative; margin-top:58px; max-width:100%; font-family:Georgia,"Times New Roman",serif; font-style:italic;
+    font-size:30px; line-height:1.02; font-weight:700; color:#e04f3a; overflow-wrap:normal; }
+  .bs-ptext { position:relative; font-style:normal; font-size:20px; line-height:1.25; font-weight:600; color:#1d2b4f; }
+  .bs-pact { position:relative; font-size:18px; font-weight:800; letter-spacing:1px; color:#1a6f73; }
+  .bs-prar { position:absolute; right:8px; bottom:14px; width:132px; height:60px; border-radius:50%; display:grid; place-items:center;
+    border:3px double var(--r); color:color-mix(in srgb, var(--r) 75%, #1d2b4f); font-size:18px; font-weight:900; letter-spacing:1px;
+    transform:rotate(-12deg); background:rgba(255,255,255,.4); white-space:nowrap; }
+  .bs-perk.r-1 .bs-prar { border-color:#6b5b3a; color:#6b5b3a; }
+  /* NEW is a STICKER slapped on the foot of the card, over whatever is there:
+     it moves nothing (the postmark keeps its place) and it reads NEW in
+     every language, like the album's own NEW tag — short, and a sticker */
+  .bs-pnew { position:absolute; z-index:3; left:-10px; bottom:14px; padding:5px 12px 4px; border-radius:8px; transform:rotate(-9deg);
+    background:#2ec4b6; color:#06231f; border:3px solid #fffaf0; font-size:20px; font-weight:900; letter-spacing:2px; white-space:nowrap;
+    box-shadow:0 4px 8px rgba(0,0,0,.35); }
+  /* a favour not taken yet, in the collection: its stamp as a silhouette */
+  .bs-perk.ghost { background:linear-gradient(180deg, #efe8d8, #ddd3bc); }
+  .bs-perk.ghost .bs-pico img { filter:brightness(0); opacity:.18; }
+  .bs-perk.ghost .bs-pname { color:#9a8f78; }
+  .bs-pick .bs-perk { transform:translateY(70px) scale(.75); opacity:0;
+    transition:transform .38s cubic-bezier(.2,1.35,.4,1), opacity .2s ease, filter .2s ease; }
+  .bs-pick .bs-perk + .bs-perk { transition-delay:.07s; }
+  .bs-pick.on .bs-perk { transform:none; opacity:1; }
+  .bs-pick .bs-perk:hover, .bs-pick .bs-perk:focus-visible { transform:translateY(-10px); outline:none; filter:brightness(1.12); }
+  .bs-pick.off .bs-perk { transform:translateY(50px) scale(.8); opacity:0; transition-delay:0s; }
+  .bs-pick.off .bs-perk.took { transform:translateY(-40px) scale(1.08); opacity:0; }
+
+  /* a full rail: which atout goes */
+  .bs-newline { margin:0; font-size:28px; letter-spacing:1px; color:var(--gold); }
+  .bs-row {
+    appearance:none; -webkit-appearance:none; margin:0; font:inherit; color:inherit; cursor:pointer;
+    width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:12px 18px; text-align:left;
+    border-radius:18px; border:2px solid var(--c); background:rgba(13,26,51,.75);
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .bs-row:hover, .bs-row:focus-visible { transform:translateX(6px); outline:none; filter:brightness(1.15); }
+  .bs-row b { font-size:26px; line-height:1; color:var(--c); font-weight:400; letter-spacing:1px; }
+  .bs-row i { font-style:normal; font-size:20px; line-height:1.25; font-weight:600; color:#e6f3ef;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  @media (prefers-reduced-motion: reduce) { .bs-pick .bs-perk { transition:none; } }
+
+  /* the collection's card is the pick's own, measured and scaled to fit the
+     codex's 300 x 420 slot (favourCard, game.js) */
+  .bs-pbox { position:relative; flex:none; }
+  .bs-pbox .bs-perk { position:absolute; top:0; transform:scale(var(--sk, 1)); transform-origin:0 0; cursor:default; }

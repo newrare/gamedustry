@@ -1,7 +1,7 @@
 {
   "slug": "grudgeon",
   "title": "Grudgeon",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "tagline": "Explore a haunted dungeon room by room and exorcise the yokai in turn-based fights",
   "order": 160,
   "draft": false,

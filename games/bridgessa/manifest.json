@@ -1,0 +1,598 @@
+{
+  "slug": "bridgessa",
+  "title": "Bridgessa",
+  "version": "0.6.0",
+  "tagline": "Play both hands and win the tricks your contract asks for",
+  "order": 170,
+  "draft": false,
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#ff7a59",
+    "accent2": "#2ec4b6"
+  },
+  "art": {
+    "objects": {
+      "cloud-flat-02": "game-cloud-flat-02",
+      "favour-foe01": "bridgessa-favour-foe-01",
+      "favour-foe02": "bridgessa-favour-foe-02",
+      "favour-foe03": "bridgessa-favour-foe-03",
+      "favour-foe04": "bridgessa-favour-foe-04",
+      "favour-foe05": "bridgessa-favour-foe-05",
+      "favour-foe06": "bridgessa-favour-foe-06",
+      "favour-hand01": "bridgessa-favour-hand-01",
+      "favour-hand02": "bridgessa-favour-hand-02",
+      "favour-hand03": "bridgessa-favour-hand-03",
+      "favour-hand04": "bridgessa-favour-hand-04",
+      "favour-hand05": "bridgessa-favour-hand-05",
+      "favour-hand06": "bridgessa-favour-hand-06",
+      "favour-points01": "bridgessa-favour-points-01",
+      "favour-points02": "bridgessa-favour-points-02",
+      "favour-points03": "bridgessa-favour-points-03",
+      "favour-points04": "bridgessa-favour-points-04",
+      "favour-points05": "bridgessa-favour-points-05",
+      "favour-points06": "bridgessa-favour-points-06",
+      "favour-points07": "bridgessa-favour-points-07",
+      "favour-points08": "bridgessa-favour-points-08",
+      "favour-rule01": "bridgessa-favour-rule-01",
+      "favour-rule02": "bridgessa-favour-rule-02",
+      "favour-rule03": "bridgessa-favour-rule-03",
+      "favour-rule04": "bridgessa-favour-rule-04",
+      "favour-rule05": "bridgessa-favour-rule-05",
+      "favour-rule06": "bridgessa-favour-rule-06",
+      "favour-survive01": "bridgessa-favour-survive-01",
+      "favour-survive02": "bridgessa-favour-survive-02",
+      "favour-survive03": "bridgessa-favour-survive-03",
+      "favour-survive04": "bridgessa-favour-survive-04",
+      "favour-survive05": "bridgessa-favour-survive-05",
+      "favour-survive06": "bridgessa-favour-survive-06",
+      "favour-vision01": "bridgessa-favour-vision-01",
+      "favour-vision02": "bridgessa-favour-vision-02",
+      "favour-vision03": "bridgessa-favour-vision-03",
+      "favour-vision04": "bridgessa-favour-vision-04",
+      "favour-vision05": "bridgessa-favour-vision-05",
+      "favour-vision06": "bridgessa-favour-vision-06",
+      "favour-vision07": "bridgessa-favour-vision-07",
+      "favour-vision08": "bridgessa-favour-vision-08",
+      "home01": "bridgessa-home-01",
+      "home02": "bridgessa-home-02",
+      "home03": "bridgessa-home-03",
+      "home04": "bridgessa-home-04",
+      "home05": "bridgessa-home-05",
+      "home06": "bridgessa-home-06",
+      "home07": "bridgessa-home-07",
+      "home08": "bridgessa-home-08",
+      "sticker01": "bridgessa-sticker-01",
+      "sticker02": "bridgessa-sticker-02",
+      "sticker03": "bridgessa-sticker-03",
+      "sticker04": "bridgessa-sticker-04",
+      "sticker05": "bridgessa-sticker-05",
+      "sticker06": "bridgessa-sticker-06",
+      "sticker07": "bridgessa-sticker-07",
+      "sticker08": "bridgessa-sticker-08",
+      "sticker09": "bridgessa-sticker-09",
+      "sticker10": "bridgessa-sticker-10",
+      "sticker11": "bridgessa-sticker-11",
+      "sticker12": "bridgessa-sticker-12",
+      "sticker13": "bridgessa-sticker-13",
+      "sticker14": "bridgessa-sticker-14",
+      "sticker15": "bridgessa-sticker-15",
+      "sticker16": "bridgessa-sticker-16",
+      "sticker17": "bridgessa-sticker-17",
+      "sticker18": "bridgessa-sticker-18",
+      "sticker19": "bridgessa-sticker-19",
+      "sticker20": "bridgessa-sticker-20"
+    }
+  },
+  "sfx": {
+    "tip": "card/bookflip",
+    "play": "card/cardplace03",
+    "win": "pickup/uipluck",
+    "lose": "card/uirollover",
+    "made": "goal/harprollup",
+    "down": "defeat/jinglehit",
+    "aid": "toggle/clickswitch",
+    "deny": "warn/errorui",
+    "pick": "card/cardfan",
+    "perk": "bonus/powerup"
+  },
+  "copy": {
+    "fr": {
+      "tagline": "Le bridge sans les enchères : joue tes deux mains et réussis ton contrat face à une défense qui ne laisse rien passer.",
+      "tags": [
+        "Bridge",
+        "Jeu de la carte",
+        "Problèmes"
+      ]
+    },
+    "en": {
+      "tagline": "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
+      "tags": [
+        "Bridge",
+        "Card play",
+        "Puzzles"
+      ]
+    }
+  },
+  "description": "Bridge without the bidding. You are always the declarer: South, your hand at the foot of the screen, and North, the dummy, face up at the top — both hands are yours to play. West and East defend, and West leads. Every trick is real bridge: follow suit, the highest card of the suit led wins unless a trump falls, the winner leads the next one. A level is an ending rather than a full deal, two to seven cards a hand, the way a bridge column sets a problem; the climb adds a card at a time, so a newcomer learns the rules one by one while a bridge player meets the puzzles they already love. The contract is read off the deal by a double-dummy solver, the defence is played by that same solver and never gives a trick away, and past the first levels the obvious line of cashing your top cards always fails: there is a finesse, a ruff or an entry to find. A level is a tournée of two to five deals with three lives, a contract gone down costing one. It opens on a pick and every contract made deals another: one of Bridgessa's forty favours out of three, kept to the end of the tournée — what is hidden shown, a card changed, a rule bent once, the score multiplied, a life saved, the defence shaken. They arrive one or two a level, from level 3 to level 28, and the tournée's score is what the stars are cut on.",
+  "itch": {
+    "user": "newrare",
+    "project": "bridgessa",
+    "channel": "html5",
+    "tags": [
+      "cards",
+      "bridge",
+      "puzzle",
+      "singleplayer",
+      "2d",
+      "casual"
+    ],
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "web": {
+    "copy": {
+      "helpAura": "Everything that <b>glows</b> on the table explains itself: <b>tap it</b> to read its rule.",
+      "fr": {
+        "helpAura": "Tout ce qui <b>brille</b> sur la table s'explique : <b>touche-le</b> pour lire sa règle.",
+        "tagline": "Joue <b class=\"w-hands\">tes deux mains</b> et remporte les <b class=\"w-tricks\">levées</b> que ton <b class=\"w-contract\">contrat</b> demande",
+        "strings": {
+          "Deal": "Distribuer",
+          "Install now": "Installer",
+          "Play the full game": "Jouer au jeu complet",
+          "Play the deal again": "Rejouer la donne",
+          "Score": "Score",
+          "Time": "Temps",
+          "Final score": "Score final",
+          "Down": "Chute",
+          "Time's up!": "Temps écoulé !",
+          "NT": "SA",
+          "Tricks": "Levées",
+          "How to play": "Comment jouer",
+          "Win the tricks": "Remporte les levées",
+          "You play South, your hand at the bottom, and North, the dummy at the top: both hands are yours.": "Tu joues Sud, ta main en bas, et Nord, le mort en haut : les deux mains sont à toi.",
+          "Each player plays one card in turn. The highest card of the suit led wins the trick, and its winner leads the next one.": "Chacun joue une carte à son tour. La plus forte carte de la couleur demandée remporte la levée, et son gagnant entame la suivante.",
+          "Follow suit whenever you can.": "Fournis à la couleur dès que tu le peux.",
+          "New rule": "Nouvelle règle",
+          "Trumps": "Atouts",
+          "On this deal {s} are trumps.": "Sur cette donne, l'atout est {s}.",
+          "When you cannot follow suit, a trump wins the trick — the highest trump, if several are played.": "Quand tu ne peux pas fournir, un atout remporte la levée — le plus fort, si plusieurs sont joués.",
+          "Tap to continue": "Touche pour continuer",
+          "Ruffed!": "Coupé !",
+          "Finesse!": "Impasse !",
+          "Overtrick!": "Levée de mieux !",
+          "Contract made!": "Contrat réussi !",
+          "Masterly!": "Magistral !",
+          "Down {n}": "{n} de chute",
+          "Wait for your turn": "Attends ton tour",
+          "{seat} is playing": "{seat} joue",
+          "The dummy plays now": "Au tour du mort",
+          "Your hand plays now": "Au tour de ta main",
+          "Every seat plays in turn, clockwise": "Chacun joue à son tour, dans le sens des aiguilles d'une montre",
+          "The winner of a trick leads the next one": "Le gagnant d'une levée entame la suivante",
+          "Follow suit": "Fournis à la couleur",
+          "You still hold a {s}": "Tu as encore du {s}",
+          "The contract is made": "Le contrat est fait",
+          "North": "Nord",
+          "East": "Est",
+          "South": "Sud",
+          "West": "Ouest",
+          "Contract": "Contrat",
+          "Deals": "Donnes",
+          "Lives": "Vies",
+          "Finesses": "Impasses",
+          "Your contract, on the stamp at the bottom left: win {c} of the {n} tricks.": "Ton contrat, sur le timbre en bas à gauche : remporter {c} des {n} levées.",
+          "Tap anything on the table to read its rule again.": "Touche n'importe quel élément de la table pour relire sa règle.",
+          "This deal": "Cette donne",
+          "No trump": "Sans atout",
+          "No suit is trump: the highest card of the suit led always wins the trick.": "Aucune couleur n'est atout : la plus forte carte de la couleur demandée remporte toujours la levée.",
+          "A card of another suit never wins, however high it is.": "Une carte d'une autre couleur ne gagne jamais, si forte soit-elle.",
+          "The dummy": "Le mort",
+          "The dummy is your partner's hand, laid face up on the table. You choose its cards too.": "Le mort est la main de ton partenaire, étalée face visible sur la table. C'est toi qui choisis aussi ses cartes.",
+          "When the dummy wins a trick, it leads the next one: think about which hand you want to be in.": "Quand le mort remporte une levée, c'est lui qui entame la suivante : pense à la main dans laquelle tu veux être.",
+          "West and East": "Ouest et Est",
+          "The defence": "La défense",
+          "The defenders play against you, and they play perfectly: they never give a trick away.": "Les défenseurs jouent contre toi, et ils jouent parfaitement : ils ne t'offrent jamais une levée.",
+          "Your contract": "Ton contrat",
+          "{c} tricks of {n}": "{c} levées sur {n}",
+          "Win {c} of the {n} tricks to make it.": "Remporte {c} des {n} levées pour le réussir.",
+          "No trump on this deal.": "Pas d'atout sur cette donne.",
+          "Trump: {s}": "Atout : {s}",
+          "Made! Every trick from now on is an overtrick.": "Réussi ! Chaque levée de plus est une levée de mieux.",
+          "You have {ns}, the defence {ew}. It can still take {m} before you go down.": "Tu en as {ns}, la défense {ew}. Elle peut encore en prendre {m} avant que tu chutes.",
+          "You have {ns}, the defence {ew}. One more trick for the defence and you go down.": "Tu en as {ns}, la défense {ew}. Une levée de plus pour la défense et tu chutes.",
+          "The contract is read off the deal: what a sound line makes however the hidden cards lie.": "Le contrat vient de la donne : c'est ce qu'une bonne ligne de jeu réussit, quelle que soit la place des cartes cachées.",
+          "Vision": "Vision",
+          "Hand": "Main",
+          "Rule": "Règle",
+          "Points": "Points",
+          "Defence": "Défense",
+          "Common": "Commune",
+          "Rare": "Rare",
+          "Epic": "Épique",
+          "Legendary": "Légendaire",
+          "Counter": "Compteur",
+          "Shows how many cards of each suit the defence still holds.": "Montre combien de cartes de chaque couleur la défense a encore.",
+          "Spectacles": "Lunettes",
+          "A sun marks every card of yours nobody can beat.": "Un soleil marque chacune de tes cartes que personne ne peut battre.",
+          "Wink": "Œillade",
+          "West shows you its longest suit, face up.": "Ouest te montre sa couleur la plus longue, face visible.",
+          "Herald": "Héraut",
+          "At every deal, tells you how many points West and East hold.": "À chaque donne, te dit combien de points ont Ouest et Est.",
+          "Lorgnette": "Lorgnette",
+          "At every deal, one card of East is shown to you.": "À chaque donne, une carte d'Est t'est montrée.",
+          "Compass": "Boussole",
+          "Shows how many cards of each suit West and East hold, one by one.": "Montre combien de cartes de chaque couleur ont Ouest et Est, chacun séparément.",
+          "Advice": "Conseil",
+          "Once per deal: lights the best card to play.": "Une fois par donne : éclaire la meilleure carte à jouer.",
+          "Clairvoyance": "Voyance",
+          "The defence plays the first trick of every deal face up.": "La défense joue la première levée de chaque donne cartes sur table.",
+          "Mistral": "Mistral",
+          "Once per deal: swap a card of your hand with a card of the dummy.": "Une fois par donne : échange une carte de ta main avec une carte du mort.",
+          "Promotion": "Promotion",
+          "At every deal, your lowest card climbs to the highest free rank of its suit.": "À chaque donne, ta plus petite carte monte au plus haut rang libre de sa couleur.",
+          "Talon": "Talon",
+          "Once per deal: trade one of your cards for a card from outside the deal.": "Une fois par donne : échange une de tes cartes contre une carte hors de la donne.",
+          "Pickpocket": "Pickpocket",
+          "Once per deal: trade one of your cards for a random card of West.": "Une fois par donne : échange une de tes cartes contre une carte d'Ouest au hasard.",
+          "Reinforcement": "Renfort",
+          "At every deal, the dummy's lowest card becomes a free honour of its suit, if one is left.": "À chaque donne, la plus petite carte du mort devient un honneur libre de sa couleur, s'il en reste un.",
+          "Royal trump": "Atout royal",
+          "At every deal, your lowest card becomes the highest free trump — of your longest suit at no trump.": "À chaque donne, ta plus petite carte devient le plus gros atout libre — de ta couleur la plus longue à sans-atout.",
+          "Opening lead": "Entame",
+          "You lead the first trick of every deal, instead of West.": "C'est toi qui entames la première levée de chaque donne, à la place d'Ouest.",
+          "Free discard": "Défausse libre",
+          "Once per deal: the next card you play need not follow suit.": "Une fois par donne : ta prochaine carte n'a pas besoin de fournir.",
+          "Switch": "Bascule",
+          "Before the first trick: a trump deal turns to no trump, a no trump deal to your longest suit as trump.": "Avant la première levée : une donne à l'atout passe à sans-atout, une donne à sans-atout prend ta couleur la plus longue comme atout.",
+          "Little miracle": "Petit miracle",
+          "Once per deal: the next 2 you play wins the trick.": "Une fois par donne : le prochain 2 que tu joues remporte la levée.",
+          "Spare trump": "Atout de secours",
+          "Once per deal: the next card you discard counts as a trump.": "Une fois par donne : ta prochaine défausse compte comme un atout.",
+          "Last word": "Dernier mot",
+          "Winning the last trick of a deal counts as two tricks.": "Remporter la dernière levée d'une donne compte pour deux levées.",
+          "Double": "Contre",
+          "Before the first trick: a made contract pays ×2, a down costs two lives.": "Avant la première levée : un contrat réussi rapporte ×2, une chute coûte deux vies.",
+          "Golden finesse": "Impasse dorée",
+          "A finesse pays 150 instead of 50.": "Une impasse rapporte 150 au lieu de 50.",
+          "Royal ruff": "Coupe royale",
+          "A ruff pays 100 more.": "Une coupe rapporte 100 de plus.",
+          "Streak": "Série",
+          "Every trick won in a row pays 25 % more than the one before.": "Chaque levée gagnée d'affilée rapporte 25 % de plus que la précédente.",
+          "Honours": "Honneurs",
+          "Every ace, king, queen or jack in a trick you win pays 50.": "Chaque as, roi, dame ou valet d'une levée que tu remportes rapporte 50.",
+          "Slam": "Chelem",
+          "A deal where you win every trick pays ×3.": "Une donne où tu remportes toutes les levées rapporte ×3.",
+          "Jackpot": "Jackpot",
+          "An overtrick pays 450 instead of 150.": "Une levée de mieux rapporte 450 au lieu de 150.",
+          "Redouble": "Surcontre",
+          "Before the first trick: a made contract pays ×4, a down costs three lives.": "Avant la première levée : un contrat réussi rapporte ×4, une chute coûte trois vies.",
+          "Pearl": "Perle",
+          "The first contract you go down on costs no life.": "Le premier contrat que tu chutes ne coûte aucune vie.",
+          "Rewind": "Retour",
+          "Once per deal: take the trick back.": "Une fois par donne : reprends la levée.",
+          "Spare heart": "Cœur de rechange",
+          "One more life, as soon as it is taken.": "Une vie de plus, dès qu'elle est prise.",
+          "Safety net": "Filet",
+          "Every contract asks one trick less, and pays 25 % less.": "Chaque contrat demande une levée de moins, et rapporte 25 % de moins.",
+          "Second chance": "Seconde chance",
+          "Once per tournée, a deal you go down on is dealt again.": "Une fois par tournée, une donne que tu chutes est redistribuée.",
+          "Insurance": "Assurance",
+          "Going down by a single trick costs no life.": "Chuter d'une seule levée ne coûte aucune vie.",
+          "Fog": "Brouillard",
+          "The defence plays its first two cards of every deal like a human, not perfectly.": "La défense joue ses deux premières cartes de chaque donne comme un humain, pas parfaitement.",
+          "Distraction": "Distraction",
+          "West leads its lowest card to the first trick.": "Ouest entame la première levée avec sa plus petite carte.",
+          "Pressure": "Pression",
+          "A defender who leads must lead its longest suit.": "Un défenseur qui entame doit jouer sa couleur la plus longue.",
+          "Silence": "Silence",
+          "At every deal, the first time a defender could ruff, it discards instead.": "À chaque donne, la première fois qu'un défenseur pourrait couper, il se défausse.",
+          "Bribe": "Pot-de-vin",
+          "Once per deal: the next defender to play plays its lowest card.": "Une fois par donne : le prochain défenseur à jouer joue sa plus petite carte.",
+          "Dazzle": "Éblouissement",
+          "When the dummy plays an honour, the next defender plays its lowest card.": "Quand le mort joue un honneur, le défenseur suivant joue sa plus petite carte.",
+          "The tournée": "La tournée",
+          "{d} deals, {l} lives": "{d} donnes, {l} vies",
+          "A tournée is {d} deals in a row. Every contract you go down on costs a life; with no life left, the tournée is over.": "Une tournée, c'est {d} donnes d'affilée. Chaque contrat chuté coûte une vie ; sans vie, la tournée s'arrête.",
+          "Your score adds up the deals: every trick won, every finesse and ruff, every contract made.": "Ton score additionne les donnes : chaque levée gagnée, chaque impasse et coupe, chaque contrat réussi.",
+          "Favours": "Faveurs",
+          "New": "Nouveau",
+          "A tournée opens on a pick, and every contract you make deals another: take one favour of three, kept until the tournée ends.": "Une tournée commence par un choix, et chaque contrat réussi en offre un autre : prends une faveur parmi trois, gardée jusqu'à la fin de la tournée.",
+          "Four fit on the rail above your hand. Some act on their own; the others are used with a tap, once per deal.": "Le rail au-dessus de ta main en tient quatre. Certaines agissent seules ; les autres s'utilisent d'un toucher, une fois par donne.",
+          "Tap a favour on the rail to read it again.": "Touche une faveur du rail pour la relire.",
+          "West leads the first trick. Their cards stay hidden — some favours show them.": "Ouest entame la première levée. Leurs cartes restent cachées — certaines faveurs les montrent.",
+          "Out of lives": "Plus de vies",
+          "Tap outside to close": "Touche à côté pour fermer",
+          "Pick a favour": "Choisis une faveur",
+          "Rail full": "Rail plein",
+          "Replace which favour?": "Quelle faveur remplacer ?",
+          "New: {a}": "Nouvelle : {a}",
+          "{a} leaves the rail": "{a} quitte le rail",
+          "Keep my rail": "Garder mon rail",
+          "Your tournée begins": "Ta tournée commence",
+          "Promotion: {a} becomes {b}": "Promotion : {a} devient {b}",
+          "Reinforcement: {a} becomes {b}": "Renfort : {a} devient {b}",
+          "Royal trump: {a} becomes {b}": "Atout royal : {a} devient {b}",
+          "West holds {w} points, East {e}": "Ouest a {w} points, Est {e}",
+          "The deal is dealt again": "La donne est redistribuée",
+          "This down costs no life": "Cette chute ne coûte aucune vie",
+          "Down by one: no life lost": "Une de chute : aucune vie perdue",
+          "Last life": "Dernière vie",
+          "{n} lives left": "Plus que {n} vies",
+          "Deal {d} made": "Donne {d} réussie",
+          "Ready": "Prête",
+          "Use": "Utiliser",
+          "Double!": "Contre !",
+          "Redouble!": "Surcontre !",
+          "Armed for your next card": "Prête pour ta prochaine carte",
+          "The next defender plays its lowest card": "Le prochain défenseur joue sa plus petite carte",
+          "Tap a card of your hand, then a card of the dummy": "Touche une carte de ta main, puis une carte du mort",
+          "Tap the card to trade": "Touche la carte à échanger",
+          "Tap the card to give West": "Touche la carte à donner à Ouest",
+          "First a card of your hand": "D'abord une carte de ta main",
+          "Mistral: {a} and {b} swap places": "Mistral : {a} et {b} changent de place",
+          "Talon: {a} for {b}": "Talon : {a} contre {b}",
+          "Pickpocket: {a} for {b}": "Pickpocket : {a} contre {b}",
+          "Cancelled": "Annulé",
+          "Tournée complete!": "Tournée bouclée !",
+          "Tournée over": "Tournée terminée",
+          "Deals made": "Donnes réussies",
+          "Score <b>{n}</b> in a tournée of {d} deals": "Marque <b>{n}</b> sur une tournée de {d} donnes",
+          "W+E": "O+E",
+          "Wait for the next deal": "Attends la donne suivante",
+          "Used this deal — ready on the next one": "Déjà utilisée — prête à la donne suivante",
+          "Already doubled": "Déjà contré",
+          "Only before the first trick": "Seulement avant la première levée",
+          "Nothing to take back yet": "Rien à reprendre pour l'instant",
+          "No 2 in the hand to play": "Pas de 2 dans la main qui joue",
+          "The beach": "La plage",
+          "The lagoon": "Le lagon",
+          "The terrace": "La terrasse",
+          "The olive grove": "L'oliveraie",
+          "The lantern square": "La place aux lanternes",
+          "Pick it in a tournée to add it to the collection": "Choisis-la dans une tournée pour l'ajouter à la collection",
+          "Used with a tap": "S'utilise d'un toucher",
+          "Safety": "Survie"
+        }
+      }
+    },
+    "font": "baloo2",
+    "music": "bridgessa.mp3",
+    "levels": {
+      "objective": {
+        "from": 500,
+        "to": 1000,
+        "step": 100
+      },
+      "copy": {
+        "en": "Score <b>{n}</b> in a tournée",
+        "fr": "Marque <b>{n}</b> sur une tournée"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "The beach",
+          "The lagoon",
+          "The terrace",
+          "The olive grove",
+          "The lantern square"
+        ],
+        "fr": [
+          "La plage",
+          "Le lagon",
+          "La terrasse",
+          "L'oliveraie",
+          "La place aux lanternes"
+        ]
+      }
+    },
+    "meta": {
+      "coinsPer": 100,
+      "awards": [
+        2,
+        7,
+        10,
+        13,
+        5,
+        4,
+        19,
+        1,
+        14,
+        11,
+        16,
+        15
+      ],
+      "stickers": [
+        {
+          "name": "Finesse",
+          "rarity": "rare"
+        },
+        {
+          "name": "Bonjour",
+          "rarity": "common"
+        },
+        {
+          "name": "All Hearts",
+          "rarity": "epic"
+        },
+        {
+          "name": "Overtrick",
+          "rarity": "common"
+        },
+        {
+          "name": "Declarer",
+          "rarity": "common"
+        },
+        {
+          "name": "Bisou",
+          "rarity": "rare"
+        },
+        {
+          "name": "Tempo",
+          "rarity": "common"
+        },
+        {
+          "name": "Riviera",
+          "rarity": "epic"
+        },
+        {
+          "name": "Penalty Double",
+          "rarity": "common"
+        },
+        {
+          "name": "Dummy",
+          "rarity": "common"
+        },
+        {
+          "name": "Contract Made",
+          "rarity": "rare"
+        },
+        {
+          "name": "Squeeze",
+          "rarity": "rare"
+        },
+        {
+          "name": "Ruffed",
+          "rarity": "common"
+        },
+        {
+          "name": "Endplay",
+          "rarity": "rare"
+        },
+        {
+          "name": "Grand Slam",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Four Aces",
+          "rarity": "epic"
+        },
+        {
+          "name": "Fresh Deck",
+          "rarity": "common"
+        },
+        {
+          "name": "Compass",
+          "rarity": "common"
+        },
+        {
+          "name": "Score Sheet",
+          "rarity": "common"
+        },
+        {
+          "name": "Bidding Box",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudFlat02",
+          "role": "decor",
+          "x": 640,
+          "y": 40,
+          "w": 200,
+          "notify": "cloud",
+          "always": true
+        },
+        {
+          "art": "home07",
+          "role": "cards",
+          "x": 100,
+          "y": 480,
+          "w": 170,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home02",
+          "role": "shop",
+          "x": 300,
+          "y": 600,
+          "w": 230,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home01",
+          "role": "map",
+          "x": 150,
+          "y": 750,
+          "w": 240,
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "album",
+          "x": 450,
+          "y": 830,
+          "w": 220,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home05",
+          "role": "daily",
+          "x": 330,
+          "y": 990,
+          "w": 190,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home08",
+          "role": "play",
+          "x": 200,
+          "y": 1150,
+          "w": 200
+        },
+        {
+          "art": "home06",
+          "role": "options",
+          "x": 495,
+          "y": 445,
+          "w": 90
+        },
+        {
+          "art": "home04",
+          "role": "ranking",
+          "x": 550,
+          "y": 1150,
+          "w": 280
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.35,
+          "seconds": 150
+        }
+      }
+    }
+  }
+}

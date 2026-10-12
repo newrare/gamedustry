@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,

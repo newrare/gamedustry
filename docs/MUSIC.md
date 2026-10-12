@@ -318,8 +318,8 @@ SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
 | `arcider`    | 182.5 s    | 36.1 s       | **5 biomes + menu**                                                |
 | `blight`     | 179.1 s    | 36.0 s       | **5 map bands + menu**, one scene apiece                           |
 | `echomaze`   | 171.4 s    | 36.0 s       | **5 map bands + menu**, one hall apiece                            |
-| `slipdeck`   | 148.8 s    | 32.0 s       | **5 map bands + menu**, one table apiece                           |
-| `marshmelt`  | 54.0 s     | 35.0 s       | none yet — enough for two, plus the menu                           |
+| `slipdeck`   | 170.9 s    | 22.8 s       | **5 map bands + menu**, one table apiece                           |
+| `marshmelt`  | 177.4 s    | 26.8 s       | **5 biomes + menu**, one scene apiece                              |
 | `bouncetry`  | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
 | `chainring`  | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
 | `gearball`   | 160.1 s    | 30.8 s       | **5 biomes + menu**, six machines apiece                           |

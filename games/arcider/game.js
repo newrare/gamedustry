@@ -29,7 +29,9 @@
     /* The gesture is a HELD side, so the stage runs the motor's "hold" variant,
        re-dressed as the road. No caption — the tagline is the sentence and the
        stage is the demonstration. */
-    intro: { logo: "logo", demo: "hold", caption: "" },
+    intro: { logo: "logo", demo: "hold", caption: "",
+             // on a desk: the arrows, held (shell.js, Demo)
+             desk: [{ keys: ["left", "right"], does: "Turn" }] },
 
     // Desktop: SPACE starts and replays. Steering is held, not tapped, so the
     // game owns the LEFT/RIGHT keys itself (see section 6).

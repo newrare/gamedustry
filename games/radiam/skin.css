@@ -191,6 +191,15 @@
     transform-origin:-53px -79px;
     animation:radRim 3.4s ease-in-out infinite;
   }
+  /* on a DESK the cursor's wave is the press that grabs the rim, and the
+     cursor turns back against the hand so it stays upright (shell.js, Demo) */
+  .demo-drag .demo-hand { --click-dur:3.4s; --click-at:.3s; }
+  .demo-drag .demo-cursor { transform-origin:50% 5%; animation:radUpright 3.4s ease-in-out infinite; }
+  @keyframes radUpright {
+    0%,10%   { transform:rotate(60deg); }
+    46%,62%  { transform:rotate(0deg); }
+    96%,100% { transform:rotate(60deg); }
+  }
 
   @keyframes radRim {
     0%,10%   { transform:rotate(-60deg); }

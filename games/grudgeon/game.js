@@ -33,7 +33,9 @@
 
     // The stage is the tap variant, re-dressed from the SKIN as a dungeon
     // room lit at the edge of the dark.
-    intro: { logo: null, demo: "tap", caption: "" },
+    intro: { logo: null, demo: "tap", caption: "",
+             // a room is entered where it is clicked: a mouse game on a desk
+             desk: [{ mouse: ["click"] }] },
 
     keyboard: true,
 

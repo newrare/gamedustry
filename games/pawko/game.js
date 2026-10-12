@@ -137,6 +137,7 @@
     var CHARM_Y, CHARM_BAND = 46;   // the charm strip, between the gates and the hand
     var DECK_Y;                     // the hand, at the foot of the frame: under the thumb
     var ROW0_Y, ROWS, PITCH_X = 66, PITCH_Y = 60;
+    var BOARD_N;                    // the pegs a card may turn: every row but the top one
     var PEG_R = 11, BUMPER_R = 13, BALL_R = 12;
     var CARD_W = 118, CARD_H = 128, CARD_GAP = 12;
     var CAST_S = 0.7;               // a card dropped: its effect plays this long before the wave leaves
@@ -182,25 +183,27 @@
        in the manifest). `lv` is the level a card joins the pile at — the
        first band teaches the eight basics, and the rest arrive four at a time
        so a new card is met, not buried. `w` is how often the pile deals it:
-       the cards that break the game are the rare ones. A peg card's `n` is
-       how many pegs it turns. The name and the description are what the
-       player reads — the copy desk translates them. */
+       the cards that break the game are the rare ones. A peg card's `pct` is
+       the share of the board it turns, written on the card as a percentage:
+       a count of pegs was a handful on a board of a hundred, and a share
+       reads the same whatever the board's size. The name and the description
+       are what the player reads — the copy desk translates them. */
     var CARDS = {
       // --- pegs: the board is built out of these, for the rest of the round
-      fire:      { kind: "peg", n: 5,  lv: 1,  w: 4, icon: "icon02", color: "#ff7a1a", name: "Fire",    desc: "5 pegs catch fire" },
-      ice:       { kind: "peg", n: 5,  lv: 1,  w: 4, icon: "icon03", color: "#5ad8ff", name: "Ice",     desc: "5 pegs turn to ice" },
-      bumper:    { kind: "peg", n: 10, lv: 1,  w: 4, icon: "icon04", color: "#ff4d6d", name: "Bumper",  desc: "10 pegs become bumpers" },
-      magnet:    { kind: "peg", n: 4,  lv: 1,  w: 4, icon: "icon05", color: "#c46bff", name: "Magnet",  desc: "4 pegs turn magnetic" },
-      bomb:      { kind: "peg", n: 3,  lv: 1,  w: 4, icon: "icon06", color: "#9aa0b4", name: "Bomb",    desc: "3 pegs become bombs" },
-      prism:     { kind: "peg", n: 3,  lv: 2,  w: 3, icon: "icon09", color: "#ff9ff3", name: "Prism",   desc: "3 prisms split a ball in two" },
-      lucky:     { kind: "peg", n: 6,  lv: 3,  w: 3, icon: "icon10", color: "#5be37a", name: "Lucky",   desc: "6 pegs: 1 in 4 pays x10" },
-      lightning: { kind: "peg", n: 4,  lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "4 pegs arc to their 3 neighbours" },
-      glass:     { kind: "peg", n: 8,  lv: 5,  w: 3, icon: "icon12", color: "#d6f6ff", name: "Glass",   desc: "8 pegs pay x5, break after 3 hits" },
-      echo:      { kind: "peg", n: 3,  lv: 7,  w: 3, icon: "icon13", color: "#9d7bff", name: "Echo",    desc: "3 pegs replay the last special a ball hit" },
-      mirror:    { kind: "peg", n: 4,  lv: 7,  w: 3, icon: "icon14", color: "#d8dce8", name: "Mirror",  desc: "4 pegs copy the special next to them" },
-      golden:    { kind: "peg", n: 5,  lv: 2,  w: 3, icon: "icon15", color: "#ffd700", name: "Midas",   desc: "5 pegs add +0.1 mult on every hit", mult: true },
-      portal:    { kind: "peg", n: 2,  lv: 8,  w: 2, icon: "icon16", color: "#6a5cff", name: "Portal",  desc: "2 portals send a ball back to the top" },
-      spike:     { kind: "peg", n: 2,  lv: 8,  w: 2, icon: "icon17", color: "#ff3355", name: "Spike",   desc: "2 spikes destroy a ball for x50" },
+      fire:      { kind: "peg", pct: 30, lv: 1,  w: 4, icon: "icon02", color: "#ff7a1a", name: "Fire",    desc: "30% of the pegs catch fire" },
+      ice:       { kind: "peg", pct: 30, lv: 1,  w: 4, icon: "icon03", color: "#5ad8ff", name: "Ice",     desc: "30% of the pegs turn to ice" },
+      bumper:    { kind: "peg", pct: 25, lv: 1,  w: 4, icon: "icon04", color: "#ff4d6d", name: "Bumper",  desc: "25% of the pegs become bumpers" },
+      magnet:    { kind: "peg", pct: 15, lv: 1,  w: 4, icon: "icon05", color: "#c46bff", name: "Magnet",  desc: "15% of the pegs turn magnetic" },
+      bomb:      { kind: "peg", pct: 10, lv: 1,  w: 4, icon: "icon06", color: "#9aa0b4", name: "Bomb",    desc: "10% of the pegs become bombs" },
+      prism:     { kind: "peg", pct: 15, lv: 2,  w: 3, icon: "icon09", color: "#ff9ff3", name: "Prism",   desc: "15% of the pegs split a ball in two" },
+      lucky:     { kind: "peg", pct: 30, lv: 3,  w: 3, icon: "icon10", color: "#5be37a", name: "Lucky",   desc: "30% of the pegs: 1 in 4 pays x10" },
+      lightning: { kind: "peg", pct: 20, lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "20% of the pegs arc to their 3 neighbours" },
+      glass:     { kind: "peg", pct: 30, lv: 5,  w: 3, icon: "icon12", color: "#d6f6ff", name: "Glass",   desc: "30% of the pegs pay x5, break after 3 hits" },
+      echo:      { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon13", color: "#9d7bff", name: "Echo",    desc: "15% of the pegs replay the last special a ball hit" },
+      mirror:    { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon14", color: "#d8dce8", name: "Mirror",  desc: "15% of the pegs copy the special next to them" },
+      golden:    { kind: "peg", pct: 10, lv: 2,  w: 3, icon: "icon15", color: "#ffd700", name: "Midas",   desc: "10% of the pegs add +0.1 mult on every hit", mult: true },
+      portal:    { kind: "peg", pct: 6,  lv: 8,  w: 2, icon: "icon16", color: "#6a5cff", name: "Portal",  desc: "6% of the pegs send a ball back to the top" },
+      spike:     { kind: "peg", pct: 5,  lv: 8,  w: 2, icon: "icon17", color: "#ff3355", name: "Spike",   desc: "5% of the pegs destroy a ball for x50" },
       // --- waves: one wave, the one the card is played before
       double:    { kind: "wave", lv: 1,  w: 4, icon: "icon01", color: "#ffd166", name: "Double",  desc: "Classic pegs pay double this wave" },
       gold:      { kind: "wave", lv: 1,  w: 4, icon: "icon08", color: "#ffb830", name: "Gold",    desc: "Gates pay double this wave, no malus" },
@@ -231,7 +234,7 @@
       shards:    { kind: "charm", lv: 5,  w: 2, icon: "icon40", color: "#d6f6ff", name: "Shards",  desc: "+0.5 mult for the round per glass peg broken" },
       reverb:    { kind: "charm", lv: 7,  w: 1, icon: "icon41", color: "#9d7bff", name: "Reverb",  desc: "Special pegs trigger twice" },
       martyr:    { kind: "charm", lv: 8,  w: 2, icon: "icon42", color: "#ff3355", name: "Martyr",  desc: "+0.5 mult for the round per ball lost" },
-      unison:    { kind: "charm", lv: 9,  w: 2, icon: "icon43", color: "#ffe08a", name: "Unison",  desc: "A special on the board 10 times pays x2" },
+      unison:    { kind: "charm", lv: 9,  w: 2, icon: "icon43", color: "#ffe08a", name: "Unison",  desc: "A special on half the board pays x2" },
       rainbow:   { kind: "charm", lv: 9,  w: 2, icon: "icon44", color: "#ff9ff3", name: "Rainbow", desc: "+1 mult per kind of special on the board", mult: true },
       interest:  { kind: "charm", lv: 10, w: 2, icon: "icon45", color: "#ffcf5a", name: "Interest", desc: "Every gate adds 1% of your score" },
       jackpotHunt: { kind: "charm", lv: 10, w: 2, icon: "icon46", color: "#ff4d6d", name: "Jackpot hunt", desc: "x1.1 mult for the round per jackpot ball" },
@@ -394,6 +397,7 @@
         }
         rows.push(row);
       }
+      BOARD_N = pegs.length - rows[0].length;
     }
     function placePegs() {   // after a resize: same pegs, new positions
       for (var r = 0; r < rows.length; r++) {
@@ -414,9 +418,12 @@
       }
       return out;
     }
-    /* Turn `n` random classic pegs into `type`. Returns the pegs touched. */
-    function convert(n, type) {
+    /* Turn `pct` percent of the board into `type`, out of the classic pegs
+       still standing (a board already full of specials gives what it has).
+       Returns the pegs touched. */
+    function convert(pct, type) {
       var pool = shuffle(classicPegs(true)), out = [];
+      var n = Math.max(1, Math.round(BOARD_N * pct / 100));
       for (var i = 0; i < n && i < pool.length; i++) {
         setType(pool[i], type);
         pool[i].hide = true; pool[i].flash = 0;   // shown as brass until its orb lands (castFx)
@@ -487,7 +494,10 @@
        brass with nothing but multipliers on it is a hand with no play — and,
        once the Mult cards exist, one card that raises the Mult on its own
        (`mult`: the ones that need no other card to work), or a level dealt
-       none of them is a different game from the one beside it. */
+       none of them is a different game from the one beside it. Echo and
+       Mirror are peg cards that copy ANOTHER special: on a plain board they
+       are brass, so they never count toward the two. */
+    var COPIER = { echo: true, mirror: true };
     function buildPile() {
       var cap = levelCap(), pool = [], fresh = [], i, k;
       for (i = 0; i < CARD_KEYS.length; i++) {
@@ -504,7 +514,7 @@
         i = Math.min(i, pool.length - 1);
         out.push(pool[i]); pool.splice(i, 1);
       }
-      guarantee(out, fresh.length, function (k) { return CARDS[k].kind === "peg"; }, 2, pool);
+      guarantee(out, fresh.length, function (k) { return CARDS[k].kind === "peg" && !COPIER[k]; }, 2, pool);
       if (cap >= 2) guarantee(out, fresh.length, function (k) { return !!CARDS[k].mult; }, 1, pool,
                              function (k) { return CARDS[k].kind === "peg"; });
       return { opening: out.slice(0, 5), rest: out.slice(5), fresh: fresh };
@@ -631,8 +641,8 @@
       if (ended) return;
       var i = cardAt(p), c = charmAt(p);
       if (c) { openZoom(c, false); return; }
-      if (i >= 0 && hand[i].key) {
-        if (state === "choose" && !hand[i].used) {
+      if (i >= 0 && hand[i].key && !hand[i].used) {
+        if (state === "choose") {
           drag = { i: i, x: p.x, y: p.y, sx: p.x, sy: p.y, moved: false, k: 1, tilt: 0 };
           hand[i].dx = 0; hand[i].dy = 0;
           Sound.clip("card", 0.3, 1.35);
@@ -682,7 +692,7 @@
          gates and the charm strip are where the effect is SEEN, and a poster
          over them would hide it. */
       castWord = { word: key === "blueprint" || key === "recycler" ? Lang.t(def.name) + ": " + Lang.t(CARDS[lastPlayed].name) : def.name,
-                   sub: def.desc };
+                   sub: def.desc, kind: def.kind };
       Sound.clip("card", 0.6, 1);
       setState("cast");
       return true;
@@ -691,7 +701,7 @@
        Returns the pegs it turned; what the player SEES of it is castFx's. */
     function apply(key) {
       var def = CARDS[key], touched = [];
-      if (def.kind === "peg") touched = convert(def.n, key);
+      if (def.kind === "peg") touched = convert(def.pct, key);
       else if (def.kind === "charm") {
         if (!charm[key]) { charmOrder.push(key); chipWait[key] = true; }
         charm[key] = (charm[key] || 0) + 1;
@@ -867,8 +877,12 @@
       // a spent bomb (or a mirror that was one) comes back armed with every wave
       for (var j = 0; j < pegs.length; j++) pegs[j].spent = false;
       HUD.setLeft(wave + "/" + P.waves, CONFIG.copy.waveLabel);
-      // over the hand, which waits through the wave
-      if (castWord) Pop.show("manifest", { word: castWord.word, sub: castWord.sub, at: deckSpot(view.w / 2), hold: 700 });
+      /* over the hand, which waits through the wave: a small plate in the
+         colour of the card's kind (.pk-cast in the SKIN) rather than a poster
+         — the card is a reminder of what was just played, not an event — and
+         silent: no shake over a board the wave is about to be read on */
+      if (castWord) Pop.show("combo", { word: castWord.word, sub: castWord.sub, at: deckSpot(view.w / 2), rot: 0,
+                                        hold: 900, cls: "pk-cast pk-k-" + castWord.kind, silent: true });
       castWord = null;
       Sound.clip("drop", 0.55, 1);
       setState("drop");
@@ -933,10 +947,15 @@
       announceWave(wave + 1);
       setState("choose");
     }
-    /* The wave is called while its card is being chosen, at the foot of the
-       board, just over the hand the player's eyes are on. */
+    /* The wave is called while its card is being chosen, on a SLIM ribbon
+       (.pk-wave in the SKIN) across the chute at the top of the board — the
+       one band that is empty while no ball falls. It used to sweep a 210 px
+       banner over the gates and the last rows, which is where the board is
+       read before a card is dropped. Silent: the frame does not shake for a
+       counter the HUD already holds. */
     function announceWave(n) {
-      Pop.show("ribbon", { word: Lang.t("Wave") + " " + n + "/" + P.waves, at: { x: view.w / 2, y: GATE_TOP - 40 }, hold: 700 });
+      Pop.show("ribbon", { word: Lang.t("Wave") + " " + n + "/" + P.waves, at: { x: view.w / 2, y: BOARD_TOP + 34 },
+                           hold: 520, cls: "pk-wave", silent: true });
     }
     /* Where a callout goes while a wave is falling: over the hand, at the
        foot of the frame, the one band no ball reaches. */
@@ -1147,6 +1166,7 @@
       else if (type === "echo") type = (b && b.last) || "classic";
       if (b) { b.hits++; hits++; }
       var reps = type !== "classic" ? 1 + (charm.reverb || 0) : 1;
+      p.blew = false;
       for (var r = 0; r < reps; r++) effect(p, b, type, depth, r);
       if (b && type !== "classic" && p.type !== "echo") b.last = type;
       p.flash = 1;
@@ -1165,8 +1185,10 @@
       if (type === "classic") base = classicPts();
       switch (type) {
         case "bomb":
-          if (p.spent) { base = classicPts(); color = TYPES.classic.color; }
-          else { blast(p, depth); tier = 3; snd = "boom"; }
+          // spent for the wave once it blew — but Reverb's passes over the hit
+          // that blew it blow it again (and Chain reaction counts every blast)
+          if (p.spent && !(rep && p.blew)) { base = classicPts(); color = TYPES.classic.color; }
+          else { p.blew = true; blast(p, depth); tier = 3; snd = "boom"; }
           break;
         case "fire":
           base += fireBonus;
@@ -1220,7 +1242,7 @@
           break;
       }
       if (boost.fever && type !== "classic") waveAdd += 0.1 * boost.fever;
-      if (charm.unison && type !== "classic" && (typeCount[type] || 0) >= 10) base *= 1 + charm.unison;
+      if (charm.unison && type !== "classic" && (typeCount[type] || 0) >= BOARD_N / 2) base *= 1 + charm.unison;
       var add = 0, m = 1;
       if (b) {
         add = ((b.burn > 0 ? BURN_ADD : 0) + (b.frozen > 0 ? FROZEN_ADD : 0) + (boost.heavy ? 0.5 : 0)) * V;
@@ -1708,23 +1730,26 @@
     }
 
     /* The hand: five cards at the foot of the frame. Live and breathing while a card is
-       to be picked, plain while the wave falls, dimmed once played. The card
-       under the finger leaves a dashed hole in its slot. */
+       to be picked, GREYED for the rest of the turn — from the card let go to
+       the next wave's choice, nothing in the hand can be played, and a card
+       that looks playable while it is not is a tap wasted. A card played
+       leaves its slot EMPTY, a dashed hole, until the slot is dealt again;
+       so does the card under the finger, in the colour of that card. */
     function drawDeck() {
       var choose = state === "choose" && !ended;
       var shake = deckShake > 0 ? Math.sin(deckShake * 60) * 6 * deckShake : 0;
       for (var i = 0; i < 5; i++) {
-        var s = hand[i], def = s.key ? CARDS[s.key] : null;
+        var s = hand[i], def = s.key && !s.used ? CARDS[s.key] : null, held = drag && drag.i === i;
         var x = cardX(i) + shake, y = DECK_Y;
         if (choose) y -= 4 + 3 * Math.sin(tAnim * 3 + i * 0.9);
         if (!Enter.begin(x + CARD_W / 2, y + CARD_H / 2)) continue;
-        if (!def || (drag && drag.i === i)) {
+        if (!def || held) {
           roundRect(ctx, x + 4, DECK_Y + 4, CARD_W - 8, CARD_H - 8, 12);
           ctx.setLineDash([8, 8]); ctx.lineWidth = 2.5;
-          ctx.strokeStyle = rgba(def ? def.color : "#ffffff", def ? 0.5 : 0.18); ctx.stroke();
+          ctx.strokeStyle = rgba(held ? def.color : "#ffffff", held ? 0.5 : 0.18); ctx.stroke();
           ctx.setLineDash([]);
         } else {
-          drawCard(s, x + CARD_W / 2 + s.dx, y + CARD_H / 2 + s.dy, 1 + s.pop * 0.18, 0, choose, i);
+          drawCard(s, x + CARD_W / 2 + s.dx, y + CARD_H / 2 + s.dy, 1 + s.pop * 0.18, 0, choose, i, !choose);
         }
         Enter.end();
       }
@@ -1732,26 +1757,26 @@
     /* ONE CARD OF THE HAND, on the canvas — the same card as the DOM one
        (cardNode) at the hand's size: the kind's tag in the top-left corner,
        the rarity on the rim, the painted object glowing in the card's colour,
-       the name on a plate. */
-    function drawCard(s, cx, cy, k, rot, live, i) {
+       the name on a plate. A `dim` card is one that cannot be played right
+       now: the same card under a grey veil. */
+    function drawCard(s, cx, cy, k, rot, live, i, dim) {
       var def = CARDS[s.key], K = KINDS[def.kind], R = RARITY[def.w];
       ctx.save();
       ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(k, k); ctx.translate(-CARD_W / 2, -CARD_H / 2);
-      if (s.used) ctx.globalAlpha *= 0.32;
       // the body, tinted by the kind from the top
       roundRect(ctx, 0, 0, CARD_W, CARD_H, 14);
-      ctx.fillStyle = s.used ? "#2a2428" : "#22060f"; ctx.fill();
+      ctx.fillStyle = "#22060f"; ctx.fill();
       var g = ctx.createLinearGradient(0, 0, 0, CARD_H);
-      g.addColorStop(0, rgba(K.color, s.used ? 0.1 : 0.34)); g.addColorStop(0.7, rgba(K.color, 0.04)); g.addColorStop(1, "rgba(0,0,0,0.25)");
+      g.addColorStop(0, rgba(K.color, 0.34)); g.addColorStop(0.7, rgba(K.color, 0.04)); g.addColorStop(1, "rgba(0,0,0,0.25)");
       ctx.fillStyle = g; ctx.fill();
       // the glow behind the object
       var art = ctx.createRadialGradient(CARD_W / 2, 50, 4, CARD_W / 2, 50, 46);
-      art.addColorStop(0, rgba(def.color, s.used ? 0.1 : 0.5)); art.addColorStop(1, rgba(def.color, 0));
+      art.addColorStop(0, rgba(def.color, 0.5)); art.addColorStop(1, rgba(def.color, 0));
       ctx.fillStyle = art; ctx.fillRect(0, 0, CARD_W, CARD_H);
       // the rim is the rarity
       roundRect(ctx, 0, 0, CARD_W, CARD_H, 14);
       ctx.lineWidth = 3.5;
-      ctx.strokeStyle = s.used ? "rgba(255,255,255,0.25)" : rgba(R.color, live ? 0.7 + 0.3 * Math.sin(tAnim * 5 + i) : 0.9);
+      ctx.strokeStyle = rgba(R.color, live ? 0.7 + 0.3 * Math.sin(tAnim * 5 + i) : 0.9);
       ctx.stroke();
       roundRect(ctx, 5, 5, CARD_W - 10, CARD_H - 10, 10);
       ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(R.color, 0.35); ctx.stroke();
@@ -1764,11 +1789,12 @@
         ctx.fillStyle = def.color;
         ctx.beginPath(); ctx.arc(CARD_W / 2, 50, 24, 0, Math.PI * 2); ctx.fill();
       }
-      // the count, when the card turns pegs or adds balls
-      if (def.n) {
+      // the count: the share of the board a peg card turns, or the balls added
+      var count = cardCount(def);
+      if (count) {
         ctx.font = font(18, 900); ctx.textAlign = "right"; ctx.textBaseline = "top";
         ctx.fillStyle = "#ffffff";
-        ctx.fillText("x" + def.n, CARD_W - 9, 8);
+        ctx.fillText(count, CARD_W - 9, 8);
       }
       // the kind's tag, in its corner
       kindGlyph(def.kind, 20, 20, 15);
@@ -1778,14 +1804,16 @@
       var ph = lines.length * 20 + 10;
       roundRect(ctx, 5, CARD_H - 5 - ph, CARD_W - 10, ph, 9);
       ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fill();
-      ctx.fillStyle = s.used ? "#c9c2cc" : "#ffe6a8";
+      ctx.fillStyle = "#ffe6a8";
       nameLines(lines, CARD_W / 2, CARD_H - 5 - ph / 2, CARD_W - 14);
-      if (s.used) {
-        ctx.globalAlpha = 0.85;
-        ctx.strokeStyle = "rgba(255,255,255,0.55)"; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(18, 18); ctx.lineTo(CARD_W - 18, CARD_H - 18); ctx.stroke();
+      if (dim) {
+        roundRect(ctx, -2, -2, CARD_W + 4, CARD_H + 4, 15);
+        ctx.fillStyle = "rgba(38,34,40,0.68)"; ctx.fill();
       }
       ctx.restore();
+    }
+    function cardCount(def) {
+      return def.pct ? def.pct + "%" : def.n ? "x" + def.n : "";
     }
     /* A name at the floor size, never under it: a second line when it does
        not fit, and only a word longer than the card on its own is narrowed. */
@@ -1931,7 +1959,7 @@
         '<div class="pk-desc"></div>' +
         '<div class="pk-tag"><svg viewBox="0 0 24 24" aria-hidden="true">' + KIND_SVG[def.kind] + "</svg></div>" +
         '<div class="pk-rar"><span><em></em></span></div>' +
-        (def.n && !ghost ? '<div class="pk-num">x' + def.n + "</div>" : "");
+        (cardCount(def) && !ghost ? '<div class="pk-num">' + cardCount(def) + "</div>" : "");
       n.querySelector(".pk-name").textContent = ghost ? "???" : upper(Lang.t(def.name));
       n.querySelector(".pk-kind").textContent = upper(Lang.t(K.name));
       n.querySelector(".pk-rar em").textContent = ghost ? "???" : upper(Lang.t(R.name));

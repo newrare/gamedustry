@@ -221,39 +221,59 @@
 .lv-node:active { transform:scale(.94); }
 .lv-node.sel { outline:none; box-shadow:0 0 0 6px rgba(255,255,255,.22); }
 
+/* A LEVEL'S FACE IS ITS BAND'S SHAPE — circle, octagon, hexagon, pentagon,
+   diamond (`SHAPES` in levels.js) — drawn as an SVG under the number, so the
+   button itself carries no ring and no disc. The outline never changes with
+   the state: the ring's colour, the fill and the glow are what say it, so a
+   world reads the same locked, cleared or still to play. `.rim` is the ring
+   and the fill, `.edge` the dark band just outside it; the glow is a
+   drop-shadow on the svg, which follows the outline where a box-shadow would
+   draw a circle. */
+.lv-node.lvl { border:0; background:none; box-shadow:none; }
+.lv-node.lvl > .num, .lv-node.lvl > .padlock { position:relative; }
+.lv-shape {
+  position:absolute; inset:0; width:100%; height:100%;
+  overflow:visible; pointer-events:none;
+}
+.lv-shape .edge { fill:none; stroke:transparent; stroke-width:13; stroke-linejoin:round; }
+/* opaque on purpose: a road must never be seen running behind a level */
+.lv-shape .rim {
+  fill:url(#lvf-base); stroke:rgba(255,255,255,.2); stroke-width:6; stroke-linejoin:round;
+}
+
 /* cleared — the ring carries the accent */
-.lv-node.done {
-  border-color:var(--accent);
-  background:radial-gradient(circle at 38% 28%, rgba(255,255,255,.18), rgba(0,0,0,.76) 72%), #0a0812;
-  box-shadow:0 0 0 3px rgba(0,0,0,.35), 0 0 26px var(--accent);
-}
+.lv-node.done .rim { fill:url(#lvf-done); stroke:var(--accent); }
+.lv-node.done .edge { stroke:rgba(0,0,0,.35); }
+.lv-node.done .lv-shape { filter:drop-shadow(0 0 12px var(--accent)); }
 /* the next one to play — the only node that moves */
-.lv-node.next {
-  border-color:var(--cta-a); color:var(--cta-text);
-  background:linear-gradient(180deg, var(--cta-a), var(--cta-b));
-  box-shadow:0 0 0 5px rgba(0,0,0,.4), 0 0 40px var(--cta-a);
-  animation:lv-pulse 1.5s ease-in-out infinite;
-}
+.lv-node.next { color:var(--cta-text); animation:lv-pulse 1.5s ease-in-out infinite; }
+.lv-node.next .rim { fill:url(#lvf-next); stroke:var(--cta-a); }
+.lv-node.next .edge { stroke:rgba(0,0,0,.4); stroke-width:18; }
+.lv-node.next .lv-shape { filter:drop-shadow(0 0 18px var(--cta-a)); }
 @keyframes lv-pulse {
   0%,100% { transform:scale(1);    }
   50%     { transform:scale(1.09); }
 }
 /* unlocked but not the next one (a level the player may replay ahead of
    themselves), and a level behind a road that is shut */
-.lv-node.open { border-color:rgba(255,255,255,.42); }
-.lv-node.lock { color:rgba(255,255,255,.28); border-color:rgba(255,255,255,.1); background:#0a0812; }
+.lv-node.open .rim { stroke:rgba(255,255,255,.42); }
+.lv-node.lock { color:rgba(255,255,255,.28); }
+.lv-node.lock .rim { fill:#0a0812; stroke:rgba(255,255,255,.1); }
 .lv-node.lock .num { display:none; }
 .lv-node.lock .padlock { display:block; }
 .lv-node .padlock { display:none; width:40px; height:40px; stroke:rgba(255,255,255,.4); fill:none; stroke-width:2.2; }
 
 /* THREE STARS. The map is read at a glance and a perfect level has to be
-   findable in that glance, so it does not merely change border colour — it
+   findable in that glance, so it does not merely change ring colour — it
    burns: a gold rim, a gold halo and a slow breath. */
-.lv-node.perfect {
-  border-color:var(--gold);
-  background:radial-gradient(circle at 38% 28%, rgba(255,212,59,.34), rgba(0,0,0,.74) 72%), #0a0812;
-  animation:lv-burn 2.4s ease-in-out infinite;
+.lv-node.perfect .rim { fill:url(#lvf-perf); stroke:var(--gold); }
+.lv-node.perfect .edge { stroke:rgba(0,0,0,.4); }
+.lv-node.perfect .lv-shape { animation:lv-burn-f 2.4s ease-in-out infinite; }
+@keyframes lv-burn-f {
+  0%,100% { filter:drop-shadow(0 0 14px rgba(255,212,59,.6)); }
+  50%     { filter:drop-shadow(0 0 22px rgba(255,212,59,.95)); }
 }
+/* the box version, for what is still a box: the bonus star and the 90/90 total */
 @keyframes lv-burn {
   0%,100% { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 30px rgba(255,212,59,.6),
                        inset 0 0 16px rgba(255,212,59,.24); }
@@ -263,7 +283,8 @@
 
 /* a level on the road the player did not take. Missing one is fine — this is
    a note, not a warning, so it is dashed and quiet rather than loud. */
-.lv-node.gap { border-style:dashed; border-color:rgba(255,255,255,.42); color:rgba(255,255,255,.62); }
+.lv-node.gap { color:rgba(255,255,255,.62); }
+.lv-node.gap .rim { stroke:rgba(255,255,255,.42); stroke-dasharray:9 7; }
 
 /* THE BONUS. It only exists on a perfect board, so it is not a level — it is
    a star, and it starts the endless run. */
@@ -616,6 +637,6 @@
 @media (prefers-reduced-motion: reduce) {
   #screen-intro.lv-perfect::after,
   #screen-intro.lv-perfect .lv-sheen,
-  .lv-node.perfect, .lv-node.next, #lv-total.full, #lv-hud.hit { animation:none; }
-  .lv-node.perfect { box-shadow:0 0 0 3px rgba(0,0,0,.4), 0 0 34px rgba(255,212,59,.8); }
+  .lv-node.perfect .lv-shape, .lv-node.next, #lv-total.full, #lv-hud.hit { animation:none; }
+  .lv-node.perfect .lv-shape { filter:drop-shadow(0 0 17px rgba(255,212,59,.8)); }
 }

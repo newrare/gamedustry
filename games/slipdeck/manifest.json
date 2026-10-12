@@ -1,7 +1,7 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.7.4",
+  "version": "1.10.1",
   "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,
@@ -210,7 +210,9 @@
   },
   "web": {
     "copy": {
+      "helpAura": "Everything that <b>glows</b> on the table explains itself: <b>tap it</b> to read its rule.",
       "fr": {
+        "helpAura": "Tout ce qui <b>brille</b> sur la table s'explique : <b>touche-le</b> pour lire sa règle.",
         "tagline": "<b class=\"w-bin\">Jette</b> ou <b class=\"w-keep\">garde</b> la carte proposée pour compléter ta <b class=\"w-hand\">main</b>",
         "strings": {
           " in a row": " d'affilée",
@@ -320,6 +322,7 @@
           "Special card": "Carte spéciale",
           "Straight": "Suite",
           "Straight flush": "Quinte flush",
+          "Royal flush": "Quinte flush royale",
           "Strongest on top": "La plus forte en haut",
           "Straights may skip one rank between two cards": "Une suite peut sauter une valeur entre deux cartes",
           "Survive": "Survie",
@@ -346,17 +349,17 @@
           "Your first hand": "Ta première main",
           "Tap anything on the table to read its rule again.": "Touche n'importe quel élément de la table pour relire sa règle.",
           "Compass": "Boussole",
-          "Tap: pick the suit of the next card": "Touche : choisis la couleur de la prochaine carte",
+          "Push the card up onto it, then down onto a suit: the next card is of that suit": "Pousse la carte vers le haut sur ce joker, puis redescends sur une couleur : la prochaine carte sera de cette couleur",
           "Reshuffle": "Rebattre",
-          "Tap: the card in play goes back into the deck, no bin spent": "Touche : la carte en jeu retourne dans le paquet, sans dépenser de défausse",
+          "Push the card up onto it: the card goes back into the deck, no bin spent": "Pousse la carte vers le haut sur ce joker : elle retourne dans le paquet, sans dépenser de défausse",
           "Pocket": "Poche",
-          "Tap: put the card in play aside, or swap it with the one put aside": "Touche : mets la carte en jeu de côté ou échange-la avec celle mise de côté",
+          "Push the card up onto it: the card is put aside, or swapped with the one put aside": "Pousse la carte vers le haut sur ce joker : elle est mise de côté, ou échangée avec celle qui s'y trouve",
           "Rewind": "Retour",
-          "Tap: the last card you binned comes back into your hand, with its bin": "Touche : la dernière carte jetée revient dans ta main et sa défausse t'est rendue",
+          "Push the card up onto it: the last card you binned comes back into your hand, with its bin": "Pousse la carte vers le haut sur ce joker : la dernière carte jetée revient dans ta main, et sa défausse t'est rendue",
           "Card counter": "Compteur de cartes",
           "Shows what is left in the deck: each suit, and the faces": "Montre ce qui reste dans le paquet : chaque couleur et les figures",
           "Called shot": "Annonce",
-          "Tap before your third card to call a hand: make it or better for ×mult, miss it and it busts": "Touche avant ta troisième carte pour annoncer une main : réussie ou dépassée, ×mult ; ratée, main morte",
+          "Before your third card, push the card up onto it, then down onto a hand: make it or better for ×mult, miss it and it busts": "Avant ta troisième carte, pousse la carte vers le haut sur ce joker, puis redescends sur une main : réussie ou dépassée, ×mult ; ratée, main morte",
           "Greed": "Avidité",
           "×3 mult, but only one bin per hand": "×3 mult, mais une seule défausse par main",
           "A bust burns half of the pot. The last hand of the deck takes all of it.": "Une main morte brûle la moitié du pot. La dernière main du paquet le prend en entier.",
@@ -383,18 +386,14 @@
           "A joker works on every hand, until the end of the run. Every run opens on a pick.": "Un joker agit sur chaque main, jusqu'à la fin de la partie. Chaque partie commence par un choix.",
           "Three fit on the rail; a fourth asks which one it replaces. Tap a joker on the rail to read it again.": "Le rail en tient trois ; un quatrième demande lequel il remplace. Touche un joker du rail pour le relire.",
           "Fate jokers": "Jokers du destin",
-          "A Fate joker acts when you tap it on the rail, once per hand.": "Un joker du destin agit quand tu le touches sur le rail, une fois par main.",
-          "A green dot on it says it is ready. It is ready again on the next hand.": "Un point vert dit qu'il est prêt. Il l'est de nouveau à la main suivante.",
+          "Left bins, right keeps, and up plays a Fate joker: push the card onto it. Each one acts once per hand.": "À gauche tu jettes, à droite tu gardes, et vers le haut tu joues un joker du destin : pousse la carte dessus. Chacun agit une fois par main.",
+          "A green dot on it says it is ready. Tap it to read what it does.": "Un point vert dit qu'il est prêt. Touche-le pour lire ce qu'il fait.",
           "Used this hand — ready on the next one": "Déjà utilisé — prêt à la main suivante",
           "Too late: call before your third card": "Trop tard : annonce avant ta troisième carte",
           "Wait for the next card": "Attends la prochaine carte",
           "No card left to steer": "Plus aucune carte à orienter",
           "Bin a card first": "Jette d'abord une carte",
           "Ready": "Prêt",
-          "Shuffle it back": "La rebattre",
-          "Swap": "Echanger",
-          "Put it aside": "La mettre de côté",
-          "Take it back": "La reprendre",
           "No {s} left": "Plus de {s}",
           "Next card: {s}": "Prochaine carte : {s}",
           "Called: {hand}": "Annonce : {hand}",
@@ -439,7 +438,10 @@
           "Staircase": "Escalier",
           "The card that ends the hand adds its chips as mult": "La carte qui termine la main ajoute ses jetons en mult",
           "The pot": "Le pot",
-          "The red chip is the mult: the hand pays blue chips × red mult.": "Le jeton rouge, c'est le mult : la main paie jetons bleus × mult rouge."
+          "The red chip is the mult: the hand pays blue chips × red mult.": "Le jeton rouge, c'est le mult : la main paie jetons bleus × mult rouge.",
+          "Two hands in one": "Deux mains en une",
+          "Your cards made two hands at once — a pair and a flush, say. Each one is counted on its own, and the hand pays both.": "Tes cartes forment deux mains à la fois, une paire et une couleur par exemple. Chacune est comptée à part, et la main paie les deux.",
+          "Wild cards and some jokers make it possible: a wild card fits any flush and still pairs its rank.": "Les cartes caméléon et certains jokers le permettent : une caméléon complète n'importe quelle couleur et fait quand même la paire avec son rang."
         }
       }
     },
@@ -471,6 +473,15 @@
         "play.lives": [
           4,
           3
+        ]
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
         ]
       }
     },

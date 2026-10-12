@@ -161,8 +161,6 @@
       wipeData: "Erase all game data",
       wipeAsk: "Tap again — progress, stickers and scores are lost",
       wipeDone: "Game data erased",
-      controls: "Controls",
-      tap: "Tap", hold: "Hold", drag: "Drag", swipe: "Swipe", aim: "Aim",
       close: "Close", again: "Play again", menu: "Menu",
       toMenu: "Back to the menu", toVillage: "Back to the village", resume: "Resume",
       leaveTitle: "Leave?",
@@ -188,8 +186,6 @@
       wipeData: "Effacer toutes les données du jeu",
       wipeAsk: "Touche encore — progression, stickers et scores seront perdus",
       wipeDone: "Données du jeu effacées",
-      controls: "Contrôles",
-      tap: "Tap", hold: "Maintenir", drag: "Glisser", swipe: "Swipe", aim: "Viser",
       close: "Fermer", again: "Rejouer", menu: "Menu",
       toMenu: "Retour au menu", toVillage: "Retour au village", resume: "Reprendre",
       leaveTitle: "Quitter ?",
@@ -201,15 +197,14 @@
   /* Which of them the screen SHOUTS. Every string above is written in normal
      case, like the rest of the repo; the ones listed here are set in capitals
      on their way out by the motor's `upper` (packages/engine), which also
-     takes the accents off — "Contrôles" reads CONTROLES, never CONTRÔLES. A
+     takes the accents off — "Débloqué" reads DEBLOQUE, never DÉBLOQUÉ. A
      game's own override of one of these keys is shouted with it, and so is a
      mode label, whose key the manifest spells `mode<Key>`. */
   var CAPS = {
     play: 1, leaderboard: 1, options: 1, help: 1,
-    scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1, controls: 1,
+    scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1,
     soonTitle: 1, rankPlayer: 1, rankStars: 1, rankStickers: 1, rankCleared: 1,
     rankSum: 1, rankLevel: 1, rankBest: 1, rankTries: 1, rankTuto: 1, rankEndless: 1,
-    tap: 1, hold: 1, drag: 1, swipe: 1, aim: 1,
     again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
   };
   var up = W.upper;
@@ -247,6 +242,8 @@
     merge(STRINGS[lang]);
     var over = (CONFIG.web && CONFIG.web.copy) || {};
     merge(over[lang] && typeof over[lang] === "object" ? over[lang] : over);
+    // a desk says "click" where a finger says "tap" (engine, Desk)
+    for (var d in out) if (out.hasOwnProperty(d)) out[d] = W.Desk.words(out[d], lang);
     for (var k in out) if (out.hasOwnProperty(k) && shouted(k)) out[k] = up(out[k]);
     return out;
   }
@@ -259,8 +256,23 @@
   function dictFor(lang) {
     var over = (CONFIG.web && CONFIG.web.copy) || {};
     var per = over[lang];
-    return (per && typeof per === "object" && per.strings) || null;
+    var game = (per && typeof per === "object" && per.strings) || null;
+    var motor = MOTOR_WORDS[lang];
+    if (!motor) return game;
+    var out = {}, k;
+    for (k in motor) if (motor.hasOwnProperty(k)) out[k] = motor[k];
+    if (game) for (k in game) if (game.hasOwnProperty(k)) out[k] = game[k];
+    return out;
   }
+
+  /* The few words the MOTOR writes on its own and no game declares: the
+     names of the keys and the mouse actions of the how-to-play legend
+     (packages/shell, Demo). They ride in the same dictionary as the game's,
+     under it, so a game can still word one its own way. */
+  var MOTOR_WORDS = {
+    fr: { "Space": "Espace", "or": "ou", "Aim": "Viser", "Click": "Cliquer", "Hold": "Maintenir",
+          "Drag": "Glisser", "Click, hold and release": "Cliquer, maintenir et relâcher" }
+  };
 
   /* Everything the motor wrote once and would otherwise keep in English: the
      six CONFIG.copy nodes and the two HUD pills. Callouts, the end screen and
@@ -972,19 +984,6 @@
     if (demo && demoHome) demoHome.appendChild(demo);
   }
 
-  function demoKind() { return (CONFIG.intro && CONFIG.intro.demo) || "tap"; }
-
-  /* The gesture the game is played with, then the key the bootstrap already
-     binds for that same gesture — both read from CONFIG, so the panel and the
-     motor can never disagree about what works. */
-  function controlHints() {
-    var kind = demoKind(), out = [COPY[kind] || COPY.tap];
-    if (CONFIG.keyboard === false) return out;
-    if (kind === "swipe") return out.concat(["←", "→"]);
-    if (kind === "tap" || kind === "hold") return out.concat(["SPACE"]);
-    return out;
-  }
-
   /* A labelled row with a control on the right: every option is one of these,
      so adding one is a line rather than a layout. */
   function row(box, iconName, label, control) {
@@ -1155,10 +1154,27 @@
       }
       box.appendChild(rules);
     }
-    var keys = controlHints(), keyRow = el("div", "web-keys");
-    for (var i = 0; i < keys.length; i++) keyRow.appendChild(el("span", "web-key", keys[i]));
-    box.appendChild(keyRow);
-    box.appendChild(el("div", "web-keys-lbl", COPY.controls));
+    /* THE AURA, NAMED. A game whose rules are read on the table — a tap on
+       anything its idle hint lights opens that thing's card (games/bridgessa,
+       games/slipdeck) — says so here, once, instead of opening every card on
+       the way into a round: `web.copy.<lang>.helpAura`, one sentence, beside
+       one of the game's own objects wearing the aura (`Game.helpAura()`, a
+       node; a plain pill without it). The round breathes its aura once every
+       few idle seconds; this one loops, faster, because here it is the thing
+       being shown. A game that declares no sentence never builds the row. */
+    if (COPY.helpAura) {
+      var aura = el("div", "web-help-aura");
+      var ex = W.Game && W.Game.helpAura ? W.Game.helpAura() : null;
+      if (!ex) ex = el("span", "web-help-aura-pill", "?");
+      ex.classList.add("web-help-aura-ex");
+      aura.appendChild(ex);
+      aura.appendChild(el("p", "", COPY.helpAura));
+      box.appendChild(aura);
+    }
+    /* NO ROW OF KEYS HERE. The keys a desk plays with are the motor's, acted
+       on the stage and named in the legend under it (shell.js, Demo) — both
+       inside the node moved in above, and both gone on a phone, where the
+       finger already says everything. */
   }
 
   /* ── 5a. the ranking, a view ──────────────────────────────────────────── */

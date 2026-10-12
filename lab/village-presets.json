@@ -2239,6 +2239,76 @@
           "seconds": 150
         }
       }
+    },
+    "bridgessa": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudFlat02",
+          "role": "decor",
+          "x": 640,
+          "y": 40,
+          "w": 200,
+          "notify": "cloud",
+          "always": true
+        },
+        {
+          "art": "home07",
+          "role": "cards",
+          "x": 100,
+          "y": 480,
+          "w": 170,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home02",
+          "role": "play",
+          "x": 300,
+          "y": 600,
+          "w": 230
+        },
+        {
+          "art": "home01",
+          "role": "map",
+          "x": 150,
+          "y": 750,
+          "w": 240,
+          "light": "random",
+          "always": true
+        },
+        {
+          "art": "home03",
+          "role": "decor",
+          "x": 450,
+          "y": 830,
+          "w": 220
+        },
+        {
+          "art": "home08",
+          "role": "options",
+          "x": 200,
+          "y": 1150,
+          "w": 200
+        },
+        {
+          "art": "home04",
+          "role": "ranking",
+          "x": 550,
+          "y": 1150,
+          "w": 280
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ffcf8f",
+          "cold": "#16234f",
+          "amount": 0.35,
+          "seconds": 150
+        }
+      }
     }
   }
 }

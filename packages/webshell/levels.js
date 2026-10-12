@@ -277,6 +277,61 @@
     return up((list && list[i]) || T.bands[Math.min(i, T.bands.length - 1)]);
   }
 
+  /* THE SHAPE OF THE BAND. A level wears its band's outline — circle,
+     octagon, hexagon, pentagon, diamond — so the five worlds of the climb
+     read on the map before a card is opened, and in EVERY state: locked,
+     cleared or still to play, the outline stays and only the ring's colour
+     and the fill say the state. Read through `bandIndex` like the name, so a
+     fork's two roads wear the same world. A shape and not a colour, because a
+     colour is the game's palette's to spend (and a state's), and five tints
+     on one map fought both.
+
+     Drawn in a 100-unit box, as an SVG under the number: a clip-path would cut
+     the ring's glow off at the outline. The radii grow as the corners come
+     down so the five carry the same weight at a glance, and the pentagon sits
+     a little low so its point and its base are equally far from the number. */
+  var SHAPES = [
+    { sides: 0 },                                   // circle
+    { sides: 8, r: 46, rot: 22.5 },                 // octagon, flat on top
+    { sides: 6, r: 47, rot: 0 },                    // hexagon, point up
+    { sides: 5, r: 48, rot: 0, dy: 4.5 },           // pentagon, point up
+    { sides: 4, r: 50, rot: 0 }                     // diamond
+  ];
+
+  function shapeTag(sh, cls) {
+    if (!sh.sides) return '<circle class="' + cls + '" cx="50" cy="50" r="44"/>';
+    var pts = [], i, a;
+    for (i = 0; i < sh.sides; i++) {
+      a = (sh.rot - 90 + i * 360 / sh.sides) * Math.PI / 180;
+      pts.push((50 + sh.r * Math.cos(a)).toFixed(2) + "," +
+               (50 + (sh.dy || 0) + sh.r * Math.sin(a)).toFixed(2));
+    }
+    return '<polygon class="' + cls + '" points="' + pts.join(" ") + '"/>';
+  }
+
+  /* The face of level n: the outline twice — `edge` is the dark (or
+     selection) band outside the ring, `rim` the ring and the fill. */
+  function shapeSvg(n) {
+    var sh = SHAPES[Math.min(bandIndex(n), SHAPES.length - 1)];
+    return '<svg class="lv-shape" viewBox="0 0 100 100" aria-hidden="true">' +
+           shapeTag(sh, "edge") + shapeTag(sh, "rim") + "</svg>";
+  }
+
+  /* The fills a face is painted with, once per map, in the road's own svg —
+     a gradient is referenced by id, and an id must exist once. The next
+     level's is the CTA's own pair, read off the theme. */
+  var SHAPE_DEFS = '<defs>' +
+    '<radialGradient id="lvf-base" cx=".38" cy=".3" r=".75">' +
+      '<stop offset="0" stop-color="#27252e"/><stop offset=".7" stop-color="#050408"/></radialGradient>' +
+    '<radialGradient id="lvf-done" cx=".38" cy=".28" r=".75">' +
+      '<stop offset="0" stop-color="#34323a"/><stop offset=".72" stop-color="#040306"/></radialGradient>' +
+    '<radialGradient id="lvf-perf" cx=".38" cy=".28" r=".75">' +
+      '<stop offset="0" stop-color="#5d4d20"/><stop offset=".72" stop-color="#050408"/></radialGradient>' +
+    '<linearGradient id="lvf-next" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" style="stop-color:var(--cta-a)"/>' +
+      '<stop offset="1" style="stop-color:var(--cta-b)"/></linearGradient>' +
+    '</defs>';
+
   /* The same name, asked for by BAND rather than by level — what the meta
      layer needs to write "earned by clearing <band>" on a sticker's card. It
      does not go through `from`, which only exists to map a LEVEL onto a band:
@@ -1588,7 +1643,7 @@
              'stroke-linecap="round" stroke-linejoin="round" ' +
              'stroke="var(--gold)" stroke-width="13"/>';
     }
-    svg.innerHTML = ink;
+    svg.innerHTML = SHAPE_DEFS + ink;
 
     var old = canvasBox.querySelectorAll(".lv-node,.lv-wall,.lv-tag");
     for (i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
@@ -1636,7 +1691,8 @@
          daily road's starred day wears. */
       var face = '<span class="num">' + n + "</span>" + PADLOCK;
       if (n === BONUS) face = artOf("starBurst", "lv-bonus-i") || face;
-      var node = API.el("button", "lv-node " + cls +
+      else face = shapeSvg(n) + face;
+      var node = API.el("button", "lv-node " + cls + (n === BONUS ? "" : " lvl") +
         (n === BONUS && artOf("starBurst") ? " art" : ""), face);
       node.style.left = pt.x + "px";
       node.style.top = pt.y + "px";

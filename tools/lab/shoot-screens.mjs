@@ -97,6 +97,7 @@ var SPAN = {
   spinshock: 27,
   stratideck: 24,   // clockless; the GAME_PILOT below takes the flag at ~27 s
   grudgeon: 60,     // clockless; the GAME_PILOT below explores the whole dungeon in ~70 s
+  bridgessa: 45,    // clockless; a tournée of deals, the GAME_PILOT below plays two or three
   triverse: 15
 };
 
@@ -226,6 +227,35 @@ var GAME_PILOT = {
       cells.forEach(function (c) { var w = c.state === LIT && pathFor(g, c.i); if (w) ways.push(w); });
       if (!ways.length) return false;
       goTo(g, ways[Math.floor(Math.random() * ways.length)]);
+      return true;
+    } };
+    `
+  },
+  /* bridgessa is bridge's card play: a tip card waits for a tap, the pick of
+     three favours for one of them, a full rail for a row, and the player's
+     turn for a card. The pilot answers whichever is open; on its turn it plays
+     the card the game's own solver rates best (the Advice favour's answer),
+     and now and then uses a favour of the rail first, so the shots show the
+     rail lit as well as the cards. */
+  bridgessa: {
+    every: 24,
+    anchor: "return { reset:reset, update:update, render:render,",
+    js: `
+    window.__G = { play: function () {
+      if (done) return false;
+      var tipNode = document.querySelector(".bs-tip.on:not(.off)");
+      if (tipNode) { if (tipOpen) tipOpen.at = 0; closeTip(true); return true; }
+      var cards = document.querySelectorAll(".bs-pick.on:not(.off) .bs-perk"), rows = document.querySelectorAll(".bs-pick.on:not(.off) .bs-row");
+      if (rows.length) { rows[0].click(); return true; }
+      if (cards.length) { cards[Math.floor(Math.random() * cards.length)].click(); return true; }
+      if (phase !== "player") return false;
+      for (var r = 0; r < rail.length; r++) {
+        if (rail[r] && PERK[rail[r].id].act && !whyNot(rail[r].id) && Math.random() < 0.15 && ["advice", "double", "freediscard", "bribe"].indexOf(rail[r].id) >= 0) { useFavour(rail[r].id); return true; }
+      }
+      var p = toPlay(), o = S.options(leader, trickCards()), best = -1, c = null, k;
+      for (k = 0; k < o.length; k++) if (o[k].v > best && legal(p, o[k].c)) { best = o[k].v; c = o[k].c; }
+      if (c === null) c = legalCards(p)[0];
+      play(p, c);
       return true;
     } };
     `

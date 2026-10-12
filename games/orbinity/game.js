@@ -29,7 +29,9 @@
 
     // Intro: logo is a key in ASSETS.images (omit for a text-only intro).
     // demo is the animated how-to-play: tap | hold | drag | swipe | aim.
-    intro: { logo: "logo", demo: "tap", caption: "" },
+    intro: { logo: "logo", demo: "tap", caption: "",
+             // on a desk: SPACE or a click (shell.js, Demo)
+             desk: [{ keys: ["space"], mouse: ["click"] }] },
 
     // HUD slots: the centre score is always there; the timer fills the right.
     hud: { score: true, timer: true },
@@ -130,7 +132,180 @@
       slack: 10            // px of the head allowed past a wall before it bounces
     },
 
-    score: { base: 12, milestone: 25, maxMult: 10 }
+    score: { base: 12, milestone: 25, maxMult: 10 },
+
+    /* --- The bodies the climb brings in (web target) -----------------------
+       A lerp says HARDER; these say DIFFERENT. Each one changes the decision
+       behind the tap, and each is met alone on the first level of its world
+       (see `ladder`) before the last world mixes them:
+
+         moon    circles some planets just outside their well. Hitting it is a
+                 wall — the chain dies; grazing it and flying on is an ECLIPSE.
+                 It changes WHEN to tap: the moon's phase at the arrival.
+         pulsar  a planet like any other, except for one second of its cycle:
+                 an electric shield crackles up on its well and bounces the
+                 comet off (the chain lives on, the clock does not wait). It
+                 changes WHEN TO ARRIVE.
+         orbit   a planet that travels an ellipse round a mini black hole. It
+                 changes WHERE the target will BE.
+         hole    a black hole: it pulls hard, catches nothing, and its horizon
+                 eats the chain. Skimmed and left, it is a SLINGSHOT. It
+                 changes HOW the shot bends.
+         rift    the side walls are open: out one edge, back through the other.
+                 It changes WHERE to aim.
+         belt    a standing asteroid belt down the middle of the rift: the
+                 direct shot across is a wall, the way over is the open side.
+         stream  every few seconds a line of asteroids sweeps the field for
+                 one to three seconds, announced by its lane. Hitting it is a
+                 wall. It changes WHEN to tap, field-wide.
+
+       All of it is a function of the time it is asked about, and that is the
+       one rule here that cannot bend: flyStep runs the landing hint too, so a
+       body the hint could not predict would make the ring lie.
+
+       Every bonus caught on the way adds `bonus.step` to the multiplier of
+       the capture that ends the flight: a slingshot then an eclipse pay x3. */
+    moon: {
+      rMin: 14, rFactor: 0.24,  // moon radius = rMin + its planet's r * rFactor
+      clear: 14,                // px between the planet's well and the moon's path
+      period: [2.2, 3.4],       // seconds for one turn, rolled per moon
+      hit: 0.7,                 // share of the comet's head that collides
+      graze: 48                 // px past contact that still reads as an eclipse
+    },
+    pulsar: {
+      period: [2.6, 3.6],       // seconds for one cycle, rolled per pulsar
+      shield: 1.0,              // seconds of it the shield is up
+      warn: 0.45,               // seconds of flicker before it pops, so it is fair
+      pop: 0.14                 // seconds the bubble takes to swell / burst
+    },
+    hole: {
+      horizon: 24,              // radius that eats the chain
+      sling: 2.8,               // skim zone = horizon * this
+      reach: 230,               // radius of its pull
+      pull: 5200,               // peak acceleration, at the horizon (px/s²)
+      holdMax: 2.2,             // s in its pull before a circling comet is eaten
+      clear: 0.55               // planets keep their well this share of reach away
+    },
+    // A mini black hole with one planet on an ellipse round it. Its pull is
+    // only the look: the system is a moving target, not a hazard.
+    orbit: {
+      a: [110, 135],            // semi-major axis, px
+      flat: 0.6,                // semi-minor = a * this
+      period: [7, 10],          // seconds for one lap
+      r: [26, 34]               // the orbiter's radius: its well has to fit
+    },
+    // Asteroids as walls: the stream that sweeps through, the belt that stands.
+    rocks: {
+      half: 22,                 // half the lane's width, px
+      hit: 0.6,                 // share of the comet's head that collides
+      lead: 2.0,                // s a stream is planned before its lane shows
+      warn: 1.0,                // s the lane glows before the rocks arrive
+      span: [1, 3],             // s the rocks take to go by
+      gap: [5, 9],              // s between two streams
+      first: [3, 5],            // s into the round before the first one
+      speed: 760,               // px/s the rocks travel along the lane
+      step: 34                  // px between two rocks of a lane
+    },
+    bonus: { step: 1 },
+
+    /* --- The five worlds of the climb ---------------------------------------
+       Read by Game.applyLevel, which the level layer calls with the level
+       armed; the playable never calls it and the endless run calls it with
+       null, so both keep the game exactly as the file draws it.
+
+       A world is read off the LEVEL NUMBER (`from`), never off the difficulty:
+       the two roads out of a fork have to be the same world. It brings:
+         skins  the planet palettes ([highlight, shadow, ring]); null = base
+         tint   a hue laid over the nebula ("color" blend), until `sky` exists
+         sky    the painted round backdrop, `orbinity-space-<key>.png`
+                -> CONFIG.art.space<Key> (portrait, cut like a phone
+                background; `sky-` is the panorama role, arcider's); it
+                replaces the nebula and the tint
+         art    the prefix of its painted planets, adopted out of
+                `orbinity-object-<key>-planet.png` -> CONFIG.art.<key>PlanetNN
+         edge   the colour the rift's open walls glow in
+         soft   a wall bounce costs nothing (the chain lives on): the first
+                world is where the tap is learned, not where it is punished
+         goals  the world's own objectives, one per level (Game.levelGoal),
+                where the manifest's lerp does not fit: a chain no wall can
+                break scores several times what the next world does, and
+                tapping blind would take three stars off the lerp's 500
+       The special bodies have sheets of their own, whatever the world:
+       `lunarMoonNN`, `pulsarStarNN`, `abyssHoleNN`. Nothing here needs the
+       art: every body falls back to the one this file paints.
+
+       `levels` is one row per level: the share of new planets born with a
+       moon or as a pulsar, how many black holes and orbit systems, whether
+       asteroid streams sweep through, whether the rift is open and the belt
+       stands in it. A rule is introduced alone, then mixed: every world has
+       its own body and a second rule from its fourth level on. */
+    ladder: {
+      art: { body: 0.8, core: 0.26 },   // painted planet: the sphere's share of
+                                         // its cut; painted hole: the core's
+      seconds: 60,                       // the endless run's clock on the web
+      worlds: [
+        { key: "inner",  sky: "spaceInner",  art: "innerPlanet",  tint: null,
+          edge: "#7cf5ff", skins: null, soft: true,
+          goals: [4500, 4700, 4900, 3500, 3700, 3900] },
+        { key: "lunar",  sky: "spaceLunar",  art: "lunarPlanet",  tint: "#4f6bff",
+          edge: "#c8d6ff",
+          skins: [
+            { a: "#e3ebff", b: "#5a6aa8", ring: "#c8d6ff" },
+            { a: "#c9f2ff", b: "#2a7f9e", ring: "#a8ecff" },
+            { a: "#e6d9ff", b: "#6a52b8", ring: "#d4c4ff" },
+            { a: "#f4f1e6", b: "#7a7f99", ring: "#e0e4ff" }
+          ] },
+        { key: "pulsar", sky: "spacePulsar", art: "pulsarPlanet", tint: "#13b4ff",
+          edge: "#7fe9ff",
+          skins: [
+            { a: "#e6fbff", b: "#0077e6", ring: "#7fe9ff" },
+            { a: "#ffe6ff", b: "#b31cff", ring: "#f39bff" },
+            { a: "#eaffea", b: "#20b46a", ring: "#a6ffcf" }
+          ] },
+        { key: "abyss",  sky: "spaceAbyss",  art: "abyssPlanet",  tint: "#ff5a1f",
+          edge: "#ffb347",
+          skins: [
+            { a: "#ffd27a", b: "#c2410c", ring: "#ffb35c" },
+            { a: "#ffb3a1", b: "#b0183c", ring: "#ff8f87" },
+            { a: "#fff1c4", b: "#c9821a", ring: "#ffe08a" }
+          ] },
+        { key: "rift",   sky: "spaceRift",   art: "riftPlanet",   tint: "#8a2cff",
+          edge: "#7dffd0",
+          skins: [
+            { a: "#b6ffe0", b: "#0f9d84", ring: "#7dffd0" },
+            { a: "#ffc6f4", b: "#b0279b", ring: "#ff8fe6" },
+            { a: "#d0c4ff", b: "#4b2fd6", ring: "#b39dff" }
+          ] }
+      ],
+      from: [1, 7, 13, 19, 25],
+      levels: [
+        {}, {}, {}, { orbit: 1 }, { orbit: 1 }, { orbit: 1 },               // 1-6   inner
+        { moon: 0.35 }, { moon: 0.4 }, { moon: 0.45 },                       // 7-12  lunar
+        { moon: 0.45, stream: true }, { moon: 0.5, stream: true },
+        { moon: 0.5, orbit: 1, stream: true },
+        { pulsar: 0.35 }, { pulsar: 0.4 }, { pulsar: 0.45 },                 // 13-18 pulsar
+        { pulsar: 0.45, orbit: 1 }, { pulsar: 0.5, stream: true },
+        { pulsar: 0.5, moon: 0.3, orbit: 1 },
+        { hole: 1 }, { hole: 1 }, { hole: 1, orbit: 1 },                     // 19-24 abyss
+        { hole: 1, stream: true }, { hole: 1, pulsar: 0.3, orbit: 1 },
+        { hole: 1, moon: 0.3, pulsar: 0.3, stream: true },
+        { rift: true, belt: true }, { rift: true, belt: true, moon: 0.3 },   // 25-30 rift
+        { rift: true, belt: true, pulsar: 0.35 },
+        { rift: true, belt: true, stream: true },
+        { rift: true, belt: true, moon: 0.3, pulsar: 0.3 },
+        { rift: true, belt: true, moon: 0.3, pulsar: 0.3, stream: true }
+      ],
+      // What a rule says the first time the climb meets it (Notify).
+      intro: {
+        moon:   { word: "Moons block the way",  sub: "Graze one for a bonus" },
+        pulsar: { word: "Pulsar shields",       sub: "For a second, a shield bounces you off" },
+        orbit:  { word: "Planets on the move",  sub: "They circle a mini black hole" },
+        stream: { word: "Asteroid stream",      sub: "Its lane lights up first: wait it out" },
+        belt:   { word: "Asteroid belt",        sub: "No way across: go round through the sides" },
+        hole:   { word: "Black hole",           sub: "Skim it to slingshot, never fall in" },
+        rift:   { word: "The side walls are open", sub: "Fly out one side, back in the other" }
+      }
+    }
   };
 
   /* ===================================================================
@@ -178,10 +353,15 @@
 
      Chain a capture inside CONFIG.combo.window to grow the combo. It dies on
      a wall bounce, or after CONFIG.combo.maxOrbits full turns of stalling.
+
+     On the web, the climb is five WORLDS (CONFIG.ladder), each bringing one
+     body: moons, pulsars, a black hole, the open rift (see CONFIG.moon).
      =================================================================== */
   var Game = (function () {
     var P = CONFIG.planet, S = CONFIG.comet, C = CONFIG.combo, W = CONFIG.walls;
     var OT = CONFIG.overtime;
+    var MO = CONFIG.moon, PU = CONFIG.pulsar, HO = CONFIG.hole, LAD = CONFIG.ladder;
+    var OB = CONFIG.orbit, RK = CONFIG.rocks;
 
 
     // Planet palettes: [body highlight, body shadow, ring / gravity well].
@@ -248,6 +428,28 @@
     // free of side effects yet takes exactly the same decisions.
     var flightSides = [];
     var aimSides = [];
+
+    // The world of the level and its row of CONFIG.ladder.levels. BIO null and
+    // the empty row are the game as designed: the playable, the endless run.
+    var NO_ROW = { moon: 0, pulsar: 0, hole: 0, orbit: 0, stream: false, rift: false, belt: false };
+    var BIO = null, ROW = NO_ROW, intro = [];
+    var PULSAR_SKIN = { a: "#ffffff", b: "#3fb8ff", ring: "#9ff3ff" };
+    var VOLT = "#22d3ff", VOLT2 = "#a66bff";   // the shield's arc, and its inner cage
+    var MOON_SKIN = { a: "#f3efe2", b: "#7d7f96", ring: "#e6e8ff" };
+    var holes = [];        // black holes, fixed for the round (see placeHoles)
+    var holeSprite = null, holeSig = "";
+    var flightId = 0;      // which flight a moon / hole bookkeeping belongs to
+    var flightBonus = 0;   // bonuses caught this flight (eclipse, slingshot)
+    var holeT = 0;         // s this flight has spent inside a hole's pull
+    var hitBody = null;    // the body flyStep's last "moon" / "hole" was about
+    var moonPt = { x: 0, y: 0 };
+    var systems = [];      // mini black holes, each with one planet on an ellipse
+    var sysPt = { x: 0, y: 0 };
+    var streams = [];      // asteroid streams, planned or under way (planStreams)
+    var nextStream = 0;    // clock time the next stream's lane lights up
+    var belt = null;       // the rift's standing belt: { x, rocks }
+    var rockSprites = null, rockSig = "";
+    var zp = [];           // reused points of an electric arc (drawShield)
 
     /* --- small helpers ---------------------------------------------------- */
 
@@ -328,6 +530,79 @@
       return C.window * Math.pow(0.5, otT / Math.max(0.1, OT.halfLife));
     }
 
+    /* --- the special bodies: all of them a function of time t --------------- */
+
+    function moonRadius(r) { return MO.rMin + r * MO.rFactor; }
+    // The moon's path runs just outside the well: it guards the way in, and
+    // never crosses the resting orbit of a comet already caught.
+    function moonOrbit(r) { return wellRadius(r) + MO.clear + moonRadius(r); }
+    // How far a planet's business reaches — the spacing rule's radius.
+    function reachOf(r, kind) {
+      return kind === "moon" ? moonOrbit(r) + moonRadius(r) : wellRadius(r);
+    }
+    function moonAt(p, t, out) {
+      var a = p.moon.a0 + p.moon.w * t;
+      out.x = p.x + Math.cos(a) * p.moon.R;
+      out.y = p.y + Math.sin(a) * p.moon.R;
+      return out;
+    }
+    // Seconds into a pulsar's cycle at time t; the shield is the cycle's
+    // last PU.shield seconds, its warning the PU.warn before them.
+    function pulseAge(p, t) {
+      var u = t / p.pulse.period + p.pulse.phase;
+      return (u - Math.floor(u)) * p.pulse.period;
+    }
+    function shielded(p, t) {
+      return !!p.pulse && pulseAge(p, t) >= p.pulse.period - PU.shield;
+    }
+    function slingR() { return HO.horizon * HO.sling; }
+
+    // Where an orbit system holds its planet at time t: an ellipse round the
+    // mini black hole, tilted by the system's own angle.
+    function systemAt(sys, t, out) {
+      var th = sys.ph + sys.w * t, ex = Math.cos(th) * sys.a, ey = Math.sin(th) * sys.b;
+      out.x = sys.x + ex * sys.cos - ey * sys.sin;
+      out.y = sys.y + ex * sys.sin + ey * sys.cos;
+      return out;
+    }
+    // How far a system's business reaches: its ellipse plus the widest well.
+    function systemReach(sys) { return sys.a + wellRadius(OB.r[1]); }
+    /* Moves every orbiting planet to where it is at time t, and keeps the step
+       it took (p.mx, p.my) so a comet circling it is carried along. The
+       landing hint calls it once per predicted step and puts the field back
+       at `clock` afterwards — the one body that moves the hint has to move. */
+    function moveBodies(t) {
+      for (var i = 0; i < planets.length; i++) {
+        var p = planets[i];
+        if (!p.orbit) continue;
+        systemAt(p.orbit, t, sysPt);
+        p.mx = sysPt.x - p.x; p.my = sysPt.y - p.y;
+        p.x = sysPt.x; p.y = sysPt.y;
+      }
+    }
+    // A stream's lane is solid while its rocks go by.
+    function streamLive(sm, t) { return t >= sm.t1 && t < sm.t2; }
+
+    // Painted bodies the game has adopted: every ArtImages key `<prefix>NN`
+    // that decoded. Kept once found — the art is decoded before the first
+    // round — and an empty pool means the body is painted here instead.
+    var artPools = {};
+    function artPool(prefix) {
+      if (artPools[prefix]) return artPools[prefix];
+      var out = [], k, im;
+      if (typeof ArtImages === "undefined" || !prefix) return out;
+      for (k in ArtImages) {
+        if (k.indexOf(prefix) !== 0 || !/^\d+$/.test(k.slice(prefix.length))) continue;
+        im = ArtImages[k];
+        if (im && im.width) out.push(im);
+      }
+      if (out.length) artPools[prefix] = out;
+      return out;
+    }
+
+    // A seam of the rift: two tail samples on either side of the open wall.
+    function seam(a, b) { return ROW.rift && Math.abs(a.x - b.x) > view.w * 0.5; }
+
     // Gentle late-round speed-up keeps the last seconds tense.
     function flightSpeed() {
       return S.speed * (1 + Round.elapsed() / Math.max(1, CONFIG.gameSeconds) * S.ramp);
@@ -373,6 +648,18 @@
 
         tmpAcc.x += wx / wm * a; tmpAcc.y += wy / wm * a;
       }
+      // A black hole pulls straight in, harder the deeper the comet goes. A
+      // radial pull only bends the part of the heading across it, so a skim
+      // swings round and out (the slingshot) while a heading AT the core is
+      // never turned away from it.
+      for (var j = 0; j < holes.length; j++) {
+        var h = holes[j], hx2 = h.x - x, hy2 = h.y - y;
+        var hd = Math.sqrt(hx2 * hx2 + hy2 * hy2);
+        if (hd < 1 || hd > HO.reach) continue;
+        var ht = clamp((HO.reach - hd) / (HO.reach - HO.horizon), 0, 1);
+        var ha = HO.pull * ht * ht;
+        tmpAcc.x += hx2 / hd * ha; tmpAcc.y += hy2 / hd * ha;
+      }
       return tmpAcc;
     }
 
@@ -382,8 +669,12 @@
     // gravity still applies), which is what keeps a wide well from handing out
     // free landings. Entries are dropped as the flight leaves them. `ignore` is
     // the host the landing hint knows is about to explode. The hint runs this
-    // very same function. Returns null | "wall" | the capturing planet.
-    function flyStep(st, dt, sp, latch, ignore, sides) {
+    // very same function. `t` is the game clock the step happens at: the
+    // moons and the pulsars are read at THAT time, which is what keeps the
+    // hint honest about them. Returns null | "wall" | "moon" | "hole" |
+    // "rock" | "shield" | the capturing planet; every named hit but the wall
+    // leaves its body in `hitBody`.
+    function flyStep(st, dt, sp, latch, ignore, sides, t) {
       var acc = accelAt(st.x, st.y, st.dx, st.dy, ignore, sides);
       st.dx += acc.x * dt / sp; st.dy += acc.y * dt / sp;
       var m = Math.sqrt(st.dx * st.dx + st.dy * st.dy) || 1;
@@ -391,23 +682,89 @@
       st.x += st.dx * sp * dt;
       st.y += st.dy * sp * dt;
 
-      var b = wallRadius(), wall = false;
-      if (st.x < Bounds.left + b)   { st.x = Bounds.left + b;   st.dx = Math.abs(st.dx);  wall = true; }
-      if (st.x > Bounds.right - b)  { st.x = Bounds.right - b;  st.dx = -Math.abs(st.dx); wall = true; }
+      var b = wallRadius(), wall = false, j, p, d;
+      if (ROW.rift) {
+        // the open sides: the nucleus crosses the edge and comes back in
+        // through the other one, heading untouched
+        var span = Bounds.right - Bounds.left;
+        if (st.x < Bounds.left) st.x += span;
+        else if (st.x > Bounds.right) st.x -= span;
+      } else {
+        if (st.x < Bounds.left + b)   { st.x = Bounds.left + b;   st.dx = Math.abs(st.dx);  wall = true; }
+        if (st.x > Bounds.right - b)  { st.x = Bounds.right - b;  st.dx = -Math.abs(st.dx); wall = true; }
+      }
       if (st.y < Bounds.top + b)    { st.y = Bounds.top + b;    st.dy = Math.abs(st.dy);  wall = true; }
       if (st.y > Bounds.bottom - b) { st.y = Bounds.bottom - b; st.dy = -Math.abs(st.dy); wall = true; }
       if (wall) return "wall";
 
-      for (var j = 0; j < planets.length; j++) {
-        var p = planets[j];
+      for (j = 0; j < holes.length; j++) {
+        if (dist(st.x, st.y, holes[j].x, holes[j].y) < HO.horizon + headRadius() * 0.3) {
+          hitBody = holes[j];
+          return "hole";
+        }
+      }
+
+      // Asteroids are walls: the rift's belt down the middle, and a stream's
+      // lane while its rocks go by. The comet glances off the lane's edge.
+      var rh = headRadius() * RK.hit + RK.half;
+      if (belt && Math.abs(st.x - belt.x) < rh) {
+        var bside = st.dx > 0 ? -1 : 1;             // back to the side it came from
+        st.x = belt.x + bside * (rh + 1);
+        st.dx = -st.dx;
+        hitBody = belt;
+        return "rock";
+      }
+      for (j = 0; j < streams.length; j++) {
+        var sm = streams[j];
+        if (!streamLive(sm, t)) continue;
+        var sd = (st.x - sm.x) * sm.nx + (st.y - sm.y) * sm.ny;
+        if (Math.abs(sd) >= rh) continue;
+        var sn = sd >= 0 ? 1 : -1, snd = st.dx * sm.nx + st.dy * sm.ny;
+        if (snd * sn < 0) { st.dx -= 2 * snd * sm.nx; st.dy -= 2 * snd * sm.ny; }
+        st.x += sm.nx * (sn * (rh + 1) - sd);
+        st.y += sm.ny * (sn * (rh + 1) - sd);
+        hitBody = sm;
+        return "rock";
+      }
+
+      // A moon is solid: the comet glances off it like off a wall.
+      var hr = headRadius() * MO.hit;
+      for (j = 0; j < planets.length; j++) {
+        p = planets[j];
+        if (!p.moon || p === ignore) continue;
+        moonAt(p, t, moonPt);
+        d = dist(st.x, st.y, moonPt.x, moonPt.y);
+        if (d < p.moon.r + hr) {
+          var nx = (st.x - moonPt.x) / (d || 1), ny = (st.y - moonPt.y) / (d || 1);
+          var dot = st.dx * nx + st.dy * ny;
+          if (dot < 0) { st.dx -= 2 * dot * nx; st.dy -= 2 * dot * ny; }
+          st.x = moonPt.x + nx * (p.moon.r + hr + 1);
+          st.y = moonPt.y + ny * (p.moon.r + hr + 1);
+          hitBody = p;
+          return "moon";
+        }
+      }
+
+      for (j = 0; j < planets.length; j++) {
+        p = planets[j];
         if (p === ignore) continue;
-        var d = dist(st.x, st.y, p.x, p.y);
+        d = dist(st.x, st.y, p.x, p.y);
         var held = latch ? latch.indexOf(p) : -1;
         if (held >= 0) {                      // still inside a well it started in
           if (d > p.captureR + 12) latch.splice(held, 1);
           continue;
         }
-        if (d <= p.captureR) return p;
+        if (d > p.captureR) continue;
+        if (!shielded(p, t)) return p;
+        // A pulsar's shield is a bubble on its well: the comet glances off it
+        // like off a moon, and nothing else happens — the chain is not cut.
+        var sx = (st.x - p.x) / (d || 1), sy = (st.y - p.y) / (d || 1);
+        var sdot = st.dx * sx + st.dy * sy;
+        if (sdot < 0) { st.dx -= 2 * sdot * sx; st.dy -= 2 * sdot * sy; }
+        st.x = p.x + sx * (p.captureR + 1);
+        st.y = p.y + sy * (p.captureR + 1);
+        hitBody = p;
+        return "shield";
       }
       return null;
     }
@@ -445,12 +802,19 @@
     // decoded yet, so a build made before the art arrived is repainted by the
     // next one. Rebuilding per round threw a full frame at the GC every replay,
     // and a phone paid for it with a major collection mid-round.
+    //
+    // A world paints its own sky when the game has one (`sky` of the world,
+    // CONFIG.ladder); without it the nebula is recoloured toward the world's
+    // `tint`, so five worlds read as five places before any art exists.
     var bgImg = null, bgSig = "", bgArt = "";
     function buildBackground(pick) {
       if (pick || !bgImg) bgImg = Rand.pick(["bg1", "bg2"]);
-      var img = Images[bgImg];
+      var sky = BIO && typeof ArtImages !== "undefined" ? ArtImages[BIO.sky] : null;
+      if (sky && !sky.width) sky = null;
+      var img = sky || Images[bgImg];
       var sig = view.w + "x" + view.h + "@" + view.dpr;
-      var art = bgImg + ":" + (img && img.width ? img.width + "x" + img.height : "none");
+      var art = (BIO ? BIO.key : "base") + ":" + (sky ? BIO.sky : bgImg) + ":" +
+                (img && img.width ? img.width + "x" + img.height : "none");
       if (sig !== bgSig || !bg) {
         if (bg) freeCanvas(bg.cvs);
         bg = offscreen(view.w, view.h);
@@ -470,6 +834,12 @@
         var w = img.width * s, h = img.height * s;
         g.drawImage(img, (view.w - w) / 2, (view.h - h) / 2, w, h);
       }
+      if (!sky && BIO && BIO.tint) {
+        g.globalCompositeOperation = "color";        // the hue moves, the light stays
+        g.fillStyle = rgba(BIO.tint, 0.55);
+        g.fillRect(0, 0, view.w, view.h);
+        g.globalCompositeOperation = "source-over";
+      }
       // The nebulas are bright: knock them back so the comet, the planets and
       // the HUD keep their contrast, and darken the HUD / CTA bands further.
       g.fillStyle = "rgba(7,4,24,.46)";
@@ -484,7 +854,9 @@
     }
 
     // One sprite per planet, drawn once: no per-frame shadowBlur anywhere.
-    function makeSprite(r, skin, ringed) {
+    // `img` is a painted body (artPool): it keeps the atmosphere and replaces
+    // everything else, its sphere scaled to the planet's radius.
+    function makeSprite(r, skin, ringed, img) {
       var pad = Math.round(r * 0.95);
       var size = Math.ceil((r + pad) * 2);
       var o = offscreen(size, size), g = o.ctx, c = size / 2, i, grd;
@@ -493,6 +865,12 @@
       for (i = 5; i >= 1; i--) {
         g.fillStyle = rgba(skin.a, 0.045);
         g.beginPath(); g.arc(c, c, r * (1 + i * 0.17), 0, Math.PI * 2); g.fill();
+      }
+      if (img) {
+        var k = 2 * r / LAD.art.body / Math.max(img.width, img.height);
+        g.drawImage(img, c - img.width * k / 2, c - img.height * k / 2,
+                    img.width * k, img.height * k);
+        return o;
       }
       if (ringed) drawSpriteRing(g, c, r, skin, false);   // back half, hidden later
 
@@ -542,24 +920,56 @@
 
     // Soft halo standing for the gravity field. A flat disc would show its rim
     // as a hard circle over the painted nebula, so it fades out to nothing.
+    // Built round the origin and drawn translated, so a planet that travels
+    // carries its field with it.
     function makeField(p) {
-      var g = ctx.createRadialGradient(p.x, p.y, p.r, p.x, p.y, p.pullR);
+      var g = ctx.createRadialGradient(0, 0, p.r, 0, 0, p.pullR);
       g.addColorStop(0, rgba(p.skin.ring, 0.1));
       g.addColorStop(0.42, rgba(p.skin.ring, 0.045));
       g.addColorStop(1, rgba(p.skin.ring, 0));
       p.field = g;
     }
 
-    function makePlanet(x, y, r) {
-      var skin = Rand.pick(SKINS);
-      var sp = makeSprite(r, skin, Rand.chance(P.ringChance));
+    // `kind` is "" for a plain planet, "moon" for one a moon circles,
+    // "pulsar" for one with a shield and "orbit" for one that travels round a
+    // mini black hole (see rollKind, spawnOrbiter).
+    function makePlanet(x, y, r, kind) {
+      var pulsar = kind === "pulsar";
+      var skin = pulsar ? PULSAR_SKIN : Rand.pick(BIO && BIO.skins || SKINS);
+      var pool = pulsar ? artPool("pulsarStar").concat(artPool("pulsarOrb"))
+                        : artPool((BIO || LAD.worlds[0]).art);
+      var img = pool.length ? Rand.pick(pool) : null;
+      var sp = makeSprite(r, skin, !img && !pulsar && Rand.chance(P.ringChance), img);
       var p = { x: x, y: y, r: r, skin: skin, captureR: wellRadius(r),
                pullR: wellRadius(r) * CONFIG.gravity.reach,
                restR: Math.max(r + 16, r * P.orbitFactor),
+               outerR: reachOf(r, kind),
                sprite: sp.cvs, size: sp.w, half: sp.w / 2,
-               spin: Rand.pick([-1, 1]), field: null };
+               spin: Rand.pick([-1, 1]), field: null,
+               moon: null, pulse: null, near: -1, orbit: null, mx: 0, my: 0 };
+      if (pulsar) {
+        p.pulse = { period: Rand.range(PU.period[0], PU.period[1]), phase: Rand.range(0, 1),
+                    bump: -9 };
+      }
+      if (kind === "moon") {
+        var mr = moonRadius(r), mpool = artPool("lunarMoon");
+        var ms = makeSprite(mr, MOON_SKIN, false, mpool.length ? Rand.pick(mpool) : null);
+        p.moon = { r: mr, R: moonOrbit(r), a0: Rand.range(0, Math.PI * 2),
+                   w: Rand.pick([-1, 1]) * Math.PI * 2 / Rand.range(MO.period[0], MO.period[1]),
+                   sprite: ms.cvs, size: ms.w, half: ms.w / 2 };
+      }
       makeField(p);
       return p;
+    }
+
+    // What the next planet is, off the level's row: a pulsar, a moon's
+    // planet, or a plain one. Never both — one rule to read per body.
+    function rollKind() {
+      var u = Rand.range(0, 1);
+      if (freeSystem() && Rand.chance(0.5)) return "orbit";
+      if (u < ROW.pulsar) return "pulsar";
+      if (u < ROW.pulsar + ROW.moon) return "moon";
+      return "";
     }
 
     // A planet's sprite is its own: the radius is continuous and the craters
@@ -569,6 +979,209 @@
     // (it blew up, or the round was reset).
     function freePlanet(p) {
       if (p.sprite) p.sprite = freeCanvas(p.sprite);
+      if (p.moon && p.moon.sprite) p.moon.sprite = freeCanvas(p.moon.sprite);
+    }
+
+    /* The black holes stand for the whole round: placed first, inside Layout,
+       clear of each other, and the planets keep their wells away from them.
+       Not in the middle third either — the round opens on the most central
+       planet, and that first hop should never start inside a pull. */
+    function placeHoles() {
+      holes.length = 0;
+      var m = slingR() + 24, tries, x, y, ok, i;
+      for (var n = 0; n < ROW.hole; n++) {
+        for (tries = 0; tries < 80; tries++) {
+          x = Rand.range(Layout.left + m, Layout.right - m);
+          y = Rand.range(Layout.top + m, Layout.bottom - m);
+          ok = Math.abs(y - Layout.cy) > Layout.h * 0.16 || tries > 60;
+          for (i = 0; ok && i < holes.length; i++) {
+            if (dist(x, y, holes[i].x, holes[i].y) < HO.reach * 1.3) ok = false;
+          }
+          if (ok) break;
+        }
+        holes.push(makeHoleField({ x: x, y: y, spin: Rand.pick([-1, 1]), dip: -1 }));
+      }
+    }
+    function makeHoleField(h) {
+      var g = ctx.createRadialGradient(h.x, h.y, HO.horizon, h.x, h.y, HO.reach);
+      var col = BIO ? BIO.edge : "#ffb347";
+      g.addColorStop(0, rgba(col, 0.16));
+      g.addColorStop(0.35, rgba(col, 0.05));
+      g.addColorStop(1, rgba(col, 0));
+      h.field = g;
+      return h;
+    }
+
+    /* The orbit systems stand for the whole round, like the holes: a mini
+       black hole and an ellipse round it, each holding one planet at a time.
+       The ellipse is kept inside Layout and clear of the holes, of the other
+       systems and of the belt; the planets keep their wells off it. */
+    function placeSystems() {
+      systems.length = 0;
+      var n, tries, a, m, x, y, ok, i, sys;
+      for (n = 0; n < ROW.orbit; n++) {
+        a = Rand.range(OB.a[0], OB.a[1]);
+        var rot = Rand.range(0, Math.PI);
+        sys = { a: a, b: a * OB.flat, cos: Math.cos(rot), sin: Math.sin(rot),
+                w: Rand.pick([-1, 1]) * Math.PI * 2 / Rand.range(OB.period[0], OB.period[1]),
+                ph: Rand.range(0, Math.PI * 2), p: null, x: 0, y: 0 };
+        m = a + OB.r[1] + 12;
+        for (tries = 0; tries < 80; tries++) {
+          x = Rand.range(Layout.left + m, Layout.right - m);
+          y = Rand.range(Layout.top + m, Layout.bottom - m);
+          ok = true;
+          for (i = 0; ok && i < holes.length; i++) {
+            if (dist(x, y, holes[i].x, holes[i].y) < systemReach(sys) + HO.reach * HO.clear) ok = false;
+          }
+          for (i = 0; ok && i < systems.length; i++) {
+            if (dist(x, y, systems[i].x, systems[i].y) < systemReach(sys) + systemReach(systems[i])) ok = false;
+          }
+          if (ok) break;
+        }
+        sys.x = x; sys.y = y;
+        systems.push(sys);
+      }
+    }
+    function freeSystem() {
+      for (var i = 0; i < systems.length; i++) if (!systems[i].p) return systems[i];
+      return null;
+    }
+    // A planet for an empty ellipse, born where the ellipse is right now.
+    function spawnOrbiter(sys) {
+      var r = Rand.range(OB.r[0], OB.r[1]);
+      systemAt(sys, clock, sysPt);
+      var p = makePlanet(sysPt.x, sysPt.y, r, "orbit");
+      p.orbit = sys; sys.p = p;
+      planets.push(p);
+      return p;
+    }
+
+    // The rift's belt: a column of rocks down the middle of the arena, with a
+    // little jitter so it reads as a field and not as a ruled line.
+    function makeBelt() {
+      var x = (Bounds.left + Bounds.right) / 2, rocks = [], y;
+      for (y = Bounds.top + 10; y < Bounds.bottom; y += RK.step * 0.8) {
+        rocks.push({ x: Rand.range(-RK.half * 0.6, RK.half * 0.6), y: y + Rand.range(-8, 8),
+                     k: Rand.int(0, 5), a: Rand.range(0, Math.PI * 2), spin: Rand.range(-1.2, 1.2) });
+      }
+      return { x: x, rocks: rocks };
+    }
+
+    /* Asteroid streams. One is PLANNED RK.lead seconds before its lane lights
+       up, which is what lets the landing hint know about it before it can
+       matter; the lane then glows for RK.warn seconds — its direction marked —
+       and the rocks go by for one to three seconds. A lane is a whole line
+       across the field, through a point of its middle. */
+    function makeStream(t0) {
+      var ang = Rand.range(0, Math.PI), m = 110;
+      var ux = Math.cos(ang), uy = Math.sin(ang), dir = Rand.pick([-1, 1]);
+      var sm = { x: Rand.range(Layout.left + m, Layout.right - m),
+                 y: Rand.range(Layout.top + m, Layout.bottom - m),
+                 ux: ux * dir, uy: uy * dir, nx: -uy, ny: ux,
+                 t0: t0, t1: t0 + RK.warn, t2: t0 + RK.warn + Rand.range(RK.span[0], RK.span[1]),
+                 shown: false, rocks: [] };
+      // enough rocks to fill the whole lane drawStreams wraps them over
+      for (var i = 0; i < Math.ceil(3000 / RK.step); i++) {
+        sm.rocks.push({ o: Rand.range(-RK.half * 0.7, RK.half * 0.7), k: Rand.int(0, 5),
+                        a: Rand.range(0, Math.PI * 2), spin: Rand.range(-3, 3) });
+      }
+      return sm;
+    }
+    function planStreams() {
+      var i;
+      for (i = streams.length - 1; i >= 0; i--) if (streams[i].t2 < clock) streams.splice(i, 1);
+      if (ROW.stream && clock + RK.lead >= nextStream) {
+        var sm = makeStream(nextStream);
+        streams.push(sm);
+        nextStream = sm.t2 + Rand.range(RK.gap[0], RK.gap[1]);
+      }
+      for (i = 0; i < streams.length; i++) {
+        if (!streams[i].shown && clock >= streams[i].t0) {
+          streams[i].shown = true;
+          if (endIn < 0) Sound.clip("stream", 0.5);
+        }
+      }
+    }
+
+    // Six rocks, drawn once per frame size: lumpy polygons, a lit side and a
+    // crater or two — stone, so nobody reads one as a planet to land on.
+    function buildRocks() {
+      var sig = String(view.dpr);
+      if (rockSprites && sig === rockSig) return;
+      if (rockSprites) for (var q = 0; q < rockSprites.length; q++) freeCanvas(rockSprites[q].cvs);
+      rockSig = sig; rockSprites = [];
+      for (var k = 0; k < 6; k++) {
+        var r = 10 + k * 1.6, size = Math.ceil(r * 2.6), o = offscreen(size, size);
+        var g = o.ctx, c = size / 2, n = 9, i, a, rr, grd;
+        g.beginPath();
+        for (i = 0; i < n; i++) {
+          a = i / n * Math.PI * 2;
+          rr = r * Rand.range(0.72, 1.08);
+          if (i === 0) g.moveTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr);
+          else g.lineTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr);
+        }
+        g.closePath();
+        grd = g.createRadialGradient(c - r * 0.4, c - r * 0.4, r * 0.1, c, c, r * 1.1);
+        grd.addColorStop(0, "#c9b8a6");
+        grd.addColorStop(0.5, "#7d6c60");
+        grd.addColorStop(1, "#3a302b");
+        g.fillStyle = grd;
+        g.fill();
+        g.strokeStyle = "rgba(255,226,196,.35)";
+        g.lineWidth = 1.5;
+        g.stroke();
+        g.fillStyle = "rgba(0,0,0,.25)";
+        g.beginPath(); g.arc(c + r * 0.25, c + r * 0.15, r * 0.22, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.arc(c - r * 0.2, c + r * 0.35, r * 0.13, 0, Math.PI * 2); g.fill();
+        rockSprites.push(o);
+      }
+    }
+
+    /* One sprite for every hole of the round: the painted one (`abyssHoleNN`,
+       its core LAD.art.core of the cut's width) or a dark core in a photon
+       ring and a tilted accretion disc. Concentric strokes, no shadowBlur. */
+    function buildHoleSprite() {
+      var pool = artPool("abyssHole"), img = pool.length ? pool[0] : null;
+      var col = BIO ? BIO.edge : "#ffb347";
+      var sig = view.dpr + ":" + col + ":" + (img ? "art" : "drawn");
+      if (holeSprite && sig === holeSig) return;
+      if (holeSprite) freeCanvas(holeSprite.cvs);
+      holeSig = sig;
+      var R = HO.horizon, size = Math.ceil(R * 9), o = offscreen(size, size);
+      var g = o.ctx, c = size / 2, i;
+      holeSprite = o;
+      if (img) {
+        var k = 2 * R / LAD.art.core / Math.max(img.width, img.height);
+        g.drawImage(img, c - img.width * k / 2, c - img.height * k / 2,
+                    img.width * k, img.height * k);
+        return;
+      }
+      for (i = 4; i >= 1; i--) {                         // the glow it lives in
+        g.fillStyle = rgba(col, 0.05);
+        g.beginPath(); g.arc(c, c, R * (1.4 + i * 0.7), 0, Math.PI * 2); g.fill();
+      }
+      function disc(front) {
+        g.save();
+        g.translate(c, c); g.rotate(-0.32); g.scale(1, 0.34);
+        for (i = 0; i < 4; i++) {
+          g.strokeStyle = i === 0 ? rgba("#ffffff", front ? 0.8 : 0.5)
+                                  : rgba(col, (front ? 0.7 : 0.45) * (1 - i * 0.2));
+          g.lineWidth = R * (0.34 - i * 0.04);
+          g.beginPath();
+          if (front) g.arc(0, 0, R * (1.6 + i * 0.5), 0, Math.PI);
+          else g.arc(0, 0, R * (1.6 + i * 0.5), Math.PI, Math.PI * 2);
+          g.stroke();
+        }
+        g.restore();
+      }
+      disc(false);                                       // behind the core
+      g.strokeStyle = rgba(col, 0.6); g.lineWidth = 7;   // photon ring
+      g.beginPath(); g.arc(c, c, R * 1.12, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = rgba("#ffffff", 0.85); g.lineWidth = 2.5;
+      g.beginPath(); g.arc(c, c, R * 1.08, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = "#000000";
+      g.beginPath(); g.arc(c, c, R, 0, Math.PI * 2); g.fill();
+      disc(true);                                        // in front of it
     }
 
     // Radius to try for a spawn: the busier the field — and the longer the
@@ -596,18 +1209,39 @@
     function spawnPlanet(ray, force) {
       var tries, r, pad, x, y, ok, i, well, gap, clear, fit;
       var bx = 0, by = 0, br = 0, bestFit = -1e9;
+      var kind = rollKind();
+      if (kind === "orbit") { spawnOrbiter(freeSystem()); return true; }
+      // With the belt standing, most new planets are born on the far side of
+      // it from the comet: the open sides are the way over, and a field that
+      // gathered on one side would never ask for them.
+      var lo = Layout.left, hi = Layout.right;
+      if (belt && comet && Rand.chance(0.7)) {
+        if (comet.x < belt.x) lo = belt.x; else hi = belt.x;
+      }
       for (tries = 0; tries < 90; tries++) {
         r = candidateRadius(tries);
-        well = wellRadius(r);
+        well = reachOf(r, kind);          // a moon's path counts as the well
         pad = r + 30;
-        x = Rand.range(Layout.left + pad, Layout.right - pad);
+        x = Rand.range(Math.min(lo + pad, hi - pad), Math.max(lo + pad, hi - pad));
         y = Rand.range(Layout.top + pad, Layout.bottom - pad);
 
-        // clear: free space between this well and the nearest other one.
+        // clear: free space between this well and the nearest other one —
+        // a black hole's inner pull counts as a well too.
         clear = 1e9;
         for (i = 0; i < planets.length; i++) {
+          if (planets[i].orbit) continue;              // its system stands for it
           clear = Math.min(clear, dist(x, y, planets[i].x, planets[i].y) -
-                                  (well + planets[i].captureR));
+                                  (well + planets[i].outerR));
+        }
+        for (i = 0; i < systems.length; i++) {
+          clear = Math.min(clear, dist(x, y, systems[i].x, systems[i].y) -
+                                  (well + systemReach(systems[i])));
+        }
+        // no well across the belt: it would catch the comet through the rock
+        if (belt) clear = Math.min(clear, Math.abs(x - belt.x) - (well + RK.half));
+        for (i = 0; i < holes.length; i++) {
+          clear = Math.min(clear, dist(x, y, holes[i].x, holes[i].y) -
+                                  (well + HO.reach * HO.clear));
         }
         // fit also folds in the two soft rules, so the fallback below picks a
         // spot that is roomy AND off the flight path, not merely roomy.
@@ -619,7 +1253,7 @@
         ok = clear >= gap;
         if (ok && comet && dist(x, y, comet.x, comet.y) < well + 150) ok = false;
         if (ok && ray && tries < 70 && rayDist(x, y, ray) < well + 70) ok = false;
-        if (ok) { planets.push(makePlanet(x, y, r)); return true; }
+        if (ok) { planets.push(makePlanet(x, y, r, kind)); return true; }
 
         if (fit > bestFit) { bestFit = fit; bx = x; by = y; br = r; }
       }
@@ -627,7 +1261,7 @@
       // the best candidate anyway — but an optional one is simply skipped
       // rather than crammed into a field that has no room left.
       if (!force) return false;
-      planets.push(makePlanet(bx, by, br));
+      planets.push(makePlanet(bx, by, br, kind));
       return true;
     }
 
@@ -650,6 +1284,9 @@
       orbitTurns = 0; flightT = 0; clock = 0; comboBroken = false;
       aura = 0; auraPop = 0;
       trapP = null; trapT = 0;
+      flightId = 0; flightBonus = 0; holeT = 0;
+      streams.length = 0;
+      nextStream = Rand.range(RK.first[0], RK.first[1]);
       overtime = false; otT = 0; otShown = -1; otWarn = 0; endIn = -1;
       best = Store.get("bestScore", 0);
       tierCols = null;                                   // refreshTier rebuilds it
@@ -660,8 +1297,14 @@
       comet = null;
       for (var k = 0; k < planets.length; k++) freePlanet(planets[k]);
       planets.length = 0;
+      belt = ROW.belt ? makeBelt() : null;
+      placeHoles();                                      // before the planets avoid them
+      placeSystems();
+      if (holes.length || systems.length) buildHoleSprite();
+      if (belt || ROW.stream) buildRocks();
       var i;
-      for (i = 0; i < P.start; i++) spawnPlanet(null, true);
+      for (i = 0; i < systems.length; i++) spawnOrbiter(systems[i]);
+      for (i = systems.length; i < Math.max(P.start, systems.length + 1); i++) spawnPlanet(null, true);
 
       // Start on the most central planet: the first hop should be a gift.
       var host = planets[0], bd = 1e9, d;
@@ -693,6 +1336,9 @@
       HUD.setScoreNow(0);
       showCombo();
       Fx.reset();
+      // The first level a rule turns up on says what it does; the motor holds
+      // a notice back until the round's entrance has landed.
+      for (i = 0; i < intro.length; i++) Notify.say(intro[i].word, { sub: intro[i].sub, kind: "info" });
     }
 
     function onResize() {
@@ -705,6 +1351,20 @@
         p.y = clamp(p.y, Layout.top + p.r + 10, Layout.bottom - p.r - 10);
         makeField(p);                     // the halo gradient is position-baked
       }
+      var m = slingR() + 24;
+      for (i = 0; i < holes.length; i++) {
+        holes[i].x = clamp(holes[i].x, Layout.left + m, Layout.right - m);
+        holes[i].y = clamp(holes[i].y, Layout.top + m, Layout.bottom - m);
+        makeHoleField(holes[i]);
+      }
+      for (i = 0; i < systems.length; i++) {
+        m = systems[i].a + OB.r[1] + 12;
+        systems[i].x = clamp(systems[i].x, Layout.left + m, Layout.right - m);
+        systems[i].y = clamp(systems[i].y, Layout.top + m, Layout.bottom - m);
+      }
+      if (belt) belt.x = (Bounds.left + Bounds.right) / 2;
+      if (holes.length || systems.length) buildHoleSprite();  // a new view.dpr
+      if (rockSprites) buildRocks();
     }
 
     /* --- input: one tap releases the comet -------------------------------- */
@@ -729,6 +1389,7 @@
       comet.flying = true;
       flightT = 0; orbitTurns = 0;
       trapP = null; trapT = 0;             // fresh flight, fresh deadlock watch
+      flightId++; flightBonus = 0; holeT = 0;
       comet.host = null;
 
       explode(host);
@@ -748,6 +1409,7 @@
     function explode(p) {
       var i = planets.indexOf(p);
       if (i >= 0) planets.splice(i, 1);
+      if (p.orbit) p.orbit.p = null;      // its ellipse waits for the next one
       freePlanet(p);                      // gone from the field, never drawn again
       Fx.burst(p.x, p.y, { color: [p.skin.a, p.skin.b, "#ffffff"], count: 26, speed: 430,
                            size: 7, life: 0.7, grav: 30 });
@@ -763,6 +1425,8 @@
 
     function update(dt) {
       clock += dt;
+      moveBodies(clock);                 // before anything reads a position
+      planStreams();
       if (comboT > 0) comboT = Math.max(0, comboT - dt);
       if (overtime || endIn >= 0) updateOvertime(dt);
       if (comet.flying) updateFlight(dt); else updateOrbit(dt);
@@ -789,6 +1453,8 @@
        turns a capture into a curve that carries on instead of a hard turn.  */
     function updateOrbit(dt) {
       var h = comet.host;
+      // a planet on the move carries the comet round it along with it
+      if (h.orbit) { comet.x += h.mx; comet.y += h.my; }
       var dx = comet.x - h.x, dy = comet.y - h.y;
       var d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
       var rx = dx / d, ry = dy / d;                       // radial unit vector
@@ -850,14 +1516,57 @@
       var sp = flightSpeed();
       flyState.x = comet.x; flyState.y = comet.y;
       flyState.dx = comet.dirX; flyState.dy = comet.dirY;
-      var res = flyStep(flyState, dt, sp, latch, null, flightSides);
+      var res = flyStep(flyState, dt, sp, latch, null, flightSides, clock);
       comet.x = flyState.x; comet.y = flyState.y;
       comet.dirX = flyState.dx; comet.dirY = flyState.dy;
       comet.vx = comet.dirX * sp; comet.vy = comet.dirY * sp;
 
       if (res === "wall") bounce();
+      else if (res === "moon") moonHit(hitBody);
+      else if (res === "shield") shieldHit(hitBody);
+      else if (res === "rock") rockHit();
+      else if (res === "hole") swallow(hitBody);
       else if (res) capture(res);
-      else { res = trapped(dt); if (res) capture(res); }
+      else { res = trapped(dt); if (res) capture(res); else flyBy(dt); }
+    }
+
+    /* What the flight did on its way without landing: an ECLIPSE is a moon
+       passed close and LEFT — awarded on the way out, so a graze that turns
+       into a hit a frame later never pays — and a SLINGSHOT is the skim zone
+       of a black hole entered and left. A comet that circles inside a pull for
+       HO.holdMax seconds is eaten: the same deadlock trapped() closes for a
+       planet, with the hole's own answer. */
+    function flyBy(dt) {
+      var i, p, h, d, inside = null, hr = headRadius();
+      for (i = 0; i < planets.length; i++) {
+        p = planets[i];
+        if (!p.moon || p.hitF === flightId) continue;
+        moonAt(p, clock, moonPt);
+        d = dist(comet.x, comet.y, moonPt.x, moonPt.y);
+        if (d < p.moon.r + hr + MO.graze) p.near = flightId;
+        else if (p.near === flightId) { p.near = -1; award("Eclipse", "eclipse", moonPt.x, moonPt.y); }
+      }
+      for (i = 0; i < holes.length; i++) {
+        h = holes[i];
+        d = dist(comet.x, comet.y, h.x, h.y);
+        if (d < slingR()) h.dip = flightId;
+        else if (h.dip === flightId && d > slingR() + 60) { h.dip = -1; award("Slingshot", "sling", comet.x, comet.y); }
+        if (d < HO.reach) inside = h;
+      }
+      if (!inside) { holeT = 0; return; }
+      holeT += dt;
+      if (holeT > HO.holdMax) swallow(inside);
+    }
+
+    // One bonus caught in flight: +bonus.step on the next capture's multiplier.
+    function award(word, key, x, y) {
+      if (endIn >= 0) return;                 // the run is over, nothing to pay
+      flightBonus += CONFIG.bonus.step;
+      Pop.show("bonus", { word: word, sub: "x" + (1 + flightBonus), hold: 240,
+                          at: { x: x, y: y - 44 } });
+      Fx.ring(x, y, { from: 10, to: 96, color: "#ffd43b", width: 5, life: 0.36 });
+      Fx.burst(x, y, { color: ["#ffd43b", "#ffffff"], count: 10, speed: 240, size: 4, life: 0.4 });
+      Sound.clip(key, 0.6, 1 + flightBonus * 0.08);
     }
 
     /* The second deadlock, and the one the latch cannot see: gravity steers the
@@ -878,7 +1587,8 @@
       if (!near) { trapP = null; trapT = 0; return null; }
       if (near !== trapP) { trapP = near; trapT = 0; }
       trapT += dt;
-      if (trapT < S.trapAfter) return null;
+      // a shielded pulsar is handed over once its shield is down
+      if (trapT < S.trapAfter || shielded(near, clock)) return null;
       trapP = null; trapT = 0;
       i = latch.indexOf(near);              // it may be the very well holding it
       if (i >= 0) latch.splice(i, 1);
@@ -897,14 +1607,23 @@
 
     // Soft assist: after a while adrift, bend the flight toward the closest
     // planet so a bad release can never lock the player into wall pinball.
+    // In the rift the field is a cylinder: a planet is also reachable through
+    // the open side, and behind the belt that is the ONLY way — aiming at it
+    // straight would pin the comet against the rocks.
     function steer(dt) {
-      var target = null, bd = 1e9, i, d;
+      var tx = 0, ty = 0, bd = 1e9, i, d, dx, dy, span = Bounds.right - Bounds.left;
       for (i = 0; i < planets.length; i++) {
-        d = dist(comet.x, comet.y, planets[i].x, planets[i].y);
-        if (d < bd) { bd = d; target = planets[i]; }
+        dx = planets[i].x - comet.x; dy = planets[i].y - comet.y;
+        if (ROW.rift) {
+          var round = dx - (dx > 0 ? span : -span);      // the same planet, the other way
+          var across = belt && (planets[i].x < belt.x) !== (comet.x < belt.x);
+          if (across || Math.abs(round) < Math.abs(dx)) dx = round;
+        }
+        d = Math.sqrt(dx * dx + dy * dy);
+        if (d < bd) { bd = d; tx = dx; ty = dy; }
       }
-      if (!target) return;
-      var want = Math.atan2(target.y - comet.y, target.x - comet.x);
+      if (bd === 1e9) return;
+      var want = Math.atan2(ty, tx);
       var cur = Math.atan2(comet.dirY, comet.dirX);
       var diff = want - cur;
       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -945,6 +1664,8 @@
       // The multiplier is capped: with gravity funnelling long chains, an
       // uncapped one turns the score into noise.
       var gained = (CONFIG.score.base + tight) * Math.min(combo, CONFIG.score.maxMult);
+      gained *= 1 + flightBonus;                         // eclipses, slingshots
+      flightBonus = 0;
       score += gained;
       HUD.setScore(score);
 
@@ -989,6 +1710,14 @@
     function bounce() {
       bounces++;
       wallGlow[nearestEdge(comet.x, comet.y)] = 1;
+      // The first world forgives a wall: a flare and a knock, and the chain
+      // and its clock carry on.
+      if (BIO && BIO.soft) {
+        Fx.burst(comet.x, comet.y, { color: [TIERS[tier].halo, "#ffffff"], count: 8, speed: 200, size: 4, life: 0.3 });
+        Fx.shake(4, 0.14);
+        Sound.clip("wall", 0.45, 1.2);
+        return;
+      }
       Fx.burst(comet.x, comet.y, { color: ["#ff4d6d", "#ffffff"], count: 12, speed: 260, size: 5, life: 0.4 });
       Fx.shake(9, 0.26);
       Fx.flash("#ff4d6d", 0.2, 3);
@@ -997,8 +1726,66 @@
       breakCombo("Wall hit");
     }
 
+    // An asteroid — the belt or a stream — is a wall made of rock.
+    function rockHit() {
+      bounces++;
+      Fx.burst(comet.x, comet.y, { color: ["#c9b8a6", "#7d6c60", "#ffffff"], count: 14, speed: 280, size: 5, life: 0.45 });
+      Fx.shake(9, 0.26);
+      Fx.flash("#ff4d6d", 0.16, 3);
+      Overlay.vignette("#ff4d6d", 0.8, 400);
+      Sound.clip("rock", 0.65);
+      breakCombo("Asteroid hit");
+    }
+
+    // A moon is a wall that moves: same price, its own flare.
+    function moonHit(p) {
+      bounces++;
+      if (p) { p.hitF = flightId; p.near = -1; }
+      Fx.burst(comet.x, comet.y, { color: [MOON_SKIN.a, "#ffffff"], count: 12, speed: 260, size: 5, life: 0.4 });
+      Fx.shake(8, 0.24);
+      Fx.flash("#ff4d6d", 0.16, 3);
+      Overlay.vignette("#ff4d6d", 0.8, 400);
+      Sound.clip("wall", 0.6, 1.3);
+      breakCombo("Moon hit");
+    }
+
+    // A pulsar's shield sends the comet off: a flare, no penalty — the chain
+    // and its clock carry on, so the only cost is the time the detour takes.
+    // The landing hint never promises a shot through a raised shield.
+    function shieldHit(p) {
+      if (p) p.pulse.bump = clock;
+      // the rescue assist starts at once, so the detour bends toward the
+      // nearest planet instead of running on into a wall
+      flightT = Math.max(flightT, S.magnetAfter);
+      Fx.ring(comet.x, comet.y, { from: 8, to: 60, color: p ? p.skin.ring : "#ffffff", width: 5, life: 0.3 });
+      Fx.burst(comet.x, comet.y, { color: ["#ffffff", p ? p.skin.ring : "#9ff3ff"], count: 8, speed: 200, size: 4, life: 0.3 });
+      Fx.shake(4, 0.14);
+      Sound.clip("shield", 0.6);
+    }
+
+    /* Past the horizon: the chain is gone and the comet is spat back out,
+       straight away from the core — a radial heading is the one a radial pull
+       cannot bend back, so it always gets out. */
+    function swallow(h) {
+      var dx = comet.x - h.x, dy = comet.y - h.y;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      if (d < 1) { dx = comet.dirX; dy = comet.dirY; d = 1; }
+      comet.dirX = dx / d; comet.dirY = dy / d;
+      comet.x = h.x + comet.dirX * (slingR() + 8);
+      comet.y = h.y + comet.dirY * (slingR() + 8);
+      h.dip = -1; holeT = 0;
+      Fx.ring(h.x, h.y, { from: HO.horizon, to: HO.reach * 0.8, color: "#ff4d6d", width: 8, life: 0.5 });
+      Fx.burst(comet.x, comet.y, { color: ["#ff4d6d", "#ffb347", "#ffffff"], count: 16, speed: 300, size: 5, life: 0.5 });
+      Fx.shake(10, 0.3);
+      Fx.flash("#000000", 0.25, 3);
+      Overlay.vignette("#ff4d6d", 0.9, 480);
+      Sound.clip("swallow", 0.7);
+      breakCombo("Swallowed");
+    }
+
     function breakCombo(reason) {
       comboBroken = true;
+      flightBonus = 0;                    // a bonus rides only on a clean flight
       var had = combo;
       combo = 0; comboT = 0;
       showCombo();
@@ -1044,6 +1831,7 @@
 
       var len = 0, i, dx, dy;
       for (i = 1; i < trail.length; i++) {
+        if (seam(trail[i], trail[i - 1])) continue;      // the rift costs no tail
         dx = trail[i].x - trail[i - 1].x; dy = trail[i].y - trail[i - 1].y;
         len += Math.sqrt(dx * dx + dy * dy);
         if (len > tailMax) { trail.length = i + 1; break; }
@@ -1061,7 +1849,11 @@
         drawBounds();
         Enter.end();
       }
+      drawHoles();
+      drawSystems();
       drawPlanets();
+      drawBelt();
+      drawStreams();
       drawLandingHint();
       if (Enter.begin(trail[0].x, trail[0].y)) {
         drawAura();               // behind the comet, so the tail stays crisp
@@ -1088,17 +1880,285 @@
       var breathe = 0.055 + 0.02 * Math.sin(clock * 2);
       for (var i = 0; i < 4; i++) {
         var e = edges[i], g = wallGlow[e[0]];
-        // the hit flare is a wide red wash under a bright core line
+        if (ROW.rift && i < 2) { drawPortal(e[1]); continue; }
+        // the hit flare is a wide red wash under a bright core line — in the
+        // tier's own colour where a wall costs nothing
+        var soft = BIO && BIO.soft;
         if (g > 0) {
-          ctx.strokeStyle = rgba("#ff4d6d", 0.3 * g);
+          ctx.strokeStyle = rgba(soft ? TIERS[tier].halo : "#ff4d6d", 0.3 * g);
           ctx.lineWidth = 16;
           ctx.beginPath(); ctx.moveTo(e[1], e[2]); ctx.lineTo(e[3], e[4]); ctx.stroke();
         }
-        ctx.strokeStyle = g > 0 ? rgba("#ff8fa3", breathe + 0.75 * g)
+        ctx.strokeStyle = g > 0 ? rgba(soft ? "#ffffff" : "#ff8fa3", breathe + 0.75 * g)
                                 : rgba(TIERS[tier].halo, breathe);
         ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(e[1], e[2]); ctx.lineTo(e[3], e[4]); ctx.stroke();
       }
+    }
+
+    /* An open side of the rift: a glow band and dashes running up the edge, so
+       it reads as a passage and never as the thin containment line. */
+    function drawPortal(x) {
+      var col = BIO ? BIO.edge : "#7dffd0", y0 = Bounds.top, y1 = Bounds.bottom;
+      var inward = x < view.w / 2 ? 1 : -1;
+      ctx.fillStyle = rgba(col, 0.1 + 0.04 * Math.sin(clock * 3));
+      ctx.fillRect(inward > 0 ? x - 1 : x - 13, y0, 14, y1 - y0);
+      ctx.save();
+      if (ctx.setLineDash) ctx.setLineDash([18, 22]);
+      ctx.lineDashOffset = -clock * 60;
+      ctx.strokeStyle = rgba(col, 0.55);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x + inward * 2, y0); ctx.lineTo(x + inward * 2, y1); ctx.stroke();
+      ctx.restore();
+    }
+
+    /* The black holes: the pull's glow, the skim zone as a slow gold dashed
+       ring (the slingshot's promise), and the sprite on top. */
+    function drawHoles() {
+      for (var i = 0; i < holes.length; i++) {
+        var h = holes[i];
+        if (!Enter.begin(h.x, h.y)) continue;
+        ctx.fillStyle = h.field;
+        ctx.fillRect(h.x - HO.reach, h.y - HO.reach, HO.reach * 2, HO.reach * 2);
+        ctx.save();
+        if (ctx.setLineDash) ctx.setLineDash([6, 14]);
+        ctx.lineDashOffset = (clock * 30 * h.spin) % 20;
+        ctx.strokeStyle = rgba("#ffd43b", 0.32);
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(h.x, h.y, slingR(), 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        var s = holeSprite;
+        if (s) ctx.drawImage(s.cvs, h.x - s.w / 2, h.y - s.h / 2, s.w, s.h);
+        Enter.end();
+      }
+    }
+
+    // Deterministic noise in [-1, 1]: an electric arc is re-struck by the
+    // clock, never by Rand, so a frame and its re-render agree.
+    function jit(a, b) {
+      var v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+      return (v - Math.floor(v)) * 2 - 1;
+    }
+    // Stroke the points in `zp` twice: a wide glow, then a white-hot core.
+    function strokeArc(n, col, a, wide, core) {
+      var pass, i;
+      for (pass = 0; pass < 2; pass++) {
+        ctx.strokeStyle = pass ? rgba("#ffffff", 0.9 * a) : rgba(col, 0.5 * a);
+        ctx.lineWidth = pass ? core : wide;
+        ctx.beginPath();
+        ctx.moveTo(zp[0], zp[1]);
+        for (i = 1; i < n; i++) ctx.lineTo(zp[i * 2], zp[i * 2 + 1]);
+        ctx.stroke();
+      }
+    }
+    // A bolt from radius r0 to r1 along `ang`, kinked sideways at each step.
+    function bolt(p, r0, r1, ang, seed, col, a) {
+      var n = 7, i, t, rr, off, ca = Math.cos(ang), sa = Math.sin(ang);
+      for (i = 0; i < n; i++) {
+        t = i / (n - 1);
+        rr = r0 + (r1 - r0) * t;
+        off = (i === 0 || i === n - 1) ? 0 : jit(seed, i) * 10;
+        zp[i * 2] = p.x + ca * rr - sa * off;
+        zp[i * 2 + 1] = p.y + sa * rr + ca * off;
+      }
+      strokeArc(n, col, a, 6, 1.6);
+    }
+    // A spark crawling along the rim, from `ang` over `len` radians.
+    function spark(p, R, ang, len, seed, col, a) {
+      var n = 6, i, th, rr;
+      for (i = 0; i < n; i++) {
+        th = ang + len * i / (n - 1);
+        rr = R + jit(seed, i) * 5;
+        zp[i * 2] = p.x + Math.cos(th) * rr;
+        zp[i * 2 + 1] = p.y + Math.sin(th) * rr;
+      }
+      strokeArc(n, col, a, 6, 1.5);
+    }
+
+    /* A pulsar's shield, the only thing that tells it from a planet once it is
+       up: an ELECTRIC cage on the well — a crackling ring re-struck 24 times a
+       second, a faint charged haze inside it and bolts arcing from the core to
+       the cage. For PU.warn seconds before it, sparks crawl along the rim,
+       more of them as it nears; it snaps on with an overshoot and blows out
+       outward, and a bounce off it whites it out. All of it read off the same
+       clock as flyStep. */
+    function drawShield(p) {
+      var age = pulseAge(p, clock), up = p.pulse.period - PU.shield;
+      var col = VOLT, R = p.captureR, f = Math.floor(clock * 24), seed = p.pulse.phase * 97;
+      var k, a, i, n, th;
+      if (age < up - PU.warn) return;
+      if (age < up) {                                   // the warning: sparks gather
+        a = (age - (up - PU.warn)) / PU.warn;
+        n = 1 + Math.floor(a * 4);
+        for (i = 0; i < n; i++) {
+          spark(p, R, jit(f + seed, i) * Math.PI, 0.35 + 0.3 * a, f * 3 + i, col, 0.45 + 0.5 * a);
+        }
+        return;
+      }
+      var t = age - up, left = PU.shield - t;
+      if (t < PU.pop) {                                 // snapping on, with an overshoot
+        k = t / PU.pop;
+        k = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
+        a = 1;
+      } else if (left < PU.pop) {                       // blowing out
+        k = 1 + 0.12 * (1 - left / PU.pop);
+        a = left / PU.pop;
+      } else { k = 1; a = 1; }
+      var r = Math.max(4, R * k);
+      var hit = Math.max(0, 1 - (clock - p.pulse.bump) / 0.3);
+      // the charged haze
+      var g = ctx.createRadialGradient(p.x, p.y, r * 0.6, p.x, p.y, r);
+      g.addColorStop(0, rgba(col, 0));
+      g.addColorStop(1, rgba(col, (0.16 + 0.3 * hit) * a));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+      // the cage: a jagged ring, closed on itself
+      n = 44;
+      for (i = 0; i < n; i++) {
+        th = i / (n - 1) * Math.PI * 2;
+        var rr = r + (i === n - 1 ? jit(f + seed, 0) : jit(f + seed, i)) * (5 + 4 * hit);
+        zp[i * 2] = p.x + Math.cos(th) * rr;
+        zp[i * 2 + 1] = p.y + Math.sin(th) * rr;
+      }
+      strokeArc(n, hit > 0 ? "#ffffff" : col, a, 9 + 6 * hit, 2 + hit);
+      // a second, quieter cage just inside, so the ring reads as a field
+      for (i = 0; i < n; i++) {
+        th = i / (n - 1) * Math.PI * 2;
+        zp[i * 2] = p.x + Math.cos(th) * (r - 8 + jit(f + seed + 7, i % (n - 1)) * 3);
+        zp[i * 2 + 1] = p.y + Math.sin(th) * (r - 8 + jit(f + seed + 7, i % (n - 1)) * 3);
+      }
+      ctx.globalAlpha = 0.7;
+      strokeArc(n, VOLT2, a, 5, 1);
+      ctx.globalAlpha = 1;
+      // bolts from the core to the cage
+      for (i = 0; i < 3; i++) {
+        bolt(p, p.r * 1.05, r, (jit(f + seed, 40 + i) + i * 0.66) * Math.PI, f * 5 + i, col, a);
+      }
+    }
+
+    /* The orbit systems: the ellipse each planet travels, faint and dashed so
+       the path reads before the planet gets there, and the mini black hole it
+       turns round — the round's hole sprite at a fraction of its size. */
+    function drawSystems() {
+      for (var i = 0; i < systems.length; i++) {
+        var sys = systems[i];
+        if (!Enter.begin(sys.x, sys.y)) continue;
+        ctx.save();
+        ctx.translate(sys.x, sys.y);
+        ctx.rotate(Math.atan2(sys.sin, sys.cos));
+        ctx.scale(1, sys.b / sys.a);
+        if (ctx.setLineDash) ctx.setLineDash([6, 12]);
+        ctx.lineDashOffset = -clock * 20 * (sys.w > 0 ? 1 : -1);
+        ctx.strokeStyle = rgba(BIO ? BIO.edge : "#7cf5ff", 0.45);
+        ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.arc(0, 0, sys.a, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+        var s = holeSprite, k = 0.5;
+        if (s) ctx.drawImage(s.cvs, sys.x - s.w * k / 2, sys.y - s.h * k / 2, s.w * k, s.h * k);
+        Enter.end();
+      }
+    }
+
+    // One rock of a lane or of the belt, turned on itself.
+    function drawRock(rk, x, y, t) {
+      var sp = rockSprites[rk.k % rockSprites.length];
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rk.a + rk.spin * t);
+      ctx.drawImage(sp.cvs, -sp.w / 2, -sp.h / 2, sp.w, sp.h);
+      ctx.restore();
+    }
+
+    // The rift's belt: a dust band and its rocks, slowly tumbling.
+    function drawBelt() {
+      if (!belt || !rockSprites) return;
+      if (!Enter.begin(belt.x, (Bounds.top + Bounds.bottom) / 2)) return;
+      ctx.fillStyle = rgba("#c9b8a6", 0.07);
+      ctx.fillRect(belt.x - RK.half - 6, Bounds.top, (RK.half + 6) * 2, Bounds.bottom - Bounds.top);
+      for (var i = 0; i < belt.rocks.length; i++) {
+        var rk = belt.rocks[i];
+        drawRock(rk, belt.x + rk.x, rk.y, clock);
+      }
+      Enter.end();
+    }
+
+    /* A stream: first its LANE — a red-orange glow along the line, chevrons
+       running the way the rocks will come and a pulse that quickens — then
+       the rocks themselves, a column of them flowing along the lane, and the
+       glow fading out behind the last one. */
+    function drawStreams() {
+      if (!rockSprites) return;
+      var L = 1500, i, j, sm, a, x, y;
+      for (i = 0; i < streams.length; i++) {
+        sm = streams[i];
+        if (clock < sm.t0) continue;
+        var warn = clock < sm.t1, live = streamLive(sm, clock);
+        // the lane
+        a = warn ? (clock - sm.t0) / RK.warn : Math.max(0, (sm.t2 - clock) / 0.4);
+        a = Math.min(1, a);
+        var beat = 0.75 + 0.25 * Math.sin(clock * (warn ? 10 + 14 * a : 6));
+        for (j = 0; j < 2; j++) {                       // a wide glow, then the lane
+          ctx.strokeStyle = rgba(warn ? "#ff5a36" : "#c9b8a6",
+                                 (warn ? (j ? 0.3 : 0.12) * beat : (j ? 0.1 : 0.05) * a));
+          ctx.lineWidth = RK.half * 2 + (j ? 10 : 44);
+          ctx.beginPath();
+          ctx.moveTo(sm.x - sm.ux * L, sm.y - sm.uy * L);
+          ctx.lineTo(sm.x + sm.ux * L, sm.y + sm.uy * L);
+          ctx.stroke();
+        }
+        if (warn) {
+          // the edges of the lane, and chevrons running the rocks' way
+          ctx.save();
+          if (ctx.setLineDash) ctx.setLineDash([16, 14]);
+          ctx.lineDashOffset = -clock * 160;
+          ctx.strokeStyle = rgba("#ffd0a8", 0.85 * beat);
+          ctx.lineWidth = 3;
+          for (j = -1; j <= 1; j += 2) {
+            ctx.beginPath();
+            ctx.moveTo(sm.x - sm.ux * L + sm.nx * RK.half * j, sm.y - sm.uy * L + sm.ny * RK.half * j);
+            ctx.lineTo(sm.x + sm.ux * L + sm.nx * RK.half * j, sm.y + sm.uy * L + sm.ny * RK.half * j);
+            ctx.stroke();
+          }
+          ctx.restore();
+          var shift = (clock * 180) % 90;
+          ctx.strokeStyle = rgba("#ffffff", 0.9 * beat);
+          ctx.lineWidth = 5;
+          for (j = -L; j < L; j += 90) {
+            x = sm.x + sm.ux * (j + shift); y = sm.y + sm.uy * (j + shift);
+            ctx.beginPath();
+            ctx.moveTo(x - sm.ux * 12 + sm.nx * 12, y - sm.uy * 12 + sm.ny * 12);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x - sm.ux * 12 - sm.nx * 12, y - sm.uy * 12 - sm.ny * 12);
+            ctx.stroke();
+          }
+        }
+        if (!live) continue;
+        // the rocks: a column flowing along the lane, wrapped over 2 L
+        var run = (clock - sm.t1) * RK.speed;
+        for (j = 0; j < sm.rocks.length; j++) {
+          var rk = sm.rocks[j];
+          var along = ((j * RK.step + run) % (2 * L)) - L;
+          drawRock(rk, sm.x + sm.ux * along + sm.nx * rk.o, sm.y + sm.uy * along + sm.ny * rk.o, clock);
+        }
+      }
+    }
+
+    // A moon: its path as a dotted circle, so the player reads where it will
+    // be, and the moon itself in a red rim — it is an obstacle, and without
+    // the rim a moon reads as one more small planet to land on.
+    function drawMoon(p) {
+      ctx.save();
+      if (ctx.setLineDash) ctx.setLineDash([3, 9]);
+      ctx.strokeStyle = rgba(MOON_SKIN.ring, 0.3);
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.moon.R, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      moonAt(p, clock, moonPt);
+      ctx.drawImage(p.moon.sprite, moonPt.x - p.moon.half, moonPt.y - p.moon.half,
+                    p.moon.size, p.moon.size);
+      ctx.strokeStyle = rgba("#ff4d6d", 0.55 + 0.2 * Math.sin(clock * 5));
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(moonPt.x, moonPt.y, p.moon.r + 5, 0, Math.PI * 2); ctx.stroke();
     }
 
     function drawPlanets() {
@@ -1108,8 +2168,11 @@
       for (i = 0; i < planets.length; i++) {
         p = planets[i];
         if (!Enter.begin(p.x, p.y)) continue;
+        ctx.save();
+        ctx.translate(p.x, p.y);
         ctx.fillStyle = p.field;
-        ctx.fillRect(p.x - p.pullR, p.y - p.pullR, p.pullR * 2, p.pullR * 2);
+        ctx.fillRect(-p.pullR, -p.pullR, p.pullR * 2, p.pullR * 2);
+        ctx.restore();
         Enter.end();
       }
       for (i = 0; i < planets.length; i++) {
@@ -1127,6 +2190,8 @@
         ctx.beginPath(); ctx.arc(p.x, p.y, p.captureR, 0, Math.PI * 2); ctx.stroke();
         ctx.restore();
         ctx.drawImage(p.sprite, p.x - p.half, p.y - p.half, p.size, p.size);
+        if (p.pulse) drawShield(p);
+        if (p.moon) drawMoon(p);
         Enter.end();
       }
     }
@@ -1180,20 +2245,43 @@
       fillLatch(aimLatch);
       aimSides.length = 0;
 
-      var bounced = 0, res, i, land = null;
+      var bounced = 0, cost = 0, res, i, land = null, doom = null;
+      var soft = BIO && BIO.soft;
       for (i = 0; i < 100; i++) {
+        moveBodies(clock + (i + 1) * step);   // the planets on the move, then
         // the simulation drops the release immunity after S.latchHold, so the
         // prediction has to drop it on the very same frame
         if (aimLatch.length && i * step > S.latchHold) aimLatch.length = 0;
-        res = flyStep(st, step, sp, aimLatch, comet.host, aimSides);
-        if (res === "wall") { if (++bounced > 1) break; }
+        // each step is read at the time it will happen: where the moons will
+        // be, whether the pulsar will be lit
+        res = flyStep(st, step, sp, aimLatch, comet.host, aimSides, clock + (i + 1) * step);
+        if (res === "wall" || res === "moon" || res === "rock") {
+          if (res !== "wall" || !soft) cost++;      // a forgiven wall is free
+          if (++bounced > 2) break;
+        }
+        // a horizon or a raised shield ends the prediction: what comes after
+        // a bounce off a bubble is too sensitive to promise a landing
+        else if (res === "hole" || res === "shield") { doom = hitBody; break; }
         else if (res) { land = res; break; }
       }
+      moveBodies(clock);                  // ...and the field put back
+      // Into a horizon, or onto a shield: that body is ringed in red, which
+      // is the whole message — not now.
+      if (doom && Enter.begin(doom.x, doom.y)) {
+        ctx.globalAlpha = 0.4 + 0.25 * Math.sin(clock * 9);
+        ctx.strokeStyle = "#ff4d6d";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(doom.x, doom.y, doom.pulse ? doom.captureR + 8 : HO.horizon + 14, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        Enter.end();
+      }
       if (!land || !Enter.begin(land.x, land.y)) return;
-      // Red ring: the shot lands, but only after hitting a wall — which costs
+      // Red ring: the shot lands, but only after hitting something that costs
       // the chain. That single colour tells the player to wait a beat.
       ctx.globalAlpha = 0.26 + 0.14 * Math.sin(clock * 6);
-      ctx.strokeStyle = bounced ? "#ff4d6d" : "#ffffff";
+      ctx.strokeStyle = cost ? "#ff4d6d" : "#ffffff";
       ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(land.x, land.y, land.r + 12, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
@@ -1214,6 +2302,7 @@
       // the coma spreading around the plume (a flat wide pass would blob)
       ctx.strokeStyle = rgba(TIERS[tier].glow, 0.13);
       for (i = 0; i < n - 1; i++) {
+        if (seam(trail[i], trail[i + 1])) continue;
         t = i / (n - 1);
         ctx.globalAlpha = 1 - t * 0.85;
         ctx.lineWidth = w * 1.9 * (1 - t * 0.94);
@@ -1225,6 +2314,7 @@
 
       // the dust itself: hot at the nucleus, cold and thin at the far end
       for (i = 0; i < n - 1; i++) {
+        if (seam(trail[i], trail[i + 1])) continue;
         t = i / (n - 1);
         ctx.strokeStyle = cols[Math.min(cols.length - 1, Math.floor(t * cols.length))];
         ctx.lineWidth = w * (1 - t * 0.94);
@@ -1238,6 +2328,7 @@
       // the ion jet: a short white streak straight out of the nucleus
       var core = Math.min(n - 1, Math.floor(n * 0.3));
       for (i = 0; i < core; i++) {
+        if (seam(trail[i], trail[i + 1])) continue;
         t = i / Math.max(1, core);
         ctx.globalAlpha = 0.7 * (1 - t) * (1 - t);
         ctx.strokeStyle = "#ffffff";
@@ -1254,6 +2345,7 @@
       // Rand, so a mote stays with its sample instead of strobing frame to frame.
       ctx.fillStyle = rgba(TIERS[tier].halo, 0.6);
       for (i = 6; i < n - 1; i += 5) {
+        if (seam(trail[i], trail[i + 1])) continue;
         t = i / (n - 1);
         var dx = trail[i].x - trail[i + 1].x, dy = trail[i].y - trail[i + 1].y;
         var m = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -1406,9 +2498,46 @@
        The three-star finish: the web shell has already played the slow
        motion, and the round ends through the game's own result so the end
        screen keeps these stat rows. Ignored by the playable, which has no
-       levels — see docs/LEVELS.md. */
+       levels — see docs/LEVELS.md.
+
+       applyLevel(d) is what makes a level a different game rather than a
+       harder one: the level layer lerps the manifest's knobs, then hands over
+       here, BEFORE reset() — which is why the world and the row only have to
+       be set: reset paints the sky, places the holes and rolls the planets
+       out of them. `null` is the endless run, and the game as designed. */
+    function applyLevel(d) {
+      var n = CONFIG.level | 0, i, k;
+      intro = [];
+      // A round on the web lasts a minute or more: the manifest lerps it over
+      // the climb, and the endless run gets the minute too. The playable never
+      // comes through here and keeps its own clock.
+      if (d == null && CONFIG.slug) CONFIG.gameSeconds = LAD.seconds;
+      if (!n || d == null) { BIO = null; ROW = NO_ROW; return; }
+      BIO = LAD.worlds[0];
+      for (i = 0; i < LAD.from.length; i++) if (n >= LAD.from[i]) BIO = LAD.worlds[i];
+      var row = LAD.levels[Math.min(n, LAD.levels.length) - 1] || {};
+      ROW = { moon: row.moon || 0, pulsar: row.pulsar || 0, hole: row.hole || 0,
+              orbit: row.orbit || 0, stream: !!row.stream, rift: !!row.rift, belt: !!row.belt };
+      // The first row a rule appears in is where it is introduced.
+      for (k in LAD.intro) {
+        if (!LAD.intro.hasOwnProperty(k) || !row[k]) continue;
+        for (i = 0; i < n - 1 && !LAD.levels[i][k]; i++) {}
+        if (i === n - 1) intro.push(LAD.intro[k]);
+      }
+    }
+
+    // The objective of level n, where its world names its own (`goals`);
+    // anything else is the manifest's lerp. Read off the level number, like
+    // the world, and asked for before the level is armed (the map's card).
+    function levelGoal(n) {
+      var w = 0, i;
+      for (i = 0; i < LAD.from.length; i++) if (n >= LAD.from[i]) w = i;
+      var goals = LAD.worlds[w].goals;
+      return goals ? { goal: goals[n - LAD.from[w]] } : null;
+    }
+
     return { reset: reset, onDown: onDown, update: update, render: render,
              onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: finishRound };
+             applyLevel: applyLevel, levelGoal: levelGoal, levelWon: finishRound };
   })();
 
