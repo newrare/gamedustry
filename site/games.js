@@ -159,19 +159,6 @@ window.GAMES = [
     }
   },
   {
-    slug: "marshmelt",
-    name: "Marshmelt",
-    accent: ["#ff9d2e", "#ff7a1a"],
-    fr: {
-      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
-    },
-    en: {
-      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
-    }
-  },
-  {
     slug: "orbinity",
     name: "Orbinity",
     accent: ["#7cf5ff", "#6d5cff"],
@@ -182,6 +169,19 @@ window.GAMES = [
     en: {
       tagline: "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
       tags: ["Timing tap", "Snap gravity", "Combo chain"]
+    }
+  },
+  {
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
+    fr: {
+      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+    },
+    en: {
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
+      tags: ["Tap to jump", "Endless", "Lava"]
     }
   },
   {

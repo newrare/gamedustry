@@ -1,0 +1,369 @@
+<!doctype html>
+<!--
+  ECHOMAZE — the TikTok promo, 1080×1920, ~13 s.
+
+  A HyperFrames composition: every element with a data-start is a clip on the
+  timeline, and the one paused GSAP timeline at the bottom is seeked frame by
+  frame by the renderer. Everything under assets/ is gathered out of the game
+  by `node tools/lab/promo.mjs echomaze`, which also renders it in both
+  languages (the `lang` variable).
+
+  The beat sheet, on the music's own break (the master's 112.1 s → 114.3 s
+  silence, so the drop lands on the blackout):
+
+    0.0  the five halls flash by, the maze powering up       HOOK
+    0.6  one maze, lit — "2", then "1"                      the two seconds
+    2.8  DROP: everything goes out                          "Lights out"
+    3.3  the real round: two dead ends, then the way        "Fire a pulse", "Read the echo"
+    E    the pulse reaches the gate                         "Way out!"
+    E+1  four halls, four colours                           "30 levels"
+    E+3  the logotype, the hero, the line, the call         end card
+
+  Text is written in normal case in assets/copy.js and shouted by upper(),
+  the house way: capitals carry no accent.
+-->
+<html lang="en" data-resolution="portrait"
+      data-composition-variables='[{"id":"lang","type":"string","label":"Language","default":"en"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/copy.js"></script>
+    <script src="assets/marks.js"></script>
+    <style>
+      @font-face {
+        font-family: "Orbitron";
+        src: url("assets/font.woff2") format("woff2");
+        font-weight: 400 900;
+      }
+      :root {
+        --ink: #03070d;
+        --cyan: #7ef9ff;
+        --green: #4ade80;
+        --white: #f2fdff;
+        --glow: 0 0 18px rgba(126, 249, 255, 0.85), 0 0 60px rgba(126, 249, 255, 0.45);
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px; overflow: hidden;
+        background: var(--ink);
+        font-family: "Orbitron", sans-serif;
+        color: var(--white);
+      }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+      .clip { position: absolute; inset: 0; }
+      .cover { width: 100%; height: 100%; object-fit: cover; }
+
+      /* --- type ---------------------------------------------------------- */
+      .say {
+        position: absolute; left: 70px; right: 70px; text-align: center;
+        font-weight: 900; letter-spacing: 0.02em; line-height: 1.05;
+        text-shadow: 0 6px 0 rgba(0, 0, 0, 0.55), var(--glow);
+      }
+      .kicker {
+        position: absolute; left: 70px; right: 70px; text-align: center;
+        font-weight: 700; font-size: 44px; letter-spacing: 0.12em; color: var(--cyan);
+        text-shadow: 0 3px 0 rgba(0, 0, 0, 0.6), 0 0 22px rgba(126, 249, 255, 0.6);
+      }
+      .plate {
+        display: inline-block; padding: 18px 34px 22px; border-radius: 22px;
+        background: rgba(3, 10, 20, 0.78); border: 3px solid rgba(126, 249, 255, 0.75);
+        box-shadow: 0 0 30px rgba(126, 249, 255, 0.35), inset 0 0 24px rgba(126, 249, 255, 0.15);
+      }
+
+      /* --- 1. the hook --------------------------------------------------- */
+      #hook-text { top: 230px; font-size: 84px; }
+      #hook-sub { top: 450px; }
+      .numeral {
+        position: absolute; left: 0; right: 0; top: 760px; text-align: center;
+        font-weight: 900; font-size: 560px; line-height: 1; color: var(--white);
+        text-shadow: 0 0 30px rgba(126, 249, 255, 0.95), 0 0 120px rgba(126, 249, 255, 0.6), 0 14px 0 rgba(0, 0, 0, 0.45);
+      }
+      #scrim-hook { background: radial-gradient(ellipse at 50% 55%, rgba(3, 7, 13, 0.15), rgba(3, 7, 13, 0.7) 75%); }
+
+      /* --- 2. lights out ------------------------------------------------- */
+      #flash { background: #e9feff; }
+      #lights { top: 820px; font-size: 120px; }
+
+      /* --- 3. the round -------------------------------------------------- */
+      .cap { top: 1180px; font-size: 68px; }
+      #escape { top: 700px; font-size: 150px; color: var(--green);
+        text-shadow: 0 8px 0 rgba(0, 0, 0, 0.55), 0 0 26px rgba(74, 222, 128, 0.95), 0 0 90px rgba(74, 222, 128, 0.55); }
+      .ring {
+        position: absolute; left: 540px; top: 790px; width: 40px; height: 40px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%; border: 8px solid var(--green);
+        box-shadow: 0 0 30px rgba(74, 222, 128, 0.9), inset 0 0 30px rgba(74, 222, 128, 0.6);
+      }
+
+      /* --- 4. the thirty levels ------------------------------------------ */
+      #scrim-levels { background: linear-gradient(180deg, rgba(3, 7, 13, 0.85) 0%, rgba(3, 7, 13, 0.25) 30%, rgba(3, 7, 13, 0.25) 62%, rgba(3, 7, 13, 0.85) 100%); }
+      #levels { top: 200px; }
+      #levels .big { display: block; font-size: 330px; line-height: 1.12; }
+      #levels .word { display: block; font-size: 96px; }
+      #levels-sub { top: 720px; }
+
+      /* --- 5. the end card ----------------------------------------------- */
+      #scrim-end { background: linear-gradient(180deg, rgba(3, 7, 13, 0.55) 0%, rgba(3, 7, 13, 0.1) 40%, rgba(3, 7, 13, 0.75) 78%, rgba(3, 7, 13, 0.95) 100%); }
+      /* Everything that is read stands above y 1600: under it, TikTok lays
+         its own caption and the sound line over the video. */
+      #logo { position: absolute; left: 110px; width: 860px; top: 150px; }
+      #hero { position: absolute; width: 560px; left: 260px; top: 400px; }
+      #tagline { top: 1250px; left: 130px; right: 130px; font-size: 50px; text-wrap: balance; }
+      #cta {
+        position: absolute; left: 0; right: 0; top: 1420px; text-align: center;
+      }
+      #cta .pill {
+        display: inline-block; padding: 24px 50px 28px; border-radius: 999px;
+        font-weight: 900; font-size: 50px; letter-spacing: 0.03em; color: #04121a;
+        background: linear-gradient(180deg, #b6fdff, var(--cyan) 55%, #36c9e0);
+        box-shadow: 0 10px 0 #1a7f93, 0 0 50px rgba(126, 249, 255, 0.7);
+      }
+      #url { top: 1560px; font-size: 40px; letter-spacing: 0.18em; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="13" data-width="1080" data-height="1920">
+
+      <!-- 1. HOOK: the five halls flash by, then one maze and two seconds -->
+      <img id="flash-b2" class="clip cover" src="assets/maze-b2.jpg" data-start="0" data-duration="0.12" data-track-index="0" />
+      <img id="flash-b3" class="clip cover" src="assets/maze-b3.jpg" data-start="0.12" data-duration="0.12" data-track-index="0" />
+      <img id="flash-b4" class="clip cover" src="assets/maze-b4.jpg" data-start="0.24" data-duration="0.12" data-track-index="0" />
+      <img id="flash-b5" class="clip cover" src="assets/maze-b5.jpg" data-start="0.36" data-duration="0.12" data-track-index="0" />
+      <img id="flash-b1" class="clip cover" src="assets/maze-b1.jpg" data-start="0.48" data-duration="0.12" data-track-index="0" />
+      <img id="maze" class="clip cover" src="assets/maze-b1.jpg" data-start="0.6" data-duration="2.2" data-track-index="0" />
+      <div id="scrim-hook" class="clip" data-start="0" data-duration="2.8" data-track-index="1"></div>
+      <div id="num-2" class="clip" data-start="0.6" data-duration="1.1" data-track-index="2"><div class="numeral" data-layout-allow-overlap>2</div></div>
+      <div id="num-1" class="clip" data-start="1.7" data-duration="1.1" data-track-index="2"><div class="numeral" data-layout-allow-overlap>1</div></div>
+      <div id="hook" class="clip" data-start="0" data-duration="2.8" data-track-index="3">
+        <div id="hook-text" class="say" data-copy="hook"></div>
+        <div id="hook-sub" class="kicker"><span class="plate" data-copy="count"></span></div>
+      </div>
+
+      <!-- 2 + 3. LIGHTS OUT, and the real round from the moment the maze dies -->
+      <video id="run" class="clip cover" src="assets/run-from-dark.mp4" muted playsinline
+             data-start="2.8" data-duration="6.2" data-track-index="0"></video>
+      <div id="flash" class="clip" data-start="2.8" data-duration="0.35" data-track-index="4"></div>
+      <div id="lights-out" class="clip" data-start="2.8" data-duration="0.85" data-track-index="3">
+        <div id="lights" class="say" data-copy="lights"></div>
+      </div>
+      <div id="cap-fire" class="clip" data-start="3.6" data-duration="1.25" data-track-index="3">
+        <div class="say cap"><span class="plate" data-copy="fire"></span></div>
+      </div>
+      <div id="cap-echo" class="clip" data-start="4.95" data-duration="1.4" data-track-index="3">
+        <div class="say cap"><span class="plate" data-copy="echo"></span></div>
+      </div>
+      <div id="win" class="clip" data-start="6.5" data-duration="0.9" data-track-index="3">
+        <div class="ring" id="ring-a"></div>
+        <div class="ring" id="ring-b"></div>
+        <div id="escape" class="say" data-copy="escape"></div>
+      </div>
+
+      <!-- 4. THIRTY LEVELS: four halls, four colours -->
+      <img id="lv-b2" class="clip cover" src="assets/maze-b2.jpg" data-start="7.4" data-duration="0.45" data-track-index="0" />
+      <img id="lv-b3" class="clip cover" src="assets/maze-b3.jpg" data-start="7.85" data-duration="0.45" data-track-index="0" />
+      <img id="lv-b4" class="clip cover" src="assets/maze-b4.jpg" data-start="8.3" data-duration="0.45" data-track-index="0" />
+      <img id="lv-b5" class="clip cover" src="assets/maze-b5.jpg" data-start="8.75" data-duration="0.45" data-track-index="0" />
+      <div id="scrim-levels" class="clip" data-start="7.4" data-duration="1.8" data-track-index="1"></div>
+      <div id="levels-card" class="clip" data-start="7.4" data-duration="1.8" data-track-index="3">
+        <div id="levels" class="say" data-layout-allow-overlap><span class="big" data-copy="levelsN" data-layout-allow-overlap></span><span class="word" data-copy="levelsWord" data-layout-allow-overlap></span></div>
+        <div id="levels-sub" class="kicker"><span class="plate" data-copy="levelsSub"></span></div>
+      </div>
+
+      <!-- 5. END CARD -->
+      <img id="end-bg" class="clip cover" src="assets/background-phone-blue.jpg" data-start="9.2" data-duration="3.8" data-track-index="0" />
+      <div id="scrim-end" class="clip" data-start="9.2" data-duration="3.8" data-track-index="1"></div>
+      <div id="end" class="clip" data-start="9.2" data-duration="3.8" data-track-index="3">
+        <img id="hero" src="assets/character-happy.png" />
+        <img id="logo" src="assets/title.png" />
+        <div id="tagline" class="say" data-copy="tagline"></div>
+        <div id="cta"><span class="pill" data-copy="cta"></span></div>
+        <div id="url" class="kicker" data-copy="url" data-case="as-is"></div>
+      </div>
+
+      <!-- the music: its break is the two seconds, its drop is the blackout -->
+      <audio id="music" src="assets/music.mp3" data-start="0" data-duration="13" data-track-index="8"
+             data-volume="0.85" data-fade-out="0.8"></audio>
+
+      <!-- the game's own sound, laid back from the shot's log by tools/lab/promo.mjs -->
+      <!-- sfx:begin -->
+      <audio id="sfx-run-0" data-start="2.8" data-duration="1.510" data-track-index="20" data-volume="0.63" src="assets/sfx-dark.mp3"></audio>
+      <audio id="sfx-run-1" data-start="3.267" data-duration="0.570" data-track-index="21" data-volume="0.72" src="assets/sfx-shoot.mp3"></audio>
+      <audio id="sfx-run-2" data-start="3.334" data-duration="0.317" data-track-index="22" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-3" data-start="3.334" data-duration="0.482" data-track-index="23" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-4" data-start="3.734" data-duration="0.177" data-track-index="24" data-volume="0.63" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-5" data-start="3.734" data-duration="0.993" data-track-index="25" data-volume="0.45" src="assets/sfx-deep.mp3"></audio>
+      <audio id="sfx-run-6" data-start="3.734" data-duration="0.317" data-track-index="26" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-7" data-start="3.734" data-duration="0.482" data-track-index="27" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-8" data-start="3.867" data-duration="0.993" data-track-index="28" data-volume="0.45" src="assets/sfx-deep.mp3"></audio>
+      <audio id="sfx-run-9" data-start="3.867" data-duration="0.317" data-track-index="29" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-10" data-start="3.867" data-duration="0.482" data-track-index="30" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-11" data-start="4" data-duration="0.317" data-track-index="31" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-12" data-start="4" data-duration="0.482" data-track-index="32" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-13" data-start="4" data-duration="0.993" data-track-index="33" data-volume="0.45" src="assets/sfx-deep.mp3"></audio>
+      <audio id="sfx-run-14" data-start="4.134" data-duration="0.317" data-track-index="34" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-15" data-start="4.167" data-duration="0.482" data-track-index="35" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-16" data-start="4.167" data-duration="0.993" data-track-index="36" data-volume="0.45" src="assets/sfx-deep.mp3"></audio>
+      <audio id="sfx-run-17" data-start="4.267" data-duration="0.317" data-track-index="37" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-18" data-start="4.3" data-duration="0.482" data-track-index="38" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-19" data-start="4.4" data-duration="0.317" data-track-index="39" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-20" data-start="4.434" data-duration="0.482" data-track-index="40" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-21" data-start="4.534" data-duration="0.317" data-track-index="41" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-22" data-start="4.567" data-duration="0.570" data-track-index="42" data-volume="0.72" src="assets/sfx-shoot.mp3"></audio>
+      <audio id="sfx-run-23" data-start="4.567" data-duration="0.482" data-track-index="43" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-24" data-start="4.667" data-duration="0.177" data-track-index="44" data-volume="0.63" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-25" data-start="4.667" data-duration="0.317" data-track-index="45" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-26" data-start="4.7" data-duration="0.482" data-track-index="46" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-27" data-start="4.8" data-duration="0.317" data-track-index="47" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-28" data-start="4.9" data-duration="0.482" data-track-index="48" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-29" data-start="4.934" data-duration="0.317" data-track-index="49" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-30" data-start="5.067" data-duration="0.317" data-track-index="50" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-31" data-start="5.2" data-duration="0.317" data-track-index="51" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-32" data-start="5.334" data-duration="0.317" data-track-index="52" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-33" data-start="5.367" data-duration="0.482" data-track-index="53" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-34" data-start="5.467" data-duration="0.317" data-track-index="54" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-35" data-start="5.567" data-duration="0.482" data-track-index="55" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-36" data-start="5.6" data-duration="0.317" data-track-index="56" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-37" data-start="5.734" data-duration="0.317" data-track-index="57" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-38" data-start="5.767" data-duration="0.720" data-track-index="58" data-volume="0.45" src="assets/sfx-fizzle.mp3"></audio>
+      <audio id="sfx-run-39" data-start="5.767" data-duration="0.177" data-track-index="59" data-volume="0.77" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-40" data-start="5.834" data-duration="0.570" data-track-index="60" data-volume="0.72" src="assets/sfx-shoot.mp3"></audio>
+      <audio id="sfx-run-41" data-start="5.867" data-duration="0.317" data-track-index="61" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-42" data-start="5.9" data-duration="0.177" data-track-index="62" data-volume="0.63" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-43" data-start="5.9" data-duration="0.482" data-track-index="63" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-44" data-start="6" data-duration="0.317" data-track-index="64" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-45" data-start="6.034" data-duration="0.482" data-track-index="65" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-46" data-start="6.134" data-duration="0.317" data-track-index="66" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-47" data-start="6.167" data-duration="0.482" data-track-index="67" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-48" data-start="6.267" data-duration="0.317" data-track-index="68" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-49" data-start="6.3" data-duration="0.482" data-track-index="69" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-50" data-start="6.4" data-duration="0.317" data-track-index="70" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-51" data-start="6.534" data-duration="0.317" data-track-index="71" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-52" data-start="6.667" data-duration="0.317" data-track-index="72" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-53" data-start="6.8" data-duration="0.570" data-track-index="73" data-volume="0.72" src="assets/sfx-shoot.mp3"></audio>
+      <audio id="sfx-run-54" data-start="6.8" data-duration="0.317" data-track-index="74" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-55" data-start="6.867" data-duration="0.177" data-track-index="75" data-volume="0.63" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-56" data-start="6.934" data-duration="0.317" data-track-index="76" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-57" data-start="7" data-duration="0.482" data-track-index="77" data-volume="0.31" src="assets/sfx-map.mp3"></audio>
+      <audio id="sfx-run-58" data-start="7.034" data-duration="0.720" data-track-index="78" data-volume="0.45" src="assets/sfx-fizzle.mp3"></audio>
+      <audio id="sfx-run-59" data-start="7.034" data-duration="0.177" data-track-index="79" data-volume="0.77" src="assets/sfx-flap.mp3"></audio>
+      <audio id="sfx-run-60" data-start="7.067" data-duration="0.993" data-track-index="80" data-volume="0.45" src="assets/sfx-deep.mp3"></audio>
+      <audio id="sfx-run-61" data-start="7.067" data-duration="0.317" data-track-index="81" data-volume="0.23" src="assets/sfx-wall.mp3"></audio>
+      <audio id="sfx-run-62" data-start="7.067" data-duration="1.324" data-track-index="82" data-volume="0.90" src="assets/sfx-escape.mp3"></audio>
+      <audio id="cue-0" data-start="0" data-duration="0.954" data-track-index="83" data-volume="0.7" src="assets/sfx-power.mp3"></audio>
+      <audio id="cue-1" data-start="0.6" data-duration="0.037" data-track-index="84" data-volume="0.9" src="assets/sfx-tick.mp3"></audio>
+      <audio id="cue-2" data-start="1.7" data-duration="0.037" data-track-index="85" data-volume="0.9" src="assets/sfx-tick.mp3"></audio>
+      <!-- sfx:end -->
+    </div>
+
+    <script>
+      /* Capitals, the house way (lab/button.html): accents come off, and a
+         lowercase run glued to a digit is left alone. */
+      function upper(str) {
+        var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+        var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+        var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+        var shouted = String(str == null ? "" : str).replace(
+          /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+            var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+            if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+            return run.toUpperCase();
+          });
+        var out = "", i, c, k;
+        for (i = 0; i < shouted.length; i++) {
+          c = shouted.charAt(i);
+          if (PAIR[c]) { out += PAIR[c]; continue; }
+          k = FROM.indexOf(c);
+          out += k < 0 ? c : TO.charAt(k);
+        }
+        return out;
+      }
+
+      var vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+      var COPY = window.PROMO_COPY[vars.lang] || window.PROMO_COPY.en;
+      document.documentElement.lang = vars.lang || "en";
+      // "30 levels" is set as a figure over a word
+      COPY.levelsN = COPY.levels.split(" ")[0];
+      COPY.levelsWord = COPY.levels.split(" ").slice(1).join(" ");
+      Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function (el) {
+        var s = COPY[el.getAttribute("data-copy")] || "";
+        el.textContent = el.getAttribute("data-case") === "as-is" ? s : upper(s);
+      });
+
+      /* The round is played, not scripted: two shots of one seed do not escape
+         on the same frame (the French run took one more pulse). So the clip
+         is cut on the run's own blackout and everything from the escape on is
+         shifted by S, read off the run's sound log (assets/marks.js, written
+         by tools/lab/promo.mjs); the end card absorbs it and the video keeps
+         its 13 s. Authored for an escape at 6.5 s. */
+      var M = window.PROMO_MARKS || { dark: 0.87, escape: 4.57 };
+      var S = +(2.8 + M.escape - M.dark - 6.5).toFixed(3);
+      function place(id, start, dur) {
+        var el = document.getElementById(id);
+        el.setAttribute("data-start", String(+start.toFixed(3)));
+        el.setAttribute("data-duration", String(+dur.toFixed(3)));
+      }
+      // #run is not placed: it starts on the blackout because promo.mjs cut it
+      // there, and the levels card covers whatever it plays past the escape.
+      place("win", 6.5 + S, 0.9);
+      ["lv-b2", "lv-b3", "lv-b4", "lv-b5"].forEach(function (id, i) { place(id, 7.4 + S + i * 0.45, 0.45); });
+      place("scrim-levels", 7.4 + S, 1.8);
+      place("levels-card", 7.4 + S, 1.8);
+      ["end-bg", "scrim-end", "end"].forEach(function (id) { place(id, 9.2 + S, 3.8 - S); });
+
+      var tl = gsap.timeline({ paused: true });
+
+      // 1. the hook: each hall punches in, the lit maze breathes in close
+      ["#flash-b2", "#flash-b3", "#flash-b4", "#flash-b5", "#flash-b1"].forEach(function (id, i) {
+        tl.fromTo(id, { scale: 1.18 }, { scale: 1.06, duration: 0.12, ease: "power2.out" }, i * 0.12);
+      });
+      tl.fromTo("#maze", { scale: 1.06 }, { scale: 1.16, duration: 2.2, ease: "none" }, 0.6);
+      tl.fromTo("#hook-text", { scale: 1.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.28, ease: "back.out(2.2)" }, 0);
+      tl.fromTo("#hook-sub", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 0.5);
+      tl.fromTo("#num-2 .numeral", { scale: 2.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 0.6);
+      tl.to("#num-2 .numeral", { scale: 0.85, opacity: 0.25, duration: 0.8, ease: "power1.in" }, 0.9);
+      tl.fromTo("#num-1 .numeral", { scale: 2.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)" }, 1.7);
+      tl.to("#num-1 .numeral", { scale: 0.85, opacity: 0.25, duration: 0.8, ease: "power1.in" }, 2.0);
+      // the power failing in the last half second before the drop
+      tl.to("#maze", { opacity: 0.55, duration: 0.05, yoyo: true, repeat: 5, ease: "none" }, 2.45);
+
+      // 2. lights out: a white hit, then the word slams in and shakes
+      tl.fromTo("#flash", { opacity: 0.95 }, { opacity: 0, duration: 0.35, ease: "power2.out" }, 2.8);
+      tl.fromTo("#lights", { scale: 2.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.22, ease: "power4.out" }, 2.8);
+      tl.to("#lights", { x: 10, duration: 0.04, yoyo: true, repeat: 5, ease: "none" }, 3.02);
+      tl.to("#lights", { opacity: 0, scale: 0.92, duration: 0.2, ease: "power2.in" }, 3.45);
+
+      // 3. the round's captions
+      [["#cap-fire", 3.6], ["#cap-echo", 4.95]].forEach(function (c) {
+        tl.fromTo(c[0] + " .plate", { y: 60, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.25, ease: "back.out(2)" }, c[1]);
+        tl.to(c[0] + " .plate", { opacity: 0, y: -30, duration: 0.2, ease: "power2.in" }, c[1] + (c[0] === "#cap-fire" ? 1.05 : 1.2));
+      });
+      tl.fromTo("#escape", { scale: 0.3, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.35, ease: "back.out(2.6)" }, 6.5 + S);
+      // the rings grow by their size, not a scale, so the stroke stays a stroke
+      tl.fromTo("#ring-a", { width: 40, height: 40, opacity: 1 }, { width: 1300, height: 1300, opacity: 0, duration: 0.8, ease: "power2.out" }, 6.5 + S);
+      tl.fromTo("#ring-b", { width: 40, height: 40, opacity: 1 }, { width: 900, height: 900, opacity: 0, duration: 0.8, ease: "power2.out" }, 6.65 + S);
+      tl.to("#escape", { scale: 1.12, duration: 0.5, ease: "sine.inOut" }, 6.85 + S);
+
+      // 4. thirty levels: every hall zooms, the figure stamps on the first
+      ["#lv-b2", "#lv-b3", "#lv-b4", "#lv-b5"].forEach(function (id, i) {
+        tl.fromTo(id, { scale: 1.25 }, { scale: 1.08, duration: 0.45, ease: "power2.out" }, 7.4 + S + i * 0.45);
+      });
+      tl.fromTo("#levels", { scale: 2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" }, 7.4 + S);
+      tl.fromTo("#levels-sub", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 7.65 + S);
+
+      // 5. the end card
+      tl.fromTo("#end-bg", { scale: 1.15 }, { scale: 1.02, duration: 3.8 - S, ease: "power1.out" }, 9.2 + S);
+      tl.fromTo("#logo", { scale: 0.4, opacity: 0, y: -40 }, { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.9)" }, 9.25 + S);
+      tl.fromTo("#hero", { y: 260, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.4)" }, 9.45 + S);
+      tl.to("#hero", { y: -14, duration: 0.9, yoyo: true, repeat: 3, ease: "sine.inOut" }, 10.0 + S);
+      tl.fromTo("#tagline", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 9.85 + S);
+      tl.fromTo("#cta .pill", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2.4)" }, 10.15 + S);
+      tl.to("#cta .pill", { scale: 1.07, duration: 0.35, yoyo: true, repeat: 5, ease: "sine.inOut" }, 10.6 + S);
+      tl.fromTo("#url", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 10.45 + S);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

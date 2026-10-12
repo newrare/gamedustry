@@ -110,8 +110,10 @@
     spinMax: 0.62,                  // rad/s — the anchor rides the spin, which
                                     // is what keeps a landing from being final
     knockSpin: 0.0009,              // rad/s of spin a collision imparts, per px/s
-    spawnEvery: 0.66, spawnMin: 0.34,
-    maxRocks: 9, minRocks: 4,
+    /* Fewer rocks than there is room for, on purpose: a crowded fall hid the
+       action and handed a recovery to every miss. */
+    spawnEvery: 0.9, spawnMin: 0.55,
+    maxRocks: 6, minRocks: 3,
     recoil: 0.1,                    // how much a jump kicks the rock it leaves
 
     /* --- the fireballs -----------------------------------------------------
@@ -119,7 +121,7 @@
        is a rock that gives you a beat and a half and then shrugs you off,
        toasting the marshmallow one shade on the way. */
     fireMinR: 30, fireMaxR: 56,
-    fireChance0: 0.1, fireChance1: 0.42,
+    fireChance0: 0.1, fireChance1: 0.32,   // a fall of six rocks has room for few
     fireFall: 1.3,                  // they fall faster than rock
     fireHold: 1.15,                 // seconds before it throws the body off
     fireEject: 470,                 // px/s it is thrown with
@@ -133,15 +135,21 @@
     riseSeconds: 78,
     burnSink: 46,                   // px/s a burning structure settles at
     burnSeconds: 1.7,               // how long it blazes before it melts
-    /* The toast IS the life. A touch of lava does not end the run while the
-       body still has a shade to lose: it is thrown back up, one shade
-       browner, and only a charred marshmallow melts. Fireballs, drops and
-       blasts brown it the same way, and ice gives a shade back — so every
-       burn is a cost and the run lasts as long as the player keeps paying. */
-    lavaBounce: 1750,               // px/s the lava throws the body back up at —
+    /* The toast IS the life, four states: white (full), golden (one hit
+       taken), toasted (two), charred — and a hit on a charred marshmallow is
+       the end of the run. A HIT is staying on a fireball until it throws the
+       body off, or the serpent's bite. The LAVA is three hits at once: a
+       white marshmallow comes out of it charred, thrown back up; anything
+       browner melts. Only the s'mores heal: a s'more (a biscuit and a
+       chocolate) gives one state back, a super s'more makes it white. */
+    lavaHits: 3,
+    lavaBounce: 1500,               // px/s the lava throws the body back up at —
                                     //    into the upper half, clear of the
                                     //    burning rocks crowding the crust
     lavaGrace: 1.2,                 // seconds the lava cannot catch it again
+    /* ...and it is FELT: a browner marshmallow is a heavier one, every shade
+       takes this much off its jump. The HUD's left pill counts the lives. */
+    toastSlow: 0.08,
     /* A falling fireball is a rock with an AURA behind it — red, yellow or
        violet, one per rock — rather than flames painted over it. */
     auras: ["#ff3b30", "#ffd166", "#b56bff"],
@@ -163,12 +171,22 @@
        place the body may stand on the lava, for a few seconds; on a fireball
        or a burning rock it puts the fire out. */
     waterEvery: 3.2, waterForm: 0.5, waterR: 11,
-    crustR: 78,             // half the crust's width (it is a flat plate)
-    crustLife: 4.5,         // seconds before it cracks back into the lake
-    /* MAGNET CRYSTALS hang in the cave: inside their field they pull the body
-       in flight toward them. They hold nothing — they bend a jump. */
-    magnetR: 190,           // the field's radius, drawn
-    magnetPull: 2600,       // px/s^2 at the centre, falling to 0 at the rim
+    crustR: 100,            // half the crust's width (it is a flat plate)
+    crustLife: 6,           // seconds before it cracks back into the lake
+    /* ...and every crust COOLS the lake: the lava drops by coolDrop, up to
+       coolMax below where it would be, and climbs back at coolBack — so the
+       water buys height on the only clock the game has. */
+    coolDrop: 26, coolMax: 120, coolBack: 4,
+    /* MAGNET CRYSTALS hang in the cave. Their field pulls the body in flight
+       toward them, the crystal CATCHES it — a perch that never falls — and
+       the jump out of it is a charged one, higher than any rock gives. Then
+       it holds no more than a beat, and goes dark for a while once used. */
+    magnetR: 230,           // the field's radius, drawn
+    magnetPull: 3400,       // px/s^2 at the centre, falling to 0 at the rim
+    magnetCore: 30,         // the crystal itself, what catches
+    magnetHold: 1.6,        // seconds it holds the body before throwing it up
+    magnetBoost: 1.35,      // the jump out of it, against a rock's
+    magnetCool: 5,          // seconds dark after a launch
     /* The LAVA SERPENT: a swirl on the lake, then a leap across it in an arc.
        It breaks the rocks it goes through and bites the body. */
     serpentEvery: 7,        // seconds between two leaps, +-25%
@@ -183,8 +201,9 @@
     /* S'MORES: a biscuit and a chocolate drift down; catch one of each and
        the s'more takes a shade of toast off, or doubles the points for a
        while when there is none to take. */
-    smoreEvery: 6.5, smoreFall: 70, smoreR: 24,
+    smoreEvery: 6, smoreFall: 70, smoreR: 24,
     smoreBoost: 10,         // seconds of double points
+    superChance: 0.2,       // the share of treats that fall as a whole SUPER s'more
 
     /* --- difficulty -------------------------------------------------------- */
     rampSeconds: 65,
@@ -228,7 +247,7 @@
     surgeEvery: 7.5,        // seconds of calm between two surges
     surgeWarn: 1.4,         // the crust flashes red this long before one
     surgeUp: 0.6, surgeHold: 0.9, surgeDown: 1.5,
-    surgeHeight: 0.1,       // fraction of the play band a surge climbs
+    surgeHeight: 0.17,      // fraction of the play band a surge climbs
     dropEvery: 2.4,         // seconds between two drops off the ceiling, +-25%
     dropForm: 0.8,          // a drop swells on the ceiling this long first
     dropR: 13,
@@ -239,8 +258,12 @@
        Read by `applyLevel` (section 6); the playable never calls it, so it
        keeps the caldera it shipped with. The manifest's `levels.tune` lerps
        the pressure over the thirty levels and this table says what each one
-       IS: five biomes of six, each bringing one new thing that changes how
-       the fall is read, then the core mixing two of them at a time.
+       IS. The first four biomes bring ONE mechanic per level, each over two
+       levels — met weakly first, then for real — so every level is the one
+       where something is new: classic rocks, claimed rocks, fireballs, the
+       surges; ice, cold water, magnets; geysers, bubbles, the serpent;
+       split rocks, crumbling rocks, bombs. The temple then THEMES its six
+       levels, three or four of those at once.
 
        A biome is also a PLACE and a SOUND: `music` is its window of the bed
        (docs/MUSIC.md — the windows climb the track as the levels climb the
@@ -256,7 +279,11 @@
        the pressure (the lava's rise and the fast lane) on the first two
        levels of a biome, so a new rock is met before the squeeze comes back.
 
-       A row: `goal` is the level's objective, the score its first star asks
+       A row: `claimed` is the share of rocks that fall already taken (dark,
+       they break the chain), `water`, `orbs`, `serpent` and `surge` are
+       intensities — 0.5 is the weak first meeting (half as often, a lower
+       surge), 1 the full one — `intro` is what the level announces, a
+       mechanic's key or a temple theme's. `goal` is the level's objective, the score its first star asks
        for (the second and third are 1.5x and 2.2x it — packages/webshell/
        levels.js), handed to the map by levelGoal(). It is MEASURED, not
        lerped: 0.9 x what a scripted pilot scores in 30 s of that biome,
@@ -288,44 +315,44 @@
       ],
       ease: [0.82, 0.92, 1, 1, 1, 1],
       levels: [
-        // the lava cave: the game as it shipped; s'mores from 2, fireballs from 3
-        { goal:2000, fire:0, smores:0 },
-        { goal:2100, fire:0, intro:["smores"] },
-        { goal:2150, fire:1, intro:["fire"] },
-        { goal:2200, fire:1 },
-        { goal:2300, fire:1 },
-        { goal:2350, fire:1 },
-        // the crystal cave: ice throws the body up; cold water, then magnets
-        { goal:2150, fire:0.6, ice:0.25, intro:["ice"] },
-        { goal:2200, fire:0.8, ice:0.3 },
-        { goal:2300, fire:1, ice:0.3, water:1, intro:["water"] },
-        { goal:2350, fire:1, ice:0.35, water:1 },
-        { goal:2450, fire:1, ice:0.3, magnets:1, intro:["magnets"] },
-        { goal:2500, fire:1, ice:0.35, water:1, magnets:2 },
-        // the jungle gorge: the steam lifts; then the lake's own bubbles
-        { goal:1450, fire:0.6, geysers:1, intro:["geyser"] },
-        { goal:1500, fire:0.8, geysers:1 },
-        { goal:1550, fire:1, geysers:1, orbs:1, intro:["orbs"] },
-        { goal:1600, fire:1, geysers:2, orbs:1 },
-        { goal:1650, fire:1, geysers:2, ice:0.15, orbs:1 },
-        { goal:1700, fire:1, geysers:3, ice:0.2, orbs:1 },
-        // the dead forest: rocks that do not last — split, wind, dust, bomb
-        { goal:3550, fire:0.6, shard:0.3, intro:["shard"] },
-        { goal:3650, fire:0.8, shard:0.3, wind:1, intro:["wind"] },
-        { goal:3800, fire:0.8, shard:0.15, dust:0.25, intro:["dust"] },
-        { goal:3900, fire:1, shard:0.2, dust:0.3, wind:1 },
-        { goal:4000, fire:0.8, shard:0.1, dust:0.15, bomb:0.2, intro:["bomb"] },
-        { goal:4150, fire:1, shard:0.15, dust:0.2, bomb:0.2, wind:1 },
-        // the serpent temple: the lava surges, drips and leaps; old friends mixed in
-        { goal:2450, fire:0.6, surge:1, ice:0.2, intro:["surge"] },
-        { goal:2550, fire:0.8, drops:1, shard:0.25, intro:["drops"] },
-        { goal:2650, fire:0.8, surge:1, serpent:1, intro:["serpent"] },
-        { goal:2700, fire:1, drops:1, bomb:0.18, serpent:1, water:1 },
-        { goal:2800, fire:1, surge:1, drops:1, ice:0.2, dust:0.2, orbs:1 },
-        { goal:2900, fire:1, surge:1, drops:1, geysers:2, bomb:0.15, serpent:1, magnets:1 }
+        // the lava cave: the rocks, the rocks already taken, the fire, the lake
+        { goal:1400, fire:0, smores:0 },                         // 1  classic rocks
+        { goal:1450, fire:0, claimed:0.3, intro:["claimed"] },   // 2  claimed rocks
+        { goal:1500, fire:0.5, intro:["fire"] },                 // 3  fireballs, a few
+        { goal:1550, fire:1.2 },                                 // 4  fireballs, often
+        { goal:1600, fire:0, surge:0.5, intro:["surge"] },       // 5  surges, rare and low
+        { goal:1650, fire:0, surge:1 },                          // 6  surges, often and high
+        // the crystal cave: ice, cold water, magnets
+        { goal:1900, fire:0, ice:0.15, intro:["ice"] },
+        { goal:1950, fire:0, ice:0.35 },
+        { goal:2050, fire:0, water:0.5, intro:["water"] },
+        { goal:2100, fire:0, water:1 },
+        { goal:2150, fire:0, magnets:1, intro:["magnets"] },
+        { goal:2250, fire:0, magnets:2 },
+        // the jungle gorge: geysers, bubbles, the serpent
+        { goal:1850, fire:0, geysers:1, intro:["geyser"] },
+        { goal:1900, fire:0, geysers:2 },
+        { goal:1950, fire:0, orbs:0.5, intro:["orbs"] },
+        { goal:2050, fire:0, orbs:1 },
+        { goal:2100, fire:0, serpent:0.5, intro:["serpent"] },
+        { goal:2150, fire:0, serpent:1 },
+        // the dead forest: rocks that do not last
+        { goal:2300, fire:0, shard:0.15, intro:["shard"] },
+        { goal:2350, fire:0, shard:0.35 },
+        { goal:2450, fire:0, dust:0.15, intro:["dust"] },
+        { goal:2550, fire:0, dust:0.35 },
+        { goal:2600, fire:0, bomb:0.12, intro:["bomb"] },
+        { goal:2700, fire:0, bomb:0.25 },
+        // the serpent temple: six themes, three or four of them at once
+        { goal:2250, fire:1, surge:1, bomb:0.15, intro:["furnace"] },
+        { goal:2300, fire:0, ice:0.25, water:1, magnets:1, intro:["cold"] },
+        { goal:2400, fire:0, geysers:2, orbs:1, magnets:1, intro:["ascent"] },
+        { goal:2500, fire:0.6, shard:0.2, dust:0.2, bomb:0.15, intro:["collapse"] },
+        { goal:2550, fire:0.6, serpent:1, surge:0.5, orbs:0.5, intro:["lair"] },
+        { goal:2650, fire:0, serpent:1, surge:1, bomb:0.15, geysers:1, intro:["cataclysm"] }
       ],
-      endless: { fire:1, ice:0.12, shard:0.1, dust:0.1, bomb:0.1, geysers:2, surge:1, drops:1,
-                 orbs:1, water:1, magnets:1, serpent:1, wind:1 }
+      endless: { fire:1, ice:0.12, shard:0.1, dust:0.1, bomb:0.1, geysers:2, surge:1,
+                 orbs:1, water:1, magnets:1, serpent:1 }
     }
   };
 
@@ -385,10 +412,10 @@
     var LAD = CONFIG.ladder, BIO = null, ROW = null;
     var geysers = [], drops = [], dropT = 0;
     var surge = { ph: 0, left: 0, off: 0 };   // 0 calm, 1 warn, 2 up, 3 hold, 4 down
-    var orbT = 0, water = [], waterT = 0, magnets = [];
+    var orbT = 0, water = [], waterT = 0, magnets = [], cool = 0;
     var serpent = { st: 0, left: 0 };         // 0 idle, 1 the swirl, 2 the leap
     var wind = { ph: 0, left: 0, dir: 1, s: 0 }, ash = [];
-    var treats = [], treatT = 0, held = { biscuit: false, chocolate: false }, boostT = 0;
+    var treats = [], treatT = 0, held = { biscuit: false, chocolate: false }, boostT = 0, toldSuper = false;
 
     /* The four special rocks. Each one is a MATERIAL — its own colours over a
        silhouette of KINDS — so it is told apart before it is touched. `hold`
@@ -404,7 +431,8 @@
                hold:"bombHold", ring:"#ff3b30", art:"rockBomb" },
       // a giant lava bubble and a crust of cooled lava: drawn by hand, below
       orb:   { kind:0 },
-      crust: { kind:2 }
+      crust: { kind:2 },
+      magnet:{ kind:1 }
     };
     var SP_KEYS = ["ice", "shard", "dust", "bomb"];
 
@@ -532,9 +560,9 @@
     /* The effects a rock leaves behind, out of the fourth row of its sheet:
        drawn where it went, growing and fading. */
     var puffs = [];
-    function puff(key, x, y, size, life) {
+    function puff(key, x, y, size, life, rot) {
       if (!sprite(key)) return;
-      puffs.push({ key: key, x: x, y: y, size: size, t: 0, life: life, rot: Rand.range(-0.5, 0.5) });
+      puffs.push({ key: key, x: x, y: y, size: size, t: 0, life: life, rot: rot == null ? Rand.range(-0.5, 0.5) : rot });
     }
 
     // What a level says on its first second, once, where the thing is new.
@@ -545,11 +573,18 @@
       shard:  ["Cracked rocks", "They split into pieces you can land on"],
       dust:   ["Crumbling rocks", "They fall to dust soon after you land"],
       bomb:   ["Bombs", "They blow 2 s after you land: get away"],
-      surge:  ["Lava surges", "The lava swells in waves"],
+      surge:  ["Lava surges", "Watch the red line: the lava will reach it"],
+      claimed:["Claimed rocks", "A dark rock is already taken: it breaks your chain"],
+      furnace:["Furnace", "Fireballs, surges and bombs"],
+      cold:   ["Cold snap", "Ice, cold water and magnets"],
+      ascent: ["Updraft", "Geysers, bubbles and magnets"],
+      collapse:["Collapse", "Rocks that split, crumble and blow"],
+      lair:   ["The lair", "The serpent, the surges and the bubbles"],
+      cataclysm:["Cataclysm", "Everything the lava has"],
       drops:  ["Lava drops", "They set rocks on fire"],
-      smores: ["S'mores", "Catch a biscuit and a chocolate"],
-      water:  ["Cold water", "It turns the lava to a crust you can stand on"],
-      magnets:["Magnet crystals", "They pull you in mid-air"],
+      smores: ["S'mores", "A biscuit and a chocolate give a life back"],
+      water:  ["Cold water", "It cools the lake down and sets a crust to stand on"],
+      magnets:["Magnet crystals", "They catch you and throw you higher"],
       orbs:   ["Lava bubbles", "Ride one up before it pops"],
       wind:   ["Ash gusts", "The wind pushes you in mid-air"],
       serpent:["Lava serpent", "Watch the swirl: it leaps from there"]
@@ -575,7 +610,7 @@
     // The lava surface is two sine waves, so it never reads as a straight line
     // and the same function decides what has fallen in.
     function surfaceAt(x) {
-      return lavaY - surge.off + Math.sin(x * 0.011 + wave) * 8 + Math.sin(x * 0.029 - wave * 1.7) * 4;
+      return lavaY - surge.off + cool + Math.sin(x * 0.011 + wave) * 8 + Math.sin(x * 0.029 - wave * 1.7) * 4;
     }
 
     function ramp() { return clamp(elapsed / C.rampSeconds, 0, 1); }
@@ -758,6 +793,8 @@
       rk.fall = (fast ? Rand.range(C.fastMin, C.fastMax) : Rand.range(C.fallMin, C.fallMax))
               * (1 + C.fallRamp * k) * (hot ? C.fireFall : 1);
       rk.vy = rk.fall;
+      // a level of claimed rocks drops some already taken: dark, no points
+      if (ROW && ROW.claimed && !hot && !sp && Rand.chance(ROW.claimed)) rk.used = true;
       rocks.push(rk);
       return rk;
     }
@@ -856,15 +893,10 @@
       Fx.burst(mallow.x, mallow.y, { color:["#fff3dd", "#ffd9a0"], count:8, speed:210, life:.32, grav:420, size:4 });
 
       if (!rk.hot) arm(rk);
-      // ice takes one shade of toast back off the body, which is what makes it
-      // the answer to a run of fireballs rather than one more hazard
-      if (rk.sp === "ice" && !rk.hot && toast > 0) {
-        toast--;
-        Fx.burst(mallow.x, mallow.y, { color:["#e8fbff", "#9fdcf2"], count:10, speed:180, life:.4, grav:-60, size:4 });
-      }
 
       if (rk.hot) { scorch(rk); return; }
       if (rk.used) {                                  // a rock already claimed
+        if (combo >= 2) Pop.show("alert", { word:"Chain lost", at:"upper" });
         combo = 0; HUD.setRight(null);
         Sound.clip("stick", 0.4, Rand.range(1.1, 1.25));
         return;
@@ -899,12 +931,6 @@
         Pop.show(rocksHit >= 40 ? "ultra" : rocksHit >= 20 ? "combo" : "streak",
                  { word: rocksHit + Lang.t(" rocks"), sub:"Keep climbing" });
         Sound.clip("climb", 0.5, 1 + Math.min(rocksHit / 60, 0.35));
-        /* ...and climbing heals: every milestone takes a shade of toast back,
-           the comeback a player earns by playing well rather than by luck. */
-        if (toast > 0) {
-          toast--;
-          Fx.burst(mallow.x, mallow.y, { color:["#fff3dd", "#ffffff"], count:12, speed:200, life:.45, grav:-80, size:4 });
-        }
       }
     }
 
@@ -1032,7 +1058,7 @@
       var i, o, dx, dy, dist, reach = rk.r + C.bombReach, m, kick;
       for (i = 0; i < rocks.length; i++) {
         o = rocks[i];
-        if (o === rk || o.sunk > 0) continue;
+        if (o === rk || o.sunk > 0 || ghost(o)) continue;
         dx = o.x - rk.x; dy = o.y - rk.y; dist = Math.hypot(dx, dy) || 1;
         if (dist > reach + o.r) continue;
         if (o.sp === "bomb" && !o.hot) shortFuse(o, 0.25);
@@ -1113,14 +1139,21 @@
     }
 
     // The lava's surge: a warning, a climb, a hold, the way back down.
+    /* A surge's size is the row's: at 0.5 it comes a third less often and
+       climbs three quarters as high. Its crest is drawn while it gathers, so
+       the player sees where the lava is about to be. */
+    function surgeH() {
+      var v = (ROW && ROW.surge) || 1;
+      return Layout.h * C.surgeHeight * (0.5 + 0.5 * v);
+    }
     function stepSurge(d) {
-      var H = Layout.h * C.surgeHeight, s = surge, p;
+      var v = (ROW && ROW.surge) || 1, H = surgeH(), s = surge, p;
       s.left -= d;
       while (s.left <= 0) {
         s.ph = (s.ph + 1) % 5;
-        s.left += [C.surgeEvery, C.surgeWarn, C.surgeUp, C.surgeHold, C.surgeDown][s.ph];
-        if (s.ph === 1) Sound.clip("surge", 0.6);
-        if (s.ph === 2) Fx.shake(4, C.surgeUp);
+        s.left += [C.surgeEvery * (v < 1 ? 1.5 : 1), C.surgeWarn, C.surgeUp, C.surgeHold, C.surgeDown][s.ph];
+        if (s.ph === 1) { Sound.clip("surge", 0.8); Pop.show("danger", { word:"Lava surge!", at:"upper" }); }
+        if (s.ph === 2) { Fx.shake(9, C.surgeUp); Overlay.vignette("#ff3b00", 0.4); }
       }
       if (s.ph === 2) { p = 1 - s.left / C.surgeUp; s.off = H * p * (2 - p); }
       else if (s.ph === 3) s.off = H;
@@ -1130,7 +1163,7 @@
 
     /* A drop swells on the ceiling, then falls. A rock it lands on catches
        fire — ice hisses away, a bomb goes up — and the body it lands on is
-       knocked loose, its chain broken and one shade browner. */
+       knocked loose and its chain broken: where it falls is the danger. */
     function stepDrops(d) {
       var i, j, dr, rk, hit;
       dropT -= d;
@@ -1149,7 +1182,7 @@
         hit = null;
         for (j = 0; j < rocks.length; j++) {
           rk = rocks[j];
-          if (rk.sunk > 0 || rk.burning) continue;
+          if (rk.sunk > 0 || rk.burning || ghost(rk)) continue;
           if (Math.hypot(dr.x - rk.x, dr.y - rk.y) < rk.r * 0.92 + C.dropR) { hit = rk; break; }
         }
         if (hit) {
@@ -1167,13 +1200,13 @@
     }
 
     function drip() {
-      toast = Math.min(3, toast + 1); mallow.hot = 0.9; mallow.blown = 0.5;
+      mallow.hot = 0.9; mallow.blown = 0.5;    // knocked loose: the lava below is the cost
       combo = 0; HUD.setRight(null);
       if (mallow.host) loose(mallow.host.vx, C.dropKnock, mallow.host);
       else mallow.vy = Math.max(mallow.vy, 0) + C.dropKnock;
       Sound.clip("burn", 0.55, Rand.range(1.05, 1.2));
       Fx.burst(mallow.x, mallow.y - C.mallowLen * 0.4, { color:["#ffd166", "#ff7a1a"], count:14, speed:280, life:.4, grav:300 });
-      Pop.show("danger", { word: toast >= 3 ? Lang.t("Burnt!") : Lang.t("Hot!"), sub:"Jump", at:"upper" });
+      Pop.show("alert", { word:"Hot!", at:"upper" });
     }
 
     /* ---- the climb's other hands ------------------------------------------
@@ -1183,7 +1216,7 @@
        names it, so the playable never meets any of them. */
 
     // A body the rock physics leaves alone: it neither pushes nor is pushed.
-    function ghost(rk) { return rk.sp === "orb" || rk.sp === "crust"; }
+    function ghost(rk) { return rk.sp === "orb" || rk.sp === "crust" || rk.sp === "magnet"; }
 
     function circleShape(rk) {
       var i;
@@ -1225,7 +1258,7 @@
       var i, j, w, rk, hit;
       waterT -= d;
       if (waterT <= 0) {
-        waterT = C.waterEvery * Rand.range(0.75, 1.25);
+        waterT = C.waterEvery / (ROW.water || 1) * Rand.range(0.75, 1.25);
         water.push({ x: Rand.range(Layout.left + 60, Layout.right - 60), y: Layout.top + 4, vy: 0, form: 0 });
       }
       for (i = water.length - 1; i >= 0; i--) {
@@ -1260,28 +1293,41 @@
       var rk = makeRock(x, surfaceAt(x), C.crustR, false, "crust");
       plateShape(rk);
       rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = 0;
-      rk.life = C.crustLife;
+      rk.life = C.crustLife; rk.design = Rand.int(0, 2);
       rocks.push(rk);
+      cool = Math.min(C.coolMax, cool + C.coolDrop);     // the lake goes down
       Sound.clip("crumble", 0.45, 1.6);
       Fx.burst(x, surfaceAt(x), { color:["#ffffff", "#e8fbff", "#c9b8a0"], count:18, speed:220, life:.7, grav:-200, size:7 });
     }
 
-    // THE MAGNETS: crystals hanging in the cave, a field each.
+    /* THE MAGNETS: crystals hanging in the cave, a field each. A crystal is a
+       body of the rock array (it is caught by the same test a rock is) that
+       the rock physics leaves alone, bobbing where it was hung. */
     function newMagnets(n) {
-      var i, out = [];
+      var i, rk, out = [];
       for (i = 0; i < n; i++) {
-        out.push({ x: Layout.left + Layout.w * (i + 1) / (n + 1) + Rand.range(-50, 50),
-                   y0: Layout.top + Layout.h * Rand.range(0.24, 0.5), y: 0, ph: Rand.range(0, TAU) });
-        out[i].y = out[i].y0;
+        rk = makeRock(Layout.left + Layout.w * (i + 1) / (n + 1) + Rand.range(-50, 50),
+                      Layout.top + Layout.h * Rand.range(0.24, 0.46), C.magnetCore, false, "magnet");
+        circleShape(rk);
+        rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = 0;
+        rk.y0 = rk.y; rk.ph = Rand.range(0, TAU); rk.cool = 0;
+        rocks.push(rk); out.push(rk);
       }
       return out;
+    }
+    function magnetLaunch(rk) {
+      Sound.clip("ice", 0.55, 0.8);
+      Fx.ring(rk.x, rk.y, { from:20, to:140, color:"#d9a6ff", width:6, life:.35 });
+      Fx.burst(rk.x, rk.y, { color:["#d9a6ff", "#ffffff"], count:14, speed:320, life:.4, grav:200, size:4 });
     }
     // the pull at a point, into out.x / out.y (the flight and the preview both)
     function magnetPull(x, y, out) {
       var i, m, dx, dy, dist, f;
       out.x = 0; out.y = 0;
       for (i = 0; i < magnets.length; i++) {
-        m = magnets[i]; dx = m.x - x; dy = m.y - y; dist = Math.hypot(dx, dy);
+        m = magnets[i];
+        if (m.cool > 0) continue;                       // dark: no field
+        dx = m.x - x; dy = m.y - y; dist = Math.hypot(dx, dy);
         if (dist > C.magnetR || dist < 24) continue;
         f = C.magnetPull * (1 - dist / C.magnetR);
         out.x += dx / dist * f; out.y += dy / dist * f;
@@ -1296,7 +1342,8 @@
       out.y = surfaceAt(out.x) + 40 - 4 * sv.H * q * (1 - q);
       return out;
     }
-    function segR(i) { return 26 - i * 1.3; }
+    // a segment's drawn radius; it bites and breaks within 0.8 of it
+    function segR(i) { return 34 - i * 1.7; }
     function stepSerpent(d) {
       var sv = serpent, i, j, rk, p = {}, q, gone = false;
       sv.left -= d;
@@ -1313,9 +1360,11 @@
           sv.left += C.serpentLeap; sv.bit = false;
           Sound.clip("serpent", 0.6);
           splash(sv.x0, 20);
+          puff("snake23", sv.x0, surfaceAt(sv.x0) - 50, 240, 0.6, 0);
         } else {
-          sv.left += C.serpentEvery * Rand.range(0.75, 1.25);
+          sv.left += C.serpentEvery / ((ROW && ROW.serpent) || 1) * Rand.range(0.75, 1.25);
           splash(sv.x1, 20);
+          puff("snake24", sv.x1, surfaceAt(sv.x1) - 50, 240, 0.6, 0);
         }
       }
       if (sv.st !== 2) return;
@@ -1325,11 +1374,11 @@
         serpentAt(q - i * 0.045, p);
         if (p.y > surfaceAt(p.x)) continue;              // still under the crust
         if (!dead && !sv.bit && mallow.safe <= 0 &&
-            Math.hypot(mallow.x - p.x, mallow.y - p.y) < segR(i) + C.mallowR * 0.8) bite(p);
+            Math.hypot(mallow.x - p.x, mallow.y - p.y) < segR(i) * 0.8 + C.mallowR * 0.8) bite(p);
         for (j = 0; j < rocks.length; j++) {
           rk = rocks[j];
-          if (rk.sunk > 0 || rk.sp === "crust" || rk.smashed) continue;
-          if (Math.hypot(rk.x - p.x, rk.y - p.y) < segR(i) + rk.r * 0.7) { rk.smashed = true; gone = true; }
+          if (rk.sunk > 0 || rk.sp === "crust" || rk.sp === "magnet" || rk.smashed) continue;
+          if (Math.hypot(rk.x - p.x, rk.y - p.y) < segR(i) * 0.8 + rk.r * 0.7) { rk.smashed = true; gone = true; }
         }
       }
       if (!gone) return;
@@ -1347,7 +1396,7 @@
     }
     function bite(p) {
       serpent.bit = true;
-      toast = Math.min(3, toast + 1);
+      if (!hurt()) return;
       combo = 0; HUD.setRight(null);
       var dx = mallow.x - p.x, dy = mallow.y - p.y, dist = Math.hypot(dx, dy) || 1;
       loose(dx / dist * 650, Math.min(dy / dist * 650, -450), mallow.host);
@@ -1394,10 +1443,16 @@
       treatT -= d;
       if (treatT <= 0) {
         treatT = C.smoreEvery * Rand.range(0.75, 1.25);
-        kind = held.biscuit !== held.chocolate && Rand.chance(0.7)
+        kind = Rand.chance(C.superChance) ? "super"
+             : !held.biscuit !== !held.chocolate && Rand.chance(0.7)
              ? (held.biscuit ? "chocolate" : "biscuit")
              : (Rand.chance(0.5) ? "biscuit" : "chocolate");
-        treats.push({ kind: kind, x: Rand.range(Layout.left + 50, Layout.right - 50), y: Layout.top - 30, ph: Rand.range(0, TAU) });
+        if (kind === "super" && !toldSuper) {
+          toldSuper = true;
+          Notify.say("Super s'more", { sub:"Catch it: every life back", kind:"rare", key:"mm-super" });
+        }
+        treats.push({ kind: kind, x: Rand.range(Layout.left + 50, Layout.right - 50), y: Layout.top - 30, ph: Rand.range(0, TAU),
+                      design: Rand.int(0, 5) });
       }
       for (i = treats.length - 1; i >= 0; i--) {
         t = treats[i];
@@ -1412,23 +1467,37 @@
     function catchTreat(t) {
       Sound.clip("pickup", 0.55, t.kind === "biscuit" ? 1 : 1.15);
       Fx.burst(t.x, t.y, { color:["#fff3dd", "#ffd166"], count:10, speed:200, life:.35, grav:300, size:4 });
+      if (t.kind === "super") {                   // the whole thing: back to white
+        Sound.clip("smore", 0.8, 0.9);
+        if (toast > 0) {
+          shade(-toast);
+          Pop.show("bonus", { word:"Super s'more!", sub:"Every life back", at:"upper" });
+        } else {
+          boostT = C.smoreBoost;
+          Pop.show("bonus", { word:"Super s'more!", sub:"Double points", at:"upper" });
+        }
+        Fx.ring(mallow.x, mallow.y, { from:20, to:160, color:"#fff3dd", width:8, life:.5 });
+        return;
+      }
       if (held[t.kind]) {                         // a second one of a kind: a few points
         score += 20; HUD.setScore(score);
         Pop.text(t.x, t.y - 30, "+20", { color:"#ffd166", size:22, life:0.6, tier:1 });
         return;
       }
-      held[t.kind] = true;
+      held[t.kind] = t.design + 1;              // which picture it was, for the icon
       if (!held.biscuit || !held.chocolate) return;
       held.biscuit = held.chocolate = false;       // the s'more
       Sound.clip("smore", 0.7);
       if (toast > 0) {
-        toast--;
-        Pop.show("bonus", { word:"S'more!", sub:"Healed", at:"upper" });
+        shade(-1);
+        Pop.show("bonus", { word:"S'more!", sub:"Life back", at:"upper" });
       } else {
         boostT = C.smoreBoost;
         Pop.show("bonus", { word:"S'more!", sub:"Double points", at:"upper" });
       }
       Fx.ring(mallow.x, mallow.y, { from:20, to:120, color:"#ffd166", width:6, life:.4 });
+      // the s'more itself, held up for a beat over the body
+      puff("smore" + cell(13 + Rand.int(0, 5)), mallow.x, mallow.y - 90, 140, 0.9, 0);
     }
 
     function fling(dirx, diry) {
@@ -1437,14 +1506,16 @@
         mallow.air--;
         Fx.ring(mallow.x, mallow.y, { from:14, to:82, color:"#ffd166", width:5, life:.3 });
       }
-      mallow.vx = dirx * C.flingSpeed;
-      mallow.vy = diry * C.flingSpeed;
+      var sp = jumpSpeed(rk);
+      if (rk && rk.sp === "magnet") { rk.cool = C.magnetCool; magnetLaunch(rk); }
+      mallow.vx = dirx * sp;
+      mallow.vy = diry * sp;
       /* The structure it just left is out for the WHOLE flight, not only while
          they still overlap: a jump has to find a new hold, so the shot is a
          commitment instead of a way to hop in place on one safe rock. */
       mallow.ignore = rk;
       mallow.flying = true; mallow.host = null; mallow.hold = 0;
-      if (rk) {                              // small rocks get kicked harder
+      if (rk && !ghost(rk)) {                // small rocks get kicked harder
         var m = Math.max(0.25, 60 / rk.r);
         rk.vx -= dirx * C.flingSpeed * C.recoil * m * 0.15;
         rk.vy -= diry * C.flingSpeed * C.recoil * m * 0.15;
@@ -1495,15 +1566,15 @@
       surge = { ph: 0, left: C.surgeEvery * 0.6, off: 0 };
       drops = []; dropT = C.dropEvery * 1.5;
       geysers = ROW && ROW.geysers ? newGeysers(ROW.geysers) : [];
-      orbT = C.orbEvery * 0.5; water = []; waterT = C.waterEvery;
-      magnets = ROW && ROW.magnets ? newMagnets(ROW.magnets) : [];
+      orbT = C.orbEvery * 0.5; water = []; waterT = C.waterEvery; cool = 0;
+      magnets = [];
       serpent = { st: 0, left: C.serpentEvery * 0.6 };
       wind = { ph: 0, left: C.gustEvery * 0.5, dir: 1, s: 0 }; ash = [];
-      if (ROW && ROW.wind) for (var ai = 0; ai < 36; ai++) {
+      if (ROW && ROW.wind) for (var ai = 0; ai < 22; ai++) {
         ash.push({ x: Rand.range(0, view.w), y: Rand.range(Layout.top, Layout.bottom), vx: Rand.range(-12, 12),
                    vy: -Rand.range(10, 40), l: Rand.range(4, 10) });
       }
-      treats = []; treatT = C.smoreEvery * 0.4; held = { biscuit: false, chocolate: false }; boostT = 0;
+      treats = []; treatT = C.smoreEvery * 0.4; held = { biscuit: false, chocolate: false }; boostT = 0; toldSuper = false;
 
       rocks = []; bubbles = []; embers = [];
       // The rock the run starts on: dead centre, big, and already falling.
@@ -1518,6 +1589,7 @@
       spawnRock(Layout.top - 40, 0);
       spawnRock(Layout.top - 250, 0);
       spawnRock(Layout.top - 470, 0);
+      if (ROW && ROW.magnets) magnets = newMagnets(ROW.magnets);
 
       mallow = { x:0, y:0, vx:0, vy:0, ang:-Math.PI / 2, tilt:0,
                  host: start, rel: -Math.PI / 2 - start.rot,
@@ -1531,7 +1603,8 @@
       for (i = 0; i < 7; i++) bubbles.push(newBubble());
 
       HUD.setScoreNow(0);
-      HUD.setLeft(best, "Best");
+      toldToast = false;
+      HUD.setLeft(4, "Lives");
       HUD.setRight(null);
       Fx.reset();
       buildSprites();
@@ -1548,10 +1621,38 @@
        otherwise it is thrown back up, a shade browner, with its mid-air shot
        back in hand to find a rock on the way, and the lava cannot catch it
        again until it has had the time to climb out. */
+    /* Every change of toast goes through here: the shade, the HUD's lives,
+       and the first time a run loses one, the sentence that says what it
+       costs. */
+    var toldToast = false;
+    function shade(n) {
+      toast = clamp(toast + n, 0, 3);
+      HUD.setLeft(4 - toast, "Lives");
+      if (n > 0) {
+        HUD.punch("#ff6b1a");
+        if (!toldToast && n === 1) {           // the lava says "charred" itself
+          toldToast = true;
+          Notify.say("Toasted", { sub:"A toasted marshmallow jumps shorter", kind:"warn", key:"mm-toast" });
+        }
+      } else HUD.punch("#9dff8a");
+    }
+    // the jump, as heavy as the toast has made it
+    function jumpSpeed(host) {
+      return C.flingSpeed * (1 - C.toastSlow * toast) * (host && host.sp === "magnet" ? C.magnetBoost : 1);
+    }
+
+    // A hit: one state browner, or the end of a charred marshmallow.
+    function hurt() {
+      if (toast >= 3) { die(); return false; }
+      shade(1);
+      if (toast >= 3) Notify.say("Charred", { sub:"One more hit and you melt", kind:"warn", key:"mm-charred" });
+      return true;
+    }
+
     function lavaHit() {
       if (dead || mallow.safe > 0) return;
-      if (toast >= 3) { die(); return; }
-      toast++;
+      if (toast + C.lavaHits > 3) { die(); return; }   // only a white one survives it
+      shade(C.lavaHits);
       combo = 0; HUD.setRight(null);
       loose((mallow.host ? mallow.host.vx : mallow.vx) * 0.3, -C.lavaBounce, mallow.host);
       mallow.y = Math.min(mallow.y, surfaceAt(mallow.x) - C.mallowR - 2);
@@ -1561,7 +1662,7 @@
       Fx.flash("#ff6b1a", 0.3, 2.5);
       Fx.shake(9, 0.3);
       Pop.show("alert", { word:"Scorched!", at:"upper" });
-      if (toast >= 3) Notify.say("Charred", { sub:"One more touch of lava and you melt", kind:"warn", key:"mm-charred" });
+      Notify.say("Charred", { sub:"One more hit and you melt", kind:"warn", key:"mm-charred" });
     }
 
     function die() {
@@ -1684,7 +1785,7 @@
           if (geysers[i].st !== 2) continue;
           for (j = 0; j < rocks.length; j++) {
             rk = rocks[j];
-            if (rk.sunk > 0 || rk.burning || Math.abs(rk.x - geysers[i].x) > C.geyserHalf + rk.r * 0.4) continue;
+            if (rk.sunk > 0 || rk.burning || ghost(rk) || Math.abs(rk.x - geysers[i].x) > C.geyserHalf + rk.r * 0.4) continue;
             if (rk.vy > -C.geyserRockMax) rk.vy = Math.max(rk.vy - C.geyserRock * d, -C.geyserRockMax);
           }
         }
@@ -1705,6 +1806,11 @@
 
         /* A bubble climbs until it pops; a crust lies on the lake until it
            cracks back into it, and takes whoever stands on it down too. */
+        if (rk.sp === "magnet") {
+          rk.ph += d * 1.2; rk.y = rk.y0 + Math.sin(rk.ph) * 18; rk.vx = rk.vy = 0;
+          if (rk.cool > 0) { rk.cool -= d; if (rk.cool <= 0) rk.used = false; }
+          continue;
+        }
         if (ghost(rk)) {
           if (rk.sunk === 0) {
             rk.life -= d;
@@ -1766,10 +1872,10 @@
       if (ROW && ROW.drops) stepDrops(d);
       if (ROW && ROW.orbs) {
         orbT -= d;
-        if (orbT <= 0) { orbT = C.orbEvery * Rand.range(0.75, 1.25); spawnOrb(); }
+        if (orbT <= 0) { orbT = C.orbEvery / ROW.orbs * Rand.range(0.75, 1.25); spawnOrb(); }
       }
       if (ROW && ROW.water) stepWater(d);
-      for (i = 0; i < magnets.length; i++) { magnets[i].ph += d * 1.2; magnets[i].y = magnets[i].y0 + Math.sin(magnets[i].ph) * 18; }
+      if (cool > 0) cool = Math.max(0, cool - C.coolBack * d);
       if (ROW && ROW.serpent) stepSerpent(d);
       if (ROW && ROW.wind) {
         stepWind(d);
@@ -1812,6 +1918,7 @@
           rk = rocks[i];
           if (rk.sunk > 0) continue;
           if (rk === mallow.ignore) continue;   // no going back to what we left
+          if (rk.sp === "magnet" && rk.cool > 0) continue;
           if (hits(rk)) { attach(rk); break; }
         }
       } else if (mallow.host) {
@@ -1824,10 +1931,13 @@
             mallow.vx *= C.fireEject / C.flingSpeed;
             mallow.vy *= C.fireEject / C.flingSpeed;
             mallow.blown = 0.5; mallow.hot = 0.9;
-            toast = Math.min(3, toast + 1);          // it stayed too long: that burns
+            if (!hurt()) return;                     // it stayed too long: that burns
             Pop.show("alert", { word:"Burnt!", at:"upper" });
             Sound.clip("crumble", 0.6);
           }
+        } else if (mallow.host.sp === "magnet") {   // a crystal holds a beat
+          mallow.hold += d;
+          if (mallow.hold >= C.magnetHold) fling(0, -1);
         } else if (mallow.host.sp === "ice") {  // ice does not hold at all
           mallow.hold += d;
           if (mallow.hold >= C.iceHold) iceKick();
@@ -2001,7 +2111,7 @@
       var H = C.haze;
       if (!H || !ctx.getTransform) return;
       var T = ctx.getTransform(), cv = ctx.canvas;
-      var crust = lavaY - surge.off;
+      var crust = lavaY - surge.off + cool;
       var y0 = Math.max(0, Math.floor(T.f + T.d * (crust - H.band)));
       var y1 = Math.min(cv.height, Math.ceil(T.f + T.d * (crust + H.below)));
       var h = y1 - y0, step = Math.max(2, Math.round(H.strip * T.d)), y, k, dx, mid = T.d * H.band;
@@ -2164,6 +2274,7 @@
       var K = KINDS[rk.kind], fresh = !rk.used;
       if (rk.sp === "orb") { drawOrb(rk); return; }
       if (rk.sp === "crust") { drawCrust(rk); return; }
+      if (rk.sp === "magnet") { drawCrystal(rk); return; }
 
       /* The smear behind a fast one. It is the only cue that says "this lane is
          quick" before it goes past, and it is a plain scaled arc — no
@@ -2380,9 +2491,21 @@
       ctx.lineCap = "butt";
     }
 
-    // A crust of cooled lava: a black plate, its cracks reddening as it goes.
+    /* A crust of cooled lava, painted (crust01-12): three plates, four states
+       — still steaming for its first second, solid, cracking on its last
+       1.6 s, breaking as it sinks. The vector plate is the fallback. */
     function drawCrust(rk) {
       var left = clamp(rk.life / C.crustLife, 0, 1), y = rk.y + rk.sunk * 40, i, a;
+      var row = rk.sunk > 0 ? 3 : C.crustLife - rk.life < 1 ? 0 : rk.life < 1.6 ? 2 : 1;
+      var im = sprite("crust" + cell(row * 3 + (rk.design || 0) + 1));
+      if (im) {
+        var cs = rk.r * 2 * 1.15 / im.width;
+        ctx.save();
+        if (rk.sunk > 0) ctx.globalAlpha = clamp(1 - rk.sunk / 0.6, 0, 1);
+        ctx.drawImage(im, rk.x - im.width * cs / 2, y - im.height * cs / 2, im.width * cs, im.height * cs);
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.translate(rk.x, y);
       if (rk.sunk > 0) ctx.globalAlpha = clamp(1 - rk.sunk / 0.6, 0, 1);
@@ -2416,12 +2539,33 @@
       }
     }
 
-    // The magnet crystals and their fields: rings drawn in toward the core.
+    // A magnet crystal: bright and turning while charged, dark once used.
+    function drawCrystal(rk) {
+      var img = sprite("rockCrystal01"), mm = img && measure("rockCrystal01");
+      ctx.save();
+      if (rk.cool > 0) ctx.globalAlpha = 0.45;
+      if (img && mm) drawBody(img, mm, rk.x, rk.y, rk.ph * 0.3, rk.r);
+      else {
+        ctx.fillStyle = "#8a5cff";
+        ctx.beginPath(); ctx.moveTo(rk.x, rk.y - 34); ctx.lineTo(rk.x + 20, rk.y); ctx.lineTo(rk.x, rk.y + 34); ctx.lineTo(rk.x - 20, rk.y); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+      // the beat it holds the body for
+      if (mallow.host === rk && mallow.hold > 0) {
+        ctx.strokeStyle = "#d9a6ff"; ctx.lineWidth = 6; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.arc(rk.x, rk.y, rk.r + 22, -Math.PI / 2, -Math.PI / 2 + TAU * (1 - clamp(mallow.hold / C.magnetHold, 0, 1)));
+        ctx.stroke(); ctx.lineCap = "butt";
+      }
+    }
+
+    // The magnet crystals' fields: rings drawn in toward the core, off when dark.
     function drawMagnets() {
-      var i, k, m, f, img = sprite("rockCrystal01"), mm = img && measure("rockCrystal01");
+      var i, k, m, f;
       for (i = 0; i < magnets.length; i++) {
         m = magnets[i];
-        ctx.drawImage(auraCv[2] || fire, m.x - 70, m.y - 70, 140, 140);
+        if (m.cool > 0) continue;
+        ctx.drawImage(auraCv[2] || fire, m.x - 80, m.y - 80, 160, 160);
         for (k = 0; k < 3; k++) {
           f = (wave * 0.5 + k / 3) % 1;
           ctx.strokeStyle = rgba("#d9a6ff", 0.45 * f);
@@ -2432,43 +2576,61 @@
         ctx.setLineDash([10, 10]);
         ctx.beginPath(); ctx.arc(m.x, m.y, C.magnetR, 0, TAU); ctx.stroke();
         ctx.setLineDash([]);
-        if (img && mm) drawBody(img, mm, m.x, m.y, m.ph * 0.3, 30);
-        else {
-          ctx.fillStyle = "#8a5cff";
-          ctx.beginPath(); ctx.moveTo(m.x, m.y - 34); ctx.lineTo(m.x + 20, m.y); ctx.lineTo(m.x, m.y + 34); ctx.lineTo(m.x - 20, m.y); ctx.closePath(); ctx.fill();
-        }
       }
     }
 
     // The serpent, tail first, so the head is on top; the lake hides the rest.
+    /* The serpent, tail first so the head is on top; the lake hides what is
+       still under it. Painted (snake01-24): the head's six frames — its jaws
+       gape when the body is near — six beads of body, and the tail's pieces
+       shrinking to a tip; each is turned along the arc, and flipped when the
+       leap runs leftward so nothing hangs upside down. The vector serpent is
+       the fallback. */
     function drawSerpent() {
-      var sv = serpent, q = 1 - sv.left / C.serpentLeap, i, r, p = {}, n = {};
+      var sv = serpent, q = 1 - sv.left / C.serpentLeap, i, r, p = {}, n = {}, a, key, im, m, flip;
+      var painted = !!sprite("snake07");
       for (i = C.serpentSegs - 1; i >= 0; i--) {
         if (q - i * 0.045 < 0 || q - i * 0.045 > 1) continue;
         serpentAt(q - i * 0.045, p);
+        serpentAt(Math.min(1, q - i * 0.045 + 0.02), n);
+        a = Math.atan2(n.y - p.y, n.x - p.x);
         r = segR(i);
+        if (painted) {
+          if (i === 0) {
+            key = Math.hypot(mallow.x - p.x, mallow.y - p.y) < 220 ? "snake03" : "snake" + cell(1 + Math.floor(wave * 4) % 6);
+          } else if (i <= 6) key = "snake" + cell(6 + i);
+          else key = "snake" + cell(15 + Math.min(3, i - 7));
+          im = sprite(key); m = im && measure(key);
+          if (im && m) {
+            flip = Math.cos(a) < 0;
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(i > 6 ? a + Math.PI : a);
+            if (flip) ctx.scale(1, -1);
+            var sc = (i === 0 ? r * 1.35 : r) / m.R;
+            ctx.drawImage(im, -m.cx * sc, -m.cy * sc, im.width * sc, im.height * sc);
+            ctx.restore();
+            continue;
+          }
+        }
         ctx.fillStyle = "#5a0f08";
         ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU); ctx.fill();
         ctx.fillStyle = i % 2 ? "#ff6a1a" : "#ff9d2e";
         ctx.beginPath(); ctx.arc(p.x, p.y - r * 0.15, r * 0.72, 0, TAU); ctx.fill();
-        ctx.fillStyle = "rgba(255,236,170,.6)";
-        ctx.beginPath(); ctx.arc(p.x - r * 0.25, p.y - r * 0.4, r * 0.25, 0, TAU); ctx.fill();
         if (i === 0) {
-          // the head: two eyes, looking the way it flies
-          serpentAt(Math.min(1, q + 0.02), n);
-          var a = Math.atan2(n.y - p.y, n.x - p.x), ex = Math.cos(a + Math.PI / 2) * r * 0.45, ey = Math.sin(a + Math.PI / 2) * r * 0.45;
+          var ex = Math.cos(a + Math.PI / 2) * r * 0.45, ey = Math.sin(a + Math.PI / 2) * r * 0.45;
           var fx = Math.cos(a) * r * 0.35, fy = Math.sin(a) * r * 0.35;
           ctx.fillStyle = "#ffe14a";
           ctx.beginPath(); ctx.arc(p.x + fx + ex, p.y + fy + ey, r * 0.24, 0, TAU); ctx.fill();
           ctx.beginPath(); ctx.arc(p.x + fx - ex, p.y + fy - ey, r * 0.24, 0, TAU); ctx.fill();
-          ctx.fillStyle = "#1a0503";
-          ctx.beginPath(); ctx.arc(p.x + fx * 1.2 + ex, p.y + fy * 1.2 + ey, r * 0.1, 0, TAU); ctx.fill();
-          ctx.beginPath(); ctx.arc(p.x + fx * 1.2 - ex, p.y + fy * 1.2 - ey, r * 0.1, 0, TAU); ctx.fill();
         }
       }
     }
 
     // The swirl it leaps from: rings tightening on the lake, and a glow.
+    /* The swirl it leaps from: a glow added to the lake and, painted, the
+       whirlpool tightening over its four frames (snake19-22); the vector
+       rings otherwise. */
     function drawSwirl() {
       var sv = serpent, t = 1 - sv.left / C.serpentWarn, k, f, y = surfaceAt(sv.x0);
       ctx.save();
@@ -2477,6 +2639,13 @@
       ctx.translate(sv.x0, y + 4); ctx.scale(1, 0.45);
       ctx.drawImage(auraCv[0] || fire, -120, -120, 240, 240);
       ctx.restore();
+      var im = sprite("snake" + cell(19 + Math.min(3, Math.floor(t * 4))));
+      var sm = im && measure("snake" + cell(19 + Math.min(3, Math.floor(t * 4))));
+      if (im && sm) {
+        var sc = (190 + 40 * t) / (sm.x1 - sm.x0);
+        ctx.drawImage(im, sv.x0 - sm.cx * sc, y - sm.cy * sc, im.width * sc, im.height * sc);
+        return;
+      }
       for (k = 0; k < 3; k++) {
         f = (t * 2 + k / 3) % 1;
         ctx.strokeStyle = rgba("#5a0f08", 0.7 * (1 - f));
@@ -2523,21 +2692,46 @@
       }
       ctx.restore();
     }
+    // A biscuit (smore01-06) or a chocolate (smore07-12), painted, fitted to `w`.
+    function treatArt(kind, design, x, y, w, rot) {
+      var key = "smore" + cell((kind === "biscuit" ? 1 : 7) + design), im = sprite(key), m = im && measure(key);
+      if (!im || !m) return false;
+      // fitted on the piece itself, not on the cut's transparent margin
+      var s = w / (m.x1 - m.x0);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+      ctx.drawImage(im, -m.cx * s, -m.cy * s, im.width * s, im.height * s);
+      ctx.restore();
+      return true;
+    }
     function drawTreats() {
       var i, t;
       for (i = 0; i < treats.length; i++) {
         t = treats[i];
-        ctx.globalAlpha = 0.55;
-        ctx.drawImage(auraCv[1] || fire, t.x - 48, t.y - 48, 96, 96);
+        var sup = t.kind === "super", ar = sup ? 80 + 8 * Math.sin(wave * 6) : 52;
+        ctx.globalAlpha = sup ? 0.85 : 0.55;
+        ctx.drawImage(auraCv[1] || fire, t.x - ar, t.y - ar, ar * 2, ar * 2);
         ctx.globalAlpha = 1;
-        treat(t.kind, t.x, t.y, C.smoreR * 0.8, Math.sin(t.ph) * 0.3);
+        if (sup) {
+          var sk = "smore" + cell(13 + t.design), sim = sprite(sk), smm = sim && measure(sk);
+          if (sim && smm) {
+            var ss = C.smoreR * 3.6 / (smm.x1 - smm.x0);
+            ctx.drawImage(sim, t.x - smm.cx * ss, t.y - smm.cy * ss, sim.width * ss, sim.height * ss);
+          } else {
+            treat("biscuit", t.x, t.y - 8, C.smoreR * 0.8, 0);
+            treat("chocolate", t.x, t.y + 6, C.smoreR * 0.6, 0);
+          }
+          continue;
+        }
+        if (!treatArt(t.kind, t.design, t.x, t.y, C.smoreR * 2.9, Math.sin(t.ph) * 0.3)) {
+          treat(t.kind, t.x, t.y, C.smoreR * 0.8, Math.sin(t.ph) * 0.3);
+        }
       }
     }
     // What the body holds toward its s'more, beside it, and the double points.
     function drawHeld() {
       var y = mallow.y - C.mallowLen * 0.5 - 44;
-      if (held.biscuit) treat("biscuit", mallow.x - 22, y, 9, 0);
-      if (held.chocolate) treat("chocolate", mallow.x + 22, y, 9, 0);
+      if (held.biscuit && !treatArt("biscuit", held.biscuit - 1, mallow.x - 24, y, 34, 0)) treat("biscuit", mallow.x - 22, y, 9, 0);
+      if (held.chocolate && !treatArt("chocolate", held.chocolate - 1, mallow.x + 24, y, 34, 0)) treat("chocolate", mallow.x + 22, y, 9, 0);
       if (boostT > 0) {
         ctx.strokeStyle = rgba("#ffd166", 0.5 + 0.3 * Math.sin(wave * 8));
         ctx.lineWidth = 4;
@@ -2552,7 +2746,9 @@
         p = puffs[i]; im = sprite(p.key);
         if (!im) continue;
         k = p.t / p.life;
-        s = p.size * (0.75 + 0.45 * k) / Math.max(im.width, im.height);
+        // sized on what is painted, where the cut's margin can be measured
+        var pm = measure(p.key);
+        s = p.size * (0.75 + 0.45 * k) / (pm ? pm.x1 - pm.x0 : Math.max(im.width, im.height));
         ctx.save();
         ctx.globalAlpha = k < 0.55 ? 1 : 1 - (k - 0.55) / 0.45;
         ctx.translate(p.x, p.y); ctx.rotate(p.rot);
@@ -2732,7 +2928,7 @@
       for (x = 18; x <= view.w; x += 18) ctx.lineTo(x, surfaceAt(x));
       ctx.lineTo(view.w, view.h);
       ctx.closePath();
-      g = ctx.createLinearGradient(0, lavaY - surge.off - 14, 0, view.h);
+      g = ctx.createLinearGradient(0, lavaY - surge.off + cool - 14, 0, view.h);
       g.addColorStop(0, "#ffd76a");
       g.addColorStop(0.16, "#ff8a1f");
       g.addColorStop(0.55, "#e0380a");
@@ -2759,6 +2955,21 @@
       ctx.strokeStyle = surge.ph === 1 ? rgba("#ff3b30", 0.6 + 0.4 * Math.sin(wave * 16))
                                        : "rgba(255,244,205,.85)";
       ctx.lineWidth = surge.ph === 1 ? 7 : 5; ctx.stroke();
+
+      // where the surge will crest, drawn while it gathers and while it climbs
+      if (ROW && ROW.surge && (surge.ph === 1 || surge.ph === 2)) {
+        var cy = lavaY + cool - surgeH(), pulse = 0.55 + 0.45 * Math.sin(wave * 10);
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = rgba("#ff3b00", 0.12 * pulse);
+        ctx.fillRect(0, cy, view.w, lavaY + cool - cy);
+        ctx.restore();
+        ctx.setLineDash([22, 14]);
+        ctx.strokeStyle = rgba("#ff3b30", 0.5 + 0.5 * pulse);
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(view.w, cy); ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
 
     // The dotted arc, simulated with the same numbers the flight uses so the
@@ -2768,7 +2979,7 @@
       if (!v) return;
       var h = 1 / 60, n = Math.round(C.previewSeconds * (0.4 + 0.6 * focus) / h);
       var px = mallow.x, py = mallow.y;
-      var vx = v.x * C.flingSpeed, vy = v.y * C.flingSpeed;
+      var vx = v.x * jumpSpeed(mallow.host), vy = v.y * jumpSpeed(mallow.host);
       // Whatever the body is on (or has just left) is out of the preview for
       // good, exactly as it is out of the flight.
       var skip = mallow.host || mallow.ignore, hit = null, pull = {};
@@ -2788,6 +2999,7 @@
           rk = rocks[j];
           if (rk.sunk > 0) continue;
           if (rk === skip) continue;
+          if (rk.sp === "magnet" && rk.cool > 0) continue;
           sx = rk.x + rk.vx * t; sy = rk.y + rk.vy * t;
           dd = Math.hypot(px - sx, py - sy);
           if (dd > rk.r * 1.35 + C.mallowR) continue;

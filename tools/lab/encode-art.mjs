@@ -332,6 +332,12 @@ var FAVOUR = { w: 192, h: 192, q: 0.8 };
    the biggest rock, which is soft painted stone with nothing to read in it. */
 var MALLOW = { scale: 0.8, q: 0.82 };
 var ROCK_SPRITE = { scale: 0.85, q: 0.8 };
+/* ...its s'mores, drawn ~40 design px (the treats) to ~120 (the reward), and
+   its lava serpent, a head and beads ~70 design px: smaller factors, same
+   rule — the frames of one sheet keep one scale. The crust (`crustNN`, a
+   plate ~200 design px wide) takes the rocks'. */
+var SMORE = { scale: 0.5, q: 0.82 };
+var SNAKE = { scale: 0.6, q: 0.8 };
 
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
@@ -342,6 +348,8 @@ var GENERIC = { w: 320, h: 400, q: 0.86 };
    device px at 3x — and the web build decodes all seventy-seven at boot, so
    256 is the size: 384 was 3.6 MB of art for a menu to wait on. */
 var ORBIT_BODY = { w: 256, h: 256, q: 0.8 };
+/* ...and its asteroids, drawn at most ~60 design px across. */
+var ORBIT_ROCK = { w: 128, h: 128, q: 0.82 };
 
 /* A master is whatever an image tool wrote: the model returns PNG, but a
    panorama exported out of an editor arrives as a JPEG and there is no reason
@@ -377,6 +385,9 @@ function profileFor(role, slug) {
   if (/^rock-(ice|cracked|crumbling|bomb)\d+$/.test(role)) return ROCK_SPRITE;
   if (/^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role)) return ROCK_SPRITE;
   if (/^flame\d+$/.test(role)) return ROCK_SPRITE;
+  if (/^crust\d+$/.test(role)) return ROCK_SPRITE;
+  if (/^smore\d+$/.test(role)) return SMORE;
+  if (/^snake\d+$/.test(role)) return SNAKE;
   if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
@@ -388,6 +399,7 @@ function profileFor(role, slug) {
      moon, pulsar or black hole, drawn up to ~190 design px across. */
   if (/^space-[a-z]+$/.test(role)) return PROFILE["background-phone"];
   if (/^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/.test(role)) return ORBIT_BODY;
+  if (/^asteroid-?\d+$/.test(role)) return ORBIT_ROCK;
   /* `background-phone-blue`, `background-phone-green`, ... — the same thing
      one role up: a game whose SCENE changes per biome keeps one painting per
      band (games/echomaze, five of them over the thirty levels). A variant is
@@ -485,8 +497,10 @@ function knownRole(role) {
          /^tree\d+$/.test(role) || role.indexOf("eagle-") === 0 ||
          /^lightning\d+$/.test(role) || /^(peak|trap-peak|trap-fire)\d+$/.test(role) ||
          /^space-[a-z]+$/.test(role) || /^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/.test(role) ||
+         /^asteroid-?\d+$/.test(role) ||
          /^mallow\d+$/.test(role) || /^rock-(ice|cracked|crumbling|bomb)\d+$/.test(role) ||
-         /^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role) || /^flame\d+$/.test(role);
+         /^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role) || /^flame\d+$/.test(role) ||
+         /^(crust|smore|snake)\d+$/.test(role);
 }
 
 function masters(all) {

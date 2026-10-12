@@ -6,7 +6,7 @@ of the same track under the menus.
 
 `games/arcider` is the reference; `games/blight`, `games/bouncetry`,
 `games/echomaze`, `games/gearball`, `games/radiam`, `games/slipdeck`,
-`games/spinshock`, `games/triverse` and `games/vipera` followed.
+`games/spinshock`, `games/triverse`, `games/vipera` and `games/orbinity` followed.
 This document is the procedure for the other eight — read it before touching a game's music,
 and update the state table at the bottom when one lands.
 
@@ -323,7 +323,7 @@ SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
 | `bouncetry`  | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
 | `chainring`  | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
 | `gearball`   | 160.1 s    | 30.8 s       | **5 biomes + menu**, six machines apiece                           |
-| `orbinity`   | 27.0 s     | 27.0 s       | needs a longer master first                                        |
+| `orbinity`   | 170.7 s    | 32.0 s       | **5 worlds + menu**, one sky apiece; the rift rides two phrases    |
 | `pawko`      | 179.3 s    | 35.0 s       | **5 map bands + menu**, one scene apiece                           |
 | `radiam`     | 181.2 s    | 29.5 s       | **5 worlds + menu**, one hall apiece                               |
 | `spinshock`  | 182.0 s    | 23.0 s       | **5 bands + menu**, one dish apiece                                |

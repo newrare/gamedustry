@@ -451,11 +451,12 @@ const WEB_ONLY_FOE = /^foe-[a-z]+\d+$/;
 const PLAYABLE_FOE = /^foe-(hanako|teketeke|jinmenken|akamanto)\d+$/;
 
 /* games/orbinity's five WORLDS: a backdrop per world (`space-<world>`) and a sheet of bodies per
-   world or per special (`lunar-moon`, `pulsar-star`, `abyss-hole`). A playable
+   world or per special (`lunar-moon`, `pulsar-star`, `abyss-hole`), and the
+   rocks of its streams and belts (`asteroidNN`). A playable
    is the game with no level, which paints its own nebula and its own planets,
    so all of it is web-only — the first world's twelve planets included, which
    would be half a megabyte of base64 in a creative that never shows them. */
-const WEB_ONLY_ORBIT = /^space-(inner|lunar|pulsar|abyss|rift)$|^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$/;
+const WEB_ONLY_ORBIT = /^space-(inner|lunar|pulsar|abyss|rift)$|^(inner|lunar|pulsar|abyss|rift)-[a-z]+-?\d+$|^asteroid-?\d+$/;
 
 /* games/marshmelt's SPECIAL ROCKS: ice, cracked, crumbling and bomb, six
    designs in four states each (`rock-<kind>NN`). Only a row of the web
@@ -469,12 +470,16 @@ const WEB_ONLY_ROCK_MATERIAL = /^rock-(crystal|shard|pumice|obsidian)-\d+$/;
 /* ...and three of the four rows of its FLAMES: the playable burns its rocks
    with the full blaze alone (flame07-12), the web build walks the four. */
 const WEB_ONLY_FLAME = /^flame(0[1-6]|1[3-9]|2[0-4])$/;
+/* ...and the cooled crust, the s'mores and the lava serpent, which only a
+   web level's row ever puts in the cave. */
+const WEB_ONLY_MARSH = /^(crust|smore|snake)\d+$/;
 
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   if (WEB_ONLY_ROCK.test(role)) return true;
   if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;
   if (WEB_ONLY_FLAME.test(role)) return true;
+  if (WEB_ONLY_MARSH.test(role)) return true;
   if (WEB_ONLY_ORBIT.test(role)) return true;
   if (WEB_ONLY_FOE.test(role) && !PLAYABLE_FOE.test(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;

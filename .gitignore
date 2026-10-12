@@ -20,3 +20,9 @@ signing.properties
 # The events bench v2's recordings (lab/game-events-v2.html): a few seconds of
 # play around each event, made again by playing. Never committed.
 lab/events-clips/
+
+# A promo video's material (tools/lab/promo.mjs): the gameplay shot under
+# virtual time, the art, the music and the sound effects gathered out of the
+# game. Made again by that command; only the composition is a source.
+promo/*/assets/
+promo/*/renders/

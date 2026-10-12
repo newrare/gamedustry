@@ -1,0 +1,62 @@
+{
+  "_": "What tools/lab/promo.mjs gathers for this promo. Times are seconds: `at` on the video's timeline, `t` / `from` / `to` on a shot's own clock. The timeline itself is index.html.",
+  "shots": [
+    { "id": "run", "level": 5, "seed": 3, "seconds": 9 },
+    { "id": "b2", "level": 9, "seed": 2, "seconds": 1.6 },
+    { "id": "b3", "level": 15, "seed": 2, "seconds": 1.6 },
+    { "id": "b4", "level": 21, "seed": 2, "seconds": 1.6 },
+    { "id": "b5", "level": 27, "seed": 2, "seconds": 1.6 }
+  ],
+  "stills": [
+    { "id": "maze-b1", "shot": "run", "t": 0.55 },
+    { "id": "maze-b2", "shot": "b2", "t": 0.55 },
+    { "id": "maze-b3", "shot": "b3", "t": 0.55 },
+    { "id": "maze-b4", "shot": "b4", "t": 0.55 },
+    { "id": "maze-b5", "shot": "b5", "t": 0.55 }
+  ],
+  "art": [
+    { "role": "title", "width": 1400 },
+    { "role": "character-happy", "width": 900 },
+    { "role": "background-phone-blue", "width": 1080, "opaque": true }
+  ],
+  "marks": { "shot": "run", "keys": ["dark", "escape"] },
+  "cuts": [{ "id": "run-from-dark", "shot": "run", "from": "dark" }],
+  "music": { "file": "echomaze.mp3", "from": 111.5, "length": 16 },
+  "sfx": [
+    { "shot": "run", "at": 2.8, "from": "dark", "to": "escape+0.9", "gap": 0.12, "gain": 0.9,
+      "skip": ["star", "score", "tick", "coin", "power"] }
+  ],
+  "cues": [
+    { "name": "power", "kind": "clip", "at": 0.0, "vol": 0.7 },
+    { "name": "tick", "at": 0.6, "vol": 0.9 },
+    { "name": "tick", "at": 1.7, "vol": 0.9 }
+  ],
+  "copy": {
+    "en": {
+      "hook": "Memorise this maze",
+      "count": "You get two seconds",
+      "lights": "Lights out",
+      "fire": "Fire a pulse",
+      "echo": "Read the echo",
+      "escape": "Way out!",
+      "levels": "30 levels",
+      "levelsSub": "Rising difficulty",
+      "tagline": "Find the way by the echo",
+      "cta": "Play free",
+      "url": "newrare.app"
+    },
+    "fr": {
+      "hook": "Mémorise ce labyrinthe",
+      "count": "Tu as deux secondes",
+      "lights": "Noir total",
+      "fire": "Tire une impulsion",
+      "echo": "Suis l'écho",
+      "escape": "La sortie !",
+      "levels": "30 niveaux",
+      "levelsSub": "Difficulté progressive",
+      "tagline": "Retrouve le chemin grâce à l'écho",
+      "cta": "Joue gratuitement",
+      "url": "newrare.app"
+    }
+  }
+}

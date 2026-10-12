@@ -2253,6 +2253,13 @@
           "always": true
         },
         {
+          "art": "home06",
+          "role": "play",
+          "x": 495,
+          "y": 445,
+          "w": 90
+        },
+        {
           "art": "home07",
           "role": "cards",
           "x": 100,
@@ -2265,10 +2272,14 @@
         },
         {
           "art": "home02",
-          "role": "play",
+          "role": "shop",
           "x": 300,
-          "y": 600,
-          "w": 230
+          "y": 590,
+          "w": 210,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
         },
         {
           "art": "home01",
@@ -2281,17 +2292,42 @@
         },
         {
           "art": "home03",
-          "role": "decor",
+          "role": "album",
           "x": 450,
-          "y": 830,
-          "w": 220
+          "y": 820,
+          "w": 180,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "sticker20",
+          "role": "daily",
+          "x": 370,
+          "y": 990,
+          "w": 80,
+          "notify": "alert"
+        },
+        {
+          "art": "sticker17",
+          "role": "decor",
+          "x": 290,
+          "y": 990,
+          "w": 80,
+          "notify": "float",
+          "always": true
         },
         {
           "art": "home08",
           "role": "options",
           "x": 200,
           "y": 1150,
-          "w": 200
+          "w": 200,
+          "badge": {
+            "dx": 0.65,
+            "dy": -1
+          }
         },
         {
           "art": "home04",
