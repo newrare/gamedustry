@@ -192,6 +192,7 @@
       awEyebrow: "Level map reward",
       awBand: "{b} cleared!", awClean: "Clean run through {b}!",
       awAll: "All 30 levels cleared!", awPerfect: "Perfect 90/90!",
+      isNew: "New",
       boostXpOn: "Double xp", boostLeft: "{n} more rounds", boostOne: "One more round", boostDone: "Boost used up",
       close: "Close", back: "Back"
     },
@@ -223,6 +224,7 @@
       awEyebrow: "Récompense de la carte",
       awBand: "{b}, c’est fait !", awClean: "Sans-faute sur {b} !",
       awAll: "30 stages terminés !", awPerfect: "90/90 parfait !",
+      isNew: "Nouveau",
       boostXpOn: "Xp doublée", boostLeft: "Encore {n} parties", boostOne: "Encore une partie", boostDone: "Boost épuisé",
       close: "Fermer", back: "Retour"
     }
@@ -241,7 +243,7 @@
     "adOfferBtn", "adOfferGift", "adTitle", "adSkip", "giftGot", "collect", "tapCollect",
     "rarity1", "rarity2", "rarity3", "rarity4", "wonBand", "wonClean",
     "wonAll", "wonPerfect", "toBand", "toClean", "toAll", "toPerfect",
-    "awEyebrow", "awBand", "awClean", "awAll", "awPerfect",
+    "awEyebrow", "awBand", "awClean", "awAll", "awPerfect", "isNew",
     "close", "back"
   ];
   (function () {
@@ -2201,12 +2203,13 @@
   /* ── 11. the end screen: the score becomes coins ──────────────────────── */
 
   /* The motor's end screen is a cascade of timers it owns (packages/shell/
-     shell.js, EndScreen) and this layer adds the last beat of it without the
-     motor growing a hook: the install CTA taking its `.show` class IS the
-     signal that the reveal is done, so the transfer is watched for rather than
-     scheduled against a copy of the motor's timings, which would drift the
-     first time a game shipped a fifth stat row. */
-  var endWallet = null, endBox = null, watching = null;
+     shell.js, EndScreen) and this layer adds the last beat of it through the
+     motor's one hook for it, `onReveal`: called where the way out would land,
+     which is the signal that the reveal is done — never scheduled against a
+     copy of the motor's timings, which would drift the first time a game
+     shipped a fifth stat row — and holding that way out for as long as this
+     layer still has something to hand over (section 11d). */
+  var endWallet = null, endBox = null;
 
   /* ── 11a. the band the view system shows ──────────────────────────────── */
 
@@ -2434,12 +2437,14 @@
          gold working over a gold star is not read at all. */
       screen.classList.add("has-gain");
     }
-    /* …and the offer's own room, on the rounds that will be offered one. */
+    /* …and the offer's own room, on the rounds that will be offered one —
+       every round with a star: the gift for an ad, or on a level's first
+       perfect round the ×5 on what its box held (section 11d). */
     var st = result.stars || 0;
-    endBox.className = (st >= 1 && st < 3) ? "slot" : "";
+    endBox.className = st >= 1 ? "slot" : "";
   }
 
-  function endRun(result) {
+  function endRun(result, c) {
     buildEnd();
     endBox.innerHTML = "";
     var score = Math.max(0, Math.round(result.score || 0));
@@ -2480,18 +2485,21 @@
           kind: "gain", icon: "xp", key: "boost-xp"
         });
       }
-      var won = sweep();
-      showAwards(won, function () {});
+      /* WHAT THE MAP OWES AND THE THREE-STAR BONUS are this screen's own
+         last beat now, in place (section 11d) — they were a card each, one
+         after the other, over a screen that had already lit its way out. */
+      if (c) ceremony(c, stars);
     }
 
     /* THE OFFER ARRIVES WITH THE WAY OUT. `endRun` runs on the frame the motor
-       lights the navigation (see watchEnd), so putting it here is putting it on
+       lights the navigation (see onReveal), so putting it here is putting it on
        the same beat as the map, the replay and the arrow — three ways to leave
        and one reason to stay, offered together. Held to the end of the transfer
        it landed seconds after the player had already read the row of buttons
        and decided, which is a fourth control appearing under a thumb on its way
-       somewhere. */
-    offer(stars);
+       somewhere. A round with something still to hand over keeps its offer
+       for the end of the ceremony, which is where its way out arrives. */
+    if (!c) offer(stars);
 
     if (earn > 0) {
       var gain = gainLine(base, lvl, earn, coinBoost);
@@ -2634,18 +2642,6 @@
     })(t0);
   }
 
-  /* The stickers the map just paid, one card after the other. */
-  function showAwards(list, done) {
-    if (!list.length) { done(); return; }
-    var i = 0;
-    function next() {
-      if (i >= list.length) { done(); return; }
-      var a = list[i++];
-      stickerCard(a.sticker, next, a);
-    }
-    next();
-  }
-
   /* WHY THE MAP PAID, as the card's title. "New sticker!" over a sticker said
      what the picture already shows and nothing of where it came from: the card
      lands on the end screen of an ordinary round, and the player could not tell
@@ -2661,7 +2657,7 @@
     return fill(m[1] === "band" ? T.awBand : T.awClean, { b: name });
   }
 
-  /* `a` is the award when the map is the one paying (see `showAwards`): the
+  /* `a` is the award when the map is the one paying (the dev view's): the
      title then names the milestone and the eyebrow says it is the map's, with
      new-or-double kept as its second half. Without it the card is the plain
      sticker reveal it always was. */
@@ -2684,59 +2680,13 @@
     W.Sound.ui("reward", 0.85);
   }
 
-  /* Whether THIS round was handed the bonus, which is what tells `offer` a
-     perfect round that has been paid from a perfect replay that has not — the
-     levels layer only opens the boxes on a level's first three stars. */
-  var bonusPaid = false;
-
-  /* THE THREE-STAR BONUS, HANDED OVER ON THE ROUND THAT EARNED IT — and once
-     per level: a perfect replay is not paid twice (levels.js, onResult).
-
-     It used to be the end screen's last beat, three screens' worth of reveal
-     after the third star lit; it is now the outro's (packages/webshell/levels.js), which
-     means the boxes open over the world still crawling in slow motion and the
-     end screen arrives with the prize already in the wallet.
-
-     The wallet comes with it: a reward that flies has to have somewhere to fly
-     to (`flyReward` measures a VISIBLE chip and gives up without one), and the
-     corner wallet the end screen shows is exactly the chip this gift lands in
-     a moment later. It is built and shown here, and the state hook takes it
-     away on any screen that is not the end one.
-
-     `done` is the outro's, so the end screen waits for the flight to land and
-     not merely for the card to close — the wallet has to be still by the time
-     the score starts counting into it. */
-  function bonus(done) {
-    buildEnd();
-    bonusPaid = true;
-    var handed = false;
-    function once() {
-      if (handed) return;
-      handed = true;
-      /* STRAIGHT TO THE END SCREEN, with the reward still in the air. This
-         used to hold the outro for the length of the flight plus a beat, and
-         what the player watched for that second was the frozen ROUND — the
-         card they had just dismissed was gone and nothing had replaced it.
-         Nothing needed the wait: the wallet the token flies into is a layer
-         over `#frame` and not a child of the end screen, so the flight plays
-         over whatever is underneath it, and the score cascade that counts into
-         the same chip does not start until the install CTA lands, seconds
-         later (`watchEnd`). */
-      done();
-    }
-    gift({ rich: true, title: T.bonusTitle, done: once });
-  }
-
   /* The two offers, and they are the only place this layer asks for anything:
      a round that earned a star is offered a gift for an ad, and a round that
      earned nothing is left alone — a player who just failed is the last person
-     to sell to. A perfect round that was paid on the round itself (see
-     `bonus`) is asked for nothing at all; a perfect REPLAY, which the bonus
-     skips, gets the same offer as one or two stars. */
+     to sell to. A level's first perfect round is never asked: its gift is the
+     ceremony's (section 11d), whose own offer is the ×5 on what the box held;
+     a perfect REPLAY gets the same offer as one or two stars. */
   function offer(stars) {
-    var paid = bonusPaid;
-    bonusPaid = false;
-    if (stars >= 3 && paid) return;
     if (stars >= 1) {
       /* ONE CONTROL, AND IT SAYS THE WHOLE DEAL. It was a gold label beside a
          button — "A FREE GIFT" · WATCH AN AD — which reads as a claim followed
@@ -2763,20 +2713,315 @@
     }
   }
 
-  /* The install CTA landing is the end of the motor's reveal. Polled rather
-     than observed: the button is replaced by a clone when the web shell
-     unbinds it (menu.js), so a MutationObserver would be watching a node that
-     is no longer in the document. */
-  function watchEnd(result) {
-    if (watching) clearInterval(watching);
-    var tries = 0;
-    watching = setInterval(function () {
-      var cta = $("btn-install");
-      if (++tries > 200 || W.state() !== "end") { clearInterval(watching); watching = null; return; }
-      if (!cta || !cta.classList.contains("show")) return;
-      clearInterval(watching); watching = null;
-      endRun(result);
-    }, 100);
+  /* ── 11d. the ceremony — what the end screen hands over, in place ────────
+
+     A LEVEL'S FIRST PERFECT ROUND, AND A ROUND THE MAP OWES A STICKER FOR,
+     END ON THE SCREEN THAT SCORES THEM — not on a card over it. The bonus
+     used to open as a card over the frozen round, before the score had even
+     been read, and the stickers the map paid opened one card each over a
+     score screen that had already lit its way out: three modals in a row for
+     one good round, each covering the screen that explained it.
+
+     So the end screen keeps the floor, and its own pieces turn into the
+     rewards:
+
+       1. the reveal plays as it always did — the title, the score, the three
+          stars, the rows — and the score becomes coins (endRun);
+       2. the three stars BECOME the three boxes, each one bursting where it
+          stood, and the rows give their room to one line: pick one;
+       3. the box picked opens, and the row of boxes is replaced by what the
+          round paid — the box's reward in the middle, the map's stickers
+          either side of it — while the rows under it say what each one is
+          for, and the bonus carries its ×5 for an ad;
+       4. each reward flies into the chip that holds it, and THEN the way out
+          arrives. The motor's `onReveal` is what holds it (packages/shell/
+          shell.js): the buttons, and the SPACE that replays, wait for `done`.
+
+     A round owed stickers but no bonus (a band passed on one or two stars, a
+     replay) skips the boxes: the stars go straight to the stickers.
+
+     The rewards are paid BEFORE they are shown, as everywhere in this layer —
+     the stickers by `sweep` on the frame the reveal ends, the box at the pick
+     — and a player who leaves mid-pick (ESCAPE, a reload of the view) is paid
+     the first box rather than nothing: the level's first perfect round is
+     recorded already, and a bonus walked past would be a bonus lost for good. */
+  var cer = null;
+  var CER_STAR_GAP = 120;          // one star to the next, as they burst
+  var CER_OPEN_MS = 760;           // the pick, to the box's prize
+  var CER_ROW_GAP = 160;           // one explanation row to the next
+  var CER_FLY_AT = 1100;           // the prizes shown, to the first flight
+  var CER_FLY_GAP = 300;           // one flight to the next
+
+  /* Is this round a level's first three stars? The levels layer decides it
+     (`firstPerfect`, read before the round's stars were recorded). */
+  function firstPerfect(stars) {
+    var LV = window.__LEVELS__;
+    var last = LV && LV.active && LV.active() && LV.last ? LV.last() : null;
+    return !!(last && last.firstPerfect && stars >= 3);
+  }
+
+  /* What the screen still has to hand over, or null when the way out may
+     arrive on the beat it always did. `sweep` PAYS the map's stickers here —
+     the save moves now and the screen catches up with it below. */
+  function owed(result) {
+    var first = firstPerfect(result.stars || 0);
+    var awards = sweep();
+    if (!first && !awards.length) return null;
+    return { first: first, awards: awards, done: null, rewards: null,
+             picking: false, picked: -1, layer: null, stars: [] };
+  }
+
+  /* The three stars where they stand. The row orders them with `order` (the
+     tall one in the middle), so they are read back by position and not by id;
+     `.mt-cer` has made the row the offset parent they are measured against. */
+  function starSlots() {
+    var out = [];
+    for (var i = 1; i <= 3; i++) {
+      var s = $("star-" + i);
+      if (!s) continue;
+      out.push({ node: s, x: s.offsetLeft + s.offsetWidth / 2,
+                 y: s.offsetTop + s.offsetHeight / 2, h: s.offsetHeight });
+    }
+    out.sort(function (a, b) { return a.x - b.x; });
+    return out;
+  }
+
+  /* The rows give their room to the ceremony's own lines — held at the
+     height they had, so the column does not move under the boxes. */
+  function cerRows(c, nodes) {
+    var box = $("eo-stats");
+    if (!box) return;
+    if (!box.style.minHeight) box.style.minHeight = box.offsetHeight + "px";
+    box.innerHTML = "";
+    for (var i = 0; i < nodes.length; i++) box.appendChild(nodes[i]);
+  }
+
+  function ceremony(c, stars) {
+    if (cer !== c || W.state() !== "end") return;
+    var screen = $("screen-end"), row = $("eo-stars");
+    if (!row) { finishCer(c, stars); return; }
+    screen.classList.add("mt-cer");
+    c.layer = el("div", "mt-estage");
+    row.appendChild(c.layer);
+    c.stars = starSlots();
+    /* Each star bursts where it stands, one after the other, in the order the
+       player reads them. */
+    c.stars.forEach(function (sl, i) {
+      setTimeout(function () { if (cer === c) sl.node.classList.add("mt-out"); }, i * CER_STAR_GAP);
+    });
+    if (c.first) pickStage(c, stars);
+    else setTimeout(function () { prizeStage(c, stars, null, -1); }, 3 * CER_STAR_GAP + 120);
+  }
+
+  /* 2. THE STARS ARE THE BOXES. One box per star, at the star's own centre
+     and a little bigger than it, so the tall middle star is the tall middle
+     box. The deal is the three-box card's (section 9): the rewards are rolled
+     before a box is drawn and per index, the looks and the colours dealt on
+     their own, so nothing about a box says what is in it. */
+  function pickStage(c, stars) {
+    c.rewards = [randomReward(true), randomReward(true), randomReward(true)];
+    c.picking = true;
+    var look = deal3(), faces = GIFT_ART ? deal3() : look;
+    var gifts = el("div", "mt-gifts mt-egifts" + (GIFT_ART ? " art" : ""));
+    c.layer.appendChild(gifts);
+    c.gifts = gifts;
+    var open = false;
+    c.stars.forEach(function (sl, i) {
+      var size = Math.round(sl.h * 1.18);
+      var slot = el("div", "mt-eslot");
+      slot.style.left = (sl.x - size / 2) + "px";
+      /* Standing where the star stood rather than centred on it: a box is
+         bigger than its star, and centred it would climb into the line under
+         the score. */
+      slot.style.top = (sl.y - sl.h / 2) + "px";
+      slot.style.width = slot.style.height = size + "px";
+      var at = i * CER_STAR_GAP + 160;
+      slot.style.animationDelay = at + "ms";
+      var b = el("button", "mt-gift g" + look[i], GIFT_ART
+        ? '<span class="rays"></span><span class="flash"></span>' +
+          '<img class="face" alt="" src="' + giftFace(faces[i], false) + '">'
+        : '<span class="lid"></span><span class="body"></span><span class="bow"></span>');
+      b.type = "button";
+      b.setAttribute("aria-label", T.pickOne);
+      b.style.animationDelay = (-3 * Math.random()).toFixed(2) + "s";
+      b.addEventListener("click", function () {
+        if (open || cer !== c) return;
+        open = true;
+        c.picked = i;
+        gifts.classList.add("chosen");
+        b.classList.add("open");
+        if (GIFT_ART) setTimeout(function () {
+          var f = b.querySelector(".face");
+          if (f) f.src = giftFace(faces[i], true);
+        }, 180);
+        W.Sound.ui("reward", 0.75);
+        setTimeout(function () { prizeStage(c, stars, c.rewards[i], i); }, CER_OPEN_MS);
+      });
+      slot.appendChild(b);
+      gifts.appendChild(slot);
+      setTimeout(function () { if (cer === c) W.Sound.ui("gain", 0.5, 0.92 + i * 0.12); }, at);
+    });
+    /* The rows' room says what the boxes are and what to do with them. */
+    cerRows(c, [el("div", "mt-ecap", "<b>" + T.bonusTitle + "</b><span>" + T.tapPick + "</span>")]);
+  }
+
+  /* 3. WHAT THE ROUND PAID, where the boxes were. The box's prize stands in
+     the middle — it is the one the player chose — and the map's stickers
+     either side of it; the rows under them say what each is for. */
+  function prizeStage(c, stars, rw, from) {
+    if (cer !== c || W.state() !== "end") return;
+    c.picking = false;
+    var list = [], bonusItem = null;
+    for (var i = 0; i < c.awards.length; i++) {
+      var a = c.awards[i];
+      list.push({ rw: reward("sticker", a.sticker), before: 0,
+                  why: awardTitle(a.key) || T.newSticker, isNew: a.isNew });
+    }
+    if (rw) {
+      var before = walletOf(rw.kind);
+      grant(rw);
+      holdKind(rw.kind, before);
+      bonusItem = { rw: rw, before: before, why: T.bonusTitle, bonus: true,
+                        isNew: rw.kind === "sticker" && count(rw.n) === 1 };
+      list.splice(Math.floor(list.length / 2), 0, bonusItem);
+    }
+    if (c.gifts) {
+      c.gifts.classList.add("gone");
+      var g = c.gifts;
+      setTimeout(function () { if (g.parentNode) g.parentNode.removeChild(g); }, 320);
+    }
+
+    /* Laid out along the stars' line, centred on the middle one, at a pitch
+       that fits five across the frame should a last level pay everything at
+       once. The prize of the box is the big one. */
+    var mid = c.stars.length ? c.stars[Math.floor(c.stars.length / 2)] : { x: c.layer.offsetWidth / 2, y: 0, h: 168 };
+    var n = list.length, pitch = Math.min(230, 660 / n);
+    list.forEach(function (it, j) {
+      var x = mid.x + (j - (n - 1) / 2) * pitch;
+      var size = Math.min(it.bonus ? 220 : 180, pitch * (it.bonus ? 1 : 0.86));
+      var tone = it.rw.kind === "sticker" ? "t" + rarityOf(it.rw.n) : it.rw.kind;
+      var node = el("div", "mt-eitem" + (it.bonus ? " bonus" : ""));
+      node.style.left = x + "px";
+      node.style.top = mid.y + "px";
+      node.style.animationDelay = (j * 140) + "ms";
+      var k = el("div", "mt-eitem-k");
+      k.style.transform = "scale(" + (size / 300).toFixed(3) + ")";
+      var badge = el("div", "mt-badge-rw " + tone, '<span class="rays"></span><span class="ring"></span>');
+      it.art = el("div", "mt-rw" + (it.rw.kind === "sticker" && shiny(it.rw.n) ? " shiny" : ""), rewardArt(it.rw));
+      badge.appendChild(it.art);
+      k.appendChild(badge);
+      node.appendChild(k);
+      c.layer.appendChild(node);
+      it.badge = badge;
+      setTimeout(function () { if (cer === c) W.Sound.ui("gain", 0.55, 1 + j * 0.1); }, j * 140);
+    });
+
+    /* The rows: why each one was paid, and what it is — the bonus first, the
+       one the player chose, then the map's in the order they stand. */
+    var read = bonusItem ? [bonusItem].concat(list.filter(function (it) { return it !== bonusItem; })) : list;
+    var rows = read.map(function (it, j) {
+      var v = it.rw.kind === "sticker" ? (it.isNew ? T.isNew : T.dupe) : rewardLabel(it.rw);
+      var r = el("div", "mt-erow" + (it.bonus ? " bonus" : ""),
+        '<span class="l">' + it.why + '</span><span class="v' +
+        (it.rw.kind === "sticker" && it.isNew ? " new" : "") + '">' + v + "</span>");
+      r.style.animationDelay = (240 + j * CER_ROW_GAP) + "ms";
+      it.row = r;
+      return r;
+    });
+    cerRows(c, rows);
+
+    /* THE BONUS CARRIES ITS OFFER, and it is the card's offer, worded the
+       same: what is multiplied, the plate, the price under it. It stays once
+       the way out has arrived — it is a choice, not a step. */
+    if (bonusItem) cerOffer(c, bonusItem);
+
+    /* 4. HOME, one after the other, and the way out with the last landing. */
+    var fly = list.slice();
+    fly.forEach(function (it, j) {
+      setTimeout(function () {
+        if (cer !== c || W.state() !== "end") return;
+        flyReward(it.badge.getBoundingClientRect(), it.rw, it.before,
+                  j === fly.length - 1 ? function () { finishCer(c, stars); } : null);
+      }, CER_FLY_AT + 240 + j * CER_FLY_GAP);
+    });
+    if (!fly.length) finishCer(c, stars);
+  }
+
+  function cerOffer(c, it) {
+    var rw = it.rw, isSticker = rw.kind === "sticker";
+    var plate = isSticker ? icon("sticker", "btn-reward") :
+      (multArt(AD_MULT, "btn-reward") || '<b class="btn-reward mt-btn-x">\u00d7' + AD_MULT + "</b>");
+    var what = rw.kind === "coins" ? T.mulCoins : rw.kind === "ticket" ? T.mulTicket : T.mulXp;
+    var row = el("div", "mt-offer");
+    var b = el("button", "btn btn-pub btn-sm",
+      icon("play") + '<span class="btn-txt"><b>' +
+      (isSticker ? T.boostMore : fill(T.boostMul, { k: what })) +
+      "</b><i>" + T.boostCost + "</i></span>" + plate);
+    b.addEventListener("click", function () {
+      if (row.parentNode) row.parentNode.removeChild(row);
+      ad(function (ok) {
+        if (!ok || cer !== c || W.state() !== "end") return;
+        var more = multiply(rw, AD_MULT);
+        var before = walletOf(more.kind);
+        grant(more);
+        holdKind(more.kind, before);
+        /* The prize in the middle becomes what the ad paid, and its row the
+           whole of what the bonus is now worth: the box's own share and the
+           ad's on top of it, one figure — "+5 ×5" read as twenty-five. */
+        it.art.innerHTML = rewardArt(more);
+        it.art.className = "mt-rw" + (more.kind === "sticker" && shiny(more.n) ? " shiny" : "");
+        var v = it.row.querySelector(".v");
+        if (v) v.innerHTML = more.kind === "sticker"
+          ? (count(more.n) === 1 ? T.isNew : T.dupe)
+          : rewardLabel(reward(more.kind, rw.n + more.n));
+        it.row.classList.add("boosted");
+        W.Sound.ui("reward", 0.8);
+        setTimeout(function () {
+          if (cer === c) flyReward(it.badge.getBoundingClientRect(), more, before, null);
+        }, 520);
+      });
+    });
+    row.appendChild(b);
+    endBox.appendChild(row);
+  }
+
+  /* The way out, and — on a round the map paid but that earned no bonus —
+     the ordinary offer with it, which is where it has always arrived. */
+  function finishCer(c, stars) {
+    if (cer !== c || !c.done) return;
+    if (!c.first) offer(stars);
+    var d = c.done;
+    c.done = null;
+    d();
+  }
+
+  /* Off the end screen: whatever was still owed is paid, and the screen is
+     handed back to the motor as it built it. */
+  function dropCer() {
+    var c = cer;
+    cer = null;
+    if (!c) return;
+    if (c.picking && c.rewards) grant(c.rewards[c.picked >= 0 ? c.picked : 0]);
+    if (c.layer && c.layer.parentNode) c.layer.parentNode.removeChild(c.layer);
+    for (var i = 0; i < c.stars.length; i++) c.stars[i].node.classList.remove("mt-out");
+    var screen = $("screen-end");
+    if (screen) screen.classList.remove("mt-cer");
+    var box = $("eo-stats");
+    if (box) box.style.minHeight = "";
+  }
+
+  /* The motor's reveal ends on this hook (onReveal, packages/shell/shell.js):
+     the score is read, the stars are lit, the rows are in. A round with
+     nothing left to hand over lets the way out arrive at once and runs the
+     transfer beside it, which is the beat it always had; one with a ceremony
+     keeps the way out for the end of it. */
+  function onReveal(result, done) {
+    dropCer();
+    var c = owed(result);
+    if (!c) { done(); endRun(result, null); return; }
+    c.done = done;
+    cer = c;
+    endRun(result, c);
   }
 
   if (ON) {
@@ -2794,19 +3039,20 @@
     W.onResult(function (result) {
       if (W.state() === "playing") pending = result;
     });
+    W.onReveal(onReveal);
     W.onState(function (s) {
-      /* The state hook fires on a CHANGE, and the wallet the three-star bonus
-         flies into is shown from the OUTRO — after the round already went to
-         "playing" and before it goes to "end". So a round starting still takes
-         the wallet down, and nothing takes it down between the two. */
+      /* The state hook fires on a CHANGE, so a round starting takes the
+         wallet down and an outro — still "playing", before "end" — leaves
+         whatever a card of it put up where it is. Leaving the end screen is
+         also what pays a box the player walked past (dropCer). */
       if (s === "end") {
         /* The layout first, on this very frame — then the transfer, which
-           waits for the motor's reveal to finish (watchEnd). */
-        if (pending) { reserveEnd(pending); watchEnd(pending); pending = null; }
+           waits for the motor's reveal to finish (onReveal). */
+        if (pending) { dropCer(); reserveEnd(pending); pending = null; }
         return;
       }
       pending = null;
-      if (watching) { clearInterval(watching); watching = null; }
+      dropCer();
       closeGift();
       if (endBox) endBox.innerHTML = "";
       var g = $("mt-gain");
@@ -3138,7 +3384,6 @@
     fx: fx,
     buyFx: buyFx,
     spendFx: spendFx,
-    bonus: bonus,
     /* The two ways out of a card, handed over so the album's own reveal
        dismisses exactly like every card of this layer instead of carrying a
        second copy of the rule (packages/webshell/album.js). */

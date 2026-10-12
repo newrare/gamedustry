@@ -507,9 +507,10 @@ What a view brings:
   never been played opens on it; everything else is unchanged, level 1 included.
   All thirteen games declare a `web.levels` block today. The
   motor's only share of it is `onResult(fn)`, a filter over a round's result,
-  `Loop.rate(k)` and `onOutro(fn)` — the beat between the round and the end
+  `Loop.rate(k)`, `onOutro(fn)` — the beat between the round and the end
   screen, with the loop still turning for it, which is what a slow motion needs
-  and an end screen cannot give. The stars become the level's without a line
+  and an end screen cannot give — and `onReveal(fn)`, which holds the end
+  screen's way out until a layer has handed over what it still owes. The stars become the level's without a line
   changing in any `game.js`. **The round wears its three stars live**, in a pill in the
   **bottom-left corner** (never *in* the HUD, whose top band is the game's) —
   mirroring MENU / OPTIONS in the opposite one, and **a tap on it opens the
@@ -655,22 +656,24 @@ What a view brings:
   tag that whispers. **Neither card closes itself and neither sells anything**:
   a tap anywhere puts it away, and the one control left is DRAW AGAIN wearing
   the ticket and what the pull costs — gone entirely when the wallet cannot pay
-  for it, since a control that cannot act is a wall. A level's FIRST perfect
-  round is offered three gift boxes ON THE ROUND ITSELF (a perfect replay gets
-  the one-or-two-star offer instead) — the outro's slow
-  motion freezes under them, like every card over a round, so the end screen arrives with the prize
-  already in the wallet — and then one ad to pay **×5** what was in the one it
-  picked, offered on a button that NAMES WHAT IT MULTIPLIES and follows with
-  the price — `MULTIPLY YOUR COINS` and the shell's painted ×5 plate finishing
-  the sentence, `watch an ad` under it at the size a price is read at. It is the
-  card's ONLY control: the arrow beside it was a button for what a miss already
-  does, since a tap anywhere else — and ENTER, SPACE or ESCAPE — collects the
-  gift as it stands, and one footnote line says so. A sticker is redrawn rather
-  than multiplied, so that one says *one more* and wears no plate. Walking past
-  it goes STRAIGHT to the end
-  screen: the token flies into a wallet that is a layer over the frame, so
-  nothing has to wait for it, and holding the outro for the flight showed a
-  second of the frozen round with nothing on it. Five and
+  for it, since a control that cannot act is a wall. **A level's FIRST perfect
+  round, and a round the map owes a sticker for, end ON THE END SCREEN and not
+  in a card** (a perfect replay gets the one-or-two-star offer instead): the
+  outro is the slow motion and the THREE STARS callout and nothing else, the
+  reveal plays and the score becomes coins, and then the three stars the screen
+  has just lit BECOME three gift boxes where they stand, the rows giving their
+  room to one line — pick one. The box picked opens and the row is replaced by
+  what the round paid — its prize in the middle, the band's and the clean run's
+  stickers either side — the rows under it say what each one is for, each prize
+  flies into its chip, and only then does the way out arrive (the motor's
+  `onReveal` holds it, and the SPACE that replays with it). The bonus row
+  carries one ad to pay **×5** what the box held, on a button that NAMES WHAT
+  IT MULTIPLIES and follows with the price — `MULTIPLY YOUR COINS` and the
+  shell's painted ×5 plate finishing the sentence, `watch an ad` under it at
+  the size a price is read at — and it stays beside the way out, since it is a
+  choice and not a step. A sticker is redrawn rather than multiplied, so that
+  one says *one more* and wears no plate. A player who leaves mid-pick is paid
+  the first box: the level's first perfect round is recorded already. Five and
   not three because the plates the shell ships are x2, x5, x10, x20, x50 and
   x100: an offer the player can SEE is worth more than a smaller one they have
   to read. A round with a star is offered the boxes FOR an ad on the end screen;
@@ -1864,7 +1867,10 @@ Shell (section 5):
   screen waits for the `done` the hook is handed. Same rule — the motor
   registers none, a playable keeps the straight cut. Hooks CHAIN in the order
   they were registered: the level layer's first, then the army layer's prisoner
-  offer.
+  offer. `onReveal(fn)` is the same contract at the other end of the end
+  screen: called where the way out would land, it holds the buttons (and the
+  SPACE that replays) until its `done` — the meta layer's ceremony, the three
+  stars turned into gift boxes and the map's stickers, is the one user.
 
 ## Ad-network glue (section 4) — do not remove
 

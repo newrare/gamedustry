@@ -1115,16 +1115,16 @@ Eighteen coins whatever the score — the cascade is a *reading* of the transfer
 not a count of it. A 40 000-point round would otherwise be four hundred DOM
 nodes for the same half-second.
 
-Then, in order: the xp, whatever the map now owes the collection (one card per
-sticker), and one offer:
+Then, in order: the xp, the ceremony when the round has one (the three-star
+bonus and whatever the map now owes the collection, below), and one offer:
 
-- **three stars** → nothing here: the gift was already handed over, on the
-  round itself (below). A perfect REPLAY, which the bonus skips, gets the
-  one-or-two-star offer instead.
+- **three stars** on a level's first perfect round → nothing more: the bonus
+  is the ceremony, and its ×5 is its own offer. A perfect REPLAY, which the
+  bonus skips, gets the one-or-two-star offer instead.
   The offer **arrives with the navigation** and not at the end of the transfer:
-  `endRun` runs on the frame the motor lights the map, the replay and the arrow
-  (see `watchEnd`), so the three ways out and the one reason to stay are offered
-  together. Held back until the coins, the stickers and the xp had all landed, it
+  `endRun` runs on the frame the motor would light the map, the replay and the
+  arrow (`onReveal`), so the three ways out and the one reason to stay are
+  offered together — on a round with a ceremony, at the end of it. Held back until the coins, the stickers and the xp had all landed, it
   appeared seconds after the player had read the row of buttons and decided —
   a fourth control arriving under a thumb already on its way somewhere.
 
@@ -1142,32 +1142,39 @@ sticker), and one offer:
 - **no star** → nothing at all. A player who just failed is the last person to
   sell to.
 
-### The three-star bonus opens on the round that earned it
+### The three-star bonus opens on the end screen, out of its stars
 
-The boxes used to be the end screen's last beat, three screens' worth of reveal
-after the third star lit. They are now the **outro's** (see
-[LEVELS.md](LEVELS.md)): the world is still there, frozen under a blur on the
-frame the slow motion had reached (every card over a round pauses it —
-`packages/webshell/view.js`, section 1b), the card reads BONUS THREE STARS, and the end screen arrives with the
-prize already in the wallet.
+The boxes were the end screen's last beat once, then a card over the frozen
+round in the outro; both were a modal laid over the screen that explained them,
+and a good round could open three of them in a row (the bonus, then one card per
+sticker the map paid). They are **the end screen's own pieces now**
+(`packages/webshell/meta.js`, section 11d):
+
+1. the outro is the slow motion and the THREE STARS callout, nothing else;
+1. the reveal plays — title, score, stars, rows — and the score becomes coins;
+1. **the three stars become the three boxes**: each star bursts where it stands
+   and a box lands in its place, the tall middle star the tall middle box; the
+   rows give their room to one line — *Three-star bonus · tap a box*;
+1. the box picked opens and **the row becomes what the round paid**: the box's
+   prize in the middle, the map's stickers (a band passed, a band passed clean,
+   the board) either side, five across at most; under it one row per prize says
+   what it was for, the bonus first, and the bonus row's offer is the ×5 for an
+   ad;
+1. each prize flies into its chip, and **only then does the way out arrive** —
+   the motor's `onReveal` holds the buttons and the SPACE that replays.
+
+A round owed stickers but no bonus (a band passed on one or two stars, a
+replay) skips the boxes: the stars go straight to the stickers, and the
+ordinary offer comes with the way out. The rows hold the height the stat rows
+had, so the column does not move under the boxes.
 
 **It is paid once per level**: on the first round that three-stars it
 (`firstPerfect`, read in `levels.js` before the round's stars are recorded).
 Paid on every perfect round, replaying an easy level for its boxes out-earned
-climbing the map.
-
-The wallet comes with it — a reward that flies has to have somewhere to fly to,
-and `flyReward` measures a *visible* chip and gives up without one — so the
-corner wallet the end screen shows is built and shown for the ceremony, which is
-exactly the chip the gift lands in.
-
-**The outro's `done` fires the moment the card closes, with the reward still in
-the air.** It used to wait out the flight plus a beat, and what the player
-watched for that second was the frozen ROUND: the card they had just dismissed
-was gone and nothing had replaced it. Nothing needed the wait — the wallet is a
-layer over `#frame` and not a child of the end screen, so the token flies over
-whatever is underneath it, and the score cascade that counts into the same chip
-does not start until the install CTA lands, seconds later.
+climbing the map. The rewards are rolled before a box is drawn, the stickers
+are paid by `sweep` on the frame the reveal ends, and a player who leaves the
+screen mid-pick is paid the first box: the level is already recorded as
+perfect, and a bonus walked past would be lost for good.
 
 **The ad offer names what it multiplies.** `WIN` beside a ×5 plate was a number
 with no noun on it, on a card that pays xp, coins or tickets from one ceremony:
@@ -1183,8 +1190,8 @@ multiplied, so that one reads *one more* and wears no plate.
 end, and a player meets it on the reward card and again on the end screen a
 beat later.
 
-**The beat it hangs off is the motor's own.** The install CTA taking its
-`.show` class is the signal that `EndScreen`'s cascade is done — watched for,
+**The beat it hangs off is the motor's own.** `onReveal` is called where the
+install CTA would land, which is the signal that `EndScreen`'s cascade is done —
 never scheduled against a copy of the motor's timings, which would drift the
 first time a game shipped a fifth stat row.
 

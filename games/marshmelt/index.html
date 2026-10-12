@@ -5829,10 +5829,36 @@
         }, afterStars + i * ROW_GAP);
       });
 
-      // 5) Install CTA, then the discreet replay link.
+      // 5) Install CTA, then the discreet replay link — once every layer that
+      //    asked for the last beat of the reveal has had it (onReveal below).
       var ctaAt = afterStars + rows.length * ROW_GAP + T_CTA_AFTER;
-      T(function () { $("btn-install").classList.add("show"); settle(); }, ctaAt);
-      T(function () { $("btn-replay").classList.add("show"); }, ctaAt + 500);
+      var mine = ++shown;
+      T(function () {
+        runReveal(result, 0, function () {
+          if (mine !== shown || State !== "end") return;   // a newer screen, or none
+          $("btn-install").classList.add("show"); settle();
+          T(function () { $("btn-replay").classList.add("show"); }, 500);
+        });
+      }, ctaAt);
+    }
+
+    /* THE WAY OUT WAITS FOR WHATEVER THE SCREEN STILL HAS TO HAND OVER. A
+       layer above the motor may own one more beat of this screen — the web
+       target's meta layer turns the three stars into three gift boxes on a
+       level's first perfect round, and hands over the stickers the map now
+       owes — and a row of buttons arriving under a choice is a way past it.
+       So the beat where the CTA would land runs these hooks first, in order
+       of registration, each handed the next as its `done`, and the buttons
+       come with the last one. The motor registers none: a playable lands its
+       CTA on the beat it always did. `shown` is the guard a delayed `done`
+       needs — a hook that answers after the player has left (or after a
+       second round's screen) must not light that screen's buttons. */
+    var revealHooks = [], shown = 0;
+    function onReveal(fn) { revealHooks.push(fn); }
+    function runReveal(result, i, fin) {
+      if (i >= revealHooks.length || State !== "end") { fin(); return; }
+      var called = false;
+      revealHooks[i](result, function () { if (!called) { called = true; runReveal(result, i + 1, fin); } });
     }
 
     /* THE REVEAL IS A CASCADE OF TIMERS, AND IT HAS TO BE CANCELLABLE. A
@@ -5844,9 +5870,9 @@
        cleared them, but only on the way into the NEXT end screen, which is
        one round too late. The shell calls this whenever the state leaves
        "end". */
-    function clear() { timers.forEach(clearTimeout); timers = []; }
+    function clear() { timers.forEach(clearTimeout); timers = []; shown++; }
 
-    return { show: show, clear: clear };
+    return { show: show, clear: clear, onReveal: onReveal };
   })();
 
   /* --- Perf: a readout on the device itself ------------------------------
@@ -6157,6 +6183,9 @@
      endRound again would end the round twice over. */
   var outroHooks = [], ending = false;
   function onOutro(fn) { outroHooks.push(fn); }
+  /* …and `onReveal(fn)` holds the end screen's way out, the same way, at the
+     other end of the reveal (EndScreen above). */
+  function onReveal(fn) { EndScreen.onReveal(fn); }
   function runOutro(result, i) {
     if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
     var called = false;                 // a second `done` from one hook is dropped

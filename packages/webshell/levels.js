@@ -1032,10 +1032,11 @@
      on. The outro is the beat in between: the clock is already stopped, the
      loop is still turning, and the end screen waits for `done`.
 
-       three stars  the shine has already played (winRound) and the world is
-                    held at a crawl while the BONUS is handed over — the three
-                    boxes open over the round that earned them, not over a
-                    score screen two beats later.
+       three stars  the shine and the THREE STARS callout have already played
+                    (winRound) and the world is held at a crawl for a beat.
+                    The bonus is not handed over here any more: it is the end
+                    screen's last beat, where the stars it lights turn into
+                    the boxes (packages/webshell/meta.js, the ceremony).
        one or two   slow motion and nothing else. The objective was met; there
                     is no ceremony owed, and a gold flash here would make a
                     scrape read like a maximum.
@@ -1082,12 +1083,6 @@
     flames(LOSS_HOLD);
   }
 
-  /* The meta layer, when the game ships one. It is the only thing the outro
-     hands the frame over to, and a game without it simply holds the beat. */
-  function meta() {
-    return (window.__META__ && window.__META__.active()) ? window.__META__ : null;
-  }
-
   function outro(result, done) {
     if (!ON || !CONFIG.level) { done(); return; }
     ending = true;
@@ -1095,20 +1090,24 @@
     var st = result.stars || 0;
 
     if (st >= 3) {
-      /* The shine normally played on the frame the third star lit; a game that
-         ended its own round on that same frame never went through winRound, so
-         the beat is played here instead of being skipped. */
-      var wait = 0;
-      if (!won) { won = true; winBeat(); slowTo(BONUS_RATE, WIN_RAMP); wait = WIN_ENTER; }
-      else W.Loop.rate(BONUS_RATE);
-      /* The boxes open on the FIRST perfect round of a level only (see
-         onResult); a perfect replay keeps the slow motion and goes straight to
-         its end screen, where the ordinary offer is waiting. */
-      var MT = meta(), pay = !!(last && last.firstPerfect);
-      setTimeout(function () {
-        if (pay && MT && MT.bonus) MT.bonus(done);
-        else done();
-      }, wait);
+      /* The shine normally played on the frame the third star lit, and the
+         callout with it (winRound); a game that ended its own round on that
+         same frame never went through it, so both are played here instead of
+         being skipped. A round that went through it has already been read:
+         it only holds its crawl for a beat. */
+      if (!won) {
+        won = true; winBeat(); slowTo(BONUS_RATE, WIN_RAMP);
+        W.Pop.show("record", { word: T.threeStars, hold: WIN_HOLD });
+        setTimeout(done, WIN_ENTER + WIN_HOLD);
+      } else {
+        W.Loop.rate(BONUS_RATE);
+        setTimeout(done, CALM_HOLD);
+      }
+      /* NO CARD OVER THE ROUND. The three-star bonus used to open here, as a
+         modal over the frozen world; it is now the end screen's own last beat
+         (packages/webshell/meta.js, the ceremony): the three stars the reveal
+         has just lit BECOME the three boxes, in place, and the way out waits
+         for the pick. */
       return;
     }
 

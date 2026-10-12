@@ -1369,6 +1369,88 @@
   margin-top:22px;
   animation:mt-offer-in .3s cubic-bezier(.2,1.4,.4,1) both;
 }
+/* ---- the ceremony: the end screen's last beat (meta.js, 11d) ------------ */
+
+/* THE STARS BECOME WHAT THE ROUND PAID, where they stand. The row is made the
+   offset parent the stars are measured against and the layer hangs over it;
+   positioned without a z-index, it still paints under the score, and the
+   layer's own z-index is what puts the boxes over everything for the tap. */
+#screen-end.mt-cer .eo-stars { position:relative; }
+.mt-estage { position:absolute; left:0; top:0; width:100%; height:100%; z-index:2; }
+/* Each star bursts — swells, whitens, goes — on the frame its box lands. The
+   id is what outweighs `.star.on`'s own slam and glow. */
+#screen-end .eo-stars .star.mt-out { animation:mt-star-out .42s cubic-bezier(.4,0,.6,1) forwards; }
+@keyframes mt-star-out {
+  0%   { transform:scale(1); opacity:1; filter:brightness(1); }
+  45%  { transform:scale(1.25); opacity:1; filter:brightness(2.2); }
+  100% { transform:scale(.2); opacity:0; filter:brightness(2.6); }
+}
+/* The three boxes are the three-box card's own (section 9 of this sheet),
+   placed one per star instead of in a row: each slot is the star's box, the
+   gift fills it, the idle and the pick are unchanged. */
+.mt-gifts.mt-egifts { position:absolute; inset:0; display:block; margin:0; transition:opacity .3s ease; }
+.mt-gifts.mt-egifts.gone { opacity:0; pointer-events:none; }
+.mt-eslot { position:absolute; animation:mt-eslot-in .5s cubic-bezier(.2,1.6,.4,1) both; }
+#screen-end .mt-eslot .mt-gift { width:100%; height:100%; }
+#screen-end .mt-egifts.art .mt-gift .face { width:100%; }
+@keyframes mt-eslot-in {
+  0%   { transform:scale(.2) rotate(-12deg); opacity:0; }
+  100% { transform:scale(1) rotate(0); opacity:1; }
+}
+/* A prize, on the stars' line: a point the badge is centred on, the badge
+   scaled from its card size (300 px) to the room the row leaves it. */
+.mt-eitem {
+  position:absolute; width:0; height:0;
+  display:flex; align-items:center; justify-content:center;
+  animation:mt-eitem-in .5s cubic-bezier(.2,1.5,.4,1) both;
+}
+.mt-eitem-k { flex:none; }
+@keyframes mt-eitem-in {
+  from { transform:scale(.2); opacity:0; }
+  to   { transform:scale(1); opacity:1; }
+}
+/* THE ROWS' ROOM, while the boxes wait: what they are and what to do. */
+.mt-ecap {
+  display:flex; flex-direction:column; align-items:center; gap:10px; padding-top:14px;
+  animation:mt-offer-in .3s cubic-bezier(.2,1.4,.4,1) .3s both;
+}
+.mt-ecap b {
+  font-size:36px; font-weight:var(--web-fw, 900); letter-spacing:2px; color:var(--gold);
+  text-shadow:0 0 18px rgba(255,212,59,.45);
+}
+.mt-ecap span {
+  font-size:24px; font-weight:800; letter-spacing:3px; color:var(--text);
+  animation:mt-ecap-pulse 1.4s ease-in-out infinite;
+}
+@keyframes mt-ecap-pulse { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+/* …and once they are open, one row per prize: why it was paid, and what. */
+.mt-erow {
+  display:flex; justify-content:space-between; align-items:center; gap:16px;
+  padding:12px 20px; border-radius:16px;
+  background:var(--panel); border:1px solid var(--panel-line);
+  font-size:26px; font-weight:800; line-height:1.15;
+  animation:mt-erow-in .32s ease both;
+}
+.mt-erow .l { min-width:0; }
+.mt-erow .v { flex:none; color:var(--gold); white-space:nowrap; }
+.mt-erow .v.new { color:var(--good); }
+.mt-erow.boosted .v { animation:mt-erow-boost .5s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes mt-erow-boost {
+  0%   { transform:scale(1); }
+  40%  { transform:scale(1.3); color:#fff; }
+  100% { transform:scale(1); }
+}
+.mt-erow.bonus {
+  color:#fff3b0;
+  background:linear-gradient(90deg, rgba(255,175,40,.16), rgba(255,220,130,.26), rgba(255,175,40,.16));
+  border-color:rgba(255,215,110,.6);
+  box-shadow:0 0 20px rgba(255,200,60,.3);
+}
+@keyframes mt-erow-in {
+  from { opacity:0; transform:translateX(-22px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
 /* One coin in flight. They are spawned into #frame, so they are in design
    pixels like everything else and nothing has to convert a scale. */
 .mt-coin {
@@ -1716,6 +1798,8 @@
   .dl-cell.live .box { transform:translate(-50%, -50%); }
   .dl-track, .dl-rail .done { transition:none; }
   .mt-rw { animation:none; }
+  .mt-eslot, .mt-eitem, .mt-erow, .mt-ecap, .mt-ecap span, .mt-erow.boosted .v { animation:none; }
+  #screen-end .eo-stars .star.mt-out { animation:none; opacity:0; }
   .mt-modal .mt-card, .mt-modal.on .mt-card { transition:none; transform:none; }
   /* The reveal's ceremony is HIDDEN rather than frozen: every one of these
      nodes is invisible only because its animation holds it at zero, so

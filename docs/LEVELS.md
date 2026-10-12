@@ -431,8 +431,8 @@ the third star lights; answering `true` makes it a beat rather than an
 ending — the same gold shine (flash, two rings, a timed vignette, the star
 chime) without the slow motion, the held vignette or the ducked music, and the
 round runs on to its own end. The game writes the callout itself, because it
-knows where its action is not. The outro still hands over the three-star bonus
-when the round does end. It is for a game whose SCORE is the point of the
+knows where its action is not. The end screen still hands over the three-star
+bonus when the round does end. It is for a game whose SCORE is the point of the
 round: `games/pawko`, where the cards are built to break the game and a round
 cut at 2.2x the objective would stop exactly when it gets good.
 
@@ -452,13 +452,15 @@ it always had.
 
 | the round ended with | what the outro plays                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **three stars**      | the shine has already played; the world is held at 14 % while the meta layer's BONUS is handed over        |
+| **three stars**      | the shine and the THREE STARS callout have already played; the world is held at 14 % for a beat            |
 | **one or two stars** | slow motion down to 22 % over ~0.5 s, a beat of hold, and nothing else                                     |
 | **none**             | the frame goes red, fire climbs it from the bottom edge, the world grinds down to 16 % — about 1.2 s of it |
 
-The three-star case is where the meta layer's gift now opens (see
-[META.md](META.md)): **over the round that earned it**, not on a score screen
-two beats later. A game with no `web.meta` block holds the beat and goes on.
+The three-star case opens no card: a game that ended its own round on the
+frame the third star lit never went through the shine, so the outro plays it
+there, callout included. The meta layer's gift is handed over **on the end
+screen, by the stars themselves** — they turn into the three boxes once the
+score has been read (see [META.md](META.md)).
 
 The shine itself is gold from end to end — a full-frame flash, two rings out of
 the middle of the play area, and a glow on the edges for as long as the slow
@@ -1350,6 +1352,7 @@ nothing about levels beyond a number in `CONFIG`.
 | `Game.levelMaxed()`                    | optional: answer true and the third star is a beat, not an ending — the round plays on to its own end (pawko)                                                                                                                                           |
 | `Loop.rate(k)`                         | the second motor addition — a time scale on the simulation, which is what the three-star slow motion rides                                                                                                                                              |
 | `onOutro(fn)` in the shell             | the third motor addition — the beat between the round and the end screen, with the loop still turning for it                                                                                                                                            |
+| `onReveal(fn)` in the shell            | the fourth — the end screen's way out held until the meta layer's ceremony (boxes, stickers) is over                                                                                                                                                    |
 | `onResult(fn)` in the shell            | the one motor addition — a filter over a round's result, so the stars become the level's and section 6 never changes                                                                                                                                    |
 | the graph itself                       | one table for the thirteen — sections, forks and road gates are the studio's shape, not a game's                                                                                                                                                        |
 | `menu.js` → `LV.mount({ help })`       | the way to the shell's one help CARD, so level 0 opens it instead of a second copy. The map used to build its own panel, because a panel of the title screen could not be raised over a map; help is a modal now and is over every view by construction |

@@ -243,7 +243,7 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
     Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
-    onOutro: onOutro, endRound: endRound, applyCopy: applyCopy,
+    onOutro: onOutro, onReveal: onReveal, endRound: endRound, applyCopy: applyCopy,
     state: function () { return State; },
     ending: function () { return ending; },
     render: frameRender,

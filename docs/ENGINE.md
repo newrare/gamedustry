@@ -293,11 +293,22 @@ none. A hook registered here is handed the finished result and a `done`: the
 clock is already stopped, the loop is left running, and the end screen waits.
 The motor registers none — a playable keeps the cut it always had. Hooks run in
 the order they were registered, each handed the next as its `done`: the web
-target's level layer first (a missed objective burns, three stars open the
-bonus; see [LEVELS.md](LEVELS.md)), then the army layer's prisoner offer (see
+target's level layer first (a missed objective burns, three stars hold the
+slow motion under their callout; see [LEVELS.md](LEVELS.md)), then the army layer's prisoner offer (see
 [ARMY.md](ARMY.md)). For as long as the outro plays the state
 is still `"playing"`, so `endRound` guards itself against a game that ends the
 same round twice.
+
+**`onReveal(fn)` holds the end screen's way out.** The reveal ends on the beat
+where the CTA lands; a hook registered here is called on that beat with the
+result and a `done`, and the CTA, the replay link — and with them the SPACE that
+replays — wait for it. Hooks chain in registration order, like the outro's. The
+motor registers none, so a playable lands its CTA on the beat it always did.
+The web target's meta layer is the one user: on a level's first perfect round,
+or a round the map owes a sticker for, the three stars become three gift boxes
+and the stickers are handed over on the screen itself, and the way out arrives
+once they have flown home (see [META.md](META.md)). A `done` answered after the
+player has left the screen lights nothing.
 
 The reveal scores itself through the **house sound kit** — `Sound.ui("score")`
 (the count-up landing), `Sound.ui("star")` (one per star, pitched up by
