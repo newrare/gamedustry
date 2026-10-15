@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.5.3",
+  "version": "1.5.8",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -59,7 +59,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Toupie contre toupie. Tape pile à l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      "tagline": "Toupie Vs toupie. Tap pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
       "tags": [
         "Tap précis",
         "5 biomes",
@@ -67,7 +67,7 @@
       ]
     },
     "en": {
-      "tagline": "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      "tagline": "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
       "tags": [
         "Timing tap",
         "5 biomes",
@@ -163,7 +163,6 @@
         "strings": {
           " shock": " choc",
           "% spin": "% de rotation",
-          "Bearings wearing out": "Roulements à bout",
           "Best": "Record",
           "Best combo": "Meilleur combo",
           "Best score": "Meilleur score",
@@ -186,12 +185,11 @@
           "Shock to recover": "Un choc pour relancer",
           "Shockwaves": "Ondes de choc",
           "Spin": "Rotation",
-          "Spin gone": "Plus de rotation",
           "Spin lost": "Rotation perdue",
           "Spin master!": "Maître de la toupie !",
           "Spinning out": "Rotation en chute",
-          "Spun out!": "Toupie à terre !",
-          "Tap to play": "Tap pour jouer",
+          "Tops destroyed": "Toupies détruites",
+          "Play": "Jouer",
           "Time's up!": "Temps écoulé !",
           "Triple": "Triple",
           "Wrecked": "Fracassé"

@@ -47,6 +47,10 @@
    `Drop` does the same while its pitch falls an octave — and the amber grip
    inside the window is where that tail begins. The tail is rendered by the
    same function tools/lab/cut-kit.mjs cuts with (tailPcm, copied below).
+   `Pitch` plays the take higher (2 is an octave up) or lower (0.5), and the
+   cutter bakes it into the file: the role is the one place a sound is shaped,
+   so a game that maps a key to it only says how loud a line plays it. A sound
+   that should sound different is another variant, not a setting in a game.
 
    Inside a variant the TAKES are interchangeable: the engine alternates
    between them so a sound heard twenty times a round does not repeat. They
@@ -54,8 +58,9 @@
 
    Save writes assets/audio/kit/kit.json, re-cuts every take and rebuilds the
    web build of the bench: the cut files are committed, the games pick them up
-   on the next `node tools/update.mjs`. Only the takes and the jitter are the
-   page's to change — a role is a name the shell calls.
+   on the next `node tools/update.mjs`. Only the takes are the page's to
+   change — a role is a name the shell calls. A gameplay variant is edited the
+   same way from the events bench (/sound), on the card of a key that plays it.
 
    Served by `make events` (tools/lab/serve-events.mjs) at /kit, beside the
    library it reads. Over file:// it has nothing to read and says so.
@@ -95,7 +100,12 @@ button { font:inherit; color:inherit; }
 .role .u { grid-column:1 / -1; color:#8fe0b8; font-size:11px; font-weight:500; }
 .role .u.none { color:#6f6f92; }
 .role .g { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
-.role .g img { width:24px; height:24px; border-radius:6px; display:block; background:#1a1a2a; }
+.role .g img { width:24px; height:24px; border-radius:6px; display:block; background:#1a1a2a; outline-offset:2px; }
+.role .g.pending img { animation:kitwait 1.1s ease-in-out infinite; }
+@keyframes kitwait { 50% { opacity:.45; } }
+.role .g img.v-ok { outline:2px solid #5fd49a; }
+.role .g img.v-part { outline:2px dashed #5fd49a; }
+.role .g img.v-stale { outline:2px solid #ffb648; }
 .role.var { margin-left:12px; padding:5px 10px; }
 .role-h { padding:10px 10px 2px; display:flex; flex-direction:column; gap:1px; }
 .role-h b { font-size:13px; }
@@ -230,7 +240,7 @@ button { font:inherit; color:inherit; }
   };
   /* How the shell plays a role in a row: the stars climb, the rows tick up,
      the coins cascade. A role that is not a ladder is played five times, which
-     is how its takes and its jitter are heard. */
+     is how its takes are heard. */
   const LADDER = {
     star: { rates: [1, 1.19, 1.42], gap: 220 },
     tick: { rates: [1, 1.07, 1.14, 1.21], gap: 125 },
@@ -240,7 +250,7 @@ button { font:inherit; color:inherit; }
   const GROUPS = { shell: "Shell — every game's menus and end screen", game: "Gameplay — mapped by a game's manifest (sfx)" };
   const WINDOW = 0.05, MAX_TAKES = 3;
 
-  const S = { kit: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "" };
+  const S = { kit: null, checked: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "" };
 
   // ---- audio -------------------------------------------------------------
   let ac = null;
@@ -299,7 +309,7 @@ button { font:inherit; color:inherit; }
   // The cut with its tail, as one mono buffer — the channels averaged, like the cutter.
   const rendered = new Map();
   function renderTake(buf, t) {
-    const key = [t.file, t.start, t.length, t.tail, t.tailLength].join("|");
+    const key = [t.file, t.start, t.length, t.tail, t.tailLength].join("|");   // the pitch is the playback's
     if (rendered.has(key)) return rendered.get(key);
     const rate = buf.sampleRate, a = Math.floor(t.start * rate);
     const n = Math.max(2, Math.min(buf.length - a, Math.floor(t.length * rate))), mono = new Float32Array(n);
@@ -316,11 +326,11 @@ button { font:inherit; color:inherit; }
   }
   let voices = [];
   function stopAll() { voices.forEach((v) => { try { v.stop(); } catch (e) {} }); voices = []; }
-  // A take — { file, start, length, tail? } — levelled and played the way it will ship.
+  // A take — { file, start, length, rate?, tail? } — levelled and played the way it will ship.
   function playTake(t, rate, at) {
     return bufOf(t.file).then((buf) => {
       const a = ctx(), src = a.createBufferSource(), g = a.createGain();
-      const t0 = a.currentTime + (at || 0), r = rate || 1, start = t.start || 0, length = t.length;
+      const t0 = a.currentTime + (at || 0), r = (rate || 1) * (t.rate || 1), start = t.start || 0, length = t.length;
       const level = Math.pow(10, gainDb(buf, start, length) / 20) * vol();
       src.playbackRate.value = r;
       src.connect(g); g.connect(a.destination);
@@ -340,7 +350,7 @@ button { font:inherit; color:inherit; }
       src.onended = () => { voices = voices.filter((v) => v !== src); };
     }).catch(() => {});
   }
-  // One shot of a variant the way Sound.ui plays it: a take, never the same twice, detuned by the jitter.
+  // One shot of a variant the way Sound.ui plays it: a take, never the same twice.
   let lastTake = -1;
   function shot(rate, at) {
     const v = cur(), n = v.takes.length;
@@ -348,8 +358,7 @@ button { font:inherit; color:inherit; }
     if (n > 1) { i = Math.floor(Math.random() * (lastTake < 0 ? n : n - 1)); if (lastTake >= 0 && i >= lastTake) i++; }
     lastTake = i;
     const t = v.takes[i] || v.takes[0];
-    const j = v.jitter ? 1 + (Math.random() * 2 - 1) * v.jitter : 1;
-    return playTake(t, (rate || 1) * j, at);
+    return playTake(t, rate || 1, at);
   }
   function sequence() {
     stopAll();
@@ -406,11 +415,16 @@ button { font:inherit; color:inherit; }
   const takesWord = (v) => v.takes.length + (v.takes.length > 1 ? " takes" : " take");
   /* The games behind a variant, one icon each: `blight.spread` and
      `blight.rot` are one game, and the keys ride in the tooltip. */
-  function iconsOf(users) {
-    const by = {};
+  /* A ring says who signed the variant off on the events bench (api/kit
+     `checked`): green, every line of that game playing it checked on its
+     current cut; dashed, some; amber, checked on a cut it no longer has. */
+  const VALID = { ok: "validated", part: "partly validated", stale: "checked on an older cut" };
+  function iconsOf(users, id) {
+    const by = {}, checked = (S.checked || {})[id] || {};
     users.forEach((u) => { const slug = u.split(".")[0]; (by[slug] = by[slug] || []).push(u); });
     return Object.keys(by).map((slug) =>
-      '<img src="icons/' + encodeURIComponent(slug) + '.png" alt="' + esc(slug) + '" title="' + esc(by[slug].join(", ")) + '">').join("");
+      '<img class="' + (checked[slug] ? "v-" + checked[slug] : "") + '" src="icons/' + encodeURIComponent(slug) + '.png" alt="' + esc(slug) + '" title="' +
+      esc(by[slug].join(", ") + (!S.checked ? "" : checked[slug] ? " — " + VALID[checked[slug]] : " — not checked yet")) + '">').join("");
   }
   // Every word of the filter has to be somewhere in the role, the variant or the games playing it.
   function matches(text) {
@@ -443,7 +457,7 @@ button { font:inherit; color:inherit; }
         const v = x.variants[name], id = idOf(role, name), users = usersOf(id);
         html += '<button class="role var' + (role === S.role && name === S.variant ? " on" : "") + (dirty.includes(id) ? " dirty" : "") + '" data-id="' + id + '">' +
           "<b>" + esc(name) + "</b>" + '<span class="n">' + takesWord(v) + "</span>" +
-          (users.length ? '<span class="g">' + iconsOf(users) + "</span>" : '<span class="u none">no game plays it</span>') + "</button>";
+          (users.length ? '<span class="g' + (S.checked ? "" : " pending") + '">' + iconsOf(users, id) + "</span>" : '<span class="u none">no game plays it</span>') + "</button>";
       });
     });
     $("role-list").innerHTML = html || '<p class="none-left">No role matches.</p>';
@@ -454,21 +468,14 @@ button { font:inherit; color:inherit; }
     const used = users.length > 0, last = Object.keys(x.variants).length < 2;
     $("role-head").innerHTML =
       "<h2>" + esc(idNow()) + "</h2>" +
-      '<label>Jitter <input id="jit" type="range" min="0" max="0.1" step="0.01" value="' + (v.jitter || 0) + '"><span id="jit-v">' +
-      Math.round((v.jitter || 0) * 100) + " %</span></label>" +
       (S.kit.playable.includes(S.role) ? '<span class="tag">ships in playables too</span>' : "") +
       (shell ? "" :
         '<span class="vacts"><button class="btn" id="v-new" title="A new variant of this role, starting from these takes">New variant</button>' +
         '<button class="btn" id="v-ren"' + (used ? ' disabled title="A game plays it — map that game elsewhere first"' : "") + ">Rename</button>" +
         '<button class="btn" id="v-del"' + (used || last ? ' disabled title="' + (used ? "A game plays it — map that game elsewhere first" : "A role keeps one variant at least") + '"' : "") + ">Delete</button></span>") +
-      '<span class="w">' + esc(x.what) + (LADDER[S.role] ? " — played as a ladder: keep the jitter at 0." : ".") +
+      '<span class="w">' + esc(x.what) + (LADDER[S.role] ? " — played as a ladder, the shell pitching each step." : ".") +
       (shell ? " The same in every game." : used ? " Played by " + esc(users.join(", ")) + " — a change here is heard there." : " No game plays it yet: map a key to it on the events bench.") +
       " The takes below are interchangeable — the shell alternates between them; they are not a choice.</span>";
-    $("jit").oninput = (e) => {
-      v.jitter = Math.round(parseFloat(e.target.value) * 100) / 100;
-      $("jit-v").textContent = Math.round(v.jitter * 100) + " %";
-      paintRoles();
-    };
     if (shell) return;
     const ask = (msg, was) => {
       const n = (prompt(msg, was || "") || "").trim().toLowerCase();
@@ -511,6 +518,7 @@ button { font:inherit; color:inherit; }
         '<canvas data-i="' + i + '"></canvas>' +
         '<span class="nums"><label>Start <input type="number" step="0.01" min="0" data-k="start" data-i="' + i + '" value="' + t.start + '"></label>' +
         '<label>Length <input type="number" step="0.01" min="0.02" max="3" data-k="length" data-i="' + i + '" value="' + t.length + '"></label>' +
+        '<label title="played higher (2 = an octave up) or lower (0.5), baked into the file">Pitch <input type="number" step="0.05" min="0.5" max="2" data-k="rate" data-i="' + i + '" value="' + (t.rate || 1) + '"></label>' +
         '<label>End <span class="seg">' +
         ["", "fade", "drop"].map((k) => '<button data-tail="' + k + '" data-i="' + i + '" class="' + ((t.tail || "") === k ? "on" : "") + '" title="' +
           ({ "": "Stops on a 70 ms anti-click fade", fade: "Dies out over the tail", drop: "Dies out while its pitch falls an octave" })[k] + '">' +
@@ -523,7 +531,7 @@ button { font:inherit; color:inherit; }
   // The inputs and the level of one take, rewritten in place while its grips are dragged.
   function syncNums(i) {
     const t = cur().takes[i];
-    document.querySelectorAll('.take[data-i="' + i + '"] input[data-k]').forEach((n) => { n.value = t[n.dataset.k]; });
+    document.querySelectorAll('.take[data-i="' + i + '"] input[data-k]').forEach((n) => { n.value = n.dataset.k === "rate" ? (t.rate || 1) : t[n.dataset.k]; });
   }
   // Where the window, its end and its tail sit on a canvas, in CSS px.
   function geom(cv, t) {
@@ -595,8 +603,11 @@ button { font:inherit; color:inherit; }
     const f = S.byStem[stem], was = cur().takes[S.take];
     return Math.round(Math.min(+f.seconds || 0.4, was ? was.length : 0.4) * 100) / 100;
   }
+  // A new file keeps the take's pitch: it is the role's shape, not the file's.
   function setTake(i, stem) {
+    const was = cur().takes[i];
     cur().takes[i] = { file: stem, start: 0, length: defaultLength(stem) };
+    if (was && was.rate) cur().takes[i].rate = was.rate;
     paint();
     const t = cur().takes[i];
     play(t);
@@ -638,6 +649,7 @@ button { font:inherit; color:inherit; }
     if (isNaN(v)) return;
     if (k === "length") t.length = r3(Math.min(3, Math.max(0.02, v)));
     if (k === "start") t.start = r3(Math.max(0, v));
+    if (k === "rate") { const rt = Math.round(Math.min(2, Math.max(0.5, v)) * 100) / 100; if (rt === 1) delete t.rate; else t.rate = rt; }
     if (k === "tailLength" || (k === "length" && t.tail)) t.tailLength = r3(Math.min(t.length, Math.max(0.02, k === "tailLength" ? v : t.tailLength)));
     syncNums(i); drawWave(i); paintRoles();
     play(t);
@@ -758,6 +770,7 @@ button { font:inherit; color:inherit; }
       .then((r) => r.json()).then((out) => {
         if (out.error) { status(out.error, true); paintRoles(); return; }
         S.kit = out.kit; S.saved = dump(S.kit);
+        readChecked();
         status("Saved — " + out.log.length + " takes cut and levelled, the bench is rebuilding");
         paint();
       }).catch((e) => { status(String(e), true); paintRoles(); });
@@ -769,6 +782,11 @@ button { font:inherit; color:inherit; }
   });
   window.addEventListener("resize", () => { if (S.role) paintTakes(); });
 
+  // Who validated each variant on the events bench: read after the kit, since it reads games.
+  function readChecked() {
+    fetch("api/kit-checked").then((r) => r.json()).then((c) => { S.checked = c || {}; paintRoles(); }).catch(() => {});
+  }
+
   // ---- boot --------------------------------------------------------------
   Promise.all([fetch("api/kit").then((r) => r.json()), fetch("api/sfx").then((r) => r.json())])
     .then(([kit, files]) => {
@@ -777,6 +795,7 @@ button { font:inherit; color:inherit; }
       S.files.forEach((f) => { S.byStem[f.stem] = f; });
       const want = decodeURIComponent(location.hash.slice(1));
       sel(kit.roles[want.split("/")[0]] ? want : Object.keys(kit.roles)[0]);
+      readChecked();
     })
     .catch(() => {
       $("main").innerHTML = '<p id="offline">This page reads the kit and the library from its server. Run <code>make events</code> and open <code>/kit</code>.</p>';

@@ -363,17 +363,18 @@
        What the SHELL sounds like, the same in every game: a ROLE is what a
        moment means (`tap`, `open`, `coin`, `star`, `reward`, `fail`…) and the
        builder injects its takes as ASSETS.sounds["kit-<role>-<variant>-<n>"],
-       with CONFIG.kit[id] = { key, n, jitter } beside them — the id is the
+       with CONFIG.kit[id] = { key, n } beside them — the id is the
        role's name for a shell role, `role/variant` for a gameplay one
        (tools/build/build.mjs, cut by tools/lab/cut-kit.mjs out of
        assets/audio/kit/kit.json). Every take
        leaves the cutter at one loudness, so `vol` here is MIX — this moment
        against the others — and never a correction of the file.
 
-       Two takes of a role never play twice in a row, and a role with a
-       `jitter` is detuned a little on every shot, so a tab tapped ten times
-       does not sound like a recording. A ladder (the stars, the coins) has no
-       jitter: its `rate` IS the melody.
+       Two takes of a role never play twice in a row, so a tab tapped ten
+       times does not sound like a recording. A take is played as it was cut —
+       its pitch included — and nothing is detuned at random: the only `rate`
+       is the caller's, and for a ladder (the stars, the coins) it IS the
+       melody.
 
        `open` and `close` are the view system's own doors (packages/webshell/
        view.js plays them on every card and every view), and a door is the
@@ -415,7 +416,6 @@
         if (prev >= 0 && i >= prev) i++;
       }
       lastTake[id] = i;
-      if (k.jitter) r *= 1 + (Math.random() * 2 - 1) * k.jitter;
       clip(k.key + "-" + (i + 1), vol, r);
     }
     function ui(role, vol, rate) {

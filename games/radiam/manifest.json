@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.5.23",
+  "version": "1.5.29",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -159,30 +159,30 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Aligne 3 couleurs pour marquer. Trouve le coup qui déclenche des explosions en chaîne !",
+      "tagline": "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
       "tags": [
-        "Glisse un anneau",
+        "Déplace les anneaux",
         "Aligne trois billes",
-        "8 billes spéciales"
+        "Plusieurs billes spéciales"
       ]
     },
     "en": {
-      "tagline": "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
+      "tagline": "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
       "tags": [
-        "Drag a ring",
+        "Move the rings",
         "Three per ray",
-        "8 special beads"
+        "Several special beads"
       ]
     }
   },
-  "description": "Three plates turn on one hub — teeth on the outer one — each carrying twelve coloured beads in its housings, over the twelve rays drawn between the hub and the rim. Drag a plate and it turns alone; the other two hold. Rays that would pay light up under the beads while you turn, so a plate is never moved blind, and the dial only cashes them once it comes to rest. A paid ray is re-fed from outside the rim, and the beads that fly in can land on a ray of their own, so one move can keep paying long after you let go. Every four rays the hub's meter buys a special bead, and a move that pays two rays at once — or a chain at x8 — buys a bigger one. There are eight of them and no level ever carries the whole catalogue: a CHARGE unzips the plate it sits on, a NOVA is wild and takes its colour off the entire dial, a BOMB clears the board outright, a FIRE takes the two rays either side, a LASER fires through the hub and out the far side, a SCORE bead arms an x2, x5 or x10 window, a SLOW bead holds the eclipse back — and an ICE bead, the one you do not want, freezes the plate it breaks on. The thirty levels introduce them one at a time and run in five worlds, each with its own material for the beads and its own palette for the machine.",
+  "description": "Three plates turn on one hub — teeth on the outer one — each carrying twelve coloured beads in its housings, over the twelve rays drawn between the hub and the rim. Drag a plate and it turns alone; the other two hold. Rays that would pay light up under the beads while you turn, so a plate is never moved blind, and the dial only cashes them once it comes to rest. A paid ray is re-fed from outside the rim, and the beads that fly in can land on a ray of their own, so one move can keep paying long after you let go. Every four rays the hub's meter buys a special bead, and a move that pays two rays at once — or a chain at x8 — buys a bigger one. There are eight of them and no level ever carries the whole catalogue: a Charge unzips the plate it sits on, a Nova is wild and takes its colour off the entire dial, a Bomb clears the board outright, a Fire takes the two rays either side, a Laser fires through the hub and out the far side, a Score bead arms an x2, x5 or x10 window, a Slow bead holds the eclipse back — and an Ice bead, the one you do not want, freezes the plate it breaks on. The thirty levels introduce them one at a time and run in five worlds, each with its own material for the beads and its own palette for the machine.",
   "store": {
     "copy": {
       "en": {
         "lines": [
           {
             "kicker": "Gear",
-            "line": "Turn <b>3 rings</b>"
+            "line": "Turn <b>three</b> rings"
           },
           {
             "kicker": "Explosion",
@@ -197,7 +197,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Reflex and reflection",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -206,7 +206,7 @@
         "lines": [
           {
             "kicker": "Engrenage",
-            "line": "Tourne <b>3 anneaux</b>"
+            "line": "Tourne <b>trois</b> anneaux"
           },
           {
             "kicker": "Explosion",
@@ -221,7 +221,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Réflexe et réflexion",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -276,53 +276,32 @@
           "  score": "  score",
           " beads": " billes",
           " rays": " rayons",
-          "Bead Hug": "Câlin de bille",
           "Best": "Record",
           "Best chain": "Meilleure chaîne",
           "Best score": "Meilleur score",
           "Biggest blast": "Plus grosse explosion",
           "Blast": "Explosion",
           "Blocked": "Bloqué",
-          "Bright Idea": "Idée lumineuse",
           "Combo": "Combo",
           "Double ray": "Double rayon",
           "Eclipsed!": "Eclipsé !",
           "Final score": "Score final",
           "Frozen": "Gelé",
-          "Full Hands": "Les bras pleins",
-          "Furious": "Furieuse",
-          "Gearhead": "Mécano",
-          "Gold Rush": "Bille d’or",
           "Install now": "Installer",
-          "Jackpot": "Jackpot",
           "Jammed!": "Coincé !",
           "Level": "Niveau",
           "Level ": "Niveau ",
-          "Make a Wish": "Fais un vœu",
-          "Nap Time": "Petite sieste",
           "New colour": "Nouvelle couleur",
-          "Nice One": "Bien vu",
-          "No Clue": "Aucune idée",
-          "No Way!": "Pas possible !",
           "Nova": "Nova",
-          "Peace Out": "Peace",
           "Play the full game": "Jouer au jeu complet",
-          "Portal": "Portail",
-          "Radiam!": "Radiam !",
           "Radiant!": "Radieux !",
           "Rays": "Rayons",
-          "Rays get rarer": "Les rayons se font rares",
           "Rays popped": "Rayons éclatés",
-          "Red Bead": "Bille rouge",
           "Replay the demo": "Rejouer la démo",
           "Ring cleared": "Anneau nettoyé",
           "Score": "Score",
-          "Smitten": "Tout émue",
-          "Starstruck": "Des étoiles",
           "Survived": "Survie",
-          "Tap to play": "Tap pour jouer",
-          "Teary": "Larme à l’œil",
-          "The Orbit": "L’orbite",
+          "Play": "Jouer",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "Triple ray": "Triple rayon"

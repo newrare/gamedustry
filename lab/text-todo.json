@@ -1,11 +1,1 @@
-{
-  "arcider": {
-    "game.js:Pop.show.callout.leader": {
-      "en": "Leader",
-      "fr": "Premier",
-      "was": "En tête",
-      "frId": "manifest.json:web.copy.fr.strings.Leader",
-      "at": "2026-09-30"
-    }
-  }
-}
+{}

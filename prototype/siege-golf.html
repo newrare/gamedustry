@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Holepocalypse — prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0d14;overflow:hidden;touch-action:none;
+            font:13px ui-monospace,Menlo,monospace;color:#fff}
+  canvas{display:block;position:absolute;left:0;top:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   HOLEPOCALYPSE (working name Siege Golf) — golf against a zombie horde.
+   Is it fun to fling ricocheting golf balls up a sloped fairway into
+   a zombie horde shambling down at you, and does the hole hidden among them
+   make you dose a shot instead of spraying?
+
+   The launcher is an ARC PAD: touch anywhere, the angle of the finger
+   around the tee aims and its distance from the tee is the power
+   (rings drawn every third of PAD_R). The green ring on the preview
+   is where the ball tops out, the bar by the tee its power.
+   Two phases switch the launcher to a GUN, balls free: hold to auto
+   fire toward the finger, tap for a putt that tops out right there.
+     Rush: hit the gold token that shows up on the fairway.
+     Last stand: the flag that would end the run buys LAST_TIME of it
+     instead, once a run; survive it and get one flag back.
+   The fairway slopes toward you, so every ball rolls back into the
+   bag (5 balls). Hits damage by speed and knock monsters into each
+   other like billiard balls; a boomer (the bloated one) bursts and
+   blows up its neighbours.
+   A ball rolling SLOWLY over the hole drops in: a shockwave wipes
+   SHOCK_COVER of the arena and a special ball is loaded (explosive
+   or multiball); straight from the tee, two of them.
+   A monster crossing the line costs a flag. Three flags.
+   R restarts, D toggles the debug lines, 1 starts a rush, 2 a last stand.
+------------------------------------------------------------------ */
+
+// ---- tunables ----------------------------------------------------
+var DES_W = 720, DES_H = 1280;
+var RAIL_L = 40, RAIL_R = 680, TOP_Y = 90, DEFENSE_Y = 1090;
+var TEE_X = 360, TEE_Y = 1190;
+
+// shot
+var BALL_R       = 11;
+var SHOT_MIN     = 420, SHOT_MAX = 1900;
+var HOLD_DELAY   = 0.15;  // released sooner = a full-power tap
+var HOLD_TIME    = 1.1;   // seconds for the power to drain from full to POWER_MIN
+var POWER_MIN    = 0;     // 0 = SHOT_MIN, 1 = SHOT_MAX
+var DEAD_ZONE    = 50;    // a finger this close to the tee does not aim
+var MIN_UP       = 0.15;  // a shot always leaves at least this much upward
+var FIRE_COOLDOWN= 0.12;
+var BAG_MAX      = 5;
+var BAG_REGEN    = 2.5;   // seconds to replace a ball that is gone for good
+var PREVIEW_T    = 1.4;
+
+// launcher
+var PAD_R        = 280;   // arc pad: distance from the tee meaning full power
+var AUTO_RATE    = 0.12;  // gun: seconds between auto shots
+var MIN_CLIMB    = 120;   // gun putt: slowest shot it may send
+
+// phases
+var RUSH_FIRST     = 10;  // seconds before the first rush token
+var RUSH_EVERY_MIN = 20, RUSH_EVERY_MAX = 30;
+var TOKEN_R        = 22, TOKEN_LIFE = 10;
+var RUSH_TIME      = 6;
+var LAST_TIME      = 8;
+var LAST_PUSH      = 450; // knockback given to every monster when a last stand starts
+
+// table
+var SLOPE        = 300;   // px/s² pulling every ball down toward the tee
+var ROLL_DECEL   = 90;    // rolling friction, px/s²
+var RAIL_BOUNCE  = 0.85;
+var BUMPER_COUNT = 2, BUMPER_R = 30, BUMPER_KICK = 1.15;
+var BALL_LIFE    = 12;
+
+// hole
+var HOLE_R         = 22;
+var HOLE_MAX_SPEED = 560; // faster than this skips over the hole
+var HOLE_PULL      = 1600;
+var SPECIAL_MAX    = 3;
+var HOLE_SPECIAL   = true; // false = the shockwave is the whole reward
+var SHOCK_COVER    = 0.8;  // share of the arena the shockwave wipes
+var SHOCK_TIME     = 0.5;  // seconds for the wave to reach its full radius
+var SHAKE          = 14;   // screen shake on a shockwave, px
+
+// monsters
+var WALKER_HP = 3, WALKER_R = 26;
+var BOOMER_HP = 2, BOOMER_R = 28, BOOMER_CHANCE = 0.25;
+var MON_MASS     = 2.5;   // ball mass is 1
+var BALL_E       = 0.8;   // ball / monster restitution
+var MON_DRAG     = 3.5;   // how fast a knockback dies out
+var MON_E        = 0.6;   // monster / monster restitution
+var MON_HIT_SPEED= 240;   // monsters colliding faster than this hurt each other
+var DMG_SPEED    = 380;   // one damage per this much ball speed
+var MIN_DMG_SPEED= 150;
+var WALK_BASE = 24, WALK_RAMP = 0.2, WALK_MAX = 55, WOBBLE = 14;
+var SPAWN_START = 2.4, SPAWN_MIN = 1.0, SPAWN_RAMP = 0.008;
+var GROUP_EVERY = 40;     // seconds per extra monster in a spawn group (max 3)
+
+// explosions
+var BOOMER_RADIUS = 120, BOOMER_DMG = 3, BOOMER_PUSH = 520;
+var EXP_RADIUS  = 150, EXP_DMG  = 5, EXP_PUSH  = 650;
+var MULTI_SPREAD = 0.42;  // radians either side when a multiball splits
+
+var FLAGS = 3, KILL_SCORE = 100, HOLE_SCORE = 300;
+var SHOW_DEBUG = true;
+
+// ---- frame -------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1;
+
+function resize(){
+  var w = window.innerWidth, h = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = w*dpr; cv.height = h*dpr;
+  cv.style.width = w+"px"; cv.style.height = h+"px";
+  scale = Math.min(w/DES_W, h/DES_H);
+  offX = (w - DES_W*scale)/2; offY = (h - DES_H*scale)/2;
+}
+window.addEventListener("resize", resize);
+resize();
+
+function toDesign(e){
+  var r = cv.getBoundingClientRect();
+  return { x:(e.clientX - r.left - offX)/scale, y:(e.clientY - r.top - offY)/scale };
+}
+
+function rand(a, b){ return a + Math.random()*(b - a); }
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+
+// ---- state -------------------------------------------------------
+var balls, mons, bumpers, hole, bag, regenT, cool, specials, lastShot, shotId, chains;
+var flags, score, time, spawnT, rings, texts, over, bestChain, holes, kills, redT, aim, shock, shakeT, fps = 0;
+var teeX = TEE_X, helpT = 8;
+
+function reset(){
+  balls = []; mons = []; rings = []; texts = []; specials = []; chains = {};
+  bag = BAG_MAX; regenT = 0; cool = 0; lastShot = null; shotId = 0;
+  flags = FLAGS; score = 0; time = 0; spawnT = 1; over = false;
+  bestChain = 0; holes = 0; kills = 0; redT = 0; aim = null; shock = null; shakeT = 0;
+  phase = "normal"; phaseT = 0; phaseHelpT = 0; lastUsed = false; token = null; tokenT = RUSH_FIRST;
+  bumpers = [];
+  for (var i = 0; i < BUMPER_COUNT; i++){
+    for (var k = 0; k < 20; k++){
+      var b = { x:rand(140, 580), y:rand(420, 860) };
+      if (farFrom(b.x, b.y, 170)){ bumpers.push(b); break; }
+    }
+  }
+  hole = { x:0, y:0 };
+  moveHole();
+}
+
+function farFrom(x, y, d){
+  for (var i = 0; i < bumpers.length; i++){
+    var dx = bumpers[i].x - x, dy = bumpers[i].y - y;
+    if (dx*dx + dy*dy < d*d) return false;
+  }
+  return true;
+}
+
+function moveHole(){
+  for (var k = 0; k < 30; k++){
+    var x = rand(110, 610), y = rand(260, 760);
+    var dx = x - hole.x, dy = y - hole.y;
+    if (farFrom(x, y, BUMPER_R + 70) && dx*dx + dy*dy > 200*200){ hole.x = x; hole.y = y; return; }
+  }
+}
+
+function say(x, y, s, c, big){ texts.push({ x:x, y:y, s:s, c:c || "#fff", t:0, big:!!big }); }
+
+// ---- shooting ----------------------------------------------------
+// free = a gun phase shot, which takes nothing from the bag
+function fire(vx, vy, free){
+  if (over) return;
+  if (!free && bag <= 0){ say(teeX, TEE_Y - 50, "Empty", "#ff6a6a"); return; }
+  if (cool > 0) return;
+  var sp = Math.sqrt(vx*vx + vy*vy);
+  if (sp < 1) return;
+  var ux = vx/sp, uy = vy/sp;
+  if (uy > -MIN_UP){ uy = -MIN_UP; ux = (ux < 0 ? -1 : 1)*Math.sqrt(1 - uy*uy); }
+  vx = ux*sp; vy = uy*sp;
+  if (!free) bag--;
+  cool = FIRE_COOLDOWN; shotId++;
+  balls.push({ x:teeX, y:TEE_Y, vx:vx, vy:vy, id:shotId, age:0,
+               kind:specials.length ? specials.shift() : "plain", bounces:0, touched:false, lipped:false });
+  lastShot = { vx:vx, vy:vy };
+}
+
+// ---- launcher ----------------------------------------------------
+// Two ways to shoot, and the phase decides which:
+//   normal              the ARC PAD: the angle of the finger around the tee
+//                       aims, its distance from the tee is the power
+//   rush, last stand    the GUN: hold to auto fire toward the finger, tap
+//                       for a putt that tops out where you tapped; balls free
+var phase, phaseT, phaseHelpT, lastUsed, token, tokenT;
+
+function gunPhase(){ return phase !== "normal"; }
+
+function startPhase(k){
+  phase = k; phaseT = k === "rush" ? RUSH_TIME : LAST_TIME; phaseHelpT = 2.5;
+  token = null;
+  say(DES_W/2, 520, k === "rush" ? "Rush!" : "Last stand!", k === "rush" ? "#ffd34d" : "#ff4d4d", true);
+  if (k === "last") for (var i = 0; i < mons.length; i++) mons[i].ky -= LAST_PUSH;
+}
+
+function updatePhase(dt){
+  phaseHelpT -= dt;
+  if (phase === "normal"){
+    if (token){
+      token.life -= dt;
+      if (token.life <= 0){ token = null; tokenT = rand(RUSH_EVERY_MIN, RUSH_EVERY_MAX); }
+    } else {
+      tokenT -= dt;
+      if (tokenT <= 0){
+        for (var k = 0; k < 20; k++){
+          var x = rand(120, 600), y = rand(300, 820);
+          if (farFrom(x, y, BUMPER_R + 60) && Math.hypot(x - hole.x, y - hole.y) > 90){ token = { x:x, y:y, life:TOKEN_LIFE }; break; }
+        }
+        tokenT = rand(RUSH_EVERY_MIN, RUSH_EVERY_MAX);
+      }
+    }
+    return;
+  }
+  phaseT -= dt;
+  if (phaseT <= 0){
+    if (phase === "last"){ flags = 1; say(DES_W/2, 520, "Saved, one flag back", "#7dff9a", true); }
+    phase = "normal";
+    tokenT = rand(RUSH_EVERY_MIN, RUSH_EVERY_MAX);
+  }
+}
+
+// full on a tap; held, it drains to POWER_MIN over HOLD_TIME and climbs back
+function speedOf(p){ return SHOT_MIN + (SHOT_MAX - SHOT_MIN)*clamp(p, 0, 1); }
+function angleTo(x, y){ return Math.atan2(x - teeX, TEE_Y - y); }
+function vecTo(x, y, p){
+  var dx = x - teeX, dy = y - TEE_Y, l = Math.sqrt(dx*dx + dy*dy);
+  if (l < DEAD_ZONE) return null;
+  var s = speedOf(p);
+  return { vx:dx/l*s, vy:dy/l*s, p:p };
+}
+function padPower(x, y){
+  var dx = x - teeX, dy = y - TEE_Y;
+  return clamp((Math.sqrt(dx*dx + dy*dy) - DEAD_ZONE)/(PAD_R - DEAD_ZONE), 0, 1);
+}
+
+// where a shot stops climbing (slope and friction, no rails)
+function apexOf(vx, vy){
+  var x = teeX, y = TEE_Y, h = 1/120;
+  for (var i = 0; i < 480; i++){
+    vy += SLOPE*h;
+    if (vy >= 0 || y < TOP_Y + BALL_R) break;
+    var sp = Math.sqrt(vx*vx + vy*vy), dec = Math.min(sp, ROLL_DECEL*h);
+    vx -= vx/sp*dec; vy -= vy/sp*dec;
+    x += vx*h; y += vy*h;
+  }
+  return { x:x, y:y };
+}
+
+// the shot that tops out on (x, y): the gun's putt
+function climbTo(x, y){
+  y = Math.max(TOP_Y + BALL_R, Math.min(y, TEE_Y - 40));
+  var a = angleTo(x, y), s = SHOT_MAX;
+  for (var k = 0; k < 6; k++){
+    var lo = MIN_CLIMB, hi = SHOT_MAX;
+    for (var it = 0; it < 16; it++){
+      s = (lo + hi)/2;
+      if (apexOf(Math.sin(a)*s, -Math.cos(a)*s).y > y) lo = s; else hi = s;
+    }
+    var ap = apexOf(Math.sin(a)*s, -Math.cos(a)*s);
+    a += Math.atan2(x - ap.x, Math.max(80, TEE_Y - y));
+  }
+  return { vx:Math.sin(a)*s, vy:-Math.cos(a)*s, p:(s - SHOT_MIN)/(SHOT_MAX - SHOT_MIN) };
+}
+
+// the shot the current touch would send, for the preview (null = none)
+function aimVec(){
+  if (!aim) return null;
+  if (gunPhase()) return aim.held >= HOLD_DELAY ? vecTo(aim.x, aim.y, 1) : null;
+  return vecTo(aim.x, aim.y, padPower(aim.x, aim.y));
+}
+
+function controlDown(p){ aim = { x:p.x, y:p.y, held:0, autoT:0, auto:false }; }
+function controlMove(p){ aim.x = p.x; aim.y = p.y; }
+
+function controlUp(){
+  var v;
+  if (gunPhase()){ if (!aim.auto){ v = climbTo(aim.x, aim.y); fire(v.vx, v.vy, true); } }
+  else { v = aimVec(); if (v) fire(v.vx, v.vy, false); }
+  aim = null;
+}
+
+function updateControl(dt){
+  helpT -= dt;
+  if (!aim) return;
+  aim.held += dt;
+  if (gunPhase() && aim.held >= HOLD_DELAY){
+    aim.autoT -= dt;
+    if (aim.autoT <= 0){
+      var v = vecTo(aim.x, aim.y, 1);
+      if (v) fire(v.vx, v.vy, true);
+      aim.autoT = AUTO_RATE; aim.auto = true;
+    }
+  }
+}
+
+cv.addEventListener("pointerdown", function(e){
+  if (over){ reset(); return; }
+  controlDown(toDesign(e));
+});
+cv.addEventListener("pointermove", function(e){ if (aim) controlMove(toDesign(e)); });
+cv.addEventListener("pointerup", function(){ if (aim) controlUp(); });
+cv.addEventListener("pointercancel", function(){ aim = null; });
+window.addEventListener("keydown", function(e){
+  if (e.key === "r" || e.key === "R") reset();
+  if (e.key === "d" || e.key === "D") SHOW_DEBUG = !SHOW_DEBUG;
+  if (!over && e.key === "1") startPhase("rush");
+  if (!over && e.key === "2") startPhase("last");
+});
+
+// ---- damage, kills, explosions -----------------------------------
+function hurt(m, dmg, tag){
+  if (m.dead) return;
+  m.hp -= dmg; m.flash = 0.12;
+  if (tag){ m.tag = tag; m.tagT = 1.5; }
+  if (m.hp <= 0) kill(m, tag);
+}
+
+function kill(m, tag){
+  m.dead = true; kills++;
+  var n = 1;
+  if (tag){ n = chains[tag] = (chains[tag] || 0) + 1; }
+  var gain = KILL_SCORE*n;
+  score += gain;
+  say(m.x, m.y, "+" + gain, "#ffe27a");
+  if (n >= 2) say(m.x, m.y - 34, "Chain x" + n, "#ff9a3d", n >= 4);
+  if (n > bestChain) bestChain = n;
+  if (m.kind === "boomer") explode(m.x, m.y, BOOMER_RADIUS, BOOMER_DMG, BOOMER_PUSH, tag);
+}
+
+function explode(x, y, R, dmg, push, tag){
+  rings.push({ x:x, y:y, r:R, t:0 });
+  for (var i = 0; i < mons.length; i++){
+    var m = mons[i];
+    if (m.dead) continue;
+    var dx = m.x - x, dy = m.y - y, d = Math.sqrt(dx*dx + dy*dy);
+    if (d > R + m.r) continue;
+    var nx = d > 1 ? dx/d : 0, ny = d > 1 ? dy/d : -1;
+    var k = push*(1 - 0.5*d/(R + m.r));
+    m.kx += nx*k; m.ky += ny*k;
+    hurt(m, dmg, tag);
+  }
+}
+
+// ---- balls -------------------------------------------------------
+function bounced(b){
+  b.bounces++;
+  if (b.kind !== "multi") return;
+  b.kind = "plain";
+  for (var s = -1; s <= 1; s += 2){
+    var a = s*MULTI_SPREAD, c = Math.cos(a), si = Math.sin(a);
+    balls.push({ x:b.x, y:b.y, vx:b.vx*c - b.vy*si, vy:b.vx*si + b.vy*c, id:b.id, age:b.age,
+                 kind:"plain", bounces:b.bounces, touched:true, lipped:false });
+  }
+}
+
+// the radius around (x, y) whose circle covers `frac` of the arena
+function coverRadius(x, y, frac){
+  var lo = 0, hi = 1600, GX = 36, GY = 40;
+  for (var it = 0; it < 14; it++){
+    var r = (lo + hi)/2, r2 = r*r, inside = 0;
+    for (var i = 0; i < GX; i++){
+      var px = RAIL_L + (i + 0.5)*(RAIL_R - RAIL_L)/GX;
+      for (var j = 0; j < GY; j++){
+        var py = TOP_Y + (j + 0.5)*(DEFENSE_Y - TOP_Y)/GY;
+        if ((px - x)*(px - x) + (py - y)*(py - y) < r2) inside++;
+      }
+    }
+    if (inside/(GX*GY) < frac) lo = r; else hi = r;
+  }
+  return hi;
+}
+
+function holed(b){
+  holes++;
+  var inOne = b.bounces === 0 && !b.touched;
+  var n = inOne ? 2 : 1;
+  if (HOLE_SPECIAL) for (var i = 0; i < n && specials.length < SPECIAL_MAX; i++) specials.push(Math.random() < 0.5 ? "explosive" : "multi");
+  score += HOLE_SCORE*n;
+  say(hole.x, hole.y - 40, inOne ? "Hole in one!" : "Hole!", "#7dff9a", true);
+  bag = Math.min(BAG_MAX, bag + 1);
+  shock = { x:hole.x, y:hole.y, R:coverRadius(hole.x, hole.y, SHOCK_COVER), t:0, tag:b.id };
+  shakeT = SHOCK_TIME;
+  moveHole();
+}
+
+// the wave kills every monster its front reaches; the kills chain on the hole shot
+function updateShock(dt){
+  if (!shock) return;
+  shock.t += dt;
+  var k = Math.min(1, shock.t/SHOCK_TIME), r = shock.R*(1 - (1 - k)*(1 - k));
+  if (k < 1){
+    for (var i = 0; i < mons.length; i++){
+      var m = mons[i];
+      if (m.dead) continue;
+      var dx = m.x - shock.x, dy = m.y - shock.y;
+      if (Math.sqrt(dx*dx + dy*dy) - m.r*0.5 < r) hurt(m, 99, shock.tag);
+    }
+  }
+  if (shock.t > SHOCK_TIME + 0.35) shock = null;
+}
+
+// returns true when the ball is gone
+function updateBall(b, dt){
+  b.age += dt;
+  if (b.age > BALL_LIFE) return true;
+  var sp = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+  var n = Math.max(1, Math.ceil(sp*dt/6)), h = dt/n;
+  for (var s = 0; s < n; s++){
+    b.vy += SLOPE*h;
+    sp = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+    if (sp > 0){ var dec = Math.min(sp, ROLL_DECEL*h); b.vx -= b.vx/sp*dec; b.vy -= b.vy/sp*dec; }
+
+    // the hole: slow enough drops in, too fast skips over
+    var hx = hole.x - b.x, hy = hole.y - b.y, hd = Math.sqrt(hx*hx + hy*hy);
+    if (hd < HOLE_R + BALL_R){
+      if (sp < HOLE_MAX_SPEED){
+        if (hd < HOLE_R*0.6){ holed(b); return true; }
+        b.vx += hx/hd*HOLE_PULL*h; b.vy += hy/hd*HOLE_PULL*h;
+      } else if (!b.lipped && hd < HOLE_R){
+        b.lipped = true; say(hole.x, hole.y - 30, "Too fast", "#ffffff");
+      }
+    }
+
+    b.x += b.vx*h; b.y += b.vy*h;
+
+    if (b.x < RAIL_L + BALL_R){ b.x = RAIL_L + BALL_R; b.vx = Math.abs(b.vx)*RAIL_BOUNCE; bounced(b); }
+    if (b.x > RAIL_R - BALL_R){ b.x = RAIL_R - BALL_R; b.vx = -Math.abs(b.vx)*RAIL_BOUNCE; bounced(b); }
+    if (b.y < TOP_Y + BALL_R){ b.y = TOP_Y + BALL_R; b.vy = Math.abs(b.vy)*RAIL_BOUNCE; bounced(b); }
+
+    if (token && Math.hypot(b.x - token.x, b.y - token.y) < TOKEN_R + BALL_R){
+      token = null; startPhase("rush");
+    }
+
+    for (var i = 0; i < bumpers.length; i++){
+      var u = bumpers[i], dx = b.x - u.x, dy = b.y - u.y, d = Math.sqrt(dx*dx + dy*dy);
+      if (d < BUMPER_R + BALL_R && d > 0){
+        var nx = dx/d, ny = dy/d, vd = b.vx*nx + b.vy*ny;
+        b.x = u.x + nx*(BUMPER_R + BALL_R); b.y = u.y + ny*(BUMPER_R + BALL_R);
+        if (vd < 0){
+          b.vx -= 2*vd*nx; b.vy -= 2*vd*ny;
+          var k = Math.min(BUMPER_KICK, SHOT_MAX/Math.max(1, Math.sqrt(b.vx*b.vx + b.vy*b.vy)));
+          b.vx *= k; b.vy *= k; u.hit = 0.15; bounced(b);
+        }
+      }
+    }
+
+    for (var j = 0; j < mons.length; j++){
+      var m = mons[j];
+      if (m.dead) continue;
+      var mx = b.x - m.x, my = b.y - m.y, md = Math.sqrt(mx*mx + my*my);
+      if (md >= m.r + BALL_R || md === 0) continue;
+      var ex = mx/md, ey = my/md;
+      b.x = m.x + ex*(m.r + BALL_R); b.y = m.y + ey*(m.r + BALL_R);
+      var rv = (b.vx - m.kx)*ex + (b.vy - m.ky)*ey;
+      if (rv >= 0) continue;
+      var impact = -rv;
+      if (b.kind === "explosive"){ explode(b.x, b.y, EXP_RADIUS, EXP_DMG, EXP_PUSH, b.id); return true; }
+      var jn = -(1 + BALL_E)*rv/(1 + 1/MON_MASS);
+      b.vx += jn*ex; b.vy += jn*ey;
+      m.kx -= jn/MON_MASS*ex; m.ky -= jn/MON_MASS*ey;
+      b.touched = true;
+      if (impact > MIN_DMG_SPEED) hurt(m, Math.max(1, Math.floor(impact/DMG_SPEED)), b.id);
+      bounced(b);
+    }
+
+    // rolled back past the line: into the bag
+    if (b.vy > 0 && b.age > 0.3 && b.y > DEFENSE_Y + 20){
+      bag = Math.min(BAG_MAX, bag + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+// ---- monsters ----------------------------------------------------
+function spawn(){
+  var group = Math.min(3, 1 + Math.floor(time/GROUP_EVERY));
+  var n = 1 + Math.floor(Math.random()*group);
+  for (var i = 0; i < n; i++){
+    var boomer = Math.random() < BOOMER_CHANCE;
+    var r = boomer ? BOOMER_R : WALKER_R;
+    mons.push({ kind:boomer ? "boomer" : "walker", x:rand(RAIL_L + r + 10, RAIL_R - r - 10), y:TOP_Y - r - i*60,
+                r:r, hp:boomer ? BOOMER_HP : WALKER_HP, maxHp:boomer ? BOOMER_HP : WALKER_HP,
+                kx:0, ky:0, phase:rand(0, 6.28), speed:rand(0.85, 1.15), tag:0, tagT:0, flash:0, dead:false });
+  }
+}
+
+function updateMonsters(dt){
+  var walk = Math.min(WALK_MAX, WALK_BASE + WALK_RAMP*time);
+  var drag = Math.exp(-MON_DRAG*dt);
+  var i, j, m;
+  for (i = 0; i < mons.length; i++){
+    m = mons[i];
+    if (m.dead) continue;
+    m.flash -= dt; m.tagT -= dt; if (m.tagT <= 0) m.tag = 0;
+    m.x += (Math.sin(time*1.3 + m.phase)*WOBBLE + m.kx)*dt;
+    m.y += (walk*m.speed + m.ky)*dt;
+    m.kx *= drag; m.ky *= drag;
+    if (m.x < RAIL_L + m.r){ m.x = RAIL_L + m.r; m.kx = Math.abs(m.kx)*0.5; }
+    if (m.x > RAIL_R - m.r){ m.x = RAIL_R - m.r; m.kx = -Math.abs(m.kx)*0.5; }
+    if (m.y < TOP_Y - 200) { m.y = TOP_Y - 200; m.ky = Math.abs(m.ky)*0.5; }
+  }
+  // billiards between monsters
+  for (i = 0; i < mons.length; i++){
+    var a = mons[i]; if (a.dead) continue;
+    for (j = i + 1; j < mons.length; j++){
+      var b = mons[j]; if (b.dead) continue;
+      var dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx*dx + dy*dy), rr = a.r + b.r;
+      if (d >= rr || d === 0) continue;
+      var nx = dx/d, ny = dy/d, push = (rr - d)/2;
+      a.x -= nx*push; a.y -= ny*push; b.x += nx*push; b.y += ny*push;
+      var rv = (a.kx - b.kx)*nx + (a.ky - b.ky)*ny;
+      if (rv <= 0) continue;
+      var jn = (1 + MON_E)*rv/2;
+      a.kx -= jn*nx; a.ky -= jn*ny; b.kx += jn*nx; b.ky += jn*ny;
+      if (rv > MON_HIT_SPEED){
+        var tag = a.tag || b.tag;
+        hurt(a, 1, tag); hurt(b, 1, tag);
+      }
+    }
+  }
+  // the line
+  for (i = 0; i < mons.length; i++){
+    m = mons[i];
+    if (m.dead || m.y + m.r*0.5 < DEFENSE_Y) continue;
+    m.dead = true; flags--; redT = 0.4;
+    say(m.x, DEFENSE_Y - 30, "Flag lost", "#ff4d4d", true);
+    if (flags <= 0){
+      if (!lastUsed){ lastUsed = true; flags = 0; startPhase("last"); }
+      else over = true;
+    }
+  }
+  var keep = [];
+  for (i = 0; i < mons.length; i++) if (!mons[i].dead) keep.push(mons[i]);
+  mons = keep;
+}
+
+// ---- update ------------------------------------------------------
+function update(dt){
+  for (var t = texts.length - 1; t >= 0; t--){
+    texts[t].t += dt; texts[t].y -= 40*dt;
+    if (texts[t].t > 1.1) texts.splice(t, 1);
+  }
+  for (var r = rings.length - 1; r >= 0; r--){ rings[r].t += dt; if (rings[r].t > 0.35) rings.splice(r, 1); }
+  for (var u = 0; u < bumpers.length; u++) bumpers[u].hit = Math.max(0, (bumpers[u].hit || 0) - dt);
+  redT = Math.max(0, redT - dt);
+  shakeT = Math.max(0, shakeT - dt);
+  updateControl(dt);
+  if (over) return;
+  updatePhase(dt);
+
+  time += dt; cool -= dt;
+  spawnT -= dt;
+  if (spawnT <= 0){ spawn(); spawnT = Math.max(SPAWN_MIN, SPAWN_START - SPAWN_RAMP*time); }
+
+  for (var i = balls.length - 1; i >= 0; i--) if (updateBall(balls[i], dt)) balls.splice(i, 1);
+  updateShock(dt);
+  updateMonsters(dt);
+
+  // a ball lost for good (exploded, timed out) comes back slowly
+  if (bag + balls.length < BAG_MAX){
+    regenT += dt;
+    if (regenT >= BAG_REGEN){ bag++; regenT = 0; }
+  } else regenT = 0;
+}
+
+// ---- render ------------------------------------------------------
+var COLORS = { plain:"#ffffff", explosive:"#ff8a2a", multi:"#4de1ff" };
+
+function drawTable(){
+  for (var y = TOP_Y; y < DEFENSE_Y; y += 80){
+    ctx.fillStyle = (Math.floor(y/80) % 2) ? "#2f6b34" : "#357a3a";
+    ctx.fillRect(RAIL_L, y, RAIL_R - RAIL_L, Math.min(80, DEFENSE_Y - y));
+  }
+  ctx.fillStyle = "#24502a"; ctx.fillRect(RAIL_L, DEFENSE_Y, RAIL_R - RAIL_L, DES_H - DEFENSE_Y);
+  ctx.fillStyle = "#2a1838"; ctx.fillRect(RAIL_L, 0, RAIL_R - RAIL_L, TOP_Y);
+  ctx.fillStyle = "#6b4a2b"; ctx.fillRect(0, 0, RAIL_L, DES_H); ctx.fillRect(RAIL_R, 0, DES_W - RAIL_R, DES_H);
+  ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 4; ctx.setLineDash([18, 14]);
+  ctx.beginPath(); ctx.moveTo(RAIL_L, DEFENSE_Y); ctx.lineTo(RAIL_R, DEFENSE_Y); ctx.stroke();
+  ctx.setLineDash([]);
+  // slope arrows
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  for (var ay = TOP_Y + 120; ay < DEFENSE_Y; ay += 240){
+    for (var ax = 140; ax < 640; ax += 220){
+      ctx.beginPath(); ctx.moveTo(ax - 20, ay); ctx.lineTo(ax + 20, ay); ctx.lineTo(ax, ay + 26); ctx.fill();
+    }
+  }
+}
+
+function drawHole(){
+  ctx.fillStyle = "#0e1a10"; ctx.beginPath(); ctx.arc(hole.x, hole.y, HOLE_R, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.strokeStyle = "#eee"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(hole.x, hole.y); ctx.lineTo(hole.x, hole.y - 70); ctx.stroke();
+  ctx.fillStyle = "#ff3b3b";
+  ctx.beginPath(); ctx.moveTo(hole.x, hole.y - 70); ctx.lineTo(hole.x + 30, hole.y - 60); ctx.lineTo(hole.x, hole.y - 50); ctx.fill();
+}
+
+// top-down zombies: arms reaching down toward the tee, shoulders swaying
+function drawMonster(m){
+  var boomer = m.kind === "boomer", sway = Math.sin(time*4 + m.phase)*0.18;
+  var skin = m.flash > 0 ? "#ffffff" : boomer ? "#8fa04a" : "#7f9c78";
+  var r = boomer ? m.r*(1 + Math.sin(time*6 + m.phase)*0.05) : m.r;
+  // arms
+  ctx.strokeStyle = skin; ctx.lineWidth = r*0.28; ctx.lineCap = "round";
+  for (var s = -1; s <= 1; s += 2){
+    var a = Math.PI/2 + s*0.35 + sway*s;
+    ctx.beginPath();
+    ctx.moveTo(m.x + s*r*0.7, m.y + r*0.1);
+    ctx.lineTo(m.x + s*r*0.7 + Math.cos(a)*r*0.9, m.y + r*0.1 + Math.sin(a)*r*0.9);
+    ctx.stroke();
+  }
+  ctx.lineCap = "butt";
+  // body: torn shirt, then the head
+  ctx.fillStyle = m.flash > 0 ? "#ffffff" : boomer ? "#6b3d6e" : "#4a5a7a";
+  ctx.beginPath(); ctx.ellipse(m.x, m.y, r, r*0.75, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.arc(m.x, m.y + r*0.15, r*0.55, 0, Math.PI*2); ctx.fill();
+  if (boomer){
+    // glowing pustules: it is about to burst
+    ctx.fillStyle = (Math.floor(time*6 + m.phase) % 2) ? "#d6ff4a" : "#9fe03a";
+    ctx.beginPath();
+    ctx.arc(m.x - r*0.55, m.y - r*0.3, r*0.16, 0, Math.PI*2);
+    ctx.arc(m.x + r*0.6, m.y - r*0.15, r*0.13, 0, Math.PI*2);
+    ctx.arc(m.x + r*0.2, m.y - r*0.55, r*0.11, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // hollow eyes and a torn mouth, facing the player
+  ctx.fillStyle = "#1a0f0f";
+  ctx.beginPath(); ctx.arc(m.x - r*0.2, m.y + r*0.15, r*0.11, 0, Math.PI*2);
+  ctx.arc(m.x + r*0.2, m.y + r*0.15, r*0.11, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#ff3b3b";
+  ctx.beginPath(); ctx.arc(m.x - r*0.2, m.y + r*0.15, r*0.04, 0, Math.PI*2);
+  ctx.arc(m.x + r*0.2, m.y + r*0.15, r*0.04, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "#3a1010"; ctx.fillRect(m.x - r*0.22, m.y + r*0.38, r*0.44, r*0.1);
+  for (var i = 0; i < m.maxHp; i++){
+    ctx.fillStyle = i < m.hp ? "#ff5a5a" : "rgba(0,0,0,0.4)";
+    ctx.fillRect(m.x - m.maxHp*7 + i*14, m.y - r - 12, 11, 6);
+  }
+}
+
+function drawPreview(){
+  var v = aimVec(); if (!v) return;
+  var x = teeX, y = TEE_Y, vx = v.vx, vy = v.vy, h = 1/120, topped = false;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  // dots for PREVIEW_T, then keep going (undrawn) until the top-out ring is placed
+  for (var i = 1; i <= 360; i++){
+    if (i > PREVIEW_T*120 && topped) break;
+    vy += SLOPE*h;
+    if (vy >= 0 && !topped){
+      // where the ball tops out: slowest point, the one to put on the hole
+      topped = true;
+      ctx.strokeStyle = "#7dff9a"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(x, y, HOLE_R, 0, Math.PI*2); ctx.stroke();
+    }
+    var sp = Math.sqrt(vx*vx + vy*vy), dec = Math.min(sp, ROLL_DECEL*h);
+    if (sp > 0){ vx -= vx/sp*dec; vy -= vy/sp*dec; }
+    x += vx*h; y += vy*h;
+    if (x < RAIL_L + BALL_R){ x = RAIL_L + BALL_R; vx = Math.abs(vx)*RAIL_BOUNCE; }
+    if (x > RAIL_R - BALL_R){ x = RAIL_R - BALL_R; vx = -Math.abs(vx)*RAIL_BOUNCE; }
+    if (y < TOP_Y + BALL_R){ y = TOP_Y + BALL_R; vy = Math.abs(vy)*RAIL_BOUNCE; }
+    if (i % 6 === 0 && i <= PREVIEW_T*120){ ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill(); }
+  }
+  // the power bar beside the tee
+  var p = clamp(v.p, 0, 1), bx = teeX > RAIL_R - 90 ? teeX - 56 : teeX + 40;
+  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(bx, TEE_Y - 50, 16, 80);
+  ctx.fillStyle = p > 0.75 ? "#ff6a3d" : p > 0.35 ? "#ffd34d" : "#7dff9a";
+  ctx.fillRect(bx, TEE_Y + 30 - 80*p, 16, 80*p);
+}
+
+// the pad's rings in normal play, the gun's reticle in a phase
+function drawControlGuides(){
+  ctx.lineWidth = 2;
+  if (!gunPhase()){
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.beginPath(); ctx.arc(teeX, TEE_Y, PAD_R, Math.PI, 2*Math.PI); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.35)";
+    for (var i = 1; i <= 3; i++){
+      ctx.beginPath(); ctx.arc(teeX, TEE_Y, DEAD_ZONE + (PAD_R - DEAD_ZONE)*i/3, Math.PI, 2*Math.PI); ctx.stroke();
+    }
+    return;
+  }
+  if (!aim) return;
+  if (aim.held < HOLD_DELAY){
+    ctx.strokeStyle = "rgba(125,255,154,0.9)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(aim.x, aim.y, HOLE_R, 0, Math.PI*2); ctx.stroke();
+  } else {
+    ctx.strokeStyle = phase === "rush" ? "#ffd34d" : "#ff4d4d"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(aim.x, aim.y, 26, 0, Math.PI*2);
+    ctx.moveTo(aim.x - 40, aim.y); ctx.lineTo(aim.x + 40, aim.y);
+    ctx.moveTo(aim.x, aim.y - 40); ctx.lineTo(aim.x, aim.y + 40); ctx.stroke();
+  }
+}
+
+function drawToken(){
+  if (!token) return;
+  var pulse = 1 + Math.sin(time*8)*0.1, r = TOKEN_R*pulse;
+  ctx.fillStyle = "#ffd34d"; ctx.beginPath();
+  for (var i = 0; i < 10; i++){
+    var a = -Math.PI/2 + i*Math.PI/5, rr = i % 2 ? r*0.45 : r;
+    ctx.lineTo(token.x + Math.cos(a)*rr, token.y + Math.sin(a)*rr);
+  }
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,211,77,0.7)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(token.x, token.y, TOKEN_R + 10, -Math.PI/2, -Math.PI/2 + Math.PI*2*token.life/TOKEN_LIFE); ctx.stroke();
+}
+
+// a phase dresses the frame and counts down along the top
+function drawPhase(){
+  if (!gunPhase()) return;
+  var c = phase === "rush" ? "255,211,77" : "255,77,77", k = phaseT/(phase === "rush" ? RUSH_TIME : LAST_TIME);
+  ctx.strokeStyle = "rgba(" + c + "," + (0.55 + 0.25*Math.sin(time*10)) + ")"; ctx.lineWidth = 12;
+  ctx.strokeRect(RAIL_L + 6, TOP_Y + 6, RAIL_R - RAIL_L - 12, DES_H - TOP_Y - 12);
+  ctx.fillStyle = "rgba(" + c + ",1)"; ctx.fillRect(RAIL_L, TOP_Y, (RAIL_R - RAIL_L)*k, 8);
+}
+
+function drawShock(){
+  if (!shock) return;
+  var k = Math.min(1, shock.t/SHOCK_TIME), r = shock.R*(1 - (1 - k)*(1 - k));
+  var fade = shock.t > SHOCK_TIME ? 1 - (shock.t - SHOCK_TIME)/0.35 : 1;
+  ctx.fillStyle = "rgba(180,255,200," + 0.18*fade + ")";
+  ctx.beginPath(); ctx.arc(shock.x, shock.y, r, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "rgba(220,255,230," + fade + ")"; ctx.lineWidth = 14;
+  ctx.beginPath(); ctx.arc(shock.x, shock.y, r, 0, Math.PI*2); ctx.stroke();
+  if (shock.t < 0.12){ ctx.fillStyle = "rgba(255,255,255," + (1 - shock.t/0.12)*0.7 + ")"; ctx.fillRect(0, 0, DES_W, DES_H); }
+}
+
+function render(){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0b0d14"; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.translate(offX, offY); ctx.scale(scale, scale);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, DES_W, DES_H); ctx.clip();
+  if (shakeT > 0){ var sk = SHAKE*shakeT/SHOCK_TIME; ctx.translate(rand(-sk, sk), rand(-sk, sk)); }
+
+  drawTable();
+  drawHole();
+  for (var u = 0; u < bumpers.length; u++){
+    var bp = bumpers[u];
+    ctx.fillStyle = bp.hit > 0 ? "#ffe27a" : "#e0a030";
+    ctx.beginPath(); ctx.arc(bp.x, bp.y, BUMPER_R, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#7a4a10"; ctx.beginPath(); ctx.arc(bp.x, bp.y, BUMPER_R*0.45, 0, Math.PI*2); ctx.fill();
+  }
+  for (var i = 0; i < mons.length; i++) drawMonster(mons[i]);
+  for (var j = 0; j < balls.length; j++){
+    var b = balls[j];
+    ctx.fillStyle = COLORS[b.kind];
+    ctx.beginPath(); ctx.arc(b.x, b.y, BALL_R, 0, Math.PI*2); ctx.fill();
+  }
+  for (var r = 0; r < rings.length; r++){
+    var g = rings[r], k = g.t/0.35;
+    ctx.strokeStyle = "rgba(255,170,60," + (1 - k) + ")"; ctx.lineWidth = 8;
+    ctx.beginPath(); ctx.arc(g.x, g.y, g.r*(0.4 + 0.6*k), 0, Math.PI*2); ctx.stroke();
+  }
+  drawShock();
+  drawToken();
+
+  // tee, next ball, bag
+  drawControlGuides();
+  ctx.fillStyle = "#c9a36a"; ctx.fillRect(teeX - 4, TEE_Y + 8, 8, 18);
+  ctx.fillStyle = bag > 0 ? COLORS[specials.length ? specials[0] : "plain"] : "rgba(255,255,255,0.2)";
+  ctx.beginPath(); ctx.arc(teeX, TEE_Y, BALL_R + 2, 0, Math.PI*2); ctx.fill();
+  drawPreview();
+  for (var s = 0; s < BAG_MAX; s++){
+    ctx.fillStyle = s < bag ? "#ffffff" : "rgba(255,255,255,0.18)";
+    ctx.beginPath(); ctx.arc(80 + s*30, TEE_Y + 10, 10, 0, Math.PI*2); ctx.fill();
+  }
+  for (var q = 0; q < specials.length; q++){
+    ctx.fillStyle = COLORS[specials[q]];
+    ctx.beginPath(); ctx.arc(DES_W - 80 - q*30, TEE_Y + 10, 10, 0, Math.PI*2); ctx.fill();
+  }
+  drawPhase();
+  ctx.textAlign = "center";
+
+  for (var t = 0; t < texts.length; t++){
+    var tx = texts[t];
+    ctx.globalAlpha = 1 - tx.t/1.1; ctx.fillStyle = tx.c;
+    ctx.font = "bold " + (tx.big ? 34 : 24) + "px ui-monospace,Menlo,monospace";
+    ctx.fillText(tx.s, tx.x, tx.y);
+  }
+  ctx.globalAlpha = 1;
+
+  if (redT > 0){ ctx.fillStyle = "rgba(255,0,0," + redT*0.6 + ")"; ctx.fillRect(0, 0, DES_W, DES_H); }
+
+  ctx.textAlign = "left"; ctx.font = "bold 22px ui-monospace,Menlo,monospace"; ctx.fillStyle = "#fff";
+  var fl = ""; for (var f = 0; f < FLAGS; f++) fl += f < flags ? "■ " : "□ ";
+  if (phase === "last") fl = "last stand " + Math.ceil(phaseT) + " s ";
+  ctx.fillText("Score " + score + "   Flags " + fl + "  " + time.toFixed(0) + " s", 52, 34);
+  if (SHOW_DEBUG){
+    ctx.font = "20px ui-monospace,Menlo,monospace"; ctx.fillStyle = "rgba(255,255,255,0.75)";
+    ctx.fillText("Kills " + kills + "  Holes " + holes + "  Best chain x" + bestChain + "  Monsters " + mons.length, 52, 62);
+    ctx.fillText("Spawn " + Math.max(SPAWN_MIN, SPAWN_START - SPAWN_RAMP*time).toFixed(2) + " s  Walk " +
+                 Math.round(Math.min(WALK_MAX, WALK_BASE + WALK_RAMP*time)) + "  Balls out " + balls.length + "  Fps " + fps, 52, 84);
+  }
+  var hl = phaseHelpT > 0 ? ["Hold: auto fire, the balls are free", "Tap: a putt that stops right there"]
+         : helpT > 0 ? ["Touch around the tee: the angle aims", "Distance from the tee is the power"] : null;
+  if (hl && !over){
+    ctx.textAlign = "center"; ctx.font = "22px ui-monospace,Menlo,monospace";
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(RAIL_L, DEFENSE_Y - 128, RAIL_R - RAIL_L, 104);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(hl[0], DES_W/2, DEFENSE_Y - 100);
+    ctx.fillText(hl[1], DES_W/2, DEFENSE_Y - 70);
+    ctx.fillStyle = "#7dff9a"; ctx.fillText("Ball slowly into the hole: shockwave", DES_W/2, DEFENSE_Y - 40);
+  }
+  if (over){
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, DES_W, DES_H);
+    ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+    ctx.font = "bold 44px ui-monospace,Menlo,monospace"; ctx.fillText("Overrun", DES_W/2, 560);
+    ctx.font = "26px ui-monospace,Menlo,monospace";
+    ctx.fillText("Score " + score + " in " + time.toFixed(0) + " s, best chain x" + bestChain, DES_W/2, 610);
+    ctx.fillText("Tap to restart", DES_W/2, 660);
+  }
+  ctx.restore();
+}
+
+// ---- loop --------------------------------------------------------
+var last = 0, fpsAcc = 0, fpsN = 0;
+function frame(ts){
+  var dt = Math.min(1/30, (ts - last)/1000 || 0); last = ts;
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5){ fps = Math.round(fpsN/fpsAcc); fpsAcc = 0; fpsN = 0; }
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

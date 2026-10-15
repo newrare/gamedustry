@@ -164,7 +164,8 @@ body.home #home { display:block; }
     <button id="reload" class="page-only" title="Reload the page">↻</button>
     <a id="open" class="btn page-only" target="_blank" title="Open in a tab of its own">↗</a>
   </div>
-  <iframe id="frame" title="Lab page"></iframe>
+  <!-- display-capture: the events bench's REC records the played frame as it is seen (getDisplayMedia). -->
+  <iframe id="frame" title="Lab page" allow="display-capture; autoplay"></iframe>
   <section id="home"></section>
 </main>
 

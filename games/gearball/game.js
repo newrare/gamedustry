@@ -2380,7 +2380,6 @@
       }
     }
     function popText(mx, my, str, color) {
-      Pop.text(toDX(mx), toDY(my), str, { color: color, size: 22, life: 0.6, tier: 1 });
     }
 
     /* ---------------- events ----------------------------------------- */
@@ -2593,7 +2592,6 @@
       combo = to;
       stats.fuseOuts++;
       fuseOutT = 0.8;
-      if (tr) Pop.show("alert", { word: "Fuse out", sub: to ? Lang.t("Combo x") + to : "Combo lost" });
     }
     function tickCombo(dt) {
       var i, c;
@@ -3210,7 +3208,6 @@
       if (c.dur !== 0) effects.push({ c: rec, left: typeof c.dur === "number" ? c.dur : null });
       recompute();
       remember(c.id); pickedIds.push(c.id);
-      Pop.show("bonus", { word: FAM_BY[c.fam].name, sub: durText(c), at: "top" });
       Fx.flash(RARITY[c.r].color, 0.12);
       if (hearts <= 0 && state === "play") { state = "over"; overT = 1.0; }
       paintRun();
@@ -3308,7 +3305,7 @@
       if (state !== "play" || held || keys <= 0) return;
       var any = false, i;
       for (i = 0; i < gates.length; i++) if (gates[i].locked) { unlock(gates[i]); any = true; }
-      if (!any) { Notify.say("No gate is locked", { kind: "info", icon: "unlock", key: "gb-key" }); return; }
+      if (!any) { Pop.show("score", { word: "No gate is locked" }); return; }
       keys--;
       Pop.show("bonus", { word: "Master key", at: "top" });
       paintRun();
@@ -3481,7 +3478,6 @@
       hintT -= dt;
       if (hintT <= 0 && hints.length && state === "play") {
         var h = hints.shift();
-        Notify.say(h[0], h[1]);
         hintT = (h[1].hold || 2200) / 1000 + 0.5;
       }
       for (i = parts.length - 1; i >= 0; i--) {

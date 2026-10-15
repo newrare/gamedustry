@@ -46,12 +46,12 @@ window.GAMES = [
     name: "Arcider",
     accent: ["#35e8ff", "#7a4dff"],
     fr: {
-      tagline: "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis ta voie : vitesse ou bouclier.",
-      tags: ["Appuie pour pencher", "Battle Royale", "1020 m"]
+      tagline: "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
+      tags: ["Incline ton vaisseau", "Battle Royale", "Musique Retro Futuriste"]
     },
     en: {
-      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
-      tags: ["Hold to lean", "Battle royale", "1020 m"]
+      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between speed and safety.",
+      tags: ["Tilt your ship", "Battle royale", "Retro-futuristic music"]
     }
   },
   {
@@ -72,12 +72,12 @@ window.GAMES = [
     name: "Blight",
     accent: ["#ff8fab", "#7048e8"],
     fr: {
-      tagline: "Un Bubble Shooter magique avec un petit twist : sois plus rapide et plus malin que la contamination qui gagne les bulles.",
-      tags: ["Vise et tire", "Groupe par 3", "Contamination"]
+      tagline: "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
+      tags: ["Vise rapidement", "Grappe de trois", "Contamination"]
     },
     en: {
-      tagline: "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
-      tags: ["Aim & shoot", "Match three", "Race the rot"]
+      tagline: "A magic bubble shooter where you must outpace the evil gnawing at the bubbles. Be quick, and outsmart the blight.",
+      tags: ["Aim fast", "Cluster of three", "Race the rot"]
     }
   },
   {
@@ -85,12 +85,25 @@ window.GAMES = [
     name: "Echomaze",
     accent: ["#7ef9ff", "#4ade80"],
     fr: {
-      tagline: "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l'écho des balles.",
-      tags: ["Mémorise et vise", "Echolocation", "Une seule sortie"]
+      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
+      tags: ["Mémorise et vise", "Echo localisation", "Une seule sortie"]
     },
     en: {
-      tagline: "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
-      tags: ["Aim & fire", "Echolocation", "1 way out of 6"]
+      tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
+      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
+    }
+  },
+  {
+    slug: "chainring",
+    name: "Chainring",
+    accent: ["#4bf5ff", "#4263eb"],
+    fr: {
+      tagline: "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
+      tags: ["Tap rythmé", "En rythme et en musique", "Mort subite"]
+    },
+    en: {
+      tagline: "Tap to the beat of the music. A hypnotic ball bounces inside endless rings.",
+      tags: ["Rhythm tap", "On the beat, to the music", "Sudden death"]
     }
   },
   {
@@ -120,29 +133,16 @@ window.GAMES = [
     }
   },
   {
-    slug: "chainring",
-    name: "Chainring",
-    accent: ["#4bf5ff", "#4263eb"],
-    fr: {
-      tagline: "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
-      tags: ["Tap rythmé", "Sur la musique", "Mort subite"]
-    },
-    en: {
-      tagline: "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
-      tags: ["Rhythm tap", "On the beat", "Sudden death"]
-    }
-  },
-  {
     slug: "radiam",
     name: "Radiam",
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
-      tagline: "Aligne 3 couleurs pour marquer. Trouve le coup qui déclenche des explosions en chaîne !",
-      tags: ["Glisse un anneau", "Aligne trois billes", "8 billes spéciales"]
+      tagline: "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
+      tags: ["Déplace les anneaux", "Aligne trois billes", "Plusieurs billes spéciales"]
     },
     en: {
-      tagline: "Line up 3 colours to score. Find the best move to set off explosion after explosion!",
-      tags: ["Drag a ring", "Three per ray", "8 special beads"]
+      tagline: "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
+      tags: ["Move the rings", "Three per ray", "Several special beads"]
     }
   },
   {
@@ -150,11 +150,11 @@ window.GAMES = [
     name: "Spinshock",
     accent: ["#40ecff", "#ff4fbe"],
     fr: {
-      tagline: "Toupie contre toupie. Tape pile à l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      tagline: "Toupie Vs toupie. Tap pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
       tags: ["Tap précis", "5 biomes", "Physique"]
     },
     en: {
-      tagline: "Top -Vs- top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      tagline: "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
       tags: ["Timing tap", "5 biomes", "Physics"]
     }
   },
@@ -163,11 +163,11 @@ window.GAMES = [
     name: "Orbinity",
     accent: ["#7cf5ff", "#6d5cff"],
     fr: {
-      tagline: "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
+      tagline: "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaine les trajectoires sans erreur pour créer un combo!",
       tags: ["Tap précis", "Gravité coupée", "Chaîne de combos"]
     },
     en: {
-      tagline: "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
+      tagline: "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it toward the next celestial body. Chain trajectories without a mistake to build a combo!",
       tags: ["Timing tap", "Snap gravity", "Combo chain"]
     }
   },
@@ -189,25 +189,12 @@ window.GAMES = [
     name: "Stratideck",
     accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat a un prix.",
-      tags: ["Glisse pour attaquer", "Grade et rang", "Tes propres cartes"]
+      tagline: "Affrontes une armée de monstre et construit le meilleur Deck possible afin de gagner un maximum de bataille. Convertis les cartes adverses, soit stratégique en défense et positionnement. N'oublies pas aussi que la vie et la gestion du camp est une composante importante pour gagner une guerre. Collectionnes des centaines de cartes uniques!",
+      tags: ["Gestion, stratégie et mémorisation", "Grade et Rang", "Collection et gestion de Deck"]
     },
     en: {
-      tagline: "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
-      tags: ["Drag to strike", "Grade and tier", "Own your cards"]
-    }
-  },
-  {
-    slug: "grudgeon",
-    name: "Grudgeon",
-    accent: ["#e2364b", "#9b8cff"],
-    fr: {
-      tagline: "Un Dungeon Crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
-      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
-    },
-    en: {
-      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
-      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
+      tagline: "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
+      tags: ["Management, strategy and memorization", "Grade and tier", "Collection and deck management"]
     }
   },
   {
@@ -221,6 +208,19 @@ window.GAMES = [
     en: {
       tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
       tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
+    }
+  },
+  {
+    slug: "grudgeon",
+    name: "Grudgeon",
+    accent: ["#e2364b", "#9b8cff"],
+    fr: {
+      tagline: "Un Dungeon Crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
+      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
+    },
+    en: {
+      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
+      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
     }
   },
   {

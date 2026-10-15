@@ -1009,7 +1009,7 @@
     function tell(key, word, sub, kind, icon) {
       if (told[key]) return;
       told[key] = true;
-      Notify.say(word, { sub: sub, kind: kind || "info", icon: icon || "sparkles" });
+      Pop.show("bonus", { word: word, sub: sub });
     }
 
     /* THE BIOMES' PICKUPS. Each is a MOMENT on the head (a callout, a sound, a
@@ -1061,8 +1061,8 @@
       if (invT > 0) return;                              // still blinking
       chain = 0; bites++;
       // the fireflies and the idol hold until a hit, plated or not
-      if (magnetOn) Notify.say("Magnet lost", { kind: "loss", icon: "x" });
-      if (idolOn) Notify.say("Double points lost", { kind: "loss", icon: "x" });
+      if (magnetOn) Pop.show("alert", { word: "Magnet lost" });
+      if (idolOn) Pop.show("alert", { word: "Double points lost" });
       magnetOn = false; idolOn = false;
       Fx.burst(x, y, { color: ["#ff2d55", "#ffd43b", "#ffffff"], count: 26, speed: 470, life: 0.55, size: 6 });
       Fx.ring(x, y, { from: 18, to: 190, color: "#ff2d55", width: 8, life: 0.42 });

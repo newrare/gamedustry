@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.7.2",
+  "version": "1.7.18",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -49,7 +49,7 @@
   },
   "sfx": {
     "perfect": "bonus/uiselect",
-    "chain": "combo/uiscroll",
+    "chain": "pickup/marimbaplink",
     "doom": "warn/marimbataps",
     "miss": "miss/marimbaerror",
     "hit": "hit/marimbaplink",
@@ -57,7 +57,6 @@
     "stick": "malus/slime",
     "burst": "burst/popplop",
     "dark": "warn/errorui",
-    "dodge": "pickup/uipluck",
     "shatter": "crash/impactglasslight"
   },
   "copy": {
@@ -65,15 +64,15 @@
       "tagline": "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
       "tags": [
         "Tap rythmé",
-        "Sur la musique",
+        "En rythme et en musique",
         "Mort subite"
       ]
     },
     "en": {
-      "tagline": "Tap to the beat of the music. The ball is hypnotic inside endless rings.",
+      "tagline": "Tap to the beat of the music. A hypnotic ball bounces inside endless rings.",
       "tags": [
         "Rhythm tap",
-        "On the beat",
+        "On the beat, to the music",
         "Sudden death"
       ]
     }
@@ -85,7 +84,7 @@
         "lines": [
           {
             "kicker": "Rhythm",
-            "line": "Tap on the <b>right beat</b>"
+            "line": "Tap at the right <b>moment</b>"
           },
           {
             "kicker": "Perfect",
@@ -100,7 +99,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "<b>Progressive</b> difficulty",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -109,10 +108,10 @@
         "lines": [
           {
             "kicker": "Rythme",
-            "line": "Tape au <b>bon moment</b>"
+            "line": "Tape au bon <b>moment</b>"
           },
           {
-            "kicker": "Parfait",
+            "kicker": "Perfect",
             "line": "Enchaîne les <b>perfect</b> en musique"
           },
           {
@@ -124,7 +123,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficulté <b>progressive</b>",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -162,41 +161,38 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Tape en rythme, à l'instant parfait où une <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau</b>",
+        "tagline": "Tape en rythme, à l'instant précis où la <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau clair</b>. Ne frappe pas les anneaux sombres",
         "strings": {
           "Close": "Presque",
           "Combo": "Combo",
           "Dark part": "Partie sombre",
-          "Dark part: don't tap. Bright part: tap": "Partie sombre : pas de tap. Partie claire : tape",
+          "Tap only the bright parts, never the dark ones": "Ne tape que sur les parties claires et ne fait rien sur les parties sombres",
           "Dark ring": "Anneau sombre",
           "Mixed ring": "Anneau mixte",
-          "Dodge the spikes": "Evite les piquants",
           "Don't tap: let the ball bounce off it": "Ne tape pas : laisse la bille rebondir",
           "Empty beat": "Temps mort",
-          "Feel the beat": "Sens le rythme",
+          "Feel the beat": "Ressent le rythme",
           "Final score": "Score final",
-          "Full track": "Morceau complet",
-          "Game over": "Partie terminée",
-          "Get ready": "Prépare-toi",
+          "Full track": "Musique complète",
+          "Game over": "Game Over",
+          "Get ready": "Get ready",
           "Go!": "Go !",
           "Good": "Bien",
           "Install now": "Installer",
           "Max combo": "Combo max",
           "Mega bonus": "Méga bonus",
-          "Miss": "Raté",
+          "Miss": "Manqué",
           "OK": "OK",
           "Perfect": "Parfait",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
-          "Rewind": "Inverse",
           "Rewind ring": "Anneau inverse",
           "Score": "Score",
           "Sticky ring": "Anneau collant",
-          "Sudden death": "Mort subite",
-          "Tap it: the rings behind back off, then rush in": "Tape-le : les anneaux suivants reculent puis foncent",
-          "Tap to play": "Tap pour jouer",
-          "Tap when the ball lands, and again when it leaves": "Tape quand la bille arrive, puis quand elle repart",
-          "The round lasts the whole song": "La partie dure tout le morceau",
+          "Tap it: the rings behind back off, then rush in": "Frappe les anneaux perturbateurs",
+          "Play": "Jouer",
+          "Tap when the ball lands, and again when it leaves": "Frappe l'anneau lorsque la bille le touche puis tape de nouveau lorsqu'elle repart",
+          "The round lasts the whole track": "La partie dure toute la musique",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !"
         }

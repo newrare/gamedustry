@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Gulp Tower — prototype</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0d14;overflow:hidden;touch-action:none;
+            font:13px ui-monospace,Menlo,monospace;color:#fff}
+  canvas{display:block;position:absolute;left:0;top:0}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   GULP TOWER — tower golf where the hole is alive.
+   Is it fun to climb a tower by sticking a golf ball to its walls,
+   chasing a hungry hole that dodges, and getting spat higher every
+   time you feed it, with a tide rising from below?
+
+   Drag back anywhere and release to shoot (time slows while aiming).
+   Moss holds the ball: a ledge top forever, a wall or a ceiling for
+   STICK_TIME seconds (the ring), then it drops. Ice bounces.
+   The hole only swallows with its mouth open; closed, it is a bumper.
+   Fed, it chews, spits the ball straight up and flees higher.
+   Hungry, it grows, opens longer and comes down to you.
+   The tide sends you back to the last ledge where it ate.
+   R restarts, D toggles the debug lines.
+------------------------------------------------------------------ */
+
+// ---- tunables ----------------------------------------------------
+var DES_W = 720, DES_H = 1280;
+
+// ball and shot
+var BALL_R      = 14;
+var GRAV        = 1900;
+var SHOT_MIN    = 380;    // speed of the weakest shot
+var SHOT_MAX    = 1600;   // speed of a full pull (apex ~670 px)
+var FULL_DIST   = 420;    // finger distance meaning full power
+var MIN_DIST    = 24;     // shorter drag = cancelled
+var PULL_BACK   = true;   // true = slingshot (shoot opposite the drag)
+var AIM_SLOWMO  = 0.35;   // world time scale while the finger is down
+var STICK_TIME  = 1.0;    // seconds a wall or a ceiling holds the ball
+var DETACH_PUSH = 90;     // push off the wall when the hold runs out
+var ICE_BOUNCE  = 0.6;
+var SIDE_W      = 26;     // outer stone walls
+var SIDE_BOUNCE = 0.5;
+var SIDE_STICKY = false;  // true = the outer walls hold the ball too
+var PREVIEW_T   = 0.85;   // seconds of predicted trajectory
+
+// tower
+var ROW_GAP_MIN = 150, ROW_GAP_MAX = 230;
+var LEDGE_W_MIN = 130, LEDGE_W_MAX = 260, LEDGE_H = 22;
+var PILLAR_W    = 26, PILLAR_H_MIN = 140, PILLAR_H_MAX = 300;
+var ICE_CHANCE  = 0.22;   // share of pillars made of ice
+var HOLE_LEDGE_W= 160;    // narrowest ledge the hole will stand on
+
+// the hole
+var HOLE_R        = 40;
+var WALK_SPEED    = 45;
+var DODGE_SPEED   = 260, DODGE_TIME = 0.35, DODGE_COOLDOWN = 1.2;
+var FEAR_R        = 230;  // a ball flying at it inside this makes it dodge
+var MOUTH_PERIOD  = 1.7, OPEN_FRAC = 0.55;
+var MOUTH_R       = 26;   // capture radius of a fully open mouth (scaled)
+var MAGNET_R      = 90, MAGNET_ACC = 2200;
+var BODY_BOUNCE   = 0.75;
+var HUNGER_TIME   = 12;   // seconds from fed to starving
+var HUNGER_GROW   = 0.6;  // extra size when starving
+var HUNGER_OPEN   = 0.25; // extra open share of the cycle when starving
+var SHRINK        = 0.07, MIN_SCALE = 0.6; // per meal
+var SPEEDUP       = 0.15; // walk speed gained per meal
+var DESCEND_DIST  = 900;  // starving and this far above the ball = comes down
+var DESCEND_COOLDOWN = 6;
+var CHEW_TIME     = 0.55;
+var SPIT_SPEED    = 1450, SPIT_SPREAD = 160;
+var FLEE_MIN      = 650, FLEE_MAX = 1050;
+var JUMP_TIME     = 0.7, JUMP_ARC = 180;
+
+// tide
+var TIDE_DELAY  = 3;      // seconds before it starts
+var TIDE_BASE   = 45;     // px/s
+var TIDE_RAMP   = 1.0;    // px/s gained per second
+var TIDE_MAX    = 150;
+var TIDE_LEASH  = 1100;   // never further than this under your best height
+var TIDE_RESET  = 420;    // how far under the checkpoint it drops on a splash
+
+var CAM_ANCHOR  = 0.58;   // ball sits at this share of the screen height
+var CAM_LERP    = 5;
+var FEED_SCORE  = 500;
+var SHOW_DEBUG  = true;
+
+// ---- frame -------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d");
+var scale = 1, offX = 0, offY = 0, dpr = 1;
+
+function resize(){
+  var w = window.innerWidth, h = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = w*dpr; cv.height = h*dpr;
+  cv.style.width = w+"px"; cv.style.height = h+"px";
+  scale = Math.min(w/DES_W, h/DES_H);
+  offX = (w - DES_W*scale)/2; offY = (h - DES_H*scale)/2;
+}
+window.addEventListener("resize", resize);
+resize();
+
+function toDesign(e){
+  var r = cv.getBoundingClientRect();
+  return { x:(e.clientX - r.left - offX)/scale, y:(e.clientY - r.top - offY)/scale };
+}
+
+function rand(a, b){ return a + Math.random()*(b - a); }
+function clamp(v, a, b){ return v < a ? a : v > b ? b : v; }
+
+// ---- state -------------------------------------------------------
+var rects, ledges, genY, ball, hole, tide, cam, aim, texts, checkpoint;
+var shots, feeds, falls, chain, score, startY, bestY, leashY, time, fps = 0;
+
+function reset(){
+  rects = []; ledges = [];
+  var floor = { x:SIDE_W, y:1200, w:DES_W - 2*SIDE_W, h:400, kind:"moss", ledge:true };
+  rects.push(floor);
+  genY = 1200;
+  ensureGen(-3000);
+
+  ball = { x:DES_W/2, y:1200 - BALL_R, vx:0, vy:0, state:"rest", t:0,
+           nx:0, ny:-1, on:floor, ignore:null, ignoreT:0, holeT:0 };
+  startY = bestY = leashY = ball.y;
+  checkpoint = { x:ball.x, y:ball.y };
+
+  hole = { ledge:null, x:0, feet:0, dir:1, dodgeT:0, dodgeCd:0, mouthT:0, open:0,
+           hunger:0, fed:0, state:"walk", ct:0, jt:0, jx0:0, jy0:0, jx1:0, jy1:0,
+           next:null, descendCd:DESCEND_COOLDOWN };
+  var first = pickLedge(400, 620, 520, null);
+  hole.ledge = first; hole.x = first.x + first.w/2; hole.feet = first.y;
+
+  tide = { y:1200 + TIDE_RESET, t:0 };
+  cam = { y:ball.y - DES_H*CAM_ANCHOR };
+  aim = null; texts = [];
+  shots = feeds = falls = chain = score = 0; time = 0;
+}
+
+// ---- tower -------------------------------------------------------
+function overlaps(a, pad){
+  for (var i = 0; i < rects.length; i++){
+    var r = rects[i];
+    if (a.x < r.x + r.w + pad && a.x + a.w + pad > r.x &&
+        a.y < r.y + r.h + pad && a.y + a.h + pad > r.y) return true;
+  }
+  return false;
+}
+
+function addLedge(){
+  for (var k = 0; k < 6; k++){
+    var w = rand(LEDGE_W_MIN, LEDGE_W_MAX);
+    var r = { x:rand(SIDE_W + 10, DES_W - SIDE_W - 10 - w), y:genY, w:w, h:LEDGE_H, kind:"moss", ledge:true };
+    if (!overlaps(r, 34)){ rects.push(r); if (w >= HOLE_LEDGE_W) ledges.push(r); return; }
+  }
+}
+
+function addPillar(){
+  for (var k = 0; k < 6; k++){
+    var h = rand(PILLAR_H_MIN, PILLAR_H_MAX);
+    var r = { x:rand(SIDE_W + 40, DES_W - SIDE_W - 40 - PILLAR_W), y:genY - h + LEDGE_H, w:PILLAR_W, h:h,
+              kind:Math.random() < ICE_CHANCE ? "ice" : "moss", ledge:false };
+    if (!overlaps(r, 34)){ rects.push(r); return; }
+  }
+}
+
+function genRow(){
+  genY -= rand(ROW_GAP_MIN, ROW_GAP_MAX);
+  var roll = Math.random();
+  if (roll < 0.45) addLedge();
+  else if (roll < 0.75){ addLedge(); addPillar(); }
+  else if (roll < 0.9){ addLedge(); addLedge(); }
+  else addPillar();
+}
+
+function ensureGen(top){ while (genY > top) genRow(); }
+
+function cull(){
+  var lim = tide.y + 900, keep = [], keepL = [], i;
+  for (i = 0; i < rects.length; i++) if (rects[i].y < lim) keep.push(rects[i]);
+  for (i = 0; i < ledges.length; i++) if (ledges[i].y < lim) keepL.push(ledges[i]);
+  rects = keep; ledges = keepL;
+}
+
+// the ledge whose top is nearest `target`, inside [minY, maxY] if possible
+function pickLedge(minY, maxY, target, not){
+  ensureGen(minY - 600);
+  var best = null, bd = 1e9, any = null, ad = 1e9;
+  for (var i = 0; i < ledges.length; i++){
+    var L = ledges[i];
+    if (L === not) continue;
+    var d = Math.abs(L.y - target);
+    if (L.y >= minY && L.y <= maxY && d < bd){ best = L; bd = d; }
+    if (d < ad){ any = L; ad = d; }
+  }
+  return best || any;
+}
+
+// ---- hole helpers ------------------------------------------------
+function holeScale(){ return (1 + hole.hunger*HUNGER_GROW) * Math.max(MIN_SCALE, 1 - hole.fed*SHRINK); }
+function holeR(){ return HOLE_R*holeScale(); }
+function holeCx(){ return hole.x; }
+function holeCy(){ return hole.feet - holeR(); }
+function mouthX(){ return hole.x; }
+function mouthY(){ return holeCy() + holeR()*0.15; }
+
+function jumpTo(L){
+  if (!L) return;
+  hole.state = "jump"; hole.jt = 0; hole.next = L;
+  hole.jx0 = hole.x; hole.jy0 = hole.feet;
+  hole.jx1 = L.x + L.w/2; hole.jy1 = L.y;
+}
+
+function say(x, y, s, c){ texts.push({ x:x, y:y, s:s, c:c || "#fff", t:0 }); }
+
+// ---- input -------------------------------------------------------
+function canShoot(){ return ball.state === "rest" || ball.state === "stick"; }
+
+function shotVec(){
+  var dx = aim.cx - aim.sx, dy = aim.cy - aim.sy;
+  var len = Math.sqrt(dx*dx + dy*dy);
+  if (len < MIN_DIST) return null;
+  if (PULL_BACK){ dx = -dx; dy = -dy; }
+  var p = clamp(len/FULL_DIST, 0, 1), sp = SHOT_MIN + (SHOT_MAX - SHOT_MIN)*p;
+  return { vx:dx/len*sp, vy:dy/len*sp, p:p };
+}
+
+cv.addEventListener("pointerdown", function(e){
+  var p = toDesign(e); aim = { sx:p.x, sy:p.y, cx:p.x, cy:p.y };
+});
+cv.addEventListener("pointermove", function(e){
+  if (!aim) return; var p = toDesign(e); aim.cx = p.x; aim.cy = p.y;
+});
+function release(){
+  if (aim && canShoot()){
+    var v = shotVec();
+    if (v){
+      ball.vx = v.vx; ball.vy = v.vy; ball.state = "fly";
+      ball.ignore = ball.on; ball.ignoreT = 0.06; ball.on = null;
+      shots++;
+    }
+  }
+  aim = null;
+}
+cv.addEventListener("pointerup", release);
+cv.addEventListener("pointercancel", function(){ aim = null; });
+window.addEventListener("keydown", function(e){
+  if (e.key === "r" || e.key === "R") reset();
+  if (e.key === "d" || e.key === "D") SHOW_DEBUG = !SHOW_DEBUG;
+});
+
+// ---- ball physics ------------------------------------------------
+// closest point of rect r to the ball, with the outward normal
+function contact(r, x, y){
+  var cx = clamp(x, r.x, r.x + r.w), cy = clamp(y, r.y, r.y + r.h);
+  var dx = x - cx, dy = y - cy, d = Math.sqrt(dx*dx + dy*dy);
+  if (d > 1e-4) return d < BALL_R ? { px:cx, py:cy, nx:dx/d, ny:dy/d } : null;
+  // centre inside the rect: leave by the nearest side
+  var l = x - r.x, rr = r.x + r.w - x, t = y - r.y, b = r.y + r.h - y, m = Math.min(l, rr, t, b);
+  if (m === t) return { px:x, py:r.y, nx:0, ny:-1 };
+  if (m === b) return { px:x, py:r.y + r.h, nx:0, ny:1 };
+  if (m === l) return { px:r.x, py:y, nx:-1, ny:0 };
+  return { px:r.x + r.w, py:y, nx:1, ny:0 };
+}
+
+function stick(r, nx, ny){
+  ball.vx = ball.vy = 0; ball.on = r; ball.nx = nx; ball.ny = ny;
+  if (ny < -0.6){ ball.state = "rest"; chain = 0; return; }
+  ball.state = "stick"; ball.t = STICK_TIME; chain++;
+  if (chain >= 2) say(ball.x, ball.y - 30, "Wall x" + chain, "#ffd34d");
+}
+
+function collideRects(){
+  for (var i = 0; i < rects.length; i++){
+    var r = rects[i];
+    if (r === ball.ignore && ball.ignoreT > 0) continue;
+    var c = contact(r, ball.x, ball.y);
+    if (!c) continue;
+    ball.x = c.px + c.nx*BALL_R; ball.y = c.py + c.ny*BALL_R;
+    if (r.kind === "ice"){
+      var vd = ball.vx*c.nx + ball.vy*c.ny;
+      if (vd < 0){ ball.vx -= (1 + ICE_BOUNCE)*vd*c.nx; ball.vy -= (1 + ICE_BOUNCE)*vd*c.ny; }
+      if (c.ny < -0.6 && Math.abs(vd) < 80){ stick(r, c.nx, c.ny); return true; }
+      continue;
+    }
+    stick(r, c.nx, c.ny);
+    return true;
+  }
+  return false;
+}
+
+function collideSides(){
+  var lo = SIDE_W + BALL_R, hi = DES_W - SIDE_W - BALL_R;
+  if (ball.x < lo || ball.x > hi){
+    var left = ball.x < lo;
+    ball.x = left ? lo : hi;
+    if (SIDE_STICKY){ stick(null, left ? 1 : -1, 0); return true; }
+    if ((left && ball.vx < 0) || (!left && ball.vx > 0)) ball.vx = -ball.vx*SIDE_BOUNCE;
+  }
+  return false;
+}
+
+function swallow(){
+  var airborne = ball.state === "fly";
+  ball.state = "eaten"; ball.vx = ball.vy = 0;
+  hole.state = "chew"; hole.ct = CHEW_TIME;
+  feeds++; hole.fed++; hole.hunger = 0;
+  var gain = FEED_SCORE*(1 + (airborne ? chain : 0));
+  score += gain;
+  say(mouthX(), mouthY() - 60, airborne && chain ? "Gulp! wall x" + chain : "Gulp!", "#7dff9a");
+  say(mouthX(), mouthY() - 30, "+" + gain, "#7dff9a");
+  checkpoint = { x:hole.x, y:hole.ledge.y - BALL_R };
+  chain = 0;
+}
+
+// returns true when the hole took the ball or kicked it
+function collideHole(){
+  if (hole.state !== "walk" || ball.holeT > 0) return false;
+  var cx = holeCx(), cy = holeCy(), r = holeR();
+  var mx = ball.x - mouthX(), my = ball.y - mouthY();
+  if (hole.open > 0.5 && mx*mx + my*my < Math.pow(MOUTH_R*holeScale()*hole.open + BALL_R*0.6, 2)){
+    swallow(); return true;
+  }
+  var dx = ball.x - cx, dy = ball.y - cy, d = Math.sqrt(dx*dx + dy*dy);
+  if (d < r + BALL_R && d > 1e-4){
+    var nx = dx/d, ny = dy/d;
+    ball.x = cx + nx*(r + BALL_R); ball.y = cy + ny*(r + BALL_R);
+    if (ball.state === "fly"){
+      var vd = ball.vx*nx + ball.vy*ny;
+      if (vd < 0){ ball.vx -= (1 + BODY_BOUNCE)*vd*nx; ball.vy -= (1 + BODY_BOUNCE)*vd*ny; }
+      var sp = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+      if (sp < 300){ ball.vx += nx*300; ball.vy += ny*300; }
+    } else {
+      // it walked into a resting ball with its mouth shut: kicked off
+      ball.state = "fly"; ball.vx = (nx < 0 ? -1 : 1)*220; ball.vy = -260;
+      ball.ignore = ball.on; ball.ignoreT = 0.15; ball.on = null;
+    }
+    ball.holeT = 0.12;
+    return true;
+  }
+  return false;
+}
+
+function updateBall(dt){
+  ball.ignoreT -= dt; ball.holeT -= dt;
+
+  if (ball.state === "stick"){
+    ball.t -= dt;
+    if (ball.t <= 0){
+      ball.state = "fly";
+      ball.vx = ball.nx*DETACH_PUSH; ball.vy = ball.ny*DETACH_PUSH;
+      ball.ignore = ball.on; ball.ignoreT = 0.2; ball.on = null;
+    }
+  }
+  if (ball.state === "rest" || ball.state === "stick"){ collideHole(); return; }
+  if (ball.state !== "fly") return;
+
+  var sp = Math.sqrt(ball.vx*ball.vx + ball.vy*ball.vy);
+  var n = Math.max(1, Math.ceil(sp*dt/7)), h = dt/n;
+  for (var i = 0; i < n; i++){
+    ball.vy += GRAV*h;
+    if (hole.state === "walk" && hole.open > 0.5){
+      var mx = mouthX() - ball.x, my = mouthY() - ball.y, md = Math.sqrt(mx*mx + my*my);
+      if (md < MAGNET_R && md > 1){ ball.vx += mx/md*MAGNET_ACC*h; ball.vy += my/md*MAGNET_ACC*h; }
+    }
+    ball.x += ball.vx*h; ball.y += ball.vy*h;
+    if (collideSides()) return;
+    if (collideRects()) return;
+    if (collideHole() && ball.state !== "fly") return;
+  }
+}
+
+// ---- hole behaviour ----------------------------------------------
+function updateHole(dt){
+  hole.mouthT += dt; hole.dodgeT -= dt; hole.dodgeCd -= dt; hole.descendCd -= dt;
+  var targetOpen = 0;
+
+  if (hole.state === "walk"){
+    hole.hunger = Math.min(1, hole.hunger + dt/HUNGER_TIME);
+    var frac = OPEN_FRAC + hole.hunger*HUNGER_OPEN;
+    targetOpen = (hole.mouthT % MOUTH_PERIOD)/MOUTH_PERIOD < frac ? 1 : 0;
+
+    var cx = holeCx(), cy = holeCy();
+    // a ball flying at it makes it step aside
+    if (ball.state === "fly" && hole.dodgeCd <= 0){
+      var dx = cx - ball.x, dy = cy - ball.y;
+      if (dx*dx + dy*dy < FEAR_R*FEAR_R && ball.vx*dx + ball.vy*dy > 0){
+        hole.dir = ball.x < cx ? 1 : -1; hole.dodgeT = DODGE_TIME; hole.dodgeCd = DODGE_COOLDOWN;
+      }
+    }
+    // a ball resting on its own ledge: it keeps away, you have to shoot
+    if (ball.state === "rest" && ball.on === hole.ledge) hole.dir = ball.x < cx ? 1 : -1;
+
+    var spd = hole.dodgeT > 0 ? DODGE_SPEED : WALK_SPEED*(1 + hole.fed*SPEEDUP);
+    hole.x += hole.dir*spd*dt;
+    if (Math.random() < 0.3*dt) hole.dir = -hole.dir;
+    var r = holeR(), lo = hole.ledge.x + r, hi = hole.ledge.x + hole.ledge.w - r;
+    if (lo > hi){ lo = hi = hole.ledge.x + hole.ledge.w/2; }
+    if (hole.x < lo){ hole.x = lo; hole.dir = 1; }
+    if (hole.x > hi){ hole.x = hi; hole.dir = -1; }
+
+    // starving and far above: it comes down to you
+    if (hole.hunger >= 1 && hole.descendCd <= 0 && ball.y - hole.feet > DESCEND_DIST && ball.state !== "eaten"){
+      var L = pickLedge(ball.y - 500, ball.y - 200, ball.y - 350, hole.ledge);
+      if (L && L.y > hole.feet){ jumpTo(L); say(hole.x, holeCy() - 60, "Hungry!", "#ff9a3d"); }
+      hole.descendCd = DESCEND_COOLDOWN;
+    }
+    // the tide reached it: it runs up
+    if (tide.y < hole.feet + 60) jumpTo(pickLedge(hole.feet - FLEE_MAX, hole.feet - FLEE_MIN, hole.feet - 800, hole.ledge));
+  }
+  else if (hole.state === "chew"){
+    hole.ct -= dt;
+    if (hole.ct <= 0){
+      ball.x = mouthX(); ball.y = mouthY() - holeR();
+      ball.vx = rand(-SPIT_SPREAD, SPIT_SPREAD); ball.vy = -SPIT_SPEED;
+      ball.state = "fly"; ball.holeT = 0.6; ball.on = null;
+      var f = hole.ledge.y;
+      jumpTo(pickLedge(f - FLEE_MAX, f - FLEE_MIN, f - (FLEE_MIN + FLEE_MAX)/2, hole.ledge));
+    }
+  }
+  else if (hole.state === "jump"){
+    hole.jt += dt/JUMP_TIME;
+    var t = Math.min(1, hole.jt);
+    hole.x = hole.jx0 + (hole.jx1 - hole.jx0)*t;
+    hole.feet = hole.jy0 + (hole.jy1 - hole.jy0)*t - Math.sin(Math.PI*t)*JUMP_ARC;
+    if (t >= 1){ hole.ledge = hole.next; hole.feet = hole.ledge.y; hole.state = "walk"; }
+  }
+
+  hole.open += clamp(targetOpen - hole.open, -8*dt, 8*dt);
+}
+
+// ---- tide --------------------------------------------------------
+function updateTide(dt){
+  if (time > TIDE_DELAY){
+    tide.t += dt;
+    tide.y -= Math.min(TIDE_MAX, TIDE_BASE + TIDE_RAMP*tide.t)*dt;
+  }
+  // the leash follows the highest point since the last splash, not the best ever
+  tide.y = Math.min(tide.y, leashY + TIDE_LEASH);
+  if (ball.state !== "eaten" && ball.y - BALL_R > tide.y){
+    falls++; chain = 0;
+    say(ball.x, tide.y - 40, "Splash", "#6fb6ff");
+    ball.x = checkpoint.x; ball.y = checkpoint.y; ball.vx = ball.vy = 0;
+    ball.state = "rest"; ball.on = null; ball.ny = -1;
+    tide.y = checkpoint.y + TIDE_RESET; tide.t *= 0.6; leashY = checkpoint.y;
+  }
+}
+
+// ---- update ------------------------------------------------------
+function update(dt){
+  var ts = aim && ball.state !== "eaten" ? AIM_SLOWMO : 1;
+  var w = dt*ts;
+  time += w;
+  updateHole(w);
+  updateBall(w);
+  updateTide(w);
+  if (ball.state !== "eaten" && ball.y < bestY) bestY = ball.y;
+  if (ball.state !== "eaten" && ball.y < leashY) leashY = ball.y;
+
+  var focus = ball.state === "eaten" ? holeCy() : ball.y;
+  var target = focus - DES_H*CAM_ANCHOR;
+  cam.y += (target - cam.y)*Math.min(1, CAM_LERP*dt);
+  ensureGen(cam.y - 1500);
+  cull();
+
+  for (var i = texts.length - 1; i >= 0; i--){
+    texts[i].t += dt; texts[i].y -= 40*dt;
+    if (texts[i].t > 1.2) texts.splice(i, 1);
+  }
+}
+
+// ---- render ------------------------------------------------------
+function drawRects(){
+  for (var i = 0; i < rects.length; i++){
+    var r = rects[i];
+    if (r.y > cam.y + DES_H || r.y + r.h < cam.y) continue;
+    if (r.kind === "ice"){
+      ctx.fillStyle = "#9fd8f0"; ctx.fillRect(r.x, r.y, r.w, r.h);
+      ctx.fillStyle = "#e6f7ff"; ctx.fillRect(r.x + 3, r.y + 3, 5, r.h - 6);
+    } else {
+      ctx.fillStyle = "#4b5a3a"; ctx.fillRect(r.x, r.y, r.w, r.h);
+      ctx.fillStyle = "#86b45a"; ctx.fillRect(r.x, r.y, r.w, 6);
+      if (!r.ledge){ ctx.fillRect(r.x, r.y, 4, r.h); ctx.fillRect(r.x + r.w - 4, r.y, 4, r.h); }
+    }
+  }
+}
+
+function drawHole(){
+  var cx = holeCx(), cy = holeCy(), r = holeR();
+  var sq = hole.state === "chew" ? 1 + Math.sin(hole.ct*30)*0.08 : 1;
+  ctx.save(); ctx.translate(cx, hole.feet); ctx.scale(1/sq, sq); ctx.translate(-cx, -hole.feet);
+  ctx.fillStyle = hole.hunger >= 1 ? "#d94fa8" : "#9b5cff";
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+  // mouth
+  var my = mouthY(), rx = r*0.6, ry = Math.max(3, r*0.5*hole.open);
+  ctx.fillStyle = "#14051f";
+  ctx.beginPath(); ctx.ellipse(cx, my, rx, ry, 0, 0, Math.PI*2); ctx.fill();
+  if (hole.open > 0.5){
+    ctx.strokeStyle = "rgba(125,255,154,0.35)"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, my, MOUTH_R*holeScale()*hole.open, 0, Math.PI*2); ctx.stroke();
+  }
+  // eyes look at the ball
+  var lx = ball.x - cx, ly = ball.y - cy, ll = Math.sqrt(lx*lx + ly*ly) || 1;
+  for (var s = -1; s <= 1; s += 2){
+    var ex = cx + s*r*0.38, ey = cy - r*0.45;
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(ex, ey, r*0.22, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(ex + lx/ll*r*0.1, ey + ly/ll*r*0.1, r*0.1, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+  // hunger bar
+  ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(cx - 32, cy - r - 22, 64, 8);
+  ctx.fillStyle = hole.hunger >= 1 ? "#ff5a3d" : "#ff9a3d"; ctx.fillRect(cx - 32, cy - r - 22, 64*hole.hunger, 8);
+}
+
+function drawBall(){
+  if (ball.state === "eaten") return;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2); ctx.fill();
+  if (ball.state === "stick"){
+    var k = clamp(ball.t/STICK_TIME, 0, 1);
+    ctx.strokeStyle = k > 0.35 ? "#ffd34d" : "#ff4d4d"; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, BALL_R + 8, -Math.PI/2, -Math.PI/2 + Math.PI*2*k); ctx.stroke();
+  }
+}
+
+function drawAim(){
+  if (!aim || !canShoot()) return;
+  var v = shotVec(); if (!v) return;
+  var x = ball.x, y = ball.y, vx = v.vx, vy = v.vy, h = 1/60;
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
+  for (var i = 1; i <= PREVIEW_T*60; i++){
+    vy += GRAV*h; x += vx*h; y += vy*h;
+    if (x < SIDE_W || x > DES_W - SIDE_W) break;
+    var hit = false;
+    for (var j = 0; j < rects.length; j++){
+      var r = rects[j];
+      if (r === ball.on) continue;
+      if (x > r.x - BALL_R && x < r.x + r.w + BALL_R && y > r.y - BALL_R && y < r.y + r.h + BALL_R){ hit = true; break; }
+    }
+    if (hit) break;
+    if (i % 3 === 0){ ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fill(); }
+  }
+}
+
+function drawTide(){
+  var top = tide.y;
+  if (top > cam.y + DES_H) return;
+  ctx.fillStyle = "rgba(40,120,220,0.78)";
+  ctx.beginPath(); ctx.moveTo(0, cam.y + DES_H + 10);
+  for (var x = 0; x <= DES_W; x += 20) ctx.lineTo(x, top + Math.sin(x*0.03 + time*3)*6);
+  ctx.lineTo(DES_W, cam.y + DES_H + 10); ctx.closePath(); ctx.fill();
+}
+
+function render(){
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = "#0b0d14"; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.translate(offX, offY); ctx.scale(scale, scale);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, DES_W, DES_H); ctx.clip();
+  ctx.fillStyle = "#151a26"; ctx.fillRect(0, 0, DES_W, DES_H);
+
+  ctx.save(); ctx.translate(0, -cam.y);
+  ctx.fillStyle = "#2a2f3d";
+  ctx.fillRect(0, cam.y, SIDE_W, DES_H); ctx.fillRect(DES_W - SIDE_W, cam.y, SIDE_W, DES_H);
+  drawRects();
+  // checkpoint flag
+  ctx.fillStyle = "#7dff9a"; ctx.fillRect(checkpoint.x - 1, checkpoint.y - 30, 3, 30);
+  ctx.beginPath(); ctx.moveTo(checkpoint.x + 2, checkpoint.y - 30); ctx.lineTo(checkpoint.x + 18, checkpoint.y - 24);
+  ctx.lineTo(checkpoint.x + 2, checkpoint.y - 18); ctx.fill();
+  drawHole();
+  drawBall();
+  drawAim();
+  drawTide();
+  ctx.textAlign = "center"; ctx.font = "bold 26px ui-monospace,Menlo,monospace";
+  for (var i = 0; i < texts.length; i++){
+    var t = texts[i];
+    ctx.globalAlpha = 1 - t.t/1.2; ctx.fillStyle = t.c; ctx.fillText(t.s, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // where the hole is when it is off screen
+  var hy = holeCy() - cam.y;
+  if (hy < 30 || hy > DES_H - 30){
+    var up = hy < 30, ay = up ? 40 : DES_H - 40, ax = clamp(holeCx(), 60, DES_W - 60);
+    ctx.fillStyle = "#9b5cff";
+    ctx.beginPath();
+    if (up){ ctx.moveTo(ax, ay - 22); ctx.lineTo(ax - 18, ay + 6); ctx.lineTo(ax + 18, ay + 6); }
+    else { ctx.moveTo(ax, ay + 22); ctx.lineTo(ax - 18, ay - 6); ctx.lineTo(ax + 18, ay - 6); }
+    ctx.fill();
+    ctx.font = "20px ui-monospace,Menlo,monospace"; ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+    ctx.fillText(Math.round(Math.abs(holeCy() - ball.y)/10) + " m", ax, up ? ay + 30 : ay - 14);
+  }
+
+  ctx.textAlign = "left"; ctx.font = "20px ui-monospace,Menlo,monospace"; ctx.fillStyle = "#fff";
+  var height = Math.round((startY - bestY)/10);
+  ctx.fillText("Height " + height + " m   Feeds " + feeds + "   Score " + (score + height*10), 40, 40);
+  if (SHOW_DEBUG){
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    var lines = [
+      "Shots " + shots + "   Splashes " + falls + "   Wall chain " + chain,
+      "Hunger " + hole.hunger.toFixed(2) + "   Scale " + holeScale().toFixed(2) + "   State " + hole.state,
+      "Tide " + Math.round((tide.y - ball.y)/10) + " m below   Speed " + Math.round(Math.min(TIDE_MAX, TIDE_BASE + TIDE_RAMP*tide.t)),
+      "Time " + time.toFixed(1) + " s   Fps " + fps
+    ];
+    for (var k = 0; k < lines.length; k++) ctx.fillText(lines[k], 40, 70 + k*26);
+  }
+  if (time < 6 && shots === 0){
+    ctx.textAlign = "center"; ctx.fillStyle = "#fff";
+    ctx.fillText("Drag back and release to shoot", DES_W/2, DES_H - 110);
+    ctx.fillText("Walls hold the ball for 1 s, feed the hole", DES_W/2, DES_H - 80);
+  }
+  ctx.restore();
+}
+
+// ---- loop --------------------------------------------------------
+var last = 0, fpsAcc = 0, fpsN = 0;
+function frame(ts){
+  var dt = Math.min(1/30, (ts - last)/1000 || 0); last = ts;
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5){ fps = Math.round(fpsN/fpsAcc); fpsAcc = 0; fpsN = 0; }
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

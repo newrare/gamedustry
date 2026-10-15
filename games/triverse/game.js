@@ -1205,7 +1205,7 @@
       shield = false; invT = 0.8;
       Fx.ring(arrowX, arrowY, { from: 18, to: 160, color: "#8ffff2", width: 7, life: 0.4 });
       Fx.shake(9, 0.24); Fx.flash("#8ffff2", 0.3);
-      Notify.say("Shield down", { kind: "loss" });
+      Pop.show("alert", { word: "Shield down" });
       Sound.clip("crash", 0.5, 1.45);        // the same impact, shrugged off
     }
 
@@ -1230,7 +1230,7 @@
 
       if (lives <= 0) { die(); return; }
       invT = T.invTime;
-      Pop.show("danger", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Crash!"),
+      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Crash!"),
                            sub: lives + (lives === 1 ? Lang.t(" life left") : Lang.t(" lives left")) });
     }
 
@@ -1246,7 +1246,6 @@
         if (lane !== g.free || invT > 0) continue;     // took the hit instead
         gain = 60 * mult;
         gainScore(gain);
-        Pop.show("streak", { word: "Threaded!", sub: "+" + gain });
         Fx.ring(arrowX, arrowY, { from: 26, to: 170, color: "#ffffff", width: 5, life: 0.36 });
         HUD.punch("#ffffff");
         Sound.clip("chain", 0.6, 1.28);
@@ -1330,7 +1329,7 @@
       lane = prevLane = best < 0 ? lane : best;
       switchT = 1; invT = T.invTime;
       Fx.ring(pathX(lane, camP), anchorY, { from: 16, to: 120, color: paths[lane].color, width: 6, life: 0.4 });
-      Pop.show("danger", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Fell!"),
+      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Fell!"),
                            sub: lives + (lives === 1 ? Lang.t(" life left") : Lang.t(" lives left")) });
     }
 
@@ -1348,7 +1347,7 @@
       if (camP >= loopSeg.p1 && loopSeg.tag) {
         g = 150 * loopSeg.n * mult;
         loops += loopSeg.n; gainScore(g);
-        Pop.show("perfect", { word: loopSeg.tag, sub: "+" + g });
+        Pop.show("score", { word: loopSeg.tag, sub: "+" + g });
         Fx.ring(arrowX, arrowY, { from: 20, to: 200, color: "#ffd43b", width: 7, life: 0.45 });
         Fx.burst(arrowX, arrowY, { color: ["#ffd43b", "#ffffff"], count: 22, speed: 400, life: 0.5 });
         HUD.punch("#ffd43b");
@@ -1458,7 +1457,6 @@
       drawLives();
       Fx.reset();
       // a stretch with a rule says it once a round (Notify waits for the entrance)
-      if (RULES.length) Notify.say(LESSON[RULES[0]], { kind: "info" });
     }
     var LESSON = {
       pad:   "Springboards throw you onto the next rope",
@@ -1619,10 +1617,10 @@
       if (invT > 0) invT -= dt;
       if (multT > 0) {
         multT -= dt;
-        if (multT <= 0) { mult = 1; Notify.say("x2 over", { kind: "info", icon: "hourglass" }); }
+        if (multT <= 0) { mult = 1; Pop.show("alert", { word: "x2 over" }); }
       }
-      if (magnetT > 0) { magnetT -= dt; if (magnetT <= 0) Notify.say("Magnet over", { kind: "info", icon: "hourglass" }); }
-      if (ghostT > 0)  { ghostT -= dt;  if (ghostT <= 0)  Notify.say("Ghost over",  { kind: "info", icon: "hourglass" }); }
+      if (magnetT > 0) { magnetT -= dt; if (magnetT <= 0) Pop.show("alert", { word: "Magnet over" }); }
+      if (ghostT > 0)  { ghostT -= dt;  if (ghostT <= 0)  Pop.show("alert", { word: "Ghost over" }); }
 
       updateSky(dt);
       if (falling) {                                      // nothing touches an arrow in the void
@@ -1650,7 +1648,7 @@
 
       if (dist >= nextMile) {
         nextMile += T.mileStep;
-        Pop.show("ribbon", { word: Math.round(dist) + " m", sub: "Faster" });
+        Pop.show("perfect", { word: Math.round(dist) + " m", sub: "Faster" });
         Overlay.vignette(rgba(paths[lane].color, 0.75), 1, 420);
         Sound.clip("chain", 0.7, 0.8);
       }

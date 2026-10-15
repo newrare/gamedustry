@@ -1821,7 +1821,6 @@
       Fx.ring(p.x, p.y, { from: p.r * 2.6, to: p.r, color: NOVA, width: 4, life: 0.4 });
       Fx.burst(p.x, p.y, { color: ["#8a8070", NOVA], count: 10, speed: 140, size: 4, life: 0.5 });
       Sound.clip("fizzle", 0.45);
-      Notify.say("Nova faded", { sub: "Keep the chain alive to reach it", kind: "warn" });
     }
 
     /* --- round lifecycle -------------------------------------------------- */
@@ -1895,7 +1894,7 @@
       Fx.reset();
       // The first level a rule turns up on says what it does; the motor holds
       // a notice back until the round's entrance has landed.
-      for (i = 0; i < intro.length; i++) Notify.say(intro[i].word, { sub: intro[i].sub, kind: "info" });
+      for (i = 0; i < intro.length; i++) Pop.show("score", { word: intro[i].word, sub: intro[i].sub });
     }
 
     function onResize() {
@@ -2167,8 +2166,6 @@
     function award(word, key, x, y) {
       if (endIn >= 0) return;                 // the run is over, nothing to pay
       flightBonus += CONFIG.bonus.step;
-      Pop.show("bonus", { word: word, sub: "x" + (1 + flightBonus), hold: 240,
-                          at: { x: x, y: y - 44 } });
       Fx.ring(x, y, { from: 10, to: 96, color: "#ffd43b", width: 5, life: 0.36 });
       Fx.burst(x, y, { color: ["#ffd43b", "#ffffff"], count: 10, speed: 240, size: 4, life: 0.4 });
       Sound.clip(key, 0.6, 1 + flightBonus * 0.08);
@@ -2304,11 +2301,11 @@
       if (tier > wasTier) {
         Fx.ring(comet.x, comet.y, { from: 18, to: 170, color: col, width: 9, life: 0.5 });
         Fx.burst(comet.x, comet.y, { color: [col, "#ffffff"], count: 18, speed: 330, size: 6, life: 0.55 });
-        Pop.show("perfect", { word: "Evolved", sub: Lang.t("Tier ") + (tier + 1),
+        Pop.show("combo", { word: "Evolved", sub: Lang.t("Tier ") + (tier + 1),
                               at: "upper", hold: 380 });
         Sound.clip("evolve", 0.7);
       } else if (combo === 2) {
-        Pop.show("streak", { word: "Chain alive", at: "upperLeft", hold: 300 });
+        Pop.show("score", { word: "Chain alive", at: "upperLeft", hold: 300 });
       }
       if (combo % 5 === 0) {
         var bonus = CONFIG.score.milestone * Math.min(combo, CONFIG.score.maxMult);
@@ -2481,7 +2478,7 @@
       if (had >= 2 || overtime) {
         // A big chain deserves a loud eulogy; a small one just a quick callout.
         if (had >= 5 || overtime) {
-          Pop.show("danger", { word: reason,
+          Pop.show("alert", { word: reason,
                                sub: overtime ? Lang.t("Run over — x") + had : Lang.t("Combo x") + had + Lang.t(" lost"),
                                hold: 420 });
         } else {
@@ -3742,11 +3739,11 @@
       var w = comboWindow();
       if (otWarn < 1 && w <= C.window * 0.5) {
         otWarn = 1;
-        Pop.show("danger", { word: "Window closing", sub: w.toFixed(1) + Lang.t("s per hop"),
+        Pop.show("alert", { word: "Window closing", sub: w.toFixed(1) + Lang.t("s per hop"),
                              at: "upperLeft", hold: 300 });
       } else if (otWarn < 2 && w <= C.window * 0.25) {
         otWarn = 2;
-        Pop.show("danger", { word: "Last breath", sub: w.toFixed(1) + Lang.t("s per hop"),
+        Pop.show("alert", { word: "Last breath", sub: w.toFixed(1) + Lang.t("s per hop"),
                              at: "upperLeft", hold: 300 });
         Overlay.vignette("#ff4d6d", 0.7, 900);
       }

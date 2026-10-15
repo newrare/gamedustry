@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.14",
+  "version": "1.8.25",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -62,19 +62,19 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l'écho des balles.",
+      "tagline": "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
       "tags": [
         "Mémorise et vise",
-        "Echolocation",
+        "Echo localisation",
         "Une seule sortie"
       ]
     },
     "en": {
-      "tagline": "Just two seconds to memorise a maze. Find the way again by the echo of your balls.",
+      "tagline": "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
       "tags": [
-        "Aim & fire",
+        "Memorise and aim",
         "Echolocation",
-        "1 way out of 6"
+        "Only one way out"
       ]
     }
   },
@@ -84,23 +84,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "Two seconds",
+            "kicker": "Satisfying effects and sounds",
             "line": "<b>Fast</b> memorising"
           },
           {
             "kicker": "Echo",
-            "line": "The <b>bounces</b> can help"
+            "line": "Use the <b>bounces</b>"
           },
           {
-            "kicker": "Satisfying",
+            "kicker": "Memorisation",
             "line": "A <b>joy</b> to run through"
           },
           {
-            "kicker": "30 levels",
+            "kicker": "30 replayable procedural stages",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Difficult",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -108,7 +108,7 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Deux secondes",
+            "kicker": "Effets et sons satisfaisants",
             "line": "Mémorisation <b>rapide</b>"
           },
           {
@@ -116,15 +116,15 @@
             "line": "Aide-toi des <b>rebonds</b>"
           },
           {
-            "kicker": "Satisfaisant",
+            "kicker": "Mémorisation",
             "line": "Un <b>plaisir</b> à parcourir"
           },
           {
-            "kicker": "30 stages",
+            "kicker": "30 stages procédurales rejouables",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficile",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -164,42 +164,32 @@
       "fr": {
         "tagline": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu'à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
         "strings": {
-          " of ": " sur ",
           " pulse": " impulsion",
+          " pulses": " impulsions",
           " walls": " murs",
           "Bonus": "Bonus",
           "Break the crystal": "Brise le cristal",
-          "Crystal down!": "Cristal brisé !",
-          "Deep run!": "Belle montée !",
-          "Door ": "Porte ",
+          "Great run!": "Beau parcours !",
           "Door forced": "Porte forcée",
-          "Escaped the maze!": "Labyrinthe vaincu !",
+          "Maze solved!": "Labyrinthe résolu !",
           "Escaped!": "Evadé !",
           "Exit": "Sortie",
           "Exit sealed": "Sortie verrouillée",
-          "False exit!": "Fausse sortie !",
           "Final score": "Score final",
-          "Fire at the gap, not at the door": "Vise l'ouverture, pas la porte",
           "Found": "Repérés",
-          "Gate unlocked": "Sortie ouverte",
           "Install now": "Installer",
           "Last pulse": "Dernière impulsion",
-          "Lights out — fire!": "Noir complet — tire !",
-          "Live fence": "Barrière active",
-          "One gap, and it moves": "Une seule ouverture, qui bouge",
           "One-way valve": "Valve à sens unique",
           "Open for good": "Ouverte pour de bon",
-          "Out of pulses!": "Plus d'impulsions !",
+          "Out of echoes!": "Manque d'echo !",
           "Perfect read!": "Lecture parfaite !",
           "Play the full game": "Jouer au jeu complet",
           "Pulses": "Impulsions",
           "Replay the demo": "Rejouer la démo",
           "Score": "Score",
-          "So close!": "Si près !",
-          "Spent pulse seals the gap": "L'impulsion usée scelle le passage",
-          "Surge!": "Décharge !",
-          "Tap to play": "Tap pour jouer",
-          "The way out": "La sortie",
+          "So close!": "Si proche !",
+          "Gap sealed": "Passage scellé",
+          "Play": "Jouer",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "Valves": "Valves",
@@ -219,7 +209,7 @@
         "step": 50
       },
       "copy": {
-        "en": "Score <b>{n}</b> reading the maze",
+        "en": "Score <b>{n}</b> in the maze",
         "fr": "Marque <b>{n}</b> points dans le labyrinthe"
       },
       "bands": {

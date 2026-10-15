@@ -35,6 +35,15 @@
   action closes when that English is checked, or when it changes — edited
   here or by hand, it has been looked at.
 
+  On the same APPLY the action is ANSWERED rather than left open: every
+  English a French edit reaches is adapted to the new French by
+  tools/lab/translate-en.mjs (the local `claude -p`) and written back in a
+  second pass, the dictionary key moving with an English the game writes. The
+  English it rewrites is NOT checked — a machine wrote it, so it waits for a
+  proofreader like any string nobody read. An English the translator keeps as
+  it was closes its action too. When the call fails (no CLI, no login, a
+  timeout) the actions stay open and the report says why — the old behaviour.
+
   STATUS is every game at once — checked, total, left to update — which is
   what turns a game green in the picker. The scans behind it are cached on
   the mtimes of the files they read, so only a game that changed is re-read.
@@ -50,8 +59,9 @@ import { watch } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
-import { ROOT, scanText, games, gameList, ARMY_JS } from './scan-text.mjs';
+import { ROOT, scanText, games, gameList, ARMY_JS, SURFACES } from './scan-text.mjs';
 import { applyText } from './apply-text.mjs';
+import { translateToEnglish } from './translate-en.mjs';
 import { isMain, portArg, listen, json, notFound, readJson, reloadHub, MIME } from '../lib/serve.mjs';
 
 const run = promisify(execFile);
@@ -200,16 +210,27 @@ async function afterApply(slug, before, out) {
   const oldById = new Map(before.rows.map((r) => [r.id, r]));
   const touched = new Set([slug]);
   out.todo = [];
-  for (const a of out.applied) {
+  out.todoRows = [];
+  // An English typed in the same apply is the reader's answer already.
+  const wroteEn = new Set();
+  const after = out.applied.map((a) => {
     const old = oldById.get(a.id);
     const now = old && rowAfter(scan, old, a.to);
+    if (now && now.lang !== 'fr') wroteEn.add(now.id);
+    return now;
+  });
+  for (let i = 0; i < out.applied.length; i++) {
+    const a = out.applied[i], now = after[i];
     if (!now) continue;
     for (const g of await markEverywhere(review, todos, slug, now, true)) touched.add(g);
     if (now.lang !== 'fr' || a.from === a.to) continue;
     for (const en of englishOf(scan, now)) {
+      if (wroteEn.has(en.id)) continue;
       todos[slug] = todos[slug] || {};
       todos[slug][en.id] = { en: en.text, fr: a.to, was: a.from, frId: now.id, at: today() };
       out.todo.push(`${en.context}: "${en.text}"`);
+      out.todoRows.push({ enId: en.id, en: en.text, fr: a.to, was: a.from, frId: now.id, frGroup: now.group,
+        context: en.context, surface: en.surface });
     }
   }
   for (const d of out.removed || []) if (review[slug]) delete review[slug][d.id];
@@ -218,6 +239,63 @@ async function afterApply(slug, before, out) {
   await writeStore(REVIEW, review);
   await writeStore(TODO, todos);
   out.status = await statusAll([...touched]);
+}
+
+/* The English pass: every action this apply opened is sent to the translator
+   in one call (one item per distinct English), the answers are written by
+   apply-text in a second pass, and the actions they answer are closed. A
+   dictionary entry's English is its KEY, so it is renamed with the strings
+   the game writes, and the French mark follows it to its new id. */
+async function retranslate(slug, out) {
+  const rows = out.todoRows || [];
+  out.retranslated = [];
+  if (!rows.length) return;
+  const items = [], index = new Map();
+  for (const r of rows) {
+    const k = `${r.en}\u0000${r.was}\u0000${r.fr}`;
+    if (!index.has(k)) {
+      const sf = r.surface && SURFACES.find((x) => x.key === r.surface.key);
+      index.set(k, items.length);
+      items.push({ en: r.en, frOld: r.was, frNew: r.fr, where: [sf && sf.label, r.context].filter(Boolean).join(' · ') });
+    }
+    r.item = index.get(k);
+  }
+  let answers;
+  try { answers = await translateToEnglish(out.title || slug, items); }
+  catch (e) { out.translateError = `English not retranslated — ${e.message}. The To update mode lists what is left.`; return; }
+
+  const edits = [], renames = [], seen = new Set(), keys = new Set();
+  for (const r of rows) {
+    const next = answers[r.item];
+    if (next === r.en || seen.has(r.enId)) continue;
+    seen.add(r.enId);
+    edits.push({ id: r.enId, was: r.en, text: next });
+    if (r.frGroup === 'words' && !keys.has(r.en)) { keys.add(r.en); renames.push({ from: r.en, to: next }); }
+  }
+  let res = { applied: [], skipped: [], written: [] };
+  if (edits.length) res = await applyText(slug, { edits, renames, bump: !out.version });
+  out.written.push(...res.written.filter((f) => !out.written.includes(f)));
+  if (res.version) out.version = res.version;
+  out.skipped.push(...res.skipped);
+  out.retranslated = res.applied.filter((a) => !a.key).map((a) => ({ what: a.what, from: a.from, to: a.to, where: a.where }));
+  const kept = rows.filter((r) => answers[r.item] === r.en);
+  for (const r of kept) out.retranslated.push({ what: `${r.context} (EN)`, from: r.en, to: r.en, where: 'kept', kept: true });
+
+  // Close what was answered: written, or kept as it was. A refused edit stays open.
+  const done = new Set([...kept.map((r) => r.enId), ...res.applied.map((a) => a.id)]);
+  const [review, todos] = await Promise.all([readReview(), readStore(TODO)]);
+  for (const id of done) if (todos[slug]) delete todos[slug][id];
+  const moved = new Map(res.applied.filter((a) => a.key).map((a) => [a.id, a]));
+  for (const [oldId, a] of moved) {
+    const newId = oldId.slice(0, oldId.length - a.from.length) + a.to;
+    if (review[slug] && review[slug][oldId]) { review[slug][newId] = review[slug][oldId]; delete review[slug][oldId]; }
+  }
+  const scan = await scanOf(slug);
+  todos[slug] = openTodos(scan, todos[slug]);
+  await writeStore(REVIEW, review);
+  await writeStore(TODO, todos);
+  out.todo = rows.filter((r) => todos[slug] && todos[slug][r.enId]).map((r) => `${r.context}: "${r.en}"`);
+  out.status = await statusAll(Object.keys(out.status || {}).length ? Object.keys(out.status) : [slug]);
 }
 
 const reload = reloadHub("serve-text.mjs: the page's own source changed — take it again.");
@@ -285,12 +363,18 @@ export async function handle(req, res, p, url) {
     for (const a of out.applied) console.log(`  ${stamp}  ✓ ${a.what}  "${a.from}" → "${a.to}"`);
     for (const d of out.removed) console.log(`  ${stamp}  ✗ ${d.what}  "${d.text}" removed`);
     for (const w of out.skipped) console.log(`  ${stamp}  ! ${w}`);
+    out.title = before.title;
+    await afterApply(plan.game, before, out);
+    if (out.todoRows.length) console.log(`  ${stamp}  … retranslating ${out.todoRows.length} English string(s)`);
+    await retranslate(plan.game, out);
+    for (const t of out.retranslated) console.log(`  ${stamp}  ⇄ ${t.what}  ${t.kept ? 'kept' : `"${t.from}" → "${t.to}"`}`);
+    if (out.translateError) console.log(`  ${stamp}  ! ${out.translateError}`);
     if (out.written.length) {
       out.rebuilt = await rebuild(plan.game);
       console.log(`  ${stamp}  rebuilt ${out.rebuilt.join(', ')}`);
     }
-    await afterApply(plan.game, before, out);
     for (const t of out.todo) console.log(`  ${stamp}  → EN to update  ${t}`);
+    delete out.todoRows;
     // The page redraws on the file as it now reads, not on what it sent.
     out.scan = await payload(plan.game);
     return json(res, 200, out);

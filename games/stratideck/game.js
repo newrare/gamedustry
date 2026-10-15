@@ -1121,7 +1121,7 @@
         /* A LOCKED SLOT IS ANSWERED TOO, for the same reason a bandage is:
            a slot that does nothing under the finger reads as a dead screen. */
         Sound.clip("warn", 0.35, 0.9);
-        Notify.say("Slot locked", { sub: unlockLine(i), kind: "warn", icon: "lock" });
+        Pop.show("alert", { word: "Slot locked", sub: unlockLine(i) });
         return;
       }
       if (i >= 0) {
@@ -1144,7 +1144,7 @@
       if (cell && armed) {
         if (grid[cell.r][cell.c]) {
           Sound.clip("warn", 0.35, 1.2);
-          Notify.say("Out of reach", { kind: "warn" });
+          Pop.show("alert", { word: "Out of reach" });
         }
         return;
       }
@@ -1182,7 +1182,6 @@
       if (cell && isTarget(cell.r, cell.c)) { attack(d.i, cell.r, cell.c, { x: p.x, y: p.y - DRAG_UP, s: DRAG_S }); return; }
       if (cell && grid[cell.r][cell.c]) {
         Sound.clip("warn", 0.35, 1.2);
-        Notify.say("Out of reach", { kind: "warn" });
       }
     }
 
@@ -1515,7 +1514,7 @@
       } else if (v.kind === "stray") {
         strayed.push(a);
         Sound.clip("lose", 0.5, 0.8);
-        Notify.say("Out of the battle", { sub: cardName(a), kind: "loss", icon: "x" });
+        Pop.show("alert", { word: "Out of the battle", sub: cardName(a) });
       } else if (v.kind === "stun") {
         a.stun = true;
         hand[T.i] = a;
@@ -1538,7 +1537,7 @@
       if (v.ally < 0) {
         hand[T.i] = a;
         Sound.clip("place", 0.45, 0.7);
-        Notify.say("The spell finds no one", { kind: "info", icon: "sparkles" });
+        Notify.say("The spell hits no one", { kind: "info", icon: "sparkles" });
         return;
       }
       Sound.clip(v.res === "tie" ? "tie" : "lose", 0.6, 0.9);
@@ -1585,7 +1584,7 @@
         Sound.clip("flag", 0.8, 1);
         Fx.flash(GOLD, 0.5, 2.5); Fx.shake(16, 0.4); Fx.freeze(0.1);
         Fx.ring(cx, cy, { from: 40, to: 700, color: GOLD, width: 10, life: 0.6 });
-        Pop.show("ultra", { word: CONFIG.copy.flagTaken, sub: "+" + pts });
+        Pop.show("record", { word: CONFIG.copy.flagTaken, sub: "+" + pts });
       } else if (v.kind === "clear") {
         pts = Math.round(TRAP_CLEAR * mult());
         grid[T.r][T.c] = null;
@@ -1616,7 +1615,7 @@
         Sound.clip("trap", 0.7, 1);
         Fx.flash(RED, 0.4, 2.2); Fx.shake(14, 0.35); Fx.freeze(0.06);
         Fx.burst(cx, cy, { color: [RED, "#3a0a0a"], count: 18, speed: 420, life: 0.5, grav: 600 });
-        Pop.show("score", { word: "Trap!" });
+        Pop.show("alert", { word: "Trap!" });
       } else if (v.kind === "win") {
         streak++;
         if (streak > bestStreak) bestStreak = streak;
@@ -1729,7 +1728,7 @@
          stun, and the deck behind it has no slot to be dealt into: the army
          cannot send another card, which is an army spent. */
       if (!playableNow()) {
-        Notify.say("No card can move", { kind: "loss", icon: "lock" });
+        Pop.show("alert", { word: "No card can move" });
         finish(false);
         return;
       }
@@ -3366,12 +3365,12 @@
       if (won) {
         Sound.clip("victory", 0.8, 1);
         Fx.flash(GOLD, 0.4, 2);
-        Pop.show("perfect", { word: CONFIG.copy.victory, sub: bonus ? "+" + bonus : "" });
+        Pop.show("record", { word: CONFIG.copy.victory, sub: bonus ? "+" + bonus : "" });
       } else {
         Sound.clip("defeat", 0.8, 1);
         Fx.flash(RED, 0.4, 1.6);
       }
-      if (clean) Pop.show("bonus", { word: "Unscathed", sub: "+" + UNSCATHED });
+      if (clean) Pop.show("ultra", { word: "Unscathed", sub: "+" + UNSCATHED });
       /* THE ROWS ARE THE STARS: the three objectives, each with the star it
          earned or a dash, and then what the battle beat. The level layer adds
          no objective row of its own for a game that tallies its stars. */
@@ -3416,8 +3415,8 @@
     function levelRules() {
       var lost = outcome === false;
       return [
-        { text: Lang.t("Take the enemy <b>flag</b>"), stars: 1, done: !lost && flagTaken },
-        { text: Lang.t("Win with <b>no wounds</b>"), stars: 1, done: !lost && !hurtCards.length && !refused.length },
+        { text: Lang.t("Retrieve the enemy <b>flag</b>"), stars: 1, done: !lost && flagTaken },
+        { text: Lang.t("Win with no <b>wounds</b>"), stars: 1, done: !lost && !hurtCards.length && !refused.length },
         { text: Lang.t("Take a <b>prisoner</b>"), stars: 1, done: !lost && captives.length > 0 }
       ];
     }

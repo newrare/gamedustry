@@ -20,7 +20,7 @@
 
     { target, peak, playable: [role…],
       roles: { <role>: { group, what,
-        variants: { <name>: { jitter, takes: [{ file, start, length, tail?, tailLength? }] } } } } }
+        variants: { <name>: { takes: [{ file, start, length, rate?, tail?, tailLength? }] } } } } }
 
   A role says what a moment MEANS; a VARIANT is one way of saying it. Two groups:
 
@@ -37,10 +37,18 @@
   them so a sound heard twenty times a round does not repeat — they are never
   a choice. `file` is a library stem, the same name a provenance comment
   writes; `start` and `length` are seconds into it; `tail`, when there is
-  one, is how the take ends (THE TAIL, below). `jitter` is the random
-  pitch spread put on every shot (0 for a variant pitched as a LADDER — the
-  stars, the coins, a chain of pickups — where a wobble would blur the steps).
+  one, is how the take ends (THE TAIL, below); `rate`, when it is not 1, is
+  the take's pitch, baked into the file (THE PITCH, below).
   `playable` lists the shell roles a playable carries, the end screen's.
+
+  THE ROLE IS THE ONE PLACE A SOUND IS SHAPED. The file, the cut, the tail and
+  the pitch are all written here, and a game that maps a key to a variant only
+  says how LOUD a line plays it — so one variant sounds the same in every game
+  that plays it, and a sound that should sound different is another variant.
+  There is no random detune on a shot any more (it was `jitter`): a wobble put
+  on top of a line's own `rate` made a pitch impossible to judge on the bench.
+  A game still pitches a line from its code where the pitch IS the meaning — a
+  ladder of stars, a combo climbing — and that multiplies what is cut here.
 
   EVERY TAKE LEAVES AT ONE LOUDNESS. Two vendors, ~870 files, and no two
   mastered alike: a volume written per call was correcting the FILE, and every
@@ -75,7 +83,8 @@ const FADE = 0.07;                // the fade out, at most
    A take may instead END — `tail: "fade"` lets it die out over its last
    `tailLength` seconds, `tail: "drop"` does the same while its pitch falls an
    octave, a tape stopping. Both are rendered sample by sample by tailPcm,
-   which lab/sound-kit.html carries a copy of, so the page hears what is cut. */
+   which lab/sound-kit.html and lab/game-events-sound.html carry a copy of, so
+   the pages hear what is cut — keep the three identical. */
 export const TAILS = ['fade', 'drop'];
 export const DROP_TO = 0.5;       // the rate a drop ends on: an octave down
 export function defaultTail(length) { return Math.round(Math.min(0.3, length * 0.4) * 1000) / 1000; }
@@ -97,6 +106,46 @@ export function tailPcm(pcm, rate, tail, tailLength) {
     p += tail === 'drop' ? 1 - (1 - DROP_TO) * u : 1;
   }
   return Float32Array.from(out);
+}
+
+/* THE PITCH. `rate` plays the take faster and higher (2 is an octave up) or
+   slower and lower (0.5, an octave down), the way a playbackRate does — so the
+   pages preview it with one, and the cutter resamples the PCM with the same
+   straight-line read. It is applied LAST, to the cut with its tail, and the
+   level is measured before it: pitch moves a take's length, not its loudness. */
+export const RATE_MIN = 0.5, RATE_MAX = 2;
+export function pitchPcm(pcm, rate) {
+  if (!rate || rate === 1) return pcm;
+  const n = pcm.length, out = new Float32Array(Math.max(1, Math.floor((n - 1) / rate)));
+  for (let k = 0; k < out.length; k++) {
+    const p = k * rate, i = Math.floor(p), f = p - i;
+    out[k] = pcm[i] * (1 - f) + (pcm[i + 1] || 0) * f;
+  }
+  return out;
+}
+// The 70 ms anti-click at the end of a take with no tail, on PCM (ffmpeg's afade is the same straight line).
+function fadePcm(pcm, rate, seconds) {
+  const out = Float32Array.from(pcm), n = Math.max(1, Math.round(seconds * rate)), a = Math.max(0, out.length - n);
+  for (let i = a; i < out.length; i++) out[i] *= 1 - (i - a) / n;
+  return out;
+}
+
+/* A take as kit.json writes it: the keys in this order, the numbers rounded
+   (ms, and the pitch to the hundredth), `rate` only off 1, `tailLength` only
+   with a tail. writeKit writes nothing else, and the events bench fingerprints
+   what a line was HEARD on through it, so a draft and the same take saved
+   read as one. */
+export function normalTake(t) {
+  const start = Math.max(0, Math.round(Number(t.start) * 1000) / 1000 || 0);
+  const length = Math.round(Number(t.length) * 1000) / 1000;
+  const out = { file: t.file, start, length };
+  const rate = Math.round(Number(t.rate) * 100) / 100;
+  if (rate && rate !== 1) out.rate = rate;
+  if (t.tail) {
+    out.tail = t.tail;
+    out.tailLength = Math.min(length, Math.max(0.02, Math.round(Number(t.tailLength) * 1000) / 1000 || defaultTail(length)));
+  }
+  return out;
 }
 
 export async function readKit() {
@@ -163,19 +212,15 @@ export async function writeKit(next) {
       const where = idOf(kit, role, name);
       if (takes.length < 1 || takes.length > 3) throw new Error(`${where}: one to three takes`);
       variants[name] = {
-        jitter: Math.min(0.1, Math.max(0, Math.round(Number(v.jitter) * 100) / 100 || 0)),
         takes: takes.map((t, i) => {
           if (!stems.has(t.file)) throw new Error(`${where} #${i + 1}: no file "${t.file}" in assets/audio/sfx/`);
           const start = Math.max(0, Math.round(Number(t.start) * 1000) / 1000 || 0);
           const length = Math.round(Number(t.length) * 1000) / 1000;
           if (!(length >= 0.02 && length <= 3)) throw new Error(`${where} #${i + 1}: a length of 0.02 to 3 s`);
-          const out = { file: t.file, start, length };
-          if (t.tail) {
-            if (!TAILS.includes(t.tail)) throw new Error(`${where} #${i + 1}: a tail is ${TAILS.join(' or ')}`);
-            out.tail = t.tail;
-            out.tailLength = Math.min(length, Math.max(0.02, Math.round(Number(t.tailLength) * 1000) / 1000 || defaultTail(length)));
-          }
-          return out;
+          const rate = Math.round(Number(t.rate) * 100) / 100;
+          if (rate && rate !== 1 && !(rate >= RATE_MIN && rate <= RATE_MAX)) throw new Error(`${where} #${i + 1}: a pitch of ${RATE_MIN} to ${RATE_MAX}`);
+          if (t.tail && !TAILS.includes(t.tail)) throw new Error(`${where} #${i + 1}: a tail is ${TAILS.join(' or ')}`);
+          return normalTake(t);
         })
       };
     }
@@ -183,6 +228,26 @@ export async function writeKit(next) {
   }
   await writeFile(KIT_JSON, formatKit(kit));
   return kit;
+}
+
+/* Variants rewritten from the events bench — the kit card's own editor, which
+   tunes the one variant a game's key plays, or forks it into a new one. Only
+   the variants named change: the rest of kit.json is read fresh from disk, so
+   a save made on /kit in the meantime is not written over. A new name is a new
+   gameplay variant; a shell role keeps its one `default`. Returns the ids. */
+export async function editVariants(list) {
+  const kit = await readKit();
+  const ids = [];
+  for (const { id, takes } of list || []) {
+    const [role, name = 'default'] = String(id || '').split('/');
+    const r = kit.roles[role];
+    if (!r) throw new Error(`${id}: no role "${role}" in the kit`);
+    if (r.group === 'shell' && name !== 'default') throw new Error(`${id}: a shell role has one variant, "default"`);
+    r.variants[name] = { takes: takes || [] };
+    ids.push(idOf(kit, role, name));
+  }
+  await writeKit(kit);
+  return ids;
 }
 
 // One take per line, so a diff of kit.json reads as the decisions it holds.
@@ -319,15 +384,17 @@ async function cutTake(kit, take, out) {
   const gain = gainFor(level, kit);
   const encode = ['-ac', '1', '-ar', String(RATE), '-b:a', '64k',
     '-map_metadata', '-1', '-fflags', '+bitexact', '-flags:a', '+bitexact', '-id3v2_version', '0', out];
-  if (take.tail) {
-    // Levelled on the cut as it reads, then the tail rendered here and handed back as raw PCM.
-    const tailed = tailPcm(pcm, RATE, take.tail, take.tailLength || defaultTail(take.length));
+  const fade = Math.min(FADE, take.length * 0.3);
+  if (take.tail || (take.rate && take.rate !== 1)) {
+    // Levelled on the cut as it reads, then the tail (or the anti-click) and the
+    // pitch rendered here and handed back as raw PCM.
+    const ended = take.tail ? tailPcm(pcm, RATE, take.tail, take.tailLength || defaultTail(take.length)) : fadePcm(pcm, RATE, fade);
+    const out = pitchPcm(ended, take.rate);
     await run(['-y', '-f', 'f32le', '-ar', String(RATE), '-ac', '1', '-i', 'pipe:0',
       '-af', `volume=${gain.toFixed(2)}dB`, ...encode],
-    { input: Buffer.from(tailed.buffer, tailed.byteOffset, tailed.byteLength) });
+    { input: Buffer.from(out.buffer, out.byteOffset, out.byteLength) });
     return { level, gain };
   }
-  const fade = Math.min(FADE, take.length * 0.3);
   const st = Math.max(0, take.length - fade);
   await run(['-y', ...seek,
     '-af', [...mix, `volume=${gain.toFixed(2)}dB`, `afade=t=out:st=${st.toFixed(3)}:d=${fade.toFixed(3)}`].join(','),
@@ -335,17 +402,21 @@ async function cutTake(kit, take, out) {
   return { level, gain };
 }
 
-export async function cutKit({ log = console.log } = {}) {
+/* `only` names the variants to re-cut (their ids) — the events bench changes
+   one at a time and should not wait for the whole kit; every other take is
+   left as it is on disk. Without it, everything is cut. Stale files go either way. */
+export async function cutKit({ log = console.log, only = null } = {}) {
   const kit = await readKit();
   await mkdir(KIT_DIR, { recursive: true });
   const keep = new Set();
-  for (const { role, variant, v } of variantsOf(kit)) {
+  for (const { id, role, variant, v } of variantsOf(kit)) {
     for (let i = 0; i < (v.takes || []).length; i++) {
       const name = `${role}-${variant}-${i + 1}.mp3`;
       keep.add(name);
+      if (only && !only.includes(id)) continue;
       const t = v.takes[i];
       const { level, gain } = await cutTake(kit, t, path.join(KIT_DIR, name));
-      log(`  ${name.padEnd(26)} ${t.file} ${t.start || 0}+${t.length}s${t.tail ? ' ' + t.tail + ' ' + t.tailLength + 's' : ''}  ` +
+      log(`  ${name.padEnd(26)} ${t.file} ${t.start || 0}+${t.length}s${t.rate ? ' x' + t.rate : ''}${t.tail ? ' ' + t.tail + ' ' + t.tailLength + 's' : ''}  ` +
           `${level.rms.toFixed(1)} dB → ${gain >= 0 ? '+' : ''}${gain.toFixed(1)} dB`);
     }
   }

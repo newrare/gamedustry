@@ -1,8 +1,8 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.27",
-  "tagline": "Lean your ship left or right to take places and never break your shield",
+  "version": "1.10.32",
+  "tagline": "Lean your ship left or right to overtake and never break your shield",
   "order": 70,
   "draft": false,
   "targets": [
@@ -66,70 +66,70 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis ta voie : vitesse ou bouclier.",
+      "tagline": "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
       "tags": [
-        "Appuie pour pencher",
+        "Incline ton vaisseau",
         "Battle Royale",
-        "1020 m"
+        "Musique Retro Futuriste"
       ]
     },
     "en": {
-      "tagline": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between health and speed.",
+      "tagline": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between speed and safety.",
       "tags": [
-        "Hold to lean",
+        "Tilt your ship",
         "Battle royale",
-        "1020 m"
+        "Retro-futuristic music"
       ]
     }
   },
-  "description": "Twenty pilots launch onto a bending neon highway and three of them finish. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. A line across the tarmac marks each cut, green while you are inside the rank it asks for and red while you are not; cross one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
+  "description": "Twenty pilots launch onto a bending neon highway and five of them reach the flag. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. A line across the tarmac marks each cut, green while you are inside the rank it asks for and red while you are not; cross one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
   "store": {
     "copy": {
       "en": {
         "lines": [
           {
-            "kicker": "Battle royale race",
+            "kicker": "Battle royale",
             "line": "Stay <b>alive</b> and win"
           },
           {
             "kicker": "Choice",
-            "line": "More speed, or a shield <b>refill</b>"
+            "line": "More speed, <b>or</b> refill your ship"
           },
           {
             "kicker": "Retro",
-            "line": "A <b>futuristic</b> race"
+            "line": "<b>Futuristic</b> race"
           },
           {
             "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
-            "line": "Go for the <b>best score</b>"
+            "kicker": "Demanding",
+            "line": "Go for first <b>place</b>"
           }
         ]
       },
       "fr": {
         "lines": [
           {
-            "kicker": "Course Battle Royale",
+            "kicker": "Battle Royale",
             "line": "<b>Survis</b> et gagne"
           },
           {
             "kicker": "Choix",
-            "line": "Fonce ou <b>recharge</b> ton bouclier"
+            "line": "Fonce <b>ou</b> recharge ton vaisseau"
           },
           {
             "kicker": "Rétro",
-            "line": "Une course <b>futuriste</b>"
+            "line": "Course <b>futuriste</b>"
           },
           {
             "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
-            "line": "Vise le <b>meilleur score</b>"
+            "kicker": "Exigeant ",
+            "line": "Vise la première <b>place</b>"
           }
         ]
       }
@@ -171,41 +171,41 @@
           " in ": " dans ",
           " pilots left": " pilotes en lice",
           "Best score": "Meilleur score",
-          "Cut to ": "Qualif top ",
+          "Be top ": "Sois top ",
           "Distance (m)": "Distance (m)",
           "Eliminated": "Eliminé",
           "Final ": "Finale à ",
           "Final position": "Classement",
           "Final score": "Score final",
-          "Finish · ": "Arrivée · ",
-          "Finish · take the lead": "Arrivée · prends la tête",
+          "Finished · ": "Terminé · ",
+          "Win the race": "Gagne la course",
           "Hull critical": "Bouclier critique",
           "Install now": "Installer",
           "km/h": "km/h",
-          "Leader": "En tête",
-          "ND": "e",
-          "Next cut · top ": "Prochaine qualif · top ",
+          "First": "Premier",
+          "nd": "e",
+          "Goal: top ": "Objectif : top ",
           "On the podium!": "Sur le podium !",
-          "Places taken": "Dépassements",
+          "Places taken": "Places gagnées",
           "Play the full game": "Jouer au jeu complet",
           "Race again": "Relancer la course",
           "Race finished!": "Course terminée !",
           "Race won!": "Victoire !",
-          "RD": "e",
+          "rd": "e",
           "Score": "Score",
           "Shield": "Bouclier",
           "Shield down": "Bouclier détruit",
-          "ST": "er",
-          "Take the charge line": "Prends la voie de recharge",
-          "Tap to race": "Tap pour foncer",
-          "TH": "e",
+          "st": "er",
+          "Recharge your shield": "Recharge ton bouclier",
+          "Start": "Démarrer",
+          "th": "e",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "Top ": "Top ",
           "Reach <b>{n} m</b>": "Atteins <b>{n} m</b>",
           "Cross the <b>finish line</b>": "Franchis la <b>ligne d'arrivée</b>",
           "Win the race in <b>first place</b>": "Termine la course <b>en tête</b>",
-          "Turn": "Tourner"
+          "Tilt": "Incliner"
         }
       }
     },

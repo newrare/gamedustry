@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.3.0",
+  "version": "1.3.5",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,

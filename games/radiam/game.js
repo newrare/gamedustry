@@ -74,7 +74,7 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "Tap to play",
+      start:      "Play",
       ctaBar:     "Install now",
       ctaEnd:     "Play the full game",
       replay:     "Replay the demo",
@@ -1302,7 +1302,7 @@
         if (lines % LINES) return;
         level++;
         HUD.setLeft(level, "Level");
-        Pop.show("alert", { word: Lang.t("Level ") + level, at: "hudUnder" });
+        Pop.show("score", { word: Lang.t("Level ") + level, at: "hudUnder" });
         Sound.clip("chain", 0.5, 1.18);
         Fx.flash("#ff4d6d", 0.14, 1.8);
         flash = 1;
@@ -1627,7 +1627,6 @@
       specSaid[word] = seen;
       if (seen > D.specTeach) return;
       specCallAt = clock;
-      Notify.say(word, { kind: "info", icon: "sparkles" });
       if (hex) Overlay.vignette(hex, 0.6, 360);
     }
 
@@ -1720,7 +1719,6 @@
       supers++;
       Sound.clip("multi", 0.6, 1 + tier * 0.08);
       Fx.flash("#ffd43b", 0.22, 1.9);
-      Pop.show("record", { word: "x" + face, sub: "Score", at: "hudUnder" });
       specCallAt = clock;                 // ...and it counts as this beat's word
     }
 
@@ -1754,7 +1752,7 @@
       Fx.ring(cx, cy, { from: r.rad - r.band / 2, to: r.rad + r.band / 2,
                         color: "#9fdcff", width: r.band * 0.6, life: 0.35 });
       Overlay.vignette("#9fdcff", 0.7, 420);
-      Pop.show("danger", { word: "Frozen", sub: r.cold + Lang.t(" rays"), at: "hudUnder" });
+      Pop.show("streak", { word: "Frozen", sub: r.cold + Lang.t(" rays"), at: "hudUnder" });
       specCallAt = clock;
     }
 
@@ -1942,9 +1940,9 @@
           Pop.show("combo", { word: "Combo", sub: "x" + combo, at: "hudUnder" });
         }
       } else if (hits.length >= 4)
-        Pop.show("ultra", { word: "Nova", sub: "+" + gained, at: "bottom" });
+        Pop.show("ultra", { word: "Nova", sub: "+" + gained, at: "hudUnder" });
       else if (hits.length === 3)
-        Pop.show("ribbon", { word: "Triple ray", sub: "+" + gained, at: "hudUnder" });
+        Pop.show("bonus", { word: "Triple ray", sub: "+" + gained, at: "hudUnder" });
       else if (hits.length === 2)
         Pop.show("bonus", { word: "Double ray", sub: "+" + gained, at: "hudUnder" });
 
@@ -1982,7 +1980,7 @@
     function addColour() {
       palette.push(palette.length);
       for (var i = 0; i < 3; i++) rings[i].bag.length = 0;   // re-deal with the newcomer in
-      Pop.show("bonus", { word: "New colour", sub: "Rays get rarer", at: "bottom" });
+      Pop.show("streak", { word: "New colour", at: "bottom" });
       Overlay.vignette(D.colours[palette.length - 1], 0.7, 500);
       Sound.clip("multi", 0.45, 0.9);
     }
@@ -2803,7 +2801,7 @@
     function powerDown() {
       Sound.clip("nova", 0.5, 0.55);
       Fx.shake(10, 0.5);
-      if (!Eclipse.on) Pop.show("danger", { word: CONFIG.copy.timeUp });
+      if (!Eclipse.on) Pop.show("streak", { word: CONFIG.copy.timeUp });
     }
 
     function stepFinale(dt) {

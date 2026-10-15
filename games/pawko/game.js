@@ -633,7 +633,6 @@
     function refuse(word) {
       deckShake = 0.45;
       word = word || "Drag a card onto the board";
-      Notify.say(word, { kind: "info", key: "refuse-" + word });
       Sound.clip("bad", 0.25, 1.4);
     }
     function onDown(p) {
@@ -798,7 +797,6 @@
         chute = { c: c, t: 1 };
         Fx.ring(x, BOARD_TOP + 8, { from: 10, to: 80, color: c, width: 5, life: .4 });
         Fx.burst(x, BOARD_TOP + 8, { color: [c, "#ffffff"], count: 8, speed: 180, life: .4, grav: 200, size: 3 });
-        if (word) Pop.text(x, BOARD_TOP + 50, word, { color: c, size: 22, life: 0.6, tier: 1 });
         Sound.clip("zap", 0.25, 1.3);
       };
     }
@@ -881,7 +879,7 @@
          colour of the card's kind (.pk-cast in the SKIN) rather than a poster
          — the card is a reminder of what was just played, not an event — and
          silent: no shake over a board the wave is about to be read on */
-      if (castWord) Pop.show("combo", { word: castWord.word, sub: castWord.sub, at: deckSpot(view.w / 2), rot: 0,
+      if (castWord) Pop.show("score", { word: castWord.word, sub: castWord.sub, at: deckSpot(view.w / 2), rot: 0,
                                         hold: 900, cls: "pk-cast pk-k-" + castWord.kind, silent: true });
       castWord = null;
       Sound.clip("drop", 0.55, 1);
@@ -914,7 +912,6 @@
       if (encoreLeft > 0) {                // Encore: the same wave, once more
         encoreLeft--;
         queueWave();
-        Pop.show("bonus", { word: "Encore!", at: deckSpot(view.w / 2), hold: 500 });
         Sound.clip("drop", 0.55, 1.15);
         return;
       }
@@ -1253,7 +1250,6 @@
       var pts = Math.round((base + add) * m * mult());
       if (tier === 0 && (m > 1 || add > 0 || type !== "classic")) tier = 1;
       addScore(pts);
-      Pop.text(p.x, p.y - p.r - 6, "+" + fmtNum(pts), { color: color, size: tier === 3 ? 30 : 22, life: 0.6, tier: tier });
       if (type !== "classic" || m > 1) {
         Fx.burst(p.x, p.y, { color: [color, "#ffffff"], count: tier === 3 ? 24 : 6, speed: tier === 3 ? 520 : 200, life: .45, grav: 300, size: 3 });
       }
@@ -1300,7 +1296,7 @@
       if (tAnim - boomT > 0.6) {
         boomT = tAnim;
         Fx.freeze(0.05);
-        Pop.show("combo", { word: "Boom!", at: deckSpot(p.x), hold: 400 });
+        Pop.show("alert", { word: "Boom!", at: deckSpot(p.x), hold: 400 });
       }
     }
     /* A bomb: one blast per wave. Domino sets off the bombs inside its reach,

@@ -41,6 +41,17 @@
    the line of source, and for a dictionary entry every call that writes its
    English — the key says what it means, not where it shows.
 
+   And every row opens on WHAT it is printed on — the SURFACE, a coloured pill:
+   the website, a store image, a notification, a callout, a floating value, a
+   card's description, the end screen… One fixed list (SURFACES in
+   tools/lab/scan-text.mjs), read off the source: the path in the manifest,
+   the call the literal is an argument of, the game's own wrapper around that
+   call, or the table it sits in. A dictionary entry wears one pill per
+   surface its English reaches, and each of its uses wears its own. Where the
+   source cannot say, the pill says so — GAME DATA (a table, named) or IN CODE
+   (built at runtime) — rather than guess. The select beside the filter keeps
+   one surface.
+
    CHECKED is the proofreader's own mark: a row read and signed off turns
    green, and the mark lands in lab/text-review.json with the text it was
    given on. A string edited since reads as unchecked again — a sign-off is
@@ -53,9 +64,14 @@
    nothing untranslated and nothing left to update — turns green in the
    picker.
 
-   TO UPDATE is what a French edit leaves behind: applying it opens an action
-   on the English it translates, which closes when that English is checked
-   (still right) or changed. The TO UPDATE mode lists them.
+   A French edit carries its English with it: the same APPLY adapts every
+   English it translates to the new French (tools/lab/translate-en.mjs, the
+   local `claude -p`) and writes it — a dictionary key moving with an English
+   the game writes. That English lands UNCHECKED, since a machine wrote it,
+   and the report lists each one, kept or changed. Only when the translator
+   cannot be reached is the action left open instead: TO UPDATE, closed when
+   that English is checked (still right) or changed. The TO UPDATE mode lists
+   them.
 
    NO USE FOUND is a dictionary entry whose English the game no longer writes.
    It is marked for removal as soon as the game is read — struck through and
@@ -119,7 +135,38 @@ select, input[type=text], textarea {
   font:inherit; padding:7px 9px;
 }
 select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; }
-#game-pick { font-weight:700; min-width:170px; }
+/* The game picker is ours and not a <select>: a native popup draws its
+   options without their colour, and its own tick on the selected entry reads
+   as "checked" next to ours. Same picker as the events bench: a dot on the
+   game being edited, a tick and green on a game every row of which is
+   checked, and what is left on the others. */
+#game-pick { position:relative; min-width:230px; }
+#game-pick .gp-btn {
+  position:relative; display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
+  padding:7px 28px 7px 9px; border:1px solid #2c2c47; border-radius:7px;
+  background:#0b0b12; color:#e8e6f5; font-family:inherit; font-size:13px; font-weight:700; line-height:1.5;
+}
+#game-pick .gp-btn::after { content:"\25BE"; position:absolute; right:10px; top:7px; color:#6f6f92; }
+#game-pick .gp-btn:hover, #game-pick.open .gp-btn, #game-pick .gp-btn:focus { outline:none; border-color:#7ea6ff; }
+#game-pick.done .gp-btn { color:#5fd49a; border-color:#2a5040; }
+#game-pick .gp-list[hidden] { display:none; }
+#game-pick .gp-list {
+  position:absolute; left:0; min-width:100%; top:calc(100% + 4px); z-index:60;
+  max-height:70vh; overflow:auto; padding:5px;
+  background:#12121c; border:1px solid #3b3b5f; border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.6);
+}
+#game-pick .gp-row {
+  display:flex; align-items:center; gap:8px; width:100%; padding:6px 9px; text-align:left; cursor:pointer;
+  border:0; border-radius:6px; background:none; color:#c9c9e0; white-space:nowrap;
+  font-family:inherit; font-size:13px; font-weight:700; line-height:1.4;
+}
+#game-pick .gp-row:hover, #game-pick .gp-row.on { background:#1e2740; color:#e8e6f5; }
+#game-pick .gp-row.done { color:#5fd49a; }
+#game-pick .gp-dot { width:8px; height:8px; border-radius:50%; background:#7ea6ff; flex:0 0 auto; }
+#game-pick .gp-ck { color:#5fd49a; flex:0 0 auto; }
+#game-pick .gp-v { color:#6f6f92; font-weight:600; }
+#game-pick .gp-left { margin-left:auto; padding-left:14px; color:#6f6f92; font-weight:600; font-size:11px; font-variant-numeric:tabular-nums; }
+#game-pick .gp-left em { font-style:normal; color:#b89cff; }
 #filter { flex:1 1 200px; min-width:140px; }
 
 #stats { display:flex; gap:6px; font-size:11px; flex-wrap:wrap; }
@@ -203,9 +250,6 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .todo-fr u { text-decoration:none; font:700 10px/1 inherit; letter-spacing:1px; color:#7a68a8; margin-right:7px; }
 .todo-fr s { color:#6f6f92; margin-right:6px; }
 #stats span.todo { background:#2a2240; color:#b89cff; cursor:pointer; }
-#game-pick.done { border-color:#2a5040; color:#5fd49a; }
-#game-pick option { color:#e8e6f5; background:#0b0b12; }
-#game-pick option.done { color:#5fd49a; }
 
 .val { margin-top:5px; font-size:14px; font-weight:500; color:#e8e6f5; white-space:pre-wrap; word-break:break-word; cursor:text; }
 .val:empty::before { content:"(empty)"; color:#4f4f6b; font-style:italic; }
@@ -240,6 +284,22 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 .use.more { font-size:11px; color:#5d5d7c; }
 .meta .pill.unused { background:#2a1a24; color:#e07aa8; }
 
+/* The surface: what the words are printed on. One hue per family — the
+   listing outside the game, the shell around the round, the round itself,
+   the content a player reads at leisure, and grey where the source is mute. */
+.sf { display:inline-flex; align-items:baseline; gap:5px; padding:2px 8px; border-radius:5px; font-size:10px; font-weight:800;
+  letter-spacing:.6px; text-transform:uppercase; white-space:nowrap; background:#1b1b2b; color:#9c9cba; }
+.sf small { font-size:10px; font-weight:600; letter-spacing:.2px; text-transform:none; opacity:.75; }
+.sf.site, .sf.meta, .sf.storeimg, .sf.gallery { background:#13263a; color:#6cc4ff; }
+.sf.title, .sf.help, .sf.menu, .sf.end, .sf.level { background:#1e2236; color:#a4b4ff; }
+.sf.hud, .sf.canvas, .sf.float { background:#2a2214; color:#e8b860; }
+.sf.callout { background:#33162a; color:#ff7ac8; }
+.sf.notice { background:#13281f; color:#5fd49a; }
+.sf.card, .sf.panel, .sf.barracks, .sf.mission, .sf.event { background:#271a38; color:#c79cff; }
+.sf.data, .sf.code { background:#1a1a24; color:#7a7a96; }
+.use-h .sf { padding:1px 6px; margin-right:3px; }
+#surface-pick { max-width:190px; }
+
 .loading { padding:60px 0; display:flex; flex-direction:column; align-items:center; gap:14px; color:#6f6f92; }
 .spin { width:28px; height:28px; border-radius:50%; border:3px solid #26263c; border-top-color:#7ea6ff; animation:spin .8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -263,7 +323,7 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 
 <div id="head">
   <h1>Copy desk<small id="sub">every word a game shows</small></h1>
-  <select id="game-pick"></select>
+  <div id="game-pick"><button type="button" class="gp-btn" title="the game this page reads"></button><div class="gp-list" hidden></div></div>
   <div id="modes">
     <button data-mode="fr" class="on">FR</button>
     <button data-mode="en">EN</button>
@@ -273,6 +333,7 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
   </div>
   <button id="todo" title="show only what is left to read">Hide checked</button>
   <input type="text" id="filter" placeholder="filter — a word, a context, a file  ( / )">
+  <select id="surface-pick" title="keep the rows printed on one surface"><option value="">Every surface</option></select>
   <div id="stats"></div>
   <button id="apply">Apply</button>
 </div>
@@ -288,9 +349,11 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
    spliced over — see tools/lab/apply-text.mjs.
    --------------------------------------------------------------------------- */
 var $ = function (id) { return document.getElementById(id); };
-var scan = null, plan = {}, mode = "fr", filter = "";
+var scan = null, plan = {}, mode = "fr", filter = "", surface = "";
 var drop = {};                              // id → true: an unused entry APPLY removes
-var status = {}, titles = {};               // slug → what the server says of it, and its name
+// Not `status`: a global of that name IS window.status, which turns any
+// object written into it into a string, so no game could ever go green.
+var gameStatus = {}, titles = {};           // slug → what the server says of it, and its name
 var hideChecked = false;
 var loading = null;                         // the slug being fetched, or null
 
@@ -312,6 +375,30 @@ function preview(text) {
 }
 
 function hasMarkup(text) { return /<[a-z/]/i.test(text); }
+
+/* --- surfaces ------------------------------------------------------------ */
+function surfaceDef(key) {
+  var list = (scan && scan.surfaces) || [];
+  for (var i = 0; i < list.length; i++) if (list[i].key === key) return list[i];
+  return { key: key, label: key, note: "" };
+}
+function surfacePill(s) {
+  if (!s) return "";
+  var d = surfaceDef(s.key);
+  return '<span class="sf ' + esc(s.key) + '" title="' + esc(d.note) + '">' + esc(d.label) +
+    (s.detail ? " <small>" + esc(s.detail) + "</small>" : "") + "</span>";
+}
+function surfacesOf(row) { return row.surfaces || (row.surface ? [row.surface] : []); }
+
+// The picker lists the surfaces this game actually uses, in the scanner's order.
+function drawSurfacePick() {
+  var pick = $("surface-pick"), used = {};
+  if (scan) scan.rows.forEach(function (r) { surfacesOf(r).forEach(function (s) { used[s.key] = (used[s.key] || 0) + 1; }); });
+  if (surface && !used[surface]) surface = "";
+  pick.innerHTML = '<option value="">Every surface</option>' + ((scan && scan.surfaces) || []).filter(function (d) { return used[d.key]; })
+    .map(function (d) { return '<option value="' + esc(d.key) + '"' + (d.key === surface ? " selected" : "") + ">" +
+      esc(d.label) + "  ·  " + used[d.key] + "</option>"; }).join("");
+}
 
 function changed(row) {
   if (!Object.prototype.hasOwnProperty.call(plan, row.id)) return false;
@@ -353,6 +440,7 @@ function drawUses(row) {
   var needle = esc(JSON.stringify(row.group === "words" ? row.context : row.text));
   var out = u.slice(0, 3).map(function (x) {
     var head = [];
+    if (x.surface && (row.group === "words" || surfacesOf(row).length > 1)) head.push(surfacePill(x.surface));
     if (row.group === "words" && x.context) head.push("<b>" + esc(x.context) + "</b>");
     if (x.fn) head.push("in <code>" + esc(x.fn) + "</code>");
     head.push('<span class="ln">' + esc((x.file || "game.js") + (x.line ? ":" + x.line : "")) + "</span>");
@@ -372,6 +460,8 @@ function drawRow(row) {
 
   var sites = row.targets.length;
   var bits = [];
+  surfacesOf(row).slice(0, 3).forEach(function (s) { bits.push(surfacePill(s)); });
+  if (surfacesOf(row).length > 3) bits.push('<span class="pill">+' + (surfacesOf(row).length - 3) + "</span>");
   bits.push('<span class="ctx">' + esc(row.context) + "</span>");
   bits.push('<span class="at" title="click to copy">' + esc(where(row)) + "</span>");
   if (sites > 1) {
@@ -426,8 +516,10 @@ function matches(row) {
   if (hideChecked && checked(row) && !todo(row)) return false;
   // A string with no language is read in both, so both modes show it.
   if (mode !== "all" && row.lang !== mode && row.lang !== "all") return false;
+  if (surface && !surfacesOf(row).some(function (s) { return s.key === surface; })) return false;
   if (!filter) return true;
   var hay = (row.context + " " + valueOf(row) + " " + where(row) + " " + (row.other || "") + " " + (row.hint || "") + " " +
+    surfacesOf(row).map(function (s) { return surfaceDef(s.key).label + " " + (s.detail || ""); }).join(" ") + " " +
     (row.uses || []).map(function (u) { return (u.fn || "") + " " + (u.context || ""); }).join(" ")).toLowerCase();
   return hay.indexOf(filter) >= 0;
 }
@@ -589,6 +681,7 @@ function load(slug) {
   plan = {};
   drop = {};
   scan = null;
+  drawSurfacePick();
   loading = slug || null;
   draw();
   if (!slug) return;
@@ -599,6 +692,7 @@ function load(slug) {
       loading = null;
       scan = data;
       proposeDrops();
+      drawSurfacePick();
       draw();
     })
     .catch(function (e) {
@@ -619,6 +713,14 @@ function report(res) {
   (res.removed || []).forEach(function (d) {
     html += '<p class="ok">' + esc(d.what) + "<small>removed from manifest.json &mdash; &ldquo;" + esc(d.text) + "&rdquo;</small></p>";
   });
+  if (res.retranslated && res.retranslated.length) {
+    html += '<p>English adapted to the new French &mdash; unchecked, to be read</p>';
+    res.retranslated.forEach(function (t) {
+      html += '<p class="ok">' + esc(t.what) + "<small>" + (t.kept ? "kept &mdash; &ldquo;" + esc(t.from) + "&rdquo; still says it"
+        : "&ldquo;" + esc(t.from) + "&rdquo; &rarr; &ldquo;" + esc(t.to) + "&rdquo; · " + esc(t.where)) + "</small></p>";
+    });
+  }
+  if (res.translateError) html += '<p class="no">' + esc(res.translateError) + "</p>";
   if (res.todo && res.todo.length) html += '<p>' + res.todo.length + " English string" + (res.todo.length > 1 ? "s" : "") +
     " to update after the French &mdash; the <b>To update</b> mode lists them</p>";
   res.skipped.forEach(function (s) { html += '<p class="no">' + esc(s) + "</p>"; });
@@ -636,13 +738,15 @@ $("apply").addEventListener("click", function () {
     return { id: r.id, was: r.text, text: plan[r.id] };
   });
   var remove = scan.rows.filter(dropped).map(function (r) { return { id: r.id, was: r.text }; });
-  $("apply").innerHTML = "Applying…";
+  // A French edit waits on the English pass (~5 s), so say so.
+  $("apply").innerHTML = edits.some(function (e) { var r = rowById(e.id); return r && r.lang === "fr"; })
+    ? "Applying + EN…" : "Applying…";
   fetch("api/apply", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ game: scan.slug, edits: edits, remove: remove })
   }).then(function (r) { return r.json(); }).then(function (res) {
-    if (res.scan) { scan = res.scan; plan = {}; proposeDrops(); }
+    if (res.scan) { scan = res.scan; plan = {}; proposeDrops(); drawSurfacePick(); }
     setStatus(res.status);
     // A refused edit keeps its typing, so it can be looked at rather than lost.
     (res.skipped || []).forEach(function (s) {
@@ -654,16 +758,16 @@ $("apply").addEventListener("click", function () {
 });
 
 $("filter").addEventListener("input", function () { filter = this.value.trim().toLowerCase(); draw(); });
+$("surface-pick").addEventListener("change", function () { surface = this.value; draw(); });
 var picked = "";
-$("game-pick").addEventListener("change", function () {
-  if (countEdits() && !confirm(countEdits() + " unapplied change(s) on " + scan.title + " — drop them?")) {
-    this.value = picked;
-    return;
-  }
-  picked = this.value;
-  this.className = status[picked] && status[picked].done ? "done" : "";
-  load(this.value);
-});
+function pickGame(slug) {
+  pickOpen(false);
+  if (slug === picked) return;
+  if (countEdits() && !confirm(countEdits() + " unapplied change(s) on " + scan.title + " — drop them?")) return;
+  picked = slug;
+  drawPicker();
+  load(slug);
+}
 $("stats").addEventListener("click", function (e) {
   if (!e.target.closest("#todo-chip")) return;
   setMode("todo");
@@ -692,36 +796,86 @@ document.addEventListener("keydown", function (e) {
 
 /* The manifests only, so the picker is up at once; nothing is parsed until a
    game is chosen. */
-var versions = {};
+var versions = {}, order = [], pickIdx = -1;
 fetch("api/games").then(function (r) { return r.json(); }).then(function (list) {
-  $("game-pick").innerHTML = '<option value="">Choose a game</option>' + list.map(function (g) {
-    titles[g.slug] = g.title;
-    versions[g.slug] = g.version;
-    return '<option value="' + esc(g.slug) + '"></option>';
-  }).join("");
-  list.forEach(function (g) { drawOption(g.slug); });
+  list.forEach(function (g) { titles[g.slug] = g.title; versions[g.slug] = g.version; });
+  order = list.map(function (g) { return g.slug; });
+  drawPicker();
   // Every game's status, read after the picker is up: it parses what the
   // server has not cached yet (~2 s cold).
   return fetch("api/status").then(function (r) { return r.json(); }).then(setStatus);
 });
 
-/* A game every row of which is checked — nothing untranslated, nothing left to
-   update — is green, and wears a tick, since a native popup may draw the
-   options without their colour. */
-function drawOption(slug) {
-  var opt = $("game-pick").querySelector('option[value="' + CSS.escape(slug) + '"]');
-  if (!opt) return;
-  var st = status[slug];
-  var txt = (st && st.done ? "\u2713 " : "") + (titles[slug] || slug) + (versions[slug] ? "  ·  v" + versions[slug] : "");
-  if (st && !st.done) txt += "  ·  " + st.checked + "/" + st.total + (st.todo ? "  ·  " + st.todo + " to update" : "");
-  opt.textContent = txt;
-  opt.className = st && st.done ? "done" : "";
-  if (slug === picked) $("game-pick").className = opt.className;
+/* ── the game picker ──────────────────────────────────────────────────────
+   One button, and a list under it. A game every row of which is checked —
+   nothing untranslated, nothing left to update — wears a tick and goes
+   green; any other says how far along it is, and how many rows to update. */
+function pickDone(slug) { return !!(gameStatus[slug] && gameStatus[slug].done); }
+
+function pickEntry(slug, inList) {
+  var st = gameStatus[slug];
+  var html = (inList && slug === picked ? '<span class="gp-dot"></span>' : "") +
+    (pickDone(slug) ? '<span class="gp-ck">\u2713</span>' : "") +
+    "<span>" + esc(titles[slug] || slug) +
+    (versions[slug] ? ' <span class="gp-v">· v' + esc(versions[slug]) + "</span>" : "") + "</span>";
+  if (inList && st && !st.done) {
+    html += '<span class="gp-left">' + st.checked + "/" + st.total +
+      (st.todo ? " · <em>" + st.todo + " to update</em>" : "") + "</span>";
+  }
+  return html;
 }
+
+function drawPicker() {
+  var box = $("game-pick");
+  box.classList.toggle("done", !!picked && pickDone(picked));
+  box.querySelector(".gp-btn").innerHTML = picked ? pickEntry(picked, false) : "<span>Choose a game</span>";
+  box.querySelector(".gp-list").innerHTML = order.map(function (slug, i) {
+    return '<button type="button" class="gp-row' + (pickDone(slug) ? " done" : "") + (i === pickIdx ? " on" : "") +
+      '" data-slug="' + esc(slug) + '">' + pickEntry(slug, true) + "</button>";
+  }).join("");
+}
+
+function pickOpen(on) {
+  var box = $("game-pick"), list = box.querySelector(".gp-list");
+  list.hidden = !on;
+  box.classList.toggle("open", on);
+  if (!on) return;
+  pickIdx = Math.max(0, order.indexOf(picked));
+  drawPicker();
+  var cur = list.querySelector(".gp-row.on");
+  if (cur) cur.scrollIntoView({ block: "nearest" });
+}
+
+(function wirePicker() {
+  var box = $("game-pick"), btn = box.querySelector(".gp-btn"), list = box.querySelector(".gp-list");
+  btn.addEventListener("click", function () { pickOpen(list.hidden); });
+  list.addEventListener("click", function (e) {
+    var r = e.target.closest(".gp-row");
+    if (r) pickGame(r.dataset.slug);
+  });
+  box.addEventListener("keydown", function (e) {
+    if (list.hidden) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); pickOpen(true); }
+      return;
+    }
+    if (e.key === "Escape") { e.preventDefault(); pickOpen(false); btn.focus(); return; }
+    if (e.key === "Enter") { e.preventDefault(); if (order[pickIdx]) pickGame(order[pickIdx]); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    pickIdx = Math.max(0, Math.min(order.length - 1, pickIdx + (e.key === "ArrowDown" ? 1 : -1)));
+    drawPicker();
+    var on = list.querySelector(".gp-row.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  });
+  // A click anywhere else, or the window losing focus, closes it.
+  document.addEventListener("mousedown", function (e) { if (!box.contains(e.target)) pickOpen(false); });
+  window.addEventListener("blur", function () { pickOpen(false); });
+})();
 
 function setStatus(map) {
   if (!map) return;
-  Object.keys(map).forEach(function (slug) { status[slug] = map[slug]; drawOption(slug); });
+  Object.keys(map).forEach(function (slug) { gameStatus[slug] = map[slug]; });
+  drawPicker();
 }
 
 // A line in the report box, for what a click did beyond the row it was on.

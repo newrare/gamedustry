@@ -86,8 +86,8 @@ const dest = (argv.find((a) => a.startsWith('--dest=')) || '--dest=site').split(
 const only = (argv.find((a) => a.startsWith('--game=')) || '').split('=')[1] || null;
 /* --lab: the web build of the TEMPLATE too, at dist/web/template/. The template
    ships nowhere, so no outlet asks for it; the events bench does
-   (tools/lab/serve-events.mjs), because the end screen's cues are the
-   template's clips and they are auditioned through the motor like any game's.
+   (tools/lab/serve-events.mjs), because the template's starter game is the
+   picker's first entry and its callouts are fired through the motor like any game's.
    build-site.mjs copies the games of its catalogue and nothing else, and it
    rebuilds dist/web without this flag, so the template never reaches the site. */
 const LAB = argv.includes('--lab');
@@ -671,7 +671,7 @@ async function kitJs(web, manifest, configSrc) {
   }
   const mapped = new Set(Object.values(map));
   const meta = [], entries = [];
-  for (const { id, role, variant, shell, v } of all) {
+  for (const { id, role, variant, shell } of all) {
     // A shell role is the shell's: every web build, and a playable's end screen.
     // A gameplay variant ships only to a game that maps a key to it.
     const wanted = mapped.has(id) || (shell && (web || (kit.playable || []).includes(role)));
@@ -683,7 +683,7 @@ async function kitJs(web, manifest, configSrc) {
       entries.push(`    "kit-${stem}-${n + 1}": "data:audio/mpeg;base64,${buf.toString('base64')}"`);
       n++;
     }
-    if (n) meta.push(`    ${JSON.stringify(id)}: { key: "kit-${stem}", n: ${n}, jitter: ${Number(v.jitter) || 0} }`);
+    if (n) meta.push(`    ${JSON.stringify(id)}: { key: "kit-${stem}", n: ${n} }`);
   }
   if (!entries.length) return '';
   const sfx = Object.keys(map).length

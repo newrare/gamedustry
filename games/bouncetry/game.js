@@ -2011,8 +2011,7 @@
       if (boardDone()) clearBoard();
     }
     function popBonus(kind) {
-      Pop.show("combo", { word: BONUS[kind].word, sub: BONUS[kind].sub, at: popAt(),
-                          cls: kind === B_BOMB ? "pop-blast" : "" });
+      Notify.say(BONUS[kind].word, { sub: BONUS[kind].sub });
     }
     function smashRing(k, depth) {
       var dc, dr;

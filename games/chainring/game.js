@@ -6,7 +6,7 @@
     /* The intro carries one sentence and nothing else — the title, the second
        line of copy and the demo caption are hidden in the SKIN, because the
        animated stage below already shows the whole mechanic. */
-    tagline: "Tap to the beat, at the exact instant a <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">ring</b>",
+    tagline: "Tap to the beat, at the exact instant the <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">light ring</b>. Don't tap the dark rings",
     gameSeconds: 30,
     storeUrl: {
       ios:     "https://newrare.app/#playables",
@@ -32,14 +32,14 @@
        those 64 beats so the grid never shifts, and Beat hands the game a clock
        locked to it — every ring is launched and lands on that grid. Re-measure
        these three numbers if the track is ever re-cut or re-encoded.          */
-    music: { volume: 0.10, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64,
+    music: { volume: 0.20, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64,
              /* The web menus' bed: the soft passage of Glacier's track (bars
                 53-68), which the web build ships as `music` — see `beds`
                 below. A playable has no menu and never reads it. */
              menu: { from: 99.985, length: 32.2, bpm: 125, beatOffset: 0.145, beats: 64,
                      gain: 1.1, fade: 1.8 } },
     copy: {
-      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      start:"Play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
       endScore:"Final score", gameOver:"Game over", timeUp:"Time's up!"
     },
@@ -264,7 +264,7 @@
       rewind: { word: "Rewind ring", sub: "Tap it: the rings behind back off, then rush in", icon: "info" },
       sticky: { word: "Sticky ring", sub: "Tap when the ball lands, and again when it leaves", icon: "hourglass" },
       dark:   { word: "Dark ring",   sub: "Don't tap: let the ball bounce off it", icon: "warn" },
-      gap:    { word: "Mixed ring",  sub: "Dark part: don't tap. Bright part: tap", icon: "eye" }
+      gap:    { word: "Mixed ring",  sub: "Tap only the bright parts, never the dark ones", icon: "eye" }
     };
     // Timing grades, tightest window first: higher tier = more points + juice.
     // `win` is how far off the beat the tap may be, **in beats** — a ring lands
@@ -732,8 +732,7 @@
       Fx.flash(src.color, 0.3);
       Fx.shake(14, 0.3);
       Overlay.vignette(src.color, 1, 500);
-      Pop.show("combo", { word: "Rewind", enter: 200, hold: 380, exit: 220 });
-      Sound.clip("rewind", 0.85);
+      Sound.clip("rewind", 0.3);
     }
     // Out fast, then back in on an accelerating curve that flattens onto the
     // ring's own speed just before it lands.
@@ -787,7 +786,7 @@
       if (seg.stick) return;
       Fx.burst(seg.x1, seg.y1, { color: seg.color, count: 6, speed: 280, size: 5, life: 0.35 });
       spawnShock(seg.bar ? seg.ring.land : arenaR, seg.color, 0.5);
-      if (seg.ring.kind === "sticky") Sound.clip("stick", 0.7);
+      if (seg.ring.kind === "sticky") Sound.clip("stick", 0.14);
     }
 
     /* =====================================================================
@@ -802,7 +801,7 @@
       Round.reset();
       if (!readyPop) {
         readyPop = true;
-        Pop.show("alert", { word: "Get ready", sub: "Feel the beat", hold: 700 });
+        Pop.show("score", { word: "Get ready", sub: "Feel the beat", hold: 700, at: "top" });
       }
       if (startAt === null && (Beat.locked() || heldT >= CONFIG.leadInMax)) {
         startAt = Beat.on() ? Beat.next(1) + CONFIG.leadInBeats : Beat.beats();
@@ -829,8 +828,8 @@
     function release() {
       held = false;
       Fx.flash("#ffffff", 0.18);
-      Pop.show("alert", { word: "Go!", hold: 200 });
-      if (FULL) Notify.say("Full track", { sub: "The round lasts the whole song", kind: "info", icon: "hourglass" });
+      Pop.show("score", { word: "Go!", hold: 200, at: "top" });
+      if (FULL) Notify.say("Full track", { sub: "The round lasts the whole track", kind: "info", icon: "hourglass" });
     }
 
     // Timer out: a spiked ring is released. It cannot be tapped away — when it
@@ -839,8 +838,7 @@
       // Just past the corners of the frame, not at spawnR: this one closes at a
       // fixed speed and must not take a beat longer than the rings do.
       doom = { r: 750 };
-      Sound.clip("doom", 0.85);                           // warm mallet taps, at pitch
-      Pop.show("danger", { word: "Sudden death", sub: "Dodge the spikes", hold: 1200 });
+      Sound.clip("doom", 0.4);                           // warm mallet taps, at pitch
       Overlay.vignette("#ff2d55", 1);                     // stays on until the end
     }
 
@@ -899,9 +897,9 @@
       Fx.shake(tier.shake * Math.min(1.4, cf), 0.22);
       // Pitch climbs with the chain for a rising, satisfying ladder of hits:
       // the sample is pitched by the timing tier, then by the combo depth.
-      Sound.clip("hit", 0.75, tier.rate + Math.min(combo, 14) * 0.045);
+      Sound.clip("hit", 0.3, tier.rate + Math.min(combo, 14) * 0.045);
       // A PERFECT gets a bright confirmation layered on top of the plink.
-      if (tier.name === "Perfect") Sound.clip("perfect", 0.55, 1 + Math.min(combo, 10) * 0.02);
+      if (tier.name === "Perfect") Sound.clip("perfect", 0.1, 1 + Math.min(combo, 10) * 0.02);
     }
 
     // Fired every `chainEvery` hits: stacked shockwaves, radial rays, an edge
@@ -973,7 +971,7 @@
         Pop.show("score", { word: bestGap > 0.7 ? Lang.t("Empty beat") : Lang.t("Miss"), cls: "pop-miss", hold: 180,
                             at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
         Fx.shake(5, 0.2);
-        Sound.clip("miss", 0.6);
+        Sound.clip("miss", 0.1);
       }
     }
 
@@ -985,7 +983,7 @@
       Pop.show("score", { word: Lang.t(ring.kind === "dark" ? "Dark ring" : "Dark part"), cls: "pop-miss", hold: 180,
                           at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
       Fx.shake(6, 0.22);
-      Sound.clip("dark", 0.6);
+      Sound.clip("dark", 0.1);
     }
 
     /* A ring left alone as it should be — a dark ring on the bounce off it, a
@@ -1000,7 +998,6 @@
       chance();
       var gained = Math.round(10 * combo * tier.mult);
       popRing(ring, tier, gained);
-      Sound.clip("dodge", 0.5, 1 + Math.min(combo, 10) * 0.03);
       HUD.setLeft("x" + combo, "Combo", combo >= CONFIG.chainEvery ? "hot" : "");
       if (combo % CONFIG.chainEvery === 0) triggerChain();
       lastFree = { ring: ring, hit: ring.hit, gained: gained };
@@ -1012,7 +1009,7 @@
       Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
       combo = 0; chance();                 // missed the beat (still a chance faced)
       HUD.setLeft("x0", "Combo");
-      Sound.clip("miss", 0.45, 1.15);      // quiet: the tap was never made
+      Sound.clip("miss", 0.07, 1.15);      // quiet: the tap was never made
     }
 
     // A sticky ring that has caught the ball is re-armed for its burst.
@@ -1027,13 +1024,13 @@
       }
       spawnShock(arenaR, ring.color, 1.2);
       Fx.shake(8, 0.2);
-      Sound.clip("burst", 0.7);
+      Sound.clip("burst", 0.75);
     }
     // A gap ring breaks: a bright part where the ball strikes it, a dive at the centre.
     function shatter(ring, x, y) {
       Fx.burst(x, y, { color: ring.color, count: 12, speed: 380, size: 5, life: 0.45 });
       Fx.burst(x, y, { color: "#ffffff", count: 5, speed: 300, size: 4, life: 0.35 });
-      Sound.clip("shatter", 0.6);
+      Sound.clip("shatter", 0.2);
     }
 
     /* One ring's life past its beat. A gap ring the ball goes through is

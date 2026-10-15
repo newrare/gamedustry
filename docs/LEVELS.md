@@ -473,7 +473,7 @@ always did, because there is no objective to have missed.
 ### What the end screen says, and the two ways out of it
 
 The title is the LEVEL's, not the game's: a round that met its objective reads
-**SCORES** and a round that missed it reads **ALMOST**, in the red the motor
+**SCORES** and a round that missed it reads **GAME OVER**, in the red the motor
 paints an untitled end screen with. "TORN APART" over a cleared level is a story
 about a viper that has nothing to do with the level.
 

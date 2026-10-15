@@ -87,7 +87,7 @@
       endlessPlay: "Start the endless run",
       bands: ["Warm-up", "Pressure", "Squeeze", "Overdrive", "Meltdown"],
       objective: "Objective", missed: "Objective missed",
-      scores: "Scores", almost: "Almost",
+      scores: "Scores", gameOver: "Game over",
       threeStars: "Three stars!", cleared: "Level cleared!",
       levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home",
       goals: "Objectives"
@@ -118,7 +118,7 @@
       endlessPlay: "Lancer la partie sans fin",
       bands: ["Echauffement", "Pression", "Etau", "Surrégime", "Fusion"],
       objective: "Objectif", missed: "Objectif manqué",
-      scores: "Scores", almost: "Presque",
+      scores: "Scores", gameOver: "Game over",
       threeStars: "Trois étoiles !", cleared: "Stage réussi !",
       levelsEntry: "Stages", map: "Carte", next: "Stage suivant", home: "Accueil",
       goals: "Objectifs"
@@ -131,7 +131,7 @@
      off — a capital carries none in this house. */
   var up = W.upper;
   var CAPS = ["title", "pick", "play", "replay", "takeRoad", "tutoPlay",
-    "endlessPlay", "objective", "missed", "scores", "almost",
+    "endlessPlay", "objective", "missed", "scores", "gameOver",
     "threeStars", "cleared", "levelsEntry", "map", "next", "locked", "tutoTag",
     "notTakenTag"
   ];
@@ -747,7 +747,7 @@
        being read — the stars, the coins and the stat rows are the whole
        screen, and "TORN APART" over them is a story about a viper that has
        nothing to do with a level having been cleared. A round that missed it
-       is ALMOST: the same screen, one word, in red, because the only thing the
+       is GAME OVER: the same screen, two words, in red, because the only thing the
        player needs told is which side of the objective they landed on.
 
        The three-star round is ended by the LEVEL and not by the game losing,
@@ -756,7 +756,7 @@
     /* The variant is the COLOUR the motor gives the title, and a missed
        objective wants the one it paints by default: `.eo-title` with no
        variant at all is the red one (packages/shell/motor.css). */
-    if (!st) { result.title = T.almost; result.variant = ""; }
+    if (!st) { result.title = T.gameOver; result.variant = ""; }
     else { result.title = T.scores; result.variant = st === 3 ? "perfect" : "win"; }
 
     /* The objective is the first thing the end screen has to answer, and the

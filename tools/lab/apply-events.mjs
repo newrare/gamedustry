@@ -12,8 +12,9 @@
 
     a call    the style of a Pop, its word, its anchor, the clip a cue names,
               its volume and its pitch — rewritten IN PLACE in
-              games/<slug>/game.js, one argument at a time. And one rewrite
-              of a whole call: a Notify.say turned into a Pop.show.
+              games/<slug>/game.js, one argument at a time. And two rewrites
+              of a whole call: a Notify.say turned into a Pop.show, and the
+              other way round.
 
     a clip    ASSETS.sounds.<key> re-cut from another file of
               assets/audio/sfx/ (ffmpeg, mono 32 kHz / 64 kbps, a 70 ms fade —
@@ -65,7 +66,9 @@ const FIELDS = {
   'Pop.text':        { word: { arg: 2, str: 1 } },
   'Notify.say':      { word: { arg: 0, str: 1 }, sub: { opt: 1 } },
   'Sound.clip':      { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } },
-  'Sound.cue':       { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } }
+  'Sound.cue':       { clip: { arg: 0, str: 1 }, vol: { arg: 1, fill: '0.8' }, rate: { arg: 2, fill: '1' } },
+  // A shell role a game plays itself (grudgeon's `deny`): its line's volume, like any cue's.
+  'Sound.ui':        { vol: { arg: 1, fill: '1' }, rate: { arg: 2, fill: '1' } }
 };
 
 /* ── a notice turned into a callout ───────────────────────────────────────
@@ -110,6 +113,50 @@ function convertNotify(src, call, set, edits, skip, label) {
     text: `Pop.show(${q(style)}${fields.length ? `, { ${fields.join(', ')} }` : ''})`,
     what: label,
     applied: { what: label, value: `Pop.show("${style}")`, line: call.line }
+  });
+}
+
+/* ── a callout turned into a notice ───────────────────────────────────────
+   `Pop.show(style, { word, sub, at, cls })` → `Notify.say(word, { sub, kind })`.
+   convertNotify read backwards: the word moves out of the options object into
+   the first position, the style goes, and a kind comes in its place — written
+   only when it is not `info`, the motor's default. A callout that names no
+   word says its style's own, which a notice does not have: it is refused
+   unless the bench typed one. What a notice has no use for (`at`, `cls`,
+   `rot`, `hold`) is dropped and named. */
+const KINDS = ['info', 'gain', 'good', 'warn', 'loss', 'rare'];
+function convertPop(src, call, set, edits, skip, label) {
+  const kind = set.kind == null || set.kind === '' ? 'info' : String(set.kind);
+  if (!KINDS.includes(kind)) { skip.push(`${label}: "${kind}" is not a Notify kind — not converted`); return; }
+  const spans = call.argSpans;
+  const raw = (sp) => src.slice(sp.start, sp.end).trim();
+  if (spans.length > 2) { skip.push(`${label}: more than two arguments — convert it by hand`); return; }
+  if (spans[1] && raw(spans[1])[0] !== '{') { skip.push(`${label}: the options are an expression — convert it by hand`); return; }
+
+  const opts = call.optSpans || {};
+  const pick = (name) => {
+    const srcText = opts[name] ? src.slice(opts[name].start, opts[name].end).trim() : null;
+    if (set[name] == null) return srcText;               // untouched on the bench
+    if (srcText != null && literal(srcText) == null) {
+      skip.push(`${label} ${name}: the source writes an expression (${srcText}) — kept as it is`);
+      return srcText;
+    }
+    return set[name] === '' ? null : q(set[name]);
+  };
+  const word = pick('word'), sub = pick('sub');
+  if (word == null) { skip.push(`${label}: no word — a notice has no style word to fall back on, type one`); return; }
+
+  const fields = [];
+  if (sub != null) fields.push(`sub: ${sub}`);
+  if (kind !== 'info') fields.push(`kind: ${q(kind)}`);
+  for (const k of Object.keys(opts)) {
+    if (k !== 'word' && k !== 'sub') skip.push(`${label}: ${k} dropped — a notice has no ${k === 'at' ? 'anchor' : k === 'hold' ? 'callout timing' : k}`);
+  }
+  edits.push({
+    start: call.callSpan.start, end: call.callSpan.end,
+    text: `Notify.say(${word}${fields.length ? `, { ${fields.join(', ')} }` : ''})`,
+    what: label,
+    applied: { what: label, value: `Notify.say(kind ${kind})`, line: call.line }
   });
 }
 
@@ -374,7 +421,7 @@ export function bumpPatch(version) {
 export async function applyEdits(slug, plan) {
   const { calls = [], sfx = [], kill = {}, bump = true, dry = false } = plan || {};
   const killCalls = kill.calls || [], killClips = kill.clips || [];
-  // The template (template/game.js) is a unit too: the end screen's cues.
+  // The template (template/game.js) is a unit too: the starter game every new game copies.
   const dir = unitDir(slug);
   const file = path.join(dir, 'game.js');
   const src = await readFile(file, 'utf8');
@@ -461,6 +508,11 @@ export async function applyEdits(slug, plan) {
     // A notice converted carries its word and sub along: one edit, not three.
     if (call.name === 'Notify.say' && edit.set && edit.set.as) {
       convertNotify(src, call, edit.set, edits, skipped, `${call.name}:${call.line}`);
+      continue;
+    }
+    // And a callout converted: its style dropdown reads `notify`.
+    if (call.name === 'Pop.show' && edit.set && edit.set.style === 'notify') {
+      convertPop(src, call, edit.set, edits, skipped, `${call.name}:${call.line}`);
       continue;
     }
     const spec = FIELDS[call.name];

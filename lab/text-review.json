@@ -1,36 +1,276 @@
 {
   "arcider": {
+    "game.js:1851.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-13"
+    },
+    "game.js:1851.Pop.show.callout.1": {
+      "text": "%",
+      "at": "2026-10-13"
+    },
+    "game.js:1854.Pop.show.callout": {
+      "text": "-",
+      "at": "2026-10-13"
+    },
+    "game.js:1854.Pop.show.callout.1": {
+      "text": "%",
+      "at": "2026-10-13"
+    },
+    "game.js:1873.Pop.show.callout": {
+      "text": "/",
+      "at": "2026-10-13"
+    },
+    "game.js:1873.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-13"
+    },
+    "game.js:2162.HUD.setLeft.hud-left-value": {
+      "text": "%",
+      "at": "2026-10-13"
+    },
+    "game.js:2172.Lang.t.translated-in-place": {
+      "text": "th",
+      "at": "2026-10-13"
+    },
+    "game.js:2172.Lang.t.translated-in-place.1": {
+      "text": "st",
+      "at": "2026-10-13"
+    },
+    "game.js:2172.Lang.t.translated-in-place.2": {
+      "text": "nd",
+      "at": "2026-10-13"
+    },
+    "game.js:2172.Lang.t.translated-in-place.3": {
+      "text": "rd",
+      "at": "2026-10-13"
+    },
+    "game.js:2172.Lang.t.translated-in-place.4": {
+      "text": "th",
+      "at": "2026-10-13"
+    },
+    "game.js:2482.Pop.show.callout": {
+      "text": " pilots left",
+      "at": "2026-10-13"
+    },
+    "game.js:2483.Pop.show.callout-sub": {
+      "text": "Win the race",
+      "at": "2026-10-13"
+    },
+    "game.js:2484.Pop.show.callout-sub.1": {
+      "text": "Goal: top ",
+      "at": "2026-10-13"
+    },
+    "game.js:2542.endRound.end-title": {
+      "text": "Race won!",
+      "at": "2026-10-13"
+    },
+    "game.js:2543.endRound.end-title.1": {
+      "text": "On the podium!",
+      "at": "2026-10-13"
+    },
+    "game.js:2543.endRound.end-title.2": {
+      "text": "Race finished!",
+      "at": "2026-10-13"
+    },
+    "game.js:HUD.setLeft.hud-left-label.shield": {
+      "text": "Shield",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.be-top": {
+      "text": "Be top ",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.cross-the-b-finish-line-b": {
+      "text": "Cross the <b>finish line</b>",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.final": {
+      "text": "Final ",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.finished": {
+      "text": "Finished · ",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.in": {
+      "text": " in ",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.km-h": {
+      "text": "km/h",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.reach-b-n-m-b": {
+      "text": "Reach <b>{n} m</b>",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.th": {
+      "text": "th",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.top": {
+      "text": "Top ",
+      "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.win-the-race-in-b-first-plac": {
+      "text": "Win the race in <b>first place</b>",
+      "at": "2026-10-13"
+    },
+    "game.js:Pop.show.callout-sub.recharge-your-shield": {
+      "text": "Recharge your shield",
+      "at": "2026-10-13"
+    },
+    "game.js:Pop.show.callout.first": {
+      "text": "First",
+      "at": "2026-10-13"
+    },
+    "game.js:Pop.show.callout.hull-critical": {
+      "text": "Hull critical",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Shield down",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Race again",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Start",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.desk.0": {
+      "text": "Tilt",
+      "at": "2026-10-13"
+    },
+    "game.js:config.tagline": {
+      "text": "Lean your ship <b class=\"w-press\">left or right</b> to <b class=\"w-pass\">overtake</b> and never break your <b class=\"w-shield\">shield</b>",
+      "at": "2026-10-13"
+    },
+    "game.js:config.title": {
+      "text": "Arcider",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between speed and safety.",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Tilt your ship",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Battle royale",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Retro-futuristic music",
+      "at": "2026-10-13"
+    },
     "manifest.json:copy.fr.tagline": {
-      "text": "Vingt pilotes s’affrontent dans une course arcade avec un léger soupçon de Battle Royale. Evite les pièges ainsi que les adversaires pour accélérer. Trouves le meilleur compromis entre vitesse ou récupération.",
-      "at": "2026-09-29"
+      "text": "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
+      "at": "2026-10-13"
     },
     "manifest.json:copy.fr.tags.0": {
-      "text": "Course",
-      "at": "2026-09-29"
+      "text": "Incline ton vaisseau",
+      "at": "2026-10-13"
     },
     "manifest.json:copy.fr.tags.1": {
       "text": "Battle Royale",
       "at": "2026-09-29"
     },
     "manifest.json:copy.fr.tags.2": {
-      "text": "Turbo",
-      "at": "2026-09-29"
+      "text": "Musique Retro Futuriste",
+      "at": "2026-10-13"
+    },
+    "manifest.json:description": {
+      "text": "Twenty pilots launch onto a bending neon highway and five of them reach the flag. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. A line across the tarmac marks each cut, green while you are inside the rank it asks for and red while you are not; cross one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Battle royale",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "Stay <b>alive</b> and win",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Choice",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "More speed, <b>or</b> refill your ship",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Retro",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "<b>Futuristic</b> race",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "Demanding",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for first <b>place</b>",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.0.kicker": {
-      "text": "Course en Battle Royale",
-      "at": "2026-09-29"
+      "text": "Battle Royale",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.0.line": {
-      "text": "Reste en <b>vie</b> pour gagner",
-      "at": "2026-09-29"
+      "text": "<b>Survis</b> et gagne",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.1.kicker": {
       "text": "Choix",
       "at": "2026-09-29"
     },
     "manifest.json:store.copy.fr.lines.1.line": {
-      "text": "<b>Vitesse</b> ou récupération",
-      "at": "2026-09-29"
+      "text": "Fonce <b>ou</b> recharge ton vaisseau",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.2.kicker": {
       "text": "Rétro",
@@ -38,23 +278,31 @@
     },
     "manifest.json:store.copy.fr.lines.2.line": {
       "text": "Course <b>futuriste</b>",
-      "at": "2026-09-29"
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.3.kicker": {
       "text": "30 stages",
-      "at": "2026-09-30"
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.3.line": {
       "text": "Difficulté <b>progressive</b>",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.4.kicker": {
-      "text": "Challenge",
-      "at": "2026-09-29"
+      "text": "Exigeant ",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.4.line": {
-      "text": "Obtiens le <b>meilleur score</b>",
-      "at": "2026-09-29"
+      "text": "Vise la première <b>place</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Lean your ship left or right to overtake and never break your shield",
+      "at": "2026-10-13"
+    },
+    "manifest.json:title": {
+      "text": "Arcider",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings. in ": {
       "text": " dans ",
@@ -64,37 +312,57 @@
       "text": " pilotes en lice",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Be top ": {
+      "text": "Sois top ",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Cross the <b>finish line</b>": {
+      "text": "Franchis la <b>ligne d'arrivée</b>",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Distance (m)": {
       "text": "Distance (m)",
       "at": "2026-09-29"
     },
     "manifest.json:web.copy.fr.strings.Eliminated": {
-      "text": "Éliminé",
-      "at": "2026-09-29"
+      "text": "Eliminé",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Final ": {
-      "text": "Finale ",
-      "at": "2026-09-29"
+      "text": "Finale à ",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Final position": {
-      "text": "Position finale",
-      "at": "2026-09-29"
+      "text": "Classement",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Finished · ": {
+      "text": "Terminé · ",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.First": {
+      "text": "Premier",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Goal: top ": {
+      "text": "Objectif : top ",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Hull critical": {
+      "text": "Bouclier critique",
+      "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-09-29"
-    },
-    "manifest.json:web.copy.fr.strings.Leader": {
-      "text": "Premier",
-      "at": "2026-09-30"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.ND": {
       "text": "e",
@@ -104,9 +372,13 @@
       "text": "Sur le podium !",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Places taken": {
+      "text": "Places gagnées",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.RD": {
       "text": "e",
@@ -121,8 +393,16 @@
       "at": "2026-09-29"
     },
     "manifest.json:web.copy.fr.strings.Race won!": {
-      "text": "Course gagnée !",
-      "at": "2026-09-29"
+      "text": "Victoire !",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Reach <b>{n} m</b>": {
+      "text": "Atteins <b>{n} m</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Recharge your shield": {
+      "text": "Recharge ton bouclier",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.ST": {
       "text": "er",
@@ -130,7 +410,7 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Shield": {
       "text": "Bouclier",
@@ -140,29 +420,65 @@
       "text": "Bouclier détruit",
       "at": "2026-09-30"
     },
+    "manifest.json:web.copy.fr.strings.Start": {
+      "text": "Démarrer",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.strings.TH": {
       "text": "e",
       "at": "2026-09-30"
     },
+    "manifest.json:web.copy.fr.strings.Tilt": {
+      "text": "Incliner",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Top ": {
       "text": "Top ",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Win the race": {
+      "text": "Gagne la course",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Win the race in <b>first place</b>": {
+      "text": "Termine la course <b>en tête</b>",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.strings.km/h": {
       "text": "km/h",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.nd": {
+      "text": "e",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.rd": {
+      "text": "e",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.st": {
+      "text": "er",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.th": {
+      "text": "e",
+      "at": "2026-10-13"
+    },
     "manifest.json:web.copy.fr.tagline": {
-      "text": "<b class=\"w-press\">Incline</b> ton vaisseau à droite ou à gauche pour <b class=\"w-pass\">gagner</b> des places sans jamais détruire ton <b class=\"w-shield\">bouclier</b>",
-      "at": "2026-09-30"
+      "text": "Penche ton vaisseau <b class=\"w-press\">à gauche ou à droite</b> pour <b class=\"w-pass\">doubler</b> sans jamais briser ton <b class=\"w-shield\">bouclier</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Win the race or reach <b>{n} m</b>",
+      "at": "2026-10-13"
     },
     "manifest.json:web.levels.copy.fr": {
       "text": "Gagne la course ou atteins <b>{n} m</b>",
@@ -170,25 +486,225 @@
     }
   },
   "blight": {
+    "game.js:1003.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1027.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1104.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1110.Pop.show.callout-sub": {
+      "text": " purified",
+      "at": "2026-10-14"
+    },
+    "game.js:1116.Pop.show.callout": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:1116.Pop.show.callout.1": {
+      "text": " streak",
+      "at": "2026-10-14"
+    },
+    "game.js:1148.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1148.Pop.show.callout-sub.1": {
+      "text": " fell",
+      "at": "2026-10-14"
+    },
+    "game.js:1221.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-14"
+    },
+    "game.js:1365.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-14"
+    },
+    "game.js:1442.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:2024.ctx.fillText.canvas-text": {
+      "text": "Next",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-label.popped": {
+      "text": "Popped",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.popped": {
+      "text": " popped",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.streak": {
+      "text": " streak",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.cascade": {
+      "text": "Cascade",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.purified": {
+      "text": "Purified!",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.the-rot-spreads": {
+      "text": "The rot spreads",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Contaminated!",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.rotLabel": {
+      "text": "Rot",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.rotten": {
+      "text": "The rot wins!",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:config.tagline": {
+      "text": "<b class=\"w-aim\">Aim</b>, <b class=\"w-fire\">shoot</b> and match 3 bubbles to push the black magic back",
+      "at": "2026-10-14"
+    },
+    "game.js:config.title": {
+      "text": "Blight",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-1-label.bubbles-cleared": {
+      "text": "Bubbles cleared",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-2-label.max-chain": {
+      "text": "Max chain",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-3-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "A magic bubble shooter where you must outpace the evil gnawing at the bubbles. Be quick, and outsmart the blight.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Aim fast",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Cluster of three",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Race the rot",
+      "at": "2026-10-14"
+    },
     "manifest.json:copy.fr.tagline": {
-      "text": "Un Bubble Shooter mais avec un vrai Twist : sois plus rapide et plus stratégique que la contamination des bulles.",
-      "at": "2026-09-29"
+      "text": "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
+      "at": "2026-10-14"
     },
     "manifest.json:copy.fr.tags.0": {
       "text": "Vise rapidement",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:copy.fr.tags.1": {
-      "text": "Bubble",
-      "at": "2026-09-29"
+      "text": "Grappe de trois",
+      "at": "2026-10-14"
     },
     "manifest.json:copy.fr.tags.2": {
       "text": "Contamination",
       "at": "2026-09-29"
     },
+    "manifest.json:description": {
+      "text": "Drag to aim, release to fire and match 3 bubbles to pop them — a cluster goes off one bubble at a time, each scoring on its own. Swap the loaded bubble for the next one whenever you like. Rainbows are jokers: one in the wall takes the colour of whatever lands on it, one fired into the rot gives a pocket of blighted bubbles their colour back — and those bubbles stay on the board. There is no clock: the blight winds up until the whole wall has turned, so the round is a race against it, and a cut-off bubble bursting on the floor pays a bonus on the way out.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Fast bubble",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "Pop faster than the <b>blight</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Super",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "Rainbow <b>versus</b> blight",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Darkness",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "Contain the <b>blight</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "Progressive difficulty",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
     "manifest.json:store.copy.fr.lines.0.kicker": {
-      "text": "Bubble Twist",
-      "at": "2026-09-29"
+      "text": "Fast Bubble",
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.0.line": {
       "text": "Sois plus rapide que la <b>contamination</b>",
@@ -199,36 +715,60 @@
       "at": "2026-09-29"
     },
     "manifest.json:store.copy.fr.lines.1.line": {
-      "text": "L’arc-en-ciel est la <b>solution</b>",
-      "at": "2026-09-29"
+      "text": "Arc-en-ciel <b>Versus</b> contamination",
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.2.kicker": {
-      "text": "Obscure",
-      "at": "2026-09-29"
+      "text": "Ténèbres",
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.2.line": {
-      "text": "La contamination doit être <b>contenue</b>",
-      "at": "2026-09-29"
+      "text": "Endigue la <b>contamination</b>",
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.3.kicker": {
       "text": "30 stages",
-      "at": "2026-09-30"
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.3.line": {
       "text": "Difficulté <b>progressive</b>",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.4.kicker": {
-      "text": "Challenge",
-      "at": "2026-09-29"
+      "text": "Difficulté progressive",
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.4.line": {
-      "text": "Obtiens le <b>meilleur score</b>",
-      "at": "2026-09-29"
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Aim, shoot and match 3 bubbles to push the black magic back",
+      "at": "2026-10-14"
+    },
+    "manifest.json:title": {
+      "text": "Blight",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. fell": {
+      "text": " tombées",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. popped": {
+      "text": " éclatées",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. purified": {
+      "text": " purifiées",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. streak": {
+      "text": " d'affilée",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Bubbles cleared": {
       "text": "Bulles éliminées",
@@ -238,13 +778,21 @@
       "text": "Cascade",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Contaminated!": {
+      "text": "Contaminé !",
+      "at": "2026-10-14"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Max chain": {
+      "text": "Chaîne max",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Next": {
       "text": "Suivant",
@@ -252,7 +800,11 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Popped": {
+      "text": "Eclatées",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Purified!": {
       "text": "Purifié !",
@@ -260,7 +812,7 @@
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Rot": {
       "text": "Infection",
@@ -268,7 +820,7 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Tap to play": {
       "text": "Tap pour jouer",
@@ -284,41 +836,843 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.tagline": {
       "text": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
       "at": "2026-09-29"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Score <b>{n}</b> before the blight takes the wall",
+      "at": "2026-10-14"
     },
     "manifest.json:web.levels.copy.fr": {
       "text": "Marque <b>{n}</b> avant la contamination totale",
       "at": "2026-09-29"
     }
   },
-  "echomaze": {
+  "bouncetry": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Interrupteurs",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Best combo": {
+      "text": "Meilleur combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "bridgessa": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "chainring": {
+    "game.js:1001.HUD.setLeft.hud-left-value": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:1808.endRound.end-title": {
+      "text": "Perfect",
+      "at": "2026-10-14"
+    },
+    "game.js:889.Pop.show.callout": {
+      "text": " x",
+      "at": "2026-10-14"
+    },
+    "game.js:889.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:922.Pop.show.callout-sub": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:922.Pop.show.callout-sub.1": {
+      "text": "  +",
+      "at": "2026-10-14"
+    },
+    "game.js:963.HUD.setLeft.hud-left-value": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:971.Pop.show.callout": {
+      "text": "Empty beat",
+      "at": "2026-10-14"
+    },
+    "game.js:971.Pop.show.callout.1": {
+      "text": "Miss",
+      "at": "2026-10-14"
+    },
+    "game.js:983.Pop.show.callout": {
+      "text": "dark",
+      "at": "2026-10-14"
+    },
+    "game.js:983.Pop.show.callout.1": {
+      "text": "Dark ring",
+      "at": "2026-10-14"
+    },
+    "game.js:983.Pop.show.callout.2": {
+      "text": "Dark part",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-label.combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-value.x0": {
+      "text": "x0",
+      "at": "2026-10-14"
+    },
+    "game.js:Notify.say.notice-sub.the-round-lasts-the-whole-tr": {
+      "text": "The round lasts the whole track",
+      "at": "2026-10-14"
+    },
+    "game.js:Notify.say.notice.full-track": {
+      "text": "Full track",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout-sub.feel-the-beat": {
+      "text": "Feel the beat",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.get-ready": {
+      "text": "Get ready",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.go": {
+      "text": "Go!",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.mega-bonus": {
+      "text": "Mega bonus",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Game over",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:config.tagline": {
+      "text": "Tap to the beat, at the exact instant the <b class=\"w-ball\">ball</b> hits a <b class=\"w-ring\">light ring</b>. Don't tap the dark rings",
+      "at": "2026-10-14"
+    },
+    "game.js:config.title": {
+      "text": "Chainring",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-1-label.perfect": {
+      "text": "Perfect",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-2-label.good": {
+      "text": "Good",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-3-label.miss": {
+      "text": "Miss",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-4-label.max-combo": {
+      "text": "Max combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Tap to the beat of the music. A hypnotic ball bounces inside endless rings.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Rhythm tap",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "On the beat, to the music",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Sudden death",
+      "at": "2026-10-14"
+    },
     "manifest.json:copy.fr.tagline": {
-      "text": "Seulement deux secondes pour mémoriser un labyrinthe. Retrouve le chemin grâce à l’écho des balles.",
-      "at": "2026-09-29"
+      "text": "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Tap rythmé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "En rythme et en musique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Mort subite",
+      "at": "2026-10-14"
+    },
+    "manifest.json:description": {
+      "text": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring. On the web the climb crosses five worlds, each with its own rings and its own rule: rewind rings that throw the others back, sticky rings that hold the ball, dark rings that must not be tapped, mixed rings whose dark parts the ball slips through untapped — and all four at once in the last.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Rhythm",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "Tap at the right <b>moment</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Perfect",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "Chain <b>perfects</b> to the music",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Satisfying",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "<b>Endless</b> bounce",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "<b>Progressive</b> difficulty",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Rythme",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Tape au bon <b>moment</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Perfect",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "Enchaîne les <b>perfect</b> en musique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Satisfaisant",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Rebond <b>infini</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Tap to the beat, at the exact instant a ball hits a ring",
+      "at": "2026-10-14"
+    },
+    "manifest.json:title": {
+      "text": "Chainring",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Close": {
+      "text": "Presque",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Dark part": {
+      "text": "Partie sombre",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Dark part: don't tap. Bright part: tap": {
+      "text": "Ne tape que sur les parties claires et ne fait rien sur les parties sombres",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Dark ring": {
+      "text": "Anneau sombre",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Don't tap: let the ball bounce off it": {
+      "text": "Ne tape pas : laisse la bille rebondir",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Empty beat": {
+      "text": "Temps mort",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Feel the beat": {
+      "text": "Ressent le rythme",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Full music": {
+      "text": "Musique complète",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Full track": {
+      "text": "Musique complète",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Game over": {
+      "text": "Game Over",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Get ready": {
+      "text": "Get ready",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Go!": {
+      "text": "Go !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Good": {
+      "text": "Bien",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Max combo": {
+      "text": "Combo max",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Mega bonus": {
+      "text": "Méga bonus",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Miss": {
+      "text": "Manqué",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Mixed ring": {
+      "text": "Anneau mixte",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.OK": {
+      "text": "OK",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Perfect": {
+      "text": "Parfait",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rewind ring": {
+      "text": "Anneau inverse",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Sticky ring": {
+      "text": "Anneau collant",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap it: the rings behind back off, then rush in": {
+      "text": "Frappe les anneaux perturbateurs",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap only the bright parts, never the dark ones": {
+      "text": "Ne tape que sur les parties claires et ne fait rien sur les parties sombres",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap when the ball lands, and again when it leaves": {
+      "text": "Frappe l'anneau lorsque la bille le touche puis tape de nouveau lorsqu'elle repart",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The round lasts the whole music": {
+      "text": "La partie dure toute la musique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The round lasts the whole track": {
+      "text": "La partie dure toute la musique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "Tape en rythme, à l'instant précis où la <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau clair</b>. Ne frappe pas les anneaux sombres",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Score <b>{n}</b> on the chart",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Marque <b>{n}</b> sur la partition",
+      "at": "2026-10-14"
+    }
+  },
+  "echomaze": {
+    "game.js:1219.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1222.Pop.show.callout": {
+      "text": " walls",
+      "at": "2026-10-14"
+    },
+    "game.js:1298.Pop.show.callout-sub": {
+      "text": "Gap sealed",
+      "at": "2026-10-14"
+    },
+    "game.js:1299.Pop.show.callout-sub.1": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1536.Pop.show.callout": {
+      "text": "Perfect read!",
+      "at": "2026-10-14"
+    },
+    "game.js:1536.Pop.show.callout.1": {
+      "text": "Escaped!",
+      "at": "2026-10-14"
+    },
+    "game.js:1537.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1803.endRound.end-title": {
+      "text": "Perfect read!",
+      "at": "2026-10-14"
+    },
+    "game.js:1804.endRound.end-title.1": {
+      "text": "Maze solved!",
+      "at": "2026-10-14"
+    },
+    "game.js:1805.endRound.end-title.2": {
+      "text": "So close!",
+      "at": "2026-10-14"
+    },
+    "game.js:1806.endRound.end-title.3": {
+      "text": "Great run!",
+      "at": "2026-10-14"
+    },
+    "game.js:1816.endRound.stat-row-1-value": {
+      "text": " pulses",
+      "at": "2026-10-14"
+    },
+    "game.js:1816.endRound.stat-row-1-value.1": {
+      "text": " pulse",
+      "at": "2026-10-14"
+    },
+    "game.js:2360.ctx.fillText.canvas-text": {
+      "text": "Exit",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-label.pulses": {
+      "text": "Pulses",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setRight.hud-right-label.walls": {
+      "text": "Walls",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.score-b-n-b-and-escape-in-b-": {
+      "text": "Score <b>{n}</b> and escape in <b>1</b> pulse",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.score-b-n-b-and-escape-in-b-#2": {
+      "text": "Score <b>{n}</b> and escape in <b>{p}</b> pulses",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.score-b-n-b-and-escape-the-m": {
+      "text": "Score <b>{n}</b> and escape the maze",
+      "at": "2026-10-14"
+    },
+    "game.js:Notify.say.notice-sub.break-the-crystal": {
+      "text": "Break the crystal",
+      "at": "2026-10-14"
+    },
+    "game.js:Notify.say.notice.exit-sealed": {
+      "text": "Exit sealed",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout-sub.found": {
+      "text": "Found",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout-sub.open-for-good": {
+      "text": "Open for good",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.door-forced": {
+      "text": "Door forced",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.last-pulse": {
+      "text": "Last pulse",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.one-way-valve": {
+      "text": "One-way valve",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Out of echoes!",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:config.tagline": {
+      "text": "<b class=\"w-echo\">Find</b> and aim the right way through the <b class=\"w-maze\">maze</b> to&nbsp;the&nbsp;<b class=\"w-exit\">exit</b>",
+      "at": "2026-10-14"
+    },
+    "game.js:config.title": {
+      "text": "Echomaze",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-1-label.bonus": {
+      "text": "Bonus",
+      "at": "2026-10-14"
+    },
+    "game.js:endRound.stat-row-2-label.valves": {
+      "text": "Valves",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Memorise and aim",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Echolocation",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Only one way out",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
+      "at": "2026-10-13"
     },
     "manifest.json:copy.fr.tags.0": {
       "text": "Mémorise et vise",
       "at": "2026-09-29"
     },
     "manifest.json:copy.fr.tags.1": {
-      "text": "Écholocation",
-      "at": "2026-09-29"
+      "text": "Echo localisation",
+      "at": "2026-10-13"
     },
     "manifest.json:copy.fr.tags.2": {
       "text": "Une seule sortie",
       "at": "2026-09-29"
     },
+    "manifest.json:description": {
+      "text": "An electric labyrinth is powered up for two seconds — the only look you ever get at it. Then everything goes out: the maze, the six mouths along its floor, even the walls of the arena. Fire pulses up into a mouth and the board exists only where one just hit it, arcing white and dying out over a couple of seconds, so you are echolocating a maze you can no longer see. Each mouth is a one-way flap — a pulse pushes through and it drops shut behind — and of the six, one leads to the gate at the top and five are dead ends.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Satisfying effects and sounds",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "<b>Fast</b> memorising",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Echo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "Use the <b>bounces</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Memorisation",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "A <b>joy</b> to run through",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 replayable procedural stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "Difficult",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
     "manifest.json:store.copy.fr.lines.0.kicker": {
-      "text": "Deux secondes",
-      "at": "2026-09-29"
+      "text": "Effets et sons satisfaisants",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.0.line": {
       "text": "Mémorisation <b>rapide</b>",
@@ -333,52 +1687,168 @@
       "at": "2026-09-29"
     },
     "manifest.json:store.copy.fr.lines.2.kicker": {
-      "text": "Satisfaisant",
-      "at": "2026-09-29"
+      "text": "Mémorisation",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.2.line": {
       "text": "Un <b>plaisir</b> à parcourir",
       "at": "2026-09-29"
     },
     "manifest.json:store.copy.fr.lines.3.kicker": {
-      "text": "30 stages",
-      "at": "2026-09-30"
+      "text": "30 stages procédurales rejouables",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.3.line": {
       "text": "Difficulté <b>progressive</b>",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.4.kicker": {
-      "text": "Challenge",
-      "at": "2026-09-29"
+      "text": "Difficile",
+      "at": "2026-10-13"
     },
     "manifest.json:store.copy.fr.lines.4.line": {
-      "text": "Obtiens le <b>meilleur score</b>",
-      "at": "2026-09-29"
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Find and aim the right way through the maze to the exit",
+      "at": "2026-10-14"
+    },
+    "manifest.json:title": {
+      "text": "Echomaze",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. Pulse": {
+      "text": " Impulsion",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings. pulse": {
+      "text": " impulsion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. pulses": {
+      "text": " impulsions",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. walls": {
+      "text": " murs",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Bonus": {
+      "text": "Bonus",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Break the crystal": {
+      "text": "Brise le cristal",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Door forced": {
+      "text": "Porte forcée",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Escaped!": {
+      "text": "Evadé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Exit": {
+      "text": "Sortie",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Exit sealed": {
+      "text": "Sortie verrouillée",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Found": {
+      "text": "Repérés",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Gap sealed": {
+      "text": "Passage scellé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Great run!": {
+      "text": "Beau parcours !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Last pulse": {
+      "text": "Dernière impulsion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Maze solved!": {
+      "text": "Labyrinthe résolu !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.One-way valve": {
+      "text": "Valve à sens unique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Open for good": {
+      "text": "Ouverte pour de bon",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Out of echoes!": {
+      "text": "Manque d'echo !",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Perfect read!": {
       "text": "Lecture parfaite !",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Pulse seals the gap": {
+      "text": "Passage scellé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Pulses": {
+      "text": "Impulsions",
+      "at": "2026-10-14"
+    },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
-    "manifest.json:web.copy.fr.strings.Tap to play": {
-      "text": "Tap pour jouer",
-      "at": "2026-09-29"
+    "manifest.json:web.copy.fr.strings.Score <b>{n}</b> and escape in <b>1</b> pulse": {
+      "text": "Marque <b>{n}</b> points et sors en <b>1</b> impulsion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score <b>{n}</b> and escape in <b>{p}</b> pulses": {
+      "text": "Marque <b>{n}</b> points et sors en <b>{p}</b> impulsions",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score <b>{n}</b> and escape the maze": {
+      "text": "Marque <b>{n}</b> points et sors du labyrinthe",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.So close!": {
+      "text": "Si proche !",
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-09-29"
+      "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.Valves": {
       "text": "Valves",
@@ -389,14 +1859,1182 @@
       "at": "2026-09-29"
     },
     "manifest.json:web.copy.fr.tagline": {
-      "text": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu’à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
-      "at": "2026-09-29"
+      "text": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu'à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Score <b>{n}</b> in the maze",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Marque <b>{n}</b> points dans le labyrinthe",
+      "at": "2026-10-13"
+    }
+  },
+  "gearball": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Best combo": {
+      "text": "Meilleur combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo lost": {
+      "text": "Combo perdu",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    }
+  },
+  "grudgeon": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "marshmelt": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:endRound.stat-row-3-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Best": {
+      "text": "Record",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best chain": {
+      "text": "Meilleure chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "orbinity": {
+    "game.js:HUD.setLeft.hud-left-label.combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaine les trajectoires sans erreur pour créer un combo!",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Joues avec la <b>gravité</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "Utilises les bonnes <b>trajectoires</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Enchaînes les <b>orbites</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings. lost": {
+      "text": " perdu",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best combo": {
+      "text": "Meilleur combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Chain reaction": {
+      "text": "Réaction en chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo lost": {
+      "text": "Combo perdu",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Cosmic!": {
+      "text": "Cosmique !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Last breath": {
+      "text": "Dernier souffle",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Lost in space": {
+      "text": "Perdu dans l'espace",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Moon hit": {
+      "text": "Lune percutée",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Overtime": {
+      "text": "Prolongation",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Planets hopped": {
+      "text": "Planètes visitées",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Solar wind": {
+      "text": "Vent solaire",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Supernova": {
+      "text": "Supernova",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Too slow": {
+      "text": "Trop lent",
+      "at": "2026-10-14"
+    }
+  },
+  "pawko": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Chain reaction": {
+      "text": "Réaction en chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "radiam": {
+    "game.js:1281.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1281.Pop.show.callout-sub.1": {
+      "text": " rays",
+      "at": "2026-10-14"
+    },
+    "game.js:1305.Pop.show.callout": {
+      "text": "Level ",
+      "at": "2026-10-14"
+    },
+    "game.js:1578.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1755.Pop.show.callout-sub": {
+      "text": " rays",
+      "at": "2026-10-14"
+    },
+    "game.js:1905.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1940.Pop.show.callout-sub": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:1943.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1945.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:1947.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-14"
+    },
+    "game.js:2623.ctx.fillText.canvas-text": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:2675.ctx.fillText.canvas-text": {
+      "text": "x",
+      "at": "2026-10-14"
+    },
+    "game.js:2675.ctx.fillText.canvas-text.1": {
+      "text": "  score",
+      "at": "2026-10-14"
+    },
+    "game.js:2875.endRound.end-title": {
+      "text": "Radiant!",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-label.best": {
+      "text": "Best",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setLeft.hud-left-label.level": {
+      "text": "Level",
+      "at": "2026-10-14"
+    },
+    "game.js:HUD.setRight.hud-right-label.rays": {
+      "text": "Rays",
+      "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.beads": {
+      "text": " beads",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.blast": {
+      "text": "Blast",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.double-ray": {
+      "text": "Double ray",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.frozen": {
+      "text": "Frozen",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.new-colour": {
+      "text": "New colour",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.nova": {
+      "text": "Nova",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.show.callout.triple-ray": {
+      "text": "Triple ray",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.text.floating-value.blocked": {
+      "text": "Blocked",
+      "at": "2026-10-14"
+    },
+    "game.js:Pop.text.floating-value.frozen": {
+      "text": "Frozen",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.eclipsed": {
+      "text": "Eclipsed!",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Jammed!",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "game.js:config.tagline": {
+      "text": "<b class=\"w-turn\">Turn</b> one or more rings to line up <b class=\"w-three\">three</b> beads on one <b class=\"w-ray\">ray</b>",
+      "at": "2026-10-14"
+    },
+    "game.js:config.title": {
+      "text": "Radiam",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Move the rings",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Three per ray",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Several special beads",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Déplace les anneaux",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Aligne trois billes",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Plusieurs billes spéciales",
+      "at": "2026-10-14"
+    },
+    "manifest.json:description": {
+      "text": "Three plates turn on one hub — teeth on the outer one — each carrying twelve coloured beads in its housings, over the twelve rays drawn between the hub and the rim. Drag a plate and it turns alone; the other two hold. Rays that would pay light up under the beads while you turn, so a plate is never moved blind, and the dial only cashes them once it comes to rest. A paid ray is re-fed from outside the rim, and the beads that fly in can land on a ray of their own, so one move can keep paying long after you let go. Every four rays the hub's meter buys a special bead, and a move that pays two rays at once — or a chain at x8 — buys a bigger one. There are eight of them and no level ever carries the whole catalogue: a Charge unzips the plate it sits on, a Nova is wild and takes its colour off the entire dial, a Bomb clears the board outright, a Fire takes the two rays either side, a Laser fires through the hub and out the far side, a Score bead arms an x2, x5 or x10 window, a Slow bead holds the eclipse back — and an Ice bead, the one you do not want, freezes the plate it breaks on. The thirty levels introduce them one at a time and run in five worlds, each with its own material for the beads and its own palette for the machine.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Gear",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "Turn <b>three</b> rings",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Explosion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "Maximise the <b>combinations</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "<b>Chain</b> reaction",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "Reflex and reflection",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Engrenage",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Tourne <b>trois</b> anneaux",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Explosion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "Maximise les <b>combinaisons</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Réaction en <b>chaîne</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Réflexe et réflexion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Turn one or more rings to line up three beads on one ray",
+      "at": "2026-10-14"
+    },
+    "manifest.json:title": {
+      "text": "Radiam",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.  score": {
+      "text": "  score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. beads": {
+      "text": " billes",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings. rays": {
+      "text": " rayons",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best": {
+      "text": "Record",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best chain": {
+      "text": "Meilleure chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Biggest blast": {
+      "text": "Plus grosse explosion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Blast": {
+      "text": "Explosion",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Blocked": {
+      "text": "Bloqué",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Combo": {
+      "text": "Combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Double ray": {
+      "text": "Double rayon",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Eclipsed!": {
+      "text": "Eclipsé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Frozen": {
+      "text": "Gelé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Jammed!": {
+      "text": "Coincé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Level": {
+      "text": "Niveau",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Level ": {
+      "text": "Niveau ",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.New colour": {
+      "text": "Nouvelle couleur",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Nova": {
+      "text": "Nova",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Radiant!": {
+      "text": "Radieux !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rays": {
+      "text": "Rayons",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rays popped": {
+      "text": "Rayons éclatés",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Ring cleared": {
+      "text": "Anneau nettoyé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Survived": {
+      "text": "Survie",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Triple ray": {
+      "text": "Triple rayon",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-turn\">Tourne</b> un ou plusieurs anneaux pour aligner <b class=\"w-three\">trois</b> billes sur un <b class=\"w-ray\">rayon</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Score <b>{n}</b> before the eclipse",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Marque <b>{n}</b> avant l’éclipse",
+      "at": "2026-10-14"
+    }
+  },
+  "slipdeck": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    }
+  },
+  "spinshock": {
+    "game.js:HUD.setLeft.hud-left-label.best": {
+      "text": "Best",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Replay the demo",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Toupie Vs toupie. Tap pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Best": {
+      "text": "Record",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best combo": {
+      "text": "Meilleur combo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.OK": {
+      "text": "OK",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Perfect": {
+      "text": "Parfait",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Replay the demo": {
+      "text": "Rejouer la démo",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tops destroyed": {
+      "text": "Toupies détruites",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Triple": {
+      "text": "Triple",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Wrecked": {
+      "text": "Fracassé",
+      "at": "2026-10-14"
     }
   },
   "stratideck": {
+    "army.js:fr.age": {
+      "text": "{n} ans",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.armyBlue": {
+      "text": "Armée bleue",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.armyRed": {
+      "text": "Camp rouge",
+      "at": "2026-10-14"
+    },
     "army.js:fr.bandBlue": {
       "text": "Bleu",
       "at": "2026-09-30"
+    },
+    "army.js:fr.bandMissions": {
+      "text": "Missions réussies",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.bandOwned": {
+      "text": "Collection",
+      "at": "2026-10-14"
     },
     "army.js:fr.bandRed": {
       "text": "Rouge",
@@ -406,23 +3044,677 @@
       "text": "Transfuge",
       "at": "2026-09-30"
     },
+    "army.js:fr.collTitle": {
+      "text": "Collection",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.cx_blue": {
+      "text": "Bleu",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.cx_obj": {
+      "text": "Objets",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.cx_red": {
+      "text": "Rouge",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.cx_turn": {
+      "text": "Transfuges",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.deck": {
+      "text": "Cartes",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.deckDrop": {
+      "text": "Laisser cette carte",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.deckFullWarn": {
+      "text": "Le deck est plein",
+      "at": "2026-10-14"
+    },
     "army.js:fr.deckSection": {
       "text": "Formation",
       "at": "2026-09-30"
+    },
+    "army.js:fr.deckTake": {
+      "text": "Mettre cette carte dans le deck",
+      "at": "2026-10-14"
     },
     "army.js:fr.deckTitle": {
       "text": "Deck",
       "at": "2026-09-30"
     },
+    "army.js:fr.defense": {
+      "text": "Défense",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.defenseTitle": {
+      "text": "Défense",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.dfOff": {
+      "text": "Absent",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.f_all": {
+      "text": "Toutes",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.f_had": {
+      "text": "Possédées",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.f_met": {
+      "text": "Rencontrées",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.f_miss": {
+      "text": "Manquantes",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.fileOpen": {
+      "text": "Lire la fiche de cet officier",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.fileTurn": {
+      "text": "Retourner la carte",
+      "at": "2026-10-14"
+    },
     "army.js:fr.fillBest": {
       "text": "Auto-complétion",
       "at": "2026-09-30"
+    },
+    "army.js:fr.filled1": {
+      "text": "1 carte ajoutée",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.filledN": {
+      "text": "{n} cartes ajoutées",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.g_female": {
+      "text": "Femelle",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.g_male": {
+      "text": "Mâle",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.g_man": {
+      "text": "Homme",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.g_woman": {
+      "text": "Femme",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.ghostBlue": {
+      "text": "Recrute cet officier pour lire sa fiche",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.ghostRed": {
+      "text": "Affronte cet officier au combat pour lire sa fiche",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.ghostTurn": {
+      "text": "Enrôle cet officier pour lire sa fiche",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infFree": {
+      "text": "Lit libre",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infFull": {
+      "text": "Infirmerie pleine",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infHealed": {
+      "text": "De nouveau sur pied",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infSub": {
+      "text": "{n} / {m} lits occupés",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infTitle": {
+      "text": "Infirmerie",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.infirmary": {
+      "text": "Infirmerie",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.locked": {
+      "text": "Verrouillé",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.next": {
+      "text": "Suivant",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.objBy": {
+      "text": "Détruit par : {g}",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.objGhostNone": {
+      "text": "Pas encore disponible",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.objKind": {
+      "text": "Objet",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.pickAll": {
+      "text": "Tous les grades",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.pickEmpty": {
+      "text": "Aucune carte n'est libre pour le deck",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.pickTitle": {
+      "text": "Choisis une carte",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prev": {
+      "text": "Précédent",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prison": {
+      "text": "Prison",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prisonFree": {
+      "text": "Cellule libre",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prisonFull": {
+      "text": "Prison pleine",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prisonSub": {
+      "text": "{n} / {m} cellules occupées",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.prisonTitle": {
+      "text": "Prison",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.recruit": {
+      "text": "Commandement",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.tab_coll": {
+      "text": "Collection",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.tab_deck": {
+      "text": "Deck",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.tab_roll": {
+      "text": "Camp",
+      "at": "2026-10-14"
+    },
+    "army.js:fr.turncoat": {
+      "text": "Transfuge",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Affrontes une armée de monstre et construit le meilleur Deck possible afin de gagner un maximum de bataille. Convertis les cartes adverses, soit stratégique en défense et positionnement. N'oublies pas aussi que la vie et la gestion du camp est une composante importante pour gagner une guerre. Collectionnes des centaines de cartes uniques!",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Gestion, stratégie et mémorisation",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Grade et Rang",
+      "at": "2026-10-14"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Collection et gestion de Deck",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Chaque carte est unique",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Gestion, stratégie et <b>mémorisation</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Collection et construction de Deck",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.helpRules.0": {
+      "text": "Chaque carte possède un particularité, un <b>Grade</b> (1 - 10) et un <b>Rang</b> (S - E). Le plus haut gagne.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.An ally falls": {
+      "text": "Un allié tombe",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.An ally is wounded": {
+      "text": "Un allié est blessé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Bewitched!": {
+      "text": "Ensorcelé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Book": {
+      "text": "Livre",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Book burnt": {
+      "text": "Livre brûlé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": {
+      "text": "L'éclaireur évite les combats et révèle à distance la force ennemi.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Fence chopped": {
+      "text": "Barrière abattue",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Fence!": {
+      "text": "Barrière !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Flag captured": {
+      "text": "Drapeau capturé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Forest": {
+      "text": "Forêt",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": {
+      "text": "L'espion peu battre un maréchal mais il n'est pas fait pour le champ de bataille.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Lost in the forest": {
+      "text": "Perdu en forêt",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.No card can move": {
+      "text": "Plus aucune carte ne bouge",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.No wounds": {
+      "text": "Aucune blessure",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Object": {
+      "text": "Objet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Out of the battle": {
+      "text": "Hors de combat",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Prisoner taken": {
+      "text": "Prisonnier capturé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Retrieve the enemy <b>flag</b>": {
+      "text": "Récupère le <b>drapeau</b> ennemi",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rock": {
+      "text": "Rocher",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rock smashed": {
+      "text": "Rocher brisé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rock!": {
+      "text": "Rocher !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Skull": {
+      "text": "Crâne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Skull shattered": {
+      "text": "Crâne brisé",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Straw man": {
+      "text": "Epouvantail",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Straw man torn": {
+      "text": "Epouvantail déchiré",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Straw man!": {
+      "text": "Epouvantail !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Struck down by an ally": {
+      "text": "Abattu par un allié",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Stunned for the battle": {
+      "text": "Etourdi jusqu'à la fin de la bataille",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Stunned!": {
+      "text": "Etourdi !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Take a <b>prisoner</b>": {
+      "text": "Fais un <b>prisonnier</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The highest grade: no soldier outranks it, but the spy kills it.": {
+      "text": "Invincible sur un champ de bataille mais peu se faire surprendre par un espion.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that burns the book without being bewitched.": {
+      "text": "Possède énormément de savoirs et ne peu pas être ensorcelé.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that chops down the wooden fence.": {
+      "text": "Aime découper des barrières de bois.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that clears a trap without being lost with it.": {
+      "text": "Désamorce un piège sans sauter avec lui.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that crosses the forest without getting lost.": {
+      "text": "Ne se perd jamais et surtout pas en forêt.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that shatters the skull without being stunned.": {
+      "text": "Courageux et briseur de crâne dans l’âme. ",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that smashes the rock.": {
+      "text": "Aime casser des pierres et des rochers.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The only grade that tears down the straw man.": {
+      "text": "Suffisamment stupide pour se battre contre un épouvantail.",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The spell hits no one": {
+      "text": "Le sort ne frappe personne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Unscathed": {
+      "text": "Indemne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Win with no <b>wounds</b>": {
+      "text": "Gagne sans <b>blessure</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Wooden fence": {
+      "text": "Barrière de bois",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Wounded by an ally": {
+      "text": "Blessé par un allié",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">grade</b> gagne",
+      "at": "2026-10-14"
+    }
+  },
+  "triverse": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the <b>best score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le <b>meilleur score</b>",
+      "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Best chain": {
+      "text": "Meilleure chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
     }
   },
   "vipera": {
+    "game.js:config.copy.ctaBar": {
+      "text": "Install now",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.ctaEnd": {
+      "text": "Play the full game",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.endScore": {
+      "text": "Final score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.scoreLabel": {
+      "text": "Score",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Tap to play",
+      "at": "2026-10-14"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-10-13"
+    },
+    "game.js:config.copy.timeUp": {
+      "text": "Time's up!",
+      "at": "2026-10-13"
+    },
+    "game.js:config.intro.caption": {
+      "text": "",
+      "at": "2026-10-13"
+    },
     "manifest.json:copy.fr.tagline": {
       "text": "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
       "at": "2026-10-01"
+    },
+    "manifest.json:store.copy.en.lines.3.kicker": {
+      "text": "30 levels",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.en.lines.3.line": {
+      "text": "<b>Rising</b> difficulty",
+      "at": "2026-10-13"
+    },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 stages",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.3.line": {
+      "text": "Difficulté <b>progressive</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:store.copy.fr.lines.4.line": {
+      "text": "Vise le meilleur <b>score</b>",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best chain": {
+      "text": "Meilleure chaîne",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.The eagle": {
+      "text": "L'aigle",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-14"
     }
   }
 }

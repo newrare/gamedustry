@@ -29,9 +29,9 @@
        no level and no menu, so it ships one window and plays all of it. */
     music: { volume: 0.10, fade: 1.8, menu: { from: 0, length: 36, rate: 0.85, gain: 0.5 } },
     copy: {
-      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      start:"Play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
-      endScore:"Final score", gameOver:"Out of pulses!", timeUp:"Time's up!"
+      endScore:"Final score", gameOver:"Out of echoes!", timeUp:"Time's up!"
     },
 
     /* THE FIVE BANDS OF THE CLIMB — one per six levels, and the level map
@@ -1212,7 +1212,7 @@
         mapped++;
         score += C.mapScore;
         HUD.setRight(mapped, "Walls");
-        Sound.clip("map", 0.34, Rand.range(0.96, 1.14));
+        Sound.clip("map", 0.5, Rand.range(0.96, 1.14));
         Fx.ring(x, y, { from: 3, to: 30 + 18 * power, color: ARC, width: 3, life: 0.22 });
         if (clock - lastText > 0.2) {
           lastText = clock;
@@ -1295,7 +1295,7 @@
       // Discreet on purpose: a valve is a consolation, not a win. It says its
       // name once, the first time, and is a plain score callout after that.
       Pop.show("score", { word: "One-way valve",
-                          sub: valves.length === 1 ? Lang.t("Spent pulse seals the gap")
+                          sub: valves.length === 1 ? Lang.t("Gap sealed")
                                                    : "+" + C.valveScore,
                           at: popAt(), hold: valves.length === 1 ? 620 : 240 });
     }
@@ -1352,8 +1352,6 @@
       Fx.burst(crystal.x, crystal.y, { color: [CRYSTAL, "#ffffff", "#ffd2f4"], count: 24,
                                        speed: 300, life: 0.55, size: 5 });
       Overlay.vignette(rgba(CRYSTAL, 0.8), 1, 900);
-      Pop.show("ultra", { word: "Crystal down!", sub: "Gate unlocked",
-                          at: popAt(), hold: 800 });
     }
 
     /* THE CEILING SHUTS — and it shuts when the round STARTS, never before.
@@ -1487,7 +1485,7 @@
       applySeal();
       Fx.ring(mx, M.y1, { from: 14, to: 130, color: SURGE, width: 5, life: 0.4 });
       Sound.clip("power", 0.45, 1.1);
-      Notify.say("Door forced", { sub: "Open for good", kind: "good", icon: "unlock" });
+      Pop.show("streak", { word: "Door forced", sub: "Open for good" });
       surgeSaid = true;
     }
 
@@ -1502,7 +1500,7 @@
       var climbed = M.rows - deepest;
       score += C.depthScore;
       HUD.setScore(score); HUD.punch(EXIT_COL);
-      Sound.clip("deep", 0.5, 0.94 + climbed * 0.07);
+      Sound.clip("deep", 0.3, 0.94 + climbed * 0.07);
       Fx.ring(b.x, b.y, { from: 10, to: 90, color: EXIT_COL, width: 4, life: 0.34 });
       // No callout for a row: the climb is what the whole board is doing, the
       // ring and the chime already mark it, and a green sticker every row was
@@ -1510,7 +1508,7 @@
     }
     function fizzle(b) {
       b.alive = false;
-      Sound.clip("fizzle", 0.5, Rand.range(0.94, 1.1));
+      Sound.clip("fizzle", 0.3, Rand.range(0.94, 1.1));
       Fx.burst(b.x, b.y, { color: [DYING, "#ffffff", "#ffb0cd"], count: 16, speed: 250,
                            life: 0.5, size: 5 });
       Fx.ring(b.x, b.y, { from: 6, to: 72, color: DYING, width: 5, life: 0.4 });
@@ -1560,12 +1558,12 @@
                    // opening is the valve it leaves behind when it burns out
                    row: null, gap: null });
       refreshHUD();
-      Sound.clip("shoot", 0.8, Rand.range(0.97, 1.07));
+      Sound.clip("shoot", 0.4, Rand.range(0.97, 1.07));
       Fx.shake(9, 0.2);
       Fx.burst(mx, my, { color: [PULSE.core, "#ffffff"], count: 12, speed: 380,
                          life: 0.3, angle: aimA, spread: 1.0 });
       Fx.ring(mx, my, { from: 10, to: 78, color: PULSE.core, width: 5, life: 0.26 });
-      if (queue === 1) Notify.say("Last pulse", { kind: "warn", icon: "hourglass" });
+      if (queue === 1) Pop.show("alert", { word: "Last pulse", at: "bottom" });
     }
 
     function stepBall(b, h) {
@@ -1718,7 +1716,7 @@
     function startRecap() {
       phase = "recap"; recapT = 0; recapStep = 0; recapRow = 0;
       balls = [];                                  // nothing left to simulate
-      Sound.clip("fail", 0.8);
+      Sound.clip("fail", 0.3);
       Overlay.vignette("rgba(255,45,120,.55)", 1, 900);
     }
 
@@ -1740,16 +1738,14 @@
         done = Math.floor(clamp((recapT - C.recapSurge) / C.recapSweep, 0, 1) * M.rows);
         while (recapRow < done) {
           recapRow++;
-          Sound.clip("map", 0.26, 0.88 + recapRow * 0.07);
+          Sound.clip("map", 0.2, 0.88 + recapRow * 0.07);
         }
       }
       // 2. the scan is at the ceiling: the whole maze is up, and the true
       //    corridor starts drawing itself out of its door
       if (recapStep === 1 && recapT >= C.recapSurge + C.recapSweep) {
         recapStep = 2;
-        Sound.clip("deep", 0.55, 0.82);
-        Pop.show("alert", { word: "The way out", sub: Lang.t("Door ") + (entryMouth + 1) + Lang.t(" of ") + MOUTHS,
-                            hold: 600, at: popAt() });
+        Sound.clip("deep", 0.3, 0.82);
       }
       // 3. it lands on the gate — the shot that was never fired
       if (recapStep === 2 && recapT >= C.recapSurge + C.recapSweep + C.recapTrace) {
@@ -1805,9 +1801,9 @@
       var stars = starsEarned();
       endRound({
         title: perfectRun() ? Lang.t("Perfect read!")
-             : escaped ? Lang.t("Escaped the maze!")
+             : escaped ? Lang.t("Maze solved!")
              : deepest <= 1 ? Lang.t("So close!")
-             : deepest <= M.rows / 3 ? Lang.t("Deep run!") : C.copy.gameOver,
+             : deepest <= M.rows / 3 ? Lang.t("Great run!") : C.copy.gameOver,
         variant: escaped ? "perfect" : deepest <= 1 ? "win" : "",
         score: score,
         stars: stars,
@@ -1817,7 +1813,7 @@
           // reach the top row and still never find the gap in the ceiling.
           // The rack is most of the score, so it is priced as the BONUS it is —
           // gold only when nothing was left on the table, which is one shot.
-          { label: "Bonus", value: spare + Lang.t(" pulse") + (spare > 1 ? "S" : ""),
+          { label: "Bonus", value: spare + (spare > 1 ? Lang.t(" pulses") : Lang.t(" pulse")),
             grade: escaped && spare >= C.startBalls - 1 ? "gold" : spare > 0 ? "accent" : "" },
           // A valve is a pulse that died in there: none of them is the clean run.
           { label: "Valves", value: valves.length,

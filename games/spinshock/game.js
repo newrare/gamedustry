@@ -31,9 +31,9 @@
     music: { volume: 0.10, fade: 1.8,
              menu: { from: 0, length: 12, rate: 0.85, gain: 0.5 } },
     copy: {
-      start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
+      start:"Play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Spin",
-      endScore:"Final score", gameOver:"Spun out!", timeUp:"Time's up!"
+      endScore:"Final score", gameOver:"Tops destroyed", timeUp:"Time's up!"
     },
 
     /* THE FIVE BANDS OF THE CLIMB — one per six levels, and the level map
@@ -1078,7 +1078,7 @@
       Fx.ring(f.x, f.y, { from: t.r * 0.5, to: t.r * 4, color: "#ffffff",
         width: 8, life: 0.5 });
       Overlay.vignette("rgba(255,212,59,.75)", 0.9, 900);
-      Pop.show("danger", { word: Lang.t("Boss top"), sub: Lang.t("Perfect taps only"),
+      Pop.show("streak", { word: Lang.t("Boss top"), sub: Lang.t("Perfect taps only"),
         hold: 1400, at: farSpot() });
       return f;
     }
@@ -1452,8 +1452,6 @@
         speed: 220, size: 4, life: 0.4 });
       Sound.clip("perfect", 0.3, 0.58);         // the chime, low: it is not yours
       if (phase === "spin")
-        Pop.text(clamp(f.x, Layout.left + 90, Layout.right - 90 - GAUGE_BAND),
-          f.y - f.type.r, "+1", { color: src.type.core, size: 22, life: 0.6, tier: 1 });
     }
 
     function insideArena(f) {
@@ -1926,7 +1924,7 @@
       Sound.clip("crash", 0.9, 0.58);
       Sound.clip("shock", 0.7, 0.5);
       Overlay.vignette("rgba(255,47,109,.95)", 1, 1500);
-      Pop.show("danger", { word: "Wrecked", sub: "Spin gone", hold: 900,
+      Pop.show("danger", { word: "Wrecked", hold: 900,
         at: farSpot() });
     }
 
@@ -2080,7 +2078,6 @@
       if (spin <= 0) { fall(); return; }
       if (!wornSaid && cap <= 0.62) {
         wornSaid = true;
-        Notify.say("Bearings wearing out", { kind: "warn" });
       }
 
       // Spinning-out alarm, armed once per dive into the red. The edge glow is
@@ -2088,7 +2085,7 @@
       if (warnArmed && spin <= CONFIG.warnAt * cap) {
         warnArmed = false;
         Sound.clip("warn", 0.6, 1);
-        Pop.show("danger", { word: "Spinning out", sub: "Shock to recover",
+        Pop.show("alert", { word: "Spinning out", sub: "Shock to recover",
           hold: 900, at: farSpot() });
       } else if (!warnArmed && spin >= CONFIG.warnClear * cap) {
         warnArmed = true;

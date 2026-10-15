@@ -343,12 +343,13 @@ Each role holds one to three takes, cut out of `assets/audio/sfx/` and
 **levelled to one loudness** by `tools/lab/cut-kit.mjs` from
 `assets/audio/kit/kit.json` — so `vol` at a call site is MIX, never a correction
 of a file. The builder injects them as `ASSETS.sounds["kit-<role>-<n>"]` with
-`CONFIG.kit[id] = { key, n, jitter }` — the id is the role's name for a shell
+`CONFIG.kit[id] = { key, n }` — the id is the role's name for a shell
 role (`tap`), `role/variant` for a gameplay one: a playable carries the end
 screen's three shell roles (`kit.playable`), the web target all of the shell's,
 and every build of a game the gameplay variants its manifest maps. Two takes never play twice
-in a row, and a role with a `jitter` is detuned a little on every shot; a ladder
-(`star`, `tick`, `coin`) has none, since its `rate` is the melody.
+in a row, and nothing is detuned at random: a take plays as it was cut, its
+pitch included, and the only `rate` on top is the caller's — for a ladder
+(`star`, `tick`, `coin`) it is the melody.
 
 `open` and `close` are the view system's doors (`packages/webshell/view.js`
 plays them on every card and every view) and they are the quietest thing there
@@ -383,8 +384,11 @@ second group of roles, for GAMEPLAY —
 | `defeat` | the round is lost: out of pulses, the army spent                  |
 
 — and a crash in one game is not a crash in another, so a gameplay role holds
-named **variants** (`crash/explosion`, `crash/glass`), each with its own takes
-and jitter, where a shell role holds one, `default`. `manifest.json` maps each
+named **variants** (`crash/explosion`, `crash/glass`), each with its own takes,
+where a shell role holds one, `default`. **The variant is the one place a sound
+is shaped** — the file, the cut, the tail and the pitch (`rate` on a take, baked
+into the file) — so it sounds the same in every game that plays it, and a sound
+that should sound different is another variant. `manifest.json` maps each
 key a game already plays to ONE variant:
 `"sfx": { "gem": "pickup/glass", "crash": "crash/explosion" }` (the events
 bench's kit selector writes it). The builder injects that as `CONFIG.sfx` and

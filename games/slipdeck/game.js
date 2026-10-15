@@ -1896,7 +1896,7 @@
       var left = cardsLeft();
       if (!lowWarned && left <= 8 && left > 0) {
         lowWarned = true;
-        Notify.say("Last cards", { sub:fill(Lang.t("{n} left in the deck"), { n:left }), kind:"warn" });
+        Pop.show("alert", { word: "Last cards", sub: fill(Lang.t("{n} left in the deck"), { n:left }) });
       }
     }
 

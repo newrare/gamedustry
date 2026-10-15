@@ -60,7 +60,7 @@
     copy: {
       start:"Tap to play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
-      endScore:"Final score", gameOver:"Overrun!", timeUp:"Time's up!",
+      endScore:"Final score", gameOver:"Contaminated!", timeUp:"Time's up!",
       rotten:"The rot wins!", rotLabel:"Rot"
     },
 
@@ -783,7 +783,7 @@
         if (rotCount < liveCount) {
           seedBlight(1);
           Fx.flash("rgba(150,40,255,0.35)", 0.2);
-          if (!rotCount) Notify.say("The rot spreads", { kind: "warn" });
+          if (!rotCount) Pop.show("alert", { word: "The rot spreads" });
           Sound.clip("spread", 1, 0.55);
         }
         return;
@@ -877,7 +877,6 @@
         grid[r][c] = mine; sup[r][c] = false;
         x = cellX(r, c); y = cellY(r);
         prismFx(x, y, mine);
-        Pop.text(x, y - R * 0.9, "Joker", { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
         setWobble(r, c, 0.95, Math.atan2(cellY(cell.r) - y, cellX(cell.r, cell.c) - x), 0);
         chain.joker++;
       }
@@ -962,7 +961,6 @@
             { from: R * 0.5, to: R * 4.2, color: "#ffffff", width: 5, life: 0.42 });
           Fx.flash("rgba(255,255,255,0.8)", 0.18);
           Fx.shake(8, 0.26);
-          Sound.clip("blast", 0.6);
           chain.stage = "cure"; chain.q = cures; chain.step = CURE_STEP; chain.t = 0.05;
           return;
         }
@@ -974,7 +972,6 @@
     function startMatch() {
       var cell = chain.cell;
       applyJoker(cell);
-      if (chain.joker) Sound.clip("blast", 0.4, 1.3);
       chain.color = grid[cell.r][cell.c];
       var group = floodGroup(cell.r, cell.c);
       if (group.length >= 3) {
@@ -1110,7 +1107,7 @@
       // about; a lone streak with a small clear keeps the corner sticker.
       var streakSub = mult > 1 ? "x" + mult + Lang.t(" streak") : cleared + Lang.t(" popped");
       if (chain.cured) {
-        Pop.show("combo", { word: "Purified!", sub: chain.cured + Lang.t(" cleansed"),
+        Pop.show("combo", { word: "Purified!", sub: chain.cured + Lang.t(" purified"),
                             hold: 420, cls: "pop-cure" });
       } else if (tier >= 1) {
         Pop.show(TIER_POP[tier], { word: TIER_WORD[tier], sub: streakSub,

@@ -26,7 +26,7 @@
 
   APPLY is the one route that writes the GAME (POST /api/apply → tools/lab/apply-events.mjs):
   a re-styled callout and a swapped clip go back into games/<slug>/game.js (or
-  template/game.js, the picker's first entry — the end screen's cues), and
+  template/game.js, the picker's first entry — the starter game every new game copies), and
   the save the page just made is what triggers the rebuild above — so the next
   frame is played on the change. Everything else here reads and plays.
 
@@ -40,7 +40,10 @@
   lab/events-clips/<slug>/ (ignored by git — playing again makes them again),
   and loop it under the row being judged. Their routes are /api/offset,
   /api/clips, /api/clip, /api/clip-drop and /clips/…; /icons/<slug>.png is the
-  game's thumb, which the sound page puts on a kit variant several games play.
+  game's thumb, which the sound page puts on a kit variant several games play;
+  /api/sfx-like is the library's files whose wave looks like a cut, which the
+  kit card's editor offers as alternatives (tools/lab/shape-sfx.mjs). A kit
+  variant edited on its card rides on /api/apply as `roles`.
   The message page also hands /api/apply a `keepEn` list — a callout kept in
   English on the French screen (tools/lab/keep-english.mjs).
 
@@ -53,14 +56,35 @@ import { readFile, writeFile, stat, readdir, mkdir, unlink } from 'node:fs/promi
 import { existsSync, watch } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { games, units, scanGame, clearCache, sfxFiles, soundPack, fileForNote, SFX_DIR, ROOT } from './scan-events.mjs';
+import { games, units, scanGame as scanUnit, clearCache, sfxFiles, soundPack, fileForNote, shellCues, SFX_DIR, ROOT, SHELL_FILES } from './scan-events.mjs';
+import { shootShell } from './shoot-shell.mjs';
 import { applyEdits } from './apply-events.mjs';
 import { keepEnglish } from './keep-english.mjs';
-import { readKit, writeKit, cutKit, kitUsers, mapKeys, KIT_DIR } from './cut-kit.mjs';
+import { readKit, writeKit, cutKit, kitUsers, mapKeys, editVariants, normalTake, KIT_DIR } from './cut-kit.mjs';
+import { shapes, alike } from './shape-sfx.mjs';
 import { createHash } from 'node:crypto';
 import { isMain, portArg, listen, json, notFound, readJson, sendFile, reloadHub, MIME } from '../lib/serve.mjs';
 
 const BUILD = path.join(ROOT, 'dist', 'web');
+
+/* ── THE SHELL, as a unit of its own ──────────────────────────────────────
+   What the motor and the web shell play in every game — the end screen, the
+   round's live stars, the meta layer (scan-events.mjs, shellCues) — is no
+   game's, so it is the picker's own entry, `shell`, after the template: its
+   lines are checked once, under review.shell, and filmed once, under
+   lab/events-clips/shell/ (POST /api/shoot-shell). It has no source to apply
+   to: only its roles' takes are written, into kit.json. */
+const SHELL_UNIT = 'shell';
+async function scanGame(slug) {
+  if (slug !== SHELL_UNIT) return scanUnit(slug);
+  const calls = await shellCues();
+  return {
+    slug: SHELL_UNIT, title: 'Shell — every game', version: null, targets: [], where: 'packages/',
+    beats: [], calls, sounds: [], warnings: [], shell: [], music: null, textEnv: {}, motor: [],
+    counts: { pop: 0, fx: 0, sound: calls.length, notify: 0, beats: 0 }
+  };
+}
+const isUnit = async (slug) => slug === SHELL_UNIT || (await units()).includes(slug);
 const PAGE = path.join(ROOT, 'lab', 'game-events-message.html');
 const PAGE_SOUND = path.join(ROOT, 'lab', 'game-events-sound.html');
 const ICONS = path.join(ROOT, 'assets', 'image', 'icon', 'thumb');
@@ -79,7 +103,7 @@ let building = false, queued = false;
 function build() {
   if (building) { queued = true; return; }
   building = true;
-  // --lab: the template too (dist/web/template/), which is where the end screen's cues live.
+  // --lab: the template too (dist/web/template/), the picker's first entry.
   const child = spawn(process.execPath, [path.join('tools', 'build', 'build.mjs'), '--target=web', '--lab'],
     { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
   let err = '';
@@ -89,7 +113,12 @@ function build() {
     building = false;
     clearCache();
     const stamp = new Date().toTimeString().slice(0, 8);
-    if (code === 0) { console.log(`  ${stamp}  rebuilt`); reload.broadcast('reload'); }
+    if (code === 0) {
+      console.log(`  ${stamp}  rebuilt`);
+      reload.broadcast('reload');
+      // The scans were just dropped: read every game again now, not under the page's first question.
+      units().then((all) => all.reduce((p, slug) => p.then(() => scanGame(slug)).catch(() => {}), Promise.resolve())).catch(() => {});
+    }
     else console.error(`  ${stamp}  BUILD FAILED\n${err.trim()}`);
     if (queued) { queued = false; build(); }
   });
@@ -114,6 +143,8 @@ function start() {
   }
   console.log('watching      games  packages  lab  template');
   build();
+  // The shapes the kit card's alternatives are read from: ~10 s the first time, cached after.
+  shapes({ log: (l) => console.log('  ' + l) }).catch((e) => console.error('  shape-sfx: ' + e.message));
 }
 
 /* ── checked marks ───────────────────────────────────────────────────────
@@ -150,6 +181,100 @@ function statusOf(g, marks) {
 
 const markLabel = (c) => `${c.name} ${c.inherited ? c.where.split('/').pop() + ':' : 'L'}${c.line}${c.fn ? ' ' + c.fn + '()' : ''}`;
 
+/* ── a kit line is checked on ONE cut of its variant ─────────────────────
+   A line that plays a kit variant (`sfx` in the manifest) is heard on the
+   takes that variant has at the time: change them — on /kit, or on a card of
+   any game playing it — and every game's check on it is a check of a sound
+   nobody has heard yet. So the mark keeps the variant's fingerprint (`kit`),
+   and a mark whose fingerprint is not the variant's any more is STALE: it
+   reads unchecked, and the sound page says why. A mark written before this
+   existed is stamped with the cut it stands on the first time the kit is
+   written (stampKitMarks), so the next change does undo it. */
+// The fingerprint of a cut: its takes as kit.json writes them, so a draft and the same takes saved are one.
+function takesHash(takes) {
+  return createHash('sha1').update(JSON.stringify((takes || []).map(normalTake))).digest('hex').slice(0, 10);
+}
+function variantHash(kit, id) {
+  const [role, name = 'default'] = String(id).split('/');
+  const v = kit.roles[role] && kit.roles[role].variants[name];
+  return v ? takesHash(v.takes) : null;
+}
+function kitOf(g, call) {
+  if (!call || call.kind !== 'sound' || !call.soundLiteral) return null;
+  if (call.method === 'ui') return call.sound;              // a shell role, played by its name
+  const s = g.sounds.find((x) => x.key === call.sound);
+  return (s && s.kit) || null;
+}
+// A game's marks split in two: those that still stand, and the ids of the stale ones.
+function liveMarks(g, marks, kit) {
+  const byId = new Map(checkable(g).map((c) => [c.checkId, c]));
+  const live = {}, stale = [], staleKit = {};
+  for (const [id, m] of Object.entries(marks || {})) {
+    const k = kitOf(g, byId.get(id));
+    if (k && m.kit && m.kit !== variantHash(kit, k)) { stale.push(id); staleKit[id] = m.kit; }
+    else live[id] = m;
+  }
+  return { live, stale, staleKit };
+}
+// Every legacy mark on a kit line, stamped with the cut it stands on — before the kit is written.
+async function stampKitMarks() {
+  const kit = await readKit(), review = await readReview();
+  let n = 0;
+  const all = [...(await units()), SHELL_UNIT];
+  for (const slug of Object.keys(review)) {
+    if (!all.includes(slug)) continue;
+    const g = await scanGame(slug);
+    const byId = new Map(checkable(g).map((c) => [c.checkId, c]));
+    for (const [id, m] of Object.entries(review[slug])) {
+      const k = kitOf(g, byId.get(id));
+      if (k && !m.kit) { m.kit = variantHash(kit, k); n++; }
+    }
+  }
+  if (n) await writeReview(review);
+  return n;
+}
+/* Who has signed off on each variant: { "<id>": { "<slug>": "ok" | "stale" | "part" } }
+   — ok, every line of that game playing it checked on its current cut; stale,
+   all of them checked but some on an older cut; part, some checked. */
+async function kitChecked(kit) {
+  const users = await kitUsers(), review = await readReview(), out = {}, all = await units();
+  // Each game read once, however many of its keys play the kit.
+  const seen = new Map();
+  const read = async (slug) => {
+    if (!seen.has(slug)) {
+      const g = await scanGame(slug);
+      seen.set(slug, { g, ...liveMarks(g, review[slug], kit) });
+    }
+    return seen.get(slug);
+  };
+  for (const [id, list] of Object.entries(users)) {
+    const tally = {};
+    for (const u of list) {
+      const [slug, key] = u.split('.');
+      if (!all.includes(slug)) continue;
+      const { g, live, stale } = await read(slug);
+      const t = tally[slug] || (tally[slug] = { total: 0, ok: 0, stale: 0 });
+      for (const c of g.calls) {
+        if (c.kind !== 'sound' || c.inherited || !c.soundLiteral || c.sound !== key || !c.checkId) continue;
+        t.total++;
+        if (live[c.checkId]) t.ok++;
+        else if (stale.includes(c.checkId)) t.stale++;
+      }
+    }
+    for (const [slug, t] of Object.entries(tally)) {
+      if (!t.total) continue;
+      const state = t.ok === t.total ? 'ok' : t.ok + t.stale === t.total && t.stale ? 'stale' : t.ok ? 'part' : null;
+      if (state) (out[id] = out[id] || {})[slug] = state;
+    }
+  }
+  return out;
+}
+/* The kit and who plays it is instant; who signed it off reads games, so it
+   is its own route (/api/kit-checked) and the pages paint it when it lands. */
+async function kitPayload() {
+  return { ...(await readKit()), users: await kitUsers() };
+}
+
 let checking = Promise.resolve();
 async function check(slug, body) {
   const g = await scanGame(slug);
@@ -160,15 +285,21 @@ async function check(slug, body) {
   const review = await readReview();
   const mine = {};
   for (const [id, m] of Object.entries(review[slug] || {})) if (byId.has(id)) mine[id] = m;
-  const at = new Date().toISOString().slice(0, 10);
+  const at = new Date().toISOString().slice(0, 10), kit = await readKit();
   for (const id of ids) {
-    const c = byId.get(id);
-    if (body.on) mine[id] = { at, what: markLabel(c) };
+    const c = byId.get(id), k = kitOf(g, c);
+    /* A kit line is checked on the cut it was HEARD on: the page says which
+       when that is not the shipped one — a draft of the variant, or another
+       variant the key is being moved to (`heard`, the takes) — so the check
+       still stands once apply has written that cut. */
+    const heard = body.heard && body.heard[id];
+    if (body.on) mine[id] = k || heard ? { at, what: markLabel(c), kit: heard ? takesHash(heard) : variantHash(kit, k) } : { at, what: markLabel(c) };
     else delete mine[id];
   }
   review[slug] = mine;
   const saved = await writeReview(review);
-  return { review: saved[slug] || {}, status: statusOf(g, saved[slug]) };
+  const { live, stale, staleKit } = liveMarks(g, saved[slug], kit);
+  return { review: live, stale, staleKit, status: statusOf(g, live) };
 }
 
 /* ── the clips of the second version ─────────────────────────────────────
@@ -187,7 +318,29 @@ async function sourceOffset(slug) {
   const at = src.indexOf(built.slice(0, 2000));
   if (at < 0) return { file: m[0], error: 'the built game no longer matches its source — wait for the rebuild' };
   // Built line 1 is "use strict", so built line n is source line n - 1 + (lines before section 6).
-  return { file: m[0], offset: src.slice(0, at).split('\n').length - 2 };
+  return { file: m[0], offset: src.slice(0, at).split('\n').length - 2, shell: await shellOffsets() };
+}
+
+/* Where the shell's own files sit in the shared scripts of the split build
+   (engine.<hash>.js, boot.<hash>.js): each is copied whole, so one line number
+   per file maps a frame of the built script back to its source line — which is
+   how the recorder catches a Sound.ui the shell plays (scan-events.mjs,
+   shellCues). [{ file, where, from, lines }], `from` the built line of source
+   line 1. */
+async function shellOffsets() {
+  const out = [];
+  const built = (await readdir(BUILD).catch(() => [])).filter((f) => /\.[0-9a-f]+\.js$/.test(f));
+  for (const where of SHELL_FILES) {
+    const src = await readFile(path.join(ROOT, where), 'utf8');
+    for (const file of built) {
+      const text = await readFile(path.join(BUILD, file), 'utf8');
+      const at = text.indexOf(src);
+      if (at < 0) continue;
+      out.push({ file, where, from: text.slice(0, at).split('\n').length, lines: src.split('\n').length });
+      break;
+    }
+  }
+  return out;
 }
 
 async function readClips(slug) {
@@ -210,7 +363,9 @@ function saveClip(slug, body) {
     await writeFile(path.join(CLIPS, slug, file), buf);
     const idx = await readClips(slug);
     const events = [].concat(body.events || []).filter((e) => e && e.id);
-    idx.clips[file] = { dur: Number(body.dur) || 0, at: Number(body.at) || 0, when: new Date().toISOString().slice(0, 16), events };
+    // `screen`: the frame as the player saw it, the DOM included — its callouts are in the picture.
+    idx.clips[file] = { dur: Number(body.dur) || 0, at: Number(body.at) || 0, when: new Date().toISOString().slice(0, 16), events,
+      ...(body.screen ? { screen: true } : {}) };
     const claim = new Set([].concat(body.claim || []));
     for (const e of events) if (claim.has(e.id) || !idx.byId[e.id]) idx.byId[e.id] = file;
     await pruneClips(slug, idx);
@@ -336,13 +491,40 @@ export async function handle(req, res, p, url) {
      line scan-events gives it. */
   if (p === '/api/offset') {
     const slug = url.searchParams.get('game');
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
+    // The shell unit plays a game it does not own: only the shared scripts are its.
+    if (slug === SHELL_UNIT) return json(res, 200, { file: null, offset: 0, shell: await shellOffsets() });
     return json(res, 200, await sourceOffset(slug));
+  }
+
+  /* Film the shell's sounds in a game's build — a headless Chrome playing a
+     scenario, the DOM included (tools/lab/shoot-shell.mjs) — and file each
+     clip under the shell unit, as a REC capture would be. */
+  if (p === '/api/shoot-shell' && req.method === 'POST') {
+    const body = await readJson(req, 1e4);
+    const game = body && body.game;
+    if (!(await units()).includes(game) || game === 'template') return notFound(res, 'game ' + game);
+    const stamp = new Date().toTimeString().slice(0, 8);
+    try {
+      const shot = await shootShell({
+        base: 'http://127.0.0.1:' + req.socket.localPort, game,
+        shell: await shellCues(), shellMap: await shellOffsets(),
+        log: (l) => console.log(`  ${stamp} ${l}`)
+      });
+      let index = null;
+      for (const c of shot.clips) {
+        const r = await saveClip(SHELL_UNIT, { webm: c.webm.toString('base64'), dur: c.dur, at: c.at, events: c.events, claim: c.claim, screen: true });
+        if (r.error) throw new Error(r.error);
+        index = r.index;
+      }
+      console.log(`  ${stamp}  shell shot in ${game}: ${shot.clips.length} clips, ${shot.heard.length} lines`);
+      return json(res, 200, { clips: shot.clips.length, heard: shot.heard, steps: shot.steps, frames: shot.frames, index: index || await readClips(SHELL_UNIT) });
+    } catch (e) { return json(res, 200, { error: String(e.message || e) }); }
   }
 
   if (p === '/api/clips') {
     const slug = url.searchParams.get('game');
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
     return json(res, 200, await readClips(slug));
   }
 
@@ -352,14 +534,14 @@ export async function handle(req, res, p, url) {
   if (p === '/api/clip' && req.method === 'POST') {
     const body = await readJson(req, 3e7);
     const slug = body && body.game;
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
     return json(res, 200, await saveClip(slug, body));
   }
 
   if (p === '/api/clip-drop' && req.method === 'POST') {
     const body = await readJson(req, 1e5);
     const slug = body && body.game;
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
     return json(res, 200, await dropClip(slug, body.file));
   }
 
@@ -383,18 +565,27 @@ export async function handle(req, res, p, url) {
   if (p === '/kit') return page(res, KIT_PAGE);
   /* With the kit, who plays each variant: the games whose manifest maps a key
      to it (`sfx`), so a take is never changed without knowing who hears it. */
-  if (p === '/api/kit' && req.method === 'GET') return json(res, 200, { ...(await readKit()), users: await kitUsers() });
+  if (p === '/api/kit' && req.method === 'GET') return json(res, 200, await kitPayload());
+  if (p === '/api/kit-checked') return json(res, 200, await kitChecked(await readKit()));
+  /* The fingerprint of cuts the page holds — a draft, a variant a key is being
+     moved to — so it can tell a check given on what a line plays NOW from one
+     given on what it played before: { list: [takes, …] } → [hash, …]. */
+  if (p === '/api/kit-hash' && req.method === 'POST') {
+    const body = await readJson(req, 1e5);
+    return json(res, 200, [].concat((body && body.list) || []).map((t) => takesHash(t)));
+  }
   if (p === '/api/kit' && req.method === 'POST') {
     const body = await readJson(req, 1e5);
     const log = [];
     try {
+      await (checking = checking.then(stampKitMarks).catch(() => {}));
       await writeKit(body);
       await cutKit({ log: (l) => log.push(l.trim()) });
     } catch (e) { return json(res, 200, { error: String(e.message || e) }); }
     const stamp = new Date().toTimeString().slice(0, 8);
     console.log(`  ${stamp}  kit re-cut (${log.length} takes)`);
     build();
-    return json(res, 200, { kit: { ...(await readKit()), users: await kitUsers() }, log });
+    return json(res, 200, { kit: await kitPayload(), log });
   }
   if (p.startsWith('/kit/')) {
     const file = path.join(KIT_DIR, path.basename(p.slice('/kit/'.length)));
@@ -405,13 +596,15 @@ export async function handle(req, res, p, url) {
   /* The picker: every game, and the TEMPLATE first. The end screen's own
      sounds are no longer its clips but the house kit's (/kit). */
   if (p === '/api/games') {
-    const out = [], review = await readReview();
-    for (const slug of await units()) {
+    const out = [], review = await readReview(), kit = await readKit();
+    const all = await units();
+    all.splice(all.indexOf('template') + 1, 0, SHELL_UNIT);
+    for (const slug of all) {
       const g = await scanGame(slug);
       out.push({
         slug: g.slug, title: g.title, version: g.version, counts: g.counts,
-        warnings: g.warnings.length, built: existsSync(path.join(BUILD, slug, 'index.html')),
-        status: statusOf(g, review[slug])
+        warnings: g.warnings.length, built: slug === SHELL_UNIT || existsSync(path.join(BUILD, slug, 'index.html')),
+        status: statusOf(g, liveMarks(g, review[slug], kit).live)
       });
     }
     return json(res, 200, out);
@@ -419,9 +612,10 @@ export async function handle(req, res, p, url) {
 
   if (p === '/api/events') {
     const slug = url.searchParams.get('game');
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
-    const g = await scanGame(slug), review = (await readReview())[slug] || {};
-    return json(res, 200, { ...g, review, status: statusOf(g, review) });
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
+    const g = await scanGame(slug);
+    const { live, stale, staleKit } = liveMarks(g, (await readReview())[slug] || {}, await readKit());
+    return json(res, 200, { ...g, review: live, stale, staleKit, status: statusOf(g, live) });
   }
 
   /* One mark, set or taken back — or several at once, which is what a clip's
@@ -431,7 +625,7 @@ export async function handle(req, res, p, url) {
   if (p === '/api/check' && req.method === 'POST') {
     const body = await readJson(req, 1e5);
     const slug = body && body.game;
-    if (!(await units()).includes(slug)) return notFound(res, 'game ' + slug);
+    if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
     // One at a time: each click is a read-modify-write, and clicks come in bursts.
     const run = checking.then(() => check(slug, body));
     checking = run.catch(() => {});
@@ -452,6 +646,21 @@ export async function handle(req, res, p, url) {
       out.push({ ...rest, size: st.size });
     }
     return json(res, 200, out);
+  }
+
+  /* The files whose WAVE looks like a cut — a kit card's alternatives
+     (tools/lab/shape-sfx.mjs): ?file=<stem>&start=&length=&not=<stem>,<stem>.
+     The first call waits for the shapes to be read. */
+  if (p === '/api/sfx-like') {
+    const lib = await sfxFiles();
+    const byStem = new Map(lib.map((f) => [f.stem, f]));
+    const f = byStem.get(url.searchParams.get('file') || '');
+    if (!f) return notFound(res, 'sfx ' + url.searchParams.get('file'));
+    const not = (url.searchParams.get('not') || '').split(',').map((x) => byStem.get(x)).filter(Boolean).map((x) => x.file);
+    const near = alike(await shapes(), f.file, Number(url.searchParams.get('start')) || 0,
+      Number(url.searchParams.get('length')) || 0.3, { n: Number(url.searchParams.get('n')) || 10, not });
+    const byFile = new Map(lib.map((x) => [x.file, x]));
+    return json(res, 200, near.map((x) => ({ ...x, stem: byFile.get(x.file).stem })));
   }
 
   /* Which game cuts a clip from which file — "chainring.hit" — read off the
@@ -479,13 +688,29 @@ export async function handle(req, res, p, url) {
      rebuild and the reload are the same ones a hand edit gets. */
   if (p === '/api/apply' && req.method === 'POST') {
     const plan = await readJson(req, 1e6);
-    if (!(await units()).includes(plan && plan.game)) return notFound(res, 'game ' + (plan && plan.game));
+    if (!(await isUnit(plan && plan.game))) return notFound(res, 'game ' + (plan && plan.game));
     const stamp = new Date().toTimeString().slice(0, 8);
-    let out, before;
+    let out, before, roles = [];
     try {
+      /* A kit variant tuned on its card (the kit card's own editor), or forked
+         into a new one: kit.json first — a key below may be mapped to the new
+         variant — then only those takes re-cut. The kit is every game's, so it
+         moves no game's version; the cut files are under assets/, which the
+         watcher does not see, hence the build called here. */
+      if (plan.roles && plan.roles.length) {
+        await (checking = checking.then(stampKitMarks).catch(() => {}));
+        roles = await editVariants(plan.roles);
+        const log = [];
+        await cutKit({ log: (l) => log.push(l.trim()), only: roles });
+        console.log(`  ${stamp}  kit ${roles.join(', ')} re-cut (${log.length} takes)`);
+      }
       clearCache();
       before = await scanGame(plan.game);
-      out = await applyEdits(plan.game, plan);
+      out = plan.game === SHELL_UNIT
+        ? { slug: SHELL_UNIT, applied: [], skipped: [], written: false, version: null, gone: [] }
+        : await applyEdits(plan.game, plan);
+      for (const id of roles) out.applied.unshift({ what: 'kit ' + id, value: 'written to kit.json and re-cut, for every game that plays it' });
+      if (roles.length) build();
       /* A key handed to the kit (the clip card's kit selector): the manifest
          maps it, its clip leaves game.js — after the edits above, which read
          the source as it was, and with the version moved once for both. */

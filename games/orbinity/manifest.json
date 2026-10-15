@@ -1,7 +1,7 @@
 {
   "slug": "orbinity",
   "title": "Orbinity",
-  "version": "1.5.2",
+  "version": "1.5.6",
   "tagline": "Tap to fling the comet from planet to planet and chain the combos",
   "order": 50,
   "draft": false,
@@ -167,7 +167,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Une comète en orbite. Tape pour couper la gravité et la projeter vers la planète suivante.",
+      "tagline": "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaine les trajectoires sans erreur pour créer un combo!",
       "tags": [
         "Tap précis",
         "Gravité coupée",
@@ -175,7 +175,7 @@
       ]
     },
     "en": {
-      "tagline": "A comet in orbit. Tap to snap gravity and fling it toward the next planet.",
+      "tagline": "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it toward the next celestial body. Chain trajectories without a mistake to build a combo!",
       "tags": [
         "Timing tap",
         "Snap gravity",
@@ -190,11 +190,11 @@
         "lines": [
           {
             "kicker": "Tap",
-            "line": "Snap the <b>gravity</b>"
+            "line": "Play with <b>gravity</b>"
           },
           {
             "kicker": "Aim",
-            "line": "Use the <b>trajectories</b>"
+            "line": "Use the right <b>trajectories</b>"
           },
           {
             "kicker": "Combo",
@@ -214,15 +214,15 @@
         "lines": [
           {
             "kicker": "Tap",
-            "line": "Coupe la <b>gravité</b>"
+            "line": "Joues avec la <b>gravité</b>"
           },
           {
             "kicker": "Vise",
-            "line": "Utilise les <b>trajectoires</b>"
+            "line": "Utilises les bonnes <b>trajectoires</b>"
           },
           {
             "kicker": "Combo",
-            "line": "Enchaîne les <b>orbites</b>"
+            "line": "Enchaînes les <b>orbites</b>"
           },
           {
             "kicker": "30 stages",
@@ -298,14 +298,12 @@
           "It catches you and flings you on": "Il t'attrape et te relance",
           "Its lane lights up first: wait it out": "Son couloir s'allume avant : laisse-la passer",
           "Keep the chain alive": "Garde la chaîne en vie",
-          "Keep the chain alive to reach it": "Garde la chaîne en vie pour l'atteindre",
           "Last breath": "Dernier souffle",
           "Lost in space": "Perdu dans l'espace",
           "Moon hit": "Lune percutée",
           "Moons block the way": "Des lunes barrent la route",
           "Nebulae": "Nébuleuses",
           "No way through: go round by the edges": "Pas de passage direct : contourne par les bords",
-          "Nova faded": "La nova s'est éteinte",
           "One pulls you in, its twin pushes you out": "L'une t'attire, sa jumelle te repousse",
           "Only a mistake breaks it now": "Seule une erreur la brise désormais",
           "Overtime": "Prolongation",

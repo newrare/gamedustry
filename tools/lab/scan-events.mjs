@@ -24,7 +24,7 @@
   (`make events`), where a beat can be fired into the real build and heard.
 */
 
-import { readFile, readdir } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -58,6 +58,10 @@ const WATCHED = {
   'Sound.clip':      { kind: 'sound' },
   'Sound.cue':       { kind: 'sound' },
   'Sound.beep':      { kind: 'sound' },
+  /* The house kit's shell roles (Sound.ui): the end screen, the round's live
+     stars, the meta layer — and a game that answers with one itself
+     (grudgeon's `deny`). Its first argument is a ROLE, not a key of the game. */
+  'Sound.ui':        { kind: 'sound' },
   'Sound.arp':       { kind: 'sound' },
   'Music.start':     { kind: 'music' },
   'Music.stop':      { kind: 'music' },
@@ -251,6 +255,7 @@ const DEFAULTS = {
   'Sound.clip':       [null, 0.8, 1],
   'Sound.cue':        [null, 0.8, 1],
   'Sound.beep':       [440, 0.15, 'sine', 0.3],
+  'Sound.ui':         ['tap', 1, 1],
   'Sound.arp':        [[440, 660, 880], 55, 0.12, 'triangle', 0.3]
 };
 
@@ -721,6 +726,166 @@ function beatsOf(calls, lines) {
   });
 }
 
+/* ── what fires a cue ─────────────────────────────────────────────────────
+   A cue line says WHICH sound and how loud; it does not say WHEN. The sound
+   page puts that beside it, read off the source around the call:
+
+     guards   the blocks the call sits in, outermost first, up to the function
+              itself — `if (combo >= 5)`, `case "gem":`, `else ← if (shield)`,
+              a callback (`setTimeout(function () {`) — plus a condition on the
+              call's own statement (`if (hit) Sound.clip(…)`, `x && …`)
+     comment  the `//` lines right above the call, or above its beat, and a
+              comment trailing the call's own line
+     beat     what else fires in the same moment (beatsOf): the callouts with
+              their style and word, the notices, the juice, the other cues —
+              the message page's beat, seen from the sound
+     code     the lines from the outermost guard (or a few above) to the call */
+const GUARD_MAX = 4, CODE_MAX = 14;
+const OPEN = { ')': '(', ']': '[', '}': '{' };
+
+// The statement head that ends at `p` (exclusive): back to the previous ; { } at its own depth.
+function headBefore(src, mask, p) {
+  let depth = 0, i = p - 1;
+  for (; i >= 0; i--) {
+    if (!mask[i]) continue;
+    const ch = src[i];
+    if (ch === ')' || ch === ']') depth++;
+    else if (ch === '}') { if (depth === 0) break; depth++; }
+    else if (ch === '(' || ch === '[' || ch === '{') { if (depth === 0) break; depth--; }
+    else if (depth === 0 && ch === ';') break;
+  }
+  const text = src.slice(i + 1, p).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, '').replace(/\s+/g, ' ').trim();
+  return { start: i + 1, text, stop: i >= 0 ? src[i] : '' };
+}
+// The name of the call whose argument list holds `p`: `orb` for `orb(x, y, function () {`.
+function calleeOf(src, mask, p) {
+  let depth = 0;
+  for (let i = p; i >= 0; i--) {
+    if (!mask[i]) continue;
+    const ch = src[i];
+    if (ch === ')' || ch === ']' || ch === '}') depth++;
+    else if (ch === '(' || ch === '[' || ch === '{') {
+      if (depth === 0) { const m = /([\w$.]+)\s*$/.exec(src.slice(Math.max(0, i - 60), i)); return ch === '(' && m ? m[1] : null; }
+      depth--;
+    }
+  }
+  return null;
+}
+// The `{` matching the `}` at `p`.
+function openOf(src, mask, p) {
+  let depth = 0;
+  for (let i = p; i >= 0; i--) {
+    if (!mask[i]) continue;
+    if (src[i] === '}') depth++;
+    else if (src[i] === '{' && --depth === 0) return i;
+  }
+  return -1;
+}
+const clip = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
+const isFunctionHead = (h) => /^(async\s+)?function\b[\s\w$]*\(/.test(h) || /^[\w$.]+\s*[:=]\s*(async\s+)?function\b/.test(h) ||
+  /^(var|let|const)\s+[\w$]+\s*=\s*(async\s+)?(function\b|\([^)]*\)\s*=>)/.test(h) ||
+  /^(?!(if|for|while|switch|catch|with|else)\b)[\w$]+\s*\([^)]*\)$/.test(h);     // a method written short: `reset() {`
+
+function guardsOf(src, mask, call, lineOf) {
+  const at = call.callSpan.start, out = [];
+  // A condition on the call's own statement: `if (hit) Sound.clip(…)`, `big && Sound.clip(…)`.
+  // The object the call is read off (`W.` in `W.Sound.ui`) is not part of the condition.
+  const own = headBefore(src, mask, at).text.replace(/[\w$.]*\.$/, '').trim();
+  if (own && /^(if|else|while|for)\b|&&|\|\||\?/.test(own)) out.push({ text: clip(own.replace(/\s*(&&|\|\||\?)\s*$/, ''), 90), line: lineOf(at) });
+  // Then every block around it, innermost first, up to the function's own body.
+  let depth = 0;
+  for (let i = at - 1; i >= 0 && out.length < GUARD_MAX + 1; i--) {
+    if (!mask[i]) continue;
+    const ch = src[i];
+    if (OPEN[ch]) { depth++; continue; }
+    if (ch !== '{' && ch !== '(' && ch !== '[') continue;
+    if (depth > 0) { depth--; continue; }
+    if (ch !== '{') continue;                       // inside an argument list: keep climbing
+    const head = headBefore(src, mask, i);
+    let text = head.text;
+    // A function handed to a call — a timer, a tween's end, a forEach — is the call's callback.
+    if (head.stop === '(' || head.stop === ',' || /(^|[,(]\s*)(async\s+)?(function\b[^(]*\([^)]*\)|\([^)]*\)\s*=>|[\w$]+\s*=>)$/.test(text) && /,/.test(text)) {
+      const who = calleeOf(src, mask, head.start - 1);
+      if (who) { out.push({ text: 'callback of ' + who + '()', line: lineOf(head.start) }); continue; }
+    }
+    if (!text || /[=:,]$/.test(text) && !/^case\b/.test(text)) continue;   // an object literal
+    if (isFunctionHead(text)) break;                // the function: its name is on the line already
+    // The case the call falls under, between this switch's brace and the call.
+    if (/^switch\b/.test(text)) {
+      const body = src.slice(i + 1, at), cases = [...body.matchAll(/(?:^|[;{}\n])\s*((?:case\b[^:]*|default)\s*:)/g)];
+      if (cases.length) out.push({ text: clip(cases[cases.length - 1][1].replace(/\s+/g, ' '), 90), line: lineOf(i + 1 + cases[cases.length - 1].index) });
+    }
+    // An else says nothing on its own: it is the if before it, turned down.
+    if (/^else$/.test(text)) {
+      let k = head.start - 1;
+      while (k >= 0 && (!mask[k] || /\s/.test(src[k]))) k--;
+      if (src[k] === '}') {
+        const o = openOf(src, mask, k);
+        if (o >= 0) text = 'else ← ' + headBefore(src, mask, o).text;
+      }
+    }
+    out.push({ text: clip(text, 90), line: lineOf(head.start) });
+  }
+  return out.reverse();
+}
+
+function commentOf(lines, call, beat) {
+  const above = (n) => {
+    const got = [];
+    for (let k = n - 2; k >= 0 && got.length < 4; k--) {
+      const t = lines[k].trim();
+      if (t.startsWith('//')) got.unshift(t.replace(/^\/\/\s?/, ''));
+      else break;
+    }
+    return got.join(' ');
+  };
+  const trail = /\/\/\s?(.*)$/.exec(lines[call.line - 1].replace(/(["'`])(?:\\.|(?!\1).)*\1/g, '""'));
+  const text = (above(call.line) || (beat && beat.line !== call.line ? above(beat.line) : '') || (trail ? trail[1] : '')).trim();
+  return text ? clip(text, 220) : null;
+}
+
+// One tag per thing that fires with the cue, in the order it fires.
+function beatTags(beat, call) {
+  const word = (c) => {
+    const w = c.texts && c.texts.fields && c.texts.fields.word;
+    if (w && w.lit != null) return w.lit;
+    if (w && w.expr) return '‹' + w.expr + '›';
+    return null;
+  };
+  const out = [], seen = new Set();
+  for (const c of beat ? beat.calls : []) {
+    if (c === call) continue;
+    let tag = null;
+    if (c.kind === 'pop') {
+      const style = /^["']([\w-]+)["']$/.exec(c.args[0] || '');
+      tag = { k: 'pop', t: [style && style[1], word(c)].filter(Boolean).join(' · ') || 'callout' };
+    } else if (c.kind === 'notify') tag = { k: 'notify', t: word(c) || 'notice' };
+    // The same clip again in the beat is another branch of this line (an if and its else), not a companion.
+    else if (c.kind === 'sound') { if (c.soundLiteral && c.sound === call.sound) continue; tag = { k: 'sound', t: c.soundLiteral ? c.sound : c.method }; }
+    else if (c.kind === 'fx' || c.kind === 'music') tag = { k: c.kind, t: c.method };
+    if (!tag) continue;
+    const id = tag.k + '|' + tag.t;
+    if (seen.has(id)) continue;
+    seen.add(id); out.push(tag);
+  }
+  return out;
+}
+
+function cueContext(src, mask, lines, lineOf, call, beat) {
+  const guards = guardsOf(src, mask, call, lineOf);
+  const top = guards.length && call.line - guards[0].line <= CODE_MAX - 2 ? guards[0].line : Math.max(1, call.line - 3);
+  const from = Math.max(top, call.endLine + 1 - CODE_MAX), to = Math.min(lines.length, call.endLine + 1);
+  const block = lines.slice(from - 1, to);
+  const pad = Math.min(...block.filter((l) => l.trim()).map((l) => l.match(/^\s*/)[0].length));
+  return {
+    guards: guards.map((g) => g.text),
+    comment: commentOf(lines, call, beat),
+    beat: beatTags(beat, call),
+    code: block.map((l) => l.slice(pad)).join('\n'),
+    codeFrom: from
+  };
+}
+
 /* The sfx pack. Keys come out of ASSETS.sounds; the note next to each one is
    the provenance comment a game writes above the block ("orb: ui_mallet…"),
    which is the only record of which file in assets/audio/sfx/ a clip was cut
@@ -850,7 +1015,7 @@ export function unitWhere(slug) {
 
 let MOTOR = null;
 // The lab server re-scans on save; the motor pass is the only thing cached.
-export function clearCache() { MOTOR = null; }
+export function clearCache() { MOTOR = null; SHELL = null; SCANS.clear(); }
 
 /* What every game inherits: the end-screen cues, the level stars, the pause
    card. A game owns none of these and can still be surprised by them. */
@@ -869,6 +1034,41 @@ async function motorCalls() {
     out.push(...scanCalls(src, f));
   }
   MOTOR = out;
+  return out;
+}
+
+/* ── what the SHELL plays, in every game ────────────────────────────────
+   The end screen (the score landing, its stars, its rows), the round's live
+   stars and its end, the meta layer's cascade and gifts: Sound.ui calls in the
+   motor and the web shell, the same in every game and in no game.js. The
+   sound page lists them under the game's own cues, one card per role, with
+   the same context a game's line gets — so a sound heard in a round and found
+   nowhere in the game's list is found here. The menus, the album, the shop and
+   the barracks are left out: they are screens, and /kit is where their roles
+   are tuned. */
+export const SHELL_FILES = ['packages/shell/shell.js', 'packages/webshell/levels.js', 'packages/webshell/meta.js'];
+let SHELL = null;
+export async function shellCues() {
+  if (SHELL) return SHELL;
+  /* A shell line has no check, but it has an id all the same — `shell-` and
+     the call's source in its file and function, like a game line's checkId —
+     so the recorder can file a capture of it and a loop can replay it. */
+  const out = [], seen = {};
+  for (const f of SHELL_FILES) {
+    const src = await readFile(path.join(ROOT, f), 'utf8');
+    const lines = src.split('\n'), mask = codeMask(src), lineOf = lineIndex(src);
+    const calls = scanCalls(src, f);
+    for (const b of beatsOf(calls, lines)) {
+      for (const c of b.calls) {
+        if (c.name !== 'Sound.ui' || !c.soundLiteral) continue;
+        c.ctx = cueContext(src, mask, lines, lineOf, c, b);
+        const base = 'shell-' + createHash('sha1').update([f, c.fn || '', c.source].join('\n')).digest('hex').slice(0, 10);
+        seen[base] = (seen[base] || 0) + 1;
+        out.push({ ...c, inherited: true, shell: true, checkId: base + (seen[base] > 1 ? '#' + seen[base] : '') });
+      }
+    }
+  }
+  SHELL = out;
   return out;
 }
 
@@ -901,12 +1101,30 @@ function braced(src, at) {
   return null;
 }
 
+/* A scan is ~70 ms a game, and the bench asks for the same game many times
+   in a row — the picker reads all of them, the kit's checks read every game
+   playing a variant. So one scan is kept per game, keyed by the size and the
+   time of its game.js and manifest.json: a write to either is a new scan, and
+   clearCache() (every rebuild) drops them all. The result is shared: read it,
+   never change it. */
+const SCANS = new Map();
 export async function scanGame(slug) {
   const dir = unitDir(slug);
+  const sig = (await Promise.all(['game.js', 'manifest.json'].map((f) =>
+    stat(path.join(dir, f)).then((st) => st.size + ':' + st.mtimeMs, () => '-')))).join('|');
+  const hit = SCANS.get(slug);
+  if (hit && hit.sig === sig) return hit.scan;
+  const scan = scanUnit(slug, dir);
+  SCANS.set(slug, { sig, scan });
+  scan.catch(() => { if (SCANS.get(slug) && SCANS.get(slug).scan === scan) SCANS.delete(slug); });
+  return scan;
+}
+
+async function scanUnit(slug, dir) {
   const src = await readFile(path.join(dir, 'game.js'), 'utf8');
   let manifest = {};
   try { manifest = JSON.parse(await readFile(path.join(dir, 'manifest.json'), 'utf8')); } catch {}
-  if (slug === TEMPLATE) manifest = { title: 'Template — the end screen', targets: [] };
+  if (slug === TEMPLATE) manifest = { title: 'Template — the starter game', targets: [] };
 
   const where = unitWhere(slug);
   const lines = src.split('\n');
@@ -915,16 +1133,20 @@ export async function scanGame(slug) {
   for (const c of calls) if (c.kind === 'pop' || c.kind === 'notify') c.texts = textsOf(c, env);
   const beats = beatsOf(calls, lines);
   const pack = soundPack(src);
+  // What fires each cue — the sound page's context line (cueContext).
+  const mask = codeMask(src), lineOf = lineIndex(src);
+  for (const b of beats) for (const c of b.calls) if (c.kind === 'sound') c.ctx = cueContext(src, mask, lines, lineOf, c, b);
 
   // Who plays what, and what nobody plays.
   const played = {};
   for (const c of calls) {
-    if (c.module !== 'Sound' || !c.soundLiteral) continue;
+    if (c.module !== 'Sound' || !c.soundLiteral || c.method === 'ui') continue;
     (played[c.sound] = played[c.sound] || []).push(c.line);
   }
   const motor = await motorCalls();
   for (const c of motor) {
     if (c.module !== 'Sound' || !c.soundLiteral) continue;
+    if (c.method === 'ui') continue;                       // a role of the kit, not a key of the game
     if (pack.keys.some((k) => k.key === c.sound)) (played[c.sound] = played[c.sound] || []).push(c.where + ':' + c.line);
   }
   /* A key handed to a COMPUTED call — `snd = "lucky"; … Sound.clip(snd)` — has
@@ -966,7 +1188,7 @@ export async function scanGame(slug) {
     if (!s.plays.length && !s.music) warnings.push(`${s.key} is embedded and never played — dead bytes in every build`);
   }
   for (const c of calls) {
-    if (c.module !== 'Sound' || !c.soundLiteral) continue;
+    if (c.module !== 'Sound' || !c.soundLiteral || c.method === 'ui') continue;
     if (sounds.some((s) => s.key === c.sound)) continue;
     warnings.push(c.method === 'cue'
       ? `line ${c.line}: Sound.cue("${c.sound}") has no clip — it falls back to a beep`
@@ -986,7 +1208,7 @@ export async function scanGame(slug) {
   if (slug === TEMPLATE) {
     for (const c of motor) {
       if (c.module !== 'Sound' || !c.soundLiteral) continue;
-      if (!pack.keys.some((k) => k.key === c.sound)) continue;
+      if (c.method === 'ui' || !pack.keys.some((k) => k.key === c.sound)) continue;
       calls.push({ ...c, inherited: true });
     }
   }

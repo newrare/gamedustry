@@ -945,7 +945,6 @@
       Fx.flash("#ff7a1a", 0.22, 3);
       Fx.shake(7, 0.2);
       Fx.burst(mallow.x, mallow.y, { color:["#ffd166", "#ff7a1a"], count:16, speed:330, life:.45, grav:-120 });
-      Pop.show("danger", { word:"Hot!", sub:"Jump", at:"upper" });
     }
 
     /* A structure that touches the lava catches fire. It becomes a fireball —
@@ -1074,7 +1073,7 @@
         loose(dx / dist * kick, dy / dist * kick, null);
         mallow.blown = 0.7; mallow.hot = 0.6;
         combo = 0; HUD.setRight(null);
-        Pop.show("danger", { word:"Boom!", at:"upper" });
+        Pop.show("alert", { word:"Boom!", at:"upper" });
       }
 
       puff("rockBomb" + cell(19 + (rk.design != null ? rk.design : Rand.int(0, 5))), rk.x, rk.y, reach * 1.6, 0.55);
@@ -1152,7 +1151,7 @@
       while (s.left <= 0) {
         s.ph = (s.ph + 1) % 5;
         s.left += [C.surgeEvery * (v < 1 ? 1.5 : 1), C.surgeWarn, C.surgeUp, C.surgeHold, C.surgeDown][s.ph];
-        if (s.ph === 1) { Sound.clip("surge", 0.8); Pop.show("danger", { word:"Lava surge!", at:"upper" }); }
+        if (s.ph === 1) { Sound.clip("surge", 0.8); Pop.show("streak", { word:"Lava surge!", at:"upper" }); }
         if (s.ph === 2) { Fx.shake(9, C.surgeUp); Overlay.vignette("#ff3b00", 0.4); }
       }
       if (s.ph === 2) { p = 1 - s.left / C.surgeUp; s.off = H * p * (2 - p); }
@@ -1206,7 +1205,6 @@
       else mallow.vy = Math.max(mallow.vy, 0) + C.dropKnock;
       Sound.clip("burn", 0.55, Rand.range(1.05, 1.2));
       Fx.burst(mallow.x, mallow.y - C.mallowLen * 0.4, { color:["#ffd166", "#ff7a1a"], count:14, speed:280, life:.4, grav:300 });
-      Pop.show("alert", { word:"Hot!", at:"upper" });
     }
 
     /* ---- the climb's other hands ------------------------------------------
@@ -1449,7 +1447,6 @@
              : (Rand.chance(0.5) ? "biscuit" : "chocolate");
         if (kind === "super" && !toldSuper) {
           toldSuper = true;
-          Notify.say("Super s'more", { sub:"Catch it: every life back", kind:"rare", key:"mm-super" });
         }
         treats.push({ kind: kind, x: Rand.range(Layout.left + 50, Layout.right - 50), y: Layout.top - 30, ph: Rand.range(0, TAU),
                       design: Rand.int(0, 5) });
@@ -1474,14 +1471,13 @@
           Pop.show("bonus", { word:"Super s'more!", sub:"Every life back", at:"upper" });
         } else {
           boostT = C.smoreBoost;
-          Pop.show("bonus", { word:"Super s'more!", sub:"Double points", at:"upper" });
+          Pop.show("score", { word:"Super s'more!", sub:"Double points", at:"upper" });
         }
         Fx.ring(mallow.x, mallow.y, { from:20, to:160, color:"#fff3dd", width:8, life:.5 });
         return;
       }
       if (held[t.kind]) {                         // a second one of a kind: a few points
         score += 20; HUD.setScore(score);
-        Pop.text(t.x, t.y - 30, "+20", { color:"#ffd166", size:22, life:0.6, tier:1 });
         return;
       }
       held[t.kind] = t.design + 1;              // which picture it was, for the icon
@@ -1493,7 +1489,7 @@
         Pop.show("bonus", { word:"S'more!", sub:"Life back", at:"upper" });
       } else {
         boostT = C.smoreBoost;
-        Pop.show("bonus", { word:"S'more!", sub:"Double points", at:"upper" });
+        Pop.show("score", { word:"S'more!", sub:"Double points", at:"upper" });
       }
       Fx.ring(mallow.x, mallow.y, { from:20, to:120, color:"#ffd166", width:6, life:.4 });
       // the s'more itself, held up for a beat over the body
@@ -1612,7 +1608,6 @@
       // what this level brings that the last one did not (after the entrance)
       if (ROW && ROW.intro) {
         for (i = 0; i < ROW.intro.length; i++) {
-          Notify.say(INTRO[ROW.intro[i]][0], { sub: INTRO[ROW.intro[i]][1], kind:"info", key:"mm-" + ROW.intro[i] });
         }
       }
     }
@@ -1645,7 +1640,6 @@
     function hurt() {
       if (toast >= 3) { die(); return false; }
       shade(1);
-      if (toast >= 3) Notify.say("Charred", { sub:"One more hit and you melt", kind:"warn", key:"mm-charred" });
       return true;
     }
 
@@ -1662,7 +1656,7 @@
       Fx.flash("#ff6b1a", 0.3, 2.5);
       Fx.shake(9, 0.3);
       Pop.show("alert", { word:"Scorched!", at:"upper" });
-      Notify.say("Charred", { sub:"One more hit and you melt", kind:"warn", key:"mm-charred" });
+      Pop.show("alert", { word: "Charred" });
     }
 
     function die() {

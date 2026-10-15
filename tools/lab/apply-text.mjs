@@ -29,6 +29,12 @@
   re-serialized. That is the one deletion this tool makes, and it is refused
   for any row the game still writes.
 
+  A dictionary KEY is the English it translates, so an English string the
+  game writes cannot change alone: `renames` moves the key with it
+  (`{ from, to }`, in every `web.copy.<lang>.strings` that holds `from`) —
+  the key literal spliced like any value, refused when `to` is already a key.
+  It is what serve-text.mjs's automatic English pass sends.
+
   A row whose text appears at several call sites — "Length", the HUD's left
   label, written at three — is written at all of them, which is the reason
   scan-text merges them into one row in the first place.
@@ -102,9 +108,10 @@ function removeEntries(src, paths, skipped, what) {
  *   remove: rows the scan marked `unused` — a dictionary entry whose English
  *   nothing writes — taken out of the manifest. Any other row is refused: a
  *   string the game does use is corrected, never deleted from here.
+ *   renames: dictionary keys that follow an English string — `{ from, to }`.
  */
 export async function applyText(slug, plan) {
-  const { edits = [], remove = [], bump = true, dry = false } = plan || {};
+  const { edits = [], remove = [], renames = [], bump = true, dry = false } = plan || {};
   const dir = path.join(ROOT, 'games', slug);
   const scan = await scanText(slug);
   const byId = new Map(scan.rows.map((r) => [r.id, r]));
@@ -134,6 +141,30 @@ export async function applyText(slug, plan) {
     applied.push({ id: row.id, lang: row.lang, what: label,
       where: row.targets.map((t) => (t.line ? `${t.file}:${t.line}` : t.file)).join(' '),
       from: row.text, to: edit.text });
+  }
+
+  /* A key is a JSON string like a value; its span runs from `keyStart` to its
+     closing quote. Splicing it with the edits keeps the file's formatting. */
+  if (renames.length) {
+    const msrc = await readFile(path.join(dir, 'manifest.json'), 'utf8');
+    const all = jsonStrings(msrc);
+    for (const rn of renames) {
+      const dict = (e) => e.path.length === 5 && e.path[0] === 'web' && e.path[1] === 'copy' && e.path[3] === 'strings';
+      const hits = all.filter((e) => dict(e) && e.path[4] === rn.from && e.keyStart != null);
+      if (!hits.length) { skipped.push(`dictionary key "${rn.from}": not found — not renamed`); continue; }
+      for (const h of hits) {
+        if (all.some((e) => dict(e) && e.path[2] === h.path[2] && e.path[4] === rn.to)) {
+          skipped.push(`dictionary key "${rn.from}" (${h.path[2]}): "${rn.to}" is already a key — not renamed`);
+          continue;
+        }
+        let i = h.keyStart + 1;
+        while (i < msrc.length && msrc[i] !== '"') { if (msrc[i] === '\\') i++; i++; }
+        if (!perFile.has('manifest.json')) perFile.set('manifest.json', []);
+        perFile.get('manifest.json').push({ start: h.keyStart, end: i + 1, text: JSON.stringify(rn.to), what: `dictionary key (${h.path[2]})` });
+        applied.push({ id: 'manifest.json:' + h.path.join('.'), lang: String(h.path[2]), what: `Dictionary key (${String(h.path[2]).toUpperCase()})`,
+          where: 'manifest.json', from: rn.from, to: rn.to, key: true });
+      }
+    }
   }
 
   const drops = [];

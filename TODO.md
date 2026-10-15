@@ -7,8 +7,9 @@ holds the reasoning. A task is **removed** once it is verifiably done.
 - **AUTO** — a command; no code to write.
 - **CODE** — something to develop.
 
-Four scopes are tracked here: **android**, the **content pass on the
-games**, **acquisition** — TikTok and the web portals, un-parked on
+Five scopes are tracked here: **android**, the **content pass on the
+games**, **new games** — parked until the thirteen are validated and live on
+Google Play — **acquisition** — TikTok and the web portals, un-parked on
 2026-09-18 — and **the codebase**. Levels, the meta layer and a village ship
 on every game; the ad measurement gate is parked, not done.
 
@@ -156,6 +157,24 @@ ______________________________________________________________________
   page hosts the fetch and talks to the iframe by `postMessage`, the game does
   not. Decide the identity model (a name typed once, stored in `Store`) and
   the anti-cheat stance before writing the schema.
+
+______________________________________________________________________
+
+## New games — parked
+
+**Not before the thirteen are validated and in production on Google Play.**
+
+- [ ] CODE — **create `holepocalypse`**, golf against a zombie horde, on the
+  motor. [docs/HOLEPOCALYPSE.md](docs/HOLEPOCALYPSE.md) is the plan of record:
+  the rules the prototypes validated (`prototype/holepocalypse-art.html` is
+  the reference), the motor steps, five biomes, seven zombies and five bosses,
+  ten ball kinds, twenty supers, the thirty levels, the stickers and the
+  village.
+- [ ] MAIN — **generate its artwork and music** from the prompts in
+  [docs/HOLEPOCALYPSE.md](docs/HOLEPOCALYPSE.md#10-the-assets--the-list-and-a-prompt-for-each)
+  (29 images and one track). Already done: the icon (to file under
+  `assets/image/icon/`), the biome 1 fairway and the Walker sheet, both
+  untracked at the repo root until they move to `assets/image/master/`.
 
 ______________________________________________________________________
 

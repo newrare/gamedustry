@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.14",
+  "version": "1.9.21",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -55,24 +55,23 @@
     "shoot": "launch/metalclank",
     "stick": "miss/dicethrowsingle",
     "pop": "burst/popplop",
-    "blast": "burst/vibearpeggiolong",
     "spread": "world/uirollover",
     "press": "world/laserlarge"
   },
   "copy": {
     "fr": {
-      "tagline": "Un Bubble Shooter magique avec un petit twist : sois plus rapide et plus malin que la contamination qui gagne les bulles.",
+      "tagline": "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
       "tags": [
-        "Vise et tire",
-        "Groupe par 3",
+        "Vise rapidement",
+        "Grappe de trois",
         "Contamination"
       ]
     },
     "en": {
-      "tagline": "A classic magic bubble shooter with a slight twist: be faster and smarter than the blight spreading through the bubbles.",
+      "tagline": "A magic bubble shooter where you must outpace the evil gnawing at the bubbles. Be quick, and outsmart the blight.",
       "tags": [
-        "Aim & shoot",
-        "Match three",
+        "Aim fast",
+        "Cluster of three",
         "Race the rot"
       ]
     }
@@ -83,23 +82,23 @@
       "en": {
         "lines": [
           {
-            "kicker": "Bubble twist",
-            "line": "Pop fast, before the <b>blight</b>"
+            "kicker": "Fast bubble",
+            "line": "Pop faster than the <b>blight</b>"
           },
           {
             "kicker": "Super",
-            "line": "The rainbow <b>wipes it all</b>"
+            "line": "Rainbow <b>versus</b> blight"
           },
           {
             "kicker": "Darkness",
-            "line": "The blight has to <b>lose</b>"
+            "line": "Contain the <b>blight</b>"
           },
           {
             "kicker": "30 levels",
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Progressive difficulty",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -107,23 +106,23 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Bubble twist",
+            "kicker": "Fast Bubble",
             "line": "Sois plus rapide que la <b>contamination</b>"
           },
           {
             "kicker": "Super",
-            "line": "L'arc-en-ciel <b>balaie tout</b>"
+            "line": "Arc-en-ciel <b>Versus</b> contamination"
           },
           {
             "kicker": "Ténèbres",
-            "line": "Fais <b>reculer</b> la contamination"
+            "line": "Endigue la <b>contamination</b>"
           },
           {
             "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficulté progressive",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -163,7 +162,7 @@
       "fr": {
         "tagline": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
         "strings": {
-          " cleansed": " assainies",
+          " purified": " purifiées",
           " fell": " tombées",
           " popped": " éclatées",
           " streak": " d'affilée",
@@ -172,10 +171,9 @@
           "Cascade": "Cascade",
           "Final score": "Score final",
           "Install now": "Installer",
-          "Joker": "Joker",
           "Max chain": "Chaîne max",
           "Next": "Suivant",
-          "Overrun!": "Envahi !",
+          "Contaminated!": "Contaminé !",
           "Play the full game": "Jouer au jeu complet",
           "Popped": "Eclatées",
           "Purified!": "Purifié !",

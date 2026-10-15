@@ -488,7 +488,7 @@ What a view brings:
   with, one objective per level lerped out of the ranges the manifest names.
   `packages/webshell/levels.{js,css}` is the screen, `prog:<slug>` is the save,
   and the end screen becomes the level's: the title reads **SCORES** or, on a
-  missed objective, **ALMOST** in red, and the buttons become three icons —
+  missed objective, **GAME OVER** in red, and the buttons become three icons —
   **the map**, **the level again** and **the way on**. The round decides which
   of the first two shines (three stars lights the map, no star lights the
   replay, one or two leaves both plain); **NEXT is never dressed**, because a
@@ -533,7 +533,7 @@ What a view brings:
   should not have to die to be told so. **Every other ending gets its own outro
   too**, on the same hook: one or two stars ease the world down and say nothing,
   a missed objective turns the frame red and burns fire up from the bottom edge
-  before the screen that reads ALMOST. A game refines that with three optional
+  before the screen that reads GAME OVER. A game refines that with three optional
   hooks — `Game.levelProgress()` (what the objective is measured against; the
   HUD score otherwise), `Game.levelStars(stars, value)` (a CAP over what those
   bands pay, never a promotion: `games/arcider` is a race, so the third star
@@ -1211,16 +1211,74 @@ in source order, grouped into the beat they fire together on — and
 `game-events-sound.html` (`/sound`) is what the player HEARS — **one card per
 clip**, the file of `assets/audio/sfx/` it is cut from and how long the cut is
 at the top (or the house kit variant it plays), and under it every line of the
-game that plays it with the volume and pitch that line asks for. The background
+game that plays it with the volume that line asks for. The background
 bed is on neither: it is the game's music, cut by hand (docs/MUSIC.md). The
 card is the clip and not the line because eighteen cues in a game are seven
-clips: one decision, offered once. **A volume or a pitch is the LINE's, in that
-game's source**: moving one never reaches the kit, nor another game mapping a
-key to the same variant — a variant's own sound is the kit page's (`/kit`,
-below), where a change reaches every game that plays it. So a kit card **wears
-the thumbs of the other games playing its variant** (`/icons/<slug>.png`, read
-off `/api/kit`'s users), and the kit selector counts them, so a variant is
-never re-cut blind. The whole folder opens from the file button and
+clips: one decision, offered once. **A sound is shaped on its ROLE, never on a
+line**: the kit variant is the one source of truth for what a key sounds like —
+its files, their cuts, how they end, their pitch — and a line owns its VOLUME
+and nothing else, in that game's source. A line's pitch is read and never set
+on the bench: a constant `rate` in the code is a sound shaped in the wrong
+place (a variant at that pitch is the fix), and a rate the code BUILDS — a
+ladder, a combo climbing — is the game's melody, left to it. **The variant is
+edited on its card**: the kit button opens the kit page's own editor under the
+header — each take's waveform cut by its grips, its end, its pitch, a take
+added or removed — and under it **the ten files of the library whose wave looks
+most like the active take** (`/api/sfx-like`, `tools/lab/shape-sfx.mjs`: the
+envelope, where the spectrum sits and how wide it spreads, compared from the
+onset; cached in `dist/lab/sfx-shapes.json`), plus a search over the whole
+library; hover hears a file as the take would play it, a click puts it in the
+take, + adds a take. A variant is every game's that maps a key to it, so the
+card **wears the thumbs of the other games playing it** (`/icons/<slug>.png`,
+read off `/api/kit`'s users) and the editor says *shared* — **New variant**
+forks it and moves the key to the fork, for a change meant for this game
+alone. Apply writes the variant into `kit.json` and re-cuts its takes before
+anything else, and moves no game's version: the kit is every game's. The **kit selector** beside the kit button, which moves a key to
+another variant, is the file picker's menu and not a `<select>`: **hovering a
+variant plays one shot of it**, levelled as it will ship (a draft edited on a
+card included), and the arrows do the same from the keyboard. **Every cue line says
+when it fires**, under it: the conditions it sits in, outermost first
+(`if (combo >= 5)`, `case "gem":`, `else ← if (shield)`, the callback of a
+timer), the comment above it, and what fires WITH it — the callouts with their
+style and word, the notices, the juice, the other cues, as the message page's
+tags — read off the source by `scan-events.mjs` (`cueContext`); a click opens
+the code. **A variant signed off by another game is said so**: a kit line is
+checked on ONE cut of its variant — the mark keeps the variant's fingerprint
+(`kit` in `lab/events-review.json`), and a change to its takes, on `/kit` or
+on any card, makes every game's check on it stale (unchecked again, its check
+icon amber). The games at the foot of a kit card, and on `/kit`, wear a green
+ring where every line of theirs playing the variant is checked on its current
+cut, a dashed one where some are, an amber one on an older cut — read on
+their own route (`/api/kit-checked`) after the icons, which breathe until
+they land; the editor
+names the games that validated it before a take is touched, and the
+selector's menu ticks them. **A change is heard in the game before apply**: a key moved to
+another variant, or a variant whose takes were edited on a card, is played by
+the line's ▶ and by a loop as it will sound — the page renders the draft
+(levelled, its tail, its pitch) into WAV data URIs and hands them to the build
+in the frame as one more kit entry, pointing the key at it (`CONFIG.sfx`);
+revert gives the key its shipped variant back, and apply is still what
+writes. A line checked while it plays such a change is checked on THAT
+cut: the page sends the takes it heard (`heard`), the mark keeps their
+fingerprint, and it still stands once apply has written them — while a check
+given on the old cut reads amber as long as the key plays another one. **The shell is an entry of the picker**, after the template: the end screen
+(the score, its stars, its rows), the round's live stars and its end, the meta
+layer's coins and gifts are `Sound.ui` calls in `packages/` (`shell.js`,
+`levels.js`, `meta.js`), the same in every game and in no `game.js` — listed
+once under `shell` (`shellCues` in `scan-events.mjs`), one card per role, with
+each line's context and the role's editor, checked once for every game
+(`review.shell`); their volumes move for the ear only. **They are FILMED
+rather than recorded**, since what they play on is DOM: **Shoot** has the
+server play a scenario in the game picked beside it — three live stars, the
+third star, the end screen, the coin cascade, the gift boxes, a missed
+objective — in a headless Chrome whose screencast films the whole page
+(`tools/lab/shoot-shell.mjs`, ~40 s), and every shell line heard gets its clip
+under `lab/events-clips/shell/`, looped like any other. REC works there too, in
+that game: a `Sound.ui` the shell plays has its frame in the shared
+`engine.<hash>.js` / `boot.<hash>.js`, where each shell file is copied whole,
+and `/api/offset` says where. A game that plays a shell role itself (grudgeon's
+`deny`) gets a card for it among its own cues, checked and applied like any
+line. The whole folder opens from the file button and
 **hovering a row plays it**, trimmed to the cut length — a clip is chosen by
 ear, names say nothing, and picking them one at a time to hear them is not
 choosing. That list is not a `<select>`, for the same reason: a native popup is
@@ -1248,7 +1306,8 @@ French identical to the English. **A line seen or heard is CHECKED** — the
 tick of the copy desk — and **check, revert and remove sit in ONE place on
 every card**, pinned to the top-right corner of its header: a callout's card
 acts on the whole moment (what fires together is checked and removed
-together), a clip's card on every line that plays it, and a cue line keeps its
+together) and, on a moment of several, each callout carries its own trash at
+the end of its line to remove it alone, a clip's card on every line that plays it, and a cue line keeps its
 own three in the last columns of its grid, right under the card's. The mark lands in
 `lab/events-review.json` against the call's `checkId`: its source in its
 function, plus, for a cue, the clip it plays (provenance note and size). Edit
@@ -1265,7 +1324,7 @@ cues on the other.
 
 Every row is editable — the pop's **style** from the motor's twelve, the word,
 the anchor, the **file a clip is cut from** and how long the cut is, the volume,
-the pitch — and **APPLY
+a kit variant's takes — and **APPLY
 writes the choice back into `games/<slug>/game.js`**: `tools/lab/apply-events.mjs`
 re-reads the source and splices the one argument, so a multi-line call keeps its
 shape; a changed file is re-cut with ffmpeg (mono 32 kHz / 64 kbps, a 70 ms
@@ -1275,13 +1334,19 @@ callout**: a `Notify.say` row's first dropdown reads `notify`, and picking a
 Pop style there fires the row as that `Pop.show` (with an anchor) and makes
 apply rewrite the whole call — the word and the sub carried over as the source
 writes them, `kind`, `icon`, `key` and `hold` dropped and named in the report.
+**And a callout into a notice**: a `Pop.show` row's style dropdown opens on
+`notify`, which fires the row as a `Notify.say` of the kind picked beside it
+and makes apply rewrite the call the other way — the word moved out of the
+options into first place (refused when the callout names none and leans on
+its style's word), `kind` written unless it is `info`, `at`, `cls`, `rot` and
+`hold` dropped and named.
 **An argument the game builds at runtime
 is refused by name, never overwritten**: a word written as `"+" plus the gain` is
 previewed with a stand-in, and pasting a stand-in back would break the game, so
 the row marks it before the click and the report names it after. Changing a
 clip's FILE reaches every beat that plays that key, which is why the swap shows
-on all of them, and why they are on the card rather than on each line. A volume,
-a pitch and a cut length are **sliders cut into magnetic segments** of 0.05, so
+on all of them, and why they are on the card rather than on each line. A volume
+and a cut length are **sliders cut into magnetic segments** of 0.05, so
 the round values are the easy ones to reach. The snap is applied on the MOVE and
 never on the draw: 43 of the catalogue's 340 volumes and pitches sit off a 0.05
 grid (`0.32`, `1.45`), and a slider whose `step` was 0.05 would rewrite them the
@@ -1329,7 +1394,25 @@ since the played frame is loaded with the dev force (`?force=1`) and
 `__LEVELS__.play(n)` (packages/webshell/levels.js) is what it calls. **↻** on a row loops that clip under
 the frame — both frames, EN and FR, on the message page — and fires the row,
 with its pending edits, at the instant it fired in play, together with
-everything else that fired in the window (a chip mutes one). `Pop.text` is not drawn while recording, so the
+everything else that fired in the window — one chip per line, ×N for a line
+that fired several times, and a chip mutes or unmutes it; on the sound page the
+OTHER cues of the window start muted, so the loop is heard as the one sound
+being judged while its callouts still play to the eye. **REC records the
+frame as it is seen** when the browser allows it — this tab, asked for once per
+Rec (`getDisplayMedia`) and cropped to the played frame (`CropTarget`), so the
+HUD, the callouts, the live star pill and the end screen are in the clip; the
+back office's frame carries `allow="display-capture"` for it. Such a clip is
+marked `screen`, and its loop fires only its cues, since its callouts are in
+the picture. Refused, or in a browser without Region Capture, it records the
+canvas alone, as before — and says why on the REC pane itself (`canvas only`,
+the reason, and a *Share the screen* button to ask again; the back office has to
+be reloaded once for its `display-capture`), and the loop bar marks such a clip
+`canvas only`. Where the browser cannot crop (no `CropTarget`, or `cropTo`
+refused), the frame is cut out of the tab capture by hand, its box measured in
+the top window through the back office's iframe; anything but this tab shared
+is refused by name. With the
+screen shared, a cue whose clip is the canvas alone is recorded again and the
+old clip replaced. `Pop.text` is not drawn while recording, so the
 number is never baked into the picture; the DOM (HUD, callouts) and a backdrop
 laid under the canvas (`CONFIG.sceneArt`) are not in a clip.
 **EN**, on the message page, keeps a
@@ -1500,8 +1583,12 @@ thirteen games at once. The page pre-searches the library for the selected
 role, plays every candidate LEVELLED as it will ship, takes the cut by its
 grips on the waveform — and how it ENDS, cut, faded out or dropping an octave
 as it fades (`tail`), for a take cut in the middle of its sound — and plays the role the way the shell does — the stars as a
-ladder, the coins as a cascade, the rest five times over to hear the takes and
-the jitter. Save writes `assets/audio/kit/kit.json`, and
+ladder, the coins as a cascade, the rest five times over to hear the takes. A
+take carries its own **pitch** (`rate`, 0.5 to 2, baked into the cut file), and
+nothing is detuned at random any more — the old `jitter` made a line's pitch
+impossible to judge, and a sound that should sound different is another
+variant. The same editor opens on a key's card in the events bench (`/sound`).
+Save writes `assets/audio/kit/kit.json`, and
 `tools/lab/cut-kit.mjs` re-cuts every take into `assets/audio/kit/<role>-<n>.mp3`,
 levelled to one loudness (committed, like `assets/image/shell/`; the build
 never runs ffmpeg). A second group of roles is GAMEPLAY (`pickup`, `bonus`,
@@ -1565,7 +1652,15 @@ the camp events. It opens on no game: the picker is the manifests alone, and a
 game is parsed when it is picked, French first. **Every row says where it is
 read** — the function the call sits in and its line of source, and for a
 dictionary entry every call that writes its English (or the table it is
-defined in; an entry nothing writes is marked *no use found*). **A row read and
+defined in; an entry nothing writes is marked *no use found*). **Every row
+also says WHAT it is printed on** — a coloured pill out of one fixed list
+(`SURFACES` in `tools/lab/scan-text.mjs`): the website, a store image, the
+title screen, a notification, a callout, a floating value, a card's name or
+description, the end screen, a mission… read off the manifest path, the call
+the literal reaches (the game's own wrapper around it included) or the table
+it sits in; a dictionary entry wears one per surface its English reaches, a
+select keeps one surface, and where the source cannot say the pill reads
+*Game data* or *In code* rather than guess. **A row read and
 signed off is CHECKED** — it turns green, and the mark lands in
 `lab/text-review.json` with the text it was given on, so a string edited since
 reads as unchecked again; *Hide checked* leaves what is left to read, and a
@@ -1573,8 +1668,13 @@ pending edit is amber. **A mark travels**: the same row reading the same words
 in another game is checked (or unchecked) there too; an applied edit is
 checked by its apply; and a game whose every row is checked, with nothing
 untranslated and nothing to update, turns green in the picker. **A French
-edit applied opens a TO UPDATE action** on the English it translates
-(`lab/text-todo.json`), closed by checking that English or changing it. **A
+edit applied rewrites its English on the same APPLY**: every English it
+translates is adapted to the new French by `tools/lab/translate-en.mjs` (the
+local `claude -p`, no key in the repo) and written back — a dictionary key
+moving with the English the game writes — and lands UNCHECKED, since a machine
+wrote it. When the translator cannot be reached, the edit opens a TO UPDATE
+action on that English instead (`lab/text-todo.json`), closed by checking that
+English or changing it. **A
 dictionary entry marked *no use found* is proposed for removal** as soon as
 the game is read, and APPLY takes it out of the manifest. Every row has an
 edit field and **APPLY writes it back**

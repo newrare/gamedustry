@@ -44,12 +44,15 @@
                    records its cues into the same place. Pop.text is not drawn
                    while recording, so the number is never baked into the
                    picture.
-     LOOP (↻)      on a row with a clip, the clip plays behind both frames
-                   (EN and FR), and at the instant the event fired it is fired
-                   again — with what the row now says, so an edit is judged on
-                   the real action. Everything else that fired in that window,
-                   the cues included, fires with it at its own time, so the
-                   moment is whole; a chip in the loop bar mutes one of them.
+     LOOP (↻)      on a row with a clip, the clip plays behind the English
+                   frame alone, as big as the stage allows (the French one
+                   steps aside: a loop is watched, not proofread), and at the
+                   instant the event fired it is fired again — with what the
+                   row now says, so an edit is judged on the real action.
+                   Everything else that fired in that window, the cues
+                   included, fires with it at its own time, so the moment is
+                   whole; a chip in the loop bar, under the frame, mutes one
+                   of them.
      EN            keep a callout's or a notice's words in English on the
                    French screen. It writes an entry whose French IS the
                    English into web.copy.fr.strings (tools/lab/keep-english.mjs,
@@ -75,7 +78,9 @@
    change can be seen before it is written. A notice can also be turned into a
    callout: its first dropdown reads `notify`, and picking a Pop style there
    fires the row as that Pop.show, and apply rewrites the call (kind and icon
-   dropped).
+   dropped). And the other way: a callout's style dropdown opens on `notify`,
+   which fires the row as a Notify.say of the kind picked beside it, and apply
+   rewrites the call (style, anchor and class dropped).
 
    APPLY is what makes it stick. What the rows changed goes to POST /api/apply
    (tools/lab/apply-events.mjs), which splices the arguments back into
@@ -99,7 +104,8 @@
    A line seen is CHECKED — the copy desk's tick — and the three actions
    (check, revert, remove) sit in ONE place on every card: the top-right corner
    of its header, out of the flow, so no wrap can move them. A card acts on its
-   whole moment. The mark lands in lab/events-review.json against the call's
+   whole moment; on a moment of several, each line also carries its own trash,
+   to remove that callout alone. The mark lands in lab/events-review.json against the call's
    checkId (tools/lab/scan-events.mjs): change the call and the mark no longer
    matches, so the line reads unchecked again. A game whose every callout and
    notice is checked turns green in the picker, and HIDE CHECKED leaves what
@@ -210,6 +216,7 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
 .k-pop     .tag { background:#3a2350; color:#dcb6ff; }
 .k-notify .tag { background:#1f3550; color:#9fd0ff; }
 .k-notify.as-pop .tag { background:#3a2350; color:#dcb6ff; }
+.k-pop.as-notify .tag { background:#1f3550; color:#9fd0ff; }
 
 .call input, .call select { padding:3px 7px; border-radius:6px; font:700 12px/1.4 inherit; }
 .call input.w { width:150px; }
@@ -250,6 +257,9 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
   opacity:.4; text-decoration:line-through; pointer-events:none;
 }
 .call.killed { background:#1d1218; }
+/* A line's own trash, on a moment of several: pinned to the right of its first
+   row, under the card's, and the one control a struck line still answers. */
+.call .iconbtn.own { margin-right:-2px; }
 
 /* Checked: seen, read and signed off. */
 .iconbtn.check.on { background:#5fd49a; color:#0b0b12; }
@@ -291,7 +301,7 @@ details.src pre {
 /* The column must not SHRINK its own rows: fit() sizes the frame from what the
    hint and the report measure, and a flex-shrunk report would make it read a
    height it had already caused. */
-#bar, #shell, #hint, #report { flex:0 0 auto; }
+#bar, #shell, #replay, #hint, #report { flex:0 0 auto; }
 
 /* What APPLY did, kept across the rebuild's reload: the line as it is now
    written, and every change that was refused and why. */
@@ -354,8 +364,11 @@ body.rec #replay { display:none; }
 .fit video.clip { position:absolute; left:0; top:0; width:720px; height:1280px; object-fit:cover; border-radius:22px; background:#000; display:none; }
 body.looping .fit video.clip { display:block; }
 body.looping .frame { background:transparent; position:relative; }
+/* A loop is watched in English only: the French pane goes, its frame stays
+   loaded (it is back at once on Stop). */
+body.looping #shell .pane:nth-child(2) { display:none; }
 
-#replay { width:100%; margin-bottom:10px; display:none; flex-wrap:wrap; align-items:center; gap:6px 8px;
+#replay { width:100%; margin-top:10px; max-height:190px; overflow:auto; display:none; flex-wrap:wrap; align-items:center; gap:6px 8px;
   background:#12121c; border:1px solid #2a3a60; border-radius:9px; padding:7px 9px; font-size:11px; color:#b9b9d6; }
 body.looping #replay { display:flex; }
 #replay .what { font:700 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff; }
@@ -402,7 +415,6 @@ button.act.en.dirty { box-shadow:0 0 0 1px #7ea6ff; }
     <span class="sp"></span>
     <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
   </div>
-  <div id="replay"></div>
   <div id="shell">
     <div class="pane"><div class="lang">EN</div>
       <div class="fit"><video class="clip" data-lang="en" muted playsinline></video><iframe class="frame" data-lang="en" title="the game's callout layers, in English"></iframe></div></div>
@@ -411,6 +423,7 @@ button.act.en.dirty { box-shadow:0 0 0 1px #7ea6ff; }
   </div>
   <div id="recwrap" class="pane"><div class="lang">Rec — play; every callout not yet seen is captured</div>
     <div class="fit rec"><iframe class="recframe frame" id="rec-frame" title="the game itself, played to record its events"></iframe></div></div>
+  <div id="replay"></div>
   <div id="hint"></div>
   <div id="report"></div>
 </main>
@@ -426,6 +439,8 @@ const STYLES = ["score","alert","combo","streak","ribbon","manifest","perfect",
 const ANCHORS = ["topLeft","top","topRight","upperLeft","upper","upperRight",
   "left","center","right","lowerLeft","lower","lowerRight",
   "bottomLeft","bottom","bottomRight","hudUnder","ctaAbove","edgeLeft","edgeRight"];
+// Notify.say's kinds (packages/shell/shell.js, KIND_ICON); the first is the motor's default.
+const NOTIFY_KINDS = ["info","gain","good","warn","loss","rare"];
 
 /* What this page lists. Canvas juice (Fx.*, HUD.punch) is scanned but not
    listed — see the head — and the cues are the sound page's. */
@@ -445,7 +460,7 @@ const state = {
   hideChecked: (() => { try { return localStorage.getItem("events:hideChecked") === "1"; } catch (e) { return false; } })(),
   /* What the rows changed and APPLY has not written yet, keyed so a re-render
      (a filter) puts every control back where the hand left it.
-       calls:  { "<line>|<Name>": { style, word, sub, at, as } }
+       calls:  { "<line>|<Name>": { style, word, sub, at, as, kind } }
        kill:   { calls: { "<line>|<Name>": { line, name } } }
        keepEn: { "<English word>": true | false } — kept in English, or given
                its French back (tools/lab/keep-english.mjs) */
@@ -620,9 +635,15 @@ function argsFor(call, row, W) {
     const w = text("word");
     if (w !== undefined) args[2] = w;
   } else if (call.kind === "pop") {
+    const w = text("word"), sub = text("sub");
+    // Turned into a notice: what Notify.say would be handed instead.
+    if (asNotify(row)) {
+      const n = { kind: get("select.kind").value };
+      if (sub) n.sub = sub;
+      return [w || "", n];
+    }
     const o = args[1] = Object.assign({}, args[1]);
     args[0] = get("select.style").value;
-    const w = text("word"), sub = text("sub");
     if (w) o.word = w; else delete o.word;          // the style's own word
     if (sub) o.sub = sub; else delete o.sub;
     const at = get("select.at").value;
@@ -768,10 +789,15 @@ function asPop(row) {
   const as = row && row.querySelector("select.as");
   return as ? as.value : "";
 }
+// A callout row turned into a notice: its style dropdown reads `notify`.
+function asNotify(row) {
+  const st = row && row.querySelector("select.style");
+  return !!st && st.value === "notify";
+}
 
 function fire(call, row) {
   unlock();
-  const [mod, meth] = (asPop(row) ? "Pop.show" : call.preview.fn).split(".");
+  const [mod, meth] = (asPop(row) ? "Pop.show" : asNotify(row) ? "Notify.say" : call.preview.fn).split(".");
   // A cue (replayed by a loop) is heard once, from the English frame; a word is read in both.
   const langs = call.kind === "sound" ? ["en"] : LANGS;
   for (const lang of langs) {
@@ -850,7 +876,7 @@ function killCall(call, row) {
 }
 
 /* --- the rows ------------------------------------------------------------ */
-function callRow(call) {
+function callRow(call, own) {
   const row = document.createElement("div");
   row.className = "call k-" + call.kind;
   const bits = [`<button class="act sm play" title="fire it in the game">▶</button>`,
@@ -874,8 +900,10 @@ function callRow(call) {
   } else if (call.kind === "pop") {
     const o = call.preview.args[1] || {};
     const style = call.preview.args[0];
-    bits.push(`<select class="style">${STYLES.map((s) =>
+    bits.push(`<select class="style" title="the callout's style, or notify to turn it into a notice — apply rewrites it as Notify.say">` +
+      `<option value="notify">notify</option>${STYLES.map((s) =>
       `<option${style === s ? " selected" : ""}>${s}</option>`).join("")}</select>`);
+    bits.push(`<select class="kind" hidden>${NOTIFY_KINDS.map((k) => `<option>${k}</option>`).join("")}</select>`);
     bits.push(field("word", "w", o.word, "style word"));
     bits.push(field("sub", "s", o.sub, "sub"));
     // The empty option is "whatever the style says" — a call that names no
@@ -905,6 +933,9 @@ function callRow(call) {
   bits.push(call.preview.exact
     ? `<span class="approx"></span>`
     : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Type over it.">≈</span>`);
+  /* A moment of several callouts gives each line its own trash, under the
+     card's: the card removes the whole moment, a line removes itself. */
+  if (own) bits.push(`<span class="sp"></span>` + iconBtn("trash own", "trash", "remove this callout alone from the game"));
   if (call.texts) {
     bits.push(slotsHtml(call));
     bits.push(`<div class="read"></div>`);
@@ -952,6 +983,25 @@ function callRow(call) {
     bind("input.w", "word", opts.word);
     bind("input.s", "sub", opts.sub);
     bind("select.at", "at", opts.at);
+    if (call.name === "Pop.show") {
+      bind("select.kind", "kind", null);
+      const st = row.querySelector("select.style"), at = row.querySelector("select.at"),
+            kind = row.querySelector("select.kind");
+      /* Turned into a notice, the anchor goes and a kind comes: a notice has
+         no spot, and an anchor left pending would be applied to nothing.
+         Back to a style, the kind goes back to the motor's default. */
+      st._sync = () => {
+        const on = st.value === "notify";
+        row.classList.toggle("as-notify", on);
+        row.querySelector(".tag").textContent = on ? "Pop.show → Notify.say" : call.name;
+        at.hidden = on;
+        kind.hidden = !on;
+        if (on && at.value !== at.dataset.was) { at.value = at.dataset.was; at.dispatchEvent(new Event("change")); }
+        if (!on && kind.value !== kind.dataset.was) { kind.value = kind.dataset.was; kind.dispatchEvent(new Event("change")); }
+      };
+      st.addEventListener("change", st._sync);
+      st._sync();
+    }
   } else if (call.kind === "notify") {
     bind("input.w", "word", call.args[0]);
     bind("input.s", "sub", opts.sub);
@@ -994,10 +1044,11 @@ function beatCard(beat, calls) {
   head.querySelector(".ln").onclick = () => copy(state.data.where + ":" + beat.line);
   card.appendChild(head);
 
-  const rows = calls.map((c) => { const r = callRow(c); card.appendChild(r); return r; });
+  const rows = calls.map((c) => { const r = callRow(c, calls.length > 1); card.appendChild(r); return r; });
+  const allKilled = () => calls.every((c) => state.pending.kill.calls[pendKey(c)]);
 
   /* The card's actions are the moment's: what fires together is checked,
-     reverted and removed together. Removing is all or nothing — every line
+     reverted and removed together. The card's trash is all or nothing — every line
      marked, or, when they all already are, every line given back. */
   head.querySelector(".check").onclick = () => {
     const ids = calls.map((c) => c.checkId).filter(Boolean);
@@ -1012,7 +1063,11 @@ function beatCard(beat, calls) {
     calls.forEach((c, i) => { if (!!state.pending.kill.calls[pendKey(c)] !== on) killCall(c, rows[i]); });
     card.classList.toggle("killed", on);
   };
-  card.classList.toggle("killed", calls.every((c) => state.pending.kill.calls[pendKey(c)]));
+  rows.forEach((r, i) => {
+    const own = r.querySelector(".iconbtn.own");
+    if (own) own.onclick = () => { killCall(calls[i], r); card.classList.toggle("killed", allKilled()); };
+  });
+  card.classList.toggle("killed", allKilled());
 
   const src = document.createElement("details");
   src.className = "src";
@@ -1198,12 +1253,13 @@ function pickGame(slug) {
   window.addEventListener("blur", () => pickOpen(false));
 })();
 
-function fit() {
+function fit(again) {
   const stage = el("stage"), bar = el("bar"), gap = 12, label = 22;
+  const replayH = el("replay").offsetHeight;
   // The apply report takes its room out of the frames, never off the bottom of
   // the window: what it costs in height the frames give back.
   const h = stage.clientHeight - bar.offsetHeight - el("hint").offsetHeight - el("report").offsetHeight -
-            el("replay").offsetHeight - label * 2 - gap - 75;
+            replayH - label * 2 - gap - 75;
   // Two frames stacked in the height the stage gets, never wider than a third of the window.
   const k = Math.max(0.12, Math.min(h / 2560, (window.innerWidth * 0.34 - 28) / 720));
   // REC: ONE frame, as big as the stage allows — it is played, not glanced at.
@@ -1216,13 +1272,17 @@ function fit() {
     stage.style.flexBasis = (720 * kr + 28) + "px";
     return;
   }
+  // LOOP: the English frame alone, sized like REC's — the loop bar under it
+  // wraps to the new width, so its height is read again once.
+  const kf = document.body.classList.contains("looping") ? kr : k;
   document.querySelectorAll(".fit:not(.rec)").forEach((f) => {
-    f.style.transform = "scale(" + k + ")";
-    f.style.width = (720 * k) + "px";
-    f.style.height = (1280 * k) + "px";
-    f.parentNode.style.width = (720 * k) + "px";
+    f.style.transform = "scale(" + kf + ")";
+    f.style.width = (720 * kf) + "px";
+    f.style.height = (1280 * kf) + "px";
+    f.parentNode.style.width = (720 * kf) + "px";
   });
-  stage.style.flexBasis = Math.max(300, 720 * k + 28) + "px";
+  stage.style.flexBasis = Math.max(300, 720 * kf + 28) + "px";
+  if (!again && el("replay").offsetHeight !== replayH) fit(true);
 }
 
 function load(slug) {
@@ -1942,7 +2002,7 @@ el("report").onclick = () => {
   try { sessionStorage.removeItem("events:report"); } catch (e) {}
 };
 
-window.addEventListener("resize", fit);
+window.addEventListener("resize", () => fit());
 fit();
 </script>
 </body>

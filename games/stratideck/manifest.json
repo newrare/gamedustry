@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.24.5",
+  "version": "0.24.10",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -263,19 +263,19 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Stratego de poche. Deux nombres décident de chaque combat — et chaque combat a un prix.",
+      "tagline": "Affrontes une armée de monstre et construit le meilleur Deck possible afin de gagner un maximum de bataille. Convertis les cartes adverses, soit stratégique en défense et positionnement. N'oublies pas aussi que la vie et la gestion du camp est une composante importante pour gagner une guerre. Collectionnes des centaines de cartes uniques!",
       "tags": [
-        "Glisse pour attaquer",
-        "Grade et rang",
-        "Tes propres cartes"
+        "Gestion, stratégie et mémorisation",
+        "Grade et Rang",
+        "Collection et gestion de Deck"
       ]
     },
     "en": {
-      "tagline": "A pocket Stratego. Two numbers decide every fight — and every fight costs you something.",
+      "tagline": "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
       "tags": [
-        "Drag to strike",
+        "Management, strategy and memorization",
         "Grade and tier",
-        "Own your cards"
+        "Collection and deck management"
       ]
     }
   },
@@ -285,15 +285,15 @@
       "en": {
         "lines": [
           {
-            "kicker": "Stratego",
-            "line": "The higher <b>rank</b> wins"
+            "kicker": "Every card is unique",
+            "line": "Management, strategy and <b>memorization</b>"
           },
           {
             "kicker": "Hidden",
             "line": "Find out what is <b>hiding</b>"
           },
           {
-            "kicker": "Two numbers",
+            "kicker": "Collection and deck building",
             "line": "Grade wins, <b>tier</b> settles it"
           },
           {
@@ -309,15 +309,15 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Stratego",
-            "line": "Le plus haut <b>grade</b> gagne"
+            "kicker": "Chaque carte est unique",
+            "line": "Gestion, stratégie et <b>mémorisation</b>"
           },
           {
             "kicker": "Face cachée",
             "line": "Découvre ce qui se <b>cache</b>"
           },
           {
-            "kicker": "Deux nombres",
+            "kicker": "Collection et construction de Deck",
             "line": "Le grade gagne, le <b>rang</b> tranche"
           },
           {
@@ -365,14 +365,11 @@
       "fr": {
         "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">grade</b> gagne",
         "strings": {
-          " streak": " d'affilée",
           "Army lost": "Armée perdue",
-          "Best score": "Meilleur score",
           "Both fall": "Les deux tombent",
           "Camp taken!": "Camp conquis !",
           "Captain": "Capitaine",
           "Captive": "Prisonnier",
-          "Captives": "Prisonniers",
           "Cards": "Cartes",
           "Colonel": "Colonel",
           "Fight again": "Rejouer",
@@ -399,7 +396,6 @@
           "Spotted": "Repéré",
           "Spy": "Espion",
           "Still wounded": "Encore blessé",
-          "The wounded are back": "Les blessés repartent",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "To battle": "A l'assaut",
@@ -429,7 +425,7 @@
           "Your army": "Ton armée",
           "Alive": "Vivants",
           "Lost": "Perdus",
-          "Flag captured": "Drapeau pris",
+          "Flag captured": "Drapeau capturé",
           "No wounds": "Aucune blessure",
           "Prisoner taken": "Prisonnier capturé",
           "Unscathed": "Indemne",
@@ -459,8 +455,8 @@
           "Only a colonel is not afraid of it": "Seul un colonel n'en a pas peur",
           "Only a general can never turn traitor": "Seul un général ne trahit jamais",
           "Out of the battle": "Hors de combat",
-          "Stunned for the battle": "Etourdi jusqu'à la fin",
-          "The spell finds no one": "Le sort ne trouve personne",
+          "Stunned for the battle": "Etourdi jusqu'à la fin de la bataille",
+          "The spell hits no one": "Le sort ne frappe personne",
           "An ally falls": "Un allié tombe",
           "Struck down by an ally": "Abattu par un allié",
           "An ally is wounded": "Un allié est blessé",
@@ -474,22 +470,22 @@
           "A card that walks into it gets lost: out of the battle until the end, neither wounded nor dead.": "La carte qui s'y aventure s'y perd : hors du combat jusqu'à la fin, ni blessée ni morte.",
           "A card that strikes it is frozen with fear: it goes back to its place in the hand and never leaves it again this battle.": "La carte qui le frappe est glacée d'effroi : elle retourne à sa place dans la main et ne la quitte plus de la bataille.",
           "A card that opens it is bewitched: it turns round and strikes a card of its own hand.": "La carte qui l'ouvre est ensorcelée : elle se retourne et frappe une carte de sa propre main.",
-          "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": "Tue le maréchal, quel que soit son rang. Contre toute autre carte, c'est la plus faible de toutes.",
-          "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": "Ne combat pas une carte cachée : il la révèle et retourne sous le paquet.",
-          "The only grade that clears a trap without being lost with it.": "Le seul grade qui désamorce un piège sans sauter avec lui.",
-          "The only grade that tears down the straw man.": "Le seul grade qui déchire l'épouvantail.",
-          "The only grade that chops down the wooden fence.": "Le seul grade qui abat la barrière de bois.",
-          "The only grade that smashes the rock.": "Le seul grade qui brise le rocher.",
-          "The only grade that crosses the forest without getting lost.": "Le seul grade qui traverse la forêt sans s'y perdre.",
-          "The only grade that shatters the skull without being stunned.": "Le seul grade qui brise le crâne sans être étourdi.",
-          "The only grade that burns the book without being bewitched.": "Le seul grade qui brûle le livre sans être ensorcelé.",
-          "The highest grade: no soldier outranks it, but the spy kills it.": "Le plus haut grade : aucun soldat ne le surpasse, mais l'espion le tue.",
-          "Take the enemy <b>flag</b>": "Prends le <b>drapeau</b> ennemi",
-          "Win with <b>no wounds</b>": "Gagne <b>sans blessure</b>",
+          "Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": "L'espion peu battre un maréchal mais il n'est pas fait pour le champ de bataille.",
+          "Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": "L'éclaireur évite les combats et révèle à distance la force ennemi.",
+          "The only grade that clears a trap without being lost with it.": "Désamorce un piège sans sauter avec lui.",
+          "The only grade that tears down the straw man.": "Suffisamment stupide pour se battre contre un épouvantail.",
+          "The only grade that chops down the wooden fence.": "Aime découper des barrières de bois.",
+          "The only grade that smashes the rock.": "Aime casser des pierres et des rochers.",
+          "The only grade that crosses the forest without getting lost.": "Ne se perd jamais et surtout pas en forêt.",
+          "The only grade that shatters the skull without being stunned.": "Courageux et briseur de crâne dans l’âme. ",
+          "The only grade that burns the book without being bewitched.": "Possède énormément de savoirs et ne peu pas être ensorcelé.",
+          "The highest grade: no soldier outranks it, but the spy kills it.": "Invincible sur un champ de bataille mais peu se faire surprendre par un espion.",
+          "Retrieve the enemy <b>flag</b>": "Récupère le <b>drapeau</b> ennemi",
+          "Win with no <b>wounds</b>": "Gagne sans <b>blessure</b>",
           "Take a <b>prisoner</b>": "Fais un <b>prisonnier</b>"
         },
         "helpRules": [
-          "Chaque carte est un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le grade le plus haut gagne.",
+          "Chaque carte possède un particularité, un <b>Grade</b> (1 - 10) et un <b>Rang</b> (S - E). Le plus haut gagne.",
           "Grade égal ? Le meilleur <b>rang</b> l'emporte. Même grade et même rang : les deux tombent.",
           "Vaincre un rang supérieur <b>blesse</b> ta carte : elle passe un tour, puis file à l'infirmerie.",
           "Battre une carte d'un rang inférieur au tien la laisse <b>debout</b> : une bataille gagnée te permet de faire un prisonnier.",
@@ -498,7 +494,7 @@
       },
       "en": {
         "helpRules": [
-          "Every card is a <b>grade</b> (1 to 10) and a <b>tier</b> (E to S). The higher grade wins.",
+          "Every card has a trait, a <b>grade</b> (1 to 10) and a <b>tier</b> (S to E). The higher one wins.",
           "Same grade? The better <b>tier</b> wins. Same grade AND same tier: both fall.",
           "Win against a better tier and your card is <b>wounded</b> — it sits out a turn, then rests in the infirmary.",
           "Beat a card with a better tier than its own and the enemy is left <b>standing</b>: a won battle lets you take one prisoner.",

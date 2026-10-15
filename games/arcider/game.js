@@ -6,7 +6,7 @@
     /* One sentence, and nothing else: the stage under it shows the finger
        pressing one side and the bike carving that way, so the line only has to
        name the gesture, the machine and the fuel. */
-    tagline: "Lean your ship <b class=\"w-press\">left or right</b> to <b class=\"w-pass\">take places</b> and never break your <b class=\"w-shield\">shield</b>",
+    tagline: "Lean your ship <b class=\"w-press\">left or right</b> to <b class=\"w-pass\">overtake</b> and never break your <b class=\"w-shield\">shield</b>",
     gameSeconds: 0,                  // endless: the run ends when the cells do
 
     // Store links used by every CTA. The right one is picked at runtime from the
@@ -31,7 +31,7 @@
        stage is the demonstration. */
     intro: { logo: "logo", demo: "hold", caption: "",
              // on a desk: the arrows, held (shell.js, Demo)
-             desk: [{ keys: ["left", "right"], does: "Turn" }] },
+             desk: [{ keys: ["left", "right"], does: "Tilt" }] },
 
     // Desktop: SPACE starts and replays. Steering is held, not tapped, so the
     // game owns the LEFT/RIGHT keys itself (see section 6).
@@ -56,7 +56,7 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "Tap to race",
+      start:      "Start",
       ctaBar:     "Install now",
       ctaEnd:     "Play the full game",
       replay:     "Race again",
@@ -1873,7 +1873,7 @@
       Pop.show("streak", { word: rank + "/" + need, sub: "+" + g, at: "top",
                            cls: safe ? "rank-in" : "rank-out" });
       if (rank === 1) {
-        Pop.show("ultra", { word: "Leader", at: popSpot() });
+        Pop.show("ultra", { word: "First", at: popSpot() });
         Overlay.vignette("rgba(255,212,59,.85)", 1, 560);
       }
     }
@@ -2164,12 +2164,12 @@
 
     /* THE RANK PILL, and the cut counting down under it. This is the pill the
        player reads: the position is the number, and the label is the wall it
-       has to be inside by — "TOP 10 · 84M" once a cut is close enough to be
+       has to be inside by — "TOP 10 · 84m" once a cut is close enough to be
        worth panicking about, the plain field size before that. */
     function ordinal(n) {
       var t = n % 100;
-      if (t >= 11 && t <= 13) return n + Lang.t("TH");
-      return n + Lang.t(["TH", "ST", "ND", "RD"][n % 10] || "TH");
+      if (t >= 11 && t <= 13) return n + Lang.t("th");
+      return n + Lang.t(["th", "st", "nd", "rd"][n % 10] || "th");
     }
     function showRank() {
       var cut = T.cuts[cutI], need = Lang.t("Final ") + fieldSize, left, txt;
@@ -2178,9 +2178,9 @@
         left = Math.max(0, Math.round(cut.at - dist));
         // The flag is a countdown and never an ask: nothing about the place is
         // at stake there but the win itself.
-        need = flag ? Lang.t("Finish · ") + left + "M"
-             : left <= T.cutWarn ? Lang.t("Top ") + cut.rank + Lang.t(" in ") + left + "M"
-                                 : Lang.t("Cut to ") + cut.rank + " · " + left + "M";
+        need = flag ? Lang.t("Finished · ") + left + "m"
+             : left <= T.cutWarn ? Lang.t("Top ") + cut.rank + Lang.t(" in ") + left + "m"
+                                 : Lang.t("Be top ") + cut.rank + " · " + left + "m";
       }
       // "3/10" — the place, and how many pilots are still in the race. One
       // glance has to answer both "where am I" and "how many are left".
@@ -2389,7 +2389,7 @@
         }
         if (!lowShown) {
           lowShown = true;
-          Pop.show("danger", { word: "Hull critical", sub: "Take the charge line", at: popSpot() });
+          Pop.show("danger", { word: "Hull critical", sub: "Recharge your shield", at: popSpot() });
         }
       } else { lowShown = false; warnT = 0; }
 
@@ -2480,8 +2480,8 @@
          the next wall. Carried by `combo` rather than a banner so it lands in
          the same layer as the rest of the game's shouts. */
       Pop.show("combo", { word: fieldSize + Lang.t(" pilots left"),
-                          sub: atFlag() ? Lang.t("Finish · take the lead")
-                                        : Lang.t("Next cut · top ") + T.cuts[cutI].rank,
+                          sub: atFlag() ? Lang.t("Win the race")
+                                        : Lang.t("Goal: top ") + T.cuts[cutI].rank,
                           at: "center" });
       showRank();
     }

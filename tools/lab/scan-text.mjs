@@ -332,13 +332,205 @@ function scopeIndex(clean, mask) {
       if (f) f.end = i;
     }
   }
-  return (off) => {
+  const scopeOf = (off) => {
     let best = null;
     for (const f of frames) if (f.start < off && off < f.end && (!best || f.start > best.start)) best = f;
     const chain = [];
     for (let f = best; f; f = f.parent) if (f.name) chain.unshift(f.name);
     return chain.slice(-3).join('.');
   };
+  scopeOf.frames = frames;                           // what wrappersOf reads
+  return scopeOf;
+}
+
+/* ── where a player READS it ───────────────────────────────────────────────
+   A group is a screen; a surface is the THING on that screen the words are
+   printed on — a notification chip, a callout, a card's description, a tag on
+   the site. It is what a proofreader needs to judge a line (a notice is read,
+   a callout is felt, a card is read at leisure) and what a dictionary entry,
+   keyed by its English, cannot say on its own. One fixed vocabulary, so the
+   page can colour and filter on it; `detail` carries the rest. */
+export const SURFACES = [
+  { key: 'site',     label: 'Website',        note: 'the newrare site — a game card' },
+  { key: 'meta',     label: 'Store page',     note: 'the itch page and the store meta, plain text' },
+  { key: 'storeimg', label: 'Store image',    note: 'printed on a listing screenshot' },
+  { key: 'gallery',  label: 'Dev gallery',    note: 'the root index.html write-up' },
+  { key: 'title',    label: 'Title screen',   note: 'the intro, its sentence and its demo' },
+  { key: 'help',     label: 'Help card',      note: 'one rule per line' },
+  { key: 'menu',     label: 'Button / menu',  note: 'a button or a label of the shell' },
+  { key: 'hud',      label: 'HUD',            note: 'the top band of the round' },
+  { key: 'callout',  label: 'Callout',        note: 'Pop.show — a moment, big and brief' },
+  { key: 'float',    label: 'Floating value', note: 'Pop.text — a number rising from the world' },
+  { key: 'notice',   label: 'Notification',   note: 'Notify.say — a chip top right, read' },
+  { key: 'canvas',   label: 'Canvas',         note: 'painted by the game with fillText' },
+  { key: 'panel',    label: 'Game panel',     note: 'a node the game writes itself — a sheet, a pick' },
+  { key: 'card',     label: 'Card',           note: 'a card of the game — its name, its text' },
+  { key: 'end',      label: 'End screen',     note: 'the title and the stat rows' },
+  { key: 'level',    label: 'Level objective', note: 'what a star asks for' },
+  { key: 'barracks', label: 'Barracks',       note: 'the army layer\'s screens' },
+  { key: 'mission',  label: 'Mission',        note: 'a briefing or a report' },
+  { key: 'event',    label: 'Camp event',     note: 'told at the village' },
+  { key: 'data',     label: 'Game data',      note: 'a table the game reads — where it shows is not written beside it' },
+  { key: 'code',     label: 'In code',        note: 'built at runtime — where it shows could not be read' }
+];
+const sf = (key, detail) => ({ key, ...(detail ? { detail } : {}) });
+
+/* Read off one line of source: the call the words reach. Direct calls first,
+   then the game's own wrappers around them (gearball's `popText`), then a
+   node the game writes into, then what the function and the table say. */
+const LINE_RULES = [
+  [/\bNotify\.say\s*\(/, 'notice'],
+  [/\bPop\.show\s*\(/, 'callout'],
+  [/\bPop\.text\s*\(/, 'float'],
+  [/\bfillText\s*\(/, 'canvas'],
+  [/\bHUD\.set(?:Left|Right)\s*\(/, 'hud'],
+  // A queue in front of Notify (gearball's `hint`) still carries its options.
+  [/\bkind\s*:\s*["'](?:info|gain|good|warn|loss|rare)["']/, 'notice']
+];
+
+/* A short function whose body makes one of those calls IS that surface, so a
+   call to it is too. */
+function wrappersOf(clean, frames) {
+  const out = {};
+  for (const f of frames) {
+    if (!f.name || f.end - f.start > 1500) continue;
+    const body = clean.slice(f.start, f.end);
+    const hit = LINE_RULES.slice(0, 5).find(([re]) => re.test(body));
+    if (hit && !out[f.name]) out[f.name] = hit[1];
+  }
+  return out;
+}
+
+/* A table whose NAME says card. Only the name: a table of TIERS may be a
+   card's rarity or a tap's timing grade, and "Game data" is the honest answer
+   when the name cannot tell them apart. */
+const CARDISH = /card|upgrade|joker|codex|skill|object|item|relic|charm|perk|rune|spell|rarity/i;
+const FIELD = { name: 'name', title: 'name', label: 'name', text: 'description', desc: 'description',
+  info: 'description', lore: 'lore', lesson: 'description', tip: 'description', hint: 'description' };
+
+function inferSurface(line, fn, ctx) {
+  for (const [re, key] of LINE_RULES) if (re.test(line)) return sf(key);
+  for (const [name, key] of Object.entries(ctx.wrappers)) {
+    if (new RegExp(`(?:^|[^\\w$.])${name.replace(/\$/g, '\\$')}\\s*\\(`).test(line)) return sf(key, `via ${name}()`);
+  }
+  // A default written inside the wrapper itself (pawko's `refuse`).
+  const own = (fn || '').split('.').pop();
+  if (own && ctx.wrappers[own]) return sf(ctx.wrappers[own], `in ${own}()`);
+  if (ctx.inEnd) return sf('end');
+  // A stat row kept in a variable before endRound: `{ label: …, value: … }`.
+  if (ctx.key === 'label' && /\bvalue\s*:/.test(line)) return sf('end', 'stat row label');
+  // A table of notices: `{ word: …, sub: …, icon: … }` (chainring's HINTS).
+  if ((ctx.key === 'word' || ctx.key === 'sub') && /\bicon\s*:\s*["']/.test(line)) return sf('notice', [ctx.table, ctx.key].filter(Boolean).join(' · '));
+  if (/^codex\b/.test(fn || '')) return sf('card', 'collection');
+  if (/\blevel(?:Rules|Goal)\b/.test(fn || '')) return sf('level');
+  if (/\.(?:textContent|innerHTML|innerText)\s*=|\bcreateElement\s*\(/.test(line)) return sf('panel', fn || null);
+  const where = [ctx.table, fn].filter(Boolean).join(' ');
+  const field = ctx.key && (FIELD[ctx.key] || ctx.key);
+  if (CARDISH.test(where)) return sf('card', [ctx.table || fn, field].filter(Boolean).join(' · '));
+  if (ctx.table || ctx.key) return sf('data', [ctx.table, ctx.key].filter(Boolean).join(' · '));
+  return sf('code', fn || null);
+}
+
+/* The key a literal is the value of (`name: "Fire"` → name) and the top-level
+   table it sits in (`var TIER_LABEL = [` …), which is all a parser can say of
+   a string the game keeps in data and reads later. */
+function dataContext(clean, off, fn) {
+  const lead = clean.slice(Math.max(0, off - 80), off);
+  const k = /([\w$]+)\s*:\s*$/.exec(lead);
+  // A table is a CONSTANT: an all-caps name, the one the scope gives or the
+  // last one declared above a literal no function holds.
+  const caps = (n) => (/^[A-Z][A-Z0-9_]*$/.test(n || '') ? n : null);
+  let table = fn ? caps(fn.split('.')[0]) : null;
+  if (!table && !fn) {
+    const re = /\n[ \t]*var\s+([A-Z][A-Z0-9_]*)\s*=\s*[[{]/g, seg = clean.slice(Math.max(0, off - 40000), off);
+    let m; while ((m = re.exec(seg))) table = m[1];
+  }
+  // Inside an endRound({ … }) still open at this point: the end screen.
+  const back = clean.slice(Math.max(0, off - 900), off);
+  const e = back.lastIndexOf('endRound(');
+  const inEnd = e >= 0 && !/\}\s*\)\s*;/.test(back.slice(e));
+  return { key: k ? k[1] : null, table, inEnd };
+}
+
+// A game.js row by what the scanner already knows of it.
+const CALL_SURFACE = { 'Callout': 'callout', 'Callout sub': 'callout', 'Floating value': 'float',
+  'Notice': 'notice', 'Notice sub': 'notice', 'Canvas text': 'canvas' };
+
+/* A manifest, CONFIG or army row: its path says it. A row whose surface
+   depends on the call it reaches (`copy.hintFuse`, Lang.t) is read off that
+   call by `resolveSurfaces` below. */
+function rowSurface(r) {
+  const c = r.context;
+  switch (r.group) {
+    case 'store':
+      if (c === 'Studio title') return sf('site', 'and itch, the stores, the title screen');
+      if (c === 'Manifest tagline') return sf('meta');
+      if (c === 'Long description') return sf('gallery');
+      if (/^Site tag /.test(c)) return sf('site', 'a tag under the card');
+      if (/^Site/.test(c)) return sf('site', 'the card\'s tagline');
+      if (/^Store card/.test(c)) return sf('storeimg', /kicker/.test(c) ? 'the small line over it' : 'the punchline');
+      return sf('site');
+    case 'intro': return sf('title', c === 'Desk control' ? 'the legend under the demo, on a desk' : null);
+    case 'help': return sf('help');
+    case 'ui':
+      if (/^HUD /.test(c)) return sf('hud');
+      if (/^Web menu/.test(c)) return sf('menu', 'web menu');
+      if (/^copy\./.test(c)) return null;              // depends on where the game reads it
+      return sf('menu');
+    case 'hud': return sf('hud', /label/.test(c) ? 'label' : 'value');
+    case 'round':
+      if (CALL_SURFACE[c]) return sf(CALL_SURFACE[c], [r.style, /sub$/.test(c) ? 'sub line' : null].filter(Boolean).join(' · ') || null);
+      return null;                                     // Lang.t: the line decides
+    case 'end': return sf('end', /^Stat row/.test(c) ? c.toLowerCase() : null);
+    case 'levels': return sf('level');
+    case 'barracks': return sf('barracks');
+    case 'officers':
+      if (/lore$/.test(c)) return sf('card', 'lore, the back of the card');
+      if (/^Trade/.test(c)) return sf('card', 'trade, the back of the card');
+      if (/^Grade/.test(c)) return sf('card', 'grade name, the face');
+      if (/^Object/.test(c)) return sf('card', 'object name');
+      return sf('card');
+    case 'missions': return sf('mission', c.split(' · ').pop());
+    case 'events': return sf('event', c.split(' · ').pop());
+    default: return null;
+  }
+}
+
+function uniqueSurfaces(list) {
+  const seen = new Set(), out = [];
+  for (const s of list) if (s && !seen.has(s.key)) { seen.add(s.key); out.push(s); }
+  return out;
+}
+
+/* Every row gets `surfaces` (most have one) and `surface`, the first. A row the
+   path cannot place is read off its call sites: a Lang.t literal by the line it
+   sits on, a `CONFIG.copy` key by the first line that reads it — which also
+   becomes the row's use, since a key alone does not say where it shows. */
+function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers }) {
+  for (const r of rows) {
+    if (r.group === 'words') continue;               // after its uses are known
+    const known = rowSurface(r);
+    if (known) {
+      for (const u of r.uses || []) u.surface = known;
+    } else if (/^copy\./.test(r.context)) {
+      const key = r.context.slice(5).replace(/\$/g, '\\$');
+      const re = new RegExp(`\\bcopy\\.${key}\\b`, 'g');
+      let m, uses = [];
+      while ((m = re.exec(js))) {
+        const fn = jsScope(m.index), src = lineAt(jsSrc, m.index);
+        uses.push({ line: jsLine(m.index), fn, src, surface: inferSurface(src, fn, { wrappers, ...dataContext(js, m.index, fn) }) });
+      }
+      if (uses.length) r.uses = uses;
+    } else {
+      for (const u of r.uses || []) {
+        const off = (r.targets.find((t) => t.line === u.line) || r.targets[0]).start;
+        u.surface = inferSurface(u.src || '', u.fn, { wrappers, ...dataContext(js, off, u.fn) });
+      }
+    }
+    r.surfaces = known ? [known] : uniqueSurfaces((r.uses || []).map((u) => u.surface));
+    if (!r.surfaces.length) r.surfaces = [sf(/^copy\./.test(r.context) ? 'menu' : 'code')];
+    r.surface = r.surfaces[0];
+  }
 }
 
 // The line of source an offset sits on, trimmed to what fits on a row.
@@ -402,7 +594,7 @@ function scanGameJs(src, out, push) {
   const mask = codeMask(clean);
   const lineOf = lineIndex(src);
   const scopeOf = scopeIndex(clean, mask);
-  out.js = { src, clean, lineOf, scopeOf };
+  out.js = { src, clean, lineOf, scopeOf, wrappers: wrappersOf(clean, scopeOf.frames) };
 
   /* --- CONFIG: the copy a game declares rather than writes inline ---------- */
   const cfg = configSpan(clean, mask);
@@ -541,8 +733,9 @@ function scanGameJs(src, out, push) {
       continue;
     }
 
-    const style = spec.style != null && spans[spec.style]
-      ? decode(oneLine(clean.slice(spans[spec.style].start, spans[spec.style].end))) : null;
+    // The style only when the source names it: a computed one says nothing a reader can use.
+    const styleSrc = spec.style != null && spans[spec.style] ? oneLine(clean.slice(spans[spec.style].start, spans[spec.style].end)) : '';
+    const style = /^(["'])[\w-]+\1$/.test(styleSrc) ? decode(styleSrc) : null;
     for (const [i, context] of Object.entries(spec.args || {})) take(spans[i], context, { style });
     if (spec.opts && spans[1] && clean[spans[1].start] === '{') {
       const o = objectFieldSpans(clean.slice(spans[1].start, spans[1].end), spans[1].start) || {};
@@ -694,6 +887,9 @@ export async function scanText(slug) {
   // A feminine form reads against the English, the one pair it has.
   for (const r of rows) if (r.echo && byPair[r.echo] && byPair[r.echo].en != null) r.other = byPair[r.echo].en;
 
+  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers } = out.js;
+  resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers });
+
   /* WHERE A DICTIONARY ENTRY IS READ. Its key is the English, which says what
      it means but not where it shows: every row of the game that writes that
      English is one use, printed under the French. An entry nothing writes is
@@ -701,20 +897,27 @@ export async function scanText(slug) {
      builds the string at runtime where a parser cannot follow it. */
   const usesOf = {};
   for (const r of rows) if (r.lang === 'en' && (r.dict || r.where === 'game.js') && !r.code) {
-    (usesOf[r.text] = usesOf[r.text] || []).push(...(r.uses && r.uses.length ? r.uses.map((u) => ({ ...u, context: r.context, group: r.group }))
-      : [{ context: r.context, group: r.group, file: r.where, line: r.line }]));
+    (usesOf[r.text] = usesOf[r.text] || []).push(...(r.uses && r.uses.length
+      ? r.uses.map((u) => ({ ...u, context: r.context, group: r.group, surface: u.surface || r.surface }))
+      : [{ context: r.context, group: r.group, file: r.where, line: r.line, surface: r.surface }]));
   }
   /* Second chance: the English sits in a table the game reads at runtime
      (`TIER_LABEL = ["Basic", "Common", …]`) and reaches Lang.t through a
      variable. The table is still where it is written, so that is its use. */
-  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc } = out.js;
   for (const r of rows) if (r.group === 'words') {
     r.uses = usesOf[r.context] || [];
-    if (r.uses.length) continue;
-    const at = [JSON.stringify(r.context), `'${r.context.replace(/'/g, "\\'")}'`]
-      .map((q) => js.indexOf(q)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
-    if (at != null) r.uses = [{ context: 'Found in game.js', group: 'data', line: jsLine(at), fn: jsScope(at), src: lineAt(jsSrc, at) }];
-    else r.unused = true;
+    if (!r.uses.length) {
+      const at = [JSON.stringify(r.context), `'${r.context.replace(/'/g, "\\'")}'`]
+        .map((q) => js.indexOf(q)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+      if (at != null) {
+        const fn = jsScope(at), src = lineAt(jsSrc, at);
+        r.uses = [{ context: 'Found in game.js', group: 'data', line: jsLine(at), fn, src,
+          surface: inferSurface(src, fn, { wrappers, ...dataContext(js, at, fn) }) }];
+      } else r.unused = true;
+    }
+    // An entry is read wherever its English is: every surface, once each.
+    r.surfaces = uniqueSurfaces(r.uses.map((u) => u.surface));
+    r.surface = r.surfaces[0] || null;
   }
 
   /* PARITY. Every string the game itself writes is read back against the
@@ -738,7 +941,7 @@ export async function scanText(slug) {
   };
   return {
     slug, title: manifest.title || slug, version: manifest.version || '',
-    groups: GROUPS, rows, counts, warnings, missing: missing.map((r) => r.text)
+    groups: GROUPS, surfaces: SURFACES, rows, counts, warnings, missing: missing.map((r) => r.text)
   };
 }
 
@@ -760,7 +963,8 @@ function table(scan) {
       console.log(`  \x1b[90m── ${g.label}\x1b[0m`);
       for (const r of inGroup) {
         const at = r.line ? `${r.where}:${r.line}` : r.where;
-        console.log(`    ${pad(at, 16)} ${pad(r.context, 26)} ${r.fragment ? '\x1b[90m·\x1b[0m ' : '  '}${oneLine(r.text)}`);
+        const shows = (r.surfaces || []).map((s) => SURFACES.find((x) => x.key === s.key).label).join(', ');
+        console.log(`    ${pad(at, 16)} ${pad(r.context, 26)} ${pad(shows, 18)} ${r.fragment ? '\x1b[90m·\x1b[0m ' : '  '}${oneLine(r.text)}`);
       }
     }
   }

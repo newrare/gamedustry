@@ -14,23 +14,81 @@
    lab/game-events-message.html (/). This one lists the cues and nothing else:
    ONE CARD PER CLIP — the file of assets/audio/sfx/ it is cut from and how
    long the cut is at the top, or the house kit variant it plays, and under it
-   every line of the game that plays it, with the volume and the pitch that
-   line asks for. The background bed is not here: it is the game's music, cut
-   into sections by hand (docs/MUSIC.md).
+   every line of the game that plays it, with the volume that line asks for.
+   The background bed is not here: it is the game's music, cut into sections
+   by hand (docs/MUSIC.md).
 
    The card is the clip and not the line, because 18 cues in a game are 7 clips:
    listing the clip once per line said the same thing five times over and
    offered the same file list five times for one decision. What is shared is
-   written once; what a line owns — how loud, how high, since one sample covers
-   a family of events through `rate` — stays on the line. So a volume or a pitch
-   moved here is THAT line of THAT game, written into its game.js; it never
-   reaches the kit, nor another game that maps a key to the same variant.
+   written once; what a line owns — how loud — stays on the line, and a volume
+   moved here is THAT line of THAT game, written into its game.js.
 
-   A key the manifest hands to the house kit (`sfx`) has no file here: its card
-   names the variant and opens the kit page (/kit), where its takes are chosen
-   for every game at once. The foot of that card lists every game that plays
-   the variant, by its thumb, so it is never re-cut without seeing who else
-   hears it.
+   A SOUND IS SHAPED ON ITS ROLE, NEVER ON A LINE. A key the manifest hands to
+   the house kit (`sfx`) has no file here: its card names the variant, and the
+   variant is the one source of truth for what it sounds like — the files of
+   its takes, their cuts, how they end, their pitch. So a line's pitch is READ
+   here and never set: a constant `rate` in the code is a sound shaped in the
+   wrong place (a variant with that pitch is the fix), and a rate the code
+   BUILDS — a ladder, a combo climbing — is the game's melody, left to it.
+
+   The variant is edited ON ITS CARD: the kit button opens the same editor as
+   the kit page (/kit) — each take's waveform with its cut taken by the grips,
+   its end (cut, fade, drop), its pitch, a take added or removed — and under
+   it the ten files of the library whose WAVE looks most like the active take
+   (tools/lab/shape-sfx.mjs: the envelope, where the spectrum sits and how wide
+   it spreads, from the onset), plus a search over the whole library. Hover
+   hears a file as the take would play it; a click puts it in the take; +
+   adds it as another take. A variant is every game's that maps a key to it,
+   and the foot of the card shows them by their thumb: NEW VARIANT forks it,
+   and the key moves to the fork, when the change is meant for this game
+   alone. The game's lines keep playing what is shipped until Apply; the
+   editor's own Play hears the draft.
+
+   EVERY LINE SAYS WHEN IT FIRES. A cue line names a sound and a volume, and
+   a sound is judged against its moment, so a line carries its context under
+   it, read off the source by tools/lab/scan-events.mjs (cueContext): the
+   conditions it sits in (`if (combo >= 5)`, `case "gem":`, the callback of a
+   timer), the comment above it, and what fires WITH it — the callouts with
+   their style and word, the notices, the juice, the other cues: the message
+   page's beat, seen from the sound. A click on that line opens the code.
+
+   A VARIANT SIGNED OFF ELSEWHERE IS SAID SO. A line of the kit is checked on
+   one cut of its variant (serve-events.mjs keeps the variant's fingerprint
+   with the mark), so the games playing a variant wear, on the card's foot, a
+   GREEN ring where every line of theirs playing it is checked, a dashed one
+   where some are, an AMBER one where the check was given on a cut the variant
+   no longer has. The editor says which games validated it before a take is
+   touched, and the selector's menu ticks them: a change to a validated
+   variant takes their check back. A line of this game checked on an older cut
+   reads unchecked, its check icon amber.
+
+   A CHANGE IS HEARD IN THE GAME BEFORE APPLY. A key moved to another variant,
+   or a variant whose takes were edited on a card, is played by the line's ▶
+   and by a loop (↻) as it WILL sound: the page renders the draft's takes —
+   levelled, with their tail and their pitch, the way cut-kit cuts them — into
+   WAV data URIs, hands them to the build in the frame as one more kit entry
+   (ASSETS.sounds, CONFIG.kit) and points the key at it (CONFIG.sfx). Nothing
+   leaves the page: a reload of the frame forgets it, revert gives the key back
+   its shipped variant, and apply is still what writes it.
+
+   THE SHELL IS AN ENTRY OF THE PICKER. The end screen (the score landing,
+   its stars, its rows), the round's live stars and its end, the meta layer's
+   cascade and gifts are Sound.ui calls in packages/, the same in every game
+   and in no game.js — so they are listed once, under `shell`, after the
+   template (scan-events.mjs, shellCues): one card per ROLE, the context of
+   each line, the role's editor, and a check given once for every game. Their
+   volumes move for the ear only: the lines are the motor's.
+
+   They are FILMED rather than recorded: what they play on is DOM — the star
+   pill, the end screen, the gift boxes — which REC's canvas does not hold.
+   SHOOT has the server play a scenario in the game picked beside it, in a
+   headless Chrome whose screencast films the whole page (tools/lab/
+   shoot-shell.mjs): three live stars, the third star, the end screen, the
+   coin cascade, the gift boxes, a missed objective. Each line heard gets its
+   clip, looped like any other. REC still works there too, in that game.
+   A game that plays a shell role itself (grudgeon's `deny`) has its own card
+   for it in its own list, checked like any line.
 
    The whole of assets/audio/sfx/ opens from the file button, and HOVERING a row
    plays it, trimmed to the cut length: a clip is chosen by ear, file names say
@@ -52,10 +110,13 @@
                    recording, so the number is never baked into the picture.
      LOOP (↻)      on a row with a clip, the clip plays behind the frame, and
                    at the instant the cue fired it is fired again — with what
-                   the row now says, so a volume or a pitch is judged on the
-                   real action. Everything else that fired in that window, the
-                   callouts included, fires with it at its own time, so the
-                   moment is whole; a chip in the loop bar mutes one of them.
+                   the row now says, so a volume is judged on the real action.
+                   The callouts of that window fire with it at their own
+                   time, so the moment is whole to the EYE; the other cues of
+                   the window start muted, so the EAR hears the one sound
+                   being judged. The loop bar holds one chip per line (×N for
+                   a line that fired several times), and a chip mutes or
+                   unmutes that line.
 
    What a clip cannot show: the DOM — the HUD, the callouts (they are fired
    live over it) — and a painted backdrop the game lays UNDER its canvas
@@ -66,10 +127,12 @@
    leaves the stage and runs on off-screen, still playing the rows.
 
    APPLY is what makes it stick. What the rows changed goes to POST /api/apply
-   (tools/lab/apply-events.mjs), which splices the volume and the pitch back
-   into games/<slug>/game.js, re-cuts a clip with ffmpeg when its FILE changed,
+   (tools/lab/apply-events.mjs), which splices the volume back into
+   games/<slug>/game.js, re-cuts a clip with ffmpeg when its FILE changed,
    moves the provenance comment with it, maps a key to a kit variant in the
-   manifest, and bumps the game's patch version. The save trips the server's
+   manifest, and bumps the game's patch version. A kit variant edited on its
+   card is written into assets/audio/kit/kit.json and its takes re-cut first
+   (tools/lab/cut-kit.mjs) — every game's, so it moves no game's version. The save trips the server's
    watcher, the build is rebuilt, the page comes back on the change.
 
    Two icons sit on everything the bench can change. REVERT puts the element
@@ -307,9 +370,16 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
   position:relative;
 }
 .filebtn::after { content:"▾"; position:absolute; right:7px; top:3px; color:#6f6f92; }
-.kitbtn { flex:1 1 180px; min-width:150px; max-width:280px; padding:3px 9px; border:1px solid #3a3260; border-radius:7px; background:#1a1630; color:#c8b8ff; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-decoration:none; }
-.kitbtn:hover { border-color:#c8b8ff; }
-.kitsel { flex:0 1 170px; min-width:110px; padding:3px 6px; background:#151522; color:#c8b8ff; border:1px solid #3a3260; border-radius:7px; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.kitbtn { flex:1 1 180px; min-width:150px; max-width:280px; padding:3px 9px; border:1px solid #3a3260; border-radius:7px; background:#1a1630; color:#c8b8ff; font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; text-decoration:none; text-align:left; cursor:pointer; }
+.kitbtn:hover, .kitbtn.open { border-color:#c8b8ff; }
+.kitbtn.dirty { border-color:#ffd08a; color:#ffd08a; }
+.kitsel {
+  position:relative; flex:0 1 190px; min-width:110px; padding:3px 22px 3px 7px; text-align:left; cursor:pointer;
+  background:#151522; color:#c8b8ff; border:1px solid #3a3260; border-radius:7px;
+  font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.kitsel::after { content:"▾"; position:absolute; right:7px; top:3px; color:#6f6f92; }
+.kitsel:hover, .kitsel.open { border-color:#c8b8ff; }
 .kitsel.dirty { border-color:#ffd08a; color:#ffd08a; }
 .filebtn:hover, .filebtn.open { border-color:#7ea6ff; background:#141d33; }
 .filebtn.swap { color:#ffd08a; }
@@ -441,8 +511,17 @@ body:not(.looping) #shell { position:absolute; left:-10000px; top:0; }
 /* The level picker exists in REC only: it starts a round in the played frame. */
 #rec-level { display:none; padding:4px 7px; font-size:11px; font-weight:700; }
 body.rec #rec-level { display:inline-block; }
+/* The shell unit's own tools: the game it is shot in, and the shoot. */
+#shell-game, #btn-shoot { display:none; }
+body.shell-unit #shell-game, body.shell-unit #btn-shoot { display:inline-block; }
+#shell-game { padding:4px 7px; font-size:11px; font-weight:700; }
 #rec-info { font-size:11px; color:#8b8ba7; font-variant-numeric:tabular-nums; }
 #rec-info b { color:#ff8fa3; }
+#rec-state.ok { color:#5fd49a; }
+#rec-state.wait { color:#9fd0ff; }
+#rec-state.bad { height:auto; min-height:22px; padding:4px 8px; margin-bottom:6px; border-radius:7px; background:#2a1d0c; color:#ffb648;
+  letter-spacing:0; line-height:1.5; font-weight:600; text-align:left; white-space:normal; }
+#rec-state.bad button { margin-left:6px; }
 /* REC: the bench frames step aside, alive (a loop needs them back at once). */
 #recwrap { display:none; flex:0 0 auto; }
 body.rec #recwrap { display:block; }
@@ -462,6 +541,8 @@ body.looping #replay { display:flex; }
 #replay .what { font:700 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#9fd0ff; }
 #replay .time { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; font-variant-numeric:tabular-nums; }
 #replay .sp { flex:1; }
+/* The chips are bounded: the frame is sized from the room left under the bar. */
+#replay .evs { flex-basis:100%; display:flex; flex-wrap:wrap; gap:5px; max-height:58px; overflow:auto; }
 #replay .ev { padding:2px 7px; border-radius:20px; border:1px solid #2c2c47; background:#1b1b2b; color:#c9c9e0; cursor:pointer; font:600 10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; }
 #replay .ev.me { border-color:#7ea6ff; color:#e8e6f5; }
 #replay .ev.off { opacity:.35; text-decoration:line-through; }
@@ -481,7 +562,93 @@ button.act.loop.near { color:#ffd08a; }
 /* The foot of a kit card: the icon of every game that plays its variant,
    this one included, so what a re-cut on /kit reaches is seen at a glance. */
 .kitusers { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:7px 10px; border-top:1px solid #2a2445; background:#161328; }
-.kitusers img { width:28px; height:28px; border-radius:7px; display:block; cursor:help; }
+.bhead .every { font-size:11px; color:#8b8ba7; font-weight:500; }
+.beat.shared { border-style:dashed; }
+.call.shell .iconbtn.check { visibility:hidden; }
+.kitusers img { width:28px; height:28px; border-radius:7px; display:block; cursor:help; outline-offset:2px; }
+/* Who signed the variant off: every line checked on its current cut, some
+   of them, or a check given on a cut the variant no longer has. */
+/* The rings are read after the icons (api/kit-checked reads games): until
+   they land, the icons breathe, so a missing ring is never read as "nobody". */
+.kitusers.pending img { animation:kitwait 1.1s ease-in-out infinite; }
+@keyframes kitwait { 50% { opacity:.45; } }
+.kitusers img.v-ok { outline:2px solid #5fd49a; }
+.kitusers img.v-part { outline:2px dashed #5fd49a; }
+.kitusers img.v-stale { outline:2px solid #ffb648; }
+.iconbtn.check.stale { color:#ffb648; }
+.kedit .knote .kval { color:#5fd49a; }
+
+/* When a line fires: its conditions, its comment, what fires with it. */
+.call .ctx { grid-column:1 / -1; margin:-1px 0 1px 62px; }
+.call .ctx summary { list-style:none; display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; cursor:pointer; font-size:11px; }
+.call .ctx summary::-webkit-details-marker { display:none; }
+.call .ctx .cg { font:600 10px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; padding:0 6px; border-radius:5px; background:#2a2210; color:#ffd08a; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.call .ctx .sep { color:#4d4d68; font-size:10px; }
+.call .ctx .cc { color:#8b8ba7; font-style:italic; font-weight:500; }
+.call .ctx .ct { font:700 10px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; padding:0 6px; border-radius:5px; white-space:nowrap; }
+.call .ctx .ct.pop { background:#3a2350; color:#dcb6ff; }
+.call .ctx .ct.notify { background:#1f3550; color:#9fd0ff; }
+.call .ctx .ct.sound { background:#1d3d31; color:#8fe0b8; }
+.call .ctx .ct.fx, .call .ctx .ct.music { background:#1e1e30; color:#8b8ba7; }
+.call .ctx .always { color:#6f6f92; font-weight:500; }
+.call .ctx .code { color:#4d4d68; font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.call .ctx summary:hover .code, .call .ctx[open] .code { color:#9fd0ff; }
+.call .ctx pre { margin:5px 0 2px; padding:8px 10px; border-radius:7px; background:#0d0d16; overflow:auto; font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6; white-space:pre; }
+
+/* A line's pitch, read and never set: the sound is shaped on its variant. */
+.rng.ro .rov { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; cursor:help; }
+.rng.ro .rov.code { color:#ffb648; }
+
+/* ---------------------------------------------------------------------------
+   THE KIT CARD'S EDITOR — the variant a key plays, opened under its header:
+   the same takes, grips and ends as lab/sound-kit.html, then the library.
+   --------------------------------------------------------------------------- */
+/* `display:flex` beats the hidden attribute's UA rule, so say it again. */
+.kedit[hidden] { display:none; }
+.kedit { border-top:1px solid #2a2445; background:#13111f; padding:9px 10px 10px; display:flex; flex-direction:column; gap:8px; }
+.kedit .kbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.kedit .kbar b { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#c8b8ff; }
+.kedit .kbar .knew { padding:1px 6px; border-radius:9px; background:#3a2a10; color:#ffd08a; font-size:10px; }
+.kedit .kbar .kwhat { font-size:11px; color:#8b8ba7; font-weight:500; }
+.kedit .kbar .sp { flex:1; }
+.kedit .knote { font-size:11px; color:#9c9cba; font-weight:500; }
+.kedit .knote b { color:#ffd08a; font-weight:600; }
+.ktake {
+  display:grid; grid-template-columns:22px 1fr auto; gap:5px 8px; align-items:center;
+  padding:6px 8px; border:1px solid #26233d; border-radius:9px; background:#0f0e19; cursor:pointer;
+}
+.ktake.on { border-color:#9a86ff; }
+.ktake .ix { color:#6f6f92; font-size:11px; text-align:center; }
+.ktake .kfile { font:600 11px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color:#e8e6f5; }
+.ktake .kfile small { color:#7d7d9d; font-weight:500; margin-left:8px; }
+.ktake .kacts { display:flex; gap:4px; align-items:center; }
+.ktake canvas { grid-column:2 / -1; width:100%; height:60px; display:block; border-radius:6px; background:#0b0b12; cursor:crosshair; touch-action:none; }
+.ktake .knums { grid-column:2 / -1; display:flex; flex-wrap:wrap; gap:6px 12px; font-size:11px; color:#9c9cba; align-items:center; }
+.ktake .knums label { display:flex; align-items:center; gap:5px; }
+.ktake .knums input { width:62px; padding:2px 5px; border-radius:6px; font:600 11px/1.4 inherit; }
+.kseg { display:inline-flex; border:1px solid #2c2c47; border-radius:7px; overflow:hidden; }
+.kseg button { padding:2px 9px; border:0; background:none; cursor:pointer; font:600 11px/1.4 inherit; color:#9c9cba; }
+.kseg button + button { border-left:1px solid #2c2c47; }
+.kseg button.on { background:#9a86ff; color:#0b0b12; }
+.kalt { display:flex; flex-direction:column; gap:4px; }
+.kalt .ksec { margin-top:4px; font:700 10px/1.4 inherit; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; }
+.kalt .ksec i { font-style:normal; text-transform:none; letter-spacing:0; color:#8b8ba7; font-weight:600; }
+.kalt input.ksearch { width:100%; margin-top:4px; padding:5px 8px; font-weight:600; }
+.krows { display:flex; flex-direction:column; }
+.krow {
+  display:grid; grid-template-columns:minmax(120px, 1fr) 44px 38px minmax(0, 90px) 26px; gap:8px; align-items:center;
+  padding:2px 6px; border-radius:6px; cursor:pointer;
+  font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6;
+}
+.krow:hover { background:#1e2740; color:#e8e6f5; }
+.krow.in { color:#8fe0b8; }
+.krow .kname { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.krow .ks { color:#7d7d9d; font-size:10px; text-align:right; font-variant-numeric:tabular-nums; }
+.krow .kscore { color:#c8b8ff; font-size:10px; text-align:right; font-variant-numeric:tabular-nums; }
+.krow .kpack { color:#5f5f80; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.krow button.act { padding:2px 0; line-height:1.2; }
+.krows[data-list="search"] { max-height:300px; overflow:auto; }
+.kwait { padding:4px 6px; font-size:11px; color:#6f6f92; font-weight:500; }
 </style>
 </head>
 <body>
@@ -501,6 +668,8 @@ button.act.loop.near { color:#ffd08a; }
     <button class="act ghost" id="btn-reload">Reload</button>
     <button class="act ghost rec" id="btn-rec" title="play the game here — every cue with no clip yet is recorded with the second before it and the second after">Rec</button>
     <select id="rec-level" title="start any level — locked ones too (the dev force, for this load only)"></select>
+    <select id="shell-game" title="the game the shell is filmed (Shoot) and played (Rec) in"></select>
+    <button class="act ghost" id="btn-shoot" title="film every shell sound in that game: a headless Chrome plays three stars, the end screen, the gifts and a missed objective — the DOM included — ~40 s">Shoot</button>
     <span id="rec-info"></span>
     <span class="sp"></span>
     <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
@@ -510,7 +679,7 @@ button.act.loop.near { color:#ffd08a; }
     <div class="pane"><div class="lang">Loop</div>
       <div class="fit"><video class="clip" data-lang="en" muted playsinline></video><iframe class="frame" data-lang="en" title="the game's own build, playing the cues"></iframe></div></div>
   </div>
-  <div id="recwrap" class="pane"><div class="lang">Rec — play; every cue not yet seen is captured</div>
+  <div id="recwrap" class="pane"><div class="lang" id="rec-state">Rec — play; every cue not yet seen is captured</div>
     <div class="fit rec"><iframe class="recframe frame" id="rec-frame" title="the game itself, played to record its events"></iframe></div></div>
   <div id="hint"></div>
   <div id="report"></div>
@@ -554,15 +723,19 @@ const state = {
      (a filter) puts every control back where the hand left it.
        calls: { "<line>|<Name>": { vol, rate } }
        sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file
-       kit:   { "<key>": "<role>/<variant>" } — the key plays the kit instead */
-  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} },
+       kit:   { "<key>": "<role>/<variant>" } — the key plays the kit instead
+       roles: { "<role>/<variant>": { takes } } — a kit variant edited on its
+              card (or forked into a new one), written to kit.json on apply */
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {} },
+  // The house kit as kit.json has it (api/kit), and the kit cards whose editor is open.
+  kit: null, kitOpen: new Set(),
   // The recorded moments (lab/events-clips/<slug>/index.json) and the
   // line offset that maps the built game.<hash>.js back to its source.
   clips: { clips: {}, byId: {} },
   offset: null
 };
 
-const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {} });
+const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {} });
 
 /* A value apply can write back, as opposed to one the game builds at runtime:
    a bare number, the shape the splicer accepts for a knob
@@ -614,7 +787,8 @@ function countPending() {
   const n = Object.values(state.pending.calls).reduce((a, o) => a + Object.keys(o).length, 0) +
             Object.keys(state.pending.sfx).length +
             Object.keys(kill.calls).length + Object.keys(kill.clips).length +
-            Object.keys(state.pending.kit || {}).length;
+            Object.keys(state.pending.kit || {}).length +
+            Object.keys(state.pending.roles || {}).filter(kitDirty).length;
   const btn = el("btn-apply");
   btn.disabled = !n;
   btn.innerHTML = n ? `Apply <span class="cnt">${n}</span>` : "Apply";
@@ -669,6 +843,8 @@ LANGS.forEach((lang) => frames[lang].addEventListener("load", () => {
     d.addEventListener("mousedown", () => closeFileMenu());
     setLang(web(lang), lang);
     d.documentElement.classList.toggle("lab-clear", !!LOOP.clip);
+    // A fresh build knows none of the drafts: hand them over again.
+    previewReset();
   } catch (e) { note("the build did not load"); }
 }));
 
@@ -714,7 +890,6 @@ function argsFor(call, row) {
   const args = JSON.parse(JSON.stringify(call.preview.args));
   if (!row || call.kind !== "sound") return args;
   args[1] = num(row.querySelector("input.vol"), args[1]);
-  args[2] = num(row.querySelector("input.rate"), args[2]);
   return args;
 }
 
@@ -735,6 +910,13 @@ function fire(call, row) {
       note(p.file + " — " + p.len + "s of it, which is what apply would cut");
       return;
     }
+  }
+  // A key whose variant changed on the page plays the change, injected into the build first.
+  if (call.kind === "sound" && row && row.dataset.key && previewWanted(row.dataset.key) && !fire.ready) {
+    const key = row.dataset.key;
+    note("plays " + previewWanted(key) + (kitDirty(previewWanted(key)) ? " as drafted" : "") + " — not applied yet");
+    syncPreview(key).then(() => { fire.ready = true; try { fire(call, row); } finally { fire.ready = false; } });
+    return;
   }
   unlock();
   const [mod, meth] = call.preview.fn.split(".");
@@ -829,8 +1011,17 @@ function openFileMenu(btn, key) {
     row.onmouseleave = () => clearTimeout(fileMenu.hover);
     row.onclick = () => { pickFile(btn, key, f.file); closeFileMenu(); };
     list.appendChild(row);
-    fileMenu.rows.push({ node: row, file: f.file, cat, hay: (f.file + " " + f.label + " " + cat + " " + (f.pack || "")).toLowerCase() });
+    fileMenu.rows.push({ node: row, file: f.file, cat, hay: (f.file + " " + f.label + " " + cat + " " + (f.pack || "")).toLowerCase(),
+      play: () => sfxPlay(f.file, cutLen(key)), pick: () => pickFile(btn, key, f.file) });
   });
+  showMenu(btn, cats, fileMenu.rows.find((x) => x.file === btn.value));
+}
+
+/* What every menu parked in #filemenu shares, once its rows are in: the
+   filter, the "nothing matches", and the box anchored to the button that
+   opened it — flipped up when the bottom of the window is close. */
+function showMenu(btn, cats, cur) {
+  const box = el("filemenu"), list = box.querySelector(".fm-list");
   const none = document.createElement("div");
   none.className = "fm-none";
   none.textContent = "nothing matches";
@@ -860,7 +1051,6 @@ function openFileMenu(btn, key) {
   box.style.left = Math.max(8, Math.min(r.left, window.innerWidth - box.offsetWidth - 8)) + "px";
   box.style.top = (r.bottom + h + 8 < window.innerHeight ? r.bottom + 4 : Math.max(8, r.top - h - 4)) + "px";
 
-  const cur = fileMenu.rows.find((x) => x.file === btn.value);
   if (cur) cur.node.scrollIntoView({ block: "center" });
   filter.focus();
 }
@@ -887,7 +1077,7 @@ function fileMenuKey(e) {
   if (e.key === "Escape") { closeFileMenu(); fileMenu.btn && fileMenu.btn.focus(); e.preventDefault(); return; }
   if (e.key === "Enter") {
     const r = live[fileMenu.idx];
-    if (r) { pickFile(fileMenu.btn, fileMenu.key, r.file); closeFileMenu(); }
+    if (r) { r.pick(); closeFileMenu(); }
     e.preventDefault();
     return;
   }
@@ -899,7 +1089,7 @@ function fileMenuKey(e) {
   const r = live[fileMenu.idx];
   r.node.classList.add("on");
   r.node.scrollIntoView({ block: "nearest" });
-  sfxPlay(r.file, cutLen(fileMenu.key));
+  r.play();
 }
 
 function awayFromMenu(e) {
@@ -1058,7 +1248,7 @@ function snapTo(v, grid) {
 /* The readout follows the thumb. Kept out of `watch` on purpose: the dirty
    marking is about the pending change, this is about reading the value. */
 function wireSliders(row) {
-  row.querySelectorAll(".rng").forEach((box) => {
+  row.querySelectorAll(".rng:not(.ro)").forEach((box) => {
     const input = box.querySelector("input[type=range]");
     const out = box.querySelector("b");
     const grid = Number(input.dataset.grid) || 0.05;
@@ -1124,14 +1314,27 @@ function revertCall(call, row) {
 function revertClip(key, card) {
   delete state.pending.sfx[key];
   delete state.pending.kill.clips[key];
+  /* A kit card: the variant's draft goes too, and a variant forked from it
+     that nothing else is moving to. */
+  const was = card.dataset.kit, to = state.pending.kit && state.pending.kit[key];
   if (state.pending.kit) delete state.pending.kit[key];
+  if (was) {
+    /* The variant it was moved to goes back too when nothing else of this game
+       plays it: a draft left behind would be applied for other games. */
+    const elsewhere = (id) => (state.data.sounds || []).some((x) => x.key !== key && ((state.pending.kit && state.pending.kit[x.key]) || x.kit) === id);
+    if (!elsewhere(was)) delete state.pending.roles[was];
+    if (to && !elsewhere(to)) delete state.pending.roles[to];
+  }
   const ks = card.querySelector(".kitsel");
-  if (ks) { ks.value = ks.querySelector("option[selected]") ? ks.querySelector("option[selected]").value : ""; ks.classList.remove("dirty"); }
+  if (ks && ks._set) ks._set(ks.dataset.current);
   // The controls first: with the pending entry gone, refreshFiles() has
   // nothing left to put them back from.
   resetControls(card.querySelector(".bhead"));
   card.querySelectorAll(".call").forEach((r) => r.classList.remove("killed"));
   card.classList.remove("killed");
+  if (card._kitSync) card._kitSync();
+  syncPreview(key);
+  paintChecks();
   refreshFiles();
   countPending();
   note("");
@@ -1163,14 +1366,46 @@ function killClip(key, card) {
 }
 
 /* --- the rows ------------------------------------------------------------ */
+/* A line's pitch, read off its source and never written from here: the sound
+   is shaped on its kit variant (the card's editor), and a rate the code BUILDS
+   — a ladder of stars, a combo climbing — is the game's melody, left to it. */
+function rateCell(call) {
+  const expr = call.args[2];
+  const v = expr == null ? 1 : isNum(expr) ? Number(expr) : null;
+  const title = v == null
+    ? "the code builds this pitch (" + expr + ") — the game's own melody, left to it"
+    : v === 1
+      ? "this line plays the sound at its own pitch — the pitch is shaped on the variant, above"
+      : "a pitch written in the code — the sound is shaped on its variant: a variant at that pitch is the place for it";
+  return `<span class="rng ro" title="${esc(title)}"><span class="lbl">rate</span>` +
+    `<span class="rov${v == null ? " code" : ""}">${v == null ? "code" : "×" + v}</span><b></b></span>`;
+}
+
+/* When a line fires, under it: the conditions it sits in, outermost first,
+   the comment above it, and what fires with it — the callout's style and
+   word, the notice, the juice, the other cues (scan-events.mjs, cueContext).
+   It is a <details>: a click opens the code it was read from. */
+function ctxHtml(call) {
+  const x = call.ctx;
+  if (!x) return "";
+  const bits = [];
+  if (x.guards.length) bits.push(x.guards.map((g) => `<span class="cg" title="${esc(g)}">${esc(g)}</span>`).join(`<span class="sep">›</span>`));
+  else bits.push(`<span class="always">every time ${call.fn ? esc(call.fn) + "()" : "the top level"} reaches it</span>`);
+  if (x.beat.length) bits.push(`<span class="sep">with</span>` + x.beat.map((t) =>
+    `<span class="ct ${t.k}" title="${esc({ pop: "a callout fired in the same moment", notify: "a notice said in the same moment", sound: "another cue of the same moment", fx: "juice of the same moment", music: "the bed, in the same moment" }[t.k] || "")}">${t.k === "sound" ? "♪ " : ""}${esc(t.t)}</span>`).join(""));
+  if (x.comment) bits.push(`<span class="cc" title="${esc(x.comment)}">// ${esc(x.comment.length > 110 ? x.comment.slice(0, 109) + "…" : x.comment)}</span>`);
+  bits.push(`<span class="code" title="the code around the line">{ }</span>`);
+  return `<details class="ctx"><summary>${bits.join("")}</summary><pre>${esc(x.code)}</pre></details>`;
+}
+
 function callRow(call) {
   const row = document.createElement("div");
   row.className = "call k-" + call.kind;
-  /* The clip itself — which file it is cut from, and how long the cut is —
-     belongs to the KEY, and it is written once on the card's header. What a
-     line owns is how loud and how high IT plays it: one sample covers a whole
-     family of events through `rate`, which is the point of the pack. Both are
-     this line's, in this game's source: neither reaches the kit.
+  /* The clip itself — which file it is cut from, and how long the cut is, or
+     the kit variant it plays — belongs to the KEY, and it is written once on
+     the card's header. What a line owns is how LOUD it plays it, in this
+     game's source. Its pitch is read and not set: a sound is shaped on its
+     variant, and a rate the code builds is the game's own melody.
      A line of the MOTOR (the template's end-screen cues) is named by its
      file, since it is not in the unit's own source. */
   const bits = [`<button class="act sm play" title="play it in the game">▶</button>`,
@@ -1180,9 +1415,8 @@ function callRow(call) {
     ? `<span class="ln motor" title="${esc(call.source)} — a motor line: auditioned here, changed in the source">${esc(call.where.split("/").pop())}:${call.line}</span>`
     : `<span class="ln" title="${esc(call.source)}">L${call.line}</span>`);
   bits.push(`<span class="fn">${call.fn ? esc(call.fn) + "<i>()</i>" : "<i>top level</i>"}</span>`);
-  bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it — this line of this game only, never the kit"));
-  bits.push(slider("rate", call.preview.args[2], 0.5, 2, 0.05, 0.25, "rate",
-    "the pitch — one sample covers a whole family of events through this; this line of this game only, never the kit"));
+  bits.push(slider("vol", call.preview.args[1], 0, 1, 0.05, 0.1, "vol", "how loud this line plays it — the one thing a line owns; the sound itself is its variant's"));
+  bits.push(rateCell(call));
   /* The marker holds its cell whether or not it has anything to say: a cue row
      is a GRID, and a column that appears on some lines and not on others is a
      column that never lines up. */
@@ -1197,7 +1431,7 @@ function callRow(call) {
     ? `<span class="iconbtn" title="a motor line — apply writes the clip, not this line"></span>`
     : iconBtn("trash", "trash", "remove this line from the game — the clip stays, the other lines that play it stay"));
 
-  row.innerHTML = bits.join("");
+  row.innerHTML = bits.join("") + ctxHtml(call);
   // Before the bindings below: the snap has to run first, so everything that
   // reads the value reads the one the grid gave it.
   wireSliders(row);
@@ -1205,13 +1439,15 @@ function callRow(call) {
   row._call = call;
   row.querySelector(".loop").onclick = () => loopToggle(call);
   row.dataset.check = call.checkId || "";
-  row.dataset.key = String(call.preview.args[0]);
+  // A shell role is keyed apart from the game's keys: `deny` the role is not a clip named deny.
+  row.dataset.key = call.method === "ui" ? "ui:" + call.sound : String(call.preview.args[0]);
+  if (call.shell && state.slug !== "shell") row.classList.add("shell");
   row.querySelector(".check").onclick = () => toggleCheck([call.checkId], !isChecked(call.checkId));
   row.querySelector(".revert").onclick = () => revertCall(call, row);
   if (row.querySelector(".trash")) row.querySelector(".trash").onclick = () => killCall(call, row);
 
-  /* A motor line's volume and pitch move for the ear only: nothing pends, and
-     revert puts them back where the motor has them. */
+  /* A motor line's volume moves for the ear only: nothing pends, and revert
+     puts it back where the motor has it. */
   if (call.inherited) {
     row.classList.add("inherited");
     row.querySelectorAll("input[type=range]").forEach((c) => { c.dataset.was = c.value; });
@@ -1223,8 +1459,8 @@ function callRow(call) {
      wrote it, and it is what tells an editable value from one apply has to
      refuse. A call apply cannot write back (Sound.beep, Sound.arp) is still
      played from here — it is read-only, not hidden. */
-  const editable = call.name === "Sound.clip" || call.name === "Sound.cue";
-  [["input.vol", "vol", call.args[1]], ["input.rate", "rate", call.args[2]]].forEach(([sel, name, expr]) => {
+  const editable = call.name === "Sound.clip" || call.name === "Sound.cue" || call.name === "Sound.ui";
+  [["input.vol", "vol", call.args[1]]].forEach(([sel, name, expr]) => {
     const ctrl = row.querySelector(sel);
     if (!ctrl) return;
     if (!editable) { ctrl.disabled = true; ctrl.title = "apply does not write this call — change it in the source"; return; }
@@ -1245,20 +1481,81 @@ function callRow(call) {
    kit's gameplay roles (a crash in one game is not a crash in another). On
    Apply the manifest maps it (`sfx`) and its clip leaves game.js
    (tools/lab/cut-kit.mjs, mapKeys); the lines that play it do not change. A
-   key already in the kit can move to another variant, not back to a clip. */
+   key already in the kit can move to another variant, not back to a clip.
+
+   It is the file picker's menu and not a <select>, for the file picker's
+   reason: a native popup fires nothing over its rows, and a variant is
+   chosen by ear. Hovering a row plays one shot of it — levelled, as it will
+   ship, the draft of a variant edited on a card included — and the arrows do
+   the same from the keyboard. */
 function kitSelect(key, current) {
   if (state.slug === "template" || !(state.kitIds || []).length) return "";
-  const groups = {};
-  state.kitIds.forEach((id) => { const r = id.split("/")[0]; (groups[r] = groups[r] || []).push(id); });
-  return `<select class="kitsel" title="play the house kit's variant instead of this clip — chosen and tuned at /kit">` +
-    (current ? "" : `<option value="">clip</option>`) +
-    Object.entries(groups).map(([r, list]) => `<optgroup label="${esc(r)}">` +
-      list.map((id) => {
-        const n = kitGames(id).length;
-        return `<option value="${esc(id)}"${id === current ? " selected" : ""}>kit: ${esc(id)}${n ? " · " + n + (n > 1 ? " games" : " game") : ""}</option>`;
-      }).join("") +
-      `</optgroup>`).join("") +
-    `</select>`;
+  return `<button type="button" class="kitsel" data-current="${esc(current || "")}" title="play the house kit's variant instead — hover a variant to hear it, tune it on the card itself (kit button)"></button>`;
+}
+// Every variant the selector offers, a variant forked on a card included: apply creates it first.
+function kitChoices() {
+  return state.kitIds.concat(Object.keys(state.pending.roles || {}).filter((id) => !state.kitIds.includes(id) && id.includes("/")));
+}
+// One shot of a variant, the way the game plays it: its takes in turn, never the same twice in a row.
+const kitLast = {};
+function kitShot(id) {
+  const v = kitDraft(id), n = v ? v.takes.length : 0;
+  if (!n) return;
+  let i = 0;
+  const prev = kitLast[id] == null ? -1 : kitLast[id];
+  if (n > 1) { i = Math.floor(Math.random() * (prev < 0 ? n : n - 1)); if (prev >= 0 && i >= prev) i++; }
+  kitLast[id] = i;
+  kstop(); kitPlay(v.takes[i]);
+}
+function openKitMenu(btn, key) {
+  const box = el("filemenu");
+  if (fileMenu.btn === btn && !box.hidden) { closeFileMenu(); return; }
+  closeFileMenu();
+  fileMenu.btn = btn; fileMenu.key = key;
+  btn.classList.add("open");
+  const list = box.querySelector(".fm-list");
+  list.innerHTML = "";
+  fileMenu.rows = [];
+  const cats = [], now = btn.dataset.value || "";
+  const row = (value, label, sub, cat, hay, play) => {
+    const node = document.createElement("button");
+    node.className = "fm-row" + (value === now ? " cur" : "");
+    node.innerHTML = esc(label) + `<br><span class="sz">${esc(sub)}</span>`;
+    node.onmouseenter = () => {
+      clearTimeout(fileMenu.hover);
+      fileMenu.hover = setTimeout(play, 110);
+    };
+    node.onmouseleave = () => clearTimeout(fileMenu.hover);
+    const pick = () => btn._choose(value);
+    node.onclick = () => { pick(); closeFileMenu(); };
+    list.appendChild(node);
+    fileMenu.rows.push({ node, value, cat, hay: hay.toLowerCase(), play, pick });
+  };
+  // A key not in the kit yet keeps its own clip on the first row, heard from its file.
+  if (!btn.dataset.current) {
+    const snd = (state.data.sounds || []).find((x) => x.key === key);
+    row("", "clip", "the game's own clip" + (snd && snd.file ? " · " + sfxLabelOf(snd.file) : ""), "", "clip",
+      () => { if (snd && snd.file) sfxPlay(snd.file, cutLen(key)); });
+  }
+  let lastCat = null;
+  kitChoices().forEach((id) => {
+    const role = id.split("/")[0], x = kitRole(id), v = kitDraft(id);
+    if (role !== lastCat) {
+      const h = document.createElement("div");
+      h.className = "fm-cat"; h.dataset.cat = role;
+      h.textContent = role + (x ? " — " + x.what : "");
+      list.appendChild(h); cats.push(h); lastCat = role;
+    }
+    const games = kitGames(id).map((g) => ((state.games && state.games[g.slug] && state.games[g.slug].title) || g.slug) +
+      ({ ok: " ✓", part: " ✓?", stale: " ✓ old cut" }[kitValid(id, g.slug)] || ""));
+    const files = v ? v.takes.map((t) => t.file + (t.rate ? " ×" + t.rate : "")) : [];
+    const sub = (kitSaved(id) ? "" : "new · ") + files.join(", ") + (games.length ? " · " + games.join(", ") : " · no game");
+    // The files start decoding on the way in, so the shot is ready when the delay is up.
+    row(id, id, sub, role, id + " " + (x ? x.what : "") + " " + files.join(" ") + " " + games.join(" "), () => kitShot(id));
+    const node = fileMenu.rows[fileMenu.rows.length - 1].node;
+    node.addEventListener("mouseenter", () => { (v ? v.takes : []).forEach((t) => kbuf(t.file).catch(() => {})); });
+  });
+  showMenu(btn, cats, fileMenu.rows.find((r) => r.value === now));
 }
 /* The games whose manifest maps a key to a kit variant (`sfx`), read off
    /api/kit: { "crash/glass": ["gearball.crash", "pawko.burst"] }. One game
@@ -1276,26 +1573,63 @@ function kitGames(id) {
    this one first. A take changed on /kit is changed for all of them, so they
    are shown on the card the variant is chosen on; the name and the keys are
    in the tooltip. */
+const KIT_VALID = {
+  ok: "validated — every line of it playing this variant is checked on its current cut",
+  part: "partly validated — some of its lines playing this variant are checked",
+  stale: "checked on an older cut — the variant changed since, it has to be heard again"
+};
+// What each game says of a variant: "ok", "part", "stale" or nothing (api/kit `checked`).
+const kitValid = (id, slug) => ((state.kitChecked || {})[id] || {})[slug] || null;
 function usersHtml(id) {
   const all = kitGames(id).sort((a, b) => (b.slug === state.slug) - (a.slug === state.slug));
   if (!all.length) return "";
-  return `<div class="kitusers">` + all.map((g) => {
-    const name = (state.games && state.games[g.slug] && state.games[g.slug].title) || g.slug;
-    return `<img src="icons/${encodeURIComponent(g.slug)}.png" alt="${esc(name)}" title="${esc(name + " — " + g.keys.join(", ") + " plays " + id)}">`;
+  const wait = state.kitChecked == null;
+  return `<div class="kitusers${wait ? " pending" : ""}" data-id="${esc(id)}"${wait ? ` title="reading which games validated it…"` : ""}>` + all.map((g) => {
+    const name = (state.games && state.games[g.slug] && state.games[g.slug].title) || g.slug, v = kitValid(id, g.slug);
+    return `<img class="${v ? "v-" + v : ""}" src="icons/${encodeURIComponent(g.slug)}.png" alt="${esc(name)}" title="${esc(name + " — " + g.keys.join(", ") + " plays " + id + (wait ? "" : v ? " · " + KIT_VALID[v] : " · not checked yet"))}">`;
   }).join("") + `</div>`;
+}
+// The games other than this one that signed a variant off on its current cut.
+function kitValidators(id) {
+  return kitGames(id).filter((g) => g.slug !== state.slug && kitValid(id, g.slug) === "ok")
+    .map((g) => (state.games && state.games[g.slug] && state.games[g.slug].title) || g.slug);
+}
+/* Who signed each variant off — read on its own route, after the kit, since
+   it reads games — and again after a check given here. The feet are
+   repainted in place, and an editor that is open says it too. */
+let kitCheckedAsk = 0;
+function refreshKitChecked() {
+  const ask = ++kitCheckedAsk;
+  return fetch("api/kit-checked").then((r) => r.json()).then((c) => {
+    if (ask !== kitCheckedAsk) return;
+    state.kitChecked = c || {};
+    document.querySelectorAll(".kitusers[data-id]").forEach((n) => { n.outerHTML = usersHtml(n.dataset.id) || "<div></div>"; });
+    document.querySelectorAll(".beat").forEach((card) => { if (card._kitSync) card._kitSync(); });
+  }).catch(() => {});
 }
 
 function wireKitSelect(sel, key, current) {
   if (!sel) return;
-  const p = state.pending.kit[key];
-  if (p) sel.value = p;
-  sel.classList.toggle("dirty", !!p);
-  sel.onchange = () => {
-    const v = sel.value;
+  sel._set = (v) => {
+    sel.dataset.value = v || "";
+    sel.textContent = v ? "kit: " + v : "clip";
+    sel.classList.toggle("dirty", (v || "") !== (current || ""));
+  };
+  sel._set(state.pending.kit[key] || current || "");
+  sel.onclick = () => openKitMenu(sel, key);
+  sel.onkeydown = (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); openKitMenu(sel, key); }
+  };
+  sel._choose = (v) => {
+    sel._set(v);
     if (!v || v === current) delete state.pending.kit[key];
     else { state.pending.kit[key] = v; delete state.pending.sfx[key]; delete state.pending.kill.clips[key]; }
     sel.classList.toggle("dirty", !!state.pending.kit[key]);
+    const card = sel.closest(".beat");
+    if (card && card._kitSync) card._kitSync();
     countPending();
+    syncPreview(key);
+    paintChecks();
     note(state.pending.kit[key]
       ? `${key} will play the kit's ${v} on apply` + (current ? "" : " — its clip leaves game.js, the lines that play it stay")
       : "");
@@ -1347,22 +1681,23 @@ function clipCard(key, calls) {
 }
 
 /* A key the manifest maps to a role of the house kit (`sfx` in manifest.json):
-   the game embeds no clip for it, and what it sounds like is chosen on the
-   kit page, for every game that maps a key to that role. So the card names
-   the role and opens the kit instead of offering a file — the lines under it
-   keep their own volume and pitch, which are the game's. */
+   the game embeds no clip for it, and what it sounds like is its VARIANT's,
+   the same in every game that maps a key to it. The kit button opens that
+   variant's editor under the header (kitEditor, below) — the lines under it
+   keep their own volume, which is the game's, and nothing else. */
 function kitCard(key, snd, calls, card) {
+  card.dataset.kit = snd.kit;
   const head = document.createElement("div");
   head.className = "bhead has-acts";
   head.dataset.key = key;
   head.innerHTML =
     `<span class="key" title="manifest.json sfx.${esc(key)}">${esc(key)}</span>` +
-    `<a class="kitbtn" href="kit#${esc(snd.kit)}" target="_blank" title="this key plays a variant of the house kit — its takes are chosen on the kit page, for every game that maps to it">kit: ${esc(snd.kit)} ↗</a>` +
+    `<button class="kitbtn" title="this key plays a variant of the house kit — open it here to tune its takes, for every game that maps to it"></button>` +
     kitSelect(key, snd.kit) +
     `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
     `<span class="acts">` +
     iconBtn("check", "check", "check every line of this clip at once") +
-    iconBtn("revert", "revert", "put this key back where the source has it") +
+    iconBtn("revert", "revert", "put this key back where the source has it — its mapping and the variant's takes") +
     iconBtn("trash", "trash", "take this key out of the house kit (sfx in manifest.json), and every line of the game that plays it") +
     `</span>`;
   head.querySelector(".key").onclick = () => copy(key);
@@ -1373,10 +1708,697 @@ function kitCard(key, snd, calls, card) {
     toggleCheck(ids, !ids.every(isChecked));
   };
   card.appendChild(head);
+  const editor = kitEditor(key, snd);
+  card.appendChild(editor);
   calls.forEach((c) => card.appendChild(callRow(c)));
   card.insertAdjacentHTML("beforeend", usersHtml(snd.kit));
+
+  const btn = head.querySelector(".kitbtn");
+  // The button names the variant the key will play, open or shut, and goes amber on a draft.
+  card._kitSync = () => {
+    const id = state.pending.kit[key] || snd.kit, open = state.kitOpen.has(key);
+    btn.textContent = "kit: " + id + (open ? " ▾" : " ▸");
+    btn.classList.toggle("open", open);
+    btn.classList.toggle("dirty", kitDirty(id));
+    editor.hidden = !open;
+    if (open) editor._paint();
+  };
+  btn.onclick = () => {
+    if (state.kitOpen.has(key)) state.kitOpen.delete(key); else state.kitOpen.add(key);
+    card._kitSync();
+  };
   wireKitSelect(head.querySelector(".kitsel"), key, snd.kit);
+  card._kitSync();
   return card;
+}
+
+/* A SHELL role (Sound.ui): a card per role, its lines under it and the
+   role's editor under the kit button. `shared` is the motor's and the web
+   shell's lines, every game's: no check, a volume for the ear only. Without
+   it, they are this game's own Sound.ui lines (grudgeon's `deny`). */
+function shellCard(role, calls, shared) {
+  const key = "ui:" + role, card = document.createElement("div");
+  card.className = "beat clip" + (shared ? " shared" : "");
+  card.dataset.key = key;
+  card.dataset.kit = role;
+  const head = document.createElement("div");
+  head.className = "bhead has-acts";
+  head.dataset.key = key;
+  head.innerHTML =
+    `<span class="key" title="Sound.ui(&quot;${esc(role)}&quot;) — a role of the house kit, the same in every game">${esc(role)}</span>` +
+    `<button class="kitbtn" title="a shell role of the house kit — open it here to tune its takes, for every game"></button>` +
+    `<span class="every">${shared || state.slug === "shell" ? "the shell, every game" : "a shell role, played by the game"}</span>` +
+    `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
+    `<span class="acts">` +
+    (shared ? `<span class="iconbtn"></span>` : iconBtn("check", "check", "check every line of this role at once")) +
+    iconBtn("revert", "revert", "put the role's takes back where kit.json has them") +
+    `<span class="iconbtn"></span>` +
+    `</span>`;
+  head.querySelector(".key").onclick = () => copy("Sound.ui(\"" + role + "\")");
+  head.querySelector(".revert").onclick = () => {
+    delete state.pending.roles[role];
+    card.querySelectorAll(".call").forEach((r) => resetControls(r));
+    card._kitSync(); syncPreview(key); paintChecks(); countPending(); note("");
+  };
+  if (!shared) head.querySelector(".check").onclick = () => {
+    const ids = calls.map((c) => c.checkId).filter(Boolean);
+    toggleCheck(ids, !ids.every(isChecked));
+  };
+  card.appendChild(head);
+  const editor = kitEditor(key, { kit: role });
+  card.appendChild(editor);
+  calls.forEach((c) => card.appendChild(callRow(c)));
+  const btn = head.querySelector(".kitbtn");
+  card._kitSync = () => {
+    const open = state.kitOpen.has(key);
+    btn.textContent = "kit: " + role + (open ? " ▾" : " ▸");
+    btn.classList.toggle("open", open);
+    btn.classList.toggle("dirty", kitDirty(role));
+    editor.hidden = !open;
+    if (open) editor._paint();
+  };
+  btn.onclick = () => {
+    if (state.kitOpen.has(key)) state.kitOpen.delete(key); else state.kitOpen.add(key);
+    card._kitSync();
+  };
+  card._kitSync();
+  return card;
+}
+
+/* ── the kit card's editor ────────────────────────────────────────────────
+   The variant a key plays, edited where the key is judged: the same takes,
+   grips and ends as the kit page (lab/sound-kit.html — the waveform, the cut
+   taken by its grips, Cut / Fade / Drop, the pitch), and under them the
+   library: the ten files whose wave looks most like the active take
+   (api/sfx-like, tools/lab/shape-sfx.mjs) and a search over all of it.
+   Hover hears a file as the take would play it, a click puts it in the take,
+   + adds it as another one.
+
+   A draft lives in state.pending.roles, keyed by the variant's id, so two
+   keys playing one variant edit one draft, and apply writes it to kit.json
+   and re-cuts it before anything else. Everything is heard LEVELLED, with the
+   measure tools/lab/cut-kit.mjs cuts with: the files are compared as they
+   will ship, not as two vendors mastered them.                              */
+const KIT_NAME = /^[a-z][a-z0-9]{0,23}$/, KIT_MAX_TAKES = 3, KIT_WINDOW = 0.05;
+const KIT_TAILS = { "": ["Cut", "Stops on a 70 ms anti-click fade"], fade: ["Fade", "Dies out over the tail"], drop: ["Drop", "Dies out while its pitch falls an octave"] };
+
+function kitSaved(id) {
+  const [role, name = "default"] = String(id).split("/");
+  const r = state.kit && state.kit.roles[role];
+  return (r && r.variants[name]) || null;
+}
+const kitRole = (id) => state.kit && state.kit.roles[String(id).split("/")[0]];
+const kitDraft = (id) => state.pending.roles[id] || kitSaved(id);
+function kitEdit(id) {
+  if (!state.pending.roles[id]) state.pending.roles[id] = { takes: JSON.parse(JSON.stringify((kitSaved(id) || { takes: [] }).takes)) };
+  return state.pending.roles[id];
+}
+function kitDirty(id) {
+  const d = state.pending.roles[id];
+  if (!d) return false;
+  const was = kitSaved(id);
+  return !was || JSON.stringify(d.takes) !== JSON.stringify(was.takes);
+}
+
+/* The audio of the editor: the library's files decoded once, levelled the way
+   the cutter levels them, the tail rendered by the cutter's own function. */
+let kac = null;
+const kbufs = {}, kdecoded = {};
+let kvoices = [];
+function kctx() {
+  if (!kac) kac = new (window.AudioContext || window.webkitAudioContext)();
+  if (kac.state === "suspended") kac.resume();
+  return kac;
+}
+function kbuf(stem) {
+  const f = state.sfxByStem && state.sfxByStem[stem];
+  if (!f) return Promise.reject(new Error("no file " + stem));
+  if (!kbufs[stem]) kbufs[stem] = fetch("sfx/" + encodeURIComponent(f.file))
+    .then((r) => r.arrayBuffer()).then((b) => kctx().decodeAudioData(b))
+    .then((buf) => { kdecoded[stem] = buf; return buf; });
+  return kbufs[stem];
+}
+function kmono(buf, start, length) {
+  const rate = buf.sampleRate, a = Math.floor(start * rate);
+  const n = Math.max(2, Math.min(buf.length - a, Math.floor(length * rate))), mono = new Float32Array(n);
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < n; i++) mono[i] += (d[a + i] || 0) / buf.numberOfChannels;
+  }
+  return mono;
+}
+// The loudest 50 ms window and the peak, as tools/lab/cut-kit.mjs measures them.
+function kgainDb(buf, start, length) {
+  const mono = kmono(buf, start, length), n = mono.length, rate = buf.sampleRate;
+  let peak = 0, best = 0;
+  for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(mono[i]));
+  const win = Math.max(1, Math.round(KIT_WINDOW * rate)), hop = Math.max(1, win >> 2);
+  for (let s = 0; ; s += hop) {
+    let sum = 0, k = 0;
+    for (let i = s; i < Math.min(s + win, n); i++, k++) sum += mono[i] * mono[i];
+    if (k) best = Math.max(best, Math.sqrt(sum / k));
+    if (s + win >= n) break;
+  }
+  const db = (v) => v > 0 ? 20 * Math.log10(v) : -120;
+  return Math.min(state.kit.target - db(best), state.kit.peak - db(peak));
+}
+/* THE TAIL — a copy of tailPcm in tools/lab/cut-kit.mjs (and lab/sound-kit.html),
+   so the editor hears the take the cutter writes. Keep the three identical. */
+const KIT_DROP_TO = 0.5;
+const kitDefaultTail = (length) => Math.round(Math.min(0.3, length * 0.4) * 1000) / 1000;
+function tailPcm(pcm, rate, tail, tailLength) {
+  const n = pcm.length, t0 = Math.max(0, n - Math.round(tailLength * rate)), span = Math.max(1, n - t0);
+  const out = [];
+  let p = 0;
+  while (p < n - 1) {
+    const i = Math.floor(p), f = p - i;
+    const s = pcm[i] * (1 - f) + pcm[i + 1] * f;
+    const u = p < t0 ? 0 : (p - t0) / span;
+    out.push(s * (1 - u) * (1 - u));
+    p += tail === "drop" ? 1 - (1 - KIT_DROP_TO) * u : 1;
+  }
+  return Float32Array.from(out);
+}
+function kstop() { kvoices.forEach((v) => { try { v.stop(); } catch (e) {} }); kvoices = []; }
+/* A take — { file, start, length, rate?, tail? } — levelled and played the way
+   it will ship. The pitch is a playbackRate, which is what the cutter's
+   resampling is. */
+function kitPlay(t, at) {
+  return kbuf(t.file).then((buf) => {
+    const a = kctx(), src = a.createBufferSource(), g = a.createGain();
+    const t0 = a.currentTime + (at || 0), r = t.rate || 1, start = t.start || 0, length = t.length;
+    const level = Math.pow(10, kgainDb(buf, start, length) / 20) * sfxVol();
+    src.playbackRate.value = r;
+    src.connect(g); g.connect(a.destination);
+    if (t.tail) {
+      const out = tailPcm(kmono(buf, start, length), buf.sampleRate, t.tail, t.tailLength || kitDefaultTail(length));
+      const ab = a.createBuffer(1, Math.max(1, out.length), buf.sampleRate);
+      ab.copyToChannel(out, 0);
+      src.buffer = ab;
+      g.gain.setValueAtTime(level, t0);
+      src.start(t0);
+    } else {
+      const real = length / r, fade = Math.min(0.07, length * 0.3) / r;
+      src.buffer = buf;
+      g.gain.setValueAtTime(level, t0);
+      g.gain.setValueAtTime(level, t0 + Math.max(0, real - fade));
+      g.gain.linearRampToValueAtTime(0, t0 + real);
+      src.start(t0, start, length);
+    }
+    kvoices.push(src);
+    src.onended = () => { kvoices = kvoices.filter((v) => v !== src); };
+  }).catch(() => note("cannot play " + t.file));
+}
+
+/* ── the draft, heard in the game ─────────────────────────────────────────
+   The build in the frame plays a kit key through CONFIG.sfx → CONFIG.kit →
+   ASSETS.sounds, and the motor decodes a data URI where it finds one. So a
+   change made on the page — a key moved to another variant, a variant's takes
+   edited — is rendered here and handed to it as one more kit entry, and the
+   key is pointed at that entry: the line's ▶ and a loop then play what apply
+   WOULD ship. A variant the build ships untouched needs nothing, and the key
+   goes back to it. */
+const PREVIEW = { orig: null, by: {} };
+// The variant a key should be heard on that the build does not already play as is.
+function previewWanted(key) {
+  // A shell role is heard as drafted, or as shipped.
+  if (key && key.startsWith("ui:")) { const role = key.slice(3); return kitDraft(role) && kitDirty(role) ? role : null; }
+  const snd = state.data && (state.data.sounds || []).find((x) => x.key === key);
+  const shipped = snd && snd.kit, id = (state.pending.kit && state.pending.kit[key]) || shipped;
+  if (!id || !kitDraft(id)) return null;
+  return id === shipped && !kitDirty(id) ? null : id;
+}
+// One take as cut-kit cuts it: mono, levelled, its tail or the anti-click, its pitch as the WAV's rate.
+function previewTake(t) {
+  return kbuf(t.file).then((buf) => {
+    const rate = buf.sampleRate, mono = kmono(buf, t.start || 0, t.length);
+    const gain = Math.pow(10, kgainDb(buf, t.start || 0, t.length) / 20);
+    let out;
+    if (t.tail) out = tailPcm(mono, rate, t.tail, t.tailLength || kitDefaultTail(t.length));
+    else {
+      out = Float32Array.from(mono);
+      const n = Math.max(1, Math.round(Math.min(0.07, t.length * 0.3) * rate)), a = Math.max(0, out.length - n);
+      for (let i = a; i < out.length; i++) out[i] *= 1 - (i - a) / n;
+    }
+    for (let i = 0; i < out.length; i++) out[i] *= gain;
+    return wavUri(out, Math.round(rate * (t.rate || 1)));
+  });
+}
+// 16-bit mono PCM in a WAV, as a data URI — the shape the motor decodes without a request.
+function wavUri(pcm, rate) {
+  const n = pcm.length, b = new DataView(new ArrayBuffer(44 + n * 2));
+  const str = (o, x) => { for (let i = 0; i < x.length; i++) b.setUint8(o + i, x.charCodeAt(i)); };
+  str(0, "RIFF"); b.setUint32(4, 36 + n * 2, true); str(8, "WAVE"); str(12, "fmt ");
+  b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+  b.setUint32(24, rate, true); b.setUint32(28, rate * 2, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true);
+  str(36, "data"); b.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 0x7fff, true);
+  const bytes = new Uint8Array(b.buffer);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return "data:audio/wav;base64," + btoa(bin);
+}
+const previewTag = (sig) => { let h = 5381; for (let i = 0; i < sig.length; i++) h = ((h * 33) ^ sig.charCodeAt(i)) >>> 0; return "lab" + h.toString(36); };
+// Point the key at what it should be heard on now, in the frame's build. Resolves once it can play.
+function syncPreview(key) {
+  const W = web("en");
+  if (!W || !W.CONFIG || !W.ASSETS || !state.kit) return Promise.resolve();
+  const C = W.CONFIG;
+  C.sfx = C.sfx || {}; C.kit = C.kit || {};
+  if (!PREVIEW.orig) PREVIEW.orig = {};
+  /* A game key is pointed at the draft through CONFIG.sfx; a shell role is
+     played by its own name, so its CONFIG.kit entry is what is swapped. */
+  const ui = key.startsWith("ui:"), role = ui ? key.slice(3) : null;
+  if (!(key in PREVIEW.orig)) PREVIEW.orig[key] = ui ? C.kit[role] : C.sfx[key];
+  const id = previewWanted(key);
+  if (!id) {
+    if (ui) { if (PREVIEW.orig[key] === undefined) delete C.kit[role]; else C.kit[role] = PREVIEW.orig[key]; }
+    else if (PREVIEW.orig[key] === undefined) delete C.sfx[key]; else C.sfx[key] = PREVIEW.orig[key];
+    delete PREVIEW.by[key];
+    if (heardHash[key]) { delete heardHash[key]; paintChecks(); }
+    return Promise.resolve();
+  }
+  const takes = kitDraft(id).takes, sig = id + "|" + JSON.stringify(takes) + "|" + state.kit.target + "|" + state.kit.peak;
+  // What the line plays now, fingerprinted by the server the way a check is.
+  const tsig = JSON.stringify(takes);
+  if (!heardHash[key] || heardHash[key].sig !== tsig) {
+    heardHash[key] = { sig: tsig, hash: null };
+    fetch("api/kit-hash", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ list: [takes] }) })
+      .then((r) => r.json()).then((h) => {
+        if (heardHash[key] && heardHash[key].sig === tsig) { heardHash[key].hash = h[0]; paintChecks(); }
+      }).catch(() => {});
+  }
+  if (PREVIEW.by[key] && PREVIEW.by[key].sig === sig) return PREVIEW.by[key].ready;
+  const entry = { sig };
+  unlock();                                   // the frame's context, which decodes what is handed over
+  entry.ready = Promise.all(takes.map(previewTake)).then((uris) => {
+    if (PREVIEW.by[key] !== entry || web("en") !== W) return;
+    const tag = previewTag(sig);
+    uris.forEach((u, i) => {
+      W.ASSETS.sounds["kit-" + tag + "-" + (i + 1)] = u;
+      if (W.Sound.load) W.Sound.load("kit-" + tag + "-" + (i + 1));
+    });
+    if (ui) C.kit[role] = { key: "kit-" + tag, n: uris.length };
+    else { C.kit["lab/" + tag] = { key: "kit-" + tag, n: uris.length }; C.sfx[key] = "lab/" + tag; }
+    // Played before it is decoded, the motor falls back to an <audio>: wait the few ms the decode takes.
+    const keys = uris.map((u, i) => "kit-" + tag + "-" + (i + 1));
+    return new Promise((done) => {
+      const t0 = performance.now();
+      (function wait() {
+        if (keys.every((k) => W.Sound.buffer(k)) || performance.now() - t0 > 1000) return done();
+        setTimeout(wait, 20);
+      })();
+    });
+  }).catch(() => note("the draft of " + id + " could not be rendered"));
+  PREVIEW.by[key] = entry;
+  return entry.ready;
+}
+// Every key that plays `id` (or every key, without one), brought up to date a moment after the hand stops.
+let previewTimer = null;
+function schedulePreview(id) {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    // The shell roles on the page: their cards carry the key.
+    new Set([...document.querySelectorAll('.beat[data-key^="ui:"]')].map((n) => n.dataset.key)).forEach((k) => {
+      if (!id || k.slice(3) === id || k in (PREVIEW.orig || {})) syncPreview(k);
+    });
+    ((state.data && state.data.sounds) || []).forEach((x) => {
+      const now = (state.pending.kit && state.pending.kit[x.key]) || x.kit;
+      if (!x.kit && !(state.pending.kit && state.pending.kit[x.key])) return;
+      if (!id || now === id || x.kit === id || x.key in (PREVIEW.orig || {})) syncPreview(x.key);
+    });
+  }, 250);
+}
+function previewReset() {
+  PREVIEW.orig = null; PREVIEW.by = {};
+  schedulePreview(null);
+}
+
+const r3 = (v) => Math.round(v * 1000) / 1000;
+
+function kitEditor(key, snd) {
+  const node = document.createElement("div");
+  node.className = "kedit";
+  node.hidden = true;
+  // The take the library writes into, the alternatives last asked for, the search.
+  const E = { take: 0, alike: null, alikeFor: "", q: "", last: -1 };
+  const id = () => state.pending.kit[key] || snd.kit;
+  const takes = () => (kitDraft(id()) || { takes: [] }).takes;
+  const edit = () => kitEdit(id()).takes;
+  const changed = () => {
+    const by = kitValidators(id());
+    if (by.length && kitDirty(id())) note(id() + " is validated by " + by.join(", ") + " — applying this takes their check back (New variant keeps it to this game)");
+    if (state.pending.roles[id()] && !kitDirty(id())) delete state.pending.roles[id()];
+    const card = node.closest(".beat");
+    if (card) card.querySelector(".kitbtn").classList.toggle("dirty", kitDirty(id()));
+    countPending();
+    schedulePreview(id());
+    paintChecks();
+  };
+  const title = (slug) => (state.games && state.games[slug] && state.games[slug].title) || slug;
+
+  function paint() {
+    const cur = id(), x = kitRole(cur), v = kitDraft(cur);
+    if (!state.kit) { node.innerHTML = `<div class="kwait">reading the kit…</div>`; return; }
+    if (!x || !v) { node.innerHTML = `<div class="knote">The kit has no variant ${esc(cur)}.</div>`; return; }
+    if (E.take >= v.takes.length) E.take = 0;
+    const others = kitGames(cur).filter((g) => g.slug !== state.slug).map((g) => title(g.slug));
+    const shell = x.group === "shell", fresh = !kitSaved(cur);
+    node.innerHTML =
+      `<div class="kbar"><b>${esc(cur)}</b>${fresh ? `<span class="knew">new</span>` : ""}<span class="kwhat">${esc(x.what)}</span><span class="sp"></span>` +
+      `<button class="act sm" data-k="play" title="one shot of the draft, the way the game plays it — the takes alternate">Play</button>` +
+      `<button class="act sm ghost" data-k="shipped" title="the cut files on disk — what the lines below play until apply"${fresh ? " disabled" : ""}>Shipped</button>` +
+      (shell ? "" : `<button class="act sm ghost" data-k="fork" title="a new variant of ${esc(cur.split("/")[0])}, starting from these takes — the key moves to it on apply, the others keep this one">New variant</button>`) +
+      `</div>` +
+      `<div class="knote">` + (shell
+        ? `<b>A shell role</b> — every game plays it, menus and end screens: a change here is heard in all of them. `
+        : "") + (shell ? "" : kitValidators(cur).length
+        ? `<b>Validated by ${esc(kitValidators(cur).join(", "))}</b> — a change here takes their check back: they will have to hear it again. <i>New variant</i> leaves it alone and keeps the change to ${esc(title(state.slug))}. `
+        : "") + (shell ? "" : others.length
+        ? `<b>Shared</b> — ${esc(others.join(", "))} ${others.length > 1 ? "play" : "plays"} it too: a change here is heard there. <i>New variant</i> keeps it to ${esc(title(state.slug))}.`
+        : fresh ? `A new variant: apply writes it into the kit and moves ${esc(key)} to it.`
+          : `Only ${esc(title(state.slug))} plays it.`) +
+      ` The takes are interchangeable — the game alternates them. The lines below play the shipped cut until apply.</div>` +
+      `<div class="ktakes">` + v.takes.map((t, i) => takeHtml(t, i, v.takes.length)).join("") + `</div>` +
+      `<div class="kalt"><div class="ksec"></div><div class="krows" data-list="alike"></div>` +
+      `<input class="ksearch" type="text" autocomplete="off" placeholder="Search the library — impact metal, pickup, ui click…">` +
+      `<div class="krows" data-list="search"></div></div>`;
+    node.querySelector(".ksearch").value = E.q;
+    v.takes.forEach((t, i) => drawWave(i));
+    paintAlike();
+    paintSearch();
+  }
+
+  function takeHtml(t, i, n) {
+    const f = state.sfxByStem && state.sfxByStem[t.file];
+    return `<div class="ktake${i === E.take ? " on" : ""}" data-i="${i}">` +
+      `<span class="ix">${i + 1}</span>` +
+      `<span class="kfile">${esc(t.file)}<small>${f ? (+f.seconds || 0).toFixed(2) + " s · " + esc(f.pack || "") : "missing"}</small><small class="kgain" data-i="${i}"></small></span>` +
+      `<span class="kacts"><button class="act sm" data-act="play" data-i="${i}" title="play this take">▶</button>` +
+      `<button class="iconbtn trash" data-act="drop" data-i="${i}" title="remove this take from the variant"${n < 2 ? " disabled" : ""}>${ICON.trash}</button></span>` +
+      `<canvas data-i="${i}"></canvas>` +
+      `<span class="knums"><label>Start <input type="number" step="0.01" min="0" data-k="start" data-i="${i}" value="${t.start}"></label>` +
+      `<label>Length <input type="number" step="0.01" min="0.02" max="3" data-k="length" data-i="${i}" value="${t.length}"></label>` +
+      `<label title="played higher (2 = an octave up) or lower (0.5) — baked into the cut file">Pitch <input type="number" step="0.05" min="0.5" max="2" data-k="rate" data-i="${i}" value="${t.rate || 1}"></label>` +
+      `<label>End <span class="kseg">` + Object.entries(KIT_TAILS).map(([k, [word, tip]]) =>
+        `<button data-tail="${k}" data-i="${i}" class="${(t.tail || "") === k ? "on" : ""}" title="${tip}">${word}</button>`).join("") + `</span></label>` +
+      (t.tail ? `<label>Tail <input type="number" step="0.01" min="0.02" data-k="tailLength" data-i="${i}" value="${t.tailLength}"></label>` : "") +
+      `</span></div>`;
+  }
+
+  function syncNums(i) {
+    const t = takes()[i];
+    node.querySelectorAll('.ktake[data-i="' + i + '"] input[data-k]').forEach((n) => { n.value = n.dataset.k === "rate" ? (t.rate || 1) : t[n.dataset.k]; });
+  }
+  function selectTake(i) {
+    if (E.take === i) return;
+    E.take = i;
+    node.querySelectorAll(".ktake").forEach((n) => n.classList.toggle("on", +n.dataset.i === i));
+    paintAlike(); paintSearch();
+  }
+
+  // ---- the waveform: where the window, its end and its tail sit, in CSS px.
+  function geom(cv, t) {
+    const dur = +cv.dataset.dur, w = cv.clientWidth, x = (sec) => Math.max(0, Math.min(w, (sec / dur) * w));
+    const end = t.start + t.length;
+    return { w, x0: x(t.start), x1: x(end), xt: t.tail ? x(end - (t.tailLength || kitDefaultTail(t.length))) : null };
+  }
+  const peaks = {};
+  function peaksOf(stem, buf, w) {
+    const k = stem + "@" + w;
+    if (peaks[k]) return peaks[k];
+    const d = buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / w)), out = new Float32Array(w);
+    for (let x = 0; x < w; x++) {
+      let m = 0;
+      for (let j = x * step; j < Math.min(d.length, (x + 1) * step); j++) m = Math.max(m, Math.abs(d[j]));
+      out[x] = m;
+    }
+    return (peaks[k] = out);
+  }
+  function drawWave(i) {
+    const t = takes()[i], cv = node.querySelector('canvas[data-i="' + i + '"]');
+    if (!cv || !t) return;
+    const buf = kdecoded[t.file];
+    if (!buf) { kbuf(t.file).then(() => drawWave(i)).catch(() => {}); return; }
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (!w) return;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    cv.dataset.dur = buf.duration;
+    const g = cv.getContext("2d"), p = peaksOf(t.file, buf, w), { x0, x1, xt } = geom(cv, t);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = "rgba(154,134,255,0.16)"; g.fillRect(x0, 0, x1 - x0, h);
+    for (let x = 0; x < w; x++) {
+      const y = p[x] * (h / 2 - 2);
+      let k = 1;
+      if (xt != null && x > xt && x <= x1) k = 1 - (x - xt) / Math.max(1, x1 - xt);
+      g.fillStyle = x >= x0 && x <= x1 ? "rgba(200,184,255," + (0.25 + 0.75 * k * k) + ")" : "#3a4160";
+      g.fillRect(x, h / 2 - y, 1, Math.max(1, y * 2));
+    }
+    if (xt != null) {
+      g.strokeStyle = "#ffd08a"; g.lineWidth = 1.5;
+      g.beginPath(); g.moveTo(xt, 6); g.lineTo(x1, h - 6); g.stroke();
+      g.setLineDash([3, 3]); g.beginPath(); g.moveTo(xt, 0); g.lineTo(xt, h); g.stroke(); g.setLineDash([]);
+      g.fillStyle = "#ffd08a"; g.fillRect(xt - 4, 0, 8, 10);
+    }
+    g.fillStyle = "#9a86ff";
+    [x0, x1].forEach((x, k) => {
+      g.fillRect(k ? x - 2 : x, 0, 2, h);
+      g.fillRect(k ? x - 8 : x, h / 2 - 11, 8, 22);
+    });
+    const gl = node.querySelector('.kgain[data-i="' + i + '"]');
+    if (gl) { const db = kgainDb(buf, t.start, t.length); gl.textContent = "levelled " + (db >= 0 ? "+" : "") + db.toFixed(1) + " dB"; }
+  }
+
+  // ---- the library: the ten alike, and the search.
+  function rowsHtml(list) {
+    const inV = new Set(takes().map((t) => t.file)), full = takes().length >= KIT_MAX_TAKES;
+    return list.map((x) => {
+      const f = state.sfxByStem[x.stem];
+      if (!f) return "";
+      return `<div class="krow${inV.has(x.stem) ? " in" : ""}" data-stem="${esc(x.stem)}" title="hover to hear it as the take would play it — click to put it in take ${E.take + 1}">` +
+        `<span class="kname">${esc(x.stem)}</span><span class="ks">${(+f.seconds || 0).toFixed(2)} s</span>` +
+        `<span class="kscore">${x.score != null ? x.score + "%" : ""}</span><span class="kpack">${esc(f.pack || "")}</span>` +
+        `<button class="act sm ghost" data-add="${esc(x.stem)}" title="add it as another take"${full ? " disabled" : ""}>+</button></div>`;
+    }).join("");
+  }
+  function paintAlike() {
+    const box = node.querySelector('[data-list="alike"]'), head = node.querySelector(".kalt .ksec");
+    if (!box) return;
+    const t = takes()[E.take];
+    if (!t) { box.innerHTML = ""; return; }
+    head.innerHTML = `Alike take ${E.take + 1} <i>— the ten files whose wave looks most like ${esc(t.file)} ${t.start}+${t.length} s</i>`;
+    const not = takes().map((x) => x.file).filter((f) => f !== t.file).join(",");
+    const q = "file=" + encodeURIComponent(t.file) + "&start=" + t.start + "&length=" + t.length + "&not=" + encodeURIComponent(not);
+    if (E.alikeFor === q && E.alike) { box.innerHTML = rowsHtml(E.alike); return; }
+    E.alikeFor = q; E.alike = null;
+    box.innerHTML = `<div class="kwait">reading the shapes of the library…</div>`;
+    fetch("api/sfx-like?" + q).then((r) => r.json()).then((list) => {
+      if (E.alikeFor !== q || !Array.isArray(list)) return;
+      E.alike = list;
+      if (node.contains(box)) box.innerHTML = rowsHtml(list) || `<div class="kwait">nothing alike</div>`;
+    }).catch(() => { if (E.alikeFor === q) box.innerHTML = `<div class="kwait">the server could not read the shapes</div>`; });
+  }
+  const SEARCH_MAX = 40;
+  function paintSearch() {
+    const box = node.querySelector('[data-list="search"]');
+    if (!box) return;
+    const terms = E.q.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) { box.innerHTML = ""; return; }
+    const hits = (state.sfx || []).filter((f) => terms.every((x) => (f.stem + " " + f.category + " " + (f.pack || "")).toLowerCase().includes(x)));
+    box.innerHTML = rowsHtml(hits.slice(0, SEARCH_MAX).map((f) => ({ stem: f.stem }))) +
+      (hits.length > SEARCH_MAX ? `<div class="kwait">${hits.length - SEARCH_MAX} more — narrow the search</div>` : "") +
+      (hits.length ? "" : `<div class="kwait">nothing in the library matches</div>`);
+  }
+
+  // A file in a take keeps the take's shape: its pitch and its end are the role's, not the file's.
+  function withFile(t, stem) {
+    const f = state.sfxByStem[stem], length = Math.max(0.02, Math.round(Math.min(+f.seconds || 0.4, t ? t.length : 0.4) * 100) / 100);
+    const out = { file: stem, start: 0, length };
+    if (t && t.rate) out.rate = t.rate;
+    if (t && t.tail) { out.tail = t.tail; out.tailLength = r3(Math.min(length, t.tailLength || kitDefaultTail(length))); }
+    return out;
+  }
+  function setFile(i, stem) {
+    const tk = edit();
+    tk[i] = withFile(tk[i], stem);
+    changed(); paint();
+    kstop(); kitPlay(tk[i]);
+  }
+
+  // One shot of the draft, the way Sound.ui plays it: a take, never the same twice in a row.
+  function shot() {
+    const v = takes(), n = v.length;
+    if (!n) return;
+    let i = 0;
+    if (n > 1) { i = Math.floor(Math.random() * (E.last < 0 ? n : n - 1)); if (E.last >= 0 && i >= E.last) i++; }
+    E.last = i;
+    kstop(); kitPlay(v[i]);
+  }
+  function shipped() {
+    const [role, name = "default"] = id().split("/"), v = kitSaved(id());
+    if (!v) return;
+    v.takes.forEach((t, i) => {
+      const a = new Audio("kit/" + role + "-" + name + "-" + (i + 1) + ".mp3?" + Date.now());
+      a.volume = sfxVol();
+      setTimeout(() => a.play().catch(() => {}), i * 450);
+    });
+  }
+  function fork() {
+    const role = id().split("/")[0];
+    const name = (prompt("A new " + role + " variant, starting from these takes — its name (glass, metal, soft…)") || "").trim().toLowerCase();
+    if (!name) return;
+    const nid = role + "/" + name;
+    if (!KIT_NAME.test(name)) { note("a variant is named in lowercase letters and digits"); return; }
+    if (kitSaved(nid) || state.pending.roles[nid]) { note(nid + " already exists"); return; }
+    state.pending.roles[nid] = { takes: JSON.parse(JSON.stringify(takes())) };
+    if (nid !== snd.kit) state.pending.kit[key] = nid;
+    note(key + " will play the new " + nid + " on apply — tune it here, the others keep " + snd.kit);
+    countPending();
+    render();
+  }
+
+  // ---- the hand: one set of listeners for the editor's whole life.
+  node.addEventListener("click", (e) => {
+    const k = e.target.closest("[data-k]");
+    if (k && k.tagName === "BUTTON") {
+      if (k.dataset.k === "play") shot();
+      if (k.dataset.k === "shipped") shipped();
+      if (k.dataset.k === "fork") fork();
+      return;
+    }
+    const act = e.target.closest("[data-act]");
+    if (act) {
+      const i = +act.dataset.i;
+      if (act.dataset.act === "play") { kstop(); kitPlay(takes()[i]); }
+      if (act.dataset.act === "drop" && takes().length > 1) { edit().splice(i, 1); E.take = 0; changed(); paint(); }
+      return;
+    }
+    const tl = e.target.closest("[data-tail]");
+    if (tl) {
+      const i = +tl.dataset.i, t = edit()[i];
+      if (tl.dataset.tail) { t.tail = tl.dataset.tail; t.tailLength = r3(Math.min(t.length, t.tailLength || kitDefaultTail(t.length))); }
+      else { delete t.tail; delete t.tailLength; }
+      E.take = i;
+      changed(); paint();
+      kstop(); kitPlay(t);
+      return;
+    }
+    const add = e.target.closest("[data-add]");
+    if (add) {
+      if (takes().length >= KIT_MAX_TAKES) return;
+      const tk = edit();
+      tk.push(withFile(tk[E.take], add.dataset.add));
+      E.take = tk.length - 1;
+      changed(); paint();
+      kstop(); kitPlay(tk[E.take]);
+      return;
+    }
+    const row = e.target.closest(".krow");
+    if (row) { setFile(E.take, row.dataset.stem); return; }
+    const box = e.target.closest(".ktake");
+    if (box && e.target.tagName !== "INPUT" && e.target.tagName !== "CANVAS") selectTake(+box.dataset.i);
+  });
+  node.addEventListener("change", (e) => {
+    const k = e.target.dataset.k;
+    if (!k || e.target.tagName !== "INPUT") return;
+    const i = +e.target.dataset.i, v = parseFloat(e.target.value);
+    if (isNaN(v)) return;
+    const t = edit()[i];
+    if (k === "length") t.length = r3(Math.min(3, Math.max(0.02, v)));
+    if (k === "start") t.start = r3(Math.max(0, v));
+    if (k === "rate") { const rt = Math.round(Math.min(2, Math.max(0.5, v)) * 100) / 100; if (rt === 1) delete t.rate; else t.rate = rt; }
+    if (k === "tailLength" || (k === "length" && t.tail)) t.tailLength = r3(Math.min(t.length, Math.max(0.02, k === "tailLength" ? v : t.tailLength)));
+    selectTake(i);
+    syncNums(i); drawWave(i); changed();
+    if (k === "start" || k === "length") paintAlike();
+    kstop(); kitPlay(t);
+  });
+  node.addEventListener("input", (e) => {
+    if (!e.target.classList.contains("ksearch")) return;
+    E.q = e.target.value;
+    paintSearch();
+  });
+  // Hover hears a file as the active take would play it, after a short intent delay.
+  let hover = null, hoverRow = null;
+  node.addEventListener("mouseover", (e) => {
+    const row = e.target.closest(".krow");
+    if (row === hoverRow) return;
+    hoverRow = row;
+    clearTimeout(hover);
+    if (!row) return;
+    hover = setTimeout(() => { kstop(); kitPlay(withFile(takes()[E.take], row.dataset.stem)); }, 110);
+  });
+  node.addEventListener("mouseleave", () => { hoverRow = null; clearTimeout(hover); });
+
+  /* The cut is taken by its grips, as on the kit page: an edge moves that
+     edge, inside the window moves it whole, the amber grip is where the tail
+     begins, a press outside draws a new window (and a click there moves it). */
+  const GRIP = 9, MIN = 0.02, MAX = 3;
+  const CURSOR = { start: "ew-resize", end: "ew-resize", tail: "ew-resize", move: "grab", new: "crosshair" };
+  function hitOf(cv, t, x) {
+    const { x0, x1, xt } = geom(cv, t);
+    const near = [["start", Math.abs(x - x0)], ["end", Math.abs(x - x1)]];
+    if (xt != null) near.push(["tail", Math.abs(x - xt) - 1]);
+    near.sort((a, b) => a[1] - b[1]);
+    if (near[0][1] <= GRIP) return near[0][0];
+    return x > x0 && x < x1 ? "move" : "new";
+  }
+  let drag = null;
+  node.addEventListener("pointerdown", (e) => {
+    const cv = e.target.closest("canvas");
+    if (!cv || !cv.dataset.dur || e.button) return;
+    e.preventDefault();
+    const i = +cv.dataset.i, t = takes()[i], rect = cv.getBoundingClientRect(), dur = +cv.dataset.dur;
+    const at = (x) => Math.max(0, Math.min(dur, ((x - rect.left) / rect.width) * dur));
+    const mode = hitOf(cv, t, e.clientX - rect.left);
+    selectTake(i);
+    drag = { i, cv, at, dur, mode, x: e.clientX, from: at(e.clientX), start: t.start, end: t.start + t.length, moved: false };
+    if (mode === "move") cv.style.cursor = "grabbing";
+    cv.setPointerCapture(e.pointerId);
+  });
+  node.addEventListener("pointermove", (e) => {
+    if (!drag) {
+      const cv = e.target.closest("canvas");
+      if (cv && cv.dataset.dur) cv.style.cursor = CURSOR[hitOf(cv, takes()[+cv.dataset.i], e.clientX - cv.getBoundingClientRect().left)];
+      return;
+    }
+    if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return;
+    drag.moved = true;
+    const t = edit()[drag.i], to = drag.at(e.clientX), d = drag;
+    if (d.mode === "start") {
+      const s = Math.max(Math.max(0, d.end - MAX), Math.min(d.end - MIN, to));
+      t.start = r3(s); t.length = r3(d.end - s);
+    } else if (d.mode === "end") {
+      t.length = r3(Math.max(d.start + MIN, Math.min(Math.min(d.dur, d.start + MAX), to)) - d.start);
+    } else if (d.mode === "move") {
+      const len = d.end - d.start;
+      t.start = r3(Math.max(0, Math.min(d.dur - len, d.start + to - d.from)));
+    } else if (d.mode === "tail") {
+      t.tailLength = r3(Math.max(MIN, Math.min(t.length, t.start + t.length - to)));
+    } else {
+      const a = Math.min(d.from, to), b = Math.max(a + MIN, Math.min(a + MAX, Math.max(d.from, to)));
+      t.start = r3(a); t.length = r3(b - a);
+    }
+    if (t.tail) t.tailLength = r3(Math.min(t.length, t.tailLength));
+    drawWave(drag.i); syncNums(drag.i);
+  });
+  function release() {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    d.cv.style.cursor = "";
+    const t = edit()[d.i];
+    if (!d.moved && d.mode === "new") t.start = r3(Math.max(0, Math.min(d.dur - t.length, d.from)));
+    if (!d.moved && d.mode !== "new") { changed(); kstop(); kitPlay(t); return; }
+    drawWave(d.i); syncNums(d.i); changed(); paintAlike();
+    kstop(); kitPlay(t);
+  }
+  node.addEventListener("pointerup", release);
+  node.addEventListener("pointercancel", release);
+
+  node._paint = paint;
+  return node;
 }
 
 /* --- auditioning a raw file ----------------------------------------------
@@ -1409,24 +2431,31 @@ function render() {
   list.innerHTML = "";
   if (!state.data) { list.innerHTML = `<div class="empty">loading…</div>`; return; }
   const d = state.data;
+  if (d.slug === "shell") {
+    add("section", "the shell — what every game plays, one card per role");
+    add("legend", "The end screen (the score landing, its stars, its rows), the round's live stars and its end, the meta layer's coins and gifts: roles of the house kit " +
+      "played by the motor and the web shell, the same in every game. A check here is given once, for all of them; the kit button tunes the role for all of them. " +
+      "Shoot films them in the game picked beside it — the DOM included — so each line loops over the screen it is heard on.");
+  } else
   add("section", "cues — one card per clip, and the lines that play it");
   if (d.slug === "template") add("legend",
     "The template's clips are the end screen's: the motor plays them (packages/shell/shell.js, and the web shell's map and menu), " +
     "so the lines below are motor lines — play them, sweep their volume and pitch by ear. Apply re-cuts the CLIP into template/game.js; " +
     "every game keeps the copy it was made with until it is re-cut on its own entry.");
-  add("legend", "The file a clip is cut from and the length of the cut belong to the clip, so they are written once, at the top of its card — change them and every line below follows. " +
-    "Volume and pitch are each line's own, in this game's source: they never reach the kit, nor another game.");
+  if (d.slug !== "shell") add("legend", "What a clip sounds like belongs to the clip, so it is written once, at the top of its card — for a key of the house kit, the kit button opens its variant: " +
+    "its takes, their cut, their end and their pitch, and the library's files that look alike. Change it and every line below follows, in every game that plays it. " +
+    "A line owns its volume and nothing else: its pitch is read, never set. Under each line, when it fires — its conditions, its comment and what fires with it; a click opens the code.");
   let n = 0;
   // Grouped by the clip, the groups in the order their first line appears.
   const groups = new Map();
   d.calls.filter((c) => c.kind === "sound").forEach((c) => {
-    const key = String(c.preview.args[0]);
+    const key = c.method === "ui" ? "ui:" + c.sound : String(c.preview.args[0]);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(c);
   });
   groups.forEach((calls, key) => {
     if (state.hideChecked && calls.every((c) => isChecked(c.checkId))) return;
-    list.appendChild(clipCard(key, calls)); n++;
+    list.appendChild(key.startsWith("ui:") ? shellCard(key.slice(3), calls, false) : clipCard(key, calls)); n++;
   });
   if (!n) add("empty", state.hideChecked && sideTotal()
     ? "every cue is checked"
@@ -1440,7 +2469,7 @@ function render() {
   const loose = d.sounds.filter((x) => !x.music && !x.kit).map((x) => x.key);
   el("stats").innerHTML =
     `<span><b>${d.counts.sound}</b> cues</span>` +
-    `<span><b>${d.sounds.length}</b> clips</span>` +
+    (d.slug === "shell" ? `<span><b>${new Set(d.calls.map((c) => c.sound)).size}</b> roles</span>` : `<span><b>${d.sounds.length}</b> clips</span>`) +
     (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "") +
     (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
     `<span class="seen-pill seen"></span>` +
@@ -1464,8 +2493,33 @@ function render() {
    A click repaints in place rather than re-rendering: a row holds pending
    edits and slot values the hand is in the middle of. With HIDE CHECKED on,
    a row that was just checked leaves the list, which is the point of it. */
+/* A kit line's check holds the fingerprint of the cut it was given on, and a
+   line whose key plays something the build does not ship as is — a draft, a
+   variant it is being moved to — is checked only if its check was given on
+   THAT: the server fingerprints the cut the line plays now (heardHash, kept
+   per key by syncPreview) and the two are compared. A check given on the
+   draft reads checked until apply writes it (the server alone would call it
+   stale), and one given on the old cut reads unchecked while the key plays
+   another. Touch the draft again and it reads unchecked, which it is. */
+const heardHash = {};
+function markOf(id) {
+  const m = state.data.review && state.data.review[id];
+  return m ? m.kit || "plain" : (state.data.staleKit || {})[id] || null;
+}
+function heardKey(id) {
+  const row = document.querySelector('.call[data-check="' + CSS.escape(id) + '"]');
+  const key = row && row.dataset.key;
+  return key && previewWanted(key) ? key : null;
+}
 function isChecked(id) {
-  return !!(id && state.data && state.data.review && state.data.review[id]);
+  if (!id || !state.data) return false;
+  const key = heardKey(id);
+  if (!key) return !!(state.data.review && state.data.review[id]);
+  return !!heardHash[key] && markOf(id) === heardHash[key].hash;
+}
+// A check there is, given on another cut than the line plays now.
+function isStaleCheck(id) {
+  return !isChecked(id) && !!markOf(id);
 }
 function sideCalls() {
   return state.data ? state.data.calls.filter((c) => c.checkId && KINDS[c.kind]) : [];
@@ -1479,16 +2533,33 @@ function toggleCheck(ids, on) {
   if (!ids.length) return;
   checkQueue = checkQueue.then(() => sendCheck(ids, on));
 }
+/* A line of the kit is checked on what it was HEARD on. When the key plays
+   a draft, or a variant it is being moved to, that is not the shipped cut,
+   and the server is told which takes it was — or the check would read stale
+   the moment apply writes the very cut that was signed off. */
+function heardFor(ids) {
+  const out = {};
+  ids.forEach((id) => {
+    const row = document.querySelector('.call[data-check="' + CSS.escape(id) + '"]');
+    const w = row && row.dataset.key && previewWanted(row.dataset.key);
+    if (w) out[id] = kitDraft(w).takes;
+  });
+  return out;
+}
 function sendCheck(ids, on) {
+  const heard = on ? heardFor(ids) : {};
   return fetch("api/check", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ game: state.slug, ids, on })
+    body: JSON.stringify({ game: state.slug, ids, on, heard })
   })
     .then((r) => r.json())
     .then((res) => {
       if (res.error) { note(res.error); return; }
       state.data.review = res.review;
+      state.data.stale = res.stale || [];
+      state.data.staleKit = res.staleKit || {};
       state.status[state.slug] = res.status;
+      refreshKitChecked();
       drawPicker();
       if (state.hideChecked && on) {
         const list = el("list"), top = list.scrollTop;
@@ -1507,8 +2578,12 @@ function paintChecks() {
     const b = row.querySelector(".iconbtn.check");
     if (b) {
       b.classList.toggle("on", on);
-      const m = on && state.data.review[row.dataset.check];
-      b.title = on ? "checked " + m.at + " — click to take it back" : "mark as checked — heard, signed off";
+      const m = on && (state.data.review[row.dataset.check] || { at: "on the draft" });
+      const stale = isStaleCheck(row.dataset.check);
+      b.classList.toggle("stale", stale);
+      b.title = on ? "checked " + m.at + " — click to take it back"
+        : stale ? "checked on another cut than the one it plays now — the takes changed, or the key moved: hear it again, then check it"
+        : "mark as checked — heard, signed off";
     }
   });
   // A card is checked when every line on it is.
@@ -1632,7 +2707,9 @@ function load(slug) {
   loadClips();
   if (REC.on) recLoad();
   localStorage.setItem("events:game", slug);
-  LANGS.forEach((lang) => { frames[lang].src = "build/" + slug + "/index.html?first=0&lang=" + lang; });
+  // The shell unit has no build of its own: its roles ship in every one, the template's included.
+  document.body.classList.toggle("shell-unit", slug === "shell");
+  LANGS.forEach((lang) => { frames[lang].src = "build/" + (slug === "shell" ? "template" : slug) + "/index.html?first=0&lang=" + lang; });
   fetch("api/events?game=" + encodeURIComponent(slug))
     .then((r) => r.json())
     .then((d) => { state.data = d; state.status[slug] = d.status; drawPicker(); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
@@ -1664,12 +2741,15 @@ function loadOffset() {
   fetch("api/offset?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
     if (slug !== state.slug) return;
     state.offset = o && o.offset != null ? o.offset : null;
+    state.shellMap = (o && o.shell) || [];
     if (REC.on && state.offset == null) note("rec: " + ((o && o.error) || "no offset for " + slug) + " — nothing can be caught");
   }).catch((e) => { if (REC.on) note("rec: api/offset failed — " + e.message); });
 }
 
+// Every row a capture can belong to: the game's lines and the shell's.
+const recCalls = () => (state.data ? state.data.calls.concat(state.data.shell || []) : []);
 function nearEvent(call) {
-  const idx = state.clips, live = new Set(state.data ? state.data.calls.map((c) => c.checkId) : []);
+  const idx = state.clips, live = new Set(recCalls().map((c) => c.checkId));
   let best = null;
   for (const [file, clip] of Object.entries(idx.clips || {})) {
     for (const e of clip.events || []) {
@@ -1682,7 +2762,7 @@ function nearEvent(call) {
 }
 
 function clipFor(call) {
-  if (!call || call.inherited || !call.checkId) return null;
+  if (!call || (call.inherited && !call.shell) || !call.checkId) return null;
   const idx = state.clips, f = idx.byId && idx.byId[call.checkId];
   if (f && idx.clips[f]) return { file: f, clip: idx.clips[f], near: false };
   const n = nearEvent(call);
@@ -1691,13 +2771,13 @@ function clipFor(call) {
 
 // A recorded event → the call the source has now (the same id, or the near one).
 function callOf(e) {
-  const calls = state.data ? state.data.calls : [];
+  const calls = recCalls();
   const hit = calls.find((c) => c.checkId === e.id);
   if (hit) return hit;
   const ids = new Set(calls.map((c) => c.checkId));
   let best = null;
   for (const c of calls) {
-    if (c.name !== e.name || (c.fn || "") !== e.fn || c.inherited) continue;
+    if (c.name !== e.name || (c.fn || "") !== e.fn || (c.inherited && !c.shell)) continue;
     // A call that has a clip of its own is not the one this event was.
     if (state.clips.byId[c.checkId] && ids.has(c.checkId)) continue;
     const d = Math.abs(c.line - e.line);
@@ -1710,7 +2790,7 @@ function paintClips() {
   document.querySelectorAll(".call").forEach((row) => {
     const b = row.querySelector(".loop"), c = row._call;
     if (!b || !c) return;
-    if (c.inherited) { b.disabled = true; b.title = "a motor line — the recorder catches the game's own calls only"; return; }
+    if (c.inherited && !c.shell) { b.disabled = true; b.title = "a motor line — the recorder catches the game's own calls and the shell's roles only"; return; }
     const hit = clipFor(c);
     b.classList.toggle("has", !!hit);
     b.classList.toggle("near", !!(hit && hit.near));
@@ -1722,7 +2802,7 @@ function paintClips() {
   });
   const pill = el("stats").querySelector(".seen-pill");
   if (pill && state.data) {
-    const pool = state.data.calls.filter((c) => c.checkId && !c.inherited && c.kind === "sound");
+    const pool = state.data.calls.filter((c) => c.checkId && (!c.inherited || c.shell) && c.kind === "sound");
     const seen = pool.filter((c) => clipFor(c)).length;
     pill.innerHTML = `<b>${seen}</b> / ${pool.length} seen in play`;
     pill.title = "cues with a recorded moment — Rec and play to capture the rest";
@@ -1759,6 +2839,8 @@ function loopStart(call, hit) {
   // A beat's rows hold COPIES of the scan's calls: a call is the same call by its id.
   if (!LOOP.events.some((x) => x.call.checkId === call.checkId)) LOOP.events.push({ e: { id: call.checkId, t: hit.clip.at }, call });
   LOOP.events.sort((a, b) => a.e.t - b.e.t);
+  // The sound being judged is the one heard: every other cue of the window starts muted.
+  LOOP.events.forEach((x) => { if (x.call.kind === "sound" && x.call.checkId !== call.checkId) LOOP.muted[x.call.checkId] = true; });
   const slug = state.slug, id = call.checkId;
   fetch("clips/" + encodeURIComponent(slug) + "/" + hit.file).then((r) => {
     if (!r.ok) throw new Error("clip " + hit.file + " is gone");
@@ -1794,8 +2876,6 @@ function loopRestart() {
   LOOP.prev = -1;
 }
 
-const evKey = (x) => x.call.checkId + "@" + x.e.t;
-
 function loopTick() {
   if (!LOOP.clip) return;
   LOOP.raf = requestAnimationFrame(loopTick);
@@ -1807,7 +2887,9 @@ function loopTick() {
   const t = en.currentTime;
   if (t < LOOP.prev - 0.1) LOOP.prev = -1;
   for (const x of LOOP.events) {
-    if (LOOP.muted[evKey(x)] || !(x.e.t > LOOP.prev && x.e.t <= t)) continue;
+    if (LOOP.muted[x.call.checkId] || !(x.e.t > LOOP.prev && x.e.t <= t)) continue;
+    // A screen clip has its callouts in the picture: only its cues are fired again.
+    if (LOOP.clip.screen && x.call.kind !== "sound") continue;
     const row = document.querySelector('.call[data-check="' + CSS.escape(x.call.checkId) + '"]');
     fire(x.call, row);
   }
@@ -1817,7 +2899,7 @@ function loopTick() {
 }
 
 function evLabel(call) {
-  if (call.kind === "sound") return String(call.preview.args[0]) + " L" + call.line;
+  if (call.kind === "sound") return String(call.preview.args[0]) + (call.shell ? " " + call.where.split("/").pop() + ":" : " L") + call.line;
   const w = call.texts && call.texts.fields && call.texts.fields.word;
   const word = w ? (w.lit != null ? w.lit : w.expr) : call.preview.args[0];
   const s = String(word == null ? call.name : word);
@@ -1828,25 +2910,40 @@ function drawReplay() {
   const box = el("replay");
   if (!LOOP.clip) { box.innerHTML = ""; return; }
   const c = LOOP.call;
+  /* One chip per LINE, not per firing: a line that fired thirty times in the
+     window (a pop per coin) is one decision, and thirty chips pushed the frame
+     out of the stage, which is sized from the room left under this bar. The
+     looped line first. */
+  const byId = new Map();
+  LOOP.events.forEach((x) => {
+    if (!byId.has(x.call.checkId)) byId.set(x.call.checkId, { list: [] });
+    byId.get(x.call.checkId).list.push(x);
+  });
+  const groups = [...byId.values()].sort((a, b) => (b.list[0].call.checkId === c.checkId) - (a.list[0].call.checkId === c.checkId));
   box.innerHTML =
     `<span class="what">↻ L${c.line} ${c.fn ? esc(c.fn) + "()" : "top level"} · ${esc(c.name)}</span>` +
     `<span class="time"></span>` +
     (LOOP.near ? `<span class="approx" title="the call was edited since this moment was recorded — the clip is the one its older self fired on">recorded before the edit</span>` : "") +
+    (LOOP.clip.screen ? "" : `<span class="approx" title="recorded from the game's canvas alone: the DOM — the HUD, the callouts, the live star pill, the end screen — is not in the picture. Rec again with the screen shared and it is replaced.">canvas only</span>`) +
     `<span class="sp"></span>` +
     `<button class="act sm ghost" data-a="drop" title="forget this recording — the next time it fires under Rec, it is captured again">Drop clip</button>` +
     `<button class="act sm" data-a="stop">Stop</button>` +
-    `<div style="flex-basis:100%;display:flex;flex-wrap:wrap;gap:5px">` +
-    LOOP.events.map((x, i) =>
-      `<button class="ev k-${x.call.kind}${x.call.checkId === c.checkId ? " me" : ""}${LOOP.muted[evKey(x)] ? " off" : ""}" data-i="${i}" ` +
-      `title="${esc(x.call.name)} at ${x.e.t.toFixed(2)} s — click to mute it in the loop">${esc(evLabel(x.call))} · ${x.e.t.toFixed(1)}s</button>`).join("") +
+    `<div class="evs">` +
+    groups.map((g) => {
+      const x = g.list[0], me = x.call.checkId === c.checkId;
+      return `<button class="ev k-${x.call.kind}${me ? " me" : ""}${LOOP.muted[x.call.checkId] ? " off" : ""}" data-id="${esc(x.call.checkId)}" ` +
+        `title="${esc(x.call.name)} — ${g.list.map((y) => y.e.t.toFixed(2) + " s").join(", ")} — click to ${LOOP.muted[x.call.checkId] ? "hear" : "mute"} it in the loop">` +
+        `${esc(evLabel(x.call))} · ${x.e.t.toFixed(1)}s${g.list.length > 1 ? " ×" + g.list.length : ""}</button>`;
+    }).join("") +
     `</div>`;
   box.querySelector('[data-a="stop"]').onclick = loopStop;
   box.querySelector('[data-a="drop"]').onclick = dropClip;
   box.querySelectorAll(".ev").forEach((b) => {
     b.onclick = () => {
-      const k = evKey(LOOP.events[Number(b.dataset.i)]);
+      const k = b.dataset.id;
       LOOP.muted[k] = !LOOP.muted[k];
       b.classList.toggle("off", LOOP.muted[k]);
+      b.title = b.title.replace(/click to (hear|mute)/, "click to " + (LOOP.muted[k] ? "hear" : "mute"));
     };
   });
 }
@@ -1871,8 +2968,12 @@ function dropClip() {
    Each watched method of the build is wrapped (Pop, Notify, Sound): the
    wrapper reads its caller off the stack — a line of the built
    game.<hash>.js, which /api/offset maps to the source — and matches it to
-   the row scan-events gave that line. A call the motor makes for itself has
-   no frame in game.<hash>.js and is ignored.
+   the row scan-events gave that line. A Sound.ui the SHELL plays (the end
+   screen, the round's stars, the meta layer) has its frame in the shared
+   engine.<hash>.js or boot.<hash>.js instead, where each shell file is copied
+   whole: /api/offset says where (`shell`), and the call is matched to its
+   shared row, so a shell role is recorded and looped like a game's cue. Any
+   other call the motor makes for itself is ignored.
 
    The canvas is sampled at REC_FPS into a ring of small canvases holding
    REC_PRE seconds. A CUE with no clip yet keeps the ring and REC_POST seconds
@@ -1882,10 +2983,95 @@ function dropClip() {
    whole; a callout opens no capture of its own, since nothing here judges it. The frames are encoded into a
    webm in real time (MediaRecorder over a canvas stream, each frame at the
    time it was taken) and posted to /api/clip.
+
+   SCREEN. The canvas alone misses everything the DOM draws — the HUD, the
+   callouts, the live star pill, the whole end screen — and a sound of the
+   shell plays on exactly those. So REC first asks the browser for this tab
+   (getDisplayMedia, preferCurrentTab) and crops it to the played frame
+   (CropTarget): the ring is then fed with the frame as the player sees it.
+   Refused, or in a browser without Region Capture, it falls back to the
+   canvas. A screen clip is marked `screen`: its callouts are in the picture,
+   so a loop replays only its cues over it, and Pop.text is drawn while
+   recording instead of being kept for the loop.
    =========================================================================== */
 const REC_PRE = 1, REC_POST = 1, REC_FPS = 20, REC_W = 360, REC_H = 640;
 const REC = { on: false, W: null, canvas: null, ground: "#000", ring: [], pool: [], log: [], open: null,
-              inflight: new Set(), saved: 0, busy: 0, raf: 0, last: 0 };
+              inflight: new Set(), saved: 0, busy: 0, raf: 0, last: 0, screen: null, screenWhy: "" };
+
+/* The played frame as the player sees it: this tab, cropped to it. Called in
+   the Rec click itself — getDisplayMedia wants the gesture — and resolved to
+   null wherever it cannot be (refused, no Region Capture). */
+/* Why the screen is not recorded, said rather than swallowed — on the REC
+   pane itself, with a button to ask again: a canvas clip of an end-screen
+   sound shows the round, and that reads as a broken replay.
+
+   The tab is asked for, and the played frame is cut out of it: by the
+   browser (Region Capture: CropTarget, Chrome) where it can, by hand
+   otherwise — the frame's box measured in the top window, this page sitting
+   in the back office's iframe or not, and scaled to the captured picture.
+   Anything but THIS TAB shared cannot be cut, and is said so. */
+async function recScreen() {
+  const md = navigator.mediaDevices;
+  REC.screenWhy = "";
+  if (!md || !md.getDisplayMedia) { REC.screenWhy = "this browser cannot capture the screen"; return null; }
+  const fp = document.featurePolicy || document.permissionsPolicy;
+  if (fp && fp.allowsFeature && !fp.allowsFeature("display-capture")) {
+    REC.screenWhy = "the frame this page is in may not capture the screen — reload the back office (make lab), or open /sound on its own";
+    return null;
+  }
+  REC.screenWhy = "asking — share THIS TAB in the browser's prompt";
+  recInfo();
+  let stream = null;
+  try {
+    stream = await md.getDisplayMedia({ video: { frameRate: REC_FPS }, audio: false, preferCurrentTab: true, selfBrowserSurface: "include" });
+  } catch (e) {
+    console.warn("[rec] getDisplayMedia:", e);
+    REC.screenWhy = e && e.name === "NotAllowedError" ? "the screen share was refused or dismissed" : "the screen share failed: " + ((e && (e.message || e.name)) || e);
+    return null;
+  }
+  const track = stream.getVideoTracks()[0];
+  const surface = track.getSettings ? track.getSettings().displaySurface : "";
+  if (surface && surface !== "browser") {
+    stream.getTracks().forEach((t) => t.stop());
+    REC.screenWhy = "a " + surface + " was shared — share THIS TAB, so the played frame can be cut out of it";
+    return null;
+  }
+  let cropped = false;
+  if (window.CropTarget && track.cropTo) {
+    try { await track.cropTo(await CropTarget.fromElement(document.querySelector(".fit.rec"))); cropped = true; }
+    catch (e) { console.warn("[rec] cropTo, cut by hand instead:", e); }
+  }
+  const video = Object.assign(document.createElement("video"), { muted: true, playsInline: true });
+  video.srcObject = stream;
+  try { await video.play(); } catch (e) { console.warn("[rec] video.play:", e); }
+  track.onended = () => {
+    if (REC.screen && REC.screen.stream === stream) {
+      REC.screen = null; REC.screenWhy = "the screen share was stopped"; recInfo();
+    }
+  };
+  REC.screenWhy = "";
+  return { stream, video, cropped };
+}
+/* The played frame's box in the captured picture, for a capture the browser
+   did not crop: its box in the top window (through every same-origin frame
+   this page sits in), scaled from that window's viewport to the video. */
+function recCut(video) {
+  const box = document.querySelector(".fit.rec").getBoundingClientRect();
+  let x = box.left, y = box.top, w = window;
+  try {
+    while (w !== w.top && w.frameElement) {
+      const fe = w.frameElement, fr = fe.getBoundingClientRect();
+      x += fr.left + fe.clientLeft; y += fr.top + fe.clientTop;
+      w = w.parent;
+    }
+  } catch (e) {}
+  const kx = video.videoWidth / w.innerWidth, ky = video.videoHeight / w.innerHeight;
+  return [x * kx, y * ky, box.width * kx, box.height * ky];
+}
+function recScreenStop() {
+  if (REC.screen) REC.screen.stream.getTracks().forEach((t) => t.stop());
+  REC.screen = null;
+}
 const recFrame = el("rec-frame");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -1896,10 +3082,24 @@ function recToggle(on) {
   cancelAnimationFrame(REC.raf);
   if (REC.on) {
     loopStop();
+    // First, in the click: the browser asks once, and the crop needs the frame on screen.
+    recScreen().then((sc) => {
+      if (!REC.on) { if (sc) sc.stream.getTracks().forEach((t) => t.stop()); return; }
+      REC.screen = sc;
+      recInfo();
+      clearInterval(REC.asking);
+      note(sc ? "play — the frame is recorded as you see it, DOM included; every cue with no clip yet (or only a canvas one) is captured"
+              : "canvas only — " + REC.screenWhy + ". The DOM (HUD, callouts, the end screen) will not be in the clips");
+    });
     recLoad();
     REC.raf = requestAnimationFrame(recTick);
-    note("play — every cue with no clip yet is captured, a second either side of it");
+    // The prompt can take a while: the bar says it is waiting rather than "canvas only".
+    clearInterval(REC.asking);
+    REC.asking = setInterval(recInfo, 500);
+    note("share this tab in the browser's prompt — the frame is then recorded as you see it");
   } else {
+    clearInterval(REC.asking);
+    recScreenStop();
     recDiscard();
     REC.W = REC.canvas = null;
     recFrame.src = "about:blank";
@@ -1912,7 +3112,7 @@ function recLoad() {
   recDiscard();
   REC.W = REC.canvas = null;
   // force=1: every level of the map can be started, for this load only (levels.js).
-  recFrame.src = "build/" + state.slug + "/index.html?first=0&lang=en&force=1";
+  recFrame.src = "build/" + (state.slug === "shell" ? shellGame() : state.slug) + "/index.html?first=0&lang=en&force=1";
   recLevels(0);
 }
 
@@ -1966,7 +3166,7 @@ recFrame.addEventListener("load", () => {
     recLevels(w.__LEVELS__ && w.__LEVELS__.active() && w.__LEVELS__.count ? w.__LEVELS__.count() : 0);
     ["show", "text"].forEach((m) => hook(W.Pop, m, "Pop." + m));
     hook(W.Notify, "say", "Notify.say");
-    ["clip", "cue", "beep", "arp"].forEach((m) => hook(W.Sound, m, "Sound." + m));
+    ["clip", "cue", "beep", "arp", "ui"].forEach((m) => hook(W.Sound, m, "Sound." + m));
     w.document.addEventListener("mousedown", () => closeFileMenu());
     try { w.focus(); } catch (e) {}
   } catch (e) { note("rec: the build did not load — " + e.message); }
@@ -1977,8 +3177,9 @@ function hook(obj, meth, name) {
   if (typeof orig !== "function" || orig.__lab) return;
   const f = function () {
     if (REC.on) recSaw(name, new Error().stack);
-    // The number is fired live over the loop: drawn here, it would be baked into the clip.
-    if (name === "Pop.text") return;
+    // The number is fired live over a canvas loop: drawn here, it would be baked into the clip.
+    // A screen clip has the callouts in the picture and replays none, so there it is drawn.
+    if (name === "Pop.text" && !REC.screen) return;
     return orig.apply(this, arguments);
   };
   f.__lab = true;
@@ -1995,6 +3196,21 @@ function callAt(name, line) {
   return best && best.c;
 }
 
+// A frame of a shared built script → the shell row of that source line.
+function shellAt(name, file, line) {
+  const e = (state.shellMap || []).find((x) => x.file === file && line >= x.from && line < x.from + x.lines);
+  if (!e) return null;
+  const at = line - e.from + 1;
+  let best = null;
+  for (const c of recCalls()) {
+    if (!c.shell) continue;
+    if (c.where !== e.where || c.name !== name) continue;
+    const d = Math.abs(c.line - at);
+    if (d <= 2 && (!best || d < best.d)) best = { c, d };
+  }
+  return best && best.c;
+}
+
 function recSaw(name, stack) {
   if (state.offset == null || !state.data) return;
   /* The frames, in any engine's spelling: Chrome opens on an "Error" line and
@@ -2003,14 +3219,17 @@ function recSaw(name, stack) {
      the wrapper, [1] whoever called it — rather than counted from the top. */
   const frames = String(stack).split("\n").filter((l) => /:\d+:\d+\)?\s*$/.test(l));
   const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || "");
-  if (!m) return;
-  const call = callAt(name, Number(m[1]) + state.offset);
+  const sh = !m && /\/((?:engine|boot)\.[0-9a-f]+\.js):(\d+):\d+/.exec(frames[1] || "");
+  const call = m ? callAt(name, Number(m[1]) + state.offset) : sh ? shellAt(name, sh[1], Number(sh[2])) : null;
   if (!call) return;
   const t = performance.now();
   REC.log.push({ id: call.checkId, name: call.name, line: call.line, fn: call.fn || "", t });
   if (REC.log.length > 400) REC.log.splice(0, 200);
   if (call.kind !== "sound") return;
-  if ((state.clips.byId && state.clips.byId[call.checkId]) || REC.inflight.has(call.checkId)) return;
+  /* A cue with a clip is not captured again — unless the screen is recorded
+     now and its clip is the canvas alone: that one is replaced. */
+  const have = state.clips.byId && state.clips.byId[call.checkId], was = have && state.clips.clips[have];
+  if ((was && (was.screen || !REC.screen)) || REC.inflight.has(call.checkId)) return;
   if (!REC.open) recOpen(t);
   REC.open.ids.add(call.checkId);
   REC.inflight.add(call.checkId);
@@ -2028,7 +3247,14 @@ function recTick(now) {
   const g = f.c.getContext("2d");
   g.fillStyle = REC.ground;
   g.fillRect(0, 0, REC_W, REC_H);
-  try { g.drawImage(REC.canvas, 0, 0, REC_W, REC_H); } catch (e) {}
+  const v = REC.screen && REC.screen.video;
+  try {
+    if (v && v.readyState >= 2 && v.videoWidth) {
+      if (REC.screen.cropped) g.drawImage(v, 0, 0, REC_W, REC_H);
+      else { const [sx, sy, sw, sh] = recCut(v); g.drawImage(v, sx, sy, sw, sh, 0, 0, REC_W, REC_H); }
+    }
+    else g.drawImage(REC.canvas, 0, 0, REC_W, REC_H);
+  } catch (e) {}
   f.t = now;
   f.refs = 1;
   REC.ring.push(f);
@@ -2043,7 +3269,7 @@ function recTick(now) {
 function recOpen(t) {
   const frames = REC.ring.filter((f) => f.t >= t - REC_PRE * 1000);
   frames.forEach((f) => { f.refs++; });
-  REC.open = { slug: state.slug, t0: frames.length ? frames[0].t : t, frames, until: t + REC_POST * 1000, ids: new Set() };
+  REC.open = { slug: state.slug, t0: frames.length ? frames[0].t : t, frames, until: t + REC_POST * 1000, ids: new Set(), screen: !!REC.screen };
 }
 
 function recClose() {
@@ -2107,7 +3333,7 @@ async function recEncode(cap, events, claim, at) {
     const webm = await blobB64(new Blob(chunks, { type: "video/webm" }));
     const res = await fetch("api/clip", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ game: cap.slug, webm, dur, at, events, claim })
+      body: JSON.stringify({ game: cap.slug, webm, dur, at, events, claim, screen: cap.screen })
     }).then((r) => r.json());
     if (res.error) note("rec: " + res.error);
     else {
@@ -2123,9 +3349,25 @@ async function recEncode(cap, events, claim, at) {
   }
 }
 
+// The REC pane says what it records, and why not the screen when it is not.
+function recState() {
+  const box = el("rec-state");
+  if (!box) return;
+  if (!REC.on) { box.className = "lang"; box.textContent = "Rec — play; every cue not yet seen is captured"; return; }
+  if (REC.screen) { box.className = "lang ok"; box.textContent = "Rec · screen — the frame as you see it, DOM included"; return; }
+  if (/^asking/.test(REC.screenWhy)) { box.className = "lang wait"; box.textContent = "Rec · " + REC.screenWhy; return; }
+  box.className = "lang bad";
+  box.innerHTML = `Rec · canvas only — ${esc(REC.screenWhy || "no screen capture")}. The HUD, the callouts and the end screen will not be in the clips. ` +
+    `<button class="act sm" id="rec-share">Share the screen</button>`;
+  el("rec-share").onclick = () => {
+    recScreen().then((sc) => { if (!REC.on) { if (sc) sc.stream.getTracks().forEach((t) => t.stop()); return; } REC.screen = sc; recInfo(); });
+  };
+}
+
 function recInfo() {
+  recState();
   el("rec-info").innerHTML = REC.on || REC.busy
-    ? `<b>${REC.saved}</b> captured` + (REC.open ? " · recording" : "") + (REC.busy ? " · encoding " + REC.busy : "")
+    ? `<b>${REC.saved}</b> captured` + (REC.on ? (REC.screen ? " · screen" : /^asking/.test(REC.screenWhy) ? " · asking for the screen…" : ` · <span title="${esc(REC.screenWhy || "no screen capture")}" style="color:#ffb648;cursor:help">canvas only</span>`) : "") + (REC.open ? " · recording" : "") + (REC.busy ? " · encoding " + REC.busy : "")
     : "";
 }
 
@@ -2133,23 +3375,67 @@ el("btn-rec").onclick = () => recToggle();
 
 fetch("api/sfx").then((r) => r.json()).then((files) => {
   state.sfx = files;
+  state.sfxByStem = {};
+  files.forEach((f) => { state.sfxByStem[f.stem] = f; });
   if (state.data) render();
 });
 
-// The gameplay variants of the house kit, for the clip cards' kit selector.
-fetch("api/kit").then((r) => r.json()).then((k) => {
-  state.kitIds = [];
-  state.kitUsers = k.users || {};
-  for (const [role, r] of Object.entries(k.roles || {})) {
-    if (r.group !== "game") continue;
-    for (const v of Object.keys(r.variants || {})) state.kitIds.push(role + "/" + v);
-  }
-  if (state.data) render();
-}).catch(() => {});
+/* The house kit: its gameplay variants for the clip cards' kit selector, and
+   the whole of it for the kit card's editor — read again after an apply. */
+function loadKit() {
+  return fetch("api/kit").then((r) => r.json()).then((k) => {
+    state.kit = k;
+    state.kitIds = [];
+    state.kitUsers = k.users || {};
+    for (const [role, r] of Object.entries(k.roles || {})) {
+      if (r.group !== "game") continue;
+      for (const v of Object.keys(r.variants || {})) state.kitIds.push(role + "/" + v);
+    }
+    if (state.data) render();
+    refreshKitChecked();
+  }).catch(() => {});
+}
+loadKit();
+/* ── SHOOT: the shell, filmed ────────────────────────────────────────────
+   The server plays a scenario in the picked game in a headless Chrome and
+   films the whole page (tools/lab/shoot-shell.mjs); each shell line it heard
+   gets its clip under the shell unit, and the rows pick them up. */
+function shellGame() {
+  const sel = el("shell-game");
+  return (sel && sel.value) || "chainring";
+}
+function fillShellGames() {
+  const sel = el("shell-game"), list = Object.values(state.games || {}).filter((g) => g.slug !== "shell" && g.slug !== "template");
+  let want = "chainring";
+  try { want = localStorage.getItem("events:shellGame") || want; } catch (e) {}
+  sel.innerHTML = list.map((g) => `<option value="${esc(g.slug)}"${g.slug === want ? " selected" : ""}>${esc(g.title)}</option>`).join("");
+  sel.onchange = () => {
+    try { localStorage.setItem("events:shellGame", sel.value); } catch (e) {}
+    if (REC.on) recLoad();
+  };
+}
+el("btn-shoot").onclick = () => {
+  const btn = el("btn-shoot"), game = shellGame();
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = "Shooting…";
+  note("filming the shell in " + game + " — three stars, the end screen, the gifts, a missed objective (~40 s)");
+  fetch("api/shoot-shell", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game }) })
+    .then((r) => r.json())
+    .then((res) => {
+      if (res.error) { note("shoot: " + res.error); return; }
+      if (state.slug === "shell") { state.clips = res.index; paintClips(); }
+      note(res.clips + " clips filmed in " + game + ", " + res.heard.length + " shell lines heard — ↻ on a line loops it");
+    })
+    .catch((e) => note("shoot failed: " + e.message))
+    .finally(() => { btn.disabled = false; btn.textContent = "Shoot"; });
+};
+
 fetch("api/games").then((r) => r.json()).then((list) => {
   state.games = {};
   list.forEach((g) => { state.games[g.slug] = g; state.status[g.slug] = g.status; });
   picker.order = list.map((g) => g.slug);
+  fillShellGames();
   const saved = localStorage.getItem("events:game");
   picker.value = list.some((g) => g.slug === saved) ? saved : list[0].slug;
   drawPicker();
@@ -2180,7 +3466,9 @@ function applyPlan() {
      the title screen signs itself with, so a build nobody can name is worse
      than a patch number nobody reads. There is no switch for it here. */
   const kit = Object.entries(state.pending.kit || {}).map(([key, id]) => ({ key, id }));
-  return { game: state.slug, calls, sfx, kill, kit, bump: true };
+  // The kit variants edited on their cards: written to kit.json and re-cut before the rest.
+  const roles = Object.keys(state.pending.roles || {}).filter(kitDirty).map((id) => ({ id, takes: state.pending.roles[id].takes }));
+  return { game: state.slug, calls, sfx, kill, kit, roles, bump: true };
 }
 
 function showReport(r) {
@@ -2203,11 +3491,13 @@ function showReport(r) {
 
 function applyNow() {
   const plan = applyPlan();
-  if (!plan.calls.length && !plan.sfx.length && !plan.kill.calls.length && !plan.kill.clips.length && !plan.kit.length) return;
+  const game = plan.calls.length || plan.sfx.length || plan.kill.calls.length || plan.kill.clips.length || plan.kit.length;
+  if (!game && !plan.roles.length) return;
   const btn = el("btn-apply");
   btn.disabled = true;
-  btn.textContent = plan.sfx.length ? "Cutting…" : "Writing…";
-  note("writing " + (plan.game === "template" ? "template" : "games/" + plan.game) + (plan.calls.length || plan.sfx.length || plan.kill.calls.length || plan.kill.clips.length ? "/game.js…" : "/manifest.json…"));
+  btn.textContent = plan.sfx.length || plan.roles.length ? "Cutting…" : "Writing…";
+  note("writing " + (plan.roles.length ? "the kit" + (game ? " and " : "") : "") +
+    (!game ? "" : (plan.game === "template" ? "template" : "games/" + plan.game) + (plan.calls.length || plan.sfx.length || plan.kill.calls.length || plan.kill.clips.length ? "/game.js…" : "/manifest.json…")));
   fetch("api/apply", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(plan)
   })
@@ -2216,9 +3506,9 @@ function applyNow() {
       state.pending = EMPTY_PENDING();
       try { sessionStorage.setItem("events:report", JSON.stringify(r)); } catch (e) {}
       showReport(r);
-      note(r.written ? "written — rebuilding" : "nothing written");
+      note(r.written || (plan.roles.length && !r.error) ? "written — rebuilding" : "nothing written");
       countPending();
-      render();
+      if (plan.roles.length) loadKit(); else render();
     })
     .catch((e) => { note("apply failed: " + e.message); countPending(); });
 }

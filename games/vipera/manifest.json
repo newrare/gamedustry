@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.7.10",
+  "version": "1.7.12",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -241,7 +241,7 @@
           },
           {
             "kicker": "Challenge",
-            "line": "Go for the <b>best score</b>"
+            "line": "Go for the best <b>score</b>"
           }
         ]
       },
@@ -265,7 +265,7 @@
           },
           {
             "kicker": "Défi",
-            "line": "Vise le <b>meilleur score</b>"
+            "line": "Vise le meilleur <b>score</b>"
           }
         ]
       }
