@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.7.18",
+  "version": "1.9.0",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -57,7 +57,8 @@
     "stick": "malus/slime",
     "burst": "burst/popplop",
     "dark": "warn/errorui",
-    "shatter": "crash/impactglasslight"
+    "shatter": "crash/impactglasslight",
+    "reveal": "bonus/glockping"
   },
   "copy": {
     "fr": {
@@ -166,6 +167,11 @@
           "Close": "Presque",
           "Combo": "Combo",
           "Dark part": "Partie sombre",
+          "Broken ring": "Anneau brisé",
+          "Fragile ring": "Anneau fragile",
+          "It may break before the ball reaches it: then don't tap": "Il peut se briser avant que la bille l'atteigne : ne tape pas alors",
+          "Phantom ring": "Anneau fantôme",
+          "It shows its face a beat before the ball: bright, tap; dark, don't": "Il se dévoile un temps avant la bille : clair, tape ; sombre, ne tape pas",
           "Tap only the bright parts, never the dark ones": "Ne tape que sur les parties claires et ne fait rien sur les parties sombres",
           "Dark ring": "Anneau sombre",
           "Mixed ring": "Anneau mixte",
@@ -215,6 +221,22 @@
       "copy": {
         "en": "Score <b>{n}</b> on the chart",
         "fr": "Marque <b>{n}</b> sur la partition"
+      },
+      "faults": {
+        "from": 3,
+        "to": 2,
+        "copy": {
+          "en": "<b>{n}</b> misses at most",
+          "fr": "<b>{n}</b> ratés au plus"
+        },
+        "one": {
+          "en": "<b>1</b> miss at most",
+          "fr": "<b>1</b> raté au plus"
+        },
+        "none": {
+          "en": "no miss",
+          "fr": "sans raté"
+        }
       },
       "bands": {
         "from": [

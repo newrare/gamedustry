@@ -2345,6 +2345,126 @@
           "seconds": 150
         }
       }
+    },
+    "holepocalypse": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudFlat07",
+          "role": "decor",
+          "x": 590,
+          "y": 250,
+          "w": 200,
+          "notify": "cloud",
+          "always": true
+        },
+        {
+          "art": "empty",
+          "role": "decor",
+          "x": 140,
+          "y": 390,
+          "w": 200,
+          "halo": {
+            "w": 0.75,
+            "h": 0.3,
+            "dy": 0,
+            "color": "#ffe340"
+          },
+          "light": "random",
+          "always": true,
+          "lightEvery": 12.9
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 510,
+          "y": 400,
+          "w": 160,
+          "flip": true
+        },
+        {
+          "art": "home05",
+          "role": "album",
+          "x": 220,
+          "y": 410,
+          "w": 180,
+          "badge": {
+            "dx": 0.25,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "empty",
+          "role": "play",
+          "x": 410,
+          "y": 520,
+          "w": 200,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04,
+            "color": "#9da414"
+          },
+          "notify": "breath",
+          "always": true
+        },
+        {
+          "art": "kind08",
+          "role": "daily",
+          "x": 250,
+          "y": 720,
+          "w": 50,
+          "badge": {
+            "dx": 0.4,
+            "dy": -0.8
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "ball08",
+          "role": "decor",
+          "x": 190,
+          "y": 720,
+          "w": 50,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 510,
+          "y": 750,
+          "w": 190,
+          "badge": {
+            "dx": 0.15,
+            "dy": -0.75
+          },
+          "flip": true
+        },
+        {
+          "art": "home06",
+          "role": "options",
+          "x": 200,
+          "y": 1060,
+          "w": 210,
+          "flip": true
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 520,
+          "y": 1070,
+          "w": 220
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ff9a6b",
+          "cold": "#2a1d6a",
+          "amount": 0.3,
+          "seconds": 150
+        }
+      }
     }
   }
 }

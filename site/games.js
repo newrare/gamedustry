@@ -81,19 +81,6 @@ window.GAMES = [
     }
   },
   {
-    slug: "echomaze",
-    name: "Echomaze",
-    accent: ["#7ef9ff", "#4ade80"],
-    fr: {
-      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
-      tags: ["Mémorise et vise", "Echo localisation", "Une seule sortie"]
-    },
-    en: {
-      tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
-      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
-    }
-  },
-  {
     slug: "chainring",
     name: "Chainring",
     accent: ["#4bf5ff", "#4263eb"],
@@ -104,6 +91,19 @@ window.GAMES = [
     en: {
       tagline: "Tap to the beat of the music. A hypnotic ball bounces inside endless rings.",
       tags: ["Rhythm tap", "On the beat, to the music", "Sudden death"]
+    }
+  },
+  {
+    slug: "echomaze",
+    name: "Echomaze",
+    accent: ["#7ef9ff", "#4ade80"],
+    fr: {
+      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
+      tags: ["Mémorise et vise", "Echo localisation", "Une seule sortie"]
+    },
+    en: {
+      tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
+      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
     }
   },
   {
@@ -198,19 +198,6 @@ window.GAMES = [
     }
   },
   {
-    slug: "pawko",
-    name: "Pawko",
-    accent: ["#ffb830", "#ff4d6d"],
-    fr: {
-      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
-      tags: ["Glisse pour lâcher", "Cinquante cartes à combiner", "Score à battre"]
-    },
-    en: {
-      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
-      tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
-    }
-  },
-  {
     slug: "grudgeon",
     name: "Grudgeon",
     accent: ["#e2364b", "#9b8cff"],
@@ -224,6 +211,19 @@ window.GAMES = [
     }
   },
   {
+    slug: "pawko",
+    name: "Pawko",
+    accent: ["#ffb830", "#ff4d6d"],
+    fr: {
+      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
+      tags: ["Glisse pour lâcher", "Cinquante cartes à combiner", "Score à battre"]
+    },
+    en: {
+      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
+      tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
+    }
+  },
+  {
     slug: "bridgessa",
     name: "Bridgessa",
     accent: ["#ff7a59", "#2ec4b6"],
@@ -234,6 +234,19 @@ window.GAMES = [
     en: {
       tagline: "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
       tags: ["Bridge", "Card play", "Puzzles"]
+    }
+  },
+  {
+    slug: "holepocalypse",
+    name: "Holepocalypse",
+    accent: ["#9fe03a", "#b46cff"],
+    fr: {
+      tagline: "Golf contre une horde de zombies : lance des balles qui ricochent et fais-en rouler une dans le trou pour tout balayer.",
+      tags: ["Golf", "Zombies", "Arcade"]
+    },
+    en: {
+      tagline: "Golf against a zombie horde: fling ricocheting balls and roll one into the hole to blast them all.",
+      tags: ["Golf", "Zombies", "Arcade"]
     }
   }
 ];

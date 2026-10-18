@@ -1,0 +1,412 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Compass</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Compass — units that never step, they pivot.
+// Every unit is a bar of 2 or 3 cells. It moves only by turning 60 degrees
+// around one of its ends, like a pair of compasses walking, and the arc it
+// sweeps hits what it crosses: 1 damage and a shove along the swing. An enemy
+// that cannot be shoved (a wall, a piece, the swing itself) is crushed.
+// The enemies show what they will bite next turn (red mark): get out of the
+// mark, or swing them away before they bite.
+// Question: is walking by pivots a puzzle worth thinking about every turn?
+//
+// Tap one END of a unit to pivot around it: two ghost positions appear, tap
+// one. Each unit has a few pivots a turn. End turn: the enemies bite, then move.
+
+// ---- tunables -------------------------------------------------------------
+var RADIUS = 4;
+var PILLARS = 5;
+var UNIT_DEFS = [
+  { name: "Lance", len: 3, hp: 3, pivots: 2, colr: "#4aa3ff" },
+  { name: "Club", len: 2, hp: 3, pivots: 3, colr: "#54d18a" }
+];
+var GRUNT_HP = 1, BRUTE_HP = 2;
+var ENEMY_MOVE = 2;
+var START_ENEMIES = 4;
+var SPAWN_EVERY = 2, SPAWN_COUNT = 2, BRUTE_CHANCE = 0.35;
+var SWING_T = 0.2;          // seconds a pivot takes on screen
+var STEP = 0.3;             // seconds between two enemies acting
+
+var W = 720, H = 1280, CY = 640;
+var R = Math.min(660 / ((2 * RADIUS + 1) * Math.sqrt(3)), 660 / (3 * RADIUS + 2));
+var D = Math.sqrt(3) * R;
+
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+// ---- state ----------------------------------------------------------------
+var cells;          // "q,r" -> true (floor) | "pillar"
+var units;          // { def, q, r, d, hp, left, swing }  bar = (q,r) + k * AX[d]
+var enemies;        // { q, r, hp, kind, intent: [q,r] | null, x, y, flash, dead, gone }
+var sel = null;     // { u, ghosts: [{ d, cells, swept, hits }] } once an end is picked
+var turn, kos, phase, queue, wait, t = 0;
+
+// ---- board ------------------------------------------------------------------
+function key(q, r) { return q + "," + r; }
+function onBoard(q, r) { return Math.abs(q) <= RADIUS && Math.abs(r) <= RADIUS && Math.abs(q + r) <= RADIUS; }
+function px(q, r) { return { x: W / 2 + R * Math.sqrt(3) * (q + r / 2), y: CY + R * 1.5 * r }; }
+function floor(q, r) { return cells[key(q, r)] === true; }
+function dist(a, b) { var dq = a.q - b.q, dr = a.r - b.r; return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)); }
+function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function angleOf(d) { var a = px(AX[d][0], AX[d][1]), o = px(0, 0); return Math.atan2(a.y - o.y, a.x - o.x); }
+
+function barCells(q, r, d, len) {
+  var out = [];
+  for (var k = 0; k < len; k++) out.push([q + AX[d][0] * k, r + AX[d][1] * k]);
+  return out;
+}
+function unitCells(u) { return barCells(u.q, u.r, u.d, u.def.len); }
+function unitAt(q, r, except) {
+  for (var i = 0; i < units.length; i++) {
+    if (units[i] === except || units[i].hp <= 0) continue;
+    var cs = unitCells(units[i]);
+    for (var j = 0; j < cs.length; j++) if (cs[j][0] === q && cs[j][1] === r) return units[i];
+  }
+  return null;
+}
+function enemyAt(q, r) {
+  for (var i = 0; i < enemies.length; i++) if (!enemies[i].dead && enemies[i].q === q && enemies[i].r === r) return enemies[i];
+  return null;
+}
+function blockedForEnemy(q, r) { return !floor(q, r) || unitAt(q, r) || enemyAt(q, r); }
+
+function newGame() {
+  cells = {};
+  var all = [];
+  for (var q = -RADIUS; q <= RADIUS; q++) for (var r = -RADIUS; r <= RADIUS; r++) if (onBoard(q, r)) { cells[key(q, r)] = true; all.push([q, r]); }
+  var inner = all.filter(function (p) { return dist({ q: p[0], r: p[1] }, { q: 0, r: 0 }) <= RADIUS - 1 && Math.abs(p[1]) <= 2; });
+  for (var i = 0; i < PILLARS; i++) { var p = inner.splice(rint(0, inner.length - 1), 1)[0]; cells[key(p[0], p[1])] = "pillar"; }
+  units = []; enemies = [];
+  // the two units lie flat in the lower half
+  UNIT_DEFS.forEach(function (def, n) {
+    for (var tries = 0; tries < 200; tries++) {
+      var u = { def: def, q: rint(-3, 2), r: rint(1, 3), d: rint(0, 5), hp: def.hp, left: def.pivots, swing: null };
+      if (unitCells(u).every(function (c) { return floor(c[0], c[1]) && !unitAt(c[0], c[1]); })) { units.push(u); break; }
+    }
+  });
+  for (i = 0; i < START_ENEMIES; i++) spawnOne(function (c) { return c[1] <= -2; });
+  turn = 1; kos = 0; phase = "player"; queue = []; wait = 0; sel = null;
+  declareIntents();
+}
+
+function spawnOne(filter) {
+  var free = Object.keys(cells).filter(function (k) { return cells[k] === true; }).map(function (k) { return k.split(",").map(Number); })
+    .filter(function (c) { return !blockedForEnemy(c[0], c[1]) && filter(c); });
+  if (!free.length) return;
+  var c = free[rint(0, free.length - 1)], brute = Math.random() < BRUTE_CHANCE && turn > 1;
+  var s = px(c[0], c[1]);
+  enemies.push({ q: c[0], r: c[1], hp: brute ? BRUTE_HP : GRUNT_HP, kind: brute ? "brute" : "grunt", intent: null, x: s.x, y: s.y, flash: -9 });
+}
+
+// ---- pivots -----------------------------------------------------------------
+// Around the end (pq, pr) of a bar lying in direction d, turning by s (+1/-1).
+function pivotPlan(u, pq, pr, d, s) {
+  var len = u.def.len, nd = (d + s + 6) % 6;
+  var cellsNew = barCells(pq, pr, nd, len);
+  var swept = cellsNew.slice(1);
+  // the far end of a 3-cell bar crosses one cell on its way
+  for (var k = 2; k < len; k++) swept.push([pq + AX[d][0] * (k - 1) + AX[nd][0], pr + AX[d][1] * (k - 1) + AX[nd][1]]);
+  for (var i = 0; i < swept.length; i++) {
+    var c = swept[i];
+    if (!floor(c[0], c[1]) || unitAt(c[0], c[1], u)) return null;
+  }
+  var push = (d + (s > 0 ? 2 : -2) + 6) % 6;   // the swing's own direction, in hex steps
+  var hits = swept.map(function (c) { return enemyAt(c[0], c[1]); }).filter(Boolean);
+  return { q: pq, r: pr, d: nd, cells: cellsNew, swept: swept, hits: hits, push: push, s: s, from: d };
+}
+
+function pickEnd(u, end) {
+  // end 0 = the stored end, 1 = the far end (the bar is then seen from there)
+  var cs = unitCells(u), pq, pr, d;
+  if (end === 0) { pq = u.q; pr = u.r; d = u.d; }
+  else { pq = cs[cs.length - 1][0]; pr = cs[cs.length - 1][1]; d = (u.d + 3) % 6; }
+  var ghosts = [pivotPlan(u, pq, pr, d, 1), pivotPlan(u, pq, pr, d, -1)].filter(Boolean);
+  sel = { u: u, pivot: [pq, pr], ghosts: ghosts };
+}
+
+function doPivot(u, g) {
+  var sweptKeys = {};
+  g.swept.forEach(function (c) { sweptKeys[key(c[0], c[1])] = true; });
+  g.hits.forEach(function (e) {
+    hurt(e, 1);
+    if (e.dead) return;
+    var nq = e.q + AX[g.push][0], nr = e.r + AX[g.push][1];
+    // the swing carries it; anything in the way crushes it
+    if (sweptKeys[key(nq, nr)] || !floor(nq, nr) || unitAt(nq, nr, u) || enemyAt(nq, nr)) hurt(e, 99);
+    else { e.q = nq; e.r = nr; }
+  });
+  var a0 = angleOf(g.from), a1 = angleOf(g.d), da = a1 - a0;
+  while (da > Math.PI) da -= Math.PI * 2;
+  while (da < -Math.PI) da += Math.PI * 2;
+  u.swing = { q: g.q, r: g.r, a0: a0, da: da, start: t };
+  u.q = g.q; u.r = g.r; u.d = g.d; u.left--;
+  sel = null;
+}
+
+function hurt(e, n) {
+  if (e.dead) return;
+  e.hp -= n; e.flash = t;
+  if (e.hp <= 0) { e.dead = true; e.gone = t; kos++; }
+}
+
+// ---- enemies ------------------------------------------------------------------
+function declareIntents() {
+  enemies.forEach(function (e) {
+    e.intent = null;
+    if (e.dead) return;
+    for (var d = 0; d < 6; d++) {
+      var q = e.q + AX[d][0], r = e.r + AX[d][1];
+      if (unitAt(q, r)) { e.intent = [q, r]; return; }
+    }
+  });
+}
+
+function enemyBite(e) {
+  if (e.dead || !e.intent) return;
+  // the bite lands on the cell it marked, whoever stands there now
+  var u = unitAt(e.intent[0], e.intent[1]);
+  if (u && dist(e, { q: e.intent[0], r: e.intent[1] }) === 1) { u.hp--; u.flash = t; }
+  e.intent = null;
+}
+
+function enemyMove(e) {
+  if (e.dead) return;
+  for (var d = 0; d < 6; d++) if (unitAt(e.q + AX[d][0], e.r + AX[d][1])) return;
+  var prev = {}, start = key(e.q, e.r), qu = [[e.q, e.r]], found = null;
+  prev[start] = null;
+  while (qu.length && !found) {
+    var c = qu.shift();
+    for (d = 0; d < 6; d++) {
+      var q = c[0] + AX[d][0], r = c[1] + AX[d][1], k = key(q, r);
+      if (prev[k] !== undefined || blockedForEnemy(q, r)) continue;
+      prev[k] = key(c[0], c[1]); qu.push([q, r]);
+      for (var d2 = 0; d2 < 6; d2++) if (unitAt(q + AX[d2][0], r + AX[d2][1])) { found = k; break; }
+      if (found) break;
+    }
+  }
+  if (!found) return;
+  var path = [found];
+  while (prev[path[0]] !== start) path.unshift(prev[path[0]]);
+  var step = path[Math.min(ENEMY_MOVE, path.length) - 1].split(",").map(Number);
+  e.q = step[0]; e.r = step[1];
+}
+
+function endTurn() {
+  if (phase !== "player") return;
+  sel = null; phase = "enemy";
+  var live = enemies.filter(function (e) { return !e.dead; });
+  live.forEach(function (e) { queue.push(function () { enemyBite(e); }); });
+  queue.push(function () { units = units.filter(function (u) { return u.hp > 0; }); });
+  live.forEach(function (e) { queue.push(function () { enemyMove(e); }); });
+  queue.push(function () {
+    turn++;
+    if (turn % SPAWN_EVERY === 0) for (var i = 0; i < SPAWN_COUNT; i++) spawnOne(function (c) { return dist({ q: c[0], r: c[1] }, { q: 0, r: 0 }) === RADIUS; });
+    declareIntents();
+    units.forEach(function (u) { u.left = u.def.pivots; });
+    phase = units.length ? "player" : "over";
+  });
+  wait = 0;
+}
+
+// ---- input ------------------------------------------------------------------
+var BUTTONS = [
+  { label: "End turn", act: function () { endTurn(); } },
+  { label: "Restart", act: function () { newGame(); } }
+];
+var BTN_Y = 1150, BTN_W = 240, BTN_H = 84;
+function btnX(i) { return W / 2 - BTN_W - 10 + i * (BTN_W + 20); }
+
+function onDown(x, y) {
+  for (var i = 0; i < BUTTONS.length; i++)
+    if (x >= btnX(i) && x <= btnX(i) + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { BUTTONS[i].act(); return; }
+  if (phase !== "player") return;
+  var best = null, bd = 1e9;
+  for (var k in cells) {
+    var p = k.split(",").map(Number), c = px(p[0], p[1]), d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (!best || bd > R * R) { sel = null; return; }
+  var q = best[0], r = best[1];
+  // a ghost first: its new cells, then the cells it only sweeps
+  if (sel) {
+    for (i = 0; i < sel.ghosts.length; i++) {
+      var g = sel.ghosts[i];
+      if (g.cells.slice(1).some(function (c) { return c[0] === q && c[1] === r; })) { doPivot(sel.u, g); return; }
+    }
+    for (i = 0; i < sel.ghosts.length; i++) {
+      if (sel.ghosts[i].swept.some(function (c) { return c[0] === q && c[1] === r; })) { doPivot(sel.u, sel.ghosts[i]); return; }
+    }
+  }
+  var u = unitAt(q, r);
+  if (u && u.left > 0) {
+    var cs = unitCells(u);
+    if (q === cs[0][0] && r === cs[0][1]) { pickEnd(u, 0); return; }
+    if (q === cs[cs.length - 1][0] && r === cs[cs.length - 1][1]) { pickEnd(u, 1); return; }
+  }
+  sel = null;
+}
+
+// ---- update / draw ------------------------------------------------------------
+function update(dt) {
+  enemies.forEach(function (e) {
+    var p = px(e.q, e.r), k = 1 - Math.exp(-dt * 14);
+    e.x += (p.x - e.x) * k; e.y += (p.y - e.y) * k;
+  });
+  enemies = enemies.filter(function (e) { return !e.dead || t - e.gone < 0.5; });
+  if (phase === "enemy") {
+    wait -= dt;
+    if (wait <= 0 && queue.length) { queue.shift()(); wait = STEP; }
+  }
+}
+
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+
+function drawBar(pq, pr, ang, len, colr, width, alpha) {
+  var p = px(pq, pr), ex = p.x + Math.cos(ang) * D * (len - 1), ey = p.y + Math.sin(ang) * D * (len - 1);
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = colr; ctx.lineWidth = width; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.globalAlpha = 1;
+  return { x0: p.x, y0: p.y, x1: ex, y1: ey };
+}
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var k, p, c, i;
+
+  for (k in cells) {
+    p = k.split(",").map(Number); c = px(p[0], p[1]);
+    hexPath(c.x, c.y, R - 2);
+    ctx.fillStyle = cells[k] === "pillar" ? "#4a4f5c" : "#262a35"; ctx.fill();
+    if (cells[k] === "pillar") { hexPath(c.x, c.y - 6, R * 0.7); ctx.fillStyle = "#6b7182"; ctx.fill(); }
+  }
+
+  // enemy marks: the cell each one bites next turn
+  enemies.forEach(function (e) {
+    if (e.dead || !e.intent) return;
+    var tc = px(e.intent[0], e.intent[1]);
+    ctx.strokeStyle = "rgba(255,70,70,0.85)"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(tc.x, tc.y); ctx.stroke();
+    hexPath(tc.x, tc.y, R - 6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(tc.x, tc.y, R * 0.2, 0, 7); ctx.stroke();
+  });
+
+  // ghosts of the two pivots, with what they would hit
+  if (sel) {
+    var pv = px(sel.pivot[0], sel.pivot[1]);
+    sel.ghosts.forEach(function (g) {
+      g.swept.forEach(function (sc) {
+        var cc = px(sc[0], sc[1]);
+        hexPath(cc.x, cc.y, R - 5); ctx.fillStyle = "rgba(255,209,102,0.16)"; ctx.fill();
+      });
+      // the arc the far end draws
+      var a0 = angleOf(g.from), a1 = angleOf(g.d), da = a1 - a0;
+      while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+      ctx.strokeStyle = "rgba(255,209,102,0.6)"; ctx.lineWidth = 3; ctx.setLineDash([8, 8]);
+      ctx.beginPath(); ctx.arc(pv.x, pv.y, D * (sel.u.def.len - 1), a0, a1, da < 0); ctx.stroke(); ctx.setLineDash([]);
+      drawBar(g.q, g.r, a1, sel.u.def.len, sel.u.def.colr, R * 0.7, 0.35);
+      g.hits.forEach(function (e) {
+        var ec = px(e.q, e.r);
+        ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 5; hexPath(ec.x, ec.y, R - 3); ctx.stroke();
+      });
+    });
+    ctx.beginPath(); ctx.arc(pv.x, pv.y, R * 0.45, 0, 7); ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.stroke();
+  }
+
+  // units
+  units.forEach(function (u) {
+    var ang = angleOf(u.d), pq = u.q, pr = u.r;
+    if (u.swing && t - u.swing.start < SWING_T) {
+      var e = (t - u.swing.start) / SWING_T; e = 1 - (1 - e) * (1 - e);
+      ang = u.swing.a0 + u.swing.da * e;
+    }
+    var hit = u.flash !== undefined && t - u.flash < 0.3;
+    var b = drawBar(pq, pr, ang, u.def.len, hit ? "#ff6060" : u.def.colr, R * 0.7, u.left > 0 || phase !== "player" ? 1 : 0.5);
+    [[b.x0, b.y0], [b.x1, b.y1]].forEach(function (pt) {
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], R * 0.32, 0, 7); ctx.fillStyle = "#1b1d24"; ctx.fill();
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], R * 0.2, 0, 7); ctx.fillStyle = "#fff"; ctx.fill();
+    });
+    var mx = (b.x0 + b.x1) / 2, my = (b.y0 + b.y1) / 2;
+    ctx.fillStyle = "#fff"; ctx.font = "bold 20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(u.hp + " hp · " + u.left, mx, my);
+  });
+
+  // enemies
+  enemies.forEach(function (e) {
+    var s = e.dead ? Math.max(0, 1 - (t - e.gone) / 0.5) : 1, rad = R * (e.kind === "brute" ? 0.62 : 0.5) * s;
+    if (rad <= 0) return;
+    ctx.beginPath();
+    if (e.kind === "brute") hexPath(e.x, e.y, rad); else ctx.arc(e.x, e.y, rad, 0, 7);
+    ctx.fillStyle = t - e.flash < 0.2 ? "#fff" : e.kind === "brute" ? "#9c2f2f" : "#e0533d"; ctx.fill();
+    for (var h = 0; h < e.hp && !e.dead; h++) {
+      ctx.beginPath(); ctx.arc(e.x - (e.hp - 1) * 7 + h * 14, e.y, 5, 0, 7); ctx.fillStyle = "#fff"; ctx.fill();
+    }
+  });
+
+  // HUD
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 40px sans-serif"; ctx.fillText("Turn " + turn, 30, 66);
+  ctx.font = "28px sans-serif"; ctx.fillText("Knocked out " + kos, 30, 108);
+  ctx.fillStyle = "#9aa0b0"; ctx.font = "23px sans-serif";
+  ctx.fillText("Tap an END of a bar to pivot around it, then a ghost.", 30, 150);
+  ctx.fillText("The swing hits and shoves; blocked, it crushes.", 30, 180);
+  ctx.fillText("Red mark: the cell an enemy bites at the end of the turn.", 30, 210);
+  ctx.fillStyle = "#6d7384"; ctx.font = "21px sans-serif";
+  ctx.fillText("Lance: 3 cells, 2 pivots. Club: 2 cells, 3 pivots. On a bar: hp · pivots left.", 30, 1100);
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 28px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    ctx.fillStyle = BUTTONS[i].label === "End turn" ? (phase === "player" ? "#2f6b4a" : "#2c303c") : "#2c303c";
+    ctx.fillRect(btnX(i), BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = "#e8e8f0"; ctx.fillText(BUTTONS[i].label, btnX(i) + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+
+  if (phase === "over") {
+    ctx.fillStyle = "rgba(10,11,14,0.7)"; ctx.fillRect(0, 500, W, 240);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 56px sans-serif"; ctx.fillText("Defeated", W / 2, 580);
+    ctx.font = "30px sans-serif"; ctx.fillText("Turn " + turn + " · knocked out " + kos + " · tap Restart", W / 2, 655);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

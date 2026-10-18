@@ -233,9 +233,6 @@
 /* The one chip on the row that is not a number: the way out of wherever the
    player is. Round, icon only, and it is the first thing in the row. */
 #web-hud .mt-chip.home { padding:0 12px; }
-/* Gone rather than inert on the bare village, which it is the door to
-   (packages/webshell/meta.js, `bandDoors`). */
-#web-hud .mt-chip.home.gone { display:none; }
 /* The DEV pill, between the house and the level chip, on a local machine only
    (meta.js, DEV). Not a chip and not a number: a flat tag in the danger
    colour, so it can never read as something the player owns. It takes its

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Holepocalypse flags and holes</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="holepocalypse">
+<style>
+/* ===========================================================================
+   HOLEPOCALYPSE — FLAGS AND HOLES.
+
+   The ball flag of the fairway (a cup to roll a ball into, wearing the kind
+   it loads) and the hole (the shockwave), and nothing else.
+
+   The first round of this page (2026-10-18) tried five flag styles and kept
+   the golf pin; tuned, the pin itself turned out to be in the way. What was
+   kept of it is the HOLOGRAM it carried over its tip: a beam of the kind's
+   colour rising out of the cup and the kind's icon turning in it. So the
+   flagstick is now an option, off by default, and the hologram stands on
+   the cup by itself.
+
+   The second thing this round answers is the PERSPECTIVE. The fairway is
+   painted seen from up the tee, at an angle, and a cup drawn as a circle
+   reads as a coin standing on its edge. Every part lying on the ground —
+   the cup, its ready ring, the recharge, the toxic glow, the burst of a
+   sink, the beam's foot — is an ellipse squashed by ONE ratio, the knob at
+   the top of the panel, which is how the game already draws a zombie's
+   shadow (0.33).
+
+   "Sink a ball" plays the cup taking a ball and handing three of its kind
+   to the bag, then the recharge. "Walk a zombie over it", "Roll a ball
+   past it" and dragging a walker by hand play what the hologram does when
+   something passes through it; "Show the zones" draws where it looks.
+   Nothing here ships: "Copy settings" hands the panel over, and the look is
+   ported into games/holepocalypse/game.js by hand.
+
+   Pictures come out of ../assets/image/embed/ (the game's own cuts).
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh;
+  display:flex;
+  overflow:hidden;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 360px;
+  overflow:auto;
+  padding:18px 18px 40px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:.5px; }
+#panel p.hint { margin:4px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+h2 { margin:18px 0 8px; font-size:11px; letter-spacing:1px; color:#76769a; text-transform:uppercase; }
+
+#params details { margin-bottom:8px; border:1px solid #23233a; border-radius:8px; padding:0 10px; }
+#params details[open] { padding-bottom:4px; }
+#params summary { padding:7px 0; font-size:12px; font-weight:700; color:#c9c7e0; cursor:pointer; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#9fe03a; }
+.row select { width:100%; margin-top:4px; padding:5px 8px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:13px; }
+.chk { display:flex !important; justify-content:flex-start !important; align-items:center; gap:8px; cursor:pointer; color:#c9c7e0 !important; }
+.chk input { accent-color:#9fe03a; }
+
+.seg { display:flex; border:1px solid #33335a; border-radius:7px; overflow:hidden; margin-top:4px; }
+.seg button { flex:1; padding:6px 4px; border:0; background:transparent; color:#e8e6f5; font:700 12px/1.2 inherit; cursor:pointer; }
+.seg button + button { border-left:1px solid #33335a; }
+.seg button.on { background:#9fe03a; color:#0b0b12; }
+
+.acts { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.acts button, .wide {
+  padding:8px 10px;
+  background:#22223a; color:#e8e6f5; border:1px solid #33335a; border-radius:8px;
+  font:700 12px/1.2 inherit; cursor:pointer;
+}
+.acts button:hover, .wide:hover { border-color:#9fe03a; }
+.acts button.main { background:#9fe03a; color:#0b0b12; border-color:#9fe03a; }
+.wide { width:100%; margin-top:6px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; min-width:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:18px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#stage canvas {
+  height:100%; max-width:100%; aspect-ratio:9 / 16;
+  border-radius:12px; background:#0a0718; box-shadow:0 18px 50px rgba(0,0,0,.5);
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Holepocalypse — flags and holes</h1>
+  <p class="hint">The ball flag as a hologram rising out of its cup, the flagstick optional, and every cup an ellipse lying on the fairway.</p>
+
+  <h2>Play it</h2>
+  <div class="acts">
+    <button class="main" id="sink">Sink a ball</button>
+    <button id="reset">Reset</button>
+    <button id="walk">Walk a zombie over it</button>
+    <button id="roll">Roll a ball past it</button>
+  </div>
+  <p class="hint" style="margin-top:8px">Drag a zombie by its body onto a flag, the hole's included.</p>
+
+  <h2>Scene</h2>
+  <div id="common"></div>
+
+  <h2>Knobs</h2>
+  <div id="params"></div>
+  <button class="wide" id="defaults">Back to the defaults</button>
+  <button class="wide" id="copy">Copy settings</button>
+</div>
+
+<div id="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const TAU = Math.PI * 2;
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, u) => a + (b - a) * u;
+  const easeOut = (u) => 1 - (1 - u) * (1 - u);
+
+  /* ---- the game's data (games/holepocalypse/game.js: MODS, BIOMES) -------- */
+  const KINDS = [
+    { name: "Explosive ball", color: "#ff5a2a", icon: "kind01", ball: "ball02" },
+    { name: "Multiball",      color: "#4de1ff", icon: "kind02", ball: "ball03" },
+    { name: "Piercing ball",  color: "#ff4dff", icon: "kind03", ball: "ball04" },
+    { name: "Heavy ball",     color: "#8a8a9a", icon: "kind04", ball: "ball05" },
+    { name: "Homing ball",    color: "#c08aff", icon: "kind05", ball: "ball06" },
+    { name: "Splitting ball", color: "#9dff8a", icon: "kind06", ball: "ball07" },
+    { name: "Fire ball",      color: "#ffb02a", icon: "kind07", ball: "ball08" },
+    { name: "Bouncy ball",    color: "#ff9de2", icon: "kind08", ball: "ball09" },
+    { name: "Ice ball",       color: "#9fe8ff", icon: "kind09", ball: "ball10" },
+    { name: "Giant ball",     color: "#ffffff", icon: "kind10", ball: "ball11" }
+  ];
+  const BIOMES = ["Country Club", "Desert Links", "Bayou Course", "Frozen Links", "Graveyard Greens"];
+  const TEE = { x: 360, y: 1186 };
+  const HOLE = { x: 470, y: 860 };
+  const FLAG1 = { x: 240, y: 720 }, FLAG2 = { x: 520, y: 540 };
+  const ZOMBIES_HOME = [{ x: 300, y: 330 }, { x: 430, y: 300 }, { x: 360, y: 440 }];
+  const ZOMBIES = ZOMBIES_HOME.map((z) => ({ x: z.x, y: z.y }));
+  const ACCENT = "#9fe03a", HOLE_RED = "#e8242c";
+  const RECHARGE = 7;
+
+  /* ---- pictures --------------------------------------------------------------- */
+  const IM = {};
+  ["fairway-01", "fairway-02", "fairway-03", "fairway-04", "fairway-05", "course01", "course03", "ball01"]
+    .concat([1, 2, 3, 4, 5, 6, 7, 8].map((i) => "walker0" + i))
+    .concat(KINDS.map((k) => k.icon), KINDS.map((k) => k.ball))
+    .forEach((key) => { const im = new Image(); im.src = "../assets/image/embed/holepocalypse-" + key + ".webp"; IM[key] = im; });
+  function ok(im) { return im && im.complete && im.naturalWidth > 0; }
+  function img(c, key, x, y, size, a) {
+    const im = IM[key];
+    if (!ok(im)) return false;
+    const s = size / Math.max(im.naturalWidth, im.naturalHeight);
+    c.save();
+    if (a != null) c.globalAlpha *= clamp(a, 0, 1);
+    c.drawImage(im, x - im.naturalWidth * s / 2, y - im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s);
+    c.restore();
+    return true;
+  }
+  function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16), f = (v) => Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k);
+    return `rgb(${f(n >> 16 & 255)},${f(n >> 8 & 255)},${f(n & 255)})`;
+  }
+  function ell(c, x, y, rx, ry) { c.beginPath(); c.ellipse(x, y, Math.max(0, rx), Math.max(0, ry), 0, 0, TAU); }
+  function noise(t) { return (Math.sin(t * 12.9898) * 43758.5453) % 1; }
+  function along(a, b, u) { return { x: lerp(a.x, b.x, u), y: lerp(a.y, b.y, u) }; }
+  function bez(a, b, ctl, u) { const v = 1 - u; return { x: v * v * a.x + 2 * v * u * ctl.x + u * u * b.x, y: v * v * a.y + 2 * v * u * ctl.y + u * u * b.y }; }
+  function rrect(c, x, y, w, h, r) {
+    c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.arcTo(x + w, y, x + w, y + r, r);
+    c.lineTo(x + w, y + h - r); c.arcTo(x + w, y + h, x + w - r, y + h, r); c.lineTo(x + r, y + h);
+    c.arcTo(x, y + h, x, y + h - r, r); c.lineTo(x, y + r); c.arcTo(x, y, x + r, y, r); c.closePath();
+  }
+  const BAG_Y = 1232, BAG_PITCH = 40;
+  function bagSlot(i) { return { x: 372 - BAG_PITCH * 2 + i * BAG_PITCH, y: BAG_Y }; }
+
+  /* ===========================================================================
+     THE KNOBS. `P` is the look (what "Copy settings" hands over), `C` the
+     scene the look is tried on.
+     =========================================================================== */
+  const PARAMS = [
+    { group: "Perspective" },
+    { k: "squash", label: "Ground ellipse (height / width)", min: 0.2, max: 1, step: 0.02, def: 0.42 },
+
+    { group: "Cups" },
+    { k: "cupW", label: "Ball flag cup width", min: 30, max: 120, step: 1, def: 68 },
+    { k: "holeW", label: "Hole cup width", min: 30, max: 120, step: 1, def: 56 },
+    { k: "cupArt", label: "Painted cup", type: "bool", def: true },
+    { k: "holeGlow", label: "Hole's toxic glow radius", min: 0, max: 140, step: 1, def: 54 },
+
+    { group: "Ready ring and recharge" },
+    { k: "ring", label: "Ready ring", type: "select", options: [["pulse", "Pulse"], ["solid", "Solid"], ["dashed", "Dashed, turning"], ["ticks", "Ticks, turning"], ["none", "None"]], def: "pulse" },
+    { k: "ringCol", label: "Ring colour", type: "select", options: [["accent", "The game's lime"], ["kind", "The kind's colour"], ["white", "White"]], def: "accent" },
+    { k: "ringR", label: "Ring radius (width)", min: 20, max: 90, step: 1, def: 42 },
+    { k: "ringW", label: "Ring thickness", min: 1, max: 10, step: 0.5, def: 4 },
+    { k: "cool", label: "Recharge drawn as", type: "select", options: [["pie", "A filling pie"], ["arc", "An arc"], ["dots", "Eight dots"]], def: "pie" },
+
+    { group: "Hologram" },
+    { k: "iSize", label: "Icon size", min: 20, max: 90, step: 1, def: 40 },
+    { k: "iLift", label: "Height over the cup", min: 0, max: 200, step: 2, def: 64 },
+    { k: "iBack", label: "Backing", type: "select", options: [["disc", "Disc"], ["hex", "Hexagon"], ["glow", "Glow"], ["none", "None"]], def: "disc" },
+    { k: "beam", label: "Light beam", type: "bool", def: true },
+    { k: "beamW", label: "Beam width", min: 0.3, max: 2, step: 0.05, def: 1 },
+    { k: "beamA", label: "Beam strength", min: 0.1, max: 1, step: 0.05, def: 0.55 },
+    { k: "emitter", label: "Glow on the cup it rises from", type: "bool", def: true },
+    { k: "spin", label: "Spin", min: 0, max: 3, step: 0.1, def: 1 },
+    { k: "lines", label: "Scanlines", type: "bool", def: true },
+    { k: "flicker", label: "Flicker", min: 0, max: 1, step: 0.05, def: 0.2 },
+    { k: "bob", label: "Bob", min: 0, max: 12, step: 0.5, def: 4 },
+    { k: "capped", label: "While it recharges", type: "select", options: [["dim", "Dimmed and grey"], ["sink", "Sunk into the cup"], ["off", "Switched off"]], def: "dim" },
+
+    { group: "Flagstick" },
+    { k: "stick", label: "Flagstick", type: "seg", options: [["none", "None"], ["pin", "Pin"]], def: "none" },
+    { k: "pole", label: "Pole height", min: 50, max: 200, step: 5, def: 100 },
+    { k: "thick", label: "Pole thickness", min: 2, max: 10, step: 0.5, def: 4 },
+    { k: "poleLook", label: "Pole look", type: "select", options: [["stripes", "Red and white stripes"], ["white", "Plain white"], ["hazard", "Black and yellow"], ["kind", "The kind's colour"]], def: "hazard" },
+    { k: "stripe", label: "Stripe length", min: 6, max: 40, step: 1, def: 12 },
+    { k: "shape", label: "Cloth", type: "select", options: [["pennant", "Pennant"], ["square", "Square"], ["none", "None, a bare pole"]], def: "pennant" },
+    { k: "len", label: "Cloth length", min: 20, max: 100, step: 2, def: 40 },
+    { k: "h", label: "Cloth height", min: 14, max: 70, step: 2, def: 40 },
+    { k: "wind", label: "Wave amplitude", min: 0, max: 20, step: 1, def: 14 },
+    { k: "speed", label: "Wave speed", min: 0.2, max: 3, step: 0.1, def: 0.8 },
+
+    { group: "Something passes through it" },
+    { k: "pass", label: "The hologram", type: "select", options: [["ghost", "Turns to a ghost"], ["duck", "Sinks into the cup"], ["none", "Stays"]], def: "ghost" },
+    { k: "ghost", label: "Ghost opacity", min: 0, max: 0.8, step: 0.05, def: 0.25 },
+    { k: "zSide", label: "Zone: either side", min: 10, max: 140, step: 2, def: 50 },
+    { k: "zBack", label: "Zone: behind (up the field)", min: 0, max: 240, step: 5, def: 110 },
+    { k: "zFront", label: "Zone: in front", min: 0, max: 120, step: 2, def: 26 },
+    { k: "fOut", label: "Fade speed", min: 2, max: 40, step: 1, def: 14 },
+    { k: "fDelay", label: "Wait before coming back", min: 0, max: 1.5, step: 0.05, def: 0.25 },
+    { k: "fBack", label: "Speed coming back", min: 1, max: 20, step: 0.5, def: 5 },
+    { k: "balls", label: "A rolling ball does it too", type: "bool", def: true },
+
+    { group: "The hole (the shockwave)" },
+    { k: "hMark", label: "Marker", type: "seg", options: [["holo", "Hologram"], ["pin", "Red flag"], ["none", "None"]], def: "holo" },
+    { k: "hSize", label: "Hologram size", min: 20, max: 100, step: 1, def: 46 },
+    { k: "hLift", label: "Hologram height", min: 0, max: 220, step: 2, def: 80 }
+  ];
+  const COMMON = [
+    { k: "biome", label: "Fairway", type: "select", options: BIOMES.map((n, i) => [i + 1, n]), def: 1, num: true },
+    { k: "kind", label: "Left flag's kind (the one sunk)", type: "select", options: KINDS.map((m, i) => [i, m.name]), def: 0, num: true },
+    { k: "kind2", label: "Right flag's kind", type: "select", options: KINDS.map((m, i) => [i, m.name]), def: 8, num: true },
+    { k: "state", label: "Ball flags", type: "seg", options: [["ready", "Ready"], ["capped", "Recharging"]], def: "ready" },
+    { k: "coolLeft", label: "Recharging: time left", min: 0.05, max: 1, step: 0.05, def: 0.6 },
+    { k: "scale", label: "Flag scale (hologram, flagstick)", min: 0.6, max: 1.8, step: 0.05, def: 1.3 },
+    { k: "walk", label: "Walker speed (px/s)", min: 15, max: 120, step: 5, def: 45 },
+    { k: "zones", label: "Show the zones", type: "bool", def: false },
+    { k: "zombies", label: "Zombies", type: "bool", def: true }
+  ];
+  const STORE = "hole-flags-3";
+  const P = {}, C = {};
+  function defaults() { PARAMS.forEach((p) => { if (p.k) P[p.k] = p.def; }); }
+  defaults();
+  COMMON.forEach((p) => { C[p.k] = p.def; });
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || "{}");
+    if (s.params) Object.assign(P, s.params);
+    if (s.common) Object.assign(C, s.common);
+  } catch (e) {}
+  function save() { try { localStorage.setItem(STORE, JSON.stringify({ params: P, common: C })); } catch (e) {} }
+
+  /* ===========================================================================
+     THE GROUND — everything lying on the fairway is an ellipse of ONE ratio.
+     =========================================================================== */
+  function groundEll(c, x, y, r) { ell(c, x, y, r, r * P.squash); }
+  function cupArt(c, x, y, w, capped) {
+    const im = IM[capped ? "course03" : "course01"];
+    if (P.cupArt && ok(im)) {
+      const s = w / Math.max(im.naturalWidth, im.naturalHeight);
+      c.save(); c.translate(x, y); c.scale(1, P.squash);
+      c.drawImage(im, -im.naturalWidth * s / 2, -im.naturalHeight * s / 2, im.naturalWidth * s, im.naturalHeight * s);
+      c.restore();
+      return;
+    }
+    // drawn: a lip, the dark inside, the far wall lit
+    c.fillStyle = "#e9e4d6"; groundEll(c, x, y, w / 2); c.fill();
+    c.fillStyle = capped ? "#8a8f80" : "#0e1a10"; groundEll(c, x, y, w * 0.4); c.fill();
+    if (!capped) { c.fillStyle = "#26352a"; ell(c, x, y - w * 0.4 * P.squash * 0.35, w * 0.36, w * 0.4 * P.squash * 0.6); c.fill(); }
+  }
+  function toxicGlow(c, x, y, R) {
+    if (R <= 0) return;
+    const g = c.createRadialGradient(x, y, 4, x, y, R);
+    g.addColorStop(0, "rgba(159,224,58,0.55)"); g.addColorStop(1, "rgba(159,224,58,0)");
+    c.save(); c.translate(x, y); c.scale(1, P.squash); c.translate(-x, -y);
+    c.fillStyle = g; ell(c, x, y, R, R); c.fill();
+    c.restore();
+  }
+  function ringOut(c, x, y, r0, r1, u, col, w) {
+    if (u <= 0 || u >= 1) return;
+    c.strokeStyle = rgba(col, 1 - u); c.lineWidth = w * (1 - u);
+    groundEll(c, x, y, lerp(r0, r1, easeOut(u))); c.stroke();
+  }
+  /* The ball flag's cup: its ring while it is ready, its recharge while it
+     is not — both laid on the ground. */
+  function drawCup(c, f, t) {
+    const k = f.kind, x = f.x, y = f.y, R = P.ringR, q = P.squash;
+    const rc = P.ringCol === "kind" ? k.color : P.ringCol === "white" ? "#ffffff" : ACCENT;
+    if (f.cool <= 0 && P.ring !== "none") {
+      c.save(); c.lineWidth = P.ringW;
+      const pul = P.ring === "pulse" ? Math.sin(t * 5) : 0;
+      c.strokeStyle = rgba(rc, P.ring === "pulse" ? 0.55 + 0.45 * pul : 0.9);
+      if (P.ring === "dashed") { c.setLineDash([10, 8]); c.lineDashOffset = -t * 30; }
+      if (P.ring === "ticks") {
+        for (let i = 0; i < 14; i++) {
+          const an = i * TAU / 14 + t * 0.8, cs = Math.cos(an), sn = Math.sin(an);
+          c.beginPath(); c.moveTo(x + cs * (R - 4), y + sn * (R - 4) * q); c.lineTo(x + cs * (R + 5), y + sn * (R + 5) * q); c.stroke();
+        }
+      } else { groundEll(c, x, y, R + 3 * pul); c.stroke(); }
+      c.restore();
+    }
+    cupArt(c, x, y, P.cupW, f.cool > 0);
+    if (f.cool > 0) {
+      const p = 1 - f.cool;
+      c.save(); c.translate(x, y); c.scale(1, q);
+      if (P.cool === "arc") { c.strokeStyle = ACCENT; c.lineWidth = P.ringW / q * 0.8; c.beginPath(); c.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + TAU * p); c.stroke(); }
+      if (P.cool === "pie") { c.fillStyle = rgba(ACCENT, 0.35); c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R, -Math.PI / 2, -Math.PI / 2 + TAU * p); c.closePath(); c.fill(); }
+      c.restore();
+      if (P.cool === "dots") for (let i = 0; i < 8; i++) {
+        const an = -Math.PI / 2 + i * TAU / 8;
+        c.fillStyle = i < Math.floor(p * 8 + 0.001) ? ACCENT : "rgba(0,0,0,.4)";
+        ell(c, x + Math.cos(an) * R, y + Math.sin(an) * R * q, 4.5, 4.5 * Math.max(0.6, q)); c.fill();
+      }
+    }
+  }
+
+  /* ===========================================================================
+     WHAT STANDS ON THE CUP — the hologram, and the flagstick when there is one.
+     =========================================================================== */
+  /* r runs to 1 while something stands in the flag's zone (a box round the
+     cup, deeper behind it, since a zombie up the field is drawn over the
+     hologram), waits, then eases back to 0. */
+  function passOf(f, t) {
+    const m = f.mem;
+    if (m.r == null) { m.r = 0; m.hold = 0; m.t = t; m.in = false; }
+    const dt = clamp(t - m.t, 0, 0.05), s = C.scale;
+    m.t = t;
+    let inside = false;
+    if (P.pass !== "none") for (const it of f.near) {
+      if (it.ball && !P.balls) continue;
+      const dx = it.x - f.x, dy = it.y - f.y;
+      if (Math.abs(dx) < P.zSide * s + it.r && dy > -P.zBack * s - it.r * 0.3 && dy < P.zFront * s + it.r * 0.5) { inside = true; break; }
+    }
+    m.in = inside;
+    if (inside) m.hold = P.fDelay; else m.hold -= dt;
+    const to = inside || m.hold > 0 ? 1 : 0, rate = to ? P.fOut : P.fBack;
+    m.r += (to - m.r) * (1 - Math.exp(-rate * dt));
+    return m.r;
+  }
+  function drawZone(c, f) {
+    if (!C.zones) return;
+    const s = C.scale;
+    c.save(); c.setLineDash([8, 6]); c.lineWidth = 2;
+    c.strokeStyle = f.mem.in ? ACCENT : "rgba(255,255,255,.7)";
+    c.strokeRect(f.x - P.zSide * s, f.y - P.zBack * s, P.zSide * s * 2, (P.zBack + P.zFront) * s);
+    c.restore();
+  }
+  /* A pennant or a square flying off the pole at (x0, y0), waving. */
+  function cloth(c, x0, y0, L, Hc, t, col, edge, shape) {
+    const N = 16, amp = P.wind * C.scale, sp = P.speed, ph = x0 * 0.01;
+    const w = (u) => amp * Math.pow(u, 0.9) * Math.sin(t * sp * 3 - u * 5.5 + ph);
+    const top = [], bot = [];
+    for (let i = 0; i <= N; i++) {
+      const u = i / N, x = x0 + u * L;
+      let ty = y0 + w(u), by = y0 + Hc + w(u);
+      if (shape === "pennant") { ty += u * Hc / 2; by -= u * Hc / 2; }
+      top.push([x, ty]); bot.push([x, by]);
+    }
+    c.beginPath(); c.moveTo(top[0][0], top[0][1]);
+    for (const p of top) c.lineTo(p[0], p[1]);
+    for (let i = N; i >= 0; i--) c.lineTo(bot[i][0], bot[i][1]);
+    c.closePath();
+    c.fillStyle = col; c.fill();
+    c.strokeStyle = edge; c.lineWidth = 2; c.stroke();
+    return (u, v) => [x0 + u * L, y0 + w(u) + (shape === "pennant" ? u * Hc / 2 + v * (Hc - u * Hc) : v * Hc)];
+  }
+  /* The flagstick, straight up out of the cup; returns its tip, which is
+     where the hologram stands when there is one. */
+  function drawStick(c, f, t, r, a, look) {
+    const s = C.scale, H = P.pole * s * (look.tall || 1) * (P.pass === "duck" ? 1 - 0.9 * r : 1);
+    const x = f.x + 2, y = f.y - 2, w = P.thick * s, top = y - H;
+    if (H < 4) return { x, y };
+    c.save(); c.globalAlpha *= a;
+    const cols = look.pole || (P.poleLook === "stripes" ? ["#f4f4f4", "#e8333a"] : P.poleLook === "hazard" ? ["#ffd21f", "#1d1d22"]
+      : P.poleLook === "kind" ? [f.kind.color, shade(f.kind.color, -0.3)] : ["#f4f4f4", "#f4f4f4"]);
+    c.lineWidth = w; c.lineCap = "butt";
+    const st = P.stripe * s;
+    for (let yy = y; yy > top; yy -= st) {
+      c.strokeStyle = cols[Math.round((y - yy) / st) % 2];
+      c.beginPath(); c.moveTo(x, yy); c.lineTo(x, Math.max(top, yy - st)); c.stroke();
+    }
+    const shape = look.shape || P.shape;
+    if (shape !== "none") {
+      const k = Math.max(0, 1 - (P.pass === "duck" ? r * 1.4 : 0));
+      if (k > 0.02) {
+        const at = cloth(c, x, top, (look.len || P.len) * s * k, (look.h || P.h) * s * k, t, look.col || f.kind.color, look.edge || shade(look.col || f.kind.color, -0.35), shape);
+        if (look.deco) look.deco(at, k);
+      }
+    }
+    c.restore();
+    return { x, y: top };
+  }
+  /* The hologram: a beam of the kind's colour out of the cup, the icon
+     turning like a coin in it — see-through, lit, scan-lined, flickering. */
+  function drawHolo(c, f, t, r, o) {
+    const s = C.scale, down = Math.max(P.pass === "duck" ? r : 0, o.sink || 0), size = o.size * s * (1 - down);
+    if (size < 2 || o.a <= 0.01) return;
+    const bob = Math.sin(t * 2.2 + f.x) * P.bob * s;
+    const lift = o.lift * s * (1 - down);
+    const base = o.from, ix = base.x, iy = base.y - lift - size / 2 - 6 * s + bob;
+    const a = o.a * (P.pass === "ghost" ? lerp(1, P.ghost, r) : 1), col = o.col;
+    const cupR = (o.cupW || P.cupW) / 2;
+    c.save(); c.globalCompositeOperation = "lighter";
+    if (P.emitter) {
+      const g = c.createRadialGradient(f.x, f.y, 2, f.x, f.y, cupR * 1.2);
+      g.addColorStop(0, rgba(col, 0.6 * a)); g.addColorStop(1, rgba(col, 0));
+      c.save(); c.translate(f.x, f.y); c.scale(1, P.squash); c.translate(-f.x, -f.y);
+      c.fillStyle = g; ell(c, f.x, f.y, cupR * 1.2, cupR * 1.2); c.fill(); c.restore();
+    }
+    if (P.beam) {
+      // the beam leaves the stick's tip, or the cup's mouth (an ellipse) when it stands alone
+      const w0 = (base.y < f.y - 4 ? 4 * s : cupR * 0.55) * P.beamW, w1 = size * 0.6 * P.beamW, top = iy;
+      const g = c.createLinearGradient(0, base.y, 0, top);
+      g.addColorStop(0, rgba(col, P.beamA * a)); g.addColorStop(1, rgba(col, P.beamA * 0.15 * a));
+      c.fillStyle = g;
+      c.beginPath();
+      c.moveTo(base.x - w0, base.y); c.lineTo(ix - w1, top); c.lineTo(ix + w1, top); c.lineTo(base.x + w0, base.y);
+      c.closePath(); c.fill();
+      if (base.y >= f.y - 4) { c.fillStyle = rgba(col, P.beamA * 0.8 * a); ell(c, base.x, base.y, w0, w0 * P.squash); c.fill(); }
+    }
+    c.restore();
+
+    const R = size / 2;
+    const fl = 1 - P.flicker * (Math.abs(noise(Math.floor(t * 14) + f.x)) > 0.85 ? 0.7 : 0.1 * (0.5 + 0.5 * Math.sin(t * 40)));
+    c.save();
+    c.globalAlpha *= clamp(a * fl, 0, 1);
+    c.translate(ix, iy);
+    if (P.spin > 0) c.scale(Math.cos(t * P.spin * 2), 1);
+    if (P.iBack === "glow") {
+      const g = c.createRadialGradient(0, 0, R * 0.2, 0, 0, R * 1.5);
+      g.addColorStop(0, rgba(col, 0.75)); g.addColorStop(1, rgba(col, 0));
+      c.fillStyle = g; ell(c, 0, 0, R * 1.5, R * 1.5); c.fill();
+    }
+    if (P.iBack === "disc" || P.iBack === "hex") {
+      c.beginPath();
+      if (P.iBack === "disc") c.arc(0, 0, R * 1.08, 0, TAU);
+      else for (let i = 0; i < 6; i++) { const an = i * TAU / 6; c[i ? "lineTo" : "moveTo"](Math.cos(an) * R * 1.16, Math.sin(an) * R * 1.16); }
+      c.closePath();
+      c.fillStyle = rgba(col, 0.3); c.fill();
+      c.strokeStyle = rgba(col, 0.95); c.lineWidth = Math.max(2, 3 * s); c.stroke();
+      if (P.lines) {
+        c.save(); c.clip(); c.fillStyle = "rgba(255,255,255,.22)";
+        for (let ly = -R * 1.2; ly < R * 1.2; ly += 5) c.fillRect(-R * 1.2, ly + (t * 18) % 5, R * 2.4, 1.5);
+        c.restore();
+      }
+    }
+    if (o.glyph) o.glyph(c, R);
+    else img(c, o.icon, 0, 0, size * 0.9, o.grey ? 0.6 : 0.95);
+    c.restore();
+  }
+  /* A ball flag: the stick if there is one, the hologram on it or on the cup. */
+  function drawFlag(c, f, t) {
+    const r = passOf(f, t), capped = f.cool > 0;
+    const flash = f.tt != null && f.tt > 0.7 && f.tt < 1.2 ? 1.25 : 1;
+    let from = { x: f.x, y: f.y - 2 };
+    if (P.stick === "pin") {
+      from = drawStick(c, f, t, r, P.pass === "ghost" ? lerp(1, P.ghost, r) : 1, capped ? { col: "#9a9a9a", edge: "#6a6a6a" } : {});
+    }
+    if (!(capped && P.capped === "off")) {
+      const sink = capped && P.capped === "sink" ? clamp(f.cool * 3, 0, 1) : 0;
+      drawHolo(c, f, t, r, {
+        from, sink, size: P.iSize, lift: P.iLift, icon: f.kind.icon,
+        col: capped ? "#b8b8b8" : f.kind.color, grey: capped,
+        a: (capped && P.capped === "dim" ? 0.45 : 1) * flash
+      });
+    }
+    drawZone(c, f);
+  }
+  /* The hole: the toxic glow and the cup on the ground, then its marker —
+     a red hologram carrying the shockwave's ring, or the old red flag. */
+  function drawHoleGround(c, h) {
+    toxicGlow(c, h.x, h.y, P.holeGlow);
+    cupArt(c, h.x, h.y, P.holeW, false);
+  }
+  function shockGlyph(c, R) {
+    c.strokeStyle = ACCENT; c.lineWidth = Math.max(3, R * 0.16);
+    ell(c, 0, 0, R * 0.62, R * 0.62); c.stroke();
+    c.lineWidth = Math.max(2, R * 0.08);
+    ell(c, 0, 0, R * 0.3, R * 0.3); c.stroke();
+    c.fillStyle = ACCENT; ell(c, 0, 0, R * 0.1, R * 0.1); c.fill();
+  }
+  function drawHoleMark(c, h, t) {
+    if (P.hMark === "none") return;
+    const r = passOf(h, t);
+    if (P.hMark === "pin") {
+      drawStick(c, h, t, r, P.pass === "ghost" ? lerp(1, P.ghost, r) : 1, {
+        tall: 1.3, pole: ["#f2f2f2", "#f2f2f2"], shape: "square", len: 54, h: 34, col: HOLE_RED, edge: "#8a1218",
+        deco: (at, k) => { const q = at(0.5, 0.5); c.strokeStyle = ACCENT; c.lineWidth = 4; ell(c, q[0], q[1], 9 * k, 9 * k); c.stroke(); }
+      });
+    } else {
+      drawHolo(c, h, t, r, { from: { x: h.x, y: h.y - 2 }, size: P.hSize, lift: P.hLift, col: HOLE_RED, cupW: P.holeW, glyph: shockGlyph, a: 1 });
+    }
+    drawZone(c, h);
+  }
+
+  /* ===========================================================================
+     THE SCENE — the band's painted fairway, three walkers up the field, the
+     hole, two ball flags, the tee and the bag row.
+     =========================================================================== */
+  function ballAt(c, key, x, y, r) {
+    c.fillStyle = "rgba(0,0,0,.3)"; ell(c, x, y + r * 0.5, r, r * 0.45); c.fill();
+    if (!img(c, key, x, y, r * 2.3)) { c.fillStyle = "#fff"; ell(c, x, y, r, r); c.fill(); }
+  }
+  function drawZombie(c, z) {
+    c.fillStyle = "rgba(0,0,0,.28)"; ell(c, z.x, z.y - 4, 27, 9); c.fill();
+    const im = IM[z.key], ref = IM.walker01;
+    if (!ok(im)) return;
+    // one scale for the whole sheet, off its first frame (the game's rule)
+    const s = 118 / ((ok(ref) ? ref.naturalHeight : im.naturalHeight) * 0.9), w = im.naturalWidth * s, h = im.naturalHeight * s;
+    c.drawImage(im, z.x - w / 2, z.y - h * 0.96, w, h);
+  }
+  function drawBag(c, f, ammo) {
+    const n = 5, x0 = 372 - BAG_PITCH * (n - 1) / 2;
+    c.fillStyle = "rgba(8,14,8,0.6)"; rrect(c, x0 - 23, BAG_Y - 23, BAG_PITCH * (n - 1) + 46, 46, 23); c.fill();
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * BAG_PITCH, k = i < ammo ? f.kind : null;
+      if (k) { c.strokeStyle = k.color; c.lineWidth = 3; ell(c, x, BAG_Y, 19, 19); c.stroke(); }
+      img(c, k ? k.ball : "ball01", x, BAG_Y, 39);
+    }
+    c.fillStyle = "#c9a36a"; c.fillRect(TEE.x - 4, TEE.y + 8, 8, 12);
+    img(c, ammo ? f.kind.ball : "ball01", TEE.x, TEE.y, 37);
+  }
+  /* A sink: the ball rolls from the tee into the cup, the cup bursts, three
+     balls of its kind hop out into the bag, and it recharges. */
+  const SINK_DONE = 1.6, AMMO_AT = (i) => 0.85 + i * 0.12 + 0.55;
+  function drawSink(c, f, tt) {
+    if (tt < 0.8) {
+      const p = along(TEE, f, easeOut(clamp(tt / 0.7, 0, 1))), r = tt > 0.7 ? 11 * (1 - (tt - 0.7) / 0.1) : 11;
+      ballAt(c, "ball01", p.x, p.y, Math.max(1, r));
+    }
+    ringOut(c, f.x, f.y, P.cupW * 0.3, P.cupW * 1.4, (tt - 0.7) / 0.5, f.kind.color, 10);
+    for (let i = 0; i < 3; i++) {
+      const u = clamp((tt - 0.85 - i * 0.12) / 0.55, 0, 1);
+      if (u <= 0 || u >= 1) continue;
+      const to = bagSlot(i), p = bez(f, to, { x: (f.x + to.x) / 2, y: Math.min(f.y, to.y) - 280 }, u);
+      img(c, f.kind.ball, p.x, p.y, 34);
+    }
+  }
+
+  const WALKS = [], MEM = { f1: {}, f2: {}, hole: {} };
+  let ROLL = null, SINK = null;
+  const now = () => performance.now() / 1000;
+  function walkers(t) {
+    for (let i = WALKS.length - 1; i >= 0; i--) if (WALKS[i].y0 + (t - WALKS[i].t0) * C.walk > FLAG1.y + 170) WALKS.splice(i, 1);
+    return WALKS.map((w) => ({ x: w.x, y: w.y0 + (t - w.t0) * C.walk, key: "walker0" + (1 + Math.floor((t - w.t0) * 7) % 8) }));
+  }
+  function rolling(t) {
+    if (!ROLL) return null;
+    const u = (t - ROLL.t0) / 1.4;
+    if (u >= 1) { ROLL = null; return null; }
+    return along({ x: FLAG1.x - 240, y: FLAG1.y + 170 }, { x: FLAG1.x + 240, y: FLAG1.y - 120 }, easeOut(u));
+  }
+
+  function draw(c, t) {
+    const walks = walkers(t), ball = rolling(t), near = [];
+    if (C.zombies) ZOMBIES.forEach((z) => near.push({ x: z.x, y: z.y, r: 26 }));
+    walks.forEach((w) => near.push({ x: w.x, y: w.y, r: 26 }));
+    if (ball) near.push({ x: ball.x, y: ball.y, r: 11, ball: true });
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, 720, 1280);
+    const bg = IM["fairway-0" + C.biome];
+    if (ok(bg)) c.drawImage(bg, 0, 0, 720, 1280); else { c.fillStyle = "#2d5a24"; c.fillRect(0, 0, 720, 1280); }
+
+    const sink = SINK ? t - SINK.t0 : null;
+    const capped = C.state === "capped" ? C.coolLeft : 0;
+    const sunkCool = sink != null && sink > SINK_DONE ? clamp(1 - (sink - SINK_DONE) / RECHARGE, 0, 1) : 0;
+    const f1 = { x: FLAG1.x, y: FLAG1.y, kind: KINDS[C.kind], mem: MEM.f1, near, cool: Math.max(capped, sunkCool), tt: sink != null && sink < SINK_DONE + 0.4 ? sink : null };
+    const f2 = { x: FLAG2.x, y: FLAG2.y, kind: KINDS[C.kind2], mem: MEM.f2, near, cool: capped, tt: null };
+    const hole = { x: HOLE.x, y: HOLE.y, kind: KINDS[0], mem: MEM.hole, near };
+    if (sink != null && sink > SINK_DONE + RECHARGE) SINK = null;
+
+    // the ground first: nothing stands under a cup
+    drawHoleGround(c, hole); drawCup(c, f2, t); drawCup(c, f1, t);
+    // then the painter's order, far to near
+    const order = [];
+    if (C.zombies) ZOMBIES.forEach((z, i) => order.push({ y: z.y, z: { x: z.x, y: z.y, key: i === 1 ? "walker05" : "walker01" } }));
+    walks.forEach((w) => order.push({ y: w.y, z: w }));
+    if (ball) order.push({ y: ball.y, b: ball });
+    order.push({ y: f2.y, f: f2 }, { y: f1.y, f: f1 }, { y: hole.y, h: hole });
+    order.sort((a, b) => a.y - b.y);
+    for (const o of order) {
+      if (o.z) drawZombie(c, o.z);
+      else if (o.b) ballAt(c, "ball01", o.b.x, o.b.y, 11);
+      else if (o.h) drawHoleMark(c, o.h, t);
+      else drawFlag(c, o.f, t);
+    }
+    if (f1.tt != null) drawSink(c, f1, f1.tt);
+    let ammo = 0;
+    if (sink != null) for (let i = 0; i < 3; i++) if (sink >= AMMO_AT(i)) ammo++;
+    drawBag(c, f1, ammo);
+  }
+
+  /* ===========================================================================
+     THE PANEL
+     =========================================================================== */
+  function knob(p, obj, onChange) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const v = obj[p.k];
+    if (p.type === "bool") {
+      row.innerHTML = `<label class="chk"><input type="checkbox"${v ? " checked" : ""}> ${p.label}</label>`;
+      row.querySelector("input").onchange = (e) => { obj[p.k] = e.target.checked; onChange(); };
+    } else if (p.type === "select") {
+      row.innerHTML = `<label>${p.label}</label><select>${p.options.map((o) => `<option value="${o[0]}"${String(o[0]) === String(v) ? " selected" : ""}>${o[1]}</option>`).join("")}</select>`;
+      row.querySelector("select").onchange = (e) => { obj[p.k] = p.num ? Number(e.target.value) : e.target.value; onChange(); };
+    } else if (p.type === "seg") {
+      row.innerHTML = `<label>${p.label}</label><div class="seg">${p.options.map((o) => `<button data-v="${o[0]}" class="${String(o[0]) === String(v) ? "on" : ""}">${o[1]}</button>`).join("")}</div>`;
+      row.querySelector(".seg").onclick = (e) => {
+        const b = e.target.closest("button"); if (!b) return;
+        obj[p.k] = p.num ? Number(b.dataset.v) : b.dataset.v;
+        row.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x === b));
+        onChange();
+      };
+    } else {
+      const dig = p.step < 1 ? (p.step < 0.1 ? 2 : 1) : 0;
+      row.innerHTML = `<label>${p.label} <b>${Number(v).toFixed(dig)}</b></label><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${v}">`;
+      const out = row.querySelector("b");
+      row.querySelector("input").oninput = (e) => { obj[p.k] = Number(e.target.value); out.textContent = obj[p.k].toFixed(dig); onChange(); };
+    }
+    return row;
+  }
+  function paintCommon() {
+    const box = $("common"); box.innerHTML = "";
+    COMMON.forEach((p) => box.appendChild(knob(p, C, save)));
+  }
+  /* The knobs in their groups, each behind a chevron. The flagstick's own
+     knobs hide while there is no flagstick, the hologram's size while the
+     hole wears a flag. */
+  const OPEN = { "Perspective": true, "Cups": true, "Hologram": true };
+  function paintParams() {
+    const box = $("params"); box.innerHTML = "";
+    let into = box, group = "";
+    PARAMS.forEach((p) => {
+      if (p.group) {
+        group = p.group;
+        const d = document.createElement("details");
+        d.open = !!OPEN[group];
+        d.ontoggle = () => { OPEN[group] = d.open; };
+        d.innerHTML = `<summary>${group}</summary>`;
+        box.appendChild(d); into = d;
+        return;
+      }
+      if (group === "Flagstick" && p.k !== "stick" && P.stick === "none") return;
+      if ((p.k === "hSize" || p.k === "hLift") && P.hMark !== "holo") return;
+      const relayout = p.k === "stick" || p.k === "hMark";
+      into.appendChild(knob(p, P, () => { save(); if (relayout) paintParams(); }));
+    });
+  }
+
+  /* A walker is dragged by its body onto a flag. */
+  let DRAG = null;
+  const cv = $("cv"), ctx = cv.getContext("2d");
+  function toDesign(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 720, y: (e.clientY - r.top) / r.height * 1280 }; }
+  const hit = (p, z) => Math.abs(p.x - z.x) < 40 && p.y > z.y - 128 && p.y < z.y + 14;
+  cv.addEventListener("pointerdown", (e) => {
+    const p = toDesign(e), i = ZOMBIES.findIndex((z) => hit(p, z));
+    if (i < 0 || !C.zombies) return;
+    DRAG = { i, dx: ZOMBIES[i].x - p.x, dy: ZOMBIES[i].y - p.y };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const p = toDesign(e);
+    if (DRAG) { ZOMBIES[DRAG.i].x = clamp(p.x + DRAG.dx, 40, 680); ZOMBIES[DRAG.i].y = clamp(p.y + DRAG.dy, 160, 1150); }
+    cv.style.cursor = DRAG || (C.zombies && ZOMBIES.some((z) => hit(p, z))) ? "grab" : "default";
+  });
+  cv.addEventListener("pointerup", () => { DRAG = null; });
+
+  $("walk").onclick = () => { WALKS.push({ t0: now(), x: FLAG1.x + (Math.random() * 40 - 20), y0: FLAG1.y - 190 }); };
+  $("roll").onclick = () => { ROLL = { t0: now() }; };
+  $("sink").onclick = () => { SINK = { t0: now() }; };
+  $("reset").onclick = () => {
+    SINK = null; WALKS.length = 0; ROLL = null;
+    ZOMBIES.forEach((z, i) => { z.x = ZOMBIES_HOME[i].x; z.y = ZOMBIES_HOME[i].y; });
+  };
+  $("defaults").onclick = () => { defaults(); save(); paintParams(); };
+  $("copy").onclick = () => {
+    const out = JSON.stringify({ params: P, scene: { scale: C.scale } }, null, 2);
+    const done = () => { $("copy").textContent = "Copied"; setTimeout(() => { $("copy").textContent = "Copy settings"; }, 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(out).then(done, () => window.prompt("Settings", out));
+    else window.prompt("Settings", out);
+  };
+
+  paintCommon(); paintParams();
+  (function frame() {
+    draw(ctx, now());
+    requestAnimationFrame(frame);
+  })();
+})();
+</script>
+</body>
+</html>

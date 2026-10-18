@@ -1,0 +1,454 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Three winds</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Three winds — turn-based tactics where the weather does the hitting.
+// At the end of every turn the wind blows along one of the hex axes and
+// pushes everything that is not anchored one cell: your units, the enemies,
+// the boulders. Pushed into the void, it falls; pushed into something, it
+// takes a hit (and so does what it hit, if that is alive). The next winds are
+// forecast, and every piece shows where the coming wind will send it.
+// Question: is setting up the wind's hits more fun than hitting yourself?
+//
+// Turn: tap a unit, tap a blue cell to move (up to 2), then act on a lit
+// target: Shove (push 1 away, no damage), Strike (1 damage), or Anchor (the
+// wind skips it this turn). End turn: wind, then the enemies move and bite.
+
+// ---- tunables -------------------------------------------------------------
+var RADIUS = 4;             // board is a hexagon of this radius
+var HOLES = 4, PILLARS = 4, BOULDERS = 5;
+var UNITS = 3, UNIT_HP = 3, UNIT_MOVE = 2;
+var GRUNT_HP = 2, HEAVY_HP = 3, ENEMY_MOVE = 2;
+var START_ENEMIES = 3;
+var SPAWN_EVERY = 2, SPAWN_COUNT = 2;
+var HEAVY_FROM_TURN = 4;    // heavies are anchored: the wind never moves them
+var FORECAST = 3;           // winds shown: now, next, then
+var EDGE_WALL = false;      // true: the rim is a wall (crash), only holes are void
+var STEP = 0.32;            // seconds between two beats of a resolution
+
+var W = 720, H = 1280, CY = 620;
+var R = Math.min(660 / ((2 * RADIUS + 1) * Math.sqrt(3)), 640 / (3 * RADIUS + 2));
+
+var FLOOR = 0, HOLE = 1, PILLAR = 2;
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+// ---- state ----------------------------------------------------------------
+var cells;          // "q,r" -> terrain
+var ents;           // { kind: unit|grunt|heavy|boulder, q, r, hp, anchored, moved, acted, x, y, flash, fall }
+var winds;          // FORECAST direction indices, [0] blows at the end of this turn
+var turn, kos, phase, sel, mode, queue, wait, t = 0, msg = "";
+
+// ---- board ------------------------------------------------------------------
+function key(q, r) { return q + "," + r; }
+function onBoard(q, r) { return Math.abs(q) <= RADIUS && Math.abs(r) <= RADIUS && Math.abs(q + r) <= RADIUS; }
+function px(q, r) { return { x: W / 2 + R * Math.sqrt(3) * (q + r / 2), y: CY + R * 1.5 * r }; }
+function dirVec(d) { var a = px(AX[d][0], AX[d][1]), o = px(0, 0); var dx = a.x - o.x, dy = a.y - o.y, L = Math.sqrt(dx * dx + dy * dy); return { x: dx / L, y: dy / L }; }
+function terrain(q, r) { var k = key(q, r); return cells[k] === undefined ? (EDGE_WALL ? PILLAR : HOLE) : cells[k]; }
+function alive(e) { return !e.dead; }
+function entAt(q, r) { for (var i = 0; i < ents.length; i++) if (alive(ents[i]) && ents[i].q === q && ents[i].r === r) return ents[i]; return null; }
+function creature(e) { return e.kind !== "boulder"; }
+function movable(e) { return alive(e) && !e.anchored && e.kind !== "heavy"; }
+function dist(a, b) { var dq = a.q - b.q, dr = a.r - b.r; return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)); }
+function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+function freeFloor() {
+  var out = [];
+  for (var k in cells) {
+    if (cells[k] !== FLOOR) continue;
+    var p = k.split(",").map(Number);
+    if (!entAt(p[0], p[1])) out.push(p);
+  }
+  return out;
+}
+function takeRandom(list) { return list.splice(rint(0, list.length - 1), 1)[0]; }
+
+function newGame() {
+  cells = {};
+  for (var q = -RADIUS; q <= RADIUS; q++) for (var r = -RADIUS; r <= RADIUS; r++) if (onBoard(q, r)) cells[key(q, r)] = FLOOR;
+  ents = [];
+  var inner = Object.keys(cells).map(function (k) { return k.split(",").map(Number); })
+    .filter(function (p) { return dist({ q: p[0], r: p[1] }, { q: 0, r: 0 }) < RADIUS && (p[0] || p[1]); });
+  var i, p;
+  for (i = 0; i < HOLES; i++) { p = takeRandom(inner); cells[key(p[0], p[1])] = HOLE; }
+  for (i = 0; i < PILLARS; i++) { p = takeRandom(inner); cells[key(p[0], p[1])] = PILLAR; }
+  // units in the lower half, enemies in the upper one
+  var free = freeFloor();
+  var low = free.filter(function (c) { return c[1] >= 1; }), high = free.filter(function (c) { return c[1] <= -1; });
+  for (i = 0; i < UNITS; i++) add("unit", takeRandom(low), UNIT_HP);
+  for (i = 0; i < START_ENEMIES; i++) add("grunt", takeRandom(high), GRUNT_HP);
+  free = freeFloor();
+  for (i = 0; i < BOULDERS; i++) add("boulder", takeRandom(free), 0);
+  winds = [];
+  for (i = 0; i < FORECAST; i++) winds.push(rint(0, 5));
+  turn = 1; kos = 0; phase = "player"; sel = null; mode = "shove"; queue = []; wait = 0; msg = "";
+}
+
+function add(kind, p, hp) {
+  var e = { kind: kind, q: p[0], r: p[1], hp: hp, anchored: false, moved: false, acted: false, flash: -9, fall: -1 };
+  var s = px(p[0], p[1]); e.x = s.x; e.y = s.y;
+  ents.push(e);
+  return e;
+}
+
+// ---- pushes -------------------------------------------------------------------
+// One push of one cell. Returns what happens without doing it.
+function pushOutcome(e, d, occ) {
+  var nq = e.q + AX[d][0], nr = e.r + AX[d][1], tr = terrain(nq, nr);
+  if (tr === HOLE) return { type: "fall" };
+  if (tr === PILLAR) return { type: "crash" };
+  var o = occ ? occ[key(nq, nr)] : entAt(nq, nr);
+  if (o) return { type: "crash", hit: o };
+  return { type: "move", q: nq, r: nr };
+}
+
+// The whole wind, front first, so a line of pieces moves together.
+function windOutcome(d) {
+  var occ = {}, v = dirVec(d), res = [];
+  ents.forEach(function (e) { if (alive(e)) occ[key(e.q, e.r)] = e; });
+  var mov = ents.filter(movable).sort(function (a, b) {
+    var pa = px(a.q, a.r), pb = px(b.q, b.r);
+    return (pb.x * v.x + pb.y * v.y) - (pa.x * v.x + pa.y * v.y);
+  });
+  mov.forEach(function (e) {
+    var o = pushOutcome(e, d, occ);
+    if (o.type === "move") { delete occ[key(e.q, e.r)]; occ[key(o.q, o.r)] = e; }
+    if (o.type === "fall") delete occ[key(e.q, e.r)];
+    o.e = e; res.push(o);
+  });
+  return res;
+}
+
+function applyOutcome(o) {
+  var e = o.e;
+  if (o.type === "move") { e.q = o.q; e.r = o.r; }
+  else if (o.type === "fall") { e.dead = true; e.fall = t; if (e.kind !== "unit" && e.kind !== "boulder") kos++; }
+  else if (o.type === "crash") {
+    if (creature(e)) hurt(e, 1);
+    if (o.hit && creature(o.hit)) hurt(o.hit, 1);
+  }
+}
+
+function hurt(e, n) {
+  if (!creature(e) || e.dead) return;
+  e.hp -= n; e.flash = t;
+  if (e.hp <= 0) { e.dead = true; e.fall = t; if (e.kind !== "unit") kos++; }
+}
+
+// ---- player actions -------------------------------------------------------------
+function reach(u) {
+  // cells a unit can walk to, up to UNIT_MOVE steps through free floor
+  var out = {}, front = [[u.q, u.r]], seen = {};
+  seen[key(u.q, u.r)] = true;
+  for (var s = 0; s < UNIT_MOVE; s++) {
+    var next = [];
+    front.forEach(function (c) {
+      for (var d = 0; d < 6; d++) {
+        var q = c[0] + AX[d][0], r = c[1] + AX[d][1], k = key(q, r);
+        if (seen[k] || terrain(q, r) !== FLOOR || entAt(q, r)) continue;
+        seen[k] = true; out[k] = [q, r]; next.push([q, r]);
+      }
+    });
+    front = next;
+  }
+  return out;
+}
+
+function targets(u) {
+  var out = [];
+  if (u.acted) return out;
+  for (var d = 0; d < 6; d++) {
+    var o = entAt(u.q + AX[d][0], u.r + AX[d][1]);
+    if (!o || o.kind === "unit") continue;
+    if (mode === "strike" && !creature(o)) continue;
+    out.push({ e: o, d: d });
+  }
+  return out;
+}
+
+function tapCell(q, r) {
+  if (phase !== "player") return;
+  var e = entAt(q, r);
+  if (sel) {
+    var tg = targets(sel).filter(function (x) { return x.e === e; })[0];
+    if (tg) {
+      if (mode === "shove") { var o = pushOutcome(tg.e, tg.d); o.e = tg.e; applyOutcome(o); }
+      else hurt(tg.e, 1);
+      sel.acted = true; sel.moved = true; sel = null; checkOver();
+      return;
+    }
+    if (!sel.moved) {
+      var rc = reach(sel)[key(q, r)];
+      if (rc) { sel.q = rc[0]; sel.r = rc[1]; sel.moved = true; return; }
+    }
+  }
+  if (e && e.kind === "unit" && !e.acted) sel = e; else sel = null;
+}
+
+function anchorSel() {
+  if (!sel || sel.acted) return;
+  sel.anchored = true; sel.acted = true; sel.moved = true; sel = null;
+}
+
+// ---- turn resolution --------------------------------------------------------
+function endTurn() {
+  if (phase !== "player") return;
+  sel = null; phase = "resolve";
+  var d = winds[0];
+  queue.push(function () {
+    msg = "Wind";
+    windOutcome(d).forEach(applyOutcome);
+  });
+  queue.push(function () {
+    ents.forEach(function (e) { e.anchored = false; });
+    msg = "Enemies";
+    if (checkOver()) return;
+    ents.filter(function (e) { return alive(e) && (e.kind === "grunt" || e.kind === "heavy"); }).forEach(function (en) {
+      queue.splice(queue.length - 1, 0, function () { enemyAct(en); checkOver(); });
+    });
+  });
+  queue.push(function () {
+    if (phase === "over") return;
+    turn++;
+    if (turn % SPAWN_EVERY === 0) spawn();
+    winds.shift(); winds.push(rint(0, 5));
+    ents.forEach(function (e) { e.moved = false; e.acted = false; });
+    msg = ""; phase = "player";
+  });
+  wait = 0;
+}
+
+function enemyAct(en) {
+  if (!alive(en)) return;
+  var units = ents.filter(function (e) { return alive(e) && e.kind === "unit"; });
+  if (!units.length) return;
+  function adjacentUnit() {
+    for (var d = 0; d < 6; d++) { var o = entAt(en.q + AX[d][0], en.r + AX[d][1]); if (o && o.kind === "unit") return o; }
+    return null;
+  }
+  var target = adjacentUnit();
+  if (!target) {
+    // BFS to the nearest cell beside a unit, then walk up to ENEMY_MOVE of it
+    var prev = {}, start = key(en.q, en.r), qu = [[en.q, en.r]], found = null;
+    prev[start] = null;
+    while (qu.length && !found) {
+      var c = qu.shift();
+      for (var d = 0; d < 6; d++) {
+        var q = c[0] + AX[d][0], r = c[1] + AX[d][1], k = key(q, r);
+        if (prev[k] !== undefined || terrain(q, r) !== FLOOR || entAt(q, r)) continue;
+        prev[k] = key(c[0], c[1]); qu.push([q, r]);
+        for (var d2 = 0; d2 < 6; d2++) { var o = entAt(q + AX[d2][0], r + AX[d2][1]); if (o && o.kind === "unit") { found = k; break; } }
+        if (found) break;
+      }
+    }
+    if (found) {
+      var path = [found];
+      while (prev[path[0]] !== start) path.unshift(prev[path[0]]);
+      var step = path[Math.min(ENEMY_MOVE, path.length) - 1].split(",").map(Number);
+      en.q = step[0]; en.r = step[1];
+    }
+    target = adjacentUnit();
+  }
+  if (target) hurt(target, 1);
+}
+
+function spawn() {
+  var rim = freeFloor().filter(function (c) { return dist({ q: c[0], r: c[1] }, { q: 0, r: 0 }) === RADIUS; });
+  for (var i = 0; i < SPAWN_COUNT && rim.length; i++) {
+    var heavy = turn >= HEAVY_FROM_TURN && Math.random() < 0.35;
+    add(heavy ? "heavy" : "grunt", takeRandom(rim), heavy ? HEAVY_HP : GRUNT_HP);
+  }
+}
+
+function checkOver() {
+  if (!ents.some(function (e) { return alive(e) && e.kind === "unit"; })) { phase = "over"; queue = []; msg = ""; return true; }
+  return false;
+}
+
+// ---- buttons ------------------------------------------------------------------
+var BUTTONS = [
+  { label: "Shove", act: function () { mode = "shove"; } },
+  { label: "Strike", act: function () { mode = "strike"; } },
+  { label: "Anchor", act: function () { anchorSel(); } },
+  { label: "End turn", act: function () { endTurn(); } },
+  { label: "Restart", act: function () { newGame(); } }
+];
+var BTN_Y = 1150, BTN_W = 128, BTN_H = 80, BTN_GAP = 10;
+function btnX(i) { return (W - BUTTONS.length * BTN_W - (BUTTONS.length - 1) * BTN_GAP) / 2 + i * (BTN_W + BTN_GAP); }
+
+function onDown(x, y) {
+  for (var i = 0; i < BUTTONS.length; i++) {
+    if (x >= btnX(i) && x <= btnX(i) + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { BUTTONS[i].act(); return; }
+  }
+  var best = null, bd = 1e9;
+  for (var k in cells) {
+    var p = k.split(",").map(Number), c = px(p[0], p[1]), d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (best && bd < R * R) tapCell(best[0], best[1]);
+}
+
+// ---- update / draw ------------------------------------------------------------
+function update(dt) {
+  ents.forEach(function (e) {
+    var p = px(e.q, e.r), k = 1 - Math.exp(-dt * 14);
+    e.x += (p.x - e.x) * k; e.y += (p.y - e.y) * k;
+  });
+  ents = ents.filter(function (e) { return !e.dead || t - e.fall < 0.6; });
+  if (phase === "resolve" || (phase === "over" && queue.length)) {
+    wait -= dt;
+    if (wait <= 0 && queue.length) { queue.shift()(); wait = STEP; }
+  }
+}
+
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+
+function arrow(x, y, d, len, colr, w) {
+  var v = dirVec(d), ex = x + v.x * len, ey = y + v.y * len;
+  ctx.strokeStyle = colr; ctx.fillStyle = colr; ctx.lineWidth = w || 4;
+  ctx.beginPath(); ctx.moveTo(x - v.x * len * 0.2, y - v.y * len * 0.2); ctx.lineTo(ex, ey); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ex + v.x * 10, ey + v.y * 10);
+  ctx.lineTo(ex - v.y * 8, ey + v.x * 8); ctx.lineTo(ex + v.y * 8, ey - v.x * 8); ctx.closePath(); ctx.fill();
+}
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var k, p, c, i;
+
+  // the void around the board, so a fall reads as one
+  ctx.fillStyle = "#0a0b0e"; ctx.beginPath(); ctx.arc(W / 2, CY, R * (RADIUS * 1.75 + 1.6), 0, 7); ctx.fill();
+
+  // ground
+  for (k in cells) {
+    p = k.split(",").map(Number); c = px(p[0], p[1]);
+    if (cells[k] === HOLE) continue;
+    hexPath(c.x, c.y, R - 2);
+    ctx.fillStyle = cells[k] === PILLAR ? "#4a4f5c" : "#262a35"; ctx.fill();
+    if (cells[k] === PILLAR) { hexPath(c.x, c.y - 6, R * 0.7); ctx.fillStyle = "#6b7182"; ctx.fill(); }
+  }
+
+  // reach and targets of the selected unit
+  if (sel && phase === "player") {
+    if (!sel.moved) {
+      var rc = reach(sel);
+      for (k in rc) { c = px(rc[k][0], rc[k][1]); hexPath(c.x, c.y, R - 6); ctx.fillStyle = "rgba(74,163,255,0.25)"; ctx.fill(); }
+    }
+    targets(sel).forEach(function (tg) {
+      var cc = px(tg.e.q, tg.e.r);
+      hexPath(cc.x, cc.y, R - 4); ctx.strokeStyle = mode === "shove" ? "#ffd166" : "#ff5a5a"; ctx.lineWidth = 5; ctx.stroke();
+      if (mode === "shove") arrow(cc.x, cc.y, tg.d, R * 0.6, "#ffd166", 4);
+    });
+  }
+
+  // entities
+  ents.forEach(function (e) {
+    var s = 1;
+    if (e.dead) s = Math.max(0, 1 - (t - e.fall) / 0.6);
+    var rad = R * 0.62 * s;
+    if (rad <= 0) return;
+    var hit = t - e.flash < 0.25;
+    ctx.beginPath();
+    if (e.kind === "heavy") { hexPath(e.x, e.y, rad * 1.1); }
+    else ctx.arc(e.x, e.y, rad, 0, Math.PI * 2);
+    ctx.fillStyle = hit ? "#fff" : e.kind === "unit" ? "#4aa3ff" : e.kind === "grunt" ? "#e0533d" : e.kind === "heavy" ? "#9c2f2f" : "#7a7266";
+    ctx.fill();
+    if (e === sel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.stroke(); }
+    if (e.anchored || e.kind === "heavy") {
+      ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(e.x, e.y, rad + 6, 0, 7); ctx.stroke();
+    }
+    if (creature(e) && !e.dead) {
+      for (var h = 0; h < e.hp; h++) {
+        ctx.beginPath(); ctx.arc(e.x - (e.hp - 1) * 7 + h * 14, e.y + rad * 0.45, 5, 0, 7);
+        ctx.fillStyle = "#fff"; ctx.fill();
+      }
+      if (e.kind === "unit" && e.acted) { ctx.fillStyle = "rgba(20,22,28,0.45)"; ctx.beginPath(); ctx.arc(e.x, e.y, rad, 0, 7); ctx.fill(); }
+    }
+  });
+
+  // what the coming wind will do to each piece
+  if (phase === "player") {
+    windOutcome(winds[0]).forEach(function (o) {
+      var e = o.e, colr = o.type === "move" ? "rgba(255,255,255,0.75)" : o.type === "fall" ? "#c77dff" : "#ff5a5a";
+      arrow(e.x, e.y - R * 0.05, winds[0], R * 0.55, colr, o.type === "move" ? 3 : 5);
+    });
+  }
+
+  // HUD
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 40px sans-serif"; ctx.fillText("Turn " + turn, 30, 66);
+  ctx.font = "28px sans-serif"; ctx.fillText("Knocked out " + kos, 30, 108);
+  ctx.textAlign = "right";
+  ctx.fillText(phase === "over" ? "Defeated" : msg || (sel ? (sel.moved ? "Act" : "Move, then act") : "Pick a unit"), W - 30, 108);
+
+  // forecast
+  var labels = ["Now", "Next", "Then"];
+  for (i = 0; i < FORECAST; i++) {
+    var fx = 120 + i * 200, fy = 190;
+    ctx.fillStyle = i === 0 ? "#2f3a52" : "#22252e"; ctx.fillRect(fx - 85, fy - 50, 170, 100);
+    var wv = dirVec(winds[i]);   // centred on its box's left half, whatever its heading
+    arrow(fx - 42 - wv.x * 16, fy - wv.y * 16, winds[i], 34, i === 0 ? "#ffffff" : "#9aa0b0", 6);
+    ctx.fillStyle = "#9aa0b0"; ctx.font = "22px sans-serif"; ctx.textAlign = "left";
+    ctx.fillText(labels[i] || "", fx + 22, fy + 12);
+  }
+  ctx.fillStyle = "#6d7384"; ctx.font = "21px sans-serif"; ctx.textAlign = "center";
+  ctx.fillText("Arrow on a piece: where the wind sends it. Red: crash. Purple: fall.", W / 2, 1010);
+  ctx.fillText("A crash hurts the pushed piece, and what it hits if alive.", W / 2, 1040);
+
+  // buttons
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 24px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    var on = (BUTTONS[i].label === "Shove" && mode === "shove") || (BUTTONS[i].label === "Strike" && mode === "strike");
+    ctx.fillStyle = on ? "#c9a86a" : BUTTONS[i].label === "End turn" ? "#2f6b4a" : "#2c303c";
+    ctx.fillRect(btnX(i), BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = on ? "#1b1d24" : "#e8e8f0";
+    ctx.fillText(BUTTONS[i].label, btnX(i) + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+
+  if (phase === "over") {
+    ctx.fillStyle = "rgba(10,11,14,0.7)"; ctx.fillRect(0, 480, W, 260);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 56px sans-serif"; ctx.fillText("Defeated", W / 2, 570);
+    ctx.font = "30px sans-serif"; ctx.fillText("Turn " + turn + " · knocked out " + kos + " · tap Restart", W / 2, 650);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

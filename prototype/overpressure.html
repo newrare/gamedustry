@@ -1,0 +1,342 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Overpressure</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Overpressure — a chain-reaction duel on hexes.
+// Tap an empty cell or one of yours to add 1 pressure. A cell bursts when its
+// pressure reaches its number of neighbours (6 inside, fewer on the rim and
+// beside a hole): it empties and pushes 1 into every neighbour, which turns
+// yours, and may burst in turn. Lose every cell and you lose.
+// Question: is the timing of a chain fun to read and to set up?
+
+// ---- tunables -------------------------------------------------------------
+var RADIUS = 3;             // board is a hexagon of this radius (3 = 37 cells)
+var HOLE_PAIRS = 2;         // holes, placed point-symmetric for fairness
+var CAP_BONUS = 0;          // capacity = neighbours + this
+var AI_ON = true;
+var AI_DEPTH = 2;           // 1 = greedy, 2 = looks at the best reply
+var AI_NOISE = 0.6;         // random spread on the AI's scores
+var AI_DELAY = 0.55;        // seconds before the AI plays
+var WAVE_T = 0.17;          // seconds per burst wave
+var MAX_WAVES = 400;        // guard against a chain that never settles
+
+var W = 720, H = 1280;
+var CY = 610;
+
+// ---- state ----------------------------------------------------------------
+var cells;          // list of { q, r, cap, p, owner (0 you, 1 ai, -1 none), nb: [idx] }
+var turn;           // whose move: 0 or 1
+var moves;          // [moves by 0, moves by 1]
+var phase;          // "input" | "chain" | "ai" | "over"
+var timer = 0, waves = 0, chainOwner = 0;
+var parts = [];     // flying pressure dots
+var lastMove = -1, winner = -1, R, t = 0;
+var flash = {};     // idx -> time of last burst
+
+// ---- board ------------------------------------------------------------------
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+function build() {
+  for (var attempt = 0; attempt < 100; attempt++) {
+    var list = [], idx = {}, q, r;
+    for (q = -RADIUS; q <= RADIUS; q++) for (r = -RADIUS; r <= RADIUS; r++) {
+      if (Math.abs(q + r) > RADIUS) continue;
+      idx[q + "," + r] = list.length;
+      list.push({ q: q, r: r });
+    }
+    // holes, never the centre
+    var holes = {};
+    for (var h = 0; h < HOLE_PAIRS; h++) {
+      var c = list[Math.floor(Math.random() * list.length)];
+      if (c.q === 0 && c.r === 0) { h--; continue; }
+      holes[c.q + "," + c.r] = true; holes[-c.q + "," + -c.r] = true;
+    }
+    var kept = [], map = {};
+    for (var i = 0; i < list.length; i++) {
+      var k = list[i].q + "," + list[i].r;
+      if (holes[k]) continue;
+      map[k] = kept.length;
+      kept.push({ q: list[i].q, r: list[i].r, p: 0, owner: -1, nb: [] });
+    }
+    for (i = 0; i < kept.length; i++) {
+      for (var d = 0; d < 6; d++) {
+        var nk = (kept[i].q + AX[d][0]) + "," + (kept[i].r + AX[d][1]);
+        if (map[nk] !== undefined) kept[i].nb.push(map[nk]);
+      }
+      kept[i].cap = kept[i].nb.length + CAP_BONUS;
+    }
+    if (connected(kept) && kept.every(function (c) { return c.cap >= 2; })) return kept;
+  }
+  return kept;
+}
+
+function connected(list) {
+  var seen = [0], mark = {}; mark[0] = true;
+  while (seen.length) {
+    var i = seen.pop();
+    for (var j = 0; j < list[i].nb.length; j++) if (!mark[list[i].nb[j]]) { mark[list[i].nb[j]] = true; seen.push(list[i].nb[j]); }
+  }
+  return Object.keys(mark).length === list.length;
+}
+
+function newGame() {
+  cells = build();
+  var span = (2 * RADIUS + 1);
+  R = Math.min(640 / (span * Math.sqrt(3)), 760 / (span * 1.5 + 0.5));
+  turn = 0; moves = [0, 0]; phase = "input"; parts = []; lastMove = -1; winner = -1; flash = {};
+}
+
+function pos(c) { return { x: W / 2 + R * Math.sqrt(3) * (c.q + c.r / 2), y: CY + R * 1.5 * c.r }; }
+
+function count(list, who) { var n = 0; for (var i = 0; i < list.length; i++) if (list[i].owner === who) n++; return n; }
+
+function legal(list, i, who) { return list[i].owner === -1 || list[i].owner === who; }
+
+// ---- rules on a bare copy (used by the AI) ----------------------------------
+function copyBoard(list) {
+  var out = new Array(list.length);
+  for (var i = 0; i < list.length; i++) out[i] = { p: list[i].p, owner: list[i].owner, cap: list[i].cap, nb: list[i].nb };
+  return out;
+}
+
+function settle(list, who, mv) {
+  // resolves every chain instantly; mv = [moves0, moves1] after this move
+  for (var w = 0; w < MAX_WAVES; w++) {
+    var over = [];
+    for (var i = 0; i < list.length; i++) if (list[i].p >= list[i].cap) over.push(i);
+    if (!over.length) return;
+    burstWave(list, over, who, null);
+    if (mv[1 - who] > 0 && count(list, 1 - who) === 0) return;
+  }
+}
+
+function burstWave(list, over, who, onDot) {
+  for (var i = 0; i < over.length; i++) {
+    var c = list[over[i]];
+    c.p -= c.cap;
+    if (c.p <= 0) { c.p = 0; c.owner = -1; }
+    for (var j = 0; j < c.nb.length; j++) {
+      var n = list[c.nb[j]];
+      n.p += 1; n.owner = who;
+      if (onDot) onDot(over[i], c.nb[j]);
+    }
+  }
+}
+
+function play(list, i, who) { list[i].p += 1; list[i].owner = who; }
+
+// ---- AI -----------------------------------------------------------------------
+function evalBoard(list, who, mv) {
+  var mine = 0, theirs = 0, s = 0;
+  for (var i = 0; i < list.length; i++) {
+    var c = list[i];
+    if (c.owner === who) { mine++; s += c.p * 0.25; if (c.p === c.cap - 1) s += threatened(list, i, who) ? -1.5 : 0.8; }
+    else if (c.owner === 1 - who) { theirs++; s -= c.p * 0.25; }
+  }
+  if (mv[1 - who] > 0 && theirs === 0) return 1000;
+  if (mv[who] > 0 && mine === 0) return -1000;
+  return s + mine * 2 - theirs * 2;
+}
+
+function threatened(list, i, who) {
+  // a critical cell of ours beside a critical cell of theirs gets taken first
+  for (var j = 0; j < list[i].nb.length; j++) {
+    var n = list[list[i].nb[j]];
+    if (n.owner === 1 - who && n.p === n.cap - 1) return true;
+  }
+  return false;
+}
+
+function aiMove() {
+  var who = 1, best = -1e9, bestI = -1;
+  for (var i = 0; i < cells.length; i++) {
+    if (!legal(cells, i, who)) continue;
+    var b = copyBoard(cells), mv = [moves[0], moves[1] + 1];
+    play(b, i, who); settle(b, who, mv);
+    var score = evalBoard(b, who, mv);
+    if (AI_DEPTH >= 2 && score < 900) {
+      var worst = 1e9;
+      for (var j = 0; j < b.length; j++) {
+        if (!legal(b, j, 0)) continue;
+        var b2 = copyBoard(b), mv2 = [mv[0] + 1, mv[1]];
+        play(b2, j, 0); settle(b2, 0, mv2);
+        var s2 = evalBoard(b2, who, mv2);
+        if (s2 < worst) worst = s2;
+      }
+      if (worst < 1e9) score = worst;
+    }
+    score += Math.random() * AI_NOISE;
+    if (score > best) { best = score; bestI = i; }
+  }
+  return bestI;
+}
+
+// ---- turn flow (animated) -----------------------------------------------------
+function doMove(i, who) {
+  play(cells, i, who);
+  moves[who]++;
+  lastMove = i; chainOwner = who; waves = 0; timer = 0;
+  phase = "chain";
+}
+
+function stepChain() {
+  var over = [];
+  for (var i = 0; i < cells.length; i++) if (cells[i].p >= cells[i].cap) over.push(i);
+  if (!over.length || waves >= MAX_WAVES) { endTurn(); return; }
+  for (i = 0; i < over.length; i++) flash[over[i]] = t;
+  burstWave(cells, over, chainOwner, function (from, to) {
+    var a = pos(cells[from]), b = pos(cells[to]);
+    parts.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, life: 0, who: chainOwner });
+  });
+  waves++;
+  var other = 1 - chainOwner;
+  if (moves[other] > 0 && count(cells, other) === 0) { winner = chainOwner; phase = "over"; }
+}
+
+function endTurn() {
+  turn = 1 - turn;
+  if (AI_ON && turn === 1) { phase = "ai"; timer = 0; }
+  else phase = "input";
+}
+
+// ---- input ------------------------------------------------------------------
+var BUTTONS = [
+  { label: "Restart", x: 30, act: function () { newGame(); } },
+  { label: "", x: 200, act: function () { AI_ON = !AI_ON; if (AI_ON && turn === 1 && phase === "input") { phase = "ai"; timer = 0; } } },
+  { label: "", x: 370, act: function () { RADIUS = RADIUS === 3 ? 4 : RADIUS === 4 ? 2 : 3; newGame(); } },
+  { label: "", x: 540, act: function () { HOLE_PAIRS = (HOLE_PAIRS + 1) % 5; newGame(); } }
+];
+var BTN_Y = 1150, BTN_W = 150, BTN_H = 76;
+function labels() {
+  BUTTONS[1].label = AI_ON ? "AI on" : "2 players";
+  BUTTONS[2].label = "Size " + RADIUS;
+  BUTTONS[3].label = "Holes " + HOLE_PAIRS * 2;
+}
+
+function onDown(x, y) {
+  for (var b = 0; b < BUTTONS.length; b++) {
+    var bt = BUTTONS[b];
+    if (x >= bt.x && x <= bt.x + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { bt.act(); return; }
+  }
+  if (phase !== "input") return;
+  var best = -1, bd = 1e9;
+  for (var i = 0; i < cells.length; i++) {
+    var p = pos(cells[i]), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+    if (d < bd) { bd = d; best = i; }
+  }
+  if (best < 0 || bd > R * R * 0.85) return;
+  if (!legal(cells, best, turn)) return;
+  doMove(best, turn);
+}
+
+// ---- update / draw ------------------------------------------------------------
+var COL = ["#4aa3ff", "#ff5a5a"];
+
+function update(dt) {
+  timer += dt;
+  if (phase === "ai" && !AI_ON) phase = "input";
+  if (phase === "chain" && timer >= WAVE_T) { timer = 0; stepChain(); }
+  if (phase === "ai" && timer >= AI_DELAY) { var i = aiMove(); if (i >= 0) doMove(i, 1); else endTurn(); }
+  for (var k = parts.length - 1; k >= 0; k--) { parts[k].life += dt / WAVE_T; if (parts[k].life >= 1) parts.splice(k, 1); }
+}
+
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var i, c, p;
+  for (i = 0; i < cells.length; i++) {
+    c = cells[i]; p = pos(c);
+    var ratio = c.p / c.cap;
+    hexPath(p.x, p.y, R - 2);
+    if (c.owner < 0) ctx.fillStyle = "#23262f";
+    else { ctx.fillStyle = COL[c.owner]; ctx.globalAlpha = 0.25 + 0.6 * ratio; }
+    ctx.fill(); ctx.globalAlpha = 1;
+    // a cell one short of bursting pulses
+    if (c.owner >= 0 && c.p === c.cap - 1) {
+      hexPath(p.x, p.y, R - 4);
+      ctx.strokeStyle = "rgba(255,255,255," + (0.45 + 0.4 * Math.sin(t * 9)) + ")"; ctx.lineWidth = 4; ctx.stroke();
+    }
+    if (flash[i] !== undefined && t - flash[i] < 0.25) {
+      hexPath(p.x, p.y, R * (1 + (t - flash[i]) * 1.2));
+      ctx.strokeStyle = "rgba(255,255,255," + (1 - (t - flash[i]) * 4) + ")"; ctx.lineWidth = 6; ctx.stroke();
+    }
+    if (i === lastMove) { hexPath(p.x, p.y, R - 9); ctx.strokeStyle = "rgba(255,230,120,0.8)"; ctx.lineWidth = 3; ctx.stroke(); }
+    // pressure dots: one slot per point of capacity, filled up to the pressure
+    for (var k = 0; k < c.cap; k++) {
+      var a = -Math.PI / 2 + k / c.cap * Math.PI * 2, rr = R * 0.42;
+      ctx.beginPath(); ctx.arc(p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, R * 0.1, 0, 7);
+      ctx.fillStyle = k < c.p ? "#fff" : "rgba(255,255,255,0.12)"; ctx.fill();
+    }
+  }
+  for (i = 0; i < parts.length; i++) {
+    var pr = parts[i], e = pr.life;
+    ctx.beginPath(); ctx.arc(pr.ax + (pr.bx - pr.ax) * e, pr.ay + (pr.by - pr.ay) * e, R * 0.14, 0, 7);
+    ctx.fillStyle = COL[pr.who]; ctx.fill();
+  }
+
+  // text
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.font = "bold 40px sans-serif"; ctx.fillStyle = "#e8e8f0";
+  var msg = phase === "over" ? (winner === 0 ? (AI_ON ? "You win" : "Blue wins") : (AI_ON ? "AI wins" : "Red wins"))
+    : phase === "ai" ? "AI thinking" : phase === "chain" ? "Chain " + waves : (AI_ON ? "Your move" : (turn === 0 ? "Blue" : "Red") + " to move");
+  ctx.fillText(msg, 30, 70);
+  ctx.font = "30px sans-serif";
+  ctx.fillStyle = COL[0]; ctx.fillText((AI_ON ? "You " : "Blue ") + count(cells, 0), 30, 120);
+  ctx.fillStyle = COL[1]; ctx.fillText((AI_ON ? "AI " : "Red ") + count(cells, 1), 200, 120);
+  ctx.fillStyle = "#9aa0b0"; ctx.fillText("Moves " + (moves[0] + moves[1]), 360, 120);
+  ctx.font = "24px sans-serif";
+  ctx.fillText("A cell bursts at as many dots as it has neighbours.", 30, 165);
+  ctx.fillText("Bursting takes every neighbour. Tap empty or yours.", 30, 195);
+
+  labels();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 28px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    var bt = BUTTONS[i];
+    ctx.fillStyle = "#2c303c"; ctx.fillRect(bt.x, BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = "#e8e8f0"; ctx.fillText(bt.label, bt.x + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

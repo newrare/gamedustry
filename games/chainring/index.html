@@ -1829,13 +1829,15 @@
        body is 64 beats (16 bars = 30.0 s) of the 30.77 s buffer. Music wraps on
        those 64 beats so the grid never shifts, and Beat hands the game a clock
        locked to it — every ring is launched and lands on that grid. Re-measure
-       these three numbers if the track is ever re-cut or re-encoded.          */
-    music: { volume: 0.20, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64,
+       these three numbers if the track is ever re-cut or re-encoded.
+       `seam` loops it on the bar (docs/MUSIC.md, The seam): two beats of
+       equal-power crossfade, taken out of the 0.77 s past those 64 beats.   */
+    music: { volume: 0.20, fade: 2.0, bpm: 128, beatOffset: 0.43, loopBeats: 64, seam: 0.94,
              /* The web menus' bed: the soft passage of Glacier's track (bars
                 53-68), which the web build ships as `music` — see `beds`
                 below. A playable has no menu and never reads it. */
              menu: { from: 99.985, length: 32.2, bpm: 125, beatOffset: 0.145, beats: 64,
-                     gain: 1.1, fade: 1.8 } },
+                     gain: 1.1, fade: 1.8, seam: 0.96 } },
     copy: {
       start:"Play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
@@ -1918,17 +1920,27 @@
          dark    must NOT be tapped: the ball bounces off it alone, which is
                  a PERFECT step of the combo, and a tap on it breaks the chain
          gap     a MIXED ring, three dark parts between three bright ones,
-                 standing still: it sweeps across the ball in mid-flight, on a
-                 beat the ball flies over. A dark part is a dark ring's: no
-                 tap — a PERFECT, the ball goes through and the ring dives on
-                 to the centre and breaks there. A bright part is a ring's:
-                 the ball bounces off it, and a tap on that bounce is a
-                 PERFECT too, and breaks it
+                 standing still: it sweeps in on a beat the ball flies over,
+                 and the ball bounces off it wherever it meets it — it never
+                 goes through. On a bright part the bounce is tapped, on a
+                 dark part it is left alone, both a PERFECT, and the ring
+                 breaks. A ball landing on a seam (or near one, `gapEdge`) is
+                 paid either way: the read must never be a coin toss
+         phantom (ECLIPSE, from its fourth level) barely there as it closes
+                 in, it shows its true face `fateLead` beats before the ball:
+                 a plain ring to tap, or a dark one to leave alone
+         fragile (GLACIER, from its fourth level) cracked: `fragileLead` beats
+                 before the ball it either shatters — it was dealt in
+                 mid-flight, the ball flies through where it stood, no tap —
+                 or holds, and is tapped like any ring. Its fate is drawn
+                 before the ball's flight is planned (addSeg)
        The rules are taught in that order — first a ring that only lies to the
        eye, then one that adds a tap, then one that takes a tap away, then one
-       that takes it away only sometimes — and NOVA brings them back two, then
-       three, then four at a time (applyLevel). A playable and a free round
-       wear NEON with no rule at all, which is the game as it always was.
+       that takes it away only sometimes — each biome's second rule joining on
+       its fourth level (`teach`, the step each rule arrives on), and NOVA
+       brings them back two, then four, then six at a time (applyLevel). A
+       playable and a free round wear NEON with no rule at all, which is the
+       game as it always was.
        `ring` is what a ring IS there (DESIGN, below), `look` how the ball is
        drawn; `rings` / `balls` are the palettes (`balls` climbs with the combo).
 
@@ -1949,15 +1961,15 @@
         rings: ["#ffb627", "#ff8c42", "#ffd166", "#f9844a", "#ffc43d", "#ff9f1c"],
         balls: ["#ffd166", "#ffb627", "#ff9f1c", "#ff7b00", "#ff5400", "#e85d04", "#ff006e"],
         ground: { style: "hive", motif: "cells",     fold: 6,  spin: -0.02,  base: ["#0a1e46", "#030a1c"], ink: ["#16357a", "#112a66", "#1d4290", "#0d2456"], glow: "#2f6bff" } },
-      { name: "Eclipse", look: "eclipse", ring: "chain", rules: ["dark"],
+      { name: "Eclipse", look: "eclipse", ring: "chain", rules: ["dark", "phantom"], teach: [0, 3],
         rings: ["#8fa8ff", "#b388ff", "#7fd1ff", "#c77dff", "#9aa5ff"],
         balls: ["#e9edff", "#c7d2fe", "#b8c0ff", "#cdb4ff", "#e0aaff", "#ff9ecf", "#ff6b9a"],
         ground: { style: "spiral", motif: "crescents", fold: 10, spin: 0.015,  base: ["#2e2008", "#120c02"], ink: ["#5e4410", "#4a360c", "#705214", "#3e2c0a"], glow: "#e0a020" } },
-      { name: "Glacier", look: "glacier", ring: "crown", rules: ["gap"],
+      { name: "Glacier", look: "glacier", ring: "crown", rules: ["gap", "fragile"], teach: [0, 3],
         rings: ["#22d3ee", "#5eead4", "#38bdf8", "#67e8f9", "#818cf8", "#2dd4bf"],
         balls: ["#e0f7ff", "#a5f3fc", "#67e8f9", "#5eead4", "#93c5fd", "#a78bfa", "#f0abfc"],
         ground: { style: "frost", motif: "crystals",  fold: 6,  spin: -0.018, base: ["#3a0a10", "#140306"], ink: ["#6a1420", "#561018", "#7a1c28", "#480c1a"], glow: "#ff3048" } },
-      { name: "Nova",    look: "nova", ring: "ribbon",    rules: ["rewind", "sticky", "dark", "gap"],
+      { name: "Nova",    look: "nova", ring: "ribbon",    rules: ["rewind", "sticky", "dark", "gap", "phantom", "fragile"], teach: [0, 0, 2, 2, 4, 4],
         rings: ["#ff2d95", "#ff6b35", "#ffe600", "#c86bff", "#ff4d6d", "#ffa62b"],
         balls: ["#ffe600", "#ffb703", "#ff6b35", "#ff2d95", "#c86bff", "#7b2cff", "#ffffff"],
         ground: { style: "warp", motif: "petals",    fold: 12, spin: 0.03,   base: ["#06301e", "#01120a"], ink: ["#0d5236", "#0b4430", "#13633f", "#08382a"], glow: "#14c97a" } }
@@ -1983,7 +1995,10 @@
        — and the sixth level plays the WHOLE track: its round lasts the song
        (`end` is where the music stops), the third star no longer cuts it
        short (`levelMaxed`) and its objective is scaled to its length
-       (`levelGoal`).                                                       */
+       (`levelGoal`). Every one of them loops on the bar: `bedFor` gives its
+       section a `seam` of two of that track's beats, so the crossfade into
+       the stretch's first kick is the bars that lead up to it (docs/MUSIC.md,
+       The seam) — each bed at its own tempo.                               */
     beds: [
       { track: "musicNeon",    bpm: 125.06, beatOffset: 0.152, end: 174.8,
         stages: [[2, 16], [10, 16], [26, 20], [51, 20], [72, 20]] },
@@ -1996,23 +2011,39 @@
       { track: "musicNova",    bpm: 144,    beatOffset: 0.070, end: 178.4,
         stages: [[1, 36], [25, 36], [41, 36], [59, 36], [69, 36]] }
     ],
-    stageFade: 1.0,          // seconds a stage's stretch fades in, and crossfades if it wraps
+    stageFade: 1.0,          // seconds of track kept past a stage's stretch (room for its seam), and the fade out of the bed it replaces
 
     /* The level each biome opens on — the LEVEL NUMBER, not the map's `d`: the
        two roads out of a fork have to be the same world, and
        `web.levels.bands.from` in the manifest carries the very same list. */
     biomeFrom: [1, 7, 13, 19, 25],
-    ruleRate: [0.55, 0.75],  // share of landing rings that carry the rule, first..last level of a biome
-    ruleRateMax: 0.85,       // ceiling once NOVA's several rules have been scaled up (applyLevel)
-    gapRate: [0.45, 0.65],   // share of bounces whose next flight is planned for a gap ring, same
+    /* The chart is written in PHRASES. A SPECIAL ring is every kind but the
+       plain and the dark one, and specials come in a SERIES of one kind —
+       one to `seriesLen` of the same ring back to back, a pattern the player
+       reads once and then plays — followed by a CALM of simple rings (plain,
+       or dark at `ruleRate`) before the next series, which is another kind
+       wherever the level has several. Two different specials never follow
+       each other. The calm is sized off the series it follows, so that about
+       `ruleRate` of the rings are special: the same share rises from the
+       first level of a biome to its last. `seriesMax` caps a kind whose
+       series would not read: two sticky rides are already four beats on the
+       rim, and a mixed ring is always alone. */
+    ruleRate: [0.50, 0.60],  // share of special rings (and of dark ones in a calm), first..last level of a biome
+    seriesLen: [1, 3],       // rings of one special kind in a row
+    seriesMax: { sticky: 2, gap: 1 },
     stickBeats: 2,           // beats the ball rides a sticky ring before it bursts
     stickRide: 0.7,          // radians it slides along the rim meanwhile
     rewindPush: 150,         // px a rewind tap shoves the rings behind it back out
-    gapOpen: 0.6,            // share of gap rings that meet the ball on a gap
+    gapDark: 0.6,            // share of gap rings that meet the ball on a dark part
     gapWidth: 0.52,          // half-width of a dark part, in radians: a sixth of the ring, as wide as a bright one
+    gapSlide: 0.8,           // how far off a part's middle the ball may meet it, as a share of its half-width
+    gapEdge: 14,             // px past the ball's own edge within which a seam pays a tap and no tap alike
     gapClear: 60,            // px a gap ring keeps from every other ring on screen, all its life
     gapLead: 0.5,            // beats a gap ring enters ahead of any ring landing after it
-    gapDive: 0.6             // beats a gap ring the ball went through takes to the centre, speeding up
+    fateLead: 1,             // beats before the ball a phantom ring shows its face
+    fragileLead: 2,          // beats before the ball a fragile ring breaks or holds: early enough to hold the tap back
+    phantomDark: 0.5,        // share of phantom rings that turn out dark
+    fragileBreak: 0.5        // share of fragile rings that break
   };
 
   /* ===================================================================
@@ -2060,7 +2091,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "1.7.18",
+    version: "1.9.0",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2074,6 +2105,7 @@
     "star": { key: "kit-star-default", n: 1 },
     "pickup/marimbaplink": { key: "kit-pickup-marimbaplink", n: 3 },
     "bonus/uiselect": { key: "kit-bonus-uiselect", n: 1 },
+    "bonus/glockping": { key: "kit-bonus-glockping", n: 3 },
     "malus/phaser": { key: "kit-malus-phaser", n: 1 },
     "malus/slime": { key: "kit-malus-slime", n: 1 },
     "crash/impactglasslight": { key: "kit-crash-impactglasslight", n: 1 },
@@ -2083,7 +2115,7 @@
     "warn/marimbataps": { key: "kit-warn-marimbataps", n: 1 },
     "warn/errorui": { key: "kit-warn-errorui", n: 1 }
   };
-  CONFIG.sfx = {"perfect":"bonus/uiselect", "chain":"pickup/marimbaplink", "doom":"warn/marimbataps", "miss":"miss/marimbaerror", "hit":"hit/marimbaplink", "rewind":"malus/phaser", "stick":"malus/slime", "burst":"burst/popplop", "dark":"warn/errorui", "shatter":"crash/impactglasslight"};
+  CONFIG.sfx = {"perfect":"bonus/uiselect", "chain":"pickup/marimbaplink", "doom":"warn/marimbataps", "miss":"miss/marimbaerror", "hit":"hit/marimbaplink", "rewind":"malus/phaser", "stick":"malus/slime", "burst":"burst/popplop", "dark":"warn/errorui", "shatter":"crash/impactglasslight", "reveal":"bonus/glockping"};
   (function (to, from) { for (var k in from) to[k] = from[k]; })(ASSETS.sounds, {
     "kit-tick-default-1": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAZAAAAAAAAABIAmTzayAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADSVZLjTxAAI6Lq13H0AACA0zrVcIvgkgagcDCLYSxxOc0zrZ90AxaAAAyuQDA31Od1yEIQn/kIxCEITqehGOACG/TU5z5z/+c5zn/QjSN/J9Gp/kqc76kJU5zn/5AMH+HygIQTD/BAEHShzKA+/kMTgg7/4jB8H3gAAcBGSyQWAyW5OpxsBHwM66MkUmYUsYiYN38nKkHAKWxB9ETODQRAYgE4RAky4aFEiq8nCfL6ZdWYl3zpPm96kkkTEu/rTTNFuggkmTpkXiaXmLfQN39NNNJdSKK10fo0aXQ0FuhdnSS6knS6Kklosij9Ps6mUh/9SLTpqgo2V2lbPHOcGAI4mXf54RYKoALVyyZTYmdBZhQGW6Y9CIebiy//tYxAmCEUWHON25gAFxiaUll6Q8mKr2eNlsCo3GFkRlJwZqIBYcF/AM5wOxxRB3OXTVIvF560TJKzqSc4mudVpI/UkbV1LZdJay6Xj7OpJaJitFFKkpKyVrOp0WWy62dJ0fbWjtr6qkkktL0f7e/UklavW21aPVpOjoo9E1RcekXPlg7PSVvf25L8kBTVQEZmZ6KgdhLi4nS8dk9EKQSdcYS7OEOI4iCgzhfj9CxXI+1ULOVeLM0eiIDCVh0lBoGjxYcDQdasFQkDTSwdbI8THoKlX4aU9eR1u/3v7flr//wKp8kV/yuRoAAJAAAY1Tczb4w0EZeA3cyLjRnNJw0VzDFLsMHeSBndfaAXiWCUdWwwMDANjppCqkuw9kGRQW//tYxBuDzBxCpy1lI4AAADSAAAAEDwMiosaHiooJDQVFWoAoqz///9Yr////1iv9TfmRZv+oW/Fv4CFgMEg9TEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-tick-default-2": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAZAAAAAAAAABIBqV+tMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAABvgbWNRhACLvtaofNNAAAELuh+CBDLJpsDhadqOA4CETqB98nhjB8H8oc4frD+oEP+c8HHcP/8u/KHOJ+Ud/kOs/0f/DEHwICHIVG6AwAAjsuDpOzOGjGigxTBB7ypslQonNDqphGMAxRF06govQb24CzgnojKkQPcvhVgqQkpdqZbj2CfCajEMV/jhE+DbGWJwUjkkS6TQva02k0OSOpNJA8PIuy6bIqUtslWqVxoLheMykXWJEmOs2dH6M17dEfC6kpzxdOF8vE0uF1JL6n1KpJLZdnWjj4PcvEiYGpk5eMyUHqcKZLHTxef1o6tHV//8uqNzJNExDINgEjULf/dZZUgFgA1QuzLYGfxtVaUkmlOOpSFwKzRCS//tYxAuDETCBMl3MgAHBjqQJvCXADgSIAAYpKRo1eGZZqceDZp4HC0a5iA586SU/dt3JVjzmcqx1aq87ey7j+Otd/esfx7qU8mn+f6WgqMCqdTwNQeFdFZ2ecocsUFw0+dXLEjZkOmdp0qWKlWHanirmXIu6n3i8axfXJMt8spT3oCVy/N65JWsANNmANtBBaDgZ/Ym3rSzAglZ5dmZWgLAxcAzUuMchTnn8X2fJqqO+Y5EuSphUlqSJtCtWxtDBq88Waa28l9QslRp3WCsRHi2GioSESw1EIaLRE5BEs+Sr7od+eLSOvEq3f+ju2/W63Z32108qdEs6GM3OwzXEK7DA5TMWjTzTWQDp3NF8yCi2adCtalqgSqqylVlgVFlH//tYxBQDzbhamg1lJ0AAADSAAAAEVsLzYAwNlACCM4VOHSiNA5pVZVJNRcHDWokBQqIzRoGRUMP9YrUSAor8qz4qKinFoqK//+oWFhcVZ//Mizf///1CwGCQeUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
@@ -2094,6 +2126,9 @@
     "kit-pickup-marimbaplink-2": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAAFoABmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmaZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzP////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAXAAAAAAAAABaDLbg3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADMHa1tQxAApawKm3MyABQAwNIOcTcO8AxcAAAnAxZCVOHO6HOf5yNOejSE0ISpCcgAQ4AACGv/yMpCVfqRp3oSQhCZz1+d/kIQikI3/O//8jdCMcAEE+Q5//////IRtTvOfIQjSEJnO5AMW4B14/Bwfmf/+PE2wGAzGYzGo0GY0DYD/69aKJ69zYglWieCG/8t/QHqi4WI/FnkmBV+O8XGWwRuOAlvYn6Y7xmyLm35PpMmZnxyCfRYgBFP96CbyLk+RQvk+RMtFIxJv/zcqGBoaIU05B0C4dNDVzp8v//7sgt39CXEU3NJ03dNOb///+3/6dS2aploIS4v//////+mZHk1MaGCEjdMfMssACfR141SyWSV6qUhs3//tYxAcBD2CXVr2UgAIWFOpZl5lgnvqBkkeCzSknXWHbQB3i42yAMIhS2iUnJwyiHoR5LRNhVmpZNZ01MhGOL7t1Cc07xG5bJodUCpQgQYUMnwEID4EZM0tODq3h9MQBg+tzVxd64oUoU3ssau5sa6g+JTQmOllLM+MzLVyk19nvFUAABJbcIddtW8GQiqWuQFSHEQELA5IOEoFywJZUuzpIS6Zazq5mUzM+ufyFD8aZZ8fkUXoo9RJq1HKJEiRyVd/TkcolM55ZLZSNMgUGgZxI4Gh1MJWGoWOhVwdSt0BZCww6aFtwFFnioTt7dSzpYCxK7+6KgG16CIieeFjygMgio1WRa9T6EAIEmJJpx0oGoIef53nDRxAJl+BxmYgd//tYxAwADqDzS0wwawIoKiSBlg24JrJUfVwreXGUaZVA71astAQEZkFXu0yQ6orbFIDBYsxLVVI6sWQz6AjbVdVhw79Rs84dXX++188KFQ2dAQuGo2Rng6wsDRn/I+qJbFsrI+lT7vkntRARpR4tBlHsfaLOExJhz5yZ1zIrOWQFTNhaa8UXMAAjdtwy/eXEoBQimJjyUST2ZZgPnvZMT1CMT0vFqy61rJRJU/zV1tGVpy609a3zWB7aqqnGNtSYgzf6rVEwcKqzsMKsOtS1go2jM1WMfS//VVJhTQMv/6l/AwEPDZKsFQqGjpWDQlDTCviLEvBVwl+p+z4aAFWlm0JxGOiMEo0FQWBAZh5hNDPU1JxpRQOGvSEhcV1i2LC4//tYxBIDy0Q4zkSwxEAAADSAAAAEqyK8WF2frFNYq2oWFxGGQEEmcUbxX6QWFhUj/4sL6xVs0KihI0DIVFg8aCoo00DIqLN/8VFG1UxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-pickup-marimbaplink-3": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAKAAAAAAAAABIAP2ljTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADEYe3DRhAAptr6w3NyACBC9/sHAYXpPTCCjwGA0w4t0IAAAhQAROHOd56EJ0OfbnJ0IEJIRvU4AAEnOd0OeQhPoQnnP/+hPznO6HPQjf////OQnpUhKnOd////yEJI38hP/znec//QlTnnO//7yAY+A7LBqBgMBjsRgMRiKAx+4s2Fzg4Cl8XboZ8qOQtiWU5xh0XPGgWgw98LODjKXGyFwgYkKhPl/xcAYzAeoA/lwwMzBvgKQKAGQAOMWNSjRB1N/lgum5FyBkTDFYfOpCrWn/5LkkekHdiKGlJN2MGZ2//xzC6VyuXGRSNFpua27dnt//8vm5EC4xuq6CBOIm5OGB79H/5wu85S7BDoUfIYxqQBMtij68EdxG//tYxAaDEEznVj2kgAHZMypJgYqogBkUFiUBTKX+gpwqMlCg41IhArHoAqFy5II0EyzDZ6GLs/Y5JC0nBWbFqxWjBWmnMIqRGZMN6ubM2tnRRdNJWlt/j2siiTRU7E878lGEo9ZRUOCo9h1wqhJjctZMIF2vZfHODlogKXX9itfkp5jOjt1NY73dyAAM5cUoZRAazxoKKz7gFwKsylCVK4VRPtD12M0Eu1fopVKqz/Rq7LrqgnpHg1ekJMSGFNV1HUmMmgCNwLFytK8Bl0qqts0vPv9Y5ZS7z5DP/bNUtfr+6sT0+bl7o/9W1KqP3KjlZb9B3uR/YeqpIw4zQV2yH0IAAkHGrs/WRyUxhgCUE6WEag9BIzNSUqJMVZtdatWn//tYxA+CDeTPRyewZ0HNqGGA8YrgJ67gInzCgK1VAZSVWgEeGa/V1LuSlGZqrVVXpVqsAjb5QEmZvoUBElh/CQFgqssTkuIk9BEiIgqAkSK3Fiqv/5H9h7srGaxqglz3BUs9R7TIQZDy4xWo6npxAEwM8BpG8m3FXLlwpHQ1ec3jOdJflIjoMWS8WFOrm9ZZoIJyUKh1BQVKFQVVRjWw1WGshrKGcTFhl6zsNYao2x0mcmhrP/6Tre360Kjl+rf7GUjlDC5ntQei4w1FX0Mtf9DH/2PkQl9YykxBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     "kit-bonus-uiselect-1": "data:audio/mpeg;base64,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2Qx3G8EzBz/////7////6v//3/////+r/WpMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqP1RLMzDHAkMz3BgcRRUQGKA+BhUFQDL1zrrxEwmGq8nr2zt+BY5q9+W7gwGAfGh8QODxd5Bbv//v////q///f/////6v9Z/voAoYlSDhniGgAYSokAEVMBGhQNZo1qA3JD14rG3nNvWsxWXeJlgq//tYxHwDxfwkpg/tgIC2A5TB/mQAIjxFbiNi//V/////9X//7/6v///9X+tMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo/UdIGMLHBzzupyMuHE4Mo3Q8xJAFCVJuK+0Rl9sEAgCH///9X/f////V//+/+r////V/rP//XUjIBgkU8RdY2qTU92OOgdTZUYy4NDh5N0ss6supaXHKs//tYxL0DyMQ8pg/xgQD/hpRB/bAgdBr///9X/f/X/q/1f//U/+p3///9X+s7fGWwOUYWaTPjQx4xu4JZMF3DsDB7gvMws0ECMGGAijAXACIwI4CIMAiAHDAXQJMwDEAwMBqATAIAdnRWhZsbgwYRcCphlUo0uMscAwkypMLgjJCB0IBjgjDhw8KBkWASDUkWYUGLQL5QXWwmoqus9TBiygDiqnfZYj4sHdBt2kPY1uRNYjLlzTvxx+InF4Yk0Ny5/6aHJmLzAQDjwdYIiFnBBZM9MxRPSEk5TaL2MvLaHtsfH///bP///////zp+PrY+349tD3exl7D29tl7Gb7aHuMvL2JtkNVemZdQ6DpxB+mGmOmyDpmQZh9EHTZCED1m//tYxLGDxoAcng/zQADsBJLB/uwAYTohSBaZij9MohJMpA9MxZCSdEC08TMUTWIARyR0ps9BByWFxrEap3ewQGNGdOsPMyaRZMeQTHLMsMQWaOtVeQxAGKIImgNjMSUI9THxypOozlxbRdCtaeZdZ5q7uPaEwWAoCB0SkSQdOnXjB6////////////V7P1dCdh17hi5MQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//tYxP+Boa4mfg/ozcGZjVGZ3TBoqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
+    "kit-bonus-glockping-1": "data:audio/mpeg;base64,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",
+    "kit-bonus-glockping-2": "data:audio/mpeg;base64,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",
+    "kit-bonus-glockping-3": "data:audio/mpeg;base64,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oKpNSqsKlyZybjXWosDN8PPVYeTYVL5PlTLVvKfxs1prlI5x//tYxPAAE54lR8QM2UHGFqo8JI061+Hf4epQo0tJstrmFAS19occMaszVV41lCpl/y8IuHarejH9IjYCQVRKlqAkSgmZuMGqxKQZeqbiKlAjbqkmFxmaCmyzvGBlGQAMws1DEaMIQhUJZCFwmhf8vzDEKQsT4jEwoOL9aKFr9dVXKX2aVXKtYvVWprVYZrVdaWLyTckPVFTRatVWGWoFg+FhY5jpJNKbropGJFYdaaLgWso7hfiyhY4pVFUFh6CxIOiILA2Bcc0oSHIemwND0Za1JsFHXwKmBSn//oqKiL////2MVFRVRUVF/MqKgYKCBoch2YxTKiooUEpDs7GMUxQQMEciKip2oqL//9UVnj4xMiSPQ8iYNYmAsCoPBaFg//tYxO4AErYnPeKM1cINROa8AIyArDgcxwLhTQk6ResbYgZaZghYbgaZghYuBqFaVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tYxOcDj2IbGEAFFwmNQtLMATOhVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-malus-phaser-1": "data:audio/mpeg;base64,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",
     "kit-malus-slime-1": "data:audio/mpeg;base64,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",
     "kit-crash-impactglasslight-1": "data:audio/mpeg;base64,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VGJZ9dtZLHu8xZu87z1XpXTTqfI/VQDCGmjU6AO0w5RAREgFdI8SEKOtVGwk+UkCmHVW3+P6/1xusF4QY0iDKtQtgrxLZv8jtWdVivwa1uELv+oOnSIdlfIyIlnUeRlvLVuOwaPPw18Nc7/7S0sbnlxmSamJIAZ3XJoI9GbS6daocmmbyYZhgYc2KDhUSDABdNFhUTyuriqJxXLBsete6fGJWLpeE8ThqIZgrc2BtilbMtMtIaEhNsPxPVaZhYvT62raASB4ChUWbH7ahVP/qb/V//+KN/////tYxGEDCwRg6G2Z5QG7kk/BzTCg/r//9ZVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
@@ -2603,6 +2638,34 @@
      stretch of any track — not only the whole file, which is all CONFIG.music
      can describe.
 
+     A SEAM ON THE BAR. The default wrap above crossfades the section's last
+     `fade` seconds into its first ones, which is click-free but not musical:
+     the head starts `fade` seconds early, so its beats land between the
+     tail's, and the loop's first downbeat is faded in from nothing. A section
+     (or CONFIG.music, for every section of the game) that names a `seam`
+     loops the other way. Its `length` is taken as the loop itself — cut on
+     whole bars, so `from + length` is the same beat of the bar as `from` —
+     and every pass advances by exactly that much. The crossfade lasts `seam`
+     seconds of the file and ENDS on the loop point: the outgoing pass plays
+     the bars that lead up to `from + length`, the incoming one plays the bars
+     that lead up to `from` (its pre-roll), both on equal-power curves, and the
+     downbeat lands once, at full level, in the pass that carries on. Where
+     there is no pre-roll to take (`from` near 0) the rest of the crossfade is
+     taken past the loop point instead, out of the music that follows it.
+
+        music: { volume: 0.12, fade: 1.6, seam: 1,
+                 menu: { from: 72, length: 12, rate: 0.85, gain: 0.5 } }
+
+     A gridded section (`bpm` + `beats`) loops on its beats rather than on its
+     length, and so does the beat-locked whole file (CONFIG.music's
+     `loopBeats`): what is left of the file past the loop is the post-roll.
+     A playable's cut is cut one seam early, so its first window has a
+     pre-roll too, and `CONFIG.music.cut` names that window — it is what a
+     null section plays (see cutOf).
+
+     `tools/lab/loop-points.mjs` measures which lengths of a window loop
+     cleanly; docs/MUSIC.md is the procedure.
+
      Scheduling is done with a look-ahead timer against the WebAudio clock,
      which keeps the seam sample-accurate even when the rAF loop is paused.  */
   var Music = (function () {
@@ -2630,17 +2693,56 @@
        file at speed — the one case where the beat grid (see Beat) still means
        anything, since an offset or a rate moves every beat of it. */
     function resolve(o, dur) {
-      var s = o || {};
+      var s = o || cutOf() || {}, m = CONFIG.music || {};
       var from = clamp(s.from > 0 ? s.from : 0, 0, Math.max(dur - 2, 0));
       var len = s.length > 0 ? Math.min(s.length, dur - from) : dur - from;
       var rate = s.rate > 0 ? clamp(s.rate, 0.25, 4) : 1;
+      var plain = from === 0 && rate === 1 && len >= dur - 0.05;
+      /* The loop a seam wraps on, in seconds of the file: a section's own
+         grid (`beats` of `bpm`), the beat-locked whole file (CONFIG.music's
+         `loopBeats`), or the section's length. */
+      var body = len;
+      if (s.bpm > 0 && s.beats > 0 && s.beats * 60 / s.bpm <= len) body = s.beats * 60 / s.bpm;
+      else if (plain && !(s.bpm > 0) && m.bpm > 0 && m.loopBeats > 0 && m.loopBeats * 60 / m.bpm <= len) {
+        body = m.loopBeats * 60 / m.bpm;
+      }
+      body = Math.max(body, 1);
       return {
         track: trackOf(s), from: from, len: Math.max(len, 1), rate: rate,
         gain: s.gain == null ? 1 : clamp(s.gain, 0, 4),
         fade: s.fade > 0 ? s.fade : fade,
-        plain: from === 0 && rate === 1 && len >= dur - 0.05,
+        body: body, seam: seamOf(s, from, body, dur),
+        plain: plain,
         per: s.bpm > 0 ? 60 / s.bpm : 0, offset: s.beatOffset || 0, beats: s.beats || 0
       };
+    }
+    /* What "the whole of what this build ships" means. A playable embeds a
+       short cut of the track, and a cut looped on the bar carries a pre-roll
+       in front of its window: `CONFIG.music.cut` names that window, and it is
+       what a null section plays. The web build ships the whole track instead
+       and drops the field (tools/build/build.mjs, webMusic). */
+    function cutOf() { var m = CONFIG.music; return (m && m.cut) || null; }
+    /* The bar-locked seam (see above): how much of the crossfade is taken
+       before the loop point (`pre`, out of what precedes `from`) and after it
+       (`post`, out of what follows `from + len`), in seconds of the file —
+       or null for a section that keeps the plain wrap. */
+    function seamOf(s, from, body, dur) {
+      var x = s.seam != null ? s.seam : (CONFIG.music || {}).seam;
+      if (!(x > 0)) return null;
+      x = Math.min(x, body * 0.45);
+      var pre = Math.min(x, from);
+      var post = Math.max(Math.min(x - pre, dur - from - body), 0);
+      // The whole file has nothing on either side to fade over: plain wrap.
+      return pre + post >= 0.05 ? { pre: pre, post: post } : null;
+    }
+    // Equal-power ramp of `param` over [t0, t0 + d]: up to `peak`, or down from it.
+    function bend(param, t0, d, peak, up) {
+      var STEPS = 8;
+      param.setValueAtTime(up ? 0 : peak, t0);
+      for (var i = 1; i <= STEPS; i++) {
+        var u = i / STEPS * Math.PI / 2;
+        param.linearRampToValueAtTime(peak * (up ? Math.sin(u) : Math.cos(u)), t0 + d * i / STEPS);
+      }
     }
     function same(a, b) {
       return !!a && !!b && a.track === b.track && a.from === b.from && a.len === b.len &&
@@ -2663,6 +2765,7 @@
        wrap.                                                                 */
     function advance(s) {
       var m = CONFIG.music || {};
+      if (s.seam) return s.body;                // the section IS the loop
       if (s.per && s.beats > 0 && s.rate === 1) {
         var own = s.beats * s.per;
         if (own > 0.5 && own <= s.len) return own;
@@ -2675,6 +2778,7 @@
     }
     // Queue passes until the schedule reaches LOOKAHEAD past "now".
     function schedule(a, buf) {
+      if (cur.seam) { scheduleSeam(a, buf); return; }
       var s = cur, adv = advance(s);
       var f = clamp(s.len - adv, 0.05, s.len * 0.45);
       // The same three lengths in wall-clock seconds: a rate stretches a pass.
@@ -2702,6 +2806,32 @@
         // whole number of beats after it, so the anchor never moves.
         if (!origin) { var lead = gridLead(s); if (lead !== null) origin = at + lead; }
         nextAt = at + wadv;                     // next pass overlaps the tail
+      }
+    }
+    /* The bar-locked loop. `nextAt` is the wall-clock time `from` plays at —
+       the loop point — and a pass starts its pre-roll ahead of it, so the
+       crossfade into it is [nextAt - pre, nextAt + post] in wall time, the
+       same window the pass before it fades out over. A first pass fades in
+       over that window too, which lands the section on its own downbeat. */
+    function scheduleSeam(a, buf) {
+      var s = cur, sm = s.seam;
+      var wpre = sm.pre / s.rate, wpost = sm.post / s.rate, wbody = s.body / s.rate;
+      var wx = Math.max(wpre + wpost, 0.03);    // a seam with no room still never clicks
+      while (nextAt < a.currentTime + LOOKAHEAD) {
+        var at = Math.max(nextAt, a.currentTime + 0.05 + wpre);
+        var src = a.createBufferSource(), g = a.createGain();
+        src.buffer = buf;
+        if (s.rate !== 1) src.playbackRate.value = s.rate;
+        bend(g.gain, at - wpre, wx, s.gain, true);
+        bend(g.gain, at + wbody - wpre, wx, s.gain, false);
+        src.connect(g); g.connect(master);
+        src.onended = function () { try { src.disconnect(); g.disconnect(); } catch (e) {} };
+        src.start(at - wpre, s.from - sm.pre, sm.pre + s.body + sm.post);
+        src.stop(at + wbody + wx + 0.1);
+        voices.push({ src: src, gain: g });
+        if (voices.length > 6) voices.shift();
+        if (!origin) { var lead = gridLead(s); if (lead !== null) origin = at + lead; }
+        nextAt = at + wbody;
       }
     }
     /* Top the schedule up, resolving the section asked for now that the buffer
@@ -2738,7 +2868,7 @@
        no way to wrap an element on a window of it. */
     function startTag(src) {
       if (tag) return;
-      var s = want || {};
+      var s = want || cutOf() || {};
       try {
         tag = new Audio(src);
         tag.loop = true;
@@ -5964,23 +6094,29 @@
        reset() and read everywhere: BIO.rings is the ring palette, BIO.balls the
        colour the ball glows at as the combo climbs, BIO.ring what a ring is
        there and BIO.look how the ball is drawn.
-       RULES are the kinds of ring this level deals, RATE the share of landing
-       rings that carry one, GAPRATE the share of bounces whose next flight
-       is planned for a gap ring (planFlight). */
-    var BIO = CONFIG.biomes[0], RULES = [], RATE = 0, GAPRATE = 0;
+       RULES are the kinds of ring this level deals, RATE the share of rings
+       that are special (and of the calm's rings that are dark), see
+       `ruleRate`. */
+    var BIO = CONFIG.biomes[0], RULES = [], RATE = 0;
     /* The bed of the level (CONFIG.beds), web target only: SEC is the section
        reset() arms, FULL says it is the whole track. A playable ships none of
        the beds (BEDS false) and keeps its own track and its own grid. */
     var BEDS = !!ASSETS.sounds.musicNeon, SEC = null, FULL = false;
-    // The kinds a tap must leave alone: the dark ring, and a gap ring that
-    // meets the ball on one of its dark parts.
-    function noTap(ring) { return ring.kind === "dark" || (ring.kind === "gap" && ring.open); }
+    // The rings a tap must leave alone: the dark ring (a phantom that turned
+    // out dark is one), a fragile ring that broke, and a gap ring that meets
+    // the ball on one of its dark parts — not on a seam, which takes both.
+    function noTap(ring) {
+      return ring.kind === "dark" || (ring.kind === "fragile" && ring.broke)
+          || (ring.kind === "gap" && ring.judge === "free");
+    }
     // What each kind says the first time it shows up in a round (Notify).
     var HINTS = {
       rewind: { word: "Rewind ring", sub: "Tap it: the rings behind back off, then rush in", icon: "info" },
       sticky: { word: "Sticky ring", sub: "Tap when the ball lands, and again when it leaves", icon: "hourglass" },
       dark:   { word: "Dark ring",   sub: "Don't tap: let the ball bounce off it", icon: "warn" },
-      gap:    { word: "Mixed ring",  sub: "Tap only the bright parts, never the dark ones", icon: "eye" }
+      gap:    { word: "Mixed ring",  sub: "Tap only the bright parts, never the dark ones", icon: "eye" },
+      phantom:{ word: "Phantom ring", sub: "It shows its face a beat before the ball: bright, tap; dark, don't", icon: "sparkles" },
+      fragile:{ word: "Fragile ring", sub: "It may break before the ball reaches it: then don't tap", icon: "x" }
     };
     // Timing grades, tightest window first: higher tier = more points + juice.
     // `win` is how far off the beat the tap may be, **in beats** — a ring lands
@@ -6012,6 +6148,8 @@
     var seen, lastKind, prevKind; // kinds already announced this round, the last two landing rings' kinds
     var lastFree;               // the ring last left alone (letAlone), while a late tap can still spoil it
     var gapAfter, gapBorn;      // the last gap ring's beat and birth: no ring landing later is born earlier
+    var phrase, calm, lastSeries; // the series being dealt, the simple rings owed after it, its kind (seriesLen)
+    var fragN, fragBroke;         // fragile rings dealt this round, and how many of them break
 
     function ballColor() { return BIO.balls[Math.min(combo, BIO.balls.length - 1)]; }
     function period() { return Beat.period() || 0.5; }
@@ -6031,6 +6169,7 @@
       score = 0; combo = 0; bestCombo = 0;
       maxScore = 0; idealCombo = 0;
       seen = {}; lastKind = ""; prevKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
+      phrase = null; calm = 0; lastSeries = ""; fragN = 0; fragBroke = 0;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
       HUD.setScoreNow(0);
       HUD.setLeft("x0", "Combo");
@@ -6169,7 +6308,7 @@
           var a1 = a0 + off;
           var qx = C.x + Math.cos(a1) * lim, qy = C.y + Math.sin(a1) * lim;
           var v = solve(px, py, qx, qy, T);
-          // Off a gap ring's bright part the ball has to come away from it, inwards.
+          // Off a gap ring the ball has to come away from it, inwards.
           if (inward && v.vx * (px - C.x) + v.vy * (py - C.y) >= 0) continue;
           if (!fits(px, py, v, T, lim)) continue;
           var launch = Math.sqrt(v.vx * v.vx + v.vy * v.vy);
@@ -6203,7 +6342,7 @@
       if (gapWant) {
         for (var g = 0; g < cands.length; g++) {
           if (cands[g].beats < 2) continue;
-          cands[g].gap = fitGap(px, py, cands[g].v, cands[g].beats, b0, gapWant.open);
+          cands[g].gap = fitGap(px, py, cands[g].v, cands[g].beats, b0, gapWant);
           if (cands[g].gap) { fit.push(cands[g]); fitW += cands[g].w; }
         }
       }
@@ -6245,32 +6384,88 @@
       var ring = { kind: kind || "", hit: slot, born: slot - span, span: span, land: arenaR,
                    r: CONFIG.spawnR, color: BIO.rings[colorIdx++ % BIO.rings.length],
                    pulse: 0, struck: false, kicks: [], spin: Rand.range(-0.6, 0.6) };
+      /* A phantom or a fragile ring carries its fate from birth — dark or
+         bright, broken or whole — and keeps it hidden until `fateLead` (`fragileLead`) beats
+         before the ball (reveal). Drawing it here keeps the round seeded. */
+      if (ring.kind === "phantom") ring.fate = Rand.chance(CONFIG.phantomDark) ? "dark" : "";
+      // A fragile ring that lands on the rim is one that holds: the ones
+      // doomed to break are dealt in mid-flight, never here (fitGap).
+      if (ring.kind === "fragile") ring.fate = "hold";
       rings.push(ring);
       if (ring.kind) announce(ring.kind);
       return ring;
     }
 
-    /* The kind of the next LANDING ring: a rule of the level, at its RATE —
-       never inside the opening pulse (`steadyFor`, the round's own metronome),
-       never two sticky rings back to back nor three dark ones. The gap ring
-       is not a landing ring and is dealt with its flight (fitGap). */
-    function pickKind(slot) {
-      if (!RULES.length || held || Round.elapsed() < CONFIG.steadyFor) return "";
-      var pool = [];
-      for (var i = 0; i < RULES.length; i++) if (RULES[i] !== "gap") pool.push(RULES[i]);
-      if (!pool.length || !Rand.chance(RATE)) return "";
-      var k = Rand.pick(pool);
-      // A rewind landing while a gap ring is still on screen would shove the
-      // rings round it back out unevenly, and across it.
-      if (k === "rewind") {
-        for (i = 0; i < rings.length; i++) if (rings[i].kind === "gap" && leavesAt(rings[i]) >= slot) return "";
+    // Every kind but the plain ring and the dark one is special (seriesLen).
+    function special(kind) { return !!kind && kind !== "dark"; }
+    // Nothing of the level's rules in the opening pulse (`steadyFor`, the
+    // round's own metronome) nor while the round is held.
+    function opening() { return !RULES.length || held || Round.elapsed() < CONFIG.steadyFor; }
+
+    /* The special kind the next ring is planned to be, or "" in a calm. When
+       a calm runs out a new series is drawn: another kind than the last one
+       wherever the level has a choice, one to `seriesLen` rings long. */
+    function planned() {
+      if (opening() || calm > 0) return "";
+      if (!phrase) {
+        var pool = [], i;
+        for (i = 0; i < RULES.length; i++) if (special(RULES[i])) pool.push(RULES[i]);
+        if (!pool.length) return "";
+        if (pool.length > 1 && pool.indexOf(lastSeries) >= 0) pool.splice(pool.indexOf(lastSeries), 1);
+        var k = Rand.pick(pool), top = CONFIG.seriesLen[1];
+        if (CONFIG.seriesMax[k]) top = Math.min(top, CONFIG.seriesMax[k]);
+        var n = Rand.int(CONFIG.seriesLen[0], Math.max(CONFIG.seriesLen[0], top));
+        phrase = { kind: k, n: n, left: n, tries: 0 };
+        lastSeries = k;
       }
-      // Two sticky rings back to back would ride the rim for four beats; two
-      // dark ones are two beats left alone, a third would leave the ball to
-      // bounce on its own for too long.
-      if (k === "sticky" && lastKind === "sticky") return "";
-      if (k === "dark" && lastKind === "dark" && prevKind === "dark") return "";
-      return k;
+      return phrase.kind;
+    }
+
+    /* The kind of the next LANDING ring. Planned special: that kind, unless
+       it cannot land there — a rewind while a gap ring is still on screen
+       would shove the rings round it back out unevenly, and across it — and
+       then a plain ring and the series waits. In a calm: plain, or dark at
+       RATE, never three dark in a row (the ball would bounce on its own for
+       too long). The gap ring is not a landing ring and is dealt with its
+       flight (fitGap). */
+    function pickKind(slot, plan) {
+      var i;
+      if (plan) {
+        if (plan === "rewind") {
+          for (i = 0; i < rings.length; i++) if (rings[i].mid && leavesAt(rings[i]) >= slot) return "";
+        }
+        return plan;
+      }
+      if (opening() || RULES.indexOf("dark") < 0 || !Rand.chance(RATE)) return "";
+      if (lastKind === "dark" && prevKind === "dark") return "";
+      return "dark";
+    }
+
+    /* The odds the next fragile ring breaks. A fragile ring landing right
+       after one that broke has to hold — the ball needs a surface to bounce
+       on between them — so a plain `fragileBreak` would leave fewer broken
+       than asked for: the odds lean toward the share owed so far. Nothing on
+       screen tells one fate from the other, so the lean cannot be read. */
+    function breakOdds() {
+      var owed = CONFIG.fragileBreak * (fragN + 1) - fragBroke;
+      return clamp(CONFIG.fragileBreak + owed * 0.3, 0.2, 0.9);
+    }
+
+    /* One ring dealt, in the order they land. The series' kind counts it
+       down, and its last ring opens the calm, sized so that about RATE of
+       the rings are special; a simple ring pays one ring of the calm off. A
+       series that could not be dealt (no flight to carry a gap ring, a
+       rewind held back) is retried a few times, then dropped for a short
+       calm. */
+    function dealt(kind, plan) {
+      if (special(kind)) {
+        if (--phrase.left > 0) return;
+        var c = phrase.n * (1 - RATE) / Math.max(0.05, RATE);
+        calm = Math.max(1, Math.round(c + Rand.range(-0.5, 0.5)));
+        phrase = null;
+      } else if (plan) {
+        if (++phrase.tries >= 4) { phrase = null; calm = 1; }
+      } else if (calm > 0) calm--;
     }
 
     // The first ring of a kind in a round names its rule, once.
@@ -6283,26 +6478,52 @@
 
     // `inward`: the flight leaves a gap ring's bright part, not the rim (see below).
     function addSeg(px, py, b0, inward) {
-      var want = gapWanted();
+      // One segment deals exactly one ring, in landing order — a gap ring
+      // cuts its flight and is its landing — so the phrases are counted here.
+      var plan = planned();
+      /* A fragile ring's fate is drawn HERE, before the flight is planned,
+         because the flight depends on it: one that will break must not be
+         a surface the ball counts on. It is dealt like a gap ring, on a beat
+         a long flight passes over, and the ball flies straight through where
+         it stood. The player sees the same cracked ring either way. */
+      var breaks = plan === "fragile" && (phrase.pend || Rand.chance(breakOdds()));
+      var want = plan === "gap" ? { dark: Rand.chance(CONFIG.gapDark) } : breaks ? { pass: true } : null;
       var f = (inward && planFlight(px, py, true, want, b0)) || planFlight(px, py, false, want, b0);
       // Remember what this bounce did, so the next two are pushed elsewhere.
       prevA = lastA; lastA = f.a1; lastBeats = f.beats;
       var seg = { b0: b0, b1: b0 + f.beats, T: f.T, x0: px, y0: py,
                   vx: f.v.vx, vy: f.v.vy, x1: f.x1, y1: f.y1 };
       segs.push(seg);
-      /* A gap ring that meets the ball on a bright part is a surface like any other:
-         the flight is cut where the bar crosses it, the ball bounces off it
+      /* A gap ring is a surface like any other, dark parts included: the
+         flight is cut where it crosses the ball, the ball bounces off it
          there, and that ring is the landing — the rim's is never dealt. */
       var gap = f.gap ? dealGap(f.gap) : null;
-      if (gap && !gap.open) {
+      if (gap && gap.kind === "fragile") {
+        // Crossed in mid-flight and never bounced on: the flight goes on to
+        // the rim, whose ring is the phrase's next one.
+        prevKind = lastKind; lastKind = "fragile";
+        phrase.pend = false; fragN++; fragBroke++;
+        dealt("fragile", plan);
+        plan = planned();
+        gap = null;
+      } else if (breaks) {
+        /* No flight here could carry it: the break is not turned into a ring
+           that holds — it waits for the next bounce, with a simple ring
+           landing meanwhile. */
+        phrase.pend = true;
+      }
+      if (gap) {
         var u = (gap.hit - b0) * period();
         seg.b1 = gap.hit; seg.T = u; seg.x1 = gap.x; seg.y1 = gap.y;
         seg.ring = gap; seg.color = gap.color; seg.bar = true;
         lastA = Math.atan2(gap.y - C.y, gap.x - C.x); prevKind = lastKind; lastKind = "";
+        dealt("gap", plan);
         return seg;
       }
-      var kind = pickKind(b0 + f.beats);
+      var kind = pickKind(b0 + f.beats, plan === "gap" || breaks && !f.gap ? "" : plan);
       prevKind = lastKind; lastKind = kind;
+      if (kind === "fragile") fragN++;
+      dealt(kind, plan);
       seg.ring = spawnRing(seg.b1, lastKind);
       seg.color = seg.ring.color;
       if (lastKind === "sticky") addStick(seg);
@@ -6330,18 +6551,25 @@
 
     /* A gap ring — a MIXED ring, dark parts between bright ones — is dealt
        on a beat a long flight passes over, sized to the ball's distance from
-       the centre ON that beat: it sweeps in and crosses the ball in
-       mid-flight. Its parts stand still — a turning part could not be read
-       off the ball's arc — and are laid so that the ball meets either the
-       middle of a dark part (`open`: no tap, a perfect, and the ring dives on
-       to break at the centre) or the middle of a bright one (the ball bounces
-       off it, see addSeg: tap it on the hit, a perfect, and it breaks). A
-       bright part stops on the ball, its edge on the ball's, like the rim. */
-    // Is the next flight to carry a gap ring, and which kind? Null: no.
-    function gapWanted() {
-      if (RULES.indexOf("gap") < 0 || held || Round.elapsed() < CONFIG.steadyFor) return null;
-      if (!Rand.chance(GAPRATE)) return null;
-      return { open: Rand.chance(CONFIG.gapOpen) };
+       the centre ON that beat: it sweeps in and stops on the ball in
+       mid-flight, its edge on the ball's like the rim, and the ball bounces
+       off it whatever part it meets (addSeg). Its parts stand still — a
+       turning part could not be read off the ball's arc — and are laid so
+       that the ball meets a dark part (`dark`: no tap) or a bright one (a
+       tap), somewhere along it rather than always dead in its middle
+       (`gapSlide`). Either way the right answer is a perfect and the ring
+       breaks. Where the ball lands close enough to a seam to touch both
+       parts, both answers are right (gapJudge). */
+    /* What the bounce off a gap ring asks for, read off where the ball meets
+       it: "tap" on a bright part, "free" on a dark one, "either" when the ball
+       is within `gapEdge` of a seam — touching both parts, or near enough that
+       the eye cannot honestly tell, and the player is never punished for that. */
+    function gapJudge(ring, a) {
+      var third = TAU / 3, gw = CONFIG.gapWidth;
+      var x = ((a - ring.phase) % third + third) % third;          // 0 = a dark part's middle
+      var seam = Math.min(Math.abs(x - gw), Math.abs(x - (third - gw)));
+      if (seam * ring.land < CONFIG.ballR + CONFIG.gapEdge) return "either";
+      return x < gw || x > third - gw ? "free" : "tap";
     }
     /* The gap ring a flight (`v` from P, `beats` long, leaving on `b0`) can
        carry, or null. It closes in at the speed every ring does — `spawnR` to
@@ -6351,18 +6579,25 @@
        that keeps clear of every ring already dealt is the one. A ring landing
        LATER cannot meet it — spawnRing holds its birth back behind this
        one's, so it trails behind. */
-    function fitGap(px, py, v, beats, b0, open) {
+    function fitGap(px, py, v, beats, b0, want) {
       var now = Beat.beats(), k0 = Rand.int(1, beats - 1);
       for (var j = 0; j < beats - 1; j++) {
         var k = 1 + (k0 - 1 + j) % (beats - 1), u = k * period();
         var x = px + v.vx * u, y = py + v.vy * u + 0.5 * CONFIG.gravity * u * u;
         var d = Math.sqrt((x - C.x) * (x - C.x) + (y - C.y) * (y - C.y));
         if (d < arenaR * 0.4) continue;                   // too small a ring to read
-        var a = Math.atan2(y - C.y, x - C.x), land = open ? d : d + CONFIG.ballR;
+        // A fragile ring doomed to break is sized THROUGH the ball, which
+        // flies across it; a gap ring stops on the ball's edge, like the rim.
+        var a = Math.atan2(y - C.y, x - C.x), land = want.pass ? d : d + CONFIG.ballR;
         var span = travelBeats() * (CONFIG.spawnR - land) / (CONFIG.spawnR - arenaR);
-        var ring = { kind: "gap", hit: b0 + k, born: b0 + k - span, span: span, land: land,
-                     x: x, y: y, r: CONFIG.spawnR, pulse: 0, struck: false, kicks: [],
-                     open: open, spin: 0, phase: open ? a : a + Math.PI / 3 };
+        var ring = { kind: "gap", hit: b0 + k, born: b0 + k - span, span: span, land: land, mid: true,
+                     x: x, y: y, r: CONFIG.spawnR, pulse: 0, struck: false, kicks: [], spin: 0 };
+        if (want.pass) {
+          ring.kind = "fragile"; ring.fate = "break"; ring.spin = Rand.range(-0.6, 0.6);
+        } else {
+          ring.phase = a + CONFIG.gapWidth * CONFIG.gapSlide * Rand.range(-1, 1) + (want.dark ? 0 : Math.PI / 3);
+          ring.judge = gapJudge(ring, a);
+        }
         // Dealt too late to cover that run-up at that speed, or not clear.
         if (ring.born >= now && clearOf(ring, ring.born)) return ring;
       }
@@ -6372,30 +6607,22 @@
       ring.color = BIO.rings[colorIdx++ % BIO.rings.length];
       rings.push(ring);
       gapAfter = ring.hit; gapBorn = Math.max(gapBorn, ring.born);
-      announce("gap");
+      announce(ring.kind);
       return ring;
     }
 
     /* A ring's radius at beat `t` on its own schedule (a rewind kick aside: it
        is back to nothing before the landing), and the beat it leaves the
-       screen: a gap ring the ball went through once its dive reaches the
-       centre, one met on a bright part on its beat (struck or hidden, see passRing),
-       any other a CLOSE window past its landing — or past the end of the
-       ride it holds the ball for.
-       The dive: from the ball, the ring carries on at its own speed and
-       speeds up, to reach the centre `gapDive` beats later. */
+       screen: a gap ring on its beat (broken or hidden, see passRing), any
+       other a CLOSE window past its landing — or past the end of the ride it
+       holds the ball for. */
     function radiusAt(ring, t) {
       if (ring.release && t >= ring.hit) return arenaR;
-      var S = CONFIG.spawnR, x = t - ring.hit;
-      if (ring.kind === "gap" && ring.open && x > 0) {
-        var v0 = (S - ring.land) / ring.span, D = CONFIG.gapDive;
-        var acc = Math.max(0, ring.land - v0 * D) / (D * D);
-        return Math.max(0, ring.land - v0 * x - acc * x * x);
-      }
+      var S = CONFIG.spawnR;
       return S + (ring.land - S) * clamp((t - ring.born) / ring.span, 0, 1);
     }
     function leavesAt(ring) {
-      if (ring.kind === "gap") return ring.hit + (ring.open ? CONFIG.gapDive : 0);
+      if (ring.kind === "gap") return ring.hit;
       return (ring.release || ring.hit) + MAXWIN;
     }
     // Does a gap ring keep `gapClear` from every ring on screen with it, from
@@ -6462,8 +6689,6 @@
       return off;
     }
 
-    // A gap ring met on a gap does not stop on its beat: it dives on to the
-    // centre (radiusAt). One met on a bright part stops there, the ball's surface.
     function ringRadius(ring, now) {
       if (ring.held) return arenaR;
       return radiusAt(ring, now) + kickAt(ring, now);
@@ -6652,18 +6877,19 @@
         var gap = Math.abs(rings[i].hit - now);
         if (gap < bestGap) { bestGap = gap; best = rings[i]; }
       }
-      // A ring just left alone (a dark ring bounced off, a dark part gone through)
-      // was paid as a perfect: a tap still inside its window is a tap on it,
-      // and takes that back.
+      // A ring just left alone (a dark ring, a dark part, a broken fragile
+      // ring, each bounced off) was paid as a perfect: a tap still inside its
+      // window is a tap on it, and takes that back — but on a gap ring's seam,
+      // where a tap was right too, it is simply the tap the player meant.
       if (lastFree && now - lastFree.hit <= MAXWIN && now - lastFree.hit < bestGap) {
         var lf = lastFree;
         lastFree = null;
+        if (lf.either) return;
         score -= lf.gained; HUD.setScore(score); stats.perfect--;
-        lf.ring.broken = true;              // a diving gap ring stops there
         return spoil(lf.ring);
       }
       if (!best) return;
-      // A dark ring, or a gap ring the ball goes through: the tap IS the mistake.
+      // A ring that wants to be left alone: the tap IS the mistake.
       if (bestGap <= MAXWIN && noTap(best)) return spoil(best);
       if (bestGap <= MAXWIN) {
         var tier = TIERS[TIERS.length - 1];
@@ -6696,16 +6922,18 @@
       ring.struck = true; ring.spoiled = true;
       combo = 0; stats.miss++;
       HUD.setLeft("x0", "Combo");
-      Pop.show("score", { word: Lang.t(ring.kind === "dark" ? "Dark ring" : "Dark part"), cls: "pop-miss", hold: 180,
+      var word = ring.kind === "gap" ? "Dark part" : ring.kind === "fragile" ? "Broken ring" : "Dark ring";
+      Pop.show("score", { word: Lang.t(word), cls: "pop-miss", hold: 180,
                           at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
       Fx.shake(6, 0.22);
       Sound.clip("dark", 0.1);
     }
 
-    /* A ring left alone as it should be — a dark ring on the bounce off it, a
-       gap ring as the ball goes through: holding back IS the beat played
-       right, so it is a step of the combo graded PERFECT. A tap that still
-       comes inside its window spoils it (onDown). */
+    /* A ring left alone as it should be — a dark ring, a dark part of a gap
+       ring on the bounce off it, or a broken fragile ring as the ball flies
+       through where it stood: holding back IS the
+       beat played right, so it is a step of the combo graded PERFECT. A tap
+       that still comes inside its window spoils it (onDown), but on a seam. */
     function letAlone(ring) {
       var tier = TIERS[0];
       combo++;
@@ -6716,14 +6944,14 @@
       popRing(ring, tier, gained);
       HUD.setLeft("x" + combo, "Combo", combo >= CONFIG.chainEvery ? "hot" : "");
       if (combo % CONFIG.chainEvery === 0) triggerChain();
-      lastFree = { ring: ring, hit: ring.hit, gained: gained };
-      ring.struck = false;                  // a diving gap ring is drawn whole, not as a ghost
+      lastFree = { ring: ring, hit: ring.hit, gained: gained, either: ring.judge === "either" };
     }
 
     // An untapped ring has gone by: the chance is spent and the chain breaks.
     function missRing(ring) {
       Fx.burst(ball.x, ball.y, { color: ring.color, count: 5, speed: 260, size: 5, life: 0.4 });
       combo = 0; chance();                 // missed the beat (still a chance faced)
+      stats.miss++;                        // a ring let by is a miss like a bad tap
       HUD.setLeft("x0", "Combo");
       Sound.clip("miss", 0.07, 1.15);      // quiet: the tap was never made
     }
@@ -6742,27 +6970,55 @@
       Fx.shake(8, 0.2);
       Sound.clip("burst", 0.75);
     }
-    // A gap ring breaks: a bright part where the ball strikes it, a dive at the centre.
+    /* `fateLead` beats before the ball a phantom ring shows its face, and
+       `fragileLead` beats before it a fragile one breaks or holds. A phantom becomes the ring it was all
+       along — a plain one or a dark one — and keeps `phantom` for its glyph
+       to fade out on; a broken fragile ring is left as debris that fades out
+       before the ball flies through it, and wants no tap (noTap). */
+    function fateLead(ring) { return ring.kind === "fragile" ? CONFIG.fragileLead : CONFIG.fateLead; }
+    function reveal(ring, now) {
+      ring.shown = now;
+      if (ring.kind === "phantom") {
+        ring.kind = ring.fate; ring.phantom = true; ring.pulse = 1.2;
+        ringBurst(ring, ring.fate === "dark" ? "#c4a1ff" : ring.color, 4);
+        Sound.clip("reveal", 0.2);
+      } else if (ring.fate === "break") {
+        ring.broke = true;
+        ringBurst(ring, "#ffffff", 3);
+        ringBurst(ring, ring.color, 5);
+        Sound.clip("shatter", 0.2);
+      } else {
+        ring.pulse = 1;                     // it held: lit once, its cracks fade
+      }
+    }
+    // Sparks all round a ring, at its current radius.
+    function ringBurst(ring, color, count) {
+      for (var j = 0; j < 8; j++) {
+        var a = j * TAU / 8 + ring.spin;
+        Fx.burst(C.x + Math.cos(a) * ring.r, C.y + Math.sin(a) * ring.r,
+                 { color: color, count: count, speed: 240, size: 5, life: 0.4 });
+      }
+    }
+
+    // A gap ring breaks where the ball strikes it.
     function shatter(ring, x, y) {
       Fx.burst(x, y, { color: ring.color, count: 12, speed: 380, size: 5, life: 0.45 });
       Fx.burst(x, y, { color: "#ffffff", count: 5, speed: 300, size: 4, life: 0.35 });
       Sound.clip("shatter", 0.2);
     }
 
-    /* One ring's life past its beat. A gap ring the ball goes through is
-       resolved on the hit and dives on, to break at the centre. A sticky ring
-       comes past its landing twice: once to catch the ball, once to burst. */
+    /* One ring's life past its beat. A gap ring breaks on the bounce: tapped
+       or spoiled, or left alone where leaving it was right (a dark part, a
+       seam); a bright part left alone hides and waits out its window. A sticky
+       ring comes past its landing twice: once to catch the ball, once to
+       burst. A broken fragile ring is a dark ring's: left alone on its beat. */
     function passRing(ring, i, now) {
       if (ring.kind === "gap") {
-        if (ring.open) {
-          if (!ring.done && now >= ring.hit) {
-            ring.done = true;
-            if (ring.spoiled) ring.broken = true; else letAlone(ring);
-          }
-          if (ring.done && !ring.broken && ring.r < 6) { ring.broken = true; shatter(ring, C.x, C.y); }
-        } else if (!ring.done) {
+        if (!ring.done) {
           if (ring.struck) {
             if (now >= ring.hit) { ring.done = ring.broken = true; shatter(ring, ball.x, ball.y); }
+          } else if (ring.judge !== "tap" && now >= ring.hit) {
+            ring.done = ring.broken = true; letAlone(ring); shatter(ring, ball.x, ball.y);
           } else if (now > ring.hit + MAXWIN) {
             ring.done = ring.broken = true; missRing(ring);
           } else if (now >= ring.hit) {
@@ -6779,7 +7035,7 @@
         if (ring.kind === "sticky" && !ring.held) return holdRing(ring);
         if (ring.held) burstRing(ring);
         rings.splice(i, 1);
-      } else if (ring.kind === "dark") {
+      } else if (noTap(ring)) {
         if (now >= ring.hit) { rings.splice(i, 1); letAlone(ring); }
       } else if (now > ring.hit + MAXWIN) {
         missRing(ring);
@@ -6817,6 +7073,8 @@
          see onDown) and is then a miss.                                       */
       for (var i = rings.length - 1; i >= 0; i--) {
         rings[i].r = ringRadius(rings[i], now);
+        if (rings[i].fate != null && rings[i].shown == null && !rings[i].struck
+            && now >= rings[i].hit - fateLead(rings[i])) reveal(rings[i], now);
         passRing(rings[i], i, now);
       }
 
@@ -6942,9 +7200,9 @@
        The biome's look. A DESIGN is what a ring is, a LOOK how the ball is
        drawn; a KIND is a mark laid over the design, and it is the same mark
        in every biome — chevrons out for a rewind ring, drops of glue for a
-       sticky one, black between violet edges for a dark one, the gaps
-       themselves for a gap ring — because NOVA deals all four over one
-       design, and a rule must read by its SHAPE whatever it is painted with. All of it is plain strokes and fills:
+       sticky one, cracks for a fragile one, little ghosts for a phantom
+       one, black between violet edges for a dark one, the gaps themselves
+       for a gap ring — because NOVA deals all six over one design, and a rule must read by its SHAPE whatever it is painted with. All of it is plain strokes and fills:
        no shadowBlur, the glow is a wider translucent stroke underneath.
        ===================================================================== */
 
@@ -7220,7 +7478,8 @@
        on sits at `r` — and every design takes the KINDS the same way: a gap
        ring is the design clipped to its three bars, a dark ring is the design
        in black between violet edges, and the rewind and sticky rings carry a
-       white glyph ringed in black over whatever is under it. Teeth, links and
+       white glyph ringed in black over whatever is under it (so do the
+       fragile and phantom rings). Teeth, links and
        points each go into ONE path, so a ring is a stroke or two whatever its
        size. RA is the alpha every part of a ring is multiplied by — a ghost,
        or a gap ring fading on its way to the centre.
@@ -7340,9 +7599,7 @@
          not be told apart: the light is a halo in the ring's own colour. */
       var pl = ring.pulse || 0, col = ring.color, draw = DESIGN[BIO.ring] || DESIGN.tube;
       var s = { t: tAnim, hot: hot, pl: pl, dir: ring.spin < 0 ? -1 : 1 };
-      // A gap ring diving to the centre dims a little on the way, and stays
-      // readable down to the break.
-      RA = ring.kind === "gap" && ring.done ? 0.5 + 0.5 * clamp(rr / Math.max(1, ring.land), 0, 1) : 1;
+      RA = 1;
       ctx.save();
       ctx.lineJoin = "round";
       // Shoved back by a rewind: a halo in the rewind ring's colour and a
@@ -7361,14 +7618,98 @@
         gapClip(ring, rr, false); paintBright(rr, col, s, pl, draw);
       } else if (ring.kind === "dark") {
         paintDark(rr, s, draw);
+      } else if (ring.kind === "phantom") {
+        // Barely there: a faint shimmer of the ring, never lit by a shockwave
+        // (its halo would give it away), never hot.
+        RA = 0.12 + 0.07 * Math.sin(tAnim * 3.1 + ring.spin * 9);
+        s.hot = false; s.pl = 0;
+        draw(rr, col, s);
+      } else if (ring.broke) {
+        // Debris: the design cut into shards, fading out before the ball
+        // flies through where the ring stood.
+        RA = 0.4 * clamp((ring.hit - now) / CONFIG.fragileLead, 0, 1); s.hot = false; s.pl = 0;
+        shardClip(ring, rr); draw(rr, tone(col, -0.3), s);
       } else {
         paintBright(rr, col, s, pl, draw);
       }
       ctx.restore();
       ctx.globalAlpha = 1; RA = 1;
       if (ring.struck) return;
+      // A glyph that has said its word (a phantom shown, a fragile ring that
+      // held) fades out over half a beat.
+      var fade = ring.shown == null ? 1 : clamp(1 - (now - ring.shown) / 0.5, 0, 1);
       if (ring.kind === "rewind") drawChevrons(ring, rr);
       else if (ring.kind === "sticky") drawGlue(ring, rr, now);
+      else if (ring.kind === "phantom") drawGhosts(ring, rr, 0.45);
+      else if (ring.phantom && fade > 0) drawGhosts(ring, rr, 0.45 + 0.55 * fade);
+      else if (ring.kind === "fragile" && !ring.broke && fade > 0) drawCracks(ring, rr, fade);
+    }
+
+    // A broken fragile ring's shards: ten wedges with a gap between each.
+    function shardClip(ring, r) {
+      ctx.beginPath();
+      for (var j = 0; j < 10; j++) {
+        var a0 = ring.spin * 4 + j * TAU / 10 + 0.06, a1 = a0 + TAU / 10 - 0.2;
+        ctx.moveTo(C.x, C.y); ctx.arc(C.x, C.y, r + 80, a0, a1); ctx.closePath();
+      }
+      ctx.clip();
+    }
+
+    /* Fragile: four cracks across the ring — a zigzag running through the
+       band with a branch off it — the chevrons' family, white ringed in
+       black, so the mark reads over every design. */
+    function drawCracks(ring, rr, alpha) {
+      var Z = [[-26, 0], [-14, 10], [-4, -8], [7, 9], [17, -6], [26, 4]];
+      ctx.lineJoin = "miter"; ctx.lineCap = "round";
+      ctx.beginPath();
+      for (var j = 0; j < 4; j++) {
+        var a = tAnim * ring.spin * 0.5 + j * Math.PI / 2 + Math.PI / 4;
+        var ux = Math.cos(a), uy = Math.sin(a), bx = C.x + ux * rr, by = C.y + uy * rr;
+        // x runs across the ring (radial), y along it (tangential).
+        for (var k = 0; k < Z.length; k++) {
+          var px = bx + ux * Z[k][0] - uy * Z[k][1], py = by + uy * Z[k][0] + ux * Z[k][1];
+          if (k) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+        }
+        ctx.moveTo(bx - ux * 4 + uy * 8, by - uy * 4 - ux * 8);
+        ctx.lineTo(bx + ux * 5 + uy * 20, by + uy * 5 - ux * 20);
+      }
+      ctx.globalAlpha = 0.7 * alpha; ctx.strokeStyle = "#05050e"; ctx.lineWidth = 9; ctx.stroke();
+      ctx.globalAlpha = alpha; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4; ctx.stroke();
+      ctx.globalAlpha = 1; ctx.lineCap = "butt"; ctx.lineJoin = "round";
+    }
+
+    /* Phantom: four little ghosts riding the ring, upright whatever side of
+       it they are on, white ringed in black with two black eyes — faint while
+       the ring is, and fading out once it has shown its face. */
+    function drawGhosts(ring, rr, alpha) {
+      var j, a, gx, gy, w = 17, h = 20, base = tAnim * ring.spin * 0.6;
+      ctx.beginPath();
+      for (j = 0; j < 4; j++) {
+        a = base + j * Math.PI / 2;
+        gx = C.x + Math.cos(a) * rr; gy = C.y + Math.sin(a) * rr - 2 * Math.sin(tAnim * 4 + j);
+        ctx.moveTo(gx - w, gy + h);
+        ctx.lineTo(gx - w, gy - 2);
+        ctx.arc(gx, gy - 2, w, Math.PI, 0);
+        ctx.lineTo(gx + w, gy + h);
+        // the hem: three scallops back to the left
+        for (var k = 0; k < 3; k++) {
+          var x0 = gx + w - k * (2 * w / 3);
+          ctx.quadraticCurveTo(x0 - w / 3, gy + h - 11, x0 - 2 * w / 3, gy + h);
+        }
+        ctx.closePath();
+      }
+      ctx.lineJoin = "round";
+      ctx.globalAlpha = 0.7 * alpha; ctx.strokeStyle = "#05050e"; ctx.lineWidth = 7; ctx.stroke();
+      ctx.globalAlpha = alpha; ctx.fillStyle = "#ffffff"; ctx.fill();
+      ctx.fillStyle = "#05050e"; ctx.beginPath();
+      for (j = 0; j < 4; j++) {
+        a = base + j * Math.PI / 2;
+        gx = C.x + Math.cos(a) * rr; gy = C.y + Math.sin(a) * rr - 2 * Math.sin(tAnim * 4 + j);
+        ctx.moveTo(gx - 2, gy - 4); ctx.arc(gx - 6, gy - 4, 4, 0, TAU);
+        ctx.moveTo(gx + 10, gy - 4); ctx.arc(gx + 6, gy - 4, 4, 0, TAU);
+      }
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
 
     // Rewind: four double chevrons riding the ring, pointing OUT — the way
@@ -7540,24 +7881,23 @@
        BEFORE reset(): it picks the biome off the LEVEL NUMBER (the two roads
        out of a fork are the same world) and the rule that arrives with it.
        Inside a biome the rule grows from `ruleRate[0]` to `ruleRate[1]` over
-       its six levels. NOVA deals the four again, two at a time on its first two
-       levels, three on the next two and all four on the last two — in the
-       order the climb taught them. `null` is the playable, a free round and
-       the endless run: NEON, no rule, the game as it always was. */
+       its six levels, and a second rule joins on the step its `teach` names
+       (ECLIPSE's phantom, GLACIER's fragile ring, from the fourth level). NOVA
+       deals the six again, two at a time on its first two levels, four on the
+       next two and all six on the last two — in the order the climb taught
+       them. `null` is the playable, a free round and the endless run: NEON,
+       no rule, the game as it always was. */
     function applyLevel(d) {
       var n = CONFIG.level | 0, i, from = CONFIG.biomeFrom;
-      BIO = CONFIG.biomes[0]; RULES = []; RATE = 0; GAPRATE = 0;
+      BIO = CONFIG.biomes[0]; RULES = []; RATE = 0;
       SEC = null; FULL = false;
       // The endless run: NEON's whole track, no rule.
       if (!n || d == null) { if (BEDS) bedFor(0, 5); return; }
       for (i = 0; i < from.length; i++) if (n >= from[i]) BIO = CONFIG.biomes[i];
       var step = clamp(n - from[CONFIG.biomes.indexOf(BIO)], 0, 5), k = step / 5;
-      RULES = BIO.rules.slice(0, BIO.rules.length > 1 ? 2 + Math.floor(step / 2) : 1);
+      RULES = [];
+      for (i = 0; i < BIO.rules.length; i++) if (step >= (BIO.teach ? BIO.teach[i] : 0)) RULES.push(BIO.rules[i]);
       RATE = CONFIG.ruleRate[0] + (CONFIG.ruleRate[1] - CONFIG.ruleRate[0]) * k;
-      GAPRATE = CONFIG.gapRate[0] + (CONFIG.gapRate[1] - CONFIG.gapRate[0]) * k;
-      // Shared out between several rules, each one would come round less often
-      // than it did alone: NOVA deals more of them in all.
-      if (RULES.length > 1) RATE = Math.min(CONFIG.ruleRateMax, RATE * 1.4);
       if (BEDS) bedFor(CONFIG.biomes.indexOf(BIO), step);
     }
 
@@ -7570,12 +7910,12 @@
       var bed = CONFIG.beds[b], per = 60 / bed.bpm, st = bed.stages[step];
       FULL = !st;
       if (FULL) {
-        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset,
+        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset, seam: 2 * per,
                 beats: Math.floor((bed.end - bed.beatOffset) / per) };
         CONFIG.gameSeconds = fullSeconds(bed);
       } else {
         var beats = st[1] * 4;
-        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset, beats: beats,
+        SEC = { track: bed.track, bpm: bed.bpm, beatOffset: bed.beatOffset, beats: beats, seam: 2 * per,
                 from: bed.beatOffset + (st[0] - 1) * 4 * per,
                 length: beats * per + CONFIG.stageFade, fade: CONFIG.stageFade };
       }
@@ -7612,6 +7952,10 @@
     return { reset: reset, onDown: onDown, update: update, render: render,
              onTimeUp: onTimeUp, onResize: onResize, applyLevel: applyLevel,
              levelWon: end, levelGoal: levelGoal,
+             /* The third star is a clean chart: every miss counts against the
+                allowance of `web.levels.faults` — a bad tap, a ring tapped
+                that wanted to be left alone, a ring let by. */
+             levelFaults: function () { return stats.miss; },
              /* The third star is a BEAT, not the end of the round, on every
                 level: a round is a stretch of music, and a player good
                 enough to max it in ten seconds was being sent to the end

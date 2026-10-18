@@ -123,6 +123,14 @@ from it; the map, the ranking and the album carried THREE DIFFERENT ones (34, 35
 appended. Opening a view already in the stack PEELS back to it rather than
 stacking a second copy.
 
+**One room at a time over the village.** Every room of the place is a door to
+the others — the band's chips, a sheet's map button — and stacking each one over
+the last left the player with three sheets to pull down to get home. So where
+the village (`View.base`) stands in the stack, a view opened over another
+REPLACES it: the stack is the village and one room, never more, and the old
+room is peeled quietly so only the new one's door is heard. A game with no
+village keeps the plain stack.
+
 **Getting out.** There is **no back arrow anywhere in this front end**. A back
 arrow answers "where did I come from", and the player does not care — they care
 where they are going. The band's four chips are the navigation, and **the LEVEL
@@ -202,14 +210,16 @@ their body differs: the hub's own ground under ONE veil (`--wv-veil`, .5 with a
 one line under it, the body, which is the one region that scrolls, and a BAR at
 the foot of the sheet. The bar carries the view's PAGES — icon and label, the
 lit one in the accent with a rule over it, the body sliding in from the side the
-page is on — and, after a filet, HOME, HELP and OPTIONS in that order. Help and
+page is on — and, after a filet, MAP, HELP and OPTIONS in that order. Help and
 options are the same two items as the round's corner, drawn into the sheet
 rather than into `#web-ctls`, so a player on the collection who wants the music
-off does not walk back to the village for it. The house is `View.home`, the
-village where there is one and the title screen otherwise, and it is THE way
-home on a sheet: the band's own house chip stands down over every sheet, the way
-it does over the bare village (`bandDoors`), and comes back when a card is over
-it. A view with one page has no tabs — a single tab is a label, not a choice —
+off does not walk back to the village for it. The MAP opens the level map over
+the sheet (`__LEVELS__.open()`); the way home on a sheet is the band's own house
+chip, top left, which stays up over every view and goes inert only on the
+village it is the door to (`bandDoors`). A game with no band, or a band with no
+map, keeps the HOUSE in that slot instead (`View.home`, the village where there
+is one and the title screen otherwise), so there is still exactly one way home.
+A view with one page has no tabs — a single tab is a label, not a choice —
 and keeps the three alone at the right of the bar. `View.sheet(spec)` builds it
 and the owner fills `body`, calls `setHead(title, sub)` and names its pages with
 `pages([{ key, label, icon }], pick)` / `light(key)`; the map and the village
@@ -219,8 +229,10 @@ are not rooms and keep their own screens. Chosen in `lab/view-frame.html`
 **A sheet pulled down goes.** The grip on its rim promises it, so a finger —
 or a mouse on a desktop — that drags the sheet down carries it, the ground
 thinning under it until the screen beneath shows through; let go past a fifth
-of its height, or flicked, it slides out and `back()` peels it, the same
-answer as ESCAPE. Short of that it springs back. The pull starts anywhere on
+of its height, or flicked, it slides out and the player is HOME — `View.home()`
+where the village is in the stack, every room put away at once, `back()`
+otherwise — the same place ESCAPE reaches, since only one room stands over
+the village. Short of that it springs back. The pull starts anywhere on
 the header, and on the body only while it is scrolled to its top: an upward or
 a sideways move stays the list's or the carousel's, the bar never starts one,
 and a control that drags on its own opts out with `data-nopull`. Touch events

@@ -1,0 +1,788 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Hex gears</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Hex gears — carry the motor's rotation to every target.
+// Two touching gears turn in opposite directions. On a hex grid three cells
+// can all touch each other, and three gears in such a triangle JAM: the whole
+// train stops. So a chain may only turn gently (120 degrees), never sharply
+// (60 degrees), and a target that asks for one direction asks for a chain of
+// the right parity.
+//
+// Thirty levels in five biomes, each adding one piece and keeping the rest:
+//   Workshop   the rule alone
+//   Mine       belts: link two gears in a line, over the void; straight keeps
+//              the turn, crossed flips it
+//   Mill       several water wheels, each driving as many pieces as its
+//              number: two trains must be joined, and their turns must agree
+//   Glacier    ratchets (one way only, forced back they jam) and crystal
+//              gears that must never turn
+//   Clockwork  the big gear: it sits on a CORNER, the forbidden triangle, and
+//              meshes at its three notches, which all turn the same way
+// Question: does each piece change how a level is solved?
+//
+// Gear tool: tap or drag over empty cells to lay gears, over yours to remove.
+// Big tool: tap near a corner. Belt tool: drag from a gear to a gear in line.
+// Tap a belt to cross it, tap again to remove it.
+
+// ---- tunables -------------------------------------------------------------
+var COLS = 7, ROWS = 10;
+var R = 50;                 // hex radius (centre to corner), design px
+var SPIN = 1.6;             // motor speed, rad/s
+var TEETH = 10, BIG_TEETH = 13;
+var ROCK_RATE = 0.32;       // share of free cells turned into rock (or void)
+var DECOY_RATE = 0.08;      // share of free cells holding a fixed gear
+var SLACK = 2;              // small gears given on top of the solution
+var WALK_MIN = 3, WALK_MAX = 6;
+var BELT_MAX = 4;           // longest belt, in cells
+var LEVELS_PER_BIOME = 6;
+var MAX_BELTS = 1;          // belts a solution may use outside the Mine
+
+var BIOMES = [
+  { name: "Workshop", floor: "#20232c", rock: "#3a3530",
+    rules: ["Neighbours turn opposite ways. Three in a triangle jam.",
+            "Arrow: the turn a target needs. Ring: any."],
+    targets: [1, 1, 2, 2, 3, 3], dir: [0, 0.5, 0.6, 0.65, 0.7, 0.75] },
+  { name: "Mine", floor: "#2a241f", rock: "#45392c",
+    rules: ["Belt: drag from a gear to a gear in line, over the void.",
+            "Straight keeps the turn, crossed flips it. Tap to cross."],
+    targets: [1, 2, 2, 2, 3, 3], dir: [0.5, 0.6, 0.65, 0.7, 0.7, 0.75],
+    beltP: 0.4, forceBelt: true, chasm: 0.75, maxBelts: [1, 2, 2, 2, 3, 3] },
+  { name: "Mill", floor: "#1d292b", rock: "#2f403f",
+    rules: ["A wheel drives as many pieces as its number.",
+            "Join two trains to add their power, if their turns agree."],
+    targets: [1, 2, 2, 2, 3, 3], dir: [0.5, 0.6, 0.65, 0.7, 0.7, 0.75],
+    beltP: 0.1, power: true, decoyMotor: [0, 0, 1, 1, 1, 2] },
+  { name: "Glacier", floor: "#212e38", rock: "#3d4f5c",
+    rules: ["A ratchet turns one way only; forced back, it jams.",
+            "A crystal gear breaks if it turns. Keep away from it."],
+    targets: [1, 2, 2, 2, 3, 3], dir: [0.5, 0.6, 0.65, 0.7, 0.7, 0.75],
+    beltP: 0.1, ratchets: [1, 1, 1, 2, 2, 2], crystal: [0.1, 0.12, 0.14, 0.16, 0.18, 0.2] },
+  { name: "Clockwork", floor: "#2b2520", rock: "#4a3b2c",
+    rules: ["A big gear sits on a corner and meshes at its 3 notches.",
+            "All three notches turn the same way."],
+    targets: [1, 2, 2, 3, 3, 4], dir: [0.5, 0.65, 0.7, 0.7, 0.75, 0.8],
+    beltP: 0.08, bigP: 0.4, forceBig: true, crystal: [0, 0, 0.05, 0.06, 0.08, 0.1],
+    ratchets: [0, 0, 0, 1, 1, 1] }
+];
+
+var W = 720, H = 1280;
+var D = Math.sqrt(3) * R;   // distance between two neighbour centres
+var BY = 285;
+var BX = (W - (COLS * D + D / 2)) / 2 + D / 2;
+var SMALL_OUT = D * 0.56, SMALL_IN = D * 0.44;
+// a notch cell sits 2D/sqrt(3) from the corner: big + small radii reach it
+var BIG_OUT = D * 2 / Math.sqrt(3) - SMALL_OUT + D * 0.12, BIG_IN = BIG_OUT - D * 0.1;
+
+var FLOOR = 0, ROCK = 1, CHASM = 2;
+
+// ---- state ----------------------------------------------------------------
+var level = 1;
+var ground;         // [ROWS][COLS] FLOOR | ROCK | CHASM
+var pieces;         // { type, cells, tri?, own, req, dir, power }
+var belts;          // { a: piece, b: piece, crossed, own }
+var occ;            // "c,r" -> piece
+var solution;       // { gears: [cell], bigs: [tri], belts: [{a, b, crossed}] }
+var par, inv;       // inv: { gear, big, belt } the level hands over
+var net;            // result of propagate()
+var tool = "gear";
+var showSol = false;
+var drag = null;    // { mode: "paint", op } | { mode: "belt", from, x, y }
+var t = 0;
+
+// ---- seeded random --------------------------------------------------------
+var seed = 1;
+function rnd() {
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  var x = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x;
+  return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+function rint(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = rint(0, i), s = a[i]; a[i] = a[j]; a[j] = s; } return a; }
+
+// ---- grid -----------------------------------------------------------------
+// cells are stored in odd-r offset (c, r) and walked in axial (q, r)
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];   // circular order
+function inside(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
+function key(c, r) { return c + "," + r; }
+function ck(cell) { return cell[0] + "," + cell[1]; }
+function toAx(c, r) { return [c - (r - (r & 1)) / 2, r]; }
+function fromAx(q, r) { return [q + (r - (r & 1)) / 2, r]; }
+function center(c, r) { return { x: BX + c * D + (r & 1 ? D / 2 : 0), y: BY + r * 1.5 * R }; }
+function neighbours(c, r) {
+  var a = toAx(c, r), out = [];
+  for (var i = 0; i < 6; i++) {
+    var n = fromAx(a[0] + AX[i][0], a[1] + AX[i][1]);
+    if (inside(n[0], n[1])) out.push(n);
+  }
+  return out;
+}
+
+// every corner shared by three cells: where a big gear may sit
+var TRIS = [];
+(function () {
+  var seen = {};
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+    var a = toAx(c, r);
+    for (var d = 0; d < 6; d++) {
+      var b1 = [a[0] + AX[d][0], a[1] + AX[d][1]], b2 = [a[0] + AX[(d + 1) % 6][0], a[1] + AX[(d + 1) % 6][1]];
+      var o1 = fromAx(b1[0], b1[1]), o2 = fromAx(b2[0], b2[1]);
+      if (!inside(o1[0], o1[1]) || !inside(o2[0], o2[1])) continue;
+      var cells = [[c, r], o1, o2], k = cells.map(ck).sort().join("|");
+      if (seen[k]) continue;
+      seen[k] = true;
+      // a notch is the cell touching two of the three: p + q - s in axial
+      var axs = [a, b1, b2], notches = [];
+      for (var i = 0; i < 3; i++) {
+        var p = axs[(i + 1) % 3], q = axs[(i + 2) % 3], s = axs[i];
+        var n = fromAx(p[0] + q[0] - s[0], p[1] + q[1] - s[1]);
+        if (inside(n[0], n[1])) notches.push(n);
+      }
+      var ps = cells.map(function (x) { return center(x[0], x[1]); });
+      TRIS.push({ cells: cells, notches: notches, key: k,
+        x: (ps[0].x + ps[1].x + ps[2].x) / 3, y: (ps[0].y + ps[1].y + ps[2].y) / 3 });
+    }
+  }
+})();
+
+function isSmall(p) { return p.type !== "big"; }
+function pieceAt(cell) { return occ[ck(cell)] || null; }
+function freeAt(cell) { return ground[cell[1]][cell[0]] === FLOOR && !occ[ck(cell)]; }
+
+function rebuildOcc() {
+  occ = {};
+  for (var i = 0; i < pieces.length; i++) {
+    pieces[i].idx = i;
+    for (var j = 0; j < pieces[i].cells.length; j++) occ[ck(pieces[i].cells[j])] = pieces[i];
+  }
+}
+
+// the pieces a small gear laid on `cell` would mesh with
+function contactsAt(cell) {
+  var out = [], nb = neighbours(cell[0], cell[1]), i, j;
+  for (i = 0; i < nb.length; i++) { var p = occ[ck(nb[i])]; if (p && isSmall(p) && out.indexOf(p) < 0) out.push(p); }
+  for (i = 0; i < pieces.length; i++) {
+    if (pieces[i].type !== "big") continue;
+    for (j = 0; j < pieces[i].tri.notches.length; j++)
+      if (ck(pieces[i].tri.notches[j]) === ck(cell) && out.indexOf(pieces[i]) < 0) out.push(pieces[i]);
+  }
+  return out;
+}
+
+function axialDist(a, b) {
+  var p = toAx(a[0], a[1]), q = toAx(b[0], b[1]);
+  var dq = q[0] - p[0], dr = q[1] - p[1], ds = -dq - dr;
+  return { inLine: dq === 0 || dr === 0 || ds === 0, n: Math.max(Math.abs(dq), Math.abs(dr), Math.abs(ds)) };
+}
+// the cells a belt runs over, between its two ends
+function beltPath(a, b) {
+  var p = toAx(a[0], a[1]), q = toAx(b[0], b[1]), n = axialDist(a, b).n, out = [];
+  for (var s = 1; s < n; s++) out.push(fromAx(p[0] + (q[0] - p[0]) * s / n, p[1] + (q[1] - p[1]) * s / n));
+  return out;
+}
+// two big gears never overlap: they do not mesh, so they must not look meshed
+function bigFits(T) {
+  return T.cells.every(freeAt) && pieces.every(function (p) {
+    if (p.type !== "big") return true;
+    var dx = p.tri.x - T.x, dy = p.tri.y - T.y;
+    return dx * dx + dy * dy >= (2 * BIG_OUT + 4) * (2 * BIG_OUT + 4);
+  });
+}
+function beltBetween(a, b) {
+  for (var i = 0; i < belts.length; i++)
+    if ((belts[i].a === a && belts[i].b === b) || (belts[i].a === b && belts[i].b === a)) return belts[i];
+  return null;
+}
+
+function biome() { return BIOMES[Math.floor((level - 1) / LEVELS_PER_BIOME)]; }
+
+// ---- level generator --------------------------------------------------------
+// Builds a solution first — a tree grown from the motor, every new piece
+// meshing with exactly one piece already laid, so no cycle at all — puts the
+// targets at the ends of its branches, then hides it under rocks and decoys.
+function genLevel(n) {
+  for (var attempt = 0; attempt < 600; attempt++) {
+    seed = n * 7919 + attempt * 104729 + 13;
+    if (tryGen(n)) return;
+  }
+  console.warn("no level for", n);
+}
+
+function tryGen(n) {
+  var B = BIOMES[Math.floor((n - 1) / LEVELS_PER_BIOME)], li = (n - 1) % LEVELS_PER_BIOME;
+  var r, c, i;
+  ground = []; pieces = []; belts = []; occ = {};
+  for (r = 0; r < ROWS; r++) { ground.push([]); for (c = 0; c < COLS; c++) ground[r].push(FLOOR); }
+
+  function add(p) { pieces.push(p); rebuildOcc(); return p; }
+  var motor = add({ type: "motor", cells: [[rint(1, COLS - 2), rint(1, ROWS - 2)]], col: 0, dir: 0, power: Infinity });
+
+  function stepSmall(N) {
+    var cand = N.type === "big" ? N.tri.notches.slice() : neighbours(N.cells[0][0], N.cells[0][1]);
+    cand = cand.filter(function (x) { if (!freeAt(x)) return false; var k = contactsAt(x); return k.length === 1 && k[0] === N; });
+    if (!cand.length) return null;
+    return add({ type: "gear", cells: [cand[rint(0, cand.length - 1)]], col: 1 - N.col, own: true });
+  }
+  function stepBig(N) {
+    var cand = TRIS.filter(function (T) {
+      if (!T.notches.some(function (z) { return ck(z) === ck(N.cells[0]); })) return false;
+      if (!bigFits(T)) return false;
+      for (var j = 0; j < T.notches.length; j++) {
+        var p = occ[ck(T.notches[j])];
+        if (p && isSmall(p) && p !== N) return false;
+      }
+      return true;
+    });
+    if (!cand.length) return null;
+    var T = cand[rint(0, cand.length - 1)];
+    return add({ type: "big", cells: T.cells, tri: T, col: 1 - N.col, own: true });
+  }
+  function stepBelt(N) {
+    if (belts.length >= (B.maxBelts ? B.maxBelts[li] : MAX_BELTS)) return null;
+    var a = toAx(N.cells[0][0], N.cells[0][1]), dirs = shuffle([0, 1, 2, 3, 4, 5]);
+    for (var d = 0; d < 6; d++) for (var k = BELT_MAX; k >= 2; k--) {
+      var y = fromAx(a[0] + AX[dirs[d]][0] * k, a[1] + AX[dirs[d]][1] * k);
+      if (!inside(y[0], y[1]) || !freeAt(y) || contactsAt(y).length) continue;
+      // a belt runs over free ground only, which turns to void at once
+      var path = beltPath(N.cells[0], y);
+      if (!path.every(freeAt)) continue;
+      var crossed = rnd() < 0.5;
+      var g = add({ type: "gear", cells: [y], col: crossed ? 1 - N.col : N.col, own: true });
+      belts.push({ a: N, b: g, crossed: crossed, own: true });
+      path.forEach(function (x) { ground[x[1]][x[0]] = CHASM; });
+      return g;
+    }
+    return null;
+  }
+
+  var nTargets = B.targets[li];
+  for (var tg = 0; tg < nTargets; tg++) {
+    var starts = pieces.filter(function (p) { return p.type !== "target"; });
+    var cur = tg === 0 ? motor : starts[rint(0, starts.length - 1)];
+    var len = rint(WALK_MIN, WALK_MAX), walked = 0;
+    for (var s = 0; s < len + 3 && (s < len || cur.type === "big"); s++) {
+      var roll = rnd(), nx = null;
+      if (cur.type !== "big" && B.bigP && roll < B.bigP) nx = stepBig(cur);
+      else if (cur.type !== "big" && B.beltP && roll < (B.bigP || 0) + B.beltP) nx = stepBelt(cur);
+      if (!nx) nx = stepSmall(cur);
+      if (!nx) break;
+      cur = nx; walked++;
+    }
+    if (walked < 2 || cur.type !== "gear") return false;
+    cur.type = "target"; cur.own = false;
+    cur.req = rnd() < B.dir[li] ? cur.col : -1;
+  }
+  var own = pieces.filter(function (p) { return p.own; });
+  if (B.forceBelt && !belts.length) return false;
+  if (B.forceBig && !own.some(function (p) { return p.type === "big"; })) return false;
+
+  // Mill: a second wheel on the solution, and neither strong enough alone
+  if (B.power) {
+    var far = own.filter(function (p) { return p.type === "gear" && contactsAt(p.cells[0]).indexOf(motor) < 0; });
+    if (!far.length) return false;
+    var m2 = far[rint(0, far.length - 1)];
+    m2.type = "motor"; m2.own = false; m2.dir = m2.col;
+    var load = pieces.filter(function (p) { return p.type !== "motor"; }).length;
+    if (load < 3) return false;
+    motor.power = Math.ceil(load * 0.6);
+    m2.power = load - motor.power + (li < 3 ? 1 : 0);
+    if (motor.power >= load || m2.power >= load) return false;
+  }
+  // Glacier: ratchets on the solution, turning the way it turns them
+  if (B.ratchets && B.ratchets[li]) {
+    var rc = shuffle(pieces.filter(function (p) { return p.own && p.type === "gear"; }));
+    if (rc.length < B.ratchets[li]) return false;
+    for (i = 0; i < B.ratchets[li]; i++) { rc[i].type = "ratchet"; rc[i].own = false; rc[i].req = rc[i].col; }
+  }
+
+  // void under the belts, then rocks, crystals and decoys on what is left
+  var solSet = pieces.slice();
+  var crystalRate = B.crystal ? B.crystal[li] : 0, decoyMotors = B.decoyMotor ? B.decoyMotor[li] : 0;
+  var free = [];
+  for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) if (freeAt([c, r])) free.push([c, r]);
+  shuffle(free);
+  for (i = 0; i < free.length; i++) {
+    var x = free[i];
+    if (!freeAt(x)) continue;
+    if (rnd() < ROCK_RATE) { ground[x[1]][x[0]] = (B.chasm && rnd() < B.chasm) ? CHASM : ROCK; continue; }
+    var k = contactsAt(x);
+    var onlySol = k.every(function (p) { return solSet.indexOf(p) >= 0; });
+    if (!k.length && crystalRate && rnd() < crystalRate) { add({ type: "crystal", cells: [x] }); continue; }
+    if (!k.length && decoyMotors > 0) { add({ type: "motor", cells: [x], dir: rint(0, 1), power: rint(2, 4) }); decoyMotors--; continue; }
+    // a decoy never jams the solution: all it touches is the solution, in one
+    // colour (and in the Mill it touches nothing, or it would add to the load)
+    if (onlySol && !(B.power && k.length) && rnd() < DECOY_RATE) {
+      var cols = {}; k.forEach(function (p) { cols[p.col] = true; });
+      if (!(cols[0] && cols[1])) add({ type: "fixed", cells: [x] });
+    }
+  }
+
+  // hide the solution
+  solution = { gears: [], bigs: [], belts: [] };
+  belts.forEach(function (b) { solution.belts.push({ a: b.a.cells[0], b: b.b.cells[0], crossed: b.crossed }); });
+  pieces.forEach(function (p) {
+    if (!p.own) return;
+    if (p.type === "big") solution.bigs.push(p.tri); else solution.gears.push(p.cells[0]);
+  });
+  pieces = pieces.filter(function (p) { return !p.own; });
+  belts = [];
+  rebuildOcc();
+  inv = { gear: solution.gears.length + SLACK, big: solution.bigs.length, belt: solution.belts.length };
+  par = solution.gears.length + solution.bigs.length + solution.belts.length;
+  tool = "gear";
+  propagate();
+  return !solved();           // a level never opens already solved
+}
+
+function applySolution() {
+  clearOwn();
+  solution.gears.forEach(function (x) { pieces.push({ type: "gear", cells: [x], own: true }); });
+  solution.bigs.forEach(function (T) { pieces.push({ type: "big", cells: T.cells, tri: T, own: true }); });
+  rebuildOcc();
+  solution.belts.forEach(function (b) { belts.push({ a: occ[ck(b.a)], b: occ[ck(b.b)], crossed: b.crossed, own: true }); });
+  propagate();
+}
+
+// ---- propagation ----------------------------------------------------------
+// Two-colours every train hooked to a wheel. An edge whose two ends get the
+// same colour is an odd cycle, and a wheel or a ratchet handed the wrong turn
+// is the same contradiction: the train jams.
+function propagate() {
+  rebuildOcc();
+  var n = pieces.length, adj = [], i, j;
+  for (i = 0; i < n; i++) adj.push([]);
+  function edge(a, b, inv) { adj[a.idx].push({ to: b, inv: inv }); adj[b.idx].push({ to: a, inv: inv }); }
+  for (i = 0; i < n; i++) {
+    var p = pieces[i];
+    if (isSmall(p)) {
+      var nb = neighbours(p.cells[0][0], p.cells[0][1]);
+      for (j = 0; j < nb.length; j++) { var q = occ[ck(nb[j])]; if (q && isSmall(q) && q.idx > i) edge(p, q, 1); }
+    } else {
+      for (j = 0; j < p.tri.notches.length; j++) { var z = occ[ck(p.tri.notches[j])]; if (z && isSmall(z)) edge(p, z, 1); }
+    }
+  }
+  // a straight belt keeps the turn, a crossed one flips it
+  for (i = 0; i < belts.length; i++) edge(belts[i].a, belts[i].b, belts[i].crossed ? 1 : 0);
+
+  var color = new Array(n), comp = new Array(n), comps = [], bad = [], badPieces = [];
+  for (i = 0; i < n; i++) {
+    if (pieces[i].type !== "motor" || comp[i] !== undefined) continue;
+    var cid = comps.length, st = { members: [], jam: false, power: 0, load: 0, crack: false, motors: [] };
+    comps.push(st);
+    color[i] = pieces[i].dir; comp[i] = cid;
+    var queue = [pieces[i]];
+    while (queue.length) {
+      var u = queue.shift(); st.members.push(u);
+      for (j = 0; j < adj[u.idx].length; j++) {
+        var e = adj[u.idx][j], v = e.to, want = color[u.idx] ^ e.inv;
+        if (color[v.idx] === undefined) { color[v.idx] = want; comp[v.idx] = cid; queue.push(v); }
+        else if (color[v.idx] !== want && u.idx < v.idx) { st.jam = true; bad.push([u, v]); }
+      }
+    }
+    st.members.forEach(function (m) {
+      if (m.type === "motor") { st.power += m.power; st.motors.push(m); if (color[m.idx] !== m.dir) { st.jam = true; badPieces.push(m); } }
+      else st.load++;
+      if (m.type === "ratchet" && color[m.idx] !== m.req) { st.jam = true; badPieces.push(m); }
+      if (m.type === "crystal") st.crack = true;
+    });
+    st.state = st.jam ? "jam" : st.load > st.power ? "stall" : st.crack ? "crack" : "run";
+  }
+  net = { color: color, comp: comp, comps: comps, bad: bad, badPieces: badPieces };
+}
+
+function stateOf(p) { var c = net.comp[p.idx]; return c === undefined ? "idle" : net.comps[c].state; }
+function targetState(p) {
+  var s = stateOf(p);
+  if (s !== "run" && s !== "crack") return s;
+  if (p.req >= 0 && net.color[p.idx] !== p.req) return "wrong";
+  return "ok";
+}
+function anyState(s) { return net.comps.some(function (c) { return c.state === s; }); }
+function solved() {
+  if (anyState("crack") || anyState("jam")) return false;
+  return pieces.every(function (p) { return p.type !== "target" || targetState(p) === "ok"; });
+}
+function used(type) {
+  if (type === "belt") return belts.filter(function (b) { return b.own; }).length;
+  return pieces.filter(function (p) { return p.own && p.type === type; }).length;
+}
+function usedAll() { return used("gear") + used("big") + used("belt"); }
+function left(type) { return inv[type] - used(type); }
+function stars() { var u = usedAll(); return u <= par ? 3 : u <= par + 1 ? 2 : 1; }
+
+// ---- editing ----------------------------------------------------------------
+function removePiece(p) {
+  belts = belts.filter(function (b) { return b.a !== p && b.b !== p; });
+  pieces.splice(pieces.indexOf(p), 1);
+  propagate();
+}
+function clearOwn() {
+  pieces = pieces.filter(function (p) { return !p.own; });
+  belts = [];
+  propagate();
+}
+
+function pick(x, y) {
+  var best = null, bd = 1e9;
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+    var p = center(c, r), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+    if (d < bd) { bd = d; best = [c, r]; }
+  }
+  return bd < R * R * 0.85 ? best : null;
+}
+function pickTri(x, y) {
+  var best = null, bd = 1e9;
+  for (var i = 0; i < TRIS.length; i++) {
+    var d = (TRIS[i].x - x) * (TRIS[i].x - x) + (TRIS[i].y - y) * (TRIS[i].y - y);
+    if (d < bd) { bd = d; best = TRIS[i]; }
+  }
+  return bd < R * R * 0.6 ? best : null;
+}
+function hitBelt(x, y) {
+  for (var i = 0; i < belts.length; i++) {
+    if (!belts[i].own) continue;
+    var a = center(belts[i].a.cells[0][0], belts[i].a.cells[0][1]), b = center(belts[i].b.cells[0][0], belts[i].b.cells[0][1]);
+    var dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy);
+    var u = ((x - a.x) * dx + (y - a.y) * dy) / (L * L);
+    if (u * L < D * 0.6 || (1 - u) * L < D * 0.6) continue;
+    var px = a.x + dx * u - x, py = a.y + dy * u - y;
+    if (px * px + py * py < 26 * 26) return belts[i];
+  }
+  return null;
+}
+
+function paintAt(cell) {
+  if (!cell || !drag || drag.mode !== "paint") return;
+  var p = pieceAt(cell);
+  if (drag.op === "add" && !p && freeAt(cell) && left("gear") > 0) { pieces.push({ type: "gear", cells: [cell], own: true }); propagate(); }
+  else if (drag.op === "del" && p && p.own && p.type === "gear") removePiece(p);
+}
+
+// ---- buttons ------------------------------------------------------------------
+var NAV = [
+  { label: "Prev", act: function () { if (level > 1) { level--; genLevel(level); } } },
+  { label: "Reset", act: function () { clearOwn(); } },
+  { label: "Solution", act: function () { showSol = !showSol; } },
+  { label: "Biome", act: function () { level = (Math.floor((level - 1) / LEVELS_PER_BIOME) + 1) % BIOMES.length * LEVELS_PER_BIOME + 1; genLevel(level); } },
+  { label: "Next", act: function () { if (level < BIOMES.length * LEVELS_PER_BIOME) { level++; genLevel(level); } } }
+];
+var NAV_Y = 1170, NAV_W = 128, NAV_H = 76, NAV_GAP = 10;
+var PAL_Y = 1060, PAL_H = 84, PAL_W = 200;
+
+function palette() {
+  var out = [{ tool: "gear", label: "Gear" }];
+  if (inv.big) out.push({ tool: "big", label: "Big" });
+  if (inv.belt) out.push({ tool: "belt", label: "Belt" });
+  var x0 = (W - out.length * PAL_W - (out.length - 1) * 16) / 2;
+  out.forEach(function (b, i) { b.x = x0 + i * (PAL_W + 16); });
+  return out;
+}
+
+function inBox(x, y, bx, by, bw, bh) { return x >= bx && x <= bx + bw && y >= by && y <= by + bh; }
+
+function onDown(x, y) {
+  var i, pal = palette();
+  var nx0 = (W - NAV.length * NAV_W - (NAV.length - 1) * NAV_GAP) / 2;
+  for (i = 0; i < NAV.length; i++) if (inBox(x, y, nx0 + i * (NAV_W + NAV_GAP), NAV_Y, NAV_W, NAV_H)) { NAV[i].act(); return; }
+  for (i = 0; i < pal.length; i++) if (inBox(x, y, pal[i].x, PAL_Y, PAL_W, PAL_H)) { tool = pal[i].tool; return; }
+
+  var bh = hitBelt(x, y);
+  if (bh) {
+    if (!bh.crossed) bh.crossed = true; else belts.splice(belts.indexOf(bh), 1);
+    propagate(); return;
+  }
+  var cell = pick(x, y), p = cell ? pieceAt(cell) : null;
+  if (tool === "gear") {
+    if (p && p.own && p.type === "big") { removePiece(p); return; }
+    if (!cell) return;
+    drag = { mode: "paint", op: p ? (p.own && p.type === "gear" ? "del" : null) : (freeAt(cell) ? "add" : null) };
+    paintAt(cell);
+  } else if (tool === "big") {
+    if (p && p.own) { removePiece(p); return; }
+    var T = pickTri(x, y);
+    if (T && bigFits(T) && left("big") > 0) { pieces.push({ type: "big", cells: T.cells, tri: T, own: true }); propagate(); }
+  } else if (tool === "belt") {
+    if (p && isSmall(p)) drag = { mode: "belt", from: p, x: x, y: y };
+  }
+}
+function onMove(x, y) {
+  if (!drag) return;
+  if (drag.mode === "paint") paintAt(pick(x, y));
+  else { drag.x = x; drag.y = y; }
+}
+function onUp(x, y) {
+  if (drag && drag.mode === "belt") {
+    var cell = pick(x, y), q = cell ? pieceAt(cell) : null, a = drag.from;
+    if (q && isSmall(q) && q !== a && !beltBetween(a, q) && left("belt") > 0) {
+      var d = axialDist(a.cells[0], q.cells[0]);
+      var clear = d.inLine && beltPath(a.cells[0], q.cells[0]).every(function (x) { return !occ[ck(x)]; });
+      if (clear && d.n >= 2 && d.n <= BELT_MAX) { belts.push({ a: a, b: q, crossed: false, own: true }); propagate(); }
+    }
+  }
+  drag = null;
+}
+
+// ---- drawing ----------------------------------------------------------------
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) {
+    var a = Math.PI / 6 + i * Math.PI / 3;
+    ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad);
+  }
+  ctx.closePath();
+}
+
+function gearPath(x, y, outer, inner, teeth, angle) {
+  ctx.beginPath();
+  var n = teeth * 4;
+  for (var i = 0; i <= n; i++) {
+    var a = angle + i / n * Math.PI * 2, ph = i % 4;
+    var rr = (ph === 0 || ph === 1) ? outer : inner;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+}
+
+function pieceCenter(p) {
+  if (p.type === "big") return { x: p.tri.x, y: p.tri.y };
+  return center(p.cells[0][0], p.cells[0][1]);
+}
+
+// angle and shake of a piece, out of the state of its train
+function motion(p) {
+  var s = stateOf(p), col = net.color[p.idx], big = p.type === "big";
+  var teeth = big ? BIG_TEETH : TEETH;
+  var o = { ang: col === 1 ? Math.PI / teeth : 0, ox: 0, oy: 0, s: s };
+  if (s === "run" || s === "crack") o.ang += (col === 0 ? 1 : -1) * t * SPIN * (big ? SMALL_OUT / BIG_OUT : 1);
+  if (s === "jam") { o.ox = Math.sin(t * 70 + p.idx) * 2; o.oy = Math.cos(t * 63 + p.idx) * 2; }
+  if (s === "stall") o.ang += Math.sin(t * 5 + p.idx) * 0.04;
+  return o;
+}
+
+function drawGear(p, fill) {
+  var c = pieceCenter(p), m = motion(p), big = p.type === "big";
+  var out = big ? BIG_OUT : SMALL_OUT, inn = big ? BIG_IN : SMALL_IN, x = c.x + m.ox, y = c.y + m.oy;
+  gearPath(x, y, out, inn, big ? BIG_TEETH : TEETH, m.ang);
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = m.s === "jam" ? "#ff4d4d" : "rgba(0,0,0,0.5)"; ctx.stroke();
+  ctx.beginPath(); ctx.arc(x, y, D * (big ? 0.18 : 0.13), 0, Math.PI * 2);
+  ctx.fillStyle = "#1b1d24"; ctx.fill();
+  ctx.save(); ctx.translate(x, y); ctx.rotate(m.ang);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  if (big) { for (var k = 0; k < 3; k++) { ctx.rotate(Math.PI * 2 / 3); ctx.fillRect(D * 0.2, -5, inn - D * 0.28, 10); } }
+  else ctx.fillRect(D * 0.14, -4, D * 0.24, 8);
+  ctx.restore();
+  return { x: x, y: y };
+}
+
+function drawArrow(x, y, rad, dir, colr, w) {
+  // dir 0 = clockwise, 1 = counter-clockwise
+  var a0 = -Math.PI * 0.9, a1 = Math.PI * 0.3;
+  ctx.beginPath(); ctx.arc(x, y, rad, a0, a1, false);
+  ctx.strokeStyle = colr; ctx.lineWidth = w || 6; ctx.stroke();
+  var end = dir === 0 ? a1 : a0, s = dir === 0 ? 1 : -1;
+  var ex = x + Math.cos(end) * rad, ey = y + Math.sin(end) * rad;
+  var tx = -Math.sin(end) * s, ty = Math.cos(end) * s;
+  ctx.beginPath();
+  ctx.moveTo(ex + tx * 14, ey + ty * 14);
+  ctx.lineTo(ex - ty * 10, ey + tx * 10);
+  ctx.lineTo(ex + ty * 10, ey - tx * 10);
+  ctx.closePath(); ctx.fillStyle = colr; ctx.fill();
+}
+
+function drawBelt(a, b, crossed, colr, run, sign, dashed) {
+  var dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy), nx = -dy / L, ny = dx / L, rr = D * 0.36;
+  ctx.lineWidth = 9; ctx.strokeStyle = colr; ctx.lineCap = "butt";
+  ctx.setLineDash(dashed ? [10, 10] : [18, 8]);
+  ctx.lineDashOffset = run ? -t * 60 * sign : 0;
+  ctx.beginPath();
+  ctx.moveTo(a.x + nx * rr, a.y + ny * rr); ctx.lineTo(b.x + (crossed ? -nx : nx) * rr, b.y + (crossed ? -ny : ny) * rr);
+  ctx.stroke();
+  ctx.lineDashOffset = run ? t * 60 * sign : 0;
+  ctx.beginPath();
+  ctx.moveTo(a.x - nx * rr, a.y - ny * rr); ctx.lineTo(b.x + (crossed ? nx : -nx) * rr, b.y + (crossed ? ny : -ny) * rr);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function render() {
+  var B = biome();
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var r, c, p, i;
+
+  // ground
+  for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) {
+    p = center(c, r);
+    var g = ground[r][c];
+    if (g === CHASM) {
+      hexPath(p.x, p.y, R - 2); ctx.fillStyle = "#07080b"; ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 2; ctx.stroke();
+      continue;
+    }
+    hexPath(p.x, p.y, R - 2);
+    ctx.fillStyle = g === ROCK ? B.rock : B.floor; ctx.fill();
+    if (g === ROCK) {
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.beginPath(); ctx.arc(p.x - 8, p.y + 4, 16, 0, 7); ctx.arc(p.x + 12, p.y - 6, 12, 0, 7); ctx.fill();
+    }
+  }
+
+  // solution, under everything
+  if (showSol) {
+    ctx.fillStyle = "rgba(120,200,255,0.55)";
+    solution.gears.forEach(function (x) { var q = center(x[0], x[1]); ctx.beginPath(); ctx.arc(q.x, q.y, 12, 0, 7); ctx.fill(); });
+    solution.bigs.forEach(function (T) { ctx.beginPath(); ctx.arc(T.x, T.y, 18, 0, 7); ctx.fill(); });
+    solution.belts.forEach(function (b) { drawBelt(center(b.a[0], b.a[1]), center(b.b[0], b.b[1]), b.crossed, "rgba(120,200,255,0.55)", false, 1, true); });
+  }
+
+  // belts, under the gears they run on
+  for (i = 0; i < belts.length; i++) {
+    var bt = belts[i], st = stateOf(bt.a), run = st === "run" || st === "crack";
+    drawBelt(pieceCenter(bt.a), pieceCenter(bt.b), bt.crossed, run ? "#8a5a34" : "#5a4030", run, net.color[bt.a.idx] === 0 ? 1 : -1, false);
+  }
+  if (drag && drag.mode === "belt") {
+    var fa = pieceCenter(drag.from);
+    ctx.strokeStyle = "rgba(255,220,150,0.7)"; ctx.lineWidth = 6; ctx.setLineDash([8, 8]);
+    ctx.beginPath(); ctx.moveTo(fa.x, fa.y); ctx.lineTo(drag.x, drag.y); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // pieces
+  for (i = 0; i < pieces.length; i++) {
+    p = pieces[i];
+    var s = stateOf(p), on = s !== "idle", at;
+    if (p.type === "gear") drawGear(p, on ? "#c9a86a" : "#7d6d50");
+    else if (p.type === "big") {
+      at = drawGear(p, on ? "#d8b46a" : "#86704c");
+      // the three notches it meshes at
+      ctx.fillStyle = "rgba(255,240,200,0.55)";
+      p.tri.notches.forEach(function (z) {
+        var q = center(z[0], z[1]), dx = q.x - p.tri.x, dy = q.y - p.tri.y, L = Math.sqrt(dx * dx + dy * dy);
+        ctx.beginPath(); ctx.arc(p.tri.x + dx / L * (BIG_OUT + 6), p.tri.y + dy / L * (BIG_OUT + 6), 6, 0, 7); ctx.fill();
+      });
+    }
+    else if (p.type === "fixed") drawGear(p, on ? "#8aa0b8" : "#59677a");
+    else if (p.type === "motor") {
+      at = drawGear(p, net.badPieces.indexOf(p) >= 0 ? "#ff3030" : "#e0533d");
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (p.power === Infinity) { ctx.font = "bold 26px sans-serif"; ctx.fillText("M", at.x, at.y + 1); }
+      else {
+        ctx.font = "bold 30px sans-serif"; ctx.fillText(p.power, at.x, at.y + 1);
+        drawArrow(at.x, at.y, D * 0.33, p.dir, "rgba(255,255,255,0.7)", 4);
+      }
+    } else if (p.type === "target") {
+      var ts = targetState(p);
+      var fill = ts === "ok" ? "#5fd38a" : ts === "wrong" ? "#f0a040" : ts === "jam" ? "#b04848" : ts === "stall" ? "#7a6a4a" : "#4a5a52";
+      at = drawGear(p, fill);
+      if (p.req >= 0) drawArrow(at.x, at.y, D * 0.27, p.req, "#fff");
+      else { ctx.beginPath(); ctx.arc(at.x, at.y, D * 0.22, 0, 7); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); }
+    } else if (p.type === "ratchet") {
+      var bad = net.badPieces.indexOf(p) >= 0;
+      at = drawGear(p, bad ? "#ff5a5a" : on ? "#a8d4f0" : "#6f8ea4");
+      drawArrow(at.x, at.y, D * 0.27, p.req, "#1b2a36", 6);
+    } else if (p.type === "crystal") {
+      var broke = s === "crack";
+      ctx.globalAlpha = 0.75;
+      at = drawGear(p, broke ? (Math.floor(t * 6) % 2 ? "#ff6060" : "#ffd0d0") : "#8ff0ff");
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = broke ? "#fff" : "rgba(255,255,255,0.8)"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (broke) { ctx.moveTo(at.x - 18, at.y - 18); ctx.lineTo(at.x + 18, at.y + 18); ctx.moveTo(at.x + 18, at.y - 18); ctx.lineTo(at.x - 18, at.y + 18); }
+      else { ctx.moveTo(at.x, at.y - 16); ctx.lineTo(at.x + 10, at.y); ctx.lineTo(at.x, at.y + 16); ctx.lineTo(at.x - 10, at.y); ctx.closePath(); }
+      ctx.stroke();
+    }
+  }
+
+  // what closes an odd cycle, or is turned the wrong way
+  if (net.bad.length && Math.floor(t * 4) % 2 === 0) {
+    ctx.strokeStyle = "#ff3030"; ctx.lineWidth = 10; ctx.lineCap = "round";
+    net.bad.forEach(function (e) {
+      var a = pieceCenter(e[0]), b = pieceCenter(e[1]);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    });
+  }
+
+  // text
+  var bi = Math.floor((level - 1) / LEVELS_PER_BIOME);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 38px sans-serif"; ctx.fillText(B.name + " · level " + level + " / " + BIOMES.length * LEVELS_PER_BIOME, 30, 62);
+  ctx.font = "26px sans-serif";
+  var line = "Pieces used " + usedAll() + "   par " + par;
+  if (inv.belt) line += "   belts " + left("belt");
+  if (inv.big) line += "   big " + left("big");
+  ctx.fillText(line + "   gears " + left("gear"), 30, 104);
+  ctx.fillStyle = "#9aa0b0"; ctx.font = "23px sans-serif";
+  ctx.fillText(B.rules[0], 30, 142);
+  ctx.fillText(B.rules[1], 30, 170);
+  if (bi > 0) { ctx.fillStyle = "#6d7384"; ctx.font = "21px sans-serif"; ctx.fillText("Biome " + (bi + 1) + " keeps the pieces of the biomes before it.", 30, 196); }
+
+  var status = "", sc = "#ff5a5a";
+  if (anyState("jam")) status = "Jammed";
+  else if (anyState("crack")) status = "A crystal broke";
+  else if (anyState("stall")) {
+    var sl = net.comps.filter(function (cp) { return cp.state === "stall"; })[0];
+    status = "Too heavy: load " + sl.load + " / power " + sl.power; sc = "#f0a040";
+  } else if (solved()) { status = "Solved " + "★★★".slice(0, stars()) + "☆☆☆".slice(0, 3 - stars()); sc = "#5fd38a"; }
+  if (status) { ctx.font = "bold 34px sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = sc; ctx.fillText(status, W / 2, 1040); }
+
+  // palette
+  var pal = palette();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  pal.forEach(function (b) {
+    var sel = tool === b.tool;
+    ctx.fillStyle = sel ? "#c9a86a" : "#2c303c"; ctx.fillRect(b.x, PAL_Y, PAL_W, PAL_H);
+    ctx.fillStyle = sel ? "#1b1d24" : "#e8e8f0"; ctx.font = "bold 30px sans-serif";
+    ctx.fillText(b.label + " " + left(b.tool), b.x + PAL_W / 2, PAL_Y + PAL_H / 2);
+  });
+
+  // nav
+  var nx0 = (W - NAV.length * NAV_W - (NAV.length - 1) * NAV_GAP) / 2;
+  ctx.font = "bold 24px sans-serif";
+  for (i = 0; i < NAV.length; i++) {
+    var hot = NAV[i].label === "Next" && solved(), x0 = nx0 + i * (NAV_W + NAV_GAP);
+    ctx.fillStyle = hot ? "#5fd38a" : (NAV[i].label === "Solution" && showSol ? "#4a7bd0" : "#23262f");
+    ctx.fillRect(x0, NAV_Y, NAV_W, NAV_H);
+    ctx.fillStyle = hot ? "#10261a" : "#c8ccd8";
+    ctx.fillText(NAV[i].label, x0 + NAV_W / 2, NAV_Y + NAV_H / 2);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+function local(e) { var b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) / scale, y: (e.clientY - b.top) / scale }; }
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) { var p = local(e); onDown(p.x, p.y); });
+cv.addEventListener("pointermove", function (e) { var p = local(e); onMove(p.x, p.y); });
+window.addEventListener("pointerup", function (e) { var p = local(e); onUp(p.x, p.y); });
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+var hash = parseInt(location.hash.slice(1), 10);
+if (hash >= 1 && hash <= BIOMES.length * LEVELS_PER_BIOME) level = hash;
+genLevel(level);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

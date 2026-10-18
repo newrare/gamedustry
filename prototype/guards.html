@@ -1,0 +1,367 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Guards</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Guards — turn-based stealth read off a clock.
+// Every guard looks down ONE of its six lines, and turns 60 degrees every
+// turn, the way its little arrow says: clockwise, counter-clockwise, or back
+// and forth over two notches. A wall, a crate or another guard cuts the line.
+// The thief moves one cell a turn; then the guards turn; a thief standing on
+// a line they look down is caught. The red cells are where they will look
+// once you have moved. Crates can be shoved to cut a line, and one guard per
+// level can be knocked out from where it is not looking.
+// Question: is reading the guards' clock a good puzzle?
+//
+// Tap a cell beside the thief to move (a crate: shove it), the thief to wait,
+// a guard beside you to knock it out.
+
+// ---- tunables -------------------------------------------------------------
+var COLS = 7, ROWS = 11;
+var R = 48;
+var WALL_RATE = 0.14;
+var CRATES = 3;
+var KNOCKOUTS = 1;          // guards the thief may knock out per level
+var GUARDS_BASE = 2;        // guards on level 1, one more every two levels
+var GUARDS_MAX = 7;
+var SWEEP_FROM = 3;         // back-and-forth guards from this level
+var MAX_PAR = 28;
+
+var W = 720, H = 1280;
+var D = Math.sqrt(3) * R;
+var BY = 250;
+var BX = (W - (COLS * D + D / 2)) / 2 + D / 2;
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];   // +1 = counter-clockwise on screen
+var SWEEP = [0, 1, 2, 1];   // a back-and-forth guard's offsets, period 4
+var PERIOD = 12;            // lcm of 6 (turning) and 4 (sweeping)
+
+// ---- state ----------------------------------------------------------------
+var level = 1;
+var walls;          // "c,r" -> true
+var crates;         // "c,r" -> true
+var guards;         // { c, r, dir0, spin: +1 | -1 | 0 (sweep), side: +1 | -1, out }
+var thief, exit, start;
+var k;              // turns played
+var moves, kos, par, phase, caughtBy = null, history = [], t = 0;
+
+// ---- seeded random --------------------------------------------------------
+var seed = 1;
+function rnd() {
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  var x = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x;
+  return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+function rint(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+
+// ---- grid -----------------------------------------------------------------
+function inside(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
+function key(c, r) { return c + "," + r; }
+function toAx(c, r) { return [c - (r - (r & 1)) / 2, r]; }
+function fromAx(q, r) { return [q + (r - (r & 1)) / 2, r]; }
+function step(c, r, d) { var a = toAx(c, r); return fromAx(a[0] + AX[d][0], a[1] + AX[d][1]); }
+function center(c, r) { return { x: BX + c * D + (r & 1 ? D / 2 : 0), y: BY + r * 1.5 * R }; }
+function dirTo(a, b) { for (var d = 0; d < 6; d++) { var s = step(a[0], a[1], d); if (s[0] === b[0] && s[1] === b[1]) return d; } return -1; }
+
+function guardDir(g, turn) {
+  if (g.spin) return ((g.dir0 + g.spin * turn) % 6 + 6) % 6;
+  return ((g.dir0 + g.side * SWEEP[turn % 4]) % 6 + 6) % 6;
+}
+function guardAt(c, r, list) {
+  for (var i = 0; i < list.length; i++) if (!list[i].out && list[i].c === c && list[i].r === r) return list[i];
+  return null;
+}
+// the cells a guard sees at a given turn, up to the first thing in the way
+function sight(g, turn, list, crateMap) {
+  var out = [], d = guardDir(g, turn), cur = [g.c, g.r];
+  for (;;) {
+    cur = step(cur[0], cur[1], d);
+    if (!inside(cur[0], cur[1]) || walls[key(cur[0], cur[1])] || crateMap[key(cur[0], cur[1])] || guardAt(cur[0], cur[1], list)) return out;
+    out.push(cur);
+  }
+}
+function seenBy(c, r, turn, list, crateMap) {
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].out) continue;
+    var s = sight(list[i], turn, list, crateMap);
+    for (var j = 0; j < s.length; j++) if (s[j][0] === c && s[j][1] === r) return list[i];
+  }
+  return null;
+}
+function walkable(c, r, list, crateMap) {
+  return inside(c, r) && !walls[key(c, r)] && !crateMap[key(c, r)] && !guardAt(c, r, list);
+}
+
+// ---- level generator --------------------------------------------------------
+// Random layouts, kept only when a BFS over (cell, turn mod 12) finds a way
+// out without touching a crate or a guard, and only when the guards make that
+// way longer than the bare walk.
+function genLevel(n) {
+  for (var attempt = 0; attempt < 3000; attempt++) {
+    seed = n * 7919 + attempt * 104729 + 7;
+    if (tryGen(n)) return;
+  }
+  console.warn("no level for", n);
+}
+
+function tryGen(n) {
+  walls = {}; crates = {}; guards = [];
+  start = [rint(0, COLS - 1), ROWS - 1];
+  exit = [rint(0, COLS - 1), 0];
+  var free = [], c, r, i;
+  for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) {
+    if ((c === start[0] && r === start[1]) || (c === exit[0] && r === exit[1])) continue;
+    if (r > 0 && r < ROWS - 1 && rnd() < WALL_RATE) walls[key(c, r)] = true; else free.push([c, r]);
+  }
+  function takeFree(filter) {
+    var cand = free.filter(function (p) { return !crates[key(p[0], p[1])] && !guardAt(p[0], p[1], guards) && (!filter || filter(p)); });
+    return cand.length ? cand[rint(0, cand.length - 1)] : null;
+  }
+  var ng = Math.min(GUARDS_BASE + Math.floor((n - 1) / 2), GUARDS_MAX);
+  for (i = 0; i < ng; i++) {
+    var p = takeFree(function (q) { return q[1] > 0 && q[1] < ROWS - 2; });
+    if (!p) return false;
+    var sweep = n >= SWEEP_FROM && rnd() < 0.35;
+    guards.push({ c: p[0], r: p[1], dir0: rint(0, 5), spin: sweep ? 0 : (rnd() < 0.5 ? 1 : -1), side: rnd() < 0.5 ? 1 : -1, out: false });
+  }
+  for (i = 0; i < CRATES; i++) { var cp = takeFree(function (q) { return q[1] > 0 && q[1] < ROWS - 1; }); if (cp) crates[key(cp[0], cp[1])] = true; }
+  if (seenBy(start[0], start[1], 0, guards, crates)) return false;
+
+  var withGuards = solve(true), bare = solve(false);
+  if (withGuards < 0 || bare < 0) return false;
+  if (withGuards <= bare || withGuards > MAX_PAR) return false;
+  par = withGuards;
+  reset();
+  return true;
+}
+
+function solve(useGuards) {
+  // BFS over (cell, turn mod PERIOD); returns the fewest moves, or -1
+  var seen = {}, qu = [[start[0], start[1], 0, 0]];
+  seen[key(start[0], start[1]) + "|0"] = true;
+  while (qu.length) {
+    var s = qu.shift();
+    if (s[3] > MAX_PAR + 4) return -1;
+    var nt = s[2] + 1;
+    for (var d = -1; d < 6; d++) {
+      var nx = d < 0 ? [s[0], s[1]] : step(s[0], s[1], d);
+      if (d >= 0 && !walkable(nx[0], nx[1], guards, crates)) continue;
+      if (nx[0] === exit[0] && nx[1] === exit[1]) return s[3] + 1;
+      if (useGuards && seenBy(nx[0], nx[1], nt, guards, crates)) continue;
+      var sk = key(nx[0], nx[1]) + "|" + (nt % (useGuards ? PERIOD : 1));
+      if (seen[sk]) continue;
+      seen[sk] = true;
+      qu.push([nx[0], nx[1], nt, s[3] + 1]);
+    }
+  }
+  return -1;
+}
+
+function reset() {
+  thief = start.slice(); k = 0; moves = 0; kos = 0; phase = "play"; caughtBy = null; history = [];
+  guards.forEach(function (g) { g.out = false; });
+  crates = Object.assign({}, crates0 || crates);
+}
+var crates0 = null;
+
+// ---- player -------------------------------------------------------------------
+function snapshot() {
+  return { thief: thief.slice(), k: k, moves: moves, kos: kos, crates: Object.assign({}, crates), out: guards.map(function (g) { return g.out; }) };
+}
+function undo() {
+  var s = history.pop();
+  if (!s) return;
+  thief = s.thief; k = s.k; moves = s.moves; kos = s.kos; crates = s.crates;
+  guards.forEach(function (g, i) { g.out = s.out[i]; });
+  phase = "play"; caughtBy = null;
+}
+
+function tapCell(c, r) {
+  if (phase !== "play") return;
+  var waitHere = c === thief[0] && r === thief[1];
+  var d = dirTo(thief, [c, r]);
+  if (!waitHere && d < 0) return;
+  var before = snapshot();
+  if (!waitHere) {
+    var g = guardAt(c, r, guards);
+    if (g) {
+      // a knock-out from where the guard is not looking
+      if (kos >= KNOCKOUTS || seenBy(thief[0], thief[1], k, [g], crates)) return;
+      g.out = true; kos++;
+    } else if (crates[key(c, r)]) {
+      var to = step(c, r, d);
+      if (!walkable(to[0], to[1], guards, crates)) return;
+      delete crates[key(c, r)]; crates[key(to[0], to[1])] = true;
+      thief = [c, r];
+    } else if (walkable(c, r, guards, crates)) thief = [c, r];
+    else return;
+  }
+  history.push(before);
+  moves++; k++;
+  if (thief[0] === exit[0] && thief[1] === exit[1]) { phase = "won"; return; }
+  caughtBy = seenBy(thief[0], thief[1], k, guards, crates);
+  if (caughtBy) phase = "caught";
+}
+
+// ---- buttons ------------------------------------------------------------------
+var BUTTONS = [
+  { label: "Prev", act: function () { if (level > 1) { level--; load(); } } },
+  { label: "Undo", act: function () { undo(); } },
+  { label: "Restart", act: function () { reset(); } },
+  { label: "Next", act: function () { level++; load(); } }
+];
+var BTN_Y = 1160, BTN_W = 150, BTN_H = 80, BTN_GAP = 14;
+function btnX(i) { return (W - BUTTONS.length * BTN_W - (BUTTONS.length - 1) * BTN_GAP) / 2 + i * (BTN_W + BTN_GAP); }
+function load() { crates0 = null; genLevel(level); crates0 = Object.assign({}, crates); }
+
+function onDown(x, y) {
+  for (var i = 0; i < BUTTONS.length; i++)
+    if (x >= btnX(i) && x <= btnX(i) + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { BUTTONS[i].act(); return; }
+  var best = null, bd = 1e9;
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+    var p = center(c, r), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+    if (d < bd) { bd = d; best = [c, r]; }
+  }
+  if (best && bd < R * R) tapCell(best[0], best[1]);
+}
+
+// ---- drawing ----------------------------------------------------------------
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+function angleOf(d) { var a = center(1, 2), s = step(1, 2, d), b = center(s[0], s[1]); return Math.atan2(b.y - a.y, b.x - a.x); }
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var r, c, p, i;
+  for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) {
+    p = center(c, r);
+    hexPath(p.x, p.y, R - 2);
+    ctx.fillStyle = walls[key(c, r)] ? "#4a4f5c" : "#232733"; ctx.fill();
+    if (walls[key(c, r)]) { hexPath(p.x, p.y - 5, R * 0.7); ctx.fillStyle = "#6b7182"; ctx.fill(); }
+  }
+  var ex = center(exit[0], exit[1]);
+  hexPath(ex.x, ex.y, R - 4); ctx.fillStyle = "#2f6b4a"; ctx.fill();
+  ctx.fillStyle = "#e8e8f0"; ctx.font = "bold 22px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("Exit", ex.x, ex.y);
+
+  // what they look at now (soft), and where they will look after your move (red)
+  guards.forEach(function (g) {
+    if (g.out) return;
+    sight(g, k, guards, crates).forEach(function (s) {
+      var q = center(s[0], s[1]); hexPath(q.x, q.y, R - 6); ctx.fillStyle = "rgba(255,209,102,0.10)"; ctx.fill();
+    });
+  });
+  if (phase === "play") {
+    guards.forEach(function (g) {
+      if (g.out) return;
+      sight(g, k + 1, guards, crates).forEach(function (s) {
+        var q = center(s[0], s[1]); hexPath(q.x, q.y, R - 6);
+        ctx.fillStyle = "rgba(255,60,60,0.22)"; ctx.fill();
+        ctx.strokeStyle = "rgba(255,60,60,0.7)"; ctx.lineWidth = 3; ctx.stroke();
+      });
+    });
+  }
+
+  // crates
+  for (var ck in crates) {
+    var cp = ck.split(",").map(Number), cc = center(cp[0], cp[1]);
+    ctx.fillStyle = "#8a6a3e"; ctx.fillRect(cc.x - R * 0.48, cc.y - R * 0.48, R * 0.96, R * 0.96);
+    ctx.strokeStyle = "#5a4428"; ctx.lineWidth = 4; ctx.strokeRect(cc.x - R * 0.48, cc.y - R * 0.48, R * 0.96, R * 0.96);
+    ctx.beginPath(); ctx.moveTo(cc.x - R * 0.48, cc.y - R * 0.48); ctx.lineTo(cc.x + R * 0.48, cc.y + R * 0.48); ctx.stroke();
+  }
+
+  // guards: a body, the line they face, and how they will turn
+  guards.forEach(function (g) {
+    var q = center(g.c, g.r), a = angleOf(guardDir(g, k));
+    ctx.beginPath(); ctx.arc(q.x, q.y, R * 0.5, 0, 7);
+    ctx.fillStyle = g.out ? "#4a4f5c" : g === caughtBy ? "#ff3030" : "#c0504d"; ctx.fill();
+    if (g.out) { ctx.fillStyle = "#c8ccd8"; ctx.font = "bold 22px sans-serif"; ctx.fillText("zz", q.x, q.y); return; }
+    // the eye
+    ctx.beginPath(); ctx.moveTo(q.x + Math.cos(a) * R * 0.75, q.y + Math.sin(a) * R * 0.75);
+    ctx.lineTo(q.x + Math.cos(a + 0.5) * R * 0.38, q.y + Math.sin(a + 0.5) * R * 0.38);
+    ctx.lineTo(q.x + Math.cos(a - 0.5) * R * 0.38, q.y + Math.sin(a - 0.5) * R * 0.38);
+    ctx.closePath(); ctx.fillStyle = "#ffd166"; ctx.fill();
+    // the turn it takes next: an arc toward the next heading
+    var a2 = angleOf(guardDir(g, k + 1)), da = a2 - a;
+    while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
+    var rr = R * 0.62;
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(q.x, q.y, rr, a, a + da * 0.85, da < 0); ctx.stroke();
+    var ea = a + da * 0.85, s = da < 0 ? -1 : 1;
+    var hx = q.x + Math.cos(ea) * rr, hy = q.y + Math.sin(ea) * rr, tx = -Math.sin(ea) * s, ty = Math.cos(ea) * s;
+    ctx.beginPath(); ctx.moveTo(hx + tx * 9, hy + ty * 9); ctx.lineTo(hx - ty * 6, hy + tx * 6); ctx.lineTo(hx + ty * 6, hy - tx * 6); ctx.closePath();
+    ctx.fillStyle = "#fff"; ctx.fill();
+    if (!g.spin) { ctx.fillStyle = "#fff"; ctx.font = "bold 18px sans-serif"; ctx.fillText("<>", q.x, q.y + R * 0.05); }
+  });
+
+  // the thief
+  var tp = center(thief[0], thief[1]);
+  ctx.beginPath(); ctx.arc(tp.x, tp.y, R * 0.45, 0, 7); ctx.fillStyle = phase === "caught" ? "#ff8080" : "#4aa3ff"; ctx.fill();
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.stroke();
+  if (phase === "play") {
+    for (var d = 0; d < 6; d++) {
+      var nx = step(thief[0], thief[1], d);
+      if (!inside(nx[0], nx[1]) || walls[key(nx[0], nx[1])]) continue;
+      var nq = center(nx[0], nx[1]); hexPath(nq.x, nq.y, R - 10);
+      ctx.strokeStyle = "rgba(74,163,255,0.6)"; ctx.lineWidth = 3; ctx.stroke();
+    }
+  }
+
+  // HUD
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 40px sans-serif"; ctx.fillText("Level " + level, 30, 66);
+  ctx.font = "28px sans-serif";
+  ctx.fillText("Moves " + moves + "   par " + par + "   knock-outs " + (KNOCKOUTS - kos), 30, 108);
+  ctx.fillStyle = "#9aa0b0"; ctx.font = "23px sans-serif";
+  ctx.fillText("Red: where the guards look once you have moved.", 30, 150);
+  ctx.fillText("White arc: the way each guard turns next. <>: back and forth.", 30, 180);
+
+  if (phase !== "play") {
+    var won = phase === "won", st = moves <= par ? 3 : moves <= par + 2 ? 2 : 1;
+    ctx.fillStyle = "rgba(10,11,14,0.75)"; ctx.fillRect(0, 1035, W, 105);
+    ctx.textAlign = "center"; ctx.font = "bold 40px sans-serif"; ctx.fillStyle = won ? "#5fd38a" : "#ff5a5a";
+    ctx.fillText(won ? "Out in " + moves + " · " + "★★★".slice(0, st) + "☆☆☆".slice(0, 3 - st) : "Caught — Undo or Restart", W / 2, 1100);
+  }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 28px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    var hot = BUTTONS[i].label === "Next" && phase === "won";
+    ctx.fillStyle = hot ? "#5fd38a" : "#2c303c"; ctx.fillRect(btnX(i), BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = hot ? "#10261a" : "#e8e8f0"; ctx.fillText(BUTTONS[i].label, btnX(i) + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+function frame(now) { t = now / 1000; render(); requestAnimationFrame(frame); }
+fit();
+load();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

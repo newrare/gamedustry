@@ -339,6 +339,31 @@ var ROCK_SPRITE = { scale: 0.85, q: 0.8 };
 var SMORE = { scale: 0.5, q: 0.82 };
 var SNAKE = { scale: 0.6, q: 0.8 };
 
+/* games/holepocalypse's horde: one sheet of FRAMES per zombie (`walkerNN`,
+   `boomerNN`… walk, hit, knockout) and per boss (`boss-<name>NN`), swapped in
+   place, so scaled and never boxed like marshmelt's body. A zombie is drawn
+   ~118 design px tall and a boss ~200: the walker's sheet was painted on
+   taller cells than the six after it, hence its smaller factor, which brings
+   every figure to ~2x a phone's ratio. Its ball kinds, supers and balls
+   (`kindNN`, `superNN`, `ballNN`) are icons ~40-70 design px across, and its
+   course pieces (`courseNN`) run from a cup to a pond ~200 px wide. */
+var ZOMBIE_WALKER = { scale: 0.6, q: 0.8 };
+var ZOMBIE = { scale: 0.72, q: 0.8 };
+var ZOMBIE_BOSS = { scale: 0.85, q: 0.8 };
+var GOLF_ICON = { w: 192, h: 192, q: 0.82 };
+var GOLF_COURSE = { w: 400, h: 400, q: 0.82 };
+/* Its power effects (`fx-<anim>-NN`: a blast, a fire patch, an ice block, the
+   cart…) are FRAMES played in place, so one fixed scale for all of them —
+   boxed, a frame that grows (an explosion) would be shrunk back to its
+   neighbour's size. Cut from 328x300 cells and drawn ~100-340 design px. */
+var GOLF_FX = { scale: 0.5, q: 0.8 };
+
+/* A SHARED FRAME (`assets/image/master/game-frame-<theme>.png`): a whole
+   portrait overlay, transparent in the middle, laid over the round for a
+   moment — the ice of a time freeze. Filled to the 720x1280 frame like a
+   backdrop, a little higher in quality since it sits over the play. */
+var FRAME = { w: 720, h: 1280, q: 0.78 };
+
 /* Everything else. Nothing uses it today; it is the floor for a role added
    later, small enough that forgetting to give it a profile is cheap. */
 var GENERIC = { w: 320, h: 400, q: 0.86 };
@@ -389,6 +414,16 @@ function profileFor(role, slug) {
   if (/^smore\d+$/.test(role)) return SMORE;
   if (/^snake\d+$/.test(role)) return SNAKE;
   if (/^cast-(blue|red|turn)-\d\d-[a-z]$/.test(role)) return CAST;
+  if (/^walker\d+$/.test(role)) return ZOMBIE_WALKER;
+  if (/^(boomer|shield|mudder|digger|runner|necro)\d+$/.test(role)) return ZOMBIE;
+  if (/^boss-[a-z]+\d+$/.test(role)) return ZOMBIE_BOSS;
+  if (/^(kind|super|ball)\d+$/.test(role)) return GOLF_ICON;
+  if (/^course\d+$/.test(role)) return GOLF_COURSE;
+  if (/^fx-[a-z]+-\d+$/.test(role)) return GOLF_FX;
+  if (/^frame-[a-z-]+$/.test(role)) return FRAME;
+  /* `fairway-01`… — games/holepocalypse's round ground, one painted fairway
+     per band, cut like a phone background (orbinity's `space-<world>`). */
+  if (/^fairway-\d+$/.test(role)) return PROFILE["background-phone"];
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
@@ -454,7 +489,12 @@ function knownSlugs() {
    The key is the ROLE — `CONFIG.art.ship01`, `assets/image/embed/<slug>-ship01.webp`,
    exactly as a master's name would have been — and the value is the file in
    `assets/image/object/`, without its extension. `cut-objects.mjs --adopt`
-   writes those lines; nothing here is typed by hand. */
+   writes those lines; nothing here is typed by hand.
+
+   One kind of value is not a cut: a SHARED FRAME, `game-frame-<theme>`, a
+   whole overlay no game owns (ice, lava, slime…), which stays in
+   assets/image/master/ because there is nothing to take apart — a game names
+   it the same way, `"frame-ice": "game-frame-ice"`, and it is read from there. */
 function objects(all) {
   var out = [];
   all.forEach(function (slug) {
@@ -468,6 +508,7 @@ function objects(all) {
       [".png", ".jpg", ".jpeg"].forEach(function (ext) {
         if (src) return;
         if (fs.existsSync(path.join(OBJ_DIR, stem + ext))) { file = stem + ext; src = path.join(OBJ_DIR, file); }
+        else if (/^game-frame-/.test(stem) && fs.existsSync(path.join(SRC_DIR, stem + ext))) { file = stem + ext; src = path.join(SRC_DIR, file); }
       });
       if (!src) {
         console.log("?     " + slug + " art.objects." + role + " → assets/image/object/" + stem +
@@ -500,7 +541,10 @@ function knownRole(role) {
          /^asteroid-?\d+$/.test(role) ||
          /^mallow\d+$/.test(role) || /^rock-(ice|cracked|crumbling|bomb)\d+$/.test(role) ||
          /^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role) || /^flame\d+$/.test(role) ||
-         /^(crust|smore|snake)\d+$/.test(role);
+         /^(crust|smore|snake)\d+$/.test(role) ||
+         /^(walker|boomer|shield|mudder|digger|runner|necro|kind|super|ball|course)\d+$/.test(role) ||
+         /^boss-[a-z]+\d+$/.test(role) || /^fairway-\d+$/.test(role) || /^fx-[a-z]+-\d+$/.test(role) ||
+         /^frame-[a-z-]+$/.test(role);
 }
 
 function masters(all) {
@@ -522,6 +566,13 @@ function masters(all) {
     if (!role) { console.log("?     " + file + " — no role in the name, left alone"); return; }
     if (role.indexOf("object-") === 0) {
       console.log("sheet " + file + " — cut it with tools/lab/cut-objects.mjs, not shipped");
+      return;
+    }
+    /* `<slug>-store-<name>.png` is key art kept for the listing images (the
+       store composer, a capsule, a cover): material like a sheet, embedded in
+       no build. */
+    if (role.indexOf("store-") === 0) {
+      console.log("store " + file + " — listing material, not shipped");
       return;
     }
     out.push({

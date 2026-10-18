@@ -1,0 +1,128 @@
+  /* =========================================================================
+     SKIN — HOLEPOCALYPSE. Everything above is the shared motor stylesheet;
+     the theme lives in these tokens and the few overrides below: a dusk
+     fairway, toxic lime, and the purple of the sky over the course.
+     ========================================================================= */
+  :root {
+    --bg:#0c1a10; --accent:#9fe03a;
+    --cta-a:#c4ff4a; --cta-b:#5fbf1a; --cta-text:#102006;
+    --danger:#ff4d6d; --gold:#ffd34d;
+    /* the bag's row stands just right of the level pill: the "!" goes on top */
+    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
+  }
+  html, body { background:radial-gradient(900px 900px at 50% 18%, #3a1f5c 0%, #142a18 58%, #070d08 100%); }
+  #intro-title {
+    color:#c4ff4a;
+    text-shadow:0 4px 0 #2f6b0e, 0 0 30px rgba(159,224,58,.55);
+  }
+  #hud-score { text-shadow:0 0 14px rgba(159,224,58,.6); }
+  .eo-score { text-shadow:0 0 22px rgba(159,224,58,.8); }
+  #cta-bar { border-top:1px solid rgba(159,224,58,.25); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole shot ---------
+     "Fling golf balls at the horde and roll one into the hole" — so the
+     stage is the foot of a fairway: the two bands of the arc around the tee
+     (blue rolls, orange lobs), a finger that presses in the blue band and
+     drags out along the shot, the blue dotted preview, and the ball rolling
+     up into a zombie that it knocks flying. One 2.6 s loop.
+
+     Geometry, in the 420x280 stage: the tee at (210, 262), the zombie's head
+     at (290, 64) — 80 px right and 198 px up, 22 deg off vertical — and the
+     finger dragging from 55 to 125 px out along that line. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#e6f5d8; }
+  #intro-tagline .w-shot { color:#ffffff; text-shadow:0 0 18px rgba(143,211,255,.85); }
+  #intro-tagline .w-hole { color:var(--accent); text-shadow:0 0 18px rgba(159,224,58,.8); }
+  #intro-demo { margin-top:30px; }
+
+  .demo-stage {
+    width:420px; height:280px; overflow:hidden;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.75) 0 4px, transparent 4px calc(100% - 4px), rgba(255,255,255,.75) calc(100% - 4px)),
+      repeating-linear-gradient(180deg, #4c9a3c 0 28px, #418a33 28px 56px);
+  }
+  /* the arc: a half disc around the tee, the blue band inside the orange */
+  .demo-stage::before {
+    content:""; position:absolute; z-index:0; left:60px; bottom:-132px;
+    width:300px; height:300px; border-radius:50%;
+    background:radial-gradient(circle at 50% 50%,
+      transparent 0 20px, rgba(80,180,255,.42) 21px 84px,
+      rgba(255,255,255,.7) 84px 86px, rgba(255,150,40,.36) 86px 148px, transparent 149px);
+  }
+  /* the zombie at the top of the field: a green head, a red visor, red eyes */
+  .demo-stage::after {
+    content:""; position:absolute; z-index:1; left:263px; top:37px; width:54px; height:54px; border-radius:50%;
+    background:
+      radial-gradient(circle at 34% 56%, #ff3b3b 0 4px, transparent 5px),
+      radial-gradient(circle at 66% 56%, #ff3b3b 0 4px, transparent 5px),
+      linear-gradient(180deg, #e8323a 0 28%, transparent 28%),
+      radial-gradient(circle at 50% 60%, #8fb36a 0 60%, #5f8a45 100%);
+    box-shadow:0 6px 0 rgba(0,0,0,.25);
+    animation:demoZombie 2.6s linear infinite;
+  }
+  @keyframes demoZombie {
+    0%,68%   { transform:translate(0,0) rotate(0); opacity:1; }
+    76%      { transform:translate(26px,-30px) rotate(40deg); opacity:1; }
+    86%      { transform:translate(52px,-44px) rotate(90deg); opacity:0; }
+    94%      { transform:translate(0,0) rotate(0); opacity:0; }
+    100%     { transform:translate(0,0) rotate(0); opacity:1; }
+  }
+
+  /* the Direct preview: blue dots along the shot, while the finger drags */
+  .demo-aim .demo-beam {
+    left:210px; bottom:18px; margin-left:-3px; width:6px; height:196px;
+    transform-origin:50% 100%; transform:rotate(22deg);
+    background:repeating-linear-gradient(180deg, #8fd3ff 0 6px, transparent 6px 16px);
+    border-radius:3px;
+    animation:demoBeam 2.6s ease-in-out infinite;
+  }
+  @keyframes demoBeam {
+    0%,8%    { opacity:0; }
+    14%,44%  { opacity:.95; }
+    50%,100% { opacity:0; }
+  }
+
+  /* the ball: on the tee, then up the line into the zombie */
+  .demo-aim .demo-target {
+    z-index:2; left:199px; top:251px; width:22px; height:22px; margin-left:0;
+    border:0; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #ffffff 0 40%, #d6dde4 75%, #9aa4ad 100%);
+    box-shadow:0 3px 4px rgba(0,0,0,.35);
+    animation:demoBall 2.6s linear infinite;
+  }
+  .demo-aim .demo-ripple { display:none; }
+  @keyframes demoBall {
+    0%,48%   { transform:translate(0,0); opacity:1; }
+    70%      { transform:translate(78px,-188px); opacity:1; }
+    80%      { transform:translate(60px,-150px); opacity:1; }
+    88%      { transform:translate(54px,-120px); opacity:0; }
+    94%      { transform:translate(0,0); opacity:0; }
+    100%     { transform:translate(0,0); opacity:1; }
+  }
+
+  /* the finger: a press in the blue band, a drag out along the shot */
+  .demo-aim .demo-hand {
+    left:193px; top:211px; bottom:auto; margin-left:0; z-index:3;
+    animation:demoHand 2.6s ease-in-out infinite;
+  }
+  /* on a DESK the cursor's wave is the press that starts the shot (shell.js, Demo) */
+  .demo-aim .demo-hand { --click-dur:2.6s; --click-at:.2s; }
+  @keyframes demoHand {
+    0%,4%    { transform:translate(0,20px); opacity:0; }
+    10%      { transform:translate(0,0); opacity:1; }
+    44%      { transform:translate(26px,-65px); opacity:1; }
+    52%      { transform:translate(26px,-40px); opacity:0; }
+    100%     { transform:translate(0,20px); opacity:0; }
+  }
+
+  /* ---- comic callouts -------------------------------------------------------
+     The shared Pop styles, retinted to the course: toxic lime for the chain,
+     the hole's green for a sinking. */
+  .pop-combo {
+    --fill:linear-gradient(180deg,#ffffff 0%,#e8ffb0 40%,#9fe03a 100%);
+    --chip:#102006; --chip-line:#9fe03a;
+  }
+  .pop-bonus {
+    --fill:linear-gradient(180deg,#ffffff 0%,#d8ffb0 50%,#7fd11e 100%);
+    --glow:rgba(159,224,58,.8); --ink:#102006;
+  }

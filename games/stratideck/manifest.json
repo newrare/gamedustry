@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.24.10",
+  "version": "0.24.18",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -404,11 +404,11 @@
           "Trap!": "Piège !",
           "Wounded": "Blessé",
           "Infirmary full": "Infirmerie pleine",
-          "card lost": "carte perdue",
+          "Card lost": "Carte perdue",
           "Prison full": "Prison pleine",
           "walks free": "repart libre",
           "holds": "résiste",
-          "Basic": "Basique",
+          "Basic": "Bannal",
           "Common": "Commun",
           "Uncommon": "Peu commun",
           "Rare": "Rare",
@@ -2919,8 +2919,8 @@
               }
             ],
             "title": {
-              "en": "The kidnapped cook",
-              "fr": "La cuisinière enlevée"
+              "en": "The cook's kidnapping",
+              "fr": "L'enlèvement de la cuisinière"
             },
             "brief": {
               "en": "The red camp has kidnapped our cook, Old Marrow, for her pies, and the whole army is eating turnips. She is held in their kitchen tent and, our spies say, has already improved their soup. Bring her home before they get used to it.",
@@ -3582,8 +3582,8 @@
               "h": 12
             },
             "title": {
-              "en": "A brawl broke out",
-              "fr": "Une bagarre a éclaté"
+              "en": "A brawl breaks out",
+              "fr": "Une bagarre éclate"
             },
             "text": {
               "en": "Over the last sausage, of course. {c} came out of it with a black eye and a bed in the infirmary.",
@@ -3598,8 +3598,8 @@
               "n": -1
             },
             "title": {
-              "en": "A thief in the night",
-              "fr": "Un voleur dans la nuit"
+              "en": "A night thief",
+              "fr": "Un voleur de nuit"
             },
             "text": {
               "en": "Someone slipped into the command tent and made off with a ticket. The guard swears he saw nothing.",
@@ -3666,8 +3666,8 @@
               "fr": "Incendie dans la réserve"
             },
             "text": {
-              "en": "A lantern tipped over among the sacks. The fire is out, but what it ate has to be bought again.",
-              "fr": "Une lanterne s'est renversée entre les sacs. Le feu est éteint, mais il faut racheter ce qu'il a dévoré."
+              "en": "A lantern tipped over among the storeroom sacks. The fire is out, but what was burned has to be bought again.",
+              "fr": "Une lanterne s'est renversée entre les sacs de la réserve. Le feu est éteint, mais il faut racheter ce qui a été brûlé."
             }
           },
           {
@@ -3708,8 +3708,8 @@
               "kind": "tentBurn"
             },
             "title": {
-              "en": "A storm flattened the tent",
-              "fr": "La tempête a abattu la tente"
+              "en": "The tent flattened by the storm",
+              "fr": "La tente abattue par la tempête"
             },
             "text": {
               "en": "The recruiting tent is on the ground and its candidates went home. New faces will come with the next shelf.",
@@ -3922,8 +3922,8 @@
               ]
             },
             "title": {
-              "en": "The kitchen's fame",
-              "fr": "La réputation de la cuisine"
+              "en": "The cook's fame",
+              "fr": "La réputation de la cuisinière"
             },
             "text": {
               "en": "Word of the camp's cooking has spread. {c} joins for the food and asks for no pay.",
@@ -3943,8 +3943,8 @@
               "fr": "Un trésor enterré"
             },
             "text": {
-              "en": "Digging new latrines, the sappers hit a chest of old coins.",
-              "fr": "En creusant de nouvelles latrines, les sapeurs sont tombés sur un coffre de vieilles pièces."
+              "en": "Digging new latrines, the sappers hit an old chest full of coins.",
+              "fr": "En creusant de nouvelles latrines, les sapeurs sont tombés sur un vieux coffre rempli de pièces."
             }
           },
           {
@@ -3960,7 +3960,7 @@
             },
             "text": {
               "en": "A travelling merchant spent the night at the camp and paid for his supper with a ticket.",
-              "fr": "Un marchand ambulant a passé la nuit au camp et a payé son souper avec un ticket."
+              "fr": "Un marchand ambulant a passé la nuit au camp. Ila payé son souper avec un ticket."
             }
           },
           {
@@ -4048,12 +4048,12 @@
               "n": 100
             },
             "title": {
-              "en": "Passing traders",
-              "fr": "Des marchands de passage"
+              "en": "Transient traders",
+              "fr": "Des marchands passagers"
             },
             "text": {
-              "en": "The camp sold its spare boots and old helmets at a very good price.",
-              "fr": "Le camp a vendu ses bottes en trop et ses vieux casques à très bon prix."
+              "en": "The camp sold some spare boots and old helmets at a very good price.",
+              "fr": "Le camp a vendu des bottes en trop et de vieux casques à très bon prix."
             }
           },
           {
@@ -4099,8 +4099,8 @@
               "fr": "Le cadeau d'un enfant"
             },
             "text": {
-              "en": "The village children came to see the soldiers and left a sticker for the collection.",
-              "fr": "Les enfants du village sont venus voir les soldats et ont laissé un sticker pour la collection."
+              "en": "The village children came to see the soldiers and gave a sticker for the collection.",
+              "fr": "Les enfants du village sont venus voir les soldats et ont donné un sticker pour la collection."
             },
             "w": 0.7
           },
@@ -4111,12 +4111,12 @@
               "kind": "board"
             },
             "title": {
-              "en": "Fresh intelligence",
-              "fr": "Des renseignements frais"
+              "en": "New intelligence",
+              "fr": "De nouveaux renseignements"
             },
             "text": {
-              "en": "The scouts came back with news, and the mission board has been rewritten.",
-              "fr": "Les éclaireurs rapportent des nouvelles. Le tableau des missions a été réécrit."
+              "en": "The scouts came back with new missions, and the mission board has been refreshed.",
+              "fr": "Les éclaireurs ont rapportés de nouvelles missions. Le tableau des missions a été renouvelées."
             }
           },
           {
@@ -4193,8 +4193,8 @@
               "fr": "Une bonne récolte"
             },
             "text": {
-              "en": "The camp's garden gave more than anyone could eat, and the surplus sold for two tickets.",
-              "fr": "Le potager du camp a donné plus que tout le monde ne pouvait manger. Le surplus s'est vendu contre deux tickets."
+              "en": "The camp's garden gave more than was needed, and the surplus sold for two tickets.",
+              "fr": "Le potager du camp a donné plus que ce qu'il fallait. Le surplus s'est vendu contre deux tickets."
             },
             "w": 0.6
           },
@@ -4258,8 +4258,8 @@
           "job": "liaison",
           "desc": "lean man with slicked-back hair and a thin curled moustache, long dark-blue coat with a high collar, black half-mask, a slender short sword, sidestepping sneakily",
           "lore": {
-            "en": "A master of disguise who owns forty false moustaches and one real one. Nobody, not even Otto, remembers which one it is.",
-            "fr": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne ne sait plus laquelle, pas même Otto."
+            "en": "A master of disguise who owns forty false moustaches and one real one. Nobody, not even Otto, knows which one it is.",
+            "fr": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne ne sait jamais laquelle, pas même Otto."
           }
         },
         {
@@ -4334,7 +4334,7 @@
           "desc": "lanky young man with sandy hair, blue scarf, short bow on his back, holding a brass spyglass to one eye, balancing on one leg on a fence post",
           "lore": {
             "en": "His only job is to shout his own name. It took the army a whole week to understand he was warning them.",
-            "fr": "Son seul travail : crier son propre nom. Il a fallu une semaine à l'armée pour comprendre que « Luke Out ! » voulait dire « attention ! »."
+            "fr": "Son seul travail : crier son propre nom. Il a fallu une semaine à l'armée pour comprendre que « Luke Out ! » voulait dire « Attention ! »."
           }
         },
         {
@@ -4528,8 +4528,8 @@
           "job": "dietitian",
           "desc": "broad-shouldered man with black hair under a blue tricorn, a halberd in one hand and a lion shield in the other, a torn straw dummy at his feet",
           "lore": {
-            "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half — out of principle.",
-            "fr": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. A l'aube, il l'a coupé en deux — par principe."
+            "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half, out of principle.",
+            "fr": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. A l'aube, il l'a coupé en deux, par principe."
           }
         },
         {
@@ -4543,8 +4543,8 @@
           "job": "interrogator",
           "desc": "cheerful blond man in a blue tricorn with a white feather, blue cape with a gold lion, a raised steel sword and a lion shield, big confident smile",
           "lore": {
-            "en": "Frank Lee says exactly what he thinks, and what he thinks is \"charge\". His honesty is so complete that no decoy has ever fooled him.",
-            "fr": "Frank Lee dit exactement ce qu'il pense. Et ce qu'il pense, c'est « chargez ». Il est si franc qu'aucun leurre ne l'a jamais trompé."
+            "en": "Frank Lee says exactly what he thinks, and what he thinks is \"charge!\". His honesty is so complete that no decoy has ever fooled him.",
+            "fr": "Frank Lee dit exactement ce qu'il pense. Et ce qu'il pense, c'est « Chargez ! ». Il est si franc qu'aucun leurre ne l'a jamais trompé."
           }
         },
         {
@@ -4573,8 +4573,8 @@
           "job": "masterAtArms",
           "desc": "burly old man with a huge white beard and an eyepatch, gleaming legendary golden armour with a blue lion cape, a giant greatsword planted in the ground, shredded straw dummies around his boots",
           "lore": {
-            "en": "Fifty years a sergeant, and proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
-            "fr": "Sergent depuis cinquante ans et fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume."
+            "en": "Fifty years a sergeant, he is proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
+            "fr": "Sergent depuis cinquante ans, il est fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume."
           }
         },
         {
@@ -4588,8 +4588,8 @@
           "job": "carpenter",
           "desc": "skinny young man with messy black hair, plain blue tunic, a small hatchet, chopping at a wooden plank with a determined frown",
           "lore": {
-            "en": "Tim was a woodcutter's son who joined up to escape the woodcutting. The army handed him an axe on the very first day.",
-            "fr": "Fils de bûcheron, Tim s'est engagé pour ne plus jamais couper de bois. L'armée lui a tendu une hache dès le premier jour."
+            "en": "Tim was a woodcutter's son who joined up never to cut wood. But on the very first day, the army handed him an axe. ",
+            "fr": "Fils de bûcheron, Tim s'est engagé de ne jamais couper du bois. Mais dès le premier jour, l'armée lui a tendu une hache. "
           }
         },
         {
@@ -4603,8 +4603,8 @@
           "job": "stretcher",
           "desc": "cocky young man with spiky brown hair and a blue tricorn, an axe resting on his shoulder, smirking with one boot on a broken fence",
           "lore": {
-            "en": "Axel says the shortest road goes through the fence. He has not used a gate since he was nine.",
-            "fr": "Axel dit que le plus court chemin passe par la palissade. Il n'a plus franchi un portail depuis ses neuf ans."
+            "en": "Axel says the shortest of roads goes through the fence. Since he was nine, he has not used a gate.",
+            "fr": "Axel dit que le plus court des chemins passe par la palissade. Depuis ses neuf ans, il ne franchi plus de portails."
           }
         },
         {
@@ -4678,8 +4678,8 @@
           "job": "stretcher",
           "desc": "chubby young man with a dirty face and a plain blue cap, a small pickaxe, sitting on a boulder he failed to break, sweating",
           "lore": {
-            "en": "Doug was made a captain because he could dig a trench faster than anyone. Nobody told him captains stop digging.",
-            "fr": "Doug a été nommé capitaine parce qu'il creusait une tranchée plus vite que tout le monde. Personne ne lui a dit que les capitaines arrêtent de creuser."
+            "en": "Doug was made a captain because he could dig trenches faster than anyone. Nobody had told him a captain was supposed to give orders instead of keep digging.",
+            "fr": "Doug a été nommé capitaine parce qu'il creusait les tranchées plus vite que tout le monde. Personne ne lui avait expliqué qu’un capitaine était censé donner des ordres plutôt que de continuer à creuser."
           }
         },
         {
@@ -4738,8 +4738,8 @@
           "job": "judge",
           "desc": "tall weathered man squinting, grey stubble, long blue duster coat with gold trim, a pickaxe slung over his back like a rifle, chewing a piece of straw",
           "lore": {
-            "en": "Flint Eastwood speaks four words a day and wastes none of them. The rocks hear \"move\", and somehow they do.",
-            "fr": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « bougez » et, allez savoir comment, ils bougent."
+            "en": "Flint Eastwood speaks four words a day and wastes none of them. The rocks hear \"move!\", and somehow they do.",
+            "fr": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « Bougez ! » et, allez savoir comment, ils bougent."
           }
         },
         {
@@ -4753,8 +4753,8 @@
           "job": "governor",
           "desc": "tiny elderly woman with a white bun and round glasses, legendary golden captain's armour with a blue cape, a huge crystal-headed pickaxe twice her size glowing blue, a boulder cracked in half behind her",
           "lore": {
-            "en": "Captain Gran Knight has broken mountains since before the war had a name. She is small, she is ancient, and no rock in the kingdom dares to stand in her way.",
-            "fr": "La capitaine Gran Knight brisait déjà des montagnes quand la guerre n'avait pas encore de nom. Elle est petite, elle est très vieille, mais aucun rocher du royaume n'ose lui barrer la route."
+            "en": "Captain Gran Knight already knew how to break mountains before the war had a name. She is small, she is ancient, and no rock in the kingdom dares to stand in her way.",
+            "fr": "La capitaine Gran Knight savait déjà briser des montagnes quand la guerre n'avait pas encore de nom. Elle est petite, elle est très vieille, mais aucun rocher du royaume n'ose lui barrer la route."
           }
         },
         {
@@ -4768,8 +4768,8 @@
           "job": "cartographer",
           "desc": "confused young man with leaves in his hair, plain blue coat, holding a map upside down and a cheap brass compass",
           "lore": {
-            "en": "Wayne holds his map upside down and still finds the way. The forest has never understood how, and neither has Wayne.",
-            "fr": "Wayne tient sa carte à l'envers et trouve quand même son chemin. La forêt n'a jamais compris comment. Wayne non plus."
+            "en": "Wayne holds his map upside down and still finds the way. No one has ever understood how, and neither has Wayne.",
+            "fr": "Wayne tient sa carte à l'envers et trouve quand même son chemin. Personne n'a jamais compris comment. Wayne non plus."
           }
         },
         {
@@ -4873,8 +4873,8 @@
           "job": "chaplain",
           "desc": "young woman with short platinum hair, blue colonel's coat, brass knuckle gauntlets, fierce stare, one boot resting on a cracked skull",
           "lore": {
-            "en": "Val Ore was dared to spend a night in the haunted crypt. She came out at dawn with the ghost's hat and a strongly worded complaint.",
-            "fr": "On a mis Val Ore au défi de passer une nuit dans la crypte hantée. Elle en est sortie à l'aube avec le chapeau du fantôme et une réclamation bien sentie."
+            "en": "Val Ore was dared to spend a night in the haunted crypt. She came out at dawn with a ghost's hat.",
+            "fr": "On a mis Val Ore au défi de passer une nuit dans la crypte hantée. Elle en est sortie à l'aube avec le chapeau d'un fantôme."
           }
         },
         {
@@ -4888,8 +4888,8 @@
           "job": "brewer",
           "desc": "burly man with a broken nose and curly dark hair, blue coat, steel gauntlets, cracking his knuckles with a confident smirk",
           "lore": {
-            "en": "Colonel Duke Upps settles every argument with one punch, then apologises politely. Skulls, bones and curses do not scare him; paperwork does.",
-            "fr": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas ; la paperasse, si."
+            "en": "Colonel Duke Upps settles every argument with one punch, then apologises politely. Skulls, bones and curses do not scare him, but paperwork does.",
+            "fr": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas, mais la paperasse, si."
           }
         },
         {
@@ -4933,8 +4933,8 @@
           "job": "jailer",
           "desc": "gigantic old man, bald with a braided white beard, legendary golden gauntlets glowing blue, blue lion cape, arms crossed, broken skulls at his feet",
           "lore": {
-            "en": "Noah Fear has never been afraid of anything, dragons, ghosts and his mother-in-law included. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
-            "fr": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, ni de sa belle-mère. A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
+            "en": "Noah Fear has never been afraid of anything, dragons, ghosts and (his mother-in-law) included. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
+            "fr": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, (ni de sa belle-mère). A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
           }
         },
         {
@@ -5128,8 +5128,8 @@
           "job": "dietitian",
           "desc": "tiny scrawny imp girl with big red eyes, an oversized red hood swallowing her, a tiny rusty dagger, peeking out from behind her own cape",
           "lore": {
-            "en": "Ima is so small she hides inside her own hood. The camp sends her to steal secrets; so far she has stolen three spoons and a sock.",
-            "fr": "Ima est si petite qu'elle se cache dans sa propre capuche. Le camp l'envoie voler des secrets ; pour l'instant, elle a volé trois cuillères et une chaussette."
+            "en": "Ima is so small she hides inside her own hood. The camp sends her to steal secrets, but so far she has stolen three spoons and a sock.",
+            "fr": "Ima est si petite qu'elle se cache dans sa propre capuche. Le camp l'envoie voler des secrets mais pour l'instant, elle a volé trois cuillères et une chaussette."
           }
         },
         {

@@ -32,7 +32,9 @@
 
   More pages ride on the same build: lab/sound-kit.html (/kit), the house
   sound kit the shell plays in every game; lab/sound-library.html (/library)
-  and lab/overlay-pop.html (/pop), the motor's Pop styles fired one by one.
+  and lab/overlay-pop.html (/pop), the motor's Pop styles fired one by one;
+  lab/holepocalypse-fx.html (/hole-fx), every sprite and effect of that game's
+  round played on demand through its Game.lab handle.
 
   Both pages add what a flat ground cannot show: the MOMENT of the game an
   event belongs to. They record the game being played (the canvas, a second on
@@ -92,6 +94,7 @@ const CLIPS = path.join(ROOT, 'lab', 'events-clips');
 const LIBRARY = path.join(ROOT, 'lab', 'sound-library.html');
 const KIT_PAGE = path.join(ROOT, 'lab', 'sound-kit.html');
 const POP = path.join(ROOT, 'lab', 'overlay-pop.html');
+const HOLE_FX = path.join(ROOT, 'lab', 'holepocalypse-fx.html');
 const REVIEW = path.join(ROOT, 'lab', 'events-review.json');
 const SFX = SFX_DIR;
 
@@ -557,6 +560,9 @@ export async function handle(req, res, p, url) {
 
   // The Pop catalogue: every style of the motor's table, fired in a game's build.
   if (p === '/pop') return page(res, POP);
+
+  // Holepocalypse's sprite and effect bench: the round driven through Game.lab.
+  if (p === '/hole-fx') return page(res, HOLE_FX);
 
   /* The house sound kit: what the shell sounds like in every game, one role at
      a time (lab/sound-kit.html, tools/lab/cut-kit.mjs). A save writes kit.json,

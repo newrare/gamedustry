@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.8.25",
+  "version": "1.9.0",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -194,9 +194,9 @@
           "Time's up!": "Temps écoulé !",
           "Valves": "Valves",
           "Walls": "Murs",
-          "Score <b>{n}</b> and escape the maze": "Marque <b>{n}</b> points et sors du labyrinthe",
-          "Score <b>{n}</b> and escape in <b>{p}</b> pulses": "Marque <b>{n}</b> points et sors en <b>{p}</b> impulsions",
-          "Score <b>{n}</b> and escape in <b>1</b> pulse": "Marque <b>{n}</b> points et sors en <b>1</b> impulsion"
+          "Find the way out": "Trouve la sortie",
+          "Escape in <b>{p}</b> pulses": "Sors en <b>{p}</b> impulsions",
+          "Escape in <b>1</b> pulse": "Sors en <b>1</b> impulsion"
         }
       }
     },
@@ -209,8 +209,8 @@
         "step": 50
       },
       "copy": {
-        "en": "Score <b>{n}</b> in the maze",
-        "fr": "Marque <b>{n}</b> points dans le labyrinthe"
+        "en": "Find the way out of the maze",
+        "fr": "Trouve la sortie du labyrinthe"
       },
       "bands": {
         "en": [

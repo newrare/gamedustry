@@ -316,7 +316,9 @@ finished game**, and it is one shape for all thirteen — the files of
 **Everything that front end puts on screen is one of two things, and there are
 exactly two** — `packages/webshell/view.js` is the system and
 [docs/VIEWS.md](docs/VIEWS.md) is the plan of record. A **view** is a place the
-player goes: title, map, sticker, shop, ranking, score. They stack, and the view
+player goes: title, map, sticker, shop, ranking, score. They stack — but over a
+village there is ONE room at a time: a view opened from another replaces it,
+so the stack is the village and one room — and the view
 system — not the screen — owns the mounting, the z-order, the bed and the wallet
 band. A **card** is something that happens over wherever they are: options,
 help, leaving a round, a daily reward, an ad, a prize. It never replaces the
@@ -329,12 +331,12 @@ the collection, the shop, the ranking and the barracks' four
 (`View.sheet`, packages/webshell/view.js). The hub's own ground under one
 veil, a sheet risen out of the bottom edge under the band, its title and one
 line under it, the body — the one region that scrolls — and a bar at the foot
-carrying the view's pages as tabs, then home, help and options after a filet — that house is the way home there, so the band drops its own over a sheet. A view
+carrying the view's pages as tabs, then the map, help and options after a filet — the way home is the band's house chip, top left, which stays up over a sheet (a game with no band, or no map, keeps the house in the bar's slot instead). A view
 with one page has no tabs. A view writes its body and names its pages; the
 ground, the veil, the header, the bar and the entrance are the sheet's, so a
 new room is never a new screen structure. **Pulled down, a sheet goes** — by
 finger or by mouse, from the header or from a body scrolled to its top, and it
-is `back()`, the same answer as ESCAPE; a control that drags on its own opts
+is home — every room put away at once, the same place ESCAPE reaches; a control that drags on its own opts
 out with `data-nopull`. Chosen in `lab/view-frame.html`; see
 [docs/VIEWS.md](docs/VIEWS.md).
 
@@ -355,9 +357,9 @@ ticket earned or bought still FLIES into the collection's chip and writes its
 `+N` there. The count lives in the band and not in the album's title, which
 names the room like every sheet's. The row never changes shape and a chip standing on its own screen goes
 inert rather than missing, so a number is never one to find again — the house
-alone is dropped on the bare village, since it is only a door and that door is
-the screen under it, and over every sheet, whose own bar carries it bottom right
-(a card over either brings it back); the row
+included: it is always first in the row, inert on the village it is the door
+to, and the way home over every sheet, whose own bar carries the map bottom
+right; the row
 runs edge to edge, the house against the left gutter, and the level chip's xp
 bar fills all the room the counts leave free. A
 view's header carries no button; a card's way out is its tap line — every card
@@ -481,17 +483,20 @@ What a view brings:
   not copied, so a SKIN's dressing follows it — and handed back while the card
   is still in the document, or `getElementById` loses it), and the end screen is
   rewired to
-  **PLAY AGAIN** / **MENU** — three icons and a level's own title once the game
+  **PLAY AGAIN** / **MENU** — icons and a level's own title once the game
   declares `web.levels`, which all thirteen do (next bullet).
 - **a game that declares `web.levels` gets the LEVEL MAP instead**, and PLAY is
   what opens it: thirty levels on a forking road, the stars each was cleared
   with, one objective per level lerped out of the ranges the manifest names.
   `packages/webshell/levels.{js,css}` is the screen, `prog:<slug>` is the save,
   and the end screen becomes the level's: the title reads **SCORES** or, on a
-  missed objective, **GAME OVER** in red, and the buttons become three icons —
-  **the map**, **the level again** and **the way on**. The round decides which
-  of the first two shines (three stars lights the map, no star lights the
-  replay, one or two leaves both plain); **NEXT is never dressed**, because a
+  missed objective, **GAME OVER** in red, and the buttons become icons —
+  **home** (the village), **the map**, **the level again** and **the way on**;
+  the map lands on the village and opens over it, and **the map always arrives
+  on the last level played** (`save.lp` in `prog:<slug>`, written by `play`).
+  The round decides which of the map and the replay shines (three stars lights
+  the map, no star lights the replay, one or two leaves both plain; home is
+  never lit); **NEXT is never dressed**, because a
   third contender in that argument makes all three quieter. It is
   `last.level + 1` and nothing cleverer — the map is where a fork is chosen —
   and it is HIDDEN where there is no way on: a free round, a round that missed
@@ -543,7 +548,10 @@ What a view brings:
   third star into a beat instead of an ending — the shine without the slow
   motion, the game's own callout, and the round runs to its own end, for a
   game whose score is the point (`games/pawko`, where a broken combination is
-  what is chased). `Game.levelTally()` goes further for a round won on objectives rather than a
+  what is chased). `Game.levelFaults()` is the game's count of MISTAKES, and
+  `web.levels.faults` how many the third star forgives — past it the round is
+  held to two stars, struck live on the pill (`games/chainring`: the misses;
+  `web.levels.stars` moves the three bands per game). `Game.levelTally()` goes further for a round won on objectives rather than a
   quantity: it IS the star count, 0 to 3, and replaces the bands
   (`games/stratideck`: the flag, no wound, a prisoner) — or null, on a level that
   keeps the bands. `Game.levelGoal(n)` changes the objective itself from level
@@ -607,7 +615,8 @@ What a view brings:
   apart from `prog:<slug>` because the two are written on different screens —
   OPTIONS erases both in one row.
   **Twenty stickers a game**, counted `x/20`, **a tile's border its rarity**, an
-  unowned one drawn as its own white silhouette, titled `???`, and told in the
+  unowned one drawn as its own white silhouette — with a padlock in its corner
+  when it is a milestone, which no draw can roll — titled `???`, and told in the
   IMPERATIVE what to do to earn it (a sticker owned says what was done; a
   sticker's NAME is never translated — it is a proper noun) — **twelve of them earned off
   the map** (a band passed, a band passed clean, the board, ninety of ninety →
@@ -1034,6 +1043,16 @@ palette of `make village`, or
 it. Clouds are **web-only** art, for the same reason the houses are: the
 village is the web menu's own view.
 
+**A shared FRAME is the one piece of shared material that is not cut.**
+`assets/image/master/game-frame-<theme>.png` (ice, lava, slime, mud, water,
+wind, knight-blue, knight-red) is a whole portrait overlay, transparent in the
+middle, laid over a round for a moment — there is nothing to take apart, so it
+stays in the master folder and a game names it in `art.objects` as it would a
+cut, `"frame-ice": "game-frame-ice"`; `encode-art.mjs` reads it from there and
+fills it to 720x1280 (`FRAME`), and it reaches the game as
+`CONFIG.art.frameIce`. `games/holepocalypse`'s time freeze is the first to
+wear one.
+
 `assets/image/master/` is the **master**: what came out of the image model, up to
 2172 px and ~2 MB apiece, 121 MB in total. It ships nowhere. The shipping cut is
 `assets/image/embed/`, WebP sized for the 720×1280 design space, ~35 KB a piece and
@@ -1340,6 +1359,12 @@ and makes apply rewrite the call the other way — the word moved out of the
 options into first place (refused when the callout names none and leans on
 its style's word), `kind` written unless it is `info`, `at`, `cls`, `rot` and
 `hold` dropped and named.
+**And a floating value into a callout**: a `Pop.text` row's first dropdown
+reads `text`, and picking a Pop style there fires the row as that `Pop.show`,
+anchored by default at the value's own point in the world (`at: { x, y }`,
+the source's two expressions) or at a named anchor or the style's spot, and
+makes apply rewrite the call — the word carried over as the source writes it,
+`color`, `size`, `tier`, `life` and `vy` dropped and named.
 **An argument the game builds at runtime
 is refused by name, never overwritten**: a word written as `"+" plus the gain` is
 previewed with a stand-in, and pasting a stand-in back would break the game, so

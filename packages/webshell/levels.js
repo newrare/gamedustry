@@ -89,6 +89,7 @@
       objective: "Objective", missed: "Objective missed",
       scores: "Scores", gameOver: "Game over",
       threeStars: "Three stars!", cleared: "Level cleared!",
+      starLost: "Third star lost",
       levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home",
       goals: "Objectives"
     },
@@ -120,6 +121,7 @@
       objective: "Objectif", missed: "Objectif manqué",
       scores: "Scores", gameOver: "Game over",
       threeStars: "Trois étoiles !", cleared: "Stage réussi !",
+      starLost: "Troisième étoile perdue",
       levelsEntry: "Stages", map: "Carte", next: "Stage suivant", home: "Accueil",
       goals: "Objectifs"
     }
@@ -391,15 +393,55 @@
   }
   function goalText(n) { return fill(goalCopy(n), { n: num(goalAt(n)) }); }
 
-  /* The three bands, 1x, 1.5x and 2.2x the objective. `bandAt` is the
-     smallest whole value that reaches band i (0..2) — what the pill counts
+  /* The three bands, 1x, 1.5x and 2.2x the objective by default. `bandAt` is
+     the smallest whole value that reaches band i (0..2) — what the pill counts
      toward and what the objectives card prints, so neither shows a number
-     one short of the star. */
-  var BANDS = [1, 1.5, 2.2];
+     one short of the star.
+
+     ONE LADDER DOES NOT FIT EVERY GAME. A star means the same thing on every
+     board — one for a round that was understood, two for a score above the
+     common run, three for a run close to flawless — but how far apart those
+     three sit on a score is the game's: a survival run whose score piles up
+     with time is not a timed shift where every point is fought for. So a game
+     may move the three multipliers with `web.levels.stars: [a, b, c]`; the
+     objective the card writes stays the FIRST star's threshold, and `a` is
+     normally 1. */
+  var BANDS = (SPEC && SPEC.stars && SPEC.stars.length === 3) ? SPEC.stars : [1, 1.5, 2.2];
   function bandAt(g, i) { return Math.ceil(g * BANDS[i] - 1e-9); }
   function starsFor(n, value) {
     var g = goalAt(n);
-    return value >= g * 2.2 ? 3 : value >= g * 1.5 ? 2 : value >= g ? 1 : 0;
+    return value >= g * BANDS[2] ? 3 : value >= g * BANDS[1] ? 2 : value >= g * BANDS[0] ? 1 : 0;
+  }
+
+  /* THE THIRD STAR IS A CLEAN RUN, NOT ONLY A BIG ONE. A score can be piled
+     up through mistakes, so a game that counts its own — a life lost, a miss,
+     a hit taken — answers `Game.levelFaults()` with that count, live, and the
+     manifest says how many the third star forgives: `web.levels.faults`, a
+     number or `{ from, to }` lerped over the climb like a tune range, with the
+     words that name them (`copy.<lang>`, `{n}` the allowance, `one.<lang>`
+     for an allowance of one and `none.<lang>` for an allowance of zero). Past it the round is held to two stars: the
+     third never lights, so it never ends the round, and the round runs to its
+     own end. It is a cap like `levelStars`, never a promotion. */
+  function faultCap(n) {
+    var f = SPEC && SPEC.faults;
+    if (f == null) return null;
+    if (typeof f === "number") return f;
+    var d = dOf(n), from = f.from != null ? f.from : f.max || 0, to = f.to != null ? f.to : from;
+    return Math.round(from + (to - from) * d);
+  }
+  function faultsNow() {
+    return W.Game && W.Game.levelFaults ? W.Game.levelFaults() | 0 : 0;
+  }
+  function faultsBlown(n) {
+    var cap = faultCap(n);
+    return cap != null && W.Game && W.Game.levelFaults ? faultsNow() > cap : false;
+  }
+  /* The words of the allowance, for the third row of the objectives card. */
+  function faultText(n) {
+    var f = SPEC && SPEC.faults, cap = faultCap(n);
+    if (cap == null || typeof f !== "object") return "";
+    var src = cap === 0 && f.none ? f.none : cap === 1 && f.one ? f.one : f.copy;
+    return src ? fill(src[LANG] || src.en || "", { n: num(cap) }) : "";
   }
 
   /* WHAT THE THREE BANDS ACTUALLY PAY. A game whose round is not won by piling
@@ -437,6 +479,7 @@
     if (W.Game && W.Game.levelStars) {
       st = Math.max(0, Math.min(st, W.Game.levelStars(st, value) | 0));
     }
+    if (st > 2 && faultsBlown(n)) st = 2;
     return st;
   }
 
@@ -576,29 +619,51 @@
      the save already are, rather than in a second file that would have to
      re-derive both.
 
-     PASSED is the climb having gone past the band: a cleared level in a higher
-     band, or level 30 itself for the top one. It is deliberately not "every
-     level of the band cleared" — a fork's two roads share a band and missing
-     the road not taken is a choice this design protects (section 1), so a rule
-     that demanded both roads would be unreachable for a player who chose.
-     CLEAN is the same band with every level the player PLAYED in it standing
-     at three stars: the road they walked, walked perfectly. */
+     The band is the one the sticker NAMES — `bandIndex`, the game's own world
+     (`web.levels.bands.from`), not the map's row band (`bandOf`). The two part
+     ways on seven of the thirty levels (4, 6, 10, 11, 18, 23, 24 sit one row
+     band above their world), and reading the row band paid "Lagoon cleared"
+     on level 10 with level 11 of the Lagoon still to play, and judged a clean
+     run on levels of the wrong world.
+
+     PASSED is the climb having FINISHED the band on a road it walked: a level
+     of a higher band cleared, or a cleared level of this band whose every way
+     on leaves it (level 30, which has none, for the top one). Only levels the
+     climb REACHED count — cleared, and joined to level 1 by cleared levels —
+     so a level started out of order under the dev force (section 3b) passes
+     nothing behind it. It is deliberately not "every level of the band
+     cleared" — a fork's two roads share a band and missing the road not taken
+     is a choice this design protects (section 1), so a rule that demanded
+     both roads would be unreachable for a player who chose. CLEAN is the same
+     band with every level the player PLAYED in it standing at three stars:
+     the road they walked, walked perfectly. */
   function bandsState() {
-    var b, n, st = [], topBand = -1, allCleared = true;
+    var b, n, i, st = [], topBand = -1, allCleared = true, reached = {};
     for (b = 0; b < 5; b++) st.push({ total: 0, played: 0, cleared: 0, three: 0, passed: false, clean: false });
+    // every edge climbs to a higher number, so one pass in order settles it
     for (n = 1; n <= LEVELS; n++) {
-      var s = st[bandOf(n)];
+      if (!cleared(n)) continue;
+      if (n === 1) { reached[n] = true; continue; }
+      var ps = preds(n);
+      for (i = 0; i < ps.length; i++) if (reached[ps[i]]) { reached[n] = true; break; }
+    }
+    for (n = 1; n <= LEVELS; n++) {
+      var bi = bandIndex(n), s = st[bi];
       s.total++;
       if (played(n)) s.played++;
       if (cleared(n)) {
         s.cleared++;
         if (starsOf(n) >= 3) s.three++;
-        if (bandOf(n) > topBand) topBand = bandOf(n);
       } else allCleared = false;
+      if (!reached[n]) continue;
+      if (bi > topBand) topBand = bi;
+      // an exit of its band: every way on leaves it (none at all for level 30)
+      var ss = succs(n), out = true;
+      for (i = 0; i < ss.length; i++) if (bandIndex(ss[i]) <= bi) out = false;
+      if (out) s.passed = true;
     }
-    var last = bandOf(LEVELS);
     for (b = 0; b < 5; b++) {
-      st[b].passed = b < topBand || (b === last && cleared(LEVELS));
+      st[b].passed = st[b].passed || b < topBand;
       // at least one level played, so an untouched band is never clean by vacancy
       st[b].clean = st[b].passed && st[b].played > 0 && st[b].three === st[b].played;
     }
@@ -793,7 +858,7 @@
      score otherwise — the same rule as `levelScore` at the end of the round,
      so a level can never be scored on one number and shown against another. */
   var hudBox, hudNum, hudStars, hudFill, hudGoal;
-  var watching = false, litStars = -1, won = false;
+  var watching = false, litStars = -1, won = false, faultLost = false;
 
   function measure() {
     if (W.Game && W.Game.levelProgress) return W.Game.levelProgress();
@@ -855,10 +920,14 @@
       var r = hook && hook[i] != null ? hook[i] : copy;
       if (typeof r === "string") r = { text: r };
       var k = r.stars || i + 1;
+      var text = fill(r.text, { n: num(bandAt(g, i)) });
+      // the third star's allowance of mistakes, written after its sentence
+      if (i === 2 && faultText(n)) text += " · " + faultText(n);
       rows.push({
         stars: k,
-        text: fill(r.text, { n: num(bandAt(g, i)) }),
-        done: r.done != null ? !!r.done : st >= i + 1
+        text: text,
+        done: r.done != null ? !!r.done : st >= i + 1,
+        lost: i === 2 && faultsBlown(n)
       });
     }
     return rows;
@@ -879,7 +948,7 @@
         ol.className = "lv-goal-list" + (solo ? " solo" : "");
         for (i = 0; i < rows.length; i++) {
           var li = document.createElement("li");
-          li.className = "lv-goal" + (rows[i].done ? " done" : "");
+          li.className = "lv-goal" + (rows[i].done ? " done" : rows[i].lost ? " lost" : "");
           var stars = '<span class="lv-stars">';
           for (var j = 0; j < rows[i].stars; j++) stars += starArt(rows[i].done);
           li.innerHTML = stars + '</span><span class="tx"></span>';
@@ -911,12 +980,21 @@
       hudFill.style.width = (k * 100).toFixed(1) + "%";
       hudGoal.textContent = num(raw >= 3 ? Math.round(value) : bandAt(g, raw));
     }
+    /* THE THIRD STAR, LOST. Once the mistakes pass the allowance the third
+       star is struck through for the rest of the round, and the player is told
+       once — a star that quietly stops being reachable is a rule they never
+       learn. */
+    if (!faultLost && faultsBlown(n)) {
+      faultLost = true;
+      hudStars[2].classList.add("lost");
+      if (W.Notify) W.Notify.say(T.starLost, { kind: "loss", icon: "star", key: "lv-star-lost" });
+    }
     if (st === litStars) return;
     /* A star landing is a beat of its own: the pill punches, the star burns in
        and the chime goes up a step. */
     for (var i = 0; i < 3; i++) {
       var on = i < st;
-      hudStars[i].className = on ? "on" : "";
+      hudStars[i].className = on ? "on" : i === 2 && faultLost ? "lost" : "";
     }
     if (st > litStars && litStars >= 0) {
       hudBox.classList.remove("hit");
@@ -1141,6 +1219,8 @@
     won = false;
     ending = false;
     litStars = -1;
+    faultLost = false;
+    for (var i = 0; i < 3; i++) hudStars[i].className = "";
     W.Loop.rate(1);
     if (!ON || !CONFIG.level) { hudBox.hidden = true; return; }
     hudNum.textContent = CONFIG.level;
@@ -1949,6 +2029,10 @@
   function play(n) {
     if (n !== BONUS && !canPlay(n)) return;
     arm(n);
+    /* The level the map comes back to (`show`). Written on the way IN rather
+       than on endRound, so a round the player walked away from is still the
+       one they were at. */
+    if (save.lp !== n) { save.lp = n; persist(); }
     /* Down to the floor, and not just this screen: a round starts with nothing
        of the shell in front of it, whatever the player had opened on the way
        here. The state hook says the same thing again a beat later (menu.js),
@@ -1976,11 +2060,18 @@
        the village is where the end screen sends the player and where the card
        for a level crossed belongs (packages/webshell/village.js). */
     /* A board nobody has played yet opens ON level 0 — the map scrolled to its
-       foot, the card offering the lesson. It is still one tap to level 1, and
-       every later arrival lands on the level the player is actually at. */
+       foot, the card offering the lesson. It is still one tap to level 1.
+       Every later arrival lands on the LAST LEVEL PLAYED (`save.lp`, written
+       by `play`): a player coming back from a score finds the level they just
+       left under their thumb, selected and centred, with the way on one tap
+       beside it. The frontier is only the answer before any level was
+       played, or when the one played last is no longer reachable. */
     tapOn = null;
-    picked = perfect() ? BONUS
-           : (!tutoSeen() && virgin()) ? TUTO
+    var lp = save.lp;
+    var lpOk = lp === BONUS ? perfect() : (lp >= 1 && lp <= LEVELS && canPlay(lp));
+    picked = (!tutoSeen() && virgin()) ? TUTO
+           : lpOk ? lp
+           : perfect() ? BONUS
            : (frontier()[0] || LEVELS);
     draw();
     scrollTo(picked);
@@ -2053,6 +2144,8 @@
        ended: which level it was and how many stars it paid, which is what
        decides whether the MAP or the REPLAY is the lit one (menu.js). */
     last: function () { return last; },
+    /* The node the map has selected — what an arrival lands on (`show`). */
+    picked: function () { return picked; },
     replayLast: function () { if (last) play(last.level); },
 
     /* THE WAY ON, WITHOUT THE MAP. The end screen's third button, and it is

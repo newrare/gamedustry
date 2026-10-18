@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "2.6.13",
+  "version": "2.7.1",
   "tagline": "One tap switches the buttons on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
@@ -212,7 +212,7 @@
       ]
     }
   },
-  "description": "Coloured glass and banks of switches over a lake of lava. The ball breaks every pane of glass and flies straight past the dark buttons — until you tap: then they light up and turn solid, and the ball bounces off them and can never break them. Tap while the ball is inside a pocket of glass and it is shut in with it, runs faster and eats the whole room; tap again to let it out, or the game opens an empty pocket for you. Thirty boards across five biomes, each with its own bonus bricks: row and column blasts, bombs and multiball, the big ball, the fireball that burns through the glass and the magnet that pulls it in — and each biome brings its own living glass too: warp panes that jump every three seconds, split panes that burst into new glass, a seed that grows glass around it and electric panes behind a shield that comes and goes. Each biome teaches it in six stages — one colour, then all five and what each pays, its power, its living glass, the mix and a finale — and the stars are the wall's, not the score's: half of it, four fifths, and three for a clear or for four fifths within the level's par of balls. The dotted sight solves five bounces ahead.",
+  "description": "Coloured glass and banks of switches over a lake of lava. The ball breaks every pane of glass and flies straight past the dark buttons — until you tap: then they light up and turn solid, and the ball bounces off them and can never break them. Tap while the ball is inside a pocket of glass and it is shut in with it, runs faster and eats the whole room; tap again to let it out, or the game opens an empty pocket for you. Thirty boards across five biomes, each with its own bonus bricks: row and column blasts, bombs and multiball, the big ball, the fireball that burns through the glass and the magnet that pulls it in — and each biome brings its own living glass too: warp panes that jump every three seconds, split panes that burst into new glass, a seed that grows glass around it and electric panes behind a shield that comes and goes. Each biome teaches it in six stages — one colour, then all five and what each pays, its power, its living glass, the mix and a finale — and the stars are the wall's, not the score's: three fifths of it, nine tenths, and three for a clear within the level's par of balls. The dotted sight solves five bounces ahead.",
   "store": {
     "copy": {
       "en": {
@@ -305,7 +305,7 @@
           "Big ball": "Grosse bille",
           "Bomb": "Bombe",
           "Burns through the glass": "Traverse le verre en le brûlant",
-          "Clear the wall for the third star": "Vide le mur pour la troisième étoile",
+          "The third star is out of reach": "La troisième étoile est hors de portée",
           "Clears its column": "Nettoie sa colonne",
           "Clears its row": "Nettoie sa rangée",
           "Column blast": "Souffle de colonne",
@@ -351,12 +351,11 @@
           "The lava pulls": "La lave attire",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "Under par!": "Sous le par !",
           "Wall": "Mur",
           "Wall broken": "Mur cassé",
           "Warp glass": "Verre téléporteur",
           "Break <b>{p}%</b> of the wall": "Casse <b>{p} %</b> du mur",
-          "Clear the wall, or <b>{p}%</b> in <b>{b}</b> balls": "Vide le mur ou casse <b>{p} %</b> en <b>{b}</b> billes"
+          "Clear the wall in <b>{b}</b> balls": "Vide le mur en <b>{b}</b> billes"
         }
       }
     },
@@ -364,14 +363,15 @@
     "music": "bouncetry.mp3",
     "levels": {
       "objective": {
-        "from": 4,
-        "to": 2,
+        "from": 5,
+        "to": 3,
         "step": 1
       },
       "copy": {
-        "en": "Clear it, or <b>80%</b> in <b>{n}</b> balls",
-        "fr": "Vide le mur ou casse <b>80 %</b> en <b>{n}</b> billes"
+        "en": "Clear the wall in <b>{n}</b> balls",
+        "fr": "Vide le mur en <b>{n}</b> billes"
       },
+      "faults": 0,
       "bands": {
         "from": [
           1,

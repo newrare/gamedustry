@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Holepocalypse sprites and effects</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="tools">
+<meta name="lab-game" content="holepocalypse">
+<style>
+/* ===========================================================================
+   HOLEPOCALYPSE — SPRITES AND EFFECTS, played on demand.
+
+   Every zombie, ball kind, super, painted effect and round event of the game,
+   one click each, on any level of the climb (so on any of the five fairways),
+   without playing the round to reach it. Served by the events bench
+   (`make events` → /hole-fx, or `make lab` → /events/hole-fx), because what
+   it drives is the game's own WEB build: the playable carries three of the
+   twenty-one effect sheets, the web build carries them all.
+
+   The page plays nothing of its own. It reaches the round through
+   `Game.lab` (the foot of games/holepocalypse/game.js), whose every call is
+   the function a round makes — addMon, firePower, spawnFx, blast, explode —
+   so a sprite placed wrong here is placed wrong in the game, and a fix in
+   the game shows here on the next build (the bench rebuilds on save and
+   reloads this page).
+
+   Hold the round stops the waves, the flags and the goal, so the field is
+   the page's. Debug draws what placement is judged against: the fences, the
+   top of the field and its gate, the white line, every zombie's footprint
+   (the circle a ball meets), its feet and the height it is drawn at, and
+   every effect's anchor (c centre, b feet, l left edge).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh;
+  display:flex;
+  overflow:hidden;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------------- */
+#panel {
+  flex:0 0 400px;
+  display:flex; flex-direction:column;
+  background:#12121c;
+  border-right:1px solid #23233a;
+  min-height:0;
+}
+#head { padding:18px 18px 10px; border-bottom:1px solid #23233a; }
+#head h1 { font-size:16px; letter-spacing:.5px; }
+#head p.hint { margin-top:4px; font-weight:500; font-size:12px; color:#8b8ba7; }
+
+.row { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+.row > label.k { flex:0 0 74px; font-size:12px; color:#9c9cba; }
+select, input[type=range] { flex:1; min-width:0; }
+select {
+  padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-size:13px;
+}
+input[type=range] { accent-color:#9fe03a; }
+.chk { display:flex; align-items:center; gap:6px; font-size:12px; color:#c9c7e0; cursor:pointer; user-select:none; }
+.chk input { accent-color:#9fe03a; }
+
+button {
+  padding:6px 10px;
+  background:#22223a; color:#e8e6f5; border:1px solid #33335a; border-radius:7px;
+  font:700 12px/1.2 inherit; cursor:pointer;
+}
+button:hover { border-color:#9fe03a; }
+button.main { background:#9fe03a; color:#0b0b12; border-color:#9fe03a; }
+
+.seg { display:flex; flex:1; border:1px solid #33335a; border-radius:7px; overflow:hidden; }
+.seg button { flex:1; border:0; border-radius:0; background:transparent; padding:6px 4px; }
+.seg button + button { border-left:1px solid #33335a; }
+.seg button.on { background:#9fe03a; color:#0b0b12; }
+
+#status {
+  margin-top:10px; padding:6px 8px;
+  background:#0b0b12; border-radius:6px;
+  font:500 11px/1.5 ui-monospace,Menlo,monospace; color:#8b8ba7;
+  white-space:pre-wrap;
+}
+#status b { color:#e8e6f5; font-weight:600; }
+
+/* tabs and their tiles */
+#tabs { display:flex; padding:0 12px; gap:2px; border-bottom:1px solid #23233a; margin-top:10px; }
+#tabs button {
+  flex:1; border:0; border-radius:7px 7px 0 0; background:transparent; color:#8b8ba7; padding:8px 2px;
+}
+#tabs button.on { background:#1c1c2e; color:#e8e6f5; }
+#body { flex:1; overflow:auto; padding:10px 14px 24px; background:#1c1c2e; min-height:0; }
+.opts { margin-bottom:10px; }
+.opts .row:first-child { margin-top:0; }
+.grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+.tile {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:6px 4px 7px;
+  background:#12121c; border:1px solid #2a2a44; border-radius:9px;
+  font-weight:600; font-size:11px; line-height:1.2; text-align:center; color:#d6d4ec;
+}
+.tile img { width:100%; height:58px; object-fit:contain; }
+.tile .ph { width:100%; height:58px; display:flex; align-items:center; justify-content:center; font-size:22px; color:#55557a; }
+.tile small { color:#76769a; font-weight:500; font-size:10px; }
+.tile.dim { opacity:.45; }
+.tile.armed { border-color:#9fe03a; box-shadow:0 0 0 2px #9fe03a inset; }
+.note { margin-top:8px; font-weight:500; font-size:11px; color:#76769a; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the game's web build, portrait
+   --------------------------------------------------------------------------- */
+#stage {
+  flex:1; min-width:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:18px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#phone { position:relative; height:calc(100vh - 70px); aspect-ratio:9 / 16; max-width:100%; }
+#frame { width:100%; height:100%; border:0; border-radius:14px; background:#000; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+#veil {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:30px;
+  border-radius:14px; background:rgba(11,11,18,.88); text-align:center; color:#9c9cba; font-size:13px;
+}
+#veil[hidden] { display:none; }
+#armed { margin-top:10px; font-size:12px; color:#8b8ba7; min-height:18px; }
+#armed b { color:#9fe03a; }
+kbd { padding:0 5px; border:1px solid #33335a; border-radius:4px; font:600 11px ui-monospace,Menlo,monospace; color:#c9c7e0; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div id="head">
+    <h1>Holepocalypse — sprites and effects</h1>
+    <p class="hint">Every zombie, ball, super and painted effect of the round, one click each, on any level.</p>
+
+    <div class="row">
+      <label class="k" for="level">Level</label>
+      <select id="level"></select>
+      <button id="restart" title="Start the level again">Restart</button>
+    </div>
+    <div class="row">
+      <label class="k">Round</label>
+      <label class="chk"><input type="checkbox" id="hold"> Hold the round</label>
+      <label class="chk"><input type="checkbox" id="still"> Zombies stand still</label>
+      <label class="chk"><input type="checkbox" id="debug"> Debug</label>
+    </div>
+    <div class="row">
+      <label class="k">Speed</label>
+      <div class="seg" id="rate">
+        <button data-v="0">Pause</button><button data-v="0.1">0.1</button><button data-v="0.25">0.25</button><button data-v="0.5">0.5</button><button data-v="1">1</button>
+      </div>
+      <button id="step" title="One frame forward, when paused">Step</button>
+    </div>
+    <div class="row">
+      <label class="k">Where</label>
+      <div class="seg" id="place">
+        <button data-v="middle">Middle of the field</button><button data-v="tap">Tap on the field</button>
+      </div>
+    </div>
+    <div class="row">
+      <label class="k"></label>
+      <button id="clear">Clear the field</button>
+      <button id="repeat" title="Play the last action again (R)">Repeat last <kbd>R</kbd></button>
+    </div>
+    <div id="status">loading the web build…</div>
+  </div>
+
+  <div id="tabs">
+    <button data-tab="zombies">Zombies</button>
+    <button data-tab="balls">Balls</button>
+    <button data-tab="supers">Supers</button>
+    <button data-tab="fx">Effects</button>
+    <button data-tab="events">Events</button>
+  </div>
+  <div id="body"></div>
+</div>
+
+<div id="stage">
+  <div id="phone">
+    <iframe id="frame" title="holepocalypse's web build"></iframe>
+    <div id="veil">Loading the web build…</div>
+  </div>
+  <div id="armed"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const frame = $("frame");
+  const SLUG = "holepocalypse";
+
+  /* The size each effect is drawn at in a round (its reference frame's width,
+     or height for the ice block): the defaults of the size slider. */
+  const FX_SIZE = {
+    boom: 315, crater: 357, burn: 120, meteor: 133, freeze: 139, hail: 92, frost: 102,
+    shock: 198, vortex: 185, target: 88, jet: 210, splash: 90, wind: 190, dust: 92,
+    crack: 90, coins: 84, split: 77, cart: 104, clip: 120, mower: 135, plane: 160
+  };
+  const FX_USE = {
+    boom: "explosive ball, boomer, cluster", crater: "meteor", burn: "fire patch", meteor: "meteor falling",
+    freeze: "ice block on a zombie", hail: "hailstone landing", frost: "time freeze", shock: "the hole's blast",
+    vortex: "magnet hole", target: "seeker rain", jet: "sprinklers", splash: "sprinklers on a zombie",
+    wind: "wind gust", dust: "a ball of the rain landing", crack: "heavy ball", coins: "golden rain",
+    split: "splitting ball", cart: "golf cart", clip: "mower's clippings", mower: "mower", plane: "carpet strike"
+  };
+
+  /* The round's own moments (Game.lab.event), each with the picture it is told by. */
+  const EVENTS = [
+    { key: "hole", name: "Hole blast", art: "fxShock01" },
+    { key: "explode", name: "Explosion", art: "fxBoom04" },
+    { key: "boomer", name: "Boomer burst", art: "boomer01" },
+    { key: "mudder", name: "Mudder split", art: "mudder01" },
+    { key: "fire", name: "Fire patch", art: "fxBurn05" },
+    { key: "mud", name: "Mud pool", art: "bossBog05" },
+    { key: "ice", name: "Ice on everyone", art: "fxFreeze04" },
+    { key: "crack", name: "Crack", art: "fxCrack03" },
+    { key: "split", name: "Split puff", art: "fxSplit02" },
+    { key: "splash", name: "Pond splash", art: "fxSplash02" },
+    { key: "wind", name: "Wind gust, right", art: "fxWind03" },
+    { key: "windLeft", name: "Wind gust, left", art: "fxWind03" },
+    { key: "drop", name: "Falling ball", art: "ball01" },
+    { key: "target", name: "Seeker mark", art: "fxTarget02" },
+    { key: "hail", name: "Hailstone", art: "ball10" },
+    { key: "flame", name: "Fire drop", art: "ball08" },
+    { key: "gold", name: "Gold drop", art: "ball12" },
+    { key: "cluster", name: "Cluster bomb", art: "super15" },
+    { key: "meteor", name: "Meteor", art: "fxMeteor01" },
+    { key: "skull", name: "Skull ball", art: "bossKing05" },
+    { key: "raise", name: "Raised walker", art: "walker01" },
+    { key: "bossAct", name: "Boss action", art: "bossYeti05" },
+    { key: "koAll", name: "Knock out all", art: "fxDust02" },
+    { key: "last", name: "Last stand", art: null },
+    { key: "rush", name: "Rush", art: "super16" }
+  ];
+  const STATES = ["walk", "hit", "ko", "frozen", "rise", "dig", "under", "surface", "cast", "act"];
+
+  // ---- state, remembered per viewer --------------------------------------
+  const S = {
+    level: 1, hold: true, still: false, debug: false, rate: 1, place: "middle", tab: "zombies",
+    state: "walk", count: 1, lob: false, power: 0.7, load: false, fxLoop: false, flip: false, fxScale: 1
+  };
+  const KEEP = Object.keys(S);
+  try { Object.assign(S, JSON.parse(localStorage.getItem("hole-fx") || "{}")); } catch (e) {}
+  function save() {
+    const o = {}; KEEP.forEach((k) => { o[k] = S[k]; });
+    try { localStorage.setItem("hole-fx", JSON.stringify(o)); } catch (e) {}
+  }
+  let CAT = null, armed = null, last = null, pinKind = null, pin = null;
+
+  // ---- the frame -----------------------------------------------------------
+  const win = () => { try { return frame.contentWindow; } catch (e) { return null; } };
+  const lab = () => { const w = win(); return w && w.Game && w.Game.lab; };
+  function veil(msg) { const v = $("veil"); v.hidden = !msg; v.textContent = msg || ""; }
+  function artSrc(key) {
+    const w = win(), im = key && w && w.ArtImages && w.ArtImages[key];
+    return im && im.src ? im.src : "";
+  }
+  function waitFor(test, done, ms, fail) {
+    const t0 = Date.now();
+    (function poll() {
+      let ok = false;
+      try { ok = test(); } catch (e) {}
+      if (ok) return done();
+      if (Date.now() - t0 > (ms || 15000)) return fail && fail();
+      setTimeout(poll, 80);
+    })();
+  }
+
+  frame.addEventListener("load", () => {
+    veil("Starting the round…");
+    waitFor(() => win().__LEVELS__ && lab() && win().ArtImages && Object.keys(win().ArtImages).length > 50, () => {
+      CAT = lab().catalog();
+      fillLevels();
+      drawTab();
+      play(S.level);
+      try { win().addEventListener("keydown", onKey); } catch (e) {}
+    }, 20000, () => veil("No web build for holepocalypse with a Game.lab handle — the events server builds every game on start; reload once it says rebuilt."));
+  });
+  frame.src = "build/" + SLUG + "/index.html?first=0&force=1&lang=en";
+
+  /* A level, straight into its round (levels.js, the same call as the
+     events bench's REC picker), its entrance skipped, the page's switches
+     put back on it. */
+  function play(n) {
+    const w = win(), L = w && w.__LEVELS__;
+    if (!L || !L.play) return;
+    S.level = n; save();
+    disarm();
+    L.play(n);
+    veil("Starting level " + (n > L.count() ? "endless" : n) + "…");
+    waitFor(() => w.Enter && w.Enter.active(), () => { w.Enter.skip(); settle(); }, 4000, settle);
+    function settle() {
+      veil(null);
+      apply();
+      try { frame.focus(); w.focus(); } catch (e) {}
+    }
+  }
+  function apply() {
+    const G = lab(), w = win();
+    if (!G) return;
+    G.set({ hold: S.hold, still: S.still, debug: S.debug });
+    try { w.Loop.rate(S.rate); } catch (e) {}
+    if (armed) G.set({ tap: (x, y) => run(armed, x, y) });
+  }
+
+  function fillLevels() {
+    const sel = $("level"), n = win().__LEVELS__.count(), B = CAT.biomes;
+    let html = "";
+    for (let b = 0; b < B.length; b++) {
+      html += `<optgroup label="${B[b].name} — ${B[b].terrain}">`;
+      for (let i = b * 6 + 1; i <= Math.min(n, b * 6 + 6); i++) html += `<option value="${i}">Level ${i}</option>`;
+      html += `</optgroup>`;
+    }
+    html += `<option value="${n + 1}">Endless run</option>`;
+    sel.innerHTML = html;
+    sel.value = String(S.level);
+  }
+  $("level").onchange = (e) => play(Number(e.target.value));
+  $("restart").onclick = () => play(S.level);
+
+  // ---- switches --------------------------------------------------------------
+  ["hold", "still", "debug"].forEach((k) => {
+    const el = $(k);
+    el.checked = !!S[k];
+    el.onchange = () => { S[k] = el.checked; save(); apply(); };
+  });
+  function seg(id, key, cast, after) {
+    const box = $(id);
+    const paint = () => box.querySelectorAll("button").forEach((b) => b.classList.toggle("on", cast(b.dataset.v) === S[key]));
+    box.onclick = (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      S[key] = cast(b.dataset.v); save(); paint(); if (after) after();
+    };
+    paint();
+  }
+  seg("rate", "rate", Number, apply);
+  seg("place", "place", String, () => { disarm(); });
+  $("step").onclick = () => {
+    const w = win(); if (!w || !w.Loop) return;
+    w.Loop.rate(1);
+    w.requestAnimationFrame(() => w.requestAnimationFrame(() => w.Loop.rate(S.rate)));
+  };
+  $("clear").onclick = () => { const G = lab(); if (G) G.clear(); };
+  $("repeat").onclick = repeat;
+  function onKey(e) {
+    if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey && e.target.tagName !== "SELECT") repeat();
+  }
+  document.addEventListener("keydown", onKey);
+  function repeat() { if (last) run(last.tool, last.x, last.y); }
+
+  // ---- what a tile does ------------------------------------------------------
+  /* A tool is a tab, a key and what it does at (x, y) — x null meaning the
+     game's own default spot (the middle of the field, or the zombie nearest
+     it for a ball). */
+  function run(tool, x, y) {
+    const G = lab();
+    if (!G) return;
+    last = { tool, x, y };
+    tool.go(G, x == null ? null : x, y == null ? null : y);
+  }
+  function use(tool) {
+    if (S.place === "tap") {
+      if (armed && armed.id === tool.id) return disarm();
+      armed = tool;
+      const G = lab(); if (G) G.set({ tap: (x, y) => run(tool, x, y) });
+      paintArmed();
+      return;
+    }
+    run(tool);
+  }
+  function disarm() {
+    armed = null;
+    const G = lab(); if (G) G.set({ tap: null });
+    paintArmed();
+  }
+  function paintArmed() {
+    document.querySelectorAll(".tile").forEach((t) => t.classList.toggle("armed", !!armed && t.dataset.id === armed.id));
+    $("armed").innerHTML = S.place !== "tap" ? "Click a tile: it plays in the middle of the field. A tap in the game still shoots."
+      : armed ? `Tap on the field: <b>${armed.label}</b> — click the tile again to shoot instead.` : "Pick a tile, then tap on the field to place it.";
+  }
+
+  // ---- tabs --------------------------------------------------------------------
+  $("tabs").onclick = (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    S.tab = b.dataset.tab; save(); drawTab();
+  };
+  function tile(id, label, art, sub, dim) {
+    const src = artSrc(art);
+    return `<button class="tile${dim ? " dim" : ""}" data-id="${id}">` +
+      (src ? `<img src="${src}" alt="">` : `<span class="ph">·</span>`) +
+      `<span>${label}</span>${sub ? `<small>${sub}</small>` : ""}</button>`;
+  }
+  function drawTab() {
+    document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === S.tab));
+    if (!CAT) return;
+    const body = $("body"), tools = {};
+    let opts = "", grid = "";
+    const add = (t) => { tools[t.id] = t; };
+
+    if (S.tab === "zombies") {
+      opts = `<div class="row"><label class="k">State</label><select id="o-state">${STATES.map((s) => `<option${s === S.state ? " selected" : ""}>${s}</option>`).join("")}</select></div>
+        <div class="row"><label class="k">How many</label><div class="seg" id="o-count"><button data-v="1">1</button><button data-v="3">3</button><button data-v="5">5</button></div></div>
+        <div class="row"><label class="k">Hold frame</label><select id="o-pin"></select></div>`;
+      CAT.kinds.forEach((k) => {
+        const t = { id: "z-" + k.key, label: k.name, go: (G, x, y) => {
+          const st = k.states.indexOf(S.state) >= 0 ? S.state : "walk";
+          if (S.count > 1 && x == null) G.row(k.key, S.count, st);
+          else for (let i = 0; i < S.count; i++) G.zombie(k.key, x == null ? null : x + (i - (S.count - 1) / 2) * 70, y, st);
+          pinKind = k.key; fillPin(k);
+          if (pin != null) G.pose(k.key, pin);
+        } };
+        add(t);
+        grid += tile(t.id, k.name, k.art, k.frames + " frames" + (k.boss ? " · boss" : ""), k.states.indexOf(S.state) < 0);
+      });
+    } else if (S.tab === "balls") {
+      opts = `<div class="row"><label class="k">Shot</label><div class="seg" id="o-lob"><button data-v="0">Direct</button><button data-v="1">Lob</button></div></div>
+        <div class="row"><label class="k">Power <b id="o-power-v"></b></label><input id="o-power" type="range" min="0" max="1" step="0.05"></div>
+        <div class="row"><label class="k"></label><label class="chk"><input type="checkbox" id="o-load"> Load in the bag instead (3 shots, then shoot them yourself)</label></div>`;
+      CAT.mods.forEach((m) => {
+        const t = { id: "b-" + m.key, label: m.name, go: (G, x, y) => {
+          if (S.load && m.key !== "plain") G.load(m.key); else G.ball(m.key, x, y, S.lob, S.power);
+        } };
+        add(t);
+        grid += tile(t.id, m.name, m.ball, m.key === "plain" ? "" : `<span style="color:${m.color}">●</span> ${m.key}`);
+      });
+    } else if (S.tab === "supers") {
+      CAT.powers.forEach((p) => {
+        const t = { id: "s-" + p.key, label: p.name, go: (G) => G.power(p.key) };
+        add(t);
+        grid += tile(t.id, p.name, p.icon, p.key);
+      });
+      grid += "";
+      opts = `<p class="note">A super fires where the round aims it (the busiest lane, the lowest zombies…), never at a tap. Seeker rain and sniper need zombies on the field.</p>`;
+    } else if (S.tab === "fx") {
+      opts = `<div class="row"><label class="k">Size</label><div class="seg" id="o-scale"><button data-v="0.5">x0.5</button><button data-v="1">x1</button><button data-v="1.5">x1.5</button><button data-v="2">x2</button></div></div>
+        <div class="row"><label class="k"></label><label class="chk"><input type="checkbox" id="o-loop"> Loop 2 s</label><label class="chk"><input type="checkbox" id="o-flip"> Mirrored</label></div>
+        <p class="note">The raw sheet, played at the size the round draws it (x1). Debug marks its anchor.</p>`;
+      CAT.fx.forEach((f) => {
+        const t = { id: "f-" + f.key, label: f.key, go: (G, x, y) => {
+          G.fx(f.key, x, y, (FX_SIZE[f.key] || 120) * (S.fxScale || 1), { loop: S.fxLoop ? 2 : 0, flip: S.flip });
+        } };
+        add(t);
+        grid += tile(t.id, f.key, f.art, `${f.n} frames · ${f.at} · ${FX_USE[f.key] || ""}`, !f.on);
+      });
+    } else if (S.tab === "events") {
+      opts = `<p class="note">The round's own moments, through the call a round makes: the blast moves the hole, a burst knocks out what it reaches, the last stand runs its 8 s.</p>`;
+      EVENTS.forEach((ev) => {
+        const t = { id: "e-" + ev.key, label: ev.name, go: (G, x, y) => G.event(ev.key, x, y) };
+        add(t);
+        grid += tile(t.id, ev.name, ev.art, ev.key);
+      });
+    }
+    body.innerHTML = `<div class="opts">${opts}</div><div class="grid">${grid}</div>`;
+    body.querySelector(".grid").onclick = (e) => {
+      const b = e.target.closest(".tile"); if (!b) return;
+      use(tools[b.dataset.id]);
+    };
+    wireOpts();
+    paintArmed();
+  }
+
+  function wireOpts() {
+    const st = $("o-state");
+    if (st) st.onchange = () => { S.state = st.value; save(); drawTab(); };
+    if ($("o-count")) seg("o-count", "count", Number);
+    if ($("o-pin")) fillPin(pinKind && CAT.kinds.find((k) => k.key === pinKind));
+    if ($("o-lob")) seg("o-lob", "lob", (v) => v === "1");
+    const pw = $("o-power");
+    if (pw) {
+      const w = () => { $("o-power-v").textContent = S.power.toFixed(2); };
+      pw.value = S.power; w();
+      pw.oninput = () => { S.power = Number(pw.value); w(); save(); };
+    }
+    const ld = $("o-load");
+    if (ld) { ld.checked = S.load; ld.onchange = () => { S.load = ld.checked; save(); }; }
+    if ($("o-scale")) { if (S.fxScale == null) S.fxScale = 1; seg("o-scale", "fxScale", Number); }
+    const lp = $("o-loop"), fl = $("o-flip");
+    if (lp) { lp.checked = S.fxLoop; lp.onchange = () => { S.fxLoop = lp.checked; save(); }; }
+    if (fl) { fl.checked = S.flip; fl.onchange = () => { S.flip = fl.checked; save(); }; }
+  }
+  /* Hold frame: every zombie of the last kind placed is held on one cut of
+     its sheet, which is how its feet are checked frame by frame. */
+  function fillPin(k) {
+    const sel = $("o-pin");
+    if (!sel) return;
+    if (!k) { sel.innerHTML = `<option value="">Place a zombie first</option>`; sel.disabled = true; return; }
+    sel.disabled = false;
+    let html = `<option value="">${k.name}: animate</option>`;
+    for (let i = 1; i <= k.frames; i++) html += `<option value="${i}"${pin === i ? " selected" : ""}>${k.name}: frame ${i}</option>`;
+    sel.innerHTML = html;
+    sel.onchange = () => {
+      pin = sel.value ? Number(sel.value) : null;
+      const G = lab(); if (G) G.pose(k.key, pin);
+    };
+  }
+
+  // ---- the readout ---------------------------------------------------------------
+  setInterval(() => {
+    const G = lab();
+    if (!G || !CAT) return;
+    let s;
+    try { s = G.state(); } catch (e) { return; }
+    const b = CAT.biomes.find((x) => x.key === s.biome);
+    $("status").innerHTML =
+      `<b>${b ? b.name : "—"}</b> · level <b>${s.level || "free"}</b> · ${s.phase}\n` +
+      `zombies <b>${s.zombies}</b> · balls <b>${s.balls}</b> · effects <b>${s.fx}</b>` +
+      (s.specials.length ? ` · loaded <b>${s.specials.join(", ")}</b>` : "");
+  }, 250);
+
+  drawTab();
+  paintArmed();
+})();
+</script>
+</body>
+</html>

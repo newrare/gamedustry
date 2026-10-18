@@ -463,7 +463,15 @@ img.art-i {
 /* The three are the motor's button (menu.js, ACT). The ids undo the column
    the block above gives the same two nodes as wide buttons. */
 #screen-end #btn-install.eo-act, #screen-end #btn-replay.eo-act,
+#screen-end #btn-map.eo-act,
 #screen-end #btn-next.eo-act { width:var(--h); max-width:none; margin:0; }
+/* FOUR ON A VILLAGE — home · map · replay · next. The map is the shell's own
+   node and follows the motor's replay in the DOM (it rides that button's
+   reveal, below), so `order` is what puts it second on screen. */
+#web-endacts #btn-install { order:0; }
+#web-endacts #btn-map { order:1; }
+#web-endacts #btn-replay { order:2; }
+#web-endacts #btn-next { order:3; }
 
 /* THE WAY ON — the third button, and the only one on this screen the shell
    owns outright (menu.js). It rides the motor's own reveal instead of a timer
@@ -477,9 +485,10 @@ img.art-i {
    between them because the round decides whether "go on" or "try again" is
    the offer, and a third contender in that argument makes all three quieter.
    Hidden outright where there is no next level. */
-#screen-end #btn-next { opacity:0; pointer-events:none; transition:opacity .5s ease; }
-#screen-end #btn-replay.show ~ #btn-next { opacity:1; pointer-events:auto; }
-#screen-end.hidden #btn-next { opacity:0; pointer-events:none; }
+#screen-end #btn-next, #screen-end #btn-map { opacity:0; pointer-events:none; transition:opacity .5s ease; }
+#screen-end #btn-replay.show ~ #btn-next,
+#screen-end #btn-replay.show ~ #btn-map { opacity:1; pointer-events:auto; }
+#screen-end.hidden #btn-next, #screen-end.hidden #btn-map { opacity:0; pointer-events:none; }
 #screen-end #btn-next[hidden] { display:none; }
 
 /* THE LIT ONE is `btn-shiny` — filled and ringed, and the SAME SIZE as the

@@ -1,8 +1,9 @@
 # HOLEPOCALYPSE — from the prototype to the game
 
 The plan of record for the fourteenth game: golf against a zombie horde. It is
-**designed and prototyped, not built**. Build it once the thirteen are
-validated and live on Google Play ([TODO.md](../TODO.md), *New games*).
+**built** as `games/holepocalypse` (v0.1.0), on the motor, with every asset
+below filed and adopted; what the first build simplified is in
+[§12](#12-what-the-first-build-decided).
 
 Everything a session needs to build it is here: the rules the prototype
 validated, the steps on the motor, the five biomes, the roster of zombies, the
@@ -13,18 +14,26 @@ ______________________________________________________________________
 
 ## 0. Where things are
 
-| what                                        | where                                                                                    |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| the rules prototype (plain shapes)          | [`prototype/siege-golf.html`](../prototype/siege-golf.html)                              |
-| the ten launcher controls tried             | [`prototype/siege-golf-controls.html`](../prototype/siege-golf-controls.html) — #8 won   |
-| the art pass, the reference for every rule  | [`prototype/holepocalypse-art.html`](../prototype/holepocalypse-art.html)                |
-| the biome 1 fairway (master, not yet filed) | repo root, `Holepocalypse Fairway toxique au crépuscule.png` (941×1672)                  |
-| the walker sheet (master, not yet filed)    | repo root, `Holepocalypse Planche de sprites _ golfeur zombie en action.png` (1024×1536) |
-| the app icon                                | on the user's machine; goes to `assets/image/icon/holepocalypse.png` (§3, step 9)        |
+| what                                       | where                                                                                                                             |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| the rules prototype (plain shapes)         | [`prototype/siege-golf.html`](../prototype/siege-golf.html)                                                                       |
+| the ten launcher controls tried            | [`prototype/siege-golf-controls.html`](../prototype/siege-golf-controls.html) — #8 won                                            |
+| the art pass, the reference for every rule | [`prototype/holepocalypse-art.html`](../prototype/holepocalypse-art.html)                                                         |
+| the game                                   | [`games/holepocalypse/`](../games/holepocalypse/)                                                                                 |
+| the five fairways                          | `assets/image/master/holepocalypse-fairway-0{1..5}.png` (country → graveyard)                                                     |
+| the horde and the bosses                   | `holepocalypse-object-<zombie>.png`, `holepocalypse-object-boss-<name>.png`                                                       |
+| the app icon                               | `assets/image/icon/holepocalypse.png` and its 320 px `thumb/`                                                                     |
+| key art for the listing images             | `holepocalypse-store-invasion.png`, `holepocalypse-store-desk-haunted.png` (not shipped)                                          |
+| every sprite and effect, one click each    | [`lab/holepocalypse-fx.html`](../lab/holepocalypse-fx.html) — `make events` → `/hole-fx`, drives the web build through `Game.lab` |
+| the ball flag and the hole, tuned          | [`lab/holepocalypse-flags.html`](../lab/holepocalypse-flags.html) — the hologram, the optional flagstick, the cups in perspective |
 
-The two root files are untracked. On the day the game is built they move to
-`assets/image/master/holepocalypse-background-phone-country.png` and
-`assets/image/master/holepocalypse-object-walker.png`.
+The painted sources arrived in a `holecopalyspe/` folder at the repo root and
+were filed under `assets/image/master/` with the names of §10. A fairway is
+`fairway-NN` and not `background-phone-<band>`: the round paints it on the
+canvas, so a playable can scale it into the room above its CTA bar, and the
+plain `background-phone` (the dusk panorama) stays the intro's and the
+menu's. A `<slug>-store-<name>.png` is key art kept for the store images:
+encode-art skips it like an object sheet, so it is embedded in no build.
 
 **Slug:** `holepocalypse`. **Store subtitle:** *Holepocalypse: Golf Siege* — the
 word "hole" alone points at the hyper-casual "hole.io" genre, the subtitle and
@@ -46,6 +55,28 @@ slowly into the hole fires a shockwave that wipes most of the field.
   the blue band and drags out; the SKIN draws the two bands and a ball rolling
   into a zombie. Desk: `intro.desk` = mouse drag.
 
+### 1.1 Who it is for, and the hero who speaks to them
+
+**The audience is young players, mostly boys, aged 8 to 12.** Everything
+painted is aimed at them: cartoon action that feels a bit daring, goofy
+zombies rather than frightening ones, slime and goo for the gross-out laugh,
+big explosions, a hero they want to be. Never gore, never real fear — and the
+game falls under Google Play's Families policy like every game of the studio
+([TODO.md](../TODO.md), *Android*).
+
+**The hero is Ace, a 12-year-old, the coolest kid on the course and the one
+who stands up to the zombies** — the age just above the player's, the kid
+they look up to and would want as a friend. He is drawn as a HERO rather than
+a mascot, so his silhouette is his own: a tall swept-up quiff with one blond
+streak, a red headband with sport shades pushed up on it, a red varsity bomber
+with white sleeves over a lime t-shirt, a bandolier of golf balls across the
+chest, a compact golf bag worn on the back like a quiver, and a chrome driver
+with a red lightning bolt. Sure of himself without being mean: a warm grin, a
+wink, he never panics, he laughs at the goofy horde and protects the kids of
+the base. Even his sad face is a hero's — he loses a round, never his nerve.
+He is the end screen's three faces, the title screen and the store images; a
+voice line or a speech bubble, if one is ever added, is his.
+
 ______________________________________________________________________
 
 ## 2. The rules the prototype validated
@@ -55,17 +86,22 @@ starting values of `CONFIG`, not final balance.
 
 ### 2.1 The field
 
-- **Portrait, top-down, sloped toward the player.** The tee is at the bottom,
-  the zombies come through a gate at the top, a defense line crosses the
-  fairway just above the tee box.
-- **The slope** pulls every ball toward the tee (`SLOPE 300` px/s², rolling
-  friction `ROLL_DECEL 90`), so every ball rolls home into the bag on its own.
+- **Portrait, top-down, flat.** The tee is at the bottom, the zombies come
+  through a gate at the top, a defense line crosses the fairway just above the
+  tee box.
+- **A golf course, not a pinball table** (v0.2.0): nothing pulls a ball home.
+  It slows on the grass — a constant friction plus a drag that bites at speed
+  (`ROLL_DECEL 520` + `ROLL_DRAG 0.9`·speed px/s², so full power rolls about
+  1180 px, the whole field) — comes to rest (`REST_SPEED 14`), fades for
+  `REST_TIME 0.45` s and goes back into the bag. The first layout had a slope
+  (`SLOPE 300`) that sent every ball back down like a flipper; it is gone.
 - **The fences are the painted ones.** The fairway narrows toward the gate; the
   physics walls are slanted lines measured off the picture (§10, *geometry*):
   biome 1 is `wallL(y) = max(60, 180 − 0.165·y)` and
   `wallR(y) = min(660, 539 + 0.189·y)`, gate `x 260…465`, top `y 140`, defense
   line `y 1107`, tee `(360, 1186)`. A ball hitting a fence reflects on its
-  normal (`fenceBounce`), restitution `0.85`.
+  normal (`fenceBounce`), restitution `0.6`; a bumper returns `0.85` of the
+  speed (it used to kick, `1.15`).
 - **The zombies fan out of the gate**: each one steers toward its own share of
   the fairway width (`lane`, `FAN_SPEED 40`), so the horde opens like a fan
   instead of marching in a column.
@@ -86,12 +122,18 @@ Chosen out of ten control schemes (`siege-golf-controls.html`, #8 *Arc pad*):
   Beyond the arc is full power.
 - **The preview says which shot it is, unmistakably:** Direct is small blue
   dots flat on the grass, a white star at every fence bounce and a green ring
-  where the ball tops out (its slowest point, the one to put on the hole); Lob
+  where the ball comes to rest — the whole roll is drawn, so the ring is the
+  point to put on a cup; Lob
   is an orange arc lifted by its height, dots growing toward the top, its
   shadow dashed on the grass and an orange target where it lands. The tee ball
   wears the mode's colour ring, and `Direct` / `Lob` is written over the power
   bar.
-- **A shot always leaves upward** (`MIN_UP 0.15`), and `FIRE_COOLDOWN 0.12`.
+- **A shot always leaves upward** (`MIN_UP 0.15`), and `FIRE_COOLDOWN 0.12`
+  — `BOSS_COOLDOWN 0.6` between two bag shots while a boss stands, swept round
+  the tee in red; a shot released during it is held and leaves when the tee is
+  ready. The gun's free balls never wait for it.
+- **The arc is painted on the grass**: over the fairway and its terrain, under
+  the cups, the zombies and the balls.
 
 ### 2.3 Direct and lob
 
@@ -104,11 +146,16 @@ Chosen out of ten control schemes (`siege-golf-controls.html`, #8 *Arc pad*):
   (`LOB_DMG 2`, the ball kind's effect, a 220 px/s kick up the field), then
   rolls on at `LOB_ROLL 0.35` of its speed — slow enough to drop into a hole.
   An explosive lob is a mortar.
+- **A lob scatters** (v0.2.2): it lands at a random point of a circle round
+  the aimed spot, whose radius grows with the range — `8` px at `LOB_MIN`,
+  `95` px at `LOB_MAX`, along `f^1.5` so a short chip stays near exact. A long
+  lob on a cup was too sure a thing. The preview draws that circle, dashed,
+  with the aimed spot in it.
 
 ### 2.4 The bag
 
-Five balls (`BAG_MAX`). A shot takes one; a ball rolling back past the line
-returns it. A ball gone for good (exploded, timed out after `BALL_LIFE 12` s)
+Five balls (`BAG_MAX`). A shot takes one; a ball coming to rest (or knocked
+back past the line) returns it. A ball gone for good (exploded, timed out after `BALL_LIFE 12` s)
 comes back after `BAG_REGEN 2.5` s. Balls a super throws are free: they take
 nothing and give nothing back.
 
@@ -124,17 +171,33 @@ nothing and give nothing back.
 - **Hole in one** (straight from the tee, no bounce, no zombie touched) pays
   double.
 
-### 2.6 The side holes — left, ball kinds
+### 2.6 The ball flags — anywhere on the fairway, ball kinds
 
-- **Two side holes** at the foot of the fairway against the left fence
-  (`y 905` and `1015`), a cup with a flag whose pennant shows its ball kind.
+- **One or two ball flags** (the level's `kinds`, the side holes of the first
+  layout) are dropped at random on the fairway (`moveFlag`), clear of the
+  hole, the supers, the bumpers and the terrain: a cup with a hologram rising
+  out of it, the kind's icon turning in a beam of its colour. The hole's own
+  hologram is red, taller and carries the shockwave's toxic ring. There is no
+  flagstick: a hologram sinks into its cup while a zombie or a ball passes
+  through it, so nothing is ever drawn through a pole. Every cup, glow and
+  recharge lies on the grass as an ellipse of one ratio (`GROUND_SQUASH`
+  0.42), the fairway's perspective; tuned in `lab/holepocalypse-flags.html`.
+- **That is the choice of every putt**: the red flag fires the shockwave; a
+  ball flag gives a **lost flag back** (never past three, not during the last
+  stand) and loads special balls.
 - **A player's ball rolled in slower than `SIDE_HOLE_MAX 900` drops in**
   (kinder than the main hole, pull `1800`): it loads **3 balls of that kind**
   on the tee (`LEFT_EXTRA`, queue capped at `SPECIAL_MAX 4`), the ball itself
-  comes home, and the hole is capped for `TARGET_COOL 8` s — a capped hole is
-  rolled over. A super's ball never drops in.
-- The loaded balls show bottom right, next one first; the tee ball wears its
-  colour.
+  comes home, and the flag moves to a new spot where it is capped for
+  `TARGET_COOL 8` s — a capped cup is rolled over. A super's ball never drops
+  in.
+- **The bag is a row of big balls under the tee**, the next shot first, each
+  ball wearing the kind it will leave as; a ball out on the course is an empty
+  socket ringed white, the one coming back by itself fills its ring. Left of
+  the tee, the special about to be fired is named with its count. The tee
+  ball wears its colour in a pulsing ring. The level pill's "!" stands on top
+  of the pill (`--lv-log-left` / `--lv-log-bottom` in the SKIN) to leave the
+  row its room.
 
 ### 2.7 The supers — right, tapped
 
@@ -149,8 +212,11 @@ nothing and give nothing back.
 The flag that would end the run buys **8 s of the gun** instead, once per run:
 every zombie is knocked back (`LAST_PUSH 450`), the launcher becomes the gun
 (hold to auto-fire toward the finger every `0.12` s, free balls; tap for a
-putt that tops out right where you tapped). Survive it and one flag comes
-back. The gun is also what the **Rush** super runs for 6 s.
+putt that comes to rest right where you tapped). Survive it and one flag
+comes back. The gun is also what the **Rush** super runs for 6 s. It draws
+its reticle and its balls and nothing else: the coloured frame round the
+field and its countdown bar went in v0.2.1 (the last stand's seconds are on
+the HUD).
 
 ### 2.9 Zombies, billiards, chains, flags
 
@@ -216,7 +282,7 @@ Follow [CLAUDE.md](../CLAUDE.md#how-to-create-a-new-game) and
    the field, `fenceBounce`, the launcher (`aimVec`, `lobVec`, `bandOf`, the
    start-band lock), balls (`updateBall`, `lobLand`, `applyMod`), the hole and
    `coverRadius`, side holes, supers, zombies (`spawn`, `updateMonsters`, the
-   billiards), drops, zones, sweeps, the gun (`climbTo`, `apexOf`).
+   billiards), drops, zones, sweeps, the gun (`climbTo`, `rollOf`).
    - `render()`: wrap the board's elements in `Enter.begin/end` in landing
      order — the side holes and supers, the main hole, the bumpers, then the
      zombies already on the field.
@@ -445,7 +511,7 @@ out of `awards`, so the machine can roll one.
 | 8   | Toxic Puddle  | common    | machine               |
 | 9   | Golf Cart     | common    | machine               |
 | 10  | Sprinkler     | common    | band 4 passed clean   |
-| 11  | Pro Shop      | common    | machine               |
+| 11  | Slime Burp    | common    | machine               |
 | 12  | Birdie        | rare      | band 3 passed clean   |
 | 13  | Hole in One   | rare      | machine               |
 | 14  | Greenkeeper   | rare      | band 1 passed clean   |
@@ -484,7 +550,7 @@ ______________________________________________________________________
 ## 10. The assets — the list and a prompt for each
 
 **Already done:** the app icon (on the user's machine), the biome 1 fairway,
-the Walker sheet. **Everything else is below, one complete prompt each**, to
+the Walker and the Boomer sheets. **Everything else is below, one complete prompt each**, to
 be pasted alone. The artwork is the user's to generate: never draw a
 placeholder for any of it.
 
@@ -499,575 +565,57 @@ placeholder for any of it.
 | village houses, 3x2                                                 | `holepocalypse-object-home.png`                   | 10.12       |
 | stickers, 5x4                                                       | `holepocalypse-object-sticker.png`                | 10.13       |
 | decor objects, 4x2                                                  | `holepocalypse-object-decor.png`                  | 10.14       |
-| ball kind badges, 5x2                                               | `holepocalypse-object-kind.png`                   | 10.15       |
-| super badges, 5x4                                                   | `holepocalypse-object-super.png`                  | 10.16       |
+| ball kind objects, 5x2                                              | `holepocalypse-object-kind.png`                   | 10.15       |
+| super objects, 5x4                                                  | `holepocalypse-object-super.png`                  | 10.16       |
 | balls in play, 6x2                                                  | `holepocalypse-object-ball.png`                   | 10.17       |
 | course objects, 4x3                                                 | `holepocalypse-object-course.png`                 | 10.18       |
 | zombie sheets (Boomer, Shield, Mudder, Digger, Runner, Necromancer) | `holepocalypse-object-<zombie>.png`               | 10.19–10.24 |
 | boss sheets (five)                                                  | `holepocalypse-object-boss-<name>.png`            | 10.25–10.29 |
 | music, one track in six sections                                    | `assets/audio/music/holepocalypse.mp3`            | 10.30       |
+| power effects, ten 4x4 frame sheets                                 | `holepocalypse-object-fx-<name>.png`              | —           |
+| time freeze, the shared ice frame                                   | `game-frame-ice.png` (shared, below)              | —           |
+
+**The power effects** replace what the round drew with rings, particles and
+the super's own icon. Each sheet is cut with `--grid 4x4` and each animation
+adopted under a role of its own, `fx-<anim>-NN` (`CONFIG.art.fxBoom01`…),
+encoded at one fixed scale (`GOLF_FX`) so a growing blast is not boxed; the
+`FX` table of `game.js` says how each one is played and held, and with no art
+on board every caller keeps its old drawing. The playable carries three of
+them (`boom`, `dust`, `shock`), the rest is web-only (`WEB_ONLY_HOLE`).
+Time freeze lays the shared ice frame over the field
+(`"frame-ice": "game-frame-ice"` in `art.objects`, `CONFIG.art.frameIce`).
+
+| sheet             | animations (frames)                                               | played by                                                                                           |
+| ----------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `fx-blast`        | `boom` (8), `crater` (8)                                          | explosive ball, Boomer, Boom volley, cluster bombs; Meteor                                          |
+| `fx-fire`         | `burn` (12), `meteor` (4)                                         | every fire patch (Fire ball, Firestorm); the falling Meteor                                         |
+| `fx-ice`          | `freeze` (8), `hail` (4), `frost` (4)                             | an ice block on a frozen zombie; Hailstorm; Time freeze                                             |
+| `fx-energy`       | `shock` (6), `vortex` (4), `target` (4)                           | the hole's shockwave, Hole blast; Magnet hole; Seeker rain                                          |
+| `fx-water-wind`   | `jet` (4), `splash` (4), `wind` (7)                               | Sprinklers; the Wind modifier's gusts                                                               |
+| `fx-impact`       | `dust` (3), `crack` (4), `coins` (4), `split` (4)                 | a ball landing (rain, seeker, carpet); Heavy; Golden; Split                                         |
+| `fx-vehicle`      | `cart` (4), `clip` (3)                                            | Golf cart; the Mower's grass clippings                                                              |
+| `fx-vehicle-side` | `mower` (4)                                                       | Mower (painted facing left, mirrored going right)                                                   |
+| `fx-plane`        | `plane` (1)                                                       | Carpet strike: the blue plane flying the rows up the field                                          |
+| `fx-shot`         | `pierce` (4), `rush` (4), `bounce` (4), `bomb` (2), `bomblet` (2) | Sniper and every piercing ball; Rush, Fan volley; Super bounce and every bouncy ball; Cluster bombs |
+
+The red, green and propeller planes of `fx-plane`, `fx-vehicle` and
+`fx-vehicle-side` are cut but not adopted, on purpose.
 
 **The sounds are not generated**: they come from the house kit and the
 library (`make events`, §3 step 5).
 
 **The geometry every fairway must keep**, so the walls stay a short table
-per biome (measured off biome 1, in shares of the 9:16 frame): the fence
-lines run from about 19 % (left) and 82 % (right) of the width at 14 % of the
-height out to the frame's edges around 70–76 % of the height; the gate opening
-spans 34 %–68 % of the width at the top; a white line crosses at 86.5 % of the
-height; two tee markers stand at 30 % and 70 % of the width at 92.7 %. Each
-biome's walls are still re-measured off its own picture.
-
-### 10.1 Fairway — Desert Links
-
-```
-Top-down view, vertical mobile game background, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, warm late-afternoon light.
-A long desert golf fairway running from the top to the bottom of the image, seen from above, slightly sloping down toward the viewer, narrowing toward the top like a road in perspective. Bright green grass with wide horizontal mowing stripes in two alternating shades of green, surrounded by golden sand dunes. The fairway itself is kept clean and empty: no hole, no flag, no ball, no characters, no bunker inside the fairway, so gameplay elements stay readable on top of it.
-Layout, to be followed exactly: white wooden rail fences run along both sides of the fairway, starting at about 19% (left) and 82% (right) of the image width at 14% of the height, and widening out to the left and right edges of the image around 72% of the height. At the very top, centered between 34% and 68% of the width, the broken adobe gate of a desert golf resort, torn open, with a sickly toxic-green glow and mist pouring out. At 86.5% of the height a thin white line crosses the fairway from fence to fence. Below it, a tee box of shorter darker grass with two white tee markers at 30% and 70% of the width, at 92.7% of the height.
-Outside the fences only: dunes, tall cacti, sun-bleached cattle skulls, a half-buried golf cart, scattered golf balls, a torn parasol, small toxic-green puddles in the sand. Orange and pink sky at the top edge behind the gate.
-Clean, readable, low detail in the play area, high contrast between the grass and the borders, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.2 Fairway — Bayou Course
-
-```
-Top-down view, vertical mobile game background, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, misty green-gold evening light.
-A long swamp golf fairway running from the top to the bottom of the image, seen from above, slightly sloping down toward the viewer, narrowing toward the top like a road in perspective. Lush green grass with wide horizontal mowing stripes in two alternating shades of green, damp and slightly darker at the edges. The fairway itself is kept clean and empty: no hole, no flag, no ball, no characters, no pond inside the fairway, so gameplay elements stay readable on top of it.
-Layout, to be followed exactly: old white wooden rail fences, a bit mossy, run along both sides of the fairway, starting at about 19% (left) and 82% (right) of the image width at 14% of the height, and widening out to the left and right edges of the image around 72% of the height. At the very top, centered between 34% and 68% of the width, a broken wooden bayou gate hung with spanish moss, torn open, a sickly toxic-green glow and mist pouring out. At 86.5% of the height a thin white line crosses the fairway from fence to fence. Below it, a tee box of shorter darker grass with two white tee markers at 30% and 70% of the width, at 92.7% of the height.
-Outside the fences only: dark swamp water with lily pads, cypress trees with hanging moss, a sunken rowboat, fireflies, a rusty golf cart half in the water, scattered golf balls, small toxic-green bubbles in the water.
-Clean, readable, low detail in the play area, high contrast between the grass and the borders, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.3 Fairway — Frozen Links
-
-```
-Top-down view, vertical mobile game background, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, cold blue winter twilight.
-A long snowy golf fairway running from the top to the bottom of the image, seen from above, slightly sloping down toward the viewer, narrowing toward the top like a road in perspective. Pale frosted green grass with wide horizontal mowing stripes in two alternating shades, a light dusting of snow, so it still reads as a golf fairway. The fairway itself is kept clean and empty: no hole, no flag, no ball, no characters, no ice patch inside the fairway, so gameplay elements stay readable on top of it.
-Layout, to be followed exactly: white wooden rail fences capped with snow run along both sides of the fairway, starting at about 19% (left) and 82% (right) of the image width at 14% of the height, and widening out to the left and right edges of the image around 72% of the height. At the very top, centered between 34% and 68% of the width, the broken iron gate of a mountain golf lodge, torn open and covered in icicles, a sickly toxic-green glow and mist pouring out. At 86.5% of the height a thin white line crosses the fairway from fence to fence. Below it, a tee box of shorter darker grass with two white tee markers at 30% and 70% of the width, at 92.7% of the height.
-Outside the fences only: snowy pine trees, snowdrifts, a frozen pond, a golf cart stuck in snow, a snowman wearing a golf visor, scattered golf balls, small toxic-green cracks glowing in the ice.
-Clean, readable, low detail in the play area, high contrast between the grass and the borders, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.4 Fairway — Graveyard Greens
-
-```
-Top-down view, vertical mobile game background, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, purple moonlit night with soft green glows.
-A long haunted golf fairway running from the top to the bottom of the image, seen from above, slightly sloping down toward the viewer, narrowing toward the top like a road in perspective. Deep green grass with wide horizontal mowing stripes in two alternating shades of green, lit by moonlight. The fairway itself is kept clean and empty: no hole, no flag, no ball, no characters, no grave inside the fairway, so gameplay elements stay readable on top of it.
-Layout, to be followed exactly: crooked white wooden rail fences run along both sides of the fairway, starting at about 19% (left) and 82% (right) of the image width at 14% of the height, and widening out to the left and right edges of the image around 72% of the height. At the very top, centered between 34% and 68% of the width, the broken wrought-iron gate of an old cemetery golf course, torn open, a bright toxic-green glow and mist pouring out, a full moon behind it. At 86.5% of the height a thin white line crosses the fairway from fence to fence. Below it, a tee box of shorter darker grass with two white tee markers at 30% and 70% of the width, at 92.7% of the height.
-Outside the fences only: cartoon tombstones shaped like golf balls and golf bags, dead twisted trees, jack-o'-lantern style lanterns, a toppled golf cart, scattered golf balls, small toxic-green wisps.
-Clean, readable, low detail in the play area, high contrast between the grass and the borders, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.5 Intro and end screen backdrop
-
-```
-Vertical mobile game title screen background, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, dramatic dusk lighting with purple and orange sky.
-A fancy country club golf course at dusk seen from a low three-quarter angle: a perfect green with a red flag in the foreground lower third, the elegant clubhouse on a hill in the background, and a sickly toxic-green glow rising from behind the clubhouse. Far in the distance, small cartoon zombie silhouettes in golf clothes shamble over the hill. Golf balls scattered on the grass, an overturned golf cart at one side.
-Keep the upper third calm and fairly empty (sky and soft glow) because a logo will be placed there, and keep the right edge simple because menu buttons will be placed there.
-Rich, saturated, inviting, playful-spooky mood, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.6 Desktop bands
-
-```
-Wide landscape illustration, 16:9, 1920x1080, polished casual mobile-game art style, cartoon 3D render, dusk lighting with a purple and orange sky.
-A panoramic view of a fancy country club golf course at dusk: rolling fairways, sand bunkers, a lake, the elegant clubhouse in the middle distance, and a sickly toxic-green glow and mist rising from the course. Small cartoon zombie silhouettes in golf clothes shamble across the far fairways. Golf flags, an overturned golf cart, scattered golf balls.
-The center third of the image must stay calm and fairly dark and simple, because a phone-sized game frame will stand on top of it; put the interesting details on the left and right thirds.
-Rich, saturated, playful-spooky mood, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.7 Village hub
-
-```
-Vertical mobile game hub screen, 9:16 portrait, 1080x1920, polished casual mobile-game art style, cartoon 3D render, cozy dusk lighting with warm lamps and a purple sky.
-A top-down three-quarter view of a golf club's grounds at dusk turned into a survivors' camp: winding cart paths, neat lawns, hedges, lanterns on posts, a small pond, a putting green with a flag in the middle. On the grounds, six EMPTY round flat pads of pale paving stone, clearly visible and spread out with space around each one, where buildings will be placed later: two in the upper part, two in the middle, two in the lower part. The pads are empty: no building on them.
-At the edges: hedges, trees, a broken gate at the top with a faint toxic-green glow far behind it, sandbags and a barricade of golf carts showing the camp is defended.
-Warm, safe, inviting, no characters, no text, no letters, no logo, no UI.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-```
-
-### 10.8 Logotype
-
-```
-Game logo for a mobile game, the single word "HOLEPOCALYPSE" spelled exactly H-O-L-E-P-O-C-A-L-Y-P-S-E, wide horizontal layout, polished casual mobile-game style, chunky 3D cartoon letters with a thick dark outline.
-The letters are fresh golf-green with a lighter top face and a toxic lime-green glow dripping slightly from the bottom edges like slime. The letter O of "HOLE" is a golf ball with dimples sitting in a golf hole, a small red golf flag planted behind it; a cartoon zombie hand pokes out of the letter O of "POCALYPSE" holding a golf ball.
-Bold, readable at small size, playful-spooky, centered, nothing else around it.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.9 Character — sad
-
-```
-Single character portrait for a mobile game end screen, upper body, polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors.
-The hero: Ace, a tough retired golf pro in her sixties, short silver hair under a white visor, a red and green plaid golf vest over a white polo, a striped golf glove, a small bandage on her cheek, holding a driver over her shoulder like a baseball bat.
-Expression: SAD and defeated, shoulders slumped, the driver drooping, a small tear, a few cartoon zombie-green slime splashes on her vest, a broken golf tee in her other hand.
-Facing the viewer, centered, no background scene, no text.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.10 Character — neutral
-
-```
-Single character portrait for a mobile game end screen, upper body, polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors.
-The hero: Ace, a tough retired golf pro in her sixties, short silver hair under a white visor, a red and green plaid golf vest over a white polo, a striped golf glove, a small bandage on her cheek, holding a driver over her shoulder like a baseball bat.
-Expression: NEUTRAL and determined, a confident half smile, one eyebrow raised, the driver resting on her shoulder, tossing a golf ball up with her other hand.
-Facing the viewer, centered, no background scene, no text.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.11 Character — happy
-
-```
-Single character portrait for a mobile game end screen, upper body, polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors.
-The hero: Ace, a tough retired golf pro in her sixties, short silver hair under a white visor, a red and green plaid golf vest over a white polo, a striped golf glove, a small bandage on her cheek, holding a driver over her shoulder like a baseball bat.
-Expression: HAPPY and triumphant, a big laugh, the driver raised high in victory, a golden trophy shaped like a golf ball in her other hand, small sparkles around her.
-Facing the viewer, centered, no background scene, no text.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.12 Village houses (3x2)
-
-```
-Sprite sheet for a mobile game, 3 columns by 2 rows grid, 6 separate buildings, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors, warm dusk lighting, all buildings at the same scale and the same top-down three-quarter camera angle, each standing on its own small round base of grass.
-Row 1: a PRO SHOP, a small wooden golf store with a striped awning, golf clubs and balls in the window and a golf-ball sign; a TROPHY PODIUM, a three-step winners' podium with a big golden golf-ball trophy on top; a COURSE MAP BOARD, a large wooden signboard on posts showing a winding course map with little flags.
-Row 2: a LOCKER ROOM, a small stone building with a green door and lockers visible through the open door, a sticker-covered locker in front; a BALL DISPENSER, a big red vintage golf ball vending machine with a crank and a glass dome full of balls; a GREENKEEPER'S SHED, a wooden tool shed with a lawn mower, rakes and a watering can.
-No characters, no text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.13 Stickers (5x4)
-
-```
-Sticker sheet for a mobile game collection album, 5 columns by 4 rows grid, 20 separate die-cut stickers, each centered in its own equal cell with generous empty space around it, each with a thick white sticker border, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors, funny-spooky golf-and-zombies theme, every sticker the same size.
-Row 1: (1) a golf ball flying with a big "swoosh" trail and a shouting cartoon mouth; (2) a golf tee with a tiny clock on it; (3) a goofy cartoon zombie golfer peeking from behind a flag; (4) a sand bunker with a zombie hand holding a rake out of the sand; (5) a golf bag with clubs and googly eyes.
-Row 2: (6) a golf ball with a four-leaf clover; (7) a cracked red sun visor; (8) a bubbling toxic-green puddle with a golf ball floating in it; (9) a golf cart with tiny wheels doing a wheelie; (10) a lawn sprinkler spraying water in a rainbow.
-Row 3: (11) a tiny pro shop building with a striped awning; (12) a cute bird wearing a golf cap; (13) a golf ball dropping into a glowing hole with stars; (14) a grumpy zombie greenkeeper on a lawn mower; (15) a muddy swamp golf ball with a lily pad on top.
-Row 4: (16) a frozen golf flag covered in icicles; (17) a cartoon green goo splash shaped like a star; (18) a ring-shaped green shockwave bursting out of a golf hole; (19) a zombie king wearing a golden crown and holding a golden golf club, special shiny foil look; (20) a golden putter with sparkles, special shiny foil look.
-No text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.14 Decor objects (4x2)
-
-```
-Sprite sheet for a mobile game, 4 columns by 2 rows grid, 8 separate objects, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors, all objects at a similar size, seen from a slight three-quarter angle.
-Row 1: a bent golf club; a golf ball with a crack and a tiny toxic-green glow inside; a red golf flag on its pole, slightly torn; a golf bag knocked over with a cartoon zombie hand waving out of it.
-Row 2: a small toxic-green barrel with a golf-ball symbol; a cracked red sun visor; a golf tee with a bandage wrapped around it; a little pile of golf balls with one of them wearing googly eyes.
-No characters, no text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.15 Ball kind badges (5x2)
-
-```
-Icon sheet for a mobile game, 5 columns by 2 rows grid, 10 separate round badge icons, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, every badge the same size: a glossy round golf-ball-white disc with dimples, a thick dark outline and a colored rim, with one bold symbol in the middle, readable at very small size.
-Row 1: EXPLOSIVE, red-orange rim, a cartoon blast burst; MULTI, cyan rim, three small golf balls fanning out; PIERCE, magenta rim, a sharp arrow piercing through; HEAVY, dark grey rim, a heavy round boulder; HOMING, violet rim, a horseshoe magnet.
-Row 2: SPLIT, light green rim, a ball splitting into two halves with motion lines; FIRE, orange rim, a flame; BOUNCY, pink rim, a ball with springy bounce lines; ICE, pale blue rim, a snowflake; GIANT, white rim with a gold edge, a very big ball next to a tiny one.
-No text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.16 Super badges (5x4)
-
-```
-Icon sheet for a mobile game, 5 columns by 4 rows grid, 20 separate power-up badge icons, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, every badge the same size: a glossy rounded-square button with a thick dark outline, a deep purple face and a golden rim, with one bold colorful symbol in the middle, readable at very small size.
-Row 1: BALL RAIN, a cloud raining golf balls; FAN VOLLEY, golf balls fanning out from one point; TIME FREEZE, an hourglass with frost; HOLE BLAST, a golf hole with a green shockwave ring; SEEKER RAIN, a golf ball with a target reticle.
-Row 2: SNIPER, a golf ball shaped like a bullet with a crosshair; SPRINKLERS, a lawn sprinkler spraying water; GOLF CART, a small golf cart charging forward with speed lines; BOOM VOLLEY, three golf balls with fuses; SPLIT STORM, golf balls splitting into many.
-Row 3: MAGNET HOLE, a golf hole with a horseshoe magnet above it; HAILSTORM, a cloud dropping ice-cube golf balls; FIRESTORM, flaming golf balls falling; SUPER BOUNCE, a golf ball with springs; CLUSTER BOMBS, a bomb splitting into small bombs.
-Row 4: RUSH, a golden star with motion lines; METEOR, a giant flaming golf ball falling; CARPET STRIKE, a small cartoon plane dropping golf balls in rows; GOLDEN RAIN, gold coins and golden golf balls raining; MOWER, a ride-on lawn mower.
-No text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.17 Balls in play (6x2)
-
-```
-Sprite sheet for a mobile game, 6 columns by 2 rows grid, 12 separate golf balls seen from straight above, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines, no shadows.
-Polished casual mobile-game style, cartoon 3D render, every ball exactly the same size and perfectly round, with visible dimples, a thick dark outline and a small white highlight at the top left, readable at very small size.
-Row 1: a plain white golf ball; a red-orange explosive ball with a short lit fuse; a cyan ball with a faint triple ghost; a magenta ball with a sharp arrow stripe; a dark grey heavy stone ball; a violet ball with a magnet stripe.
-Row 2: a light green ball with a seam down the middle; an orange ball wrapped in small flames; a pink rubbery bouncy ball; a pale blue ice ball with frost; a white ball with a golden ring (the giant ball); a golden ball with sparkles.
-No text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.18 Course objects (4x3)
-
-```
-Sprite sheet for a mobile game, 4 columns by 3 rows grid, 12 separate golf course objects seen from a top-down view, each centered in its own equal cell with generous empty space around it, nothing touching or overlapping another cell, no grid lines.
-Polished casual mobile-game style, cartoon 3D render, thick clean outlines, vibrant colors, all objects lit from the top left, same top-down camera for all.
-Row 1: a golf cup seen from above, a dark round hole with a white rim in a small disc of short grass; a red golf flag on a white pole seen from a slight angle; a golf cup covered by a round grey metal lid; a round stone planter full of flowers (a bumper).
-Row 2: a round brass lawn sprinkler head (a bumper); a small kidney-shaped sand bunker; a large irregular sand bunker; a small round pond with lily pads.
-Row 3: a large irregular pond with reeds; an irregular patch of slippery blue ice; a cartoon tombstone shaped like a golf ball; a cracked grave mound with a toxic-green glow.
-No characters, no text, no letters, no numbers, no logo.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.19 Zombie — Boomer
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE CHARACTER, a bloated zombie golfer, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: short legs, a huge round swollen belly about 1.3 times wider than a normal man, short stubby arms.
-- Skin: grey-green (#8FA38A) with darker green shading.
-- Eyes: round, glowing red pupils (#FF3B3B), always visible.
-- Head: a flat checkered golf cap.
-- Top: a purple polo shirt (#7A3E8C) stretched tight and torn at the seams.
-- Bottom: loud yellow and blue checkered golf trousers.
-- Belly and shoulders: four glowing lime-green pustules (#C6FF3A).
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and walking toward the bottom of the image.
-- The character fills about 65% of the cell height, centered horizontally.
-- The soles of the feet always sit on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROWS 1 AND 2, WALK CYCLE, 8 frames, a heavy waddle; the short arms reach forward and sway; the belly bounces up and down one beat after the feet.
-- Frame 1, left foot forward touching the ground, belly level.
-- Frame 2, weight on the left foot, knees bent, body lowest, belly squashed wide.
-- Frame 3, left leg straight under the body, right foot lifted beside it, belly stretched tall.
-- Frame 4, body highest, right leg swinging forward, belly lifted.
-- Frame 5, mirror of frame 1 with the right foot forward.
-- Frame 6, mirror of frame 2, weight on the right foot, belly squashed wide.
-- Frame 7, mirror of frame 3, left foot lifted.
-- Frame 8, mirror of frame 4, left leg swinging forward.
-
-ROW 3, HIT REACTION, 4 frames, bonked in the belly by a golf ball:
-- Frame 9, the belly squashes inward like jelly, eyes squeezed shut.
-- Frame 10, the belly bounces back outward wider than before, arms flung up.
-- Frame 11, wobbling, pustules glowing brighter.
-- Frame 12, settled back to the walking pose of frame 3.
-
-ROW 4, BURST, 4 frames, a cartoon pop:
-- Frame 13, swelling up like a balloon, eyes bulging, lines of lime-green light cracking across the shirt.
-- Frame 14, almost spherical, glowing intensely, feet lifting off the ground.
-- Frame 15, bursting into a cartoon splash of bright lime-green goo shaped like a star, the cap flying up.
-- Frame 16, a flat lime-green goo stain on the ground with the cap lying in it.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.20 Zombie — Shield
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE CHARACTER, a zombie caddie with a shield, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: a stocky adult, slightly hunched.
-- Skin: grey-green (#8FA38A) with darker green shading.
-- Eyes: round, glowing red pupils (#FF3B3B), always visible.
-- Head: a white caddie cap worn backwards.
-- Clothes: a white caddie overall (#EDEDED) with a green bib number patch without any number, torn at the knees.
-- Shield: a big tan leather golf bag (#B07A3C) full of clubs held flat in front of the body with both arms like a riot shield, covering the chest and belly.
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and walking toward the bottom of the image.
-- The character fills about 70% of the cell height, centered horizontally.
-- The soles of the feet always sit on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROWS 1 AND 2, WALK CYCLE, 8 frames, a steady march behind the bag; the bag stays in front of the body and bobs with each step.
-- Frame 1, left foot forward touching the ground. Frame 2, weight on the left foot, body lowest. Frame 3, left leg straight, right foot passing. Frame 4, body highest, right leg swinging forward.
-- Frames 5 to 8, the same four poses mirrored with the other leg.
-
-ROW 3, BLOCK, 4 frames, a golf ball bounces off the bag:
-- Frame 9, the bag takes the impact, a small cartoon spark on the leather, the caddie leans back.
-- Frame 10, sliding back a little, heels digging in, gritting teeth.
-- Frame 11, peeking over the bag, annoyed.
-- Frame 12, back to the walking pose of frame 3.
-
-ROW 4, KNOCKOUT, 4 frames, cartoon slapstick:
-- Frame 13, the bag knocked aside, the caddie tipping backward, arms up.
-- Frame 14, falling backward, clubs flying out of the bag.
-- Frame 15, lying flat on the ground, eyes turned into cartoon spirals, the bag beside him.
-- Frame 16, a poof of grey dust with the cap and the bag lying in it.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.21 Zombie — Mudder
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE CHARACTER, a swamp mud zombie, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: a lumpy man-shaped figure made of glossy brown swamp mud (#6B4A2B) with green algae patches, a bit wider than a man.
-- Eyes: round, glowing red pupils (#FF3B3B), always visible.
-- Head: a lily pad stuck on the head like a hat, a golf ball half sunk in the mud of the chest.
-- Arms: long and drippy, reaching forward, small mud drips falling.
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and walking toward the bottom of the image.
-- The character fills about 70% of the cell height, centered horizontally.
-- The base of the body always sits on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROWS 1 AND 2, WALK CYCLE, 8 frames, a sloshing, wobbling shamble; the mud body squashes and stretches with each step, arms swaying forward.
-- Frame 1, left foot forward. Frame 2, weight on the left, body squashed lowest. Frame 3, passing, body stretched tall. Frame 4, body highest, right leg swinging forward.
-- Frames 5 to 8, the same four poses mirrored with the other leg.
-
-ROW 3, HIT REACTION, 4 frames:
-- Frame 9, a splat dent in the mud chest where the ball hit, eyes squeezed.
-- Frame 10, leaning back, mud splashing out in cartoon drops.
-- Frame 11, wobbling like jelly.
-- Frame 12, reformed, back to the walking pose of frame 3.
-
-ROW 4, SPLIT, 4 frames, the mud body splits into two small mud creatures:
-- Frame 13, a crack of light running down the middle of the body.
-- Frame 14, the body pulling apart into two halves.
-- Frame 15, two small round mud blobs with red eyes and tiny arms, side by side, each about half the size.
-- Frame 16, one single small mud blob alone, standing, ready to waddle (this is the small creature, drawn alone in the cell).
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.22 Zombie — Digger
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE CHARACTER, a zombie groundskeeper who digs, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: a wiry adult, hunched forward.
-- Skin: grey-green (#8FA38A) with darker green shading.
-- Eyes: round, glowing red pupils (#FF3B3B), always visible.
-- Head: a knitted green beanie and a miner's headlamp.
-- Clothes: green dungarees (#3E6B3A) over a brown shirt, muddy boots.
-- Tool: a small garden shovel in both hands.
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and moving toward the bottom of the image.
-- The character fills about 65% of the cell height when standing, centered horizontally.
-- The ground line always sits on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROW 1, WALK, 4 frames: left foot forward; passing with the body lowest; right foot forward; passing with the body highest. The shovel held ready.
-ROW 2, DIG IN, 4 frames: stabbing the shovel into the grass with dirt flying; half sunk into a hole, only the upper body visible; only the head and the beanie above a mound of dirt; just a mound of fresh dirt with the headlamp glowing out of it.
-ROW 3, SURFACE, 4 frames: a mound of dirt bulging; the head and shovel popping out with dirt flying; climbing out waist-deep; standing again shaking off the dirt.
-ROW 4, HIT AND KNOCKOUT, 4 frames: bonked by a golf ball, headlamp flickering, leaning back; staggering with stars around the head; falling flat with eyes turned into cartoon spirals, the shovel beside him; a poof of grey dust with the beanie and the shovel lying in it.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.23 Zombie — Runner
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE CHARACTER, a fast zombie jogger, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: skinny and long-legged, leaning far forward.
-- Skin: grey-green (#8FA38A) with darker green shading.
-- Eyes: round, glowing red pupils (#FF3B3B), always visible, wide open.
-- Head: a red sweatband, wild hair streaming back.
-- Clothes: a bright yellow running vest (#F2D23A), blue running shorts, one running shoe and one bare foot.
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and running toward the bottom of the image.
-- The character fills about 70% of the cell height, centered horizontally.
-- The ground line always sits on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROWS 1 AND 2, SPRINT CYCLE, 8 frames, a frantic sprint with big strides, arms pumping, both feet off the ground in frames 4 and 8:
-- Frame 1, left foot striking the ground far forward, right arm forward. Frame 2, weight on the left, knee bent, body lowest. Frame 3, pushing off, right knee driving up. Frame 4, airborne, legs spread wide.
-- Frames 5 to 8, the same four poses mirrored with the other leg and arm.
-
-ROW 3, HIT REACTION, 4 frames: bonked in the chest, head snapped back; stumbling, arms windmilling; almost falling, one foot up; recovering into the sprint pose of frame 1.
-ROW 4, KNOCKOUT, 4 frames: tripping forward, arms out; flying flat in the air like a superhero belly flop; face down on the grass with eyes turned into cartoon spirals, the sweatband flying off; a poof of grey dust with the sweatband and the shoe lying in it.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.24 Zombie — Necromancer
-
-```
-Sprite sheet for a mobile game: ONE single character drawn 16 times, a 4 columns by 4 rows grid of 16 equal square cells, read left to right then top to bottom. It is an animation sheet, so the character must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure except the magic described in the cast frames.
-
-THE CHARACTER, a zombie club president who raises the others, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- Body: a tall thin old man, very straight, with a long chin.
-- Skin: pale grey-green (#A3B39E) with darker shading.
-- Eyes: round, glowing lime-green pupils (#C6FF3A), always visible.
-- Head: a tall black top hat with a lime-green band, a thin moustache.
-- Clothes: a long dark purple tailcoat (#3E2350) over a green golf vest, a monocle.
-- Prop: a golf club topped with a glowing green crystal ball, held like a wizard's staff.
-
-CAMERA AND FRAMING, the same in all 16 cells:
-- Top-down three-quarter view from above, about 45 degrees, the character facing the viewer and walking toward the bottom of the image.
-- The character fills about 75% of the cell height, centered horizontally.
-- The soles of the feet always sit on the same baseline, at 85% of the cell height from the top.
-- Light from the top left, soft shadow on the character itself only.
-
-ROW 1, WALK, 4 frames, a slow pompous stride using the club like a cane: left foot forward; passing; right foot forward; passing.
-ROW 2, CAST, 4 frames: raising the club, the crystal starting to glow; both arms raised high, a swirl of lime-green sparkles around the crystal; pointing the club down at the ground, green sparkles shooting down; lowering the arms, a few sparkles fading.
-ROW 3, HIT REACTION, 4 frames: bonked, the top hat jumping up off his head; leaning back, monocle popping out; catching the hat, annoyed; back to the walking pose.
-ROW 4, KNOCKOUT, 4 frames: tipping backward stiff like a plank; falling flat, the club flying; lying on the ground with eyes turned into cartoon spirals, the hat rolling away; a poof of grey dust with the top hat and the club lying in it.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.25 Boss — Greenkeeper
-
-```
-Sprite sheet for a mobile game: ONE single boss character drawn 12 times, a 4 columns by 3 rows grid of 12 equal square cells, read left to right then top to bottom. It is an animation sheet, so the boss must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE BOSS, the zombie Greenkeeper on his ride-on mower, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- A big burly zombie groundskeeper with grey-green skin (#8FA38A), glowing red eyes (#FF3B3B), a bushy beard full of grass clippings, a straw hat, green overalls.
-- He rides a rusty red ride-on lawn mower with a big front grille like teeth, one headlight cracked, grass clippings shooting out of the side.
-
-CAMERA AND FRAMING, the same in all 12 cells:
-- Top-down three-quarter view from above, about 45 degrees, driving toward the viewer (toward the bottom of the image).
-- The boss and mower fill about 80% of the cell, centered; the wheels always on the same baseline at 88% of the cell height.
-- Light from the top left, soft shadow on the boss itself only.
-
-ROW 1, DRIVE, 4 frames: the mower rolling forward with the wheels turning, the driver bouncing in the seat, grass clippings puffing out of the side in a different puff each frame.
-ROW 2, ATTACK, 4 frames: revving the engine with smoke puffs; leaning forward, the grille snapping open like a mouth; charging with the grille wide open; braking with a skid of grass.
-ROW 3, HIT AND DEFEAT, 4 frames: bonked by a golf ball, straw hat jumping up; spinning in the seat with stars around the head; the mower coughing black smoke and stopping; the mower parked and smoking, the greenkeeper slumped over the wheel with eyes turned into cartoon spirals.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.26 Boss — Caddie Colossus
-
-```
-Sprite sheet for a mobile game: ONE single boss character drawn 12 times, a 4 columns by 3 rows grid of 12 equal square cells, read left to right then top to bottom. It is an animation sheet, so the boss must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE BOSS, the Caddie Colossus, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- A giant hulking zombie caddie, three times as wide as a normal zombie, grey-green skin (#8FA38A), glowing red eyes (#FF3B3B), a tiny caddie cap on a huge head, a sweat-stained white caddie overall stretched over big muscles.
-- He carries an enormous armoured golf bag (#B07A3C with riveted steel plates) in front of him like a tower shield, a forest of golf clubs sticking out of the top.
-
-CAMERA AND FRAMING, the same in all 12 cells:
-- Top-down three-quarter view from above, about 45 degrees, facing the viewer and walking toward the bottom of the image.
-- The boss fills about 80% of the cell, centered; the feet always on the same baseline at 88% of the cell height.
-- Light from the top left, soft shadow on the boss itself only.
-
-ROW 1, STOMP, 4 frames: left foot stomping forward with a small dust puff; passing; right foot stomping forward with a dust puff; passing. The bag stays in front.
-ROW 2, THROW, 4 frames: pulling a spare golf bag from behind his back; lifting it high over his head with both arms; throwing it forward, the bag flying out of his hands; back to the stomp pose, panting.
-ROW 3, HIT AND DEFEAT, 4 frames: bonked on the head by a golf ball, a cartoon bump rising, eyes crossed; staggering, the armoured bag tilting; dropping the bag, falling backward like a giant tree; lying on his back with eyes turned into cartoon spirals, clubs scattered around him.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.27 Boss — Bog Giant
-
-```
-Sprite sheet for a mobile game: ONE single boss character drawn 12 times, a 4 columns by 3 rows grid of 12 equal square cells, read left to right then top to bottom. It is an animation sheet, so the boss must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure.
-
-THE BOSS, the Bog Giant, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- A huge round swamp giant made of glossy brown mud (#6B4A2B) and green moss, three times as wide as a normal zombie, glowing red eyes (#FF3B3B), a cypress stump growing on its head like a hat, reeds and lily pads stuck all over it, dozens of golf balls half sunk in its belly.
-- Long dripping arms with big three-fingered mud hands.
-
-CAMERA AND FRAMING, the same in all 12 cells:
-- Top-down three-quarter view from above, about 45 degrees, facing the viewer and wading toward the bottom of the image.
-- The boss fills about 80% of the cell, centered; the base always on the same baseline at 88% of the cell height.
-- Light from the top left, soft shadow on the boss itself only.
-
-ROW 1, WADE, 4 frames: a heavy sloshing step with the left side; mud body squashing low; a heavy step with the right side; mud body stretching tall. Small mud drips falling.
-ROW 2, SPLASH ATTACK, 4 frames: raising both mud hands high; slamming them down; a big round ring of mud splashing outward around it; settling, mud dripping from its arms.
-ROW 3, HIT AND DEFEAT, 4 frames: bonked, a splat dent in its belly; tipping backward with arms flailing; falling backward into an unseen pond with a big cartoon water splash; only its stump hat and bubbles left floating on a circle of water.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.28 Boss — Yeti
-
-```
-Sprite sheet for a mobile game: ONE single boss character drawn 12 times, a 4 columns by 3 rows grid of 12 equal square cells, read left to right then top to bottom. It is an animation sheet, so the boss must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure except the frost described in the attack frames.
-
-THE BOSS, the zombie Yeti, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- A huge shaggy white yeti with patches of pale green fur, three times as wide as a normal zombie, glowing red eyes (#FF3B3B), a big underbite with two blunt rounded teeth, a red and white knitted bobble hat, a striped golf scarf.
-- Giant furry hands, one of them holding a bent golf club like a toothpick.
-
-CAMERA AND FRAMING, the same in all 12 cells:
-- Top-down three-quarter view from above, about 45 degrees, facing the viewer and walking toward the bottom of the image.
-- The boss fills about 80% of the cell, centered; the feet always on the same baseline at 88% of the cell height.
-- Light from the top left, soft shadow on the boss itself only.
-
-ROW 1, STOMP, 4 frames: left foot forward, snow puffing; passing, body lowest; right foot forward, snow puffing; passing, body highest.
-ROW 2, FROST ATTACK, 4 frames: taking a huge breath, cheeks puffed; blowing a cone of sparkly blue frost forward; slamming the ground with both hands, ice crystals spreading; charging forward on all fours.
-ROW 3, HIT AND DEFEAT, 4 frames: bonked on the nose, eyes watering, bobble hat jumping; slipping on ice, feet flying up; landing flat on its back in the snow; lying in a yeti-shaped snow angel with eyes turned into cartoon spirals, the bobble hat on its belly.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.29 Boss — Zombie King
-
-```
-Sprite sheet for a mobile game: ONE single boss character drawn 12 times, a 4 columns by 3 rows grid of 12 equal square cells, read left to right then top to bottom. It is an animation sheet, so the boss must be IDENTICAL in every frame: same design, same colors, same proportions, same size, same camera, same lighting. Only the pose changes. Every figure sits fully inside its own cell with clear empty space on all four sides; nothing touches the cell edges; no glow, haze or soft halo around the figure except the magic described in the frames.
-
-THE BOSS, the Zombie King, cartoon 3D render in a polished casual mobile-game style, thick clean dark outlines, funny rather than scary:
-- A tall regal zombie golfer twice the size of a normal zombie, grey-green skin (#8FA38A), glowing lime-green eyes (#C6FF3A), a long white beard, a big golden crown with golf-ball jewels.
-- A royal purple cape with a green lining over a gold and black argyle golf sweater, white golf trousers, golden golf shoes.
-- A golden driver held in both hands.
-
-CAMERA AND FRAMING, the same in all 12 cells:
-- Top-down three-quarter view from above, about 45 degrees, facing the viewer.
-- The boss fills about 80% of the cell, centered; the feet always on the same baseline at 88% of the cell height.
-- Light from the top left, soft shadow on the boss itself only.
-
-ROW 1, WALK, 4 frames: a proud royal stride with the cape flowing, the driver resting on the shoulder; left foot forward; passing; right foot forward; passing.
-ROW 2, ROYAL SWING, 4 frames: placing a glowing green skull-shaped golf ball on a tee in front of him; winding the golden driver back over his shoulder; swinging through, the green ball shooting forward toward the viewer with sparkles; the follow-through pose, cape swirling, with a smug grin.
-ROW 3, HIT AND DEFEAT, 4 frames: bonked, the crown jumping up off his head; staggering, catching the crown; falling backward with the cape flying; lying flat on his back with eyes turned into cartoon spirals, the crown rolling beside him and the golden driver bent.
-
-No text, no letters, no numbers, no logo, no motion blur, no speed lines.
-Family-friendly cartoon art for an all-ages casual mobile game, made in line with the image platform's content policy and guidelines: no gore, no blood, no wounds, no realistic violence, no sexual content; playful, colorful and friendly.
-On a real transparent background, in PNG format.
-```
-
-### 10.30 Music — one track in six sections
-
-One file, cut into a menu bed and five biome beds with `Music.play` sections
-([MUSIC.md](MUSIC.md), arcider is the reference). AI tracks miss the asked BPM
-and can drift their grid: measure the real tempo before cutting.
-
-```
-Instrumental music for a family-friendly casual mobile game about golf and cartoon zombies, about 4 minutes, 120 BPM, steady tempo the whole way, in 4/4, playful-spooky and catchy, no vocals, no lyrics, no spoken words, clean loopable section endings.
-[Section 1, menu, 0:00-0:35] a relaxed and mischievous lounge-swing groove: brushed drums, upright bass, vibraphone and a playful theremin melody, quiet and cozy.
-[Section 2, Country Club, 0:35-1:15] the same melody turned into an upbeat swing with a walking bass, finger snaps, muted trumpet and a bouncy piano, a little spooky organ under it.
-[Section 3, Desert Links, 1:15-1:55] the melody as surf rock: twangy reverb electric guitar, fast tom drums, hand claps, a desert whistle.
-[Section 4, Bayou Course, 1:55-2:35] the melody as swamp blues: slide guitar, harmonica, washboard percussion, a stomping kick drum, frog-like bass plucks.
-[Section 5, Frozen Links, 2:35-3:15] the melody as icy chiptune pop: sleigh bells, glockenspiel, bright square-wave synths, a crisp electronic beat.
-[Section 6, Graveyard Greens, 3:15-4:00] the climax: the melody on a big church-style organ over driving rock drums and electric guitars, choir pads without words, energetic and triumphant.
-```
+per biome (in shares of the 9:16 frame): **the play area is the picture** —
+the fence lines start at about 9 % (left) and 91 % (right) of the width at
+13 % of the height and run almost straight down to about 4 % and 96 % at the
+white line, so the grass is never narrower than 80 % of the width; the gate
+opening spans 28 %–72 % of the width at the top; a white line crosses at
+86.5 % of the height; two tee markers stand at 30 % and 70 % of the width at
+92.7 %. The scenery lives in the thin side strips and the band above the gate.
+It replaced a road narrowing from 19 %–82 % at the top, which left the field a
+third of the frame wide under the gate (the first desert render, and biome 1's
+picture, are on that older layout). Each biome's walls are still re-measured
+off its own picture.
 
 ______________________________________________________________________
 
@@ -1087,3 +635,37 @@ whole. On top of it, for this game:
 - [ ] The thirty levels are benched (12 seeds or more a level, a scripted
   pilot driving `frameUpdate`): every level winnable at one star by a plain pilot,
   three stars by a good one.
+
+______________________________________________________________________
+
+## 12. What the first build decided
+
+- **The supers are fixed by the level table** on all thirty levels — the cheap
+  alternative of §3 step 7, two per level, rotating the band's new ones in. A
+  loadout card before the round is still open.
+- **A level counts its own stars** (`levelTally`): the goal, then no flag
+  lost, then the bonus — cumulative, so the third needs the second.
+- **A boss gives ground**: a hit that does damage knocks it back a step
+  (`BOSS_RECOIL 150` px/s, ×2.5 off the shockwave) and stuns it
+  (`BOSS_STUN 0.45` s, the hit pose held), once per `BOSS_POISE 1.2` s — the
+  hits inside that window still wear it down, and it is never pushed above
+  the top of the field, where no rolling ball reaches. A fire's tick never
+  knocks it back.
+- **A boss is worn down**: a ball takes two HP off it at most (one off the
+  Greenkeeper's mower from the front), the shockwave 15, a lob on the
+  Colossus's head six, a dunk in a pond eighteen, a skull ball driven back
+  into the King eight — so its HP is 100 / 110 / 160 / 260 / 240 rather than
+  §5's, and the "in under" bonus 150 s (210 s for the King).
+- **Level 13 asks four drowned zombies (bonus: two in one shot), level 27
+  four necromancers** — the bench found six and three the wrong length; a
+  zombie drowns when knocked into a pond faster than `DROWN_SPEED 40` px/s.
+  Pushing one into a pond by hand was too hard on a phone, so **a pond is a
+  whirlpool** (v0.2.0): a zombie hit within `POND_REACH 150` px of its bank is
+  pulled in for as long as the hit's tag lasts (1.5 s, `POND_PULL 1500`
+  px/s² easing out with distance); a walker and a boss it never touches. Two
+  currents turn on the water to say so, and level 13 says it on a notice. The
+  pilot's level 13 went from ~220 s to ~56 s.
+- **The playable** (free round, `CONFIG.level` unset) is biome 1, three waves,
+  one side hole (explosive) and one super (ball rain); everything a later
+  band brings is web-only (`WEB_ONLY_HOLE` in `tools/build/build.mjs`).
+- **The endless run** is the graveyard with every zombie, waves forever.

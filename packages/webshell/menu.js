@@ -1533,7 +1533,8 @@
 
   function labelControls() {
     VW.cornerLabels({ help: COPY.help, options: COPY.options,
-                      home: villaged() ? COPY.toVillage : COPY.toMenu });
+                      home: villaged() ? COPY.toVillage : COPY.toMenu,
+                      map: levelled() ? LV.text("map") : "" });
   }
 
   /* A pair of wide buttons under the body — RESUME alone for the options,
@@ -1658,7 +1659,7 @@
 
      A game with no map keeps the two words it always had — PLAY AGAIN and
      MENU — because neither of them is an icon anyone would read. */
-  var btnAgain, btnMenu, btnNext, endActs;
+  var btnAgain, btnMenu, btnMap, btnNext, endActs;
 
   /* THE END SCREEN'S THREE STARS, painted. They are the motor's own nodes and
      the motor writes a glyph into them (template/page.html), which every
@@ -1709,7 +1710,23 @@
       endActs = el("div"); endActs.id = "web-endacts";
       btnAgain.parentNode.insertBefore(endActs, btnAgain);
       endActs.appendChild(btnAgain);
+
+      /* THE MAP, WHERE THE FIRST BUTTON IS THE VILLAGE. On a game with a hub
+         the first button is home, and the map is one building of it — which
+         made the climb two taps away from the score that is part of it. So
+         the map gets its own button, second in the row — home · map · replay
+         · next — and it lands where the house would, then opens the map over
+         it: ESCAPE from there is the village, as from any building. The
+         shell's own node, like NEXT, and it rides the same reveal through
+         `#btn-replay.show ~ #btn-map` in menu.css — so it sits AFTER the
+         motor's button in the DOM and is put back in front of it by `order`. */
+      if (villaged()) {
+        btnMap = el("button", ACT); btnMap.id = "btn-map";
+        btnMap.type = "button";
+        btnMap.addEventListener("click", function () { toMenu(); LV.open(); });
+      }
       endActs.appendChild(btnMenu);
+      if (btnMap) endActs.appendChild(btnMap);
 
       /* THE WAY ON — the third button, and the shell's own. The motor owns
          exactly two nodes on this screen and a NEXT LEVEL belongs to the level
@@ -1773,8 +1790,17 @@
     btnAgain.setAttribute("aria-label", villaged() ? MT_home() : LV.text("map"));
     btnMenu.innerHTML = icon("reset");
     btnMenu.setAttribute("aria-label", LV.text("replay"));
-    dress(btnAgain, ACT, TONE[st >= 3 ? "hero" : st >= 1 ? "calm" : "dim"]);
+    /* The lit state is the MAP's, wherever the map is: the first button on a
+       game without a village, its own button on one — and then the house is
+       a plain way home that never takes part in the argument. */
+    var mapTone = TONE[st >= 3 ? "hero" : st >= 1 ? "calm" : "dim"];
+    dress(btnAgain, ACT, btnMap ? "" : mapTone);
     dress(btnMenu, ACT, TONE[st >= 3 ? "dim" : st >= 1 ? "calm" : "hero"]);
+    if (btnMap) {
+      btnMap.innerHTML = icon("map");
+      btnMap.setAttribute("aria-label", LV.text("map"));
+      btnMap.className = ACT + (mapTone ? " " + mapTone : "");
+    }
     /* NEXT IS NEVER DRESSED. The other two trade the lit state between them
        because what the round earned decides which of "go on" and "try again"
        is the offer; this one is the same size and the same weight whatever

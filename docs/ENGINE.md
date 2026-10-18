@@ -1372,6 +1372,7 @@ Music.play({ from: 0, length: 40, rate: 0.85, gain: 0.5 }); // quiet and slower
 | `rate`   | playback speed, which pitches it with it (1)                   |
 | `gain`   | a multiplier on `CONFIG.music.volume` (1)                      |
 | `fade`   | this section's own crossfade, in seconds (`CONFIG.music.fade`) |
+| `seam`   | loop ON THE BAR, crossfading over this many seconds (off)      |
 
 A window past the end of the file is clamped to what is there, so `from` alone
 is enough. The section is what the crossfade loops — reaching its end IS the
@@ -1422,6 +1423,23 @@ Two more things the module takes care of:
   paused. With `bpm` + `loopBeats` set, the wrap is `loopBeats` beats instead of
   `duration - fade`, so the pulse crosses the seam without shifting — and the
   crossfade is whatever is left of the buffer past that point.
+- **A seam on the bar**, for a section cut on whole bars. The plain wrap above
+  starts the head `fade` seconds early, so its beats fall between the tail's
+  and the loop's first downbeat is faded in from nothing. A `seam` (on the
+  section, or on `CONFIG.music` for every section of the game) loops the other
+  way: `length` IS the loop and every pass advances by exactly that much, and
+  the crossfade lasts `seam` seconds and ENDS on the loop point — the outgoing
+  pass plays the bars leading up to `from + length`, the incoming one the bars
+  leading up to `from` (its pre-roll), both on equal-power curves, so the level
+  holds through the seam and the downbeat lands once, at full level. With no
+  pre-roll to take, the rest is taken after the loop point; a whole file at
+  speed, with room on neither side, keeps the plain wrap.
+  A gridded section (`bpm` + `beats`) loops on its beats, and a playable's
+  cut, cut one seam early, names its window in `CONFIG.music.cut` — which is
+  what a `null` section plays, and which the web build drops.
+  `tools/lab/loop-points.mjs` says which lengths of a window loop cleanly;
+  every game uses it (`seam`: two beats of its track). See
+  [MUSIC.md](MUSIC.md#the-seam--looping-on-the-bar).
 
 `Music.pause()` / `Music.resume()` are already wired to
 `visibilitychange` and to MRAID's `viewableChange`: they ramp the bed down and

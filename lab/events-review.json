@@ -33,6 +33,11 @@
       "at": "2026-10-13",
       "what": "Pop.show L1876 tookPlaces()"
     },
+    "6f062b91f3d0": {
+      "at": "2026-10-18",
+      "what": "Sound.clip L1888 tookPlaces()",
+      "kit": "edf5862dea"
+    },
     "8fd561a365bf": {
       "at": "2026-10-02",
       "what": "Sound.clip L2112 crash()",
@@ -145,10 +150,6 @@
       "at": "2026-10-13",
       "what": "Pop.show L1116 finishClear()"
     },
-    "beb9e3485d17": {
-      "at": "2026-10-13",
-      "what": "Pop.show L1113 finishClear()"
-    },
     "c14954cf90c6": {
       "at": "2026-10-13",
       "what": "Pop.show L1119 finishClear()"
@@ -156,6 +157,10 @@
     "c87333091a48": {
       "at": "2026-10-13",
       "what": "Pop.show L1107 finishClear()"
+    },
+    "d1e76ed30c2b": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1110 finishClear()"
     },
     "e1b0b401b01c": {
       "at": "2026-10-13",
@@ -241,20 +246,112 @@
     }
   },
   "bridgessa": {
+    "0bca65675d8f": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1381 endDeal()"
+    },
+    "106c0d496337": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1315 collect()"
+    },
+    "13788f3affcf": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1278 play()"
+    },
+    "1742e68fbcab": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1728 onUp()"
+    },
+    "290cfe3ed4a9": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1129 equip()"
+    },
     "378c6ffa79ff": {
       "at": "2026-10-14",
       "what": "Notify.say L1093 showReplace()"
+    },
+    "38bf1bd62f0c": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1718 onUp()"
+    },
+    "4194c79d6b50": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1506 useFavour()"
+    },
+    "49210a05ab02": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1511 useFavour()"
+    },
+    "4f54a7c20ebe": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1723 onUp()"
+    },
+    "51983cc76def": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1736 onUp()"
+    },
+    "6c0c033cfd08": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1378 endDeal()"
+    },
+    "6e63cfd937b3": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1309 collect()"
+    },
+    "787f7da91260": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1509 useFavour()"
+    },
+    "8a0a3eb555c3": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1405 defenceCard()"
+    },
+    "91222c9a55b8": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1322 collect()"
+    },
+    "aad4e8cec08d": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1505 useFavour()"
+    },
+    "ac1d2cec75f2": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1364 endDeal()"
+    },
+    "c0354350afcb": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1373 endDeal()"
+    },
+    "cb78188b03ab": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1510 useFavour()"
+    },
+    "d12ecd939bed": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1369 endDeal()"
+    },
+    "db0a4b5b58b1": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1305 collect()"
+    },
+    "e5c692940e7c": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1377 endDeal()"
+    },
+    "fcff963ed999": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1343 afterSweep()"
     }
   },
   "chainring": {
+    "0696066bde6b": {
+      "at": "2026-10-15",
+      "what": "Notify.say L832 release()"
+    },
     "1587ff03af65": {
       "at": "2026-10-13",
       "what": "Sound.clip L1013 missRing()",
       "kit": "ef5f91ee5d"
-    },
-    "1ba15c16d13f": {
-      "at": "2026-10-13",
-      "what": "Pop.show L983 spoil()"
     },
     "2c9aed08817f": {
       "at": "2026-10-13",
@@ -273,6 +370,11 @@
       "at": "2026-10-13",
       "what": "Pop.show L971 onDown()"
     },
+    "65fd7fb20e01": {
+      "at": "2026-10-17",
+      "what": "Sound.clip L1169 reveal()",
+      "kit": "217676c4ed"
+    },
     "6775dbb9f8b4": {
       "at": "2026-10-13",
       "what": "Sound.clip L902 popRing()",
@@ -283,18 +385,23 @@
       "what": "Sound.clip L986 spoil()",
       "kit": "ae51d0cbe3"
     },
-    "7b651f5a664f": {
-      "at": "2026-10-13",
-      "what": "Notify.say L832 release()"
+    "6c319895c5c1": {
+      "at": "2026-10-17",
+      "what": "Sound.clip L1174 reveal()",
+      "kit": "7c7703dbdd"
     },
     "87ad519f17cd": {
       "at": "2026-10-13",
       "what": "Sound.clip L1027 burstRing()",
       "kit": "b6354ddb41"
     },
+    "8a6af39304ec": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1106 spoil()"
+    },
     "9b80a76045e9": {
-      "at": "2026-10-13",
-      "what": "Sound.clip L1033 shatter()",
+      "at": "2026-10-17",
+      "what": "Sound.clip L1192 shatter()",
       "kit": "7c7703dbdd"
     },
     "a3bc582c2e32": {
@@ -445,10 +552,6 @@
       "what": "Sound.clip L1863 reset()",
       "kit": "570441c04f"
     },
-    "a893083a02a9": {
-      "at": "2026-10-13",
-      "what": "Pop.show L1297 forgeValve()"
-    },
     "b61cae865359": {
       "at": "2026-10-13",
       "what": "Sound.clip L1328 burnDecoy()",
@@ -482,6 +585,10 @@
       "at": "2026-10-13",
       "what": "Sound.clip L1755 updateRecap()",
       "kit": "8588d9de50"
+    },
+    "f14639958624": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1297 forgeValve()"
     },
     "f15022045594": {
       "at": "2026-10-13",
@@ -632,6 +739,296 @@
     "fc702987dfe3": {
       "at": "2026-10-14",
       "what": "Pop.show L2655 catchLost()"
+    }
+  },
+  "grudgeon": {
+    "0877ff7eb510": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2006 heroAct()"
+    },
+    "0bdeaec7d86b": {
+      "at": "2026-10-16",
+      "what": "Notify.say L771 build()"
+    },
+    "0be905764de3": {
+      "at": "2026-10-17",
+      "what": "Notify.say L2231 letGo()"
+    },
+    "0cba0be9e2b2": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2140 foeAct()"
+    },
+    "11a9c00431a5": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2064 hitFoe()"
+    },
+    "1867e3867b5e": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1843 action()"
+    },
+    "1b0ac34e1e6c": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2217 win()"
+    },
+    "1c5bac332538": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1350 takeKey()"
+    },
+    "21eaa0c6f387": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1988 heroAct()"
+    },
+    "27e17257ab8b": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1764 planWith()"
+    },
+    "2dfa15f509e2": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2071 hitFoe()"
+    },
+    "318e1844dc94": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2152 foeAct()"
+    },
+    "370ac1f222a8": {
+      "at": "2026-10-16",
+      "what": "Notify.say L766 build()"
+    },
+    "3c23a8b39be5": {
+      "at": "2026-10-17",
+      "what": "Pop.show L3989 takeExit()"
+    },
+    "439141c44816": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1449 startCombat()"
+    },
+    "44207bea2c57": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1968 heroAct()"
+    },
+    "4528e8adf225": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2043 heroAct()"
+    },
+    "4ebb013f5073": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1907 freeCocoon()"
+    },
+    "53a65a64e3f4": {
+      "at": "2026-10-17",
+      "what": "Pop.text L1920 counter()"
+    },
+    "554055b6545b": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2199 join()"
+    },
+    "6046a1829765": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2148 foeAct()"
+    },
+    "6154a86be64a": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1448 startCombat()"
+    },
+    "6802c19487cc": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1662 action()"
+    },
+    "686e40c0fe04": {
+      "at": "2026-10-16",
+      "what": "Notify.say L586 levelUp()"
+    },
+    "6ae34526909b": {
+      "at": "2026-10-17",
+      "what": "Notify.say L858 choose()"
+    },
+    "6c64ace0f68d": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1447 startCombat()"
+    },
+    "6e2669dc20f1": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1919 counter()"
+    },
+    "6fd19ac6a611": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1922 counter()"
+    },
+    "70bcf672dbb3": {
+      "at": "2026-10-17",
+      "what": "Pop.show L901 takeBonus()"
+    },
+    "7249128a0807": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1892 onHit()"
+    },
+    "761ce867e0e3": {
+      "at": "2026-10-17",
+      "what": "Notify.say L2441 aimScroll()"
+    },
+    "78cf22a6e947": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2041 heroAct()"
+    },
+    "7afd8916f940": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1227 stepDone()"
+    },
+    "7b0b8e697430": {
+      "at": "2026-10-17",
+      "what": "Pop.show L905 takeBonus()"
+    },
+    "7d38e5a676a3": {
+      "at": "2026-10-17",
+      "what": "Notify.say L974 split()"
+    },
+    "7dc78776b1bf": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1306 groupLost()"
+    },
+    "7e553625ef7f": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1720 action()"
+    },
+    "7f0940b628c6": {
+      "at": "2026-10-17",
+      "what": "Pop.show L887 takeBonus()"
+    },
+    "7f2e5428f9f2": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1122 refused()"
+    },
+    "81463fd9206e": {
+      "at": "2026-10-17",
+      "what": "Pop.show L811 build()"
+    },
+    "86d6f02d55ca": {
+      "at": "2026-10-17",
+      "what": "Pop.text L2020 heroAct()"
+    },
+    "8bddb8338e5b": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2072 hitFoe()"
+    },
+    "8d29e0d3de7d": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2042 heroAct()"
+    },
+    "911f7184e27d": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2007 heroAct()"
+    },
+    "92c046acc952": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2073 hitFoe()"
+    },
+    "931870bba9bc": {
+      "at": "2026-10-17",
+      "what": "Notify.say L2393 select()"
+    },
+    "939d1bc1cb6f": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1013 addCandles()"
+    },
+    "9c72456efd4e": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1701 action()"
+    },
+    "9e57a79bc1ca": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1266 ambush()"
+    },
+    "a99c1401cfd1": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2030 heroAct()"
+    },
+    "b39aedf8e1d8": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1743 action()"
+    },
+    "b5467f10aff7": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1983 heroAct()"
+    },
+    "bb061e5a7600": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2145 foeAct()"
+    },
+    "c294023995ec": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1733 live()"
+    },
+    "c5883dda9963": {
+      "at": "2026-10-17",
+      "what": "Pop.text L1004 burn()"
+    },
+    "c5f753cd8cf1": {
+      "at": "2026-10-17",
+      "what": "Notify.say L867 choose()"
+    },
+    "d5d33b931e8a": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2044 heroAct()"
+    },
+    "d6081a014eb2": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1126 refused()"
+    },
+    "d7068c7c0b67": {
+      "at": "2026-10-17",
+      "what": "Pop.show L892 takeBonus()"
+    },
+    "d7a0d3a615b9": {
+      "at": "2026-10-16",
+      "what": "Notify.say L765 build()"
+    },
+    "de0aaab0c5c8": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1007 burn()"
+    },
+    "df19b36563f0": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1820 action()"
+    },
+    "e18d92b6e0de": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1486 push()"
+    },
+    "e1e3c8215339": {
+      "at": "2026-10-17",
+      "what": "Notify.say L982 merge()"
+    },
+    "e23e8ab78bf9": {
+      "at": "2026-10-16",
+      "what": "Notify.say L690 build()"
+    },
+    "e38b6c5df117": {
+      "at": "2026-10-17",
+      "what": "Pop.show L1783 planWith()"
+    },
+    "e82857577a5b": {
+      "at": "2026-10-17",
+      "what": "Notify.say L3897 onDown()"
+    },
+    "e86b738ab742": {
+      "at": "2026-10-17",
+      "what": "Pop.show L897 takeBonus()"
+    },
+    "e9c259f36192": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2122 foeAct()"
+    },
+    "ec513245f7b7": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1131 refused()"
+    },
+    "ee4b7f519179": {
+      "at": "2026-10-17",
+      "what": "Pop.show L2113 foeAct()"
+    },
+    "f4f7769df890": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1329 teach()"
     }
   },
   "marshmelt": {
@@ -796,6 +1193,10 @@
       "at": "2026-10-14",
       "what": "Pop.text L1382 collect()"
     },
+    "dc811cd39106": {
+      "at": "2026-10-18",
+      "what": "Pop.text L1275 effect()"
+    },
     "f836b0f96ebe": {
       "at": "2026-10-14",
       "what": "Pop.show L883 dropWave()"
@@ -956,9 +1357,73 @@
     }
   },
   "slipdeck": {
-    "6a96ecb87e0c": {
-      "at": "2026-10-14",
-      "what": "Notify.say L1899 nextCard()"
+    "04162a973aec": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1359 liftMove()"
+    },
+    "16bc5d1981af": {
+      "at": "2026-10-16",
+      "what": "Notify.say L1952 decide()"
+    },
+    "18512baea1a6": {
+      "at": "2026-10-16",
+      "what": "Pop.show L1727 equip()"
+    },
+    "319e359fea74": {
+      "at": "2026-10-16",
+      "what": "Pop.text L2330 fireStep()"
+    },
+    "3e235a022d6f": {
+      "at": "2026-10-16",
+      "what": "Pop.text L3249 burnPot()"
+    },
+    "418c05dda24c": {
+      "at": "2026-10-16",
+      "what": "Pop.show L1916 loseLife()"
+    },
+    "4a52c5268bab": {
+      "at": "2026-10-16",
+      "what": "Pop.show L2039 settle()"
+    },
+    "6a44e29d3a39": {
+      "at": "2026-10-16",
+      "what": "Notify.say L2205 onUp()"
+    },
+    "6b432d39a7d9": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1271 useCall()"
+    },
+    "70543c2a8db2": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1720 equip()"
+    },
+    "7c8c264eb937": {
+      "at": "2026-10-16",
+      "what": "Pop.show L2041 settle()"
+    },
+    "922286f7ea6f": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1218 useCompass()"
+    },
+    "ac7fb06d4134": {
+      "at": "2026-10-17",
+      "what": "Notify.say L1212 useCompass()"
+    },
+    "ba599df1e245": {
+      "at": "2026-10-16",
+      "what": "Notify.say L1584 openPick()"
+    },
+    "d6bcc82517c3": {
+      "at": "2026-10-15",
+      "what": "Pop.show L2020 settle()"
+    },
+    "ec78ec0be923": {
+      "at": "2026-10-16",
+      "what": "Pop.text L2248 update()"
+    },
+    "f67a8242f1b0": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1899 nextCard()"
     }
   },
   "spinshock": {
@@ -1036,6 +1501,10 @@
       "at": "2026-10-14",
       "what": "Notify.say L1130 onDown()"
     },
+    "43e1494ac380": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1553 spellLands()"
+    },
     "47a741009948": {
       "at": "2026-10-14",
       "what": "Notify.say L1461 wound()"
@@ -1051,6 +1520,10 @@
     "65903fcaba9f": {
       "at": "2026-10-14",
       "what": "Pop.show L1597 resolve()"
+    },
+    "7e06e298326b": {
+      "at": "2026-10-15",
+      "what": "Notify.say L1540 spellLands()"
     },
     "80bdfec699b1": {
       "at": "2026-10-13",
@@ -1068,6 +1541,14 @@
       "at": "2026-10-13",
       "what": "Pop.text L1697 resolve()"
     },
+    "bb9bbce37728": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1147 onDown()"
+    },
+    "bdb8596b2c5f": {
+      "at": "2026-10-15",
+      "what": "Notify.say L1529 objectHit()"
+    },
     "be986a439d3f": {
       "at": "2026-10-14",
       "what": "Pop.show L1669 resolve()"
@@ -1076,6 +1557,10 @@
       "at": "2026-10-14",
       "what": "Pop.show L1732 endTurn()"
     },
+    "dbb4d91b12cd": {
+      "at": "2026-10-15",
+      "what": "Notify.say L1576 resolve()"
+    },
     "f333b13f5a0f": {
       "at": "2026-10-14",
       "what": "Pop.show L1587 resolve()"
@@ -1083,6 +1568,10 @@
     "f389055b9f46": {
       "at": "2026-10-14",
       "what": "Notify.say L1659 resolve()"
+    },
+    "f40a549eb6f1": {
+      "at": "2026-10-15",
+      "what": "Pop.show L1124 onDown()"
     },
     "fba7c9caedc3": {
       "at": "2026-10-14",

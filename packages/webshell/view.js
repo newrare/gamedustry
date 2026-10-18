@@ -465,6 +465,20 @@
     }
     var node = nodeOf(name);
     if (!node) return;
+    /* ONE ROOM AT A TIME OVER THE VILLAGE. Every room of the place — the map,
+       the collection, the shop, the ranking, the barracks — is a door to the
+       others (the band's chips, a sheet's map button), and stacking each one
+       over the last left the player with three sheets to pull down to get home
+       again. So a view opened where the village stands in the stack REPLACES
+       whatever was over it: the village and one room, never more, and a sheet
+       pulled down or an ESCAPE is home. Peeled quietly — one door, the one
+       that opens. A game with no village keeps the stack it always had. */
+    var hub = base ? stack.indexOf(base) : -1;
+    if (hub >= 0 && name !== base && stack.length > hub + 1) {
+      quiet++;
+      while (stack.length > hub + 1) back();
+      quiet--;
+    }
     /* THE STACK OWNS THE Z-ORDER, and it has to: DOM order alone only settles
        a tie, and these four screens were written with three different
        z-indexes (the map 34, the ranking 35, the album and the shop 36). Every
@@ -837,17 +851,26 @@
     var bar = el("nav", "wv-bar");
     var tabs = el("div", "wv-tabs");
     var ctls = el("div", "wv-ctls");
-    /* THE ONE WAY HOME, and on a sheet it is here rather than in the band:
-       the house first, then help, then options — the bottom-right corner is
-       where a thumb already is, and the band's own house chip stands down
-       over every sheet (packages/webshell/meta.js, `bandDoors`), so there is
-       still exactly one. It is `web-home` like the button a bandless view
+    /* THE MAP, then help, then options — the bottom-right corner is where a
+       thumb already is. The way home is the band's house chip, top left, on
+       every view (packages/webshell/meta.js, `bandRow`), so this slot is the
+       one door a room of the place needs most and the band only offers as a
+       count: the climb. `mapped` is read here and not at load — the band is
+       raised by meta.js and the level layer by levels.js, both long before a
+       sheet's first open.
+
+       A game with no band keeps the HOUSE here, since nothing else would lead
+       home, and a band with no map keeps it too: there is always exactly one
+       way home, never two. It is `web-home` like the button a bandless view
        wears, because it is the same door: View.home, the village where there
        is one and the title screen otherwise. */
-    var hb = el("button", "wv-ctl web-home", API ? API.icon("home") : "");
-    hb.setAttribute("aria-label", ctlLabels.home || spec.home || "");
-    hb.setAttribute("data-ctl", "home");
-    hb.addEventListener("click", home);
+    var LVL = window.__LEVELS__;
+    var mapped = banded() && !!(LVL && LVL.active());
+    var hb = el("button", "wv-ctl " + (mapped ? "web-map" : "web-home"),
+                API ? API.icon(mapped ? "map" : "home") : "");
+    hb.setAttribute("aria-label", mapped ? (ctlLabels.map || "") : (ctlLabels.home || spec.home || ""));
+    hb.setAttribute("data-ctl", mapped ? "map" : "home");
+    hb.addEventListener("click", mapped ? function () { LVL.open(); } : home);
     ctls.appendChild(hb);
     bar.appendChild(tabs);
     bar.appendChild(ctls);
@@ -1060,8 +1083,10 @@
       }
       S.box.classList.add("wv-gone");
       place(h);
+      /* A pull puts EVERY room away, not just this one: where the village is
+         in the stack it is home, whatever stood between (section 3, `go`). */
       setTimeout(function () {
-        if (onTop(S)) back();
+        if (onTop(S)) { if (base && isOpen(base)) home(); else back(); }
         unpull(S);
       }, PULL_GONE);
     }

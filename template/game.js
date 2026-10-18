@@ -71,7 +71,15 @@
     // A game played on the beat also declares the tempo here — bpm, beatOffset
     // (seconds to the first beat inside the file) and loopBeats (beats the loop
     // keeps) — and drives its action with Beat. See docs/ENGINE.md.
-    music: { volume: 0.12, fade: 1.6 },
+    // seam:   loop ON THE BAR — seconds of equal-power crossfade (two beats)
+    //         ending on the loop point; every window is then cut on whole bars
+    //         (tools/lab/loop-points.mjs). A whole file with no room on either
+    //         side keeps the plain `fade` wrap.
+    // cut:    the playable's window inside its embedded cut, when the cut
+    //         starts one seam early to give that window a pre-roll —
+    //         { from: <seam>, length: <bars> }. The web build drops it.
+    //         See docs/MUSIC.md, "The seam".
+    music: { volume: 0.12, fade: 1.6, seam: 1 },
 
     // All user-facing copy in one place.
     copy: {

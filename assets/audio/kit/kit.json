@@ -175,7 +175,7 @@
         },
         "uipluck": {
           "takes": [
-            { "file": "ui-pluck-01", "start": 0, "length": 0.1 }
+            { "file": "pop-plop-01", "start": 0, "length": 0.1 }
           ]
         },
         "marimbaplink": {
@@ -208,7 +208,9 @@
         },
         "glockping": {
           "takes": [
-            { "file": "glock-ping-02", "start": 0, "length": 0.43 }
+            { "file": "hiss-steam-02", "start": 0, "length": 0.834 },
+            { "file": "hiss-steam-04", "start": 0, "length": 0.839 },
+            { "file": "hiss-steam-05", "start": 0, "length": 0.814 }
           ]
         },
         "coinshandle": {
@@ -249,6 +251,11 @@
         "harprunup": {
           "takes": [
             { "file": "harp-run-up-01", "start": 0, "length": 1.51 }
+          ]
+        },
+        "coinstight": {
+          "takes": [
+            { "file": "coins-handle-02", "start": 0.045, "length": 0.29 }
           ]
         }
       }
@@ -366,6 +373,11 @@
         "powerup02": {
           "takes": [
             { "file": "powerup-02", "start": 0, "length": 0.46 }
+          ]
+        },
+        "fireignite": {
+          "takes": [
+            { "file": "fire-ignite-01", "start": 0, "length": 0.28, "tail": "fade", "tailLength": 0.112 }
           ]
         }
       }
@@ -561,6 +573,11 @@
           "takes": [
             { "file": "impact-metal-medium-04", "start": 0, "length": 0.25 }
           ]
+        },
+        "electricground": {
+          "takes": [
+            { "file": "electric-ground-hit-01", "start": 0, "length": 0.24 }
+          ]
         }
       }
     },
@@ -617,6 +634,16 @@
           "takes": [
             { "file": "dice-throw-single-04", "start": 0, "length": 0.471 }
           ]
+        },
+        "dicetick": {
+          "takes": [
+            { "file": "dice-throw-single-04", "start": 0.115, "length": 0.205 }
+          ]
+        },
+        "springboing": {
+          "takes": [
+            { "file": "spring-boing-03", "start": 0, "length": 0.34, "tail": "fade", "tailLength": 0.136 }
+          ]
         }
       }
     },
@@ -670,6 +697,11 @@
           "takes": [
             { "file": "hit-thud-03", "start": 0, "length": 0.39 }
           ]
+        },
+        "plop": {
+          "takes": [
+            { "file": "pop-plop-02", "start": 0.09, "length": 0.12 }
+          ]
         }
       }
     },
@@ -705,6 +737,16 @@
         "clickswitch": {
           "takes": [
             { "file": "click-switch-03", "start": 0, "length": 0.18 }
+          ]
+        },
+        "metallatchtight": {
+          "takes": [
+            { "file": "metal-latch-01", "start": 0.03, "length": 0.15 }
+          ]
+        },
+        "phaserjumptight": {
+          "takes": [
+            { "file": "phaser-jump-02", "start": 0.06, "length": 0.3 }
           ]
         }
       }

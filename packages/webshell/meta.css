@@ -316,6 +316,19 @@
   border:2px solid rgba(0,0,0,.6); font-style:normal;
 }
 
+/* EARNED, NOT DRAWN: an unowned milestone sticker carries a padlock in the
+   dup badge's corner, so a shadow the map pays for is told apart from a
+   shadow the machine can still roll. A pictogram and not a word — the
+   imperative line that says how to earn it is the card's, one tap away. */
+.al-tile .lk {
+  position:absolute; top:-6px; right:-4px; z-index:1;
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(12,14,24,.92); color:var(--gold);
+  border:2px solid rgba(255,212,59,.55);
+}
+.al-tile .lk .al-lki { width:18px; height:18px; }
+
 /* =========================================================================
    THE MACHINE
    ========================================================================= */

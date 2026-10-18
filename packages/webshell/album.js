@@ -951,7 +951,7 @@
   }
 
   function paintShelves() {
-    var r, k, i, c, html, have;
+    var r, k, i, c, html, have, earn;
     for (r = 0; r < 4; r++) {
       var sh = shelves[r], list = TIERS[r];
       /* a game with no sticker of a rarity has no shelf for it */
@@ -961,10 +961,17 @@
         i = list[k];
         c = MT.count(i);
         if (c) have++;
-        html += '<button class="al-tile r' + r + (c ? " have" : " ghost") + (MT.shiny(i) && c ? " shiny" : "") +
+        /* A SHADOW THE MACHINE WILL NEVER ROLL wears a padlock: a milestone
+           sticker is earned on the map (a band, a clean band, the board), and
+           without the mark it reads exactly like the shadows a ticket can
+           still pull — the player would bet on a picture no bet can reach. */
+        earn = !c && MT.isMilestone(i);
+        html += '<button class="al-tile r' + r + (c ? " have" : " ghost") + (earn ? " earn" : "") +
+          (MT.shiny(i) && c ? " shiny" : "") +
           '" data-n="' + i + '" aria-label="' + (c ? MT.name(i) : T.unknown) + '">' +
           '<img src="' + MT.art(i) + '" alt="">' +
-          (c > 1 ? '<i class="dup">x' + c + "</i>" : "") + "</button>";
+          (c > 1 ? '<i class="dup">x' + c + "</i>" : "") +
+          (earn ? '<i class="lk">' + icon("lock", "al-lki") + "</i>" : "") + "</button>";
       }
       sh.row.innerHTML = html;
       sh.nm.textContent = MT.text("rarity" + (r + 1));

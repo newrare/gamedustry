@@ -1,7 +1,7 @@
 {
   "slug": "bridgessa",
   "title": "Bridgessa",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "tagline": "Play both hands and win the tricks your contract asks for",
   "order": 170,
   "draft": false,

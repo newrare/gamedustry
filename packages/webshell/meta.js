@@ -40,13 +40,15 @@
     all 30 levels cleared       sticker 11
     ninety of ninety            sticker 12, and it is the shiny one
 
-  A band is PASSED when the climb went past it — a cleared level in a higher
-  band, or level 30 itself for the top one. It is deliberately not "every level
-  of the band cleared": a fork's two roads share a band and missing the road
-  not taken is fine by design (docs/LEVELS.md), so a rule that demanded both
-  would make five of the twelve unreachable for a player who chose. CLEAN is
-  the same band with every level the player PLAYED in it at three stars — the
-  road they walked, walked perfectly.
+  A band is the game's own world (`web.levels.bands.from`), and it is PASSED
+  when the climb finished it on a road it walked — a level of a higher band
+  cleared, or a cleared exit of this one (level 30 for the top one), counting
+  only levels joined to level 1 by cleared levels. It is deliberately not
+  "every level of the band cleared": a fork's two roads share a band and
+  missing the road not taken is fine by design (docs/LEVELS.md), so a rule
+  that demanded both would make five of the twelve unreachable for a player
+  who chose. CLEAN is the same band with every level the player PLAYED in it
+  at three stars — the road they walked, walked perfectly.
 
   Those twelve can also come out of the machine, but only once they have been
   earned: a milestone sticker that dropped from a draw would be a milestone
@@ -2346,20 +2348,11 @@
     if (!band) return;
     var top = VW.top();
     /* The house chip means whatever `View.home` means — the title screen, or
-       the VILLAGE on a game that has one. On the bare village it is not quiet
-       but GONE: the other chips are numbers and keep counting where their
-       door is shut, this one is only a door, and a door home drawn over home
-       is nothing but a greyed house. The level bar takes the room it leaves.
-       A card over the village brings it back, since from there it is a way
-       out again. */
-    /* ...and on every SHEET, for the same reason from the other side: the
-       sheet's own bar carries the house, bottom right, and a second one up
-       here would be two ways to one place (packages/webshell/view.js). */
-    if (band.home) {
-      var M = window.__MODAL__;
-      var bare = top === "village" || (!!top && VW.sheeted(top));
-      band.home.classList.toggle("gone", bare && !(M && M.any()));
-    }
+       the VILLAGE on a game that has one — and it is ALWAYS there, first in
+       the row, top left: on the village it goes inert like every chip standing
+       on its own screen, and over a sheet it is the way home, since the
+       sheet's own bar carries the MAP in that slot (packages/webshell/view.js,
+       `sheet`). A door that comes and goes is a door nobody finds again. */
     mark(band.home, "village", top, T.home);
     mark(band.lvBox, "ranking", top, T.scores);
     mark(band.coins.parentNode, "shop", top, T.shop);

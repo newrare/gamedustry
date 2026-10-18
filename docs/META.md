@@ -175,6 +175,13 @@ as **its own silhouette** — the same picture through `brightness(0) invert(1)`
 No second asset to cut, no placeholder to draw, and the shape is exactly the
 tease a collection needs: there is something here and you do not know what.
 
+**A shadow the map pays for wears a padlock.** An unowned milestone sticker
+(`MT.isMilestone`, the twelve below) carries a small gold lock in the corner
+the `xN` badge takes on an owned tile, so it is told apart from a shadow the
+machine can still roll: without it a player bets tickets on a picture no draw
+can reach. The lock goes as soon as the sticker is owned (`.al-tile.earn .lk`,
+`packages/webshell/meta.css`).
+
 Twelve come off the map and nothing else:
 
 | milestone                 | pays                             |
@@ -184,8 +191,16 @@ Twelve come off the map and nothing else:
 | all 30 levels cleared     | `awards[10]`                     |
 | ninety of ninety          | `awards[11]` — **the shiny one** |
 
-**PASSED** is the climb having gone past the band: a cleared level in a higher
-band, or level 30 itself for the top one. It is deliberately *not* "every level
+The band is the game's own **world** — the one the sticker names, read through
+`web.levels.bands.from` (`bandIndex`) — and never the map's row band
+(`bandOf`): the two disagree on levels 4, 6, 10, 11, 18, 23 and 24, and reading
+the row band paid "Lagoon cleared" on level 10 with level 11 still to play.
+
+**PASSED** is the climb having finished the band on a road it walked: a level
+of a higher band cleared, or a cleared level of this band whose every way on
+leaves it (level 30 for the top one). Only levels the climb *reached* count —
+cleared and joined to level 1 by cleared levels — so a level started out of
+order under the dev force passes nothing behind it. It is deliberately *not* "every level
 of the band cleared" — a fork's two roads share a band and missing the road not
 taken is a choice the map protects, so a rule that demanded both roads would
 make five of the twelve unreachable for a player who chose.

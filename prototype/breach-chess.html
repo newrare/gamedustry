@@ -1,0 +1,1056 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Breach chess</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Breach chess — an Into the Breach turn, read like a chess board.
+// Three pieces, each with its own move and its own attack. The enemies show
+// what they will hit at the end of your turn; push them so they miss, or so
+// they hit each other.
+//
+// Every turn is a small puzzle: the enemy plan is re-rolled until it threatens
+// buildings AND a solver finds a way to save every one of them. The Hint
+// button asks the same solver for the next step.
+
+// ---- tunables -------------------------------------------------------------
+var COLS = 6, ROWS = 8;
+var TURNS = 5;            // survive this many enemy phases
+var POWER = 5;            // a building hit costs 1, 0 is a loss
+var BUILDINGS = 6, ROCKS = 2, WATERS = 1;
+var ENEMY_START = 4;      // enemies on the board at the start
+var ENEMY_MIN = 4;        // respawn up to this count each round (top rows)
+var ENEMY_MOVE = 3;       // enemy move range (steps)
+var RAID_3 = 0.25;        // chance 3 enemies go for buildings this turn (2 otherwise)
+var ENEMY_NEAR = 0.8;     // how hard a raider sticks close to your pieces
+var ENEMY_STEP = 0.6;     // seconds between two enemy attacks
+var BUMP_DMG = 1;         // pushed into something
+
+var MIN_THREATS = 2;      // buildings a fresh turn threatens (when it can)
+var PLAN_TRIES = 80;      // enemy plans rolled before giving up on a solvable one
+var SOLVE_BUDGET = 12000; // solver nodes per plan before calling it unsolvable
+var HINT_BUDGET = 60000;  // solver nodes for the Hint button
+
+var W = 720, H = 1280, TILE = 110, BX = 30, BY = 150;
+var LEGEND_W = 640;       // legend panel beside the board, when the window is wide enough
+
+var PIECES = {
+  square:   { hp: 3, move: "rook",   act: "punch", weapon: "Punch", col: "#4aa3ff",
+              text: "Square: moves straight, up to 3.",
+              atk: "Punch: an adjacent tile, 2 dmg + push 1." },
+  triangle: { hp: 3, move: "bishop", act: "shoot", weapon: "Shoot", col: "#54d18a",
+              text: "Triangle: moves diagonally, up to 3.",
+              atk: "Shoot: the first thing in a line, 1 dmg + push 1." },
+  circle:   { hp: 3, move: "knight", act: "pulse", weapon: "Pulse", col: "#f5c542",
+              text: "Circle: jumps like a chess knight.",
+              atk: "Pulse: pushes all 4 neighbours away, no dmg." }
+};
+var ENEMIES = {
+  brute:   { hp: 3, atk: "melee", dmg: 2, text: "Brute: hits the next tile for 2." },
+  spitter: { hp: 2, atk: "shot",  dmg: 1, text: "Spitter: shoots a line, hits the first thing for 1." },
+  bomber:  { hp: 2, atk: "lob",   dmg: 2, text: "Bomber: lobs 2 tiles ahead, over anything, for 2." }
+};
+var ENEMY_KINDS = ["brute", "spitter", "bomber"];
+
+var DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+var DIAG = [[1, -1], [1, 1], [-1, 1], [-1, -1]];
+var KNIGHT = [[1, -2], [2, -1], [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2]];
+
+// map cells
+var EMPTY = 0, BUILDING = 1, ROCK = 2, WATER = 3, RUBBLE = 4;
+
+// ---- state ----------------------------------------------------------------
+var S;              // the board: { map, units, power, turn, kills, nextId }
+var phase;          // "player" | "enemy" | "over"
+var sel = null;     // selected piece id
+var mode = "move";  // what the selected piece is doing: "move" | "attack"
+var info = null;    // inspected enemy id
+var preview = null; // { s, ev, tx, ty } — the board after the aimed attack
+var undo = [];      // snapshots of every step of this turn
+var hint = null;    // { step } or { msg }
+var solvable = true;
+var roundNote = "";
+var powerAtTurn = POWER;
+var enemyQueue = [], enemyTimer = 0;
+var floaters = [], flashes = [];
+var overText = "";
+var side = false;         // legend drawn beside the board (wide window)
+var legendOpen = false;   // legend drawn over everything (narrow window, "?" button)
+var HELP = { x: W - BX - 28, y: 50, r: 28 };
+
+function cloneState(s) {
+  return {
+    map: s.map.map(function (r) { return r.slice(); }),
+    units: s.units.map(function (u) { var c = {}; for (var k in u) c[k] = u[k]; return c; }),
+    power: s.power, turn: s.turn, kills: s.kills, nextId: s.nextId
+  };
+}
+function inB(x, y) { return x >= 0 && y >= 0 && x < COLS && y < ROWS; }
+function rnd(n) { return Math.floor(Math.random() * n); }
+function byId(s, id) { for (var i = 0; i < s.units.length; i++) if (s.units[i].id === id) return s.units[i]; return null; }
+function unitAt(s, x, y) {
+  for (var i = 0; i < s.units.length; i++) {
+    var u = s.units[i];
+    if (!u.dead && u.x === x && u.y === y) return u;
+  }
+  return null;
+}
+function walkable(s, x, y) {
+  if (!inB(x, y)) return false;
+  var m = s.map[y][x];
+  return (m === EMPTY || m === RUBBLE) && !unitAt(s, x, y);
+}
+function enemies(s) { return s.units.filter(function (u) { return u.side === "e" && !u.dead; }); }
+function pieces(s) { return s.units.filter(function (u) { return u.side === "p" && !u.dead; }); }
+function buildingCount(s) {
+  return s.map.reduce(function (n, r) { return n + r.filter(function (m) { return m === BUILDING; }).length; }, 0);
+}
+function inList(list, x, y) {
+  for (var i = 0; i < list.length; i++) if (list[i].x === x && list[i].y === y) return true;
+  return false;
+}
+
+// ---- setup ----------------------------------------------------------------
+function pickEmpty(s, y0, y1) {
+  for (var tries = 0; tries < 500; tries++) {
+    var x = rnd(COLS), y = y0 + rnd(y1 - y0 + 1);
+    if (s.map[y][x] === EMPTY && !unitAt(s, x, y)) return { x: x, y: y };
+  }
+  return null;
+}
+
+function addUnit(s, side, kind, p) {
+  var def = side === "p" ? PIECES[kind] : ENEMIES[kind];
+  var u = { id: s.nextId++, side: side, kind: kind, x: p.x, y: p.y, px: p.x, py: p.y,
+            hp: def.hp, maxHp: def.hp, moved: false, acted: false, dir: 2, dead: false };
+  s.units.push(u);
+  return u;
+}
+
+function newMap() {
+  S = { map: [], units: [], power: POWER, turn: 1, kills: 0, nextId: 1 };
+  for (var y = 0; y < ROWS; y++) { S.map.push([]); for (var x = 0; x < COLS; x++) S.map[y].push(EMPTY); }
+  var i, p;
+  for (i = 0; i < BUILDINGS; i++) { p = pickEmpty(S, 3, 7); S.map[p.y][p.x] = BUILDING; }
+  for (i = 0; i < ROCKS; i++) { p = pickEmpty(S, 1, 6); S.map[p.y][p.x] = ROCK; }
+  for (i = 0; i < WATERS; i++) { p = pickEmpty(S, 2, 5); S.map[p.y][p.x] = WATER; }
+  ["square", "triangle", "circle"].forEach(function (k) { addUnit(S, "p", k, pickEmpty(S, 3, 5)); });
+  for (i = 0; i < ENEMY_START; i++) addUnit(S, "e", ENEMY_KINDS[rnd(3)], pickEmpty(S, 0, 1));
+}
+
+function newGame() {
+  for (var tries = 0; tries < 8; tries++) {
+    newMap();
+    if (makePuzzle()) break;
+  }
+  startPlayerTurn();
+  roundNote = "";
+  floaters = []; flashes = []; overText = "";
+}
+
+// ---- rules: damage and push ----------------------------------------------
+function hurt(s, u, n, ev) {
+  u.hp -= n;
+  ev.push({ t: "dmg", x: u.x, y: u.y, n: n });
+  if (u.hp <= 0 && !u.dead) {
+    u.dead = true;
+    ev.push({ t: "die", x: u.x, y: u.y });
+    if (u.side === "e") s.kills++;
+  }
+}
+
+// Push u one tile along d. Off the board, a rock, a building or another unit
+// stops it and both sides take a bump; water drowns it.
+function push(s, u, d, ev) {
+  if (u.dead) return;
+  var nx = u.x + d[0], ny = u.y + d[1];
+  var m = inB(nx, ny) ? s.map[ny][nx] : ROCK;
+  var other = inB(nx, ny) ? unitAt(s, nx, ny) : null;
+  if (m === BUILDING || m === ROCK || other) {
+    ev.push({ t: "bump", x: u.x, y: u.y, dx: d[0], dy: d[1] });
+    hurt(s, u, BUMP_DMG, ev);
+    if (other) hurt(s, other, BUMP_DMG, ev);
+    return;
+  }
+  ev.push({ t: "push", fx: u.x, fy: u.y, x: nx, y: ny });
+  u.x = nx; u.y = ny;
+  if (m === WATER) {
+    u.dead = true;
+    ev.push({ t: "die", x: nx, y: ny, drown: true });
+    if (u.side === "e") s.kills++;
+  }
+}
+
+// ---- pieces: moves and attacks -------------------------------------------
+function moveTargets(s, u) {
+  var out = [], i, k, x, y;
+  var kind = PIECES[u.kind].move;
+  if (kind === "knight") {
+    for (i = 0; i < KNIGHT.length; i++) {
+      x = u.x + KNIGHT[i][0]; y = u.y + KNIGHT[i][1];
+      if (walkable(s, x, y)) out.push({ x: x, y: y });
+    }
+    return out;
+  }
+  var dirs = kind === "rook" ? DIRS : DIAG;
+  for (i = 0; i < dirs.length; i++) {
+    for (k = 1; k <= 3; k++) {
+      x = u.x + dirs[i][0] * k; y = u.y + dirs[i][1] * k;
+      if (!walkable(s, x, y)) break;
+      out.push({ x: x, y: y });
+    }
+  }
+  return out;
+}
+
+// Every tile the weapon can be aimed at, empty or not — like a weapon's
+// pattern in Into the Breach.
+function attackTargets(s, u) {
+  var act = PIECES[u.kind].act, out = [];
+  if (act === "pulse") return [{ x: u.x, y: u.y }];
+  DIRS.forEach(function (d) {
+    var x = u.x + d[0], y = u.y + d[1];
+    if (!inB(x, y)) return;
+    if (act === "shoot") {
+      // the shot flies until the first unit, building or rock, or the edge
+      for (;;) {
+        var m = s.map[y][x];
+        if (unitAt(s, x, y) || m === BUILDING || m === ROCK) break;
+        if (!inB(x + d[0], y + d[1])) break;
+        x += d[0]; y += d[1];
+      }
+    }
+    out.push({ x: x, y: y });
+  });
+  return out;
+}
+
+// An attack that touches no unit changes nothing: the solver skips it.
+function useful(s, u, t) {
+  if (PIECES[u.kind].act === "pulse") {
+    return DIRS.some(function (d) { return unitAt(s, u.x + d[0], u.y + d[1]); });
+  }
+  return !!unitAt(s, t.x, t.y);
+}
+
+// Your attacks hurt units only, never a building.
+function doAction(s, u, tx, ty, ev) {
+  if (PIECES[u.kind].act === "pulse") {
+    for (var i = 0; i < DIRS.length; i++) {
+      var o = unitAt(s, u.x + DIRS[i][0], u.y + DIRS[i][1]);
+      if (o) push(s, o, DIRS[i], ev);
+    }
+  } else {
+    var d = [Math.sign(tx - u.x), Math.sign(ty - u.y)];
+    var t = unitAt(s, tx, ty);
+    if (t) {
+      hurt(s, t, PIECES[u.kind].act === "punch" ? 2 : 1, ev);
+      push(s, t, d, ev);
+    }
+  }
+  u.moved = true; u.acted = true;
+}
+
+// ---- enemies: intent, attack, plan ----------------------------------------
+// The intent is a DIRECTION from the enemy, read live: push the enemy and its
+// target moves with it.
+function attackInfo(s, e) {
+  var d = DIRS[e.dir], def = ENEMIES[e.kind], path = [], hit = null, x, y;
+  if (def.atk === "melee" || def.atk === "lob") {
+    var k = def.atk === "melee" ? 1 : 2;
+    x = e.x + d[0] * k; y = e.y + d[1] * k;
+    if (inB(x, y)) hit = { x: x, y: y };
+  } else {
+    x = e.x; y = e.y;
+    for (;;) {
+      x += d[0]; y += d[1];
+      if (!inB(x, y)) break;
+      path.push({ x: x, y: y });
+      var m = s.map[y][x];
+      if (m === BUILDING || m === ROCK || unitAt(s, x, y)) { hit = { x: x, y: y }; break; }
+    }
+  }
+  return { path: path, hit: hit };
+}
+
+function enemyAttack(s, e, ev) {
+  var h = attackInfo(s, e).hit;
+  if (!h) return null;
+  var dmg = ENEMIES[e.kind].dmg;
+  if (s.map[h.y][h.x] === BUILDING) {
+    s.map[h.y][h.x] = RUBBLE;
+    s.power--;
+    ev.push({ t: "building", x: h.x, y: h.y });
+  } else {
+    var u = unitAt(s, h.x, h.y);
+    if (u) hurt(s, u, dmg, ev);
+  }
+  return h;
+}
+
+// Plays the whole enemy phase on a copy: how many buildings it would cost.
+function buildingsAtRisk(s) {
+  var t = cloneState(s), ev = [];
+  enemies(t).forEach(function (e) { if (!e.dead) enemyAttack(t, e, ev); });
+  return s.power - t.power;
+}
+
+function reachable(s, e) {
+  var seen = {}, out = [{ x: e.x, y: e.y, n: 0 }], q = out.slice();
+  seen[e.x + "," + e.y] = true;
+  while (q.length) {
+    var c = q.shift();
+    if (c.n >= ENEMY_MOVE) continue;
+    for (var i = 0; i < 4; i++) {
+      var x = c.x + DIRS[i][0], y = c.y + DIRS[i][1], key = x + "," + y;
+      if (seen[key] || !walkable(s, x, y)) continue;
+      seen[key] = true;
+      var n = { x: x, y: y, n: c.n + 1 };
+      out.push(n); q.push(n);
+    }
+  }
+  return out;
+}
+
+function nearestBuilding(s, x, y) {
+  var best = 99;
+  for (var j = 0; j < ROWS; j++) for (var i = 0; i < COLS; i++)
+    if (s.map[j][i] === BUILDING) best = Math.min(best, Math.abs(i - x) + Math.abs(j - y));
+  return best === 99 ? 0 : best;
+}
+
+function nearestPiece(s, x, y) {
+  var best = 99;
+  pieces(s).forEach(function (u) { best = Math.min(best, Math.abs(u.x - x) + Math.abs(u.y - y)); });
+  return best === 99 ? 0 : best;
+}
+
+// Each enemy moves and picks a direction, at random among its best options.
+// `raiders` of them go for buildings nobody targets yet; the others hunt your
+// pieces and keep off the city.
+function planEnemies(s, raiders) {
+  var taken = {}, list = enemies(s), raid = {};
+  list.slice().sort(function () { return Math.random() - 0.5; }).slice(0, raiders)
+    .forEach(function (e) { raid[e.id] = true; });
+  list.forEach(function (e) {
+    var hunt = !raid[e.id], ox = e.x, oy = e.y, cands = [];
+    reachable(s, e).forEach(function (p) {
+      for (var d = 0; d < 4; d++) {
+        e.x = p.x; e.y = p.y; e.dir = d;
+        var h = attackInfo(s, e).hit, sc = 0, u = h && unitAt(s, h.x, h.y);
+        if (h && s.map[h.y][h.x] === BUILDING) sc = hunt ? -3 : taken[h.x + "," + h.y] ? 3 : 10;
+        else if (u && u !== e) sc = u.side === "p" ? (hunt ? 10 : 2) : -8;
+        // a raid close to your pieces is one you can answer
+        var near = hunt ? 0.1 * nearestBuilding(s, p.x, p.y) : ENEMY_NEAR * nearestPiece(s, p.x, p.y);
+        cands.push({ x: p.x, y: p.y, d: d, h: h, sc: sc - near + Math.random() * 0.5 });
+      }
+    });
+    e.x = ox; e.y = oy;
+    cands.sort(function (a, b) { return b.sc - a.sc; });
+    var top = cands.filter(function (c) { return c.sc >= cands[0].sc - 1; }).slice(0, 4);
+    var pick = top[rnd(top.length)];
+    e.x = pick.x; e.y = pick.y; e.dir = pick.d;
+    if (pick.h) taken[pick.h.x + "," + pick.h.y] = true;
+  });
+}
+
+// ---- solver ---------------------------------------------------------------
+// Depth-first over the pieces still to play: each one moves (or not), then
+// attacks a unit, or waits where its body blocks a shot. A plan is solved
+// when the enemy phase would cost no building.
+function solve(s, budget) {
+  var ids = pieces(s).filter(function (u) { return !u.acted; }).map(function (u) { return u.id; });
+  return dfs(s, ids, { n: budget }, {});
+}
+
+function stateKey(s, ids) {
+  var k = ids.join(",") + "|";
+  s.units.forEach(function (u) {
+    if (!u.dead) k += u.id + ":" + u.x + "," + u.y + "," + u.hp + (u.acted ? "a" : u.moved ? "m" : "") + ";";
+  });
+  return k;
+}
+
+function shotLanes(s) {
+  var lanes = {};
+  enemies(s).forEach(function (e) {
+    if (ENEMIES[e.kind].atk === "shot") attackInfo(s, e).path.forEach(function (p) { lanes[p.x + "," + p.y] = true; });
+  });
+  return lanes;
+}
+
+function dfs(s, ids, budget, seen) {
+  if (budget.n-- <= 0) return null;
+  if (buildingsAtRisk(s) === 0) return [];
+  if (!ids.length) return null;
+  var key = stateKey(s, ids);
+  if (seen[key]) return null;
+  seen[key] = true;
+  var lanes = shotLanes(s);
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i], rest = ids.slice(0, i).concat(ids.slice(i + 1));
+    var u = byId(s, id);
+    if (!u || u.dead) continue;
+    var spots = [{ x: u.x, y: u.y }];
+    if (!u.moved) spots = spots.concat(moveTargets(s, u));
+    for (var j = 0; j < spots.length; j++) {
+      var sp = spots[j], s1 = cloneState(s), u1 = byId(s1, id), r;
+      u1.x = sp.x; u1.y = sp.y; u1.moved = true;
+      var targets = attackTargets(s1, u1);
+      for (var k = 0; k < targets.length; k++) {
+        var t = targets[k];
+        if (!useful(s1, u1, t)) continue;
+        var s2 = cloneState(s1);
+        doAction(s2, byId(s2, id), t.x, t.y, []);
+        r = dfs(s2, rest, budget, seen);
+        if (r) return [{ id: id, x: sp.x, y: sp.y, tx: t.x, ty: t.y }].concat(r);
+        if (budget.n <= 0) return null;
+      }
+      if (lanes[sp.x + "," + sp.y]) {
+        u1.acted = true;
+        r = dfs(s1, rest, budget, seen);
+        if (r) return [{ id: id, x: sp.x, y: sp.y, tx: null, ty: null }].concat(r);
+      }
+    }
+  }
+  return null;
+}
+
+// Rolls enemy plans until one threatens buildings and can be fully saved.
+function makePuzzle() {
+  var base = cloneState(S), best = null;
+  for (var i = 0; i < PLAN_TRIES; i++) {
+    var s = cloneState(base);
+    planEnemies(s, Math.random() < RAID_3 ? 3 : 2);
+    var risk = buildingsAtRisk(s);
+    if (risk < 1) continue;
+    if (!solve(s, SOLVE_BUDGET)) continue;
+    if (risk >= Math.min(MIN_THREATS, buildingCount(s))) { best = s; break; }
+    if (!best) best = s;
+  }
+  solvable = !!best;
+  if (!best) { best = cloneState(base); planEnemies(best, 2); }
+  S = best;
+  return solvable;
+}
+
+// ---- turn flow ------------------------------------------------------------
+function checkLoss() {
+  if (S.power <= 0) { phase = "over"; overText = "Defeat — the city went dark"; return true; }
+  if (!pieces(S).length) { phase = "over"; overText = "Defeat — all pieces down"; return true; }
+  return false;
+}
+
+function prune() { S.units = S.units.filter(function (u) { return !u.dead; }); }
+
+function startPlayerTurn() {
+  phase = "player"; sel = null; info = null; preview = null; undo = []; hint = null;
+  powerAtTurn = S.power;
+}
+
+function endTurn() {
+  if (phase !== "player") return;
+  sel = null; preview = null; info = null; undo = []; hint = null;
+  phase = "enemy";
+  enemyQueue = enemies(S).map(function (e) { return e.id; });
+  enemyTimer = 0.35;
+}
+
+function enemyStep() {
+  while (enemyQueue.length) {
+    var e = byId(S, enemyQueue.shift());
+    if (!e || e.dead) continue;
+    var ev = [];
+    var h = enemyAttack(S, e, ev);
+    if (h) flashes.push({ x: h.x, y: h.y, t: 0.45 });
+    showEvents(ev);
+    prune();
+    if (checkLoss()) return;
+    enemyTimer = ENEMY_STEP;
+    return;
+  }
+  // every intent has fired: next round
+  var lost = powerAtTurn - S.power;
+  roundNote = lost ? "Last turn cost " + lost + " building" + (lost > 1 ? "s" : "") + "." : "Perfect turn: every building saved!";
+  S.turn++;
+  if (S.turn > TURNS) { phase = "over"; overText = "Victory — the city held"; return; }
+  pieces(S).forEach(function (u) { u.moved = false; u.acted = false; });
+  if (enemies(S).length < ENEMY_MIN) {
+    var p = pickEmpty(S, 0, 1);
+    if (p) addUnit(S, "e", ENEMY_KINDS[rnd(3)], p);
+  }
+  makePuzzle();
+  startPlayerTurn();
+}
+
+function showEvents(ev) {
+  ev.forEach(function (e) {
+    if (e.t === "dmg") floaters.push({ x: e.x, y: e.y, text: "-" + e.n, col: "#ff6b5e", t: 1 });
+    if (e.t === "die") floaters.push({ x: e.x, y: e.y, text: e.drown ? "Drowned" : "KO", col: "#fff", t: 1.2 });
+    if (e.t === "building") floaters.push({ x: e.x, y: e.y, text: "-1 power", col: "#ffcc4d", t: 1.4 });
+  });
+}
+
+// ---- input ----------------------------------------------------------------
+var BTNS = [
+  { id: "undo", x: 30,  y: 1185, w: 150, h: 80, label: "Undo" },
+  { id: "hint", x: 200, y: 1185, w: 150, h: 80, label: "Hint" },
+  { id: "new",  x: 370, y: 1185, w: 150, h: 80, label: "New map" },
+  { id: "end",  x: 540, y: 1185, w: 150, h: 80, label: "End turn" }
+];
+// the selected piece's own bar: move, its weapon, or wait
+var CTX = [
+  { id: "move",   x: 30,  y: 1100, w: 200, h: 70 },
+  { id: "attack", x: 250, y: 1100, w: 220, h: 70 },
+  { id: "wait",   x: 490, y: 1100, w: 200, h: 70 }
+];
+
+function hitBtn(list, px, py) {
+  for (var i = 0; i < list.length; i++) {
+    var B = list[i];
+    if (px >= B.x && px <= B.x + B.w && py >= B.y && py <= B.y + B.h) return B.id;
+  }
+  return null;
+}
+
+function snapshot() { undo.push({ s: cloneState(S), sel: sel, mode: mode }); hint = null; }
+
+function selectPiece(u) {
+  sel = u.id; info = null; preview = null;
+  mode = u.moved ? "attack" : "move";
+}
+
+function onTap(px, py) {
+  if (legendOpen) { legendOpen = false; return; }
+  if (!side && Math.hypot(px - HELP.x, py - HELP.y) <= HELP.r + 10) { legendOpen = true; return; }
+  var b = hitBtn(BTNS, px, py);
+  if (b) return button(b);
+  if (phase !== "player") return;
+  var u = sel ? byId(S, sel) : null;
+  if (u) {
+    var c = hitBtn(CTX, px, py);
+    if (c) return context(u, c);
+  }
+  var tx = Math.floor((px - BX) / TILE), ty = Math.floor((py - BY) / TILE);
+  if (!inB(tx, ty)) return;
+
+  if (u) {
+    // second tap on the aimed tile fires
+    if (preview && preview.tx === tx && preview.ty === ty) {
+      snapshot();
+      var ev = [];
+      doAction(S, u, tx, ty, ev);
+      showEvents(ev);
+      prune();
+      sel = null; preview = null;
+      checkLoss();
+      return;
+    }
+    if (mode === "move") {
+      if (inList(moveTargets(S, u), tx, ty)) {
+        snapshot();
+        u.x = tx; u.y = ty; u.moved = true;
+        mode = "attack";          // moved: the weapon is up next
+        return;
+      }
+      if (tx === u.x && ty === u.y) { mode = "attack"; return; }
+    } else if (inList(attackTargets(S, u), tx, ty)) {
+      var s2 = cloneState(S), ev2 = [];
+      doAction(s2, byId(s2, u.id), tx, ty, ev2);
+      s2.units.forEach(function (v) { v.px = v.x; v.py = v.y; });
+      preview = { s: s2, ev: ev2, tx: tx, ty: ty };
+      return;
+    }
+  }
+  preview = null;
+  var t = unitAt(S, tx, ty);
+  if (t && t.side === "p" && !t.acted) selectPiece(t);
+  else if (t) { sel = null; info = t.id; }
+  else { sel = null; info = null; }
+}
+
+function context(u, id) {
+  preview = null;
+  if (id === "move" && !u.moved) mode = "move";
+  if (id === "attack") mode = "attack";
+  if (id === "wait") { snapshot(); u.moved = true; u.acted = true; sel = null; }
+}
+
+function button(id) {
+  if (id === "new") return newGame();
+  if (phase !== "player") return;
+  if (id === "end") return endTurn();
+  if (id === "undo" && undo.length) {
+    var snap = undo.pop();
+    S = snap.s; sel = snap.sel; mode = snap.mode; preview = null; hint = null;
+  }
+  if (id === "hint") {
+    preview = null;
+    if (buildingsAtRisk(S) === 0) { hint = { msg: "Every building is safe already: end your turn." }; return; }
+    var sol = solve(S, HINT_BUDGET);
+    hint = sol ? { step: sol[0] } : { msg: "No way to save every building from here. Undo and try again." };
+  }
+}
+
+// ---- render ---------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  side = innerWidth / innerHeight >= (W + LEGEND_W) / H;
+  if (side) legendOpen = false;
+  var TW = side ? W + LEGEND_W : W;
+  scale = Math.min(innerWidth / TW, innerHeight / H);
+  cv.style.width = TW * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(TW * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var r = cv.getBoundingClientRect();
+  onTap((e.clientX - r.left) / scale, (e.clientY - r.top) / scale);
+});
+
+function cx(x) { return BX + x * TILE + TILE / 2; }
+function cy(y) { return BY + y * TILE + TILE / 2; }
+
+function poly(pts) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+}
+
+function shapePath(kind, x, y, r) {
+  var i, pts = [];
+  if (kind === "square") { ctx.beginPath(); ctx.rect(x - r * 0.78, y - r * 0.78, r * 1.56, r * 1.56); return; }
+  if (kind === "triangle") { poly([[x, y - r], [x + r * 0.95, y + r * 0.75], [x - r * 0.95, y + r * 0.75]]); return; }
+  if (kind === "circle") { ctx.beginPath(); ctx.arc(x, y, r * 0.85, 0, Math.PI * 2); return; }
+  if (kind === "brute") { for (i = 0; i < 6; i++) pts.push([x + Math.cos(i * Math.PI / 3) * r, y + Math.sin(i * Math.PI / 3) * r]); poly(pts); return; }
+  if (kind === "spitter") { poly([[x, y - r], [x + r * 0.8, y], [x, y + r], [x - r * 0.8, y]]); return; }
+  if (kind === "bomber") {
+    for (i = 0; i < 10; i++) {
+      var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      pts.push([x + Math.cos(a) * rr, y + Math.sin(a) * rr]);
+    }
+    poly(pts);
+  }
+}
+
+function arrow(x0, y0, x1, y1, col, w) {
+  var a = Math.atan2(y1 - y0, x1 - x0);
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = w;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+  poly([[x1 + Math.cos(a) * 14, y1 + Math.sin(a) * 14],
+        [x1 + Math.cos(a + 2.3) * 14, y1 + Math.sin(a + 2.3) * 14],
+        [x1 + Math.cos(a - 2.3) * 14, y1 + Math.sin(a - 2.3) * 14]]);
+  ctx.fill();
+}
+
+function text(str, x, y, size, col, align, weight) {
+  ctx.font = (weight || "600") + " " + size + "px system-ui, sans-serif";
+  ctx.fillStyle = col; ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+  ctx.fillText(str, x, y);
+}
+
+function wrap(str, x, y, maxW, size, col) {
+  ctx.font = "500 " + size + "px system-ui, sans-serif";
+  var words = str.split(" "), line = "", lines = [];
+  words.forEach(function (w) {
+    var t = line ? line + " " + w : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  });
+  lines.push(line);
+  lines.forEach(function (l, i) { text(l, x, y + i * size * 1.25, size, col, "left", "500"); });
+  return lines.length;
+}
+
+function drawBoard(s) {
+  for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) {
+    var X = BX + x * TILE, Y = BY + y * TILE;
+    ctx.fillStyle = (x + y) % 2 ? "#2a2f3a" : "#323846";
+    ctx.fillRect(X, Y, TILE, TILE);
+    drawCell(s.map[y][x], X, Y);
+  }
+}
+
+// The terrain of one cell, its top-left corner at X, Y.
+function drawCell(m, X, Y) {
+  if (m === WATER) {
+    ctx.fillStyle = "#1f5f9e"; ctx.fillRect(X + 4, Y + 4, TILE - 8, TILE - 8);
+    ctx.strokeStyle = "#5fa8e8"; ctx.lineWidth = 3;
+    for (var k = 0; k < 3; k++) {
+      ctx.beginPath();
+      for (var i = 0; i <= 8; i++) ctx.lineTo(X + 18 + i * 9, Y + 30 + k * 25 + Math.sin(i + k) * 4);
+      ctx.stroke();
+    }
+  } else if (m === ROCK) {
+    ctx.fillStyle = "#6b5a48";
+    poly([[X + 20, Y + 88], [X + 38, Y + 30], [X + 62, Y + 20], [X + 90, Y + 52], [X + 88, Y + 90]]);
+    ctx.fill();
+  } else if (m === BUILDING) {
+    ctx.fillStyle = "#9aa3b5"; ctx.fillRect(X + 22, Y + 18, TILE - 44, TILE - 30);
+    ctx.fillStyle = "#ffe08a";
+    for (var r = 0; r < 3; r++) for (var c = 0; c < 2; c++) ctx.fillRect(X + 34 + c * 26, Y + 28 + r * 22, 14, 12);
+  } else if (m === RUBBLE) {
+    ctx.fillStyle = "#555c6b";
+    ctx.fillRect(X + 30, Y + 70, 16, 12); ctx.fillRect(X + 54, Y + 76, 22, 10); ctx.fillRect(X + 44, Y + 60, 12, 10);
+  }
+}
+
+function drawIntents(s) {
+  enemies(s).forEach(function (e, idx) {
+    var a = attackInfo(s, e), d = DIRS[e.dir], def = ENEMIES[e.kind];
+    var ex = cx(e.x), ey = cy(e.y);
+    ctx.setLineDash([10, 8]);
+    ctx.strokeStyle = "rgba(255,90,80,0.8)"; ctx.lineWidth = 4;
+    if (def.atk === "shot") {
+      var end = a.hit || a.path[a.path.length - 1];
+      if (end) { ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(cx(end.x), cy(end.y)); ctx.stroke(); }
+    } else if (def.atk === "lob" && a.hit) {
+      var hx = cx(a.hit.x), hy = cy(a.hit.y), mx = (ex + hx) / 2, my = (ey + hy) / 2;
+      ctx.beginPath(); ctx.moveTo(ex, ey);
+      ctx.quadraticCurveTo(mx + (d[0] === 0 ? 60 : 0), my - (d[1] === 0 ? 60 : 0), hx, hy); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    if (a.hit) {
+      var X = BX + a.hit.x * TILE, Y = BY + a.hit.y * TILE;
+      ctx.fillStyle = "rgba(255,60,50,0.32)"; ctx.fillRect(X + 3, Y + 3, TILE - 6, TILE - 6);
+      ctx.strokeStyle = "#ff5a50"; ctx.lineWidth = 4; ctx.strokeRect(X + 5, Y + 5, TILE - 10, TILE - 10);
+      text(idx + 1 + "", X + 18, Y + 20, 22, "#ffb0a8", "center", "800");
+      text("-" + def.dmg, X + TILE - 22, Y + TILE - 20, 22, "#ff8a80", "center", "800");
+    }
+  });
+}
+
+function drawUnit(u, idx, isSel) {
+  var x = BX + u.px * TILE + TILE / 2, y = BY + u.py * TILE + TILE / 2;
+  var col = u.side === "p" ? PIECES[u.kind].col : "#e8504a";
+  ctx.globalAlpha = u.side === "p" && u.acted && phase === "player" ? 0.45 : 1;
+  if (isSel) {
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(x, y, 50, 0, Math.PI * 2); ctx.stroke();
+  }
+  shapePath(u.kind, x, y, 34);
+  ctx.fillStyle = col; ctx.fill();
+  ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 3; ctx.stroke();
+  if (u.side === "e") {
+    // facing nose + attack order
+    var d = DIRS[u.dir];
+    ctx.fillStyle = "#ffd2cc";
+    ctx.beginPath(); ctx.arc(x + d[0] * 40, y + d[1] * 40, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(x - 38, y - 38, 14, 0, Math.PI * 2); ctx.fill();
+    text(idx + 1 + "", x - 38, y - 37, 20, "#ffb0a8", "center", "800");
+  }
+  // hp pips
+  for (var i = 0; i < u.maxHp; i++) {
+    ctx.fillStyle = i < u.hp ? (u.side === "p" ? "#7cf0a0" : "#ff8a80") : "#444";
+    ctx.fillRect(x - u.maxHp * 9 + i * 18 + 2, y + 42, 14, 8);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawPreview(ev) {
+  ev.forEach(function (e) {
+    if (e.t === "push") arrow(cx(e.fx), cy(e.fy), cx(e.x) - (e.x - e.fx) * 16, cy(e.y) - (e.y - e.fy) * 16, "#fff", 5);
+    if (e.t === "bump") {
+      arrow(cx(e.x), cy(e.y), cx(e.x) + e.dx * 40, cy(e.y) + e.dy * 40, "#ffcc4d", 5);
+      text("Bump", cx(e.x) + e.dx * 40, cy(e.y) + e.dy * 40 - 24, 20, "#ffcc4d", "center", "800");
+    }
+    if (e.t === "dmg") text("-" + e.n, cx(e.x) + 30, cy(e.y) - 30, 26, "#ff6b5e", "center", "800");
+    if (e.t === "die") {
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx(e.x) - 26, cy(e.y) - 26); ctx.lineTo(cx(e.x) + 26, cy(e.y) + 26);
+      ctx.moveTo(cx(e.x) + 26, cy(e.y) - 26); ctx.lineTo(cx(e.x) - 26, cy(e.y) + 26);
+      ctx.stroke();
+    }
+  });
+}
+
+function drawHint(step, t) {
+  var u = byId(S, step.id);
+  if (!u) return;
+  var a = 0.6 + 0.4 * Math.sin(t * 6);
+  ctx.strokeStyle = "rgba(80,230,255," + a + ")"; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(cx(u.x), cy(u.y), 50, 0, Math.PI * 2); ctx.stroke();
+  if (step.x !== u.x || step.y !== u.y) {
+    ctx.setLineDash([12, 8]);
+    arrow(cx(u.x), cy(u.y), cx(step.x), cy(step.y), "rgba(80,230,255," + a + ")", 5);
+    ctx.setLineDash([]);
+    ctx.strokeRect(BX + step.x * TILE + 10, BY + step.y * TILE + 10, TILE - 20, TILE - 20);
+  }
+  if (step.tx !== null) {
+    ctx.strokeStyle = "rgba(80,230,255," + a + ")"; ctx.lineWidth = 7;
+    ctx.strokeRect(BX + step.tx * TILE + 4, BY + step.ty * TILE + 4, TILE - 8, TILE - 8);
+  }
+}
+
+function hintText(step) {
+  var u = byId(S, step.id), name = u.kind;
+  var moveTxt = step.x !== u.x || step.y !== u.y ? "move the " + name + " to the cyan tile, then " : "with the " + name + ", ";
+  return "Hint: " + moveTxt + (step.tx === null ? "wait there: its body blocks a shot."
+    : (PIECES[u.kind].act === "pulse" ? "pulse." : PIECES[u.kind].weapon.toLowerCase() + " the cyan frame."));
+}
+
+function drawButton(B, label, state) {
+  // state: "on" (highlighted), "off" (disabled), or plain
+  ctx.fillStyle = state === "on" ? "#2e9e5b" : state === "off" ? "#23272f" : "#3a4150";
+  ctx.fillRect(B.x, B.y, B.w, B.h);
+  text(label, B.x + B.w / 2, B.y + B.h / 2, 24, state === "off" ? "#666" : "#fff", "center", "700");
+}
+
+function render(time) {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W + LEGEND_W, H);
+  var s = preview ? preview.s : S;
+  var u = sel && phase === "player" ? byId(S, sel) : null;
+
+  // HUD
+  text("Turn " + Math.min(S.turn, TURNS) + " / " + TURNS, BX, 50, 34, "#fff", "left", "800");
+  text("Kills " + S.kills, side ? W - BX : HELP.x - HELP.r - 18, 50, 28, "#ff8a80", "right", "700");
+  if (!side) {
+    ctx.fillStyle = "#3a4150"; ctx.beginPath(); ctx.arc(HELP.x, HELP.y, HELP.r, 0, Math.PI * 2); ctx.fill();
+    text("?", HELP.x, HELP.y + 1, 32, "#fff", "center", "800");
+  }
+  text("Power", BX, 105, 24, "#ffe08a", "left", "700");
+  for (var i = 0; i < POWER; i++) {
+    ctx.fillStyle = i < s.power ? "#ffcc4d" : "#3a3f4a";
+    ctx.fillRect(BX + 90 + i * 40, 91, 30, 30);
+  }
+  if (phase === "enemy") text("Enemy turn", W - BX, 105, 26, "#ff6b5e", "right", "700");
+  else if (phase === "player") {
+    var risk = buildingsAtRisk(s);
+    text(risk ? risk + " building" + (risk > 1 ? "s" : "") + " at risk" : "City safe", W - BX, 105, 26,
+         risk ? "#ff6b5e" : "#7cf0a0", "right", "700");
+  }
+
+  drawBoard(s);
+
+  // the selected piece: blue dots to move, orange frames to aim
+  if (u && !preview) {
+    if (mode === "move") moveTargets(S, u).forEach(function (p) {
+      ctx.fillStyle = "rgba(90,170,255,0.6)";
+      ctx.beginPath(); ctx.arc(cx(p.x), cy(p.y), 16, 0, Math.PI * 2); ctx.fill();
+    });
+    else attackTargets(S, u).forEach(function (p) {
+      if (PIECES[u.kind].act === "shoot") {
+        ctx.strokeStyle = "rgba(255,165,61,0.5)"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(cx(u.x), cy(u.y)); ctx.lineTo(cx(p.x), cy(p.y)); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(255,165,61,0.18)";
+      ctx.fillRect(BX + p.x * TILE + 8, BY + p.y * TILE + 8, TILE - 16, TILE - 16);
+      ctx.strokeStyle = "#ffa53d"; ctx.lineWidth = 5;
+      ctx.strokeRect(BX + p.x * TILE + 8, BY + p.y * TILE + 8, TILE - 16, TILE - 16);
+    });
+  }
+  if (preview) {
+    ctx.strokeStyle = "#ffa53d"; ctx.lineWidth = 6;
+    ctx.strokeRect(BX + preview.tx * TILE + 6, BY + preview.ty * TILE + 6, TILE - 12, TILE - 12);
+  }
+
+  drawIntents(s);
+
+  flashes.forEach(function (f) {
+    ctx.fillStyle = "rgba(255,240,220," + Math.min(1, f.t * 2) + ")";
+    ctx.fillRect(BX + f.x * TILE, BY + f.y * TILE, TILE, TILE);
+  });
+
+  var eIdx = 0;
+  s.units.forEach(function (v) {
+    if (v.dead) return;
+    var idx = v.side === "e" ? eIdx++ : 0;
+    drawUnit(v, idx, v.id === sel || v.id === info);
+  });
+  if (preview) drawPreview(preview.ev);
+  if (hint && hint.step && !preview) drawHint(hint.step, time / 1000);
+
+  floaters.forEach(function (f) {
+    ctx.globalAlpha = Math.min(1, f.t);
+    text(f.text, cx(f.x), cy(f.y) - 20 - (1.2 - f.t) * 50, 28, f.col, "center", "800");
+  });
+  ctx.globalAlpha = 1;
+
+  // info line
+  var msg, def = u && PIECES[u.kind];
+  if (phase === "over") msg = "Tap New map to play again.";
+  else if (phase === "enemy") msg = "The enemies strike, in the order of their badges.";
+  else if (hint) msg = hint.msg || hintText(hint.step);
+  else if (preview) msg = "Tap the same tile again to fire. Tap another orange tile to aim elsewhere.";
+  else if (u && mode === "move") msg = def.text + " Tap a blue dot to move — or " + def.weapon + " to attack from here.";
+  else if (u) msg = def.atk + " Tap an orange tile to aim, then again to fire.";
+  else if (info && byId(S, info)) {
+    var t = byId(S, info);
+    msg = t.side === "e" ? ENEMIES[t.kind].text + " Push it and its red tile moves with it."
+                         : PIECES[t.kind].text + " (done this turn)";
+  } else msg = (roundNote ? roundNote + " " : "") +
+    (solvable ? "Every building can be saved this turn. " : "") +
+    "Tap a piece: move it, then attack. Red tiles are hit when you end your turn.";
+  wrap(msg, BX, 1052, W - BX * 2, 22, "#cfd5e2");
+
+  // the selected piece's bar
+  if (u) {
+    drawButton(CTX[0], "Move", u.moved ? "off" : mode === "move" ? "on" : "");
+    drawButton(CTX[1], def.weapon, mode === "attack" ? "on" : "");
+    drawButton(CTX[2], "Wait", "");
+  }
+
+  // buttons
+  var allDone = phase === "player" && pieces(S).every(function (p) { return p.acted; });
+  BTNS.forEach(function (B) {
+    var off = phase !== "player" && B.id !== "new";
+    if (B.id === "undo" && !undo.length) off = true;
+    drawButton(B, B.label, off ? "off" : B.id === "end" && allDone ? "on" : "");
+  });
+
+  if (phase === "over") {
+    ctx.fillStyle = "rgba(10,12,16,0.78)";
+    ctx.fillRect(BX, BY, COLS * TILE, ROWS * TILE);
+    text(overText, W / 2, BY + 360, 34, "#fff", "center", "800");
+    text("Buildings left " + buildingCount(S) + "   Kills " + S.kills + "   Power " + S.power,
+         W / 2, BY + 420, 24, "#cfd5e2", "center", "600");
+  }
+
+  if (side) {
+    ctx.fillStyle = "#1b1e26"; ctx.fillRect(W, 20, LEGEND_W - 20, H - 40);
+    drawLegend(W + 24, 40, LEGEND_W - 64);
+  } else if (legendOpen) {
+    ctx.fillStyle = "rgba(14,16,22,0.97)"; ctx.fillRect(0, 0, W, H);
+    drawLegend(BX, 20, W - BX * 2);
+    text("Tap anywhere to close", W / 2, H - 24, 22, "#cfd5e2", "center", "600");
+  }
+}
+
+// ---- legend ---------------------------------------------------------------
+// Every symbol of the board, drawn with the same code as the board itself.
+
+// A board cell shrunk to `size`, centred on x, y, with `fn` drawing on top of
+// it in tile coordinates (0..TILE).
+function miniTile(x, y, size, m, fn) {
+  ctx.save();
+  ctx.translate(x - size / 2, y - size / 2);
+  ctx.scale(size / TILE, size / TILE);
+  ctx.fillStyle = "#323846"; ctx.fillRect(0, 0, TILE, TILE);
+  drawCell(m, 0, 0);
+  if (fn) fn();
+  ctx.restore();
+}
+
+function unitIcon(kind, col) {
+  return function (x, y) {
+    shapePath(kind, x, y, 19);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 2; ctx.stroke();
+  };
+}
+function cellIcon(m) { return function (x, y) { miniTile(x, y, 44, m); }; }
+function frameIcon(col) {
+  return function (x, y) {
+    miniTile(x, y, 44, EMPTY, function () {
+      ctx.strokeStyle = col; ctx.lineWidth = 9; ctx.strokeRect(10, 10, TILE - 20, TILE - 20);
+    });
+  };
+}
+
+var LEGEND = [
+  "Your pieces — move, then attack",
+  [unitIcon("square", PIECES.square.col), "Square · rook move, up to 3", "Punch: an adjacent tile, 2 dmg, push 1"],
+  [unitIcon("triangle", PIECES.triangle.col), "Triangle · bishop move, up to 3", "Shoot: the first thing in a line, 1 dmg, push 1"],
+  [unitIcon("circle", PIECES.circle.col), "Circle · knight jump", "Pulse: pushes its 4 neighbours away, no dmg"],
+  "Enemies",
+  [unitIcon("brute", "#e8504a"), "Brute (hexagon)", "Hits the next tile it faces for 2"],
+  [unitIcon("spitter", "#e8504a"), "Spitter (diamond)", "Shoots a line, the first thing hit takes 1"],
+  [unitIcon("bomber", "#e8504a"), "Bomber (star)", "Lobs 2 tiles ahead, over anything, for 2"],
+  "Board",
+  [cellIcon(BUILDING), "Building", "Hit by an enemy: -1 power. Your attacks never hurt it"],
+  [cellIcon(ROCK), "Rock", "Blocks moves and shots, pushed into it = bump"],
+  [cellIcon(WATER), "Water", "No walking in. Pushed into it = destroyed"],
+  [cellIcon(RUBBLE), "Rubble", "A fallen building, walkable"],
+  "Marks",
+  [function (x, y) {
+    miniTile(x, y, 44, EMPTY, function () {
+      ctx.fillStyle = "rgba(255,60,50,0.32)"; ctx.fillRect(3, 3, TILE - 6, TILE - 6);
+      ctx.strokeStyle = "#ff5a50"; ctx.lineWidth = 6; ctx.strokeRect(5, 5, TILE - 10, TILE - 10);
+      text("1", 22, 24, 30, "#ffb0a8", "center", "800");
+      text("-2", TILE - 26, TILE - 24, 30, "#ff8a80", "center", "800");
+    });
+  }, "Enemy target", "Hit at end of turn. Top-left: order, bottom-right: dmg"],
+  [function (x, y) {
+    unitIcon("brute", "#e8504a")(x + 4, y + 4);
+    ctx.fillStyle = "#ffd2cc"; ctx.beginPath(); ctx.arc(x + 30, y + 4, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(x - 16, y - 16, 11, 0, Math.PI * 2); ctx.fill();
+    text("1", x - 16, y - 15, 15, "#ffb0a8", "center", "800");
+  }, "Order and facing", "Badge: who strikes first. Pale dot: where it faces"],
+  [function (x, y) {
+    miniTile(x, y, 44, EMPTY, function () {
+      ctx.fillStyle = "rgba(90,170,255,0.75)";
+      ctx.beginPath(); ctx.arc(TILE / 2, TILE / 2, 18, 0, Math.PI * 2); ctx.fill();
+    });
+  }, "Move", "Blue dot: where the selected piece can go"],
+  [frameIcon("#ffa53d"), "Attack", "Orange frame: tap to aim, tap again to fire"],
+  [function (x, y) { arrow(x - 24, y, x + 12, y, "#fff", 4); }, "Push", "While aiming: where the unit will slide"],
+  [function (x, y) { arrow(x - 24, y, x + 12, y, "#ffcc4d", 4); }, "Bump", "Blocked push: 1 dmg to the unit and to what it hits"],
+  [frameIcon("#50e6ff"), "Hint", "Cyan: the piece to play, where to go, what to hit"],
+  [function (x, y) {
+    for (var i = 0; i < 3; i++) {
+      ctx.fillStyle = i < 2 ? "#7cf0a0" : "#444"; ctx.fillRect(x - 26 + i * 18, y - 10, 14, 8);
+      ctx.fillStyle = i < 1 ? "#ff8a80" : "#444"; ctx.fillRect(x - 26 + i * 18, y + 6, 14, 8);
+    }
+  }, "Health", "Bars under a unit: green for yours, red for enemies"],
+  [function (x, y) {
+    ctx.fillStyle = "#ffcc4d"; ctx.fillRect(x - 24, y - 10, 20, 20);
+    ctx.fillStyle = "#3a3f4a"; ctx.fillRect(x + 4, y - 10, 20, 20);
+  }, "Power", "Top of the screen: the city's life, 0 is a loss"]
+];
+
+function drawLegend(x0, y0, w) {
+  var y = y0;
+  LEGEND.forEach(function (row) {
+    if (typeof row === "string") {
+      text(row, x0, y + 14, 24, "#ffe08a", "left", "800");
+      y += 34;
+      return;
+    }
+    row[0](x0 + 28, y + 24);
+    text(row[1], x0 + 70, y + 11, 22, "#fff", "left", "700");
+    var n = wrap(row[2], x0 + 70, y + 35, w - 70, 20, "#aab2c2");
+    y += 24 + n * 25 + 5;
+  });
+}
+
+// ---- loop -----------------------------------------------------------------
+var last = 0;
+function update(dt) {
+  S.units.forEach(function (u) {
+    var k = Math.min(1, dt * 14);
+    u.px += (u.x - u.px) * k; u.py += (u.y - u.py) * k;
+  });
+  floaters.forEach(function (f) { f.t -= dt; });
+  floaters = floaters.filter(function (f) { return f.t > 0; });
+  flashes.forEach(function (f) { f.t -= dt; });
+  flashes = flashes.filter(function (f) { return f.t > 0; });
+  if (phase === "enemy") {
+    enemyTimer -= dt;
+    if (enemyTimer <= 0) enemyStep();
+  }
+}
+function frame(ts) {
+  var dt = Math.min(0.05, (ts - last) / 1000 || 0);
+  last = ts;
+  update(dt);
+  render(ts);
+  requestAnimationFrame(frame);
+}
+
+fit();
+newGame();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

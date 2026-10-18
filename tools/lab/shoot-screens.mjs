@@ -98,7 +98,8 @@ var SPAN = {
   stratideck: 24,   // clockless; the GAME_PILOT below takes the flag at ~27 s
   grudgeon: 60,     // clockless; the GAME_PILOT below explores the whole dungeon in ~70 s
   bridgessa: 45,    // clockless; a tournée of deals, the GAME_PILOT below plays two or three
-  triverse: 15
+  triverse: 15,
+  holepocalypse: 40 // clockless; the GAME_PILOT below clears the free round's three waves in ~45-75 s
 };
 
 /* Games whose tap POINT is the aim, not just a trigger. The generic "tap"
@@ -153,6 +154,31 @@ var RACK = {
    anchor - the text the hook is written in front of, inside the first script
             block.  every - frames between two moves, the pause a turn reads in. */
 var GAME_PILOT = {
+  /* holepocalypse is aimed around the tee: a press in the blue band, a drag
+     out along the shot. A blind drag lands in whichever band it starts in and
+     rarely meets a zombie, so the pilot is the game's own: a full-power
+     Direct shot at the zombie nearest the line, a lob at a shield, a full
+     super fired at once. */
+  holepocalypse: {
+    every: 24,
+    anchor: "return { reset: reset, update: update, render: render,",
+    js: `
+    window.__G = { play: function () {
+      if (ended || won || over) return false;
+      for (var i = 0; i < slots.length; i++) if (!slots[i].left && slots[i].charge >= 1) { superTap(slots[i]); return true; }
+      if (bag <= 0) return false;
+      var live = mons.filter(function (m) { return !m.dead && m.state !== "under" && m.y > B.top; });
+      if (!live.length) return false;
+      live.sort(function (a, b) { return b.y - a.y; });
+      var m = live[0], dx = m.x - TEE_X, dy = m.y - TEE_Y, l = Math.hypot(dx, dy) || 1, lob = m.kind === "shield";
+      var r0 = lob ? 300 : 120, r1 = lob ? Math.min(379, 50 + (l - 120) / 830 * 330) : 380;
+      onDown({ x: sx(TEE_X + dx / l * r0), y: sy(TEE_Y + dy / l * r0) });
+      onMove({ x: sx(TEE_X + dx / l * r1), y: sy(TEE_Y + dy / l * r1) });
+      onUp({});
+      return true;
+    } };
+    `
+  },
   /* gearball is a machine with four switches and four gates, and a tap goes to
      the NEAREST of them: a blind tap in the middle of the band flips the same
      switch forever while the locked gates overflow. So the pilot is the

@@ -127,6 +127,26 @@ ______________________________________________________________________
   or metal, short pinball pins and bumpers, a gacha capsule popping open, a
   game-show buzzer and a real snake hiss.
 
+- [ ] MAIN — **listen to every game's beds looped on the bar** (`seam`,
+  2026-10-17): validated on holepocalypse, then rolled out to the seventeen
+  others and the template. Every window's length was re-measured with
+  `tools/lab/loop-points.mjs` (most moved by a bar or two; bridgessa's tempo
+  was wrong) and every playable re-cut one seam early. Let a level of each
+  biome and the menu run past their first loop, chainring's five beds
+  included.
+
+- [ ] MAIN — **the stars, every game: one easy, three near-flawless.** The
+  meaning is fixed in [docs/LEVELS.md](docs/LEVELS.md) (*The objective, and the
+  stars*) and the motor has the two knobs (`web.levels.stars`,
+  `web.levels.faults` + `Game.levelFaults()`). Done on 2026-10-17, untested by
+  a human: chainring (misses), gearball (objective ×0.4, hearts 7→4, ≤1→2
+  hearts lost), bouncetry (60 % / 90 % / a clear within par 5→3), marshmelt
+  (`[1, 2, 3]`, ≤1→0 hit), arcider (difficulty squeezed to 0.15→0.70 of its
+  span), echomaze (the gate, and the pulses it cost). Play each one and say
+  what is too easy or too hard; then the other eleven, whose mistakes are
+  already counted in most of them (vipera `bites`, triverse lives, slipdeck
+  `busts`, spinshock `crashes`, bridgessa deals down, grudgeon `fell`).
+
 - [ ] AUTO — **update the screenshots, every game.** `make shots GAME=<slug>`
   (`tools/lab/shoot-screens.mjs`) reshoots `assets/image/screen/`; the site
   picks them up on its next build (`make check && make site`).
@@ -164,17 +184,14 @@ ______________________________________________________________________
 
 **Not before the thirteen are validated and in production on Google Play.**
 
-- [ ] CODE — **create `holepocalypse`**, golf against a zombie horde, on the
-  motor. [docs/HOLEPOCALYPSE.md](docs/HOLEPOCALYPSE.md) is the plan of record:
-  the rules the prototypes validated (`prototype/holepocalypse-art.html` is
-  the reference), the motor steps, five biomes, seven zombies and five bosses,
-  ten ball kinds, twenty supers, the thirty levels, the stickers and the
-  village.
-- [ ] MAIN — **generate its artwork and music** from the prompts in
-  [docs/HOLEPOCALYPSE.md](docs/HOLEPOCALYPSE.md#10-the-assets--the-list-and-a-prompt-for-each)
-  (29 images and one track). Already done: the icon (to file under
-  `assets/image/icon/`), the biome 1 fairway and the Walker sheet, both
-  untracked at the repo root until they move to `assets/image/master/`.
+- [ ] MAIN — **playtest `holepocalypse`'s thirty levels on a phone**: the
+  balance is a scripted pilot's (docs/HOLEPOCALYPSE.md §12), the boss HP and
+  the bonus targets above all.
+- [ ] MAIN — decide whether `holepocalypse`'s two supers stay fixed by the
+  level table or become a loadout card before the round (§3 step 7).
+- [ ] MAIN — check every `holepocalypse` sprite and effect on the five
+  fairways in `lab/holepocalypse-fx.html` (`make events` → `/hole-fx`, Debug
+  on): feet on their footprint, effects on their anchor.
 
 ______________________________________________________________________
 

@@ -493,6 +493,34 @@
      stretch of any track — not only the whole file, which is all CONFIG.music
      can describe.
 
+     A SEAM ON THE BAR. The default wrap above crossfades the section's last
+     `fade` seconds into its first ones, which is click-free but not musical:
+     the head starts `fade` seconds early, so its beats land between the
+     tail's, and the loop's first downbeat is faded in from nothing. A section
+     (or CONFIG.music, for every section of the game) that names a `seam`
+     loops the other way. Its `length` is taken as the loop itself — cut on
+     whole bars, so `from + length` is the same beat of the bar as `from` —
+     and every pass advances by exactly that much. The crossfade lasts `seam`
+     seconds of the file and ENDS on the loop point: the outgoing pass plays
+     the bars that lead up to `from + length`, the incoming one plays the bars
+     that lead up to `from` (its pre-roll), both on equal-power curves, and the
+     downbeat lands once, at full level, in the pass that carries on. Where
+     there is no pre-roll to take (`from` near 0) the rest of the crossfade is
+     taken past the loop point instead, out of the music that follows it.
+
+        music: { volume: 0.12, fade: 1.6, seam: 1,
+                 menu: { from: 72, length: 12, rate: 0.85, gain: 0.5 } }
+
+     A gridded section (`bpm` + `beats`) loops on its beats rather than on its
+     length, and so does the beat-locked whole file (CONFIG.music's
+     `loopBeats`): what is left of the file past the loop is the post-roll.
+     A playable's cut is cut one seam early, so its first window has a
+     pre-roll too, and `CONFIG.music.cut` names that window — it is what a
+     null section plays (see cutOf).
+
+     `tools/lab/loop-points.mjs` measures which lengths of a window loop
+     cleanly; docs/MUSIC.md is the procedure.
+
      Scheduling is done with a look-ahead timer against the WebAudio clock,
      which keeps the seam sample-accurate even when the rAF loop is paused.  */
   var Music = (function () {
@@ -520,17 +548,56 @@
        file at speed — the one case where the beat grid (see Beat) still means
        anything, since an offset or a rate moves every beat of it. */
     function resolve(o, dur) {
-      var s = o || {};
+      var s = o || cutOf() || {}, m = CONFIG.music || {};
       var from = clamp(s.from > 0 ? s.from : 0, 0, Math.max(dur - 2, 0));
       var len = s.length > 0 ? Math.min(s.length, dur - from) : dur - from;
       var rate = s.rate > 0 ? clamp(s.rate, 0.25, 4) : 1;
+      var plain = from === 0 && rate === 1 && len >= dur - 0.05;
+      /* The loop a seam wraps on, in seconds of the file: a section's own
+         grid (`beats` of `bpm`), the beat-locked whole file (CONFIG.music's
+         `loopBeats`), or the section's length. */
+      var body = len;
+      if (s.bpm > 0 && s.beats > 0 && s.beats * 60 / s.bpm <= len) body = s.beats * 60 / s.bpm;
+      else if (plain && !(s.bpm > 0) && m.bpm > 0 && m.loopBeats > 0 && m.loopBeats * 60 / m.bpm <= len) {
+        body = m.loopBeats * 60 / m.bpm;
+      }
+      body = Math.max(body, 1);
       return {
         track: trackOf(s), from: from, len: Math.max(len, 1), rate: rate,
         gain: s.gain == null ? 1 : clamp(s.gain, 0, 4),
         fade: s.fade > 0 ? s.fade : fade,
-        plain: from === 0 && rate === 1 && len >= dur - 0.05,
+        body: body, seam: seamOf(s, from, body, dur),
+        plain: plain,
         per: s.bpm > 0 ? 60 / s.bpm : 0, offset: s.beatOffset || 0, beats: s.beats || 0
       };
+    }
+    /* What "the whole of what this build ships" means. A playable embeds a
+       short cut of the track, and a cut looped on the bar carries a pre-roll
+       in front of its window: `CONFIG.music.cut` names that window, and it is
+       what a null section plays. The web build ships the whole track instead
+       and drops the field (tools/build/build.mjs, webMusic). */
+    function cutOf() { var m = CONFIG.music; return (m && m.cut) || null; }
+    /* The bar-locked seam (see above): how much of the crossfade is taken
+       before the loop point (`pre`, out of what precedes `from`) and after it
+       (`post`, out of what follows `from + len`), in seconds of the file —
+       or null for a section that keeps the plain wrap. */
+    function seamOf(s, from, body, dur) {
+      var x = s.seam != null ? s.seam : (CONFIG.music || {}).seam;
+      if (!(x > 0)) return null;
+      x = Math.min(x, body * 0.45);
+      var pre = Math.min(x, from);
+      var post = Math.max(Math.min(x - pre, dur - from - body), 0);
+      // The whole file has nothing on either side to fade over: plain wrap.
+      return pre + post >= 0.05 ? { pre: pre, post: post } : null;
+    }
+    // Equal-power ramp of `param` over [t0, t0 + d]: up to `peak`, or down from it.
+    function bend(param, t0, d, peak, up) {
+      var STEPS = 8;
+      param.setValueAtTime(up ? 0 : peak, t0);
+      for (var i = 1; i <= STEPS; i++) {
+        var u = i / STEPS * Math.PI / 2;
+        param.linearRampToValueAtTime(peak * (up ? Math.sin(u) : Math.cos(u)), t0 + d * i / STEPS);
+      }
     }
     function same(a, b) {
       return !!a && !!b && a.track === b.track && a.from === b.from && a.len === b.len &&
@@ -553,6 +620,7 @@
        wrap.                                                                 */
     function advance(s) {
       var m = CONFIG.music || {};
+      if (s.seam) return s.body;                // the section IS the loop
       if (s.per && s.beats > 0 && s.rate === 1) {
         var own = s.beats * s.per;
         if (own > 0.5 && own <= s.len) return own;
@@ -565,6 +633,7 @@
     }
     // Queue passes until the schedule reaches LOOKAHEAD past "now".
     function schedule(a, buf) {
+      if (cur.seam) { scheduleSeam(a, buf); return; }
       var s = cur, adv = advance(s);
       var f = clamp(s.len - adv, 0.05, s.len * 0.45);
       // The same three lengths in wall-clock seconds: a rate stretches a pass.
@@ -592,6 +661,32 @@
         // whole number of beats after it, so the anchor never moves.
         if (!origin) { var lead = gridLead(s); if (lead !== null) origin = at + lead; }
         nextAt = at + wadv;                     // next pass overlaps the tail
+      }
+    }
+    /* The bar-locked loop. `nextAt` is the wall-clock time `from` plays at —
+       the loop point — and a pass starts its pre-roll ahead of it, so the
+       crossfade into it is [nextAt - pre, nextAt + post] in wall time, the
+       same window the pass before it fades out over. A first pass fades in
+       over that window too, which lands the section on its own downbeat. */
+    function scheduleSeam(a, buf) {
+      var s = cur, sm = s.seam;
+      var wpre = sm.pre / s.rate, wpost = sm.post / s.rate, wbody = s.body / s.rate;
+      var wx = Math.max(wpre + wpost, 0.03);    // a seam with no room still never clicks
+      while (nextAt < a.currentTime + LOOKAHEAD) {
+        var at = Math.max(nextAt, a.currentTime + 0.05 + wpre);
+        var src = a.createBufferSource(), g = a.createGain();
+        src.buffer = buf;
+        if (s.rate !== 1) src.playbackRate.value = s.rate;
+        bend(g.gain, at - wpre, wx, s.gain, true);
+        bend(g.gain, at + wbody - wpre, wx, s.gain, false);
+        src.connect(g); g.connect(master);
+        src.onended = function () { try { src.disconnect(); g.disconnect(); } catch (e) {} };
+        src.start(at - wpre, s.from - sm.pre, sm.pre + s.body + sm.post);
+        src.stop(at + wbody + wx + 0.1);
+        voices.push({ src: src, gain: g });
+        if (voices.length > 6) voices.shift();
+        if (!origin) { var lead = gridLead(s); if (lead !== null) origin = at + lead; }
+        nextAt = at + wbody;
       }
     }
     /* Top the schedule up, resolving the section asked for now that the buffer
@@ -628,7 +723,7 @@
        no way to wrap an element on a window of it. */
     function startTag(src) {
       if (tag) return;
-      var s = want || {};
+      var s = want || cutOf() || {};
       try {
         tag = new Audio(src);
         tag.loop = true;

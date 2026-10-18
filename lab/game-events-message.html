@@ -80,7 +80,11 @@
    fires the row as that Pop.show, and apply rewrites the call (kind and icon
    dropped). And the other way: a callout's style dropdown opens on `notify`,
    which fires the row as a Notify.say of the kind picked beside it, and apply
-   rewrites the call (style, anchor and class dropped).
+   rewrites the call (style, anchor and class dropped). A floating value
+   (`Pop.text`) turns into a callout the same way: its first dropdown reads
+   `text`, a Pop style there fires it as that Pop.show, anchored by default at
+   the value's own point in the world (`at: {x, y}`), and apply rewrites the
+   call (colour, size, tier, life and rise dropped).
 
    APPLY is what makes it stick. What the rows changed goes to POST /api/apply
    (tools/lab/apply-events.mjs), which splices the arguments back into
@@ -634,6 +638,17 @@ function argsFor(call, row, W) {
   if (call.name === "Pop.text") {
     const w = text("word");
     if (w !== undefined) args[2] = w;
+    // Turned into a callout: what Pop.show would be handed instead — at the
+    // value's own point in the world unless the row names an anchor.
+    const as = asPop(row);
+    if (as) {
+      const p = {};
+      if (args[2] != null && args[2] !== "") p.word = String(args[2]);
+      const at = get("select.at").value;
+      if (at === "") p.at = { x: Number(args[0]) || 360, y: Number(args[1]) || 640 };
+      else if (at !== "style") p.at = at;
+      return [as, p];
+    }
   } else if (call.kind === "pop") {
     const w = text("word"), sub = text("sub");
     // Turned into a notice: what Notify.say would be handed instead.
@@ -784,7 +799,7 @@ function refreshReads() {
   document.querySelectorAll(".call").forEach((row) => { if (row._read) row._read(); });
 }
 
-// The Pop style a notice row has been turned into, or "" when it is a notice.
+// The Pop style a notice or a floating-value row has been turned into, or "" when it is not.
 function asPop(row) {
   const as = row && row.querySelector("select.as");
   return as ? as.value : "";
@@ -809,7 +824,7 @@ function fire(call, row) {
     try { target[meth].apply(target, args); }
     catch (e) { note(call.name + " threw: " + e.message); return; }
     // The canvas half only exists while something draws it.
-    if (call.name === "Pop.text") juice(lang, ((args[3] && args[3].life) || 0.9) + 0.4);
+    if (call.name === "Pop.text" && meth === "text") juice(lang, ((args[3] && args[3].life) || 0.9) + 0.4);
   }
 }
 
@@ -892,10 +907,15 @@ function callRow(call, own) {
     : `<input type="text" class="${cls}"${ph ? ` placeholder="${ph}"` : ""} value="${esc(value == null ? "" : value)}">`;
 
   if (call.name === "Pop.text") {
-    // The canvas half: a word at a point in the world, no style and no anchor.
+    /* The canvas half: a word at a point in the world, no style and no
+       anchor. The dropdown is what it is DRAWN as: `text`, or a Pop style it
+       is turned into — then it takes an anchor, its own point by default. */
     const o = call.preview.args[3] || {};
-    bits.push(`<span class="style">text</span>`);
+    bits.push(`<select class="as" title="text, or a Pop style to turn this floating value into a callout — apply rewrites it as Pop.show">` +
+      `<option value="">text</option>${STYLES.map((s) => `<option>${s}</option>`).join("")}</select>`);
     bits.push(field("word", "w", String(call.preview.args[2])));
+    bits.push(`<select class="at" hidden><option value="">world point</option><option value="style">style spot</option>${ANCHORS.map((a) =>
+      `<option>${a}</option>`).join("")}</select>`);
     bits.push(`<span class="meta">${esc(Object.keys(o).map((k) => k + " " + o[k]).join(" · "))}</span>`);
   } else if (call.kind === "pop") {
     const o = call.preview.args[1] || {};
@@ -977,8 +997,26 @@ function callRow(call, own) {
     if (!ctrl) return;
     watch(ctrl, call, name, expr);
   };
-  if (call.name === "Pop.text") bind("input.w", "word", call.args[2]);
-  else if (call.kind === "pop") {
+  if (call.name === "Pop.text") {
+    bind("input.w", "word", call.args[2]);
+    bind("select.as", "as", null);
+    bind("select.at", "at", null);
+    const as = row.querySelector("select.as"), at = row.querySelector("select.at"),
+          meta = row.querySelector(".meta");
+    /* Back to `text`, the anchor goes with it: a floating value has its point,
+       and an anchor left pending would be refused by apply. The canvas options
+       read struck through while they are on their way out. */
+    as._sync = () => {
+      const on = !!as.value;
+      row.classList.toggle("as-pop", on);
+      row.querySelector(".tag").textContent = on ? "Pop.text → Pop.show" : call.name;
+      at.hidden = !on;
+      if (meta) meta.style.textDecoration = on ? "line-through" : "";
+      if (!on && at.value !== at.dataset.was) { at.value = at.dataset.was; at.dispatchEvent(new Event("change")); }
+    };
+    as.addEventListener("change", as._sync);
+    as._sync();
+  } else if (call.kind === "pop") {
     bind("select.style", "style", call.args[0]);
     bind("input.w", "word", opts.word);
     bind("input.s", "sub", opts.sub);
@@ -1915,6 +1953,8 @@ function recInfo() {
 el("btn-rec").onclick = () => recToggle();
 
 fetch("api/games").then((r) => r.json()).then((list) => {
+  // The shell unit is sound only (Sound.ui in packages/): it writes no word to read here.
+  list = list.filter((g) => g.slug !== "shell");
   state.games = {};
   list.forEach((g) => { state.games[g.slug] = g; state.status[g.slug] = g.status; });
   picker.order = list.map((g) => g.slug);

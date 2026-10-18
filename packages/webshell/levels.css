@@ -540,6 +540,15 @@
 #lv-hud .st s.on .lv-sti {
   filter:drop-shadow(0 0 7px rgba(255,212,59,.95)) drop-shadow(0 2px 4px rgba(0,0,0,.6));
 }
+/* the third star lost to the allowance of mistakes: struck, and dimmer than
+   a star still to earn, so it reads as gone rather than as waiting */
+#lv-hud .st s.lost { position:relative; color:rgba(255,255,255,.1); }
+#lv-hud .st s.lost .lv-sti { filter:grayscale(1) brightness(.35) opacity(.3); }
+#lv-hud .st s.lost::after {
+  content:""; position:absolute; left:-2px; right:-2px; top:50%; height:3px;
+  margin-top:-1.5px; border-radius:2px; background:var(--danger, #ff4d5e);
+  transform:rotate(-35deg);
+}
 #lv-hud .goal {
   margin-left:auto; font-style:normal; font-size:21px; line-height:1;
   color:rgba(255,255,255,.6); font-variant-numeric:tabular-nums;
@@ -583,6 +592,9 @@
 .lv-goal .tx b { color:var(--accent); font-variant-numeric:tabular-nums; }
 .lv-goal.done .tx { color:var(--muted); }
 .lv-goal.done .tx b { color:var(--gold); }
+/* the third star's allowance already spent: the row stays, struck */
+.lv-goal.lost { border-color:color-mix(in srgb, var(--danger, #ff4d5e) 55%, var(--panel-line)); opacity:.7; }
+.lv-goal.lost .tx { text-decoration:line-through; text-decoration-color:var(--danger, #ff4d5e); }
 
 /* =========================================================================
    NINETY OF NINETY — the title screen says the game is finished

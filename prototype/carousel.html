@@ -1,0 +1,365 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Carousel</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Carousel — tactics by turning the world.
+// You never move a piece. You pick a cell, and the ring of its six
+// neighbours turns one notch around it: everything standing on the ring goes
+// with it — enemies, your allies, the bombs. The ground stays: a piece turned
+// onto a pit falls (not a brute: too heavy), an ally turned onto a gem picks it up. Then your allies
+// hit an enemy beside them, a bomb beside an enemy goes off, and the enemies
+// walk and bite. Two enemies into the pits with one turn is the move.
+// Question: is moving the board instead of the pieces fun to plan?
+//
+// Tap a cell to preview its turn (red cross: what dies), tap it again to turn.
+// A wall is not on the ring: the ring turns around it, one cell shorter.
+
+// ---- tunables -------------------------------------------------------------
+var RADIUS = 4;
+var PITS = 4, WALLS = 3, GEMS = 4;
+var ALLIES = 3, ALLY_HP = 3;
+var ENEMY_BASE = 4;         // enemies on level 1, one more per level
+var BRUTE_FROM = 2;         // brutes (2 hp, too heavy to fall) from this level
+var BOMBS = 1;
+var BOMB_DMG = 2;
+var STEP = 0.32;            // seconds between two beats of the enemy phase
+
+var W = 720, H = 1280, CY = 640;
+var R = Math.min(660 / ((2 * RADIUS + 1) * Math.sqrt(3)), 660 / (3 * RADIUS + 2));
+
+var FLOOR = 0, PIT = 1, WALL = 2;
+// circular order; on screen +1 turns counter-clockwise
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+// ---- state ----------------------------------------------------------------
+var ground;         // "q,r" -> FLOOR | PIT | WALL
+var gems;           // "q,r" -> true
+var objs;           // list of { kind: ally|grunt|brute|bomb, q, r, hp, x, y, flash, dead, gone }
+var level = 1, turns, gemsTaken, kos, phase, sel = null, spin = -1, queue = [], wait = 0, t = 0;
+var callout = { text: "", at: -9 };
+
+// ---- board ------------------------------------------------------------------
+function key(q, r) { return q + "," + r; }
+function onBoard(q, r) { return Math.abs(q) <= RADIUS && Math.abs(r) <= RADIUS && Math.abs(q + r) <= RADIUS; }
+function px(q, r) { return { x: W / 2 + R * Math.sqrt(3) * (q + r / 2), y: CY + R * 1.5 * r }; }
+function rint(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+function dist(a, b) { var dq = a.q - b.q, dr = a.r - b.r; return Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)); }
+function enemy(o) { return o.kind === "grunt" || o.kind === "brute"; }
+function creature(o) { return o.kind !== "bomb"; }
+function live(list) { return list.filter(function (o) { return !o.dead; }); }
+function objAt(list, q, r) { for (var i = 0; i < list.length; i++) if (!list[i].dead && list[i].q === q && list[i].r === r) return list[i]; return null; }
+
+function ring(q, r) {
+  var out = [];
+  for (var d = 0; d < 6; d++) {
+    var nq = q + AX[d][0], nr = r + AX[d][1];
+    if (onBoard(nq, nr) && ground[key(nq, nr)] !== WALL) out.push([nq, nr]);
+  }
+  return out;
+}
+
+function newLevel() {
+  ground = {}; gems = {}; objs = [];
+  var all = [];
+  for (var q = -RADIUS; q <= RADIUS; q++) for (var r = -RADIUS; r <= RADIUS; r++) if (onBoard(q, r)) { ground[key(q, r)] = FLOOR; all.push([q, r]); }
+  function take(filter) {
+    var c = all.filter(function (p) { return ground[key(p[0], p[1])] === FLOOR && !gems[key(p[0], p[1])] && !objAt(objs, p[0], p[1]) && (!filter || filter(p)); });
+    return c[rint(0, c.length - 1)];
+  }
+  var i, p;
+  for (i = 0; i < PITS; i++) { p = take(function (c) { return dist({ q: c[0], r: c[1] }, { q: 0, r: 0 }) < RADIUS; }); ground[key(p[0], p[1])] = PIT; }
+  for (i = 0; i < WALLS; i++) { p = take(); ground[key(p[0], p[1])] = WALL; }
+  for (i = 0; i < GEMS; i++) { p = take(); gems[key(p[0], p[1])] = true; }
+  for (i = 0; i < ALLIES; i++) add("ally", take(function (c) { return c[1] >= 1; }), ALLY_HP);
+  var n = ENEMY_BASE + level - 1;
+  for (i = 0; i < n; i++) {
+    var brute = level >= BRUTE_FROM && Math.random() < 0.35;
+    add(brute ? "brute" : "grunt", take(function (c) { return c[1] <= 0; }), brute ? 2 : 1);
+  }
+  for (i = 0; i < BOMBS + (level >= 3 ? 1 : 0); i++) add("bomb", take(), 0);
+  turns = 0; gemsTaken = 0; kos = 0; phase = "player"; sel = null; queue = []; callout.text = "";
+}
+
+function add(kind, p, hp) {
+  var s = px(p[0], p[1]);
+  objs.push({ kind: kind, q: p[0], r: p[1], hp: hp, x: s.x, y: s.y, flash: -9 });
+}
+
+// ---- the turn ---------------------------------------------------------------
+// Runs on any list of objects, so the preview can run it on a copy.
+function turnRing(list, cq, cr, dir, fx) {
+  var rg = ring(cq, cr), n = rg.length;
+  if (n < 2) return;
+  var on = rg.map(function (c) { return objAt(list, c[0], c[1]); });
+  on.forEach(function (o, i) { if (o) { var to = rg[(i + dir + n) % n]; o.q = to[0]; o.r = to[1]; } });
+  resolve(list, fx);
+}
+
+function hurt(o, n, fx) {
+  if (o.dead || !creature(o)) return;
+  o.hp -= n; o.flash = t;
+  if (o.hp <= 0) { o.dead = true; o.gone = t; if (fx && enemy(o)) fx.kills++; }
+}
+
+function resolve(list, fx) {
+  // the ground: pits swallow, gems are picked up by allies
+  live(list).forEach(function (o) {
+    var g = ground[key(o.q, o.r)];
+    // a brute is too heavy to fall: it stands on the pit and blocks it
+    if (g === PIT && o.kind !== "brute") { o.dead = true; o.gone = t; o.fell = true; if (fx && enemy(o)) fx.kills++; }
+    else if (o.kind === "ally" && fx && fx.gems[key(o.q, o.r)]) { delete fx.gems[key(o.q, o.r)]; fx.gemsTaken++; }
+  });
+  // bombs go off beside an enemy
+  live(list).forEach(function (b) {
+    if (b.kind !== "bomb" || b.dead) return;
+    var nb = live(list).filter(function (o) { return creature(o) && dist(o, b) === 1; });
+    if (!nb.some(enemy)) return;
+    b.dead = true; b.gone = t; b.boom = true;
+    nb.forEach(function (o) { hurt(o, BOMB_DMG, fx); });
+  });
+  // allies hit the weakest enemy beside them
+  live(list).forEach(function (a) {
+    if (a.kind !== "ally" || a.dead) return;
+    var foes = live(list).filter(function (o) { return enemy(o) && dist(o, a) === 1; }).sort(function (x, y) { return x.hp - y.hp; });
+    if (foes.length) hurt(foes[0], 1, fx);
+  });
+}
+
+function preview(cq, cr) {
+  var copy = objs.map(function (o) { var c = {}; for (var k in o) c[k] = o[k]; c.src = o; return c; });
+  var fx = { kills: 0, gems: Object.assign({}, gems), gemsTaken: 0 };
+  turnRing(copy, cq, cr, spin, fx);
+  return { list: copy, fx: fx };
+}
+
+function play(cq, cr) {
+  var fx = { kills: 0, gems: gems, gemsTaken: 0 };
+  turnRing(objs, cq, cr, spin, fx);
+  turns++; gemsTaken += fx.gemsTaken; kos += fx.kills;
+  if (fx.kills >= 2) { callout.text = fx.kills === 2 ? "Double!" : fx.kills === 3 ? "Triple!" : fx.kills + " in one turn!"; callout.at = t; }
+  sel = null;
+  if (endCheck()) return;
+  phase = "enemy";
+  live(objs).filter(enemy).forEach(function (e) { queue.push(function () { enemyAct(e); endCheck(); }); });
+  queue.push(function () { if (phase === "enemy") phase = "player"; });
+  wait = STEP;
+}
+
+function enemyAct(e) {
+  if (e.dead) return;
+  var allies = live(objs).filter(function (o) { return o.kind === "ally"; });
+  var adj = allies.filter(function (a) { return dist(a, e) === 1; });
+  if (adj.length) { hurt(adj[0], 1); return; }
+  // one step along the shortest walk to a cell beside an ally
+  var prev = {}, start = key(e.q, e.r), qu = [[e.q, e.r]], found = null;
+  prev[start] = null;
+  while (qu.length && !found) {
+    var c = qu.shift();
+    for (var d = 0; d < 6; d++) {
+      var q = c[0] + AX[d][0], r = c[1] + AX[d][1], k = key(q, r);
+      if (prev[k] !== undefined || !onBoard(q, r) || ground[k] !== FLOOR || objAt(objs, q, r)) continue;
+      prev[k] = key(c[0], c[1]); qu.push([q, r]);
+      if (allies.some(function (a) { return dist(a, { q: q, r: r }) === 1; })) { found = k; break; }
+    }
+  }
+  if (!found) return;
+  while (prev[found] !== start) found = prev[found];
+  var s = found.split(",").map(Number);
+  e.q = s[0]; e.r = s[1];
+}
+
+function endCheck() {
+  if (!live(objs).some(function (o) { return o.kind === "ally"; })) { phase = "lost"; queue = []; return true; }
+  if (!live(objs).some(enemy)) { phase = "won"; queue = []; return true; }
+  return false;
+}
+
+// ---- input ------------------------------------------------------------------
+var BUTTONS = [
+  { label: function () { return spin < 0 ? "Clockwise" : "Counter"; }, act: function () { spin = -spin; } },
+  { label: function () { return "Restart"; }, act: function () { newLevel(); } },
+  { label: function () { return phase === "won" ? "Next level" : "Skip level"; }, act: function () { level++; newLevel(); } }
+];
+var BTN_Y = 1150, BTN_W = 210, BTN_H = 84, BTN_GAP = 14;
+function btnX(i) { return (W - BUTTONS.length * BTN_W - (BUTTONS.length - 1) * BTN_GAP) / 2 + i * (BTN_W + BTN_GAP); }
+
+function onDown(x, y) {
+  for (var i = 0; i < BUTTONS.length; i++)
+    if (x >= btnX(i) && x <= btnX(i) + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { BUTTONS[i].act(); return; }
+  if (phase !== "player") return;
+  var best = null, bd = 1e9;
+  for (var k in ground) {
+    var p = k.split(",").map(Number), c = px(p[0], p[1]), d = (c.x - x) * (c.x - x) + (c.y - y) * (c.y - y);
+    if (d < bd) { bd = d; best = p; }
+  }
+  if (!best || bd > R * R) { sel = null; return; }
+  if (sel && sel[0] === best[0] && sel[1] === best[1]) play(best[0], best[1]);
+  else sel = best;
+}
+
+// ---- update / draw ------------------------------------------------------------
+function update(dt) {
+  objs.forEach(function (o) {
+    var p = px(o.q, o.r), k = 1 - Math.exp(-dt * 12);
+    o.x += (p.x - o.x) * k; o.y += (p.y - o.y) * k;
+  });
+  objs = objs.filter(function (o) { return !o.dead || t - o.gone < 0.7; });
+  if (phase === "enemy") { wait -= dt; if (wait <= 0 && queue.length) { queue.shift()(); wait = STEP; } }
+}
+
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+
+function drawObj(o, x, y, s) {
+  var rad = R * 0.55 * s;
+  if (rad <= 0) return;
+  var hit = t - o.flash < 0.25;
+  ctx.beginPath();
+  if (o.kind === "brute") hexPath(x, y, rad * 1.1); else ctx.arc(x, y, rad, 0, 7);
+  ctx.fillStyle = hit ? "#fff" : o.kind === "ally" ? "#4aa3ff" : o.kind === "grunt" ? "#e0533d" : o.kind === "brute" ? "#9c2f2f" : "#2a2a2a";
+  ctx.fill();
+  if (o.kind === "bomb") {
+    ctx.strokeStyle = "#ffb347"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x + rad * 0.5, y - rad * 0.5); ctx.lineTo(x + rad * 0.9, y - rad * 1.0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x + rad * 0.95, y - rad * 1.05, 5 + Math.sin(t * 12) * 2, 0, 7); ctx.fillStyle = "#ffd166"; ctx.fill();
+    return;
+  }
+  for (var h = 0; h < o.hp && !o.dead; h++) {
+    ctx.beginPath(); ctx.arc(x - (o.hp - 1) * 7 + h * 14, y, 5, 0, 7); ctx.fillStyle = "#fff"; ctx.fill();
+  }
+}
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var k, p, c, i;
+  for (k in ground) {
+    p = k.split(",").map(Number); c = px(p[0], p[1]);
+    hexPath(c.x, c.y, R - 2);
+    ctx.fillStyle = ground[k] === PIT ? "#07080b" : ground[k] === WALL ? "#4a4f5c" : "#262a35"; ctx.fill();
+    if (ground[k] === WALL) { hexPath(c.x, c.y - 6, R * 0.7); ctx.fillStyle = "#6b7182"; ctx.fill(); }
+    if (ground[k] === PIT) { ctx.strokeStyle = "rgba(255,255,255,0.08)"; ctx.lineWidth = 2; ctx.stroke(); }
+    if (gems[k]) {
+      ctx.fillStyle = "#ffd166"; ctx.beginPath();
+      ctx.moveTo(c.x, c.y - 14); ctx.lineTo(c.x + 11, c.y); ctx.lineTo(c.x, c.y + 14); ctx.lineTo(c.x - 11, c.y); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  // the selected ring and its preview
+  var pv = null;
+  if (sel && phase === "player") {
+    pv = preview(sel[0], sel[1]);
+    var sc = px(sel[0], sel[1]);
+    hexPath(sc.x, sc.y, R - 4); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke();
+    var rg = ring(sel[0], sel[1]), n = rg.length;
+    rg.forEach(function (cell, idx) {
+      var a = px(cell[0], cell[1]), to = rg[(idx + spin + n) % n], b = px(to[0], to[1]);
+      hexPath(a.x, a.y, R - 6); ctx.fillStyle = "rgba(255,209,102,0.12)"; ctx.fill();
+      // an arrow from this cell toward the one it goes to
+      var mx = a.x + (b.x - a.x) * 0.3, my = a.y + (b.y - a.y) * 0.3, ex = a.x + (b.x - a.x) * 0.7, ey = a.y + (b.y - a.y) * 0.7;
+      var dx = ex - mx, dy = ey - my, L = Math.sqrt(dx * dx + dy * dy); dx /= L; dy /= L;
+      ctx.strokeStyle = "rgba(255,209,102,0.9)"; ctx.fillStyle = "rgba(255,209,102,0.9)"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ex + dx * 10, ey + dy * 10); ctx.lineTo(ex - dy * 8, ey + dx * 8); ctx.lineTo(ex + dy * 8, ey - dx * 8); ctx.closePath(); ctx.fill();
+    });
+  }
+
+  // pieces
+  objs.forEach(function (o) {
+    var s = o.dead ? Math.max(0, 1 - (t - o.gone) / 0.7) : 1;
+    drawObj(o, o.x, o.y, s);
+    if (o.dead && o.boom) {
+      var e = (t - o.gone) / 0.7;
+      ctx.strokeStyle = "rgba(255,179,71," + (1 - e) + ")"; ctx.lineWidth = 8;
+      ctx.beginPath(); ctx.arc(o.x, o.y, R * (0.5 + e * 1.6), 0, 7); ctx.stroke();
+    }
+  });
+
+  // where each piece lands, and what dies, if the selected ring turns
+  if (pv) {
+    pv.list.forEach(function (o) {
+      var src = o.src;
+      if (src.dead) return;
+      var a = px(o.q, o.r);
+      if (o.q !== src.q || o.r !== src.r) {
+        ctx.globalAlpha = 0.35; drawObj(src, a.x, a.y, 0.8); ctx.globalAlpha = 1;
+      }
+      if (o.dead && creature(o)) {
+        ctx.strokeStyle = enemy(o) ? "#ff3030" : "#c77dff"; ctx.lineWidth = 7; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(a.x - 16, a.y - 16); ctx.lineTo(a.x + 16, a.y + 16); ctx.moveTo(a.x + 16, a.y - 16); ctx.lineTo(a.x - 16, a.y + 16); ctx.stroke();
+      }
+    });
+  }
+
+  // HUD
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 40px sans-serif"; ctx.fillText("Level " + level, 30, 66);
+  ctx.font = "28px sans-serif";
+  ctx.fillText("Turns " + turns + "   knocked out " + kos + "   gems " + gemsTaken + " / " + GEMS, 30, 108);
+  ctx.fillStyle = "#9aa0b0"; ctx.font = "23px sans-serif";
+  ctx.fillText("Tap a cell to preview its ring turning, tap again to turn it.", 30, 150);
+  ctx.fillText("Pits swallow. Allies hit an enemy beside them after the turn.", 30, 180);
+  ctx.fillText("A bomb beside an enemy goes off. Red cross: knocked out.", 30, 210);
+
+  if (t - callout.at < 1.4 && callout.text) {
+    var e = (t - callout.at) / 1.4;
+    ctx.globalAlpha = 1 - e * e; ctx.fillStyle = "#ffd166"; ctx.textAlign = "center";
+    ctx.font = "bold " + Math.round(64 + 20 * (1 - e)) + "px sans-serif";
+    ctx.fillText(callout.text, W / 2, 300 - e * 30); ctx.globalAlpha = 1;
+  }
+  if (phase === "won" || phase === "lost") {
+    ctx.fillStyle = "rgba(10,11,14,0.72)"; ctx.fillRect(0, 520, W, 220);
+    ctx.textAlign = "center"; ctx.fillStyle = phase === "won" ? "#5fd38a" : "#ff5a5a"; ctx.font = "bold 56px sans-serif";
+    ctx.fillText(phase === "won" ? "Cleared in " + turns + " turns" : "All allies down", W / 2, 610);
+    ctx.fillStyle = "#e8e8f0"; ctx.font = "28px sans-serif";
+    ctx.fillText(phase === "won" ? "Gems " + gemsTaken + " / " + GEMS : "Restart, or skip the level", W / 2, 680);
+  }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 28px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    var hot = i === 2 && phase === "won";
+    ctx.fillStyle = hot ? "#5fd38a" : "#2c303c"; ctx.fillRect(btnX(i), BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = hot ? "#10261a" : "#e8e8f0"; ctx.fillText(BUTTONS[i].label(), btnX(i) + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+newLevel();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

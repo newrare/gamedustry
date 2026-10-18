@@ -994,9 +994,17 @@
       "text": "Installer",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Legendary": {
+      "text": "Légendaire",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rare": {
+      "text": "Rare",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
@@ -1940,6 +1948,10 @@
       "text": "Combo perdu",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Epic": {
+      "text": "Epique",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-10-14"
@@ -1948,9 +1960,17 @@
       "text": "Installer",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Legendary": {
+      "text": "Légendaire",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rare": {
+      "text": "Rare",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -2009,6 +2029,10 @@
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap to close": {
+      "text": "Touche pour fermer",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
@@ -2352,6 +2376,10 @@
       "text": "Combo",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Epic": {
+      "text": "Epique",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-10-14"
@@ -2364,6 +2392,10 @@
       "text": "Jouer au jeu complet",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Rare": {
+      "text": "Rare",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
       "at": "2026-10-14"
@@ -2371,6 +2403,10 @@
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap to close": {
+      "text": "Touche pour fermer",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
@@ -2860,6 +2896,14 @@
       "text": "Vise le <b>meilleur score</b>",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.Common": {
+      "text": "Commun",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Epic": {
+      "text": "Epique",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-10-14"
@@ -2868,9 +2912,17 @@
       "text": "Installer",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Legendary": {
+      "text": "Légendaire",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rare": {
+      "text": "Rare",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
@@ -3024,6 +3076,14 @@
       "text": "Camp rouge",
       "at": "2026-10-14"
     },
+    "army.js:fr.away": {
+      "text": "En mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.backAlive": {
+      "text": "Rescapé",
+      "at": "2026-10-18"
+    },
     "army.js:fr.bandBlue": {
       "text": "Bleu",
       "at": "2026-09-30"
@@ -3040,9 +3100,45 @@
       "text": "Rouge",
       "at": "2026-09-30"
     },
+    "army.js:fr.bandTitle": {
+      "text": "Ton armée",
+      "at": "2026-10-18"
+    },
     "army.js:fr.bandTurn": {
       "text": "Transfuge",
       "at": "2026-09-30"
+    },
+    "army.js:fr.campNone": {
+      "text": "Le camp est vide",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.campPosts": {
+      "text": "Postes",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.campRoll": {
+      "text": "Au camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.campSub": {
+      "text": "Un officier affecté à un poste ne peut plus combattre et ne peut plus partir en mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.campTitle": {
+      "text": "Camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.cancel": {
+      "text": "Annuler",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.captiveTap": {
+      "text": "Touche une carte pour la prendre",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.captiveTitle": {
+      "text": "Butin de victoire",
+      "at": "2026-10-18"
     },
     "army.js:fr.collTitle": {
       "text": "Collection",
@@ -3096,9 +3192,125 @@
       "text": "Défense",
       "at": "2026-10-14"
     },
+    "army.js:fr.dfDrop": {
+      "text": "Retirer de la défense",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfFront": {
+      "text": "L'ennemi attaque ici",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfNote": {
+      "text": "Place ton drapeau, puis protège-le avec tes cartes et tes objets.",
+      "at": "2026-10-18"
+    },
     "army.js:fr.dfOff": {
       "text": "Absent",
       "at": "2026-10-14"
+    },
+    "army.js:fr.dfPick": {
+      "text": "Placer une carte",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfPrisoners1": {
+      "text": "1 prisonnier",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfRepLost": {
+      "text": "Le drapeau est tombé",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfRepNoneSub": {
+      "text": "Aucun assaut pour l'instant",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfStampLost": {
+      "text": "Capturé",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfSubFlag": {
+      "text": "Place tout d'abord ton drapeau",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfSubNew": {
+      "text": "Protège le drapeau, puis valide",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfTake": {
+      "text": "Placer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfTextHeld": {
+      "text": "L'armée rouge a attaqué ton camp sans jamais atteindre le drapeau, mais certains de ses soldats sont restés.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfTextLost": {
+      "text": "L'armée rouge a percé ta défense et pris le drapeau.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfTipHigh": {
+      "text": "Une défense qui résiste à presque tous les assauts.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfTipLow": {
+      "text": "Eloigne le drapeau du front et remplis les cases autour : chaque trou est une brèche.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfUndo": {
+      "text": "Annuler les changements",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfValidate": {
+      "text": "Valider",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfValidated": {
+      "text": "Défense validée",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.dfValidatedSub": {
+      "text": "Elle garde le camp pendant ton absence",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evBad": {
+      "text": "Mauvaise nouvelle",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evBoard": {
+      "text": "Nouvelles missions au tableau",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evEscaped": {
+      "text": "Evasion",
+      "at": "2026-10-17"
+    },
+    "army.js:fr.evEyebrow": {
+      "text": "Vie du camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evGood": {
+      "text": "Bonne nouvelle",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evJailLater": {
+      "text": "+{h} en prison",
+      "at": "2026-10-17"
+    },
+    "army.js:fr.evJoins": {
+      "text": "Rejoint ton armée",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evLeaves": {
+      "text": "Quitte le camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evTent": {
+      "text": "Nouvelles recrues à la tente",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.evTentBurn": {
+      "text": "Plus de recrues jusqu'au prochain renouvellement",
+      "at": "2026-10-18"
     },
     "army.js:fr.f_all": {
       "text": "Toutes",
@@ -3116,6 +3328,38 @@
       "text": "Manquantes",
       "at": "2026-10-14"
     },
+    "army.js:fr.fallenEyebrow1": {
+      "text": "Une carte est perdue",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fallenFoot1": {
+      "text": "Son nom est inscrit au registre. Qui sait, la tente de recrutement retrouvera peut-être cette carte en vie.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fallenFootN": {
+      "text": "Leurs noms sont inscrits au registre. Qui sait, la tente de recrutement en retrouvera peut-être une en vie.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fallenOpen": {
+      "text": "Ouvrir le registre",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fateHurt": {
+      "text": "Blessée",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fateLost": {
+      "text": "Perdue",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fateUp": {
+      "text": "Promue",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.fileHint": {
+      "text": "Touche la carte pour la retourner",
+      "at": "2026-10-18"
+    },
     "army.js:fr.fileOpen": {
       "text": "Lire la fiche de cet officier",
       "at": "2026-10-14"
@@ -3125,8 +3369,8 @@
       "at": "2026-10-14"
     },
     "army.js:fr.fillBest": {
-      "text": "Auto-complétion",
-      "at": "2026-09-30"
+      "text": "Compléter",
+      "at": "2026-10-18"
     },
     "army.js:fr.filled1": {
       "text": "1 carte ajoutée",
@@ -3164,6 +3408,22 @@
       "text": "Enrôle cet officier pour lire sa fiche",
       "at": "2026-10-14"
     },
+    "army.js:fr.hire": {
+      "text": "Recruter",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.hurtEyebrow1": {
+      "text": "Direction l'infirmerie",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.hurtTitle": {
+      "text": "Blessés",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.inCamp": {
+      "text": "Déjà au camp",
+      "at": "2026-10-18"
+    },
     "army.js:fr.infFree": {
       "text": "Lit libre",
       "at": "2026-10-14"
@@ -3192,6 +3452,38 @@
       "text": "Verrouillé",
       "at": "2026-10-14"
     },
+    "army.js:fr.logEmpty": {
+      "text": "Aucune escouade n'est rentrée.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.lostBattle": {
+      "text": "Tombée au combat",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.lostDesert": {
+      "text": "A déserté le camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.lostMissionAny": {
+      "text": "Perdue en mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.misBoard": {
+      "text": "Tableau des missions",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.misLog": {
+      "text": "Rapports",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.misTitle": {
+      "text": "Missions",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.needMore1": {
+      "text": "Encore 1 carte pour envoyer l'escouade",
+      "at": "2026-10-18"
+    },
     "army.js:fr.next": {
       "text": "Suivant",
       "at": "2026-10-14"
@@ -3200,6 +3492,10 @@
       "text": "Détruit par : {g}",
       "at": "2026-10-14"
     },
+    "army.js:fr.objGhostBand": {
+      "text": "Termine le biome {b} pour l'obtenir",
+      "at": "2026-10-18"
+    },
     "army.js:fr.objGhostNone": {
       "text": "Pas encore disponible",
       "at": "2026-10-14"
@@ -3207,6 +3503,26 @@
     "army.js:fr.objKind": {
       "text": "Objet",
       "at": "2026-10-14"
+    },
+    "army.js:fr.oddsLabel": {
+      "text": "Chances de réussite",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.pd_inf": {
+      "text": "Lits à l'infirmerie",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.pd_ops": {
+      "text": "Emplacements de mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.pd_pri": {
+      "text": "Cellules dans la prison",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.penLose1": {
+      "text": "1 carte perdue",
+      "at": "2026-10-18"
     },
     "army.js:fr.pickAll": {
       "text": "Tous les grades",
@@ -3219,6 +3535,50 @@
     "army.js:fr.pickTitle": {
       "text": "Choisis une carte",
       "at": "2026-10-14"
+    },
+    "army.js:fr.postDrop": {
+      "text": "Relever cet officier",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.postPick": {
+      "text": "Choisis un officier",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.postTake": {
+      "text": "Affecter cette carte au poste",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_cmd": {
+      "text": "Camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_cook": {
+      "text": "Cuisine",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_drill": {
+      "text": "Formation",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_inf": {
+      "text": "Infirmerie",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_ops": {
+      "text": "Missions",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.post_pri": {
+      "text": "Prison",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.postsTitle": {
+      "text": "Gestion",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.prepare": {
+      "text": "Préparer",
+      "at": "2026-10-18"
     },
     "army.js:fr.prev": {
       "text": "Précédent",
@@ -3244,9 +3604,153 @@
       "text": "Prison",
       "at": "2026-10-14"
     },
+    "army.js:fr.readReport": {
+      "text": "Rapport",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.ready": {
+      "text": "Prêt",
+      "at": "2026-10-18"
+    },
     "army.js:fr.recruit": {
       "text": "Commandement",
       "at": "2026-10-14"
+    },
+    "army.js:fr.recruitTitle": {
+      "text": "Tente de recrutement",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.regBack": {
+      "text": "Retrouvée vivante, de retour en service",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.regNone": {
+      "text": "Aucune carte perdue pour l'instant. Les cartes tombées au combat ou en mission sont inscrites ici.",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.regSec": {
+      "text": "Cartes perdues",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.regTitle": {
+      "text": "Registre",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.repClose": {
+      "text": "Touche n'importe où pour fermer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.repCollect": {
+      "text": "Touche n'importe où pour récupérer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.repEyebrow": {
+      "text": "Rapport de mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.repLose": {
+      "text": "Echec",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.repWin": {
+      "text": "Réussite",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.role_cmd": {
+      "text": "Au commandement",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.role_cook": {
+      "text": "Cuisinier du camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.role_drill": {
+      "text": "Instructeur de formation",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.role_inf": {
+      "text": "Chef de l'infirmerie",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.role_ops": {
+      "text": "Officier des missions",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.runBack": {
+      "text": "De retour au camp",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.rwSticker": {
+      "text": "Un sticker",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.send": {
+      "text": "Envoyer l'escouade",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.sent": {
+      "text": "Escouade en route",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.sold": {
+      "text": "Recruté",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.soon": {
+      "text": "D'un instant à l'autre",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.squadDrop": {
+      "text": "Retirer cette carte de l'escouade",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.squadFull": {
+      "text": "L'escouade est complète",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.squadSec": {
+      "text": "L'escouade",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.squadTake": {
+      "text": "Ajouter cette carte à l'escouade",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.stAway": {
+      "text": "En mission",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.stDeck": {
+      "text": "En formation",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.stHurt": {
+      "text": "Blessée",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.stIdle": {
+      "text": "Disponible",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.surEyebrow": {
+      "text": "Le commandant ennemi",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.surNo": {
+      "text": "Continuer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.surTap": {
+      "text": "Touche pour continuer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.surTitle": {
+      "text": "Se rendre ?",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.surYes": {
+      "text": "Se rendre",
+      "at": "2026-10-18"
     },
     "army.js:fr.tab_coll": {
       "text": "Collection",
@@ -3256,13 +3760,77 @@
       "text": "Deck",
       "at": "2026-10-14"
     },
+    "army.js:fr.tab_mis": {
+      "text": "Missions",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.tab_posts": {
+      "text": "Gestion",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.tab_reg": {
+      "text": "Registre",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.tab_rep": {
+      "text": "Rapport",
+      "at": "2026-10-18"
+    },
     "army.js:fr.tab_roll": {
       "text": "Camp",
       "at": "2026-10-14"
     },
+    "army.js:fr.tab_tent": {
+      "text": "Recrues",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.tapContinue": {
+      "text": "Touche n'importe où pour continuer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.theSquad": {
+      "text": "L'escouade",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.tooPoor": {
+      "text": "Pas assez de pièces",
+      "at": "2026-10-18"
+    },
     "army.js:fr.turncoat": {
       "text": "Transfuge",
       "at": "2026-10-14"
+    },
+    "army.js:fr.upClose": {
+      "text": "Touche pour fermer",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.upEyebrow": {
+      "text": "Une carte progresse",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.upNext": {
+      "text": "Touche pour la suivante",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.upTitle": {
+      "text": "Promotion !",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.wDay": {
+      "text": "jour",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.wDays": {
+      "text": "jours",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.wHour": {
+      "text": "heure",
+      "at": "2026-10-18"
+    },
+    "army.js:fr.wHours": {
+      "text": "heures",
+      "at": "2026-10-18"
     },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
@@ -3320,6 +3888,10 @@
       "text": "Gestion, stratégie et <b>mémorisation</b>",
       "at": "2026-10-14"
     },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Face cachée",
+      "at": "2026-10-18"
+    },
     "manifest.json:store.copy.fr.lines.2.kicker": {
       "text": "Collection et construction de Deck",
       "at": "2026-10-14"
@@ -3328,9 +3900,541 @@
       "text": "30 stages",
       "at": "2026-10-14"
     },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Tout se paie",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.1.lore.fr": {
+      "text": "Mae a appris à disparaître dans la foule d'un marché en volant des pommes. Aujourd'hui, elle vole des plans de bataille, mais laisse toujours un trognon de pomme à leur place.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.13.lore.fr": {
+      "text": "Justin emporte un double de tout, au cas où. Son sac pèse plus lourd que lui. Il a sauvé le régiment onze fois.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.14.lore.fr": {
+      "text": "Kay entend un piège enterré faire tic-tac à vingt pas. Elle le désamorce, garde la poudre et s'en sert pour allumer les bougies d'anniversaire du régiment.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.15.lore.fr": {
+      "text": "Sol a désamorcé trois cents pièges et en a fabriqué quatre cents, pour s'entraîner. Il parle à chaque mèche qu'il coupe. Aucune ne lui a encore répondu.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.16.lore.fr": {
+      "text": "Quand Mina traverse un champ de mines en fredonnant, les mines se tiennent tranquilles. Les ingénieurs jurent que ça ne marche pas comme ça. Mina jure que si.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.2.lore.fr": {
+      "text": "Un maître du déguisement qui possède quarante fausses moustaches et une vraie. Personne ne sait jamais laquelle, pas même Otto.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.20.lore.fr": {
+      "text": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. A l'aube, il l'a coupé en deux, par principe.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.21.lore.fr": {
+      "text": "Frank Lee dit exactement ce qu'il pense. Et ce qu'il pense, c'est « Chargez ! ». Il est si franc qu'aucun leurre ne l'a jamais trompé.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.23.lore.fr": {
+      "text": "Sergent depuis cinquante ans, il est fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.24.lore.fr": {
+      "text": "Fils de bûcheron, Tim s'est engagé de ne jamais couper du bois. Mais dès le premier jour, l'armée lui a tendu une hache. ",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.25.lore.fr": {
+      "text": "Axel dit que le plus court des chemins passe par la palissade. Depuis ses neuf ans, il ne franchi plus de portails.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.26.lore.fr": {
+      "text": "Holly abat une palissade en trois coups et la reconstruit en quatre. Elle appelle ça redécorer le camp ennemi.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.30.lore.fr": {
+      "text": "Doug a été nommé capitaine parce qu'il creusait les tranchées plus vite que tout le monde. Personne ne lui avait expliqué qu’un capitaine était censé donner des ordres plutôt que de continuer à creuser.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.33.lore.fr": {
+      "text": "Rocco passe à travers les rochers, pas autour. L'intendant a renoncé à lui commander des pioches neuves. Désormais, il lui commande des rochers neufs, pour l'entraînement.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.34.lore.fr": {
+      "text": "Flint Eastwood prononce quatre mots par jour et n'en gaspille aucun. Les rochers entendent « Bougez ! » et, allez savoir comment, ils bougent.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.35.lore.fr": {
+      "text": "La capitaine Gran Knight savait déjà briser des montagnes quand la guerre n'avait pas encore de nom. Elle est petite, elle est très vieille, mais aucun rocher du royaume n'ose lui barrer la route.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.36.lore.fr": {
+      "text": "Wayne tient sa carte à l'envers et trouve quand même son chemin. Personne n'a jamais compris comment. Wayne non plus.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.39.lore.fr": {
+      "text": "Le major Hector Vane ne s'est jamais perdu, même s'il a égaré un régiment le temps d'un week-end. On l'a retrouvé exactement là où il l'avait laissé.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.41.lore.fr": {
+      "text": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. A quatre-vingt-deux ans, les forêts s'écartent encore devant lui par respect.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.43.lore.fr": {
+      "text": "On a mis Val Ore au défi de passer une nuit dans la crypte hantée. Elle en est sortie à l'aube avec le chapeau d'un fantôme.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.44.lore.fr": {
+      "text": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas, mais la paperasse, si.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.47.lore.fr": {
+      "text": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, (ni de sa belle-mère). A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.48.lore.fr": {
+      "text": "Constance a prêté serment sur un livre à cadenas, puis en a perdu la clé. Depuis, elle tient toutes ses promesses, par précaution.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.49.lore.fr": {
+      "text": "Keith garde les ordres secrets de l'armée dans un livre enchaîné à son poignet. Il dort avec, mange avec. Il a même traversé une rivière à la nage avec.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.60.lore.fr": {
+      "text": "Ima est si petite qu'elle se cache dans sa propre capuche. Le camp l'envoie voler des secrets mais pour l'instant, elle a volé trois cuillères et une chaussette.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.cast.7.lore.fr": {
+      "text": "Son seul travail : crier son propre nom. Il a fallu une semaine à l'armée pour comprendre que « Luke Out ! » voulait dire « Attention ! ».",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.0.text.fr": {
+      "text": "Pour la dernière saucisse, évidemment. {c} en ressort avec un œil au beurre noir et un lit à l'infirmerie.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.0.title.fr": {
+      "text": "Une bagarre éclate",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.1.text.fr": {
+      "text": "Quelqu'un s'est glissé sous la tente de commandement et a filé avec un ticket. Le garde jure n'avoir rien vu.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.1.title.fr": {
+      "text": "Un voleur de nuit",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.11.title.fr": {
+      "text": "Fièvre à l'infirmerie",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.12.title.fr": {
+      "text": "Accident à l'entraînement",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.13.title.fr": {
+      "text": "Un duel d'honneur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.16.title.fr": {
+      "text": "Fausse route",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.19.title.fr": {
+      "text": "Perdu aux latrines",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.20.title.fr": {
+      "text": "Un volontaire",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.21.title.fr": {
+      "text": "La réputation de la cuisinière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.22.text.fr": {
+      "text": "En creusant de nouvelles latrines, les sapeurs sont tombés sur un vieux coffre rempli de pièces.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.22.title.fr": {
+      "text": "Un trésor enterré",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.23.text.fr": {
+      "text": "Un marchand ambulant a passé la nuit au camp. Ila payé son souper avec un ticket.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.23.title.fr": {
+      "text": "Le cadeau d'un marchand",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.24.title.fr": {
+      "text": "Un grand festin",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.25.title.fr": {
+      "text": "La soupe de grand-mère",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.27.title.fr": {
+      "text": "La leçon d'un vétéran",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.28.title.fr": {
+      "text": "Des lettres du pays",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.29.text.fr": {
+      "text": "Le camp a vendu des bottes en trop et de vieux casques à très bon prix.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.29.title.fr": {
+      "text": "Des marchands passagers",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.31.title.fr": {
+      "text": "Une trouvaille",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.32.text.fr": {
+      "text": "Les enfants du village sont venus voir les soldats et ont donné un sticker pour la collection.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.32.title.fr": {
+      "text": "Le cadeau d'un enfant",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.33.text.fr": {
+      "text": "Les éclaireurs ont rapportés de nouvelles missions. Le tableau des missions a été renouvelées.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.33.title.fr": {
+      "text": "De nouveaux renseignements",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.34.text.fr": {
+      "text": "L'odeur de la cuisine a attiré du monde. De nouvelles têtes attendent à la tente de recrutement.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.34.title.fr": {
+      "text": "Foule à la tente",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.35.title.fr": {
+      "text": "Un raccourci",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.36.title.fr": {
+      "text": "Une belle journée",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.37.title.fr": {
+      "text": "Le village te remercie",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.38.text.fr": {
+      "text": "Le potager du camp a donné plus que ce qu'il fallait. Le surplus s'est vendu contre deux tickets.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.38.title.fr": {
+      "text": "Une bonne récolte",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.39.title.fr": {
+      "text": "Une médaille",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.4.text.fr": {
+      "text": "La moitié du camp a passé la nuit à gémir. Les cas les plus graves sont à l'infirmerie.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.4.title.fr": {
+      "text": "Ragoût douteux",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.5.text.fr": {
+      "text": "Une lanterne s'est renversée entre les sacs de la réserve. Le feu est éteint, mais il faut racheter ce qui a été brûlé.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.5.title.fr": {
+      "text": "Incendie dans la réserve",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.events.list.8.title.fr": {
+      "text": "La tente abattue par la tempête",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.0.name.fr": {
+      "text": "Charpentier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.0.name.frF": {
+      "text": "Charpentière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.10.name.fr": {
+      "text": "Cartographe",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.11.name.fr": {
+      "text": "Analyste du renseignement",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.12.name.fr": {
+      "text": "Officier de liaison",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.12.name.frF": {
+      "text": "Officière de liaison",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.13.name.fr": {
+      "text": "Transmetteur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.13.name.frF": {
+      "text": "Transmetteuse",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.14.name.fr": {
+      "text": "Chef d'expédition",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.14.name.frF": {
+      "text": "Cheffe d'expédition",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.15.name.fr": {
+      "text": "Chirurgien",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.15.name.frF": {
+      "text": "Chirurgienne",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.16.name.fr": {
+      "text": "Infirmier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.16.name.frF": {
+      "text": "Infirmière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.17.name.fr": {
+      "text": "Brancardier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.17.name.frF": {
+      "text": "Brancardière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.18.name.fr": {
+      "text": "Pharmacien",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.18.name.frF": {
+      "text": "Pharmacienne",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.19.name.fr": {
+      "text": "Médecin",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.2.name.fr": {
+      "text": "Aumônier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.20.name.fr": {
+      "text": "Surveillant",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.20.name.frF": {
+      "text": "Surveillante",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.21.name.fr": {
+      "text": "Interrogateur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.21.name.frF": {
+      "text": "Interrogatrice",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.22.name.fr": {
+      "text": "Garde",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.23.name.fr": {
+      "text": "Geôlier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.23.name.frF": {
+      "text": "Geôlière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.24.name.fr": {
+      "text": "Juge",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.25.name.fr": {
+      "text": "Cuisinier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.25.name.frF": {
+      "text": "Cuisinière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.26.name.fr": {
+      "text": "Boulanger",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.26.name.frF": {
+      "text": "Boulangère",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.27.name.fr": {
+      "text": "Boucher",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.27.name.frF": {
+      "text": "Bouchère",
+      "at": "2026-10-17"
+    },
+    "manifest.json:web.army.jobs.28.name.fr": {
+      "text": "Diététicien",
+      "at": "2026-10-17"
+    },
+    "manifest.json:web.army.jobs.28.name.frF": {
+      "text": "Diététicienne",
+      "at": "2026-10-17"
+    },
+    "manifest.json:web.army.jobs.29.name.fr": {
+      "text": "Brasseur",
+      "at": "2026-10-17"
+    },
+    "manifest.json:web.army.jobs.29.name.frF": {
+      "text": "Brasseuse",
+      "at": "2026-10-17"
+    },
+    "manifest.json:web.army.jobs.4.name.fr": {
+      "text": "Gouverneur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.4.name.frF": {
+      "text": "Gouverneure",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.5.name.fr": {
+      "text": "Instructeur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.5.name.frF": {
+      "text": "Instructrice",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.6.name.fr": {
+      "text": "Maître d'armes",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.7.name.fr": {
+      "text": "Tacticien",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.7.name.frF": {
+      "text": "Tacticienne",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.8.name.fr": {
+      "text": "Moniteur commando",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.8.name.frF": {
+      "text": "Monitrice commando",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.9.name.fr": {
+      "text": "Ecuyer",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.jobs.9.name.frF": {
+      "text": "Ecuyère",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.10.title.fr": {
+      "text": "Le pari de Grubnik",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.11.title.fr": {
+      "text": "Le pont de cordes",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.13.title.fr": {
+      "text": "Le convoi égaré",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.14.title.fr": {
+      "text": "Le conseil de la taverne",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.15.title.fr": {
+      "text": "Tempête sur le col",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.16.title.fr": {
+      "text": "Des rochers sur la route",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.17.title.fr": {
+      "text": "La fête des moissons",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.20.title.fr": {
+      "text": "Le moulin hanté",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.21.title.fr": {
+      "text": "La hache de Tim Burr",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.24.title.fr": {
+      "text": "L'autel des crânes",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.27.title.fr": {
+      "text": "La charrette d'argent",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.43.title.fr": {
+      "text": "L'enlèvement de la cuisinière",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.44.title.fr": {
+      "text": "Le drapeau rouge",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.45.title.fr": {
+      "text": "Les lettres du maréchal",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.48.brief.fr": {
+      "text": "Chaque automne, les gobelins tiennent la foire de la Crasse sous la montagne, où tout se vend, y compris des tickets rares et la solde du camp rouge. Les mises sont hautes et les dés pipés. Envoie une escouade aux poches profondes et aux nerfs solides.",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.48.title.fr": {
+      "text": "La foire de la Crasse",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.army.missions.list.49.title.fr": {
+      "text": "Le sommet du Vieux Rocher",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.helpRules.0": {
       "text": "Chaque carte possède un particularité, un <b>Grade</b> (1 - 10) et un <b>Rang</b> (S - E). Le plus haut gagne.",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Alive": {
+      "text": "Vivants",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.An ally falls": {
       "text": "Un allié tombe",
@@ -3339,6 +4443,18 @@
     "manifest.json:web.copy.fr.strings.An ally is wounded": {
       "text": "Un allié est blessé",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Army lost": {
+      "text": "Armée perdue",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.At the start of the battle": {
+      "text": "Au début de la bataille",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Basic": {
+      "text": "Bannal",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Bewitched!": {
       "text": "Ensorcelé !",
@@ -3352,9 +4468,45 @@
       "text": "Livre brûlé",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Camp taken!": {
+      "text": "Camp conquis !",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Captain": {
+      "text": "Capitaine",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Captive": {
+      "text": "Prisonnier",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Card lost": {
+      "text": "Carte perdue",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Cards": {
+      "text": "Cartes",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Colonel": {
+      "text": "Colonel",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Common": {
+      "text": "Commun",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": {
       "text": "L'éclaireur évite les combats et révèle à distance la force ennemi.",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Enemy camp": {
+      "text": "Camp ennemi",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Epic": {
+      "text": "Epique",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Fence chopped": {
       "text": "Barrière abattue",
@@ -3364,17 +4516,53 @@
       "text": "Barrière !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Fight again": {
+      "text": "Rejouer",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Flag": {
+      "text": "Drapeau",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Flag captured": {
       "text": "Drapeau capturé",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Flag captured!": {
+      "text": "Drapeau capturé !",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Foes": {
+      "text": "Ennemis",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Foes beaten": {
+      "text": "Ennemis vaincus",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Forest": {
       "text": "Forêt",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Forest crossed": {
+      "text": "Forêt traversée",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.General": {
+      "text": "Général",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Infirmary": {
+      "text": "Infirmerie",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Infirmary full": {
+      "text": "Infirmerie pleine",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
@@ -3384,21 +4572,61 @@
       "text": "L'espion peu battre un maréchal mais il n'est pas fait pour le champ de bataille.",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Legendary": {
+      "text": "Légendaire",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Lieutenant": {
+      "text": "Lieutenant",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Lost": {
+      "text": "Perdus",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Lost in the forest": {
       "text": "Perdu en forêt",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Major": {
+      "text": "Major",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Marshal": {
+      "text": "Maréchal",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.No card can move": {
       "text": "Plus aucune carte ne bouge",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.No foe beaten yet": {
+      "text": "Aucun ennemi vaincu",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.No prisoners yet": {
+      "text": "Aucun prisonnier",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.No wounds": {
       "text": "Aucune blessure",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Nobody wounded yet": {
+      "text": "Aucun blessé",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Object": {
       "text": "Objet",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Only a general can never turn traitor": {
+      "text": "Seul un général ne trahit jamais",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Out of reach": {
+      "text": "Hors de portée",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Out of the battle": {
       "text": "Hors de combat",
@@ -3408,9 +4636,25 @@
       "text": "Jouer au jeu complet",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Precise!": {
+      "text": "Précis !",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Prison": {
+      "text": "Prison",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Prison full": {
+      "text": "Prison pleine",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Prisoner taken": {
       "text": "Prisonnier capturé",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Rare": {
+      "text": "Rare",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Retrieve the enemy <b>flag</b>": {
       "text": "Récupère le <b>drapeau</b> ennemi",
@@ -3428,9 +4672,21 @@
       "text": "Rocher !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Sapper": {
+      "text": "Sapeur",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Scout": {
+      "text": "Eclaireur",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Sergeant": {
+      "text": "Sergent",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Skull": {
       "text": "Crâne",
@@ -3439,6 +4695,18 @@
     "manifest.json:web.copy.fr.strings.Skull shattered": {
       "text": "Crâne brisé",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Slot locked": {
+      "text": "Emplacement verrouillé",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Spotted": {
+      "text": "Repéré",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Spy": {
+      "text": "Espion",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.Straw man": {
       "text": "Epouvantail",
@@ -3467,6 +4735,10 @@
     "manifest.json:web.copy.fr.strings.Take a <b>prisoner</b>": {
       "text": "Fais un <b>prisonnier</b>",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap to close": {
+      "text": "Touche pour fermer",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.strings.The highest grade: no soldier outranks it, but the spy kills it.": {
       "text": "Invincible sur un champ de bataille mais peu se faire surprendre par un espion.",
@@ -3512,6 +4784,26 @@
       "text": "Temps écoulé !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.To battle": {
+      "text": "A l'assaut",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Trap": {
+      "text": "Piège",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Trap cleared": {
+      "text": "Piège désamorcé",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Trap!": {
+      "text": "Piège !",
+      "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Uncommon": {
+      "text": "Peu commun",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Unscathed": {
       "text": "Indemne",
       "at": "2026-10-14"
@@ -3524,9 +4816,17 @@
       "text": "Barrière de bois",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Wounded": {
+      "text": "Blessé",
+      "at": "2026-10-18"
+    },
     "manifest.json:web.copy.fr.strings.Wounded by an ally": {
       "text": "Blessé par un allié",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Your army": {
+      "text": "Ton armée",
+      "at": "2026-10-18"
     },
     "manifest.json:web.copy.fr.tagline": {
       "text": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">grade</b> gagne",

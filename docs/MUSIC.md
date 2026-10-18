@@ -242,6 +242,81 @@ replay of the same level does not restart the music.
 
 ______________________________________________________________________
 
+## The seam — looping on the bar
+
+A section loops for the whole of a round, so its seam is heard every thirty
+seconds for minutes on end, and the default wrap is click-free without being
+musical: the next pass starts `fade` seconds before the section ends, so its
+beats land BETWEEN the tail's (a 32 s window with a 1.6 s fade at 120 BPM wraps
+every 30.4 s, 60.8 beats), and the loop's first downbeat is faded in from
+nothing on a linear ramp that dips the level half-way through.
+
+A section that names a `seam` (seconds of the file — or `CONFIG.music.seam`,
+for every section of the game) loops on the bar instead:
+
+```js
+music: {
+  volume: 0.12, fade: 1.6, seam: 1,             // two beats at 120 BPM
+  menu: { from: 72, length: 12, rate: 0.85, gain: 0.5 }
+},
+```
+
+- **`length` is the loop.** Every pass advances by exactly `length`, so it has
+  to be whole bars: then `from + length` is the same beat of the bar as `from`
+  and the pulse never moves.
+- **the crossfade ends on the loop point.** Over the `seam` seconds before it,
+  the outgoing pass plays the bars that lead up to `from + length` and the
+  incoming one plays the bars that lead up to `from` — its PRE-ROLL, read out
+  of the file before the window — both on equal-power curves, so the level
+  holds through the seam. The downbeat then lands once, at full level, in the
+  pass that carries on, instead of twice or faded.
+- **no pre-roll, then post-roll.** A window starting under `seam` seconds into
+  the file takes the rest of the crossfade after the loop point, out of the
+  music that follows `from + length`. A whole file at speed has room on
+  neither side and keeps the plain wrap.
+- **a gridded section loops on its beats.** One that carries `bpm` and
+  `beats` (chainring's) wraps on `beats` beats whatever its `length`, and the
+  beat-locked whole file (`CONFIG.music.loopBeats`) on those: what is left of
+  the file past the loop is the post-roll. Its `seam` is two beats of ITS
+  track — chainring's `bedFor` writes `seam: 2 * per` on every bed's section.
+- **the playable's cut needs its pre-roll too.** It is cut one `seam` early
+  (`-ss <from − seam> -t <seam + length>`) and `CONFIG.music.cut` names the
+  window inside it — `{ from: <seam>, length }`. That is what a `null` section
+  plays (the motor's `cutOf`), so `Music.play(CONFIG.level ? BIO.music : null)`
+  is unchanged in every game; the web build, which ships the whole track,
+  drops the field (`webMusic` in tools/build/build.mjs).
+
+Which lengths are whole bars is arithmetic; which of them loop CLEANLY is not,
+and the ear only hears an off-bar seam after the fifth loop. That is what
+`tools/lab/loop-points.mjs` is for: it compares the spectrum and the onsets
+around `from` with those around `from + L`, for every whole beat within a few
+seconds of the length asked for, and prints the best first with what each one
+is in bars.
+
+```bash
+node tools/lab/loop-points.mjs assets/audio/music/embed/<slug>.mp3 40 32 --bpm 120
+```
+
+Without `--bpm` it measures the tempo itself (`--tempo` prints it alone).
+Pick the best-scoring WHOLE-BAR length and check it by ear, with three guards
+that the rollout to every game used (2026-10-17):
+
+- **never more than one bar longer than the window was.** Its end was put on
+  an arrangement seam by ear; a length that runs past it into the next part
+  loops the wrong music, however well its seam scores.
+- **prefer an alignment inside the grid.** A candidate whose best frame sits
+  at the edge of the ±150 ms refinement is a jump of the generator's grid or a
+  false match; take it only when no candidate aligns on the beat or when it
+  outscores them clearly (bouncetry's last window: 0.29 against 0.04).
+- **a score is relative.** When every candidate of a window scores under ~0.1
+  (pawko's ambient opening), keep the length that was there if it is whole
+  bars.
+
+Measured that way, most windows moved by a bar or two, and a few were not
+whole bars at all: holepocalypse's third band was seventeen bars, and
+bridgessa's sixteen-bar windows were measured at 105.5 BPM when the track runs
+at 105.99 (eight bars are 18.117 s), so every loop slipped 0.17 s.
+
 ## Where the bed is ducked, and by how much
 
 One place, for all thirteen: `endRound` in `packages/shell/shell.js` ducks to
@@ -313,23 +388,28 @@ SHIPPING cut (`embed/`), since re-encoding moves the first kick by a few ms.
 
 ## Where each game stands
 
-| game         | master     | embedded cut | sections                                                           |
-| ------------ | ---------- | ------------ | ------------------------------------------------------------------ |
-| `arcider`    | 182.5 s    | 36.1 s       | **5 biomes + menu**                                                |
-| `blight`     | 179.1 s    | 36.0 s       | **5 map bands + menu**, one scene apiece                           |
-| `echomaze`   | 171.4 s    | 36.0 s       | **5 map bands + menu**, one hall apiece                            |
-| `slipdeck`   | 170.9 s    | 22.8 s       | **5 map bands + menu**, one table apiece                           |
-| `marshmelt`  | 177.4 s    | 26.8 s       | **5 biomes + menu**, one scene apiece                              |
-| `bouncetry`  | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
-| `chainring`  | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
-| `gearball`   | 160.1 s    | 30.8 s       | **5 biomes + menu**, six machines apiece                           |
-| `orbinity`   | 170.7 s    | 32.0 s       | **5 worlds + menu**, one sky apiece; the rift rides two phrases    |
-| `pawko`      | 179.3 s    | 35.0 s       | **5 map bands + menu**, one scene apiece                           |
-| `radiam`     | 181.2 s    | 29.5 s       | **5 worlds + menu**, one hall apiece                               |
-| `spinshock`  | 182.0 s    | 23.0 s       | **5 bands + menu**, one dish apiece                                |
-| `stratideck` | 177.2 s    | 30.0 s       | **5 map bands + menu**, one camp apiece                            |
-| `triverse`   | 174.7 s    | 31.1 s       | **5 biomes + menu**, one rule and one look apiece                  |
-| `vipera`     | 176.9 s    | 33.0 s       | **5 biomes + menu**, one ground apiece                             |
+Every game below loops on the bar (`seam`, two beats of its track) since
+2026-10-17, its windows measured with `tools/lab/loop-points.mjs` and its
+playable re-cut with one seam of pre-roll (`CONFIG.music.cut`).
+
+| game            | master     | embedded cut | sections                                                           |
+| --------------- | ---------- | ------------ | ------------------------------------------------------------------ |
+| `arcider`       | 182.5 s    | 36.1 s       | **5 biomes + menu**                                                |
+| `blight`        | 179.1 s    | 36.0 s       | **5 map bands + menu**, one scene apiece                           |
+| `echomaze`      | 171.4 s    | 36.0 s       | **5 map bands + menu**, one hall apiece                            |
+| `slipdeck`      | 170.9 s    | 22.8 s       | **5 map bands + menu**, one table apiece                           |
+| `marshmelt`     | 177.4 s    | 26.8 s       | **5 biomes + menu**, one scene apiece                              |
+| `bouncetry`     | 177.8 s    | 30.5 s       | **5 biomes + menu**, one scene apiece                              |
+| `chainring`     | 5 × ~3 min | 30.8 s       | **5 tracks**, one per biome: 5 stretches + the whole track, + menu |
+| `gearball`      | 160.1 s    | 30.8 s       | **5 biomes + menu**, six machines apiece                           |
+| `orbinity`      | 170.7 s    | 32.0 s       | **5 worlds + menu**, one sky apiece; the rift rides two phrases    |
+| `pawko`         | 179.3 s    | 35.0 s       | **5 map bands + menu**, one scene apiece                           |
+| `radiam`        | 181.2 s    | 29.5 s       | **5 worlds + menu**, one hall apiece                               |
+| `spinshock`     | 182.0 s    | 23.0 s       | **5 bands + menu**, one dish apiece                                |
+| `stratideck`    | 177.2 s    | 30.0 s       | **5 map bands + menu**, one camp apiece                            |
+| `triverse`      | 174.7 s    | 31.1 s       | **5 biomes + menu**, one rule and one look apiece                  |
+| `vipera`        | 176.9 s    | 33.0 s       | **5 biomes + menu**, one ground apiece                             |
+| `holepocalypse` | 180.2 s    | 33.0 s       | **5 biomes + menu**, one fairway apiece                            |
 
 A game with no `menu` section keeps silent menus and a single whole-file bed,
 which is what the ten do today. Nothing about them changed when the sections

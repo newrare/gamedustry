@@ -12,9 +12,9 @@
 
     a call    the style of a Pop, its word, its anchor, the clip a cue names,
               its volume and its pitch — rewritten IN PLACE in
-              games/<slug>/game.js, one argument at a time. And two rewrites
-              of a whole call: a Notify.say turned into a Pop.show, and the
-              other way round.
+              games/<slug>/game.js, one argument at a time. And three rewrites
+              of a whole call: a Notify.say turned into a Pop.show, the other
+              way round, and a Pop.text turned into a Pop.show.
 
     a clip    ASSETS.sounds.<key> re-cut from another file of
               assets/audio/sfx/ (ffmpeg, mono 32 kHz / 64 kbps, a 70 ms fade —
@@ -107,6 +107,44 @@ function convertNotify(src, call, set, edits, skip, label) {
   if (set.at) fields.push(`at: ${q(set.at)}`);
   for (const k of Object.keys(opts)) {
     if (k !== 'sub') skip.push(`${label}: ${k} dropped — a Pop has no ${k === 'hold' ? 'notice timing' : k}`);
+  }
+  edits.push({
+    start: call.callSpan.start, end: call.callSpan.end,
+    text: `Pop.show(${q(style)}${fields.length ? `, { ${fields.join(', ')} }` : ''})`,
+    what: label,
+    applied: { what: label, value: `Pop.show("${style}")`, line: call.line }
+  });
+}
+
+/* ── a floating value turned into a callout ───────────────────────────────
+   `Pop.text(x, y, word, { color, size, tier, life, vy })` →
+   `Pop.show(style, { word, at })`. The word keeps the source's own text — a
+   built word stays built — unless the bench retyped a literal. The point in
+   the world travels as the callout's anchor, `at: { x, y }` with the source's
+   own two expressions, so the callout rises where the value did; the bench may
+   name an anchor instead (`set.at`), or `style` for the style's own spot. The
+   canvas options (colour, size, tier, life, rise) have no meaning on a DOM
+   callout and are dropped and named. */
+function convertText(src, call, set, edits, skip, label) {
+  const style = String(set.as);
+  if (!/^\w+$/.test(style)) { skip.push(`${label}: "${style}" is not a Pop style — not converted`); return; }
+  const spans = call.argSpans;
+  const raw = (sp) => src.slice(sp.start, sp.end).trim();
+  if (spans.length < 3) { skip.push(`${label}: no word to carry — not converted`); return; }
+  if (spans.length > 4) { skip.push(`${label}: more than four arguments — convert it by hand`); return; }
+
+  let word = raw(spans[2]);
+  if (set.word != null) {
+    if (literal(call.args[2]) == null) skip.push(`${label} word: the source writes an expression (${word}) — kept as it is`);
+    else word = set.word === '' ? null : q(set.word);
+  }
+  const fields = [];
+  if (word != null) fields.push(`word: ${word}`);
+  if (!set.at) fields.push(`at: { x: ${raw(spans[0])}, y: ${raw(spans[1])} }`);
+  else if (set.at !== 'style') fields.push(`at: ${q(set.at)}`);
+  if (spans[3]) {
+    if (raw(spans[3])[0] !== '{') skip.push(`${label}: the options (${raw(spans[3])}) dropped — a callout has no canvas options`);
+    else for (const k of Object.keys(call.opts || {})) skip.push(`${label}: ${k} dropped — a callout has no canvas ${k}`);
   }
   edits.push({
     start: call.callSpan.start, end: call.callSpan.end,
@@ -508,6 +546,11 @@ export async function applyEdits(slug, plan) {
     // A notice converted carries its word and sub along: one edit, not three.
     if (call.name === 'Notify.say' && edit.set && edit.set.as) {
       convertNotify(src, call, edit.set, edits, skipped, `${call.name}:${call.line}`);
+      continue;
+    }
+    // A floating value converted: its first dropdown names a Pop style.
+    if (call.name === 'Pop.text' && edit.set && edit.set.as) {
+      convertText(src, call, edit.set, edits, skipped, `${call.name}:${call.line}`);
       continue;
     }
     // And a callout converted: its style dropdown reads `notify`.

@@ -1,0 +1,326 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Watershed</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14161c; overflow: hidden; touch-action: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Watershed — steer a river with a shovel before the drought arrives.
+// Every cell has a height. The water always takes the LOWEST cell beside it:
+// down a slope it is a river, in a hollow it pools into a lake until the lake
+// spills over its lowest rim. Each turn you dig (-1) or fill (+1) a couple of
+// cells, then the water grows by a few cells along its course. The course is
+// worked out again from the source every turn, so one cell dug upstream can
+// swing the whole river and leave the old bed dry. A field is saved for good
+// once water touches it; the drought climbs from the bottom and takes every
+// field it reaches first. The bottom row is the sea: water there is lost.
+// Question: is shaping a river cell by cell a satisfying puzzle?
+//
+// Tap a cell to dig or fill it (switch below). Dotted blue: where the water
+// goes next.
+
+// ---- tunables -------------------------------------------------------------
+var COLS = 7, ROWS = 10;
+var R = 50;
+var ACTIONS = 2;            // edits per turn, then the water flows
+var FLOW = 3;               // cells the water gains per turn
+var PREVIEW = 10;           // cells of course shown ahead of the water
+var DROUGHT_START = 3;      // turn the drought starts climbing
+var DROUGHT_EVERY = 2;      // turns per row it climbs
+var FIELDS = 5;
+var SLOPE = 1.1;            // height lost per row, top to bottom
+var BUMPS = 7, BUMP_H = 3.2;
+var HMAX = 15;
+
+var W = 720, H = 1280;
+var D = Math.sqrt(3) * R;
+var BY = 285;
+var BX = (W - (COLS * D + D / 2)) / 2 + D / 2;
+var AX = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+
+// ---- state ----------------------------------------------------------------
+var level = 1;
+var h;              // [ROWS][COLS] heights
+var src;            // [c, r]
+var fields;         // { c, r, state: "dry" | "saved" | "lost" }
+var turn, waterLen, shownLen, actionsLeft, droughtRow, tool = "dig", course, phase, t = 0;
+
+// ---- seeded random --------------------------------------------------------
+var seed = 1;
+function rnd() {
+  seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+  var x = Math.imul(seed ^ seed >>> 15, 1 | seed);
+  x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x;
+  return ((x ^ x >>> 14) >>> 0) / 4294967296;
+}
+function rint(a, b) { return a + Math.floor(rnd() * (b - a + 1)); }
+
+// ---- grid -----------------------------------------------------------------
+function inside(c, r) { return c >= 0 && c < COLS && r >= 0 && r < ROWS; }
+function key(c, r) { return c + "," + r; }
+function toAx(c, r) { return [c - (r - (r & 1)) / 2, r]; }
+function fromAx(q, r) { return [q + (r - (r & 1)) / 2, r]; }
+function center(c, r) { return { x: BX + c * D + (r & 1 ? D / 2 : 0), y: BY + r * 1.5 * R }; }
+function neighbours(c, r) {
+  var a = toAx(c, r), out = [];
+  for (var d = 0; d < 6; d++) { var n = fromAx(a[0] + AX[d][0], a[1] + AX[d][1]); if (inside(n[0], n[1])) out.push(n); }
+  return out;
+}
+
+// ---- the water ----------------------------------------------------------------
+// Priority flood from the source: the water body always grows into the lowest
+// cell touching it (the newest on a tie, so a river runs on instead of
+// spreading). That is a river on a slope and a lake in a hollow, which spills
+// over its lowest rim once full. It stops at the sea, or at `limit` cells.
+function flow(limit) {
+  var inW = {}, queued = {}, order = [], pq = [], seq = 0, sea = false;
+  function add(cell, parent) {
+    inW[key(cell[0], cell[1])] = true;
+    order.push({ c: cell[0], r: cell[1], parent: parent });
+    if (cell[1] === ROWS - 1) { sea = true; return; }
+    neighbours(cell[0], cell[1]).forEach(function (n) {
+      var k = key(n[0], n[1]);
+      if (inW[k] || queued[k]) return;
+      queued[k] = true;
+      pq.push({ cell: n, h: h[n[1]][n[0]], seq: seq++, parent: cell });
+    });
+  }
+  add(src, null);
+  while (order.length < limit && pq.length && !sea) {
+    var bi = 0;
+    for (var i = 1; i < pq.length; i++) if (pq[i].h < pq[bi].h || (pq[i].h === pq[bi].h && pq[i].seq > pq[bi].seq)) bi = i;
+    var nx = pq.splice(bi, 1)[0];
+    add(nx.cell, nx.parent);
+  }
+  return order;
+}
+
+function wetSet(n) {
+  var s = {};
+  course.slice(0, n).forEach(function (w) { s[key(w.c, w.r)] = true; });
+  return s;
+}
+
+function updateFields() {
+  var wet = wetSet(waterLen);
+  fields.forEach(function (f) {
+    if (f.state !== "dry") return;
+    var touched = wet[key(f.c, f.r)] || neighbours(f.c, f.r).some(function (n) { return wet[key(n[0], n[1])]; });
+    if (touched) f.state = "saved";
+    else if (f.r >= droughtRow) f.state = "lost";
+  });
+  if (fields.every(function (f) { return f.state !== "dry"; })) phase = "over";
+}
+
+// ---- level --------------------------------------------------------------------
+function genLevel(n) {
+  for (var attempt = 0; attempt < 500; attempt++) {
+    seed = n * 7919 + attempt * 104729 + 3;
+    if (tryGen()) return;
+  }
+}
+
+function tryGen() {
+  var r, c, i, bumps = [];
+  for (i = 0; i < BUMPS; i++) bumps.push({ x: rnd() * COLS, y: 1 + rnd() * (ROWS - 2), a: (rnd() < 0.55 ? 1 : -1) * BUMP_H * (0.5 + rnd()), s: 0.9 + rnd() * 1.4 });
+  h = [];
+  for (r = 0; r < ROWS; r++) {
+    h.push([]);
+    for (c = 0; c < COLS; c++) {
+      var v = (ROWS - 1 - r) * SLOPE + 1, x = c + (r & 1 ? 0.5 : 0);
+      bumps.forEach(function (b) { var dx = x - b.x, dy = (r - b.y) * 0.87; v += b.a * Math.exp(-(dx * dx + dy * dy) / (b.s * b.s)); });
+      h[r].push(Math.max(0, Math.min(HMAX, Math.round(v))));
+    }
+  }
+  // the source is the highest cell of the top row, raised one more
+  var sc = 0;
+  for (c = 1; c < COLS; c++) if (h[0][c] > h[0][sc]) sc = c;
+  src = [sc, 0]; h[0][sc] = Math.min(HMAX, h[0][sc] + 1);
+
+  // fields away from where the water goes on its own
+  course = flow(80);
+  var lazy = {};
+  course.slice(0, 14).forEach(function (w) { lazy[key(w.c, w.r)] = true; neighbours(w.c, w.r).forEach(function (nb) { lazy[key(nb[0], nb[1])] = true; }); });
+  var cand = [];
+  for (r = 2; r < ROWS - 1; r++) for (c = 0; c < COLS; c++) if (!lazy[key(c, r)]) cand.push([c, r]);
+  if (cand.length < FIELDS) return false;
+  fields = [];
+  for (i = 0; i < FIELDS; i++) {
+    if (!cand.length) return false;
+    var p = cand.splice(rint(0, cand.length - 1), 1)[0];
+    if (fields.some(function (f) { return Math.abs(f.c - p[0]) + Math.abs(f.r - p[1]) < 2; })) { i--; if (!cand.length) return false; continue; }
+    fields.push({ c: p[0], r: p[1], state: "dry" });
+  }
+  turn = 1; waterLen = 1; shownLen = 1; actionsLeft = ACTIONS; droughtRow = ROWS - 1; tool = "dig"; phase = "play";
+  course = flow(waterLen + PREVIEW + 40);
+  return true;
+}
+
+function edit(c, r) {
+  if (phase !== "play" || actionsLeft <= 0) return;
+  if (c === src[0] && r === src[1]) return;
+  var v = h[r][c] + (tool === "dig" ? -1 : 1);
+  if (v < 0 || v > HMAX) return;
+  h[r][c] = v;
+  course = flow(waterLen + PREVIEW + 40);
+  actionsLeft--;
+  if (actionsLeft === 0) endTurn();
+}
+
+function endTurn() {
+  if (phase !== "play") return;
+  turn++;
+  waterLen += FLOW;
+  if (turn >= DROUGHT_START && (turn - DROUGHT_START) % DROUGHT_EVERY === 0) droughtRow = Math.max(0, droughtRow - 1);
+  course = flow(waterLen + PREVIEW + 40);
+  updateFields();
+  actionsLeft = ACTIONS;
+}
+
+// ---- input --------------------------------------------------------------------
+var BUTTONS = [
+  { label: function () { return "Dig"; }, act: function () { tool = "dig"; } },
+  { label: function () { return "Fill"; }, act: function () { tool = "fill"; } },
+  { label: function () { return "Wait"; }, act: function () { endTurn(); } },
+  { label: function () { return "Restart"; }, act: function () { genLevel(level); } },
+  { label: function () { return "Next"; }, act: function () { level++; genLevel(level); } }
+];
+var BTN_Y = 1160, BTN_W = 128, BTN_H = 80, BTN_GAP = 10;
+function btnX(i) { return (W - BUTTONS.length * BTN_W - (BUTTONS.length - 1) * BTN_GAP) / 2 + i * (BTN_W + BTN_GAP); }
+
+function onDown(x, y) {
+  for (var i = 0; i < BUTTONS.length; i++)
+    if (x >= btnX(i) && x <= btnX(i) + BTN_W && y >= BTN_Y && y <= BTN_Y + BTN_H) { BUTTONS[i].act(); return; }
+  var best = null, bd = 1e9;
+  for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) {
+    var p = center(c, r), d = (p.x - x) * (p.x - x) + (p.y - y) * (p.y - y);
+    if (d < bd) { bd = d; best = [c, r]; }
+  }
+  if (best && bd < R * R) edit(best[0], best[1]);
+}
+
+// ---- drawing ----------------------------------------------------------------
+function hexPath(x, y, rad) {
+  ctx.beginPath();
+  for (var i = 0; i < 6; i++) { var a = Math.PI / 6 + i * Math.PI / 3; ctx.lineTo(x + Math.cos(a) * rad, y + Math.sin(a) * rad); }
+  ctx.closePath();
+}
+function landColor(v) {
+  // low: green, high: pale rock
+  var k = v / HMAX;
+  var r = Math.round(46 + k * 150), g = Math.round(84 + k * 110), b = Math.round(52 + k * 140);
+  return "rgb(" + r + "," + g + "," + b + ")";
+}
+
+function render() {
+  ctx.fillStyle = "#14161c"; ctx.fillRect(0, 0, W, H);
+  var r, c, p, i;
+  var wet = wetSet(Math.floor(shownLen));
+  for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++) {
+    p = center(c, r);
+    hexPath(p.x, p.y, R - 1.5);
+    ctx.fillStyle = r === ROWS - 1 ? "#1d3550" : landColor(h[r][c]); ctx.fill();
+    if (r >= droughtRow && r < ROWS - 1) { ctx.fillStyle = "rgba(196,120,40,0.45)"; ctx.fill(); }
+    if (wet[key(c, r)]) { hexPath(p.x, p.y, R - 6); ctx.fillStyle = "rgba(60,140,255,0.75)"; ctx.fill(); }
+  }
+
+  // the course: the river's links, then the dotted path it takes next
+  ctx.lineCap = "round";
+  course.forEach(function (w, idx) {
+    if (!w.parent || idx >= Math.floor(shownLen) + PREVIEW) return;
+    var a = center(w.parent[0], w.parent[1]), b = center(w.c, w.r);
+    var isWet = idx < Math.floor(shownLen);
+    ctx.strokeStyle = isWet ? "#9fd0ff" : "rgba(120,190,255,0.8)"; ctx.lineWidth = isWet ? 6 : 3;
+    ctx.setLineDash(isWet ? [] : [6, 8]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  // heights
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 22px sans-serif";
+  for (r = 0; r < ROWS - 1; r++) for (c = 0; c < COLS; c++) {
+    p = center(c, r);
+    ctx.fillStyle = h[r][c] > HMAX * 0.55 ? "#1b1d24" : "#e8e8f0";
+    ctx.fillText(h[r][c], p.x, p.y + R * 0.45);
+  }
+  ctx.fillStyle = "#6fa8dc"; ctx.font = "bold 20px sans-serif";
+  ctx.fillText("Sea", W / 2, center(0, ROWS - 1).y + R * 0.9);
+
+  // source and fields
+  var sp = center(src[0], src[1]);
+  ctx.beginPath(); ctx.arc(sp.x, sp.y - 6, R * 0.3, 0, 7); ctx.fillStyle = "#3c8cff"; ctx.fill();
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
+  fields.forEach(function (f) {
+    var fp = center(f.c, f.r), s = R * 0.34;
+    ctx.fillStyle = f.state === "saved" ? "#5fd38a" : f.state === "lost" ? "#7a5a3a" : "#e8c35a";
+    ctx.fillRect(fp.x - s, fp.y - s - 8, s * 2, s * 2);
+    ctx.strokeStyle = "rgba(0,0,0,0.4)"; ctx.lineWidth = 2;
+    for (var l = -1; l <= 1; l++) { ctx.beginPath(); ctx.moveTo(fp.x - s, fp.y - 8 + l * s * 0.6); ctx.lineTo(fp.x + s, fp.y - 8 + l * s * 0.6); ctx.stroke(); }
+    if (f.state === "lost") { ctx.strokeStyle = "#ff5a5a"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(fp.x - s, fp.y - s - 8); ctx.lineTo(fp.x + s, fp.y + s - 8); ctx.stroke(); }
+  });
+
+  // HUD
+  var saved = fields.filter(function (f) { return f.state === "saved"; }).length;
+  var lost = fields.filter(function (f) { return f.state === "lost"; }).length;
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.fillStyle = "#e8e8f0";
+  ctx.font = "bold 40px sans-serif"; ctx.fillText("Level " + level + " · turn " + turn, 30, 66);
+  ctx.font = "28px sans-serif";
+  ctx.fillText("Fields saved " + saved + "   lost " + lost + " / " + FIELDS + "   edits left " + actionsLeft, 30, 108);
+  ctx.fillStyle = "#9aa0b0"; ctx.font = "23px sans-serif";
+  ctx.fillText("Water takes the lowest cell beside it; a hollow fills first.", 30, 150);
+  ctx.fillText("Water beside a field saves it. Orange: the drought.", 30, 180);
+  var next = droughtRow <= 0 ? "" : turn < DROUGHT_START ? "Drought starts on turn " + DROUGHT_START : "Drought climbs every " + DROUGHT_EVERY + " turns";
+  ctx.fillText(next + " · water +" + FLOW + " a turn.", 30, 210);
+
+  if (phase === "over") {
+    ctx.fillStyle = "rgba(10,11,14,0.78)"; ctx.fillRect(0, 1040, W, 100);
+    ctx.textAlign = "center"; ctx.font = "bold 40px sans-serif";
+    ctx.fillStyle = saved >= FIELDS - 1 ? "#5fd38a" : "#ffd166";
+    ctx.fillText(saved + " of " + FIELDS + " fields saved", W / 2, 1100);
+  }
+
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 26px sans-serif";
+  for (i = 0; i < BUTTONS.length; i++) {
+    var lb = BUTTONS[i].label(), on = (lb === "Dig" && tool === "dig") || (lb === "Fill" && tool === "fill");
+    ctx.fillStyle = on ? "#c9a86a" : lb === "Next" && phase === "over" ? "#5fd38a" : "#2c303c";
+    ctx.fillRect(btnX(i), BTN_Y, BTN_W, BTN_H);
+    ctx.fillStyle = on ? "#1b1d24" : "#e8e8f0"; ctx.fillText(lb, btnX(i) + BTN_W / 2, BTN_Y + BTN_H / 2);
+  }
+}
+
+// ---- frame ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d"), scale = 1;
+function fit() {
+  var dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  cv.width = Math.round(W * scale * dpr); cv.height = Math.round(H * scale * dpr);
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+window.addEventListener("resize", fit);
+cv.addEventListener("pointerdown", function (e) {
+  var b = cv.getBoundingClientRect();
+  onDown((e.clientX - b.left) / scale, (e.clientY - b.top) / scale);
+});
+
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t += dt;
+  // the water front advances a cell at a time on screen, and recedes at once
+  if (shownLen < waterLen) shownLen = Math.min(waterLen, shownLen + dt * 6); else shownLen = waterLen;
+  render();
+  requestAnimationFrame(frame);
+}
+fit();
+genLevel(level);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

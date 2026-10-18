@@ -237,8 +237,10 @@ Three properties, and each of them is the point:
   through is a tutorial they skim.
 - **It is where a player who does not know looks.** A board that has never
   been played opens on level 0 — the map scrolled to its foot, the card
-  offering the lesson — and every later arrival lands on the level the player
-  is actually at. Being first under the thumb is the whole of the nudge.
+  offering the lesson — and every later arrival lands on the LAST LEVEL PLAYED
+  (`save.lp`, written by `play`), selected and centred, so a player coming back
+  from a score finds the level they just left under their thumb; the frontier
+  is the answer only before any level was played. Being first under the thumb is the whole of the nudge.
   **The very first launch never reaches the map**, though: a board never
   played whose lesson was never opened (`__LEVELS__.fresh()`) drops the
   player straight into level 1, and the help card opens over that round once
@@ -309,6 +311,51 @@ The second measure for a clear-shaped level is never invented: every one of
 those games already counts it (`spareBonus`, `ballBonus`, lives left, time
 left). This replaces the flat `score >= 3000 ? 3 : ...` thresholds the games
 carry today, which become the level-15 row of the same formula.
+
+**What a star MEANS is the same on every board, and it is the player's, not
+the score's** (2026-10-17):
+
+| stars | what it says about the run                                       |
+| ----- | ---------------------------------------------------------------- |
+| ★     | the round was understood — mistakes, but the run was read. EASY  |
+| ★★    | a good score, above what the common run makes                    |
+| ★★★   | close to flawless, with a small allowance a human can still keep |
+| none  | plenty of mistakes: the objective was not met                    |
+
+One star is easy on purpose: the map's gates count stars, and a player stuck
+for the first one is a closed door. Three stars is rare on purpose: it pays
+the three gift boxes once per level and the band's clean sticker, and a gift
+handed out for any long run is no gift.
+
+**One ladder does not fit every game**, so the 1x / 1.5x / 2.2x bands above are
+the default and a game moves them two ways, both in `web.levels`:
+
+- **`stars: [a, b, c]`** — the three multipliers of the objective. The card's
+  objective stays the first star's threshold, so `a` is normally 1. A survival
+  run whose score piles up with time spreads them (`marshmelt`: `[1, 2, 3]`), a
+  shift where every point is fought for keeps the first close and the third far
+  (`gearball`: `[1, 2.2, 3.5]`, over an objective cut to 0.4x).
+- **`faults`** — how many mistakes the third star forgives, a number or
+  `{ from, to }` lerped over the climb, with its words (`copy`, `one`, `none`,
+  each `{ en, fr }`, `{n}` the allowance) written after the third row of the
+  objectives card. The game counts its mistakes live in `Game.levelFaults()`.
+  Past the allowance the round is held to two stars: the third star is struck
+  on the pill, a `Notify` says *Third star lost* once, the objectives row is
+  struck too, and the third star can no longer end the round, which runs to its
+  own end. It is a cap like `levelStars`, applied after the tally, never a
+  promotion.
+
+| game        | what counts as a mistake                                    | allowance |
+| ----------- | ----------------------------------------------------------- | --------- |
+| `chainring` | a bad tap, a ring tapped that wanted leaving, a ring let by | 3 → 2     |
+| `gearball`  | a heart lost                                                | 1 → 2     |
+| `marshmelt` | a hit taken (fireball, bite, lava)                          | 1 → 0     |
+| `bouncetry` | a ball fired past par (its tally already asks a clear)      | 0         |
+
+The other games keep the default bands and no allowance until each is tuned
+against what a human makes of it; `stratideck`, `echomaze`, `bouncetry`,
+`arcider` and `grudgeon`'s way-out and master levels count their stars
+themselves.
 
 **What is measured is the score, unless the game says otherwise.** A game whose
 objective is not its score puts the measure in its `endRound` result as
@@ -557,23 +604,23 @@ available before a bench exists. The flavour objectives stay on the table for
 when one does — the machinery takes them unchanged, through `levelProgress()`
 and `levelScore`.
 
-| game           | round shape            | measured on | the objective a level sets                         | what the thirty levels move (`L1 → L30`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| -------------- | ---------------------- | ----------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **arcider**    | a race, to the arch    | metres      | `200 → 1 300 m`                                    | 27 knobs, and a table — the one game that uses `applyLevel`, below                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **blight**     | 60 s, bubble shooter   | score       | `350 → 2 300`                                      | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                                                                                                                                                                                                                                                                                                                                                                                              |
-| **bouncetry**  | ends with the balls    | the wall    | par `4 → 2` balls (`levelTally`)                   | one of thirty blueprints (read off `CONFIG.level`), `startBalls 8→4`, `multiBalls 3→2`, `pullAfter 7→4`                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **chainring**  | timed, on the beat     | score       | `700 → 4 600`                                      | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`                                                                                                                                                                                                                                                                                                                                                                                  |
-| **echomaze**   | ends with the pulses   | score       | `500 → 3 500`                                      | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 2.6→1.5`, `bounceJitter .03→.09`, `surgePeriod 1.15→0.85` — **and one rule per band**, below                                                                                                                                                                                                                                                                                                                                        |
-| **gearball**   | timed, marble machine  | score       | `13 000 → 95 000`                                  | one machine per level, its band's counts (1 switch / 2 gates / 2 arrivals → 6 / 6 / 6, read off `CONFIG.level`), `gameSeconds 180→600` (and `mix.rampSeconds` with it: the pace climbs linearly over the whole shift and peaks on its last second), `mix.hearts 6→3` (one electric marble is always in play, so its rate is not tuned); the pace's end values (`tempoEnd`, `pourEnd`, `lockRate`, `lockGain`, `lockMoreEvery`, `minOpenEnd`) are set by `Game.applyLevel`, eased back at each band's first level |
-| **marshmelt**  | endless, rising lava   | score       | per level, `1 400 → 2 700`, measured (`levelGoal`) | `riseSeconds 160→95`, `lavaEnd .16→.3`, `spawnEvery .8→.5`, `fastChance .15→.45`, `rampSeconds 130→80`, `airShots 2→1`, **and a table**: thirteen mechanics, one per level over two levels (weak, then regular) through the first four biomes, then six themed levels of 3-4 at once in the temple — `CONFIG.ladder`, read by `applyLevel`; each row carries its own measured objective (`levelGoal`)                                                                                                            |
-| **orbinity**   | 60–75 s, orbits        | score       | `500 → 2 600`                                      | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`, `gameSeconds 60→75`, **and a table**: five worlds out of `CONFIG.ladder`, read by `applyLevel` — moons, pulsars, a black hole, the open rift (below)                                                                                                                                                                                                                        |
-| **pawko**      | five waves of balls    | score       | `17 000 → 60 000`                                  | `play.balls 10→14`, `play.malusGates 0→2`, `play.pegValue 10→20`, the four `play.gate.*` values ×3 — the board pays more as the level climbs; it always opens plain brass, and the level's PILE (seeded by its number) brings four new cards every level up to 12                                                                                                                                                                                                                                                |
-| **radiam**     | 40 s dial / eclipse    | score       | `2 100 → 13 900`                                   | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| **slipdeck**   | 52-card deck, no clock | score       | one per level, `Game.levelGoal` (`GOALS`)          | `play.deckSize 52`, `play.chuteDepth 4→3`, `play.shoeBias .85→.50`, `play.lives 4→3`; what a level DEALS — joker families (`FAM_LEVEL`), special cards, the pair floor (any → 8 → 10 → J) — is `stageFor(n)` in game.js, and the goal follows it rather than a lerp: the first jokers (4) pay far more than the floor of 7 and the curses of 13 let through                                                                                                                                                      |
-| **spinshock**  | endless, top battle    | score       | `350 → 2 300`                                      | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                                                                                                                                                                                                                                                                                                                                                                                        |
-| **stratideck** | a battle, turn-based   | objectives  | flag · no wound · a prisoner (`levelTally`)        | `play.cols 4→6`, `play.rows 3→6`, `play.traps 0→5`, `play.enemyBias -1→1.2`, `play.enemyTier .05→.7` — the camp grows and is better equipped; a battle lost before the flag is worth no star                                                                                                                                                                                                                                                                                                                     |
-| **triverse**   | endless, 3 lanes       | metres      | `180 → 1 200 m`                                    | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`                                                                                                                                                                                                                                                                                                                                                                                   |
-| **vipera**     | endless, the burrow    | metres      | `100 → 650 m`                                      | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`                                                                                                                                                                                                                                                                                                                                                                              |
+| game           | round shape            | measured on | the objective a level sets                                | what the thirty levels move (`L1 → L30`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| -------------- | ---------------------- | ----------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **arcider**    | a race, to the arch    | metres      | `375 → 975 m`                                             | 27 knobs (squeezed to 0.15 → 0.70 of their old span, v1.11.0), and a table — the one game that uses `applyLevel`, below                                                                                                                                                                                                                                                                                                                                                                                          |
+| **blight**     | 60 s, bubble shooter   | score       | `350 → 2 300`                                             | `startRows 4→11`, `blightInterval 3.4→1.2`, `addRowShots 8→3`, `shotSuperChance .20→.05`, `wallSuperChance .10→.03`                                                                                                                                                                                                                                                                                                                                                                                              |
+| **bouncetry**  | ends with the balls    | the wall    | a clear in par `5 → 3` balls (`levelTally`)               | one of thirty blueprints (read off `CONFIG.level`), `startBalls 8→4`, `multiBalls 3→2`, `pullAfter 7→4`                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **chainring**  | timed, on the beat     | score       | `700 → 4 600`                                             | `gameSeconds 24→60`, `travelBeats 8→3.5`, `travelBeatsEnd 6→2.5`, `gapChance .02→.35`, `gapChanceEnd .35→.85`, `breakAfter 4→2`                                                                                                                                                                                                                                                                                                                                                                                  |
+| **echomaze**   | ends with the pulses   | the gate    | the way out (`levelTally`; `500 → 3 500` for the economy) | `cols 10→16`, `rows 7→13`, `startBalls 8→4`, `ballLife 14→8`, `revealSeconds 2.6→1.5`, `bounceJitter .03→.09`, `surgePeriod 1.15→0.85` — **and one rule per band**, below                                                                                                                                                                                                                                                                                                                                        |
+| **gearball**   | timed, marble machine  | score       | `5 000 → 38 000`, stars `1 / 2.2 / 3.5`                   | one machine per level, its band's counts (1 switch / 2 gates / 2 arrivals → 6 / 6 / 6, read off `CONFIG.level`), `gameSeconds 180→600` (and `mix.rampSeconds` with it: the pace climbs linearly over the whole shift and peaks on its last second), `mix.hearts 7→4` (one electric marble is always in play, so its rate is not tuned); the pace's end values (`tempoEnd`, `pourEnd`, `lockRate`, `lockGain`, `lockMoreEvery`, `minOpenEnd`) are set by `Game.applyLevel`, eased back at each band's first level |
+| **marshmelt**  | endless, rising lava   | score       | per level, `1 400 → 2 700`, measured (`levelGoal`)        | `riseSeconds 160→95`, `lavaEnd .16→.3`, `spawnEvery .8→.5`, `fastChance .15→.45`, `rampSeconds 130→80`, `airShots 2→1`, **and a table**: thirteen mechanics, one per level over two levels (weak, then regular) through the first four biomes, then six themed levels of 3-4 at once in the temple — `CONFIG.ladder`, read by `applyLevel`; each row carries its own measured objective (`levelGoal`)                                                                                                            |
+| **orbinity**   | 60–75 s, orbits        | score       | `500 → 2 600`                                             | `planet.start 4→2`, `planet.max 5→3`, `planet.rMax 70→48`, `planet.shrink .7→.42`, `comet.speed 440→760`, `comet.trapAfter 2.4→1.2`, `gameSeconds 60→75`, **and a table**: five worlds out of `CONFIG.ladder`, read by `applyLevel` — moons, pulsars, a black hole, the open rift (below)                                                                                                                                                                                                                        |
+| **pawko**      | five waves of balls    | score       | `17 000 → 60 000`                                         | `play.balls 10→14`, `play.malusGates 0→2`, `play.pegValue 10→20`, the four `play.gate.*` values ×3 — the board pays more as the level climbs; it always opens plain brass, and the level's PILE (seeded by its number) brings four new cards every level up to 12                                                                                                                                                                                                                                                |
+| **radiam**     | 40 s dial / eclipse    | score       | `2 100 → 13 900`                                          | those four knobs, **and a table** — the second game to use `applyLevel`, below                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **slipdeck**   | 52-card deck, no clock | score       | one per level, `Game.levelGoal` (`GOALS`)                 | `play.deckSize 52`, `play.chuteDepth 4→3`, `play.shoeBias .85→.50`, `play.lives 4→3`; what a level DEALS — joker families (`FAM_LEVEL`), special cards, the pair floor (any → 8 → 10 → J) — is `stageFor(n)` in game.js, and the goal follows it rather than a lerp: the first jokers (4) pay far more than the floor of 7 and the curses of 13 let through                                                                                                                                                      |
+| **spinshock**  | endless, top battle    | score       | `350 → 2 300`                                             | `spawnEvery 1.8→0.6`, `spawnEveryEnd .9→.32`, `maxFoes 3→7`, `drainBase .03→.07`, `drainRamp .035→.085`, `spinStart 1→.7`                                                                                                                                                                                                                                                                                                                                                                                        |
+| **stratideck** | a battle, turn-based   | objectives  | flag · no wound · a prisoner (`levelTally`)               | `play.cols 4→6`, `play.rows 3→6`, `play.traps 0→5`, `play.enemyBias -1→1.2`, `play.enemyTier .05→.7` — the camp grows and is better equipped; a battle lost before the flag is worth no star                                                                                                                                                                                                                                                                                                                     |
+| **triverse**   | endless, 3 lanes       | metres      | `180 → 1 200 m`                                           | `speedMin 440→680`, `speedMax 820→1250`, `ramp 26→12`, `diffFull 900→320`, `hazardMax .50→.95`, `gapNear 340→250`, `lives 4→2`                                                                                                                                                                                                                                                                                                                                                                                   |
+| **vipera**     | endless, the burrow    | metres      | `100 → 650 m`                                             | `speedMin 280→430`, `speedMax 480→680`, `diffFull 900→340`, `rowMax .55→.95`, `gapTight 240→165`, `lives 4→2`, `anchorHigh 400→540`                                                                                                                                                                                                                                                                                                                                                                              |
 
 The three distance ranges are calibrated on **duration**, not on a threshold:
 their speed ramps are known, so a target in metres converts straight to a round
@@ -882,36 +929,40 @@ it.
 
 ### echomaze — the stars are the gate, and the rack is the score
 
-Its objective stays the score, but a run that empties the rack into five dead
-ends was worth three stars for the walls it mapped — which is the same lie
-arcider's distance told about its race. The board has one question, and it is
-the door, so `Game.levelStars` caps the bands onto it:
+A run that empties the rack into five dead ends was worth three stars for the
+walls it mapped — which is the same lie arcider's distance told about its race
+— and, once capped, still one star for the points of a board never solved. The
+board has one question, and it is the door, so a level COUNTS its own stars
+(`Game.levelTally`, v1.9.0) and no score earns one:
 
 | the run                                              | stars |
 | ---------------------------------------------------- | ----- |
 | the gate found for the **fewest pulses it can cost** | 3     |
-| the gate found, whatever the rack cost               | 2     |
-| no way out, objective covered                        | 1     |
-| no way out, short of the objective                   | 0     |
+| the gate found with **one pulse more** than that     | 2     |
+| the gate found, whatever the rack cost               | 1     |
+| no way out                                           | 0     |
+
+The objective stays in the manifest because the economy reads it
+(`tools/lib/economy.mjs`); the level card's sentence is the door. The playable
+keeps its own ladder (`starsEarned`): a lost run that mapped `parScore` is still
+worth one star there.
 
 The top band is `shotPar`, not a constant: one pulse on most boards, **two on a
 board whose crystal stands in a dead end**, because the key is a whole shot
 there and three stars has to keep meaning "as cheap as this board can be"
 rather than "impossible".
 
-The third band is a cap over a value the score has to reach anyway, so the
-escape had to become worth reaching it with. **A pulse left in the rack pays
+The score still pays the wallet, so the escape had to be worth the most of it.
+**A pulse left in the rack pays
 `spareBonus` (1500), and a pulse spent can never farm that much** — a whole
 extra run through the maze is a few hundred points of walls, bounces and rows.
 So the maximum score of a board *is* the first-shot escape, the two rules agree
 by construction, and trying the six doors by elimination is paid for out of the
-total. `escapeBonus` (3500) plus the rows a climb pays is the floor of an
-escape: it clears 1.5x the objective at level 30, so finding the gate is worth
-its two stars however long it took.
+total.
 
-The cap holds the live pill to one star until the gate, so the shell's
-three-star slow motion can only ever land on an escape — where the game was
-already holding the frame for its own callout.
+The tally reads nothing until the gate, so the shell's three-star slow motion
+can only ever land on an escape — where the game was already holding the frame
+for its own callout.
 
 The playable has no objective to cover, so it reads the same ladder against
 `CONFIG.parScore` instead. It is benched, not guessed: on the shipped board a
@@ -996,21 +1047,30 @@ ring and the ball are drawn and the palette they are drawn in (`CONFIG.biomes`,
 read by `applyLevel` off the LEVEL NUMBER, `web.levels.bands.from` the same
 list):
 
-| biome   | rule     | what it asks                                                                                                                                                                                                        |
-| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Neon    | `rewind` | nothing new of the ear: tapped, it shoves every ring behind it back out and they rush in again — still on their beat, the kick is gone half a beat before                                                           |
-| Amber   | `sticky` | one more tap: the ball rides the rim for `stickBeats`, a circle closing on it says when it leaves, and the departure is tapped like the landing                                                                     |
-| Eclipse | `dark`   | one tap fewer: the ball bounces off it alone, and a tap on it breaks the chain; left alone it pays `5 × combo`                                                                                                      |
-| Glacier | `gap`    | the tap only sometimes: dealt on a beat a long flight passes over, it sweeps ACROSS the ball with its gaps standing still — through a gap no tap, and it shatters as a step of the combo; on a bar a tap on the hit |
-| Nova    | all four | two, then three, then four at a time over its six levels, in the order above                                                                                                                                        |
+| biome   | rule      | what it asks                                                                                                                                                                                                                                                                                                                                                                |
+| ------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Neon    | `rewind`  | nothing new of the ear: tapped, it shoves every ring behind it back out and they rush in again — still on their beat, the kick is gone half a beat before                                                                                                                                                                                                                   |
+| Amber   | `sticky`  | one more tap: the ball rides the rim for `stickBeats`, a circle closing on it says when it leaves, and the departure is tapped like the landing                                                                                                                                                                                                                             |
+| Eclipse | `dark`    | one tap fewer: the ball bounces off it alone, and a tap on it breaks the chain; left alone it pays `5 × combo`                                                                                                                                                                                                                                                              |
+| Eclipse | `phantom` | from the biome's fourth level: barely visible as it closes in, it shows its face `fateLead` (1) beat before the ball — a plain ring to tap or a dark one to leave alone, half and half                                                                                                                                                                                      |
+| Glacier | `gap`     | the tap only sometimes: dealt on a beat a long flight passes over, it stops on the ball with its parts standing still and the ball bounces off it wherever it meets it — a bright part is tapped, a dark part left alone, a seam (within `gapEdge` of the ball's edge) takes both                                                                                           |
+| Glacier | `fragile` | from the biome's fourth level: cracked, and its fate is drawn before the ball's flight is planned. Half of them break `fragileLead` (2) beats before the ball — those are dealt in mid-flight like a gap ring, the debris fades and the ball flies straight through, no tap — and the rest land on the rim and are tapped like any ring. Both look the same until the break |
+| Nova    | all six   | two, then four, then six at a time over its six levels, in the order above                                                                                                                                                                                                                                                                                                  |
 
 The order is the teaching: a ring that only lies to the eye, then one that
 adds a tap, then one that takes a tap away, then one that takes it away only
 sometimes. Inside a biome the share of rings carrying the rule climbs from
-`ruleRate[0]` to `ruleRate[1]` (and `gapRate` for the gap ring), none of them
-during the opening pulse (`steadyFor`). A KIND reads by its shape and never by
+`ruleRate[0]` to `ruleRate[1]`, none of them
+during the opening pulse (`steadyFor`). **The chart is written in phrases**: every kind but the plain and the dark
+ring is SPECIAL, and specials come in a SERIES of one kind — one to three of
+the same ring back to back (`seriesLen`; a sticky series stops at two and a
+mixed ring is always alone, `seriesMax`) — then a CALM of plain or dark rings
+sized off the series, before the next series, of another kind wherever the
+level has several. Two different specials never follow each other, and about
+`ruleRate` (50 % rising to 60 % over a biome) of the rings are special: a
+pattern the player reads once and then plays, and a breath after it. A KIND reads by its shape and never by
 its colour — chevrons, beads of glue, a black band, the gaps themselves —
-because Nova deals all four over one look — and a ring is always drawn in its
+because Nova deals all six over one look — and a ring is always drawn in its
 biome's colour: the shockwave that lights it is a halo in that colour, never
 white, or a combo turns every ring on screen white and the biomes vanish. A playable, a free round and the
 endless run are Neon with no rule, the game as it always was.
@@ -1027,8 +1087,8 @@ the brightest thing in the frame. **And a ring is a different OBJECT in each
 biome** (`ring`, chosen in `lab/chainring-rings.html`): Neon's tube, Amber's
 sprocket, Eclipse's chain, Glacier's crown, Nova's ribbon — the kinds ride on
 top as white glyphs ringed in black (chevrons for rewind, drops of glue for
-sticky), or as the design itself in black (dark) or clipped to three bars
-(gap). **And the third star never ends a chainring round**
+sticky, cracks for fragile, little ghosts for phantom), or as the design
+itself in black (dark) or clipped to three bars (gap). **And the third star never ends a chainring round**
 (`levelMaxed`, on every level): a round is a stretch of music, and a perfect
 player was maxing it in seconds and being sent to the end screen before the
 track had got going.

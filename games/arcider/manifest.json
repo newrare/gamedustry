@@ -1,7 +1,7 @@
 {
   "slug": "arcider",
   "title": "Arcider",
-  "version": "1.10.32",
+  "version": "1.11.1",
   "tagline": "Lean your ship left or right to overtake and never break your shield",
   "order": 70,
   "draft": false,
@@ -61,6 +61,7 @@
     "crash": "crash/explosioncrunch",
     "scrape": "crash/impactmetalscifi",
     "ramp": "launch/phaserup",
+    "rank": "pickup/uipluck",
     "land": "bounce/impactmetalheavy",
     "warn": "warn/errorui03"
   },
@@ -213,8 +214,8 @@
     "music": "arcider.mp3",
     "levels": {
       "objective": {
-        "from": 200,
-        "to": 1300,
+        "from": 375,
+        "to": 975,
         "step": 25
       },
       "copy": {
@@ -246,112 +247,112 @@
       },
       "tune": {
         "play.pilots": [
-          8,
-          20
+          10,
+          16
         ],
         "play.paceLow": [
-          0.62,
-          0.78
+          0.64,
+          0.73
         ],
         "play.paceHigh": [
-          0.82,
-          0.94
+          0.84,
+          0.9
         ],
         "play.halfBase": [
-          330,
-          235
+          316,
+          264
         ],
         "play.halfShrink": [
-          18,
-          82
+          28,
+          63
         ],
         "play.forkSep": [
-          372,
-          265
+          356,
+          297
         ],
         "play.speedMin": [
-          400,
-          560
+          424,
+          512
         ],
         "play.speedMax": [
-          820,
-          1200
+          877,
+          1086
         ],
         "play.ramp": [
-          44,
-          22
+          41,
+          29
         ],
         "play.diffFull": [
-          700,
-          380
+          652,
+          476
         ],
         "play.slotFar": [
-          1300,
-          780
+          1222,
+          936
         ],
         "play.slotNear": [
-          1000,
-          520
+          928,
+          664
         ],
         "play.blockMin": [
-          0.04,
-          0.16
+          0.06,
+          0.12
         ],
         "play.blockMax": [
-          0.1,
-          0.3
+          0.13,
+          0.24
         ],
         "play.bombChance": [
-          0.06,
-          0.26
+          0.09,
+          0.2
         ],
         "play.rampChance": [
-          0.08,
-          0.3
+          0.11,
+          0.23
         ],
         "play.rampSolid": [
-          0.2,
-          0.7
+          0.28,
+          0.55
         ],
         "play.wallFrom": [
-          0.85,
-          0.3
+          0.77,
+          0.46
         ],
         "play.gateWide": [
-          300,
-          205
+          286,
+          234
         ],
         "play.gateTight": [
-          230,
-          145
+          217,
+          171
         ],
         "play.forkFirst": [
-          1600,
-          2800
+          1780,
+          2440
         ],
         "play.forkEvery": [
-          2100,
-          3400
+          2295,
+          3010
         ],
         "play.forkCells": [
-          180,
-          300
+          198,
+          264
         ],
         "play.forkBombs": [
           0,
-          4
+          3
         ],
         "play.cellPower": [
-          16,
-          7
+          15,
+          10
         ],
         "play.shieldStart": [
-          100,
-          70
+          96,
+          79
         ],
         "play.crashCost": [
-          26,
-          44
+          29,
+          39
         ]
       }
     },

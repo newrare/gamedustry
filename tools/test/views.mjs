@@ -188,6 +188,10 @@ async function run(url) {
      screen opened from it stands one higher and `home` peels back TO it rather
      than to nothing. Every depth below is counted from here. */
   const FLOOR = villaged ? 1 : 0;
+  /* ONE ROOM AT A TIME over a village (view.js, `go`): a view opened over
+     another REPLACES it, so the depth of n rooms opened in a row is one room.
+     Without a village they still stack. */
+  const ROOMS = function (n) { return FLOOR + (villaged ? 1 : n); };
 
   /* THE VILLAGE — a view, and the one the rest of this front end points back
      at. `title -> village -> map -> round -> score -> village`: PLAY opens it,
@@ -248,18 +252,13 @@ async function run(url) {
       })()`, 1);
     await check("home means the village, from anywhere",
       `(function () { __VIEW__.home(); return __VILLAGE__.isOpen() && __VIEW__.depth() === 1; })()`, true);
-    /* THE HOUSE CHIP IS GONE ON THE BARE VILLAGE, not greyed: it is the one
-       chip that is only a door, and the door it is stands under it. A card
-       over the village makes it a way out again, so it comes back. */
+    /* THE HOUSE CHIP IS ALWAYS THERE, top left — inert on the village it is
+       the door to, like every chip standing on its own screen. */
     if (metaed) {
-      await check("the bare village carries no house chip",
-        "getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display", "none");
-      await check("...and a card over it brings the chip back",
+      await check("the village carries the house chip, inert",
         `(function () {
-          var m = __MODAL__.open({ kind: "test" });
-          var d = getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display;
-          m.close();
-          return d !== "none";
+          var h = document.querySelector('#web-hud .mt-band.full .mt-chip.home');
+          return getComputedStyle(h).display !== "none" && h.classList.contains("inert");
         })()`, true);
     }
     /* THE PLAY HOUSE STARTS A REAL LEVEL — the highest the board has opened —
@@ -308,17 +307,19 @@ async function run(url) {
     console.log("\nthe album and the shop — a stack, not an argument");
     await evalJs("__ALBUM__.open(); return 1;"); await sleep(260);
     await check("the album is on top", "__VIEW__.top()", "sticker");
-    await check("...over the map", "__VIEW__.depth()", FLOOR + (levelled ? 2 : 1));
+    await check(villaged ? "...in place of the map" : "...over the map",
+      "__VIEW__.depth()", ROOMS(levelled ? 2 : 1));
     await evalJs("__ALBUM__.openShop(); return 1;"); await sleep(260);
     await check("the shop is on top", "__VIEW__.top()", "shop");
-    await check("...over the album", "__VIEW__.depth()", FLOOR + (levelled ? 3 : 2));
+    await check(villaged ? "...in place of the album" : "...over the album",
+      "__VIEW__.depth()", ROOMS(levelled ? 3 : 2));
     /* THE BUG THIS SYSTEM EXISTS FOR. The two screens are doors both ways, so
        asking for the album from the shop must PEEL the shop rather than stack
        a second album under it — which is what DOM order used to decide, and
        decided wrong whenever the album had been built first. */
     await evalJs("__ALBUM__.open(); return 1;"); await sleep(260);
     await check("the album is reachable from the shop", "__VIEW__.top()", "sticker");
-    await check("...by peeling, not by stacking", "__VIEW__.depth()", FLOOR + (levelled ? 2 : 1));
+    await check("...by peeling, not by stacking", "__VIEW__.depth()", ROOMS(levelled ? 2 : 1));
     await check("the shop is really gone",
       "document.getElementById('sh-screen').classList.contains('on')", false);
 
@@ -392,13 +393,15 @@ async function run(url) {
       "!!document.querySelector('#web-hud .mt-chip.collection.inert')", true);
     await check("...and the others are not",
       "document.querySelectorAll('#web-hud .mt-band.full .inert').length", 1);
-    /* A SHEET CARRIES THE HOUSE IN ITS OWN BAR, bottom right, so the band's
-       stands down over it — one way home, never two (view.js, `sheet`). */
-    await check("over a sheet the band's house stands down",
-      "getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display", "none");
-    await check("...and the sheet's bar carries it, first of home / help / options",
+    /* OVER A SHEET THE BAND'S HOUSE IS THE WAY HOME, and the sheet's own bar
+       carries the MAP in that slot, bottom right — one way home, never two
+       (view.js, `sheet`). */
+    await check("over a sheet the band's house stays up",
+      "getComputedStyle(document.querySelector('#web-hud .mt-band.full .mt-chip.home')).display !== 'none'", true);
+    await check("...and the sheet's bar carries map / help / options",
       "[].map.call(document.querySelectorAll('.wv-screen.on .wv-ctls [data-ctl]')," +
-      " function (b) { return b.getAttribute('data-ctl'); }).join()", "home,help,options");
+      " function (b) { return b.getAttribute('data-ctl'); }).join()",
+      levelled ? "map,help,options" : "home,help,options");
     /* The geometry is read where the house is up: the map, which is not a
        sheet. */
     if (levelled) { await evalJs("__LEVELS__.open(); return 1;"); await sleep(400); }
@@ -510,19 +513,30 @@ async function run(url) {
       await evalJs("__VIEW__.home(); __ALBUM__.open(); return 1;"); await sleep(400);
       await evalJs("document.querySelector('#web-hud .mt-chip.stars').click(); return 1;");
       await sleep(400);
-      await check("the map opens OVER the album it was reached from",
-        "__VIEW__.top()", "map");
-      await check("...and is really on top of it",
-        "+getComputedStyle(document.getElementById('lv-screen')).zIndex >" +
-        " +getComputedStyle(document.getElementById('al-screen')).zIndex", true);
+      await check("the map opens from the album", "__VIEW__.top()", "map");
+      if (villaged) {
+        await check("...in its place: one room over the village", "__VIEW__.depth()", FLOOR + 1);
+        await check("...and the album is really gone",
+          "document.getElementById('al-screen').classList.contains('on')", false);
+      } else {
+        await check("...and is really on top of it",
+          "+getComputedStyle(document.getElementById('lv-screen')).zIndex >" +
+          " +getComputedStyle(document.getElementById('al-screen')).zIndex", true);
+      }
     }
     await evalJs("document.querySelector('#web-hud .mt-band.full .mt-lv')" +
                  " .click(); return 1;");
     await sleep(400);
     await check("the level chip opens the ranking", "__VIEW__.top()", "ranking");
-    await evalJs("document.querySelector('.wv-screen.on .wv-ctls .web-home').click(); return 1;");
+    if (levelled) {
+      await evalJs("document.querySelector('.wv-screen.on .wv-ctls .web-map').click(); return 1;");
+      await sleep(400);
+      await check("the sheet's map button opens the map", "__VIEW__.top()", "map");
+      if (villaged) await check("...in place of the sheet", "__VIEW__.depth()", FLOOR + 1);
+    }
+    await evalJs("document.querySelector('#web-hud .mt-band.full .mt-chip.home').click(); return 1;");
     await sleep(400);
-    await check("the sheet's house is the way home", "__VIEW__.depth()", FLOOR);
+    await check("the band's house is the way home", "__VIEW__.depth()", FLOOR);
   }
 
   console.log("\nESCAPE — one order, top down");
@@ -895,7 +909,7 @@ async function run(url) {
     await check(views[v] + " shows no corner controls",
       "document.getElementById('web-ctls').hidden", true);
     if (views[v] !== "map") {
-      await check("...its sheet's bar carries home, help and options instead",
+      await check("...its sheet's bar carries map (or home), help and options instead",
         "document.querySelectorAll('.wv-screen.on .wv-ctls [data-ctl]').length", 3);
     }
     /* EXACTLY ONE WAY HOME on every view, and never two: the band's level
@@ -1133,6 +1147,32 @@ async function run(url) {
     "document.querySelectorAll('.wm-modal').length + " +
     "document.querySelectorAll('#lv-screen.on, #al-screen.on, #sh-screen.on, #web-rank.on').length + " +
     "document.querySelectorAll('.ar-screen.on').length", 0);
+
+  /* THE END SCREEN'S MAP, where the first button is the village (menu.js,
+     `rewireEnd`): it lands on the village, opens the map over it, and the map
+     arrives ON the level just played (levels.js, `show`). Last of the run: it
+     records a level, and every check above reads a fresh board. */
+  if (levelled && villaged) {
+    console.log("\nthe end screen's map — back on the level just played");
+    await evalJs("__LEVELS__.play(1); return 1;"); await sleep(700);
+    await evalJs("__WEB__.endRound({ title: 'Test', score: 0, stars: 0, rows: [] }); return 1;");
+    var shown = false;
+    for (var w = 0; w < 40 && !shown; w++) {
+      shown = await evalJs("return !!document.querySelector('#btn-replay.show');");
+      if (!shown) await sleep(150);
+    }
+    /* NEXT may follow: a game whose stars are not score bands
+       (stratideck's levelTally) can clear the level on this round. */
+    await check("the row reads home · map · replay",
+      "[].filter.call(document.querySelectorAll('#web-endacts > button'), function (b) {" +
+      "  return !b.hidden; }).sort(function (a, b) {" +
+      "  return +getComputedStyle(a).order - +getComputedStyle(b).order; })" +
+      " .slice(0, 3).map(function (b) { return b.id; }).join()", "btn-install,btn-map,btn-replay");
+    await evalJs("document.getElementById('btn-map').click(); return 1;"); await sleep(500);
+    await check("...and the map button opens the map", "__VIEW__.top()", "map");
+    await check("...over the village", "__VILLAGE__.isOpen() && __VIEW__.depth() === 2", true);
+    await check("...on the level just played", "__LEVELS__.picked()", 1);
+  }
 }
 
 /* ---------- main --------------------------------------------------------- */

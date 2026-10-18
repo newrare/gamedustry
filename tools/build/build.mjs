@@ -474,12 +474,23 @@ const WEB_ONLY_FLAME = /^flame(0[1-6]|1[3-9]|2[0-4])$/;
    web level's row ever puts in the cave. */
 const WEB_ONLY_MARSH = /^(crust|smore|snake)\d+$/;
 
+/* games/holepocalypse's climb: five fairways, seven zombies, five bosses, ten
+   ball kinds and twenty supers. The playable is biome 1 with no level — the
+   first fairway, the walker and the boomer, one side hole (explosive, kind01)
+   and one super (ball rain, super01) — so everything a later band brings is
+   web-only, ~2 MB of base64 a creative would never draw. Of the power
+   effects the playable draws three: the explosion, the dust of a falling
+   ball and the hole's shockwave. A shared frame (`frame-<theme>`, the time
+   freeze's ice) is web-only too, until a playable draws one. */
+const WEB_ONLY_HOLE = /^fairway-0[2-9]$|^(shield|mudder|digger|runner|necro)\d+$|^boss-[a-z]+\d+$|^kind(0[2-9]|10)$|^super(0[2-9]|1\d|20)$|^fx-(?!boom-|dust-|shock-)[a-z]+-\d+$|^frame-[a-z-]+$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   if (WEB_ONLY_ROCK.test(role)) return true;
   if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;
   if (WEB_ONLY_FLAME.test(role)) return true;
   if (WEB_ONLY_MARSH.test(role)) return true;
+  if (WEB_ONLY_HOLE.test(role)) return true;
   if (WEB_ONLY_ORBIT.test(role)) return true;
   if (WEB_ONLY_FOE.test(role) && !PLAYABLE_FOE.test(role)) return true;
   if (WEB_ONLY_STICKER.test(role)) return true;
@@ -842,7 +853,11 @@ async function webMusic(configSrc, manifest) {
   }
   const extra = Object.keys(uris).filter(k => k !== 'music')
     .map(k => `,\n      ${k}: "${uris[k]}"`).join('');
-  return configSrc.replace(MUSIC_KEY, (m, pre) => `${pre}"${uris.music}"${extra}`);
+  /* `CONFIG.music.cut` is the playable's window INSIDE its short cut — the
+     cut minus the pre-roll its seam fades in over (docs/MUSIC.md, The seam).
+     The whole track has no such offset, so the field goes with the cut. */
+  const dropCut = '\n  if (CONFIG.music) delete CONFIG.music.cut;   // web.music: the whole track ships\n';
+  return configSrc.replace(MUSIC_KEY, (m, pre) => `${pre}"${uris.music}"${extra}`) + dropCut;
 }
 
 function webDress(html, menuCss, menuJs) {

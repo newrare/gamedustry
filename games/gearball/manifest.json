@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.8.4",
+  "version": "2.9.0",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
@@ -395,13 +395,34 @@
     "music": "gearball.mp3",
     "levels": {
       "objective": {
-        "from": 13000,
-        "to": 95000,
+        "from": 5000,
+        "to": 38000,
         "step": 500
       },
       "copy": {
         "en": "Score <b>{n}</b> before the shift ends",
         "fr": "Marque <b>{n}</b> avant la fin du service"
+      },
+      "stars": [
+        1,
+        2.2,
+        3.5
+      ],
+      "faults": {
+        "from": 1,
+        "to": 2,
+        "copy": {
+          "en": "<b>{n}</b> hearts lost at most",
+          "fr": "<b>{n}</b> cœurs perdus au plus"
+        },
+        "one": {
+          "en": "<b>1</b> heart lost at most",
+          "fr": "<b>1</b> cœur perdu au plus"
+        },
+        "none": {
+          "en": "no heart lost",
+          "fr": "sans perdre de cœur"
+        }
       },
       "tune": {
         "gameSeconds": [
@@ -413,8 +434,8 @@
           600
         ],
         "mix.hearts": [
-          6,
-          3
+          7,
+          4
         ]
       },
       "bands": {
@@ -442,6 +463,7 @@
       }
     },
     "meta": {
+      "roundScore": 60500,
       "coinsPer": 100,
       "awards": [
         1,
