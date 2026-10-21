@@ -88,7 +88,7 @@
       bands: ["Warm-up", "Pressure", "Squeeze", "Overdrive", "Meltdown"],
       objective: "Objective", missed: "Objective missed",
       scores: "Scores", gameOver: "Game over",
-      threeStars: "Three stars!", cleared: "Level cleared!",
+      cleared: "Level cleared!",
       starLost: "Third star lost",
       levelsEntry: "Levels", map: "Map", next: "Next level", home: "Home",
       goals: "Objectives"
@@ -120,7 +120,7 @@
       bands: ["Echauffement", "Pression", "Etau", "Surrégime", "Fusion"],
       objective: "Objectif", missed: "Objectif manqué",
       scores: "Scores", gameOver: "Game over",
-      threeStars: "Trois étoiles !", cleared: "Stage réussi !",
+      cleared: "Stage réussi !",
       starLost: "Troisième étoile perdue",
       levelsEntry: "Stages", map: "Carte", next: "Stage suivant", home: "Accueil",
       goals: "Objectifs"
@@ -134,7 +134,7 @@
   var up = W.upper;
   var CAPS = ["title", "pick", "play", "replay", "takeRoad", "tutoPlay",
     "endlessPlay", "objective", "missed", "scores", "gameOver",
-    "threeStars", "cleared", "levelsEntry", "map", "next", "locked", "tutoTag",
+    "cleared", "levelsEntry", "map", "next", "locked", "tutoTag",
     "notTakenTag"
   ];
   (function () {
@@ -1020,13 +1020,19 @@
      its hero callout before calling endRound) is slowed with everything else,
      so the level layer stays the one that ends the round.
 
-     THREE STARS IS THE LAST THING THE ROUND SAYS, and it is a `record` — the
-     end-of-run peak, not one more milestone. It therefore WAITS for the game's
-     own callouts to play out first: echomaze lands PERFECT READ! on the very
-     frame the third star lights, and two hero callouts over one another read
-     as neither. `Pop.pending()` is how long that takes; the wait is capped so
-     a game that stacks several never leaves the player in slow motion. */
-  var WIN_RAMP = 620, WIN_WAIT = 1600, WIN_HOLD = 1100, WIN_ENTER = 620;
+     THE THIRD STAR WRITES NO WORD. The shine is the whole reaction, and the
+     end screen lights the three stars a moment later: a THREE STARS callout
+     over the round said the same thing twice. The crawl still WAITS for the
+     game's own callouts to play out (echomaze lands PERFECT READ! on the very
+     frame the third star lights) before the end screen takes over;
+     `Pop.pending()` is how long that takes, and the wait is capped so a game
+     that stacks several never leaves the player in slow motion.
+
+     EVERY ENDING IS HALF A SECOND (lab/end-screen.html, preset G): from the
+     frame the round is decided to the end screen's first frame — the ramp,
+     then a hold — whatever the round scored. The screen after it is where the
+     result is read. */
+  var WIN_RAMP = 300, WIN_WAIT = 500, WIN_HOLD = 200;
 
   /* EASING THE WORLD OFF, one ramp shared by the three ways a round can end.
      It reads the rate it is starting from rather than assuming 1, so a second
@@ -1066,11 +1072,7 @@
     slowTo(0.12, WIN_RAMP);
 
     var wait = Math.min(W.Pop.pending ? W.Pop.pending() : 0, WIN_WAIT);
-    setTimeout(function () {
-      if (W.state() !== "playing") return;              // it died on the way down
-      W.Pop.show("record", { word: T.threeStars, hold: WIN_HOLD });
-      setTimeout(function () { finishWin(value); }, WIN_ENTER + WIN_HOLD);
-    }, wait);
+    setTimeout(function () { finishWin(value); }, Math.max(wait, WIN_RAMP) + WIN_HOLD);
   }
 
   /* PLAYING ON. A game whose score is the point of the round rather than a
@@ -1110,9 +1112,8 @@
      on. The outro is the beat in between: the clock is already stopped, the
      loop is still turning, and the end screen waits for `done`.
 
-       three stars  the shine and the THREE STARS callout have already played
-                    (winRound) and the world is held at a crawl for a beat.
-                    The bonus is not handed over here any more: it is the end
+       three stars  the shine has already played (winRound) and the world
+                    is held at a crawl for a beat. The bonus is not handed over here any more: it is the end
                     screen's last beat, where the stars it lights turn into
                     the boxes (packages/webshell/meta.js, the ceremony).
        one or two   slow motion and nothing else. The objective was met; there
@@ -1123,8 +1124,8 @@
 
      Only a LEVEL has an outro. A free round and the endless run end the way
      they always did — there is no objective to have missed. */
-  var OUT_RAMP = 480, CALM_RATE = 0.22, CALM_HOLD = 300;
-  var LOSS_RATE = 0.16, LOSS_HOLD = 1150, BONUS_RATE = 0.14;
+  var OUT_RAMP = 300, CALM_RATE = 0.22, CALM_HOLD = 200;
+  var LOSS_RATE = 0.16, LOSS_HOLD = 500, BONUS_RATE = 0.14;
 
   /* The fire, spawned along the bottom edge of the frame and pulled UP by a
      negative gravity, so it accelerates away from the glass the way a flame
@@ -1168,18 +1169,17 @@
     var st = result.stars || 0;
 
     if (st >= 3) {
-      /* The shine normally played on the frame the third star lit, and the
-         callout with it (winRound); a game that ended its own round on that
-         same frame never went through it, so both are played here instead of
-         being skipped. A round that went through it has already been read:
-         it only holds its crawl for a beat. */
+      /* The shine normally played on the frame the third star lit
+         (winRound); a game that ended its own round on that same frame never
+         went through it, so it is played here instead of being skipped. A
+         round that went through it has already had its half second (the
+         ramp and the hold of winRound): the end screen follows at once. */
       if (!won) {
         won = true; winBeat(); slowTo(BONUS_RATE, WIN_RAMP);
-        W.Pop.show("record", { word: T.threeStars, hold: WIN_HOLD });
-        setTimeout(done, WIN_ENTER + WIN_HOLD);
+        setTimeout(done, WIN_RAMP + WIN_HOLD);
       } else {
         W.Loop.rate(BONUS_RATE);
-        setTimeout(done, CALM_HOLD);
+        done();
       }
       /* NO CARD OVER THE ROUND. The three-star bonus used to open here, as a
          modal over the frozen world; it is now the end screen's own last beat
@@ -1222,6 +1222,13 @@
     faultLost = false;
     for (var i = 0; i < 3; i++) hudStars[i].className = "";
     W.Loop.rate(1);
+    /* A level's record is the level's own best, not the game's: thirty
+       levels, thirty records (packages/shell/shell.js, Record). The endless
+       run has its own. A free round keeps the game's, armed by the motor. */
+    if (ON && W.Record) {
+      if (endless) W.Record.arm(save.e || 0);
+      else if (CONFIG.level) W.Record.arm(save.l[CONFIG.level] ? scoreOf(save.l[CONFIG.level]) : 0);
+    }
     if (!ON || !CONFIG.level) { hudBox.hidden = true; return; }
     hudNum.textContent = CONFIG.level;
     hudBox.hidden = false;
@@ -1610,9 +1617,9 @@
   /* The read-out goes on whichever side of the FRAME has room for it —
      measured, not guessed from the column, because the stars are the one thing
      on this screen that must never be clipped. */
-  function tagAt(pt, html) {
+  function tagAt(pt, html, stack) {
     var toLeft = pt.x + 46 + 150 > 720 - 16;
-    var tag = API.el("div", "lv-tag", html);
+    var tag = API.el("div", "lv-tag" + (stack ? " stack" : ""), html);
     tag.style.left = (pt.x + (toLeft ? -50 : 50)) + "px";
     tag.style.top = pt.y + "px";
     if (toLeft) tag.style.transform = "translate(-100%, -50%)";
@@ -1782,10 +1789,13 @@
 
       if (n === BONUS) continue;
 
+      /* A played level reads its stars, and its best SCORE under them — the
+         score and not the measure, so a distance game (arcider, triverse,
+         vipera) shows the number the ranking adds up. */
       var bits = played(n)
-        ? starRow(starsOf(n)) + '<span class="best">' + num(save.l[n].b) + "</span>"
+        ? starRow(starsOf(n)) + '<span class="best">' + num(scoreOf(save.l[n])) + "</span>"
         : isGap(n) ? "<em>" + T.notTakenTag + "</em>" : "";
-      if (bits) tagAt(pt, bits);
+      if (bits) tagAt(pt, bits, played(n));
     }
 
     totalN.textContent = totalStars() + "/" + MAX_STARS;
@@ -2147,6 +2157,9 @@
     /* The node the map has selected — what an arrival lands on (`show`). */
     picked: function () { return picked; },
     replayLast: function () { if (last) play(last.level); },
+    /* The level the running round was armed with — the endless run's own
+       number included — or 0 for a free round. */
+    current: function () { return ON ? (endless ? BONUS : (CONFIG.level || 0)) : 0; },
 
     /* THE WAY ON, WITHOUT THE MAP. The end screen's third button, and it is
        the level after the one just finished — `last.level + 1` and nothing

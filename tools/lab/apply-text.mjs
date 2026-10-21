@@ -111,7 +111,8 @@ function removeEntries(src, paths, skipped, what) {
  *   renames: dictionary keys that follow an English string — `{ from, to }`.
  */
 export async function applyText(slug, plan) {
-  const { edits = [], remove = [], renames = [], bump = true, dry = false } = plan || {};
+  const { edits = [], remove = [], bump = true, dry = false } = plan || {};
+  const renames = [...((plan && plan.renames) || [])];
   const dir = path.join(ROOT, 'games', slug);
   const scan = await scanText(slug);
   const byId = new Map(scan.rows.map((r) => [r.id, r]));
@@ -141,6 +142,16 @@ export async function applyText(slug, plan) {
     applied.push({ id: row.id, lang: row.lang, what: label,
       where: row.targets.map((t) => (t.line ? `${t.file}:${t.line}` : t.file)).join(' '),
       from: row.text, to: edit.text });
+  }
+
+  /* An English string the game writes is the KEY of its own translation, so
+     it never moves alone — whoever moved it, the desk's own English edit as
+     much as the automatic pass: without the key, the French stays behind as
+     an entry nothing reads and the new English reads untranslated. */
+  const keyed = new Set(scan.rows.filter((r) => r.group === 'words').map((r) => r.context));
+  for (const a of [...applied]) {
+    if (a.lang !== 'en' || !keyed.has(a.from) || renames.some((rn) => rn.from === a.from)) continue;
+    renames.push({ from: a.from, to: a.to });
   }
 
   /* A key is a JSON string like a value; its span runs from `keyStart` to its

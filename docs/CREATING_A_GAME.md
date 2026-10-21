@@ -137,7 +137,8 @@ Fx.shake(8, .22); Fx.flash("#ffffff", .3); Fx.freeze(.05);
 Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
 Pop.show("combo", { word:"Combo x8", sub:"+160" });              // milestone → COMBO x8
 Pop.show("ultra", { word:"Chain x20", sub:"+400" });             // hero beat
-Notify.say("The lava pulls", { kind: "warn" });                   // a status line
+Notify.say("The lava pulls", { kind: "warn" });                   // an event the player did not make
+Notify.learn("lava", "Lava", { sub: "It rises every ten seconds" });  // a mechanic, the first time ever
 Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone
@@ -151,13 +152,28 @@ other half is `Pop.text`, the canvas one, for a number at a world point; the
 thirteen give it the same look (`size: 22, life: 0.6, tier: 1`) and vary only
 its colour. Retint a style from the SKIN block, never inline.
 
-**Information is `Notify.say`, never a callout**: a state that changed ("Shield
-down"), an input refused ("Out of reach"), a hint, a warning of what is coming.
-It is one chip, top-right, with one look for all the games (chosen in
+**Every word is in one of three places.** `Pop` is what the player just DID —
+a hit, a power, a mistake, and the state it left ("Shield down"). `Notify.say`
+is what HAPPENED to them — an event they did not make (a wave, a boss, the lava
+surging), an action refused that they tried anyway ("Out of reach", "Follow
+suit"), anything said outside a round — and `Notify.learn` names a mechanic the
+first time a player meets it, once ever. A record beaten is said by the motor.
+`Notify` is one chip, top-right, with one look for all the games (chosen in
 [`lab/notify.html`](../lab/notify.html)) — pass a `kind` and, if it helps, an
 `icon`, and nothing else. Never paint a status line on the canvas and never
 build a message node of your own. See
 [ENGINE.md](ENGINE.md#notify--the-one-voice-for-information).
+
+**Every RULE is a page of the guide**, never a line during play nor a card on
+the way into a round. Publish `Game.guide` (`template/game.js` has the shape):
+chapters of pages, one per rule, biome, object or special card, each with the
+level that first deals it (`lv`). **A page shows before it tells**: a picture
+first (`pic` — the round's own renderer on a canvas, one of the game's cards,
+a cut of its artwork), a table for what a thing pays (`rows`), then two or
+three short lines. The Help card ends on the book's line (*Anytime, tap {book} for more help*), which
+opens it, a notice wearing the book and the "!" log open the page a `Notify.learn` named, and a tap on an element of the
+table opens its page with `__GUIDE__.open(id)`. See
+[the guide in CLAUDE.md](../CLAUDE.md#the-guide).
 
 ### 5. Update the intro markup
 

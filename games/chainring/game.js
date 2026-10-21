@@ -43,7 +43,7 @@
     copy: {
       start:"Play", ctaBar:"Install now", ctaEnd:"Play the full game",
       replay:"Replay the demo", scoreLabel:"Score", timeLabel:"Time",
-      endScore:"Final score", gameOver:"Game over", timeUp:"Time's up!"
+      endScore:"Final score", gameOver:"Game Over", timeUp:"Time's up!"
     },
 
     /* --- lead-in ---
@@ -294,15 +294,24 @@
       return ring.kind === "dark" || (ring.kind === "fragile" && ring.broke)
           || (ring.kind === "gap" && ring.judge === "free");
     }
-    // What each kind says the first time it shows up in a round (Notify).
-    var HINTS = {
-      rewind: { word: "Rewind ring", sub: "Tap it: the rings behind back off, then rush in", icon: "info" },
-      sticky: { word: "Sticky ring", sub: "Tap when the ball lands, and again when it leaves", icon: "hourglass" },
-      dark:   { word: "Dark ring",   sub: "Don't tap: let the ball bounce off it", icon: "warn" },
-      gap:    { word: "Mixed ring",  sub: "Tap only the bright parts, never the dark ones", icon: "eye" },
-      phantom:{ word: "Phantom ring", sub: "It shows its face a beat before the ball: bright, tap; dark, don't", icon: "sparkles" },
-      fragile:{ word: "Fragile ring", sub: "It may break before the ball reaches it: then don't tap", icon: "x" }
-    };
+    /* What each kind says the first time a PLAYER meets it — once ever, not
+       once a round (Notify.learn, kept under `guide:chainring`): the key is
+       the id of its page in the guide, which the notice's line in the "!"
+       log opens. The rule itself is that page's, never a line in the round.
+       Worded at the call, so the notice is in the language of the moment.
+       Only the special rings are named: each changes what a tap does. A full
+       track reads off the clock and needs no notice. */
+    function hint(kind) {
+      switch (kind) {
+        case "rewind":  return { word: Lang.t("Rewind ring"),  sub: Lang.t("Trust the beat, not your eyes"), icon: "info" };
+        case "sticky":  return { word: Lang.t("Sticky ring"),  sub: Lang.t("Tap on landing, tap on the burst"), icon: "hourglass" };
+        case "dark":    return { word: Lang.t("Dark ring"),    sub: Lang.t("Don't tap a dark ring"), icon: "warn" };
+        case "gap":     return { word: Lang.t("Mixed ring"),   sub: Lang.t("Tap bright parts, not dark ones"), icon: "eye" };
+        case "phantom": return { word: Lang.t("Phantom ring"), sub: Lang.t("Tap a phantom ring only if it shows bright"), icon: "sparkles" };
+        case "fragile": return { word: Lang.t("Fragile ring"), sub: Lang.t("If a fragile ring shatters first, don't tap"), icon: "x" };
+      }
+      return null;
+    }
     // Timing grades, tightest window first: higher tier = more points + juice.
     // `win` is how far off the beat the tap may be, **in beats** — a ring lands
     // on the beat, so the grade is pure rhythm accuracy and the widest window
@@ -330,7 +339,7 @@
     var lastStyle, sinceLow;              // bounce shape, and time since the last fall
     var score, combo, bestCombo, stats;
     var maxScore, idealCombo;   // running "perfect play" reference for the stars
-    var seen, lastKind, prevKind; // kinds already announced this round, the last two landing rings' kinds
+    var lastKind, prevKind;     // the last two landing rings' kinds
     var lastFree;               // the ring last left alone (letAlone), while a late tap can still spoil it
     var gapAfter, gapBorn;      // the last gap ring's beat and birth: no ring landing later is born earlier
     var phrase, calm, lastSeries; // the series being dealt, the simple rings owed after it, its kind (seriesLen)
@@ -353,7 +362,7 @@
       shockwaves = []; rays = []; ballPop = 0; hitFx = 0; tAnim = 0;
       score = 0; combo = 0; bestCombo = 0;
       maxScore = 0; idealCombo = 0;
-      seen = {}; lastKind = ""; prevKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
+      lastKind = ""; prevKind = ""; lastFree = null; gapAfter = -1e9; gapBorn = -1e9;
       phrase = null; calm = 0; lastSeries = ""; fragN = 0; fragBroke = 0;
       stats = { perfect: 0, good: 0, ok: 0, close: 0, miss: 0 };
       HUD.setScoreNow(0);
@@ -653,12 +662,10 @@
       } else if (calm > 0) calm--;
     }
 
-    // The first ring of a kind in a round names its rule, once.
+    // The first ring of a kind a player ever meets names its rule (hint).
     function announce(kind) {
-      if (seen[kind]) return;
-      seen[kind] = true;
-      var h = HINTS[kind];
-      Notify.say(h.word, { sub: h.sub, kind: "info", icon: h.icon, hold: 3200 });
+      var h = hint(kind);
+      if (h) Notify.learn(kind, h.word, { sub: h.sub, icon: h.icon });
     }
 
     // `inward`: the flight leaves a gap ring's bright part, not the rim (see below).
@@ -927,7 +934,7 @@
       Round.reset();
       if (!readyPop) {
         readyPop = true;
-        Pop.show("score", { word: "Get ready", sub: "Feel the beat", hold: 700, at: "top" });
+        Pop.show("score", { word: "Get ready", sub: "On the beat", hold: 700, at: "top" });
       }
       if (startAt === null && (Beat.locked() || heldT >= CONFIG.leadInMax)) {
         startAt = Beat.on() ? Beat.next(1) + CONFIG.leadInBeats : Beat.beats();
@@ -955,7 +962,6 @@
       held = false;
       Fx.flash("#ffffff", 0.18);
       Pop.show("score", { word: "Go!", hold: 200, at: "top" });
-      if (FULL) Notify.say("Full track", { sub: "The round lasts the whole track", kind: "info", icon: "hourglass" });
     }
 
     // Timer out: a spiked ring is released. It cannot be tapped away — when it
@@ -1111,7 +1117,7 @@
       Pop.show("score", { word: Lang.t(word), cls: "pop-miss", hold: 180,
                           at: { x: clamp(ball.x, 200, view.w - 200), y: ball.y - 56 } });
       Fx.shake(6, 0.22);
-      Sound.clip("dark", 0.1);
+      Sound.clip("dark", 0.5);
     }
 
     /* A ring left alone as it should be — a dark ring, a dark part of a gap
@@ -1158,8 +1164,9 @@
     /* `fateLead` beats before the ball a phantom ring shows its face, and
        `fragileLead` beats before it a fragile one breaks or holds. A phantom becomes the ring it was all
        along — a plain one or a dark one — and keeps `phantom` for its glyph
-       to fade out on; a broken fragile ring is left as debris that fades out
-       before the ball flies through it, and wants no tap (noTap). */
+       to fade out on; a broken fragile ring is left as debris that fades out,
+       its cracks with it, before the ball flies through it, and wants no tap
+       (noTap). One that held keeps its cracks until it is tapped. */
     function fateLead(ring) { return ring.kind === "fragile" ? CONFIG.fragileLead : CONFIG.fateLead; }
     function reveal(ring, now) {
       ring.shown = now;
@@ -1332,21 +1339,7 @@
       }
       ctx.globalAlpha = 1;
 
-      // Game-over ring — a red spiked circle closing in (spikes point inward).
-      if (doom) {
-        var DR = Math.max(1, doom.r), spikes = 40, spikeLen = 28;
-        ctx.strokeStyle = "#ff2d55"; ctx.lineWidth = 9;
-        ctx.beginPath(); ctx.arc(C.x, C.y, DR, 0, Math.PI * 2); ctx.stroke();
-        ctx.fillStyle = "#ff2d55"; ctx.beginPath();
-        for (var d = 0; d < spikes; d++) {
-          var da = (d / spikes) * Math.PI * 2 + tAnim * 0.5, a1 = da + 0.045, a2 = da - 0.045;
-          ctx.moveTo(C.x + Math.cos(a1) * DR, C.y + Math.sin(a1) * DR);
-          ctx.lineTo(C.x + Math.cos(da) * (DR - spikeLen), C.y + Math.sin(da) * (DR - spikeLen));
-          ctx.lineTo(C.x + Math.cos(a2) * DR, C.y + Math.sin(a2) * DR);
-          ctx.closePath();
-        }
-        ctx.fill();
-      }
+      if (doom) drawDoom(Math.max(1, doom.r));
 
       // Ball trail — one stroked streak of the recent path.
       if (trail.length > 1) {
@@ -1379,6 +1372,22 @@
         drawBall(bc, beat);
         Enter.end();
       }
+    }
+
+    // Game-over ring — a red spiked circle closing in (spikes point inward).
+    function drawDoom(DR) {
+      var spikes = 40, spikeLen = 28;
+      ctx.strokeStyle = "#ff2d55"; ctx.lineWidth = 9;
+      ctx.beginPath(); ctx.arc(C.x, C.y, DR, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#ff2d55"; ctx.beginPath();
+      for (var d = 0; d < spikes; d++) {
+        var da = (d / spikes) * Math.PI * 2 + tAnim * 0.5, a1 = da + 0.045, a2 = da - 0.045;
+        ctx.moveTo(C.x + Math.cos(a1) * DR, C.y + Math.sin(a1) * DR);
+        ctx.lineTo(C.x + Math.cos(da) * (DR - spikeLen), C.y + Math.sin(da) * (DR - spikeLen));
+        ctx.lineTo(C.x + Math.cos(a2) * DR, C.y + Math.sin(a2) * DR);
+        ctx.closePath();
+      }
+      ctx.fill();
     }
 
     /* =====================================================================
@@ -1820,14 +1829,20 @@
       ctx.restore();
       ctx.globalAlpha = 1; RA = 1;
       if (ring.struck) return;
-      // A glyph that has said its word (a phantom shown, a fragile ring that
-      // held) fades out over half a beat.
+      // A phantom's glyph has said its word once it has shown its face: it
+      // fades out over half a beat. A fragile ring keeps its cracks whatever
+      // its fate — whole up to the tap, so a ring that held still reads as
+      // the fragile one it was, and on the shards as they fade, so a break
+      // reads as the fragile ring breaking rather than a plain one vanishing.
       var fade = ring.shown == null ? 1 : clamp(1 - (now - ring.shown) / 0.5, 0, 1);
       if (ring.kind === "rewind") drawChevrons(ring, rr);
       else if (ring.kind === "sticky") drawGlue(ring, rr, now);
       else if (ring.kind === "phantom") drawGhosts(ring, rr, 0.45);
       else if (ring.phantom && fade > 0) drawGhosts(ring, rr, 0.45 + 0.55 * fade);
-      else if (ring.kind === "fragile" && !ring.broke && fade > 0) drawCracks(ring, rr, fade);
+      else if (ring.kind === "fragile") {
+        var ca = ring.broke ? clamp((ring.hit - now) / CONFIG.fragileLead, 0, 1) : 1;
+        if (ca > 0) drawCracks(ring, rr, ca);
+      }
     }
 
     // A broken fragile ring's shards: ten wedges with a gap between each.
@@ -2130,13 +2145,221 @@
       return { goal: Math.round(base * fullSeconds(CONFIG.beds[i]) / secs / step) * step };
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and what it shows is drawn by the
+       round's own renderers — drawRing, drawBall, drawDoom, the biome's
+       kaleidoscope — with the motor's `ctx` lent to a canvas of the page's
+       own for the length of the call, so a ring read in the guide is the
+       ring that closes in. The scene those renderers read (the arena's
+       centre, the biome, the ball, the animation clock) is set for the
+       call and put back after it: the guide can open over a round, and
+       before any round at all, when none of it is set yet. A page's level
+       is the one the climb first deals the idea on (applyLevel), locked
+       until the board opens it. */
+    var GW = { neon: 0, amber: 1, eclipse: 2, glacier: 3, nova: 4 };
+    function scenePic(W, H, bio, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1;
+      var keep = { ctx: ctx, C: C, BIO: BIO, t: tAnim, ball: ball, pop: ballPop, fx: hitFx };
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      BIO = bio; tAnim = 1.3; ballPop = 0; hitFx = 0; RA = 1;
+      try {
+        // the biome's own ground, as a tile with rounded corners
+        var g = bio.ground, bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.6);
+        bg.addColorStop(0, g.base[0]); bg.addColorStop(1, g.base[1]);
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(0, 0, W, H, 18); else ctx.rect(0, 0, W, H);
+        ctx.fill(); ctx.clip();
+        fn(W, H);
+      } finally {
+        ctx = keep.ctx; C = keep.C; BIO = keep.BIO; tAnim = keep.t; ball = keep.ball;
+        ballPop = keep.pop; hitFx = keep.fx; RA = 1;
+      }
+      return cv;
+    }
+    /* One ring of `o.kind` centred on (x, y), radius r, drawn as the round
+       draws it — and the ball on its rim at angle `at` (down by default),
+       its edge on the ring like a landing; `through` puts the ball ON the
+       line instead (a broken fragile ring, flown across). */
+    function picRing(x, y, r, o) {
+      o = o || {};
+      C = { x: x, y: y };
+      var ring = { kind: o.kind || "", color: o.color || BIO.rings[o.c || 0], pulse: o.pulse || 0,
+                   struck: false, kicks: [], spin: o.spin == null ? 0.35 : o.spin, hit: 2,
+                   phase: o.phase, broke: o.broke, phantom: o.phantom, shown: o.shown };
+      drawRing(ring, r, !!o.hot, 0);
+      if (o.ball === false) return;
+      var a = o.at == null ? Math.PI / 2 : o.at, d = o.through ? r : r - CONFIG.ballR;
+      ball = { x: x + Math.cos(a) * d, y: y + Math.sin(a) * d, vx: 0, vy: 0 };
+      drawBall(o.ballCol || BIO.balls[2], 0.4);
+    }
+    function ringPic(bio, specs) {
+      var n = specs.length, r = n === 1 ? 128 : n === 2 ? 108 : 70;
+      var cell = n === 1 ? 340 : n === 2 ? 250 : 170, W = cell * n, H = n === 3 ? 190 : r * 2 + 50;
+      return scenePic(W, H, CONFIG.biomes[bio], function () {
+        for (var i = 0; i < n; i++) picRing(cell * (i + 0.5), H / 2, r, specs[i]);
+      });
+    }
+    /* A world's tile: its kaleidoscope behind (built fresh for the picture
+       and freed after it — the round's own cache is never touched), and one
+       ring of its design with its ball. */
+    function worldPic(b) {
+      var bio = CONFIG.biomes[b];
+      return scenePic(500, 300, bio, function (W, H) {
+        var g = bio.ground, R = Math.ceil(Math.sqrt(W * W + H * H) / 2) + 10, res = Math.min(view.dpr || 1, 1.5);
+        var cv = g.style === "spiral" ? spiral(g, R, res) : kaleido(g, R, res, b * 7 + 1, true);
+        C = { x: W / 2, y: H / 2 };
+        blit(cv, R, 0.3, 1, 1);
+        freeCanvas(cv);
+        picRing(W / 2, H / 2, 118, { c: 1, ballCol: bio.balls[3] });
+      });
+    }
+    // The four grades as four rings closing on one ball: the closer the
+    // ring when the tap comes, the better the grade (TIERS, tightest first).
+    function timingPic() {
+      return scenePic(480, 200, CONFIG.biomes[0], function (W) {
+        var R0 = 300, by = 96, i;
+        C = { x: W / 2, y: by - (R0 - CONFIG.ballR) };
+        for (i = TIERS.length - 1; i >= 0; i--) {
+          if (!i) circ(R0, TIERS[i].color, 22, 0.22);
+          circ(R0 + i * 21, TIERS[i].color, 8);
+        }
+        ball = { x: W / 2, y: by, vx: 0, vy: 0 };
+        drawBall(BIO.balls[0], 0.4);
+      });
+    }
+    // The ball's colour as the combo climbs (BIO.balls, ballColor).
+    function comboPic() {
+      var bio = CONFIG.biomes[0], n = bio.balls.length;
+      return scenePic(n * 70 + 30, 120, bio, function () {
+        for (var i = 0; i < n; i++) {
+          ball = { x: 50 + i * 70, y: 60, vx: 0, vy: 0 };
+          hitFx = i / (n - 1) * 0.6;
+          drawBall(bio.balls[i], 0.2 + i * 0.1);
+        }
+      });
+    }
+    function doomPic() {
+      return scenePic(320, 300, CONFIG.biomes[0], function (W, H) {
+        C = { x: W / 2, y: H / 2 };
+        ball = { x: W / 2, y: H / 2 + 40, vx: 0, vy: 0 };
+        drawBall(BIO.balls[6], 0.3);
+        drawDoom(128);
+      });
+    }
+    // A whole song of rings closing in, one ring a beat.
+    function chartPic(hot) {
+      return scenePic(500, 300, CONFIG.biomes[0], function (W, H) {
+        var x = W / 2, y = H / 2, n = hot ? 3 : 7, i;
+        for (i = n - 1; i >= 1; i--) picRing(x, y, 110 + i * 46, { c: i, ball: false, spin: 0.2 * i });
+        picRing(x, y, 110, { hot: hot, c: 0, ballCol: BIO.balls[1] });
+      });
+    }
+    function starsPic() {
+      var src = CONFIG.shellArt && CONFIG.shellArt.star;
+      if (!src) return null;
+      var box = document.createElement("div"), i, im;
+      box.className = "cr-gstars";
+      for (i = 0; i < 3; i++) { im = document.createElement("img"); im.alt = ""; im.src = src; box.appendChild(im); }
+      return box;
+    }
+    function times(m) {
+      var s = "×" + m;
+      return Lang.code && Lang.code() === "fr" ? s.replace(".", ",") : s;
+    }
+    var guide = {
+      chapters: function () {
+        var faults = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.faults;
+        var fMax = faults ? Math.max(faults.from, faults.to) : 3, fMin = faults ? Math.min(faults.from, faults.to) : 2;
+        var tierRows = [], i;
+        for (i = 0; i < TIERS.length; i++) tierRows.push([Lang.t(TIERS[i].name), times(TIERS[i].mult), TIERS[i].color]);
+        var GOLD = TIERS[0].color, RED = "#ff6b6b", RIDE = CONFIG.stickBeats;
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "tap", title: Lang.t("Tap on the beat"), pic: function () { return chartPic(true); }, lines: [
+              Lang.t("Tap the instant a ring touches the ball. The ring glows while your tap can count."),
+              Lang.t("A long flight leaves an empty beat. Tapping on it counts as a miss.") ] },
+            { id: "timing", title: Lang.t("Timing"), pic: timingPic, rows: tierRows, lines: [
+              Lang.t("Tapping off the beat or letting a ring by breaks your combo, but costs no points.") ] },
+            { id: "combo", title: Lang.t("Combo and mega bonus"), pic: comboPic,
+              rows: [[Lang.t("Every {n} hits in a row").replace("{n}", CONFIG.chainEvery), Lang.t("+20 × combo"), GOLD]],
+              lines: [
+              Lang.t("The combo multiplies every hit and every mega bonus.") ] },
+            { id: "doom", title: Lang.t("The spiked ring"), pic: doomPic, lines: [
+              Lang.t("When the clock runs out, a red spiked ring closes in on the ball."),
+              Lang.t("No tap can stop the spiked ring. Once it reaches the ball, the round is over.") ] },
+            { id: "clean", title: Lang.t("The third star"), pic: starsPic, lines: [
+              Lang.t("Each stage asks for a score. The third star also limits your misses."),
+              Lang.t("A bad tap, a dark ring tapped or a ring let by is a miss. You get {a}, later only {b}.")
+                .replace("{a}", fMax).replace("{b}", fMin) ] },
+            { id: "full", title: Lang.t("Full track"), lv: 6, pic: function () { return chartPic(false); }, lines: [
+              Lang.t("The last stage of each world lasts its whole track, and asks for a bigger score.") ] }
+          ] },
+          { key: "neon", label: Lang.t("Neon"), pages: [
+            { id: "neon", title: Lang.t("Rings of light"), lv: 1, pic: function () { return worldPic(GW.neon); }, lines: [
+              Lang.t("The rewind ring arrives.") ] },
+            { id: "rewind", title: Lang.t("Rewind ring"), lv: 1, pic: function () {
+                return ringPic(GW.neon, [{ kind: "rewind" }, { c: 1, ball: false }]);
+              }, lines: [
+              Lang.t("Tap a rewind ring like any other ring. Every ring behind it is pushed back out."),
+              Lang.t("Rewind rings rush back in time for their beat. Trust the music, not your eyes.") ] }
+          ] },
+          { key: "amber", label: Lang.t("Amber"), pages: [
+            { id: "amber", title: Lang.t("Chainrings"), lv: 7, pic: function () { return worldPic(GW.amber); }, lines: [
+              Lang.t("The sticky ring arrives.") ] },
+            { id: "sticky", title: Lang.t("Sticky ring"), lv: 7, pic: function () { return ringPic(GW.amber, [{ kind: "sticky" }]); },
+              rows: [[Lang.t("The ball lands"), Lang.t("Tap")],
+                     [Lang.t("{n} beats later, the ring bursts").replace("{n}", RIDE), Lang.t("Tap")]],
+              lines: [
+              Lang.t("The ball sticks to a sticky ring and rides the rim, then the ring bursts.") ] }
+          ] },
+          { key: "eclipse", label: Lang.t("Eclipse"), pages: [
+            { id: "eclipse", title: Lang.t("Chains"), lv: 13, pic: function () { return worldPic(GW.eclipse); }, lines: [
+              Lang.t("The dark ring arrives, then the phantom ring from stage 16.") ] },
+            { id: "dark", title: Lang.t("Dark ring"), lv: 13, pic: function () { return ringPic(GW.eclipse, [{ kind: "dark" }]); },
+              rows: [[Lang.t("Left alone"), Lang.t("Perfect"), GOLD], [Lang.t("Tapped"), Lang.t("Miss"), RED]],
+              lines: [
+              Lang.t("Don't tap a dark ring. The ball bounces off it on its own.") ] },
+            { id: "phantom", title: Lang.t("Phantom ring"), lv: 16, pic: function () {
+                return ringPic(GW.eclipse, [{ kind: "phantom" }, { phantom: true, shown: 0 }, { kind: "dark", phantom: true, shown: 0 }]);
+              },
+              rows: [[Lang.t("Shows bright"), Lang.t("Tap")], [Lang.t("Shows dark"), Lang.t("Leave it")]],
+              lines: [
+              Lang.t("A phantom ring is barely visible as it closes in. It shows its true colour one beat before the ball.") ] }
+          ] },
+          { key: "glacier", label: Lang.t("Glacier"), pages: [
+            { id: "glacier", title: Lang.t("Crowns"), lv: 19, pic: function () { return worldPic(GW.glacier); }, lines: [
+              Lang.t("The mixed ring arrives, then the fragile ring from stage 22.") ] },
+            { id: "gap", title: Lang.t("Mixed ring"), lv: 19, pic: function () {
+                return ringPic(GW.glacier, [{ kind: "gap", phase: Math.PI / 2 + Math.PI / 3 }, { kind: "gap", phase: Math.PI / 2 }]);
+              },
+              rows: [[Lang.t("Bright part"), Lang.t("Tap")], [Lang.t("Dark part"), Lang.t("Leave it")], [Lang.t("On a seam"), Lang.t("Either")]],
+              lines: [
+              Lang.t("A mixed ring meets the ball in mid-flight. What counts is the part the ball touches.") ] },
+            { id: "fragile", title: Lang.t("Fragile ring"), lv: 22, pic: function () {
+                return ringPic(GW.glacier, [{ kind: "fragile" }, { kind: "fragile", broke: true, through: true }]);
+              },
+              rows: [[Lang.t("Holds"), Lang.t("Tap")], [Lang.t("Shatters"), Lang.t("Leave it")]],
+              lines: [
+              Lang.t("A fragile ring is cracked. Two beats before the ball arrives, it either shatters or holds.") ] }
+          ] },
+          { key: "nova", label: Lang.t("Nova"), pages: [
+            { id: "nova", title: Lang.t("Ribbons"), lv: 25, pic: function () { return worldPic(GW.nova); }, lines: [
+              Lang.t("Every special ring comes back.") ] }
+          ] }
+        ];
+      }
+    };
+
     /* The three-star finish: the web shell has already played the slow
        motion, and the round ends through the game's own result so the end
        screen keeps these stat rows. Ignored by the playable, which has no
        levels — see docs/LEVELS.md. */
     return { reset: reset, onDown: onDown, update: update, render: render,
              onTimeUp: onTimeUp, onResize: onResize, applyLevel: applyLevel,
-             levelWon: end, levelGoal: levelGoal,
+             levelWon: end, levelGoal: levelGoal, guide: guide,
              /* The third star is a clean chart: every miss counts against the
                 allowance of `web.levels.faults` — a bad tap, a ring tapped
                 that wanted to be left alone, a ring let by. */

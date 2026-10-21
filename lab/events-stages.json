@@ -1,0 +1,56 @@
+{
+  "marshmelt": {
+    "boom": 23,
+    "burn": 1,
+    "climb": 11,
+    "crumble": 1,
+    "dust": 21,
+    "fling": 1,
+    "fuse": 23,
+    "geyser": 13,
+    "ice": 7,
+    "melt": 1,
+    "pickup": 7,
+    "pop": 15,
+    "serpent": 18,
+    "shatter": 18,
+    "smore": 11,
+    "stick": 1,
+    "surge": 5,
+    "wall": 1
+  },
+  "orbinity": {
+    "boom": 2,
+    "eclipse": 2,
+    "evolve": 2,
+    "grab": 2,
+    "launch": 2,
+    "lost": 2,
+    "milestone": 2,
+    "nova": 2,
+    "reaction": 2,
+    "supernova": 2,
+    "wall": 2
+  },
+  "pawko": {
+    "card": 2,
+    "drop": 2,
+    "gate": 2,
+    "goal": 2,
+    "hit": 2,
+    "out": 2,
+    "snd": 2,
+    "split": 2,
+    "zap": 2
+  },
+  "radiam": {
+    "blast": 4,
+    "chain": 4,
+    "charge": 4,
+    "land": 4,
+    "multi": 4,
+    "nova": 4,
+    "pop": 4,
+    "tick": 4
+  }
+}

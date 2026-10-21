@@ -781,6 +781,17 @@ function openOf(src, mask, p) {
   }
   return -1;
 }
+// The `if (…)` or `else if (…)` a statement opens on, its condition balanced; null otherwise.
+function ifHead(text) {
+  const m = /^(else\s+)?if\s*\(/.exec(text);
+  if (!m) return null;
+  let d = 0;
+  for (let i = m[0].length - 1; i < text.length; i++) {
+    if (text[i] === '(') d++;
+    else if (text[i] === ')' && --d === 0) return text.slice(0, i + 1);
+  }
+  return null;
+}
 const clip = (t, n) => t.length > n ? t.slice(0, n - 1) + '…' : t;
 const isFunctionHead = (h) => /^(async\s+)?function\b[\s\w$]*\(/.test(h) || /^[\w$.]+\s*[:=]\s*(async\s+)?function\b/.test(h) ||
   /^(var|let|const)\s+[\w$]+\s*=\s*(async\s+)?(function\b|\([^)]*\)\s*=>)/.test(h) ||
@@ -790,7 +801,14 @@ function guardsOf(src, mask, call, lineOf) {
   const at = call.callSpan.start, out = [];
   // A condition on the call's own statement: `if (hit) Sound.clip(…)`, `big && Sound.clip(…)`.
   // The object the call is read off (`W.` in `W.Sound.ui`) is not part of the condition.
-  const own = headBefore(src, mask, at).text.replace(/[\w$.]*\.$/, '').trim();
+  const head = headBefore(src, mask, at);
+  let own = head.text.replace(/[\w$.]*\.$/, '').trim();
+  /* A braceless `else` is the if on the statement before it, turned down —
+     `if (mid) Sound.clip(…); else Sound.clip(…);`, one call per case. */
+  if (own === 'else' && head.stop === ';') {
+    const prev = ifHead(headBefore(src, mask, head.start - 1).text);
+    if (prev) own = 'else ← ' + prev;
+  }
   if (own && /^(if|else|while|for)\b|&&|\|\||\?/.test(own)) out.push({ text: clip(own.replace(/\s*(&&|\|\||\?)\s*$/, ''), 90), line: lineOf(at) });
   // Then every block around it, innermost first, up to the function's own body.
   let depth = 0;

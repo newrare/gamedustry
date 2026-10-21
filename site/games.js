@@ -16,185 +16,29 @@
 */
 window.GAMES = [
   {
-    slug: "gearball",
-    name: "Gearball",
-    accent: ["#7ef9ff", "#ffb44f"],
+    slug: "holepocalypse",
+    name: "Holepocalypse",
+    accent: ["#9fe03a", "#b46cff"],
     fr: {
-      tagline: "Une machine à billes à faire tourner. Déverrouille les barrières avant qu’elles débordent et déplace la prise pour attraper la bille électrique.",
-      tags: ["Touche pour déverrouiller", "Attrape l’étincelle", "Monte le combo"]
+      tagline: "Golf vs Zombies : testez votre précision sur le green à travers 5 biomes uniques et battez tous les records ! Pas facile d'ajuster son swing quand une horde de zombies s'invite sur le parcours... Découvrez un mélange explosif de précision, de Tower Defense et de pouvoirs destructeurs !",
+      tags: ["Golf", "Horde de zombies", "Tower Defense"]
     },
     en: {
-      tagline: "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
-      tags: ["Tap to unlock", "Catch the spark", "Build the combo"]
+      tagline: "Golf vs Zombies: test your precision on the green across 5 unique biomes and beat every record! Not easy to adjust your swing when a zombie horde crashes the course… Discover an explosive mix of precision, Tower Defense and destructive powers!",
+      tags: ["Golf", "Zombie horde", "Tower Defense"]
     }
   },
   {
-    slug: "bouncetry",
-    name: "Bouncetry",
-    accent: ["#ff3b57", "#2f86ff"],
+    slug: "bridgessa",
+    name: "Bridgessa",
+    accent: ["#ff7a59", "#2ec4b6"],
     fr: {
-      tagline: "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
-      tags: ["Tap pour piéger", "Casse-briques", "Interrupteurs"]
+      tagline: "Le bridge sans les enchères : joue tes deux mains et réussis ton contrat face à une défense qui ne laisse rien passer.",
+      tags: ["Bridge", "Jeu de la carte", "Problèmes"]
     },
     en: {
-      tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
-      tags: ["Tap to trap", "Breakout", "Switch buttons"]
-    }
-  },
-  {
-    slug: "arcider",
-    name: "Arcider",
-    accent: ["#35e8ff", "#7a4dff"],
-    fr: {
-      tagline: "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
-      tags: ["Incline ton vaisseau", "Battle Royale", "Musique Retro Futuriste"]
-    },
-    en: {
-      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between speed and safety.",
-      tags: ["Tilt your ship", "Battle royale", "Retro-futuristic music"]
-    }
-  },
-  {
-    slug: "slipdeck",
-    name: "Slipdeck",
-    accent: ["#f5c451", "#3ddc97"],
-    fr: {
-      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
-      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
-    },
-    en: {
-      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
-      tags: ["Swipe to sort", "Jokers", "Poker hands"]
-    }
-  },
-  {
-    slug: "blight",
-    name: "Blight",
-    accent: ["#ff8fab", "#7048e8"],
-    fr: {
-      tagline: "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
-      tags: ["Vise rapidement", "Grappe de trois", "Contamination"]
-    },
-    en: {
-      tagline: "A magic bubble shooter where you must outpace the evil gnawing at the bubbles. Be quick, and outsmart the blight.",
-      tags: ["Aim fast", "Cluster of three", "Race the rot"]
-    }
-  },
-  {
-    slug: "chainring",
-    name: "Chainring",
-    accent: ["#4bf5ff", "#4263eb"],
-    fr: {
-      tagline: "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
-      tags: ["Tap rythmé", "En rythme et en musique", "Mort subite"]
-    },
-    en: {
-      tagline: "Tap to the beat of the music. A hypnotic ball bounces inside endless rings.",
-      tags: ["Rhythm tap", "On the beat, to the music", "Sudden death"]
-    }
-  },
-  {
-    slug: "echomaze",
-    name: "Echomaze",
-    accent: ["#7ef9ff", "#4ade80"],
-    fr: {
-      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
-      tags: ["Mémorise et vise", "Echo localisation", "Une seule sortie"]
-    },
-    en: {
-      tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
-      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
-    }
-  },
-  {
-    slug: "vipera",
-    name: "Vipera",
-    accent: ["#4dff9b", "#12b86a"],
-    fr: {
-      tagline: "Ondule comme un serpent : chaque tap inverse ta direction. Grandis et évite les pièges !",
-      tags: ["Tap pour dévier", "Sans fin", "Armure d'écailles"]
-    },
-    en: {
-      tagline: "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
-      tags: ["Tap to swerve", "Endless", "Armour"]
-    }
-  },
-  {
-    slug: "triverse",
-    name: "Triverse",
-    accent: ["#3ce0ff", "#ff5ad4"],
-    fr: {
-      tagline: "Trois cordes de lumière. Swipe pour sauter de l'une à l'autre et éviter les pièges.",
-      tags: ["Swipe pour sauter", "Sans fin", "3 vies"]
-    },
-    en: {
-      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
-      tags: ["Swipe lanes", "Endless", "3 lives"]
-    }
-  },
-  {
-    slug: "radiam",
-    name: "Radiam",
-    accent: ["#35e0ff", "#8b6cff"],
-    fr: {
-      tagline: "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
-      tags: ["Déplace les anneaux", "Aligne trois billes", "Plusieurs billes spéciales"]
-    },
-    en: {
-      tagline: "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
-      tags: ["Move the rings", "Three per ray", "Several special beads"]
-    }
-  },
-  {
-    slug: "spinshock",
-    name: "Spinshock",
-    accent: ["#40ecff", "#ff4fbe"],
-    fr: {
-      tagline: "Toupie Vs toupie. Tap pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
-      tags: ["Tap précis", "5 biomes", "Physique"]
-    },
-    en: {
-      tagline: "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
-      tags: ["Timing tap", "5 biomes", "Physics"]
-    }
-  },
-  {
-    slug: "orbinity",
-    name: "Orbinity",
-    accent: ["#7cf5ff", "#6d5cff"],
-    fr: {
-      tagline: "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaine les trajectoires sans erreur pour créer un combo!",
-      tags: ["Tap précis", "Gravité coupée", "Chaîne de combos"]
-    },
-    en: {
-      tagline: "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it toward the next celestial body. Chain trajectories without a mistake to build a combo!",
-      tags: ["Timing tap", "Snap gravity", "Combo chain"]
-    }
-  },
-  {
-    slug: "marshmelt",
-    name: "Marshmelt",
-    accent: ["#ff9d2e", "#ff7a1a"],
-    fr: {
-      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
-    },
-    en: {
-      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
-    }
-  },
-  {
-    slug: "stratideck",
-    name: "Stratideck",
-    accent: ["#f2c14e", "#5aa9ff"],
-    fr: {
-      tagline: "Affrontes une armée de monstre et construit le meilleur Deck possible afin de gagner un maximum de bataille. Convertis les cartes adverses, soit stratégique en défense et positionnement. N'oublies pas aussi que la vie et la gestion du camp est une composante importante pour gagner une guerre. Collectionnes des centaines de cartes uniques!",
-      tags: ["Gestion, stratégie et mémorisation", "Grade et Rang", "Collection et gestion de Deck"]
-    },
-    en: {
-      tagline: "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
-      tags: ["Management, strategy and memorization", "Grade and tier", "Collection and deck management"]
+      tagline: "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
+      tags: ["Bridge", "Card play", "Puzzles"]
     }
   },
   {
@@ -224,29 +68,185 @@ window.GAMES = [
     }
   },
   {
-    slug: "bridgessa",
-    name: "Bridgessa",
-    accent: ["#ff7a59", "#2ec4b6"],
+    slug: "stratideck",
+    name: "Stratideck",
+    accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Le bridge sans les enchères : joue tes deux mains et réussis ton contrat face à une défense qui ne laisse rien passer.",
-      tags: ["Bridge", "Jeu de la carte", "Problèmes"]
+      tagline: "Affronte une armée de monstres et construis le meilleur deck possible pour gagner un maximum de batailles. Convertis les cartes adverses, sois stratégique en défense comme en placement. N'oublie pas que la vie et la gestion du camp sont essentielles pour gagner une guerre. Collectionne des centaines de cartes uniques !",
+      tags: ["Gestion, stratégie et mémorisation", "Grade et rang", "Collection et gestion de deck"]
     },
     en: {
-      tagline: "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
-      tags: ["Bridge", "Card play", "Puzzles"]
+      tagline: "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
+      tags: ["Management, strategy and memorization", "Grade and tier", "Collection and deck management"]
     }
   },
   {
-    slug: "holepocalypse",
-    name: "Holepocalypse",
-    accent: ["#9fe03a", "#b46cff"],
+    slug: "marshmelt",
+    name: "Marshmelt",
+    accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "Golf contre une horde de zombies : lance des balles qui ricochent et fais-en rouler une dans le trou pour tout balayer.",
-      tags: ["Golf", "Zombies", "Arcade"]
+      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
+      tags: ["Tap pour sauter", "Sans fin", "Lave"]
     },
     en: {
-      tagline: "Golf against a zombie horde: fling ricocheting balls and roll one into the hole to blast them all.",
-      tags: ["Golf", "Zombies", "Arcade"]
+      tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
+      tags: ["Tap to jump", "Endless", "Lava"]
+    }
+  },
+  {
+    slug: "echomaze",
+    name: "Echomaze",
+    accent: ["#7ef9ff", "#4ade80"],
+    fr: {
+      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho de tes impulsions.",
+      tags: ["Mémorise et vise", "Echolocalisation", "Une seule sortie"]
+    },
+    en: {
+      tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
+      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
+    }
+  },
+  {
+    slug: "gearball",
+    name: "Gearball",
+    accent: ["#7ef9ff", "#ffb44f"],
+    fr: {
+      tagline: "Une machine à billes à faire tourner. Déverrouille les barrières avant qu’elles débordent et déplace la prise pour attraper la bille électrique.",
+      tags: ["Touche pour déverrouiller", "Attrape l’étincelle", "Monte le combo"]
+    },
+    en: {
+      tagline: "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
+      tags: ["Tap to unlock", "Catch the spark", "Build the combo"]
+    }
+  },
+  {
+    slug: "radiam",
+    name: "Radiam",
+    accent: ["#35e0ff", "#8b6cff"],
+    fr: {
+      tagline: "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
+      tags: ["Déplace les anneaux", "Aligne trois billes", "Plusieurs billes spéciales"]
+    },
+    en: {
+      tagline: "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
+      tags: ["Move the rings", "Three per ray", "Several special beads"]
+    }
+  },
+  {
+    slug: "slipdeck",
+    name: "Slipdeck",
+    accent: ["#f5c451", "#3ddc97"],
+    fr: {
+      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
+      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
+    },
+    en: {
+      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
+      tags: ["Swipe to sort", "Jokers", "Poker hands"]
+    }
+  },
+  {
+    slug: "spinshock",
+    name: "Spinshock",
+    accent: ["#40ecff", "#ff4fbe"],
+    fr: {
+      tagline: "Toupie contre toupie. Tape pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      tags: ["Tap précis", "5 biomes", "Physique"]
+    },
+    en: {
+      tagline: "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      tags: ["Timing tap", "5 biomes", "Physics"]
+    }
+  },
+  {
+    slug: "arcider",
+    name: "Arcider",
+    accent: ["#35e8ff", "#7a4dff"],
+    fr: {
+      tagline: "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
+      tags: ["Arcade", "Battle Royale", "Rapide"]
+    },
+    en: {
+      tagline: "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose speed or safety.",
+      tags: ["Arcade", "Battle royale", "Fast"]
+    }
+  },
+  {
+    slug: "chainring",
+    name: "Chainring",
+    accent: ["#4bf5ff", "#4263eb"],
+    fr: {
+      tagline: "Tape au rythme de la musique. Une bille hypnotisante rebondit dans des anneaux sans fin sans jamais perdre le tempo.",
+      tags: ["Rythme", "Musique", "Hypnotisant"]
+    },
+    en: {
+      tagline: "Tap to the beat of the music. A hypnotizing ball bounces inside endless rings without ever losing the beat.",
+      tags: ["Rhythm", "Music", "Hypnotic"]
+    }
+  },
+  {
+    slug: "bouncetry",
+    name: "Bouncetry",
+    accent: ["#ff3b57", "#2f86ff"],
+    fr: {
+      tagline: "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
+      tags: ["Tap pour piéger", "Casse-briques", "Interrupteurs"]
+    },
+    en: {
+      tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
+      tags: ["Tap to trap", "Breakout", "Switch buttons"]
+    }
+  },
+  {
+    slug: "blight",
+    name: "Blight",
+    accent: ["#ff8fab", "#7048e8"],
+    fr: {
+      tagline: "Un Bubble Shooter magique où il faut aller plus vite que le mal qui ronge les bulles. Sois rapide et plus malin que la contamination.",
+      tags: ["Vise rapidement", "Grappe de trois", "Contamination"]
+    },
+    en: {
+      tagline: "A magic bubble shooter where you must outpace the evil gnawing at the bubbles. Be quick, and outsmart the blight.",
+      tags: ["Aim fast", "Cluster of three", "Race the rot"]
+    }
+  },
+  {
+    slug: "triverse",
+    name: "Triverse",
+    accent: ["#3ce0ff", "#ff5ad4"],
+    fr: {
+      tagline: "Trois cordes de lumière. Swipe pour sauter de l'une à l'autre et éviter les pièges.",
+      tags: ["Swipe pour sauter", "Sans fin", "3 vies"]
+    },
+    en: {
+      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
+      tags: ["Swipe lanes", "Endless", "3 lives"]
+    }
+  },
+  {
+    slug: "vipera",
+    name: "Vipera",
+    accent: ["#4dff9b", "#12b86a"],
+    fr: {
+      tagline: "Glissez-vous dans la peau de Vipera et explorez cinq biomes remplis de pièges et de défis. Un simple Tap suffit pour changer de direction mais il faudra maîtriser l'art de l'ondulation pour faire le plein de bonus et devenir le roi du classement !",
+      tags: ["Snake", "Pièges", "Distance"]
+    },
+    en: {
+      tagline: "Slip into Vipera's skin and explore five biomes packed with traps and challenges. One tap changes direction, but you'll need to master the art of the slither to collect bonuses and top the leaderboard!",
+      tags: ["Snake", "Traps", "Distance"]
+    }
+  },
+  {
+    slug: "orbinity",
+    name: "Orbinity",
+    accent: ["#7cf5ff", "#6d5cff"],
+    fr: {
+      tagline: "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaîne les trajectoires sans erreur pour créer un combo !",
+      tags: ["Tap précis", "Gravité coupée", "Chaîne de combos"]
+    },
+    en: {
+      tagline: "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it toward the next celestial body. Chain trajectories without a mistake to build a combo!",
+      tags: ["Timing tap", "Snap gravity", "Combo chain"]
     }
   }
 ];

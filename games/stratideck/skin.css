@@ -1048,3 +1048,24 @@
   }
   .card.lit .c-body { box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 2px rgba(242,193,78,.45), 0 0 16px rgba(242,193,78,.25); }
   .card.lit.hot .c-body { box-shadow:0 12px 30px rgba(0,0,0,.55), 0 0 0 3px rgba(255,214,110,.85), 0 0 22px rgba(242,193,78,.5); }
+
+  /* THE GUIDE'S PICTURES (game.js, THE GUIDE): the game's own cards laid out
+     on the page's plate — a row, a veil over one, a grid of the defense — and
+     a cut of the artwork cropped to the plate. The badges hang over a card's
+     edge, so the gaps leave them room. */
+  .cd-gpic { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:26px; }
+  .cd-gpic.tight { gap:16px; }
+  .cd-gvs { font-size:28px; font-weight:900; letter-spacing:.06em; color:#f2c14e; text-shadow:0 2px 6px rgba(0,0,0,.6); }
+  .cd-gveil { position:relative; }
+  .cd-gveil-cv { position:absolute; left:0; top:0; z-index:30; pointer-events:none; }
+  .gu-pic .cd-gimg { width:520px; max-width:100%; height:280px; object-fit:cover; border-radius:16px; }
+  .cd-gfoe { height:300px; width:auto; transform:scaleX(-1); }
+  .cd-gtent { width:190px; height:auto; }
+  .cd-gstar { width:88px; height:88px; object-fit:contain; }
+  .cd-ggrid { display:grid; grid-template-columns:repeat(5, 58px); gap:14px; }
+  .cd-ggrid > i { display:block; width:58px; height:58px; border-radius:10px; border:2px dashed rgba(255,255,255,.18); }
+  .cd-gtrades { display:flex; flex-direction:column; gap:10px; width:100%; }
+  .cd-gtrades > div { display:flex; flex-direction:column; gap:2px; padding:10px 16px; border-radius:14px; background:rgba(255,255,255,.05); }
+  .cd-gtrades b { font-size:22px; font-weight:800; color:#f2c14e; }
+  .cd-gtrades span { font-size:22px; font-weight:500; line-height:1.35; color:#f6f1e4;
+                     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }

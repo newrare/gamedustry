@@ -379,6 +379,9 @@
     padding:4px 13px; border-radius:999px; background:rgba(255,255,255,.08);
     font-size:20px; font-weight:800; color:#e8d9c0;
   }
+  /* the web build's way to the rule of the card's kind (the guide): the one
+     control of a layer that otherwise takes no pointer */
+  .pk-zinfo .pk-zrule { align-self:flex-start; pointer-events:auto; }
   .pk-hint {
     margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-weight:500; font-size:22px; line-height:1.4; color:rgba(255,230,190,.7);

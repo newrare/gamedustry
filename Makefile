@@ -13,6 +13,7 @@
 #   make serve   the dev loop, with reload on save
 #   make preview the same site built once, no reload — restart it to rebuild
 #   make lab     every lab page behind one back office, at http://localhost:8095/
+#   make studio  the same back office, no watcher, no reload — restart it to rebuild
 #   make store   the store card composer, at http://localhost:8091/
 #   make events  the callouts / cues bench, at http://localhost:8092/ (and /kit, the house sound kit; /library, the sfx by ear; /pop, the Pop styles)
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
@@ -31,7 +32,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve preview lab store events sfx kit text village stickers meta shots map ng android
+.PHONY: help check test push itch site serve preview lab studio store events sfx kit text village stickers meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -92,6 +93,11 @@ preview:
 # (/events/, /text/, /store/, /village/); their own targets still work alone.
 lab:
 	node tools/lab/serve-lab.mjs
+
+# Same back office, frozen: no tool watches the sources, so nothing reloads
+# under the hand while an agent is editing them. An apply still rebuilds.
+studio:
+	node tools/lab/serve-lab.mjs --no-watch
 
 # lab/store-card.html needs a server for two things it cannot do over file://:
 # list what a game owns, and write the image it composed into assets/image/<store>/.

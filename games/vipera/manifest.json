@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.7.14",
+  "version": "1.8.22",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -196,25 +196,25 @@
     "erupt": "world/explosionlow",
     "land": "world/impactpunchheavy",
     "strike": "world/explosioncrunchlong",
-    "dive": "world/cloth",
+    "dive": "world/wind",
     "death": "defeat/electrichit",
-    "wilt": "defeat/electricpowerdown"
+    "diveAttack": "world/cloth"
   },
   "copy": {
     "fr": {
-      "tagline": "Ondule comme un serpent : chaque tap inverse ta direction. Grandis et évite les pièges !",
+      "tagline": "Glissez-vous dans la peau de Vipera et explorez cinq biomes remplis de pièges et de défis. Un simple Tap suffit pour changer de direction mais il faudra maîtriser l'art de l'ondulation pour faire le plein de bonus et devenir le roi du classement !",
       "tags": [
-        "Tap pour dévier",
-        "Sans fin",
-        "Armure d'écailles"
+        "Snake",
+        "Pièges",
+        "Distance"
       ]
     },
     "en": {
-      "tagline": "Move like a snake. Every tap flips the reptile’s direction: grow and dodge the traps!",
+      "tagline": "Slip into Vipera's skin and explore five biomes packed with traps and challenges. One tap changes direction, but you'll need to master the art of the slither to collect bonuses and top the leaderboard!",
       "tags": [
-        "Tap to swerve",
-        "Endless",
-        "Armour"
+        "Snake",
+        "Traps",
+        "Distance"
       ]
     }
   },
@@ -224,11 +224,11 @@
       "en": {
         "lines": [
           {
-            "kicker": "Tap",
+            "kicker": "Snake",
             "line": "<b>Reptile</b> movement"
           },
           {
-            "kicker": "Bonus",
+            "kicker": "Multiple bonuses",
             "line": "Mutation and <b>evolution</b>"
           },
           {
@@ -240,7 +240,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Progressive difficulty",
             "line": "Go for the best <b>score</b>"
           }
         ]
@@ -248,15 +248,15 @@
       "fr": {
         "lines": [
           {
-            "kicker": "Tap",
+            "kicker": "Snake",
             "line": "Ondule comme un <b>reptile</b>"
           },
           {
-            "kicker": "Bonus",
+            "kicker": "Plusieurs Bonus",
             "line": "Mutation et <b>évolution</b>"
           },
           {
-            "kicker": "Piège",
+            "kicker": "Pièges",
             "line": "Attention aux <b>dangers</b>"
           },
           {
@@ -264,7 +264,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficulté progressive",
             "line": "Vise le meilleur <b>score</b>"
           }
         ]
@@ -302,7 +302,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-tap\">Touche</b> pour faire tourner la <b class=\"w-viper\">vipère</b><br>et <b class=\"w-eat\">grandis</b> pour cumuler les bonus",
+        "tagline": "<b class=\"w-tap\">Tap</b> pour changer de direction et attrape les Bonus pour <b class=\"w-eat\">grandir</b>",
         "strings": {
           " blocks": " blocs",
           "Adder": "Aspic",
@@ -313,7 +313,6 @@
           "Bitten!": "Mordu !",
           "Body lost": "Corps tranché",
           "Chain x": "Chaîne x",
-          "Deeper": "Plus profond",
           "Distance (m)": "Distance (m)",
           "Evolved": "Evolution",
           "Final score": "Score final",
@@ -323,12 +322,12 @@
           "Last life": "Dernière vie",
           "Length": "Longueur",
           "Lives": "Vies",
-          "Longest body": "Corps le plus long",
+          "Snake length": "Longueur du serpent",
           "Mamba": "Mamba",
           "Play the full game": "Jouer au jeu complet",
           "Score": "Score",
           "Slither again": "Rampe encore",
-          "Tap to play": "Tap pour jouer",
+          "Play": "Jouer",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
           "Torn apart": "Déchiqueté",
@@ -340,17 +339,60 @@
           "Amber": "Ambre",
           "Full length": "Taille max",
           "Magnet lost": "Aimant perdu",
-          "Double points lost": "Points doublés perdus",
+          "Bonus lost": "Bonus perdu",
           "Rainbow egg": "Œuf arc-en-ciel",
-          "Shield": "Bouclier",
+          "Shield": "Armure",
           "Drifting logs": "Troncs flottants",
-          "Swerve around them": "Contourne-les",
-          "Traps and lightning": "Pièges et foudre",
-          "Leave the glowing ground": "Quitte le sol qui s'illumine",
-          "Geysers and rocks": "Geysers et rochers",
-          "Rocks land where shadows grow": "Les rochers tombent là où l'ombre grandit",
+          "Watch out for lightning": "Attention à la foudre",
+          "A shadow marks a falling rock": "L'ombre annonce la chute d'un rocher",
           "The eagle": "L'aigle",
-          "Its shadow shows the side it strikes": "Son ombre annonce le côté où il frappe"
+          "The eagle's shadow shows the side it will strike": "L'ombre de l'aigle annonce le côté qu'il va frapper",
+          "Spike traps": "Pièges à pointes",
+          "Fire traps": "Pièges de feu",
+          "Lightning": "Foudre",
+          "Geysers": "Geysers",
+          "Falling rocks": "Chutes de rochers",
+          "Armor": "Armure",
+          "The armor takes the next hit": "Le prochain dégât sera pour l'armure",
+          "The basics": "Les bases",
+          "Moving": "Déplacement",
+          "Walls push Vipera back, at no cost.": "Les murs repoussent Vipera, sans dégât.",
+          "Eggs and score": "Œufs et score",
+          "Chain of 5, 10, 15…": "Chaîne de 5, 10, 15…",
+          "Damage": "Dégâts",
+          "The viper": "La vipère",
+          "Evolution": "Evolution",
+          "Jungle": "Jungle",
+          "Swamp": "Marais",
+          "Temple": "Temple",
+          "Volcano": "Volcan",
+          "Lair": "Repaire",
+          "Thorns": "Epines",
+          "Vipera instantly grows to just short of full length.": "Vipera grandit d'un coup jusqu'à presque sa taille maximale.",
+          "Watch out for spikes": "Attention aux pointes",
+          "Watch out for flames": "Attention aux flammes",
+          "Vipera never stops. A tap changes her direction.": "Vipera avance sans arrêt. Un tap change sa direction.",
+          "Eggs make Vipera grow and score points. A stage ends after a set distance.": "Les œufs font grandir Vipera et rapportent des points. Le stage se termine après une certaine distance.",
+          "Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses.": "Chaque dégât coûte une vie. Vipera reprend alors sa taille de départ et perd ses bonus.",
+          "Then Vipera blinks, and nothing can hurt her for a second.": "Ensuite, Vipera clignote et plus rien ne peut la blesser pendant une seconde.",
+          "The longer Vipera gets, the faster she goes. A hit never slows her down.": "Plus Vipera est longue, plus elle va vite. Un dégât ne la ralentit pas.",
+          "At full length, Vipera grows an armor that takes one hit for her.": "Arrivée à sa taille maximale, Vipera se couvre d'une armure qui encaisse un dégât.",
+          "To get the armor back, grow to full length again or eat a rainbow egg.": "Pour retrouver cette armure, atteins de nouveau la taille maximale ou mange un œuf arc-en-ciel.",
+          "Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns.": "Les épines rouges sont dangereuses, mais un passage reste toujours libre. Les meilleurs joueurs remarqueront qu'on peut même se faufiler entre deux épines rapprochées.",
+          "Don't bump into the logs.": "Ne te cogne pas contre les troncs.",
+          "Fireflies help Vipera collect eggs. They fly off at the first hit.": "Les lucioles aident Vipera à ramasser les œufs. Elles partent toutefois au premier dégât reçu.",
+          "Only raised spikes are dangerous.": "Seules les pointes relevées sont dangereuses.",
+          "The spikes creep out slowly, then shoot up all at once.": "Les pointes sortent doucement, puis surgissent d'un coup.",
+          "A ring warns of the next lightning strike.": "Un cercle annonce le prochain impact de foudre.",
+          "Lightning can even strike twice in a row.": "La foudre peut même frapper deux fois de suite.",
+          "With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.": "Avec ce bonus, les points comptent double. C'est le moment de ramasser un maximum d'œufs et de réussir des chaînes complètes.",
+          "Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.": "Des braises montent juste avant que la lave jaillisse. Et rappelons-le, Vipera n'aime pas du tout la lave.",
+          "A shadow always shows where a rock will land. The snake would rather avoid a bump on the head.": "Une ombre montre toujours le point d'impact d'un rocher. Le serpent préfère éviter les bosses sur la tête.",
+          "Watch out, once landed, rocks stay hot and dangerous.": "Attention, une fois au sol, les rochers restent brûlants et dangereux.",
+          "Like spike traps, but the flames come out faster.": "Comme les pièges à pointes, mais les flammes sortent plus vite.",
+          "The eagle's shadow tells you which side its next attack will come from.": "L'ombre de l'aigle annonce de quel côté viendra sa prochaine attaque.",
+          "Quickly get clear of that side before you get bitten.": "Quitte vite ce côté pour ne pas te faire croquer.",
+          "This egg is so good it instantly gives Vipera a rainbow armor.": "Cet œuf est si bon qu'il donne aussitôt à Vipera une armure arc-en-ciel."
         }
       }
     },

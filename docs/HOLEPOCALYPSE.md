@@ -126,8 +126,9 @@ Chosen out of ten control schemes (`siege-golf-controls.html`, #8 *Arc pad*):
   point to put on a cup; Lob
   is an orange arc lifted by its height, dots growing toward the top, its
   shadow dashed on the grass and an orange target where it lands. The tee ball
-  wears the mode's colour ring, and `Direct` / `Lob` is written over the power
-  bar.
+  wears the mode's colour ring. There is no power gauge beside the ball
+  (v0.5.1): the preview already says how far the shot goes, and the bands
+  name the mode.
 - **A shot always leaves upward** (`MIN_UP 0.15`), and `FIRE_COOLDOWN 0.12`
   — `BOSS_COOLDOWN 0.6` between two bag shots while a boss stands, swept round
   the tee in red; a shot released during it is held and leaves when the tee is
@@ -151,6 +152,16 @@ Chosen out of ten control schemes (`siege-golf-controls.html`, #8 *Arc pad*):
   `95` px at `LOB_MAX`, along `f^1.5` so a short chip stays near exact. A long
   lob on a cup was too sure a thing. The preview draws that circle, dashed,
   with the aimed spot in it.
+- **A direct shot aims better under stress** (v0.5.0): it leaves off its line
+  by a triangular error inside `±AIM_ERR`, from `0.28` rad (~16°) on a calm
+  field to `0.012` rad when it is crowded. The stress counts the zombies
+  standing — one in the lower half of the field counts up to `1 + STRESS_NEAR`,
+  a boss `STRESS_BOSS 5` — mapped from `STRESS_CALM 1` (calm) to
+  `STRESS_FULL 9` (full), and eased at `STRESS_RATE 1.5`/s so a spawn does not
+  snap the aim. A crowded screen is not made harder by the aim on top of it; a
+  quiet one is where a shot has to be earned. The preview draws the cone off
+  the tee, wide and pale when calm, a hairline under pressure. Lobs keep their
+  own scatter and the gun (Rush, the last stand) stays exact.
 
 ### 2.4 The bag
 
@@ -333,7 +344,7 @@ mixes everything.
 | 1    | **Country Club**     | bumpers (stone planters, sprinkler heads)                                   | Walker, Boomer        | explosive, multi | Ball rain, Fan volley, Time freeze, Hole blast   | Greenkeeper     | swing, mischievous     |
 | 2    | **Desert Links**     | bunkers: sand slows balls (×0.5 speed) and zombies (×0.6)                   | Shield                | pierce, heavy    | Seeker rain, Sniper, Sprinklers, Golf cart       | Caddie Colossus | surf-rock twang        |
 | 3    | **Bayou Course**     | water: a ball is lost in it, **a zombie knocked into it drowns**            | Mudder (and Mudlings) | homing, split    | Boom volley, Split storm, Magnet hole, Hailstorm | Bog Giant       | swamp blues, washboard |
-| 4    | **Frozen Links**     | ice: balls and zombies slide (friction ×0.3, knockback lasts ×2) — pile-ups | Digger                | fire, bouncy     | Firestorm, Super bounce, Cluster bombs, Rush     | Yeti            | icy chiptune, sleigh   |
+| 4    | **Frozen Links**     | ice: balls and zombies slide (friction ×0.3, knockback lasts ×2) — pile-ups | —                     | fire, bouncy     | Firestorm, Super bounce, Cluster bombs, Rush     | Yeti            | icy chiptune, sleigh   |
 | 5    | **Graveyard Greens** | graves: zombies also rise mid-field from them                               | Runner, Necromancer   | ice, giant       | Meteor, Carpet strike, Golden rain, Mower        | Zombie King     | organ rock, the climax |
 
 The unlocks are cumulative: in band 5 the side holes may hand any of the ten
@@ -346,15 +357,15 @@ ______________________________________________________________________
 Numbers at level 1 of their band; `web.levels.tune` raises HP and speed with
 the climb. Radius is the footprint (§2.10).
 
-| zombie          | band | HP  | speed | radius | behaviour                                                                                                        | the answer                            | sheet                                        |
-| --------------- | ---- | --- | ----- | ------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------- |
-| **Walker**      | 1    | 3   | 1.0   | 30     | shambles down its lane                                                                                           | anything                              | done — walk 8, hit 4, knockout 4             |
-| **Boomer**      | 1    | 2   | 0.8   | 28     | bloated; bursts on death: 120 px, 3 damage, 520 knockback to its neighbours                                      | burst it inside the pack              | walk 8, hit 4, burst 4                       |
-| **Shield**      | 2    | 4   | 0.8   | 32     | holds a golf bag in front: a Direct hit from below does 0 damage and bounces off                                 | Lob over it, bank off a fence, pierce | walk 8, block 4, knockout 4                  |
-| **Mudder**      | 3    | 4   | 0.9   | 32     | made of swamp mud; its knockout splits it into two **Mudlings** (HP 1, radius 18, speed 1.4)                     | homing, split, or a pond behind it    | walk 8, hit 4, split 4 (Mudling = scaled)    |
-| **Digger**      | 4    | 3   | 1.1   | 28     | burrows (invulnerable, a moving dirt mound), surfaces near the main hole and **drags it** 200 px toward the line | hit it before it digs; Time freeze    | walk 4, dig 4, surface 4, hit 2 + knockout 2 |
-| **Runner**      | 5    | 1   | 2.2   | 26     | sprints straight down                                                                                            | a fast Direct shot, Seeker rain       | sprint 8, hit 4, knockout 4                  |
-| **Necromancer** | 5    | 5   | 0.6   | 30     | stops every 6 s and raises the last two knocked-out zombies as Walkers                                           | top priority: Sniper, Meteor          | walk 4, cast 4, hit 4, knockout 4            |
+| zombie          | band | HP  | speed | radius | behaviour                                                                                                                            | the answer                            | sheet                                        |
+| --------------- | ---- | --- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | -------------------------------------------- |
+| **Walker**      | 1    | 3   | 1.0   | 30     | shambles down its lane                                                                                                               | anything                              | done — walk 8, hit 4, knockout 4             |
+| **Boomer**      | 1    | 2   | 0.8   | 28     | bloated; bursts on death: 120 px, 3 damage, 520 knockback to its neighbours                                                          | burst it inside the pack              | walk 8, hit 4, burst 4                       |
+| **Shield**      | 2    | 4   | 0.8   | 32     | holds a golf bag in front: a Direct hit from below does 0 damage and bounces off                                                     | Lob over it, bank off a fence, pierce | walk 8, block 4, knockout 4                  |
+| **Mudder**      | 3    | 4   | 0.9   | 32     | made of swamp mud; its knockout splits it into two **Mudlings** (HP 1, radius 18, speed 1.4)                                         | homing, split, or a pond behind it    | walk 8, hit 4, split 4 (Mudling = scaled)    |
+| ~~Digger~~      | 4    | 3   | 1.1   | 28     | removed in v0.4.0 — burrows (invulnerable, a moving dirt mound), surfaces near the main hole and **drags it** 200 px toward the line | hit it before it digs; Time freeze    | walk 4, dig 4, surface 4, hit 2 + knockout 2 |
+| **Runner**      | 5    | 1   | 2.2   | 26     | sprints straight down                                                                                                                | a fast Direct shot, Seeker rain       | sprint 8, hit 4, knockout 4                  |
+| **Necromancer** | 5    | 5   | 0.6   | 30     | stops every 6 s and raises the last two knocked-out zombies as Walkers                                                               | top priority: Sniper, Meteor          | walk 4, cast 4, hit 4, knockout 4            |
 
 **The bosses**, one per band, each the climax of level 6 of its band:
 
@@ -438,7 +449,9 @@ before it.
 **The modifiers** of the twist levels: *Moving hole* (it glides across the
 field), *Wind* (bends the shots), *Night* (only the bottom half is lit; the
 zombies come out of the dark), *Double hole* (two holes, each wave covering
-60 %), *Horde* (twice the zombies, 1 HP each).
+60 %), *Horde* (twice the zombies, 1 HP each), *Scorched course* (level 5,
+v0.4.0: every impact — crater, scorch, crack — stays on the grass for the
+whole round instead of fading after four seconds).
 
 **The pressure**, lerped over the climb by `web.levels.tune` (levels 1 → 30):
 
@@ -457,7 +470,7 @@ zombies come out of the dark), *Double hole* (two holes, each wave covering
 | 2   | 1    | practice | survive 2 waves            | Boomer          | —           | explosive, multi  | Ball rain, Fan volley         | a chain of 4            |
 | 3   | 1    | use      | sink the hole 2 times      | Lob             | —           | explosive, multi  | Ball rain, Fan volley         | a lob into the hole     |
 | 4   | 1    | twist    | survive 3 waves            | —               | Moving hole | multi, explosive  | Time freeze, Hole blast       | no last stand           |
-| 5   | 1    | exam     | survive 3 waves            | —               | —           | explosive, multi  | Fan volley, Time freeze       | a chain of 6            |
+| 5   | 1    | exam     | survive 3 waves            | —               | Scorched    | explosive, multi  | Fan volley, Time freeze       | a chain of 6            |
 | 6   | 1    | boss     | defeat the Greenkeeper     | Greenkeeper     | —           | explosive, multi  | Hole blast, Ball rain         | in under 2 min          |
 | 7   | 2    | discover | survive 2 waves            | Shield, bunkers | —           | pierce            | offered: band 1 + Seeker rain | 3 shields by lob        |
 | 8   | 2    | practice | survive 3 waves            | —               | —           | pierce, heavy     | offered: + Sniper             | a chain of 5            |
@@ -472,7 +485,7 @@ zombies come out of the dark), *Double hole* (two holes, each wave covering
 | 17  | 3    | exam     | survive 4 waves            | —               | —           | homing, explosive | offered                       | a chain of 8            |
 | 18  | 3    | boss     | defeat the Bog Giant       | Bog Giant       | —           | heavy, homing     | offered                       | in under 2 min          |
 | 19  | 4    | discover | survive 3 waves            | ice             | —           | bouncy            | offered: + Firestorm          | a 5-zombie pile-up      |
-| 20  | 4    | practice | survive 3 waves            | Digger          | —           | fire, bouncy      | offered: + Super bounce       | no hole dragged         |
+| 20  | 4    | practice | survive 3 waves            | —               | —           | fire, bouncy      | offered: + Super bounce       | chain of 7              |
 | 21  | 4    | use      | sink the hole 3 times      | —               | —           | fire, split       | offered: + Cluster bombs      | a chain of 8            |
 | 22  | 4    | twist    | survive 4 waves            | —               | Double hole | bouncy, homing    | offered: + Rush               | both holes in one wave  |
 | 23  | 4    | exam     | survive 4 waves            | —               | —           | fire, heavy       | offered                       | no flag lost            |
@@ -662,10 +675,74 @@ ______________________________________________________________________
   Pushing one into a pond by hand was too hard on a phone, so **a pond is a
   whirlpool** (v0.2.0): a zombie hit within `POND_REACH 150` px of its bank is
   pulled in for as long as the hit's tag lasts (1.5 s, `POND_PULL 1500`
-  px/s² easing out with distance); a walker and a boss it never touches. Two
+  px/s² easing out with distance); a walker and a boss it never touches. It
+  pulled too well, so since v0.5.5 it takes **a direct ball hit of at least
+  `POND_SHOT 700` px/s, the zombie within `POND_REACH 90` px of the bank and
+  the pond BEHIND it** — the push no more than ~50° off the line to the water
+  (`POND_AIM 0.64`); then that one pond pulls for `POND_TIME 1` s. A zombie
+  knocked by another zombie, or with the pond in front of it, is not pulled. Two
   currents turn on the water to say so, and level 13 says it on a notice. The
   pilot's level 13 went from ~220 s to ~56 s.
 - **The playable** (free round, `CONFIG.level` unset) is biome 1, three waves,
   one side hole (explosive) and one super (ball rain); everything a later
   band brings is web-only (`WEB_ONLY_HOLE` in `tools/build/build.mjs`).
 - **The endless run** is the graveyard with every zombie, waves forever.
+- **v0.4.0, the effects pass** (2026-10-18):
+  - **Everything round that lies on the grass is an ellipse** of the cups'
+    ratio (`GROUND_SQUASH` 0.42): the hole's blast, the seeker's mark, the
+    magnet's vortex, the freeze's frost, a crack (`sq` in the `FX` table), the
+    obstacles. The shockwave itself is an ellipse of `SHOCK_SQUASH` 0.62 —
+    flatter than a circle, rounder than a cup, or a wave covering 80 % of the
+    field would be a band — with a soft, wavering front and its hit test and
+    `coverRadius` on the same ellipse.
+  - **The impacts stay** (`marks`): the last frame of a boom, the meteor's
+    crater, a hailstone's frost, a heavy ball's crack, a burnt-out fire
+    patch, a broken obstacle's crack lie on the grass for `MARK_LIFE` 4 s,
+    then fade over 1.2 s (40 at most). Level 5 carries the *Scorched course*
+    twist, where nothing fades (150 at most).
+  - **The obstacles** lie flat, without a shadow, raised by a band of their own silhouette darkened under the top face (`BUMPER_DEPTH` 0.5 radius, the height a cup has as depth), and break: `BUMPER_HP` 6
+    (a grave 8, the Colossus's bag 4) taken by a ball as a zombie's are, by a
+    blast, a drop or a vehicle — never by the shockwave — for
+    `BUMPER_SCORE` 50.
+  - **The Digger is gone** (its sheet is no longer embedded); level 20's
+    bonus is a chain of 7. **A Mudder's halves do not walk**: they sit where
+    the split threw them, and any ball touching one bursts it into a splat
+    of mud that knocks its neighbours (one point each, so the halves chain).
+  - **The Bog Giant's mud** is drawn rather than painted (no cut exists): a
+    wobbling blob with a dark lip, splatter, moss, a wet shine and bubbles,
+    an ellipse of `MUD_SQUASH` 0.55 that is also the area that slows a ball.
+  - **The supers name themselves quietly**, a `score` callout at
+    `hudUnder`. *Fan volley* is 22 balls at 2500 px/s gliding on the grass
+    (×0.45 friction); *Sprinklers* spray from nozzles hidden past the
+    screen's edges, over the fence and a quarter of the fairway in; the *Golf cart* stays inside the gate's width and
+    drives up to the painted gate, where it vanishes into the gate's own
+    toxic mist; the *Carpet strike* shows only
+    the plane's shadow, the bombs raining a beat behind it; the *Mower* is 5
+    to 10 mowers on random rows, each way, driving out of a blue portal and
+    into an orange one in the fences.
+  - **Rush and the last stand** draw no sprite: the bag row becomes a target
+    and the time left, the tee a turning sight, the field a breathing glow
+    of the phase's colour. The last stand says itself with a notice — an
+    event the player did not make — named once with its guide page the first
+    time (`Notify.learn("last")`). A **necromancer casting** wears a violet aura (the raised walkers
+    too) instead of a callout.
+  - **The moving hole runs on a rail** sunk in the grass, the length of its
+    swing. **The life gauges** — a zombie's, an obstacle's, the boss's bar
+    under its name between two skulls — are HOLOGRAMS like the flags': a
+    faint glass ringed in light, one lit cell per point, scanlines and a
+    flicker, and the chip of the last hit draining after it. A zombie's and
+    an obstacle's show only on a hit, for `LIFE_SHOW` 2 s, fading out over
+    the last `LIFE_FADE` 0.3 s, and the next hit brings them back; the
+    boss's bar stays up.
+  - **The wave is worth the shot** (`shotDifficulty`, 0..1): the hole's
+    distance from the tee (`SHOCK_NEAR` 380 → `SHOCK_FAR` 930 px) plus 0.25
+    for a lob, 0.1 for a banked shot, 0.1 for one threaded through the
+    horde, 0.15 on the moving hole. The wave covers 30 % to 85 % of the
+    field with it (×0.75 with two holes), knocks out what it reaches from
+    0.5 up and deals 2 to 6 below; the shake, the flash, the sound and the
+    score (`HOLE_SCORE` × 1..2, *Hole!* / *Great hole!* / *Mega hole!*) grow
+    with it, and the hole's hologram carries one to three rings by its
+    distance. The *Hole blast* super keeps the full wave.
+  - **A shield blocks a Rush ball 30 % of the time** (`RUSH_BLOCK`), rolled
+    once per ball and shield; a stream of free balls breaks a shield wall.
+    Bag shots and the last stand's gun are blocked as before.

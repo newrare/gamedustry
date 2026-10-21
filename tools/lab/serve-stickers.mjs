@@ -134,7 +134,8 @@ async function review(body) {
 
 function start() {
   let timer = null;
-  try {
+  if (process.argv.includes('--no-watch')) console.log('watching nothing (--no-watch)');
+  else try {
     watch(PAGE, () => { clearTimeout(timer); timer = setTimeout(() => reload.broadcast('reload'), 120); });
   } catch { console.error('  cannot watch lab/sticker-review.html'); }
   console.log('verdicts are written to lab/sticker-review.json');

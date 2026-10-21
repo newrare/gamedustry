@@ -399,7 +399,8 @@
       malus: [260, 0.2], crash: [120, 0.35], move: [600, 0.06],
       launch: [700, 0.08], hit: [820, 0.06], bounce: [300, 0.05], burst: [1000, 0.12],
       toggle: [560, 0.04], card: [480, 0.05], miss: [240, 0.15], warn: [330, 0.2],
-      world: [180, 0.25], goal: [1320, 0.3], defeat: [160, 0.5]
+      world: [180, 0.25], goal: [1320, 0.3], defeat: [160, 0.5],
+      select: [520, 0.05], refuse: [220, 0.12]
     };
     var lastTake = {}, door = null, doorTimer = null;
     function shoot(id, vol, rate) {
@@ -1660,46 +1661,132 @@
   })();
 
   // --- Confetti: end-screen celebration on its own canvas ----------------
+  /* Two layers on the end screen: the confetti canvas BEHIND every word of
+     it (template/page.html), and one in FRONT of them, made here, for what
+     has to read over the stars — the glitter a star lands with and the rain
+     a lost round gets. Both chosen in lab/end-screen.html. */
   var Confetti = (function () {
-    var cvs = null, cx = null, parts = [], running = false, last = 0;
+    var cvs = null, cx = null, fcv = null, fcx = null;
+    var parts = [], running = false, last = 0;
     var COLORS = ["#00e5ff", "#ff2d95", "#ffd43b", "#39ff14", "#c86bff", "#ff6b35", "#ffffff"];
+    function size(c) {
+      var dpr = pixelRatio(view.scale);          // same rule as the game canvas
+      c.width = Math.round(view.w * dpr); c.height = Math.round(view.h * dpr);
+      c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     function ensure() {
       if (cvs) return true;
       cvs = $("confetti"); if (!cvs) return false;
       cx = cvs.getContext("2d");
-      var dpr = pixelRatio(view.scale);          // same rule as the game canvas
-      cvs.width = Math.round(view.w * dpr); cvs.height = Math.round(view.h * dpr);
-      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      size(cvs);
+      return true;
+    }
+    function ensureFront() {
+      if (fcv) return true;
+      var host = $("screen-end");
+      if (!host || !ensure()) return false;
+      fcv = document.createElement("canvas");
+      fcv.id = "eo-front"; fcv.className = "eo-fx";
+      host.appendChild(fcv);
+      fcx = fcv.getContext("2d");
+      size(fcv);
       return true;
     }
     function frame(now) {
       var dt = Math.min((now - last) / 1000, 0.05); last = now;
       cx.clearRect(0, 0, view.w, view.h);
+      if (fcx) fcx.clearRect(0, 0, view.w, view.h);
       for (var i = parts.length - 1; i >= 0; i--) {
         var p = parts[i];
-        p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt;
-        if (p.life <= 0 || p.y > view.h + 40) { parts.splice(i, 1); continue; }
-        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
-        cx.globalAlpha = clamp(p.life, 0, 1); cx.fillStyle = p.color;
-        cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+        if (p.delay > 0) { p.delay -= dt; continue; }
+        p.vy += (p.g || 0) * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.t += dt;
+        if (p.t >= p.life || p.y > view.h + 40) { parts.splice(i, 1); continue; }
+        draw(p.front ? fcx : cx, p);
       }
       if (parts.length) requestAnimationFrame(frame);
-      else { running = false; cx.clearRect(0, 0, view.w, view.h); }
+      else { running = false; clear(); }
     }
-    function burst(n) {
+    function draw(c, p) {
+      var u = p.t / p.life;
+      c.save();
+      if (p.k === "glit") {
+        /* a four-point sparkle that swells and goes, added onto what is under it */
+        var r = p.w * Math.sin(Math.PI * u);
+        c.translate(p.x, p.y); c.rotate(u * 1.5);
+        c.globalCompositeOperation = "lighter"; c.fillStyle = p.color;
+        c.beginPath();
+        for (var j = 0; j < 8; j++) {
+          var a = j * Math.PI / 4, d = j % 2 ? r * 0.22 : r;
+          c.lineTo(Math.cos(a) * d, Math.sin(a) * d);
+        }
+        c.closePath(); c.fill();
+      } else if (p.k === "rain") {
+        c.strokeStyle = "rgba(170,195,255,.45)"; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x + p.vx * 0.02, p.y + p.vy * 0.02); c.stroke();
+      } else {
+        c.translate(p.x, p.y); c.rotate(p.rot);
+        c.globalAlpha = clamp(p.life - p.t, 0, 1); c.fillStyle = p.color;
+        c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      c.restore();
+    }
+    function go() {
+      if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+    }
+    function add(p) {
+      p.t = 0; p.rot = p.rot || 0; p.vr = p.vr || 0; p.vx = p.vx || 0; p.vy = p.vy || 0;
+      parts.push(p);
+    }
+    /* `n` pieces thrown up, over the middle of the frame — or around a point,
+       in design px, when one is given. */
+    function burst(n, x, y) {
       if (!ensure()) return;
       for (var i = 0; i < n; i++) {
-        parts.push({
-          x: view.w * Rand.range(0.15, 0.85), y: view.h * Rand.range(0.26, 0.4),
-          vx: Rand.range(-560, 560), vy: Rand.range(-900, -280),
+        add({
+          x: x != null ? x + Rand.range(-250, 250) : view.w * Rand.range(0.15, 0.85),
+          y: y != null ? y + Rand.range(-60, 60) : view.h * Rand.range(0.26, 0.4),
+          vx: Rand.range(-560, 560), vy: Rand.range(-900, -280), g: 700,
           rot: Rand.range(0, 6.28), vr: Rand.range(-6, 6),
           w: Rand.range(10, 22), h: Rand.range(14, 34),
           color: Rand.pick(COLORS), life: Rand.range(1.8, 3.2)
         });
       }
-      if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+      go();
     }
-    function clear() { parts.length = 0; if (cx) cx.clearRect(0, 0, view.w, view.h); }
-    return { burst: burst, clear: clear };
+    /* The centre of a node of the end screen, in design px. */
+    function at(node) {
+      if (!node || !ensure()) return { x: view.w / 2, y: view.h / 2 };
+      var r = node.getBoundingClientRect(), c = cvs.getBoundingClientRect();
+      var k = c.width ? view.w / c.width : 1;
+      return { x: (r.left + r.width / 2 - c.left) * k, y: (r.top + r.height / 2 - c.top) * k };
+    }
+    /* Sparkles around a node, in front of it: what a star lands with. */
+    function glitter(node) {
+      if (!ensureFront()) return;
+      var pt = at(node);
+      var accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#ffffff";
+      var tint = ["#ffffff", "#fff3b0", accent];
+      for (var i = 0; i < 26; i++) {
+        add({ k: "glit", front: true, x: pt.x + Rand.range(-170, 170), y: pt.y + Rand.range(-110, 110),
+              vy: Rand.range(-50, -10), w: Rand.range(8, 20), life: Rand.range(0.6, 1.4),
+              delay: Rand.range(0, 0.5), color: Rand.pick(tint) });
+      }
+      go();
+    }
+    /* A shower slanting across the whole screen, for a round lost. */
+    function rain() {
+      if (!ensureFront()) return;
+      for (var i = 0; i < 90; i++) {
+        add({ k: "rain", front: true, x: Rand.range(0, view.w * 1.25), y: Rand.range(-200, 0),
+              vx: -260, vy: Rand.range(1300, 1700), life: 1.2, delay: Rand.range(0, 1.5) });
+      }
+      go();
+    }
+    function clear() {
+      parts.length = 0;
+      if (cx) cx.clearRect(0, 0, view.w, view.h);
+      if (fcx) fcx.clearRect(0, 0, view.w, view.h);
+    }
+    return { burst: burst, glitter: glitter, rain: rain, at: at, clear: clear };
   })();
 

@@ -113,8 +113,9 @@ Everything that makes a playable a playable, minus the game:
 - `Notify` — the one voice for information (a state, a refusal, a lesson), on
   every screen, round and menus alike.
 - `buildIntro()` — writes the logo, copy and picks the animated how-to-play demo.
-- `EndScreen` — the staggered reveal (title → score count-up + confetti → stars
-  → stat rows → install CTA → replay link).
+- `EndScreen` — the reveal as a list of beats (character → title → score
+  count-up → stars and stat rows on one grid → install CTA → replay link); a
+  layer adds its own beats with `onEndBeat`.
 - `Round` — the clock, the HUD timer and the `onTimeUp` hand-off.
 - `endRound(result)` — the one way a round ends.
 

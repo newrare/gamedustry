@@ -25,6 +25,12 @@
                      slot reel — the player is not betting, they are
                      collecting. One pull eats ONE TO FIVE tickets and the
                      odds move with the bet, shown before they are rolled.
+    THE GALLERY      the album's second tab: the game's own paintings — its
+                     scenes and its character — cut into puzzle pieces and
+                     bought one at a time with coins, at a price that follows
+                     the climb (section 5b, and meta.js section 4b). It is
+                     what the coins are for once the machine has nothing left
+                     to give.
     THE SHOP         a grid of six tiles bought with coins — the ticket, the
                      super ticket, the mystery gift, the xp pack and the two
                      boosts — plus a missed day of the daily road while it can
@@ -74,7 +80,12 @@
       sell1: "Sell 1 double", sellN: "Sell {n} doubles",
       fromMap: "Reward earned", fromMachine: "Won from a draw",
       toMap: "A reward to earn", toMachine: "Will come from a draw",
-      unknown: "???"
+      unknown: "???",
+      machineTab: "Machine", galleryTab: "Gallery", galleryTitle: "Gallery",
+      galPaint: "Painting {n}/{t}", galName: "Painting {n}",
+      buyPiece: "Buy a piece",
+      galAhead: "Win stars on the map to bring the price down.",
+      galFull: "Every painting is complete."
     },
     fr: {
       album: "Stickers", shop: "Boutique",
@@ -96,7 +107,12 @@
       sell1: "Vendre 1 doublon", sellN: "Vendre {n} doublons",
       fromMap: "Récompense gagnée", fromMachine: "Obtenu par tirage",
       toMap: "Une récompense à gagner", toMachine: "S’obtiendra par tirage",
-      unknown: "???"
+      unknown: "???",
+      machineTab: "Machine", galleryTab: "Galerie", galleryTitle: "Galerie",
+      galPaint: "Tableau {n}/{t}", galName: "Tableau {n}",
+      buyPiece: "Acheter une pièce",
+      galAhead: "Gagne des étoiles sur la carte pour faire baisser le prix.",
+      galFull: "Tous les tableaux sont complets."
     }
   };
   W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
@@ -111,7 +127,7 @@
     "again", "buyTitle", "superTitle", "giftTitle", "xpTitle",
     "coinBoostTitle", "xpBoostTitle",
     "fromMap", "fromMachine",
-    "toMap", "toMachine"
+    "toMap", "toMachine", "galPaint", "buyPiece"
   ];
   (function () {
     function shout(v) {
@@ -165,17 +181,66 @@
        shelves fit and nothing moves, and on a short one the legendary shelf
        — the one worth drawing for — is scrolled to rather than cut off. */
     scroll = el("div"); scroll.id = "al-scroll";
+    pgMachine = el("div", "al-pg"); pgMachine.id = "al-pg-machine";
     var top = el("div"); top.id = "al-top";
     top.appendChild(buildMachine());
     top.appendChild(buildControls());
-    scroll.appendChild(top);
-    scroll.appendChild(buildShelves());
+    pgMachine.appendChild(top);
+    pgMachine.appendChild(buildShelves());
+    scroll.appendChild(pgMachine);
+    /* THE GALLERY IS THE SECOND PAGE of this room (section 5b), and a game
+       that ships no painting has no gallery and no tab bar. */
+    if (MT.piecesTotal()) {
+      pgGallery = buildGallery();
+      scroll.appendChild(pgGallery);
+    }
 
     S = VW.sheet({ id: "al-screen", body: scroll });
     box = S.box;
+    S.tab = "machine";
+    if (pgGallery) S.pages(albumTabs(), pickTab);
     S.setHead(T.album, "");
     alStock = el("div", "sh-stock");
     S.head.appendChild(alStock);
+  }
+
+  var pgMachine = null, pgGallery = null;
+
+  function albumTabs() {
+    return [{ key: "machine", label: T.machineTab, icon: "ticket" },
+            { key: "gallery", label: T.galleryTab, icon: "image" }];
+  }
+
+  /* A page change waits for a draw in flight: the reveal opens on the ball's
+     landing, and a machine put to sleep under it would never report one. */
+  function pickTab(key) {
+    if (S.tab === key || drawing) return;
+    S.tab = key;
+    scroll.scrollTop = 0;
+    paintPage();
+    W.Sound.ui("tap", 0.45);
+  }
+
+  /* The page on show, painted; the other one hidden and, for the machine,
+     put to sleep — a canvas nobody is looking at draws nothing. */
+  function paintPage() {
+    var gal = !!pgGallery && S.tab === "gallery";
+    pgMachine.style.display = gal ? "none" : "";
+    if (pgGallery) {
+      pgGallery.style.display = gal ? "" : "none";
+      S.relabel(albumTabs());
+      S.light(S.tab);
+    }
+    if (gal) {
+      Machine.sleep();
+      S.setHead(T.galleryTitle, "");
+      paintGallery();
+    } else {
+      S.setHead(T.album, "");
+      paintMachine();
+      paintShelves();
+      Machine.refresh();          // the frame may have been resized under it
+    }
   }
 
   /* ── 3. the machine ───────────────────────────────────────────────────── */
@@ -684,11 +749,16 @@
     }
 
     paintOdds();
+    if (S && S.tab === "gallery") return drawLabel(isSuper, ok);
     paintStock(alStock, [
       { tone: "ticket", pic: "ticket", n: have, label: T.buyTitle },
       { tone: "super", pic: "ticketSuper", n: supers, label: T.superTitle }
     ]);
 
+    drawLabel(isSuper, ok);
+  }
+
+  function drawLabel(isSuper, ok) {
     drawBtn.disabled = drawing || !ok;
     drawBtn.innerHTML = "<span>" + (drawing ? T.mixing : T.draw) + "</span>" +
       '<span class="btn-badge">' + icon(isSuper ? "ticketSuper" : "ticket") +
@@ -1025,6 +1095,320 @@
       : (have ? T.fromMachine : T.toMachine)));
   }
 
+  /* ── 5b. the gallery ──────────────────────────────────────────────────── */
+
+  /* THE SECOND THING TO FILL. The machine runs dry once the twenty stickers
+     are in, and the coins kept coming with nothing left to buy; the gallery
+     is what they go to. Its paintings are the game's OWN — every scene it
+     ships, the village's ground, the desk's wide scene and the character in
+     its three moods standing on the game's scene (meta.js, section 4b) — so
+     there is nothing to draw for it, and it is cut into puzzle pieces bought
+     one at a time. The paintings fill in order, each one a step, and a
+     painting not reached yet is shown under its pieces with a padlock: the
+     shape of what is coming is the reason to go on.
+
+     THE CUT IS GENERATED, never drawn: a grid per painting (meta.js picks it)
+     and a tab on every inner edge, its side drawn from a generator seeded on
+     the game and the painting, so a piece has the same shape every visit and
+     in every build. The order the pieces land in is the same generator's
+     shuffle, so a painting fills from everywhere at once and not row by
+     row. Nothing about a piece is stored: the save holds one count.
+
+     THE PRICE IS THE CLIMB'S (meta.js `galPrice`): it is read fresh on every
+     paint, and the one sentence on the page says what lowers it when the
+     gallery has run ahead of the map — a price that moves for a reason the
+     player is never told reads as a cheat. */
+  var gal = null;                       // the page's nodes
+  var galSel = -1;                      // the painting on show; -1 = the one being filled
+  var galNew = -1, galNewAt = 0;        // the piece just bought, and when
+  var galDone = -1, galDoneAt = 0;      // the painting just completed, and when
+  var GAL_NEW_MS = 900, GAL_DONE_MS = 1400;
+  var shapes = {};
+
+  /* WHERE A CHARACTER STANDS ON ITS SCENE. The eighteen casts were not cut
+     to one shape: 373x560, 460x383, 460x549…, some with a margin of air
+     around the body (orbinity's fills 69 % of its height) and some off
+     centre in their own file (gearball's sits high). Centring the FILE would
+     centre the air with it, so the visible body is measured once — the box
+     of every pixel that is not transparent — and THAT box is centred on the
+     painting, scaled to fit 78 % of its width and 62 % of its height.
+
+     The measure needs the picture decoded, so every character is measured
+     when the gallery is built, long before its tab is opened; a painting
+     drawn before its measure lands draws no character and is repainted when
+     it does, rather than drawing it once in the wrong place. */
+  var CHAR_W = 0.78, CHAR_H = 0.62;
+  var bodies = {};                      // src -> the visible box, or 1 while it loads
+
+  function measureBody(src) {
+    if (bodies[src]) return;
+    bodies[src] = 1;
+    var img = new Image();
+    img.onload = function () {
+      var w = img.naturalWidth, h = img.naturalHeight, box = { x: 0, y: 0, w: w, h: h, iw: w, ih: h };
+      var cv = document.createElement("canvas");
+      cv.width = w; cv.height = h;
+      try {
+        var c = cv.getContext("2d");
+        c.drawImage(img, 0, 0);
+        var d = c.getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = -1, y1 = -1, x, y;
+        for (y = 0; y < h; y++) {
+          for (x = 0; x < w; x++) {
+            if (d[(y * w + x) * 4 + 3] > 24) {
+              if (x < x0) x0 = x;
+              if (x > x1) x1 = x;
+              if (y < y0) y0 = y;
+              if (y > y1) y1 = y;
+            }
+          }
+        }
+        if (x1 >= 0) box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, iw: w, ih: h };
+      } catch (e) { /* a picture the canvas may not read is centred whole */ }
+      cv.width = cv.height = 0;
+      bodies[src] = box;
+      if (gal && VW.isOpen("sticker") && S.tab === "gallery") paintGallery();
+    };
+    img.src = src;
+  }
+
+  /* The picture's own rectangle in the painting's viewBox, placed so that
+     its visible body is centred on (w/2, h/2). Null until it is measured. */
+  function charPlace(src, w, h) {
+    var b = bodies[src];
+    if (!b || b === 1) { measureBody(src); return null; }
+    var k = Math.min(w * CHAR_W / b.w, h * CHAR_H / b.h);
+    return { x: w / 2 - (b.x + b.w / 2) * k, y: h / 2 - (b.y + b.h / 2) * k,
+             w: b.iw * k, h: b.ih * k };
+  }
+
+  function buildGallery() {
+    var list = MT.gallery(), i;
+    for (i = 0; i < list.length; i++) if (list[i].groundSrc) measureBody(list[i].src);
+    var pg = el("div", "al-pg"); pg.id = "al-pg-gallery";
+    gal = {
+      frame: el("div", "gl-frame"),
+      cap: el("div", "gl-cap"),
+      buy: el("button", "btn btn-buy btn-lg btn-wide gl-buy"),
+      hint: el("p", "gl-hint"),
+      thumbs: el("div", "gl-thumbs")
+    };
+    gal.buy.addEventListener("click", onBuyPiece);
+    gal.frame.addEventListener("click", function () {
+      var list = MT.gallery(), i = shownIndex();
+      if (ownIn(list[i]) === list[i].n) viewPainting(i);
+    });
+    pg.appendChild(gal.frame);
+    pg.appendChild(gal.cap);
+    pg.appendChild(gal.buy);
+    pg.appendChild(gal.hint);
+    pg.appendChild(gal.thumbs);
+    pg.style.display = "none";
+    return pg;
+  }
+
+  /* A generator seeded on a string: the same pieces, the same order, every
+     visit. An LCG and not Math.random, because a cut that changed under the
+     player between two visits would be a different puzzle. */
+  function rng(str) {
+    var st = 7, i;
+    for (i = 0; i < str.length; i++) st = (st * 31 + str.charCodeAt(i)) % 4294967296;
+    return function () {
+      st = (st * 1664525 + 1013904223) % 4294967296;
+      return st / 4294967296;
+    };
+  }
+
+  function f1(v) { return Math.round(v * 10) / 10; }
+
+  /* ONE PAINTING CUT INTO ITS PIECES: an outline per cell, every inner seam
+     once, and the order the pieces land in. A tab's side is drawn per EDGE,
+     not per piece: the piece on either side of it walks the same curve in
+     opposite directions, which is what makes two neighbours fit. */
+  function shapeOf(p) {
+    if (shapes[p.key]) return shapes[p.key];
+    var w = p.wide ? 1600 : 720, h = p.wide ? 900 : 1280;
+    var r = rng((W.CONFIG.slug || "game") + ":" + p.key);
+    var cw = w / p.cols, ch = h / p.rows, tab = 0.26 * Math.min(cw, ch);
+    var hz = [], vt = [], row, c, i;
+    for (row = 0; row <= p.rows; row++) {
+      hz.push([]);
+      for (c = 0; c < p.cols; c++) hz[row].push(r() < 0.5 ? 1 : -1);
+    }
+    for (row = 0; row < p.rows; row++) {
+      vt.push([]);
+      for (c = 0; c <= p.cols; c++) vt[row].push(r() < 0.5 ? 1 : -1);
+    }
+    /* From (ax, ay) to (bx, by), straight on the painting's border (s = 0)
+       and with a knob on either side of it inside (s = ±1): a neck, a round
+       head wider than the neck, and the same neck back. */
+    function edge(ax, ay, bx, by, s) {
+      if (!s) return " L" + f1(bx) + " " + f1(by);
+      var dx = bx - ax, dy = by - ay, len = Math.sqrt(dx * dx + dy * dy);
+      var nx = -dy / len * s * tab, ny = dx / len * s * tab;
+      function at(t, n) { return f1(ax + dx * t + nx * n) + " " + f1(ay + dy * t + ny * n); }
+      return " L" + at(0.36, 0) +
+             " C" + at(0.42, 0) + " " + at(0.30, 1) + " " + at(0.5, 1) +
+             " C" + at(0.70, 1) + " " + at(0.58, 0) + " " + at(0.64, 0) +
+             " L" + f1(bx) + " " + f1(by);
+    }
+    var cells = [], seams = "";
+    for (row = 0; row < p.rows; row++) {
+      for (c = 0; c < p.cols; c++) {
+        var x0 = c * cw, y0 = row * ch, x1 = x0 + cw, y1 = y0 + ch;
+        cells.push("M" + f1(x0) + " " + f1(y0) +
+          edge(x0, y0, x1, y0, row === 0 ? 0 : hz[row][c]) +
+          edge(x1, y0, x1, y1, c === p.cols - 1 ? 0 : vt[row][c + 1]) +
+          edge(x1, y1, x0, y1, row === p.rows - 1 ? 0 : -hz[row + 1][c]) +
+          edge(x0, y1, x0, y0, c === 0 ? 0 : -vt[row][c]) + "Z");
+        if (row > 0) seams += "M" + f1(x0) + " " + f1(y0) + edge(x0, y0, x1, y0, hz[row][c]);
+        if (c > 0) seams += "M" + f1(x0) + " " + f1(y0) + edge(x0, y0, x0, y1, vt[row][c]);
+      }
+    }
+    var order = [];
+    for (i = 0; i < p.n; i++) order.push(i);
+    for (i = order.length - 1; i > 0; i--) {
+      var j = Math.floor(r() * (i + 1)), t = order[i];
+      order[i] = order[j]; order[j] = t;
+    }
+    return (shapes[p.key] = { w: w, h: h, cells: cells, seams: seams, order: order });
+  }
+
+  /* The painting as an SVG: the picture (the character on the game's scene,
+     where it is one), the seams over it, and a dark piece over every cell
+     not owned yet — dark and not black, so the painting shows faintly through
+     what is missing. `fresh` is the cell just bought: its piece is drawn
+     once more, fading, with a flash on its outline. */
+  function paintingSvg(p, owned, fresh) {
+    var sh = shapeOf(p), have = {}, i;
+    for (i = 0; i < owned; i++) have[sh.order[i]] = true;
+    var html = '<svg class="gl-svg" viewBox="0 0 ' + sh.w + " " + sh.h +
+      '" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<image href="' + (p.groundSrc || p.src) + '" x="0" y="0" width="' + sh.w + '" height="' + sh.h +
+      '" preserveAspectRatio="xMidYMid slice"/>';
+    /* the character in front of the scene, its VISIBLE body centred on
+       the painting both ways (`charPlace`) */
+    if (p.groundSrc) {
+      var cp = charPlace(p.src, sh.w, sh.h);
+      if (cp) {
+        html += '<image href="' + p.src + '" x="' + f1(cp.x) + '" y="' + f1(cp.y) +
+          '" width="' + f1(cp.w) + '" height="' + f1(cp.h) + '" preserveAspectRatio="none"/>';
+      }
+    }
+    html += '<path class="gl-seam" d="' + sh.seams + '"/>';
+    for (i = 0; i < p.n; i++) {
+      if (have[i] && i !== fresh) continue;
+      html += '<path class="gl-hole' + (i === fresh ? " go" : "") + '" d="' + sh.cells[i] + '"/>';
+    }
+    if (fresh >= 0) html += '<path class="gl-flash" d="' + sh.cells[fresh] + '"/>';
+    return html + "</svg>";
+  }
+
+  /* How many pieces of painting `p` are owned: the count fills the paintings
+     in order (meta.js), so it is the share of that count past `p.first`. */
+  function ownIn(p) { return Math.max(0, Math.min(p.n, MT.pieces() - p.first)); }
+
+  /* The painting being filled — the last one once they all are. */
+  function galCurrent() {
+    var list = MT.gallery(), owned = MT.pieces(), i;
+    for (i = 0; i < list.length; i++) if (owned < list[i].first + list[i].n) return i;
+    return list.length - 1;
+  }
+
+  function shownIndex() {
+    var cur = galCurrent();
+    return galSel < 0 || galSel > cur ? cur : galSel;
+  }
+
+  function paintGallery() {
+    if (!gal) return;
+    var list = MT.gallery(), cur = galCurrent(), sel = shownIndex();
+    var p = list[sel], have = ownIn(p), now = Date.now(), i;
+    var fresh = -1;
+    if (now - galNewAt < GAL_NEW_MS && galNew >= p.first && galNew < p.first + p.n) {
+      fresh = shapeOf(p).order[galNew - p.first];
+    }
+    gal.frame.className = "gl-frame" + (p.wide ? " wide" : "") + (have === p.n ? " full" : "") +
+      (galDone === sel && now - galDoneAt < GAL_DONE_MS ? " done" : "");
+    gal.frame.innerHTML = paintingSvg(p, have, fresh);
+    gal.frame.setAttribute("aria-label", fill(T.galName, { n: sel + 1 }));
+    gal.cap.textContent = fill(T.galPaint, { n: sel + 1, t: list.length }) + " · " + have + "/" + p.n;
+
+    /* The price, or the line that says there is nothing left to buy. */
+    var price = MT.piecePrice();
+    if (!price) {
+      gal.buy.style.display = "none";
+      gal.hint.textContent = T.galFull;
+      gal.hint.style.display = "";
+    } else {
+      gal.buy.style.display = "";
+      gal.buy.disabled = MT.coins() < price;
+      gal.buy.innerHTML = "<span>" + T.buyPiece + '</span><span class="btn-badge">' +
+        icon("coin") + num(price) + "</span>";
+      var ahead = MT.pieceAhead() > 1.5;
+      gal.hint.textContent = ahead ? T.galAhead : "";
+      gal.hint.style.display = ahead ? "" : "none";
+    }
+
+    /* EVERY PAINTING, small: done ones ticked, the one on show lit, the
+       ones not reached yet under their pieces and a padlock. A tap shows a
+       painting already reached in the frame above. */
+    gal.thumbs.innerHTML = "";
+    for (i = 0; i < list.length; i++) {
+      var q = list[i], h = ownIn(q), locked = i > cur;
+      var b = el("button", "gl-th" + (q.wide ? " wide" : "") + (i === sel ? " on" : "") +
+        (locked ? " locked" : "") + (h === q.n ? " full" : ""),
+        paintingSvg(q, locked ? 0 : h, -1) +
+        (locked ? '<i class="gl-mk">' + icon("lock", "gl-mki") + "</i>" : "") +
+        (h === q.n ? '<i class="gl-mk ok">' + icon("check", "gl-mki") + "</i>" : ""));
+      b.setAttribute("aria-label", fill(T.galName, { n: i + 1 }));
+      b.setAttribute("aria-pressed", i === sel ? "true" : "false");
+      b.disabled = locked;
+      b.addEventListener("click", (function (n) {
+        return function () {
+          if (n === shownIndex()) return;
+          galSel = n;
+          W.Sound.ui("tick", 0.4);
+          paintGallery();
+        };
+      })(i));
+      gal.thumbs.appendChild(b);
+    }
+
+    var owned = MT.pieces(), total = MT.piecesTotal();
+    paintStock(alStock, [
+      { tone: "puzzle", pic: "puzzle", n: owned, fig: owned + "/" + total, label: T.galleryTab }
+    ]);
+  }
+
+  /* One piece. The price leaves the coin chip like every purchase of this
+     layer (`spendFx`), the frame turns to the painting it landed in, and the
+     piece fades in where it belongs. The one that completes a painting
+     shines it and sounds the reward. */
+  function onBuyPiece() {
+    var before = MT.coins(), cur = galCurrent();
+    if (!MT.buyPiece()) return;
+    galNew = MT.pieces() - 1; galNewAt = Date.now();
+    galSel = cur;
+    var p = MT.gallery()[cur], done = ownIn(p) === p.n;
+    if (done) { galDone = cur; galDoneAt = Date.now(); }
+    MT.spendFx(before, MT.coins());
+    W.Sound.ui(done ? "reward" : "buy", done ? 0.8 : 0.7);
+    paintGallery();
+  }
+
+  /* A FINISHED PAINTING, AT FULL SIZE, with nothing over it: the reward for
+     the pieces is to look at it. Put away by a tap anywhere. */
+  function viewPainting(i) {
+    var p = MT.gallery()[i];
+    MD.open({
+      kind: "gl-view" + (p.wide ? " wide" : ""), dismiss: true,
+      eyebrow: T.galleryTitle, title: fill(T.galName, { n: i + 1 }),
+      fill: function (body) {
+        body.appendChild(el("div", "gl-big" + (p.wide ? " wide" : ""), paintingSvg(p, p.n, -1)));
+      }
+    });
+  }
+
   /* ── 6. the shop ──────────────────────────────────────────────────────── */
 
   var shop, shopBody, shopBuilt = false, SH = null, shStock = null;
@@ -1070,7 +1454,7 @@
       }
     }
     for (var i = 0; i < list.length; i++) {
-      var o = list[i], p = node.children[i], fig = num(o.n);
+      var o = list[i], p = node.children[i], fig = o.fig != null ? o.fig : num(o.n);
       var b = p.querySelector("b");
       p.classList.toggle("zero", !o.n);
       p.setAttribute("role", "img");
@@ -1382,9 +1766,8 @@
      two equal z-indexes won — is the view system's, and it does it for every
      screen rather than for these two (packages/webshell/view.js). */
   function showAlbum() {
-    paintMachine();
-    paintShelves();
-    Machine.refresh();                // the frame may have been resized under it
+    galSel = -1;                      // the gallery opens on the painting being filled
+    paintPage();
     MT.markSeen();
   }
 
@@ -1396,7 +1779,7 @@
      a ticket bought in the shop has to grey the machine's button in, and a
      sticker earned on the end screen has to fill its tile. */
   MT.onChange(function () {
-    if (VW.isOpen("sticker")) { paintMachine(); paintShelves(); }
+    if (VW.isOpen("sticker")) paintPage();
     if (VW.isOpen("shop")) paintShop();
   });
 
@@ -1437,6 +1820,8 @@
             if (n < 0) { W.Notify.say("The album is full", { kind: "warn" }); return; }
             MT.give(n); MT.bumpUnseen(); reveal(n, true);
           } });
+        W.Dev.entry({ group: "Shell", label: "Gallery, five pieces", sub: "Five puzzle pieces of the gallery, for nothing",
+          run: function () { MT.addPieces(5); VW.go("sticker"); } });
         W.Dev.entry({ group: "Shell", label: "Sticker draw, double", sub: "The machine's reveal of a sticker already owned",
           run: function () {
             var n = pickSticker(true);
@@ -1460,10 +1845,8 @@
     LANG = STRINGS[code] ? code : "en";
     T = STRINGS[LANG];
     if (built) {
-      S.setHead(T.album, "");
       ctl.querySelector(".al-lbl").textContent = T.perDraw;
-      paintMachine();
-      paintShelves();
+      paintPage();
     }
     if (shopBuilt) {
       SH.setHead(T.shop, "");

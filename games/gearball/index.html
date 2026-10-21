@@ -292,7 +292,8 @@
      Over the views, the band and a card (z 48), under the wallet's flying
      pieces. Under the band on a view (`--wh-band`, view.js), under the HUD
      in a round — and pointer-transparent there (.round), so a notice never
-     takes a tap the game was waiting for.
+     takes a tap the game was waiting for; except `.nt-link`, a notice that
+     names a guide page, which a tap opens on it.
      ========================================================================= */
   #nt-layer {
     position:absolute; right:26px; left:26px; z-index:48; pointer-events:none;
@@ -323,6 +324,8 @@
     animation:nt-shake .42s ease both; animation-delay:260ms; animation-play-state:paused;
   }
   #nt-layer.round .nt-b { pointer-events:none; }
+  /* a notice naming a guide page opens it, in a round too (shell.js, Notify) */
+  #nt-layer.round .nt-b.nt-link { pointer-events:auto; }
   .nt-b.k-info { --k:var(--accent); }
   .nt-b.k-gain { --k:var(--gold); }
   .nt-b.k-good { --k:var(--good); }
@@ -342,6 +345,9 @@
     background:var(--k); box-shadow:0 0 8px color-mix(in srgb, var(--k) 60%, transparent); }
   .nt-ic svg { width:84%; height:84%; fill:none; stroke:var(--k); stroke-width:2.4;
     stroke-linecap:round; stroke-linejoin:round; }
+  /* the guide's book in the icon's slot: this notice opens a page of it
+     (Notify, `guide`), here and on its line in the "!" log */
+  .nt-ic.go svg { stroke:var(--accent); }
   .nt-tx { min-width:0; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:10px; }
   .nt-w {
     font-size:24px; line-height:1.15; letter-spacing:1.5px; color:var(--k);
@@ -351,6 +357,14 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     font-size:20px; font-weight:600; line-height:1.2; color:var(--muted);
   }
+  /* the guide's book as a disc, inline in the Help card's last line
+     (packages/webshell/guide.css, .web-help-note) */
+  .nt-go {
+    flex:0 0 auto; display:grid; place-items:center; width:40px; height:40px;
+    margin-left:4px; margin-right:-8px; border-radius:50%; background:rgba(255,255,255,.1);
+  }
+  .nt-go svg { width:24px; height:24px; fill:none; stroke:var(--accent); stroke-width:2.4;
+    stroke-linecap:round; stroke-linejoin:round; }
   .nt-n {
     position:absolute; top:-14px; right:-10px; min-width:36px; height:36px; padding:0 8px;
     border-radius:18px; display:none; align-items:center; justify-content:center;
@@ -1438,51 +1452,42 @@
      number — and a `z-index:0` of its own cannot beat a selector carrying two
      ids. Out of the rule it is simply not positioned, so it stacks below every
      figure on this screen. */
-  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer):not(.eo-stars) { position:relative; z-index:1; }
+  #screen-end > *:not(#confetti):not(.screen-art):not(#eo-char):not(.decor-layer):not(.eo-stars):not(.eo-fx) { position:relative; z-index:1; }
+  /* IN FRONT of every word: the glitter a star lands with and the rain of a
+     lost round (engine.js, Confetti), and the white flash of the score landing
+     (shell.js, EndScreen). Never a target. */
+  #eo-front { position:absolute; left:0; top:0; width:720px; height:1280px; z-index:2; pointer-events:none; }
+  .eo-flash { position:absolute; inset:0; z-index:3; background:#fff; pointer-events:none; animation:eo-flash .3s ease-out forwards; }
+  @keyframes eo-flash { from { opacity:.7; } to { opacity:0; } }
 
   /* ---- The character ------------------------------------------------------
      One of `assets/image/embed/<slug>-character-{sad,neutral,happy}.webp`, picked by
      the star count the round scored (shell.js, Art.faceFor).
 
-     It hangs off the bottom-right corner of the frame, cropped by the bottom
-     edge only — a figure the edge cuts stands in the scene where one floating
-     clear of it is a sticker, and the bottom takes the feet where the top would
-     take the head. The right edge is flush: a horizontal crop takes an arm.
+     IT STANDS BEHIND THE COLUMN: centred on the bottom edge, a little bigger
+     than its box and at a third of its strength, so it is the screen's
+     backdrop and every word lands over it. It rises alone, the first beat of
+     the reveal (shell.js, EndScreen). Chosen in lab/end-screen.html, over a
+     corner figure that shrank a step per beat.
 
-     THE BOX IS FIXED, AND BIG: 660px, twice the figure the screen settles on.
-     `Art.settleCharacter` walks `--char-k` down from 1 to .5 as the reveal
-     lands, so the face arrives alone with the title at full size and has made
-     its room by the time the buttons show. Nothing here is measured against the
-     column any more — see the block above Art.settleCharacter in shell.js for
-     why the fit that used to be went away.
-
-     ABSOLUTE, NOT A FLEX ITEM. In the flow it would push the whole column by
-     its own height. Out of the flow nothing moves — and document order puts
-     #eo-char before everything the reveal writes, at one shared z-index, so
-     the title, the score, the rows and both buttons paint over it. Nothing can
-     be hidden by it; the worst case is a face partly covered.
+     ABSOLUTE, NOT A FLEX ITEM: in the flow it would push the whole column by
+     its own height. Document order puts #eo-char before everything the reveal
+     writes, at one shared z-index, so nothing can be hidden by it.
 
      The masters are portrait for some games and landscape for others
      (1024x1536 against 1374x1145), so the box is fixed and the fit is
-     `contain`: the anchor never moves with the aspect ratio. ---- */
+     `contain`, anchored on the bottom centre. ---- */
   #eo-char {
-    position:absolute; right:0; bottom:-44px; z-index:1;
-    width:594px; height:660px;
-    object-fit:contain; object-position:bottom right;
+    position:absolute; left:50%; bottom:-44px; z-index:1;
+    width:594px; height:660px; margin-left:-297px;
+    object-fit:contain; object-position:bottom center;
     pointer-events:none;
     filter:drop-shadow(0 14px 30px rgba(0,0,0,.6));
-    /* `--char-k` is the settle, written by Art.settleCharacter. It scales about
-       the BOTTOM-RIGHT corner, so the figure keeps its footing in the corner
-       and the 44px of bleed shrinks with it instead of eating more of the
-       feet. */
-    --char-k:1; transform-origin:100% 100%;
-    opacity:0; transform:translateY(40px) scale(calc(var(--char-k) * .94));
-    transition:opacity .5s ease, transform .55s cubic-bezier(.2,1.5,.4,1);
+    transform-origin:50% 100%;
+    opacity:0; transform:translateY(40px) scale(1.12);
+    transition:opacity 1s ease, transform 1s cubic-bezier(.2,1.6,.4,1);
   }
-  /* The way down is not the way in: the entrance overshoots, and six of those
-     in a row would read as a wobble rather than as a figure making room. */
-  #eo-char.settling { transition:opacity .5s ease, transform .5s ease; }
-  #eo-char.show { opacity:1; transform:translateY(0) scale(var(--char-k)); }
+  #eo-char.show { opacity:.3; transform:translateY(0) scale(1.12); }
 
   /* The three display strings are measured and scaled DOWN by Fit (section 5)
      rather than sized per game: "OUT OF BALLS!" is 703px of a 624px band at
@@ -1493,118 +1498,115 @@
      96px of .screen padding. */
   #intro-title, #screen-end .eo-title, #screen-end .eo-score { white-space:nowrap; }
 
-  .eo-title {
-    font-size:96px; font-weight:900; letter-spacing:4px; color:var(--danger);
-    text-shadow:0 0 24px rgba(255,45,85,.85), 0 0 52px rgba(255,45,85,.45);
-    opacity:0; transform:scale(.55);
-    transition:opacity .4s ease, transform .45s cubic-bezier(.2,1.7,.4,1);
+  /* THE BEATS' ENTRANCES (lab/end-screen.html, preset G): the title is
+     stamped, the score and the stars pop, the rows slide in from the left,
+     the way out rises. Each one is an animation with `both`, so the element
+     holds its first frame until its class lands. */
+  @keyframes eo-stamp {
+    0%   { opacity:0; transform:scale(3) rotate(-14deg); }
+    60%  { opacity:1; transform:scale(.92) rotate(-3deg); }
+    100% { opacity:1; transform:scale(1) rotate(0); }
   }
-  .eo-title.show { opacity:1; transform:scale(1); }
+  @keyframes eo-popin {
+    from { opacity:0; transform:scale(.55); }
+    to   { opacity:1; transform:scale(1); }
+  }
+
+  .eo-title {
+    font-size:84px; font-weight:900; letter-spacing:4px; color:var(--danger);
+    text-shadow:0 0 24px rgba(255,45,85,.85), 0 0 52px rgba(255,45,85,.45);
+    opacity:0;
+  }
+  .eo-title.show { opacity:1; animation:eo-stamp .6s cubic-bezier(.3,1,.4,1) both; }
   /* A great run gets a brighter, celebratory title instead of the red one. */
   .eo-title.win { color:var(--good); text-shadow:0 0 24px rgba(105,219,124,.8), 0 0 52px rgba(105,219,124,.4); }
-  .eo-title.perfect { color:#5cf0ff; animation:perfectglow 1.6s ease-in-out infinite; }
+  .eo-title.perfect { color:#5cf0ff; }
+  .eo-title.perfect.show { animation:eo-stamp .6s cubic-bezier(.3,1,.4,1) both, perfectglow 1.6s ease-in-out .6s infinite; }
   @keyframes perfectglow {
     0%,100%{ text-shadow:0 0 24px rgba(0,229,255,.9), 0 0 52px rgba(0,180,255,.55); }
     50%    { text-shadow:0 0 38px rgba(120,240,255,1), 0 0 78px rgba(0,200,255,.8); }
   }
-  .eo-scorelbl { margin-top:12px; font-size:18px; font-weight:800; letter-spacing:6px; color:var(--muted);
-    opacity:0; transition:opacity .4s ease; }
-  .eo-scorelbl.show { opacity:1; }
+  /* The label is not written: the number under the title is the score, and
+     the line saying so cost the column a row. */
+  .eo-scorelbl { display:none; }
   .eo-score {
-    font-size:150px; font-weight:900; line-height:1; color:var(--text);
+    margin-top:10px;
+    font-size:136px; font-weight:900; line-height:1; color:var(--text);
     text-shadow:0 0 22px rgba(0,229,255,.65); font-variant-numeric:tabular-nums;
-    opacity:0; transform:scale(.7); transition:opacity .35s ease, transform .35s ease;
+    opacity:0;
   }
-  .eo-score.show { opacity:1; transform:scale(1); }
+  /* `transform:none` is not decoration: the landing adds `.pop`, which is
+     also the callout layer's class (`translate(-50%, -50%)`), and this rule is
+     what outweighs it once the landing's own animation has ended. */
+  .eo-score.show { opacity:1; transform:none; animation:eo-popin .45s cubic-bezier(.2,1.7,.4,1) both; }
   .eo-score.pop { animation:eopop .45s ease; }
   @keyframes eopop { 0%{transform:scale(1);} 40%{transform:scale(1.2);} 100%{transform:scale(1);} }
 
   /* THE THIRD STAR STANDS IN THE MIDDLE, and it is the biggest. Three stars
      the same size in a row is a progress bar; a podium is what the last one
      earned. The DOM order and the reveal are untouched — star-1, star-2,
-     star-3, lit one by one in that order (shell.js) — and only the `order`
+     star-3, popped one by one in that order (shell.js) — and only the `order`
      property moves the third into the centre, so nothing about the cascade,
      the chimes or the ids has to know about the arrangement.
 
-     The lift is `top` and never `transform`: the slam and the dim both animate
-     the transform, and a raise written there would be wiped by the first
-     keyframe of either. */
-  /* THEY TUCK UNDER THE SCORE, and behind it. Three stars standing in their
-     own band cost the column a sixth of the frame for a row that is read in
-     one glance — pulled up they sit just below the number, the tall middle one
-     rising into the space beside its digits, and the rows underneath gain the
-     the height. They are the one child of #screen-end left UNPOSITIONED (see
-     the rule above), which is what puts them behind the score and behind the
-     line that explains it — nothing overlapping can cover a figure. */
-  .eo-stars { margin-top:-26px; display:flex; gap:18px; justify-content:center; align-items:center; }
-  /* …unless something is written in that gap. The meta layer's conversion line
-     sits between the score and this row (packages/webshell/meta.js), and the
-     middle star reaches 20 px above the row's own top — gold working over a
-     gold star is not read at all. The row steps down by exactly what the line
-     needs, and only where there is a line. The score label gives the height
-     back (`.eo-scorelbl` above), so the column is no taller than it was. */
-  #screen-end.has-gain .eo-stars { margin-top:22px; }
+     The lift is `top` and never `transform`: the pop animates the transform,
+     and a raise written there would be wiped by its first keyframe.
+
+     THEY STAND IN THEIR OWN ROW, big, under the coins line — the verdict of
+     the round, read at a glance. EVERY SLOT POPS, earned or not: an empty
+     star lands dim on its own beat, so the row takes the same time whatever
+     the round scored and stays on the grid the coins line and the rows step
+     on (shell.js, EndScreen). */
+  .eo-stars { margin-top:20px; display:flex; gap:18px; justify-content:center; align-items:center; }
   .eo-stars.hidden { display:none; }
-  .star { font-size:112px; line-height:1; color:rgba(255,255,255,.10); opacity:0; transform:scale(.3);
-    position:relative; transition:opacity .2s ease; }
+  .star { font-size:140px; line-height:1; color:rgba(255,255,255,.10); opacity:0;
+    position:relative; }
   .eo-stars .star:nth-child(1) { order:1; }
-  .eo-stars .star:nth-child(3) { order:2; font-size:168px; top:-20px; }
+  .eo-stars .star:nth-child(3) { order:2; font-size:210px; top:-20px; }
   .eo-stars .star:nth-child(2) { order:3; }
-  .star.dim { opacity:1; transform:scale(.82); color:rgba(255,255,255,.12); }
-  /* `transform:scale(1)` is what the star RESTS at, and it has to be written
-     here: `starslam` carries no fill mode, so the moment it ends the element
-     falls back on its own rule — `.star`'s scale(.3), the not-yet-revealed
-     state. Every lit star has been landing and then shrinking to a third of
-     its size since the cascade was written; the dim ones sat at .82 beside
-     them, which is why an unearned star looked bigger than an earned one. */
+  .star.dim { color:rgba(255,255,255,.12); animation:eo-popin .5s cubic-bezier(.2,1.7,.4,1) both; }
   .star.on {
-    opacity:1; color:var(--gold); transform:scale(1);
+    color:var(--gold);
     background:linear-gradient(180deg,#fff6bf 0%,#ffd43b 55%,#ff9f1c 100%);
     -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
-    animation:starslam .6s cubic-bezier(.2,1.8,.35,1), starglow 1.9s ease-in-out .6s infinite;
+    animation:eo-popin .5s cubic-bezier(.2,1.7,.4,1) both, starglow 1.9s ease-in-out .5s infinite;
   }
-  @keyframes starslam { 0%{transform:scale(2.6);} 55%{transform:scale(.86);} 100%{transform:scale(1);} }
   @keyframes starglow { 0%,100%{filter:drop-shadow(0 0 10px rgba(255,200,60,.7));}
     50%{filter:drop-shadow(0 0 24px rgba(255,225,130,1));} }
 
-  .eo-stats { margin-top:28px; width:520px; display:flex; flex-direction:column; gap:12px; }
+  /* THE ROWS ARE A RECEIPT: no plate, a dashed rule under each line, the
+     label in the muted ink and the figure in the grade's colour. They slide in
+     from the left, one per beat. */
+  .eo-stats { margin-top:24px; width:520px; display:flex; flex-direction:column; }
   .eo-row {
     display:flex; justify-content:space-between; align-items:center; gap:16px;
-    padding:14px 22px; border-radius:16px;
-    background:var(--panel); border:1px solid var(--panel-line);
-    font-size:30px; font-weight:800;
-    opacity:0; transform:translateX(-22px); transition:opacity .3s ease, transform .3s ease;
+    padding:9px 4px;
+    border-bottom:2px dashed rgba(255,255,255,.16);
+    font-size:26px; font-weight:800; letter-spacing:1px; color:var(--muted);
+    opacity:0; transform:translateX(-40px); transition:opacity .5s ease-out, transform .5s ease-out;
   }
   .eo-row.show { opacity:1; transform:translateX(0); }
-  .eo-val { font-variant-numeric:tabular-nums; }
-  /* grades: accent / good / warn / bad / gold (gold gets the trophy treatment) */
-  .eo-row.accent { color:var(--accent); background:rgba(0,229,255,.09); border-color:rgba(0,229,255,.3); }
-  .eo-row.good   { color:var(--good); }
-  .eo-row.warn   { color:#ffa94d; }
-  .eo-row.bad    { color:#ff6b6b; }
-  .eo-row.gold {
-    position:relative; overflow:hidden; color:#fff3b0;
-    background:linear-gradient(90deg, rgba(255,175,40,.16), rgba(255,220,130,.26), rgba(255,175,40,.16));
-    border-color:rgba(255,215,110,.6);
-    box-shadow:0 0 20px rgba(255,200,60,.3), inset 0 0 16px rgba(255,215,130,.18);
-  }
+  .eo-val { font-variant-numeric:tabular-nums; color:var(--text); }
+  /* grades: accent / good / warn / bad / gold (gold gets the sparks and the glow) */
+  .eo-row.accent .eo-val { color:var(--gold); }
+  .eo-row.good .eo-val   { color:var(--good); }
+  .eo-row.warn .eo-val   { color:#ffa94d; }
+  .eo-row.bad .eo-val    { color:#ff6b6b; }
+  .eo-row.gold { color:#fff3b0; border-bottom-color:rgba(255,215,110,.45); }
   .eo-row.gold .eo-val { color:#ffe58a; text-shadow:0 0 12px rgba(255,205,70,.7); }
-  .eo-row.gold::after {
-    content:""; position:absolute; top:0; left:-60%; width:45%; height:100%;
-    background:linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent);
-    transform:skewX(-20deg); animation:shine 2.8s ease-in-out infinite;
-  }
-  @keyframes shine { 0%{left:-60%;} 55%,100%{left:130%;} }
   .eo-row .spark { display:inline-block; color:var(--gold); filter:drop-shadow(0 0 8px rgba(255,205,80,.9));
     animation:twinkle 1.8s ease-in-out infinite; }
   .eo-row .spark:last-child { animation-delay:.9s; }
   @keyframes twinkle { 0%,100%{opacity:.65; transform:scale(.85) rotate(0deg);}
     50%{opacity:1; transform:scale(1.15) rotate(20deg);} }
 
-  /* The install CTA and the replay link arrive last, together. */
-  #screen-end #btn-install, #screen-end #btn-replay { opacity:0; pointer-events:none; transition:opacity .5s ease; }
-  #screen-end #btn-install { margin-top:34px; }
-  #screen-end #btn-install.show, #screen-end #btn-replay.show { opacity:1; pointer-events:auto; }
+  /* The way out arrives last, rising, one control a beat after the other. */
+  #screen-end #btn-install, #screen-end #btn-replay {
+    opacity:0; pointer-events:none; transform:translateY(40px);
+    transition:opacity .1s ease, transform .1s cubic-bezier(.2,1.6,.4,1);
+  }
+  #screen-end #btn-install { margin-top:26px; }
+  #screen-end #btn-install.show, #screen-end #btn-replay.show { opacity:1; pointer-events:auto; transform:none; }
   /* ...and a CLOSED end screen takes them back. `pointer-events:none` on
      .screen.hidden does NOT beat `auto` on a descendant — the property is
      resolved per element, never inherited as a veto — so the two buttons of
@@ -2048,6 +2050,15 @@
   .gb-art.pic img { display:block; position:relative; z-index:1; height:100%; max-height:124px; width:auto; max-width:200px; object-fit:contain;
     filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
   .gb-card.ghost .gb-art.pic img { filter:brightness(0) invert(1) !important; opacity:.42; }
+
+  /* ---- the guide's pictures (Game.guide) -----------------------------------
+     cards side by side, as cardNode builds them; a biome's painted hall cut
+     to a band (its size is set inline by scenePic) */
+  .gb-gcards { display:flex; justify-content:center; align-items:flex-start; gap:20px; padding-top:14px; }
+  .gb-gscene { max-width:100%; border-radius:16px; background:center 42% / cover no-repeat;
+    box-shadow:0 8px 22px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.12); }
+  /* the pick card's way to its rule's page, under the tap line */
+  #gb-pick .gb-rules { align-self:center; }
 </style>
 </head>
 <body>
@@ -2243,10 +2254,10 @@
       gameOver:   "Out of hearts",
       timeUp:     "Shift over",
       perfect:    "Full power!",
-      hintLock:   "Tap a lock to open its gate",
+      // the second lines of the first-time notices (Notify.learn), one per mechanic
+      hintLock:   "Tap a locked gate's padlock to open it",
       hintVolt:   "Tap an arrival to move the socket under it",
-      hintSpill:  "It rolls behind the machine to the red socket, and costs a heart",
-      hintFuse:   "Open gates and catch the electric marble to keep the combo"
+      hintFuse:   "Gates and electric marbles relight the fuse"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -2453,7 +2464,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "2.9.0",
+    version: "2.10.5",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2484,7 +2495,7 @@
     "kit-tick-default-3": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAZAAAAAAAAABIDRFl6+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADZxPMBTzAAovGmqnNPAAFzLm5qQ5DQNA0DQLmaZ1qNXq9Xq9nAAAIECBAgQIEyZMmTTu0yCEAAAAB4eHh4YAAAAAB4eHh4YAAAAAB4eHh4YAAAAAB4eHh60AAAAAPDw8PDAAAAAAPDw8PSAAAAGf/////h/5h4YACP//joAAAQoIgAQAABw5Cgw6AzrsMUS1g6FZwphnJBf4GjHQgQyxQeMg16aA4jI4GUJYKpYeMDIeq4SaHQt+sfDIiUwz5/87zVPtPM82KyV18Wjx6a9NU8JaiwLwbzW3j///78fGv/au7QnKDxb58BkMTizwSOhxYr+kvP/CjAobHPDjj37L+X+p4sgTA8DyAAAAA0ru0jqESdNFMyifuV6W//tYxAkCD+kpT72mgCGvjSQJvKHACpU/0ErtVKgBMtNNsNA9g5xsii3PGZqgZKdJpio26j6k0KkfpOrRRSLxeNrdddJSnW6nZmU635iy0E3Mkkkl/Rqotd0UaNXZ2XRRf9bcxGB1iJGeusAJUiq0s8tJVvZrcR0/O2yqw1JNLZ206gBlAM0cQNSgIeUBUqac7ReYwkIaYgmWeq1G8FEhsMca6Km5PJwhng6m47YGBcVFRgw8VWirFaKOkVX42lZVSQVBo8Ww0JUyzwVEQhlgaKni2sNSoTyx5YaUHQaBXad+w7d/8sokVu93R22fytVFB6ACN6sz8As+QNAGMyGDNNM4ASLGhgUCBQAIiF1iBkKfGD+CPhHQKSjMQy6DLGF5//tYxBiDzFhKmwzhkAAAADSAAAAEiMYwgoAMCMYpk6ResbhCIZ9Qsb8VZ/+3////6xYWFhb//xUVFBYWFhYVZrFWf///qFlMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-score-default-1": "data:audio/mpeg;base64,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qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//tYxGyDwEACAAyAACAAADSAAAAEqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
     "kit-star-default-1": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAAFoABmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmaZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzP////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAJcAAAAAAAABaDOzqtFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADDB5TFWGAAJmN6srNTABAABjScumz4CENTDcw1GBQFcSeUSyq+6maQ6m88AsB5bscGBgYGBPM1973bXrzAwPFlJnFhmZn6+9527CxYsWUOROD4PviAEAQU5YPv5D4Y//+H+UDHB9/+XP0f/3/BAEOXAAAYMUJAIJBAuFAO/UFlyuYS1bwQNBIT7msgsvMaGEQkwYxOUwg0G2QuYB1gsXE7jMMMsLPFpACQCghfjPD0aGYskfSaSJkvkoOIzLw6SIGSZozt+XTI2U5RSRRSWtBO3+Ui6ZFMvOoxNVpJL//+kXnmJ5kkq0f///+5SRomR9jFS91WZ0tJFSk0Gdkf///UpLMUpktZiFBIo7kCuzKmGbMKABMwCgCjA5//tYxAgDEJxvCB3vAAnuCeBN/3Q4A2AwDQNACpFAk0yQEowsRcTMAFzMOQIUw2k2jS5rPN95sUxcXpzajaaMnyJE0BhgjCzCYNO48cx2BbzFAFxMmoqEFGcmL0C+aCpExlCpjGRSBYYnYTxhBgpGBuAwj+YAQApdKTQDLdZdu01Ttn9Y5b+6BHv6AAiLsaCEAAOCIAA1ytNjyGKJisSeBgDgTmEULyY4wWZhIA2GO6hMaJ4WJibnEmPE4IaTCWZlHI2md4GaIBgD584HqFhCMEk+Ne3uMBBRNyzaNH6yOZTWMqwmSAT7aBL3hjEWwVBo9u9zP6H+uLf//Z///5L/J/6f///9ijjagDYwK4BeMCED8MBjBoAaPSIpbjj7DoA5//tYxA0DkPBy9g/7ocHLiV6J/fAogtCDmNADGYDgExh6kzGoyy8YlZRJnNE8mNucEYTJMJovCNmD8HecJCGYqiCYEiQYKgMZJImZ8n+cFB6Y4q8dhocYegGCgEUvZZD8bwz5r9c/m/xzx1hhl9wERQ7E9wDtLtSLsLy973vfu3E/TtDA3fQg3MBFAvj9Js1FeMIBTLSZDFWJMUu8mmYETnDHoJEgQTnR6QY+SRxXBnVUUFUAYATJhUcGj0gYpFj+GMRYYkTZokNGJRa4Q83Ep3orzV/wSHCzQ4JQ6HQeNihIqiDVRC0ieUO1rjHdbqnlvK////0VAAdzS8jVsxycFoOxcc7SYDMyfNDjAxYLTEIIIgIl0VQmXWCBOYLBxVSJ//tYxBUCEayY6E/zQcECAqCdvDAOxKNmdAiaokpokMmTgAZzRBkkJm8rnGLs2bsXzVrM5BEsJsXw0mbvajduk/Wd3Onzt2NYY/3O1T6ww/n51e/e1zWv3/NarBRZ2VGaMORF///X9GzU7uIf9/9X/1+XC7sTmuTDAiE1ImDV644kcDGpdJg1wOnJNXA0PGgqHRE21+sRA0e8tlga5YGga9n+DIKlXf/+Wv/1f+s7wVDXBUNNrBUFeCpMQU1FMy4xMDCqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
-    "kit-pickup-glass-1": "data:audio/mpeg;base64,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",
+    "kit-pickup-glass-1": "data:audio/mpeg;base64,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",
     "kit-combo-harprunup-1": "data:audio/mpeg;base64,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",
     "kit-malus-impactmining-1": "data:audio/mpeg;base64,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GcWxp3vP/V9X3/qI8MEkEK5QBt8DCclcAo0YdIRcmC+gg/////////3YpDeAwvg/GQRUpNA2//ZIyMSkOkRiR030GBEb1y1enf/////3VTGIMTeiLj14HDewwDOGVVgKZ1zuEreAEjAkaV2J1uQEHB/QwTZH7er/+oboZZGsQETiF1wMhKkC4TCgMGGSx80QX////////+pQYiAz4OB2lr0f/1IomxqOcGJQODjkCyZEbEgY//tYxDKCDQ07Bg7mo4F0pmJ1vlAQGJHGQAFgFgAlNQSDykA6MzzAYVHiK06BZ5lLqKIDyIOAtpEHDNmr/Uz6v/+dRSRNR9AAGgDvxBTZHr//7//////6lj4BaeLAzf//1LKAocDpXwvuOBMHAf/////39/e+pQAAAALQJUBsZCiB8Q6nbzcazRp0kwFM1Ke3h/KdOF/bGdEgAOFq9u/V//rK6SJqRYARQG9DImzPV//7/1o/////UgQEHERGhV///1qOiMgMbKFLF0MAV3///859E/x6dKnLqoksIAodzQ4h/Y71SkZG80LAYvTD0OxK9TZXYgI5gYjv8+VDhYopI+r7X3X/6IpcniKjkhgYDEk+AxQABkSLGKW3//////////tYxFUCDJExFa5mg0GyJ6FJ3VSoopIjqDOQc1gtZHY9kkP/6KKRiOoCABAxigxly8i7Obf////s/+zpAAAIAiAGo4Q2/zMSAjMrQpI3dYLjUBCt7OIci9FfnTDhw4lA9jlwlNDS5P/q//+UBSxPniNC9AGDZYANSA+cghfQTT/////////WkUSLAaaIIIgGSya1LT//0kTYqhYIDQxKAsHiZSWkYo/////WYdqnIrN2eJQXxgpCpGLEBQg6RBJMLrduIXdRsxv27QdnuOCNQSOM1f///1jcEBiGkOFbBoIGcT8C5dC9w0SXPJp/////////aw54nEDfrIC5kb5OKWonP/1LY+RAWWGIANvq4FDKCgHHATBTIwnP/////7+t//tYxHIDzd07Cw9qo4HTp2CB7NSoMJhLsz/OgjQUIHMS8ls8RRBgcIwFORd7vxSjsxICD0Zne78cBJYj//+v/I4uE6RYZYEgGAYewNbAsPWIqXkf////////+bmJBwNkOsKBIqma0Fkn/+9ZgQMZwBcIgY0x4GRwSHyC5yLk4Q8d8ToD6z4Q/jplZTTEPzl0zNkAEdDgTeQRDNN94w4ZJme5/SwWeVdXQf7f/5kOw1LxsGLQARvgHDJIwmTJav///0bf///+jLodYDG2UICQCCPOMmw8f/opF4ho+gxaBEGgGMpJAGAMDgN4SMLRWHkYL///////oTDYFUN4p7E0SQVzCuEsPFRS9tH7jFJny48IzOHR1t9qipzUT/////TF//tYxIWDTY07Bg9uo4HVp6CF3VhwgIiRYZ4LXQhZIGCQ2QQgZxav////////6imMYAKLQNCSEAoYEcT6bKHv/61Il0vEiNMAIAgeBnIGlAeJ/GYIYR41iDf/////pBNQGDFoGarmGJhBHYTDgdLZusksUfNyoBHBIlS9qD/CovfrQ///ybIgREgwhEAgCgJmIHBxiHJEeUDNBB////////9Vky4XgCgQAbYgUSAi5BDA6WB4//XTMCbHMAGAYHDlWAMNxHgzZFy4Rc7//////3/SADABhQkB5OTJvQHBiyX4cRMu1h394Zxww+EoY6xfCoP9X73/+oX4tY5CZOBY+Bi5LgeFAYFgAMmThfNEF/////////UsUIG8AYB2oGBw//tYxJoDzjk7BA9mo4HQp2DB3VRoOXC+maG43//9I6WBfgOBAGZWMBAFCdzA0NzxU////+7/qALBAMMVI03flzPCtMKDU6jXY5b+Q3T4Z6mRmYsXD7F4VF/169Xd/9Q+RW5AiKitQuGAyFPgOeggN9HEapNX////////7omxBAbFAhpgDA6HabppGI8//6KjEsCeQMBqkL+jNJuibH////0qO7nU/lYAIAHABBjIdZkFfRt6OpVDgmB+kvrO/mj8QEY+N/DCjX9q/1//uXRGw9k6Q0EACAXvgGvw4HXHQTZgmm3///qf////UtFy4NMLsASxQcTRvk4YGZQJL//sbF0PiAxwVAJDYqG6ajpr////X3po/TABoMnplGhBx2hx//tYxKyCDfk7CK7ipRHAJ2FlzFRohWBwfAeeqxt3chibw3JEOQsa3r6jtqQf+/vZS9v1kwFzQ55gOMAwDAZt0ABIiCzYyBEycL6aH///////+u7G4zIgcCBaACD4nAi5mYGZV//6aA5YZEAyyKAxAmXATBL///J/06/o9n7O+gBwGYggCpmeJwm1ZRlJ+X4p8M+c1/apZ9fln9XCEFKARt6SF376q19XWSgoIhpNDuDLIGJ1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cQV0I7gUcL1MQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tYxMoD070Swk5gwYgHAEABgAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-crash-impactglassheavy-1": "data:audio/mpeg;base64,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",
@@ -2898,7 +2909,8 @@
       malus: [260, 0.2], crash: [120, 0.35], move: [600, 0.06],
       launch: [700, 0.08], hit: [820, 0.06], bounce: [300, 0.05], burst: [1000, 0.12],
       toggle: [560, 0.04], card: [480, 0.05], miss: [240, 0.15], warn: [330, 0.2],
-      world: [180, 0.25], goal: [1320, 0.3], defeat: [160, 0.5]
+      world: [180, 0.25], goal: [1320, 0.3], defeat: [160, 0.5],
+      select: [520, 0.05], refuse: [220, 0.12]
     };
     var lastTake = {}, door = null, doorTimer = null;
     function shoot(id, vol, rate) {
@@ -4159,47 +4171,133 @@
   })();
 
   // --- Confetti: end-screen celebration on its own canvas ----------------
+  /* Two layers on the end screen: the confetti canvas BEHIND every word of
+     it (template/page.html), and one in FRONT of them, made here, for what
+     has to read over the stars — the glitter a star lands with and the rain
+     a lost round gets. Both chosen in lab/end-screen.html. */
   var Confetti = (function () {
-    var cvs = null, cx = null, parts = [], running = false, last = 0;
+    var cvs = null, cx = null, fcv = null, fcx = null;
+    var parts = [], running = false, last = 0;
     var COLORS = ["#00e5ff", "#ff2d95", "#ffd43b", "#39ff14", "#c86bff", "#ff6b35", "#ffffff"];
+    function size(c) {
+      var dpr = pixelRatio(view.scale);          // same rule as the game canvas
+      c.width = Math.round(view.w * dpr); c.height = Math.round(view.h * dpr);
+      c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     function ensure() {
       if (cvs) return true;
       cvs = $("confetti"); if (!cvs) return false;
       cx = cvs.getContext("2d");
-      var dpr = pixelRatio(view.scale);          // same rule as the game canvas
-      cvs.width = Math.round(view.w * dpr); cvs.height = Math.round(view.h * dpr);
-      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      size(cvs);
+      return true;
+    }
+    function ensureFront() {
+      if (fcv) return true;
+      var host = $("screen-end");
+      if (!host || !ensure()) return false;
+      fcv = document.createElement("canvas");
+      fcv.id = "eo-front"; fcv.className = "eo-fx";
+      host.appendChild(fcv);
+      fcx = fcv.getContext("2d");
+      size(fcv);
       return true;
     }
     function frame(now) {
       var dt = Math.min((now - last) / 1000, 0.05); last = now;
       cx.clearRect(0, 0, view.w, view.h);
+      if (fcx) fcx.clearRect(0, 0, view.w, view.h);
       for (var i = parts.length - 1; i >= 0; i--) {
         var p = parts[i];
-        p.vy += 700 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt;
-        if (p.life <= 0 || p.y > view.h + 40) { parts.splice(i, 1); continue; }
-        cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot);
-        cx.globalAlpha = clamp(p.life, 0, 1); cx.fillStyle = p.color;
-        cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); cx.restore();
+        if (p.delay > 0) { p.delay -= dt; continue; }
+        p.vy += (p.g || 0) * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.t += dt;
+        if (p.t >= p.life || p.y > view.h + 40) { parts.splice(i, 1); continue; }
+        draw(p.front ? fcx : cx, p);
       }
       if (parts.length) requestAnimationFrame(frame);
-      else { running = false; cx.clearRect(0, 0, view.w, view.h); }
+      else { running = false; clear(); }
     }
-    function burst(n) {
+    function draw(c, p) {
+      var u = p.t / p.life;
+      c.save();
+      if (p.k === "glit") {
+        /* a four-point sparkle that swells and goes, added onto what is under it */
+        var r = p.w * Math.sin(Math.PI * u);
+        c.translate(p.x, p.y); c.rotate(u * 1.5);
+        c.globalCompositeOperation = "lighter"; c.fillStyle = p.color;
+        c.beginPath();
+        for (var j = 0; j < 8; j++) {
+          var a = j * Math.PI / 4, d = j % 2 ? r * 0.22 : r;
+          c.lineTo(Math.cos(a) * d, Math.sin(a) * d);
+        }
+        c.closePath(); c.fill();
+      } else if (p.k === "rain") {
+        c.strokeStyle = "rgba(170,195,255,.45)"; c.lineWidth = 2;
+        c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x + p.vx * 0.02, p.y + p.vy * 0.02); c.stroke();
+      } else {
+        c.translate(p.x, p.y); c.rotate(p.rot);
+        c.globalAlpha = clamp(p.life - p.t, 0, 1); c.fillStyle = p.color;
+        c.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      }
+      c.restore();
+    }
+    function go() {
+      if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+    }
+    function add(p) {
+      p.t = 0; p.rot = p.rot || 0; p.vr = p.vr || 0; p.vx = p.vx || 0; p.vy = p.vy || 0;
+      parts.push(p);
+    }
+    /* `n` pieces thrown up, over the middle of the frame — or around a point,
+       in design px, when one is given. */
+    function burst(n, x, y) {
       if (!ensure()) return;
       for (var i = 0; i < n; i++) {
-        parts.push({
-          x: view.w * Rand.range(0.15, 0.85), y: view.h * Rand.range(0.26, 0.4),
-          vx: Rand.range(-560, 560), vy: Rand.range(-900, -280),
+        add({
+          x: x != null ? x + Rand.range(-250, 250) : view.w * Rand.range(0.15, 0.85),
+          y: y != null ? y + Rand.range(-60, 60) : view.h * Rand.range(0.26, 0.4),
+          vx: Rand.range(-560, 560), vy: Rand.range(-900, -280), g: 700,
           rot: Rand.range(0, 6.28), vr: Rand.range(-6, 6),
           w: Rand.range(10, 22), h: Rand.range(14, 34),
           color: Rand.pick(COLORS), life: Rand.range(1.8, 3.2)
         });
       }
-      if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+      go();
     }
-    function clear() { parts.length = 0; if (cx) cx.clearRect(0, 0, view.w, view.h); }
-    return { burst: burst, clear: clear };
+    /* The centre of a node of the end screen, in design px. */
+    function at(node) {
+      if (!node || !ensure()) return { x: view.w / 2, y: view.h / 2 };
+      var r = node.getBoundingClientRect(), c = cvs.getBoundingClientRect();
+      var k = c.width ? view.w / c.width : 1;
+      return { x: (r.left + r.width / 2 - c.left) * k, y: (r.top + r.height / 2 - c.top) * k };
+    }
+    /* Sparkles around a node, in front of it: what a star lands with. */
+    function glitter(node) {
+      if (!ensureFront()) return;
+      var pt = at(node);
+      var accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#ffffff";
+      var tint = ["#ffffff", "#fff3b0", accent];
+      for (var i = 0; i < 26; i++) {
+        add({ k: "glit", front: true, x: pt.x + Rand.range(-170, 170), y: pt.y + Rand.range(-110, 110),
+              vy: Rand.range(-50, -10), w: Rand.range(8, 20), life: Rand.range(0.6, 1.4),
+              delay: Rand.range(0, 0.5), color: Rand.pick(tint) });
+      }
+      go();
+    }
+    /* A shower slanting across the whole screen, for a round lost. */
+    function rain() {
+      if (!ensureFront()) return;
+      for (var i = 0; i < 90; i++) {
+        add({ k: "rain", front: true, x: Rand.range(0, view.w * 1.25), y: Rand.range(-200, 0),
+              vx: -260, vy: Rand.range(1300, 1700), life: 1.2, delay: Rand.range(0, 1.5) });
+      }
+      go();
+    }
+    function clear() {
+      parts.length = 0;
+      if (cx) cx.clearRect(0, 0, view.w, view.h);
+      if (fcx) fcx.clearRect(0, 0, view.w, view.h);
+    }
+    return { burst: burst, glitter: glitter, rain: rain, at: at, clear: clear };
   })();
 
   /* ===================================================================
@@ -4379,8 +4477,8 @@
     var target = 0, shown = 0, colorT = null;
     function write(v) { $("hud-score").textContent = v; }
     // Set the score target; the displayed number eases toward it (see tick).
-    function setScore(v) { target = v; }
-    function setScoreNow(v) { target = shown = v; write(Math.round(v)); }
+    function setScore(v) { target = v; Record.check(v); }
+    function setScoreNow(v) { target = shown = v; write(Math.round(v)); Record.check(v); }
     function tick(dt) {
       if (shown === target) return;
       shown += (target - shown) * Math.min(1, dt * 14);
@@ -4491,15 +4589,21 @@
 
   /* --- Notify: the one voice for INFORMATION ---------------------------
 
-     Two layers write words, and they say two different things:
+     Two layers write words, and a third place holds the rules:
 
-       Pop     the MOMENT — a word as loud as the action it lands on: a
-               score, a combo, a mistake as it happens, an alarm.
-       Notify  the INFORMATION — something the player should know and could
-               read a second later: a state that changed and stays changed
-               ("Shield down", "Wounded"), an input refused ("Out of reach",
-               "Not enough coins"), a lesson, and anything at all said
-               outside a round, on a menu, the map, the village or a card.
+       Pop     the PLAYER'S ACTION — a word on what they just did and on what
+               it did at once, in the scene: a score, a combo, a hit, a
+               mistake as it happens, a power fired, the state that action
+               left behind ("Shield down", "Wounded").
+       Notify  an EVENT the player did not make — the camp's day, a boss or a
+               wave arriving, the lava surging, overtime; a RECORD beaten
+               (Record, below); an action REFUSED that the player tried anyway
+               ("Out of reach", "Follow suit", "Not enough coins"); a MECHANIC
+               met for the first time (`learn`, below); and anything at all
+               said outside a round, on a menu, the map, the village or a card.
+       the guide  every RULE, explained (packages/webshell/guide.js). A lesson
+               is never a line on screen during play: `learn` names the
+               mechanic once and points at its page.
 
          Notify.say("Taken to the prison", { sub: "Captain · A", kind: "info", icon: "lock" })
 
@@ -4513,6 +4617,18 @@
              draws the kind's dot in the same slot, so every line aligns.
        key   what two notices are compared on; default word + sub
        hold  ms fully readable, when a line needs longer than the house 2.2 s
+       guide the id of a page of the game's guide: a tap on the notice opens
+             that page — in a round too, which the card pauses — and so does
+             its line in the log (packages/webshell/meta.js, the "!" card)
+
+         Notify.learn("pot", "The pot", { sub: "Binned chips pay the hand" })
+
+       says a MECHANIC once per player — the first round it is met in — and
+       never again (`guide:<slug>` in Store, erased with the game's data). The
+       id is the guide page that explains it, so the notice carries it as its
+       `guide` and the log opens it; `mark` is what is remembered instead of
+       the id, for a rule told again under a new value (slipdeck's pair floor,
+       "floor10"). Returns true when it spoke.
 
      ONE LOOK, ONE PLACE, ONE RULE FOR A CROWD — chosen in lab/notify.html
      (the `chip` preset, tuned) and written here as constants, because a
@@ -4530,7 +4646,9 @@
          lifting away otherwise;
        - a tap dismisses it and a press holds it — EXCEPT in a round, where
          the layer is pointer-transparent: a notice must never eat the tap
-         the game was waiting for.
+         the game was waiting for. The one exception is a notice that names
+         a guide page (`guide`, every `learn`): it stays tappable in a round,
+         and the tap opens the guide on that page.
 
      The one thing a game may say about it: `CONFIG.notify = { round:
      "bottom" }` when its board fills the top of the frame, which docks the
@@ -4575,6 +4693,9 @@
       star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'
     };
     SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
+    /* the guide's book, worn IN THE ICON'S SLOT by a notice that opens a page
+       of it — in place of its own icon, so the line keeps one mark */
+    var BOOK = '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>';
 
     var live = [], box = null, raf = 0, last = 0, targetOf = null;
     var LOG_MAX = 10, log = [], logFn = null;
@@ -4582,12 +4703,12 @@
     /* Into the log, newest first. Keyed like a live notice, but only against
        the entry on top: the same line again after something else was said is
        a new event, and the log is read as the order things happened in. */
-    function record(key, w, sub, kind, icon) {
+    function record(key, w, sub, kind, icon, guide) {
       var top = log[0];
       if (top && top.key === key) { top.count++; top.at = Date.now(); }
       else {
-        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon,
-                      html: iconHtml(icon), count: 1, at: Date.now() });
+        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon, guide: guide || null,
+                      html: iconHtml(icon, guide), count: 1, at: Date.now() });
         if (log.length > LOG_MAX) log.length = LOG_MAX;
       }
       if (logFn) logFn(log.length);
@@ -4604,8 +4725,10 @@
     }
     /* Every notice carries a mark in the same 32 px slot, so the words of a
        stack — and of the log — start on one line: a name this table does not
-       know, or none at all, is the kind's own dot rather than a gap. */
-    function iconHtml(name) {
+       know, or none at all, is the kind's own dot rather than a gap. A notice
+       that opens a page of the guide wears the book there instead. */
+    function iconHtml(name, page) {
+      if (page) return '<span class="nt-ic lu go"><svg viewBox="0 0 24 24" aria-hidden="true">' + BOOK + '</svg></span>';
       var src = name && ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
       if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
       if (!name || !SVG[name]) return '<span class="nt-ic dot" aria-hidden="true"></span>';
@@ -4691,7 +4814,8 @@
       var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
       var key = opt.key || (w + "|" + sub);
       var hold = opt.hold || HOLD, i, it;
-      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon);
+      var GD = window.__GUIDE__, page = opt.guide && GD && GD.has(opt.guide) ? opt.guide : null;
+      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon, page);
 
       for (i = 0; i < live.length; i++) {
         it = live[i];
@@ -4709,7 +4833,7 @@
       var node = document.createElement("div"); node.className = "nt";
       var anim = document.createElement("div"); anim.className = "nt-a";
       var body = document.createElement("div"); body.className = "nt-b k-" + kind;
-      body.innerHTML = iconHtml(icon) +
+      body.innerHTML = iconHtml(icon, page) +
         '<span class="nt-tx"><b class="nt-w">' + esc(w) + '</b>' +
         (sub ? '<span class="nt-s">' + esc(sub) + '</span>' : '') + '</span>' +
         '<span class="nt-n"></span><span class="nt-sh"></span><span class="nt-bar"></span>';
@@ -4718,9 +4842,20 @@
       it = { node: node, anim: anim, body: body, key: key, icon: icon, hold: hold, left: hold,
              count: 1, held: false, gone: false,
              n: body.querySelector(".nt-n"), bar: body.querySelector(".nt-bar") };
+      /* A notice that names a page of the guide is a way into its rule, on
+         every screen and in a round too: the tap opens the guide on that
+         page, and the card pauses the round (Modal.open). It says so with
+         the guide's book in its icon's slot, as its line in the "!" log does. */
+      if (page) body.classList.add("nt-link");
       body.addEventListener("pointerdown", function (e) { e.stopPropagation(); it.held = true; });
-      body.addEventListener("pointerup", function (e) { e.stopPropagation(); it.held = false; leave(it); });
+      body.addEventListener("pointerup", function (e) {
+        e.stopPropagation(); it.held = false; leave(it);
+        if (page) GD.open(page);
+      });
       body.addEventListener("pointerleave", function () { it.held = false; });
+      /* the motor's Input listens for mouseup on the window: a tap on a
+         notice is not the game's */
+      if (page) body.addEventListener("mouseup", function (e) { e.stopPropagation(); });
 
       var before = measure();
       box.insertBefore(node, box.firstChild);
@@ -4742,24 +4877,63 @@
       box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
     }
 
-    /* The log, as copies: { word, sub, kind, icon, html, count, at }, the
-       newest first. `html` is the notice's own icon, ready to draw. */
+    /* The log, as copies: { word, sub, kind, icon, guide, html, count, at },
+       the newest first. `html` is the notice's own icon, ready to draw. */
     function history() {
       return log.map(function (e) {
-        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon,
+        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon, guide: e.guide,
                  html: e.html, count: e.count, at: e.at };
       });
     }
     function onLog(fn) { logFn = fn; }
 
+    /* A MECHANIC, NAMED ONCE PER PLAYER. Every game had its own memory for
+       this — once a round, once a session, once ever, under six Store keys —
+       and a player told the same lesson every round stops reading notices.
+       One key per game, one mark per id, kept until OPTIONS erases the game. */
+    function learnKey() { return "guide:" + (CONFIG.slug || "game"); }
+    function learnt() { var s = Store.get(learnKey(), null); return s && typeof s === "object" ? s : {}; }
+    function learn(id, word, opt) {
+      opt = opt || {};
+      var s = learnt(), mark = opt.mark || id;      // `mark`: a rule told again under a new value
+      if (s[mark]) return false;
+      s[mark] = 1; Store.set(learnKey(), s);
+      say(word, { sub: opt.sub, kind: opt.kind || "rare", icon: opt.icon === undefined ? "sparkles" : opt.icon,
+                  key: "learn:" + id, hold: opt.hold || 3200, guide: id });
+      return true;
+    }
+    function unlearn() { Store.del(learnKey()); }
+
     return { say: say, clear: clear, target: target, state: state,
-             history: history, onLog: onLog };
+             history: history, onLog: onLog, learn: learn, learnt: learnt, unlearn: unlearn };
+  })();
+
+  /* --- Record: the best score, beaten while it happens --------------------
+
+     A record is said ONCE a round, the moment the HUD score passes the best
+     one — a Notify, because the player did not do it in a gesture: a round
+     did it. `arm(best)` is called as a round starts, with the game's best
+     score (bootstrap.js, startGame); the level layer re-arms it with the
+     level's own best (packages/webshell/levels.js), because a board of thirty
+     levels has thirty records. A best of 0 is no record yet: a first round
+     beats nothing. */
+  var Record = (function () {
+    var best = 0, said = true;
+    function arm(v) { best = Math.max(0, Math.round(v || 0)); said = best <= 0; }
+    function check(v) {
+      if (said || State !== "playing" || !(v > best)) return;
+      said = true;
+      var n = Number(best).toLocaleString(Lang.code() === "fr" ? "fr-FR" : "en-US");
+      Notify.say("New record", { sub: Lang.t("Previous: {n}").replace("{n}", n), kind: "gain", icon: "trophy", key: "record" });
+    }
+    return { arm: arm, check: check };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------
-     The loud half of the words: score gains, combo milestones, hero beats,
-     a mistake as it happens. A word the player has to READ rather than feel
-     — a state, a refusal, a lesson — is Notify's (above), not a callout.
+     The loud half of the words: what the player just did and what it did
+     at once — score gains, combo milestones, hero beats, a mistake as it
+     happens. An event they did not make, a refusal, a record, a mechanic met
+     for the first time are Notify's (above), and a rule is the guide's.
 
          Pop.show("combo", { word: "COMBO x5", sub: "+120", at: "topRight" })
 
@@ -5029,8 +5203,8 @@
     var STYLES = {
       // the tiny frequent one, spawned at the impact point
       score:    { anim:"float", enter:240, hold:240, exit:420, decor:[], at:"center", rot:-5 },
-      // a mistake AS IT HAPPENS: chain lost, a whiff, a fight lost. A state the
-      // mistake leaves behind ("Shield down") is Notify's, not this.
+      // a mistake AS IT HAPPENS: chain lost, a whiff, a fight lost — and the
+      // state it leaves behind ("Shield down"), which is still that action's.
       alert:    { anim:"punch", enter:220, hold:320, exit:220, decor:[], at:"hudUnder", rot:-2 },
       // a scoring milestone: a compact chip with a shockwave, off to one side.
       // This is the one callout a good run fires over and over, so it is built
@@ -5351,65 +5525,19 @@
       screen.insertBefore(img, screen.firstChild.nextSibling);
     }
 
-    /* THE FACE IS A CORNER FIGURE, AND IT ARRIVES AT TWICE ITS FINAL SIZE.
-
-       It hangs off the bottom-right corner of the frame, and both sizes are
-       constants — the box lives in the stylesheet. It arrives at CHAR_ENTER,
-       when the title is the only thing on the screen and there is nothing to
-       bury, then gives up room one step at a time as the column claims it (the
-       score, the stars, each stat row, the buttons) down to CHAR_HOME. So the
-       entrance is a character and the finished screen is a corner figure.
-
-       WHY IT MAY COVER ANYTHING AT ALL: document order puts #eo-char before
-       everything the reveal writes, at one shared z-index, so the title, the
-       score, the rows and both buttons paint OVER it. Nothing can be hidden by
-       the face; the worst case is a face partly covered, and only for a beat.
-
-       This replaced a fit measured against the column every round, band by
-       band, and the measurement was not wrong so much as pointless: the end
-       screen's column runs from three stat rows to ten, and against a finished
-       one the free band is worth 120-165px on most of the thirteen — a sliver,
-       and on the dense games no face at all. Letting the plates cover a corner
-       of a big figure buys back every pixel that measurement was protecting,
-       and it deleted the ResizeObserver the fit needed to survive the web
-       target's late title refit: a fixed box has nothing to re-measure.
-
-       Only the BOTTOM edge crops it, CHAR_BLEED px of it: it takes the feet,
-       where the top edge would take the head — a figure the frame crops stands
-       in the scene, one floating clear of it is a sticker. The right edge is
-       flush, because a horizontal crop takes an arm and reads as an accident. */
-    var CHAR_ENTER = 660, CHAR_HOME = 330;
-
-    /* How far along the settle the face is, 0..1 — kept so a replay can start
-       it over. */
-    var charT = 0;
-
-    /* One step of the settle. `t` is how much of the reveal has landed, and the
-       shell calls it on every beat that writes over the face. The step is a
-       `transform: scale()` about the bottom-right corner (motor.css reads
-       `--char-k`), so the box never changes, the anchor cannot drift, no step
-       costs a layout, and the bleed shrinks with the figure instead of eating
-       more of its feet. */
-    function settleCharacter(t) {
-      var img = $("eo-char");
-      charT = t < 0 ? 0 : t > 1 ? 1 : t;
-      if (!img) return;
-      /* A calm easing for the way down: the entrance transition overshoots, and
-         six of those in a row would read as a wobble. */
-      if (charT > 0) img.classList.add("settling");
-      img.style.setProperty("--char-k", (1 - (1 - CHAR_HOME / CHAR_ENTER) * charT).toFixed(3));
-    }
-
+    /* THE FACE STANDS BEHIND THE COLUMN. Centred on the bottom edge, big and
+       turned down to a third of its strength (motor.css, #eo-char), it is the
+       screen's backdrop rather than a figure beside it: it rises alone, as the
+       first beat of the reveal, and everything written after it paints over
+       it. Chosen in lab/end-screen.html — it replaced a corner figure that
+       arrived at twice its size and shrank one step per beat. */
     function showCharacter(stars) {
       var img = $("eo-char");
       if (!img) return;
       var src = faceFor(stars);
       if (!src) { img.classList.remove("show"); return; }
       if (img.getAttribute("src") !== src) img.src = src;
-      img.classList.remove("show", "settling");
-      /* A replay starts the settle over: full size with the title, again. */
-      settleCharacter(0);
-      img.classList.remove("settling");
+      img.classList.remove("show");
 
       /* One frame later, so the class change is a transition and not the
          element's first paint — a replay has to see it arrive again. */
@@ -5460,7 +5588,6 @@
       scene: function () { return onScene; },
       dress: dress, titleImage: titleImage, buildCharacter: buildCharacter,
       showCharacter: showCharacter, hideCharacter: hideCharacter,
-      settleCharacter: settleCharacter,
       dressFrame: function () { onScene = dressFrame(); return onScene; }
     };
   })();
@@ -5903,27 +6030,63 @@
     Demo.relabel();
   }
 
-  // --- End screen: the cinematic reveal ----------------------------------
-  // Beats: title -> score count-up (+confetti) -> stars -> stat rows -> CTA.
+  // --- End screen: the reveal, as a list of beats ---------------------------
+  /* THE SEQUENCE IS A LIST OF BEATS, chosen in lab/end-screen.html (preset
+     `G · Chosen`, which replays this list). Each beat starts AFTER the end of
+     the active beat above it, or WITH its start, plus a delay; a beat that has
+     nothing to do on this round (no stat rows, no stars, no character art, a
+     layer with nothing to pay) is skipped, and the next one anchors on the one
+     before it. So the screen is one schedule rather than a dozen hand-placed
+     timers, and a fifth stat row moves everything under it by one step.
+
+       char      the character rises, alone on the screen       1000 ms
+       title     stamped in                                      600 ms
+       score     pops 100 ms into the title and counts up        910 ms
+       gain      the coins line, three parts                     (meta)
+       stars     three pops — an empty star pops too, so the row
+                 lasts the same whatever the round scored
+       rows      one stat row per step
+       coins     the cascade into the wallet                     (meta)
+       offer     the ad button                                   (meta)
+       ceremony  the gift boxes                                  (meta)
+       buttons   the way out, one every 100 ms
+
+     The coins line, the stars and the rows start together and step on ONE
+     500 ms grid, so what lands on a beat lands on all three at once.
+
+     FOUR OF THE BEATS ARE NOT THE MOTOR'S. The web target's meta layer owns
+     the coins line, the cascade, the offer and the gift boxes and registers
+     them with `onEndBeat(id, { applies, count, play })`; a playable has none
+     of them, so its way out lands with the rows — exactly what the lab shows
+     with the coins turned off. The way out still waits for every `onReveal`
+     hook below, which is how a gift being picked holds it. */
   var EndScreen = (function () {
     var timers = [];
-    var T_TITLE = 120, T_SCORE = 560, T_STARS = 1950, STAR_GAP = 440,
-        ROW_GAP = 250, T_CTA_AFTER = 1500;
-    /* THE REVEAL PLAYS AT TWICE THE SPEED IT WAS AUTHORED AT. Every delay in
-       this module is the timing the cascade was designed with and PACE is what
-       the screen actually plays it at — one number rather than sixteen edited
-       ones, so the RHYTHM between the beats is exactly the one that was tuned
-       and only the tempo moves. It was authored for a creative, where the end
-       screen is the last thing a viewer sees; in a game it is the doorway back
-       to the map, and a player who has just cleared a level reads the stars
-       long before the old cascade had finished landing them. */
-    var PACE = 0.5;
+    var BEATS = [
+      { id: "char",     mode: "after", delay: 0,   dur: 1000 },
+      { id: "title",    mode: "after", delay: 0,   dur: 600 },
+      { id: "score",    mode: "with",  delay: 100, dur: 910 },
+      { id: "gain",     mode: "after", delay: 0,   dur: 500, gap: 500 },
+      { id: "stars",    mode: "with",  delay: 0,   dur: 500, gap: 500 },
+      { id: "rows",     mode: "with",  delay: 0,   dur: 500, gap: 500 },
+      { id: "coins",    mode: "after", delay: 0,   dur: 1000 },
+      { id: "offer",    mode: "with",  delay: 0,   dur: 500 },
+      { id: "ceremony", mode: "with",  delay: 0,   dur: 500 },
+      { id: "buttons",  mode: "with",  delay: 0,   dur: 100, gap: 100 }
+    ];
     // The reveal climbs: each star rings the kit's `star` a step higher.
     var STAR_RATE = [1, 1.19, 1.42];
+    var layers = {};
+    function beat(id, spec) { layers[id] = spec; }
 
+    /* A counter the motor writes until a layer writes the figure itself: the
+       meta layer splits the score at the coin rate into two spans, and a count
+       still running would wipe them on its next frame. The landing still
+       happens — the layer wrote the final figure. */
     function countUp(el, target, dur, cb) {
       var start = performance.now();
       function step(now) {
+        if (el.childElementCount) { if (cb) cb(); return; }
         var p = clamp((now - start) / dur, 0, 1), e = 1 - Math.pow(1 - p, 3);
         el.textContent = Math.round(e * target);
         if (p < 1) requestAnimationFrame(step);
@@ -5932,12 +6095,44 @@
       requestAnimationFrame(step);
     }
 
+    /* THE PUNCH — the score landing. The whole screen gives a small kick and
+       a white flash goes over it: one hit, where the confetti used to be two
+       bursts. */
+    function punch() {
+      var sc = $("screen-end");
+      if (!sc) return;
+      if (sc.animate) sc.animate([{ transform: "scale(1.05)" }, { transform: "none" }],
+        { duration: 380, easing: "cubic-bezier(.2,1.4,.4,1)" });
+      var f = document.createElement("div");
+      f.className = "eo-fx eo-flash";
+      sc.appendChild(f);
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 360);
+    }
+
+    /* Where each active beat starts and ends, in ms from the screen's first
+       frame. */
+    function plan(result, own) {
+      var out = [], prev = null;
+      BEATS.forEach(function (b) {
+        var s = own[b.id] || layers[b.id];
+        if (!s || (s.applies && !s.applies(result))) return;
+        var n = s.count ? s.count(result) : 1;
+        var start = prev ? (b.mode === "with" ? prev.start : prev.end) + b.delay : b.delay;
+        if (start < 0) start = 0;
+        var e = { b: b, s: s, n: n, start: start,
+                  end: start + (b.gap || 0) * Math.max(0, n - 1) + b.dur };
+        out.push(e);
+        prev = e;
+      });
+      return out;
+    }
+
     // result: { title, variant:""|"win"|"perfect", score, stars:0..3|null,
     //           rows:[{label, value, grade}] }
     function show(result) {
       timers.forEach(clearTimeout); timers = [];
       Confetti.clear();
-      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms * PACE))); }
+      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms))); }
 
       var title = $("eo-title");
       title.textContent = upper(Lang.t(result.title || CONFIG.copy.gameOver));
@@ -5967,80 +6162,79 @@
       });
       box.innerHTML = html;
 
-      /* THE CHARACTER GIVES UP ROOM AS THE COLUMN CLAIMS IT. It arrives at
-         full size with the title, alone on the screen, and every beat that
-         writes something over it takes it one step down toward the corner
-         figure — so the count is the number of beats left after the title, and
-         `settle` is called from each of them. A game with three stat rows
-         therefore shrinks it in five steps and one with six in eight: the face
-         is done making room exactly when the screen is done filling. */
-      var beats = 1 + (hasStars ? 1 : 0) + rows.length + 1, beat = 0;
-      function settle() { Art.settleCharacter(++beat / beats); }
-
-      // 1) Title slams in, and the character rises with it — one beat, so the
-      //    screen reads as a reaction to the round rather than as a slideshow.
       Art.hideCharacter();
-      T(function () {
-        title.classList.add("show");
-        Art.showCharacter(stars);
-      }, T_TITLE);
-
-      // 2) Final score counts up, greeted by confetti.
-      T(function () {
-        $("eo-scorelbl").classList.add("show");
-        $("eo-score").classList.add("show");
-        settle();
-        Confetti.burst(70);
-        countUp($("eo-score"), result.score || 0, 1100 * PACE, function () {
-          $("eo-score").classList.add("pop");
-          Sound.ui("score", 0.8);
-          Confetti.burst(90);
-        });
-      }, T_SCORE);
-
-      // 3) Stars slam in one by one, each with a rising chime.
-      var afterStars = T_SCORE + 900;
-      if (hasStars) {
-        T(function () {
-          for (var s = 1; s <= 3; s++) $("star-" + s).classList.add("dim");
-          settle();
-        }, T_STARS - 160);
-        for (var si = 0; si < stars; si++) {
-          (function (idx) {
-            T(function () {
-              var el = $("star-" + (idx + 1));
-              el.classList.remove("dim"); el.classList.add("on");
-              Sound.ui("star", 0.75, STAR_RATE[idx] || 1.42);
-              Confetti.burst(30);
-            }, T_STARS + idx * STAR_GAP);
-          })(si);
-        }
-        afterStars = T_STARS + Math.max(stars, 1) * STAR_GAP + 350;
-      }
-
-      // 4) Stat rows cascade in, counters animating.
-      rows.forEach(function (r, i) {
-        T(function () {
-          $("eo-row-" + i).classList.add("show");
-          settle();
-          var el = $("eo-val-" + i);
-          if (typeof r.value === "number") countUp(el, r.value, 450 * PACE);
-          else el.textContent = upper(Lang.t(r.value));
-          Sound.ui("tick", 0.5, 1 + i * 0.07);
-        }, afterStars + i * ROW_GAP);
-      });
-
-      // 5) Install CTA, then the discreet replay link — once every layer that
-      //    asked for the last beat of the reveal has had it (onReveal below).
-      var ctaAt = afterStars + rows.length * ROW_GAP + T_CTA_AFTER;
       var mine = ++shown;
-      T(function () {
-        runReveal(result, 0, function () {
-          if (mine !== shown || State !== "end") return;   // a newer screen, or none
-          $("btn-install").classList.add("show"); settle();
-          T(function () { $("btn-replay").classList.add("show"); }, 500);
-        });
-      }, ctaAt);
+
+      var own = {
+        char: {
+          applies: function () { return Art.has("characterNeutral") || Art.has("characterSad") || Art.has("characterHappy"); },
+          play: function () { Art.showCharacter(stars); }
+        },
+        title: { play: function () { title.classList.add("show"); } },
+        score: {
+          play: function (r, b) {
+            var sc = $("eo-score");
+            $("eo-scorelbl").classList.add("show");
+            sc.classList.add("show");
+            countUp(sc, result.score || 0, b.dur, function () {
+              sc.classList.add("pop");
+              Sound.ui("score", 0.8);
+              punch();
+            });
+          }
+        },
+        stars: {
+          applies: function () { return hasStars; },
+          count: function () { return 3; },
+          play: function (r, b) {
+            for (var s = 0; s < 3; s++) {
+              (function (idx) {
+                T(function () {
+                  var el = $("star-" + (idx + 1)), lit = idx < stars;
+                  el.className = "star " + (lit ? "on" : "dim");
+                  if (!lit) { Sound.ui("tick", 0.3, 0.8); return; }
+                  Sound.ui("star", 0.75, STAR_RATE[idx] || 1.42);
+                  Confetti.glitter(el);
+                  if (idx === 2) Confetti.glitter($("eo-stars"));
+                }, idx * b.gap);
+              })(s);
+            }
+          }
+        },
+        rows: {
+          applies: function () { return rows.length > 0; },
+          count: function () { return rows.length; },
+          play: function (r, b) {
+            rows.forEach(function (row, i) {
+              T(function () {
+                $("eo-row-" + i).classList.add("show");
+                var el = $("eo-val-" + i);
+                if (typeof row.value === "number") countUp(el, row.value, Math.max(120, b.dur * 1.2));
+                else el.textContent = upper(Lang.t(row.value));
+                Sound.ui("tick", 0.5, 1 + i * 0.07);
+              }, i * b.gap);
+            });
+          }
+        },
+        /* The way out — once every layer that asked for the last beat of the
+           reveal has had it (onReveal below). */
+        buttons: {
+          count: function () { return 2; },
+          play: function (r, b) {
+            runReveal(result, 0, function () {
+              if (mine !== shown || State !== "end") return;   // a newer screen, or none
+              $("btn-install").classList.add("show");
+              T(function () { $("btn-replay").classList.add("show"); }, b.gap);
+            });
+          }
+        }
+      };
+
+      // A lost round rains on its own screen, from its first frame.
+      if (hasStars && stars === 0) Confetti.rain();
+      plan(result, own).forEach(function (e) {
+        T(function () { e.s.play(result, e.b, e.n); }, e.start);
+      });
     }
 
     /* THE WAY OUT WAITS FOR WHATEVER THE SCREEN STILL HAS TO HAND OVER. A
@@ -6073,7 +6267,7 @@
        "end". */
     function clear() { timers.forEach(clearTimeout); timers = []; shown++; }
 
-    return { show: show, clear: clear, onReveal: onReveal };
+    return { show: show, clear: clear, onReveal: onReveal, beat: beat };
   })();
 
   /* --- Perf: a readout on the device itself ------------------------------
@@ -6387,6 +6581,10 @@
   /* …and `onReveal(fn)` holds the end screen's way out, the same way, at the
      other end of the reveal (EndScreen above). */
   function onReveal(fn) { EndScreen.onReveal(fn); }
+  /* A layer's own beat of the end screen (EndScreen above, BEATS): `applies`
+     says whether this round has it, `count` how many steps it takes, `play`
+     runs it on its start. */
+  function onEndBeat(id, spec) { EndScreen.beat(id, spec); }
   function runOutro(result, i) {
     if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
     var called = false;                 // a second `done` from one hook is dropped
@@ -8464,9 +8662,8 @@
     var fuse = 1, fuseBurn = false, fuseOutT = 0, comets = [], slowT = 0;
     var SLOW_TIME = 0.6, SLOW_K = 0.22, COMET_TIME = 0.42;
     var flow = 0, screwSlot = 0, towerQ = [], revealT = -1;
-    var stats = null, taught = null, chimeGap = 0, clickGap = 0, lastTick = 0, spaceTap = false;
+    var stats = null, chimeGap = 0, clickGap = 0, lastTick = 0, spaceTap = false;
     var landGap = 0, noteGap = 0, boostGap = 0;      // the moving modules' sounds, never piled up
-    var hints = [], hintT = 0;      // the lessons, one on screen at a time
 
     function lerp(a, b, k) { return a + (b - a) * k; }
     function zapK() { return Math.min(1, zap / ZAP_EASE); }
@@ -8525,17 +8722,15 @@
       marbles.push(m);
       return m;
     }
-    function hint(word, opt) { hints.push([word, opt]); }
     function spawn(kind) {
       var m = newMarble(kind, CH.top.xs[0], CH.top.ys[0]);
       m.ch = CH.top;
       if (m.e && splits > 0) { splits--; m.splitter = true; }
       if (m.e) {
         spark(H0[0], H0[1] - 10, C.volt, 10, 220);
-        if (!taught.volt) {
-          taught.volt = true;
-          hint("Electric marble", { sub: CONFIG.copy.hintVolt, kind: "info", icon: "sparkles", hold: 3400 });
-        }
+        // a MECHANIC met for the first time: named once per player ever, its
+        // line in the "!" log opening the guide page that explains it
+        Notify.learn("volt", "Electric marble", { sub: CONFIG.copy.hintVolt, kind: "info", icon: "sparkles", hold: 3400 });
       }
     }
     function gateLoad(g) {
@@ -8575,7 +8770,9 @@
                      r: 8 + Math.random() * 10, t: -Math.random() * 0.25, life: 1.1 });
       }
     }
+    // A value floating up from a point of the machine: the house look, only the colour is ours.
     function popText(mx, my, str, color) {
+      Pop.text(toDX(mx), toDY(my), str, { color: color, size: 22, life: 0.6, tier: 1 });
     }
 
     /* ---------------- events ----------------------------------------- */
@@ -8726,7 +8923,7 @@
         blackLen = BLACKOUT * (0.7 + 1.1 * k); blackT = blackLen;
         Sound.clip("blackout", 0.4 + 0.3 * k, 1 - 0.18 * k);
       } else {
-        Sound.clip("blackout", 0.3, 1.25);
+        Sound.clip("blackout", 0.2, 1.6);
       }
       Fx.shake(5 + 13 * k, 0.2 + 0.3 * k);
       if (k >= 0.4) { slowT = SLOW_TIME; Fx.flash(tc, 0.12 + 0.18 * k); }
@@ -8739,6 +8936,8 @@
     function fuseSecs() { return M.fuse[Math.min(M.fuse.length - 1, tier(combo))]; }
     // Every action that feeds the combo relights the fuse whole.
     function feedFuse() { fuse = 1; fuseOutT = 0; }
+    // the combo has started from nothing: the fuse that keeps it is named once
+    function learnFuse() { Notify.learn("fuse", "Combo fuse", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
     /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
        the combo grows when it lands, so the hub counts up in step with what
        the player sees fly in. The fuse is relit at once, on the action. */
@@ -8750,8 +8949,9 @@
     // that climbs the scale toward the next tier.
     var SCALE = [0, 2, 4, 5, 7, 9, 11, 12, 14];
     function landSpark(c) {
-      var b = tier(combo), tr, lo, hi, step;
+      var b = tier(combo), was = combo, tr, lo, hi, step;
       combo += c.n; if (combo > bestCombo) bestCombo = combo;
+      if (!was) learnFuse();
       tr = tier(combo);
       lo = tr ? tierAt(tr - 1) : 0; hi = tr < M.tiers.length ? tierAt(tr) : 0;
       step = hi ? Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1)) : SCALE.length - 1;
@@ -8803,10 +9003,6 @@
         fuse -= dt / fuseSecs();
         if (fuse <= 0) fuseOut();
       }
-      if (combo > 0 && !taught.fuse) {
-        taught.fuse = true;
-        hint("Keep the fuse lit", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass", hold: 3600 });
-      }
     }
     // A heart goes: the HUD, the cue, and the end of the shift on the last one.
     function loseHeart(n) {
@@ -8821,7 +9017,7 @@
         Overlay.vignette(C.full, 0.9);
       } else if (hearts === 1) {
         Overlay.vignette(C.full, 0.55);
-        Notify.say("Last heart", { kind: "loss", icon: "heart" });
+        Pop.show("alert", { word: "Last heart", at: "upper" });
       }
     }
     // A full queue with no drain (none of the five machines has one) shatters
@@ -8869,11 +9065,8 @@
       var hadCombo = combo >= 2;
       breakCombo(true);
       if (state !== "play") return;
+      // the callout says what happened, and the heart is seen going: no notice
       Pop.show("alert", { word: "Overflow", sub: hadCombo ? "Combo lost" : "" });
-      if (!taught.spill) {
-        taught.spill = true;
-        hint("Lost marble", { sub: CONFIG.copy.hintSpill, kind: "warn", icon: "heart", hold: 3200 });
-      }
     }
     // A lost marble reaches the red sink: it is gone, and so is a heart.
     function sinkHit(m) {
@@ -8905,10 +9098,7 @@
       g.locked = true; g.lockAge = 0; stats.locks++; g.locks = (g.locks || 0) + 1;
       ring(g.px, g.py, C.amber, 30, 140, 0.6, 4);
       Sound.clip("lock", 0.46, Rand.range(0.95, 1.05));
-      if (!taught.lock) {
-        taught.lock = true;
-        hint(CONFIG.copy.hintLock, { kind: "warn", icon: "lock", hold: 3200 });
-      }
+      Notify.learn("lock", "Locked gate", { sub: CONFIG.copy.hintLock, kind: "warn", icon: "lock" });
     }
     function unlock(g) {
       if (state !== "play" || !g || !g.locked) return false;
@@ -8931,7 +9121,8 @@
       s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
       if (!byMarble) {
         s.spin += 0.6; s.snap = 0.22;
-        Sound.clip("flip", 0.5, s.dir ? 1.08 : 0.94);
+        if (s.dir) Sound.clip("flip", 0.5, 1.08);
+        else Sound.clip("flip", 0.5, 0.94);
         var a = branchAngle(id, s.dir);
         spark(s.x + Math.cos(a) * 58, s.y + Math.sin(a) * 58, C.steelL, 5, 150);
       } else if (clickGap <= 0) {
@@ -9006,7 +9197,7 @@
       { key: "slowmo", biome: 2, kind: "help", icon: "hourglass", color: "#c9b8ff", name: "Slow motion",
         text: "The machine runs at half speed", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
       { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Combo shield",
-        text: "The next {n} combo breaks are absorbed", one: "The next combo break is absorbed",
+        text: "The next {n} mistakes don't break your combo", one: "The next mistake doesn't break your combo",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "rustyLocks", biome: 2, kind: "help", icon: "lock", color: "#d39a6a", name: "Rusty locks",
         text: "Gates lock 40% less often", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
@@ -9015,7 +9206,7 @@
       { key: "train", biome: 2, kind: "score", icon: "chevrons-right", color: "#ffe6a8", name: "Marble train",
         text: "Marbles landing back to back pay +{n} per wagon", tiers: [[1, 10, "shift"], [2, 20, "shift"], [3, 40, "shift"]] },
       { key: "chain", biome: 2, kind: "score", icon: "zap", color: "#e8fdff", name: "Chain lightning",
-        text: "The payoff arc zaps every marble it passes: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
+        text: "A caught electric marble's arc zaps every marble on its way: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
       { key: "packed", biome: 2, kind: "score", icon: "circle-dot", color: "#d9a8ff", name: "Packed machine",
         text: "Every marble delivered pays +5% per marble in the machine", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overclock", biome: 2, kind: "risk", icon: "flame", color: "#ff9a44", name: "Overclock",
@@ -9023,7 +9214,7 @@
       { key: "allIn", biome: 2, kind: "risk", icon: "hand-fist", color: "#ff5d86", name: "All in",
         text: "+25 combo now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
       { key: "doubleOr", biome: 2, kind: "risk", icon: "dices", color: "#ffd43b", name: "Double or nothing",
-        text: "The next electric on target doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
+        text: "The next electric marble caught doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
       { key: "capacitor", biome: 2, kind: "legend", icon: "medal", color: "#ffd43b", name: "Capacitor",
         text: "The socket recharges {n}% faster", tiers: [[4, 10, "shift"]] },
 
@@ -9041,11 +9232,11 @@
         text: "The next {n} electric marbles split in two at every switch", one: "The next electric marble splits in two at every switch",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "staticCharge", biome: 3, kind: "score", icon: "magnet", color: "#a8f0ff", name: "Static charge",
-        text: "An electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
+        text: "An extra electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
       { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Combo anchor",
         text: "The combo never falls below its last tier", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "greedy", biome: 3, kind: "risk", icon: "pickaxe", color: "#ffd43b", name: "Greedy locks",
-        text: "Every unlock pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
+        text: "Every gate you open pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
       { key: "torrent", biome: 3, kind: "risk", icon: "droplet", color: "#5ab0ff", name: "Torrent",
         text: "Every marble pays x3", cost: "The feeder pours twice as fast", tiers: [[3, 0, 15]] },
       { key: "sacrifice", biome: 3, kind: "risk", icon: "axe", color: "#ff3d6e", name: "Sacrifice",
@@ -9057,16 +9248,16 @@
       { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slow feeder",
         text: "The feeder pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overcharge", biome: 4, kind: "score", icon: "sparkles", color: "#7ef9ff", name: "Overcharge",
-        text: "An electric on target charges the machine for {n} s: every marble pays x3",
+        text: "A caught electric marble overcharges the machine: every marble pays x3 for {n} s",
         tiers: [[1, 3, "shift"], [2, 6, "shift"], [3, 10, "shift"]] },
       { key: "redJackpot", biome: 4, kind: "score", icon: "target", color: "#ff5d86", name: "Red jackpot",
         text: "A marble in the red socket pays 50 instead of a heart", tiers: [[1, 50, 20], [2, 50, "next"], [3, 50, "shift"]] },
       { key: "narrow", biome: 4, kind: "risk", icon: "arrow-up-down", color: "#d9a8ff", name: "Narrow gates",
-        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one marble less", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one fewer marble", tiers: [[3, 0, "shift"]] },
       { key: "blackout", biome: 4, kind: "risk", icon: "eye", color: "#9fb3ff", name: "Blackout",
-        text: "Electric marbles pay x2 for the shift", cost: "The routes no longer light up", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "You no longer see which way leads to the socket", tiers: [[3, 0, "shift"]] },
       { key: "liveWire", biome: 4, kind: "risk", icon: "circle-x", color: "#a8f0ff", name: "Live wire",
-        text: "An electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
+        text: "An extra electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
       { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Dynamo",
         text: "The socket recharges {n}% faster", tiers: [[4, 20, "shift"]] },
 
@@ -9078,7 +9269,7 @@
       { key: "lockdown", biome: 5, kind: "risk", icon: "book-lock", color: "#ffb44f", name: "Lockdown",
         text: "Marbles leaving a gate pay x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
       { key: "jam", biome: 5, kind: "risk", icon: "arrow-down", color: "#bdb3ee", name: "Jam session",
-        text: "The combo climbs twice as fast for the shift", cost: "The wheel entries hold 2 marbles less", tiers: [[3, 0, "shift"]] },
+        text: "The combo climbs twice as fast for the shift", cost: "The wheel's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
       { key: "tempt", biome: 5, kind: "risk", icon: "wand-sparkles", color: "#ff6fd8", name: "Tempt fate",
         text: "The next pick deals two epic cards", cost: "-1 heart now", tiers: [[3, 0, 0]] },
       { key: "tesla", biome: 5, kind: "legend", icon: "crown", color: "#ffd43b", name: "Tesla coil",
@@ -9193,6 +9384,7 @@
     function addCombo(n) {
       var b = tier(combo);
       feedFuse();
+      if (!combo && n > 0) learnFuse();
       combo += n; if (combo > bestCombo) bestCombo = combo;
       if (tier(combo) > b) tierUp();
     }
@@ -9434,6 +9626,14 @@
         (function (k) { btn.addEventListener("click", function (e) { e.stopPropagation(); take(k); }); })(i);
         row.appendChild(btn);
       }
+      // on the web, the pick's rule is a page of the guide, a tap away (it pauses over the pick)
+      if (window.__GUIDE__) {
+        btn = document.createElement("button");
+        btn.type = "button"; btn.className = "btn btn-sm btn-plate gb-rules";
+        btn.textContent = upper(Lang.t("Upgrade cards"));
+        btn.addEventListener("click", function (e) { e.stopPropagation(); window.__GUIDE__.open("cards"); });
+        mc.appendChild(btn);
+      }
       lay.appendChild(mc);
       frame.appendChild(lay);
       held = { node: lay, deal: deal };
@@ -9502,7 +9702,7 @@
       if (state !== "play" || held || keys <= 0) return;
       var any = false, i;
       for (i = 0; i < gates.length; i++) if (gates[i].locked) { unlock(gates[i]); any = true; }
-      if (!any) { Pop.show("score", { word: "No gate is locked" }); return; }
+      if (!any) { Notify.say("No gate is locked", { kind: "warn", icon: "lock" }); return; }
       keys--;
       Pop.show("bonus", { word: "Master key", at: "top" });
       paintRun();
@@ -9522,7 +9722,7 @@
       recompute();
       ready = charge() >= 1;
       if (ready && !wasReady) {
-        Notify.say("Upgrade ready", { sub: "The next electric on target deals two cards", kind: "rare", icon: "sparkles", key: "gb-ready" });
+        Notify.say("Upgrade ready", { sub: "Next electric marble deals two cards", kind: "rare", icon: "sparkles", key: "gb-ready" });
         boxes[arrival].charge = 1; boxes[arrival].kick = 0.5;
       }
       wasReady = ready;
@@ -9565,6 +9765,306 @@
                  chips: [{ text: Lang.t(R.name), color: R.color }, { text: durText(c) }] };
       }
     };
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells: its picture is painted by the
+       round's own painters — paintGate, paintArrival, paintWays and
+       paintSwitch, the hub, the rails, the marbles — on a canvas of its own,
+       with the round's `ctx` lent for the length of the call, so a gate read
+       in the guide is the gate on the machine. Nothing of the round moves:
+       what a painter reads (the scale, the sprites, the combo, the metal) is
+       swapped in and put back. The guide may open before any round, so no
+       picture reads L, the wheel or a gate of the machine. A page's level is
+       the one the climb first deals the idea on (LAYOUTS, CARD_FAMS). */
+    function machinePic(W, H, sc, x0, y0, paint) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1;
+      var keep = { ctx: ctx, S: S, sprites: sprites, cog: cogCv, wheel: wheelCv, parts: parts, chargeT: chargeT,
+                   marbles: marbles, L: L, dh: TINT.dh, ks: TINT.ks, key: TINT.key, memo: tintMemo,
+                   steel: C.steel, steelD: C.steelD, steelL: C.steelL };
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      try {
+        setBiome(0);                     // the first biome's violet steel, whatever round lies under the guide
+        S = sc; sprites = {}; parts = []; chargeT = 0;
+        buildMarbles(sc * k); buildCog(sc * k);
+        ctx = cv.getContext("2d"); ctx.scale(k * sc, k * sc); ctx.translate(-x0, -y0);
+        paint(sc * k);
+      } finally {
+        ctx = keep.ctx; S = keep.S; sprites = keep.sprites; cogCv = keep.cog; wheelCv = keep.wheel;
+        parts = keep.parts; chargeT = keep.chargeT; marbles = keep.marbles; L = keep.L;
+        TINT.dh = keep.dh; TINT.ks = keep.ks; TINT.key = keep.key; tintMemo = keep.memo;
+        C.steel = keep.steel; C.steelD = keep.steelD; C.steelL = keep.steelL;
+      }
+      return cv;
+    }
+    function picLine(tr) { var ch = makeChannel("pic", "", tr.p); ch.mods = []; return ch; }
+    // The rails as buildRails lays them: behind, the bowls, in front, the tubes' walls, the pipe mouths.
+    function picRails(chs, bowls) {
+      var i, j;
+      for (i = 0; i < chs.length; i++) railBed(ctx, chs[i], isBack);
+      for (i = 0; i < chs.length; i++) railPass(ctx, chs[i], isBack, 0.8);
+      for (i = 0; bowls && i < bowls.length; i++) paintBowl(ctx, bowls[i]);
+      for (i = 0; i < chs.length; i++) railBed(ctx, chs[i], isFront);
+      for (i = 0; i < chs.length; i++) railPass(ctx, chs[i], isFront, 1);
+      for (i = 0; i < chs.length; i++) { tubeWalls(ctx, chs[i], isGlass, 14); tubeWalls(ctx, chs[i], isZebra, 0); }
+      for (i = 0; i < chs.length; i++) for (j = 0; j < chs[i].mouths.length; j++) paintMouth(ctx, chs[i], chs[i].mouths[j]);
+    }
+    // ...and what lies over the marbles: the glass sheen, the zebra's bands, the hoses.
+    function picOver(chs) {
+      for (var i = 0; i < chs.length; i++) { tubeSheen(ctx, chs[i], isGlass); zebraBands(ctx, chs[i]); hoseBody(ctx, chs[i]); }
+    }
+    // A marble on a line, `kind` as the pour names them (c, k, g, e).
+    function picMarble(ch, d, kind, more) {
+      var p = at(ch, d, {}), m = { e: kind === "e", k: kind === "k", gold: kind === "g", st: "track", ch: ch, d: d,
+                                   x: p.x, y: p.y, z: p.z, rot: d / R }, k;
+      for (k in more || {}) m[k] = more[k];
+      return m;
+    }
+    // A gate locked on line `ch` at (x, y), `n` of its `cap` slots taken, its padlock at (px, py).
+    function picGate(ch, x, y, cap, n, px, py) {
+      var d = nearestD(ch, x, y), p = at(ch, d, {}), a = at(ch, d + 5, {});
+      var l = Math.sqrt((a.x - p.x) * (a.x - p.x) + (a.y - p.y) * (a.y - p.y)) || 1;
+      var g = { d: d, cap: cap, q: { length: n }, locked: true, lockAge: 1, pop: 0, x: p.x, y: p.y,
+                tx: (a.x - p.x) / l, ty: (a.y - p.y) / l, px: px, py: py };
+      g.fx = g.x + g.tx * (R + 4); g.fy = g.y + g.ty * (R + 4);
+      return g;
+    }
+    function picBox(x, sock) {
+      return { x: x, col: sock ? C.volt : CLASSIC, kick: 0, fizz: 0, charge: sock ? 0.6 : 0, led: -1, sweep: 0 };
+    }
+
+    function marblesPic() {
+      return machinePic(384, 136, 2, 0, 0, function () {
+        drawMarble({ x: 36, y: 34, z: 1, rot: 0.6 });
+        drawMarble({ k: true, x: 96, y: 34, z: 1, rot: 0.6 });
+        drawMarble({ e: true, x: 156, y: 34, z: 1, rot: 0.6 });
+      });
+    }
+    function lockPic() {
+      return machinePic(476, 280, 1.4, 0, 0, function () {
+        var ch = picLine(T(-30, 150).to(370, 182)), g = picGate(ch, 250, 172, 4, 3, 120, 60), i;
+        picRails([ch]);
+        drawSockets(ch, g.d, g.cap, 3, 0, true);
+        paintGate(g, false);
+        for (i = 0; i < 3; i++) drawMarble(picMarble(ch, g.d - i * 2.2 * R, i === 1 ? "k" : "c"));
+      });
+    }
+    function spillPic() {
+      return machinePic(374, 319, 1.1, 0, 20, function () {
+        var ch = picLine(T(-30, 120).to(370, 150)), g = picGate(ch, 200, 142, 4, 4, 300, 50), i, dl, tp, back;
+        dl = g.d - g.cap * 2.2 * R; tp = at(ch, dl, {});
+        back = picLine(T(tp.x, tp.y).under().to(tp.x - 14, 190).to(120, 252).to(220, 262).to(290, 232));
+        ctx.globalAlpha = 0.5; railBed(ctx, back, isBack); ctx.globalAlpha = 1;
+        railPass(ctx, back, isBack, 0.5);
+        paintSink(290, 232, 0);
+        drawMarble(picMarble(back, back.len * 0.42, "c", { lost: true }));
+        picRails([ch]);
+        drawSockets(ch, g.d, g.cap, 4, 0.5, true);
+        paintGate(g, false);
+        for (i = 0; i < 4; i++) drawMarble(picMarble(ch, g.d - i * 2.2 * R, i === 2 ? "k" : "c"));
+      });
+    }
+    function voltPic() {
+      return machinePic(456, 310, 1.2, 0, RIM_Y - 150, function () {
+        var xs = [70, 190, 310], chs = [], i;
+        for (i = 0; i < 3; i++) chs.push(picLine(T(xs[i], RIM_Y - 190).to(xs[i], RAIL_END)));
+        picRails(chs);
+        drawMarble(picMarble(chs[0], 110, "c"));
+        drawMarble(picMarble(chs[1], 70, "e"));
+        for (i = 0; i < 3; i++) paintArrival(picBox(xs[i], i === 1), i === 1, 50);
+      });
+    }
+    function switchPic() {
+      return machinePic(320, 320, 0.8, 0, 780, function () {
+        var top = picLine(T(200, 760).to(200, 890)),
+            left = picLine(T(200, 890).to(135, 950).to(95, 1010).to(95, RAIL_END)),
+            right = picLine(T(200, 890).to(265, 950).to(305, 1010).to(305, RAIL_END));
+        var p = at(right, 30, {}), s = { x: 200, y: 890, dir: 1, kb: 1, spin: 0.4, flash: 0, snap: 0,
+                                       ang: Math.atan2(p.y - 890, p.x - 200) };
+        picRails([top, left, right]);
+        paintWays(s, [left, right], function (ch) { return ch === right; });
+        paintSwitch(s, true, true);
+        drawMarble(picMarble(top, 62, "e"));
+        paintArrival(picBox(95, false), false, 50);
+        paintArrival(picBox(305, true), true, 50);
+      });
+    }
+    /* The wheel, its fuse and the hub, for a combo of `c` with the fuse at
+       `f` (burning when `burn`): the round's own drawFuse and drawHub, on
+       the combo swapped in for the call. */
+    function hubPic(c, f, burn) {
+      var keep = { combo: combo, fuse: fuse, burn: fuseBurn, zap: hubZap, brk: hubBreak, pop: hubPop, stats: stats, state: state };
+      try {
+        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; stats = { delivered: 1 }; state = "play";
+        return machinePic(250, 250, 1.04, -120, -120, function (k) {
+          var half = RIM + 6;
+          buildWheel(k, 10);
+          drawGlow(TIERS_COL[tier(combo)], 0, 0, RIM + 40 + tier(combo) * 26, tier(combo) ? 0.45 : 0);
+          ctx.drawImage(wheelCv, -half, -half, half * 2, half * 2);
+          drawFuse(0, 0, RIM + 9);
+          drawHub(0, 0);
+        });
+      } finally {
+        combo = keep.combo; fuse = keep.fuse; fuseBurn = keep.burn; hubZap = keep.zap; hubBreak = keep.brk;
+        hubPop = keep.pop; stats = keep.stats; state = keep.state;
+      }
+    }
+    function loopsPic() {
+      return machinePic(480, 264, 1.2, 0, 0, function () {
+        var lp = picLine(T(-20, 150).to(60, 172).to(120, 182).loop(52, 1).to(230, 190)),
+            cl = picLine(T(250, 10).to(300, 30).coil(190, 36, 2).to(300, 240));
+        picRails([lp, cl]);
+        drawMarble(picMarble(lp, nearestD(lp, 120, 78), "c"));
+        drawMarble(picMarble(cl, cl.len * 0.55, "k"));
+      });
+    }
+    function ferryPic() {
+      return machinePic(442, 286, 1.3, 0, 0, function (k) {
+        var cx = 170, cy = 112, r = 70, n = 10, half = r + 18, ph = 230 * Math.PI / 180, i, a;
+        var fin = picLine(T(-10, 40).to(60, 66).to(cx + r * Math.cos(200 * Math.PI / 180), cy + r * Math.sin(200 * Math.PI / 180))),
+            fout = picLine(T(cx + r * Math.cos(340 * Math.PI / 180), cy + r * Math.sin(340 * Math.PI / 180)).to(300, 66).to(360, 56));
+        picRails([fin, fout]);
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(ph);
+        ctx.drawImage(gearSprite(k, r, n), -half, -half, half * 2, half * 2);
+        ctx.restore();
+        ctx.drawImage(cogCv, cx - 24, cy - 24, 48, 48);
+        for (i = 0; i < 3; i++) {
+          a = ph + i * PI2 / n;
+          drawMarble({ k: i === 1, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, z: 1, rot: a * 3 });
+        }
+        drawMarble(picMarble(fin, fin.len - 40, "c"));
+      });
+    }
+    function movesPic() {
+      return machinePic(483, 288, 1.15, 0, 0, function () {
+        var jp = T(-20, 40).to(60, 70).to(110, 92).jump(270, 112, 35).to(310, 132).to(330, 136),
+            st = T(330, 136).steps(405, 196, 3),
+            bs = T(-20, 214).to(60, 214).boost(300, 222).to(440, 224);
+        var j = picLine(jp), s = picLine(st), b = picLine(bs), props = jp.props.concat(st.props, bs.props), i;
+        picRails([j, s, b]);
+        for (i = 0; i < props.length; i++) if (props[i].k !== "coil") paintProp(ctx, props[i]);
+        drawMarble(picMarble(j, nearestD(j, 200, 60), "c"));
+        drawMarble(picMarble(b, nearestD(b, 212, 219), "e"));
+        for (i = 0; i < props.length; i++) if (props[i].k === "coil") paintCoil(ctx, props[i]);
+        drawGlow(C.amber, props[props.length - 2].x, props[props.length - 2].y, R + 26, 0.8);
+      });
+    }
+    function tubesPic() {
+      return machinePic(480, 264, 1.2, 0, 0, function () {
+        var gl = picLine(T(-20, 40).to(50, 40).glass(1).to(350, 44).glass(0).to(420, 44)),
+            zb = picLine(T(-20, 110).to(50, 110).zebra(1).to(350, 114).zebra(0).to(420, 114)),
+            hs = picLine(T(-20, 180).to(40, 180).hose(360, 188, 0).to(420, 188)), chs = [gl, zb, hs];
+        picRails(chs);
+        marbles = [picMarble(gl, nearestD(gl, 200, 42), "e"), picMarble(zb, nearestD(zb, 200, 112), "e"),
+                   picMarble(hs, nearestD(hs, 200, 184), "e")];
+        drawMarble(marbles[0]); drawMarble(marbles[1]); drawMarble(marbles[2]);
+        picOver(chs);
+        L = { props: [] }; drawCovered();          // the electric glow through what covers it
+      });
+    }
+    function whirlPic() {
+      return machinePic(456, 288, 1.2, 0, 0, function () {
+        var tr = T(-20, 30).to(60, 48).to(118, 92).whirl(200, 110, 70, 16, 1.5, 1).to(215, 190).over().to(230, 214).to(400, 228),
+            w = picLine(tr);
+        picRails([w], tr.bowls);
+        drawMarble(picMarble(w, nearestD(w, 270, 112), "k"));
+      });
+    }
+    function cardsPic(ids, w) {
+      var box = document.createElement("div"), i;
+      box.className = "gb-gcards";
+      for (i = 0; i < ids.length; i++) box.appendChild(cardNode(ids[i], { w: w || 250 }));
+      return box;
+    }
+    // A biome's painted hall, cut to a band.
+    function scenePic(b) {
+      var src = (CONFIG.art || {})[CONFIG.biomes[b].scene], n;
+      if (!src) return null;
+      n = document.createElement("div");
+      n.className = "gb-gscene";
+      n.style.width = "480px"; n.style.height = "230px";
+      n.style.backgroundImage = 'url("' + src + '")';
+      return n;
+    }
+    // what each biome's machines bring, in one line
+    var BIOME_LINES = [
+      "Every level is a different machine. Here, each one has a single switch.",
+      "Two switches, and glass tubes from level 7.",
+      "Four switches step down the machine.",
+      "Lines cross. One dives under the other and comes back out of a pipe mouth.",
+      "Six switches chained: the biggest machines of the climb."
+    ];
+    // two cards a biome shows: one that helps, one that scores or wagers
+    var BIOME_CARDS = [["spareHeart-2", "glass"], ["autoSwitch-2", "doubleOr"], ["second-1", "greedy"],
+                       ["oneLockLess-2", "redJackpot-1"], ["wide-2", "tesla"]];
+    function biomeChapter(b) {
+      var B = CONFIG.biomes[b], lv = b * 6 + 1;
+      return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
+        { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: function () { return scenePic(b); },
+          lines: [Lang.t(BIOME_LINES[b])] },
+        { id: "cards-" + B.name.toLowerCase(), title: Lang.t("Biome cards"), lv: lv,
+          pic: function () { return cardsPic(BIOME_CARDS[b], 230); },
+          lines: [Lang.t("From here on, a pick can also deal cards like these.")] }
+      ] };
+    }
+    var guide = {
+      chapters: function () {
+        var tiers = [], i, out;
+        for (i = 0; i < M.tiers.length; i++) tiers.push([Lang.t("Combo") + " " + M.tiers[i], "×" + (i + 2)]);
+        out = [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "shift", title: Lang.t("The shift"), pic: marblesPic,
+              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble caught"), "+" + M.electricScore]],
+              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the combo."),
+                      Lang.t("On a keyboard, space or Q to Y open the gates. Keys 1 to 6 move the socket.")] },
+            { id: "lock", title: Lang.t("Locked gates"), pic: lockPic,
+              lines: [Lang.t("Gates lock at random. Tap the padlock to open the gate again."),
+                      Lang.t("Each marble the gate then lets out feeds the combo.")] },
+            { id: "volt", title: Lang.t("The electric marble"), pic: voltPic,
+              rows: [[Lang.t("Combo"), "+" + M.electricJump]],
+              lines: [Lang.t("Tap an arrival to move the socket there. Only the socket takes the electric marble."),
+                      Lang.t("Anywhere else the electric marble fizzles, and the combo breaks.")] },
+            { id: "switch", title: Lang.t("Switches"), pic: switchPic,
+              lines: [Lang.t("A switch flips each time a marble passes. Its lit way shows where the next one goes.")] },
+            { id: "spill", title: Lang.t("Overflow"), pic: spillPic,
+              lines: [Lang.t("When a queue is full, the next marble breaks the combo and drops through the trapdoor."),
+                      Lang.t("That marble rolls to the red socket and costs a heart.")] },
+            { id: "combo", title: Lang.t("The combo"), pic: function () { return hubPic(27, 0.85, false); }, rows: tiers,
+              lines: [Lang.t("Opening a gate adds +1 per marble it lets out. A caught electric marble adds +5."),
+                      Lang.t("Losing a marble or wasting an electric one resets the combo to 0.")] },
+            { id: "fuse", title: Lang.t("The fuse"), pic: function () { return hubPic(12, 0.3, true); },
+              lines: [Lang.t("The fuse burns down while the machine waits on you. Open a gate or catch an electric marble."),
+                      Lang.t("If the fuse burns out, the combo drops back one tier.")] }
+          ] },
+          { key: "cards", label: Lang.t("Upgrade cards"), pages: [
+            { id: "cards", title: Lang.t("The upgrade pick"), pic: function () { return cardsPic(["spareHeart-1", "turbo-2"]); },
+              lines: [Lang.t("When the socket is charged, catching an electric marble pauses the machine and deals two cards."),
+                      Lang.t("One card helps, the other scores or takes a risk. Take one.")] },
+            { id: "risk", title: Lang.t("Risk cards"), lv: 1, pic: function () { return cardsPic(["glass", "doubleOr"]); },
+              lines: [Lang.t("A risk card pays big, but you pay for it in hearts, speed or half your score.")] },
+            { id: "legend", title: Lang.t("Legendary cards"), lv: 7, pic: function () { return cardsPic(["capacitor", "tesla"]); },
+              lines: [Lang.t("These golden cards are rare. Each one makes the socket recharge faster for the whole shift.")] },
+            { id: "key", title: Lang.t("Master key"), lv: 1, pic: function () { return cardsPic(["masterKey-1"], 300); },
+              lines: [Lang.t("The master key waits under the hearts. Tap it, or press K, to open every locked gate.")] }
+          ] },
+          { key: "track", label: Lang.t("The track"), pages: [
+            { id: "loops", title: Lang.t("Loops and spirals"), lv: 1, pic: loopsPic,
+              lines: [Lang.t("With the Loop prize and Spiral prize cards, every loop or spiral a marble rides pays.")] },
+            { id: "ferry", title: Lang.t("Ferry gears"), lv: 1, pic: ferryPic,
+              lines: [Lang.t("A ferry gear carries a marble over to another line. Watch where it sets it down.")] },
+            { id: "moves", title: Lang.t("Jumps and boosters"), lv: 2, pic: movesPic,
+              lines: [Lang.t("A jump throws the marble into a catcher. A booster speeds it up.")] },
+            { id: "tubes", title: Lang.t("Tubes and hoses"), lv: 3, pic: tubesPic,
+              lines: [Lang.t("A glass tube shows its marbles. A striped tube shows them between its bands, a hose hides them."),
+                      Lang.t("The electric marble glows through all of them.")] },
+            { id: "whirl", title: Lang.t("Whirlpools and dives"), lv: 12, pic: whirlPic,
+              lines: [Lang.t("A whirlpool spirals the marble down its drain, behind the machine."),
+                      Lang.t("A line that dives runs under the others and comes back through a pipe mouth.")] }
+          ] }
+        ];
+        for (i = 0; i < CONFIG.biomes.length; i++) out.push(biomeChapter(i));
+        return out;
+      }
+    };
     function tcBiome(b) { return CONFIG.biomes[b].metal; }
     // The arc that opens the round has the shift's own socket path.
     function roundPath() { return path; }
@@ -9576,7 +10076,7 @@
       L = layout(machine()); CH = L.CH;
       setBiome(L.b);
       fit(); readFont(); build();
-      marbles = []; queue = []; parts = []; shards = []; rings = []; arcs = []; puffs = []; hints = []; hintT = 0;
+      marbles = []; queue = []; parts = []; shards = []; rings = []; arcs = []; puffs = [];
       boxes = {};
       arrival = L.arr[Math.floor(Math.random() * L.arr.length)].id;
       for (i = 0; i < L.arr.length; i++) {
@@ -9634,7 +10134,6 @@
       fuse = 1; fuseBurn = false; fuseOutT = 0; comets = []; slowT = 0;
       flow = 0; screwSlot = 0; towerQ = []; revealT = 0.25; chimeGap = 0; clickGap = 0;
       stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0, fuseOuts: 0, heartsLost: 0 };
-      taught = { lock: false, volt: false, spill: false, fuse: false };
       best = Store.get("bestScore", 0) || 0;
       HUD.setScoreNow(0);
       showHearts();
@@ -9671,12 +10170,6 @@
       zap = Math.max(0, zap - dt);
       chimeGap -= dt; clickGap -= dt; landGap -= dt; noteGap -= dt; boostGap -= dt;
       for (i = 0; i < L.props.length; i++) if (L.props[i].hit > 0) L.props[i].hit -= dt;
-      // the lessons, one at a time: a notice never stacks on another hint
-      hintT -= dt;
-      if (hintT <= 0 && hints.length && state === "play") {
-        var h = hints.shift();
-        hintT = (h[1].hold || 2200) / 1000 + 0.5;
-      }
       for (i = parts.length - 1; i >= 0; i--) {
         p = parts[i]; p.t += dt;
         p.vy += 700 * dt; p.vx *= 0.985;
@@ -9699,6 +10192,7 @@
         if (!ar.rev && was && ar.t * ARC_SPEED >= P.len) {
           // The arc reaches the hub: the combo jumps.
           b3 = tier(combo);
+          if (!combo && ar.jump) learnFuse();
           combo += ar.jump; if (combo > bestCombo) bestCombo = combo;
           feedFuse();
           hubZap = 1.2; hubPop = 0.7; zap = ZAP_TIME;
@@ -9970,7 +10464,7 @@
           m.v *= 0.72;
           spark(m.x, m.y + R, C.steelL, m.clone ? 2 : 5, 150, 90);
           ring(m.x, m.y, C.steelL, R, 50, 0.3, 3);
-          if (landGap <= 0) { landGap = 0.08; Sound.clip("land", 0.32, Rand.range(0.92, 1.08)); }
+          if (landGap <= 0) { landGap = 0.08; Sound.clip("land", 0.15, Rand.range(0.92, 1.08)); }
         } else if (md.kind === "note") {
           spark(m.x, m.y + R, C.steelL, 2, 90, 60);
           if (noteGap <= 0) { noteGap = 0.06; Sound.clip("chime", 0.07, 1.5 - md.n * 0.1); }
@@ -10816,9 +11310,11 @@
        and dimmer than an arrival — it is behind the machine — with a heart
        in its core, because a heart is what it takes. */
     var SINK_SCALE = 0.7;
-    function drawSink() {
-      var x = 0, y = 0, w = 30, k = sink.kick, pl = 0.5 + 0.5 * Math.sin(t * 3), g;
-      ctx.save(); ctx.translate(L.sink[0], L.sink[1]); ctx.scale(SINK_SCALE, SINK_SCALE);
+    function drawSink() { paintSink(L.sink[0], L.sink[1], sink.kick); }
+    // The sink at (sx, sy), `k` the kick of a marble just landed in it.
+    function paintSink(sx, sy, k) {
+      var x = 0, y = 0, w = 30, pl = 0.5 + 0.5 * Math.sin(t * 3), g;
+      ctx.save(); ctx.translate(sx, sy); ctx.scale(SINK_SCALE, SINK_SCALE);
       drawGlow(C.full, x, y + 26, 54, 0.22 + 0.12 * pl + k * 0.9);
       ctx.globalAlpha = 0.9;
       ctx.beginPath();
@@ -11133,7 +11629,7 @@
        The open way is cyan when it still leads to the socket. */
     var SW_BAR = 34;                // how far down the shut way its stop stands
     function drawSwitches() {
-      var eNext = {}, i, j, m, k, s, b, ch, live, toArr, pl, ex, ey, snap, op, p, nv, d, hw, a;
+      var eNext = {}, i, m, k, s, live, toArr;
       for (i = 0; i < marbles.length; i++) {
         m = marbles[i];
         if (m.e && m.st === "track" && L.out[m.ch.to]) eNext[m.ch.to] = true;
@@ -11144,77 +11640,94 @@
         toArr = leads(live.id) && !MOD.blind;
         // the two ways belong to the track, and land with it (Enter rank 1)
         if (Enter.begin(s.x, s.y, { rank: 1 })) {
-        for (b = 0; b < 2; b++) {
-          ch = CH[L.out[k][b]];
-          op = b === 1 ? s.kb : 1 - s.kb;              // 1: this way is open
-          // the mouth of the way: lit when open, dark when shut
-          ctx.lineWidth = 2 * R + 8;
-          ctx.strokeStyle = op > 0.5 ? (leads(ch.id) && !MOD.blind ? C.volt : tc("#d9ccff")) : "#05030f";
-          ctx.globalAlpha = op > 0.5 ? 0.3 * op : 0.55 * (1 - op);
-          ctx.beginPath(); ctx.moveTo(ch.xs[0], ch.ys[0]);
-          for (i = 1; i < Math.min(ch.n, 18); i++) ctx.lineTo(ch.xs[i], ch.ys[i]);
-          ctx.stroke();
-          // the open way: three chevrons running down it
-          if (op > 0.05) {
-            ctx.globalAlpha = op;
-            ctx.strokeStyle = leads(ch.id) && !MOD.blind ? C.voltHi : "#ffffff"; ctx.lineWidth = 5;
-            for (j = 0; j < 3; j++) {
-              d = 22 + mod(t * 60 + j * 22, 66);
-              i = Math.min(ch.n - 2, Math.round(d / DS)); p = at(ch, d, {}); nv = normalAt(ch, i);
-              a = Math.atan2(-nv[0], nv[1]);           // the way's own heading
-              hw = 12 * Math.min(1, 1.6 * (1 - Math.abs(d - 55) / 36));
-              if (hw <= 0) continue;
-              ctx.beginPath();
-              ctx.moveTo(p.x - Math.cos(a) * hw + nv[0] * hw, p.y - Math.sin(a) * hw + nv[1] * hw);
-              ctx.lineTo(p.x, p.y);
-              ctx.lineTo(p.x - Math.cos(a) * hw - nv[0] * hw, p.y - Math.sin(a) * hw - nv[1] * hw);
-              ctx.stroke();
-            }
-          }
-          // the shut way: a red stop across its mouth
-          if (op < 0.95) {
-            p = at(ch, SW_BAR, {}); nv = normalAt(ch, Math.round(SW_BAR / DS)); hw = R + 10;
-            ctx.globalAlpha = 1 - op;
-            drawGlow(C.full, p.x, p.y, 30, 0.45);
-            ctx.lineCap = "butt";
-            ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw + 2), p.y - nv[1] * (hw + 2)); ctx.lineTo(p.x + nv[0] * (hw + 2), p.y + nv[1] * (hw + 2)); ctx.stroke();
-            ctx.strokeStyle = C.full; ctx.lineWidth = 8;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * hw, p.y - nv[1] * hw); ctx.lineTo(p.x + nv[0] * hw, p.y + nv[1] * hw); ctx.stroke();
-            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw - 4), p.y - nv[1] * (hw - 4)); ctx.lineTo(p.x + nv[0] * (hw - 4), p.y + nv[1] * (hw - 4)); ctx.stroke();
-            ctx.lineCap = "round";
-          }
-        }
-        Enter.end();
+          paintWays(s, [CH[L.out[k][0]], CH[L.out[k][1]]], wayLit);
+          Enter.end();
         }
         ctx.globalAlpha = 1;
         // the switch itself is a gear, and lands with the gears
         if (!Enter.begin(s.x, s.y)) continue;
-        // An electric marble is heading here: a cyan ring says watch this switch.
-        if (eNext[k] && !MOD.blind) {
-          pl = 0.5 + 0.5 * Math.sin(t * 12);
-          drawGlow(C.volt, s.x, s.y, 64, 0.35 + 0.3 * pl);
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 4; ctx.globalAlpha = 0.55 + 0.45 * pl;
-          ctx.beginPath(); ctx.arc(s.x, s.y, 36 + pl * 4, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
-        }
-        snap = s.snap > 0 ? 1 + 0.18 * Math.sin(s.snap / 0.22 * Math.PI) : 1;
-        ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.scale(snap, snap);
-        ctx.drawImage(cogCv, -26, -26, 52, 52);
-        ctx.restore();
-        if (s.flash > 0) drawGlow("#ffffff", s.x, s.y, 40, s.flash / (FLIP_TIME * 2) * 0.6);
-        // the tongue, laid along the open way, a lamp on its tip
-        ex = s.x + Math.cos(s.ang) * 40 * snap; ey = s.y + Math.sin(s.ang) * 40 * snap;
-        ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
-        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke();
-        ctx.strokeStyle = tc("#cfc6f5"); ctx.lineWidth = 7; ctx.stroke();
-        drawGlow(toArr ? C.volt : tc("#d9ccff"), ex, ey, 20, 0.8);
-        ctx.fillStyle = toArr ? C.volt : tc("#e9e2ff");
-        ctx.beginPath(); ctx.arc(ex, ey, 6.5, 0, PI2); ctx.fill();
-        ctx.fillStyle = tc("#1b1440");
-        ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, PI2); ctx.fill();
+        paintSwitch(s, toArr, eNext[k] && !MOD.blind);
         Enter.end();
       }
+    }
+    function wayLit(ch) { return leads(ch.id) && !MOD.blind; }
+    /* A switch's two ways, `ways` [left, right] (channels), `lit(ch)` true
+       for a way that still leads to the socket — the round's, or the
+       guide's picture of one. */
+    function paintWays(s, ways, lit) {
+      var b, ch, op, i, j, d, p, nv, a, hw;
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (b = 0; b < 2; b++) {
+        ch = ways[b];
+        op = b === 1 ? s.kb : 1 - s.kb;              // 1: this way is open
+        // the mouth of the way: lit when open, dark when shut
+        ctx.lineWidth = 2 * R + 8;
+        ctx.strokeStyle = op > 0.5 ? (lit(ch) ? C.volt : tc("#d9ccff")) : "#05030f";
+        ctx.globalAlpha = op > 0.5 ? 0.3 * op : 0.55 * (1 - op);
+        ctx.beginPath(); ctx.moveTo(ch.xs[0], ch.ys[0]);
+        for (i = 1; i < Math.min(ch.n, 18); i++) ctx.lineTo(ch.xs[i], ch.ys[i]);
+        ctx.stroke();
+        // the open way: three chevrons running down it
+        if (op > 0.05) {
+          ctx.globalAlpha = op;
+          ctx.strokeStyle = lit(ch) ? C.voltHi : "#ffffff"; ctx.lineWidth = 5;
+          for (j = 0; j < 3; j++) {
+            d = 22 + mod(t * 60 + j * 22, 66);
+            i = Math.min(ch.n - 2, Math.round(d / DS)); p = at(ch, d, {}); nv = normalAt(ch, i);
+            a = Math.atan2(-nv[0], nv[1]);           // the way's own heading
+            hw = 12 * Math.min(1, 1.6 * (1 - Math.abs(d - 55) / 36));
+            if (hw <= 0) continue;
+            ctx.beginPath();
+            ctx.moveTo(p.x - Math.cos(a) * hw + nv[0] * hw, p.y - Math.sin(a) * hw + nv[1] * hw);
+            ctx.lineTo(p.x, p.y);
+            ctx.lineTo(p.x - Math.cos(a) * hw - nv[0] * hw, p.y - Math.sin(a) * hw - nv[1] * hw);
+            ctx.stroke();
+          }
+        }
+        // the shut way: a red stop across its mouth
+        if (op < 0.95) {
+          p = at(ch, SW_BAR, {}); nv = normalAt(ch, Math.round(SW_BAR / DS)); hw = R + 10;
+          ctx.globalAlpha = 1 - op;
+          drawGlow(C.full, p.x, p.y, 30, 0.45);
+          ctx.lineCap = "butt";
+          ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw + 2), p.y - nv[1] * (hw + 2)); ctx.lineTo(p.x + nv[0] * (hw + 2), p.y + nv[1] * (hw + 2)); ctx.stroke();
+          ctx.strokeStyle = C.full; ctx.lineWidth = 8;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * hw, p.y - nv[1] * hw); ctx.lineTo(p.x + nv[0] * hw, p.y + nv[1] * hw); ctx.stroke();
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw - 4), p.y - nv[1] * (hw - 4)); ctx.lineTo(p.x + nv[0] * (hw - 4), p.y + nv[1] * (hw - 4)); ctx.stroke();
+          ctx.lineCap = "round";
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    /* The switch's gear and its tongue, laid along the open way: `toArr`
+       when that way leads to the socket, `watch` when an electric marble is
+       heading here. */
+    function paintSwitch(s, toArr, watch) {
+      var pl, snap, ex, ey;
+      // An electric marble is heading here: a cyan ring says watch this switch.
+      if (watch) {
+        pl = 0.5 + 0.5 * Math.sin(t * 12);
+        drawGlow(C.volt, s.x, s.y, 64, 0.35 + 0.3 * pl);
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 4; ctx.globalAlpha = 0.55 + 0.45 * pl;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 36 + pl * 4, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      snap = s.snap > 0 ? 1 + 0.18 * Math.sin(s.snap / 0.22 * Math.PI) : 1;
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.scale(snap, snap);
+      ctx.drawImage(cogCv, -26, -26, 52, 52);
+      ctx.restore();
+      if (s.flash > 0) drawGlow("#ffffff", s.x, s.y, 40, s.flash / (FLIP_TIME * 2) * 0.6);
+      // the tongue, laid along the open way, a lamp on its tip
+      ex = s.x + Math.cos(s.ang) * 40 * snap; ey = s.y + Math.sin(s.ang) * 40 * snap;
+      ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.strokeStyle = tc("#cfc6f5"); ctx.lineWidth = 7; ctx.stroke();
+      drawGlow(toArr ? C.volt : tc("#d9ccff"), ex, ey, 20, 0.8);
+      ctx.fillStyle = toArr ? C.volt : tc("#e9e2ff");
+      ctx.beginPath(); ctx.arc(ex, ey, 6.5, 0, PI2); ctx.fill();
+      ctx.fillStyle = tc("#1b1440");
+      ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, PI2); ctx.fill();
     }
 
 
@@ -11272,7 +11785,7 @@
        pallet is down, the slots show, and the padlock is a big pulsing button
        with the count under it. Just unlocked, the shackle springs open. */
     function drawGates() {
-      var i, g, shut, n, k, col, pl, rr, grow, op;
+      var i, g;
       for (i = 0; i < gates.length; i++) {
         g = gates[i];
         if (g.locked || g.flush || g.broke > 0) drawSockets(g.ch, g.d, g.cap, g.q.length, g.broke, !!g.spill);
@@ -11283,77 +11796,83 @@
       for (i = 0; i < gates.length; i++) {
         g = gates[i];
         if (!Enter.begin(g.px, g.py, { rank: 1 })) continue;
-        shut = g.locked;
-        // a self-opening gate wears a turning green ring round its padlock
-        if (MOD.autoGate[i]) {
-          ctx.strokeStyle = rgba(C.calm, 0.8); ctx.lineWidth = 3; ctx.setLineDash([7, 7]); ctx.lineDashOffset = -t * 30;
-          ctx.beginPath(); ctx.arc(g.px, g.py, 50, 0, PI2); ctx.stroke();
-          ctx.setLineDash([]); ctx.lineDashOffset = 0;
-        }
-        /* The gate itself: two posts either side of the rail and, locked, an
-           amber bar across it. The bar slides back into the near post as the
-           gate opens. A dashed cable runs from the near post to the padlock. */
-        var nx = -g.ty, ny = g.tx, pw = R + 9, sgn, ax, ay, bx2, by2, bar;
-        sgn = (nx * (g.px - g.fx) + ny * (g.py - g.fy)) >= 0 ? 1 : -1;
-        ax = g.fx + nx * pw * sgn; ay = g.fy + ny * pw * sgn;          // the post on the padlock's side
-        bx2 = g.fx - nx * pw * sgn; by2 = g.fy - ny * pw * sgn;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = shut ? rgba(C.amber, 0.6) : tca("#c8beff", .26); ctx.lineWidth = 3;
-        ctx.setLineDash([6, 6]);
-        ctx.beginPath(); ctx.moveTo(g.px, g.py); ctx.lineTo(ax, ay); ctx.stroke();
-        ctx.setLineDash([]);
-        bar = shut ? 1 : g.pop > 0 ? g.pop / 0.4 : 0;
-        if (bar > 0) {
-          if (shut) drawGlow(C.amber, g.fx, g.fy, R + 22, 0.55);
-          ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 11;
-          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx2 - ax) * bar, ay + (by2 - ay) * bar); ctx.stroke();
-          ctx.strokeStyle = shut ? C.amber : C.calm; ctx.lineWidth = 6; ctx.stroke();
-          ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.6; ctx.stroke();
-        }
-        for (var pj = 0; pj < 2; pj++) {
-          var qx = pj ? bx2 : ax, qy = pj ? by2 : ay;
-          ctx.fillStyle = tc("#0b0720"); ctx.beginPath(); ctx.arc(qx, qy, 7.5, 0, PI2); ctx.fill();
-          ctx.fillStyle = shut ? C.amber : tc("#8f84c8"); ctx.beginPath(); ctx.arc(qx, qy, 5, 0, PI2); ctx.fill();
-        }
-        if (!shut) {
-          op = g.pop > 0 ? g.pop / 0.4 : 0;
-          if (op > 0) {
-            // just unlocked: the button shrinks back with its shackle open
-            rr = 14 + 24 * op;
-            drawGlow(C.calm, g.px, g.py, rr + 30, 0.7 * op);
-            ctx.fillStyle = "#12241e"; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
-            ctx.lineWidth = 5; ctx.strokeStyle = C.calm; ctx.stroke();
-            ctx.globalAlpha = op; padlock(g.px, g.py - 2, 22 * (0.6 + 0.4 * op), "#eafff4", 1 - op * 0.2); ctx.globalAlpha = 1;
-          } else {
-            ctx.fillStyle = tc("#1b1440"); ctx.beginPath(); ctx.arc(g.px, g.py, 14, 0, PI2); ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = tc("#8f84c8"); ctx.stroke();
-            drawGlow(C.calm, g.px, g.py, 14, 0.7);
-            ctx.fillStyle = C.calm; ctx.beginPath(); ctx.arc(g.px, g.py, 4, 0, PI2); ctx.fill();
-          }
-          Enter.end();
-          continue;
-        }
-        n = g.q.length; k = n / g.cap; col = gaugeColor(k); pl = 0.5 + 0.5 * Math.sin(t * (7 + 10 * k));
-        grow = g.lockAge < 0.3 ? 1 + 0.35 * Math.sin(g.lockAge / 0.3 * Math.PI) : 1;
-        rr = (34 + pl * 3) * grow;
-        drawGlow(C.amber, g.px, g.py, rr + 40, 0.35 + 0.3 * pl);
-        drawGlow(col, g.px, g.py, rr + 18, 0.4);
-        var bg = ctx.createRadialGradient(g.px - rr * 0.3, g.py - rr * 0.35, 2, g.px, g.py, rr);
-        bg.addColorStop(0, "#5a3a1c"); bg.addColorStop(1, "#1d0f14");
-        ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
-        ctx.lineWidth = 6; ctx.strokeStyle = n >= g.cap && Math.sin(t * 18) > 0 ? "#ffffff" : col;
-        ctx.stroke();
-        ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.amber, 0.8);
-        ctx.beginPath(); ctx.arc(g.px, g.py, rr - 7, 0, PI2); ctx.stroke();
-        padlock(g.px, g.py - 2, 22 * grow, "#ffe3b0", 0);
-        // the count, under the button
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = font(22, 900);
-        ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .92);
-        ctx.strokeText(n + "/" + g.cap, g.px, g.py + rr + 18);
-        ctx.fillStyle = col; ctx.fillText(n + "/" + g.cap, g.px, g.py + rr + 18);
+        paintGate(g, MOD.autoGate[i]);
         Enter.end();
       }
+    }
+    /* One gate, its posts, its bar and its padlock — the round's, or the
+       guide's picture of one (a gate object of the same shape). `auto`: a
+       self-opening gate card is on it. */
+    function paintGate(g, auto) {
+      var shut, n, k, col, pl, rr, grow, op;
+      shut = g.locked;
+      // a self-opening gate wears a turning green ring round its padlock
+      if (auto) {
+        ctx.strokeStyle = rgba(C.calm, 0.8); ctx.lineWidth = 3; ctx.setLineDash([7, 7]); ctx.lineDashOffset = -t * 30;
+        ctx.beginPath(); ctx.arc(g.px, g.py, 50, 0, PI2); ctx.stroke();
+        ctx.setLineDash([]); ctx.lineDashOffset = 0;
+      }
+      /* The gate itself: two posts either side of the rail and, locked, an
+         amber bar across it. The bar slides back into the near post as the
+         gate opens. A dashed cable runs from the near post to the padlock. */
+      var nx = -g.ty, ny = g.tx, pw = R + 9, sgn, ax, ay, bx2, by2, bar;
+      sgn = (nx * (g.px - g.fx) + ny * (g.py - g.fy)) >= 0 ? 1 : -1;
+      ax = g.fx + nx * pw * sgn; ay = g.fy + ny * pw * sgn;          // the post on the padlock's side
+      bx2 = g.fx - nx * pw * sgn; by2 = g.fy - ny * pw * sgn;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = shut ? rgba(C.amber, 0.6) : tca("#c8beff", .26); ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.moveTo(g.px, g.py); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.setLineDash([]);
+      bar = shut ? 1 : g.pop > 0 ? g.pop / 0.4 : 0;
+      if (bar > 0) {
+        if (shut) drawGlow(C.amber, g.fx, g.fy, R + 22, 0.55);
+        ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx2 - ax) * bar, ay + (by2 - ay) * bar); ctx.stroke();
+        ctx.strokeStyle = shut ? C.amber : C.calm; ctx.lineWidth = 6; ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.6; ctx.stroke();
+      }
+      for (var pj = 0; pj < 2; pj++) {
+        var qx = pj ? bx2 : ax, qy = pj ? by2 : ay;
+        ctx.fillStyle = tc("#0b0720"); ctx.beginPath(); ctx.arc(qx, qy, 7.5, 0, PI2); ctx.fill();
+        ctx.fillStyle = shut ? C.amber : tc("#8f84c8"); ctx.beginPath(); ctx.arc(qx, qy, 5, 0, PI2); ctx.fill();
+      }
+      if (!shut) {
+        op = g.pop > 0 ? g.pop / 0.4 : 0;
+        if (op > 0) {
+          // just unlocked: the button shrinks back with its shackle open
+          rr = 14 + 24 * op;
+          drawGlow(C.calm, g.px, g.py, rr + 30, 0.7 * op);
+          ctx.fillStyle = "#12241e"; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+          ctx.lineWidth = 5; ctx.strokeStyle = C.calm; ctx.stroke();
+          ctx.globalAlpha = op; padlock(g.px, g.py - 2, 22 * (0.6 + 0.4 * op), "#eafff4", 1 - op * 0.2); ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = tc("#1b1440"); ctx.beginPath(); ctx.arc(g.px, g.py, 14, 0, PI2); ctx.fill();
+          ctx.lineWidth = 3; ctx.strokeStyle = tc("#8f84c8"); ctx.stroke();
+          drawGlow(C.calm, g.px, g.py, 14, 0.7);
+          ctx.fillStyle = C.calm; ctx.beginPath(); ctx.arc(g.px, g.py, 4, 0, PI2); ctx.fill();
+        }
+        return;
+      }
+      n = g.q.length; k = n / g.cap; col = gaugeColor(k); pl = 0.5 + 0.5 * Math.sin(t * (7 + 10 * k));
+      grow = g.lockAge < 0.3 ? 1 + 0.35 * Math.sin(g.lockAge / 0.3 * Math.PI) : 1;
+      rr = (34 + pl * 3) * grow;
+      drawGlow(C.amber, g.px, g.py, rr + 40, 0.35 + 0.3 * pl);
+      drawGlow(col, g.px, g.py, rr + 18, 0.4);
+      var bg = ctx.createRadialGradient(g.px - rr * 0.3, g.py - rr * 0.35, 2, g.px, g.py, rr);
+      bg.addColorStop(0, "#5a3a1c"); bg.addColorStop(1, "#1d0f14");
+      ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = n >= g.cap && Math.sin(t * 18) > 0 ? "#ffffff" : col;
+      ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.amber, 0.8);
+      ctx.beginPath(); ctx.arc(g.px, g.py, rr - 7, 0, PI2); ctx.stroke();
+      padlock(g.px, g.py - 2, 22 * grow, "#ffe3b0", 0);
+      // the count, under the button
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = font(22, 900);
+      ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .92);
+      ctx.strokeText(n + "/" + g.cap, g.px, g.py + rr + 18);
+      ctx.fillStyle = col; ctx.fillText(n + "/" + g.cap, g.px, g.py + rr + 18);
     }
 
     /* The chimes: a tube hung off the rail on a bracket; a marble passing
@@ -11394,65 +11913,70 @@
       ctx.lineTo(x - w * 0.3, CORE_Y - 8); ctx.lineTo(x - w * 0.42, RIM_Y + 50); ctx.closePath();
     }
     function drawReceivers() {
-      var k, mc, arr, pl, i, lx, on, w = L.mouthW, cr = Math.min(18, w * 0.42), g, yb, by, col;
-      pl = 0.5 + 0.5 * Math.sin(t * 5);
+      var k;
       for (k in boxes) if (boxes.hasOwnProperty(k)) {
-        mc = boxes[k]; arr = k === arrival; col = mc.col;
-        if (!Enter.begin(mc.x, RIM_Y + 40, { rank: 1 })) continue;
-        if (arr) drawGlow(C.volt, mc.x, RIM_Y + 40, w * 2.1, 0.32 + 0.14 * pl + mc.charge * 0.5);
-        drawGlow(col, mc.x, RIM_Y + 38, w * 1.5, 0.22 + mc.kick * 1.2);
-        // the funnel
-        ctx.lineJoin = "round";
-        funnel(mc.x, w);
-        g = ctx.createLinearGradient(0, RIM_Y, 0, CORE_Y);
-        g.addColorStop(0, rgba(col, 0.42)); g.addColorStop(0.35, "#1c1344"); g.addColorStop(1, "#07041a");
-        ctx.fillStyle = g; ctx.fill();
-        ctx.lineWidth = 6; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
-        // a light rising up the funnel on every marble
-        if (mc.sweep > 0) {
-          ctx.save(); funnel(mc.x, w); ctx.clip();
-          yb = CORE_Y - (1 - mc.sweep / 0.4) * (CORE_Y - RIM_Y + 20);
-          var sg = ctx.createLinearGradient(0, yb - 16, 0, yb + 16);
-          sg.addColorStop(0, rgba(col, 0)); sg.addColorStop(0.5, rgba(arr ? C.volt : col, 0.7)); sg.addColorStop(1, rgba(col, 0));
-          ctx.fillStyle = sg; ctx.fillRect(mc.x - w, yb - 16, w * 2, 32);
-          ctx.restore();
-        }
-        if (mc.fizz > 0) { funnel(mc.x, w); ctx.fillStyle = "rgba(70,80,100," + (mc.fizz * 0.55) + ")"; ctx.fill(); }
-        // the mouth: a dark hole ringed in the arrival's colour
-        ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w, 8, 0, 0, PI2);
-        ctx.fillStyle = "#05030f"; ctx.fill();
-        ctx.lineWidth = 5; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
-        if (arr) { ctx.lineWidth = 1.5; ctx.strokeStyle = C.voltHi; ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w - 5, 5, 0, 0, PI2); ctx.stroke(); }
-        // the lamp chaser along the rim
-        for (i = 0; i < 5; i++) {
-          lx = mc.x + (i - 2) * w * 0.36; on = i === mc.led && mc.sweep > 0;
-          if (on) drawGlow(col, lx, RIM_Y + 8, 14, 0.9);
-          ctx.fillStyle = on ? "#ffffff" : rgba(col, 0.45);
-          ctx.beginPath(); ctx.arc(lx, RIM_Y + 8, 2.6, 0, PI2); ctx.fill();
-        }
-        // the core lamp at the bottom
-        drawGlow(arr ? C.volt : col, mc.x, CORE_Y, cr * 2.4, 0.5 + mc.kick * 1.4 + (arr ? 0.2 * pl : 0));
-        g = ctx.createRadialGradient(mc.x - cr * 0.3, CORE_Y - cr * 0.35, 1, mc.x, CORE_Y, cr);
-        g.addColorStop(0, mc.kick > 0.1 ? "#ffffff" : arr ? C.voltHi : rgba(col, 0.95));
-        g.addColorStop(0.6, col); g.addColorStop(1, "#140c33");
-        ctx.beginPath(); ctx.arc(mc.x, CORE_Y, cr, 0, PI2); ctx.fillStyle = g; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        if (arr) {
-          // arcs from the rim to the core, and the sign over the mouth
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 2;
-          var nb = mc.kick > 0 ? 5 : mc.charge > 0.2 ? 3 : 1;
-          for (i = 0; i < nb; i++) if (mc.kick > 0 || mc.charge > 0.2 || Math.random() < 0.35) {
-            bolt(mc.x + (Math.random() - 0.5) * w * 1.6, RIM_Y + 4, mc.x + (Math.random() - 0.5) * cr, CORE_Y - cr * 0.6, 6, 4);
-          }
-          by = RIM_Y - 40 + Math.sin(t * 3) * 4;
-          drawGlow(C.volt, mc.x, by, 40, 0.6 + 0.3 * pl);
-          ctx.fillStyle = "#07243f"; ctx.beginPath(); ctx.arc(mc.x, by, 19, 0, PI2); ctx.fill();
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 3; ctx.stroke();
-          boltIcon(mc.x, by, 12, C.voltHi);
-        }
+        if (!Enter.begin(boxes[k].x, RIM_Y + 40, { rank: 1 })) continue;
+        paintArrival(boxes[k], k === arrival, L.mouthW);
         Enter.end();
+      }
+    }
+    /* One arrival, `mc` being its box ({ x, col, kick, fizz, charge, led,
+       sweep }), `arr` whether it is the socket, `w` the half-width of its
+       mouth: the round's, or the guide's picture of one. */
+    function paintArrival(mc, arr, w) {
+      var i, lx, on, cr = Math.min(18, w * 0.42), g, yb, by, col = mc.col, pl = 0.5 + 0.5 * Math.sin(t * 5);
+      if (arr) drawGlow(C.volt, mc.x, RIM_Y + 40, w * 2.1, 0.32 + 0.14 * pl + mc.charge * 0.5);
+      drawGlow(col, mc.x, RIM_Y + 38, w * 1.5, 0.22 + mc.kick * 1.2);
+      // the funnel
+      ctx.lineJoin = "round";
+      funnel(mc.x, w);
+      g = ctx.createLinearGradient(0, RIM_Y, 0, CORE_Y);
+      g.addColorStop(0, rgba(col, 0.42)); g.addColorStop(0.35, "#1c1344"); g.addColorStop(1, "#07041a");
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
+      // a light rising up the funnel on every marble
+      if (mc.sweep > 0) {
+        ctx.save(); funnel(mc.x, w); ctx.clip();
+        yb = CORE_Y - (1 - mc.sweep / 0.4) * (CORE_Y - RIM_Y + 20);
+        var sg = ctx.createLinearGradient(0, yb - 16, 0, yb + 16);
+        sg.addColorStop(0, rgba(col, 0)); sg.addColorStop(0.5, rgba(arr ? C.volt : col, 0.7)); sg.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = sg; ctx.fillRect(mc.x - w, yb - 16, w * 2, 32);
+        ctx.restore();
+      }
+      if (mc.fizz > 0) { funnel(mc.x, w); ctx.fillStyle = "rgba(70,80,100," + (mc.fizz * 0.55) + ")"; ctx.fill(); }
+      // the mouth: a dark hole ringed in the arrival's colour
+      ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w, 8, 0, 0, PI2);
+      ctx.fillStyle = "#05030f"; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      if (arr) { ctx.lineWidth = 1.5; ctx.strokeStyle = C.voltHi; ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w - 5, 5, 0, 0, PI2); ctx.stroke(); }
+      // the lamp chaser along the rim
+      for (i = 0; i < 5; i++) {
+        lx = mc.x + (i - 2) * w * 0.36; on = i === mc.led && mc.sweep > 0;
+        if (on) drawGlow(col, lx, RIM_Y + 8, 14, 0.9);
+        ctx.fillStyle = on ? "#ffffff" : rgba(col, 0.45);
+        ctx.beginPath(); ctx.arc(lx, RIM_Y + 8, 2.6, 0, PI2); ctx.fill();
+      }
+      // the core lamp at the bottom
+      drawGlow(arr ? C.volt : col, mc.x, CORE_Y, cr * 2.4, 0.5 + mc.kick * 1.4 + (arr ? 0.2 * pl : 0));
+      g = ctx.createRadialGradient(mc.x - cr * 0.3, CORE_Y - cr * 0.35, 1, mc.x, CORE_Y, cr);
+      g.addColorStop(0, mc.kick > 0.1 ? "#ffffff" : arr ? C.voltHi : rgba(col, 0.95));
+      g.addColorStop(0.6, col); g.addColorStop(1, "#140c33");
+      ctx.beginPath(); ctx.arc(mc.x, CORE_Y, cr, 0, PI2); ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      if (arr) {
+        // arcs from the rim to the core, and the sign over the mouth
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 2;
+        var nb = mc.kick > 0 ? 5 : mc.charge > 0.2 ? 3 : 1;
+        for (i = 0; i < nb; i++) if (mc.kick > 0 || mc.charge > 0.2 || Math.random() < 0.35) {
+          bolt(mc.x + (Math.random() - 0.5) * w * 1.6, RIM_Y + 4, mc.x + (Math.random() - 0.5) * cr, CORE_Y - cr * 0.6, 6, 4);
+        }
+        by = RIM_Y - 40 + Math.sin(t * 3) * 4;
+        drawGlow(C.volt, mc.x, by, 40, 0.6 + 0.3 * pl);
+        ctx.fillStyle = "#07243f"; ctx.beginPath(); ctx.arc(mc.x, by, 19, 0, PI2); ctx.fill();
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 3; ctx.stroke();
+        boltIcon(mc.x, by, 12, C.voltHi);
       }
     }
 
@@ -11604,7 +12128,7 @@
              /* The third star is a clean shift: every heart lost counts
                 against the allowance of `web.levels.faults`. */
              levelFaults: function () { return stats ? stats.heartsLost : 0; },
-             held: function () { return !!held; }, codex: codex, wipe: wipe };
+             held: function () { return !!held; }, codex: codex, guide: guide, wipe: wipe };
   })();
   /* ===================================================================
      7. BOOTSTRAP — wiring. Rarely edited.
@@ -11681,6 +12205,7 @@
        own bed (web target) can never leak into a round. Nothing is audible
        until start() below, which is what makes the armed section play. */
     Music.arm((CONFIG.music || {}).round || null);
+    Record.arm(Store.get("bestScore", 0));   // the level layer re-arms it per level
     Game.reset();
     Round.reset();
     setState("playing");

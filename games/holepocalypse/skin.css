@@ -18,6 +18,8 @@
   #hud-score { text-shadow:0 0 14px rgba(159,224,58,.6); }
   .eo-score { text-shadow:0 0 22px rgba(159,224,58,.8); }
   #cta-bar { border-top:1px solid rgba(159,224,58,.25); }
+  /* a super names itself quietly at the top: the effect is the show */
+  .pop-score.pop-super { --sz:34px; --stroke:6px; --glow:rgba(159,224,58,.5); }
 
   /* ---- intro: one sentence, and a stage that plays the whole shot ---------
      "Fling golf balls at the horde and roll one into the hole" — so the

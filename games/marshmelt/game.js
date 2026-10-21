@@ -197,11 +197,6 @@
     serpentWarn: 1.3,       // the swirl before one
     serpentLeap: 1.6,       // the leap itself
     serpentSegs: 11,
-    /* ASH GUSTS sweep the forest: a warning of ash, then a wind that pushes
-       the body in flight, and a little the rocks. */
-    gustEvery: 7, gustWarn: 1, gustTime: 2.6,
-    windPush: 900,          // px/s^2 on the body in flight, at full gust
-    windRock: 80,           // px/s^2 on a rock
     /* S'MORES: a biscuit and a chocolate drift down; catch one of each and
        the s'more takes a shade of toast off, or doubles the points for a
        while when there is none to take. */
@@ -298,8 +293,8 @@
        fireball rate (0 = none), `ice` / `shard` /
        `dust` / `bomb` are the share of the rocks drawn as that special,
        `geysers` how many vents, `surge` and `drops` turn the core's two
-       hazards on, `orbs`, `water`, `serpent` and `wind` four more (the bubble
-       to ride, the drips that set a crust, the leap, the gusts), `magnets`
+       hazards on, `orbs`, `water` and `serpent` three more (the bubble
+       to ride, the drips that set a crust, the leap), `magnets`
        how many crystals hang in the cave, `smores: 0` keeps the treats out
        (they fall on every other level), and `intro` names what the round announces on its first
        second — only on the level where it first appears. `endless` is the
@@ -421,8 +416,7 @@
     var surge = { ph: 0, left: 0, off: 0 };   // 0 calm, 1 warn, 2 up, 3 hold, 4 down
     var orbT = 0, water = [], waterT = 0, magnets = [], cool = 0;
     var serpent = { st: 0, left: 0 };         // 0 idle, 1 the swirl, 2 the leap
-    var wind = { ph: 0, left: 0, dir: 1, s: 0 }, ash = [];
-    var treats = [], treatT = 0, held = { biscuit: false, chocolate: false }, boostT = 0, toldSuper = false;
+    var treats = [], treatT = 0, held = { biscuit: false, chocolate: false }, boostT = 0;
 
     /* The four special rocks. Each one is a MATERIAL — its own colours over a
        silhouette of KINDS — so it is told apart before it is touched. `hold`
@@ -572,30 +566,35 @@
       puffs.push({ key: key, x: x, y: y, size: size, t: 0, life: life, rot: rot == null ? Rand.range(-0.5, 0.5) : rot });
     }
 
-    // What a level says on its first second, once, where the thing is new.
+    /* What a level names on its first second, where the thing is new — once
+       per player ever (Notify.learn), each key the id of the guide's page that
+       explains it. Its title and line are that notice, and its title the
+       page's. Only what the frame cannot say is announced: a hidden rule, a
+       warning to decode, a help worth aiming for. A cracked rock splits in
+       plain sight, and a band of the core only mixes what was named before:
+       those are QUIET, titles of their pages and nothing more. */
     var INTRO = {
-      fire:   ["Fireballs", "They throw you off after a beat"],
-      ice:    ["Ice rocks", "They throw you straight up"],
+      fire:   ["Fireballs", "Fireballs throw you off after a beat"],
+      ice:    ["Ice rocks", "Ice rocks throw you straight up"],
       geyser: ["Geysers", "The steam lifts whatever it touches"],
-      shard:  ["Cracked rocks", "They split into pieces you can land on"],
-      dust:   ["Crumbling rocks", "They fall to dust soon after you land"],
-      bomb:   ["Bombs", "They blow 2 s after you land: get away"],
-      surge:  ["Lava surges", "Watch the red line: the lava will reach it"],
-      claimed:["Claimed rocks", "A dark rock is already taken: it breaks your chain"],
+      shard:  ["Cracked rocks", "These rocks split into pieces you can land on"],
+      dust:   ["Crumbling rocks", "These rocks crumble soon after you land"],
+      bomb:   ["Bombs", "Bombs blow 2 s after you land"],
+      surge:  ["Lava surges", "The lava will reach the red line"],
+      claimed:["Dark rocks", "Dark rocks break your chain"],
       furnace:["Furnace", "Fireballs, surges and bombs"],
-      cold:   ["Cold snap", "Ice, cold water and magnets"],
-      ascent: ["Updraft", "Geysers, bubbles and magnets"],
+      cold:   ["Cold snap", "Ice, cold water and crystals"],
+      ascent: ["Updraft", "Geysers, bubbles and crystals"],
       collapse:["Collapse", "Rocks that split, crumble and blow"],
       lair:   ["The lair", "The serpent, the surges and the bubbles"],
       cataclysm:["Cataclysm", "Everything the lava has"],
-      drops:  ["Lava drops", "They set rocks on fire"],
-      smores: ["S'mores", "A biscuit and a chocolate give a life back"],
-      water:  ["Cold water", "It cools the lake down and sets a crust to stand on"],
-      magnets:["Magnet crystals", "They catch you and throw you higher"],
-      orbs:   ["Lava bubbles", "Ride one up before it pops"],
-      wind:   ["Ash gusts", "The wind pushes you in mid-air"],
-      serpent:["Lava serpent", "Watch the swirl: it leaps from there"]
+      smores: ["S'mores", "One of each gives a life back"],
+      water:  ["Cold water", "Cold water sets a crust you can stand on"],
+      magnets:["Magnet crystals", "Crystals catch you and throw you higher"],
+      orbs:   ["Lava bubbles", "Ride a bubble up before it pops"],
+      serpent:["Lava serpent", "The serpent leaps from the swirl"]
     };
+    var QUIET = { shard: 1, furnace: 1, cold: 1, ascent: 1, collapse: 1, lair: 1, cataclysm: 1 };
 
     /* ---- helpers --------------------------------------------------------- */
 
@@ -917,7 +916,8 @@
       mallow.air = C.airShots;      // a fresh rock is what reloads the recovery
       focus = Math.min(1, focus + C.focusClaim);   // ...and part of the focus
       if (combo > bestCombo) bestCombo = combo;
-      Sound.clip("stick", 0.62, Rand.range(0.86, 1.02) * (rk.r > 70 ? 0.9 : 1.1));
+      if (rk.r > 70) Sound.clip("stick", 0.62, Rand.range(0.86, 1.02) * 0.9);
+      else Sound.clip("stick", 0.45, Rand.range(0.86, 1.02) * 1.1);
 
       // Higher is worth more, which is the whole reason to climb rather than to
       // sit on the first thing that floats past.
@@ -937,7 +937,7 @@
         nextMile += C.milestone;
         Pop.show(rocksHit >= 40 ? "ultra" : rocksHit >= 20 ? "combo" : "streak",
                  { word: rocksHit + Lang.t(" rocks"), sub:"Keep climbing" });
-        Sound.clip("climb", 0.5, 1 + Math.min(rocksHit / 60, 0.35));
+        Sound.clip("climb", 0.3, 1 + Math.min(rocksHit / 60, 0.35));
       }
     }
 
@@ -979,7 +979,8 @@
       if (!S || !S.hold || rk.armed) return;
       rk.armed = true; rk.fuse = rk.fuse0 = C[S.hold];
       if (rk.sp === "bomb") Sound.clip("fuse", 0.5);
-      else Sound.clip("crumble", 0.32, rk.sp === "dust" ? 1.5 : 1.15);
+      else if (rk.sp === "dust") Sound.clip("crumble", 0.32, 1.5);
+      else Sound.clip("crumble", 0.32, 1.15);
     }
 
     // A bomb set off by something other than a landing: a blast, a drop.
@@ -1000,7 +1001,7 @@
     function iceKick() {
       var rk = mallow.host;
       loose(rk.vx * 0.5, -C.iceKick, rk);
-      Sound.clip("ice", 0.55, Rand.range(0.95, 1.1));
+      Sound.clip("ice", 0.25, Rand.range(0.95, 1.1));
       Fx.burst(mallow.x, mallow.y + C.mallowLen * 0.4, { color:["#e8fbff", "#9fdcf2", "#ffffff"], count:14,
                                      speed:260, life:.4, grav:500, angle: Math.PI / 2, spread: 1.4 });
       Fx.ring(mallow.x, mallow.y, { from:16, to:90, color:"#bfefff", width:5, life:.3 });
@@ -1117,7 +1118,7 @@
           else if (g.st === 1) g.left += C.geyserWarn;
           else {
             g.left += C.geyserBlast;
-            Sound.clip("geyser", 0.45, Rand.range(0.92, 1.08));
+            Sound.clip("geyser", 0.4, Rand.range(0.92, 1.08));
             Fx.burst(g.x, surfaceAt(g.x), { color:["#fffbe6", "#ffe27a"], count:14, speed:380, life:.5,
                                             grav:-200, angle: -Math.PI / 2, spread: 0.6, size:6 });
           }
@@ -1158,7 +1159,7 @@
       while (s.left <= 0) {
         s.ph = (s.ph + 1) % 5;
         s.left += [C.surgeEvery * (v < 1 ? 1.5 : 1), C.surgeWarn, C.surgeUp, C.surgeHold, C.surgeDown][s.ph];
-        if (s.ph === 1) { Sound.clip("surge", 0.8); Pop.show("streak", { word:"Lava surge!", at:"upper" }); }
+        if (s.ph === 1) { Sound.clip("surge", 0.8); Notify.say("Lava surge!", { kind:"warn", key:"mm-surge" }); }
         if (s.ph === 2) { Fx.shake(9, C.surgeUp); Overlay.vignette("#ff3b00", 0.4); }
       }
       if (s.ph === 2) { p = 1 - s.left / C.surgeUp; s.off = H * p * (2 - p); }
@@ -1215,9 +1216,9 @@
     }
 
     /* ---- the climb's other hands ------------------------------------------
-       Six more things a row of ladder.levels can put in the cave: a bubble to
+       Five more things a row of ladder.levels can put in the cave: a bubble to
        ride, water that makes ground of the lake, magnets that bend a jump, a
-       serpent, the wind, and s'mores to catch. Each is off unless its row
+       serpent, and s'mores to catch. Each is off unless its row
        names it, so the playable never meets any of them. */
 
     // A body the rock physics leaves alone: it neither pushes nor is pushed.
@@ -1249,11 +1250,11 @@
       rk.drift = rk.vx = Rand.range(-20, 20); rk.spin = 0; rk.rot = 0;
       rk.life = C.orbLife;
       rocks.push(rk);
-      Sound.clip("pop", 0.3, 0.7);
+      Sound.clip("pop", 0.45, 0.75);
     }
     function burstOrb(rk) {
       if (mallow.host === rk) { loose(rk.vx, -C.orbKick, null); mallow.blown = 0.4; }
-      Sound.clip("pop", 0.6, Rand.range(0.9, 1.1));
+      Sound.clip("pop", 0.55, Rand.range(0.9, 1.1));
       Fx.burst(rk.x, rk.y, { color:["#ffd76a", "#ff9d2e", "#fff3dd"], count:22, speed:300, life:.45, grav:500, size:5 });
       Fx.ring(rk.x, rk.y, { from: rk.r * 0.6, to: rk.r * 1.6, color:"#ffd76a", width:5, life:.3 });
     }
@@ -1321,7 +1322,7 @@
       return out;
     }
     function magnetLaunch(rk) {
-      Sound.clip("ice", 0.55, 0.8);
+      Sound.clip("ice", 0.25, 0.6);
       Fx.ring(rk.x, rk.y, { from:20, to:140, color:"#d9a6ff", width:6, life:.35 });
       Fx.burst(rk.x, rk.y, { color:["#d9a6ff", "#ffffff"], count:14, speed:320, life:.4, grav:200, size:4 });
     }
@@ -1412,36 +1413,6 @@
       Pop.show("alert", { word:"Bitten!", at:"upper" });
     }
 
-    // THE WIND: calm, a warning of ash, a gust, calm again.
-    function stepWind(d) {
-      var w = wind, e;
-      w.left -= d;
-      while (w.left <= 0) {
-        w.ph = (w.ph + 1) % 3;
-        if (w.ph === 1) { w.dir = Rand.chance(0.5) ? 1 : -1; w.left += C.gustWarn; Sound.clip("wind", 0.5); }
-        else if (w.ph === 2) w.left += C.gustTime;
-        else w.left += C.gustEvery * Rand.range(0.75, 1.25);
-      }
-      if (w.ph === 1) w.s = 0.25 * (1 - w.left / C.gustWarn);
-      else if (w.ph === 2) w.s = Math.min(1, (C.gustTime - w.left) / 0.3, w.left / 0.5);
-      else w.s = 0;
-      for (var i = 0; i < ash.length; i++) {
-        e = ash[i];
-        e.x += (w.dir * w.s * 560 + e.vx) * d; e.y += e.vy * d;
-        if (e.x < -20) e.x = view.w + 20; if (e.x > view.w + 20) e.x = -20;
-        if (e.y < Layout.top - 20) e.y = Layout.top + Layout.h;
-      }
-    }
-    // the gust's strength `t` seconds from now, walked through its cycle
-    function windAt(t) {
-      var w = wind, ph = w.ph, left = w.left, i;
-      for (i = 0; i < 3 && t >= left; i++) {
-        t -= left; ph = (ph + 1) % 3;
-        left = ph === 1 ? C.gustWarn : ph === 2 ? C.gustTime : 99;
-      }
-      return ph === 2 ? 1 : ph === 1 ? 0.25 : 0;
-    }
-
     // THE S'MORES: a biscuit and a chocolate drifting down, to be caught.
     function stepTreats(d) {
       var i, t, kind;
@@ -1452,9 +1423,9 @@
              : !held.biscuit !== !held.chocolate && Rand.chance(0.7)
              ? (held.biscuit ? "chocolate" : "biscuit")
              : (Rand.chance(0.5) ? "biscuit" : "chocolate");
-        if (kind === "super" && !toldSuper) {
-          toldSuper = true;
-        }
+        // named once ever, the first time each one falls (the guide's page)
+        if (kind === "super") Notify.learn("smores", "Super s'more", { sub:"Catch the super s'more to get every life back", mark:"super" });
+        else Notify.learn("smores", INTRO.smores[0], { sub:INTRO.smores[1] });
         treats.push({ kind: kind, x: Rand.range(Layout.left + 50, Layout.right - 50), y: Layout.top - 30, ph: Rand.range(0, TAU),
                       design: Rand.int(0, 5) });
       }
@@ -1469,10 +1440,11 @@
       }
     }
     function catchTreat(t) {
-      Sound.clip("pickup", 0.55, t.kind === "biscuit" ? 1 : 1.15);
+      if (t.kind === "biscuit") Sound.clip("pickup", 0.55, 1.8);
+      else Sound.clip("pickup", 0.55, 1.8);
       Fx.burst(t.x, t.y, { color:["#fff3dd", "#ffd166"], count:10, speed:200, life:.35, grav:300, size:4 });
       if (t.kind === "super") {                   // the whole thing: back to white
-        Sound.clip("smore", 0.8, 0.9);
+        Sound.clip("smore", 0.3, 0.9);
         if (toast > 0) {
           shade(-toast);
           Pop.show("bonus", { word:"Super s'more!", sub:"Every life back", at:"upper" });
@@ -1490,7 +1462,7 @@
       held[t.kind] = t.design + 1;              // which picture it was, for the icon
       if (!held.biscuit || !held.chocolate) return;
       held.biscuit = held.chocolate = false;       // the s'more
-      Sound.clip("smore", 0.7);
+      Sound.clip("smore", 0.7, 0.85);
       if (toast > 0) {
         shade(-1);
         Pop.show("bonus", { word:"S'more!", sub:"Life back", at:"upper" });
@@ -1523,7 +1495,8 @@
         rk.vx -= dirx * C.flingSpeed * C.recoil * m * 0.15;
         rk.vy -= diry * C.flingSpeed * C.recoil * m * 0.15;
       }
-      Sound.clip("fling", mid ? 0.42 : 0.5, mid ? Rand.range(1.22, 1.32) : Rand.range(0.96, 1.08));
+      if (mid) Sound.clip("fling", 0.3, Rand.range(1.22, 1.32));
+      else Sound.clip("fling", 0.3, Rand.range(0.96, 1.08));
       Fx.burst(mallow.x, mallow.y, { color:["#fff3dd", "#ffd9a0"], count:9, speed:230,
                                      life:.3, grav:300, angle: Math.atan2(-diry, -dirx), spread: 1.5 });
     }
@@ -1572,12 +1545,7 @@
       orbT = C.orbEvery * 0.5; water = []; waterT = C.waterEvery; cool = 0;
       magnets = [];
       serpent = { st: 0, left: C.serpentEvery * 0.6 };
-      wind = { ph: 0, left: C.gustEvery * 0.5, dir: 1, s: 0 }; ash = [];
-      if (ROW && ROW.wind) for (var ai = 0; ai < 22; ai++) {
-        ash.push({ x: Rand.range(0, view.w), y: Rand.range(Layout.top, Layout.bottom), vx: Rand.range(-12, 12),
-                   vy: -Rand.range(10, 40), l: Rand.range(4, 10) });
-      }
-      treats = []; treatT = C.smoreEvery * 0.4; held = { biscuit: false, chocolate: false }; boostT = 0; toldSuper = false;
+      treats = []; treatT = C.smoreEvery * 0.4; held = { biscuit: false, chocolate: false }; boostT = 0;
 
       rocks = []; bubbles = []; embers = [];
       // The rock the run starts on: dead centre, big, and already falling.
@@ -1606,15 +1574,18 @@
       for (i = 0; i < 7; i++) bubbles.push(newBubble());
 
       HUD.setScoreNow(0);
-      toldToast = false;
       HUD.setLeft(4, "Lives");
       HUD.setRight(null);
       Fx.reset();
       buildSprites();
 
-      // what this level brings that the last one did not (after the entrance)
+      /* What this level brings that the last one did not, named once per
+         player (Notify.learn): its line in the "!" log opens the guide's page
+         of the same key. A notice fired during the entrance waits for it. */
       if (ROW && ROW.intro) {
         for (i = 0; i < ROW.intro.length; i++) {
+          var I = INTRO[ROW.intro[i]];
+          if (I && !QUIET[ROW.intro[i]]) Notify.learn(ROW.intro[i], I[0], { sub: I[1] });
         }
       }
     }
@@ -1624,18 +1595,14 @@
        back in hand to find a rock on the way, and the lava cannot catch it
        again until it has had the time to climb out. */
     /* Every change of toast goes through here: the shade, the HUD's lives,
-       and the first time a run loses one, the sentence that says what it
-       costs. */
-    var toldToast = false;
+       and the first life a player ever loses, the notice that names what it
+       costs (the guide's "toast" page says the rest). */
     function shade(n) {
       toast = clamp(toast + n, 0, 3);
       HUD.setLeft(4 - toast, "Lives");
       if (n > 0) {
         HUD.punch("#ff6b1a");
-        if (!toldToast && n === 1) {           // the lava says "charred" itself
-          toldToast = true;
-          Notify.say("Toasted", { sub:"A toasted marshmallow jumps shorter", kind:"warn", key:"mm-toast" });
-        }
+        Notify.learn("toast", "Toasted", { sub:"A toasted marshmallow jumps shorter" });
       } else HUD.punch("#9dff8a");
     }
     // the jump, as heavy as the toast has made it
@@ -1664,15 +1631,14 @@
       Sound.clip("burn", 0.75, 0.9);
       Fx.flash("#ff6b1a", 0.3, 2.5);
       Fx.shake(9, 0.3);
-      Pop.show("alert", { word:"Scorched!", at:"upper" });
-      Pop.show("alert", { word: "Charred" });
+      Pop.show("alert", { word:"Scorched!", sub:"Charred", at:"upper" });   // one hit, one callout
     }
 
     function die() {
       if (dead) return;
       dead = true; deadT = 0; sink = 0; aim = null;
       mallow.flying = false; mallow.host = null;
-      Sound.clip("melt", 0.85);
+      Sound.clip("melt", 1, 0.7);
       Fx.flash("#ff6b1a", 0.5, 2.2);
       Fx.shake(13, 0.5);
       Fx.freeze(0.08);
@@ -1880,10 +1846,6 @@
       if (ROW && ROW.water) stepWater(d);
       if (cool > 0) cool = Math.max(0, cool - C.coolBack * d);
       if (ROW && ROW.serpent) stepSerpent(d);
-      if (ROW && ROW.wind) {
-        stepWind(d);
-        for (i = 0; i < rocks.length; i++) if (!ghost(rocks[i])) rocks[i].vx += wind.dir * wind.s * C.windRock * d;
-      }
       if (ROW && ROW.smores !== 0) stepTreats(d);
 
       if (dead) {
@@ -1904,7 +1866,6 @@
           var mp = magnetPull(mallow.x, mallow.y, {});
           mallow.vx += mp.x * d; mallow.vy += mp.y * d;
         }
-        if (wind.s > 0) mallow.vx += wind.dir * wind.s * C.windPush * d;
         mallow.x += mallow.vx * d; mallow.y += mallow.vy * d;
         if (mallow.x < Layout.left + C.mallowR) {
           mallow.x = Layout.left + C.mallowR; mallow.vx = -mallow.vx * C.wallBounce; bump();
@@ -1962,7 +1923,7 @@
     function bump() {
       if (wallT > 0) return;
       wallT = 0.12;
-      Sound.clip("wall", 0.3, Rand.range(0.95, 1.2));
+      Sound.clip("wall", 0.2, Rand.range(0.95, 1.2));
       Fx.burst(mallow.x, mallow.y, { color:"#c9b8a0", count:5, speed:200, life:.25, grav:500, size:3 });
     }
 
@@ -2089,7 +2050,6 @@
       if (water.length) drawWater();
       if (treats.length) drawTreats();
       if (serpent.st === 2) drawSerpent();     // under the lake's surface, the lake hides it
-      if (ash.length) drawAsh();
 
       if (dead) drawMallow();          // sinking: the crust closes over it
       if (Enter.begin(view.w / 2, (lavaY + view.h) / 2)) {
@@ -2657,20 +2617,6 @@
       }
     }
 
-    // The ash on the wind: streaks that stretch with the gust.
-    function drawAsh() {
-      var i, e, len = 4 + wind.s * 22;
-      ctx.strokeStyle = rgba("#c9c0b8", 0.35 + 0.35 * wind.s);
-      ctx.lineWidth = 2.5; ctx.lineCap = "round";
-      ctx.beginPath();
-      for (i = 0; i < ash.length; i++) {
-        e = ash[i];
-        ctx.moveTo(e.x, e.y); ctx.lineTo(e.x - wind.dir * len * (e.l / 7), e.y + 1);
-      }
-      ctx.stroke();
-      ctx.lineCap = "butt";
-    }
-
     // A biscuit or a square of chocolate, in a soft light so it reads as a gift.
     function treat(kind, x, y, sz, rot) {
       ctx.save();
@@ -2992,7 +2938,6 @@
         vy += C.gravity * h;
         if (geysers.length && vy > -C.geyserMax && lift(px, i * h)) vy = Math.max(vy - C.geyserPush * h, -C.geyserMax);
         if (magnets.length) { magnetPull(px, py, pull); vx += pull.x * h; vy += pull.y * h; }
-        if (ROW && ROW.wind) vx += wind.dir * windAt(i * h) * C.windPush * h;
         px += vx * h; py += vy * h;
         if (px < Layout.left + C.mallowR)  { px = Layout.left + C.mallowR;  vx = -vx * C.wallBounce; }
         if (px > Layout.right - C.mallowR) { px = Layout.right - C.mallowR; vx = -vx * C.wallBounce; }
@@ -3185,6 +3130,439 @@
       ctx.stroke();
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells: its picture is drawn by the round's
+       own renderers — drawRock, drawFire, drawMallow, drawLava, drawAim… —
+       on a canvas of its own, so a rock read in the guide is the rock that
+       falls. A page's level is the row of ladder.levels that first names it
+       (`intro`), locked until the board opens it; the INTRO notices above
+       are the titles, so a mechanic is named once. */
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+
+    /* A cave of the guide's making, for the length of one synchronous call.
+       The draw functions read the round's state (the body, the rocks, the
+       lake, the toast…), so every piece of it is put aside and given back in
+       the finally: a page opened over a paused round leaves it untouched, and
+       one opened before any round (the Help card on the title screen) finds a
+       stand-in instead of what reset() has not set yet. The picture's own
+       pixels are mapped onto the design space, at zoom `k`, because the aim
+       preview bounces off Layout like the flight does. */
+    var GX = 0, GY = 0;
+    function scene(W, H, k, fn) {
+      if (!fire || !steam || !auraCv.length) buildSprites();   // no round yet
+      var keep = [mallow, rocks, toast, dead, sink, deadT, aim, focus, focusT, lavaY, geysers, magnets,
+                  wave, surge, cool, ROW, held, boostT, serpent, treats, water, bubbles];
+      GX = Layout.cx - W / k / 2; GY = Layout.top + 60;
+      mallow = { x:-999, y:-999, vx:0, vy:0, ang:-Math.PI / 2, tilt:0, host:null, rel:0, flying:false,
+                 ignore:null, hold:0, grip:1, air:0, land:0, blown:0, hot:0, safe:0 };
+      rocks = []; toast = 0; dead = false; sink = 0; deadT = 0; aim = null; focus = 1; focusT = 0;
+      lavaY = GY + 1e4; geysers = []; magnets = []; wave = 0.6; surge = { ph:0, left:0, off:0 }; cool = 0;
+      ROW = null; held = { biscuit:false, chocolate:false }; boostT = 0; serpent = { st:0, left:0 };
+      treats = []; water = []; bubbles = [];
+      try {
+        return paintPic(W, H, function () { ctx.scale(k, k); ctx.translate(-GX, -GY); fn(); });
+      } finally {
+        mallow = keep[0]; rocks = keep[1]; toast = keep[2]; dead = keep[3]; sink = keep[4]; deadT = keep[5];
+        aim = keep[6]; focus = keep[7]; focusT = keep[8]; lavaY = keep[9]; geysers = keep[10];
+        magnets = keep[11]; wave = keep[12]; surge = keep[13]; cool = keep[14]; ROW = keep[15];
+        held = keep[16]; boostT = keep[17]; serpent = keep[18]; treats = keep[19]; water = keep[20];
+        bubbles = keep[21];
+      }
+    }
+    // a rock of the fall, still, at (u, v) of the picture
+    function stone(u, v, r, o) {
+      o = o || {};
+      var rk = makeRock(GX + u, GY + v, r, o.hot, o.sp);
+      rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = o.rot || 0;
+      if (o.used) rk.used = true;
+      if (o.burn != null) { rk.burning = true; rk.burn = o.burn; rk.glow = 1.9; }
+      if (o.fuse != null) { rk.armed = true; rk.fuse0 = C[SP[o.sp].hold]; rk.fuse = rk.fuse0 * o.fuse; }
+      rocks.push(rk);
+      return rk;
+    }
+    function orbAt(u, v, r) {
+      var rk = makeRock(GX + u, GY + v, r || 56, false, "orb");
+      circleShape(rk); rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = 0; rk.life = C.orbLife * 0.6;
+      rocks.push(rk);
+      return rk;
+    }
+    // drawn bigger than the core it catches with, or a crystal is a speck
+    function crystalAt(u, v) {
+      var rk = makeRock(GX + u, GY + v, C.magnetCore * 1.6, false, "magnet");
+      circleShape(rk); rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = 0;
+      rk.y0 = rk.y; rk.ph = 0.8; rk.cool = 0;
+      rocks.push(rk);
+      return rk;
+    }
+    function crustAt(u) {
+      var rk = makeRock(GX + u, 0, C.crustR, false, "crust");
+      plateShape(rk); rk.vx = rk.vy = rk.drift = rk.fall = 0; rk.spin = 0; rk.rot = 0;
+      rk.life = C.crustLife * 0.6; rk.design = 0; rk.y = surfaceAt(rk.x) - rk.r * 0.12;
+      rocks.push(rk);
+      return rk;
+    }
+    // the body planted on a rock, leaning as it does in a round
+    function perch(rk, a) {
+      mallow.host = rk; mallow.flying = false;
+      mallow.rel = (a == null ? -Math.PI / 2 : a) - rk.rot; mallow.grip = 0.15;
+      ride();
+      mallow.tilt = clamp(wrapAngle(mallow.ang + Math.PI / 2), -C.leanMax, C.leanMax);
+    }
+    // the body in flight at (u, v), heading along (vx, vy)
+    function flying(u, v, vx, vy, air) {
+      mallow.x = GX + u; mallow.y = GY + v; mallow.vx = vx; mallow.vy = vy;
+      mallow.flying = true; mallow.host = null; mallow.air = air || 0;
+      mallow.ang = Math.atan2(vy, vx);
+      mallow.tilt = clamp(wrapAngle(mallow.ang + Math.PI / 2), -C.leanMax, C.leanMax);
+    }
+    // the water's drops, drawn at `z` times their size around where they hang
+    function dropsAt(z) {
+      var all = water, i, w;
+      for (i = 0; i < all.length; i++) {
+        w = all[i]; water = [w];
+        ctx.save(); ctx.translate(w.x, w.y); ctx.scale(z, z); ctx.translate(-w.x, -w.y);
+        drawWater();
+        ctx.restore();
+      }
+      water = all;
+    }
+    // what the burning rocks, the plain ones and the fireballs are drawn in, as render() does
+    function drawAll() {
+      var i;
+      for (i = 0; i < rocks.length; i++) if (!rocks[i].hot) drawRock(rocks[i]);
+      for (i = 0; i < rocks.length; i++) if (rocks[i].burning) drawRock(rocks[i]);
+      for (i = 0; i < rocks.length; i++) if (rocks[i].hot) drawFire(rocks[i]);
+      drawFuses();
+    }
+
+    function flingPic() {
+      return scene(520, 300, 1, function () {
+        var a = stone(120, 225, 66), b = stone(410, 120, 58);
+        perch(a);
+        aim = { x: b.x, y: b.y - 14 }; focus = 0.75;
+        drawAll(); drawAim(); drawMallow();
+      });
+    }
+    function focusPic() {
+      return scene(520, 230, 1.25, function () {
+        var a = stone(95, 140, 52);
+        perch(a);
+        aim = { x: GX + 300, y: GY + 50 }; focus = 0.38;
+        drawAll(); drawAim(); drawMallow(); drawFocusBar();
+      });
+    }
+    function airPic() {
+      return scene(520, 300, 1, function () {
+        stone(80, 250, 54, { used:true }); var b = stone(420, 170, 58);
+        flying(170, 120, 520, -240, 1);
+        aim = { x: b.x, y: b.y - 10 };
+        drawAll(); drawAim(); drawMallow();
+      });
+    }
+    function scorePic() {
+      return scene(520, 220, 1, function () {
+        var a = stone(140, 135, 66); stone(385, 120, 66, { used:true });
+        perch(a);
+        drawAll(); drawMallow();
+      });
+    }
+    function toastPic() {
+      return scene(520, 170, 1.3, function () {
+        for (var i = 0; i < 4; i++) {
+          toast = i; mallow.x = GX + 50 + i * 100; mallow.y = GY + 66; mallow.tilt = 0;
+          drawMallow();
+        }
+      });
+    }
+    function lavaPic() {
+      return scene(520, 300, 0.8, function () {
+        lavaY = GY + 235;
+        bubbles = [{ x: GX + 90, t: 0.5, life: 1, r: 14 }, { x: GX + 520, t: 0.3, life: 1, r: 11 }];
+        stone(270, 215, 62, { hot:true, burn:0.7 }); stone(470, 90, 60);
+        drawAll(); drawLava();
+      });
+    }
+    function firePic() {
+      return scene(520, 240, 1, function () {
+        var a = stone(150, 150, 52, { hot:true }); stone(390, 115, 46, { hot:true });
+        perch(a); mallow.hold = C.fireHold * 0.55;
+        drawAll(); drawMallow();
+      });
+    }
+    function claimedPic() {
+      return scene(520, 240, 1, function () {
+        stone(95, 130, 64, { used:true }); stone(260, 110, 60); stone(425, 135, 64, { used:true });
+        drawAll();
+      });
+    }
+    function smoresPic() {
+      return scene(520, 190, 1.6, function () {
+        treats = [{ kind:"biscuit", x: GX + 55, y: GY + 66, ph: 0.4, design: 0 },
+                  { kind:"chocolate", x: GX + 160, y: GY + 66, ph: -0.4, design: 0 },
+                  { kind:"super", x: GX + 270, y: GY + 62, ph: 0, design: 0 }];
+        drawTreats();
+      });
+    }
+    function surgePic() {
+      return scene(520, 260, 0.8, function () {
+        ROW = { surge: 1 }; surge = { ph: 1, left: C.surgeWarn * 0.5, off: 0 }; wave = 0.1;
+        lavaY = GY + 290;
+        var a = stone(160, 75, 58); stone(470, 205, 56);
+        perch(a);
+        drawAll(); drawLava(); drawMallow();
+      });
+    }
+    function icePic() {
+      return scene(520, 240, 1, function () {
+        var a = stone(150, 150, 64, { sp:"ice" }); stone(390, 110, 58, { sp:"ice" });
+        perch(a); mallow.hold = C.iceHold * 0.4;
+        drawAll(); drawMallow();
+      });
+    }
+    function waterPic() {
+      return scene(520, 300, 0.85, function () {
+        lavaY = GY + 250;
+        water = [{ x: GX + 150, y: GY + 110, vy: 0, form: C.waterForm }, { x: GX + 470, y: GY + 30, vy: 0, form: C.waterForm * 0.6 }];
+        var c = crustAt(300);
+        perch(c);
+        dropsAt(2); drawAll(); drawLava(); drawMallow();
+      });
+    }
+    function magnetPic() {
+      return scene(520, 210, 0.6, function () {
+        var m = crystalAt(520, 175);
+        magnets = [m];
+        flying(260, 290, 600, -360, 0);
+        drawMagnets(); drawAll(); drawMallow();
+      });
+    }
+    function geyserPic() {
+      return scene(520, 260, 0.75, function () {
+        lavaY = GY + 290;
+        geysers = [{ x: GX + 240, st: 2, left: C.geyserBlast * 0.5, next: 3 },
+                   { x: GX + 540, st: 1, left: C.geyserWarn * 0.4, next: 3 }];
+        stone(240, 185, 50);
+        flying(250, 80, 40, -600, 0);
+        drawColumns(); drawAll(); drawLava(); drawVents(); drawMallow();
+      });
+    }
+    function orbPic() {
+      return scene(520, 300, 1, function () {
+        lavaY = GY + 245;
+        var o = orbAt(260, 150, 58);
+        perch(o);
+        drawAll(); drawLava(); drawMallow();
+      });
+    }
+    function serpentPic() {
+      return scene(520, 260, 0.75, function () {
+        lavaY = GY + 290;
+        serpent = { st: 2, left: C.serpentLeap * 0.45, x0: GX + 130, x1: GX + 560, H: 270, bit: false };
+        drawSerpent(); drawLava();
+      });
+    }
+    function shardPic() {
+      return scene(520, 250, 1, function () {
+        var a = stone(140, 135, 80, { sp:"shard", fuse:0.45 }), i, p, d = a.design;
+        for (i = 0; i < 3; i++) {
+          p = stone(355 + (i === 1 ? 90 : 0), 55 + i * 70, 40);
+          if (d != null && shapeFrom(p, "rockCracked" + cell(19 + (d + i) % 6))) p.frag = (d + i) % 6;
+        }
+        perch(a);
+        drawAll(); drawMallow();
+      });
+    }
+    function dustPic() {
+      return scene(520, 250, 1, function () {
+        var a = stone(160, 150, 66, { sp:"dust", fuse:0.35 }); stone(395, 110, 60, { sp:"dust" });
+        perch(a);
+        drawAll(); drawMallow();
+      });
+    }
+    function bombPic() {
+      return scene(520, 320, 0.66, function () {
+        stone(330, 245, 64, { sp:"bomb", fuse:0.5 }); stone(140, 330, 60); stone(470, 120, 54);
+        var a = stone(640, 380, 58);
+        perch(a);
+        drawAll(); drawMallow();
+      });
+    }
+    /* A theme of the core, as a line of the things it mixes, over the lake
+       when the theme has one (and its red line flashing for a surge). */
+    var PUT = {
+      fire:   function (u, v) { stone(u, v, 46, { hot:true }); },
+      bomb:   function (u, v) { stone(u, v, 54, { sp:"bomb" }); },
+      ice:    function (u, v) { stone(u, v, 54, { sp:"ice" }); },
+      shard:  function (u, v) { stone(u, v, 60, { sp:"shard" }); },
+      dust:   function (u, v) { stone(u, v, 54, { sp:"dust" }); },
+      orb:    function (u, v) { orbAt(u, v, 50); },
+      magnet: function (u, v) { crystalAt(u, v); },
+      water:  function (u, v) { water.push({ x: GX + u, y: GY + v + 10, vy: 0, form: C.waterForm }); },
+      geyser: function (u) { geysers.push({ x: GX + u, st: 2, left: C.geyserBlast * 0.5, next: 3 }); }
+    };
+    function themePic(list, lake) {
+      return function () {
+        var k = 1, W = 520, H = lake ? 280 : 220;
+        return scene(W, H, k, function () {
+          var i, n = list.length, step = W / k / n;
+          if (lake) {
+            lavaY = GY + H / k - 60;
+            if (lake === "surge") { surge = { ph: 1, left: 0.5, off: 0 }; wave = 0.1; }
+          }
+          for (i = 0; i < n; i++) PUT[list[i]](step * (i + 0.5), lake ? 95 : 110);
+          if (geysers.length) drawColumns();
+          if (water.length) dropsAt(1.8);
+          drawAll();
+          if (lake) { drawLava(); if (geysers.length) drawVents(); }
+        });
+      };
+    }
+    /* A biome's own painted cave, the one its levels are played in, cut to
+       the page's width: its lower half, where the lake and the rocks are. */
+    function scenePic(b) {
+      return function () {
+        var src = CONFIG.art && CONFIG.art[LAD.biomes[b].scene], n;
+        if (!src) return null;
+        n = document.createElement("div");
+        n.style.cssText = "width:520px;height:260px;border-radius:16px;" +
+                          "background:url(\"" + src + "\") 50% 78% / cover no-repeat";
+        return n;
+      };
+    }
+    // the level whose row first names a key (ladder.levels[].intro)
+    function lvOf(key) {
+      for (var i = 0; i < LAD.levels.length; i++) {
+        if (LAD.levels[i].intro && LAD.levels[i].intro.indexOf(key) >= 0) return i + 1;
+      }
+      return 0;
+    }
+    // the first level the treats fall on (every row but a `smores: 0` one)
+    function smoresLv() {
+      for (var i = 0; i < LAD.levels.length; i++) if (LAD.levels[i].smores !== 0) return i + 1;
+      return 0;
+    }
+    // a figure in seconds, with the player's own decimal mark
+    function secs(v) { return String(v).replace(".", Lang.code() === "fr" ? "," : ".") + " s"; }
+
+    var guide = {
+      chapters: function () {
+        function page(key, pic, lines, rows) {
+          return { id: key, title: Lang.t(INTRO[key][0]), lv: lvOf(key), pic: pic, lines: lines, rows: rows };
+        }
+        function biome(b, id, line, more) {
+          return { id: id, title: Lang.t(BANDS[b]), lv: LAD.from[b] > 1 ? LAD.from[b] : 0, pic: scenePic(b),
+                   lines: [Lang.t(line)].concat(more ? [Lang.t(more)] : []) };
+        }
+        // one line: the band's tip, or what it mixes when there is no tip worth giving
+        function theme(key, list, lake, tip) {
+          return page(key, list ? themePic(list, lake) : serpentPic, [tip ? Lang.t(tip) : Lang.t(INTRO[key][1]) + "."]);
+        }
+        var pct = function (v) { return "+" + Math.round(v * 100) + " %"; };
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "fling", title: Lang.t("Tap to fling"), pic: flingPic, lines: [
+              Lang.t("Tap where you aim. The marshmallow flies there and sticks to the first rock it meets.") ] },
+            { id: "focus", title: Lang.t("Slow motion"), pic: focusPic, lines: [
+              Lang.t("Hold your finger down to slow time. A dotted arc shows where you will land.") ] },
+            { id: "air", title: Lang.t("Mid-air shot"), pic: airPic, lines: [
+              Lang.t("In mid-air, a tap flings the marshmallow once more."),
+              Lang.t("Every fresh rock you land on reloads the mid-air shot.") ] },
+            { id: "score", title: Lang.t("Score and chain"), pic: scorePic,
+              rows: [[Lang.t("Each fresh rock in a row"), pct(C.chainStep)],
+                     [Lang.t("Chain at most"), "×" + C.chainMax]],
+              lines: [
+              Lang.t("Only fresh rocks score. The higher the rock, the more it pays."),
+              Lang.t("A dark rock, a fireball or a hit breaks the chain.") ] },
+            { id: "toast", title: Lang.t("Four lives"), pic: toastPic, lines: [
+              Lang.t("Each hit toasts the marshmallow a shade browner. Each shade takes 8 % off its jump.") ] },
+            { id: "lava", title: Lang.t("The lava"), pic: lavaPic, lines: [
+              Lang.t("Falling in costs three lives. Only a white marshmallow comes back out, charred.") ] }
+          ] },
+          { key: "caldera", label: Lang.t(BANDS[0]), pages: [
+            biome(0, "b-caldera", "Levels 1 to 6: dark rocks, fireballs and lava surges."),
+            page("claimed", claimedPic, [
+              Lang.t("Some rocks fall already dark. They score nothing."),
+              Lang.t("Landing on one breaks your chain.") ]),
+            { id: "smores", title: Lang.t(INTRO.smores[0]), lv: smoresLv(), pic: smoresPic,
+              rows: [[Lang.t("A biscuit and a chocolate"), Lang.t("+1 life")],
+                     [Lang.t("A super s'more"), Lang.t("All lives")],
+                     [Lang.t("At full life"), "×2 · " + secs(C.smoreBoost)]],
+              lines: [
+              Lang.t("Biscuits and chocolates drift down. Catch one of each to make a s'more.") ] },
+            page("fire", firePic, [
+              Lang.t("You can land on a fireball, but it scores nothing and breaks the chain."),
+              Lang.t("Jump off before a fireball's ring runs out, or it throws you off a shade browner.") ],
+              [[Lang.t("Thrown off after"), secs(C.fireHold)]]),
+            page("surge", surgePic, [
+              Lang.t("The crust flashes red, and a dashed line shows how high the lava will climb."),
+              Lang.t("Get above the line before the lava rises. It drops back soon after.") ],
+              [[Lang.t("Warning"), secs(C.surgeWarn)]])
+          ] },
+          { key: "frost", label: Lang.t(BANDS[1]), pages: [
+            biome(1, "b-frost", "Levels 7 to 12: ice rocks, cold water and magnet crystals."),
+            page("ice", icePic, [
+              Lang.t("Ice does not hold you. After a beat, it throws you straight up.") ],
+              [[Lang.t("Holds you for"), secs(C.iceHold)]]),
+            page("water", waterPic, [
+              Lang.t("Water drips off the ceiling. On the lava it sets a crust you can stand on."),
+              Lang.t("Get off the crust before it cracks back into the lake.") ],
+              [[Lang.t("A crust lasts"), secs(C.crustLife)]]),
+            page("magnets", magnetPic, [
+              Lang.t("In mid-air, a crystal pulls you in and catches you."),
+              Lang.t("Jump from a crystal to go higher than any rock can send you.") ],
+              [[Lang.t("Thrown up after"), secs(C.magnetHold)]])
+          ] },
+          { key: "geysers", label: Lang.t(BANDS[2]), pages: [
+            biome(2, "b-geysers", "Levels 13 to 18: geysers, lava bubbles and the lava serpent."),
+            page("geyser", geyserPic, [
+              Lang.t("A vent bubbles in the lava, then blows steam up to the ceiling."),
+              Lang.t("The steam lifts you in mid-air, and the rocks it touches.") ]),
+            page("orbs", orbPic, [
+              Lang.t("A bubble rises out of the lake and carries you up with it."),
+              Lang.t("The bubble pops after a while or at the ceiling, and throws you higher.") ]),
+            page("serpent", serpentPic, [
+              Lang.t("A swirl on the lava marks where the serpent will leap from."),
+              Lang.t("The serpent breaks the rocks in its way. Its bite costs a life.") ],
+              [[Lang.t("The swirl warns"), secs(C.serpentWarn)]])
+          ] },
+          { key: "faults", label: Lang.t(BANDS[3]), pages: [
+            biome(3, "b-faults", "Levels 19 to 24: rocks that split, crumble and blow."),
+            page("shard", shardPic, [
+              Lang.t("A cracked rock splits soon after your first touch, whether you stay or not."),
+              Lang.t("The cracked rock breaks into three fresh pieces you can land on.") ],
+              [[Lang.t("Splits after"), secs(C.shardHold)]]),
+            page("dust", dustPic, [
+              Lang.t("A crumbling rock falls to dust soon after your first touch."),
+              Lang.t("Jump before the ring runs out, or fall with the dust.") ],
+              [[Lang.t("Falls to dust after"), secs(C.dustHold)]]),
+            page("bomb", bombPic, [
+              Lang.t("Your first touch lights the fuse. The dashed circle is the blast's reach."),
+              Lang.t("The blast throws you and breaks your chain. Lava sets bombs off too.") ],
+              [[Lang.t("Blows after"), secs(C.bombHold)]])
+          ] },
+          { key: "core", label: Lang.t(BANDS[4]), pages: [
+            biome(4, "b-core", "Levels 25 to 30: three or four of these dangers at once.",
+                  "Earn all 90 stars and an endless run opens, with everything at once."),
+            theme("furnace", ["fire", "bomb", "fire"], "surge", "Jump off fireballs fast. A surge can catch you waiting."),
+            theme("cold", ["ice", "water", "magnet"], null, "Ice throws you up and crystals catch you. Chain them to climb."),
+            theme("ascent", ["orb", "geyser", "magnet"], "lake", "Steam, bubbles and crystals all send you up. Use them!"),
+            theme("collapse", ["shard", "dust", "bomb", "fire"], null, null),
+            theme("lair", null, null, "Watch the swirl and the red line at once."),
+            theme("cataclysm", ["bomb", "geyser", "bomb"], "surge", null)
+          ] }
+        ];
+      }
+    };
+    // the five biomes' names, as the map's bands write them (web.levels.bands)
+    var BANDS = ["Caldera", "Frozen sulphur", "Geysers", "Fault lines", "The core"];
+
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        `applyLevel(d)` is called after the manifest's `levels.tune` has lerped
        the pressure into CONFIG and BEFORE reset(): it picks the biome and the
@@ -3224,7 +3602,7 @@
        levels — see docs/LEVELS.md. */
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             applyLevel: applyLevel, levelGoal: levelGoal, levelWon: finish,
+             applyLevel: applyLevel, levelGoal: levelGoal, levelWon: finish, guide: guide,
              /* The third star is a clean climb: every hit taken counts
                 against the allowance of `web.levels.faults`. */
              levelFaults: function () { return hitsTaken; } };

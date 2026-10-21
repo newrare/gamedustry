@@ -726,7 +726,8 @@
       shotCount++;
       launchPunch = 1;
       aimLoad = 0;
-      Sound.clip("shoot", 0.5, ball.sup ? 1.16 : 1);   // a super leaves the tube brighter
+      if (ball.sup) Sound.clip("shoot", 0.5, 1.2);   // a super leaves the tube brighter
+      else Sound.clip("shoot", 0.5, 0.9);
     }
 
     /* --- THE ROT RACE -----------------------------------------------------
@@ -788,7 +789,11 @@
         if (rotCount < liveCount) {
           seedBlight(1);
           Fx.flash("rgba(150,40,255,0.35)", 0.2);
-          if (!rotCount) Pop.show("alert", { word: "The rot spreads" });
+          /* An EVENT the player did not make: a notice, not a callout. The
+             very first rot a player ever meets is named instead (the guide's
+             page on it); every outbreak after that is said as what it is. */
+          if (!rotCount && !learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it."))
+            Notify.say("The rot spreads", { kind: "warn", guide: "outbreak" });
           Sound.clip("spread", 1, 0.55);
         }
         return;
@@ -1138,6 +1143,7 @@
       if (shotCount > 0 && shotCount % ADD_SHOTS === 0) pushRow();
       if (lowestBubbleBottom() >= DANGER_Y) { endRun("Overrun!"); return; }
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
+      if (nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
     }
 
     // Fireworks when 5+ bubbles fall at once.
@@ -1183,6 +1189,8 @@
       }
       Fx.shake(6, 0.25);
       Sound.clip("press", 0.5, 0.85);                  // the wall grinding one row closer
+      for (var sc = 0; sc < n; sc++)
+        if (srow[sc]) { learn("joker", "Rainbow bubble", "This bubble will take the right colour"); break; }
     }
 
     function lowestBubbleBottom() {
@@ -1230,6 +1238,34 @@
          play it on, so `null` — the whole of what this build ships — is the
          right section there. */
       Music.play(CONFIG.level ? BAND.music : null);
+      meet();
+    }
+
+    /* --- FIRST MEETINGS (web target) ---------------------------------------
+       A mechanic the player meets for the first time is NAMED by a notice,
+       once per player ever (Notify.learn, packages/shell/shell.js), and its
+       line in the "!" log opens the guide's page of the same id — the round
+       is never stopped to teach. A playable has no guide, so it says none of
+       this and plays as it always has. Only what the frame cannot say is
+       named: the swap ring, the rot and the two rainbows. A cascade and the
+       wall coming down a row show themselves as they happen. */
+    function learn(id, word, sub) {
+      return !!window.__GUIDE__ && Notify.learn(id, word, { sub: sub });
+    }
+    // What the board a round opens on deals: the swap is always there, the
+    // rot, a rainbow in the wall and one in the launcher only when dealt.
+    function meet() {
+      var r, c, rot = false, joker = false;
+      learn("swap", "Swap", "Tap the Swap ring to change bubbles");
+      for (r = 0; r < ROWS; r++)
+        for (c = 0; c < rowCols(r); c++) {
+          if (grid[r][c] === null) continue;
+          if (blk[r][c]) rot = true;
+          if (sup[r][c]) joker = true;
+        }
+      if (rot) learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it.");
+      if (joker) learn("joker", "Rainbow bubble", "This bubble will take the right colour");
+      if (ball.sup || nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
     }
 
     /* Six levels a band, five bands: the same stretches the level map names on
@@ -2045,6 +2081,316 @@
       ctx.restore();
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and every picture is painted by the
+       round's own renderer: drawBubble, drawInfecting, drawLauncher and
+       drawSwapRing are lent a canvas of their own for the length of the call
+       (the round's `ctx` is swapped and given back), so a bubble read in the
+       guide is the bubble on the wall, sprite for sprite. The guide can open
+       before any round — from the Help card on the title screen — so nothing
+       here reads the board: a picture is a patch of wall written out by hand,
+       and the figures are read off CONFIG and the manifest's level tuning. */
+    var SQ3 = Math.sqrt(3);
+    function paintPic(W, H, fn) {
+      if (!LY) geometry();                    // derived from Layout alone
+      buildSprites();                         // a cache: a no-op once built
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx, keepT = bgT;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      if (keepT == null) bgT = 0;             // drawInfecting reads the board's clock
+      try { fn(); } finally { ctx = keep; bgT = keepT; }
+      return cv;
+    }
+    /* One bubble of a picture. `b` is a palette index, "s" a rainbow, "x" a
+       rotten film, or { c, t, hole } a film the cloud is still filling. */
+    function picBubble(x, y, b, r, alpha, def, ang) {
+      r = r || R;
+      if (b === "s") drawBubble(x, y, r, 0, true, false, alpha, 0.6, def || 0, ang || 0, 1);
+      else if (b === "x") {
+        // drawBlightSmoke's aura, held still: on the board it is what makes
+        // a rotten film read against a dark scene, and a picture needs it more
+        ctx.save();
+        ctx.globalAlpha = 0.5 * (alpha == null ? 1 : alpha); ctx.fillStyle = "#4a0090";
+        ctx.beginPath(); ctx.arc(x, y, r * 1.1, 0, PI2); ctx.fill();
+        ctx.globalAlpha = 0.7 * (alpha == null ? 1 : alpha); ctx.strokeStyle = "#c050ff"; ctx.lineWidth = Math.max(1.5, r * 0.08);
+        ctx.beginPath(); ctx.arc(x, y, r * 0.98, 0, PI2); ctx.stroke();
+        ctx.restore();
+        drawBubble(x, y, r, 0, false, true, alpha, 0, def || 0, ang || 0, 1);
+      }
+      else if (typeof b === "object") drawInfecting(x, y, r, b.c, 0, 0, 1, b.t, b.hole, 1.3);
+      else drawBubble(x, y, r, b, false, false, alpha, 0, def || 0, ang || 0, 1);
+    }
+    /* A patch of wall written as rows of letters — r y b the three colours,
+       s a rainbow, x a rotten film, . a hole — with every odd row half a
+       bubble in, the way the board staggers them. (x0, y0) is the top-left
+       of the first row's first bubble. */
+    var PIC_CH = { r: 0, y: 1, b: 2, s: "s", x: "x" };
+    function picWall(rows, x0, y0, r) {
+      r = r || R;
+      var out = [];
+      for (var i = 0; i < rows.length; i++)
+        for (var j = 0; j < rows[i].length; j++) {
+          var ch = rows[i].charAt(j);
+          if (PIC_CH[ch] == null) continue;
+          var p = picCell(x0, y0, i, j, r);
+          picBubble(p.x, p.y, PIC_CH[ch], r);
+          out.push(p);
+        }
+      return out;
+    }
+    function picCell(x0, y0, i, j, r) {
+      r = r || R;
+      return { x: x0 + r + j * 2 * r + (i % 2 ? r : 0), y: y0 + r + i * r * SQ3 };
+    }
+    // The aim line, in drawAim's own dots: one every three steps of the real
+    // preview, fading out along the line, bouncing once off a side.
+    function picDots(pts) {
+      ctx.fillStyle = "#ffffff";
+      for (var i = 0; i < pts.length; i += 3) {
+        ctx.globalAlpha = 0.5 * (1 - i / pts.length);
+        ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 4, 0, PI2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // simulateShot's walk, against the picture's own sides and wall
+    function picPath(x, y, ang, wall, side0, side1) {
+      var pts = [], st = R * 0.6, dx = Math.sin(ang) * st, dy = -Math.cos(ang) * st, i, j;
+      for (i = 0; i < 120 && y > R; i++) {
+        pts.push({ x: x, y: y });
+        x += dx; y += dy;
+        if (x < side0) { x = side0; dx = -dx; } else if (x > side1) { x = side1; dx = -dx; }
+        for (j = 0; j < wall.length; j++) {
+          var ex = x - wall[j].x, ey = y - wall[j].y;
+          if (ex * ex + ey * ey <= COLLIDE * COLLIDE) return pts;
+        }
+      }
+      return pts;
+    }
+    // The launcher and its swap ring, drawn where the picture wants them:
+    // both draw at the round's own launcher row, so the context is moved.
+    function picLauncher(x, y) {
+      ctx.save(); ctx.translate(x - LX, y - LY); drawLauncher(); ctx.restore();
+    }
+    function picSwapRing(x, y) {
+      ctx.save(); ctx.translate(x - SWAP_X, y - LY); drawSwapRing(); ctx.restore();
+    }
+    // drawNextPreview's own label and bubble, at a point of the picture.
+    function picNext(x, y, b) {
+      var nr = R * 0.6;
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(upper(Lang.t("Next")), x, y - nr - 12);
+      ctx.textAlign = "left";
+      picBubble(x, y, b, nr);
+    }
+    // drawDangerLine's dashes, at full strength.
+    function picDanger(W, y) {
+      ctx.save();
+      ctx.globalAlpha = 0.7; ctx.strokeStyle = "#ff4d6d"; ctx.lineWidth = 3;
+      ctx.setLineDash([14, 10]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.restore();
+    }
+
+    // A figure in the player's own decimal mark.
+    function num(v) {
+      var s = String(Math.round(v * 10) / 10);
+      return Lang.code() === "fr" ? s.replace(".", ",") : s;
+    }
+    function fill(str, vars) {
+      return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? vars[k] : m; });
+    }
+
+    /* A band's picture: its own scene, and over it the board one of its
+       levels opens on (LV_OPEN), dealt the way fillStartRows deals it — the
+       figure, its colour pattern, what it leaves hanging pruned, its rot
+       seeds — at half size. The two patterns that roll dice are dealt off a
+       fixed hash instead, so the picture is the same every time it opens. */
+    function bandPic(b, lvl) {
+      var W = 400, H = 220, rr, open = LV_OPEN[lvl - 1];
+      var art = open.art ? LV_ART[open.art] : null, rows = art ? art.rows : open.rows;
+      var half = view.w / 2, spanX = half - R, k = Math.min(open.colors, PAL.length);
+      var cells = {}, list = [], r, c, i;
+      for (r = 0; r < rows; r++) {
+        var n = r % 2 ? COLS - 1 : COLS, v = rows > 1 ? r / (rows - 1) : 0;
+        for (c = 0; c < n; c++) {
+          var bx = R + c * 2 * R + (r % 2 ? R : 0);
+          if (art && !(art.cell ? art.cell(r, c) : art.hit((bx - half) / spanX, v))) continue;
+          var col = open.fill === "random" ? (r * 7 + c * 5 + (r * c) % 3) % k
+                  : open.fill === "clusters" ? (((r >> 1) * 8 + Math.floor(c / 3)) * 7 + 1) % k
+                  : patternColor(open.fill, r, c, k);
+          cells[r + "_" + c] = col;
+        }
+      }
+      // what hangs from nothing goes, as pruneFloating does it (row parity is
+      // the board's own at the start of a round)
+      var ok = {}, q = [];
+      for (c = 0; c < COLS; c++) if (cells["0_" + c] != null) { ok["0_" + c] = 1; q.push([0, c]); }
+      while (q.length) {
+        var cur = q.pop(), o = cur[0] % 2 === 1, rr0 = cur[0], cc0 = cur[1];
+        var nb = o ? [[rr0, cc0 - 1], [rr0, cc0 + 1], [rr0 - 1, cc0], [rr0 - 1, cc0 + 1], [rr0 + 1, cc0], [rr0 + 1, cc0 + 1]]
+                   : [[rr0, cc0 - 1], [rr0, cc0 + 1], [rr0 - 1, cc0 - 1], [rr0 - 1, cc0], [rr0 + 1, cc0 - 1], [rr0 + 1, cc0]];
+        for (i = 0; i < nb.length; i++) {
+          var kk = nb[i][0] + "_" + nb[i][1];
+          if (cells[kk] != null && !ok[kk]) { ok[kk] = 1; q.push(nb[i]); }
+        }
+      }
+      for (var key2 in cells) if (ok[key2]) list.push(key2);
+      for (i = 0; i < open.seeds && list.length; i++)
+        cells[list[Math.floor((i + 0.5) * list.length / open.seeds)]] = "x";
+      return paintPic(W, H, function () {
+        var img = ArtImages[CONFIG.bands[b].scene];
+        if (img && img.width) {
+          var sw = img.width, sh = sw * H / W;
+          ctx.drawImage(img, 0, img.height * 0.18, sw, sh, 0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.42)"; ctx.fillRect(0, 0, W, H);
+        } else {
+          var g = ctx.createLinearGradient(0, 0, 0, H);
+          g.addColorStop(0, "#231a4a"); g.addColorStop(1, "#0b0820");
+          ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        }
+        var rowsDrawn = 0;
+        for (i = 0; i < list.length; i++) rowsDrawn = Math.max(rowsDrawn, +list[i].split("_")[0] + 1);
+        rr = Math.min(14, (H - 12) / (2 + (rowsDrawn - 1) * SQ3));
+        var x0 = (W - COLS * 2 * rr) / 2;
+        var y0 = Math.max(8, (H - (rr * 2 + (rowsDrawn - 1) * rr * SQ3)) / 2);
+        for (i = 0; i < list.length; i++) {
+          var rc = list[i].split("_"), p = picCell(x0, y0, +rc[0], +rc[1], rr);
+          picBubble(p.x, p.y, cells[list[i]], rr);
+        }
+      });
+    }
+    var BAND_PAGES = [
+      { id: "marsh",  lv: 1,  show: 6, name: "Marsh", lines: [
+        "Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s." ] },
+      { id: "ruins",  lv: 7,  show: 10, name: "Ruins", lines: [
+        "Almost every wall draws a shape: a diamond, a lattice, a ring, a cross." ] },
+      { id: "gorge",  lv: 13, show: 16, name: "Gorge", lines: [
+        "Most walls start with two outbreaks. You will have to hold two fronts at once." ] },
+      { id: "castle", lv: 19, show: 22, name: "Castle", lines: [
+        "New shapes to spot: an arrow, cherries, and more." ] },
+      { id: "throne", lv: 25, show: 28, name: "Throne", lines: [
+        "From level 26, every wall starts with three outbreaks." ] }
+    ];
+    function bandPage(i) {
+      var B = BAND_PAGES[i], j;
+      var lines = [];
+      for (j = 0; j < B.lines.length; j++) lines.push(fill(Lang.t(B.lines[j]), { n: CONFIG.rotGrace }));
+      return { id: B.id, title: Lang.t(B.name), lv: B.lv,
+               pic: function () { return bandPic(i, B.show); },
+               lines: lines };
+    }
+
+    var guide = {
+      chapters: function () {
+        // the stars are the level layer's default bands over the objective
+        var goalRows = [["★ · ★★ · ★★★", "×1 · ×" + num(1.5) + " · ×" + num(2.2)]];
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "goal", title: Lang.t("Race the rot"), pic: function () {
+                return paintPic(460, 180, function () {
+                  picWall(["ryxxby", "xbyxx", "bxxrry"], 50, 4);
+                });
+              }, rows: goalRows, lines: [
+              Lang.t("There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.") ] },
+            { id: "aim", title: Lang.t("Aim and shoot"), pic: function () {
+                return paintPic(460, 260, function () {
+                  var wall = picWall(["ybrrb", "byyb"], 40, 10);
+                  picDots(picPath(150, 210, 1.15, wall, R, 460 - R));
+                  picLauncher(150, 210);
+                  picBubble(150, 210, 0);
+                });
+              }, lines: [
+              Lang.t("Drag to aim, release to shoot.") ] },
+            { id: "match", title: Lang.t("Match three"), pic: function () {
+                return paintPic(460, 210, function () {
+                  var wall = picWall(["byrrby", "yb.by"], 50, 6), p = picCell(50, 6, 1, 2);
+                  picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
+                  picBubble(p.x, 172, 0, R, 1, -0.3, Math.PI / 2);
+                });
+              }, lines: [
+              Lang.t("Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.") ] },
+            { id: "cascade", title: Lang.t("Falling bubbles"), pic: function () {
+                return paintPic(460, 220, function () {
+                  picWall(["yb..by", "b...y"], 50, 6);
+                  var fall = [[160, 112, 0, 0.95], [292, 104, "x", 0.9], [222, 150, 1, 0.85], [300, 176, 2, 0.75]];
+                  for (var f = 0; f < fall.length; f++)
+                    picBubble(fall[f][0], fall[f][1], fall[f][2], R, fall[f][3], -0.25, Math.PI / 2);
+                  // drawSplashes' own burst on the floor, lent one splash
+                  var keepS = splashes;
+                  splashes = [{ x: 170, y: 206, t: 0.12, life: 0.46, color: PAL[1].light, edge: PAL[1].core, power: 1.1 }];
+                  try { drawSplashes(); } finally { splashes = keepS; }
+                });
+              }, rows: [[Lang.t("A bubble that falls"), "+" + CONFIG.fallBonus],
+                        [Lang.t("A rotten bubble that falls"), "+" + CONFIG.fallBonus * 2]], lines: [
+              Lang.t("Pop what holds a group to the ceiling, and the whole group falls.") ] },
+            { id: "swap", title: Lang.t("Swap"), pic: function () {
+                return paintPic(380, 150, function () {
+                  var y = 92, sx = 130 + (SWAP_X - LX), nx = 130 + (NEXT_X - LX);
+                  picLauncher(130, y);
+                  picBubble(130, y, 2);
+                  picSwapRing(sx, y);
+                  picNext(nx, y, "s");
+                });
+              }, lines: [
+              Lang.t("Tap the ring or the next bubble to swap the two."),
+              Lang.t("Swapping costs no shot. Check the next bubble and fire it first if it fits better.") ] },
+            { id: "press", title: Lang.t("The wall comes down"), pic: function () {
+                return paintPic(460, 220, function () {
+                  picWall(["byyrbr", "rbyyb", "yrrbby"], 50, 6);
+                  picDanger(460, 204);
+                });
+              }, lines: [
+              Lang.t("The wall moves down after a few shots. A bubble on the red line ends the round.") ] }
+          ] },
+          { key: "rot", label: Lang.t("The rot"), pages: [
+            { id: "rot", title: Lang.t("The rot"), pic: function () {
+                return paintPic(400, 130, function () {
+                  picBubble(90, 65, 1);
+                  picBubble(200, 65, { c: 1, t: 0.55, hole: Math.PI });
+                  picBubble(310, 65, "x");
+                });
+              }, lines: [
+              Lang.t("A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it."),
+              Lang.t("A bubble filling with rot is still active. Pop it before it turns completely.") ] },
+            { id: "outbreak", title: Lang.t("The rot spreads"), pic: function () {
+                return paintPic(400, 200, function () {
+                  picWall(["byrby", "ry.yb", "ybrb"], 60, 12);
+                  var p = picCell(60, 12, 1, 2);
+                  picBubble(p.x, p.y, { c: 0, t: 0.12, hole: -Math.PI / 2 });
+                });
+              }, lines: [
+              Lang.t("Cutting the rot off won't stop it. It will break out somewhere else.") ] }
+          ] },
+          { key: "rainbow", label: Lang.t("The rainbow"), pages: [
+            { id: "joker", title: Lang.t("Rainbow bubble"), pic: function () {
+                return paintPic(460, 210, function () {
+                  var wall = picWall(["rrsrry", "bys.b"], 50, 6), p = picCell(50, 6, 1, 3);
+                  picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
+                  picBubble(p.x, 172, 0, R, 1, -0.3, Math.PI / 2);
+                });
+              }, lines: [
+              Lang.t("A rainbow bubble in a cluster takes the right colour on impact."),
+              Lang.t("A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.") ] },
+            { id: "cure", title: Lang.t("Rainbow shot"), pic: function () {
+                return paintPic(460, 210, function () {
+                  var wall = picWall(["xxbxxy", "rx.xb"], 50, 6), p = picCell(50, 6, 1, 2);
+                  picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
+                  picBubble(p.x, 172, "s", R, 1, -0.3, Math.PI / 2);
+                });
+              }, rows: [[Lang.t("Bubbles saved"), CONFIG.cureMin + " → " + CONFIG.cureMax]], lines: [
+              Lang.t("Fire a rainbow into the rot to give the bubbles their colour back."),
+              Lang.t("The more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.") ] }
+          ] },
+          { key: "climb", label: Lang.t("The climb"), pages: [
+            bandPage(0), bandPage(1), bandPage(2), bandPage(3), bandPage(4)
+          ] }
+        ];
+      }
+    };
+
     function onTimeUp() { endRun(CONFIG.copy.timeUp); }
 
     function endRun(title) {
@@ -2074,5 +2420,5 @@
        levels — see docs/LEVELS.md. */
     return { reset: reset, onDown: onDown, onMove: onMove, onUp: onUp,
              update: update, render: render, onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: endRun };
+             levelWon: endRun, guide: guide };
   })();

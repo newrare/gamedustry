@@ -288,8 +288,8 @@ img.art-i {
    — it was a colour, and a colour reaches no <img>. */
 /* The painted star, at the size its place on the podium calls for — the
    arrangement itself is the motor's (packages/shell/motor.css). */
-.eo-sti { width:116px; height:116px; }
-.eo-stars .star:nth-child(3) .eo-sti { width:176px; height:176px; }
+.eo-sti { width:140px; height:140px; }
+.eo-stars .star:nth-child(3) .eo-sti { width:210px; height:210px; }
 .star.dim .eo-sti { filter:grayscale(1) brightness(.5) opacity(.45); }
 
 /* ---- rows shared by the panels ----------------------------------------- */
@@ -375,31 +375,6 @@ img.art-i {
 }
 .web-help-rules b { color:var(--text); font-weight:900; }
 
-/* THE AURA, NAMED (menu.js, fillHelp). The example object loops the hint's
-   two rings — a bright one hugging it, a faint one further out — on its own
-   outline: box-shadow follows the node's border-radius, a card or a disc
-   alike. A SKIN tints it with --help-aura / --help-aura-soft, the colours its
-   canvas hint strokes with. */
-.web-help-aura {
-  display:flex; align-items:center; gap:26px;
-  margin:18px 0 0; padding:16px 22px; border-radius:18px;
-  background:rgba(255,255,255,.05);
-}
-.web-help-aura p { margin:0; font-size:22px; line-height:1.35; color:var(--muted); text-align:left; }
-.web-help-aura p b { color:var(--text); font-weight:900; }
-.web-help-aura-ex { flex:none; margin:12px; animation:web-aura 1.3s ease-in-out infinite; }
-.web-help-aura-pill {
-  width:60px; height:60px; border-radius:50%; display:grid; place-items:center;
-  font-size:30px; font-weight:900; color:var(--text);
-  background:rgba(0,0,0,.3); border:2px solid rgba(255,255,255,.25);
-}
-@keyframes web-aura {
-  0%, 100% { box-shadow:0 0 0 3px transparent, 0 0 0 10px transparent; }
-  45%      { box-shadow:0 0 0 3px var(--help-aura, rgba(255,212,59,.7)), 0 0 0 10px var(--help-aura-soft, rgba(255,212,59,.22)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .web-help-aura-ex { animation:none; box-shadow:0 0 0 3px var(--help-aura, rgba(255,212,59,.7)); }
-}
 #screen-intro #intro-demo { margin:0 auto; }
 
 /* =========================================================================
@@ -423,11 +398,16 @@ img.art-i {
    The OTHER bottom corner is the level pill's, on the same terms and for the
    same reasons (levels.css). Between them the two corners are the shell's, and
    a game anchors no instrument and no word in either. */
-/* ---- the two wide buttons under a card --------------------------------- */
+/* ---- the wide buttons under a card ------------------------------------ */
 /* The one card in this shell that ASKS something — leave this round? — is the
-   one card with a pair of buttons under it. Every other one is dismissed. */
+   one card with buttons under it: resume, then one exit per line (again,
+   home, the map),
+   icon then word — `.col`. The barracks' surrender keeps its pair in a row.
+   Every other card is dismissed. */
 .web-actions { display:flex; gap:16px; margin:18px 0 6px; }
 .web-actions .btn { flex:1 1 0; min-width:0; padding:0 12px; }
+.web-actions.col { flex-direction:column; gap:14px; }
+.web-actions.col .btn { flex:0 0 auto; width:100%; padding:0 24px; }
 
 /* =========================================================================
    THE END SCREEN — same geometry, a different face
@@ -447,6 +427,11 @@ img.art-i {
 #screen-end #btn-install, #screen-end #btn-replay { width:100%; max-width:420px; }
 #screen-end #btn-install { margin-top:26px; }
 #screen-end #btn-replay { margin-top:14px; }
+/* ONE CONTROL A BEAT AFTER THE OTHER (lab/end-screen.html): the motor lights
+   the first and, 100 ms later, the replay; the map rides the replay, so the
+   replay itself and the way on wait one and two more steps — home, map,
+   replay, next, 100 ms apart. */
+#screen-end #btn-replay.show { transition-delay:.1s; }
 
 /* ── the end screen's two icons ──────────────────────────────────────────
    On a map the two ways out are the MAP and THE LEVEL AGAIN, every round, so
@@ -458,7 +443,7 @@ img.art-i {
    the same two nodes as full-width buttons. */
 #web-endacts {
   display:flex; align-items:center; justify-content:center; gap:30px;
-  margin-top:30px;
+  margin-top:26px;
 }
 /* The three are the motor's button (menu.js, ACT). The ids undo the column
    the block above gives the same two nodes as wide buttons. */
@@ -485,9 +470,13 @@ img.art-i {
    between them because the round decides whether "go on" or "try again" is
    the offer, and a third contender in that argument makes all three quieter.
    Hidden outright where there is no next level. */
-#screen-end #btn-next, #screen-end #btn-map { opacity:0; pointer-events:none; transition:opacity .5s ease; }
+#screen-end #btn-next, #screen-end #btn-map {
+  opacity:0; pointer-events:none; transform:translateY(40px);
+  transition:opacity .1s ease, transform .1s cubic-bezier(.2,1.6,.4,1);
+}
 #screen-end #btn-replay.show ~ #btn-next,
-#screen-end #btn-replay.show ~ #btn-map { opacity:1; pointer-events:auto; }
+#screen-end #btn-replay.show ~ #btn-map { opacity:1; pointer-events:auto; transform:none; }
+#screen-end #btn-replay.show ~ #btn-next { transition-delay:.2s; }
 #screen-end.hidden #btn-next, #screen-end.hidden #btn-map { opacity:0; pointer-events:none; }
 #screen-end #btn-next[hidden] { display:none; }
 

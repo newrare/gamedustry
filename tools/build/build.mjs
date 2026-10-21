@@ -75,6 +75,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 import { splitGameJs } from '../lib/parts.mjs';
 import { derivedRates } from '../lib/economy.mjs';
 
@@ -169,7 +170,7 @@ async function manifestOf(unit) {
      in a manifest is the drift that rule exists to end. */
   const meta = m.web && m.web.meta;
   if (meta) {
-    for (const k of ['ticketPrice', 'xpPer']) {
+    for (const k of ['ticketPrice', 'xpPer', 'roundCoins', 'galleryRounds']) {
       if (meta[k] != null) {
         throw new Error(`${file}: web.meta.${k} is derived (tools/lib/economy.mjs) — set web.meta.roundScore instead`);
       }
@@ -241,9 +242,10 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
     CONFIG: CONFIG, ASSETS: ASSETS,
     Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, Desk: Desk, upper: upper,
     Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
-    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout,
+    Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout, Record: Record,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
-    onOutro: onOutro, onReveal: onReveal, endRound: endRound, applyCopy: applyCopy,
+    onOutro: onOutro, onReveal: onReveal, onEndBeat: onEndBeat, Confetti: Confetti,
+    endRound: endRound, applyCopy: applyCopy,
     state: function () { return State; },
     ending: function () { return ending; },
     render: frameRender,
@@ -1061,6 +1063,9 @@ async function main() {
                                       `Game.codex`, as a collection. Before
                                       menu.js and village.js, which list its
                                       door and its word
+       guide.js   window.__GUIDE__  — every rule of a game that publishes
+                                      `Game.guide`, as a book of pages. Before
+                                      menu.js, whose Help card opens it
        menu.js    mounts all six, and publishes the DOORS
        village.js window.__VILLAGE__ — the front door as a place, for a game
                                       that declares `web.village`. After
@@ -1082,6 +1087,7 @@ async function main() {
              await read('packages/webshell/meta.css') + '\n' +
              await read('packages/webshell/army.css') + '\n' +
              await read('packages/webshell/codex.css') + '\n' +
+             await read('packages/webshell/guide.css') + '\n' +
              await read('packages/webshell/village.css') + '\n' +
              await read('packages/webshell/dev.css'),
         js: await read('packages/webshell/view.js') + '\n' +
@@ -1091,6 +1097,7 @@ async function main() {
             await read('packages/webshell/daily.js') + '\n' +
             await read('packages/webshell/army.js') + '\n' +
             await read('packages/webshell/codex.js') + '\n' +
+            await read('packages/webshell/guide.js') + '\n' +
             await read('packages/webshell/menu.js') + '\n' +
             await read('packages/webshell/village.js') + '\n' +
             await read('packages/webshell/dev.js')
@@ -1164,7 +1171,15 @@ async function main() {
 
     if (CHECK) {
       const current = existsSync(path.join(ROOT, out)) ? await read(out) : null;
-      if (current === html) {
+      /* THE SCRIPT MUST PARSE. Matching its sources byte for byte says nothing
+         about whether the sources are JavaScript: a statement deleted under a
+         bare `if (…)` left a game that could not run, and every check passed
+         (spinshock's `mend`, 2026-10). Compiled, never run. */
+      const syntax = scriptError(html);
+      if (syntax) {
+        bad++;
+        console.log(`SYNTAX ${out}  ${syntax}`);
+      } else if (current === html) {
         console.log(`OK    ${out}  (${(html.length / 1024).toFixed(0)} KB)`);
       } else if (current === null) {
         bad++;
@@ -1202,6 +1217,20 @@ async function main() {
     else console.log(`\n${bad} of ${built} units differ from their sources.`);
     process.exit(bad ? 1 : 0);
   }
+}
+
+// The first inline script of a page that does not compile, as "line n: message".
+function scriptError(html) {
+  const re = /<script>([\s\S]*?)<\/script>/g;
+  let m;
+  while ((m = re.exec(html))) {
+    try { new vm.Script(m[1]); }
+    catch (e) {
+      const line = html.slice(0, m.index).split('\n').length + (e.stack.match(/:(\d+)\n/) || [0, 1])[1] - 1;
+      return `line ~${line}: ${e.message}`;
+    }
+  }
+  return null;
 }
 
 main().catch((err) => { console.error('build failed:', err.message); process.exit(1); });

@@ -129,6 +129,8 @@
         W.Notify.say("Failed: " + label, { sub: String(err && err.message || err), kind: "loss" });
         if (window.console) console.error(err);
       }
+      /* a label that reads a state (a switch) says the new one */
+      if (typeof e.label === "function" && VW.top() === "dev") paint();
     });
     return b;
   }

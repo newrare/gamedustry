@@ -27,10 +27,22 @@
    A SOUND IS SHAPED ON ITS ROLE, NEVER ON A LINE. A key the manifest hands to
    the house kit (`sfx`) has no file here: its card names the variant, and the
    variant is the one source of truth for what it sounds like — the files of
-   its takes, their cuts, how they end, their pitch. So a line's pitch is READ
-   here and never set: a constant `rate` in the code is a sound shaped in the
-   wrong place (a variant with that pitch is the fix), and a rate the code
-   BUILDS — a ladder, a combo climbing — is the game's melody, left to it.
+   its takes, their cuts, how they end, their pitch. A LINE owns its volume
+   and its rate, both magnetic sliders, played on top of the variant: the
+   rate is this line's pitch in this game's source, and ↺ puts it back at ×1,
+   the argument taken out of the call on apply. A rate the code BUILDS — a
+   ladder, a combo climbing — is the game's melody: heard, and refused.
+
+   A SOUND OTHER GAMES PLAY IS NOT THIS CARD'S TO CHANGE. The card's sound
+   button names the variant and says who shares it (shared · 4 games · 2
+   validated); while another game plays it, its editor is READ-ONLY — heard,
+   never tuned — and changing it for every game is /kit's job. The way out
+   acts on THIS game alone, through CHANGE SOUND: its first row, New sound
+   for <game>, copies the variant — the draft included — into one of this
+   game's own (named after the game, or `role/name` to file it under another
+   role) and moves the key to it; every other row is an existing variant the
+   key moves to. The scissors on a line are the finer cut: a key of its own
+   for that one line, which its card can then move the same way.
 
    The variant is edited ON ITS CARD: the kit button opens the same editor as
    the kit page (/kit) — each take's waveform with its cut taken by the grips,
@@ -40,9 +52,8 @@
    it spreads, from the onset), plus a search over the whole library. Hover
    hears a file as the take would play it; a click puts it in the take; +
    adds it as another take. A variant is every game's that maps a key to it,
-   and the foot of the card shows them by their thumb: NEW VARIANT forks it,
-   and the key moves to the fork, when the change is meant for this game
-   alone. The game's lines keep playing what is shipped until Apply; the
+   and the foot of the card shows them by their thumb, ringed by what each
+   validated. The game's lines keep playing what is shipped until Apply; the
    editor's own Play hears the draft.
 
    EVERY LINE SAYS WHEN IT FIRES. A cue line names a sound and a volume, and
@@ -108,7 +119,14 @@
                    in lab/events-clips/<slug>/ (ignored by git — playing again
                    is how they are made again). Pop.text is not drawn while
                    recording, so the number is never baked into the picture.
-     LOOP (↻)      on a row with a clip, the clip plays behind the frame, and
+     STAGE         every card says ONE level its key is heard on ("Stage 7"),
+                   and a tap on it starts that level in the Rec frame. It is
+                   lab/events-stages.json: Rec writes the level of every cue it
+                   sees fire, and FIND STAGES fills the rest — a headless walk
+                   of the levels by a blind pilot (tools/lab/probe-stages.mjs,
+                   POST /api/probe-stages), which keeps the first level each
+                   key fired on. A key it never heard reads "not heard".
+     LOOP (↻)     on a row with a clip, the clip plays behind the frame, and
                    at the instant the cue fired it is fired again — with what
                    the row now says, so a volume is judged on the real action.
                    The callouts of that window fire with it at their own
@@ -233,6 +251,11 @@ select:focus, input:focus { outline:none; border-color:#7ea6ff; }
 .bhead .key { font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#8fe0b8; min-width:58px; cursor:pointer; }
 .bhead .filebtn { flex:1 1 180px; min-width:150px; max-width:280px; }
 .bhead .plays { font-size:11px; color:#8fe0b8; font-variant-numeric:tabular-nums; }
+/* Where a key is heard: one level of the map (lab/events-stages.json). */
+.bhead .stage { font-size:11px; padding:1px 8px; border-radius:10px; background:#1d2a3a; color:#9cc4ff; cursor:pointer; white-space:nowrap; }
+.bhead .stage:hover { background:#25385a; }
+.bhead .stage.none { background:none; color:#6f6f92; cursor:default; }
+#stats button.probe[disabled] { opacity:.7; cursor:default; }
 .bhead .approx { color:#ffb648; font-size:11px; cursor:help; }
 .beat.clip .call { padding-left:16px; }
 .call .ln { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
@@ -406,6 +429,8 @@ button.act.ghost:hover { background:#1e1e30; color:#e8e6f5; }
   font:600 11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
   word-break:break-word; overflow-wrap:anywhere;
 }
+/* The filter hides a row with `hidden`, which the display above would win over. */
+#filemenu .fm-row[hidden], #filemenu .fm-none[hidden] { display:none; }
 #filemenu .fm-row:hover, #filemenu .fm-row.on { background:#1e2740; color:#e8e6f5; }
 #filemenu .fm-row.cur { color:#ffd08a; }
 #filemenu .fm-row .sz { color:#5f5f80; font-size:9px; }
@@ -555,8 +580,8 @@ button.act.loop.has { background:#1e2740; color:#9fd0ff; }
 button.act.loop.has:hover { background:#2a3a60; }
 button.act.loop.on { background:#7ea6ff; color:#0b0b12; }
 button.act.loop.near { color:#ffd08a; }
-.call.k-sound { grid-template-columns: 26px 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
-.call.k-sound.inherited { grid-template-columns: 26px 26px 76px 100px minmax(40px, 1fr) auto auto 14px 24px 24px 24px; }
+.call.k-sound { grid-template-columns: 26px 26px 76px 46px minmax(40px, 1fr) auto auto 14px 24px 24px 24px 24px; }
+.call.k-sound.inherited { grid-template-columns: 26px 26px 76px 100px minmax(40px, 1fr) auto auto 14px 24px 24px 24px 24px; }
 
 #stats span.seen b { color:#9fd0ff; }
 /* The foot of a kit card: the icon of every game that plays its variant,
@@ -566,6 +591,34 @@ button.act.loop.near { color:#ffd08a; }
 .beat.shared { border-style:dashed; }
 .call.shell .iconbtn.check { visibility:hidden; }
 .kitusers img { width:28px; height:28px; border-radius:7px; display:block; cursor:help; outline-offset:2px; }
+/* The sound button of a kit card says who else plays the sound: shared
+   (and validated) is the case where this card must not touch it. */
+.kitbtn:has(.kshare) { max-width:460px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* New sound stays on top of Change sound's menu, which opens scrolled to the variant played. */
+#filemenu .fm-row.fm-new { position:sticky; top:-6px; z-index:1; background:#1a1630; color:#c8b8ff; border:1px dashed #3a3260; }
+#filemenu .fm-row.fm-new:hover, #filemenu .fm-row.fm-new.on { background:#2a2445; border-style:solid; }
+.kitbtn .kshare { margin-left:6px; padding:0 6px; border-radius:9px; background:#2a2445; color:#9c9cba; font-weight:500; }
+.kitbtn .kshare.shared { background:#2a2210; color:#ffd08a; }
+.kitbtn .kshare.own { background:#13281f; color:#5fd49a; }
+.kitbtn .kshare.new { background:#1e2740; color:#9dbaff; }
+/* A sound other games play is read here, never edited: the takes are shown,
+   heard, and nothing in them answers the hand. */
+.kedit .klock { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:8px 10px; border:1px solid #4a3a1a; border-radius:8px; background:#1f1a10; font-size:11px; color:#d8c8a8; font-weight:500; }
+.kedit .klock b { color:#ffd08a; }
+.kedit .klock .sp { flex:1; }
+.kedit.locked .ktakes { opacity:.6; }
+.kedit.locked .ktakes input, .kedit.locked .ktakes [data-tail], .kedit.locked .ktakes [data-act=drop], .kedit.locked .ktakes canvas { pointer-events:none; }
+.kedit.locked .kalt { display:none; }
+/* The pitch handed back to the role. */
+.rng.rate { grid-template-columns:30px 96px 34px 22px; }
+.rng .rrst:disabled { visibility:hidden; }
+.rng .rrst { width:22px; height:20px; padding:0; border:1px solid #2c2c47; border-radius:6px; background:none; color:#8b8ba7; font:700 12px/1 inherit; cursor:pointer; justify-self:start; }
+.rng .rrst:hover { border-color:#7ea6ff; color:#e8e6f5; }
+.rng .rrst.on { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+/* A line split off to a key of its own. */
+.iconbtn.split.on { background:#2a2210; color:#ffd08a; }
+.call.split { background:#1c1a12; }
+.call .splitto { color:#ffd08a; font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; }
 /* Who signed the variant off: every line checked on its current cut, some
    of them, or a check given on a cut the variant no longer has. */
 /* The rings are read after the icons (api/kit-checked reads games): until
@@ -596,8 +649,6 @@ button.act.loop.near { color:#ffd08a; }
 .call .ctx pre { margin:5px 0 2px; padding:8px 10px; border-radius:7px; background:#0d0d16; overflow:auto; font:500 11px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9b9d6; white-space:pre; }
 
 /* A line's pitch, read and never set: the sound is shaped on its variant. */
-.rng.ro .rov { font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; cursor:help; }
-.rng.ro .rov.code { color:#ffb648; }
 
 /* ---------------------------------------------------------------------------
    THE KIT CARD'S EDITOR — the variant a key plays, opened under its header:
@@ -725,17 +776,19 @@ const state = {
        sfx:   { "<key>": { file, len } }   — the clip is re-cut from that file
        kit:   { "<key>": "<role>/<variant>" } — the key plays the kit instead
        roles: { "<role>/<variant>": { takes } } — a kit variant edited on its
-              card (or forked into a new one), written to kit.json on apply */
-  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {} },
+              card (or forked into a new one), written to kit.json on apply
+       split: { "<line>|<Name>": { line, name, from, to, id } } — a line of a
+              kit key moved to a key of its own, which plays the same variant */
+  pending: { calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {}, split: {} },
   // The house kit as kit.json has it (api/kit), and the kit cards whose editor is open.
-  kit: null, kitOpen: new Set(),
+  kit: null, kitOpen: new Set(), stages: {}, probe: null,
   // The recorded moments (lab/events-clips/<slug>/index.json) and the
   // line offset that maps the built game.<hash>.js back to its source.
   clips: { clips: {}, byId: {} },
   offset: null
 };
 
-const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {} });
+const EMPTY_PENDING = () => ({ calls: {}, sfx: {}, kill: { calls: {}, clips: {} }, kit: {}, roles: {}, split: {} });
 
 /* A value apply can write back, as opposed to one the game builds at runtime:
    a bare number, the shape the splicer accepts for a knob
@@ -788,7 +841,8 @@ function countPending() {
             Object.keys(state.pending.sfx).length +
             Object.keys(kill.calls).length + Object.keys(kill.clips).length +
             Object.keys(state.pending.kit || {}).length +
-            Object.keys(state.pending.roles || {}).filter(kitDirty).length;
+            Object.keys(state.pending.roles || {}).filter(kitDirty).length +
+            Object.keys(state.pending.split || {}).length;
   const btn = el("btn-apply");
   btn.disabled = !n;
   btn.innerHTML = n ? `Apply <span class="cnt">${n}</span>` : "Apply";
@@ -890,6 +944,8 @@ function argsFor(call, row) {
   const args = JSON.parse(JSON.stringify(call.preview.args));
   if (!row || call.kind !== "sound") return args;
   args[1] = num(row.querySelector("input.vol"), args[1]);
+  const rate = num(row.querySelector("input.rate"), args[2] == null ? 1 : args[2]);
+  if (args.length > 2 || rate !== 1) args[2] = rate;
   return args;
 }
 
@@ -1248,7 +1304,7 @@ function snapTo(v, grid) {
 /* The readout follows the thumb. Kept out of `watch` on purpose: the dirty
    marking is about the pending change, this is about reading the value. */
 function wireSliders(row) {
-  row.querySelectorAll(".rng:not(.ro)").forEach((box) => {
+  row.querySelectorAll(".rng").forEach((box) => {
     const input = box.querySelector("input[type=range]");
     const out = box.querySelector("b");
     const grid = Number(input.dataset.grid) || 0.05;
@@ -1283,6 +1339,7 @@ function wireSliders(row) {
    it out. So a removal is reviewed next to the rest of the plan, counted in
    the Apply badge, and taken back with the same revert as a typo.            */
 const ICON = {
+  split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   revert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h12a5 5 0 0 1 0 10h-5"/><path d="M7 5 3 9l4 4"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>'
@@ -1305,7 +1362,10 @@ function resetControls(node) {
 function revertCall(call, row) {
   delete state.pending.calls[pendKey(call)];
   delete state.pending.kill.calls[pendKey(call)];
+  delete state.pending.split[pendKey(call)];
   resetControls(row);
+  if (row._rateSync) row._rateSync();
+  if (row._splitSync) row._splitSync();
   row.classList.remove("killed");
   countPending();
   note("");
@@ -1314,6 +1374,11 @@ function revertCall(call, row) {
 function revertClip(key, card) {
   delete state.pending.sfx[key];
   delete state.pending.kill.clips[key];
+  card.querySelectorAll(".call").forEach((r) => {
+    if (!r._call) return;
+    delete state.pending.split[pendKey(r._call)];
+    if (r._splitSync) r._splitSync();
+  });
   /* A kit card: the variant's draft goes too, and a variant forked from it
      that nothing else is moving to. */
   const was = card.dataset.kit, to = state.pending.kit && state.pending.kit[key];
@@ -1366,19 +1431,91 @@ function killClip(key, card) {
 }
 
 /* --- the rows ------------------------------------------------------------ */
-/* A line's pitch, read off its source and never written from here: the sound
-   is shaped on its kit variant (the card's editor), and a rate the code BUILDS
-   — a ladder of stars, a combo climbing — is the game's melody, left to it. */
+/* A line's pitch: a magnetic slider like the volume, 0.5 to 2 in steps of
+   0.05, this line of this game only — the variant's takes carry their own
+   pitch, and this one is played on top of it. ↺ puts it back at ×1, which on
+   apply takes a constant rate out of the call (the line then plays the
+   variant at the pitch its takes were cut with). A rate the code BUILDS — a
+   ladder of stars, a combo climbing — is previewed with its stand-in and
+   refused by apply, like any argument the game computes. */
 function rateCell(call) {
   const expr = call.args[2];
-  const v = expr == null ? 1 : isNum(expr) ? Number(expr) : null;
-  const title = v == null
-    ? "the code builds this pitch (" + expr + ") — the game's own melody, left to it"
-    : v === 1
-      ? "this line plays the sound at its own pitch — the pitch is shaped on the variant, above"
-      : "a pitch written in the code — the sound is shaped on its variant: a variant at that pitch is the place for it";
-  return `<span class="rng ro" title="${esc(title)}"><span class="lbl">rate</span>` +
-    `<span class="rov${v == null ? " code" : ""}">${v == null ? "code" : "×" + v}</span><b></b></span>`;
+  const v = expr == null ? 1 : isNum(expr) ? Number(expr) : Number(call.preview.args[2]) || 1;
+  const title = expr != null && !isNum(expr)
+    ? "the code builds this pitch (" + expr + ") — heard here, refused by apply: the game's own melody"
+    : "the pitch this line plays the sound at, on top of the variant's own — this line of this game only, never the kit";
+  return slider("rate", v, 0.5, 2, 0.05, 0.25, "rate", title)
+    .replace(/^<span class="rng"/, '<span class="rng rate"')
+    .replace(/<\/span>$/, `<button class="rrst" title="back to ×1 — apply takes the rate out of the call">↺</button></span>`);
+}
+function wireRate(call, row) {
+  const input = row.querySelector("input.rate");
+  if (!input) return;
+  const btn = input.closest(".rng").querySelector(".rrst"), expr = call.args[2];
+  // A constant in the source, or no argument at all (×1); null when the code builds it.
+  const src = expr == null ? 1 : isNum(expr) ? Number(expr) : null;
+  const writes = !call.inherited && /^Sound\.(clip|cue|ui)$/.test(call.name);
+  input.dataset.was = input.value;
+  if (src == null) input.classList.add("expr");
+  row._rateSync = () => {
+    const changed = input.value !== input.dataset.was;
+    input.classList.toggle("dirty", changed);
+    if (input._show) input._show();
+    btn.disabled = Number(input.value) === 1;
+  };
+  const sync = () => {
+    row._rateSync();
+    // A motor line's pitch moves for the ear only, like its volume.
+    if (!writes) return;
+    const p = pend(call), v = Number(input.value);
+    delete p.rate;
+    // Back to ×1 over a constant: the argument goes rather than being written as 1.
+    if (input.value !== input.dataset.was) p.rate = v === 1 && src != null ? "" : input.value;
+    if (!Object.keys(p).length) delete state.pending.calls[pendKey(call)];
+    countPending();
+  };
+  input.addEventListener("input", sync);
+  input.addEventListener("change", sync);
+  btn.onclick = () => {
+    input.value = 1;
+    input.dispatchEvent(new Event("input"));
+    if (writes && src != null && src !== 1) note(`line ${call.line} will play ${row.dataset.key} at ×1 — the ×${src} leaves the call on apply`);
+  };
+  // A re-render rebuilds the row: put the pending pitch back on it.
+  const p = state.pending.calls[pendKey(call)];
+  if (p && p.rate != null) input.value = p.rate === "" ? 1 : p.rate;
+  row._rateSync();
+}
+
+/* ── split: one line of a kit key to a key of its own ─────────────────────
+   Two lines playing one key play one sound: a wingbeat and a cry share
+   `dive`, and moving the variant of one moves the other. The scissors give
+   the line a NEW key (`dive2`, or a name typed in), mapped in the manifest to
+   the variant the key ships with today — so it sounds the same on apply, and
+   its own card then picks its own variant. The last line of a key stays: a key
+   nothing plays is not a split, it is a removal. */
+const KEY_NAME = /^[A-Za-z_$][\w$]*$/;
+function splitTaken(name) {
+  return name === "music" || (state.data.sounds || []).some((x) => x.key === name);
+}
+function splitLine(call, row) {
+  const k = pendKey(call);
+  if (state.pending.split[k]) { delete state.pending.split[k]; row._splitSync(); countPending(); note(""); return; }
+  const card = row.closest(".beat"), from = card.dataset.key;
+  if (!card.dataset.kit) { note(from + " is an embedded clip — hand it to a kit variant first, then split it"); return; }
+  const rows = [...card.querySelectorAll(".call")].filter((r) => r._call && !state.pending.split[pendKey(r._call)]);
+  if (rows.length < 2) { note(from + " keeps its last line — a key nothing plays is a removal, not a split"); return; }
+  const used = (n) => splitTaken(n) || Object.values(state.pending.split).some((s) => s.to === n && s.from !== from);
+  let i = 2;
+  while (used(from + i)) i++;
+  const to = (prompt(`A key of its own for line ${call.line} (${call.fn || "top level"}) — it plays ${card.dataset.kit} until you pick another variant on its card`, from + i) || "").trim();
+  if (!to) return;
+  if (!KEY_NAME.test(to)) { note(`"${to}" is not a sound key — letters, digits, _ and $`); return; }
+  if (to === from || used(to)) { note(to + " is already a key of this game"); return; }
+  state.pending.split[k] = { line: call.line, name: call.name, from, to, id: card.dataset.kit };
+  row._splitSync();
+  countPending();
+  note(`line ${call.line} will play ${to} on apply — mapped to ${card.dataset.kit}, so it sounds the same until its own card moves it`);
 }
 
 /* When a line fires, under it: the conditions it sits in, outermost first,
@@ -1404,8 +1541,8 @@ function callRow(call) {
   /* The clip itself — which file it is cut from, and how long the cut is, or
      the kit variant it plays — belongs to the KEY, and it is written once on
      the card's header. What a line owns is how LOUD it plays it, in this
-     game's source. Its pitch is read and not set: a sound is shaped on its
-     variant, and a rate the code builds is the game's own melody.
+     game's source, and at what PITCH, on top of the variant's own; a rate the
+     code builds is the game's own melody, heard here and left to it.
      A line of the MOTOR (the template's end-screen cues) is named by its
      file, since it is not in the unit's own source. */
   const bits = [`<button class="act sm play" title="play it in the game">▶</button>`,
@@ -1423,6 +1560,12 @@ function callRow(call) {
   bits.push(call.preview.exact
     ? `<span class="approx"></span>`
     : `<span class="approx" title="an argument is built from the round's own state — the motor's default is shown instead. Slide over it.">≈</span>`);
+  // A line of a kit key can leave for a key of its own (splitLine).
+  const splittable = !call.inherited && call.kind === "sound" && call.soundLiteral !== false &&
+    (call.name === "Sound.clip" || call.name === "Sound.cue") && state.slug !== "template" && state.slug !== "shell";
+  bits.push(splittable
+    ? iconBtn("split", "split", "give this line a key of its own — it plays the same variant on apply, then its card picks another")
+    : `<span class="iconbtn"></span>`);
   // Each line carries its own three: one clip is played by several lines and
   // each is its own decision.
   bits.push(iconBtn("check", "check", "mark as checked — heard, signed off"));
@@ -1445,6 +1588,20 @@ function callRow(call) {
   row.querySelector(".check").onclick = () => toggleCheck([call.checkId], !isChecked(call.checkId));
   row.querySelector(".revert").onclick = () => revertCall(call, row);
   if (row.querySelector(".trash")) row.querySelector(".trash").onclick = () => killCall(call, row);
+  wireRate(call, row);
+  const sp = row.querySelector(".iconbtn.split");
+  if (sp) {
+    row._splitSync = () => {
+      const s = state.pending.split[pendKey(call)];
+      row.classList.toggle("split", !!s);
+      sp.classList.toggle("on", !!s);
+      let tag = row.querySelector(".splitto");
+      if (s && !tag) { tag = document.createElement("span"); tag.className = "splitto"; row.querySelector(".fn").appendChild(tag); }
+      if (tag) { if (s) tag.textContent = " → " + s.to; else tag.remove(); }
+    };
+    sp.onclick = () => splitLine(call, row);
+    row._splitSync();
+  }
 
   /* A motor line's volume moves for the ear only: nothing pends, and revert
      puts it back where the motor has it. */
@@ -1519,7 +1676,7 @@ function openKitMenu(btn, key) {
   const cats = [], now = btn.dataset.value || "";
   const row = (value, label, sub, cat, hay, play) => {
     const node = document.createElement("button");
-    node.className = "fm-row" + (value === now ? " cur" : "");
+    node.className = "fm-row" + (value === now ? " cur" : "") + (value === "__new__" ? " fm-new" : "");
     node.innerHTML = esc(label) + `<br><span class="sz">${esc(sub)}</span>`;
     node.onmouseenter = () => {
       clearTimeout(fileMenu.hover);
@@ -1531,6 +1688,15 @@ function openKitMenu(btn, key) {
     list.appendChild(node);
     fileMenu.rows.push({ node, value, cat, hay: hay.toLowerCase(), play, pick });
   };
+  /* A key already in the kit: the first row makes it a sound of this game's
+     own, a copy of the one it plays — the others are left as they ship. */
+  if (btn.dataset.current) {
+    const from = state.pending.kit[key] || btn.dataset.current;
+    const others = kitGames(from).filter((g) => g.slug !== state.slug).length;
+    row("__new__", "+ New sound for " + gameTitle(state.slug), "a copy of " + from + " to tune on this card" +
+      (others ? " — the " + others + " other game" + (others > 1 ? "s" : "") + " keep " + from + " as it ships" : ""), "", "new",
+      () => kitShot(from));
+  }
   // A key not in the kit yet keeps its own clip on the first row, heard from its file.
   if (!btn.dataset.current) {
     const snd = (state.data.sounds || []).find((x) => x.key === key);
@@ -1589,6 +1755,53 @@ function usersHtml(id) {
     return `<img class="${v ? "v-" + v : ""}" src="icons/${encodeURIComponent(g.slug)}.png" alt="${esc(name)}" title="${esc(name + " — " + g.keys.join(", ") + " plays " + id + (wait ? "" : v ? " · " + KIT_VALID[v] : " · not checked yet"))}">`;
   }).join("") + `</div>`;
 }
+function paintUsers() {
+  document.querySelectorAll(".kitusers[data-id]").forEach((n) => { n.outerHTML = usersHtml(n.dataset.id) || "<div></div>"; });
+}
+const gameTitle = (slug) => (state.games && state.games[slug] && state.games[slug].title) || slug;
+/* The name a new sound is offered: the game's own slug, in the kit's
+   alphabet, numbered when the role already holds it. */
+function forkName(role) {
+  const base = (state.slug.replace(/[^a-z0-9]/g, "").replace(/^[^a-z]+/, "") || "game").slice(0, 22);
+  const taken = (n) => kitSaved(role + "/" + n) || state.pending.roles[role + "/" + n];
+  let n = base, i = 2;
+  while (taken(n)) n = base + i++;
+  return n;
+}
+/* New sound for this game (the first row of Change sound): this key leaves
+   the variant it plays for a copy of it — the draft included — that only
+   this game plays, under the same role or another one (`role/name`), so
+   nothing done to it reaches a game that validated the original. The key
+   alone moves: another key of this game on the same variant keeps it until
+   its own card does the same. */
+function forkKey(key, from) {
+  const role = from.split("/")[0];
+  const ans = (prompt("New sound for " + key + " in " + gameTitle(state.slug) + ", a copy of " + from + ".\n" +
+    "Its name — or role/name to file it under another role (" + gameplayRoles().join(", ") + ")", forkName(role)) || "").trim().toLowerCase();
+  if (!ans) return;
+  const [nrole, name] = ans.includes("/") ? ans.split("/") : [role, ans];
+  const nid = nrole + "/" + name;
+  if (!gameplayRoles().includes(nrole)) { note(nrole + " is not a gameplay role of the kit (" + gameplayRoles().join(", ") + ")"); return; }
+  if (!KIT_NAME.test(name || "")) { note("a sound is named in lowercase letters and digits"); return; }
+  if (kitSaved(nid) || state.pending.roles[nid]) { note(nid + " already exists — pick it in Change sound instead"); return; }
+  state.pending.roles[nid] = { takes: JSON.parse(JSON.stringify((kitDraft(from) || { takes: [] }).takes)) };
+  /* The draft travels with the key: left on the variant it leaves, it would
+     be applied for the games that stay on it. */
+  const elsewhere = (id) => (state.data.sounds || []).some((x) => x.key !== key && ((state.pending.kit && state.pending.kit[x.key]) || x.kit) === id);
+  if (!elsewhere(from)) delete state.pending.roles[from];
+  // A copy of a copy: the one it came from was this key's alone, and goes.
+  if (!kitSaved(from) && !elsewhere(from)) delete state.pending.roles[from];
+  const snd = (state.data.sounds || []).find((x) => x.key === key);
+  if (snd && snd.kit === nid) delete state.pending.kit[key]; else state.pending.kit[key] = nid;
+  state.kitOpen.add(key);
+  note(key + " will play the new " + nid + " on apply — tune it here; " + from + " stays as it ships for the other games");
+  countPending();
+  render();
+}
+// The kit's gameplay roles, the ones a game's key may play (state.kitIds holds no shell role).
+function gameplayRoles() {
+  return [...new Set((state.kitIds || []).map((id) => id.split("/")[0]))];
+}
 // The games other than this one that signed a variant off on its current cut.
 function kitValidators(id) {
   return kitGames(id).filter((g) => g.slug !== state.slug && kitValid(id, g.slug) === "ok")
@@ -1603,7 +1816,7 @@ function refreshKitChecked() {
   return fetch("api/kit-checked").then((r) => r.json()).then((c) => {
     if (ask !== kitCheckedAsk) return;
     state.kitChecked = c || {};
-    document.querySelectorAll(".kitusers[data-id]").forEach((n) => { n.outerHTML = usersHtml(n.dataset.id) || "<div></div>"; });
+    paintUsers();
     document.querySelectorAll(".beat").forEach((card) => { if (card._kitSync) card._kitSync(); });
   }).catch(() => {});
 }
@@ -1612,7 +1825,8 @@ function wireKitSelect(sel, key, current) {
   if (!sel) return;
   sel._set = (v) => {
     sel.dataset.value = v || "";
-    sel.textContent = v ? "kit: " + v : "clip";
+    // On a kit card the sound button already names the variant: this is the way to another one.
+    sel.textContent = current ? "Change sound" : v ? "kit: " + v : "clip";
     sel.classList.toggle("dirty", (v || "") !== (current || ""));
   };
   sel._set(state.pending.kit[key] || current || "");
@@ -1621,6 +1835,7 @@ function wireKitSelect(sel, key, current) {
     if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); openKitMenu(sel, key); }
   };
   sel._choose = (v) => {
+    if (v === "__new__") { forkKey(key, state.pending.kit[key] || current); return; }
     sel._set(v);
     if (!v || v === current) delete state.pending.kit[key];
     else { state.pending.kit[key] = v; delete state.pending.sfx[key]; delete state.pending.kill.clips[key]; }
@@ -1692,7 +1907,7 @@ function kitCard(key, snd, calls, card) {
   head.dataset.key = key;
   head.innerHTML =
     `<span class="key" title="manifest.json sfx.${esc(key)}">${esc(key)}</span>` +
-    `<button class="kitbtn" title="this key plays a variant of the house kit — open it here to tune its takes, for every game that maps to it"></button>` +
+    `<button class="kitbtn" title="the sound of the house kit this key plays — open it to hear its takes, and to tune them when no other game plays it"></button>` +
     kitSelect(key, snd.kit) +
     `<span class="sp"></span><span class="plays">${calls.length}×</span>` +
     `<span class="acts">` +
@@ -1711,13 +1926,19 @@ function kitCard(key, snd, calls, card) {
   const editor = kitEditor(key, snd);
   card.appendChild(editor);
   calls.forEach((c) => card.appendChild(callRow(c)));
-  card.insertAdjacentHTML("beforeend", usersHtml(snd.kit));
 
   const btn = head.querySelector(".kitbtn");
   // The button names the variant the key will play, open or shut, and goes amber on a draft.
   card._kitSync = () => {
     const id = state.pending.kit[key] || snd.kit, open = state.kitOpen.has(key);
-    btn.textContent = "kit: " + id + (open ? " ▾" : " ▸");
+    const others = kitGames(id).filter((g) => g.slug !== state.slug), ok = others.filter((g) => kitValid(id, g.slug) === "ok").length;
+    const tag = !kitSaved(id) ? ["new", "new · this game only"]
+      : others.length ? ["shared", "shared · " + (others.length + 1) + " games" + (ok ? " · " + ok + " validated" : "")]
+      : ["own", "this game only"];
+    btn.innerHTML = (open ? "▾ " : "▸ ") + esc(id) + `<span class="kshare ${tag[0]}">${esc(tag[1])}</span>`;
+    // The foot shows who plays the variant the key WILL play: none yet for a new one.
+    const foot = card.querySelector(":scope > .kitusers");
+    if (!foot || foot.dataset.id !== id) { if (foot) foot.remove(); card.insertAdjacentHTML("beforeend", usersHtml(id)); }
     btn.classList.toggle("open", open);
     btn.classList.toggle("dirty", kitDirty(id));
     editor.hidden = !open;
@@ -2045,9 +2266,16 @@ function kitEditor(key, snd) {
   const id = () => state.pending.kit[key] || snd.kit;
   const takes = () => (kitDraft(id()) || { takes: [] }).takes;
   const edit = () => kitEdit(id()).takes;
+  /* A gameplay sound another game plays is not this card's to change: it is
+     read and heard here, and changed on /kit, where changing it for every
+     game is what the page is for. A shell role is every game's by design. */
+  const locked = () => {
+    const x = kitRole(id());
+    return !!x && x.group !== "shell" && !!kitSaved(id()) && kitGames(id()).some((g) => g.slug !== state.slug);
+  };
   const changed = () => {
     const by = kitValidators(id());
-    if (by.length && kitDirty(id())) note(id() + " is validated by " + by.join(", ") + " — applying this takes their check back (New variant keeps it to this game)");
+    if (by.length && kitDirty(id())) note(id() + " is validated by " + by.join(", ") + " — applying this takes their check back");
     if (state.pending.roles[id()] && !kitDirty(id())) delete state.pending.roles[id()];
     const card = node.closest(".beat");
     if (card) card.querySelector(".kitbtn").classList.toggle("dirty", kitDirty(id()));
@@ -2063,22 +2291,27 @@ function kitEditor(key, snd) {
     if (!x || !v) { node.innerHTML = `<div class="knote">The kit has no variant ${esc(cur)}.</div>`; return; }
     if (E.take >= v.takes.length) E.take = 0;
     const others = kitGames(cur).filter((g) => g.slug !== state.slug).map((g) => title(g.slug));
-    const shell = x.group === "shell", fresh = !kitSaved(cur);
+    const shell = x.group === "shell", fresh = !kitSaved(cur), lock = locked();
+    node.classList.toggle("locked", lock);
+    const ok = kitValidators(cur);
     node.innerHTML =
       `<div class="kbar"><b>${esc(cur)}</b>${fresh ? `<span class="knew">new</span>` : ""}<span class="kwhat">${esc(x.what)}</span><span class="sp"></span>` +
       `<button class="act sm" data-k="play" title="one shot of the draft, the way the game plays it — the takes alternate">Play</button>` +
       `<button class="act sm ghost" data-k="shipped" title="the cut files on disk — what the lines below play until apply"${fresh ? " disabled" : ""}>Shipped</button>` +
-      (shell ? "" : `<button class="act sm ghost" data-k="fork" title="a new variant of ${esc(cur.split("/")[0])}, starting from these takes — the key moves to it on apply, the others keep this one">New variant</button>`) +
       `</div>` +
+      (lock
+        ? `<div class="klock"><span><b>Shared with ${esc(others.join(", "))}</b>` +
+          (ok.length ? ` — validated by ${esc(ok.join(", "))}` : "") +
+          `. It is read here and not changed: to change ${esc(key)} alone, give it a sound of its own.</span><span class="sp"></span>` +
+          `<button class="act sm" data-k="own" title="a copy of ${esc(cur)} that only ${esc(title(state.slug))} plays, tuned on this card — the others keep ${esc(cur)} as it ships">New sound for ${esc(title(state.slug))}</button>` +
+          `<button class="act sm ghost" data-k="other" title="another sound of the kit for ${esc(key)} — hover to hear">Change sound</button></div>`
+        : "") +
       `<div class="knote">` + (shell
         ? `<b>A shell role</b> — every game plays it, menus and end screens: a change here is heard in all of them. `
-        : "") + (shell ? "" : kitValidators(cur).length
-        ? `<b>Validated by ${esc(kitValidators(cur).join(", "))}</b> — a change here takes their check back: they will have to hear it again. <i>New variant</i> leaves it alone and keeps the change to ${esc(title(state.slug))}. `
-        : "") + (shell ? "" : others.length
-        ? `<b>Shared</b> — ${esc(others.join(", "))} ${others.length > 1 ? "play" : "plays"} it too: a change here is heard there. <i>New variant</i> keeps it to ${esc(title(state.slug))}.`
-        : fresh ? `A new variant: apply writes it into the kit and moves ${esc(key)} to it.`
-          : `Only ${esc(title(state.slug))} plays it.`) +
-      ` The takes are interchangeable — the game alternates them. The lines below play the shipped cut until apply.</div>` +
+        : "") + (lock ? "To change it for every game, open it on <a href=\"kit\" target=\"_blank\">/kit</a>. "
+        : fresh ? `A new sound: apply writes it into the kit and moves ${esc(key)} to it. `
+        : shell ? "" : `Only ${esc(title(state.slug))} plays it: a change here is heard nowhere else. `) +
+      `The takes are interchangeable — the game alternates them. The lines below play the shipped cut until apply.</div>` +
       `<div class="ktakes">` + v.takes.map((t, i) => takeHtml(t, i, v.takes.length)).join("") + `</div>` +
       `<div class="kalt"><div class="ksec"></div><div class="krows" data-list="alike"></div>` +
       `<input class="ksearch" type="text" autocomplete="off" placeholder="Search the library — impact metal, pickup, ui click…">` +
@@ -2141,7 +2374,8 @@ function kitEditor(key, snd) {
     const buf = kdecoded[t.file];
     if (!buf) { kbuf(t.file).then(() => drawWave(i)).catch(() => {}); return; }
     const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
-    if (!w) return;
+    // An editor painted open by a render is not in the page yet: it is drawn once it is.
+    if (!w) { if (!cv.isConnected && !cv._later) { cv._later = 1; requestAnimationFrame(() => drawWave(i)); } return; }
     if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     cv.dataset.dur = buf.duration;
     const g = cv.getContext("2d"), p = peaksOf(t.file, buf, w), { x0, x1, xt } = geom(cv, t);
@@ -2244,29 +2478,17 @@ function kitEditor(key, snd) {
       setTimeout(() => a.play().catch(() => {}), i * 450);
     });
   }
-  function fork() {
-    const role = id().split("/")[0];
-    const name = (prompt("A new " + role + " variant, starting from these takes — its name (glass, metal, soft…)") || "").trim().toLowerCase();
-    if (!name) return;
-    const nid = role + "/" + name;
-    if (!KIT_NAME.test(name)) { note("a variant is named in lowercase letters and digits"); return; }
-    if (kitSaved(nid) || state.pending.roles[nid]) { note(nid + " already exists"); return; }
-    state.pending.roles[nid] = { takes: JSON.parse(JSON.stringify(takes())) };
-    if (nid !== snd.kit) state.pending.kit[key] = nid;
-    note(key + " will play the new " + nid + " on apply — tune it here, the others keep " + snd.kit);
-    countPending();
-    render();
-  }
-
   // ---- the hand: one set of listeners for the editor's whole life.
   node.addEventListener("click", (e) => {
     const k = e.target.closest("[data-k]");
     if (k && k.tagName === "BUTTON") {
       if (k.dataset.k === "play") shot();
       if (k.dataset.k === "shipped") shipped();
-      if (k.dataset.k === "fork") fork();
+      if (k.dataset.k === "own") forkKey(key, id());
+      if (k.dataset.k === "other") { const sel = node.closest(".beat").querySelector(".kitsel"); if (sel) openKitMenu(sel, key); }
       return;
     }
+    if (locked() && !e.target.closest('[data-act="play"]')) return;
     const act = e.target.closest("[data-act]");
     if (act) {
       const i = +act.dataset.i;
@@ -2301,7 +2523,7 @@ function kitEditor(key, snd) {
   });
   node.addEventListener("change", (e) => {
     const k = e.target.dataset.k;
-    if (!k || e.target.tagName !== "INPUT") return;
+    if (!k || e.target.tagName !== "INPUT" || locked()) return;
     const i = +e.target.dataset.i, v = parseFloat(e.target.value);
     if (isNaN(v)) return;
     const t = edit()[i];
@@ -2347,7 +2569,7 @@ function kitEditor(key, snd) {
   let drag = null;
   node.addEventListener("pointerdown", (e) => {
     const cv = e.target.closest("canvas");
-    if (!cv || !cv.dataset.dur || e.button) return;
+    if (!cv || !cv.dataset.dur || e.button || locked()) return;
     e.preventDefault();
     const i = +cv.dataset.i, t = takes()[i], rect = cv.getBoundingClientRect(), dur = +cv.dataset.dur;
     const at = (x) => Math.max(0, Math.min(dur, ((x - rect.left) / rect.width) * dur));
@@ -2474,7 +2696,18 @@ function render() {
     (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
     `<span class="seen-pill seen"></span>` +
     `<span class="checked-pill"></span>` +
+    (d.slug === "shell" || d.slug === "template" ? "" :
+      `<button class="probe" title="play every level of the map in a headless browser, a blind pilot pressing at random, and note on each card the first level its sound was heard on — a few minutes">Find stages</button>`) +
     `<button class="hide${state.hideChecked ? " on" : ""}" title="show only what is left to check">Hide checked</button>`;
+  const probe = el("stats").querySelector("button.probe");
+  if (probe) probe.onclick = () => {
+    fetch("api/probe-stages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: state.slug }) })
+      .then((r) => r.json()).then((o) => {
+        if (o.error) { note("find stages: " + o.error); return; }
+        note("finding stages for " + o.keys.length + " key" + (o.keys.length > 1 ? "s" : "") + " — the cards fill in as it goes");
+        loadStages();
+      }).catch((e) => note("find stages failed — " + e.message));
+  };
   el("stats").querySelector("button.hide").onclick = () => {
     state.hideChecked = !state.hideChecked;
     try { localStorage.setItem("events:hideChecked", state.hideChecked ? "1" : "0"); } catch (e) {}
@@ -2483,6 +2716,7 @@ function render() {
 
   paintChecks();
   paintClips();
+  paintStages();
   refreshFiles();
   countPending();
 }
@@ -2731,6 +2965,62 @@ function loadClips() {
     paintClips();
   });
   loadOffset();
+  loadStages();
+}
+
+/* ── STAGES: one level of the map each key is heard on ─────────────────────
+   lab/events-stages.json, written by the recorder (every cue seen fire, with
+   the level it fired on) and by Find stages (tools/lab/probe-stages.mjs, a
+   headless walk of the levels). A card says it beside its count; a tap on it
+   starts that level in the Rec frame, so the cue can be played for. */
+let stageTimer = 0;
+function loadStages() {
+  const slug = state.slug;
+  clearTimeout(stageTimer);
+  fetch("api/stages?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
+    if (slug !== state.slug) return;
+    state.stages = (o && o.stages) || {};
+    state.probe = (o && o.probe) || null;
+    paintStages();
+    if (state.probe && state.probe.game === slug) stageTimer = setTimeout(loadStages, 3000);
+  }).catch(() => {});
+}
+function paintStages() {
+  const pr = state.probe, running = pr && pr.game === state.slug, over = pr && !pr.game && pr.done === state.slug;
+  document.querySelectorAll(".beat .bhead[data-key]").forEach((head) => {
+    const key = head.dataset.key, n = (state.stages || {})[key];
+    let tag = head.querySelector(".stage");
+    if (!tag) {
+      tag = document.createElement("span");
+      tag.className = "stage";
+      const at = head.querySelector(".plays") || head.querySelector(".acts");
+      head.insertBefore(tag, at);
+      tag.onclick = () => { if (tag.dataset.n) recPlayLevel(Number(tag.dataset.n)); };
+    }
+    const missing = over && (pr.left || []).includes(key);
+    tag.hidden = !n && !missing && !running;
+    tag.classList.toggle("none", !n);
+    tag.dataset.n = n || "";
+    tag.textContent = n ? "Stage " + n : running ? "stage…" : "not heard";
+    tag.title = n ? "heard on level " + n + " — a tap starts it in the Rec frame"
+      : running ? "Find stages is walking the levels"
+      : "the blind pilot never heard it — a move it cannot make, or a level past the ones it walked";
+  });
+  const b = el("stats").querySelector("button.probe");
+  if (b) {
+    b.disabled = !!running;
+    b.textContent = running ? "Finding stages · level " + (pr.level || 0) + "/" + (pr.count || "?") + " · " + (pr.left || []).length + " left" : "Find stages";
+    if (over && pr.error) b.title = "the last walk failed: " + pr.error;
+  }
+}
+// A level started in the Rec frame — Rec opened first when it is not.
+function recPlayLevel(n) {
+  const w = recFrame.contentWindow, L = w && w.__LEVELS__;
+  if (!REC.on || !L || !L.play) { note("press Rec, then tap Stage " + n + " again — or pick level " + n + " in its list"); return; }
+  recDiscard();
+  L.play(n);
+  try { w.focus(); } catch (e) {}
+  note("level " + n + " started");
 }
 
 /* Asked again every time the played frame loads, not only when the game is
@@ -3226,6 +3516,16 @@ function recSaw(name, stack) {
   REC.log.push({ id: call.checkId, name: call.name, line: call.line, fn: call.fn || "", t });
   if (REC.log.length > 400) REC.log.splice(0, 200);
   if (call.kind !== "sound") return;
+  // The level it fired on, kept for its card when it is a lower one than the card says.
+  if (!call.shell && call.sound) {
+    const L = recFrame.contentWindow && recFrame.contentWindow.__LEVELS__, lv = L && L.current ? L.current() : 0;
+    const was = (state.stages || {})[call.sound];
+    if (lv >= 1 && (!was || lv < was)) {
+      (state.stages = state.stages || {})[call.sound] = lv;
+      paintStages();
+      fetch("api/stage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: state.slug, key: call.sound, level: lv }) }).catch(() => {});
+    }
+  }
   /* A cue with a clip is not captured again — unless the screen is recorded
      now and its clip is the canvas alone: that one is replaced. */
   const have = state.clips.byId && state.clips.byId[call.checkId], was = have && state.clips.clips[have];
@@ -3466,6 +3766,14 @@ function applyPlan() {
      the title screen signs itself with, so a build nobody can name is worse
      than a patch number nobody reads. There is no switch for it here. */
   const kit = Object.entries(state.pending.kit || {}).map(([key, id]) => ({ key, id }));
+  /* A line split off: its call names the new key (the `clip` argument), and
+     the manifest maps that key to the variant its old key ships with. */
+  for (const s of Object.values(state.pending.split || {})) {
+    let c = calls.find((x) => x.line === s.line && x.name === s.name);
+    if (!c) calls.push(c = { line: s.line, name: s.name, set: {} });
+    c.set = Object.assign({}, c.set, { clip: s.to });
+    if (!kit.some((x) => x.key === s.to)) kit.push({ key: s.to, id: s.id, split: true });
+  }
   // The kit variants edited on their cards: written to kit.json and re-cut before the rest.
   const roles = Object.keys(state.pending.roles || {}).filter(kitDirty).map((id) => ({ id, takes: state.pending.roles[id].takes }));
   return { game: state.slug, calls, sfx, kill, kit, roles, bump: true };

@@ -170,6 +170,11 @@ var CARDS = { w: 560, h: 700, q: 0.84 };
    and `card-king` are the same name for a prop drawn at a third of the size. */
 var CARD_BY_SLUG = {
   stratideck: { w: 380, h: 470, q: 0.82 },
+  /* games/bridgessa's jack, queen and king: a square HALF figure each, cut to
+     the hips, which the game draws twice — upright and turned — split on a
+     diagonal. The half stands ~85 design px wide on the hand's biggest card
+     (~140 device px on a 3x phone), so 320 keeps better than 2x. */
+  bridgessa: { w: 320, h: 320, q: 0.84 },
   /* games/gearball's upgrade cards: one illustration per family, `card-<family>`,
      cut out of two grid sheets. The picture stands in the card's porthole at
      ~110 design px on the round's two cards and ~150 on the collection's big

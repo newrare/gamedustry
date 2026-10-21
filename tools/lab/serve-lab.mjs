@@ -4,6 +4,7 @@
 
     node tools/lab/serve-lab.mjs            (or: make lab)
     node tools/lab/serve-lab.mjs --port=9000
+    node tools/lab/serve-lab.mjs --no-watch (or: make studio)
 
   http://localhost:8095/ is the back office (lab/index.html): every page of
   lab/ in one list, opened beside it in a frame, one click from the next.
@@ -30,6 +31,12 @@
   none of them, so it does not run the events bench's web build either. Their
   output is printed here, each line tagged with the tool.
 
+  --no-watch (`make studio`) hands the flag to every tool it starts, so
+  none of them watches the sources: an agent editing games/ or lab/ no longer
+  reloads the page under the hand. A tool's own write (an APPLY) still
+  rebuilds and reloads, since that one was asked for. Restart to pick up a
+  change made elsewhere.
+
   Localhost only, like every lab server: it binds 127.0.0.1 and answers a
   request only when its Host names this machine. Four of these tools write
   into the repo.
@@ -46,6 +53,7 @@ import { HOST, isMain, portArg, listen, json, notFound, sendFile, text } from '.
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAB = path.join(ROOT, 'lab');
 const HOME = path.join(LAB, 'index.html');
+const LIVE = !process.argv.includes('--no-watch');
 
 /* The mounted tools, and the lab pages each one serves. A page listed here is
    never served as a bare file: without its server under it, it would open on
@@ -90,7 +98,7 @@ function ensure(t) {
   const tag = t.mount.replace(/\//g, '');
   t.port = (async () => {
     const port = await freePort();
-    const child = spawn(process.execPath, [path.join(ROOT, 'tools', 'lab', t.script), `--port=${port}`],
+    const child = spawn(process.execPath, [path.join(ROOT, 'tools', 'lab', t.script), `--port=${port}`, ...(LIVE ? [] : ['--no-watch'])],
       { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
     t.child = child;
     tagged(child.stdout, tag, process.stdout);
@@ -239,6 +247,7 @@ if (isMain(import.meta.url)) {
       console.log(`\n  lab back office   ${u}`);
       console.log(`  ${list.length} pages, ${list.filter((l) => l.server).length} on a server` +
                   ` (${TOOLS.map((t) => t.mount).join(' ')}), each started on first use`);
+      if (!LIVE) console.log('  watching nothing (--no-watch): restart to pick up a change made elsewhere');
       console.log('  bound to 127.0.0.1 — localhost only\n');
     }
   });

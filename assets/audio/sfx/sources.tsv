@@ -483,6 +483,7 @@ step-wood-05.ogg	kenney-impact	CC0 1.0	sfx/kenney_impact-sounds/Audio/footstep_w
 tone-double-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/twoTone1.ogg
 tone-double-02.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/twoTone2.ogg
 tone-high-down-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/highDown.ogg
+tone-high-echo-01.mp3	kenney-digital	CC0 1.0	derived from tone-high-down-01.ogg: its first 50 ms, decayed, repeated as an 8-click echo train (echomaze, 2026-10-05)
 tone-high-up-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/highUp.ogg
 tone-low-down-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/lowDown.ogg
 tone-low-random-01.ogg	kenney-digital	CC0 1.0	sfx/kenney_digital-audio/Audio/lowRandom.ogg

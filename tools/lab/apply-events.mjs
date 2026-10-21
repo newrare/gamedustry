@@ -90,6 +90,7 @@ function convertNotify(src, call, set, edits, skip, label) {
 
   const pick = (name, srcText, isLiteral) => {
     if (set[name] == null) return srcText;               // untouched on the bench
+    if (set[name] === '') return null;                   // cleared — built or not, it goes
     if (srcText != null && !isLiteral) {
       skip.push(`${label} ${name}: the source writes an expression (${srcText}) — kept as it is`);
       return srcText;
@@ -175,6 +176,7 @@ function convertPop(src, call, set, edits, skip, label) {
   const pick = (name) => {
     const srcText = opts[name] ? src.slice(opts[name].start, opts[name].end).trim() : null;
     if (set[name] == null) return srcText;               // untouched on the bench
+    if (set[name] === '') return null;                   // cleared — built or not, it goes
     if (srcText != null && literal(srcText) == null) {
       skip.push(`${label} ${name}: the source writes an expression (${srcText}) — kept as it is`);
       return srcText;
@@ -210,7 +212,9 @@ function setArg(src, call, spec, value, edits, skip, label) {
       return;
     }
     if (!spec.str && !/^-?\d+(\.\d+)?$/.test(call.args[i])) {
-      skip.push(`${label}: the source writes an expression (${call.args[i]}) — not overwritten`);
+      // A condition picking between values is two cases in one call: one call per case makes each a line.
+      skip.push(`${label}: the source writes an expression (${call.args[i]}) — not overwritten` +
+        (call.args[i].includes('?') ? '; two cases in one call — write one call per case (if … else …) to tune each' : ''));
       return;
     }
     edits.push({ start: spans[i].start, end: spans[i].end, text, what: label });
@@ -225,6 +229,22 @@ function setArg(src, call, spec, value, edits, skip, label) {
   }
   add.push(text);
   edits.push({ start: call.argsSpan.end, end: call.argsSpan.end, text: ', ' + add.join(', '), what: label });
+}
+
+/* A pitch handed back to the ROLE: the bench's ↺ on a line's rate. The sound
+   is shaped on its kit variant, so a constant rate in the call goes — taken
+   out when it is the last argument, written `1` when an argument follows it
+   (Sound.cue's freq, dur, type). A rate the code builds is the game's melody,
+   and is refused like any expression. */
+function dropRate(src, call, spec, edits, skip, label) {
+  const i = spec.arg, spans = call.argSpans;
+  if (i >= spans.length) { skip.push(`${label}: the line already plays the role's own pitch`); return; }
+  if (!/^-?\d+(\.\d+)?$/.test(String(call.args[i]).trim())) {
+    skip.push(`${label}: the source writes an expression (${call.args[i]}) — the game's own melody, not removed`);
+    return;
+  }
+  if (i === spans.length - 1) edits.push({ start: spans[i - 1].end, end: spans[i].end, text: '', what: label });
+  else edits.push({ start: spans[i].start, end: spans[i].end, text: '1', what: label });
 }
 
 /* One field of the options object: rewritten where it is, appended after the
@@ -330,9 +350,15 @@ function noteEdit(src, pack, key, file, edits) {
    with it. 261 of the catalogue's 277 calls are alone on their statement; the
    16 that are not are all that kind of guard.
 
-   Anything else — a call sharing its line, an `else` hanging off the next one,
-   a guard that closes a brace — is named and left alone. A tool that writes
-   into a game's source may refuse; it may not guess.                          */
+   One call per case is the house way to give two cases two volumes
+   (`if (mid) Sound.clip(…); else Sound.clip(…);`), so both lines of that pair
+   come out too: the `else` line on its own, and the `if` line by turning the
+   `else` under it into the `if` it no longer has (`if (!mid) Sound.clip(…);`).
+
+   Anything else — a call sharing its line, an `else` hanging off the next one
+   that is not that pair, a guard that closes a brace — is named and left
+   alone. A tool that writes into a game's source may refuse; it may not
+   guess.                                                                      */
 function balancedParens(text) {
   let d = 0;
   for (const ch of text) {
@@ -340,6 +366,16 @@ function balancedParens(text) {
     else if (ch === ')') { d--; if (d < 0) return false; }
   }
   return d === 0;
+}
+
+// The condition of an `if (…)` / `else if (…)` head, turned down.
+function negate(cond) {
+  const c = cond.trim();
+  if (/^[\w$.]+$/.test(c)) return '!' + c;
+  if (/^![\w$.]+$/.test(c)) return c.slice(1);
+  const eq = /^([\w$.]+|"[^"]*")\s*(===|!==)\s*([\w$.]+|"[^"]*")$/.exec(c);
+  if (eq) return eq[1] + (eq[2] === '===' ? ' !== ' : ' === ') + eq[3];
+  return '!(' + c + ')';
 }
 
 function statementSpan(src, call, skip, label) {
@@ -362,14 +398,22 @@ function statementSpan(src, call, skip, label) {
   }
 
   const guard = before.trim();
-  if (guard && !(/^if\s*\(/.test(guard) && guard.endsWith(')') && balancedParens(guard))) {
+  const cond = /^(else\s+)?if\s*\(/.test(guard) && guard.endsWith(')') && balancedParens(guard);
+  if (guard && !cond && guard !== 'else') {
     skip.push(`${label}: it hangs off \`${guard}\` — remove it by hand`);
     return null;
   }
 
-  const nextEnd = src.indexOf('\n', lineEnd + 1);
-  const next = src.slice(lineEnd + 1, nextEnd < 0 ? src.length : nextEnd);
-  if (/^\s*(\}\s*)?else\b/.test(next)) {
+  const nextStart = lineEnd + 1, nextEnd = src.indexOf('\n', nextStart);
+  const next = src.slice(nextStart, nextEnd < 0 ? src.length : nextEnd);
+  // The plain `else` of this line's own `if`: it becomes that `if`, turned down.
+  let rewrite = null;
+  const tail = /^(\s*)else\b(?!\s+if\b)\s*/.exec(next);
+  if (cond && tail) {
+    const head = /^(else\s+)?if\s*\(/.exec(guard)[0];
+    rewrite = { end: nextStart + tail[0].length,
+                text: tail[1] + (head.startsWith('else') ? 'else ' : '') + 'if (' + negate(guard.slice(head.length, -1)) + ') ' };
+  } else if (/^\s*(\}\s*)?else\b/.test(next)) {
     skip.push(`${label}: an \`else\` follows it and would lose its \`if\` — remove it by hand`);
     return null;
   }
@@ -383,7 +427,26 @@ function statementSpan(src, call, skip, label) {
   if (/^\s*\/\//.test(prev) && prev.match(/^\s*/)[0] === before.match(/^\s*/)[0]) {
     skip.push(`${label}: removed, but the comment above it was left — "${prev.trim().slice(0, 60)}"`);
   }
+  if (rewrite) return { start: lineStart, end: rewrite.end, text: rewrite.text };
   return { start: lineStart, end: Math.min(src.length, lineEnd + 1) };
+}
+
+/* Two removals that touch are the two branches of one `if / else` going
+   together: the `if` line's span rewrites the head of the `else` line, which
+   is going too, so the pair becomes one plain deletion of both lines. */
+function mergeRemovals(list) {
+  list.sort((a, b) => a.span.start - b.span.start);
+  const out = [];
+  for (const r of list) {
+    const last = out[out.length - 1];
+    if (last && r.span.start < last.span.end) {
+      last.span = { start: last.span.start, end: Math.max(last.span.end, r.span.end) };
+      last.also.push(r);
+      continue;
+    }
+    out.push({ ...r, also: [] });
+  }
+  return out;
 }
 
 /* The whole `key: "data:…",` property, from the key to the comma that ends it,
@@ -482,7 +545,7 @@ export async function applyEdits(slug, plan) {
 
   /* Deletions first, so an edit to something that is on its way out is dropped
      rather than spliced into a span that will not exist. */
-  const gone = new Set();
+  const gone = new Set(), removals = [];
   for (const key of killClips) {
     const entry = pack.keys.find((k) => k.key === key);
     const kit = !entry && mapped[key];
@@ -514,7 +577,7 @@ export async function applyEdits(slug, plan) {
       if (note) edits.push({ start: note.lineStart, end: note.lineEnd, text: '', what: `note for ${key}` });
     }
     for (const p of spans) {
-      edits.push({ start: p.span.start, end: p.span.end, text: '', what: `${p.call.name}:${p.call.line}`,
+      removals.push({ span: p.span, what: `${p.call.name}:${p.call.line}`,
         applied: { what: `${p.call.name}:${p.call.line}`, value: `removed — it played ${key}`, line: p.call.line, quiet: true } });
       gone.add(p.call.line + '|' + p.call.name);
     }
@@ -530,9 +593,15 @@ export async function applyEdits(slug, plan) {
     }
     const sp = statementSpan(src, hits[0], skipped, `${k.name}:${k.line}`);
     if (!sp) continue;
-    edits.push({ start: sp.start, end: sp.end, text: '', what: `${k.name}:${k.line}`,
+    removals.push({ span: sp, what: `${k.name}:${k.line}`,
       applied: { what: `${k.name}:${k.line}`, value: 'removed', line: Number(k.line), quiet: true } });
     gone.add(id);
+  }
+  for (const r of mergeRemovals(removals)) {
+    const text = r.also.length ? '' : r.span.text || '';
+    edits.push({ start: r.span.start, end: r.span.end, text, what: r.what, applied: r.applied });
+    // The other branch, deleted in the same span: reported, never spliced twice.
+    for (const o of r.also) applied.push({ ...o.applied, after: null, at: null });
   }
 
   for (const edit of calls) {
@@ -565,10 +634,11 @@ export async function applyEdits(slug, plan) {
       const label = `${call.name}:${call.line} ${name}`;
       if (!f) { skipped.push(`${label}: not an editable argument`); continue; }
       const before = edits.length;
-      if (f.opt) setOpt(src, call, name, String(value), edits, skipped, label);
+      if (name === 'rate' && value === '') dropRate(src, call, f, edits, skipped, label);
+      else if (f.opt) setOpt(src, call, name, String(value), edits, skipped, label);
       else setArg(src, call, f, value, edits, skipped, label);
       for (let i = before; i < edits.length; i++) {
-        edits[i].applied = { what: label, value: value === '' ? '(removed)' : String(value), line: call.line };
+        edits[i].applied = { what: label, value: value === '' ? (name === 'rate' ? "the role's own pitch" : '(removed)') : String(value), line: call.line };
       }
     }
   }

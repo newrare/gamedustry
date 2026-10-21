@@ -7,18 +7,18 @@ default starting point for any new concept.
 
 A playable always needs the same things, so the motor owns them:
 
-| Layer          | What it is                                                                                                                                                                                                                          |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Frame**      | A portrait 720×1280 design space, letterbox-scaled to any screen. Canvas *and* DOM overlays share those coordinates.                                                                                                                |
-| **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                                                                                                                        |
-| **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                                                                                                                     |
-| **Overlay**    | The dramatic edge glow over the game view, and the host of the Pop layer.                                                                                                                                                           |
-| **Pop**        | Comic / manga callouts over the game view: score gains, combo milestones, hero beats, a mistake as it happens. The MOMENT.                                                                                                          |
-| **Notify**     | The one voice for INFORMATION, on every screen: a state that changed, an input refused, a lesson, anything said on a menu. A chip pinned top-right.                                                                                 |
-| **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                                                                                                                               |
-| **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                                                                                                                               |
-| **End screen** | Cinematic reveal: title, score count-up with confetti, the three stars on a podium (the third one in the middle, and bigger) tucked up under the score and behind it, cascading stat rows, big install CTA and a small replay link. |
-| **Ad glue**    | MRAID readiness, pause when not viewable, one `Ad.openStore()` for every CTA.                                                                                                                                                       |
+| Layer          | What it is                                                                                                                                                                                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Frame**      | A portrait 720×1280 design space, letterbox-scaled to any screen. Canvas *and* DOM overlays share those coordinates.                                                                                                                                                       |
+| **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                                                                                                                                                               |
+| **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                                                                                                                                                            |
+| **Overlay**    | The dramatic edge glow over the game view, and the host of the Pop layer.                                                                                                                                                                                                  |
+| **Pop**        | Comic / manga callouts over the game view: what the player just DID — score gains, combo milestones, hero beats, a mistake as it happens.                                                                                                                                  |
+| **Notify**     | What HAPPENED to the player, on every screen: an event they did not make, an input refused, a record, a mechanic met the first time, anything said on a menu. A chip pinned top-right.                                                                                     |
+| **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                                                                                                                                                                      |
+| **Fx**         | Canvas juice: particles, rings, screen shake, colour flash, hit-stop.                                                                                                                                                                                                      |
+| **End screen** | A list of beats: the character behind the column, the title stamped, the score popping and counting up, the three stars on a podium (the third in the middle, and bigger) and the stat rows as a receipt on one 500 ms grid, then the install CTA and a small replay link. |
+| **Ad glue**    | MRAID readiness, pause when not viewable, one `Ad.openStore()` for every CTA.                                                                                                                                                                                              |
 
 **A new game writes `CONFIG`, `ASSETS` and the `Game` module. Nothing else.**
 
@@ -399,14 +399,27 @@ interchangeable, alternated so a sound heard twenty times does not repeat; a
 different sound is a different variant, never another take. A mapped key must no longer be embedded in
 `ASSETS.sounds` — the build refuses one that is, since those bytes would never
 play. Every key of every game is mapped today, its variant cut to the file and the
-length its clip had; the one clip left is `echomaze`'s `map`, an echo train
-built by hand rather than cut, which no take can hold. The events bench names
+length its clip had. A sound built by hand rather than cut — `echomaze`'s
+`map`, an echo train — enters `assets/audio/sfx/` as its own file
+(`tone-high-echo-01`, declared in `sources.tsv`) and is a take like any
+other (`pickup/echotrain`). The events bench names
 any key still outside the kit in its header (*without a role*).
 
-It plays at **twice the speed it was authored at**: every delay in `EndScreen`
-is the timing the cascade was tuned with and `PACE` (0.5) is what the screen
-plays them at — one number rather than sixteen edited ones, so the rhythm
-between the beats is untouched and only the tempo moves.
+It is **a list of beats**, `BEATS` in `EndScreen`, chosen in
+`lab/end-screen.html` (preset `G · Chosen`): each beat starts after the end of
+the active one above it, or with its start, plus a delay, and a beat with
+nothing to do on this round (no rows, no stars, no character art) is skipped —
+so a fifth stat row moves everything under it by one step instead of
+overlapping it. The character rises alone (1 s), the title is stamped (0.6 s),
+the score pops 100 ms into it and counts up (0.91 s), then the stars and the
+rows step together on a 500 ms grid — **an empty star pops too**, dim and
+quiet, so the row lasts the same whatever the round scored — and the way out
+rises one control every 100 ms. The score lands on a punch (a kick of the
+screen and a white flash), a star lands on glitter and a lost round rains
+(`Confetti.glitter` / `Confetti.rain`, drawn on a canvas in front of the
+words). A layer above the motor adds its own beats to the same list with
+`onEndBeat(id, { applies, count, play })` — the web target's coins line,
+cascade, offer and gift boxes — and `onReveal` still holds the way out.
 
 ### If the clock should not end the round
 
@@ -492,34 +505,58 @@ Notify.say("Out of reach", { kind: "warn" });
 Notify.say("Taken to the prison", { sub: "Captain · A", kind: "info", icon: "lock" });
 ```
 
-**Two layers write words, and they say two different things.** `Pop` is the
-MOMENT — a word as loud as the action it lands on: a score, a combo, a mistake
-as it happens ("Combo lost", "Miss", "Both fall"), an alarm. `Notify` is the
-INFORMATION — something the player should know and could read a second later:
+**Two layers write words, and a third place holds the rules.** `Pop` is what
+the player just DID — a word as loud as the action it lands on: a score, a
+combo, a power fired, a mistake as it happens ("Combo lost", "Miss", "Both
+fall"), and the state that action leaves behind ("Shield down", "Wounded").
+`Notify` is what HAPPENED to them:
 
-- a state that changed and stays changed — "Shield down", "Wounded", "x2 over";
-- an input refused — "Out of reach", "Not enough coins", "The deck is full";
-- a lesson or a hint — gearball's "Tap a lock to open its gate",
-  radiam's power names;
-- a warning of what is coming — "Last ball", "The lava pulls";
+- an EVENT they did not make — a wave or a boss arriving, the lava surging,
+  overtime, the speed going up, the camp's day, a favour acting on its own;
+- an action REFUSED that they tried anyway — "Out of reach", "Follow suit",
+  "Not enough coins", "The deck is full";
+- a RECORD beaten — the motor's own (`Record`, below), nothing to write;
+- a MECHANIC met for the first time — `Notify.learn` (below), once per player;
 - **anything at all said outside a round** — the village, the map, a view, a
   card. `Pop` lives in `#overlay`, under the screens, so it cannot speak there;
   `Notify` is one layer (z 48) over the round, every view, the wallet band and
   a card, so the same call reads everywhere.
 
-When in doubt: if the word is the beat, it is `Pop`; if the player would be
-annoyed to have missed it, it is `Notify`. A refusal said AT the finger in the
-world stays `Pop.text` (radiam's "Frozen", "Blocked"): its whole point is where
-it is drawn.
+And a RULE — how a thing works, a lesson, a hint — is neither: it is a page of
+the game's **guide** (`Game.guide`, `packages/webshell/guide.js`; see
+[CLAUDE.md](../CLAUDE.md#the-guide)). It is never a line on screen during play
+and never a card opened on the way into a round. A refusal said AT the finger
+in the world stays `Pop.text` (radiam's "Frozen", "Blocked"): its whole point
+is where it is drawn.
 
-| field  | what it is                                                                                                                                                                                                            |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `word` | the line, in normal case. Translated (`Lang.t`, so a key of `web.copy.<lang>.strings`) and shouted through `upper()`                                                                                                  |
-| `sub`  | the second line, translated, never shouted                                                                                                                                                                            |
-| `kind` | `info` (accent) · `gain` (gold) · `good` (green) · `warn` (orange) · `loss` (danger) · `rare` (lilac). A colour and a default icon, nothing more                                                                      |
-| `icon` | a shell piece — `coin ticket super xp star sticker trophy`, painted when the build ships `CONFIG.shellArt` — or a pictogram: `info warn lock unlock heart user check x hourglass sparkles eye trash`. `null` for none |
-| `key`  | what two notices are compared on (default: word + sub)                                                                                                                                                                |
-| `hold` | ms fully readable, for a long sentence (gearball's hints take 3200); the house value is 2200                                                                                                                          |
+```js
+Notify.learn("pot", "The pot", { sub: "Binned chips pay the next paid hand" });
+```
+
+**`Notify.learn(id, word, opt)` names a mechanic once per player** — the first
+round it is met in, and never again (`guide:<slug>` in Store, erased by the
+OPTIONS row with the rest of the game's data). `id` is the guide page that
+explains it: the notice carries it as its `guide`, and its line in the "!" log
+opens that page. `opt.mark` is what is remembered instead of the id, for a rule
+told again under a new value (slipdeck's pair floor, `floor10`). It returns
+whether it spoke. It holds a notice 3.2 s and defaults to `kind: "rare"` and
+the `sparkles` icon.
+
+**`Record` says a record once a round**, the moment the HUD score passes the
+best one ("New record", "Previous: 12 400"). The motor arms it with the game's
+best score as a round starts (bootstrap.js, `startGame`) and checks it on every
+`HUD.setScore`; the level layer re-arms it with the level's own best, since a
+board of thirty levels has thirty records. A best of 0 is no record yet.
+
+| field   | what it is                                                                                                                                                                                                            |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `word`  | the line, in normal case. Translated (`Lang.t`, so a key of `web.copy.<lang>.strings`) and shouted through `upper()`                                                                                                  |
+| `sub`   | the second line, translated, never shouted                                                                                                                                                                            |
+| `kind`  | `info` (accent) · `gain` (gold) · `good` (green) · `warn` (orange) · `loss` (danger) · `rare` (lilac). A colour and a default icon, nothing more                                                                      |
+| `icon`  | a shell piece — `coin ticket super xp star sticker trophy`, painted when the build ships `CONFIG.shellArt` — or a pictogram: `info warn lock unlock heart user check x hourglass sparkles eye trash`. `null` for none |
+| `key`   | what two notices are compared on (default: word + sub)                                                                                                                                                                |
+| `hold`  | ms fully readable, for a long sentence (gearball's hints take 3200); the house value is 2200                                                                                                                          |
+| `guide` | the id of a page of the game's guide: the notice's line in the "!" log opens it                                                                                                                                       |
 
 **One look, and nothing about it is a game's.** It was chosen in
 [`lab/notify.html`](../lab/notify.html) — the `D · Chip` preset — and is written
@@ -539,7 +576,13 @@ thirteen products again:
   away otherwise;
 - a tap dismisses it and a press holds it — **except in a round**, where the
   layer is pointer-transparent: a notice must never eat the tap the game was
-  waiting for.
+  waiting for. **A notice that names a guide page** (`guide`, so every
+  `Notify.learn`) is the exception: a tap on it opens the guide on that page,
+  in a round too, and the card pauses the round. It says so with the guide's
+  book IN THE ICON'S SLOT, in place of its own icon (`.nt-ic.go`) — the line
+  is one mark, the words and the timer, here and in the "!" log alike — and
+  the Help card says it once, beside that book (`__GUIDE__.tip()`, menu.js
+  `fillHelp`).
 
 It is not cleared on a change of screen — the notice fired as a round ends is
 the one the next screen must still show.
@@ -1175,18 +1218,12 @@ only ever be a texture its echo arcs read against — carries a measured `scrim`
 per band, each solved for the same residual luma, so the colour carries the
 variety and not the light.
 
-**The character is a corner figure that arrives at twice its size.** It hangs
-off the bottom-right corner, cropped by the bottom edge only (44px of bleed —
-the feet, where the top edge would take the head), and the box is a constant in
-`motor.css`: 660px, twice the 330px figure it settles on. It arrives at full
-size with the title, when nothing else is on the screen, then gives up room one
-step at a time as the column claims it — the score, the stars, **each stat
-row**, the buttons — so a game with three rows shrinks it in five steps and one
-with six in eight, and the face is done making room exactly when the screen is
-done filling. `Art.settleCharacter(t)` is the step, called from the reveal; it
-writes `--char-k` and the stylesheet scales about the bottom-right corner, so
-the box never moves, no step costs a layout and the bleed shrinks with the
-figure.
+**The character stands behind the column.** Centred on the bottom edge,
+cropped by it (44px of bleed — the feet, where the top edge would take the
+head), a little bigger than its 594x660 box and at a third of its strength: it
+is the screen's backdrop, and it rises alone as the first beat of the reveal.
+It replaced a corner figure that arrived at twice its size and shrank one step
+per beat (chosen in `lab/end-screen.html`).
 
 It may overlap because it **cannot hide anything**: `#eo-char` is painted before
 everything the reveal writes, at one shared z-index, so the title, the score,

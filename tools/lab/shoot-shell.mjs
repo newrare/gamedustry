@@ -41,13 +41,13 @@ const VW = 450, VH = 800;                  // the 720×1280 frame at 0.625
 const PRE = 1, POST = 1;                   // seconds kept either side of a sound
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function launch(profile) {
+export async function launch(profile, { label = 'shoot-shell', minutes = 5 } = {}) {
   const child = spawn(CHROME, [
     '--headless=new', '--remote-debugging-port=0', '--user-data-dir=' + profile,
     '--hide-scrollbars', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     '--no-first-run', '--force-device-scale-factor=1', '--window-size=' + VW + ',' + VH, 'about:blank'
   ], { stdio: 'ignore' });
-  reap(child, { label: 'shoot-shell', deadlineMs: 5 * 60 * 1000 });
+  reap(child, { label, deadlineMs: minutes * 60 * 1000 });
   const portFile = path.join(profile, 'DevToolsActivePort');
   for (let i = 0; i < 100; i++) {
     if (fs.existsSync(portFile)) {
@@ -60,7 +60,7 @@ async function launch(profile) {
   throw new Error('Chrome did not open a debugging port');
 }
 
-async function cdp(port) {
+export async function cdp(port) {
   const info = await (await fetch('http://127.0.0.1:' + port + '/json/version')).json();
   const ws = new WebSocket(info.webSocketDebuggerUrl);
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });

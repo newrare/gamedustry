@@ -301,3 +301,7 @@
   .pop-bonus .pop-sub { background:#001a2a; border-color:#8ef0ff; color:#8ef0ff; }
   /* PERFECT CLEAR — gold, the run of the day */
   .pop-record .pop-sub, .pop-perfect .pop-sub { letter-spacing:4px; }
+
+  /* ---- the guide's stars page: the shell's painted star, three times ------ */
+  .bt-gstars { display:flex; justify-content:center; gap:18px; padding:8px 0; }
+  .bt-gstars img { width:96px; height:96px; object-fit:contain; }

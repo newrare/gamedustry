@@ -131,8 +131,8 @@
     var target = 0, shown = 0, colorT = null;
     function write(v) { $("hud-score").textContent = v; }
     // Set the score target; the displayed number eases toward it (see tick).
-    function setScore(v) { target = v; }
-    function setScoreNow(v) { target = shown = v; write(Math.round(v)); }
+    function setScore(v) { target = v; Record.check(v); }
+    function setScoreNow(v) { target = shown = v; write(Math.round(v)); Record.check(v); }
     function tick(dt) {
       if (shown === target) return;
       shown += (target - shown) * Math.min(1, dt * 14);
@@ -243,15 +243,21 @@
 
   /* --- Notify: the one voice for INFORMATION ---------------------------
 
-     Two layers write words, and they say two different things:
+     Two layers write words, and a third place holds the rules:
 
-       Pop     the MOMENT — a word as loud as the action it lands on: a
-               score, a combo, a mistake as it happens, an alarm.
-       Notify  the INFORMATION — something the player should know and could
-               read a second later: a state that changed and stays changed
-               ("Shield down", "Wounded"), an input refused ("Out of reach",
-               "Not enough coins"), a lesson, and anything at all said
-               outside a round, on a menu, the map, the village or a card.
+       Pop     the PLAYER'S ACTION — a word on what they just did and on what
+               it did at once, in the scene: a score, a combo, a hit, a
+               mistake as it happens, a power fired, the state that action
+               left behind ("Shield down", "Wounded").
+       Notify  an EVENT the player did not make — the camp's day, a boss or a
+               wave arriving, the lava surging, overtime; a RECORD beaten
+               (Record, below); an action REFUSED that the player tried anyway
+               ("Out of reach", "Follow suit", "Not enough coins"); a MECHANIC
+               met for the first time (`learn`, below); and anything at all
+               said outside a round, on a menu, the map, the village or a card.
+       the guide  every RULE, explained (packages/webshell/guide.js). A lesson
+               is never a line on screen during play: `learn` names the
+               mechanic once and points at its page.
 
          Notify.say("Taken to the prison", { sub: "Captain · A", kind: "info", icon: "lock" })
 
@@ -265,6 +271,18 @@
              draws the kind's dot in the same slot, so every line aligns.
        key   what two notices are compared on; default word + sub
        hold  ms fully readable, when a line needs longer than the house 2.2 s
+       guide the id of a page of the game's guide: a tap on the notice opens
+             that page — in a round too, which the card pauses — and so does
+             its line in the log (packages/webshell/meta.js, the "!" card)
+
+         Notify.learn("pot", "The pot", { sub: "Binned chips pay the hand" })
+
+       says a MECHANIC once per player — the first round it is met in — and
+       never again (`guide:<slug>` in Store, erased with the game's data). The
+       id is the guide page that explains it, so the notice carries it as its
+       `guide` and the log opens it; `mark` is what is remembered instead of
+       the id, for a rule told again under a new value (slipdeck's pair floor,
+       "floor10"). Returns true when it spoke.
 
      ONE LOOK, ONE PLACE, ONE RULE FOR A CROWD — chosen in lab/notify.html
      (the `chip` preset, tuned) and written here as constants, because a
@@ -282,7 +300,9 @@
          lifting away otherwise;
        - a tap dismisses it and a press holds it — EXCEPT in a round, where
          the layer is pointer-transparent: a notice must never eat the tap
-         the game was waiting for.
+         the game was waiting for. The one exception is a notice that names
+         a guide page (`guide`, every `learn`): it stays tappable in a round,
+         and the tap opens the guide on that page.
 
      The one thing a game may say about it: `CONFIG.notify = { round:
      "bottom" }` when its board fills the top of the frame, which docks the
@@ -327,6 +347,9 @@
       star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>'
     };
     SVG["super"] = SVG.ticket; SVG.sticker = SVG.sparkles; SVG.trophy = SVG.star;
+    /* the guide's book, worn IN THE ICON'S SLOT by a notice that opens a page
+       of it — in place of its own icon, so the line keeps one mark */
+    var BOOK = '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>';
 
     var live = [], box = null, raf = 0, last = 0, targetOf = null;
     var LOG_MAX = 10, log = [], logFn = null;
@@ -334,12 +357,12 @@
     /* Into the log, newest first. Keyed like a live notice, but only against
        the entry on top: the same line again after something else was said is
        a new event, and the log is read as the order things happened in. */
-    function record(key, w, sub, kind, icon) {
+    function record(key, w, sub, kind, icon, guide) {
       var top = log[0];
       if (top && top.key === key) { top.count++; top.at = Date.now(); }
       else {
-        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon,
-                      html: iconHtml(icon), count: 1, at: Date.now() });
+        log.unshift({ key: key, word: w, sub: sub, kind: kind, icon: icon, guide: guide || null,
+                      html: iconHtml(icon, guide), count: 1, at: Date.now() });
         if (log.length > LOG_MAX) log.length = LOG_MAX;
       }
       if (logFn) logFn(log.length);
@@ -356,8 +379,10 @@
     }
     /* Every notice carries a mark in the same 32 px slot, so the words of a
        stack — and of the log — start on one line: a name this table does not
-       know, or none at all, is the kind's own dot rather than a gap. */
-    function iconHtml(name) {
+       know, or none at all, is the kind's own dot rather than a gap. A notice
+       that opens a page of the guide wears the book there instead. */
+    function iconHtml(name, page) {
+      if (page) return '<span class="nt-ic lu go"><svg viewBox="0 0 24 24" aria-hidden="true">' + BOOK + '</svg></span>';
       var src = name && ART[name] && CONFIG.shellArt && CONFIG.shellArt[ART[name]];
       if (src) return '<span class="nt-ic"><img src="' + src + '" alt=""></span>';
       if (!name || !SVG[name]) return '<span class="nt-ic dot" aria-hidden="true"></span>';
@@ -443,7 +468,8 @@
       var w = upper(Lang.t(word)), sub = opt.sub != null && opt.sub !== "" ? Lang.t(opt.sub) : "";
       var key = opt.key || (w + "|" + sub);
       var hold = opt.hold || HOLD, i, it;
-      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon);
+      var GD = window.__GUIDE__, page = opt.guide && GD && GD.has(opt.guide) ? opt.guide : null;
+      record(key, w, sub, kind, opt.icon === undefined ? KIND_ICON[kind] : opt.icon, page);
 
       for (i = 0; i < live.length; i++) {
         it = live[i];
@@ -461,7 +487,7 @@
       var node = document.createElement("div"); node.className = "nt";
       var anim = document.createElement("div"); anim.className = "nt-a";
       var body = document.createElement("div"); body.className = "nt-b k-" + kind;
-      body.innerHTML = iconHtml(icon) +
+      body.innerHTML = iconHtml(icon, page) +
         '<span class="nt-tx"><b class="nt-w">' + esc(w) + '</b>' +
         (sub ? '<span class="nt-s">' + esc(sub) + '</span>' : '') + '</span>' +
         '<span class="nt-n"></span><span class="nt-sh"></span><span class="nt-bar"></span>';
@@ -470,9 +496,20 @@
       it = { node: node, anim: anim, body: body, key: key, icon: icon, hold: hold, left: hold,
              count: 1, held: false, gone: false,
              n: body.querySelector(".nt-n"), bar: body.querySelector(".nt-bar") };
+      /* A notice that names a page of the guide is a way into its rule, on
+         every screen and in a round too: the tap opens the guide on that
+         page, and the card pauses the round (Modal.open). It says so with
+         the guide's book in its icon's slot, as its line in the "!" log does. */
+      if (page) body.classList.add("nt-link");
       body.addEventListener("pointerdown", function (e) { e.stopPropagation(); it.held = true; });
-      body.addEventListener("pointerup", function (e) { e.stopPropagation(); it.held = false; leave(it); });
+      body.addEventListener("pointerup", function (e) {
+        e.stopPropagation(); it.held = false; leave(it);
+        if (page) GD.open(page);
+      });
       body.addEventListener("pointerleave", function () { it.held = false; });
+      /* the motor's Input listens for mouseup on the window: a tap on a
+         notice is not the game's */
+      if (page) body.addEventListener("mouseup", function (e) { e.stopPropagation(); });
 
       var before = measure();
       box.insertBefore(node, box.firstChild);
@@ -494,24 +531,63 @@
       box.classList.toggle("dock-bottom", !!(CONFIG.notify && CONFIG.notify.round === "bottom"));
     }
 
-    /* The log, as copies: { word, sub, kind, icon, html, count, at }, the
-       newest first. `html` is the notice's own icon, ready to draw. */
+    /* The log, as copies: { word, sub, kind, icon, guide, html, count, at },
+       the newest first. `html` is the notice's own icon, ready to draw. */
     function history() {
       return log.map(function (e) {
-        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon,
+        return { word: e.word, sub: e.sub, kind: e.kind, icon: e.icon, guide: e.guide,
                  html: e.html, count: e.count, at: e.at };
       });
     }
     function onLog(fn) { logFn = fn; }
 
+    /* A MECHANIC, NAMED ONCE PER PLAYER. Every game had its own memory for
+       this — once a round, once a session, once ever, under six Store keys —
+       and a player told the same lesson every round stops reading notices.
+       One key per game, one mark per id, kept until OPTIONS erases the game. */
+    function learnKey() { return "guide:" + (CONFIG.slug || "game"); }
+    function learnt() { var s = Store.get(learnKey(), null); return s && typeof s === "object" ? s : {}; }
+    function learn(id, word, opt) {
+      opt = opt || {};
+      var s = learnt(), mark = opt.mark || id;      // `mark`: a rule told again under a new value
+      if (s[mark]) return false;
+      s[mark] = 1; Store.set(learnKey(), s);
+      say(word, { sub: opt.sub, kind: opt.kind || "rare", icon: opt.icon === undefined ? "sparkles" : opt.icon,
+                  key: "learn:" + id, hold: opt.hold || 3200, guide: id });
+      return true;
+    }
+    function unlearn() { Store.del(learnKey()); }
+
     return { say: say, clear: clear, target: target, state: state,
-             history: history, onLog: onLog };
+             history: history, onLog: onLog, learn: learn, learnt: learnt, unlearn: unlearn };
+  })();
+
+  /* --- Record: the best score, beaten while it happens --------------------
+
+     A record is said ONCE a round, the moment the HUD score passes the best
+     one — a Notify, because the player did not do it in a gesture: a round
+     did it. `arm(best)` is called as a round starts, with the game's best
+     score (bootstrap.js, startGame); the level layer re-arms it with the
+     level's own best (packages/webshell/levels.js), because a board of thirty
+     levels has thirty records. A best of 0 is no record yet: a first round
+     beats nothing. */
+  var Record = (function () {
+    var best = 0, said = true;
+    function arm(v) { best = Math.max(0, Math.round(v || 0)); said = best <= 0; }
+    function check(v) {
+      if (said || State !== "playing" || !(v > best)) return;
+      said = true;
+      var n = Number(best).toLocaleString(Lang.code() === "fr" ? "fr-FR" : "en-US");
+      Notify.say("New record", { sub: Lang.t("Previous: {n}").replace("{n}", n), kind: "gain", icon: "trophy", key: "record" });
+    }
+    return { arm: arm, check: check };
   })();
 
   /* --- Pop: comic / manga callouts --------------------------------------
-     The loud half of the words: score gains, combo milestones, hero beats,
-     a mistake as it happens. A word the player has to READ rather than feel
-     — a state, a refusal, a lesson — is Notify's (above), not a callout.
+     The loud half of the words: what the player just did and what it did
+     at once — score gains, combo milestones, hero beats, a mistake as it
+     happens. An event they did not make, a refusal, a record, a mechanic met
+     for the first time are Notify's (above), and a rule is the guide's.
 
          Pop.show("combo", { word: "COMBO x5", sub: "+120", at: "topRight" })
 
@@ -781,8 +857,8 @@
     var STYLES = {
       // the tiny frequent one, spawned at the impact point
       score:    { anim:"float", enter:240, hold:240, exit:420, decor:[], at:"center", rot:-5 },
-      // a mistake AS IT HAPPENS: chain lost, a whiff, a fight lost. A state the
-      // mistake leaves behind ("Shield down") is Notify's, not this.
+      // a mistake AS IT HAPPENS: chain lost, a whiff, a fight lost — and the
+      // state it leaves behind ("Shield down"), which is still that action's.
       alert:    { anim:"punch", enter:220, hold:320, exit:220, decor:[], at:"hudUnder", rot:-2 },
       // a scoring milestone: a compact chip with a shockwave, off to one side.
       // This is the one callout a good run fires over and over, so it is built
@@ -1103,65 +1179,19 @@
       screen.insertBefore(img, screen.firstChild.nextSibling);
     }
 
-    /* THE FACE IS A CORNER FIGURE, AND IT ARRIVES AT TWICE ITS FINAL SIZE.
-
-       It hangs off the bottom-right corner of the frame, and both sizes are
-       constants — the box lives in the stylesheet. It arrives at CHAR_ENTER,
-       when the title is the only thing on the screen and there is nothing to
-       bury, then gives up room one step at a time as the column claims it (the
-       score, the stars, each stat row, the buttons) down to CHAR_HOME. So the
-       entrance is a character and the finished screen is a corner figure.
-
-       WHY IT MAY COVER ANYTHING AT ALL: document order puts #eo-char before
-       everything the reveal writes, at one shared z-index, so the title, the
-       score, the rows and both buttons paint OVER it. Nothing can be hidden by
-       the face; the worst case is a face partly covered, and only for a beat.
-
-       This replaced a fit measured against the column every round, band by
-       band, and the measurement was not wrong so much as pointless: the end
-       screen's column runs from three stat rows to ten, and against a finished
-       one the free band is worth 120-165px on most of the thirteen — a sliver,
-       and on the dense games no face at all. Letting the plates cover a corner
-       of a big figure buys back every pixel that measurement was protecting,
-       and it deleted the ResizeObserver the fit needed to survive the web
-       target's late title refit: a fixed box has nothing to re-measure.
-
-       Only the BOTTOM edge crops it, CHAR_BLEED px of it: it takes the feet,
-       where the top edge would take the head — a figure the frame crops stands
-       in the scene, one floating clear of it is a sticker. The right edge is
-       flush, because a horizontal crop takes an arm and reads as an accident. */
-    var CHAR_ENTER = 660, CHAR_HOME = 330;
-
-    /* How far along the settle the face is, 0..1 — kept so a replay can start
-       it over. */
-    var charT = 0;
-
-    /* One step of the settle. `t` is how much of the reveal has landed, and the
-       shell calls it on every beat that writes over the face. The step is a
-       `transform: scale()` about the bottom-right corner (motor.css reads
-       `--char-k`), so the box never changes, the anchor cannot drift, no step
-       costs a layout, and the bleed shrinks with the figure instead of eating
-       more of its feet. */
-    function settleCharacter(t) {
-      var img = $("eo-char");
-      charT = t < 0 ? 0 : t > 1 ? 1 : t;
-      if (!img) return;
-      /* A calm easing for the way down: the entrance transition overshoots, and
-         six of those in a row would read as a wobble. */
-      if (charT > 0) img.classList.add("settling");
-      img.style.setProperty("--char-k", (1 - (1 - CHAR_HOME / CHAR_ENTER) * charT).toFixed(3));
-    }
-
+    /* THE FACE STANDS BEHIND THE COLUMN. Centred on the bottom edge, big and
+       turned down to a third of its strength (motor.css, #eo-char), it is the
+       screen's backdrop rather than a figure beside it: it rises alone, as the
+       first beat of the reveal, and everything written after it paints over
+       it. Chosen in lab/end-screen.html — it replaced a corner figure that
+       arrived at twice its size and shrank one step per beat. */
     function showCharacter(stars) {
       var img = $("eo-char");
       if (!img) return;
       var src = faceFor(stars);
       if (!src) { img.classList.remove("show"); return; }
       if (img.getAttribute("src") !== src) img.src = src;
-      img.classList.remove("show", "settling");
-      /* A replay starts the settle over: full size with the title, again. */
-      settleCharacter(0);
-      img.classList.remove("settling");
+      img.classList.remove("show");
 
       /* One frame later, so the class change is a transition and not the
          element's first paint — a replay has to see it arrive again. */
@@ -1212,7 +1242,6 @@
       scene: function () { return onScene; },
       dress: dress, titleImage: titleImage, buildCharacter: buildCharacter,
       showCharacter: showCharacter, hideCharacter: hideCharacter,
-      settleCharacter: settleCharacter,
       dressFrame: function () { onScene = dressFrame(); return onScene; }
     };
   })();
@@ -1655,27 +1684,63 @@
     Demo.relabel();
   }
 
-  // --- End screen: the cinematic reveal ----------------------------------
-  // Beats: title -> score count-up (+confetti) -> stars -> stat rows -> CTA.
+  // --- End screen: the reveal, as a list of beats ---------------------------
+  /* THE SEQUENCE IS A LIST OF BEATS, chosen in lab/end-screen.html (preset
+     `G · Chosen`, which replays this list). Each beat starts AFTER the end of
+     the active beat above it, or WITH its start, plus a delay; a beat that has
+     nothing to do on this round (no stat rows, no stars, no character art, a
+     layer with nothing to pay) is skipped, and the next one anchors on the one
+     before it. So the screen is one schedule rather than a dozen hand-placed
+     timers, and a fifth stat row moves everything under it by one step.
+
+       char      the character rises, alone on the screen       1000 ms
+       title     stamped in                                      600 ms
+       score     pops 100 ms into the title and counts up        910 ms
+       gain      the coins line, three parts                     (meta)
+       stars     three pops — an empty star pops too, so the row
+                 lasts the same whatever the round scored
+       rows      one stat row per step
+       coins     the cascade into the wallet                     (meta)
+       offer     the ad button                                   (meta)
+       ceremony  the gift boxes                                  (meta)
+       buttons   the way out, one every 100 ms
+
+     The coins line, the stars and the rows start together and step on ONE
+     500 ms grid, so what lands on a beat lands on all three at once.
+
+     FOUR OF THE BEATS ARE NOT THE MOTOR'S. The web target's meta layer owns
+     the coins line, the cascade, the offer and the gift boxes and registers
+     them with `onEndBeat(id, { applies, count, play })`; a playable has none
+     of them, so its way out lands with the rows — exactly what the lab shows
+     with the coins turned off. The way out still waits for every `onReveal`
+     hook below, which is how a gift being picked holds it. */
   var EndScreen = (function () {
     var timers = [];
-    var T_TITLE = 120, T_SCORE = 560, T_STARS = 1950, STAR_GAP = 440,
-        ROW_GAP = 250, T_CTA_AFTER = 1500;
-    /* THE REVEAL PLAYS AT TWICE THE SPEED IT WAS AUTHORED AT. Every delay in
-       this module is the timing the cascade was designed with and PACE is what
-       the screen actually plays it at — one number rather than sixteen edited
-       ones, so the RHYTHM between the beats is exactly the one that was tuned
-       and only the tempo moves. It was authored for a creative, where the end
-       screen is the last thing a viewer sees; in a game it is the doorway back
-       to the map, and a player who has just cleared a level reads the stars
-       long before the old cascade had finished landing them. */
-    var PACE = 0.5;
+    var BEATS = [
+      { id: "char",     mode: "after", delay: 0,   dur: 1000 },
+      { id: "title",    mode: "after", delay: 0,   dur: 600 },
+      { id: "score",    mode: "with",  delay: 100, dur: 910 },
+      { id: "gain",     mode: "after", delay: 0,   dur: 500, gap: 500 },
+      { id: "stars",    mode: "with",  delay: 0,   dur: 500, gap: 500 },
+      { id: "rows",     mode: "with",  delay: 0,   dur: 500, gap: 500 },
+      { id: "coins",    mode: "after", delay: 0,   dur: 1000 },
+      { id: "offer",    mode: "with",  delay: 0,   dur: 500 },
+      { id: "ceremony", mode: "with",  delay: 0,   dur: 500 },
+      { id: "buttons",  mode: "with",  delay: 0,   dur: 100, gap: 100 }
+    ];
     // The reveal climbs: each star rings the kit's `star` a step higher.
     var STAR_RATE = [1, 1.19, 1.42];
+    var layers = {};
+    function beat(id, spec) { layers[id] = spec; }
 
+    /* A counter the motor writes until a layer writes the figure itself: the
+       meta layer splits the score at the coin rate into two spans, and a count
+       still running would wipe them on its next frame. The landing still
+       happens — the layer wrote the final figure. */
     function countUp(el, target, dur, cb) {
       var start = performance.now();
       function step(now) {
+        if (el.childElementCount) { if (cb) cb(); return; }
         var p = clamp((now - start) / dur, 0, 1), e = 1 - Math.pow(1 - p, 3);
         el.textContent = Math.round(e * target);
         if (p < 1) requestAnimationFrame(step);
@@ -1684,12 +1749,44 @@
       requestAnimationFrame(step);
     }
 
+    /* THE PUNCH — the score landing. The whole screen gives a small kick and
+       a white flash goes over it: one hit, where the confetti used to be two
+       bursts. */
+    function punch() {
+      var sc = $("screen-end");
+      if (!sc) return;
+      if (sc.animate) sc.animate([{ transform: "scale(1.05)" }, { transform: "none" }],
+        { duration: 380, easing: "cubic-bezier(.2,1.4,.4,1)" });
+      var f = document.createElement("div");
+      f.className = "eo-fx eo-flash";
+      sc.appendChild(f);
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 360);
+    }
+
+    /* Where each active beat starts and ends, in ms from the screen's first
+       frame. */
+    function plan(result, own) {
+      var out = [], prev = null;
+      BEATS.forEach(function (b) {
+        var s = own[b.id] || layers[b.id];
+        if (!s || (s.applies && !s.applies(result))) return;
+        var n = s.count ? s.count(result) : 1;
+        var start = prev ? (b.mode === "with" ? prev.start : prev.end) + b.delay : b.delay;
+        if (start < 0) start = 0;
+        var e = { b: b, s: s, n: n, start: start,
+                  end: start + (b.gap || 0) * Math.max(0, n - 1) + b.dur };
+        out.push(e);
+        prev = e;
+      });
+      return out;
+    }
+
     // result: { title, variant:""|"win"|"perfect", score, stars:0..3|null,
     //           rows:[{label, value, grade}] }
     function show(result) {
       timers.forEach(clearTimeout); timers = [];
       Confetti.clear();
-      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms * PACE))); }
+      function T(fn, ms) { timers.push(setTimeout(fn, Math.round(ms))); }
 
       var title = $("eo-title");
       title.textContent = upper(Lang.t(result.title || CONFIG.copy.gameOver));
@@ -1719,80 +1816,79 @@
       });
       box.innerHTML = html;
 
-      /* THE CHARACTER GIVES UP ROOM AS THE COLUMN CLAIMS IT. It arrives at
-         full size with the title, alone on the screen, and every beat that
-         writes something over it takes it one step down toward the corner
-         figure — so the count is the number of beats left after the title, and
-         `settle` is called from each of them. A game with three stat rows
-         therefore shrinks it in five steps and one with six in eight: the face
-         is done making room exactly when the screen is done filling. */
-      var beats = 1 + (hasStars ? 1 : 0) + rows.length + 1, beat = 0;
-      function settle() { Art.settleCharacter(++beat / beats); }
-
-      // 1) Title slams in, and the character rises with it — one beat, so the
-      //    screen reads as a reaction to the round rather than as a slideshow.
       Art.hideCharacter();
-      T(function () {
-        title.classList.add("show");
-        Art.showCharacter(stars);
-      }, T_TITLE);
-
-      // 2) Final score counts up, greeted by confetti.
-      T(function () {
-        $("eo-scorelbl").classList.add("show");
-        $("eo-score").classList.add("show");
-        settle();
-        Confetti.burst(70);
-        countUp($("eo-score"), result.score || 0, 1100 * PACE, function () {
-          $("eo-score").classList.add("pop");
-          Sound.ui("score", 0.8);
-          Confetti.burst(90);
-        });
-      }, T_SCORE);
-
-      // 3) Stars slam in one by one, each with a rising chime.
-      var afterStars = T_SCORE + 900;
-      if (hasStars) {
-        T(function () {
-          for (var s = 1; s <= 3; s++) $("star-" + s).classList.add("dim");
-          settle();
-        }, T_STARS - 160);
-        for (var si = 0; si < stars; si++) {
-          (function (idx) {
-            T(function () {
-              var el = $("star-" + (idx + 1));
-              el.classList.remove("dim"); el.classList.add("on");
-              Sound.ui("star", 0.75, STAR_RATE[idx] || 1.42);
-              Confetti.burst(30);
-            }, T_STARS + idx * STAR_GAP);
-          })(si);
-        }
-        afterStars = T_STARS + Math.max(stars, 1) * STAR_GAP + 350;
-      }
-
-      // 4) Stat rows cascade in, counters animating.
-      rows.forEach(function (r, i) {
-        T(function () {
-          $("eo-row-" + i).classList.add("show");
-          settle();
-          var el = $("eo-val-" + i);
-          if (typeof r.value === "number") countUp(el, r.value, 450 * PACE);
-          else el.textContent = upper(Lang.t(r.value));
-          Sound.ui("tick", 0.5, 1 + i * 0.07);
-        }, afterStars + i * ROW_GAP);
-      });
-
-      // 5) Install CTA, then the discreet replay link — once every layer that
-      //    asked for the last beat of the reveal has had it (onReveal below).
-      var ctaAt = afterStars + rows.length * ROW_GAP + T_CTA_AFTER;
       var mine = ++shown;
-      T(function () {
-        runReveal(result, 0, function () {
-          if (mine !== shown || State !== "end") return;   // a newer screen, or none
-          $("btn-install").classList.add("show"); settle();
-          T(function () { $("btn-replay").classList.add("show"); }, 500);
-        });
-      }, ctaAt);
+
+      var own = {
+        char: {
+          applies: function () { return Art.has("characterNeutral") || Art.has("characterSad") || Art.has("characterHappy"); },
+          play: function () { Art.showCharacter(stars); }
+        },
+        title: { play: function () { title.classList.add("show"); } },
+        score: {
+          play: function (r, b) {
+            var sc = $("eo-score");
+            $("eo-scorelbl").classList.add("show");
+            sc.classList.add("show");
+            countUp(sc, result.score || 0, b.dur, function () {
+              sc.classList.add("pop");
+              Sound.ui("score", 0.8);
+              punch();
+            });
+          }
+        },
+        stars: {
+          applies: function () { return hasStars; },
+          count: function () { return 3; },
+          play: function (r, b) {
+            for (var s = 0; s < 3; s++) {
+              (function (idx) {
+                T(function () {
+                  var el = $("star-" + (idx + 1)), lit = idx < stars;
+                  el.className = "star " + (lit ? "on" : "dim");
+                  if (!lit) { Sound.ui("tick", 0.3, 0.8); return; }
+                  Sound.ui("star", 0.75, STAR_RATE[idx] || 1.42);
+                  Confetti.glitter(el);
+                  if (idx === 2) Confetti.glitter($("eo-stars"));
+                }, idx * b.gap);
+              })(s);
+            }
+          }
+        },
+        rows: {
+          applies: function () { return rows.length > 0; },
+          count: function () { return rows.length; },
+          play: function (r, b) {
+            rows.forEach(function (row, i) {
+              T(function () {
+                $("eo-row-" + i).classList.add("show");
+                var el = $("eo-val-" + i);
+                if (typeof row.value === "number") countUp(el, row.value, Math.max(120, b.dur * 1.2));
+                else el.textContent = upper(Lang.t(row.value));
+                Sound.ui("tick", 0.5, 1 + i * 0.07);
+              }, i * b.gap);
+            });
+          }
+        },
+        /* The way out — once every layer that asked for the last beat of the
+           reveal has had it (onReveal below). */
+        buttons: {
+          count: function () { return 2; },
+          play: function (r, b) {
+            runReveal(result, 0, function () {
+              if (mine !== shown || State !== "end") return;   // a newer screen, or none
+              $("btn-install").classList.add("show");
+              T(function () { $("btn-replay").classList.add("show"); }, b.gap);
+            });
+          }
+        }
+      };
+
+      // A lost round rains on its own screen, from its first frame.
+      if (hasStars && stars === 0) Confetti.rain();
+      plan(result, own).forEach(function (e) {
+        T(function () { e.s.play(result, e.b, e.n); }, e.start);
+      });
     }
 
     /* THE WAY OUT WAITS FOR WHATEVER THE SCREEN STILL HAS TO HAND OVER. A
@@ -1825,7 +1921,7 @@
        "end". */
     function clear() { timers.forEach(clearTimeout); timers = []; shown++; }
 
-    return { show: show, clear: clear, onReveal: onReveal };
+    return { show: show, clear: clear, onReveal: onReveal, beat: beat };
   })();
 
   /* --- Perf: a readout on the device itself ------------------------------
@@ -2139,6 +2235,10 @@
   /* …and `onReveal(fn)` holds the end screen's way out, the same way, at the
      other end of the reveal (EndScreen above). */
   function onReveal(fn) { EndScreen.onReveal(fn); }
+  /* A layer's own beat of the end screen (EndScreen above, BEATS): `applies`
+     says whether this round has it, `count` how many steps it takes, `play`
+     runs it on its start. */
+  function onEndBeat(id, spec) { EndScreen.beat(id, spec); }
   function runOutro(result, i) {
     if (i >= outroHooks.length || State !== "playing") { finishRound(result); return; }
     var called = false;                 // a second `done` from one hook is dropped

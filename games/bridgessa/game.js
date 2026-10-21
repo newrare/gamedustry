@@ -505,49 +505,49 @@
     var PERKS = [
       // VISION — what is hidden, shown
       { id:"counter",      fam:"vision",  r:1, lv:3,  name:"Counter",        text:"Shows how many cards of each suit the defence still holds." },
-      { id:"glasses",      fam:"vision",  r:1, lv:4,  name:"Spectacles",     text:"A sun marks every card of yours nobody can beat." },
+      { id:"glasses",      fam:"vision",  r:1, lv:4,  name:"Spectacles",     text:"A sun marks each of your cards that nobody can beat." },
       { id:"wink",         fam:"vision",  r:2, lv:7,  name:"Wink",           text:"West shows you its longest suit, face up." },
-      { id:"herald",       fam:"vision",  r:1, lv:9,  name:"Herald",         text:"At every deal, tells you how many points West and East hold." },
-      { id:"lorgnette",    fam:"vision",  r:2, lv:11, name:"Lorgnette",      text:"At every deal, one card of East is shown to you." },
-      { id:"compass",      fam:"vision",  r:2, lv:14, name:"Compass",        text:"Shows how many cards of each suit West and East hold, one by one." },
-      { id:"advice",       fam:"vision",  r:3, lv:20, name:"Advice",         text:"Once per deal: lights the best card to play.", act:true },
-      { id:"clairvoyance", fam:"vision",  r:4, lv:26, name:"Clairvoyance",   text:"The defence plays the first trick of every deal face up." },
+      { id:"herald",       fam:"vision",  r:1, lv:9,  name:"Herald",         text:"At every deal, you learn how many points West and East hold." },
+      { id:"lorgnette",    fam:"vision",  r:2, lv:11, name:"Lorgnette",      text:"At every deal, you see one of East's cards." },
+      { id:"compass",      fam:"vision",  r:2, lv:14, name:"Compass",        text:"Shows, hand by hand, how many cards of each suit West and East hold." },
+      { id:"advice",       fam:"vision",  r:3, lv:20, name:"Advice",         text:"Lights up the best card to play, once per deal.", act:true },
+      { id:"clairvoyance", fam:"vision",  r:4, lv:26, name:"Clairvoyance",   text:"You see the defence's cards during the first trick of every deal." },
       // HAND — your cards, changed
-      { id:"mistral",      fam:"hand",    r:1, lv:8,  name:"Mistral",        text:"Once per deal: swap a card of your hand with a card of the dummy.", act:true },
-      { id:"promotion",    fam:"hand",    r:2, lv:10, name:"Promotion",      text:"At every deal, your lowest card climbs to the highest free rank of its suit." },
-      { id:"talon",        fam:"hand",    r:2, lv:13, name:"Talon",          text:"Once per deal: trade one of your cards for a card from outside the deal.", act:true },
-      { id:"pickpocket",   fam:"hand",    r:3, lv:17, name:"Pickpocket",     text:"Once per deal: trade one of your cards for a random card of West.", act:true },
-      { id:"reinforcement",fam:"hand",    r:2, lv:21, name:"Reinforcement",  text:"At every deal, the dummy's lowest card becomes a free honour of its suit, if one is left." },
-      { id:"royaltrump",   fam:"hand",    r:4, lv:28, name:"Royal trump",    text:"At every deal, your lowest card becomes the highest free trump — of your longest suit at no trump." },
+      { id:"mistral",      fam:"hand",    r:1, lv:8,  name:"Mistral",        text:"Swap a card of your hand with one of the dummy's, once per deal.", act:true },
+      { id:"promotion",    fam:"hand",    r:2, lv:10, name:"Promotion",      text:"At every deal, your lowest card becomes the highest card of its suit nobody holds." },
+      { id:"talon",        fam:"hand",    r:2, lv:13, name:"Talon",          text:"Trade one of your cards for a card nobody holds, once per deal.", act:true },
+      { id:"pickpocket",   fam:"hand",    r:3, lv:17, name:"Pickpocket",     text:"Trade one of your cards for a random card of West's, once per deal.", act:true },
+      { id:"reinforcement",fam:"hand",    r:2, lv:21, name:"Reinforcement",  text:"At every deal, the dummy's lowest card becomes an honour of its suit nobody holds." },
+      { id:"royaltrump",   fam:"hand",    r:4, lv:28, name:"Royal trump",    text:"At every deal, your lowest card becomes the highest trump nobody holds (your longest suit at no trump)." },
       // RULE — a rule bent, once
       { id:"lead",         fam:"rule",    r:2, lv:16, name:"Opening lead",   text:"You lead the first trick of every deal, instead of West." },
-      { id:"freediscard",  fam:"rule",    r:1, lv:18, name:"Free discard",   text:"Once per deal: the next card you play need not follow suit.", act:true },
-      { id:"switch",       fam:"rule",    r:2, lv:19, name:"Switch",         text:"Before the first trick: a trump deal turns to no trump, a no trump deal to your longest suit as trump.", act:true },
-      { id:"miracle",      fam:"rule",    r:3, lv:22, name:"Little miracle", text:"Once per deal: the next 2 you play wins the trick.", act:true },
-      { id:"sparetrump",   fam:"rule",    r:2, lv:23, name:"Spare trump",    text:"Once per deal: the next card you discard counts as a trump.", act:true },
-      { id:"lastword",     fam:"rule",    r:4, lv:25, name:"Last word",      text:"Winning the last trick of a deal counts as two tricks." },
+      { id:"freediscard",  fam:"rule",    r:1, lv:18, name:"Free discard",   text:"Your next card does not have to follow suit, once per deal.", act:true },
+      { id:"switch",       fam:"rule",    r:2, lv:19, name:"Switch",         text:"Before the first trick, removes the trump. At no trump, your longest suit becomes trump.", act:true },
+      { id:"miracle",      fam:"rule",    r:3, lv:22, name:"Little miracle", text:"The next 2 you play wins the trick, once per deal.", act:true },
+      { id:"sparetrump",   fam:"rule",    r:2, lv:23, name:"Spare trump",    text:"Your next discard counts as a trump, once per deal.", act:true },
+      { id:"lastword",     fam:"rule",    r:4, lv:25, name:"Last word",      text:"The last trick of a deal counts as two when you win it." },
       // POINTS — the score, multiplied
-      { id:"double",       fam:"points",  r:1, lv:3,  name:"Double",         text:"Before the first trick: a made contract pays ×2, a down costs two lives.", act:true },
+      { id:"double",       fam:"points",  r:1, lv:3,  name:"Double",         text:"Use it before the first trick. A made contract pays ×2, a down costs two lives.", act:true },
       { id:"goldenfinesse",fam:"points",  r:1, lv:4,  name:"Golden finesse", text:"A finesse pays 150 instead of 50." },
-      { id:"royalruff",    fam:"points",  r:1, lv:5,  name:"Royal ruff",     text:"A ruff pays 100 more." },
+      { id:"royalruff",    fam:"points",  r:1, lv:5,  name:"Royal ruff",     text:"A ruff pays 130 instead of 30." },
       { id:"streak",       fam:"points",  r:2, lv:7,  name:"Streak",         text:"Every trick won in a row pays 25 % more than the one before." },
       { id:"honours",      fam:"points",  r:2, lv:12, name:"Honours",        text:"Every ace, king, queen or jack in a trick you win pays 50." },
       { id:"slam",         fam:"points",  r:3, lv:15, name:"Slam",           text:"A deal where you win every trick pays ×3." },
       { id:"jackpot",      fam:"points",  r:3, lv:22, name:"Jackpot",        text:"An overtrick pays 450 instead of 150." },
-      { id:"redouble",     fam:"points",  r:4, lv:27, name:"Redouble",       text:"Before the first trick: a made contract pays ×4, a down costs three lives.", act:true },
+      { id:"redouble",     fam:"points",  r:4, lv:27, name:"Redouble",       text:"Use it before the first trick. A made contract pays ×4, a down costs three lives.", act:true },
       // SURVIVAL — the tournée, kept alive
       { id:"pearl",        fam:"survive", r:1, lv:5,  name:"Pearl",          text:"The first contract you go down on costs no life." },
-      { id:"rewind",       fam:"survive", r:1, lv:6,  name:"Rewind",         text:"Once per deal: take the trick back.", act:true },
-      { id:"spareheart",   fam:"survive", r:2, lv:8,  name:"Spare heart",    text:"One more life, as soon as it is taken." },
+      { id:"rewind",       fam:"survive", r:1, lv:6,  name:"Rewind",         text:"Take the trick back and play it again, once per deal.", act:true },
+      { id:"spareheart",   fam:"survive", r:2, lv:8,  name:"Spare heart",    text:"One more life, as soon as you pick it." },
       { id:"safetynet",    fam:"survive", r:2, lv:10, name:"Safety net",     text:"Every contract asks one trick less, and pays 25 % less." },
       { id:"secondchance", fam:"survive", r:3, lv:13, name:"Second chance",  text:"Once per tournée, a deal you go down on is dealt again." },
       { id:"insurance",    fam:"survive", r:3, lv:18, name:"Insurance",      text:"Going down by a single trick costs no life." },
       // DEFENCE — the defence, shaken
-      { id:"fog",          fam:"foe",     r:1, lv:12, name:"Fog",            text:"The defence plays its first two cards of every deal like a human, not perfectly." },
+      { id:"fog",          fam:"foe",     r:1, lv:12, name:"Fog",            text:"At every deal, the defence plays its first two cards like a human, and can slip up." },
       { id:"distraction",  fam:"foe",     r:1, lv:14, name:"Distraction",    text:"West leads its lowest card to the first trick." },
       { id:"pressure",     fam:"foe",     r:2, lv:17, name:"Pressure",       text:"A defender who leads must lead its longest suit." },
       { id:"silence",      fam:"foe",     r:2, lv:21, name:"Silence",        text:"At every deal, the first time a defender could ruff, it discards instead." },
-      { id:"bribe",        fam:"foe",     r:3, lv:24, name:"Bribe",          text:"Once per deal: the next defender to play plays its lowest card.", act:true },
+      { id:"bribe",        fam:"foe",     r:3, lv:24, name:"Bribe",          text:"The next defender plays its lowest card, once per deal.", act:true },
       { id:"dazzle",       fam:"foe",     r:3, lv:26, name:"Dazzle",         text:"When the dummy plays an honour, the next defender plays its lowest card." }
     ];
     var PERK = {};
@@ -642,7 +642,11 @@
     var pick = null, afterPick = null;
     var L = {}, backKey = "", backSprite = null, downAt = null;
 
-    function has(id) { for (var i = 0; i < rail.length; i++) if (rail[i] && rail[i].id === id) return rail[i]; return null; }
+    function has(id) {
+      if (!rail) return null;               // no round yet: the guide draws a favour bare
+      for (var i = 0; i < rail.length; i++) if (rail[i] && rail[i].id === id) return rail[i];
+      return null;
+    }
     function toPlay() { return (leader + trick.length) % 4; }
     function trickCards() { var a = [], i; for (i = 0; i < trick.length; i++) a.push(trick[i].c); return a; }
     function sortHand(h) {
@@ -810,7 +814,7 @@
       g.restore();
       return c;
     }
-    /* The Help card's example of what the hint lights (menu.js, helpAura):
+    /* The guide's example of what the hint lights (guide.js, helpAura):
        a defender's card back, which a tap explains like everything that
        glows. Painted at its own size, so it needs no round to exist. */
     function helpAura() {
@@ -834,30 +838,24 @@
        =================================================================== */
     var TIPS = {
       basics: { eye:"How to play", title:"Win the tricks", lines:[
-        "You play South, your hand at the bottom, and North, the dummy at the top: both hands are yours.",
-        "Each player plays one card in turn. The highest card of the suit led wins the trick, and its winner leads the next one.",
-        "Follow suit whenever you can.",
-        "Your contract, on the stamp at the bottom left: win {c} of the {n} tricks.",
-        "Tap anything on the table to read its rule again." ] },
+        "You play both hands: yours at the bottom and the dummy at the top.",
+        "The highest card of the suit led wins the trick. Whoever wins it leads the next one.",
+        "Your contract: win {c} of the {n} tricks." ] },
       tournee: { eye:"The tournée", title:"{d} deals, {l} lives", lines:[
-        "A tournée is {d} deals in a row. Every contract you go down on costs a life; with no life left, the tournée is over.",
-        "Your score adds up the deals: every trick won, every finesse and ruff, every contract made." ] },
-      favours: { eye:"New", title:"Favours", lines:[
-        "A tournée opens on a pick, and every contract you make deals another: take one favour of three, kept until the tournée ends.",
-        "Four fit on the rail above your hand. Some act on their own; the others are used with a tap, once per deal.",
-        "Tap a favour on the rail to read it again." ] },
-      trump: { eye:"New rule", title:"Trumps", lines:[
+        "Each contract you go down on costs a life. The tournée ends when you have none left." ] },
+      favours: { eye:"New", title:"Favours", say:"Kept until the tournée ends", lines:[
+        "Pick one favour out of three at the start, then after each contract made. It lasts the whole tournée.",
+        "The rail holds four favours. Some work on their own, the others take a tap, once per deal." ] },
+      trump: { eye:"New rule", title:"Trumps", say:"On this deal {s} are trumps", lines:[
         "On this deal {s} are trumps.",
-        "When you cannot follow suit, a trump wins the trick — the highest trump, if several are played." ] },
+        "If you cannot follow suit, a trump wins the trick. If several are played, the highest wins." ] },
       notrump: { eye:"This deal", title:"No trump", lines:[
-        "No suit is trump: the highest card of the suit led always wins the trick.",
-        "A card of another suit never wins, however high it is." ] },
+        "No suit is trump. Only a card of the suit led can win the trick." ] },
       dummy: { eye:"North", title:"The dummy", lines:[
-        "The dummy is your partner's hand, laid face up on the table. You choose its cards too.",
-        "When the dummy wins a trick, it leads the next one: think about which hand you want to be in." ] },
+        "The dummy is your partner's hand, face up. You play its cards too.",
+        "When the dummy wins a trick, it leads the next one. Win with the hand you want to lead from." ] },
       defence: { eye:"West and East", title:"The defence", lines:[
-        "The defenders play against you, and they play perfectly: they never give a trick away.",
-        "West leads the first trick. Their cards stay hidden — some favours show them." ] }
+        "The defenders play perfectly. They never give a trick away." ] }
     };
     function tipsKey() { return "tips:" + (CONFIG.slug || "bridgessa"); }
     function told() { var s = Store.get(tipsKey(), null); return s && typeof s === "object" ? s : {}; }
@@ -875,6 +873,19 @@
        answered whatever was told before. */
     function tip(key, vars, again) {
       if (done) return false;
+      /* THE WEB BUILD HAS A GUIDE (packages/webshell/guide.js), and a rule is
+         a page of it: a tap on the table opens that page, and an idea met
+         for the first time is NAMED by a notice whose line in the log opens
+         it — the round is never stopped to teach. A playable has no guide and
+         keeps the cards below. */
+      var GD = window.__GUIDE__;
+      if (GD) {
+        if (again) { GD.open(key); return true; }
+        if (TIPS[key].say) {
+          Notify.learn(key, fill(Lang.t(TIPS[key].title), vars), { sub:fill(Lang.t(TIPS[key].say), vars) });
+        }
+        return true;
+      }
       var s = told(), T = TIPS[key], lines = [], i;
       if (!again) {
         if (s[key]) return false;
@@ -891,19 +902,132 @@
     /* The contract, read live: what it asks, the trump, where the deal
        stands and how much room is left. */
     function contractCard() {
+      if (window.__GUIDE__) { window.__GUIDE__.open("contract"); return; }
+      showCard({ eye:Lang.t("Your contract"), title:fill(Lang.t("{c} tricks of {n}"), { c:contract, n:total }), lines:contractNow() });
+    }
+    /* The contract, read live — on the card in a playable, under the
+       contract's page of the guide on the web. Empty before a deal. */
+    function contractNow() {
+      if (!total || State !== "playing") return [];
       var m = total - contract - ew, lines = [
-        fill(Lang.t("Win {c} of the {n} tricks to make it."), { c:contract, n:total }),
+        fill(Lang.t("Win {c} of the {n} tricks to make the contract."), { c:contract, n:total }),
         trump === NT ? Lang.t("No trump on this deal.") : fill(Lang.t("Trump: {s}"), { s:SUIT_GLYPH[trump] })
       ];
-      if (made) lines.push(Lang.t("Made! Every trick from now on is an overtrick."));
+      if (made) lines.push(Lang.t("Made! Every further trick you win is an overtrick."));
       else if (m > 0) lines.push(fill(Lang.t("You have {ns}, the defence {ew}. It can still take {m} before you go down."), { ns:ns, ew:ew, m:m }));
       else lines.push(fill(Lang.t("You have {ns}, the defence {ew}. One more trick for the defence and you go down."), { ns:ns, ew:ew }));
-      lines.push(Lang.t("The contract is read off the deal: what a sound line makes however the hidden cards lie."));
-      showCard({ eye:Lang.t("Your contract"), title:fill(Lang.t("{c} tricks of {n}"), { c:contract, n:total }), lines:lines });
+      if (!window.__GUIDE__) lines.push(Lang.t("Every contract can be made, however the hidden cards lie."));
+      return lines;
     }
     function tourneeCard() {
       tip("tournee", { d:stage.deals, l:lives }, true);
     }
+
+    /* THE GUIDE (packages/webshell/guide.js): every rule, as pages. The TIPS
+       are its words, so a rule is written once — save where a tip speaks of
+       THIS deal ({c} tricks, {d} deals, {s} trumps): the page says it in
+       general, and the page of the contract carries the deal being played
+       under it, live. Every page SHOWS before it tells: its picture is drawn
+       by the table's own renderers (drawCard, the backs, the favour's card),
+       so a trick read in the guide is a trick as it lies on the table. */
+    function tipLines(key, from, vars, skip) {
+      var T = TIPS[key], out = [], i;
+      for (i = from || 0; i < T.lines.length; i++) if (!skip || skip.indexOf(i) < 0) out.push(fill(Lang.t(T.lines[i]), vars));
+      return out;
+    }
+    function liveNode(lines) {
+      if (!lines.length) return null;
+      var box = document.createElement("div"), i, p;
+      box.className = "bs-live";
+      for (i = 0; i < lines.length; i++) { p = document.createElement("p"); p.textContent = lines[i]; box.appendChild(p); }
+      return box;
+    }
+    function C(rank, suit) { return suit * 13 + rank; }  // rank 0 is a 2, 12 an ace
+    /* A canvas of its own, painted with the round's `ctx` lent to it for the
+       length of the call: the table's drawCard draws the guide's cards. */
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+    var PW = 92, PH = 128;
+    /* A trick as it lies: North on top, South at the bottom, West and East
+       either side; the card that takes it glows in the table's sun. */
+    function trickPic(n, e, sCard, w, win) {
+      return paintPic(420, 400, function () {
+        var at = [[210, 82], [330, 200], [210, 318], [90, 200]], cs = [n, e, sCard, w], i;
+        for (i = 0; i < 4; i++) {
+          drawCard(cs[i], at[i][0], at[i][1], PW, PH, (i - 1.5) * 0.04, { glow:i === win ? SUN : null, dim:i !== win });
+        }
+      });
+    }
+    function rowPic(cards) {
+      var step = 62, W = 40 + PW + step * (cards.length - 1);
+      return paintPic(W, PH + 40, function () {
+        for (var i = 0; i < cards.length; i++) drawCard(cards[i], 20 + PW / 2 + i * step, 20 + PH / 2, PW, PH, (i - (cards.length - 1) / 2) * 0.05);
+      });
+    }
+    function backsPic() {
+      var b = paintBack(PW, PH, view.dpr || 1);
+      return paintPic(340, PH + 40, function () {
+        for (var i = 0; i < 4; i++) {
+          ctx.save(); ctx.translate(80 + i * 60, 20 + PH / 2); ctx.rotate((i - 1.5) * 0.08);
+          ctx.drawImage(b, -PW / 2, -PH / 2, PW, PH); ctx.restore();
+        }
+        freeCanvas(b);
+      });
+    }
+    function favoursPic() {
+      var box = document.createElement("div"), i;
+      box.className = "bs-gfavours";
+      var fams = {}, n = 0;                 // one of each of the first two families, read at rest
+      for (i = 0; i < PERKS.length && n < 2; i++) {
+        if (fams[PERKS[i].fam]) continue;
+        fams[PERKS[i].fam] = 1; n++;
+        box.appendChild(favourCard(PERKS[i].id, { w:206, h:380 }));
+      }
+      return box;
+    }
+    var guide = {
+      chapters: function () {
+        return [
+          { key:"basics", label:Lang.t("The basics"), pages:[
+            { id:"basics", title:Lang.t(TIPS.basics.title), lines:tipLines("basics", 0, null, [2]),
+              pic:function () { return trickPic(C(7, 0), C(10, 0), C(12, 0), C(3, 0), 2); } },
+            { id:"contract", title:Lang.t("The contract"), node:function () { return liveNode(contractNow()); }, lines:[
+              Lang.t("The contract is the number of tricks you must win."),
+              Lang.t("Every contract can be made, however the hidden cards lie.") ] },
+            { id:"tournee", title:Lang.t("The tournée"), lines:tipLines("tournee") },
+            { id:"dummy", title:Lang.t(TIPS.dummy.title), lines:tipLines("dummy"),
+              pic:function () { return rowPic([C(12, 1), C(9, 1), C(4, 1), C(11, 3), C(2, 3)]); } },
+            { id:"defence", title:Lang.t(TIPS.defence.title), lines:tipLines("defence"), pic:backsPic }
+          ] },
+          { key:"trumps", label:Lang.t("Trumps"), pages:[
+            { id:"trump", title:Lang.t(TIPS.trump.title), lines:tipLines("trump", 1),
+              pic:function () { return trickPic(C(2, 2), C(11, 2), C(0, 1), C(12, 2), 2); } },
+            { id:"notrump", title:Lang.t(TIPS.notrump.title), lines:tipLines("notrump"),
+              pic:function () { return trickPic(C(1, 2), C(7, 2), C(11, 2), C(12, 3), 2); } }
+          ] },
+          { key:"score", label:Lang.t("The score"), pages:[
+            { id:"points", title:Lang.t("What a trick pays"), rows:[
+                [Lang.t("A trick won"), "100"],
+                [Lang.t("A ruff"), "+30"],
+                [Lang.t("A finesse"), "+50"],
+                [Lang.t("An overtrick"), "+150"],
+                [Lang.t("The contract made"), "+300"] ],
+              lines:[
+              Lang.t("A ruff is a trick you win with a trump when you could not follow suit."),
+              Lang.t("A finesse is a trick you win while a defender still holds a higher card.") ] }
+          ] },
+          { key:"favours", label:Lang.t("Favours"), pages:[
+            { id:"favours", title:Lang.t(TIPS.favours.title), lv:3, lines:tipLines("favours"), pic:favoursPic }
+          ] }
+        ];
+      }
+    };
     function nextTip() {
       var t = tipQueue.shift(), frame = document.getElementById("frame");
       if (!t || !frame) { tipOpen = null; return; }
@@ -943,7 +1067,7 @@
     function tipButton(b) {
       var n = document.createElement("button");
       n.type = "button";
-      n.className = "btn btn-sm";
+      n.className = "btn btn-sm" + (b.plate ? " btn-plate" : "");
       n.textContent = upper(b.label);
       if (b.off) n.disabled = true;
       n.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
@@ -1096,8 +1220,7 @@
         b.querySelector("i").textContent = Lang.t(P.text);
         b.addEventListener("click", function (e) {
           e.stopPropagation(); closePick();
-          Notify.say(fill(Lang.t("{a} leaves the rail"), { a:Lang.t(P.name) }), { kind:"info", key:"rail" });
-          equip(id, k); donePick();
+          equip(id, k, P.name); donePick();
         });
         body.appendChild(b);
       })(i);
@@ -1128,12 +1251,13 @@
       var f = afterPick; afterPick = null;
       if (f) f();
     }
-    function equip(id, slotIdx) {
+    function equip(id, slotIdx, out) {
       rail[slotIdx] = { id:id, used:0 };
       perksTaken++;
       remember(id);
-      Pop.show("bonus", { word:PERK[id].name, at:"top" });
-      Sound.cue("perk", 0.5, 1, 700, 0.12, "triangle");
+      // the favour it replaced rides on the callout: one word for one choice
+      Pop.show("bonus", { word:PERK[id].name, sub:out ? fill(Lang.t("{a} leaves the rail"), { a:Lang.t(out) }) : null, at:"top" });
+      Sound.cue("perk", 0.5, 0.5, 700, 0.12, "triangle");
       if (id === "spareheart") { lives++; showTour(); }
     }
 
@@ -1177,15 +1301,13 @@
       seatT = 0;
       showTour();
       /* No rules card on the way in: the rules are where they apply, on a
-         tap of whatever the hint lights (explainAt), and the Help card says
-         so (helpAura); a new table and a level's new favours are seen, not
+         tap of whatever the hint lights (explainAt), and the guide's contents
+         say so (helpAura); a new table and a level's new favours are seen, not
          announced (its first pick deals them with their NEW sticker:
          openPick, `fresh`). A playable has no Help card, so it keeps the
          rules cards. */
-      if (!CONFIG.web) {
-        tip("basics", { c:contract, n:total });
-        if (stage.deals > 1) tip("tournee", { d:stage.deals, l:lives });
-      }
+      if (!CONFIG.web) tip("basics", { c:contract, n:total });
+      if (stage.deals > 1) tip("tournee", { d:stage.deals, l:lives });
       /* the tournée opens on a pick once the favours are in — before the
          first deal, so what is taken acts on it */
       if (pool().length) { phase = "pick"; openPick(Lang.t("Your tournée begins"), startDeal, freshFavours()); }
@@ -1329,7 +1451,7 @@
         }
         dealScore += pts; score += pts; tricksAll++;
         HUD.setScore(score); HUD.punch(SUN);
-        Sound.cue("win", 0.5, 1 + ns * 0.04, 760, 0.08, "triangle");
+        Sound.cue("win", 0.3, 1 + ns * 0.04, 760, 0.08, "triangle");
       } else {
         ew++; run = 0;
         Sound.cue("lose", 0.35, 1, 260, 0.08, "sawtooth");
@@ -1347,7 +1469,7 @@
         made = true;
         dealScore += 300; score += 300; HUD.setScore(score);
         Pop.show("perfect", { word:"Contract made!" });
-        Sound.cue("made", 0.6, 1, 880, 0.2, "triangle");
+        Sound.cue("made", 0.3, 1.6, 880, 0.2, "triangle");
       }
       if (!made && ew > total - contract) { endDeal(false); return; }   // the contract cannot be made any more
       if (!hands[0].length) { endDeal(true); return; }
@@ -1384,8 +1506,8 @@
       else if (has("insurance") && down === 1) { cost = 0; Notify.say("Insurance", { sub:"Down by one: no life lost", kind:"good", key:"insure" }); }
       if (cost) {
         lives = Math.max(0, lives - cost); showTour();
-        Notify.say(lives ? (lives === 1 ? "Last life" : fill(Lang.t("{n} lives left"), { n:lives })) : "Out of lives",
-                   { kind:lives ? "warn" : "loss", icon:"heart", key:"lives" });
+        // the HUD counts the hearts: only the last one is worth a word
+        if (lives === 1) Notify.say("Last life", { kind:"warn", icon:"heart", key:"lives" });
       }
       betweenNext = lives ? "next" : "end";
     }
@@ -1476,8 +1598,11 @@
        tap, whether it is ready and the button that uses it. */
     function perkCard(i) {
       var P = PERK[rail[i].id], why = P.act ? whyNot(P.id) : "";
+      var btns = [];
+      if (P.act) btns.push({ label:Lang.t("Use"), off:!!why, fn:function () { useFavour(P.id); } });
+      if (window.__GUIDE__) btns.push({ label:Lang.t("Favours"), plate:true, fn:function () { tip("favours", null, true); } });
       showCard({ node:favourCard(P.id, { w:360, h:620 }), lines:P.act ? [why ? Lang.t(why) : Lang.t("Ready")] : [], status:P.act,
-                 buttons:P.act ? [{ label:Lang.t("Use"), off:!!why, fn:function () { useFavour(P.id); } }] : null });
+                 buttons:btns.length ? btns : null });
     }
     function spend(id) { var r = has(id); if (r) r.used = 1; }
     function useFavour(id) {
@@ -1503,16 +1628,15 @@
           trump = len.indexOf(Math.max.apply(null, len));
         } else trump = NT;
         sortAll(); S.load(hands, trump); spend(id);
-        Notify.say(trump === NT ? "No trump" : fill(Lang.t("Trump: {s}"), { s:SUIT_GLYPH[trump] }), { kind:"good", key:"contract" });
+        Pop.show("bonus", { word:trump === NT ? "No trump" : fill(Lang.t("Trump: {s}"), { s:SUIT_GLYPH[trump] }), at:"top" });
         return;
       }
       if (id === "freediscard" || id === "miracle" || id === "sparetrump" || id === "bribe") {
         armed[id] = true; spend(id);
-        Notify.say(PERK[id].name, { sub:"Armed for your next card", kind:"good", key:"armed" });
-        if (id === "bribe") Notify.say(PERK[id].name, { sub:"The next defender plays its lowest card", kind:"good", key:"armed" });
+        Pop.show("bonus", { word:PERK[id].name, sub:"Armed for your next card", at:"top" });
         return;
       }
-      if (id === "mistral") { sel = { id:id, from:null }; Notify.say("Mistral", { sub:"Tap a card of your hand, then a card of the dummy", kind:"info", key:"sel" }); return; }
+      if (id === "mistral") { sel = { id:id, from:null }; Notify.say("Mistral", { sub:"Tap your card, then the dummy's", kind:"info", key:"sel" }); return; }
       if (id === "talon") { sel = { id:id }; Notify.say("Talon", { sub:"Tap the card to trade", kind:"info", key:"sel" }); return; }
       if (id === "pickpocket") { sel = { id:id }; Notify.say("Pickpocket", { sub:"Tap the card to give West", kind:"info", key:"sel" }); return; }
     }
@@ -1520,19 +1644,19 @@
     function selectCard(hit) {
       var c = hit.c, p = hit.p, w;
       if (sel.id === "mistral") {
-        if (!sel.from) { if (p !== 2) { Notify.say("Mistral", { sub:"First a card of your hand", kind:"warn", key:"sel" }); return; } sel.from = c; return; }
+        if (!sel.from) { if (p !== 2) { Notify.say("Mistral", { sub:"Tap a card of your hand first", kind:"warn", key:"sel" }); return; } sel.from = c; return; }
         if (p !== 0) { sel.from = c; return; }
         hands[2][hands[2].indexOf(sel.from)] = c; hands[0][hands[0].indexOf(c)] = sel.from;
-        Notify.say(fill(Lang.t("Mistral: {a} and {b} swap places"), { a:cardName(sel.from), b:cardName(c) }), { kind:"good", key:"sel" });
+        Pop.show("bonus", { word:fill(Lang.t("Mistral: {a} and {b} swap places"), { a:cardName(sel.from), b:cardName(c) }), at:"top" });
       } else if (sel.id === "talon") {
         w = outside[Rand.int(0, outside.length - 1)];
         turnInto(p, c, w);
-        Notify.say(fill(Lang.t("Talon: {a} for {b}"), { a:cardName(c), b:cardName(w) }), { kind:"good", key:"sel" });
+        Pop.show("bonus", { word:fill(Lang.t("Talon: {a} for {b}"), { a:cardName(c), b:cardName(w) }), at:"top" });
       } else if (sel.id === "pickpocket") {
         var k = Rand.int(0, hands[3].length - 1); w = hands[3][k];
         hands[3][k] = c; hands[p][hands[p].indexOf(c)] = w;
         delete shown[w];
-        Notify.say(fill(Lang.t("Pickpocket: {a} for {b}"), { a:cardName(c), b:cardName(w) }), { kind:"good", key:"sel" });
+        Pop.show("bonus", { word:fill(Lang.t("Pickpocket: {a} for {b}"), { a:cardName(c), b:cardName(w) }), at:"top" });
       }
       spend(sel.id); sel = null;
       sortAll(); S.load(hands, trump);
@@ -1721,7 +1845,7 @@
       var hit = cardAt(p);
       if (sel) {
         if (hit) selectCard(hit);
-        else { sel = null; Notify.say("Cancelled", { kind:"info", key:"sel" }); }
+        else { sel = null; Pop.show("score", { word:"Cancelled" }); }
         return;
       }
       if (!hit) { explainAt(p); return; }
@@ -1740,7 +1864,7 @@
       if (!legal(hit.p, hit.c)) {
         var led = suitOf(trick[0].c);
         Notify.say("Follow suit", { sub:fill(Lang.t("You still hold a {s}"), { s:SUIT_GLYPH[led] }), kind:"warn", key:"follow" });
-        Sound.cue("deny", 0.4, 1, 200, 0.08, "square");
+        Sound.cue("deny", 0.4, 1.2, 200, 0.08, "square");
         return;
       }
       play(hit.p, hit.c);
@@ -1799,10 +1923,70 @@
       }
     }
 
+    /* The proportions of a face, as fractions of the card's width (`rowY`
+       of its height). The index is small and tucked in the corner; the body's
+       pips are big, in two columns pulled in far enough to clear it by `gap`.
+       On a small card (the dummy on a 4:3 tablet is 71 wide) the rank stands
+       on its 18px floor and grows past its share, so there the pips shrink
+       instead of reaching into it — never under `ratio` times the corner's,
+       which is what keeps the index the small one. */
+    var FACE = { rank:0.19, corner:0.12, indexX:0.14, indexY:0.15,
+                 pip:0.2, colX:0.17, rowY:0.3, ace:0.5, gap:0.04, ratio:1.4 };
+
+    /* The painted court, from assets/image/object/bridgessa-card-{jack,queen,king}.png,
+       named by the manifest's art.objects (slipdeck's technique). Each file
+       is HALF a double-headed figure — a square cut at the hips, with no suit
+       and no letter in it — so three pictures dress all twelve court cards,
+       and the two heads of a card are the same pixels by construction: the
+       half is drawn upright, then turned 180 degrees, each copy clipped to
+       its side of a diagonal through the centre, and a filet covers the
+       seam. No frame and no pip of its own: the card's corners say the rank
+       and the suit, so the figure takes the whole face inside the rim — the
+       head is narrow and the shoulders start low, which leaves the corners
+       to the index. */
+    var COURT_ART = { 9: "cardJack", 10: "cardQueen", 11: "cardKing" };
+    var COURT = { size:1.02, top:0.06, tilt:0.16 };
+
+    function courtArt(rk) {
+      var img = ArtImages[COURT_ART[rk]];
+      // drawn only once decoded; the big letter below is the fallback
+      return img && img.complete && img.naturalWidth ? img : null;
+    }
+
+    function drawCourt(rk, w, h, col) {
+      var art = courtArt(rk), q;
+      if (!art) {
+        ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.font = font(h * 0.3, 700, true);
+        ctx.fillText(RANKS[rk], 0, 0);
+        return;
+      }
+      /* The half is square, `size` of the card's width — a little wider than
+         the rim, so the shoulders run off its sides like a printed court's —
+         and reaches past the centre, which is the room the diagonal needs:
+         `tilt` of the width either side of the middle. */
+      var d = w * COURT.size, x0 = -w * 0.45, y0 = -h / 2 + w * 0.05, t = w * COURT.tilt;
+      for (q = 0; q < 2; q++) {
+        ctx.save();
+        if (q) ctx.rotate(Math.PI);
+        roundRect(x0, y0, -x0 * 2, -y0 * 2, w * 0.054);   // inside the coral rim
+        ctx.clip();
+        ctx.beginPath();                                  // this head's side of the seam
+        ctx.moveTo(x0, y0); ctx.lineTo(-x0, y0); ctx.lineTo(-x0, -t); ctx.lineTo(x0, t);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(art, -d / 2, -h / 2 + w * COURT.top, d, d);
+        ctx.restore();
+      }
+      ctx.beginPath();                                    // the seam
+      ctx.moveTo(x0, t); ctx.lineTo(-x0, -t);
+      ctx.lineWidth = Math.max(1.5, w * 0.014); ctx.strokeStyle = col; ctx.stroke();
+    }
+
     /* One card face, the RIVIERA face: ivory, a navy rim with a thin coral
        line inside it, the index in a serif at the top-left (the only corner
-       an overlapped hand shows), pips for the numbers, a framed letter for
-       the court. `o`: dim, glow (a colour), star (the Masters mark). */
+       an overlapped hand shows), pips for the numbers, the painted court.
+       `o`: dim, glow (a colour), star (the Masters mark). */
     function drawCard(c, x, y, w, h, rot, o) {
       o = o || {};
       var s = suitOf(c), rk = rankOf(c), col = ink(c), r = w * 0.09, i, lay, q;
@@ -1831,34 +2015,38 @@
         ctx.restore();
         return;
       }
-      // the index: rank over pip, top-left, mirrored bottom-right
+      // the court is laid first: its figure runs under the corners
+      if (rk >= 9 && rk <= 11) drawCourt(rk, w, h, col);
+      /* the index: rank over a SMALL pip, tucked in the top-left corner and
+         mirrored bottom-right, clear of the body's columns */
+      var fs = Math.max(18, w * FACE.rank), ix = -w / 2 + w * FACE.indexX;
+      var iy = -h / 2 + w * FACE.indexY, ps = Math.max(8, w * FACE.corner);
       ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       for (q = 0; q < 2; q++) {
         ctx.save();
         if (q) ctx.rotate(Math.PI);
-        ctx.font = font(w * (rk === 8 ? 0.27 : 0.32), 700, true);
-        ctx.fillText(RANKS[rk], -w / 2 + w * 0.2, -h / 2 + w * 0.22);
-        ctx.translate(-w / 2 + w * 0.2, -h / 2 + w * 0.5);
-        pipPath(ctx, s, w * 0.2); ctx.fill();
+        ctx.font = font(fs, 700, true);
+        ctx.save();
+        ctx.translate(ix, iy);
+        if (rk === 8) ctx.scale(0.72, 1);                // the 10, condensed to one glyph's width
+        ctx.fillText(RANKS[rk], 0, 0);
+        ctx.restore();
+        ctx.translate(ix, iy + fs * 0.5 + ps * 0.62);
+        pipPath(ctx, s, ps); ctx.fill();
         ctx.restore();
       }
-      // the body
-      if (rk === 12) pip(s, 0, 0, w * 0.46, col);
-      else if (rk >= 9) {
-        var iw = w * 0.5, ih = h * 0.5;
-        roundRect(-iw / 2, -ih / 2, iw, ih, w * 0.05);
-        ctx.fillStyle = rgba(col, 0.08); ctx.fill();
-        ctx.lineWidth = Math.max(1.5, w * 0.014); ctx.strokeStyle = rgba(col, 0.6); ctx.stroke();
-        ctx.fillStyle = col; ctx.font = font(h * 0.24, 700, true);
-        ctx.fillText(RANKS[rk], 0, -ih * 0.12);
-        pip(s, 0, ih * 0.28, w * 0.13, col);
-      } else {
+      // the body: one big pip for the ace, the traditional columns for the numbers
+      if (rk === 12) pip(s, 0, 0, w * FACE.ace, col);
+      else if (rk < 9) {
+        // a pip's half-width is 0.42 of its size; the index's is ~0.42 of the rank's
+        var reach = w / 2 - w * FACE.indexX - Math.max(fs, ps) * 0.42 - w * FACE.gap;
+        var pz = Math.min(w * FACE.pip, Math.max(ps * FACE.ratio, (reach - w * FACE.colX) / 0.42));
         lay = PIP_LAYOUT[rk + 1];
         for (i = 0; i < lay.length; i++) {
           ctx.save();
-          ctx.translate(lay[i][0] * w * 0.17, lay[i][1] * h * 0.27);
+          ctx.translate(lay[i][0] * w * FACE.colX, lay[i][1] * h * FACE.rowY);
           if (lay[i][1] > 0.001) ctx.rotate(Math.PI);
-          ctx.fillStyle = col; pipPath(ctx, s, w * 0.15); ctx.fill();
+          ctx.fillStyle = col; pipPath(ctx, s, pz); ctx.fill();
           ctx.restore();
         }
       }
@@ -2194,5 +2382,5 @@
              onDown:onDown, onMove:onMove, onUp:onUp, onResize:onResize,
              held:function () { return !!(tipOpen || pick); },
              levelWon:finish, levelGoal:levelGoal,
-             levelMaxed:function () { return true; }, wipe:wipe, codex:codex, helpAura:helpAura };
+             levelMaxed:function () { return true; }, wipe:wipe, codex:codex, helpAura:helpAura, guide:guide };
   })();

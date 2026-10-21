@@ -110,10 +110,10 @@
       gameOver:   "Out of hearts",
       timeUp:     "Shift over",
       perfect:    "Full power!",
-      hintLock:   "Tap a lock to open its gate",
+      // the second lines of the first-time notices (Notify.learn), one per mechanic
+      hintLock:   "Tap a locked gate's padlock to open it",
       hintVolt:   "Tap an arrival to move the socket under it",
-      hintSpill:  "It rolls behind the machine to the red socket, and costs a heart",
-      hintFuse:   "Open gates and catch the electric marble to keep the combo"
+      hintFuse:   "Gates and electric marbles relight the fuse"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -2272,9 +2272,8 @@
     var fuse = 1, fuseBurn = false, fuseOutT = 0, comets = [], slowT = 0;
     var SLOW_TIME = 0.6, SLOW_K = 0.22, COMET_TIME = 0.42;
     var flow = 0, screwSlot = 0, towerQ = [], revealT = -1;
-    var stats = null, taught = null, chimeGap = 0, clickGap = 0, lastTick = 0, spaceTap = false;
+    var stats = null, chimeGap = 0, clickGap = 0, lastTick = 0, spaceTap = false;
     var landGap = 0, noteGap = 0, boostGap = 0;      // the moving modules' sounds, never piled up
-    var hints = [], hintT = 0;      // the lessons, one on screen at a time
 
     function lerp(a, b, k) { return a + (b - a) * k; }
     function zapK() { return Math.min(1, zap / ZAP_EASE); }
@@ -2333,17 +2332,15 @@
       marbles.push(m);
       return m;
     }
-    function hint(word, opt) { hints.push([word, opt]); }
     function spawn(kind) {
       var m = newMarble(kind, CH.top.xs[0], CH.top.ys[0]);
       m.ch = CH.top;
       if (m.e && splits > 0) { splits--; m.splitter = true; }
       if (m.e) {
         spark(H0[0], H0[1] - 10, C.volt, 10, 220);
-        if (!taught.volt) {
-          taught.volt = true;
-          hint("Electric marble", { sub: CONFIG.copy.hintVolt, kind: "info", icon: "sparkles", hold: 3400 });
-        }
+        // a MECHANIC met for the first time: named once per player ever, its
+        // line in the "!" log opening the guide page that explains it
+        Notify.learn("volt", "Electric marble", { sub: CONFIG.copy.hintVolt, kind: "info", icon: "sparkles", hold: 3400 });
       }
     }
     function gateLoad(g) {
@@ -2383,7 +2380,9 @@
                      r: 8 + Math.random() * 10, t: -Math.random() * 0.25, life: 1.1 });
       }
     }
+    // A value floating up from a point of the machine: the house look, only the colour is ours.
     function popText(mx, my, str, color) {
+      Pop.text(toDX(mx), toDY(my), str, { color: color, size: 22, life: 0.6, tier: 1 });
     }
 
     /* ---------------- events ----------------------------------------- */
@@ -2534,7 +2533,7 @@
         blackLen = BLACKOUT * (0.7 + 1.1 * k); blackT = blackLen;
         Sound.clip("blackout", 0.4 + 0.3 * k, 1 - 0.18 * k);
       } else {
-        Sound.clip("blackout", 0.3, 1.25);
+        Sound.clip("blackout", 0.2, 1.6);
       }
       Fx.shake(5 + 13 * k, 0.2 + 0.3 * k);
       if (k >= 0.4) { slowT = SLOW_TIME; Fx.flash(tc, 0.12 + 0.18 * k); }
@@ -2547,6 +2546,8 @@
     function fuseSecs() { return M.fuse[Math.min(M.fuse.length - 1, tier(combo))]; }
     // Every action that feeds the combo relights the fuse whole.
     function feedFuse() { fuse = 1; fuseOutT = 0; }
+    // the combo has started from nothing: the fuse that keeps it is named once
+    function learnFuse() { Notify.learn("fuse", "Combo fuse", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
     /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
        the combo grows when it lands, so the hub counts up in step with what
        the player sees fly in. The fuse is relit at once, on the action. */
@@ -2558,8 +2559,9 @@
     // that climbs the scale toward the next tier.
     var SCALE = [0, 2, 4, 5, 7, 9, 11, 12, 14];
     function landSpark(c) {
-      var b = tier(combo), tr, lo, hi, step;
+      var b = tier(combo), was = combo, tr, lo, hi, step;
       combo += c.n; if (combo > bestCombo) bestCombo = combo;
+      if (!was) learnFuse();
       tr = tier(combo);
       lo = tr ? tierAt(tr - 1) : 0; hi = tr < M.tiers.length ? tierAt(tr) : 0;
       step = hi ? Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1)) : SCALE.length - 1;
@@ -2611,10 +2613,6 @@
         fuse -= dt / fuseSecs();
         if (fuse <= 0) fuseOut();
       }
-      if (combo > 0 && !taught.fuse) {
-        taught.fuse = true;
-        hint("Keep the fuse lit", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass", hold: 3600 });
-      }
     }
     // A heart goes: the HUD, the cue, and the end of the shift on the last one.
     function loseHeart(n) {
@@ -2629,7 +2627,7 @@
         Overlay.vignette(C.full, 0.9);
       } else if (hearts === 1) {
         Overlay.vignette(C.full, 0.55);
-        Notify.say("Last heart", { kind: "loss", icon: "heart" });
+        Pop.show("alert", { word: "Last heart", at: "upper" });
       }
     }
     // A full queue with no drain (none of the five machines has one) shatters
@@ -2677,11 +2675,8 @@
       var hadCombo = combo >= 2;
       breakCombo(true);
       if (state !== "play") return;
+      // the callout says what happened, and the heart is seen going: no notice
       Pop.show("alert", { word: "Overflow", sub: hadCombo ? "Combo lost" : "" });
-      if (!taught.spill) {
-        taught.spill = true;
-        hint("Lost marble", { sub: CONFIG.copy.hintSpill, kind: "warn", icon: "heart", hold: 3200 });
-      }
     }
     // A lost marble reaches the red sink: it is gone, and so is a heart.
     function sinkHit(m) {
@@ -2713,10 +2708,7 @@
       g.locked = true; g.lockAge = 0; stats.locks++; g.locks = (g.locks || 0) + 1;
       ring(g.px, g.py, C.amber, 30, 140, 0.6, 4);
       Sound.clip("lock", 0.46, Rand.range(0.95, 1.05));
-      if (!taught.lock) {
-        taught.lock = true;
-        hint(CONFIG.copy.hintLock, { kind: "warn", icon: "lock", hold: 3200 });
-      }
+      Notify.learn("lock", "Locked gate", { sub: CONFIG.copy.hintLock, kind: "warn", icon: "lock" });
     }
     function unlock(g) {
       if (state !== "play" || !g || !g.locked) return false;
@@ -2739,7 +2731,8 @@
       s.dir = 1 - s.dir; s.flash = FLIP_TIME * 2;
       if (!byMarble) {
         s.spin += 0.6; s.snap = 0.22;
-        Sound.clip("flip", 0.5, s.dir ? 1.08 : 0.94);
+        if (s.dir) Sound.clip("flip", 0.5, 1.08);
+        else Sound.clip("flip", 0.5, 0.94);
         var a = branchAngle(id, s.dir);
         spark(s.x + Math.cos(a) * 58, s.y + Math.sin(a) * 58, C.steelL, 5, 150);
       } else if (clickGap <= 0) {
@@ -2814,7 +2807,7 @@
       { key: "slowmo", biome: 2, kind: "help", icon: "hourglass", color: "#c9b8ff", name: "Slow motion",
         text: "The machine runs at half speed", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
       { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Combo shield",
-        text: "The next {n} combo breaks are absorbed", one: "The next combo break is absorbed",
+        text: "The next {n} mistakes don't break your combo", one: "The next mistake doesn't break your combo",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "rustyLocks", biome: 2, kind: "help", icon: "lock", color: "#d39a6a", name: "Rusty locks",
         text: "Gates lock 40% less often", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
@@ -2823,7 +2816,7 @@
       { key: "train", biome: 2, kind: "score", icon: "chevrons-right", color: "#ffe6a8", name: "Marble train",
         text: "Marbles landing back to back pay +{n} per wagon", tiers: [[1, 10, "shift"], [2, 20, "shift"], [3, 40, "shift"]] },
       { key: "chain", biome: 2, kind: "score", icon: "zap", color: "#e8fdff", name: "Chain lightning",
-        text: "The payoff arc zaps every marble it passes: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
+        text: "A caught electric marble's arc zaps every marble on its way: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
       { key: "packed", biome: 2, kind: "score", icon: "circle-dot", color: "#d9a8ff", name: "Packed machine",
         text: "Every marble delivered pays +5% per marble in the machine", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overclock", biome: 2, kind: "risk", icon: "flame", color: "#ff9a44", name: "Overclock",
@@ -2831,7 +2824,7 @@
       { key: "allIn", biome: 2, kind: "risk", icon: "hand-fist", color: "#ff5d86", name: "All in",
         text: "+25 combo now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
       { key: "doubleOr", biome: 2, kind: "risk", icon: "dices", color: "#ffd43b", name: "Double or nothing",
-        text: "The next electric on target doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
+        text: "The next electric marble caught doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
       { key: "capacitor", biome: 2, kind: "legend", icon: "medal", color: "#ffd43b", name: "Capacitor",
         text: "The socket recharges {n}% faster", tiers: [[4, 10, "shift"]] },
 
@@ -2849,11 +2842,11 @@
         text: "The next {n} electric marbles split in two at every switch", one: "The next electric marble splits in two at every switch",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "staticCharge", biome: 3, kind: "score", icon: "magnet", color: "#a8f0ff", name: "Static charge",
-        text: "An electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
+        text: "An extra electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
       { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Combo anchor",
         text: "The combo never falls below its last tier", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "greedy", biome: 3, kind: "risk", icon: "pickaxe", color: "#ffd43b", name: "Greedy locks",
-        text: "Every unlock pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
+        text: "Every gate you open pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
       { key: "torrent", biome: 3, kind: "risk", icon: "droplet", color: "#5ab0ff", name: "Torrent",
         text: "Every marble pays x3", cost: "The feeder pours twice as fast", tiers: [[3, 0, 15]] },
       { key: "sacrifice", biome: 3, kind: "risk", icon: "axe", color: "#ff3d6e", name: "Sacrifice",
@@ -2865,16 +2858,16 @@
       { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slow feeder",
         text: "The feeder pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overcharge", biome: 4, kind: "score", icon: "sparkles", color: "#7ef9ff", name: "Overcharge",
-        text: "An electric on target charges the machine for {n} s: every marble pays x3",
+        text: "A caught electric marble overcharges the machine: every marble pays x3 for {n} s",
         tiers: [[1, 3, "shift"], [2, 6, "shift"], [3, 10, "shift"]] },
       { key: "redJackpot", biome: 4, kind: "score", icon: "target", color: "#ff5d86", name: "Red jackpot",
         text: "A marble in the red socket pays 50 instead of a heart", tiers: [[1, 50, 20], [2, 50, "next"], [3, 50, "shift"]] },
       { key: "narrow", biome: 4, kind: "risk", icon: "arrow-up-down", color: "#d9a8ff", name: "Narrow gates",
-        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one marble less", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one fewer marble", tiers: [[3, 0, "shift"]] },
       { key: "blackout", biome: 4, kind: "risk", icon: "eye", color: "#9fb3ff", name: "Blackout",
-        text: "Electric marbles pay x2 for the shift", cost: "The routes no longer light up", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "You no longer see which way leads to the socket", tiers: [[3, 0, "shift"]] },
       { key: "liveWire", biome: 4, kind: "risk", icon: "circle-x", color: "#a8f0ff", name: "Live wire",
-        text: "An electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
+        text: "An extra electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
       { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Dynamo",
         text: "The socket recharges {n}% faster", tiers: [[4, 20, "shift"]] },
 
@@ -2886,7 +2879,7 @@
       { key: "lockdown", biome: 5, kind: "risk", icon: "book-lock", color: "#ffb44f", name: "Lockdown",
         text: "Marbles leaving a gate pay x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
       { key: "jam", biome: 5, kind: "risk", icon: "arrow-down", color: "#bdb3ee", name: "Jam session",
-        text: "The combo climbs twice as fast for the shift", cost: "The wheel entries hold 2 marbles less", tiers: [[3, 0, "shift"]] },
+        text: "The combo climbs twice as fast for the shift", cost: "The wheel's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
       { key: "tempt", biome: 5, kind: "risk", icon: "wand-sparkles", color: "#ff6fd8", name: "Tempt fate",
         text: "The next pick deals two epic cards", cost: "-1 heart now", tiers: [[3, 0, 0]] },
       { key: "tesla", biome: 5, kind: "legend", icon: "crown", color: "#ffd43b", name: "Tesla coil",
@@ -3001,6 +2994,7 @@
     function addCombo(n) {
       var b = tier(combo);
       feedFuse();
+      if (!combo && n > 0) learnFuse();
       combo += n; if (combo > bestCombo) bestCombo = combo;
       if (tier(combo) > b) tierUp();
     }
@@ -3242,6 +3236,14 @@
         (function (k) { btn.addEventListener("click", function (e) { e.stopPropagation(); take(k); }); })(i);
         row.appendChild(btn);
       }
+      // on the web, the pick's rule is a page of the guide, a tap away (it pauses over the pick)
+      if (window.__GUIDE__) {
+        btn = document.createElement("button");
+        btn.type = "button"; btn.className = "btn btn-sm btn-plate gb-rules";
+        btn.textContent = upper(Lang.t("Upgrade cards"));
+        btn.addEventListener("click", function (e) { e.stopPropagation(); window.__GUIDE__.open("cards"); });
+        mc.appendChild(btn);
+      }
       lay.appendChild(mc);
       frame.appendChild(lay);
       held = { node: lay, deal: deal };
@@ -3310,7 +3312,7 @@
       if (state !== "play" || held || keys <= 0) return;
       var any = false, i;
       for (i = 0; i < gates.length; i++) if (gates[i].locked) { unlock(gates[i]); any = true; }
-      if (!any) { Pop.show("score", { word: "No gate is locked" }); return; }
+      if (!any) { Notify.say("No gate is locked", { kind: "warn", icon: "lock" }); return; }
       keys--;
       Pop.show("bonus", { word: "Master key", at: "top" });
       paintRun();
@@ -3330,7 +3332,7 @@
       recompute();
       ready = charge() >= 1;
       if (ready && !wasReady) {
-        Notify.say("Upgrade ready", { sub: "The next electric on target deals two cards", kind: "rare", icon: "sparkles", key: "gb-ready" });
+        Notify.say("Upgrade ready", { sub: "Next electric marble deals two cards", kind: "rare", icon: "sparkles", key: "gb-ready" });
         boxes[arrival].charge = 1; boxes[arrival].kick = 0.5;
       }
       wasReady = ready;
@@ -3373,6 +3375,306 @@
                  chips: [{ text: Lang.t(R.name), color: R.color }, { text: durText(c) }] };
       }
     };
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells: its picture is painted by the
+       round's own painters — paintGate, paintArrival, paintWays and
+       paintSwitch, the hub, the rails, the marbles — on a canvas of its own,
+       with the round's `ctx` lent for the length of the call, so a gate read
+       in the guide is the gate on the machine. Nothing of the round moves:
+       what a painter reads (the scale, the sprites, the combo, the metal) is
+       swapped in and put back. The guide may open before any round, so no
+       picture reads L, the wheel or a gate of the machine. A page's level is
+       the one the climb first deals the idea on (LAYOUTS, CARD_FAMS). */
+    function machinePic(W, H, sc, x0, y0, paint) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1;
+      var keep = { ctx: ctx, S: S, sprites: sprites, cog: cogCv, wheel: wheelCv, parts: parts, chargeT: chargeT,
+                   marbles: marbles, L: L, dh: TINT.dh, ks: TINT.ks, key: TINT.key, memo: tintMemo,
+                   steel: C.steel, steelD: C.steelD, steelL: C.steelL };
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      try {
+        setBiome(0);                     // the first biome's violet steel, whatever round lies under the guide
+        S = sc; sprites = {}; parts = []; chargeT = 0;
+        buildMarbles(sc * k); buildCog(sc * k);
+        ctx = cv.getContext("2d"); ctx.scale(k * sc, k * sc); ctx.translate(-x0, -y0);
+        paint(sc * k);
+      } finally {
+        ctx = keep.ctx; S = keep.S; sprites = keep.sprites; cogCv = keep.cog; wheelCv = keep.wheel;
+        parts = keep.parts; chargeT = keep.chargeT; marbles = keep.marbles; L = keep.L;
+        TINT.dh = keep.dh; TINT.ks = keep.ks; TINT.key = keep.key; tintMemo = keep.memo;
+        C.steel = keep.steel; C.steelD = keep.steelD; C.steelL = keep.steelL;
+      }
+      return cv;
+    }
+    function picLine(tr) { var ch = makeChannel("pic", "", tr.p); ch.mods = []; return ch; }
+    // The rails as buildRails lays them: behind, the bowls, in front, the tubes' walls, the pipe mouths.
+    function picRails(chs, bowls) {
+      var i, j;
+      for (i = 0; i < chs.length; i++) railBed(ctx, chs[i], isBack);
+      for (i = 0; i < chs.length; i++) railPass(ctx, chs[i], isBack, 0.8);
+      for (i = 0; bowls && i < bowls.length; i++) paintBowl(ctx, bowls[i]);
+      for (i = 0; i < chs.length; i++) railBed(ctx, chs[i], isFront);
+      for (i = 0; i < chs.length; i++) railPass(ctx, chs[i], isFront, 1);
+      for (i = 0; i < chs.length; i++) { tubeWalls(ctx, chs[i], isGlass, 14); tubeWalls(ctx, chs[i], isZebra, 0); }
+      for (i = 0; i < chs.length; i++) for (j = 0; j < chs[i].mouths.length; j++) paintMouth(ctx, chs[i], chs[i].mouths[j]);
+    }
+    // ...and what lies over the marbles: the glass sheen, the zebra's bands, the hoses.
+    function picOver(chs) {
+      for (var i = 0; i < chs.length; i++) { tubeSheen(ctx, chs[i], isGlass); zebraBands(ctx, chs[i]); hoseBody(ctx, chs[i]); }
+    }
+    // A marble on a line, `kind` as the pour names them (c, k, g, e).
+    function picMarble(ch, d, kind, more) {
+      var p = at(ch, d, {}), m = { e: kind === "e", k: kind === "k", gold: kind === "g", st: "track", ch: ch, d: d,
+                                   x: p.x, y: p.y, z: p.z, rot: d / R }, k;
+      for (k in more || {}) m[k] = more[k];
+      return m;
+    }
+    // A gate locked on line `ch` at (x, y), `n` of its `cap` slots taken, its padlock at (px, py).
+    function picGate(ch, x, y, cap, n, px, py) {
+      var d = nearestD(ch, x, y), p = at(ch, d, {}), a = at(ch, d + 5, {});
+      var l = Math.sqrt((a.x - p.x) * (a.x - p.x) + (a.y - p.y) * (a.y - p.y)) || 1;
+      var g = { d: d, cap: cap, q: { length: n }, locked: true, lockAge: 1, pop: 0, x: p.x, y: p.y,
+                tx: (a.x - p.x) / l, ty: (a.y - p.y) / l, px: px, py: py };
+      g.fx = g.x + g.tx * (R + 4); g.fy = g.y + g.ty * (R + 4);
+      return g;
+    }
+    function picBox(x, sock) {
+      return { x: x, col: sock ? C.volt : CLASSIC, kick: 0, fizz: 0, charge: sock ? 0.6 : 0, led: -1, sweep: 0 };
+    }
+
+    function marblesPic() {
+      return machinePic(384, 136, 2, 0, 0, function () {
+        drawMarble({ x: 36, y: 34, z: 1, rot: 0.6 });
+        drawMarble({ k: true, x: 96, y: 34, z: 1, rot: 0.6 });
+        drawMarble({ e: true, x: 156, y: 34, z: 1, rot: 0.6 });
+      });
+    }
+    function lockPic() {
+      return machinePic(476, 280, 1.4, 0, 0, function () {
+        var ch = picLine(T(-30, 150).to(370, 182)), g = picGate(ch, 250, 172, 4, 3, 120, 60), i;
+        picRails([ch]);
+        drawSockets(ch, g.d, g.cap, 3, 0, true);
+        paintGate(g, false);
+        for (i = 0; i < 3; i++) drawMarble(picMarble(ch, g.d - i * 2.2 * R, i === 1 ? "k" : "c"));
+      });
+    }
+    function spillPic() {
+      return machinePic(374, 319, 1.1, 0, 20, function () {
+        var ch = picLine(T(-30, 120).to(370, 150)), g = picGate(ch, 200, 142, 4, 4, 300, 50), i, dl, tp, back;
+        dl = g.d - g.cap * 2.2 * R; tp = at(ch, dl, {});
+        back = picLine(T(tp.x, tp.y).under().to(tp.x - 14, 190).to(120, 252).to(220, 262).to(290, 232));
+        ctx.globalAlpha = 0.5; railBed(ctx, back, isBack); ctx.globalAlpha = 1;
+        railPass(ctx, back, isBack, 0.5);
+        paintSink(290, 232, 0);
+        drawMarble(picMarble(back, back.len * 0.42, "c", { lost: true }));
+        picRails([ch]);
+        drawSockets(ch, g.d, g.cap, 4, 0.5, true);
+        paintGate(g, false);
+        for (i = 0; i < 4; i++) drawMarble(picMarble(ch, g.d - i * 2.2 * R, i === 2 ? "k" : "c"));
+      });
+    }
+    function voltPic() {
+      return machinePic(456, 310, 1.2, 0, RIM_Y - 150, function () {
+        var xs = [70, 190, 310], chs = [], i;
+        for (i = 0; i < 3; i++) chs.push(picLine(T(xs[i], RIM_Y - 190).to(xs[i], RAIL_END)));
+        picRails(chs);
+        drawMarble(picMarble(chs[0], 110, "c"));
+        drawMarble(picMarble(chs[1], 70, "e"));
+        for (i = 0; i < 3; i++) paintArrival(picBox(xs[i], i === 1), i === 1, 50);
+      });
+    }
+    function switchPic() {
+      return machinePic(320, 320, 0.8, 0, 780, function () {
+        var top = picLine(T(200, 760).to(200, 890)),
+            left = picLine(T(200, 890).to(135, 950).to(95, 1010).to(95, RAIL_END)),
+            right = picLine(T(200, 890).to(265, 950).to(305, 1010).to(305, RAIL_END));
+        var p = at(right, 30, {}), s = { x: 200, y: 890, dir: 1, kb: 1, spin: 0.4, flash: 0, snap: 0,
+                                       ang: Math.atan2(p.y - 890, p.x - 200) };
+        picRails([top, left, right]);
+        paintWays(s, [left, right], function (ch) { return ch === right; });
+        paintSwitch(s, true, true);
+        drawMarble(picMarble(top, 62, "e"));
+        paintArrival(picBox(95, false), false, 50);
+        paintArrival(picBox(305, true), true, 50);
+      });
+    }
+    /* The wheel, its fuse and the hub, for a combo of `c` with the fuse at
+       `f` (burning when `burn`): the round's own drawFuse and drawHub, on
+       the combo swapped in for the call. */
+    function hubPic(c, f, burn) {
+      var keep = { combo: combo, fuse: fuse, burn: fuseBurn, zap: hubZap, brk: hubBreak, pop: hubPop, stats: stats, state: state };
+      try {
+        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; stats = { delivered: 1 }; state = "play";
+        return machinePic(250, 250, 1.04, -120, -120, function (k) {
+          var half = RIM + 6;
+          buildWheel(k, 10);
+          drawGlow(TIERS_COL[tier(combo)], 0, 0, RIM + 40 + tier(combo) * 26, tier(combo) ? 0.45 : 0);
+          ctx.drawImage(wheelCv, -half, -half, half * 2, half * 2);
+          drawFuse(0, 0, RIM + 9);
+          drawHub(0, 0);
+        });
+      } finally {
+        combo = keep.combo; fuse = keep.fuse; fuseBurn = keep.burn; hubZap = keep.zap; hubBreak = keep.brk;
+        hubPop = keep.pop; stats = keep.stats; state = keep.state;
+      }
+    }
+    function loopsPic() {
+      return machinePic(480, 264, 1.2, 0, 0, function () {
+        var lp = picLine(T(-20, 150).to(60, 172).to(120, 182).loop(52, 1).to(230, 190)),
+            cl = picLine(T(250, 10).to(300, 30).coil(190, 36, 2).to(300, 240));
+        picRails([lp, cl]);
+        drawMarble(picMarble(lp, nearestD(lp, 120, 78), "c"));
+        drawMarble(picMarble(cl, cl.len * 0.55, "k"));
+      });
+    }
+    function ferryPic() {
+      return machinePic(442, 286, 1.3, 0, 0, function (k) {
+        var cx = 170, cy = 112, r = 70, n = 10, half = r + 18, ph = 230 * Math.PI / 180, i, a;
+        var fin = picLine(T(-10, 40).to(60, 66).to(cx + r * Math.cos(200 * Math.PI / 180), cy + r * Math.sin(200 * Math.PI / 180))),
+            fout = picLine(T(cx + r * Math.cos(340 * Math.PI / 180), cy + r * Math.sin(340 * Math.PI / 180)).to(300, 66).to(360, 56));
+        picRails([fin, fout]);
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(ph);
+        ctx.drawImage(gearSprite(k, r, n), -half, -half, half * 2, half * 2);
+        ctx.restore();
+        ctx.drawImage(cogCv, cx - 24, cy - 24, 48, 48);
+        for (i = 0; i < 3; i++) {
+          a = ph + i * PI2 / n;
+          drawMarble({ k: i === 1, x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, z: 1, rot: a * 3 });
+        }
+        drawMarble(picMarble(fin, fin.len - 40, "c"));
+      });
+    }
+    function movesPic() {
+      return machinePic(483, 288, 1.15, 0, 0, function () {
+        var jp = T(-20, 40).to(60, 70).to(110, 92).jump(270, 112, 35).to(310, 132).to(330, 136),
+            st = T(330, 136).steps(405, 196, 3),
+            bs = T(-20, 214).to(60, 214).boost(300, 222).to(440, 224);
+        var j = picLine(jp), s = picLine(st), b = picLine(bs), props = jp.props.concat(st.props, bs.props), i;
+        picRails([j, s, b]);
+        for (i = 0; i < props.length; i++) if (props[i].k !== "coil") paintProp(ctx, props[i]);
+        drawMarble(picMarble(j, nearestD(j, 200, 60), "c"));
+        drawMarble(picMarble(b, nearestD(b, 212, 219), "e"));
+        for (i = 0; i < props.length; i++) if (props[i].k === "coil") paintCoil(ctx, props[i]);
+        drawGlow(C.amber, props[props.length - 2].x, props[props.length - 2].y, R + 26, 0.8);
+      });
+    }
+    function tubesPic() {
+      return machinePic(480, 264, 1.2, 0, 0, function () {
+        var gl = picLine(T(-20, 40).to(50, 40).glass(1).to(350, 44).glass(0).to(420, 44)),
+            zb = picLine(T(-20, 110).to(50, 110).zebra(1).to(350, 114).zebra(0).to(420, 114)),
+            hs = picLine(T(-20, 180).to(40, 180).hose(360, 188, 0).to(420, 188)), chs = [gl, zb, hs];
+        picRails(chs);
+        marbles = [picMarble(gl, nearestD(gl, 200, 42), "e"), picMarble(zb, nearestD(zb, 200, 112), "e"),
+                   picMarble(hs, nearestD(hs, 200, 184), "e")];
+        drawMarble(marbles[0]); drawMarble(marbles[1]); drawMarble(marbles[2]);
+        picOver(chs);
+        L = { props: [] }; drawCovered();          // the electric glow through what covers it
+      });
+    }
+    function whirlPic() {
+      return machinePic(456, 288, 1.2, 0, 0, function () {
+        var tr = T(-20, 30).to(60, 48).to(118, 92).whirl(200, 110, 70, 16, 1.5, 1).to(215, 190).over().to(230, 214).to(400, 228),
+            w = picLine(tr);
+        picRails([w], tr.bowls);
+        drawMarble(picMarble(w, nearestD(w, 270, 112), "k"));
+      });
+    }
+    function cardsPic(ids, w) {
+      var box = document.createElement("div"), i;
+      box.className = "gb-gcards";
+      for (i = 0; i < ids.length; i++) box.appendChild(cardNode(ids[i], { w: w || 250 }));
+      return box;
+    }
+    // A biome's painted hall, cut to a band.
+    function scenePic(b) {
+      var src = (CONFIG.art || {})[CONFIG.biomes[b].scene], n;
+      if (!src) return null;
+      n = document.createElement("div");
+      n.className = "gb-gscene";
+      n.style.width = "480px"; n.style.height = "230px";
+      n.style.backgroundImage = 'url("' + src + '")';
+      return n;
+    }
+    // what each biome's machines bring, in one line
+    var BIOME_LINES = [
+      "Every level is a different machine. Here, each one has a single switch.",
+      "Two switches, and glass tubes from level 7.",
+      "Four switches step down the machine.",
+      "Lines cross. One dives under the other and comes back out of a pipe mouth.",
+      "Six switches chained: the biggest machines of the climb."
+    ];
+    // two cards a biome shows: one that helps, one that scores or wagers
+    var BIOME_CARDS = [["spareHeart-2", "glass"], ["autoSwitch-2", "doubleOr"], ["second-1", "greedy"],
+                       ["oneLockLess-2", "redJackpot-1"], ["wide-2", "tesla"]];
+    function biomeChapter(b) {
+      var B = CONFIG.biomes[b], lv = b * 6 + 1;
+      return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
+        { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: function () { return scenePic(b); },
+          lines: [Lang.t(BIOME_LINES[b])] },
+        { id: "cards-" + B.name.toLowerCase(), title: Lang.t("Biome cards"), lv: lv,
+          pic: function () { return cardsPic(BIOME_CARDS[b], 230); },
+          lines: [Lang.t("From here on, a pick can also deal cards like these.")] }
+      ] };
+    }
+    var guide = {
+      chapters: function () {
+        var tiers = [], i, out;
+        for (i = 0; i < M.tiers.length; i++) tiers.push([Lang.t("Combo") + " " + M.tiers[i], "×" + (i + 2)]);
+        out = [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "shift", title: Lang.t("The shift"), pic: marblesPic,
+              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble caught"), "+" + M.electricScore]],
+              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the combo."),
+                      Lang.t("On a keyboard, space or Q to Y open the gates. Keys 1 to 6 move the socket.")] },
+            { id: "lock", title: Lang.t("Locked gates"), pic: lockPic,
+              lines: [Lang.t("Gates lock at random. Tap the padlock to open the gate again."),
+                      Lang.t("Each marble the gate then lets out feeds the combo.")] },
+            { id: "volt", title: Lang.t("The electric marble"), pic: voltPic,
+              rows: [[Lang.t("Combo"), "+" + M.electricJump]],
+              lines: [Lang.t("Tap an arrival to move the socket there. Only the socket takes the electric marble."),
+                      Lang.t("Anywhere else the electric marble fizzles, and the combo breaks.")] },
+            { id: "switch", title: Lang.t("Switches"), pic: switchPic,
+              lines: [Lang.t("A switch flips each time a marble passes. Its lit way shows where the next one goes.")] },
+            { id: "spill", title: Lang.t("Overflow"), pic: spillPic,
+              lines: [Lang.t("When a queue is full, the next marble breaks the combo and drops through the trapdoor."),
+                      Lang.t("That marble rolls to the red socket and costs a heart.")] },
+            { id: "combo", title: Lang.t("The combo"), pic: function () { return hubPic(27, 0.85, false); }, rows: tiers,
+              lines: [Lang.t("Opening a gate adds +1 per marble it lets out. A caught electric marble adds +5."),
+                      Lang.t("Losing a marble or wasting an electric one resets the combo to 0.")] },
+            { id: "fuse", title: Lang.t("The fuse"), pic: function () { return hubPic(12, 0.3, true); },
+              lines: [Lang.t("The fuse burns down while the machine waits on you. Open a gate or catch an electric marble."),
+                      Lang.t("If the fuse burns out, the combo drops back one tier.")] }
+          ] },
+          { key: "cards", label: Lang.t("Upgrade cards"), pages: [
+            { id: "cards", title: Lang.t("The upgrade pick"), pic: function () { return cardsPic(["spareHeart-1", "turbo-2"]); },
+              lines: [Lang.t("When the socket is charged, catching an electric marble pauses the machine and deals two cards."),
+                      Lang.t("One card helps, the other scores or takes a risk. Take one.")] },
+            { id: "risk", title: Lang.t("Risk cards"), lv: 1, pic: function () { return cardsPic(["glass", "doubleOr"]); },
+              lines: [Lang.t("A risk card pays big, but you pay for it in hearts, speed or half your score.")] },
+            { id: "legend", title: Lang.t("Legendary cards"), lv: 7, pic: function () { return cardsPic(["capacitor", "tesla"]); },
+              lines: [Lang.t("These golden cards are rare. Each one makes the socket recharge faster for the whole shift.")] },
+            { id: "key", title: Lang.t("Master key"), lv: 1, pic: function () { return cardsPic(["masterKey-1"], 300); },
+              lines: [Lang.t("The master key waits under the hearts. Tap it, or press K, to open every locked gate.")] }
+          ] },
+          { key: "track", label: Lang.t("The track"), pages: [
+            { id: "loops", title: Lang.t("Loops and spirals"), lv: 1, pic: loopsPic,
+              lines: [Lang.t("With the Loop prize and Spiral prize cards, every loop or spiral a marble rides pays.")] },
+            { id: "ferry", title: Lang.t("Ferry gears"), lv: 1, pic: ferryPic,
+              lines: [Lang.t("A ferry gear carries a marble over to another line. Watch where it sets it down.")] },
+            { id: "moves", title: Lang.t("Jumps and boosters"), lv: 2, pic: movesPic,
+              lines: [Lang.t("A jump throws the marble into a catcher. A booster speeds it up.")] },
+            { id: "tubes", title: Lang.t("Tubes and hoses"), lv: 3, pic: tubesPic,
+              lines: [Lang.t("A glass tube shows its marbles. A striped tube shows them between its bands, a hose hides them."),
+                      Lang.t("The electric marble glows through all of them.")] },
+            { id: "whirl", title: Lang.t("Whirlpools and dives"), lv: 12, pic: whirlPic,
+              lines: [Lang.t("A whirlpool spirals the marble down its drain, behind the machine."),
+                      Lang.t("A line that dives runs under the others and comes back through a pipe mouth.")] }
+          ] }
+        ];
+        for (i = 0; i < CONFIG.biomes.length; i++) out.push(biomeChapter(i));
+        return out;
+      }
+    };
     function tcBiome(b) { return CONFIG.biomes[b].metal; }
     // The arc that opens the round has the shift's own socket path.
     function roundPath() { return path; }
@@ -3384,7 +3686,7 @@
       L = layout(machine()); CH = L.CH;
       setBiome(L.b);
       fit(); readFont(); build();
-      marbles = []; queue = []; parts = []; shards = []; rings = []; arcs = []; puffs = []; hints = []; hintT = 0;
+      marbles = []; queue = []; parts = []; shards = []; rings = []; arcs = []; puffs = [];
       boxes = {};
       arrival = L.arr[Math.floor(Math.random() * L.arr.length)].id;
       for (i = 0; i < L.arr.length; i++) {
@@ -3442,7 +3744,6 @@
       fuse = 1; fuseBurn = false; fuseOutT = 0; comets = []; slowT = 0;
       flow = 0; screwSlot = 0; towerQ = []; revealT = 0.25; chimeGap = 0; clickGap = 0;
       stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0, fuseOuts: 0, heartsLost: 0 };
-      taught = { lock: false, volt: false, spill: false, fuse: false };
       best = Store.get("bestScore", 0) || 0;
       HUD.setScoreNow(0);
       showHearts();
@@ -3479,12 +3780,6 @@
       zap = Math.max(0, zap - dt);
       chimeGap -= dt; clickGap -= dt; landGap -= dt; noteGap -= dt; boostGap -= dt;
       for (i = 0; i < L.props.length; i++) if (L.props[i].hit > 0) L.props[i].hit -= dt;
-      // the lessons, one at a time: a notice never stacks on another hint
-      hintT -= dt;
-      if (hintT <= 0 && hints.length && state === "play") {
-        var h = hints.shift();
-        hintT = (h[1].hold || 2200) / 1000 + 0.5;
-      }
       for (i = parts.length - 1; i >= 0; i--) {
         p = parts[i]; p.t += dt;
         p.vy += 700 * dt; p.vx *= 0.985;
@@ -3507,6 +3802,7 @@
         if (!ar.rev && was && ar.t * ARC_SPEED >= P.len) {
           // The arc reaches the hub: the combo jumps.
           b3 = tier(combo);
+          if (!combo && ar.jump) learnFuse();
           combo += ar.jump; if (combo > bestCombo) bestCombo = combo;
           feedFuse();
           hubZap = 1.2; hubPop = 0.7; zap = ZAP_TIME;
@@ -3778,7 +4074,7 @@
           m.v *= 0.72;
           spark(m.x, m.y + R, C.steelL, m.clone ? 2 : 5, 150, 90);
           ring(m.x, m.y, C.steelL, R, 50, 0.3, 3);
-          if (landGap <= 0) { landGap = 0.08; Sound.clip("land", 0.32, Rand.range(0.92, 1.08)); }
+          if (landGap <= 0) { landGap = 0.08; Sound.clip("land", 0.15, Rand.range(0.92, 1.08)); }
         } else if (md.kind === "note") {
           spark(m.x, m.y + R, C.steelL, 2, 90, 60);
           if (noteGap <= 0) { noteGap = 0.06; Sound.clip("chime", 0.07, 1.5 - md.n * 0.1); }
@@ -4624,9 +4920,11 @@
        and dimmer than an arrival — it is behind the machine — with a heart
        in its core, because a heart is what it takes. */
     var SINK_SCALE = 0.7;
-    function drawSink() {
-      var x = 0, y = 0, w = 30, k = sink.kick, pl = 0.5 + 0.5 * Math.sin(t * 3), g;
-      ctx.save(); ctx.translate(L.sink[0], L.sink[1]); ctx.scale(SINK_SCALE, SINK_SCALE);
+    function drawSink() { paintSink(L.sink[0], L.sink[1], sink.kick); }
+    // The sink at (sx, sy), `k` the kick of a marble just landed in it.
+    function paintSink(sx, sy, k) {
+      var x = 0, y = 0, w = 30, pl = 0.5 + 0.5 * Math.sin(t * 3), g;
+      ctx.save(); ctx.translate(sx, sy); ctx.scale(SINK_SCALE, SINK_SCALE);
       drawGlow(C.full, x, y + 26, 54, 0.22 + 0.12 * pl + k * 0.9);
       ctx.globalAlpha = 0.9;
       ctx.beginPath();
@@ -4941,7 +5239,7 @@
        The open way is cyan when it still leads to the socket. */
     var SW_BAR = 34;                // how far down the shut way its stop stands
     function drawSwitches() {
-      var eNext = {}, i, j, m, k, s, b, ch, live, toArr, pl, ex, ey, snap, op, p, nv, d, hw, a;
+      var eNext = {}, i, m, k, s, live, toArr;
       for (i = 0; i < marbles.length; i++) {
         m = marbles[i];
         if (m.e && m.st === "track" && L.out[m.ch.to]) eNext[m.ch.to] = true;
@@ -4952,77 +5250,94 @@
         toArr = leads(live.id) && !MOD.blind;
         // the two ways belong to the track, and land with it (Enter rank 1)
         if (Enter.begin(s.x, s.y, { rank: 1 })) {
-        for (b = 0; b < 2; b++) {
-          ch = CH[L.out[k][b]];
-          op = b === 1 ? s.kb : 1 - s.kb;              // 1: this way is open
-          // the mouth of the way: lit when open, dark when shut
-          ctx.lineWidth = 2 * R + 8;
-          ctx.strokeStyle = op > 0.5 ? (leads(ch.id) && !MOD.blind ? C.volt : tc("#d9ccff")) : "#05030f";
-          ctx.globalAlpha = op > 0.5 ? 0.3 * op : 0.55 * (1 - op);
-          ctx.beginPath(); ctx.moveTo(ch.xs[0], ch.ys[0]);
-          for (i = 1; i < Math.min(ch.n, 18); i++) ctx.lineTo(ch.xs[i], ch.ys[i]);
-          ctx.stroke();
-          // the open way: three chevrons running down it
-          if (op > 0.05) {
-            ctx.globalAlpha = op;
-            ctx.strokeStyle = leads(ch.id) && !MOD.blind ? C.voltHi : "#ffffff"; ctx.lineWidth = 5;
-            for (j = 0; j < 3; j++) {
-              d = 22 + mod(t * 60 + j * 22, 66);
-              i = Math.min(ch.n - 2, Math.round(d / DS)); p = at(ch, d, {}); nv = normalAt(ch, i);
-              a = Math.atan2(-nv[0], nv[1]);           // the way's own heading
-              hw = 12 * Math.min(1, 1.6 * (1 - Math.abs(d - 55) / 36));
-              if (hw <= 0) continue;
-              ctx.beginPath();
-              ctx.moveTo(p.x - Math.cos(a) * hw + nv[0] * hw, p.y - Math.sin(a) * hw + nv[1] * hw);
-              ctx.lineTo(p.x, p.y);
-              ctx.lineTo(p.x - Math.cos(a) * hw - nv[0] * hw, p.y - Math.sin(a) * hw - nv[1] * hw);
-              ctx.stroke();
-            }
-          }
-          // the shut way: a red stop across its mouth
-          if (op < 0.95) {
-            p = at(ch, SW_BAR, {}); nv = normalAt(ch, Math.round(SW_BAR / DS)); hw = R + 10;
-            ctx.globalAlpha = 1 - op;
-            drawGlow(C.full, p.x, p.y, 30, 0.45);
-            ctx.lineCap = "butt";
-            ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw + 2), p.y - nv[1] * (hw + 2)); ctx.lineTo(p.x + nv[0] * (hw + 2), p.y + nv[1] * (hw + 2)); ctx.stroke();
-            ctx.strokeStyle = C.full; ctx.lineWidth = 8;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * hw, p.y - nv[1] * hw); ctx.lineTo(p.x + nv[0] * hw, p.y + nv[1] * hw); ctx.stroke();
-            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw - 4), p.y - nv[1] * (hw - 4)); ctx.lineTo(p.x + nv[0] * (hw - 4), p.y + nv[1] * (hw - 4)); ctx.stroke();
-            ctx.lineCap = "round";
-          }
-        }
-        Enter.end();
+          paintWays(s, [CH[L.out[k][0]], CH[L.out[k][1]]], wayLit);
+          Enter.end();
         }
         ctx.globalAlpha = 1;
         // the switch itself is a gear, and lands with the gears
         if (!Enter.begin(s.x, s.y)) continue;
-        // An electric marble is heading here: a cyan ring says watch this switch.
-        if (eNext[k] && !MOD.blind) {
-          pl = 0.5 + 0.5 * Math.sin(t * 12);
-          drawGlow(C.volt, s.x, s.y, 64, 0.35 + 0.3 * pl);
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 4; ctx.globalAlpha = 0.55 + 0.45 * pl;
-          ctx.beginPath(); ctx.arc(s.x, s.y, 36 + pl * 4, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
-        }
-        snap = s.snap > 0 ? 1 + 0.18 * Math.sin(s.snap / 0.22 * Math.PI) : 1;
-        ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.scale(snap, snap);
-        ctx.drawImage(cogCv, -26, -26, 52, 52);
-        ctx.restore();
-        if (s.flash > 0) drawGlow("#ffffff", s.x, s.y, 40, s.flash / (FLIP_TIME * 2) * 0.6);
-        // the tongue, laid along the open way, a lamp on its tip
-        ex = s.x + Math.cos(s.ang) * 40 * snap; ey = s.y + Math.sin(s.ang) * 40 * snap;
-        ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
-        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke();
-        ctx.strokeStyle = tc("#cfc6f5"); ctx.lineWidth = 7; ctx.stroke();
-        drawGlow(toArr ? C.volt : tc("#d9ccff"), ex, ey, 20, 0.8);
-        ctx.fillStyle = toArr ? C.volt : tc("#e9e2ff");
-        ctx.beginPath(); ctx.arc(ex, ey, 6.5, 0, PI2); ctx.fill();
-        ctx.fillStyle = tc("#1b1440");
-        ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, PI2); ctx.fill();
+        paintSwitch(s, toArr, eNext[k] && !MOD.blind);
         Enter.end();
       }
+    }
+    function wayLit(ch) { return leads(ch.id) && !MOD.blind; }
+    /* A switch's two ways, `ways` [left, right] (channels), `lit(ch)` true
+       for a way that still leads to the socket — the round's, or the
+       guide's picture of one. */
+    function paintWays(s, ways, lit) {
+      var b, ch, op, i, j, d, p, nv, a, hw;
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (b = 0; b < 2; b++) {
+        ch = ways[b];
+        op = b === 1 ? s.kb : 1 - s.kb;              // 1: this way is open
+        // the mouth of the way: lit when open, dark when shut
+        ctx.lineWidth = 2 * R + 8;
+        ctx.strokeStyle = op > 0.5 ? (lit(ch) ? C.volt : tc("#d9ccff")) : "#05030f";
+        ctx.globalAlpha = op > 0.5 ? 0.3 * op : 0.55 * (1 - op);
+        ctx.beginPath(); ctx.moveTo(ch.xs[0], ch.ys[0]);
+        for (i = 1; i < Math.min(ch.n, 18); i++) ctx.lineTo(ch.xs[i], ch.ys[i]);
+        ctx.stroke();
+        // the open way: three chevrons running down it
+        if (op > 0.05) {
+          ctx.globalAlpha = op;
+          ctx.strokeStyle = lit(ch) ? C.voltHi : "#ffffff"; ctx.lineWidth = 5;
+          for (j = 0; j < 3; j++) {
+            d = 22 + mod(t * 60 + j * 22, 66);
+            i = Math.min(ch.n - 2, Math.round(d / DS)); p = at(ch, d, {}); nv = normalAt(ch, i);
+            a = Math.atan2(-nv[0], nv[1]);           // the way's own heading
+            hw = 12 * Math.min(1, 1.6 * (1 - Math.abs(d - 55) / 36));
+            if (hw <= 0) continue;
+            ctx.beginPath();
+            ctx.moveTo(p.x - Math.cos(a) * hw + nv[0] * hw, p.y - Math.sin(a) * hw + nv[1] * hw);
+            ctx.lineTo(p.x, p.y);
+            ctx.lineTo(p.x - Math.cos(a) * hw - nv[0] * hw, p.y - Math.sin(a) * hw - nv[1] * hw);
+            ctx.stroke();
+          }
+        }
+        // the shut way: a red stop across its mouth
+        if (op < 0.95) {
+          p = at(ch, SW_BAR, {}); nv = normalAt(ch, Math.round(SW_BAR / DS)); hw = R + 10;
+          ctx.globalAlpha = 1 - op;
+          drawGlow(C.full, p.x, p.y, 30, 0.45);
+          ctx.lineCap = "butt";
+          ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw + 2), p.y - nv[1] * (hw + 2)); ctx.lineTo(p.x + nv[0] * (hw + 2), p.y + nv[1] * (hw + 2)); ctx.stroke();
+          ctx.strokeStyle = C.full; ctx.lineWidth = 8;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * hw, p.y - nv[1] * hw); ctx.lineTo(p.x + nv[0] * hw, p.y + nv[1] * hw); ctx.stroke();
+          ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(p.x - nv[0] * (hw - 4), p.y - nv[1] * (hw - 4)); ctx.lineTo(p.x + nv[0] * (hw - 4), p.y + nv[1] * (hw - 4)); ctx.stroke();
+          ctx.lineCap = "round";
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    /* The switch's gear and its tongue, laid along the open way: `toArr`
+       when that way leads to the socket, `watch` when an electric marble is
+       heading here. */
+    function paintSwitch(s, toArr, watch) {
+      var pl, snap, ex, ey;
+      // An electric marble is heading here: a cyan ring says watch this switch.
+      if (watch) {
+        pl = 0.5 + 0.5 * Math.sin(t * 12);
+        drawGlow(C.volt, s.x, s.y, 64, 0.35 + 0.3 * pl);
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 4; ctx.globalAlpha = 0.55 + 0.45 * pl;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 36 + pl * 4, 0, PI2); ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      snap = s.snap > 0 ? 1 + 0.18 * Math.sin(s.snap / 0.22 * Math.PI) : 1;
+      ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.spin); ctx.scale(snap, snap);
+      ctx.drawImage(cogCv, -26, -26, 52, 52);
+      ctx.restore();
+      if (s.flash > 0) drawGlow("#ffffff", s.x, s.y, 40, s.flash / (FLIP_TIME * 2) * 0.6);
+      // the tongue, laid along the open way, a lamp on its tip
+      ex = s.x + Math.cos(s.ang) * 40 * snap; ey = s.y + Math.sin(s.ang) * 40 * snap;
+      ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 13;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(ex, ey); ctx.stroke();
+      ctx.strokeStyle = tc("#cfc6f5"); ctx.lineWidth = 7; ctx.stroke();
+      drawGlow(toArr ? C.volt : tc("#d9ccff"), ex, ey, 20, 0.8);
+      ctx.fillStyle = toArr ? C.volt : tc("#e9e2ff");
+      ctx.beginPath(); ctx.arc(ex, ey, 6.5, 0, PI2); ctx.fill();
+      ctx.fillStyle = tc("#1b1440");
+      ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, PI2); ctx.fill();
     }
 
 
@@ -5080,7 +5395,7 @@
        pallet is down, the slots show, and the padlock is a big pulsing button
        with the count under it. Just unlocked, the shackle springs open. */
     function drawGates() {
-      var i, g, shut, n, k, col, pl, rr, grow, op;
+      var i, g;
       for (i = 0; i < gates.length; i++) {
         g = gates[i];
         if (g.locked || g.flush || g.broke > 0) drawSockets(g.ch, g.d, g.cap, g.q.length, g.broke, !!g.spill);
@@ -5091,77 +5406,83 @@
       for (i = 0; i < gates.length; i++) {
         g = gates[i];
         if (!Enter.begin(g.px, g.py, { rank: 1 })) continue;
-        shut = g.locked;
-        // a self-opening gate wears a turning green ring round its padlock
-        if (MOD.autoGate[i]) {
-          ctx.strokeStyle = rgba(C.calm, 0.8); ctx.lineWidth = 3; ctx.setLineDash([7, 7]); ctx.lineDashOffset = -t * 30;
-          ctx.beginPath(); ctx.arc(g.px, g.py, 50, 0, PI2); ctx.stroke();
-          ctx.setLineDash([]); ctx.lineDashOffset = 0;
-        }
-        /* The gate itself: two posts either side of the rail and, locked, an
-           amber bar across it. The bar slides back into the near post as the
-           gate opens. A dashed cable runs from the near post to the padlock. */
-        var nx = -g.ty, ny = g.tx, pw = R + 9, sgn, ax, ay, bx2, by2, bar;
-        sgn = (nx * (g.px - g.fx) + ny * (g.py - g.fy)) >= 0 ? 1 : -1;
-        ax = g.fx + nx * pw * sgn; ay = g.fy + ny * pw * sgn;          // the post on the padlock's side
-        bx2 = g.fx - nx * pw * sgn; by2 = g.fy - ny * pw * sgn;
-        ctx.lineCap = "round";
-        ctx.strokeStyle = shut ? rgba(C.amber, 0.6) : tca("#c8beff", .26); ctx.lineWidth = 3;
-        ctx.setLineDash([6, 6]);
-        ctx.beginPath(); ctx.moveTo(g.px, g.py); ctx.lineTo(ax, ay); ctx.stroke();
-        ctx.setLineDash([]);
-        bar = shut ? 1 : g.pop > 0 ? g.pop / 0.4 : 0;
-        if (bar > 0) {
-          if (shut) drawGlow(C.amber, g.fx, g.fy, R + 22, 0.55);
-          ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 11;
-          ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx2 - ax) * bar, ay + (by2 - ay) * bar); ctx.stroke();
-          ctx.strokeStyle = shut ? C.amber : C.calm; ctx.lineWidth = 6; ctx.stroke();
-          ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.6; ctx.stroke();
-        }
-        for (var pj = 0; pj < 2; pj++) {
-          var qx = pj ? bx2 : ax, qy = pj ? by2 : ay;
-          ctx.fillStyle = tc("#0b0720"); ctx.beginPath(); ctx.arc(qx, qy, 7.5, 0, PI2); ctx.fill();
-          ctx.fillStyle = shut ? C.amber : tc("#8f84c8"); ctx.beginPath(); ctx.arc(qx, qy, 5, 0, PI2); ctx.fill();
-        }
-        if (!shut) {
-          op = g.pop > 0 ? g.pop / 0.4 : 0;
-          if (op > 0) {
-            // just unlocked: the button shrinks back with its shackle open
-            rr = 14 + 24 * op;
-            drawGlow(C.calm, g.px, g.py, rr + 30, 0.7 * op);
-            ctx.fillStyle = "#12241e"; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
-            ctx.lineWidth = 5; ctx.strokeStyle = C.calm; ctx.stroke();
-            ctx.globalAlpha = op; padlock(g.px, g.py - 2, 22 * (0.6 + 0.4 * op), "#eafff4", 1 - op * 0.2); ctx.globalAlpha = 1;
-          } else {
-            ctx.fillStyle = tc("#1b1440"); ctx.beginPath(); ctx.arc(g.px, g.py, 14, 0, PI2); ctx.fill();
-            ctx.lineWidth = 3; ctx.strokeStyle = tc("#8f84c8"); ctx.stroke();
-            drawGlow(C.calm, g.px, g.py, 14, 0.7);
-            ctx.fillStyle = C.calm; ctx.beginPath(); ctx.arc(g.px, g.py, 4, 0, PI2); ctx.fill();
-          }
-          Enter.end();
-          continue;
-        }
-        n = g.q.length; k = n / g.cap; col = gaugeColor(k); pl = 0.5 + 0.5 * Math.sin(t * (7 + 10 * k));
-        grow = g.lockAge < 0.3 ? 1 + 0.35 * Math.sin(g.lockAge / 0.3 * Math.PI) : 1;
-        rr = (34 + pl * 3) * grow;
-        drawGlow(C.amber, g.px, g.py, rr + 40, 0.35 + 0.3 * pl);
-        drawGlow(col, g.px, g.py, rr + 18, 0.4);
-        var bg = ctx.createRadialGradient(g.px - rr * 0.3, g.py - rr * 0.35, 2, g.px, g.py, rr);
-        bg.addColorStop(0, "#5a3a1c"); bg.addColorStop(1, "#1d0f14");
-        ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
-        ctx.lineWidth = 6; ctx.strokeStyle = n >= g.cap && Math.sin(t * 18) > 0 ? "#ffffff" : col;
-        ctx.stroke();
-        ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.amber, 0.8);
-        ctx.beginPath(); ctx.arc(g.px, g.py, rr - 7, 0, PI2); ctx.stroke();
-        padlock(g.px, g.py - 2, 22 * grow, "#ffe3b0", 0);
-        // the count, under the button
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = font(22, 900);
-        ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .92);
-        ctx.strokeText(n + "/" + g.cap, g.px, g.py + rr + 18);
-        ctx.fillStyle = col; ctx.fillText(n + "/" + g.cap, g.px, g.py + rr + 18);
+        paintGate(g, MOD.autoGate[i]);
         Enter.end();
       }
+    }
+    /* One gate, its posts, its bar and its padlock — the round's, or the
+       guide's picture of one (a gate object of the same shape). `auto`: a
+       self-opening gate card is on it. */
+    function paintGate(g, auto) {
+      var shut, n, k, col, pl, rr, grow, op;
+      shut = g.locked;
+      // a self-opening gate wears a turning green ring round its padlock
+      if (auto) {
+        ctx.strokeStyle = rgba(C.calm, 0.8); ctx.lineWidth = 3; ctx.setLineDash([7, 7]); ctx.lineDashOffset = -t * 30;
+        ctx.beginPath(); ctx.arc(g.px, g.py, 50, 0, PI2); ctx.stroke();
+        ctx.setLineDash([]); ctx.lineDashOffset = 0;
+      }
+      /* The gate itself: two posts either side of the rail and, locked, an
+         amber bar across it. The bar slides back into the near post as the
+         gate opens. A dashed cable runs from the near post to the padlock. */
+      var nx = -g.ty, ny = g.tx, pw = R + 9, sgn, ax, ay, bx2, by2, bar;
+      sgn = (nx * (g.px - g.fx) + ny * (g.py - g.fy)) >= 0 ? 1 : -1;
+      ax = g.fx + nx * pw * sgn; ay = g.fy + ny * pw * sgn;          // the post on the padlock's side
+      bx2 = g.fx - nx * pw * sgn; by2 = g.fy - ny * pw * sgn;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = shut ? rgba(C.amber, 0.6) : tca("#c8beff", .26); ctx.lineWidth = 3;
+      ctx.setLineDash([6, 6]);
+      ctx.beginPath(); ctx.moveTo(g.px, g.py); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.setLineDash([]);
+      bar = shut ? 1 : g.pop > 0 ? g.pop / 0.4 : 0;
+      if (bar > 0) {
+        if (shut) drawGlow(C.amber, g.fx, g.fy, R + 22, 0.55);
+        ctx.strokeStyle = tc("#0b0720"); ctx.lineWidth = 11;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + (bx2 - ax) * bar, ay + (by2 - ay) * bar); ctx.stroke();
+        ctx.strokeStyle = shut ? C.amber : C.calm; ctx.lineWidth = 6; ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.6; ctx.stroke();
+      }
+      for (var pj = 0; pj < 2; pj++) {
+        var qx = pj ? bx2 : ax, qy = pj ? by2 : ay;
+        ctx.fillStyle = tc("#0b0720"); ctx.beginPath(); ctx.arc(qx, qy, 7.5, 0, PI2); ctx.fill();
+        ctx.fillStyle = shut ? C.amber : tc("#8f84c8"); ctx.beginPath(); ctx.arc(qx, qy, 5, 0, PI2); ctx.fill();
+      }
+      if (!shut) {
+        op = g.pop > 0 ? g.pop / 0.4 : 0;
+        if (op > 0) {
+          // just unlocked: the button shrinks back with its shackle open
+          rr = 14 + 24 * op;
+          drawGlow(C.calm, g.px, g.py, rr + 30, 0.7 * op);
+          ctx.fillStyle = "#12241e"; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+          ctx.lineWidth = 5; ctx.strokeStyle = C.calm; ctx.stroke();
+          ctx.globalAlpha = op; padlock(g.px, g.py - 2, 22 * (0.6 + 0.4 * op), "#eafff4", 1 - op * 0.2); ctx.globalAlpha = 1;
+        } else {
+          ctx.fillStyle = tc("#1b1440"); ctx.beginPath(); ctx.arc(g.px, g.py, 14, 0, PI2); ctx.fill();
+          ctx.lineWidth = 3; ctx.strokeStyle = tc("#8f84c8"); ctx.stroke();
+          drawGlow(C.calm, g.px, g.py, 14, 0.7);
+          ctx.fillStyle = C.calm; ctx.beginPath(); ctx.arc(g.px, g.py, 4, 0, PI2); ctx.fill();
+        }
+        return;
+      }
+      n = g.q.length; k = n / g.cap; col = gaugeColor(k); pl = 0.5 + 0.5 * Math.sin(t * (7 + 10 * k));
+      grow = g.lockAge < 0.3 ? 1 + 0.35 * Math.sin(g.lockAge / 0.3 * Math.PI) : 1;
+      rr = (34 + pl * 3) * grow;
+      drawGlow(C.amber, g.px, g.py, rr + 40, 0.35 + 0.3 * pl);
+      drawGlow(col, g.px, g.py, rr + 18, 0.4);
+      var bg = ctx.createRadialGradient(g.px - rr * 0.3, g.py - rr * 0.35, 2, g.px, g.py, rr);
+      bg.addColorStop(0, "#5a3a1c"); bg.addColorStop(1, "#1d0f14");
+      ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(g.px, g.py, rr, 0, PI2); ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = n >= g.cap && Math.sin(t * 18) > 0 ? "#ffffff" : col;
+      ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba(C.amber, 0.8);
+      ctx.beginPath(); ctx.arc(g.px, g.py, rr - 7, 0, PI2); ctx.stroke();
+      padlock(g.px, g.py - 2, 22 * grow, "#ffe3b0", 0);
+      // the count, under the button
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = font(22, 900);
+      ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .92);
+      ctx.strokeText(n + "/" + g.cap, g.px, g.py + rr + 18);
+      ctx.fillStyle = col; ctx.fillText(n + "/" + g.cap, g.px, g.py + rr + 18);
     }
 
     /* The chimes: a tube hung off the rail on a bracket; a marble passing
@@ -5202,65 +5523,70 @@
       ctx.lineTo(x - w * 0.3, CORE_Y - 8); ctx.lineTo(x - w * 0.42, RIM_Y + 50); ctx.closePath();
     }
     function drawReceivers() {
-      var k, mc, arr, pl, i, lx, on, w = L.mouthW, cr = Math.min(18, w * 0.42), g, yb, by, col;
-      pl = 0.5 + 0.5 * Math.sin(t * 5);
+      var k;
       for (k in boxes) if (boxes.hasOwnProperty(k)) {
-        mc = boxes[k]; arr = k === arrival; col = mc.col;
-        if (!Enter.begin(mc.x, RIM_Y + 40, { rank: 1 })) continue;
-        if (arr) drawGlow(C.volt, mc.x, RIM_Y + 40, w * 2.1, 0.32 + 0.14 * pl + mc.charge * 0.5);
-        drawGlow(col, mc.x, RIM_Y + 38, w * 1.5, 0.22 + mc.kick * 1.2);
-        // the funnel
-        ctx.lineJoin = "round";
-        funnel(mc.x, w);
-        g = ctx.createLinearGradient(0, RIM_Y, 0, CORE_Y);
-        g.addColorStop(0, rgba(col, 0.42)); g.addColorStop(0.35, "#1c1344"); g.addColorStop(1, "#07041a");
-        ctx.fillStyle = g; ctx.fill();
-        ctx.lineWidth = 6; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
-        // a light rising up the funnel on every marble
-        if (mc.sweep > 0) {
-          ctx.save(); funnel(mc.x, w); ctx.clip();
-          yb = CORE_Y - (1 - mc.sweep / 0.4) * (CORE_Y - RIM_Y + 20);
-          var sg = ctx.createLinearGradient(0, yb - 16, 0, yb + 16);
-          sg.addColorStop(0, rgba(col, 0)); sg.addColorStop(0.5, rgba(arr ? C.volt : col, 0.7)); sg.addColorStop(1, rgba(col, 0));
-          ctx.fillStyle = sg; ctx.fillRect(mc.x - w, yb - 16, w * 2, 32);
-          ctx.restore();
-        }
-        if (mc.fizz > 0) { funnel(mc.x, w); ctx.fillStyle = "rgba(70,80,100," + (mc.fizz * 0.55) + ")"; ctx.fill(); }
-        // the mouth: a dark hole ringed in the arrival's colour
-        ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w, 8, 0, 0, PI2);
-        ctx.fillStyle = "#05030f"; ctx.fill();
-        ctx.lineWidth = 5; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
-        if (arr) { ctx.lineWidth = 1.5; ctx.strokeStyle = C.voltHi; ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w - 5, 5, 0, 0, PI2); ctx.stroke(); }
-        // the lamp chaser along the rim
-        for (i = 0; i < 5; i++) {
-          lx = mc.x + (i - 2) * w * 0.36; on = i === mc.led && mc.sweep > 0;
-          if (on) drawGlow(col, lx, RIM_Y + 8, 14, 0.9);
-          ctx.fillStyle = on ? "#ffffff" : rgba(col, 0.45);
-          ctx.beginPath(); ctx.arc(lx, RIM_Y + 8, 2.6, 0, PI2); ctx.fill();
-        }
-        // the core lamp at the bottom
-        drawGlow(arr ? C.volt : col, mc.x, CORE_Y, cr * 2.4, 0.5 + mc.kick * 1.4 + (arr ? 0.2 * pl : 0));
-        g = ctx.createRadialGradient(mc.x - cr * 0.3, CORE_Y - cr * 0.35, 1, mc.x, CORE_Y, cr);
-        g.addColorStop(0, mc.kick > 0.1 ? "#ffffff" : arr ? C.voltHi : rgba(col, 0.95));
-        g.addColorStop(0.6, col); g.addColorStop(1, "#140c33");
-        ctx.beginPath(); ctx.arc(mc.x, CORE_Y, cr, 0, PI2); ctx.fillStyle = g; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "#0b0720"; ctx.stroke();
-        if (arr) {
-          // arcs from the rim to the core, and the sign over the mouth
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 2;
-          var nb = mc.kick > 0 ? 5 : mc.charge > 0.2 ? 3 : 1;
-          for (i = 0; i < nb; i++) if (mc.kick > 0 || mc.charge > 0.2 || Math.random() < 0.35) {
-            bolt(mc.x + (Math.random() - 0.5) * w * 1.6, RIM_Y + 4, mc.x + (Math.random() - 0.5) * cr, CORE_Y - cr * 0.6, 6, 4);
-          }
-          by = RIM_Y - 40 + Math.sin(t * 3) * 4;
-          drawGlow(C.volt, mc.x, by, 40, 0.6 + 0.3 * pl);
-          ctx.fillStyle = "#07243f"; ctx.beginPath(); ctx.arc(mc.x, by, 19, 0, PI2); ctx.fill();
-          ctx.strokeStyle = C.volt; ctx.lineWidth = 3; ctx.stroke();
-          boltIcon(mc.x, by, 12, C.voltHi);
-        }
+        if (!Enter.begin(boxes[k].x, RIM_Y + 40, { rank: 1 })) continue;
+        paintArrival(boxes[k], k === arrival, L.mouthW);
         Enter.end();
+      }
+    }
+    /* One arrival, `mc` being its box ({ x, col, kick, fizz, charge, led,
+       sweep }), `arr` whether it is the socket, `w` the half-width of its
+       mouth: the round's, or the guide's picture of one. */
+    function paintArrival(mc, arr, w) {
+      var i, lx, on, cr = Math.min(18, w * 0.42), g, yb, by, col = mc.col, pl = 0.5 + 0.5 * Math.sin(t * 5);
+      if (arr) drawGlow(C.volt, mc.x, RIM_Y + 40, w * 2.1, 0.32 + 0.14 * pl + mc.charge * 0.5);
+      drawGlow(col, mc.x, RIM_Y + 38, w * 1.5, 0.22 + mc.kick * 1.2);
+      // the funnel
+      ctx.lineJoin = "round";
+      funnel(mc.x, w);
+      g = ctx.createLinearGradient(0, RIM_Y, 0, CORE_Y);
+      g.addColorStop(0, rgba(col, 0.42)); g.addColorStop(0.35, "#1c1344"); g.addColorStop(1, "#07041a");
+      ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 6; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = rgba(col, 0.9); ctx.stroke();
+      // a light rising up the funnel on every marble
+      if (mc.sweep > 0) {
+        ctx.save(); funnel(mc.x, w); ctx.clip();
+        yb = CORE_Y - (1 - mc.sweep / 0.4) * (CORE_Y - RIM_Y + 20);
+        var sg = ctx.createLinearGradient(0, yb - 16, 0, yb + 16);
+        sg.addColorStop(0, rgba(col, 0)); sg.addColorStop(0.5, rgba(arr ? C.volt : col, 0.7)); sg.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = sg; ctx.fillRect(mc.x - w, yb - 16, w * 2, 32);
+        ctx.restore();
+      }
+      if (mc.fizz > 0) { funnel(mc.x, w); ctx.fillStyle = "rgba(70,80,100," + (mc.fizz * 0.55) + ")"; ctx.fill(); }
+      // the mouth: a dark hole ringed in the arrival's colour
+      ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w, 8, 0, 0, PI2);
+      ctx.fillStyle = "#05030f"; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+      if (arr) { ctx.lineWidth = 1.5; ctx.strokeStyle = C.voltHi; ctx.beginPath(); ctx.ellipse(mc.x, RIM_Y, w - 5, 5, 0, 0, PI2); ctx.stroke(); }
+      // the lamp chaser along the rim
+      for (i = 0; i < 5; i++) {
+        lx = mc.x + (i - 2) * w * 0.36; on = i === mc.led && mc.sweep > 0;
+        if (on) drawGlow(col, lx, RIM_Y + 8, 14, 0.9);
+        ctx.fillStyle = on ? "#ffffff" : rgba(col, 0.45);
+        ctx.beginPath(); ctx.arc(lx, RIM_Y + 8, 2.6, 0, PI2); ctx.fill();
+      }
+      // the core lamp at the bottom
+      drawGlow(arr ? C.volt : col, mc.x, CORE_Y, cr * 2.4, 0.5 + mc.kick * 1.4 + (arr ? 0.2 * pl : 0));
+      g = ctx.createRadialGradient(mc.x - cr * 0.3, CORE_Y - cr * 0.35, 1, mc.x, CORE_Y, cr);
+      g.addColorStop(0, mc.kick > 0.1 ? "#ffffff" : arr ? C.voltHi : rgba(col, 0.95));
+      g.addColorStop(0.6, col); g.addColorStop(1, "#140c33");
+      ctx.beginPath(); ctx.arc(mc.x, CORE_Y, cr, 0, PI2); ctx.fillStyle = g; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#0b0720"; ctx.stroke();
+      if (arr) {
+        // arcs from the rim to the core, and the sign over the mouth
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 2;
+        var nb = mc.kick > 0 ? 5 : mc.charge > 0.2 ? 3 : 1;
+        for (i = 0; i < nb; i++) if (mc.kick > 0 || mc.charge > 0.2 || Math.random() < 0.35) {
+          bolt(mc.x + (Math.random() - 0.5) * w * 1.6, RIM_Y + 4, mc.x + (Math.random() - 0.5) * cr, CORE_Y - cr * 0.6, 6, 4);
+        }
+        by = RIM_Y - 40 + Math.sin(t * 3) * 4;
+        drawGlow(C.volt, mc.x, by, 40, 0.6 + 0.3 * pl);
+        ctx.fillStyle = "#07243f"; ctx.beginPath(); ctx.arc(mc.x, by, 19, 0, PI2); ctx.fill();
+        ctx.strokeStyle = C.volt; ctx.lineWidth = 3; ctx.stroke();
+        boltIcon(mc.x, by, 12, C.voltHi);
       }
     }
 
@@ -5412,5 +5738,5 @@
              /* The third star is a clean shift: every heart lost counts
                 against the allowance of `web.levels.faults`. */
              levelFaults: function () { return stats ? stats.heartsLost : 0; },
-             held: function () { return !!held; }, codex: codex, wipe: wipe };
+             held: function () { return !!held; }, codex: codex, guide: guide, wipe: wipe };
   })();

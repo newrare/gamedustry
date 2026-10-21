@@ -65,7 +65,21 @@ export function xpPer(web) {
   return Math.max(1, Math.round(roundScore(web) / ROUND_XP));
 }
 
-/* The two rates, as the builder injects them. */
+/* What a reference round pays in coins at player level 1 — the unit the
+   gallery prices a puzzle piece in (packages/webshell/meta.js, section 4b),
+   so a piece costs the same number of rounds in every game. */
+export function roundCoins(web) {
+  return Math.max(1, Math.floor(roundScore(web) / coinsPer(web)));
+}
+
+/* What a puzzle piece of the gallery costs at par — the map's share of stars
+   and the gallery's share of pieces level, the album full — in reference
+   rounds at the player's own level. tools/lab/sim-economy.mjs --gallery is
+   where it was tuned, with the curve that moves the price around it. */
+export const GALLERY_ROUNDS = 1.5;
+
+/* The rates, as the builder injects them. */
 export function derivedRates(web) {
-  return { ticketPrice: ticketPrice(web), xpPer: xpPer(web) };
+  return { ticketPrice: ticketPrice(web), xpPer: xpPer(web), roundCoins: roundCoins(web),
+           galleryRounds: GALLERY_ROUNDS };
 }

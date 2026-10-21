@@ -73,6 +73,7 @@
        own bed (web target) can never leak into a round. Nothing is audible
        until start() below, which is what makes the armed section play. */
     Music.arm((CONFIG.music || {}).round || null);
+    Record.arm(Store.get("bestScore", 0));   // the level layer re-arms it per level
     Game.reset();
     Round.reset();
     setState("playing");

@@ -102,7 +102,7 @@ ______________________________________________________________________
 
 - [ ] CODE — **check the `Pop` messages, every game.**
   Every score gain, combo and celebration beat goes through `Pop.show`, and
-  every status line through `Notify.say`; the words, the styles and when they
+  every event, refusal and first-time mechanic through `Notify` (`say`, `learn`); the words, the styles and when they
   fire were written game by game and have never been read side by side. Check
   they say something, that two callouts never stack on the same beat, and that
   the FR strings exist in `web.copy.fr.strings` (`make text` prints what is
@@ -112,6 +112,39 @@ ______________________________________________________________________
   into `game.js` by **Apply**, so the pass is read, heard and landed in one
   place. A word the game builds at runtime is still changed by hand: apply
   refuses it rather than paste the bench's stand-in.
+
+- [ ] MAIN — **play the gallery's pace on a real climb.** The album's
+  GALLERY tab (docs/META.md, section 3b) is priced off a modelled player
+  (`node tools/lab/sim-economy.mjs --gallery`); check on two or three games
+  that the paintings fill at about the pace of the stars, and move
+  `GALLERY_ROUNDS` (tools/lib/economy.mjs) or the curve in
+  `packages/webshell/meta.js` (section 4b) if they do not.
+
+- [ ] CODE — **gameplay bugs the guide pass found** (left as they were; the
+  guide says what the code does):
+
+  - echomaze — `cols` lerps 10 → 16 rounded, so it is odd on many levels:
+    `MOUTHS = cols / mouthW` is fractional, the last surge mouth is one cell
+    wide and `hSolid[hI(rows, cols)]` writes past the array;
+  - radiam — a stage that opens on 3 colours gets its 4th and 5th on two frames
+    in a row at ink level 10; on stages whose pool is only big specials (5, 7,
+    9\) the charge meter, double rays and x4 chains earn nothing;
+  - arcider — the first stalker is on level 7, not the 6 `foeUnlock` says, and
+    `play.forkBombs` is not gated by `ladder.unlock.bomb` (mines on level 4);
+    `mixHex` is defined twice;
+  - grudgeon — a ware's `Pop` draws under the shop card's veil (z 16 < 30);
+  - shell — under the dev force, a missed objective still shows NEXT on the
+    end screen (seen on grudgeon 29).
+
+- [ ] MAIN — **pawko's refusals are silent**: `refuse(word)` computes "Keep
+  it for the last wave", "No card played yet"… but its `Notify.say` was taken
+  out in 190cee8. Under the word rule a refused action is a notice — put it
+  back, or confirm it stays a shake and a sound.
+
+- [ ] CODE — **guide pictures under the type floor**: gearball's upgrade cards
+  (250 px) and slipdeck's jokers (240 px) are drawn smaller than authored, so
+  their own text falls to ~15–18 px. One card at full size per page, or a
+  picture without the card's prose.
 
 - [ ] CODE — **check the sfx, every game.** Every key is mapped to a variant
   of the house kit (`assets/audio/kit/`), each cut to the file and length its
@@ -192,6 +225,13 @@ ______________________________________________________________________
 - [ ] MAIN — check every `holepocalypse` sprite and effect on the five
   fairways in `lab/holepocalypse-fx.html` (`make events` → `/hole-fx`, Debug
   on): feet on their footprint, effects on their anchor.
+- [ ] MAIN — generate the `foldiers` assets of docs/FOLDIERS.md §10 (10.1 to
+  10.23; the blue and red army and the scenery sheets are filed).
+- [ ] CODE — try the biome trick of docs/FOLDIERS.md §5.2 (terrain as paper,
+  owner as tissue) in `lab/conquest-paper.html`.
+- [ ] CODE — build `foldiers` from docs/FOLDIERS.md: stage 1 first (the
+  prototype's rules on the paper map of `lab/conquest-paper.html`), then the
+  stages one mechanic at a time.
 
 ______________________________________________________________________
 

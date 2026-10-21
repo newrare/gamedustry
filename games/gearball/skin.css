@@ -432,3 +432,12 @@
   .gb-art.pic img { display:block; position:relative; z-index:1; height:100%; max-height:124px; width:auto; max-width:200px; object-fit:contain;
     filter:drop-shadow(0 6px 8px rgba(0,0,0,.55)); }
   .gb-card.ghost .gb-art.pic img { filter:brightness(0) invert(1) !important; opacity:.42; }
+
+  /* ---- the guide's pictures (Game.guide) -----------------------------------
+     cards side by side, as cardNode builds them; a biome's painted hall cut
+     to a band (its size is set inline by scenePic) */
+  .gb-gcards { display:flex; justify-content:center; align-items:flex-start; gap:20px; padding-top:14px; }
+  .gb-gscene { max-width:100%; border-radius:16px; background:center 42% / cover no-repeat;
+    box-shadow:0 8px 22px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.12); }
+  /* the pick card's way to its rule's page, under the tap line */
+  #gb-pick .gb-rules { align-self:center; }

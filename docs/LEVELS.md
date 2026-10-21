@@ -457,8 +457,8 @@ measured by `levelProgress`), find the way out and exorcise the master of the
 place (both tallied: the objective, m yokai on the way, no hero fallen).
 
 **The third star ends the round.** There is nothing left to earn, so the game
-stops asking: a gold flash, the callout, then slow motion easing the world down
-to 12 % over ~0.6 s, a beat of hold, and the end screen. Arriving there fast is
+stops asking: a gold flash — no callout, the end screen is what says three
+stars — then slow motion easing the world down to 12 % over 0.3 s, a 0.2 s hold, and the end screen: every ending is half a second, whatever it scored. Arriving there fast is
 the point — a player who has maxed a level should not have to die to be told so.
 
 The slow-down is `Loop.rate(k)`, one number in the motor: the frame keeps
@@ -499,13 +499,13 @@ it always had.
 
 | the round ended with | what the outro plays                                                                                       |
 | -------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **three stars**      | the shine and the THREE STARS callout have already played; the world is held at 14 % for a beat            |
+| **three stars**      | the shine has already played (no callout); the world is held at 14 % for a beat                            |
 | **one or two stars** | slow motion down to 22 % over ~0.5 s, a beat of hold, and nothing else                                     |
 | **none**             | the frame goes red, fire climbs it from the bottom edge, the world grinds down to 16 % — about 1.2 s of it |
 
 The three-star case opens no card: a game that ended its own round on the
 frame the third star lit never went through the shine, so the outro plays it
-there, callout included. The meta layer's gift is handed over **on the end
+there. The meta layer's gift is handed over **on the end
 screen, by the stars themselves** — they turn into the three boxes once the
 score has been read (see [META.md](META.md)).
 
@@ -568,9 +568,10 @@ over the next round is a bug this codebase has already paid for once.
 
 All three carry `cursor:pointer`: `dress()` rewrites `className` on the motor's
 two, which drops the `.btn` / `.link` that carried it, and on a desk they read
-as decoration until the pointer changes over them. The reveal itself also runs at **twice the speed it was
-authored at** (`PACE` in the motor's `EndScreen`) — it was tuned for a creative,
-where the end screen is the last thing a viewer sees.
+as decoration until the pointer changes over them. The reveal itself is a list
+of beats (`BEATS` in the motor's `EndScreen`, chosen in `lab/end-screen.html`):
+the stars and the rows step on one 500 ms grid, and the way out rises one
+control every 100 ms.
 
 ______________________________________________________________________
 

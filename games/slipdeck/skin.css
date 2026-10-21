@@ -37,8 +37,8 @@
   #hud-left.sd-hint .hud-pill, #hud-right.sd-hint .hud-pill { animation:sd-hint 1.4s ease-in-out; }
   @keyframes sd-hint { 50% { box-shadow:0 0 0 2px rgba(245,196,81,.3), 0 0 14px rgba(245,196,81,.3); } }
   @media (prefers-reduced-motion: reduce) { #hud-left.sd-hint .hud-pill, #hud-right.sd-hint .hud-pill { animation:none; } }
-  /* the Help card's example of it (Game.helpAura): a joker's medallion,
-     wearing the hint's gold */
+  /* the guide's example of it (Game.helpAura, on top of the contents): a
+     joker's medallion, wearing the hint's gold */
   :root { --help-aura:rgba(245,196,81,.75); --help-aura-soft:rgba(245,196,81,.25); }
   .sd-medal {
     width:80px; height:80px; border-radius:50%; box-sizing:border-box;
@@ -48,8 +48,6 @@
   }
   .sd-medal img { width:68px; height:68px; object-fit:contain; }
   .sd-medal span { font-size:34px; font-weight:900; color:#fff; }
-  /* its sentence is read like a tip's, not shouted in the display face */
-  .web-help-aura p { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
      The motor's "swipe" variant lends its flicking hand; the target becomes
@@ -331,3 +329,6 @@
   .sd-jc.ghost .sd-jart img { filter:brightness(0) invert(1); opacity:.16; }
   .sd-jc.ghost .sd-jglow { display:none; }
   @media (prefers-reduced-motion: reduce) { .sd-take { transition:none; } }
+
+  /* ---- the guide's pictures (game.js, the guide) -------------------------- */
+  .sd-gjokers { display:flex; justify-content:center; gap:16px; }

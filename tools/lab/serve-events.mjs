@@ -4,6 +4,7 @@
 
     node tools/lab/serve-events.mjs            (or: make events)
     node tools/lab/serve-events.mjs --port=9000
+    node tools/lab/serve-events.mjs --no-watch   build once, never on a save
     make lab                                   → http://localhost:8095/events/
 
   The bench is two pages over the same scan. lab/game-events-message.html (/)
@@ -60,9 +61,10 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { games, units, scanGame as scanUnit, clearCache, sfxFiles, soundPack, fileForNote, shellCues, SFX_DIR, ROOT, SHELL_FILES } from './scan-events.mjs';
 import { shootShell } from './shoot-shell.mjs';
+import { probeStages } from './probe-stages.mjs';
 import { applyEdits } from './apply-events.mjs';
 import { keepEnglish } from './keep-english.mjs';
-import { readKit, writeKit, cutKit, kitUsers, mapKeys, editVariants, normalTake, KIT_DIR } from './cut-kit.mjs';
+import { readKit, writeKit, cutKit, kitUsers, roleCalls, mapKeys, editVariants, normalTake, KIT_DIR } from './cut-kit.mjs';
 import { shapes, alike } from './shape-sfx.mjs';
 import { createHash } from 'node:crypto';
 import { isMain, portArg, listen, json, notFound, readJson, sendFile, reloadHub, MIME } from '../lib/serve.mjs';
@@ -99,6 +101,7 @@ const REVIEW = path.join(ROOT, 'lab', 'events-review.json');
 const SFX = SFX_DIR;
 
 const reload = reloadHub('serve-events.mjs: the build changed, take the page back to the same game.');
+const LIVE = !process.argv.includes('--no-watch');
 
 // ── the web build, which is what the iframes play ──
 let building = false, queued = false;
@@ -129,7 +132,7 @@ function build() {
 
 function start() {
   let timer = null;
-  for (const dir of ['games', 'packages', 'lab', 'template']) {
+  for (const dir of LIVE ? ['games', 'packages', 'lab', 'template'] : []) {
     const full = path.join(ROOT, dir);
     if (!existsSync(full)) continue;
     try {
@@ -144,7 +147,7 @@ function start() {
       });
     } catch { console.error(`  cannot watch ${dir}`); }
   }
-  console.log('watching      games  packages  lab  template');
+  console.log(LIVE ? 'watching      games  packages  lab  template' : 'watching      nothing (--no-watch): an apply still rebuilds');
   build();
   // The shapes the kit card's alternatives are read from: ~10 s the first time, cached after.
   shapes({ log: (l) => console.log('  ' + l) }).catch((e) => console.error('  shape-sfx: ' + e.message));
@@ -154,6 +157,40 @@ function start() {
    { <slug>: { <checkId>: { at, what } } }. `what` is a label for a human
    reading the file — "Pop.show L564 collect()" — never what a mark is matched
    on: the id is. */
+/* ── where each sound is heard ───────────────────────────────────────────
+   lab/events-stages.json: { <slug>: { <key>: level } } — one level of the map
+   on which a key was HEARD, so a card the bench has no clip of yet says where
+   to go and Rec it. Two writers: the recorder, which reports the level of
+   every cue it sees fire (POST /api/stage), and the probe, a headless walk of
+   the levels by a blind pilot (POST /api/probe-stages, tools/lab/probe-stages.mjs).
+   Keyed by the sound key rather than the line: a key is what a card is, and
+   it survives an edit of the source. The lowest level wins. */
+const STAGES = path.join(ROOT, 'lab', 'events-stages.json');
+async function readStages() {
+  try { return JSON.parse(await readFile(STAGES, 'utf8')); } catch { return {}; }
+}
+let staging = Promise.resolve();
+function noteStages(slug, found) {
+  const run = staging.then(async () => {
+    const all = await readStages(), g = all[slug] || (all[slug] = {});
+    let moved = false;
+    for (const [key, lv] of Object.entries(found)) {
+      if (!(lv >= 1) || (g[key] && g[key] <= lv)) continue;
+      g[key] = lv; moved = true;
+    }
+    if (moved) {
+      const out = {};
+      for (const k of Object.keys(all).sort()) out[k] = Object.fromEntries(Object.entries(all[k]).sort(([a], [b]) => a.localeCompare(b)));
+      await writeFile(STAGES, JSON.stringify(out, null, 2) + '\n');
+    }
+    return all[slug];
+  });
+  staging = run.catch(() => {});
+  return run;
+}
+// One probe at a time, for the whole server: it is a browser and minutes of it.
+const PROBE = { game: null, level: 0, count: 0, left: [], steps: [], error: null, done: null };
+
 async function readReview() {
   try { return JSON.parse(await readFile(REVIEW, 'utf8')); } catch { return {}; }
 }
@@ -273,9 +310,12 @@ async function kitChecked(kit) {
   return out;
 }
 /* The kit and who plays it is instant; who signed it off reads games, so it
-   is its own route (/api/kit-checked) and the pages paint it when it lands. */
+   is its own route (/api/kit-checked) and the pages paint it when it lands.
+   `calls` is who CALLS a role by name — the shell's files and a game's own
+   Sound.ui — which is the only record of where a shell role is heard. */
 async function kitPayload() {
-  return { ...(await readKit()), users: await kitUsers() };
+  const kit = await readKit();
+  return { ...kit, users: await kitUsers(), calls: await roleCalls(kit) };
 }
 
 let checking = Promise.resolve();
@@ -500,6 +540,60 @@ export async function handle(req, res, p, url) {
     return json(res, 200, await sourceOffset(slug));
   }
 
+  /* Where each key was heard (lab/events-stages.json), and the probe's state. */
+  if (p === '/api/stages') {
+    const slug = url.searchParams.get('game');
+    return json(res, 200, { stages: (await readStages())[slug] || {}, probe: PROBE.game === slug || PROBE.done === slug ? PROBE : null });
+  }
+  // The recorder saw a cue fire on a level: { game, key, level }.
+  if (p === '/api/stage' && req.method === 'POST') {
+    const body = await readJson(req, 1e4);
+    if (!body || !(await isUnit(body.game)) || typeof body.key !== 'string') return notFound(res, 'stage');
+    return json(res, 200, { stages: await noteStages(body.game, { [body.key]: Number(body.level) }) });
+  }
+  /* Walk a game's levels in a headless Chrome until every key it plays has
+     been heard once (tools/lab/probe-stages.mjs). It answers at once and runs
+     on: the page polls /api/stages. Keys the store already places are not
+     looked for again. */
+  if (p === '/api/probe-stages' && req.method === 'POST') {
+    const body = await readJson(req, 1e4);
+    const game = body && body.game;
+    if (!(await units()).includes(game) || game === 'template') return notFound(res, 'game ' + game);
+    if (PROBE.game) return json(res, 200, { error: 'a probe of ' + PROBE.game + ' is running already' });
+    const g = await scanGame(game), known = (await readStages())[game] || {};
+    const rows = g.calls.filter((c) => c.kind === 'sound' && !c.inherited && c.soundLiteral && c.checkId);
+    const keys = [...new Set(rows.map((c) => c.sound))].filter((k) => body.all || !known[k]);
+    if (!keys.length) return json(res, 200, { error: 'every key already has a level' });
+    const off = await sourceOffset(game);
+    if (off.offset == null) return json(res, 200, { error: off.error || 'no offset for ' + game });
+    // A frame of the built game.<hash>.js → its scanned row, as the recorder matches it.
+    const match = ({ name, stack }) => {
+      const frames = String(stack).split('\n').filter((l) => /:\d+:\d+\)?\s*$/.test(l));
+      const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || '');
+      if (!m) return null;
+      const at = Number(m[1]) + off.offset;
+      let best = null;
+      for (const c of rows) {
+        if (c.name !== name) continue;
+        const d = Math.abs(c.line - at);
+        if (d <= 2 && (!best || d < best.d)) best = { c, d };
+      }
+      return best && best.c;
+    };
+    Object.assign(PROBE, { game, level: 0, count: 0, left: keys, steps: [], error: null, done: null });
+    const stamp = new Date().toTimeString().slice(0, 8);
+    console.log(`  ${stamp}  probe ${game}: ${keys.length} keys to place`);
+    probeStages({
+      base: 'http://127.0.0.1:' + req.socket.localPort, game, keys, match,
+      log: (l) => { PROBE.steps.push(l.trim()); console.log(`  ${stamp} ${l}`); },
+      progress: (pr) => Object.assign(PROBE, pr),
+      // Written as it is heard, so the cards fill in while the walk goes on.
+      found: (key, level) => { noteStages(game, { [key]: level }).catch(() => {}); }
+    }).then((r) => { Object.assign(PROBE, { left: r.left }); }).catch((e) => { PROBE.error = String(e.message || e); })
+      .finally(() => { PROBE.done = game; PROBE.game = null; console.log(`  probe ${game} done${PROBE.error ? ' — ' + PROBE.error : ''}`); });
+    return json(res, 200, { started: true, keys });
+  }
+
   /* Film the shell's sounds in a game's build — a headless Chrome playing a
      scenario, the DOM included (tools/lab/shoot-shell.mjs) — and file each
      clip under the shell unit, as a REC capture would be. */
@@ -703,9 +797,10 @@ export async function handle(req, res, p, url) {
          variant — then only those takes re-cut. The kit is every game's, so it
          moves no game's version; the cut files are under assets/, which the
          watcher does not see, hence the build called here. */
-      if (plan.roles && plan.roles.length) {
+      const variants = plan.roles || [];
+      if (variants.length) {
         await (checking = checking.then(stampKitMarks).catch(() => {}));
-        roles = await editVariants(plan.roles);
+        roles = await editVariants(variants);
         const log = [];
         await cutKit({ log: (l) => log.push(l.trim()), only: roles });
         console.log(`  ${stamp}  kit ${roles.join(', ')} re-cut (${log.length} takes)`);

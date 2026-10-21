@@ -17,12 +17,12 @@
   sequence, in steps of ten so a game can be slipped between two others);
   manifests without one fall to the end, alphabetically.
 
-  The public site shows the freshest game first instead: sorted by the day its
-  `version` last moved, newest first, then by the higher version on a tie. That
-  day is read from git here, where the history is whole, and baked into the
-  order of site/games.js — the Vercel build clones shallow and never asks git.
-  A version that differs from HEAD's (a bump not committed yet, or a game HEAD
-  has never seen) counts as today, which is the day that commit will carry.
+  The public site shows the newest game first instead: sorted by the first
+  commit that touched games/<slug>/, newest first, the curated order breaking a
+  tie between games added in the same commit. That date is read from git here,
+  where the history is whole, and baked into the order of site/games.js — the
+  Vercel build clones shallow and never asks git. A game git has never seen
+  counts as created now.
 */
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -71,37 +71,17 @@ function git(args) {
   }
 }
 
-function localDay(d) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+// Unix time of the first commit that touched games/<slug>/ — the game's birth.
+// A game git has never seen is being created now.
+function createdAt(m) {
+  const first = git(['log', '--reverse', '--format=%ct', '--', `games/${m.slug}`]).split('\n')[0];
+  return Number(first) || Math.floor(Date.now() / 1000);
 }
 
-// YYYY-MM-DD of the commit that last moved this manifest's `version`.
-function releaseDay(m) {
-  const file = `games/${m.slug}/manifest.json`;
-  let committed = null;
-  try { committed = JSON.parse(git(['show', `HEAD:${file}`])).version; } catch { /* not in HEAD */ }
-  if (committed !== m.version) return localDay(new Date());
-  return git(['log', '-1', '--format=%cs', '-G', '^[[:space:]]*"version"[[:space:]]*:', '--', file]) || localDay(new Date());
-}
-
-function compareVersions(a, b) {
-  const pa = String(a || '0').split('.').map(Number);
-  const pb = String(b || '0').split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const d = (pa[i] || 0) - (pb[i] || 0);
-    if (d) return d;
-  }
-  return 0;
-}
-
-// Newest release day first, then the higher version, then the slug.
-function byRelease(list) {
-  const day = new Map(list.map((m) => [m.slug, releaseDay(m)]));
-  return [...list].sort((a, b) =>
-    day.get(b.slug).localeCompare(day.get(a.slug)) ||
-    compareVersions(b.version, a.version) ||
-    a.slug.localeCompare(b.slug));
+// Newest game first; games born in the same commit keep the curated order.
+function byCreation(list) {
+  const born = new Map(list.map((m) => [m.slug, createdAt(m)]));
+  return [...list].sort((a, b) => born.get(b.slug) - born.get(a.slug));
 }
 
 // ── site/games.js ──────────────────────────────────────────────────────────
@@ -177,7 +157,7 @@ async function main() {
   const list = await manifests();
 
   const targets = [
-    { file: 'site/games.js', text: siteCatalogue(byRelease(list)) },
+    { file: 'site/games.js', text: siteCatalogue(byCreation(list)) },
     { file: 'index.html', text: null }  // patched in place, below
   ];
 

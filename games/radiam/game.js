@@ -249,8 +249,7 @@
       /* The window multiplies a RAY and the chain milestone, never the beads a
          wave takes — see scoreHit, and the bench that forced it. */
       slowTime: 6,                   // seconds a SLOW bead holds the ink back
-      slowFactor: 0.34,              // ...and what it multiplies the eclipse rate by
-      specTeach: 3                   // times a power names itself before it goes quiet
+      slowFactor: 0.34               // ...and what it multiplies the eclipse rate by
     },
 
     /* --- THE LADDER — what makes thirty levels thirty games ----------------
@@ -479,15 +478,17 @@
        buys a SMALL one, a three-ray move or a x8 chain buys a BIG one. A pool
        with no big special pays its big beats in small ones rather than
        reaching outside the level for something the player has not met. */
+    /* `name` and `teach` are the notice a special says the first time it
+       lands (learnSpec); the key is also the id of its page in the guide. */
     var SPEC = {
-      charge: { bit: CHARGE, tier: 1, word: "Charge" },
-      fire:   { bit: FIRE,   tier: 1, word: "Fire"   },
-      laser:  { bit: LASER,  tier: 1, word: "Laser"  },
-      score:  { bit: SCORE,  tier: 1, word: "Score"  },
-      slow:   { bit: SLOW,   tier: 1, word: "Slow"   },
-      nova:   { bit: NOVA,   tier: 2, word: "Nova"   },
-      bomb:   { bit: BOMB,   tier: 2, word: "Bomb"   },
-      ice:    { bit: ICE,    tier: 0, word: "Frozen" }
+      charge: { bit: CHARGE, tier: 1, name: "Charge bead", teach: "Pop a charge bead's ray to clear its ring" },
+      fire:   { bit: FIRE,   tier: 1, name: "Fire bead",   teach: "Pops both neighbouring rays too" },
+      laser:  { bit: LASER,  tier: 1, name: "Laser bead",  teach: "Pops the opposite ray too" },
+      score:  { bit: SCORE,  tier: 1, name: "Score bead",  teach: "Multiplies your rays for a few seconds" },
+      slow:   { bit: SLOW,   tier: 1, name: "Slow bead",   teach: "Slows the ink for a few seconds" },
+      nova:   { bit: NOVA,   tier: 2, name: "Nova bead",   teach: "Matches any colour, like a joker" },
+      bomb:   { bit: BOMB,   tier: 2, name: "Bomb bead",   teach: "Pop a bomb bead's ray to clear the dial" },
+      ice:    { bit: ICE,    tier: 0, name: "Frozen bead", teach: "Popping a frozen bead freezes its ring" }
     };
 
     // Geometry — every one of these is rebuilt from Layout by layout().
@@ -560,9 +561,19 @@
       cx = Layout.cx; cy = Layout.cy;
       unit = Math.min(Math.min(Layout.w, Layout.h) * 0.5 - D.margin, D.maxRadius);
       rimR = unit; hubR = unit * D.hubR;
+      placeRings(rings);
+      buildSprites();
+      buildBg();
+      Eclipse.build();                 // ...and the contaminated copy of it
+    }
+
+    /* The three tracks stacked out of `unit` and `hubR` — the round's plates,
+       and the guide's pictures, which lay out a dial of their own the same
+       way (see lendDial). */
+    function placeRings(rs) {
       var gap = unit * D.gap, edge = hubR + gap, prev = hubR;
       for (var i = 0; i < 3; i++) {
-        var r = rings[i];
+        var r = rs[i];
         r.ballR = unit * D.ballR[i];
         r.band = r.ballR * 2 + unit * D.housing;  // width of its housing track
         r.rad = edge + r.band / 2;                // ...so its inner wall is `edge`
@@ -571,16 +582,13 @@
         r.inner = (prev + edge) / 2;
         prev = r.rad + r.band / 2;
         edge = prev + gap;
-        if (i > 0) rings[i - 1].outer = r.inner;
+        if (i > 0) rs[i - 1].outer = r.inner;
       }
-      rings[2].outer = unit * D.grabPad;
+      rs[2].outer = unit * D.grabPad;
       // ...except the innermost, which swallows most of the hub: a thumb aiming
       // at the small inner plate lands short as often as not, and there is
       // nothing else down there to grab.
-      rings[0].inner = hubR * 0.62;
-      buildSprites();
-      buildBg();
-      Eclipse.build();                 // ...and the contaminated copy of it
+      rs[0].inner = hubR * 0.62;
     }
 
     /* One bead sprite per colour and per plate size, drawn once. Per-frame the
@@ -1157,7 +1165,7 @@
          the bitmap is only as big as the machine it stains. */
       function build() {
         if (!on) return;
-        var i, g, x, y, r, grd, s;
+        var s;
         inkR = rimR * 1.01;                // the teeth end at rimR, nothing past it
         s = Math.ceil(inkR * 2);
         /* The texture depends on its size and nothing else, so a replay keeps
@@ -1165,9 +1173,12 @@
            garbage per reset (see bakeCanvas). A new size frees the old one. */
         if (ink && ink.width === s) return;
         freeCanvas(ink);
-        ink = document.createElement("canvas");
-        ink.width = s; ink.height = s;
-        g = ink.getContext("2d");
+        ink = bakeInk(s);
+      }
+      function bakeInk(s) {
+        var i, g, x, y, r, grd, c = document.createElement("canvas");
+        c.width = s; c.height = s;
+        g = c.getContext("2d");
         g.fillStyle = "rgba(4,3,10,0.94)";
         g.fillRect(0, 0, s, s);
         for (i = 0; i < 9; i++) {
@@ -1181,6 +1192,26 @@
           g.fillStyle = grd;
           g.beginPath(); g.arc(0, 0, r, 0, TAU); g.fill();
           g.restore();
+        }
+        return c;
+      }
+
+      /* The guide's picture of the ink (see lendDial): a shadow `c` rays deep
+         lent for the length of `fn`, so draw(0) paints the very layer a round
+         draws and sink() sinks the beads under it — on whatever dial is lent
+         at the time. Every number of the round's own shadow is put back on
+         the way out, since the guide can open over a round it is pausing.
+         `slowing` paints the green rim a SLOW bead leaves. */
+      function lend(c, slowing, fn) {
+        var keep = [cover, hold, shove, flash, slowLeft, ink, inkR, on];
+        try {
+          cover = c; hold = 0; shove = 0; flash = 0; slowLeft = slowing ? 1 : 0; on = true;
+          inkR = rimR * 1.01; ink = bakeInk(Math.ceil(inkR * 2));
+          fn();
+        } finally {
+          freeCanvas(ink);
+          cover = keep[0]; hold = keep[1]; shove = keep[2]; flash = keep[3];
+          slowLeft = keep[4]; ink = keep[5]; inkR = keep[6]; on = keep[7];
         }
       }
 
@@ -1306,7 +1337,8 @@
         if (lines % LINES) return;
         level++;
         HUD.setLeft(level, "Level");
-        Pop.show("score", { word: Lang.t("Level ") + level, at: "hudUnder" });
+        /* No word for it: the HUD's level and the flash say it, and the rule
+           is the guide's (page "inklevel"). */
         Sound.clip("chain", 0.5, 1.18);
         Fx.flash("#ff4d6d", 0.14, 1.8);
         flash = 1;
@@ -1481,7 +1513,7 @@
       var api = { on: false, arm: arm, build: build, reset: reset, update: update,
                dead: dead, sink: sink, miss: miss, slow: slow,
                uncovered: uncovered, single: single, multi: multi, line: line,
-               bead: bead, blast: blast, draw: draw,
+               bead: bead, blast: blast, draw: draw, lend: lend,
                level: function () { return level; },
                lines: function () { return lines; },
                survived: function () { return Math.round(clock); } };
@@ -1566,7 +1598,7 @@
       score += pts;
       blastGain += pts;
       HUD.setScore(score);
-      Sound.clip("pop", 0.3, 1.25 + Rand.range(-0.1, 0.12));
+      Sound.clip("pop", 0.7, 1.25 + Rand.range(-0.1, 0.12));
       fireSuper(v, r, k, hueOf(v));
     }
 
@@ -1607,31 +1639,35 @@
       else if (v & SLOW)  slowHit(r, k);
     }
 
-    /* A power names itself ONCE and in the clear band under the HUD, never at
-       the hub: the hub is where flushBlast pays the whole chain out under one
-       BLAST, and a name and a payout landing on the same pixel on the same
-       beat is two things to read. Rate-limited for the same reason a cascade's
-       COMBO is — one move can set off three powers inside a third of a second.
+    /* A power going off tints the frame in its own colour. Rate-limited for
+       the same reason a cascade's COMBO is — one move can set off three powers
+       inside a third of a second, and three glows on one beat are one.
 
-       CHARGE and NOVA say nothing, which is how they shipped: they are the two
-       the player meets on levels 1 and 4 and they are self-evident on screen.
-       The six below arrive one per level with nothing else new on it, and a
-       name is what makes that lesson land. */
-    var specCallAt = -9, specSaid = {};
-    function specCall(word, hex) {
-      /* A power names itself for the first `specTeach` of the round and then
-         shuts up. The word is a LESSON, not a celebration — the level a power
-         arrives on is the one where it is the only new thing, so three
-         sightings is where a player has it; after that the same word over the
-         same effect is noise on the beat they are watching the board. The
-         effect itself never goes quiet: the wave, the flare and the payout are
-         all still there. */
-      if (clock - specCallAt < 0.45) return;
-      var seen = (specSaid[word] || 0) + 1;
-      specSaid[word] = seen;
-      if (seen > D.specTeach) return;
-      specCallAt = clock;
+       What a power IS is no longer said here at all: it was a word the first
+       three times a round, which is a lesson told on the beat the player is
+       watching the board. A special is NAMED once per player, the first time
+       one lands on the dial (learnSpec), and explained on its page of the
+       guide. */
+    var specGlowAt = -9;
+    function specGlow(hex) {
+      if (clock - specGlowAt < 0.45) return;
+      specGlowAt = clock;
       if (hex) Overlay.vignette(hex, 0.6, 360);
+    }
+
+    /* The first time a special RIDES IN, whatever level it is on: a notice
+       naming it, once per player ever (Notify.learn, `guide:<slug>`), whose
+       line in the "!" log opens that special's page. Web only — a playable
+       has no guide to open, and its two specials are the ones it shipped
+       with. */
+    function learnSpec(v) {
+      if (!window.__GUIDE__) return;
+      for (var key in SPEC) {
+        if (SPEC.hasOwnProperty(key) && (v & SPEC[key].bit)) {
+          Notify.learn(key, Lang.t(SPEC[key].name), { sub: Lang.t(SPEC[key].teach) });
+          return;
+        }
+      }
     }
 
     /* BOMB — the whole dial, and the supers it reaches go off in turn. The
@@ -1654,7 +1690,7 @@
       Sound.clip("blast", 0.7, 0.68);
       Fx.shake(26, 0.55);
       Fx.flash("#ffffff", 0.34, 2.6);
-      specCall("Bomb", "#ffd43b");
+      specGlow("#ffd43b");
     }
 
     /* FIRE — the two rays either side of its own. Both catch on the same beat:
@@ -1672,7 +1708,7 @@
       supers++;
       Sound.clip("blast", 0.5, 1.22);
       Fx.shake(11, 0.3);
-      specCall("Fire", "#ff8a3d");
+      specGlow("#ff8a3d");
     }
 
     /* LASER — straight through the hub and out the far side. `N / 2` is the
@@ -1690,7 +1726,7 @@
       supers++;
       Sound.clip("nova", 0.5, 1.35);
       Fx.shake(9, 0.26);
-      specCall("Laser", D.colours[colour]);
+      specGlow(D.colours[colour]);
     }
 
     /* SCORE — the one power that touches no bead at all. It arms a multiplier
@@ -1723,7 +1759,7 @@
       supers++;
       Sound.clip("multi", 0.6, 1 + tier * 0.08);
       Fx.flash("#ffd43b", 0.22, 1.9);
-      specCallAt = clock;                 // ...and it counts as this beat's word
+      specGlowAt = clock;                 // ...and it counts as this beat's glow
     }
 
     /* SLOW — the relief power, and the only one whose effect is on the room
@@ -1734,7 +1770,7 @@
       Eclipse.slow(D.slowTime);
       supers++;
       Sound.clip("charge", 0.55, 0.78);
-      specCall("Slow", "#3ff0a0");
+      specGlow("#3ff0a0");
     }
 
     /* ICE — the hazard. Breaking it freezes the plate it sat on: that ring
@@ -1757,7 +1793,7 @@
                         color: "#9fdcff", width: r.band * 0.6, life: 0.35 });
       Overlay.vignette("#9fdcff", 0.7, 420);
       Pop.show("streak", { word: "Frozen", sub: r.cold + Lang.t(" rays"), at: "hudUnder" });
-      specCallAt = clock;
+      specGlowAt = clock;
     }
 
     function thaw(r) {
@@ -1864,7 +1900,8 @@
       // where the round is long enough to spend a four-second window.
       if (bit === SCORE) v |= Rand.int(0, MUL_FACE - 1) << MULSHIFT;
       flyers[Rand.pick(cand)].colour = v;
-      Sound.clip("charge", 0.5, bit === NOVA ? 1.12 : 1);
+      if (bit === NOVA) Sound.clip("charge", 0.5, 1.12);
+      else Sound.clip("charge", 0.5);
       return true;
     }
 
@@ -1984,7 +2021,7 @@
     function addColour() {
       palette.push(palette.length);
       for (var i = 0; i < 3; i++) rings[i].bag.length = 0;   // re-deal with the newcomer in
-      Pop.show("streak", { word: "New colour", at: "bottom" });
+      // no notice: the newcomer and its glow read at a glance
       Overlay.vignette(D.colours[palette.length - 1], 0.7, 500);
       Sound.clip("multi", 0.45, 0.9);
     }
@@ -2042,7 +2079,7 @@
       blastRun = 0; blastGain = 0; bestBlast = 0;
       clock = 0; grab = null; touched = false; resting = true; armed = null;
       finale = null;
-      mulK = 1; mulLeft = 0; mulSpan = 1; specCallAt = -9; specSaid = {};
+      mulK = 1; mulLeft = 0; mulSpan = 1; specGlowAt = -9;
       for (i = 0; i < 3; i++) {
         rings[i].prev = 0; rings[i].still = 9;
         rings[i].cold = 0; rings[i].coldT = 0;
@@ -2102,6 +2139,7 @@
         if (p >= 1) {
           f.ring.slots[f.k] = f.colour;
           flyers.splice(i, 1);
+          if (f.colour & SUPER) learnSpec(f.colour);   // a special met for the first time
           Sound.clip("land", 0.2, 1.16 - f.ring.idx * 0.13);
           Fx.ring(px(a, f.ring.rad), py(a, f.ring.rad),
                   { from: f.ring.ballR * 0.5, to: f.ring.ballR * 1.8,
@@ -2197,7 +2235,7 @@
       // It is measured on the BEAD, not on the sprite: the materials pad their
       // canvases by 22% for the sticker's shadow and the ink's wobble, and a
       // veil that wide would sink the housings either side of this one too.
-      var d = Eclipse.sink(x, y);
+      var d = PIC && !INK_PIC ? 0 : Eclipse.sink(x, y);
       if (d > 0) {
         ctx.fillStyle = rgba("#04030a", 0.44 * d * alpha);
         ctx.beginPath(); ctx.arc(x, y, rings[idx].ballR * sc * 1.04, 0, TAU); ctx.fill();
@@ -2480,7 +2518,7 @@
     }
 
     function drawArmed(s, alpha) {
-      var hex = D.colours[rayColour(s)], w = unit * 0.075, i, r, a;
+      var hex = D.colours[PIC ? rawColour(s) : rayColour(s)], w = unit * 0.075, i, r, a;
       ctx.save();
       ctx.translate(cx, cy); ctx.rotate(s * SLOT);
       var g = ctx.createLinearGradient(0, -hubR, 0, -rimR);
@@ -2679,6 +2717,20 @@
       ctx.fillText(upper("x" + mulK + Lang.t("  score")), cx, y + h / 2 + 1);
     }
 
+    function drawRayLines() {
+      var i, ecl = Eclipse.on && !PIC;
+      ctx.save(); ctx.translate(cx, cy);
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
+      for (i = 0; i < N; i++) {
+        // The rotate comes first, so this pass draws ray i+1.
+        ctx.rotate(SLOT);
+        if (ecl)
+          ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
+        ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function render() {
       var i, k, r, a, b, sc;
       ctx.drawImage(bg, 0, 0);
@@ -2696,16 +2748,7 @@
       // the beads: they are the one thing on screen that never moves, and a
       // player who cannot see them cannot see the game.
       if (Enter.begin(cx, cy)) {
-        ctx.save(); ctx.translate(cx, cy);
-        ctx.lineWidth = 2; ctx.strokeStyle = rgba("#ffffff", 0.2);
-        for (i = 0; i < N; i++) {
-          // The rotate comes first, so this pass draws ray i+1.
-          ctx.rotate(SLOT);
-          if (Eclipse.on)
-            ctx.strokeStyle = rgba("#ffffff", Eclipse.dead(mod(i + 1, N)) ? 0.05 : 0.2);
-          ctx.beginPath(); ctx.moveTo(0, -hubR * 0.98); ctx.lineTo(0, -rimR); ctx.stroke();
-        }
-        ctx.restore();
+        drawRayLines();
 
         // The ink, over the machine and clipped to it, and under the beads:
         // a bead sitting on black is a ray that cannot pay. See Eclipse.
@@ -2939,12 +2982,365 @@
       MUL_FACE = d < 0.34 ? 1 : d < 0.68 ? 2 : 3;
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and every picture is a dial painted
+       by the round's OWN renderer — drawPlate, drawBall, drawBadge, drawHub,
+       the flares, the waves and the eclipse's ink — on a canvas of its own.
+       Two things are lent for the length of the call and put back on the way
+       out: the motor's `ctx` (paintPic), and the DIAL itself (lendDial) —
+       its centre, its size, its three plates, its bead sprites, its clock and
+       the chain on its hub. The guide can open before any round (the title
+       screen's Help card) and over a round it is pausing, so a picture reads
+       nothing reset() sets and leaves nothing of its own behind.
+
+       A page's level is the one the ladder deals the idea on
+       (CONFIG.ladder.levels), and its picture wears that level's bead style
+       and that band's machine, so what is read in the guide is what is dealt
+       on that stretch of the map. */
+    var PIC = false;                    // a guide picture is being painted
+    var INK_PIC = false;                // ...with a shadow of its own lent (Eclipse.lend)
+
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+
+    // The band a level sits in, and the bead style it is dealt in.
+    function bioAt(lv) {
+      var b = LAD.biomes[0], i;
+      for (i = 0; i < LAD.biomeFrom.length; i++) if (lv >= LAD.biomeFrom[i]) b = LAD.biomes[i];
+      return b;
+    }
+    function styleAt(lv) {
+      return LAD.styles[Math.min(LAD.styles.length - 1, Math.floor((Math.max(1, lv) - 1) / 2))];
+    }
+
+    /* A dial of the picture's own, laid out like the round's and painted in
+       the style of level `o.lv`. Ray s reads hues s, s+2 and s+4 down its
+       three plates, so nothing is lined up unless the picture says so. */
+    function lendDial(o, fn) {
+      var keep = [cx, cy, unit, rimR, hubR, rings, sprites, novaBodies, novaShells, wheel,
+                  STYLE, ART_ON, clock, grab, touched, combo, comboLeft, charge,
+                  mulK, mulLeft, mulSpan, D.wire, D.plate, D.hub];
+      var mine = [], bio = bioAt(o.lv || 1), rs = [], i, k, c;
+      try {
+        PIC = true;
+        cx = o.x; cy = o.y; unit = o.unit; rimR = unit; hubR = unit * D.hubR;
+        for (i = 0; i < 3; i++) rs.push({ idx: i, slots: new Array(N), angle: 0, step: 0, cold: 0 });
+        placeRings(rs);
+        for (i = 0; i < 3; i++) for (k = 0; k < N; k++) rs[i].slots[k] = (k + i * 2) % D.colours.length;
+        rings = rs;
+        STYLE = styleAt(o.lv || 1);
+        ART_ON = !!ballArt(BALL_HUE[0], STYLE);
+        D.wire = bio.wire; D.plate = bio.plate; D.hub = bio.hub;
+        clock = 1.1; grab = null; touched = true;
+        combo = o.combo || 0; comboLeft = D.comboWindow * 0.62; charge = o.charge || 0;
+        mulK = 1; mulLeft = 0; mulSpan = 1;
+        sprites = [];
+        for (c = 0; c < D.colours.length; c++) {
+          sprites[c] = [];
+          for (i = 0; i < 3; i++) mine.push(sprites[c][i] = ballSprite(D.colours[c], rs[i].ballR, c, null));
+        }
+        novaBodies = []; novaShells = [];
+        if (!ART_ON) wheel = hueWheel();
+        for (i = 0; i < 3; i++) {
+          novaBodies.push(ART_ON ? novaSprite(rs[i].ballR, null) : novaBody(rs[i].ballR, null));
+          if (!ART_ON) novaShells.push(novaShell(rs[i].ballR, null));
+        }
+        mine = mine.concat(novaBodies, novaShells);
+        fn(rs);
+      } finally {
+        cx = keep[0]; cy = keep[1]; unit = keep[2]; rimR = keep[3]; hubR = keep[4];
+        rings = keep[5]; sprites = keep[6]; novaBodies = keep[7]; novaShells = keep[8];
+        wheel = keep[9]; STYLE = keep[10]; ART_ON = keep[11]; clock = keep[12];
+        grab = keep[13]; touched = keep[14]; combo = keep[15]; comboLeft = keep[16];
+        charge = keep[17]; mulK = keep[18]; mulLeft = keep[19]; mulSpan = keep[20];
+        D.wire = keep[21]; D.plate = keep[22]; D.hub = keep[23];
+        for (i = 0; i < mine.length; i++) freeCanvas(mine[i]);
+        PIC = false;
+      }
+    }
+
+    // Where housing k of plate i sits on the lent dial.
+    function slotXY(rs, i, k) { var a = k * SLOT; return { x: px(a, rs[i].rad), y: py(a, rs[i].rad) }; }
+
+    /* The dial in the round's layer order (render): plates and teeth, the
+       rays, the ink, the beads, then the light — armed rays, flares and
+       waves — and the hub over all of it. */
+    function drawDial(rs, o) {
+      if (!o.ink) { dialLayers(rs, o); return; }
+      Eclipse.lend(o.ink, o.slow, function () {
+        INK_PIC = true;
+        try { dialLayers(rs, o); } finally { INK_PIC = false; }
+      });
+    }
+    function dialLayers(rs, o) {
+      var i, k, q;
+      if (o.cold != null) rs[o.cold].cold = 1;
+      for (i = 0; i < 3; i++) drawPlate(rs[i]);
+      drawTeeth(rs[2]);
+      drawRayLines();
+      if (o.ink) Eclipse.draw(0);
+      for (i = 0; i < 3; i++) for (k = 0; k < N; k++) {
+        if (rs[i].slots[k] === null) continue;
+        q = slotXY(rs, i, k);
+        drawBall(rs[i].slots[k], i, q.x, q.y, 1, 1);
+      }
+      ctx.globalCompositeOperation = "lighter";
+      for (i = 0; o.armed && i < o.armed.length; i++) drawArmed(o.armed[i], 0.5);
+      for (i = 0; o.flares && i < o.flares.length; i++) drawFlare(o.flares[i]);
+      if (o.sweep) drawSweep(o.sweep);
+      if (o.nova) drawNova(o.nova);
+      if (o.boom) drawBoom(o.boom);
+      if (o.beam) drawBeam(o.beam);
+      ctx.globalCompositeOperation = "source-over";
+      drawHub();
+      if (o.mul) { mulK = o.mul; mulSpan = D.mulTime[1]; mulLeft = mulSpan * 0.6; drawMul(); }
+    }
+
+    // Line ray s up in one hue on all three plates.
+    function lineUp(rs, s, hue) { for (var i = 0; i < 3; i++) rs[i].slots[mod(s, N)] = hue; }
+    function emptyRay(rs, s) { for (var i = 0; i < 3; i++) rs[i].slots[mod(s, N)] = null; }
+
+    /* One bead the size of a thumb, badge and all: sprites baked for the
+       picture and freed with it. Called inside lendDial, so it wears the
+       lent style. */
+    function bigBead(v, x, y, R) {
+      var sp, w, sh = null;
+      if (v & NOVA) sp = ART_ON ? novaSprite(R, null) : novaBody(R, null);
+      else sp = ballSprite(D.colours[hueOf(v)], R, hueOf(v), null);
+      if ((v & NOVA) && !ART_ON) sh = novaShell(R, null);
+      w = sp.width;
+      ctx.drawImage(sp, x - w / 2, y - w / 2, w, w);
+      if (sh) ctx.drawImage(sh, x - w / 2, y - w / 2, w, w);
+      // A laser's arrow lies along its ray; the bead on its own stands for
+      // one at 12 o'clock, the ray the picture's beam is fired down.
+      var kx = cx, ky = cy;
+      cx = x; cy = y + R * 4;
+      try { if (v & SUPER) drawBadge(v, R, x, y); } finally { cx = kx; cy = ky; }
+      freeCanvas(sp); freeCanvas(sh);
+    }
+
+    var PW = 520, PH = 300;             // every picture's frame, design px
+
+    // A dial alone, centred.
+    function dialPic(lv, o, edit) {
+      return paintPic(PW, PH, function () {
+        lendDial({ x: PW / 2, y: PH / 2, unit: 140, lv: lv, combo: o.combo, charge: o.charge },
+                 function (rs) { if (edit) edit(rs, o); drawDial(rs, o); });
+      });
+    }
+    // The top of the dial, close up: the rays at 12 o'clock read bead by bead.
+    function topPic(lv, o, edit) {
+      return paintPic(PW, PH, function () {
+        lendDial({ x: PW / 2, y: PH + 10, unit: 280, lv: lv },
+                 function (rs) { if (edit) edit(rs, o); drawDial(rs, o); });
+      });
+    }
+    // The hub, close up: the chain and the meter are read on it.
+    function hubPic(o) {
+      return paintPic(PW, PH, function () {
+        lendDial({ x: PW / 2, y: PH / 2, unit: 250, lv: 1, combo: o.combo, charge: o.charge },
+                 function (rs) { drawDial(rs, {}); });
+      });
+    }
+    /* A special: the bead itself on the left, at the size of a thumb, and
+       what it does to the dial beside it, caught mid-wave. `v` is the bead,
+       `edit` empties what the wave has already taken and returns the
+       effect to draw. */
+    function specPic(lv, v, edit, H) {
+      H = H || PH;
+      return paintPic(PW, H, function () {
+        var dy = H > PH ? 125 : PH / 2, u = H > PH ? 115 : 140;
+        lendDial({ x: 350, y: dy, unit: u, lv: lv }, function (rs) {
+          var o = edit(rs) || {};
+          drawDial(rs, o);
+          bigBead(v, 96, H / 2, 52);
+        });
+      });
+    }
+
+    // Every bead within `rad` of a point, emptied — what a wave has taken.
+    function takeWithin(rs, x, y, rad, hue) {
+      var i, k, q, v;
+      for (i = 0; i < 3; i++) for (k = 0; k < N; k++) {
+        v = rs[i].slots[k];
+        if (v === null || (hue != null && hueOf(v) !== hue)) continue;
+        q = slotXY(rs, i, k);
+        if ((q.x - x) * (q.x - x) + (q.y - y) * (q.y - y) <= rad * rad) rs[i].slots[k] = null;
+      }
+    }
+
+    /* A band: its painted hall, and the dial standing in it in that band's
+       machine and first bead style — the room the round is played in. */
+    function bandPic(lv) {
+      var bio = bioAt(lv), img = typeof ArtImages !== "undefined" ? ArtImages[bio.scene] : null;
+      return paintPic(PW, PH, function () {
+        if (img && img.width) {
+          var k = PW / img.width, h = img.height * k;
+          ctx.drawImage(img, 0, (PH - h) / 2, PW, h);
+        } else {
+          ctx.fillStyle = bio.sky[1]; ctx.fillRect(0, 0, PW, PH);
+        }
+        // the well the round sits in (buildBg), so the beads read on the hall
+        var well = ctx.createRadialGradient(PW / 2, PH / 2, 12, PW / 2, PH / 2, 230);
+        well.addColorStop(0, "rgba(5,3,16,.74)");
+        well.addColorStop(0.58, "rgba(5,3,16,.46)");
+        well.addColorStop(1, "rgba(5,3,16,0)");
+        ctx.fillStyle = well; ctx.fillRect(0, 0, PW, PH);
+        lendDial({ x: PW / 2, y: PH / 2, unit: 128, lv: lv }, function (rs) { drawDial(rs, {}); });
+      });
+    }
+
+    // The five hues, a bead each.
+    function huesPic() {
+      return paintPic(PW, 150, function () {
+        lendDial({ x: -999, y: -999, unit: 140, lv: 1 }, function () {
+          for (var c = 0; c < D.colours.length; c++) bigBead(c, 76 + c * 92, 75, 38);
+        });
+      });
+    }
+
+    function flareOf(s, hex) { return { s: mod(s, N), hex: hex, life: D.flareTime }; }
+
+    // The special pages, one per bead, at the level the ladder first deals it.
+    function specPage(key, lv, title, v, edit, lines, rows, H) {
+      return { id: key, title: Lang.t(title), lv: lv, rows: rows,
+               pic: function () { return specPic(lv, v, edit, H); }, lines: lines };
+    }
+    function bandPage(id, lv, title, lines) {
+      return { id: id, title: Lang.t(title), lv: lv, lines: lines,
+               pic: function () { return bandPic(lv); } };
+    }
+
+    var guide = {
+      chapters: function () {
+        var T = Lang.t;
+        return [
+          { key: "basics", label: T("The basics"), pages: [
+            { id: "turn", title: T("Turn the rings"), pic: function () {
+                return topPic(1, { armed: [0] }, function (rs) { lineUp(rs, 0, 1); });
+              }, lines: [
+              T("Drag a ring to turn it. Line up three beads of one colour on a ray and they pop."),
+              T("A ray pays once the dial stops. Let go of the ring, or hold it still.") ] },
+            { id: "rays", title: T("What a ray pays"), pic: function () {
+                return topPic(1, { armed: [11, 1] }, function (rs) { lineUp(rs, 11, 3); lineUp(rs, 1, 2); });
+              }, rows: [
+              [T("Two rays at once"), "×2.5"],
+              [T("Three rays at once"), "×5"],
+              [T("Four rays or more"), "×8"] ], lines: [
+              T("Pop several rays in one move and everything the move pays is multiplied.") ] },
+            { id: "chain", title: T("The chain"), pic: function () { return hubPic({ combo: 4, charge: 1 }); },
+              lines: [
+              T("Each ray raises the chain, up to x8."),
+              T("Pop the next ray within a second, or the chain falls back to zero.") ] },
+            { id: "meter", title: T("Earning a special"), pic: function () { return hubPic({ combo: 0, charge: 2 }); },
+              lines: [
+              T("Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one."),
+              T("A special goes off when its ray pops, or when another special's wave reaches it.") ] }
+          ] },
+          { key: "eclipse", label: T("The eclipse"), pages: [
+            { id: "eclipse", title: T("The eclipse"), pic: function () { return dialPic(1, { ink: 4.5 }); },
+              rows: [
+              [T("One ray"), T("the ink stops 2 s")],
+              [T("Two rays at once"), T("0.8 ray won back")],
+              [T("Three rays or more"), T("2 rays won back")],
+              [T("A whole ring emptied"), T("3 rays won back")] ], lines: [
+              T("Ink rises over the dial from the bottom. A ray under the ink can no longer pop."),
+              T("Reach the level's score before the ink covers every ray.") ] },
+            { id: "inklevel", title: T("The ink speeds up"), pic: function () { return dialPic(1, { ink: 8 }); },
+              lines: [
+              T("Every 10 rays popped, the level goes up and the ink rises faster.") ] },
+            { id: "colour", title: T("A new colour"), pic: huesPic, lines: [
+              T("The dial starts with four colours. The fifth joins once the ink reaches level 10.") ] }
+          ] },
+          { key: "atelier", label: T("Atelier"), pages: [
+            bandPage("atelier", 1, "Atelier", [
+              T("Levels 1 to 6. The charge bead arrives at level 1, the nova at level 4.") ]),
+            specPage("charge", 1, "Charge bead", 1 | CHARGE, function (rs) {
+              var k;
+              for (k = -3; k <= 3; k++) rs[2].slots[mod(k, N)] = null;
+              emptyRay(rs, 0);
+              return { sweep: { ring: rs[2], k: 0, t: 3 * D.fuseStep, travel: 6 * D.fuseStep,
+                                dur: 6 * D.fuseStep + 0.18, hex: D.colours[1] },
+                       flares: [flareOf(0, D.colours[1])] };
+            }, [
+              T("Pop a charge bead's ray and a wave takes every bead on its ring."),
+              T("The more beads a wave takes, the more each one pays.") ]),
+            specPage("nova", 4, "Nova bead", NOVA, function (rs) {
+              var q = slotXY(rs, 0, 0);
+              emptyRay(rs, 0);
+              takeWithin(rs, q.x, q.y, 110, 0);
+              return { nova: { x: q.x, y: q.y, t: 0.1, dur: 0.6, hex: D.colours[0] },
+                       flares: [flareOf(0, D.colours[0])] };
+            }, [
+              T("Like a joker, a nova bead matches any colour on its ray."),
+              T("When a nova bead goes off, every bead of its ray's colour leaves the dial.") ])
+          ] },
+          { key: "lagoon", label: T("Lagoon"), pages: [
+            bandPage("lagoon", 7, "Lagoon", [
+              T("Levels 7 to 12. The bomb arrives at level 7, the score bead at level 10.") ]),
+            specPage("bomb", 7, "Bomb bead", 2 | BOMB, function (rs) {
+              var q = slotXY(rs, 0, 0);
+              emptyRay(rs, 0);
+              takeWithin(rs, q.x, q.y, 100);
+              return { boom: { x: q.x, y: q.y, t: 0.11, dur: 0.85, hex: D.colours[2] } };
+            }, [
+              T("Pop a bomb bead's ray and its wave takes the whole dial, ring after ring.") ]),
+            specPage("score", 10, "Score bead", 0 | SCORE | (1 << MULSHIFT), function (rs) {
+              emptyRay(rs, 0);
+              return { mul: 5, flares: [flareOf(0, D.colours[0])] };
+            }, [
+              T("Pop a score bead's ray to multiply the next rays for a few seconds."),
+              T("The score bead never multiplies what a wave takes.") ], null, 310)
+          ] },
+          { key: "reliquary", label: T("Reliquary"), pages: [
+            bandPage("reliquary", 13, "Reliquary", [
+              T("Levels 13 to 18. The fire bead arrives at level 13, the laser at level 15.") ]),
+            specPage("fire", 13, "Fire bead", 1 | FIRE, function (rs) {
+              emptyRay(rs, 0); emptyRay(rs, -1); emptyRay(rs, 1);
+              return { flares: [flareOf(-1, "#ff8a3d"), flareOf(1, "#ff8a3d"), flareOf(0, D.colours[1])] };
+            }, [
+              T("Pop a fire bead's ray and the two rays either side of it pop too."),
+              T("Whatever their colours, on all three rings.") ]),
+            specPage("laser", 15, "Laser bead", 2 | LASER, function (rs) {
+              emptyRay(rs, 0); emptyRay(rs, N / 2);
+              return { beam: { s: 0, t: 0.12, dur: 0.45, hex: D.colours[2] },
+                       flares: [flareOf(N / 2, D.colours[2])] };
+            }, [
+              T("Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too.") ])
+          ] },
+          { key: "sumi", label: T("Sumi"), pages: [
+            bandPage("sumi", 19, "Sumi", [
+              T("Levels 19 to 24. From level 19, some of the new beads arrive frozen.") ]),
+            specPage("ice", 19, "Frozen bead", 4 | ICE, function (rs) {
+              return { cold: 1 };
+            }, [
+              T("A frozen bead pops like any bead, but then its ring freezes and cannot turn."),
+              T("Pop two rays to thaw the ring, or wait 8 s.") ])
+          ] },
+          { key: "circuit", label: T("Circuit"), pages: [
+            bandPage("circuit", 25, "Circuit", [
+              T("Levels 25 to 30. The slow bead arrives at level 25.") ]),
+            specPage("slow", 25, "Slow bead", 4 | SLOW, function () {
+              return { ink: 5, slow: true };
+            }, [
+              T("Pop a slow bead's ray and the ink slows right down.") ])
+          ] }
+        ];
+      }
+    };
+
     /* The three-star finish: the web shell has already played the slow motion,
        and the round ends through the game's own result so the end screen keeps
        its stat rows. Ignored by the playable, which has no levels. */
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp,
              onTimeUp: onTimeUp, onResize: onResize,
-             applyLevel: applyLevel, levelWon: gameOver };
+             applyLevel: applyLevel, levelWon: gameOver, guide: guide };
   })();
 

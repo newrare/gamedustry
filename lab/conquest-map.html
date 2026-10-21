@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — conquest map looks</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   CONQUEST MAP LOOKS — ten ways to paint the world of
+   prototype/conquest-ticks.html, and ten ways to draw an order on it, any
+   arrow on any map.
+
+   The map is not drawn from polygons. It is SHADED, pixel by pixel, out of a
+   few fields computed once over the 720x1280 frame:
+     - sdf  signed distance to the coast (+ on land), from a distance transform
+            of a land mask made of noisy blobs;
+     - e    distance to the nearest region border (a domain-warped Voronoi, so
+            borders wander like real ones);
+     - f    distance to the nearest region of ANOTHER owner (the camps' front);
+     - h    a height noise, g a fine grain.
+   Every look is a shader over those fields — porcelain seams, ink washes,
+   neon fronts, hill shading, low-poly facets, a hex board, a dot matrix,
+   paper terraces, soft 3D, stained glass — which is what a canvas game would
+   bake into its map layer once per level. Units, markers and the arrows are
+   drawn on top every frame, the arrows animated.
+
+   The scene: blue (south, the player) and red (north, the AI), the neutral
+   archipelago between them, the player's orders (two attacks, a
+   reinforcement, a landing), the red orders a spy revealed (faded, with the
+   eye), a red column two ticks away, and the clash at Esker.
+
+   Views: One (the map and the arrow picked, at 2x), Maps (the ten maps with
+   the arrow picked), Arrows (the ten arrows on the map picked, zoomed on the
+   orders). A click on a frame opens it. Nothing here ships.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 300px;
+  height:100vh; overflow:auto;
+  padding:22px 18px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel h2 { margin:18px 0 8px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#8b8ba7; }
+#panel p.hint { margin:8px 0 16px; font-weight:500; font-size:12px; color:#8b8ba7; }
+.seg { display:flex; gap:6px; }
+.seg button, .list button {
+  flex:1; padding:7px 10px;
+  background:#1b1b2a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px;
+  font:inherit; cursor:pointer; text-align:left;
+}
+.seg button { text-align:center; }
+.seg button.on, .list button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.list { display:flex; flex-direction:column; gap:5px; }
+.list button b { display:block; font-size:13px; }
+.list button span { display:block; font-weight:500; font-size:11px; opacity:.75; }
+.tog { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:#c9c9e0; cursor:pointer; }
+.tog input { accent-color:#7ea6ff; }
+
+#stage {
+  flex:1; height:100vh; overflow:auto;
+  padding:24px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#stage.one { display:flex; align-items:center; justify-content:center; }
+#stage.one .fr { height:calc(100vh - 48px); }
+#stage.one canvas { height:calc(100% - 40px); width:auto; }
+#stage.maps, #stage.arrows { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:22px 18px; align-content:start; }
+#stage.maps .fr, #stage.arrows .fr { cursor:pointer; }
+#stage.maps canvas:hover, #stage.arrows canvas:hover { outline:3px solid #7ea6ff; }
+#stage .busy { margin:auto; color:#8b8ba7; font-size:15px; }
+.fr { display:flex; flex-direction:column; gap:8px; }
+.fr canvas { display:block; width:100%; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+.fr figcaption { font-size:12px; color:#9c9cba; font-weight:500; }
+.fr figcaption b { color:#e8e6f5; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Conquest map</h1>
+  <p class="hint">Ten shaded maps and ten animated arrows for prototype/conquest-ticks.html, any arrow on any map.</p>
+
+  <div class="seg">
+    <button data-v="one">One</button>
+    <button data-v="maps">Maps</button>
+    <button data-v="arrows">Arrows</button>
+  </div>
+
+  <h2>Map</h2>
+  <div class="list" id="maps"></div>
+
+  <h2>Arrow</h2>
+  <div class="list" id="arrows"></div>
+
+  <h2>Show</h2>
+  <label class="tog"><input type="checkbox" id="t-anim" checked> Animate</label>
+  <label class="tog"><input type="checkbox" id="t-names"> Region names</label>
+  <label class="tog"><input type="checkbox" id="t-hud" checked> Top bar</label>
+</div>
+
+<div id="stage"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const W = 720, H = 1280;
+
+  /* ==========================================================================
+     THE WORLD — land blobs, regions, units, orders.
+     ========================================================================== */
+  // x, y, radius — a noisy union of these is the land.
+  const BLOBS = [
+    [150, 260, 115], [305, 225, 125], [470, 245, 120], [610, 310, 105], [225, 400, 115], [420, 405, 120],
+    [580, 455, 95], [300, 525, 85], [60, 520, 30],
+    [110, 665, 62], [265, 690, 60], [430, 640, 72], [605, 705, 72], [515, 755, 40],
+    [180, 905, 105], [370, 880, 115], [565, 920, 105], [255, 1045, 110], [445, 1060, 112], [610, 1065, 72],
+    [350, 1185, 82], [175, 1160, 58],
+    [675, 560, 32], [650, 1210, 30], [70, 800, 24]
+  ];
+
+  // x, y, owner (n b r), name, marker
+  const REG = [
+    [150, 255, "r", "Norvik", null], [310, 225, "r", "Aldmar", "cap"], [470, 245, "r", "Kestra", null],
+    [610, 315, "r", "Varos", "city"], [215, 405, "r", "Myrr", null], [420, 400, "r", "Tolen", "fort"],
+    [580, 455, "r", "Ostra", "iron"], [290, 530, "r", "Brann", null],
+    [110, 665, "n", "Brevin", "grain"], [265, 690, "n", "Calder", "city"], [430, 645, "n", "Duna", "city"],
+    [605, 705, "n", "Esker", "gold"],
+    [180, 905, "b", "Falun", null], [370, 885, "b", "Garr", "fort"], [565, 920, "b", "Holm", "city"],
+    [255, 1050, "n", "Isel", "grain"], [445, 1065, "b", "Jarrow", "cap"], [610, 1065, "b", "Kalm", "port"],
+    [350, 1185, "b", "Lund", null], [675, 560, "n", "Mora", "oil"]
+  ].map(function (r, i) {
+    return { i: i, x: r[0], y: r[1], o: r[2] === "b" ? 1 : r[2] === "r" ? 2 : 0, name: r[3], mk: r[4] };
+  });
+
+  const FLEET = [55, 1000];
+  const UNITS = [
+    { r: 0, k: "inf", n: 3 }, { r: 1, k: "art", n: 2 }, { r: 2, k: "inf", n: 2 }, { r: 3, k: "inf", n: 2 },
+    { r: 4, k: "inf", n: 4 }, { r: 5, k: "inf", n: 7 }, { r: 6, k: "cav", n: 5 }, { r: 7, k: "inf", n: 3 },
+    { r: 8, k: "inf", n: 1 }, { r: 9, k: "inf", n: 3 }, { r: 10, k: "inf", n: 2 }, { r: 11, k: "inf", n: 2 },
+    { r: 15, k: "inf", n: 2 }, { r: 19, k: "inf", n: 1 },
+    { r: 12, k: "inf", n: 5 }, { r: 13, k: "inf", n: 6, gen: true }, { r: 14, k: "cav", n: 4 }, { r: 16, k: "art", n: 3 },
+    { r: 17, k: "inf", n: 2 }, { r: 18, k: "inf", n: 1 }, { at: FLEET, o: 1, k: "fleet", n: 3 }
+  ];
+
+  const ORDERS = [
+    { a: 13, b: 9, o: 1, n: 6, bend: -0.15 },
+    { a: 14, b: 11, o: 1, n: 4, bend: 0.15 },
+    { a: 16, b: 13, o: 1, n: 3, bend: 0.25, thin: true },
+    { a: FLEET, b: 8, o: 1, n: 3, bend: -0.12 },
+    { a: 6, b: 11, o: 2, n: 5, bend: -0.2, ghost: true },
+    { a: 4, b: 8, o: 2, n: 4, bend: 0.2, ghost: true }
+  ];
+  const MARCH = { a: 1, b: 10, o: 2, n: 4, bend: 0.12, at: 0.55, eta: "2 ticks" };
+  const CLASH = 11;
+  const ZOOM = [20, 360, 680, 740];
+
+  /* ==========================================================================
+     NOISE
+     ========================================================================== */
+  const VAL = new Float32Array(256), PERM = new Uint8Array(512);
+  (function () {
+    let s = 1234567;
+    const r = function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (let i = 0; i < 256; i++) { VAL[i] = r(); PERM[i] = i; }
+    for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)), t = PERM[i]; PERM[i] = PERM[j]; PERM[j] = t; }
+    for (let i = 0; i < 256; i++) PERM[i + 256] = PERM[i];
+  })();
+  function vn(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, X = xi & 255, Y = yi & 255;
+    const a = VAL[PERM[PERM[X] + Y]], b = VAL[PERM[PERM[X + 1] + Y]], c = VAL[PERM[PERM[X] + Y + 1]], d = VAL[PERM[PERM[X + 1] + Y + 1]];
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function fbm(x, y, oct) {
+    let s = 0, amp = 0.5, tot = 0;
+    for (let o = 0; o < oct; o++) { s += vn(x, y) * amp; tot += amp; x *= 2.03; y *= 2.03; amp *= 0.5; }
+    return s / tot;
+  }
+  const hash2 = function (a, b) { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const clamp01 = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
+  const sstep = function (a, b, v) { const t = clamp01((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+
+  /* ==========================================================================
+     FIELDS — computed once per resolution, shared by every look.
+     ========================================================================== */
+  function edt1d(f, n, d, v, z) {
+    let k = 0;
+    v[0] = 0; z[0] = -1e20; z[1] = 1e20;
+    for (let q = 1; q < n; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+  }
+  // Squared distance from every pixel to the nearest pixel whose mask equals target.
+  function edt(mask, w, h, target) {
+    const g = new Float32Array(w * h), n = Math.max(w, h);
+    const f = new Float32Array(n), d = new Float32Array(n), v = new Int32Array(n), z = new Float32Array(n + 1);
+    for (let i = 0; i < w * h; i++) g[i] = mask[i] === target ? 0 : 1e20;
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) f[y] = g[y * w + x];
+      edt1d(f, h, d, v, z);
+      for (let y = 0; y < h; y++) g[y * w + x] = d[y];
+    }
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) f[x] = g[y * w + x];
+      edt1d(f, w, d, v, z);
+      for (let x = 0; x < w; x++) g[y * w + x] = d[x];
+    }
+    return g;
+  }
+
+  const FIELDS = {};
+  function fields(res) {
+    if (FIELDS[res]) return FIELDS[res];
+    const w = W * res, h = H * res, N = w * h, n = REG.length;
+    const land = new Uint8Array(N), id = new Uint8Array(N), own = new Uint8Array(N);
+    const e = new Float32Array(N), f = new Float32Array(N), hh = new Float32Array(N), gr = new Float32Array(N);
+    const SX = REG.map(function (r) { return r.x; }), SY = REG.map(function (r) { return r.y; }), SO = REG.map(function (r) { return r.o; });
+    const DD = REG.map(function (a) { return REG.map(function (b) { return Math.hypot(a.x - b.x, a.y - b.y) || 1; }); });
+    for (let py = 0; py < h; py++) {
+      const y = (py + 0.5) / res;
+      for (let px = 0; px < w; px++) {
+        const x = (px + 0.5) / res, i = py * w + px;
+        const wx = x + (fbm(x * 0.006 + 3.1, y * 0.006 + 7.7, 2) - 0.5) * 80;
+        const wy = y + (fbm(x * 0.006 + 11.3, y * 0.006 + 1.9, 2) - 0.5) * 80;
+        let m = -9;
+        for (let k = 0; k < BLOBS.length; k++) {
+          const b = BLOBS[k], dx = wx - b[0], dy = wy - b[1], v = 1 - Math.sqrt(dx * dx + dy * dy) / b[2];
+          if (v > m) m = v;
+        }
+        land[i] = m + (fbm(x * 0.022, y * 0.022, 3) - 0.5) * 0.45 > 0 ? 1 : 0;
+        const rx = x + (wx - x) * 0.55, ry = y + (wy - y) * 0.55;
+        let b1 = 0, d1 = 1e12, b2 = 0, d2 = 1e12;
+        for (let k = 0; k < n; k++) {
+          const dx = rx - SX[k], dy = ry - SY[k], dd = dx * dx + dy * dy;
+          if (dd < d1) { d2 = d1; b2 = b1; d1 = dd; b1 = k; } else if (dd < d2) { d2 = dd; b2 = k; }
+        }
+        const o1 = SO[b1];
+        let bo = -1, dO = 1e12;
+        for (let k = 0; k < n; k++) {
+          if (SO[k] === o1) continue;
+          const dx = rx - SX[k], dy = ry - SY[k], dd = dx * dx + dy * dy;
+          if (dd < dO) { dO = dd; bo = k; }
+        }
+        id[i] = b1; own[i] = o1;
+        e[i] = (d2 - d1) / (2 * DD[b1][b2]);
+        f[i] = bo < 0 ? 999 : (dO - d1) / (2 * DD[b1][bo]);
+        hh[i] = fbm(x * 0.011, y * 0.011, 4);
+        gr[i] = vn(x * 0.31, y * 0.31) * 0.55 + vn(x * 1.1 + 50, y * 1.1) * 0.45;
+      }
+    }
+    const toSea = edt(land, w, h, 0), toLand = edt(land, w, h, 1), sdf = new Float32Array(N);
+    for (let i = 0; i < N; i++) sdf[i] = land[i] ? (Math.sqrt(toSea[i]) - 0.5) / res : -(Math.sqrt(toLand[i]) - 0.5) / res;
+    FIELDS[res] = { res: res, w: w, h: h, sdf: sdf, e: e, f: f, id: id, own: own, ht: hh, g: gr };
+    return FIELDS[res];
+  }
+  function S(F, arr, x, y) {
+    let px = (x * F.res) | 0, py = (y * F.res) | 0;
+    if (px < 0) px = 0; else if (px >= F.w) px = F.w - 1;
+    if (py < 0) py = 0; else if (py >= F.h) py = F.h - 1;
+    return arr[py * F.w + px];
+  }
+
+  /* ==========================================================================
+     COLOUR HELPERS
+     ========================================================================== */
+  const hx = function (h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; };
+  const WHITE = [255, 255, 255], BLACK = [0, 0, 0];
+  const set = function (c, a) { c[0] = a[0]; c[1] = a[1]; c[2] = a[2]; };
+  const mixTo = function (c, a, t) { if (t <= 0) return; if (t > 1) t = 1; c[0] += (a[0] - c[0]) * t; c[1] += (a[1] - c[1]) * t; c[2] += (a[2] - c[2]) * t; };
+  const mul = function (c, k) { c[0] *= k; c[1] *= k; c[2] *= k; };
+  const add = function (c, a, k) { c[0] += a[0] * k; c[1] += a[1] * k; c[2] += a[2] * k; };
+  const lerp3 = function (a, b, t, c) { c[0] = a[0] + (b[0] - a[0]) * t; c[1] = a[1] + (b[1] - a[1]) * t; c[2] = a[2] + (b[2] - a[2]) * t; };
+  function ramp(stops, t, c) {
+    if (t <= stops[0][0]) { set(c, stops[0][1]); return; }
+    for (let k = 1; k < stops.length; k++) {
+      if (t <= stops[k][0]) { lerp3(stops[k - 1][1], stops[k][1], (t - stops[k - 1][0]) / (stops[k][0] - stops[k - 1][0]), c); return; }
+    }
+    set(c, stops[stops.length - 1][1]);
+  }
+  const css = function (a, al) { return al == null ? "rgb(" + (a[0] | 0) + "," + (a[1] | 0) + "," + (a[2] | 0) + ")" : "rgba(" + (a[0] | 0) + "," + (a[1] | 0) + "," + (a[2] | 0) + "," + al + ")"; };
+  const mixHex = function (a, b, t) { const A = hx(a), B = hx(b); return [A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]; };
+
+  // A height field shaded by one light; returns the lambert term per pixel.
+  function lightField(F, Hf, scale, L) {
+    const w = F.w, h = F.h, out = new Float32Array(w * h), r = F.res;
+    const ll = Math.hypot(L[0], L[1], L[2]), lx = L[0] / ll, ly = L[1] / ll, lz = L[2] / ll;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        const hxv = (Hf[x < w - 1 ? i + 1 : i] - Hf[x > 0 ? i - 1 : i]) * r / 2 * scale;
+        const hyv = (Hf[y < h - 1 ? i + w : i] - Hf[y > 0 ? i - w : i]) * r / 2 * scale;
+        const nl = Math.hypot(hxv, hyv, 1);
+        out[i] = (-hxv * lx - hyv * ly + lz) / nl;
+      }
+    }
+    return out;
+  }
+
+  /* ==========================================================================
+     THE TEN MAPS — each a shader factory over the fields, plus the dress
+     of what is drawn on top (chip, marker, label, HUD, font, camp colours).
+     A factory returns { land, sea } (blended across the coast) or { all }.
+     ========================================================================== */
+  const MAPS = [];
+
+  // ---- 1. Porcelain ---------------------------------------------------------
+  MAPS.push({
+    key: "porcelain", name: "Porcelain", desc: "White glazed tiles, soft seams, a thin coloured front, a pale sea with rings.",
+    font: "'Avenir Next', 'Helvetica Neue', sans-serif", blue: "#3c6cf0", red: "#e8503e", chip: "porcelain",
+    ink: "#2b3445", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#2b3445", hud: { bg: "rgba(255,255,255,.92)", ink: "#2b3445", r: 26 },
+    shader: function (F) {
+      const sea0 = hx("#e8eef3"), sea1 = hx("#b9c8d5"), n = hx("#faf8f4"), b = hx("#dce6fc"), r = hx("#fce0db"), bS = hx("#3c6cf0"), rS = hx("#e8503e");
+      return {
+        sea: function (i, x, y, c) {
+          const s = F.sdf[i];
+          lerp3(sea0, sea1, clamp01(-s / 180), c);
+          if (-s < 90) { const rr = (-s) % 26; mixTo(c, WHITE, (1 - sstep(0.4, 1.4, Math.abs(rr - 13))) * (1 + s / 90) * 0.6); }
+          mul(c, 1 - sstep(-18, 4, S(F, F.sdf, x - 7, y - 12)) * 0.16);
+        },
+        land: function (i, x, y, c) {
+          const s = F.sdf[i], o = F.own[i], e = F.e[i];
+          set(c, o === 1 ? b : o === 2 ? r : n);
+          mul(c, 1 - 0.13 * Math.exp(-Math.min(e, s) / 7));
+          mul(c, 1 - 0.18 * (1 - sstep(0.5, 1.5, e)));
+          if (o) mixTo(c, o === 1 ? bS : rS, 1 - sstep(2.6, 3.8, Math.min(F.f[i], s + 0.5)));
+          mixTo(c, WHITE, (1 - sstep(0.8, 2.8, s)) * 0.7);
+          mul(c, 0.985 + 0.03 * F.ht[i]);
+        }
+      };
+    }
+  });
+
+  // ---- 2. Ink wash ----------------------------------------------------------
+  MAPS.push({
+    key: "ink", name: "Ink wash", desc: "Brush coast on rice paper, watercolour camps blooming at their edges.",
+    font: "Baskerville, 'Hoefler Text', Georgia, serif", blue: "#2f4f8f", red: "#c23b26", chip: "seal",
+    ink: "#26221e", labelBg: "#f7f0e2", mkBg: "#f7f0e2", mkInk: "#26221e", hud: { bg: "rgba(247,240,226,.94)", ink: "#26221e", r: 4 },
+    shader: function (F) {
+      const paper = hx("#f1e8d5"), paperL = hx("#f8f1e3"), ink = hx("#26221e"), wash = hx("#71879a"), blue = hx("#2f4f8f"), red = hx("#c23b26"), ochre = hx("#c9a35a");
+      return {
+        sea: function (i, x, y, c) {
+          const s = F.sdf[i], g = F.g[i];
+          set(c, paper); mul(c, 0.965 + 0.05 * g);
+          mixTo(c, wash, Math.exp(s / 30) * 0.34 * (0.7 + 0.6 * g));
+          for (let k = 0; k < 2; k++) {
+            const tg = (k ? 36 : 17) * (0.9 + 0.25 * F.ht[i]);
+            mixTo(c, ink, (1 - sstep(0.3, 1.1, Math.abs(-s - tg))) * (g > 0.45 ? 0.38 : 0) * (k ? 0.6 : 1));
+          }
+          const bw = 1.2 + 2.6 * F.ht[i];
+          mixTo(c, ink, (1 - sstep(bw / 2 - 0.6, bw / 2 + 0.5, -s)) * 0.9);
+        },
+        land: function (i, x, y, c) {
+          const s = F.sdf[i], o = F.own[i], g = F.g[i];
+          set(c, paperL); mul(c, 0.97 + 0.04 * g);
+          if (o) mixTo(c, o === 1 ? blue : red, Math.min(0.85, (0.2 + 0.42 * Math.exp(-F.e[i] / 5) + 0.28 * Math.exp(-Math.min(F.f[i], s) / 4)) * (0.7 + 0.6 * g)));
+          else mixTo(c, ochre, 0.07 + 0.06 * g);
+          mixTo(c, ink, (1 - sstep(0.35, 1.0, F.e[i])) * 0.38 * (g > 0.35 ? 1 : 0.25));
+          const bw = 1.2 + 2.6 * F.ht[i];
+          mixTo(c, ink, (1 - sstep(bw / 2 - 0.6, bw / 2 + 0.5, s)) * 0.9);
+        }
+      };
+    }
+  });
+
+  // ---- 3. Neon --------------------------------------------------------------
+  MAPS.push({
+    key: "neon", name: "Neon", desc: "A night console: a faint grid, depth lines, fronts burning along their edge.",
+    font: "Futura, 'Avenir Next', sans-serif", blue: "#36a3ff", red: "#ff3d71", chip: "neon",
+    ink: "#e8e4ff", labelBg: "#120f2a", mkBg: "#120f2a", mkInk: "#c9c3ff", hud: { bg: "rgba(14,11,34,.88)", ink: "#e8e4ff", r: 14, line: "rgba(120,110,255,.45)" },
+    shader: function (F) {
+      const bg = hx("#07061a"), grid = hx("#1a1640"), landC = hx("#0f0d25"), bT = hx("#0b1a44"), rT = hx("#2c0a22"), seam = hx("#2a2558");
+      const blue = hx("#36a3ff"), red = hx("#ff3d71"), bL = hx("#c4e6ff"), rL = hx("#ffc4d4"), coast = hx("#5b55d6"), dim = hx("#2a2a70");
+      return {
+        sea: function (i, x, y, c) {
+          const s = F.sdf[i];
+          set(c, bg);
+          const mx = x % 40, my = y % 40;
+          mixTo(c, grid, (1 - sstep(0.3, 1.1, Math.min(mx, 40 - mx, my, 40 - my))) * 0.9);
+          for (let k = 0; k < 3; k++) { const d = [14, 34, 62][k]; add(c, dim, (1 - sstep(0.3, 1.1, Math.abs(-s - d))) * (1 - d / 90)); }
+          add(c, coast, 0.4 * Math.exp(s / 9));
+        },
+        land: function (i, x, y, c) {
+          const s = F.sdf[i], o = F.own[i];
+          set(c, o === 1 ? bT : o === 2 ? rT : landC);
+          mixTo(c, seam, 1 - sstep(0.4, 1.3, F.e[i]));
+          mixTo(c, coast, 1 - sstep(0.6, 1.7, s));
+          if (o) {
+            const fe = Math.min(F.f[i], s + 1);
+            add(c, o === 1 ? blue : red, 0.9 * Math.exp(-fe / 6));
+            mixTo(c, o === 1 ? bL : rL, 1 - sstep(0.6, 1.6, fe));
+          }
+        }
+      };
+    }
+  });
+
+  // ---- 4. Relief ------------------------------------------------------------
+  MAPS.push({
+    key: "relief", name: "Relief", desc: "Shaded relief, hypsometric tints, a political wash and crisp fronts.",
+    font: "'Gill Sans', 'Avenir Next', sans-serif", blue: "#2f62d6", red: "#d4402f", chip: "badge",
+    ink: "#2c2a24", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#2c2a24", hud: { bg: "rgba(255,255,255,.9)", ink: "#2c2a24", r: 18 },
+    shader: function (F) {
+      const N = F.w * F.h, Hf = new Float32Array(N);
+      for (let i = 0; i < N; i++) { const s = F.sdf[i]; Hf[i] = s > 0 ? Math.pow(clamp01(s / 90), 0.6) * (0.25 + 0.75 * F.ht[i]) : 0; }
+      const lam = lightField(F, Hf, 140, [-0.55, -0.6, 0.58]);
+      const hyp = [[0, hx("#b4d38b")], [0.28, hx("#d8d79b")], [0.5, hx("#ceb086")], [0.72, hx("#a88c73")], [0.9, hx("#f4f0e8")]];
+      const seaS = [[0, hx("#aedcee")], [0.5, hx("#73b0d6")], [1, hx("#3b77ad")]];
+      const blue = hx("#2f62d6"), red = hx("#d4402f"), bD = hx("#173a8f"), rD = hx("#8f2015"), dark = hx("#3a3328");
+      return {
+        sea: function (i, x, y, c) {
+          const s = F.sdf[i];
+          ramp(seaS, Math.pow(clamp01(-s / 210), 0.8), c);
+          mixTo(c, WHITE, Math.exp(s / 11) * 0.38);
+          mixTo(c, WHITE, (1 - sstep(0.5, 2.2, -s)) * 0.7);
+        },
+        land: function (i, x, y, c) {
+          const o = F.own[i], s = F.sdf[i];
+          ramp(hyp, Hf[i], c);
+          mul(c, 0.52 + 0.62 * Math.max(0, lam[i]));
+          if (o) {
+            const fe = Math.min(F.f[i], s);
+            mixTo(c, o === 1 ? blue : red, 0.26 + 0.3 * (1 - sstep(4, 8, fe)));
+            mixTo(c, o === 1 ? bD : rD, 1 - sstep(0.8, 1.7, F.f[i]));
+          }
+          if (F.e[i] < 0.9 && ((Math.floor(x / 3) + Math.floor(y / 3)) & 1)) mixTo(c, dark, 0.4);
+        }
+      };
+    }
+  });
+
+  // ---- 5. Low poly ----------------------------------------------------------
+  MAPS.push({
+    key: "lowpoly", name: "Low poly", desc: "A faceted world on a triangle lattice, every facet lit on its own.",
+    font: "'Avenir Next Condensed', 'Avenir Next', sans-serif", blue: "#3f63e0", red: "#e8503f", chip: "facet",
+    ink: "#23304a", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#23304a", hud: { bg: "rgba(255,255,255,.9)", ink: "#23304a", r: 6 },
+    shader: function (F) {
+      const s = 30, q3 = Math.sqrt(3), L = [-0.5, -0.62, 0.6], ll = Math.hypot(L[0], L[1], L[2]);
+      const sea = hx("#4cc0cf"), b = hx("#6c8cf2"), r = hx("#f2786c"), grass = hx("#a9cf7e"), sand = hx("#ead79c"), rock = hx("#c9b597");
+      const P = [0, 0, 0], Q = [0, 0, 0], R = [0, 0, 0];
+      const vert = function (a, bb, out) {
+        const x = s * (a + bb / 2), y = s * q3 / 2 * bb, sd = S(F, F.sdf, x, y);
+        out[0] = x; out[1] = y;
+        out[2] = sd > 0 ? 10 + 36 * Math.pow(clamp01(sd / 70), 0.7) * (0.4 + 0.9 * S(F, F.ht, x, y)) : hash2(a, bb) * 5;
+      };
+      const base = [0, 0, 0];
+      return {
+        all: function (i, x, y, c) {
+          const u = x / s - y / (s * q3), v = 2 * y / (s * q3), a = Math.floor(u), bb = Math.floor(v), fu = u - a, fv = v - bb;
+          if (fu + fv < 1) { vert(a, bb, P); vert(a + 1, bb, Q); vert(a, bb + 1, R); }
+          else { vert(a + 1, bb, P); vert(a + 1, bb + 1, Q); vert(a, bb + 1, R); }
+          const ux = Q[0] - P[0], uy = Q[1] - P[1], uz = Q[2] - P[2], wx = R[0] - P[0], wy = R[1] - P[1], wz = R[2] - P[2];
+          let nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+          if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+          const nl = Math.hypot(nx, ny, nz), lam = (nx * L[0] + ny * L[1] + nz * L[2]) / (nl * ll);
+          const cx = (P[0] + Q[0] + R[0]) / 3, cy = (P[1] + Q[1] + R[1]) / 3, sd = S(F, F.sdf, cx, cy);
+          if (sd > 0) {
+            const o = S(F, F.own, cx, cy), hh = S(F, F.ht, cx, cy);
+            set(base, o === 1 ? b : o === 2 ? r : hh > 0.62 ? rock : hh > 0.45 ? grass : sand);
+          } else set(base, sea);
+          set(c, base);
+          mul(c, (0.6 + 0.55 * lam) * (0.97 + 0.06 * hash2(cx, cy)));
+        }
+      };
+    }
+  });
+
+  // ---- 6. Hex board ---------------------------------------------------------
+  MAPS.push({
+    key: "hex", name: "Hex board", desc: "A board of bevelled hex tiles, fronts drawn on the tile edges, trees and peaks.",
+    font: "'Avenir Next', 'Helvetica Neue', sans-serif", blue: "#3466e8", red: "#e64b3c", chip: "tile", props: true,
+    ink: "#1f2a3a", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#1f2a3a", hud: { bg: "rgba(255,255,255,.92)", ink: "#1f2a3a", r: 20 },
+    shader: function (F) {
+      const R = 22, ap = R * Math.sqrt(3) / 2, q3 = Math.sqrt(3);
+      const gap = hx("#22324a"), sea = hx("#3f9cc4"), b = hx("#7fa2f2"), r = hx("#f28a7f"), plain = hx("#cfe3a0"), forest = hx("#9cc788"), hill = hx("#e2cf9a");
+      const bS = hx("#2550d8"), rS = hx("#d8382a");
+      return {
+        all: function (i, x, y, c) {
+          const q = (q3 / 3 * x - y / 3) / R, rr = (2 / 3 * y) / R;
+          let cx3 = q, cz3 = rr, cy3 = -q - rr, rx = Math.round(cx3), ry = Math.round(cy3), rz = Math.round(cz3);
+          const dx3 = Math.abs(rx - cx3), dy3 = Math.abs(ry - cy3), dz3 = Math.abs(rz - cz3);
+          if (dx3 > dy3 && dx3 > dz3) rx = -ry - rz; else if (dy3 > dz3) ry = -rx - rz; else rz = -rx - ry;
+          const cx = R * q3 * (rx + rz / 2), cy = R * 1.5 * rz, dx = x - cx, dy = y - cy;
+          const dEdge = ap - Math.max(Math.abs(dx), Math.abs(0.5 * dx + 0.866 * dy), Math.abs(-0.5 * dx + 0.866 * dy));
+          const sd = S(F, F.sdf, cx, cy), isLand = sd > 0, o = isLand ? S(F, F.own, cx, cy) : 0, hh = S(F, F.ht, cx, cy);
+          if (isLand) set(c, o === 1 ? b : o === 2 ? r : hh > 0.6 ? hill : S(F, F.g, cx, cy) > 0.55 ? forest : plain);
+          else { set(c, sea); mul(c, 0.94 + 0.1 * hash2(rx, rz)); }
+          mul(c, 1 + (cy - y) / R * (isLand ? 0.05 : 0.03));
+          const dl = Math.hypot(dx, dy) || 1, lit = (dx * -0.45 + dy * -0.89) / dl;
+          mul(c, 1 + (1 - sstep(1.4, 5, dEdge)) * (isLand ? 0.26 : 0.14) * lit);
+          if (isLand && o && dEdge < 5.5) {
+            const px = cx + dx / dl * R * 1.6, py = cy + dy / dl * R * 1.6;
+            if (!(S(F, F.sdf, px, py) > 0 && S(F, F.own, px, py) === o)) mixTo(c, o === 1 ? bS : rS, 1 - sstep(4, 5.2, dEdge));
+          }
+          const t = sstep(0.7, 1.7, dEdge);
+          c[0] = gap[0] + (c[0] - gap[0]) * t; c[1] = gap[1] + (c[1] - gap[1]) * t; c[2] = gap[2] + (c[2] - gap[2]) * t;
+        }
+      };
+    }
+  });
+
+  // ---- 7. Dot matrix --------------------------------------------------------
+  MAPS.push({
+    key: "dots", name: "Dot matrix", desc: "The world as a field of dots on deep navy, the fronts brighter, the seas faint.",
+    font: "Menlo, 'SF Mono', Consolas, monospace", blue: "#3f86ff", red: "#ff4d5e", chip: "tag",
+    ink: "#dfe6f5", labelBg: "#0d1426", mkBg: "#0d1426", mkInk: "#9fb0d0", hud: { bg: "rgba(13,20,38,.9)", ink: "#dfe6f5", r: 10, line: "rgba(120,150,210,.35)" },
+    shader: function (F) {
+      const G = 11, bg0 = hx("#0b1122"), bg1 = hx("#060913"), sea = hx("#1c2747"), coastC = hx("#2d3d6a"), n = hx("#7d879c");
+      const b = hx("#3f86ff"), r = hx("#ff4d5e"), bL = hx("#9cc2ff"), rL = hx("#ffa0aa");
+      const dot = [0, 0, 0];
+      return {
+        all: function (i, x, y, c) {
+          const dv = Math.hypot(x - W / 2, y - H / 2) / 760;
+          lerp3(bg0, bg1, clamp01(dv), c);
+          const gx = (Math.floor(x / G) + 0.5) * G, gy = (Math.floor(y / G) + 0.5) * G, d = Math.hypot(x - gx, y - gy);
+          const sd = S(F, F.sdf, gx, gy);
+          let rad, al = 1;
+          if (sd > 0) {
+            const o = S(F, F.own, gx, gy), fr = o ? S(F, F.f, gx, gy) : 99, eb = S(F, F.e, gx, gy);
+            set(dot, o === 1 ? b : o === 2 ? r : n);
+            rad = 3.9;
+            if (eb < 4) { rad = 2.6; al = 0.75; }
+            if (fr < 9) { rad = 4.6; set(dot, o === 1 ? bL : rL); }
+            if (o) add(c, dot, Math.exp(-Math.max(0, d - rad) / 3) * 0.12);
+          } else if (sd > -14) { set(dot, coastC); rad = 1.8; }
+          else { set(dot, sea); rad = 1.2; }
+          mixTo(c, dot, (1 - sstep(rad - 0.6, rad + 0.5, d)) * al);
+        }
+      };
+    }
+  });
+
+  // ---- 8. Paper layers ------------------------------------------------------
+  MAPS.push({
+    key: "paper", name: "Paper layers", desc: "Cut-paper terraces, each sheet casting a shadow on the one below.",
+    font: "'Avenir Next', 'Helvetica Neue', sans-serif", blue: "#3b63d6", red: "#de4f3e", chip: "paper",
+    ink: "#2f2a26", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#2f2a26", hud: { bg: "rgba(255,255,255,.94)", ink: "#2f2a26", r: 22 },
+    shader: function (F) {
+      const seaL = [hx("#a8def0"), hx("#88cbe4"), hx("#6db8da"), hx("#58a5cd")];
+      const pal = { 0: [hx("#cfe2b0"), hx("#f4f6e4")], 1: [hx("#a9c1f2"), hx("#e6edfd")], 2: [hx("#f4b6aa"), hx("#fde8e2")] };
+      const lv = function (s, h) { return s > 0 ? 1 + Math.floor(clamp01((s * 0.45 + h * 40) / 72) * 5.99) : -Math.floor(clamp01(-s / 96) * 3.99); };
+      const tmp = [0, 0, 0];
+      const level = function (x, y) { return lv(S(F, F.sdf, x, y), S(F, F.ht, x, y)); };
+      const finish = function (i, x, y, c, l) {
+        const up = level(x - 3.2, y - 5.2), near = level(x - 1.2, y - 2);
+        if (up > l) mul(c, near > l ? 0.74 : 0.84);
+        else if (level(x + 1.2, y + 2) < l) mul(c, 1.07);
+      };
+      return {
+        sea: function (i, x, y, c) {
+          const l = lv(F.sdf[i], F.ht[i]);
+          set(c, seaL[-l]); mul(c, 0.985 + 0.03 * F.g[i]);
+          finish(i, x, y, c, l);
+        },
+        land: function (i, x, y, c) {
+          const l = lv(F.sdf[i], F.ht[i]), o = F.own[i], p = pal[o];
+          lerp3(p[0], p[1], (l - 1) / 5, c); mul(c, 0.985 + 0.03 * F.g[i]);
+          finish(i, x, y, c, l);
+          const e = F.e[i];
+          if (e < 1) mixTo(c, WHITE, 0.75 * (1 - sstep(0.4, 1, e)));
+          else if (e < 2.4) mul(c, 0.93);
+          if (o) { set(tmp, WHITE); mixTo(c, tmp, 1 - sstep(0.6, 1.5, F.f[i])); }
+        }
+      };
+    }
+  });
+
+  // ---- 9. Soft 3D -----------------------------------------------------------
+  MAPS.push({
+    key: "soft", name: "Soft 3D", desc: "Every region a soft pillow, lit and glossy, casting its shadow on a candy sea.",
+    font: "'Arial Rounded MT Bold', 'Avenir Next', sans-serif", blue: "#4a6cff", red: "#ff5a6a", chip: "sphere",
+    ink: "#2f2850", labelBg: "#ffffff", mkBg: "#ffffff", mkInk: "#2f2850", hud: { bg: "rgba(255,255,255,.9)", ink: "#2f2850", r: 30 },
+    shader: function (F) {
+      const N = F.w * F.h, Hf = new Float32Array(N), Rr = 15;
+      for (let i = 0; i < N; i++) {
+        const q = Math.min(F.sdf[i], F.e[i] * 1.3 + 2.5);
+        Hf[i] = q <= 0 ? 0 : q >= Rr ? Rr : Math.sqrt(Rr * Rr - (Rr - q) * (Rr - q));
+      }
+      const L = [-0.4, -0.62, 0.68], ll = Math.hypot(L[0], L[1], L[2]);
+      const Hv = [L[0] / ll, L[1] / ll, L[2] / ll + 1], hl = Math.hypot(Hv[0], Hv[1], Hv[2]);
+      const b = hx("#7d9bff"), r = hx("#ff8b8b"), n = hx("#ffe3b5"), s0 = hx("#9fe0f5"), s1 = hx("#5db3e6");
+      const w = F.w, res = F.res;
+      return {
+        sea: function (i, x, y, c) {
+          const s = F.sdf[i];
+          lerp3(s0, s1, clamp01(y / H * 0.8 + clamp01(-s / 220) * 0.4), c);
+          mul(c, 1 - sstep(-14, 6, S(F, F.sdf, x - 8, y - 14)) * 0.22);
+          mul(c, 1 - 0.16 * Math.exp(s / 6));
+        },
+        land: function (i, x, y, c) {
+          const o = F.own[i], px = i % w;
+          const gx = (Hf[px < w - 1 ? i + 1 : i] - Hf[px > 0 ? i - 1 : i]) * res / 2, gy = (Hf[i + w < N ? i + w : i] - Hf[i - w >= 0 ? i - w : i]) * res / 2;
+          const nl = Math.hypot(gx, gy, 1), nx = -gx / nl, ny = -gy / nl, nz = 1 / nl;
+          const lam = Math.max(0, (nx * L[0] + ny * L[1] + nz * L[2]) / ll);
+          const sp = Math.pow(Math.max(0, (nx * Hv[0] + ny * Hv[1] + nz * Hv[2]) / hl), 40) * 0.5;
+          set(c, o === 1 ? b : o === 2 ? r : n);
+          mul(c, 0.5 + 0.62 * lam);
+          add(c, WHITE, sp);
+        }
+      };
+    }
+  });
+
+  // ---- 10. Stained glass ----------------------------------------------------
+  MAPS.push({
+    key: "glass", name: "Stained glass", desc: "Lead lines and lit panes: ruby north, sapphire south, amber and green between.",
+    font: "Didot, 'Bodoni 72', Georgia, serif", blue: "#2a5ad0", red: "#c81e36", chip: "medal",
+    ink: "#1b1a20", labelBg: "#f6efe0", mkBg: "#f6efe0", mkInk: "#1b1a20", hud: { bg: "rgba(27,26,32,.9)", ink: "#f6efe0", r: 4, line: "rgba(214,176,92,.7)" },
+    shader: function (F) {
+      const lead = hx("#1b1a20"), leadL = hx("#56535f");
+      const P = {
+        1: ["#2449b8", "#2f5fd2", "#1c3b9a", "#3a6ae0"].map(hx),
+        2: ["#b5182d", "#d12c3f", "#9c1428", "#c4223a"].map(hx),
+        0: ["#e0a526", "#3f9b5a", "#d9c27a", "#7fb36a", "#c98a2a"].map(hx),
+        s: ["#2a7f9e", "#1f6c8c", "#3592b0", "#246f8a", "#2d86a3"].map(hx)
+      };
+      return {
+        all: function (i, x, y, c) {
+          const s = F.sdf[i], idv = F.id[i], e = F.e[i];
+          const pal = s > 0 ? P[F.own[i]] : P.s, k = s > 0 ? idv : idv * 7 + 3;
+          set(c, pal[k % pal.length]);
+          const d = Math.min(e, Math.abs(s));
+          mul(c, (0.72 + 0.4 * clamp01(d / 38)) * (0.9 + 0.17 * vn(x * 0.04 + idv * 3, y * 0.35)) * (1 + 0.12 * (1 - y / H)));
+          if (s <= 0) mul(c, 0.8);
+          mul(c, 1 - 0.28 * Math.exp(-(d - 2.4) / 3) * (d > 2.4 ? 1 : 0));
+          mixTo(c, lead, 1 - sstep(1.7, 2.7, d));
+          mixTo(c, leadL, (1 - sstep(0.2, 0.8, d)) * 0.6);
+        }
+      };
+    }
+  });
+
+  /* ==========================================================================
+     PAINT — the shader over every pixel, blended across the coast.
+     ========================================================================== */
+  const BITMAP = {};
+  function bitmap(mp, res) {
+    const key = mp.key + "@" + res;
+    if (BITMAP[key]) return BITMAP[key];
+    const F = fields(res), cv = document.createElement("canvas");
+    cv.width = F.w; cv.height = F.h;
+    const ctx = cv.getContext("2d"), img = ctx.createImageData(F.w, F.h), d = img.data, sh = mp.shader(F);
+    const c = new Float32Array(3), c2 = new Float32Array(3);
+    for (let py = 0; py < F.h; py++) {
+      const y = (py + 0.5) / res;
+      for (let px = 0; px < F.w; px++) {
+        const i = py * F.w + px, x = (px + 0.5) / res;
+        if (sh.all) sh.all(i, x, y, c);
+        else {
+          const cov = F.sdf[i] * res + 0.5;
+          if (cov >= 1) sh.land(i, x, y, c);
+          else if (cov <= 0) sh.sea(i, x, y, c);
+          else {
+            sh.land(i, x, y, c); sh.sea(i, x, y, c2);
+            c[0] = c2[0] + (c[0] - c2[0]) * cov; c[1] = c2[1] + (c[1] - c2[1]) * cov; c[2] = c2[2] + (c[2] - c2[2]) * cov;
+          }
+        }
+        const o = i * 4;
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    BITMAP[key] = cv;
+    return cv;
+  }
+
+  /* ==========================================================================
+     ICONS — 24-unit paths (lucide's, ISC, plus a few drawn to the same grid).
+     ========================================================================== */
+  const SWORD = ["m11 19-6-6", "m5 21-2-2", "m8 16-4 4", "M9.5 17.5 21 6V3h-3L6.5 14.5"];
+  const ICON = {
+    cav: ["M6.5 3.5C5 6.5 4.8 10 5.6 13a6.6 6.6 0 0 0 12.8 0c.8-3 .6-6.5-.9-9.5", "M4 3.5h5M15 3.5h5", "M7.4 9h.01M16.6 9h.01M8.6 14.5h.01M15.4 14.5h.01"],
+    art: ["M12.5 16a4 4 0 1 1-8 0a4 4 0 1 1 8 0", "M10.6 12.6 19.4 5.4a1.4 1.4 0 0 1 2 .3l.4.6a1.4 1.4 0 0 1-.4 1.9L13 14", "M3 21h11"],
+    fleet: ["M3 15h18l-2.6 4.6a1 1 0 0 1-.9.4H6.5a1 1 0 0 1-.9-.4z", "M12 15V3", "M12 4.5 18 12h-6", "M12 6 7 12h5"],
+    city: ["M4 21V9h2.5V6H9v3h2V6h2v3h2V6h2.5v3H20v12z", "M10 21v-3.5a2 2 0 0 1 4 0V21"],
+    fort: ["M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z", "M12 7v10M8 11h8"],
+    port: ["M14.2 5a2.2 2.2 0 1 1-4.4 0a2.2 2.2 0 1 1 4.4 0", "M12 7.2V21", "M8 10.5h8", "M4.5 13.5a7.5 7.5 0 0 0 15 0"],
+    gold: ["M19 6.5c0 1.7-3.1 3-7 3s-7-1.3-7-3 3.1-3 7-3 7 1.3 7 3z", "M5 6.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5", "M5 11.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"],
+    grain: ["M12 22V6", "M12 9c-2.6 0-4-1.6-4-4 2.6 0 4 1.6 4 4zM12 9c2.6 0 4-1.6 4-4-2.6 0-4 1.6-4 4zM12 14c-2.6 0-4-1.6-4-4 2.6 0 4 1.6 4 4zM12 14c2.6 0 4-1.6 4-4-2.6 0-4 1.6-4 4zM12 19c-2.6 0-4-1.6-4-4 2.6 0 4 1.6 4 4zM12 19c2.6 0 4-1.6 4-4-2.6 0-4 1.6-4 4z"],
+    iron: ["m14 13-8.381 8.38a1 1 0 0 1-3.001-3L11 9.999", "M15.973 4.027A13 13 0 0 0 5.902 2.373c-1.398.342-1.092 2.158.277 2.601a19.9 19.9 0 0 1 5.822 3.024", "M16.001 11.999a19.9 19.9 0 0 1 3.024 5.824c.444 1.369 2.26 1.676 2.603.278A13 13 0 0 0 20 8.069", "M18.352 3.352a1.205 1.205 0 0 0-1.704 0l-5.296 5.296a1.205 1.205 0 0 0 0 1.704l2.296 2.296a1.205 1.205 0 0 0 1.704 0l5.296-5.296a1.205 1.205 0 0 0 0-1.704z"],
+    oil: ["M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"],
+    eye: ["M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0", "M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0"],
+    time: ["M5 22h14", "M5 2h14", "M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22", "M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"]
+  };
+  const FILLED = {
+    crown: "M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294zM5 19.5h14v2H5z",
+    star: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
+    clash: "M12 1.5 14 8l6.2-3.4L16.8 10.6 22.5 12l-5.7 1.4 3.4 6L14 16l-2 6.5L10 16l-6.2 3.4 3.4-6L1.5 12l5.7-1.4L3.8 4.6 10 8z"
+  };
+  const PATHS = {};
+  Object.keys(ICON).forEach(function (k) { PATHS[k] = ICON[k].map(function (d) { return new Path2D(d); }); });
+  PATHS.sword = SWORD.map(function (d) { return new Path2D(d); });
+  const FPATH = {};
+  Object.keys(FILLED).forEach(function (k) { FPATH[k] = new Path2D(FILLED[k]); });
+
+  function icon(ctx, k, x, y, s, col, lw) {
+    ctx.save();
+    ctx.translate(x - s / 2, y - s / 2);
+    ctx.scale(s / 24, s / 24);
+    if (FPATH[k]) { ctx.fillStyle = col; ctx.fill(FPATH[k]); ctx.restore(); return; }
+    ctx.strokeStyle = col; ctx.lineWidth = lw || 2.2; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    if (k === "inf") {
+      PATHS.sword.forEach(function (p) { ctx.stroke(p); });
+      ctx.translate(24, 0); ctx.scale(-1, 1);
+      PATHS.sword.forEach(function (p) { ctx.stroke(p); });
+    } else PATHS[k].forEach(function (p) { ctx.stroke(p); });
+    ctx.restore();
+  }
+
+  /* ==========================================================================
+     UNITS, MARKERS, PROPS — the static top layer of a map.
+     ========================================================================== */
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function hexPath(ctx, x, y, r, rot) {
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) { const a = Math.PI / 3 * k + (rot || -Math.PI / 2); ctx[k ? "lineTo" : "moveTo"](x + Math.cos(a) * r, y + Math.sin(a) * r); }
+    ctx.closePath();
+  }
+  const NEUTRAL = { porcelain: "#9a9488", ink: "#8a7a5c", neon: "#6b6890", relief: "#8a7f6a", lowpoly: "#a8946c", hex: "#8f9a7a",
+    dots: "#7d879c", paper: "#a49a7f", soft: "#c7a67c", glass: "#b08a3a" };
+  function campOf(mp, o) { return o === 1 ? mp.blue : o === 2 ? mp.red : NEUTRAL[mp.key]; }
+
+  function badge(ctx, mp, x, y, n, col) {
+    ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2);
+    ctx.fillStyle = mp.chip === "neon" || mp.chip === "tag" ? "#0d0b20" : "#ffffff"; ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke();
+    ctx.fillStyle = mp.chip === "neon" || mp.chip === "tag" ? col : mp.ink;
+    ctx.font = "800 17px " + mp.font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(n, x, y + 1);
+  }
+
+  function chip(ctx, mp, x, y, u) {
+    const o = u.o != null ? u.o : REG[u.r].o, col = campOf(mp, o), A = hx(col.length === 7 ? col : "#888888");
+    const dark = css([A[0] * 0.62, A[1] * 0.62, A[2] * 0.62]), light = css(mixHex(col, "#ffffff", 0.45));
+    ctx.save();
+    switch (mp.chip) {
+      case "porcelain":
+        ctx.shadowColor = "rgba(40,60,90,.28)"; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5;
+        ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.stroke();
+        icon(ctx, u.k, x, y, 24, col);
+        badge(ctx, mp, x + 21, y - 21, u.n, col);
+        break;
+      case "seal":
+        ctx.translate(x, y); ctx.rotate(-0.08);
+        rrect(ctx, -24, -24, 48, 48, 6); ctx.fillStyle = col; ctx.globalAlpha = 0.92; ctx.fill(); ctx.globalAlpha = 1;
+        rrect(ctx, -20, -20, 40, 40, 4); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.stroke();
+        icon(ctx, u.k, 0, 0, 26, "#fff");
+        ctx.rotate(0.08);
+        ctx.fillStyle = mp.ink; ctx.font = "italic 700 26px " + mp.font; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText(u.n, 29, 6);
+        break;
+      case "neon":
+        ctx.shadowColor = col; ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.arc(x, y, 24, 0, Math.PI * 2); ctx.fillStyle = "#0b0a1d"; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = col; ctx.stroke();
+        ctx.shadowBlur = 0;
+        icon(ctx, u.k, x, y, 24, col);
+        ctx.fillStyle = light; ctx.font = "700 22px " + mp.font; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.shadowColor = col; ctx.shadowBlur = 8; ctx.fillText(u.n, x + 31, y + 1);
+        break;
+      case "badge":
+        ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+        ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
+        icon(ctx, u.k, x, y, 24, "#fff");
+        badge(ctx, mp, x + 21, y - 21, u.n, col);
+        break;
+      case "facet": {
+        const shades = [1.18, 1.06, 0.9, 0.76, 0.86, 1.0];
+        for (let k = 0; k < 6; k++) {
+          const a0 = Math.PI / 3 * k - Math.PI / 2, a1 = a0 + Math.PI / 3;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a0) * 28, y + Math.sin(a0) * 28); ctx.lineTo(x + Math.cos(a1) * 28, y + Math.sin(a1) * 28); ctx.closePath();
+          ctx.fillStyle = css([Math.min(255, A[0] * shades[k]), Math.min(255, A[1] * shades[k]), Math.min(255, A[2] * shades[k])]); ctx.fill();
+        }
+        icon(ctx, u.k, x, y, 24, "#fff", 2.4);
+        badge(ctx, mp, x + 22, y - 22, u.n, col);
+        break;
+      }
+      case "tile":
+        hexPath(ctx, x, y + 6, 27); ctx.fillStyle = dark; ctx.fill();
+        hexPath(ctx, x, y, 27); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+        icon(ctx, u.k, x, y, 24, "#fff", 2.4);
+        badge(ctx, mp, x + 22, y - 22, u.n, col);
+        break;
+      case "tag":
+        rrect(ctx, x - 34, y - 18, 68, 36, 8); ctx.fillStyle = "rgba(9,13,28,.94)"; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = col; ctx.stroke();
+        icon(ctx, u.k, x - 15, y, 20, col);
+        ctx.fillStyle = light; ctx.font = "700 20px " + mp.font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(u.n, x + 15, y + 1);
+        break;
+      case "paper":
+        ctx.shadowColor = "rgba(60,40,20,.3)"; ctx.shadowBlur = 6; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 4;
+        ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+        ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 2; ctx.shadowBlur = 3;
+        ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
+        ctx.shadowColor = "transparent";
+        ctx.beginPath(); ctx.arc(x, y, 22, Math.PI * 1.05, Math.PI * 1.7); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.stroke();
+        icon(ctx, u.k, x, y, 24, "#fff", 2.4);
+        badge(ctx, mp, x + 21, y - 21, u.n, col);
+        break;
+      case "sphere": {
+        ctx.beginPath(); ctx.ellipse(x + 3, y + 22, 22, 7, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(30,20,60,.22)"; ctx.fill();
+        const gr = ctx.createRadialGradient(x - 8, y - 10, 3, x, y, 27);
+        gr.addColorStop(0, light); gr.addColorStop(0.45, col); gr.addColorStop(1, dark);
+        ctx.beginPath(); ctx.arc(x, y, 26, 0, Math.PI * 2); ctx.fillStyle = gr; ctx.fill();
+        icon(ctx, u.k, x, y + 1, 25, "#fff", 2.5);
+        badge(ctx, mp, x + 21, y - 21, u.n, col);
+        break;
+      }
+      case "medal": {
+        const gold = ctx.createLinearGradient(x - 27, y - 27, x + 27, y + 27);
+        gold.addColorStop(0, "#f5dc8a"); gold.addColorStop(0.5, "#b8862e"); gold.addColorStop(1, "#f0d27a");
+        ctx.shadowColor = "rgba(0,0,0,.4)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+        ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.fillStyle = gold; ctx.fill();
+        ctx.shadowColor = "transparent";
+        const gl = ctx.createRadialGradient(x - 6, y - 8, 2, x, y, 22);
+        gl.addColorStop(0, light); gl.addColorStop(1, col);
+        ctx.beginPath(); ctx.arc(x, y, 21, 0, Math.PI * 2); ctx.fillStyle = gl; ctx.fill();
+        icon(ctx, u.k, x, y, 23, "#fff", 2.3);
+        badge(ctx, mp, x + 21, y - 21, u.n, "#b8862e");
+        break;
+      }
+    }
+    ctx.restore();
+    if (u.gen) {
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 4;
+      icon(ctx, "star", x - 22, y - 22, 22, "#f7b500");
+      ctx.restore();
+    }
+  }
+
+  function marker(ctx, mp, r) {
+    if (!r.mk) return;
+    const k = { cap: "crown", city: "city", fort: "fort", port: "port", gold: "gold", grain: "grain", iron: "iron", oil: "oil" }[r.mk];
+    const x = r.x, y = r.y - 50;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.25)"; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+    ctx.beginPath(); ctx.arc(x, y, 17, 0, Math.PI * 2); ctx.fillStyle = mp.mkBg; ctx.fill();
+    ctx.restore();
+    const gold = r.mk === "cap" || r.mk === "gold";
+    icon(ctx, k, x, y, 20, gold ? "#e8a400" : mp.mkInk, 2);
+  }
+
+  function props(ctx, mp, F) {
+    // Trees and peaks on free hex tiles, kept clear of what the map says.
+    const R = 22, q3 = Math.sqrt(3), busy = REG.map(function (r) { return [r.x, r.y]; }).concat([FLEET]);
+    for (let rz = -2; rz < H / (R * 1.5) + 2; rz++) {
+      for (let rx = -Math.ceil(rz / 2) - 2; rx < W / (R * q3) + 2; rx++) {
+        const cx = R * q3 * (rx + rz / 2), cy = R * 1.5 * rz;
+        if (cx < 0 || cx > W || cy < 110 || cy > H) continue;
+        if (S(F, F.sdf, cx, cy) <= 6) continue;
+        if (busy.some(function (p) { return Math.hypot(p[0] - cx, p[1] - cy) < 62; })) continue;
+        const hh = S(F, F.ht, cx, cy), g = S(F, F.g, cx, cy), o = S(F, F.own, cx, cy);
+        if (hh > 0.6) {
+          ctx.beginPath(); ctx.moveTo(cx - 11, cy + 7); ctx.lineTo(cx - 2, cy - 9); ctx.lineTo(cx + 3, cy - 2); ctx.lineTo(cx + 6, cy - 6); ctx.lineTo(cx + 12, cy + 7); ctx.closePath();
+          ctx.fillStyle = o ? "rgba(60,50,70,.45)" : "#9a8463"; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(cx - 5, cy - 3); ctx.lineTo(cx - 2, cy - 9); ctx.lineTo(cx + 1, cy - 4); ctx.closePath(); ctx.fillStyle = "#fff"; ctx.fill();
+        } else if (g > 0.55) {
+          [[-6, 3], [5, 1], [0, -5]].forEach(function (t) {
+            ctx.beginPath(); ctx.arc(cx + t[0], cy + t[1], 5.5, 0, Math.PI * 2);
+            ctx.fillStyle = o ? "rgba(40,70,60,.4)" : "#5f9d5a"; ctx.fill();
+          });
+        }
+      }
+    }
+  }
+
+  const TOP = {};
+  function topLayer(mp, res, names) {
+    const key = mp.key + "@" + res + (names ? "n" : "");
+    if (TOP[key]) return TOP[key];
+    const F = fields(res), cv = document.createElement("canvas");
+    cv.width = F.w; cv.height = F.h;
+    const ctx = cv.getContext("2d");
+    ctx.scale(res, res);
+    if (mp.props) props(ctx, mp, F);
+    REG.forEach(function (r) { marker(ctx, mp, r); });
+    UNITS.forEach(function (u) { const p = u.at || [REG[u.r].x, REG[u.r].y]; chip(ctx, mp, p[0], p[1], u); });
+    const cr = REG[CLASH];
+    ctx.save(); ctx.shadowColor = "rgba(0,0,0,.3)"; ctx.shadowBlur = 6;
+    ctx.beginPath(); ctx.arc(cr.x + 40, cr.y + 28, 17, 0, Math.PI * 2); ctx.fillStyle = "#ff8a1f"; ctx.fill();
+    ctx.restore();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(cr.x + 40, cr.y + 28, 17, 0, Math.PI * 2); ctx.stroke();
+    icon(ctx, "clash", cr.x + 40, cr.y + 28, 24, "#fff");
+    const m = MARCH.g.pointAt(MARCH.g.tot * MARCH.at);
+    chip(ctx, mp, m[0], m[1], { o: 2, k: "inf", n: MARCH.n });
+    pill(ctx, mp, m[0] + 92, m[1] + 36, 104, campOf(mp, 2), function (cx) {
+      icon(ctx, "time", cx - 30, m[1] + 36, 16, mp.ink);
+      ctx.fillStyle = mp.ink; ctx.font = "700 18px " + mp.font; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(MARCH.eta, cx - 18, m[1] + 37);
+    });
+    if (names) {
+      REG.forEach(function (r) {
+        ctx.font = "700 19px " + mp.font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.lineWidth = 5; ctx.lineJoin = "round"; ctx.strokeStyle = mp.chip === "neon" || mp.chip === "tag" ? "rgba(0,0,0,.8)" : "rgba(255,255,255,.85)";
+        ctx.strokeText(r.name, r.x, r.y + 46); ctx.fillStyle = mp.chip === "neon" || mp.chip === "tag" ? "#fff" : mp.ink; ctx.fillText(r.name, r.x, r.y + 46);
+      });
+    }
+    TOP[key] = cv;
+    return cv;
+  }
+
+  function pill(ctx, mp, cx, cy, w, edge, inner) {
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.2)"; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+    rrect(ctx, cx - w / 2, cy - 16, w, 32, mp.hud.r > 8 ? 16 : 4); ctx.fillStyle = mp.labelBg; ctx.fill();
+    ctx.shadowColor = "transparent"; ctx.lineWidth = 2.5; ctx.strokeStyle = edge; ctx.stroke();
+    ctx.restore();
+    inner(cx);
+  }
+
+  /* ==========================================================================
+     ARROW GEOMETRY
+     ========================================================================== */
+  function at(id) { return Array.isArray(id) ? id : [REG[id].x, REG[id].y]; }
+  function geo(a, b, bend, r0, r1) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], c = [(a[0] + b[0]) / 2 - dy * bend, (a[1] + b[1]) / 2 + dx * bend];
+    const pts = [];
+    for (let i = 0; i <= 140; i++) {
+      const t = i / 140, u = 1 - t;
+      const p = [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+      if (Math.hypot(p[0] - a[0], p[1] - a[1]) < r0 || Math.hypot(p[0] - b[0], p[1] - b[1]) < r1) continue;
+      pts.push(p);
+    }
+    const L = [0];
+    for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    const tot = L[L.length - 1];
+    const idx = function (s) { let i = 1; while (i < L.length - 1 && L[i] < s) i++; return i; };
+    return {
+      tot: tot,
+      pointAt: function (s) {
+        s = Math.max(0, Math.min(tot, s));
+        const i = idx(s), a2 = pts[i - 1], b2 = pts[i], t = (s - L[i - 1]) / ((L[i] - L[i - 1]) || 1);
+        return [a2[0] + (b2[0] - a2[0]) * t, a2[1] + (b2[1] - a2[1]) * t];
+      },
+      tanAt: function (s) {
+        const a2 = this.pointAt(s - 2), b2 = this.pointAt(s + 2), l = Math.hypot(b2[0] - a2[0], b2[1] - a2[1]) || 1;
+        return [(b2[0] - a2[0]) / l, (b2[1] - a2[1]) / l];
+      }
+    };
+  }
+  ORDERS.forEach(function (o) { o.g = geo(at(o.a), at(o.b), o.bend, 34, 38); });
+  MARCH.g = geo(at(MARCH.a), at(MARCH.b), MARCH.bend, 34, 38);
+
+  // Left and right edges of a band of width w(s) between s0 and s1.
+  function edges(g, s0, s1, wf, step) {
+    const Lp = [], Rp = [];
+    for (let s = s0; ; s += step || 3) {
+      if (s > s1) s = s1;
+      const p = g.pointAt(s), t = g.tanAt(s), w = wf(s) / 2;
+      Lp.push([p[0] - t[1] * w, p[1] + t[0] * w]); Rp.push([p[0] + t[1] * w, p[1] - t[0] * w]);
+      if (s >= s1) break;
+    }
+    return { L: Lp, R: Rp };
+  }
+  // A band with a head: hw wide at its base, hl long, barbs pulled back by back.
+  function arrowShape(ctx, g, wf, hw, hl, back, dx, dy) {
+    dx = dx || 0; dy = dy || 0;
+    const s1 = g.tot - hl, E = edges(g, 0, s1, wf), B = g.pointAt(s1), t = g.tanAt(s1), tip = g.pointAt(g.tot);
+    ctx.beginPath();
+    E.L.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0] + dx, p[1] + dy); });
+    ctx.lineTo(B[0] - t[1] * hw / 2 - t[0] * (back || 0) + dx, B[1] + t[0] * hw / 2 - t[1] * (back || 0) + dy);
+    ctx.lineTo(tip[0] + dx, tip[1] + dy);
+    ctx.lineTo(B[0] + t[1] * hw / 2 - t[0] * (back || 0) + dx, B[1] - t[0] * hw / 2 - t[1] * (back || 0) + dy);
+    for (let i = E.R.length - 1; i >= 0; i--) ctx.lineTo(E.R[i][0] + dx, E.R[i][1] + dy);
+    ctx.closePath();
+  }
+  function polyline(ctx, g, s0, s1, off, step) {
+    ctx.beginPath();
+    for (let s = s0, k = 0; ; s += step || 3, k++) {
+      if (s > s1) s = s1;
+      const p = g.pointAt(s), t = g.tanAt(s);
+      ctx[k ? "lineTo" : "moveTo"](p[0] - t[1] * (off || 0), p[1] + t[0] * (off || 0));
+      if (s >= s1) break;
+    }
+  }
+  function headOnly(ctx, g, hw, hl, fill, edge) {
+    const s1 = g.tot - hl, B = g.pointAt(s1), t = g.tanAt(s1), tip = g.pointAt(g.tot);
+    ctx.beginPath();
+    ctx.moveTo(B[0] - t[1] * hw / 2, B[1] + t[0] * hw / 2); ctx.lineTo(tip[0], tip[1]); ctx.lineTo(B[0] + t[1] * hw / 2, B[1] - t[0] * hw / 2); ctx.closePath();
+    if (edge) { ctx.lineWidth = 3.5; ctx.lineJoin = "round"; ctx.strokeStyle = edge; ctx.stroke(); }
+    ctx.fillStyle = fill; ctx.fill();
+  }
+
+  /* ==========================================================================
+     THE TEN ARROWS — ctx in design units, t in seconds, C the camp colours.
+     ========================================================================== */
+  const ARROWS = [
+    {
+      key: "brush", name: "Brush", desc: "A calligraphic stroke swelling then tapering into a swept head.",
+      draw: function (ctx, g, C, t, th) {
+        const s1 = g.tot - 32 * th;
+        const wf = function (s) { const u = Math.min(1, s / s1); return th * (4 + 17 * Math.pow(Math.sin(u * Math.PI * 0.62), 0.9)) + Math.sin(s * 0.09) * 1.1; };
+        ctx.save(); ctx.translate(2, 4); arrowShape(ctx, g, wf, 50 * th, 32 * th, 9 * th); ctx.fillStyle = "rgba(0,0,0,.16)"; ctx.fill(); ctx.restore();
+        arrowShape(ctx, g, wf, 50 * th, 32 * th, 9 * th);
+        ctx.fillStyle = C.base; ctx.fill(); ctx.lineWidth = 1.6; ctx.strokeStyle = C.dark; ctx.stroke();
+        polyline(ctx, g, 10, s1 * 0.85, -2.5 * th); ctx.lineWidth = 2; ctx.strokeStyle = C.light; ctx.globalAlpha *= 0.6; ctx.stroke();
+      }
+    },
+    {
+      key: "ribbon", name: "Ribbon 3D", desc: "A thick band lying on the map, its side showing, light chevrons riding it.",
+      draw: function (ctx, g, C, t, th) {
+        const wf = function () { return 22 * th; };
+        arrowShape(ctx, g, wf, 56 * th, 36 * th, 0, 0, 9 * th); ctx.fillStyle = C.dark; ctx.fill();
+        arrowShape(ctx, g, wf, 56 * th, 36 * th, 0);
+        const a = g.pointAt(0), b = g.pointAt(g.tot), gr = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+        gr.addColorStop(0, C.light); gr.addColorStop(1, C.base);
+        ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = C.light; ctx.stroke();
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 3.5 * th; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        for (let s = (t * 46) % 32; s < g.tot - 40 * th; s += 32) {
+          const p = g.pointAt(s), tg = g.tanAt(s), k = 7 * th;
+          ctx.beginPath();
+          ctx.moveTo(p[0] - tg[0] * k - tg[1] * k, p[1] - tg[1] * k + tg[0] * k); ctx.lineTo(p[0], p[1]); ctx.lineTo(p[0] - tg[0] * k + tg[1] * k, p[1] - tg[1] * k - tg[0] * k);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    },
+    {
+      key: "shimmer", name: "Shimmer", desc: "A solid tapered arrow with a white edge and light sweeping along it.",
+      draw: function (ctx, g, C, t, th) {
+        const wf = function (s) { return th * (10 + 12 * s / g.tot); };
+        ctx.save(); ctx.translate(0, 5); arrowShape(ctx, g, wf, 52 * th, 34 * th, 4); ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fill(); ctx.restore();
+        arrowShape(ctx, g, wf, 52 * th, 34 * th, 4);
+        ctx.lineWidth = 6; ctx.lineJoin = "round"; ctx.strokeStyle = "#fff"; ctx.stroke();
+        ctx.fillStyle = C.base; ctx.fill();
+        const p = ((t * 0.55) % 1.6) - 0.3, a = g.pointAt(0), b = g.pointAt(g.tot), gr = ctx.createLinearGradient(a[0], a[1], b[0], b[1]);
+        const st = function (o, c) { if (o >= 0 && o <= 1) gr.addColorStop(o, c); };
+        gr.addColorStop(0, "rgba(255,255,255,0)");
+        st(p - 0.14, "rgba(255,255,255,0)"); st(p, "rgba(255,255,255,.7)"); st(p + 0.14, "rgba(255,255,255,0)");
+        gr.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.save(); ctx.clip(); ctx.fillStyle = gr; ctx.fillRect(-50, -50, W + 100, H + 100); ctx.restore();
+      }
+    },
+    {
+      key: "march", name: "March", desc: "Bold dashes marching toward a solid head, outlined in white.",
+      draw: function (ctx, g, C, t, th) {
+        const s1 = g.tot - 30 * th;
+        polyline(ctx, g, 0, s1);
+        ctx.lineCap = "round"; ctx.setLineDash([22, 14]); ctx.lineDashOffset = -t * 52;
+        ctx.lineWidth = 19 * th; ctx.strokeStyle = "#fff"; ctx.stroke();
+        ctx.lineWidth = 12 * th; ctx.strokeStyle = C.base; ctx.stroke();
+        ctx.setLineDash([]);
+        headOnly(ctx, g, 46 * th, 34 * th, C.base, "#fff");
+      }
+    },
+    {
+      key: "chevrons", name: "Chevrons", desc: "A stream of chevrons growing toward the target, flowing.",
+      draw: function (ctx, g, C, t, th) {
+        polyline(ctx, g, 0, g.tot - 20); ctx.lineCap = "round"; ctx.lineWidth = 20 * th; ctx.strokeStyle = C.base; ctx.globalAlpha *= 0.18; ctx.stroke(); ctx.globalAlpha /= 0.18;
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        for (let s = (t * 40) % 28; s < g.tot - 34 * th; s += 28) {
+          const k = (0.6 + 0.55 * s / g.tot) * th, p = g.pointAt(s), tg = g.tanAt(s);
+          ctx.beginPath();
+          ctx.moveTo(p[0] - tg[0] * 8 * k - tg[1] * 11 * k, p[1] - tg[1] * 8 * k + tg[0] * 11 * k); ctx.lineTo(p[0] + tg[0] * 6 * k, p[1] + tg[1] * 6 * k);
+          ctx.lineTo(p[0] - tg[0] * 8 * k + tg[1] * 11 * k, p[1] - tg[1] * 8 * k - tg[0] * 11 * k);
+          ctx.lineWidth = 11 * k; ctx.strokeStyle = "#fff"; ctx.stroke();
+          ctx.lineWidth = 6.5 * k; ctx.strokeStyle = C.base; ctx.stroke();
+        }
+        headOnly(ctx, g, 46 * th, 32 * th, C.base, "#fff");
+      }
+    },
+    {
+      key: "particles", name: "Particles", desc: "A comet of particles streaming along a faint track, tightening at the head.",
+      draw: function (ctx, g, C, t, th) {
+        polyline(ctx, g, 0, g.tot - 20); ctx.lineCap = "round"; ctx.lineWidth = 16 * th; ctx.strokeStyle = C.base; ctx.globalAlpha *= 0.2; ctx.stroke(); ctx.globalAlpha /= 0.2;
+        const n = Math.round(g.tot / 8);
+        for (let i = 0; i < n; i++) {
+          const p = (i / n + t * 0.3) % 1, s = p * (g.tot - 24), q = g.pointAt(s), tg = g.tanAt(s), j = Math.sin(i * 91.7) * 8 * (1 - p) * th;
+          ctx.beginPath(); ctx.arc(q[0] - tg[1] * j, q[1] + tg[0] * j, (1.8 + 3.4 * p) * th, 0, Math.PI * 2);
+          ctx.fillStyle = i & 1 ? C.base : C.light; ctx.globalAlpha *= 0.25 + 0.75 * p; ctx.fill(); ctx.globalAlpha /= 0.25 + 0.75 * p;
+        }
+        headOnly(ctx, g, 40 * th, 30 * th, C.base, "#fff");
+      }
+    },
+    {
+      key: "rail", name: "Rail", desc: "A supply line: rails, sleepers and a convoy running to the front.",
+      draw: function (ctx, g, C, t, th) {
+        const s1 = g.tot - 30 * th;
+        ctx.lineCap = "round";
+        for (let s = 4; s < s1; s += 11) {
+          const p = g.pointAt(s), tg = g.tanAt(s), k = 10 * th;
+          ctx.beginPath(); ctx.moveTo(p[0] - tg[1] * k, p[1] + tg[0] * k); ctx.lineTo(p[0] + tg[1] * k, p[1] - tg[0] * k);
+          ctx.lineWidth = 3.5; ctx.strokeStyle = C.light; ctx.stroke();
+        }
+        [-6, 6].forEach(function (off) { polyline(ctx, g, 0, s1, off * th); ctx.lineWidth = 2.6; ctx.strokeStyle = C.dark; ctx.stroke(); });
+        for (let k = 0; k < 3; k++) {
+          const s = (t * 60 + k * 22) % Math.max(1, s1 - 20) + 8, p = g.pointAt(s), tg = g.tanAt(s), a = Math.atan2(tg[1], tg[0]);
+          ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(a);
+          rrect(ctx, -8, -6 * th, 16, 12 * th, 4); ctx.fillStyle = k ? C.base : "#fff"; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = C.dark; ctx.stroke();
+          ctx.restore();
+        }
+        headOnly(ctx, g, 42 * th, 30 * th, C.base, "#fff");
+      }
+    },
+    {
+      key: "front", name: "Front", desc: "An operational arrow: a wide hatched band, a swallow tail, a big head.",
+      draw: function (ctx, g, C, t, th) {
+        const w = 30 * th, hw = 66 * th, hl = 42 * th, s1 = g.tot - hl;
+        const shape = function (dx, dy) {
+          const E = edges(g, 0, s1, function () { return w; }), B = g.pointAt(s1), tg = g.tanAt(s1), tip = g.pointAt(g.tot), a = g.pointAt(0), ta = g.tanAt(0);
+          ctx.beginPath();
+          ctx.moveTo(a[0] + ta[0] * 14 * th + dx, a[1] + ta[1] * 14 * th + dy);
+          E.L.forEach(function (p) { ctx.lineTo(p[0] + dx, p[1] + dy); });
+          ctx.lineTo(B[0] - tg[1] * hw / 2 + dx, B[1] + tg[0] * hw / 2 + dy); ctx.lineTo(tip[0] + dx, tip[1] + dy);
+          ctx.lineTo(B[0] + tg[1] * hw / 2 + dx, B[1] - tg[0] * hw / 2 + dy);
+          for (let i = E.R.length - 1; i >= 0; i--) ctx.lineTo(E.R[i][0] + dx, E.R[i][1] + dy);
+          ctx.closePath();
+        };
+        shape(2, 6); ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fill();
+        shape(0, 0); ctx.fillStyle = C.base; ctx.fill();
+        ctx.save(); ctx.clip();
+        ctx.strokeStyle = "rgba(255,255,255,.28)"; ctx.lineWidth = 5;
+        const off = (t * 12) % 14;
+        for (let k = -H; k < W + H; k += 14) { ctx.beginPath(); ctx.moveTo(k + off, 0); ctx.lineTo(k + off - H, H); ctx.stroke(); }
+        ctx.restore();
+        shape(0, 0); ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.strokeStyle = C.dark; ctx.stroke();
+      }
+    },
+    {
+      key: "tube", name: "Tube", desc: "A glossy cylinder lit from above with a shaded cone for a head, rings sliding.",
+      draw: function (ctx, g, C, t, th) {
+        const s1 = g.tot - 32 * th, D = hx(C.darkHex), Lc = hx(C.lightHex);
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.save(); ctx.translate(2, 6); polyline(ctx, g, 0, s1 + 4); ctx.lineWidth = 20 * th; ctx.strokeStyle = "rgba(0,0,0,.16)"; ctx.stroke(); ctx.restore();
+        for (let k = 0; k <= 7; k++) {
+          const f = k / 7;
+          ctx.save(); ctx.translate(0, -k * 0.6 * th);
+          polyline(ctx, g, 0, s1 + 4); ctx.lineWidth = (20 - k * 2.3) * th;
+          ctx.strokeStyle = css([D[0] + (Lc[0] - D[0]) * f, D[1] + (Lc[1] - D[1]) * f, D[2] + (Lc[2] - D[2]) * f]); ctx.stroke();
+          ctx.restore();
+        }
+        polyline(ctx, g, 0, s1); ctx.setLineDash([3, 24]); ctx.lineDashOffset = -t * 40; ctx.lineWidth = 18 * th; ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.stroke(); ctx.setLineDash([]);
+        const B = g.pointAt(s1), tg = g.tanAt(s1), hw = 46 * th, gr = ctx.createLinearGradient(B[0] - tg[1] * hw / 2, B[1] + tg[0] * hw / 2, B[0] + tg[1] * hw / 2, B[1] - tg[0] * hw / 2);
+        gr.addColorStop(0, C.light); gr.addColorStop(0.35, C.base); gr.addColorStop(1, C.dark);
+        headOnly(ctx, g, hw, 32 * th, gr);
+      }
+    },
+    {
+      key: "tracks", name: "Tracks", desc: "Footprints walking to the target, the newest crisp, the oldest fading.",
+      draw: function (ctx, g, C, t, th) {
+        const s1 = g.tot - 30 * th, ph = (t * 0.45) % 1.35;
+        let side = 1;
+        for (let s = 8; s < s1; s += 14, side = -side) {
+          const q = s / g.tot, a = q <= ph ? Math.max(0.35, 1 - (ph - q) * 1.1) : 0.16;
+          const p = g.pointAt(s), tg = g.tanAt(s), off = side * 6 * th, x = p[0] - tg[1] * off, y = p[1] + tg[0] * off, ang = Math.atan2(tg[1], tg[0]);
+          ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.globalAlpha *= a;
+          ctx.beginPath(); ctx.ellipse(1.5, 0, 5 * th, 3.3 * th, 0, 0, Math.PI * 2); ctx.fillStyle = C.base; ctx.fill();
+          ctx.beginPath(); ctx.ellipse(-5 * th, 0, 2.4 * th, 2.6 * th, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+        }
+        headOnly(ctx, g, 36 * th, 28 * th, C.base, "#fff");
+      }
+    }
+  ];
+
+  function campColors(mp, o) {
+    const base = o === 1 ? mp.blue : mp.red, A = hx(base);
+    const dk = [A[0] * 0.6, A[1] * 0.6, A[2] * 0.6], lt = mixHex(base, "#ffffff", 0.45);
+    const hex2 = function (a) { return "#" + a.map(function (v) { return ("0" + Math.round(v).toString(16)).slice(-2); }).join(""); };
+    return { base: base, dark: css(dk), light: css(lt), darkHex: hex2(dk), lightHex: hex2(lt) };
+  }
+
+  /* ==========================================================================
+     ONE FRAME
+     ========================================================================== */
+  function drawFrame(f, t) {
+    const ctx = f.ctx, res = f.res, vb = f.vb, mp = f.mp, ar = f.ar;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(f.bmp, vb[0] * res, vb[1] * res, vb[2] * res, vb[3] * res, 0, 0, f.cv.width, f.cv.height);
+    ctx.setTransform(res, 0, 0, res, -vb[0] * res, -vb[1] * res);
+
+    // the column on its way, under everything
+    ctx.save();
+    polyline(ctx, MARCH.g, 0, MARCH.g.tot - 24); ctx.setLineDash([0.1, 15]); ctx.lineDashOffset = -t * 18; ctx.lineCap = "round";
+    ctx.lineWidth = 8; ctx.strokeStyle = campOf(mp, 2); ctx.globalAlpha = 0.7; ctx.stroke(); ctx.setLineDash([]);
+    headOnly(ctx, MARCH.g, 26, 22, campOf(mp, 2));
+    ctx.restore();
+
+    ORDERS.forEach(function (o) {
+      ctx.save();
+      if (o.ghost) ctx.globalAlpha = 0.5;
+      ar.draw(ctx, o.g, campColors(mp, o.o), o.ghost ? t * 0.7 : t, o.thin ? 0.7 : 1);
+      ctx.restore();
+    });
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(f.top, vb[0] * res, vb[1] * res, vb[2] * res, vb[3] * res, 0, 0, f.cv.width, f.cv.height);
+    ctx.setTransform(res, 0, 0, res, -vb[0] * res, -vb[1] * res);
+
+    ORDERS.forEach(function (o) {
+      const m = o.g.pointAt(o.g.tot * 0.45), w = o.ghost ? 62 : 40, col = campOf(mp, o.o);
+      pill(ctx, mp, m[0], m[1], w, col, function (cx) {
+        ctx.fillStyle = mp.ink; ctx.font = "800 20px " + mp.font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        if (o.ghost) { icon(ctx, "eye", cx - 13, m[1], 18, mp.ink); ctx.fillText(o.n, cx + 13, m[1] + 1); }
+        else ctx.fillText(o.n, cx, m[1] + 1);
+      });
+    });
+
+    if (f.hud) hud(ctx, mp);
+  }
+
+  function hud(ctx, mp) {
+    const h = mp.hud;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,.22)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    rrect(ctx, 16, 16, 688, 86, h.r); ctx.fillStyle = h.bg; ctx.fill();
+    ctx.restore();
+    if (h.line) { rrect(ctx, 16, 16, 688, 86, h.r); ctx.lineWidth = 1.5; ctx.strokeStyle = h.line; ctx.stroke(); }
+    ctx.fillStyle = h.ink; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.font = "800 30px " + mp.font; ctx.fillText("Tick 7", 40, 54);
+    ctx.font = "500 20px " + mp.font; ctx.globalAlpha = 0.72; ctx.fillText("next in 2h 14m", 40, 84); ctx.globalAlpha = 1;
+    for (let i = 0; i < 5; i++) {
+      rrect(ctx, 268 + i * 34, 38, 26, 20, 6);
+      ctx.fillStyle = i < 3 ? "#f5b301" : h.ink; ctx.globalAlpha = i < 3 ? 1 : 0.16; ctx.fill(); ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = h.ink; ctx.globalAlpha = 0.72; ctx.font = "500 18px " + mp.font; ctx.fillText("3 couriers", 268, 86); ctx.globalAlpha = 1;
+    [[1, 560], [2, 640]].forEach(function (s) {
+      rrect(ctx, s[1] - 30, 37, 60, 44, h.r > 8 ? 14 : 3); ctx.fillStyle = campOf(mp, s[0]); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "800 24px " + mp.font; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("7", s[1], 60);
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    });
+  }
+
+  /* ==========================================================================
+     PAGE
+     ========================================================================== */
+  const state = { view: "maps", map: "porcelain", arrow: "shimmer", anim: true, names: false, hud: true };
+  try {
+    const hsh = new URLSearchParams(location.hash.slice(1));
+    ["view", "map", "arrow"].forEach(function (k) { if (hsh.get(k)) state[k] = hsh.get(k); });
+  } catch (err) { /* a bad hash keeps the defaults */ }
+
+  const stage = document.getElementById("stage");
+  let frames = [], t0 = performance.now(), frozen = 0;
+
+  function fillList(id, items, key) {
+    const list = document.getElementById(id);
+    items.forEach(function (it) {
+      const b = document.createElement("button");
+      b.dataset.k = it.key;
+      b.innerHTML = "<b>" + it.name + "</b><span>" + it.desc + "</span>";
+      b.addEventListener("click", function () { state[key] = it.key; render(); });
+      list.appendChild(b);
+    });
+  }
+  fillList("maps", MAPS, "map");
+  fillList("arrows", ARROWS, "arrow");
+  document.querySelectorAll(".seg button").forEach(function (b) { b.addEventListener("click", function () { state.view = b.dataset.v; render(); }); });
+  ["anim", "names", "hud"].forEach(function (k) {
+    const el = document.getElementById("t-" + k);
+    el.checked = state[k];
+    el.addEventListener("change", function () { state[k] = el.checked; render(); });
+  });
+
+  const byKey = function (list, k) { return list.find(function (x) { return x.key === k; }) || list[0]; };
+
+  function render() {
+    location.replace("#view=" + state.view + "&map=" + state.map + "&arrow=" + state.arrow);
+    document.querySelectorAll(".seg button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === state.view); });
+    document.querySelectorAll("#maps button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === state.map); });
+    document.querySelectorAll("#arrows button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === state.arrow); });
+    const res = state.view === "maps" ? 1 : 2;
+    stage.className = state.view;
+    if (!FIELDS[res]) {
+      stage.innerHTML = '<div class="busy">Computing the world at ' + res + 'x…</div>';
+      frames = [];
+      setTimeout(function () { fields(res); render(); }, 30);
+      return;
+    }
+    let list;
+    if (state.view === "one") list = [{ mp: byKey(MAPS, state.map), ar: byKey(ARROWS, state.arrow) }];
+    else if (state.view === "maps") list = MAPS.map(function (mp) { return { mp: mp, ar: byKey(ARROWS, state.arrow) }; });
+    else list = ARROWS.map(function (ar) { return { mp: byKey(MAPS, state.map), ar: ar }; });
+    stage.innerHTML = "";
+    frames = list.map(function (it) {
+      const vb = state.view === "arrows" ? ZOOM : [0, 0, W, H];
+      const fig = document.createElement("figure"), cv = document.createElement("canvas");
+      fig.className = "fr";
+      cv.width = vb[2] * res; cv.height = vb[3] * res;
+      const cap = document.createElement("figcaption");
+      cap.innerHTML = state.view === "arrows" ? "<b>" + it.ar.name + "</b> · " + it.ar.desc
+        : "<b>" + it.mp.name + "</b> · " + it.mp.desc + (state.view === "one" ? " — arrow: " + it.ar.name : "");
+      fig.appendChild(cv); fig.appendChild(cap); stage.appendChild(fig);
+      if (state.view !== "one") fig.addEventListener("click", function () { state.map = it.mp.key; state.arrow = it.ar.key; state.view = "one"; render(); });
+      return { cv: cv, ctx: cv.getContext("2d"), res: res, vb: vb, mp: it.mp, ar: it.ar, hud: state.hud && state.view !== "arrows",
+        bmp: bitmap(it.mp, res), top: topLayer(it.mp, res, state.names) };
+    });
+    tick();
+  }
+
+  function tick() {
+    const t = state.anim ? (performance.now() - t0) / 1000 : frozen;
+    if (state.anim) frozen = t;
+    frames.forEach(function (f) { drawFrame(f, t); });
+  }
+  (function loop() { if (state.anim) tick(); requestAnimationFrame(loop); })();
+  render();
+})();
+</script>
+</body>
+</html>

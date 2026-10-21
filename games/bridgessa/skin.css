@@ -35,7 +35,7 @@
   #hud-left.bs-hint .hud-pill, #hud-right.bs-hint .hud-pill { animation:bs-hint 1.4s ease-in-out; }
   @keyframes bs-hint { 50% { box-shadow:0 0 0 2px rgba(242,193,78,.3), 0 0 14px rgba(242,193,78,.3); } }
   @media (prefers-reduced-motion: reduce) { #hud-left.bs-hint .hud-pill, #hud-right.bs-hint .hud-pill { animation:none; } }
-  /* the Help card's example of it (Game.helpAura) wears the same sun */
+  /* the guide's example of it (Game.helpAura) wears the same sun */
   :root { --help-aura:rgba(242,193,78,.75); --help-aura-soft:rgba(242,193,78,.25); }
 
   /* ---- intro: one sentence, and a stage that plays one trick -------------
@@ -231,3 +231,12 @@
      codex's 300 x 420 slot (favourCard, game.js) */
   .bs-pbox { position:relative; flex:none; }
   .bs-pbox .bs-perk { position:absolute; top:0; transform:scale(var(--sk, 1)); transform-origin:0 0; cursor:default; }
+
+  /* ---- the contract being played, under its page of the guide ------------
+     (game.js, contractNow: guide.js draws it as the page's node) */
+  .bs-live { display:flex; flex-direction:column; gap:10px; width:100%; box-sizing:border-box;
+    padding:16px 22px; border-radius:16px; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.12); }
+  .bs-live p { margin:0; }
+  /* three favours side by side, as the pick deals them (game.js, favoursPic) */
+  .bs-gfavours { display:flex; justify-content:center; gap:14px; }

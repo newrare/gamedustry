@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — conquest paper map</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   CONQUEST PAPER MAP — the world of prototype/conquest-ticks.html built as a
+   cut-paper diorama, the direction the marketing round picked (layered
+   paper, origami pieces), and the CAMERA that shows it.
+
+   The map is baked once into a flat texture, as if photographed from straight
+   above: every land sheet sits on the one under it and shows its thickness
+   on its near edge and its shadow beyond it, the sea is three sheets cut
+   along waves, the beaches are a cream sheet under the land, and every sheet
+   is a mosaic of torn shards a shade apart. The camp orders are folded paper
+   strips laid on it.
+
+   The OCEAN fills the screen whatever the camera does: the texture is baked
+   with a margin around the frame, and past it a tile of deep sea repeats
+   forever. The tile and the texture's open sea come out of the same
+   functions — wave strips and shards made periodic over the tile — so the
+   two meet without a seam. The sea's colour is its own choice, because a
+   blue ocean under a blue camp reads as one sheet: the colourways move it
+   away from the camp's hue (teal, lagoon) or its value (night navy).
+
+   The camera projects that ground onto a tilted plane, one screen row at a
+   time (a flat plane under perspective is a scale per row), and stands the
+   pieces upright on it, sorted far to near and scaled by depth. The pieces
+   are the three asset sheets of the prompts, cut into lab/conquest-paper/
+   (temporary material); a piece whose file is missing falls back to a
+   code-drawn placeholder.
+
+   Views: One (the camera of the panel), Compare (the presets side by side).
+   Drag the frame to pan. Nothing here ships.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 290px;
+  height:100vh; overflow:auto;
+  padding:22px 18px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel h2 { margin:18px 0 8px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#8b8ba7; }
+#panel p.hint { margin:8px 0 16px; font-weight:500; font-size:12px; color:#8b8ba7; }
+.seg { display:flex; gap:6px; flex-wrap:wrap; }
+.seg button {
+  flex:1 1 40%; padding:7px 10px;
+  background:#1b1b2a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px;
+  font:inherit; cursor:pointer;
+}
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.seg button .sw { display:inline-flex; vertical-align:middle; margin-right:6px; border-radius:4px; overflow:hidden; box-shadow:0 0 0 1px rgba(255,255,255,.2); }
+.seg button .sw i { display:block; width:8px; height:16px; }
+.row { margin-bottom:12px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.tog { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:#c9c9e0; cursor:pointer; }
+.tog input { accent-color:#7ea6ff; }
+
+#stage {
+  flex:1; height:100vh; overflow:auto;
+  padding:24px;
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#stage .busy { color:#8b8ba7; font-size:15px; }
+.fr { display:flex; flex-direction:column; gap:8px; height:calc(100vh - 48px); }
+.fr canvas { display:block; height:calc(100% - 30px); width:auto; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); cursor:grab; }
+.fr figcaption { font-size:12px; color:#9c9cba; font-weight:500; }
+.fr figcaption b { color:#e8e6f5; font-size:13px; }
+#stage.compare .fr { height:auto; width:calc((100% - 64px) / 5); cursor:pointer; }
+#stage.compare .fr canvas { width:100%; height:auto; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Conquest paper</h1>
+  <p class="hint">A cut-paper world under a camera you can tilt, the ocean to the edges, origami pieces standing on it.</p>
+
+  <div class="seg" id="views">
+    <button data-v="one">One</button>
+    <button data-v="compare">Compare</button>
+  </div>
+
+  <h2>Camera</h2>
+  <div class="seg" id="presets"></div>
+  <div style="height:12px"></div>
+  <div class="row"><label for="pitch">tilt <b id="pitch-v"></b></label><input id="pitch" type="range" min="0" max="68" step="1"></div>
+  <div class="row"><label for="persp">perspective <b id="persp-v"></b></label><input id="persp" type="range" min="0" max="100" step="1"></div>
+  <div class="row"><label for="zoom">zoom <b id="zoom-v"></b></label><input id="zoom" type="range" min="70" max="260" step="1"></div>
+  <div class="row"><label for="panY">frame height <b id="panY-v"></b></label><input id="panY" type="range" min="-700" max="700" step="5"></div>
+  <div class="row"><label for="piece">piece size <b id="piece-v"></b></label><input id="piece" type="range" min="50" max="200" step="5"></div>
+
+  <h2>Ocean</h2>
+  <div class="seg" id="seas"></div>
+
+  <h2>Show</h2>
+  <label class="tog"><input type="checkbox" id="t-pieces" checked> Pieces</label>
+  <label class="tog"><input type="checkbox" id="t-sprites" checked> Paper assets (the sheets)</label>
+  <label class="tog"><input type="checkbox" id="t-arrows" checked> Paper arrows</label>
+  <label class="tog"><input type="checkbox" id="t-anim" checked> Animate the crane</label>
+</div>
+
+<div id="stage"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const W = 720, H = 1280, TR = 1.5;           // design frame, texture resolution
+  const X0 = -160, Y0 = -300, DW = 1040, DH = 1700;   // the baked ground: the frame plus a margin of open sea
+  const T = 416;                                // the deep-sea tile, every periodic pattern divides it
+  const MCX = 360, MCY = 690;                   // the map's centre, what the camera turns around
+
+  /* ==========================================================================
+     THE WORLD — the scene of the other conquest pages.
+     ========================================================================== */
+  const BLOBS = [
+    [150, 260, 115], [305, 225, 125], [470, 245, 120], [610, 310, 105], [225, 400, 115], [420, 405, 120],
+    [580, 455, 95], [300, 525, 85], [60, 520, 30],
+    [110, 665, 62], [265, 690, 60], [430, 640, 72], [605, 705, 72], [515, 755, 40],
+    [180, 905, 105], [370, 880, 115], [565, 920, 105], [255, 1045, 110], [445, 1060, 112], [610, 1065, 72],
+    [350, 1185, 82], [175, 1160, 58],
+    [675, 560, 32], [650, 1210, 30], [70, 800, 24]
+  ];
+  const REG = [
+    [150, 255, "r", null], [310, 225, "r", "cap"], [470, 245, "r", null], [610, 315, "r", "city"],
+    [215, 405, "r", null], [420, 400, "r", "fort"], [580, 455, "r", "iron"], [290, 530, "r", null],
+    [110, 665, "n", "grain"], [265, 690, "n", "city"], [430, 645, "n", "glass"], [605, 705, "n", "gold"],
+    [180, 905, "b", null], [370, 885, "b", "fort"], [565, 920, "b", "city"], [255, 1050, "n", "grain"],
+    [445, 1065, "b", "cap"], [610, 1065, "b", null], [350, 1185, "b", null], [675, 560, "n", "oil"]
+  ].map(function (r, i) { return { i: i, x: r[0], y: r[1], o: r[2] === "b" ? 1 : r[2] === "r" ? 2 : 0, mk: r[3] }; });
+
+  const UNITS = [
+    { r: 0, k: "inf", n: 3 }, { r: 1, k: "art", n: 2 }, { r: 2, k: "inf", n: 2 }, { r: 3, k: "inf", n: 2 },
+    { r: 4, k: "inf", n: 4 }, { r: 5, k: "inf", n: 6 }, { r: 6, k: "cav", n: 5 }, { r: 7, k: "inf", n: 3 },
+    { r: 12, k: "inf", n: 5 }, { r: 13, k: "inf", n: 6, gen: true }, { r: 14, k: "cav", n: 4 }, { r: 16, k: "art", n: 3 },
+    { r: 17, k: "inf", n: 2 }, { r: 18, k: "inf", n: 1 }
+  ];
+  // What the camps hold beyond their garrisons: camps, watchtowers, a supply wagon, ships, balloons, the courier.
+  const EXTRAS = [
+    [228, 968, "tent", 1], [160, 330, "tent", 2],
+    [298, 822, "watchtower", 1], [520, 520, "watchtower", 2],
+    [420, 968, "wagon", 1],
+    [55, 1000, "warship", 1], [672, 850, "warship", 2], [630, 618, "rowboat", 2],
+    [520, 800, "balloon", 1, { h: 80 }], [240, 470, "balloon", 2, { h: 90 }],
+    [0, 0, "crane", 0, { fly: true }]
+  ];
+  const ORDERS = [
+    { a: 13, b: 10, o: 1, bend: -0.12 }, { a: 14, b: 11, o: 1, bend: 0.15 },
+    { a: 5, b: 10, o: 2, bend: 0.12 }, { a: 4, b: 8, o: 2, bend: 0.2 }
+  ];
+
+  const CAMP = {
+    0: { base: "#b9a77d", light: "#d8c79c", dark: "#8a7a55" },
+    1: { base: "#2f63c4", light: "#5b8fe0", dark: "#1d3f8a" },
+    2: { base: "#d9412f", light: "#ee6a4a", dark: "#a52a1f" }
+  };
+
+  // The ocean's colourways: deep, mid, shallow sheets. "Blue" is the one that sank into the blue camp.
+  const SEAS = [
+    { key: "teal", name: "Teal", c: ["#156c7a", "#1f8a96", "#38a6ad"] },
+    { key: "lagoon", name: "Lagoon", c: ["#11705f", "#1b8d78", "#36aa90"] },
+    { key: "navy", name: "Night navy", c: ["#14284a", "#1e3a64", "#2b5184"] },
+    { key: "aqua", name: "Aqua", c: ["#2a97a8", "#49b1bf", "#78cad2"] },
+    { key: "blue", name: "Blue (before)", c: ["#2b62ad", "#3c7cc6", "#5b98d6"] }
+  ];
+
+  /* ==========================================================================
+     NOISE & FIELDS
+     ========================================================================== */
+  const VAL = new Float32Array(256), PERM = new Uint8Array(512);
+  (function () {
+    let s = 1234567;
+    const r = function () { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (let i = 0; i < 256; i++) { VAL[i] = r(); PERM[i] = i; }
+    for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)), t = PERM[i]; PERM[i] = PERM[j]; PERM[j] = t; }
+    for (let i = 0; i < 256; i++) PERM[i + 256] = PERM[i];
+  })();
+  function vn(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, X = xi & 255, Y = yi & 255;
+    const a = VAL[PERM[PERM[X] + Y]], b = VAL[PERM[PERM[X + 1] + Y]], c = VAL[PERM[PERM[X] + Y + 1]], d = VAL[PERM[PERM[X + 1] + Y + 1]];
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function fbm(x, y, oct) {
+    let s = 0, amp = 0.5, tot = 0;
+    for (let o = 0; o < oct; o++) { s += vn(x, y) * amp; tot += amp; x *= 2.03; y *= 2.03; amp *= 0.5; }
+    return s / tot;
+  }
+  const hash2 = function (a, b) { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const mod = function (a, n) { return ((a % n) + n) % n; };
+
+  function edt1d(f, n, d, v, z) {
+    let k = 0;
+    v[0] = 0; z[0] = -1e20; z[1] = 1e20;
+    for (let q = 1; q < n; q++) {
+      let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+      while (s <= z[k]) { k--; s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]); }
+      k++; v[k] = q; z[k] = s; z[k + 1] = 1e20;
+    }
+    k = 0;
+    for (let q = 0; q < n; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + f[v[k]]; }
+  }
+  function edt(mask, w, h, target) {
+    const g = new Float32Array(w * h), n = Math.max(w, h);
+    const f = new Float32Array(n), d = new Float32Array(n), v = new Int32Array(n), z = new Float32Array(n + 1);
+    for (let i = 0; i < w * h; i++) g[i] = mask[i] === target ? 0 : 1e20;
+    for (let x = 0; x < w; x++) {
+      for (let y = 0; y < h; y++) f[y] = g[y * w + x];
+      edt1d(f, h, d, v, z);
+      for (let y = 0; y < h; y++) g[y * w + x] = d[y];
+    }
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) f[x] = g[y * w + x];
+      edt1d(f, w, d, v, z);
+      for (let x = 0; x < w; x++) g[y * w + x] = d[x];
+    }
+    return g;
+  }
+
+  // sdf (coast), e (region border), own, ht (height noise), g (grain) — over the baked ground at TR.
+  function fields() {
+    const w = DW * TR, h = DH * TR, N = w * h, n = REG.length;
+    const land = new Uint8Array(N), own = new Uint8Array(N);
+    const e = new Float32Array(N), ht = new Float32Array(N), gr = new Float32Array(N);
+    const DD = REG.map(function (a) { return REG.map(function (b) { return Math.hypot(a.x - b.x, a.y - b.y) || 1; }); });
+    for (let py = 0; py < h; py++) {
+      const y = Y0 + (py + 0.5) / TR;
+      for (let px = 0; px < w; px++) {
+        const x = X0 + (px + 0.5) / TR, i = py * w + px;
+        const wx = x + (fbm(x * 0.006 + 3.1, y * 0.006 + 7.7, 2) - 0.5) * 80;
+        const wy = y + (fbm(x * 0.006 + 11.3, y * 0.006 + 1.9, 2) - 0.5) * 80;
+        let m = -9;
+        for (let k = 0; k < BLOBS.length; k++) {
+          const b = BLOBS[k], dx = wx - b[0], dy = wy - b[1], v = 1 - Math.sqrt(dx * dx + dy * dy) / b[2];
+          if (v > m) m = v;
+        }
+        land[i] = m + (fbm(x * 0.022, y * 0.022, 3) - 0.5) * 0.45 > 0 ? 1 : 0;
+        if (m < -0.6) { own[i] = 0; e[i] = 99; continue; }   // open sea: no region to read
+        const rx = x + (wx - x) * 0.55, ry = y + (wy - y) * 0.55;
+        let b1 = 0, d1 = 1e12, b2 = 0, d2 = 1e12;
+        for (let k = 0; k < n; k++) {
+          const dx = rx - REG[k].x, dy = ry - REG[k].y, dd = dx * dx + dy * dy;
+          if (dd < d1) { d2 = d1; b2 = b1; d1 = dd; b1 = k; } else if (dd < d2) { d2 = dd; b2 = k; }
+        }
+        own[i] = REG[b1].o;
+        e[i] = (d2 - d1) / (2 * DD[b1][b2]);
+        ht[i] = fbm(x * 0.011, y * 0.011, 4);
+        gr[i] = vn(x * 0.31, y * 0.31) * 0.55 + vn(x * 1.1 + 50, y * 1.1) * 0.45;
+      }
+    }
+    const toSea = edt(land, w, h, 0), toLand = edt(land, w, h, 1), sdf = new Float32Array(N);
+    for (let i = 0; i < N; i++) sdf[i] = land[i] ? (Math.sqrt(toSea[i]) - 0.5) / TR : -(Math.sqrt(toLand[i]) - 0.5) / TR;
+    return { w: w, h: h, sdf: sdf, e: e, own: own, ht: ht, g: gr };
+  }
+
+  /* ==========================================================================
+     THE PAPER — every pixel knows which sheet it is on (KIND: 1 sea, 2 beach,
+     3 land) and how high that sheet sits (LEVEL); thickness, shadow and lit
+     edges are read off the levels of its neighbours. The sea's patterns are
+     periodic over T, so the open sea of the texture IS the tile.
+     ========================================================================== */
+  const hx = function (h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; };
+  const CREAM = hx("#f6ecd2"), BEACH = hx("#f2e0b0");
+  const LAND = {
+    0: [hx("#e9d79e"), hx("#b9d27a"), hx("#94c060")],
+    1: [hx("#3d7cd4"), hx("#5d98e0"), hx("#82b4ee")],
+    2: [hx("#e2533c"), hx("#ec6f46"), hx("#f28c55")]
+  };
+
+  // The cut wave strips of the open sea: periodic over T in x and in y.
+  function stripAt(x, y) {
+    const yy = (y + 12 * Math.sin(x * Math.PI * 2 * 3 / T)) / 52, b = Math.floor(yy);
+    return yy - b < 0.13 && mod(x + b * 104, T) < 240;
+  }
+  function seaLevel(x, y, s) {
+    const d = -s + 6 * Math.sin(x * 0.045 + y * 0.012) + 4 * Math.sin(x * 0.11 - y * 0.031);
+    if (d < 18) return 3;
+    if (d < 52) return 2;
+    return stripAt(x, y) ? 2 : 1;
+  }
+
+  // A mosaic of shards; n cells across makes it periodic (n * size = T for the sea).
+  let SH_ID = 0, SH_EDGE = 0;
+  function shard(x, y, size, n) {
+    const cx = Math.floor(x / size), cy = Math.floor(y / size);
+    let d1 = 1e9, d2 = 1e9, id = 0;
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const gx = cx + dx, gy = cy + dy, mx = mod(gx, n), my = mod(gy, n);
+        const px = (gx + hash2(mx, my)) * size, py = (gy + hash2(my * 1.7 + 3, mx * 3.1)) * size;
+        const d = (x - px) * (x - px) + (y - py) * (y - py);
+        if (d < d1) { d2 = d1; d1 = d; id = mx * 7919 + my * 104729; } else if (d < d2) d2 = d;
+      }
+    }
+    SH_ID = id; SH_EDGE = Math.sqrt(d2) - Math.sqrt(d1);
+  }
+  function tone(c, size, n, x, y) {
+    shard(x, y, size, n);
+    const t = 0.93 + 0.12 * hash2(SH_ID, 1.3);
+    c[0] *= t * (1 + (hash2(SH_ID, 7.1) - 0.5) * 0.05); c[1] *= t; c[2] *= t * (1 + (hash2(SH_ID, 2.9) - 0.5) * 0.05);
+    if (SH_EDGE < 0.9) { c[0] *= 0.95; c[1] *= 0.95; c[2] *= 0.95; }
+  }
+  // One pixel of paper: the near edge of a higher sheet, or this sheet shaded by its neighbours.
+  function paper(x, y, c, lvAt, topOf) {
+    const L = lvAt(x, y);
+    if (lvAt(x, y - 5) > L) {
+      topOf(x, y - 5, c);
+      c[0] = c[0] * 0.66 + CREAM[0] * 0.14; c[1] = c[1] * 0.66 + CREAM[1] * 0.14; c[2] = c[2] * 0.66 + CREAM[2] * 0.14;
+      return false;
+    }
+    topOf(x, y, c);
+    if (lvAt(x - 4, y - 10) > L) { c[0] *= 0.76; c[1] *= 0.76; c[2] *= 0.8; }
+    else if (lvAt(x - 2, y - 5) > L) { c[0] *= 0.87; c[1] *= 0.87; c[2] *= 0.9; }
+    else if (lvAt(x - 1.5, y - 2.5) < L) { c[0] += (255 - c[0]) * 0.16; c[1] += (255 - c[1]) * 0.16; c[2] += (255 - c[2]) * 0.16; }
+    return true;
+  }
+
+  // Levels of the baked ground, computed once (they do not depend on colours).
+  let BASE = null;
+  function buildBase() {
+    const F = fields(), w = F.w, h = F.h, N = w * h, KD = new Uint8Array(N), LV = new Uint8Array(N);
+    for (let py = 0; py < h; py++) {
+      const y = Y0 + (py + 0.5) / TR;
+      for (let px = 0; px < w; px++) {
+        const x = X0 + (px + 0.5) / TR, i = py * w + px, s = F.sdf[i];
+        if (s > 0) {
+          const hv = s / 22 + (F.ht[i] - 0.45) * 2.4;
+          KD[i] = 3; LV[i] = hv < 1 ? 5 : hv < 2.3 ? 6 : 7;
+        } else if (s > -7 + 3 * Math.sin(x * 0.08 + y * 0.05)) { KD[i] = 2; LV[i] = 4; }
+        else { KD[i] = 1; LV[i] = seaLevel(x, y, s); }
+      }
+    }
+    return { F: F, KD: KD, LV: LV };
+  }
+
+  const SHADED = {};
+  function shaded(sea) {
+    if (SHADED[sea.key]) return SHADED[sea.key];
+    const SEA = [null, hx(sea.c[0]), hx(sea.c[1]), hx(sea.c[2])], F = BASE.F, KD = BASE.KD, LV = BASE.LV, w = F.w, h = F.h;
+    const seaTop = function (L, x, y, c) { const a = SEA[L]; c[0] = a[0]; c[1] = a[1]; c[2] = a[2]; tone(c, 26, T / 26, x, y); };
+
+    // The tile: open sea only.
+    const tile = document.createElement("canvas"), TP = T * TR;
+    tile.width = tile.height = TP;
+    {
+      const ctx = tile.getContext("2d"), img = ctx.createImageData(TP, TP), d = img.data, c = [0, 0, 0];
+      const lv = function (x, y) { return stripAt(x, y) ? 2 : 1; };
+      const top = function (x, y, cc) { seaTop(lv(x, y), x, y, cc); };
+      for (let py = 0; py < TP; py++) {
+        const y = (py + 0.5) / TR;
+        for (let px = 0; px < TP; px++) {
+          const x = (px + 0.5) / TR, o = (py * TP + px) * 4;
+          paper(x, y, c, lv, top);
+          d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    // The ground: land, beaches and the sea around them.
+    const idx = function (x, y) {
+      let px = ((x - X0) * TR) | 0, py = ((y - Y0) * TR) | 0;
+      if (px < 0) px = 0; else if (px >= w) px = w - 1;
+      if (py < 0) py = 0; else if (py >= h) py = h - 1;
+      return py * w + px;
+    };
+    const lvAt = function (x, y) { return LV[idx(x, y)]; };
+    const topOf = function (x, y, c) {
+      const j = idx(x, y), k = KD[j];
+      if (k === 1) { seaTop(LV[j], x, y, c); return; }
+      const a = k === 2 ? BEACH : LAND[F.own[j]][LV[j] - 5];
+      c[0] = a[0]; c[1] = a[1]; c[2] = a[2];
+      tone(c, k === 3 ? 15 : 28, 1e6, x, y);
+    };
+    const cv = document.createElement("canvas");
+    cv.width = w; cv.height = h;
+    const ctx = cv.getContext("2d"), img = ctx.createImageData(w, h), d = img.data, c = [0, 0, 0];
+    for (let py = 0; py < h; py++) {
+      const y = Y0 + (py + 0.5) / TR;
+      for (let px = 0; px < w; px++) {
+        const x = X0 + (px + 0.5) / TR, i = py * w + px, top = paper(x, y, c, lvAt, topOf);
+        if (KD[i] !== 1) {
+          if (top && KD[i] === 3) {
+            const e = F.e[i];
+            if (e < 0.8) { c[0] *= 0.8; c[1] *= 0.8; c[2] *= 0.82; }
+            else if (e < 1.7) { c[0] += (255 - c[0]) * 0.1; c[1] += (255 - c[1]) * 0.1; c[2] += (255 - c[2]) * 0.1; }
+          }
+          const gk = 0.965 + 0.06 * F.g[i];
+          c[0] *= gk; c[1] *= gk; c[2] *= gk;
+        }
+        const o = i * 4;
+        d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const deep = SEA[1];
+    SHADED[sea.key] = { ground: cv, tile: tile, haze: "rgb(" + [0, 1, 2].map(function (k) { return Math.round(deep[k] + (235 - deep[k]) * 0.35); }).join(",") + ")" };
+    return SHADED[sea.key];
+  }
+
+  /* ==========================================================================
+     PAPER ARROWS — a folded strip: a light half, a dark half, a crease.
+     ========================================================================== */
+  function curve(a, b, bend, r0, r1) {
+    const dx = b[0] - a[0], dy = b[1] - a[1], c = [(a[0] + b[0]) / 2 - dy * bend, (a[1] + b[1]) / 2 + dx * bend];
+    const pts = [];
+    for (let i = 0; i <= 120; i++) {
+      const t = i / 120, u = 1 - t;
+      const p = [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+      if (Math.hypot(p[0] - a[0], p[1] - a[1]) < r0 || Math.hypot(p[0] - b[0], p[1] - b[1]) < r1) continue;
+      pts.push(p);
+    }
+    return pts;
+  }
+  function paperArrow(ctx, pts, C) {
+    const n = pts.length, hl = 34, w = 13, hw = 30;
+    let L = 0;
+    const cum = [0];
+    for (let i = 1; i < n; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+    let iB = n - 1;
+    while (iB > 1 && L - cum[iB] < hl) iB--;
+    const left = [], mid = [], right = [];
+    for (let i = 0; i <= iB; i++) {
+      const p = pts[i], q = pts[Math.min(n - 1, i + 1)], o = pts[Math.max(0, i - 1)];
+      let tx = q[0] - o[0], ty = q[1] - o[1];
+      const l = Math.hypot(tx, ty) || 1;
+      tx /= l; ty /= l;
+      left.push([p[0] - ty * w, p[1] + tx * w]); right.push([p[0] + ty * w, p[1] - tx * w]); mid.push(p);
+    }
+    const B = pts[iB], Tp = pts[n - 1], dx = Tp[0] - B[0], dy = Tp[1] - B[1], dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl;
+    const wl = [B[0] + nx * hw, B[1] + ny * hw], wr = [B[0] - nx * hw, B[1] - ny * hw];
+    const outline = function () {
+      ctx.beginPath();
+      left.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); });
+      ctx.lineTo(wl[0], wl[1]); ctx.lineTo(Tp[0], Tp[1]); ctx.lineTo(wr[0], wr[1]);
+      for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+      ctx.closePath();
+    };
+    ctx.save();
+    ctx.filter = "blur(3px)"; ctx.translate(5, 9); outline(); ctx.fillStyle = "rgba(20,30,70,.32)"; ctx.fill();
+    ctx.restore();
+    outline(); ctx.fillStyle = C.base; ctx.fill();
+    ctx.beginPath();
+    left.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); });
+    ctx.lineTo(wl[0], wl[1]); ctx.lineTo(Tp[0], Tp[1]);
+    for (let i = mid.length - 1; i >= 0; i--) ctx.lineTo(mid[i][0], mid[i][1]);
+    ctx.closePath(); ctx.fillStyle = C.light; ctx.fill();
+    ctx.beginPath(); mid.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.lineTo(Tp[0], Tp[1]);
+    ctx.lineWidth = 1.2; ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.stroke();
+    outline(); ctx.lineWidth = 1.4; ctx.strokeStyle = C.dark; ctx.stroke();
+  }
+
+  const TEX = {};
+  function texture(sea, arrows) {
+    const key = sea.key + (arrows ? "+a" : "");
+    if (TEX[key]) return TEX[key];
+    const S = shaded(sea), cv = document.createElement("canvas");
+    cv.width = S.ground.width; cv.height = S.ground.height;
+    const ctx = cv.getContext("2d");
+    ctx.drawImage(S.ground, 0, 0);
+    if (arrows) {
+      ctx.scale(TR, TR); ctx.translate(-X0, -Y0);
+      ORDERS.forEach(function (o) {
+        paperArrow(ctx, curve([REG[o.a].x, REG[o.a].y], [REG[o.b].x, REG[o.b].y], o.bend, 46, 52), CAMP[o.o]);
+      });
+    }
+    TEX[key] = { ground: cv, tile: S.tile, haze: S.haze };
+    return TEX[key];
+  }
+
+  /* ==========================================================================
+     CODE-DRAWN PIECES — the placeholders a kind falls back to, drawn at their
+     foot (0, 0), about 34 units tall, light from the top left.
+     ========================================================================== */
+  function poly(ctx, pts, col) {
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i += 2) ctx[i ? "lineTo" : "moveTo"](pts[i], pts[i + 1]);
+    ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+  }
+  const DRAW = {
+    soldier: function (ctx, C) {
+      poly(ctx, [-4.5, 0, -1, 0, -1, -10, -5, -10], C.dark);
+      poly(ctx, [1, 0, 4.5, 0, 5, -10, 1, -10], C.dark);
+      poly(ctx, [-7, -9, 0, -9, 0, -24, -5, -23], C.light);
+      poly(ctx, [0, -9, 7, -9, 5, -23, 0, -24], C.base);
+      poly(ctx, [-4, -25, 0, -27, 0, -32, -4, -30], "#f6dcc0");
+      poly(ctx, [0, -27, 4, -25, 4, -30, 0, -32], "#e3c3a3");
+      poly(ctx, [-7, -30, 7, -30, 0, -37], C.dark);
+      ctx.strokeStyle = "#8a6a45"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(8, -3); ctx.lineTo(9, -38); ctx.stroke();
+      poly(ctx, [7.6, -38, 10.4, -38, 9, -43], "#c9cdd2");
+    },
+    horse: function (ctx, C) {
+      poly(ctx, [-11, 0, -8, 0, -8, -11, -11, -11], C.dark);
+      poly(ctx, [-5, 0, -2, 0, -3, -11, -6, -11], C.dark);
+      poly(ctx, [3, 0, 6, 0, 6, -11, 3, -11], C.dark);
+      poly(ctx, [8, 0, 11, 0, 10, -11, 7, -11], C.dark);
+      poly(ctx, [-12, -10, 10, -10, 9, -15, -12, -16], C.base);
+      poly(ctx, [-12, -16, 9, -15, 7, -20, -10, -20], C.light);
+      poly(ctx, [6, -16, 11, -27, 15, -26, 11, -14], C.light);
+      poly(ctx, [11, -27, 19, -24, 18, -21, 14, -23], C.base);
+      poly(ctx, [-12, -18, -18, -10, -13, -12], C.dark);
+    },
+    cannon: function (ctx, C) {
+      poly(ctx, [-13, -1, -4, -6, -3, -4, -12, 1], C.dark);
+      poly(ctx, [-9, -10, 12, -19, 14, -14, -7, -5], C.base);
+      poly(ctx, [-9, -10, 12, -19, 12.6, -17, -8.4, -8], C.light);
+      ctx.beginPath(); ctx.arc(-3, -6, 6.5, 0, Math.PI * 2); ctx.fillStyle = C.dark; ctx.fill();
+      ctx.strokeStyle = "#f2e2c4"; ctx.lineWidth = 1.2;
+      for (let k = 0; k < 4; k++) { const a = k * Math.PI / 4; ctx.beginPath(); ctx.moveTo(-3 - Math.cos(a) * 5, -6 - Math.sin(a) * 5); ctx.lineTo(-3 + Math.cos(a) * 5, -6 + Math.sin(a) * 5); ctx.stroke(); }
+    },
+    castle: function (ctx, C, t, crown) {
+      poly(ctx, [-14, 0, 6, 0, 6, -22, -14, -22], "#f4ead6");
+      poly(ctx, [6, 0, 13, -4, 13, -24, 6, -22], "#d8c9ad");
+      poly(ctx, [-7, 0, -1, 0, -1, -8, -4, -11, -7, -8], "#6b5a45");
+      poly(ctx, [-20, 0, -11, 0, -11, -30, -20, -30], "#f8f0de");
+      poly(ctx, [-11, 0, -8, -2, -8, -31, -11, -30], "#dccdb2");
+      poly(ctx, [-21, -30, -15.5, -45, -15.5, -30], C.light);
+      poly(ctx, [-15.5, -45, -7, -31, -15.5, -30], C.base);
+      poly(ctx, [9, -4, 18, -4, 18, -34, 9, -34], "#f8f0de");
+      poly(ctx, [18, -4, 21, -6, 21, -35, 18, -34], "#dccdb2");
+      poly(ctx, [8, -34, 13.5, -50, 13.5, -34], C.light);
+      poly(ctx, [13.5, -50, 22, -35, 13.5, -34], C.base);
+      if (crown) {
+        poly(ctx, [-11, -22, 3, -22, 4, -33, 0, -28, -4, -35, -8, -28, -12, -33], "#f2c230");
+        poly(ctx, [-11, -22, 3, -22, 3, -25, -11, -25], "#d49a12");
+      }
+    },
+    tower: function (ctx, C) {
+      poly(ctx, [-8, 0, 6, 0, 6, -34, -8, -34], "#f4ead6");
+      poly(ctx, [6, 0, 10, -2, 10, -35, 6, -34], "#d8c9ad");
+      for (let k = 0; k < 3; k++) poly(ctx, [-8 + k * 5.5, -34, -5 + k * 5.5, -34, -5 + k * 5.5, -39, -8 + k * 5.5, -39], "#f8f0de");
+      ctx.strokeStyle = "#6b5a45"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -39); ctx.lineTo(0, -52); ctx.stroke();
+      poly(ctx, [0, -52, 9, -49, 0, -46], C.base);
+    },
+    boat: function (ctx, C) {
+      poly(ctx, [-17, -6, 17, -6, 12, 3, -12, 3], C.base);
+      poly(ctx, [-17, -6, 17, -6, 16, -3, -16, -3], "#fbf6ea");
+      ctx.strokeStyle = "#7a5a3a"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(0, -38); ctx.stroke();
+      poly(ctx, [1, -36, 15, -10, 1, -10], "#fffaf0");
+      poly(ctx, [-1, -33, -13, -10, -1, -10], "#e6ddc8");
+    },
+    tree: function (ctx) {
+      poly(ctx, [-1.5, 0, 1.5, 0, 1.5, -6, -1.5, -6], "#8a6238");
+      poly(ctx, [-10, -5, 0, -32, 0, -5], "#7cc865");
+      poly(ctx, [0, -32, 10, -5, 0, -5], "#3f9148");
+    },
+    mountain: function (ctx) {
+      poly(ctx, [-22, 0, -2, -32, 5, 0], "#c4cfd8");
+      poly(ctx, [-2, -32, 22, 0, 5, 0], "#8f9eac");
+      poly(ctx, [-9, -19, -2, -32, 2, -21, -3, -18], "#ffffff");
+    },
+    flag: function (ctx, C) {
+      ctx.strokeStyle = "#6b5a45"; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -28); ctx.stroke();
+      poly(ctx, [0, -28, 13, -24, 0, -20], C.base);
+    },
+    glass: function (ctx) {
+      poly(ctx, [-9, 0, 9, 0, 9, -4, -9, -4], "#9c6a38");
+      poly(ctx, [-9, -30, 9, -30, 9, -34, -9, -34], "#b57d44");
+      poly(ctx, [-7, -4, 7, -4, 0, -17], "rgba(232,242,248,.9)");
+      poly(ctx, [-7, -30, 7, -30, 0, -17], "rgba(232,242,248,.9)");
+      poly(ctx, [-5, -4, 5, -4, 0, -10], "#e8c27a");
+    },
+    crane: function (ctx, C, t) {
+      const flap = Math.sin(t * 5) * 0.5 + 0.5;
+      poly(ctx, [-14, 0, 10, -2, 18, -8, 4, 3], "#fbf8f2");
+      poly(ctx, [10, -2, 22, -13, 24, -12, 13, 0], "#f1ece2");
+      poly(ctx, [-4, -1, 6, -1, -2, -6 - 18 * flap], "#ffffff");
+      poly(ctx, [21, -14, 31, -14, 31, -6, 21, -6], "#f6ecd2");
+    }
+  };
+
+  /* ==========================================================================
+     THE PAPER ASSETS — the three sheets of docs/FOLDIERS.md, now filed as
+     assets/image/master/foldiers-object-{army-blue,army-red,scenery}.png, cut
+     into lab/conquest-paper/<blue|red|object>-NN.png, NN the cell read row by
+     row. Temporary material for this bench (the game cuts its own with
+     cut-objects --grid 4x4): each entry is [width, height, foot x / width].
+     ========================================================================== */
+  const META = {"blue-01":[214,260,0.498],"blue-02":[185,260,0.5],"blue-03":[224,209,0.496],"blue-04":[228,260,0.583],"blue-05":[120,260,0.483],"blue-06":[213,260,0.364],"blue-07":[212,260,0.469],"blue-08":[153,260,0.399],"blue-09":[230,168,0.378],"blue-10":[260,181,0.469],"blue-11":[247,258,0.455],"blue-12":[232,145,0.457],"blue-13":[240,221,0.496],"blue-14":[113,243,0.504],"blue-15":[154,227,0.5],"blue-16":[160,218,0.05],"red-01":[209,260,0.5],"red-02":[193,260,0.482],"red-03":[245,209,0.506],"red-04":[218,260,0.589],"red-05":[124,260,0.516],"red-06":[195,260,0.4],"red-07":[217,260,0.442],"red-08":[159,260,0.447],"red-09":[246,177,0.382],"red-10":[260,194,0.473],"red-11":[245,252,0.451],"red-12":[260,159,0.406],"red-13":[260,247,0.488],"red-14":[129,260,0.496],"red-15":[164,256,0.497],"red-16":[183,254,0.079],"object-01":[169,260,0.509],"object-02":[206,260,0.519],"object-03":[255,260,0.498],"object-04":[260,144,0.488],"object-05":[248,208,0.468],"object-06":[221,173,0.486],"object-07":[249,243,0.528],"object-08":[176,257,0.082],"object-09":[245,187,0.594],"object-10":[179,260,0.494],"object-11":[260,218,0.471],"object-12":[174,249,0.494],"object-13":[136,250,0.5],"object-14":[260,204,0.567],"object-15":[260,140,0.304],"object-16":[166,142,0.313]};
+  const SHEET = { capital: 1, fort: 2, town: 3, harbour: 4, infantry: 5, archer: 6, cavalry: 7, general: 8, cannon: 9,
+    wagon: 10, warship: 11, rowboat: 12, tent: 13, watchtower: 14, balloon: 15, flag: 16 };
+  const OBJECT = { pine: 1, tree: 2, mountain: 3, hill: 4, rocks: 5, bush: 6, house: 7, nflag: 8, gold: 9, wheat: 10,
+    iron: 11, barrel: 12, glass: 13 };
+  // How tall each piece stands at a piece size of 1, in design px (the crane is measured across).
+  const TALL = { capital: 70, fort: 58, town: 44, harbour: 46, infantry: 38, archer: 36, cavalry: 42, general: 40, cannon: 26,
+    wagon: 30, warship: 60, rowboat: 20, tent: 36, watchtower: 54, balloon: 54, flag: 34, pine: 40, tree: 38, mountain: 58,
+    hill: 22, rocks: 26, bush: 20, house: 34, nflag: 30, gold: 20, wheat: 28, iron: 26, barrel: 24, glass: 34 };
+  // The code-drawn placeholder a kind falls back to when its file is not there.
+  const FALLBACK = { capital: "castle", town: "castle", house: "castle", tent: "castle", harbour: "boat", fort: "tower",
+    watchtower: "tower", infantry: "soldier", archer: "soldier", general: "soldier", cavalry: "horse", cannon: "cannon",
+    wagon: "cannon", warship: "boat", rowboat: "boat", balloon: "flag", flag: "flag", nflag: "flag", pine: "tree",
+    tree: "tree", bush: "tree", mountain: "mountain", hill: "mountain", rocks: "mountain", gold: "glass", wheat: "glass",
+    iron: "glass", barrel: "glass", glass: "glass", crane: "crane" };
+  const IMG = {};
+  Object.keys(META).forEach(function (k) {
+    const im = new Image();
+    im.onload = function () { if (frames.length) redraw(); };
+    im.src = "conquest-paper/" + k + ".png";
+    IMG[k] = im;
+  });
+  function spriteKey(p, t) {
+    if (p.t === "crane") return Math.floor(t * 3) % 2 ? "object-15" : "object-14";
+    if (SHEET[p.t]) return (p.o === 1 ? "blue-" : "red-") + ("0" + SHEET[p.t]).slice(-2);
+    return "object-" + ("0" + OBJECT[p.t]).slice(-2);
+  }
+
+  // Every piece of the scene: u, v on the map, its kind, its camp. Neutral land holds
+  // no troops — its houses, flags and resources say what is there.
+  const PIECES = [], BUSY = [];
+  function piece(u, v, t, o, extra) {
+    PIECES.push(Object.assign({ u: u, v: v, t: t, o: o }, extra || {}));
+    BUSY.push([u, v]);
+  }
+  (function () {
+    const RES = { grain: "wheat", gold: "gold", iron: "iron", oil: "barrel" };
+    REG.forEach(function (r) {
+      if (r.mk === "cap") piece(r.x, r.y - 36, "capital", r.o);
+      else if (r.mk === "city") piece(r.x, r.y - 32, r.o ? "town" : "house", r.o);
+      else if (r.mk === "fort") piece(r.x + 4, r.y - 32, "fort", r.o);
+      else if (r.mk === "glass") piece(r.x, r.y - 4, "glass", 0);
+      else if (RES[r.mk]) piece(r.x + (r.o ? -30 : 0), r.y - 26, RES[r.mk], 0);
+      piece(r.x + 34, r.y - 8, r.o ? "flag" : "nflag", r.o);
+    });
+    UNITS.forEach(function (un) {
+      const r = REG[un.r], n = Math.min(3, Math.ceil(un.n / 2)), offs = [[0, 8], [-22, 16], [20, 18]];
+      for (let j = 0; j < n; j++) {
+        let t = un.k === "cav" ? "cavalry" : un.k === "art" && j === 0 ? "cannon" : j === 1 ? "archer" : "infantry";
+        if (un.gen && j === 0) t = "general";
+        piece(r.x + offs[j][0], r.y + offs[j][1], t, r.o);
+      }
+    });
+    EXTRAS.forEach(function (e) { piece(e[0], e[1], e[2], e[3], e[4]); });
+  })();
+  function placeScenery(F) {
+    const S = function (arr, x, y) {
+      const px = Math.min(F.w - 1, Math.max(0, ((x - X0) * TR) | 0)), py = Math.min(F.h - 1, Math.max(0, ((y - Y0) * TR) | 0));
+      return arr[py * F.w + px];
+    };
+    const inFrame = function (x, y) { return x > 24 && x < W - 24 && y > 120 && y < H - 20; };
+    const free = function (x, y, d) { return !BUSY.some(function (p) { return Math.hypot(p[0] - x, p[1] - y) < d; }); };
+    // A harbour on the shore of one region per camp: the free coast point a few px inland.
+    [[17, 1], [3, 2]].forEach(function (hb) {
+      const r = REG[hb[0]];
+      let best = null, bd = 1e9;
+      for (let a = 0; a < 64; a++) {
+        for (let d = 40; d < 120; d += 8) {
+          const x = r.x + Math.cos(a / 64 * 6.283) * d, y = r.y + Math.sin(a / 64 * 6.283) * d, s = S(F.sdf, x, y);
+          if (s < 2 || s > 9 || !inFrame(x, y) || !free(x, y, 40)) continue;
+          const score = Math.abs(s - 5) + d * 0.02;
+          if (score < bd) { bd = score; best = [x, y]; }
+        }
+      }
+      if (best) piece(best[0], best[1], "harbour", hb[1]);
+    });
+    for (let k = 0, placed = 0; k < 900 && placed < 34; k++) {
+      const x = 30 + hash2(k, 1.1) * 660, y = 140 + hash2(k, 2.7) * 1120;
+      const s = S(F.sdf, x, y);
+      if (s < 12 || !inFrame(x, y) || !free(x, y, 58)) continue;
+      const hh = S(F.ht, x, y), pick = hash2(k, 9);
+      const t = hh > 0.64 && s > 30 ? (pick < 0.7 ? "mountain" : "rocks")
+        : hh > 0.56 ? (pick < 0.5 ? "hill" : "rocks")
+        : pick < 0.45 ? "pine" : pick < 0.8 ? "tree" : "bush";
+      piece(x, y, t, 0, { s: 0.85 + hash2(k, 5) * 0.3 });
+      placed++;
+    }
+  }
+
+  /* ==========================================================================
+     THE CAMERA — a pitch around the map's centre, a focal (0 = orthographic),
+     a zoom and a frame height; the ground is drawn one screen row at a time,
+     the sea tile first across the whole row, the baked ground over it.
+     ========================================================================== */
+  const PRESETS = [
+    { key: "close", name: "Close 30°", cam: { pitch: 30, persp: 20, zoom: 190, panY: -275, piece: 100 } },
+    { key: "top", name: "Top", cam: { pitch: 0, persp: 0, zoom: 100, panY: 0, piece: 100 } },
+    { key: "board", name: "Board 30°", cam: { pitch: 30, persp: 35, zoom: 108, panY: 40, piece: 105 } },
+    { key: "poster", name: "Poster 52°", cam: { pitch: 52, persp: 70, zoom: 100, panY: 140, piece: 120 } },
+    { key: "iso", name: "Iso 45°", cam: { pitch: 45, persp: 0, zoom: 98, panY: 150, piece: 110 } }
+  ];
+
+  function draw(f, t) {
+    const ctx = f.ctx, R = f.R, cam = f.cam, G = f.tex;
+    const th = cam.pitch * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+    const D = cam.persp <= 0 ? 1e7 : 6000 + (900 - 6000) * (cam.persp / 100);
+    const zf = cam.zoom / 100, fz = D * zf, cxS = 360 + (f.panX || 0), cyS = 640 + cam.panY;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = G.haze; ctx.fillRect(0, 0, f.cv.width, f.cv.height);
+    const ground = G.ground, tile = G.tile, gw = ground.width, tw = tile.width;
+    for (let py = 0; py < f.cv.height; py++) {
+      const sy = (py + 0.5) / R, k = (sy - cyS) / fz, den = c + k * s;
+      if (den <= 0.02) continue;
+      const Y = k * D / den, depth = D - Y * s;
+      if (depth <= 1) continue;
+      const sc = fz / depth, v = Y + MCY;
+      // Far rows dissolve into the haze: past this scale a row would be thousands of tiles wide.
+      if (sc < 0.08) continue;
+      const uL = MCX - cxS / sc, uR = MCX + (W - cxS) / sc, row = Math.floor(mod(v, T) * TR);
+      for (let u = Math.floor(uL / T) * T; u < uR; u += T) {
+        ctx.drawImage(tile, 0, row, tw, 1, (cxS + sc * (u - MCX)) * R - 0.5, py, T * sc * R + 1, 1.6);
+      }
+      if (v >= Y0 && v < Y0 + DH) {
+        ctx.drawImage(ground, 0, Math.floor((v - Y0) * TR), gw, 1, (cxS + sc * (X0 - MCX)) * R, py, DW * sc * R, 1.6);
+      }
+      if (sc < 0.45) {
+        ctx.globalAlpha = Math.min(1, (0.45 - sc) / 0.37); ctx.fillStyle = G.haze;
+        ctx.fillRect(0, py, f.cv.width, 1.6); ctx.globalAlpha = 1;
+      }
+    }
+    if (!f.pieces) return;
+    const proj = function (u, v, h) {
+      const X = u - MCX, Y = v - MCY, depth = D - Y * s - h * c, sc = fz / depth;
+      return { x: cxS + X * sc, y: cyS + (Y * c - h * s) * sc, sc: sc, depth: depth };
+    };
+    const list = [];
+    PIECES.forEach(function (p) {
+      let u = p.u, v = p.v, h = p.h || 0;
+      if (p.fly) { u = 470 + Math.cos(t * 0.35) * 150; v = 575 + Math.sin(t * 0.35) * 45; h = 95 + Math.sin(t * 1.3) * 6; }
+      else if (h) h += Math.sin(t * 0.8 + u) * 4;
+      const g = proj(u, v, 0), q = h ? proj(u, v, h) : g;
+      if (g.depth > 1) list.push({ p: p, g: g, q: q, h: h });
+    });
+    list.sort(function (a, b) { return b.q.depth - a.q.depth; });
+    ctx.setTransform(R, 0, 0, R, 0, 0);
+    list.forEach(function (it) {
+      const p = it.p, k = it.g.sc * (cam.piece / 100) * (p.s || 1);
+      const key = f.sprites ? spriteKey(p, t) : null, im = key && IMG[key], m = key && META[key];
+      let w = 0, hgt = 0;
+      if (im && im.complete && im.naturalWidth) {
+        if (p.t === "crane") { w = 50 * k; hgt = w * m[1] / m[0]; } else { hgt = TALL[p.t] * k; w = hgt * m[0] / m[1]; }
+      }
+      // The contact shadow lies on the paper, flattened by the tilt; a flying piece's is fainter.
+      const rx = w ? w * 0.34 : 12 * k;
+      ctx.beginPath(); ctx.ellipse(it.g.x + 3 * k, it.g.y + 1 * k, rx, rx * Math.max(0.32, 0.25 + 0.75 * c * c * 0.6), 0, 0, Math.PI * 2);
+      ctx.fillStyle = it.h ? "rgba(10,25,40,.14)" : "rgba(10,25,40,.28)"; ctx.fill();
+      if (w) {
+        if (p.t === "crane") ctx.drawImage(im, it.q.x - w / 2, it.q.y - hgt / 2, w, hgt);
+        else ctx.drawImage(im, it.q.x - m[2] * w, it.q.y - hgt, w, hgt);
+        return;
+      }
+      ctx.save(); ctx.translate(it.q.x, it.q.y); ctx.scale(k, k);
+      DRAW[FALLBACK[p.t]](ctx, CAMP[p.o], t, p.t === "capital");
+      ctx.restore();
+    });
+  }
+
+  /* ==========================================================================
+     PAGE
+     ========================================================================== */
+  const state = { view: "one", preset: "close", sea: "teal", cam: Object.assign({}, PRESETS[0].cam), panX: 0,
+    pieces: true, sprites: true, arrows: true, anim: true };
+  try {
+    const hsh = new URLSearchParams(location.hash.slice(1));
+    if (hsh.get("view")) state.view = hsh.get("view");
+    if (SEAS.some(function (q) { return q.key === hsh.get("sea"); })) state.sea = hsh.get("sea");
+    const pr = PRESETS.find(function (p) { return p.key === hsh.get("preset"); });
+    if (pr) { state.preset = pr.key; state.cam = Object.assign({}, pr.cam); }
+  } catch (err) { /* a bad hash keeps the defaults */ }
+
+  const stage = document.getElementById("stage"), presets = document.getElementById("presets"), seas = document.getElementById("seas");
+  const KNOBS = [["pitch", function (v) { return v + "°"; }], ["persp", function (v) { return v ? v + "%" : "ortho"; }],
+    ["zoom", function (v) { return (v / 100).toFixed(2); }], ["panY", function (v) { return Math.round(v); }], ["piece", function (v) { return (v / 100).toFixed(2); }]];
+  PRESETS.forEach(function (p) {
+    const b = document.createElement("button");
+    b.textContent = p.name; b.dataset.k = p.key;
+    b.addEventListener("click", function () { state.preset = p.key; state.cam = Object.assign({}, p.cam); state.panX = 0; render(); });
+    presets.appendChild(b);
+  });
+  SEAS.forEach(function (q) {
+    const b = document.createElement("button");
+    b.dataset.k = q.key;
+    b.innerHTML = '<span class="sw">' + q.c.map(function (c) { return '<i style="background:' + c + '"></i>'; }).join("") + "</span>" + q.name;
+    b.addEventListener("click", function () { state.sea = q.key; render(); });
+    seas.appendChild(b);
+  });
+  KNOBS.forEach(function (kn) {
+    const el = document.getElementById(kn[0]);
+    el.addEventListener("input", function () { state.cam[kn[0]] = +el.value; state.preset = ""; syncKnobs(); redraw(); });
+  });
+  function syncKnobs() {
+    KNOBS.forEach(function (kn) {
+      document.getElementById(kn[0]).value = state.cam[kn[0]];
+      document.getElementById(kn[0] + "-v").textContent = kn[1](state.cam[kn[0]]);
+    });
+    presets.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === state.preset); });
+    seas.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.k === state.sea); });
+  }
+  document.querySelectorAll("#views button").forEach(function (b) { b.addEventListener("click", function () { state.view = b.dataset.v; render(); }); });
+  ["pieces", "sprites", "arrows", "anim"].forEach(function (k) {
+    const el = document.getElementById("t-" + k);
+    el.checked = state[k];
+    el.addEventListener("change", function () { state[k] = el.checked; render(); });
+  });
+
+  let frames = [], t0 = performance.now(), tFrozen = 0;
+  function render() {
+    location.replace("#view=" + state.view + "&preset=" + (state.preset || "custom") + "&sea=" + state.sea);
+    document.querySelectorAll("#views button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === state.view); });
+    syncKnobs();
+    const sea = SEAS.find(function (q) { return q.key === state.sea; });
+    if (!BASE || !TEX[sea.key + (state.arrows ? "+a" : "")]) {
+      stage.className = "";
+      stage.innerHTML = '<div class="busy">' + (BASE ? "Dyeing the sea…" : "Cutting the paper… (a few seconds)") + "</div>";
+      frames = [];
+      setTimeout(function () {
+        if (!BASE) { BASE = buildBase(); placeScenery(BASE.F); }
+        texture(sea, state.arrows);
+        render();
+      }, 30);
+      return;
+    }
+    const G = texture(sea, state.arrows);
+    stage.className = state.view;
+    stage.innerHTML = "";
+    const list = state.view === "one" ? [{ name: "Camera", cam: state.cam, live: true }] : PRESETS.map(function (p) { return { name: p.name, cam: p.cam, key: p.key }; });
+    const R = state.view === "one" ? 1.5 : 0.75;
+    frames = list.map(function (it) {
+      const fig = document.createElement("figure"), cv = document.createElement("canvas"), cap = document.createElement("figcaption");
+      fig.className = "fr"; cv.width = W * R; cv.height = H * R;
+      cap.innerHTML = "<b>" + it.name + "</b> · tilt " + it.cam.pitch + "°, " + (it.cam.persp ? "perspective " + it.cam.persp + "%" : "orthographic") + ", zoom " + (it.cam.zoom / 100).toFixed(2);
+      fig.appendChild(cv); fig.appendChild(cap); stage.appendChild(fig);
+      const f = { cv: cv, ctx: cv.getContext("2d"), R: R, cam: it.cam, tex: G, pieces: state.pieces, sprites: state.sprites, panX: it.live ? state.panX : 0 };
+      if (it.live) dragPan(cv, f);
+      else fig.addEventListener("click", function () {
+        const p = PRESETS.find(function (q) { return q.key === it.key; });
+        state.preset = p.key; state.cam = Object.assign({}, p.cam); state.panX = 0; state.view = "one"; render();
+      });
+      return f;
+    });
+    redraw();
+  }
+  function dragPan(cv, f) {
+    let last = null;
+    cv.addEventListener("pointerdown", function (e) { last = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; });
+    cv.addEventListener("pointermove", function (e) {
+      if (!last) return;
+      const k = W / cv.getBoundingClientRect().width;
+      f.panX += (e.clientX - last[0]) * k; state.panX = f.panX;
+      state.cam.panY = Math.round(state.cam.panY + (e.clientY - last[1]) * k);
+      last = [e.clientX, e.clientY]; state.preset = ""; syncKnobs(); redraw();
+    });
+    cv.addEventListener("pointerup", function () { last = null; cv.style.cursor = ""; });
+  }
+  function redraw() {
+    const t = state.anim ? (performance.now() - t0) / 1000 : tFrozen;
+    if (state.anim) tFrozen = t;
+    frames.forEach(function (f) { draw(f, t); });
+  }
+  (function loop() { if (state.anim && frames.length) redraw(); requestAnimationFrame(loop); })();
+  render();
+})();
+</script>
+</body>
+</html>

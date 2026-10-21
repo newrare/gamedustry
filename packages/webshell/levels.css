@@ -345,6 +345,9 @@
   color:rgba(255,255,255,.42);
 }
 .lv-tag .best { font-size:20px; color:rgba(255,255,255,.42); font-variant-numeric:tabular-nums; }
+/* A played level: the stars, and its best score centred under them. */
+.lv-tag.stack { flex-direction:column; gap:3px; }
+.lv-tag.stack .best { line-height:1; text-shadow:0 2px 4px rgba(0,0,0,.8); }
 
 /* ---- the force switch, on a local host only -----------------------------
    Not part of the game: levels.js builds this button on localhost and on a

@@ -9,7 +9,7 @@
       "variants": {
         "default": {
           "takes": [
-            { "file": "ui-click-01", "start": 0, "length": 0.1 }
+            { "file": "click-03", "start": 0.019, "length": 0.031, "tail": "fade", "tailLength": 0.022 }
           ]
         }
       }
@@ -165,7 +165,7 @@
       "variants": {
         "glass": {
           "takes": [
-            { "file": "ui-glass-02", "start": 0, "length": 0.12 }
+            { "file": "ball-tennis-bounce-01", "start": 0, "length": 0.12 }
           ]
         },
         "lasersmall": {
@@ -184,6 +184,11 @@
             { "file": "whoosh-swish-11", "start": 0, "length": 0.08 },
             { "file": "whoosh-swish-13", "start": 0, "length": 0.07 }
           ]
+        },
+        "echotrain": {
+          "takes": [
+            { "file": "tone-high-echo-01", "start": 0, "length": 0.482 }
+          ]
         }
       }
     },
@@ -194,11 +199,6 @@
         "powerup": {
           "takes": [
             { "file": "powerup-04", "start": 0, "length": 0.55 }
-          ]
-        },
-        "glockchord": {
-          "takes": [
-            { "file": "glock-chord-01", "start": 0, "length": 0.57 }
           ]
         },
         "uiselect": {
@@ -240,17 +240,17 @@
         },
         "whistlerise": {
           "takes": [
-            { "file": "whistle-rise-01", "start": 0, "length": 0.32 }
+            { "file": "harp-run-up-01", "start": 0.258, "length": 0.877, "tail": "fade", "tailLength": 0.523 }
           ]
         },
         "jinglehit": {
           "takes": [
-            { "file": "jingle-hit-04", "start": 0, "length": 0.746 }
+            { "file": "jingle-achievement-01", "start": 0, "length": 0.617, "tail": "fade", "tailLength": 0.398 }
           ]
         },
         "harprunup": {
           "takes": [
-            { "file": "harp-run-up-01", "start": 0, "length": 1.51 }
+            { "file": "harp-run-up-01", "start": 0, "length": 1.19, "tail": "fade", "tailLength": 0.73 }
           ]
         },
         "coinstight": {
@@ -286,7 +286,7 @@
         },
         "uiscroll": {
           "takes": [
-            { "file": "ui-scroll-05", "start": 0, "length": 0.68 }
+            { "file": "rattle-snake-01", "start": 11.257, "length": 0.844, "tail": "fade", "tailLength": 0.511 }
           ]
         },
         "jinglepizzicato": {
@@ -311,7 +311,7 @@
         },
         "glockglissandoup": {
           "takes": [
-            { "file": "glock-glissando-up-01", "start": 0, "length": 2.12 }
+            { "file": "plastic-handle-03", "start": 0, "length": 1.06, "tail": "fade", "tailLength": 0.473 }
           ]
         }
       }
@@ -367,12 +367,12 @@
         },
         "vibearpeggio": {
           "takes": [
-            { "file": "vibe-arpeggio-01", "start": 0, "length": 1.4 }
+            { "file": "jingle-ability-01", "start": 0.027, "length": 0.891, "tail": "fade", "tailLength": 0.612 }
           ]
         },
         "powerup02": {
           "takes": [
-            { "file": "powerup-02", "start": 0, "length": 0.46 }
+            { "file": "chime-tree-up-01", "start": 0, "length": 0.905, "tail": "fade", "tailLength": 0.589 }
           ]
         },
         "fireignite": {
@@ -424,7 +424,7 @@
       "variants": {
         "explosion": {
           "takes": [
-            { "file": "explosion-crunch-02", "start": 0, "length": 0.7 }
+            { "file": "explosion-crunch-02", "start": 0.011, "length": 0.892, "tail": "fade", "tailLength": 0.618 }
           ]
         },
         "explosioncrunch": {
@@ -435,11 +435,6 @@
         "impactmetalscifi": {
           "takes": [
             { "file": "impact-metal-scifi-05", "start": 0, "length": 0.36 }
-          ]
-        },
-        "jinglehit": {
-          "takes": [
-            { "file": "jingle-hit-06", "start": 0, "length": 0.613 }
           ]
         },
         "impactglassheavy": {
@@ -479,7 +474,7 @@
         },
         "electrichit": {
           "takes": [
-            { "file": "electric-hit-01", "start": 0, "length": 1.33 }
+            { "file": "rattle-snake-01", "start": 0, "length": 1.007, "tail": "fade", "tailLength": 0.813 }
           ]
         }
       }
@@ -496,6 +491,13 @@
         "uiscratch": {
           "takes": [
             { "file": "ui-scratch-03", "start": 0, "length": 0.123 }
+          ]
+        },
+        "fast": {
+          "takes": [
+            { "file": "whoosh-swish-02", "start": 0, "length": 0.1 },
+            { "file": "whoosh-swish-07", "start": 0, "length": 0.19 },
+            { "file": "whoosh-swish-10", "start": 0, "length": 0.12 }
           ]
         }
       }
@@ -519,11 +521,6 @@
         "metalclanklong": {
           "takes": [
             { "file": "firework-burst-06", "start": 0, "length": 0.57 }
-          ]
-        },
-        "whistlerise": {
-          "takes": [
-            { "file": "whistle-rise-01", "start": 0, "length": 0.32 }
           ]
         },
         "laserlarge": {
@@ -658,16 +655,6 @@
             { "file": "pop-blip-05", "start": 0, "length": 0.03 }
           ]
         },
-        "vibearpeggiolong": {
-          "takes": [
-            { "file": "ui-save-01", "start": 0, "length": 1.587, "tail": "fade", "tailLength": 0.3 }
-          ]
-        },
-        "vibearpeggio": {
-          "takes": [
-            { "file": "vibe-arpeggio-01", "start": 0, "length": 0.57 }
-          ]
-        },
         "whistlerise": {
           "takes": [
             { "file": "whistle-rise-01", "start": 0, "length": 0.43 }
@@ -675,7 +662,8 @@
         },
         "explosioncrunch02": {
           "takes": [
-            { "file": "explosion-crunch-02", "start": 0, "length": 0.72 }
+            { "file": "explosion-crunch-02", "start": 0, "length": 0.65, "tail": "fade", "tailLength": 0.48 },
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.196 }
           ]
         },
         "explosioncrunch": {
@@ -701,6 +689,11 @@
         "plop": {
           "takes": [
             { "file": "pop-plop-02", "start": 0.09, "length": 0.12 }
+          ]
+        },
+        "explosion": {
+          "takes": [
+            { "file": "explosion-crunch-05", "start": 0, "length": 0.961, "tail": "fade", "tailLength": 0.454 }
           ]
         }
       }
@@ -832,11 +825,6 @@
             { "file": "error-ui-03", "start": 0, "length": 0.5 }
           ]
         },
-        "clickswitch": {
-          "takes": [
-            { "file": "click-switch-22", "start": 0, "length": 0.14 }
-          ]
-        },
         "marimbataps": {
           "takes": [
             { "file": "ui-menu-04", "start": 0, "length": 0.82 }
@@ -849,7 +837,12 @@
         },
         "errorui": {
           "takes": [
-            { "file": "error-ui-01", "start": 0, "length": 0.162 }
+            { "file": "explosion-boom-01", "start": 0.101, "length": 0.17 }
+          ]
+        },
+        "dark": {
+          "takes": [
+            { "file": "explosion-boom-01", "start": 0.101, "length": 0.17 }
           ]
         }
       }
@@ -918,7 +911,17 @@
         },
         "cloth": {
           "takes": [
-            { "file": "cloth-01", "start": 0, "length": 0.661 }
+            { "file": "creature-bug-04", "start": 0, "length": 0.286, "tail": "fade", "tailLength": 0.199 }
+          ]
+        },
+        "wind": {
+          "takes": [
+            { "file": "amb-wind-06", "start": 1.1, "length": 2.6, "tail": "fade", "tailLength": 1 }
+          ]
+        },
+        "dust": {
+          "takes": [
+            { "file": "whoosh-air-01", "start": 0.056, "length": 0.4, "tail": "fade", "tailLength": 0.16 }
           ]
         }
       }
@@ -970,12 +973,77 @@
         },
         "electrichit": {
           "takes": [
-            { "file": "electric-hit-01", "start": 0, "length": 1.8 }
+            { "file": "impact-generic-light-02", "start": 0, "length": 0.051 },
+            { "file": "impact-generic-light-04", "start": 0, "length": 0.06 },
+            { "file": "impact-generic-light-05", "start": 0, "length": 0.061 }
           ]
         },
         "electricpowerdown": {
           "takes": [
-            { "file": "electric-power-down-01", "start": 0, "length": 1.65 }
+            { "file": "jingle-steel-08", "start": 0, "length": 1.207, "tail": "fade", "tailLength": 0.981 }
+          ]
+        }
+      }
+    },
+    "select": {
+      "group": "game",
+      "what": "The player picks something on the table: a hero, a target, a step of the way",
+      "variants": {
+        "click": {
+          "takes": [
+            { "file": "click-03", "start": 0.019, "length": 0.031, "tail": "fade", "tailLength": 0.022 }
+          ]
+        }
+      }
+    },
+    "refuse": {
+      "group": "game",
+      "what": "An action the game refuses: not enough gold, not enough SP, the last hero kept",
+      "variants": {
+        "errorui": {
+          "takes": [
+            { "file": "error-ui-04", "start": 0, "length": 0.1 }
+          ]
+        }
+      }
+    },
+    "eat": {
+      "group": "game",
+      "what": "The player eats a bonus",
+      "variants": {
+        "default": {
+          "takes": [
+            { "file": "creature-eat-01", "start": 0, "length": 0.4 },
+            { "file": "creature-eat-03", "start": 0, "length": 0.17 }
+          ]
+        }
+      }
+    },
+    "monster": {
+      "group": "game",
+      "what": "Animals noise",
+      "variants": {
+        "default": {
+          "takes": [
+            { "file": "creature-monster-03", "start": 0.195, "length": 0.553 },
+            { "file": "creature-monster-04", "start": 0.142, "length": 0.4 }
+          ]
+        }
+      }
+    },
+    "ice": {
+      "group": "game",
+      "what": "Freeze and ice",
+      "variants": {
+        "default": {
+          "takes": [
+            { "file": "vibe-sting-01", "start": 0, "length": 1.495 },
+            { "file": "vibe-sting-02", "start": 0, "length": 1.486, "rate": 0.9, "tail": "fade", "tailLength": 0.991 }
+          ]
+        },
+        "wind": {
+          "takes": [
+            { "file": "amb-wind-06", "start": 1.623, "length": 1.81, "tail": "fade", "tailLength": 0.971 }
           ]
         }
       }

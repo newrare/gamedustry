@@ -201,7 +201,7 @@
       bomb:      { kind: "peg", pct: 10, lv: 1,  w: 4, icon: "icon06", color: "#9aa0b4", name: "Bomb",    desc: "10% of the pegs become bombs" },
       prism:     { kind: "peg", pct: 15, lv: 2,  w: 3, icon: "icon09", color: "#ff9ff3", name: "Prism",   desc: "15% of the pegs split a ball in two" },
       lucky:     { kind: "peg", pct: 30, lv: 3,  w: 3, icon: "icon10", color: "#5be37a", name: "Lucky",   desc: "30% of the pegs: 1 in 4 pays x10" },
-      lightning: { kind: "peg", pct: 20, lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "20% of the pegs arc to their 3 neighbours" },
+      lightning: { kind: "peg", pct: 20, lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "20% of the pegs zap their 3 neighbours" },
       glass:     { kind: "peg", pct: 30, lv: 5,  w: 3, icon: "icon12", color: "#d6f6ff", name: "Glass",   desc: "30% of the pegs pay x5, break after 3 hits" },
       echo:      { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon13", color: "#9d7bff", name: "Echo",    desc: "15% of the pegs replay the last special a ball hit" },
       mirror:    { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon14", color: "#d8dce8", name: "Mirror",  desc: "15% of the pegs copy the special next to them" },
@@ -215,12 +215,12 @@
       molten:    { kind: "wave", lv: 2,  w: 3, icon: "icon18", color: "#ff5a1a", name: "Magma",   desc: "Every ball burns for the whole wave" },
       fever:     { kind: "wave", lv: 2,  w: 3, icon: "icon19", color: "#ff7ab8", name: "Fever",   desc: "+0.1 mult for every special peg hit", mult: true },
       twins:     { kind: "wave", lv: 3,  w: 3, icon: "icon20", color: "#6ee08a", name: "Twins",   desc: "Every ball drops with a twin" },
-      combo:     { kind: "wave", lv: 3,  w: 3, icon: "icon21", color: "#7be05a", name: "Combo",   desc: "Each hit of a ball adds x0.1 to its next ones" },
+      combo:     { kind: "wave", lv: 3,  w: 3, icon: "icon21", color: "#7be05a", name: "Combo",   desc: "Each hit adds x0.1 to the ball's next hits" },
       chain:     { kind: "wave", lv: 4,  w: 1, icon: "icon22", color: "#ff8a3c", name: "Chain reaction", desc: "x1.5 mult for every explosion this wave" },
-      heavy:     { kind: "wave", lv: 4,  w: 3, icon: "icon23", color: "#a9a9b8", name: "Heavy",   desc: "Big balls that pay half a peg more a hit" },
+      heavy:     { kind: "wave", lv: 4,  w: 3, icon: "icon23", color: "#a9a9b8", name: "Heavy",   desc: "Big balls: +0.5 peg a hit" },
       cryo:      { kind: "wave", lv: 5,  w: 3, icon: "icon24", color: "#7ac8ff", name: "Cryo",    desc: "Every ball drops frozen" },
-      thermal:   { kind: "wave", lv: 5,  w: 2, icon: "icon25", color: "#ff6ad5", name: "Thermal shock", desc: "Fire meets ice: an explosion worth x10" },
-      lastCall:  { kind: "wave", lv: 6,  w: 1, icon: "icon26", color: "#ffcf5a", name: "Last call", desc: "x3 mult, played on the last wave only", mult: true },
+      thermal:   { kind: "wave", lv: 5,  w: 2, icon: "icon25", color: "#ff6ad5", name: "Thermal shock", desc: "Fire meeting ice explodes for x10" },
+      lastCall:  { kind: "wave", lv: 6,  w: 1, icon: "icon26", color: "#ffcf5a", name: "Last call", desc: "x3 mult, on the last wave only", mult: true },
       bouncy:    { kind: "wave", lv: 8,  w: 3, icon: "icon27", color: "#ff6b6b", name: "Bouncy",  desc: "Livelier balls that last twice as long" },
       ghost:     { kind: "wave", lv: 9,  w: 3, icon: "icon28", color: "#b48cff", name: "Ghost",   desc: "Balls pass through classic pegs" },
       rain:      { kind: "wave", lv: 9,  w: 3, icon: "icon29", color: "#5ab0ff", name: "Rain",    desc: "Balls fall across the whole board" },
@@ -476,12 +476,18 @@
         if (malus >= 1) vals[draw() < 0.5 ? 0 : 4] = P.gate.malus;
         if (malus >= 2) { vals[0] = P.gate.malus; vals[4] = P.gate.malus; }
       }
-      gates = []; var x = BL;
+      gates = cellsOf(vals, frac, BL, BW);
+    }
+    /* Five cells across `w` from `x`, at the shares `frac` (the guide paints
+       its own row with the same builder). */
+    function cellsOf(vals, frac, x, w) {
+      var out = [];
       for (var i = 0; i < 5; i++) {
-        var w = BW * frac[i];
-        gates.push({ x: x, w: w, cx: x + w / 2, val: vals[i], flash: 0, jackpot: i === 2, edge: i === 0 || i === 4 });
-        x += w;
+        var cw = w * frac[i];
+        out.push({ x: x, w: cw, cx: x + cw / 2, val: vals[i], flash: 0, jackpot: i === 2, edge: i === 0 || i === 4 });
+        x += cw;
       }
+      return out;
     }
     function gateValue(g) {
       var v = g.val;
@@ -602,8 +608,13 @@
       if (deal.fresh.length) {
         var names = [];
         for (var f = 0; f < deal.fresh.length; f++) names.push(Lang.t(CARDS[deal.fresh[f]].name));
-        Notify.say(deal.fresh.length > 1 ? "New cards" : "New card", { sub: names.join(", "), kind: "rare", icon: "sparkles" });
+        Notify.say(deal.fresh.length > 1 ? "New cards" : "New card", { sub: names.join(", "), kind: "rare", icon: "sparkles",
+                                                                     guide: "kind-" + CARDS[deal.fresh[0]].kind });
       }
+      // a malus gate on the board: named the first time one is met
+      var mal = 0;
+      for (var gi = 0; gi < 5; gi++) if (gates[gi].val < 0) mal++;
+      if (mal) Notify.learn("malus", "Malus gate", { sub: "An edge gate takes points away" });
       Music.play(CONFIG.level ? BAND.music : null);
     }
     function freshBoost() {
@@ -697,6 +708,9 @@
       castWord = { word: key === "blueprint" || key === "recycler" ? Lang.t(def.name) + ": " + Lang.t(CARDS[lastPlayed].name) : def.name,
                    sub: def.desc, kind: def.kind };
       Sound.clip("card", 0.6, 1);
+      /* a charm met for the first time: that it stays is what the card's
+         own callout does not say (a trick's callout names what it copied) */
+      if (def.kind === "charm") Notify.learn("kind-charm", "Charms", { sub: "A charm stays for the whole round" });
       setState("cast");
       return true;
     }
@@ -1406,7 +1420,8 @@
       } else if (v < 0) {
         Sound.clip("bad", 0.4, 1);
       } else {
-        Sound.clip("gate", 0.35, g.val === P.gate.mid ? 1 : 0.9);
+        if (g.val === P.gate.mid) Sound.clip("gate", 0.35);
+        else Sound.clip("gate", 0.35, 0.9);
       }
     }
     /* A ball that leaves without a gate — burnt out, or on a spike. Martyr
@@ -1578,10 +1593,7 @@
       var tg = c.createLinearGradient(0, 0, 0, band);
       tg.addColorStop(0, "rgba(0,0,0,0.6)"); tg.addColorStop(1, "rgba(0,0,0,0)");
       c.fillStyle = tg; c.fillRect(0, 0, view.w, band);
-      // the board panel
-      roundRect(c, BL - 6, BOARD_TOP - 8, BW + 12, GATE_BOTTOM - BOARD_TOP + 16, 22);
-      c.fillStyle = "rgba(24,2,10,0.62)"; c.fill();
-      c.lineWidth = 3; c.strokeStyle = "rgba(255,184,48,0.55)"; c.stroke();
+      boardPanel(c, BL - 6, BOARD_TOP - 8, BW + 12, GATE_BOTTOM - BOARD_TOP + 16);
       // the chute line the balls fall from
       c.strokeStyle = "rgba(255,184,48,0.25)"; c.lineWidth = 2;
       c.setLineDash([8, 10]);
@@ -1591,6 +1603,13 @@
       var sh = c.createLinearGradient(0, GATE_BOTTOM + 8, 0, view.h);
       sh.addColorStop(0, "rgba(10,2,6,0)"); sh.addColorStop(0.35, "rgba(10,2,6,0.5)"); sh.addColorStop(1, "rgba(10,2,6,0.75)");
       c.fillStyle = sh; c.fillRect(0, GATE_BOTTOM + 8, view.w, view.h - GATE_BOTTOM - 8);
+    }
+
+    /* The board panel: the dark velvet the pegs are read on. */
+    function boardPanel(c, x, y, w, h) {
+      roundRect(c, x, y, w, h, 22);
+      c.fillStyle = "rgba(24,2,10,0.62)"; c.fill();
+      c.lineWidth = 3; c.strokeStyle = "rgba(255,184,48,0.55)"; c.stroke();
     }
 
     /* --- render ----------------------------------------------------------------- */
@@ -1604,11 +1623,11 @@
       drawBalls();
       drawDeck();
       drawCharms();
-      if (state === "cast") drawAim(tapX);
+      if (state === "cast") drawAim(tapX, BOARD_TOP + 8, chute && state === "cast" ? chute.c : null);
       if (ghost) drawGhost();
       drawOrbs();
       if (drag) {
-        if (overBoard(drag)) drawAim(clampX(drag.x));
+        if (overBoard(drag)) drawAim(clampX(drag.x), BOARD_TOP + 8, null);
         drawCard(hand[drag.i], drag.x, drag.y - 20, drag.k, drag.tilt, true, drag.i);
       }
     }
@@ -1621,64 +1640,74 @@
        too: at the same rate, through the third line and up to the panel's own
        top edge, which it reaches a little past 2.3x. */
     function drawGauge() {
-      var top = BOARD_TOP + 34, base = GATE_TOP - 4, h = base - top, full = target * 2.2;
-      var ceil = BOARD_TOP - 8, room = base - ceil;
-      var f = clamp(score / full, 0, 1), fh = clamp(h * score / full, 0, room);
+      var top = BOARD_TOP + 34, base = GATE_TOP - 4;
       /* The gauge, the gates, each row of pegs and each card are the
          elements of the round's entrance (Enter): the board is the ground. */
-      if (!Enter.begin(BL + BW / 2, top + h / 2)) return;
+      if (!Enter.begin(BL + BW / 2, (top + base) / 2)) return;
+      gaugeBody(BL, BR, BOARD_TOP - 8, top, base, score, target, goalHit);
+      Enter.end();
+    }
+    /* The gauge itself, between the board's edges `l` / `r`: `ceil` is the
+       panel's top, `top` the third star's line, `base` the foot of the fill. */
+    function gaugeBody(l, r, ceil, top, base, sc, goal, hit) {
+      var w = r - l, h = base - top, full = goal * 2.2, room = base - ceil;
+      var f = clamp(sc / full, 0, 1), fh = clamp(h * sc / full, 0, room);
       ctx.save();
       // clipped to the inside of the board panel (buildBackground), its rim left whole
-      roundRect(ctx, BL - 4.5, ceil + 1.5, BW + 9, room + 8, 20.5); ctx.clip();
+      roundRect(ctx, l - 4.5, ceil + 1.5, w + 9, room + 8, 20.5); ctx.clip();
       var g = ctx.createLinearGradient(0, base - fh, 0, base);
-      g.addColorStop(0, goalHit ? "rgba(255,184,48,0.20)" : "rgba(255,120,80,0.13)");
-      g.addColorStop(1, goalHit ? "rgba(255,184,48,0.05)" : "rgba(255,120,80,0.03)");
-      ctx.fillStyle = g; ctx.fillRect(BL - 6, base - fh, BW + 12, fh);
+      g.addColorStop(0, hit ? "rgba(255,184,48,0.20)" : "rgba(255,120,80,0.13)");
+      g.addColorStop(1, hit ? "rgba(255,184,48,0.05)" : "rgba(255,120,80,0.03)");
+      ctx.fillStyle = g; ctx.fillRect(l - 6, base - fh, w + 12, fh);
       if (fh < room - 1) {
-        ctx.fillStyle = goalHit ? "rgba(255,230,150,0.7)" : "rgba(255,170,120,0.5)";
-        ctx.fillRect(BL - 6, base - fh - 2, BW + 12, 3);
+        ctx.fillStyle = hit ? "rgba(255,230,150,0.7)" : "rgba(255,170,120,0.5)";
+        ctx.fillRect(l - 6, base - fh - 2, w + 12, 3);
       }
-      var marks = [1 / 2.2, 1.5 / 2.2, 1], labels = [target, Math.round(target * 1.5), Math.round(full)];
+      var marks = [1 / 2.2, 1.5 / 2.2, 1], labels = [goal, Math.round(goal * 1.5), Math.round(full)];
       ctx.font = font(18, 800); ctx.textAlign = "right"; ctx.textBaseline = "bottom";
       for (var i = 0; i < 3; i++) {
-        var y = GATE_TOP - 4 - h * marks[i], on = f >= marks[i] - 0.0001;
+        var y = base - h * marks[i], on = f >= marks[i] - 0.0001;
         ctx.strokeStyle = on ? "rgba(255,220,120,0.7)" : "rgba(255,255,255,0.16)"; ctx.lineWidth = 1.5;
         ctx.setLineDash([6, 8]);
-        ctx.beginPath(); ctx.moveTo(BL + 8, y); ctx.lineTo(BR - 8, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(l + 8, y); ctx.lineTo(r - 8, y); ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = on ? "rgba(255,220,120,0.9)" : "rgba(255,255,255,0.3)";
-        ctx.fillText(labels[i], BR - 12, y - 2);
+        ctx.fillText(labels[i], r - 12, y - 2);
       }
       ctx.restore();
-      Enter.end();
     }
 
     function drawGates() {
       ctx.save();
       for (var i = 0; i < 5; i++) {
-        var g = gates[i], v = g.held != null ? g.held : gateValue(g), x = g.x, w = g.w, y = GATE_TOP;
-        var color = v < 0 ? "#c46bff" : g.jackpot ? "#ff4d6d" : boost.gold ? "#ffe08a" : "#ffcf5a";
-        if (!Enter.begin(g.cx, y + GATE_H / 2)) continue;
-        // the cell
-        roundRect(ctx, x + 3, y, w - 6, GATE_H, 10);
-        ctx.fillStyle = v < 0 ? "rgba(90,30,140,0.45)" : g.jackpot ? "rgba(255,77,109,0.22)" : "rgba(255,184,48,0.12)";
-        ctx.fill();
-        if (g.flash > 0) { ctx.fillStyle = rgba(color, 0.55 * g.flash); ctx.fill(); }
-        ctx.lineWidth = 2; ctx.strokeStyle = rgba(color, 0.7); ctx.stroke();
-        // the value
-        ctx.font = font(g.jackpot ? 30 : 24, 900); ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillStyle = color;
-        ctx.fillText((v < 0 ? "" : "+") + fmtNum(v), g.cx, y + GATE_H / 2 + (g.flash > 0 ? -3 * g.flash : 0));
-        // a gold pin at the seam
-        if (i > 0) {
-          ctx.fillStyle = "#ffcf5a";
-          ctx.beginPath(); ctx.arc(x, y - 6, 6, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = "rgba(255,255,255,0.7)";
-          ctx.beginPath(); ctx.arc(x - 1.5, y - 8, 2, 0, Math.PI * 2); ctx.fill();
-        }
+        var g = gates[i];
+        if (!Enter.begin(g.cx, GATE_TOP + GATE_H / 2)) continue;
+        drawGate(g, i, g.held != null ? g.held : gateValue(g), boost.gold, GATE_TOP);
         Enter.end();
       }
       ctx.restore();
+    }
+    /* One gate cell at `y`, wearing the value `v` (`gold`: Gold is in force). */
+    function drawGate(g, i, v, gold, y) {
+      var x = g.x, w = g.w;
+      var color = v < 0 ? "#c46bff" : g.jackpot ? "#ff4d6d" : gold ? "#ffe08a" : "#ffcf5a";
+      // the cell
+      roundRect(ctx, x + 3, y, w - 6, GATE_H, 10);
+      ctx.fillStyle = v < 0 ? "rgba(90,30,140,0.45)" : g.jackpot ? "rgba(255,77,109,0.22)" : "rgba(255,184,48,0.12)";
+      ctx.fill();
+      if (g.flash > 0) { ctx.fillStyle = rgba(color, 0.55 * g.flash); ctx.fill(); }
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba(color, 0.7); ctx.stroke();
+      // the value
+      ctx.font = font(g.jackpot ? 30 : 24, 900); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = color;
+      ctx.fillText((v < 0 ? "" : "+") + fmtNum(v), g.cx, y + GATE_H / 2 + (g.flash > 0 ? -3 * g.flash : 0));
+      // a gold pin at the seam
+      if (i > 0) {
+        ctx.fillStyle = "#ffcf5a";
+        ctx.beginPath(); ctx.arc(x, y - 6, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.beginPath(); ctx.arc(x - 1.5, y - 8, 2, 0, Math.PI * 2); ctx.fill();
+      }
     }
 
     function drawPegs() {
@@ -1689,67 +1718,71 @@
           row = pegs[i].row; on = Enter.begin(BL + BW / 2, pegs[i].y);
         }
         if (!on) continue;
-        var p = pegs[i];
-        if (p.dead) continue;
-        var type = p.hide ? "classic" : p.type;
-        var sp = type === "bomb" && p.spent ? sprites.spent : sprites[type];
-        var S = sp.width / view.dpr, k = 1 + p.flash * 0.35;
-        if (type === "fire" || type === "magnet" || type === "golden") k *= 1 + 0.05 * Math.sin(tAnim * 8 + p.id);
-        if (type === "portal") {
-          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(tAnim * 3);
-          ctx.drawImage(sp, -S / 2 * k, -S / 2 * k, S * k, S * k); ctx.restore();
-        } else ctx.drawImage(sp, p.x - S / 2 * k, p.y - S / 2 * k, S * k, S * k);
-        if (p.type === "glass" && p.cracks) {      // the cracks, one per hit taken
-          ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(p.x - 7, p.y - 3); ctx.lineTo(p.x + 1, p.y + 1); ctx.lineTo(p.x + 6, p.y - 6);
-          if (p.cracks > 1) { ctx.moveTo(p.x + 1, p.y + 1); ctx.lineTo(p.x - 2, p.y + 8); }
-          ctx.stroke();
-        }
-        if (p.flash > 0.02) {
-          ctx.strokeStyle = rgba("#ffffff", p.flash * 0.9); ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 4 + (1 - p.flash) * 14, 0, Math.PI * 2); ctx.stroke();
-        }
+        drawPeg(pegs[i]);
       }
       if (on) Enter.end();
+    }
+    function drawPeg(p) {
+      if (p.dead) return;
+      var t = tAnim || 0, type = p.hide ? "classic" : p.type;
+      var sp = type === "bomb" && p.spent ? sprites.spent : sprites[type];
+      var S = sp.width / view.dpr, k = 1 + p.flash * 0.35;
+      if (type === "fire" || type === "magnet" || type === "golden") k *= 1 + 0.05 * Math.sin(t * 8 + p.id);
+      if (type === "portal") {
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(t * 3);
+        ctx.drawImage(sp, -S / 2 * k, -S / 2 * k, S * k, S * k); ctx.restore();
+      } else ctx.drawImage(sp, p.x - S / 2 * k, p.y - S / 2 * k, S * k, S * k);
+      if (p.type === "glass" && p.cracks) {      // the cracks, one per hit taken
+        ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(p.x - 7, p.y - 3); ctx.lineTo(p.x + 1, p.y + 1); ctx.lineTo(p.x + 6, p.y - 6);
+        if (p.cracks > 1) { ctx.moveTo(p.x + 1, p.y + 1); ctx.lineTo(p.x - 2, p.y + 8); }
+        ctx.stroke();
+      }
+      if (p.flash > 0.02) {
+        ctx.strokeStyle = rgba("#ffffff", p.flash * 0.9); ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 4 + (1 - p.flash) * 14, 0, Math.PI * 2); ctx.stroke();
+      }
     }
 
     /* A Spark's arcs: a jagged white-blue line that flickers out. */
     function drawArcs() {
-      for (var i = 0; i < arcs.length; i++) {
-        var a = arcs[i], f = a.t / 0.18, dx = a.x2 - a.x1, dy = a.y2 - a.y1;
-        ctx.strokeStyle = rgba("#bff4ff", f); ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(a.x1, a.y1);
-        for (var s = 1; s < 5; s++) {
-          var t = s / 5, j = Math.sin(a.s + s * 2.3 + tAnim * 40) * 9;
-          ctx.lineTo(a.x1 + dx * t - dy / 60 * j, a.y1 + dy * t + dx / 60 * j);
-        }
-        ctx.lineTo(a.x2, a.y2); ctx.stroke();
+      for (var i = 0; i < arcs.length; i++) drawArc(arcs[i]);
+    }
+    function drawArc(a) {
+      var f = a.t / 0.18, dx = a.x2 - a.x1, dy = a.y2 - a.y1, t0 = tAnim || 0;
+      ctx.strokeStyle = rgba("#bff4ff", f); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(a.x1, a.y1);
+      for (var s = 1; s < 5; s++) {
+        var t = s / 5, j = Math.sin(a.s + s * 2.3 + t0 * 40) * 9;
+        ctx.lineTo(a.x1 + dx * t - dy / 60 * j, a.y1 + dy * t + dx / 60 * j);
       }
+      ctx.lineTo(a.x2, a.y2); ctx.stroke();
     }
 
     function drawBalls() {
       var img = ArtImages["ball0" + clamp(wave, 1, 5)];
-      for (var i = 0; i < balls.length; i++) {
-        var b = balls[i];
-        if (b.burn > 0 || b.frozen > 0 || b.charged > 0 || b.gold) {
-          var c = b.gold ? "#ffd700" : b.burn > 0 ? "#ff7a1a" : b.frozen > 0 ? "#5ad8ff" : "#c46bff";
-          ctx.fillStyle = rgba(c, 0.28 + 0.12 * Math.sin(tAnim * 14 + b.id));
-          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 8, 0, Math.PI * 2); ctx.fill();
-          ctx.strokeStyle = rgba(c, 0.9); ctx.lineWidth = 2.5;
-          ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, Math.PI * 2); ctx.stroke();
-          // a burning ball leaves embers
-          if (b.burn > 0) {
-            b.trail += 1;
-            if (b.trail % 3 === 0) Fx.burst(b.x, b.y, { color: ["#ff7a1a", "#ffd166"], count: 1, speed: 40, life: .35, grav: -120, size: 3 });
-          }
+      for (var i = 0; i < balls.length; i++) drawBall(balls[i], img);
+    }
+    /* One ball, its heat ringed round it; `img` is the wave's painted ball. */
+    function drawBall(b, img) {
+      if (b.burn > 0 || b.frozen > 0 || b.charged > 0 || b.gold) {
+        var c = b.gold ? "#ffd700" : b.burn > 0 ? "#ff7a1a" : b.frozen > 0 ? "#5ad8ff" : "#c46bff";
+        ctx.fillStyle = rgba(c, 0.28 + 0.12 * Math.sin((tAnim || 0) * 14 + b.id));
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = rgba(c, 0.9); ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 3, 0, Math.PI * 2); ctx.stroke();
+        // a burning ball leaves embers
+        if (b.burn > 0) {
+          b.trail += 1;
+          if (b.trail % 3 === 0) Fx.burst(b.x, b.y, { color: ["#ff7a1a", "#ffd166"], count: 1, speed: 40, life: .35, grav: -120, size: 3 });
         }
-        if (img && img.width) {
-          var s = (b.r + 3) * 2;
-          ctx.drawImage(img, b.x - s / 2, b.y - s / 2, s, s);
-        } else {
-          var S = sprites.ball.width / view.dpr * b.r / BALL_R;
-          ctx.drawImage(sprites.ball, b.x - S / 2, b.y - S / 2, S, S);
-        }
+      }
+      if (img && img.width) {
+        var s = (b.r + 3) * 2;
+        ctx.drawImage(img, b.x - s / 2, b.y - s / 2, s, s);
+      } else {
+        var S = sprites.ball.width / view.dpr * b.r / BALL_R;
+        ctx.drawImage(sprites.ball, b.x - S / 2, b.y - S / 2, S, S);
       }
     }
 
@@ -1930,9 +1963,9 @@
 
     /* Where the wave will fall from: a marker on the chute, and a dashed drop
        line under it. */
-    function drawAim(x) {
-      var y = BOARD_TOP + 8, pulse = 0.6 + 0.4 * Math.sin(tAnim * 6);
-      var c = chute && state === "cast" ? chute.c : "#ffb830";
+    function drawAim(x, y, charged) {
+      var pulse = 0.6 + 0.4 * Math.sin((tAnim || 0) * 6);
+      var c = charged || "#ffb830";
       if (c !== "#ffb830") {        // a wave card charged the chute: it glows in that card's colour
         ctx.fillStyle = rgba(c, 0.25 * pulse);
         ctx.beginPath(); ctx.arc(x, y - 4, 34, 0, Math.PI * 2); ctx.fill();
@@ -2036,6 +2069,19 @@
         h.className = "pk-hint"; h.textContent = Lang.t("Drag it onto the board to play it");
         panel.appendChild(h);
       }
+      /* the web build's guide holds the rule of the card's kind: a button to
+         its page, the one control of this layer (the rest takes no pointer) */
+      if (window.__GUIDE__) {
+        var rule = document.createElement("button");
+        rule.className = "btn btn-sm btn-plate pk-zrule";
+        rule.textContent = upper(Lang.t(KIND_PAGE[CARDS[key].kind]));
+        rule.addEventListener("click", function (e) {
+          e.stopPropagation();
+          closeZoom();
+          window.__GUIDE__.open("kind-" + CARDS[key].kind);
+        });
+        panel.appendChild(rule);
+      }
       mc.appendChild(panel);
       var tap = document.createElement("p");
       tap.className = "mt-tap"; tap.textContent = upper(Lang.t("Tap to close"));
@@ -2078,6 +2124,263 @@
       info: cardInfo
     };
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and every picture is painted by the
+       round's own renderers — drawPeg, drawBall, drawGate, drawCard,
+       gaugeBody — with the round's `ctx` lent to a canvas of its own for the
+       length of the call, so a peg read in the guide is the peg on the board.
+       It may open before any round (the Help card on the title screen): the
+       pictures build every peg, ball and gate they draw themselves and touch
+       nothing of the round. A page's `lv` is the level that first deals the
+       idea (the card's `lv`, or the level the tune first puts it on). */
+    var KIND_PAGE = { peg: "Peg cards", wave: "Wave cards", charm: "Charms", meta: "Tricks" };
+    var PIC_W = 520, BOARD_W = 660;   // a page's picture, and the board's own width a scene is painted at
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { buildSprites(); fn(); } finally { ctx = keep; }
+      return cv;
+    }
+    function fillIn(str, vals) {
+      return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vals[k] == null ? m : vals[k]; });
+    }
+    /* What the climb lerps a knob between, level 1 to level 30
+       (web.levels.tune), or the knob as it stands where there is no climb. */
+    function tuneOf(key, now) {
+      var T = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.tune, r = T && T[key];
+      return r ? r : [now, now];
+    }
+    function firstGoal() {
+      var L = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.objective;
+      return L ? L.from : P.goal;
+    }
+    function pegAt(type, x, y, more) {
+      var p = { x: x, y: y, type: type, r: TYPES[type].r || PEG_R, flash: 0, wait: 0, hide: false,
+                spent: false, dead: false, cracks: 0, row: 0, id: 0 }, k;
+      for (k in more || {}) p[k] = more[k];
+      return p;
+    }
+    function ballAt(x, y, more) {
+      var b = { x: x, y: y, r: BALL_R, burn: 0, frozen: 0, charged: 0, gold: false, id: 0, trail: 1 }, k;
+      for (k in more || {}) b[k] = more[k];
+      return b;
+    }
+    function ballImg() { var img = ArtImages.ball01; return img && img.width ? img : null; }
+    /* Pegs close up, each with the ball it is about when it has one. */
+    function pegsPic(items, Z) {
+      var pad = 12, sum = 0, i;
+      for (i = 0; i < items.length; i++) sum += items[i].ball ? 92 : 62;
+      Z = Z || Math.min(3, (PIC_W - pad * 2) / sum);   // as big as the page lets them stand
+      var W = pad * 2 + sum * Z, H = 64 * Z + pad * 2;
+      return paintPic(Math.round(W), Math.round(H), function () {
+        var x = pad;
+        for (var j = 0; j < items.length; j++) {
+          var it = items[j], cw = (it.ball ? 92 : 62) * Z;
+          ctx.save();
+          ctx.translate(x + cw / 2, H / 2); ctx.scale(Z, Z);
+          var off = it.ball ? 11 : 0;
+          drawPeg(pegAt(it.type, off, off, it.peg));
+          if (it.ball) drawBall(ballAt(off - 19, off - 19, it.ball), ballImg());
+          ctx.restore();
+          x += cw;
+        }
+      });
+    }
+    /* A row of the hand's own cards (drawCard); a null key is a slot played. */
+    function cardsPic(keys, k) {
+      k = k || 1.3;
+      var cw = CARD_W * k, ch = CARD_H * k, gap = 12, pad = 12;
+      var W = pad * 2 + keys.length * cw + (keys.length - 1) * gap, H = ch + pad * 2 + 8;
+      return paintPic(Math.round(W), Math.round(H), function () {
+        for (var i = 0; i < keys.length; i++) {
+          var cx = pad + cw / 2 + i * (cw + gap), cy = H / 2;
+          if (keys[i]) drawCard({ key: keys[i], used: false }, cx, cy, k, (i - (keys.length - 1) / 2) * 0.04, false, i);
+          else {
+            roundRect(ctx, cx - cw / 2 + 4, cy - ch / 2 + 4, cw - 8, ch - 8, 12);
+            ctx.setLineDash([8, 8]); ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+      });
+    }
+    /* A stretch of the board, painted at the board's width and scaled to the
+       page: `H` board px tall, `fn` drawing in board px. */
+    function scenePic(H, fn) {
+      var s = PIC_W / BOARD_W;
+      return paintPic(PIC_W, Math.round(H * s), function () {
+        ctx.scale(s, s);
+        boardPanel(ctx, 3, 3, BOARD_W - 6, H - 6);
+        fn();
+      });
+    }
+    /* Staggered rows of classic pegs (buildPegs' pitch), `types` naming the
+       odd peg out: { "row,col": type }. */
+    function pegRows(y0, n, types) {
+      for (var r = 0; r < n; r++) {
+        var odd = r % 2, m = odd ? 9 : 10, x0 = PITCH_X / 2 + (odd ? PITCH_X / 2 : 0);
+        for (var c = 0; c < m; c++) drawPeg(pegAt((types && types[r + "," + c]) || "classic", x0 + c * PITCH_X, y0 + r * PITCH_Y));
+      }
+    }
+    function gateRow(vals, y, flash) {
+      var cells = cellsOf(vals, [0.24, 0.20, 0.12, 0.20, 0.24], 0, BOARD_W);
+      for (var i = 0; i < 5; i++) {
+        if (flash === i) cells[i].flash = 0.7;
+        drawGate(cells[i], i, cells[i].val, false, y);
+      }
+    }
+    function firstGates(malus) {
+      var e = tuneOf("play.gate.edge", P.gate.edge)[0], m = tuneOf("play.gate.mid", P.gate.mid)[0];
+      var j = tuneOf("play.gate.jackpot", P.gate.jackpot)[0], x = tuneOf("play.gate.malus", P.gate.malus)[0];
+      return [malus ? x : e, m, j, m, malus > 1 ? x : e];
+    }
+    function playPic() {
+      return scenePic(400, function () {
+        ctx.strokeStyle = "rgba(255,184,48,0.25)"; ctx.lineWidth = 2;
+        ctx.setLineDash([8, 10]);
+        ctx.beginPath(); ctx.moveTo(10, 22); ctx.lineTo(BOARD_W - 10, 22); ctx.stroke();
+        ctx.setLineDash([]);
+        pegRows(80, 4, { "1,4": "fire", "2,2": "bumper", "3,6": "ice" });
+        var img = ballImg();
+        drawBall(ballAt(296, 64), img); drawBall(ballAt(318, 118, { burn: 1 }), img); drawBall(ballAt(270, 176), img);
+        drawAim(296, 16, null);
+        gateRow(firstGates(0), 320, null);
+      });
+    }
+    function gatesPic(malus, flash) {
+      return scenePic(200, function () {
+        pegRows(36, 2, null);
+        if (flash != null) drawBall(ballAt(BOARD_W / 2, 104), ballImg());
+        gateRow(firstGates(malus), 124, flash);
+      });
+    }
+    function gaugePic() {
+      var goal = firstGoal();
+      return paintPic(PIC_W, 240, function () {
+        boardPanel(ctx, 4, 4, PIC_W - 8, 232);
+        gaugeBody(10, PIC_W - 10, 12, 40, 226, goal * 1.75, goal, true);
+        // the pegs stand clear of the figures, which are read on the right
+        for (var r = 0; r < 3; r++) {
+          for (var c = 0; c < 6; c++) drawPeg(pegAt("classic", 34 + c * PITCH_X + (r % 2) * PITCH_X / 2, 70 + r * 62));
+        }
+      });
+    }
+    function sparkPic() {
+      var Z = 1.7;
+      return paintPic(Math.round(250 * Z), Math.round(170 * Z), function () {
+        ctx.scale(Z, Z);
+        var cx = 125, cy = 70, at = [[-66, 0], [66, 0], [-33, 60], [33, 60], [-33, -60], [33, -60]], i;
+        for (i = 0; i < 3; i++) drawArc({ x1: cx, y1: cy, x2: cx + at[i][0], y2: cy + at[i][1], t: 0.18, s: i * 31 });
+        for (i = 0; i < at.length; i++) drawPeg(pegAt("classic", cx + at[i][0], cy + at[i][1], { flash: i < 3 ? 0.5 : 0 }));
+        drawPeg(pegAt("lightning", cx, cy));
+      });
+    }
+    function bandPic(i) {
+      var src = artSrc(CONFIG.bands[i] && CONFIG.bands[i].scene);
+      return src || null;
+    }
+    function bandName(i) {
+      var B = CONFIG.web && CONFIG.web.levels && CONFIG.web.levels.bands;
+      var names = B && (B[Lang.code()] || B.en);
+      return names && names[i] ? names[i] : fillIn(Lang.t("Levels {a} to {b}"), { a: i * 6 + 1, b: i * 6 + 6 });
+    }
+    function bandChapter(i, lines) {
+      var a = i * 6 + 1;
+      return { key: "band" + (i + 1), label: bandName(i), pages: [
+        { id: "band" + (i + 1), title: fillIn(Lang.t("Levels {a} to {b}"), { a: a, b: a + 5 }), lv: a,
+          pic: function () { return bandPic(i); }, lines: lines }
+      ] };
+    }
+    function mulRow(label, type, color) { return [Lang.t(label), "x" + TYPES[type].mul, color]; }
+    var guide = {
+      chapters: function () {
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "play", title: Lang.t("Play a card"), pic: playPic,
+              lines: [Lang.t("Drag a card from your hand onto the board. The wave drops where you let go.")] },
+            { id: "score", title: Lang.t("Points and mult"),
+              pic: function () { return pegsPic([{ type: "classic", ball: {} }, { type: "fire" }, { type: "bumper" }]); },
+              lines: [Lang.t("Each peg a ball touches scores its points, multiplied by the current mult.")] },
+            { id: "hand", title: Lang.t("Your hand"), pic: function () { return cardsPic(["bomb", "gold", "magnet", null], 1); },
+              lines: [Lang.t("Tap a card to read it."),
+                      Lang.t("A level always deals the same pile.")] },
+            { id: "objective", title: Lang.t("Objective and stars"), pic: gaugePic,
+              lines: [Lang.t("Three stars don't end the round. Play on to the last ball to push your score.")] }
+          ] },
+          { key: "gates", label: Lang.t("The gates"), pages: [
+            { id: "gates", title: Lang.t("The gates"), pic: function () { return gatesPic(0, 2); },
+              lines: [Lang.t("Every ball ends up in a gate, which pays its value times the mult.")] },
+            { id: "malus", title: Lang.t("Malus gates"), lv: 4, pic: function () { return gatesPic(1, null); },
+              lines: [Lang.t("The Gold card makes malus gates pay for one wave. All in turns the edge gates into malus.")] }
+          ] },
+          { key: "cards", label: Lang.t("The cards"), pages: [
+            { id: "kind-peg", title: Lang.t("Peg cards"), lv: 1, pic: function () { return cardsPic(["fire", "ice", "bumper"]); },
+              lines: [Lang.t("A peg card turns some classic pegs into special ones until the end of the round.")] },
+            { id: "kind-wave", title: Lang.t("Wave cards"), lv: 1, pic: function () { return cardsPic(["double", "gold", "balls"]); },
+              lines: [Lang.t("A wave card only works for the next wave.")] },
+            { id: "mult", title: Lang.t("The mult cards"), lv: 2, pic: function () { return cardsPic(["golden", "fever", "lastCall"]); },
+              lines: [Lang.t("The mult starts at 1. Every + adds to it, then every x multiplies it."),
+                      Lang.t("Most mult bonuses last one wave. A charm's bonus stays for the round.")] },
+            { id: "kind-charm", title: Lang.t("Charms"), lv: 3, pic: function () { return cardsPic(["clover", "wildfire", "collector"]); },
+              lines: [Lang.t("A charm stays until the end of the round. A second copy stacks with the first.")] },
+            { id: "kind-meta", title: Lang.t("Tricks"), lv: 7, pic: function () { return cardsPic(["blueprint", "recycler"]); },
+              lines: [Lang.t("Copy plays the last card again. Recall puts it back in your hand.")] },
+            { id: "rarity", title: Lang.t("Rarity"), pic: function () { return cardsPic(["fire", "prism", "portal", "chain"], 1); },
+              lines: [Lang.t("The rarer the card, the less often the pile deals it.")] }
+          ] },
+          { key: "pegs", label: Lang.t("Special pegs"), pages: [
+            { id: "heat", title: Lang.t("Fire and ice"), lv: 1,
+              pic: function () { return pegsPic([{ type: "fire", ball: { burn: 1 } }, { type: "ice", ball: { frozen: 1 } }]); },
+              rows: [mulRow("Fire or ice peg", "fire"), [Lang.t("A burning ball"), Lang.t("+0.5 peg a hit"), "#ff7a1a"],
+                     [Lang.t("A frozen ball"), Lang.t("+1 peg a hit"), "#5ad8ff"]],
+              lines: [Lang.t("A fire peg sets the ball on fire. An ice peg freezes it, and a frozen ball falls slower."),
+                      Lang.t("Fire and ice cancel each other out. With Thermal shock, they explode instead.")] },
+            { id: "bumper", title: Lang.t("Bumpers and magnets"), lv: 1,
+              pic: function () { return pegsPic([{ type: "bumper" }, { type: "magnet", ball: { charged: 1 } }]); },
+              rows: [mulRow("Bumper", "bumper"), mulRow("Magnet", "magnet"), [Lang.t("A charged ball"), Lang.t("x2 a hit"), "#c46bff"]],
+              lines: [Lang.t("A magnet pulls balls in and charges them. A charged ball pays double and pulls the others.")] },
+            { id: "bomb", title: Lang.t("Bombs"), lv: 1,
+              pic: function () { return pegsPic([{ type: "bomb" }, { type: "bomb", peg: { spent: true } }]); },
+              rows: [mulRow("Bomb", "bomb")],
+              lines: [Lang.t("A bomb goes off once a wave and blasts away every ball near it.")] },
+            { id: "prism", title: Lang.t("Prisms and Midas"), lv: 2,
+              pic: function () { return pegsPic([{ type: "prism", ball: {} }, { type: "golden" }]); },
+              rows: [mulRow("Prism", "prism")],
+              lines: [Lang.t("A prism splits a ball in two. The halves can't split again."),
+                      Lang.t("Midas adds +0.1 to the mult on every hit, until the end of the wave.")] },
+            { id: "lucky", title: Lang.t("Lucky pegs"), lv: 3,
+              pic: function () { return pegsPic([{ type: "lucky", ball: {} }, { type: "lucky" }]); },
+              lines: [Lang.t("One hit in four on a lucky peg pays ten times as much."),
+                      Lang.t("Clover doubles every chance in the game.")] },
+            { id: "spark", title: Lang.t("Sparks"), lv: 4, pic: sparkPic,
+              rows: [mulRow("Spark", "lightning")],
+              lines: [Lang.t("A spark zaps its three nearest pegs, which go off as if a ball hit them.")] },
+            { id: "glass", title: Lang.t("Glass"), lv: 5,
+              pic: function () { return pegsPic([{ type: "glass" }, { type: "glass", peg: { cracks: 1 } }, { type: "glass", peg: { cracks: 2 } }]); },
+              rows: [mulRow("Glass", "glass")],
+              lines: [Lang.t("A glass peg pays five pegs a hit. It breaks on its third hit, for the rest of the round."),
+                      Lang.t("With Shards, each broken glass peg adds +0.5 mult.")] },
+            { id: "copiers", title: Lang.t("Echo and mirror"), lv: 7,
+              pic: function () { return pegsPic([{ type: "echo" }, { type: "mirror" }, { type: "fire" }]); },
+              lines: [Lang.t("An echo replays the last special the ball hit."),
+                      Lang.t("A mirror copies the special next to it.")] },
+            { id: "portal", title: Lang.t("Portals and spikes"), lv: 8,
+              pic: function () { return pegsPic([{ type: "portal", ball: {} }, { type: "spike" }]); },
+              rows: [mulRow("Portal", "portal"), mulRow("Spike", "spike", "#ff3355")],
+              lines: [Lang.t("A portal sends the ball back up to the top, three times at most."),
+                      Lang.t("A spike destroys the ball but pays fifty pegs for it.")] }
+          ] },
+          bandChapter(0, [Lang.t("Every level after the first adds four cards.")]),
+          bandChapter(1, [Lang.t("At level 12, Recall and All in complete the set.")]),
+          bandChapter(2, [fillIn(Lang.t("No new cards here. The pile now deals from all {n}."), { n: CARD_KEYS.length })]),
+          bandChapter(3, [Lang.t("From level 22, both edge gates take points away.")]),
+          bandChapter(4, [Lang.t("Both edge gates are malus on every level of the last band.")])
+        ];
+      }
+    };
+
     /* --- the end ------------------------------------------------------------------ */
     function onTimeUp() { endRun(CONFIG.copy.timeUp); }
     function endRun(title) {
@@ -2105,9 +2408,10 @@
     /* The third star does not end a pawko round: the score is what a broken
        combination is chased for, so the level layer is told to play on
        (`levelMaxed`) and the round runs to the last ball of the last wave.
-       The callout is written here, over the hand, where no ball is. */
+       It is said as a notice — the level's event, not the player's shot —
+       whose line in the log opens the page of the stars. */
     function levelMaxed() {
-      Pop.show("record", { word: "Three stars!", sub: "Play on for the score", at: deckSpot(view.w / 2), hold: 1000 });
+      Notify.say("Three stars!", { sub: "Play on for the score", kind: "good", icon: "star", guide: "objective" });
       return true;
     }
 
@@ -2117,6 +2421,6 @@
        would end through the game's own result. Ignored by the playable. */
     return { reset: reset, onDown: onDown, onMove: onMove, onUp: onUp, update: update, render: render,
              onTimeUp: onTimeUp, onResize: onResize, applyLevel: applyLevel,
-             levelMaxed: levelMaxed, levelWon: endRun, codex: codex };
+             levelMaxed: levelMaxed, levelWon: endRun, codex: codex, guide: guide };
   })();
 

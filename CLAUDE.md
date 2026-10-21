@@ -180,17 +180,32 @@ development pages and answer only to the short rules in their own sections.
    - call `endRound({ title, variant, score, stars, rows })` when the run is
      over → plays the cinematic end screen. **At most four `rows`**: past that the
      column overflows the frame and the cascade drags. The end screen's
-     character no longer depends on the row count — it arrives at twice its
-     size and settles into the corner over the reveal, painted under everything
-     the screen writes (see [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what
-     picks the face — 3 → happy, 2 or 1 → neutral, 0 → sad.
+     character stands behind the column, big and at a third of its strength,
+     painted under everything the screen writes (see
+     [docs/ENGINE.md](docs/ENGINE.md)). `stars` is what picks the face — 3 →
+     happy, 2 or 1 → neutral, 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
-   `Fx.burst/ring/shake/flash/freeze`, `Pop.show` for **every MOMENT the game
-   writes** (a mistake as it happens is the `alert` style), **`Notify.say` for
-   every piece of INFORMATION** — a state that changed, an input refused, a
-   hint, a warning — `Pop.text` for a value floating in the world,
-   `Overlay.vignette` for the glow, `Sound.clip`. Never paint a status line on
-   the canvas and never build a message node of your own.
+   `Fx.burst/ring/shake/flash/freeze`, `Overlay.vignette` for the glow,
+   `Sound.clip` — and put every word in ONE of three places:
+   - **`Pop.show` / `Pop.text` — what the player just DID**, in the scene: a
+     hit, a score, a combo, a power fired, a mistake as it happens (`alert`),
+     and the state that action left behind ("Shield down", "Wounded");
+   - **`Notify.say` — what HAPPENED to them**: an event they did not make (a
+     wave, a boss, the lava surging, the camp's day), an action REFUSED that
+     they tried anyway ("Out of reach", "Follow suit"), and anything said
+     outside a round; **`Notify.learn(id, word, { sub })`** names a MECHANIC
+     the first time a player meets it, once ever, and a **record beaten** is
+     the motor's own (`Record`, nothing to write);
+   - **the guide (`Game.guide`) — every RULE**, explained. A lesson is never
+     a line on screen during play and never a card on the way into a round.
+     Never paint a status line on the canvas and never build a message node of
+     your own.
+1. Publish the rules as **`Game.guide`** — chapters of pages, one page per
+   rule, biome, object or special case, each with the level that first deals
+   it (`lv`, locked until then). The Help card ends on the book's line, *Anytime, tap
+   {book} for more help*, which opens it; a `Notify.learn(id)` opens page `id` from the "!" log; and a game
+   whose table explains itself on a tap opens the page of what was tapped
+   (`__GUIDE__.open(id)`). See [The guide](#the-guide) below.
 1. Give every event a sound **picked from `assets/audio/sfx/`**, trimmed and embedded
    in `ASSETS.sounds` (see [docs/ASSETS.md](docs/ASSETS.md)). Every file there is
    named `<category>-<descriptor>-<NN>` — browse it by ear at `make events` →
@@ -342,7 +357,7 @@ out with `data-nopull`. Chosen in `lab/view-frame.html`; see
 
 **There is no back arrow in it.** A back arrow answers "where did I come from",
 and the player does not care — they care where they are going. The **wallet band
-IS the navigation**: one line, `⌂ · DEV · ⚡ · more · 1 240 · 3/20 · 12/90 · !`,
+IS the navigation**: one line, `DEV · ⌂ · ⚡ · more · 1 240 · 3/20 · 12/90 · !`,
 each chip the door to the screen it is the number of — home, the ranking, the
 shop, the collection, the map (DEV on a local machine only, `more` only on a
 game that declares `web.meta.more`). **The "!" at the end counts nothing**: it
@@ -360,7 +375,8 @@ inert rather than missing, so a number is never one to find again — the house
 included: it is always first in the row, inert on the village it is the door
 to, and the way home over every sheet, whose own bar carries the map bottom
 right; the row
-runs edge to edge, the house against the left gutter, and the level chip's xp
+runs edge to edge, the house against the left gutter (behind the DEV pill on
+a local machine), and the level chip's xp
 bar fills all the room the counts leave free. A
 view's header carries no button; a card's way out is its tap line — every card
 ends on one ("Tap to close", "Tap to collect"), and a tap anywhere — the card,
@@ -463,9 +479,12 @@ What a view brings:
   through `Store`.
 - **the round gets a third control in front of that pair**: the way out. It is
   the difference between a playable, where the round *is* the ad, and a game the
-  player owns, and the pictogram is the DESTINATION rather than the door — the
-  house, and it leads to the village (the title screen on a game without one),
-  never to the map, which is one building of that place. Not in the top band:
+  player owns, and its pictogram is the MENU (three lines): it opens the leave
+  card, which answers with **resume** first, then where to go — **play again** (the same level, the
+  endless run included, or a free round), **home** (the village, the title
+  screen on a game without one) and **the map** (a levelled game only), one
+  exit per line, the tap line under them resuming the round as well
+  (`openLeave`, `packages/webshell/menu.js`). Not in the top band:
   the HUD is the game's, all of it, and the thirteen fill it differently —
   nothing about the round has to move to make room (`--hud-h`, `--cta-h` and
   `Layout` are all untouched). Any card over a round **pauses it** (the clock is
@@ -476,8 +495,8 @@ What a view brings:
   as the options (`packages/webshell/view.js`, section 1b) — and the outro is
   held too, since its slow motion is still the game turning behind the scrim:
   the same options
-  rows, or the one question that throws a run away — leaving does not call
-  `endRound`, so an abandoned round writes no score. ESCAPE is that pause on a
+  rows, or the one question that throws a run away — leaving or replaying from
+  it does not call `endRound`, so an abandoned round writes no score. ESCAPE is that pause on a
   keyboard.
 - the how-to-play demo moves into the Help card (the motor's own node, moved
   not copied, so a SKIN's dressing follows it — and handed back while the card
@@ -534,7 +553,8 @@ What a view brings:
   in its SKIN to stand it on top of the pill instead (`games/blight`,
   `games/echomaze`). **The third star ends the
   round**: slow motion down to 12 %
-  over ~0.6 s, then the end screen, because a player who has maxed a level
+  over 0.3 s and a 0.2 s hold — every ending is half a second, whatever it
+  scored — then the end screen, because a player who has maxed a level
   should not have to die to be told so. **Every other ending gets its own outro
   too**, on the same hook: one or two stars ease the world down and say nothing,
   a missed objective turns the frame red and burns fire up from the bottom edge
@@ -606,7 +626,7 @@ What a view brings:
   standing on — the road card steps aside and the boxes take its place, and the
   map is never involved — and on a game with no hub the tap does what PLAY does
   and opens the LEVEL MAP under it. On `localhost` the wallet band carries a
-  DEV pill in front of the level chip — the one DEV pill the front end draws —
+  DEV pill first in the row, in front of the house — the one DEV pill the front end draws —
   and it is the door to the **DEV view** (`packages/webshell/dev.js`): every
   card and action the layers register with `W.Dev.entry`, one tap each, and
   the game's clock (`W.Dev.now()`) moved by hand — ADVANCE passes x hours with
@@ -639,6 +659,13 @@ What a view brings:
   the wallet band**: it is counted in the header of the shop and of the
   album, the two sheets it is bought and spent on, and a super ticket won or
   bought flies into the collection's chip like a ticket does.
+  **The album's second tab is the GALLERY**, what the coins are for once the
+  machine has nothing left to give: the game's own paintings — its scenes, the
+  village's ground, the desk's scene and the character in its three moods on
+  its scene — cut into generated puzzle pieces bought one at a time, at a
+  price that follows the climb (half price behind the board, up to eight times
+  ahead of it), and the perfect 90/90 hands over whatever is left. No art is
+  made for it (docs/META.md, section 3b; `sim-economy.mjs --gallery`).
   **The shop around it is a grid of six tiles** — the ticket, the super
   ticket, a mystery gift (the three boxes, which never pay coins), an xp pack
   priced at the player's own level, and two boosts counted in ROUNDS and never
@@ -668,14 +695,15 @@ What a view brings:
   for it, since a control that cannot act is a wall. **A level's FIRST perfect
   round, and a round the map owes a sticker for, end ON THE END SCREEN and not
   in a card** (a perfect replay gets the one-or-two-star offer instead): the
-  outro is the slow motion and the THREE STARS callout and nothing else, the
+  outro is the slow motion and the gold shine and nothing else — no word, the
   reveal plays and the score becomes coins, and then the three stars the screen
   has just lit BECOME three gift boxes where they stand, the rows giving their
   room to one line — pick one. The box picked opens and the row is replaced by
   what the round paid — its prize in the middle, the band's and the clean run's
-  stickers either side — the rows under it say what each one is for, each prize
-  flies into its chip, and only then does the way out arrive (the motor's
-  `onReveal` holds it, and the SPACE that replays with it). The bonus row
+  stickers either side — the rows under it say what each one is for, and **the
+  way out lands with the prize**, the prizes flying into their chips under it
+  (the motor's `onReveal` holds it until the pick, and the SPACE that replays
+  with it; nothing times the pick, the player makes it). The bonus row
   carries one ad to pay **×5** what the box held, on a button that NAMES WHAT
   IT MULTIPLIES and follows with the price — `MULTIPLY YOUR COINS` and the
   shell's painted ×5 plate finishing the sentence, `watch an ad` under it at
@@ -966,7 +994,8 @@ is why a game needs no change to be split — and the assets are files, not base
 `dist/itch/<slug>/index.html` instead: an itch project is uploaded alone, so it
 has nobody to share a cache with.
 
-`--check` rebuilds in memory and compares byte for byte. A DIFF means someone
+`--check` rebuilds in memory, compiles every inline script (a game whose
+`game.js` no longer parses fails it as `SYNTAX`) and compares byte for byte. A DIFF means someone
 edited an `index.html` directly, or a source changed without a rebuild; it is the
 CI gate. The template is a build unit too, so `template/game-template.html` never
 holds a second copy of the motor.
@@ -978,6 +1007,61 @@ reword `6. GAME`, and do not reorder the sections.
 `node tools/build/extract.mjs` is the one-shot that created this layout from the old
 single-file games. It only needs re-running if a game's `index.html` becomes the
 source of truth again, which should not happen.
+
+## The guide
+
+**Every rule of a game lives in one place, its guide** —
+`packages/webshell/guide.js`, a card of a fixed height over whatever is on
+screen (a round included, which it pauses): a contents page grouped by chapter,
+then one page at a time with previous, contents and next. It is the web
+target's; a playable has no guide and keeps the cards it has.
+
+- **The contract is one function**, `Game.guide.chapters()` →
+  `[{ key, label, pages: [{ id, title, eyebrow, pic, rows, lines, lv, node }] }]`,
+  every string already through `Lang.t`. `lv` is the level that first deals
+  the idea: until the board opens it the page is **locked** in the contents,
+  `???` and the level, as the codex does — a biome stays a discovery. A page
+  opened BY NAME opens whatever its level, since the player has just met it.
+- **A page SHOWS before it tells.** `pic` is drawn first, and every page that
+  can have one has one: a canvas painted by the round's OWN renderer with its
+  `ctx` lent for the call (slipdeck's `cardsPic`, bridgessa's `trickPic`), one
+  of the game's cards (`jokerNode`, `favourCard`), or an image src out of
+  `CONFIG.art` (a cut object, an enemy, a power-up). `rows` is what a thing
+  pays or costs as a table — `[[label, value, colour?]]` — never a sentence of
+  figures. `lines` is then two or three short lines of prose (text, never
+  markup), and `node()` an optional live part under them (slipdeck's poker
+  chart, bridgessa's contract being played). A picture drawn before any round
+  must not read round state: guard what is unset until `reset()`.
+- **Three ways in, one book.** The Help card keeps the sentence and the demo,
+  and ends on one line, *Anytime, tap {book} for more help*
+  (FR *À n'importe quel moment, appuie sur {book} pour obtenir plus d'aide*), the book drawn in it: it says
+  that a notice wearing the book opens its page, and a tap on the line opens
+  the contents over the card. A game whose table explains
+  itself on a tap calls `__GUIDE__.open(id)` — the page of what was tapped,
+  not a card of its own (`games/slipdeck`, `games/bridgessa`: their `TIPS`
+  are the guide's pages word for word, so a rule is written once), and says
+  so once, on top of the guide's contents (`web.copy.helpAura`, beside
+  `Game.helpAura()` wearing the aura) rather than on the Help card. A card that
+  shows LIVE state or carries an action — a joker's counters, a favour's Use
+  button — stays the game's card and carries a button to its rule's page.
+- **A room of the shell explained in the guide names its page**:
+  `__GUIDE__.here(fn)` registers a function that returns the page id of the
+  room on top, and HELP opened over that room opens the guide straight on its
+  page instead of the Help card — the contents are one tap away. The barracks is the one user (`packages/webshell/army.js`,
+  `guidePage`: `camp-deck`, `camp-infirmary`, `camp-prison`, `camp-defense`,
+  `camp-posts`, `camp-recruit`, `camp-missions`, `camp-register`), and a post's
+  name opens `post-<key>`. Those ids are the contract with stratideck's guide.
+- **The contents come back to where the player was**: going from a page to
+  the contents lands with the page read last centred and its row dashed in the
+  accent (`guide.js`, `last`), never back at the top of a long list.
+- **A card that scrolls says so**: every modal card watches its scrolling
+  part (`.mt-body`, `.web-pbody`, `[data-scroll]`) and wears a bobbing
+  chevron at its foot while something is still under the fold
+  (`packages/webshell/view.js`, `moreCue`), above a footer marked
+  `data-foot`; a tap on it scrolls on.
+- **A mechanic met for the first time is a notice, not a card**:
+  `Notify.learn(id, word, { sub })`, once per player, and its line in the "!"
+  log opens page `id`. The round is never stopped to teach.
 
 ## The painted artwork
 
@@ -1236,10 +1320,11 @@ card is the clip and not the line because eighteen cues in a game are seven
 clips: one decision, offered once. **A sound is shaped on its ROLE, never on a
 line**: the kit variant is the one source of truth for what a key sounds like —
 its files, their cuts, how they end, their pitch — and a line owns its VOLUME
-and nothing else, in that game's source. A line's pitch is read and never set
-on the bench: a constant `rate` in the code is a sound shaped in the wrong
-place (a variant at that pitch is the fix), and a rate the code BUILDS — a
-ladder, a combo climbing — is the game's melody, left to it. **The variant is
+and its RATE, in that game's source: two magnetic sliders (the rate 0.5 to 2,
+in steps of 0.05), the rate played on top of the variant's own pitch. **↺**
+beside the rate puts it back at ×1, and apply takes a constant rate out of the
+call. A rate the code BUILDS — a ladder, a combo climbing — is the game's
+melody: heard on the slider, refused by apply. **The variant is
 edited on its card**: the kit button opens the kit page's own editor under the
 header — each take's waveform cut by its grips, its end, its pitch, a take
 added or removed — and under it **the ten files of the library whose wave looks
@@ -1249,9 +1334,18 @@ onset; cached in `dist/lab/sfx-shapes.json`), plus a search over the whole
 library; hover hears a file as the take would play it, a click puts it in the
 take, + adds a take. A variant is every game's that maps a key to it, so the
 card **wears the thumbs of the other games playing it** (`/icons/<slug>.png`,
-read off `/api/kit`'s users) and the editor says *shared* — **New variant**
-forks it and moves the key to the fork, for a change meant for this game
-alone. Apply writes the variant into `kit.json` and re-cuts its takes before
+read off `/api/kit`'s users) and its sound button says who shares it
+(`shared · 4 games · 2 validated`). **A sound another game plays is read-only
+on the card** — heard, never tuned; changing it for every game is `/kit`'s job.
+**Leaving it only ever touches THIS game**, through **Change sound**: its first
+row, *New sound for <game>*, copies the variant — its draft included — into one
+of this game's own (`<role>/<slug>`, renamable, `role/name` for another role),
+moves the key to it and opens its editor; every other row is an existing
+variant the key moves to. **Two lines sharing a key are split** by the scissors
+on a line: it gets a key of its own (rewritten in the call, mapped in the
+manifest to the same variant, so it sounds the same until its own card moves
+it), and the last line of a key never leaves it. No other game is ever
+remapped from this page. Apply writes the variant into `kit.json` and re-cuts its takes before
 anything else, and moves no game's version: the kit is every game's. The **kit selector** beside the kit button, which moves a key to
 another variant, is the file picker's menu and not a `<select>`: **hovering a
 variant plays one shot of it**, levelled as it will ship (a draft edited on a
@@ -1416,7 +1510,14 @@ kind (callouts and notices on the message page, cues on the sound page), and
 the two share the one folder; whatever else fired in the window rides along. The level picker beside REC starts any level
 of the climb, or the endless run, straight into its round — locked ones too,
 since the played frame is loaded with the dev force (`?force=1`) and
-`__LEVELS__.play(n)` (packages/webshell/levels.js) is what it calls. **↻** on a row loops that clip under
+`__LEVELS__.play(n)` (packages/webshell/levels.js) is what it calls. **Every
+card of the sound page says one level its key is heard on** — `Stage N`
+beside its count, and a tap on it starts that level in the Rec frame — out of
+`lab/events-stages.json`, which the recorder feeds with the level of every cue
+it sees fire and **Find stages** fills for the rest: a headless Chrome walks
+the levels in order with a blind pilot pressing the play area at random
+(`tools/lab/probe-stages.mjs`), keeps the first level each key was heard on and
+stops once every key has one; a key it never heard reads *not heard*. **↻** on a row loops that clip under
 the frame — both frames, EN and FR, on the message page — and fires the row,
 with its pending edits, at the instant it fired in play, together with
 everything else that fired in the window — one chip per line, ×N for a line
@@ -1587,6 +1688,23 @@ camp and army lists over a round); `packages/webshell/view.js` builds the slots
 and `view.css` only places the card. The other presets are the record of what
 it beat.
 
+`end-screen.html` is **the end screen bench**: the web build's score screen
+replayed as a list of BEATS — the outro, the title, the character, the score,
+the stars, the rows, the coins line and its cascade, the gift boxes, the offer,
+the way out — each one placed after or with the beat above it, with its delay,
+its duration and its entrance, over a timeline that prints when the way out
+lands and when everything has settled. Beside it the layout (anchor, stack
+order, the stars, the rows as plates, grid, chips or a receipt, the character,
+a card behind the column) and one effect per moment of the screen, out of
+eighteen. **Preset `G · Chosen` is what ships** — the `BEATS` list of
+shell.js `EndScreen`, the levels.js outro and the meta layer's beats: every
+pop on one 500 ms grid, the empty stars popping too so the row lasts the same
+whatever the score, the character behind the column, the rows as a receipt,
+and on a first perfect round the boxes at once and the way out landing with
+the prize. `A · Current` is the screen it replaced, timed as it was; the
+others are the record of what was tried. Nothing ships from the page itself:
+a change is ported by hand, and *Copy settings* is the JSON of the panel.
+
 `button.html` is **the button catalogue**, and it is where the ONE button
 every game draws was chosen: a short list and nothing outside it — the button
 (rest, hover, pressed, shiny, off), three sizes, danger, the icon, the switch,
@@ -1629,8 +1747,19 @@ one a game plays. **The takes inside a variant are interchangeable** — the
 engine alternates them so a sound heard twenty times does not repeat — and
 never a choice: a different sound is a different variant. **Every key of every
 game is mapped to a role** — each variant cut to the file and length its clip
-had — save echomaze's `map`, an echo train built by hand that no take can
-hold; the events bench's header counts what is still *without a role*.
+had, and a sound built by hand rather than cut (echomaze's echo train,
+`pickup/echotrain`) enters the library as its own file first; the events
+bench's header counts what is still *without a role*.
+**Every role says who calls it**, as tags under its name — the shell's files
+that call it by name (`album`, `barracks`, `every card & view`…) and the icon
+of a game whose own code calls `Sound.ui`, read off the source (`roleCalls` in
+`tools/lab/cut-kit.mjs`); nothing calling it reads `unused`. **A role is added
+from the page**: the + on a group's heading asks its name and one line of what
+it means, the + on a gameplay role's heading adds a variant, and either starts
+empty until one to three files of the library are clicked into it. **Delete
+role** and **Delete variant** take one out, and only once nothing plays it —
+no manifest maps a key to it, no source calls it by name; the button says
+which, and the cutter refuses the same on Save.
 
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
@@ -1684,8 +1813,16 @@ title screen, a notification, a callout, a floating value, a card's name or
 description, the end screen, a mission… read off the manifest path, the call
 the literal reaches (the game's own wrapper around it included) or the table
 it sits in; a dictionary entry wears one per surface its English reaches, a
-select keeps one surface, and where the source cannot say the pill reads
-*Game data* or *In code* rather than guess. **A row read and
+select keeps one surface. **What the words are ABOUT is read off the name of
+the table or the function that holds them** (`TABLE_TOPIC` and `FN_TOPIC`):
+a page of the guide is *Help guide*, a hero, a yokai or an officer's lore is
+*Character*, a biome or a band *Biome / band*, a power, a ware or a blessing
+*Object / power*, a tier or a rarity *Rank*, what a tapped piece does now
+*Info card* — and a page of the guide about a character or a biome takes the
+topic, with *guide page* in its detail. A table whose name means something
+else in one game is named in `TABLE_TOPIC_GAME`. Where neither name says
+anything the pill reads *Game data* (a table) or *In code* (a function)
+rather than guess. **A row read and
 signed off is CHECKED** — it turns green, and the mark lands in
 `lab/text-review.json` with the text it was given on, so a string edited since
 reads as unchecked again; *Hide checked* leaves what is left to read, and a
@@ -1699,7 +1836,15 @@ local `claude -p`, no key in the repo) and written back — a dictionary key
 moving with the English the game writes — and lands UNCHECKED, since a machine
 wrote it. When the translator cannot be reached, the edit opens a TO UPDATE
 action on that English instead (`lab/text-todo.json`), closed by checking that
-English or changing it. **A
+English or changing it. **The English of a TABLE is a row too**: a guide
+page, a card, a power or a hero written in a table or handed to the game's
+own helper (`guidePage(id, "Plated", …)`) reaches `Lang.t` through a
+variable, and its literal is listed as a *Table entry* — without it that
+English could not be read, and a French edit never reached it. **An English
+edit moves its dictionary key** (`apply-text.mjs`), whoever made it, and the
+French mark follows the key. How the copy itself is written — guide pages,
+cards, lore, missions — is the `write-copy` skill, with vipera's guide as the
+reference. **A
 dictionary entry marked *no use found* is proposed for removal** as soon as
 the game is read, and APPLY takes it out of the manifest. Every row has an
 edit field and **APPLY writes it back**
@@ -1863,7 +2008,12 @@ Frame & input (section 3):
   rather than duplicated. `Sound.cue(name,vol,rate,freq,dur,type)` plays the clip
   when the game ships one under `name` and a synthesized beep otherwise;
   `Sound.beep(f,dur,type,vol)` / `Sound.arp(freqs,step,dur,type)` are that
-  fallback.
+  fallback. **One call per case**: when a condition picks the volume, the
+  pitch or the key (`mid ? 0.42 : 0.5`), write one call per case —
+  `if (mid) Sound.clip("fling", 0.42); else Sound.clip("fling", 0.5);` — so
+  `make events` gives each case its own line to tune, check and remove. A
+  value that MOVES with the round (a combo ladder, `clamp(k…)`) stays one
+  expression: that is the game's melody, not two events.
 - `Music.start/stop/duck/unduck` — the looping background bed. A game only
   embeds `ASSETS.sounds.music` and sets `CONFIG.music = { volume, fade }`; the
   shell starts it, ducks it on the end screen and pauses it off-screen, and the
@@ -1931,10 +2081,12 @@ Shell (section 5):
 
 - `HUD.setScore/setScoreNow/punch/setLeft/setRight` — the top band.
 - `Pop.show(style, {word, sub, at, rot, cls, hold})` — the comic / manga callout
-  layer, and **the place a game writes a MOMENT**: score gains, combos, every
-  beat that celebrates a player action, a mistake as it happens (`alert`:
-  "Combo lost", "Miss") and an alarm (`danger`). A word the player has to READ
-  rather than feel is not a moment and goes to `Notify.say` below.
+  layer, and **the place a game writes what the player just DID**: score
+  gains, combos, every beat that celebrates a player action, a power fired, a
+  mistake as it happens (`alert`: "Combo lost", "Miss") and the state that
+  action leaves behind ("Shield down"). An event the player did not make, a
+  refusal, a record and a mechanic met for the first time go to `Notify` below;
+  a rule goes to the guide.
   Styles: `score alert streak bonus ribbon combo perfect manifest danger record ultra vert`. Catalogue and live preview: `lab/overlay-pop.html` (`make events` → `/pop`); what a
   given game already fires, in that game's own build: `make events`.
 - `Pop.text(x, y, str, {color, size, tier:0..3, life, vy})` — **the same
@@ -1946,13 +2098,20 @@ Shell (section 5):
   running. **The thirteen share one look for it** — `size: 22, life: 0.6, tier: 1`, taken from blight's JOKER — and only the `color` is the game's,
   because the colour is data (the brick that was hit, rot against clean) and the
   rest is style.
-- `Notify.say(word, {sub, kind, icon, key, hold})` — **the one voice for
-  INFORMATION, on every screen**: a state that changed and stays changed
-  ("Shield down", "Wounded"), an input refused ("Out of reach", "Not enough
-  coins"), a hint or a lesson, a warning of what is coming ("Last ball"), and
-  anything at all said outside a round — the village, the map, a view, a card
-  (the web shell's army, OPTIONS and meta layer call it through
-  `window.__WEB__.Notify`). `kind` is `info gain good warn loss rare`, a colour
+- `Notify.say(word, {sub, kind, icon, key, hold, guide})` — **what HAPPENED
+  to the player, on every screen**: an event they did not make (a wave or a
+  boss arriving, the lava surging, overtime, the camp's day), an input refused
+  that they tried anyway ("Out of reach", "Follow suit", "Not enough coins"),
+  and anything at all said outside a round — the village, the map, a view, a
+  card (the web shell's army, OPTIONS and meta layer call it through
+  `window.__WEB__.Notify`). `guide` is a page of the game's guide, which the
+  notice's line in the "!" log opens. **`Notify.learn(id, word, {sub, mark})`**
+  is the one way to name a MECHANIC met for the first time: once per player
+  ever (`guide:<slug>` in Store, erased by OPTIONS), as a notice whose log line
+  opens guide page `id`; `mark` re-tells a rule under a new value. **A record
+  beaten is the motor's**: `Record` says "New record" once a round, the moment
+  the HUD score passes the best (the level's own on the map), and a game
+  writes nothing for it. `kind` is `info gain good warn loss rare`, a colour
   and a default icon; `icon` is a shell piece (`coin ticket super xp star sticker trophy`, painted where the build has `CONFIG.shellArt`) or a
   pictogram (`info warn lock unlock heart user check x hourglass sparkles eye trash`). **One look, and none of it is a game's**: a chip of the wallet
   band's family pinned top-right — under the band on a view, under the HUD in
@@ -1963,7 +2122,8 @@ Shell (section 5):
   (`Notify.history()`, `Notify.onLog(fn)`), and the web band reads them back
   behind its "!" chip. Tap dismisses, press holds — except
   in a round, where the layer is pointer-transparent so it never eats the
-  game's tap. The one knob is `CONFIG.notify = { round: "bottom" }` for a board
+  game's tap — save a notice carrying a `guide` page, which a tap opens on
+  that page, the round paused under the card. The one knob is `CONFIG.notify = { round: "bottom" }` for a board
   that fills the top of the frame (bouncetry, echomaze). Chosen in
   `lab/notify.html`; see
   [docs/ENGINE.md](docs/ENGINE.md#notify--the-one-voice-for-information).
@@ -2027,11 +2187,12 @@ its own, deployed by Vercel from this repo.
   string in the markup, and never add a third mechanism.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
-- **The cards are ordered by release, freshest first**: the day the manifest's
-  `version` last moved in git, newest first, then the higher version on a tie.
-  `gen-catalogues.mjs` reads it from git and bakes the order into `games.js`
-  (a bump not committed yet counts as today), because the Vercel build clones
-  shallow. `order` in the manifest now sorts the developer gallery only.
+- **The cards are ordered by creation, newest first**: the first commit that
+  touched `games/<slug>/`, newest first, the manifest's `order` breaking a tie
+  between games added in the same commit. `gen-catalogues.mjs` reads it from
+  git and bakes the order into `games.js` (a game git has never seen counts as
+  created now), because the Vercel build clones shallow. Otherwise `order`
+  sorts the developer gallery only.
 - **The hero is dressed with the games' own characters.** `build-site.mjs` copies
   each game's `assets/image/embed/<slug>-character-happy.webp` to
   `image/games/<slug>/character.webp` and marks `character: true`;
@@ -2142,9 +2303,14 @@ its own, deployed by Vercel from this repo.
 - [ ] No text under its floor (18 / 20 / 20 / 22 design px by case and
   weight, hard constraint 8), on the canvas or in the DOM, on a phone viewport
   — and no screen whose layout broke to get there.
-- [ ] Every status line, refusal, hint and warning is a `Notify.say` — no
-  message painted on the canvas, no message node of the game's own, no
-  `Pop.show("alert")` carrying anything but a mistake as it happens.
+- [ ] Every word is in its one place: what the player did is `Pop`, an event,
+  a refusal or a first-time mechanic is `Notify.say` / `Notify.learn`, a rule
+  is a page of `Game.guide` — no message painted on the canvas, no message
+  node of the game's own, no lesson card opened on the way into a round.
+- [ ] `Game.guide` covers every rule the game has — the basics, each biome or
+  band and what it introduces, each object, enemy or special card — with the
+  level each first appears on, and every mechanic it introduces is named once
+  with `Notify.learn` on its page id.
 - [ ] Code and comments in English, and **every string in normal case** — no
   word typed in capitals, no `toUpperCase`; the motor's `upper()` is what
   shouts, and `node tools/lab/scan-text.mjs <slug>` is where the game's copy is

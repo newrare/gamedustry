@@ -303,17 +303,18 @@
     var stage = 0, recipe = STAGES[0];        // the stage within its biome, and what it switches on
     var par = CONFIG.parBalls;                // shots within which a clear is worth three stars
 
-    /* --- the living glass: what each kind is called when a biome opens -- */
+    /* --- the living glass: what each kind is called, and for the ones whose
+         rule the board cannot show, what the first meeting names
+         (Notify.learn, whose line opens the guide page of the same id) */
     var K_WARP = "warp", K_SPLIT = "split", K_SEED = "seed", K_SHIELD = "shield";
     var LIVE_ORDER = [K_WARP, K_SPLIT, K_SEED, K_SHIELD];
     var LIVE = {};
-    LIVE[K_WARP]   = { word: "Warp glass",   sub: "It jumps every three seconds",    icon: "sparkles" };
-    LIVE[K_SPLIT]  = { word: "Split glass",  sub: "It bursts into new glass",        icon: "warn" };
-    LIVE[K_SEED]   = { word: "Seed glass",   sub: "It grows new glass every second", icon: "heart" };
-    LIVE[K_SHIELD] = { word: "Shield glass", sub: "Hit it while the shield is down", icon: "lock" };
-    var LIVE_MIX   = { word: "Living glass", sub: "Every kind at once",              icon: "eye" };
+    LIVE[K_WARP]   = { word: "Warp glass" };
+    LIVE[K_SPLIT]  = { word: "Split glass",  sub: "This glass bursts into new bricks",        icon: "warn" };
+    LIVE[K_SEED]   = { word: "Seed glass",   sub: "This glass grows a brick every second", icon: "heart" };
+    LIVE[K_SHIELD] = { word: "Shield glass", sub: "Hit this glass while its shield is down", icon: "lock" };
+    var K_MIX = "living";                      // the furnace core's page: all four kinds at once
     var SHOCK = "#7ef9ff", SEED = "#b8ff6a";   // the shield's arc, the seed's sap
-    var told = {};                             // the biomes whose glass was introduced this session
 
     /* --- the five colours of glass, from the cheapest to the dearest ------
          `key` names the painted cut (ArtImages.brickRed07); the three hexes
@@ -363,13 +364,13 @@
     var B_ROW = "row", B_COL = "col", B_BOMB = "bomb", B_MULTI = "multi";
     var B_BIG = "big", B_FIRE = "fire", B_MAG = "magnet";
     var BONUS = {};
-    BONUS[B_ROW]   = { icon: "icoRow",    word: "Row blast",    sub: "Clears its row" };
-    BONUS[B_COL]   = { icon: "icoCol",    word: "Column blast", sub: "Clears its column" };
-    BONUS[B_BOMB]  = { icon: "icoBomb",   word: "Bomb",         sub: "Takes the neighbours" };
+    BONUS[B_ROW]   = { icon: "icoRow",    word: "Row blast" };
+    BONUS[B_COL]   = { icon: "icoCol",    word: "Column blast" };
+    BONUS[B_BOMB]  = { icon: "icoBomb",   word: "Bomb" };
     BONUS[B_MULTI] = { icon: "icoMulti",  word: "Multiball" };
-    BONUS[B_BIG]   = { icon: "icoBig",    word: "Big ball",     sub: "The ball grows" };
-    BONUS[B_FIRE]  = { icon: "icoFire",   word: "Fireball",     sub: "Burns through the glass" };
-    BONUS[B_MAG]   = { icon: "icoMagnet", word: "Magnet",       sub: "Pulls the glass in" };
+    BONUS[B_BIG]   = { icon: "icoBig",    word: "Big ball" };
+    BONUS[B_FIRE]  = { icon: "icoFire",   word: "Fireball" };
+    BONUS[B_MAG]   = { icon: "icoMagnet", word: "Magnet" };
     // The blueprint's own letter for each of them.
     var SYM = { "=": B_ROW, "!": B_COL, "*": B_BOMB, "+": B_MULTI, "@": B_BIG, "^": B_FIRE, "&": B_MAG };
 
@@ -1450,22 +1451,21 @@
       Fx.burst(b.x, b.y, { color: [SHOCK, "#ffffff"], count: 7, speed: 240, life: 0.24 });
       Fx.ring(brickX(k) + BW / 2, brickY(k) + BH / 2, { from: 8, to: 44, color: SHOCK, width: 3, life: 0.2 });
     }
-    /* The stage that brings something new says so, once a session: the first
-       board of several colours that each colour has its price, and the first
-       board of a biome's living glass what that glass does (the last biome's
-       is all four kinds at once). */
+    /* The stage that brings something new names it, once per player
+       (Notify.learn, packages/shell/shell.js) — only what the board cannot
+       show: the first board of two banks that a tap swaps them, and the
+       living glass whose rule is hidden (split, seed, shield). A power, a
+       colour's price and the warp pane read at a glance once met, and the
+       last biome's mix is four kinds already named. Each id is a page of
+       the guide, which the notice's line in the log opens. */
     function tellStage() {
       var own = BIOMES[biome].live, n = 0, i, one = null, say;
-      if (!recipe.mono && !told.colours) {
-        told.colours = true;
-        Notify.say("Each colour has its price", { sub: "The higher, the dearer", kind: "info", icon: "coin" });
-      }
-      if (!recipe.live || told[biome]) return;
+      if (groups > 1) Notify.learn("banks", "Two button colours", { sub: "A tap swaps the button colours", icon: "unlock" });
+      if (!recipe.live) return;
       for (i = 0; i < LIVE_ORDER.length; i++) if (own[LIVE_ORDER[i]]) { n++; one = LIVE_ORDER[i]; }
-      if (!n) return;
-      told[biome] = true;
-      say = n > 1 ? LIVE_MIX : LIVE[one];
-      Notify.say(say.word, { sub: say.sub, kind: "info", icon: say.icon });
+      if (n !== 1) return;
+      say = LIVE[one];
+      if (say.sub) Notify.learn(one, say.word, { sub: say.sub, icon: say.icon });
     }
 
     /* --- the switches -------------------------------------------------- */
@@ -1503,7 +1503,8 @@
                                          width: 3, life: 0.22 });
       }
       if (clock - lastSwap > 0.07) {
-        Sound.clip("swap", 0.55, auto ? 0.85 : Rand.range(0.98, 1.06));
+        if (auto) Sound.clip("swap", 0.55, 0.85);
+        else Sound.clip("swap", 0.55, Rand.range(0.98, 1.06));
         lastSwap = clock;
       }
     }
@@ -1564,7 +1565,7 @@
       if (!n) return;
       bonus = C.pocketBonus * n;
       score += bonus; HUD.setScore(score);
-      Sound.clip("gold", 0.7, 1.2);
+      Sound.clip("gold", 0.4, 1.8);
       Pop.show("bonus", { word: "Pocket cleared", sub: "+" + bonus, at: popAt() });
     }
 
@@ -1806,10 +1807,9 @@
       phase = "flight"; flightT = 0; pulled = false; recoil = 1;
       chain = 0; releaseT = -1;                    // a new shot, a new combo
       refreshHUD();
-      // The shot past par: a clear is now worth two stars. On a level the
-      // level layer says it, striking the third star (levelFaults).
-      if (fired === par + 1 && !CONFIG.level)
-      Sound.clip("shoot", 0.85, 1);
+      // The shot past par: a clear is now worth two stars. The level layer
+      // says it, striking the third star (levelFaults).
+      Sound.clip("shoot", 0.7, 0.7);
       Fx.shake(10, 0.22);
       Fx.burst(mx, my, { color: [BALL.glow, "#ffffff"], count: 14, speed: 400,
                          life: 0.32, angle: aimA, spread: 1.1 });
@@ -1820,7 +1820,8 @@
     function wallHit(b, side, v) {
       var p = tone(b);
       if (clock - lastWall > 0.05) {
-        Sound.clip("wall", 0.25, b.zone ? 1.14 : 0.95);
+        if (b.zone) Sound.clip("wall", 0.25, 1.14);
+        else Sound.clip("wall", 0.25, 0.95);
         lastWall = clock;
       }
       zap(side, b.x, b.y, clamp(v / C.ballSpeed, 0.3, 1), p.glow);
@@ -1833,7 +1834,7 @@
        thinking about. */
     function burnBall(b) {
       b.alive = false;
-      Sound.clip("burn", 0.5, 1.2);
+      Sound.clip("burn", 0.5, );
       Fx.burst(b.x, field.floor - 4, { color: ["#fff0b8", "#ffb44f", "#ff4400"],
                                        count: 18, speed: 320, life: 0.55,
                                        angle: -Math.PI / 2, spread: 1.9, grav: 780 });
@@ -1850,7 +1851,7 @@
       solidG = plan.start; releaseT = -1;
       if (queue > 0) {
         phase = "aim"; aiming = false; idleT = 0; traceShot();
-        if (queue === 1) Notify.say("Last ball", { kind: "warn", icon: "hourglass" });
+        if (queue === 1) Pop.show("alert", { word: "Last ball", at: popAt() });
       } else {
         phase = "over"; endT = 0;
       }
@@ -1885,7 +1886,8 @@
       var cx = brickX(k) + BW / 2, cy = brickY(k) + BH / 2, g = GHOST[k.group];
       k.flash = 0.6;
       if (clock - lastWall > 0.05) {
-        Sound.clip("steel", 0.45, k.group === 1 ? 0.9 : 1.15);
+        if (k.group === 1) Sound.clip("steel", 0.45, 0.9);
+        else Sound.clip("steel", 0.45, 1.15);
         lastWall = clock;
       }
       Fx.burst(b.x, b.y, { color: [g.light, g.tint], count: 5, speed: 190, life: 0.24 });
@@ -1895,7 +1897,7 @@
     function crack(k, b) {
       var cx = brickX(k) + BW / 2, cy = brickY(k) + BH / 2, p = COLORS[k.tone];
       k.hp--; k.flash = 0.7; b.idle = 0;
-      Sound.clip("brick", 0.32, 0.8);
+      Sound.clip("brick", 0.32, 1.4);
       Fx.burst(cx, cy, { color: [p.light, "#ffffff"], count: 6, speed: 200, life: 0.3 });
     }
 
@@ -1914,16 +1916,16 @@
       if (m === comboMult(chain - 1)) return;
       if (m === 2) {
         Pop.show("streak", { word: "Hot!", sub: COMBO_WORD[2], at: popAt() });
-        Sound.clip("chain", 0.6, 1);
+        Sound.clip("chain", 0.2, 1);
       } else if (m === 3) {
         Pop.show("combo", { word: COMBO_WORD[3], sub: "+" + gain, at: popAt() });
-        Sound.clip("chain", 0.75, 1.12); Fx.flash("#4bf5ff", 0.18);
+        Sound.clip("chain", 0.4, 1.12); Fx.flash("#4bf5ff", 0.18);
       } else if (m === 4) {
         Pop.show("combo", { word: "Smash!", sub: COMBO_WORD[4], cls: "pop-blast", at: popAt() });
-        Sound.clip("chain", 0.85, 1.25);
+        Sound.clip("chain", 0.55, 1.25);
       } else {
         Pop.show("ultra", { word: COMBO_WORD[5], sub: "+" + gain, at: popAt() });
-        Sound.clip("chain", 0.95, 1.4);
+        Sound.clip("chain", 0.7, 1.4);
         Overlay.vignette("rgba(75,245,255,.85)", 1, 620);
       }
     }
@@ -1984,14 +1986,14 @@
         smashRing(k, depth);
 
       } else if (bonus === B_ROW) {                // the whole row goes
-        Sound.clip("line", 0.85, 0.94);
+        Sound.clip("line", 0.5, 1.25);
         Fx.shake(12, 0.26); Fx.flash("#22d3ee", 0.2);
         addBeam(true, k, "#22d3ee");
         if (!depth) popBonus(B_ROW);
         for (i = 0; i < G.cols; i++) smash(cellAt(i, k.r), null, depth + 1);
 
       } else if (bonus === B_COL) {                // the whole column goes
-        Sound.clip("line", 0.85, 1.22);
+        Sound.clip("line", 0.5, 1.5);
         Fx.shake(12, 0.26); Fx.flash("#a855f7", 0.2);
         addBeam(false, k, "#a855f7");
         if (!depth) popBonus(B_COL);
@@ -2015,8 +2017,10 @@
       comboBeat(gain);
       if (boardDone()) clearBoard();
     }
+    // The power the ball just set off, said where the callouts land: what it
+    // does is the guide's page of the same id.
     function popBonus(kind) {
-      Notify.say(BONUS[kind].word, { sub: BONUS[kind].sub });
+      Pop.show("bonus", { word: BONUS[kind].word, at: popAt() });
     }
     function smashRing(k, depth) {
       var dc, dr;
@@ -2091,7 +2095,7 @@
         spawn(cx, cy, a);
       }
       refreshHUD();
-      Sound.clip("gold", 0.85);
+      Sound.clip("gold", 0.6, 2);
       Fx.ring(cx, cy, { from: 10, to: 200, color: BALL.glow, width: 8, life: 0.45 });
       Overlay.vignette(rgba(BALL.glow, 0.7), 1, 420);
       Pop.show("bonus", { word: "Multiball", sub: "+" + C.multiBalls + Lang.t(" balls"), at: popAt() });
@@ -2102,7 +2106,7 @@
       cleared = true; ballsPaid = true;
       var bonus = C.clearBonus + Math.max(0, queue) * C.ballBonus;
       score += bonus; HUD.setScore(score);
-      Sound.clip("clear", 0.95);
+      Sound.clip("clear", 0.2);
       Confetti.burst(40);
       Pop.show("ultra", { word: "Perfect clear", sub: "+" + bonus, hold: 900, at: popAt() });
       phase = "over"; endT = -0.7;                 // let the callout land first
@@ -2243,7 +2247,6 @@
       }
       if (pullNow && !pulled) {                    // every shot ends in the lake
         pulled = true;
-        Notify.say("The lava pulls", { kind: "warn" });
         Overlay.vignette("rgba(255,106,0,.5)", 1, 900);
       }
       if (empty && !full && solidG) {
@@ -2251,7 +2254,7 @@
         releaseT -= dt;
         if (Math.floor(releaseT * 2) !== releaseTick) {    // a tick every half second
           releaseTick = Math.floor(releaseT * 2);
-          Sound.clip("tick", 0.4, 1.2 + (1 - releaseT / C.releaseDelay) * 0.6);
+          Sound.clip("tick", 0.3, 1.2 + (1 - releaseT / C.releaseDelay) * 0.6);
         }
         if (releaseT <= 0) toggleMist(true);
       } else releaseT = -1;
@@ -2365,11 +2368,12 @@
        electric pane — caged in a crackling shield while it is up, which
        stutters before it drops and ghosts in before it rises. Drawn around
        the pane's own origin, so a pane growing in carries its mark. */
-    function drawLife(k, x, y) {
+    function drawLife(k, x, y, now) {
       var cx = x + BW / 2, cy = y + BH / 2, a, i, j, u, cyc, per, room, t, s;
+      if (now == null) now = clock;                // the guide draws a pane at a moment of its own
       if (k.kind === K_WARP) {
         a = k.warpT < 0.22 && Math.floor(k.warpT * 30) % 2 ? 0.3 : 1;
-        i = Math.floor(clock * 10 + k.c + k.r);
+        i = Math.floor(now * 10 + k.c + k.r);
         ctx.globalAlpha = a;
         ctx.strokeStyle = RAINBOW[(i + 2) % RAINBOW.length]; ctx.lineWidth = 7;
         rr(ctx, x - 2, y - 2, BW + 4, BH + 4, 12); ctx.stroke();
@@ -2384,7 +2388,7 @@
         ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 1.5;
         rr(ctx, x + 8, y + 8, BW - 16, BH - 16, 4); ctx.stroke();
       } else if (k.kind === K_SEED) {
-        room = freeAround(k.c, k.r, 1).length;     // a seed with no room left rests
+        room = k.room != null ? k.room : freeAround(k.c, k.r, 1).length;   // a seed with no room left rests
         t = clamp(1 - k.seedT / C.seedEvery, 0, 1); s = BH * 0.3;
         ctx.fillStyle = "rgba(6,14,4,.72)";
         ctx.beginPath(); ctx.arc(cx, cy, s + 3, 0, TAU); ctx.fill();
@@ -2396,7 +2400,7 @@
         ctx.fillStyle = rgba(SEED, room ? 0.6 + 0.4 * t : 0.35);
         ctx.beginPath(); ctx.arc(cx, cy, 4 + 3 * t * t, 0, TAU); ctx.fill();
       } else if (k.kind === K_SHIELD) {
-        per = C.shieldUp + C.shieldDown; cyc = (clock + k.ph) % per; s = BH * 0.34;
+        per = C.shieldUp + C.shieldDown; cyc = (now + k.ph) % per; s = BH * 0.34;
         ctx.fillStyle = cyc < C.shieldUp ? "#ffffff" : SHOCK;   // the bolt: this pane is electric
         ctx.strokeStyle = "rgba(6,8,18,.85)"; ctx.lineWidth = 3; ctx.lineJoin = "round";
         ctx.beginPath();
@@ -2404,8 +2408,8 @@
         ctx.lineTo(cx - 0.04 * s, cy + 0.12 * s); ctx.lineTo(cx - 0.2 * s, cy + s);
         ctx.lineTo(cx + 0.5 * s, cy - 0.16 * s); ctx.lineTo(cx + 0.04 * s, cy - 0.16 * s);
         ctx.closePath(); ctx.stroke(); ctx.fill();
-        if (cyc < C.shieldUp) a = cyc > C.shieldUp - 0.3 && Math.floor(clock * 24) % 2 ? 0.25 : 1;
-        else a = cyc > per - 0.3 && Math.floor(clock * 24) % 2 ? 0.3 : 0;
+        if (cyc < C.shieldUp) a = cyc > C.shieldUp - 0.3 && Math.floor(now * 24) % 2 ? 0.25 : 1;
+        else a = cyc > per - 0.3 && Math.floor(now * 24) % 2 ? 0.3 : 0;
         if (a > 0) {
           ctx.globalAlpha = a;
           if (cyc < C.shieldUp) {
@@ -2415,7 +2419,7 @@
               ctx.beginPath();
               for (i = 0; i <= 6; i++) {
                 u = x - 3 + i / 6 * (BW + 6);
-                t = y + BH * (j ? 0.72 : 0.28) + Math.sin(clock * 47 + i * 2.3 + j * 5 + k.c) * 6;
+                t = y + BH * (j ? 0.72 : 0.28) + Math.sin(now * 47 + i * 2.3 + j * 5 + k.c) * 6;
                 if (i) ctx.lineTo(u, t); else ctx.moveTo(u, t);
               }
               ctx.stroke();
@@ -2680,41 +2684,42 @@
        and trails flame; a magnet wears the ring of its reach. */
     var FIRE = { core: "#ff6a1a", light: "#fff0b8", glow: "#ff3d00" };
     function drawBalls() {
-      var i, j, b, sp, p, len, R, ux, uy, q;
+      for (var i = 0; i < balls.length; i++) if (balls[i].alive) drawBall(balls[i], clock);
+    }
+    // One ball, at the moment `now` (the round's clock, or the guide's own).
+    function drawBall(b, now) {
+      var j, sp, p, len, R, ux, uy, q;
       ctx.lineCap = "round";
-      for (i = 0; i < balls.length; i++) {
-        b = balls[i]; if (!b.alive) continue;
-        p = b.fire > 0 ? FIRE : tone(b); R = b.r;
-        sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
-        ux = b.vx / sp; uy = b.vy / sp;
-        len = 44 * clamp(sp / C.ballSpeed, 1, 2.2);
-        if (b.mag > 0) {                           // the magnet's reach, breathing
-          q = 0.5 + 0.5 * Math.sin(clock * 9);
-          ctx.strokeStyle = rgba("#c7d2e0", 0.18 + 0.14 * q); ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(b.x, b.y, C.magnetReach * (0.9 + 0.1 * q), 0, TAU); ctx.stroke();
-          ctx.strokeStyle = rgba("#ffffff", 0.5); ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(b.x, b.y, R + 7, 0, TAU); ctx.stroke();
-        }
-        if (b.fire > 0) {                          // flames licking back off the ball
-          for (j = 5; j >= 1; j--) {
-            ctx.fillStyle = rgba(j > 2 ? "#ff3d00" : "#ffb44f", 0.1 + 0.05 * (6 - j));
-            ctx.beginPath();
-            ctx.arc(b.x - ux * j * R * 0.9 + Math.sin(clock * 30 + j) * 3,
-                    b.y - uy * j * R * 0.9 + Math.cos(clock * 27 + j) * 3, R * (1.25 - j * 0.13), 0, TAU);
-            ctx.fill();
-          }
-        }
-        ctx.strokeStyle = rgba(p.glow, 0.34); ctx.lineWidth = R * 1.4;
-        ctx.beginPath();
-        ctx.moveTo(b.x - ux * len, b.y - uy * len); ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        ctx.fillStyle = rgba(p.glow, 0.26);
-        ctx.beginPath(); ctx.arc(b.x, b.y, R * 1.9, 0, TAU); ctx.fill();
-        ctx.fillStyle = p.core;
-        ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, TAU); ctx.fill();
-        ctx.fillStyle = p.light;
-        ctx.beginPath(); ctx.arc(b.x - R * 0.28, b.y - R * 0.3, R * 0.45, 0, TAU); ctx.fill();
+      p = b.fire > 0 ? FIRE : tone(b); R = b.r;
+      sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
+      ux = b.vx / sp; uy = b.vy / sp;
+      len = 44 * clamp(sp / C.ballSpeed, 1, 2.2);
+      if (b.mag > 0) {                           // the magnet's reach, breathing
+        q = 0.5 + 0.5 * Math.sin(now * 9);
+        ctx.strokeStyle = rgba("#c7d2e0", 0.18 + 0.14 * q); ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(b.x, b.y, C.magnetReach * (0.9 + 0.1 * q), 0, TAU); ctx.stroke();
+        ctx.strokeStyle = rgba("#ffffff", 0.5); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(b.x, b.y, R + 7, 0, TAU); ctx.stroke();
       }
+      if (b.fire > 0) {                          // flames licking back off the ball
+        for (j = 5; j >= 1; j--) {
+          ctx.fillStyle = rgba(j > 2 ? "#ff3d00" : "#ffb44f", 0.1 + 0.05 * (6 - j));
+          ctx.beginPath();
+          ctx.arc(b.x - ux * j * R * 0.9 + Math.sin(now * 30 + j) * 3,
+                  b.y - uy * j * R * 0.9 + Math.cos(now * 27 + j) * 3, R * (1.25 - j * 0.13), 0, TAU);
+          ctx.fill();
+        }
+      }
+      ctx.strokeStyle = rgba(p.glow, 0.34); ctx.lineWidth = R * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(b.x - ux * len, b.y - uy * len); ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      ctx.fillStyle = rgba(p.glow, 0.26);
+      ctx.beginPath(); ctx.arc(b.x, b.y, R * 1.9, 0, TAU); ctx.fill();
+      ctx.fillStyle = p.core;
+      ctx.beginPath(); ctx.arc(b.x, b.y, R, 0, TAU); ctx.fill();
+      ctx.fillStyle = p.light;
+      ctx.beginPath(); ctx.arc(b.x - R * 0.28, b.y - R * 0.3, R * 0.45, 0, TAU); ctx.fill();
     }
 
     /* The combo is the whole scoring rule, so it is on screen while it runs —
@@ -2722,10 +2727,12 @@
        between two shots. It never reaches the bricks: the band above the
        field is empty by construction (CONFIG.layout.hudHeight). */
     function drawChain() {
-      if (chain < 2) return;
-      var w = 230, h = 40, x = view.w / 2 - w / 2, y = view.insetTop + 110, m = comboMult(chain);
+      if (chain >= 2) drawChainAt(chain, view.w / 2 - 115, view.insetTop + 110);
+    }
+    function drawChainAt(n, x, y) {
+      var w = 230, h = 40, m = comboMult(n);
       // the bar fills toward the next step, and stays full at the ceiling
-      var t = m >= C.comboMax ? 1 : (chain % C.comboStep) / C.comboStep;
+      var t = m >= C.comboMax ? 1 : (n % C.comboStep) / C.comboStep;
       var col = m >= 4 ? "#ff2d78" : m >= 3 ? "#ffb44f" : m >= 2 ? "#4bf5ff" : "#9fb6e6";
       ctx.fillStyle = "rgba(6,9,26,.72)"; rr(ctx, x, y, w, h, 20); ctx.fill();
       ctx.fillStyle = rgba(col, 0.3); rr(ctx, x + 4, y + 4, (w - 8) * t, h - 8, 16); ctx.fill();
@@ -2759,6 +2766,384 @@
       if (cells && phase === "aim") traceShot();
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and its picture is drawn by the
+       round's own renderers — the pane sprites, drawLife, drawBall,
+       drawCannon, drawLava, the combo pill — on a canvas of its own, with the
+       round's `ctx` lent for the length of the call. So the glass read in the
+       guide is the glass on the board. A page's level is the one the climb
+       first deals the idea on (pickPlan, STAGES): a biome's power on its
+       third level, its living glass on its fourth, its second power on its
+       fifth. The guide can open before any round: nothing here reads the
+       board, and the few round values drawCannon reads are lent and given
+       back in the same call (lendRound). */
+    function paintPic(W, H, fn) {
+      if (!BW) geometry();                         // a guide opened before the first layout
+      if (!bubbles) makeBubbles();
+      buildSprites();                              // a no-op unless its inputs moved
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(W, H); } finally { ctx = keep; }
+      return cv;
+    }
+    // The round values drawCannon reads, set for one drawing and given back.
+    function lendRound(o, fn) {
+      var keep = [aimA, recoil, phase, queue, clock];
+      aimA = o.aimA; recoil = 0; phase = "aim"; queue = o.queue; clock = o.clock || 0;
+      try { fn(); } finally { aimA = keep[0]; recoil = keep[1]; phase = keep[2]; queue = keep[3]; clock = keep[4]; }
+    }
+    /* One pane, its top-left corner at (x, y) and `s` times its size: the
+       board's own sprite, and a living kind's mark drawn by drawLife at a
+       moment of the guide's own (`now`). */
+    function gPane(tone, x, y, o) {
+      o = o || {};
+      var s = o.s || 1, img = o.bonus ? sprites.charged[tone][o.bonus]
+            : o.tough ? sprites.tough[tone] : o.cracked ? sprites.cracked[tone] : sprites.plain[tone];
+      ctx.save();
+      ctx.translate(x + BW * s / 2, y + BH * s / 2); ctx.scale(s, s);
+      if (o.alpha != null) ctx.globalAlpha = o.alpha;
+      ctx.drawImage(img, -BW / 2, -BH / 2, BW, BH);
+      if (o.kind) drawLife({ kind: o.kind, c: 0, r: 0, warpT: 1, seedT: C.seedEvery * 0.35, room: 1, ph: 0 },
+                           -BW / 2, -BH / 2, o.now || 0);
+      ctx.restore();
+    }
+    /* One button of a bank in any biome's colour (the board only dresses
+       its own two): the painted cut, or the steel and the mist without it. */
+    var gBtns = {};
+    function gButton(hue, key, on, x, y) {
+      var id = hue + key + (on ? 1 : 0) + "|" + BW + "x" + BH, g = bank(hue, key), cv = gBtns[id];
+      if (!cv) {
+        cv = buttonFace(g, on);
+        if (cv) gBtns[id] = cv;
+        else cv = on ? steelFace(g) : fogFace(g);
+      }
+      ctx.drawImage(cv, x - GM, y - GM, BW + GM * 2, BH + GM * 2);
+    }
+    function hueB(hue) { return hue === "yellow" ? "blue" : "yellow"; }
+    function gBall(x, y, o) {
+      o = o || {};
+      drawBall({ x: x, y: y, vx: o.vx || 0, vy: o.vy == null ? -C.ballSpeed : o.vy, r: o.r || C.ballR,
+                 k: o.hot ? C.fastMult : 1, fire: o.fire ? 1 : 0, mag: o.mag ? 1 : 0 }, o.now || 0.2);
+    }
+    // A plain white chevron between two states of the same thing.
+    function gArrow(x, y) {
+      ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 5; ctx.lineCap = "round"; ctx.lineJoin = "round";
+      ctx.beginPath(); ctx.moveTo(x - 8, y - 14); ctx.lineTo(x + 6, y); ctx.lineTo(x - 8, y + 14); ctx.stroke();
+    }
+    // A row of n panes centred in W, one cell apart, starting at y.
+    function rowX(n, W) { return (W - (n - 1) * G.cw - BW) / 2; }
+
+    /* --- the pictures --- */
+    // The sight: a band of glass, the turret, and five bounces of dots.
+    function shootPic() {
+      return paintPic(520, 300, function (W, H) {
+        var sc = 0.6, VH = H / sc, floor = VH - 60, cy = floor - C.cannonH, i, c, r, a, x, y, vx, vy, n, R = C.ballR;
+        ctx.scale(sc, sc); ctx.translate((W / sc - view.w) / 2, 0);
+        for (r = 0; r < 2; r++) for (c = 0; c < 12; c++)
+          gPane(4 - r - (c % 3 === 0 ? 1 : 0), field.left + c * G.cw + C.pad, 14 + r * G.ch, { tough: r === 0 && c === 5 });
+        a = -Math.PI / 2 + 1;
+        ctx.save(); ctx.translate(0, floor - field.floor);
+        lendRound({ aimA: a, queue: 5, clock: 0.3 }, drawLava);
+        ctx.restore();
+        x = cannon.x + Math.cos(a) * C.muzzle; y = cy + Math.sin(a) * C.muzzle;
+        vx = Math.cos(a) * 22; vy = Math.sin(a) * 22;
+        ctx.fillStyle = BALL.glow;
+        for (n = 0; n < 40 && y > 14 + 2 * G.ch + R; n++) {      // the dotted sight, up to the glass
+          x += vx; y += vy;
+          if (x > field.right - R) { x = field.right - R; vx = -vx;
+            ctx.strokeStyle = rgba(BALL.glow, 0.85); ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(x, y, 10, 0, TAU); ctx.stroke(); }
+          ctx.globalAlpha = clamp(1 - n / 40, 0.25, 0.85);
+          ctx.beginPath(); ctx.arc(x, y, 5 - 2 * n / 40, 0, TAU); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        i = clamp(Math.floor((x - field.left) / G.cw), 0, 11);
+        ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 3;
+        rr(ctx, field.left + i * G.cw + C.pad - 3, 14 + G.ch - 3, BW + 6, BH + 6, 14); ctx.stroke();
+        ctx.save(); ctx.translate(0, cy - cannon.y);
+        lendRound({ aimA: a, queue: 5, clock: 0.3 }, drawCannon);
+        ctx.restore();
+      });
+    }
+    // Dark, the ball flies through; lit, it bounces off.
+    function switchesPic() {
+      return paintPic(520, 190, function (W) {
+        var hue = BIOME_HUE[biome] || "red", y = 74, x0 = rowX(9, W), i;
+        for (i = 0; i < 4; i++) gButton(hue, "a", false, x0 + i * G.cw, y);
+        for (i = 5; i < 9; i++) gButton(hue, "a", true, x0 + i * G.cw, y);
+        gArrow(x0 + 4 * G.cw + BW / 2, y + BH / 2);
+        gBall(x0 + 1.5 * G.cw + BW / 2, y - 22, { vx: 0, vy: -C.ballSpeed });
+        gBall(x0 + 6.5 * G.cw + BW / 2 + 22, y + BH + 50, { vx: 0.45 * C.ballSpeed, vy: C.ballSpeed });
+        ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x0 + 6.5 * G.cw + BW / 2, y + BH + 6, 18, 0, TAU); ctx.stroke();
+      });
+    }
+    // Two banks: a tap lights one and darkens the other.
+    function banksPic() {
+      return paintPic(520, 170, function (W) {
+        var a = "red", b = hueB(a), x0 = rowX(9, W), i, y1 = 30, y2 = 30 + G.ch + 22;
+        for (i = 0; i < 4; i++) { gButton(a, "a", true, x0 + i * G.cw, y1); gButton(b, "b", false, x0 + i * G.cw, y2); }
+        for (i = 5; i < 9; i++) { gButton(a, "a", false, x0 + i * G.cw, y1); gButton(b, "b", true, x0 + i * G.cw, y2); }
+        gArrow(x0 + 4 * G.cw + BW / 2, (y1 + y2 + BH) / 2);
+      });
+    }
+    // The cage: lit buttons all round, glass inside, the ball shut in and running gold.
+    function pocketPic() {
+      return paintPic(520, 252, function (W) {
+        var cols = 9, rows = 5, x0 = (W - cols * G.cw) / 2, y0 = 6, hue = BIOME_HUE[biome] || "red", c, r, x, y;
+        ctx.fillStyle = "rgba(255,216,74,.1)";                     // the pocket, washed in gold
+        ctx.fillRect(x0 + G.cw, y0 + 3 * G.ch, (cols - 2) * G.cw, G.ch);
+        for (r = 0; r < rows; r++) for (c = 0; c < cols; c++) {
+          x = x0 + c * G.cw + C.pad; y = y0 + r * G.ch + C.pad;
+          if (r === 0 || r === rows - 1 || c === 0 || c === cols - 1) gButton(hue, "a", true, x, y);
+          else if (r < 3 && !(r === 2 && (c === 3 || c === 6))) gPane(r === 1 ? 3 : 2, x, y);
+        }
+        gBall(x0 + 5.2 * G.cw, y0 + 3.5 * G.ch, { hot: true, vx: -C.ballSpeed, vy: -0.4 * C.ballSpeed });
+      });
+    }
+    // The lake, and a ball on its way into it.
+    function lavaPic() {
+      return paintPic(520, 230, function () {
+        ctx.save(); ctx.translate(-100, 130 - field.floor);
+        lendRound({ aimA: -Math.PI / 2, queue: 0, clock: 0.6 }, drawLava);
+        ctx.restore();
+        gBall(300, 70, { vx: -0.25 * C.ballSpeed, vy: C.ballSpeed });
+      });
+    }
+    function tonesPic() {
+      return paintPic(520, 110, function (W) {
+        var s = 1.6, step = (W - 20) / 5, i;
+        for (i = 0; i < 5; i++) gPane(i, 10 + i * step + (step - BW * s) / 2, (110 - BH * s) / 2, { s: s });
+      });
+    }
+    function comboPic() {
+      return paintPic(520, 160, function (W) {
+        var x0 = rowX(8, W), i;
+        for (i = 0; i < 8; i++) gPane(i < 3 ? 1 : 2, x0 + i * G.cw, 8);
+        ctx.save(); ctx.translate(W / 2, 112); ctx.scale(1.3, 1.3);
+        drawChainAt(12, -115, -20);
+        ctx.restore();
+      });
+    }
+    function toughPic() {
+      return paintPic(520, 130, function (W) {
+        var s = 2, w = BW * s, gap = 70, x = (W - w * 2 - gap) / 2, y = (130 - BH * s) / 2;
+        gPane(2, x, y, { s: s, tough: true });
+        gArrow(W / 2, 65);
+        gPane(2, x + w + gap, y, { s: s, cracked: true });
+      });
+    }
+    function starsPic() {
+      var src = CONFIG.shellArt && CONFIG.shellArt.star, box, im, i;
+      if (!src) return null;
+      box = document.createElement("div"); box.className = "bt-gstars";
+      for (i = 0; i < 3; i++) { im = document.createElement("img"); im.src = src; im.alt = ""; box.appendChild(im); }
+      return box;
+    }
+    /* A biome: its painting, and in front of it the bank of buttons, the
+       powers and the living glass it brings, as they stand on its board. */
+    function bandPic(b) {
+      return paintPic(520, 240, function (W, H) {
+        var B = BIOMES[b], a = typeof ArtImages !== "undefined" ? ArtImages[B.scene] : null, s, w, h;
+        var items = [], i, x, y, sz = 1.25, step, live = LIVE_ORDER, hue = BIOME_HUE[b];
+        ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+        if (a && a.width) {
+          s = Math.max(W / a.width, H / a.height); w = a.width * s; h = a.height * s;
+          ctx.drawImage(a, (W - w) / 2, (H - h) * 0.45, w, h);
+        }
+        ctx.fillStyle = "rgba(7,10,30,.42)"; ctx.fillRect(0, 0, W, H);
+        items.push({ btn: "a" });
+        if (b > 0) items.push({ btn: "b" });
+        for (i = 0; i < B.powers.length; i++) items.push({ bonus: B.powers[i] });
+        for (i = 0; i < live.length; i++) if (B.live[live[i]]) items.push({ kind: live[i] });
+        step = Math.min(BW * sz + 14, (W - 24) / items.length);
+        x = (W - (items.length - 1) * step - BW * sz) / 2; y = H - BH * sz - 30;
+        for (i = 0; i < items.length; i++, x += step) {
+          if (items[i].btn) {
+            ctx.save(); ctx.translate(x + BW * sz / 2, y + BH * sz / 2); ctx.scale(sz, sz);
+            gButton(items[i].btn === "a" ? hue : hueB(hue), items[i].btn, true, -BW / 2, -BH / 2);
+            ctx.restore();
+          } else if (items[i].bonus) gPane(B.tone, x, y, { s: sz, bonus: items[i].bonus });
+          else gPane(items[i].kind === K_WARP ? 4 : B.tone, x, y, { s: sz, kind: items[i].kind, now: 0.4,
+                                                                     tough: items[i].kind === K_SEED });
+        }
+      });
+    }
+    // A living pane between two plain ones, or the shield up and down.
+    function livePic(kind, tone) {
+      return paintPic(520, 130, function (W) {
+        var s = 1.8, w = BW * s, gap = 30, y = (130 - BH * s) / 2, x = (W - w * 3 - gap * 2) / 2;
+        if (kind === K_SHIELD) {
+          x = (W - w * 2 - gap * 3) / 2;
+          gPane(tone, x, y, { s: s, kind: kind, now: 0.5 });
+          gPane(tone, x + w + gap * 3, y, { s: s, kind: kind, now: C.shieldUp + 0.5 });
+          return;
+        }
+        gPane(kind === K_WARP ? 2 : tone, x, y, { s: s });
+        gPane(kind === K_WARP ? 4 : tone, x + w + gap, y, { s: s, kind: kind, now: 0.4, tough: kind === K_SEED });
+        gPane(kind === K_WARP ? 1 : tone, x + (w + gap) * 2, y, { s: s, alpha: kind === K_SEED || kind === K_SPLIT ? 0.55 : 1 });
+      });
+    }
+    function mixPic() {
+      return paintPic(520, 120, function (W) {
+        var s = 1.5, step = (W - 20) / 4, i, k;
+        for (i = 0; i < 4; i++) {
+          k = LIVE_ORDER[i];
+          gPane(k === K_WARP ? 4 : 4 - i, 10 + i * step + (step - BW * s) / 2, (120 - BH * s) / 2,
+                { s: s, kind: k, now: 0.4, tough: k === K_SEED });
+        }
+      });
+    }
+    /* A power: its pane, and what it does to the glass around it. */
+    function powerPic(kind) {
+      var tone = { row: 0, col: 0, multi: 2, bomb: 2, big: 1, fire: 3, magnet: 4 }[kind];
+      if (kind === B_ROW) return paintPic(520, 100, function (W) {
+        var x0 = rowX(8, W), i, y = 29;
+        for (i = 0; i < 8; i++) gPane(tone, x0 + i * G.cw, y, { bonus: i === 3 ? B_ROW : null });
+        ctx.globalAlpha = 0.5; ctx.fillStyle = "#22d3ee"; ctx.fillRect(0, y + BH / 2 - 8, W, 16); ctx.globalAlpha = 1;
+      });
+      if (kind === B_COL) return paintPic(520, 220, function (W) {
+        var x0 = rowX(3, W), c, r, x;
+        for (c = 0; c < 3; c++) for (r = 0; r < 4; r++) gPane(tone, x0 + c * G.cw, 14 + r * G.ch, { bonus: c === 1 && r === 1 ? B_COL : null });
+        x = x0 + G.cw + BW / 2;
+        ctx.globalAlpha = 0.5; ctx.fillStyle = "#a855f7"; ctx.fillRect(x - 8, 0, 16, 220); ctx.globalAlpha = 1;
+      });
+      if (kind === B_BOMB) return paintPic(520, 200, function (W) {
+        var x0 = rowX(5, W), c, r, cx, cy;
+        for (c = 0; c < 5; c++) for (r = 0; r < 3; r++) gPane(tone, x0 + c * G.cw, 28 + r * G.ch,
+          { bonus: c === 2 && r === 1 ? B_BOMB : null, alpha: Math.abs(c - 2) > 1 ? 1 : c === 2 && r === 1 ? 1 : 0.55 });
+        cx = x0 + 2 * G.cw + BW / 2; cy = 28 + G.ch + BH / 2;
+        ctx.strokeStyle = "rgba(255,180,79,.85)"; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(cx, cy, 82, 0, TAU); ctx.stroke();
+      });
+      return paintPic(520, kind === B_MAG ? 300 : 200, function (W, H) {
+        var s = 1.6, px, py, i, a, cx;
+        if (kind === B_MULTI) {
+          px = (W - BW * s) / 2; py = H - BH * s - 10;
+          for (i = 0; i < 3; i++) {
+            a = -Math.PI / 2 + (i - 1) * 0.5;
+            gBall(W / 2 + Math.cos(a) * 110, py + 10 + Math.sin(a) * 110, { vx: Math.cos(a) * C.ballSpeed, vy: Math.sin(a) * C.ballSpeed });
+          }
+          gPane(tone, px, py, { s: s, bonus: kind });
+        } else if (kind === B_BIG) {
+          px = 60; py = (H - BH * s) / 2;
+          gPane(tone, px, py, { s: s, bonus: kind });
+          gArrow(250, H / 2);
+          gBall(330, H / 2, { vx: 0, vy: -1 });
+          gBall(430, H / 2, { vx: 0, vy: -1, r: C.ballR * C.bigMult });
+        } else if (kind === B_FIRE) {
+          px = 60; py = (H - BH * s) / 2;
+          gPane(tone, px, py, { s: s, bonus: kind });
+          gArrow(250, H / 2);
+          for (i = 0; i < 3; i++) gPane(tone, 300 + i * G.cw, 40, { alpha: i === 1 ? 0.25 : 1 });
+          gBall(300 + G.cw + BW / 2, 40 + BH / 2 + 12, { fire: true, vx: 0.2 * C.ballSpeed, vy: -C.ballSpeed });
+        } else {
+          px = 20; py = (H - BH * s) / 2; cx = 340;
+          gPane(tone, px, py, { s: s, bonus: kind });
+          gPane(2, cx - 120, 40); gPane(1, cx + 70, 60); gPane(3, cx + 60, H - 90); gPane(0, cx - 130, H - 100);
+          ctx.save(); ctx.translate(cx - 40, H / 2 - 30); ctx.rotate(0.8); ctx.scale(0.75, 0.75);
+          ctx.drawImage(sprites.plain[2], -BW / 2, -BH / 2, BW, BH); ctx.restore();
+          gBall(cx, H / 2, { mag: true, vx: 0.4 * C.ballSpeed, vy: -C.ballSpeed });
+        }
+      });
+    }
+
+    function bandName(b) {
+      var B = C.web && C.web.levels && C.web.levels.bands, l = Lang.code ? Lang.code() : "en";
+      return B && (B[l] || B.en) ? (B[l] || B.en)[b] : "";
+    }
+    function bandLv(b) { return b * 6 + 1; }
+    function powerPage(kind, lv, lines) {
+      return { id: kind, title: Lang.t(BONUS[kind].word), lv: lv, lines: lines,
+               pic: function () { return powerPic(kind); } };
+    }
+    function livePage(kind, tone, lv, lines) {
+      return { id: kind, title: Lang.t(LIVE[kind].word), lv: lv, lines: lines,
+               pic: function () { return livePic(kind, tone); } };
+    }
+    function bandPage(b, title, lines) {
+      return { id: "band" + (b + 1), title: title, lv: bandLv(b), lines: lines,
+               pic: function () { return bandPic(b); } };
+    }
+    var guide = {
+      chapters: function () {
+        var pct = function (k) { return Lang.t("{p}% of the wall").replace("{p}", Math.round(C[k] * 100)); };
+        var panes = function (n) { return Lang.t("{n} bricks in one shot").replace("{n}", n); };
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "shoot", title: Lang.t("Aim and shoot"), pic: shootPic,
+              lines: [Lang.t("Drag to aim and let go to fire. The dotted line shows the next five bounces.")] },
+            { id: "switches", title: Lang.t("The buttons"), pic: switchesPic,
+              lines: [Lang.t("Tap while the ball flies to light up the buttons. Tap again to switch them off."),
+                      Lang.t("A dark button lets the ball through. A lit one bounces it back.")] },
+            { id: "pocket", title: Lang.t("The pocket"), pic: pocketPic,
+              rows: [[Lang.t("Each brick in a pocket"), "+" + C.pocketBonus]],
+              lines: [Lang.t("Tap as the ball enters a pocket walled by buttons. It stays shut in with the bricks.")] },
+            { id: "lava", title: Lang.t("The lava"), pic: lavaPic,
+              lines: [Lang.t("After a few seconds of flight, the lava pulls the ball down.")] },
+            { id: "tough", title: Lang.t("Tough glass"), pic: toughPic,
+              lines: [Lang.t("A brick with a double white rim takes two hits. The first one cracks it."),
+                      Lang.t("A power breaks this brick in one go.")] },
+            { id: "colours", title: Lang.t("Each colour has its price"), pic: tonesPic, lv: 2,
+              rows: [[Lang.t("Red"), String(C.colorScore[0]), COLORS[0].core], [Lang.t("Green"), String(C.colorScore[1]), COLORS[1].core],
+                     [Lang.t("Blue"), String(C.colorScore[2]), COLORS[2].core], [Lang.t("Purple"), String(C.colorScore[3]), COLORS[3].core],
+                     [Lang.t("Rainbow"), String(C.colorScore[4]), COLORS[4].core]],
+              lines: [Lang.t("Each brick scores the points of its colour, times the combo.")] },
+            { id: "combo", title: Lang.t("The combo"), pic: comboPic,
+              rows: [[panes(C.comboStep), "×2"], [panes(C.comboStep * 4), "×" + C.comboMax]],
+              lines: [Lang.t("Every brick broken during a shot counts, even by a power or an extra ball.")] },
+            { id: "stars", title: Lang.t("The stars"), pic: starsPic,
+              rows: [[Lang.t("1 star"), pct("starOne")], [Lang.t("2 stars"), pct("starTwo")],
+                     [Lang.t("3 stars"), Lang.t("The whole wall within par")]],
+              lines: [Lang.t("Go one shot over par and the third star is lost.")] }
+          ] },
+          { key: "band1", label: bandName(0), pages: [
+            bandPage(0, Lang.t("What this biome brings"), [
+              Lang.t("Only red buttons here. You meet the row blast, then the column blast.")]),
+            powerPage(B_ROW, 3, [Lang.t("Break this brick and every brick in its row breaks too.")]),
+            livePage(K_WARP, 4, 4, [Lang.t("This rainbow brick jumps to a nearby free spot every three seconds."),
+                                    Lang.t("The rainbow brick flickers just before it jumps.")]),
+            powerPage(B_COL, 5, [Lang.t("Break this brick and every brick in its column breaks too.")])
+          ] },
+          { key: "band2", label: bandName(1), pages: [
+            bandPage(1, Lang.t("What this biome brings"), [
+              Lang.t("From level 11, yellow buttons join the blue ones.")]),
+            powerPage(B_MULTI, 9, [Lang.t("Break this brick to release extra balls.")]),
+            livePage(K_SPLIT, 2, 10, [Lang.t("When split glass breaks, new bricks appear on every free spot around it."),
+                                      Lang.t("These new bricks count in the wall, so break them too.")]),
+            { id: "banks", title: Lang.t("Two button colours"), pic: banksPic, lv: 11,
+              lines: [Lang.t("A tap swaps the two button colours. One lights up as the other goes dark."),
+                      Lang.t("Every new shot starts with the same colour lit.")] },
+            powerPage(B_BOMB, 11, [Lang.t("Break this brick and the eight bricks around it break too.")])
+          ] },
+          { key: "band3", label: bandName(2), pages: [
+            bandPage(2, Lang.t("What this biome brings"), [
+              Lang.t("Here you meet the big ball and the seed glass.")]),
+            powerPage(B_BIG, 15, [Lang.t("The ball that breaks this brick grows bigger for the rest of its flight.")]),
+            livePage(K_SEED, 1, 16, [Lang.t("Every second, seed glass grows a new brick next to it."),
+                                     Lang.t("Seed glass takes two hits, so break it first.")])
+          ] },
+          { key: "band4", label: bandName(3), pages: [
+            bandPage(3, Lang.t("What this biome brings"), [
+              Lang.t("Here you meet the fireball and the shield glass.")]),
+            powerPage(B_FIRE, 21, [Lang.t("For five seconds, the ball burns through bricks instead of bouncing off them."),
+                                   Lang.t("Lit buttons and raised shields still bounce the ball back.")]),
+            livePage(K_SHIELD, 3, 22, [Lang.t("While shield glass has its shield up, the ball and every power bounce off it."),
+                                       Lang.t("Wait for the shield to drop, then hit the glass.")])
+          ] },
+          { key: "band5", label: bandName(4), pages: [
+            bandPage(4, Lang.t("What this biome brings"), [
+              Lang.t("Here you meet the magnet and all four kinds of living glass at once.")]),
+            powerPage(B_MAG, 27, [Lang.t("For five seconds, nearby bricks fly into the ball.")]),
+            { id: K_MIX, title: Lang.t("Living glass"), lv: 28, pic: mixPic,
+              lines: [Lang.t("The bricks living glass adds count in the wall, so break them too.")] }
+          ] }
+        ];
+      }
+    };
+
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        The three-star finish: the web shell has already played the slow
        motion, and the round ends through the game's own result so the end
@@ -2767,6 +3152,6 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              levelWon: finish, levelTally: tally, levelRules: levelRules, levelFaults: levelFaults,
-             applyLevel: applyLevel };
+             applyLevel: applyLevel, guide: guide };
   })();
 

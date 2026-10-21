@@ -148,7 +148,17 @@
         onDown/onMove/onUp optional — pointer, in design coordinates
         onTimeUp()         optional — the round clock hit zero
         onResize()         optional — Layout changed
+        guide              optional — the game's rules, as a book of pages
+                           (packages/webshell/guide.js): the Help card opens
+                           it on ALL THE RULES, a tap on the table opens one
+                           page, Notify.learn names a page's mechanic once
      Call endRound({...}) when the run is over.
+
+     Words, three places (docs/ENGINE.md):
+        Pop.show / Pop.text   what the player just did, in the scene
+        Notify.say            an event they did not make, a record, a refused
+                              action; Notify.learn: a mechanic, the first time
+        guide                 every rule, explained
 
      This placeholder is a working demo of the whole engine: tap the drifting
      target inside Layout, chain hits for a combo, HUD/Overlay/Fx feedback.
@@ -191,6 +201,8 @@
       // Screen-space feedback: milestones get the dramatic treatment.
       if (combo > 0 && combo % 5 === 0) {
         Pop.show(combo >= 15 ? "ultra" : "combo", { word: "Combo x" + combo, sub: "+" + combo * 20 });
+        // the first combo ever: the mechanic is named once, and its page waits in the guide
+        Notify.learn("combo", "Combos", { sub: "Every fifth hit in a row pays a bonus" });
         Sound.clip("combo", 0.8);
         score += combo * 20; HUD.setScore(score);
       } else if (combo === 3) {
@@ -250,6 +262,36 @@
       });
     }
 
-    return { reset: reset, onDown: onDown, update: update, render: render, onTimeUp: onTimeUp };
+    /* The guide: chapters of pages, in the player's language. A page shows
+       before it tells — `pic` is drawn first, here the target as the round
+       draws it — then two or three short lines; `rows` is a table of what a
+       thing pays, `lv` locks a page until the map opens that level. */
+    function dotPic() {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, r = 78;
+      cv.width = Math.round(240 * k); cv.height = Math.round(240 * k);
+      cv.style.width = "240px"; cv.style.height = "240px";
+      var g = cv.getContext("2d");
+      g.scale(k, k);
+      g.fillStyle = rgba("#4bf5ff", 0.25); g.beginPath(); g.arc(120, 120, r * 1.3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#4bf5ff"; g.beginPath(); g.arc(120, 120, r, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#ffffff"; g.beginPath(); g.arc(120, 120, r * 0.42, 0, Math.PI * 2); g.fill();
+      return cv;
+    }
+    var guide = {
+      chapters: function () {
+        return [
+          { key: "basics", label: Lang.t("Basics"), pages: [
+            { id: "hit", title: Lang.t("Hit the target"), pic: dotPic, lines: [
+              Lang.t("Tap the target before it drifts away. Every hit pays 10 points times your chain."),
+              Lang.t("A tap that misses breaks the chain.") ] },
+            { id: "combo", title: Lang.t("Combos"),
+              rows: [[Lang.t("A hit"), "10 × chain"], [Lang.t("Every fifth hit"), "+20 × chain"]], lines: [
+              Lang.t("Every fifth hit in a row pays a bonus, and the target speeds up a little.") ] }
+          ] }
+        ];
+      }
+    };
+
+    return { reset: reset, onDown: onDown, update: update, render: render, onTimeUp: onTimeUp, guide: guide };
   })();
 

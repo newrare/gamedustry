@@ -201,6 +201,16 @@ function englishOf(scan, fr) {
   return scan.rows.filter((r) => r.lang === 'en' && r.pair === pair);
 }
 
+/* A dictionary entry's id ends on its key, so a renamed key is a new id:
+   the French mark follows it, since the French itself did not change. */
+function moveKeyMarks(review, slug, applied) {
+  for (const a of applied) {
+    if (!a.key) continue;
+    const newId = a.id.slice(0, a.id.length - a.from.length) + a.to;
+    if (review[slug] && review[slug][a.id]) { review[slug][newId] = review[slug][a.id]; delete review[slug][a.id]; }
+  }
+}
+
 /* What an apply leaves on the desk: every string it wrote is checked, every
    French one it wrote opens an action on its English, and a removed entry
    takes its marks with it. */
@@ -219,9 +229,10 @@ async function afterApply(slug, before, out) {
     if (now && now.lang !== 'fr') wroteEn.add(now.id);
     return now;
   });
+  moveKeyMarks(review, slug, out.applied);
   for (let i = 0; i < out.applied.length; i++) {
     const a = out.applied[i], now = after[i];
-    if (!now) continue;
+    if (!now || a.key) continue;
     for (const g of await markEverywhere(review, todos, slug, now, true)) touched.add(g);
     if (now.lang !== 'fr' || a.from === a.to) continue;
     for (const en of englishOf(scan, now)) {
@@ -285,11 +296,7 @@ async function retranslate(slug, out) {
   const done = new Set([...kept.map((r) => r.enId), ...res.applied.map((a) => a.id)]);
   const [review, todos] = await Promise.all([readReview(), readStore(TODO)]);
   for (const id of done) if (todos[slug]) delete todos[slug][id];
-  const moved = new Map(res.applied.filter((a) => a.key).map((a) => [a.id, a]));
-  for (const [oldId, a] of moved) {
-    const newId = oldId.slice(0, oldId.length - a.from.length) + a.to;
-    if (review[slug] && review[slug][oldId]) { review[slug][newId] = review[slug][oldId]; delete review[slug][oldId]; }
-  }
+  moveKeyMarks(review, slug, res.applied);
   const scan = await scanOf(slug);
   todos[slug] = openTodos(scan, todos[slug]);
   await writeStore(REVIEW, review);
@@ -302,7 +309,8 @@ const reload = reloadHub("serve-text.mjs: the page's own source changed — take
 
 function start() {
   let timer = null;
-  try {
+  if (process.argv.includes('--no-watch')) console.log('watching nothing (--no-watch)');
+  else try {
     watch(PAGE, () => { clearTimeout(timer); timer = setTimeout(() => reload.broadcast('reload'), 120); });
   } catch { console.error('  cannot watch lab/game-text.html'); }
   console.log('apply writes manifest.json, game.js, page.html (and army.js), then rebuilds the game');

@@ -1,0 +1,627 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Conquest ticks</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #10141c; overflow: hidden; touch-action: none; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Conquest ticks — territory conquest against the game, played in orders.
+// Every region holds troops. You give each of your regions at most one order
+// (drag to a neighbour), the AI gives its own, and everything resolves AT
+// ONCE when the tick falls. Centers (star) and capitals (crown) produce troops
+// after each tick. Stage 1: take the red capital, keep yours.
+//
+// The question it answers: is "plan, wait, watch it resolve" fun, at a tick of
+// 20 s as much as at a tick of 4 h? The tick length is the knob a stage turns,
+// and the speed / resolve-now buttons cheat on the clock to judge a long tick
+// without waiting for it.
+//
+// Orders: drag from a blue region to a neighbour = send all. Tap the region
+// again = send half, tap again = cancel. Orders are cleared after each tick.
+
+// ---- tunables -------------------------------------------------------------
+var TICK_PRESETS = [20, 120, 1800, 14400]; // seconds per tick (stage 1 … stage 30)
+var SPEEDS = [1, 10, 60, 600];             // clock cheat
+var ANIM_SECONDS = 1.2;                    // how long a resolution plays
+var PROD_CENTER = 1;                       // troops a center adds per tick
+var PROD_CAPITAL = 2;                      // troops a capital adds per tick
+var DEF_BONUS = 1.5;                       // troops staying home fight this much harder
+var START_CAPITAL = 4;                     // troops on each capital at the start
+var AI_MARGIN = 1.2;                       // AI attacks with this much over the defence it sees
+var AI_CAUTION = 0.6;                      // share of the threat next door a frontier AI region keeps home
+var AI_SKIP = 0.1;                         // chance an AI region sits a tick out
+var KEEP_ORDERS = false;                   // true = player orders stand until cancelled
+
+// ---- frame & map ----------------------------------------------------------
+var W = 720, H = 1280;
+var CELL = 4, MY0 = 130, MW = 720, MH = 920;
+var GW = MW / CELL, GH = MH / CELL;
+
+// The continent is a union of ellipses with a noisy coast: [cx, cy, rx, ry].
+var LAND = [[360, 330, 300, 200], [300, 640, 250, 190], [430, 880, 260, 165], [560, 560, 140, 160]];
+
+// One seed per region; the region is every land cell nearest to it.
+var SEEDS = [
+  [170, 260], [330, 200], [500, 230], [620, 330],
+  [250, 390], [430, 370], [580, 470],
+  [140, 560], [320, 530], [480, 600], [640, 620],
+  [230, 720], [400, 740],
+  [250, 880], [440, 900], [610, 860],
+  [320, 990], [520, 985]
+];
+var NAMES = ["Norvik", "Aldmar", "Kestra", "Varos", "Myrr", "Tolen", "Ostra", "Brevin", "Calder",
+  "Duna", "Esker", "Falun", "Garr", "Holm", "Isel", "Jarrow", "Kalm", "Lund"];
+var CENTERS = [0, 5, 8, 10, 12, 15];
+var PLAYER_CAP = 16, AI_CAP = 2;
+
+var NEUTRAL = 0, PLAYER = 1, AI = 2;
+var WHO = ["Neutral", "You", "Red"];
+var COL = [[150, 148, 138], [70, 130, 225], [215, 80, 70]];
+var CSS = ["#9a988c", "#4682e1", "#d75046"];
+
+// ---- state ----------------------------------------------------------------
+var cv = document.getElementById("c"), ctx = cv.getContext("2d");
+var mapCv = document.createElement("canvas");
+mapCv.width = GW; mapCv.height = GH;
+var mctx = mapCv.getContext("2d");
+
+var grid, regions, adj;
+var orders, aiOrders;
+var phase, tick, timer, paused, speedIx, tickIx, showAI;
+var anim, animT, pending;
+var selected, drag, hover;
+var log, floaters, outcome;
+
+function noise(x, y, k) {
+  return Math.sin(x * 0.031 + k) * Math.sin(y * 0.027 + k * 1.7) * 0.5 +
+    Math.sin(x * 0.071 + y * 0.053 + k * 2.3) * 0.3 +
+    Math.sin(x * 0.13 - y * 0.11 + k * 0.7) * 0.2;
+}
+
+function isLand(x, y) {
+  var best = -9;
+  for (var i = 0; i < LAND.length; i++) {
+    var e = LAND[i], dx = (x - e[0]) / e[2], dy = (y - e[1]) / e[3];
+    best = Math.max(best, 1 - dx * dx - dy * dy);
+  }
+  return best + noise(x, y, 4.1) * 0.12 > 0;
+}
+
+function buildMap() {
+  grid = new Int16Array(GW * GH);
+  regions = [];
+  for (var i = 0; i < SEEDS.length; i++) {
+    regions.push({ id: i, name: NAMES[i], sx: SEEDS[i][0], sy: SEEDS[i][1], cx: 0, cy: 0, cells: 0,
+      owner: NEUTRAL, troops: 0, center: CENTERS.indexOf(i) >= 0, capital: i === PLAYER_CAP || i === AI_CAP });
+  }
+  for (var gy = 0; gy < GH; gy++) {
+    for (var gx = 0; gx < GW; gx++) {
+      var x = gx * CELL + CELL / 2, y = MY0 + gy * CELL + CELL / 2, id = -1;
+      if (isLand(x, y)) {
+        var bd = 1e9;
+        for (var s = 0; s < regions.length; s++) {
+          var r = regions[s];
+          var d = Math.hypot(x - r.sx, y - r.sy) + noise(x, y, s * 1.3) * 26;
+          if (d < bd) { bd = d; id = s; }
+        }
+        regions[id].cx += x; regions[id].cy += y; regions[id].cells++;
+      }
+      grid[gy * GW + gx] = id;
+    }
+  }
+  regions.forEach(function (r) {
+    if (r.cells) { r.cx /= r.cells; r.cy /= r.cells; } else { r.cx = r.sx; r.cy = r.sy; }
+  });
+  // Two regions are neighbours when they share a few cells of border.
+  var touch = {};
+  for (gy = 0; gy < GH; gy++) {
+    for (gx = 0; gx < GW; gx++) {
+      var a = grid[gy * GW + gx];
+      if (a < 0) continue;
+      var nb = [gx + 1 < GW ? grid[gy * GW + gx + 1] : -1, gy + 1 < GH ? grid[(gy + 1) * GW + gx] : -1];
+      for (var k = 0; k < 2; k++) {
+        var b = nb[k];
+        if (b < 0 || b === a) continue;
+        var key = Math.min(a, b) + "," + Math.max(a, b);
+        touch[key] = (touch[key] || 0) + 1;
+      }
+    }
+  }
+  adj = regions.map(function () { return []; });
+  for (var key2 in touch) {
+    if (touch[key2] < 3) continue;
+    var p = key2.split(",").map(Number);
+    adj[p[0]].push(p[1]); adj[p[1]].push(p[0]);
+  }
+}
+
+function reset() {
+  buildMap();
+  regions.forEach(function (r, i) {
+    r.troops = r.center ? 3 : 1 + (i * 7) % 2;
+  });
+  regions[PLAYER_CAP].owner = PLAYER; regions[PLAYER_CAP].troops = START_CAPITAL;
+  regions[AI_CAP].owner = AI; regions[AI_CAP].troops = START_CAPITAL;
+  orders = {}; aiOrders = {};
+  phase = "plan"; tick = 0; timer = 0; paused = false;
+  anim = []; animT = 0; pending = null;
+  selected = -1; drag = null; hover = -1; outcome = null;
+  floaters = [];
+  log = ["Drag from a blue region to a neighbour: all its troops go there at the tick.",
+    "Tap it again for half, again to cancel. Everyone moves at once."];
+  computeAI();
+  renderMap();
+}
+
+// ---- the map picture ------------------------------------------------------
+function renderMap() {
+  var img = mctx.createImageData(GW, GH), d = img.data;
+  for (var gy = 0; gy < GH; gy++) {
+    for (var gx = 0; gx < GW; gx++) {
+      var i = gy * GW + gx, id = grid[i], o = i * 4, c, f;
+      var x = gx * CELL, y = MY0 + gy * CELL;
+      if (id < 0) {
+        f = 1 + noise(x, y, 9) * 0.08;
+        c = [28 * f, 58 * f, 92 * f];
+      } else {
+        var r = regions[id], base = COL[r.owner];
+        f = 1 + noise(x * 2, y * 2, 2) * 0.05;
+        if (id === selected || id === hover) f *= 1.22;
+        var right = gx + 1 < GW ? grid[i + 1] : -1, down = gy + 1 < GH ? grid[i + GW] : -1;
+        var left = gx > 0 ? grid[i - 1] : -1, up = gy > 0 ? grid[i - GW] : -1;
+        if (right < 0 || down < 0 || left < 0 || up < 0) f *= 0.45;              // coast
+        else if (right !== id || down !== id) f *= 0.6;                         // border
+        c = [base[0] * f, base[1] * f, base[2] * f];
+      }
+      d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+    }
+  }
+  mctx.putImageData(img, 0, 0);
+}
+
+// ---- resolution -----------------------------------------------------------
+function orderCount(r, o) {
+  if (o.n != null) return Math.min(o.n, r.troops);
+  return o.frac >= 1 ? r.troops : Math.max(1, Math.floor(r.troops * o.frac));
+}
+
+function resolve() {
+  var stay = regions.map(function (r) { return r.troops; });
+  var moves = [], events = [];
+  function collect(set, owner) {
+    for (var k in set) {
+      var from = +k, o = set[k], r = regions[from];
+      if (r.owner !== owner || r.troops <= 0 || adj[from].indexOf(o.to) < 0) continue;
+      var n = orderCount(r, o);
+      if (n <= 0) continue;
+      stay[from] -= n;
+      moves.push({ from: from, to: o.to, owner: owner, n0: n, n: n, clash: false });
+    }
+  }
+  collect(orders, PLAYER);
+  collect(aiOrders, AI);
+
+  // Two enemy columns crossing the same border meet halfway.
+  for (var i = 0; i < moves.length; i++) {
+    for (var j = i + 1; j < moves.length; j++) {
+      var a = moves[i], b = moves[j];
+      if (a.from === b.to && a.to === b.from && a.owner !== b.owner) {
+        var k = Math.min(a.n, b.n);
+        a.n -= k; b.n -= k; a.clash = b.clash = true;
+        events.push("Clash between " + regions[a.from].name + " and " + regions[a.to].name + " (-" + k + " each)");
+      }
+    }
+  }
+
+  var arrive = regions.map(function () { return [0, 0, 0]; });
+  moves.forEach(function (m) { arrive[m.to][m.owner] += m.n; });
+
+  var next = regions.map(function (r, id) { return { owner: r.owner, troops: stay[id], fight: false }; });
+  regions.forEach(function (r, id) {
+    var owner = r.owner, def = stay[id] + arrive[id][owner];
+    var sides = [{ owner: owner, raw: def, str: def }];
+    for (var w = 0; w < 3; w++) if (w !== owner && arrive[id][w] > 0) sides.push({ owner: w, raw: arrive[id][w], str: arrive[id][w] });
+    next[id].troops = def;
+    if (sides.length === 1) return;
+    sides[0].str = def * DEF_BONUS;
+    sides.sort(function (p, q) { return q.str - p.str; });
+    var s1 = sides[0], s2 = sides[1];
+    next[id].fight = true;
+    if (s1.str === s2.str) {
+      next[id].troops = 0;
+      events.push("Stalemate at " + r.name + ", nobody left standing");
+      return;
+    }
+    next[id].owner = s1.owner;
+    next[id].troops = Math.max(1, Math.round(s1.raw * (s1.str - s2.str) / s1.str));
+    if (s1.owner !== owner) events.push(WHO[s1.owner] + " took " + r.name + (r.capital ? " (capital)" : ""));
+    else if (owner !== NEUTRAL) events.push(WHO[owner] + " held " + r.name);
+  });
+
+  regions.forEach(function (r, id) {
+    var n = next[id];
+    if (n.owner === NEUTRAL || !r.center && !r.capital) return;
+    n.prod = r.capital ? PROD_CAPITAL : PROD_CENTER;
+    n.troops += n.prod;
+  });
+  return { next: next, moves: moves, events: events };
+}
+
+function startResolve() {
+  pending = resolve();
+  anim = pending.moves;
+  animT = 0;
+  phase = "resolve";
+  drag = null;
+}
+
+function applyResolve() {
+  pending.next.forEach(function (n, id) {
+    var r = regions[id];
+    r.owner = n.owner; r.troops = n.troops;
+    if (n.prod) floaters.push({ x: r.cx, y: r.cy - 52, text: "+" + n.prod, col: "#ffd34d", t: 0 });
+    if (n.fight) floaters.push({ x: r.cx, y: r.cy + 40, text: "battle", col: "#fff", t: 0 });
+  });
+  log = pending.events.length ? pending.events.slice(-3) : ["Tick " + (tick + 1) + ": nothing happened"];
+  pending = null; anim = [];
+  tick++; timer = 0;
+  if (!KEEP_ORDERS) orders = {};
+  for (var k in orders) if (regions[k].owner !== PLAYER) delete orders[k];
+  if (regions[AI_CAP].owner !== AI) outcome = "Victory";
+  else if (regions[PLAYER_CAP].owner !== PLAYER) outcome = "Defeat";
+  phase = outcome ? "over" : "plan";
+  computeAI();
+  renderMap();
+}
+
+// ---- the AI ---------------------------------------------------------------
+// Greedy: rank the targets next to its land by worth over defence, pool every
+// region touching a target until it outnumbers it, march the interior toward
+// the front, and keep part of a frontier home when you stand next door.
+function computeAI() {
+  aiOrders = {};
+  var mine = regions.filter(function (r) { return r.owner === AI; });
+  var avail = {}, used = {};
+  mine.forEach(function (r) {
+    var threat = 0;
+    adj[r.id].forEach(function (n) { if (regions[n].owner === PLAYER) threat += regions[n].troops; });
+    var keep = Math.ceil(threat * (r.capital ? 1 : AI_CAUTION) / DEF_BONUS);
+    avail[r.id] = Math.max(0, r.troops - keep);
+  });
+
+  var targets = [];
+  regions.forEach(function (t) {
+    if (t.owner === AI) return;
+    if (!adj[t.id].some(function (n) { return regions[n].owner === AI; })) return;
+    var need = (t.troops * (t.troops > 0 ? DEF_BONUS : 1) + 1) * AI_MARGIN;
+    var worth = 1 + (t.center ? 2 : 0) + (t.capital ? 4 : 0) + (t.owner === PLAYER ? 1 : 0);
+    targets.push({ t: t, need: need, score: worth / need });
+  });
+  targets.sort(function (a, b) { return b.score - a.score; });
+
+  targets.forEach(function (g) {
+    var src = adj[g.t.id].filter(function (n) { return regions[n].owner === AI && !used[n] && avail[n] > 0; });
+    src.sort(function (a, b) { return avail[b] - avail[a]; });
+    var sum = 0, pick = [];
+    for (var i = 0; i < src.length && sum < g.need; i++) { sum += avail[src[i]]; pick.push(src[i]); }
+    if (sum < g.need) return;
+    pick.forEach(function (s) {
+      if (Math.random() < AI_SKIP) return;
+      used[s] = true;
+      aiOrders[s] = { to: g.t.id, n: avail[s] };
+    });
+  });
+
+  // Distance to the front, walked through the AI's own land.
+  var dist = {}, queue = [];
+  mine.forEach(function (r) {
+    if (adj[r.id].some(function (n) { return regions[n].owner !== AI; })) { dist[r.id] = 0; queue.push(r.id); }
+  });
+  while (queue.length) {
+    var c = queue.shift();
+    adj[c].forEach(function (n) {
+      if (regions[n].owner === AI && dist[n] == null) { dist[n] = dist[c] + 1; queue.push(n); }
+    });
+  }
+  mine.forEach(function (r) {
+    if (used[r.id] || r.troops <= 0 || !dist[r.id]) return;
+    var best = -1;
+    adj[r.id].forEach(function (n) {
+      if (regions[n].owner === AI && dist[n] != null && (best < 0 || dist[n] < dist[best])) best = n;
+    });
+    if (best >= 0 && !r.capital) aiOrders[r.id] = { to: best, n: r.troops };
+  });
+}
+
+// ---- input ----------------------------------------------------------------
+var buttons = [
+  { label: function () { return paused ? "Play" : "Pause"; }, act: function () { paused = !paused; } },
+  { label: function () { return "Speed x" + SPEEDS[speedIx]; }, act: function () { speedIx = (speedIx + 1) % SPEEDS.length; } },
+  { label: function () { return "Tick " + fmt(TICK_PRESETS[tickIx]); }, act: function () { tickIx = (tickIx + 1) % TICK_PRESETS.length; timer = Math.min(timer, TICK_PRESETS[tickIx] - 1); } },
+  { label: function () { return "Resolve now"; }, act: function () { if (phase === "plan") startResolve(); } },
+  { label: function () { return showAI ? "Red orders: shown" : "Red orders: hidden"; }, act: function () { showAI = !showAI; } },
+  { label: function () { return "Restart"; }, act: function () { reset(); } }
+];
+buttons.forEach(function (b, i) {
+  b.x = 16 + (i % 3) * 232; b.y = 1146 + Math.floor(i / 3) * 66; b.w = 224; b.h = 58;
+});
+speedIx = 0; tickIx = 0; showAI = false;
+
+var fit = { s: 1, ox: 0, oy: 0 };
+function toDesign(e) {
+  return { x: (e.clientX - fit.ox) / fit.s, y: (e.clientY - fit.oy) / fit.s };
+}
+
+function regionAt(x, y) {
+  var gx = Math.floor(x / CELL), gy = Math.floor((y - MY0) / CELL);
+  if (gx >= 0 && gx < GW && gy >= 0 && gy < GH && grid[gy * GW + gx] >= 0) return grid[gy * GW + gx];
+  var best = -1, bd = 50;
+  regions.forEach(function (r) {
+    var d = Math.hypot(x - r.cx, y - r.cy);
+    if (d < bd) { bd = d; best = r.id; }
+  });
+  return best;
+}
+
+function setSelected(id) {
+  if (id === selected) return;
+  selected = id;
+  renderMap();
+}
+
+cv.addEventListener("pointerdown", function (e) {
+  var p = toDesign(e);
+  if (phase === "over") { reset(); return; }
+  for (var i = 0; i < buttons.length; i++) {
+    var b = buttons[i];
+    if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { b.act(); return; }
+  }
+  var id = regionAt(p.x, p.y);
+  setSelected(id);
+  if (phase === "plan" && id >= 0 && regions[id].owner === PLAYER && regions[id].troops > 0) drag = { from: id, x: p.x, y: p.y };
+});
+
+cv.addEventListener("pointermove", function (e) {
+  if (!drag) return;
+  var p = toDesign(e);
+  drag.x = p.x; drag.y = p.y;
+  var id = regionAt(p.x, p.y);
+  var h = id >= 0 && adj[drag.from].indexOf(id) >= 0 ? id : -1;
+  if (h !== hover) { hover = h; renderMap(); }
+});
+
+cv.addEventListener("pointerup", function (e) {
+  if (!drag) return;
+  var p = toDesign(e), id = regionAt(p.x, p.y), from = drag.from;
+  drag = null;
+  if (hover >= 0) { hover = -1; renderMap(); }
+  if (phase !== "plan") return;
+  if (id === from) {
+    var o = orders[from];
+    if (o && o.frac >= 1) o.frac = 0.5;
+    else if (o) delete orders[from];
+  } else if (id >= 0 && adj[from].indexOf(id) >= 0) {
+    orders[from] = { to: id, frac: 1 };
+  }
+});
+
+// ---- drawing --------------------------------------------------------------
+function fmt(sec) {
+  sec = Math.max(0, Math.round(sec));
+  var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  if (d) return d + "d " + h + "h";
+  if (h) return h + "h " + (m < 10 ? "0" : "") + m + "m";
+  if (m) return m + "m " + (s < 10 ? "0" : "") + s + "s";
+  return s + "s";
+}
+
+function star(x, y, r, col) {
+  ctx.beginPath();
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+  ctx.fillStyle = col; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = "#3a2a00"; ctx.stroke();
+}
+
+function crown(x, y, col) {
+  ctx.beginPath();
+  ctx.moveTo(x - 20, y + 10); ctx.lineTo(x - 20, y - 8); ctx.lineTo(x - 10, y + 1); ctx.lineTo(x, y - 14);
+  ctx.lineTo(x + 10, y + 1); ctx.lineTo(x + 20, y - 8); ctx.lineTo(x + 20, y + 10);
+  ctx.closePath();
+  ctx.fillStyle = col; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = "#3a2a00"; ctx.stroke();
+}
+
+function token(x, y, n, owner, r) {
+  r = r || 22;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = CSS[owner]; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.font = "bold 22px system-ui, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(n, x, y + 1);
+}
+
+function arrow(a, b, col, label, dashed) {
+  var dx = b.cx - a.cx, dy = b.cy - a.cy, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+  var x0 = a.cx + ux * 26, y0 = a.cy + uy * 26, x1 = b.cx - ux * 30, y1 = b.cy - uy * 30;
+  ctx.save();
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 7; ctx.lineCap = "round";
+  if (dashed) ctx.setLineDash([12, 10]);
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * 10, y1 - uy * 10); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x1 + ux * 6, y1 + uy * 6);
+  ctx.lineTo(x1 - ux * 16 - uy * 13, y1 - uy * 16 + ux * 13);
+  ctx.lineTo(x1 - ux * 16 + uy * 13, y1 - uy * 16 - ux * 13);
+  ctx.closePath(); ctx.fill();
+  if (label) {
+    var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    ctx.font = "bold 20px system-ui, sans-serif";
+    var w = ctx.measureText(label).width + 16;
+    ctx.fillStyle = "rgba(10,14,22,0.85)";
+    ctx.fillRect(mx - w / 2, my - 14, w, 28);
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(label, mx, my + 1);
+  }
+  ctx.restore();
+}
+
+function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+function draw() {
+  ctx.fillStyle = "#10141c";
+  ctx.fillRect(0, 0, W, H);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(mapCv, 0, MY0, MW, MH);
+
+  // Orders.
+  if (phase !== "resolve") {
+    if (showAI) for (var k in aiOrders) {
+      var ao = aiOrders[k], ar = regions[k];
+      arrow(ar, regions[ao.to], "rgba(255,120,110,0.9)", "" + orderCount(ar, ao), true);
+    }
+    for (var k2 in orders) {
+      var o = orders[k2], r = regions[k2];
+      arrow(r, regions[o.to], "rgba(160,205,255,0.95)", (o.frac >= 1 ? "all " : "half ") + orderCount(r, o));
+    }
+  }
+  if (drag) {
+    adj[drag.from].forEach(function (n) {
+      var rn = regions[n];
+      ctx.beginPath(); ctx.arc(rn.cx, rn.cy, 32, 0, Math.PI * 2);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.55)"; ctx.stroke();
+    });
+    var rf = regions[drag.from];
+    ctx.beginPath(); ctx.moveTo(rf.cx, rf.cy); ctx.lineTo(drag.x, drag.y);
+    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.stroke();
+  }
+
+  // Regions: icon, then troops (moving columns hide what left).
+  regions.forEach(function (r) {
+    if (r.capital) crown(r.cx, r.cy - 40, "#ffd34d");
+    else if (r.center) star(r.cx, r.cy - 38, 14, "#ffd34d");
+    var n = r.troops;
+    if (phase === "resolve") {
+      anim.forEach(function (m) { if (m.from === r.id) n -= m.n0; });
+    }
+    token(r.cx, r.cy, n, r.owner);
+  });
+
+  // Columns on the move.
+  if (phase === "resolve") {
+    var t = Math.min(1, animT / animLen());
+    anim.forEach(function (m) {
+      var a = regions[m.from], b = regions[m.to], e = ease(t);
+      if (m.clash && t > 0.5 && m.n === 0) return;
+      var x = a.cx + (b.cx - a.cx) * e, y = a.cy + (b.cy - a.cy) * e;
+      token(x, y, m.clash && t < 0.5 ? m.n0 : m.n, m.owner, 17);
+      if (m.clash && Math.abs(t - 0.5) < 0.12) {
+        ctx.beginPath(); ctx.arc((a.cx + b.cx) / 2, (a.cy + b.cy) / 2, 30 + (t - 0.38) * 120, 0, Math.PI * 2);
+        ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,240,200,0.8)"; ctx.stroke();
+      }
+    });
+  }
+
+  floaters.forEach(function (f) {
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4);
+    ctx.fillStyle = f.col; ctx.font = "bold 22px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(f.text, f.x, f.y - f.t * 24);
+    ctx.globalAlpha = 1;
+  });
+
+  // Top: objective, clock, selection.
+  var tl = TICK_PRESETS[tickIx];
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#fff"; ctx.font = "bold 26px system-ui, sans-serif";
+  ctx.fillText("Stage 1 · take the red capital, keep yours", 16, 36);
+  ctx.font = "22px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
+  var clock = phase === "resolve" ? "resolving…" : "next in " + fmt(tl - timer);
+  ctx.fillText("Tick " + (tick + 1) + " · " + clock + " · elapsed " + fmt(tick * tl + timer) +
+    (paused ? " · paused" : ""), 16, 68);
+  ctx.fillStyle = "#2a3242"; ctx.fillRect(16, 82, W - 32, 8);
+  ctx.fillStyle = "#ffd34d"; ctx.fillRect(16, 82, (W - 32) * (phase === "resolve" ? 1 : timer / tl), 8);
+  if (selected >= 0) {
+    var s = regions[selected];
+    var line = s.name + " · " + WHO[s.owner] + " · " + s.troops + " troops";
+    if (s.capital) line += " · capital +" + PROD_CAPITAL + "/tick";
+    else if (s.center) line += " · center +" + PROD_CENTER + "/tick";
+    line += " · " + adj[selected].length + " neighbours";
+    ctx.fillStyle = "#fff"; ctx.font = "20px system-ui, sans-serif";
+    ctx.fillText(line, 16, 118);
+  }
+
+  // Bottom: last tick's report, then the clock cheats.
+  ctx.font = "20px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
+  log.forEach(function (l, i) { ctx.fillText(l, 16, MY0 + MH + 26 + i * 26, W - 32); });
+  buttons.forEach(function (b) {
+    ctx.fillStyle = "#273044"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = "#4a5670"; ctx.lineWidth = 2; ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 21px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(b.label(), b.x + b.w / 2, b.y + b.h / 2 + 1);
+  });
+
+  if (outcome) {
+    ctx.fillStyle = "rgba(8,10,16,0.72)"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = outcome === "Victory" ? "#7fd18a" : "#ff8a7a";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "bold 64px system-ui, sans-serif";
+    ctx.fillText(outcome, W / 2, H / 2 - 50);
+    ctx.fillStyle = "#fff"; ctx.font = "24px system-ui, sans-serif";
+    ctx.fillText(tick + " ticks · " + fmt(tick * tl) + " of game time", W / 2, H / 2 + 10);
+    ctx.fillText("Tap to restart", W / 2, H / 2 + 56);
+  }
+}
+
+// ---- loop -----------------------------------------------------------------
+function animLen() { return ANIM_SECONDS / Math.min(SPEEDS[speedIx], 3); }
+
+function update(dt) {
+  floaters.forEach(function (f) { f.t += dt; });
+  floaters = floaters.filter(function (f) { return f.t < 1.4; });
+  if (phase === "plan" && !paused) {
+    timer += dt * SPEEDS[speedIx];
+    if (timer >= TICK_PRESETS[tickIx]) startResolve();
+  } else if (phase === "resolve") {
+    animT += dt;
+    if (animT >= animLen()) applyResolve();
+  }
+}
+
+function resize() {
+  var dpr = window.devicePixelRatio || 1, ww = window.innerWidth, wh = window.innerHeight;
+  fit.s = Math.min(ww / W, wh / H);
+  fit.ox = (ww - W * fit.s) / 2; fit.oy = (wh - H * fit.s) / 2;
+  cv.width = ww * dpr; cv.height = wh * dpr;
+  cv.style.width = ww + "px"; cv.style.height = wh + "px";
+  ctx.setTransform(dpr * fit.s, 0, 0, dpr * fit.s, fit.ox * dpr, fit.oy * dpr);
+}
+window.addEventListener("resize", resize);
+
+var last = 0;
+function frame(ts) {
+  var dt = Math.min(0.1, (ts - last) / 1000 || 0);
+  last = ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+resize();
+reset();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

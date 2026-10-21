@@ -176,8 +176,8 @@
      motor.css, CARD): it says what the tap does, and when the caller has
      nothing more precise to say it is this one. */
   var STRINGS = {
-    en: { tapClose: "Tap to close" },
-    fr: { tapClose: "Touche pour fermer" }
+    en: { tapClose: "Tap to close", more: "More below" },
+    fr: { tapClose: "Touche pour fermer", more: "La suite en dessous" }
   };
   W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
   var LANG = "en";
@@ -324,6 +324,7 @@
       });
       handle.watch.observe(card, { childList: true });
     }
+    if (card) handle.more = moreCue(card);
 
     if (handle.dismiss) {
       box.addEventListener("click", function (e) {
@@ -341,6 +342,77 @@
     notify();
     door("open");
     return handle;
+  }
+
+  /* THERE IS MORE BELOW. A card whose body scrolls showed nothing of it: the
+     last line sat flush on the tap line and read as the end of the card. So
+     every card watches its own scrolling part — the body of a card of a
+     fixed height, the rows of a panel, anything marked `data-scroll` — and
+     while there is still something under the fold it wears a chevron that
+     bobs at the foot of that part, above a footer the part pins to its own
+     bottom (`data-foot`, the guide's previous / contents / next). It goes the
+     moment the end is reached, and a tap on it scrolls on — it is a control,
+     so that tap is never the one that closes the card.
+
+     Checked on a short debounce rather than per frame: a card that counts a
+     figure up rewrites its text sixty times a second, and each check reads a
+     layout. */
+  function moreCue(card) {
+    var cue = el("button", "mt-more",
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" ' +
+      'stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>');
+    cue.type = "button";
+    cue.setAttribute("aria-label", tapCopy("more"));
+    card.appendChild(cue);
+    var target = null, timer = 0, dead = false;
+    function scroller() {
+      var list = card.querySelectorAll(".mt-body, .web-pbody, [data-scroll]");
+      for (var i = 0; i < list.length; i++) {
+        var n = list[i];
+        if (n.scrollHeight <= n.clientHeight + 4) continue;
+        var oy = window.getComputedStyle(n).overflowY;
+        if (oy === "auto" || oy === "scroll") return n;
+      }
+      return null;
+    }
+    function update() {
+      timer = 0;
+      if (dead) return;
+      target = scroller();
+      var on = !!target && target.scrollHeight - target.clientHeight - target.scrollTop > 8;
+      if (on) {
+        /* where the part ends, in the card's own px (the card is scaled into
+           the frame, and it is scaling in while it opens) */
+        var cr = card.getBoundingClientRect(), tr = target.getBoundingClientRect();
+        var k = card.offsetHeight ? cr.height / card.offsetHeight : 1;
+        var foot = target.querySelector("[data-foot]");
+        var bottom = (tr.bottom - cr.top) / k - (foot ? foot.offsetHeight : 0);
+        cue.style.top = Math.round(bottom - 62) + "px";
+      }
+      cue.classList.toggle("on", on);
+    }
+    function later() { if (!timer && !dead) timer = setTimeout(update, 90); }
+    card.addEventListener("scroll", later, true);
+    card.addEventListener("load", later, true);
+    window.addEventListener("resize", later);
+    var mo = window.MutationObserver ? new MutationObserver(later) : null;
+    if (mo) mo.observe(card, { childList: true, subtree: true });
+    cue.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (target) target.scrollBy({ top: Math.round(target.clientHeight * 0.7), behavior: "smooth" });
+    });
+    later();
+    setTimeout(later, 420);                 // once the card has scaled in and its fonts are set
+    return {
+      stop: function () {
+        dead = true;
+        if (timer) clearTimeout(timer);
+        if (mo) mo.disconnect();
+        card.removeEventListener("scroll", later, true);
+        card.removeEventListener("load", later, true);
+        window.removeEventListener("resize", later);
+      }
+    };
   }
 
   /* THE TITLE IS ONE LINE, AT THE SIZE THE CARD LEAVES IT. The motor's own
@@ -366,6 +438,7 @@
     if (i < 0) return;                  // already closed: closing twice is a no-op
     modals.splice(i, 1);
     if (handle.watch) { handle.watch.disconnect(); handle.watch = null; }
+    if (handle.more) { handle.more.stop(); handle.more = null; }
     if (handle.bed) bedUp();
     /* While it is still in the document: see `onHide` above. */
     if (handle.onHide) handle.onHide();

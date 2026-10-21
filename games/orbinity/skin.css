@@ -141,12 +141,6 @@
   /* the milestone sticker leans violet, like the CTA and the nebula */
   .pop-combo { --chip:#12042e; --chip-line:#c9b4ff;
     --fill:linear-gradient(180deg,#ffffff 0%,#c9b4ff 42%,#7c5cff 72%,#ff5ecb 100%); }
-  /* OVERTIME rides the same compact chip: the clock runs out WHILE the player
-     is still flying, so this callout has to stay out of the way of the field it
-     is announcing — hence the sticker rather than the hero style. Iced cyan so
-     it never reads as a scoring milestone. */
-  .pop-combo.pop-ot { --chip:#050a2c; --chip-line:#8be6ff; --glow:rgba(124,245,255,.5);
-    --fill:linear-gradient(180deg,#ffffff 0%,#a6e9ff 52%,#6d8cff 100%); }
   .pop-streak { --burst:#7cf5ff; --ink:#04182a;
     --fill:linear-gradient(180deg,#ffffff 0%,#c6f7ff 50%,#4bd9ff 100%);
     --glow:rgba(124,245,255,.75); }

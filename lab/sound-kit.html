@@ -56,11 +56,25 @@
    between them so a sound heard twenty times a round does not repeat. They
    are never a choice — a different sound is a different variant.
 
+   Every role and variant says WHO CALLS IT, as tags under its name: the
+   shell's files that play it by name (`album`, `barracks`, `every card &
+   view`…), and a game that calls `Sound.ui` itself, by its icon — read off
+   the source (api/kit `calls`, roleCalls in tools/lab/cut-kit.mjs). A
+   gameplay variant also shows the games whose manifest maps a key to it.
+   Nothing calling it reads `unused`.
+
+   The + beside a group's heading ADDS A ROLE to it — its name, then one line
+   saying what it means — and the + beside a gameplay role's heading adds a
+   variant to it. Either starts with no take: click one to three files of the
+   library, then Save. `Delete role` drops a role and its variants, and
+   `Delete variant` one variant — both only once nothing plays it: no
+   manifest maps a key to it and no source calls it by name (the button says
+   which, and the cutter refuses the same on Save).
+
    Save writes assets/audio/kit/kit.json, re-cuts every take and rebuilds the
    web build of the bench: the cut files are committed, the games pick them up
-   on the next `node tools/update.mjs`. Only the takes are the page's to
-   change — a role is a name the shell calls. A gameplay variant is edited the
-   same way from the events bench (/sound), on the card of a key that plays it.
+   on the next `node tools/update.mjs`. A gameplay variant is edited the same
+   way from the events bench (/sound), on the card of a key that plays it.
 
    Served by `make events` (tools/lab/serve-events.mjs) at /kit, beside the
    library it reads. Over file:// it has nothing to read and says so.
@@ -107,12 +121,31 @@ button { font:inherit; color:inherit; }
 .role .g img.v-part { outline:2px dashed #5fd49a; }
 .role .g img.v-stale { outline:2px solid #ffb648; }
 .role.var { margin-left:12px; padding:5px 10px; }
-.role-h { padding:10px 10px 2px; display:flex; flex-direction:column; gap:1px; }
+.role-h { padding:8px 10px; border-radius:8px; display:grid; grid-template-columns:1fr auto auto; gap:1px 8px; align-items:center; cursor:pointer; }
+.role-h:hover { background:#1a1a2a; }
+.role-h.on { background:#1e2740; }
+.role-h.open { padding-bottom:2px; }
+.role-h .n { color:#6f6f92; font-size:11px; }
+.role-h .chev { display:inline-block; width:14px; color:#6f6f92; }
+.role-h .w { grid-column:1 / -1; }
 .role-h b { font-size:13px; }
 .role-h .w { color:#8b8ba7; font-size:11px; font-weight:500; }
 .role-h.dirty b::after { content:" •"; color:#ffd08a; }
 .vacts { display:flex; gap:6px; }
-.grp { padding:14px 10px 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; }
+.grp { padding:14px 10px 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; display:flex; align-items:center; gap:8px; }
+.grp span, .role-h .t { flex:1; }
+.add {
+  flex:0 0 auto; width:22px; height:22px; padding:0; border:1px solid #2c2c47; border-radius:6px;
+  background:none; color:#9c9cba; font-size:14px; line-height:1; cursor:pointer;
+}
+.add:hover { border-color:#7ea6ff; color:#e8e6f5; }
+.calls { grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; align-items:center; }
+.calls .c { padding:0 6px; border-radius:10px; background:#1d2a2a; color:#8fe0b8; font-size:10px; font-weight:600; }
+.calls .c.none { background:#1a1a2a; color:#6f6f92; }
+.calls img { width:18px; height:18px; border-radius:5px; display:block; }
+.calls .lbl { color:#9c9cba; font-size:11px; font-weight:500; margin-right:4px; }
+#role-head .calls { flex-basis:100%; margin:0; }
+#takes .empty { padding:16px 14px; border:1px dashed #3a3a5c; border-radius:10px; color:#9c9cba; font-weight:500; }
 .tag { display:inline-block; margin-left:6px; padding:0 6px; border-radius:10px; background:#2a2440; color:#c8b8ff; font-size:10px; font-weight:600; }
 #roles .foot { margin-top:auto; padding:12px 6px 0; display:flex; flex-direction:column; gap:8px; font-size:11px; color:#9c9cba; }
 #roles .foot label { display:flex; justify-content:space-between; align-items:center; }
@@ -236,7 +269,8 @@ button { font:inherit; color:inherit; }
     malus: "phaser", crash: "explosion", move: "swish",
     launch: "launch", hit: "impact", bounce: "bounce", burst: "pop",
     toggle: "switch", card: "card", miss: "error", warn: "alarm",
-    world: "explosion", goal: "jingle", defeat: "lose"
+    world: "explosion", goal: "jingle", defeat: "lose",
+    select: "click", refuse: "error"
   };
   /* How the shell plays a role in a row: the stars climb, the rows tick up,
      the coins cascade. A role that is not a ladder is played five times, which
@@ -248,9 +282,19 @@ button { font:inherit; color:inherit; }
     pickup: { rates: [1, 1.045, 1.09, 1.135, 1.18, 1.225, 1.27, 1.315], gap: 110 }
   };
   const GROUPS = { shell: "Shell — every game's menus and end screen", game: "Gameplay — mapped by a game's manifest (sfx)" };
+  /* A shell file named by what the player sees it as: `army` is the barracks,
+     `view` plays the door of every card and view. A file not listed is
+     shown by its own name. */
+  const WHERE = {
+    shell: "end screen", levels: "level map", meta: "rewards", album: "album", army: "barracks",
+    codex: "codex", daily: "daily road", guide: "guide", menu: "menu", view: "every card & view", village: "village"
+  };
   const WINDOW = 0.05, MAX_TAKES = 3;
 
-  const S = { kit: null, checked: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "" };
+  /* `open` is the one gameplay role whose variants are listed: the list opens
+     folded, unfolding a role folds the one before it, and a filter lists the
+     variants it matches whatever is folded. */
+  const S = { kit: null, checked: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "", open: null };
 
   // ---- audio -------------------------------------------------------------
   let ac = null;
@@ -354,6 +398,7 @@ button { font:inherit; color:inherit; }
   let lastTake = -1;
   function shot(rate, at) {
     const v = cur(), n = v.takes.length;
+    if (!n) return Promise.resolve();
     let i = 0;
     if (n > 1) { i = Math.floor(Math.random() * (lastTake < 0 ? n : n - 1)); if (lastTake >= 0 && i >= lastTake) i++; }
     lastTake = i;
@@ -386,6 +431,7 @@ button { font:inherit; color:inherit; }
   const idNow = () => idOf(S.role, S.variant);
   function dirtyIds() {
     const was = JSON.parse(S.saved), out = [];
+    for (const role of Object.keys(was)) if (!S.kit.roles[role]) out.push(role);
     for (const [role, r] of Object.entries(S.kit.roles)) {
       for (const [name, v] of Object.entries(r.variants)) {
         const w = was[role] && was[role].variants[name];
@@ -403,8 +449,9 @@ button { font:inherit; color:inherit; }
     if (!S.kit.roles[role]) return;
     const names = Object.keys(S.kit.roles[role].variants);
     S.role = role; S.variant = names.includes(variant) ? variant : names[0];
+    if (!isShell(role)) S.open = role;
     S.take = 0; lastTake = -1;
-    S.q = SEARCH[role] || "";
+    S.q = SEARCH[role] || role;
     $("q").value = S.q;
     try { history.replaceState(null, "", "#" + idNow()); } catch (e) {}
     paint();
@@ -426,6 +473,26 @@ button { font:inherit; color:inherit; }
       '<img class="' + (checked[slug] ? "v-" + checked[slug] : "") + '" src="icons/' + encodeURIComponent(slug) + '.png" alt="' + esc(slug) + '" title="' +
       esc(by[slug].join(", ") + (!S.checked ? "" : checked[slug] ? " — " + VALID[checked[slug]] : " — not checked yet")) + '">').join("");
   }
+  function callsOf(id) { return (S.kit.calls && S.kit.calls[id]) || []; }
+  /* Who calls a variant by name, as tags: one per shell file, one icon per
+     game whose own code calls it — the lines in the tooltip. `users` are the
+     games mapping a key to it, drawn elsewhere, which only count here to tell
+     a variant nobody plays. */
+  function callTags(id, users, label) {
+    const by = {}, list = callsOf(id);
+    list.forEach((c) => { (by[c.where] = by[c.where] || { game: c.game, at: [] }).at.push(c.file + ":" + c.line); });
+    // An older server sends no `calls`: say nothing rather than `unused`.
+    if (!S.kit.calls) return "";
+    const html = Object.keys(by).map((w) => {
+      const b = by[w], tip = esc(b.at.length + (b.at.length > 1 ? " calls — " : " call — ") + b.at.join(", "));
+      return b.game
+        ? '<img src="icons/' + encodeURIComponent(w) + '.png" alt="' + esc(w) + '" title="' + esc(w) + " — Sound.ui in game.js, " + tip + '">'
+        : '<span class="c" title="' + tip + '">' + esc(WHERE[w] || w) + "</span>";
+    }).join("");
+    if (html) return '<span class="calls">' + (label ? '<span class="lbl">' + label + "</span>" : "") + html + "</span>";
+    return users && users.length ? "" : '<span class="calls"><span class="c none">unused</span></span>';
+  }
+  const callWords = (id) => callsOf(id).map((c) => c.where + " " + (WHERE[c.where] || "")).join(" ");
   // Every word of the filter has to be somewhere in the role, the variant or the games playing it.
   function matches(text) {
     const tt = S.rq.toLowerCase().split(/\s+/).filter(Boolean), hay = text.toLowerCase();
@@ -438,26 +505,35 @@ button { font:inherit; color:inherit; }
       const x = S.kit.roles[role], base = role + " " + x.what + " " + x.group;
       const shown = Object.keys(x.variants).filter((name) => {
         const id = idOf(role, name);
-        return matches(base + " " + id + " " + usersOf(id).join(" "));
+        return matches(base + " " + id + " " + usersOf(id).join(" ") + " " + callWords(id));
       });
       if (!shown.length) return;
-      if (x.group !== group) { group = x.group; html += '<h3 class="grp">' + esc(GROUPS[group] || group) + "</h3>"; }
+      if (x.group !== group) {
+        group = x.group;
+        html += '<h3 class="grp"><span>' + esc(GROUPS[group] || group) + '</span><button class="add" data-new-role="' + group + '" title="A new role in this group">+</button></h3>';
+      }
       if (x.group === "shell") {
         const v = x.variants.default;
         html += '<button class="role' + (role === S.role ? " on" : "") + (dirty.includes(role) ? " dirty" : "") + '" data-id="' + role + '">' +
           "<b>" + esc(role) + (S.kit.playable.includes(role) ? '<span class="tag">playable</span>' : "") + "</b>" +
           '<span class="n">' + takesWord(v) + "</span>" +
-          '<span class="w">' + esc(x.what) + "</span></button>";
+          '<span class="w">' + esc(x.what) + "</span>" + callTags(role, []) + "</button>";
         return;
       }
       /* A gameplay role is a heading and its variants under it: a variant is
          what a game picks, so it is what is listed and what is selected. */
-      html += '<div class="role-h' + (dirty.includes(role) ? " dirty" : "") + '"><b>' + esc(role) + '</b><span class="w">' + esc(x.what) + "</span></div>";
+      const open = S.open === role || !!S.rq.trim(), n = Object.keys(x.variants).length;
+      html += '<div class="role-h' + (dirty.includes(role) ? " dirty" : "") + (open ? " open" : "") + (role === S.role && !open ? " on" : "") + '" data-fold="' + esc(role) + '">' +
+        '<b class="t"><span class="chev">' + (open ? "▾" : "▸") + "</span>" + esc(role) + "</b>" +
+        '<span class="n">' + n + (n > 1 ? " variants" : " variant") + "</span>" +
+        '<button class="add" data-new-var="' + esc(role) + '" title="A new variant of ' + esc(role) + '">+</button><span class="w">' + esc(x.what) + "</span></div>";
+      if (!open) return;
       shown.forEach((name) => {
         const v = x.variants[name], id = idOf(role, name), users = usersOf(id);
         html += '<button class="role var' + (role === S.role && name === S.variant ? " on" : "") + (dirty.includes(id) ? " dirty" : "") + '" data-id="' + id + '">' +
           "<b>" + esc(name) + "</b>" + '<span class="n">' + takesWord(v) + "</span>" +
-          (users.length ? '<span class="g' + (S.checked ? "" : " pending") + '">' + iconsOf(users, id) + "</span>" : '<span class="u none">no game plays it</span>') + "</button>";
+          (users.length ? '<span class="g' + (S.checked ? "" : " pending") + '">' + iconsOf(users, id) + "</span>" : callsOf(id).length ? "" : '<span class="u none">no game plays it</span>') +
+          (callsOf(id).length ? callTags(id, users) : "") + "</button>";
       });
     });
     $("role-list").innerHTML = html || '<p class="none-left">No role matches.</p>';
@@ -465,17 +541,33 @@ button { font:inherit; color:inherit; }
   }
   function paintHead() {
     const x = S.kit.roles[S.role], v = cur(), shell = isShell(S.role), users = usersOf(idNow());
-    const used = users.length > 0, last = Object.keys(x.variants).length < 2;
+    const used = users.length > 0 || callsOf(idNow()).length > 0, last = Object.keys(x.variants).length < 2;
+    /* Why a role cannot go: a manifest maps a key to one of its variants, or
+       a source calls it by name. The cutter checks the same on Save. */
+    const ids = Object.keys(x.variants).map((n) => idOf(S.role, n));
+    const why = !S.kit.calls ? "Restart the events server to know who calls it" :
+      ids.some((id) => usersOf(id).length) ? "A game's manifest plays it — map that game elsewhere first" :
+      ids.some((id) => callsOf(id).length) ? "Called in " + ids.flatMap((id) => callsOf(id).map((c) => c.file + ":" + c.line)).slice(0, 4).join(", ") + " — remove the call first" : "";
     $("role-head").innerHTML =
       "<h2>" + esc(idNow()) + "</h2>" +
       (S.kit.playable.includes(S.role) ? '<span class="tag">ships in playables too</span>' : "") +
+      '<button class="btn" id="r-del"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="Delete the role and every variant of it"') + ">Delete role</button>" +
       (shell ? "" :
         '<span class="vacts"><button class="btn" id="v-new" title="A new variant of this role, starting from these takes">New variant</button>' +
         '<button class="btn" id="v-ren"' + (used ? ' disabled title="A game plays it — map that game elsewhere first"' : "") + ">Rename</button>" +
-        '<button class="btn" id="v-del"' + (used || last ? ' disabled title="' + (used ? "A game plays it — map that game elsewhere first" : "A role keeps one variant at least") + '"' : "") + ">Delete</button></span>") +
+        '<button class="btn" id="v-del"' + (used || last ? ' disabled title="' + (used ? "A game plays it — map that game elsewhere first" : "The last variant: delete the role instead") + '"' : "") + ">Delete variant</button></span>") +
       '<span class="w">' + esc(x.what) + (LADDER[S.role] ? " — played as a ladder, the shell pitching each step." : ".") +
-      (shell ? " The same in every game." : used ? " Played by " + esc(users.join(", ")) + " — a change here is heard there." : " No game plays it yet: map a key to it on the events bench.") +
-      " The takes below are interchangeable — the shell alternates between them; they are not a choice.</span>";
+      (shell ? (callsOf(S.role).length ? " The same in every game." : " Nothing calls it yet: a shell role is heard once packages/ calls Sound.ui(\"" + esc(S.role) + "\").") :
+        users.length ? " Played by " + esc(users.join(", ")) + " — a change here is heard there." : " No game plays it yet: map a key to it on the events bench.") +
+      " The takes below are interchangeable — the shell alternates between them; they are not a choice.</span>" +
+      (callsOf(idNow()).length ? callTags(idNow(), users, "Called by") : "");
+    $("r-del").onclick = () => {
+      if (!confirm("Delete the role " + S.role + (shell ? "" : " and its " + ids.length + " variant(s)") + "?")) return;
+      const was = S.role;
+      delete S.kit.roles[was];
+      sel(Object.keys(S.kit.roles)[0]);
+      status("Role " + was + " deleted — Save to cut it out of the kit");
+    };
     if (shell) return;
     const ask = (msg, was) => {
       const n = (prompt(msg, was || "") || "").trim().toLowerCase();
@@ -508,6 +600,10 @@ button { font:inherit; color:inherit; }
   const r3 = (v) => Math.round(v * 1000) / 1000;
   function paintTakes() {
     const r = cur();
+    if (!r.takes.length) {
+      $("takes").innerHTML = '<p class="empty">No take yet. Click a file of the library below to make it the first one, + to add up to ' + MAX_TAKES + ".</p>";
+      return;
+    }
     $("takes").innerHTML = r.takes.map((t, i) => {
       const f = S.byStem[t.file];
       return '<div class="take' + (i === S.take ? " on" : "") + '" data-i="' + i + '">' +
@@ -613,7 +709,48 @@ button { font:inherit; color:inherit; }
     play(t);
   }
 
+  /* A new name, asked for and checked the way cut-kit.mjs will check it on
+     Save — so a typo is said here and not after the cut. */
+  function askName(msg, taken) {
+    const n = (prompt(msg) || "").trim().toLowerCase();
+    if (!n) return null;
+    if (!/^[a-z][a-z0-9]{0,23}$/.test(n)) { status("A name is lowercase letters and digits, a letter first", true); return null; }
+    if (taken(n)) { status(n + " already exists", true); return null; }
+    return n;
+  }
+  // A role lands at the end of its own group, since the list is painted in kit order.
+  function addRole(group) {
+    const role = askName("Name of the new " + (group === "shell" ? "shell" : "gameplay") + " role (eat, jump, unlock…)", (n) => !!S.kit.roles[n]);
+    if (!role) return;
+    const what = (prompt("What does " + role + " mean? One line — \"The player eats a fruit\"") || "").trim();
+    if (!what) { status("A role says in one line what it means", true); return; }
+    const out = {}, names = Object.keys(S.kit.roles);
+    const lastOf = names.filter((n) => S.kit.roles[n].group === group).pop();
+    let put = false;
+    for (const n of names) {
+      out[n] = S.kit.roles[n];
+      if (n === lastOf) { out[role] = { group, what, variants: { default: { takes: [] } } }; put = true; }
+    }
+    if (!put) out[role] = { group, what, variants: { default: { takes: [] } } };
+    S.kit.roles = out;
+    sel(group === "shell" ? role : role + "/default");
+    status("New role " + role + " — pick one to three sounds below, then Save");
+  }
+  function addVariant(role) {
+    const x = S.kit.roles[role];
+    const n = askName("Name of the new " + role + " variant (glass, metal, soft…)", (v) => !!x.variants[v]);
+    if (!n) return;
+    x.variants[n] = { takes: [] };
+    sel(role + "/" + n);
+    status("New variant " + role + "/" + n + " — pick one to three sounds below, then Save");
+  }
   $("role-list").addEventListener("click", (e) => {
+    const nr = e.target.closest("[data-new-role]");
+    if (nr) { addRole(nr.dataset.newRole); return; }
+    const nv = e.target.closest("[data-new-var]");
+    if (nv) { addVariant(nv.dataset.newVar); return; }
+    const fold = e.target.closest("[data-fold]");
+    if (fold) { S.open = S.open === fold.dataset.fold ? null : fold.dataset.fold; paintRoles(); return; }
     const b = e.target.closest(".role");
     if (b) sel(b.dataset.id);
   });
@@ -761,9 +898,15 @@ button { font:inherit; color:inherit; }
 
   $("revert").onclick = () => {
     S.kit.roles = JSON.parse(S.saved);
-    sel(idNow()); status("Reverted");
+    sel(S.kit.roles[S.role] ? idNow() : Object.keys(S.kit.roles)[0]); status("Reverted");
   };
   $("save").onclick = () => {
+    // A variant with no take would be refused by the cutter: say which, and open it.
+    for (const [role, r] of Object.entries(S.kit.roles)) {
+      for (const [name, v] of Object.entries(r.variants)) {
+        if (!v.takes.length) { sel(idOf(role, name)); status(idOf(role, name) + " has no take yet — pick one in the library", true); return; }
+      }
+    }
     $("save").disabled = true;
     status("Cutting…");
     fetch("api/kit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(S.kit) })
@@ -795,6 +938,7 @@ button { font:inherit; color:inherit; }
       S.files.forEach((f) => { S.byStem[f.stem] = f; });
       const want = decodeURIComponent(location.hash.slice(1));
       sel(kit.roles[want.split("/")[0]] ? want : Object.keys(kit.roles)[0]);
+      if (!kit.calls) status("This server predates the who-calls-it tags — restart make events / make lab", true);
       readChecked();
     })
     .catch(() => {

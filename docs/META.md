@@ -37,17 +37,19 @@ forty-six tickets out of one three-star box. Twenty minutes of play bought more
 tickets than the album could use, and a gift of tickets or coins meant nothing.
 
 So `tools/lib/economy.mjs` holds the rule and `tools/build/build.mjs` injects
-its result into `CONFIG.web.meta` — a manifest that types `ticketPrice` or
-`xpPer` is refused:
+its result into `CONFIG.web.meta` — a manifest that types `ticketPrice`,
+`xpPer`, `roundCoins` or `galleryRounds` is refused:
 
-| figure        | rule                                                                          |
-| ------------- | ----------------------------------------------------------------------------- |
-| `roundScore`  | a reference round: 1.5 × the objective a third of the way up the climb        |
-| `ticketPrice` | 20 reference rounds of coins at player level 3, `legible`                     |
-| `xpPer`       | so that a reference round pays 100 xp                                         |
-| the gifts     | coins as a share of the ticket, xp as a share of the player's current level   |
-| a level       | `500 · level^1.5` xp                                                          |
-| the bonus     | the three-star boxes open on a level's FIRST perfect round, never on a replay |
+| figure         | rule                                                                          |
+| -------------- | ----------------------------------------------------------------------------- |
+| `roundScore`   | a reference round: 1.5 × the objective a third of the way up the climb        |
+| `ticketPrice`  | 20 reference rounds of coins at player level 3, `legible`                     |
+| `xpPer`        | so that a reference round pays 100 xp                                         |
+| `roundCoins`   | the coins of a reference round at player level 1                              |
+| a puzzle piece | 1.5 reference rounds at the player's level, moved by the climb (section 3b)   |
+| the gifts      | coins as a share of the ticket, xp as a share of the player's current level   |
+| a level        | `500 · level^1.5` xp                                                          |
+| the bonus      | the three-star boxes open on a level's FIRST perfect round, never on a replay |
 
 A game whose objective is not its score — a distance, a count, a par — writes
 `web.meta.roundScore` itself. Five do, and their figure is read off the code
@@ -730,6 +732,82 @@ one of the nodes that repaint replaces — a detached node measures zero.
 
 ______________________________________________________________________
 
+## 3b. The gallery — what the coins are for once the album is full
+
+The chain of this layer ends on the stickers: the gifts pay xp, coins or a
+sticker, the xp is the rate the coins are paid at, and the coins buy the
+tickets that pull the machine. Once the album reads 20/20 the wallet has
+nothing left to want. **The gallery is the second thing to fill**, and it is
+the album's second tab (`MACHINE` · `GALLERY`).
+
+**It is made of what every game already ships**, and nothing is drawn for it:
+the game's scenes (the plain one, then one per band of the climb), the
+village's ground, the desk's wide scene, and the character in its three moods
+— sad, neutral, happy — standing on the game's own scene with its VISIBLE
+body centred both ways: the casts are cut to different shapes and margins
+(373×560, 460×383, a body that fills 69 % of its file…), so the box of its
+opaque pixels is measured once and that box is centred, never the file. Six paintings on a game with one scene, ten or eleven on a
+game with a scene per band. They fill **in that order, one at a time**, and a
+painting not reached yet is shown under its pieces with a padlock: the shape
+of what is coming is the reason to go on.
+
+**Every painting is cut into puzzle pieces bought one at a time.** The cut is
+GENERATED, never drawn: a grid per painting — the one nearest to an even share
+of ninety pieces (3×5 on a game with six paintings, 2×4 on one with ten or
+eleven, swapped for the 16:9 desk scene) — and a knob on every inner edge,
+its side drawn from a generator seeded on the game and the painting, so a
+piece has the same shape every visit. The order the pieces land in is the same
+generator's shuffle, so a painting fills from everywhere at once. The save
+holds **one count** (`g` in `meta:<slug>`); which cell the n-th piece fills is
+worked out, never stored.
+
+### The price follows the climb
+
+A piece is priced so that the gallery fills **at the pace of the map**:
+
+```
+price = legible(galleryRounds × roundCoins × level × album × ahead)
+album = 0.5 + 0.5 × stickers owned / 20
+ahead = 2^(8 × (pieces% − 0.85 × stars%)), held between 0.5 and 8
+```
+
+- **the level** multiplies the coins of a round, so it multiplies the price
+  too: a piece costs the same number of rounds at level 2 and at level 12;
+- **the album** halves the price while the machine still has stickers to give
+  and takes its share of the coins — full price once it is done and the
+  gallery is the only thing left to buy;
+- **ahead** is how far the gallery stands from the board. Behind it, a piece
+  is down to half price; ahead of it, the price doubles every 12 % of the
+  gallery, up to eight times. The 0.85 keeps the gallery a step behind the
+  board, so its last pieces are the map's to give. When the price is more than
+  half again over par, the page says what lowers it — *win stars on the map to
+  bring the price down* — because a price that moves for a reason the player is
+  never told reads as a cheat.
+
+**The perfect 90/90 hands over every piece still missing**, at once, with a
+notice (`sweep`, beside the shiny sticker it already pays). A player who
+reaches the end of the board reaches the end of the gallery with it.
+
+**A farmer gets there too, slowly.** A player who replays the same levels
+without winning a star pays up to eight times par — about twelve rounds a
+piece once the album is full — and still fills the gallery. That is a player
+playing, which is the point; the ceiling only keeps the paintings from running
+away from the board for everyone else.
+
+`node tools/lab/sim-economy.mjs --gallery` is the model it was tuned on: a
+CLIMBER who plays the thirty levels and then replays what is not perfect, and a
+FARMER who replays the first ten for ever, both spending half their coins on
+the machine until it is done and the rest on pieces. `--steep`, `--pace`,
+`--cap` and `--replay` move the model; the defaults are what ships. Under a ×4
+ceiling a slow climber's gallery ran ten points ahead of the board by the
+second hour — once the machine is done, coins pile up faster than the last
+stars come — which is why it is eight.
+
+A finished painting opens at full size on a tap, in a card, with no seam left
+on it.
+
+______________________________________________________________________
+
 ## 4. The daily road
 
 **A line of the title screen's menu, between the map and the collection.** Not a
@@ -1165,18 +1243,20 @@ and a good round could open three of them in a row (the bonus, then one card per
 sticker the map paid). They are **the end screen's own pieces now**
 (`packages/webshell/meta.js`, section 11d):
 
-1. the outro is the slow motion and the THREE STARS callout, nothing else;
+1. the outro is the slow motion and the gold shine, no word, nothing else;
 1. the reveal plays — title, score, stars, rows — and the score becomes coins;
-1. **the three stars become the three boxes**: each star bursts where it stands
-   and a box lands in its place, the tall middle star the tall middle box; the
-   rows give their room to one line — *Three-star bonus · tap a box*;
-1. the box picked opens and **the row becomes what the round paid**: the box's
-   prize in the middle, the map's stickers (a band passed, a band passed clean,
-   the board) either side, five across at most; under it one row per prize says
-   what it was for, the bonus first, and the bonus row's offer is the ×5 for an
-   ad;
-1. each prize flies into its chip, and **only then does the way out arrive** —
-   the motor's `onReveal` holds the buttons and the SPACE that replays.
+1. **on the cascade's own beat, with no pause, the three stars become the three
+   boxes**: each star bursts where it stands and a box lands in its place, the
+   tall middle star the tall middle box; the rows give their room to one line —
+   *Three-star bonus · tap a box*. Nothing times the pick: the player makes it;
+1. the box picked opens on confetti and **the row becomes what the round
+   paid**: the box's prize in the middle, the map's stickers (a band passed, a
+   band passed clean, the board) either side, five across at most; under it one
+   row per prize says what it was for, the bonus first, and the bonus row's
+   offer is the ×5 for an ad;
+1. **the way out lands with the prize** (`release`) — the motor's `onReveal`
+   holds the buttons and the SPACE that replays until then — and each prize
+   flies into its chip under it.
 
 A round owed stickers but no bonus (a band passed on one or two stars, a
 replay) skips the boxes: the stars go straight to the stickers, and the
@@ -1187,7 +1267,7 @@ had, so the column does not move under the boxes.
 (`firstPerfect`, read in `levels.js` before the round's stars are recorded).
 Paid on every perfect round, replaying an easy level for its boxes out-earned
 climbing the map. The rewards are rolled before a box is drawn, the stickers
-are paid by `sweep` on the frame the reveal ends, and a player who leaves the
+are paid by `sweep` on the frame the end screen opens, and a player who leaves the
 screen mid-pick is paid the first box: the level is already recorded as
 perfect, and a bonus walked past would be lost for good.
 
@@ -1205,10 +1285,15 @@ multiplied, so that one reads *one more* and wears no plate.
 end, and a player meets it on the reward card and again on the end screen a
 beat later.
 
-**The beat it hangs off is the motor's own.** `onReveal` is called where the
-install CTA would land, which is the signal that `EndScreen`'s cascade is done —
-never scheduled against a copy of the motor's timings, which would drift the
-first time a game shipped a fifth stat row.
+**The beats it hangs off are the motor's own.** The coins line, the cascade,
+the offer and the boxes are four entries of `EndScreen`'s `BEATS`, registered
+with `onEndBeat` and played on the motor's clock — the coins line on the
+500 ms grid the stars and the rows step on, the cascade after the last row,
+the boxes and the offer with it — never against a copy of its timings, which
+would drift the first time a game shipped a fifth stat row. What the round
+pays is worked out once, when the screen opens (`planEnd`), and a player who
+leaves before the cascade is still paid it. `onReveal` is where the way out
+lands, and it is held while a box is being picked.
 
 ______________________________________________________________________
 
@@ -1237,7 +1322,7 @@ publishes the handle the next reads:
 | `packages/webshell/view.js`   | `window.__VIEW__` `window.__MODAL__` | what a view is, what a card is, and the stack both live in  |
 | `packages/webshell/levels.js` | `window.__LEVELS__`                  | the map, and `bands()` — what a band is worth               |
 | `packages/webshell/meta.js`   | `window.__META__`                    | the state, the wallet band, the gift, the ad                |
-| `packages/webshell/album.js`  | `window.__ALBUM__`                   | the collection, the machine, the shop                       |
+| `packages/webshell/album.js`  | `window.__ALBUM__`                   | the collection, the machine, the gallery, the shop          |
 | `packages/webshell/daily.js`  | `window.__DAILY__`                   | the daily road: a house of the village, a strip without one |
 | `packages/webshell/menu.js`   | —                                    | mounts all five                                             |
 

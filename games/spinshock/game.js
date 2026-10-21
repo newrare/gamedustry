@@ -685,7 +685,7 @@
       gauge.w = GAUGE_W;     gauge.x = Layout.right - GAUGE_W;
       gauge.y = Layout.top + 8; gauge.h = Layout.h - 16;
       buildFloor();
-      var i, t, k;
+      var i, k;
       /* The tops are sized in design px, so the only thing a resize can change
          about them is the device ratio their backing store is cut at: the
          player's five tiers are baked once per ratio and kept across rounds. */
@@ -695,13 +695,7 @@
         foeCv = {};
         topDpr = view.dpr;
         topCvs = [];
-        for (i = 0; i < SPIN_TIERS.length; i++) {
-          t = SPIN_TIERS[i];
-          topCvs.push(makeTop(CONFIG.playerR, {
-            teeth: 14, amp: 15, arms: 3, plate: "#1b1a4e",
-            rim: t.rim, arm: t.arm, core: t.core
-          }));
-        }
+        for (i = 0; i < SPIN_TIERS.length; i++) topCvs.push(playerTop(SPIN_TIERS[i]));
       }
       /* Only what this round can actually field: nineteen liveries is nineteen
          cached canvases with a shadowBlur apiece, and `build` runs on every
@@ -716,6 +710,12 @@
       }
       for (k in foeCv) freeCanvas(foeCv[k]);
       foeCv = next;
+    }
+
+    // The player's top in one tier of its colour ramp (SPIN_TIERS).
+    function playerTop(t) {
+      return makeTop(CONFIG.playerR, { teeth: 14, amp: 15, arms: 3, plate: "#1b1a4e",
+                                       rim: t.rim, arm: t.arm, core: t.core });
     }
 
     /* --------------------------------------------------------------- helpers */
@@ -1061,7 +1061,25 @@
       f.track = { col: t.rim[0], pts: [], last: 0, w: t.trail || 1 };
       tracks.push(f.track);
       foes.push(f);
+      if (!t.perfectOnly) meet(t);
       return f;
+    }
+
+    /* A LIVERY MET FOR THE FIRST TIME is a notice, once per player ever
+       (Notify.learn), and its line in the log opens that colour's page of the
+       guide. The boss is told by spawnBoss. Keyed by the livery's letter,
+       the first of a type's key ("bl" a large blue). Green, the baseline with
+       no immunity, has nothing to decode and is not named. */
+    var MEET = {
+      b: ["blue",   "Blue top",   "The fence can't damage a blue top"],
+      y: ["yellow", "Yellow top", "Other tops can't damage a yellow top"],
+      r: ["red",    "Red top",    "Only the fence damages a red top"],
+      k: ["black",  "Black top",  "A black top mends the tops it touches"],
+      p: ["purple", "Purple top", "A large one splits in two"]
+    };
+    function meet(t) {
+      var m = MEET[t.key.charAt(0)];
+      if (m && phase === "spin") Notify.learn(m[0], m[1], { sub: m[2] });
     }
 
     // A livery's own speed on top of its build's — "slow" and "fast" are the
@@ -1082,8 +1100,9 @@
       Fx.ring(f.x, f.y, { from: t.r * 0.5, to: t.r * 4, color: "#ffffff",
         width: 8, life: 0.5 });
       Overlay.vignette("rgba(255,212,59,.75)", 0.9, 900);
-      Pop.show("streak", { word: Lang.t("Boss top"), sub: Lang.t("Perfect taps only"),
-        hold: 1400, at: farSpot() });
+      /* The first boss ever is the lesson, and its line in the log opens the
+         boss's page. Later arrivals say nothing: the alarm and the glow do. */
+      Notify.learn("boss", "Boss top", { sub: "Perfect taps only" });
       return f;
     }
 
@@ -1329,7 +1348,8 @@
       Fx.ring(f.x, f.y, { from: f.type.r * 0.6, to: f.type.r * 3.4, color: col,
         width: 6, life: 0.32 });
       Fx.shake(f.type.perfectOnly ? 16 : 6, f.type.perfectOnly ? 0.4 : 0.16);
-      Sound.clip("crash", f.type.perfectOnly ? 0.8 : 0.42, f.type.perfectOnly ? 0.7 : 1.35);
+      if (f.type.perfectOnly) Sound.clip("crash", 0.8, 0.7);
+      else Sound.clip("crash", 0.42, 1.35);
       payKo(f);
       split(f);
     }
@@ -1455,7 +1475,6 @@
       Fx.burst(f.x, f.y, { color: [src.type.core, "#ffffff"], count: 7,
         speed: 220, size: 4, life: 0.4 });
       Sound.clip("perfect", 0.3, 0.58);         // the chime, low: it is not yours
-      if (phase === "spin")
     }
 
     function insideArena(f) {
@@ -2080,8 +2099,11 @@
       if (spin > cap) spin = cap;
       setSpinPill();
       if (spin <= 0) { fall(); return; }
+      /* The wear, met once per player (Notify.learn keeps the memory); the
+         flag only spares this frame loop a Store read once it has asked. */
       if (!wornSaid && cap <= 0.62) {
         wornSaid = true;
+        Notify.learn("wear", "Worn bearings", { sub: "Max spin drops over time" });
       }
 
       // Spinning-out alarm, armed once per dive into the red. The edge glow is
@@ -2089,8 +2111,7 @@
       if (warnArmed && spin <= CONFIG.warnAt * cap) {
         warnArmed = false;
         Sound.clip("warn", 0.6, 1);
-        Pop.show("alert", { word: "Spinning out", sub: "Shock to recover",
-          hold: 900, at: farSpot() });
+        Notify.say("Spinning out", { sub: "Shock to recover", kind: "warn" });
       } else if (!warnArmed && spin >= CONFIG.warnClear * cap) {
         warnArmed = true;
       }
@@ -2193,7 +2214,7 @@
         Enter.end();
       }
 
-      var i, f, gap, tier;
+      var i, f;
 
       /* AREA OF EFFECT — a breath of light around the top, and nothing else.
          There is deliberately NO edge to read: the gradient peaks well inside
@@ -2222,38 +2243,10 @@
         if (f.dead) continue;
         if (!Enter.begin(f.x, f.y)) continue;
         var fade = clamp(f.born / 0.22, 0.15, 1);
-        if (phase === "spin") {
-          gap = gapOf(f);
-          if (gap <= CONFIG.reach) {
-            tier = tierOf(gap);
-            var col = tier === 2 ? "#ffd43b" : tier === 1 ? "#7ef4ff" : "#ffffff";
-            var k = clamp(1 - gap / CONFIG.reach, 0, 1);
-            ctx.strokeStyle = rgba(col, 0.25 + k * 0.6);
-            ctx.lineWidth = 4 + k * 6;
-            ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r + 30 - k * 8, 0, TAU); ctx.stroke();
-            if (tier === 2) {                       // the "NOW" flash
-              ctx.strokeStyle = rgba("#fff6bf", 0.75);
-              ctx.lineWidth = 3;
-              ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r + 42, 0, TAU); ctx.stroke();
-            }
-          }
-        }
+        if (phase === "spin") drawTell(f, gapOf(f));
         drawIntent(f, fade);
         blit(foeCv[f.type.key], f.x, f.y, f.ang, 1, fade);
-        if (f.flash > 0) {
-          ctx.globalAlpha = clamp(f.flash / 0.16, 0, 1) * 0.55 * fade;
-          ctx.fillStyle = "#ffffff";
-          ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r * 0.92, 0, TAU); ctx.fill();
-          ctx.globalAlpha = 1;
-        }
-        // A shell point just handed back by a black top: the same flash, in the
-        // healer's own green, so a repair never reads as a hit landing.
-        if (f.mend > 0) {
-          ctx.globalAlpha = clamp(f.mend / 0.4, 0, 1) * 0.5 * fade;
-          ctx.fillStyle = "#8affc0";
-          ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r * 0.92, 0, TAU); ctx.fill();
-          ctx.globalAlpha = 1;
-        }
+        drawMarks(f, fade);
         drawShell(f, fade);
         Enter.end();
       }
@@ -2264,6 +2257,42 @@
       drawCombo();
       // last, so no top ever draws over it
       if (Enter.begin(gauge.x + gauge.w / 2, gauge.y + gauge.h / 2)) { drawGauge(); Enter.end(); }
+    }
+
+    /* The telegraph that tells the player when to tap: a ring round a rival
+       inside the reach, white, then cyan for a GREAT, then gold with a second
+       ring for a PERFECT. */
+    function drawTell(f, gap) {
+      if (gap > CONFIG.reach) return;
+      var tier = tierOf(gap);
+      var col = tier === 2 ? "#ffd43b" : tier === 1 ? "#7ef4ff" : "#ffffff";
+      var k = clamp(1 - gap / CONFIG.reach, 0, 1);
+      ctx.strokeStyle = rgba(col, 0.25 + k * 0.6);
+      ctx.lineWidth = 4 + k * 6;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r + 30 - k * 8, 0, TAU); ctx.stroke();
+      if (tier === 2) {                       // the "NOW" flash
+        ctx.strokeStyle = rgba("#fff6bf", 0.75);
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r + 42, 0, TAU); ctx.stroke();
+      }
+    }
+
+    /* A white flash on the frame a shell point goes — and a shell point just
+       handed back by a black top: the same flash, in the healer's own green,
+       so a repair never reads as a hit landing. */
+    function drawMarks(f, fade) {
+      if (f.flash > 0) {
+        ctx.globalAlpha = clamp(f.flash / 0.16, 0, 1) * 0.55 * fade;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r * 0.92, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (f.mend > 0) {
+        ctx.globalAlpha = clamp(f.mend / 0.4, 0, 1) * 0.5 * fade;
+        ctx.fillStyle = "#8affc0";
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.type.r * 0.92, 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
     }
 
     /* THE SPIN BAR ----------------------------------------------------------
@@ -2866,6 +2895,232 @@
       ctx.restore();
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and what it shows is drawn by the
+       round's own renderers — the same sprites (makeTop), the same pips
+       (drawShell), the same telegraphs (drawTell, drawIntent), trails
+       (drawTracks), blast (drawBlasts) and spin bar (drawGauge) — on a canvas
+       of the page's own. `stage` lends them that canvas as `ctx` and a
+       staged copy of the few globals they read, for the length of one
+       synchronous call, and puts the round's back in `finally`: the guide
+       can open before any round (from the Help card), and over one, without
+       reading or touching its state. Every figure in a row is read off
+       CONFIG, so the guide cannot drift from the tables the round plays. */
+    var guideCv = {}, guideDpr = 0;
+    function jitter(n) {
+      var a = [], i;
+      for (i = 0; i <= n; i++) a.push(i && i < n ? Rand.range(-1, 1) : 0);
+      return a;
+    }
+    function stage(W, H, zoom, fn) {
+      var k = view.dpr || 1, cv = document.createElement("canvas"), kk;
+      if (guideDpr !== k) { for (kk in guideCv) freeCanvas(guideCv[kk]); guideCv = {}; guideDpr = k; }
+      var keep = [ctx, phase, spin, spinLag, elapsed, gauge, gaugeT, gaugePunch,
+                  foeCv, tracks, blasts, arcSeg, boltSeg];
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k * zoom, k * zoom);
+      phase = "spin"; spin = spinLag = 0.8; elapsed = 0; gaugeT = 0; gaugePunch = 0;
+      foeCv = guideCv; tracks = []; blasts = []; arcSeg = jitter(8); boltSeg = jitter(16);
+      try { fn(); } finally {
+        ctx = keep[0]; phase = keep[1]; spin = keep[2]; spinLag = keep[3]; elapsed = keep[4];
+        gauge = keep[5]; gaugeT = keep[6]; gaugePunch = keep[7]; foeCv = keep[8];
+        tracks = keep[9]; blasts = keep[10]; arcSeg = keep[11]; boltSeg = keep[12];
+      }
+      return cv;
+    }
+    // A rival as the round draws it: its telegraph, its sprite, its pips.
+    function gFoe(key, x, y, o) {
+      var t = CONFIG.foeTypes[key];
+      o = o || {};
+      if (!guideCv[key]) guideCv[key] = makeTop(t.r, t);
+      var f = { type: t, x: x, y: y, ang: o.ang || 0.6, hp: o.hp == null ? t.hp : o.hp, hpMax: t.hp,
+                vx: o.vx || 0, vy: o.vy || 0, age: 0, inside: true, cruise: cruiseOf(t),
+                pulse: o.hold ? "hold" : "dash", pulseT: CONFIG.pulseHold * (1 - (o.hold || 0)),
+                aimX: o.aimX || 0, aimY: o.aimY || 0, flash: o.flash || 0, mend: o.mend || 0 };
+      if (o.gap != null) drawTell(f, o.gap);
+      drawIntent(f, 1);
+      blit(guideCv[key], x, y, f.ang, 1, 1);
+      drawMarks(f, 1);
+      drawShell(f, 1);
+    }
+    // The player's top at a given spin, its two tiers cross-faded as in a round.
+    function gPlayer(x, y, s, sc) {
+      spin = s;
+      var pos = tierPos(), lo = Math.floor(pos), hi = Math.min(lo + 1, SPIN_TIERS.length - 1);
+      if (!guideCv["top" + lo]) guideCv["top" + lo] = playerTop(SPIN_TIERS[lo]);
+      if (!guideCv["top" + hi]) guideCv["top" + hi] = playerTop(SPIN_TIERS[hi]);
+      blit(guideCv["top" + lo], x, y, 0.4, sc || 1, 1);
+      if (pos - lo > 0.02) blit(guideCv["top" + hi], x, y, 0.4, sc || 1, pos - lo);
+    }
+    // The spin bar, at a spin and a point of the wear.
+    function gGauge(x, y, h, s, at) {
+      spin = spinLag = s; elapsed = at;
+      gauge = { x: x, y: y, w: GAUGE_W, h: h };
+      drawGauge();
+    }
+    // A trail on the floor, fading from its tail to its head.
+    function gTrail(col, w, pts) {
+      var out = [], i, n = pts.length;
+      for (i = 0; i < n; i++) out.push({ x: pts[i][0], y: pts[i][1], a: 0.2 + 0.8 * i / (n - 1) });
+      tracks = [{ col: col, w: w, pts: out }];
+      drawTracks();
+      tracks = [];
+    }
+    function line(x0, y0, x1, y1, n) {
+      var p = [], i;
+      for (i = 0; i <= n; i++) p.push([x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]);
+      return p;
+    }
+    // A yellow's saw: straight runs off the line, flipping side at `amp`.
+    function saw(x0, y0, x1, y1, amp, per) {
+      var dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, p = [], d, q;
+      for (d = 0; d <= L; d += per / 4) {
+        q = (d / per) % 1; q = q < 0.5 ? q * 4 - 1 : 3 - q * 4;
+        p.push([x0 + ux * d - uy * q * amp, y0 + uy * d + ux * q * amp]);
+      }
+      return p;
+    }
+    function livery(c) { return CONFIG.foeColours[c]; }
+    function pct(v) { return "-" + Math.round(v * 100) + "%"; }
+
+    var guide = {
+      chapters: function () {
+        var S = CONFIG.foeSizes, B = CONFIG.boss;
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "tap", title: Lang.t("Tap on the impact"), pic: function () {
+                return stage(500, 300, 0.85, function () {
+                  gPlayer(294, 215, 0.85);
+                  gFoe("gs", 294 - 208 * 0.906, 215 - 208 * 0.423, { gap: 100 });
+                  gFoe("gs", 294, 215 - 158, { gap: 50 });
+                  gFoe("gs", 294 + 123 * 0.906, 215 - 123 * 0.423, { gap: 15 });
+                });
+              },
+              lines: [Lang.t("Tap just before a rival hits you. Your shockwave throws it back and wins you spin."),
+                      Lang.t("The closer to the impact you tap, the more it pays. A gold ring means a perfect.")] },
+            { id: "spin", title: Lang.t("The spin gauge"), pic: function () {
+                return stage(500, 290, 1, function () {
+                  gPlayer(115, 145, 0.9, 0.8); gGauge(220, 20, 250, 0.9, 0);
+                  gPlayer(345, 145, 0.2, 0.8); gGauge(450, 20, 250, 0.2, 0);
+                });
+              },
+              rows: [[Lang.t("A miss"), pct(CONFIG.whiffCost)]],
+              lines: [Lang.t("Your top keeps slowing down. Every rival that hits you costs spin."),
+                      Lang.t("At zero your top blows apart and the round ends.")] },
+            { id: "shell", title: Lang.t("Shell points"), pic: function () {
+                return stage(480, 220, 1, function () {
+                  gFoe("gl", 95, 110, { hp: 4 });
+                  gFoe("gl", 245, 110, { hp: 2, flash: 0.1 });
+                  gFoe("gs", 385, 110, { hp: 1 });
+                });
+              },
+              rows: [[Lang.t("A perfect"), "-" + CONFIG.perfectDmg]],
+              lines: [Lang.t("The notches around a rival are its shell points. It blows apart when it loses the last one."),
+                      Lang.t("Your shockwave, the fence and a crash into another top each take one point.")] },
+            { id: "combo", title: Lang.t("Combos and chains"), pic: function () {
+                return stage(500, 300, 0.85, function () {
+                  gPlayer(294, 230, 0.7);
+                  gFoe("gs", 294 - 148 * 0.866, 230 - 148 * 0.5, { gap: 40 });
+                  gFoe("gl", 294 + 152 * 0.819, 230 - 152 * 0.574, { gap: 18 });
+                });
+              },
+              rows: [[Lang.t("Spin every 5 hits"), "+" + Math.round(CONFIG.comboSpin * 100) + "%"],
+                     [Lang.t("A KO pays the rival's score"), "×" + CONFIG.koScore]],
+              lines: [Lang.t("Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it."),
+                      Lang.t("One wave can hit several tops. A double or triple shock wins extra spin.")] },
+            { id: "wear", title: Lang.t("Worn bearings"), pic: function () {
+                return stage(510, 290, 1, function () {
+                  gPlayer(60, 145, 0.8, 0.55);  gGauge(130, 20, 250, 0.8, 0);
+                  gPlayer(230, 145, 0.4, 0.55); gGauge(300, 20, 250, 0.4, 60);
+                  gPlayer(400, 145, 0.12, 0.55); gGauge(470, 20, 250, 0.12, 110);
+                });
+              },
+              lines: [Lang.t("As the round goes on, your top holds less and less spin."),
+                      Lang.t("Even a flawless run ends, so score while the bearings last.")] }
+          ] },
+          { key: "spark", label: Lang.t("Spark"), pages: [
+            { id: "green", title: Lang.t("Green top"), lv: 1, pic: function () {
+                return stage(480, 260, 1, function () {
+                  gTrail(livery(0).rim[0], 1, line(20, 20, 220, 70, 8));
+                  gTrail(livery(0).rim[0], 1, line(30, 250, 250, 190, 6));
+                  gPlayer(410, 130, 0.85, 0.8);
+                  gFoe("gs", 220, 70); gFoe("gl", 250, 190);
+                });
+              },
+              lines: [Lang.t("Green tops have no protection. Your tap, the fence and other tops all damage them.")] },
+            { id: "builds", title: Lang.t("Small and large"), lv: 3, pic: function () {
+                return stage(420, 200, 1, function () { gFoe("gs", 130, 100); gFoe("gl", 290, 100); });
+              },
+              rows: [[Lang.t("A small rival hits you"), pct(S[0].cost)], [Lang.t("A large rival hits you"), pct(S[1].cost)]],
+              lines: [Lang.t("A large top is slow, but costs far more spin when it hits you.")] }
+          ] },
+          { key: "insulated", label: Lang.t("Insulated"), pages: [
+            { id: "blue", title: Lang.t("Blue top"), lv: 7, pic: function () {
+                return stage(500, 300, 1, function () {
+                  gTrail(livery(1).rim[0], 1, line(10, 280, 120, 150, 6));
+                  gPlayer(420, 150, 0.85, 0.8);
+                  gFoe("bl", 120, 150, { hold: 0.65, aimX: 1, aimY: 0 });
+                });
+              },
+              lines: [Lang.t("Blue tops stop, charge, then dash along the dashed line."),
+                      Lang.t("The fence can't damage blue tops. Use your tap, or throw other tops into them.")] }
+          ] },
+          { key: "split", label: Lang.t("Split"), pages: [
+            { id: "yellow", title: Lang.t("Yellow top"), lv: 13, pic: function () {
+                return stage(500, 280, 1, function () {
+                  gTrail(livery(2).rim[0], livery(2).trail, saw(10, 250, 290, 150, 40, 110));
+                  gPlayer(420, 140, 0.85, 0.8);
+                  gFoe("yl", 290, 150);
+                });
+              },
+              lines: [Lang.t("Other tops can't damage yellow tops. Use your tap and the fence instead.")] },
+            { id: "purple", title: Lang.t("Purple top"), lv: 16, pic: function () {
+                return stage(480, 260, 1, function () {
+                  var c = livery(5).rim[0];
+                  gTrail(c, 1, [[150, 125], [200, 105], [250, 70], [300, 75], [330, 70]]);
+                  gTrail(c, 1, [[150, 140], [210, 170], [260, 160], [320, 190], [380, 200]]);
+                  gFoe("pl", 110, 130); gFoe("ps", 330, 70); gFoe("ps", 380, 200);
+                });
+              },
+              lines: [Lang.t("A large purple top blows apart into two small ones. One top becomes three.")] }
+          ] },
+          { key: "grounded", label: Lang.t("Grounded"), pages: [
+            { id: "red", title: Lang.t("Red top"), lv: 19, pic: function () {
+                return stage(520, 280, 1.25, function () {
+                  gTrail(livery(3).rim[0], 1, line(-20, 112, 60, 112, 4));
+                  blasts = [{ x: 330, y: 112, r: CONFIG.blastR[0], t: 0.08, col: livery(3).rim[0],
+                              rays: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(function (i) {
+                                return { a: i / 12 * TAU + 0.15, len: i % 2 ? 0.8 : 1.1, w: 0.07 };
+                              }) }];
+                  drawBlasts();
+                  gFoe("rs", 60, 112, { vx: 650, vy: 0 });
+                });
+              },
+              lines: [Lang.t("Red tops blow up on the first thing they touch. Only the fence damages them."),
+                      Lang.t("Send a red top into the fence with your shockwave. Its blast hits every rival around it.")] }
+          ] },
+          { key: "overcharge", label: Lang.t("Overcharge"), pages: [
+            { id: "black", title: Lang.t("Black top"), lv: 25, pic: function () {
+                return stage(480, 280, 1, function () {
+                  var pts = [], a, R = CONFIG.playerR + 52 + CONFIG.reach * CONFIG.circleGap;
+                  for (a = -2.4; a <= -Math.PI / 2 + 0.001; a += 0.08) pts.push([170 + R * Math.cos(a), 140 + R + R * Math.sin(a)]);
+                  gTrail(livery(4).rim[0], 1, pts);
+                  gFoe("kl", 170, 140);
+                  gFoe("gl", 270, 165, { hp: 3, mend: 0.3 });
+                });
+              },
+              lines: [Lang.t("Black tops give a shell point back to every rival they touch. Take them out first.")] },
+            { id: "boss", title: Lang.t("Boss top"), lv: 27, pic: function () {
+                return stage(420, 280, 1, function () { gFoe("boss", 210, 140, { gap: 15 }); });
+              },
+              rows: [[Lang.t("Shell points"), String(B.hp)], [Lang.t("The boss hits you"), pct(B.cost)]],
+              lines: [Lang.t("Only a perfect tap damages the boss, one point at a time. Everything else glances off.")] }
+          ] }
+        ];
+      }
+    };
+
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        `applyLevel(d)` is the escape hatch a lerp cannot cover (docs/LEVELS.md):
        the level layer lerps the manifest's knobs first and then hands the game
@@ -2901,6 +3156,6 @@
        levels — see docs/LEVELS.md. */
     return { reset: reset, onDown: onDown, update: update, render: render,
              onResize: onResize, applyLevel: applyLevel,
-             levelWon: finish };
+             levelWon: finish, guide: guide };
   })();
 

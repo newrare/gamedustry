@@ -365,13 +365,19 @@ export const SURFACES = [
   { key: 'canvas',   label: 'Canvas',         note: 'painted by the game with fillText' },
   { key: 'panel',    label: 'Game panel',     note: 'a node the game writes itself — a sheet, a pick' },
   { key: 'card',     label: 'Card',           note: 'a card of the game — its name, its text' },
+  { key: 'guide',    label: 'Help guide',     note: 'a page of the rules book (Game.guide), opened from Help' },
+  { key: 'character', label: 'Character',     note: 'a hero, a foe, an officer — name, lore, status, intent' },
+  { key: 'world',    label: 'Biome / band',   note: 'a biome or a band of the climb — its name and what it brings' },
+  { key: 'item',     label: 'Object / power', note: 'something picked, bought, fired or met on the table' },
+  { key: 'rank',     label: 'Rank',           note: 'a tier, a grade, a rarity, a timing grade' },
+  { key: 'info',     label: 'Info card',      note: 'opened on a tap — what a thing on the table does right now' },
   { key: 'end',      label: 'End screen',     note: 'the title and the stat rows' },
   { key: 'level',    label: 'Level objective', note: 'what a star asks for' },
   { key: 'barracks', label: 'Barracks',       note: 'the army layer\'s screens' },
   { key: 'mission',  label: 'Mission',        note: 'a briefing or a report' },
-  { key: 'event',    label: 'Camp event',     note: 'told at the village' },
-  { key: 'data',     label: 'Game data',      note: 'a table the game reads — where it shows is not written beside it' },
-  { key: 'code',     label: 'In code',        note: 'built at runtime — where it shows could not be read' }
+  { key: 'event',    label: 'Event',          note: 'a scene told to the player — a camp day, an encounter and its choices' },
+  { key: 'data',     label: 'Game data',      note: 'a table the game reads, whose name says nothing of where it shows' },
+  { key: 'code',     label: 'In code',        note: 'built at runtime in a function whose name says nothing of where it shows' }
 ];
 const sf = (key, detail) => ({ key, ...(detail ? { detail } : {}) });
 
@@ -379,7 +385,7 @@ const sf = (key, detail) => ({ key, ...(detail ? { detail } : {}) });
    then the game's own wrappers around them (gearball's `popText`), then a
    node the game writes into, then what the function and the table say. */
 const LINE_RULES = [
-  [/\bNotify\.say\s*\(/, 'notice'],
+  [/\bNotify\.(?:say|learn)\s*\(/, 'notice'],
   [/\bPop\.show\s*\(/, 'callout'],
   [/\bPop\.text\s*\(/, 'float'],
   [/\bfillText\s*\(/, 'canvas'],
@@ -401,12 +407,75 @@ function wrappersOf(clean, frames) {
   return out;
 }
 
+/* The tables a mechanic is NAMED out of, once per player: a CAPS table
+   indexed just before a Notify.learn (marshmelt's INTRO, spinshock's MEET). */
+function learnTables(clean) {
+  const out = new Set(), re = /\bNotify\.learn\s*\(/g;
+  let m;
+  while ((m = re.exec(clean))) {
+    const back = clean.slice(Math.max(0, m.index - 300), m.index), ix = /\b([A-Z][A-Z0-9_]*)\s*\[/g;
+    let t; while ((t = ix.exec(back))) out.add(t[1]);
+  }
+  return out;
+}
+
 /* A table whose NAME says card. Only the name: a table of TIERS may be a
    card's rarity or a tap's timing grade, and "Game data" is the honest answer
    when the name cannot tell them apart. */
 const CARDISH = /card|upgrade|joker|codex|skill|object|item|relic|charm|perk|rune|spell|rarity/i;
 const FIELD = { name: 'name', title: 'name', label: 'name', text: 'description', desc: 'description',
   info: 'description', lore: 'lore', lesson: 'description', tip: 'description', hint: 'description' };
+
+/* WHAT the words are about, read off the name of the table they sit in or of
+   the function that writes them — a convention the thirteen games keep well
+   (`FOES`, `heroPage`, `BIOMES`, `bandPage`, `POWERS`). Topic first, in this
+   order: a page of the guide about a yokai is a CHARACTER's description,
+   which is what a proofreader reads it as; any other page of the guide is
+   the guide. Matched on the whole table name, on each segment of the scope. */
+const TABLE_TOPIC = [
+  [/^(?:HEROES|FOES|ENEMIES|BOSS(?:ES)?|YOKAI|CAST|SPECIAL_OWN|SPECIAL_MOVE|PASS)$/, 'character'],
+  [/^(?:BIOMES?|BANDS?|BAND_[A-Z_]+|BIOME_[A-Z_]+|WORLDS?|ZONES?)$/, 'world'],
+  [/^(?:POWERS?|MODS|WARES|BLESSINGS|ITEMS?|OBJECTS|ABOUT|PERKS?|RELICS?)$/, 'item'],
+  [/^(?:TIERS?|TIER_[A-Z_]+|RARITY|RANKS?|GRADES?)$/, 'rank'],
+  [/^(?:TIPS|[A-Z_]+_PAGES)$/, 'guide'],
+  [/^(?:GOALS?|GOAL_TEXT|BONUS_TEXT)$/, 'level'],
+  [/^EVENTS$/, 'event'],
+  [/^POST_[A-Z_]+$/, 'barracks'],
+  [/^COMBO_WORD$/, 'callout'],
+  [/^SEAT_NAME$/, 'canvas']
+];
+// A table whose name means something else in one game.
+const TABLE_TOPIC_GAME = {
+  'holepocalypse:KINDS': ['character', 'zombie kind'],
+  'holepocalypse:TIPS': ['character', 'zombie tip'],
+  'grudgeon:RULES': ['character', 'yokai status'],
+  'grudgeon:ELEMENTS': ['rank', 'element']
+};
+const FN_TOPIC = [
+  [/^(?:hero|yokai|foe|enemy|boss|officer|zombie|intent)[A-Z]\w*$|^(?:intentText|foeCard)$/, 'character'],
+  [/^(?:band|biome|bio|world)(?:Page|Chapter|Name|Pic|Line)s?$/, 'world'],
+  [/^(?:object|item|power)(?:Page|Pic)s?$/, 'item'],
+  [/^(?:whyNot|\w+WhyNot|refuse)$/, 'notice', 'refusal'],
+  [/^hint$/, 'notice', 'first meeting'],
+  [/^(?:finish|gameOver|endRun)$/, 'end'],
+  [/TagBox$/, 'canvas'],
+  [/^(?:\w+Sheet|sheet\w+)$/, 'panel'],
+  [/^(?:goalLine|unlockLine)$/, 'level'],
+  [/^(?:showTip|contractNow|durText|whenWord|weightWord|hitsWord|partyBurns|hpRow|liveryRows)$/, 'info'],
+  [/^(?:guide|chapters)$|Pages?$|Chapter$|Pic$/, 'guide']
+];
+const inGuide = (fn) => /(?:^|\.)(?:guide|chapters)(?:\.|$)|Pages?(?:\.|$)|Chapter(?:\.|$)/.test(fn || '');
+
+function topicOf(fn, ctx) {
+  const guided = inGuide(fn), page = (d) => [guided ? 'guide page' : null, d].filter(Boolean).join(' · ') || null;
+  const game = ctx.table && TABLE_TOPIC_GAME[`${ctx.slug}:${ctx.table}`];
+  if (game) return sf(game[0], page(game[1]));
+  if (ctx.table && ctx.learn && ctx.learn.has(ctx.table)) return sf('notice', 'first meeting · ' + ctx.table);
+  if (ctx.table) for (const [re, key] of TABLE_TOPIC) if (re.test(ctx.table)) return sf(key, page([ctx.table, ctx.key].filter(Boolean).join(' · ')));
+  const segs = (fn || '').split('.').reverse();
+  for (const s of segs) for (const [re, key, d] of FN_TOPIC) if (re.test(s)) return sf(key, key === 'guide' ? fn : page(d || s + '()'));
+  return null;
+}
 
 function inferSurface(line, fn, ctx) {
   for (const [re, key] of LINE_RULES) if (re.test(line)) return sf(key);
@@ -417,6 +486,10 @@ function inferSurface(line, fn, ctx) {
   const own = (fn || '').split('.').pop();
   if (own && ctx.wrappers[own]) return sf(ctx.wrappers[own], `in ${own}()`);
   if (ctx.inEnd) return sf('end');
+  const topic = topicOf(fn, ctx);
+  if (topic) return topic;
+  // A biome listed in CONFIG: it names the scene it is painted on.
+  if (ctx.key === 'name' && /\bscene\s*:/.test(line)) return sf('world', [ctx.table, 'name'].filter(Boolean).join(' · '));
   // A stat row kept in a variable before endRound: `{ label: …, value: … }`.
   if (ctx.key === 'label' && /\bvalue\s*:/.test(line)) return sf('end', 'stat row label');
   // A table of notices: `{ word: …, sub: …, icon: … }` (chainring's HINTS).
@@ -441,9 +514,13 @@ function dataContext(clean, off, fn) {
   // last one declared above a literal no function holds.
   const caps = (n) => (/^[A-Z][A-Z0-9_]*$/.test(n || '') ? n : null);
   let table = fn ? caps(fn.split('.')[0]) : null;
-  if (!table && !fn) {
-    const re = /\n[ \t]*var\s+([A-Z][A-Z0-9_]*)\s*=\s*[[{]/g, seg = clean.slice(Math.max(0, off - 40000), off);
-    let m; while ((m = re.exec(seg))) table = m[1];
+  if (!table) {
+    /* The last table declared above, as long as no function or other
+       declaration starts between it and the literal: a key inside it
+       (grudgeon's event choices `a: { label: … }`) names a scope too. */
+    const re = /\n[ \t]*var\s+([A-Z][A-Z0-9_]*)\s*=\s*[[{]/g, from = Math.max(0, off - 40000), seg = clean.slice(from, off);
+    let m, last = null; while ((m = re.exec(seg))) last = m;
+    if (last && (!fn || !/\n[ \t]*(?:function\b|var\b)/.test(seg.slice(last.index + last[0].length)))) table = last[1];
   }
   // Inside an endRound({ … }) still open at this point: the end screen.
   const back = clean.slice(Math.max(0, off - 900), off);
@@ -485,7 +562,7 @@ function rowSurface(r) {
     case 'levels': return sf('level');
     case 'barracks': return sf('barracks');
     case 'officers':
-      if (/lore$/.test(c)) return sf('card', 'lore, the back of the card');
+      if (/lore$/.test(c)) return sf('character', 'lore, the back of the card');
       if (/^Trade/.test(c)) return sf('card', 'trade, the back of the card');
       if (/^Grade/.test(c)) return sf('card', 'grade name, the face');
       if (/^Object/.test(c)) return sf('card', 'object name');
@@ -506,7 +583,8 @@ function uniqueSurfaces(list) {
    path cannot place is read off its call sites: a Lang.t literal by the line it
    sits on, a `CONFIG.copy` key by the first line that reads it — which also
    becomes the row's use, since a key alone does not say where it shows. */
-function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers }) {
+function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug, learn }) {
+  const base = { wrappers, slug, learn };
   for (const r of rows) {
     if (r.group === 'words') continue;               // after its uses are known
     const known = rowSurface(r);
@@ -518,13 +596,13 @@ function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers }) {
       let m, uses = [];
       while ((m = re.exec(js))) {
         const fn = jsScope(m.index), src = lineAt(jsSrc, m.index);
-        uses.push({ line: jsLine(m.index), fn, src, surface: inferSurface(src, fn, { wrappers, ...dataContext(js, m.index, fn) }) });
+        uses.push({ line: jsLine(m.index), fn, src, surface: inferSurface(src, fn, { ...base, ...dataContext(js, m.index, fn) }) });
       }
       if (uses.length) r.uses = uses;
     } else {
       for (const u of r.uses || []) {
         const off = (r.targets.find((t) => t.line === u.line) || r.targets[0]).start;
-        u.surface = inferSurface(u.src || '', u.fn, { wrappers, ...dataContext(js, off, u.fn) });
+        u.surface = inferSurface(u.src || '', u.fn, { ...base, ...dataContext(js, off, u.fn) });
       }
     }
     r.surfaces = known ? [known] : uniqueSurfaces((r.uses || []).map((u) => u.surface));
@@ -551,6 +629,8 @@ const TEXT_CALLS = {
   'Pop.show':       { opts: { word: 'Callout', sub: 'Callout sub' }, group: 'round', style: 0 },
   'Pop.text':       { args: { 2: 'Floating value' }, group: 'round' },
   'Notify.say':     { args: { 0: 'Notice' }, opts: { sub: 'Notice sub' }, group: 'round' },
+  // a mechanic named once (Notify.learn(id, word, { sub })): the id is a guide page, not a word
+  'Notify.learn':   { args: { 1: 'Notice' }, opts: { sub: 'Notice sub' }, group: 'round' },
   'HUD.setLeft':    { args: { 0: 'HUD left value', 1: 'HUD left label' }, group: 'hud' },
   'HUD.setRight':   { args: { 0: 'HUD right value', 1: 'HUD right label' }, group: 'hud' },
   'fillText':       { args: { 0: 'Canvas text' }, group: 'round' },
@@ -594,7 +674,7 @@ function scanGameJs(src, out, push) {
   const mask = codeMask(clean);
   const lineOf = lineIndex(src);
   const scopeOf = scopeIndex(clean, mask);
-  out.js = { src, clean, lineOf, scopeOf, wrappers: wrappersOf(clean, scopeOf.frames) };
+  out.js = { src, clean, lineOf, scopeOf, wrappers: wrappersOf(clean, scopeOf.frames), learn: learnTables(clean) };
 
   /* --- CONFIG: the copy a game declares rather than writes inline ---------- */
   const cfg = configSpan(clean, mask);
@@ -876,6 +956,7 @@ export async function scanText(slug) {
   scanGameJs(gameSrc, out, push);
   scanPage(pageSrc, out, warn);
   if (manifest.web && manifest.web.army) await scanArmyJs(push, warn);
+  if (out.js) tableRows(rows, out.js, push);
 
   // Same sentence, two languages, one line on the page.
   const byPair = {};
@@ -887,8 +968,8 @@ export async function scanText(slug) {
   // A feminine form reads against the English, the one pair it has.
   for (const r of rows) if (r.echo && byPair[r.echo] && byPair[r.echo].en != null) r.other = byPair[r.echo].en;
 
-  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers } = out.js;
-  resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers });
+  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers, learn } = out.js;
+  resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug, learn });
 
   /* WHERE A DICTIONARY ENTRY IS READ. Its key is the English, which says what
      it means but not where it shows: every row of the game that writes that
@@ -912,7 +993,7 @@ export async function scanText(slug) {
       if (at != null) {
         const fn = jsScope(at), src = lineAt(jsSrc, at);
         r.uses = [{ context: 'Found in game.js', group: 'data', line: jsLine(at), fn, src,
-          surface: inferSurface(src, fn, { wrappers, ...dataContext(js, at, fn) }) }];
+          surface: inferSurface(src, fn, { wrappers, slug, learn, ...dataContext(js, at, fn) }) }];
       } else r.unused = true;
     }
     // An entry is read wherever its English is: every surface, once each.
@@ -945,16 +1026,58 @@ export async function scanText(slug) {
   };
 }
 
+/* THE ENGLISH OF A TABLE. A guide page, a card, a power or a hero is most
+   often a literal in a table or an argument of the game's own helper
+   (`guidePage(id, "Plated", …)`, `{ name: "Greed", text: "×3 mult…" }`) and
+   reaches Lang.t through a variable, where no call rule can follow it. Its
+   French was listed — the dictionary entry — and its English was not, so the
+   English could not be proofread, and a French correction never reached it
+   (the automatic English pass works off the English ROWS). Every dictionary
+   key with no English row is looked up as a literal of game.js, and the
+   literals found are its row. A literal that is a key, a comparison or a
+   `case` is a value the code tests, never copy, and is left alone. */
+function tableRows(rows, js, push) {
+  const { clean, src, lineOf, scopeOf } = js;
+  const keys = new Set(rows.filter((r) => r.group === 'words').map((r) => r.context));
+  const have = new Set(rows.filter((r) => r.lang === 'en' && r.where === 'game.js').map((r) => r.text));
+  const claimed = new Set();
+  for (const r of rows) for (const t of r.targets || []) if (t.file === 'game.js') claimed.add(t.start);
+  const found = new Map();
+  for (const lit of literalsIn(clean, 0, clean.length)) {
+    if (!keys.has(lit.text) || have.has(lit.text) || claimed.has(lit.start)) continue;
+    const before = clean.slice(Math.max(0, lit.start - 12), lit.start), after = clean.slice(lit.end, lit.end + 4);
+    if (/^\s*:/.test(after) || /[!=]==?\s*$|\bcase\s*$/.test(before) || /^\s*[!=]==?/.test(after)) continue;
+    (found.get(lit.text) || found.set(lit.text, []).get(lit.text)).push(lit);
+  }
+  for (const [text, lits] of found) {
+    const targets = lits.map((l) => ({ file: 'game.js', kind: 'js', start: l.start, end: l.end, line: lineOf(l.start) }));
+    push({ id: 'data.' + slugOf(text) + '.' + hashOf(text), lang: 'en', group: 'round', where: 'game.js',
+      line: targets[0].line, lines: targets.map((t) => t.line), context: 'Table entry', text,
+      fragment: false, code: false, targets,
+      uses: targets.map((t) => ({ line: t.line, fn: scopeOf(t.start), src: lineAt(src, t.start) })) });
+  }
+}
+
+// A short, stable fingerprint: two long strings cut to the same slug stay two ids.
+function hashOf(s) {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36).slice(0, 5);
+}
+
 /* ── CLI ─────────────────────────────────────────────────────────────────── */
-function table(scan) {
+function table(scan, { review, lang: only } = {}) {
   const pad = (s, n) => String(s).padEnd(n).slice(0, n);
+  // --unchecked: what the copy desk has not signed off yet (lab/text-review.json).
+  const open = (r) => !review || !(review[r.id] && review[r.id].text === r.text);
   console.log(`\n\x1b[1m${scan.title}\x1b[0m  v${scan.version}   ${scan.counts.en} EN · ${scan.counts.fr} FR` +
     (scan.counts.fragments ? `   (${scan.counts.fragments} fragments)` : '') +
     (scan.counts.untranslated ? `   \x1b[33m${scan.counts.untranslated} untranslated\x1b[0m` : '   \x1b[32mfully translated\x1b[0m'));
   for (const t of scan.missing) console.log(`  \x1b[33m? no FR for ${JSON.stringify(t)}\x1b[0m`);
   for (const w of scan.warnings) console.log(`  \x1b[33m! ${w}\x1b[0m`);
   for (const lang of ['en', 'fr', 'all']) {
-    const mine = scan.rows.filter((r) => r.lang === lang);
+    if (only && lang !== only) continue;
+    const mine = scan.rows.filter((r) => r.lang === lang && open(r));
     if (!mine.length) continue;
     console.log(`\n  \x1b[1m${lang.toUpperCase()}\x1b[0m`);
     for (const g of GROUPS) {
@@ -965,6 +1088,8 @@ function table(scan) {
         const at = r.line ? `${r.where}:${r.line}` : r.where;
         const shows = (r.surfaces || []).map((s) => SURFACES.find((x) => x.key === s.key).label).join(', ');
         console.log(`    ${pad(at, 16)} ${pad(r.context, 26)} ${pad(shows, 18)} ${r.fragment ? '\x1b[90m·\x1b[0m ' : '  '}${oneLine(r.text)}`);
+        // A dictionary entry's English is its key: printed whole when the column cut it.
+        if (review && r.group === 'words' && r.context.length > 26) console.log(`    ${pad('', 16)} ${pad('', 26)} ${pad('', 18)}   \x1b[90m${oneLine(r.context)}\x1b[0m`);
       }
     }
   }
@@ -975,12 +1100,18 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const all = await games();
   const wanted = argv.includes('--all') ? all : argv.filter((a) => !a.startsWith('-'));
   if (!wanted.length || wanted.some((s) => !all.includes(s))) {
-    console.log('usage: node tools/lab/scan-text.mjs <slug>|--all [--json]');
+    console.log('usage: node tools/lab/scan-text.mjs <slug>|--all [--json] [--unchecked] [--lang=fr|en]');
     console.log('       games: ' + all.join(' '));
     process.exit(1);
   }
   const scans = [];
   for (const slug of wanted) scans.push(await scanText(slug));
   if (argv.includes('--json')) console.log(JSON.stringify(scans.length === 1 ? scans[0] : scans, null, 2));
-  else { for (const s of scans) table(s); console.log(''); }
+  else {
+    const review = argv.includes('--unchecked')
+      ? JSON.parse(await readFile(path.join(ROOT, 'lab', 'text-review.json'), 'utf8').catch(() => '{}')) : null;
+    const lang = (argv.find((a) => a.startsWith('--lang=')) || '').slice(7) || null;
+    for (const s of scans) table(s, { review: review && (review[s.slug] || {}), lang });
+    console.log('');
+  }
 }

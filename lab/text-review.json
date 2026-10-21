@@ -16,6 +16,22 @@
       "text": "%",
       "at": "2026-10-13"
     },
+    "game.js:1869.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1869.Pop.show.callout.1": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
+    "game.js:1872.Pop.show.callout": {
+      "text": "-",
+      "at": "2026-10-21"
+    },
+    "game.js:1872.Pop.show.callout.1": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
     "game.js:1873.Pop.show.callout": {
       "text": "/",
       "at": "2026-10-13"
@@ -23,6 +39,14 @@
     "game.js:1873.Pop.show.callout-sub": {
       "text": "+",
       "at": "2026-10-13"
+    },
+    "game.js:1893.Pop.show.callout": {
+      "text": "/",
+      "at": "2026-10-21"
+    },
+    "game.js:1893.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
     },
     "game.js:2162.HUD.setLeft.hud-left-value": {
       "text": "%",
@@ -48,6 +72,54 @@
       "text": "th",
       "at": "2026-10-13"
     },
+    "game.js:2183.HUD.setLeft.hud-left-value": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
+    "game.js:2184.HUD.setLeft.hud-left-value": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
+    "game.js:2193.Lang.t.translated-in-place": {
+      "text": "th",
+      "at": "2026-10-21"
+    },
+    "game.js:2193.Lang.t.translated-in-place.1": {
+      "text": "st",
+      "at": "2026-10-21"
+    },
+    "game.js:2193.Lang.t.translated-in-place.2": {
+      "text": "nd",
+      "at": "2026-10-21"
+    },
+    "game.js:2193.Lang.t.translated-in-place.3": {
+      "text": "rd",
+      "at": "2026-10-21"
+    },
+    "game.js:2193.Lang.t.translated-in-place.4": {
+      "text": "th",
+      "at": "2026-10-21"
+    },
+    "game.js:2194.Lang.t.translated-in-place": {
+      "text": "th",
+      "at": "2026-10-21"
+    },
+    "game.js:2194.Lang.t.translated-in-place.1": {
+      "text": "st",
+      "at": "2026-10-21"
+    },
+    "game.js:2194.Lang.t.translated-in-place.2": {
+      "text": "nd",
+      "at": "2026-10-21"
+    },
+    "game.js:2194.Lang.t.translated-in-place.3": {
+      "text": "rd",
+      "at": "2026-10-21"
+    },
+    "game.js:2194.Lang.t.translated-in-place.4": {
+      "text": "th",
+      "at": "2026-10-21"
+    },
     "game.js:2482.Pop.show.callout": {
       "text": " pilots left",
       "at": "2026-10-13"
@@ -59,6 +131,30 @@
     "game.js:2484.Pop.show.callout-sub.1": {
       "text": "Goal: top ",
       "at": "2026-10-13"
+    },
+    "game.js:2507.Notify.say.notice": {
+      "text": " pilots left",
+      "at": "2026-10-21"
+    },
+    "game.js:2508.Notify.say.notice": {
+      "text": " pilots left",
+      "at": "2026-10-21"
+    },
+    "game.js:2508.Notify.say.notice-sub": {
+      "text": "Win the race",
+      "at": "2026-10-21"
+    },
+    "game.js:2509.Notify.say.notice-sub": {
+      "text": "Win the race",
+      "at": "2026-10-21"
+    },
+    "game.js:2509.Notify.say.notice-sub.1": {
+      "text": "Goal: top ",
+      "at": "2026-10-21"
+    },
+    "game.js:2510.Notify.say.notice-sub.1": {
+      "text": "Goal: top ",
+      "at": "2026-10-21"
     },
     "game.js:2542.endRound.end-title": {
       "text": "Race won!",
@@ -72,17 +168,149 @@
       "text": "Race finished!",
       "at": "2026-10-13"
     },
+    "game.js:2567.endRound.end-title": {
+      "text": "Race won!",
+      "at": "2026-10-21"
+    },
+    "game.js:2568.endRound.end-title": {
+      "text": "Race won!",
+      "at": "2026-10-21"
+    },
+    "game.js:2568.endRound.end-title.1": {
+      "text": "On the podium!",
+      "at": "2026-10-21"
+    },
+    "game.js:2568.endRound.end-title.2": {
+      "text": "Race finished!",
+      "at": "2026-10-21"
+    },
+    "game.js:2569.endRound.end-title.1": {
+      "text": "On the podium!",
+      "at": "2026-10-21"
+    },
+    "game.js:2569.endRound.end-title.2": {
+      "text": "Race finished!",
+      "at": "2026-10-21"
+    },
     "game.js:HUD.setLeft.hud-left-label.shield": {
       "text": "Shield",
       "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.10-to-15-shield": {
+      "text": "+10 to +15 % shield",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.14-to-21": {
+      "text": "-14 to -21 %",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.29-to-39": {
+      "text": "-29 to -39 %",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-barrier": {
+      "text": "A barrier",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-cell": {
+      "text": "A cell",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-craft-s-colour-tells-you-h": {
+      "text": "A craft's colour tells you how it drives, long before you reach it.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-green-rank-means-your-plac": {
+      "text": "A green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-mine": {
+      "text": "A mine",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-mine-never-blocks-the-way-": {
+      "text": "A mine never blocks the way to a booster.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-mine-s-blast-throws-you-si": {
+      "text": "A mine's blast throws you sideways. Lean the other way to stay on the tarmac.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-wall-often-leaves-a-way-th": {
+      "text": "A wall often leaves a way through, with a booster in it.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.any-hit-puts-the-booster-out": {
+      "text": "Any hit puts the booster out at once.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.barriers": {
+      "text": "Barriers",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.barriers-block-your-way-hit-": {
+      "text": "Barriers block your way. Hit one and it breaks, and your speed drops with it.",
+      "at": "2026-10-21"
     },
     "game.js:Lang.t.translated-in-place.be-top": {
       "text": "Be top ",
       "at": "2026-10-13"
     },
+    "game.js:Lang.t.translated-in-place.blue-craft-drive-straight-ah": {
+      "text": "Blue craft drive straight ahead, blind to you and to the road.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.boosters": {
+      "text": "Boosters",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.charge-cells": {
+      "text": "Charge cells",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.checkpoint-ahead": {
+      "text": "Checkpoint ahead",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.checkpoints": {
+      "text": "Checkpoints",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.choose-your-path": {
+      "text": "Choose your path",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.clipping-a-pilot": {
+      "text": "Clipping a pilot",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.cross-it-in-first-place": {
+      "text": "Cross it in first place",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.cross-the-b-finish-line-b": {
       "text": "Cross the <b>finish line</b>",
       "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.cross-the-finish-line": {
+      "text": "Cross the finish line",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.day": {
+      "text": "Day",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.drones": {
+      "text": "Drones",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.dusk": {
+      "text": "Dusk",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.each-checkpoint-asks-for-a-r": {
+      "text": "Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out.",
+      "at": "2026-10-21"
     },
     "game.js:Lang.t.translated-in-place.final": {
       "text": "Final ",
@@ -92,6 +320,34 @@
       "text": "Finished · ",
       "at": "2026-10-13"
     },
+    "game.js:Lang.t.translated-in-place.first-place-guarantees-three": {
+      "text": "First place guarantees three stars",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.fork": {
+      "text": "Fork",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.from-here-on-three-checkpoin": {
+      "text": "From here on, three checkpoints before the finish.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.from-stage-13-some-walls-aft": {
+      "text": "From stage 13, some walls after a ramp have no way through.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.going-fast-never-drains-your": {
+      "text": "Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.green-craft-get-out-of-your-": {
+      "text": "Green craft get out of your way.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.hold-a-side-of-the-screen-or": {
+      "text": "Hold a side of the screen, or an arrow key, to lean that way.",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.in": {
       "text": " in ",
       "at": "2026-10-13"
@@ -100,21 +356,209 @@
       "text": "km/h",
       "at": "2026-10-13"
     },
+    "game.js:Lang.t.translated-in-place.landing-in-the-gravel": {
+      "text": "Landing in the gravel",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.lasts": {
+      "text": "Lasts",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.lean-to-steer": {
+      "text": "Lean to steer",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.line-up-before-you-take-off-": {
+      "text": "Line up before you take off. You can barely steer in the air.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.liveries": {
+      "text": "Liveries",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.marshal": {
+      "text": "Marshal",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.marshals": {
+      "text": "Marshals",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.mines": {
+      "text": "Mines",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.mist": {
+      "text": "Mist",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.night": {
+      "text": "Night",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.nothing-new-in-this-biome-bu": {
+      "text": "Nothing new in this biome, but every hazard and every pilot at once.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.on-the-road": {
+      "text": "On the road",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.one-branch-has-the-charge-ce": {
+      "text": "One branch has the charge cells. The other has boosters, often guarded by mines.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.only-a-booster-gets-you-past": {
+      "text": "Only a booster gets you past some craft",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.only-cells-refill-your-shiel": {
+      "text": "Only cells refill your shield. They line the track on some forks.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.overcast": {
+      "text": "Overcast",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.ram": {
+      "text": "Ram",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.ramps": {
+      "text": "Ramps",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.rams": {
+      "text": "Rams",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.reach-b-n-m-b": {
       "text": "Reach <b>{n} m</b>",
       "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.reach-the-required-rank-befo": {
+      "text": "Reach the required rank before the next checkpoint",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.reach-the-stage-s-distance": {
+      "text": "Reach the stage's distance",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.red-craft-block-your-line-bu": {
+      "text": "Red craft block your line but never hit on purpose. Only a booster gets you past them easily.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.scouts": {
+      "text": "Scouts",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.solid-walls": {
+      "text": "Solid walls",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.stages-a-to-b": {
+      "text": "Stages {a} to {b}",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.stalkers": {
+      "text": "Stalkers",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.take-them-in-a-row-for-a-com": {
+      "text": "Take them in a row for a combo bonus. Gravel or a hit breaks the combo.",
+      "at": "2026-10-21"
     },
     "game.js:Lang.t.translated-in-place.th": {
       "text": "th",
       "at": "2026-10-13"
     },
+    "game.js:Lang.t.translated-in-place.the-basics": {
+      "text": "The basics",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-climb": {
+      "text": "The climb",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-finish-line": {
+      "text": "The finish line",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-pilots": {
+      "text": "The pilots",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-race": {
+      "text": "The race",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-road-to-the-first-checkp": {
+      "text": "The road to the first checkpoint is paved with boosters.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-score": {
+      "text": "The score",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-shield": {
+      "text": "The shield",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-violet-craft-hits-harder": {
+      "text": "The violet craft hits harder",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-wall-after-a-ramp-may-ha": {
+      "text": "The wall after a ramp may have no way through. Jump over it to avoid a crash.",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.top": {
       "text": "Top ",
       "at": "2026-10-13"
     },
+    "game.js:Lang.t.translated-in-place.two-checkpoints-before-the-f": {
+      "text": "Two checkpoints before the finish.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.use-the-ramp": {
+      "text": "Use the ramp",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.violet-craft-come-straight-f": {
+      "text": "Violet craft come straight for you, and they hit the hardest.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.walls": {
+      "text": "Walls",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.watch-out-for-blasts": {
+      "text": "Watch out for blasts",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.watch-out-for-walls": {
+      "text": "Watch out for walls",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.while-a-booster-lasts-metres": {
+      "text": "While a booster lasts, metres and cells count double.",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.win-the-race-in-b-first-plac": {
       "text": "Win the race in <b>first place</b>",
       "at": "2026-10-13"
+    },
+    "game.js:Lang.t.translated-in-place.yellow-craft-are-slow-and-st": {
+      "text": "Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.you-start-last-to-pass-the-l": {
+      "text": "You start last. To pass the leaders, you will need a booster.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.your-place-as-you-cross-the-": {
+      "text": "Your place as you cross the finish line is your final result.",
+      "at": "2026-10-21"
     },
     "game.js:Pop.show.callout-sub.recharge-your-shield": {
       "text": "Recharge your shield",
@@ -180,37 +624,57 @@
       "text": "Arcider",
       "at": "2026-10-13"
     },
+    "game.js:data.best-score.12oyx": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
+    "game.js:data.distance-m.c800e": {
+      "text": "Distance (m)",
+      "at": "2026-10-21"
+    },
+    "game.js:data.eliminated.7mmbd": {
+      "text": "Eliminated",
+      "at": "2026-10-21"
+    },
+    "game.js:data.final-position.w5k4p": {
+      "text": "Final position",
+      "at": "2026-10-21"
+    },
+    "game.js:data.places-taken.16jyq": {
+      "text": "Places taken",
+      "at": "2026-10-21"
+    },
     "manifest.json:copy.en.tagline": {
-      "text": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose between speed and safety.",
-      "at": "2026-10-13"
+      "text": "Twenty pilots fight through an arcade race with a light touch of battle royale. Dodge the traps and your rivals, and choose speed or safety.",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.en.tags.0": {
-      "text": "Tilt your ship",
-      "at": "2026-10-13"
+      "text": "Arcade",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.en.tags.1": {
       "text": "Battle royale",
       "at": "2026-10-13"
     },
     "manifest.json:copy.en.tags.2": {
-      "text": "Retro-futuristic music",
-      "at": "2026-10-13"
+      "text": "Fast",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tagline": {
       "text": "Vingt pilotes s'affrontent dans une course arcade au parfum de Battle Royale. Esquive pièges et rivaux. Choisis entre vitesse ou sécurité.",
-      "at": "2026-10-13"
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.0": {
-      "text": "Incline ton vaisseau",
-      "at": "2026-10-13"
+      "text": "Arcade",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.1": {
       "text": "Battle Royale",
       "at": "2026-09-29"
     },
     "manifest.json:copy.fr.tags.2": {
-      "text": "Musique Retro Futuriste",
-      "at": "2026-10-13"
+      "text": "Rapide",
+      "at": "2026-10-21"
     },
     "manifest.json:description": {
       "text": "Twenty pilots launch onto a bending neon highway and five of them reach the flag. You start last. Hold the left or right of the screen to lean, and climb the board by physically overtaking the craft ahead — mines, barriers and the pilots you clip all come off a shield that nothing else refills. Every so often the tarmac forks, and the two things you need are never on the same branch: charge on the slow line, boosters and mines on the fast one. A line across the tarmac marks each cut, green while you are inside the rank it asks for and red while you are not; cross one and the field is really trimmed — 15 pilots left, then 10, then 5 — until the chequered arch at 1020m.",
@@ -289,8 +753,8 @@
       "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.4.kicker": {
-      "text": "Exigeant ",
-      "at": "2026-10-13"
+      "text": "Exigeant",
+      "at": "2026-10-19"
     },
     "manifest.json:store.copy.fr.lines.4.line": {
       "text": "Vise la première <b>place</b>",
@@ -312,21 +776,145 @@
       "text": " pilotes en lice",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.+10 to +15 % shield": {
+      "text": "+10 à +15 % de bouclier",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.-14 to -21 %": {
+      "text": "-14 à -21 %",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.-29 to -39 %": {
+      "text": "-29 à -39 %",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A barrier": {
+      "text": "Une barrière",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A cell": {
+      "text": "Une cellule",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A craft's colour tells you how it drives, long before you reach it.": {
+      "text": "La couleur d'un vaisseau te dit comment il pilote, bien avant que tu l'atteignes.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass.": {
+      "text": "Un rang affiché en vert indique que ta place suffit pour le prochain Check Point. En rouge, il te faut encore doubler des adversaires.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A mine": {
+      "text": "Une mine",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A mine never blocks the way to a booster.": {
+      "text": "Une mine ne barre jamais l'accès à un Booster.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A mine's blast throws you sideways. Lean the other way to stay on the tarmac.": {
+      "text": "Le souffle d'une mine te projette sur un côté. Contre-braque pour rester sur la piste.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A wall": {
+      "text": "Un mur",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.A wall leaves a way through, often with a booster in it.": {
+      "text": "Souvent un mur laisse un passage avec un Booster.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A wall often leaves a way through, with a booster in it.": {
+      "text": "Souvent, un mur laisse un passage avec un Booster.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Any hit puts the booster out at once.": {
+      "text": "Le moindre choc coupe immédiatement le Booster.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Barriers": {
+      "text": "Barrières",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Barriers block your way. Hit one and it breaks, and your speed drops with it.": {
+      "text": "Les barrières bloquent la route. Si tu en percutes une, elle se brise et ta vitesse chute.",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Be top ": {
       "text": "Sois top ",
       "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Blue craft drive straight ahead, blind to you and to the road.": {
+      "text": "Les bleus foncent tout droit, sans voir quoi que ce soit.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Boosters": {
+      "text": "Boosters",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Cells on one branch, boosters on the other": {
+      "text": "Cellules d'un côté, boosters de l'autre",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Charge cells": {
+      "text": "Cellules de charge",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Checkpoint ahead": {
+      "text": "Check Point en vue",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Checkpoints": {
+      "text": "Check Points",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Choose your path": {
+      "text": "Choisis ta route",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Clipping a pilot": {
+      "text": "Accrocher un pilote",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Cross it in first place": {
+      "text": "Franchis-la en tête",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Cross the <b>finish line</b>": {
       "text": "Franchis la <b>ligne d'arrivée</b>",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.Cross the finish line": {
+      "text": "Franchis la ligne d'arrivée",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Day": {
+      "text": "Plein jour",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Distance (m)": {
       "text": "Distance (m)",
-      "at": "2026-09-29"
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Drones": {
+      "text": "Drones",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Dusk": {
+      "text": "Crépuscule",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Each checkpoint asks for a rank. Fall short and you are out, full shield or not.": {
+      "text": "Chaque Check Point exige un classement. Cette course en Battle Royale est sans pitié,  tu es éliminé si tu n'as pas une position suffisante.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out.": {
+      "text": "Chaque Check Point exige un classement. Cette course en Battle Royale est sans pitié : si ta position ne suffit pas, tu es éliminé.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Eliminated": {
       "text": "Eliminé",
@@ -342,7 +930,7 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Finished · ": {
       "text": "Terminé · ",
@@ -352,9 +940,41 @@
       "text": "Premier",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.First place guarantees three stars": {
+      "text": "La première place assure trois étoiles",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Fork": {
+      "text": "Embranchement",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.From here on, three checkpoints before the finish.": {
+      "text": "A partir de maintenant, il y aura trois Check Points avant l'arrivée.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.From stage 13, some walls after a ramp have no way through.": {
+      "text": "A partir du stage 13, certains murs n'ont plus aucun passage.",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Goal: top ": {
       "text": "Objectif : top ",
       "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Going fast never costs shield, only contact does. At 0 %, the race is over.": {
+      "text": "Aller vite ne coûte ne consomme pas le bouclier, seuls les chocs l'endommage. Attention car un bouclier vide termine la course immédiatement.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once.": {
+      "text": "Aller vite ne consomme pas le bouclier, seuls les chocs l'endommagent. Attention : un bouclier vide termine la course immédiatement.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Green craft get out of your way.": {
+      "text": "Les verts s'écartent de ta route.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Hold a side of the screen, or an arrow key, to lean that way.": {
+      "text": "Maintiens ou appuie sur un côté de l'écran pour tourner de ce côté.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Hull critical": {
       "text": "Bouclier critique",
@@ -362,15 +982,103 @@
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Its line is green while your place is good enough, red while it is not.": {
+      "text": "Un affichage de rang en vert indique que ta place suffit pour le prochain Check Point. Il faudra encore dépasser des adversaires si cet affichage est rouge.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Landing in the gravel": {
+      "text": "Hors-piste",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Lasts": {
+      "text": "Durée",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Lean to steer": {
+      "text": "Tourner",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Line up before you take off. You can barely steer in the air.": {
+      "text": "Aligne-toi avant de décoller car en l'air, tu tournes à peine.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Liveries": {
+      "text": "Livrées",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Marshal": {
+      "text": "Gendarme",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Marshals": {
+      "text": "Gendarmes",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Mines": {
+      "text": "Mines",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Mist": {
+      "text": "Brume",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.ND": {
       "text": "e",
       "at": "2026-09-30"
     },
+    "manifest.json:web.copy.fr.strings.Night": {
+      "text": "Nuit",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Nobody is eliminated at the finish. Your place as you cross it is your result.": {
+      "text": "Ta place sur la ligne d'arrivée déterminera ton classement final.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Nothing new in this biome, but every hazard and every pilot at once.": {
+      "text": "Rien de nouveau dans ce biome, mais tous les dangers et tous les pilotes sont réunis.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Nothing new, just every hazard and every pilot at once.": {
+      "text": "Rien de nouveau sur ce biome, par contre tous les dangers et tous les pilotes seront .",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.On the podium!": {
       "text": "Sur le podium !",
       "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.On the road": {
+      "text": "Sur la route",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.One branch has the charge cells. The other has boosters, guarded by mines.": {
+      "text": "Une branche offre des cellules de charge. L'autre des boosters mais souvent gardés par des mines.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.One branch has the charge cells. The other has boosters, often guarded by mines.": {
+      "text": "Une branche offre des cellules de charge, l'autre des Boosters souvent gardés par des mines.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Only a booster gets past certain ships": {
+      "text": "Seul un booster permet doubler certain vaisseau",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Only a booster gets you past some craft": {
+      "text": "Seul un Booster permet de doubler certains vaisseaux",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Only cells refill your shield. They line the track on some forks.": {
+      "text": "Seules les cellules rechargent ton bouclier. Elles jalonnent la course sur certains embranchements.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Only cells refill your shield. They sit on one branch of each fork.": {
+      "text": "Seules les cellules rechargent ton bouclier. Elles jalonnent la course sur certains embranchements.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Overcast": {
+      "text": "Ciel couvert",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Places taken": {
       "text": "Places gagnées",
@@ -378,7 +1086,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.RD": {
       "text": "e",
@@ -396,13 +1104,45 @@
       "text": "Victoire !",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.Ram": {
+      "text": "Bélier",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Ramps": {
+      "text": "Tremplins",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Rams": {
+      "text": "Béliers",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Reach <b>{n} m</b>": {
       "text": "Atteins <b>{n} m</b>",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.Reach the required rank before the next Check Point": {
+      "text": "Atteins le rang nécessaire avant le prochain Check Point",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Reach the required rank before the next checkpoint": {
+      "text": "Atteins le rang nécessaire avant le prochain Check Point",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Reach the stage's distance": {
+      "text": "Atteins la distance du stage",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Recharge your shield": {
       "text": "Recharge ton bouclier",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Red craft block your line but never hit first. Only a booster gets you past them.": {
+      "text": "Les rouges te barrent la route sans jamais attaquer volontairement. Seul un Booster permet de les dépasser facilement.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Red craft block your line but never hit on purpose. Only a booster gets you past them easily.": {
+      "text": "Les rouges te barrent la route sans jamais attaquer volontairement. Seul un Booster permet de les dépasser facilement.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.ST": {
       "text": "er",
@@ -410,15 +1150,31 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Scouts": {
+      "text": "Eclaireurs",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Shield": {
       "text": "Bouclier",
-      "at": "2026-09-29"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Shield down": {
       "text": "Bouclier détruit",
       "at": "2026-09-30"
+    },
+    "manifest.json:web.copy.fr.strings.Solid walls": {
+      "text": "Murs pleins",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Stages {a} to {b}": {
+      "text": "Stages {a} à {b}",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Stalkers": {
+      "text": "Traqueurs",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Start": {
       "text": "Démarrer",
@@ -428,21 +1184,105 @@
       "text": "e",
       "at": "2026-09-30"
     },
+    "manifest.json:web.copy.fr.strings.Take them in a row for a chain bonus. Gravel or a hit breaks the chain.": {
+      "text": "Prends-les à la suite pour obtenir un combo bonus. Le hors piste ou un choc casse le combo.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Take them in a row for a combo bonus. Gravel or a hit breaks the combo.": {
+      "text": "Prends-les à la suite pour obtenir un combo bonus. Le hors-piste ou un choc casse le combo.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The climb": {
+      "text": "La remontée",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The finish line": {
+      "text": "La ligne d'arrivée",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The pilots": {
+      "text": "Les pilotes",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The race": {
+      "text": "La course",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The road to the first checkpoint is paved with boosters.": {
+      "text": "La route jusqu'au premier Check Point est pavée de Boosters.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The score": {
+      "text": "Le score",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The shield": {
+      "text": "Le bouclier",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The violet craft hits harder": {
+      "text": "Le vaisseau violet frappe plus fort",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The wall after a ramp may have no way through. Jump it, or crash into it.": {
+      "text": "Le mur après un tremplin peut n'avoir aucun passage. Il faut donc sauter par dessus pour éviter le crash.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The wall after a ramp may have no way through. Jump over it to avoid a crash.": {
+      "text": "Le mur après un tremplin peut n'avoir aucun passage. Saute par-dessus pour éviter le crash.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Three checkpoints before the finish, in every race from here.": {
+      "text": "A partir de maintenant, il y aura trois Check Points avant l'arrivée.",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Tilt": {
       "text": "Incliner",
       "at": "2026-10-13"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Top ": {
       "text": "Top ",
       "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Two checkpoints before the finish.": {
+      "text": "Deux Check Points avant l'arrivée.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Use the ramp": {
+      "text": "Utilise le tremplin",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Violet craft come straight for you, and they hit the hardest.": {
+      "text": "Les violets te foncent dessus. Ce sont eux qui frappent le plus fort.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Walls": {
+      "text": "Murs",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out for blasts": {
+      "text": "Attention aux souffles",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out for walls": {
+      "text": "Attention aux murs",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.While a booster lasts, metres and cells count double.": {
+      "text": "Tant qu'un Booster est actif, la distance et les cellules régénératives comptent double.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Win the race": {
       "text": "Gagne la course",
@@ -451,6 +1291,18 @@
     "manifest.json:web.copy.fr.strings.Win the race in <b>first place</b>": {
       "text": "Termine la course <b>en tête</b>",
       "at": "2026-10-13"
+    },
+    "manifest.json:web.copy.fr.strings.Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.": {
+      "text": "Les jaunes sont lents et se rabattent sur toi. Faciles à rattraper, durs à doubler sans choc.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.You start last. To pass the leaders, you will need a booster.": {
+      "text": "Tu pars dernier. Utilise des Boosters pour doubler les premiers.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Your place as you cross the finish line is your final result.": {
+      "text": "Ta place sur la ligne d'arrivée déterminera ton classement final.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.km/h": {
       "text": "km/h",
@@ -490,9 +1342,25 @@
       "text": "+",
       "at": "2026-10-14"
     },
+    "game.js:1012.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1013.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
     "game.js:1027.Pop.text.floating-value": {
       "text": "+",
       "at": "2026-10-14"
+    },
+    "game.js:1036.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1037.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
     },
     "game.js:1104.Pop.show.callout": {
       "text": "+",
@@ -502,6 +1370,14 @@
       "text": " purified",
       "at": "2026-10-14"
     },
+    "game.js:1113.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1114.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
     "game.js:1116.Pop.show.callout": {
       "text": "x",
       "at": "2026-10-14"
@@ -509,6 +1385,30 @@
     "game.js:1116.Pop.show.callout.1": {
       "text": " streak",
       "at": "2026-10-14"
+    },
+    "game.js:1119.Pop.show.callout-sub": {
+      "text": " purified",
+      "at": "2026-10-21"
+    },
+    "game.js:1120.Pop.show.callout-sub": {
+      "text": " purified",
+      "at": "2026-10-21"
+    },
+    "game.js:1125.Pop.show.callout": {
+      "text": "x",
+      "at": "2026-10-21"
+    },
+    "game.js:1125.Pop.show.callout.1": {
+      "text": " streak",
+      "at": "2026-10-21"
+    },
+    "game.js:1126.Pop.show.callout": {
+      "text": "x",
+      "at": "2026-10-21"
+    },
+    "game.js:1126.Pop.show.callout.1": {
+      "text": " streak",
+      "at": "2026-10-21"
     },
     "game.js:1148.Pop.show.callout-sub": {
       "text": "+",
@@ -518,33 +1418,213 @@
       "text": " fell",
       "at": "2026-10-14"
     },
+    "game.js:1158.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1158.Pop.show.callout-sub.1": {
+      "text": " fell",
+      "at": "2026-10-21"
+    },
+    "game.js:1159.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1159.Pop.show.callout-sub.1": {
+      "text": " fell",
+      "at": "2026-10-21"
+    },
     "game.js:1221.HUD.setRight.hud-right-value": {
       "text": "%",
       "at": "2026-10-14"
+    },
+    "game.js:1233.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
+    "game.js:1234.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-21"
     },
     "game.js:1365.HUD.setRight.hud-right-value": {
       "text": "%",
       "at": "2026-10-14"
     },
+    "game.js:1405.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
+    "game.js:1406.HUD.setRight.hud-right-value": {
+      "text": "%",
+      "at": "2026-10-21"
+    },
     "game.js:1442.Pop.text.floating-value": {
       "text": "+",
       "at": "2026-10-14"
+    },
+    "game.js:1482.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:1483.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-21"
     },
     "game.js:2024.ctx.fillText.canvas-text": {
       "text": "Next",
       "at": "2026-10-14"
     },
+    "game.js:2064.ctx.fillText.canvas-text": {
+      "text": "Next",
+      "at": "2026-10-21"
+    },
+    "game.js:2065.ctx.fillText.canvas-text": {
+      "text": "Next",
+      "at": "2026-10-21"
+    },
+    "game.js:2183.ctx.fillText.canvas-text": {
+      "text": "Next",
+      "at": "2026-10-21"
+    },
+    "game.js:2184.ctx.fillText.canvas-text": {
+      "text": "Next",
+      "at": "2026-10-21"
+    },
     "game.js:HUD.setLeft.hud-left-label.popped": {
       "text": "Popped",
       "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.a-bubble-filling-with-rot-is": {
+      "text": "A bubble filling with rot is still active. Pop it before it turns completely.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-bubble-that-falls": {
+      "text": "A bubble that falls",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-rainbow-bubble-can-join-tw": {
+      "text": "A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-rainbow-bubble-in-a-cluste": {
+      "text": "A rainbow bubble in a cluster takes the right colour on impact.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-rotten-bubble-never-pops-e": {
+      "text": "A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-rotten-bubble-that-falls": {
+      "text": "A rotten bubble that falls",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.aim-and-shoot": {
+      "text": "Aim and shoot",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.bubbles-saved": {
+      "text": "Bubbles saved",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.cutting-the-rot-off-won-t-st": {
+      "text": "Cutting the rot off won't stop it. It will break out somewhere else.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.drag-to-aim-release-to-shoot": {
+      "text": "Drag to aim, release to shoot.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.every-shot-that-pops-raises-": {
+      "text": "Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.falling-bubbles": {
+      "text": "Falling bubbles",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.fire-a-rainbow-into-the-rot-": {
+      "text": "Fire a rainbow into the rot to give the bubbles their colour back.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.match-three": {
+      "text": "Match three",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.pop-what-holds-a-group-to-th": {
+      "text": "Pop what holds a group to the ceiling, and the whole group falls.",
+      "at": "2026-10-21"
     },
     "game.js:Lang.t.translated-in-place.popped": {
       "text": " popped",
       "at": "2026-10-14"
     },
+    "game.js:Lang.t.translated-in-place.race-the-rot": {
+      "text": "Race the rot",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.rainbow-bubble": {
+      "text": "Rainbow bubble",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.rainbow-shot": {
+      "text": "Rainbow shot",
+      "at": "2026-10-21"
+    },
     "game.js:Lang.t.translated-in-place.streak": {
       "text": " streak",
       "at": "2026-10-14"
+    },
+    "game.js:Lang.t.translated-in-place.swap": {
+      "text": "Swap",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.swapping-costs-no-shot-check": {
+      "text": "Swapping costs no shot. Check the next bubble and fire it first if it fits better.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.tap-the-ring-or-the-next-bub": {
+      "text": "Tap the ring or the next bubble to swap the two.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-basics": {
+      "text": "The basics",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-climb": {
+      "text": "The climb",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-more-rot-there-is-the-mo": {
+      "text": "The more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-rainbow": {
+      "text": "The rainbow",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-rot": {
+      "text": "The rot",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-rot-spreads": {
+      "text": "The rot spreads",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-wall-comes-down": {
+      "text": "The wall comes down",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-wall-moves-down-after-a-": {
+      "text": "The wall moves down after a few shots. A bubble on the red line ends the round.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.there-is-no-clock-only-the-r": {
+      "text": "There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.",
+      "at": "2026-10-21"
+    },
+    "game.js:Notify.say.notice.the-rot-spreads": {
+      "text": "The rot spreads",
+      "at": "2026-10-21"
     },
     "game.js:Pop.show.callout.cascade": {
       "text": "Cascade",
@@ -614,6 +1694,62 @@
       "text": "Blight",
       "at": "2026-10-14"
     },
+    "game.js:data.a-rotten-bubble-won-t-pop-ma.1qsrc": {
+      "text": "A rotten bubble won't pop. Make it fall or purify it.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.almost-every-wall-draws-a-sh.lmgal": {
+      "text": "Almost every wall draws a shape: a diamond, a lattice, a ring, a cross.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.castle.1birg": {
+      "text": "Castle",
+      "at": "2026-10-21"
+    },
+    "game.js:data.fire-a-rainbow-into-the-rot-.1w3h6": {
+      "text": "Fire a rainbow into the rot to purify it",
+      "at": "2026-10-21"
+    },
+    "game.js:data.from-level-26-every-wall-sta.exyba": {
+      "text": "From level 26, every wall starts with three outbreaks.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.gorge.3ogae": {
+      "text": "Gorge",
+      "at": "2026-10-21"
+    },
+    "game.js:data.levels-1-and-2-start-clean-w.xyjwn": {
+      "text": "Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.marsh.3se0v": {
+      "text": "Marsh",
+      "at": "2026-10-21"
+    },
+    "game.js:data.most-walls-start-with-two-ou.384ba": {
+      "text": "Most walls start with two outbreaks. You will have to hold two fronts at once.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.new-shapes-to-spot-an-arrow-.er1pr": {
+      "text": "New shapes to spot: an arrow, cherries, and more.",
+      "at": "2026-10-21"
+    },
+    "game.js:data.ruins.3wcb2": {
+      "text": "Ruins",
+      "at": "2026-10-21"
+    },
+    "game.js:data.tap-the-swap-ring-to-change-.14mw0": {
+      "text": "Tap the Swap ring to change bubbles",
+      "at": "2026-10-21"
+    },
+    "game.js:data.this-bubble-will-take-the-ri.1crmh": {
+      "text": "This bubble will take the right colour",
+      "at": "2026-10-21"
+    },
+    "game.js:data.throne.1mns8": {
+      "text": "Throne",
+      "at": "2026-10-21"
+    },
     "game.js:endRound.stat-row-1-label.bubbles-cleared": {
       "text": "Bubbles cleared",
       "at": "2026-10-14"
@@ -643,8 +1779,8 @@
       "at": "2026-10-14"
     },
     "manifest.json:copy.fr.tagline": {
-      "text": "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
-      "at": "2026-10-14"
+      "text": "Un Bubble Shooter magique où il faut aller plus vite que le mal qui ronge les bulles. Sois rapide et plus malin que la contamination.",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.0": {
       "text": "Vise rapidement",
@@ -675,8 +1811,8 @@
       "at": "2026-10-14"
     },
     "manifest.json:store.copy.en.lines.1.line": {
-      "text": "Rainbow <b>versus</b> blight",
-      "at": "2026-10-14"
+      "text": "Rainbow <b>Versus</b> blight",
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.en.lines.2.kicker": {
       "text": "Darkness",
@@ -696,7 +1832,7 @@
     },
     "manifest.json:store.copy.en.lines.4.kicker": {
       "text": "Progressive difficulty",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.en.lines.4.line": {
       "text": "Go for the <b>best score</b>",
@@ -716,7 +1852,7 @@
     },
     "manifest.json:store.copy.fr.lines.1.line": {
       "text": "Arc-en-ciel <b>Versus</b> contamination",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.fr.lines.2.kicker": {
       "text": "Ténèbres",
@@ -736,7 +1872,7 @@
     },
     "manifest.json:store.copy.fr.lines.4.kicker": {
       "text": "Difficulté progressive",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:store.copy.fr.lines.4.line": {
       "text": "Vise le <b>meilleur score</b>",
@@ -766,33 +1902,149 @@
       "text": " d'affilée",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.A bubble filling with rot is still active. Pop it before it turns completely.": {
+      "text": "Une bulle qui commence à se remplir d'infection est toujours active. Eclate-la avant qu'elle soit infectée totalement.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A bubble that falls": {
+      "text": "Une bulle qui tombe",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.": {
+      "text": "Une bulle arc-en-ciel peut relier deux grappes en une seule. Cette bulle Joker ne s'infecte jamais et permet même de décontaminer une zone.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A rainbow bubble in a cluster takes the right colour on impact.": {
+      "text": "Une bulle arc-en-ciel dans une grappe prendra la bonne couleur au moment de l'impact.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it.": {
+      "text": "Une bulle infectée n'éclate jamais. Régulièrement, l'infection gagne une bulle voisine.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A rotten bubble that falls": {
+      "text": "Une bulle infectée qui tombe",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.A rotten bubble won't pop. Make it fall or purify it.": {
+      "text": "Une bulle infectée n'éclate pas. Fais-la tomber ou convertis-la.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Aim and shoot": {
+      "text": "Viser et tirer",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Almost every wall draws a shape: a diamond, a lattice, a ring, a cross.": {
+      "text": "Presque chaque mur dessine une forme : losange, grille, anneau, croix.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Almost every wall draws a shape: a diamond, a lattice, a ring, a heart, a cross.": {
+      "text": "Presque chaque mur dessine une forme : losange, grille, anneau, croix.",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Bubbles cleared": {
       "text": "Bulles éliminées",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Bubbles saved": {
+      "text": "Bulles sauvées",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Cascade": {
       "text": "Cascade",
       "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.Castle": {
+      "text": "Château",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Contaminated!": {
       "text": "Contaminé !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Cutting the rot off won't stop it. It will break out somewhere else.": {
+      "text": "Isoler l'infection ne l'arrête pas. Elle finira par ressurgir ailleurs.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Drag to aim, release to shoot.": {
+      "text": "Glisse pour viser, relâche pour tirer.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.": {
+      "text": "Chaque tir qui éclate des bulles fait monter ton combo, jusqu'à ×6. Un tir raté le remet à zéro.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Falling bubbles": {
+      "text": "Bulles qui tombent",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fire a rainbow into the rot to give the bubbles their colour back.": {
+      "text": "Tire un arc-en-ciel dans l'infection pour rendre des couleurs aux bulles.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Fire a rainbow into the rot to purify it": {
+      "text": "Tire un arc-en-ciel dans l'infection pour la purifier",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Fire it into the rot to purify it": {
+      "text": "Tire un arc-en-ciel dans l'infection pour la purifier",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.From level 26, every wall starts with three outbreaks.": {
+      "text": "Dès le stage 26, chaque mur démarre avec trois foyers.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Gorge": {
+      "text": "Gorge",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It won't pop. Make it fall.": {
+      "text": "Une bulle infectée n'éclate pas. Fais-la tomber ou converti là.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s.": {
+      "text": "Les stages 1 et 2 démarrent sains, avec deux couleurs. L'infection surgit après {n} secondes.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Marsh": {
+      "text": "Marais",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Match three": {
+      "text": "Trois de même couleur",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Max chain": {
       "text": "Chaîne max",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Most walls start with two outbreaks, two fronts to hold at once.": {
+      "text": "La plupart des murs démarrent avec deux foyers infectés. Il faudra alors tenir sur deux fronts à la fois.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Most walls start with two outbreaks. You will have to hold two fronts at once.": {
+      "text": "La plupart des murs démarrent avec deux foyers infectés. Il faudra alors tenir sur deux fronts à la fois.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.New shapes to spot: an arrow, a cherry, a face, a bow tie.": {
+      "text": "De nouvelles formes à repérer : une flèche, des cerises, etc.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.New shapes to spot: an arrow, cherries, and more.": {
+      "text": "De nouvelles formes à repérer : une flèche, des cerises, etc.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Next": {
       "text": "Suivant",
@@ -800,7 +2052,11 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Pop what holds a group to the ceiling, and the whole group falls.": {
+      "text": "Eclate les bulles qui retiennent une grappe : elle tombe tout entière.",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Popped": {
       "text": "Eclatées",
@@ -810,6 +2066,18 @@
       "text": "Purifié !",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Race the rot": {
+      "text": "Plus vite que l'infection",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Rainbow bubble": {
+      "text": "Bulle arc-en-ciel",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Rainbow shot": {
+      "text": "Tir arc-en-ciel",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
       "at": "2026-10-14"
@@ -818,13 +2086,57 @@
       "text": "Infection",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.Ruins": {
+      "text": "Ruines",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Swap": {
+      "text": "Echange",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Swapping costs no shot. Check the next bubble and fire it first if it fits better.": {
+      "text": "Echanger ne coûte aucun tir. Regarde la bulle suivante et tire-la d'abord si elle convient mieux.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Tap the Swap ring to change bubbles": {
+      "text": "Touche l'anneau de Swap pour échanger de bulle",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Tap the ring or the next bubble to swap the two.": {
+      "text": "Touche l'anneau ou la bulle suivante pour échanger les deux bulles.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Tap the ring to swap bubbles": {
+      "text": "Touche l'anneau de Swap pour échanger de bulle",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Tap to play": {
       "text": "Tap pour jouer",
       "at": "2026-09-29"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The climb": {
+      "text": "L'ascension",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.": {
+      "text": "Plus l'infection est étendue, plus l'arc-en-ciel est puissant. Garde cette bulle pour le bon moment.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The rainbow": {
+      "text": "L'arc-en-ciel",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The rot": {
+      "text": "L'infection",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.The rot spreads": {
       "text": "L'infection se propage",
@@ -834,13 +2146,37 @@
       "text": "L'infection l'emporte !",
       "at": "2026-09-29"
     },
+    "manifest.json:web.copy.fr.strings.The wall comes down": {
+      "text": "Le mur descend",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The wall moves down after a few shots. A bubble on the red line ends the round.": {
+      "text": "Le mur descend après quelques tirs. Une bulle sur la ligne rouge met fin à la partie.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.": {
+      "text": "Pas de chrono, seulement l'infection. La partie s'arrête quand tout le mur est infecté. Si ton score est encore faible, fais en sorte de toujours avoir des bulles de couleur : un clean total est parfois contre-productif.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.This bubble takes the colour of the shot": {
+      "text": "Cette bulle prendra la bonne couleur",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.This bubble will take the right colour": {
+      "text": "Cette bulle prendra la bonne couleur",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.Throne": {
+      "text": "Trône",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.tagline": {
       "text": "<b class=\"w-aim\">Vise</b>, <b class=\"w-fire\">tire</b> et forme des grappes de 3 bulles pour repousser la magie noire",
@@ -892,6 +2228,10 @@
       "text": "",
       "at": "2026-10-13"
     },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
     "manifest.json:copy.fr.tags.2": {
       "text": "Interrupteurs",
       "at": "2026-10-14"
@@ -926,19 +2266,23 @@
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet": {
+      "text": "Aimant",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -946,18 +2290,26 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "bridgessa": {
+    "game.js:HUD.setRight.hud-right-label.lives": {
+      "text": "Lives",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -988,19 +2340,27 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Last life": {
+      "text": "Dernière vie",
+      "at": "2026-10-19"
     },
     "manifest.json:web.copy.fr.strings.Legendary": {
       "text": "Légendaire",
       "at": "2026-10-18"
     },
+    "manifest.json:web.copy.fr.strings.Lives": {
+      "text": "Vies",
+      "at": "2026-10-19"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Rare": {
       "text": "Rare",
@@ -1008,15 +2368,23 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The score": {
+      "text": "Le score",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "chainring": {
@@ -1126,7 +2494,7 @@
     },
     "game.js:config.copy.start": {
       "text": "Play",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "game.js:config.copy.timeLabel": {
       "text": "Time",
@@ -1181,20 +2549,20 @@
       "at": "2026-10-14"
     },
     "manifest.json:copy.fr.tagline": {
-      "text": "Tape au rythme de la musique. Une bille hypnotique rebondit dans des anneaux sans fin.",
-      "at": "2026-10-14"
+      "text": "Tape au rythme de la musique. Une bille hypnotisante rebondit dans des anneaux sans fin sans jamais perdre le tempo.",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.0": {
-      "text": "Tap rythmé",
-      "at": "2026-10-14"
+      "text": "Rythme",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.1": {
-      "text": "En rythme et en musique",
-      "at": "2026-10-14"
+      "text": "Musique",
+      "at": "2026-10-21"
     },
     "manifest.json:copy.fr.tags.2": {
-      "text": "Mort subite",
-      "at": "2026-10-14"
+      "text": "Hypnotisant",
+      "at": "2026-10-21"
     },
     "manifest.json:description": {
       "text": "Tap the instant a closing ring hits the bouncing ball — every ring lands on a beat of the track, but some beats are empty. Chain perfect taps for a huge combo, then survive the spiked sudden-death ring. On the web the climb crosses five worlds, each with its own rings and its own rule: rewind rings that throw the others back, sticky rings that hold the ball, dark rings that must not be tapped, mixed rings whose dark parts the ball slips through untapped — and all four at once in the last.",
@@ -1288,6 +2656,14 @@
       "text": "Chainring",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Amber": {
+      "text": "Ambre",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Broken ring": {
+      "text": "Anneau brisé",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Close": {
       "text": "Presque",
       "at": "2026-10-14"
@@ -1316,13 +2692,13 @@
       "text": "Temps mort",
       "at": "2026-10-14"
     },
-    "manifest.json:web.copy.fr.strings.Feel the beat": {
-      "text": "Ressent le rythme",
-      "at": "2026-10-14"
-    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fragile ring": {
+      "text": "Anneau fragile",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Full music": {
       "text": "Musique complète",
@@ -1332,9 +2708,9 @@
       "text": "Musique complète",
       "at": "2026-10-14"
     },
-    "manifest.json:web.copy.fr.strings.Game over": {
+    "manifest.json:web.copy.fr.strings.Game Over": {
       "text": "Game Over",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Get ready": {
       "text": "Get ready",
@@ -1350,7 +2726,7 @@
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Max combo": {
       "text": "Combo max",
@@ -1372,9 +2748,17 @@
       "text": "OK",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.On the beat": {
+      "text": "En rythme",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Perfect": {
       "text": "Parfait",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Phantom ring": {
+      "text": "Anneau fantôme",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
@@ -1382,7 +2766,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -1394,11 +2778,15 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Sticky ring": {
       "text": "Anneau collant",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Tap a phantom ring only if it shows bright": {
+      "text": "Tape un anneau fantôme seulement s'il se révèle clair",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.Tap it: the rings behind back off, then rush in": {
       "text": "Frappe les anneaux perturbateurs",
@@ -1412,6 +2800,10 @@
       "text": "Frappe l'anneau lorsque la bille le touche puis tape de nouveau lorsqu'elle repart",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.The round lasts the whole music": {
       "text": "La partie dure toute la musique",
       "at": "2026-10-14"
@@ -1422,11 +2814,11 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.tagline": {
       "text": "Tape en rythme, à l'instant précis où la <b class=\"w-ball\">bille</b> touche un <b class=\"w-ring\">anneau clair</b>. Ne frappe pas les anneaux sombres",
@@ -1572,7 +2964,7 @@
     },
     "game.js:config.copy.start": {
       "text": "Play",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "game.js:config.copy.timeLabel": {
       "text": "Time",
@@ -1618,17 +3010,9 @@
       "text": "Only one way out",
       "at": "2026-10-14"
     },
-    "manifest.json:copy.fr.tagline": {
-      "text": "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho des balles.",
-      "at": "2026-10-13"
-    },
     "manifest.json:copy.fr.tags.0": {
       "text": "Mémorise et vise",
       "at": "2026-09-29"
-    },
-    "manifest.json:copy.fr.tags.1": {
-      "text": "Echo localisation",
-      "at": "2026-10-13"
     },
     "manifest.json:copy.fr.tags.2": {
       "text": "Une seule sortie",
@@ -1702,10 +3086,6 @@
       "text": "Un <b>plaisir</b> à parcourir",
       "at": "2026-09-29"
     },
-    "manifest.json:store.copy.fr.lines.3.kicker": {
-      "text": "30 stages procédurales rejouables",
-      "at": "2026-10-13"
-    },
     "manifest.json:store.copy.fr.lines.3.line": {
       "text": "Difficulté <b>progressive</b>",
       "at": "2026-10-14"
@@ -1768,7 +3148,7 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Found": {
       "text": "Repérés",
@@ -1784,7 +3164,7 @@
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Last pulse": {
       "text": "Dernière impulsion",
@@ -1802,10 +3182,6 @@
       "text": "Ouverte pour de bon",
       "at": "2026-10-14"
     },
-    "manifest.json:web.copy.fr.strings.Out of echoes!": {
-      "text": "Manque d'echo !",
-      "at": "2026-10-14"
-    },
     "manifest.json:web.copy.fr.strings.Perfect read!": {
       "text": "Lecture parfaite !",
       "at": "2026-09-29"
@@ -1816,7 +3192,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Pulse seals the gap": {
       "text": "Passage scellé",
@@ -1832,7 +3208,7 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Score <b>{n}</b> and escape in <b>1</b> pulse": {
       "text": "Marque <b>{n}</b> points et sors en <b>1</b> impulsion",
@@ -1850,13 +3226,17 @@
       "text": "Si proche !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Valves": {
       "text": "Valves",
@@ -1864,7 +3244,7 @@
     },
     "manifest.json:web.copy.fr.strings.Walls": {
       "text": "Murs",
-      "at": "2026-09-29"
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.tagline": {
       "text": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu'à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
@@ -1912,6 +3292,10 @@
       "text": "",
       "at": "2026-10-13"
     },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
     "manifest.json:store.copy.en.lines.3.kicker": {
       "text": "30 levels",
       "at": "2026-10-13"
@@ -1942,7 +3326,7 @@
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Combo lost": {
       "text": "Combo perdu",
@@ -1954,11 +3338,11 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Legendary": {
       "text": "Légendaire",
@@ -1966,7 +3350,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Rare": {
       "text": "Rare",
@@ -1978,11 +3362,15 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "grudgeon": {
@@ -2016,34 +3404,656 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Ice": {
+      "text": "Glace",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Tap to close": {
       "text": "Touche pour fermer",
       "at": "2026-10-18"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    }
+  },
+  "holepocalypse": {
+    "game.js:Lang.t.translated-in-place.the-boss-slows-your-swing": {
+      "text": "The boss slows your swing",
+      "at": "2026-10-20"
+    },
+    "game.js:data.it-raises-fallen-zombies-kno.4ksnt": {
+      "text": "It raises fallen zombies. Knock it out first.",
+      "at": "2026-10-20"
+    },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Golf vs Zombies : testez votre précision sur le green à travers 5 biomes uniques et battez tous les records ! Pas facile d'ajuster son swing quand une horde de zombies s'invite sur le parcours... Découvrez un mélange explosif de précision, de Tower Defense et de pouvoirs destructeurs !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Golf",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Horde de zombies",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Tower Defense",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.A ball in the water is lost.": {
+      "text": "Une balle dans l'eau est perdue.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.A broken obstacle": {
+      "text": "Un obstacle cassé",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Aim from the orange semicircle to lob": {
+      "text": "Vise depuis le demi-cercle orange pour faire un lob",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bag empty": {
+      "text": "Sac vide",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Ball rain": {
+      "text": "Pluie de balles",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Balls and zombies slide on it": {
+      "text": "Les balles et zombies glissent",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bayou Course": {
+      "text": "Parcours du Bayou",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Best chain": {
+      "text": "Meilleure chaîne",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Best score": {
+      "text": "Meilleur score",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Blocked": {
+      "text": "Bloqué",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bog Giant": {
+      "text": "Géant du marais",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Boom volley": {
+      "text": "Salve explosive",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Boomer": {
+      "text": "Boomer",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Boss": {
+      "text": "Boss",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Boss down": {
+      "text": "Boss vaincu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bouncy ball": {
+      "text": "Balle rebondissante",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bunkers": {
+      "text": "Bunkers",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Caddie Colossus": {
+      "text": "Caddie colosse",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Carpet strike": {
+      "text": "Tapis de bombes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Chain x": {
+      "text": "Chaîne x",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Cluster bombs": {
+      "text": "Grappe de bombes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Coloured holes give special balls": {
+      "text": "Les trous colorés donnent des balles spéciales",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Country Club": {
+      "text": "Country club",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Course cleared": {
+      "text": "Parcours nettoyé",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Damaged course": {
+      "text": "Parcours endommagé",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Defeat the <b>{boss}</b>": {
+      "text": "Bats le <b>{boss}</b>",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Desert Links": {
+      "text": "Links du désert",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Direct": {
+      "text": "Direct",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Direct shot in blue, lobbed shot in orange": {
+      "text": "Tir direct en bleu et tir lobé en orange",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Drown <b>{n}</b> zombies": {
+      "text": "Noie <b>{n}</b> zombies",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Drown <b>{n}</b> zombies with one shot": {
+      "text": "Noie <b>{n}</b> zombies avec un seul tir",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Drowned": {
+      "text": "Noyés",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Dunked!": {
+      "text": "Plouf !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Every impact stays on the course": {
+      "text": "Chaque impact reste sur le parcours",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Explosive ball": {
+      "text": "Balle explosive",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fan volley": {
+      "text": "Salve en éventail",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Final score": {
+      "text": "Score final",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fire ball": {
+      "text": "Balle de feu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Firestorm": {
+      "text": "Tempête de feu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Flag back": {
+      "text": "Drapeau récupéré",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Flag lost": {
+      "text": "Drapeau perdu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Flags": {
+      "text": "Drapeaux",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Frozen Links": {
+      "text": "Links gelés",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Giant ball": {
+      "text": "Balle géante",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Golden rain": {
+      "text": "Pluie d'or",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Golf cart": {
+      "text": "Voiturette",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Graves": {
+      "text": "Tombes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Graveyard Greens": {
+      "text": "Green du cimetière",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Great shot!": {
+      "text": "Belle réussite !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Greenkeeper": {
+      "text": "Jardinier",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hailstorm": {
+      "text": "Grêle",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Heavy ball": {
+      "text": "Balle lourde",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hit a zombie hard with a pond behind it": {
+      "text": "Frappe fort un zombie pour le pousser dans l'étang",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hold the line": {
+      "text": "Tiens bon",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hold to fire in bursts": {
+      "text": "Maintiens pour tirer en rafale",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hole blast": {
+      "text": "Onde de choc",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hole in one!": {
+      "text": "Trou en un !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Hole!": {
+      "text": "Dans le trou !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Holes": {
+      "text": "Trous",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Holes sunk": {
+      "text": "Trous réussis",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Homing ball": {
+      "text": "Balle chercheuse",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Horde": {
+      "text": "Horde",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Ice": {
+      "text": "Glace",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Ice ball": {
+      "text": "Balle de glace",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Install now": {
+      "text": "Installer",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It bends every shot": {
+      "text": "Il dévie chaque tir",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It bursts and blows up its neighbours": {
+      "text": "Il explose et souffle ses voisins",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It raises the fallen: knock it out first": {
+      "text": "Il relève les zombies KO avec son pouvoir",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It splits in two when knocked out": {
+      "text": "Il se divise en deux une fois KO",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.It sprints straight down: shoot fast": {
+      "text": "Il court vite",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Its bag blocks shots from below: lob over it or bank off a fence": {
+      "text": "Son sac bloque les tirs directs mais n'est pas efficace contre les lobs",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.KO": {
+      "text": "KO",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Knock out <b>{n}</b> necromancers": {
+      "text": "Mets KO <b>{n}</b> zombies nécromanciens",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Knock out <b>{n}</b> shields": {
+      "text": "Mets KO <b>{n}</b> zombies boucliers",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Knock out <b>{n}</b> shields with a lob": {
+      "text": "Mets KO <b>{n}</b> zombies boucliers avec un lob",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Land <b>{n}</b> lobs on its head": {
+      "text": "Réalise <b>{n}</b> tirs à la tête avec un lob",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Last stand": {
+      "text": "Dernier rempart",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Last stand!": {
+      "text": "Dernier rempart !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Let no runner cross": {
+      "text": "Ne laisse passer aucun zombie coureur",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Let no zombie be raised": {
+      "text": "Empêche le zombie nécromancien d'utiliser son pouvoir",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lob": {
+      "text": "Lob",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lob a ball into the hole": {
+      "text": "Réussis le trou principal avec un lob",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lose no flag": {
+      "text": "Ne perds aucun drapeau",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet hole": {
+      "text": "Trou aimanté",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Make a chain of <b>{n}</b>": {
+      "text": "Enchaîne <b>{n}</b> KO",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Mega shot!": {
+      "text": "Méga tir !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Meteor": {
+      "text": "Météore",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Move the aim out to shoot harder": {
+      "text": "Déplace la viser au loin pour tirer plus fort",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Mower": {
+      "text": "Tondeuses",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Mudder": {
+      "text": "Boueux",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Mudling": {
+      "text": "Mini boueux",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Multiball": {
+      "text": "Multiballe",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Necromancer": {
+      "text": "Nécromancien",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Necromancers": {
+      "text": "Nécromanciens",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Never need the last stand": {
+      "text": "N'utilise pas le dernier rempart (mode Rafale)",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Night": {
+      "text": "Nuit",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Overrun": {
+      "text": "Submergé",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Piercing ball": {
+      "text": "Balle perforante",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Play again": {
+      "text": "Rejouer",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Play the full game": {
+      "text": "Jouer au jeu complet",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Reloading": {
+      "text": "Recharge",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Right on the head!": {
+      "text": "Pleine tête !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Runner": {
+      "text": "Coureur",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Rush": {
+      "text": "Rafale",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Sand slows balls and zombies": {
+      "text": "Le sable freine les balles et les zombies",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Score": {
+      "text": "Score",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Seeker rain": {
+      "text": "Pluie guidée",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Shield": {
+      "text": "Bouclier",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Shields": {
+      "text": "Boucliers",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Sink both holes in one wave": {
+      "text": "Réussis deux trous principaux dans une même vague",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Sink the hole <b>{n}</b> times": {
+      "text": "Réussis <b>{n}</b> trous",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Sniper": {
+      "text": "Sniper",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Splash!": {
+      "text": "Plouf !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Split storm": {
+      "text": "Tempête scindée",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Splitting ball": {
+      "text": "Balle scindée",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Sprinklers": {
+      "text": "Arroseurs",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Start": {
+      "text": "Commencer",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Super bounce": {
+      "text": "Super rebond",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Survive <b>{n}</b> waves": {
+      "text": "Repousse <b>{n}</b> vagues",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The boss slows your Swing": {
+      "text": "Le boss ralentit ton Swing",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The boss slows your swing": {
+      "text": "Le boss ralentit ton swing",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The hole moves": {
+      "text": "Le trou bouge",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The horde comes out of the dark": {
+      "text": "La horde surgit de l'ombre",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The red hole creates a shockwave": {
+      "text": "Le trou rouge créer une onde de choc",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Time freeze": {
+      "text": "Temps figé",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Time's up!": {
+      "text": "Temps écoulé !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Too fast": {
+      "text": "Trop rapide",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Twice the zombies, one hit each": {
+      "text": "Plus nombreux mais aussi plus faibles",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Two holes": {
+      "text": "Deux trous",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Use a lob to get past a horde": {
+      "text": "Utilise un lob pour passer une horde",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Walker": {
+      "text": "Rôdeur",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Wave": {
+      "text": "Vague",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Whirlpools": {
+      "text": "Tourbillons",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Win in under <b>{n}</b> s": {
+      "text": "Gagne en moins de <b>{n}</b> secondes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Wind": {
+      "text": "Vent",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Wind blows left": {
+      "text": "Vent vers la gauche",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Wind blows right": {
+      "text": "Vent vers la droite",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Yeti": {
+      "text": "Yéti",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Zombie King": {
+      "text": "Roi zombie",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Zombies knocked out": {
+      "text": "Zombies KO",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Zombies rise out of them": {
+      "text": "Des zombies sortent des tombes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "Lance des <b class=\"w-shot\">balles</b> de golf sur la horde de zombies ou vise un <b class=\"w-hole\">trou</b> pour obtenir des pouvoirs destructeurs",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Tiens <b>{n}</b> vagues",
+      "at": "2026-10-20"
     }
   },
   "marshmelt": {
+    "game.js:Pop.show.callout-sub.double-points": {
+      "text": "Double points",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -2110,23 +4120,39 @@
     },
     "manifest.json:web.copy.fr.strings.Best chain": {
       "text": "Meilleure chaîne",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bitten!": {
+      "text": "Mordu !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Double points": {
+      "text": "Points doublés",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Geysers": {
+      "text": "Geysers",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lives": {
+      "text": "Vies",
+      "at": "2026-10-19"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -2134,11 +4160,15 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "orbinity": {
@@ -2182,10 +4212,6 @@
       "text": "",
       "at": "2026-10-13"
     },
-    "manifest.json:copy.fr.tagline": {
-      "text": "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaine les trajectoires sans erreur pour créer un combo!",
-      "at": "2026-10-14"
-    },
     "manifest.json:store.copy.en.lines.2.kicker": {
       "text": "Combo",
       "at": "2026-10-14"
@@ -2202,20 +4228,8 @@
       "text": "Go for the <b>best score</b>",
       "at": "2026-10-14"
     },
-    "manifest.json:store.copy.fr.lines.0.line": {
-      "text": "Joues avec la <b>gravité</b>",
-      "at": "2026-10-14"
-    },
-    "manifest.json:store.copy.fr.lines.1.line": {
-      "text": "Utilises les bonnes <b>trajectoires</b>",
-      "at": "2026-10-14"
-    },
     "manifest.json:store.copy.fr.lines.2.kicker": {
       "text": "Combo",
-      "at": "2026-10-14"
-    },
-    "manifest.json:store.copy.fr.lines.2.line": {
-      "text": "Enchaînes les <b>orbites</b>",
       "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.3.kicker": {
@@ -2240,7 +4254,7 @@
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Chain reaction": {
       "text": "Réaction en chaîne",
@@ -2258,13 +4272,17 @@
       "text": "Cosmique !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Evolved": {
+      "text": "Evolution",
+      "at": "2026-10-19"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Last breath": {
       "text": "Dernier souffle",
@@ -2288,7 +4306,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -2296,7 +4314,7 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Solar wind": {
       "text": "Vent solaire",
@@ -2306,13 +4324,17 @@
       "text": "Supernova",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Too slow": {
       "text": "Trop lent",
@@ -2356,6 +4378,10 @@
       "text": "",
       "at": "2026-10-13"
     },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
     "manifest.json:store.copy.en.lines.3.kicker": {
       "text": "30 levels",
       "at": "2026-10-13"
@@ -2366,7 +4392,7 @@
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Chain reaction": {
       "text": "Réaction en chaîne",
@@ -2382,15 +4408,23 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Ice": {
+      "text": "Glace",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet": {
+      "text": "Aimant",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Rare": {
       "text": "Rare",
@@ -2402,19 +4436,27 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Tap to close": {
       "text": "Touche pour fermer",
       "at": "2026-10-18"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Wave": {
+      "text": "Vague",
+      "at": "2026-10-20"
     }
   },
   "radiam": {
@@ -2556,7 +4598,7 @@
     },
     "game.js:config.copy.start": {
       "text": "Play",
-      "at": "2026-10-14"
+      "at": "2026-10-21"
     },
     "game.js:config.copy.timeLabel": {
       "text": "Time",
@@ -2720,11 +4762,11 @@
     },
     "manifest.json:web.copy.fr.strings.Best chain": {
       "text": "Meilleure chaîne",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Biggest blast": {
       "text": "Plus grosse explosion",
@@ -2736,7 +4778,7 @@
     },
     "manifest.json:web.copy.fr.strings.Blocked": {
       "text": "Bloqué",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Combo": {
       "text": "Combo",
@@ -2752,7 +4794,7 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Frozen": {
       "text": "Gelé",
@@ -2760,7 +4802,7 @@
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Jammed!": {
       "text": "Coincé !",
@@ -2788,7 +4830,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Radiant!": {
       "text": "Radieux !",
@@ -2812,19 +4854,23 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Survived": {
       "text": "Survie",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Triple ray": {
       "text": "Triple rayon",
@@ -2844,6 +4890,14 @@
     }
   },
   "slipdeck": {
+    "game.js:HUD.setRight.hud-right-label.lives": {
+      "text": "Lives",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-climb": {
+      "text": "The climb",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -2906,19 +4960,23 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Legendary": {
       "text": "Légendaire",
       "at": "2026-10-18"
     },
+    "manifest.json:web.copy.fr.strings.Lives": {
+      "text": "Vies",
+      "at": "2026-10-19"
+    },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Rare": {
       "text": "Rare",
@@ -2926,15 +4984,19 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "spinshock": {
@@ -2963,8 +5025,8 @@
       "at": "2026-10-13"
     },
     "game.js:config.copy.start": {
-      "text": "Tap to play",
-      "at": "2026-10-14"
+      "text": "Play",
+      "at": "2026-10-21"
     },
     "game.js:config.copy.timeUp": {
       "text": "Time's up!",
@@ -2974,9 +5036,9 @@
       "text": "",
       "at": "2026-10-13"
     },
-    "manifest.json:copy.fr.tagline": {
-      "text": "Toupie Vs toupie. Tap pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
-      "at": "2026-10-13"
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.en.lines.3.kicker": {
       "text": "30 levels",
@@ -3012,15 +5074,15 @@
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.OK": {
       "text": "OK",
@@ -3036,7 +5098,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
@@ -3044,11 +5106,15 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Tops destroyed": {
       "text": "Toupies détruites",
@@ -3122,7 +5188,7 @@
     },
     "army.js:fr.campSub": {
       "text": "Un officier affecté à un poste ne peut plus combattre et ne peut plus partir en mission",
-      "at": "2026-10-18"
+      "at": "2026-10-20"
     },
     "army.js:fr.campTitle": {
       "text": "Camp",
@@ -3310,7 +5376,7 @@
     },
     "army.js:fr.evTentBurn": {
       "text": "Plus de recrues jusqu'au prochain renouvellement",
-      "at": "2026-10-18"
+      "at": "2026-10-20"
     },
     "army.js:fr.f_all": {
       "text": "Toutes",
@@ -3832,6 +5898,10 @@
       "text": "heures",
       "at": "2026-10-18"
     },
+    "game.js:Lang.t.translated-in-place.the-climb": {
+      "text": "The climb",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -3860,20 +5930,8 @@
       "text": "",
       "at": "2026-10-13"
     },
-    "manifest.json:copy.fr.tagline": {
-      "text": "Affrontes une armée de monstre et construit le meilleur Deck possible afin de gagner un maximum de bataille. Convertis les cartes adverses, soit stratégique en défense et positionnement. N'oublies pas aussi que la vie et la gestion du camp est une composante importante pour gagner une guerre. Collectionnes des centaines de cartes uniques!",
-      "at": "2026-10-14"
-    },
     "manifest.json:copy.fr.tags.0": {
       "text": "Gestion, stratégie et mémorisation",
-      "at": "2026-10-14"
-    },
-    "manifest.json:copy.fr.tags.1": {
-      "text": "Grade et Rang",
-      "at": "2026-10-14"
-    },
-    "manifest.json:copy.fr.tags.2": {
-      "text": "Collection et gestion de Deck",
       "at": "2026-10-14"
     },
     "manifest.json:store.copy.en.lines.3.kicker": {
@@ -3891,10 +5949,6 @@
     "manifest.json:store.copy.fr.lines.1.kicker": {
       "text": "Face cachée",
       "at": "2026-10-18"
-    },
-    "manifest.json:store.copy.fr.lines.2.kicker": {
-      "text": "Collection et construction de Deck",
-      "at": "2026-10-14"
     },
     "manifest.json:store.copy.fr.lines.3.kicker": {
       "text": "30 stages",
@@ -3940,20 +5994,8 @@
       "text": "Sergent depuis cinquante ans, il est fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume.",
       "at": "2026-10-18"
     },
-    "manifest.json:web.army.cast.24.lore.fr": {
-      "text": "Fils de bûcheron, Tim s'est engagé de ne jamais couper du bois. Mais dès le premier jour, l'armée lui a tendu une hache. ",
-      "at": "2026-10-18"
-    },
-    "manifest.json:web.army.cast.25.lore.fr": {
-      "text": "Axel dit que le plus court des chemins passe par la palissade. Depuis ses neuf ans, il ne franchi plus de portails.",
-      "at": "2026-10-18"
-    },
     "manifest.json:web.army.cast.26.lore.fr": {
       "text": "Holly abat une palissade en trois coups et la reconstruit en quatre. Elle appelle ça redécorer le camp ennemi.",
-      "at": "2026-10-18"
-    },
-    "manifest.json:web.army.cast.30.lore.fr": {
-      "text": "Doug a été nommé capitaine parce qu'il creusait les tranchées plus vite que tout le monde. Personne ne lui avait expliqué qu’un capitaine était censé donner des ordres plutôt que de continuer à creuser.",
       "at": "2026-10-18"
     },
     "manifest.json:web.army.cast.33.lore.fr": {
@@ -3976,10 +6018,6 @@
       "text": "Le major Hector Vane ne s'est jamais perdu, même s'il a égaré un régiment le temps d'un week-end. On l'a retrouvé exactement là où il l'avait laissé.",
       "at": "2026-10-18"
     },
-    "manifest.json:web.army.cast.41.lore.fr": {
-      "text": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. A quatre-vingt-deux ans, les forêts s'écartent encore devant lui par respect.",
-      "at": "2026-10-18"
-    },
     "manifest.json:web.army.cast.43.lore.fr": {
       "text": "On a mis Val Ore au défi de passer une nuit dans la crypte hantée. Elle en est sortie à l'aube avec le chapeau d'un fantôme.",
       "at": "2026-10-18"
@@ -3988,20 +6026,12 @@
       "text": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas, mais la paperasse, si.",
       "at": "2026-10-18"
     },
-    "manifest.json:web.army.cast.47.lore.fr": {
-      "text": "Noah Fear n'a jamais eu peur de rien, ni des dragons, ni des fantômes, (ni de sa belle-mère). A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes.",
-      "at": "2026-10-18"
-    },
     "manifest.json:web.army.cast.48.lore.fr": {
       "text": "Constance a prêté serment sur un livre à cadenas, puis en a perdu la clé. Depuis, elle tient toutes ses promesses, par précaution.",
       "at": "2026-10-18"
     },
     "manifest.json:web.army.cast.49.lore.fr": {
       "text": "Keith garde les ordres secrets de l'armée dans un livre enchaîné à son poignet. Il dort avec, mange avec. Il a même traversé une rivière à la nage avec.",
-      "at": "2026-10-18"
-    },
-    "manifest.json:web.army.cast.60.lore.fr": {
-      "text": "Ima est si petite qu'elle se cache dans sa propre capuche. Le camp l'envoie voler des secrets mais pour l'instant, elle a volé trois cuillères et une chaussette.",
       "at": "2026-10-18"
     },
     "manifest.json:web.army.cast.7.lore.fr": {
@@ -4060,10 +6090,6 @@
       "text": "Un trésor enterré",
       "at": "2026-10-18"
     },
-    "manifest.json:web.army.events.list.23.text.fr": {
-      "text": "Un marchand ambulant a passé la nuit au camp. Ila payé son souper avec un ticket.",
-      "at": "2026-10-18"
-    },
     "manifest.json:web.army.events.list.23.title.fr": {
       "text": "Le cadeau d'un marchand",
       "at": "2026-10-18"
@@ -4102,10 +6128,6 @@
     },
     "manifest.json:web.army.events.list.32.title.fr": {
       "text": "Le cadeau d'un enfant",
-      "at": "2026-10-18"
-    },
-    "manifest.json:web.army.events.list.33.text.fr": {
-      "text": "Les éclaireurs ont rapportés de nouvelles missions. Le tableau des missions a été renouvelées.",
       "at": "2026-10-18"
     },
     "manifest.json:web.army.events.list.33.title.fr": {
@@ -4452,10 +6474,6 @@
       "text": "Au début de la bataille",
       "at": "2026-10-18"
     },
-    "manifest.json:web.copy.fr.strings.Basic": {
-      "text": "Bannal",
-      "at": "2026-10-18"
-    },
     "manifest.json:web.copy.fr.strings.Bewitched!": {
       "text": "Ensorcelé !",
       "at": "2026-10-14"
@@ -4488,6 +6506,10 @@
       "text": "Cartes",
       "at": "2026-10-18"
     },
+    "manifest.json:web.copy.fr.strings.Clears a trap without blowing up with it.": {
+      "text": "Désamorce un piège sans sauter avec lui.",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Colonel": {
       "text": "Colonel",
       "at": "2026-10-18"
@@ -4496,9 +6518,9 @@
       "text": "Commun",
       "at": "2026-10-18"
     },
-    "manifest.json:web.copy.fr.strings.Does not fight a hidden card: reveals it and goes back to the bottom of the deck.": {
-      "text": "L'éclaireur évite les combats et révèle à distance la force ennemi.",
-      "at": "2026-10-14"
+    "manifest.json:web.copy.fr.strings.Dumb enough to fight a straw man, and to tear it down.": {
+      "text": "Suffisamment stupide pour se battre contre un épouvantail.",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Enemy camp": {
       "text": "Camp ennemi",
@@ -4522,7 +6544,7 @@
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Flag": {
       "text": "Drapeau",
@@ -4566,11 +6588,7 @@
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
-    },
-    "manifest.json:web.copy.fr.strings.Kills the marshal, whatever its tier. Against any other card it is the weakest of all.": {
-      "text": "L'espion peu battre un maréchal mais il n'est pas fait pour le champ de bataille.",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Legendary": {
       "text": "Légendaire",
@@ -4588,6 +6606,14 @@
       "text": "Perdu en forêt",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Loves breaking stones and rocks.": {
+      "text": "Aime casser des pierres et des rochers.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Loves chopping down wooden fences.": {
+      "text": "Aime découper des barrières de bois.",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Major": {
       "text": "Major",
       "at": "2026-10-18"
@@ -4595,6 +6621,10 @@
     "manifest.json:web.copy.fr.strings.Marshal": {
       "text": "Maréchal",
       "at": "2026-10-18"
+    },
+    "manifest.json:web.copy.fr.strings.Never gets lost, least of all in a forest.": {
+      "text": "Ne se perd jamais et surtout pas en forêt.",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.No card can move": {
       "text": "Plus aucune carte ne bouge",
@@ -4634,7 +6664,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Precise!": {
       "text": "Précis !",
@@ -4678,7 +6708,7 @@
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Scout": {
       "text": "Eclaireur",
@@ -4740,13 +6770,9 @@
       "text": "Touche pour fermer",
       "at": "2026-10-18"
     },
-    "manifest.json:web.copy.fr.strings.The highest grade: no soldier outranks it, but the spy kills it.": {
-      "text": "Invincible sur un champ de bataille mais peu se faire surprendre par un espion.",
-      "at": "2026-10-14"
-    },
-    "manifest.json:web.copy.fr.strings.The only grade that burns the book without being bewitched.": {
-      "text": "Possède énormément de savoirs et ne peu pas être ensorcelé.",
-      "at": "2026-10-14"
+    "manifest.json:web.copy.fr.strings.The climb": {
+      "text": "L'ascension",
+      "at": "2026-10-21"
     },
     "manifest.json:web.copy.fr.strings.The only grade that chops down the wooden fence.": {
       "text": "Aime découper des barrières de bois.",
@@ -4758,10 +6784,6 @@
     },
     "manifest.json:web.copy.fr.strings.The only grade that crosses the forest without getting lost.": {
       "text": "Ne se perd jamais et surtout pas en forêt.",
-      "at": "2026-10-14"
-    },
-    "manifest.json:web.copy.fr.strings.The only grade that shatters the skull without being stunned.": {
-      "text": "Courageux et briseur de crâne dans l’âme. ",
       "at": "2026-10-14"
     },
     "manifest.json:web.copy.fr.strings.The only grade that smashes the rock.": {
@@ -4778,11 +6800,11 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.To battle": {
       "text": "A l'assaut",
@@ -4834,6 +6856,14 @@
     }
   },
   "triverse": {
+    "game.js:1159.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:HUD.setRight.hud-right-label.lives": {
+      "text": "Lives",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -4865,6 +6895,14 @@
     "game.js:config.intro.caption": {
       "text": "",
       "at": "2026-10-13"
+    },
+    "game.js:endRound.stat-row-3-label.best-chain": {
+      "text": "Best chain",
+      "at": "2026-10-21"
+    },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.en.lines.3.kicker": {
       "text": "30 levels",
@@ -4890,40 +6928,416 @@
       "text": "Vise le <b>meilleur score</b>",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.A mine": {
+      "text": "Une mine",
+      "at": "2026-10-21"
+    },
     "manifest.json:web.copy.fr.strings.Best chain": {
       "text": "Meilleure chaîne",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Chain x": {
+      "text": "Chaîne x",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Distance (m)": {
+      "text": "Distance (m)",
+      "at": "2026-10-19"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Great run!": {
+      "text": "Superbe partie !",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Holes": {
+      "text": "Trous",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Last life": {
+      "text": "Dernière vie",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Lives": {
+      "text": "Vies",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet": {
+      "text": "Aimant",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Shield": {
+      "text": "Bouclier",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     }
   },
   "vipera": {
+    "game.js:1134.Pop.show.callout-sub": {
+      "text": "Body lost",
+      "at": "2026-10-21"
+    },
+    "game.js:1134.Pop.show.callout-sub.1": {
+      "text": "Bitten!",
+      "at": "2026-10-21"
+    },
+    "game.js:1371.endRound.end-title": {
+      "text": "Apex viper!",
+      "at": "2026-10-21"
+    },
+    "game.js:1371.endRound.end-title.1": {
+      "text": "Great run!",
+      "at": "2026-10-21"
+    },
+    "game.js:1372.endRound.end-title": {
+      "text": "Apex viper!",
+      "at": "2026-10-21"
+    },
+    "game.js:1372.endRound.end-title.1": {
+      "text": "Great run!",
+      "at": "2026-10-21"
+    },
+    "game.js:1381.endRound.stat-row-1-value": {
+      "text": " blocks",
+      "at": "2026-10-21"
+    },
+    "game.js:1382.endRound.stat-row-1-value": {
+      "text": " blocks",
+      "at": "2026-10-21"
+    },
+    "game.js:937.HUD.setRight.hud-right-value": {
+      "text": "◈ ",
+      "at": "2026-10-21"
+    },
+    "game.js:978.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:985.Pop.show.callout": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:998.Pop.show.callout": {
+      "text": "Chain x",
+      "at": "2026-10-21"
+    },
+    "game.js:998.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-21"
+    },
+    "game.js:HUD.setLeft.hud-left-label.length": {
+      "text": "Length",
+      "at": "2026-10-21"
+    },
+    "game.js:HUD.setRight.hud-right-label.lives": {
+      "text": "Lives",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.a-ring-warns-of-the-next-lig": {
+      "text": "A ring warns of the next lightning strike.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.a-shadow-always-shows-where-": {
+      "text": "A shadow always shows where a rock will land. The snake would rather avoid a bump on the head.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.amber": {
+      "text": "Amber",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.armor": {
+      "text": "Armor",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.at-full-length-vipera-grows-": {
+      "text": "At full length, Vipera grows an armor that takes one hit for her.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.chain-of-5-10-15": {
+      "text": "Chain of 5, 10, 15…",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.damage": {
+      "text": "Damage",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.don-t-bump-into-the-logs": {
+      "text": "Don't bump into the logs.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.drifting-logs": {
+      "text": "Drifting logs",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.each-hit-costs-a-life-vipera": {
+      "text": "Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.eggs-and-score": {
+      "text": "Eggs and score",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.eggs-make-vipera-grow-and-sc": {
+      "text": "Eggs make Vipera grow and score points. A stage ends after a set distance.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.embers-rise-just-before-the-": {
+      "text": "Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.evolution": {
+      "text": "Evolution",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.falling-rocks": {
+      "text": "Falling rocks",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.fire-traps": {
+      "text": "Fire traps",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.fireflies": {
+      "text": "Fireflies",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.fireflies-help-vipera-collec": {
+      "text": "Fireflies help Vipera collect eggs. They fly off at the first hit.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.geysers": {
+      "text": "Geysers",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.idol": {
+      "text": "Idol",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.jungle": {
+      "text": "Jungle",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.lair": {
+      "text": "Lair",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.lightning": {
+      "text": "Lightning",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.lightning-can-even-strike-tw": {
+      "text": "Lightning can even strike twice in a row.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.like-spike-traps-but-the-fla": {
+      "text": "Like spike traps, but the flames come out faster.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.moving": {
+      "text": "Moving",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.only-raised-spikes-are-dange": {
+      "text": "Only raised spikes are dangerous.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.quickly-get-clear-of-that-si": {
+      "text": "Quickly get clear of that side before you get bitten.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.rainbow-egg": {
+      "text": "Rainbow egg",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.red-thorns-are-dangerous-but": {
+      "text": "Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.spike-traps": {
+      "text": "Spike traps",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.swamp": {
+      "text": "Swamp",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.temple": {
+      "text": "Temple",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.the-basics": {
+      "text": "The basics",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.the-eagle": {
+      "text": "The eagle",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.the-eagle-s-shadow-tells-you": {
+      "text": "The eagle's shadow tells you which side its next attack will come from.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.the-longer-vipera-gets-the-f": {
+      "text": "The longer Vipera gets, the faster she goes. A hit never slows her down.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.the-spikes-creep-out-slowly-": {
+      "text": "The spikes creep out slowly, then shoot up all at once.",
+      "at": "2026-10-21"
+    },
+    "game.js:Lang.t.translated-in-place.the-viper": {
+      "text": "The viper",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.then-vipera-blinks-and-nothi": {
+      "text": "Then Vipera blinks, and nothing can hurt her for a second.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.they-creep-out-slowly-then-s": {
+      "text": "They creep out slowly, then shoot up all at once.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.this-egg-is-so-good-it-insta": {
+      "text": "This egg is so good it instantly gives Vipera a rainbow armor.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.thorns": {
+      "text": "Thorns",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.to-get-the-armor-back-grow-t": {
+      "text": "To get the armor back, grow to full length again or eat a rainbow egg.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.vipera-instantly-grows-to-ju": {
+      "text": "Vipera instantly grows to just short of full length.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.vipera-never-stops-a-tap-cha": {
+      "text": "Vipera never stops. A tap changes her direction.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.volcano": {
+      "text": "Volcano",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.walls-push-vipera-back-at-no": {
+      "text": "Walls push Vipera back, at no cost.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.watch-out-once-landed-rocks-": {
+      "text": "Watch out, once landed, rocks stay hot and dangerous.",
+      "at": "2026-10-20"
+    },
+    "game.js:Lang.t.translated-in-place.with-this-bonus-points-count": {
+      "text": "With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.armor": {
+      "text": "Armor",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.falling-rocks": {
+      "text": "Falling rocks",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.geysers": {
+      "text": "Geysers",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.lightning": {
+      "text": "Lightning",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.spike-traps": {
+      "text": "Spike traps",
+      "at": "2026-10-20"
+    },
+    "game.js:Notify.learn.notice.the-eagle": {
+      "text": "The eagle",
+      "at": "2026-10-20"
+    },
+    "game.js:Pop.show.callout-sub.double-points": {
+      "text": "Double points",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout-sub.evolved": {
+      "text": "Evolved",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout-sub.full-length": {
+      "text": "Full length",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout-sub.magnet": {
+      "text": "Magnet",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout-sub.shield": {
+      "text": "Shield",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.amber": {
+      "text": "Amber",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.bonus-lost": {
+      "text": "Bonus lost",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.fireflies": {
+      "text": "Fireflies",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.gold-egg": {
+      "text": "Gold egg",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.idol": {
+      "text": "Idol",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.last-life": {
+      "text": "Last life",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.magnet-lost": {
+      "text": "Magnet lost",
+      "at": "2026-10-21"
+    },
+    "game.js:Pop.show.callout.rainbow-egg": {
+      "text": "Rainbow egg",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.ctaBar": {
       "text": "Install now",
       "at": "2026-10-13"
@@ -4936,13 +7350,21 @@
       "text": "Final score",
       "at": "2026-10-13"
     },
+    "game.js:config.copy.gameOver": {
+      "text": "Torn apart",
+      "at": "2026-10-21"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Slither again",
+      "at": "2026-10-21"
+    },
     "game.js:config.copy.scoreLabel": {
       "text": "Score",
       "at": "2026-10-13"
     },
     "game.js:config.copy.start": {
-      "text": "Tap to play",
-      "at": "2026-10-14"
+      "text": "Play",
+      "at": "2026-10-21"
     },
     "game.js:config.copy.timeLabel": {
       "text": "Time",
@@ -4956,9 +7378,129 @@
       "text": "",
       "at": "2026-10-13"
     },
+    "game.js:config.tagline": {
+      "text": "<b class=\"w-tap\">Tap</b> to change direction and grab the bonuses to <b class=\"w-eat\">grow</b>",
+      "at": "2026-10-21"
+    },
+    "game.js:config.title": {
+      "text": "Vipera",
+      "at": "2026-10-21"
+    },
+    "game.js:data.a-shadow-marks-a-falling-roc.1oyhx": {
+      "text": "A shadow marks a falling rock",
+      "at": "2026-10-20"
+    },
+    "game.js:data.adder.3jyz6": {
+      "text": "Adder",
+      "at": "2026-10-20"
+    },
+    "game.js:data.basilisk.19c78": {
+      "text": "Basilisk",
+      "at": "2026-10-20"
+    },
+    "game.js:data.mamba.3sdw8": {
+      "text": "Mamba",
+      "at": "2026-10-20"
+    },
+    "game.js:data.the-armor-takes-the-next-hit.69l0k": {
+      "text": "The armor takes the next hit",
+      "at": "2026-10-20"
+    },
+    "game.js:data.the-eagle-s-shadow-shows-the.1etcz": {
+      "text": "The eagle's shadow shows the side it will strike",
+      "at": "2026-10-20"
+    },
+    "game.js:data.viper.3yww8": {
+      "text": "Viper",
+      "at": "2026-10-20"
+    },
+    "game.js:data.watch-out-for-flames.1l9cg": {
+      "text": "Watch out for flames",
+      "at": "2026-10-20"
+    },
+    "game.js:data.watch-out-for-lightning.ow37y": {
+      "text": "Watch out for lightning",
+      "at": "2026-10-20"
+    },
+    "game.js:data.watch-out-for-spikes.1tr8q": {
+      "text": "Watch out for spikes",
+      "at": "2026-10-20"
+    },
+    "game.js:endRound.stat-row-1-label.snake-length": {
+      "text": "Snake length",
+      "at": "2026-10-21"
+    },
+    "game.js:endRound.stat-row-2-label.distance-m": {
+      "text": "Distance (m)",
+      "at": "2026-10-21"
+    },
+    "game.js:endRound.stat-row-3-label.best-chain": {
+      "text": "Best chain",
+      "at": "2026-10-21"
+    },
+    "game.js:endRound.stat-row-4-label.best-score": {
+      "text": "Best score",
+      "at": "2026-10-21"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Slip into Vipera's skin and explore five biomes packed with traps and challenges. One tap changes direction, but you'll need to master the art of the slither to collect bonuses and top the leaderboard!",
+      "at": "2026-10-21"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Snake",
+      "at": "2026-10-21"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Traps",
+      "at": "2026-10-21"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Distance",
+      "at": "2026-10-21"
+    },
     "manifest.json:copy.fr.tagline": {
-      "text": "Déplace-toi comme un serpent. Chaque TAP change la direction du reptile : grandis et évite les pièges !",
-      "at": "2026-10-01"
+      "text": "Glissez-vous dans la peau de Vipera et explorez cinq biomes remplis de pièges et de défis. Un simple Tap suffit pour changer de direction mais il faudra maîtriser l'art de l'ondulation pour faire le plein de bonus et devenir le roi du classement !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Snake",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Pièges",
+      "at": "2026-10-20"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Distance",
+      "at": "2026-10-20"
+    },
+    "manifest.json:description": {
+      "text": "A viper races up an endless burrow. Every tap flips the side it carves toward, so a rhythm of taps weaves it through the thorns. Gems grow the body — and the longer it gets, the higher its head rides and the less time there is to read what comes next. Eat all the way to full length and the scales plate over: the armour eats the next bite for free. Unarmoured, a thorn strips the body back to a stump and costs one of only three lives — the whole ladder has to be eaten again, at the speed the run has already reached.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.0.kicker": {
+      "text": "Snake",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.0.line": {
+      "text": "<b>Reptile</b> movement",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.1.kicker": {
+      "text": "Multiple bonuses",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.1.line": {
+      "text": "Mutation and <b>evolution</b>",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.2.kicker": {
+      "text": "Traps",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.2.line": {
+      "text": "Watch out for <b>danger</b>",
+      "at": "2026-10-21"
     },
     "manifest.json:store.copy.en.lines.3.kicker": {
       "text": "30 levels",
@@ -4968,6 +7510,38 @@
       "text": "<b>Rising</b> difficulty",
       "at": "2026-10-13"
     },
+    "manifest.json:store.copy.en.lines.4.kicker": {
+      "text": "Progressive difficulty",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.en.lines.4.line": {
+      "text": "Go for the best <b>score</b>",
+      "at": "2026-10-21"
+    },
+    "manifest.json:store.copy.fr.lines.0.kicker": {
+      "text": "Snake",
+      "at": "2026-10-20"
+    },
+    "manifest.json:store.copy.fr.lines.0.line": {
+      "text": "Ondule comme un <b>reptile</b>",
+      "at": "2026-10-20"
+    },
+    "manifest.json:store.copy.fr.lines.1.kicker": {
+      "text": "Plusieurs Bonus",
+      "at": "2026-10-20"
+    },
+    "manifest.json:store.copy.fr.lines.1.line": {
+      "text": "Mutation et <b>évolution</b>",
+      "at": "2026-10-20"
+    },
+    "manifest.json:store.copy.fr.lines.2.kicker": {
+      "text": "Pièges",
+      "at": "2026-10-20"
+    },
+    "manifest.json:store.copy.fr.lines.2.line": {
+      "text": "Attention aux <b>dangers</b>",
+      "at": "2026-10-20"
+    },
     "manifest.json:store.copy.fr.lines.3.kicker": {
       "text": "30 stages",
       "at": "2026-10-14"
@@ -4976,45 +7550,397 @@
       "text": "Difficulté <b>progressive</b>",
       "at": "2026-10-14"
     },
+    "manifest.json:store.copy.fr.lines.4.kicker": {
+      "text": "Difficulté progressive",
+      "at": "2026-10-20"
+    },
     "manifest.json:store.copy.fr.lines.4.line": {
       "text": "Vise le meilleur <b>score</b>",
       "at": "2026-10-14"
     },
+    "manifest.json:tagline": {
+      "text": "Tap to swerve the viper and grow for maximum bonus",
+      "at": "2026-10-21"
+    },
+    "manifest.json:title": {
+      "text": "Vipera",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings. blocks": {
+      "text": " blocs",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.A ring warns of the next lightning strike.": {
+      "text": "Un cercle annonce le prochain impact de foudre.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.A shadow always shows where a rock will land. The snake would rather avoid a bump on the head.": {
+      "text": "Une ombre montre toujours le point d'impact d'un rocher. Le serpent préfère éviter les bosses sur la tête.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.A shadow marks a falling rock": {
+      "text": "L'ombre annonce la chute d'un rocher",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Adder": {
+      "text": "Aspic",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Amber": {
+      "text": "Ambre",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Apex viper!": {
+      "text": "Vipère suprême !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Armor": {
+      "text": "Armure",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.At full length, Vipera grows an armor that takes one hit for her.": {
+      "text": "Arrivée à sa taille maximale, Vipera se couvre d'une armure qui encaisse un dégât.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Basilisk": {
+      "text": "Basilic",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Best chain": {
       "text": "Meilleure chaîne",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Best score": {
       "text": "Meilleur score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bitten!": {
+      "text": "Mordu !",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Body lost": {
+      "text": "Corps tranché",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Bonus lost": {
+      "text": "Bonus perdu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Chain of 5, 10, 15…": {
+      "text": "Chaîne de 5, 10, 15…",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Chain x": {
+      "text": "Chaîne x",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Damage": {
+      "text": "Dégâts",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Distance (m)": {
+      "text": "Distance (m)",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Don't bump into the logs.": {
+      "text": "Ne te cogne pas contre les troncs.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Double points": {
+      "text": "Points doublés",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Drifting logs": {
+      "text": "Troncs flottants",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses.": {
+      "text": "Chaque dégât coûte une vie. Vipera reprend alors sa taille de départ et perd ses bonus.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Eggs and score": {
+      "text": "Œufs et score",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Eggs make Vipera grow and score points. A stage ends after a set distance.": {
+      "text": "Les œufs font grandir Vipera et rapportent des points. Le stage se termine après une certaine distance.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.": {
+      "text": "Des braises montent juste avant que la lave jaillisse. Et rappelons-le, Vipera n'aime pas du tout la lave.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Evolution": {
+      "text": "Evolution",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Evolved": {
+      "text": "Evolution",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Falling rocks": {
+      "text": "Chutes de rochers",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fire traps": {
+      "text": "Pièges de feu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fireflies": {
+      "text": "Lucioles",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Fireflies help Vipera collect eggs. They fly off at the first hit.": {
+      "text": "Les lucioles aident Vipera à ramasser les œufs. Elles partent toutefois au premier dégât reçu.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Full length": {
+      "text": "Taille max",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Geysers": {
+      "text": "Geysers",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Gold egg": {
+      "text": "Œuf d'or",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Great run!": {
+      "text": "Superbe partie !",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Idol": {
+      "text": "Idole",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Jungle": {
+      "text": "Jungle",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lair": {
+      "text": "Repaire",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Last life": {
+      "text": "Dernière vie",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Length": {
+      "text": "Longueur",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Lightning": {
+      "text": "Foudre",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lightning can even strike twice in a row.": {
+      "text": "La foudre peut même frapper deux fois de suite.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Like spike traps, but the flames come out faster.": {
+      "text": "Comme les pièges à pointes, mais les flammes sortent plus vite.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Lives": {
+      "text": "Vies",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet": {
+      "text": "Aimant",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Magnet lost": {
+      "text": "Aimant perdu",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Mamba": {
+      "text": "Mamba",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Moving": {
+      "text": "Déplacement",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Only raised spikes are dangerous.": {
+      "text": "Seules les pointes relevées sont dangereuses.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Plated": {
+      "text": "Armure",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-10-19"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Quickly get clear of that side before you get bitten.": {
+      "text": "Quitte vite ce côté pour ne pas te faire croquer.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Rainbow egg": {
+      "text": "Œuf arc-en-ciel",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns.": {
+      "text": "Les épines rouges sont dangereuses, mais un passage reste toujours libre. Les meilleurs joueurs remarqueront qu'on peut même se faufiler entre deux épines rapprochées.",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Shield": {
+      "text": "Armure",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Slither again": {
+      "text": "Rampe encore",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Snake length": {
+      "text": "Longueur du serpent",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Spike traps": {
+      "text": "Pièges à pointes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Swamp": {
+      "text": "Marais",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Temple": {
+      "text": "Temple",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The armor takes the next hit": {
+      "text": "Le prochain dégât sera pour l'armure",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.The eagle": {
       "text": "L'aigle",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.The eagle's shadow shows the side it will strike": {
+      "text": "L'ombre de l'aigle annonce le côté qu'il va frapper",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The eagle's shadow tells you which side its next attack will come from.": {
+      "text": "L'ombre de l'aigle annonce de quel côté viendra sa prochaine attaque.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The longer Vipera gets, the faster she goes. A hit never slows her down.": {
+      "text": "Plus Vipera est longue, plus elle va vite. Un dégât ne la ralentit pas.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The spikes creep out slowly, then shoot up all at once.": {
+      "text": "Les pointes sortent doucement, puis surgissent d'un coup.",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.copy.fr.strings.The viper": {
+      "text": "La vipère",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Then Vipera blinks, and nothing can hurt her for a second.": {
+      "text": "Ensuite, Vipera clignote et plus rien ne peut la blesser pendant une seconde.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.They creep out slowly, then shoot up all at once.": {
+      "text": "Elles sortent doucement, puis surgissent d'un coup.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.This egg is so good it instantly gives Vipera a rainbow armor.": {
+      "text": "Cet œuf est si bon qu'il donne aussitôt à Vipera une armure arc-en-ciel.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Thorns": {
+      "text": "Epines",
+      "at": "2026-10-20"
+    },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
-      "at": "2026-10-14"
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.To get the armor back, grow to full length again or eat a rainbow egg.": {
+      "text": "Pour retrouver cette armure, atteins de nouveau la taille maximale ou mange un œuf arc-en-ciel.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Torn apart": {
+      "text": "Déchiqueté",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Viper": {
+      "text": "Vipère",
+      "at": "2026-10-19"
+    },
+    "manifest.json:web.copy.fr.strings.Vipera instantly grows to just short of full length.": {
+      "text": "Vipera grandit d'un coup jusqu'à presque sa taille maximale.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Vipera never stops. A tap changes her direction.": {
+      "text": "Vipera avance sans arrêt. Un tap change sa direction.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Volcano": {
+      "text": "Volcan",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Walls push Vipera back, at no cost.": {
+      "text": "Les murs repoussent Vipera, sans dégât.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out for flames": {
+      "text": "Attention aux flammes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out for lightning": {
+      "text": "Attention à la foudre",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out for spikes": {
+      "text": "Attention aux pointes",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Watch out, once landed, rocks stay hot and dangerous.": {
+      "text": "Attention, une fois au sol, les rochers restent brûlants et dangereux.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.": {
+      "text": "Avec ce bonus, les points comptent double. C'est le moment de ramasser un maximum d'œufs et de réussir des chaînes complètes.",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "<b class=\"w-tap\">Tap</b> pour changer de direction et attrape les Bonus pour <b class=\"w-eat\">grandir</b>",
+      "at": "2026-10-20"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Reach <b>{n} m</b> without being torn apart",
+      "at": "2026-10-21"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Atteins <b>{n} m</b> sans te faire déchiqueter",
+      "at": "2026-10-20"
     }
   }
 }

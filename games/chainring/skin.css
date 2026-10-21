@@ -121,3 +121,8 @@
     44%    { opacity:.95; }
     100%   { transform:scale(1.35); opacity:0; }
   }
+
+  /* ---- the guide (Game.guide) ----------------------------------------------
+     The third star's page shows the shell's own painted star, three times. */
+  .cr-gstars { display:flex; gap:18px; align-items:center; justify-content:center; }
+  .cr-gstars img { width:96px; height:96px; object-fit:contain; }

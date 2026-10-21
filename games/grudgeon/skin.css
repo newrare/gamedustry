@@ -64,10 +64,12 @@
   #gd-card.on { opacity:1; }
   #gd-card.off { opacity:0; pointer-events:none; transition-duration:.25s; }
   .gd-text { margin:0; font-size:24px; line-height:1.4; text-align:center; color:var(--text); opacity:.88; }
-  .gd-list { display:flex; flex-direction:column; gap:14px; width:100%; }
-  .gd-list .btn { width:100%; height:auto; min-height:var(--h); padding-top:10px; padding-bottom:10px; }
-  .gd-list .btn-txt { align-items:center; white-space:normal; text-align:center; }
-  .gd-list .btn.is-sold { opacity:.4; }
+  .gd-picks { display:flex; flex-direction:column; gap:14px; width:100%; }
+  .gd-picks .btn { width:100%; height:auto; min-height:var(--h); padding-top:10px; padding-bottom:10px; }
+  .gd-picks .btn-txt { align-items:center; white-space:normal; text-align:center; }
+  .gd-picks .btn.is-sold { opacity:.4; }
+  /* a ware's painted item, beside its name (Game.button's `art`) */
+  .gd-picks .btn .gd-ico { flex:0 0 auto; width:72px; height:72px; object-fit:contain; margin-right:6px; }
 
   /* the party: four heroes, lit when they are coming */
   .gd-party { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; }
@@ -250,3 +252,21 @@
   .gd-sk-ico { flex:0 0 40px; width:40px; height:40px; margin-top:2px; background:var(--ink); -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; }
   .gd-sk-t p:first-child { display:flex; flex-wrap:wrap; gap:4px 12px; align-items:baseline; font-size:20px; letter-spacing:2px; font-weight:900; }
   .gd-sk-t p:first-child i { font-style:normal; font-size:18px; color:#8fdcff; }
+
+  /* ---- the guide's pictures (Game.guide) ----------------------------------
+     The game's own nodes and cuts on the guide's plate: heroes and yokai
+     standing side by side, a band's scene cropped to a strip, the scrolls
+     as the fight's bar deals them — inert here, a picture and not a control
+     — and the shop's and the altar's cards, dealt as their cards deal them. */
+  .gd-gp-row { display:flex; align-items:flex-end; justify-content:center; gap:12px; max-width:100%; }
+  .gd-gp-row > img { flex:0 1 auto; min-width:0; width:auto; height:220px; object-fit:contain; }
+  .gd-gp-duel > img { height:270px; }
+  .gd-gp-skill { align-items:center; gap:18px; }
+  .gd-gp-skill > img { height:190px; }
+  .gd-gp-big .gd-scroll { transform:scale(1.6); margin:30px; }
+  .gu-pic > .gd-gp-fig { max-height:300px; height:300px; width:auto; }
+  .gu-pic > .gd-gp-scene { width:480px; height:250px; max-height:none; object-fit:cover; border-radius:14px; }
+  .gd-gp-scrolls { display:flex; justify-content:center; gap:22px; padding:10px 0; }
+  .gd-gp-scrolls .gd-scroll { pointer-events:none; }
+  .gd-gp-inert { pointer-events:none; }
+  .gd-info .gd-more { align-self:center; }

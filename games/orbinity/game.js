@@ -419,21 +419,21 @@
         { rift: true, belt: [[0.2, 0, 0.8, 1]], moon: 0.3, pulsar: 0.3, worm: 1 },      // a steep slant
         { rift: true, belt: [[0, 0.75, 1, 0.3]], moon: 0.3, pulsar: 0.3, worm: 1 }      // the other way
       ],
-      // What a rule says the first time the climb meets it (Notify).
+      // What a rule says the first time the climb meets it: Notify.learn,
+      // once per player, and each key is the id of the rule's guide page.
+      // Only what the frame cannot say is named: a warning to decode or a
+      // hidden rule. Moving planets, the wind's arrows, a binary pair and a
+      // belt of rocks read at a glance, so they have a page and no notice.
       intro: {
-        moon:   { word: "Moons block the way",  sub: "Graze one for a bonus" },
-        pulsar: { word: "Pulsar shields",       sub: "For a second, a shield bounces you off" },
-        orbit:  { word: "Planets on the move",  sub: "They circle a mini black hole" },
-        nebula: { word: "Nebulae",              sub: "Blue slows you down, orange speeds you up" },
-        wind:   { word: "Solar wind",           sub: "It bends every shot that crosses it" },
-        repel:  { word: "Repulsors",            sub: "They push you away: bank off them" },
-        binary: { word: "Binary pair",          sub: "One pulls you in, its twin pushes you out" },
+        moon:   { word: "Moons",                sub: "Graze, never hit" },
+        pulsar: { word: "Pulsar shields",       sub: "Sparks warn of the shield" },
+        nebula: { word: "Nebulae",              sub: "Blue slows, orange speeds up" },
+        repel:  { word: "Repulsors",            sub: "Glancing off one is safe" },
         worm:   { word: "Wormholes",            sub: "In one, out the other, toward a planet" },
         stream: { word: "Asteroid stream",      sub: "Its lane lights up first: wait it out" },
-        belt:   { word: "Asteroid belts",       sub: "No way through: go round by the edges" },
         patient: { word: "The chain waits",     sub: "Only a mistake breaks it now" },
         hole:   { word: "Black hole",           sub: "It catches you and flings you on" },
-        rift:   { word: "All four edges are open", sub: "Fly out one, back in the other" }
+        rift:   { word: "Open edges",           sub: "Fly out one, back in the other" }
       }
     }
   };
@@ -542,8 +542,8 @@
     // Overtime: the clock ran out while a chain was live, so the round plays on
     // (see onTimeUp). `endIn` >= 0 means the chain has since died and the end
     // screen is queued; `otT` is how long the overtime has lasted, which is
-    // what closes the chain window (see comboWindow). `otWarn` counts the
-    // squeeze callouts already shown.
+    // what closes the chain window (see comboWindow). `otWarn` says the
+    // squeeze notice has been shown.
     var overtime, otT, otShown, otWarn, endIn;
 
     // The rectangle the comet rebounds in — the visible arena, rebuilt on every
@@ -1472,12 +1472,7 @@
           }
           return 1;
         });
-        var nb = { x: q.x, y: q.y, r: r, fast: fast, k: fast ? NB.fast : NB.slow };
-        var g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-        var col = fast ? "#ffc24a" : "#4f9dff";
-        g.addColorStop(0, rgba(col, 0.32)); g.addColorStop(0.7, rgba(col, 0.2)); g.addColorStop(1, rgba(col, 0));
-        nb.field = g;
-        nebulae.push(nb);
+        nebulae.push(makeNebula(q.x, q.y, r, fast));
       }
       for (n = 0; n < ROW.wind; n++) {
         var ang = Rand.range(0, Math.PI), dir = Rand.pick([-1, 1]);
@@ -1486,6 +1481,16 @@
                      y: Rand.range(Layout.top + 200, Layout.bottom - 200),
                      ux: ux, uy: uy, nx: -uy, ny: ux });
       }
+    }
+
+    // A nebula: slow (blue) or fast (orange), its cloud a gradient round the origin.
+    function makeNebula(x, y, r, fast) {
+      var nb = { x: x, y: y, r: r, fast: fast, k: fast ? NB.fast : NB.slow };
+      var g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      var col = fast ? "#ffc24a" : "#4f9dff";
+      g.addColorStop(0, rgba(col, 0.32)); g.addColorStop(0.7, rgba(col, 0.2)); g.addColorStop(1, rgba(col, 0));
+      nb.field = g;
+      return nb;
     }
 
     /* The repulsor's look, its own and nobody else's: a dark plum core under
@@ -1806,12 +1811,8 @@
         Fx.ring(p.x, p.y, { from: p.r, to: p.captureR * 1.6, color: NOVA, width: 7, life: 0.55 });
         Fx.burst(p.x, p.y, { color: [NOVA, "#ffffff"], count: 14, speed: 260, size: 5, life: 0.5 });
         Sound.clip("nova", 0.6);
-        // told three times, then the corona speaks for itself
-        var told = Store.get("orbinityNovaTips", 0);
-        if (told < 3) {
-          Store.set("orbinityNovaTips", told + 1);
-          Notify.say("Supernova", { sub: "Reach it with the chain alive", kind: "rare", icon: "sparkles" });
-        }
+        // named once per player, then the corona speaks for itself
+        Notify.learn("nova", "Supernova", { sub: "Reach the supernova with the chain alive" });
         return;
       }
     }
@@ -1897,9 +1898,12 @@
       HUD.setScoreNow(0);
       showCombo();
       Fx.reset();
-      // The first level a rule turns up on says what it does; the motor holds
-      // a notice back until the round's entrance has landed.
-      for (i = 0; i < intro.length; i++) Pop.show("score", { word: intro[i].word, sub: intro[i].sub });
+      // The first level a rule turns up on names it, once per player, and the
+      // notice opens that rule's page of the guide; the motor holds it back
+      // until the round's entrance has landed.
+      for (i = 0; i < intro.length; i++) {
+        Notify.learn(intro[i], LAD.intro[intro[i]].word, { sub: LAD.intro[intro[i]].sub });
+      }
     }
 
     function onResize() {
@@ -2493,7 +2497,7 @@
           Pop.show("score", { word: "x" + had + Lang.t(" lost"), cls: "pop-lost",
                               at: { x: comet.x, y: comet.y - 48 } });
         }
-        Sound.clip("lost", 0.55);
+        Sound.clip("lost", 0.55, 0.7);
       }
       if (overtime) queueEnd();
     }
@@ -2756,7 +2760,7 @@
       Fx.ring(c.x, c.y, { from: c.r, to: 560, color: NOVA2, width: 6, life: 0.9 });
       Fx.burst(c.x, c.y, { color: [NOVA, NOVA2, "#ffffff", TIERS[tier].halo], count: 60, speed: 620,
                            size: 7, life: 0.9, grav: 20 });
-      Sound.clip("supernova", 0.85);
+      Sound.clip("supernova", 0.85, 1.6);
       Sound.clip("boom", 0.8, 0.7);
       for (i = 0; i < planets.length; i++) {
         p = planets[i];
@@ -3716,12 +3720,11 @@
       Round.stop();
       // Deliberately understated for a moment this big: overtime starts WHILE
       // the comet is mid-flight, so a hero callout would black out exactly the
-      // field the player has to read to stay alive. The compact chip sits high,
-      // out of the play area, and it is gone in half a second.
+      // field the player has to read to stay alive. It is an event the clock
+      // made, not the player, so it is a notice, pinned out of the play area.
       Overlay.vignette(TIERS[tier].halo, 0.7, 480);
       Fx.flash("#ffffff", 0.1, 3);
-      Pop.show("combo", { word: "Overtime", sub: "Keep the chain alive",
-                          cls: "pop-ot", at: "top", hold: 300 });
+      Notify.say("Overtime", { sub: "Keep the chain alive", kind: "warn", icon: "hourglass", guide: "overtime" });
       Sound.clip("milestone", 0.75, 0.82);
       Ad.track("overtime", { score: score, combo: combo });
     }
@@ -3739,17 +3742,13 @@
       // the window overtime has left. This is the natural end of a great run.
       if (comboT <= 0) { breakCombo("Chain cold"); return; }
 
-      // Call out the squeeze as it bites, twice, so losing never feels random:
-      // the player is told the window is closing before it closes on them.
+      // Call out the squeeze once, as it bites, so losing never feels random:
+      // the timer slot counts the window down, and this says it is nearly shut.
       var w = comboWindow();
-      if (otWarn < 1 && w <= C.window * 0.5) {
+      if (otWarn < 1 && w <= C.window * 0.25) {
         otWarn = 1;
-        Pop.show("alert", { word: "Window closing", sub: w.toFixed(1) + Lang.t("s per hop"),
-                             at: "upperLeft", hold: 300 });
-      } else if (otWarn < 2 && w <= C.window * 0.25) {
-        otWarn = 2;
-        Pop.show("alert", { word: "Last breath", sub: w.toFixed(1) + Lang.t("s per hop"),
-                             at: "upperLeft", hold: 300 });
+        Notify.say("Last breath", { sub: w.toFixed(1) + Lang.t("s per hop"), kind: "loss",
+                                    icon: "hourglass", guide: "overtime" });
         Overlay.vignette("#ff4d6d", 0.7, 900);
       }
 
@@ -3817,13 +3816,13 @@
       // the first patient level says so
       if (BIO.patient && n === LAD.from[LAD.worlds.indexOf(BIO)] && LAD.worlds.indexOf(BIO) ===
           (function () { for (var w = 0; w < LAD.worlds.length; w++) if (LAD.worlds[w].patient) return w; return -1; })()) {
-        intro.push(LAD.intro.patient);
+        intro.push("patient");
       }
       // The first row a rule appears in is where it is introduced.
       for (k in LAD.intro) {
         if (!LAD.intro.hasOwnProperty(k) || !row[k]) continue;
         for (i = 0; i < n - 1 && !LAD.levels[i][k]; i++) {}
-        if (i === n - 1) intro.push(LAD.intro[k]);
+        if (i === n - 1) intro.push(k);
       }
     }
 
@@ -3837,8 +3836,417 @@
       return goals ? { goal: goals[n - LAD.from[w]] } : null;
     }
 
+    /* --- THE GUIDE (packages/webshell/guide.js) ---------------------------
+       Every rule, as pages, and every page SHOWS before it tells: its
+       picture is a small field of the round drawn by the round's own
+       renderer — makePlanet and the sprites, drawPlanets, drawTail and the
+       rest — on a canvas of its own, with the round's `ctx` lent to it for
+       the length of the call. The renderer reads the module's state (the
+       planets, the holes, the comet, the clock, the world...), so `stage`
+       swaps a field of its own in, draws it, frees what it built and puts
+       the round's state back as it found it: the guide opens before any
+       round (the Help card) as well as over one. A page's level is the first
+       row of ladder.levels that deals its rule — the row applyLevel names it
+       on, with Notify.learn(key), whose line in the log opens page `key`. */
+    function fill(s, v) {
+      for (var k in v) if (v.hasOwnProperty(k)) s = s.split("{" + k + "}").join(String(v[k]));
+      return s;
+    }
+    function firstLevel(k) {
+      for (var i = 0; i < LAD.levels.length; i++) if (LAD.levels[i][k]) return i + 1;
+      return 0;
+    }
+    // the first stage of the first world that holds the chain's clock
+    function patientLevel() {
+      for (var w = 0; w < LAD.worlds.length; w++) if (LAD.worlds[w].patient) return LAD.from[w];
+      return 0;
+    }
+    // the last stage whose world forgives a wall
+    function softUntil() {
+      for (var w = 0; w < LAD.worlds.length; w++) if (!LAD.worlds[w].soft) return LAD.from[w] - 1;
+      return LAD.levels.length;
+    }
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+    // The world's own sky behind the field, as buildBackground lays it: the
+    // painted space of the world (the nebula without one) under its scrim,
+    // in a frame with rounded corners.
+    function picSky(W, H) {
+      var im = BIO && typeof ArtImages !== "undefined" ? ArtImages[BIO.sky] : null, r = 18;
+      if (!im || !im.width) im = Images.bg1;
+      ctx.beginPath();
+      ctx.moveTo(r, 0); ctx.arcTo(W, 0, W, H, r); ctx.arcTo(W, H, 0, H, r);
+      ctx.arcTo(0, H, 0, 0, r); ctx.arcTo(0, 0, W, 0, r); ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = CONFIG.bg;
+      ctx.fillRect(0, 0, W, H);
+      if (im && im.width) {
+        var s = Math.max(W / im.width, H / im.height);
+        ctx.drawImage(im, (W - im.width * s) / 2, (H - im.height * s) / 2, im.width * s, im.height * s);
+      }
+      ctx.fillStyle = "rgba(7,4,24,.46)";
+      ctx.fillRect(0, 0, W, H);
+    }
+    function rowOf(r) {
+      var out = {}, k;
+      for (k in NO_ROW) if (NO_ROW.hasOwnProperty(k)) out[k] = NO_ROW[k];
+      for (k in r || {}) if (r.hasOwnProperty(k)) out[k] = r[k];
+      return out;
+    }
+    /* A field of the round on a W x H canvas: `o.world` (an index of
+       ladder.worlds), `o.row` (the level row's rules), `o.zoom`, `o.t` (the
+       clock it is drawn at), `o.combo` and `o.aura` (the chain the comet
+       wears), `o.walls` (the arena's edges), `o.hint` (the landing ring).
+       `build` places the bodies with the round's own constructors; `o.draw`
+       replaces the round's paint order when a page draws something else. */
+    function stage(W, H, o, build) {
+      var keep = { planets: planets, holes: holes, systems: systems, nebulae: nebulae, winds: winds,
+                   repellers: repellers, worms: worms, streams: streams, belt: belt, comet: comet,
+                   trail: trail, clock: clock, BIO: BIO, ROW: ROW, tier: tier, tierCols: tierCols,
+                   combo: combo, aura: aura, auraPop: auraPop, orbitTurns: orbitTurns,
+                   overtime: overtime, novaP: novaP, run: run, holeHold: holeHold, famLast: famLast,
+                   holeSprite: holeSprite, holeSig: holeSig, repelSprite: repelSprite, repelSig: repelSig,
+                   rockSprites: rockSprites, rockSig: rockSig, rockById: rockById,
+                   bl: Bounds.left, br: Bounds.right, bt: Bounds.top, bb: Bounds.bottom };
+      var z = o.zoom || 1, i;
+      planets = []; holes = []; systems = []; nebulae = []; winds = []; repellers = []; worms = [];
+      streams = []; belt = null; trail = []; run = null; novaP = null; overtime = false;
+      comet = { x: -999, y: -999, vx: 0, vy: 0, dirX: 1, dirY: 0, flying: true, host: null };
+      clock = o.t || 0; BIO = o.world == null ? null : LAD.worlds[o.world]; ROW = rowOf(o.row);
+      combo = o.combo || 0; tier = 0; tierCols = null; aura = o.aura || 0; auraPop = 0;
+      orbitTurns = 0; holeHold = 0; famLast = -1;
+      holeSprite = null; repelSprite = null; rockSprites = null; rockById = {};
+      Bounds.left = 0; Bounds.top = 0; Bounds.right = W / z; Bounds.bottom = H / z;
+      try {
+        return paintPic(W, H, function () {
+          picSky(W, H);
+          ctx.scale(z, z);
+          refreshTier();
+          if (build) build();
+          if (o.draw) { o.draw(); return; }
+          if (o.walls) drawBounds();
+          drawNebulae(); drawWinds(); drawHoles(); drawWorms(); drawSystems(); drawRepellers();
+          drawPlanets(); drawBelt(); drawStreams();
+          if (o.hint && !comet.flying) drawLandingHint();
+          if (trail.length > 1) { drawAura(); drawNebulaFx(); drawTail(); drawHead(); }
+        });
+      } finally {
+        for (i = 0; i < planets.length; i++) freePlanet(planets[i]);
+        if (holeSprite) freeCanvas(holeSprite.cvs);
+        if (repelSprite) freeCanvas(repelSprite.cvs);
+        if (rockSprites) for (i = 0; i < rockSprites.length; i++) freeCanvas(rockSprites[i].cvs);
+        planets = keep.planets; holes = keep.holes; systems = keep.systems; nebulae = keep.nebulae;
+        winds = keep.winds; repellers = keep.repellers; worms = keep.worms; streams = keep.streams;
+        belt = keep.belt; comet = keep.comet; trail = keep.trail; clock = keep.clock; BIO = keep.BIO;
+        ROW = keep.ROW; tier = keep.tier; tierCols = keep.tierCols; combo = keep.combo; aura = keep.aura;
+        auraPop = keep.auraPop; orbitTurns = keep.orbitTurns; overtime = keep.overtime;
+        novaP = keep.novaP; run = keep.run; holeHold = keep.holeHold; famLast = keep.famLast;
+        holeSprite = keep.holeSprite; holeSig = keep.holeSig; repelSprite = keep.repelSprite;
+        repelSig = keep.repelSig; rockSprites = keep.rockSprites; rockSig = keep.rockSig;
+        rockById = keep.rockById;
+        Bounds.left = keep.bl; Bounds.right = keep.br; Bounds.top = keep.bt; Bounds.bottom = keep.bb;
+      }
+    }
+    // A body of the field: makePlanet's own, pushed where drawPlanets reads it.
+    function body(x, y, r, kind) { var p = makePlanet(x, y, r, kind || ""); planets.push(p); return p; }
+    /* The comet circling planet p at angle a (dir: the way it turns), its
+       tail coiled behind it along the orbit as reset() pre-coils it. */
+    function circling(p, a, dir) {
+      var R = p.restR, v = orbitSpeed(R) * R, i, b;
+      comet = { x: p.x + Math.cos(a) * R, y: p.y + Math.sin(a) * R, flying: false, host: p,
+                angle: a, dir: dir, orbitR: R, dirX: -Math.sin(a) * dir, dirY: Math.cos(a) * dir };
+      comet.vx = comet.dirX * v; comet.vy = comet.dirY * v;
+      var L = Math.min(S.length * stretch(), Math.PI * 2 * R * 0.72), n = Math.ceil(L / S.step);
+      trail = [];
+      for (i = 0; i <= n; i++) {
+        b = a - dir * i * S.step / R;
+        trail.push({ x: p.x + Math.cos(b) * R, y: p.y + Math.sin(b) * R });
+      }
+    }
+    /* The comet in flight along a curve from (x0, y0) bent toward (cx, cy),
+       its nucleus at (x1, y1): the tail is the curve's last stretch, its
+       length the one the chain gives it. `wrap` folds it through the
+       rift's open edges, where the tail breaks as it does in a round. */
+    function flying(x0, y0, cx, cy, x1, y1, wrap) {
+      var pts = [], i, u, L = S.length * stretch(), len = 0, last;
+      for (i = 200; i >= 0; i--) {
+        u = i / 200;
+        pts.push({ x: (1 - u) * (1 - u) * x0 + 2 * u * (1 - u) * cx + u * u * x1,
+                   y: (1 - u) * (1 - u) * y0 + 2 * u * (1 - u) * cy + u * u * y1 });
+      }
+      trail = [pts[0]]; last = pts[0];
+      for (i = 1; i < pts.length && len < L; i++) {
+        var d = dist(pts[i].x, pts[i].y, last.x, last.y);
+        if (d < S.step) continue;
+        len += d; last = pts[i]; trail.push(pts[i]);
+      }
+      var dx = x1 - cx, dy = y1 - cy, m = Math.sqrt(dx * dx + dy * dy) || 1;
+      comet = { x: x1, y: y1, flying: true, host: null, dirX: dx / m, dirY: dy / m, vx: 0, vy: 0 };
+      if (wrap) {
+        var Wd = Bounds.right - Bounds.left, Hd = Bounds.bottom - Bounds.top;
+        for (i = 0; i < trail.length; i++) {
+          trail[i] = { x: ((trail[i].x % Wd) + Wd) % Wd, y: ((trail[i].y % Hd) + Hd) % Hd };
+        }
+        comet.x = trail[0].x; comet.y = trail[0].y;
+      }
+    }
+    // The four looks of the comet, from a fresh chain to the hottest.
+    function tiersPic() {
+      return stage(480, 300, { zoom: 0.8, world: 0, draw: function () {
+        for (var i = 0; i < TIERS.length; i++) {
+          var x = 75 + 150 * i;
+          combo = TIERS[i].at; tierCols = null; refreshTier();
+          flying(x - 40, 370, x + 50, 230, x, 105);
+          drawTail(); drawHead();
+        }
+      } }, null);
+    }
+
+    var guide = {
+      chapters: function () {
+        var s = fill, lv = firstLevel;
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "fling", title: Lang.t("Tap to fling"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 0, combo: 1, aura: 0.9, hint: true }, function () {
+                  circling(body(150, 215, 38), -Math.PI / 2, 1);
+                  body(430, 140, 34);
+                });
+              },
+              lines: [
+                Lang.t("Tap and the comet lets go of its planet. It flies straight on, the way it was turning."),
+                Lang.t("A white ring shows where the shot will land. A red ring warns of a crash.") ] },
+            { id: "chain", title: Lang.t("The chain"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 0, combo: 4, aura: 0.75 }, function () {
+                  circling(body(190, 190, 34), -0.6, 1);
+                  body(440, 210, 40);
+                });
+              },
+              lines: [
+                s(Lang.t("Catch the next planet within {s} seconds, or the chain is lost."), { s: C.window }),
+                s(Lang.t("Circling one planet {n} times breaks it. So do moons, asteroids and, from stage {w}, walls."),
+                  { n: C.maxOrbits, w: softUntil() + 1 }) ] },
+            { id: "score", title: Lang.t("What a planet pays"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 0, combo: 2, aura: 0.8 }, function () {
+                  body(165, 178, 60);
+                  circling(body(415, 178, 26), Math.PI * 0.8, -1);
+                });
+              },
+              rows: [
+                [Lang.t("Times the chain, up to"), "x" + CONFIG.score.maxMult],
+                [Lang.t("Every fifth planet caught, times the chain"), "+" + CONFIG.score.milestone] ],
+              lines: [
+                Lang.t("The smaller the planet, the more it pays.") ] }
+          ] },
+          { key: "combo", label: Lang.t("Chains"), pages: [
+            { id: "tiers", title: Lang.t("The comet evolves"), pic: tiersPic,
+              lines: [
+                Lang.t("The longer the chain, the hotter the comet.") ] },
+            { id: "nova", title: Lang.t("Supernova"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.8, world: 0, combo: 5, aura: 0.8, t: 1 }, function () {
+                  body(410, 190, 36).nova = { born: 0.5 };
+                  flying(35, 340, 105, 120, 235, 130);
+                });
+              },
+              lines: [
+                s(Lang.t("From a chain of x{n}, a new planet may appear golden for {s} seconds."), { n: NV.minCombo, s: NV.life }),
+                Lang.t("Reach the supernova without breaking the chain. The comet then hops from planet to planet on its own.") ] },
+            { id: "overtime", title: Lang.t("Overtime"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 0, combo: 6, aura: 0.2, t: 0.087 }, function () {
+                  circling(body(215, 180, 36), -0.4, 1);
+                  body(455, 255, 30);
+                });
+              },
+              lines: [
+                Lang.t("If time runs out while your chain is alive, the round goes into overtime."),
+                Lang.t("The time to reach the next planet keeps shrinking. The round ends when the chain breaks.") ] }
+          ] },
+          { key: "inner", label: Lang.t("Inner system"), pages: [
+            { id: "nebula", title: Lang.t("Nebulae"), lv: lv("nebula"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 0, combo: 3, aura: 0.7 }, function () {
+                  nebulae.push(makeNebula(220, 220, 160, false), makeNebula(540, 210, 140, true));
+                  flying(30, 400, 120, 260, 240, 215);
+                });
+              },
+              lines: [
+                Lang.t("A blue nebula slows the comet to a crawl, and the chain's clock with it."),
+                Lang.t("An orange one speeds the comet up, but not the clock.") ] },
+            { id: "orbit", title: Lang.t("Planets on the move"), lv: lv("orbit"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 0, combo: 2, aura: 0.8 }, function () {
+                  var sys = { a: 130, b: 130 * OB.flat, cos: Math.cos(0.25), sin: Math.sin(0.25),
+                              w: Math.PI * 2 / 8, binary: false, ph: -0.3, p: null, x: 450, y: 215 };
+                  systems.push(sys);
+                  spawnOrbiter(sys);
+                  circling(body(120, 250, 32), -Math.PI / 2, 1);
+                });
+              },
+              lines: [
+                Lang.t("Some planets circle a mini black hole. Aim where the planet is going to be.") ] }
+          ] },
+          { key: "lunar", label: Lang.t("Moons"), pages: [
+            { id: "moon", title: Lang.t("Moons"), lv: lv("moon"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 1, combo: 2, aura: 0.8 }, function () {
+                  body(440, 215, 40, "moon").moon.a0 = Math.PI * 0.85;
+                  circling(body(110, 320, 28), -Math.PI / 2, 1);
+                });
+              },
+              lines: [
+                Lang.t("A moon circles its planet. Hit it and the chain is lost, so time your tap.") ] },
+            { id: "eclipse", title: Lang.t("Eclipse"), lv: lv("moon"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 1, combo: 3, aura: 0.8 }, function () {
+                  body(470, 215, 40, "moon").moon.a0 = Math.PI;
+                  flying(180, 430, 170, 260, 230, 95);
+                });
+              },
+              rows: [
+                [Lang.t("One eclipse on the way"), "x2"],
+                [Lang.t("Two eclipses"), "x3"] ],
+              lines: [
+                Lang.t("Skim past a moon without touching it. The planet you land on then pays more.") ] },
+            { id: "wind", title: Lang.t("Solar wind"), lv: lv("wind"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 1, combo: 2, aura: 0.8, t: 0.4 }, function () {
+                  var a = 0.3;
+                  winds.push({ x: 343, y: 215, ux: Math.cos(a), uy: Math.sin(a), nx: -Math.sin(a), ny: Math.cos(a) });
+                  body(560, 110, 32);
+                  flying(140, 410, 220, 150, 420, 250);
+                });
+              },
+              lines: [
+                Lang.t("The solar wind pushes every shot that crosses it. Aim a little into the wind.") ] },
+            { id: "stream", title: Lang.t("Asteroid stream"), lv: lv("stream"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 1, row: { stream: true }, t: 10 }, function () {
+                  buildRocks();
+                  var a = 0.42, b = -0.5;
+                  streams.push({ x: 343, y: 150, ux: Math.cos(a), uy: Math.sin(a), nx: -Math.sin(a), ny: Math.cos(a),
+                                 t0: 9.6, t1: 10.6, t2: 12, shown: true, rocks: scatterRocks(3000, 1, nextFamily()) });
+                  streams.push({ x: 343, y: 330, ux: Math.cos(b), uy: Math.sin(b), nx: -Math.sin(b), ny: Math.cos(b),
+                                 t0: 8, t1: 9, t2: 11, shown: true, rocks: scatterRocks(3000, 1, nextFamily()) });
+                });
+              },
+              lines: [
+                Lang.t("A lane glows red just before asteroids sweep through it. Hitting them breaks the chain.") ] }
+          ] },
+          { key: "pulsar", label: Lang.t("Pulsars"), pages: [
+            { id: "pulsar", title: Lang.t("Pulsar shields"), lv: lv("pulsar"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 2, combo: 3, aura: 0.8, t: 2.6 }, function () {
+                  body(450, 215, 36, "pulsar").pulse = { period: 3, phase: 0, bump: -9 };
+                  flying(40, 380, 110, 180, 230, 170);
+                });
+              },
+              lines: [
+                s(Lang.t("Every few seconds, a pulsar raises a shield for {n} second. The comet bounces off it."), { n: PU.shield }),
+                Lang.t("Sparks on the pulsar's rim warn you first. A bounce keeps the chain, but the clock keeps running.") ] },
+            { id: "patient", title: Lang.t("The chain waits"), lv: patientLevel(),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 2, combo: 7, aura: 1 }, function () {
+                  circling(body(205, 178, 36), -0.5, -1);
+                  body(445, 235, 32);
+                });
+              },
+              lines: [
+                Lang.t("The chain no longer runs out of time, however long you circle."),
+                Lang.t("Now only a wall, a moon or an asteroid breaks the chain. In overtime, the clock comes back.") ] },
+            { id: "repel", title: Lang.t("Repulsors"), lv: lv("repel"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 2, combo: 3, aura: 0.8, t: 0.3 }, function () {
+                  buildRepelSprite();
+                  repellers.push({ x: 330, y: 230, sys: null });
+                  flying(30, 300, 330, 400, 560, 120);
+                });
+              },
+              lines: [
+                Lang.t("A repulsor pushes the comet away. Bouncing off it is safe, so use it to bank a shot.") ] }
+          ] },
+          { key: "abyss", label: Lang.t("Black hole"), pages: [
+            { id: "hole", title: Lang.t("Black hole"), lv: lv("hole"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.85, world: 3, combo: 4, aura: 0.8 }, function () {
+                  holes.push(makeHoleField({ x: 290, y: 180, spin: 1, dip: -1, auto: true,
+                                             r: HO.horizon, restR: HO.horizon * 1.9, captureR: HO.catch }));
+                  buildHoleSprite();
+                  body(480, 105, 30);
+                  flying(10, 345, 90, 320, 195, 245);
+                });
+              },
+              lines: [
+                Lang.t("Reach a black hole's ring. It swings the comet round, then flings it at a planet."),
+                Lang.t("No tap needed. The chain's clock starts over.") ] },
+            { id: "binary", title: Lang.t("Binary pair"), lv: lv("binary"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 3, combo: 2, aura: 0.8, t: 0.5 }, function () {
+                  var sys = { a: 95, b: 95, cos: 1, sin: 0, w: Math.PI * 2 / 7, binary: true,
+                              ph: Math.PI * 0.9, p: null, x: 440, y: 215 };
+                  systems.push(sys);
+                  var tw = { x: 0, y: 0, sys: sys };
+                  twinAt(sys, clock, tw);
+                  repellers.push(tw);
+                  buildRepelSprite();
+                  spawnOrbiter(sys);
+                  circling(body(110, 300, 28), -Math.PI / 2, 1);
+                });
+              },
+              lines: [
+                Lang.t("A planet and a repulsor circle each other. One pulls, the other pushes.") ] }
+          ] },
+          { key: "rift", label: Lang.t("Rift"), pages: [
+            { id: "rift", title: Lang.t("The rift"), lv: lv("rift"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 4, row: { rift: true }, walls: true, combo: 3, aura: 0.8, t: 0.4 }, function () {
+                  body(200, 170, 34);
+                  body(470, 330, 30);
+                  flying(500, 260, 600, 230, 760, 190, true);
+                });
+              },
+              lines: [
+                Lang.t("All four edges are open. Fly out of one and you come back through the opposite one."),
+                Lang.t("Going through an edge is often the shortest way to a planet.") ] },
+            { id: "belt", title: Lang.t("Asteroid belts"), lv: lv("belt"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 4, row: { rift: true, belt: [[0.5, 0, 0.5, 1]] }, walls: true,
+                                         combo: 2, aura: 0.8, t: 0.4 }, function () {
+                  buildRocks();
+                  belt = makeBelt(ROW.belt);
+                  circling(body(150, 215, 32), -Math.PI / 2, 1);
+                  body(530, 220, 34);
+                });
+              },
+              lines: [
+                Lang.t("You can't fly through a belt. Go round it through the open edges.") ] },
+            { id: "worm", title: Lang.t("Wormholes"), lv: lv("worm"),
+              pic: function () {
+                return stage(480, 300, { zoom: 0.7, world: 4, row: { rift: true }, walls: true, combo: 2, aura: 0.8, t: 0.6 }, function () {
+                  worms.push({ ax: 170, ay: 120, bx: 520, by: 310 });
+                  body(560, 110, 30);
+                  circling(body(150, 320, 28), -Math.PI / 2, 1);
+                });
+              },
+              lines: [
+                Lang.t("The comet enters one mouth and comes out of the other, aimed at a planet. Your chain is safe.") ] }
+          ] }
+        ];
+      }
+    };
+
     return { reset: reset, onDown: onDown, update: update, render: render,
              onTimeUp: onTimeUp, onResize: onResize,
-             applyLevel: applyLevel, levelGoal: levelGoal, levelWon: finishRound };
+             applyLevel: applyLevel, levelGoal: levelGoal, levelWon: finishRound, guide: guide };
   })();
 

@@ -5,7 +5,7 @@
     title:   "Holepocalypse",
     /* ONE sentence: the shot and the hole. The stage below plays the same
        thing — a press in the blue band, a ball rolling into a zombie. */
-    tagline: "Fling <b class=\"w-shot\">golf balls</b> at the horde and roll one into the <b class=\"w-hole\">hole</b> to blast them all",
+    tagline: "Fling golf <b class=\"w-shot\">balls</b> at the zombie horde or aim for a <b class=\"w-hole\">hole</b> to get destructive powers",
     /* No clock: a round ends on its own goal (the last wave cleared, the
        boss down) or when the last flag falls after the last stand. */
     gameSeconds: 0,
@@ -62,7 +62,7 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "Tee off",
+      start:      "Start",
       ctaBar:     "Install now",
       ctaEnd:     "Play the full game",
       replay:     "Play again",
@@ -149,6 +149,17 @@
     var SPLIT_R = 210, LOB_R = 380;  // DEAD_ZONE..SPLIT_R rolls, SPLIT_R..LOB_R lobs
     var AUTO_RATE = 0.12, MIN_CLIMB = 120;
     var RUSH_TIME = 6, LAST_TIME = 8, LAST_PUSH = 450;
+    /* A DIRECT shot leaves off its line by up to AIM_ERR radians, and the
+       golfer aims better under STRESS: a crowded field is not made harder by
+       the aim on top of it, a quiet one is where the shot has to be earned.
+       The stress counts the zombies standing (one in the lower half of the
+       field counts STRESS_NEAR more, a boss STRESS_BOSS), from calm at
+       STRESS_CALM to full at STRESS_FULL, and follows that count at
+       STRESS_RATE a second so a spawn does not snap the aim. The error is
+       triangular inside the cone the preview draws. Lobs keep their own
+       scatter; the gun (Rush, the last stand) is exact. */
+    var AIM_ERR_CALM = 0.28, AIM_ERR_STRESS = 0.012;
+    var STRESS_CALM = 1, STRESS_FULL = 9, STRESS_NEAR = 1, STRESS_BOSS = 5, STRESS_RATE = 1.5;
 
     // ---- table ----------------------------------------------------------
     /* A golf course, not a pinball table: the fairway is FLAT. A ball leaves
@@ -160,21 +171,46 @@
     var ROLL_DECEL = 520, ROLL_DRAG = 0.9, RAIL_BOUNCE = 0.6;
     var REST_SPEED = 14, REST_TIME = 0.45;   // slower than this is at rest; then it fades home
     var BUMPER_R = 30, BUMPER_KICK = 0.85, BALL_LIFE = 12;
+    /* An obstacle lies flat on the grass like a cup (BUMPER_SQUASH) and its
+       collision is that ellipse. It can be broken: BUMPER_HP points, a ball
+       taking them as it takes a zombie's, a blast or a super too. */
+    var BUMPER_HP = 6, GRAVE_HP = 8, BAG_HP = 4, BUMPER_SCORE = 50;
     var SAND_DECEL = 900, ICE_K = 0.3;
 
     // ---- hole -----------------------------------------------------------
     var HOLE_R = 22, HOLE_MAX_SPEED = 560, HOLE_PULL = 1600;
     var SPECIAL_MAX = 4, SHOCK_COVER = 0.8, SHOCK_TIME = 0.5, SHOCK_BOSS = 15;
+    /* The shockwave runs over the grass as an ELLIPSE, flatter than a circle
+       (the fairway's perspective) yet rounder than a cup, or a wave that
+       covers the field would be a horizontal band. Its front is soft and
+       wavers: the player reads roughly how far it went, not a line. */
+    var SHOCK_SQUASH = 0.62;
+    /* THE WAVE IS WORTH THE SHOT. A hole sunk from close by is easy, so its
+       wave is small and only hurts; one sunk far up the field, lobbed in,
+       banked or threaded through the horde is hard, and its wave is the
+       big one that wipes the field. `shotDifficulty` scores the shot 0..1:
+       the distance from the tee (SHOCK_NEAR..SHOCK_FAR) plus a share for
+       each trick. The wave covers SHOCK_MIN..SHOCK_MAX of the field, knocks
+       out what it reaches from SHOCK_KILL up (below it, it deals 2 to 6),
+       and the shake, the flash and the score grow with it. */
+    var SHOCK_MIN = 0.3, SHOCK_MAX = 0.85, SHOCK_NEAR = 380, SHOCK_FAR = 930, SHOCK_KILL = 0.5;
 
     // ---- zombies --------------------------------------------------------
     var MON_MASS = 2.5, BALL_E = 0.8, MON_DRAG = 3.5, MON_E = 0.6, MON_HIT_SPEED = 240;
     var DMG_SPEED = 380, MIN_DMG_SPEED = 150, WOBBLE = 14, FAN_SPEED = 40;
     var WALK_FPS = 7, HIT_TIME = 0.3, KO_TIME = 0.6, KO_HOLD = 0.7, KO_FADE = 0.4;
+    // a life gauge shows on a hit, for LIFE_SHOW seconds, and fades out over
+    // the last LIFE_FADE of them; the next hit brings it back (bosses keep their bar)
+    var LIFE_SHOW = 2, LIFE_FADE = 0.3;
     var BOOMER_RADIUS = 120, BOOMER_DMG = 3, BOOMER_PUSH = 520;
-    /* A pond is a whirlpool for a zombie that has just been hit: within
-       POND_REACH of its bank it is pulled in, harder the closer it is, for
-       as long as the hit's tag lasts. A walker it never touches. */
-    var DROWN_SPEED = 40, POND_REACH = 150, POND_PULL = 1500;
+    /* A pond is a whirlpool for a zombie a ball has just knocked back into
+       it: a DIRECT hit of at least POND_SHOT, the zombie within POND_REACH
+       of the bank, and the pond behind it — the push no more than ~50° off
+       the line to the water (POND_AIM, a cosine). Then, for POND_TIME, that
+       one pond pulls it in, harder the closer it is. A walker, a zombie hit
+       by another zombie and a pond in front of it are never touched. */
+    var DROWN_SPEED = 40, POND_REACH = 90, POND_PULL = 1500;
+    var POND_SHOT = 700, POND_AIM = 0.64, POND_TIME = 1.0;
     /* A boss hit by a shot is knocked back a step and stunned, once per
        BOSS_POISE: the hits inside that window still wear it down, but a
        volley does not push it off the top of the field. */
@@ -194,9 +230,22 @@
     var SLOT_R = 34, TARGET_COOL = 8, LEFT_EXTRA = 3, SUPER_KILLS = 12;
     var SIDE_HOLE_R = 26, SIDE_HOLE_MAX = 900, SIDE_HOLE_PULL = 1800;
     var BOUNCY_SPEED = 1500, SPLIT_GENS = 3, BALLS_CAP = 70;
+    var FAN_VOLLEY_SPEED = 2500, FAN_VOLLEY_GLIDE = 0.45, JET_THICK = 95, JET_NOZZLE = 0.15;
+    var CART_SPEED = 560, CART_MIST = 0.7, CART_GATE = 30, PLANE_SPEED = 950;
+    /* A mudling touched by any ball bursts: a small splash of mud that
+       knocks (and chains through) whatever stands next to it. */
+    var MUDLING_BLAST = 70, MUDLING_PUSH = 320;
+    var MUD_SQUASH = 0.55;   // the bog's mud lies on the grass as this ellipse
+    var MOWER_SPEED = 560, PORTAL_OPEN = 0.35, PORTAL_RX = 16, PORTAL_RY = 58;
     var HEAVY_MASS = 4, GIANT_R = 2.2, HOMING_ACC = 2200, HOMING_TIME = 3;
 
     var FLAGS = 3, KILL_SCORE = 100, HOLE_SCORE = 300;
+    /* A zombie that takes a flag BLOWS UP on the line, and its blast throws
+       the rest of the horde back: every zombie under the middle of the field
+       is sent up towards it (CROSS_BACK of the way, so each lands short of
+       it and the order of the horde holds), and a boss is shoved like the
+       rest. One zombie through must not be three flags in a row. */
+    var CROSS_R = 140, CROSS_BACK = 0.85;
     var DIRECT_COL = "#8fd3ff", LOB_COL = "#ffa640", ACCENT = "#9fe03a";
 
     /* ======================================================================
@@ -234,8 +283,10 @@
       boomer:  { name: "Boomer", hp: 2, speed: 0.8, r: 28, h: 112, walk: [1, 8], hit: [9, 12], ko: [13, 16] },
       shield:  { name: "Shield", hp: 4, speed: 0.8, r: 32, h: 120, walk: [1, 8], hit: [9, 12], ko: [13, 16] },
       mudder:  { name: "Mudder", hp: 4, speed: 0.9, r: 32, h: 120, walk: [1, 8], hit: [9, 12], ko: [13, 15] },
-      mudling: { name: "Mudling", art: "mudder", hp: 1, speed: 1.4, r: 18, h: 58, walk: [16, 16], hit: [16, 16], ko: [16, 16], noHp: true },
-      digger:  { name: "Digger", hp: 3, speed: 1.1, r: 28, h: 110, walk: [1, 4], dig: [5, 8], mound: [9, 9], surface: [10, 12], hit: [13, 14], ko: [15, 16] },
+      /* A mudder's half is one picture and no legs, so it does not walk:
+         it sits where the split threw it, and the wave is not over until it
+         is knocked out. */
+      mudling: { name: "Mudling", art: "mudder", hp: 1, speed: 0, r: 18, h: 58, walk: [16, 16], hit: [16, 16], ko: [16, 16], noHp: true, still: true },
       runner:  { name: "Runner", hp: 1, speed: 2.2, r: 26, h: 116, walk: [1, 8], hit: [9, 12], ko: [13, 16], fps: 13, straight: true, noBonus: true },
       necro:   { name: "Necromancer", hp: 5, speed: 0.6, r: 30, h: 124, walk: [1, 4], cast: [5, 8], hit: [9, 12], ko: [13, 16] },
       greenkeeper: { name: "Greenkeeper", boss: true, art: "bossGreenkeeper", hp: 100, speed: 0.55, r: 50, h: 196, walk: [1, 8], hit: [9, 12], ko: [13, 16], straight: true },
@@ -245,7 +296,7 @@
       king:        { name: "Zombie King", boss: true, art: "bossKing", hp: 240, speed: 0.4, r: 52, h: 214, walk: [1, 4], act: [5, 8], hit: [9, 10], ko: [11, 12] }
     };
     /* The specials each level may send, in the order the climb brings them. */
-    var SPECIALS = [["boomer", 2], ["shield", 7], ["mudder", 14], ["digger", 20], ["runner", 25], ["necro", 26]];
+    var SPECIALS = [["boomer", 2], ["shield", 7], ["mudder", 14], ["runner", 25], ["necro", 26]];
 
     /* ======================================================================
        THE TEN BALL KINDS (the side holes, kindNN) and the ball each one
@@ -277,7 +328,7 @@
       { goal: ["waves", 2], bonus: ["chain", 4], kinds: ["explosive", "multi"], supers: ["rain", "fan"], feature: "boomer" },
       { goal: ["holes", 2], bonus: ["lobHole", 1], kinds: ["explosive", "multi"], supers: ["rain", "fan"], lobHelp: true },
       { goal: ["waves", 3], bonus: ["noLast", 1], kinds: ["multi", "explosive"], supers: ["freeze", "holeblast"], mod: "moving" },
-      { goal: ["waves", 3], bonus: ["chain", 6], kinds: ["explosive", "multi"], supers: ["fan", "freeze"] },
+      { goal: ["waves", 3], bonus: ["chain", 6], kinds: ["explosive", "multi"], supers: ["fan", "freeze"], mod: "scars" },
       { goal: ["boss", 1], bonus: ["time", 150], kinds: ["explosive", "multi"], supers: ["holeblast", "rain"], boss: "greenkeeper" },
       { goal: ["waves", 2], bonus: ["shieldLob", 3], kinds: ["pierce"], supers: ["seeker", "rain"], feature: "shield" },
       { goal: ["waves", 3], bonus: ["chain", 5], kinds: ["pierce", "heavy"], supers: ["sniper", "seeker"] },
@@ -292,7 +343,7 @@
       { goal: ["waves", 4], bonus: ["chain", 8], kinds: ["homing", "explosive"], supers: ["boomvolley", "hail"] },
       { goal: ["boss", 1], bonus: ["time", 150], kinds: ["heavy", "homing"], supers: ["sprinkler", "magnet"], boss: "bog" },
       { goal: ["waves", 3], bonus: ["chain", 5], kinds: ["bouncy"], supers: ["firestorm", "freeze"] },
-      { goal: ["waves", 3], bonus: ["noDrag", 1], kinds: ["fire", "bouncy"], supers: ["superbounce", "firestorm"], feature: "digger" },
+      { goal: ["waves", 3], bonus: ["chain", 7], kinds: ["fire", "bouncy"], supers: ["superbounce", "firestorm"] },
       { goal: ["holes", 3], bonus: ["chain", 8], kinds: ["fire", "split"], supers: ["cluster", "superbounce"] },
       { goal: ["waves", 4], bonus: ["bothHoles", 1], kinds: ["bouncy", "homing"], supers: ["rush", "cluster"], mod: "double" },
       { goal: ["waves", 4], bonus: ["hole", 3], kinds: ["fire", "heavy"], supers: ["firestorm", "rush"] },
@@ -328,7 +379,6 @@
       shieldLob: "Knock out <b>{n}</b> shields with a lob",
       headLob: "Land <b>{n}</b> lobs on its head",
       drownShot: "Drown <b>{n}</b> zombies with one shot",
-      noDrag: "Never let a digger drag the hole",
       bothHoles: "Sink both holes in one wave",
       noRunner: "Let no runner cross",
       noRaise: "Let no zombie be raised"
@@ -337,13 +387,13 @@
     // ---- state -----------------------------------------------------------
     var B, L, levelD = null;
     var k = 1, ox = 0, oy = 0;                 // world → frame
-    var balls, mons, bumpers, terrain, holes, slots, drops, zones, sweeps, kos, skulls, fallen, fxs, gustT;
-    var bag, regenT, cool, coolMax, pending, coolTold, specials, shotId, chains, monId;
+    var balls, mons, bumpers, terrain, holes, slots, drops, zones, sweeps, kos, skulls, fallen, fxs, marks, gustT;
+    var bag, regenT, cool, coolMax, pending, specials, shotId, chains, monId;
     var flags, score, time, over, ended, won, wonT;
-    var aim, shock, phase, phaseT, lastUsed, freezeT, goldT, magnetT, wind, windT;
+    var aim, stress, shock, phase, phaseT, lastUsed, freezeT, goldT, magnetT, wind, windT;
     var wave, waveIdx, wavesCleared, waveGap, bossSpawned, bossRef;
     var kills, holesSunk, bestChain, lobHoles, shieldKO, shieldsByLob, drowned, maxDrown, necroKO;
-    var lobsOnHead, holeDragged, runnersAcross, raised, flagsLost, bothHoles, holesThisWave, drownBy;
+    var lobsOnHead, runnersAcross, raised, flagsLost, bothHoles, holesThisWave, drownBy;
     var helpT, started;
     /* The lab's hands on the round (lab/holepocalypse-fx.html, see THE LAB
        HANDLE at the foot of this module): `hold` stops the waves, the flags
@@ -474,6 +524,9 @@
     //  solid pixels), l its left edge (a jet's nozzle), t its top (a comet's
     //  head); `rot` turns it about that point. With no art on board
     //  (a playable carries three of them) every caller keeps its drawing.
+    //  `sq` lays a round piece flat on the grass: its height is squashed so
+    //  it reads as the same ellipse as a cup (GROUND_SQUASH, 0.42, over the
+    //  cut's own aspect).
     // ======================================================================
     var ICE_TIME = 3, FREEZE_TIME = 4;
     var FX = {
@@ -483,15 +536,15 @@
       meteor: { n: 4, ref: 1, at: "b" },
       freeze: { n: 8, ref: 4, at: "b", fit: "h" },
       hail:   { n: 4, fps: 12, ref: 2, at: "c" },
-      frost:  { n: 4, ref: 4, at: "c" },
-      shock:  { n: 6, fps: 12, ref: 4, at: "c" },
-      vortex: { n: 4, ref: 1, at: "c" },
-      target: { n: 4, ref: 2, at: "c" },
+      frost:  { n: 4, ref: 4, at: "c", sq: 0.5 },
+      shock:  { n: 6, fps: 12, ref: 4, at: "c", sq: 0.42 },
+      vortex: { n: 4, ref: 1, at: "c", sq: 0.42 },
+      target: { n: 4, ref: 2, at: "c", sq: 0.42 },
       jet:    { n: 4, fps: 14, ref: 1, at: "l" },
       splash: { n: 4, fps: 14, ref: 2, at: "b" },
       wind:   { n: 7, fps: 7, ref: 3, at: "c" },
       dust:   { n: 3, fps: 12, ref: 3, at: "c" },
-      crack:  { n: 4, fps: 12, ref: 3, at: "c" },
+      crack:  { n: 4, fps: 12, ref: 3, at: "c", sq: 0.47 },
       coins:  { n: 4, fps: 10, ref: 3, at: "c" },
       split:  { n: 4, fps: 18, ref: 2, at: "c" },
       cart:   { n: 4, ref: 1, at: "c" },
@@ -508,12 +561,14 @@
     function fxKey(name, i) { return "fx" + name.charAt(0).toUpperCase() + name.slice(1) + two(i + 1); }
     function hasFx(name) { return !!img(fxKey(name, 0)); }
     /* Frame i (from 0) of an anim at (x, y); `size` is the width of its
-       reference frame, or its height for an anim fitted by height. */
-    function drawFx(name, i, x, y, size, alpha, flip, rot) {
+       reference frame, or its height for an anim fitted by height. `sq`
+       squashes this one drawing on top of the anim's own (a jet stretched
+       across the field keeps its thickness). */
+    function drawFx(name, i, x, y, size, alpha, flip, rot, sq) {
       var A = FX[name], key = fxKey(name, clamp(i, 0, A.n - 1)), im = img(key), ref = img(fxKey(name, A.ref - 1));
       if (!im || !ref) return false;
       var s = size / (A.fit === "h" ? ref.naturalHeight : ref.naturalWidth), w = im.naturalWidth * s, h = im.naturalHeight * s;
-      var dx = -w / 2, dy = -h / 2;
+      var dx = -w / 2, dy = -h / 2, q = (sq || 1) * (A.sq || 1);
       if (A.at === "b") dy = -metrics(key).fy * s;
       else if (A.at === "l") dx = -FX_PAD * s;
       else if (A.at === "t") dy = -FX_PAD * s;
@@ -521,6 +576,7 @@
       if (alpha != null && alpha < 1) ctx.globalAlpha *= Math.max(0, alpha);
       ctx.translate(x, y);
       if (rot) ctx.rotate(rot);
+      if (q !== 1) ctx.scale(1, q);
       if (flip) ctx.scale(-1, 1);
       ctx.drawImage(im, dx, dy, w, h);
       ctx.restore();
@@ -528,15 +584,18 @@
     }
     /* A one-shot: `top` draws it over the zombies, `from`/`to` play part of
        the anim, `hold` keeps its last frame that long while it fades, `loop`
-       plays it round for that many seconds, `vx`/`vy` carry it, `shadow`
-       lays one under it (a plane). False when the art is not on board. */
+       plays it round for that many seconds, `vx`/`vy` carry it, `sq` flattens
+       it. `mark` leaves its last frame on the grass as an IMPACT (a crater,
+       a scorch, a crack) once it has played. False when the art is not on
+       board. */
     function spawnFx(name, x, y, size, o) {
       if (!hasFx(name)) return false;
       o = o || {};
       var A = FX[name];
       fxs.push({ name: name, x: x, y: y, size: size, t: 0, fps: o.fps || A.fps || 12,
                  from: o.from || 0, to: o.to != null ? o.to : A.n - 1, hold: o.hold || 0, loop: o.loop || 0,
-                 top: !!o.top, flip: !!o.flip, vx: o.vx || 0, vy: o.vy || 0, alpha: o.alpha || 1, shadow: !!o.shadow });
+                 top: !!o.top, flip: !!o.flip, vx: o.vx || 0, vy: o.vy || 0, alpha: o.alpha || 1,
+                 sq: o.sq || 1, mark: !!o.mark });
       return true;
     }
     function fxLife(f) { return f.loop || (f.to - f.from + 1) / f.fps + f.hold; }
@@ -544,7 +603,15 @@
       for (var i = fxs.length - 1; i >= 0; i--) {
         var f = fxs[i];
         f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt;
-        if (f.t >= fxLife(f)) fxs.splice(i, 1);
+        // an impact: its last frame goes down onto the grass and stays there
+        if (f.mark && f.t >= (f.to - f.from + 1) / f.fps) {
+          addMark(f.name, f.to, f.x, f.y, f.size, f.flip);
+          fxs.splice(i, 1);
+        } else if (f.t >= fxLife(f)) fxs.splice(i, 1);
+      }
+      for (i = marks.length - 1; i >= 0; i--) {
+        marks[i].t += dt;
+        if (marks[i].t >= MARK_LIFE + MARK_FADE && L.mod !== "scars") marks.splice(i, 1);
       }
     }
     function drawFxs(top) {
@@ -555,11 +622,27 @@
         var fi = f.loop ? f.from + step % n : f.from + Math.min(n - 1, step);
         if (f.loop) a *= Math.min(1, (f.loop - f.t) / 0.25);
         else if (f.hold && f.t > play) a *= 1 - (f.t - play) / f.hold;
-        if (f.shadow) {
-          ctx.fillStyle = "rgba(0,0,0," + 0.22 * a + ")";
-          ctx.beginPath(); ctx.ellipse(f.x + f.size * 0.15, f.y + f.size * 0.5, f.size * 0.36, f.size * 0.12, 0, 0, Math.PI * 2); ctx.fill();
-        }
-        drawFx(f.name, fi, f.x, f.y, f.size, a, f.flip);
+        drawFx(f.name, fi, f.x, f.y, f.size, a, f.flip, 0, f.sq);
+      }
+    }
+
+    /* THE IMPACTS — what a blast leaves on the course: the boom's crater,
+       the meteor's, a burnt patch, a heavy ball's crack, the frost of a
+       hailstone. Each is the last frame of its anim, lying on the grass under
+       everything that stands, for MARK_LIFE seconds, then it fades. On a
+       level with the `scars` twist nothing fades: the course keeps every
+       wound of the round. */
+    var MARK_LIFE = 4, MARK_FADE = 1.2, MARK_MAX = 40, MARK_MAX_SCARS = 150;
+    function addMark(name, i, x, y, size, flip) {
+      if (!hasFx(name)) return;
+      marks.push({ name: name, i: i, x: x, y: y, size: size, flip: !!flip, t: 0 });
+      var cap = L.mod === "scars" ? MARK_MAX_SCARS : MARK_MAX;
+      while (marks.length > cap) marks.shift();
+    }
+    function drawMarks() {
+      for (var i = 0; i < marks.length; i++) {
+        var m = marks[i], a = L.mod === "scars" ? 1 : clamp((MARK_LIFE + MARK_FADE - m.t) / MARK_FADE, 0, 1);
+        drawFx(m.name, m.i, m.x, m.y, m.size, a, m.flip);
       }
     }
     // an ice block breaking off a zombie that thaws
@@ -594,14 +677,14 @@
       B = BIOMES[bandIndex()];
       place();
       balls = []; mons = []; bumpers = []; terrain = []; holes = []; slots = [];
-      drops = []; zones = []; sweeps = []; kos = []; skulls = []; fallen = []; fxs = []; gustT = 0;
-      bag = BAG_MAX; regenT = 0; cool = 0; coolMax = 1; pending = null; coolTold = false; specials = []; shotId = 0; chains = {}; monId = 0;
+      drops = []; zones = []; sweeps = []; kos = []; skulls = []; fallen = []; fxs = []; marks = []; gustT = 0;
+      bag = BAG_MAX; regenT = 0; cool = 0; coolMax = 1; pending = null; specials = []; shotId = 0; chains = {}; monId = 0;
       flags = FLAGS; score = 0; time = 0; over = false; ended = false; won = false; wonT = 0;
-      aim = null; shock = null; phase = "normal"; phaseT = 0; lastUsed = false;
+      aim = null; stress = 0; shock = null; phase = "normal"; phaseT = 0; lastUsed = false;
       freezeT = 0; goldT = 0; magnetT = 0; wind = 0; windT = 0;
       waveIdx = 0; wavesCleared = 0; waveGap = 1.2; wave = null; bossSpawned = false; bossRef = null;
       kills = 0; holesSunk = 0; bestChain = 0; lobHoles = 0; shieldKO = 0; shieldsByLob = 0;
-      drowned = 0; maxDrown = 0; necroKO = 0; lobsOnHead = 0; holeDragged = false; runnersAcross = 0;
+      drowned = 0; maxDrown = 0; necroKO = 0; lobsOnHead = 0; runnersAcross = 0;
       raised = 0; flagsLost = 0; bothHoles = false; holesThisWave = {}; drownBy = {};
       helpT = 0; started = false;
       buildCourse();
@@ -691,7 +774,34 @@
     function placeBumper(key, grave) {
       for (var t = 0; t < 40; t++) {
         var y = rand(TOP() + 220, LINE() - 300), x = rand(wallL(y) + 70, wallR(y) - 70);
-        if (clearOf(x, y, 130)) { bumpers.push({ x: x, y: y, r: BUMPER_R + (grave ? 6 : 0), key: key, hit: 0, grave: !!grave }); return; }
+        if (clearOf(x, y, 130)) { addBumper({ x: x, y: y, r: BUMPER_R + (grave ? 6 : 0), key: key, grave: !!grave, hp: grave ? GRAVE_HP : BUMPER_HP }); return; }
+      }
+    }
+    var bumperId = 0;
+    function addBumper(u) {
+      u.id = ++bumperId; u.hit = 0; u.maxHp = u.hp; u.hpShow = u.hp; u.dead = false;
+      bumpers.push(u);
+      return u;
+    }
+    // an obstacle takes a hit; out of points, it breaks and leaves a crack
+    function hitBumper(u, dmg) {
+      if (u.dead || dmg <= 0) return;
+      u.hpShow = Math.max(u.hpShow, u.hp);
+      u.hp -= dmg; u.hit = 0.15; u.hpT = LIFE_SHOW; u.chipT = 0.35;
+      if (u.hp > 0) return;
+      u.dead = true;
+      spawnFx("dust", u.x, u.y - 10, u.r * 3.6, { top: true });
+      addMark("crack", FX.crack.n - 1, u.x, u.y, u.r * 3.2);
+      Fx.burst(sx(u.x), sy(u.y), { color: u.grave ? ["#9a9a9a", "#5a4a3a", "#7fd11e"] : ["#7fd11e", "#6b4a2a", "#ffe27a"], count: 18, speed: 320, life: 0.5, grav: 400 });
+      Fx.shake(5, 0.15);
+      Sound.clip("land", 0.6, 0.55);
+      addScore(BUMPER_SCORE);
+      Pop.text(sx(u.x), sy(u.y - 30), "+" + BUMPER_SCORE, { color: "#e8ff9a", size: 22, life: 0.6, tier: 1 });
+    }
+    function hitBumpersIn(x, y, R, dmg) {
+      for (var i = 0; i < bumpers.length; i++) {
+        var u = bumpers[i];
+        if (!u.dead && Math.hypot(u.x - x, u.y - y) < R + u.r) hitBumper(u, dmg);
       }
     }
     function placeArea(kind, key, rx, ry) {
@@ -780,8 +890,10 @@
     }
     function spawnOne(i) {
       var kind = pickKind();
+      // a zombie whose rule the frame cannot say is named the first time one walks on
+      if (TIPS[kind]) Notify.learn(kind, KINDS[kind].name, { sub: Lang.t(TIPS[kind]) });
       if (B.terrain === "grave" && Math.random() < 0.3) {
-        var gs = bumpers.filter(function (b) { return b.grave; });
+        var gs = bumpers.filter(function (b) { return b.grave && !b.dead; });
         if (gs.length) {
           var gr = gs[Math.floor(Math.random() * gs.length)];
           addMon(kind, gr.x + rand(-20, 20), gr.y + gr.r + 30, true);
@@ -798,7 +910,7 @@
       var m = { id: ++monId, kind: kind, x: x, y: y, r: K.r, hp: hp, maxHp: hp, kx: 0, ky: 0,
                 animT: rand(0, 2), phase: rand(0, 6.28), speed: rand(0.88, 1.12), lane: rand(0.1, 0.9),
                 tag: 0, tagT: 0, flash: 0, hitT: 0, frozenT: 0, dead: false, rise: rise ? 0.6 : 0,
-                state: "walk", stateT: 0, actT: rand(3, 6), digAt: rand(TOP() + 180, TOP() + 420) };
+                state: "walk", stateT: 0, actT: rand(3, 6) };
       if (K.straight) m.lane = -1;
       mons.push(m);
       return m;
@@ -809,8 +921,10 @@
       bossRef = addMon(kind, (B.gate[0] + B.gate[1]) / 2, TOP() - K.r);
       bossRef.lane = 0.5;
       bossRef.t0 = time;
-      Pop.show("danger", { word: K.name, sub: "Boss" });
-      Sound.clip("boss", 0.8);
+      // an event the player did not make: the first time, it names its page
+      if (!Notify.learn(kind, K.name, { sub: Lang.t("Boss"), kind: "warn" }))
+        Notify.say(K.name, { sub: Lang.t("Boss"), kind: "warn", key: "boss" });
+      Sound.clip("boss", 1, 0.6);
       Fx.shake(10, 0.5);
       hudWave();
       if (!wave) { wave = { left: 9999, spawnT: 3, endless: true }; }
@@ -827,6 +941,12 @@
       if (sp < 1) return;
       var ux = vx / sp, uy = vy / sp;
       if (uy > -MIN_UP) { uy = -MIN_UP; ux = (ux < 0 ? -1 : 1) * Math.sqrt(1 - uy * uy); }
+      // a direct shot leaves off its line, less the more stressed the golfer
+      if (!free && !lob) {
+        var da = aimErr() * (Math.random() - Math.random()), ca = Math.cos(da), sa = Math.sin(da);
+        var rx = ux * ca - uy * sa, ry = ux * sa + uy * ca;
+        if (ry <= -MIN_UP) { ux = rx; uy = ry; }
+      }
       vx = ux * sp; vy = uy * sp;
       // a lob's landing is scattered round its target, wider the longer it is
       if (lob) {
@@ -837,10 +957,12 @@
       // a boss on the field slows the bag's shots, never the gun's free ones
       cool = !free && bossRef ? BOSS_COOLDOWN : FIRE_COOLDOWN; coolMax = cool; shotId++;
       var b = newBall(TEE_X, TEE_Y, vx, vy, shotId, !!free);
+      if (phase === "rush") b.rush = true;
       applyMod(b, !free && specials.length ? specials.shift() : "plain");
       if (lob) { b.air = true; b.z = 0.01; b.vz = lob.vz; b.lob = true; }
       balls.push(b);
-      Sound.clip("shot", 0.55, lob ? 0.9 : 1.05);
+      if (lob) Sound.clip("shot", 0.55, 0.9);
+      else Sound.clip("shot", 0.55, 1.05);
     }
     function newBall(x, y, vx, vy, id, free) {
       return { x: x, y: y, vx: vx, vy: vy, id: id, age: 0, kind: "plain", bounces: 0, touched: false,
@@ -925,11 +1047,28 @@
            the moment the tee is ready, rather than being thrown away. */
         if (v && cool > 0 && bossRef && bag > 0) {
           pending = v;
-          if (!coolTold) { coolTold = true; Notify.say("Reloading", { sub: Lang.t("The boss slows your swing"), kind: "warn", key: "cool" }); }
+          Notify.learn("boss", "Reloading", { sub: Lang.t("The boss slows your swing"), kind: "warn" });
         } else if (v) fire(v.vx, v.vy, false, v.lob ? v : null);
       }
       aim = null;
     }
+    // ---- the aim under stress -------------------------------------------
+    function stressTarget() {
+      var n = 0, span = Math.max(1, LINE() - TOP());
+      for (var i = 0; i < mons.length; i++) {
+        var m = mons[i];
+        if (m.dead) continue;
+        n += KINDS[m.kind].boss ? STRESS_BOSS : 1 + STRESS_NEAR * clamp((m.y - TOP()) / span * 2 - 1, 0, 1);
+      }
+      return clamp((n - STRESS_CALM) / (STRESS_FULL - STRESS_CALM), 0, 1);
+    }
+    function updateStress(dt) {
+      var t = stressTarget(), s = STRESS_RATE * dt;
+      stress += clamp(t - stress, -s, s);
+    }
+    // the widest a direct shot may leave off its line, either side (rad)
+    function aimErr() { return AIM_ERR_CALM + (AIM_ERR_STRESS - AIM_ERR_CALM) * stress; }
+
     function updateControl(dt) {
       if (pending && cool <= 0 && !won && !over) { var pv = pending; pending = null; fire(pv.vx, pv.vy, false, pv.lob ? pv : null); }
       if (!aim) return;
@@ -949,12 +1088,14 @@
       phase = kd; phaseT = kd === "rush" ? RUSH_TIME : LAST_TIME;
       if (kd === "last") {
         for (var i = 0; i < mons.length; i++) mons[i].ky -= LAST_PUSH;
-        Pop.show("danger", { word: "Last stand!", sub: Lang.t("Hold to fire") });
-        Notify.say("Last stand", { sub: Lang.t("Hold to fire, tap to putt — the balls are free"), kind: "loss", key: "last" });
-        Sound.clip("last", 0.8);
+        // the round turning on the player: an event, named once as a mechanic
+        if (!Notify.learn("last", "Last stand!", { sub: Lang.t("Hold to fire in bursts"), kind: "warn" }))
+          Notify.say("Last stand!", { sub: Lang.t("Hold to fire in bursts"), kind: "warn", key: "last" });
+        Sound.clip("last", 0.4, 0.7);
         Fx.flash("#ff3030", 0.35);
       } else {
-        Notify.say("Rush", { sub: Lang.t("Hold to fire, tap to putt — the balls are free"), kind: "good", key: "rush" });
+        // the super's own callout names it (firePower); how the gun is played is told once
+        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to fire, tap to putt") });
       }
       hudFlags();
     }
@@ -963,10 +1104,7 @@
       phaseT -= dt;
       if (phase === "last") hudFlags();
       if (phaseT <= 0) {
-        if (phase === "last") {
-          flags = 1;
-          Notify.say("Saved", { sub: Lang.t("One flag back"), kind: "good", key: "saved" });
-        }
+        if (phase === "last") flags = 1;
         phase = "normal";
         hudFlags();
       }
@@ -994,7 +1132,7 @@
         powerBall(Math.sin(a) * speed, -Math.cos(a) * speed, kind, tag, extra ? JSON.parse(JSON.stringify(extra)) : null);
       }
     }
-    function living() { return mons.filter(function (m) { return !m.dead && m.state !== "under"; }); }
+    function living() { return mons.filter(function (m) { return !m.dead; }); }
     function lowest(n) { return living().sort(function (a, b) { return b.y - a.y; }).slice(0, n); }
     function densest() {
       var ms = living(), best = null, bn = -1;
@@ -1009,7 +1147,8 @@
 
     var POWERS = [
       { key: "rain", name: "Ball rain", icon: "super01", fire: function (t) { rainOf(24, 0.1, { tag: t, R: 46, dmg: 2 }); } },
-      { key: "fan", name: "Fan volley", icon: "super02", fire: function (t) { fan(11, 1.05, SHOT_MAX, "plain", t); spawnFx("rush", TEE_X, TEE_Y + 16, 190, { top: true, loop: 0.45 }); } },
+      // twenty-two balls, faster than a drive and gliding on the grass: they reach the gate
+      { key: "fan", name: "Fan volley", icon: "super02", fire: function (t) { fan(22, 1.05, FAN_VOLLEY_SPEED, "plain", t, { glide: FAN_VOLLEY_GLIDE }); spawnFx("rush", TEE_X, TEE_Y + 16, 190, { top: true, loop: 0.45 }); } },
       { key: "freeze", name: "Time freeze", icon: "super03", fire: function () { freezeT = FREEZE_TIME; } },
       { key: "holeblast", name: "Hole blast", icon: "super04", fire: function (t) {
           for (var i = 0; i < holes.length; i++) blast(holes[i], t, holes.length > 1 ? 0.6 : SHOCK_COVER);
@@ -1031,9 +1170,17 @@
             ms[i].ky -= 520; hurt(ms[i], 1, t);
             spawnFx("splash", ms[i].x, ms[i].y + ms[i].r * 0.75, ms[i].r * 3, { top: true });
           }
+          /* A jet out of each side every 160 px down the field, its nozzle
+             (the first JET_NOZZLE of the cut) hidden past the edge of the
+             SCREEN, its spray reaching over the fence and a quarter of the
+             fairway in — then squashed back to a jet's thickness. */
+          var el = wx(0), er = wx(W), jr = img(fxKey("jet", 0)), k2 = 1 - JET_NOZZLE;
           for (var y = TOP() + 120; y < LINE(); y += 160) {
-            if (spawnFx("jet", wallL(y) - 10, y, 210, { top: true, loop: 0.9 })) {
-              spawnFx("jet", wallR(y) + 10, y, 210, { top: true, loop: 0.9, flip: true });
+            var into = clamp(0.28 * (wallR(y) - wallL(y)), 110, 170);
+            var rl = (wallL(y) - el + into) / k2, rr = (er - wallR(y) + into) / k2;
+            var tl = jr ? JET_THICK / (rl * jr.naturalHeight / jr.naturalWidth) : 1, tr = jr ? JET_THICK / (rr * jr.naturalHeight / jr.naturalWidth) : 1;
+            if (spawnFx("jet", el - JET_NOZZLE * rl, y, rl, { top: true, loop: 0.9, sq: tl })) {
+              spawnFx("jet", er + JET_NOZZLE * rr, y, rr, { top: true, loop: 0.9, flip: true, sq: tr });
               continue;
             }
             Fx.burst(sx(wallL(y)), sy(y), { color: ["#7fd4ff", "#ffffff"], count: 10, speed: 360, life: 0.5, angle: 0, spread: 1.2 });
@@ -1044,7 +1191,12 @@
           var lanes = [0, 0, 0, 0, 0], ym = (TOP() + LINE()) / 2, l = wallL(ym), w = wallR(ym) - l, ms = living();
           for (var i = 0; i < ms.length; i++) lanes[clamp(Math.floor((ms[i].x - l) / w * 5), 0, 4)]++;
           var best = 0; for (var j = 1; j < 5; j++) if (lanes[j] > lanes[best]) best = j;
-          sweeps.push({ kind: "cart", icon: "super08", x: l + (best + 0.5) * w / 5, y: LINE() + 20, vx: 0, vy: -560, w: 90, h: 100, hits: {}, tag: t, life: 2 });
+          /* It drives up the lane that holds the most, kept inside the
+             gate's width so the narrowing fences never put it off the
+             course, all the way to the painted gate at the top — and
+             vanishes into its toxic mist there. */
+          var cx = clamp(l + (best + 0.5) * w / 5, B.gate[0] + 50, B.gate[1] - 50), y0 = LINE() + 20, life = (y0 - TOP() + CART_GATE) / CART_SPEED;
+          sweeps.push({ kind: "cart", icon: "super08", x: cx, y: y0, vx: 0, vy: -CART_SPEED, w: 90, h: 100, hits: {}, tag: t, life: life });
         } },
       { key: "boomvolley", name: "Boom volley", icon: "super09", fire: function (t) { fan(5, 0.7, 1800, "explosive", t); } },
       { key: "splitstorm", name: "Split storm", icon: "super10", fire: function (t) { fan(3, 0.4, 1600, "split", t, { gen: 0 }); } },
@@ -1059,18 +1211,34 @@
           drop(c.x, c.y + 20, 0, { tag: t, R: 170, dmg: 8, push: 600, fall: 0.9, kind: "meteor" });
         } },
       { key: "carpet", name: "Carpet strike", icon: "super18", fire: function (t) {
-          // the plane flies the rows up the field: 130 px a row every 0.18 s
-          var py = LINE() + 40;
-          spawnFx("plane", (wallL(py) + wallR(py)) / 2, py, 160, { top: true, vy: -722, loop: 2.2, shadow: true });
+          /* The plane is never seen, only its SHADOW sweeping up the field
+             from below the screen; the bombs it let go rain down a beat
+             behind it, row by row, as the shadow passes over each one. */
+          var y0 = H + 160, top = TOP() - 320;
+          sweeps.push({ kind: "shadow", x: TEE_X, y: y0, vx: 0, vy: -PLANE_SPEED, w: 0, h: 0, hits: {}, life: (y0 - top) / PLANE_SPEED });
           for (var r = 0; r < 7; r++) {
-            var y = LINE() - 100 - r * 130, l = wallL(y), w = wallR(y) - l;
-            for (var c = 0; c < 5; c++) drop(l + (c + 0.5) * w / 5, y, r * 0.18, { tag: t, R: 48, dmg: 2, up: true, push: 260, fall: 0.3 });
+            var y = LINE() - 100 - r * 130, l = wallL(y), w = wallR(y) - l, pass = (y0 - y) / PLANE_SPEED;
+            for (var c = 0; c < 5; c++)
+              drop(l + (c + 0.5) * w / 5 + rand(-18, 18), y + rand(-14, 14), pass + 0.3 + rand(0, 0.12),
+                   { tag: t, R: 48, dmg: 2, up: true, push: 260, fall: 0.5, kind: "carpet" });
           }
         } },
       { key: "golden", name: "Golden rain", icon: "super19", fire: function (t) { goldT = 8; rainOf(18, 0.12, { tag: t, R: 42, dmg: 2, kind: "gold" }); } },
       { key: "mower", name: "Mower", icon: "super20", fire: function (t) {
-          var y = LINE() - 110;
-          sweeps.push({ kind: "mower", icon: "super20", x: wallL(y) - 60, y: y, vx: 520, vy: 0, w: 100, h: 90, hits: {}, tag: t, life: 1.8 });
+          /* Five to ten mowers on rows drawn at random, each its own way:
+             a PORTAL opens in the fence on each side of its row, the mower
+             drives out of one, across the fairway and into the other. */
+          var n = 5 + Math.floor(Math.random() * 6), ys = [], tries = 0, i;
+          while (ys.length < n && tries++ < 300) {
+            var y = rand(TOP() + 90, LINE() - 70), ok = true;
+            for (i = 0; i < ys.length; i++) if (Math.abs(ys[i] - y) < 72) ok = false;
+            if (ok) ys.push(y);
+          }
+          for (i = 0; i < ys.length; i++) {
+            var dir = Math.random() < 0.5 ? 1 : -1, a = dir > 0 ? wallL(ys[i]) : wallR(ys[i]), b = dir > 0 ? wallR(ys[i]) : wallL(ys[i]);
+            sweeps.push({ kind: "mower", icon: "super20", y: ys[i], a: a, b: b, dir: dir, x: a - dir * 70, vx: dir * MOWER_SPEED, vy: 0,
+                          w: 100, h: 90, hits: {}, tag: t, t: -(i * 0.14 + rand(0, 0.45)) - PORTAL_OPEN, gone: -1 });
+          }
         } }
     ];
     function powerOf(key) { for (var i = 0; i < POWERS.length; i++) if (POWERS[i].key === key) return POWERS[i]; return POWERS[0]; }
@@ -1078,7 +1246,8 @@
     function firePower(key) {
       var p = powerOf(key);
       p.fire(++shotId);
-      Pop.show("ribbon", { word: p.name });
+      // a super names itself quietly, at the top: the effect is the show
+      Pop.show("score", { word: p.name, at: "hudUnder", rot: -2, cls: "pop-super" });
       Sound.clip("super", 0.75);
     }
     // a tap on a super: a full one fires, an empty one says how full it is
@@ -1097,26 +1266,25 @@
         var s = slots[i];
         if (s.left || s.charge >= 1) continue;
         s.charge = Math.min(1, s.charge + 1 / SUPER_KILLS);
-        if (s.charge >= 1) {
-          Notify.say("Super charged", { sub: Lang.t(powerOf(s.power).name), kind: "rare", key: "super" + i });
-          Sound.clip("ready", 0.6);
-        }
+        // the full button and its sound say it is ready: no notice
+        if (s.charge >= 1) Sound.clip("ready", 0.4);
       }
     }
 
     // a drop has landed: damage around it, never pushing a zombie toward the line
     function land(d) {
-      var art = d.kind === "meteor" ? spawnFx("crater", d.x, d.y, d.R * 2.1, { top: true, hold: 1.2 })
-        : d.kind === "ice" ? spawnFx("hail", d.x, d.y, d.R * 2.2, { hold: 0.5 })
+      // the meteor's crater, a hailstone's frost and a bomb's scorch stay on the grass
+      var art = d.kind === "meteor" ? spawnFx("crater", d.x, d.y, d.R * 2.1, { top: true, mark: true })
+        : d.kind === "ice" ? spawnFx("hail", d.x, d.y, d.R * 2.2, { mark: true })
         : d.kind === "gold" ? spawnFx("coins", d.x, d.y, d.R * 2, { top: true, hold: 0.4 })
-        : d.kind === "cluster" || d.kind === "bomblet" ? spawnFx("boom", d.x, d.y, d.R * 2.2, { top: true, hold: 0.2 })
+        : d.kind === "cluster" || d.kind === "bomblet" || d.kind === "carpet" ? spawnFx("boom", d.x, d.y, d.R * 2.2, { top: true, mark: true })
         : d.kind === "fire" ? hasFx("burn")
         : spawnFx("dust", d.x, d.y, d.R * 2, {});
       if (!art) Fx.ring(sx(d.x), sy(d.y), { from: d.R * 0.4 * k, to: d.R * k, color: DROP_COLORS[d.kind] || "#ffffff", width: 6, life: 0.35 });
       if (d.kind === "meteor") { Fx.shake(12, 0.4); Sound.clip("shock", 0.7); }
       for (var i = 0; i < mons.length; i++) {
         var m = mons[i];
-        if (m.dead || m.state === "under") continue;
+        if (m.dead) continue;
         var dx = m.x - d.x, dy = m.y - d.y, dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > d.R + m.r * 0.6) continue;
         if (d.up) m.ky -= d.push;
@@ -1124,6 +1292,7 @@
         if (d.kind === "ice") m.frozenT = ICE_TIME;
         hurt(m, d.dmg * (d.kind === "fire" && m.kind === "yeti" ? 2 : 1), d.tag);
       }
+      hitBumpersIn(d.x, d.y, d.R, d.dmg, d.tag);
       if (d.kind === "fire") zones.push({ kind: "fire", x: d.x, y: d.y, r: 55, life: 4, tick: 0, tag: d.tag });
       if (d.kind === "cluster") for (var j = 0; j < 5; j++) {
         var a = j * Math.PI * 2 / 5;
@@ -1150,22 +1319,23 @@
           z.tick = 0.5;
           for (j = 0; j < mons.length; j++) {
             var m = mons[j];
-            if (!m.dead && m.state !== "under" && Math.hypot(m.x - z.x, m.y - z.y) < z.r + m.r * 0.5) hurt(m, m.kind === "yeti" ? 2 : 1, z.tag, "tick");
+            if (!m.dead && Math.hypot(m.x - z.x, m.y - z.y) < z.r + m.r * 0.5) hurt(m, m.kind === "yeti" ? 2 : 1, z.tag, "tick");
           }
         }
-        if (z.life <= 0) zones.splice(i, 1);
+        if (z.life <= 0) {
+          // a fire goes out on its scorched patch, which stays
+          if (z.kind === "fire") addMark("burn", FX.burn.n - 1, z.x, z.y + z.r * 0.5, z.r * 2.4);
+          zones.splice(i, 1);
+        }
       }
       for (i = sweeps.length - 1; i >= 0; i--) {
         var s = sweeps[i];
-        s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
-        for (j = 0; j < mons.length; j++) {
-          var mm = mons[j];
-          if (mm.dead || mm.state === "under" || s.hits[mm.id] || Math.abs(mm.x - s.x) > s.w / 2 + mm.r || Math.abs(mm.y - s.y) > s.h / 2 + mm.r) continue;
-          s.hits[mm.id] = 1;
-          if (s.kind === "mower") { mm.ky -= 380; hurt(mm, mm.kind === "walker" ? 99 : 3, s.tag); }
-          else { mm.ky -= 500; mm.kx += (mm.x < s.x ? -1 : 1) * 320; hurt(mm, 3, s.tag); }
-        }
-        if (s.life <= 0) sweeps.splice(i, 1);
+        if (s.kind === "mower") { if (updateMower(s, dt)) sweeps.splice(i, 1); continue; }
+        // the cart rolls on slowly into the gate's mist; the plane's shadow only flies
+        if (s.life > 0) { s.x += s.vx * dt; s.y += s.vy * dt; if (s.kind !== "shadow") hitSweep(s); }
+        else if (s.kind === "cart") s.y += s.vy * 0.3 * dt;
+        s.life -= dt;
+        if (s.life <= (s.kind === "cart" ? -CART_MIST : 0)) sweeps.splice(i, 1);
       }
       for (i = terrain.length - 1; i >= 0; i--) {
         var t = terrain[i];
@@ -1175,9 +1345,39 @@
       }
       for (i = bumpers.length - 1; i >= 0; i--) {
         var bu = bumpers[i];
-        bu.hit = Math.max(0, bu.hit - dt);
-        if (bu.life != null) { bu.life -= dt; if (bu.life <= 0) bumpers.splice(i, 1); }
+        bu.hit = Math.max(0, bu.hit - dt); bu.hpT = (bu.hpT || 0) - dt; bu.chipT = (bu.chipT || 0) - dt;
+        if (bu.chipT <= 0 && bu.hpShow > bu.hp) bu.hpShow = Math.max(bu.hp, bu.hpShow - bu.maxHp * 1.5 * dt);
+        if (bu.life != null) { bu.life -= dt; if (bu.life <= 0) bu.dead = true; }
+        if (bu.dead) bumpers.splice(i, 1);
       }
+    }
+    // a cart or a mower running over whatever is in its box, once each
+    function hitSweep(s) {
+      var j;
+      for (j = 0; j < mons.length; j++) {
+        var mm = mons[j];
+        if (mm.dead || s.hits[mm.id] || Math.abs(mm.x - s.x) > s.w / 2 + mm.r || Math.abs(mm.y - s.y) > s.h / 2 + mm.r) continue;
+        s.hits[mm.id] = 1;
+        if (s.kind === "mower") { mm.ky -= 380; hurt(mm, mm.kind === "walker" ? 99 : 3, s.tag); }
+        else { mm.ky -= 500; mm.kx += (mm.x < s.x ? -1 : 1) * 320; hurt(mm, 3, s.tag); }
+      }
+      for (j = 0; j < bumpers.length; j++) {
+        var u = bumpers[j];
+        if (u.dead || s.hits["b" + u.id] || Math.abs(u.x - s.x) > s.w / 2 + u.r || Math.abs(u.y - s.y) > s.h / 2 + u.r * BUMPER_SQUASH) continue;
+        s.hits["b" + u.id] = 1;
+        hitBumper(u, 3, s.tag);
+      }
+    }
+    /* A mower: its portals open, it drives out of one across its row and
+       into the other, and they close behind it. */
+    function updateMower(s, dt) {
+      s.t += dt;
+      if (s.gone >= 0) { s.gone += dt; return s.gone >= PORTAL_OPEN; }
+      if (s.t <= 0) return false;
+      s.x += s.vx * dt;
+      if ((s.x - s.b) * s.dir > 70) { s.gone = 0; return false; }
+      hitSweep(s);
+      return false;
     }
 
     // a player's ball rolling over an open SIDE HOLE: slow enough, it drops in
@@ -1195,14 +1395,12 @@
           for (var j = 0; j < LEFT_EXTRA && specials.length < SPECIAL_MAX; j++) { specials.push(kind); n++; }
           bag = Math.min(BAG_MAX, bag + 1);
           Fx.ring(sx(s.x), sy(s.y), { from: 10 * k, to: 60 * k, color: m.color, width: 6, life: 0.4 });
-          Pop.show("bonus", { word: Lang.t(m.name) + " x" + Math.max(1, n), at: { x: sx(s.x), y: sy(s.y - 70) } });
-          Sound.clip("side", 0.7);
-          // the flag point: a lost flag comes back
-          if (flags < FLAGS && phase !== "last") {
-            flags++;
-            hudFlags();
-            Notify.say("Flag back", { sub: flags + " / " + FLAGS, kind: "gain", key: "flagback" });
-          }
+          // the flag point: a lost flag comes back, said on the same callout
+          var back = flags < FLAGS && phase !== "last";
+          if (back) { flags++; hudFlags(); }
+          Pop.show("bonus", { word: Lang.t(m.name) + " x" + Math.max(1, n), at: { x: sx(s.x), y: sy(s.y - 70) },
+                              sub: back ? Lang.t("Flag back") + " " + flags + " / " + FLAGS : "" });
+          Sound.clip("side", 0.8);
           // the flag moves on, and is capped for a while where it lands
           s.cool = TARGET_COOL; s.hit = 0.4; s.shown = kind;
           moveFlag(s);
@@ -1218,10 +1416,12 @@
     // ======================================================================
     function hurt(m, dmg, tag, how) {
       if (m.dead || dmg <= 0) return;
-      if (m.state === "under" || m.rise > 0.3) return;
+      if (m.rise > 0.3) return;
       var boss = KINDS[m.kind].boss;
       if (boss && dmg >= 99) dmg = SHOCK_BOSS;
-      m.hp -= dmg; m.flash = 0.12; m.hitT = HIT_TIME;
+      // the gauge's chip: the life the hit took, which drains after it
+      m.hpShow = Math.max(m.hpShow == null ? m.hp : m.hpShow, m.hp);
+      m.hp -= dmg; m.flash = 0.12; m.hitT = HIT_TIME; m.chipT = 0.35; m.hpT = LIFE_SHOW;
       /* A boss that takes a hit gives ground: a step back up the field and a
          stun that stops its walk — not off a fire's tick, which would hold
          it in place for as long as it burns. */
@@ -1235,7 +1435,7 @@
       if (tag) { m.tag = tag; m.tagT = 1.5; }
       if (m === bossRef) hudWave();
       if (m.hp <= 0) kill(m, tag, how);
-      else Sound.clip("hit", 0.35, 1 + Math.random() * 0.2);
+      else Sound.clip("hit", 0.7, 1 + Math.random() * 0.2);
     }
 
     function kill(m, tag, how) {
@@ -1251,7 +1451,7 @@
       if (n > bestChain) bestChain = n;
       if (n === 4 || n === 6 || n === 8 || n >= 10 && n % 5 === 0) {
         Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Chain x") + n, sub: "+" + gain });
-        Sound.clip("combo", 0.7, 1 + Math.min(n, 12) * 0.03);
+        Sound.clip("combo", 0.3, 1 + Math.min(n, 12) * 0.03);
       }
       Sound.clip("down", 0.45, 0.9 + Math.random() * 0.2);
       if (m.kind === "shield") { shieldKO++; if (how === "lob") shieldsByLob++; }
@@ -1262,9 +1462,10 @@
       }
       if (!K.boss && m.kind !== "mudling") fallen.push({ x: m.x, y: m.y });
       if (fallen.length > 6) fallen.shift();
-      if (how !== "drown") kos.push({ kind: m.kind, x: m.x, y: m.y, t: 0 });
+      if (how !== "drown" && m.kind !== "mudling") kos.push({ kind: m.kind, x: m.x, y: m.y, t: 0 });
+      if (m.kind === "mudling" && how !== "drown") mudBurst(m, tag);
       if (m.kind === "boomer") {
-        Sound.clip("boomer", 0.7);
+        Sound.clip("boomer", 0.6, 0.65);
         Fx.burst(sx(m.x), sy(m.y), { color: ["#b8ff3a", "#7fd11e", "#e8ff9a"], count: 22, speed: 420, life: 0.6, grav: 400 });
         explode(m.x, m.y, BOOMER_RADIUS, BOOMER_DMG, BOOMER_PUSH, tag);
       }
@@ -1276,24 +1477,42 @@
       }
       if (K.boss) {
         bossRef = null;
-        Pop.show("perfect", { word: Lang.t(K.name), sub: Lang.t("Knocked out") });
+        Pop.show("perfect", { word: Lang.t(K.name), sub: Lang.t("KO") });
         Fx.shake(16, 0.6); Fx.flash("#ffffff", 0.5);
-        Sound.clip("shock", 0.8);
+        Sound.clip("shock", 1);
         if (L.goal[0] === "boss") goalMet();
       }
       hudWave();
       checkGoal();
     }
 
+    /* A mudling bursts into a splat of mud: it knocks its neighbours (one
+       point each, which chains through the other halves) and leaves a small
+       puddle that dries in a couple of seconds and slows nothing. */
+    function mudBurst(m, tag) {
+      zones.push({ kind: "mud", splat: true, x: m.x, y: m.y + m.r * 0.6, r: 50, life: 2.5, tick: 0 });
+      spawnFx("dust", m.x, m.y - 10, 110, { top: true });
+      Fx.burst(sx(m.x), sy(m.y - 20), { color: ["#6b4522", "#3d2611", "#7fae2a"], count: 20, speed: 380, life: 0.55, grav: 600 });
+      Fx.shake(4, 0.12);
+      Sound.clip("boomer", 0.5, 1.25);
+      for (var i = 0; i < mons.length; i++) {
+        var o = mons[i];
+        if (o === m || o.dead) continue;
+        var dx = o.x - m.x, dy = o.y - m.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d > MUDLING_BLAST + o.r) continue;
+        if (d > 1 && !KINDS[o.kind].boss) { o.kx += dx / d * MUDLING_PUSH; o.ky += dy / d * MUDLING_PUSH; }
+        hurt(o, 1, tag);
+      }
+    }
     function explode(x, y, R, dmg, push, tag) {
-      if (!spawnFx("boom", x, y, R * 2.1, { top: true, hold: 0.3 })) {
+      if (!spawnFx("boom", x, y, R * 2.1, { top: true, mark: true })) {
         Fx.ring(sx(x), sy(y), { from: R * 0.3 * k, to: R * k, color: "#ffb347", width: 8, life: 0.35 });
         Fx.burst(sx(x), sy(y), { color: ["#ffd34d", "#ff6a2a", "#ffffff"], count: 16, speed: 380, life: 0.45 });
       }
       Fx.shake(6, 0.2);
       for (var i = 0; i < mons.length; i++) {
         var m = mons[i];
-        if (m.dead || m.state === "under") continue;
+        if (m.dead) continue;
         var dx = m.x - x, dy = m.y - y, d = Math.sqrt(dx * dx + dy * dy);
         if (d > R + m.r) continue;
         var nx = d > 1 ? dx / d : 0, ny = d > 1 ? dy / d : -1;
@@ -1301,6 +1520,7 @@
         m.kx += nx * kk; m.ky += ny * kk;
         hurt(m, dmg, tag);
       }
+      hitBumpersIn(x, y, R, dmg, tag);
     }
 
     function addScore(n) { score += n; HUD.setScore(score); }
@@ -1342,38 +1562,69 @@
             var py = TOP() + (j + 0.5) * (LINE() - TOP()) / GY;
             if (px < wallL(py) || px > wallR(py)) continue;
             all++;
-            if ((px - x) * (px - x) + (py - y) * (py - y) < r2) inside++;
+            var qy = (py - y) / SHOCK_SQUASH;
+            if ((px - x) * (px - x) + qy * qy < r2) inside++;
           }
         }
         if (inside / all < frac) lo = r; else hi = r;
       }
       return hi;
     }
-    function blast(h, tag, frac) {
-      spawnFx("shock", h.x, h.y, HOLE_R * 9, { hold: 0.25 });
-      shock = { x: h.x, y: h.y, R: coverRadius(h.x, h.y, frac), t: 0, tag: tag, hitIds: {} };
-      Fx.shake(14, SHOCK_TIME);
-      Fx.flash("#eaffd0", 0.4);
-      Sound.clip("shock", 0.8);
+    // `power` 0..1: how hard the shot was (a super's blast is a full one)
+    function blast(h, tag, frac, power) {
+      if (power == null) power = 1;
+      spawnFx("shock", h.x, h.y, HOLE_R * (6 + 3 * power), { hold: 0.25 });
+      shock = { x: h.x, y: h.y, R: coverRadius(h.x, h.y, frac), t: 0, tag: tag, hitIds: {}, power: power,
+                dmg: power >= SHOCK_KILL ? 99 : 2 + Math.round(power * 8) };
+      Fx.shake(5 + 9 * power, SHOCK_TIME);
+      Fx.flash("#eaffd0", 0.15 + 0.25 * power);
+      Sound.clip("shock", 0.45 + 0.35 * power, 1.15 - 0.2 * power);
       moveHole(h);
+    }
+    // how far the hole stands from the tee, 0 (by the tee) to 1 (up by the gate)
+    function holeReach(h) { return clamp((Math.hypot(h.x - TEE_X, h.y - TEE_Y) - SHOCK_NEAR) / (SHOCK_FAR - SHOCK_NEAR), 0, 1); }
+    function shotDifficulty(b, h) {
+      var d = holeReach(h);
+      if (b.lob) d += 0.25;               // dropped in from the air
+      if (b.bounces > 0) d += 0.1;        // banked off a fence or an obstacle
+      if (b.touched) d += 0.1;            // threaded through the horde
+      if (L.mod === "moving") d += 0.15;  // onto a cup on the move
+      return clamp(d, 0, 1);
     }
 
     function holed(b, h) {
       holesSunk++;
       var inOne = b.bounces === 0 && !b.touched && !b.lob;
-      var n = inOne ? 2 : 1;
-      addScore(HOLE_SCORE * n);
+      var n = inOne ? 2 : 1, d = shotDifficulty(b, h), gain = Math.round(HOLE_SCORE * (1 + d) / 50) * 50;
+      addScore(gain * n);
       if (b.lob) lobHoles++;
       var hi = holes.indexOf(h);
       holesThisWave[hi] = 1;
       if (holes.length > 1 && holesThisWave[0] && holesThisWave[1]) bothHoles = true;
       if (inOne) Pop.show("perfect", { word: "Hole in one!", sub: "x2", at: { x: sx(h.x), y: sy(h.y - 60) } });
-      else Pop.show("bonus", { word: "Hole!", sub: "+" + HOLE_SCORE, at: { x: sx(h.x), y: sy(h.y - 60) } });
-      Sound.clip("hole", 0.8);
+      else Pop.show(d >= 0.7 ? "record" : "bonus", { word: d >= 0.7 ? "Mega shot!" : d >= 0.35 ? "Great shot!" : "Hole!", sub: "+" + gain, at: { x: sx(h.x), y: sy(h.y - 60) } });
+      Sound.clip("hole", 0.4);
       if (!b.free) bag = Math.min(BAG_MAX, bag + 1);
-      blast(h, b.id, holes.length > 1 ? 0.6 : SHOCK_COVER);
+      blast(h, b.id, (SHOCK_MIN + (SHOCK_MAX - SHOCK_MIN) * d) * (holes.length > 1 ? 0.75 : 1), d);
       hudWave();
       checkGoal();
+    }
+
+    /* A direct, strong hit pushing zombie m along (px, py): the first pond
+       whose bank is within POND_REACH and lies behind it takes it. */
+    function whirlFor(m, px, py) {
+      if (KINDS[m.kind].boss) return;
+      for (var i = 0; i < terrain.length; i++) {
+        var t = terrain[i];
+        if (t.kind !== "pond") continue;
+        var dx = t.x - m.x, dy = t.y - m.y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 1) continue;
+        var q = Math.sqrt((dx / t.rx) * (dx / t.rx) + (dy / t.ry) * (dy / t.ry));
+        if (q > 1 && d * (1 - 1 / q) > POND_REACH) continue;
+        if ((dx * px + dy * py) / d < POND_AIM) continue;
+        m.whirl = t; m.whirlT = POND_TIME;
+        return;
+      }
     }
 
     // the wave kills every zombie its front reaches; the kills chain on the hole shot
@@ -1384,8 +1635,8 @@
       if (kk < 1) {
         for (var i = 0; i < mons.length; i++) {
           var m = mons[i];
-          if (m.dead || shock.hitIds[m.id] || m.state === "under") continue;
-          if (Math.hypot(m.x - shock.x, m.y - shock.y) - m.r * 0.5 < r) { shock.hitIds[m.id] = 1; hurt(m, 99, shock.tag); }
+          if (m.dead || shock.hitIds[m.id]) continue;
+          if (Math.hypot(m.x - shock.x, (m.y - shock.y) / SHOCK_SQUASH) - m.r * 0.5 < r) { shock.hitIds[m.id] = 1; hurt(m, shock.dmg, shock.tag); }
         }
       }
       if (shock.t > SHOCK_TIME + 0.35) shock = null;
@@ -1413,35 +1664,46 @@
     // a lob coming down: whatever it lands on takes the hit and its kind's effect
     function lobLand(b) {
       Fx.ring(sx(b.x), sy(b.y), { from: 8 * k, to: 34 * k, color: LOB_COL, width: 4, life: 0.3 });
-      Sound.clip("land", 0.45);
+      Sound.clip("land", 0.3);
       if (areaAt("pond", b.x, b.y)) { splash(b.x, b.y); return true; }
       if (b.kind === "explosive") { explode(b.x, b.y, EXP_RADIUS, EXP_DMG, EXP_PUSH, b.id); return true; }
       for (var i = 0; i < mons.length; i++) {
         var m = mons[i];
-        if (m.dead || m.state === "under" || Math.hypot(m.x - b.x, m.y - b.y) > m.r + (b.kind === "giant" ? BALL_R * GIANT_R : BALL_R) + 6) continue;
+        if (m.dead || Math.hypot(m.x - b.x, m.y - b.y) > m.r + (b.kind === "giant" ? BALL_R * GIANT_R : BALL_R) + 6) continue;
         var K = KINDS[m.kind];
         if (!K.boss) m.ky -= 220;
         if (b.kind === "ice") m.frozenT = ICE_TIME;
         if (b.kind === "fire") zones.push({ kind: "fire", x: m.x, y: m.y, r: 50, life: 3, tick: 0, tag: b.id });
         var dmg = LOB_DMG * (b.kind === "heavy" ? 2 : 1);
-        if (m.kind === "colossus") { dmg *= 3; lobsOnHead++; Pop.text(sx(m.x), sy(m.y - 120), Lang.t("On the head!"), { color: LOB_COL, size: 22, life: 0.6, tier: 1 }); }
+        if (m.kind === "colossus") { dmg *= 3; lobsOnHead++; Pop.text(sx(m.x), sy(m.y - 120), Lang.t("Right on the head!"), { color: LOB_COL, size: 22, life: 0.6, tier: 1 }); }
         if (m.kind === "yeti" && b.kind === "fire") dmg *= 2;
         hurt(m, dmg, b.id, "lob");
         b.touched = true;
       }
       if (b.kind === "fire" && !b.touched) zones.push({ kind: "fire", x: b.x, y: b.y, r: 45, life: 2, tick: 0, tag: b.id });
-      if (b.kind === "heavy") spawnFx("crack", b.x, b.y, 90, { from: 2, hold: 0.6 });
+      if (b.kind === "heavy") spawnFx("crack", b.x, b.y, 90, { from: 2, mark: true });
       return false;
     }
     function splash(x, y) {
       Fx.burst(sx(x), sy(y), { color: ["#8fd8ff", "#ffffff", "#4aa8e0"], count: 14, speed: 260, life: 0.45, grav: 500 });
-      Sound.clip("splash", 0.5);
+      Sound.clip("splash", 0.2);
     }
 
     /* Does a Direct hit from below land on the shield's bag? (front, rising) */
+    /* A ball of the Rush gun gets past a shield's bag RUSH_BLOCK of the
+       time it would be blocked: a stream of free balls is meant to break
+       a shield wall, not bounce off it. Rolled once per ball and shield,
+       so a ball sliding along the bag does not get a second chance. */
+    var RUSH_BLOCK = 0.3;
     function blocked(m, b, ey) {
       if (b.kind === "pierce" || b.kind === "heavy" || b.kind === "giant") return false;
-      if (m.kind === "shield") return ey > 0.45 && b.vy < 0;
+      if (m.kind === "shield") {
+        if (!(ey > 0.45 && b.vy < 0)) return false;
+        if (!b.rush) return true;
+        if (!b.blockRoll) b.blockRoll = {};
+        if (b.blockRoll[m.id] == null) b.blockRoll[m.id] = Math.random() < RUSH_BLOCK;
+        return b.blockRoll[m.id];
+      }
       if (m.kind === "colossus" || m.kind === "greenkeeper") return ey > 0.55 && b.vy < 0;
       return false;
     }
@@ -1469,17 +1731,20 @@
           var tgt = null, td = 1e9;
           for (j = 0; j < mons.length; j++) {
             var dd = Math.hypot(mons[j].x - b.x, mons[j].y - b.y);
-            if (!mons[j].dead && mons[j].state !== "under" && dd < td) { td = dd; tgt = mons[j]; }
+            if (!mons[j].dead && dd < td) { td = dd; tgt = mons[j]; }
           }
           if (tgt) { b.vx += (tgt.x - b.x) / td * HOMING_ACC * h; b.vy += (tgt.y - b.y) / td * HOMING_ACC * h; }
         }
         // terrain: sand drags, ice lets it glide, a pond takes it, mud sticks
         sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
-        var decel = friction(sp), sand = !!areaAt("bunker", b.x, b.y);
+        var decel = friction(sp) * (b.glide || 1), sand = !!areaAt("bunker", b.x, b.y);
         if (sand) { decel += SAND_DECEL; if (!b.sand) { b.vx *= 0.7; b.vy *= 0.7; } }
         b.sand = sand;
         if (areaAt("ice", b.x, b.y)) decel *= ICE_K;
-        for (j = 0; j < zones.length; j++) if (zones[j].kind === "mud" && Math.hypot(zones[j].x - b.x, zones[j].y - b.y) < zones[j].r) decel += 1400;
+        for (j = 0; j < zones.length; j++) {
+          var zm = zones[j];
+          if (zm.kind === "mud" && !zm.splat && Math.hypot(zm.x - b.x, (zm.y - b.y) / MUD_SQUASH) < zm.r) decel += 1400;
+        }
         if (areaAt("pond", b.x, b.y)) { splash(b.x, b.y); return true; }
         if (!bouncy) {
           if (wind) b.vx += wind * h;
@@ -1503,21 +1768,30 @@
 
         b.x += b.vx * h; b.y += b.vy * h;
 
-        if (fenceBounce(b)) { bounced(b); if (s === 0 && sp > 500) Sound.clip("bounce", 0.25); }
+        if (fenceBounce(b)) { bounced(b); if (s === 0 && sp > 500) Sound.clip("bounce", 0.5); }
         if (b.y < TOP() + BALL_R) { b.y = TOP() + BALL_R; b.vy = Math.abs(b.vy) * RAIL_BOUNCE; bounced(b); }
 
         if (sideHoleHit(b, h)) return true;
 
+        // the obstacles: a flat ellipse, the ball pushed out along its normal
         for (i = 0; i < bumpers.length; i++) {
-          var u = bumpers[i], dx = b.x - u.x, dy = b.y - u.y, d = Math.sqrt(dx * dx + dy * dy);
-          if (d < u.r + BALL_R && d > 0) {
-            var nx = dx / d, ny = dy / d, vd = b.vx * nx + b.vy * ny;
-            b.x = u.x + nx * (u.r + BALL_R); b.y = u.y + ny * (u.r + BALL_R);
+          var u = bumpers[i];
+          if (u.dead) continue;
+          var ea = u.r * BUMPER_RX + BALL_R, eb = u.r * BUMPER_RX * BUMPER_SQUASH + BALL_R, dx = b.x - u.x, dy = b.y - u.y;
+          var q = Math.sqrt(dx * dx / (ea * ea) + dy * dy / (eb * eb));
+          if (q < 1 && q > 0) {
+            var nx = dx / (ea * ea), ny = dy / (eb * eb), nl = Math.sqrt(nx * nx + ny * ny);
+            nx /= nl; ny /= nl;
+            b.x = u.x + dx / q; b.y = u.y + dy / q;
+            var vd = b.vx * nx + b.vy * ny;
             if (vd < 0) {
+              if (b.kind === "explosive") { explode(b.x, b.y, EXP_RADIUS, EXP_DMG, EXP_PUSH, b.id); return true; }
               b.vx -= 2 * vd * nx; b.vy -= 2 * vd * ny;
               var kick = Math.min(BUMPER_KICK, SHOT_MAX / Math.max(1, Math.sqrt(b.vx * b.vx + b.vy * b.vy)));
-              b.vx *= kick; b.vy *= kick; u.hit = 0.15; bounced(b);
-              Sound.clip("bounce", 0.3, 1.2);
+              b.vx *= kick; b.vy *= kick; bounced(b);
+              Sound.clip("bounce", 0.5, 1.2);
+              if (-vd > MIN_DMG_SPEED) hitBumper(u, Math.max(1, Math.floor(-vd / DMG_SPEED)) * (b.kind === "heavy" ? 2 : 1));
+              else u.hit = 0.15;
             }
           }
         }
@@ -1527,12 +1801,11 @@
           if (sk.back || Math.hypot(sk.x - b.x, sk.y - b.y) > 18 + BALL_R) continue;
           sk.back = true; sk.vy = -620; sk.tag = b.id;
           b.vy = Math.abs(b.vy) * 0.6; bounced(b);
-          Pop.text(sx(sk.x), sy(sk.y - 30), Lang.t("Back at him!"), { color: ACCENT, size: 22, life: 0.6, tier: 1 });
         }
 
         for (j = 0; j < mons.length; j++) {
           var m = mons[j];
-          if (m.dead || m.state === "under" || m.rise > 0.3) continue;
+          if (m.dead || m.rise > 0.3) continue;
           var mx = b.x - m.x, my = b.y - m.y, md = Math.sqrt(mx * mx + my * my);
           var rr = b.kind === "giant" ? BALL_R * GIANT_R : BALL_R;
           if (md >= m.r + rr || md === 0) continue;
@@ -1550,6 +1823,7 @@
           var jn = -(1 + BALL_E) * rv / (1 / bm + 1 / mmass);
           b.vx += jn / bm * ex; b.vy += jn / bm * ey;
           if (!guard) { m.kx -= jn / mmass * ex; m.ky -= jn / mmass * ey; }
+          if (!guard && impact >= POND_SHOT) whirlFor(m, -ex, -ey);
           b.touched = true;
           var dmg = Math.max(1, Math.floor(impact / DMG_SPEED)) * (b.kind === "heavy" ? 2 : 1) + (b.kind === "giant" ? 1 : 0);
           /* A boss is worn down, not knocked out: a ball takes two at most
@@ -1557,13 +1831,14 @@
           if (KINDS[m.kind].boss) dmg = Math.min(dmg, m.kind === "greenkeeper" && guard ? 1 : 2);
           if (m.kind === "yeti" && b.kind === "fire") dmg *= 2;
           if (guard && m.kind !== "greenkeeper") {
-            if (s === 0) Sound.clip("block", 0.35);
+            if (s === 0) Sound.clip("block", 0.2);
             if (!m.blockT || m.blockT <= 0) { Pop.text(sx(m.x), sy(m.y - 70), Lang.t("Blocked"), { color: "#ffffff", size: 22, life: 0.6, tier: 1 }); m.blockT = 1; }
           } else {
             if (b.kind === "ice") m.frozenT = ICE_TIME;
             if (b.kind === "fire") zones.push({ kind: "fire", x: m.x, y: m.y, r: 50, life: 3, tick: 0, tag: b.id });
-            if (impact > MIN_DMG_SPEED) hurt(m, dmg, b.id);
-            if (b.kind === "heavy" && impact > MIN_DMG_SPEED) spawnFx("crack", m.x, m.y + m.r * 0.75, m.r * 3, { from: 2, hold: 0.6 });
+            // a mudling bursts at any touch; the rest needs a real hit
+            if (impact > MIN_DMG_SPEED || KINDS[m.kind].still) hurt(m, dmg, b.id);
+            if (b.kind === "heavy" && impact > MIN_DMG_SPEED) spawnFx("crack", m.x, m.y + m.r * 0.75, m.r * 3, { from: 2, mark: true });
           }
           bounced(b);
         }
@@ -1600,6 +1875,8 @@
         if (m.dead) continue;
         var K = KINDS[m.kind];
         m.flash -= dt; m.hitT -= dt; m.tagT -= dt; if (m.tagT <= 0) m.tag = 0;
+        m.hpT = (m.hpT || 0) - dt; m.chipT = (m.chipT || 0) - dt;
+        if (m.hpShow != null && m.chipT <= 0) m.hpShow = Math.max(m.hp, m.hpShow - m.maxHp * (K.boss ? 0.25 : 1.5) * dt);
         m.frozenT -= dt; if (m.frozenT <= 0 && m.frozenT > -dt && freezeT <= 0) iceOff(m);
         m.blockT = (m.blockT || 0) - dt; m.stunT = (m.stunT || 0) - dt; m.poiseT = (m.poiseT || 0) - dt;
         if (m.rise > 0) { m.rise -= dt; continue; }
@@ -1609,31 +1886,24 @@
           m.animT += dt * m.speed;
           behave(m, K, dt);
           var v = walk * K.speed * m.speed * (sand ? 0.6 : 1) * (m.chargeT > 0 ? 3 : 1);
-          if (m.state === "under") v = 70;
-          if ((m.state === "walk" || m.state === "under") && !lab.still) {
-            if (m.state === "under") {
-              var hh = holes[0], dx = hh.x - m.x, dy = hh.y - m.y, dl = Math.hypot(dx, dy) || 1;
-              m.x += dx / dl * v * dt; m.y += dy / dl * v * dt;
-              if (dl < 26) surface(m);
-            } else {
-              if (m.y > TOP() && m.lane >= 0) {
-                var lx = wallL(m.y) + m.lane * (wallR(m.y) - wallL(m.y));
-                m.x += clamp((lx - m.x) * 1.2, -FAN_SPEED, FAN_SPEED) * dt;
-              }
-              if (!K.straight) m.x += Math.sin(time * 1.3 + m.phase) * WOBBLE * dt;
-              m.y += v * dt;
+          if (m.state === "walk" && !lab.still && !K.still) {
+            if (m.y > TOP() && m.lane >= 0) {
+              var lx = wallL(m.y) + m.lane * (wallR(m.y) - wallL(m.y));
+              m.x += clamp((lx - m.x) * 1.2, -FAN_SPEED, FAN_SPEED) * dt;
             }
+            if (!K.straight) m.x += Math.sin(time * 1.3 + m.phase) * WOBBLE * dt;
+            m.y += v * dt;
           }
         }
-        // a pond pulls in a zombie that has just been hit (the whirlpool)
-        if (m.tagT > 0 && !K.boss && m.state !== "under") for (j = 0; j < terrain.length; j++) {
-          var wp = terrain[j];
-          if (wp.kind !== "pond") continue;
-          var wdx = wp.x - m.x, wdy = wp.y - m.y, wd = Math.sqrt(wdx * wdx + wdy * wdy), reach = wp.rx + POND_REACH;
-          if (wd < 1 || wd > reach) continue;
-          var pull = POND_PULL * (1 - 0.6 * wd / reach) * dt;
-          m.kx += wdx / wd * pull; m.ky += wdy / wd * pull;
-        }
+        // the pond a strong hit knocked it back towards pulls it in (the whirlpool)
+        m.whirlT = (m.whirlT || 0) - dt;
+        if (m.whirlT > 0 && m.whirl) {
+          var wp = m.whirl, wdx = wp.x - m.x, wdy = wp.y - m.y, wd = Math.sqrt(wdx * wdx + wdy * wdy), reach = wp.rx + POND_REACH;
+          if (wd > 1) {
+            var pull = POND_PULL * (1 - 0.6 * Math.min(1, wd / reach)) * dt;
+            m.kx += wdx / wd * pull; m.ky += wdy / wd * pull;
+          }
+        } else m.whirl = null;
         m.x += m.kx * dt;
         m.y += m.ky * dt;
         var drag = Math.exp(-MON_DRAG * (ice ? 0.5 : 1) * dt);
@@ -1647,7 +1917,7 @@
         // a boss knocked back stays on the field, where a rolling ball reaches it
         if (K.boss && m.y < TOP() + m.r && m.ky < 0 && bossRef === m) { m.y = TOP() + m.r; m.ky = 0; }
         // a pond: knocked in, it drowns; walking, it goes round
-        var pond = m.state !== "under" ? areaAt("pond", m.x, m.y) : null;
+        var pond = areaAt("pond", m.x, m.y);
         if (pond) {
           var ks = Math.hypot(m.kx, m.ky);
           if (m.kind === "bog") {
@@ -1663,7 +1933,7 @@
             Pop.text(sx(m.x), sy(m.y - 50), Lang.t("Splash!"), { color: "#8fd8ff", size: 22, life: 0.6, tier: 1 });
             kill(m, m.tag, "drown");
             continue;
-          } else {
+          } else if (!K.still) {
             /* Walking, it goes round — on the side with more room, picked
                once, or a zombie square on the pond's crown would dither on
                it forever. */
@@ -1688,9 +1958,9 @@
       }
       // billiards between zombies
       for (i = 0; i < mons.length; i++) {
-        var a = mons[i]; if (a.dead || a.state === "under" || a.rise > 0) continue;
+        var a = mons[i]; if (a.dead || a.rise > 0) continue;
         for (j = i + 1; j < mons.length; j++) {
-          var b = mons[j]; if (b.dead || b.state === "under" || b.rise > 0) continue;
+          var b = mons[j]; if (b.dead || b.rise > 0) continue;
           var ddx = b.x - a.x, ddy = b.y - a.y, d = Math.sqrt(ddx * ddx + ddy * ddy), rr = a.r + b.r;
           if (d >= rr || d === 0) continue;
           var nx = ddx / d, ny = ddy / d, push = (rr - d) / 2;
@@ -1709,10 +1979,11 @@
       // the line
       for (i = 0; i < mons.length; i++) {
         m = mons[i];
-        if (m.dead || m.state === "under" || m.y + m.r * 0.5 < LINE()) continue;
-        if (KINDS[m.kind].boss) { m.ky -= 900; m.y = LINE() - m.r; loseFlag(m, 2); continue; }
+        if (m.dead || m.y + m.r * 0.5 < LINE()) continue;
+        if (KINDS[m.kind].boss) { m.ky -= 900; m.y = LINE() - m.r; crossBlast(m); loseFlag(m, 2); continue; }
         m.dead = true;
         if (m.kind === "runner") runnersAcross++;
+        crossBlast(m);
         loseFlag(m, 1);
       }
       var keep = [];
@@ -1720,13 +1991,35 @@
       mons = keep;
     }
 
+    /* The zombie on the line explodes where it stands, and the blast sends
+       every other zombie below the middle of the field back up towards it. */
+    function crossBlast(m) {
+      if (won || lab.hold) return;
+      if (!spawnFx("boom", m.x, m.y, CROSS_R * 2.1, { top: true, mark: true })) {
+        Fx.ring(sx(m.x), sy(m.y), { from: CROSS_R * 0.3 * k, to: CROSS_R * k, color: "#ff5a3a", width: 8, life: 0.4 });
+      }
+      Fx.burst(sx(m.x), sy(m.y - 30), { color: ["#ff3b3b", "#ffb347", "#b8ff3a"], count: 26, speed: 460, life: 0.6, grav: 400 });
+      Sound.clip("boomer", 0.5, 1.85);
+      var my = (TOP() + LINE()) / 2;
+      for (var i = 0; i < mons.length; i++) {
+        var o = mons[i];
+        if (o === m || o.dead || o.y <= my) continue;
+        var tx = (wallL(my) + wallR(my)) / 2, dx = tx - o.x, dy = my - o.y;
+        // the knock decays at MON_DRAG a second, so this speed carries it
+        // CROSS_BACK of the way to the middle
+        o.kx += dx * MON_DRAG * CROSS_BACK; o.ky += dy * MON_DRAG * CROSS_BACK;
+        o.flash = 0.12;
+      }
+    }
+
     function loseFlag(m, n) {
       if (won || lab.hold) return;
-      Fx.flash("#ff2020", 0.35); Fx.shake(8, 0.25);
+      Fx.flash("#ff2020", 0.35); Fx.shake(16, 0.45);
+      Overlay.vignette("rgba(255,30,30,.85)", 1, 700);
       Sound.clip("flag", 0.7);
       if (phase === "last") return;           // the gun holds the line: nothing left to lose
       flags -= n; flagsLost += n;
-      Notify.say("Flag lost", { sub: Math.max(0, flags) + " / " + FLAGS, kind: "loss", key: "flag" });
+      Pop.show("alert", { word: "Flag lost", sub: Math.max(0, flags) + " / " + FLAGS });
       if (flags <= 0) {
         flags = 0;
         if (!lastUsed) { lastUsed = true; startPhase("last"); }
@@ -1738,11 +2031,7 @@
     /* What each special does on top of walking. */
     function behave(m, K, dt) {
       m.stateT += dt;
-      if (m.kind === "digger") {
-        if (m.state === "walk" && !m.surfaced && m.y > m.digAt) { m.state = "dig"; m.stateT = 0; }
-        else if (m.state === "dig" && m.stateT > 0.8) { m.state = "under"; m.stateT = 0; }
-        else if (m.state === "surface" && m.stateT > 0.6) { m.state = "walk"; m.stateT = 0; }
-      } else if (m.kind === "necro") {
+      if (m.kind === "necro") {
         m.actT -= dt;
         if (m.state === "walk" && m.actT <= 0 && m.y > TOP()) { m.state = "cast"; m.stateT = 0; }
         if (m.state === "cast" && m.stateT > 1) {
@@ -1752,7 +2041,6 @@
             var f = fallen.pop();
             addMon("walker", f.x, f.y, true); raised++; n++;
           }
-          if (n) Pop.show("danger", { word: "Raised!", at: { x: sx(m.x), y: sy(m.y - 120) } });
         }
       } else if (K.boss) {
         m.actT -= dt;
@@ -1760,23 +2048,14 @@
         if (m.state === "act" && m.stateT > 0.8) { m.state = "walk"; bossAct(m); }
       }
     }
-    function surface(m) {
-      m.state = "surface"; m.stateT = 0; m.surfaced = true;
-      var h = holes[0];
-      h.y = Math.min(LINE() - 130, h.y + 200);
-      h.home = h.x;
-      holeDragged = true;
-      Fx.burst(sx(m.x), sy(m.y), { color: ["#6b4a2a", "#9a7a4a"], count: 18, speed: 300, life: 0.5, grav: 400 });
-      Notify.say("The hole was dragged", { sub: Lang.t("Hit a digger before it burrows"), kind: "warn", key: "drag" });
-    }
     function bossAct(m) {
       m.actT = m.kind === "king" ? 5 : m.kind === "colossus" ? 8 : 6.5;
       var y;
       if (m.kind === "colossus") {
         // a golf bag hurled down a lane: a bumper for five seconds
         y = Math.min(LINE() - 220, m.y + rand(220, 360));
-        bumpers.push({ x: clamp(m.x + rand(-160, 160), wallL(y) + 50, wallR(y) - 50), y: y, r: 34, key: "decor03", hit: 0, life: 5 });
-        Sound.clip("land", 0.6, 0.8);
+        addBumper({ x: clamp(m.x + rand(-160, 160), wallL(y) + 50, wallR(y) - 50), y: y, r: 34, key: "decor03", life: 5, hp: BAG_HP });
+        Sound.clip("land", 0.8, 0.65);
       } else if (m.kind === "bog") {
         zones.push({ kind: "mud", x: m.x, y: m.y + 60, r: 150, life: 4, tick: 0 });
         Fx.burst(sx(m.x), sy(m.y + 40), { color: ["#6b4a2a", "#4a3a1a", "#9fe03a"], count: 20, speed: 320, life: 0.6, grav: 400 });
@@ -1788,7 +2067,7 @@
       } else if (m.kind === "king") {
         skulls.push({ x: m.x, y: m.y + 40, vy: 260, back: false, tag: 0 });
         for (var i = 0; i < 2; i++) addMon("walker", m.x + (i ? 70 : -70), m.y + 20, true);
-        Sound.clip("shot", 0.6, 0.7);
+        Sound.clip("shot", 1, 1.5);
       }
     }
     function updateSkulls(dt) {
@@ -1843,7 +2122,6 @@
         case "shieldLob": return shieldsByLob >= n;
         case "headLob": return lobsOnHead >= n;
         case "drownShot": return maxDrown >= n;
-        case "noDrag": return !holeDragged;
         case "bothHoles": return bothHoles;
         case "noRunner": return runnersAcross === 0;
         case "noRaise": return raised === 0;
@@ -1889,18 +2167,22 @@
     function update(dt) {
       if (!started) {
         started = true;
-        if (L.help) Notify.say("Start in blue to roll, in orange to lob", { sub: Lang.t("Drag out: the distance is the power"), kind: "info", key: "help", hold: 5 });
-        if (L.help) Notify.say("Red flag: a shockwave", { sub: Lang.t("A coloured flag: special balls and a flag back"), kind: "info", key: "flags", hold: 5 });
-        if (L.lobHelp) Notify.say("Lob over the horde", { sub: Lang.t("Start your touch in the orange band"), kind: "info", key: "lob" });
-        if (L.goal[0] === "drown") Notify.say("Whirlpools", { sub: Lang.t("A zombie you hit near a pond is pulled in"), kind: "info", key: "whirl", hold: 5 });
-        if (L.mod === "moving") Notify.say("The hole moves", { kind: "warn", key: "mod" });
-        if (L.mod === "wind") Notify.say("Wind", { sub: Lang.t("It bends every shot"), kind: "warn", key: "mod" });
-        if (L.mod === "night") Notify.say("Night", { sub: Lang.t("The horde comes out of the dark"), kind: "warn", key: "mod" });
-        if (L.mod === "double") Notify.say("Two holes", { sub: Lang.t("Each blast covers less"), kind: "warn", key: "mod" });
-        if (L.mod === "horde") Notify.say("Horde", { sub: Lang.t("Twice the zombies, one hit each"), kind: "warn", key: "mod" });
-        if (L.feature && LEVELS.indexOf(L) > 0 && SPECIALS.some(function (s) { return s[0] === L.feature && s[1] === CONFIG.level; }))
-          Notify.say(KINDS[L.feature].name, { sub: Lang.t(TIPS[L.feature]), kind: "rare", key: "new" });
+        /* A MECHANIC MET FOR THE FIRST TIME is named once per player
+           (Notify.learn), and its line in the "!" log opens its page of the
+           guide — the rules themselves are the guide's, never a line during
+           play. The web build opens its first round under the Help card; a
+           playable has neither, so it keeps the two words on the controls.
+           Only what the frame cannot say is named: a terrain, a twist or a
+           zombie that reads at a glance is left to the guide. */
+        if (L.help && !window.__GUIDE__) {
+          Notify.learn("shot", "Roll or lob", { sub: Lang.t("Blue band to roll, orange band to lob"), kind: "info", hold: 5000 });
+          Notify.learn("flags", "Ball flags", { sub: Lang.t("Coloured holes give special balls"), kind: "info" });
+        }
+        if (L.lobHelp) Notify.learn("lob", "The lob", { sub: Lang.t("Aim from the orange semicircle to lob") });
+        var met = MET_TERRAIN[B.terrain];
+        if (met) Notify.learn(met[0], met[1], { sub: Lang.t(met[2]) });
       }
+      updateStress(dt);
       updateControl(dt);
       if (ended) return;
       if (won || over) {
@@ -1929,6 +2211,7 @@
       }
       if (L.mod === "moving") for (var i = 0; i < holes.length; i++) {
         var h = holes[i], amp = Math.max(0, Math.min(h.home - wallL(h.y) - 50, wallR(h.y) - 50 - h.home, 150));
+        h.amp = amp;
         h.x = h.home + Math.sin(time * 0.7) * amp;
       }
       updateWaves(dt);
@@ -1950,20 +2233,24 @@
       if (!calm) { updateMonsters(dt); updateSkulls(dt); }
     }
 
+    /* What a band's terrain says the first time it is met: the page of the
+       guide, the word and its line. Sand and ice read at a glance, and so
+       does every twist level (the guide has their pages). */
+    var MET_TERRAIN = {
+      water:  ["ponds", "Whirlpools", "Hit a zombie hard with a pond behind it"],
+      grave:  ["graves", "Graves", "Break graves so no more zombies rise"]
+    };
+    // the zombies named on their first walk-on: a rule the frame cannot say
     var TIPS = {
-      boomer: "It bursts and blows up its neighbours",
-      shield: "Its bag blocks shots from below: lob over it or bank off a fence",
-      mudder: "It splits in two when knocked out",
-      digger: "Hit it before it burrows, or it drags the hole",
-      runner: "It sprints straight down: shoot fast",
-      necro: "It raises the fallen: knock it out first"
+      shield: "Lob over it or bank off a fence",
+      necro: "It raises fallen zombies. Knock it out first."
     };
 
     // ======================================================================
     //  RENDER
     // ======================================================================
-    var DROP_COLORS = { plain: "#ffffff", fire: "#ff8a2a", ice: "#9fe8ff", gold: "#ffd34d", cluster: "#555555", bomblet: "#555555", meteor: "#8a5a3a" };
-    var DROP_ART = { plain: "ball01", fire: "ball08", ice: "ball10", gold: "ball12", cluster: "super15", bomblet: "ball01", meteor: "super17" };
+    var DROP_COLORS = { plain: "#ffffff", fire: "#ff8a2a", ice: "#9fe8ff", gold: "#ffd34d", cluster: "#555555", bomblet: "#555555", carpet: "#555555", meteor: "#8a5a3a" };
+    var DROP_ART = { plain: "ball01", fire: "ball08", ice: "ball10", gold: "ball12", cluster: "super15", bomblet: "ball01", carpet: "ball01", meteor: "super17" };
 
     function render() {
       if (k < 1) {
@@ -1978,6 +2265,7 @@
       else { ctx.fillStyle = "#357a3a"; ctx.fillRect(0, 0, W, H); }
 
       drawTerrain();
+      drawMarks();
       drawZones();
       // the arc is painted on the grass: over the ground, under every sprite
       drawBands();
@@ -2021,9 +2309,9 @@
           ctx.restore();
         }
       }
+      drawGunAura();
       drawReticle();
       drawTee();
-      if (phase === "rush") drawFx("rush", Math.floor(time * 14) % 4, TEE_X, TEE_Y + 16, 190);
       drawPreview();
       drawBag();
       drawBossBar();
@@ -2032,26 +2320,28 @@
 
     function drawTerrain() {
       for (var i = 0; i < terrain.length; i++) {
-        var t = terrain[i], a = t.life < 0 ? 1 : Math.min(1, t.life);
-        if (Enter.begin(t.x, t.y)) {
-          ctx.save();
-          ctx.globalAlpha *= a;
-          if (!drawPatch(t.key, t.x, t.y, t.rx, t.ry)) {
-            ctx.fillStyle = t.kind === "pond" ? "#3a8ac0" : t.kind === "ice" ? "#bfe8ff" : "#e8d29a";
-            ctx.beginPath(); ctx.ellipse(t.x, t.y, t.rx, t.ry, 0, 0, Math.PI * 2); ctx.fill();
-          }
-          // a pond is a whirlpool: two currents turning round its middle
-          if (t.kind === "pond") {
-            ctx.strokeStyle = "rgba(220,245,255,0.55)"; ctx.lineWidth = 3;
-            for (var w = 0; w < 2; w++) {
-              var w0 = time * 2.2 + w * Math.PI;
-              ctx.beginPath(); ctx.ellipse(t.x, t.y, t.rx * (0.32 + 0.2 * w), t.ry * (0.32 + 0.2 * w), 0, w0, w0 + 2.2); ctx.stroke();
-            }
-          }
-          ctx.restore();
-          Enter.end();
+        var t = terrain[i];
+        if (Enter.begin(t.x, t.y)) { paintTerrain(t); Enter.end(); }
+      }
+    }
+    // one patch of terrain (also what the guide's pictures paint)
+    function paintTerrain(t) {
+      var a = t.life < 0 ? 1 : Math.min(1, t.life);
+      ctx.save();
+      ctx.globalAlpha *= a;
+      if (!drawPatch(t.key, t.x, t.y, t.rx, t.ry)) {
+        ctx.fillStyle = t.kind === "pond" ? "#3a8ac0" : t.kind === "ice" ? "#bfe8ff" : "#e8d29a";
+        ctx.beginPath(); ctx.ellipse(t.x, t.y, t.rx, t.ry, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      // a pond is a whirlpool: two currents turning round its middle
+      if (t.kind === "pond") {
+        ctx.strokeStyle = "rgba(220,245,255,0.55)"; ctx.lineWidth = 3;
+        for (var w = 0; w < 2; w++) {
+          var w0 = time * 2.2 + w * Math.PI;
+          ctx.beginPath(); ctx.ellipse(t.x, t.y, t.rx * (0.32 + 0.2 * w), t.ry * (0.32 + 0.2 * w), 0, w0, w0 + 2.2); ctx.stroke();
         }
       }
+      ctx.restore();
     }
     function drawZones() {
       for (var i = 0; i < zones.length; i++) {
@@ -2068,25 +2358,120 @@
           ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.fill();
           ctx.fillStyle = "rgba(255,220,80," + f + ")";
           ctx.beginPath(); ctx.arc(z.x, z.y, z.r * 0.5, 0, Math.PI * 2); ctx.fill();
-        } else if (z.kind === "mud") {
-          ctx.fillStyle = "rgba(92,64,30," + 0.45 * a + ")";
-          ctx.beginPath(); ctx.ellipse(z.x, z.y, z.r, z.r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+        } else if (z.kind === "mud") drawMud(z);
+      }
+    }
+    /* THE BOG'S MUD: a blob of wet mud spreading on the grass (an outline
+       that wobbles, its own on each puddle), a dark lip, splatter round it,
+       the bog's moss in it, a wet shine, and bubbles swelling and popping —
+       then it dries away over its last 0.8 s. No art: drawn here. */
+    function drawMud(z) {
+      if (z.max == null) z.max = z.life;
+      if (!z.seed) z.seed = 1 + Math.random() * 97;
+      var age = z.max - z.life, sd = z.seed, j;
+      var grow = 1 - Math.pow(1 - clamp(age / (z.splat ? 0.15 : 0.35), 0, 1), 3), dry = clamp(z.life / 0.8, 0, 1);
+      var r = z.r * grow * (0.9 + 0.1 * dry);
+      if (r < 2) return;
+      function blob(kk) {
+        ctx.beginPath();
+        for (var q = 0; q <= 44; q++) {
+          var an = q / 44 * Math.PI * 2;
+          var rr = r * kk * (1 + 0.09 * Math.sin(an * 3 + sd) + 0.06 * Math.sin(an * 7 + sd * 1.7) + 0.015 * Math.sin(an * 13 + time * 2.5));
+          if (q) ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); else ctx.moveTo(Math.cos(an) * rr, Math.sin(an) * rr);
+        }
+        ctx.closePath();
+      }
+      ctx.save();
+      ctx.globalAlpha *= dry;
+      ctx.translate(z.x, z.y); ctx.scale(1, MUD_SQUASH);
+      ctx.fillStyle = "#3a2410";
+      for (j = 0; j < 9; j++) {
+        var da = sd * 2.3 + j * 0.71 * Math.PI, dd = r * (1.1 + 0.18 * ((sd * (j + 3)) % 1));
+        ctx.beginPath(); ctx.arc(Math.cos(da) * dd, Math.sin(da) * dd, r * (0.04 + 0.04 * ((sd * (j + 7)) % 1)), 0, Math.PI * 2); ctx.fill();
+      }
+      blob(1.05); ctx.fillStyle = "#24160a"; ctx.fill();
+      var g = ctx.createRadialGradient(-r * 0.2, -r * 0.25, r * 0.1, 0, 0, r);
+      g.addColorStop(0, "#6e4824"); g.addColorStop(0.6, "#553518"); g.addColorStop(1, "#3b2511");
+      blob(1); ctx.fillStyle = g; ctx.fill();
+      ctx.fillStyle = "rgba(127,174,42,0.85)";
+      for (j = 0; j < 6; j++) {
+        var ma = sd * 1.3 + j * 1.9, md = r * 0.65 * ((sd * (j + 1) * 0.37) % 1);
+        ctx.beginPath(); ctx.ellipse(Math.cos(ma) * md, Math.sin(ma) * md, r * 0.07, r * 0.045, ma, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.strokeStyle = "rgba(255,236,200,0.32)"; ctx.lineCap = "round";
+      ctx.lineWidth = Math.max(3, r * 0.05); ctx.beginPath(); ctx.arc(0, 0, r * 0.74, Math.PI * 1.1, Math.PI * 1.42); ctx.stroke();
+      ctx.lineWidth = Math.max(2, r * 0.03); ctx.beginPath(); ctx.arc(0, 0, r * 0.55, Math.PI * 1.16, Math.PI * 1.32); ctx.stroke();
+      ctx.restore();
+      // the bubbles stand up off the mud, so they are not squashed
+      ctx.save();
+      ctx.globalAlpha *= dry;
+      for (j = 0; j < (z.splat ? 2 : 6); j++) {
+        var cyc = 1.1 + 0.3 * (j % 3), ph = ((time + j * 0.37 + sd) % cyc) / cyc;
+        var ba = sd * 3 + j * 2.39, bd = r * 0.62 * ((j * 0.37 + sd) % 1), bx = z.x + Math.cos(ba) * bd, by = z.y + Math.sin(ba) * bd * MUD_SQUASH;
+        if (ph < 0.8) {
+          var br = 2 + (z.splat ? 4 : 7) * ph / 0.8;
+          ctx.fillStyle = "#7a5230"; ctx.beginPath(); ctx.arc(bx, by - br * 0.6, br, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = "#2a1a0a"; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.fillStyle = "rgba(255,240,210,0.6)"; ctx.beginPath(); ctx.arc(bx - br * 0.35, by - br, br * 0.28, 0, Math.PI * 2); ctx.fill();
+        } else {
+          var pr = 8 + (ph - 0.8) * 50;
+          ctx.strokeStyle = "rgba(140,100,55," + (1 - (ph - 0.8) / 0.2) + ")"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.ellipse(bx, by, pr, pr * MUD_SQUASH, 0, 0, Math.PI * 2); ctx.stroke();
         }
       }
+      ctx.restore();
+    }
+    /* The obstacles lie on the grass squashed to the cups' ellipse, with no
+       shadow — and with a HEIGHT: under the top face, a band of the object's
+       own silhouette, darkened and stacked down BUMPER_DEPTH radii, like the
+       wall of a cup seen from the tee, so a flowerbed reads as a raised bed
+       and not a sticker. The top face sits half a band above the collision
+       centre, the band half a band below it. A hit makes it jump; a damaged
+       one wears its gauge. */
+    var BUMPER_SQUASH = 0.42, BUMPER_ART = 3.2, BUMPER_RX = 1.35;   // art width, collision half-width, in radii
+    var BUMPER_DEPTH = 0.5, sideCache = {};
+    // the object's silhouette darkened for its side band: `deep` for the lower half
+    function sideOf(key, im, deep) {
+      var id = key + (deep ? "d" : "u");
+      if (sideCache[id]) return sideCache[id];
+      var c = document.createElement("canvas"), x;
+      c.width = im.naturalWidth; c.height = im.naturalHeight;
+      x = c.getContext("2d");
+      x.drawImage(im, 0, 0);
+      x.globalCompositeOperation = "source-atop";
+      x.fillStyle = deep ? "rgba(22,14,8,0.7)" : "rgba(30,22,12,0.5)";
+      x.fillRect(0, 0, c.width, c.height);
+      sideCache[id] = c;
+      return c;
     }
     function drawBumpers() {
       for (var i = 0; i < bumpers.length; i++) {
-        var u = bumpers[i], s = u.hit > 0 ? 1.12 : 1, a = u.life != null ? Math.min(1, u.life) : 1;
-        if (Enter.begin(u.x, u.y)) {
-          ctx.fillStyle = "rgba(0,0,0,0.28)";
-          ctx.beginPath(); ctx.ellipse(u.x, u.y + u.r * 0.55, u.r * 1.1, u.r * 0.4, 0, 0, Math.PI * 2); ctx.fill();
-          if (!drawArt(u.key, u.x, u.y - u.r * 0.25, u.r * 2.6 * s, a)) {
-            ctx.fillStyle = u.hit > 0 ? "#ffe27a" : "#e0a030";
-            ctx.beginPath(); ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2); ctx.fill();
-          }
-          Enter.end();
-        }
+        var u = bumpers[i];
+        if (u.dead) continue;
+        if (Enter.begin(u.x, u.y)) { paintBumper(u); Enter.end(); }
       }
+    }
+    // one obstacle (also what the guide's pictures paint)
+    function paintBumper(u) {
+      var s = u.hit > 0 ? 1.1 : 1, a = u.life != null ? Math.min(1, u.life) : 1, im = img(u.key), w = u.r * BUMPER_ART * s, h = w * BUMPER_SQUASH;
+      var T = u.r * BUMPER_DEPTH, top = u.y - T / 2;
+      ctx.save();
+      ctx.globalAlpha *= a;
+      if (im) {
+        h = w * im.naturalHeight / im.naturalWidth * BUMPER_SQUASH;
+        // the side band, bottom up: the deep tint low, the lighter one high
+        for (var dy = T; dy > 0; dy -= 1.5) ctx.drawImage(sideOf(u.key, im, dy > T * 0.45), u.x - w / 2, top - h / 2 + dy, w, h);
+        ctx.drawImage(im, u.x - w / 2, top - h / 2, w, h);
+        if (u.hit > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha *= 0.45; ctx.drawImage(im, u.x - w / 2, top - h / 2, w, h); }
+      } else {
+        var rx = u.r * BUMPER_RX, ry = rx * BUMPER_SQUASH;
+        ctx.fillStyle = "#9a6a1a";
+        ctx.beginPath(); ctx.ellipse(u.x, top + T, rx, ry, 0, 0, Math.PI); ctx.lineTo(u.x - rx, top); ctx.ellipse(u.x, top, rx, ry, 0, Math.PI, 0, true); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = u.hit > 0 ? "#ffe27a" : "#e0a030";
+        ctx.beginPath(); ctx.ellipse(u.x, top, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+      if (u.hp < u.maxHp && u.hpT > 0) drawLife(u.x, top - h / 2 - 20, u.hp, u.hpShow, u.maxHp, lifeAlpha(u.hpT), u.hit > 0, u.id + 50);
     }
     /* The ball flags and the hole, as chosen in lab/holepocalypse-flags.html
        (2026-10-18). No flagstick: a flag is a HOLOGRAM rising out of its
@@ -2106,20 +2491,30 @@
     function groundEllipse(x, y, r) {
       ctx.beginPath(); ctx.ellipse(x, y, r, r * GROUND_SQUASH, 0, 0, Math.PI * 2);
     }
-    /* A cup seen from up the tee: the lip, the dark inside, its far wall. */
-    function drawCup(x, y, w, capped) {
-      ctx.fillStyle = "#e9e4d6"; groundEllipse(x, y, w / 2); ctx.fill();
+    /* A cup seen from up the tee: the lip, the dark inside, its far wall.
+       `bare` leaves the lip out, for a cup whose rim is drawn dashed. */
+    function drawCup(x, y, w, capped, bare) {
+      if (!bare) { ctx.fillStyle = "#e9e4d6"; groundEllipse(x, y, w / 2); ctx.fill(); }
       ctx.fillStyle = capped ? "#8a8f80" : "#0e1a10"; groundEllipse(x, y, w * 0.4); ctx.fill();
       if (!capped) {
         ctx.fillStyle = "#26352a";
         ctx.beginPath(); ctx.ellipse(x, y - w * 0.4 * GROUND_SQUASH * 0.35, w * 0.36, w * 0.4 * GROUND_SQUASH * 0.6, 0, 0, Math.PI * 2); ctx.fill();
       }
     }
+    /* A cup's lip wears its hologram's colour, folded or not, so a cup says
+       what it holds even with a zombie standing on it: the power's colour,
+       and dashed on the shockwave's hole so it never reads as a power flag. */
+    function drawLip(x, y, w, col, dashed) {
+      ctx.save();
+      ctx.strokeStyle = col; ctx.lineWidth = w * 0.1;
+      if (dashed) { ctx.setLineDash([w * 0.16, w * 0.1]); ctx.lineDashOffset = -time * 12; }
+      groundEllipse(x, y, w * 0.45); ctx.stroke();
+      ctx.restore();
+    }
     function passIn(o) {
       var i, dx, dy, m, b;
       for (i = 0; i < mons.length; i++) {
         m = mons[i];
-        if (m.state === "under") continue;
         dx = m.x - o.x; dy = m.y + m.r * 0.75 - o.y;
         if (Math.abs(dx) < PASS.side + m.r && dy > -PASS.back - m.r * 0.3 && dy < PASS.front + m.r * 0.5) return true;
       }
@@ -2186,11 +2581,16 @@
       ctx.restore();
     }
     // the shockwave's toxic ring, on the hole's red hologram
-    function shockGlyph(R) {
-      ctx.strokeStyle = ACCENT; ctx.lineWidth = Math.max(3, R * 0.16);
-      ctx.beginPath(); ctx.arc(0, 0, R * 0.62, 0, Math.PI * 2); ctx.stroke();
-      ctx.lineWidth = Math.max(2, R * 0.08);
-      ctx.beginPath(); ctx.arc(0, 0, R * 0.3, 0, Math.PI * 2); ctx.stroke();
+    /* The shockwave's toxic rings, on the hole's red hologram: one, two or
+       three of them as the hole stands further up the field — the size of
+       the wave a putt there would set off. */
+    function shockGlyph(R, h) {
+      var rings = 1 + Math.round(2 * holeReach(h));
+      ctx.strokeStyle = ACCENT;
+      for (var i = 0; i < rings; i++) {
+        ctx.lineWidth = Math.max(2, R * (0.08 + 0.04 * i));
+        ctx.beginPath(); ctx.arc(0, 0, R * (0.3 + 0.22 * i), 0, Math.PI * 2); ctx.stroke();
+      }
       ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(0, 0, R * 0.1, 0, Math.PI * 2); ctx.fill();
     }
     function drawHoles() {
@@ -2201,19 +2601,44 @@
           ctx.strokeStyle = "rgba(159,224,58," + (0.45 + 0.3 * Math.sin(time * 10)) + ")"; ctx.lineWidth = 4;
           groundEllipse(h.x, h.y, HOLE_R * 4); ctx.stroke();
         }
-        // a toxic glow says where the shockwave waits
-        var g = ctx.createRadialGradient(h.x, h.y, 4, h.x, h.y, HOLE_GLOW);
-        g.addColorStop(0, "rgba(159,224,58,0.55)"); g.addColorStop(1, "rgba(159,224,58,0)");
-        ctx.save(); ctx.translate(h.x, h.y); ctx.scale(1, GROUND_SQUASH); ctx.translate(-h.x, -h.y);
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(h.x, h.y, HOLE_GLOW, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-        drawCup(h.x, h.y, HOLE_CUP_W, false);
+        if (L.mod === "moving") drawRail(h);
+        paintHole(h);
         Enter.end();
       }
     }
+    // the hole's cup on the grass (also what the guide's pictures paint)
+    function paintHole(h) {
+      // a toxic glow says where the shockwave waits
+      var g = ctx.createRadialGradient(h.x, h.y, 4, h.x, h.y, HOLE_GLOW);
+      g.addColorStop(0, "rgba(159,224,58,0.55)"); g.addColorStop(1, "rgba(159,224,58,0)");
+      ctx.save(); ctx.translate(h.x, h.y); ctx.scale(1, GROUND_SQUASH); ctx.translate(-h.x, -h.y);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(h.x, h.y, HOLE_GLOW, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      drawCup(h.x, h.y, HOLE_CUP_W, false, true);
+      drawLip(h.x, h.y, HOLE_CUP_W, HOLE_RED, true);
+    }
+    /* The moving hole runs on a RAIL sunk in the grass: a groove the
+       length of its swing, two steel rails and the sleepers under them, so
+       the path is read before the hole moves along it. */
+    function drawRail(h) {
+      var amp = h.amp != null ? h.amp : Math.max(0, Math.min(h.home - wallL(h.y) - 50, wallR(h.y) - 50 - h.home, 150));
+      var x0 = h.home - amp - HOLE_CUP_W * 0.6, x1 = h.home + amp + HOLE_CUP_W * 0.6, y = h.y, gh = HOLE_CUP_W * GROUND_SQUASH * 0.9;
+      ctx.fillStyle = "rgba(20,32,16,0.55)"; pill(x0, y - gh / 2, x1 - x0, gh); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "#6a4a2a";
+      for (var x = x0 + 14; x < x1 - 8; x += 22) ctx.fillRect(x - 3, y - gh * 0.42, 6, gh * 0.84);
+      for (var k2 = -1; k2 <= 1; k2 += 2) {
+        var ry = y + k2 * gh * 0.24;
+        ctx.strokeStyle = "#5d666e"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x0 + 8, ry); ctx.lineTo(x1 - 8, ry); ctx.stroke();
+        ctx.strokeStyle = "#dfe6ea"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0 + 8, ry - 1); ctx.lineTo(x1 - 8, ry - 1); ctx.stroke();
+      }
+      // the buffers at each end
+      ctx.fillStyle = "#c0392b";
+      for (var e = 0; e < 2; e++) { ctx.beginPath(); ctx.ellipse(e ? x1 - 6 : x0 + 6, y, 5, gh * 0.45, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
     function drawHoleHolo(h) {
       if (!Enter.begin(h.x, h.y)) return;
-      drawHolo(h.x, h.y, HOLE_CUP_W, HOLE_HOLO, h.pass || 0, HOLE_RED, null, 1, shockGlyph);
+      drawHolo(h.x, h.y, HOLE_CUP_W, HOLE_HOLO, h.pass || 0, HOLE_RED, null, 1, function (R) { shockGlyph(R, h); });
       Enter.end();
     }
     /* A ball flag's hologram: its kind's, every kind in turn on a cup that
@@ -2225,6 +2650,13 @@
       drawHolo(s.x, s.y, CUP_W, HOLO, s.pass || 0, ready ? (kind ? kind.color : "#ffffff") : "#b8b8b8", icon, ready ? 1 : 0.45);
       Enter.end();
     }
+    // the colour a flag's power wears: its kind's, every kind in turn on a
+    // cup that takes any, grey while it recharges
+    function flagColor(s) {
+      if (s.cool > 0) return "#b8b8b8";
+      var kind = s.power === "any" ? MODS[Math.floor(time * 2) % MODS.length] : modOf(s.power);
+      return kind ? kind.color : "#ffffff";
+    }
     function drawSlots() {
       for (var i = 0; i < slots.length; i++) {
         var s = slots[i];
@@ -2232,6 +2664,7 @@
         var pulse = 0.5 + 0.5 * Math.sin(time * 5 + i);
         if (s.left) {
           drawCup(s.x, s.y, CUP_W, s.cool > 0);
+          drawLip(s.x, s.y, CUP_W, flagColor(s), false);
           // the recharge: eight dots round the cup, lit one by one
           if (s.cool > 0) {
             var lit = Math.floor(clamp(1 - s.cool / TARGET_COOL, 0, 1) * 8 + 0.001);
@@ -2241,33 +2674,32 @@
               ctx.beginPath(); ctx.ellipse(s.x + Math.cos(an) * DOT_R, s.y + Math.sin(an) * DOT_R * GROUND_SQUASH, 4.5, 4.5 * Math.max(0.6, GROUND_SQUASH), 0, 0, Math.PI * 2); ctx.fill();
             }
           }
-        } else {
-          var full = s.charge >= 1;
-          ctx.fillStyle = "rgba(30,16,44,0.82)";
-          ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R, 0, Math.PI * 2); ctx.fill();
-          if (full) {
-            ctx.strokeStyle = "rgba(255,211,77," + (0.6 + 0.4 * pulse) + ")"; ctx.lineWidth = 6;
-            ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4 + pulse * 4, 0, Math.PI * 2); ctx.stroke();
-          } else {
-            ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 6;
-            ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4, 0, Math.PI * 2); ctx.stroke();
-            ctx.strokeStyle = "#ffd34d";
-            ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(s.charge, 0, 1)); ctx.stroke();
-          }
-          drawArt(powerOf(s.power).icon, s.x, s.y, SLOT_R * 1.9 * (full ? 1 + 0.06 * pulse : 1), full ? 1 : 0.45);
-          if (s.hit > 0) { ctx.fillStyle = "rgba(255,255,255," + s.hit * 1.5 + ")"; ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 10, 0, Math.PI * 2); ctx.fill(); }
-        }
+        } else paintSuper(s, pulse);
         Enter.end();
       }
+    }
+    // a super's button: full, it pulses gold; charging, its ring fills
+    function paintSuper(s, pulse) {
+      var full = s.charge >= 1;
+      ctx.fillStyle = "rgba(30,16,44,0.82)";
+      ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R, 0, Math.PI * 2); ctx.fill();
+      if (full) {
+        ctx.strokeStyle = "rgba(255,211,77," + (0.6 + 0.4 * pulse) + ")"; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4 + pulse * 4, 0, Math.PI * 2); ctx.stroke();
+      } else {
+        ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = "#ffd34d";
+        ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(s.charge, 0, 1)); ctx.stroke();
+      }
+      drawArt(powerOf(s.power).icon, s.x, s.y, SLOT_R * 1.9 * (full ? 1 + 0.06 * pulse : 1), full ? 1 : 0.45);
+      if (s.hit > 0) { ctx.fillStyle = "rgba(255,255,255," + s.hit * 1.5 + ")"; ctx.beginPath(); ctx.arc(s.x, s.y, SLOT_R + 10, 0, Math.PI * 2); ctx.fill(); }
     }
 
     function stateFrame(m, K) {
       var r;
-      if (m.hitT > 0 && m.state !== "under") { r = K.hit; return r[0] + Math.min(r[1] - r[0], Math.floor((1 - m.hitT / HIT_TIME) * (r[1] - r[0] + 1))); }
+      if (m.hitT > 0) { r = K.hit; return r[0] + Math.min(r[1] - r[0], Math.floor((1 - m.hitT / HIT_TIME) * (r[1] - r[0] + 1))); }
       if (m.stunT > 0) return K.hit[1];          // a stunned boss holds its hit pose
-      if (m.state === "dig") { r = K.dig; return r[0] + Math.min(3, Math.floor(m.stateT / 0.2)); }
-      if (m.state === "under") return K.mound[0];
-      if (m.state === "surface") { r = K.surface; return r[0] + Math.min(2, Math.floor(m.stateT / 0.2)); }
       if (m.state === "cast" && K.cast) { r = K.cast; return r[0] + Math.floor(m.stateT * 4) % 4; }
       if (m.state === "act" && K.act) { r = K.act; return r[0] + Math.min(3, Math.floor(m.stateT / 0.2)); }
       r = K.walk;
@@ -2276,11 +2708,12 @@
     function drawMonster(m) {
       var K = KINDS[m.kind], feet = m.y + m.r * 0.75, fi = m.labFrame != null ? m.labFrame : stateFrame(m, K);
       var a = m.rise > 0 ? 1 - m.rise / 0.6 : 1;
-      if (m.state !== "under") {
-        ctx.fillStyle = "rgba(0,0,0,0.28)";
-        ctx.beginPath(); ctx.ellipse(m.x, feet - 4, m.r * 0.9, m.r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
-      }
-      if (freezeT > 0 && m.state !== "under") drawFx("frost", Math.min(3, Math.floor((FREEZE_TIME - freezeT) / 0.1)), m.x, feet - 2, m.r * 3.4, Math.min(1, freezeT / 0.3));
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath(); ctx.ellipse(m.x, feet - 4, m.r * 0.9, m.r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      // a necromancer casting wears its power: a violet aura, as do the fallen it raises
+      if (m.state === "cast") drawAura(m.x, feet, m.r, K.h, clamp(m.stateT / 0.25, 0, 1) * clamp((1 - m.stateT) / 0.2 + 0.3, 0, 1));
+      else if (m.rise > 0) drawAura(m.x, feet, m.r, K.h, m.rise / 0.6);
+      if (freezeT > 0) drawFx("frost", Math.min(3, Math.floor((FREEZE_TIME - freezeT) / 0.1)), m.x, feet - 2, m.r * 3.4, Math.min(1, freezeT / 0.3));
       var drawn = drawFrame(m.kind, fi, m.x, feet, a, m.flash > 0);
       if (!drawn) drawBlob(m, feet);
       if (freezeT > 0 || m.frozenT > 0) {
@@ -2293,18 +2726,80 @@
           ctx.beginPath(); ctx.ellipse(m.x, feet - K.h * 0.45, m.r * 1.15, K.h * 0.5, 0, 0, Math.PI * 2); ctx.fill();
         }
       }
-      if (m.chargeT > 0) {
-        ctx.strokeStyle = "rgba(255,80,80,0.7)"; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(m.x, feet - K.h * 0.5, m.r * 1.3, 0, Math.PI * 2); ctx.stroke();
+      // the life gauge over a zombie that just took a hit (the boss has its bar)
+      if (!K.boss && !K.noHp && m.maxHp > 1 && m.hp < m.maxHp && m.hpT > 0)
+        drawLife(m.x, feet - K.h - 14, m.hp, m.hpShow, m.maxHp, lifeAlpha(m.hpT), m.flash > 0, m.id);
+    }
+    /* The necromancer's power: a violet glow lying on the grass round its
+       feet, a haze round its body and motes rising through it — drawn in
+       `lighter`, so it lights the figure rather than covering it. */
+    function drawAura(x, feet, r, h, a) {
+      if (a <= 0.01) return;
+      var pulse = 0.75 + 0.25 * Math.sin(time * 9), cy = feet - h * 0.48, g;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      g = ctx.createRadialGradient(x, feet, 2, x, feet, r * 2.4);
+      g.addColorStop(0, "rgba(190,90,255," + 0.85 * a * pulse + ")"); g.addColorStop(1, "rgba(120,40,220,0)");
+      ctx.save(); ctx.translate(x, feet); ctx.scale(1, GROUND_SQUASH); ctx.translate(-x, -feet);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, feet, r * 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      g = ctx.createRadialGradient(x, cy, h * 0.1, x, cy, h * 0.62);
+      g.addColorStop(0, "rgba(170,80,255," + 0.55 * a * pulse + ")"); g.addColorStop(0.7, "rgba(140,50,240," + 0.3 * a + ")"); g.addColorStop(1, "rgba(120,40,220,0)");
+      ctx.save(); ctx.translate(x, cy); ctx.scale(0.62, 1); ctx.translate(-x, -cy);
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, cy, h * 0.62, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      for (var i = 0; i < 6; i++) {
+        var t = (time * 0.8 + i / 6) % 1, mx = x + Math.sin(i * 2.4 + time * 2) * r * 0.9;
+        ctx.fillStyle = "rgba(220,160,255," + 0.8 * a * (1 - t) + ")";
+        ctx.beginPath(); ctx.arc(mx, feet - t * h * 0.95, 3.5 * (1 - t * 0.5), 0, Math.PI * 2); ctx.fill();
       }
-      // the HP pips over a zombie that took a hit (the boss has its bar)
-      if (!K.boss && !K.noHp && m.maxHp > 1 && m.hp < m.maxHp && m.state !== "under") {
-        var w = 12, gap = 3, tot = m.maxHp * (w + gap) - gap, x0 = m.x - tot / 2, y0 = feet - K.h - 10;
-        for (var p = 0; p < m.maxHp; p++) {
-          ctx.fillStyle = p < m.hp ? "#ff5a5a" : "rgba(0,0,0,0.45)";
-          ctx.fillRect(x0 + p * (w + gap), y0, w, 6);
+      ctx.restore();
+    }
+    /* A LIFE GAUGE, projected like the flags' holograms: a faint glass
+       capsule ringed in light, one cell per point lit in a colour that runs
+       from lime to red as it empties, the white CHIP of the hit just taken
+       draining after it, scanlines rolling through, a flicker, and a thin
+       beam down to whatever it stands over. `show` is the chip's level. */
+    function holoFlick(seed) {
+      var n = (Math.sin((Math.floor(time * 14) + seed) * 12.9898) * 43758.5453) % 1;
+      return 1 - HOLO.flicker * (Math.abs(n) > 0.85 ? 0.7 : 0.1 * (0.5 + 0.5 * Math.sin(time * 40)));
+    }
+    function holoScan(x, y, w, h) {
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      for (var ly = y - 4; ly < y + h; ly += 4) ctx.fillRect(x, ly + (time * 18) % 4, w, 1.2);
+    }
+    // `max` cells in the capsule (x0, y, w, h): lit to `f`, the chip to `c`, both 0..1
+    function holoCells(x0, y, w, h, max, f, c, col, low, flash) {
+      var gap = max > 12 ? 2 : 3, cw = (w - gap * (max - 1)) / max;
+      for (var p = 0; p < max; p++) {
+        var cx = x0 + p * (cw + gap), lit = clamp(f * max - p, 0, 1), chip = clamp(c * max - p, 0, 1);
+        ctx.fillStyle = rgba(col, 0.13); ctx.fillRect(cx, y, cw, h);
+        if (chip > lit) { ctx.fillStyle = flash ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.45)"; ctx.fillRect(cx + cw * lit, y, cw * (chip - lit), h); }
+        if (lit > 0) {
+          ctx.fillStyle = rgba(col, 0.72 + 0.25 * low); ctx.fillRect(cx, y, cw * lit, h);
+          ctx.fillStyle = "rgba(255,255,255,0.28)"; ctx.fillRect(cx, y + 1, cw * lit, Math.max(1.5, h * 0.22));
         }
       }
+    }
+    function lifeAlpha(t) { return clamp(t / LIFE_FADE, 0, 1); }
+    function drawLife(x, y, hp, show, max, a, flash, seed) {
+      var w = clamp(max * 11, 44, 72), h = 11, x0 = x - w / 2, f = clamp(hp / max, 0, 1), c = clamp((show == null ? hp : show) / max, f, 1);
+      var col = f > 0.6 ? "#7dff6a" : f > 0.3 ? "#ffd34d" : "#ff4d5a";
+      ctx.save();
+      ctx.globalAlpha *= clamp(a * holoFlick(seed || x), 0, 1);
+      // a dark glass first, so the light reads on bright grass
+      ctx.fillStyle = "rgba(0,12,6,0.4)"; pill(x0 - 4, y - 4, w + 8, h + 8); ctx.fill();
+      ctx.globalCompositeOperation = "lighter";
+      var g = ctx.createLinearGradient(0, y + h + 4, 0, y + h + 16);
+      g.addColorStop(0, rgba(col, 0.35)); g.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(x - 10, y + h + 4); ctx.lineTo(x + 10, y + h + 4); ctx.lineTo(x + 3, y + h + 16); ctx.lineTo(x - 3, y + h + 16); ctx.closePath(); ctx.fill();
+      ctx.save(); pill(x0, y, w, h); ctx.clip();
+      holoCells(x0, y, w, h, max, f, c, col, 0, flash);
+      holoScan(x0, y, w, h);
+      ctx.restore();
+      ctx.strokeStyle = rgba(col, 0.9); ctx.lineWidth = 1.5; pill(x0 - 4, y - 4, w + 8, h + 8); ctx.stroke();
+      ctx.restore();
     }
     // a zombie with no sheet on board: the prototype's top-down drawing
     function drawBlob(m, feet) {
@@ -2374,7 +2869,7 @@
         if (d.kind === "meteor" && drawFx("meteor", Math.floor(time * 12) % 4, d.x, y + r, r * 2 / 0.58)) continue;
         // a bomb and its bomblets: the fuse flickers between two frames
         if (d.kind === "cluster" && drawFx("bomb", Math.floor(time * 10) % 2, d.x, y, r * 3.6)) continue;
-        if (d.kind === "bomblet" && drawFx("bomblet", Math.floor(time * 10) % 2, d.x, y, r * 3.4)) continue;
+        if ((d.kind === "bomblet" || d.kind === "carpet") && drawFx("bomblet", Math.floor(time * 10) % 2, d.x, y, r * 3.4)) continue;
         if (!drawArt(DROP_ART[d.kind] || "ball01", d.x, y, r * 2.4)) {
           ctx.fillStyle = DROP_COLORS[d.kind] || "#fff";
           ctx.beginPath(); ctx.arc(d.x, y, r, 0, Math.PI * 2); ctx.fill();
@@ -2383,28 +2878,150 @@
     }
     function drawSweeps() {
       for (var i = 0; i < sweeps.length; i++) {
-        var s = sweeps[i], f = Math.floor(time * 12) % 4, art;
-        ctx.save(); ctx.translate(s.x, s.y);
-        // the art faces left (the mower) or up (the cart)
-        if (s.vx > 0) ctx.scale(-1, 1);
-        if (s.kind === "mower") {
-          drawFx("clip", f % 3, s.w * 0.35, 10, 120);
-          art = drawFx("mower", f, 0, s.h / 2, s.w * 1.35);
-        } else art = drawFx("cart", f, 0, 0, s.w * 1.15);
-        if (!art) drawArt(s.icon, 0, 0, 110);
-        ctx.restore();
+        var s = sweeps[i];
+        if (s.kind === "shadow") drawPlaneShadow(s.x, s.y);
+        else if (s.kind === "mower") drawMower(s);
+        else drawCart(s);
       }
     }
+    /* The cart drives up (its art faces up) to the painted gate; there
+       (life 0) it rolls on slowly, shrinks into the distance and fades,
+       swallowed by a puff of the gate's own toxic mist. */
+    function drawCart(s) {
+      var f = Math.floor(time * 12) % 4, gone = clamp(-s.life / CART_MIST, 0, 1), a = clamp(1 - gone / 0.6, 0, 1);
+      if (a > 0) {
+        ctx.save(); ctx.globalAlpha *= a; ctx.translate(s.x, s.y); ctx.scale(1 - 0.3 * gone, 1 - 0.3 * gone);
+        if (!drawFx("cart", f, 0, 0, s.w * 1.15)) drawArt(s.icon, 0, 0, 110);
+        ctx.restore();
+      }
+      var u = clamp((0.15 - s.life) / (CART_MIST + 0.15), 0, 1), ma = Math.sin(Math.PI * u) * 0.85;
+      if (ma <= 0.01) return;
+      for (var p = 0; p < 7; p++) {
+        var px = s.x + Math.sin(p * 2.1 + u * 2) * 46 * (0.5 + u), py = s.y + 10 + Math.cos(p * 1.7) * 30 * (0.5 + u) - u * 20, r = 38 + 52 * u;
+        var g = ctx.createRadialGradient(px, py, 0, px, py, r);
+        g.addColorStop(0, "rgba(210,255,140," + ma + ")"); g.addColorStop(0.5, "rgba(150,230,60," + ma * 0.6 + ")"); g.addColorStop(1, "rgba(110,200,40,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    /* The carpet strike's plane is never drawn, only its shadow: the plane's
+       own cut turned to a black silhouette once, laid on the field soft. */
+    var PLANE_SHADOW_W = 300, planeSil = null;
+    function planeShadowImg() {
+      if (planeSil) return planeSil;
+      var im = img(fxKey("plane", 0));
+      if (!im) return null;
+      var c = document.createElement("canvas"), x;
+      c.width = im.naturalWidth; c.height = im.naturalHeight;
+      x = c.getContext("2d");
+      x.drawImage(im, 0, 0);
+      x.globalCompositeOperation = "source-in";
+      x.fillStyle = "#000"; x.fillRect(0, 0, c.width, c.height);
+      planeSil = c;
+      return c;
+    }
+    function drawPlaneShadow(x, y) {
+      var im = planeShadowImg(), w = PLANE_SHADOW_W, base = ctx.globalAlpha;
+      ctx.save();
+      if (im) {
+        var h = w * im.height / im.width;
+        for (var p = 0; p < 3; p++) {
+          var g = 1 + p * 0.05;
+          ctx.globalAlpha = base * (p ? 0.07 : 0.2);
+          ctx.drawImage(im, x - w * g / 2, y - h * g / 2, w * g, h * g);
+        }
+      } else {
+        ctx.fillStyle = "rgba(0,0,0,0.2)";
+        ctx.beginPath(); ctx.ellipse(x, y, w * 0.5, w * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(x, y, w * 0.08, w * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    /* A mower between its two portals: blue where it comes out, orange
+       where it goes in. The portal's mouth is drawn first, the mower over
+       it clipped to the fairway between the two, so it seems to drive out
+       of one and into the other, and the rims last, over its nose. */
+    function drawMower(s) {
+      var o = s.gone >= 0 ? 1 - s.gone / PORTAL_OPEN : clamp((s.t + PORTAL_OPEN) / PORTAL_OPEN, 0, 1), py = s.y + 10;
+      drawPortal(s.a, py, o, "#3aa8ff", false); drawPortal(s.b, py, o, "#ff9a2a", false);
+      if (s.t > 0 && s.gone < 0) {
+        var f = Math.floor(time * 12) % 4, lo = Math.min(s.a, s.b), hi = Math.max(s.a, s.b);
+        ctx.save();
+        ctx.beginPath(); ctx.rect(lo, s.y - 300, hi - lo, 600); ctx.clip();
+        ctx.translate(s.x, s.y);
+        if (s.dir > 0) ctx.scale(-1, 1);    // the art faces left
+        drawFx("clip", f % 3, s.w * 0.35, 10, 120);
+        if (!drawFx("mower", f, 0, s.h / 2, s.w * 1.35)) drawArt(s.icon, 0, 0, 110);
+        ctx.restore();
+      }
+      drawPortal(s.a, py, o, "#3aa8ff", true); drawPortal(s.b, py, o, "#ff9a2a", true);
+    }
+    function drawPortal(x, y, o, col, rim) {
+      if (o <= 0.05) return;
+      var rx = PORTAL_RX * (0.4 + 0.6 * o), ry = Math.max(3, PORTAL_RY * o), i;
+      ctx.save();
+      if (rim) {
+        ctx.strokeStyle = col; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255," + 0.8 * o + ")"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.ellipse(x, y, Math.max(1, rx - 1), Math.max(1, ry - 1), 0, 0, Math.PI * 2); ctx.stroke();
+      } else {
+        ctx.globalCompositeOperation = "lighter";
+        ctx.save(); ctx.translate(x, y); ctx.scale(rx * 2.2 / ry, 1);
+        var g = ctx.createRadialGradient(0, 0, ry * 0.2, 0, 0, ry * 1.25);
+        g.addColorStop(0, rgba(col, 0.55 * o)); g.addColorStop(1, rgba(col, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, ry * 1.25, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "rgba(8,10,28," + 0.85 * o + ")";
+        ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = rgba(col, 0.7 * o); ctx.lineWidth = 2.5;
+        for (i = 0; i < 3; i++) {
+          var a0 = time * 6 + i * 2.1;
+          ctx.beginPath(); ctx.ellipse(x, y, rx * (0.35 + 0.2 * i), ry * (0.35 + 0.2 * i), 0, a0, a0 + 2.2); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+    /* The wave: a faint toxic haze thickening toward its front, and the
+       front itself as three soft strokes, wide and faint to thin and
+       brighter, each wavering on its own — no hard line, no sure radius.
+       Clipped to the fairway, squashed to SHOCK_SQUASH. */
     function drawShock() {
       if (!shock) return;
       var kk = Math.min(1, shock.t / SHOCK_TIME), r = shock.R * (1 - (1 - kk) * (1 - kk));
-      var fade = shock.t > SHOCK_TIME ? 1 - (shock.t - SHOCK_TIME) / 0.35 : 1;
-      ctx.fillStyle = "rgba(180,255,120," + 0.16 * fade + ")";
-      ctx.beginPath(); ctx.arc(shock.x, shock.y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "rgba(210,255,150," + fade + ")"; ctx.lineWidth = 14;
-      ctx.beginPath(); ctx.arc(shock.x, shock.y, r, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255," + 0.6 * fade + ")"; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.arc(shock.x, shock.y, Math.max(0, r - 12), 0, Math.PI * 2); ctx.stroke();
+      var fade = (shock.t > SHOCK_TIME ? 1 - (shock.t - SHOCK_TIME) / 0.35 : 1) * (0.55 + 0.45 * shock.power);
+      if (r < 4 || fade <= 0) return;
+      ctx.save();
+      clipField();
+      ctx.translate(shock.x, shock.y);
+      ctx.scale(1, SHOCK_SQUASH);
+      var g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+      g.addColorStop(0, "rgba(180,255,120,0)");
+      g.addColorStop(0.6, "rgba(180,255,120," + 0.04 * fade + ")");
+      g.addColorStop(0.92, "rgba(190,255,130," + 0.13 * fade + ")");
+      g.addColorStop(1, "rgba(190,255,130,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.04, 0, Math.PI * 2); ctx.fill();
+      var PASSES = [[34, 0.07], [18, 0.12], [6, 0.22]];
+      for (var p = 0; p < PASSES.length; p++) {
+        ctx.strokeStyle = "rgba(205,255,150," + PASSES[p][1] * fade + ")";
+        ctx.lineWidth = PASSES[p][0];
+        ctx.beginPath();
+        for (var i = 0; i <= 64; i++) {
+          var an = i / 64 * Math.PI * 2;
+          var rr = r * (1 + 0.035 * Math.sin(an * 5 + shock.t * 11 + p * 2.1) + 0.025 * Math.sin(an * 9 - shock.t * 17 + p));
+          if (i) ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); else ctx.moveTo(Math.cos(an) * rr, Math.sin(an) * rr);
+        }
+        ctx.closePath(); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    // the fairway between the fences, as a clip path
+    function clipField() {
+      ctx.beginPath(); ctx.moveTo(wallL(TOP() - 60), TOP() - 60);
+      for (var cy = TOP() - 60; cy <= H; cy += 40) ctx.lineTo(wallL(cy), cy);
+      for (var cy2 = H; cy2 >= TOP() - 60; cy2 -= 40) ctx.lineTo(wallR(cy2), cy2);
+      ctx.closePath(); ctx.clip();
     }
     function drawNight() {
       var g = ctx.createLinearGradient(0, TOP() - 100, 0, (TOP() + LINE()) * 0.6);
@@ -2415,7 +3032,9 @@
       ctx.fillRect(0, 0, W, (TOP() + LINE()) * 0.6);
     }
     // the arc's two bands in normal play (the gun has its reticle instead)
-    function drawBands() {
+    /* `k2` is the scale a picture of the guide paints it at: the two words
+       keep their 20 px on screen there too. */
+    function drawBands(k2) {
       if (won || over || gunPhase()) return;
       ctx.lineWidth = 2;
       var on = aim ? aim.mode : null;
@@ -2431,7 +3050,7 @@
       ctx.beginPath(); ctx.arc(TEE_X, TEE_Y, SPLIT_R, Math.PI, 2 * Math.PI); ctx.stroke();
       ctx.beginPath(); ctx.arc(TEE_X, TEE_Y, LOB_R, Math.PI, 2 * Math.PI); ctx.stroke();
       ctx.restore();
-      ctx.font = "800 20px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = "800 " + Math.round(20 / (k2 || 1)) + "px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = "rgba(200,235,255,0.95)"; ctx.fillText(upper(Lang.t("Direct")), TEE_X, TEE_Y - SPLIT_R + 26);
       ctx.fillStyle = "rgba(255,215,160,0.95)"; ctx.fillText(upper(Lang.t("Lob")), TEE_X, TEE_Y - LOB_R + 26);
       ctx.textBaseline = "alphabetic";
@@ -2453,10 +3072,16 @@
        while a boss slows the swing, the reload sweeping round it. */
     function drawTee() {
       if (!Enter.begin(TEE_X, TEE_Y)) return;
+      paintTee();
+      Enter.end();
+    }
+    // the tee and its ball (also what the guide's pictures paint)
+    function paintTee() {
       ctx.fillStyle = "#c9a36a"; ctx.fillRect(TEE_X - 4, TEE_Y + 8, 8, 12);
       var next = specials.length && !gunPhase() ? modOf(specials[0]) : null;
       var wait = cool > 0 && coolMax > FIRE_COOLDOWN ? clamp(cool / coolMax, 0, 1) : 0;
-      if (bag > 0 || gunPhase()) {
+      if (gunPhase()) drawTarget(TEE_X, TEE_Y, BALL_R + 12, gunColor(), time * 1.5);
+      else if (bag > 0) {
         if (next) {
           ctx.fillStyle = rgba(next.color, 0.28 + 0.12 * Math.sin(time * 6));
           ctx.beginPath(); ctx.arc(TEE_X, TEE_Y, BALL_R + 14, 0, Math.PI * 2); ctx.fill();
@@ -2472,17 +3097,13 @@
         ctx.strokeStyle = "#ff4d6d";
         ctx.beginPath(); ctx.arc(TEE_X, TEE_Y, BALL_R + 20, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - wait)); ctx.stroke();
       }
-      Enter.end();
     }
-    function drawPowerBar(p, mode) {
-      var bx = TEE_X + 44, col = mode === "lob" ? LOB_COL : DIRECT_COL;
-      ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(bx, TEE_Y - 50, 16, 80);
-      ctx.fillStyle = col; ctx.fillRect(bx, TEE_Y + 30 - 80 * p, 16, 80 * p);
-      ctx.strokeStyle = col; ctx.lineWidth = 4;
+    /* The tee wears the mode's colour ring while a shot is aimed. The power
+       is read off the preview (the green ring where the roll stops, the
+       lob's target), so no gauge stands beside the ball. */
+    function drawModeRing(mode) {
+      ctx.strokeStyle = mode === "lob" ? LOB_COL : DIRECT_COL; ctx.lineWidth = 4;
       ctx.beginPath(); ctx.arc(TEE_X, TEE_Y, BALL_R + 9, 0, Math.PI * 2); ctx.stroke();
-      ctx.font = "800 22px " + FONT; ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(bx - 40, TEE_Y - 90, 96, 32);
-      ctx.fillStyle = col; ctx.fillText(upper(Lang.t(mode === "lob" ? "Lob" : "Direct")), bx + 8, TEE_Y - 66);
     }
     function drawLobPreview(v) {
       var lx = TEE_X + v.vx * v.T, ly = TEE_Y + v.vy * v.T, i, t;
@@ -2504,13 +3125,36 @@
       ctx.lineWidth = 4;
       ctx.beginPath(); ctx.arc(lx, ly, 7, 0, Math.PI * 2); ctx.stroke();
     }
+    /* Where a direct shot may leave: a wedge off the tee as wide as the
+       error the stress allows, wide and pale on a quiet field, a hairline
+       once the horde is in. */
+    var CONE_LEN = 340;
+    function drawAimCone(v) {
+      var a = Math.atan2(v.vy, v.vx), e = aimErr(), L0 = 30;
+      ctx.fillStyle = rgba(DIRECT_COL, 0.10 + 0.08 * (1 - stress));
+      ctx.beginPath();
+      ctx.moveTo(TEE_X + Math.cos(a - e) * L0, TEE_Y + Math.sin(a - e) * L0);
+      ctx.lineTo(TEE_X + Math.cos(a - e) * CONE_LEN, TEE_Y + Math.sin(a - e) * CONE_LEN);
+      ctx.arc(TEE_X, TEE_Y, CONE_LEN, a - e, a + e);
+      ctx.lineTo(TEE_X + Math.cos(a + e) * L0, TEE_Y + Math.sin(a + e) * L0);
+      ctx.arc(TEE_X, TEE_Y, L0, a + e, a - e, true);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = rgba(DIRECT_COL, 0.55); ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+      ctx.beginPath();
+      ctx.moveTo(TEE_X + Math.cos(a - e) * L0, TEE_Y + Math.sin(a - e) * L0);
+      ctx.lineTo(TEE_X + Math.cos(a - e) * CONE_LEN, TEE_Y + Math.sin(a - e) * CONE_LEN);
+      ctx.moveTo(TEE_X + Math.cos(a + e) * L0, TEE_Y + Math.sin(a + e) * L0);
+      ctx.lineTo(TEE_X + Math.cos(a + e) * CONE_LEN, TEE_Y + Math.sin(a + e) * CONE_LEN);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
     function drawPreview() {
       if (won || over) return;
       var v = aimVec(); if (!v) return;
-      if (v.lob) { drawLobPreview(v); drawPowerBar(clamp(v.p, 0, 1), "lob"); return; }
+      if (v.lob) { drawLobPreview(v); drawModeRing("lob"); return; }
       /* The whole roll on flat grass, fences and all, to the green ring
          where the ball comes to rest — the point to put on a cup. Sand,
          ice and the zombies are left out: they are what the shot meets. */
+      if (!gunPhase()) drawAimCone(v);
       var x = TEE_X, y = TEE_Y, vx = v.vx, vy = v.vy, h = 1 / 120;
       for (var i = 1; i <= PREVIEW_T * 120; i++) {
         if (wind) vx += wind * h;
@@ -2530,8 +3174,8 @@
         if (i % 5 === 0) { ctx.fillStyle = DIRECT_COL; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill(); }
       }
       ctx.strokeStyle = "#9fe03a"; ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.arc(x, y, HOLE_R, 0, Math.PI * 2); ctx.stroke();
-      drawPowerBar(clamp(v.p, 0, 1), "direct");
+      groundEllipse(x, y, HOLE_R * 1.3); ctx.stroke();
+      drawModeRing("direct");
     }
     /* The bag, a column right of the tee, and the loaded kinds, a column
        left of it, next one at the bottom: the two bottom corners are the
@@ -2547,6 +3191,7 @@
     var BAG_PITCH = 40, BAG_R = 17, BAG_X = TEE_X + 12, BAG_Y = TEE_Y + 46;
     function drawBag() {
       var n = BAG_MAX, x0 = BAG_X - BAG_PITCH * (n - 1) / 2, own = 0, s, x;
+      if (gunPhase()) { drawGunBar(x0); return; }
       for (s = 0; s < balls.length; s++) if (!balls[s].free && !balls[s].extra) own++;
       ctx.fillStyle = "rgba(8,14,8,0.6)";
       pill(x0 - BAG_R - 6, BAG_Y - BAG_R - 6, BAG_PITCH * (n - 1) + 2 * BAG_R + 12, 2 * BAG_R + 12);
@@ -2595,6 +3240,58 @@
       ctx.fillText(label, rx, ly + 1);
       ctx.textBaseline = "alphabetic";
     }
+    /* THE GUN PHASES (Rush, the last stand): the balls are free, so the bag
+       has nothing to count. The row becomes a TARGET and the time left,
+       draining, in the phase's colour — the HUD says the mode changed — and
+       the field wears it: a glow breathing round its edges and a sight
+       turning round the tee. */
+    function gunColor() { return phase === "rush" ? "#ffd34d" : "#ff4d4d"; }
+    function gunMax() { return phase === "rush" ? RUSH_TIME : LAST_TIME; }
+    function drawTarget(x, y, r, col, rot) {
+      ctx.save();
+      ctx.translate(x, y); ctx.rotate(rot || 0);
+      ctx.strokeStyle = col; ctx.lineWidth = 3.5;
+      ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, r * 0.45, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      for (var q = 0; q < 4; q++) {
+        var a = q * Math.PI / 2;
+        ctx.moveTo(Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62); ctx.lineTo(Math.cos(a) * r * 1.35, Math.sin(a) * r * 1.35);
+      }
+      ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    function drawGunBar(x0) {
+      var col = gunColor(), w = BAG_PITCH * (BAG_MAX - 1) + 2 * BAG_R + 12, l = x0 - BAG_R - 6, f = clamp(phaseT / gunMax(), 0, 1);
+      ctx.fillStyle = "rgba(8,14,8,0.72)";
+      pill(l, BAG_Y - BAG_R - 6, w, 2 * BAG_R + 12); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+      drawTarget(l + BAG_R + 8, BAG_Y, BAG_R - 3, col, -time * 2);
+      var bx = l + 2 * BAG_R + 18, bw = w - (bx - l) - 14;
+      ctx.fillStyle = "rgba(0,0,0,0.5)"; pill(bx, BAG_Y - 6, bw, 12); ctx.fill();
+      ctx.fillStyle = col; pill(bx, BAG_Y - 6, Math.max(12, bw * f), 12); ctx.fill();
+    }
+    function drawGunAura() {
+      if (!gunPhase() || won || over) return;
+      var col = gunColor(), a = (0.28 + 0.14 * Math.sin(time * 8)) * Math.min(1, (gunMax() - phaseT) / 0.3, phaseT / 0.5 + 0.2), e = 90, g;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      g = ctx.createLinearGradient(0, 0, e, 0); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, 0, e, H);
+      g = ctx.createLinearGradient(W, 0, W - e, 0); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = g; ctx.fillRect(W - e, 0, e, H);
+      g = ctx.createLinearGradient(0, H, 0, H - e * 1.6); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = g; ctx.fillRect(0, H - e * 1.6, W, e * 1.6);
+      ctx.restore();
+      // the sight turning round the tee, its ring lying on the grass
+      ctx.save();
+      ctx.translate(TEE_X, TEE_Y); ctx.scale(1, GROUND_SQUASH * 1.4);
+      ctx.strokeStyle = rgba(col, 0.75); ctx.lineWidth = 4; ctx.setLineDash([22, 14]); ctx.lineDashOffset = -time * 60;
+      ctx.beginPath(); ctx.arc(0, 0, 78, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
     // a capsule path (no ctx.roundRect: older WebViews lack it)
     function pill(x, y, w, h) {
       var r = h / 2;
@@ -2605,13 +3302,59 @@
       ctx.arc(x + r, y + r, r, Math.PI / 2, Math.PI * 1.5);
       ctx.closePath();
     }
+    /* THE BOSS BAR, a red hologram like the hole's: the name in heavy
+       capitals between two projected skulls, over a bevelled panel of ten
+       cells — lit red, the pale chip of the last hits draining after them,
+       brighter and pulsing once a quarter is left — scanlines rolling
+       through it all, a flicker, and a shake on every hit. */
+    function bevel(x, y, w, h) {
+      var e = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + e); ctx.lineTo(x + e, y); ctx.lineTo(x + w - e, y); ctx.lineTo(x + w, y + e);
+      ctx.lineTo(x + w - e, y + h); ctx.lineTo(x + e, y + h); ctx.closePath();
+    }
     function drawBossBar() {
       if (!bossRef || bossRef.dead) return;
-      var K = KINDS[bossRef.kind], x = B.lo + 40, w = B.hi - B.lo - 80, y = TOP() + 30;
-      ctx.fillStyle = "rgba(10,6,20,0.7)"; ctx.fillRect(x - 4, y - 4, w + 8, 22);
-      ctx.fillStyle = "#ff4d6d"; ctx.fillRect(x, y, w * clamp(bossRef.hp / bossRef.maxHp, 0, 1), 14);
-      ctx.font = "800 20px " + FONT; ctx.textAlign = "center";
-      ctx.fillStyle = "#ffffff"; ctx.fillText(upper(Lang.t(K.name)), W / 2, y + 44);
+      var m = bossRef, K = KINDS[m.kind], w = 500, h = 20, x = (W - w) / 2, ny = TOP() + 20, y = TOP() + 46, col = "#ff3b4a";
+      var f = clamp(m.hp / m.maxHp, 0, 1), c = clamp((m.hpShow == null ? m.hp : m.hpShow) / m.maxHp, f, 1);
+      var shake = m.flash > 0 ? Math.sin(time * 90) * 3 : 0, low = f < 0.25 ? 0.5 + 0.5 * Math.sin(time * 10) : 0;
+      var name = upper(Lang.t(K.name));
+      ctx.save();
+      ctx.translate(shake, 0);
+      ctx.globalAlpha *= holoFlick(7);
+      ctx.font = "900 30px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+      var tw = ctx.measureText(name).width;
+      // the dark glass behind the name and the bar
+      ctx.fillStyle = "rgba(24,0,6,0.62)";
+      pill(W / 2 - tw / 2 - 52, ny - 20, tw + 104, 40); ctx.fill();
+      bevel(x - 14, y - 7, w + 28, h + 14); ctx.fill();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = rgba(col, 0.3); ctx.lineWidth = 10; ctx.strokeText(name, W / 2, ny);
+      ctx.fillStyle = "#ffc9ce"; ctx.fillText(name, W / 2, ny);
+      holoSkull(W / 2 - tw / 2 - 28, ny, col); holoSkull(W / 2 + tw / 2 + 28, ny, col);
+      ctx.save(); bevel(x - 4, y, w + 8, h); ctx.clip();
+      holoCells(x, y, w, h, 10, f, c, col, low, m.flash > 0);
+      holoScan(x - 4, y, w + 8, h);
+      ctx.restore();
+      ctx.save();
+      pill(W / 2 - tw / 2 - 52, ny - 20, tw + 104, 40); ctx.clip();
+      holoScan(W / 2 - tw / 2 - 52, ny - 20, tw + 104, 40);
+      ctx.restore();
+      ctx.strokeStyle = rgba(col, 0.25); ctx.lineWidth = 6; bevel(x - 14, y - 7, w + 28, h + 14); ctx.stroke();
+      ctx.strokeStyle = rgba(col, 0.95); ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+      ctx.textBaseline = "alphabetic";
+    }
+    // a skull projected in light, flanking the boss's name
+    function holoSkull(x, y, col) {
+      ctx.fillStyle = rgba(col, 0.25);
+      ctx.beginPath(); ctx.arc(x, y - 2, 11, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(x - 6, y + 5, 12, 7);
+      ctx.strokeStyle = rgba(col, 0.95); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y - 2, 11, Math.PI * 0.72, Math.PI * 2.28); ctx.lineTo(x + 6, y + 12); ctx.lineTo(x - 6, y + 12); ctx.closePath(); ctx.stroke();
+      ctx.fillStyle = rgba(col, 0.95);
+      ctx.beginPath(); ctx.arc(x - 4, y - 2, 3, 0, Math.PI * 2); ctx.arc(x + 4, y - 2, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(x - 3, y + 7, 1.5, 4); ctx.fillRect(x + 1.5, y + 7, 1.5, 4);
     }
 
     function onResize() {
@@ -2650,6 +3393,406 @@
     function levelWon() { finish(true); }
 
     // ======================================================================
+    //  THE GUIDE — every rule, as pages (packages/webshell/guide.js). Every
+    //  page SHOWS before it tells: its picture is a window of the band's own
+    //  painted fairway, and the round's renderers draw on it — the zombies'
+    //  sprites, the cups and their holograms, the bands round the tee, the
+    //  bag, the supers' buttons, the boss bar — with the round's `ctx` lent
+    //  for the length of the call. The guide may open before any round, so
+    //  `lend` hands those renderers the little state they read (the biome,
+    //  the clock, the phase) and puts the round's own back afterwards: a
+    //  picture changes nothing. A page's level is the one the climb first
+    //  deals the idea on (LEVELS, SPECIALS), locked until the board opens it.
+    // ======================================================================
+    var PIC_T = Math.PI;   // a picture's clock: the holograms face the player
+    function paintPic(pw, ph, fn) {
+      var cv = document.createElement("canvas"), kk = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(pw * kk); cv.height = Math.round(ph * kk);
+      cv.style.width = pw + "px"; cv.style.height = ph + "px";
+      ctx = cv.getContext("2d"); ctx.scale(kk, kk);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+    function lend(bi, fn) {
+      var keep = [B, L, time, phase, phaseT, won, over, aim, wind, stress, freezeT, magnetT,
+                  specials, bag, cool, coolMax, balls, regenT, skulls, bossRef];
+      B = BIOMES[bi || 0]; L = LEVELS[1]; time = PIC_T; phase = "normal"; phaseT = 0; won = false; over = false;
+      aim = null; wind = 0; stress = 0.4; freezeT = 0; magnetT = 0; specials = []; bag = BAG_MAX;
+      cool = 0; coolMax = 1; balls = []; regenT = 0; skulls = []; bossRef = null;
+      try { fn(); } finally {
+        B = keep[0]; L = keep[1]; time = keep[2]; phase = keep[3]; phaseT = keep[4]; won = keep[5]; over = keep[6];
+        aim = keep[7]; wind = keep[8]; stress = keep[9]; freezeT = keep[10]; magnetT = keep[11]; specials = keep[12];
+        bag = keep[13]; cool = keep[14]; coolMax = keep[15]; balls = keep[16]; regenT = keep[17]; skulls = keep[18];
+        bossRef = keep[19];
+      }
+    }
+    /* A window [x0, y0, w, h] of biome `bi`'s fairway at scale `s`, `fn`
+       drawing on it in the world's own coordinates. */
+    function fieldPic(bi, x0, y0, w, h, s, fn) {
+      return paintPic(Math.round(w * s), Math.round(h * s), function () {
+        lend(bi, function () {
+          ctx.scale(s, s); ctx.translate(-x0, -y0);
+          var g = img(BIOMES[bi].scene);
+          if (g) ctx.drawImage(g, 0, 0, W, H);
+          else { ctx.fillStyle = "#357a3a"; ctx.fillRect(x0, y0, w, h); }
+          if (fn) fn();
+        });
+      });
+    }
+    // a zombie standing on (x, feet), as drawMonster draws it
+    function picMon(kind, x, feet, frame, flash, alpha) {
+      var K = KINDS[kind];
+      ctx.fillStyle = "rgba(0,0,0,0.28)";
+      ctx.beginPath(); ctx.ellipse(x, feet - 4, K.r * 0.9, K.r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      drawFrame(kind, frame || K.walk[0], x, feet, alpha == null ? 1 : alpha, !!flash);
+    }
+    function picBall(kind, x, y) { drawBall({ x: x, y: y, vx: 0, vy: -1, kind: kind || "plain", z: 0, air: false }); }
+    function picFlag(key, x, y) {
+      var m = modOf(key);
+      drawCup(x, y, CUP_W, false);
+      drawLip(x, y, CUP_W, m.color, false);
+      drawHolo(x, y, CUP_W, HOLO, 0, m.color, m.icon, 1);
+    }
+    function picHole(x, y) {
+      var h = { x: x, y: y };
+      paintHole(h);
+      drawHolo(x, y, HOLE_CUP_W, HOLE_HOLO, 0, HOLE_RED, null, 1, function (R) { shockGlyph(R, h); });
+    }
+    function picBumper(key, x, y, grave) {
+      var hp = key === "decor03" ? BAG_HP : grave ? GRAVE_HP : BUMPER_HP;
+      paintBumper({ x: x, y: y, r: key === "decor03" ? 34 : BUMPER_R + (grave ? 6 : 0), key: key, hit: 0, hp: hp, maxHp: hp });
+    }
+    // a boss on its court under its bar, at 70 % of its life
+    function bossPic(kind, bi, prop) {
+      var K = KINDS[kind];
+      return fieldPic(bi, 90, 130, 540, 350, 0.88, function () {
+        bossRef = { kind: kind, hp: K.hp * 0.7, maxHp: K.hp, hpShow: K.hp * 0.8, flash: 0, dead: false };
+        if (prop) prop();
+        picMon(kind, 360, 462);
+        drawBossBar();
+      });
+    }
+    // a row of supers' buttons, all full
+    function supersPic(keys) {
+      return paintPic(500, 125, function () {
+        lend(0, function () {
+          ctx.scale(1.25, 1.25);
+          for (var i = 0; i < keys.length; i++) paintSuper({ x: 50 + 100 * i, y: 50, power: keys[i], charge: 1, hit: 0 }, 0.5);
+        });
+      });
+    }
+    // two ball flags of a family, their balls rolling by
+    function kindsPic(bi, a, b) {
+      return fieldPic(bi, 120, 480, 480, 240, 1, function () {
+        picFlag(a, 240, 660); picFlag(b, 480, 650);
+        picBall(a, 300, 700); picBall(b, 420, 690);
+      });
+    }
+    // a boss's hit points, read against what a ball and a wave deal it
+    function hpRow(hp) { return [Lang.t("Hit points"), String(hp)]; }
+
+    var guide = {
+      chapters: function () {
+        var B0 = BIOMES;
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "shot", title: Lang.t("Roll or lob"), pic: function () {
+                return fieldPic(0, 100, 790, 520, 420, 0.76, function () {
+                  picMon("walker", 250, 935, 2); picMon("walker", 470, 905, 5);
+                  aim = { x: TEE_X + 80, y: TEE_Y - 150, held: 0, mode: "direct" };
+                  drawBands(0.76); drawPreview(); paintTee();
+                });
+              }, lines: [
+                Lang.t("Put your finger in the blue band to roll, in the orange band to lob."),
+                Lang.t("Your finger's angle sets the aim. The farther it is from the tee, the harder the shot.") ] },
+            { id: "lob", title: Lang.t("The lob"), lv: 3, pic: function () {
+                return fieldPic(0, 60, 560, 600, 650, 0.5, function () {
+                  picMon("walker", 290, 860, 3); picMon("walker", 400, 830, 6); picMon("walker", 480, 900, 1);
+                  aim = { x: TEE_X + 40, y: TEE_Y - 215, held: 0, mode: "lob" };
+                  drawBands(0.5); drawPreview(); paintTee();
+                });
+              }, lines: [
+                Lang.t("A lob flies over the horde. It lands softly enough to drop into the hole."),
+                Lang.t("The longer the lob, the less precisely it lands.") ] },
+            { id: "bag", title: Lang.t("The bag"), pic: function () {
+                return fieldPic(0, 60, 1110, 560, 160, 0.93, function () {
+                  bag = 3; specials = ["explosive", "explosive"]; regenT = 1.2;
+                  paintTee(); drawBag();
+                });
+              }, lines: [
+                Lang.t("Each shot takes a ball from the bag. Once a ball stops rolling, it goes back in.") ] },
+            { id: "hole", title: Lang.t("The hole"), pic: function () {
+                return fieldPic(0, 130, 400, 460, 340, 0.94, function () {
+                  picMon("walker", 230, 650, 4); picMon("walker", 500, 625, 7);
+                  picHole(360, 690); picBall("plain", 335, 728);
+                });
+              }, lines: [
+                Lang.t("Roll a ball gently into the hole. Too fast, and it skips over."),
+                Lang.t("A long shot, a lob or a bank shot makes a bigger shockwave.") ] },
+            { id: "flags", title: Lang.t("Ball flags"), pic: function () {
+                return fieldPic(0, 120, 480, 480, 240, 1, function () {
+                  picFlag("explosive", 240, 650); picFlag("multi", 480, 640); picBall("plain", 300, 700);
+                });
+              }, lines: [
+                Lang.t("Roll a ball into a coloured flag to win 3 balls of its kind."),
+                Lang.t("A coloured flag also gives back a lost flag.") ] },
+            { id: "chain", title: Lang.t("Chains"), pic: function () {
+                return fieldPic(0, 130, 520, 460, 230, 1, function () {
+                  picMon("walker", 230, 700, 10, true); picMon("walker", 345, 685, 11, true); picMon("walker", 460, 705, 9);
+                  picBall("plain", 280, 725);
+                });
+              }, lines: [
+                Lang.t("Zombies bounce like billiard balls. Knock one hard into another and both take a hit."),
+                Lang.t("All the KOs of one shot make a chain. The 3rd pays 300, the 4th 400…") ] },
+            { id: "supers", title: Lang.t("Supers"), pic: function () {
+                return fieldPic(0, 380, 840, 340, 270, 1, function () {
+                  picMon("walker", 470, 990, 3);
+                  paintSuper({ x: wallR(1015) - SLOT_R - 10, y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
+                  paintSuper({ x: wallR(907) - SLOT_R - 10, y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
+                });
+              }, lines: [
+                Lang.t("Every KO charges both supers. 12 KOs fill one."),
+                Lang.t("Tap a full super to fire it. Its balls don't come out of your bag.") ] },
+            { id: "line", title: Lang.t("The line"), pic: function () {
+                return fieldPic(0, 140, 880, 440, 300, 1, function () {
+                  picMon("walker", 260, 1060, 2); picMon("walker", 400, 1112, 10, true);
+                  drawFx("boom", 3, 430, 1095, 200);
+                });
+              }, lines: [
+                Lang.t("A zombie that crosses the white line costs you a flag. Its blast pushes the horde back."),
+                Lang.t("A coloured flag wins one back.") ] },
+            { id: "last", title: Lang.t("The last stand"), pic: function () {
+                return fieldPic(0, 120, 900, 480, 370, 0.86, function () {
+                  phase = "last"; phaseT = 5; aim = { x: 300, y: 960, held: 1 };
+                  picMon("walker", 230, 965, 9); picMon("walker", 470, 990, 4);
+                  for (var i = 1; i <= 4; i++) picBall("plain", TEE_X + (300 - TEE_X) * i / 5, TEE_Y + (960 - TEE_Y) * i / 5);
+                  drawGunAura(); drawReticle(); paintTee(); drawBag();
+                });
+              }, lines: [
+                Lang.t("Lose your last flag and you get the gun for 8 s. Only once a round."),
+                Lang.t("Hold to fire, tap to putt. Hold out and you get one flag back.") ] },
+            { id: "goal", title: Lang.t("Goal and stars"), pic: function () {
+                return fieldPic(0, 160, 40, 400, 330, 0.95, function () {
+                  picMon("walker", 380, 175, 1); picMon("walker", 300, 215, 4); picMon("walker", 440, 270, 6); picMon("walker", 330, 340, 2);
+                });
+              }, rows: [[Lang.t("The level's goal"), "★"], [Lang.t("Lose no flag"), "★★"], [Lang.t("The level's bonus"), "★★★"]],
+              lines: [
+                Lang.t("Each level has one goal: survive its waves, sink the hole, knock out a boss…"),
+                Lang.t("The round ends as soon as the goal is met.") ] },
+            { id: "boss", title: Lang.t("Bosses"), lv: 6, pic: function () {
+                return fieldPic(0, 130, 1030, 460, 240, 1, function () {
+                  cool = 0.35; coolMax = BOSS_COOLDOWN; bag = 4;
+                  paintTee(); drawBag();
+                });
+              }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags lost if a boss crosses"), "2"]],
+              lines: [
+                Lang.t("While a boss is on the field, you can only shoot once every 0.6 s.") ] }
+          ] },
+
+          { key: "country", label: Lang.t(B0[0].name), pages: [
+            { id: "bumpers", title: Lang.t("Obstacles"), lv: 1, pic: function () {
+                return fieldPic(0, 100, 470, 520, 290, 1, function () {
+                  picBumper("course04", 230, 610); picBumper("course05", 480, 590); picBumper("course11", 360, 700);
+                  picMon("walker", 560, 700, 3); picBall("plain", 290, 680);
+                });
+              }, lines: [
+                Lang.t("Hit an obstacle hard enough, often enough, and it breaks.") ] },
+            { id: "walker", title: Lang.t(KINDS.walker.name), lv: 1, pic: function () {
+                return fieldPic(0, 140, 470, 440, 230, 1, function () {
+                  picMon("walker", 240, 670, 1); picMon("walker", 360, 645, 3); picMon("walker", 480, 680, 6);
+                });
+              }, lines: [
+                Lang.t("A walker shambles down its lane toward the line.") ] },
+            { id: "boomer", title: Lang.t(KINDS.boomer.name), lv: 2, pic: function () {
+                return fieldPic(0, 140, 470, 440, 230, 1, function () {
+                  picMon("walker", 470, 670, 10, true); picMon("boomer", 280, 670, 2);
+                  drawFx("boom", 3, 460, 625, 200);
+                });
+              }, lines: [
+                Lang.t("When knocked out, a boomer bursts and deals 3 damage to every zombie around it."),
+                Lang.t("Burst a boomer inside the pack.") ] },
+            { id: "moving", title: Lang.t("The moving hole"), lv: 4, pic: function () {
+                return fieldPic(0, 100, 380, 520, 330, 1, function () {
+                  var h = { x: 420, y: 650, home: 360, amp: 150 };
+                  drawRail(h); picHole(h.x, h.y); picBall("plain", 300, 690);
+                });
+              }, lines: [
+                Lang.t("Sink the moving hole while it moves for a bigger shockwave.") ] },
+            { id: "scars", title: Lang.t("Damaged course"), lv: 5, pic: function () {
+                return fieldPic(0, 100, 470, 520, 290, 1, function () {
+                  drawFx("crater", FX.crater.n - 1, 240, 600, 160); drawFx("burn", FX.burn.n - 1, 470, 690, 130);
+                  drawFx("crack", FX.crack.n - 1, 340, 700, 110); drawFx("boom", FX.boom.n - 1, 480, 560, 200);
+                  picMon("walker", 380, 640, 4);
+                });
+              }, lines: [
+                Lang.t("Every crater, scorch and crack stays on the grass for the whole round.") ] },
+            { id: "greenkeeper", title: Lang.t(KINDS.greenkeeper.name), lv: 6, pic: function () {
+                return bossPic("greenkeeper", 0, function () { picBumper("course04", 520, 445); });
+              }, rows: [hpRow(KINDS.greenkeeper.hp)], lines: [
+                Lang.t("From the front, each hit on the greenkeeper deals only 1 damage. Bank your shots to reach its sides.") ] }
+          ] },
+
+          { key: "desert", label: Lang.t(B0[1].name), pages: [
+            { id: "bunkers", title: Lang.t("Bunkers"), lv: 7, pic: function () {
+                return fieldPic(1, 100, 470, 520, 290, 1, function () {
+                  paintTerrain({ kind: "bunker", key: "course06", x: 260, y: 610, rx: 86, ry: 54, life: -1 });
+                  paintTerrain({ kind: "bunker", key: "course07", x: 470, y: 670, rx: 86, ry: 54, life: -1 });
+                  picMon("walker", 260, 640, 3); picBall("plain", 450, 665);
+                });
+              }, lines: [
+                Lang.t("Sand brakes a ball hard the moment it rolls in.") ] },
+            { id: "shield", title: Lang.t(KINDS.shield.name), lv: 7, pic: function () {
+                return fieldPic(1, 140, 470, 440, 230, 1, function () {
+                  picMon("shield", 270, 665, 2); picMon("shield", 440, 650, 10); picBall("plain", 440, 690);
+                });
+              }, lines: [
+                Lang.t("The shield zombie's golf bag blocks shots that come straight from below."),
+                Lang.t("Lob over the shield zombie, bank off a fence, or use a piercing, heavy or giant ball.") ] },
+            { id: "wind", title: Lang.t("Wind"), lv: 10, pic: function () {
+                return fieldPic(1, 100, 470, 520, 290, 1, function () {
+                  picMon("walker", 420, 620, 2);
+                  drawFx("wind", 2, 250, 560, 190, 0.85); drawFx("wind", 4, 430, 690, 190, 0.85);
+                  picBall("plain", 300, 650);
+                });
+              }, lines: [
+                Lang.t("The wind bends every shot, rolled or lobbed.") ] },
+            { id: "colossus", title: Lang.t(KINDS.colossus.name), lv: 12, pic: function () {
+                return bossPic("colossus", 1, function () { picBumper("decor03", 530, 455); });
+              }, rows: [hpRow(KINDS.colossus.hp)], lines: [
+                Lang.t("The colossus blocks direct shots with its shield and throws golf bags that block the lanes."),
+                Lang.t("Lob onto the colossus's head instead. Each ball deals 6 damage.") ] }
+          ] },
+
+          { key: "bayou", label: Lang.t(B0[2].name), pages: [
+            { id: "ponds", title: Lang.t("Ponds"), lv: 13, pic: function () {
+                return fieldPic(2, 100, 470, 520, 290, 1, function () {
+                  paintTerrain({ kind: "pond", key: "course08", x: 330, y: 555, rx: 92, ry: 60, life: -1 });
+                  picMon("walker", 345, 668, 10, true); picBall("plain", 352, 715);
+                });
+              }, lines: [
+                Lang.t("A ball in the water is lost."),
+                Lang.t("Knock a zombie hard into a pond and it drowns.") ] },
+            { id: "mudder", title: Lang.t(KINDS.mudder.name), lv: 14, pic: function () {
+                return fieldPic(2, 140, 470, 440, 230, 1, function () {
+                  picMon("mudder", 270, 670, 3); picMon("mudling", 430, 655, 16); picMon("mudling", 500, 680, 16);
+                });
+              }, lines: [
+                Lang.t("Knocked out, a mudder splits into two mudlings that burst at a touch and splash their neighbours.") ] },
+            { id: "night", title: Lang.t("Night"), lv: 16, pic: function () {
+                return fieldPic(2, 100, 420, 520, 340, 0.93, function () {
+                  picMon("walker", 300, 560, 2); picMon("walker", 460, 530, 5);
+                  drawNight();
+                  picMon("walker", 390, 735, 7);
+                });
+              }, lines: [
+                Lang.t("Only the bottom of the field is lit. The horde comes out of the dark.") ] },
+            { id: "bog", title: Lang.t(KINDS.bog.name), lv: 18, pic: function () {
+                return bossPic("bog", 2, function () { drawMud({ x: 360, y: 470, r: 130, life: 4 }); });
+              }, rows: [hpRow(KINDS.bog.hp)], lines: [
+                Lang.t("Knock the bog giant into a pond. Each dunk costs it 18 hit points.") ] }
+          ] },
+
+          { key: "frozen", label: Lang.t(B0[3].name), pages: [
+            { id: "ice", title: Lang.t("Ice"), lv: 19, pic: function () {
+                return fieldPic(3, 100, 470, 520, 290, 1, function () {
+                  paintTerrain({ kind: "ice", key: "course10", x: 360, y: 640, rx: 118, ry: 70, life: -1 });
+                  picMon("walker", 300, 650, 10, true); picMon("walker", 380, 630, 11, true); picMon("walker", 440, 675, 9);
+                });
+              }, lines: [
+                Lang.t("Zombies slide on ice too, twice as long when knocked back. Go for big pile-ups.") ] },
+            { id: "double", title: Lang.t("Two holes"), lv: 22, pic: function () {
+                return fieldPic(3, 100, 380, 520, 340, 0.94, function () {
+                  picHole(240, 680); picHole(480, 660);
+                });
+              }, lines: [
+                Lang.t("Two holes on the fairway, but each one's shockwave covers less ground.") ] },
+            { id: "yeti", title: Lang.t(KINDS.yeti.name), lv: 24, pic: function () {
+                return bossPic("yeti", 3, function () {
+                  paintTerrain({ kind: "ice", key: "course10", x: 360, y: 470, rx: 150, ry: 60, life: -1 });
+                });
+              }, rows: [hpRow(KINDS.yeti.hp)], lines: [
+                Lang.t("Fire hurts the yeti twice as much.") ] }
+          ] },
+
+          { key: "graveyard", label: Lang.t(B0[4].name), pages: [
+            { id: "graves", title: Lang.t("Graves"), lv: 25, pic: function () {
+                return fieldPic(4, 100, 470, 520, 290, 1, function () {
+                  picBumper("course12", 480, 600, true); picBumper("course12", 290, 610, true);
+                  drawAura(290, 690, 30, 118, 0.8); picMon("walker", 290, 690, 1, false, 0.6);
+                });
+              }, lines: [
+                Lang.t("Graves break like obstacles. Once broken, no more zombies rise from them.") ] },
+            { id: "runner", title: Lang.t(KINDS.runner.name), lv: 25, pic: function () {
+                return fieldPic(4, 140, 470, 440, 230, 1, function () {
+                  picMon("runner", 290, 650, 2); picMon("runner", 440, 685, 6);
+                });
+              }, lines: [
+                Lang.t("A runner sprints straight at the line, more than twice as fast as a walker. Shoot fast.") ] },
+            { id: "necro", title: Lang.t(KINDS.necro.name), lv: 26, pic: function () {
+                return fieldPic(4, 140, 470, 440, 230, 1, function () {
+                  drawAura(290, 670, 30, 124, 1); picMon("necro", 290, 670, 6);
+                  drawAura(460, 680, 30, 118, 0.8); picMon("walker", 460, 680, 1, false, 0.6);
+                });
+              }, lines: [
+                Lang.t("Every 6 s, the necromancer stops to bring back the last two zombies knocked out."),
+                Lang.t("Knock the necromancer out first.") ] },
+            { id: "horde", title: Lang.t("Horde"), lv: 28, pic: function () {
+                return fieldPic(4, 120, 450, 480, 270, 1, function () {
+                  var spots = [[220, 560], [330, 540], [440, 565], [530, 590], [270, 640], [390, 630], [500, 670], [200, 700], [330, 710]];
+                  for (var i = 0; i < spots.length; i++) picMon("walker", spots[i][0], spots[i][1], 1 + i % 8);
+                });
+              }, lines: [
+                Lang.t("Twice the zombies, but every one falls at the first hit.") ] },
+            { id: "king", title: Lang.t(KINDS.king.name), lv: 30, pic: function () {
+                return bossPic("king", 4, function () {
+                  skulls = [{ x: 490, y: 445, back: false }];
+                  drawAura(220, 470, 30, 118, 0.8); picMon("walker", 220, 470, 1, false, 0.7);
+                  drawSkulls();
+                });
+              }, rows: [hpRow(KINDS.king.hp)], lines: [
+                Lang.t("Send the zombie king's skull balls back at him for 8 damage. One that reaches the line costs a flag.") ] }
+          ] },
+
+          { key: "kinds", label: Lang.t("Ball kinds"), pages: [
+            { id: "kinds1", title: Lang.t("Explosive and multi"), lv: 1, pic: function () { return kindsPic(0, "explosive", "multi"); }, lines: [
+                Lang.t("The explosive ball blows up on the first zombie it hits, dealing 5 damage around it."),
+                Lang.t("The multiball splits into three at its first bounce.") ] },
+            { id: "kinds2", title: Lang.t("Pierce and heavy"), lv: 7, pic: function () { return kindsPic(1, "pierce", "heavy"); }, lines: [
+                Lang.t("The piercing ball goes through every zombie in its path, dealing 3 damage to each."),
+                Lang.t("The heavy ball deals double damage and knocks zombies far back. No shield stops these two.") ] },
+            { id: "kinds3", title: Lang.t("Homing and split"), lv: 14, pic: function () { return kindsPic(2, "homing", "split"); }, lines: [
+                Lang.t("The homing ball curves toward the nearest zombie for 3 s."),
+                Lang.t("The splitting ball splits in two at each of its first three bounces.") ] },
+            { id: "kinds4", title: Lang.t("Bouncy and fire"), lv: 19, pic: function () { return kindsPic(3, "bouncy", "fire"); }, lines: [
+                Lang.t("For 6 s, the bouncy ball keeps its full speed and bounces off the line."),
+                Lang.t("The fire ball sets the grass alight where it hits.") ] },
+            { id: "kinds5", title: Lang.t("Ice and giant"), lv: 25, pic: function () { return kindsPic(4, "ice", "giant"); }, lines: [
+                Lang.t("The ice ball freezes the zombies it hits for 3 s."),
+                Lang.t("The giant ball is twice as big, deals +1 damage and goes through every shield.") ] }
+          ] },
+
+          { key: "supers", label: Lang.t("Supers"), pages: [
+            { id: "supers1", title: Lang.t(B0[0].name), lv: 1, pic: function () { return supersPic(["rain", "fan", "freeze", "holeblast"]); }, lines: [
+                Lang.t("Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once."),
+                Lang.t("Time freeze stops the horde for 4 s. Hole blast sets off the hole's full shockwave.") ] },
+            { id: "supers2", title: Lang.t(B0[1].name), lv: 7, pic: function () { return supersPic(["seeker", "sniper", "sprinkler", "cart"]); }, lines: [
+                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest."),
+                Lang.t("Sprinklers push the whole horde back. The Golf cart charges up the busiest lane.") ] },
+            { id: "supers3", title: Lang.t(B0[2].name), lv: 13, pic: function () { return supersPic(["boomvolley", "splitstorm", "magnet", "hail"]); }, lines: [
+                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 ice balls."),
+                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 s, at any speed.") ] },
+            { id: "supers4", title: Lang.t(B0[3].name), lv: 19, pic: function () { return supersPic(["firestorm", "superbounce", "cluster", "rush"]); }, lines: [
+                Lang.t("Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down."),
+                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun for 6 s.") ] },
+            { id: "supers5", title: Lang.t(B0[4].name), lv: 25, pic: function () { return supersPic(["meteor", "carpet", "golden", "mower"]); }, lines: [
+                Lang.t("Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field."),
+                Lang.t("Golden rain makes KOs pay × 3 for 8 s. Mower sends mowers across the field.") ] }
+          ] }
+        ];
+      }
+    };
+
+    // ======================================================================
     //  THE LAB HANDLE — what lab/holepocalypse-fx.html (make events →
     //  /hole-fx) plays the round with, inside this very build: a zombie of
     //  any kind in any state, a ball of any kind, any super, any painted
@@ -2659,7 +3802,7 @@
     // ======================================================================
     function labSpot() { var y = (TOP() + LINE()) / 2 - 100; return { x: (wallL(y) + wallR(y)) / 2, y: y }; }
     function labFrames(K) {
-      var n = 0, keys = ["walk", "hit", "ko", "dig", "mound", "surface", "cast", "act"];
+      var n = 0, keys = ["walk", "hit", "ko", "cast", "act"];
       for (var i = 0; i < keys.length; i++) if (K[keys[i]]) n = Math.max(n, K[keys[i]][1]);
       return n;
     }
@@ -2669,7 +3812,6 @@
         biomes: BIOMES.map(function (b) { return { key: b.key, name: b.name, terrain: b.terrain }; }),
         kinds: Object.keys(KINDS).map(function (key) {
           var K = KINDS[key], st = ["walk", "hit", "ko", "frozen", "rise"];
-          if (K.dig) st.push("dig", "under", "surface");
           if (K.cast) st.push("cast");
           if (K.act) st.push("act");
           return { key: key, name: K.name, boss: !!K.boss, art: frameKey(key, K.walk[0]), frames: labFrames(K), states: st };
@@ -2691,15 +3833,14 @@
       var K = KINDS[kind];
       if (!K || !B) return null;
       // a state the kind's sheet has no frames for stays a walk
-      if ((state === "dig" || state === "under" || state === "surface") && !K.dig || state === "cast" && !K.cast || state === "act" && !K.act) state = "walk";
+      if (state === "cast" && !K.cast || state === "act" && !K.act) state = "walk";
       if (x == null) { var p = labSpot(); x = p.x + rand(-90, 90); y = p.y + rand(-40, 40); }
       if (state === "ko") { kos.push({ kind: kind, x: x, y: y, t: 0 }); return null; }
       var m = addMon(kind, x, y, state === "rise");
       if (K.boss && !bossRef) { bossRef = m; m.lane = 0.5; m.t0 = time; hudWave(); }
       if (state === "hit") { m.hitT = HIT_TIME; m.flash = 0.12; }
       else if (state === "frozen") m.frozenT = ICE_TIME;
-      else if (state === "dig" || state === "under" || state === "cast" || state === "act") { m.state = state; m.stateT = 0; }
-      else if (state === "surface") { m.state = "surface"; m.stateT = 0; m.surfaced = true; }
+      else if (state === "cast" || state === "act") { m.state = state; m.stateT = 0; }
       return m;
     }
     function labRow(kind, n, state) {
@@ -2727,7 +3868,8 @@
       applyMod(b, kind || "plain");
       if (lob) { b.air = true; b.z = 0.01; b.vz = v.vz; b.lob = true; }
       balls.push(b);
-      Sound.clip("shot", 0.55, lob ? 0.9 : 1.05);
+      if (lob) Sound.clip("shot", 0.55, 0.9);
+      else Sound.clip("shot", 0.55, 1.05);
     }
     // what sinking a ball flag of `kind` loads: the next shots from the bag
     function labLoad(kind) {
@@ -2742,14 +3884,19 @@
     }
     /* The round's own moments, each through the call a round makes. */
     var LAB_EVENTS = {
-      hole: function (x, y) { var h = holes[0]; if (x != null) { h.x = x; h.y = y; h.home = x; } blast(h, ++shotId, holes.length > 1 ? 0.6 : SHOCK_COVER); },
+      // a plain putt sunk there: its wave is the one that hole's distance earns
+      hole: function (x, y) {
+        var h = holes[0]; if (x != null) { h.x = x; h.y = y; h.home = x; }
+        var d = holeReach(h);
+        blast(h, ++shotId, (SHOCK_MIN + (SHOCK_MAX - SHOCK_MIN) * d) * (holes.length > 1 ? 0.75 : 1), d);
+      },
       explode: function (x, y) { explode(x, y, EXP_RADIUS, EXP_DMG, EXP_PUSH, ++shotId); },
       boomer: function (x, y) { var m = labZombie("boomer", x, y); if (m) kill(m, ++shotId); },
       mudder: function (x, y) { var m = labZombie("mudder", x, y); if (m) kill(m, ++shotId); },
       fire: function (x, y) { zones.push({ kind: "fire", x: x, y: y, r: 50, life: 3, tick: 0, tag: ++shotId }); },
       mud: function (x, y) { zones.push({ kind: "mud", x: x, y: y, r: 150, life: 4, tick: 0 }); },
       ice: function () { living().forEach(function (m) { m.frozenT = ICE_TIME; }); },
-      crack: function (x, y) { spawnFx("crack", x, y, 90, { from: 2, hold: 0.6 }); },
+      crack: function (x, y) { spawnFx("crack", x, y, 90, { from: 2, mark: true }); },
       split: function (x, y) { spawnFx("split", x, y, BALL_R * 7, { from: 1, top: true }); },
       splash: function (x, y) { splash(x, y); },
       wind: function (x, y) { spawnFx("wind", x, y, 190, { top: true, vx: 224, alpha: 0.85 }); },
@@ -2827,7 +3974,7 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelTally: levelTally,
-             levelRules: levelRules, levelWon: levelWon,
+             levelRules: levelRules, levelWon: levelWon, guide: guide,
              lab: { set: function (o) { for (var key in o) if (o.hasOwnProperty(key)) lab[key] = o[key]; },
                     catalog: labCatalog, state: labState, zombie: labZombie, row: labRow, pose: labPose,
                     ball: labBall, load: labLoad, power: firePower, fx: labFx, event: labEvent, clear: labClear } };

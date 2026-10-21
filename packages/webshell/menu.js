@@ -97,6 +97,7 @@
   /* The codex, published by packages/webshell/codex.js for a game that
      publishes `Game.codex` (games/pawko) — read lazily, like the barracks. */
   function CX() { return window.__CODEX__ || null; }
+  function GD() { return window.__GUIDE__ || null; }
   function codexed() { var c = CX(); return !!(c && c.active()); }
 
   /* WHAT PLAY OPENS, IN ONE PLACE. Three answers and they are a chain, not a
@@ -165,7 +166,7 @@
       toMenu: "Back to the menu", toVillage: "Back to the village", resume: "Resume",
       leaveTitle: "Leave?",
       leaveNote: "The round ends here and its score is lost.",
-      leaveYes: "Leave"
+      leaveVillage: "Village"
     },
     fr: {
       play: "Jouer", leaderboard: "Classement", options: "Options", help: "Aide",
@@ -190,7 +191,7 @@
       toMenu: "Retour au menu", toVillage: "Retour au village", resume: "Reprendre",
       leaveTitle: "Quitter ?",
       leaveNote: "La partie s’arrête ici et son score est perdu.",
-      leaveYes: "Quitter"
+      leaveVillage: "Village"
     }
   };
 
@@ -205,7 +206,7 @@
     scoresTitle: 1, optionsTitle: 1, helpTitle: 1, best: 1,
     soonTitle: 1, rankPlayer: 1, rankStars: 1, rankStickers: 1, rankCleared: 1,
     rankSum: 1, rankLevel: 1, rankBest: 1, rankTries: 1, rankTuto: 1, rankEndless: 1,
-    again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveYes: 1
+    again: 1, menu: 1, resume: 1, leaveTitle: 1, leaveVillage: 1
   };
   var up = W.upper;
   function shouted(key) { return CAPS[key] || key.indexOf("mode") === 0; }
@@ -267,11 +268,12 @@
 
   /* The few words the MOTOR writes on its own and no game declares: the
      names of the keys and the mouse actions of the how-to-play legend
-     (packages/shell, Demo). They ride in the same dictionary as the game's,
+     (packages/shell, Demo), and the record beaten mid-round (Record). They ride in the same dictionary as the game's,
      under it, so a game can still word one its own way. */
   var MOTOR_WORDS = {
     fr: { "Space": "Espace", "or": "ou", "Aim": "Viser", "Click": "Cliquer", "Hold": "Maintenir",
-          "Drag": "Glisser", "Click, hold and release": "Cliquer, maintenir et relâcher" }
+          "Drag": "Glisser", "Click, hold and release": "Cliquer, maintenir et relâcher",
+          "New record": "Nouveau record", "Previous: {n}": "Précédent : {n}" }
   };
 
   /* Everything the motor wrote once and would otherwise keep in English: the
@@ -437,6 +439,7 @@
     lang:  '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
     reset: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
     home:  '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    menu:  '<path d="M4 12h16"/><path d="M4 18h16"/><path d="M4 6h16"/>',
     map:   '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
     close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     help:  '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
@@ -462,6 +465,14 @@
     play:   '<polygon points="6 3 20 12 6 21 6 3"/>',
     check:  '<path d="M20 6 9 17l-5-5"/>',
     lock:   '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    /* the album's gallery (album.js, section 5b): its tab, and the pieces it
+       is counted in */
+    image:  '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+    puzzle: '<path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/>',
+    /* the guide's two (packages/webshell/guide.js): the book the Help card
+       opens, and its contents */
+    book:   '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+    list:   '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
     /* the ranking's own three: the podium's cup (the painted trophy where
        the build has one), the crown on the player's best level, and the
        rocket of a feature on its way */
@@ -932,8 +943,11 @@
            is inside the card now and that is where the back arrow is, so a
            piece there is a picture over a control. Not bottom-right either —
            that corner is the shell's own. */
+        /* The leave card's left edge is a column of buttons from the note
+           down, so its piece keeps to the top-right corner. */
         W.Decor.dress(card, {
-          count: 1, spots: ["tr", "l", "bl"], size: 140, opacity: 0.45, front: 0.4
+          count: 1, spots: kind === "leave" ? ["tr"] : ["tr", "l", "bl"],
+          size: 140, opacity: 0.45, front: 0.4
         });
       },
       /* The demo stage is the MOTOR's node, borrowed rather than copied, and it
@@ -970,7 +984,14 @@
       withReset ? resetButton() : null);
   }
 
+  /* HELP OVER A ROOM THE GUIDE EXPLAINS IS THAT ROOM'S PAGE. A player asking
+     for help on the barracks' infirmary is asking about the infirmary, not
+     about how a battle is played: where the guide names a page for the room
+     on top (packages/webshell/guide.js, `here`), help opens the guide on it,
+     and its contents button is one tap from everything else. */
   function openHelp() {
+    var here = GD() && GD().current();
+    if (here) return GD().open(here);
     return panelModal("help", COPY.helpTitle, fillHelp, openHelp);
   }
 
@@ -1053,6 +1074,7 @@
       if (levelled()) LV.wipe();
       if (metaed()) MT.wipe();
       if (W.Game && W.Game.wipe) W.Game.wipe();   // what the game keeps itself (gearball's card collection)
+      if (W.Notify.unlearn) W.Notify.unlearn();   // the mechanics already named (Notify.learn)
       /* The question was the button's own (it is the control, asking), and
          the answer is information: it is said the way every other one is,
          and the button goes back to being what it was. */
@@ -1154,22 +1176,23 @@
       }
       box.appendChild(rules);
     }
-    /* THE AURA, NAMED. A game whose rules are read on the table — a tap on
-       anything its idle hint lights opens that thing's card (games/bridgessa,
-       games/slipdeck) — says so here, once, instead of opening every card on
-       the way into a round: `web.copy.<lang>.helpAura`, one sentence, beside
-       one of the game's own objects wearing the aura (`Game.helpAura()`, a
-       node; a plain pill without it). The round breathes its aura once every
-       few idle seconds; this one loops, faster, because here it is the thing
-       being shown. A game that declares no sentence never builds the row. */
-    if (COPY.helpAura) {
-      var aura = el("div", "web-help-aura");
-      var ex = W.Game && W.Game.helpAura ? W.Game.helpAura() : null;
-      if (!ex) ex = el("span", "web-help-aura-pill", "?");
-      ex.classList.add("web-help-aura-ex");
-      aura.appendChild(ex);
-      aura.appendChild(el("p", "", COPY.helpAura));
-      box.appendChild(aura);
+    /* THE BOOK, ONE LINE THAT IS TWO THINGS. The card above is the game in
+       one look and must stay that short; everything else it has to say — the
+       biomes, the objects, what a special card does — is a page of its guide
+       (packages/webshell/guide.js). A mechanic met in a round is named by a
+       notice wearing the guide's book (Notify.learn), and a tap on it opens
+       its page over the paused round. This line says so, the book drawn inside
+       the sentence, so a player knows the chip is a door before they meet one
+       — and the line IS the way in: a tap on it opens the guide's contents,
+       over this card, so closing the guide comes back here. A game that
+       publishes no guide never builds it. */
+    if (GD()) {
+      var note = el("button", "web-help-note",
+        GD().tip().replace("{book}", '<span class="nt-go">' + icon("book", "ico") + "</span>"));
+      note.type = "button";
+      note.setAttribute("aria-label", GD().label());
+      note.addEventListener("click", function () { GD().open(); });
+      box.appendChild(note);
     }
     /* NO ROW OF KEYS HERE. The keys a desk plays with are the motor's, acted
        on the stage and named in the legend under it (shell.js, Demo) — both
@@ -1509,11 +1532,9 @@
      screen and coming back stay on the same side, and nothing about a round
      has to move to make room. The other bottom corner is the level pill's.
 
-     THE THIRD CONTROL IS THE WAY OUT, and the pictogram is the DESTINATION
-     rather than the door: the house, because leaving a round goes back to
-     where the player lives — the village where there is one, the title screen
-     otherwise — the same place the band's home chip and ESCAPE both mean. The
-     map is one building of that place, not where a way out should land. */
+     THE THIRD CONTROL IS THE WAY OUT, and since there are several ways out
+     — the round again, home, the map — its pictogram is the MENU and not one
+     of the destinations: the card it opens (`openLeave`) lists the three. */
   function buildControls() {
     VW.corner([
       { name: "help",    icon: "help", label: COPY.help,    on: openHelp },
@@ -1525,8 +1546,8 @@
   function roundControl(on) {
     if (!on) { VW.cornerExtra(null); return; }
     VW.cornerExtra({
-      icon: "home",
-      label: villaged() ? COPY.toVillage : COPY.toMenu,
+      icon: "menu",
+      label: COPY.menu,
       on: openLeave
     });
   }
@@ -1537,21 +1558,25 @@
                       map: levelled() ? LV.text("map") : "" });
   }
 
-  /* A pair of wide buttons under the body — RESUME alone for the options,
-     RESUME / LEAVE for the question that loses a run. */
+  /* The column of wide buttons under the leave card: each is
+     [act, icon, label, class, on], and `data-act` is what a test clicks. */
   function actions(box, list) {
-    var bar = el("div", "web-actions");
+    var bar = el("div", "web-actions col");
     for (var i = 0; i < list.length; i++) {
-      var b = el("button", "btn " + list[i][1], list[i][0]);
-      b.addEventListener("click", list[i][2]);
+      var b = el("button", "btn " + list[i][3], icon(list[i][1]) + "<span>" + list[i][2] + "</span>");
+      b.type = "button";
+      b.setAttribute("data-act", list[i][0]);
+      b.addEventListener("click", list[i][4]);
       bar.appendChild(b);
     }
     box.appendChild(bar);
   }
 
-  /* THE ONE QUESTION THAT THROWS A RUN AWAY. Same card as the options, and it
-     is the only card in this shell that asks something — which is why it is
-     the only one with a pair of buttons under it. */
+  /* THE ONE QUESTION THAT THROWS A RUN AWAY, and it answers with where to go:
+     RESUME first, said as a button as well as by the tap line, then the three
+     exits — the round again, home, the map — each of which loses the score. Same
+     card as the options, and the only one in this shell with a column of
+     buttons under it. */
   function openLeave() {
     if (W.state() !== "playing") return;
     /* The state is still "playing" while the outro plays (the loop is left
@@ -1560,12 +1585,28 @@
     if (W.ending && W.ending()) return;
     var h = panelModal("leave", COPY.leaveTitle, function (body) {
       body.appendChild(el("div", "web-note", COPY.leaveNote));
-      actions(body, [
-        [COPY.resume, "", function () { h.close(); }],
-        [COPY.leaveYes, "btn-danger", function () { h.close(); leave(); }]
-      ]);
+      var list = [
+        ["resume", "play", COPY.resume, "", function () { h.close(); }],
+        ["again", "reset", COPY.again, "btn-plate", function () { h.close(); replay(); }],
+        ["home", "home", villaged() ? COPY.leaveVillage : COPY.menu, "btn-plate",
+         function () { h.close(); leave(); }]
+      ];
+      if (levelled()) {
+        list.push(["map", "map", up(LV.text("map")), "btn-plate",
+                   function () { h.close(); leave(); LV.open(); }]);
+      }
+      actions(body, list);
     }, openLeave);
     return h;
+  }
+
+  /* The same round again, from the top: the level being played where there
+     is a map (the endless run included), a free round otherwise. startGame
+     tears the running round down itself, and writes no score for it. */
+  function replay() {
+    var n = levelled() ? LV.current() : 0;
+    if (n) { LV.play(n); return; }
+    W.start();
   }
 
   /* Leaving is the one path that throws a round away, so the score is not
@@ -1601,6 +1642,7 @@
     if (metaed()) { MT.setLang(code); AL.setLang(code); DL.setLang(code); }
     if (armied()) AR().setLang(code);
     if (codexed()) CX().setLang(code);
+    if (GD()) GD().setLang(code);
     for (var i = 0; i < items.length; i++)
       items[i].node.textContent = (items[i].mt && metaed() ? MT.text(items[i].mt) : null) ||
                                   (items[i].lv && levelled() ? LV.text(items[i].lv) : null) ||
@@ -1895,6 +1937,9 @@
     }
     /* The codex needs no wallet: a game's cards are read with or without one. */
     if (codexed()) CX().mount({ el: el, icon: icon, art: artImg, lang: LANG });
+    /* The guide needs nothing but the language and the pictograms. */
+    if (GD()) GD().mount({ el: el, icon: icon, art: artImg, lang: LANG,
+                           text: function (k) { return COPY[k]; } });
     /* This file's two cards, for the DEV view (packages/webshell/dev.js). */
     if (W.Dev) {
       W.Dev.entry({ group: "Shell", label: "Options", sub: "The options card, with the erase row", run: function () { openOptions(true); } });

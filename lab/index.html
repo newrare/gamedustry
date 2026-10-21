@@ -26,7 +26,9 @@
    `<meta name="lab-group">`: TOOLS (what a game is built and checked with),
    CSS (a look being tried before it moves into the motor or a SKIN) and
    PROTOTYPE (a mechanic tried outside the motor). `<meta name="lab-game">`
-   tags a page with the one game it is about.
+   tags a page with the one game it is about, and a page with none is tagged
+   "all". Inside a group the pages are sorted by tag — "all" first, then the
+   games alphabetically — and by name; each group folds on its heading.
 
    The location is the hash — `#/events/`, `#/lab/button.html` — so a reload
    comes back to the same page, and a page that navigates inside the frame
@@ -76,6 +78,17 @@ body.shut #panel { margin-left:-272px; }
 #list h2 {
   margin:14px 8px 4px; font-size:11px; letter-spacing:1px; text-transform:uppercase; color:var(--dim);
 }
+#list summary { list-style:none; cursor:pointer; border-radius:6px; }
+#list summary::-webkit-details-marker { display:none; }
+#list summary h2 { display:flex; align-items:center; gap:6px; margin:10px 0 2px; padding:4px 8px; }
+#list summary h2::before {
+  content:""; width:0; height:0;
+  border-left:5px solid currentColor; border-top:4px solid transparent; border-bottom:4px solid transparent;
+  transition:transform .15s ease;
+}
+#list details[open] > summary h2::before { transform:rotate(90deg); }
+#list summary h2 small { font-size:10px; letter-spacing:0; font-weight:500; }
+#list summary:hover h2 { color:var(--ink); }
 #list a {
   display:flex; align-items:center; gap:8px;
   padding:6px 8px; border-radius:6px;
@@ -91,7 +104,6 @@ body.shut #panel { margin-left:-272px; }
   font-size:10px; font-weight:700; letter-spacing:.3px;
   background:#1f1f33; color:var(--dim);
 }
-.pill.writes { background:rgba(255,184,107,.14); color:var(--warn); }
 .pill.game { background:rgba(126,166,255,.12); color:var(--accent); }
 
 #panel footer { padding:10px 16px 14px; font-size:11px; font-weight:500; color:var(--dim); border-top:1px solid var(--line); }
@@ -182,34 +194,58 @@ body.home #home { display:block; }
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   }
 
+  // A page about no game in particular is about all of them.
+  function tag(l) { return l.game || "all"; }
+
   function pills(l) {
-    var h = "";
-    if (l.game) h += '<i class="pill game">' + esc(l.game) + "</i>";
-    if (l.server) h += '<i class="pill writes" title="Served by /' + esc(l.server) + '/, which writes into the repo">server</i>';
-    return h;
+    return '<i class="pill' + (l.game ? " game" : "") + '">' + esc(tag(l)) + "</i>";
   }
 
   function groups() {
     var q = $("filter").value.trim().toLowerCase();
     var hit = LABS.filter(function (l) {
-      return !q || (l.name + " " + l.file + " " + (l.game || "") + " " + l.summary).toLowerCase().indexOf(q) >= 0;
+      return !q || (l.name + " " + l.file + " " + tag(l) + " " + l.summary).toLowerCase().indexOf(q) >= 0;
     });
-    // Filed by the page's own <meta name="lab-group">, sorted by name inside.
+    // Filed by the page's own <meta name="lab-group">, then sorted by tag —
+    // "all" first, then the games in alphabetical order — and by name inside.
     return GROUPS.map(function (g) {
       return [g[1], hit.filter(function (l) { return l.group === g[0]; })
-        .sort(function (a, b) { return a.name.localeCompare(b.name); })];
+        .sort(function (a, b) {
+          var ta = tag(a), tb = tag(b);
+          if (ta !== tb) return ta === "all" ? -1 : tb === "all" ? 1 : ta.localeCompare(tb);
+          return a.name.localeCompare(b.name);
+        }), g[0]];
     }).filter(function (g) { return g[1].length; });
   }
 
+  /* Each group of the list folds on its heading. The folded ones are kept per
+     browser; a filter being typed opens them all, since a match hidden in a
+     closed group reads as no match. */
+  var shutGroups = {};
+  try { shutGroups = JSON.parse(localStorage.getItem("lab:groups") || "{}") || {}; } catch (e) {}
+
   function renderList() {
     var cur = current();
+    var q = $("filter").value.trim();
     $("list").innerHTML = groups().map(function (g) {
-      return "<h2>" + g[0] + "</h2>" + g[1].map(function (l) {
+      var open = q || !shutGroups[g[2]];
+      return '<details data-group="' + esc(g[2]) + '"' + (open ? " open" : "") + "><summary><h2>" + g[0] +
+        " <small>" + g[1].length + "</small></h2></summary>" + g[1].map(function (l) {
         return '<a href="#' + esc(l.url) + '"' + (cur && cur.url === l.url ? ' class="on"' : "") +
           ' title="' + esc(l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>";
-      }).join("");
+      }).join("") + "</details>";
     }).join("") || '<h2>Nothing matches</h2>';
   }
+
+  // Only a click on a heading is the player's choice: a <details> written open
+  // by renderList fires "toggle" too.
+  $("list").addEventListener("click", function (e) {
+    var s = e.target.closest("summary");
+    if (!s || $("filter").value.trim()) return;
+    var d = s.parentNode;
+    if (d.open) shutGroups[d.dataset.group] = 1; else delete shutGroups[d.dataset.group];
+    try { localStorage.setItem("lab:groups", JSON.stringify(shutGroups)); } catch (e2) {}
+  });
 
   function renderHome() {
     $("home").innerHTML = groups().map(function (g) {

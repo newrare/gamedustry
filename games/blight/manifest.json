@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.9.22",
+  "version": "1.10.9",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -60,7 +60,7 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un Bubble Shooter magique dans lequel il faut être plus rapide que le mal qui ronge les bulles. Il faudra donc être rapide et plus malin que la contamination.",
+      "tagline": "Un Bubble Shooter magique où il faut aller plus vite que le mal qui ronge les bulles. Sois rapide et plus malin que la contamination.",
       "tags": [
         "Vise rapidement",
         "Grappe de trois",
@@ -87,7 +87,7 @@
           },
           {
             "kicker": "Super",
-            "line": "Rainbow <b>versus</b> blight"
+            "line": "Rainbow <b>Versus</b> blight"
           },
           {
             "kicker": "Darkness",
@@ -184,7 +184,50 @@
           "The rot spreads": "L'infection se propage",
           "The rot wins!": "L'infection l'emporte !",
           "Time": "Temps",
-          "Time's up!": "Temps écoulé !"
+          "Time's up!": "Temps écoulé !",
+          "The basics": "Les bases",
+          "Race the rot": "Plus vite que l'infection",
+          "Aim and shoot": "Viser et tirer",
+          "Match three": "Trois de même couleur",
+          "Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.": "Chaque tir qui éclate des bulles fait monter ton combo, jusqu'à ×6. Un tir raté le remet à zéro.",
+          "Falling bubbles": "Bulles qui tombent",
+          "A bubble that falls": "Une bulle qui tombe",
+          "A rotten bubble that falls": "Une bulle infectée qui tombe",
+          "Swap": "Echange",
+          "Tap the ring or the next bubble to swap the two.": "Touche l'anneau ou la bulle suivante pour échanger les deux bulles.",
+          "Swapping costs no shot. Check the next bubble and fire it first if it fits better.": "Echanger ne coûte aucun tir. Regarde la bulle suivante et tire-la d'abord si elle convient mieux.",
+          "The wall comes down": "Le mur descend",
+          "The wall moves down after a few shots. A bubble on the red line ends the round.": "Le mur descend après quelques tirs. Une bulle sur la ligne rouge met fin à la partie.",
+          "The rot": "L'infection",
+          "A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it.": "Une bulle infectée n'éclate jamais. Régulièrement, l'infection gagne une bulle voisine.",
+          "A bubble filling with rot is still active. Pop it before it turns completely.": "Une bulle qui commence à se remplir d'infection est toujours active. Eclate-la avant qu'elle soit infectée totalement.",
+          "The rainbow": "L'arc-en-ciel",
+          "Rainbow bubble": "Bulle arc-en-ciel",
+          "A rainbow bubble in a cluster takes the right colour on impact.": "Une bulle arc-en-ciel dans une grappe prendra la bonne couleur au moment de l'impact.",
+          "Rainbow shot": "Tir arc-en-ciel",
+          "The climb": "L'ascension",
+          "Marsh": "Marais",
+          "Ruins": "Ruines",
+          "Gorge": "Gorge",
+          "Castle": "Château",
+          "Throne": "Trône",
+          "Most walls start with two outbreaks. You will have to hold two fronts at once.": "La plupart des murs démarrent avec deux foyers infectés. Il faudra alors tenir sur deux fronts à la fois.",
+          "New shapes to spot: an arrow, cherries, and more.": "De nouvelles formes à repérer : une flèche, des cerises, etc.",
+          "From level 26, every wall starts with three outbreaks.": "Dès le stage 26, chaque mur démarre avec trois foyers.",
+          "Fire a rainbow into the rot to purify it": "Tire un arc-en-ciel dans l'infection pour la purifier",
+          "Bubbles saved": "Bulles sauvées",
+          "Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s.": "Les stages 1 et 2 démarrent sains, avec deux couleurs. L'infection surgit après {n} secondes.",
+          "Almost every wall draws a shape: a diamond, a lattice, a ring, a cross.": "Presque chaque mur dessine une forme : losange, grille, anneau, croix.",
+          "Fire a rainbow into the rot to give the bubbles their colour back.": "Tire un arc-en-ciel dans l'infection pour rendre des couleurs aux bulles.",
+          "The more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.": "Plus l'infection est étendue, plus l'arc-en-ciel est puissant. Garde cette bulle pour le bon moment.",
+          "There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.": "Pas de chrono, seulement l'infection. La partie s'arrête quand tout le mur est infecté. Si ton score est encore faible, fais en sorte de toujours avoir des bulles de couleur : un clean total est parfois contre-productif.",
+          "Pop what holds a group to the ceiling, and the whole group falls.": "Eclate les bulles qui retiennent une grappe : elle tombe tout entière.",
+          "Drag to aim, release to shoot.": "Glisse pour viser, relâche pour tirer.",
+          "Cutting the rot off won't stop it. It will break out somewhere else.": "Isoler l'infection ne l'arrête pas. Elle finira par ressurgir ailleurs.",
+          "A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.": "Une bulle arc-en-ciel peut relier deux grappes en une seule. Cette bulle Joker ne s'infecte jamais et permet même de décontaminer une zone.",
+          "This bubble will take the right colour": "Cette bulle prendra la bonne couleur",
+          "A rotten bubble won't pop. Make it fall or purify it.": "Une bulle infectée n'éclate pas. Fais-la tomber ou convertis-la.",
+          "Tap the Swap ring to change bubbles": "Touche l'anneau de Swap pour échanger de bulle"
         }
       }
     },

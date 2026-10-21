@@ -96,7 +96,7 @@
       swipeMin:   26,         // design px of travel that count as a swipe
 
       pxPerM:   42,           // progress pixels per displayed metre
-      mileStep: 240,          // metres between milestone callouts
+      mileStep: 240,          // metres between milestone glows
 
       lives:    3,
       invTime:  1.15,         // invulnerability after a crash
@@ -905,21 +905,27 @@
        Each takes a hazard slot, so a stretch with a rule is not simply a
        stretch with more to dodge: the rule REPLACES some of the mines. */
     function lerpRule(r) { return r[0] + (r[1] - r[0]) * STEP; }
-    function ruleKind() {
-      var k = [], i;
-      for (i = 0; i < RULES.length; i++) if (RULES[i] !== "elec") k.push(RULES[i]);
-      return k.length ? Rand.pick(k) : null;
-    }
-    function isHazard(it) { return it.type !== "gem" && it.type !== "star" && it.type !== "x2" &&
-                                   it.type !== "shield" && it.type !== "magnet" && it.type !== "ghost" &&
-                                   it.type !== "slow"; }
-    // Gems along the jump's arc: they only pay to an arrow in the air.
-    function airGems(path, from, stop) {
-      var n = 3, i;
-      for (i = 0; i < n; i++) items.push({ p: from + (stop - from) * (i + 0.5) / n, path: path, type: "gem", air: true, seed: 0 });
+    /* A rule MET for the first time is named once per player, ever, by a
+       notice whose line in the "!" log opens the rule's page of the guide
+       (Notify.learn, which keeps the memory). It fires as the hazard is dealt,
+       just above the frame, so the notice and the hazard arrive together.
+       Only what the frame cannot say is named: the gesture a laser or a hole
+       asks for, the sleep of a blinking mine, a comet's slide and the live
+       rope's warning. A springboard and a pendulum read at a glance. */
+    function met(kind) {
+      if (kind === "laser")         Notify.learn("laser", "Laser", { sub: "Swipe up to jump the lasers" });
+      else if (kind === "blink")    Notify.learn("blink", "Blinking mine", { sub: "Ride through a blinking mine while it sleeps" });
+      else if (kind === "break")    Notify.learn("break", "Hole", { sub: "Swipe up to jump the holes" });
+      else if (kind === "comet")    Notify.learn("comet", "Comet", { sub: "Comets slide down the ropes" });
+      else if (kind === "elec")     Notify.learn("elec", "Live rope", { sub: "A rope goes live: get off it" });
     }
 
     function spawnRule(kind, p) {
+      if (!dealRule(kind, p)) return false;
+      met(kind);
+      return true;
+    }
+    function dealRule(kind, p) {
       var tries, i, len, v, pm, s, o, k, dir, a, b;
       if (kind === "pad") {
         /* A SPRINGBOARD: the arrow that rides over it is thrown onto the next
@@ -1355,7 +1361,8 @@
         Fx.ring(arrowX, arrowY, { from: 20, to: 200, color: "#ffd43b", width: 7, life: 0.45 });
         Fx.burst(arrowX, arrowY, { color: ["#ffd43b", "#ffffff"], count: 22, speed: 400, life: 0.5 });
         HUD.punch("#ffd43b");
-        Sound.clip("loop", 0.85, loopSeg.n > 1 ? 0.9 : 1);
+        if (loopSeg.n > 1) Sound.clip("loop", 0.85, 0.9);
+        else Sound.clip("loop", 0.85);
       }
       loopSeg = null;                                     // paid, or bailed out
     }
@@ -1385,7 +1392,8 @@
       Fx.burst(arrowX, arrowY, { color: [paths[prevLane].color, "#ffffff"], count: 9,
                                  speed: 260, life: 0.3, angle: dir > 0 ? Math.PI : 0, spread: 1.7 });
       Fx.ring(arrowX, arrowY, { from: 14, to: 66, color: paths[lane].color, width: 4, life: 0.24 });
-      Sound.clip("swipe", 0.6, dir > 0 ? 1.08 : 0.93);   // pitch tells the direction
+      if (dir > 0) Sound.clip("swipe", 0.6, 1.08);   // pitch tells the direction
+      else Sound.clip("swipe", 0.6, 0.93);
     }
 
     /* A flick UP is the jump; a flick sideways is a hop. Up wins only when it
@@ -1460,15 +1468,7 @@
       HUD.setLeft("0 m", "Dist");
       drawLives();
       Fx.reset();
-      // a stretch with a rule says it once a round (Notify waits for the entrance)
     }
-    var LESSON = {
-      pad:   "Springboards throw you onto the next rope",
-      laser: "Swipe up to jump the lasers",
-      break: "Swipe up to jump the holes",
-      comet: "Comets slide down the ropes",
-      elec:  "A rope goes live: get off it"
-    };
 
     /* The callouts burn in the colour of the rope that earned them, and the
        ropes are the biome's: the SKIN reads --rp0..2 (fill), --rg0..2 (glow)
@@ -1572,6 +1572,7 @@
       for (i = 0; i < 3; i++) {
         if (hazardOn(order[i], w0 - 200, w1 + 100)) continue;
         elec = { rope: order[i], start: camP, p0: w0, p1: w1, live: false, liveT: 0, hit: false };
+        met("elec");
         Sound.clip("zap", 0.3, 1.7);
         return;
       }
@@ -1621,10 +1622,12 @@
       if (invT > 0) invT -= dt;
       if (multT > 0) {
         multT -= dt;
-        if (multT <= 0) { mult = 1; Pop.show("alert", { word: "x2 over" }); }
+        if (multT <= 0) mult = 1;
       }
-      if (magnetT > 0) { magnetT -= dt; if (magnetT <= 0) Pop.show("alert", { word: "Magnet over" }); }
-      if (ghostT > 0)  { ghostT -= dt;  if (ghostT <= 0)  Pop.show("alert", { word: "Ghost over" }); }
+      /* Only the ghost running out is said: mines bite again, which changes
+         what the player must do now. The x2 and the magnet just stop. */
+      if (magnetT > 0) magnetT -= dt;
+      if (ghostT > 0)  { ghostT -= dt;  if (ghostT <= 0)  Notify.say("Ghost over", { icon: "hourglass", guide: "ghost" }); }
 
       updateSky(dt);
       if (falling) {                                      // nothing touches an arrow in the void
@@ -1652,7 +1655,7 @@
 
       if (dist >= nextMile) {
         nextMile += T.mileStep;
-        Pop.show("perfect", { word: Math.round(dist) + " m", sub: "Faster" });
+        // the run speeding up is felt, not said: a glow and a sound
         Overlay.vignette(rgba(paths[lane].color, 0.75), 1, 420);
         Sound.clip("chain", 0.7, 0.8);
       }
@@ -2114,7 +2117,9 @@
       ctx.fillStyle = "#fff4f6"; ctx.beginPath(); ctx.arc(x, y + 3, 10, 0, TAU); ctx.fill();
     }
 
-    function drawItems() {
+    /* `plain` draws them outside the round's entrance: the guide's pictures
+       paint a scene with this same function and must never wait on Enter. */
+    function drawItems(plain) {
       var i, it, y, e;
       for (i = 0; i < items.length; i++) {
         it = items[i];
@@ -2124,27 +2129,27 @@
             pathPoint(paths[it.path], it.p + e * it.len, pp);
             y = sy(pp.y);
             if (y < -40 || y > view.h + 40) continue;
-            if (Enter.begin(pp.x, y)) { drawSnap(pp.x, y, e * 5 + i); Enter.end(); }
+            if (plain || Enter.begin(pp.x, y)) { drawSnap(pp.x, y, e * 5 + i); if (!plain) Enter.end(); }
           }
           continue;
         }
         if (it.p < pMin || it.p > pMax) continue;
         if (it.type === "laser") {
           y = sy(it.p);
-          if (y > -40 && y < view.h + 40 && Enter.begin(Layout.cx, y)) { drawLaser(it, y); Enter.end(); }
+          if (y > -40 && y < view.h + 40 && (plain || Enter.begin(Layout.cx, y))) { drawLaser(it, y); if (!plain) Enter.end(); }
           continue;
         }
         pathPoint(paths[it.path], it.p, pp);
         y = sy(pp.y);
         if (y < -70 || y > view.h + 70) continue;
-        if (Enter.begin(pp.x, y)) {
+        if (plain || Enter.begin(pp.x, y)) {
           if (it.type === "comet") drawComet(it, pp.x, y);
           else if (it.type === "pendulum") drawPendulum(it, y);
           else if (it.type === "blink") drawBlink(it, pp.x, y);
           else if (it.type === "pad") drawPad(it, pp.x, y, paths[it.path].color);
           else if (it.air) drawAirGem(it, pp.x, y, paths[it.path].color);
           else drawItem(it, magnetX(it, pp.x), y, paths[it.path].color);
-          Enter.end();
+          if (!plain) Enter.end();
         }
       }
     }
@@ -2417,8 +2422,281 @@
       FIG = FIGURES.concat(BIO.figures);
     }
 
+    /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
+       Every page SHOWS before it tells, and its picture is a scene of the
+       round painted by the round's own renderers — drawPath, drawItems,
+       drawArrow, drawElec — with the round's `ctx` lent to a canvas of its
+       own for the length of the call. The scene borrows every piece of round
+       state those renderers read and puts it back in `finally`, so a picture
+       drawn before the first round (from the title screen's Help card) reads
+       nothing unset, and one drawn over a paused round changes nothing of it.
+       The scene is laid out in the design space and scaled to the picture,
+       cropped to the 620 px around the three ropes, so they stand on the same
+       grid as in a round. */
+    var PIC_W = 520, PIC_K = PIC_W / 620;
+    function rail(i) { return { k: 0, p0: -6000, p1: 6000, x: slotX(i), step: T.dot }; }
+    /* `bi` is the biome, `H` the picture's height in px; `setup(o, Hd)` lays
+       the scene out (items, lanes, timers) before anything is drawn, and may
+       turn off the arrow (`o.arrow`) or the sky (`o.sky`). */
+    function scenePic(bi, H, setup) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx, Hd = H / PIC_K,
+          o = { arrow: true, sky: true, t: 0.4 }, i, g, q, mine,
+          S = [BIO, paths, items, trail, camP, runT, anchorY, pMin, pMax, lane, prevLane, switchT, switchDir,
+               arrowX, arrowY, arrowAng, jumpP, falling, fallT, magnetT, ghostT, shield, invT, mult,
+               dotDim, dotHot, dotKey, sparks, glowGrad, beamGrad, sway, elec, flashT, bolt, deco];
+      cv.width = Math.round(PIC_W * k); cv.height = Math.round(H * k);
+      cv.style.width = PIC_W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k * PIC_K, k * PIC_K); ctx.translate(310 - Layout.cx, 0);
+      try {
+        BIO = CONFIG.biomes[bi]; sway = 0;
+        dotDim = []; dotHot = []; dotKey = ""; buildDots(); mine = [dotDim, dotHot];
+        camP = 0; runT = 0; anchorY = Hd - 76; pMin = anchorY - Hd - 240; pMax = anchorY + 240;
+        lane = 1; prevLane = 1; switchT = 1; switchDir = 0; jumpP = -1e9; falling = false; fallT = 0;
+        magnetT = 0; ghostT = 0; shield = false; invT = 0; mult = 1;
+        elec = null; flashT = 0; bolt = null; deco = []; items = []; trail = [];
+        paths = [];
+        for (i = 0; i < 3; i++) paths.push({ idx: i, color: BIO.ropes[i], segs: [rail(i)] });
+        if (setup) setup(o, Hd);
+        // the arrow's place first: the magnet's pull is read off it
+        for (q = -200; q <= -40; q += 12) { pathPoint(paths[prevLane], q, pa); trail.push({ x: pa.x, y: pa.y }); }
+        updateArrow();
+
+        // the ground: the biome's own gradient, centred on this frame
+        g = ctx.createRadialGradient(360, Hd * 0.3, 30, 360, Hd * 0.42, Hd * 1.1);
+        g.addColorStop(0, BIO.ground[0]); g.addColorStop(0.55, BIO.ground[1]); g.addColorStop(1, BIO.ground[2]);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 720, Hd);
+        if (o.sky) {
+          // the biome's sky, its field folded into this frame's height
+          buildSparks();
+          for (i = 0; i < sparks.length; i++) sparks[i].y = sparks[i].y * (Hd + 80) / (view.h + 80);
+          glowGrad = null;
+          if (BIO.glow) {
+            glowGrad = ctx.createRadialGradient(360, Hd * 1.08, 20, 360, Hd * 1.08, Hd * 0.9);
+            glowGrad.addColorStop(0, rgba(BIO.glow[0], BIO.glow[1]));
+            glowGrad.addColorStop(1, rgba(BIO.glow[0], 0));
+          }
+          beamGrad = ctx.createLinearGradient(-90, 0, 90, 0);
+          beamGrad.addColorStop(0, rgba(BIO.tint, 0));
+          beamGrad.addColorStop(0.5, rgba(BIO.tint, 0.07));
+          beamGrad.addColorStop(1, rgba(BIO.tint, 0));
+          drawSparks();
+        }
+        runT = o.t;
+        for (i = 0; i < 3; i++) if (i !== lane) drawPath(paths[i], false);
+        drawPath(paths[lane], true);
+        if (elec) drawElec();
+        drawItems(true);
+        if (o.arrow) { drawTrail(); drawArrow(); }   // its trail down the rope it came from
+      } finally {
+        if (mine) for (i = 0; i < 3; i++) { freeCanvas(mine[0][i]); freeCanvas(mine[1][i]); }
+        BIO = S[0]; paths = S[1]; items = S[2]; trail = S[3]; camP = S[4]; runT = S[5]; anchorY = S[6];
+        pMin = S[7]; pMax = S[8]; lane = S[9]; prevLane = S[10]; switchT = S[11]; switchDir = S[12];
+        arrowX = S[13]; arrowY = S[14]; arrowAng = S[15]; jumpP = S[16]; falling = S[17]; fallT = S[18];
+        magnetT = S[19]; ghostT = S[20]; shield = S[21]; invT = S[22]; mult = S[23];
+        dotDim = S[24]; dotHot = S[25]; dotKey = S[26]; sparks = S[27]; glowGrad = S[28]; beamGrad = S[29];
+        sway = S[30]; elec = S[31]; flashT = S[32]; bolt = S[33]; deco = S[34];
+        ctx = keep;
+      }
+      return cv;
+    }
+    // what a scene puts on a rope
+    function put(type, path, p, more) {
+      var it = { type: type, path: path, p: p, seed: 0.6 }, k;
+      for (k in more || {}) it[k] = more[k];
+      items.push(it);
+    }
+    function gemRun(path, p0, n, gap) { for (var i = 0; i < n; i++) put("gem", path, p0 + i * gap); }
+    function fill(s, v) { return s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); }
+    // the level a biome opens on, and its last one
+    function bioSpan(i) {
+      var f = CONFIG.biomeFrom;
+      return { a: f[i], b: i + 1 < f.length ? f[i + 1] - 1 : 30 };
+    }
+    function bioPage(i, id, title, lines, setup) {
+      var s = bioSpan(i);
+      return { id: id, title: title, lv: s.a, lines: lines,
+               pic: function () { return scenePic(i, 280, setup); } };
+    }
+    // every string a page carries is already in the player's language
+    function page(id, title, lv, lines, pic, rows) {
+      return { id: id, title: title, lv: lv, lines: lines, pic: pic, rows: rows };
+    }
+    var guide = {
+      chapters: function () {
+        var F = CONFIG.biomeFrom, E = CONFIG.rule.elec;
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            page("ropes", Lang.t("Three ropes"), 0, [
+              Lang.t("Swipe left or right, or tap beside the arrow, to hop onto the next rope.")
+            ], function () {
+              return scenePic(0, 240, function (o) {
+                prevLane = 1; lane = 2; switchT = 0.55; switchDir = 1;
+                gemRun(2, 120, 3, 80);
+              });
+            }),
+            page("jump", Lang.t("The jump"), 0, [
+              Lang.t("Swipe up, or tap the arrow, to jump. You can still change rope in the air."),
+              Lang.t("Holes and lasers pass under you. Mines are too tall to jump over.")
+            ], function () {
+              return scenePic(0, 280, function () {
+                jumpP = -T.jumpLen * 0.45;
+                put("gem", 1, 150, { air: true }); put("gem", 1, 240, { air: true });
+              });
+            }),
+            page("goal", Lang.t("The run"), 0, [
+              Lang.t("Each level asks for a distance. Gems raise the score, never the distance.")
+            ], function () { return scenePic(0, 200, null); }),
+            page("score", Lang.t("Scoring"), 0, [
+              Lang.t("Every gem grows your chain. A crash, a fall or a void breaks it.")
+            ], function () {
+              return scenePic(0, 200, function () { gemRun(1, 40, 2, 70); put("star", 2, 100); });
+            },
+            [[Lang.t("A mega gem"), "120", "#ffd43b"], [Lang.t("A chain of 6, 12…"), "+50, +100…"]]),
+            page("hazards", Lang.t("Mines and voids"), 0, [
+              Lang.t("A void costs no life, but drains points and breaks the chain.")
+            ], function () {
+              return scenePic(0, 240, function () { put("mine", 0, 150); put("void", 2, 150); gemRun(1, 80, 2, 70); });
+            },
+            [[Lang.t("A mine"), Lang.t("−1 life"), "#ff2d55"], [Lang.t("A void"), "−70", "#c07bff"]]),
+            page("pair", Lang.t("Mine pairs"), 0, [
+              Lang.t("When two mines block two ropes, the third one is always open.")
+            ], function () {
+              return scenePic(0, 280, function () { put("mine", 0, 180); put("mine", 2, 180); });
+            }, [[Lang.t("Through the open rope"), "+60"]]),
+            page("loops", Lang.t("Loops and figures"), 0, [
+              Lang.t("Ride a figure to the end to score it. Leaving it halfway pays nothing.")
+            ], function () {
+              return scenePic(0, 240, function () {
+                var r = 70, sp = r * 2.3, x = slotX(1), p0 = 40;
+                paths[1].segs = [{ k: 0, p0: -6000, p1: p0, x: x, step: T.dot },
+                                 { k: 3, p0: p0, p1: p0 + sp, x: x, r: r, dir: 1, step: dotStep(3, r, sp / TAU), n: 2 },
+                                 { k: 3, p0: p0 + sp, p1: p0 + sp * 2, x: x, r: r, dir: -1, step: dotStep(3, r, sp / TAU), n: 2 },
+                                 { k: 0, p0: p0 + sp * 2, p1: 6000, x: x, step: T.dot }];
+              });
+            })
+          ] },
+          { key: "pickups", label: Lang.t("Pickups"), pages: [
+            page("x2", Lang.t("Score x2"), 0, [
+              Lang.t("Every gem, chain, loop and mine pair pays double.")
+            ], function () {
+              return scenePic(0, 260, function () { put("x2", 1, 180); gemRun(2, 140, 2, 80); });
+            }),
+            page("shield", Lang.t("Shield"), 0, [
+              Lang.t("The shield takes one crash for you. You lose no life and keep your chain."),
+              Lang.t("The shield won't stop you falling into a hole.")
+            ], function () {
+              return scenePic(0, 260, function () { shield = true; put("shield", 1, 180); });
+            }),
+            page("magnet", Lang.t("Magnet"), 0, [
+              Lang.t("The magnet pulls in the gems of all three ropes, but not the ones in the air.")
+            ], function () {
+              return scenePic(0, 280, function () {
+                magnetT = 3; put("magnet", 1, 230);
+                put("gem", 0, 90); put("gem", 0, 180); put("gem", 2, 120); put("gem", 2, 210);
+              });
+            }),
+            page("ghost", Lang.t("Ghost"), F[1], [
+              Lang.t("Mines, voids, lasers, comets and live ropes pass through you."),
+              Lang.t("You still fall into holes.")
+            ], function () {
+              return scenePic(1, 260, function () { ghostT = 3; put("mine", 1, 6); put("ghost", 1, 180); });
+            }),
+            page("slow", Lang.t("Slow down"), F[2], [
+              Lang.t("You drop back to the level's starting speed, then speed up again.")
+            ], function () {
+              return scenePic(2, 260, function () { put("slow", 1, 180); });
+            })
+          ] },
+          { key: "neon", label: Lang.t("Neon"), pages: [
+            bioPage(0, "neon", Lang.t("Neon"), [
+              Lang.t("Here you meet springboards, plus the score x2, the shield and the magnet.")
+            ], function () { gemRun(0, 120, 3, 80); put("mine", 2, 230); }),
+            page("pad", Lang.t("Springboards"), F[0], [
+              Lang.t("A springboard throws you onto the next rope, the way its chevrons point."),
+              Lang.t("The bounce counts as a jump, so holes and lasers pass under you.")
+            ], function () {
+              return scenePic(0, 300, function () { put("pad", 1, 190, { dir: 1 }); });
+            })
+          ] },
+          { key: "prism", label: Lang.t("Prism"), pages: [
+            bioPage(1, "prism", Lang.t("Prism"), [
+              Lang.t("Here you meet lasers, blinking mines and the ghost.")
+            ], function () { gemRun(2, 110, 3, 80); }),
+            page("laser", Lang.t("Lasers"), F[1], [
+              Lang.t("A laser crosses all three ropes, so changing rope won't help."),
+              Lang.t("Swipe up to jump the laser.")
+            ], function () {
+              return scenePic(1, 280, function () {
+                put("laser", -1, 210);
+                put("gem", 1, 130, { air: true }); put("gem", 1, 250, { air: true });
+              });
+            }),
+            page("blink", Lang.t("Blinking mines"), F[1], [
+              Lang.t("A blinking mine sleeps and wakes to a rhythm. Its arc counts down until it wakes up."),
+              Lang.t("Dodge a blinking mine, or ride through it while it sleeps.")
+            ], function () {
+              return scenePic(1, 260, function () {
+                put("blink", 0, 200, { period: 1.5, ph: 0 });
+                put("blink", 2, 200, { period: 1.5, ph: 0.5 });
+              });
+            })
+          ] },
+          { key: "storm", label: Lang.t("Storm"), pages: [
+            bioPage(2, "storm", Lang.t("Storm"), [
+              Lang.t("Here you meet holes in the ropes, and the slow down.")
+            ], function () {
+              flashT = 0.3; bolt = [520, -20, 490, 50, 540, 120, 500, 190, 550, 250];
+              gemRun(0, 120, 3, 80);
+            }),
+            page("break", Lang.t("Holes"), F[2], [
+              Lang.t("Jump over a hole, or switch rope before it and come back after."),
+              Lang.t("Neither the shield nor the ghost will stop you falling.")
+            ], function () {
+              return scenePic(2, 300, function () {
+                jumpP = -90;
+                put("break", 1, 60, { len: 150 });
+                put("gem", 1, 85, { air: true }); put("gem", 1, 135, { air: true }); put("gem", 1, 185, { air: true });
+              });
+            })
+          ] },
+          { key: "comets", label: Lang.t("Comets"), pages: [
+            bioPage(3, "comets", Lang.t("Comets"), [
+              Lang.t("Here you meet comets and pendulums.")
+            ], function () { deco = [{ x: 640, y: 30, len: 230 }]; gemRun(2, 120, 3, 80); }),
+            page("comet", Lang.t("Comets"), F[3], [
+              Lang.t("A comet slides down its rope towards you, faster than the ropes scroll."),
+              Lang.t("Leave the comet's rope before it reaches you.")
+            ], function () {
+              return scenePic(3, 280, function () { put("comet", 1, 150); });
+            }),
+            page("pendulum", Lang.t("Pendulums"), F[3], [
+              Lang.t("A pendulum's mine swings between two ropes, and the third one always stays clear.")
+            ], function () {
+              return scenePic(3, 260, function () {
+                lane = prevLane = 2;
+                put("pendulum", 0, 200, { b: 1, w: TAU / 1.75, ph: -0.2 });
+              });
+            })
+          ] },
+          { key: "fusion", label: Lang.t("Fusion"), pages: [
+            bioPage(4, "fusion", Lang.t("Fusion"), [
+              Lang.t("Here you meet live ropes.")
+            ], function () { gemRun(0, 120, 3, 80); put("blink", 2, 220, { period: 1.3, ph: 0 }); }),
+            page("elec", Lang.t("Live ropes"), F[4], [
+              fill(Lang.t("A rope sparks for {w} s first. It is only a warning, and harmless."), { w: E.warn }),
+              fill(Lang.t("Then the rope goes live for {l} s. Get off it, or be in the air."), { l: E.live })
+            ], function () {
+              return scenePic(4, 280, function () {
+                elec = { rope: 2, start: -600, p0: 60, p1: 900, live: false, liveT: 0, hit: false };
+              });
+            })
+          ] }
+        ];
+      }
+    };
+
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
-             levelProgress: levelProgress, levelWon: die, applyLevel: applyLevel };
+             levelProgress: levelProgress, levelWon: die, applyLevel: applyLevel, guide: guide };
   })();
 

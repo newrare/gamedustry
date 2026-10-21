@@ -329,6 +329,9 @@ details.src pre {
   padding:3px 7px; border-radius:6px; border:1px dashed #3b3b5f; background:#0d0d16;
   font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#ffd08a; cursor:help;
 }
+.call .cut { text-decoration:line-through; opacity:.45; }
+.call button.subx { padding:3px 6px; }
+.call button.subx.on { background:#5a2333; border-color:#8a3346; color:#ffb3c1; }
 .call .slots, .call .read { flex:1 1 100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding-left:34px; }
 .call .slots .lbl { margin-right:-4px; }
 .slot { display:inline-flex; align-items:center; gap:5px; }
@@ -701,6 +704,7 @@ function runner(code) {
 }
 
 function textOf(call, row, field, W) {
+  if (field === "sub" && row && row._subCut) return "";   // the row's ✕: no subtitle
   const f = call.texts && call.texts.fields[field];
   if (f && f.code) {
     if (!W) return undefined;
@@ -874,6 +878,7 @@ function revertCall(call, row) {
   delete state.pending.kill.calls[pendKey(call)];
   if (row._en) { enWords(call).forEach((w) => { delete state.pending.keepEn[w]; }); refreshReads(); paintAllEn(); }
   resetControls(row);
+  if (row._uncut) row._uncut();
   row.classList.remove("killed");
   countPending();
   note("");
@@ -890,6 +895,42 @@ function killCall(call, row) {
     : "");
 }
 
+/* ── the subtitle's ✕ ─────────────────────────────────────────────────────
+   A callout or a notice whose source names a sub can lose it in one click,
+   whether the sub is a literal or a word the game builds (which has no field
+   to empty). The cut is pending `sub: ""`, which apply reads as "take the
+   field out of the options"; the row fires and reads without it meanwhile. */
+function subCutBtn(call) {
+  return call.opts && call.opts.sub != null
+    ? `<button class="act sm ghost subx" title="remove the subtitle — apply takes sub out of the call">✕</button>` : "";
+}
+function bindSubCut(call, row) {
+  const btn = row.querySelector(".subx");
+  if (!btn) return;
+  const input = row.querySelector("input.s"), code = row.querySelector('code.xw[data-f="sub"]');
+  const paint = (on) => {
+    row._subCut = on;
+    btn.classList.toggle("on", on);
+    btn.title = on ? "put the subtitle back" : "remove the subtitle — apply takes sub out of the call";
+    if (input) { input.disabled = on; input.classList.toggle("cut", on); }
+    if (code) code.classList.toggle("cut", on);
+    if (row._read) row._read();
+  };
+  btn.onclick = () => {
+    const on = !row._subCut, p = pend(call);
+    if (on) p.sub = "";
+    else if (input) { delete p.sub; input.dispatchEvent(new Event("input")); }   // back to what the field says
+    else delete p.sub;
+    if (!Object.keys(p).length) delete state.pending.calls[pendKey(call)];
+    paint(on);
+    countPending();
+  };
+  row._uncut = () => paint(false);
+  // A re-render rebuilds the row: a cut still pending comes back cut.
+  const p = state.pending.calls[pendKey(call)];
+  if (p && p.sub === "") paint(true);
+}
+
 /* --- the rows ------------------------------------------------------------ */
 function callRow(call, own) {
   const row = document.createElement("div");
@@ -903,7 +944,7 @@ function callRow(call, own) {
      the slots under the row, never the field itself. */
   const fields = (call.texts && call.texts.fields) || {};
   const field = (name, cls, value, ph) => fields[name] && fields[name].code
-    ? `<code class="xw" title="${esc(name + " = " + fields[name].expr)} — built by the game, run here with the values below">${esc(fields[name].expr)}</code>`
+    ? `<code class="xw" data-f="${name}" title="${esc(name + " = " + fields[name].expr)} — built by the game, run here with the values below">${esc(fields[name].expr)}</code>`
     : `<input type="text" class="${cls}"${ph ? ` placeholder="${ph}"` : ""} value="${esc(value == null ? "" : value)}">`;
 
   if (call.name === "Pop.text") {
@@ -926,6 +967,7 @@ function callRow(call, own) {
     bits.push(`<select class="kind" hidden>${NOTIFY_KINDS.map((k) => `<option>${k}</option>`).join("")}</select>`);
     bits.push(field("word", "w", o.word, "style word"));
     bits.push(field("sub", "s", o.sub, "sub"));
+    bits.push(subCutBtn(call));
     // The empty option is "whatever the style says" — a call that names no
     // anchor must not be previewed at some arbitrary corner of the frame.
     const at = o.at || "";
@@ -943,6 +985,7 @@ function callRow(call, own) {
       `<option value="">notify</option>${STYLES.map((s) => `<option>${s}</option>`).join("")}</select>`);
     bits.push(field("word", "w", String(call.preview.args[0])));
     bits.push(field("sub", "s", o.sub, "sub"));
+    bits.push(subCutBtn(call));
     bits.push(`<select class="at" hidden><option value="">style spot</option>${ANCHORS.map((a) =>
       `<option>${a}</option>`).join("")}</select>`);
   }
@@ -979,6 +1022,7 @@ function callRow(call, own) {
   }
   row.querySelector(".play").onclick = () => fire(call, row);
   row._call = call;
+  bindSubCut(call, row);
   row.querySelector(".loop").onclick = () => loopToggle(call);
   const enBtn = row.querySelector(".en");
   if (enBtn) {

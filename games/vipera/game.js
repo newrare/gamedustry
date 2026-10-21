@@ -6,7 +6,7 @@
     /* One sentence, and nothing else: the stage under it shows the viper
        turning right then left on two taps, so the line only has to name the
        gesture, the character and the reward. */
-    tagline: "<b class=\"w-tap\">Tap</b> to swerve the <b class=\"w-viper\">viper</b><br>and <b class=\"w-eat\">grow</b> for maximum bonus",
+    tagline: "<b class=\"w-tap\">Tap</b> to change direction and grab the bonuses to <b class=\"w-eat\">grow</b>",
     gameSeconds: 0,                  // endless: the run ends on the third bite
 
     // Store links used by every CTA. The right one is picked at runtime from the
@@ -55,7 +55,7 @@
 
     // All user-facing copy in one place.
     copy: {
-      start:      "Tap to play",
+      start:      "Play",
       ctaBar:     "Install now",
       ctaEnd:     "Play the full game",
       replay:     "Slither again",
@@ -206,29 +206,25 @@
        climb walks them.
        `mote` tints the motes in the air, `shade` scales the canopy shadows
        (there is little canopy over a volcano), `drift` keeps the falling
-       leaves, `eagle` sends the bird over the burrow (see THE EAGLE), and
-       `intro` is what the first round of the biome says — a title and the one
-       line under it. */
+       leaves, and `eagle` sends the bird over the burrow (see THE EAGLE).
+       What each biome brings is named the first time it is met (LEARN, in
+       section 6) and explained in the guide. */
     biomes: [
       { key: "jungle",  music: { from: 32, length: 32.008 },
         hazards: {},                                               share: [0, 0],
-        bonus: null,      mote: "#a8ff8e", shade: 1,    drift: true,  intro: null },
+        bonus: null,      mote: "#a8ff8e", shade: 1,    drift: true },
       { key: "swamp",   music: { from: 65, length: 24.002 },
         hazards: { log: 1 },                                       share: [0.22, 0.4],
-        bonus: "fly",     mote: "#e9ff6e", shade: 0.9,  drift: true,
-        intro: ["Drifting logs", "Swerve around them"] },
+        bonus: "fly",     mote: "#e9ff6e", shade: 0.9,  drift: true },
       { key: "temple",  music: { from: 92, length: 24.002 },
         hazards: { trap: 1, bolt: 1 },                             share: [0.2, 0.36],
-        bonus: "idol",    mote: "#ffe7a3", shade: 0.8,  drift: true,
-        intro: ["Traps and lightning", "Leave the glowing ground"] },
+        bonus: "idol",    mote: "#ffe7a3", shade: 0.8,  drift: true },
       { key: "volcano", music: { from: 108, length: 30.003 },
         hazards: { geyser: 2, rock: 2, fire: 1 },                  share: [0.26, 0.42],
-        bonus: "amber",   mote: "#ff9a3c", shade: 0.45, drift: false,
-        intro: ["Geysers and rocks", "Rocks land where shadows grow"] },
+        bonus: "amber",   mote: "#ff9a3c", shade: 0.45, drift: false },
       { key: "lair",    music: { from: 138, length: 25.996 },
         hazards: { geyser: 1, rock: 1, trap: 1, fire: 1 },         share: [0.26, 0.4],
-        bonus: "rainbow", mote: "#d59bff", shade: 0.6,  drift: false, eagle: true,
-        intro: ["The eagle", "Its shadow shows the side it strikes"] }
+        bonus: "rainbow", mote: "#d59bff", shade: 0.6,  drift: false, eagle: true }
     ],
 
     /* ---- THE CLIMB, LEVEL BY LEVEL -------------------------------------------
@@ -398,8 +394,6 @@
     var magnetOn = false, idolOn = false, nextBonusP = 0, eruptT = 0;
     // THE EAGLE: the pass in flight (null between two) and the clock to the next
     var eagle = null, eagleT = 0;
-    // What has already been explained this session: a hint is said once.
-    var told = {};
 
     // --- cached per layout ---------------------------------------------------
     var anchorY = 0, pMin = 0, pMax = 0, sparks = [], wallGlow = { l: 0, r: 0 };
@@ -583,6 +577,7 @@
     function spawnHazard(p) {
       var kind = pickWeighted(BIO.hazards), lo = Layout.left + T.edge, hi = Layout.right - T.edge;
       var x, i, n, ph, c, extra = 0;
+      learn(kind);
       if (kind === "log") {
         n = levelK >= 3 && Rand.chance(0.45) ? 2 : 1;
         for (i = 0; i < n; i++) {
@@ -634,6 +629,7 @@
       var kind = BIO.bonus, older = [], i;
       for (i = 1; i < biomeIdx; i++) if (CONFIG.biomes[i].bonus) older.push(CONFIG.biomes[i].bonus);
       if (older.length && Rand.chance(0.35)) kind = Rand.pick(older);
+      learn(kind);
       pushAt(p, clamp(headX + Rand.range(-220, 220), Layout.left + T.edge + 50, Layout.right - T.edge - 50), kind);
       nextBonusP = p + Rand.range(T.bonusFar, T.bonusNear);
       nextP = p + Rand.range(260, 380);
@@ -840,14 +836,15 @@
         if (eagleT > 0) return;
         side = Rand.chance(0.75) ? (headX < Layout.cx ? -1 : 1) : (Rand.chance(0.5) ? -1 : 1);
         eagle = { side: side, ph: "shadow", t: 0, y: eagleTop(), hit: false };
-        Sound.clip("dive", 0.32, 0.62);                 // the wingbeat passing over
+        learn("eagle");
+        Sound.clip("dive", 1);                 // the wind of the shadow sweeping in
         return;
       }
       e.t += dt;
       if (e.ph === "shadow" && e.t >= T.eagleShadow) { e.ph = "wait"; e.t = 0; }
       else if (e.ph === "wait" && e.t >= T.eagleWait) {
         e.ph = "start"; e.t = 0;
-        Sound.clip("dive", 0.7, 1.08);                  // the cry before the stoop
+        Sound.clip("diveAttack", 0.5, 1.08);                  // the cry before the stoop
       } else if (e.ph === "start" && e.t >= T.eagleStart) {
         e.ph = "dive"; e.t = 0; e.y = eagleTop();
         Fx.shake(5, 0.14);
@@ -926,7 +923,8 @@
       Fx.ring(headX, anchorY, { from: 22, to: 190, color: "#d8fff0", width: 7, life: 0.45 });
       Fx.burst(headX, anchorY, { color: ["#d8fff0", "#8dffbf"], count: 18, speed: 380, life: 0.5, size: 5 });
       HUD.punch("#8dffbf");
-      Sound.clip("power", 0.8, 1.1);
+      Sound.clip("power", 0.45, );
+      learn("armour");
     }
 
     /* Right HUD slot: the lives left, with the armour glyph in front of them
@@ -999,7 +997,7 @@
           if (chain % 25 === 0) {
             Pop.show("ultra", { word: Lang.t("Chain x") + chain, sub: "+" + g, at: popSpot() });
           }
-          Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
+          Sound.clip("chain", 0.4, 1 + Math.min(chain, 24) * 0.008);
         }
 
       } else if (PICKUP[it.type]) {
@@ -1009,15 +1007,32 @@
       }
     }
 
-    // Say something once per session — a hint that repeats is noise.
-    function tell(key, word, sub) {
-      if (told[key]) return;
-      told[key] = true;
-      Pop.show("bonus", { word: word, sub: sub });
+    /* LEARN — a mechanic met for the first time is NAMED, once per player
+       ever (Notify.learn, packages/shell/shell.js), and its line in the "!"
+       log opens its page of the guide (below), which is where the rule is
+       explained. Called where the thing first turns up — a hazard or a
+       pickup when it is laid ahead of the head, the eagle when its shadow
+       comes in, the plates when they are earned, a bite when it costs the
+       body — so the notice lands a moment before the player meets it, never
+       in the middle of a round's opening. The id is the page's id, and every
+       word is a literal at its call so the copy desk reads it.
+       Only what the frame cannot say is named: a warning to decode (the
+       tips, the ring, the embers, the shadows) and the plates' hidden rule.
+       A log or a flame reads at a glance, a pickup's own callout already
+       says what it does, and a bite shows what it cost. */
+    function learn(id) {
+      switch (id) {
+        case "trap": Notify.learn("trap", "Spike traps", { sub: "Watch out for spikes" }); break;
+        case "bolt": Notify.learn("bolt", "Lightning", { sub: "Watch out for lightning" }); break;
+        case "geyser": Notify.learn("geyser", "Geysers", { sub: "Watch out for flames" }); break;
+        case "rock": Notify.learn("rock", "Falling rocks", { sub: "A shadow marks a falling rock" }); break;
+        case "eagle": Notify.learn("eagle", "The eagle", { sub: "The eagle's shadow shows the side it will strike" }); break;
+        case "armour": Notify.learn("armour", "Armor", { sub: "The armor takes the next hit" }); break;
+      }
     }
 
     /* THE BIOMES' PICKUPS. Each is a MOMENT on the head (a callout, a sound, a
-       burst) and a ring around the head while it holds (see drawPowers). The
+       burst) and an aura on the body while it holds (see drawAura). The
        callout's sub already says what it does, so no second line follows. */
     function power(kind) {
       var x = headX, y = anchorY;
@@ -1062,7 +1077,7 @@
       chain = 0; bites++;
       // the fireflies and the idol hold until a hit, plated or not
       if (magnetOn) Pop.show("alert", { word: "Magnet lost" });
-      if (idolOn) Pop.show("alert", { word: "Double points lost" });
+      if (idolOn) Pop.show("alert", { word: "Bonus lost" });
       magnetOn = false; idolOn = false;
       Fx.burst(x, y, { color: ["#ff2d55", "#ffd43b", "#ffffff"], count: 26, speed: 470, life: 0.55, size: 6 });
       Fx.ring(x, y, { from: 18, to: 190, color: "#ff2d55", width: 8, life: 0.42 });
@@ -1134,7 +1149,8 @@
       tongueT = 0.26;
       Fx.burst(headX, anchorY, { color: [TIERS[tier].halo, "#ffffff"], count: 6, speed: 210,
                                  life: 0.26, size: 4, angle: dir > 0 ? Math.PI : 0, spread: 1.5 });
-      Sound.clip("turn", 0.05, dir > 0 ? 1.07 : 0.93);
+      if (dir > 0) Sound.clip("turn", 0.05, 1.07);
+      else Sound.clip("turn", 0.05, 0.93);
     }
 
     /* ====================================================================
@@ -1176,8 +1192,6 @@
       HUD.setLeft(len, "Length");
       showLives();
       Fx.reset();
-      // A biome's first round of the session says what its new danger is.
-      if (BIO.intro) tell("biome-" + BIO.key, BIO.intro[0], BIO.intro[1]);
     }
 
     function update(dt) {
@@ -1231,9 +1245,10 @@
 
       if (dist >= nextMile) {
         nextMile += T.mileStep;
-        Pop.show("ribbon", { word: Math.round(dist) + " m", sub: "Deeper", at: popSpot() });
+        // the burrow's milestone: a glow and a chime, no word — the round's
+        // callouts already carry the run, and a notice every 250 m is chatter
         Overlay.vignette(rgba(TIERS[tier].halo, 0.7), 1, 420);
-        Sound.clip("chain", 0.6, 0.82);
+        Sound.clip("chain", 0.3, 0.82);
       }
     }
 
@@ -1274,7 +1289,7 @@
       // No callout here: the next two seconds ARE the callout. A sticker would
       // sit on top of the one thing the cinematic exists to show — the body
       // coming apart block by block.
-      Sound.clip("death", 0.95, 0.92);
+      Sound.clip("death", 1, 0.92);
     }
 
     // The cinematic's own clock, 0 -> 1. Every curve below is a function of it.
@@ -1316,7 +1331,6 @@
       // the head goes limp: one soft descending voice under the whole wilt
       if (!wilted && deathT() >= D_LIMP) {
         wilted = true;
-        Sound.clip("wilt", 0.55, 1.05);
       }
 
       if (!popped && deathT() >= D_POP) {
@@ -1365,7 +1379,7 @@
         levelScore: d,
         stars: st,
         rows: [
-          { label: "Longest body", value: bestLen + Lang.t(" blocks"), grade: "accent" },
+          { label: "Snake length", value: bestLen + Lang.t(" blocks"), grade: "accent" },
           { label: "Distance (m)", value: d },
           { label: "Best chain", value: bestChain, grade: "accent" },
           { label: "Best score", value: Math.max(sc, best), grade: "gold" }
@@ -2619,13 +2633,14 @@
        wander, a quicker swerve and a fast jitter — so its path never closes
        into a loop and no two of them move alike. Its light flickers on a
        clock of its own. Read off runT alone: nothing to store per fly. */
-    function drawFireflies(x, y, seed) {
+    function drawFireflies(x, y, seed, k) {
       var i, t, s, fx, fy, a;
+      k = k || 1;                       // how wide the swarm wanders
       for (i = 0; i < 5; i++) {
         s = seed * 7.3 + i * 2.39;
         t = runT * (0.85 + 0.12 * i);
-        fx = x + Math.sin(t * 1.3 + s) * 30 + Math.sin(t * 3.7 + s * 2.1) * 14 + Math.sin(t * 11.3 + s * 3.7) * 3.5;
-        fy = y + Math.sin(t * 1.1 + s * 1.7) * 24 + Math.sin(t * 4.3 + s * 0.6) * 12 + Math.sin(t * 13.1 + s * 5.3) * 3.5;
+        fx = x + (Math.sin(t * 1.3 + s) * 30 + Math.sin(t * 3.7 + s * 2.1) * 14) * k + Math.sin(t * 11.3 + s * 3.7) * 3.5;
+        fy = y + (Math.sin(t * 1.1 + s * 1.7) * 24 + Math.sin(t * 4.3 + s * 0.6) * 12) * k + Math.sin(t * 13.1 + s * 5.3) * 3.5;
         a = 0.55 + 0.45 * Math.sin(runT * (5 + i * 1.3) + s * 4);
         ctx.fillStyle = rgba("#f6ff9e", 0.35 * a);
         ctx.beginPath(); ctx.arc(fx, fy, 8, 0, TAU); ctx.fill();
@@ -2660,21 +2675,85 @@
       }
     }
 
-    /* The pickups that hold, as rings around the head: a power the player
-       cannot see running is a power they do not trust. They last until the
-       next hit rather than on a clock, so a ring is whole until it goes. */
-    function drawPowers() {
-      var r = headRadius() * HEAD_K * 1.25, list = [], i, w;
-      if (magnetOn) list.push([1, "#e9ff6e"]);
-      if (idolOn) list.push([1, "#ffd43b"]);
-      ctx.lineCap = "round";
-      for (i = 0; i < list.length; i++) {
-        w = list[i];
-        ctx.strokeStyle = rgba(w[1], 0.22); ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.arc(headX, anchorY, r + i * 10, 0, TAU); ctx.stroke();
-        ctx.strokeStyle = w[1];
-        ctx.beginPath(); ctx.arc(headX, anchorY, r + i * 10, -Math.PI / 2, -Math.PI / 2 + TAU * w[0]); ctx.stroke();
+    /* The pickups that hold, worn by the viper itself: a power the player
+       cannot see running is a power they do not trust. A ring drawn round the
+       head read as a HUD widget laid over the burrow, so each power is an AURA
+       of its own colour breathing along the whole body (drawAura, under the
+       plates), plus what it is made of, over them (drawPowers): the jar's
+       fireflies buzzing round the head, the idol's gold glinting up off the
+       scales. They last until the next hit rather than on a clock, so both
+       hold until it lands. */
+    var AURA = { fly: "#d4ff4a", idol: "#ffc21a" };
+    function auraColours() {
+      var list = [];
+      if (magnetOn) list.push(AURA.fly);
+      if (idolOn) list.push(AURA.idol);
+      return list;
+    }
+    // the spine from the head to block `m`, as one path (bsx/bsy, see poseBody)
+    function spinePath(m) {
+      var i;
+      ctx.beginPath();
+      ctx.moveTo(bsx[0], bsy[0]);
+      for (i = 1; i < m; i++) ctx.lineTo(bsx[i], bsy[i]);
+    }
+    /* AURA_PASSES strokes of the spine, each wider and shorter than the one
+       before, so the light falls off softly across the body and thins toward
+       the tail the way the body does; one stroked path each, never a disc per
+       block, which would bead at every joint. Additive, so it lights the dark
+       floor rather than greying it. Two powers breathe in opposition, which is
+       what keeps the two colours apart rather than mixed. */
+    var AURA_PASSES = 7;
+    function drawAura(n) {
+      var list = auraColours(), r = headRadius(), j, b, s, f;
+      if (!list.length || n < 2) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      for (j = 0; j < list.length; j++) {
+        b = 0.7 + 0.3 * Math.sin(runT * 3.4 + j * Math.PI);
+        for (s = 0; s < AURA_PASSES; s++) {
+          f = s / (AURA_PASSES - 1);
+          spinePath(Math.max(2, Math.ceil(n * (1 - 0.6 * f))));
+          ctx.strokeStyle = rgba(list[j], 0.045 * b);
+          ctx.lineWidth = r * (2.4 + 3.2 * f);
+          ctx.stroke();
+        }
+        halo(bsx[0], bsy[0], r * HEAD_K * (2.1 + 0.25 * b), list[j]);
       }
+      ctx.restore();
+    }
+    /* The idol's gold: small four-point glints rising off the front of the
+       body and fading as they go. Each one is read off runT alone — its cycle
+       number picks the block it leaves from — so nothing is stored. */
+    function drawGlints(n) {
+      var m = Math.min(n, 12), r = headRadius(), k, t, cyc, ph, b, x, y, a, s;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      for (k = 0; k < 7; k++) {
+        t = runT * 0.8 + k / 7;
+        cyc = Math.floor(t); ph = t - cyc;
+        b = (k * 5 + cyc * 3) % m;
+        x = bsx[b] + Math.sin(k * 2.3 + cyc * 1.7) * r * 0.8;
+        y = bsy[b] - ph * 56;
+        a = Math.sin(ph * Math.PI);
+        s = 4 + 5 * a;
+        ctx.fillStyle = rgba(AURA.idol, 0.3 * a);
+        ctx.beginPath(); ctx.arc(x, y, s * 1.3, 0, TAU); ctx.fill();
+        ctx.fillStyle = rgba("#fff3b0", 0.9 * a);
+        ctx.beginPath();
+        ctx.moveTo(x, y - s); ctx.lineTo(x + s * 0.28, y - s * 0.28);
+        ctx.lineTo(x + s, y); ctx.lineTo(x + s * 0.28, y + s * 0.28);
+        ctx.lineTo(x, y + s); ctx.lineTo(x - s * 0.28, y + s * 0.28);
+        ctx.lineTo(x - s, y); ctx.lineTo(x - s * 0.28, y - s * 0.28);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+    function drawPowers() {
+      if (poseN < 1) return;
+      if (magnetOn) drawFireflies(bsx[0], bsy[0], 0.4, 1.5);
+      if (idolOn) drawGlints(poseN);
     }
 
     function drawItems() {
@@ -3078,7 +3157,7 @@
     /* Per-block screen pose, rebuilt once per frame and shared by the plate
        pass, the gloss and the tail tip. Module-level arrays: three walks of
        the body must not allocate three arrays every frame. */
-    var bsx = [], bsy = [], bang = [];
+    var bsx = [], bsy = [], bang = [], poseN = 0;   // poseN: blocks posed this frame
 
     function poseBody(n) {
       var i, fx, fy, bx, by;
@@ -3140,11 +3219,14 @@
          exactly one block, whatever the viper's girth, so the layers stay evenly
          stacked from the nape to the tail. */
       var ky = T.block * PLATE_LEN / (PLATE_F + PLATE_B);
+      poseN = 0;
       if (invT > 0 && Math.floor(invT * 14) % 2) return;  // blink while immune
       // dying: the tail end has already been torn off, block by block, and the
       // last of it goes with the head
       if (dieT >= 0) { n -= crumbled; if (popped || n < 1) return; }
       poseBody(n);
+      poseN = n;
+      if (dieT < 0) drawAura(n);
 
       /* One soft pass for the whole body, so it glows without shadowBlur — and
          as ONE stroked spine, not one disc per block: a disc bulges out at every
@@ -3425,8 +3507,11 @@
       if (Enter.begin(view.w / 2, view.h / 2)) { drawBanks(); Enter.end(); }
       if (Enter.begin(Layout.cx, view.h / 2)) { drawWalls(); Enter.end(); }
       drawItems();
-      if (Enter.begin(headX, anchorY)) { drawBody(); drawHead(); Enter.end(); }
-      if (dieT < 0) drawPowers();
+      if (Enter.begin(headX, anchorY)) {
+        drawBody(); drawHead();
+        if (dieT < 0) drawPowers();
+        Enter.end();
+      }
       drawBolts();
       // the sky: over the burrow, the viper and everything on it
       if (dieT < 0) drawEagle();
@@ -3435,6 +3520,248 @@
     }
 
     function onResize() { metrics(); }
+
+    /* ====================================================================
+       THE GUIDE — every rule, as pages (packages/webshell/guide.js)
+
+       Every page SHOWS before it tells, and its picture is painted by the
+       round's own renderer: the module's `ctx` is lent to a canvas of the
+       page's own for the length of one call (paintPic), and the burrow's
+       pieces are drawn on it by drawItem, drawLog, drawTrapArt, drawGeyser,
+       drawRock, drawBoltGround, eagleSprite — and the viper by drawBody,
+       drawHead and drawPowers themselves, with the round's state lent too
+       (drawViper) and handed back before the call returns. Nothing here
+       reads a round that may not exist yet: the guide opens from the title
+       screen's Help card, before any reset(). A page's level is the one the
+       climb deals the idea on (CONFIG.ladder.from), locked until then.
+       ==================================================================== */
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+
+    /* A picture on its biome's floor: the painted ground at its round size
+       (a crop of its middle), under the round's night veil, in a rounded
+       frame. `s` scales what is drawn on it, so a long viper fits. */
+    function floorPic(W, H, biome, s, fn) {
+      return paintPic(W, H, function () {
+        var img = artImage("ground" + biome.charAt(0).toUpperCase() + biome.slice(1)), sw, sh;
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(0, 0, W, H, 18); else ctx.rect(0, 0, W, H);
+        ctx.clip();
+        ctx.fillStyle = CONFIG.bg; ctx.fillRect(0, 0, W, H);
+        if (img) {
+          sw = Math.min(W, img.naturalWidth); sh = Math.min(H, img.naturalHeight);
+          ctx.drawImage(img, (img.naturalWidth - sw) * 0.5, (img.naturalHeight - sh) * 0.5, sw, sh, 0, 0, W, H);
+        }
+        ctx.fillStyle = "rgba(3,16,11," + GROUND_SHADE + ")";
+        ctx.fillRect(0, 0, W, H);
+        ctx.scale(s, s);
+        fn();
+        ctx.restore();
+      });
+    }
+    // a piece of the burrow, as the round lays one: what drawItem reads
+    function piece(type, seed, more) {
+      var it = { type: type, seed: seed, p: 0, x: 0 }, k;
+      for (k in more || {}) it[k] = more[k];
+      return it;
+    }
+    function scaled(x, y, s, fn) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); fn(); ctx.restore(); }
+
+    /* A pictured viper: `n` blocks a block apart behind the head at (x, y),
+       heading `a` (0 is straight up, as `ang` in the round), its spine bent
+       along a sine of amplitude `amp` — the line a tapping player draws. The
+       round's own state is lent for the call, and given back. */
+    function drawViper(o) {
+      var a = o.a || 0, amp = o.amp || 0, ph = o.ph || 0, pts = [], i, d, s;
+      var keep = [bodyPts, lenF, tier, shield, invT, dieT, headX, anchorY, ang, camP, items, tongueT, dir, magnetOn, idolOn];
+      for (i = 0; i < o.n; i++) {
+        d = i * T.block;
+        s = amp * (Math.sin(ph + d / 90) - Math.sin(ph));
+        pts.push({ x: o.x - Math.sin(a) * d + Math.cos(a) * s, y: o.y + Math.cos(a) * d + Math.sin(a) * s });
+      }
+      buildSkin();
+      try {
+        camP = 0; anchorY = pts[0].y; headX = pts[0].x;
+        bodyPts = [];
+        for (i = 0; i < pts.length; i++) bodyPts.push({ x: pts[i].x, y: anchorY - pts[i].y });
+        ang = Math.atan2(pts[0].x - pts[1].x, pts[1].y - pts[0].y);
+        lenF = o.n; tier = o.tier || 0; shield = !!o.shield; dieT = -1;
+        invT = o.hurt ? 0.01 : 0;            // the hurt face, on a frame it is not blinking
+        items = []; tongueT = o.tongue || 0; dir = o.dir || 1;
+        magnetOn = !!o.magnet; idolOn = !!o.idol;
+        drawBody(); drawHead(); drawPowers();
+      } finally {
+        bodyPts = keep[0]; lenF = keep[1]; tier = keep[2]; shield = keep[3]; invT = keep[4];
+        dieT = keep[5]; headX = keep[6]; anchorY = keep[7]; ang = keep[8]; camP = keep[9];
+        items = keep[10]; tongueT = keep[11]; dir = keep[12]; magnetOn = keep[13]; idolOn = keep[14];
+      }
+    }
+
+    // A pickup at 1.5 times its round size, and the viper wearing what it does.
+    function pickupPic(type, biome, viper) {
+      return floorPic(520, 260, biome, 1, function () {
+        scaled(viper ? 140 : 260, 130, 1.6, function () { drawBiomeItem(piece(type, 0.7), 0, 0); });
+        if (viper) drawViper(viper);
+      });
+    }
+    // A row of traps, every other one up: the two stripes of THE TRAPS.
+    function trapsPic(fire) {
+      return floorPic(520, 220, "temple", 1.1, function () {
+        var i, x;
+        for (i = 0; i < 4; i++) {
+          x = 85 + i * T.trapStep * 1.05;
+          drawTrapArt(piece("trap", i, { fire: fire }), x, 100, 0.3, i % 2 === 0, i === 3);
+        }
+      });
+    }
+    // where a geyser stands in its cycle at `f`, whatever the round's clock reads
+    function geyserAt(f, seed) { return piece("geyser", seed, { ph: f * T.geyserPeriod - runT }); }
+
+    function guidePage(id, title, lv, pic, lines, rows) {
+      var P = { id: id, title: title, lv: lv, pic: pic, lines: lines };
+      if (rows) P.rows = rows;
+      return P;
+    }
+    function lvOf(biome) {
+      var i;
+      for (i = 0; i < CONFIG.biomes.length; i++) if (CONFIG.biomes[i].key === biome) return CONFIG.ladder.from[i];
+      return 0;
+    }
+
+    var guide = {
+      chapters: function () {
+        var lvS = lvOf("swamp"), lvT = lvOf("temple"), lvV = lvOf("volcano"), lvL = lvOf("lair");
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            guidePage("swerve", Lang.t("Moving"), 0, function () {
+              return floorPic(520, 300, "jungle", 1, function () {
+                drawItem(piece("orb", 1), 390, 52);
+                drawItem(piece("orb", 2), 150, 70);
+                drawViper({ x: 300, y: 150, a: 0.45, n: 8, amp: 16, tongue: 0.2, dir: 1 });
+              });
+            }, [Lang.t("Vipera never stops. A tap changes her direction."),
+                Lang.t("Walls push Vipera back, at no cost.")]),
+            guidePage("score", Lang.t("Eggs and score"), 0, function () {
+              return floorPic(420, 150, "jungle", 1.25, function () {
+                drawItem(piece("orb", 1), 105, 60);
+                drawItem(piece("mega", 2), 231, 60);
+              });
+            }, [Lang.t("Eggs make Vipera grow and score points. A stage ends after a set distance.")],
+            [[Lang.t("Chain of 5, 10, 15…"), "+40, +80, +120…"]]),
+            guidePage("bites", Lang.t("Damage"), 0, function () {
+              return floorPic(520, 200, "jungle", 1, function () {
+                drawItem(piece("thorn", 0.4), 330, 55);
+                drawViper({ x: 260, y: 120, a: -0.3, n: 4, hurt: true });
+              });
+            }, [Lang.t("Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses."),
+                Lang.t("Then Vipera blinks, and nothing can hurt her for a second.")])
+          ] },
+          { key: "viper", label: Lang.t("The viper"), pages: [
+            guidePage("tiers", Lang.t("Evolution"), 0, function () {
+              return floorPic(520, 200, "jungle", 0.34, function () {
+                for (var t = 0; t < TIERS.length; t++) {
+                  drawViper({ x: 191 + t * 382, y: 62, a: 0, n: TIERS[t].at, amp: 14, ph: t, tier: t });
+                }
+              });
+            }, [Lang.t("The longer Vipera gets, the faster she goes. A hit never slows her down.")]),
+            guidePage("armour", Lang.t("Armor"), 0, function () {
+              return floorPic(520, 240, "jungle", 0.8, function () {
+                drawViper({ x: 580, y: 150, a: Math.PI / 2, n: T.maxLen, amp: 22, ph: 0.6, shield: true, tier: TIERS.length - 1 });
+              });
+            }, [Lang.t("At full length, Vipera grows an armor that takes one hit for her."),
+                Lang.t("To get the armor back, grow to full length again or eat a rainbow egg.")])
+          ] },
+          { key: "jungle", label: Lang.t("Jungle"), pages: [
+            guidePage("thorns", Lang.t("Thorns"), 1, function () {
+              return floorPic(520, 230, "jungle", 1, function () {
+                var xs = [56, 160, 368, 472], i;
+                for (i = 0; i < xs.length; i++) drawItem(piece("thorn", i * 1.7), xs[i], 100);
+                drawItem(piece("orb", 3), 264, 100);
+                drawViper({ x: 264, y: 205, a: 0.1, n: 6, amp: 10 });
+              });
+            }, [Lang.t("Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns.")])
+          ] },
+          { key: "swamp", label: Lang.t("Swamp"), pages: [
+            guidePage("log", Lang.t("Drifting logs"), lvS, function () {
+              return floorPic(520, 240, "swamp", 1, function () {
+                drawLog(piece("log", 0.5), 170, 70);
+                drawLog(piece("log", 2.6), 350, 170);
+              });
+            }, [Lang.t("Don't bump into the logs.")]),
+            guidePage("fly", Lang.t("Fireflies"), lvS, function () {
+              return pickupPic("fly", "swamp", { x: 380, y: 90, n: 6, amp: 10, magnet: true });
+            }, [Lang.t("Fireflies help Vipera collect eggs. They fly off at the first hit.")])
+          ] },
+          { key: "temple", label: Lang.t("Temple"), pages: [
+            guidePage("trap", Lang.t("Spike traps"), lvT, function () { return trapsPic(false); },
+              [Lang.t("Only raised spikes are dangerous."),
+               Lang.t("The spikes creep out slowly, then shoot up all at once.")]),
+            guidePage("bolt", Lang.t("Lightning"), lvT, function () {
+              return floorPic(520, 260, "temple", 1, function () {
+                var w = T.boltWarn, img = artImage("lightning01"), x = 380, y = 190, bw, bh;
+                drawBoltGround(piece("bolt", 0.3, { st: w * 0.45, w: w, hit: false }), 140, 150);
+                ctx.save();
+                ctx.globalCompositeOperation = "lighter";
+                halo(x, y, T.boltR * 2, "#cfdcff");
+                if (img) {
+                  bw = 240; bh = y / BOLT_FOOT_Y;
+                  ctx.drawImage(img, x - bw * BOLT_FOOT_X, y - bh * BOLT_FOOT_Y, bw, bh);
+                }
+                drawArt("lightning05", x, y, T.boltR * 2.4, 0.4);
+                ctx.restore();
+              });
+            }, [Lang.t("A ring warns of the next lightning strike."),
+                Lang.t("Lightning can even strike twice in a row.")]),
+            guidePage("idol", Lang.t("Idol"), lvT, function () {
+              return pickupPic("idol", "temple", { x: 380, y: 90, n: 6, amp: 10, idol: true });
+            }, [Lang.t("With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.")])
+          ] },
+          { key: "volcano", label: Lang.t("Volcano"), pages: [
+            guidePage("geyser", Lang.t("Geysers"), lvV, function () {
+              return floorPic(520, 300, "volcano", 1, function () {
+                drawGeyser(geyserAt(0.68, 0.3), 120, 170);
+                drawGeyser(geyserAt(0.86, 1.1), 360, 160);
+              });
+            }, [Lang.t("Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.")]),
+            guidePage("rock", Lang.t("Falling rocks"), lvV, function () {
+              return floorPic(520, 240, "volcano", 1, function () {
+                drawRock(piece("rock", 0.2, { fallT: -1, p: camP + T.rockFall + 120 }), 100, 140);
+                drawRock(piece("rock", 1.3, { fallT: ROCK_DROP * 0.45 }), 260, 140);
+                drawRock(piece("rock", 2.1, { fallT: ROCK_DROP }), 420, 140);
+              });
+            }, [Lang.t("A shadow always shows where a rock will land. The snake would rather avoid a bump on the head."),
+                Lang.t("Watch out, once landed, rocks stay hot and dangerous.")]),
+            guidePage("fire", Lang.t("Fire traps"), lvV, function () { return trapsPic(true); },
+              [Lang.t("Like spike traps, but the flames come out faster.")]),
+            guidePage("amber", Lang.t("Amber"), lvV, function () { return pickupPic("amber", "volcano", null); },
+              [Lang.t("Vipera instantly grows to just short of full length.")])
+          ] },
+          { key: "lair", label: Lang.t("Lair"), pages: [
+            guidePage("eagle", Lang.t("The eagle"), lvL, function () {
+              return floorPic(520, 320, "lair", 1, function () {
+                // the shadow alone, with its penumbra, as the round draws it
+                var shade = artImage("eaglePlane"), w = 300;
+                shade = shade ? silhouette(shade) : null;
+                eagleSprite(shade, 185, 165, w * 1.08, true, 0.22);
+                eagleSprite(shade, 185, 165, w, true, 0.62);
+                drawViper({ x: 430, y: 120, a: 0.2, n: 8, amp: 12 });
+              });
+            }, [Lang.t("The eagle's shadow tells you which side its next attack will come from."),
+                Lang.t("Quickly get clear of that side before you get bitten.")]),
+            guidePage("rainbow", Lang.t("Rainbow egg"), lvL, function () {
+              return pickupPic("rainbow", "lair", { x: 380, y: 90, n: 7, amp: 10, shield: true });
+            }, [Lang.t("This egg is so good it instantly gives Vipera a rainbow armor.")])
+          ] }
+        ];
+      }
+    };
 
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        Two optional hooks, both ignored by the playable — the motor knows
@@ -3574,6 +3901,6 @@
     else dressDemo();
 
     return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
-             levelProgress: levelProgress, levelWon: die, applyLevel: applyLevel };
+             levelProgress: levelProgress, levelWon: die, applyLevel: applyLevel, guide: guide };
   })();
 

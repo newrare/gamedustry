@@ -390,7 +390,8 @@
          the lane the pilot drives on its own; `dodge` is whether it reads the
          road at all; `pace` multiplies its share of the base speed AT SEED
          TIME, so the grid still hands its pass over on schedule (seedRivals).
-         `kick` and `cost` are what a contact with it is worth.
+         `kick` and `cost` are what a contact with it is worth, and `learn`
+         the page of the guide a hunter is named on the first time one is met.
 
          WHICH of them are on the grid is the level's business and not this
          table's — see `ladder.foeMix`. */
@@ -401,9 +402,9 @@
           hunt:  0.00, wander: 0.00, dodge: 0, pace: 1.00, kick: 1.00, cost: 1.00 },
         { name: "STALKER", art: "ship07", col: ["#ffd43b", "#6b4a06"],
           hunt:  0.70, wander: 0.35, dodge: 1, pace: 0.70, kick: 0.85, cost: 0.85 },
-        { name: "MARSHAL", art: "ship06", col: ["#ff6b6b", "#6e1414"], hold: 1, match: 1,
+        { name: "MARSHAL", art: "ship06", col: ["#ff6b6b", "#6e1414"], hold: 1, match: 1, learn: "marshal",
           hunt:  0.95, wander: 0.25, dodge: 1, pace: 1.00, kick: 1.00, cost: 1.00 },
-        { name: "RAM",     art: "ship05", col: ["#8b5cf6", "#1a0b3e"],
+        { name: "RAM",     art: "ship05", col: ["#8b5cf6", "#1a0b3e"], learn: "ram",
           hunt:  1.00, wander: 0.15, dodge: 1, pace: 1.03, kick: 1.70, cost: 1.30 }
       ],
       /* THE HULLS ARE PAINTED. `assets/image/master/arcider-object-ship.png` is one
@@ -1306,6 +1307,7 @@
       var h = branchHalf(p, forkAmt(p)) - 34;
       items.push({ p: p, off: clamp(off, -h, h), type: type, br: br || 0,
                    seed: Rand.range(0, TAU), used: false });
+      if (type === "bomb") meet("mines", Lang.t("Mines"), Lang.t("Watch out for blasts"));
     }
 
     /* IS THERE A PAD IN THE WAY? One walk over the live item list, which is a
@@ -1375,6 +1377,7 @@
       var a = p + 240, b = a + T.forkLen, side = Rand.chance(0.5) ? -1 : 1;
       var n, i, q, run, pads = [], gaps = [], q0, lo, hi;
       forks.push({ a: a, b: b });
+      meet("fork", Lang.t("Fork"), Lang.t("Choose your path"));
 
       // the charge branch
       run = T.forkLen - T.forkFade * 1.4;
@@ -1461,6 +1464,7 @@
 
       if (Rand.chance(T.rampSolid)) {
         for (x = -hw; x <= hw; x += T.rampStep) place(pw + Rand.range(-10, 10), x, "block", 0);
+        meet("solid", Lang.t("Watch out for walls"), Lang.t("Use the ramp"));
       } else {
         // The gate is pushed away from the ramp's own line, so threading it is a
         // decision taken instead of the jump and not on top of it.
@@ -1827,8 +1831,11 @@
             if (Math.abs(r.push) < 1) r.push = 0;
           }
         }
-        if (r.p > cp) ahead++;
-        else if (r.p < camP - 900) {
+        if (r.p > cp) {
+          ahead++;
+          // A hunter met for the first time: the moment it starts to react.
+          if (fo.learn && !asked[fo.learn] && r.p - cp < T.foeSee) meetFoe(fo);
+        } else if (r.p < camP - 900) {
           // Dropped a long way behind: park it just off the lens so a player who
           // loses a lot of speed can still be re-passed by the pilots they took.
           r.p = camP - 900;
@@ -1885,7 +1892,8 @@
          down while not, so the ear reads the colour too. */
       Pop.show("streak", { word: rank + "/" + need, sub: "+" + g, at: "top",
                            cls: safe ? "rank-in" : "rank-out" });
-      Sound.clip("rank", 0.12, safe ? 1.15 : 0.8);
+      if (safe) Sound.clip("rank", 0.12, 1.15);
+      else Sound.clip("rank", 0.12, 0.8);
       if (rank === 1) {
         Pop.show("ultra", { word: "First", at: popSpot() });
         Overlay.vignette("rgba(255,212,59,.85)", 1, 560);
@@ -2244,6 +2252,7 @@
       items = []; trail = []; forks = []; paint = []; shards = []; hazN = 0;
       nextP = 1150; nextMile = T.mileStep; lastPop = -1; lastSpot = -1;
       lastLostPop = -1;
+      asked = {};
       // The first fork waits until the player has ridden a straight road for a
       // few seconds: a choice only reads as a choice once the default is known.
       forkTry = T.forkFirst;
@@ -2463,6 +2472,8 @@
         cutWarned = true;
         safe = flag || rank <= cut.rank;
         Overlay.vignette(safe ? "rgba(53,232,255,.7)" : "rgba(255,45,85,.8)", 1, 620);
+        if (flag) meet("finish", Lang.t("The finish line"), Lang.t("First place guarantees three stars"));
+        else meet("cuts", Lang.t("Checkpoint ahead"), Lang.t("Reach the required rank before the next checkpoint"));
       }
       if (dist < cut.at) return;
 
@@ -2491,12 +2502,13 @@
       /* ONE callout for the whole beat, and it is about what happens NEXT. That
          the cut was survived is already told by the confetti, the flash and the
          pack thinning out on screen; what the player cannot see is the size of
-         the next wall. Carried by `combo` rather than a banner so it lands in
-         the same layer as the rest of the game's shouts. */
-      Pop.show("combo", { word: fieldSize + Lang.t(" pilots left"),
-                          sub: atFlag() ? Lang.t("Win the race")
-                                        : Lang.t("Goal: top ") + T.cuts[cutI].rank,
-                          at: "center" });
+         the next wall. A NOTICE and not a callout: the field being cut is
+         something that happens TO the player, and the callouts are kept for
+         what they did themselves (an overtake, a hit, first place). */
+      Notify.say(fieldSize + Lang.t(" pilots left"),
+                 { sub: atFlag() ? Lang.t("Win the race")
+                                 : Lang.t("Goal: top ") + T.cuts[cutI].rank,
+                   kind: "info", icon: "user" });
       showRank();
     }
 
@@ -4042,6 +4054,342 @@
 
     function onResize() { metrics(); lens(); }
 
+    /* ====================================================================
+       FIRST MEETINGS, AND THE GUIDE (web target)
+
+       A mechanic met for the first time is NAMED, once per player and ever,
+       by the motor's own memory — Notify.learn (packages/shell/shell.js),
+       whose line in the "!" log opens the guide on the page of the same id.
+       Only where there is a guide to open: a playable has none and says
+       nothing. `asked` is not a memory but a cache in front of that one, so
+       an id this round has already handed over is not asked again on every
+       frame; reset() empties it with the round.
+       Only what the road cannot say at a glance is named: a checkpoint's
+       rank, the flag's stars, a mine's blast, the fork's choice, a wall with
+       no gate and the two hunters worth reading by colour. A plain wall, a
+       ramp and the slow stalker explain themselves on sight.
+       ==================================================================== */
+    var asked = {};
+    function meet(id, word, sub) {
+      if (asked[id]) return;
+      asked[id] = 1;
+      if (window.__GUIDE__) Notify.learn(id, word, { sub: sub });
+    }
+    function meetFoe(fo) {
+      if (fo.learn === "marshal") meet("marshal", Lang.t("Marshal"), Lang.t("Only a booster gets you past some craft"));
+      else if (fo.learn === "ram") meet("ram", Lang.t("Ram"), Lang.t("The violet craft hits harder"));
+    }
+
+    /* --- the pictures ------------------------------------------------------
+       Every page SHOWS before it tells, and what it shows is drawn by the
+       round's own renderer: the motor's `ctx` is lent to a canvas of the
+       page's own for the length of one synchronous call (slipdeck's
+       cardsPic, bridgessa's trickPic). */
+    function paintPic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+
+    /* THE ROAD, STAGED. A fork, a ramp or a checkpoint is shown the way the
+       round draws it — buildRows, drawSky, drawPlain, drawRoad, drawFog and
+       the item renderers, through the one projection — and that projection
+       reads the round's camera, its phases, its layout caches and the forks
+       in force. So every one of those values is LENT too: saved, set to a
+       still frame (the camera at the start line, the road at a crest of its
+       bend, a dip under the craft so the road ahead climbs into view), and
+       handed back in `finally`. The guide can open before any round and over
+       a paused one, and neither may notice it was drawn.
+
+       `o` is { bio, cw, focus, at, fork, cam, things, ship }: the biome's index,
+       the width of design space the picture crops (the frame's 720 by
+       default), the progress ahead of the craft the crop is centred on and
+       at which height of it, a fork as [mouth, merge] ahead of the craft,
+       how far the camera sits off the centre line (`cam`, to look down one
+       branch), what stands on the road — { type, z, off, br, kind } with `type` one
+       of cell bomb block boost ramp rival gate flag, or a function returning
+       that list once the road is staged — and the craft
+       itself, { off, lean }. */
+    function stagePic(o, W, H) {
+      W = W || 520; H = H || 300;
+      return paintPic(W, H, function () { stage(o, W, H); });
+    }
+    function stage(o, W, H) {
+      var K = { BIO: BIO, camP: camP, camX: camX, fov: fov, fovZ: fovZ, elevCar: elevCar,
+                phA: phA, phB: phB, phC: phC, phD: phD, dist: dist, runT: runT,
+                forks: forks, rows: rows, rowN: rowN, farI: farI, halfW: halfW,
+                horizonY: horizonY, anchorY: anchorY, span: span, skyBase: skyBase,
+                skyGrad: skyGrad, plainGrad: plainGrad, fogGrad: fogGrad, sunGrad: sunGrad,
+                foot: foot, tarmacOn: tarmacOn, tarmacOff: tarmacOff, stars: stars,
+                towers: towers, speedoFont: speedoFont,
+                rx: shieldRail.x, ry: shieldRail.y, rw: shieldRail.w, rh: shieldRail.h,
+                gl: railGlow.l, gr: railGlow.r };
+      try { stageDraw(o, W, H); }
+      finally {
+        BIO = K.BIO; camP = K.camP; camX = K.camX; fov = K.fov; fovZ = K.fovZ;
+        elevCar = K.elevCar; phA = K.phA; phB = K.phB; phC = K.phC; phD = K.phD;
+        dist = K.dist; runT = K.runT; forks = K.forks; rows = K.rows; rowN = K.rowN;
+        farI = K.farI; halfW = K.halfW; horizonY = K.horizonY; anchorY = K.anchorY;
+        span = K.span; skyBase = K.skyBase; skyGrad = K.skyGrad; plainGrad = K.plainGrad;
+        fogGrad = K.fogGrad; sunGrad = K.sunGrad; foot = K.foot; tarmacOn = K.tarmacOn;
+        tarmacOff = K.tarmacOff; stars = K.stars; towers = K.towers; speedoFont = K.speedoFont;
+        shieldRail.x = K.rx; shieldRail.y = K.ry; shieldRail.w = K.rw; shieldRail.h = K.rh;
+        railGlow.l = K.gl; railGlow.r = K.gr;
+      }
+    }
+    function stageDraw(o, W, H) {
+      var cp = T.camZ, list = [], things, i, e, k, cw, s, fy;
+      BIO = LAD.biomes[o.bio || 0];
+      camP = 0; dist = 0; fov = 0; runT = 0.4;
+      phA = Math.PI / 2 - cp * T.bendKLong;
+      phB = Math.PI / 2 - cp * T.bendKShort;
+      phC = 0;
+      phD = Math.PI * 1.5 - cp * T.hillK;
+      forks = o.fork ? [{ a: cp + o.fork[0], b: cp + o.fork[1] }] : [];
+      rows = []; rowN = 0; farI = -1;
+      railGlow.l = 0; railGlow.r = 0;
+      metrics();
+      camX = roadX(cp) + (o.cam || 0);
+      lens();
+
+      cw = o.cw || view.w; s = W / cw;
+      fy = screenY(cp + (o.focus || 0), kAt(cp + (o.focus || 0)));
+      ctx.save();
+      ctx.scale(s, s);
+      ctx.translate(-(halfW - cw / 2), -(fy - (H / s) * (o.at != null ? o.at : 0.96)));
+      buildRows();
+      drawSky();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(-BLEED, skyBase, view.w + BLEED * 2, view.h - skyBase + BLEED);
+      ctx.clip();
+      drawPlain();
+      drawRoad();
+      drawFog();
+      // a list, or a function of the staged road (a wall reads its width)
+      things = typeof o.things === "function" ? o.things() : (o.things || []);
+      for (i = 0; i < things.length; i++) list.push(stageThing(things[i], cp));
+      list.sort(function (a, b) { return b.p - a.p; });        // far first
+      for (i = 0; i < list.length; i++) {
+        e = list[i]; k = kAt(e.p);
+        if (e.g) drawGate(e.g, e.last);
+        else if (e.r) drawRival(e.r, k);
+        else if (e.it.type === "boost") drawPad(e.it, k);
+        else if (e.it.type === "ramp") drawRamp(e.it, k);
+        else drawStanding(e.it, screenX(itemX(e.it), k), screenY(e.it.p, k), k);
+      }
+      ctx.restore();
+      if (o.ship) stageShip(o.ship, cp);
+      ctx.restore();
+    }
+    // One thing on the staged road, in the shape the round's own lists hold.
+    function stageThing(t, cp) {
+      var p = cp + t.z;
+      if (t.type === "gate" || t.type === "flag") {
+        // a checkpoint's line is green while the place is good enough
+        return { p: p, last: t.type === "flag",
+                 g: { at: p / T.pxPerM, rank: t.type === "flag" || t.ok === false ? 0 : 999 } };
+      }
+      if (t.type === "rival") {
+        // `seed` zeroes the pilot's own weave, so `off` is where it drives
+        return { p: p, r: { p: p, br: t.br || 0, kind: t.kind, seed: -p * 0.0016,
+                            dodge: t.off || 0, hunt: 0, push: 0, pushV: 0, bump: 0 } };
+      }
+      return { p: p, it: { p: p, off: t.off || 0, type: t.type, br: t.br || 0,
+                           seed: t.seed || 0, used: false } };
+    }
+    // The player's craft, as drawCraft lays it: its two pools of light, then
+    // the hull on its roll.
+    function stageShip(sh, cp) {
+      var x = halfW + (roadX(cp) + (sh.off || 0) - camX), y = horizonY + span, sc = 0.84;
+      halo(x, y, 118 * sc, "#35e8ff");
+      halo(x, y, 68 * sc, "#8a5cff");
+      ctx.save();
+      ctx.translate(x, y); ctx.scale(sc, sc);
+      ctx.translate(0, -52); ctx.rotate((sh.lean || 0) * T.leanMax); ctx.translate(0, 52);
+      drawShip(T.playerArt, T.shipW, null, 0, 0);
+      ctx.restore();
+    }
+    /* Hulls side by side, each in its pool of light: `list` is
+       [{ art, col, w, tint }], `tint` the red wash of a hull coming apart. */
+    function hullsPic(list, gap) {
+      var W, H = 0, i, h, x, y;
+      gap = gap || 20; W = gap;
+      for (i = 0; i < list.length; i++) { W += list[i].w + gap; H = Math.max(H, list[i].w * 0.62 + 56); }
+      return paintPic(W, H, function () {
+        for (x = gap, i = 0; i < list.length; i++) {
+          h = list[i].w; y = H - 26;
+          halo(x + h / 2, y, h * 0.5, list[i].col);
+          ctx.save();
+          ctx.translate(x + h / 2, y);
+          drawShip(list[i].art, h, list[i].tint ? "#ff2d55" : null, list[i].tint || 0, 1);
+          ctx.restore();
+          x += h + gap;
+        }
+      });
+    }
+    function foeHull(i, w) { return { art: T.foes[i].art, col: T.foes[i].col[0], w: w }; }
+
+    /* --- the pages ---------------------------------------------------------
+       Every figure is the round's own: what the code bills and pays, and the
+       stage each idea first reaches the road on (`ladder.unlock`, the field's
+       mix and `cutsFor` read over the shipped climb). Ranges are the climb's,
+       foot to top, because the level layer lerps them. */
+    var guide = {
+      chapters: function () {
+        var gold = "#ffd43b", red = "#ff5a6e", green = "#5cffb0";
+        function foePage(i, id, title, lv, lines) {
+          return { id: id, title: title, lv: lv, lines: lines,
+                   pic: function () { return hullsPic([foeHull(i, 300)]); } };
+        }
+        function bandPage(i, id, from, title, lines, things) {
+          return { id: id, title: title, lv: from,
+                   eyebrow: Lang.t("Stages {a} to {b}").replace("{a}", from).replace("{b}", from + 5),
+                   lines: lines,
+                   pic: function () { return stagePic({ bio: i, focus: 900, at: 0.62, things: things }); } };
+        }
+        return [
+          { key: "basics", label: Lang.t("The basics"), pages: [
+            { id: "steer", title: Lang.t("Lean to steer"),
+              pic: function () { return stagePic({ ship: { off: -40, lean: -1 },
+                                                   things: [{ type: "boost", z: 170, off: -110 }] }); },
+              lines: [Lang.t("Hold a side of the screen, or an arrow key, to lean that way.")] },
+            { id: "race", title: Lang.t("The race"),
+              pic: function () { return stagePic({ ship: { off: 30 },
+                                                   things: [{ type: "rival", kind: 0, z: 150, off: -130 },
+                                                            { type: "rival", kind: 1, z: 250, off: 110 },
+                                                            { type: "rival", kind: 0, z: 360, off: -20 }] }); },
+              lines: [Lang.t("You start last. To pass the leaders, you will need a booster.")] },
+            { id: "cuts", title: Lang.t("Checkpoints"),
+              pic: function () { return stagePic({ ship: { off: 0 },
+                                                   things: [{ type: "gate", z: 170 },
+                                                            { type: "rival", kind: 1, z: 300, off: 90 }] }); },
+              lines: [Lang.t("Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out."),
+                      Lang.t("A green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass.")] },
+            { id: "finish", title: Lang.t("The finish line"),
+              pic: function () { return stagePic({ ship: { off: 0 },
+                                                   things: [{ type: "flag", z: 170 },
+                                                            { type: "rival", kind: 0, z: 310, off: -80 }] }); },
+              rows: [[Lang.t("Reach the stage's distance"), "★", gold],
+                     [Lang.t("Cross the finish line"), "★★", gold],
+                     [Lang.t("Cross it in first place"), "★★★", gold]],
+              lines: [Lang.t("Your place as you cross the finish line is your final result.")] },
+            { id: "shield", title: Lang.t("The shield"),
+              pic: function () { return hullsPic([{ art: T.playerArt, col: "#35e8ff", w: 140 },
+                                                  { art: T.playerArt, col: "#ff2d55", w: 140, tint: 0.75 }]); },
+              rows: [[Lang.t("A mine"), "-" + T.bombCost + " %", red],
+                     [Lang.t("A barrier"), Lang.t("-29 to -39 %"), red],
+                     [Lang.t("Clipping a pilot"), Lang.t("-14 to -21 %"), red]],
+              lines: [Lang.t("Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once.")] },
+            { id: "score", title: Lang.t("The score"),
+              pic: function () { return stagePic({ ship: { off: 20 },
+                                                   things: [{ type: "boost", z: 130, off: 20 },
+                                                            { type: "boost", z: 330, off: -70 }] }, 520, 170); },
+              lines: [Lang.t("While a booster lasts, metres and cells count double.")] }
+          ] },
+          { key: "road", label: Lang.t("On the road"), pages: [
+            { id: "boost", title: Lang.t("Boosters"),
+              pic: function () { return stagePic({ ship: { off: 0 },
+                                                   things: [{ type: "boost", z: 120, off: 0 },
+                                                            { type: "boost", z: 290, off: 90 }] }); },
+              rows: [[Lang.t("Lasts"), T.boostTime + " s", gold]],
+              lines: [Lang.t("Any hit puts the booster out at once.")] },
+            { id: "barrier", title: Lang.t("Barriers"),
+              pic: function () { return stagePic({ ship: { off: -60 },
+                                                   things: [{ type: "block", z: 150, off: 70 },
+                                                            { type: "block", z: 300, off: -150 }] }); },
+              lines: [Lang.t("Barriers block your way. Hit one and it breaks, and your speed drops with it.")] },
+            { id: "fork", title: Lang.t("Fork"),
+              pic: function () { return stagePic({ fork: [-900, 2600], cw: 760, focus: 160, at: 0.8,
+                                                   things: [{ type: "cell", z: 60, br: -1, off: 0 },
+                                                            { type: "cell", z: 190, br: -1, off: 40 },
+                                                            { type: "cell", z: 320, br: -1, off: -20 },
+                                                            { type: "boost", z: 90, br: 1, off: 0 },
+                                                            { type: "bomb", z: 230, br: 1, off: 40 },
+                                                            { type: "boost", z: 360, br: 1, off: -20 }] }); },
+              lines: [Lang.t("One branch has the charge cells. The other has boosters, often guarded by mines.")] },
+            { id: "cells", title: Lang.t("Charge cells"),
+              pic: function () { return stagePic({ fork: [-900, 2600], ship: { off: -322 }, cam: -322,
+                                                   things: [{ type: "cell", z: 150, br: -1, off: 0 },
+                                                            { type: "cell", z: 260, br: -1, off: 40 },
+                                                            { type: "cell", z: 370, br: -1, off: -20 }] }); },
+              rows: [[Lang.t("A cell"), Lang.t("+10 to +15 % shield"), green]],
+              lines: [Lang.t("Only cells refill your shield. They line the track on some forks."),
+                      Lang.t("Take them in a row for a combo bonus. Gravel or a hit breaks the combo.")] },
+            { id: "wall", title: Lang.t("Walls"), lv: 3,
+              pic: function () { return stagePic({ ship: { off: 90 },
+                                                   things: function () { return wallThings(240, 110, true); } }); },
+              lines: [Lang.t("A wall often leaves a way through, with a booster in it.")] },
+            { id: "mines", title: Lang.t("Mines"), lv: 4,
+              pic: function () { return stagePic({ ship: { off: 0 },
+                                                   things: [{ type: "bomb", z: 130, off: -120 },
+                                                            { type: "bomb", z: 230, off: 40 },
+                                                            { type: "bomb", z: 340, off: 150 }] }); },
+              lines: [Lang.t("A mine's blast throws you sideways. Lean the other way to stay on the tarmac."),
+                      Lang.t("A mine never blocks the way to a booster.")] },
+            { id: "ramp", title: Lang.t("Ramps"), lv: 9,
+              pic: function () { return stagePic({ ship: { off: -40 }, at: 0.98,
+                                                   things: function () { return [{ type: "ramp", z: 90, off: -40 }].concat(wallThings(90 + T.rampWall, 170, false)); } }); },
+              rows: [[Lang.t("Landing in the gravel"), "-" + T.roughCost + " %", red]],
+              lines: [Lang.t("Line up before you take off. You can barely steer in the air.")] },
+            { id: "solid", title: Lang.t("Solid walls"), lv: 13,
+              pic: function () { return stagePic({ ship: { off: 30 }, at: 0.98,
+                                                   things: function () { return [{ type: "ramp", z: 90, off: 30 }].concat(wallThings(90 + T.rampWall, null, false)); } }); },
+              lines: [Lang.t("The wall after a ramp may have no way through. Jump over it to avoid a crash.")] }
+          ] },
+          { key: "pilots", label: Lang.t("The pilots"), pages: [
+            { id: "pilots", title: Lang.t("Liveries"),
+              pic: function () { return hullsPic([foeHull(0, 88), foeHull(1, 88), foeHull(2, 88), foeHull(3, 88), foeHull(4, 88)], 10); },
+              lines: [Lang.t("A craft's colour tells you how it drives, long before you reach it.")] },
+            foePage(0, "scout", Lang.t("Scouts"), 0, [
+              Lang.t("Green craft get out of your way.")]),
+            foePage(1, "drone", Lang.t("Drones"), 0, [
+              Lang.t("Blue craft drive straight ahead, blind to you and to the road.")]),
+            foePage(2, "stalker", Lang.t("Stalkers"), 7, [
+              Lang.t("Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.")]),
+            foePage(3, "marshal", Lang.t("Marshals"), 12, [
+              Lang.t("Red craft block your line but never hit on purpose. Only a booster gets you past them easily.")]),
+            foePage(4, "ram", Lang.t("Rams"), 18, [
+              Lang.t("Violet craft come straight for you, and they hit the hardest.")])
+          ] },
+          { key: "climb", label: Lang.t("The climb"), pages: [
+            bandPage(0, "dusk", 1, Lang.t("Dusk"), [
+              Lang.t("The road to the first checkpoint is paved with boosters.")],
+              [{ type: "boost", z: 300, off: -60 }, { type: "boost", z: 600, off: 40 }, { type: "rival", kind: 0, z: 900, off: -80 }]),
+            bandPage(1, "day", 7, Lang.t("Day"), [
+              Lang.t("Two checkpoints before the finish.")],
+              [{ type: "ramp", z: 420, off: 30 }, { type: "rival", kind: 2, z: 800, off: -90 }]),
+            bandPage(2, "mist", 13, Lang.t("Mist"), [
+              Lang.t("From stage 13, some walls after a ramp have no way through.")],
+              [{ type: "bomb", z: 420, off: -80 }, { type: "rival", kind: 3, z: 720, off: 60 }]),
+            bandPage(3, "overcast", 19, Lang.t("Overcast"), [
+              Lang.t("From here on, three checkpoints before the finish.")],
+              [{ type: "gate", z: 520 }, { type: "rival", kind: 4, z: 780, off: 40 }]),
+            bandPage(4, "night", 25, Lang.t("Night"), [
+              Lang.t("Nothing new in this biome, but every hazard and every pilot at once.")],
+              [{ type: "bomb", z: 380, off: 90 }, { type: "rival", kind: 4, z: 620, off: -70 }, { type: "rival", kind: 3, z: 900, off: 60 }])
+          ] }
+        ];
+      }
+    };
+    /* A row of barriers across the road at `z`, filled from each kerb in to
+       a gate centred on `gate` — or rail to rail with `gate` null, the wall
+       a ramp is the only way over — with the booster the gate often holds. */
+    function wallThings(z, gate, pad) {
+      var h = roadHalf(T.camZ + z) - 34, step = gate == null ? T.rampStep : T.blockStep, g = 120, out = [], x;
+      if (gate == null) {
+        for (x = -h; x <= h; x += step) out.push({ type: "block", z: z, off: x });
+        return out;
+      }
+      for (x = -h; x < gate - g; x += step) out.push({ type: "block", z: z, off: x });
+      for (x = h; x > gate + g; x -= step) out.push({ type: "block", z: z, off: x });
+      if (pad) out.push({ type: "boost", z: z, off: gate });
+      return out;
+    }
+
     /* --- THE LEVEL LAYER (web target) ------------------------------------
        `levelProgress` is what a level's objective is measured against while
        the round runs, and it is the same number the result reports as
@@ -4091,6 +4439,6 @@
                 the title over it either way. */
              levelProgress: levelProgress, levelStars: levelStars, levelRules: levelRules,
              levelWon: win,
-             applyLevel: applyLevel };
+             applyLevel: applyLevel, guide: guide };
   })();
 

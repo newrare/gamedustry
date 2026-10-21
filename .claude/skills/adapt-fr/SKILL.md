@@ -75,14 +75,79 @@ proper nouns and are **never translated**.
    levels of the climb are "30 stages", "Stage 12", "Stage suivant"
    (masculine: "le stage").
 
+## Does it make sense? — the check every line passes
+
+Natural vocabulary is not enough: a line made of good French words can still
+say nothing. Read each line **out loud, as a player who has never seen the
+English**, and fix it when one of these fails.
+
+1. **The sentence is complete.** A transitive verb has its object, a
+   subordinate clause has its main clause. "Vol libre avant que la lave
+   attire" → *attire quoi ?* → "Quelques secondes de vol libre, puis la lave
+   aspire la bille".
+1. **One idea per line, in the order the player lives it.** Cause before
+   effect, gesture before result: "Touche pendant que la bille vole : le
+   circuit s'allume" — not the result first and the gesture tucked at the end.
+1. **No stacked participles or noun chains.** "Chaque brique cassée dans une
+   poche vidée" is three past participles and no action: say what pays —
+   "Chaque brique d'une poche vidée rapporte".
+1. **The subject is the thing the player sees.** "Il saute toutes les trois
+   secondes" is fine on a page whose title names *il*; out of its page (a
+   notice, a tag) it must name the thing.
+1. **Every word earns its place.** Cut what restates the title, the obvious
+   and the filler ("toutes seules", "de façon à", "afin de", "le fait de").
+   A line that reads well with a word removed is better without it.
+1. **The logic matches the game.** Before rewording a rule, read its call site
+   and its guide page (`scan-text.mjs` gives `file:line`): a reworded rule
+   that is now false is worse than a clumsy true one.
+1. **Same term, same thing, everywhere in the game.** Once a mechanic is
+   "poche", it is never "salle" or "zone" on another screen. List a game's
+   key terms before editing, and keep them.
+1. **Concrete verbs over generic ones.** *Faire, mettre, effectuer, réaliser*
+   usually hide the real verb: "Mets la balle dans le trou" → "Rentre la
+   balle". "Survis à {n} vagues" → "Tiens {n} vagues".
+1. **Read the assembled string.** A fragment, a `{n}` replaced by 1 and by 12,
+   a plural, a feminine — the line on screen is the one that has to make
+   sense, not the key.
+
+A guide page (`Help guide` on the copy desk) is read at leisure, but on a
+phone: its title is a short noun phrase, each line one rule of at most about
+90 characters, its `rows` labels two or three words.
+
+## Punchlines — the lines that sell
+
+The site card's tagline, the three site tags and the store cards' kicker and
+line are not instructions: they make someone who has never played want to.
+They follow their own rules on top of the ones above.
+
+1. **Lead with the fantasy or the verb**, never with the genre's definition.
+   "Un casse-briques aux billes comptées" describes; "Chaque bille compte"
+   sells.
+1. **Concrete, never generic.** "Un plaisir à parcourir", "Effets
+   satisfaisants" could be any game: name what is unique to this one (the
+   zombie in the hole, the comet torn out of its orbit).
+1. **Short.** A store line is 2 to 6 words, its kicker 1 to 3; the `<b>` goes
+   on the hook word, the one an eye catches first. A site tagline is one or
+   two sentences, under about 140 characters, the first one the hook.
+1. **Rhythm and contrast work**: a pair ("Garde ou jette"), a promise and its
+   price ("Fonce ou recharge"), a challenge ("Plus vite que l'infection").
+1. **No promise the game does not keep**, and no superlative it cannot back
+   ("le meilleur jeu de…").
+1. **The two languages each sell in their own words.** A French punchline is
+   written as French ad copy, not adapted line by line — but it sells the same
+   feature on the same card, since the picture under it is the same.
+1. **The shared closers stay shared**: "Difficulté progressive", "Vise le
+   meilleur score", "30 stages" are the same on every game.
+
 ## House rules — never break these
 
 - **Normal case.** A capital on the first letter and on a proper noun only.
   Never type a word in capitals ("Chaque TAP" is wrong): the motor's `upper()`
   shouts, and a capital loses its accent on screen.
 - **A capital letter carries no accent, in the source too**: *Evite*,
-  *Eliminé*, *Etoile*, *A toi* — accents only on lowercase letters
-  (*Esquive les pièges*). Grammar is correct: *Trouve* (imperative, no `s`),
+  *Eliminé*, *Etoile*, *A toi*, *Ca accélère* (no cedilla either) — accents
+  only on lowercase letters (*Esquive les pièges*). The ligatures Œ and Æ are
+  letters, not accents: *Œuf* stays. Grammar is correct: *Trouve* (imperative, no `s`),
   agreement checked.
 - **Markup is preserved one-to-one.** Every `<b>` / `<b class="w-…">` of the
   English is kept, on the French word that carries the same meaning (the
@@ -122,7 +187,12 @@ Extend this table when a pass settles a new shared term.
 ## Workflow
 
 1. `node tools/lab/scan-text.mjs <slug>` — the EN and FR side by side, grouped
-   by screen, with the call sites of every fragment.
+   by screen, with the call sites of every fragment. A proofreading pass
+   targets what the copy desk has not signed off yet:
+   `node tools/lab/scan-text.mjs <slug> --unchecked --lang=fr` lists only the
+   rows whose text is not checked in `lab/text-review.json`, each with the
+   surface it is printed on (*Help guide*, *Notification*, *Character*…). A
+   checked row is the user's: never edit it unless asked.
 1. Read the call sites of every fragment and every HUD/pill label (length).
 1. Edit `games/<slug>/manifest.json`. It is `JSON.stringify(m, null, 2)` + a
    newline, so a node script that parses, edits and re-dumps it keeps the

@@ -4180,6 +4180,11 @@
     var name = el("button", "ar-post-l", icon(p.icon, "ar-ci") + "<span>" + W.upper(T["post_" + p.k]) + "</span>");
     name.setAttribute("aria-label", fill(T.postJobs, { post: T["post_" + p.k] }));
     name.addEventListener("click", function () {
+      /* The post's rule is a page of the game's guide where it has one
+         (packages/webshell/guide.js); the notice is the playable-free
+         fallback, for a game whose guide does not name it. */
+      var GD = window.__GUIDE__;
+      if (GD && GD.has("post-" + p.k)) { GD.open("post-" + p.k); return; }
       say(T["post_" + p.k], T["pd_" + p.k] + ". " + fill(T.postJobsLine, { j: jobsOf(p.k).join(" · ") }), "info", p.icon);
     });
     cell.appendChild(name);
@@ -5015,9 +5020,28 @@
 
   var DECOR = { count: 2, spots: ["l", "r"], size: 130, opacity: 0.3, front: 0 };
 
+  /* THE PAGE OF THE GUIDE THIS ROOM IS EXPLAINED ON — the Help card opened
+     over a room of the barracks offers it beside "All the rules"
+     (packages/webshell/guide.js, `here`). The ids are the contract with the
+     game's guide (games/stratideck: Game.guide); a page it does not have is
+     simply not offered. */
+  function guidePage() {
+    var top = VW.top();
+    if (top === "deck") return "camp-deck";
+    if (top === "infirmary") return "camp-infirmary";
+    if (top === "prison") return "camp-prison";
+    if (top === "defense") return "camp-defense";
+    if (top === "recruit") {
+      return RT.tab === "posts" ? "camp-posts" : RT.tab === "mis" ? "camp-missions" :
+             RT.tab === "reg" ? "camp-register" : "camp-recruit";
+    }
+    return null;
+  }
+
   function mount(api) {
     API = api;
     if (api.lang) setLang(api.lang);
+    if (window.__GUIDE__ && window.__GUIDE__.here) window.__GUIDE__.here(guidePage);
 
     VW.define("deck", {
       build: buildDeck, node: function () { return DK.box; },
@@ -5219,7 +5243,7 @@
       prisonTitle: "Prison", prisonSub: "{n} / {m} cells taken",
       defenseTitle: "Defense",
       dfSubFlag: "Place your flag first of all", dfSubNew: "Protect the flag, then validate",
-      dfSubDirty: "Changed: validate to defend with it",
+      dfSubDirty: "Changes not validated yet",
       dfFront: "The enemy attacks here",
       dfNote: "Place your flag, then protect it with your cards and your objects.",
       dfValidate: "Validate", dfUndo: "Undo changes",
@@ -5234,12 +5258,12 @@
       dfPrisoners1: "1 prisoner", dfPrisonersN: "{n} prisoners", dfPrisonFull: "Prison full: no prisoner",
       dfSolid: "Solidity",
       dfTipLow: "Keep the flag away from the front and fill the cells around it: a gap is a way in.",
-      dfTipMid: "Objects buy time: a raid that stalls on a fence or a straw man is a raid that runs out of night.",
+      dfTipMid: "Objects slow a raid down. Every card stuck on a fence or a straw man is one less to reach your flag.",
       dfTipHigh: "A layout that holds almost every assault.",
       tab_strat: "Strategy", tab_rep: "Report",
       dfRepSub: "Last raid: {d}", dfRepNoneSub: "No raid yet",
-      dfRepNone: "No raid yet. Validate a defense: the red army storms your camp when you come back after {n} hours away.",
-      dfRepNoLog: "This raid came before the report kept its duels.",
+      dfRepNone: "No raid yet. Validate a defense: the red army will attack it when you come back after {n} hours away.",
+      dfRepNoLog: "The duels of this raid were not recorded.",
       dfRepTapHeld: "Tap anywhere to collect and see the report", dfRepTapLost: "Tap anywhere to see the report",
       dfRepOrder: "Order of attack", dfRepCamp: "Pushed back: {n}", dfRepFoe: "Broken through: {n}",
       duVs: "vs", duWin: "{w} wins", duTie: "Both fall", duFlag: "Flag taken",
@@ -5248,8 +5272,8 @@
       duSpell: "{a} is bewitched", duScout: "{a} reveals the card",
       dfUnlockEyebrow: "{b} cleared", dfUnlockEyebrowN: "Biomes cleared",
       dfUnlockTitleN: "New object cards",
-      dfUnlockText1: "It is now in your collection and can guard your camp in the defense, up to {n} times.",
-      dfUnlockTextN: "They are now in your collection and can guard your camp in the defense, each up to {n} times.",
+      dfUnlockText1: "It joins your collection. Your defense can now hold up to {n} of it.",
+      dfUnlockTextN: "They join your collection. Your defense can now hold up to {n} of each.",
       enlist: "Enlist", hire: "Recruit", enlisted: "{c} joins your army",
       recruitTitle: "Recruiting tent", recruitSub: "New faces in {t}",
       sold: "Recruited", recruited: "{c} recruited",
@@ -5287,7 +5311,7 @@
       repCollect: "Tap anywhere to collect", repClose: "Tap anywhere to close",
       tab_posts: "Management", tab_reg: "Register",
       postsTitle: "Management", campTitle: "Camp",
-      campSub: "An officer at a post can fight no battle and join no squad",
+      campSub: "An officer at a post can no longer fight or go on a mission",
       campPosts: "Posts", campRoll: "In the camp", campNone: "The camp is empty",
       post_inf: "Infirmary", post_pri: "Prison", post_drill: "Formation", post_ops: "Missions", post_cmd: "Camp",
       post_cook: "Kitchen",
@@ -5327,14 +5351,14 @@
       surNo: "Fight on", surYes: "Surrender", surTap: "Tap to fight on",
       hurtTitle: "Wounded", hurtEyebrow1: "To the infirmary", hurtEyebrowN: "{n} cards to the infirmary",
       hurt1: "{c}: wounded in battle", hurtN: "{n} cards wounded in battle",
-      hurtGo1: "{g} {c}, rank {r}, must go to the infirmary for {t}.",
+      hurtGo1: "{g} {c}, tier {r}, must go to the infirmary for {t}.",
       hurtGoN: "{n} cards must go to the infirmary for {t}.",
       upTitle: "Promotion!", upEyebrow: "A card climbs", upEyebrowN: "Promotion {i} / {n}",
       upNext: "Tap for the next one", upClose: "Tap to close",
       deckCut1: "1 card back in reserve", deckCutN: "{n} cards back in reserve",
       deckCutSub: "The formation holds fewer slots now",
       lockSay: "Post an officer to {post} to open it",
-      postsNote: "A card's tier sets a post's percentage. Give the post an officer whose trade relates to it for a {b} bonus. Tap a post's name to learn more.",
+      postsNote: "An officer's tier fills the post's gauge. A trade that suits the post adds {b}. Tap a post's name to learn more.",
       fx_cmd: "Captives: {n}/{m}", fx_drill: "Deck: {n}/{m}", fx_ops: "Missions: {n}/{m}",
       fx_inf: "Beds: {n}/{m}", fx_pri: "Cells: {n}/{m}", fx_cook: "Morale: {n}/{m}",
       pd_cmd: "Captives offered after a won battle", pd_drill: "Slots in your deck",
@@ -5348,7 +5372,7 @@
       evTicketLost: "-{n} ticket", evJoins: "Joins your army", evLeaves: "Leaves the camp",
       evHealed: "Back on their feet", evHealLater: "+{h} in the infirmary",
       evEscaped: "Escaped", evJailLater: "+{h} in prison",
-      evTent: "New recruits at the tent", evTentBurn: "No recruits until the next shelf",
+      evTent: "New recruits at the tent", evTentBurn: "No recruits until the next batch",
       evBoard: "New missions on the board", evLate: "+{h} away"
     },
     fr: {
@@ -5384,7 +5408,7 @@
       prisonTitle: "Prison", prisonSub: "{n} / {m} cellules occupées",
       defenseTitle: "Défense",
       dfSubFlag: "Place tout d'abord ton drapeau", dfSubNew: "Protège le drapeau, puis valide",
-      dfSubDirty: "Modifiée : valide-la pour l'appliquer",
+      dfSubDirty: "Changements pas encore validés",
       dfFront: "L'ennemi attaque ici",
       dfNote: "Place ton drapeau, puis protège-le avec tes cartes et tes objets.",
       dfValidate: "Valider", dfUndo: "Annuler les changements",
@@ -5399,12 +5423,12 @@
       dfPrisoners1: "1 prisonnier", dfPrisonersN: "{n} prisonniers", dfPrisonFull: "Prison pleine : aucun prisonnier",
       dfSolid: "Solidité",
       dfTipLow: "Eloigne le drapeau du front et remplis les cases autour : chaque trou est une brèche.",
-      dfTipMid: "Les objets font gagner du temps : un assaut bloqué par une barrière ou un épouvantail finit par manquer de nuit.",
+      dfTipMid: "Les objets ralentissent l'assaut. Chaque carte bloquée par une barrière ou un épouvantail, c'est une carte de moins pour atteindre ton drapeau.",
       dfTipHigh: "Une défense qui résiste à presque tous les assauts.",
       tab_strat: "Stratégie", tab_rep: "Rapport",
       dfRepSub: "Dernier assaut : {d}", dfRepNoneSub: "Aucun assaut pour l'instant",
-      dfRepNone: "Aucun assaut pour l'instant. Valide une défense : l'armée rouge attaque ton camp quand tu reviens après {n} heures d'absence.",
-      dfRepNoLog: "Cet assaut est antérieur au détail des duels.",
+      dfRepNone: "Aucun assaut pour l'instant. Valide une défense : l'armée rouge l'attaquera si tu reviens après {n} heures d'absence.",
+      dfRepNoLog: "Les duels de cet assaut n'ont pas été enregistrés.",
       dfRepTapHeld: "Touche n'importe où pour récupérer et voir le rapport", dfRepTapLost: "Touche n'importe où pour voir le rapport",
       dfRepOrder: "Ordre d'attaque", dfRepCamp: "Repoussés : {n}", dfRepFoe: "Percées : {n}",
       duVs: "vs", duWin: "{w} gagne", duTie: "Les deux tombent", duFlag: "Drapeau pris",
@@ -5413,8 +5437,8 @@
       duSpell: "{a} tombe sous le sort", duScout: "{a} révèle la carte",
       dfUnlockEyebrow: "Biome {b} terminé", dfUnlockEyebrowN: "Biomes terminés",
       dfUnlockTitleN: "Nouvelles cartes objets",
-      dfUnlockText1: "Elle rejoint ta collection et peut maintenant garder ton camp en défense, {n} fois au plus.",
-      dfUnlockTextN: "Elles rejoignent ta collection et peuvent maintenant garder ton camp en défense, {n} fois au plus chacune.",
+      dfUnlockText1: "Elle rejoint ta collection. Ta défense peut maintenant en accueillir jusqu'à {n}.",
+      dfUnlockTextN: "Elles rejoignent ta collection. Ta défense peut maintenant accueillir jusqu'à {n} exemplaires de chacune.",
       enlist: "Enrôler", hire: "Recruter", enlisted: "{c} rejoint ton armée",
       recruitTitle: "Tente de recrutement", recruitSub: "De nouvelles têtes dans {t}",
       sold: "Recruté", recruited: "{c} s'engage",
@@ -5486,9 +5510,9 @@
       tapContinue: "Touche n'importe où pour continuer",
       surEyebrow: "Le commandant ennemi", surTitle: "Se rendre ?",
       surWhy_trap: "Des mines gardent mon drapeau. Il ne te reste aucun sapeur pour les lever.",
-      surWhy_object: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le briser.",
+      surWhy_object: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le détruire.",
       surWhy_soldier: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le battre.",
-      surNote: "Cette bataille ne peut plus être gagnée. Rends-toi : elle s'arrête ici, sans score.",
+      surNote: "Cette bataille ne peut plus être gagnée. Si tu te rends, elle s'arrête ici, sans score.",
       surNo: "Continuer", surYes: "Se rendre", surTap: "Touche pour continuer",
       hurtTitle: "Blessés", hurtEyebrow1: "Direction l'infirmerie", hurtEyebrowN: "{n} cartes à l'infirmerie",
       hurt1: "{c} : blessure au combat", hurtN: "{n} cartes blessées au combat",
@@ -5497,16 +5521,16 @@
       upTitle: "Promotion !", upEyebrow: "Une carte progresse", upEyebrowN: "Promotion {i} / {n}",
       upNext: "Touche pour la suivante", upClose: "Touche pour fermer",
       deckCut1: "1 carte retourne en réserve", deckCutN: "{n} cartes retournent en réserve",
-      deckCutSub: "La formation compte moins d'emplacements",
+      deckCutSub: "La formation compte moins de places",
       lockSay: "Affecte un officier au poste {post} pour l'ouvrir",
-      postsNote: "Le rang d'une carte fixe le pourcentage d'un poste. Un officier dont le métier convient au poste ajoute un bonus de {b}. Touche le nom d'un poste pour en savoir plus.",
+      postsNote: "Le rang de l'officier remplit la jauge du poste. Un métier adapté y ajoute {b}. Touche le nom d'un poste pour en savoir plus.",
       fx_cmd: "Captifs : {n}/{m}", fx_drill: "Deck : {n}/{m}", fx_ops: "Missions : {n}/{m}",
       fx_inf: "Lits : {n}/{m}", fx_pri: "Cellules : {n}/{m}", fx_cook: "Moral : {n}/{m}",
-      pd_cmd: "Prisonniers proposés après une victoire", pd_drill: "Places dans ton deck",
+      pd_cmd: "Captifs proposés après une victoire", pd_drill: "Places dans ton deck",
       pd_ops: "Emplacements de mission", pd_inf: "Lits à l'infirmerie",
       pd_pri: "Cellules dans la prison", pd_cook: "Le moral du camp : plus il est haut, plus les bons jours sont fréquents",
       postJobsLine: "Métiers adaptés : {j}",
-      postJobs: "Métiers adaptés au poste {post}", jobFor: "Poste : {post}",
+      postJobs: "Métiers adaptés au poste {post}", jobFor: "Poste idéal : {post}",
       lostDesert: "A déserté le camp",
       evEyebrow: "Vie du camp", evEyebrowN: "Vie du camp · {n} nouvelles",
       evGood: "Bonne nouvelle", evBad: "Mauvaise nouvelle",

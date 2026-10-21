@@ -408,3 +408,8 @@
   }
   .pop-ultra .pop-sub { background:#031f12; border-color:#8ef0b0; color:#8ef0b0; }
   .pop-record .pop-sub, .pop-perfect .pop-sub { letter-spacing:4px; }
+
+  /* THE GUIDE's star page: the shell's own painted star, three of them, the
+     way a cleared level wears them (packages/webshell/guide.js). */
+  .em-gstars { display:flex; justify-content:center; gap:18px; padding:8px 0; }
+  .em-gstars img { width:104px; height:104px; object-fit:contain; }

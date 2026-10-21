@@ -405,23 +405,23 @@ async function run(url) {
     /* The geometry is read where the house is up: the map, which is not a
        sheet. */
     if (levelled) { await evalJs("__LEVELS__.open(); return 1;"); await sleep(400); }
-    /* THE ROW RUNS EDGE TO EDGE, and the level chip is the spring: the house
-       against the left gutter, the counts against the right one, and the xp
-       bar over everything between them — no empty band in front of the house. */
-    if (levelled) await check("the house sits against the left gutter",
+    /* THE ROW RUNS EDGE TO EDGE, and the level chip is the spring: the first
+       node against the left gutter — the DEV pill this server's 127.0.0.1
+       earns, the house on a player's machine — the counts against the right
+       one, and the xp bar over everything between them. */
+    if (levelled) await check("the row's first node sits against the left gutter",
       "(function () {" +
       "  var f = document.getElementById('frame').getBoundingClientRect();" +
-      "  var h = document.querySelector('#web-hud .mt-band.full .mt-chip.home').getBoundingClientRect();" +
+      "  var h = document.querySelector('#web-hud .mt-band.full').firstElementChild.getBoundingClientRect();" +
       "  return Math.abs(h.left - f.left - 26 * f.width / 720) < 1;" +
       "})()", true);
     /* ...or up to the fold's chip, on a game that declares one: it stands
-       between the level and the coins. The DEV pill this server's 127.0.0.1
-       earns sits between the house and the level (meta.js, DEV), so the gap
-       is measured from whichever of the two is last. */
+       between the level and the coins. The house is the node in front of the
+       level chip, the DEV pill standing before it (meta.js, DEV). */
     if (levelled) await check("...and the level chip fills the room up to the counts",
       "(function () {" +
       "  var b = document.querySelector('#web-hud .mt-band.full');" +
-      "  var h = (b.querySelector('.mt-dev') || b.querySelector('.mt-chip.home')).getBoundingClientRect();" +
+      "  var h = b.querySelector('.mt-chip.home').getBoundingClientRect();" +
       "  var lv = b.querySelector('.mt-lv').getBoundingClientRect();" +
       "  var m = b.querySelector('.mt-band-more');" +
       "  var c = (m && !m.hidden ? m : b.querySelector('.mt-band-chips')).getBoundingClientRect();" +
@@ -430,10 +430,10 @@ async function run(url) {
       "  return lv.left - h.right < 12 * k && c.left - lv.right < 12 * k && bar.width > 40 * k;" +
       "})()", true);
     /* ONE DEV PILL, in the band, on a local host — this server is one. */
-    await check("the DEV pill stands between the house and the level chip",
+    await check("the DEV pill stands first, in front of the house",
       "(function () { var d = document.querySelector('#web-hud .mt-band.full .mt-dev');" +
-      " return !!d && d.previousElementSibling.classList.contains('home') &&" +
-      " d.nextElementSibling.classList.contains('mt-band-lv'); })()", true);
+      " return !!d && !d.previousElementSibling &&" +
+      " d.nextElementSibling.classList.contains('home'); })()", true);
     await check("...and nowhere else",
       "document.querySelectorAll('.mt-dev, .dl-dev, .ar-dev').length", 1);
   }
@@ -537,6 +537,22 @@ async function run(url) {
     await evalJs("document.querySelector('#web-hud .mt-band.full .mt-chip.home').click(); return 1;");
     await sleep(400);
     await check("the band's house is the way home", "__VIEW__.depth()", FLOOR);
+  }
+
+  if (metaed) {
+    /* The DEV view's guide switch: every page readable, then locked again. A
+       board that has opened every level has nothing locked to test. */
+    const guideLocked = "(function () { __GUIDE__.open(); var n = document.querySelectorAll('.gu-row.locked').length;" +
+      " return n; })()";
+    const unlockGuide = "(function () { var e = __WEB__.Dev.entries().filter(function (x) {" +
+      " return x.group === 'Guide' && typeof x.label === 'function'; })[0]; e.run(); return e.label(); })()";
+    if (await evalJs("return !!window.__GUIDE__ && " + guideLocked + " > 0;")) {
+      await check("the DEV view's guide switch unlocks every page",
+        "(function () { " + unlockGuide + "; return " + guideLocked + "; })()", 0);
+      await check("...and locks them again",
+        "(function () { " + unlockGuide + "; return " + guideLocked + " > 0; })()", true);
+      await key("Escape");
+    }
   }
 
   console.log("\nESCAPE — one order, top down");
@@ -751,9 +767,11 @@ async function run(url) {
   await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
   await sleep(300);
   await check("the way out asks first", "__MODAL__.top()", "web-card leave");
-  await check("...with two answers and not one",
-    "document.querySelectorAll('.wm-modal .web-actions .btn').length", 2);
-  await evalJs("document.querySelector('.wm-modal .web-actions .btn-danger').click(); return 1;");
+  await check("...resume first, then one exit per destination — again, home, and the map where there is one",
+    "document.querySelectorAll('.wm-modal .web-actions .btn').length", levelled ? 4 : 3);
+  await check("...and resume is the first answer",
+    "document.querySelector('.wm-modal .web-actions .btn').getAttribute('data-act')", "resume");
+  await evalJs("document.querySelector('.wm-modal .web-actions [data-act=home]').click(); return 1;");
   await sleep(500);
   await check("leaving goes back to the shell", "__WEB__.state()", "intro");
   await check("...and to the village where there is one",
@@ -793,7 +811,7 @@ async function run(url) {
       " setTimeout(function () { ok(__MODAL__.count() === 0 && window.__ticks > a); }, 400); })", true);
     await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
     await sleep(300);
-    await evalJs("document.querySelector('.wm-modal .web-actions .btn-danger').click(); return 1;");
+    await evalJs("document.querySelector('.wm-modal .web-actions [data-act=home]').click(); return 1;");
     await sleep(500);
     /* Disarmed, or the free rounds below would be played as level 1. */
     await evalJs("__LEVELS__.clear(); return 1;");

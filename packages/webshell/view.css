@@ -85,6 +85,22 @@
 }
 .mt-modal.on .mt-card { transform:scale(1); }
 
+/* THERE IS MORE BELOW (view.js, `moreCue`): a chevron bobbing at the foot of
+   a part that still scrolls, gone once its end is reached. A control: a tap
+   on it scrolls on. */
+.mt-modal .mt-more {
+  position:absolute; left:50%; z-index:6; width:58px; height:58px; margin-left:-29px;
+  display:grid; place-items:center; padding:0; border-radius:50%; cursor:pointer;
+  background:rgba(6,8,18,.88); border:2px solid var(--accent); color:var(--accent);
+  box-shadow:0 6px 18px rgba(0,0,0,.6), 0 0 18px color-mix(in srgb, var(--accent) 40%, transparent);
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.mt-modal .mt-more.on { opacity:1; pointer-events:auto; animation:mt-more-bob 1.1s ease-in-out infinite; }
+.mt-modal .mt-more svg { width:30px; height:30px; }
+@keyframes mt-more-bob { 0%, 100% { transform:translateY(-4px); } 50% { transform:translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .mt-modal .mt-more.on { animation:none; } }
+
 /* ONE LINE, MEASURED. The title is written at the size a title is read at and
    the view system shrinks it to the card's width once the card is filled
    (view.js, `fitTitles`) — "Fais un prisonnier" and "Pick one" are not the
@@ -231,9 +247,10 @@
 #web-hud .mt-band.transient .mt-lv { gap:10px; padding:0 14px; }
 
 /* The one chip on the row that is not a number: the way out of wherever the
-   player is. Round, icon only, and it is the first thing in the row. */
+   player is. Round, icon only, and it is the first thing in the row a player
+   ever sees. */
 #web-hud .mt-chip.home { padding:0 12px; }
-/* The DEV pill, between the house and the level chip, on a local machine only
+/* The DEV pill, first in the row in front of the house, on a local machine only
    (meta.js, DEV). Not a chip and not a number: a flat tag in the danger
    colour, so it can never read as something the player owns. It takes its
    width out of the xp bar, which is the spring of the row. It is the door to

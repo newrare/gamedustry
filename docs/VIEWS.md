@@ -51,6 +51,7 @@ count, since the motor has stopped or restarted the loop by then.
 | ------- | -------------------------------------------------- | ---------- | ------------- |
 | options | a house, the title menu, the corner, a sheet's bar | no         | yes           |
 | help    | the title menu, the corner, a sheet's bar, L0      | no         | yes           |
+| guide   | the help card, a tap on the table, the "!" log     | yes        | yes           |
 | leave   | the round's corner control                         | no         | yes           |
 | daily   | a day of the strip, a house                        | yes        | yes           |
 | gift    | a perfect round, a daily gift                      | no         | no            |
@@ -59,6 +60,14 @@ count, since the motor has stopped or restarted the loop by then.
 | sticker | a pull, a tile of the album                        | varies     | varies        |
 | captive | a won battle with an enemy standing                | no         | no            |
 | report  | a squad back from a mission                        | collects   | collects      |
+
+**The guide is a card, and a navigated one**: every rule of the game, a contents
+page and then one page at a time (`packages/webshell/guide.js`). It is a card
+and not a view because it is opened over a round as often as over a menu — a
+tap on an element of the table is mid-round by definition — and a card is what
+stands over a round and pauses it. It keeps one fixed height so turning a page
+never moves it, and its previous / contents / next are controls, so a tap on
+them turns the page and a tap anywhere else puts it away, like any card.
 
 **The barracks' four are views and the prisoner is a card, and the rule is the
 one above rather than a judgement**: a deck being composed, a list of wounds and
@@ -189,7 +198,9 @@ level 0 opens the help card, and a view already carries four doors in the band
 over it. Two more controls on top of those is a fifth and a sixth thing in a
 corner nobody is looking at. In a round there is nothing else at all, which is
 the whole difference between a playable — where the round IS the ad — and a game
-the player owns.
+the player owns. The way out wears the MENU pictogram and opens the leave card: RESUME
+first, then three exits — play again, home, the map — that each throw the run
+away; its tap line gives the round back too.
 
 **With one branch, and a VILLAGE is what added it.** A village is a view whose
 content is six buildings, because six is what an image model returns on one
@@ -341,8 +352,8 @@ level and the coins, declared by `web.meta.more` and filled by the layer that
 owns the figures ([docs/META.md](META.md)). It is a chip of this row and not a
 second row: the band keeps its one line and its one height.
 
-**On a dev machine the row carries a DEV pill**, between the house and the
-level chip — localhost, a loopback or a LAN address, where the game's clock can
+**On a dev machine the row carries a DEV pill**, first in the row against the
+left gutter, in front of the house — localhost, a loopback or a LAN address, where the game's clock can
 be moved by hand. A `file://` page shows no pill, because it is how
 `tools/lab/shoot-screens.mjs` opens a build and a store screenshot must never
 wear it. It is the one place that says so: no card and no sheet wears a pill of
@@ -353,7 +364,8 @@ while there is one (`DEV +52h`).
 **The pill is the door to the DEV view** (`packages/webshell/dev.js`), a sheet
 with two tabs. **EVENTS** lists every card and action the layers can fire, one
 tap each, grouped by the layer that owns it — the three gift boxes, the ad, a
-sticker draw, the daily road, options and help, and on a game with an army the
+sticker draw, the daily road, options and help, a switch that unlocks every
+page of the guide (kept on this machine until it is switched back), and on a game with an army the
 raid report, the prisoner offer, a promotion, the wounded, IN MEMORIAM, a new
 object, the squads home, an officer's file and every camp day of the manifest.
 Each layer registers its own with `W.Dev.entry({ group, label, sub, run })`,

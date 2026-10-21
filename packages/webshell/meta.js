@@ -168,7 +168,7 @@
   var STRINGS = {
     en: {
       coins: "Coins", tickets: "Tickets", level: "Level", lvShort: "Lv {n}",
-      stickersEntry: "Stickers",
+      stickersEntry: "Album",
       album: "Stickers", shop: "Shop", map: "Levels", home: "Home", scores: "Leaderboard",
       more: "More",
       notices: "Notifications", noticesNote: "The latest first",
@@ -196,11 +196,12 @@
       awAll: "All 30 levels cleared!", awPerfect: "Perfect 90/90!",
       isNew: "New",
       boostXpOn: "Double xp", boostLeft: "{n} more rounds", boostOne: "One more round", boostDone: "Boost used up",
+      galDone: "Gallery complete", galDoneSub: "The perfect 90/90 hands over the last {n} pieces",
       close: "Close", back: "Back"
     },
     fr: {
       coins: "Pièces", tickets: "Tickets", level: "Niveau", lvShort: "Nv {n}",
-      stickersEntry: "Stickers",
+      stickersEntry: "Album",
       album: "Stickers", shop: "Boutique", map: "Stages", home: "Accueil", scores: "Classement",
       more: "Plus",
       notices: "Notifications", noticesNote: "Les plus récentes en premier",
@@ -228,6 +229,7 @@
       awAll: "30 stages terminés !", awPerfect: "90/90 parfait !",
       isNew: "Nouveau",
       boostXpOn: "Xp doublée", boostLeft: "Encore {n} parties", boostOne: "Encore une partie", boostDone: "Boost épuisé",
+      galDone: "Galerie complète", galDoneSub: "Le 90/90 parfait offre les {n} dernières pièces",
       close: "Fermer", back: "Retour"
     }
   };
@@ -460,7 +462,8 @@
      at once, and a wallet is no more precious than the climb that filled it.
 
      c coins · t tickets · x xp · s stickers {index: count} · a milestones
-     already paid, by key · d the daily strip's own state · ar the barracks
+     already paid, by key · g puzzle pieces of the gallery, a count (section
+     4b) · d the daily strip's own state · ar the barracks
      (army.js) — both of those write through here so there is one save and one
      schema. */
   var KEY = "meta:" + (CONFIG.slug || "game");
@@ -476,10 +479,11 @@
        rounds left on each) is the same story. */
     if (typeof s.st !== "number") s.st = 0;
     if (!s.b || typeof s.b !== "object") s.b = { c: 0, x: 0 };
+    if (typeof s.g !== "number") s.g = 0;
     return s;
   })();
   function fresh() {
-    return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null, b: { c: 0, x: 0 } };
+    return { v: 1, c: 0, t: 1, st: 0, x: 0, s: {}, a: {}, d: null, ar: null, b: { c: 0, x: 0 }, g: 0 };
   }
 
   var hooks = [];
@@ -714,6 +718,130 @@
     return out;
   }
 
+  /* ── 4b. the gallery ──────────────────────────────────────────────────── */
+
+  /* WHAT THE COINS ARE FOR ONCE THE MACHINE HAS NOTHING LEFT TO GIVE. The
+     chain of this layer ends on the stickers — the gifts pay xp, coins or a
+     sticker, the xp is the rate the coins are paid at, the coins buy the
+     tickets — and an album at 20/20 left a wallet with nothing to want. The
+     gallery is the second thing to fill, and it is made of what every game
+     already ships: its painted scenes and its character, cut into PUZZLE
+     PIECES bought one at a time (the album's second tab, album.js).
+
+     ITS PACE IS THE MAP'S. A piece's price is read off the climb: about one
+     and a half reference rounds at the player's own level when the gallery
+     stands where the stars do, cheaper when it is behind, dearer and dearer
+     when it runs ahead — so the paintings fill as the board does, and the
+     perfect 90/90 hands over whatever is left. tools/lab/sim-economy.mjs
+     --gallery is the model this curve was tuned on; `galleryRounds` and
+     `roundCoins` are injected by the builder (tools/lib/economy.mjs).
+
+     The state is ONE COUNT, `save.g`: pieces land in the paintings in order,
+     and which cell of a painting the n-th piece fills is a seeded shuffle the
+     album draws (album.js, section 5b) — nothing about a piece is stored. */
+  var GAL_ROUNDS = opt("galleryRounds", 1.5);
+  var ROUND_COINS = opt("roundCoins", Math.max(1, Math.round(TICKET_PRICE / 60)));
+  /* The curve around par: 2^(8 * (pieces% - 0.85 * stars%)), held between
+     half price and eight times it. The 0.85 keeps the gallery a step behind
+     the board, so its last pieces are the map's to give; the ceiling is what
+     a farmer pays — slowly, but they get there, which is a player playing. */
+  var GAL_STEEP = 8, GAL_PACE = 0.85, GAL_FLOOR = 0.5, GAL_CAP = 8;
+  /* A PORTRAIT painting is cut in one of these grids (cols x rows), the one
+     nearest to an even share of NINETY pieces — a piece is worth about a
+     star of the board whatever the game ships. A landscape one swaps them. */
+  var GAL_GRIDS = [[2, 4], [3, 4], [3, 5], [4, 6]];
+  var GAL_FACES = ["characterSad", "characterNeutral", "characterHappy"];
+
+  /* THE PAINTINGS, IN THE ORDER THEY ARE FILLED — each one a step: the
+     game's scenes (the plain one, then one per band), the village's ground,
+     the desk's wide scene, and the character last, sad, then neutral, then
+     happy, standing on the game's own scene rather than on nothing. A
+     painting is a key of CONFIG.art, so a game with no artwork has an empty
+     gallery and the tab is not drawn. */
+  var GALLERY = (function () {
+    var art = (CONFIG && CONFIG.art) || {}, scenes = [], out = [], k, i;
+    for (k in art) if (art.hasOwnProperty(k) && /^backgroundPhone/.test(k)) scenes.push(k);
+    scenes.sort();
+    var base = (W.Art && W.Art.sceneKey && W.Art.sceneKey()) || scenes[0] || null;
+    for (i = 0; i < scenes.length; i++) out.push({ key: scenes[i] });
+    if (art.backgroundHome) out.push({ key: "backgroundHome" });
+    if (art.backgroundDesk) out.push({ key: "backgroundDesk", wide: true });
+    if (base) {
+      for (i = 0; i < GAL_FACES.length; i++) {
+        if (art[GAL_FACES[i]]) out.push({ key: GAL_FACES[i], ground: base });
+      }
+    }
+    var share = out.length ? 90 / out.length : 0, first = 0;
+    for (i = 0; i < out.length; i++) {
+      var best = GAL_GRIDS[0], g;
+      for (g = 1; g < GAL_GRIDS.length; g++) {
+        var a = GAL_GRIDS[g];
+        if (Math.abs(a[0] * a[1] - share) < Math.abs(best[0] * best[1] - share)) best = a;
+      }
+      var p = out[i];
+      p.cols = p.wide ? best[1] : best[0];
+      p.rows = p.wide ? best[0] : best[1];
+      p.n = p.cols * p.rows;
+      p.first = first;
+      p.src = art[p.key];
+      p.groundSrc = p.ground ? art[p.ground] : null;
+      first += p.n;
+    }
+    return { list: out, total: first };
+  })();
+
+  function galOwned() { return Math.min(save.g, GALLERY.total); }
+
+  /* The board's share of its stars, 0..1 — or null when there is no board,
+     and then the price stays at par: a gallery with no map to follow is
+     priced on the round alone. */
+  function starShare() {
+    var LV = window.__LEVELS__;
+    if (!LV || !LV.active() || !LV.max || !LV.max()) return null;
+    return Math.min(1, LV.total() / LV.max());
+  }
+
+  /* How far the gallery has run ahead of the board, as the factor on the
+     price: 1 at par, under 1 behind, up to GAL_CAP ahead. */
+  function galAhead() {
+    var s = starShare();
+    if (s == null || !GALLERY.total) return 1;
+    var g = galOwned() / GALLERY.total;
+    return Math.min(GAL_CAP, Math.max(GAL_FLOOR, Math.pow(2, GAL_STEEP * (g - GAL_PACE * s))));
+  }
+
+  /* THE PRICE OF THE NEXT PIECE, 0 once the gallery is full. Three terms on
+     top of the round: the LEVEL (the coins of a round are multiplied by it,
+     so a piece costs the same number of rounds at level 2 and at level 12),
+     the ALBUM (half price while the machine still has stickers to give and
+     takes its share of the coins, full price once it is done) and how far
+     AHEAD of the board the gallery stands. */
+  function galPrice() {
+    if (!GALLERY.total || galOwned() >= GALLERY.total) return 0;
+    var album = TOTAL ? 0.5 + 0.5 * ownedCount() / TOTAL : 1;
+    return legible(GAL_ROUNDS * ROUND_COINS * playerLevel() * album * galAhead());
+  }
+
+  function buyPiece() {
+    var p = galPrice();
+    if (!p || save.c < p) return false;
+    save.c -= p;
+    save.g = galOwned() + 1;
+    persist();
+    return true;
+  }
+
+  /* THE PERFECT BOARD FILLS WHATEVER IS LEFT. Called by `sweep` with the
+     board at 90/90; the pieces still missing are handed over at once, and
+     their count is what the notice says. */
+  function galFinish() {
+    if (!GALLERY.total || galOwned() >= GALLERY.total) return 0;
+    var n = GALLERY.total - galOwned();
+    save.g = GALLERY.total;
+    persist();
+    return n;
+  }
+
   /* ── 5. the milestones the map pays ───────────────────────────────────── */
 
   /* WHICH STICKER EACH MILESTONE HANDS OVER, in milestone order: the five
@@ -771,6 +899,14 @@
     }
     if (st.allCleared) { got = award("all", null, AWARDS[10]); if (got) out.push(got); }
     if (st.allPerfect) { got = award("perfect", null, AWARDS[11]); if (got) out.push(got); }
+    /* and the gallery's last pieces with it (section 4b) */
+    if (st.allPerfect) {
+      var left = galFinish();
+      if (left) {
+        bumpUnseen();
+        W.Notify.say(T.galDone, { sub: fill(T.galDoneSub, { n: left }), kind: "rare", icon: "trophy" });
+      }
+    }
     return out;
   }
 
@@ -1542,17 +1678,21 @@
     }
 
     if (a && o.burst) {
+      /* `ms` stretches the cascade over a beat of the end screen: the flight
+         keeps its arc and the pieces leave closer together or further apart. */
+      var flyMs = o.ms ? Math.min(FLY_MS, Math.round(o.ms * 0.6)) : FLY_MS;
+      var flyGap = o.ms ? Math.max(0, (o.ms - flyMs - 60) / (FLY_N - 1)) : FLY_GAP;
       for (i = 0; i < FLY_N; i++) {
         (function (idx) {
           piece(host, "mt-coin", icon("coin", "mt-ci"), a, b, 60, 0.45,
-                idx * FLY_GAP + 20, FLY_MS);
+                idx * flyGap + 20, flyMs);
           setTimeout(function () {
             W.Sound.ui("coin", 0.32, 1 + idx * 0.035);
             if (idx === FLY_N - 1) land();
-          }, idx * FLY_GAP + FLY_MS + 40);
+          }, idx * flyGap + flyMs + 40);
         })(i);
       }
-      span = FLY_N * FLY_GAP + FLY_MS + 60;
+      span = FLY_N * flyGap + flyMs + 60;
       /* Counting starts NOW and lasts the whole cascade: the chip fills as the
          coins arrive, which is the reading the eighteen of them exist for. */
       if (cell) countTo(cell, before, after, span);
@@ -1564,7 +1704,8 @@
                       a, b, o.spread ? 45 : 0, o.big ? 0.26 : 0.3, 0, 0);
       setTimeout(function () {
         if (fly.parentNode) fly.parentNode.removeChild(fly);
-        W.Sound.ui("gain", 0.6, o.big ? 1.08 : 1);
+        if (o.big) W.Sound.ui("gain", 0.6, 1.08);
+        else W.Sound.ui("gain", 0.6);
         land();
       }, HOME_MS);
       span = HOME_MS;
@@ -1578,7 +1719,8 @@
       hit(home.node);
       if (cell) countTo(cell, before, after, 340);
       else if (lv) { lv.holdXp = null; fillLv(lv, before, after); }
-      W.Sound.ui(n < 0 ? "tick" : "gain", 0.5, n < 0 ? 0.7 : 1);
+      if (n < 0) W.Sound.ui("tick", 0.5, 0.7);
+      else W.Sound.ui("gain", 0.5);
       veil(home.w, kind, away);
       if (o.done) o.done();
     }
@@ -2204,13 +2346,15 @@
 
   /* ── 11. the end screen: the score becomes coins ──────────────────────── */
 
-  /* The motor's end screen is a cascade of timers it owns (packages/shell/
-     shell.js, EndScreen) and this layer adds the last beat of it through the
-     motor's one hook for it, `onReveal`: called where the way out would land,
-     which is the signal that the reveal is done — never scheduled against a
-     copy of the motor's timings, which would drift the first time a game
-     shipped a fifth stat row — and holding that way out for as long as this
-     layer still has something to hand over (section 11d). */
+  /* The motor's end screen is a list of BEATS it schedules (packages/shell/
+     shell.js, EndScreen), and four of them are this layer's: the coins line,
+     the cascade, the offer and the gift boxes, registered with `onEndBeat` and
+     played on the motor's clock — never against a copy of its timings, which
+     would drift the first time a game shipped a fifth stat row. What the round
+     pays is worked out ONCE, on the frame the screen opens (`planEnd`), so
+     every beat reads the same figures. The motor's `onReveal` is where the way
+     out would land, and it is held for as long as a gift is still being picked
+     (section 11d). */
   var endWallet = null, endBox = null;
 
   /* ── 11a. the band the view system shows ──────────────────────────────── */
@@ -2246,10 +2390,10 @@
      layers can fire, one tap each. It wears the offset while the clock is
      ahead of the real one — "Dev +52h" — and reads "Dev" alone on the real
      clock, since a moved clock is the one thing about this machine that a
-     picture of it cannot show. It is said ONCE, in the band, in front of the
-     level chip — not on each screen that bends a rule, which is how three
-     pills in three places came to mean one thing. A deployed site's hostname
-     is none of these, so the node is never built there. NOT on a file://
+     picture of it cannot show. It is said ONCE, in the band, first in the row
+     and in front of the house — not on each screen that bends a rule, which
+     is how three pills in three places came to mean one thing. A deployed
+     site's hostname is none of these, so the node is never built there. NOT on a file://
      page, though the two layers count one as local: that is how
      tools/lab/shoot-screens.mjs opens a build, and a store screenshot is the
      one picture that must never wear it. */
@@ -2305,14 +2449,16 @@
        The stars hang in a host the wallet fills: a number it paints, like the
        coins. */
     var h = null;
+    /* On the standing row only: the end screen's is a target for a flight.
+       The DEV pill comes FIRST, against the left gutter, so the row a player
+       sees — the house leading it — is the same row with the pill taken off. */
+    if (home && DEV) row.appendChild(devPill());
     if (home) {
       h = el("button", "mt-chip home door", icon("home", "mt-ci"));
       h.setAttribute("aria-label", T.home);
       h.addEventListener("click", function () { VW.home(); });
       row.appendChild(h);
     }
-    /* On the standing row only: the end screen's is a target for a flight. */
-    if (home && DEV) row.appendChild(devPill());
     row.appendChild(lv);
     if (more) row.appendChild(more);
     row.appendChild(chips);
@@ -2371,13 +2517,10 @@
     var screen = $("screen-end");
     if (!endBox) {
       endBox = el("div"); endBox.id = "mt-end";
-      /* Above the way out, whatever the way out is drawn as: on a map the two
-         buttons are moved into a row of their own (packages/webshell/menu.js),
-         so the node to insert in front of is that row and not a button that is
-         no longer a child of this screen. */
-      var cta = $("btn-install");
-      var ref = cta.parentNode === screen ? cta : cta.parentNode;
-      screen.insertBefore(endBox, ref);
+      /* Between the stars and the stat rows: the offer is read with the
+         verdict it is offered for, and the rows are the detail under both
+         (lab/end-screen.html, preset G). */
+      screen.insertBefore(endBox, $("eo-stats"));
     }
     /* The band itself belongs to the view system and is built with it; all
        this screen does is ask for it. `hud: "auto"` is what keeps it down
@@ -2417,118 +2560,89 @@
     screen.classList.remove("has-gain");
     $("eo-score").classList.remove("cut");
 
-    var score = Math.max(0, Math.round(result.score || 0));
-    var earn = Math.floor(score / POINTS_PER_COIN) * playerLevel();
-    if (earn > 0) {
+    plan = planEnd(result);
+    if (plan.earn > 0) {
       var g = el("div", "mt-gain");
       g.id = "mt-gain";
       var sc = $("eo-score");
       sc.parentNode.insertBefore(g, sc.nextSibling);
-      /* The stars are tucked up under the score and this line stands between
-         the two, so the row is told there is something in that gap: without it
-         it climbs into the score's own baseline (packages/shell/motor.css) and
-         gold working over a gold star is not read at all. */
       screen.classList.add("has-gain");
     }
     /* …and the offer's own room, on the rounds that will be offered one —
        every round with a star: the gift for an ad, or on a level's first
        perfect round the ×5 on what its box held (section 11d). */
-    var st = result.stars || 0;
-    endBox.className = st >= 1 ? "slot" : "";
+    endBox.className = plan.stars >= 1 ? "slot" : "";
   }
 
-  function endRun(result, c) {
-    buildEnd();
-    endBox.innerHTML = "";
+  /* WHAT THE ROUND PAYS, read once, on the frame the end screen opens — every
+     beat of this layer reads these figures and none recomputes them.
+
+     THE LEVEL THE ROUND WAS PLAYED AT is what pays it, read before a single
+     coin moves: `addXp` may well level the player up on this very run, and a
+     rate that changed halfway through its own animation would write a sum the
+     screen then contradicts. THE SHOP'S BOOSTS are spent here and only on a
+     round they have something to double (`takeBoost`): the coin one is a
+     fourth term of the sum the line writes out; the xp one has no line on this
+     screen, so a notice says it was used. And `owed` PAYS the map's stickers
+     here: the save moves now, the ceremony catches up with it on its beat. */
+  var plan = null;
+  function planEnd(result) {
     var score = Math.max(0, Math.round(result.score || 0));
-    /* THE LEVEL THE ROUND WAS PLAYED AT is what pays it, read before a single
-       coin moves: `addXp` below may well level the player up on this very run,
-       and a rate that changed halfway through its own animation would write a
-       sum the screen then contradicts. */
     var lvl = playerLevel();
     var base = Math.floor(score / POINTS_PER_COIN);
     var earn = base * lvl;
     var xpGain = Math.floor(score / POINTS_PER_XP);
-    var stars = result.stars || 0;
-    /* THE SHOP'S BOOSTS, spent here and only on a round they have something to
-       double (`takeBoost`). The coin one is a fourth term of the sum the line
-       writes out; the xp one has no line on this screen, so a notice says it
-       was used and how many rounds it has left. */
     var coinBoost = earn > 0 && takeBoost("coins");
     if (coinBoost) earn *= 2;
     var xpBoost = xpGain > 0 && takeBoost("xp");
     if (xpBoost) xpGain *= 2;
+    var c = owed(result);
+    cer = c;
+    return { score: score, lvl: lvl, base: base, earn: earn, xpGain: xpGain,
+             coinBoost: coinBoost, xpBoost: xpBoost, stars: result.stars || 0,
+             c: c, after: false };
+  }
 
-    function afterCoins() {
-      /* The coins themselves are already IN — they are paid on the frame the
-         cascade leaves (see below), because a chip can only count up to a
-         figure the save already holds. What is left is the climb and whatever
-         the map owes for it. */
-      /* Granted here, READ on the map (see `arrive`). `before` is taken first
-         because that is the figure the bar has to come back to. */
-      var x0 = save.x;
-      var got = addXp(xpGain);
-      if (xpGain > 0) pendXp = pendXp
-        ? { before: pendXp.before, levels: pendXp.levels + got }
-        : { before: x0, levels: got };
-      if (xpBoost && W.Notify) {
-        var left = save.b.x;
-        W.Notify.say(T.boostXpOn, {
-          sub: left > 1 ? fill(T.boostLeft, { n: left }) : left ? T.boostOne : T.boostDone,
-          kind: "gain", icon: "xp", key: "boost-xp"
-        });
-      }
-      /* WHAT THE MAP OWES AND THE THREE-STAR BONUS are this screen's own
-         last beat now, in place (section 11d) — they were a card each, one
-         after the other, over a screen that had already lit its way out. */
-      if (c) ceremony(c, stars);
-    }
+  /* THE CASCADE, on its beat. PAID FIRST, ANIMATED SECOND — the contract
+     every other caller of `fx` keeps (section 8): the chip counts up to what
+     the SAVE holds. The same `fx` the shop and the reward cards use, with the
+     cascade turned on and stretched over the beat: a score becoming coins is a
+     TRANSFER being read, so the pieces empty the line the figure is written on
+     and the chip counts through them. */
+  function payCoins(p, ms) {
+    var gain = $("mt-gain");
+    var c0 = save.c;
+    addCoins(p.earn);
+    p.paid = true;
+    fx({ kind: "coins", n: p.earn, from: gain, before: c0, burst: true, ms: ms,
+         done: function () {
+           /* IT DOES NOT LEAVE. What the level is worth is the one thing on
+              this screen a player can act on, and a line that says it for a
+              second and then vanishes has said it to nobody. The coins go;
+              the sentence stays, small and quiet, under the score. */
+           if (gain) gain.classList.add("kept");
+           afterCoins(p);
+         } });
+  }
 
-    /* THE OFFER ARRIVES WITH THE WAY OUT. `endRun` runs on the frame the motor
-       lights the navigation (see onReveal), so putting it here is putting it on
-       the same beat as the map, the replay and the arrow — three ways to leave
-       and one reason to stay, offered together. Held to the end of the transfer
-       it landed seconds after the player had already read the row of buttons
-       and decided, which is a fourth control appearing under a thumb on its way
-       somewhere. A round with something still to hand over keeps its offer
-       for the end of the ceremony, which is where its way out arrives. */
-    if (!c) offer(stars);
-
-    if (earn > 0) {
-      var gain = gainLine(base, lvl, earn, coinBoost);
-      /* The sum is READ before it is spent. The coins used to leave the moment
-         the figure landed, which is fine for one number and wrong for three:
-         what the level is worth is the thing this beat exists to say, and a
-         line that empties while it is still being written says nothing. */
-      setTimeout(function () {
-        /* PAID FIRST, ANIMATED SECOND — the contract every other caller of
-           `fx` keeps (section 8): the chip counts up to what the SAVE holds,
-           so a payout that had not been made yet counted from its old figure
-           to the same old figure. The wallet moving here is never seen, since
-           `fx` holds the chip back to `c0` on the very next line. */
-        var c0 = save.c;
-        addCoins(earn);
-        /* The same `fx` the shop and the reward cards use, with the cascade
-           turned on: a score becoming coins is a TRANSFER being read, so the
-           eighteen pieces empty the line the figure is written on and the chip
-           counts through them. The figure landing on the chip is `fx`'s own
-           doing now and no longer a second copy of it here. */
-        fx({ kind: "coins", n: earn, from: gain, before: c0, burst: true,
-             done: function () {
-               /* IT DOES NOT LEAVE. What the level is worth is the one thing
-                  on this screen a player can act on, and a line that says it
-                  for a second and then vanishes has said it to nobody. The
-                  coins go; the sentence stays, small and quiet, under the
-                  score it explains. */
-               gain.classList.add("kept");
-               afterCoins();
-             } });
-         /* …and it is READ before it is spent: the sum lands, then a beat of
-            nothing, then the coins leave. 260 ms was the figure arriving and
-            being emptied in the same breath. */
-      }, GAIN_MS * (coinBoost ? 3 : 2) + 620);
-    } else {
-      afterCoins();
+  /* The coins are IN; what is left is the climb. Granted here, READ on the
+     map (see `arrive`). `before` is taken first because that is the figure
+     the bar has to come back to. A round that paid no coin still gets here,
+     from the way out (onReveal). */
+  function afterCoins(p) {
+    if (!p || p.after) return;
+    p.after = true;
+    var x0 = save.x;
+    var got = addXp(p.xpGain);
+    if (p.xpGain > 0) pendXp = pendXp
+      ? { before: pendXp.before, levels: pendXp.levels + got }
+      : { before: x0, levels: got };
+    if (p.xpBoost && W.Notify) {
+      var left = save.b.x;
+      W.Notify.say(T.boostXpOn, {
+        sub: left > 1 ? fill(T.boostLeft, { n: left }) : left ? T.boostOne : T.boostDone,
+        kind: "gain", icon: "xp", key: "boost-xp"
+      });
     }
   }
 
@@ -2544,10 +2658,11 @@
      a player ever learns the lever exists.
 
      The parts arrive one at a time because a sum that appears whole is read as
-     one number; the pause between them is what makes the "x" a step. */
-  var GAIN_MS = 340;
-
-  function gainLine(base, lvl, total, boosted) {
+     one number; the pause between them is what makes the "x" a step. They step
+     on the beat's own grid (`gap`), the one the stars and the rows step on,
+     and each takes the beat's `dur` to land. */
+  function gainLine(p, gap, dur) {
+    var base = p.base, lvl = p.lvl, total = p.earn, boosted = p.coinBoost;
     /* The node is ALREADY in the column — `reserveEnd` put it there, empty and
        at its full height, before the motor's reveal began (see below). Filling
        a box that is already standing moves nothing; creating one here pushed
@@ -2568,7 +2683,10 @@
        go fade — the player sees which part of their number became coins
        without being told a rate. The motor rewrites the node as plain text on
        the next round, so nothing has to undo it. */
-    var sc = $("eo-score"), txt = sc.textContent;
+    /* Split from the round's own figure and not from the node's text: the
+       motor's count may not have written its last frame yet. Writing markup
+       into the node is also what stops that count (shell.js, countUp). */
+    var sc = $("eo-score"), txt = String(p.score);
     var cut = String(POINTS_PER_COIN).length - 1;
     if (/^\d+$/.test(txt) && txt.length > cut) {
       sc.innerHTML = "<span class=\"mt-keep\">" + txt.slice(0, -cut) +
@@ -2589,7 +2707,10 @@
     if (boosted) parts.push(el("span", "mt-gp mul", "\u00d7 <b class=\"mt-lvtag mt-bst\">" +
       icon("flame", "mt-ci") + "2</b>"));
     parts.push(el("span", "mt-gp sum", "= +" + num(total) + icon("coin", "mt-ci")));
-    for (var i = 0; i < parts.length; i++) g.appendChild(parts[i]);
+    for (var i = 0; i < parts.length; i++) {
+      parts[i].style.transitionDuration = dur + "ms";
+      g.appendChild(parts[i]);
+    }
     requestAnimationFrame(function () { g.classList.add("on"); });
 
     /* Each beat has its own small cue, and the sum's is the one that rings:
@@ -2603,7 +2724,7 @@
         if (i === 0) sc.classList.add("cut");
         parts[i].classList.add("on");
         W.Sound.ui("tick", vol, rate);
-      }, i * GAIN_MS);
+      }, i * gap);
     }
     return g;
   }
@@ -2718,17 +2839,20 @@
      So the end screen keeps the floor, and its own pieces turn into the
      rewards:
 
-       1. the reveal plays as it always did — the title, the score, the three
-          stars, the rows — and the score becomes coins (endRun);
-       2. the three stars BECOME the three boxes, each one bursting where it
-          stood, and the rows give their room to one line: pick one;
-       3. the box picked opens, and the row of boxes is replaced by what the
-          round paid — the box's reward in the middle, the map's stickers
-          either side of it — while the rows under it say what each one is
-          for, and the bonus carries its ×5 for an ad;
-       4. each reward flies into the chip that holds it, and THEN the way out
-          arrives. The motor's `onReveal` is what holds it (packages/shell/
-          shell.js): the buttons, and the SPACE that replays, wait for `done`.
+       1. the reveal plays — the title, the score, the three stars, the rows —
+          and the score becomes coins (the motor's beats, and this layer's);
+       2. on the cascade's own beat, without a pause, the three stars BECOME
+          the three boxes, each one bursting where it stood, and the rows give
+          their room to one line: pick one. Nothing moves on until the player
+          does — a choice has no default and no timer;
+       3. the box picked opens on a burst of confetti, and the row of boxes is
+          replaced by what the round paid — the box's reward in the middle,
+          the map's stickers either side of it — while the rows under it say
+          what each one is for, and the bonus carries its ×5 for an ad;
+       4. THE WAY OUT LANDS WITH THE PRIZE (`release`), and each reward flies
+          into the chip that holds it under it. The motor's `onReveal` is what
+          holds the way out until then (packages/shell/shell.js): the buttons,
+          and the SPACE that replays, wait for `done`.
 
      A round owed stickers but no bonus (a band passed on one or two stars, a
      replay) skips the boxes: the stars go straight to the stickers.
@@ -2792,7 +2916,7 @@
   function ceremony(c, stars) {
     if (cer !== c || W.state() !== "end") return;
     var screen = $("screen-end"), row = $("eo-stars");
-    if (!row) { finishCer(c, stars); return; }
+    if (!row) { release(c, stars); return; }
     screen.classList.add("mt-cer");
     c.layer = el("div", "mt-estage");
     row.appendChild(c.layer);
@@ -2843,6 +2967,11 @@
         c.picked = i;
         gifts.classList.add("chosen");
         b.classList.add("open");
+        /* The box opens on confetti, where it stands (lab/end-screen.html). */
+        if (W.Confetti) {
+          var pt = W.Confetti.at(b);
+          W.Confetti.burst(60, pt.x, pt.y);
+        }
         if (GIFT_ART) setTimeout(function () {
           var f = b.querySelector(".face");
           if (f) f.src = giftFace(faces[i], true);
@@ -2928,16 +3057,16 @@
        the way out has arrived — it is a choice, not a step. */
     if (bonusItem) cerOffer(c, bonusItem);
 
-    /* 4. HOME, one after the other, and the way out with the last landing. */
+    /* 4. The way out lands WITH the prize, and the prizes go home under it,
+       one after the other. */
+    release(c, stars);
     var fly = list.slice();
     fly.forEach(function (it, j) {
       setTimeout(function () {
         if (cer !== c || W.state() !== "end") return;
-        flyReward(it.badge.getBoundingClientRect(), it.rw, it.before,
-                  j === fly.length - 1 ? function () { finishCer(c, stars); } : null);
+        flyReward(it.badge.getBoundingClientRect(), it.rw, it.before, null);
       }, CER_FLY_AT + 240 + j * CER_FLY_GAP);
     });
-    if (!fly.length) finishCer(c, stars);
   }
 
   function cerOffer(c, it) {
@@ -2979,13 +3108,16 @@
   }
 
   /* The way out, and — on a round the map paid but that earned no bonus —
-     the ordinary offer with it, which is where it has always arrived. */
-  function finishCer(c, stars) {
-    if (cer !== c || !c.done) return;
+     the ordinary offer with it. Called on the frame the prize is shown; the
+     motor may not have asked for the way out yet (`c.done` is set by
+     onReveal), in which case it gets it at once when it does. */
+  function release(c, stars) {
+    if (cer !== c || c.released) return;
+    c.released = true;
     if (!c.first) offer(stars);
     var d = c.done;
     c.done = null;
-    d();
+    if (d) d();
   }
 
   /* Off the end screen: whatever was still owed is paid, and the screen is
@@ -3003,18 +3135,33 @@
     if (box) box.style.minHeight = "";
   }
 
-  /* The motor's reveal ends on this hook (onReveal, packages/shell/shell.js):
-     the score is read, the stars are lit, the rows are in. A round with
-     nothing left to hand over lets the way out arrive at once and runs the
-     transfer beside it, which is the beat it always had; one with a ceremony
-     keeps the way out for the end of it. */
+  /* The motor's way out lands on this hook (onReveal, packages/shell/
+     shell.js). A round with nothing left to hand over lets it arrive at once;
+     one with a ceremony keeps it until the prize is shown (`release`). A round
+     that paid no coin has had no cascade to grant its xp, so it is granted
+     here. */
   function onReveal(result, done) {
-    dropCer();
-    var c = owed(result);
-    if (!c) { done(); endRun(result, null); return; }
+    if (plan && !plan.earn) afterCoins(plan);
+    var c = cer;
+    if (!c || c.released) { done(); return; }
     c.done = done;
-    cer = c;
-    endRun(result, c);
+  }
+
+  /* THIS LAYER'S BEATS OF THE END SCREEN (shell.js, EndScreen, BEATS), each
+     one read off the plan made when the screen opened. */
+  if (ON && W.onEndBeat) {
+    var paying = function () { return !!(plan && plan.earn > 0); };
+    W.onEndBeat("gain", { applies: paying,
+      count: function () { return plan.coinBoost ? 4 : 3; },
+      play: function (r, b) { gainLine(plan, b.gap, b.dur); } });
+    W.onEndBeat("coins", { applies: paying,
+      play: function (r, b) { payCoins(plan, b.dur); } });
+    /* The ordinary offer, a gift for an ad, comes on its beat — unless a
+       ceremony is playing, whose prize brings the offer with it. */
+    W.onEndBeat("offer", { applies: function () { return !!(plan && plan.stars >= 1); },
+      play: function () { if (!plan.c) offer(plan.stars); } });
+    W.onEndBeat("ceremony", { applies: function () { return !!(plan && plan.c); },
+      play: function () { ceremony(plan.c, plan.stars); } });
   }
 
   if (ON) {
@@ -3045,6 +3192,13 @@
         return;
       }
       pending = null;
+      /* Leaving before the cascade has played (ESCAPE, the tab going away)
+         still pays what the round earned: the boost is already spent. */
+      if (plan) {
+        if (plan.earn > 0 && !plan.paid) { addCoins(plan.earn); plan.paid = true; }
+        afterCoins(plan);
+        plan = null;
+      }
       dropCer();
       closeGift();
       if (endBox) endBox.innerHTML = "";
@@ -3209,9 +3363,24 @@
       li.querySelector(".nt-w").textContent = e.word;
       if (e.sub) li.querySelector(".nt-s").textContent = e.sub;
       li.querySelector(".mt-log-at").textContent = ago(e.at);
+      /* A MECHANIC NAMED (Notify.learn) IS A WAY INTO ITS RULE: its line opens
+         the guide on that page, over this card, which is still here when the
+         guide is put away (packages/webshell/guide.js). The book is already
+         in its icon's slot (Notify's `html`). */
+      var GD = window.__GUIDE__;
+      if (e.guide && GD && GD.has(e.guide)) {
+        li.classList.add("mt-log-link");
+        li.setAttribute("role", "button");
+        li.setAttribute("tabindex", "0");
+        li.addEventListener("click", logLink(e.guide));
+      }
       ul.appendChild(li);
     }
     body.appendChild(ul);
+  }
+
+  function logLink(id) {
+    return function (ev) { ev.stopPropagation(); window.__GUIDE__.open(id); };
   }
 
   function openLog() {
@@ -3346,6 +3515,19 @@
     isMilestone: function (i) { return !!MILESTONE[i]; },
     milestoneLabel: milestoneLabel,
     ticketPrice: function () { return TICKET_PRICE; },
+    /* The gallery (section 4b): the paintings, the pieces owned, the next
+       piece's price and how far ahead of the board the gallery stands. */
+    gallery: function () { return GALLERY.list; },
+    pieces: galOwned,
+    piecesTotal: function () { return GALLERY.total; },
+    piecePrice: galPrice,
+    pieceAhead: galAhead,
+    buyPiece: buyPiece,
+    /* for the DEV view only: pieces given, nothing paid */
+    addPieces: function (n) {
+      save.g = Math.min(GALLERY.total, galOwned() + Math.max(0, n | 0));
+      persist();
+    },
 
     roll: roll, odds: odds, sweep: sweep,
     maxBet: function () { return MAX_BET; },

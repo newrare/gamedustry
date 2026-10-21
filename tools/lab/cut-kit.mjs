@@ -65,6 +65,7 @@
   role, variant or take is gone from kit.json is removed.
 */
 import { readFile, writeFile, readdir, unlink, mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -181,20 +182,108 @@ export async function kitUsers() {
   return out;
 }
 
-const NAME = /^[a-z][a-z0-9]{0,23}$/;
+/* Who CALLS each role: every `Sound.ui("tap")` of the motor, the web shell and
+   the games — and the view system's `door("open")`, which plays it for every
+   card and view. A shell role has no manifest to say where it is heard, so
+   this is the one way the kit page can tell `tap` is the album's, the
+   barracks' and grudgeon's. Read off the source as text: a call whose role is
+   a variable (`ui(role)`) names nothing and is skipped, and a ternary names
+   both of its literals (`ui(ok ? "win" : "fail")`).
+   { tap: [{ where: "album", game: false, file, line }, …] } */
+const CALL_DIRS = ['packages'];
+async function jsUnder(dir) {
+  const out = [];
+  for (const e of await readdir(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...await jsUnder(p));
+    else if (e.name.endsWith('.js')) out.push(p);
+  }
+  return out;
+}
+// The first argument of a call opened at `i`, up to its first comma at depth 0.
+function firstArg(src, i) {
+  let depth = 0, q = null;
+  for (let j = i; j < src.length; j++) {
+    const c = src[j];
+    if (q) { if (c === '\\') j++; else if (c === q) q = null; continue; }
+    if (c === '"' || c === "'") q = c;
+    else if (c === '(' || c === '[' || c === '{') depth++;
+    else if (c === ')' || c === ']' || c === '}') { if (!depth--) return src.slice(i, j); }
+    else if (c === ',' && !depth) return src.slice(i, j);
+  }
+  return '';
+}
+export async function roleCalls(kit) {
+  const files = [];
+  for (const d of CALL_DIRS) files.push(...(await jsUnder(path.join(ROOT, d))).map((f) => ({ f, game: false })));
+  for (const slug of (await readdir(GAMES_DIR)).sort()) {
+    const f = path.join(GAMES_DIR, slug, 'game.js');
+    if (existsSync(f)) files.push({ f, game: true, slug });
+  }
+  const ids = new Set(variantsOf(kit).map((v) => v.id)), out = {};
+  for (const { f, game, slug } of files) {
+    const src = await readFile(f, 'utf8'), rel = path.relative(ROOT, f);
+    const where = game ? slug : path.basename(f, '.js');
+    const re = /\b(?:ui|door)\(/g;
+    let m;
+    while ((m = re.exec(src))) {
+      const lineStart = src.lastIndexOf('\n', m.index) + 1;
+      const head = src.slice(lineStart, m.index).trim();
+      if (head.startsWith('//') || head.startsWith('*') || /\bfunction\s*$/.test(head)) continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      for (const lit of firstArg(src, re.lastIndex).matchAll(/["']([a-z0-9/]+)["']/g)) {
+        if (ids.has(lit[1])) (out[lit[1]] = out[lit[1]] || []).push({ where, game, file: rel, line });
+      }
+    }
+  }
+  return out;
+}
 
-/* What the kit page may write, checked against the kit on disk. The ROLES are
-   not the page's to invent or drop — each is a name the engine and the shell
-   call (UI_FALLBACK in packages/engine/engine.js) — so a role keeps its group
-   and its words, and the page rewrites its variants: a shell role keeps its one
-   `default`, a gameplay role may add, rename and drop them — except a variant
-   a game plays, which stays until that game is mapped elsewhere. */
+const NAME = /^[a-z][a-z0-9]{0,23}$/;
+const GROUPS = ['shell', 'game'];
+
+/* What the kit page may write, checked against the kit on disk. A role on disk
+   is never DROPPED — each is a name the engine, the shell or a game calls — and
+   keeps its group and its words; the page rewrites its variants: a shell role
+   keeps its one `default`, a gameplay role may add, rename and drop them —
+   except a variant a game plays, which stays until that game is mapped
+   elsewhere. The page may ADD a role (its + button): a name, a group and a
+   line saying what it means, written in the page's order so it lands in its
+   group. A new role nobody calls yet plays nowhere until a manifest maps a key
+   to it or the shell calls it; the engine's synth stand-in (UI_FALLBACK) is a
+   generic beep for a name it does not list. */
 export async function writeKit(next) {
   const kit = await readKit();
   const users = await kitUsers();
   const stems = new Set((await readdir(SFX_DIR)).map((f) => f.slice(0, f.lastIndexOf('.'))));
+  const order = Object.keys((next && next.roles) || {});
+  /* A role left out is DROPPED — only when nothing plays it: no manifest maps
+     a key to one of its variants and no source calls it by name, since a
+     call to a role gone is a beep where a sound was. */
+  const gone = Object.keys(kit.roles).filter((role) => !order.includes(role));
+  const calls = await roleCalls(kit);
+  if (gone.length) {
+    for (const role of gone) {
+      for (const name of Object.keys(kit.roles[role].variants)) {
+        const id = idOf(kit, role, name);
+        if (users[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
+        if (calls[id]) throw new Error(`${id} is called in ${calls[id].map((c) => c.file + ':' + c.line).join(', ')} — remove the call first`);
+      }
+      delete kit.roles[role];
+    }
+    kit.playable = (kit.playable || []).filter((role) => !gone.includes(role));
+  }
+  for (const role of order) {
+    if (kit.roles[role]) continue;
+    const n = next.roles[role] || {};
+    if (!NAME.test(role)) throw new Error(`"${role}" — a role is named in lowercase letters and digits`);
+    if (!GROUPS.includes(n.group)) throw new Error(`${role}: a role is in the group ${GROUPS.join(' or ')}`);
+    const what = String(n.what || '').trim();
+    if (!what) throw new Error(`${role}: say in one line what the role means`);
+    kit.roles[role] = { group: n.group, what, variants: {} };
+  }
   for (const [role, r] of Object.entries(kit.roles)) {
-    const n = next && next.roles && next.roles[role];
+    const n = next.roles[role];
     if (!n || !n.variants) throw new Error(`role "${role}" is missing`);
     const names = Object.keys(n.variants);
     if (r.group === 'shell' && (names.length !== 1 || names[0] !== 'default')) {
@@ -204,6 +293,7 @@ export async function writeKit(next) {
     for (const name of Object.keys(r.variants)) {
       const id = idOf(kit, role, name);
       if (!n.variants[name] && users[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
+      if (!n.variants[name] && calls[id]) throw new Error(`${id} is called in ${calls[id].map((c) => c.file + ':' + c.line).join(', ')} — remove the call first`);
     }
     const variants = {};
     for (const name of names) {
@@ -226,6 +316,10 @@ export async function writeKit(next) {
     }
     r.variants = variants;
   }
+  // In the page's order, so a role added lands at the end of its own group.
+  const roles = {};
+  for (const role of order) roles[role] = kit.roles[role];
+  kit.roles = roles;
   await writeFile(KIT_JSON, formatKit(kit));
   return kit;
 }
@@ -273,7 +367,8 @@ export async function mapKeys(slug, list, { bump = true } = {}) {
   let src = await readFile(gf, 'utf8');
   const applied = [], skipped = [];
   const sfx = { ...(manifest.sfx || {}) };
-  for (const { key, id } of list || []) {
+  // `split`: a key a line was just moved to (the events bench's scissors) — it has no clip to find.
+  for (const { key, id, split } of list || []) {
     if (!/^[A-Za-z_$][\w$]*$/.test(key || '')) { skipped.push(`"${key}": not a sound key`); continue; }
     if (!ids.has(id)) { skipped.push(`${key}: no variant "${id}" in the kit`); continue; }
     const lines = src.split('\n');
@@ -289,7 +384,7 @@ export async function mapKeys(slug, list, { bump = true } = {}) {
       }
       src = kept.join('\n');
       applied.push({ what: `ASSETS.sounds.${key}`, value: 'removed — the kit plays it' });
-    } else if (!sfx[key]) {
+    } else if (!sfx[key] && !split) {
       skipped.push(`${key}: no clip embedded under that name, mapped all the same`);
     }
     sfx[key] = id;
