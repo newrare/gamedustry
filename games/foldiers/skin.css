@@ -1,0 +1,114 @@
+
+  /* =========================================================================
+     SKIN — FOLDIERS. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     A world cut out of paper on a teal sea: navy-blue paper for the player's
+     army, scarlet for the Red Marshal's, cream for the paper itself and gold
+     for what is won.
+     ========================================================================= */
+  :root {
+    --bg:#156c7a; --text:#fbf5e6; --muted:#cfe7e6;
+    --accent:#f2b400; --cta-a:#ffd75a; --cta-b:#e2a40c; --cta-text:#2a1a02;
+    --danger:#d9412f; --gold:#ffd34d; --good:#5b8fe0;
+    --panel:rgba(246,236,210,.14); --panel-line:rgba(246,236,210,.32);
+    /* the two armies, shared by the DOM intro and the canvas */
+    --blue:#2f63c4; --blue-light:#5b8fe0; --red:#d9412f;
+    --scene-scrim: rgba(6,30,36,.36);
+  }
+  html, body { background:radial-gradient(900px 860px at 50% 30%, #2a9aa4 0%, #156c7a 55%, #0c4752 100%); }
+
+  #intro-title {
+    font-size:96px; letter-spacing:4px;
+    background:linear-gradient(180deg,#ffffff 0%,#f6ecd2 50%,#d9c08a 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:none; filter:drop-shadow(0 6px 16px rgba(0,0,0,.45));
+  }
+  #cta-bar { border-top:1px solid rgba(246,236,210,.22); }
+  #hud-score { text-shadow:0 0 16px rgba(242,180,0,.45); }
+  #hud-right .hud-pill.warn { color:#fff; background:rgba(217,65,47,.75); }
+
+  /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
+     The motor's "drag" variant lends its finger. The stage is a scrap of the
+     paper world: a region of yours under the blue tissue (::before), a
+     neutral one across the border (::after), the folded arrow an order is
+     (.demo-track), and the Send button at the foot (.demo-target).
+
+     One 3.6 s loop: the finger presses the blue region, draws the arrow onto
+     the neutral one, lifts, taps Send; the arrow goes and the neutral region
+     takes the blue tissue. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#fbf5e6; }
+  #intro-tagline .w-orders { color:#9cc0ff; text-shadow:0 0 18px rgba(91,143,224,.8); }
+  #intro-tagline .w-tick   { color:var(--accent); text-shadow:0 0 18px rgba(242,180,0,.75); }
+  #intro-tagline .w-map    { color:#f6ecd2; text-shadow:0 0 18px rgba(246,236,210,.6); }
+
+  .demo-stage {
+    width:420px; height:270px; overflow:hidden;
+    background:
+      repeating-linear-gradient(170deg, rgba(56,166,173,.0) 0 22px, rgba(56,166,173,.55) 22px 26px, rgba(56,166,173,0) 26px 44px),
+      linear-gradient(180deg,#1f8a96,#156c7a);
+    border-color:rgba(246,236,210,.3);
+  }
+  /* your region: meadow paper under the blue tissue, on its cream beach */
+  .demo-stage::before {
+    content:""; position:absolute; left:30px; top:112px; width:170px; height:118px;
+    border-radius:46% 54% 42% 58% / 52% 44% 56% 48%;
+    background:linear-gradient(rgba(47,99,196,.5), rgba(47,99,196,.5)), #b9d27a;
+    box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25);
+  }
+  /* the neutral region across the border: its tissue lands on the bell */
+  .demo-stage::after {
+    content:""; position:absolute; left:226px; top:26px; width:160px; height:110px;
+    border-radius:54% 46% 58% 42% / 46% 56% 44% 54%;
+    background:#b9d27a;
+    box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25);
+    animation:demoTake 3.6s ease-in-out infinite;
+  }
+  @keyframes demoTake {
+    0%, 66% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
+    74%, 92% { background:#7f9ec8; box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
+    100% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
+  }
+  /* the order: a folded strip of blue paper, light half over dark half */
+  .demo-drag .demo-track {
+    z-index:2; left:118px; top:150px; right:auto; bottom:auto; width:206px; height:26px; border:0;
+    transform-origin:0 50%; transform:rotate(-24deg) scaleX(0);
+    background:linear-gradient(180deg,#5b8fe0 0 50%,#2f63c4 50% 100%);
+    clip-path:polygon(0 30%, 84% 30%, 84% 0, 100% 50%, 84% 100%, 84% 70%, 0 70%);
+    filter:drop-shadow(3px 5px 0 rgba(10,30,60,.25));
+    animation:demoOrder 3.6s ease-in-out infinite;
+  }
+  @keyframes demoOrder {
+    0%, 12% { transform:rotate(-24deg) scaleX(0); opacity:1; }
+    40%, 64% { transform:rotate(-24deg) scaleX(1); opacity:1; }
+    72%, 100% { transform:rotate(-24deg) scaleX(1); opacity:0; }
+  }
+  /* Send: a cream paper button with its tick ring */
+  .demo-drag .demo-target {
+    display:block; z-index:2; left:auto; right:34px; top:auto; bottom:18px; margin:0; width:76px; height:52px;
+    border:3px solid #1d3f8a; border-radius:26px; background:#f6ecd2; box-shadow:0 6px 0 rgba(10,30,60,.25);
+  }
+  .demo-drag .demo-target::before {
+    content:""; position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px;
+    border-radius:50%; border:4px solid #e2a40c; border-right-color:rgba(29,63,138,.2);
+  }
+  .demo-drag .demo-ripple { border-color:#e2a40c; border-radius:30px; animation:demoSendRip 3.6s ease-out infinite; }
+  .demo-drag .demo-ripple.d2 { animation-delay:.15s; }
+  @keyframes demoSendRip { 0%, 60% { transform:scale(.6); opacity:0; } 63% { opacity:.9; } 78%, 100% { transform:scale(1.7); opacity:0; } }
+  /* the finger: press, draw, lift, tap Send */
+  .demo-drag .demo-hand { z-index:3; animation:demoDraw 3.6s ease-in-out infinite; }
+  @keyframes demoDraw {
+    0%   { transform:translate(-95px, 14px); opacity:0; }
+    8%   { transform:translate(-95px, 14px); opacity:1; }
+    12%  { transform:translate(-95px, 18px) scale(.95); opacity:1; }
+    40%  { transform:translate(95px, -78px) scale(.95); opacity:1; }
+    46%  { transform:translate(95px, -82px); opacity:1; }
+    58%  { transform:translate(118px, 64px); opacity:1; }
+    62%  { transform:translate(118px, 70px) scale(.95); opacity:1; }
+    66%  { transform:translate(118px, 62px); opacity:1; }
+    80%  { transform:translate(118px, 62px); opacity:0; }
+    100% { transform:translate(-95px, 14px); opacity:0; }
+  }
+  /* on a desk the finger is a cursor: it clicks as it presses and on Send */
+  .demo-drag .demo-hand { --click-dur:3.6s; --click-at:.43s; }
+  .demo-drag .demo-cursor { top:-24px; }

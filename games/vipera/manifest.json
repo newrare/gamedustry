@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.8.22",
+  "version": "1.8.23",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -197,7 +197,7 @@
     "land": "world/impactpunchheavy",
     "strike": "world/explosioncrunchlong",
     "dive": "world/wind",
-    "death": "defeat/electrichit",
+    "death": "miss/electrichit",
     "diveAttack": "world/cloth"
   },
   "copy": {

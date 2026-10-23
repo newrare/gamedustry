@@ -126,6 +126,14 @@
                    of the levels by a blind pilot (tools/lab/probe-stages.mjs,
                    POST /api/probe-stages), which keeps the first level each
                    key fired on. A key it never heard reads "not heard".
+     AUTO REC      the same capture with nobody playing: a headless Chrome
+                   walks the levels with that blind pilot, the stages already
+                   found first, and films every cue, callout and notice with
+                   no clip yet, the whole page (so the clip is `screen`). It
+                   runs on the server (POST /api/auto-rec,
+                   tools/lab/auto-rec.mjs), one game at a time, and the cards
+                   fill in as it plays; what the pilot never fires is left
+                   for REC.
      LOOP (↻)     on a row with a clip, the clip plays behind the frame, and
                    at the instant the cue fired it is fired again — with what
                    the row now says, so a volume is judged on the real action.
@@ -530,6 +538,7 @@ body:not(.looping) #shell { position:absolute; left:-10000px; top:0; }
    The recorder and the loop.
    --------------------------------------------------------------------------- */
 #bar .rec { min-width:64px; }
+#bar .auto.on { background:#3a1f2a; color:#ff8fa3; border-color:#c0304a; opacity:1; }
 #bar .rec.on { background:#c0304a; color:#fff; border-color:#c0304a; }
 #bar .rec.on::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:#fff; margin-right:6px; animation:recblink 1s steps(2) infinite; }
 @keyframes recblink { 50% { opacity:0; } }
@@ -719,6 +728,7 @@ button.act.loop.near { color:#ffd08a; }
     <button class="act ghost" id="btn-reload">Reload</button>
     <button class="act ghost rec" id="btn-rec" title="play the game here — every cue with no clip yet is recorded with the second before it and the second after">Rec</button>
     <select id="rec-level" title="start any level — locked ones too (the dev force, for this load only)"></select>
+    <button class="act ghost auto" id="btn-auto">Auto rec</button>
     <select id="shell-game" title="the game the shell is filmed (Shoot) and played (Rec) in"></select>
     <button class="act ghost" id="btn-shoot" title="film every shell sound in that game: a headless Chrome plays three stars, the end screen, the gifts and a missed objective — the DOM included — ~40 s">Shoot</button>
     <span id="rec-info"></span>
@@ -1690,7 +1700,7 @@ function openKitMenu(btn, key) {
   };
   /* A key already in the kit: the first row makes it a sound of this game's
      own, a copy of the one it plays — the others are left as they ship. */
-  if (btn.dataset.current) {
+  if (btn.dataset.current && (state.pending.kit[key] || btn.dataset.current) !== KIT_EMPTY) {
     const from = state.pending.kit[key] || btn.dataset.current;
     const others = kitGames(from).filter((g) => g.slug !== state.slug).length;
     row("__new__", "+ New sound for " + gameTitle(state.slug), "a copy of " + from + " to tune on this card" +
@@ -1930,7 +1940,15 @@ function kitCard(key, snd, calls, card) {
   const btn = head.querySelector(".kitbtn");
   // The button names the variant the key will play, open or shut, and goes amber on a draft.
   card._kitSync = () => {
-    const id = state.pending.kit[key] || snd.kit, open = state.kitOpen.has(key);
+    const id = state.pending.kit[key] || snd.kit, open = state.kitOpen.has(key) && id !== KIT_EMPTY;
+    if (id === KIT_EMPTY) {
+      btn.innerHTML = esc(KIT_EMPTY) + `<span class="kshare new">plays nothing · pick a sound in Change sound</span>`;
+      btn.classList.remove("open", "dirty");
+      const foot = card.querySelector(":scope > .kitusers");
+      if (foot) foot.remove();
+      editor.hidden = true;
+      return;
+    }
     const others = kitGames(id).filter((g) => g.slug !== state.slug), ok = others.filter((g) => kitValid(id, g.slug) === "ok").length;
     const tag = !kitSaved(id) ? ["new", "new · this game only"]
       : others.length ? ["shared", "shared · " + (others.length + 1) + " games" + (ok ? " · " + ok + " validated" : "")]
@@ -1945,6 +1963,7 @@ function kitCard(key, snd, calls, card) {
     if (open) editor._paint();
   };
   btn.onclick = () => {
+    if ((state.pending.kit[key] || snd.kit) === KIT_EMPTY) return;
     if (state.kitOpen.has(key)) state.kitOpen.delete(key); else state.kitOpen.add(key);
     card._kitSync();
   };
@@ -2021,6 +2040,10 @@ function shellCard(role, calls, shared) {
    measure tools/lab/cut-kit.mjs cuts with: the files are compared as they
    will ship, not as two vendors mastered them.                              */
 const KIT_NAME = /^[a-z][a-z0-9]{0,23}$/, KIT_MAX_TAKES = 3, KIT_WINDOW = 0.05;
+/* The silent mapping (tools/lab/cut-kit.mjs EMPTY): a key whose variant was
+   deleted on /kit before anyone checked it. It plays nothing and has no
+   editor; Change sound is how it gets a sound again. */
+const KIT_EMPTY = "empty";
 const KIT_TAILS = { "": ["Cut", "Stops on a 70 ms anti-click fade"], fade: ["Fade", "Dies out over the tail"], drop: ["Drop", "Dies out while its pitch falls an octave"] };
 
 function kitSaved(id) {
@@ -2688,12 +2711,13 @@ function render() {
   const dead = d.sounds.filter((x) => !x.music && !x.plays.length).map((x) => x.key);
   /* A clip the manifest has not handed to a role of the house kit (`sfx`) is
      the game's own file: the pill names every key still waiting for a role. */
-  const loose = d.sounds.filter((x) => !x.music && !x.kit).map((x) => x.key);
+  // A key mapped to empty has no role either: its variant was deleted on /kit.
+  const loose = d.sounds.filter((x) => !x.music && (!x.kit || x.kit === KIT_EMPTY)).map((x) => x.key);
   el("stats").innerHTML =
     `<span><b>${d.counts.sound}</b> cues</span>` +
     (d.slug === "shell" ? `<span><b>${new Set(d.calls.map((c) => c.sound)).size}</b> roles</span>` : `<span><b>${d.sounds.length}</b> clips</span>`) +
     (dead.length ? `<span style="background:#3a2a12" title="${esc(dead.join(", "))} — embedded in every build and played by no beat. Delete them from ASSETS.sounds, or give them one."><b style="color:#ffb648">${dead.length}</b> never played</span>` : "") +
-    (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
+    (loose.length ? `<span style="background:#2a1f3d" title="${esc(loose.join(", "))} — a clip of the game's own, or a key left silent (empty) when its variant was deleted: in no role of the house kit. Pick one in the kit selector of its card."><b style="color:#c8b8ff">${loose.length}</b> without a role</span>` : "") +
     `<span class="seen-pill seen"></span>` +
     `<span class="checked-pill"></span>` +
     (d.slug === "shell" || d.slug === "template" ? "" :
@@ -2959,6 +2983,7 @@ function load(slug) {
 function loadClips() {
   const slug = state.slug;
   state.offset = null;
+  autoLoad();
   fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
     if (slug !== state.slug) return;
     state.clips = idx && idx.clips ? idx : { clips: {}, byId: {} };
@@ -3672,6 +3697,60 @@ function recInfo() {
 }
 
 el("btn-rec").onclick = () => recToggle();
+
+/* ===========================================================================
+   AUTO REC: the same capture with nobody playing (tools/lab/auto-rec.mjs). A
+   headless Chrome walks the levels with Find stages' blind pilot and films
+   every callout, notice and cue still without a clip — the whole page, so a
+   clip is `screen`, its callouts in the picture. The server runs it in the
+   background, one game at a time; the page polls and the rows fill in.
+   =========================================================================== */
+const AUTO = { timer: 0, clips: -1, was: null };
+function autoLoad() {
+  const slug = state.slug;
+  clearTimeout(AUTO.timer);
+  fetch("api/auto-rec?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
+    if (slug !== state.slug) return;
+    const a = (o && o.auto) || null, running = !!(a && a.game === slug);
+    if (a && a.clips !== AUTO.clips) {
+      AUTO.clips = a.clips;
+      fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
+        if (slug !== state.slug || !idx || !idx.clips) return;
+        state.clips = idx;
+        paintClips();
+      }).catch(() => {});
+    }
+    if (AUTO.was === slug && !running && a) {
+      note("auto rec: " + a.clips + " clip" + (a.clips === 1 ? "" : "s") + ", " + a.left + " line" + (a.left === 1 ? "" : "s") +
+        " never fired under the pilot" + (a.error ? " — " + a.error : "") + (a.left ? " — Rec and play those yourself" : ""));
+    }
+    AUTO.was = running ? slug : null;
+    autoPaint(a, running, o && o.busy);
+    if (running || (o && o.busy)) AUTO.timer = setTimeout(autoLoad, 3000);
+  }).catch(() => {});
+}
+function autoPaint(a, running, busy) {
+  const b = el("btn-auto");
+  b.hidden = state.slug === "template" || state.slug === "shell";
+  b.classList.toggle("on", running);
+  b.disabled = running || !!busy;
+  b.textContent = running
+    ? "Auto rec · level " + (a.level || 0) + " (" + (a.done || 0) + "/" + (a.count || "?") + ") · " + a.clips + " clips · " + a.left + " left"
+    : "Auto rec";
+  b.title = busy && !running ? "Auto rec is playing " + busy + " — one game at a time"
+    : running ? "a headless Chrome is playing the levels — the rows fill in as their clips land"
+    : "play every level in a headless browser, a blind pilot pressing at random, and film every callout, notice and cue with no clip yet — the whole page, a second either side — several minutes" +
+      (a && a.over === state.slug ? " · last run: " + a.clips + " clips, " + a.left + " never fired" + (a.error ? ", " + a.error : "") : "");
+}
+el("btn-auto").onclick = () => {
+  fetch("api/auto-rec", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: state.slug }) })
+    .then((r) => r.json()).then((o) => {
+      if (o.error) { note("auto rec: " + o.error); return; }
+      note("auto rec started: " + o.wanted + " line" + (o.wanted > 1 ? "s" : "") + " without a clip — the rows fill in as it plays");
+      AUTO.clips = -1;
+      autoLoad();
+    }).catch((e) => note("auto rec failed — " + e.message));
+};
 
 fetch("api/sfx").then((r) => r.json()).then((files) => {
   state.sfx = files;

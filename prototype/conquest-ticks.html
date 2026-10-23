@@ -12,59 +12,98 @@
 <body>
 <canvas id="c"></canvas>
 <script>
-// Conquest ticks — territory conquest against the game, played in orders.
+// Conquest ticks — the foldiers test bench (docs/FOLDIERS.md, sections 2, 3 and 8).
+//
 // Every region holds troops. You give each of your regions at most one order
-// (drag to a neighbour), the AI gives its own, and everything resolves AT
-// ONCE when the tick falls. Centers (star) and capitals (crown) produce troops
-// after each tick. Stage 1: take the red capital, keep yours.
+// (drag to a neighbour), the AI gives its own, and everything resolves AT ONCE
+// when the bell rings (Send orders, or the tick running out).
 //
-// The question it answers: is "plan, wait, watch it resolve" fun, at a tick of
-// 20 s as much as at a tick of 4 h? The tick length is the knob a stage turns,
-// and the speed / resolve-now buttons cheat on the clock to judge a long tick
-// without waiting for it.
+// Mechanics menu: the thirty stages, each loaded as a small set-up built to
+// show its rule in one or two bells. Two questions are tested on every one:
 //
-// Orders: drag from a blue region to a neighbour = send all. Tap the region
-// again = send half, tap again = cancel. Orders are cleared after each tick.
+// 1. Is what an order wins or loses readable BEFORE sending it?
+//    - every arrow carries a forecast chip: "✓ 2" taken with 2 left, "✗ +3"
+//      three troops short, "= tie", "⚠ 2" taken now but the enemy can stop it,
+//      "?" hidden by the fog;
+//    - every frontier region of yours wears a shield: green holds even if every
+//      enemy neighbour strikes with everything, red "⚠ N" falls to N troops;
+//    - the panel at the bottom prints the arithmetic: troops x multiplier, each
+//      bonus named (fort +0.5, river -0.25, general +0.5, morale +0.1 a step).
+// 2. Is "now" versus "later" readable?
+//    - a solid arrow happens at THIS bell;
+//    - a dashed amber arrow with "+1" happens at the NEXT bell (a courier that
+//      leaves late, a fleet at sea, a column in the snow);
+//    - a token standing between two regions is on the road: it left home, it
+//      defends nothing, and its chip says when it lands;
+//    - the agenda line under the clock counts both.
+//
+// Orders: drag from a blue region onto a target, then pick in the bubble how
+// many go (All, Half, Foot only, Cavalry only), each line with its forecast.
+// Tap a region that already has an order to change or cancel it. A region
+// holding cavalry and foot can give two orders, one per arm. Region actions (recruit, cannon, depot,
+// standing order…) appear in the bar above the panel once a region is selected.
+// "Red orders" reveals the AI's orders (a cheat, to check the forecasts).
 
 // ---- tunables -------------------------------------------------------------
-var TICK_PRESETS = [20, 120, 1800, 14400]; // seconds per tick (stage 1 … stage 30)
-var SPEEDS = [1, 10, 60, 600];             // clock cheat
+var TICK_PRESETS = [30, 120, 600, 1800];   // seconds per tick (doc: 2 min at stage 1, 10 min at stage 30)
+var SPEEDS = [1, 10, 60];                  // clock cheat
 var ANIM_SECONDS = 1.2;                    // how long a resolution plays
-var PROD_CENTER = 1;                       // troops a center adds per tick
-var PROD_CAPITAL = 2;                      // troops a capital adds per tick
-var DEF_BONUS = 1.5;                       // troops staying home fight this much harder
-var START_CAPITAL = 4;                     // troops on each capital at the start
+var PROD_CITY = 1, PROD_CAPITAL = 2;       // troops produced at each bell
+var DEF_BONUS = 1.5;                       // a defender's multiplier
+var FORT_BONUS = 2, BASTION_BONUS = 2.5;   // a fort's multiplier (Bastion doctrine)
+var PALISADE_STEP = 0.5;                   // one defence step
+var RIVER_MULT = 0.75;                     // attacking across a river without a bridge
+var GENERAL_ATT = 1.5, GENERAL_DEF = 2;    // an army led by its general
+var MORALE_STEP = 0.1, MORALE_MAX = 3;     // +3 morale = x1.3
 var AI_MARGIN = 1.2;                       // AI attacks with this much over the defence it sees
 var AI_CAUTION = 0.6;                      // share of the threat next door a frontier AI region keeps home
 var AI_SKIP = 0.1;                         // chance an AI region sits a tick out
+var COURIER_RANGE = 3;                     // doc says 4: the test map is 5 rows deep
+var SUPPLY_RANGE = 3;                      // regions from a city, capital or depot
+var GRAIN_FEED = 6, FARM_GRAIN = 3;        // troops a region feeds; grain a farm makes
+var MINE_GOLD = 1;
+var RECRUIT_COST = 3, RECRUIT_TROOPS = 3;
+var CAV_COST = 4, CAV_COUNT = 2;
+var CANNON_DAMAGE = 2;
+var SPY_COST = 2, POST_COST = 2;
+var WORK_COST = 4, WORK_TICKS = 2;         // engineer: palisade or bridge
+var SEASON_LEN = 6;                        // bells per season
+var STORM_R = 110, STORM_STEP = 120, STORM_LOSS = 1 / 3;
+var REVOLT_TICKS = 3, REVOLT_TROOPS = 2, REVOLT_CHANCE = 0.3;
+var WONDER_HOLD = 5;
+var TRUCE_TICKS = 6, BETRAY_RATIO = 1.5;
+var LIFT_MAX = 6, LIFT_RANGE = 540;        // troop balloon: troops, and reach in design px (~3 regions)
+var SCOUT_RANGE = 2, TOWER_RANGE = 2;
 var KEEP_ORDERS = false;                   // true = player orders stand until cancelled
 
 // ---- frame & map ----------------------------------------------------------
 var W = 720, H = 1280;
-var CELL = 4, MY0 = 130, MW = 720, MH = 920;
+var CELL = 4, MY0 = 190, MW = 720, MH = 820;
 var GW = MW / CELL, GH = MH / CELL;
 
-// The continent is a union of ellipses with a noisy coast: [cx, cy, rx, ry].
-var LAND = [[360, 330, 300, 200], [300, 640, 250, 190], [430, 880, 260, 165], [560, 560, 140, 160]];
-
-// One seed per region; the region is every land cell nearest to it.
-var SEEDS = [
-  [170, 260], [330, 200], [500, 230], [620, 330],
-  [250, 390], [430, 370], [580, 470],
-  [140, 560], [320, 530], [480, 600], [640, 620],
-  [230, 720], [400, 740],
-  [250, 880], [440, 900], [610, 860],
-  [320, 990], [520, 985]
-];
+// The test map: 18 regions on a staggered grid, so every scenario knows its
+// neighbours. Region ids, row by row:
+//    0   1   2   3
+//      4   5   6
+//    7   8   9  10
+//     11  12  13
+//   14  15  16  17
+var ROWS = [[120, 280, 440, 600], [200, 360, 520], [120, 280, 440, 600], [200, 360, 520], [120, 280, 440, 600]];
 var NAMES = ["Norvik", "Aldmar", "Kestra", "Varos", "Myrr", "Tolen", "Ostra", "Brevin", "Calder",
   "Duna", "Esker", "Falun", "Garr", "Holm", "Isel", "Jarrow", "Kalm", "Lund"];
-var CENTERS = [0, 5, 8, 10, 12, 15];
-var PLAYER_CAP = 16, AI_CAP = 2;
 
-var NEUTRAL = 0, PLAYER = 1, AI = 2;
-var WHO = ["Neutral", "You", "Red"];
-var COL = [[150, 148, 138], [70, 130, 225], [215, 80, 70]];
-var CSS = ["#9a988c", "#4682e1", "#d75046"];
+var NEUTRAL = 0, BLUE = 1, RED = 2, GREEN = 3, REBEL = 4;
+var WHO = ["Neutral", "You", "Red", "Green", "Rebels"];
+var COL = [[150, 148, 138], [70, 130, 225], [215, 80, 70], [70, 170, 90], [150, 90, 190]];
+var CSS = ["#9a988c", "#4682e1", "#d75046", "#46aa5a", "#965abe"];
+var GHOST = ["", "", "rgba(255,120,110,0.9)", "rgba(120,230,130,0.9)", ""];
+var TERRAIN = { meadow: [150, 186, 104], snow: [226, 234, 242] };
+var OK_COL = "#3fae5a", BAD_COL = "#d94a3d", RISK_COL = "#e0a020", TIE_COL = "#7a8296", LATER_COL = "rgba(255,200,90,0.95)";
+
+var BUILD_ICON = { fort: "🏰", mine: "⛏", farm: "🌾", harbour: "⚓", tower: "🗼", post: "📯", depot: "📦", wonder: "🏛", palisade: "🪵" };
+var PIECE_ICON = { general: "🎖", cannon: "💣", wagon: "🛒", engineer: "🔨", drummer: "🥁", siege: "🪜", lift: "🪂" };
+var ARMY_PIECES = ["general", "cannon", "wagon", "engineer", "drummer", "siege"];   // follow an army sent with "all"
+var ALL_PIECES = ARMY_PIECES.concat(["lift"]);
 
 // ---- state ----------------------------------------------------------------
 var cv = document.getElementById("c"), ctx = cv.getContext("2d");
@@ -72,12 +111,23 @@ var mapCv = document.createElement("canvas");
 mapCv.width = GW; mapCv.height = GH;
 var mctx = mapCv.getContext("2d");
 
-var grid, regions, adj;
-var orders, aiOrders;
-var phase, tick, timer, paused, speedIx, tickIx, showAI;
+var grid, regions, land, adj, borders, bmid;
+var sc, scIx, rules, aiCamps, playerCap;
+var orders, cavOrders, bubble, aiOrders, aiActs, courierDue, transit, standing, acts, works, balloon, balloonTick;
+var gold, grain, truce, temper, doctrine, captured, wonderHold, storm, stat, seasonShift;
+var phase, tick, timer, paused, speedIx, tickIx, showAI, spyTick;
 var anim, animT, pending;
-var selected, drag, hover;
-var log, floaters, outcome;
+var selected, drag, hover, mode, menuOpen, pickDoctrine;
+var log, floaters, outcome, seen, rng, F;
+
+function makeRng(seed) {
+  return function () {
+    seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 
 function noise(x, y, k) {
   return Math.sin(x * 0.031 + k) * Math.sin(y * 0.027 + k * 1.7) * 0.5 +
@@ -85,42 +135,52 @@ function noise(x, y, k) {
     Math.sin(x * 0.13 - y * 0.11 + k * 0.7) * 0.2;
 }
 
-function isLand(x, y) {
-  var best = -9;
-  for (var i = 0; i < LAND.length; i++) {
-    var e = LAND[i], dx = (x - e[0]) / e[2], dy = (y - e[1]) / e[3];
-    best = Math.max(best, 1 - dx * dx - dy * dy);
-  }
-  return best + noise(x, y, 4.1) * 0.12 > 0;
+function onLand(x, y) {
+  var d = Math.min(x - 14, MW - 14 - x, y - MY0 - 12, MY0 + MH - 12 - y);
+  return d + noise(x, y, 4.1) * 16 > 0;
 }
 
-function buildMap() {
-  grid = new Int16Array(GW * GH);
+function newRegion(id, x, y, water) {
+  return { id: id, name: NAMES[id], sx: x, sy: y, cx: 0, cy: 0, cells: 0, water: water,
+    owner: NEUTRAL, troops: 1 + id % 2, cav: 0, terrain: "meadow", morale: 0, takenAt: -99, acc: 0,
+    capital: false, city: false, fort: false, mine: false, farm: false, harbour: false, tower: false,
+    post: false, depot: false, wonder: false, palisade: false,
+    general: false, cannon: false, wagon: false, engineer: false, drummer: false, siege: false, lift: false };
+}
+
+function buildMap(water) {
   regions = [];
-  for (var i = 0; i < SEEDS.length; i++) {
-    regions.push({ id: i, name: NAMES[i], sx: SEEDS[i][0], sy: SEEDS[i][1], cx: 0, cy: 0, cells: 0,
-      owner: NEUTRAL, troops: 0, center: CENTERS.indexOf(i) >= 0, capital: i === PLAYER_CAP || i === AI_CAP });
-  }
+  var id = 0;
+  ROWS.forEach(function (row, ri) {
+    row.forEach(function (x) {
+      regions.push(newRegion(id, x, MY0 + 80 + ri * 165, water.indexOf(id) >= 0));
+      id++;
+    });
+  });
+  grid = new Int16Array(GW * GH);
   for (var gy = 0; gy < GH; gy++) {
     for (var gx = 0; gx < GW; gx++) {
-      var x = gx * CELL + CELL / 2, y = MY0 + gy * CELL + CELL / 2, id = -1;
-      if (isLand(x, y)) {
+      var x = gx * CELL + CELL / 2, y = MY0 + gy * CELL + CELL / 2, best = -1;
+      if (onLand(x, y)) {
         var bd = 1e9;
         for (var s = 0; s < regions.length; s++) {
           var r = regions[s];
-          var d = Math.hypot(x - r.sx, y - r.sy) + noise(x, y, s * 1.3) * 26;
-          if (d < bd) { bd = d; id = s; }
+          var d = Math.hypot(x - r.sx, y - r.sy) + noise(x, y, s * 1.3) * 14;
+          if (d < bd) { bd = d; best = s; }
         }
-        regions[id].cx += x; regions[id].cy += y; regions[id].cells++;
+        if (regions[best].water) best = -1;
+        else { regions[best].cx += x; regions[best].cy += y; regions[best].cells++; }
       }
-      grid[gy * GW + gx] = id;
+      grid[gy * GW + gx] = best;
     }
   }
   regions.forEach(function (r) {
     if (r.cells) { r.cx /= r.cells; r.cy /= r.cells; } else { r.cx = r.sx; r.cy = r.sy; }
   });
-  // Two regions are neighbours when they share a few cells of border.
-  var touch = {};
+  land = regions.filter(function (r) { return !r.water; });
+  // Two regions are neighbours when they share a few cells of border; the
+  // middle of that border is where a bridge, a pass or a column on the road sits.
+  var touch = {}, sum = {};
   for (gy = 0; gy < GH; gy++) {
     for (gx = 0; gx < GW; gx++) {
       var a = grid[gy * GW + gx];
@@ -129,56 +189,1126 @@ function buildMap() {
       for (var k = 0; k < 2; k++) {
         var b = nb[k];
         if (b < 0 || b === a) continue;
-        var key = Math.min(a, b) + "," + Math.max(a, b);
-        touch[key] = (touch[key] || 0) + 1;
+        var key0 = key(a, b);
+        touch[key0] = (touch[key0] || 0) + 1;
+        if (!sum[key0]) sum[key0] = [0, 0];
+        sum[key0][0] += gx * CELL; sum[key0][1] += MY0 + gy * CELL;
       }
     }
   }
   adj = regions.map(function () { return []; });
+  bmid = {};
   for (var key2 in touch) {
     if (touch[key2] < 3) continue;
     var p = key2.split(",").map(Number);
     adj[p[0]].push(p[1]); adj[p[1]].push(p[0]);
+    bmid[key2] = { x: sum[key2][0] / touch[key2], y: sum[key2][1] / touch[key2] };
   }
 }
 
-function reset() {
-  buildMap();
-  regions.forEach(function (r, i) {
-    r.troops = r.center ? 3 : 1 + (i * 7) % 2;
+// ---- small helpers --------------------------------------------------------
+function key(a, b) { return Math.min(a, b) + "," + Math.max(a, b); }
+function borderOf(a, b) { return borders[key(a, b)] || ""; }
+function canCross(a, b) { return borderOf(a, b) !== "mountain"; }
+function isNb(a, b) { return adj[a].indexOf(b) >= 0; }
+function owns(id) { return regions[id].owner === BLUE; }
+function mult(parts) { var k = 0; parts.forEach(function (p) { k += p.v; }); return k; }
+function r1(v) { return Math.round(v * 100) / 100; }
+function sgn(v) { return (v >= 0 ? "+" : "−") + r1(Math.abs(v)); }
+function dist2(a, b) { return Math.hypot(a.cx - b.cx, a.cy - b.cy); }
+function alive(camp) { return land.some(function (r) { return r.owner === camp; }); }
+function isWinter() { return !!rules.winter && Math.floor((tick + seasonShift) / SEASON_LEN) % 2 === 1; }
+
+function hostile(a, b) {
+  if (a === b) return false;
+  if (a === NEUTRAL || b === NEUTRAL || a === REBEL || b === REBEL) return true;
+  var other = a === BLUE ? b : b === BLUE ? a : 0;
+  return !(other && truce[other] > tick);
+}
+
+// Steps from `sources` through the regions `through` accepts.
+function bfs(sources, through) {
+  var d = {}, q = [];
+  sources.forEach(function (s) { d[s] = 0; q.push(s); });
+  while (q.length) {
+    var c = q.shift();
+    adj[c].forEach(function (n) {
+      if (d[n] == null && canCross(c, n) && through(n)) { d[n] = d[c] + 1; q.push(n); }
+    });
+  }
+  return d;
+}
+
+function courierSteps(from) {
+  var src = land.filter(function (r) { return r.owner === BLUE && (r.capital || r.post); }).map(function (r) { return r.id; });
+  var d = bfs(src, function () { return true; });
+  return d[from] == null ? 99 : d[from];
+}
+
+function outOfSupply() {
+  var out = {};
+  if (!rules.supply) return out;
+  var src = land.filter(function (r) { return r.owner === BLUE && (r.capital || r.city || r.depot); }).map(function (r) { return r.id; });
+  var d = bfs(src, function (n) { return regions[n].owner === BLUE; });
+  land.forEach(function (r) {
+    if (r.owner === BLUE && r.troops > 0 && (d[r.id] == null || d[r.id] > SUPPLY_RANGE)) out[r.id] = true;
   });
-  regions[PLAYER_CAP].owner = PLAYER; regions[PLAYER_CAP].troops = START_CAPITAL;
-  regions[AI_CAP].owner = AI; regions[AI_CAP].troops = START_CAPITAL;
-  orders = {}; aiOrders = {};
-  phase = "plan"; tick = 0; timer = 0; paused = false;
+  return out;
+}
+
+// Cavalry: two regions in one bell (three with Blitz), through your own or
+// empty land. Returns target -> the region it enters from.
+function cavReach(from) {
+  var maxD = doctrine === "blitz" ? 3 : 2, out = {}, lvl = {}, frontier = [from];
+  lvl[from] = 0;
+  for (var d = 1; d <= maxD; d++) {
+    var next = [];
+    frontier.forEach(function (c) {
+      adj[c].forEach(function (n) {
+        if (lvl[n] != null || !canCross(c, n)) return;
+        lvl[n] = d;
+        if (d >= 2) out[n] = c;
+        if (regions[n].owner === BLUE || regions[n].troops === 0) next.push(n);
+      });
+    });
+    frontier = next;
+  }
+  return out;
+}
+
+function siegeOk(camp, to, from) {
+  var held = adj[to].filter(function (n) { return regions[n].owner === camp; }).length;
+  return held >= 2 || from >= 0 && regions[from].siege;
+}
+
+function segDist(px, py, ax, ay, bx, by) {
+  var dx = bx - ax, dy = by - ay, t = ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1);
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - ax - t * dx, py - ay - t * dy);
+}
+
+function nextStorm() {
+  if (!storm) return null;
+  var dx = storm.dx, x = storm.x + dx;
+  if (x > MW - 40 || x < 40) { dx = -dx; x = storm.x + dx; }
+  return { x: x, y: storm.y, dx: dx };
+}
+
+// ---- what an order is ------------------------------------------------------
+// What an order from `from` to `to` would be for `camp`: its kind, how many
+// bells before it lands, whether its courier leaves late — or why it cannot go.
+function classify(from, to, kind, camp, courier, unit) {
+  var a = regions[from], b = regions[to];
+  if (from === to || b.water) return { ok: false, why: "" };
+  var c = { ok: true, kind: kind || "move", eta: 0, delayed: false, tags: [] };
+  if (c.kind === "fire") {
+    if (!a.cannon || !isNb(from, to) || !canCross(from, to) || b.owner === camp) return { ok: false, why: "Out of the cannon's reach" };
+    return c;
+  }
+  if (c.kind === "lift") {
+    if (!a.lift || dist2(a, b) > LIFT_RANGE) return { ok: false, why: "Too far for the balloon" };
+    c.tags.push("airlift");
+  } else if (isNb(from, to)) {
+    if (!canCross(from, to)) return { ok: false, why: "Mountain: no way through" };
+    c.kind = "move";
+    if (borderOf(from, to) === "river") c.tags.push("river");
+    if (borderOf(from, to) === "bridge") c.tags.push("bridge");
+    if (isWinter() && (b.terrain === "snow" || borderOf(from, to) === "pass")) { c.eta = 1; c.tags.push("snow, +1 bell"); }
+  } else if (unit !== "foot" && a.cav > 0 && cavReach(from)[to] != null) {
+    c.kind = "cav";
+    c.tags.push("cavalry");
+  } else if (a.harbour && b.harbour) {
+    c.kind = "fleet"; c.eta = 1;
+    c.tags.push("fleet, +1 bell");
+    if (storm && segDist(storm.x, storm.y, a.cx, a.cy, b.cx, b.cy) < STORM_R) return { ok: false, why: "Storm on the sea lane" };
+  } else return { ok: false, why: "" };
+  if (b.owner !== camp && b.owner !== NEUTRAL && !hostile(camp, b.owner)) return { ok: false, why: "Truce with " + WHO[b.owner] };
+  if (rules.siege && (b.capital || b.fort) && b.owner !== camp && !siegeOk(camp, to, from)) return { ok: false, why: "Walls: hold two of its neighbours" };
+  if (camp === BLUE && rules.courier && !courier && courierSteps(from) > COURIER_RANGE) { c.delayed = true; c.tags.push("courier, +1 bell"); }
+  return c;
+}
+
+// The same, for an order already drawn.
+function classifyOrder(from, o, camp, courier) {
+  var k = o.kind === "lift" || o.kind === "fire" ? o.kind : null;
+  return classify(from, o.to, k, camp, courier, o.unit);
+}
+
+// Every order of the player: one per region, plus one for its cavalry.
+function playerOrderList() {
+  var L = [];
+  for (var k in orders) L.push({ from: +k, o: orders[k] });
+  for (var c in cavOrders) L.push({ from: +c, o: cavOrders[c] });
+  return L;
+}
+function cavSlot(o) { return o.unit === "cav" || o.kind === "cav"; }
+
+// ---- the bell, as data ------------------------------------------------------
+function attackParts(from, to, m, via) {
+  var p = [{ t: "attack", v: 1 }];
+  var last = via != null ? via : from;
+  if ((m.kind === "move" || m.kind === "cav") && borderOf(last, to) === "river") p.push({ t: "river", v: RIVER_MULT - 1 });
+  if (m.pieces.indexOf("general") >= 0) p.push({ t: "general", v: GENERAL_ATT - 1 });
+  var mo = regions[from].morale;
+  if (rules.morale && mo) p.push({ t: "morale", v: mo * MORALE_STEP });
+  return p;
+}
+
+function defParts(id, camp, general) {
+  var r = regions[id], p = [{ t: "defence", v: DEF_BONUS }];
+  if (r.fort) p.push({ t: "fort", v: (doctrine === "bastion" && camp === BLUE ? BASTION_BONUS : FORT_BONUS) - DEF_BONUS });
+  if (r.palisade) p.push({ t: "palisade", v: PALISADE_STEP });
+  if (general) p.push({ t: "general", v: GENERAL_DEF - DEF_BONUS });
+  if (rules.morale && r.morale && camp !== NEUTRAL) p.push({ t: "morale", v: r.morale * MORALE_STEP });
+  return p;
+}
+
+// One order turned into a column: who leaves, how many, what it carries, how
+// hard it hits. Reads and updates the `stay` arrays, never the regions.
+function column(from, o, camp, stay, stayCav, courier) {
+  var r = regions[from];
+  if (r.owner !== camp) return null;
+  var c = classifyOrder(from, o, camp, courier);
+  if (!c.ok) return { from: from, to: o.to, camp: camp, why: c.why || "cannot go" };
+  var n, cav, all = false;
+  if (c.kind === "cav" || o.unit === "cav") { n = cav = stayCav[from]; }
+  else if (o.unit === "foot") {
+    var foot0 = stay[from] - stayCav[from];
+    n = Math.min(foot0, o.frac >= 1 ? foot0 : Math.max(1, Math.floor(foot0 * o.frac)));
+    cav = 0;
+    all = n >= foot0;
+  } else {
+    var want = c.kind === "lift" ? Math.min(LIFT_MAX, stay[from]) :
+      o.n != null ? Math.min(o.n, stay[from]) :
+      o.frac >= 1 ? stay[from] : Math.max(1, Math.floor(stay[from] * o.frac));
+    all = want >= stay[from];
+    var foot = stay[from] - stayCav[from];
+    cav = all ? stayCav[from] : Math.max(0, want - foot);
+    n = want;
+  }
+  if (n <= 0) return null;
+  stay[from] -= n; stayCav[from] -= cav;
+  var m = { from: from, to: o.to, camp: camp, n: n, n0: n, cav: cav, kind: c.kind, eta: c.eta, tags: c.tags,
+    pieces: [], clash: false, auto: o.auto };
+  if ((c.kind === "move" || c.kind === "fleet") && o.unit !== "cav") {
+    ARMY_PIECES.forEach(function (k) { if (r[k] && (all || k === "siege")) m.pieces.push(k); });
+  }
+  if (c.kind === "lift") m.pieces.push("lift");
+  m.parts = attackParts(from, o.to, m, c.kind === "cav" ? cavReach(from)[o.to] : null);
+  return m;
+}
+
+// Every order of a bell, as columns. Nothing here touches the state: the
+// resolution and the forecast both read it.
+function planMoves(plans, landings, stand) {
+  var P = { stay: [], stayCav: [], moves: [], later: [], fires: [], blocked: [], carried: {}, gone: {},
+    arrive: [], events: [], standingFired: [] };
+  regions.forEach(function (r) { P.stay[r.id] = r.troops; P.stayCav[r.id] = r.cav; P.arrive[r.id] = []; });
+  // 1. cannons fire before anything moves
+  plans.forEach(function (p) {
+    if (p.o.kind !== "fire" || regions[p.from].owner !== p.camp) return;
+    if (!classify(p.from, p.o.to, "fire", p.camp).ok) return;
+    var hit = Math.min(CANNON_DAMAGE, P.stay[p.o.to]);
+    P.stay[p.o.to] -= hit;
+    P.stayCav[p.o.to] = Math.min(P.stayCav[p.o.to], P.stay[p.o.to]);
+    P.fires.push({ from: p.from, to: p.o.to, camp: p.camp, hit: hit });
+    P.gone[p.from] = true;
+  });
+  // 2. columns leave
+  function launch(p) {
+    var m = column(p.from, p.o, p.camp, P.stay, P.stayCav, p.courier);
+    if (!m) return null;
+    if (m.why) { P.blocked.push(m); return null; }
+    P.gone[p.from] = true;
+    if (m.pieces.length) P.carried[p.from] = (P.carried[p.from] || []).concat(m.pieces);
+    (m.eta > 0 ? P.later : P.moves).push(m);
+    return m;
+  }
+  plans.forEach(function (p) { if (p.o.kind !== "fire") launch(p); });
+  (landings || []).forEach(function (t) { P.moves.push(t); });
+  // 3. standing orders fire by themselves when their region is attacked
+  if (stand) {
+    Object.keys(stand).map(Number).sort(function (a, b) { return a - b; }).forEach(function (from) {
+      var s = stand[from];
+      if (s.cond !== "attacked" || P.gone[from] || !owns(from) || !owns(s.to)) return;
+      var hit = P.moves.some(function (m) { return m.to === s.to && hostile(m.camp, BLUE); });
+      if (!hit) return;
+      var m = launch({ camp: BLUE, from: from, o: { to: s.to, frac: 1, auto: "standing" } });
+      if (m) P.standingFired.push(m);
+    });
+  }
+  // 4. two enemy columns crossing the same border meet halfway
+  for (var i = 0; i < P.moves.length; i++) {
+    for (var j = i + 1; j < P.moves.length; j++) {
+      var a = P.moves[i], b = P.moves[j];
+      if (a.landing || b.landing || a.from !== b.to || a.to !== b.from || !hostile(a.camp, b.camp)) continue;
+      var k = Math.min(a.n, b.n);
+      a.n -= k; b.n -= k; a.cav = Math.min(a.cav, a.n); b.cav = Math.min(b.cav, b.n);
+      a.clash = b.clash = true;
+      P.events.push("Clash between " + regions[a.from].name + " and " + regions[a.to].name + " (−" + k + " each)");
+    }
+  }
+  P.moves.forEach(function (m) { if (m.n > 0 || m.pieces.length) P.arrive[m.to].push(m); });
+  return P;
+}
+
+function homeOf(id, P) {
+  var r = regions[id], gone = P.carried[id] || [];
+  return { camp: r.owner, n: P.stay[id], cav: P.stayCav[id], general: r.general && gone.indexOf("general") < 0 };
+}
+
+// The fight in one region: who holds it after the bell, and every number that decided it.
+function battle(id, home, arr) {
+  var sides = [], byCamp = {};
+  function side(c) {
+    if (!byCamp[c]) { byCamp[c] = { camp: c, raw: 0, cav: 0, str: 0, k: 1, items: [], general: false }; sides.push(byCamp[c]); }
+    return byCamp[c];
+  }
+  var d = side(home.camp);
+  d.raw = home.n; d.cav = home.cav; d.general = home.general; d.home = home.n;
+  arr.forEach(function (m) {
+    var s = side(m.camp);
+    s.raw += m.n; s.cav += m.cav;
+    if (m.pieces.indexOf("general") >= 0) s.general = true;
+    s.items.push(m);
+  });
+  d.parts = defParts(id, home.camp, d.general);
+  d.k = mult(d.parts); d.str = d.raw * d.k;
+  sides.forEach(function (s) {
+    if (s === d) return;
+    s.str = 0;
+    s.items.forEach(function (m) { s.str += m.n * mult(m.parts); });
+    s.k = s.raw ? s.str / s.raw : 1;
+  });
+  var res = { id: id, def: d, sides: sides.slice(), fight: sides.length > 1, owner: home.camp, left: d.raw, cav: d.cav, tie: false, winner: d };
+  if (!res.fight) return res;
+  res.sides.sort(function (p, q) { return q.str - p.str; });
+  var s1 = res.sides[0], s2 = res.sides[1];
+  if (Math.abs(s1.str - s2.str) < 1e-9) {
+    res.tie = true; res.left = 0; res.cav = 0; res.winner = null;
+    return res;
+  }
+  res.winner = s1; res.owner = s1.camp;
+  res.left = Math.max(1, Math.round(s1.raw * (s1.str - s2.str) / s1.str));
+  res.cav = s1.raw ? Math.min(res.left, Math.round(res.left * s1.cav / s1.raw)) : 0;
+  return res;
+}
+
+// ---- plans ----------------------------------------------------------------
+function playerPlans() {
+  var p = [];
+  courierDue.forEach(function (d) { p.push({ camp: BLUE, from: d.from, o: d.o, courier: true }); });
+  playerOrderList().forEach(function (it) {
+    if (lockedByCourier(it.from)) return;
+    var c = it.o.kind === "fire" ? { ok: true } : classifyOrder(it.from, it.o, BLUE);
+    if (!c.delayed) p.push({ camp: BLUE, from: it.from, o: it.o });
+  });
+  return p;
+}
+
+function aiPlans(onlyShown) {
+  var p = [];
+  aiCamps.forEach(function (c) {
+    var set = aiOrders[c] || {};
+    for (var k in set) if (!onlyShown || aiShown(c, +k, set[k])) p.push({ camp: c, from: +k, o: set[k] });
+  });
+  return p;
+}
+
+function aiShown(camp, from, o) {
+  if (showAI || spyTick === tick) return true;
+  if (balloon >= 0) {
+    var d = bfs([balloon], function () { return true; });
+    return d[o.to] != null && d[o.to] <= SCOUT_RANGE;
+  }
+  return false;
+}
+
+function sortPlans(p) { return p.sort(function (a, b) { return a.from - b.from || a.camp - b.camp; }); }
+
+function landingsNow(estimate) {
+  var ns = nextStorm();
+  return transit.filter(function (t) { return t.land === tick; }).map(function (t) {
+    var m = {};
+    for (var k in t) m[k] = t[k];
+    m.landing = true; m.parts = [{ t: "attack", v: 1 }].concat(t.parts.slice(1).filter(function (p) { return p.t !== "river"; }));
+    if (ns && t.kind === "fleet" && Math.hypot(ns.x - t.x, ns.y - t.y) < STORM_R) {
+      m.storm = Math.round(t.n * STORM_LOSS);
+      m.n = t.n - m.storm; m.cav = Math.min(m.cav, m.n);
+    }
+    return m;
+  });
+}
+
+// ---- the forecast -----------------------------------------------------------
+// "now": every order the player can see (theirs, plus the red ones a spy, a
+// balloon or the cheat shows). "worst": the same, plus every enemy neighbour of
+// the region sending everything it has at it (an opportunist in truce counts).
+function forecast(extra) {
+  var plans = playerPlans();
+  if (extra) {
+    plans = plans.filter(function (p) {
+      return p.from !== extra.from || cavSlot(p.o) !== cavSlot(extra.o) && !extra.alone;
+    });
+    plans.push(extra);
+  }
+  var base = sortPlans(plans.concat(aiPlans(true)));
+  var lands = landingsNow(true);
+  var P = planMoves(base, lands, rules.standing ? standing : null);
+  var out = { P: P, now: {}, worst: {}, unknown: {}, threat: {} };
+  land.forEach(function (r) {
+    if (P.arrive[r.id].length) out.now[r.id] = battle(r.id, homeOf(r.id, P), P.arrive[r.id]);
+  });
+  var targets = {};
+  P.moves.concat(P.later).forEach(function (m) { if (m.camp === BLUE) targets[m.to] = true; });
+  land.forEach(function (r) { if (r.owner === BLUE) targets[r.id] = true; });
+  for (var t in targets) worstAt(+t, base, lands, out);
+  return out;
+}
+
+function worstAt(t, base, lands, out) {
+  var used = {}, add = [], unknown = !seen[t], threat = 0;
+  base.forEach(function (p) { used[p.from] = true; });
+  adj[t].forEach(function (n) {
+    var r = regions[n];
+    if (used[n] || aiCamps.indexOf(r.owner) < 0 || !canCross(n, t) || r.troops <= 0) return;
+    var vs = regions[t].owner, mayBetray = vs === BLUE && rules.betray && temper[r.owner] === "opportunist";
+    if (r.owner !== vs && !hostile(r.owner, vs) && !mayBetray) return;
+    if (!seen[n]) unknown = true;
+    if (r.owner !== vs) threat += r.troops;
+    add.push({ camp: r.owner, from: n, o: { to: t, frac: 1 }, betray: mayBetray && !hostile(r.owner, vs) });
+  });
+  out.threat[t] = threat;
+  if (unknown) out.unknown[t] = true;
+  if (!add.length) { if (out.now[t]) out.worst[t] = out.now[t]; return; }
+  // an opportunist in truce is weighed as if the truce were already broken
+  var saved = truce.slice();
+  add.forEach(function (p) { if (p.betray) truce[p.camp] = 0; });
+  var P = planMoves(sortPlans(base.concat(add)), lands, rules.standing ? standing : null);
+  truce = saved;
+  if (P.arrive[t].length) out.worst[t] = battle(t, homeOf(t, P), P.arrive[t]);
+}
+
+// What a chip on an arrow, or a shield on a region, says.
+function sideOf(res, camp) {
+  for (var i = 0; i < res.sides.length; i++) if (res.sides[i].camp === camp) return res.sides[i];
+  return null;
+}
+
+function needMore(res, camp) {
+  var s = sideOf(res, camp), other = 0;
+  res.sides.forEach(function (q) { if (q.camp !== camp) other = Math.max(other, q.str); });
+  if (!s) return 0;
+  var k = s.k || 1;
+  return Math.max(1, Math.floor(other / k - s.raw) + 1);
+}
+
+function verdict(t, F) {
+  var now = F.now[t], worst = F.worst[t];
+  if (F.unknown[t] && !seen[t]) return { text: "?", col: RISK_COL };
+  if (!now) return null;
+  if (now.tie) return { text: "= tie", col: TIE_COL };
+  if (now.owner !== BLUE) return { text: "✗ +" + needMore(now, BLUE), col: BAD_COL };
+  if (F.unknown[t]) return { text: "✓ " + now.left + " ?", col: RISK_COL };
+  if (worst && worst.owner !== BLUE) return { text: "⚠ " + now.left, col: RISK_COL };
+  return { text: "✓ " + now.left, col: OK_COL };
+}
+
+// ---- resolution -----------------------------------------------------------
+function resolve() {
+  var plans = playerPlans().concat(aiPlans(false));
+  var later = [];
+  playerOrderList().forEach(function (it) {
+    if (it.o.kind === "fire" || lockedByCourier(it.from)) return;
+    var c = classifyOrder(it.from, it.o, BLUE);
+    if (c.ok && c.delayed) later.push({ from: it.from, o: it.o });
+  });
+  var lands = landingsNow(false);
+  var P = planMoves(sortPlans(plans), lands, rules.standing ? standing : null);
+  var results = {};
+  land.forEach(function (r) {
+    if (P.arrive[r.id].length) results[r.id] = battle(r.id, homeOf(r.id, P), P.arrive[r.id]);
+  });
+  var events = P.events.slice();
+  P.blocked.forEach(function (m) { if (m.camp === BLUE) events.push("Refused: " + regions[m.from].name + " → " + regions[m.to].name + " (" + m.why + ")"); });
+  P.standingFired.forEach(function (m) { events.push("Standing order: " + regions[m.from].name + " marches to " + regions[m.to].name); });
+  lands.forEach(function (m) { if (m.storm) events.push("Storm: the fleet loses " + m.storm + " at sea"); });
+  // what the animation shows
+  var mv = [];
+  P.moves.forEach(function (m) {
+    var a = m.landing ? { cx: m.x, cy: m.y } : regions[m.from];
+    mv.push({ a: a, b: regions[m.to], camp: m.camp, n0: m.n0, n: m.n, clash: m.clash, src: m.landing ? -1 : m.from });
+  });
+  P.later.forEach(function (m) {
+    var pt = roadPoint(m);
+    mv.push({ a: regions[m.from], b: { cx: pt.x, cy: pt.y }, camp: m.camp, n0: m.n, n: m.n, src: m.from });
+  });
+  pending = { P: P, results: results, events: events, later: later, anim: mv };
+}
+
+// Where a column waits when it lands next bell: at sea between the two
+// harbours, or on the border it is crossing.
+function roadPoint(m) {
+  var a = regions[m.from], b = regions[m.to];
+  if (m.kind === "fleet") return { x: (a.cx + b.cx) / 2, y: (a.cy + b.cy) / 2 };
+  var bm = bmid[key(m.from, m.to)];
+  return bm ? { x: bm.x, y: bm.y } : { x: a.cx + (b.cx - a.cx) * 0.6, y: a.cy + (b.cy - a.cy) * 0.6 };
+}
+
+function startResolve() {
+  if (phase !== "plan" || pickDoctrine) return;
+  bubble = null;
+  resolve();
+  anim = pending.anim;
+  animT = 0;
+  phase = "resolve";
+  drag = null; mode = null;
+}
+
+function applyResolve() {
+  var R = pending, P = R.P, ev = R.events, bell = tick;
+  var winter = isWinter(), moraleBefore = regions.map(function (r) { return r.morale; });
+  var lostNow = {}, citiesNow = 0;
+
+  // pieces leave with their armies
+  for (var id in P.carried) P.carried[id].forEach(function (k) { regions[id][k] = false; });
+  P.fires.forEach(function (f) {
+    floaters.push({ x: regions[f.to].cx, y: regions[f.to].cy + 40, text: "💥 −" + f.hit, col: "#ffb070", t: 0 });
+  });
+
+  land.forEach(function (r) {
+    var res = R.results[r.id], was = r.owner;
+    if (!res) { r.troops = P.stay[r.id]; r.cav = P.stayCav[r.id]; return; }
+    r.troops = res.left; r.cav = res.cav;
+    if (!res.fight) {
+      res.sides[0].items.forEach(function (m) { m.pieces.forEach(function (k) { r[k] = true; }); });
+      return;
+    }
+    floaters.push({ x: r.cx, y: r.cy + 40, text: "battle", col: "#fff", t: 0 });
+    var taken = !res.tie && res.owner !== was;
+    if (taken) {
+      ALL_PIECES.forEach(function (k) {
+        if (!r[k]) return;
+        if (k === "general") { captured[was] = true; ev.push(WHO[was] + "'s general captured at " + r.name); }
+        r[k] = false;
+      });
+      r.owner = res.owner; r.takenAt = bell;
+      if (was === BLUE) { lostNow[r.id] = true; stat.lost++; }
+      if (res.owner === BLUE && (r.city || r.capital)) citiesNow++;
+      ev.push(WHO[res.owner] + " took " + r.name + (r.capital ? " (capital)" : ""));
+    } else if (res.tie) ev.push("Stalemate at " + r.name + ", nobody left standing");
+    else if (was !== NEUTRAL) ev.push(WHO[was] + " held " + r.name);
+    // pieces of the arriving columns: the winner's land, the losers' are lost
+    res.sides.forEach(function (s) {
+      s.items.forEach(function (m) {
+        var won = !res.tie && res.winner === s;
+        m.pieces.forEach(function (k) {
+          if (won) r[k] = true;
+          else if (k === "general") { captured[m.camp] = true; ev.push(WHO[m.camp] + "'s general captured at " + r.name); }
+        });
+        if (rules.morale && !won && !res.tie && regions[m.from].owner === m.camp) {
+          regions[m.from].morale = Math.max(-MORALE_MAX, regions[m.from].morale - 1);
+        }
+      });
+    });
+    if (rules.morale && !res.tie) {
+      if (!taken) r.morale = Math.min(MORALE_MAX, r.morale + 1);
+      else {
+        var best = -MORALE_MAX;
+        res.winner.items.forEach(function (m) { best = Math.max(best, moraleBefore[m.from]); });
+        r.morale = Math.min(MORALE_MAX, best + 1);
+      }
+    }
+  });
+  stat.citiesBell = Math.max(stat.citiesBell, citiesNow);
+
+  // columns on the road: the landed ones go, the new ones start
+  var ns = nextStorm();
+  transit = transit.filter(function (t) { return t.land !== bell; });
+  P.later.forEach(function (m) {
+    var pt = roadPoint(m);
+    m.x = pt.x; m.y = pt.y; m.land = bell + 1;
+    transit.push(m);
+  });
+  if (ns) storm = ns;
+
+  // production, then the economy
+  land.forEach(function (r) {
+    if (r.owner === NEUTRAL || r.owner === REBEL) return;
+    var p = r.capital ? PROD_CAPITAL : r.city ? PROD_CITY : 0;
+    if (p && winter) { r.acc += p / 2; p = Math.floor(r.acc); r.acc -= p; }
+    if (p) { r.troops += p; floaters.push({ x: r.cx, y: r.cy - 56, text: "+" + p, col: "#ffd34d", t: 0 }); }
+    if (r.mine) gold[r.owner] += doctrine === "merchant" && r.owner === BLUE ? 2 : MINE_GOLD;
+    if (r.farm && r.owner === BLUE) grain += FARM_GRAIN;
+  });
+  acts.concat(aiActs).forEach(function (a) {
+    var r = regions[a.at], camp = a.camp || BLUE;
+    if (r.owner !== camp) return;
+    if (a.kind === "recruit") { r.troops += RECRUIT_TROOPS; floaters.push({ x: r.cx + 30, y: r.cy - 30, text: "+" + RECRUIT_TROOPS + " recruits", col: "#9fe0ff", t: 0 }); }
+    if (a.kind === "cav") { r.troops += CAV_COUNT; r.cav += CAV_COUNT; floaters.push({ x: r.cx + 30, y: r.cy - 30, text: "+" + CAV_COUNT + " 🐎", col: "#9fe0ff", t: 0 }); }
+    if (a.kind === "depot") { r.depot = true; ev.push("Depot built at " + r.name); }
+  });
+  works = works.filter(function (w) {
+    var r = regions[w.at];
+    if (r.owner !== BLUE || !r.engineer) { ev.push("Works at " + r.name + " abandoned"); return false; }
+    w.left--;
+    if (w.left > 0) return true;
+    if (w.kind === "palisade") regions[w.to].palisade = true;
+    else borders[key(w.at, w.to)] = "bridge";
+    stat.works++;
+    ev.push((w.kind === "palisade" ? "Palisade" : "Bridge") + " finished at " + regions[w.to].name);
+    return false;
+  });
+  if (rules.grain) {
+    var eat = 0;
+    land.forEach(function (r) { if (r.owner === BLUE) eat += Math.max(0, r.troops - GRAIN_FEED); });
+    grain -= eat;
+    if (grain < 0) {
+      grain = 0;
+      land.forEach(function (r) {
+        if (r.owner !== BLUE || r.troops <= GRAIN_FEED) return;
+        r.troops--; if (r.cav > r.troops) r.cav = r.troops;
+        stat.deserted++;
+        floaters.push({ x: r.cx, y: r.cy + 66, text: "−1 deserts", col: "#ff8a7a", t: 0 });
+      });
+      ev.push("No grain left: one troop deserts from every overfed region");
+    }
+  }
+  var oos = outOfSupply();
+  for (var s in oos) {
+    var rs = regions[s];
+    rs.troops--; if (rs.cav > rs.troops) rs.cav = rs.troops;
+    stat.supplyLost++;
+    floaters.push({ x: rs.cx, y: rs.cy + 66, text: "−1 no supply", col: "#ff8a7a", t: 0 });
+  }
+  if (rules.morale) land.forEach(function (r) {
+    if (r.drummer && r.owner !== NEUTRAL) r.morale = Math.min(MORALE_MAX, r.morale + 1);
+  });
+  if (rules.revolt) land.forEach(function (r) {
+    if (r.owner !== BLUE || r.capital || bell + 1 - r.takenAt > REVOLT_TICKS || r.troops >= REVOLT_TROOPS) return;
+    if (rng() < REVOLT_CHANCE) {
+      r.owner = REBEL; r.troops = 2; r.cav = 0; stat.revolts++; lostNow[r.id] = true;
+      ev.push(r.name + " revolts!");
+    }
+  });
+  if (rules.wonder) land.forEach(function (r) {
+    if (!r.wonder) return;
+    for (var c = 1; c < 4; c++) wonderHold[c] = r.owner === c ? wonderHold[c] + 1 : 0;
+  });
+  aiCamps.forEach(function (c) {
+    if (truce[c] === bell + 1) ev.push("The truce with " + WHO[c] + " is over");
+  });
+
+  // next bell
+  log = ev.length ? ev.slice(-3) : ["Bell " + (bell + 1) + ": nothing happened"];
+  courierDue = R.later.map(function (d) { var o = {}; for (var k in d.o) o[k] = d.o[k]; return { from: d.from, o: o }; });
+  pending = null; anim = [];
+  tick++; timer = 0;
+  if (!KEEP_ORDERS) { orders = {}; cavOrders = {}; }
+  for (var k2 in orders) if (regions[k2].owner !== BLUE) delete orders[k2];
+  for (var k4 in cavOrders) if (regions[k4].owner !== BLUE) delete cavOrders[k4];
+  for (var k3 in standing) {
+    var st = standing[k3];
+    if (!owns(+k3)) { delete standing[k3]; continue; }
+    if (st.cond === "lost" && lostNow[st.to]) {
+      orders[k3] = { to: st.to, frac: 1, auto: "standing" };
+      stat.standingFired++;
+      log.push("Standing order: " + regions[k3].name + " will retake " + regions[st.to].name);
+    }
+  }
+  stat.standingFired += P.standingFired.length;
+  acts = [];
+  checkOutcome();
+  phase = outcome ? "over" : "plan";
+  planAI();
+  renderMap();
+}
+
+function checkOutcome() {
+  var fail = sc.fail ? sc.fail() : "";
+  if (!fail && playerCap >= 0 && !owns(playerCap)) fail = "Your capital fell";
+  for (var c = 2; c < 4; c++) if (!fail && wonderHold[c] >= WONDER_HOLD) fail = WHO[c] + " held the wonder";
+  if (fail) outcome = { win: false, text: fail };
+  else if (sc.won()) outcome = { win: true, text: "Objective met" };
+}
+
+// ---- the AI ---------------------------------------------------------------
+// Greedy: rank the targets next to its land by worth over defence, pool every
+// region touching a target until it outnumbers it, march the interior toward
+// the front, and keep part of a frontier home when an enemy stands next door.
+function planAI() {
+  aiOrders = {}; aiActs = [];
+  aiCamps.forEach(function (c) { if (alive(c)) computeAI(c); });
+  // a scenario may script the AI's first moves, so its test plays the same every time
+  var forced = sc.script && sc.script(tick);
+  if (forced) aiOrders[RED] = forced;
+}
+
+function computeAI(camp) {
+  var out = {}, mine = land.filter(function (r) { return r.owner === camp; });
+  var margin = rules.fair ? 1.1 : AI_MARGIN, skip = sc.skip != null ? sc.skip : rules.fair ? 0 : AI_SKIP;
+  if (rules.betray && temper[camp] === "opportunist" && truce[camp] > tick && tick > 0) {
+    var tempted = mine.some(function (r) {
+      return adj[r.id].some(function (n) {
+        return regions[n].owner === BLUE && canCross(r.id, n) && r.troops >= BETRAY_RATIO * regions[n].troops * DEF_BONUS;
+      });
+    });
+    if (tempted) {
+      truce[camp] = 0; stat.betrayed = true;
+      mine.forEach(function (r) { r.morale = Math.max(-MORALE_MAX, r.morale - 1); });
+      log.push(WHO[camp] + " broke the truce! (−1 morale everywhere)");
+    }
+  }
+  if (rules.recruit && gold[camp] >= RECRUIT_COST) {
+    var capR = mine.filter(function (r) { return r.capital; })[0];
+    if (capR) { gold[camp] -= RECRUIT_COST; aiActs.push({ kind: "recruit", at: capR.id, camp: camp }); }
+  }
+  var avail = {}, used = {};
+  mine.forEach(function (r) {
+    var threat = 0;
+    adj[r.id].forEach(function (n) {
+      var o = regions[n].owner;
+      if (o !== camp && o !== NEUTRAL && o !== REBEL && hostile(o, camp) && canCross(n, r.id)) threat += regions[n].troops;
+    });
+    var keep = Math.ceil(threat * (r.capital ? 1 : AI_CAUTION) / DEF_BONUS);
+    avail[r.id] = Math.max(0, r.troops - keep);
+  });
+  mine.forEach(function (r) {
+    if (!r.cannon) return;
+    var best = -1;
+    adj[r.id].forEach(function (n) {
+      if (hostile(camp, regions[n].owner) && regions[n].owner !== NEUTRAL && canCross(r.id, n) && (best < 0 || regions[n].troops > regions[best].troops)) best = n;
+    });
+    if (best >= 0) { out[r.id] = { to: best, kind: "fire" }; used[r.id] = true; }
+  });
+
+  var targets = [];
+  land.forEach(function (t) {
+    if (t.owner === camp || !hostile(camp, t.owner)) return;
+    if (!adj[t.id].some(function (n) { return regions[n].owner === camp && canCross(n, t.id); })) return;
+    var k = mult(defParts(t.id, t.owner, t.general));
+    var need = (t.troops * (t.troops > 0 ? k : 1) + 1) * margin;
+    var worth = 1 + (t.city ? 2 : 0) + (t.capital ? 4 : 0) + (t.owner === BLUE ? 1 : 0) + (t.mine ? 2 : 0) + (t.wonder ? 6 : 0);
+    targets.push({ t: t, need: need, score: worth / need });
+  });
+  targets.sort(function (a, b) { return b.score - a.score; });
+  targets.forEach(function (g) {
+    var src = adj[g.t.id].filter(function (n) {
+      return regions[n].owner === camp && !used[n] && avail[n] > 0 && classify(n, g.t.id, null, camp).ok;
+    });
+    src.sort(function (a, b) { return avail[b] - avail[a]; });
+    var sum = 0, pick = [];
+    for (var i = 0; i < src.length && sum < g.need; i++) {
+      sum += avail[src[i]] * (borderOf(src[i], g.t.id) === "river" ? RIVER_MULT : 1);
+      pick.push(src[i]);
+    }
+    if (sum < g.need) return;
+    pick.forEach(function (s) {
+      if (rng() < skip) return;
+      used[s] = true;
+      out[s] = { to: g.t.id, n: avail[s] };
+    });
+  });
+
+  // march the interior toward the front, through its own land
+  var front = mine.filter(function (r) {
+    return adj[r.id].some(function (n) { return regions[n].owner !== camp && canCross(r.id, n); });
+  }).map(function (r) { return r.id; });
+  var dist = bfs(front, function (n) { return regions[n].owner === camp; });
+  mine.forEach(function (r) {
+    if (used[r.id] || r.troops <= 0 || !dist[r.id] || r.capital) return;
+    var best = -1;
+    adj[r.id].forEach(function (n) {
+      if (regions[n].owner === camp && dist[n] != null && canCross(r.id, n) && (best < 0 || dist[n] < dist[best])) best = n;
+    });
+    if (best >= 0) out[r.id] = { to: best, n: r.troops };
+  });
+  aiOrders[camp] = out;
+}
+
+function offerTruce(camp) {
+  var mine = 0, theirs = 0;
+  land.forEach(function (r) { if (r.owner === BLUE) mine += r.troops; if (r.owner === camp) theirs += r.troops; });
+  if (theirs < mine) {
+    truce[camp] = tick + TRUCE_TICKS;
+    stat.truces++;
+    log = [WHO[camp] + " accepts a truce for " + TRUCE_TICKS + " bells (" + theirs + " troops against your " + mine + ")"];
+    computeAI(camp);
+    for (var k in orders) if (regions[orders[k].to].owner === camp) delete orders[k];
+    for (var kc in cavOrders) if (regions[cavOrders[kc].to].owner === camp) delete cavOrders[kc];
+  } else {
+    log = [WHO[camp] + " refuses: " + theirs + " troops against your " + mine + ", it is not the weaker"];
+  }
+}
+
+// ---- the scenarios ----------------------------------------------------------
+function put(id, owner, troops, props) {
+  var r = regions[id];
+  r.owner = owner; r.troops = troops;
+  for (var k in props || {}) r[k] = props[k];
+  if (r.capital && owner === BLUE) playerCap = id;
+}
+function P(id, n, p) { put(id, BLUE, n, p); }
+function Rd(id, n, p) { put(id, RED, n, p); }
+function Gr(id, n, p) { put(id, GREEN, n, p); }
+function N(id, n, p) { put(id, NEUTRAL, n, p); }
+function cap(id, owner, n, p) { put(id, owner, n, p); regions[id].capital = true; if (owner === BLUE) playerCap = id; }
+function city(id, n, p) { N(id, n, p); regions[id].city = true; }
+function riverRow(bridge) {
+  [[7, 11], [8, 11], [8, 12], [9, 12], [9, 13], [10, 13]].forEach(function (b) { borders[key(b[0], b[1])] = "river"; });
+  if (bridge) borders[key(bridge[0], bridge[1])] = "bridge";
+}
+function blueMines() { return land.filter(function (r) { return r.mine && r.owner === BLUE; }).length; }
+
+var SCENARIOS = [
+  { lv: 1, name: "Orders and ticks", ai: [RED],
+    rule: "Draw your orders, Send them (or let the bell ring): both camps move at once. Defender ×1.5, city +1, capital +2.",
+    goal: "Take the red capital (Kestra)",
+    hint: "Drag from a blue region onto a neighbour, then pick All or Half in the bubble. Tap the region again to change or cancel.",
+    setup: function () {
+      cap(15, BLUE, 5); cap(2, RED, 5);
+      [0, 5, 8, 9, 12, 17].forEach(function (i) { city(i, 3); });
+    },
+    won: function () { return owns(2); } },
+
+  { lv: 2, name: "Forts", rules: [], ai: [],
+    rule: "A fort defends ×2 instead of ×1.5.",
+    goal: "Take the fort of Calder",
+    hint: "Point Garr at Duna, then at Calder: 5 beats 3 × 1.5, not 3 × 2. Pool Falun and Garr on the fort.",
+    setup: function () { cap(15, BLUE, 5); P(11, 4); P(12, 5); P(16, 3); N(8, 3, { fort: true }); N(9, 3); cap(2, RED, 5); },
+    won: function () { return owns(8); } },
+
+  { lv: 3, name: "Mountains", ai: [],
+    rule: "A mountain border cannot be crossed; a pass is the only way through.",
+    goal: "Take Calder",
+    hint: "Drag Falun → Calder: the mountain refuses it. The pass Garr → Duna is the only way north.",
+    setup: function () {
+      [[7, 11], [8, 11], [8, 12], [9, 13], [10, 13]].forEach(function (b) { borders[key(b[0], b[1])] = "mountain"; });
+      borders[key(9, 12)] = "pass";
+      cap(15, BLUE, 5); P(11, 5); P(12, 6); P(13, 4); city(8, 2); N(7, 1); N(9, 1); N(10, 1); cap(2, RED, 5);
+    },
+    won: function () { return owns(8); } },
+
+  { lv: 4, name: "Rivers and bridges", ai: [],
+    rule: "Attacking across a river counts ×0.75; over a bridge, ×1.",
+    goal: "Take Calder and Duna",
+    hint: "Garr → Calder over the bridge: 6 vs 4.5, taken. Holm → Duna across the water: 6 × 0.75 = 4.5 vs 4.5, a tie.",
+    setup: function () { riverRow([8, 12]); cap(15, BLUE, 5); P(11, 6); P(12, 6); P(13, 6); N(8, 3); N(9, 3); cap(2, RED, 5); },
+    won: function () { return owns(8) && owns(9); } },
+
+  { lv: 5, name: "Sea and harbours", ai: [RED], water: [7, 8, 9, 10],
+    rule: "A harbour ships troops to any other harbour; the fleet lands at the next bell.",
+    goal: "Land on the island and take Tolen",
+    hint: "Drag Garr ⚓ → Tolen ⚓: a fleet. It sails during this bell (dashed, +1) and lands at the next one.",
+    setup: function () {
+      cap(15, BLUE, 4); P(11, 2); P(12, 8, { harbour: true }); P(13, 3, { harbour: true }); P(14, 1); P(16, 1); P(17, 1);
+      city(5, 2, { harbour: true }); N(4, 1, { harbour: true }); N(6, 1); cap(2, RED, 4); Rd(1, 3); Rd(3, 2);
+    },
+    won: function () { return owns(5); } },
+
+  { lv: 6, name: "Fog of war", rules: ["fog"], ai: [RED],
+    rule: "You see only your regions and their neighbours; a watchtower sees two away. Red troops elsewhere read ?.",
+    goal: "Find and take the hidden capital",
+    hint: "The tower at Garr sees two regions away. A forecast into the fog reads ? until you see the region.",
+    setup: function () {
+      cap(15, BLUE, 5); P(11, 4); P(12, 4, { tower: true }); cap(0, RED, 5); Rd(1, 3); Rd(4, 3);
+      city(5, 3); city(8, 3); city(9, 3);
+    },
+    won: function () { return owns(0); } },
+
+  { lv: 7, name: "Gold", rules: ["gold"], ai: [],
+    rule: "A mine pays 1 gold a bell to its owner; the HUD counts it.",
+    goal: "Hold three mines at once",
+    hint: "Falun → Brevin and Holm → Esker take two mines in one bell; watch the income in the HUD.",
+    setup: function () {
+      cap(15, BLUE, 5); P(11, 5); P(12, 4); P(13, 5); P(16, 2, { mine: true });
+      N(7, 2, { mine: true }); N(10, 2, { mine: true }); cap(2, RED, 5);
+    },
+    won: function () { return blueMines() >= 3; } },
+
+  { lv: 8, name: "Recruitment", rules: ["gold", "recruit"], ai: [RED],
+    rule: "Tap one of your cities: 3 gold → +3 troops there at the bell (after the battles).",
+    goal: "Recruit in three cities",
+    hint: "Select a city, Recruit +3. The recruits join after the fights: Garr's shield does not change this bell.",
+    setup: function () {
+      cap(15, BLUE, 4); P(11, 2, { city: true }); P(12, 2, { city: true }); P(13, 2);
+      Rd(8, 7); Rd(9, 4); cap(2, RED, 5); gold[BLUE] = 9;
+    },
+    won: function () { return Object.keys(stat.recruit).length >= 3; } },
+
+  { lv: 9, name: "Cavalry", rules: ["gold", "cav"], ai: [],
+    rule: "A cavalry order moves two regions in one bell, through your own or empty land. 4 gold → 2 cavalry.",
+    goal: "Take two cities in one bell",
+    hint: "Drag Falun onto Myrr and Garr onto Tolen (two regions away): the bubble offers the cavalry. Garr's foot can still go elsewhere: drag it onto Duna, Foot only.",
+    setup: function () {
+      cap(15, BLUE, 4); P(11, 2, { cav: 2 }); P(12, 5, { cav: 3 }); P(13, 2);
+      N(8, 0); N(9, 0); city(4, 1); city(5, 1); N(6, 1); N(7, 1); cap(2, RED, 5); gold[BLUE] = 8;
+    },
+    won: function () { return stat.citiesBell >= 2; } },
+
+  { lv: 10, name: "Artillery", ai: [],
+    rule: "A cannon bombards a neighbour at the start of the bell: −2 troops there. It cannot move and fire in the same bell.",
+    goal: "Break the red fortress (Calder)",
+    hint: "Select Garr, Fire cannon on Calder, then read Falun's chip again: 9 vs 12 becomes 9 vs 8.",
+    setup: function () { cap(15, BLUE, 4); P(11, 9); P(12, 6, { cannon: true }); Rd(8, 6, { fort: true }); Rd(5, 2); cap(2, RED, 5); },
+    won: function () { return owns(8); } },
+
+  { lv: 11, name: "Grain", rules: ["grain"], ai: [],
+    rule: "Grain is a stock: farms add 3 a bell. A region feeds 6 troops; each one above eats 1 grain. Stock below 0: one troop deserts per overfed region.",
+    goal: "Three bells without a desertion",
+    hint: "The HUD says what the stock will be after the bell. Send half of Falun and Garr into the empty land: their orange rings go and the stock stops falling.",
+    setup: function () {
+      cap(15, BLUE, 8); P(11, 9); P(12, 8); P(13, 4); P(16, 3, { farm: true });
+      N(7, 1); N(8, 1); N(9, 1); N(14, 1); N(17, 1); cap(2, RED, 5); grain = 4;
+    },
+    won: function () { return tick >= 3 && stat.deserted === 0; },
+    fail: function () { return stat.deserted ? "Troops deserted" : ""; } },
+
+  { lv: 12, name: "Supply lines", rules: ["supply"], ai: [],
+    rule: "An army more than 3 regions from a city or a depot loses 1 troop a bell; a wagon builds a depot in 1 bell.",
+    goal: "Take the far capital (Aldmar)",
+    hint: "Norvik is 4 regions from your capital (red ring, −1 a bell). Build a depot at Myrr, or strike at once.",
+    setup: function () { cap(15, BLUE, 3); P(11, 1); P(7, 1); P(4, 5, { wagon: true }); P(0, 8); cap(1, RED, 6); Rd(2, 2); },
+    won: function () { return owns(1); } },
+
+  { lv: 13, name: "Scouts", rules: ["fog", "scout"], ai: [RED], skip: 0,
+    rule: "A balloon reveals two regions around it, and the red orders aimed at them, before the bell.",
+    goal: "Take Calder",
+    hint: "Red arrows aimed near your balloon (🎈) show before the bell. Move it one region a bell from its region's actions.",
+    setup: function () {
+      cap(15, BLUE, 5); P(11, 4); P(12, 4); P(13, 4); Rd(4, 6); Rd(5, 6); Rd(8, 5, { city: true }); cap(2, RED, 5);
+      balloon = 12;
+    },
+    won: function () { return owns(8); } },
+
+  { lv: 14, name: "Spies", rules: ["fog", "gold", "spy"], ai: [RED], skip: 0,
+    rule: "2 gold: the spy shows every red order of this bell as a ghost arrow.",
+    goal: "Take Calder",
+    hint: "Press Spy: the red arrows appear and every chip and shield now counts them.",
+    setup: function () {
+      cap(15, BLUE, 5); P(11, 4); P(12, 4); P(13, 4); Rd(4, 6); Rd(5, 6); Rd(8, 5, { city: true }); cap(2, RED, 5);
+      gold[BLUE] = 6;
+    },
+    won: function () { return owns(8); } },
+
+  { lv: 15, name: "Couriers", rules: ["gold", "courier"], ai: [RED],
+    rule: "An order from more than " + COURIER_RANGE + " steps from your capital or a courier post leaves one bell late.",
+    goal: "Take the red capital (Kestra)",
+    hint: "Draw Aldmar → Kestra: dashed amber, +1, it leaves next bell. Build a courier post at Myrr: the arrow turns solid.",
+    setup: function () { cap(15, BLUE, 4); P(11, 1); P(8, 1); P(4, 1); P(1, 7); cap(2, RED, 4); Rd(5, 2); Rd(6, 2); gold[BLUE] = 4; },
+    won: function () { return owns(2); } },
+
+  { lv: 16, name: "Generals", ai: [RED],
+    rule: "A general's army attacks ×1.5 and defends ×2; if it is beaten he is captured and the bonus is lost.",
+    goal: "Capture the red general",
+    hint: "Garr alone: 6 × 1.5 = 9 against 5 × 2 = 10. Add Falun and it is 12 against 10.",
+    setup: function () {
+      cap(15, BLUE, 4); P(11, 3); P(12, 6, { general: true }); P(13, 3);
+      Rd(8, 5, { general: true }); Rd(9, 3); cap(2, RED, 5);
+    },
+    won: function () { return !!captured[RED]; } },
+
+  { lv: 17, name: "Morale", rules: ["morale"], ai: [],
+    rule: "A win raises an army's morale (+1, up to +3 → ×1.3), a defeat lowers it; a drummer raises it by one a bell.",
+    goal: "An army at full morale (+3)",
+    hint: "Garr is at +1 with a drummer: win a fight with all its troops and the drummer follows.",
+    setup: function () { cap(15, BLUE, 4); P(11, 3); P(12, 5, { morale: 1, drummer: true }); N(8, 2); N(9, 2); N(4, 2); N(5, 2); cap(2, RED, 5); },
+    won: function () { return land.some(function (r) { return r.owner === BLUE && r.morale >= MORALE_MAX; }); } },
+
+  { lv: 18, name: "Standing orders", rules: ["standing"], ai: [RED], skip: 0,
+    rule: "A region can hold one order that fires by itself: if a region is attacked, reinforce it; if it is lost, retake it.",
+    goal: "Hold Garr for two bells",
+    hint: "Red strikes Garr with everything at the first bell. Select Kalm, If attacked → reinforce, tap Garr: Garr's shield turns green.",
+    script: function (t) { return t === 0 ? { 8: { to: 12, n: 7 }, 9: { to: 12, n: 6 } } : null; },
+    setup: function () { cap(15, BLUE, 5); P(11, 5); P(12, 3); P(13, 2); P(16, 8); Rd(8, 7); Rd(9, 6); cap(2, RED, 5); },
+    won: function () { return tick >= 2 && owns(12); },
+    fail: function () { return owns(12) ? "" : "Garr fell"; } },
+
+  { lv: 19, name: "Winter", rules: ["winter"], ai: [], snow: [0, 1, 2, 3, 4, 5, 6, 8],
+    rule: "Every " + SEASON_LEN + " bells the season turns. In winter, entering snow takes a bell more and production is halved.",
+    goal: "Take Tolen",
+    hint: "Garr → Calder (snow) is dashed +1: the column spends a bell on the road. Garr → Duna is solid: it lands now.",
+    setup: function () { seasonShift = SEASON_LEN; cap(15, BLUE, 4); P(11, 6); P(12, 8); P(13, 3); city(8, 2); N(9, 2); city(5, 2); cap(2, RED, 5); },
+    won: function () { return owns(5); } },
+
+  { lv: 20, name: "Storms", rules: ["storm"], ai: [], water: [7, 8, 9, 10],
+    rule: "A storm drifts over the sea; a lane under it is closed and a fleet caught in it loses a third.",
+    goal: "Take Myrr and Ostra",
+    hint: "The dashed circle is where the storm will be at the bell. Holm's fleet would sail under it; Falun's would not.",
+    setup: function () {
+      cap(15, BLUE, 4); P(11, 6, { harbour: true }); P(13, 6, { harbour: true }); P(12, 2);
+      N(4, 2, { harbour: true }); N(6, 2, { harbour: true }); cap(2, RED, 5);
+      storm = { x: 360, y: 600, dx: STORM_STEP };
+    },
+    won: function () { return owns(4) && owns(6); } },
+
+  { lv: 21, name: "Rebellions", rules: ["revolt"], ai: [],
+    rule: "A region taken less than 3 bells ago with fewer than 2 troops may revolt (30 % a bell) and turn purple.",
+    goal: "Still hold Calder and Duna after three bells",
+    hint: "Calder and Duna were just taken with 1 troop: their chips read the risk. Send them a troop each.",
+    setup: function () { cap(15, BLUE, 4); P(12, 6); P(11, 2); P(8, 1, { takenAt: 0 }); P(9, 1, { takenAt: 0 }); cap(2, RED, 5); },
+    won: function () { return tick >= 3 && owns(8) && owns(9); },
+    fail: function () { return stat.revolts ? "A region revolted" : ""; } },
+
+  { lv: 22, name: "Wonders", rules: ["wonder"], ai: [RED],
+    rule: "Holding the wonder region " + WONDER_HOLD + " bells in a row wins the stage outright.",
+    goal: "Hold the wonder " + WONDER_HOLD + " bells",
+    hint: "You have held Duna's wonder 3 bells. Red will strike it: keep it two more.",
+    setup: function () { cap(15, BLUE, 4); P(9, 3, { wonder: true }); P(12, 4); P(13, 3); Rd(5, 6); Rd(6, 5); cap(2, RED, 5); wonderHold[BLUE] = 3; },
+    won: function () { return wonderHold[BLUE] >= WONDER_HOLD; } },
+
+  { lv: 23, name: "Engineers", rules: ["gold"], ai: [RED],
+    rule: "4 gold, " + WORK_TICKS + " bells: the engineer builds a palisade (defence +0.5) or a bridge over a river.",
+    goal: "Finish one work",
+    hint: "Select Garr: Palisade or Bridge. The work counts down on the region; the engineer must stay.",
+    setup: function () { riverRow(null); cap(15, BLUE, 4); P(11, 4); P(12, 6, { engineer: true }); P(13, 4); Rd(8, 8); Rd(9, 5); cap(2, RED, 5); gold[BLUE] = 8; },
+    won: function () { return stat.works >= 1; } },
+
+  { lv: 24, name: "Sieges", rules: ["siege"], ai: [],
+    rule: "A capital or a fort can only be attacked by a camp holding two of its neighbours; a siege tower ignores the walls.",
+    goal: "Take the walled capital (Tolen)",
+    hint: "Calder → Tolen is refused. Take Myrr or Duna first, or bring Garr's siege tower 🪜 to Calder.",
+    setup: function () { cap(15, BLUE, 4); P(8, 10); P(12, 6, { siege: true }); P(11, 3); cap(5, RED, 5); Rd(2, 2); N(4, 1); N(9, 1); },
+    won: function () { return owns(5); } },
+
+  { lv: 25, name: "A third camp", ai: [RED, GREEN],
+    rule: "The green camp plays too, against everyone.",
+    goal: "Take both enemy capitals",
+    hint: "Your shields now count green and red neighbours alike. Red orders shows both camps' arrows.",
+    setup: function () {
+      cap(15, BLUE, 6); P(16, 2); cap(2, RED, 6); Rd(3, 2); cap(7, GREEN, 6); Gr(4, 2);
+      [5, 9, 12, 17].forEach(function (i) { city(i, 3); });
+    },
+    won: function () { return owns(2) && owns(7); } },
+
+  { lv: 26, name: "Truces", rules: ["truce"], ai: [RED, GREEN],
+    rule: "An envoy offers a truce: no attack between two camps for " + TRUCE_TICKS + " bells. An AI accepts when it is the weaker.",
+    goal: "Sign two truces",
+    hint: "Offer both truces. Under a truce, an order into that camp is refused and its shields drop.",
+    setup: function () { cap(15, BLUE, 6); P(11, 4); P(12, 4); P(16, 3); cap(2, RED, 3); Rd(3, 2); cap(7, GREEN, 5); Gr(4, 3); },
+    won: function () { return stat.truces >= 2; } },
+
+  { lv: 27, name: "Betrayal", rules: ["truce", "betray", "morale"], ai: [RED, GREEN],
+    rule: "Every AI has a temper. An opportunist breaks a truce when it is stronger at a border, and loses one morale everywhere.",
+    goal: "Lose no region for three bells",
+    hint: "Red is an opportunist and Garr is weak: your shields already count Red as a threat. Reinforce Garr.",
+    setup: function () {
+      cap(15, BLUE, 6); P(12, 2); P(11, 4); Rd(8, 9); cap(2, RED, 6); cap(7, GREEN, 5); Gr(4, 3);
+      truce[RED] = TRUCE_TICKS; truce[GREEN] = TRUCE_TICKS; temper[RED] = "opportunist"; temper[GREEN] = "loyal";
+    },
+    won: function () { return tick >= 3 && stat.lost === 0; },
+    fail: function () { return stat.lost ? "You lost a region" : ""; } },
+
+  { lv: 28, name: "Doctrines", rules: ["doctrine", "gold", "cav"], ai: [RED],
+    rule: "Before the stage, pick one doctrine: Blitz (cavalry +1 region), Bastion (forts ×2.5) or Merchant (mines pay 2).",
+    goal: "Take the red capital (Kestra)",
+    hint: "Pick a doctrine, then compare: Garr's cavalry reach, the forts' chips, the gold income.",
+    setup: function () {
+      cap(15, BLUE, 5); P(12, 5, { cav: 2 }); P(11, 3); N(5, 3, { fort: true }); N(8, 3, { fort: true });
+      N(7, 1, { mine: true }); N(10, 1, { mine: true }); cap(2, RED, 6); Rd(1, 3); gold[BLUE] = 4;
+    },
+    won: function () { return owns(2); } },
+
+  { lv: 29, name: "Airlift", ai: [RED], water: [7, 8, 9, 10],
+    rule: "A troop balloon carries up to " + LIFT_MAX + " troops three regions away, over sea or mountain, in one bell.",
+    goal: "Take the capital across the sea (Kestra)",
+    hint: "Select Holm, Airlift, tap Kestra over the sea: 6 against 3 × 1.5. The ⚠ says its red neighbours could still reinforce it.",
+    setup: function () { cap(15, BLUE, 4); P(13, 8, { lift: true }); P(12, 4); P(11, 2); cap(2, RED, 3); Rd(5, 3); Rd(6, 3); N(3, 1); N(1, 1); },
+    won: function () { return owns(2); } },
+
+  { lv: 30, name: "The Marshals' duel", rules: ["fog", "gold", "recruit", "cav", "morale", "fair"], ai: [RED],
+    rule: "A mirror map against the Red Marshal: he sees through the fog no more and plays your rules, everything on.",
+    goal: "Take the Red Marshal's capital (Kestra)",
+    hint: "Same map turned around, same fog, same gold. Spy is off: only the shields tell you what he could do.",
+    setup: function () {
+      cap(15, BLUE, 6, { general: true }); cap(2, RED, 6, { general: true });
+      city(12, 2); city(5, 2); city(9, 2); city(8, 2);
+      N(13, 2, { fort: true }); N(4, 2, { fort: true }); N(10, 1, { mine: true }); N(7, 1, { mine: true });
+      P(16, 2, { cav: 2 }); Rd(1, 2, { cav: 2 }); P(14, 2); Rd(3, 2);
+      gold[BLUE] = 3; gold[RED] = 3;
+    },
+    won: function () { return owns(2); } }
+];
+
+function load(ix) {
+  scIx = ix; sc = SCENARIOS[ix];
+  rules = {};
+  (sc.rules || []).forEach(function (k) { rules[k] = true; });
+  buildMap(sc.water || []);
+  borders = {};
+  gold = [0, 0, 0, 0, 0]; grain = 0; truce = [0, 0, 0, 0, 0]; temper = ["", "", "", "", ""];
+  doctrine = ""; captured = []; wonderHold = [0, 0, 0, 0, 0]; storm = null; seasonShift = 0;
+  stat = { recruit: {}, works: 0, truces: 0, spies: 0, deserted: 0, lost: 0, revolts: 0, standingFired: 0, citiesBell: 0, supplyLost: 0 };
+  orders = {}; cavOrders = {}; bubble = null; aiOrders = {}; aiActs = []; courierDue = []; transit = []; standing = {}; acts = []; works = [];
+  balloon = -1; balloonTick = -1; playerCap = -1;
+  phase = "plan"; tick = 0; timer = 0; paused = false; spyTick = -1;
   anim = []; animT = 0; pending = null;
-  selected = -1; drag = null; hover = -1; outcome = null;
-  floaters = [];
-  log = ["Drag from a blue region to a neighbour: all its troops go there at the tick.",
-    "Tap it again for half, again to cancel. Everyone moves at once."];
-  computeAI();
+  selected = -1; drag = null; hover = -1; mode = null; outcome = null; floaters = [];
+  rng = makeRng(1234 + ix * 77);
+  aiCamps = sc.ai || [];
+  (sc.snow || []).forEach(function (i) { regions[i].terrain = "snow"; });
+  sc.setup();
+  log = [sc.hint];
+  pickDoctrine = !!rules.doctrine;
+  planAI();
   renderMap();
 }
 
 // ---- the map picture ------------------------------------------------------
+function computeSeen() {
+  seen = {};
+  if (!rules.fog) { land.forEach(function (r) { seen[r.id] = true; }); return; }
+  function around(id, reach) {
+    var d = bfs([id], function () { return true; });
+    for (var k in d) if (d[k] <= reach) seen[k] = true;
+  }
+  land.forEach(function (r) {
+    if (r.owner !== BLUE) return;
+    seen[r.id] = true;
+    adj[r.id].forEach(function (n) { seen[n] = true; });
+    if (r.tower) around(r.id, TOWER_RANGE);
+  });
+  if (balloon >= 0) around(balloon, SCOUT_RANGE);
+}
+
 function renderMap() {
+  computeSeen();
   var img = mctx.createImageData(GW, GH), d = img.data;
+  // the first four test a plain edge; the far ones only widen a mountain range
+  var OFF = [[1, 0], [-1, 0], [0, 1], [0, -1], [2, 0], [-2, 0], [0, 2], [0, -2],
+    [4, 0], [-4, 0], [0, 4], [0, -4], [6, 0], [-6, 0], [0, 6], [0, -6]];
   for (var gy = 0; gy < GH; gy++) {
     for (var gx = 0; gx < GW; gx++) {
       var i = gy * GW + gx, id = grid[i], o = i * 4, c, f;
       var x = gx * CELL, y = MY0 + gy * CELL;
       if (id < 0) {
         f = 1 + noise(x, y, 9) * 0.08;
-        c = [28 * f, 58 * f, 92 * f];
+        c = [28 * f, 70 * f, 96 * f];
       } else {
-        var r = regions[id], base = COL[r.owner];
+        var r = regions[id], t = TERRAIN[r.terrain], own = COL[r.owner];
+        // the terrain is the paper, the owner a tissue laid over it
+        var a = r.owner === NEUTRAL ? 0.15 : 0.55;
+        if (!seen[id]) { own = [70, 74, 84]; a = 0.75; }
+        c = [t[0] * (1 - a) + own[0] * a, t[1] * (1 - a) + own[1] * a, t[2] * (1 - a) + own[2] * a];
         f = 1 + noise(x * 2, y * 2, 2) * 0.05;
-        if (id === selected || id === hover) f *= 1.22;
-        var right = gx + 1 < GW ? grid[i + 1] : -1, down = gy + 1 < GH ? grid[i + GW] : -1;
-        var left = gx > 0 ? grid[i - 1] : -1, up = gy > 0 ? grid[i - GW] : -1;
-        if (right < 0 || down < 0 || left < 0 || up < 0) f *= 0.45;              // coast
-        else if (right !== id || down !== id) f *= 0.6;                         // border
-        c = [base[0] * f, base[1] * f, base[2] * f];
+        if (id === selected || id === hover) f *= 1.2;
+        var edge = false, coast = false, typed = "";
+        for (var k = 0; k < OFF.length; k++) {
+          var nx = gx + OFF[k][0], ny = gy + OFF[k][1];
+          var nb = nx >= 0 && nx < GW && ny >= 0 && ny < GH ? grid[ny * GW + nx] : -1;
+          if (k < 4 && nb < 0) coast = true;
+          if (nb >= 0 && nb !== id) {
+            if (k < 4) edge = true;
+            var bt = borderOf(id, nb);
+            if (bt && bt !== "pass" && (k < 8 || bt === "mountain")) typed = bt;
+          }
+        }
+        if (typed === "mountain") c = [112, 86, 58];
+        else if (typed === "river") c = [60, 130, 210];
+        else if (typed === "bridge") c = [60, 130, 210];
+        else if (coast) f *= 0.5;
+        else if (edge) f *= 0.62;
+        c = [c[0] * f, c[1] * f, c[2] * f];
       }
       d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
     }
@@ -186,184 +1316,28 @@ function renderMap() {
   mctx.putImageData(img, 0, 0);
 }
 
-// ---- resolution -----------------------------------------------------------
-function orderCount(r, o) {
-  if (o.n != null) return Math.min(o.n, r.troops);
-  return o.frac >= 1 ? r.troops : Math.max(1, Math.floor(r.troops * o.frac));
-}
-
-function resolve() {
-  var stay = regions.map(function (r) { return r.troops; });
-  var moves = [], events = [];
-  function collect(set, owner) {
-    for (var k in set) {
-      var from = +k, o = set[k], r = regions[from];
-      if (r.owner !== owner || r.troops <= 0 || adj[from].indexOf(o.to) < 0) continue;
-      var n = orderCount(r, o);
-      if (n <= 0) continue;
-      stay[from] -= n;
-      moves.push({ from: from, to: o.to, owner: owner, n0: n, n: n, clash: false });
-    }
-  }
-  collect(orders, PLAYER);
-  collect(aiOrders, AI);
-
-  // Two enemy columns crossing the same border meet halfway.
-  for (var i = 0; i < moves.length; i++) {
-    for (var j = i + 1; j < moves.length; j++) {
-      var a = moves[i], b = moves[j];
-      if (a.from === b.to && a.to === b.from && a.owner !== b.owner) {
-        var k = Math.min(a.n, b.n);
-        a.n -= k; b.n -= k; a.clash = b.clash = true;
-        events.push("Clash between " + regions[a.from].name + " and " + regions[a.to].name + " (-" + k + " each)");
-      }
-    }
-  }
-
-  var arrive = regions.map(function () { return [0, 0, 0]; });
-  moves.forEach(function (m) { arrive[m.to][m.owner] += m.n; });
-
-  var next = regions.map(function (r, id) { return { owner: r.owner, troops: stay[id], fight: false }; });
-  regions.forEach(function (r, id) {
-    var owner = r.owner, def = stay[id] + arrive[id][owner];
-    var sides = [{ owner: owner, raw: def, str: def }];
-    for (var w = 0; w < 3; w++) if (w !== owner && arrive[id][w] > 0) sides.push({ owner: w, raw: arrive[id][w], str: arrive[id][w] });
-    next[id].troops = def;
-    if (sides.length === 1) return;
-    sides[0].str = def * DEF_BONUS;
-    sides.sort(function (p, q) { return q.str - p.str; });
-    var s1 = sides[0], s2 = sides[1];
-    next[id].fight = true;
-    if (s1.str === s2.str) {
-      next[id].troops = 0;
-      events.push("Stalemate at " + r.name + ", nobody left standing");
-      return;
-    }
-    next[id].owner = s1.owner;
-    next[id].troops = Math.max(1, Math.round(s1.raw * (s1.str - s2.str) / s1.str));
-    if (s1.owner !== owner) events.push(WHO[s1.owner] + " took " + r.name + (r.capital ? " (capital)" : ""));
-    else if (owner !== NEUTRAL) events.push(WHO[owner] + " held " + r.name);
-  });
-
-  regions.forEach(function (r, id) {
-    var n = next[id];
-    if (n.owner === NEUTRAL || !r.center && !r.capital) return;
-    n.prod = r.capital ? PROD_CAPITAL : PROD_CENTER;
-    n.troops += n.prod;
-  });
-  return { next: next, moves: moves, events: events };
-}
-
-function startResolve() {
-  pending = resolve();
-  anim = pending.moves;
-  animT = 0;
-  phase = "resolve";
-  drag = null;
-}
-
-function applyResolve() {
-  pending.next.forEach(function (n, id) {
-    var r = regions[id];
-    r.owner = n.owner; r.troops = n.troops;
-    if (n.prod) floaters.push({ x: r.cx, y: r.cy - 52, text: "+" + n.prod, col: "#ffd34d", t: 0 });
-    if (n.fight) floaters.push({ x: r.cx, y: r.cy + 40, text: "battle", col: "#fff", t: 0 });
-  });
-  log = pending.events.length ? pending.events.slice(-3) : ["Tick " + (tick + 1) + ": nothing happened"];
-  pending = null; anim = [];
-  tick++; timer = 0;
-  if (!KEEP_ORDERS) orders = {};
-  for (var k in orders) if (regions[k].owner !== PLAYER) delete orders[k];
-  if (regions[AI_CAP].owner !== AI) outcome = "Victory";
-  else if (regions[PLAYER_CAP].owner !== PLAYER) outcome = "Defeat";
-  phase = outcome ? "over" : "plan";
-  computeAI();
-  renderMap();
-}
-
-// ---- the AI ---------------------------------------------------------------
-// Greedy: rank the targets next to its land by worth over defence, pool every
-// region touching a target until it outnumbers it, march the interior toward
-// the front, and keep part of a frontier home when you stand next door.
-function computeAI() {
-  aiOrders = {};
-  var mine = regions.filter(function (r) { return r.owner === AI; });
-  var avail = {}, used = {};
-  mine.forEach(function (r) {
-    var threat = 0;
-    adj[r.id].forEach(function (n) { if (regions[n].owner === PLAYER) threat += regions[n].troops; });
-    var keep = Math.ceil(threat * (r.capital ? 1 : AI_CAUTION) / DEF_BONUS);
-    avail[r.id] = Math.max(0, r.troops - keep);
-  });
-
-  var targets = [];
-  regions.forEach(function (t) {
-    if (t.owner === AI) return;
-    if (!adj[t.id].some(function (n) { return regions[n].owner === AI; })) return;
-    var need = (t.troops * (t.troops > 0 ? DEF_BONUS : 1) + 1) * AI_MARGIN;
-    var worth = 1 + (t.center ? 2 : 0) + (t.capital ? 4 : 0) + (t.owner === PLAYER ? 1 : 0);
-    targets.push({ t: t, need: need, score: worth / need });
-  });
-  targets.sort(function (a, b) { return b.score - a.score; });
-
-  targets.forEach(function (g) {
-    var src = adj[g.t.id].filter(function (n) { return regions[n].owner === AI && !used[n] && avail[n] > 0; });
-    src.sort(function (a, b) { return avail[b] - avail[a]; });
-    var sum = 0, pick = [];
-    for (var i = 0; i < src.length && sum < g.need; i++) { sum += avail[src[i]]; pick.push(src[i]); }
-    if (sum < g.need) return;
-    pick.forEach(function (s) {
-      if (Math.random() < AI_SKIP) return;
-      used[s] = true;
-      aiOrders[s] = { to: g.t.id, n: avail[s] };
-    });
-  });
-
-  // Distance to the front, walked through the AI's own land.
-  var dist = {}, queue = [];
-  mine.forEach(function (r) {
-    if (adj[r.id].some(function (n) { return regions[n].owner !== AI; })) { dist[r.id] = 0; queue.push(r.id); }
-  });
-  while (queue.length) {
-    var c = queue.shift();
-    adj[c].forEach(function (n) {
-      if (regions[n].owner === AI && dist[n] == null) { dist[n] = dist[c] + 1; queue.push(n); }
-    });
-  }
-  mine.forEach(function (r) {
-    if (used[r.id] || r.troops <= 0 || !dist[r.id]) return;
-    var best = -1;
-    adj[r.id].forEach(function (n) {
-      if (regions[n].owner === AI && dist[n] != null && (best < 0 || dist[n] < dist[best])) best = n;
-    });
-    if (best >= 0 && !r.capital) aiOrders[r.id] = { to: best, n: r.troops };
-  });
-}
-
 // ---- input ----------------------------------------------------------------
 var buttons = [
-  { label: function () { return paused ? "Play" : "Pause"; }, act: function () { paused = !paused; } },
-  { label: function () { return "Speed x" + SPEEDS[speedIx]; }, act: function () { speedIx = (speedIx + 1) % SPEEDS.length; } },
-  { label: function () { return "Tick " + fmt(TICK_PRESETS[tickIx]); }, act: function () { tickIx = (tickIx + 1) % TICK_PRESETS.length; timer = Math.min(timer, TICK_PRESETS[tickIx] - 1); } },
-  { label: function () { return "Resolve now"; }, act: function () { if (phase === "plan") startResolve(); } },
-  { label: function () { return showAI ? "Red orders: shown" : "Red orders: hidden"; }, act: function () { showAI = !showAI; } },
-  { label: function () { return "Restart"; }, act: function () { reset(); } }
+  { label: function () { return "Send orders"; }, act: function () { startResolve(); }, send: true },
+  { label: function () { return paused ? "Resume" : "Pause"; }, act: function () { paused = !paused; }, pause: true },
+  { label: function () { return "Mechanics"; }, act: function () { menuOpen = true; } },
+  { label: function () { return "Speed ×" + SPEEDS[speedIx]; }, act: function () { speedIx = (speedIx + 1) % SPEEDS.length; } },
+  { label: function () { return showAI ? "Red: shown" : "Red: hidden"; }, act: function () { showAI = !showAI; } },
+  { label: function () { return "Restart"; }, act: function () { load(scIx); } }
 ];
-buttons.forEach(function (b, i) {
-  b.x = 16 + (i % 3) * 232; b.y = 1146 + Math.floor(i / 3) * 66; b.w = 224; b.h = 58;
-});
-speedIx = 0; tickIx = 0; showAI = false;
+buttons.forEach(function (b, i) { b.x = 16 + i * 116; b.y = 1190; b.w = 108; b.h = 76; });
+speedIx = 0; tickIx = 0; showAI = false; menuOpen = false;
 
 var fit = { s: 1, ox: 0, oy: 0 };
-function toDesign(e) {
-  return { x: (e.clientX - fit.ox) / fit.s, y: (e.clientY - fit.oy) / fit.s };
-}
+function toDesign(e) { return { x: (e.clientX - fit.ox) / fit.s, y: (e.clientY - fit.oy) / fit.s }; }
+function inBox(p, b) { return p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h; }
 
 function regionAt(x, y) {
   var gx = Math.floor(x / CELL), gy = Math.floor((y - MY0) / CELL);
   if (gx >= 0 && gx < GW && gy >= 0 && gy < GH && grid[gy * GW + gx] >= 0) return grid[gy * GW + gx];
-  var best = -1, bd = 50;
-  regions.forEach(function (r) {
+  if (y < MY0 || y > MY0 + MH) return -1;
+  var best = -1, bd = 40;
+  land.forEach(function (r) {
     var d = Math.hypot(x - r.cx, y - r.cy);
     if (d < bd) { bd = d; best = r.id; }
   });
@@ -376,24 +1350,197 @@ function setSelected(id) {
   renderMap();
 }
 
+// The bar of actions: the global ones, then those of the selected region.
+function actions() {
+  var L = [];
+  if (phase !== "plan") return L;
+  if (rules.spy) L.push({ label: "Spy · " + SPY_COST + "g", on: gold[BLUE] >= SPY_COST && spyTick !== tick,
+    act: function () { gold[BLUE] -= SPY_COST; spyTick = tick; stat.spies++; } });
+  if (rules.truce) aiCamps.forEach(function (c) {
+    if (alive(c) && truce[c] <= tick) L.push({ label: "Truce " + WHO[c], on: true, act: function () { offerTruce(c); } });
+  });
+  if (selected < 0 || !owns(selected)) return L;
+  var r = regions[selected], s = selected;
+  var doneHere = function (kind) { return acts.some(function (a) { return a.at === s && a.kind === kind; }); };
+  if (rules.recruit && (r.city || r.capital)) L.push({ label: "Recruit +" + RECRUIT_TROOPS + " · " + RECRUIT_COST + "g",
+    on: gold[BLUE] >= RECRUIT_COST && !doneHere("recruit"),
+    act: function () { gold[BLUE] -= RECRUIT_COST; acts.push({ kind: "recruit", at: s }); stat.recruit[s] = true; } });
+  if (rules.cav && (r.city || r.capital)) L.push({ label: "Cavalry +" + CAV_COUNT + " · " + CAV_COST + "g",
+    on: gold[BLUE] >= CAV_COST && !doneHere("cav"),
+    act: function () { gold[BLUE] -= CAV_COST; acts.push({ kind: "cav", at: s }); } });
+  if (r.cannon) L.push({ label: "Fire cannon", on: true, mode: "fire" });
+  if (r.lift) L.push({ label: "Airlift", on: true, mode: "lift" });
+  if (r.wagon && !r.depot) L.push({ label: "Depot · 1 bell", on: !doneHere("depot"), act: function () { acts.push({ kind: "depot", at: s }); } });
+  if (rules.courier && !r.post && !r.capital) L.push({ label: "Courier post · " + POST_COST + "g",
+    on: gold[BLUE] >= POST_COST,
+    act: function () { gold[BLUE] -= POST_COST; r.post = true; log = ["Courier post at " + r.name + ": orders near it leave at once"]; } });
+  if (r.engineer) {
+    var busy = works.some(function (w) { return w.at === s; });
+    if (!r.palisade) L.push({ label: "Palisade · " + WORK_COST + "g", on: !busy && gold[BLUE] >= WORK_COST,
+      act: function () { gold[BLUE] -= WORK_COST; works.push({ at: s, to: s, kind: "palisade", left: WORK_TICKS }); } });
+    if (adj[s].some(function (n) { return borderOf(s, n) === "river"; })) L.push({ label: "Bridge · " + WORK_COST + "g", on: !busy && gold[BLUE] >= WORK_COST, mode: "bridge" });
+  }
+  if (rules.standing) {
+    L.push({ label: "If attacked → reinforce", on: true, mode: "standA" });
+    L.push({ label: "If lost → retake", on: true, mode: "standL" });
+    if (standing[s]) L.push({ label: "Clear standing", on: true, act: function () { delete standing[s]; } });
+  }
+  if (balloon === s) L.push({ label: "Move balloon", on: balloonTick !== tick, mode: "balloon" });
+  return L;
+}
+
+function layoutActions() {
+  var L = actions(), x = 16, y = 1016;
+  ctx.font = "bold 20px system-ui, sans-serif";
+  L.forEach(function (a) {
+    var w = ctx.measureText(a.label).width + 26;
+    if (x + w > W - 16) { x = 16; y -= 50; }
+    a.x = x; a.y = y; a.w = w; a.h = 44;
+    x += w + 8;
+  });
+  return L;
+}
+
+function modeTarget(id) {
+  var s = selected;
+  if (id < 0 || s < 0) return false;
+  if (mode === "fire" || mode === "lift") return classify(s, id, mode, BLUE).ok;
+  if (mode === "standA" || mode === "standL") return id !== s && owns(id) && isNb(s, id) && canCross(s, id);
+  if (mode === "balloon") return isNb(s, id);
+  if (mode === "bridge") return isNb(s, id) && borderOf(s, id) === "river";
+  return false;
+}
+
+function applyMode(id) {
+  var s = selected;
+  if (mode === "fire") orders[s] = { to: id, kind: "fire" };
+  if (mode === "lift") orders[s] = { to: id, kind: "lift", frac: 1 };
+  if (mode === "standA") standing[s] = { to: id, cond: "attacked" };
+  if (mode === "standL") standing[s] = { to: id, cond: "lost" };
+  if (mode === "balloon") { balloon = id; balloonTick = tick; selected = id; }
+  if (mode === "bridge") { gold[BLUE] -= WORK_COST; works.push({ at: s, to: id, kind: "bridge", left: WORK_TICKS }); }
+  mode = null;
+  renderMap();
+}
+
+// ---- the order bubble -------------------------------------------------------
+// A drag drawn onto a target opens a bubble beside it: one line per way the
+// order can go, each with its count and the forecast of its fight. Nothing is
+// ordered until a line is picked; a tap anywhere else closes it.
+// `editing` is the order being changed ("main" or "cav"), or null for a new one.
+function openBubble(from, to, editing) {
+  var r = regions[from], c = classify(from, to, null, BLUE);
+  if (!c.ok) { if (c.why) log = ["Refused: " + c.why]; return; }
+  var foot = r.troops - r.cav, opts = [];
+  function add(label, o, n) { opts.push({ label: label + " · " + n, o: o }); }
+  if (c.kind === "cav") add("Cavalry", { to: to, frac: 1, kind: "cav", unit: "cav" }, r.cav);
+  else {
+    add("All", { to: to, frac: 1, kind: c.kind }, r.troops);
+    if (r.troops > 1) add("Half", { to: to, frac: 0.5, kind: c.kind }, Math.floor(r.troops / 2));
+    if (r.cav > 0 && foot > 0 && c.kind === "move") {
+      add("Foot only", { to: to, frac: 1, kind: c.kind, unit: "foot" }, foot);
+      add("Cavalry only", { to: to, frac: 1, kind: c.kind, unit: "cav" }, r.cav);
+    }
+  }
+  opts.forEach(function (op) {
+    var cc = classifyOrder(from, op.o, BLUE);
+    if (cc.delayed || cc.eta > 0) { op.v = { text: "+1 bell", col: "#b07a10" }; return; }
+    // "All" takes the riders too, so it replaces a cavalry order already given
+    var Fo = forecast({ camp: BLUE, from: from, o: op.o, alone: !op.o.unit && op.o.frac >= 1 });
+    op.v = verdict(to, Fo);
+    var cur = cavSlot(op.o) ? cavOrders[from] : orders[from];
+    op.on = cur && cur.to === to && cur.frac === op.o.frac && (cur.unit || "") === (op.o.unit || "");
+  });
+  if (editing) opts.push({ label: "Cancel this order", cancel: true });
+  var w = 330, h = 50 + opts.length * 56, b = regions[to];
+  var x = Math.max(16, Math.min(W - 16 - w, b.cx + 46));
+  if (b.cx + 46 + w > W - 16) x = Math.max(16, b.cx - 46 - w);
+  var y = Math.max(MY0 + 4, Math.min(MY0 + MH - h - 4, b.cy - h / 2));
+  bubble = { from: from, to: to, opts: opts, x: x, y: y, w: w, h: h, editing: editing };
+}
+
+function bubbleRow(i) { return { x: bubble.x + 10, y: bubble.y + 44 + i * 56, w: bubble.w - 20, h: 50 }; }
+
+function pickBubble(op) {
+  var from = bubble.from, bubbleEditing = bubble.editing;
+  bubble = null;
+  if (op.cancel) {
+    if (bubbleEditing === "cav") delete cavOrders[from]; else delete orders[from];
+    return;
+  }
+  if (cavSlot(op.o)) {
+    cavOrders[from] = op.o;
+    // the cavalry now rides apart: an "all" order already given keeps only the foot
+    var o = orders[from];
+    if (o && !o.unit && o.frac >= 1 && o.kind === "move") o.unit = "foot";
+  } else {
+    orders[from] = op.o;
+    if (!op.o.unit && op.o.frac >= 1) delete cavOrders[from];   // everyone rides together
+  }
+}
+
+function drawBubble() {
+  var b = bubble, from = regions[b.from], to = regions[b.to];
+  arrow(from, to, "rgba(255,255,255,0.85)", "", true, 5);
+  ctx.fillStyle = "rgba(14,18,28,0.96)";
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(b.x, b.y, b.w, b.h, 14); else ctx.rect(b.x, b.y, b.w, b.h);
+  ctx.fill();
+  ctx.strokeStyle = "#6a7aa0"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.font = "bold 20px system-ui, sans-serif";
+  ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(from.name + " → " + to.name, b.x + 14, b.y + 22, b.w - 28);
+  b.opts.forEach(function (op, i) {
+    var r = bubbleRow(i);
+    ctx.fillStyle = op.cancel ? "#4a2626" : op.on ? "#2b5aa8" : "#273044";
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 21px system-ui, sans-serif";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText(op.label, r.x + 12, r.y + r.h / 2 + 1, r.w - 120);
+    if (op.v) chip(r.x + r.w - 54, r.y + r.h / 2, op.v.text, op.v.col);
+  });
+}
+
+function lockedByCourier(id) { return courierDue.some(function (d) { return d.from === id; }); }
+
 cv.addEventListener("pointerdown", function (e) {
   var p = toDesign(e);
-  if (phase === "over") { reset(); return; }
-  for (var i = 0; i < buttons.length; i++) {
-    var b = buttons[i];
-    if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { b.act(); return; }
+  if (menuOpen) { menuTap(p); return; }
+  if (pickDoctrine) { doctrineTap(p); return; }
+  if (outcome) { outcomeTap(p); return; }
+  if (bubble) {
+    for (var bi = 0; bi < bubble.opts.length; bi++) {
+      if (inBox(p, bubbleRow(bi))) { pickBubble(bubble.opts[bi]); return; }
+    }
+    bubble = null;
+    if (inBox(p, { x: 0, y: MY0, w: W, h: MH })) return;   // a tap on the map only closes it
+  }
+  for (var i = 0; i < buttons.length; i++) if (inBox(p, buttons[i])) { buttons[i].act(); return; }
+  var L = layoutActions();
+  for (i = 0; i < L.length; i++) {
+    var a = L[i];
+    if (!inBox(p, a)) continue;
+    if (!a.on) return;
+    if (a.mode) mode = mode === a.mode ? null : a.mode;
+    else a.act();
+    return;
   }
   var id = regionAt(p.x, p.y);
+  if (mode) {
+    if (modeTarget(id)) applyMode(id); else mode = null;
+    return;
+  }
   setSelected(id);
-  if (phase === "plan" && id >= 0 && regions[id].owner === PLAYER && regions[id].troops > 0) drag = { from: id, x: p.x, y: p.y };
+  if (phase === "plan" && id >= 0 && owns(id) && regions[id].troops > 0 && !lockedByCourier(id)) drag = { from: id, x: p.x, y: p.y, moved: false };
 });
 
 cv.addEventListener("pointermove", function (e) {
   if (!drag) return;
   var p = toDesign(e);
+  if (Math.hypot(p.x - drag.x, p.y - drag.y) > 12) drag.moved = true;
   drag.x = p.x; drag.y = p.y;
   var id = regionAt(p.x, p.y);
-  var h = id >= 0 && adj[drag.from].indexOf(id) >= 0 ? id : -1;
+  var h = id >= 0 && id !== drag.from ? id : -1;
   if (h !== hover) { hover = h; renderMap(); }
 });
 
@@ -404,19 +1551,50 @@ cv.addEventListener("pointerup", function (e) {
   if (hover >= 0) { hover = -1; renderMap(); }
   if (phase !== "plan") return;
   if (id === from) {
-    var o = orders[from];
-    if (o && o.frac >= 1) o.frac = 0.5;
-    else if (o) delete orders[from];
-  } else if (id >= 0 && adj[from].indexOf(id) >= 0) {
-    orders[from] = { to: id, frac: 1 };
-  }
+    // a tap on a region that already has an order: change it or cancel it
+    var o = orders[from] || cavOrders[from];
+    if (!o) return;
+    if (o.kind === "fire" || o.kind === "lift") { delete orders[from]; return; }
+    openBubble(from, o.to, orders[from] ? "main" : "cav");
+  } else if (id >= 0) openBubble(from, id, null);
 });
+
+function menuTap(p) {
+  for (var i = 0; i < SCENARIOS.length; i++) {
+    var b = menuBox(i);
+    if (inBox(p, b)) { menuOpen = false; load(i); return; }
+  }
+  for (var t = 0; t < TICK_PRESETS.length; t++) {
+    if (inBox(p, tickBox(t))) { tickIx = t; timer = Math.min(timer, TICK_PRESETS[t] - 1); return; }
+  }
+  if (inBox(p, { x: 220, y: 1180, w: 280, h: 70 })) menuOpen = false;
+}
+function menuBox(i) { return { x: 16 + (i >= 15 ? 348 : 0), y: 84 + (i % 15) * 62, w: 340, h: 54 }; }
+function tickBox(t) { return { x: 160 + t * 140, y: 1036, w: 130, h: 56 }; }
+
+var DOCTRINES = [
+  { key: "blitz", name: "Blitz", text: "Cavalry rides one region further (3)" },
+  { key: "bastion", name: "Bastion", text: "Your forts defend ×2.5 instead of ×2" },
+  { key: "merchant", name: "Merchant", text: "Your mines pay 2 gold a bell" }
+];
+function doctrineBox(i) { return { x: 80, y: 420 + i * 150, w: 560, h: 120 }; }
+function doctrineTap(p) {
+  DOCTRINES.forEach(function (d, i) {
+    if (inBox(p, doctrineBox(i))) { doctrine = d.key; pickDoctrine = false; log = ["Doctrine: " + d.name + ". " + d.text + "."]; }
+  });
+}
+
+function outcomeBox(i) { return { x: 70 + i * 200, y: 720, w: 180, h: 70 }; }
+function outcomeTap(p) {
+  if (inBox(p, outcomeBox(0))) load(scIx);
+  else if (inBox(p, outcomeBox(1))) load(Math.min(SCENARIOS.length - 1, scIx + 1));
+  else if (inBox(p, outcomeBox(2))) { menuOpen = true; }
+}
 
 // ---- drawing --------------------------------------------------------------
 function fmt(sec) {
   sec = Math.max(0, Math.round(sec));
-  var d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
-  if (d) return d + "d " + h + "h";
+  var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
   if (h) return h + "h " + (m < 10 ? "0" : "") + m + "m";
   if (m) return m + "m " + (s < 10 ? "0" : "") + s + "s";
   return s + "s";
@@ -452,11 +1630,22 @@ function token(x, y, n, owner, r) {
   ctx.fillText(n, x, y + 1);
 }
 
-function arrow(a, b, col, label, dashed) {
-  var dx = b.cx - a.cx, dy = b.cy - a.cy, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+function chip(x, y, text, bg, fg, size) {
+  ctx.font = "bold " + (size || 20) + "px system-ui, sans-serif";
+  var w = ctx.measureText(text).width + 14, h = (size || 20) + 10;
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2); else ctx.rect(x - w / 2, y - h / 2, w, h);
+  ctx.fill();
+  ctx.fillStyle = fg || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y + 1);
+}
+
+function arrow(a, b, col, label, dashed, width) {
+  var dx = b.cx - a.cx, dy = b.cy - a.cy, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
   var x0 = a.cx + ux * 26, y0 = a.cy + uy * 26, x1 = b.cx - ux * 30, y1 = b.cy - uy * 30;
   ctx.save();
-  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 7; ctx.lineCap = "round";
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = width || 7; ctx.lineCap = "round";
   if (dashed) ctx.setLineDash([12, 10]);
   ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * 10, y1 - uy * 10); ctx.stroke();
   ctx.setLineDash([]);
@@ -465,124 +1654,574 @@ function arrow(a, b, col, label, dashed) {
   ctx.lineTo(x1 - ux * 16 - uy * 13, y1 - uy * 16 + ux * 13);
   ctx.lineTo(x1 - ux * 16 + uy * 13, y1 - uy * 16 - ux * 13);
   ctx.closePath(); ctx.fill();
-  if (label) {
-    var mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-    ctx.font = "bold 20px system-ui, sans-serif";
-    var w = ctx.measureText(label).width + 16;
-    ctx.fillStyle = "rgba(10,14,22,0.85)";
-    ctx.fillRect(mx - w / 2, my - 14, w, 28);
-    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(label, mx, my + 1);
-  }
+  if (label) chip(x0 + (x1 - x0) * 0.3, y0 + (y1 - y0) * 0.3, label, "rgba(10,14,22,0.85)");
   ctx.restore();
+  return { x: x1 - ux * 24, y: y1 - uy * 24 };
 }
 
 function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
+function orderLabel(from, o) {
+  var r = regions[from];
+  if (o.kind === "fire") return "💥 −" + CANNON_DAMAGE;
+  if (cavSlot(o)) return "🐎 " + r.cav;
+  if (o.kind === "lift") return "🪂 " + Math.min(LIFT_MAX, r.troops);
+  if (o.unit === "foot") {
+    var foot = r.troops - r.cav;
+    return (o.frac >= 1 ? "foot " : "half foot ") + (o.frac >= 1 ? foot : Math.max(1, Math.floor(foot * o.frac)));
+  }
+  var n = o.frac >= 1 ? r.troops : Math.max(1, Math.floor(r.troops * o.frac));
+  return (o.frac >= 1 ? "all " : "half ") + n;
+}
+
+// What each region will hold after the bell if the forecast holds: who owns it,
+// the troops left by its fights, and what the bell then produces there.
+function projected() {
+  var out = {}, P = F.P;
+  land.forEach(function (r) {
+    var res = F.now[r.id];
+    var owner = res && !res.tie ? res.owner : r.owner, n = res ? res.left : P.stay[r.id], prod = 0;
+    if (owner !== NEUTRAL && owner !== REBEL) {
+      prod = r.capital ? PROD_CAPITAL : r.city ? PROD_CITY : 0;
+      if (prod && isWinter()) prod = Math.floor(r.acc + prod / 2);
+    }
+    acts.forEach(function (a) {
+      if (a.at === r.id && owner === BLUE) prod += a.kind === "recruit" ? RECRUIT_TROOPS : a.kind === "cav" ? CAV_COUNT : 0;
+    });
+    out[r.id] = { owner: owner, n: n, prod: prod };
+  });
+  return out;
+}
+function overFed(pj) { return pj.owner === BLUE ? Math.max(0, pj.n + pj.prod - GRAIN_FEED) : 0; }
+var PJ = null;
+
 function draw() {
+  F = phase === "plan" ? forecast(dragExtra()) : null;
+  PJ = F ? projected() : null;
   ctx.fillStyle = "#10141c";
   ctx.fillRect(0, 0, W, H);
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(mapCv, 0, MY0, MW, MH);
 
-  // Orders.
-  if (phase !== "resolve") {
-    if (showAI) for (var k in aiOrders) {
-      var ao = aiOrders[k], ar = regions[k];
-      arrow(ar, regions[ao.to], "rgba(255,120,110,0.9)", "" + orderCount(ar, ao), true);
-    }
-    for (var k2 in orders) {
-      var o = orders[k2], r = regions[k2];
-      arrow(r, regions[o.to], "rgba(160,205,255,0.95)", (o.frac >= 1 ? "all " : "half ") + orderCount(r, o));
-    }
+  // border marks: bridges and passes
+  for (var bk in borders) {
+    var bm = bmid[bk];
+    if (!bm) continue;
+    if (borders[bk] === "bridge") chip(bm.x, bm.y, "bridge", "#8a5a2a", "#fff", 18);
+    if (borders[bk] === "mountain") { ctx.font = "34px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("⛰⛰", bm.x, bm.y); }
+    if (borders[bk] === "pass") chip(bm.x, bm.y, "pass", "#c9a46a", "#2a1a00", 18);
   }
-  if (drag) {
-    adj[drag.from].forEach(function (n) {
-      var rn = regions[n];
-      ctx.beginPath(); ctx.arc(rn.cx, rn.cy, 32, 0, Math.PI * 2);
-      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,0.55)"; ctx.stroke();
-    });
-    var rf = regions[drag.from];
-    ctx.beginPath(); ctx.moveTo(rf.cx, rf.cy); ctx.lineTo(drag.x, drag.y);
-    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.stroke();
-  }
-
-  // Regions: icon, then troops (moving columns hide what left).
-  regions.forEach(function (r) {
-    if (r.capital) crown(r.cx, r.cy - 40, "#ffd34d");
-    else if (r.center) star(r.cx, r.cy - 38, 14, "#ffd34d");
-    var n = r.troops;
-    if (phase === "resolve") {
-      anim.forEach(function (m) { if (m.from === r.id) n -= m.n0; });
-    }
-    token(r.cx, r.cy, n, r.owner);
+  works.forEach(function (w) {
+    var at = w.kind === "bridge" ? bmid[key(w.at, w.to)] : { x: regions[w.at].cx, y: regions[w.at].cy - 84 };
+    if (at) chip(at.x, at.y, "🔨 " + w.kind + " " + w.left, "#5a4a2a", "#fff", 18);
   });
 
-  // Columns on the move.
-  if (phase === "resolve") {
-    var t = Math.min(1, animT / animLen());
-    anim.forEach(function (m) {
-      var a = regions[m.from], b = regions[m.to], e = ease(t);
-      if (m.clash && t > 0.5 && m.n === 0) return;
-      var x = a.cx + (b.cx - a.cx) * e, y = a.cy + (b.cy - a.cy) * e;
-      token(x, y, m.clash && t < 0.5 ? m.n0 : m.n, m.owner, 17);
-      if (m.clash && Math.abs(t - 0.5) < 0.12) {
-        ctx.beginPath(); ctx.arc((a.cx + b.cx) / 2, (a.cy + b.cy) / 2, 30 + (t - 0.38) * 120, 0, Math.PI * 2);
-        ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,240,200,0.8)"; ctx.stroke();
+  // the storm, and where it will be at the bell
+  if (storm) {
+    var ns = nextStorm();
+    ctx.fillStyle = "rgba(60,64,80,0.55)";
+    ctx.beginPath(); ctx.arc(storm.x, storm.y, STORM_R, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(230,230,255,0.8)";
+    ctx.beginPath(); ctx.arc(ns.x, ns.y, STORM_R, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    arrow({ cx: storm.x, cy: storm.y }, { cx: ns.x, cy: ns.y }, "rgba(230,230,255,0.7)", "", true, 4);
+    chip(storm.x, storm.y, "⛈ storm", "rgba(20,24,36,0.8)");
+    chip(ns.x, ns.y + STORM_R - 16, "at the bell", "rgba(20,24,36,0.8)", "#ddd", 18);
+  }
+
+  if (phase !== "resolve") {
+    // standing orders: dotted, they fire by themselves
+    for (var sk in standing) {
+      var s = standing[sk];
+      arrow(regions[sk], regions[s.to], "rgba(220,220,220,0.7)", s.cond === "attacked" ? "if attacked" : "if lost", true, 3);
+    }
+    // the AI's orders, where something shows them
+    aiPlans(true).forEach(function (pl) {
+      var ar = regions[pl.from];
+      if (pl.o.kind === "fire") { arrow(ar, regions[pl.o.to], GHOST[pl.camp], "💥 −" + CANNON_DAMAGE, true, 5); return; }
+      var n = pl.o.n != null ? Math.min(pl.o.n, ar.troops) : ar.troops;
+      arrow(ar, regions[pl.o.to], GHOST[pl.camp], WHO[pl.camp] + " " + n, true, 5);
+    });
+    // couriers that arrived: these orders leave at this bell
+    courierDue.forEach(function (d) {
+      var r = regions[d.from];
+      var tip = arrow(r, regions[d.o.to], "rgba(160,205,255,0.95)", "📯 " + orderLabel(d.from, d.o));
+      drawVerdict(d.o.to, tip);
+    });
+    // the player's orders
+    playerOrderList().forEach(function (it) {
+      var o = it.o, r = regions[it.from], to = regions[o.to];
+      if (o.kind === "fire") { arrow(r, to, "rgba(255,170,90,0.95)", "💥 −" + CANNON_DAMAGE, true, 5); return; }
+      // a cavalry order rides beside the foot one, a little to its side
+      if (cavSlot(o)) {
+        var dx = to.cx - r.cx, dy = to.cy - r.cy, l = Math.hypot(dx, dy) || 1;
+        r = { cx: r.cx - dy / l * 14, cy: r.cy + dx / l * 14 };
+        to = { cx: to.cx - dy / l * 14, cy: to.cy + dx / l * 14 };
       }
+      var c = classifyOrder(it.from, o, BLUE);
+      var later = c.ok && (c.delayed || c.eta > 0);
+      var label = orderLabel(it.from, o) + (o.auto ? " · standing" : "");
+      var tip2 = arrow(r, to, later ? LATER_COL : "rgba(160,205,255,0.95)", label, later);
+      if (!c.ok) chip(tip2.x, tip2.y, "✗ " + (c.why || "refused"), BAD_COL);
+      else if (later) chip(tip2.x, tip2.y, c.delayed ? "📯 +1 bell" : "+1 bell", "#b07a10");
+      else drawVerdict(o.to, tip2);
+    });
+  }
+  if (drag) drawDrag();
+  if (mode) {
+    land.forEach(function (r) {
+      if (!modeTarget(r.id)) return;
+      ctx.beginPath(); ctx.arc(r.cx, r.cy, 34, 0, Math.PI * 2);
+      ctx.lineWidth = 4; ctx.strokeStyle = "#ffd34d"; ctx.stroke();
+    });
+  }
+
+  // regions: buildings, token, pieces, badges
+  var oos = outOfSupply();
+  land.forEach(function (r) {
+    var vis = seen[r.id];
+    if (vis || r.owner === BLUE) {
+      if (r.capital) crown(r.cx, r.cy - 40, "#ffd34d");
+      else if (r.city) star(r.cx, r.cy - 38, 14, "#ffd34d");
+      var icons = [];
+      for (var b in BUILD_ICON) if (r[b]) icons.push(BUILD_ICON[b]);
+      if (icons.length) {
+        ctx.font = "22px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(icons.join(""), r.cx + (r.capital || r.city ? 44 : 0), r.cy - 40);
+      }
+    }
+    var n = r.troops;
+    if (phase === "resolve") anim.forEach(function (m) { if (m.src === r.id) n -= m.n0; });
+    if (!vis) { token(r.cx, r.cy, "?", r.owner === BLUE ? BLUE : NEUTRAL); return; }
+    token(r.cx, r.cy, n, r.owner);
+    var pieces = [];
+    for (var pk in PIECE_ICON) if (r[pk]) pieces.push(PIECE_ICON[pk]);
+    if (r.cav) pieces.push("🐎" + r.cav);
+    if (balloon === r.id) pieces.push("🎈");
+    if (pieces.length) {
+      ctx.font = "20px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff";
+      ctx.fillText(pieces.join(" "), r.cx, r.cy + 38);
+    }
+    if (PJ && PJ[r.id].prod) {
+      // next bell's production, as a ghost beside the troops: 5 +2
+      ctx.globalAlpha = 0.6;
+      chip(r.cx + 38, r.cy - 16, "+" + PJ[r.id].prod, "rgba(255,211,77,0.35)", "#ffe9a0", 18);
+      ctx.globalAlpha = 1;
+    }
+    if (rules.morale && r.morale && r.owner !== NEUTRAL) chip(r.cx - 38, r.cy + 18, "♥" + (r.morale > 0 ? "+" : "") + r.morale, r.morale > 0 ? "#8a3a8a" : "#555", "#fff", 18);
+    if (r.owner !== BLUE) return;
+    if (F) drawShield(r);
+    if (oos[r.id]) {
+      ctx.save(); ctx.setLineDash([6, 5]); ctx.lineWidth = 4; ctx.strokeStyle = BAD_COL;
+      ctx.beginPath(); ctx.arc(r.cx, r.cy, 30, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      chip(r.cx + 40, r.cy + 18, "−1 supply", BAD_COL, "#fff", 18);
+    }
+    var eats = PJ ? overFed(PJ[r.id]) : 0;
+    if (rules.grain && eats) {
+      ctx.lineWidth = 4; ctx.strokeStyle = RISK_COL;
+      ctx.beginPath(); ctx.arc(r.cx, r.cy, 27, 0, Math.PI * 2); ctx.stroke();
+      chip(r.cx + 40, r.cy + 18, "eats " + eats, RISK_COL, "#2a1a00", 18);
+    }
+    if (rules.revolt && !r.capital && tick - r.takenAt < REVOLT_TICKS && r.troops < REVOLT_TROOPS) {
+      chip(r.cx + 40, r.cy + 18, "revolt " + Math.round(REVOLT_CHANCE * 100) + "%", "#965abe", "#fff", 18);
+    }
+    if (r.wonder) chip(r.cx, r.cy - 76, "🏛 " + wonderHold[BLUE] + "/" + WONDER_HOLD, "#6a5a20", "#fff", 18);
+  });
+
+  // columns on the road: gone from home, defending nothing, landing next bell
+  if (phase === "plan") transit.forEach(function (t) {
+    ctx.globalAlpha = 0.35;
+    arrow(regions[t.from], regions[t.to], LATER_COL, "", true, 5);
+    ctx.globalAlpha = 1;
+    token(t.x, t.y, t.n, t.camp, 18);
+    var ns2 = nextStorm(), hit = ns2 && t.kind === "fleet" && Math.hypot(ns2.x - t.x, ns2.y - t.y) < STORM_R;
+    chip(t.x, t.y + 32, hit ? "⛈ −" + Math.round(t.n * STORM_LOSS) + " at the bell" : "lands at the bell", hit ? BAD_COL : "#b07a10", "#fff", 18);
+    arrow({ cx: t.x, cy: t.y }, regions[t.to], LATER_COL, "", true, 4);
+  });
+
+  if (phase === "resolve") {
+    var tt = Math.min(1, animT / animLen());
+    anim.forEach(function (m) {
+      var e = ease(tt);
+      if (m.clash && tt > 0.5 && m.n === 0) return;
+      var x = m.a.cx + (m.b.cx - m.a.cx) * e, y = m.a.cy + (m.b.cy - m.a.cy) * e;
+      token(x, y, m.clash && tt < 0.5 ? m.n0 : m.n, m.camp, 17);
     });
   }
 
   floaters.forEach(function (f) {
-    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.4);
+    ctx.globalAlpha = Math.max(0, 1 - f.t / 1.6);
     ctx.fillStyle = f.col; ctx.font = "bold 22px system-ui, sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(f.text, f.x, f.y - f.t * 24);
     ctx.globalAlpha = 1;
   });
 
-  // Top: objective, clock, selection.
+  if (bubble && phase === "plan") drawBubble();
+  drawHud();
+  drawBottom();
+  if (menuOpen) drawMenu();
+  else if (pickDoctrine) drawDoctrine();
+  else if (outcome) drawOutcome();
+}
+
+function drawVerdict(t, tip) {
+  if (!F) return;
+  var v = verdict(t, F);
+  if (v) chip(tip.x, tip.y, v.text, v.col);
+}
+
+// A frontier region of yours: green holds against every enemy neighbour
+// striking at once, red falls (with the troops that could come), ? unknown.
+function drawShield(r) {
+  var w = F.worst[r.id], now = F.now[r.id], th = F.threat[r.id] || 0;
+  if (!w && !now) return;
+  if (!th && !(now && now.fight)) return;
+  var x = r.cx - 38, y = r.cy - 14, text, col;
+  if (now && now.fight && now.owner !== BLUE) { text = "✗ falls"; col = BAD_COL; }
+  else if (F.unknown[r.id]) { text = "🛡?"; col = RISK_COL; }
+  else if (w && w.owner !== BLUE) { text = "⚠" + th; col = BAD_COL; }
+  else { text = "🛡"; col = OK_COL; }
+  chip(x, y, text, col, "#fff", 18);
+}
+
+function dragExtra() {
+  if (!drag || hover < 0) return null;
+  var c = classify(drag.from, hover, null, BLUE);
+  if (!c.ok || c.delayed || c.eta > 0) return null;
+  return { camp: BLUE, from: drag.from, o: dragOrder(drag.from, hover) };
+}
+
+function dragOrder(from, to) {
+  var c = classify(from, to, null, BLUE);
+  return c.kind === "cav" ? { to: to, frac: 1, kind: "cav", unit: "cav" } : { to: to, frac: 1, kind: c.kind };
+}
+
+function drawDrag() {
+  var from = drag.from;
+  land.forEach(function (rn) {
+    if (rn.id === from) return;
+    var c = classify(from, rn.id, null, BLUE);
+    if (!c.ok && !c.why) return;
+    ctx.save();
+    ctx.lineWidth = 4;
+    if (!c.ok) {
+      ctx.strokeStyle = BAD_COL;
+      ctx.beginPath(); ctx.moveTo(rn.cx - 14, rn.cy - 14); ctx.lineTo(rn.cx + 14, rn.cy + 14);
+      ctx.moveTo(rn.cx + 14, rn.cy - 14); ctx.lineTo(rn.cx - 14, rn.cy + 14); ctx.stroke();
+    } else {
+      var later = c.delayed || c.eta > 0;
+      ctx.strokeStyle = later ? LATER_COL : "rgba(255,255,255,0.75)";
+      if (later) ctx.setLineDash([8, 6]);
+      ctx.beginPath(); ctx.arc(rn.cx, rn.cy, 34, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      if (later) chip(rn.cx + 30, rn.cy - 30, "+1", "#b07a10", "#fff", 18);
+      if (c.kind === "cav") chip(rn.cx - 30, rn.cy - 30, "🐎", "#333", "#fff", 18);
+      if (c.kind === "fleet") chip(rn.cx - 30, rn.cy - 30, "⚓", "#333", "#fff", 18);
+    }
+    ctx.restore();
+  });
+  var rf = regions[from];
+  ctx.beginPath(); ctx.moveTo(rf.cx, rf.cy); ctx.lineTo(drag.x, drag.y);
+  ctx.lineWidth = 5; ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.stroke();
+}
+
+function resourceLine() {
+  var L = [];
+  if (rules.gold || rules.spy || rules.courier) {
+    var inc = 0;
+    land.forEach(function (r) { if (r.mine && r.owner === BLUE) inc += doctrine === "merchant" ? 2 : MINE_GOLD; });
+    L.push("Gold " + gold[BLUE] + (inc ? " (+" + inc + "/bell)" : ""));
+  }
+  if (rules.grain) {
+    var farms = 0, eat = 0;
+    land.forEach(function (r) {
+      var pj = PJ ? PJ[r.id] : { owner: r.owner, n: r.troops, prod: 0 };
+      if (pj.owner !== BLUE) return;
+      if (r.farm) farms += FARM_GRAIN;
+      eat += overFed(pj);
+    });
+    var after = grain + farms - eat;
+    L.push("Grain " + grain + " +" + farms + " farm −" + eat + " eaten = " + after + (after < 0 ? " → 1 deserts per orange ring" : ""));
+  }
+  if (rules.winter) {
+    var left = SEASON_LEN - (tick + seasonShift) % SEASON_LEN;
+    L.push(isWinter() ? "❄ Winter · spring in " + left : "Summer · winter in " + left);
+  }
+  if (rules.wonder) L.push("Wonder: you " + wonderHold[BLUE] + "/" + WONDER_HOLD + ", red " + wonderHold[RED]);
+  if (rules.truce) aiCamps.forEach(function (c) {
+    var t = truce[c] > tick ? "truce " + (truce[c] - tick) : "war";
+    L.push(WHO[c] + ": " + t + (temper[c] ? " (" + temper[c] + ")" : ""));
+  });
+  if (doctrine) L.push("Doctrine: " + doctrine);
+  if (captured[RED]) L.push("Red general captured");
+  if (captured[BLUE]) L.push("Your general is captured");
+  return L.join(" · ");
+}
+
+// What happens at this bell, and what waits for the next one.
+function agenda() {
+  var now = 0, next = [];
+  playerOrderList().forEach(function (it) {
+    if (it.o.kind === "fire") { now++; return; }
+    var c = classifyOrder(it.from, it.o, BLUE);
+    if (!c.ok) return;
+    if (c.delayed) next.push("courier"); else if (c.eta > 0) next.push(c.kind === "fleet" ? "at sea" : "on the road"); else now++;
+  });
+  now += courierDue.length;
+  transit.forEach(function (t) { if (t.camp === BLUE && t.land === tick) now++; });
+  return "This bell: " + now + " · next bell: " + (next.length ? next.length + " (" + next.join(", ") + ")" : "0");
+}
+
+function drawHud() {
   var tl = TICK_PRESETS[tickIx];
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#fff"; ctx.font = "bold 26px system-ui, sans-serif";
-  ctx.fillText("Stage 1 · take the red capital, keep yours", 16, 36);
-  ctx.font = "22px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
-  var clock = phase === "resolve" ? "resolving…" : "next in " + fmt(tl - timer);
-  ctx.fillText("Tick " + (tick + 1) + " · " + clock + " · elapsed " + fmt(tick * tl + timer) +
-    (paused ? " · paused" : ""), 16, 68);
-  ctx.fillStyle = "#2a3242"; ctx.fillRect(16, 82, W - 32, 8);
-  ctx.fillStyle = "#ffd34d"; ctx.fillRect(16, 82, (W - 32) * (phase === "resolve" ? 1 : timer / tl), 8);
-  if (selected >= 0) {
-    var s = regions[selected];
-    var line = s.name + " · " + WHO[s.owner] + " · " + s.troops + " troops";
-    if (s.capital) line += " · capital +" + PROD_CAPITAL + "/tick";
-    else if (s.center) line += " · center +" + PROD_CENTER + "/tick";
-    line += " · " + adj[selected].length + " neighbours";
-    ctx.fillStyle = "#fff"; ctx.font = "20px system-ui, sans-serif";
-    ctx.fillText(line, 16, 118);
-  }
-
-  // Bottom: last tick's report, then the clock cheats.
+  ctx.fillText(sc.lv + " · " + sc.name, 16, 32);
   ctx.font = "20px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
-  log.forEach(function (l, i) { ctx.fillText(l, 16, MY0 + MH + 26 + i * 26, W - 32); });
-  buttons.forEach(function (b) {
-    ctx.fillStyle = "#273044"; ctx.fillRect(b.x, b.y, b.w, b.h);
-    ctx.strokeStyle = "#4a5670"; ctx.lineWidth = 2; ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
-    ctx.fillStyle = "#fff"; ctx.font = "bold 21px system-ui, sans-serif";
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(b.label(), b.x + b.w / 2, b.y + b.h / 2 + 1);
-  });
+  wrap(sc.rule, 16, 60, W - 32, 24, 2);
+  ctx.font = "bold 21px system-ui, sans-serif"; ctx.fillStyle = "#ffd34d";
+  ctx.fillText("Goal: " + sc.goal, 16, 114, W - 32);
+  ctx.font = "20px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
+  var clock = phase === "resolve" ? "resolving…" : "bell in " + fmt(tl - timer);
+  ctx.fillText("Tick " + (tick + 1) + " · " + clock + (paused ? " · paused" : "") + " · " + agenda(), 16, 142, W - 32);
+  ctx.fillStyle = "#2a3242"; ctx.fillRect(16, 152, W - 32, 6);
+  ctx.fillStyle = "#ffd34d"; ctx.fillRect(16, 152, (W - 32) * (phase === "resolve" ? 1 : timer / tl), 6);
+  var res = resourceLine();
+  if (res) { ctx.fillStyle = "#fff"; ctx.font = "bold 20px system-ui, sans-serif"; ctx.fillText(res, 16, 182, W - 32); }
+}
 
-  if (outcome) {
-    ctx.fillStyle = "rgba(8,10,16,0.72)"; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = outcome === "Victory" ? "#7fd18a" : "#ff8a7a";
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = "bold 64px system-ui, sans-serif";
-    ctx.fillText(outcome, W / 2, H / 2 - 50);
-    ctx.fillStyle = "#fff"; ctx.font = "24px system-ui, sans-serif";
-    ctx.fillText(tick + " ticks · " + fmt(tick * tl) + " of game time", W / 2, H / 2 + 10);
-    ctx.fillText("Tap to restart", W / 2, H / 2 + 56);
+function wrap(text, x, y, w, lh, max) {
+  var words = text.split(" "), line = "", n = 0;
+  for (var i = 0; i < words.length; i++) {
+    var t = line ? line + " " + words[i] : words[i];
+    if (ctx.measureText(t).width > w && line) {
+      ctx.fillText(line, x, y + n * lh, w); n++; line = words[i];
+      if (n >= max) return;
+    } else line = t;
   }
+  if (line && n < max) ctx.fillText(line, x, y + n * lh, w);
+}
+
+// ---- the panel: the arithmetic of a fight -----------------------------------
+function partsText(parts) {
+  var extra = parts.slice(1).filter(function (p) { return p.v; }).map(function (p) { return p.t + " " + sgn(p.v); });
+  return extra.length ? " [" + extra.join(", ") + "]" : "";
+}
+
+function sideText(s, res) {
+  if (s === res.def) return s.raw + " × " + r1(s.k) + partsText(s.parts) + " = " + r1(s.str);
+  return s.items.map(function (m) {
+    var k = mult(m.parts);
+    return m.n + (k !== 1 ? " × " + r1(k) : "") + partsText(m.parts);
+  }).join(" + ") + " = " + r1(s.str);
+}
+
+function resultText(res, camp) {
+  if (!res) return "?";
+  if (res.tie) return "tie, nobody keeps a troop";
+  if (res.owner === camp) return (res.def.camp === camp ? "held, " : "taken, ") + res.left + " left";
+  return "lost to " + WHO[res.owner] + (sideOf(res, camp) ? ", " + needMore(res, camp) + " more needed" : "");
+}
+
+function orderLines(from, to, o, Fc) {
+  var c = o.kind === "fire" ? { ok: true, kind: "fire", tags: [] } : classifyOrder(from, o, BLUE);
+  var L = [];
+  var head = regions[from].name + " → " + regions[to].name;
+  if (!c.ok) return [head, "Refused: " + (c.why || "not a neighbour")];
+  if (c.kind === "fire") return [head + " · cannon", "Fires first: −" + CANNON_DAMAGE + " in " + regions[to].name + " before anything moves; the cannon's region stays put."];
+  L.push(head + " · " + orderLabel(from, o) + (c.tags.length ? " · " + c.tags.join(", ") : ""));
+  if (c.delayed) { L.push("The courier needs a bell: the troops leave at the NEXT bell, with what is there then."); return L; }
+  if (c.eta > 0) { L.push("On the road for a bell: gone from home now, it lands at the NEXT bell, against what is there then."); return L; }
+  if (!seen[to]) { L.push("Hidden by the fog: the defence is unknown (?)."); return L; }
+  var res = Fc.now[to];
+  if (!res) return L;
+  var mine = sideOf(res, BLUE), def = res.def;
+  if (def.camp === BLUE) L.push("Reinforcement: " + regions[to].name + " ends with " + res.left + (res.fight ? " after the fight" : ""));
+  else L.push("Attack " + (mine ? sideText(mine, res) : "0") + "  vs  defence " + sideText(def, res));
+  var w = Fc.worst[to];
+  var tail = "";
+  if (Fc.unknown[to]) tail = " · worst case: unknown, enemy troops in the fog";
+  else if (w && w !== res) tail = " · worst case (" + threatNames(to) + " strike too): " + resultText(w, BLUE);
+  L.push("Now: " + resultText(res, BLUE) + tail);
+  return L;
+}
+
+function threatNames(t) {
+  var by = {};
+  adj[t].forEach(function (n) { var o = regions[n].owner; if (aiCamps.indexOf(o) >= 0) by[o] = (by[o] || 0) + regions[n].troops; });
+  return Object.keys(by).map(function (c) { return WHO[c] + " " + by[c]; }).join(", ") || "nobody";
+}
+
+function defenceLine(r, Fc) {
+  var w = Fc.worst[r.id], th = Fc.threat[r.id] || 0;
+  if (!th) return "No enemy can reach " + r.name + " at this bell.";
+  if (Fc.unknown[r.id]) return "Defence: an enemy neighbour is in the fog (?).";
+  if (!w) return "";
+  var att = w.sides.filter(function (s) { return s !== w.def; }).map(function (s) { return WHO[s.camp] + " " + sideText(s, w); }).join("; ");
+  return "If every enemy neighbour strikes: " + sideText(w.def, w) + " vs " + att + " → " + resultText(w, BLUE);
+}
+
+function regionLine(r) {
+  if (!seen[r.id]) return r.name + " · hidden by the fog";
+  var L = [r.name, WHO[r.owner], r.troops + " troops" + (r.cav ? " (" + r.cav + " cavalry)" : "")];
+  if (r.capital) L.push("capital +" + PROD_CAPITAL);
+  else if (r.city) L.push("city +" + PROD_CITY);
+  for (var b in BUILD_ICON) if (r[b]) L.push(b);
+  for (var p in PIECE_ICON) if (r[p]) L.push(p);
+  if (r.morale) L.push("morale " + sgn(r.morale));
+  if (r.terrain !== "meadow") L.push(r.terrain);
+  return L.join(" · ");
+}
+
+function takeLine(r) {
+  if (!seen[r.id]) return "Its troops are unknown.";
+  var parts = defParts(r.id, r.owner, r.general), k = mult(parts);
+  return "To take it: more than " + r.troops + " × " + r1(k) + partsText(parts) + " = " + r1(r.troops * k) + " attack strength.";
+}
+
+function notes(r) {
+  var L = [];
+  if (lockedByCourier(r.id)) L.push("Its courier has arrived: its order leaves at this bell.");
+  if (rules.courier && courierSteps(r.id) > COURIER_RANGE) L.push("Beyond the couriers' reach: its orders leave one bell late.");
+  if (outOfSupply()[r.id]) L.push("Out of supply: −1 troop at the bell.");
+  var eats = PJ ? overFed(PJ[r.id]) : 0;
+  if (rules.grain && eats) L.push("After the bell it holds " + (PJ[r.id].n + PJ[r.id].prod) + ", " + eats + " over the " + GRAIN_FEED + " it feeds: they eat " + eats + " grain.");
+  if (standing[r.id]) L.push("Standing order: " + (standing[r.id].cond === "attacked" ? "if " + regions[standing[r.id].to].name + " is attacked, reinforce it" : "if " + regions[standing[r.id].to].name + " is lost, retake it") + ".");
+  return L;
+}
+
+function panelLines() {
+  var L = [];
+  if (phase !== "plan" || !F) return log.slice(-4);
+  if (mode) {
+    var what = { fire: "Fire cannon: tap the region to bombard (−" + CANNON_DAMAGE + " before anything moves).",
+      lift: "Airlift: tap a region within reach (yellow rings). Up to " + LIFT_MAX + " troops land at this bell.",
+      standA: "Standing order: tap the region of yours it reinforces the moment it is attacked.",
+      standL: "Standing order: tap the region of yours it retakes, at the next bell, if it is lost.",
+      balloon: "Move the balloon: tap a neighbouring region. It sees two regions around it.",
+      bridge: "Bridge: tap the region across the river. Ready in " + WORK_TICKS + " bells." }[mode];
+    return [what, "Tap a yellow ring, or the button again to cancel."];
+  }
+  if (bubble) return ["Pick how many go: each line forecasts its fight.", "✓ taken (troops left) · ✗ +N troops short · = tie · ⚠ the enemy can still stop it.", "Tap elsewhere to close without ordering."];
+  if (drag && hover >= 0) return orderLines(drag.from, hover, dragOrder(drag.from, hover), F);
+  if (selected >= 0) {
+    var r = regions[selected];
+    L.push(regionLine(r));
+    if (r.owner === BLUE) {
+      var o = orders[selected], oc = cavOrders[selected];
+      // two orders (foot and cavalry): one line each, the route and its outcome
+      var short = function (q) { var t = orderLines(selected, q.to, q, F); return t[0] + " → " + t[t.length - 1]; };
+      if (o && oc) L.push(short(o), short(oc));
+      else if (o || oc) L = L.concat(orderLines(selected, (o || oc).to, o || oc, F).slice(1));
+      var dl = defenceLine(r, F);
+      if (dl) L.push(dl);
+      L = L.concat(notes(r));
+    } else L.push(takeLine(r));
+    return L;
+  }
+  return tick === 0 ? ["Try: " + sc.hint] : log.slice(-3).concat(["Try: " + sc.hint]);
+}
+
+function wrapLines(text, w) {
+  var words = String(text).split(" "), out = [], line = "";
+  words.forEach(function (wd) {
+    var t = line ? line + " " + wd : wd;
+    if (ctx.measureText(t).width > w && line) { out.push(line); line = wd; } else line = t;
+  });
+  if (line) out.push(line);
+  return out;
+}
+
+function drawBottom() {
+  var L = layoutActions();
+  L.forEach(function (a) {
+    ctx.fillStyle = mode && a.mode === mode || a.sel ? "#8a6a10" : a.on ? "#2f3a52" : "#222833";
+    ctx.fillRect(a.x, a.y, a.w, a.h);
+    ctx.strokeStyle = a.on ? "#6a7aa0" : "#333a48"; ctx.lineWidth = 2; ctx.strokeRect(a.x + 1, a.y + 1, a.w - 2, a.h - 2);
+    ctx.fillStyle = a.on ? "#fff" : "#6a7080"; ctx.font = "bold 20px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(a.label, a.x + a.w / 2, a.y + a.h / 2 + 1);
+  });
+  ctx.fillStyle = "#151a24"; ctx.fillRect(0, 1064, W, 122);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  var row = 0;
+  panelLines().forEach(function (l, i) {
+    ctx.font = (i === 0 ? "bold " : "") + "20px system-ui, sans-serif";
+    ctx.fillStyle = i === 0 ? "#fff" : "#cfd6e4";
+    wrapLines(l, W - 32).forEach(function (t) {
+      if (row < 5) ctx.fillText(t, 16, 1086 + row * 24, W - 32);
+      row++;
+    });
+  });
+  buttons.forEach(function (b) {
+    ctx.fillStyle = b.send ? "#2b5aa8" : b.pause && paused ? "#8a6a10" : "#273044"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = "#4a5670"; ctx.lineWidth = 2; ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+    if (b.send && phase === "plan") {
+      var left = 1 - timer / TICK_PRESETS[tickIx];
+      ctx.beginPath(); ctx.arc(b.x + b.w / 2, b.y + 22, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
+      ctx.lineWidth = 4; ctx.strokeStyle = "#ffd34d"; ctx.stroke();
+    }
+    ctx.fillStyle = "#fff"; ctx.font = "bold 20px system-ui, sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(b.label(), b.x + b.w / 2, b.y + (b.send ? 56 : b.h / 2 + 1), b.w - 8);
+  });
+}
+
+function drawMenu() {
+  ctx.fillStyle = "rgba(8,10,16,0.95)"; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#fff"; ctx.font = "bold 28px system-ui, sans-serif";
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.fillText("Mechanics: pick one to test", 16, 54);
+  SCENARIOS.forEach(function (s, i) {
+    var b = menuBox(i);
+    ctx.fillStyle = i === scIx ? "#2b5aa8" : "#222a3a"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 21px system-ui, sans-serif"; ctx.textBaseline = "middle";
+    ctx.fillText(s.lv + " · " + s.name, b.x + 12, b.y + b.h / 2 + 1, b.w - 20);
+  });
+  ctx.fillStyle = "#cfd6e4"; ctx.font = "20px system-ui, sans-serif"; ctx.textBaseline = "middle";
+  ctx.fillText("Tick", 16, 1064);
+  TICK_PRESETS.forEach(function (t, i) {
+    var b = tickBox(i);
+    ctx.fillStyle = i === tickIx ? "#2b5aa8" : "#222a3a"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 20px system-ui, sans-serif";
+    ctx.fillText(fmt(t), b.x + b.w / 2, b.y + b.h / 2 + 1);
+    ctx.textAlign = "left";
+  });
+  ctx.fillStyle = "#273044"; ctx.fillRect(220, 1180, 280, 70);
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "bold 22px system-ui, sans-serif";
+  ctx.fillText("Close", 360, 1216);
+}
+
+function drawDoctrine() {
+  ctx.fillStyle = "rgba(8,10,16,0.88)"; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#fff"; ctx.font = "bold 30px system-ui, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("Pick a doctrine for this stage", W / 2, 360);
+  DOCTRINES.forEach(function (d, i) {
+    var b = doctrineBox(i);
+    ctx.fillStyle = "#273a5a"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 28px system-ui, sans-serif";
+    ctx.fillText(d.name, W / 2, b.y + 40);
+    ctx.font = "21px system-ui, sans-serif"; ctx.fillStyle = "#cfd6e4";
+    ctx.fillText(d.text, W / 2, b.y + 82);
+  });
+}
+
+function drawOutcome() {
+  ctx.fillStyle = "rgba(8,10,16,0.75)"; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = outcome.win ? "#7fd18a" : "#ff8a7a";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = "bold 56px system-ui, sans-serif";
+  ctx.fillText(outcome.text, W / 2, 560);
+  ctx.fillStyle = "#fff"; ctx.font = "24px system-ui, sans-serif";
+  ctx.fillText(tick + " bell" + (tick > 1 ? "s" : "") + " · " + sc.goal, W / 2, 630, W - 40);
+  ["Replay", "Next", "Mechanics"].forEach(function (t, i) {
+    var b = outcomeBox(i);
+    ctx.fillStyle = "#273044"; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 22px system-ui, sans-serif";
+    ctx.fillText(t, b.x + b.w / 2, b.y + b.h / 2 + 1);
+  });
 }
 
 // ---- loop -----------------------------------------------------------------
@@ -590,7 +2229,8 @@ function animLen() { return ANIM_SECONDS / Math.min(SPEEDS[speedIx], 3); }
 
 function update(dt) {
   floaters.forEach(function (f) { f.t += dt; });
-  floaters = floaters.filter(function (f) { return f.t < 1.4; });
+  floaters = floaters.filter(function (f) { return f.t < 1.6; });
+  if (menuOpen || pickDoctrine) return;
   if (phase === "plan" && !paused) {
     timer += dt * SPEEDS[speedIx];
     if (timer >= TICK_PRESETS[tickIx]) startResolve();
@@ -620,7 +2260,7 @@ function frame(ts) {
 }
 
 resize();
-reset();
+load(Math.max(0, Math.min(SCENARIOS.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1)));
 requestAnimationFrame(frame);
 </script>
 </body>

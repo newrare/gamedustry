@@ -905,6 +905,19 @@
        Each takes a hazard slot, so a stretch with a rule is not simply a
        stretch with more to dodge: the rule REPLACES some of the mines. */
     function lerpRule(r) { return r[0] + (r[1] - r[0]) * STEP; }
+    function ruleKind() {
+      var k = [], i;
+      for (i = 0; i < RULES.length; i++) if (RULES[i] !== "elec") k.push(RULES[i]);
+      return k.length ? Rand.pick(k) : null;
+    }
+    function isHazard(it) { return it.type !== "gem" && it.type !== "star" && it.type !== "x2" &&
+                                   it.type !== "shield" && it.type !== "magnet" && it.type !== "ghost" &&
+                                   it.type !== "slow"; }
+    // Gems along the jump's arc: they only pay to an arrow in the air.
+    function airGems(path, from, stop) {
+      var n = 3, i;
+      for (i = 0; i < n; i++) items.push({ p: from + (stop - from) * (i + 0.5) / n, path: path, type: "gem", air: true, seed: 0 });
+    }
     /* A rule MET for the first time is named once per player, ever, by a
        notice whose line in the "!" log opens the rule's page of the guide
        (Notify.learn, which keeps the memory). It fires as the hazard is dealt,
@@ -1142,7 +1155,7 @@
         if (it.type === "star") {
           Fx.ring(x, y, { from: 16, to: 130, color: "#ffd43b", width: 6, life: 0.38 });
           Pop.show("bonus", { word: "Mega gem", sub: "+" + g, at: "upperLeft" });
-          Sound.clip("mega", 0.8);
+          Sound.clip("mega", 1, 0.8);
         } else {
           // Gems arrive faster than a callout can be read: one pop per ~quarter
           // second, and the HUD punch plus the burst carry the ones in between.
@@ -1151,13 +1164,13 @@
             Pop.show("score", { word: "+" + g, at: { x: x, y: y - 116 }, cls: "pop-l" + lane });
           }
           // one sample, pitched by the chain: the run climbs as it grows
-          Sound.clip("gem", 0.6, 1 + Math.min(chain, 14) * 0.045);
+          Sound.clip("gem", 0.2, 1 + Math.min(chain, 14) * 0.045);
         }
         if (chain > 0 && chain % 6 === 0) {
           g = 50 * mult * (chain / 6);
           gainScore(g);
           Pop.show(chain >= 24 ? "ultra" : "combo", { word: Lang.t("Chain x") + chain, sub: "+" + g });
-          Sound.clip("chain", 0.85, 1 + Math.min(chain, 24) * 0.008);
+          Sound.clip("chain", 0.4, 1 + Math.min(chain, 24) * 0.008);
         }
 
       } else if (it.type === "x2") {
@@ -1177,7 +1190,7 @@
         magnetT = T.magnetTime;
         Pop.show("bonus", { word: "Magnet", sub: T.magnetTime + "s", at: "upperLeft" });
         Fx.ring(x, y, { from: 20, to: 150, color: "#ffd43b", width: 6, life: 0.45 });
-        Sound.clip("magnet", 0.8);
+        Sound.clip("magnet", 1);
 
       } else if (it.type === "ghost") {
         ghostT = T.ghostTime;
@@ -1191,7 +1204,7 @@
         Pop.show("bonus", { word: "Slow down", sub: "Start speed", at: "upperLeft" });
         Overlay.vignette("rgba(120,200,255,.75)", 1, 520);
         Fx.ring(x, y, { from: 20, to: 170, color: "#8fd0ff", width: 6, life: 0.5 });
-        Sound.clip("slow", 0.8);
+        Sound.clip("slow", 1, 0.5);
 
       } else if (it.type === "void") {
         // a ghost drifts through it; a shield takes it whole — score and chain
@@ -1203,7 +1216,7 @@
         Pop.show("alert", { word: "-" + g, sub: "Chain lost", cls: "pop-drain" });
         Fx.shake(7, 0.2);
         Fx.burst(x, y, { color: ["#a24bff", "#2b003f"], count: 16, speed: 300, life: 0.5 });
-        Sound.clip("void", 0.75);
+        Sound.clip("void", 0.4);
 
       } else {                                            // mine, or a blinking one awake
         crash();
@@ -1236,7 +1249,7 @@
       drawLives();
       Fx.shake(17, 0.4); Fx.flash("#ff2d55", 0.45); Fx.freeze(0.06);
       Overlay.vignette("rgba(255,45,85,.9)", 1, 620);
-      Sound.clip("crash", 0.9);
+      Sound.clip("crash", 0.9, 1.2);
 
       if (lives <= 0) { die(); return; }
       invT = T.invTime;
@@ -1258,7 +1271,7 @@
         gainScore(gain);
         Fx.ring(arrowX, arrowY, { from: 26, to: 170, color: "#ffffff", width: 5, life: 0.36 });
         HUD.punch("#ffffff");
-        Sound.clip("chain", 0.6, 1.28);
+        Sound.clip("chain", 0.4, 1.28);
       }
     }
 
@@ -1313,7 +1326,7 @@
       falling = true; fallT = 0;
       fallX = arrowX; fallP = camP + (anchorY - arrowY); fallAng = arrowAng;
       chain = 0;
-      Sound.clip("fall", 0.85);
+      Sound.clip("fall", 1, 0.7);
       Fx.burst(arrowX, arrowY, { color: [paths[lane].color, "#ffffff"], count: 14, speed: 160, life: 0.5 });
       Fx.shake(6, 0.25);
     }
@@ -1361,8 +1374,8 @@
         Fx.ring(arrowX, arrowY, { from: 20, to: 200, color: "#ffd43b", width: 7, life: 0.45 });
         Fx.burst(arrowX, arrowY, { color: ["#ffd43b", "#ffffff"], count: 22, speed: 400, life: 0.5 });
         HUD.punch("#ffd43b");
-        if (loopSeg.n > 1) Sound.clip("loop", 0.85, 0.9);
-        else Sound.clip("loop", 0.85);
+        if (loopSeg.n > 1) Sound.clip("loop", 0.1, 0.9);
+        else Sound.clip("loop", 0.1);
       }
       loopSeg = null;                                     // paid, or bailed out
     }
@@ -1573,7 +1586,7 @@
         if (hazardOn(order[i], w0 - 200, w1 + 100)) continue;
         elec = { rope: order[i], start: camP, p0: w0, p1: w1, live: false, liveT: 0, hit: false };
         met("elec");
-        Sound.clip("zap", 0.3, 1.7);
+        Sound.clip("zap", 0.3, 1.2);
         return;
       }
     }
@@ -1657,7 +1670,7 @@
         nextMile += T.mileStep;
         // the run speeding up is felt, not said: a glow and a sound
         Overlay.vignette(rgba(paths[lane].color, 0.75), 1, 420);
-        Sound.clip("chain", 0.7, 0.8);
+        Sound.clip("chain", 0.4, 1.15);
       }
     }
 

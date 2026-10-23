@@ -194,11 +194,6 @@
     }
   },
   "bouncetry": {
-    "0383c4968ea1": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1922 comboBeat()",
-      "kit": "db16c1b0c8"
-    },
     "0f31ef3a76f0": {
       "at": "2026-10-21",
       "what": "Sound.clip L2095 multiball()",
@@ -209,29 +204,24 @@
       "what": "Sound.clip L2106 clearBoard()",
       "kit": "a93af4ae5e"
     },
-    "147a4dfc338f": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1897 crack()",
-      "kit": "4e8d2a81d5"
+    "15ad54b90292": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1922 comboBeat()",
+      "kit": "3de4f44660"
     },
     "170c162120a3": {
       "at": "2026-10-13",
       "what": "Pop.show L1920 comboBeat()"
-    },
-    "1b5a29d01b33": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1925 comboBeat()",
-      "kit": "db16c1b0c8"
     },
     "1eff19b7e782": {
       "at": "2026-10-21",
       "what": "Sound.clip L1978 smash()",
       "kit": "268d214207"
     },
-    "209ad70d0b8a": {
+    "2533f68930b2": {
       "at": "2026-10-21",
-      "what": "Sound.clip L1919 comboBeat()",
-      "kit": "db16c1b0c8"
+      "what": "Sound.clip L1967 smash()",
+      "kit": "4e8d2a81d5"
     },
     "298b29d6550c": {
       "at": "2026-10-19",
@@ -256,9 +246,19 @@
       "what": "Sound.clip L1506 toggleMist()",
       "kit": "24440a7861"
     },
+    "59e22d8eb2b8": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1900 crack()",
+      "kit": "4e8d2a81d5"
+    },
     "5a85b2706e40": {
       "at": "2026-10-13",
       "what": "Pop.show L2093 multiball()"
+    },
+    "5d0ad511c098": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1928 comboBeat()",
+      "kit": "3de4f44660"
     },
     "5eb5e98992ca": {
       "at": "2026-10-21",
@@ -316,15 +316,15 @@
       "at": "2026-10-13",
       "what": "Pop.show L1911 comboBeat()"
     },
+    "b9fcbdbeb874": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1925 comboBeat()",
+      "kit": "3de4f44660"
+    },
     "c360a51a587f": {
       "at": "2026-10-21",
       "what": "Sound.clip L1993 smash()",
       "kit": "3967261906"
-    },
-    "c59ed11d48ed": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1964 smash()",
-      "kit": "4e8d2a81d5"
     },
     "c6fb5fe8a043": {
       "at": "2026-10-13",
@@ -334,6 +334,11 @@
       "at": "2026-10-21",
       "what": "Sound.clip L1448 shieldHit()",
       "kit": "1478960a50"
+    },
+    "cae3fde53f2b": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1919 comboBeat()",
+      "kit": "3de4f44660"
     },
     "cb09b7956ec3": {
       "at": "2026-10-13",
@@ -358,11 +363,6 @@
       "at": "2026-10-21",
       "what": "Sound.clip L1835 burnBall()",
       "kit": "217676c4ed"
-    },
-    "e72da1a648d0": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1916 comboBeat()",
-      "kit": "db16c1b0c8"
     }
   },
   "bridgessa": {
@@ -420,6 +420,10 @@
     "51983cc76def": {
       "at": "2026-10-17",
       "what": "Notify.say L1736 onUp()"
+    },
+    "590b5f6c0d22": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1639 useFavour()"
     },
     "5c1ba4169127": {
       "at": "2026-10-21",
@@ -508,6 +512,10 @@
       "at": "2026-10-17",
       "what": "Notify.say L1373 endDeal()"
     },
+    "c5d653402bde": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1647 selectCard()"
+    },
     "cb78188b03ab": {
       "at": "2026-10-17",
       "what": "Notify.say L1510 useFavour()"
@@ -533,6 +541,10 @@
       "at": "2026-10-17",
       "what": "Notify.say L1377 endDeal()"
     },
+    "ebdcad0704bd": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1510 endDeal()"
+    },
     "f0b9733871b4": {
       "at": "2026-10-21",
       "what": "Sound.cue L1457 collect()",
@@ -557,10 +569,6 @@
       "at": "2026-10-13",
       "what": "Sound.clip L974 onDown()",
       "kit": "ef5f91ee5d"
-    },
-    "45ea8e1b71f6": {
-      "at": "2026-10-13",
-      "what": "Pop.show L804 hold()"
     },
     "4fa96c5f147e": {
       "at": "2026-10-13",
@@ -600,10 +608,9 @@
       "what": "Sound.clip L735 rewindFx()",
       "kit": "ea0269112a"
     },
-    "bbf4baf4a21b": {
-      "at": "2026-10-13",
-      "what": "Sound.clip L900 popRing()",
-      "kit": "aa3b84c574"
+    "b1c8c99ac961": {
+      "at": "2026-10-23",
+      "what": "Pop.show L937 hold()"
     },
     "c3f51c74db02": {
       "at": "2026-10-13",
@@ -631,6 +638,11 @@
     "f726fee03f52": {
       "at": "2026-10-13",
       "what": "Pop.show L922 triggerChain()"
+    },
+    "f8d42f6dedc8": {
+      "at": "2026-10-13",
+      "what": "Sound.clip L1032 popRing()",
+      "kit": "aa3b84c574"
     },
     "fa1c5ddb49a9": {
       "at": "2026-10-13",
@@ -691,11 +703,6 @@
       "what": "Sound.clip L1487 freeMouth()",
       "kit": "570441c04f"
     },
-    "4425a2562fbd": {
-      "at": "2026-10-13",
-      "what": "Sound.clip L1719 startRecap()",
-      "kit": "bf23f6a985"
-    },
     "4b9ee5d25c6a": {
       "at": "2026-10-13",
       "what": "Sound.clip L1239 kickFlap()",
@@ -745,15 +752,20 @@
       "what": "Sound.clip L1863 reset()",
       "kit": "570441c04f"
     },
+    "a08309973648": {
+      "at": "2026-10-13",
+      "what": "Sound.clip L1719 startRecap()",
+      "kit": "bf23f6a985"
+    },
+    "a3c3f03487e0": {
+      "at": "2026-10-13",
+      "what": "Sound.clip L1326 burnDecoy()",
+      "kit": "bf23f6a985"
+    },
     "b61cae865359": {
       "at": "2026-10-13",
       "what": "Sound.clip L1328 burnDecoy()",
       "kit": "0e6ce147ce"
-    },
-    "b67ae99be05b": {
-      "at": "2026-10-13",
-      "what": "Sound.clip L1329 burnDecoy()",
-      "kit": "bf23f6a985"
     },
     "c02fcef36544": {
       "at": "2026-10-13",
@@ -843,6 +855,11 @@
       "at": "2026-10-14",
       "what": "Pop.show L2490 tierUp()"
     },
+    "2b14172e3fed": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L4077 moduleFx()",
+      "kit": "aed8729d56"
+    },
     "2bf462611bd4": {
       "at": "2026-10-19",
       "what": "Pop.show L2631 loseHeart()"
@@ -851,11 +868,6 @@
       "at": "2026-10-02",
       "what": "Sound.clip L1356 unlock()",
       "kit": "9f9928ae3e"
-    },
-    "2fc27695ba70": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L4076 moduleFx()",
-      "kit": "aed8729d56"
     },
     "30203bddef07": {
       "at": "2026-10-14",
@@ -965,6 +977,10 @@
       "at": "2026-10-14",
       "what": "Pop.show L2512 breakCombo()"
     },
+    "ef761f504513": {
+      "at": "2026-10-23",
+      "what": "Notify.say L3335 tickCards()"
+    },
     "f7bb37c1301e": {
       "at": "2026-10-21",
       "what": "Sound.clip L2570 landSpark()",
@@ -980,10 +996,6 @@
       "at": "2026-10-17",
       "what": "Pop.show L2006 heroAct()"
     },
-    "0be905764de3": {
-      "at": "2026-10-17",
-      "what": "Notify.say L2231 letGo()"
-    },
     "0cba0be9e2b2": {
       "at": "2026-10-17",
       "what": "Pop.show L2140 foeAct()"
@@ -991,6 +1003,10 @@
     "11a9c00431a5": {
       "at": "2026-10-17",
       "what": "Pop.show L2064 hitFoe()"
+    },
+    "17086f2614c3": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1125 refused()"
     },
     "1867e3867b5e": {
       "at": "2026-10-17",
@@ -1024,6 +1040,10 @@
       "at": "2026-10-17",
       "what": "Pop.show L2152 foeAct()"
     },
+    "35cebd24253e": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1129 refused()"
+    },
     "370ac1f222a8": {
       "at": "2026-10-16",
       "what": "Notify.say L766 build()"
@@ -1031,6 +1051,10 @@
     "3c23a8b39be5": {
       "at": "2026-10-17",
       "what": "Pop.show L3989 takeExit()"
+    },
+    "4018453dfc9b": {
+      "at": "2026-10-23",
+      "what": "Notify.say L4308 onDown()"
     },
     "439141c44816": {
       "at": "2026-10-17",
@@ -1043,6 +1067,10 @@
     "4528e8adf225": {
       "at": "2026-10-17",
       "what": "Pop.show L2043 heroAct()"
+    },
+    "496bf9b3a5ce": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1010 burn()"
     },
     "4ebb013f5073": {
       "at": "2026-10-17",
@@ -1063,10 +1091,6 @@
     "6802c19487cc": {
       "at": "2026-10-17",
       "what": "Pop.show L1662 action()"
-    },
-    "686e40c0fe04": {
-      "at": "2026-10-16",
-      "what": "Notify.say L586 levelUp()"
     },
     "6ae34526909b": {
       "at": "2026-10-17",
@@ -1124,10 +1148,6 @@
       "at": "2026-10-17",
       "what": "Pop.show L887 takeBonus()"
     },
-    "7f2e5428f9f2": {
-      "at": "2026-10-17",
-      "what": "Notify.say L1122 refused()"
-    },
     "81463fd9206e": {
       "at": "2026-10-17",
       "what": "Pop.show L811 build()"
@@ -1159,10 +1179,6 @@
     "931870bba9bc": {
       "at": "2026-10-17",
       "what": "Notify.say L2393 select()"
-    },
-    "939d1bc1cb6f": {
-      "at": "2026-10-17",
-      "what": "Notify.say L1013 addCandles()"
     },
     "9c72456efd4e": {
       "at": "2026-10-17",
@@ -1204,10 +1220,6 @@
       "at": "2026-10-17",
       "what": "Pop.show L2044 heroAct()"
     },
-    "d6081a014eb2": {
-      "at": "2026-10-17",
-      "what": "Notify.say L1126 refused()"
-    },
     "d7068c7c0b67": {
       "at": "2026-10-17",
       "what": "Pop.show L892 takeBonus()"
@@ -1215,10 +1227,6 @@
     "d7a0d3a615b9": {
       "at": "2026-10-16",
       "what": "Notify.say L765 build()"
-    },
-    "de0aaab0c5c8": {
-      "at": "2026-10-17",
-      "what": "Notify.say L1007 burn()"
     },
     "df19b36563f0": {
       "at": "2026-10-17",
@@ -1228,17 +1236,9 @@
       "at": "2026-10-17",
       "what": "Pop.show L1486 push()"
     },
-    "e23e8ab78bf9": {
-      "at": "2026-10-16",
-      "what": "Notify.say L690 build()"
-    },
     "e38b6c5df117": {
       "at": "2026-10-17",
       "what": "Pop.show L1783 planWith()"
-    },
-    "e82857577a5b": {
-      "at": "2026-10-17",
-      "what": "Notify.say L3897 onDown()"
     },
     "e86b738ab742": {
       "at": "2026-10-17",
@@ -1248,6 +1248,10 @@
       "at": "2026-10-17",
       "what": "Pop.show L2122 foeAct()"
     },
+    "e9e516c844d0": {
+      "at": "2026-10-23",
+      "what": "Notify.say L693 build()"
+    },
     "ec513245f7b7": {
       "at": "2026-10-17",
       "what": "Notify.say L1131 refused()"
@@ -1255,9 +1259,18 @@
     "ee4b7f519179": {
       "at": "2026-10-17",
       "what": "Pop.show L2113 foeAct()"
+    },
+    "f50837d91f70": {
+      "at": "2026-10-23",
+      "what": "Notify.say L2236 letGo()"
     }
   },
   "holepocalypse": {
+    "008654872174": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L3871 labBall()",
+      "kit": "072ee5411a"
+    },
     "0610c2a5f022": {
       "at": "2026-10-20",
       "what": "Sound.clip L1481 kill()",
@@ -1276,9 +1289,22 @@
       "at": "2026-10-19",
       "what": "Notify.say L926 spawnBoss()"
     },
+    "1cac54bf0365": {
+      "at": "2026-10-23",
+      "what": "Pop.show L1605 holed()"
+    },
+    "208317398bee": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L965 fire()",
+      "kit": "072ee5411a"
+    },
     "239d27ed1fdb": {
       "at": "2026-10-19",
       "what": "Notify.say L934 fire()"
+    },
+    "2ef8711eb2f6": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1093 startPhase()"
     },
     "2fdd7bd2ca82": {
       "at": "2026-10-19",
@@ -1288,9 +1314,23 @@
       "at": "2026-10-19",
       "what": "Notify.say L1261 superTap()"
     },
+    "3460475f5762": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1438 hurt()",
+      "kit": "bb35c71cc1"
+    },
     "3a5a375a08b0": {
       "at": "2026-10-19",
       "what": "Pop.show L1768 updateBall()"
+    },
+    "47bce45aa04c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2070 bossAct()",
+      "kit": "072ee5411a"
+    },
+    "58ba6924b7cc": {
+      "at": "2026-10-23",
+      "what": "Pop.show L1480 kill()"
     },
     "6034b17de57a": {
       "at": "2026-10-19",
@@ -1337,6 +1377,10 @@
       "at": "2026-10-20",
       "what": "Sound.clip L2061 bossAct()",
       "kit": "80f0c8fc0c"
+    },
+    "8ac1e819d5cd": {
+      "at": "2026-10-23",
+      "what": "Pop.text L1678 lobLand()"
     },
     "8e1141c4e4f4": {
       "at": "2026-10-19",
@@ -1385,20 +1429,10 @@
       "what": "Sound.clip L1666 lobLand()",
       "kit": "157b0c22d9"
     },
-    "a98261615c87": {
-      "at": "2026-10-20",
-      "what": "Sound.clip L1437 hurt()",
-      "kit": "8f5811fcdc"
-    },
     "b41ccae6f545": {
       "at": "2026-10-20",
       "what": "Sound.clip L1407 sideHoleHit()",
       "kit": "7d512b4060"
-    },
-    "bddab7a879b7": {
-      "at": "2026-10-20",
-      "what": "Sound.clip L1093 startPhase()",
-      "kit": "bf23f6a985"
     },
     "c3347fe87cb7": {
       "at": "2026-10-19",
@@ -1424,6 +1458,11 @@
       "what": "Sound.clip L1467 kill()",
       "kit": "30bd744c0d"
     },
+    "db25e2931524": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L964 fire()",
+      "kit": "072ee5411a"
+    },
     "dbee4fb73a55": {
       "at": "2026-10-20",
       "what": "Sound.clip L1605 holed()",
@@ -1438,9 +1477,19 @@
       "at": "2026-10-19",
       "what": "Pop.show L851 startWave()"
     },
+    "e56fd7f4f33d": {
+      "at": "2026-10-20",
+      "what": "Sound.clip L1094 startPhase()",
+      "kit": "bf23f6a985"
+    },
     "e5750949ac5c": {
       "at": "2026-10-19",
       "what": "Pop.text L1454 kill()"
+    },
+    "f562f5c0e43e": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L3872 labBall()",
+      "kit": "072ee5411a"
     },
     "fcda383c7ee7": {
       "at": "2026-10-20",
@@ -1592,11 +1641,6 @@
       "what": "Sound.clip L926 claim()",
       "kit": "c656358383"
     },
-    "881681b44cfa": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1127 stepGeysers()",
-      "kit": "bc317233d1"
-    },
     "96eb3e28e248": {
       "at": "2026-10-21",
       "what": "Sound.clip L1218 drip()",
@@ -1690,12 +1734,62 @@
     "f92360acfb85": {
       "at": "2026-10-14",
       "what": "Pop.show L1931 update()"
+    },
+    "ffa98bec5bc8": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1121 stepGeysers()",
+      "kit": "bc317233d1"
     }
   },
   "orbinity": {
     "0a1aef829e5f": {
       "at": "2026-10-14",
       "what": "Pop.show L2491 breakCombo()"
+    },
+    "10fd85274a33": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2390 rockHit()",
+      "kit": "a060b02a2a"
+    },
+    "150e064600e9": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1829 fizzleNova()",
+      "kit": "570441c04f"
+    },
+    "19e5fbd126a7": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2741 linkHit()",
+      "kit": "edf5862dea"
+    },
+    "1b35f5f463f3": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2365 wormJump()",
+      "kit": "0f9c26c007"
+    },
+    "1d43c2f01a34": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2328 capture()",
+      "kit": "b489f58708"
+    },
+    "1eb2c5a0e1fe": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2180 award()",
+      "kit": "217676c4ed"
+    },
+    "2577023c2f02": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1813 maybeNova()",
+      "kit": "778d917f3c"
+    },
+    "27f946aef9ff": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2477 nebulaEdge()",
+      "kit": "0669009ec4"
+    },
+    "38ef137ae5e8": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2350 bounce()",
+      "kit": "243ded5853"
     },
     "458ac3f5624e": {
       "at": "2026-10-21",
@@ -1706,6 +1800,21 @@
       "at": "2026-10-13",
       "what": "Pop.text L2728 linkHit()"
     },
+    "4ca58206a12d": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2742 linkHit()",
+      "kit": "f038e2fca8"
+    },
+    "501f7c57670d": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2418 shieldHit()",
+      "kit": "fbe2b7833c"
+    },
+    "62805c8870ed": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2315 capture()",
+      "kit": "881ead2c57"
+    },
     "6409a193d9ab": {
       "at": "2026-10-14",
       "what": "Pop.show L2308 capture()"
@@ -1715,6 +1824,21 @@
       "what": "Sound.clip L2763 supernova()",
       "kit": "96365f04af"
     },
+    "6885b5f33e99": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2343 bounce()",
+      "kit": "243ded5853"
+    },
+    "6a9b2e326067": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2633 launchRoad()",
+      "kit": "8b28656c43"
+    },
+    "6c27b62490e9": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2764 supernova()",
+      "kit": "f038e2fca8"
+    },
     "72b4d35cbbf2": {
       "at": "2026-10-14",
       "what": "Pop.show L2318 capture()"
@@ -1723,13 +1847,23 @@
       "at": "2026-10-13",
       "what": "Pop.show L2294 capture()"
     },
+    "7fd1a23dff2c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2372 repelHit()",
+      "kit": "ad3ec49362"
+    },
     "8610f52623d0": {
       "at": "2026-10-14",
       "what": "Pop.show L2488 breakCombo()"
     },
-    "a4c5d72f1011": {
+    "9afa324e9ca4": {
       "at": "2026-10-21",
-      "what": "Sound.clip L2717 revealLink()",
+      "what": "Sound.clip L2002 explode()",
+      "kit": "f038e2fca8"
+    },
+    "a4c5d72f1011": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2718 revealLink()",
       "kit": "217676c4ed"
     },
     "a5b2b84876b9": {
@@ -1744,9 +1878,44 @@
       "at": "2026-10-14",
       "what": "Pop.show L2304 capture()"
     },
+    "b5ae895954e0": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L2304 capture()",
+      "kit": "edf5862dea"
+    },
+    "cef52c27c299": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2437 holeCatch()",
+      "kit": "4e8d2a81d5"
+    },
+    "d8ed677ce88b": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L3728 startOvertime()",
+      "kit": "b489f58708"
+    },
+    "dc3b3b1e5a96": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1596 planStreams()",
+      "kit": "26b338fe5e"
+    },
+    "dca38e22571d": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2403 moonHit()",
+      "kit": "243ded5853"
+    },
+    "dd13986713eb": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2476 nebulaEdge()",
+      "kit": "0669009ec4"
+    },
     "dd2540319147": {
       "at": "2026-10-19",
       "what": "Notify.say L3755 updateOvertime()"
+    },
+    "deb9ebc42bb1": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2379 glance()",
+      "kit": "243ded5853"
     },
     "f11a63b50c61": {
       "at": "2026-10-14",
@@ -1756,6 +1925,11 @@
       "at": "2026-10-14",
       "what": "Pop.show L2481 breakCombo()"
     },
+    "f675089be060": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1985 depart()",
+      "kit": "8b28656c43"
+    },
     "fb01d8cb1fc6": {
       "at": "2026-10-21",
       "what": "Sound.clip L2500 breakCombo()",
@@ -1763,19 +1937,34 @@
     }
   },
   "pawko": {
+    "008d46315750": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1398 shatter()",
+      "kit": "b6354ddb41"
+    },
     "0835ece703de": {
       "at": "2026-10-14",
       "what": "Pop.text L1329 shock()"
     },
-    "0d9ddf4ba7f5": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1200 tick()",
+    "0853c8699f71": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1033 watchMult()",
+      "kit": "0d9644facf"
+    },
+    "2150dbce4424": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1418 collect()",
       "kit": "b489f58708"
     },
     "22f456a6b379": {
       "at": "2026-10-21",
       "what": "Sound.clip L2092 openZoom()",
       "kit": "2d5c728892"
+    },
+    "2f7889326ed6": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L903 dropWave()",
+      "kit": "2b9c591571"
     },
     "31a30b07c5a2": {
       "at": "2026-10-14",
@@ -1786,14 +1975,49 @@
       "what": "Sound.clip L662 onDown()",
       "kit": "2d5c728892"
     },
+    "396f9cd0be25": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1421 collect()",
+      "kit": "0e6ce147ce"
+    },
+    "4b0439a1dd0e": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1424 collect()",
+      "kit": "b489f58708"
+    },
+    "4bc33e6b8c7f": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L842 multOrb()",
+      "kit": "0d9644facf"
+    },
     "5820dd4f254a": {
       "at": "2026-10-14",
       "what": "Pop.show L1016 watchMult()"
+    },
+    "639a6e19d2a3": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L763 castFx()",
+      "kit": "c183e94307"
     },
     "6b5ba0503355": {
       "at": "2026-10-21",
       "what": "Sound.clip L770 castFx()",
       "kit": "2d5c728892"
+    },
+    "742b0b0b96b3": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L778 castFx()",
+      "kit": "c183e94307"
+    },
+    "79f6f273d739": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1423 collect()",
+      "kit": "b489f58708"
+    },
+    "7c6120a56725": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L818 chuteLands()",
+      "kit": "c183e94307"
     },
     "7c76a47fb073": {
       "at": "2026-10-19",
@@ -1802,6 +2026,20 @@
     "858d3ac47e35": {
       "at": "2026-10-14",
       "what": "Pop.show L957 announceWave()"
+    },
+    "ada045878877": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L651 refuse()",
+      "kit": "0e6ce147ce"
+    },
+    "b231efa4b494": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1205 accent()"
+    },
+    "b39875090e63": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1304 addScore()",
+      "kit": "881ead2c57"
     },
     "d760362b054a": {
       "at": "2026-10-14",
@@ -1815,6 +2053,16 @@
       "at": "2026-10-18",
       "what": "Pop.text L1275 effect()"
     },
+    "dfa86e3735a1": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1364 shock()",
+      "kit": "8f5811fcdc"
+    },
+    "e4a1502636c7": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L810 gateLands()",
+      "kit": "b489f58708"
+    },
     "e82ca6932f34": {
       "at": "2026-10-21",
       "what": "Sound.clip L710 playCard()",
@@ -1825,6 +2073,16 @@
       "what": "Sound.clip L803 pegLands()",
       "kit": "bb35c71cc1"
     },
+    "f5225cbe61c3": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1437 burnOut()",
+      "kit": "c183e94307"
+    },
+    "f5845e16851e": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1200 tick()",
+      "kit": "08c073b121"
+    },
     "f836b0f96ebe": {
       "at": "2026-10-14",
       "what": "Pop.show L883 dropWave()"
@@ -1832,6 +2090,11 @@
     "fbe7f1bdaa8a": {
       "at": "2026-10-19",
       "what": "Notify.say L2470 levelMaxed()"
+    },
+    "fc03abfbc24c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L933 endWave()",
+      "kit": "2b9c591571"
     },
     "fd128a748804": {
       "at": "2026-10-14",
@@ -1848,19 +2111,19 @@
       "what": "Sound.clip L1374 miss()",
       "kit": "1478960a50"
     },
-    "10b506985e6f": {
+    "0f73dd820f2f": {
       "at": "2026-10-21",
-      "what": "Sound.clip L2026 addColour()",
-      "kit": "96365f04af"
+      "what": "Sound.clip L2007 pop()",
+      "kit": "b489f58708"
     },
     "1ae88eec8b89": {
       "at": "2026-10-14",
       "what": "Pop.show L1944 pop()"
     },
-    "2060b70be70e": {
+    "2092a6e9346a": {
       "at": "2026-10-21",
-      "what": "Sound.clip L2013 pop()",
-      "kit": "8ebe7cbe83"
+      "what": "Sound.clip L2020 addColour()",
+      "kit": "b489f58708"
     },
     "38f6667ae99c": {
       "at": "2026-10-21",
@@ -1899,11 +2162,6 @@
       "at": "2026-10-14",
       "what": "Pop.show L1756 iceHit()"
     },
-    "60ab8f62a3a9": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1760 scoreHit()",
-      "kit": "96365f04af"
-    },
     "612256046641": {
       "at": "2026-10-14",
       "what": "Pop.show L1578 flushBlast()"
@@ -1927,19 +2185,19 @@
       "what": "Sound.clip L2849 powerDown()",
       "kit": "27a0043661"
     },
-    "8c5467af4a08": {
+    "8288aa30fd1f": {
       "at": "2026-10-21",
-      "what": "Sound.clip L1959 pop()",
-      "kit": "96365f04af"
+      "what": "Sound.clip L1953 pop()",
+      "kit": "b489f58708"
+    },
+    "8b52e49dbbb5": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1758 scoreHit()",
+      "kit": "b489f58708"
     },
     "96cde7499f39": {
       "at": "2026-10-14",
       "what": "Pop.show L1907 pop()"
-    },
-    "9972b8e57ea7": {
-      "at": "2026-10-21",
-      "what": "Sound.clip L1342 line()",
-      "kit": "8ebe7cbe83"
     },
     "ab1558cc275b": {
       "at": "2026-10-21",
@@ -1968,6 +2226,11 @@
     "d0416552b7e9": {
       "at": "2026-10-14",
       "what": "Pop.show L1281 give()"
+    },
+    "de6e62857cb4": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1340 line()",
+      "kit": "b489f58708"
     },
     "eb945818b36f": {
       "at": "2026-10-21",
@@ -2135,6 +2398,11 @@
       "what": "Sound.cue L1153 jokerShow()",
       "kit": "39d2e1f34c"
     },
+    "5ae2a63309bb": {
+      "at": "2026-10-21",
+      "what": "Sound.cue L2352 update()",
+      "kit": "edf5862dea"
+    },
     "6a44e29d3a39": {
       "at": "2026-10-16",
       "what": "Notify.say L2205 onUp()"
@@ -2177,28 +2445,63 @@
       "at": "2026-10-19",
       "what": "Pop.show L1749 equip()"
     },
-    "f119e9357e73": {
-      "at": "2026-10-21",
-      "what": "Sound.cue L2352 update()",
-      "kit": "edf5862dea"
-    },
     "fb3e96c1cb41": {
       "at": "2026-10-19",
       "what": "Pop.show L2066 decide()"
     }
   },
   "spinshock": {
+    "017ab84a2c99": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1434 boom()",
+      "kit": "1e2553bf5c"
+    },
+    "0ac61851bb0c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1477 mend()",
+      "kit": "b489f58708"
+    },
     "0f41812497da": {
       "at": "2026-10-14",
       "what": "Pop.show L1929 shatter()"
+    },
+    "33fe59d3de00": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1968 shatter()",
+      "kit": "1e2553bf5c"
     },
     "37bc23a7fc99": {
       "at": "2026-10-14",
       "what": "Pop.show L1730 comboBeat()"
     },
+    "3e08f7430242": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1983 shatter()",
+      "kit": "8f9b6a423d"
+    },
     "3f894fb10548": {
       "at": "2026-10-14",
       "what": "Pop.show L1343 payKo()"
+    },
+    "464c3a45a412": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1366 payKo()",
+      "kit": "3de4f44660"
+    },
+    "54b0bea2bb2f": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1458 split()",
+      "kit": "3de4f44660"
+    },
+    "6755535681e3": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1219 dash()",
+      "kit": "1e2553bf5c"
+    },
+    "686f1accd649": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1974 shatter()",
+      "kit": "1e2553bf5c"
     },
     "70800d0fa7df": {
       "at": "2026-10-14",
@@ -2208,21 +2511,112 @@
       "at": "2026-10-14",
       "what": "Pop.text L1339 payKo()"
     },
-    "7a0e89c21677": {
-      "at": "2026-10-19",
-      "what": "Notify.say L1106 spawnBoss()"
+    "75c61ef05982": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1099 spawnBoss()",
+      "kit": "570441c04f"
+    },
+    "77b8e3d01290": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1698 onDown()",
+      "kit": "3de4f44660"
     },
     "7a8580884d6e": {
       "at": "2026-10-14",
       "what": "Pop.show L1673 onDown()"
     },
+    "7dc8d39e54e2": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1435 boom()",
+      "kit": "1e2553bf5c"
+    },
+    "83234f0fb029": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1682 onDown()",
+      "kit": "b489f58708"
+    },
+    "86333ccbf43f": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1766 whiff()",
+      "kit": "2a9d89a944"
+    },
     "868af84041cc": {
       "at": "2026-10-14",
       "what": "Pop.show L1746 whiff()"
     },
+    "8cc59ccd0ad1": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2036 shardHit()",
+      "kit": "1e2553bf5c"
+    },
+    "909fe511d89c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1433 boom()",
+      "kit": "8f9b6a423d"
+    },
+    "920986025986": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1291 walls()",
+      "kit": "1e2553bf5c"
+    },
+    "9933e9cbc7aa": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1965 shatter()",
+      "kit": "8f9b6a423d"
+    },
+    "9f3dfb2868b6": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1352 explode()",
+      "kit": "8f9b6a423d"
+    },
+    "a21f47afb3be": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1948 shatter()",
+      "kit": "1e2553bf5c"
+    },
+    "a36e281c81a7": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1754 comboBeat()",
+      "kit": "3de4f44660"
+    },
+    "a9ad0e1e8cce": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L2113 update()",
+      "kit": "570441c04f"
+    },
+    "b4dee56c3701": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1820 crash()",
+      "kit": "8f9b6a423d"
+    },
     "b79d30a9b128": {
       "at": "2026-10-19",
       "what": "Notify.say L2114 update()"
+    },
+    "c3624552f95c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1947 shatter()",
+      "kit": "8f9b6a423d"
+    },
+    "c9d36fc4af20": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1492 clank()",
+      "kit": "1e2553bf5c"
+    },
+    "de648100d4b0": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1351 explode()",
+      "kit": "8f9b6a423d"
+    },
+    "e8dc3c3b96f8": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1681 onDown()",
+      "kit": "1e2553bf5c"
+    },
+    "f019c54f666d": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1987 shatter()",
+      "kit": "570441c04f"
     },
     "f61843262139": {
       "at": "2026-10-14",
@@ -2246,9 +2640,19 @@
       "at": "2026-10-14",
       "what": "Pop.show L1506 objectHit()"
     },
+    "153d51a38e44": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1151 onDown()",
+      "kit": "26b338fe5e"
+    },
     "158ca6de3165": {
       "at": "2026-10-13",
       "what": "Pop.show L3369 finish()"
+    },
+    "2843eccaf802": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1141 onDown()",
+      "kit": "b175358740"
     },
     "2b89798e6335": {
       "at": "2026-10-19",
@@ -2298,6 +2702,16 @@
       "at": "2026-10-19",
       "what": "Notify.say L1136 onDown()"
     },
+    "70c3d8753499": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1128 onDown()",
+      "kit": "26b338fe5e"
+    },
+    "70c3d8753499#2": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1134 onDown()",
+      "kit": "26b338fe5e"
+    },
     "80bdfec699b1": {
       "at": "2026-10-13",
       "what": "Pop.show L3374 finish()"
@@ -2310,6 +2724,16 @@
       "at": "2026-10-14",
       "what": "Pop.show L1679 resolve()"
     },
+    "9f7dce262cfc": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L3202 sheetShow()",
+      "kit": "b175358740"
+    },
+    "a56b276ee261": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1730 endTurn()",
+      "kit": "26b338fe5e"
+    },
     "accc316fc75b": {
       "at": "2026-10-13",
       "what": "Pop.text L1697 resolve()"
@@ -2321,6 +2745,11 @@
     "b3fe2fba118c": {
       "at": "2026-10-19",
       "what": "Pop.show L1552 spellLands()"
+    },
+    "bbf3fb781e6e": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1189 onUp()",
+      "kit": "26b338fe5e"
     },
     "be986a439d3f": {
       "at": "2026-10-14",
@@ -2358,21 +2787,47 @@
     }
   },
   "triverse": {
+    "15464fdbd74d": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1239 crash()",
+      "kit": "fbe2b7833c"
+    },
     "16adc435e173": {
       "at": "2026-10-14",
       "what": "Pop.show L1233 crash()"
-    },
-    "221faa9a70aa": {
-      "at": "2026-10-19",
-      "what": "Notify.say L1622 update()"
     },
     "2410e827c8eb": {
       "at": "2026-10-14",
       "what": "Pop.show L1134 collect()"
     },
+    "24ad7c29e1d6": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1307 padThrow()",
+      "kit": "2b9c591571"
+    },
+    "24edd751454f": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1329 fall()",
+      "kit": "0e6ce147ce"
+    },
+    "2aee60459b12": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1277 jump()",
+      "kit": "0f9c26c007"
+    },
+    "2b0347b12dc5": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1387 switchLane()",
+      "kit": "8b28656c43"
+    },
     "3200a22d5434": {
       "at": "2026-10-14",
       "what": "Pop.show L1174 collect()"
+    },
+    "40ce721de9a4": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1395 switchLane()",
+      "kit": "8b28656c43"
     },
     "45714a571d24": {
       "at": "2026-10-14",
@@ -2382,17 +2837,48 @@
       "at": "2026-10-14",
       "what": "Pop.show L1141 collect()"
     },
-    "506508c226d4": {
-      "at": "2026-10-19",
-      "what": "Notify.say L1625 update()"
+    "4fed12e030ca": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1569 updateElec()",
+      "kit": "fbe2b7833c"
+    },
+    "5f0d7d854cb2": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1145 collect()",
+      "kit": "0ab042e336"
     },
     "60250c4ffa8a": {
       "at": "2026-10-14",
       "what": "Pop.show L1155 collect()"
     },
+    "64d3d251d79c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1193 collect()",
+      "kit": "5fa3a9af53"
+    },
+    "6cbc998144f6": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1168 collect()",
+      "kit": "ad3ec49362"
+    },
     "6ddb54f21ee1": {
       "at": "2026-10-14",
       "what": "Pop.show L1350 checkLoop()"
+    },
+    "6e72bfa3dad9": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1154 collect()",
+      "kit": "3de4f44660"
+    },
+    "744573b81472": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1378 checkLoop()",
+      "kit": "3967261906"
+    },
+    "83b9bf3c22c9": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1219 shieldDown()",
+      "kit": "fbe2b7833c"
     },
     "87c7474a2163": {
       "at": "2026-10-14",
@@ -2402,9 +2888,25 @@
       "at": "2026-10-14",
       "what": "Pop.show L1149 collect()"
     },
-    "b6708ed47b3e": {
-      "at": "2026-10-19",
-      "what": "Notify.say L1655 update()"
+    "8f1bc7a56805": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1199 collect()",
+      "kit": "2b9c591571"
+    },
+    "9bb72a7640d8": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1261 checkGates()",
+      "kit": "0ab042e336"
+    },
+    "a6de8a8210ab": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1589 updateElec()",
+      "kit": "fbe2b7833c"
+    },
+    "b19b904ee48c": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1160 collect()",
+      "kit": "0ab042e336"
     },
     "b7f88e6d03e9": {
       "at": "2026-10-14",
@@ -2422,14 +2924,39 @@
       "at": "2026-10-14",
       "what": "Pop.show L1193 collect()"
     },
+    "e24127aca297": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1207 collect()",
+      "kit": "f913ccd951"
+    },
+    "e53016d453f8": {
+      "at": "2026-10-21",
+      "what": "Sound.clip L1396 switchLane()",
+      "kit": "8b28656c43"
+    },
+    "e55a2fd96943": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1174 collect()",
+      "kit": "ad3ec49362"
+    },
+    "eccfdf8682dc": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1206 collect()",
+      "kit": "0e6ce147ce"
+    },
     "ee65ce56e4b3": {
       "at": "2026-10-14",
       "what": "Pop.show L1168 collect()"
     },
-    "fed5babc02a8": {
-      "at": "2026-10-06",
-      "what": "Sound.clip L631 collect()",
-      "kit": "4e85dd11a9"
+    "f06733cbd610": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1660 update()",
+      "kit": "0ab042e336"
+    },
+    "f15898687d9d": {
+      "at": "2026-10-22",
+      "what": "Sound.clip L1377 checkLoop()",
+      "kit": "3967261906"
     }
   },
   "vipera": {
@@ -2498,11 +3025,6 @@
       "at": "2026-10-13",
       "what": "Pop.show L1033 power()"
     },
-    "51636c4d0e61": {
-      "at": "2026-10-20",
-      "what": "Sound.clip L1291 startDeath()",
-      "kit": "06ce51f254"
-    },
     "542c18dd2100": {
       "at": "2026-10-20",
       "what": "Sound.clip L1043 power()",
@@ -2538,6 +3060,11 @@
     "829d7534d0c2": {
       "at": "2026-10-13",
       "what": "Pop.show L1041 power()"
+    },
+    "91952234f1c1": {
+      "at": "2026-10-20",
+      "what": "Sound.clip L1292 startDeath()",
+      "kit": "06ce51f254"
     },
     "98b354ae83cd": {
       "at": "2026-10-03",
@@ -2582,6 +3109,10 @@
       "at": "2026-10-20",
       "what": "Sound.clip L926 armour()",
       "kit": "0ec33386bb"
+    },
+    "fac9af5557a6": {
+      "at": "2026-10-23",
+      "what": "Pop.show L1080 bite()"
     }
   }
 }

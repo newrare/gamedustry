@@ -16,6 +16,19 @@
 */
 window.GAMES = [
   {
+    slug: "foldiers",
+    name: "Foldiers",
+    accent: ["#f2b400", "#1f8a96"],
+    fr: {
+      tagline: "Commande une armée de papier sur un monde découpé : trace tes ordres, envoie-les avant la fin du tick, et toutes les armées bougent en même temps.",
+      tags: ["Stratégie", "Conquête", "Origami"]
+    },
+    en: {
+      tagline: "Command a paper army on a world cut out of paper: draw your orders, send them before the tick ends, and every army on the map moves at once.",
+      tags: ["Strategy", "Conquest", "Origami"]
+    }
+  },
+  {
     slug: "holepocalypse",
     name: "Holepocalypse",
     accent: ["#9fe03a", "#b46cff"],
@@ -98,12 +111,12 @@ window.GAMES = [
     name: "Echomaze",
     accent: ["#7ef9ff", "#4ade80"],
     fr: {
-      tagline: "Seulement deux secondes pour mémoriser le labyrinthe. Retrouve ton chemin grâce à l'écho de tes impulsions.",
-      tags: ["Mémorise et vise", "Echolocalisation", "Une seule sortie"]
+      tagline: "Deux secondes pour tout voir. Laisse tes impulsions guider ton retour.",
+      tags: ["Mémoire", "Echo", "Satisfaisant"]
     },
     en: {
       tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
-      tags: ["Memorise and aim", "Echolocation", "Only one way out"]
+      tags: ["Memory", "Echo", "Satisfying"]
     }
   },
   {

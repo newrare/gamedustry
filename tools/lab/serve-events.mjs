@@ -41,7 +41,10 @@
   event belongs to. They record the game being played (the canvas, a second on
   each side of every event of their kind), keep each capture in
   lab/events-clips/<slug>/ (ignored by git — playing again makes them again),
-  and loop it under the row being judged. Their routes are /api/offset,
+  and loop it under the row being judged. Auto rec does the playing for them:
+  a headless Chrome walks the levels with a blind pilot and films every line
+  still without a clip (POST /api/auto-rec, tools/lab/auto-rec.mjs). Their
+  routes are /api/offset, /api/auto-rec,
   /api/clips, /api/clip, /api/clip-drop and /clips/…; /icons/<slug>.png is the
   game's thumb, which the sound page puts on a kit variant several games play;
   /api/sfx-like is the library's files whose wave looks like a cut, which the
@@ -62,9 +65,10 @@ import path from 'node:path';
 import { games, units, scanGame as scanUnit, clearCache, sfxFiles, soundPack, fileForNote, shellCues, SFX_DIR, ROOT, SHELL_FILES } from './scan-events.mjs';
 import { shootShell } from './shoot-shell.mjs';
 import { probeStages } from './probe-stages.mjs';
+import { autoRec } from './auto-rec.mjs';
 import { applyEdits } from './apply-events.mjs';
 import { keepEnglish } from './keep-english.mjs';
-import { readKit, writeKit, cutKit, kitUsers, roleCalls, mapKeys, editVariants, normalTake, KIT_DIR } from './cut-kit.mjs';
+import { readKit, writeKit, cutKit, kitUsers, roleCalls, mapKeys, editVariants, remapManifests, normalTake, KIT_DIR, EMPTY } from './cut-kit.mjs';
 import { shapes, alike } from './shape-sfx.mjs';
 import { createHash } from 'node:crypto';
 import { isMain, portArg, listen, json, notFound, readJson, sendFile, reloadHub, MIME } from '../lib/serve.mjs';
@@ -190,6 +194,27 @@ function noteStages(slug, found) {
 }
 // One probe at a time, for the whole server: it is a browser and minutes of it.
 const PROBE = { game: null, level: 0, count: 0, left: [], steps: [], error: null, done: null };
+// The same for Auto rec (tools/lab/auto-rec.mjs), and never beside a probe.
+const AUTO = { game: null, level: 0, count: 0, done: 0, left: 0, clips: 0, wanted: 0, steps: [], error: null, over: null };
+
+/* A frame of the built game.<hash>.js → its scanned row, as the page's
+   recorder matches it: the caller's line, mapped by the build's offset, and
+   the nearest row of that call name within two lines. */
+function rowMatcher(rows, offset) {
+  return ({ name, stack }) => {
+    const frames = String(stack).split('\n').filter((l) => /:\d+:\d+\)?\s*$/.test(l));
+    const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || '');
+    if (!m) return null;
+    const at = Number(m[1]) + offset;
+    let best = null;
+    for (const c of rows) {
+      if (c.name !== name) continue;
+      const d = Math.abs(c.line - at);
+      if (d <= 2 && (!best || d < best.d)) best = { c, d };
+    }
+    return best && best.c;
+  };
+}
 
 async function readReview() {
   try { return JSON.parse(await readFile(REVIEW, 'utf8')); } catch { return {}; }
@@ -238,6 +263,14 @@ function variantHash(kit, id) {
   const [role, name = 'default'] = String(id).split('/');
   const v = kit.roles[role] && kit.roles[role].variants[name];
   return v ? takesHash(v.takes) : null;
+}
+// Every id a kit names its variants by, flat — for a kit read off disk or sent by the page.
+function variantsOfKit(kit) {
+  const out = [];
+  for (const [role, r] of Object.entries((kit && kit.roles) || {})) {
+    for (const name of Object.keys(r.variants || {})) out.push(r.group === 'shell' ? role : role + '/' + name);
+  }
+  return out;
 }
 function kitOf(g, call) {
   if (!call || call.kind !== 'sound' || !call.soundLiteral) return null;
@@ -312,10 +345,12 @@ async function kitChecked(kit) {
 /* The kit and who plays it is instant; who signed it off reads games, so it
    is its own route (/api/kit-checked) and the pages paint it when it lands.
    `calls` is who CALLS a role by name — the shell's files and a game's own
-   Sound.ui — which is the only record of where a shell role is heard. */
+   Sound.ui — which is the only record of where a shell role is heard.
+   `accepts` is what this server's Save understands, so a page newer than the
+   process serving it says so instead of being refused on a variant it moved. */
 async function kitPayload() {
   const kit = await readKit();
-  return { ...kit, users: await kitUsers(), calls: await roleCalls(kit) };
+  return { ...kit, users: await kitUsers(), calls: await roleCalls(kit), accepts: ['remap'] };
 }
 
 let checking = Promise.resolve();
@@ -560,26 +595,14 @@ export async function handle(req, res, p, url) {
     const game = body && body.game;
     if (!(await units()).includes(game) || game === 'template') return notFound(res, 'game ' + game);
     if (PROBE.game) return json(res, 200, { error: 'a probe of ' + PROBE.game + ' is running already' });
+    if (AUTO.game) return json(res, 200, { error: 'Auto rec is playing ' + AUTO.game });
     const g = await scanGame(game), known = (await readStages())[game] || {};
     const rows = g.calls.filter((c) => c.kind === 'sound' && !c.inherited && c.soundLiteral && c.checkId);
     const keys = [...new Set(rows.map((c) => c.sound))].filter((k) => body.all || !known[k]);
     if (!keys.length) return json(res, 200, { error: 'every key already has a level' });
     const off = await sourceOffset(game);
     if (off.offset == null) return json(res, 200, { error: off.error || 'no offset for ' + game });
-    // A frame of the built game.<hash>.js → its scanned row, as the recorder matches it.
-    const match = ({ name, stack }) => {
-      const frames = String(stack).split('\n').filter((l) => /:\d+:\d+\)?\s*$/.test(l));
-      const m = /\/game\.[0-9a-f]+\.js:(\d+):\d+/.exec(frames[1] || '');
-      if (!m) return null;
-      const at = Number(m[1]) + off.offset;
-      let best = null;
-      for (const c of rows) {
-        if (c.name !== name) continue;
-        const d = Math.abs(c.line - at);
-        if (d <= 2 && (!best || d < best.d)) best = { c, d };
-      }
-      return best && best.c;
-    };
+    const match = rowMatcher(rows, off.offset);
     Object.assign(PROBE, { game, level: 0, count: 0, left: keys, steps: [], error: null, done: null });
     const stamp = new Date().toTimeString().slice(0, 8);
     console.log(`  ${stamp}  probe ${game}: ${keys.length} keys to place`);
@@ -592,6 +615,45 @@ export async function handle(req, res, p, url) {
     }).then((r) => { Object.assign(PROBE, { left: r.left }); }).catch((e) => { PROBE.error = String(e.message || e); })
       .finally(() => { PROBE.done = game; PROBE.game = null; console.log(`  probe ${game} done${PROBE.error ? ' — ' + PROBE.error : ''}`); });
     return json(res, 200, { started: true, keys });
+  }
+
+  /* Auto rec: a headless Chrome plays the levels with the probe's blind pilot
+     and films every callout, notice and cue that has no clip yet, the DOM
+     included (tools/lab/auto-rec.mjs) — the page's REC without a player.
+     It answers at once and runs on: both pages poll GET /api/auto-rec and
+     reload the clips as they land. The levels Find stages already placed a
+     wanted key on are walked first. */
+  if (p === '/api/auto-rec' && req.method === 'GET') {
+    const slug = url.searchParams.get('game');
+    return json(res, 200, { auto: AUTO.game === slug || AUTO.over === slug ? AUTO : null, busy: AUTO.game });
+  }
+  if (p === '/api/auto-rec' && req.method === 'POST') {
+    const body = await readJson(req, 1e4);
+    const game = body && body.game;
+    if (!(await units()).includes(game) || game === 'template') return notFound(res, 'game ' + game);
+    if (AUTO.game) return json(res, 200, { error: 'Auto rec is playing ' + AUTO.game + ' already' });
+    if (PROBE.game) return json(res, 200, { error: 'a probe of ' + PROBE.game + ' is running' });
+    const g = await scanGame(game), have = (await readClips(game)).byId || {};
+    const rows = g.calls.filter((c) => c.checkId && !c.inherited && (c.kind === 'pop' || c.kind === 'notify' || c.kind === 'sound'));
+    const want = new Set(rows.filter((c) => !have[c.checkId]).map((c) => c.checkId));
+    if (!want.size) return json(res, 200, { error: 'every line already has a clip' });
+    const off = await sourceOffset(game);
+    if (off.offset == null) return json(res, 200, { error: off.error || 'no offset for ' + game });
+    const known = (await readStages())[game] || {};
+    const first = [...new Set(rows.filter((c) => want.has(c.checkId) && known[c.sound]).map((c) => known[c.sound]))].sort((a, b) => a - b);
+    Object.assign(AUTO, { game, level: 0, count: 0, done: 0, left: want.size, clips: 0, wanted: want.size, steps: [], error: null, over: null });
+    const stamp = new Date().toTimeString().slice(0, 8);
+    console.log(`  ${stamp}  auto rec ${game}: ${want.size} lines without a clip`);
+    autoRec({
+      base: 'http://127.0.0.1:' + req.socket.localPort, game, want, first, match: rowMatcher(rows, off.offset),
+      ...(body.seconds > 0 ? { seconds: Number(body.seconds) } : {}), ...(body.minutes > 0 ? { minutes: Number(body.minutes) } : {}),
+      save: (c) => saveClip(game, { webm: c.webm.toString('base64'), dur: c.dur, at: c.at, events: c.events, claim: c.claim, screen: true }),
+      log: (l) => { AUTO.steps.push(l.trim()); if (AUTO.steps.length > 200) AUTO.steps.shift(); console.log(`  ${stamp} ${l}`); },
+      progress: (pr) => Object.assign(AUTO, pr),
+      heard: (key, level) => { if (!known[key] || known[key] > level) { known[key] = level; noteStages(game, { [key]: level }).catch(() => {}); } }
+    }).then((r) => { Object.assign(AUTO, { left: r.left, clips: r.clips }); }).catch((e) => { AUTO.error = String(e.message || e); })
+      .finally(() => { AUTO.over = game; AUTO.game = null; console.log(`  auto rec ${game} done — ${AUTO.clips} clips, ${AUTO.left} left${AUTO.error ? ' — ' + AUTO.error : ''}`); });
+    return json(res, 200, { started: true, wanted: want.size, first });
   }
 
   /* Film the shell's sounds in a game's build — a headless Chrome playing a
@@ -676,16 +738,45 @@ export async function handle(req, res, p, url) {
   }
   if (p === '/api/kit' && req.method === 'POST') {
     const body = await readJson(req, 1e5);
-    const log = [];
+    const log = [], remap = (body && body.remap) || {};
+    let remapped = [];
+    const stamp = new Date().toTimeString().slice(0, 8);
     try {
       await (checking = checking.then(stampKitMarks).catch(() => {}));
-      await writeKit(body);
+      /* What moved (a rename) or went silent (a delete) — refused before
+         anything is written when a game has already signed that variant off:
+         a check is a sound someone listened to, and EMPTY would throw it away. */
+      const before = await readKit(), users = await kitUsers();
+      const known = new Set(variantsOfKit(before));
+      const next = new Set(variantsOfKit(body));
+      const silent = Object.entries(remap).filter(([, to]) => to === EMPTY).map(([from]) => from);
+      const valid = silent.length ? await kitChecked(before) : {};
+      for (const [from, to] of Object.entries(remap)) {
+        if (!known.has(from)) throw new Error(`${from}: no such variant in the kit on disk`);
+        if (next.has(from)) throw new Error(`${from} is still in the kit — nothing to move`);
+        if (to !== EMPTY && !next.has(to)) throw new Error(`${from} → ${to}: no variant "${to}" in the kit being saved`);
+        const by = Object.keys(valid[from] || {});
+        if (to === EMPTY && by.length) throw new Error(`${from} is validated by ${by.join(', ')} — move that game to another sound first`);
+      }
+      // The games whose keys move: read before, so their checked marks follow the new ids.
+      const moved = [...new Set(Object.keys(remap).flatMap((id) => (users[id] || []).map((u) => u.split('.')[0])))];
+      clearCache();
+      const scans = {};
+      for (const slug of moved) scans[slug] = await scanGame(slug);
+      await writeKit(body, { remap });
+      remapped = await remapManifests(remap);
       await cutKit({ log: (l) => log.push(l.trim()) });
+      clearCache();
+      for (const slug of Object.keys(scans)) {
+        const run = checking.then(async () => carryMarks(slug, scans[slug], await scanGame(slug), []));
+        checking = run.catch(() => {});
+        await run;
+      }
     } catch (e) { return json(res, 200, { error: String(e.message || e) }); }
-    const stamp = new Date().toTimeString().slice(0, 8);
     console.log(`  ${stamp}  kit re-cut (${log.length} takes)`);
+    for (const r of remapped) console.log(`  ${stamp}  ✓ ${r.slug} ${r.keys.join(', ')}${r.version ? ' — v' + r.version : ''}`);
     build();
-    return json(res, 200, { kit: await kitPayload(), log });
+    return json(res, 200, { kit: await kitPayload(), log, remapped });
   }
   if (p.startsWith('/kit/')) {
     const file = path.join(KIT_DIR, path.basename(p.slice('/kit/'.length)));

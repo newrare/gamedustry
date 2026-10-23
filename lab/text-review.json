@@ -2999,24 +2999,32 @@
       "at": "2026-10-14"
     },
     "manifest.json:copy.en.tags.0": {
-      "text": "Memorise and aim",
-      "at": "2026-10-14"
+      "text": "Memory",
+      "at": "2026-10-23"
     },
     "manifest.json:copy.en.tags.1": {
-      "text": "Echolocation",
-      "at": "2026-10-14"
+      "text": "Echo",
+      "at": "2026-10-23"
     },
     "manifest.json:copy.en.tags.2": {
-      "text": "Only one way out",
-      "at": "2026-10-14"
+      "text": "Satisfying",
+      "at": "2026-10-23"
+    },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Deux secondes pour tout voir. Laisse tes impulsions guider ton retour.",
+      "at": "2026-10-23"
     },
     "manifest.json:copy.fr.tags.0": {
-      "text": "Mémorise et vise",
-      "at": "2026-09-29"
+      "text": "Mémoire",
+      "at": "2026-10-23"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Echo",
+      "at": "2026-10-23"
     },
     "manifest.json:copy.fr.tags.2": {
-      "text": "Une seule sortie",
-      "at": "2026-09-29"
+      "text": "Satisfaisant",
+      "at": "2026-10-23"
     },
     "manifest.json:description": {
       "text": "An electric labyrinth is powered up for two seconds — the only look you ever get at it. Then everything goes out: the maze, the six mouths along its floor, even the walls of the arena. Fire pulses up into a mouth and the board exists only where one just hit it, arcing white and dying out over a couple of seconds, so you are echolocating a maze you can no longer see. Each mouth is a one-way flap — a pulse pushes through and it drops shut behind — and of the six, one leads to the gate at the top and five are dead ends.",
@@ -3086,6 +3094,10 @@
       "text": "Un <b>plaisir</b> à parcourir",
       "at": "2026-09-29"
     },
+    "manifest.json:store.copy.fr.lines.3.kicker": {
+      "text": "30 niveaux procéduraux et rejouables",
+      "at": "2026-10-23"
+    },
     "manifest.json:store.copy.fr.lines.3.line": {
       "text": "Difficulté <b>progressive</b>",
       "at": "2026-10-14"
@@ -3122,6 +3134,22 @@
       "text": " murs",
       "at": "2026-10-13"
     },
+    "manifest.json:web.copy.fr.strings.A false exit looks exactly like the true one, but it is a trap because it swallows your pulse.": {
+      "text": "Extérieurement identique à la vraie, la fausse sortie est un piège car elle absorbe ton impulsion.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.A pulse that hits the fence is lost, but that door stays open for good.": {
+      "text": "Bien qu'une impulsion touchant la barrière soit perdue, la porte correspondante reste ouverte définitivement.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Aim and fire": {
+      "text": "Vise et tir",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Below the doors, your pulse bounces off the crystal and can still reach a door.": {
+      "text": "Situé sous les portes, le cristal renvoie ton impulsion par rebond, lui permettant d'atteindre une porte.",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Bonus": {
       "text": "Bonus",
       "at": "2026-10-13"
@@ -3130,9 +3158,37 @@
       "text": "Brise le cristal",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Crystal lock": {
+      "text": "Verrou de cristal",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Dark maze": {
+      "text": "Noir total",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Door forced": {
       "text": "Porte forcée",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Drag to aim, let go to fire a pulse.": {
+      "text": "Fais glisser ton doigt pour viser, puis relève-le pour lancer une impulsion.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Each pulse left": {
+      "text": "Chaque impulsion conservée",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Echoes": {
+      "text": "Les échos",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Escape in <b>1</b> pulse": {
+      "text": "Sortir en <b>1</b> impulsion",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Escape in <b>{p}</b> pulses": {
+      "text": "Sortir en <b>{p}</b> impulsions",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.Escaped!": {
       "text": "Evadé !",
@@ -3146,13 +3202,33 @@
       "text": "Sortie verrouillée",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.False exit": {
+      "text": "Fausse sortie",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.False exits": {
+      "text": "Fausses sorties",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-10-20"
     },
+    "manifest.json:web.copy.fr.strings.Find the way out": {
+      "text": "Trouver la sortie",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Fire through the gap": {
+      "text": "Tire dans la brèche",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Found": {
       "text": "Repérés",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Full surge": {
+      "text": "Surcharge",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.Gap sealed": {
       "text": "Passage scellé",
@@ -3162,25 +3238,73 @@
       "text": "Beau parcours !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.In the dark, a wall only shows where a pulse strikes it, then fades.": {
+      "text": "Puisque l'obscurité règne, les murs ne se révèlent qu'aux points d'impact de tes impulsions, avant de s'effacer.",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
       "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.Just the maze, its doors and one exit.": {
+      "text": "Un labyrinthe épuré, ses portes d'accès et une unique sortie à découvrir.",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.Last pulse": {
       "text": "Dernière impulsion",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Live fence": {
+      "text": "Barrière active",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Maze solved!": {
       "text": "Labyrinthe résolu !",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.No way out": {
+      "text": "Bloqué (aucune sortie)",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Once the lights go out, a bar seals every exit. Break the crystal to lift it.": {
+      "text": "Dès que l'obscurité s'installe, une barre bloque toutes les sorties. Tu dois briser le cristal pour la désactiver.",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.One-way valve": {
       "text": "Valve à sens unique",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Only one door leads to the exit. The others end in dead ends.": {
+      "text": "Une seule porte ouvre le passage vers la sortie ; toutes les autres mènent à des impasses.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Only the true exit sends rings": {
+      "text": "Seule la vraie sortie émet des anneaux",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Open for good": {
       "text": "Ouverte pour de bon",
       "at": "2026-10-14"
+    },
+    "manifest.json:web.copy.fr.strings.Out in 1 pulse": {
+      "text": "Sortie en 1 impulsion",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Out in 2 pulses": {
+      "text": "Sortie en 2 impulsions",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Out in 3 or more": {
+      "text": "Sortie en 3 impulsions ou plus",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Out of echoes!": {
+      "text": "Plus d'écho !",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Out of pulses and still inside? The maze lights up one last time to show you the solution.": {
+      "text": "Tu as épuisé tes impulsions sans trouver la sortie ? Le labyrinthe s'éclaire une dernière fois pour te montrer la solution.",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.Perfect read!": {
       "text": "Lecture parfaite !",
@@ -3202,6 +3326,14 @@
       "text": "Impulsions",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Pulses go up, never back down": {
+      "text": "Les impulsions progressent vers le haut",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Pulses you have left pay the most. Getting out on the first shot gives the best score.": {
+      "text": "Plus tu économises d'impulsions, plus ton score s'envole. Réussir du premier coup garantit le meilleur score.",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.Replay the demo": {
       "text": "Rejouer la démo",
       "at": "2026-10-14"
@@ -3222,13 +3354,57 @@
       "text": "Marque <b>{n}</b> points et sors du labyrinthe",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Scoring": {
+      "text": "Calcul des points",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.So close!": {
       "text": "Si proche !",
       "at": "2026-10-14"
     },
+    "manifest.json:web.copy.fr.strings.Spot the true exit while the maze is lit, then break the crystal before you go for it.": {
+      "text": "Identifie la bonne sortie à la lumière, détruis le cristal, puis fonce vers la liberté.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Stars": {
+      "text": "Étoiles",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.That valve lets pulses up, never back down.": {
+      "text": "Cette valve autorise le passage des impulsions vers le haut, mais bloque tout retour en arrière.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The answer": {
+      "text": "La solution",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
       "at": "2026-10-20"
+    },
+    "manifest.json:web.copy.fr.strings.The crystal": {
+      "text": "Le cristal",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The crystal can hide in a dead end of the maze.": {
+      "text": "Le cristal est susceptible de se dissimuler au fond d'une impasse.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The gap in the fence moves from door to door in a fixed order. Aim where it goes next.": {
+      "text": "La brèche de la barrière se déplace d'une porte à l'autre selon un ordre cyclique. Anticipe son prochain emplacement pour viser.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The hidden crystal": {
+      "text": "Le cristal caché",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The maze is lit for a moment, then everything goes dark.": {
+      "text": "Le labyrinthe s'illumine brièvement avant de plonger dans le noir complet.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.The sight locks onto your aim. The pulse will go in that direction.": {
+      "text": "Le réticule se bloque sur ta visée. L'impulsion ira dans cette direction.",
+      "at": "2026-10-23"
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
@@ -3246,17 +3422,285 @@
       "text": "Murs",
       "at": "2026-10-21"
     },
+    "manifest.json:web.copy.fr.strings.When a pulse dies in the maze, the last opening it went through becomes a valve.": {
+      "text": "Lorsqu'une impulsion s'éteint dans le labyrinthe, le dernier passage qu'elle a emprunté se transforme en valve.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.When the crystal hides in a dead end, each star allows one more pulse.": {
+      "text": "Si le cristal se dissimule dans un cul-de-sac, chaque étoile obtenue t'octroie une impulsion supplémentaire.",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.While the maze is lit, only the true exit sends out rings. Remember which one.": {
+      "text": "Pendant que le labyrinthe est éclairé, seule la vraie sortie émet des ondes circulaires. Mémorise bien sa position.",
+      "at": "2026-10-23"
+    },
     "manifest.json:web.copy.fr.tagline": {
       "text": "<b class=\"w-echo\">Trouve</b> et vise le bon chemin du <b class=\"w-maze\">labyrinthe</b> jusqu'à&nbsp;la&nbsp;<b class=\"w-exit\">sortie</b>",
       "at": "2026-10-13"
     },
     "manifest.json:web.levels.copy.en": {
-      "text": "Score <b>{n}</b> in the maze",
-      "at": "2026-10-14"
+      "text": "Find the way out of the maze",
+      "at": "2026-10-23"
     },
     "manifest.json:web.levels.copy.fr": {
-      "text": "Marque <b>{n}</b> points dans le labyrinthe",
-      "at": "2026-10-13"
+      "text": "Trouve la sortie du labyrinthe",
+      "at": "2026-10-23"
+    },
+    "manifest.json:web.copy.fr.strings.Reaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\".": {
+      "text": "Atteindre le cristal consomme parfois une impulsion supplémentaire. Dans ce cas, une impulsion de plus sera quand même considérée en  \"Lecture parfaite\".",
+      "at": "2026-10-23"
+    },
+    "game.js:Notify.learn.notice.exit-sealed": {
+      "text": "Exit sealed",
+      "at": "2026-10-23"
+    },
+    "game.js:1217.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-10-23"
+    },
+    "game.js:1220.Pop.show.callout": {
+      "text": " walls",
+      "at": "2026-10-23"
+    },
+    "game.js:Notify.learn.notice.one-way-valve": {
+      "text": "One-way valve",
+      "at": "2026-10-23"
+    },
+    "game.js:1297.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-23"
+    },
+    "game.js:Notify.learn.notice.false-exit": {
+      "text": "False exit",
+      "at": "2026-10-23"
+    },
+    "game.js:1534.Pop.show.callout": {
+      "text": "Perfect read!",
+      "at": "2026-10-23"
+    },
+    "game.js:1534.Pop.show.callout.1": {
+      "text": "Escaped!",
+      "at": "2026-10-23"
+    },
+    "game.js:1535.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-10-23"
+    },
+    "game.js:Notify.learn.notice.live-fence": {
+      "text": "Live fence",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.escape-in-b-1-b-pulse": {
+      "text": "Escape in <b>1</b> pulse",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.escape-in-b-p-b-pulses": {
+      "text": "Escape in <b>{p}</b> pulses",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.find-the-way-out": {
+      "text": "Find the way out",
+      "at": "2026-10-23"
+    },
+    "game.js:1813.endRound.end-title": {
+      "text": "Perfect read!",
+      "at": "2026-10-23"
+    },
+    "game.js:1814.endRound.end-title.1": {
+      "text": "Maze solved!",
+      "at": "2026-10-23"
+    },
+    "game.js:1815.endRound.end-title.2": {
+      "text": "So close!",
+      "at": "2026-10-23"
+    },
+    "game.js:1816.endRound.end-title.3": {
+      "text": "Great run!",
+      "at": "2026-10-23"
+    },
+    "game.js:1826.endRound.stat-row-1-value": {
+      "text": " pulses",
+      "at": "2026-10-23"
+    },
+    "game.js:1826.endRound.stat-row-1-value.1": {
+      "text": " pulse",
+      "at": "2026-10-23"
+    },
+    "game.js:2375.ctx.fillText.canvas-text": {
+      "text": "Exit",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.dark-maze": {
+      "text": "Dark maze",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.false-exits": {
+      "text": "False exits",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.crystal-lock": {
+      "text": "Crystal lock",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.live-fence": {
+      "text": "Live fence",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.full-surge": {
+      "text": "Full surge",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-basics": {
+      "text": "The basics",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-maze-is-lit-for-a-moment": {
+      "text": "The maze is lit for a moment, then everything goes dark.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.only-one-door-leads-to-the-e": {
+      "text": "Only one door leads to the exit. The others end in dead ends.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.aim-and-fire": {
+      "text": "Aim and fire",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.drag-to-aim-let-go-to-fire-a": {
+      "text": "Drag to aim, let go to fire a pulse.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-sight-locks-onto-your-ai": {
+      "text": "The sight locks onto your aim. The pulse will go in that direction.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.echoes": {
+      "text": "Echoes",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.in-the-dark-a-wall-only-show": {
+      "text": "In the dark, a wall only shows where a pulse strikes it, then fades.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.one-way-valve": {
+      "text": "One-way valve",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.when-a-pulse-dies-in-the-maz": {
+      "text": "When a pulse dies in the maze, the last opening it went through becomes a valve.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.that-valve-lets-pulses-up-ne": {
+      "text": "That valve lets pulses up, never back down.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-answer": {
+      "text": "The answer",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.out-of-pulses-and-still-insi": {
+      "text": "Out of pulses and still inside? The maze lights up one last time to show you the solution.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.scoring": {
+      "text": "Scoring",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.each-pulse-left": {
+      "text": "Each pulse left",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.pulses-you-have-left-pay-the": {
+      "text": "Pulses you have left pay the most. Getting out on the first shot gives the best score.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.stars": {
+      "text": "Stars",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.out-in-1-pulse": {
+      "text": "Out in 1 pulse",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.out-in-2-pulses": {
+      "text": "Out in 2 pulses",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.out-in-3-or-more": {
+      "text": "Out in 3 or more",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.no-way-out": {
+      "text": "No way out",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.when-the-crystal-hides-in-a-": {
+      "text": "When the crystal hides in a dead end, each star allows one more pulse.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.just-the-maze-its-doors-and-": {
+      "text": "Just the maze, its doors and one exit.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.a-false-exit-looks-exactly-l": {
+      "text": "A false exit looks exactly like the true one, but it is a trap because it swallows your pulse.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.while-the-maze-is-lit-only-t": {
+      "text": "While the maze is lit, only the true exit sends out rings. Remember which one.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-crystal": {
+      "text": "The crystal",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.once-the-lights-go-out-a-bar": {
+      "text": "Once the lights go out, a bar seals every exit. Break the crystal to lift it.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.below-the-doors-your-pulse-b": {
+      "text": "Below the doors, your pulse bounces off the crystal and can still reach a door.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-hidden-crystal": {
+      "text": "The hidden crystal",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-crystal-can-hide-in-a-de": {
+      "text": "The crystal can hide in a dead end of the maze.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.reaching-the-crystal-sometim": {
+      "text": "Reaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\".",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.the-gap-in-the-fence-moves-f": {
+      "text": "The gap in the fence moves from door to door in a fixed order. Aim where it goes next.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.a-pulse-that-hits-the-fence-": {
+      "text": "A pulse that hits the fence is lost, but that door stays open for good.",
+      "at": "2026-10-23"
+    },
+    "game.js:Lang.t.translated-in-place.spot-the-true-exit-while-the": {
+      "text": "Spot the true exit while the maze is lit, then break the crystal before you go for it.",
+      "at": "2026-10-23"
+    },
+    "game.js:data.break-the-crystal.n9n0m": {
+      "text": "Break the crystal",
+      "at": "2026-10-23"
+    },
+    "game.js:data.pulses-go-up-never-back-down.dihyu": {
+      "text": "Pulses go up, never back down",
+      "at": "2026-10-23"
+    },
+    "game.js:data.only-the-true-exit-sends-rin.odvo8": {
+      "text": "Only the true exit sends rings",
+      "at": "2026-10-23"
+    },
+    "game.js:data.fire-through-the-gap.szf9o": {
+      "text": "Fire through the gap",
+      "at": "2026-10-23"
     }
   },
   "gearball": {

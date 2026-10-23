@@ -1301,7 +1301,7 @@
         goalHit = true;
         Pop.show("perfect", { word: "Objective reached", at: deckSpot(view.w / 2), hold: 900 });
         Overlay.vignette("#ffb830", 0.7, 700);
-        Sound.clip("goal", 0.6, 1);
+        Sound.clip("goal", 0.4, 1);
       }
     }
 
@@ -1361,7 +1361,7 @@
       addScore(pts);
       Pop.text(p.x, p.y - 30, "+" + fmtNum(pts), { color: "#ff6ad5", size: 30, life: 0.7, tier: 3 });
       explode(p, "#ff6ad5");
-      Sound.clip("boom", 0.6, 1.2);
+      Sound.clip("boom", 0.6);
     }
     /* Spark: the three nearest pegs are triggered, a beat later, as if hit. */
     function arc(p, depth) {
@@ -1434,7 +1434,7 @@
       burnt++;
       if (charm.martyr) roundAdd += 0.5 * charm.martyr;
       Fx.burst(b.x, b.y, { color: ["#ffffff", "#ffcf5a"], count: 10, speed: 200, life: .4, grav: 200, size: 3 });
-      Sound.clip("out", 0.3, 0.8);
+      Sound.clip("out", 1);
     }
 
     /* --- sprites -------------------------------------------------------------- */

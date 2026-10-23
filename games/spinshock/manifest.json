@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.6.4",
+  "version": "1.6.10",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -49,13 +49,13 @@
     }
   },
   "sfx": {
-    "perfect": "bonus/uiselect",
-    "chain": "combo/uiscrolllong",
-    "crash": "crash/dicethrowsingle",
-    "bump": "bounce/itemmisc",
-    "warn": "warn/marimbataps",
-    "miss": "miss/marimbaerror02",
-    "shock": "hit/impactslam"
+    "perfect": "pickup/echotrain",
+    "chain": "combo/harpshort",
+    "crash": "burst/destroy",
+    "bump": "bounce/ball",
+    "warn": "world/forcefield",
+    "miss": "miss/void",
+    "shock": "bounce/ball"
   },
   "copy": {
     "fr": {

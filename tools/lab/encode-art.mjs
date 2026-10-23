@@ -363,6 +363,14 @@ var GOLF_COURSE = { w: 400, h: 400, q: 0.82 };
    neighbour's size. Cut from 328x300 cells and drawn ~100-340 design px. */
 var GOLF_FX = { scale: 0.5, q: 0.8 };
 
+/* games/foldiers' pieces: every cell of its 4x4 sheets — the three armies,
+   their works, the world pieces and the five biomes' decor — stands on the
+   paper map at its foot, ~20-140 design px tall at the default camera, so 220
+   covers the tallest at ~1.6x on a 3x phone. A paper poof is FRAMES played in
+   place, so one fixed scale (cut from 384x256 cells). */
+var FOLD_PIECE = { w: 220, h: 220, q: 0.8 };
+var FOLD_POOF = { scale: 0.5, q: 0.8 };
+
 /* A SHARED FRAME (`assets/image/master/game-frame-<theme>.png`): a whole
    portrait overlay, transparent in the middle, laid over the round for a
    moment — the ice of a time freeze. Filled to the 720x1280 frame like a
@@ -426,6 +434,8 @@ function profileFor(role, slug) {
   if (/^course\d+$/.test(role)) return GOLF_COURSE;
   if (/^fx-[a-z]+-\d+$/.test(role)) return GOLF_FX;
   if (/^frame-[a-z-]+$/.test(role)) return FRAME;
+  if (/^(army|works)-(blue|red|green)\d+$|^(scenery|world|plains|woods|north|desert|jungle)\d+$/.test(role)) return FOLD_PIECE;
+  if (/^poof\d+$/.test(role)) return FOLD_POOF;
   /* `fairway-01`… — games/holepocalypse's round ground, one painted fairway
      per band, cut like a phone background (orbinity's `space-<world>`). */
   if (/^fairway-\d+$/.test(role)) return PROFILE["background-phone"];

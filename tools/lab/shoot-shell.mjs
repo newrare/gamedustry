@@ -146,6 +146,29 @@ function lineOf(stack, shellMap, shell) {
 
 // The frames of a window, as a webm: each frame held until the next one came.
 function encode(frames, dir, name) {
+  const { txt, out } = concatList(frames, dir, name);
+  const r = spawnSync('ffmpeg', ffmpegArgs(txt, out));
+  if (r.status !== 0) throw new Error('ffmpeg: ' + String(r.stderr || '').trim());
+  return fs.readFileSync(out);
+}
+
+// The same, off the event loop: a recorder still taking frames cannot stop for ffmpeg (auto-rec.mjs).
+export function encodeAsync(frames, dir, name) {
+  const { txt, out } = concatList(frames, dir, name);
+  return new Promise((res, rej) => {
+    const p = spawn('ffmpeg', ffmpegArgs(txt, out), { stdio: ['ignore', 'ignore', 'pipe'] });
+    let err = '';
+    p.stderr.on('data', (d) => { err += d; });
+    p.on('error', rej);
+    p.on('close', (code) => code === 0 ? res(fs.readFileSync(out)) : rej(new Error('ffmpeg: ' + err.trim())));
+  });
+}
+
+const ffmpegArgs = (txt, out) => ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', txt,
+  '-vf', 'scale=360:640:force_original_aspect_ratio=increase,crop=360:640,fps=20', '-c:v', 'libvpx', '-b:v', '1M',
+  '-pix_fmt', 'yuv420p', '-an', out];
+
+function concatList(frames, dir, name) {
   const list = [];
   frames.forEach((f, i) => {
     const file = path.join(dir, `${name}-${String(i).padStart(4, '0')}.jpg`);
@@ -156,11 +179,7 @@ function encode(frames, dir, name) {
   list.push(`file '${path.join(dir, `${name}-${String(frames.length - 1).padStart(4, '0')}.jpg`)}'`);
   const txt = path.join(dir, name + '.txt'), out = path.join(dir, name + '.webm');
   fs.writeFileSync(txt, list.join('\n') + '\n');
-  const r = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', txt,
-    '-vf', 'scale=360:640:force_original_aspect_ratio=increase,crop=360:640,fps=20', '-c:v', 'libvpx', '-b:v', '1M',
-    '-pix_fmt', 'yuv420p', '-an', out]);
-  if (r.status !== 0) throw new Error('ffmpeg: ' + String(r.stderr || '').trim());
-  return fs.readFileSync(out);
+  return { txt, out };
 }
 
 /**

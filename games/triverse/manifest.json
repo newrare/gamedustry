@@ -1,7 +1,7 @@
 {
   "slug": "triverse",
   "title": "Triverse",
-  "version": "1.8.4",
+  "version": "1.8.15",
   "tagline": "Swipe to jump from path to path",
   "order": 60,
   "draft": false,
@@ -50,21 +50,21 @@
     }
   },
   "sfx": {
-    "gem": "pickup/glass",
-    "mega": "bonus/powerup",
-    "chain": "combo/tone",
+    "gem": "combo/harpshort",
+    "mega": "pickup/gem",
+    "chain": "pickup/gem",
     "power": "power/forcefield",
-    "void": "malus/phaser",
-    "crash": "crash/explosion",
-    "swipe": "move/scratch",
-    "loop": "combo/jinglehit",
-    "jump": "toggle/phaserjump",
-    "fall": "hit/phaserdown",
-    "pad": "bounce/marimbaplink",
-    "magnet": "power/powerup04",
-    "ghost": "power/loopthruster",
-    "slow": "power/vibearpeggio",
-    "zap": "launch/laserlarge"
+    "void": "miss/laserlarge",
+    "crash": "burst/electric",
+    "swipe": "move/fast",
+    "loop": "burst/whistlerise",
+    "jump": "move/teleport",
+    "fall": "miss/laserlarge",
+    "pad": "power/uiclose",
+    "magnet": "pickup/magnet",
+    "ghost": "power/uiclose",
+    "slow": "power/forcefield02",
+    "zap": "burst/electric"
   },
   "copy": {
     "fr": {

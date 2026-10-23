@@ -1,7 +1,7 @@
 {
   "slug": "marshmelt",
   "title": "Marshmelt",
-  "version": "1.5.19",
+  "version": "1.5.20",
   "tagline": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
   "order": 130,
   "draft": false,
@@ -327,7 +327,7 @@
     "wall": "bounce/impactmining",
     "crumble": "world/stepsnow",
     "ice": "move/scratch",
-    "geyser": "ice/wind",
+    "geyser": "world/winter",
     "shatter": "burst/explosioncrunch02",
     "dust": "world/dust",
     "fuse": "warn/marimbataps",

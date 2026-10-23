@@ -225,13 +225,27 @@ ______________________________________________________________________
 - [ ] MAIN — check every `holepocalypse` sprite and effect on the five
   fairways in `lab/holepocalypse-fx.html` (`make events` → `/hole-fx`, Debug
   on): feet on their footprint, effects on their anchor.
-- [ ] MAIN — generate the `foldiers` assets of docs/FOLDIERS.md §10 (10.1 to
-  10.23; the blue and red army and the scenery sheets are filed).
-- [ ] CODE — try the biome trick of docs/FOLDIERS.md §5.2 (terrain as paper,
-  owner as tissue) in `lab/conquest-paper.html`.
-- [ ] CODE — build `foldiers` from docs/FOLDIERS.md: stage 1 first (the
-  prototype's rules on the paper map of `lab/conquest-paper.html`), then the
-  stages one mechanic at a time.
+- [ ] MAIN — playtest `foldiers` v0.3.0 on a phone: the Close 30° camera, its
+  double tap and the pinch, the order ring (the 0.28 s rest that opens it,
+  the slide onto a bubble), the drag that starts on the troops only (is a
+  figure big enough to grab at the whole-map zoom? the flag that opens the
+  card, the bare map that pans, "All" given on a release with no choice), the march and the fight of a bell, the card and
+  the paper HUD (crumpled, tilted up to 6°: is every word still read at a
+  glance, does a tap land on a tilted action), the
+  vector ground (sharp edges at every zoom; the frame rate while panning and
+  pinching a 70-region stage, when the ground is painted again — ~25–35 ms
+  on headless Chrome's CPU rasterizer), what flies floating (balloons bob and
+  swing under their envelope, fog clouds and the storm drift: `floatOf` —
+  enough motion, not seasick?), and whether a 2-minute tick is the
+  right pressure at stage 1 (docs/FOLDIERS.md §12).
+- [ ] CODE — balance `foldiers`' thirty stages with `tools/lab/bench-foldiers.mjs`
+  (12 seeds or more): the plain pilot wins most of 1–23 and leaves 24–30
+  undecided after sixty ticks (docs/FOLDIERS.md §13).
+- [ ] MAIN — `foldiers`: cut the bed into one section per band (docs/MUSIC.md;
+  `CONFIG.music.menu` and the round sections), and decide what the concept
+  picture `foldiers/Carte du monde en origami stratégique.png` is for.
+- [ ] CODE — `foldiers`: the map composer `lab/foldiers-map.html`
+  (docs/FOLDIERS.md §5.3), to curate the thirty generated maps.
 
 ______________________________________________________________________
 

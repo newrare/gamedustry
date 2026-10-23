@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.10.5",
+  "version": "2.10.6",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
@@ -108,7 +108,7 @@
     "flip": "toggle/metalclick",
     "lock": "toggle/metallatch",
     "unlock": "toggle/coinshandle",
-    "land": "hit/impactmetallight",
+    "land": "bounce/impactmetallight",
     "boost": "launch/phaserup"
   },
   "copy": {

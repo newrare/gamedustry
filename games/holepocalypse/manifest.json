@@ -1,7 +1,7 @@
 {
   "slug": "holepocalypse",
   "title": "Holepocalypse",
-  "version": "0.6.15",
+  "version": "0.6.21",
   "tagline": "Fling golf balls at a zombie horde and roll one into the hole to blast them all",
   "order": 170,
   "draft": false,
@@ -384,8 +384,8 @@
     }
   },
   "sfx": {
-    "shot": "hit/impactmetallight",
-    "hit": "burst/explosioncrunch",
+    "shot": "bounce/shot",
+    "hit": "burst/plop",
     "bounce": "bounce/impactsoftmedium",
     "land": "bounce/impactmining",
     "hole": "goal/harprollup",
@@ -395,7 +395,7 @@
     "super": "power/uiclose",
     "ready": "power/forcefield02",
     "flag": "warn/errorui",
-    "last": "defeat/jinglehit",
+    "last": "miss/jinglehit",
     "combo": "combo/harprunup",
     "down": "burst/popplop",
     "splash": "malus/slime",

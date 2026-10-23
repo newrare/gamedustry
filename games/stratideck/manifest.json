@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.25.4",
+  "version": "0.25.6",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -248,17 +248,17 @@
     }
   },
   "sfx": {
-    "win": "bonus/jinglehit15",
-    "tie": "malus/chipcollide",
-    "lose": "crash/impactwoodheavy",
-    "warn": "warn/errorui",
-    "trap": "world/explosioncrunch",
-    "clash": "hit/impactmetalmedium",
-    "flag": "goal/impactbellheavy",
-    "victory": "goal/jinglesteel",
-    "defeat": "defeat/metalpot",
+    "win": "empty",
+    "tie": "empty",
+    "lose": "empty",
+    "warn": "warn/marimbataps",
+    "trap": "empty",
+    "clash": "empty",
+    "flag": "empty",
+    "victory": "empty",
+    "defeat": "empty",
     "pick": "card/cardfan",
-    "place": "card/chipstack",
+    "place": "empty",
     "flip": "card/bookflip"
   },
   "copy": {

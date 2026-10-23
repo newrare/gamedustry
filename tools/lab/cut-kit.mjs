@@ -241,6 +241,12 @@ export async function roleCalls(kit) {
 
 const NAME = /^[a-z][a-z0-9]{0,23}$/;
 const GROUPS = ['shell', 'game'];
+/* The SILENT mapping: `"sfx": { "crash": "empty" }` is a key that plays
+   nothing (packages/engine/engine.js, clip). It is where a game's key lands
+   when the variant it played is deleted before anyone validated it, so the
+   game keeps building and the key waits, silent, for a sound to be picked on
+   the events bench. It is no role and no role may take its name. */
+export const EMPTY = 'empty';
 
 /* What the kit page may write, checked against the kit on disk. A role on disk
    is never DROPPED — each is a name the engine, the shell or a game calls — and
@@ -251,8 +257,14 @@ const GROUPS = ['shell', 'game'];
    line saying what it means, written in the page's order so it lands in its
    group. A new role nobody calls yet plays nowhere until a manifest maps a key
    to it or the shell calls it; the engine's synth stand-in (UI_FALLBACK) is a
-   generic beep for a name it does not list. */
-export async function writeKit(next) {
+   generic beep for a name it does not list.
+
+   `remap` is the page's record of what moved: { "<id on disk>": "<new id>" }
+   for a role or a variant RENAMED, and EMPTY for one deleted while games
+   still map a key to it. A variant named there may leave the kit although a
+   manifest plays it — remapManifests() moves those keys right after; a source
+   that CALLS it by name still holds it, since a rename cannot reach a call. */
+export async function writeKit(next, { remap = {} } = {}) {
   const kit = await readKit();
   const users = await kitUsers();
   const stems = new Set((await readdir(SFX_DIR)).map((f) => f.slice(0, f.lastIndexOf('.'))));
@@ -266,17 +278,20 @@ export async function writeKit(next) {
     for (const role of gone) {
       for (const name of Object.keys(kit.roles[role].variants)) {
         const id = idOf(kit, role, name);
-        if (users[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
+        if (users[id] && !remap[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
         if (calls[id]) throw new Error(`${id} is called in ${calls[id].map((c) => c.file + ':' + c.line).join(', ')} — remove the call first`);
       }
       delete kit.roles[role];
     }
-    kit.playable = (kit.playable || []).filter((role) => !gone.includes(role));
+    // A shell role renamed keeps its place in the playables.
+    kit.playable = (kit.playable || []).map((role) => gone.includes(role) && remap[role] && remap[role] !== EMPTY ? remap[role] : role)
+      .filter((role) => !gone.includes(role));
   }
   for (const role of order) {
     if (kit.roles[role]) continue;
     const n = next.roles[role] || {};
     if (!NAME.test(role)) throw new Error(`"${role}" — a role is named in lowercase letters and digits`);
+    if (role === EMPTY) throw new Error(`"${EMPTY}" is the silent mapping — a role takes another name`);
     if (!GROUPS.includes(n.group)) throw new Error(`${role}: a role is in the group ${GROUPS.join(' or ')}`);
     const what = String(n.what || '').trim();
     if (!what) throw new Error(`${role}: say in one line what the role means`);
@@ -292,7 +307,7 @@ export async function writeKit(next) {
     if (!names.length) throw new Error(`${role}: at least one variant`);
     for (const name of Object.keys(r.variants)) {
       const id = idOf(kit, role, name);
-      if (!n.variants[name] && users[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
+      if (!n.variants[name] && users[id] && !remap[id]) throw new Error(`${id} is played by ${users[id].join(', ')} — map it elsewhere first`);
       if (!n.variants[name] && calls[id]) throw new Error(`${id} is called in ${calls[id].map((c) => c.file + ':' + c.line).join(', ')} — remove the call first`);
     }
     const variants = {};
@@ -405,6 +420,34 @@ export async function mapKeys(slug, list, { bump = true } = {}) {
   await writeFile(gf, src);
   await writeFile(mf, JSON.stringify(out, null, 2) + '\n');
   return { slug, applied, skipped, written: true, version };
+}
+
+/* The keys of every game that played a variant the kit page renamed or
+   deleted, moved to where it went — the new id, or EMPTY — with the patch
+   version moved, since the game now sounds different (or the same under
+   another name, which its manifest says all the same). Returns
+   [{ slug, keys: ["crash → crash/metal"], version }]. */
+export async function remapManifests(remap) {
+  const out = [];
+  if (!remap || !Object.keys(remap).length) return out;
+  for (const slug of (await readdir(GAMES_DIR)).sort()) {
+    const mf = path.join(GAMES_DIR, slug, 'manifest.json');
+    let m;
+    try { m = JSON.parse(await readFile(mf, 'utf8')); } catch { continue; }
+    const keys = [];
+    for (const [key, id] of Object.entries(m.sfx || {})) {
+      if (!remap[id]) continue;
+      m.sfx[key] = remap[id];
+      keys.push(`${key} → ${remap[id]}`);
+    }
+    if (!keys.length) continue;
+    let version = null;
+    const v = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(m.version || ''));
+    if (v) m.version = version = `${v[1]}.${v[2]}.${Number(v[3]) + 1}`;
+    await writeFile(mf, JSON.stringify(m, null, 2) + '\n');
+    out.push({ slug, keys, version });
+  }
+  return out;
 }
 
 function run(args, { capture = false, input = null } = {}) {

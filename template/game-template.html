@@ -2198,9 +2198,10 @@
     }
     function clip(name, vol, rate) {
       if (muted) return;
-      // A key the game's manifest hands to the house kit (`sfx`): its variant plays.
+      // A key the game's manifest hands to the house kit (`sfx`): its variant
+      // plays — or nothing, for a key mapped to "empty" (no sound picked yet).
       var id = CONFIG.sfx && CONFIG.sfx[name];
-      if (id) { shoot(id, vol, rate); return; }
+      if (id) { if (id !== "empty") shoot(id, vol, rate); return; }
       var src = ASSETS.sounds[name]; if (!src) return;
       var a = ensure(), buf = buffers[name];
       if (a && buf) {

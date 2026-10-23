@@ -2465,6 +2465,110 @@
           "seconds": 150
         }
       }
+    },
+    "foldiers": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "cloudHaze02",
+          "role": "decor",
+          "x": 600,
+          "y": 100,
+          "w": 200,
+          "notify": "cloud",
+          "always": true
+        },
+        {
+          "art": "home06",
+          "role": "decor",
+          "x": 100,
+          "y": 200,
+          "w": 130
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 520,
+          "y": 360,
+          "w": 170,
+          "badge": {
+            "dx": -0.2,
+            "dy": -0.75
+          },
+          "flip": true
+        },
+        {
+          "art": "home04",
+          "role": "album",
+          "x": 210,
+          "y": 380,
+          "w": 170,
+          "badge": {
+            "dx": 0.35,
+            "dy": -0.65
+          }
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 530,
+          "y": 620,
+          "w": 180,
+          "flip": true
+        },
+        {
+          "art": "armyBlue02",
+          "role": "play",
+          "x": 200,
+          "y": 620,
+          "w": 130
+        },
+        {
+          "art": "scenery14",
+          "role": "decor",
+          "x": 160,
+          "y": 870,
+          "w": 80,
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "scenery09",
+          "role": "daily",
+          "x": 240,
+          "y": 880,
+          "w": 90,
+          "notify": "alert",
+          "badge": {
+            "dx": -0.25,
+            "dy": -0.95
+          }
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 520,
+          "y": 900,
+          "w": 150,
+          "flip": true
+        },
+        {
+          "art": "home05",
+          "role": "options",
+          "x": 200,
+          "y": 1120,
+          "w": 110,
+          "notify": "alert"
+        }
+      ],
+      "life": {
+        "cycle": {
+          "warm": "#ff9a6b",
+          "cold": "#2a1d6a",
+          "amount": 0.3,
+          "seconds": 150
+        }
+      }
     }
   }
 }

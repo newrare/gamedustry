@@ -1,4 +1,9 @@
 {
+  "foldiers": {
+    "order": 14,
+    "prod": 2,
+    "send": 2
+  },
   "marshmelt": {
     "boom": 23,
     "burn": 1,
@@ -23,21 +28,32 @@
     "boom": 2,
     "eclipse": 2,
     "evolve": 2,
+    "fast": 5,
+    "fizzle": 4,
     "grab": 2,
     "launch": 2,
     "lost": 2,
     "milestone": 2,
     "nova": 2,
     "reaction": 2,
+    "repel": 22,
+    "rock": 26,
+    "shield": 18,
+    "slow ? \"slow\" : \"fast\"": 3,
+    "stream": 10,
     "supernova": 2,
-    "wall": 2
+    "swallow": 22,
+    "wall": 2,
+    "worm": 26
   },
   "pawko": {
+    "bad": 4,
     "card": 2,
     "drop": 2,
     "gate": 2,
     "goal": 2,
     "hit": 2,
+    "mult": 2,
     "out": 2,
     "snd": 2,
     "split": 2,
@@ -52,5 +68,16 @@
     "nova": 4,
     "pop": 4,
     "tick": 4
+  },
+  "triverse": {
+    "swipe": 5
+  },
+  "vipera": {
+    "bite": 8,
+    "chain": 3,
+    "grow": 3,
+    "orb": 3,
+    "turn": 1,
+    "wall": 1
   }
 }

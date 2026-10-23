@@ -2349,7 +2349,7 @@
           pot += potFly[i].v; potHit = 1;
           Fx.burst(L.potX, L.potY - 20, { color:[GOLD, "#ffffff"], count:10, speed:240, life:0.4, grav:500 });
           Pop.text(L.potX, L.potY - 60, "+" + potFly[i].v, { color:GOLD, size:22, life:0.6, tier:1 });
-          Sound.cue("tally", 0.35, 1.25, 990, 0.04, "triangle");
+          Sound.cue("tally", 0.65, 1.25, 990, 0.04, "triangle");
           potFly.splice(i, 1);
         }
       }

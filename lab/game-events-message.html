@@ -44,6 +44,14 @@
                    records its cues into the same place. Pop.text is not drawn
                    while recording, so the number is never baked into the
                    picture.
+     AUTO REC      the same capture with nobody playing: a headless Chrome
+                   walks the levels with Find stages' blind pilot and films
+                   every callout, notice and cue with no clip yet, the whole
+                   page (HUD and callouts in the picture, so the clip is
+                   `screen`). It runs on the server (POST /api/auto-rec,
+                   tools/lab/auto-rec.mjs), one game at a time, and the rows
+                   fill in as it plays; what the pilot never fires is left
+                   for REC.
      LOOP (↻)      on a row with a clip, the clip plays behind the English
                    frame alone, as big as the stage allows (the French one
                    steps aside: a loop is watched, not proofread), and at the
@@ -351,6 +359,7 @@ details.src pre {
    The recorder, the loop and the EN toggle.
    --------------------------------------------------------------------------- */
 #bar .rec { min-width:64px; }
+#bar .auto.on { background:#3a1f2a; color:#ff8fa3; border-color:#c0304a; opacity:1; }
 #bar .rec.on { background:#c0304a; color:#fff; border-color:#c0304a; }
 #bar .rec.on::before { content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:#fff; margin-right:6px; animation:recblink 1s steps(2) infinite; }
 @keyframes recblink { 50% { opacity:0; } }
@@ -418,6 +427,7 @@ button.act.en.dirty { box-shadow:0 0 0 1px #7ea6ff; }
     <button class="act ghost" id="btn-reload">Reload</button>
     <button class="act ghost rec" id="btn-rec" title="play the game here — every callout with no clip yet is recorded with the second before it and the second after">Rec</button>
     <select id="rec-level" title="start any level — locked ones too (the dev force, for this load only)"></select>
+    <button class="act ghost auto" id="btn-auto">Auto rec</button>
     <span id="rec-info"></span>
     <span class="sp"></span>
     <button class="act go" id="btn-apply" disabled title="write the changes into the game's source — its patch version moves with them">Apply</button>
@@ -1512,6 +1522,7 @@ function toggleEn(call) {
 function loadClips() {
   const slug = state.slug;
   state.offset = null;
+  autoLoad();
   fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
     if (slug !== state.slug) return;
     state.clips = idx && idx.clips ? idx : { clips: {}, byId: {} };
@@ -1995,6 +2006,60 @@ function recInfo() {
 }
 
 el("btn-rec").onclick = () => recToggle();
+
+/* ===========================================================================
+   AUTO REC: the same capture with nobody playing (tools/lab/auto-rec.mjs). A
+   headless Chrome walks the levels with Find stages' blind pilot and films
+   every callout, notice and cue still without a clip — the whole page, so a
+   clip is `screen`, its callouts in the picture. The server runs it in the
+   background, one game at a time; the page polls and the rows fill in.
+   =========================================================================== */
+const AUTO = { timer: 0, clips: -1, was: null };
+function autoLoad() {
+  const slug = state.slug;
+  clearTimeout(AUTO.timer);
+  fetch("api/auto-rec?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((o) => {
+    if (slug !== state.slug) return;
+    const a = (o && o.auto) || null, running = !!(a && a.game === slug);
+    if (a && a.clips !== AUTO.clips) {
+      AUTO.clips = a.clips;
+      fetch("api/clips?game=" + encodeURIComponent(slug)).then((r) => r.json()).then((idx) => {
+        if (slug !== state.slug || !idx || !idx.clips) return;
+        state.clips = idx;
+        paintClips();
+      }).catch(() => {});
+    }
+    if (AUTO.was === slug && !running && a) {
+      note("auto rec: " + a.clips + " clip" + (a.clips === 1 ? "" : "s") + ", " + a.left + " line" + (a.left === 1 ? "" : "s") +
+        " never fired under the pilot" + (a.error ? " — " + a.error : "") + (a.left ? " — Rec and play those yourself" : ""));
+    }
+    AUTO.was = running ? slug : null;
+    autoPaint(a, running, o && o.busy);
+    if (running || (o && o.busy)) AUTO.timer = setTimeout(autoLoad, 3000);
+  }).catch(() => {});
+}
+function autoPaint(a, running, busy) {
+  const b = el("btn-auto");
+  b.hidden = state.slug === "template" || state.slug === "shell";
+  b.classList.toggle("on", running);
+  b.disabled = running || !!busy;
+  b.textContent = running
+    ? "Auto rec · level " + (a.level || 0) + " (" + (a.done || 0) + "/" + (a.count || "?") + ") · " + a.clips + " clips · " + a.left + " left"
+    : "Auto rec";
+  b.title = busy && !running ? "Auto rec is playing " + busy + " — one game at a time"
+    : running ? "a headless Chrome is playing the levels — the rows fill in as their clips land"
+    : "play every level in a headless browser, a blind pilot pressing at random, and film every callout, notice and cue with no clip yet — the whole page, a second either side — several minutes" +
+      (a && a.over === state.slug ? " · last run: " + a.clips + " clips, " + a.left + " never fired" + (a.error ? ", " + a.error : "") : "");
+}
+el("btn-auto").onclick = () => {
+  fetch("api/auto-rec", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: state.slug }) })
+    .then((r) => r.json()).then((o) => {
+      if (o.error) { note("auto rec: " + o.error); return; }
+      note("auto rec started: " + o.wanted + " line" + (o.wanted > 1 ? "s" : "") + " without a clip — the rows fill in as it plays");
+      AUTO.clips = -1;
+      autoLoad();
+    }).catch((e) => note("auto rec failed — " + e.message));
+};
 
 fetch("api/games").then((r) => r.json()).then((list) => {
   // The shell unit is sound only (Sound.ui in packages/): it writes no word to read here.

@@ -486,8 +486,15 @@ const WEB_ONLY_MARSH = /^(crust|smore|snake)\d+$/;
    freeze's ice) is web-only too, until a playable draws one. */
 const WEB_ONLY_HOLE = /^fairway-0[2-9]$|^(shield|mudder|digger|runner|necro)\d+$|^boss-[a-z]+\d+$|^kind(0[2-9]|10)$|^super(0[2-9]|1\d|20)$|^fx-(?!boom-|dust-|shock-)[a-z]+-\d+$|^frame-[a-z-]+$/;
 
+/* games/foldiers' climb: the playable is stage 1 — the blue and red armies on
+   the meadow scenery, and the paper poof of a battle — so the green camp, the
+   works of every camp, the world pieces and the four later biomes' decor are
+   web-only. */
+const WEB_ONLY_FOLD = /^(army-green|works-(blue|red|green)|world|plains|woods|north|desert|jungle)\d+$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
+  if (WEB_ONLY_FOLD.test(role)) return true;
   if (WEB_ONLY_ROCK.test(role)) return true;
   if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;
   if (WEB_ONLY_FLAME.test(role)) return true;
@@ -661,8 +668,14 @@ ${entries.join(',\n')}
   `Sound.clip("gem")` plays that variant. A gameplay variant ships only to the
   games that map to it. A mapped key the game still EMBEDS is
   refused: those bytes would ship and never play.
+
+  `"sfx": { "gem": "empty" }` is the one id that names no variant: the key
+  plays nothing (the engine's clip skips it). It is where the kit page sends a
+  key whose variant was deleted before anyone validated it, until a sound is
+  picked for it on the events bench.
 */
 const KIT_DIR = 'assets/audio/kit';
+const KIT_EMPTY = 'empty';
 
 async function kitJs(web, manifest, configSrc) {
   const file = path.join(ROOT, KIT_DIR, 'kit.json');
@@ -677,7 +690,7 @@ async function kitJs(web, manifest, configSrc) {
   }
   const map = (manifest && manifest.sfx) || {};
   for (const [key, id] of Object.entries(map)) {
-    if (!all.some((x) => x.id === id)) throw new Error(`manifest sfx.${key}: no variant "${id}" in ${KIT_DIR}/kit.json`);
+    if (id !== KIT_EMPTY && !all.some((x) => x.id === id)) throw new Error(`manifest sfx.${key}: no variant "${id}" in ${KIT_DIR}/kit.json`);
     if (new RegExp(`(^|[\\s{,])"?${key}"?\\s*:\\s*"data:audio`, 'm').test(configSrc || '')) {
       throw new Error(`manifest sfx.${key} plays the kit's "${id}", and game.js still embeds ASSETS.sounds.${key} — remove the clip`);
     }

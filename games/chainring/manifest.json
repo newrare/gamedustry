@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.10.8",
+  "version": "1.10.9",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -52,7 +52,7 @@
     "chain": "pickup/marimbaplink",
     "doom": "warn/marimbataps",
     "miss": "miss/marimbaerror",
-    "hit": "hit/marimbaplink",
+    "hit": "bounce/marimbaplink",
     "rewind": "malus/phaser",
     "stick": "malus/slime",
     "burst": "burst/popplop",

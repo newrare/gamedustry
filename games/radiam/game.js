@@ -1280,7 +1280,6 @@
           shown = f;
           if (f <= WARN && f > 0) {
             Overlay.vignette(D.colours[0], 0.85, 520);
-            Sound.clip("charge", 0.4, 0.7);
           }
         }
       }
@@ -1314,7 +1313,6 @@
         flash = 0.7; shove = 1;
         recount();
         if (word) Pop.show("bonus", { word: word, sub: "+" + rays + Lang.t(" rays"), at: "hudUnder" });
-        Sound.clip("charge", 0.55, 1.15);
         Fx.flash("#8b6cff", 0.16, 1.6);
       }
 
@@ -1339,7 +1337,7 @@
         HUD.setLeft(level, "Level");
         /* No word for it: the HUD's level and the flash say it, and the rule
            is the guide's (page "inklevel"). */
-        Sound.clip("chain", 0.5, 1.18);
+        Sound.clip("chain", 0.5);
         Fx.flash("#ff4d6d", 0.14, 1.8);
         flash = 1;
       }
@@ -1769,7 +1767,6 @@
     function slowHit(r, k) {
       Eclipse.slow(D.slowTime);
       supers++;
-      Sound.clip("charge", 0.55, 0.78);
       specGlow("#3ff0a0");
     }
 
@@ -1798,7 +1795,6 @@
 
     function thaw(r) {
       r.cold = 0; r.coldT = 0;
-      Sound.clip("land", 0.35, 1.3);
       Fx.ring(cx, cy, { from: r.rad + r.band / 2, to: r.rad - r.band / 2,
                         color: "#ffffff", width: r.band * 0.5, life: 0.3 });
     }
@@ -1900,8 +1896,6 @@
       // where the round is long enough to spend a four-second window.
       if (bit === SCORE) v |= Rand.int(0, MUL_FACE - 1) << MULSHIFT;
       flyers[Rand.pick(cand)].colour = v;
-      if (bit === NOVA) Sound.clip("charge", 0.5, 1.12);
-      else Sound.clip("charge", 0.5);
       return true;
     }
 
@@ -1956,7 +1950,7 @@
         var mult = D.multiMult[Math.min(hits.length, D.multiMult.length) - 1];
         var bonus = Math.round(gained * (mult - 1));
         gained += bonus;
-        Sound.clip("multi", 0.55);
+        Sound.clip("multi", 0.55, 1.4);
         Fx.shake(12, 0.3);
         Overlay.vignette(D.colours[colour], 0.75, 420);
         grant(hits.length > 2 ? 2 : 1, colour);
@@ -2140,7 +2134,6 @@
           f.ring.slots[f.k] = f.colour;
           flyers.splice(i, 1);
           if (f.colour & SUPER) learnSpec(f.colour);   // a special met for the first time
-          Sound.clip("land", 0.2, 1.16 - f.ring.idx * 0.13);
           Fx.ring(px(a, f.ring.rad), py(a, f.ring.rad),
                   { from: f.ring.ballR * 0.5, to: f.ring.ballR * 1.8,
                     color: D.colours[f.colour], width: 3, life: 0.22 });

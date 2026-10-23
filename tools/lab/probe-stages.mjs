@@ -56,12 +56,34 @@ const HOOK = `(() => {
 })()`;
 
 // The play area in viewport px: Layout, less its bottom strip where the corners stand.
-const AREA = `(() => {
+export const AREA = `(() => {
   const W = window.__WEB__, L = W.Layout, cv = document.getElementById("game");
   const r = cv.getBoundingClientRect(), k = r.width / W.view.w;
   const bottom = Math.min(L.bottom, W.view.h - 150);
   return { x0: r.left + L.left * k, x1: r.left + L.right * k, y0: r.top + L.top * k, y1: r.top + bottom * k };
 })()`;
+
+/* One move of the blind pilot, picked at random — a tap, a hold, a drag or a
+   flick inside `a` (AREA's box) — then a pause. `mouse(type, x, y)` and
+   `move(x, y)` dispatch it; tools/lab/auto-rec.mjs flies the same pilot. */
+export async function gesture(mouse, move, a) {
+  if (a) {
+    const rx = () => a.x0 + Math.random() * (a.x1 - a.x0), ry = () => a.y0 + Math.random() * (a.y1 - a.y0);
+    const x = rx(), y = ry(), g = Math.random();
+    await mouse('mousePressed', x, y);
+    if (g < 0.4) await sleep(40);
+    else if (g < 0.6) await sleep(300 + Math.random() * 600);
+    else {
+      const tx = g < 0.8 ? rx() : x + (Math.random() < 0.5 ? -1 : 1) * 120, ty = g < 0.8 ? ry() : y + (Math.random() - 0.5) * 60;
+      for (let i = 1; i <= 6; i++) { await move(x + (tx - x) * i / 6, y + (ty - y) * i / 6); await sleep(g < 0.8 ? 60 : 15); }
+    }
+    await mouse('mouseReleased', x, y);
+  }
+  /* And now and then nothing at all: a mechanic that pays for staying
+     put (an ice rock thrown after a hold, a fuse burning down under the
+     body) never fires under a pilot that presses three times a second. */
+  await sleep(Math.random() < 0.35 ? 700 + Math.random() * 1800 : 120 + Math.random() * 200);
+}
 
 /**
  * Walk a game's levels and note the first one each sound line fires on.
@@ -138,24 +160,7 @@ export async function probeStages({ base, game, keys, match, seconds = 14, rate 
           if (still >= 8) { await start(n); rounds++; still = 0; }
         } else still = 0;
         lastClock = st.c;
-        // One gesture, picked at random: a tap, a hold, a drag or a flick.
-        const a = await ev(AREA).catch(() => null);
-        if (a) {
-          const rx = () => a.x0 + Math.random() * (a.x1 - a.x0), ry = () => a.y0 + Math.random() * (a.y1 - a.y0);
-          const x = rx(), y = ry(), g = Math.random();
-          await mouse('mousePressed', x, y);
-          if (g < 0.4) await sleep(40);
-          else if (g < 0.6) await sleep(300 + Math.random() * 600);
-          else {
-            const tx = g < 0.8 ? rx() : x + (Math.random() < 0.5 ? -1 : 1) * 120, ty = g < 0.8 ? ry() : y + (Math.random() - 0.5) * 60;
-            for (let i = 1; i <= 6; i++) { await move(x + (tx - x) * i / 6, y + (ty - y) * i / 6); await sleep(g < 0.8 ? 60 : 15); }
-          }
-          await mouse('mouseReleased', x, y);
-        }
-        /* And now and then nothing at all: a mechanic that pays for staying
-           put (an ice rock thrown after a hold, a fuse burning down under the
-           body) never fires under a pilot that presses three times a second. */
-        await sleep(Math.random() < 0.35 ? 700 + Math.random() * 1800 : 120 + Math.random() * 200);
+        await gesture(mouse, move, await ev(AREA).catch(() => null));
         await drain();
       }
       steps.push(`level ${n}: ${rounds} round${rounds > 1 ? 's' : ''}, ${left.size} key${left.size === 1 ? '' : 's'} left`);

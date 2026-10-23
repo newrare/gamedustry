@@ -1663,7 +1663,7 @@
       if (surgeSeq.length) {                       // that is the last of it
         jumpSurge(true);
         // the fence comes up with the dark: named once ever (guide "fence")
-        Notify.learn("fence", "Live fence", { sub: "Fire through the gap as it moves" });
+        Notify.learn("fence", "Live fence", { sub: "Fire through the gap" });
       }
     }
     // What fraction of the board is drawn for free right now: 1 during the
@@ -3064,14 +3064,14 @@
               Lang.t("Only one door leads to the exit. The others end in dead ends.") ] },
             { id: "aim", title: Lang.t("Aim and fire"), pic: aimPic, lines: [
               Lang.t("Drag to aim, let go to fire a pulse."),
-              Lang.t("The sight stops at a door. That is the door your pulse will take.") ] },
+              Lang.t("The sight locks onto your aim. The pulse will go in that direction.") ] },
             { id: "echo", title: Lang.t("Echoes"), pic: echoPic, lines: [
               Lang.t("In the dark, a wall only shows where a pulse strikes it, then fades.") ] },
             { id: "valves", title: Lang.t("One-way valve"), pic: valvePic, lines: [
               Lang.t("When a pulse dies in the maze, the last opening it went through becomes a valve."),
               Lang.t("That valve lets pulses up, never back down.") ] },
             { id: "recap", title: Lang.t("The answer"), pic: recapPic, lines: [
-              Lang.t("Out of pulses and still inside? The maze lights up one last time.") ] },
+              Lang.t("Out of pulses and still inside? The maze lights up one last time to show you the solution.") ] },
             { id: "score", title: Lang.t("Scoring"), pic: escapePic, rows: [
               [Lang.t("Each pulse left"), "+" + C.spareBonus] ], lines: [
               Lang.t("Pulses you have left pay the most. Getting out on the first shot gives the best score.") ] },
@@ -3088,7 +3088,7 @@
           ] },
           { key: "decoys", label: names[1], pages: [
             { id: "decoys", title: names[1], lv: 4, pic: decoyPic, lines: [
-              Lang.t("A false exit looks exactly like the true one, but it swallows your pulse."),
+              Lang.t("A false exit looks exactly like the true one, but it is a trap because it swallows your pulse."),
               Lang.t("While the maze is lit, only the true exit sends out rings. Remember which one.") ] }
           ] },
           { key: "crystal", label: names[2], pages: [
@@ -3097,7 +3097,7 @@
               Lang.t("Below the doors, your pulse bounces off the crystal and can still reach a door.") ] },
             { id: "hidden", title: Lang.t("The hidden crystal"), lv: 11, pic: hiddenPic, lines: [
               Lang.t("The crystal can hide in a dead end of the maze."),
-              Lang.t("Reaching the crystal costs a pulse of its own, so each star allows one more pulse.") ] }
+              Lang.t("Reaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\".") ] }
           ] },
           { key: "fence", label: names[3], pages: [
             { id: "fence", title: names[3], lv: 18, pic: fencePic, lines: [

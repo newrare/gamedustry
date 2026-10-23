@@ -1517,7 +1517,13 @@ beside its count, and a tap on it starts that level in the Rec frame — out of
 it sees fire and **Find stages** fills for the rest: a headless Chrome walks
 the levels in order with a blind pilot pressing the play area at random
 (`tools/lab/probe-stages.mjs`), keeps the first level each key was heard on and
-stops once every key has one; a key it never heard reads *not heard*. **↻** on a row loops that clip under
+stops once every key has one; a key it never heard reads *not heard*. **Auto rec** is that
+pilot with a camera: beside REC on both pages, it walks the levels in a
+headless Chrome — the stages already found first — and films every callout,
+notice and cue still without a clip, the whole page as a screencast, so the
+clip is `screen` with its HUD and callouts in the picture
+(`tools/lab/auto-rec.mjs`, POST `/api/auto-rec`, one game at a time, the rows
+filling in as it plays); what the pilot never fires is left for REC. **↻** on a row loops that clip under
 the frame — both frames, EN and FR, on the message page — and fires the row,
 with its pending edits, at the instant it fired in play, together with
 everything else that fired in the window — one chip per line, ×N for a line
@@ -1756,10 +1762,20 @@ of a game whose own code calls `Sound.ui`, read off the source (`roleCalls` in
 `tools/lab/cut-kit.mjs`); nothing calling it reads `unused`. **A role is added
 from the page**: the + on a group's heading asks its name and one line of what
 it means, the + on a gameplay role's heading adds a variant, and either starts
-empty until one to three files of the library are clicked into it. **Delete
-role** and **Delete variant** take one out, and only once nothing plays it —
-no manifest maps a key to it, no source calls it by name; the button says
-which, and the cutter refuses the same on Save.
+empty until one to three files of the library are clicked into it. **Hovering
+a role or a variant in the list plays one shot of it.** **Delete role** and
+**Delete variant** take one out unless a source calls it by name or a game has
+CHECKED a line playing it on the events bench; the button says which, and the
+server refuses the same on Save. A game that maps a key to it unchecked goes
+**silent**: its key moves to `"empty"` (`"sfx": { "crash": "empty" }`), which
+plays nothing, builds, is counted *without a role* on the events bench and
+listed under *Silent* at the foot of the kit — Change sound on its card gives
+it a variant again. **Rename role**, **Rename** (a variant) and **Move to…**
+(a variant filed under another role, renamed on the way with `role/name`; a
+role's last variant moved takes the role with it) are refused only by a call
+by name: every manifest mapping it follows the new name on Save, its
+patch version moved, and the checked marks of its lines move with it
+(`remapManifests` in `tools/lab/cut-kit.mjs`).
 
 `sound-library.html` is **the sfx library, by ear** (`make events` →
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
@@ -1933,6 +1949,25 @@ biome; Pairing shows the five biomes side by side, which is the comparison the
 choice is made on; Copy pairing hands it over as JSON. What ships is tube,
 sprocket, chain, crown and ribbon, Neon to Nova — `ring` on each biome of
 `games/chainring/game.js`, its `DESIGN` table a port of this page's.
+
+`foldiers-hud.html` is **foldiers' paper HUD catalogue**: what the round
+writes over its paper map — the card of the region in hand and its actions,
+the order ring, Send and its tick, the resources and the tags — in its second
+round: **taped and folded**, the two ideas the first round's eight flat looks
+left standing (the scrapbook's tape, the origami's facets). Nothing on it is
+straight: every plate is an SVG generated from a seed — off-square corners,
+hand-cut edges, a tilt, a fold (one crease, accordion, folded in four,
+crumpled) whose creases BREAK the outline where they reach the edge, a
+dog-ear showing the back of the paper, torn strips of tape — so a look is a
+set of knobs rather than a CSS block; six presets are starting points and
+*Copy settings* is the knobs as JSON. The backdrop is a frame of stage 1 shot
+bare with the game's dev switch `?hud=0`
+(`tools/lab/shoot-foldiers.mjs 1 --query hud=0`, into `lab/foldiers-hud/`).
+The motor's own HUD is mocked in grey, for the room it takes. **`D · Crumpled`,
+edited, is what ships**: the generator is plain polygons, ported onto the
+canvas as THE PAPER of `games/foldiers/game.js` (each piece drawn once into a
+cached canvas, then laid tilted), and its knobs are `LOOK` there — a retune is
+a new *Copy settings* pasted over that object.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see

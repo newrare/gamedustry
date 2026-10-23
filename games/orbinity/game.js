@@ -1826,7 +1826,7 @@
       if (quiet) return;
       Fx.ring(p.x, p.y, { from: p.r * 2.6, to: p.r, color: NOVA, width: 4, life: 0.4 });
       Fx.burst(p.x, p.y, { color: ["#8a8070", NOVA], count: 10, speed: 140, size: 4, life: 0.5 });
-      Sound.clip("fizzle", 0.45);
+      Sound.clip("fizzle", 0.65);
     }
 
     /* --- round lifecycle -------------------------------------------------- */
@@ -1982,7 +1982,7 @@
       Fx.ring(comet.x, comet.y, { from: 12, to: 96, color: "#ffffff", width: 5, life: 0.28 });
       Fx.burst(comet.x, comet.y, { color: ["#ffffff", "#8ef4ff"], count: 8, speed: 220,
                                    size: 4, life: 0.32, angle: Math.atan2(-ty, -tx), spread: 1.2 });
-      Sound.clip("launch", 0.5);
+      Sound.clip("launch", 0.6);
     }
 
     // `soft`: one of a cascade (the chain reaction), so no frame flash — a
@@ -1999,7 +1999,7 @@
       Fx.shake(soft ? 5 : 7, 0.24);
       if (!soft) Fx.flash(p.skin.a, 0.15, 3);
       // A big planet blows up lower than a small one.
-      Sound.clip("boom", 0.6, 1.25 - (p.r - P.rMin) / (P.rMax - P.rMin) * 0.4);
+      Sound.clip("boom", 0.15, 1.25 - (p.r - P.rMin) / (P.rMax - P.rMin) * 0.4);
     }
 
     /* --- simulation ------------------------------------------------------- */
@@ -2141,7 +2141,7 @@
         moonAt(p, clock, moonPt);
         d = dist(comet.x, comet.y, moonPt.x, moonPt.y);
         if (d < p.moon.r + hr + MO.graze) p.near = flightId;
-        else if (p.near === flightId) { p.near = -1; award("Eclipse", "eclipse", moonPt.x, moonPt.y); }
+        else if (p.near === flightId) { p.near = -1; award(moonPt.x, moonPt.y); }
       }
       for (i = 0; i < holes.length; i++) {
         h = holes[i];
@@ -2172,12 +2172,12 @@
     }
 
     // One bonus caught in flight: +bonus.step on the next capture's multiplier.
-    function award(word, key, x, y) {
+    function award(x, y) {
       if (endIn >= 0) return;                 // the run is over, nothing to pay
       flightBonus += CONFIG.bonus.step;
       Fx.ring(x, y, { from: 10, to: 96, color: "#ffd43b", width: 5, life: 0.36 });
       Fx.burst(x, y, { color: ["#ffd43b", "#ffffff"], count: 10, speed: 240, size: 4, life: 0.4 });
-      Sound.clip(key, 0.6, 1 + flightBonus * 0.08);
+      Sound.clip("eclipse", 0.6, 1 + flightBonus * 0.08);
     }
 
     /* The second deadlock, and the one the latch cannot see: gravity steers the
@@ -2312,7 +2312,7 @@
         Fx.burst(comet.x, comet.y, { color: [col, "#ffffff"], count: 18, speed: 330, size: 6, life: 0.55 });
         Pop.show("combo", { word: "Evolved", sub: Lang.t("Tier ") + (tier + 1),
                               at: "upper", hold: 380 });
-        Sound.clip("evolve", 0.7);
+        Sound.clip("evolve", 0.25, 1.6);
       } else if (combo === 2) {
         Pop.show("score", { word: "Chain alive", at: "upperLeft", hold: 300 });
       }
@@ -2362,7 +2362,7 @@
       Fx.ring(wm.ax, wm.ay, { from: 8, to: WH.r * 2.6, color: "#b48cff", width: 6, life: 0.4 });
       Fx.ring(wm.bx, wm.by, { from: 8, to: WH.r * 2.6, color: "#b48cff", width: 6, life: 0.4 });
       Fx.burst(comet.x, comet.y, { color: ["#b48cff", "#ffffff"], count: 12, speed: 260, size: 4, life: 0.4 });
-      Sound.clip("worm", 0.6);
+      Sound.clip("worm", 0.5, 1.4);
     }
     // Off a repulsor's body: a magenta flare and a knock, and nothing lost.
     function repelHit(rb) {
@@ -2387,7 +2387,7 @@
       Fx.shake(9, 0.26);
       Fx.flash("#ff4d6d", 0.16, 3);
       Overlay.vignette("#ff4d6d", 0.8, 400);
-      Sound.clip("rock", 0.65);
+      Sound.clip("rock", 0.9);
       breakCombo("Asteroid hit");
     }
 
@@ -2415,7 +2415,7 @@
       Fx.ring(comet.x, comet.y, { from: 8, to: 60, color: p ? p.skin.ring : "#ffffff", width: 5, life: 0.3 });
       Fx.burst(comet.x, comet.y, { color: ["#ffffff", p ? p.skin.ring : "#9ff3ff"], count: 8, speed: 200, size: 4, life: 0.3 });
       Fx.shake(4, 0.14);
-      Sound.clip("shield", 0.6);
+      Sound.clip("shield", 0.3);
     }
 
     /* Caught by a black hole: it becomes the comet's host for HO.hold
@@ -2434,7 +2434,7 @@
       if (combo > 0 && endIn < 0) comboT = Math.max(comboT, comboWindow());
       Fx.ring(h.x, h.y, { from: HO.horizon, to: HO.catch * 1.8, color: BIO ? BIO.edge : "#ffb347", width: 7, life: 0.4 });
       Fx.shake(5, 0.18);
-      Sound.clip("swallow", 0.6);
+      Sound.clip("swallow", 1, 0.8);
     }
     /* ...and flung on, the hole inert for the flight so it can neither bend
        nor catch it again. It lets go when the way the comet is swinging
@@ -2473,7 +2473,8 @@
       var slow = nk < 1;
       Fx.ring(comet.x, comet.y, { from: 14, to: 110, color: slow ? "#6fb2ff" : "#ffcf5a", width: 6, life: slow ? 0.8 : 0.35 });
       Overlay.vignette(slow ? "#4f9dff" : "#ffc24a", 0.55, slow ? 900 : 450);
-      Sound.clip(slow ? "slow" : "fast", 0.5);
+      if (slow) Sound.clip("slow", 1);
+      else Sound.clip("fast", 1, 1.3);
     }
 
     function breakCombo(reason) {
@@ -2630,7 +2631,7 @@
       launchDir(aimState);
       explode(nv);
       Fx.ring(nv.x, nv.y, { from: nv.r, to: nv.captureR * 3, color: NOVA, width: 10, life: 0.5 });
-      Sound.clip("launch", 0.55, 1.2);
+      Sound.clip("launch", 0.55, 1.35);
       run.phase = 1;
       comet.flying = true; comet.host = null;
 
@@ -3725,7 +3726,7 @@
       Overlay.vignette(TIERS[tier].halo, 0.7, 480);
       Fx.flash("#ffffff", 0.1, 3);
       Notify.say("Overtime", { sub: "Keep the chain alive", kind: "warn", icon: "hourglass", guide: "overtime" });
-      Sound.clip("milestone", 0.75, 0.82);
+      Sound.clip("milestone", 0.75, 1.75);
       Ad.track("overtime", { score: score, combo: combo });
     }
 

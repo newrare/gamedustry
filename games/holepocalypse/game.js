@@ -961,8 +961,8 @@
       applyMod(b, !free && specials.length ? specials.shift() : "plain");
       if (lob) { b.air = true; b.z = 0.01; b.vz = lob.vz; b.lob = true; }
       balls.push(b);
-      if (lob) Sound.clip("shot", 0.55, 0.9);
-      else Sound.clip("shot", 0.55, 1.05);
+      if (lob) Sound.clip("shot", 1, 1.2);
+      else Sound.clip("shot", 1, 1.1);
     }
     function newBall(x, y, vx, vy, id, free) {
       return { x: x, y: y, vx: vx, vy: vy, id: id, age: 0, kind: "plain", bounces: 0, touched: false,
@@ -1435,7 +1435,7 @@
       if (tag) { m.tag = tag; m.tagT = 1.5; }
       if (m === bossRef) hudWave();
       if (m.hp <= 0) kill(m, tag, how);
-      else Sound.clip("hit", 0.7, 1 + Math.random() * 0.2);
+      else Sound.clip("hit", 0.4, 1 + Math.random() * 0.2);
     }
 
     function kill(m, tag, how) {
@@ -2067,7 +2067,7 @@
       } else if (m.kind === "king") {
         skulls.push({ x: m.x, y: m.y + 40, vy: 260, back: false, tag: 0 });
         for (var i = 0; i < 2; i++) addMon("walker", m.x + (i ? 70 : -70), m.y + 20, true);
-        Sound.clip("shot", 1, 1.5);
+        Sound.clip("shot", 1);
       }
     }
     function updateSkulls(dt) {
@@ -3868,8 +3868,8 @@
       applyMod(b, kind || "plain");
       if (lob) { b.air = true; b.z = 0.01; b.vz = v.vz; b.lob = true; }
       balls.push(b);
-      if (lob) Sound.clip("shot", 0.55, 0.9);
-      else Sound.clip("shot", 0.55, 1.05);
+      if (lob) Sound.clip("shot", 0.55, 0.8);
+      else Sound.clip("shot", 0.55, 0.7);
     }
     // what sinking a ball flag of `kind` loads: the next shots from the bag
     function labLoad(kind) {

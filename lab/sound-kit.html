@@ -37,8 +37,8 @@
    renamed and dropped here — and a game's manifest maps a key it already plays
    to ONE of them (`"sfx": { "crash": "crash/explosion" }`), which the events
    bench's kit selector writes. The list says which game plays each variant,
-   so a take is never changed without knowing who hears it, and a variant a
-   game plays cannot be renamed or dropped.
+   so a take is never changed without knowing who hears it. Hovering a role or
+   a variant in the list plays one shot of it, levelled.
 
    A take is cut on its waveform by its grips: the left edge is the start,
    the right edge the end, the middle moves the window and keeps its length,
@@ -67,9 +67,25 @@
    saying what it means — and the + beside a gameplay role's heading adds a
    variant to it. Either starts with no take: click one to three files of the
    library, then Save. `Delete role` drops a role and its variants, and
-   `Delete variant` one variant — both only once nothing plays it: no
-   manifest maps a key to it and no source calls it by name (the button says
-   which, and the cutter refuses the same on Save).
+   `Delete variant` one variant — refused while a source calls it by name or
+   a game has CHECKED a line playing it on the events bench (the button says
+   which, and the server refuses the same on Save). A game that maps a key to
+   it without having checked it is not in the way: its key goes to `empty`,
+   which plays nothing, and waits on the events bench for a sound — the
+   `Silent` row at the foot of the list counts those keys.
+
+   `Move to…` takes a gameplay variant out of its role and files it under
+   another (`bonus`, or `bonus/name` to rename it on the way): a variant
+   filed under the wrong meaning is moved, not rebuilt. It is a rename of its
+   id, so it follows the same rule — refused only by a call by name — and a
+   game that CHECKED it keeps its marks, since a mark stands on the takes and
+   the takes travel with it. Moving a role's last variant deletes the role.
+
+   `Rename role` and `Rename` (a variant) are refused only by a call by name,
+   which a rename cannot reach: every manifest that maps a key to it follows
+   the new name on Save, its version moved, and the checked marks of its lines
+   move with it. The page keeps what moved in S.remap ({ old id: new id or
+   empty }) and sends it with the kit.
 
    Save writes assets/audio/kit/kit.json, re-cuts every take and rebuilds the
    web build of the bench: the cut files are committed, the games pick them up
@@ -121,6 +137,8 @@ button { font:inherit; color:inherit; }
 .role .g img.v-part { outline:2px dashed #5fd49a; }
 .role .g img.v-stale { outline:2px solid #ffb648; }
 .role.var { margin-left:12px; padding:5px 10px; }
+.role.silent { cursor:default; }
+.role.silent:hover { background:none; }
 .role-h { padding:8px 10px; border-radius:8px; display:grid; grid-template-columns:1fr auto auto; gap:1px 8px; align-items:center; cursor:pointer; }
 .role-h:hover { background:#1a1a2a; }
 .role-h.on { background:#1e2740; }
@@ -290,11 +308,13 @@ button { font:inherit; color:inherit; }
     codex: "codex", daily: "daily road", guide: "guide", menu: "menu", view: "every card & view", village: "village"
   };
   const WINDOW = 0.05, MAX_TAKES = 3;
+  // The silent mapping (tools/lab/cut-kit.mjs EMPTY): a key that plays nothing.
+  const EMPTY = "empty";
 
   /* `open` is the one gameplay role whose variants are listed: the list opens
      folded, unfolding a role folds the one before it, and a filter lists the
      variants it matches whatever is folded. */
-  const S = { kit: null, checked: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "", open: null };
+  const S = { kit: null, checked: null, saved: "", files: [], byStem: {}, role: null, take: 0, q: "", rq: "", open: null, remap: {} };
 
   // ---- audio -------------------------------------------------------------
   let ac = null;
@@ -395,16 +415,17 @@ button { font:inherit; color:inherit; }
     }).catch(() => {});
   }
   // One shot of a variant the way Sound.ui plays it: a take, never the same twice.
-  let lastTake = -1;
-  function shot(rate, at) {
-    const v = cur(), n = v.takes.length;
+  const lastTake = {};
+  function shotOf(id, rate, at) {
+    const v = variantOf(id), n = v ? v.takes.length : 0;
     if (!n) return Promise.resolve();
+    const was = lastTake[id] == null ? -1 : lastTake[id];
     let i = 0;
-    if (n > 1) { i = Math.floor(Math.random() * (lastTake < 0 ? n : n - 1)); if (lastTake >= 0 && i >= lastTake) i++; }
-    lastTake = i;
-    const t = v.takes[i] || v.takes[0];
-    return playTake(t, rate || 1, at);
+    if (n > 1) { i = Math.floor(Math.random() * (was < 0 ? n : n - 1)); if (was >= 0 && i >= was) i++; }
+    lastTake[id] = i;
+    return playTake(v.takes[i] || v.takes[0], rate || 1, at);
   }
+  const shot = (rate, at) => shotOf(idNow(), rate, at);
   function sequence() {
     stopAll();
     const l = LADDER[S.role];
@@ -429,6 +450,31 @@ button { font:inherit; color:inherit; }
   // The id a manifest and Sound.ui name a variant by: `tap`, `crash/explosion`.
   const idOf = (role, variant) => isShell(role) ? role : role + "/" + variant;
   const idNow = () => idOf(S.role, S.variant);
+  // A variant of the kit as the page holds it now, by its id.
+  function variantOf(id) {
+    const [role, name = "default"] = String(id).split("/"), r = S.kit.roles[role];
+    return (r && r.variants[name]) || null;
+  }
+  // The ids of the kit on disk: what a manifest and a source name today.
+  function savedIds() {
+    const was = JSON.parse(S.saved), out = new Set();
+    for (const [role, r] of Object.entries(was)) for (const name of Object.keys(r.variants)) out.add(r.group === "shell" ? role : role + "/" + name);
+    return out;
+  }
+  /* A variant renamed (`to`, its new id) or deleted (`to` = EMPTY): recorded
+     against the id ON DISK, which is what the manifests name, so a rename of
+     a rename is still one move and a rename back is none. */
+  function moveId(from, to) {
+    for (const k of Object.keys(S.remap)) if (S.remap[k] === from) S.remap[k] = to;
+    if (savedIds().has(from) && !(from in S.remap)) S.remap[from] = to;
+    for (const k of Object.keys(S.remap)) if (S.remap[k] === k) delete S.remap[k];
+  }
+  // The ids on disk a variant of the page stands for: itself, and what was renamed to it.
+  function origOf(id) {
+    const out = Object.keys(S.remap).filter((k) => S.remap[k] === id);
+    if (!(id in S.remap)) out.unshift(id);
+    return out;
+  }
   function dirtyIds() {
     const was = JSON.parse(S.saved), out = [];
     for (const role of Object.keys(was)) if (!S.kit.roles[role]) out.push(role);
@@ -450,7 +496,7 @@ button { font:inherit; color:inherit; }
     const names = Object.keys(S.kit.roles[role].variants);
     S.role = role; S.variant = names.includes(variant) ? variant : names[0];
     if (!isShell(role)) S.open = role;
-    S.take = 0; lastTake = -1;
+    S.take = 0;
     S.q = SEARCH[role] || role;
     $("q").value = S.q;
     try { history.replaceState(null, "", "#" + idNow()); } catch (e) {}
@@ -458,7 +504,9 @@ button { font:inherit; color:inherit; }
   }
 
   // ---- painting ----------------------------------------------------------
-  function usersOf(id) { return (S.kit.users && S.kit.users[id]) || []; }
+  function usersOf(id) { return origOf(id).flatMap((k) => (S.kit.users && S.kit.users[k]) || []); }
+  // Who validated a variant, through its renames: { slug: "ok" | "part" | "stale" }.
+  function checkedOf(id) { return Object.assign({}, ...origOf(id).map((k) => (S.checked || {})[k] || {})); }
   const takesWord = (v) => v.takes.length + (v.takes.length > 1 ? " takes" : " take");
   /* The games behind a variant, one icon each: `blight.spread` and
      `blight.rot` are one game, and the keys ride in the tooltip. */
@@ -467,13 +515,13 @@ button { font:inherit; color:inherit; }
      current cut; dashed, some; amber, checked on a cut it no longer has. */
   const VALID = { ok: "validated", part: "partly validated", stale: "checked on an older cut" };
   function iconsOf(users, id) {
-    const by = {}, checked = (S.checked || {})[id] || {};
+    const by = {}, checked = checkedOf(id);
     users.forEach((u) => { const slug = u.split(".")[0]; (by[slug] = by[slug] || []).push(u); });
     return Object.keys(by).map((slug) =>
       '<img class="' + (checked[slug] ? "v-" + checked[slug] : "") + '" src="icons/' + encodeURIComponent(slug) + '.png" alt="' + esc(slug) + '" title="' +
       esc(by[slug].join(", ") + (!S.checked ? "" : checked[slug] ? " — " + VALID[checked[slug]] : " — not checked yet")) + '">').join("");
   }
-  function callsOf(id) { return (S.kit.calls && S.kit.calls[id]) || []; }
+  function callsOf(id) { return origOf(id).flatMap((k) => (S.kit.calls && S.kit.calls[k]) || []); }
   /* Who calls a variant by name, as tags: one per shell file, one icon per
      game whose own code calls it — the lines in the tooltip. `users` are the
      games mapping a key to it, drawn elsewhere, which only count here to tell
@@ -536,42 +584,85 @@ button { font:inherit; color:inherit; }
           (callsOf(id).length ? callTags(id, users) : "") + "</button>";
       });
     });
+    /* The keys mapped to EMPTY — a variant deleted before anyone checked it:
+       they play nothing until the events bench gives them a sound. */
+    const silent = usersOf(EMPTY);
+    if (silent.length && matches(EMPTY + " silent " + silent.join(" "))) {
+      html += '<h3 class="grp"><span>Silent — keys that play nothing</span></h3>' +
+        '<div class="role silent"><b>' + EMPTY + '</b><span class="n">' + silent.length + (silent.length > 1 ? " keys" : " key") + "</span>" +
+        '<span class="w">Their variant was deleted: pick them a sound on the events bench (/sound).</span>' +
+        '<span class="g">' + iconsOf(silent, EMPTY) + "</span></div>";
+    }
     $("role-list").innerHTML = html || '<p class="none-left">No role matches.</p>';
     $("save").disabled = $("revert").disabled = !dirty.length;
   }
+  /* Why a role or a variant cannot be renamed, or deleted: a source CALLS it
+     by name (a rename cannot reach a call), or — for a delete — a game has
+     CHECKED a line playing it on the events bench. A game that maps a key to
+     it unchecked is no reason: its key follows a rename, and goes to EMPTY on
+     a delete. The server refuses the same on Save. */
+  function blocked(ids, deleting) {
+    if (!S.kit.calls) return "Restart the events server to know who calls it";
+    const at = ids.flatMap((id) => callsOf(id).map((c) => c.file + ":" + c.line));
+    if (at.length) return "Called by name in " + at.slice(0, 4).join(", ") + " — " + (deleting ? "remove" : "rename") + " the call first";
+    if (!deleting) return "";
+    if (!S.checked && ids.some((id) => usersOf(id).length)) return "Reading who validated it…";
+    const by = [...new Set(ids.flatMap((id) => Object.keys(checkedOf(id))))];
+    if (by.length) return "Validated by " + by.join(", ") + " on the events bench — move that game to another sound first";
+    return "";
+  }
   function paintHead() {
     const x = S.kit.roles[S.role], v = cur(), shell = isShell(S.role), users = usersOf(idNow());
-    const used = users.length > 0 || callsOf(idNow()).length > 0, last = Object.keys(x.variants).length < 2;
-    /* Why a role cannot go: a manifest maps a key to one of its variants, or
-       a source calls it by name. The cutter checks the same on Save. */
+    const last = Object.keys(x.variants).length < 2;
     const ids = Object.keys(x.variants).map((n) => idOf(S.role, n));
-    const why = !S.kit.calls ? "Restart the events server to know who calls it" :
-      ids.some((id) => usersOf(id).length) ? "A game's manifest plays it — map that game elsewhere first" :
-      ids.some((id) => callsOf(id).length) ? "Called in " + ids.flatMap((id) => callsOf(id).map((c) => c.file + ":" + c.line)).slice(0, 4).join(", ") + " — remove the call first" : "";
+    const whyDel = blocked(ids, true), whyRen = blocked(ids, false);
+    const whyVarDel = shell ? "" : last ? "The last variant: delete the role instead" : blocked([idNow()], true);
+    const whyVarRen = shell ? "" : blocked([idNow()], false);
+    const btn = (id, label, why, tip) => '<button class="btn" id="' + id + '"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="' + esc(tip) + '"') + ">" + label + "</button>";
+    const silentTip = (list) => list.length ? " — " + list.join(", ") + " will play nothing (empty) until a sound is picked on the events bench" : "";
     $("role-head").innerHTML =
       "<h2>" + esc(idNow()) + "</h2>" +
       (S.kit.playable.includes(S.role) ? '<span class="tag">ships in playables too</span>' : "") +
-      '<button class="btn" id="r-del"' + (why ? ' disabled title="' + esc(why) + '"' : ' title="Delete the role and every variant of it"') + ">Delete role</button>" +
+      btn("r-ren", "Rename role", whyRen, "Rename the role — every game mapping one of its variants follows the new name") +
+      btn("r-del", "Delete role", whyDel, "Delete the role and every variant of it" + silentTip(ids.flatMap(usersOf))) +
       (shell ? "" :
         '<span class="vacts"><button class="btn" id="v-new" title="A new variant of this role, starting from these takes">New variant</button>' +
-        '<button class="btn" id="v-ren"' + (used ? ' disabled title="A game plays it — map that game elsewhere first"' : "") + ">Rename</button>" +
-        '<button class="btn" id="v-del"' + (used || last ? ' disabled title="' + (used ? "A game plays it — map that game elsewhere first" : "The last variant: delete the role instead") + '"' : "") + ">Delete variant</button></span>") +
+        btn("v-ren", "Rename", whyVarRen, "Rename the variant — every game mapping it follows the new name") +
+        btn("v-move", "Move to…", whyVarRen, "File the variant under another role — every game mapping it follows, its checks kept") +
+        btn("v-del", "Delete variant", whyVarDel, "Delete the variant" + silentTip(users)) + "</span>") +
       '<span class="w">' + esc(x.what) + (LADDER[S.role] ? " — played as a ladder, the shell pitching each step." : ".") +
       (shell ? (callsOf(S.role).length ? " The same in every game." : " Nothing calls it yet: a shell role is heard once packages/ calls Sound.ui(\"" + esc(S.role) + "\").") :
         users.length ? " Played by " + esc(users.join(", ")) + " — a change here is heard there." : " No game plays it yet: map a key to it on the events bench.") +
       " The takes below are interchangeable — the shell alternates between them; they are not a choice.</span>" +
       (callsOf(idNow()).length ? callTags(idNow(), users, "Called by") : "");
+    const goSilent = (list) => list.length ? "\n\n" + list.join(", ") + " will play nothing (empty) until a sound is picked for " + (list.length > 1 ? "them" : "it") + " on the events bench." : "";
     $("r-del").onclick = () => {
-      if (!confirm("Delete the role " + S.role + (shell ? "" : " and its " + ids.length + " variant(s)") + "?")) return;
+      const silent = ids.flatMap(usersOf);
+      if (!confirm("Delete the role " + S.role + (shell ? "" : " and its " + ids.length + " variant(s)") + "?" + goSilent(silent))) return;
       const was = S.role;
+      ids.forEach((id) => moveId(id, EMPTY));
       delete S.kit.roles[was];
       sel(Object.keys(S.kit.roles)[0]);
-      status("Role " + was + " deleted — Save to cut it out of the kit");
+      status("Role " + was + " deleted" + (silent.length ? ", " + silent.length + " key(s) go silent" : "") + " — Save to cut it out of the kit");
+    };
+    $("r-ren").onclick = () => {
+      const was = S.role;
+      const n = askName("Rename the role " + was + " to", (r) => !!S.kit.roles[r], was);
+      if (!n) return;
+      const follow = ids.flatMap(usersOf).length;
+      Object.keys(x.variants).forEach((name) => moveId(idOf(was, name), shell ? n : n + "/" + name));
+      S.kit.playable = S.kit.playable.map((r) => r === was ? n : r);
+      const out = {};
+      for (const [k, val] of Object.entries(S.kit.roles)) out[k === was ? n : k] = val;
+      S.kit.roles = out;
+      if (S.open === was) S.open = n;
+      sel(shell ? n : n + "/" + S.variant);
+      status("Role " + was + " renamed " + n + (follow ? " — " + follow + " key(s) follow it" : "") + " — Save to write it");
     };
     if (shell) return;
     const ask = (msg, was) => {
       const n = (prompt(msg, was || "") || "").trim().toLowerCase();
-      if (!n) return null;
+      if (!n || n === was) return null;
       if (!/^[a-z][a-z0-9]{0,23}$/.test(n)) { status("A variant is named in lowercase letters and digits", true); return null; }
       if (x.variants[n]) { status(S.role + "/" + n + " already exists", true); return null; }
       return n;
@@ -586,15 +677,39 @@ button { font:inherit; color:inherit; }
     $("v-ren").onclick = () => {
       const n = ask("Rename " + idNow() + " to", S.variant);
       if (!n) return;
+      const was = idNow();
+      moveId(was, S.role + "/" + n);
       const out = {};
       for (const [k, val] of Object.entries(x.variants)) out[k === S.variant ? n : k] = val;
       x.variants = out;
       sel(S.role + "/" + n);
+      status(was + " renamed " + idNow() + (users.length ? " — " + users.join(", ") + " follow it" : "") + " — Save to write it");
+    };
+    $("v-move").onclick = () => {
+      const roles = Object.keys(S.kit.roles).filter((r) => !isShell(r) && r !== S.role);
+      const ans = (prompt("Move " + idNow() + " to which role? A role, or role/name to rename it on the way:\n\n" + roles.join(", ")) || "").trim().toLowerCase();
+      if (!ans) return;
+      const [to, name = S.variant] = ans.split("/");
+      if (!roles.includes(to)) { status(to === S.role ? idNow() + " is already in " + to + " — Rename changes its name" : to + " is not a gameplay role of the kit", true); return; }
+      if (!/^[a-z][a-z0-9]{0,23}$/.test(name)) { status("A variant is named in lowercase letters and digits", true); return; }
+      if (S.kit.roles[to].variants[name]) { status(to + "/" + name + " already exists — move it as " + to + "/<another name>", true); return; }
+      const from = S.role, was = idNow();
+      if (last && !confirm(was + " is the last variant of " + from + ": moving it deletes the role " + from + ".")) return;
+      moveId(was, to + "/" + name);
+      S.kit.roles[to].variants[name] = x.variants[S.variant];
+      delete x.variants[S.variant];
+      if (last) delete S.kit.roles[from];
+      S.open = to;
+      sel(to + "/" + name);
+      status(was + " moved to " + idNow() + (users.length ? " — " + users.join(", ") + " follow it" : "") + (last ? ", role " + from + " deleted" : "") + " — Save to write it");
     };
     $("v-del").onclick = () => {
-      if (!confirm("Delete " + idNow() + "?")) return;
+      if (!confirm("Delete " + idNow() + "?" + goSilent(users))) return;
+      const was = idNow();
+      moveId(was, EMPTY);
       delete x.variants[S.variant];
       sel(S.role);
+      status(was + " deleted" + (users.length ? " — " + users.join(", ") + " go silent" : "") + " — Save to write it");
     };
   }
   const r3 = (v) => Math.round(v * 1000) / 1000;
@@ -711,9 +826,10 @@ button { font:inherit; color:inherit; }
 
   /* A new name, asked for and checked the way cut-kit.mjs will check it on
      Save — so a typo is said here and not after the cut. */
-  function askName(msg, taken) {
-    const n = (prompt(msg) || "").trim().toLowerCase();
-    if (!n) return null;
+  function askName(msg, taken, was) {
+    const n = (prompt(msg, was || "") || "").trim().toLowerCase();
+    if (!n || n === was) return null;
+    if (n === EMPTY) { status(EMPTY + " is the silent mapping — pick another name", true); return null; }
     if (!/^[a-z][a-z0-9]{0,23}$/.test(n)) { status("A name is lowercase letters and digits, a letter first", true); return null; }
     if (taken(n)) { status(n + " already exists", true); return null; }
     return n;
@@ -751,9 +867,25 @@ button { font:inherit; color:inherit; }
     if (nv) { addVariant(nv.dataset.newVar); return; }
     const fold = e.target.closest("[data-fold]");
     if (fold) { S.open = S.open === fold.dataset.fold ? null : fold.dataset.fold; paintRoles(); return; }
-    const b = e.target.closest(".role");
+    const b = e.target.closest(".role[data-id]");
     if (b) sel(b.dataset.id);
   });
+  /* Hovering a role or a variant in the list plays one shot of it, the way
+     the library plays a file: its takes start decoding on the way in, so the
+     shot is ready when the delay is up. A row repainted under the pointer is
+     the same id and is not heard twice. */
+  let roleHover = null, roleTimer = null;
+  $("role-list").addEventListener("mouseover", (e) => {
+    const row = e.target.closest(".role[data-id]"), id = row ? row.dataset.id : null;
+    if (id === roleHover) return;
+    roleHover = id;
+    clearTimeout(roleTimer);
+    const v = id && variantOf(id);
+    if (!v || !v.takes.length) return;
+    v.takes.forEach((t) => bufOf(t.file).catch(() => {}));
+    roleTimer = setTimeout(() => { stopAll(); shotOf(id); }, 110);
+  });
+  $("role-list").addEventListener("mouseleave", () => { roleHover = null; clearTimeout(roleTimer); });
   function selectTake(i) {
     S.take = i;
     document.querySelectorAll(".take").forEach((n) => n.classList.toggle("on", +n.dataset.i === S.take));
@@ -897,10 +1029,15 @@ button { font:inherit; color:inherit; }
   $("vol").oninput = (e) => { try { localStorage.setItem("kit:vol", e.target.value); } catch (err) {} };
 
   $("revert").onclick = () => {
-    S.kit.roles = JSON.parse(S.saved);
+    S.kit.roles = JSON.parse(S.saved); S.remap = {};
     sel(S.kit.roles[S.role] ? idNow() : Object.keys(S.kit.roles)[0]); status("Reverted");
   };
   $("save").onclick = () => {
+    // A server started before renames and silent deletes existed would refuse them on a played variant.
+    if (Object.keys(S.remap).length && !(S.kit.accepts || []).includes("remap")) {
+      status("This server predates renames and deletes to empty — restart it (pkill -f serve-lab.mjs && make lab), reload, then redo", true);
+      return;
+    }
     // A variant with no take would be refused by the cutter: say which, and open it.
     for (const [role, r] of Object.entries(S.kit.roles)) {
       for (const [name, v] of Object.entries(r.variants)) {
@@ -909,12 +1046,13 @@ button { font:inherit; color:inherit; }
     }
     $("save").disabled = true;
     status("Cutting…");
-    fetch("api/kit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(S.kit) })
+    fetch("api/kit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...S.kit, remap: S.remap }) })
       .then((r) => r.json()).then((out) => {
         if (out.error) { status(out.error, true); paintRoles(); return; }
-        S.kit = out.kit; S.saved = dump(S.kit);
+        S.kit = out.kit; S.saved = dump(S.kit); S.remap = {};
         readChecked();
-        status("Saved — " + out.log.length + " takes cut and levelled, the bench is rebuilding");
+        const moved = (out.remapped || []).map((m) => m.slug + (m.version ? " v" + m.version : "") + ": " + m.keys.join(", "));
+        status("Saved — " + out.log.length + " takes cut and levelled" + (moved.length ? "; " + moved.join(" · ") : "") + " — the bench is rebuilding");
         paint();
       }).catch((e) => { status(String(e), true); paintRoles(); });
   };
@@ -924,6 +1062,8 @@ button { font:inherit; color:inherit; }
     if (e.key === "/") { e.preventDefault(); $("q").focus(); }
   });
   window.addEventListener("resize", () => { if (S.role) paintTakes(); });
+  // Every change here lives in the page until Save: a reload would drop it without a word.
+  window.addEventListener("beforeunload", (e) => { if (S.kit && dirtyIds().length) { e.preventDefault(); e.returnValue = ""; } });
 
   // Who validated each variant on the events bench: read after the kit, since it reads games.
   function readChecked() {

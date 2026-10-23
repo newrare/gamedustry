@@ -1216,7 +1216,7 @@
         width: 6, life: 0.26 });
       Fx.burst(f.x - f.aimX * r, f.y - f.aimY * r, { color: [f.type.rim[0], "#ffffff"],
         count: 8, speed: 300, size: 5, life: 0.3 });
-      Sound.clip("bump", 0.32, 0.62);           // the release, a fifth down
+      Sound.clip("bump", 0.8, 0.62);           // the release, a fifth down
     }
 
     /* YELLOW — a TRIANGLE wave at the player: a straight run zigAngle off the
@@ -1288,7 +1288,7 @@
       if (sy >= 0 && vny > ZAP_MIN) zap(sy, f.x, f.y, clamp(vny / 900, 0.1, 1));
       if (f.type.blastR) { blast(f); return; }
       if (!slam) { clank(f.x, f.y, sp, 0.7); return; }
-      Sound.clip("bump", 0.5, 0.8);
+      Sound.clip("bump", 0.85, 0.8);
       dmg(f, "wall");
     }
 
@@ -1348,7 +1348,7 @@
       Fx.ring(f.x, f.y, { from: f.type.r * 0.6, to: f.type.r * 3.4, color: col,
         width: 6, life: 0.32 });
       Fx.shake(f.type.perfectOnly ? 16 : 6, f.type.perfectOnly ? 0.4 : 0.16);
-      if (f.type.perfectOnly) Sound.clip("crash", 0.8, 0.7);
+      if (f.type.perfectOnly) Sound.clip("crash", 0.5, 0.7);
       else Sound.clip("crash", 0.42, 1.35);
       payKo(f);
       split(f);
@@ -1431,8 +1431,8 @@
         Overlay.vignette("rgba(255,110,40,.85)", 1, 460);
       }
       Sound.clip("crash", 0.95, 0.6);
-      Sound.clip("shock", 0.8, 0.55);
-      Sound.clip("bump", 0.6, 0.45);
+      Sound.clip("shock", 0.8, 1.55);
+      Sound.clip("bump", 0.85, 0.45);
     }
 
     /* A PURPLE does not die quietly: it leaves two of the build below it,
@@ -1474,7 +1474,7 @@
         color: src.type.core, width: 4, life: 0.34 });
       Fx.burst(f.x, f.y, { color: [src.type.core, "#ffffff"], count: 7,
         speed: 220, size: 4, life: 0.4 });
-      Sound.clip("perfect", 0.3, 0.58);         // the chime, low: it is not yours
+      Sound.clip("perfect", 0.6, 0.58);         // the chime, low: it is not yours
     }
 
     function insideArena(f) {
@@ -1679,7 +1679,7 @@
       Fx.shake(6 + tier * 5, 0.2);
       if (tier === 2) Fx.flash("#bff6ff", 0.22, 3.4);
       Sound.clip("shock", 0.75, 1 + tier * 0.12 + Math.min(combo, 12) * 0.02);
-      if (tier === 2) Sound.clip("perfect", 0.55, 1.06);
+      if (tier === 2) Sound.clip("perfect", 0.8, 1.06);
 
       /* The callout is pushed OUT past the edge of the shockwave, on the line
          between the top and what it just blasted: it still reads as belonging to
@@ -1763,7 +1763,7 @@
       pushSpin(-CONFIG.whiffCost);
       waves.push({ x: player.x, y: player.y, t: 0, life: 0.26, tier: -1 });
       Fx.shake(3, 0.12);
-      Sound.clip("miss", 0.45, 1.15);
+      Sound.clip("miss", 1);
       Pop.show("alert", {
         word: "Miss", sub: "-" + Math.round(CONFIG.whiffCost * 100) + Lang.t("% spin"),
         at: farSpot()
@@ -1944,8 +1944,8 @@
         f.vr = (f.vr > 0 ? 1 : -1) * 22;
       }
 
-      Sound.clip("crash", 0.9, 0.58);
-      Sound.clip("shock", 0.7, 0.5);
+      Sound.clip("crash", 1, 0.58);
+      Sound.clip("shock", 0.7, 1.6);
       Overlay.vignette("rgba(255,47,109,.95)", 1, 1500);
       Pop.show("danger", { word: "Wrecked", hold: 900,
         at: farSpot() });
@@ -1962,16 +1962,16 @@
             color: "#ff8a3d", width: 9, life: 0.45 });
           Fx.flash("#ff2f6d", 0.34, 2.2);
           Fx.shake(16, 0.4);
-          Sound.clip("crash", 0.5, 0.9);
+          Sound.clip("crash", 1, 0.9);
         } },
       { at: 0.5, run: function () {
-          Sound.clip("bump", 0.55, 0.72);
+          Sound.clip("bump", 0.9, 0.72);
           Fx.shake(7, 0.24);
         } },
       { at: 0.85, run: function () {
           Fx.burst(player.x, player.y, { color: ["#8f9ab5", "#ff7a96"], count: 14,
             speed: 260, size: 4, life: 1.1, grav: -20 });
-          Sound.clip("bump", 0.4, 1.35);
+          Sound.clip("bump", 0.65, 1.35);
         } },
       { at: 1.25, run: function () {
           // A last flare-up out of the wreck, once the debris has spread.
@@ -1980,7 +1980,7 @@
           Fx.burst(player.x, player.y, { color: ["#ffd43b", "#ff8a3d"], count: 12,
             speed: 340, size: 5, life: 0.9, grav: -30 });
           Fx.shake(9, 0.3);
-          Sound.clip("crash", 0.35, 1.5);
+          Sound.clip("crash", 1);
         } },
       { at: 1.75, run: function () {
           Overlay.vignette("rgba(255,47,109,.55)", 0.6, 900);
@@ -2033,7 +2033,7 @@
       zap(side, s.x, s.y, clamp(sp / 900, 0.15, 0.8));
       Fx.burst(s.x, s.y, { color: ["#ffd43b", "#ffffff"], count: 5, speed: 260,
         size: 4, life: 0.3 });
-      if (bumpT <= 0) { bumpT = 0.08; Sound.clip("bump", 0.3, Rand.range(1.2, 1.7)); }
+      if (bumpT <= 0) { bumpT = 0.08; Sound.clip("bump", 0.8, Rand.range(1.2, 1.7)); }
     }
 
     function finish() {

@@ -20,7 +20,7 @@
       "variants": {
         "default": {
           "takes": [
-            { "file": "ui-open-01", "start": 0, "length": 0.15 }
+            { "file": "ui-open-01", "start": 0, "length": 0.15, "tail": "fade", "tailLength": 0.069 }
           ]
         }
       }
@@ -189,6 +189,21 @@
           "takes": [
             { "file": "tone-high-echo-01", "start": 0, "length": 0.482 }
           ]
+        },
+        "item": {
+          "takes": [
+            { "file": "item-pickup-chime-01", "start": 0, "length": 0.4 }
+          ]
+        },
+        "gem": {
+          "takes": [
+            { "file": "magic-sparkle-02", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.264 }
+          ]
+        },
+        "magnet": {
+          "takes": [
+            { "file": "tone-low-triple-01", "start": 0.464, "length": 0.527, "rate": 1.2 }
+          ]
         }
       }
     },
@@ -196,11 +211,6 @@
       "group": "game",
       "what": "A rare, valuable pickup",
       "variants": {
-        "powerup": {
-          "takes": [
-            { "file": "powerup-04", "start": 0, "length": 0.55 }
-          ]
-        },
         "uiselect": {
           "takes": [
             { "file": "ui-select-06", "start": 0, "length": 0.43 }
@@ -213,16 +223,6 @@
             { "file": "hiss-steam-05", "start": 0, "length": 0.814 }
           ]
         },
-        "coinshandle": {
-          "takes": [
-            { "file": "coins-handle-02", "start": 0, "length": 0.338 }
-          ]
-        },
-        "powerup06": {
-          "takes": [
-            { "file": "powerup-06", "start": 0, "length": 0.441 }
-          ]
-        },
         "harpsuccess": {
           "takes": [
             { "file": "harp-success-01", "start": 0, "length": 1.62 }
@@ -231,11 +231,6 @@
         "harprollup": {
           "takes": [
             { "file": "harp-roll-up-01", "start": 0, "length": 1.62 }
-          ]
-        },
-        "jinglehit15": {
-          "takes": [
-            { "file": "jingle-hit-15", "start": 0, "length": 0.417 }
           ]
         },
         "whistlerise": {
@@ -252,11 +247,6 @@
           "takes": [
             { "file": "harp-run-up-01", "start": 0, "length": 1.19, "tail": "fade", "tailLength": 0.73 }
           ]
-        },
-        "coinstight": {
-          "takes": [
-            { "file": "coins-handle-02", "start": 0.045, "length": 0.29 }
-          ]
         }
       }
     },
@@ -264,11 +254,6 @@
       "group": "game",
       "what": "A combo, a streak or a climb crosses a step",
       "variants": {
-        "tone": {
-          "takes": [
-            { "file": "tone-triple-01", "start": 0, "length": 0.5 }
-          ]
-        },
         "uiscrolllong": {
           "takes": [
             { "file": "bell-arpeggio-01", "start": 0, "length": 1.82 }
@@ -279,9 +264,9 @@
             { "file": "harp-run-up-01", "start": 0, "length": 1.4 }
           ]
         },
-        "harprunupshort": {
+        "harpshort": {
           "takes": [
-            { "file": "harp-run-up-01", "start": 0, "length": 0.75 }
+            { "file": "harp-run-up-01", "start": 0.327, "length": 0.739 }
           ]
         },
         "uiscroll": {
@@ -299,19 +284,14 @@
             { "file": "harp-run-up-01", "start": 0, "length": 1.11 }
           ]
         },
-        "glocktwotone": {
-          "takes": [
-            { "file": "glock-two-tone-01", "start": 0, "length": 0.36 }
-          ]
-        },
-        "jinglehit": {
-          "takes": [
-            { "file": "jingle-hit-12", "start": 0, "length": 0.72 }
-          ]
-        },
         "glockglissandoup": {
           "takes": [
             { "file": "plastic-handle-03", "start": 0, "length": 1.06, "tail": "fade", "tailLength": 0.473 }
+          ]
+        },
+        "short": {
+          "takes": [
+            { "file": "ui-echo-01", "start": 0, "length": 0.65 }
           ]
         }
       }
@@ -330,11 +310,6 @@
             { "file": "ui-close-01", "start": 0, "length": 0.148 }
           ]
         },
-        "powerup04": {
-          "takes": [
-            { "file": "powerup-04", "start": 0, "length": 0.546 }
-          ]
-        },
         "loopthruster": {
           "takes": [
             { "file": "loop-thruster-02", "start": 0, "length": 0.61 }
@@ -343,26 +318,6 @@
         "forcefield02": {
           "takes": [
             { "file": "forcefield-02", "start": 0, "length": 0.72 }
-          ]
-        },
-        "powerup": {
-          "takes": [
-            { "file": "powerup-01", "start": 0, "length": 0.72 }
-          ]
-        },
-        "whistlerise": {
-          "takes": [
-            { "file": "whistle-rise-01", "start": 0, "length": 0.36 }
-          ]
-        },
-        "impactglasslight": {
-          "takes": [
-            { "file": "impact-glass-light-01", "start": 0, "length": 0.21 }
-          ]
-        },
-        "powerup05": {
-          "takes": [
-            { "file": "powerup-05", "start": 0, "length": 0.43 }
           ]
         },
         "vibearpeggio": {
@@ -378,6 +333,11 @@
         "fireignite": {
           "takes": [
             { "file": "fire-ignite-01", "start": 0, "length": 0.28, "tail": "fade", "tailLength": 0.112 }
+          ]
+        },
+        "slow": {
+          "takes": [
+            { "file": "tone-low-random-01", "start": 0, "length": 0.55 }
           ]
         }
       }
@@ -404,16 +364,6 @@
         "uiminimize": {
           "takes": [
             { "file": "ui-minimize-03", "start": 0, "length": 0.21 }
-          ]
-        },
-        "errorui": {
-          "takes": [
-            { "file": "error-ui-03", "start": 0, "length": 0.46 }
-          ]
-        },
-        "chipcollide": {
-          "takes": [
-            { "file": "chip-collide-01", "start": 0, "length": 0.256 }
           ]
         }
       }
@@ -452,26 +402,6 @@
             { "file": "slime-02", "start": 0, "length": 1.11 }
           ]
         },
-        "impactmetalheavy": {
-          "takes": [
-            { "file": "impact-metal-heavy-02", "start": 0, "length": 0.356 }
-          ]
-        },
-        "marimbaerror": {
-          "takes": [
-            { "file": "marimba-error-01", "start": 0, "length": 0.9 }
-          ]
-        },
-        "dicethrowsingle": {
-          "takes": [
-            { "file": "dice-throw-single-04", "start": 0, "length": 0.471 }
-          ]
-        },
-        "impactwoodheavy": {
-          "takes": [
-            { "file": "impact-wood-heavy-03", "start": 0, "length": 0.31 }
-          ]
-        },
         "electrichit": {
           "takes": [
             { "file": "rattle-snake-01", "start": 0, "length": 1.007, "tail": "fade", "tailLength": 0.813 }
@@ -499,6 +429,11 @@
             { "file": "whoosh-swish-07", "start": 0, "length": 0.19 },
             { "file": "whoosh-swish-10", "start": 0, "length": 0.12 }
           ]
+        },
+        "teleport": {
+          "takes": [
+            { "file": "door-scifi-open-03", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.203 }
+          ]
         }
       }
     },
@@ -521,59 +456,6 @@
         "metalclanklong": {
           "takes": [
             { "file": "firework-burst-06", "start": 0, "length": 0.57 }
-          ]
-        },
-        "laserlarge": {
-          "takes": [
-            { "file": "laser-large-01", "start": 0, "length": 0.46 }
-          ]
-        },
-        "chiphandle": {
-          "takes": [
-            { "file": "chip-handle-04", "start": 0, "length": 0.356 }
-          ]
-        }
-      }
-    },
-    "hit": {
-      "group": "game",
-      "what": "A contact that scores: a brick, a peg, a target struck, pitched up the chain",
-      "variants": {
-        "itemmisc": {
-          "takes": [
-            { "file": "item-misc-02", "start": 0, "length": 0.28 }
-          ]
-        },
-        "marimbaplink": {
-          "takes": [
-            { "file": "impact-wood-light-01", "start": 0, "length": 0.08 },
-            { "file": "impact-wood-light-02", "start": 0, "length": 0.08 },
-            { "file": "impact-wood-light-03", "start": 0, "length": 0.08 }
-          ]
-        },
-        "impactmetallight": {
-          "takes": [
-            { "file": "impact-metal-light-05", "start": 0, "length": 0.18 }
-          ]
-        },
-        "phaserdown": {
-          "takes": [
-            { "file": "phaser-down-02", "start": 0, "length": 0.311 }
-          ]
-        },
-        "impactslam": {
-          "takes": [
-            { "file": "impact-slam-04", "start": 0, "length": 0.302 }
-          ]
-        },
-        "impactmetalmedium": {
-          "takes": [
-            { "file": "impact-metal-medium-04", "start": 0, "length": 0.25 }
-          ]
-        },
-        "electricground": {
-          "takes": [
-            { "file": "electric-ground-hit-01", "start": 0, "length": 0.24 }
           ]
         }
       }
@@ -612,34 +494,50 @@
             { "file": "impact-metal-scifi-04", "start": 0, "length": 0.36 }
           ]
         },
-        "impactplateheavy": {
-          "takes": [
-            { "file": "impact-plate-heavy-02", "start": 0, "length": 0.32 }
-          ]
-        },
-        "marimbaplink": {
-          "takes": [
-            { "file": "marimba-plink-01", "start": 0, "length": 0.43 }
-          ]
-        },
-        "itemmisc": {
-          "takes": [
-            { "file": "item-misc-02", "start": 0, "length": 0.32 }
-          ]
-        },
         "dicethrowsinglelong": {
           "takes": [
             { "file": "dice-throw-single-04", "start": 0, "length": 0.471 }
           ]
         },
-        "dicetick": {
+        "itemmisc": {
           "takes": [
-            { "file": "dice-throw-single-04", "start": 0.115, "length": 0.205 }
+            { "file": "item-misc-02", "start": 0, "length": 0.28 }
           ]
         },
-        "springboing": {
+        "marimbaplink": {
           "takes": [
-            { "file": "spring-boing-03", "start": 0, "length": 0.34, "tail": "fade", "tailLength": 0.136 }
+            { "file": "impact-wood-light-01", "start": 0, "length": 0.08 },
+            { "file": "impact-wood-light-02", "start": 0, "length": 0.08 },
+            { "file": "impact-wood-light-03", "start": 0, "length": 0.08 }
+          ]
+        },
+        "impactmetallight": {
+          "takes": [
+            { "file": "impact-metal-light-05", "start": 0, "length": 0.18 }
+          ]
+        },
+        "rock": {
+          "takes": [
+            { "file": "impact-plank-medium-02", "start": 0, "length": 0.4 },
+            { "file": "impact-plank-medium-02", "start": 0, "length": 0.4, "rate": 1.2 },
+            { "file": "impact-plank-medium-02", "start": 0, "length": 0.4, "rate": 0.8 }
+          ]
+        },
+        "ball": {
+          "takes": [
+            { "file": "ball-tennis-bounce-01", "start": 0, "length": 0.4 },
+            { "file": "ball-tennis-bounce-01", "start": 0, "length": 0.4, "rate": 0.9, "tail": "fade", "tailLength": 0.16 },
+            { "file": "ball-tennis-bounce-01", "start": 0, "length": 0.4, "rate": 1.2, "tail": "drop", "tailLength": 0.16 }
+          ]
+        },
+        "impactball": {
+          "takes": [
+            { "file": "pop-bubble-03", "start": 0.003, "length": 0.079 }
+          ]
+        },
+        "shot": {
+          "takes": [
+            { "file": "cannon-shot-05", "start": 0, "length": 0.427 }
           ]
         }
       }
@@ -671,16 +569,6 @@
             { "file": "explosion-crunch-01", "start": 0, "length": 0.61 }
           ]
         },
-        "impactglassheavy": {
-          "takes": [
-            { "file": "impact-glass-heavy-02", "start": 0, "length": 0.429 }
-          ]
-        },
-        "popplop02": {
-          "takes": [
-            { "file": "pop-plop-02", "start": 0, "length": 0.21 }
-          ]
-        },
         "hitthud": {
           "takes": [
             { "file": "hit-thud-03", "start": 0, "length": 0.39 }
@@ -694,6 +582,18 @@
         "explosion": {
           "takes": [
             { "file": "explosion-crunch-05", "start": 0, "length": 0.961, "tail": "fade", "tailLength": 0.454 }
+          ]
+        },
+        "electric": {
+          "takes": [
+            { "file": "electric-teleport-01", "start": 0, "length": 0.48 }
+          ]
+        },
+        "destroy": {
+          "takes": [
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.378, "tail": "drop", "tailLength": 0.203 },
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.434, "tail": "fade", "tailLength": 0.124 },
+            { "file": "explosion-crunch-01", "start": 0, "length": 0.322, "tail": "drop", "tailLength": 0.16 }
           ]
         }
       }
@@ -722,24 +622,9 @@
             { "file": "coins-handle-02", "start": 0, "length": 0.338 }
           ]
         },
-        "phaserjump": {
-          "takes": [
-            { "file": "phaser-jump-02", "start": 0, "length": 0.389 }
-          ]
-        },
         "clickswitch": {
           "takes": [
             { "file": "click-switch-03", "start": 0, "length": 0.18 }
-          ]
-        },
-        "metallatchtight": {
-          "takes": [
-            { "file": "metal-latch-01", "start": 0.03, "length": 0.15 }
-          ]
-        },
-        "phaserjumptight": {
-          "takes": [
-            { "file": "phaser-jump-02", "start": 0.06, "length": 0.3 }
           ]
         }
       }
@@ -758,11 +643,6 @@
             { "file": "card-place-03", "start": 0.33, "length": 0.3 }
           ]
         },
-        "uiselect": {
-          "takes": [
-            { "file": "ui-select-06", "start": 0, "length": 0.43 }
-          ]
-        },
         "uirollover": {
           "takes": [
             { "file": "ui-rollover-06", "start": 0, "length": 0.172 }
@@ -771,11 +651,6 @@
         "cardfan": {
           "takes": [
             { "file": "card-fan-01", "start": 0, "length": 0.25 }
-          ]
-        },
-        "chipstack": {
-          "takes": [
-            { "file": "chip-stack-02", "start": 0, "length": 0.17 }
           ]
         },
         "bookflip": {
@@ -804,14 +679,21 @@
             { "file": "laser-large-02", "start": 0, "length": 0.72 }
           ]
         },
-        "uirollover": {
+        "jinglehit": {
           "takes": [
-            { "file": "ui-rollover-06", "start": 0, "length": 0.172 }
+            { "file": "electric-power-down-01", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.153 }
           ]
         },
-        "marimbaerror02": {
+        "electrichit": {
           "takes": [
-            { "file": "marimba-error-02", "start": 0, "length": 0.72 }
+            { "file": "impact-generic-light-02", "start": 0, "length": 0.051 },
+            { "file": "impact-generic-light-04", "start": 0, "length": 0.06 },
+            { "file": "impact-generic-light-05", "start": 0, "length": 0.061 }
+          ]
+        },
+        "void": {
+          "takes": [
+            { "file": "forcefield-02", "start": 0, "length": 0.259 }
           ]
         }
       }
@@ -830,17 +712,7 @@
             { "file": "ui-menu-04", "start": 0, "length": 0.82 }
           ]
         },
-        "marimbaerror": {
-          "takes": [
-            { "file": "marimba-error-03", "start": 0, "length": 0.57 }
-          ]
-        },
         "errorui": {
-          "takes": [
-            { "file": "explosion-boom-01", "start": 0.101, "length": 0.17 }
-          ]
-        },
-        "dark": {
           "takes": [
             { "file": "explosion-boom-01", "start": 0.101, "length": 0.17 }
           ]
@@ -888,11 +760,6 @@
             { "file": "step-snow-03", "start": 0, "length": 0.36 }
           ]
         },
-        "explosioncrunch": {
-          "takes": [
-            { "file": "explosion-crunch-01", "start": 0, "length": 0.57 }
-          ]
-        },
         "explosionlow": {
           "takes": [
             { "file": "explosion-low-02", "start": 0, "length": 0.72 }
@@ -923,6 +790,11 @@
           "takes": [
             { "file": "whoosh-air-01", "start": 0.056, "length": 0.4, "tail": "fade", "tailLength": 0.16 }
           ]
+        },
+        "winter": {
+          "takes": [
+            { "file": "amb-wind-06", "start": 1.623, "length": 1.81, "tail": "fade", "tailLength": 0.971 }
+          ]
         }
       }
     },
@@ -945,64 +817,10 @@
             { "file": "jingle-pizzicato-05", "start": 0, "length": 0.564 }
           ]
         },
-        "impactbellheavy": {
+        "asia": {
           "takes": [
-            { "file": "impact-bell-heavy-03", "start": 0, "length": 0.57 }
-          ]
-        },
-        "jinglesteel": {
-          "takes": [
-            { "file": "jingle-steel-01", "start": 0, "length": 0.9 }
-          ]
-        }
-      }
-    },
-    "defeat": {
-      "group": "game",
-      "what": "The round is lost: out of pulses, the army spent, the fatal bite",
-      "variants": {
-        "jinglehit": {
-          "takes": [
-            { "file": "electric-power-down-01", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.153 }
-          ]
-        },
-        "metalpot": {
-          "takes": [
-            { "file": "metal-pot-01", "start": 0, "length": 0.9 }
-          ]
-        },
-        "electrichit": {
-          "takes": [
-            { "file": "impact-generic-light-02", "start": 0, "length": 0.051 },
-            { "file": "impact-generic-light-04", "start": 0, "length": 0.06 },
-            { "file": "impact-generic-light-05", "start": 0, "length": 0.061 }
-          ]
-        },
-        "electricpowerdown": {
-          "takes": [
-            { "file": "jingle-steel-08", "start": 0, "length": 1.207, "tail": "fade", "tailLength": 0.981 }
-          ]
-        }
-      }
-    },
-    "select": {
-      "group": "game",
-      "what": "The player picks something on the table: a hero, a target, a step of the way",
-      "variants": {
-        "click": {
-          "takes": [
-            { "file": "click-03", "start": 0.019, "length": 0.031, "tail": "fade", "tailLength": 0.022 }
-          ]
-        }
-      }
-    },
-    "refuse": {
-      "group": "game",
-      "what": "An action the game refuses: not enough gold, not enough SP, the last hero kept",
-      "variants": {
-        "errorui": {
-          "takes": [
-            { "file": "error-ui-04", "start": 0, "length": 0.1 }
+            { "file": "powerup-rise-07", "start": 0, "length": 0.986, "tail": "fade", "tailLength": 0.457 },
+            { "file": "powerup-rise-07", "start": 0.122, "length": 0.864, "tail": "fade", "tailLength": 0.343 }
           ]
         }
       }
@@ -1027,23 +845,6 @@
           "takes": [
             { "file": "creature-monster-03", "start": 0.195, "length": 0.553 },
             { "file": "creature-monster-04", "start": 0.142, "length": 0.4 }
-          ]
-        }
-      }
-    },
-    "ice": {
-      "group": "game",
-      "what": "Freeze and ice",
-      "variants": {
-        "default": {
-          "takes": [
-            { "file": "vibe-sting-01", "start": 0, "length": 1.495 },
-            { "file": "vibe-sting-02", "start": 0, "length": 1.486, "rate": 0.9, "tail": "fade", "tailLength": 0.991 }
-          ]
-        },
-        "wind": {
-          "takes": [
-            { "file": "amb-wind-06", "start": 1.623, "length": 1.81, "tail": "fade", "tailLength": 0.971 }
           ]
         }
       }

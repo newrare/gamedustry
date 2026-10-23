@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers paper HUD</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS PAPER HUD — round 2: TAPED AND FOLDED. What the round writes over
+   its paper map (the card of the region in hand and its actions, the order
+   ring a drag opens, Send with the tick draining, the resources, the tags an
+   army, a production, a shield and a verdict need), drawn as paper that was
+   cut by hand, folded and taped onto the map.
+
+   Round 1 had eight flat looks; two were kept: the TAPE of the scrapbook and
+   the FACETS of the origami. Here nothing is straight: every plate is tilted
+   a little, its corners are off-square, its edges are cut by hand, a fold
+   crosses it and BREAKS ITS OUTLINE where it meets the edge (a mountain fold
+   pushes the edge out, a valley pulls it in), a corner may be dog-eared and
+   show the back of the paper, and strips of tape hold it on the map.
+
+   Every plate is an SVG generated from a seed, so a look is a set of knobs
+   rather than a CSS block: tilt, edge roughness, the fold (one crease,
+   accordion, folded in four, crumpled), its depth and how much it kinks the
+   edge, the dog-ear, the tape, the paper, the grain and the shadow. The
+   presets are starting points; the panel moves any knob live.
+
+   The backdrop is a frame of stage 1 shot bare (`?hud=0`) by
+   tools/lab/shoot-foldiers.mjs into lab/foldiers-hud/map.jpg. The motor's own
+   HUD (tick, score, bell, star pill, corner controls) is mocked in grey: it
+   is the shell's, never restyled by a game, and is here only for the room it
+   takes. Every word sits on the house floors (20 bold, 22 regular; 18 for
+   capitals and figures).
+
+   Nothing here ships by itself: the generator below (`sheet`, `facets`,
+   `tapeStrip`) is ported polygon for polygon as THE PAPER of
+   games/foldiers/game.js, and the look picked ("D · Crumpled", edited) is
+   its `LOOK` object. Copy settings is the knobs as JSON: a retune is that
+   JSON pasted over `LOOK`.
+   =========================================================================== */
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 300px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; width:auto; margin:0; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.styles { display:flex; flex-direction:column; gap:4px; }
+.styles button { text-align:left; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px;
+  font:600 12px/1.35 inherit; cursor:pointer; }
+.styles button b { display:block; color:#e8e6f5; font-size:13px; }
+.styles button span { color:#8b8ba7; font-weight:500; }
+.styles button.on { border-color:#7ea6ff; background:#20263d; }
+.styles button.dirty b::after { content:" · edited"; color:#e0b050; font-weight:600; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+
+#stage { flex:1; height:100vh; overflow:auto; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; gap:22px; padding:22px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.cell .name { font-size:13px; color:#c9c9e0; }
+.holder { position:relative; overflow:hidden; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); cursor:pointer; }
+.holder.on { outline:3px solid #7ea6ff; outline-offset:3px; }
+
+/* ---------------------------------------------------------------------------
+   THE FRAME — 720x1280 design px, scaled by its holder. Positions are the
+   game's: the tags at the regions' anchors, Send at the foot, the card over it.
+   --------------------------------------------------------------------------- */
+.fr { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; overflow:hidden;
+  font-family:"Baloo 2", system-ui, sans-serif; color:#2a2418; }
+.fr .bg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.fr .abs { position:absolute; }
+.fr .c { transform:translate(-50%,-50%); }
+
+/* the motor's HUD, mocked: not a game's to restyle */
+.mock { position:absolute; background:rgba(16,30,40,.62); border:2px solid rgba(255,255,255,.12); border-radius:18px; color:rgba(255,255,255,.75);
+  font:800 22px/1 "Baloo 2", system-ui; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+.mock small { font-size:18px; letter-spacing:2px; opacity:.7; }
+.mock.round { border-radius:50%; }
+
+/* every paper piece: its SVG sheet behind, its tape in front, a tilt */
+.pp { position:relative; isolation:isolate; rotate:var(--rot, 0deg); }
+.pp > svg.pp-back, .pp > svg.pp-front { position:absolute; pointer-events:none; overflow:visible; }
+.pp > svg.pp-back { z-index:-1; }
+.pp > svg.pp-front { z-index:2; }
+.abs.pp, .card.pp, .send.pp, .bub.pp, .rtitle.pp { position:absolute; }
+
+/* the markup the generator dresses: sizes and words only, no paint */
+.res { position:absolute; left:30px; top:160px; display:flex; flex-wrap:wrap; gap:14px 16px; max-width:460px; }
+.chip { display:inline-block; font:700 20px/1 "Baloo 2", system-ui; padding:9px 15px 7px; white-space:nowrap; color:#fff; }
+.tag { font:800 22px/1 "Baloo 2", system-ui; min-width:38px; text-align:center; padding:6px 10px 4px; }
+.tag.b, .tag.r { color:#fff; }
+.prod { font:800 20px/1 "Baloo 2", system-ui; padding:6px 10px 4px; color:#3d2c00; }
+.shield { width:32px; height:38px; display:flex; align-items:center; justify-content:center; font:800 18px/1 "Baloo 2"; color:#fff; }
+.verdict { display:inline-block; font:700 20px/1 "Baloo 2", system-ui; padding:8px 22px 6px 14px; white-space:nowrap; color:#fff; }
+.card { position:absolute; left:30px; right:30px; padding:22px 22px 20px; }
+.card .ttl { display:flex; align-items:center; gap:14px; margin-bottom:6px; }
+.card .ttl h2 { font:800 30px/1 "Baloo 2", system-ui; }
+.card .own { display:inline-block; font:700 20px/1 "Baloo 2", system-ui; padding:6px 14px 4px; color:#fff; }
+.card p { font:500 22px/1.3 "Baloo 2", system-ui; color:#3a3326; }
+.card .acts { display:flex; flex-wrap:wrap; gap:12px 12px; margin-top:14px; }
+.act { display:inline-block; font:700 20px/1 "Baloo 2", system-ui; padding:14px 18px 12px; color:#fff; white-space:nowrap; }
+.act.off { color:#fbf7ec; }
+.send { position:absolute; left:206px; top:1100px; width:308px; height:84px; display:flex; align-items:center; gap:12px; padding:0 18px 0 16px; }
+.send .clock { position:relative; width:64px; height:64px; flex:0 0 64px; }
+.send .clock svg { position:absolute; inset:0; }
+.send .clock img { position:absolute; left:10px; top:12px; width:44px; }
+.send .txt b { display:block; font:800 24px/1 "Baloo 2", system-ui; color:#1d3f8a; white-space:nowrap; letter-spacing:-.3px; }
+.send .txt span { display:block; font:500 22px/1.1 "Baloo 2", system-ui; color:#2a2418; margin-top:2px; }
+.bub { position:absolute; width:132px; height:132px; transform:translate(-50%,-50%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.bub b { font:800 36px/1 "Baloo 2", system-ui; }
+.bub span { font:700 20px/1.05 "Baloo 2", system-ui; color:#4a4030; max-width:104px; }
+.bub.pick { transform:translate(-50%,-50%) scale(1.14); }
+.rtitle { position:absolute; transform:translateX(-50%); padding:14px 24px 12px; text-align:center; }
+.rtitle b { display:block; font:800 22px/1.1 "Baloo 2", system-ui; }
+.rtitle .verdict { margin-top:8px; }
+.finger { position:absolute; width:60px; height:60px; border-radius:50%; border:3px dashed rgba(255,250,235,.85); transform:translate(-50%,-50%); }
+.kraft .card p { color:#2e2210; }
+.kraft .bub span { color:#3a2a12; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Foldiers HUD</h1>
+  <p class="hint">Round 2: the round's table cut by hand, folded and taped onto the map. Nothing is straight.</p>
+  <div class="row"><label>View</label><div class="seg" id="view"></div></div>
+  <div class="row"><label>Moment</label><div class="seg" id="moment"></div></div>
+  <div class="row"><label>Language</label><div class="seg" id="lang"></div></div>
+  <h3>Preset</h3>
+  <div class="styles" id="presets"></div>
+  <h3>Knobs</h3>
+  <div id="knobs"></div>
+  <div class="btns"><button id="shuffle">Reshuffle</button><button id="reset">Reset preset</button></div>
+  <div class="btns"><button id="copy" class="main">Copy settings</button></div>
+</div>
+
+<div id="stage"></div>
+
+<script>
+/* The page's own code: one markup, a paper generator, a panel of knobs. */
+(function () {
+  "use strict";
+
+  // ---- the presets: starting points, every one a set of knobs --------------
+  const BASE = { tilt: 2, rough: 3, fold: "diag", depth: 0.7, kink: 3, ear: 20, tape: "masking", tapeSmall: true, paper: "cream", grain: 0.4, shadow: 0.5, seed: 7 };
+  const PRESETS = [
+    { key: "taped",     name: "A · Taped crease",  note: "one crease across, masking tape on the corners",
+      k: {} },
+    { key: "accordion", name: "B · Accordion",     note: "pleated plates, the edges zig-zag, blue washi",
+      k: { tilt: 1.5, rough: 2, fold: "accordion", depth: 0.85, kink: 4, ear: 0, tape: "washi-blue", tapeSmall: false, paper: "white", grain: 0.3, seed: 3 } },
+    { key: "dogear",    name: "C · Dog-eared",     note: "big folded corners showing the back, clear tape",
+      k: { tilt: 3, rough: 3, fold: "diag", depth: 0.45, kink: 2, ear: 36, tape: "clear", seed: 11 } },
+    { key: "crumpled",  name: "D · Crumpled",      note: "creased all over, rough cut edges",
+      k: { tilt: 2.5, rough: 5, fold: "crumple", depth: 0.8, kink: 0, ear: 14, tape: "masking", grain: 0.5, seed: 19 } },
+    { key: "quarters",  name: "E · Folded in four", note: "a letter folded twice, yellow washi",
+      k: { tilt: 1, rough: 2, fold: "cross", depth: 0.8, kink: 3, ear: 0, tape: "washi-yellow", tapeSmall: false, seed: 5 } },
+    { key: "kraft",     name: "F · Kraft pleats",  note: "packing paper, accordion, masking tape",
+      k: { tilt: 2.5, rough: 4, fold: "accordion", depth: 0.7, kink: 5, ear: 18, tape: "masking", paper: "kraft", grain: 0.6, shadow: 0.6, seed: 23 } }
+  ].map((p) => (p.k = Object.assign({}, BASE, p.k), p));
+
+  const KNOBS = [
+    { key: "tilt",   label: "Tilt (max °)",        min: 0, max: 6,  step: 0.5 },
+    { key: "rough",  label: "Hand-cut edges (px)", min: 0, max: 8,  step: 0.5 },
+    { key: "fold",   label: "Fold", seg: [["none", "None"], ["diag", "Crease"], ["accordion", "Accordion"], ["cross", "In four"], ["crumple", "Crumple"]] },
+    { key: "depth",  label: "Fold depth",          min: 0, max: 1,  step: 0.05 },
+    { key: "kink",   label: "Fold breaks the edge (px)", min: 0, max: 8, step: 0.5 },
+    { key: "ear",    label: "Dog-ear (px)",        min: 0, max: 40, step: 2 },
+    { key: "tape",   label: "Tape", seg: [["none", "None"], ["masking", "Masking"], ["clear", "Clear"], ["washi-blue", "Blue"], ["washi-yellow", "Yellow"], ["washi-pink", "Pink"], ["washi-green", "Green"]] },
+    { key: "tapeSmall", label: "Tape on small pieces", seg: [[true, "Yes"], [false, "No"]] },
+    { key: "paper",  label: "Paper", seg: [["cream", "Cream"], ["white", "White"], ["kraft", "Kraft"]] },
+    { key: "grain",  label: "Grain",               min: 0, max: 1,  step: 0.05 },
+    { key: "shadow", label: "Shadow",              min: 0, max: 1,  step: 0.05 }
+  ];
+
+  const PAPER = {
+    cream: { fill: "#f6ecd2", back: "#e3d2a6", edge: "rgba(110,85,40,.28)" },
+    white: { fill: "#fcfaf3", back: "#e6e0cf", edge: "rgba(90,80,60,.22)" },
+    kraft: { fill: "#cfab73", back: "#b38d55", edge: "rgba(70,45,10,.35)" }
+  };
+  const INK = { blue: "#2f63c4", blueBack: "#dfe8f8", red: "#d9412f", redBack: "#f6dfd8", grey: "#b3ab9b", greyBack: "#ece6d8",
+    gold: "#f1cf61", goldBack: "#fbefc4", ok: "#2f8f4e", okBack: "#d8eedd", risk: "#d08a12", riskBack: "#f8e8c8", bad: "#c8402f", badBack: "#f6dcd6",
+    neu: "#b9a77d", amber: "#a87a10", grain: "#8a6a2a", green: "#5a8a3a" };
+  const TAPE = {
+    masking: { a: "rgba(236,220,172,.9)", b: "rgba(226,208,156,.9)", w: 0 },
+    clear: { a: "rgba(255,255,255,.32)", b: "rgba(255,255,255,.22)", w: 0, gloss: true },
+    "washi-blue": { a: "rgba(110,165,220,.82)", b: "rgba(165,205,240,.82)", w: 8 },
+    "washi-yellow": { a: "rgba(240,196,80,.84)", b: "rgba(250,224,140,.84)", w: 8 },
+    "washi-pink": { a: "rgba(236,130,150,.82)", b: "rgba(248,186,196,.82)", w: 8 },
+    "washi-green": { a: "rgba(120,180,120,.82)", b: "rgba(180,220,170,.82)", w: 8 }
+  };
+  const MOMENTS = [["card", "Region in hand"], ["ring", "Order ring"], ["march", "Marching"], ["idle", "Nothing in hand"]];
+
+  const T = {
+    en: { you: "You", troops: "5 troops · capital, +2 a tick", holds: "Holds even if every enemy next door strikes",
+          recruit: "Recruit +3 (3 gold)", cav: "Cavalry +2 (4 gold)", fire: "Fire the cannon", spy: "Spy (2 gold)",
+          send: "Send orders", drawn: "1 order drawn", march: "Marching", gold: "Gold 5 (+1)", grain: "Grain 8", season: "Summer: winter in 4",
+          risky: "Risky, 2 left", all: "All", half: "Half", tick: "Tick", bell: "Bell" },
+    fr: { you: "Toi", troops: "5 troupes · capitale, +2 par tick", holds: "Tient même si tous les ennemis voisins frappent",
+          recruit: "Recruter +3 (3 or)", cav: "Cavalerie +2 (4 or)", fire: "Tirer au canon", spy: "Espion (2 or)",
+          send: "Envoyer les ordres", drawn: "1 ordre tracé", march: "En marche", gold: "Or 5 (+1)", grain: "Blé 8", season: "Eté : hiver dans 4",
+          risky: "Risqué, reste 2", all: "Toutes", half: "La moitié", tick: "Tick", bell: "Cloche" }
+  };
+
+  // the motor's capitals: accents off, a unit glued to a number left alone (lab/button.html)
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY", PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+      var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+      if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+      return run.toUpperCase();
+    });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k >= 0 ? TO.charAt(k) : c;
+    }
+    return out;
+  }
+
+  // ---- state -------------------------------------------------------------------
+  const S = { view: "one", moment: "card", lang: "en", preset: "taped", k: null };
+  try { Object.assign(S, JSON.parse(localStorage.getItem("foldiers-hud2") || "{}")); } catch (e) { /* defaults */ }
+  // #view=all&moment=ring&lang=fr&preset=kraft opens a state without the panel's clicks
+  location.hash.slice(1).split("&").forEach((kv) => {
+    const q = kv.split("=");
+    if (q[1] && q[0] in S && q[0] !== "k") { S[q[0]] = decodeURIComponent(q[1]); if (q[0] === "preset") S.k = null; }
+  });
+  const presetOf = (key) => PRESETS.find((p) => p.key === key) || PRESETS[0];
+  if (!S.k) S.k = Object.assign({}, presetOf(S.preset).k);
+  S.k = Object.assign({}, BASE, S.k);
+  function save() { try { localStorage.setItem("foldiers-hud2", JSON.stringify(S)); } catch (e) { /* private window */ } }
+
+  // ---- geometry ------------------------------------------------------------------
+  function rng(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619); return h >>> 0; }
+  const lerp = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+  const pts = (list) => list.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const len = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+
+  // keep the side of line A->B where cross >= 0 (sign = 1) or <= 0 (sign = -1)
+  function clipHalf(poly, A, B, sign) {
+    const side = (p) => sign * ((B[0] - A[0]) * (p[1] - A[1]) - (B[1] - A[1]) * (p[0] - A[0]));
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i], q = poly[(i + 1) % poly.length], sp = side(p), sq = side(q);
+      if (sp >= 0) out.push(p);
+      if ((sp >= 0) !== (sq >= 0)) out.push(lerp(p, q, sp / (sp - sq)));
+    }
+    return out;
+  }
+
+  /* A sheet: four off-square corners, hand-cut edges, the creases of its fold
+     (whose ends kink the edge out for a mountain, in for a valley), an
+     optional dog-ear and an optional V notch (a ribbon's end). Returns the
+     outline, the creases and the flap, all in the element's own px. */
+  function sheet(w, h, o, r) {
+    const J = o.rough, jit = () => (r() * 2 - 1) * J;
+    const P = [[jit(), jit()], [w + jit(), jit()], [w + jit(), h + jit()], [jit(), h + jit()]];
+    const kinks = [[], [], [], []];   // per edge: { t, off, id }
+    const creases = [];
+    // edge e runs P[e] -> P[e+1]; f is the fraction read left->right / top->bottom
+    const tOf = (e, f) => (e === 2 || e === 3 ? 1 - f : f);
+    function crease(e1, f1, e2, f2, mountain) {
+      const id = creases.length, off = (mountain ? 1 : -1) * o.kink * (0.6 + r() * 0.6);
+      kinks[e1].push({ t: tOf(e1, f1), off, id, end: 0 });
+      kinks[e2].push({ t: tOf(e2, f2), off, id, end: 1 });
+      creases.push({ a: null, b: null, mountain });
+    }
+    const fold = o.fold;
+    if (fold === "diag") {
+      if (w >= h * 1.3) crease(0, 0.52 + r() * 0.2, 2, 0.34 + r() * 0.2, true);
+      else crease(3, 0.3 + r() * 0.2, 1, 0.5 + r() * 0.2, true);
+    } else if (fold === "tent") {
+      crease(3, 0.46 + r() * 0.1, 1, 0.46 + r() * 0.1, true);
+    } else if (fold === "accordion") {
+      const n = Math.max(1, Math.min(6, Math.round(w / 110)));
+      for (let i = 1; i <= n; i++) {
+        const f = i / (n + 1) + (r() - 0.5) * 0.06, slant = (r() - 0.5) * 0.06;
+        crease(0, f + slant, 2, f - slant, i % 2 === 1);
+      }
+    } else if (fold === "cross") {
+      crease(0, 0.46 + r() * 0.08, 2, 0.46 + r() * 0.08, true);
+      if (h > 50) crease(3, 0.44 + r() * 0.12, 1, 0.44 + r() * 0.12, false);
+    }
+    if (o.notch) kinks[1].push({ t: 0.5, off: -o.notch, id: -1 });
+
+    const L = P.map((p, i) => len(p, P[(i + 1) % 4]));
+    let ear = -1, d = 0;
+    if (o.ear > 0 && o.earCorner != null) {
+      ear = o.earCorner;
+      d = Math.min(o.ear, 0.42 * Math.min(w, h));
+      if (d < 6) ear = -1;
+    }
+    const out = [];
+    let a = null, b = null;
+    for (let e = 0; e < 4; e++) {
+      const u = P[e], v = P[(e + 1) % 4], dx = (v[0] - u[0]) / L[e], dy = (v[1] - u[1]) / L[e], nx = dy, ny = -dx;
+      const t0 = e === ear ? d / L[e] : 0, t1 = (e + 1) % 4 === ear ? 1 - d / L[e] : 1;
+      const n = Math.max(1, Math.round(L[e] / 26)), list = [];
+      for (let i = 1; i < n; i++) list.push({ t: i / n, off: (r() * 2 - 1) * J * 0.3 });
+      kinks[e].forEach((k) => list.push(k));
+      list.sort((p, q) => p.t - q.t);
+      const at = (t, off) => [u[0] + (v[0] - u[0]) * t + nx * off, u[1] + (v[1] - u[1]) * t + ny * off];
+      if (e === ear) { b = at(t0, 0); out.push(b); } else out.push(u);
+      list.forEach((k) => {
+        if (k.t <= t0 + 0.02 || k.t >= t1 - 0.02) {
+          if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = at(k.t, 0);   // still a line, no kink
+          return;
+        }
+        const p = at(k.t, k.off);
+        if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = p;
+        // a kink is a sharp corner: the points either side stay on the cut
+        if (k.id !== undefined) { out.push(at(k.t - 0.012, 0)); out.push(p); out.push(at(k.t + 0.012, 0)); }
+        else out.push(p);
+      });
+      if ((e + 1) % 4 === ear) { a = at(t1, 0); out.push(a); }
+    }
+    let flap = null;
+    if (ear >= 0 && a && b) {
+      // the corner folded over the line a-b lands inside the sheet
+      const c = P[ear], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] * ab[0] + ab[1] * ab[1];
+      const t = ((c[0] - a[0]) * ab[0] + (c[1] - a[1]) * ab[1]) / l2, foot = [a[0] + ab[0] * t, a[1] + ab[1] * t];
+      flap = [a, b, [2 * foot[0] - c[0], 2 * foot[1] - c[1]]];
+    }
+    return { outline: out, creases: creases.filter((c) => c.a && c.b), flap, P };
+  }
+
+  /* The facets the creases cut the sheet into: every facet takes the parity
+     of the creases it lies right of, light or dark. Crumple is a jittered
+     grid of triangles instead, each its own tone. */
+  function facets(w, h, g, o, r) {
+    const out = [], pad = 60;
+    if (o.fold === "crumple") {
+      const nx = Math.max(2, Math.round(w / 56)), ny = Math.max(1, Math.round(h / 56)), grid = [];
+      for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+        const edge = i === 0 || j === 0 || i === nx || j === ny;
+        grid.push([(i / nx) * w + (edge ? (i === 0 ? -pad : i === nx ? pad : 0) : (r() - 0.5) * w / nx * 0.7),
+                   (j / ny) * h + (edge ? (j === 0 ? -pad : j === ny ? pad : 0) : (r() - 0.5) * h / ny * 0.7)]);
+      }
+      const G = (i, j) => grid[j * (nx + 1) + i];
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const flip = r() < 0.5;
+        const t1 = flip ? [G(i, j), G(i + 1, j), G(i + 1, j + 1)] : [G(i, j), G(i + 1, j), G(i, j + 1)];
+        const t2 = flip ? [G(i, j), G(i + 1, j + 1), G(i, j + 1)] : [G(i + 1, j), G(i + 1, j + 1), G(i, j + 1)];
+        [t1, t2].forEach((t) => out.push({ poly: t, tone: (r() * 2 - 1), line: true }));
+      }
+      return out;
+    }
+    let regions = [[[-pad, -pad], [w + pad, -pad], [w + pad, h + pad], [-pad, h + pad]]];
+    g.creases.forEach((c) => {
+      const next = [];
+      regions.forEach((p) => { [1, -1].forEach((s) => { const q = clipHalf(p, c.a, c.b, s); if (q.length > 2) next.push(q); }); });
+      regions = next;
+    });
+    regions.forEach((p) => {
+      const cx = p.reduce((s, q) => s + q[0], 0) / p.length, cy = p.reduce((s, q) => s + q[1], 0) / p.length;
+      let par = 0;
+      g.creases.forEach((c) => { if ((c.b[0] - c.a[0]) * (cy - c.a[1]) - (c.b[1] - c.a[1]) * (cx - c.a[0]) < 0) par++; });
+      out.push({ poly: p, tone: par % 2 ? -1 : 0.7 });
+    });
+    return out;
+  }
+
+  /* A strip of tape: a rotated band with torn, zig-zag ends. */
+  function tapeStrip(cx, cy, tw, th, ang, kind, r, uid) {
+    const T = TAPE[kind];
+    const teeth = Math.max(3, Math.round(th / 4)), left = [], right = [];
+    for (let i = 0; i <= teeth; i++) {
+      const y = -th / 2 + (th * i) / teeth;
+      left.push([-tw / 2 + (i % 2 ? 2.5 : 0) + r() * 1.5, y]);
+      right.unshift([tw / 2 - (i % 2 ? 2.5 : 0) - r() * 1.5, y]);
+    }
+    const poly = pts(left.concat(right));
+    const fill = T.w ? "url(#st" + uid + ")" : T.a;
+    let s = '<g transform="translate(' + cx.toFixed(1) + "," + cy.toFixed(1) + ") rotate(" + ang.toFixed(1) + ')">';
+    s += '<polygon points="' + poly + '" fill="rgba(0,0,0,.18)" transform="translate(1,2)" filter="url(#tb' + uid + ')"/>';
+    s += '<polygon points="' + poly + '" fill="' + fill + '"/>';
+    if (T.gloss) s += '<rect x="' + (-tw / 2 + 4) + '" y="' + (-th / 2 + 2) + '" width="' + (tw - 8) + '" height="' + (th * 0.28) + '" fill="rgba(255,255,255,.35)"/>' +
+      '<polygon points="' + poly + '" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1"/>';
+    else s += '<polygon points="' + poly + '" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="1"/>';
+    return s + "</g>";
+  }
+
+  let UID = 0;
+  /* One paper piece. `o` is the recipe of the element merged with the knobs. */
+  function dress(el, K, recipe, seedKey) {
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (!w || !h) return;
+    const r = rng(hash(seedKey + ":" + K.seed)), uid = ++UID, pad = 40;
+    const o = Object.assign({}, K, recipe);
+    if (recipe.fold === undefined && o.fold === "crumple" && Math.min(w, h) < 44) o.fold = "tent";
+    if (recipe.fold === undefined && o.fold !== "none" && w < 70 && h < 50) o.fold = "tent";
+    const tilt = (r() * 2 - 1) * K.tilt * (recipe.tiltK == null ? 1 : recipe.tiltK);
+    el.style.setProperty("--rot", tilt.toFixed(2) + "deg");
+    el.classList.add("pp");
+
+    const depth = K.depth, sh = K.shadow;
+    let geom, body = "";
+    const defs = '<filter id="bl' + uid + '" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="' + (2 + 3 * sh).toFixed(1) + '"/></filter>' +
+      '<filter id="fb' + uid + '" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.6"/></filter>' +
+      '<filter id="gr' + uid + '"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="' + (uid % 97) + '"/>' +
+      '<feColorMatrix type="matrix" values="0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .1  0 0 0 1.6 -.55"/></filter>' +
+      '<linearGradient id="lt' + uid + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient>';
+    if (recipe.shape === "radial") geom = radial(w, h, o, r);
+    else if (recipe.shape === "shield") geom = shield(w, h, o, r);
+    else geom = sheet(w, h, o, r);
+    const outline = pts(geom.outline);
+
+    // shadow, then the sheet, then everything that sits ON the paper, clipped to it
+    body += '<polygon points="' + outline + '" fill="#000" opacity="' + (0.15 + 0.3 * sh).toFixed(2) + '" transform="translate(' + (1 + 2 * sh).toFixed(1) + "," + (2 + 6 * sh).toFixed(1) + ')" filter="url(#bl' + uid + ')"/>';
+    body += '<polygon points="' + outline + '" fill="' + o.fill + '"/>';
+    let on = "";
+    if (recipe.shape === "radial") on += geom.on(depth);
+    else {
+      if (o.fold !== "none") facets(w, h, geom, o, r).forEach((f) => {
+        const t = f.tone * depth;
+        on += '<polygon points="' + pts(f.poly) + '" fill="' + (t > 0 ? "#fff" : "#2a1c00") + '" opacity="' + Math.abs(t * (t > 0 ? 0.26 : 0.2)).toFixed(3) + '"' +
+          (f.line ? ' stroke="rgba(255,255,255,' + (0.25 * depth).toFixed(2) + ')" stroke-width=".8"' : "") + "/>";
+      });
+      geom.creases.forEach((c) => {
+        on += '<line x1="' + c.a[0].toFixed(1) + '" y1="' + c.a[1].toFixed(1) + '" x2="' + c.b[0].toFixed(1) + '" y2="' + c.b[1].toFixed(1) +
+          '" stroke="rgba(40,25,0,' + (0.28 * depth).toFixed(2) + ')" stroke-width="1.4"/>' +
+          '<line x1="' + (c.a[0] + 1.2).toFixed(1) + '" y1="' + c.a[1].toFixed(1) + '" x2="' + (c.b[0] + 1.2).toFixed(1) + '" y2="' + c.b[1].toFixed(1) +
+          '" stroke="rgba(255,255,255,' + (0.6 * depth).toFixed(2) + ')" stroke-width="1"/>';
+      });
+    }
+    on += '<rect x="-20" y="-20" width="' + (w + 40) + '" height="' + (h + 40) + '" fill="url(#lt' + uid + ')"/>';
+    if (K.grain > 0) on += '<rect x="-20" y="-20" width="' + (w + 40) + '" height="' + (h + 40) + '" filter="url(#gr' + uid + ')" opacity="' + (K.grain * 0.5).toFixed(2) + '"/>';
+    body += '<g clip-path="url(#cl' + uid + ')">' + on + "</g>";
+    body += '<polygon points="' + outline + '" fill="none" stroke="' + o.edge + '" stroke-width="1.2" stroke-linejoin="round"/>';
+    if (geom.flap) {
+      const f = pts(geom.flap);
+      body += '<polygon points="' + f + '" fill="#000" opacity=".28" transform="translate(-1.5,2)" filter="url(#fb' + uid + ')"/>';
+      body += '<polygon points="' + f + '" fill="' + o.back + '"/>';
+      body += '<polygon points="' + f + '" fill="url(#lt' + uid + ')"/>';
+      body += '<line x1="' + geom.flap[0][0].toFixed(1) + '" y1="' + geom.flap[0][1].toFixed(1) + '" x2="' + geom.flap[1][0].toFixed(1) + '" y2="' + geom.flap[1][1].toFixed(1) +
+        '" stroke="rgba(255,255,255,.7)" stroke-width="1.2"/>';
+      body += '<polygon points="' + f + '" fill="none" stroke="' + o.edge + '" stroke-width="1"/>';
+    }
+    const box = 'width="' + (w + 2 * pad) + '" height="' + (h + 2 * pad) + '" viewBox="' + -pad + " " + -pad + " " + (w + 2 * pad) + " " + (h + 2 * pad) + '"';
+    const place = "left:" + -pad + "px;top:" + -pad + "px";
+    const back = '<svg class="pp-back" style="' + place + '" ' + box + '><defs>' + defs + '<clipPath id="cl' + uid + '"><polygon points="' + outline + '"/></clipPath></defs>' + body + "</svg>";
+
+    // the tape, in front of the words
+    let front = "";
+    const tapes = K.tape === "none" ? [] : (recipe.small && !K.tapeSmall ? [] : recipe.tape || []);
+    if (tapes.length) {
+      const T = TAPE[K.tape];
+      let tdefs = '<filter id="tb' + uid + '" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="1"/></filter>';
+      if (T.w) tdefs += '<pattern id="st' + uid + '" width="' + (2 * T.w) + '" height="' + (2 * T.w) + '" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+        '<rect width="' + (2 * T.w) + '" height="' + (2 * T.w) + '" fill="' + T.b + '"/><rect width="' + T.w + '" height="' + (2 * T.w) + '" fill="' + T.a + '"/></pattern>';
+      const base = recipe.tapeLen || Math.max(34, Math.min(104, Math.min(w, h) * 0.9));
+      tapes.forEach((spot) => {
+        const tw = base * (0.85 + r() * 0.3), th = Math.max(12, tw * 0.3), j = (r() - 0.5) * 12;
+        const at = {
+          tl: [6, 4, -40], tr: [w - 6, 4, 40], bl: [6, h - 4, 40], br: [w - 6, h - 4, -40],
+          t: [w * (0.42 + r() * 0.16), 0, 0], b: [w * (0.42 + r() * 0.16), h, 0],
+          l: [0, h * 0.5, 90], r: [w, h * 0.5, 90]
+        }[spot];
+        front += tapeStrip(at[0], at[1], spot === "l" || spot === "r" ? Math.max(tw * 0.7, h * 0.55) : tw, th, at[2] + j, K.tape, r, uid);
+      });
+      front = '<svg class="pp-front" style="' + place + '" ' + box + "><defs>" + tdefs + "</defs>" + front + "</svg>";
+    }
+    el.insertAdjacentHTML("afterbegin", back + front);
+  }
+
+  /* The order ring's bubble: a folded paper rosette — an octagon of
+     triangles meeting in the middle, light and dark in turn, on a rim in the
+     colour of the verdict. */
+  function radial(w, h, o, r) {
+    const n = 8, cx = w / 2, cy = h / 2, R = w / 2, spin = r() * 0.4, outer = [], inner = [];
+    for (let i = 0; i < n; i++) {
+      const a = spin + (i / n) * Math.PI * 2, k = 1 + (r() * 2 - 1) * o.rough * 0.012;
+      outer.push([cx + Math.cos(a) * R * k, cy + Math.sin(a) * R * k]);
+    }
+    outer.forEach((p) => inner.push([cx + (p[0] - cx) * 0.84, cy + (p[1] - cy) * 0.84]));
+    return {
+      outline: outer, creases: [], flap: null,
+      on: (depth) => {
+        let s = "";
+        outer.forEach((p, i) => {
+          const q = outer[(i + 1) % n];
+          s += '<polygon points="' + pts([[cx, cy], p, q]) + '" fill="' + (i % 2 ? "#000" : "#fff") + '" opacity="' + ((i % 2 ? 0.12 : 0.2) * depth).toFixed(3) + '"/>';
+        });
+        s += '<polygon points="' + pts(inner) + '" fill="' + o.inner + '"/>';
+        inner.forEach((p, i) => {
+          const q = inner[(i + 1) % n];
+          s += '<polygon points="' + pts([[cx, cy], p, q]) + '" fill="' + (i % 2 ? "#2a1c00" : "#fff") + '" opacity="' + ((i % 2 ? 0.1 : 0.3) * depth).toFixed(3) + '"/>';
+          s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="rgba(40,25,0,' + (0.16 * depth).toFixed(2) + ')" stroke-width="1"/>';
+        });
+        return s;
+      }
+    };
+  }
+
+  /* The frontier shield: six points, a crease down the middle. */
+  function shield(w, h, o, r) {
+    const j = () => (r() * 2 - 1) * o.rough * 0.3;
+    const P = [[w / 2 + j(), j()], [w + j(), h * 0.18 + j()], [w * 0.92 + j(), h * 0.62], [w / 2 + j(), h + j()], [w * 0.08 + j(), h * 0.62], [j(), h * 0.18 + j()]];
+    return { outline: P, creases: [{ a: P[0], b: P[3] }], flap: null };
+  }
+
+  // ---- the markup one look dresses ------------------------------------------
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  function frame(K) {
+    const t = T[S.lang], m = S.moment, h = [];
+    h.push('<div class="fr' + (K.paper === "kraft" ? " kraft" : "") + '"><img class="bg" src="foldiers-hud/map.jpg" alt="">');
+    // the motor's HUD and corner controls, mocked in grey
+    h.push('<div class="mock" style="left:26px;top:26px;width:94px;height:92px"><small>' + upper(t.tick) + '</small>1 / 6</div>');
+    h.push('<div class="mock" style="left:310px;top:26px;width:100px;height:92px;background:none;border:0;font-size:56px">0</div>');
+    h.push('<div class="mock" style="right:26px;top:26px;width:94px;height:92px"><small>' + upper(t.bell) + '</small>1:57</div>');
+    h.push('<div class="mock" style="left:26px;top:1196px;width:250px;height:58px;flex-direction:row;gap:14px">1 ★ ★ ★ 0/3</div>');
+    [500, 576, 652].forEach((x) => h.push('<div class="mock round" style="left:' + (x - 6) + 'px;top:1196px;width:58px;height:58px">·</div>'));
+    // the resources under the HUD
+    h.push('<div class="res"><span class="chip" data-p="chip" data-c="amber">' + esc(t.gold) + '</span>' +
+           '<span class="chip" data-p="chip" data-c="grain">' + esc(t.grain) + '</span>' +
+           '<span class="chip" data-p="chip" data-c="green">' + esc(t.season) + '</span></div>');
+    // the tags at the regions' anchors (the positions of stage 1's map)
+    [[435, 893, 5, "b"], [445, 352, 5, "r"], [270, 582, 2, ""], [588, 606, 2, ""], [690, 358, 2, ""], [106, 851, 2, ""]].forEach((q) => {
+      h.push('<div class="abs c tag ' + q[3] + '" data-p="tag" style="left:' + q[0] + 'px;top:' + q[1] + 'px">' + q[2] + "</div>");
+    });
+    h.push('<div class="abs c prod" data-p="prod" style="left:490px;top:893px">+2</div>');
+    h.push('<div class="abs c prod" data-p="prod" style="left:640px;top:606px">+1</div>');
+    h.push('<div class="abs c shield" data-p="shield" style="left:384px;top:893px">✓</div>');
+    if (m !== "march") h.push('<div class="abs c verdict" data-p="verdict" data-c="risk" style="left:486px;top:614px">' + esc(t.risky) + "</div>");
+    // Send, the tick draining round its crane
+    const frac = m === "march" ? 0 : 0.78, R = 28, L = 2 * Math.PI * R;
+    h.push('<div class="send" data-p="send"><div class="clock"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="' + R + '" fill="none" stroke="rgba(29,63,138,.18)" stroke-width="6"/>' +
+           '<circle cx="32" cy="32" r="' + R + '" fill="none" stroke="#e2a40c" stroke-width="6" stroke-dasharray="' + (L * frac) + " " + L + '" transform="rotate(-90 32 32)"/></svg>' +
+           '<img src="../assets/image/embed/foldiers-scenery14.webp" alt=""></div><div class="txt"><b>' + esc(m === "march" ? t.march : t.send) + "</b>" +
+           (m === "march" ? "" : "<span>" + esc(t.drawn) + "</span>") + "</div></div>");
+    if (m === "card") {
+      h.push('<div class="card" data-p="card" style="bottom:' + (1280 - 1078) + 'px"><div class="ttl"><h2>Ostra</h2><span class="own" data-p="own">' + esc(t.you) + "</span></div>" +
+             "<p>" + esc(t.troops) + "</p><p>" + esc(t.holds) + '</p><div class="acts">' +
+             '<span class="act" data-p="act">' + esc(t.recruit) + '</span><span class="act off" data-p="act">' + esc(t.cav) + "</span>" +
+             '<span class="act" data-p="act">' + esc(t.fire) + '</span><span class="act" data-p="act">' + esc(t.spy) + "</span></div></div>");
+    }
+    if (m === "ring") {
+      // the finger rests at (580, 600): two choices on an arc above it, the route over them
+      h.push('<div class="finger" style="left:580px;top:600px"></div>');
+      h.push('<div class="bub pick" data-p="bub" data-c="risk" style="left:486px;top:462px"><b>5</b><span>' + esc(t.all) + "</span></div>");
+      h.push('<div class="bub" data-p="bub" data-c="bad" style="left:632px;top:462px"><b>2</b><span>' + esc(t.half) + "</span></div>");
+      h.push('<div class="rtitle" data-p="rtitle" style="left:558px;top:292px"><b>Ostra → Wick</b><span class="verdict" data-p="verdict" data-c="risk">' + esc(t.risky) + "</span></div>");
+    }
+    h.push("</div>");
+    return h.join("");
+  }
+
+  /* What each kind of piece is made of, before the knobs. */
+  function recipeOf(el, K, i) {
+    const pp = PAPER[K.paper], kind = el.dataset.p, c = el.dataset.c;
+    const ink = (name) => ({ fill: INK[name], back: INK[name + "Back"] || pp.back, edge: "rgba(0,0,0,.22)" });
+    const ears = ["tr", "br", "bl"], ear = (r) => ears[r % 3];
+    switch (kind) {
+      case "card":   return Object.assign({}, pp, { earCorner: 2, tape: ["tl", "tr"], tiltK: 0.35, tapeLen: 100 });
+      case "rtitle": return Object.assign({}, pp, { earCorner: 3, tape: ["t"], tiltK: 0.6, tapeLen: 80 });
+      case "send":   return Object.assign({}, pp, { earCorner: 1, tape: ["l", "r"], tiltK: 0.6 });
+      case "own":    return Object.assign(ink("blue"), { earCorner: null, fold: "diag", tiltK: 1.2 });
+      case "act":    return Object.assign(ink(el.classList.contains("off") ? "grey" : "blue"), { earCorner: [1, 1, 0, 1][i % 4], ear: Math.min(K.ear, 16), fold: K.fold === "accordion" ? "accordion" : K.fold === "none" ? "none" : "diag", tiltK: 0.8 });
+      case "chip":   return Object.assign({ fill: INK[c], back: pp.back, edge: "rgba(0,0,0,.25)" }, { earCorner: null, tape: ["l"], small: true, tapeLen: 40, tiltK: 0.9, notch: 7 });
+      case "tag":    return Object.assign(el.classList.contains("b") ? ink("blue") : el.classList.contains("r") ? ink("red") : Object.assign({}, pp),
+                       { earCorner: null, fold: K.fold === "none" ? "none" : "tent", tape: ["t"], small: true, tapeLen: 30, tiltK: 1.6 });
+      case "prod":   return Object.assign(ink("gold"), { earCorner: null, fold: K.fold === "none" ? "none" : "tent", tape: [], tiltK: 2 });
+      case "shield": return Object.assign(ink("ok"), { shape: "shield", tiltK: 1.4 });
+      case "verdict":return Object.assign(ink(c), { earCorner: null, notch: 9, fold: K.fold === "none" ? "none" : "diag", tape: ["l"], small: true, tapeLen: 36, tiltK: 1.4 });
+      case "bub":    return { shape: "radial", fill: INK[c], inner: pp.fill, edge: "rgba(0,0,0,.25)", tiltK: 2 };
+    }
+    return Object.assign({}, pp);
+  }
+  function dressFrame(root, K) {
+    root.querySelectorAll("[data-p]").forEach((el, i) => dress(el, K, recipeOf(el, K, i), el.dataset.p + ":" + i));
+  }
+
+  // ---- the stage --------------------------------------------------------------
+  const stage = document.getElementById("stage");
+  function render() {
+    const list = S.view === "one" ? [{ name: presetOf(S.preset).name + (dirty() ? " · edited" : ""), k: S.k, key: S.preset }]
+                                  : PRESETS.map((p) => ({ name: p.name, k: p.key === S.preset ? S.k : p.k, key: p.key }));
+    const avail = stage.clientHeight - 44 - 30;
+    const k = S.view === "one" ? Math.min(avail / 1280, (stage.clientWidth - 44) / 720) : 0.36;
+    stage.innerHTML = list.map((s) => '<div class="cell"><div class="holder' + (S.view !== "one" && s.key === S.preset ? " on" : "") + '" style="width:' + Math.round(720 * k) + "px;height:" + Math.round(1280 * k) + 'px">' +
+      frame(s.k).replace('<div class="fr', '<div style="transform:scale(' + k + ')" class="fr') + '</div><div class="name">' + s.name + "</div></div>").join("");
+    stage.querySelectorAll(".fr").forEach((fr, i) => dressFrame(fr, list[i].k));
+    stage.querySelectorAll(".holder").forEach((el, i) => el.addEventListener("click", () => {
+      if (S.view === "one") return;
+      pick(list[i].key); S.view = "one"; sync();
+    }));
+  }
+
+  // ---- the panel -------------------------------------------------------------
+  const dirty = () => JSON.stringify(S.k) !== JSON.stringify(presetOf(S.preset).k);
+  function pick(key) { if (key !== S.preset || !dirty()) { S.preset = key; S.k = Object.assign({}, presetOf(key).k); } }
+  function seg(id, items, key) {
+    const el = document.getElementById(id);
+    el.innerHTML = items.map((it) => '<button data-v="' + it[0] + '">' + it[1] + "</button>").join("");
+    el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { S[key] = b.dataset.v; sync(); } });
+  }
+  seg("view", [["one", "One"], ["all", "Compare"]], "view");
+  seg("moment", MOMENTS, "moment");
+  seg("lang", [["en", "EN"], ["fr", "FR"]], "lang");
+  const pr = document.getElementById("presets");
+  pr.innerHTML = PRESETS.map((p) => '<button data-v="' + p.key + '"><b>' + p.name + "</b><span>" + p.note + "</span></button>").join("");
+  pr.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    S.preset = b.dataset.v; S.k = Object.assign({}, presetOf(S.preset).k); S.view = "one"; sync();
+  });
+
+  const kn = document.getElementById("knobs");
+  kn.innerHTML = KNOBS.map((d) => d.seg
+    ? '<div class="row"><label>' + d.label + '</label><div class="seg" data-k="' + d.key + '">' + d.seg.map((s) => '<button data-v="' + s[0] + '">' + s[1] + "</button>").join("") + "</div></div>"
+    : '<div class="row"><label>' + d.label + ' <output data-o="' + d.key + '"></output></label><input type="range" data-k="' + d.key + '" min="' + d.min + '" max="' + d.max + '" step="' + d.step + '"></div>').join("");
+  let pending = 0;
+  kn.addEventListener("input", (e) => {
+    const k = e.target.dataset.k;
+    if (!k) return;
+    S.k[k] = parseFloat(e.target.value);
+    kn.querySelector('[data-o="' + k + '"]').textContent = S.k[k];
+    cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(sync);
+  });
+  kn.addEventListener("click", (e) => {
+    const b = e.target.closest(".seg button"), k = b && b.parentNode.dataset.k;
+    if (!k) return;
+    const v = b.dataset.v;
+    S.k[k] = v === "true" ? true : v === "false" ? false : v;
+    sync();
+  });
+  document.getElementById("shuffle").addEventListener("click", () => { S.k.seed = 1 + Math.floor(Math.random() * 999); sync(); });
+  document.getElementById("reset").addEventListener("click", () => { S.k = Object.assign({}, presetOf(S.preset).k); sync(); });
+  document.getElementById("copy").addEventListener("click", () => {
+    const txt = JSON.stringify({ preset: S.preset, edited: dirty(), knobs: S.k }, null, 2);
+    if (navigator.clipboard) navigator.clipboard.writeText(txt);
+    document.getElementById("copy").textContent = "Copied";
+    setTimeout(() => { document.getElementById("copy").textContent = "Copy settings"; }, 1200);
+  });
+
+  function sync() {
+    document.querySelectorAll("#view button").forEach((b) => b.classList.toggle("on", b.dataset.v === S.view));
+    document.querySelectorAll("#moment button").forEach((b) => b.classList.toggle("on", b.dataset.v === S.moment));
+    document.querySelectorAll("#lang button").forEach((b) => b.classList.toggle("on", b.dataset.v === S.lang));
+    document.querySelectorAll("#presets button").forEach((b) => {
+      b.classList.toggle("on", b.dataset.v === S.preset);
+      b.classList.toggle("dirty", b.dataset.v === S.preset && dirty());
+    });
+    KNOBS.forEach((d) => {
+      if (d.seg) kn.querySelectorAll('[data-k="' + d.key + '"] button').forEach((b) => b.classList.toggle("on", b.dataset.v === String(S.k[d.key])));
+      else {
+        const inp = kn.querySelector('input[data-k="' + d.key + '"]');
+        if (document.activeElement !== inp) inp.value = S.k[d.key];
+        kn.querySelector('[data-o="' + d.key + '"]').textContent = S.k[d.key];
+      }
+    });
+    save();
+    render();
+  }
+  window.addEventListener("resize", render);
+  // the plates are measured: wait for the face, or every width is the fallback's
+  const face = document.fonts ? Promise.all(["500 22px", "700 20px", "800 22px"].map((f) => document.fonts.load(f + ' "Baloo 2"'))) : Promise.resolve();
+  face.catch(() => null).then(sync);
+})();
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.6.6",
+  "version": "1.6.10",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -148,11 +148,9 @@
     }
   },
   "sfx": {
-    "multi": "bonus/harpsuccess",
+    "multi": "pickup/echotrain",
     "nova": "bonus/harprollup",
-    "chain": "combo/harprunup",
-    "charge": "power/whistlerise",
-    "land": "bounce/marimbaplink",
+    "chain": "pickup/echotrain",
     "pop": "burst/popplop",
     "blast": "burst/hitthud",
     "tick": "toggle/clickswitch"
