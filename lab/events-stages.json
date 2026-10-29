@@ -1,8 +1,21 @@
 {
   "foldiers": {
-    "order": 14,
+    "order": 8,
     "prod": 2,
     "send": 2
+  },
+  "gelatile": {
+    "apply": 30,
+    "goal": 1,
+    "gold": 1,
+    "merge": 1,
+    "portal": 30,
+    "refuse": 1,
+    "slide": 1,
+    "smoke": 30,
+    "strike": 30,
+    "stuck": 30,
+    "target": 30
   },
   "marshmelt": {
     "boom": 23,
@@ -68,6 +81,21 @@
     "nova": 4,
     "pop": 4,
     "tick": 4
+  },
+  "slipdeck": {
+    "deal": 3
+  },
+  "stratideck": {
+    "clash": 1,
+    "flag": 1,
+    "flip": 1,
+    "lose": 1,
+    "pick": 1,
+    "place": 1,
+    "tie": 1,
+    "victory": 1,
+    "warn": 1,
+    "win": 1
   },
   "triverse": {
     "swipe": 5

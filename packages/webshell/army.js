@@ -809,6 +809,12 @@
       c = byId(a.dead[i]);
       if (c) { retire(c, "battle"); n++; }
     }
+    /* A CARD FALLEN IN A BATTLE FOUGHT TO THE END: the surrender was
+       refused, and the round drew this one lost for good (`fall`). */
+    for (i = 0; i < (a.slain || []).length; i++) {
+      c = byId(a.slain[i]);
+      if (c) { retire(c, "slain"); n++; }
+    }
     /* EVERY CARD THE BATTLE TURNED OVER goes into the collection, won or
        lost: an officer of the camp by the best tier met, an object once. */
     for (i = 0; i < (a.met || []).length; i++) {
@@ -1095,40 +1101,96 @@
   /* THE COMMANDER SAYS IT BEFORE THE PLAYER HAS TO FIND OUT. The round
      (games/stratideck, HOPELESS) asks once a battle, the first turn the army
      left can neither take the flag nor beat the whole camp, and `why` is
-     what walls the flag in: "trap", "object" or "soldier". Surrendering is
-     the round's way out (menu.js, `leave`): back to the village, no end
-     screen, no score — and nothing of the battle written to the barracks,
-     the same as leaving it from the corner. Anything else — a tap, ESCAPE,
-     FIGHT ON — plays the battle out, to the end screen it was heading for.
+     what walls the flag in: "trap", "object" or "soldier".
+
+     NEITHER ANSWER IS FREE. Surrendering is the round's way out (menu.js,
+     `leave`): back to the village, no end screen, no score — but the battle
+     still owes the barracks what it cost (`api.ledger`, absorbed as a lost
+     battle: the wounds, the dead, the services), and the price of the
+     surrender is ONE CARD OF THE ARMY STILL STANDING (`api.alive`), picked
+     by the player on the card and handed to the commander: struck off the
+     roster, written in the register as handed over. An army with nothing
+     left to hand over pays the wounds alone. Anything else — a tap,
+     ESCAPE, FIGHT ON — plays the battle out to the last card
+     (`api.fightOn`): every card that falls from then on is lost or wounded.
      The card holds the round while it stands, like every card over one. */
-  function surrender(why) {
+  function surrender(why, api) {
     var MN = window.__MENU__;
     if (!MN || !MN.leave) return;
-    var give = false;
+    api = api || {};
+    var give = false, pick = null, alive = [], i, c;
+    for (i = 0; i < (api.alive || []).length; i++) {
+      c = byId(api.alive[i]);
+      if (c) alive.push(c);
+    }
     MD.open({
       kind: "ar-surrender",
       eyebrow: T.surEyebrow, title: T.surTitle, tap: T.surTap,
-      onClose: function () { if (give) MN.leave(); },
+      onClose: function () {
+        if (!give) { if (api.fightOn) api.fightOn(); return; }
+        yieldBattle(api, pick);
+        MN.leave();
+      },
       fill: function (card, close) {
-        var face = CONFIG.art && (CONFIG.art.enemyHappy || CONFIG.art.enemyNeutral);
-        if (face) {
+        var face0 = CONFIG.art && (CONFIG.art.enemyHappy || CONFIG.art.enemyNeutral);
+        if (face0) {
           var img = el("img", "ar-sur-foe");
-          img.src = face; img.alt = "";
+          img.src = face0; img.alt = "";
           card.appendChild(img);
         }
         card.appendChild(el("p", "ar-sur-quote", T["surWhy_" + why] || T.surWhy_soldier));
-        card.appendChild(el("p", "mt-sub ar-sur-note", T.surNote));
+        card.appendChild(el("p", "mt-sub ar-sur-note", alive.length ? T.surNote : T.surNoteNone));
+        card.appendChild(el("p", "mt-sub ar-sur-note risk", T.surRisk));
+        /* THE PRICE, PICKED: every card still standing, one tap marks the
+           one handed over, and SURRENDER is what hands it. */
+        if (alive.length) {
+          card.appendChild(text("div", "ar-sur-h", W.upper(T.surPick)));
+          var row = el("div", "ar-sur-row" + (PAINTED ? " painted" : ""));
+          row.setAttribute("data-scroll", "");
+          alive.forEach(function (ac) {
+            var b = el("button", "ar-sur-c");
+            b.type = "button";
+            b.appendChild(cardTile(face(ac), { fmt: "tiny", w: 76 }));
+            b.addEventListener("click", function () {
+              pick = ac;
+              var on = row.querySelectorAll(".ar-sur-c.on");
+              for (var k = 0; k < on.length; k++) on[k].classList.remove("on");
+              b.classList.add("on");
+              W.Sound.ui("tap", 0.6);
+            });
+            row.appendChild(b);
+          });
+          card.appendChild(row);
+        }
         var bar = el("div", "web-actions");
         var no = el("button", "btn", T.surNo);
         var yes = el("button", "btn btn-danger", T.surYes);
         no.addEventListener("click", function () { close(); });
-        yes.addEventListener("click", function () { give = true; close(); });
+        yes.addEventListener("click", function () {
+          if (alive.length && !pick) {
+            say(T.surPick, "", "warn");
+            W.Sound.ui("deny", 0.7);
+            return;
+          }
+          give = true;
+          close();
+        });
         bar.appendChild(no);
         bar.appendChild(yes);
         card.appendChild(bar);
       }
     });
     W.Sound.cue("warn", 0.5, 0.8, 330, 0.18, "triangle");
+  }
+
+  /* The surrender, paid: the battle's ledger first, as a battle lost — a
+     card the infirmary had no bed for is gone already and cannot be handed
+     over twice — then the card the player picked. Told at the village like
+     every card lost (`announce`). */
+  function yieldBattle(api, c) {
+    if (api.ledger) absorb({ army: api.ledger() });
+    if (c && save.r.indexOf(c) >= 0) retire(c, "surrender");
+    persist();
   }
 
   /* ── 6b. the camp's day: the kitchen ──────────────────────────────────── */
@@ -2911,17 +2973,19 @@
   /* THE DEFENSE REPORT, at the village: held, with what it paid, or taken,
      with what it cost — and the solidity, which is the one place the
      player reads how good the layout was. A raid that never came says
-     nothing at all. A TAP pays it and opens the defense on its REPORT tab,
-     where the raid is read duel by duel; a key only pays it, since ESCAPE
-     and ENTER put a card away rather than walk somewhere. */
-  function openDefenseReport(then) {
+     nothing at all. A tap anywhere, or a key, pays it and puts it away;
+     the DETAILS button pays it too and opens the defense on its REPORT tab,
+     where the raid is read duel by duel. */
+  /* `leave`: opened from the recap, which is still under it — the recap
+     is the one that walks to the defense, and is put away first. */
+  function openDefenseReport(then, leave) {
     var d = dfState(), rep = d.q, done = false, off = null;
     if (!rep) { then(); return; }
     MD.open({
       kind: "ar-event ar-dfrep", dismiss: false, esc: false, onClose: then,
       eyebrow: T.dfRepEyebrow,
       title: rep.ok ? T.dfRepHeld : T.dfRepLost,
-      tap: rep.ok ? T.dfRepTapHeld : T.dfRepTapLost,
+      tap: rep.ok ? T.repCollect : T.tapContinue,
       fill: function (card, close, handle) {
         card.appendChild(el("div", "ar-stamp " + (rep.ok ? "ok" : "ko"), W.upper(rep.ok ? T.dfStampHeld : T.dfStampLost)));
         card.appendChild(text("p", "ar-ev-text", rep.ok ? T.dfTextHeld : T.dfTextLost));
@@ -2936,19 +3000,11 @@
           for (i = 0; i < tiles.length; i++) { var b = el("div", "ar-fallen-c live"); b.appendChild(tiles[i]); row.appendChild(b); }
           card.appendChild(row);
         }
-        var out = el("div", "ar-rep-out"), chip;
-        if (rep.ok) {
-          if ((rep.pr || []).length) out.appendChild(mkChip("lock", fill(rep.pr.length > 1 ? T.dfPrisonersN : T.dfPrisoners1, { n: rep.pr.length }), "gain"));
-          else if (rep.full) out.appendChild(mkChip("lock", T.dfPrisonFull, "risk"));
-          if (rep.coins) { chip = mkChip("coin", MT.rewardLabel(MT.reward("coins", rep.coins)), "gain"); chip.setAttribute("data-rw", "coins"); out.appendChild(chip); }
-          if (rep.xp) { chip = mkChip("xp", MT.rewardLabel(MT.reward("xp", rep.xp)), "gain"); chip.setAttribute("data-rw", "xp"); out.appendChild(chip); }
-        } else {
-          if ((rep.hurt || []).length) out.appendChild(mkChip("heal", fill(rep.hurt.length > 1 ? T.penWoundN : T.penWound1, { n: rep.hurt.length }), "risk"));
-          if (rep.fine) out.appendChild(mkChip("coin", fill(T.penCoins, { n: MT.num(Math.min(rep.fine, MT.coins()) || rep.fine) }), "risk"));
-        }
+        var out = el("div", "ar-rep-out"), chips = dfChips(rep);
+        for (i = 0; i < chips.length; i++) out.appendChild(chips[i]);
         if (out.childNodes.length) card.appendChild(out);
-        /* THE SOLIDITY, a gauge and the figure, and one line on how to raise
-           it when it is low */
+        /* THE SOLIDITY, a gauge and the figure: it says how good the layout
+           was on its own */
         var g = el("div", "ar-pgauge ar-df-sol" + (rep.sol >= 70 ? " full" : ""));
         var bar = el("div", "ar-pgauge-t"), f = el("i");
         f.style.width = rep.sol + "%";
@@ -2957,7 +3013,10 @@
         g.appendChild(bar);
         g.appendChild(el("b", "", rep.sol + "%"));
         card.appendChild(g);
-        card.appendChild(text("p", "ar-ev-foot", rep.sol < 50 ? T.dfTipLow : rep.sol < 80 ? T.dfTipMid : T.dfTipHigh));
+        var see = el("button", "btn btn-sm ar-df-see", "<span>" + W.upper(T.dfRepSee) + "</span>" + icon("next", "ar-ci"));
+        see.type = "button";
+        see.addEventListener("click", function () { finish(true); });
+        card.appendChild(see);
 
         function finish(open) {
           if (done) return;
@@ -2967,13 +3026,32 @@
           close();
           fly();
           if (rep.ok) W.Sound.ui("win", 0.8);
-          if (open) openDfReportTab();
+          if (!open) return;
+          if (leave) leave();
+          openDfReportTab();
         }
-        MT.tapOut(handle.box, function () { finish(true); });
+        MT.tapOut(handle.box, function () { finish(false); });
         off = MT.keyOut(function () { finish(false); });
       }
     });
     W.Sound.ui(rep.ok ? "win" : "fail", 0.8);
+  }
+
+  /* What a raid paid or cost, as the chips a report is read in — on its own
+     card and on its line of the recap. `data-rw` is where a reward flies
+     from (`dfCollect`). */
+  function dfChips(rep) {
+    var out = [], chip;
+    if (rep.ok) {
+      if ((rep.pr || []).length) out.push(mkChip("lock", fill(rep.pr.length > 1 ? T.dfPrisonersN : T.dfPrisoners1, { n: rep.pr.length }), "gain"));
+      else if (rep.full) out.push(mkChip("lock", T.dfPrisonFull, "risk"));
+      if (rep.coins) { chip = mkChip("coin", MT.rewardLabel(MT.reward("coins", rep.coins)), "gain"); chip.setAttribute("data-rw", "coins"); out.push(chip); }
+      if (rep.xp) { chip = mkChip("xp", MT.rewardLabel(MT.reward("xp", rep.xp)), "gain"); chip.setAttribute("data-rw", "xp"); out.push(chip); }
+    } else {
+      if ((rep.hurt || []).length) out.push(mkChip("heal", fill(rep.hurt.length > 1 ? T.penWoundN : T.penWound1, { n: rep.hurt.length }), "risk"));
+      if (rep.fine) out.push(mkChip("coin", fill(T.penCoins, { n: MT.num(Math.min(rep.fine, MT.coins()) || rep.fine) }), "risk"));
+    }
+    return out;
   }
 
   /* The defense's REPORT tab, from wherever the player is: redrawn on it
@@ -3059,9 +3137,10 @@
       line = el("div", "ar-when", icon("lock", "ar-ci") + "<span>" + untilText(p.u - now()) + "</span>");
     }
     /* A prisoner who has turned is drawn as the card they are about to be:
-       the player's army, in the uniform they were caught in. */
+       the player's army, in the uniform they were caught in. One who has
+       not is no card yet — the officer alone, behind the bars of the cell. */
     var n = wardCell("cell" + (turned ? " turned" : ""),
-      cardTile({ g: p.g, t: p.t, o: turned ? "red" : null }, { foe: !turned, fmt: "mid", w: WARD_W }),
+      turned ? cardTile({ g: p.g, t: p.t, o: "red" }, { fmt: "mid", w: WARD_W }) : jailTile(p),
       { o: "red", g: p.g, t: p.t }, turned ? "blue" : "red", doneOf(p.u, freeMs(p.g)), line);
     if (turned) {
       var busy = false;
@@ -3084,6 +3163,22 @@
     return n;
   }
   var ENLIST_MS = 560;                      // the turn, army.css `ar-enlist`
+
+  /* THE CELL: the card's footprint as a barred slot, the officer's portrait
+     standing inside it and cut by its walls, the bars in front. The bars
+     belong to the slot, not to a card laid over it, so nothing hangs past
+     the edge; the grade and the tier wait for the card they turn into. */
+  function jailTile(p) {
+    var n = el("div", "ar-jail");
+    var src = gradeArt(p.g, true, p.t, false);
+    if (src) {
+      var img = el("img");
+      img.src = src; img.alt = ""; img.draggable = false;
+      n.appendChild(img);
+    }
+    n.appendChild(el("i", "ar-jail-bars"));
+    return n;
+  }
 
   /* ── 8d. the camp: the recruiting tent ────────────────────────────────── */
 
@@ -4347,10 +4442,12 @@
      battle (the wound the infirmary had no bed for), a compass for a squad
      that did not come back, a heart for a wound brought home from a
      mission with no bed to lay it in. */
-  var CAUSE = { battle: "sword", mission: "compass", wounds: "heal", desert: "users" };
+  var CAUSE = { battle: "sword", mission: "compass", wounds: "heal", desert: "users", slain: "skull", surrender: "flag" };
   function causeText(e) {
     var m = e.m ? MISSION[e.m] : null;
     if (e.why === "desert") return T.lostDesert;
+    if (e.why === "slain") return T.lostSlain;
+    if (e.why === "surrender") return T.lostSurrender;
     if (e.why === "mission") return m ? fill(T.lostMission, { m: loc(m.title) }) : T.lostMissionAny;
     if (e.why === "wounds") return m ? fill(T.lostWounds, { m: loc(m.title) }) : T.lostWoundsAny;
     return T.lostBattle;
@@ -4690,6 +4787,13 @@
     var gifts = home ? newUnlocks() : [], raid = home && !!dfState().q;
     if (announcing || (!dead.length && !save.up.length && !days && !gifts.length && !raid)) { then(); return; }
     announcing = true;
+    /* SEVERAL PIECES OF NEWS ARE ONE CARD: a player back after a night finds
+       the recap, not a row of cards to tap through */
+    var items = newsItems(gifts, dead, home && days, raid);
+    if (items.length >= RECAP_MIN) {
+      openRecap(items, function () { announcing = false; then(); });
+      return;
+    }
     /* what the climb handed over first — it is news about the map the
        player just walked off — then the camp's own */
     openUnlocks(gifts, function () {
@@ -4707,6 +4811,173 @@
       });
     });
   }
+
+  /* THE RECAP. Everything waiting at the village, one LINE each in the order
+     the cards would have come — what it is, over what it pays or costs —
+     on one card. A line is a door to its own card, which tells it in full
+     and settles it as it always did; a tap anywhere else settles every line
+     left at once and the rewards fly together. Nothing is skipped: a bad
+     day collected from here is a bad day applied, so neither the scrim nor
+     ESCAPE walks past it without it. */
+  var RECAP_MIN = 2;
+
+  /* One item per card the chain would open: `open(then)` is that card,
+     `take(row)` settles it without one and hands back its flights. The days
+     are an item each, since each is a card of its own. */
+  function newsItems(gifts, dead, days, raid) {
+    var out = [], q = evState().q, i;
+    if (gifts.length) {
+      out.push({
+        title: gifts.length === 1 ? W.Lang.t(gradeName(gifts[0])) : T.dfUnlockTitleN, tone: "ok",
+        chips: function () {
+          return [mkChip("star", gifts.length === 1 ? T.rcObj1 : fill(T.rcObjN, { n: gifts.length }), "gain")];
+        },
+        open: function (then) { openUnlocks(gifts, then); },
+        take: function () {
+          var d = dfState();
+          for (var k = 0; k < gifts.length; k++) d.an[gifts[k]] = 1;
+          MT.setArmy(save);
+        }
+      });
+    }
+    if (dead.length) {
+      out.push({
+        title: T.fallenTitle, tone: "ko",
+        chips: function () {
+          return [mkChip("users", dead.length === 1 ? T.fallenEyebrow1 : fill(T.fallenEyebrowN, { n: dead.length }), "risk")];
+        },
+        /* the round's way of telling it: a card opens its file, since a door
+           out to the register would walk away from the recap under it */
+        open: function (then) { openFallen(dead, then, true); },
+        take: function () {
+          for (var k = 0; k < dead.length; k++) delete dead[k].nw;
+          MT.setArmy(save);
+        }
+      });
+    }
+    if (save.up.length) {
+      var ups = save.up.length;
+      out.push({
+        title: T.upTitle, tone: "ok",
+        chips: function () { return [mkChip("star", ups === 1 ? T.upEyebrow : fill(T.rcUpN, { n: ups }), "gain")]; },
+        open: function (then) { openPromos(then); },
+        take: function () { save.up.splice(0, save.up.length); MT.setArmy(save); }
+      });
+    }
+    for (i = 0; days && i < q.length; i++) {
+      if (EV_BY[q[i].id]) out.push(eventItem(q[i]));
+    }
+    if (raid) {
+      var rep = dfState().q;
+      out.push({
+        title: rep.ok ? T.dfRepHeld : T.dfRepLost, tone: rep.ok ? "ok" : "ko",
+        chips: function () { return dfChips(rep); },
+        open: function (then, leave) { openDefenseReport(then, leave); },
+        take: function (row) { return dfState().q === rep ? dfCollect(rep, row) : null; }
+      });
+    }
+    return out;
+  }
+
+  function eventItem(ev) {
+    return {
+      title: loc(EV_BY[ev.id].title), tone: ev.good ? "ok" : "ko",
+      chips: function () { return evChips(ev); },
+      open: function (then) { openEvent(ev, 1, then); },
+      take: function () {
+        var q = evState().q, at = q.indexOf(ev);
+        if (at < 0) return null;
+        q.splice(at, 1);
+        return applyEvent(ev);
+      }
+    };
+  }
+
+  function openRecap(items, then) {
+    var h = null, off = null, done = false, busy = false, list = null;
+    MD.open({
+      kind: "ar-event ar-recap", dismiss: false, esc: false, onClose: then,
+      onHide: function () { if (off) { off(); off = null; } },
+      eyebrow: T.dfRepEyebrow,
+      title: T.rcTitle,
+      badge: items.length,
+      tap: T.rcTap,
+      fill: function (card, close, handle) {
+        h = handle;
+        list = el("div", "ar-rc-list");
+        for (var i = 0; i < items.length; i++) list.appendChild(row(items[i]));
+        card.appendChild(list);
+        MT.tapOut(handle.box, collect);
+        off = MT.keyOut(collect);
+      }
+    });
+    W.Sound.ui("reward", 0.7);
+
+    function row(it) {
+      var b = el("button", "ar-rc-row " + it.tone);
+      b.type = "button";
+      /* two lines, what it is over what it did, and the arrow that says
+         the line opens */
+      var main = el("span", "ar-rc-main");
+      main.appendChild(text("span", "ar-rc-t", it.title));
+      var out = el("span", "ar-rc-out"), chips = it.chips();
+      for (var k = 0; k < chips.length; k++) out.appendChild(chips[k]);
+      main.appendChild(out);
+      b.appendChild(main);
+      b.appendChild(el("span", "ar-rc-go", icon("next", "ar-ci")));
+      it.row = b;
+      b.addEventListener("click", function () { read(it); });
+      return b;
+    }
+
+    /* ONE LINE, IN FULL: its own card over the recap, which steps aside
+       until that card has settled it, then comes back without the line —
+       or goes, when it was the last. */
+    function read(it) {
+      if (busy || done) return;
+      busy = true;
+      if (off) { off(); off = null; }
+      h.box.classList.add("ar-rc-away");
+      it.open(function () {
+        busy = false;
+        items.splice(items.indexOf(it), 1);
+        if (it.row.parentNode) it.row.parentNode.removeChild(it.row);
+        if (done) return;
+        if (!items.length) { done = true; h.close(); return; }
+        h.set({ badge: items.length });
+        h.box.classList.remove("ar-rc-away");
+        off = MT.keyOut(collect);
+      }, away);
+    }
+
+    /* A LINE THAT WALKS ELSEWHERE (the raid's details): the recap goes with
+       nothing settled, and what is left is told again at the next return to
+       the village. */
+    function away() {
+      if (done) return;
+      done = true;
+      h.close();
+    }
+
+    /* EVERYTHING AT ONCE, in the order the cards would have come, and the
+       flights one beat apart so each chip is seen counting. */
+    function collect() {
+      if (busy || done) return;
+      done = true;
+      if (off) { off(); off = null; }
+      var flights = [], good = false, f, i;
+      for (i = 0; i < items.length; i++) {
+        f = items[i].take(items[i].row);
+        if (f) flights.push(f);
+        if (items[i].tone === "ok") good = true;
+      }
+      persist();
+      h.close();
+      for (i = 0; i < flights.length; i++) setTimeout(flights[i], i * RECAP_FLY_MS);
+      if (good) W.Sound.ui("win", 0.7);
+    }
+  }
+  var RECAP_FLY_MS = 260;
 
   /* After a view change, once the screen has settled: a card opened on the
      same beat as the village is opened under it, or over a card the village
@@ -5257,14 +5528,11 @@
       dfTextLost: "The red army broke through your defense and took the flag.",
       dfPrisoners1: "1 prisoner", dfPrisonersN: "{n} prisoners", dfPrisonFull: "Prison full: no prisoner",
       dfSolid: "Solidity",
-      dfTipLow: "Keep the flag away from the front and fill the cells around it: a gap is a way in.",
-      dfTipMid: "Objects slow a raid down. Every card stuck on a fence or a straw man is one less to reach your flag.",
-      dfTipHigh: "A layout that holds almost every assault.",
       tab_strat: "Strategy", tab_rep: "Report",
       dfRepSub: "Last raid: {d}", dfRepNoneSub: "No raid yet",
       dfRepNone: "No raid yet. Validate a defense: the red army will attack it when you come back after {n} hours away.",
       dfRepNoLog: "The duels of this raid were not recorded.",
-      dfRepTapHeld: "Tap anywhere to collect and see the report", dfRepTapLost: "Tap anywhere to see the report",
+      dfRepSee: "See the details",
       dfRepOrder: "Order of attack", dfRepCamp: "Pushed back: {n}", dfRepFoe: "Broken through: {n}",
       duVs: "vs", duWin: "{w} wins", duTie: "Both fall", duFlag: "Flag taken",
       duTrap: "{a} falls in the trap", duClear: "{a} clears the trap", duSmash: "{a} clears the way",
@@ -5347,8 +5615,19 @@
       surWhy_trap: "Mines guard my flag, and you have no sapper left to clear them.",
       surWhy_object: "What guards my flag, none of your cards can break.",
       surWhy_soldier: "What guards my flag, none of your cards can beat.",
-      surNote: "This battle can no longer be won. Surrender, and it ends here with no score.",
+      surNote: "This battle can no longer be won. Surrender, and you hand me one of your cards: it leaves your camp for good. The wounds already taken still count.",
+      surNoteNone: "This battle can no longer be won. You have no card left to hand me: surrender, and only the wounds already taken count.",
+      surRisk: "Fight on, and every card that falls is lost or wounded.",
+      surPick: "Pick the card you hand over",
       surNo: "Fight on", surYes: "Surrender", surTap: "Tap to fight on",
+      lostSlain: "Fell in a battle fought to the last card",
+      lostSurrender: "Handed over to the enemy in a surrender",
+      fallen1_slain: "{c}: fell in a battle fought to the last card",
+      fallenS_slain: "1 card fallen in a battle fought to the last card",
+      fallenN_slain: "{n} cards fallen in a battle fought to the last card",
+      fallen1_surrender: "{c}: handed over to the enemy commander",
+      fallenS_surrender: "1 card handed over to the enemy",
+      fallenN_surrender: "{n} cards handed over to the enemy",
       hurtTitle: "Wounded", hurtEyebrow1: "To the infirmary", hurtEyebrowN: "{n} cards to the infirmary",
       hurt1: "{c}: wounded in battle", hurtN: "{n} cards wounded in battle",
       hurtGo1: "{g} {c}, tier {r}, must go to the infirmary for {t}.",
@@ -5369,6 +5648,8 @@
       lostDesert: "Deserted the camp",
       evEyebrow: "Life in the camp", evEyebrowN: "Life in the camp · {n} news",
       evGood: "Good news", evBad: "Bad news",
+      rcTitle: "Camp news", rcTap: "Tap anywhere to accept everything",
+      rcObj1: "New object card", rcObjN: "{n} object cards", rcUpN: "{n} promotions",
       evTicketLost: "-{n} ticket", evJoins: "Joins your army", evLeaves: "Leaves the camp",
       evHealed: "Back on their feet", evHealLater: "+{h} in the infirmary",
       evEscaped: "Escaped", evJailLater: "+{h} in prison",
@@ -5422,14 +5703,11 @@
       dfTextLost: "L'armée rouge a percé ta défense et pris le drapeau.",
       dfPrisoners1: "1 prisonnier", dfPrisonersN: "{n} prisonniers", dfPrisonFull: "Prison pleine : aucun prisonnier",
       dfSolid: "Solidité",
-      dfTipLow: "Eloigne le drapeau du front et remplis les cases autour : chaque trou est une brèche.",
-      dfTipMid: "Les objets ralentissent l'assaut. Chaque carte bloquée par une barrière ou un épouvantail, c'est une carte de moins pour atteindre ton drapeau.",
-      dfTipHigh: "Une défense qui résiste à presque tous les assauts.",
       tab_strat: "Stratégie", tab_rep: "Rapport",
       dfRepSub: "Dernier assaut : {d}", dfRepNoneSub: "Aucun assaut pour l'instant",
       dfRepNone: "Aucun assaut pour l'instant. Valide une défense : l'armée rouge l'attaquera si tu reviens après {n} heures d'absence.",
       dfRepNoLog: "Les duels de cet assaut n'ont pas été enregistrés.",
-      dfRepTapHeld: "Touche n'importe où pour récupérer et voir le rapport", dfRepTapLost: "Touche n'importe où pour voir le rapport",
+      dfRepSee: "Voir le détail",
       dfRepOrder: "Ordre d'attaque", dfRepCamp: "Repoussés : {n}", dfRepFoe: "Percées : {n}",
       duVs: "vs", duWin: "{w} gagne", duTie: "Les deux tombent", duFlag: "Drapeau pris",
       duTrap: "{a} tombe dans le piège", duClear: "{a} désamorce le piège", duSmash: "{a} ouvre le passage",
@@ -5471,7 +5749,7 @@
       needMore1: "Encore 1 carte pour envoyer l'escouade", needMoreN: "Encore {n} cartes pour envoyer l'escouade",
       send: "Envoyer l'escouade", cancel: "Annuler",
       sent: "Escouade en route", sentSub: "De retour dans {t}",
-      repEyebrow: "Rapport de mission", repWin: "Réussite", repLose: "Echec",
+      repEyebrow: "Rapport de mission", repWin: "Réussite", repLose: "Échec",
       fateHurt: "Blessée", fateLost: "Perdue", theSquad: "L'escouade",
       repCollect: "Touche n'importe où pour récupérer", repClose: "Touche n'importe où pour fermer",
       tab_posts: "Gestion", tab_reg: "Registre",
@@ -5512,8 +5790,19 @@
       surWhy_trap: "Des mines gardent mon drapeau. Il ne te reste aucun sapeur pour les lever.",
       surWhy_object: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le détruire.",
       surWhy_soldier: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le battre.",
-      surNote: "Cette bataille ne peut plus être gagnée. Si tu te rends, elle s'arrête ici, sans score.",
+      surNote: "Cette bataille ne peut plus être gagnée. Si tu te rends, tu me livres une de tes cartes : elle quitte ton camp pour de bon. Les blessures déjà reçues comptent toujours.",
+      surNoteNone: "Cette bataille ne peut plus être gagnée. Il ne te reste aucune carte à me livrer : si tu te rends, seules les blessures déjà reçues comptent.",
+      surRisk: "Si tu continues, chaque carte qui tombe est perdue ou blessée.",
+      surPick: "Choisis la carte à livrer",
       surNo: "Continuer", surYes: "Se rendre", surTap: "Touche pour continuer",
+      lostSlain: "Tombé dans une bataille menée jusqu'à la dernière carte",
+      lostSurrender: "Livré à l'ennemi lors d'une reddition",
+      fallen1_slain: "{c} : tombé dans une bataille menée jusqu'à la dernière carte",
+      fallenS_slain: "1 carte tombée dans une bataille menée jusqu'à la dernière carte",
+      fallenN_slain: "{n} cartes tombées dans une bataille menée jusqu'à la dernière carte",
+      fallen1_surrender: "{c} : livré au commandant ennemi",
+      fallenS_surrender: "1 carte livrée à l'ennemi",
+      fallenN_surrender: "{n} cartes livrées à l'ennemi",
       hurtTitle: "Blessés", hurtEyebrow1: "Direction l'infirmerie", hurtEyebrowN: "{n} cartes à l'infirmerie",
       hurt1: "{c} : blessure au combat", hurtN: "{n} cartes blessées au combat",
       hurtGo1: "{g} {c}, rang {r}, part à l'infirmerie pour {t}.",
@@ -5534,9 +5823,11 @@
       lostDesert: "A déserté le camp",
       evEyebrow: "Vie du camp", evEyebrowN: "Vie du camp · {n} nouvelles",
       evGood: "Bonne nouvelle", evBad: "Mauvaise nouvelle",
+      rcTitle: "Nouvelles du camp", rcTap: "Touche n'importe où pour tout accepter",
+      rcObj1: "Nouvelle carte objet", rcObjN: "{n} cartes objets", rcUpN: "{n} promotions",
       evTicketLost: "-{n} ticket", evJoins: "Rejoint ton armée", evLeaves: "Quitte le camp",
       evHealed: "De retour sur pied", evHealLater: "+{h} à l'infirmerie",
-      evEscaped: "Evasion", evJailLater: "+{h} en prison",
+      evEscaped: "Évasion", evJailLater: "+{h} en prison",
       evTent: "Nouvelles recrues à la tente", evTentBurn: "Plus de recrues jusqu'au prochain renouvellement",
       evBoard: "Nouvelles missions au tableau", evLate: "+{h} de retard"
     }

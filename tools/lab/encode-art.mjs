@@ -158,6 +158,9 @@ var PROFILE = {
    close to their master's 650px. */
 var CARDS = { w: 560, h: 700, q: 0.84 };
 
+/* games/gelatile's grey materials (see profileFor). */
+var TEXTURE = { w: 512, h: 512, q: 0.8 };
+
 /* ...AND IT IS NOT ONE BOX, BECAUSE "A CARD" IS NOT ONE SIZE. The rule above
    is slipdeck's, whose one big card is 357 design px wide and is what the
    player stares at. games/stratideck draws TWENTY of them — an officer per
@@ -439,6 +442,13 @@ function profileFor(role, slug) {
   /* `fairway-01`… — games/holepocalypse's round ground, one painted fairway
      per band, cut like a phone background (orbinity's `space-<world>`). */
   if (/^fairway-\d+$/.test(role)) return PROFILE["background-phone"];
+  /* `scene-bath`, `scene-jungle`… — games/gelatile's round scenes, one per
+     biome, painted on the canvas behind the board: a phone background. */
+  if (/^scene-[a-z]+$/.test(role)) return PROFILE["background-phone"];
+  /* `texture-soap`, `texture-wood`… — games/gelatile's grey tile materials,
+     laid over every tile in hard-light. A tile shows a crop of one, at most
+     ~150 design px, so 512 is plenty at 3x. */
+  if (/^texture-[a-z]+$/.test(role)) return TEXTURE;
   /* `sky-day`, `sky-night`, ... — a game with several horizons keeps one cut
      per biome and picks between them at runtime (games/arcider). They are the
      same panorama as `sky` and must not fall to the generic 320px box, which
@@ -558,7 +568,7 @@ function knownRole(role) {
          /^rock-(boulder|crystal|slab|shard|pumice|obsidian)-\d+$/.test(role) || /^flame\d+$/.test(role) ||
          /^(crust|smore|snake)\d+$/.test(role) ||
          /^(walker|boomer|shield|mudder|digger|runner|necro|kind|super|ball|course)\d+$/.test(role) ||
-         /^boss-[a-z]+\d+$/.test(role) || /^fairway-\d+$/.test(role) || /^fx-[a-z]+-\d+$/.test(role) ||
+         /^boss-[a-z]+\d+$/.test(role) || /^fairway-\d+$/.test(role) || /^(scene|texture)-[a-z]+$/.test(role) || /^fx-[a-z]+-\d+$/.test(role) ||
          /^frame-[a-z-]+$/.test(role);
 }
 
@@ -689,6 +699,10 @@ export var SHELL_CUTS = [
   { cut: "game-reward-18", role: "coin-pile" },  // an AMOUNT of money
   { cut: "game-reward-24", role: "xp" },         // the bolt the xp bar fills with
   { cut: "game-trophy-03", role: "trophy" },     // ninety of ninety
+  /* THE MODES' MEDAL — the gold one of the three on `game-object-reward.png`,
+     on the ranking's MODES tab beside the trophy (RECORDS) and the star
+     (LEVELS): a record kept per mode, in the same painted family. */
+  { cut: "game-reward-19", role: "medal" },      // a mode's record
   /* THE COLLECTION, and it is the four-leaf clover of the twenty on
      `game-object-sticker.png` — the one piece on that sheet that says
      "a thing worth collecting" without being a star, a coin, a trophy or a
@@ -708,6 +722,15 @@ export var SHELL_CUTS = [
      this one is a plate across a modal's header, so 360 would be upscaled
      where they are downscaled. */
   { cut: "game-multiplicator-02", role: "mult-5", w: 480, h: 480 },
+
+  /* THE GALLERY, out of `game-object-gallery.png` (cut `--grid 4x3`, so the
+     cell is the index): the framed landscape with a jigsaw piece over its
+     corner is the album's GALLERY tab — a painting AND the pieces it is
+     bought in — and the lone blue piece is the count of pieces owned in that
+     tab's header. Both names are pictograms menu.js already draws (`image`,
+     `puzzle`), so `icon()` picks the painted one up with no caller changed. */
+  { cut: "game-gallery-09", role: "image" },     // the gallery tab
+  { cut: "game-gallery-03", role: "puzzle" },    // a gallery piece, counted
 
   /* THE HAND the Help card acts the gesture out with — the pointing index of
      the twenty-four on `game-object-hand.png`, cuff down and fingertip up,

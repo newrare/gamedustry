@@ -68,7 +68,9 @@ development pages and answer only to the short rules in their own sections.
    shell's own `STRINGS` — holds `"Best score"`, `"Time's up!"`, `"Chaîne x"`:
    lowercase, with a capital on the first letter and on a proper noun. Where a
    screen shouts, the motor's `upper()` is what shouts it, and **a capital
-   carries no accent** ("Déjà" reads DEJA). Never type a word in capitals to get
+   carries no accent ON SCREEN** ("Déjà" reads DEJA). The source keeps every
+   accent, on a capital too: `"Éclatées"`, `"À toi"`, `"Ça accélère"`, never
+   `"Eclatées"`. Never type a word in capitals to get
    capitals on screen, and never `toUpperCase` — `upper` also leaves a unit
    glued to a number alone, so `"Chain x" + 3` stays CHAIN x3. See
    [docs/ENGINE.md](docs/ENGINE.md#upper--capitals-are-a-look-not-a-spelling).
@@ -383,8 +385,10 @@ ends on one ("Tap to close", "Tap to collect"), and a tap anywhere — the card,
 around it, the line itself — does what it says — and ESCAPE: no card
 carries a cross. The one branch: a game with no `web.meta` has no band, so
 its views keep a home button — there is always exactly one way home, never two.
-**The bottom-right corner belongs to the ROUND**, which is the one surface with
-nothing else on it: options, help and the way out.
+**The bottom edge belongs to the ROUND**, which is the one surface with
+nothing else on it: ONE foot bar, the same in every game — the level's stars
+and the "!" on the left, MENU / GUIDE / HELP / OPTIONS on the right
+(`packages/webshell/view.css`, THE FOOT BAR).
 
 What a view brings:
 
@@ -428,7 +432,8 @@ What a view brings:
   **PLAY / LEADERBOARD / OPTIONS / HELP**. PLAY *is* the motor's `#btn-start`,
   restyled — which is what keeps `startGame`, the SPACE key and the audio
   unlock gesture exactly as they were. LEADERBOARD opens the **ranking view**
-  — two tabs until an online board exists: RECORDS, one screen with no scroll
+  — two tabs until an online board exists (a third, MODES, for a game that
+  publishes `Game.records()`): RECORDS, one screen with no scroll
   (the summed best score of every level under the trophy, the player level,
   stars, stickers and levels cleared, the climb's figures opening LEVELS on a
   tap) and LEVELS (level 0, the thirty in their bands, the endless star),
@@ -448,12 +453,18 @@ What a view brings:
   the default on every return, so no path can launch a mode nobody picked. The
   label comes from `web.copy` under `mode<Key>` (`modeClassic`), the key in
   caps otherwise. The motor knows nothing about modes, and a game that declares
-  none never sees the field. **No game ships a second mode today**: `radiam`
-  declares `web.modes: ["eclipse"]`, a one-entry list that arms `CONFIG.mode`
-  and adds nothing to the menu — its timed dial is still in the build, reached
-  with `?mode=` for a bench, but the map is what the player gets. An extra entry
-  would start a *free* round, so the shell clears `CONFIG.level` and the base
-  tuning before it does.
+  none never sees the field. `radiam` declares `web.modes: ["eclipse"]`, a
+  one-entry list that arms `CONFIG.mode` and adds nothing to the menu — its
+  timed dial is still in the build, reached with `?mode=` for a bench, but the
+  map is what the player gets. An extra entry starts a *free* round, so the
+  shell clears `CONFIG.level` and the base tuning before it does. **On a
+  village a mode is a HOUSE**: `"role": "mode", "mode": "<key>"` arms that key
+  and starts the round (`__MENU__.startMode`), and its word is the entry's
+  `mode<Key>`. `gelatile` is the one game with two: `["levels", "classic", "fast"]`, a no-power endless board and a race to 2048, floating in the
+  village's bathtub. A game whose modes keep records publishes them as
+  **`Game.records()`** → `[{ key, title, label, value, figure, sub }]`, which
+  gives the ranking view a third tab, MODES, one card a mode; `Game.wipe()`
+  is what OPTIONS' erase row calls for what the game keeps itself.
 - **a bed over all of it** — the same track the round plays, as its own quiet,
   slower section of the file: `CONFIG.music.menu` in the game, `Music.play` in
   the motor. It starts on the first gesture (nothing may play before one) and
@@ -461,8 +472,8 @@ What a view brings:
   keeps silent menus.
 - **OPTIONS and HELP are cards, and they open from anywhere** — the title menu
   where there is one, the village's own houses where there is a hub, the bar
-  at the foot of every view's sheet (below), and a pair of controls in the
-  **bottom-right corner** of a round (`#web-ctls`). The OPTIONS card ends on the **studio signature** — the mark,
+  at the foot of every view's sheet (below), and the right end of a round's
+  **foot bar** (`#web-ctls`). The OPTIONS card ends on the **studio signature** — the mark,
   `NEWRARE` and `v<version>`, the same block the motor pins to the corner of
   the title screen out of `CONFIG.brand`. A version number is what a player is
   asked for when a build misbehaves, and a title screen two seconds long is not
@@ -477,7 +488,8 @@ What a view brings:
   the best score, the climb and the meta layer's wallet, collection and daily
   road together (it asks twice, and not from a round). All of it persisted
   through `Store`.
-- **the round gets a third control in front of that pair**: the way out. It is
+- **the round gets two more controls in front of that pair**: the way out,
+  then the GUIDE (the book, which opens the guide on its contents). The way out is
   the difference between a playable, where the round *is* the ad, and a game the
   player owns, and its pictogram is the MENU (three lines): it opens the leave
   card, which answers with **resume** first, then where to go — **play again** (the same level, the
@@ -486,8 +498,8 @@ What a view brings:
   exit per line, the tap line under them resuming the round as well
   (`openLeave`, `packages/webshell/menu.js`). Not in the top band:
   the HUD is the game's, all of it, and the thirteen fill it differently —
-  nothing about the round has to move to make room (`--hud-h`, `--cta-h` and
-  `Layout` are all untouched). Any card over a round **pauses it** (the clock is
+  so the round's controls are the foot bar's (`--hud-h` and `--cta-h` are
+  untouched; a game's instruments stop at `Layout.foot`). Any card over a round **pauses it** (the clock is
   `Loop`'s, so freezing the loop freezes the world, the timer and the game's
   update at once, and a tab coming back cannot un-pause it). The pause is the
   CARD's, not its caller's — `Modal.open` takes it and gives it back, counted,
@@ -535,23 +547,25 @@ What a view brings:
   screen, with the loop still turning for it, which is what a slow motion needs
   and an end screen cannot give — and `onReveal(fn)`, which holds the end
   screen's way out until a layer has handed over what it still owes. The stars become the level's without a line
-  changing in any `game.js`. **The round wears its three stars live**, in a pill in the
-  **bottom-left corner** (never *in* the HUD, whose top band is the game's) —
-  mirroring MENU / OPTIONS in the opposite one, and **a tap on it opens the
-  OBJECTIVES card** — what each of the three stars asks for, the met ones lit
-  (`Game.levelRules(n)` words them for a game whose stars are not score
-  bands). Neither corner takes a band out
-  of `Layout`: a game draws through them and anchors no instrument and no word
-  there. A game whose own layout owns that corner moves the pill from its SKIN
-  with `--lv-hud-bottom` / `--lv-hud-left` — or, better, stops its own table
-  above that row on the web (`games/slipdeck`, whose hand now stands above it:
-  `WEB_FOOT` in its game.js) — and `games/arcider` moved its shield rail and
-  speedometer to the right flank instead. **The pill carries the round's
+  changing in any `game.js`. **The round wears its three stars live**, in a pill at
+  the **left end of the foot bar** (never *in* the HUD, whose top band is the
+  game's), and **a tap on it opens the OBJECTIVES card** — what each of the
+  three stars asks for, the met ones lit (`Game.levelRules(n)` words them for
+  a game whose stars are not score bands). **The pill carries the round's
   "!"** just to its right — the band's notification log, which is down over a
-  round; its card pauses the round like every card over one — and a game
-  whose launcher stands there sets `--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)`
-  in its SKIN to stand it on top of the pill instead (`games/blight`,
-  `games/echomaze`). **The third star ends the
+  round; its card pauses the round like every card over one. The right end of
+  the bar is MENU (the leave card), GUIDE (the book: the guide's contents,
+  `__GUIDE__.open()`), HELP and OPTIONS. **The bar is ONE shape in every game
+  and nothing moves it**: 62 px tall on the 26 px margin, no SKIN escape. It
+  takes no band out of `Layout` — a game draws THROUGH it — and anchors no
+  instrument and no word in it: **`Layout.foot`** is the line an instrument
+  stops at (the bar's top plus a breath, `CONFIG.layout.footHeight` written by
+  the web and android platforms; `Layout.bottom` on a playable).
+  `games/echomaze`'s cannon, `games/blight`'s launcher and
+  `games/holepocalypse`'s queue stand on it; `games/slipdeck` and
+  `games/bridgessa` stop their table above it with their own `WEB_FOOT`, and
+  `games/arcider` moved its shield rail and speedometer to the right flank.
+  **The third star ends the
   round**: slow motion down to 12 %
   over 0.3 s and a 0.2 s hold — every ending is half a second, whatever it
   scored — then the end screen, because a player who has maxed a level
@@ -818,6 +832,24 @@ What a view brings:
   choice through `Game.held()` (docs/ENGINE.md), the socket recharges for 30 s,
   and the deal is one help card against one score, risk or legendary card,
   never told apart on screen. The look is chosen in `lab/gearball-cards.html`.
+- **a game that publishes `Game.loadout` gets the LOADOUT card** — what the
+  player takes into a round, picked before it starts
+  (`packages/webshell/loadout.{js,css}`): the slots on top, what the tile in
+  focus does under them, every item of the game in one grid — the locked ones
+  as dark silhouettes with a padlock and the level that opens them, from level
+  1 — and PLAY at the foot. Every slot is always filled, so PLAY is always
+  live, and a change is TWO TAPS, never a drag: a free tile is held, the slots
+  sway with the swap glyph, the slot tapped takes it. `play(n)` in levels.js asks it on every level
+  started from the map, the village, the end screen's NEXT or the ranking;
+  never on a REPLAY (`__LEVELS__.replay`, the same hand again), never on the
+  first launch, never on a load a tool drives (`?first=0`, `?force=1`). The
+  pick starts from the player's last one (`loadout:<slug>` in `Store`), with
+  what THIS level brings in first, tagged NEW, then the level's own
+  suggestion. The contract is six functions — `title()`, `slots(n)`,
+  `items()` (`{ id, lv }`), `info(id)` (`{ name, text, src }`), `suggest(n)`
+  and `set(ids)`, which arms the next round (null: the level's own). An item
+  is unlocked once the map has opened its `lv`, the codex's rule.
+  `games/holepocalypse` publishes it: its two supers among the twenty.
 
 **A game that declares `web.village` gets the VILLAGE**, a view between the
 title screen and the map, and it is the place the player lives:
@@ -836,7 +868,8 @@ leads home like any other round's, and OPTIONS' erase row makes the next launch
 a first one again (`packages/webshell/menu.js`, section 4c). **`?first=0`
 turns it off for one load** — every tool that drives a build on an empty
 storage (the views test, the events bench, `overlay-pop`, `shoot-screens`)
-passes it, and a new one must too.
+passes it, and a new one must too. It also keeps the loadout card shut, as
+`?force=1` does: a tool that starts a level gets a round, not a question.
 
 The title screen becomes a **SPLASH**: the logotype, the signature, two seconds
 of them, and then the village opens on its own — the stacked menu in front of a
@@ -1781,8 +1814,9 @@ patch version moved, and the checked marks of its lines move with it
 `http://localhost:8092/library`): every file of `assets/audio/sfx/` on one
 page, grouped by the CATEGORY its name starts with, with its length, whether it
 is mono, its pack and which game already cuts a clip from it (`chainring.hit`);
-a search box, the categories, the packs and the length as facets; hover plays,
-click copies the name. The library is ~1310 files, **all free of rights** —
+a search box, the categories, the packs and the length as facets — ONE
+category at a time, and hovering one plays the first file it would list, while
+the packs and the length stay folded; hover plays, click copies the name. The library is ~1310 files, **all free of rights** —
 CC0 1.0, or the public domain with its reason written in `sources.tsv` (the
 author's dedication, a US federal work, an expired term) — out of eight Kenney
 packs, some ninety OpenGameArt pages, BigSoundBank, Wikimedia Commons, the US
@@ -2010,7 +2044,7 @@ Frame & input (section 3):
 - `view` — `w`, `h`, `scale`, `dpr`, `insetTop`, `insetBottom` (design px).
   `view.dpr` is the design→device pixel ratio: size every cached canvas with it
   and never read `window.devicePixelRatio` in a game.
-- `Layout` — `top / bottom / left / right / w / h / cx / cy`: the band gameplay
+- `Layout` — `top / bottom / foot / left / right / w / h / cx / cy`: the band gameplay
   may use, already clear of the HUD, the CTA bar and the device insets, and
   **never closer to the glass than the house margin** — `CONFIG.layout.safePad`,
   26 design px, a FLOOR on the four edges and not an addition (a playable's
@@ -2019,7 +2053,9 @@ Frame & input (section 3):
   and every readable word a game draws is anchored inside it — `Pop.show` and
   `Pop.text` are clamped into it by the motor. It is **not a clip rect**: a lava
   lake, a scrolling lane or an expanding shockwave is meant to bleed off an edge
-  and is drawn outside `Layout`, as it always was. See
+  and is drawn outside `Layout`, as it always was. **`Layout.foot`** is where
+  an INSTRUMENT anchored at the bottom stops (a cannon, a launcher, a queue):
+  the top of the web round's foot bar, and `Layout.bottom` on a playable. See
   [docs/ENGINE.md](docs/ENGINE.md).
 - `Input.on("down"|"move"|"up", fn)` — unified mouse+touch in design space.
 - `Input.swipe(dir, dist)` / `Input.at(type, x, y)` — synthesize a gesture. This
@@ -2303,7 +2339,8 @@ its own, deployed by Vercel from this repo.
   reads in capitals got them from `upper()` — the motor's
   ([packages/engine](packages/engine/engine.js)), the site's
   ([site/script.js](site/script.js)) or the lab page's own copy of it — and
-  **a capital carries no accent**: DEJA, CA MELANGE, MEILLEURE CHAINE. Never
+  **a capital carries no accent on screen**: DEJA, CA MELANGE, MEILLEURE
+  CHAINE — while the source keeps it (`"Ça mélange"`, `"Éclatées"`). Never
   type a word in capitals to get capitals on screen, and never `toUpperCase`,
   which keeps the accent and shouts the `x` of a multiplier. On the site the
   stylesheet stays the one place that says WHAT shouts: `applyLang` reads the

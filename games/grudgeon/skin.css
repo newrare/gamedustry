@@ -61,6 +61,9 @@
      menu without telling the game: the HUD goes hidden, and so does every
      layer of the round that still stands (they are appended after it). */
   #hud.hidden ~ #gd-card, #hud.hidden ~ #gd-bar { display:none; }
+  /* The shop stays open while the player buys, so the callout a purchase
+     fires is lifted over the card instead of landing behind its veil. */
+  #frame.gd-shopping #overlay { z-index:31; }
   #gd-card.on { opacity:1; }
   #gd-card.off { opacity:0; pointer-events:none; transition-duration:.25s; }
   .gd-text { margin:0; font-size:24px; line-height:1.4; text-align:center; color:var(--text); opacity:.88; }
@@ -71,52 +74,20 @@
   /* a ware's painted item, beside its name (Game.button's `art`) */
   .gd-picks .btn .gd-ico { flex:0 0 auto; width:72px; height:72px; object-fit:contain; margin-right:6px; }
 
-  /* the party: four heroes, lit when they are coming */
-  .gd-party { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; }
-  .gd-hero {
-    --hc:var(--accent);
-    appearance:none; -webkit-appearance:none; margin:0; cursor:pointer; font:inherit; color:var(--text);
-    display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px 14px;
-    border-radius:22px; border:3px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03);
-    opacity:.45; filter:grayscale(.8);
-    transition:opacity .15s ease, filter .15s ease, border-color .15s ease, transform .1s ease;
+  /* what an event's choice did: the lore over it (.gd-text), then one row
+     per effect, a gain in green and a price in red */
+  .gd-fx { display:flex; flex-direction:column; gap:10px; width:100%; margin:0; padding:0; list-style:none; }
+  .gd-fx li {
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:12px 18px; border-radius:16px; background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.1);
+    font-size:22px; line-height:1.25; font-weight:700; color:var(--text);
   }
-  .gd-hero.on {
-    opacity:1; filter:none; border-color:var(--hc);
-    background:color-mix(in srgb, var(--hc) 10%, transparent);
-    box-shadow:0 0 26px color-mix(in srgb, var(--hc) 35%, transparent);
-  }
-  .gd-hero:active { transform:scale(.97); }
-  .gd-hero canvas { width:150px; height:150px; }
-  .gd-hero b { font-size:28px; letter-spacing:3px; font-weight:900; color:var(--hc); }
-  .gd-hero i { font-style:normal; font-size:20px; letter-spacing:1px; font-weight:800; opacity:.75; text-align:center; }
-  /* the candle a hero carries, on their tile: lit when called */
-  .gd-hero { position:relative; }
-  .gd-burn {
-    position:absolute; top:8px; right:8px; width:52px; height:52px; border-radius:26px;
-    display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(circle, rgba(255,190,90,.45), rgba(255,190,90,0) 70%);
-    filter:grayscale(1) brightness(.5); transition:filter .15s ease;
-  }
-  .gd-burn img { width:44px; height:44px; object-fit:contain; }
-  .gd-hero.on .gd-burn { filter:none; }
-  /* the lantern under the party: the candles, and the steps of light they
-     make for the party picked */
-  .gd-lamp {
-    width:100%; box-sizing:border-box; padding:14px 18px; border-radius:18px;
-    background:radial-gradient(120% 140% at 12% 50%, rgba(255,190,90,.18), rgba(20,12,6,.6) 60%);
-    border:1px solid rgba(255,207,122,.4);
-  }
-  .gd-lamp .gd-lamp-row { display:flex; align-items:center; gap:16px; margin:0; }
-  .gd-lamp .gd-lamp-why { margin:10px 0 0; }
-  .gd-lamp-ico img { width:56px; height:56px; object-fit:contain; display:block; }
-  .gd-lamp-col { margin:0; display:flex; flex-direction:column; line-height:1; gap:4px; }
-  .gd-lamp-col b { font-size:40px; font-weight:900; color:#fff2c4; }
-  .gd-lamp-col i { font-style:normal; font-size:18px; letter-spacing:2px; font-weight:900; color:rgba(255,242,196,.7); }
-  .gd-lamp-why {
-    font-size:20px; line-height:1.3; font-weight:700; color:rgba(255,242,196,.85);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  }
+  .gd-fx li b { flex:0 0 auto; font-size:24px; font-weight:900; white-space:nowrap; }
+  .gd-fx li.is-good { border-color:rgba(126,224,161,.45); }
+  .gd-fx li.is-good b { color:#7ee0a1; }
+  .gd-fx li.is-bad { border-color:rgba(255,110,110,.45); }
+  .gd-fx li.is-bad b { color:#ff6e6e; }
 
   /* ---- the fight's scrolls, under the stage the canvas draws -------------
      One square scroll per action: the paper between two rods, the action's

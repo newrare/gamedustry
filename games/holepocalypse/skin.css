@@ -7,8 +7,6 @@
     --bg:#0c1a10; --accent:#9fe03a;
     --cta-a:#c4ff4a; --cta-b:#5fbf1a; --cta-text:#102006;
     --danger:#ff4d6d; --gold:#ffd34d;
-    /* the bag's row stands just right of the level pill: the "!" goes on top */
-    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
   }
   html, body { background:radial-gradient(900px 900px at 50% 18%, #3a1f5c 0%, #142a18 58%, #070d08 100%); }
   #intro-title {

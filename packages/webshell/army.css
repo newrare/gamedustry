@@ -542,13 +542,34 @@ button.ar-act:active { transform:scale(.9); }
   background:linear-gradient(90deg, var(--danger, #e23b3b), #4d8dff);
   background-size:150px 100%;
 }
-/* the bars, over a prisoner who has not turned */
-.ar-cell.cell:not(.turned) .ar-slot-w::after {
-  content:""; position:absolute; inset:4px 4px 21% 4px; z-index:36; pointer-events:none;
-  border-radius:14px;
-  background:repeating-linear-gradient(90deg,
-    transparent 0 19px, rgba(20,22,30,.9) 19px 23px, rgba(120,126,140,.9) 23px 25px, transparent 25px 30px);
-  box-shadow:inset 0 10px 0 rgba(20,22,30,.85), inset 0 -10px 0 rgba(20,22,30,.85);
+/* THE CELL, a prisoner who has not turned (army.js, jailTile): the card's
+   footprint as a barred slot. The officer is cropped as the medium card
+   crops them and cut by the walls; the bars are the slot's own, four round
+   irons between two rails, so nothing hangs past the edge. */
+.ar-jail {
+  position:relative; width:150px; height:150px; border-radius:24px; overflow:hidden;
+  background:
+    radial-gradient(80% 70% at 50% 35%, rgba(226,59,59,.28), transparent 70%),
+    linear-gradient(180deg, #1c1f2a, #0b0c14);
+  box-shadow:inset 0 0 0 3px rgba(226,59,59,.55), 0 6px 14px rgba(0,0,0,.45);
+}
+.ar-jail img {
+  position:absolute; left:50%; top:50%; transform:translate(-50%, -50%);
+  height:149%; width:auto; max-width:none; margin-left:-4%; margin-top:16%;
+  filter:saturate(.8) brightness(.82);
+}
+.ar-jail-bars {
+  position:absolute; inset:0; pointer-events:none;
+  background:
+    linear-gradient(180deg, transparent 15px, #3a3f4c 15px, #8a919f 18px, #2a2e38 24px, transparent 24px),
+    linear-gradient(0deg, transparent 15px, #2a2e38 15px, #8a919f 21px, #3a3f4c 24px, transparent 24px),
+    repeating-linear-gradient(90deg,
+      transparent 0 12px, #1a1c24 12px 13px, #9aa1ae 14px 15px, #4a4f5c 16px 17px, #1a1c24 17px 18px, transparent 18px 30px);
+  /* the irons stand at 30, 60, 90 and 120: the face is in the middle gap */
+  background-position:0 0, 0 0, 15px 0;
+  filter:drop-shadow(3px 0 3px rgba(0,0,0,.6));
+  box-shadow:inset 0 0 18px rgba(0,0,0,.75), inset 0 0 0 3px rgba(226,59,59,.55);
+  border-radius:inherit;
 }
 .ar-cell.cell.turned .ar-card { filter:drop-shadow(0 0 14px rgba(77,141,255,.75)); }
 .ar-cell.enlist .ar-slot-w { animation:ar-enlist .56s cubic-bezier(.3,.9,.4,1) both; }
@@ -667,6 +688,9 @@ button.ar-post-l:active { transform:scale(.96); }
 /* the report's solidity: the one place the figure is read */
 .ar-df-sol { width:440px; margin:18px auto 0; gap:12px; }
 .ar-df-sol-l { flex:0 0 auto; font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--muted); }
+/* the raid's card: the way to its duels, under the solidity */
+.ar-df-see { align-self:center; margin-top:16px; display:inline-flex; align-items:center; gap:8px; }
+.ar-df-see .ar-ci { width:20px; height:20px; }
 
 /* THE REPORT TAB (army.js, paintDfReport): the verdict stamped as the
    village's card stamped it, the solidity and the tally, then the raid as
@@ -1230,6 +1254,53 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   color:rgba(246,241,228,.96); text-align:center;
 }
 .mt-sub.ar-sur-note { margin:10px 0 0; font-size:22px; }
+.mt-sub.ar-sur-note.risk { color:var(--danger, #ff5c5c); }
+/* THE PRICE: every card still standing, the one picked lifted and ringed
+   in the camp's red. Scrolls past three rows (view.js, `moreCue`). */
+.ar-sur-h {
+  margin:16px 0 8px; font-size:20px; font-weight:800; letter-spacing:1px;
+  color:var(--muted); text-align:center;
+}
+.ar-sur-row {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+  max-height:300px; overflow-y:auto; padding:6px 4px; margin:0 0 6px;
+}
+.ar-sur-c {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  background:none; border:0; padding:0; margin:0; width:76px;
+  border-radius:12px; transition:transform .15s ease, box-shadow .15s ease;
+}
+.ar-sur-c .ar-card:not(.painted) { height:101px; }
+.ar-sur-c:active { transform:scale(.95); }
+.ar-sur-c.on { transform:translateY(-4px); box-shadow:0 0 0 3px var(--camp, #ff5c5c), 0 6px 14px rgba(0,0,0,.45); }
+
+/* =========================================================================
+   THE RECAP (army.js, openRecap): the news waiting at the village, a line
+   each on two lines — what it is, over what it paid or cost — and the arrow
+   that opens it
+   ========================================================================= */
+.ar-rc-list { align-self:stretch; display:flex; flex-direction:column; gap:10px; }
+.ar-rc-row {
+  appearance:none; -webkit-appearance:none; cursor:pointer;
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:12px 10px 12px 14px; border-radius:14px; text-align:left;
+  background:rgba(6,9,26,.55); border:1px solid rgba(255,255,255,.12);
+  border-left:5px solid rgba(255,255,255,.3);
+  font-family:inherit; color:inherit;
+}
+.ar-rc-row.ok { border-left-color:#51cf66; }
+.ar-rc-row.ko { border-left-color:var(--danger, #ff5c5c); }
+.ar-rc-row:active { transform:scale(.98); }
+.ar-rc-main { flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.ar-rc-t {
+  max-width:100%; font-size:22px; font-weight:800; line-height:1.25;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(246,241,228,.96);
+}
+.ar-rc-out { display:flex; flex-wrap:wrap; gap:6px; }
+.ar-rc-go { flex:0 0 auto; display:flex; color:var(--muted); }
+.ar-rc-go .ar-ci { width:24px; height:24px; }
+/* stepped aside while one of its lines is read on its own card */
+.ar-recap.ar-rc-away { visibility:hidden; pointer-events:none; }
 
 /* =========================================================================
    A DAY IN THE CAMP (army.js, section 6b): the card that tells it

@@ -1,0 +1,546 @@
+{
+  "slug": "gelatile",
+  "title": "Gelatile",
+  "version": "0.2.22",
+  "tagline": "Swipe to merge twin jellies, read the board's targets a move ahead and reach the big tile",
+  "order": 190,
+  "draft": false,
+  "targets": [
+    "playable",
+    "web"
+  ],
+  "theme": {
+    "accent": "#3aa8ff",
+    "accent2": "#ff6fa8"
+  },
+  "art": {
+    "objects": {
+      "decor-01": "gelatile-decor-01",
+      "decor-02": "gelatile-decor-02",
+      "decor-05": "gelatile-decor-05",
+      "decor-08": "gelatile-decor-08",
+      "home01": "gelatile-home-01",
+      "home02": "gelatile-home-02",
+      "home03": "gelatile-home-03",
+      "home04": "gelatile-home-04",
+      "home05": "gelatile-home-05",
+      "home06": "gelatile-home-06",
+      "sticker01": "gelatile-sticker-01",
+      "sticker02": "gelatile-sticker-02",
+      "sticker03": "gelatile-sticker-03",
+      "sticker04": "gelatile-sticker-04",
+      "sticker05": "gelatile-sticker-05",
+      "sticker06": "gelatile-sticker-06",
+      "sticker07": "gelatile-sticker-07",
+      "sticker08": "gelatile-sticker-08",
+      "sticker09": "gelatile-sticker-09",
+      "sticker10": "gelatile-sticker-10",
+      "sticker11": "gelatile-sticker-11",
+      "sticker12": "gelatile-sticker-12",
+      "sticker13": "gelatile-sticker-13",
+      "sticker14": "gelatile-sticker-14",
+      "sticker15": "gelatile-sticker-15",
+      "sticker16": "gelatile-sticker-16",
+      "sticker17": "gelatile-sticker-17",
+      "sticker18": "gelatile-sticker-18",
+      "sticker19": "gelatile-sticker-19",
+      "sticker20": "gelatile-sticker-20"
+    }
+  },
+  "sfx": {
+    "slide": "move/fast",
+    "merge": "pickup/uipluck",
+    "gold": "bonus/harpsuccess",
+    "refuse": "miss/void",
+    "target": "malus/uiminimize",
+    "apply": "malus/uiminimize",
+    "thaw": "burst/popplop",
+    "strike": "burst/electric",
+    "smoke": "malus/slime",
+    "swap": "move/teleport",
+    "portal": "pickup/echotrain",
+    "goal": "goal/harprollup",
+    "stuck": "miss/bad",
+    "fire": "burst/explosion",
+    "comet": "burst/explosioncrunch"
+  },
+  "copy": {
+    "fr": {
+      "tagline": "Fusionne les gelées jumelles, déjoue les pièges qui visent la grille et fais grimper la tuile jusqu'à 2048. Plusieurs pouvoirs viennent pimenter les parties au travers de 5 biomes.",
+      "tags": [
+        "Fusion",
+        "Réflexion",
+        "Chiffres"
+      ]
+    },
+    "en": {
+      "tagline": "Merge twin jellies, outsmart the traps aiming at the grid and climb the tile all the way to 2048. Several powers spice up your games across 5 biomes.",
+      "tags": [
+        "Merge",
+        "Puzzle",
+        "Numbers"
+      ]
+    }
+  },
+  "description": "Gelatile is a merge puzzle on a 4x4 board of jelly tiles. Swipe to slide every tile one way: two twins that meet stamp into their sum, and from 128 up a tile turns gold, then rainbow. Each of the thirty levels asks for one tile, from 128 to 2048, starting from a board already laid out in a corner, with a par of moves for the second star and a bonus for the third. Fourteen powers join the board one at a time across five biomes - a bubble bath, a jungle lodge, a crystal cave, rice terraces and a coconut beach. Tile powers freeze, petrify, ghost or hide a tile for five moves. Targets mark cells of the grid and strike after your next move, so you choose which tile lands there. And a side of the board can turn into a portal or lock shut.",
+  "itch": {
+    "user": "newrare",
+    "project": "gelatile",
+    "channel": "html5",
+    "tags": [
+      "puzzle",
+      "casual",
+      "singleplayer",
+      "2d",
+      "2048",
+      "merge",
+      "relaxing",
+      "high-score"
+    ],
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false
+  },
+  "web": {
+    "font": "baloo2",
+    "music": "gelatile.mp3",
+    "modes": [
+      "levels",
+      "classic",
+      "fast"
+    ],
+    "levels": {
+      "objective": {
+        "from": 128,
+        "to": 2048,
+        "step": 128
+      },
+      "copy": {
+        "en": "Get a <b>{n}</b> tile",
+        "fr": "Obtiens une tuile <b>{n}</b>"
+      },
+      "bands": {
+        "from": [
+          1,
+          7,
+          13,
+          19,
+          25
+        ],
+        "en": [
+          "Bubble Bath",
+          "Jungle Lodge",
+          "Crystal Cave",
+          "Rice Terraces",
+          "Coconut Beach"
+        ],
+        "fr": [
+          "Bain moussant",
+          "Cabane de la jungle",
+          "Grotte de cristal",
+          "Rizières",
+          "Plage des cocotiers"
+        ]
+      },
+      "tune": {
+        "play.powerEveryMin": [
+          6,
+          4
+        ],
+        "play.powerEveryMax": [
+          9,
+          7
+        ],
+        "play.maxTargets": [
+          1,
+          2
+        ],
+        "play.fourChance": [
+          0.1,
+          0.14
+        ]
+      }
+    },
+    "meta": {
+      "coinsPer": 100,
+      "roundScore": 3000,
+      "awards": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        12,
+        14,
+        15,
+        16,
+        18,
+        20
+      ],
+      "stickers": [
+        {
+          "name": "First Merge",
+          "rarity": "common"
+        },
+        {
+          "name": "Wobble",
+          "rarity": "common"
+        },
+        {
+          "name": "Rubber Duck",
+          "rarity": "common"
+        },
+        {
+          "name": "Bamboo Sprout",
+          "rarity": "common"
+        },
+        {
+          "name": "Ice Cube",
+          "rarity": "common"
+        },
+        {
+          "name": "Paper Lantern",
+          "rarity": "common"
+        },
+        {
+          "name": "Coconut",
+          "rarity": "common"
+        },
+        {
+          "name": "Bubble Pop",
+          "rarity": "common"
+        },
+        {
+          "name": "Corner King",
+          "rarity": "common"
+        },
+        {
+          "name": "Stone Face",
+          "rarity": "common"
+        },
+        {
+          "name": "Mystery Box",
+          "rarity": "common"
+        },
+        {
+          "name": "Fireball",
+          "rarity": "rare"
+        },
+        {
+          "name": "Purple Haze",
+          "rarity": "rare"
+        },
+        {
+          "name": "Thunder Jelly",
+          "rarity": "rare"
+        },
+        {
+          "name": "Comet Crash",
+          "rarity": "rare"
+        },
+        {
+          "name": "Portal Hop",
+          "rarity": "rare"
+        },
+        {
+          "name": "Golden 128",
+          "rarity": "epic"
+        },
+        {
+          "name": "Rainbow 2048",
+          "rarity": "epic"
+        },
+        {
+          "name": "Gelo Crown",
+          "rarity": "legendary"
+        },
+        {
+          "name": "Holo 4096",
+          "rarity": "legendary"
+        }
+      ]
+    },
+    "village": {
+      "ground": "backgroundHome",
+      "houses": [
+        {
+          "art": "decor01",
+          "role": "mode",
+          "x": 510,
+          "y": 170,
+          "w": 80,
+          "mode": "classic",
+          "notify": "float",
+          "every": 3.2,
+          "always": true
+        },
+        {
+          "art": "decor05",
+          "role": "mode",
+          "x": 370,
+          "y": 350,
+          "w": 60,
+          "mode": "fast"
+        },
+        {
+          "art": "home04",
+          "role": "album",
+          "x": 210,
+          "y": 470,
+          "w": 150,
+          "badge": {
+            "dx": 0.3,
+            "dy": -0.75
+          }
+        },
+        {
+          "art": "home01",
+          "role": "shop",
+          "x": 540,
+          "y": 480,
+          "w": 185,
+          "flip": true,
+          "badge": {
+            "dx": -0.35,
+            "dy": -0.7
+          }
+        },
+        {
+          "art": "home05",
+          "role": "play",
+          "x": 200,
+          "y": 720,
+          "w": 150,
+          "notify": "alert"
+        },
+        {
+          "art": "home03",
+          "role": "map",
+          "x": 540,
+          "y": 720,
+          "w": 160
+        },
+        {
+          "art": "decor08",
+          "role": "decor",
+          "x": 320,
+          "y": 870,
+          "w": 50,
+          "halo": {
+            "w": 1.1,
+            "h": 0.34,
+            "dy": 0.04
+          },
+          "notify": "float",
+          "always": true
+        },
+        {
+          "art": "decor02",
+          "role": "daily",
+          "x": 400,
+          "y": 870,
+          "w": 80,
+          "badge": {
+            "dx": -0.3,
+            "dy": -0.8
+          },
+          "notify": "alert"
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 540,
+          "y": 1020,
+          "w": 170
+        },
+        {
+          "art": "home06",
+          "role": "options",
+          "x": 210,
+          "y": 1030,
+          "w": 160,
+          "flip": true
+        }
+      ]
+    },
+    "copy": {
+      "en": {
+        "modeClassic": "Classic",
+        "modeFast": "Fast"
+      },
+      "fr": {
+        "modeClassic": "Classique",
+        "modeFast": "Rapide",
+        "tagline": "Glisse pour <b class=\"w-merge\">fusionner</b> les tuiles identiques afin d'atteindre ton <b class=\"w-goal\">objectif</b>",
+        "strings": {
+          "2048 reached": "2048 atteint",
+          "No round played yet": "Aucune partie jouée",
+          "1 round played": "1 partie jouée",
+          "{n} rounds played": "{n} parties jouées",
+          "Classic": "Classique",
+          "Fast": "Rapide",
+          "Best time": "Meilleur temps",
+          "Modes": "Modes",
+          "The bathroom, with no powers and no particular goal.": "La salle de bain, sans pouvoir ni objectif particulier.",
+          "Play until no move is possible. Only your score counts.": "Joue jusqu'à ce qu'aucun coup ne soit possible. Seul ton score compte.",
+          "Tile 128": "Tuile 128",
+          "Tile 1024": "Tuile 1024",
+          "Reach 2048 as fast as you can. The clock starts on your first move.": "Atteins 2048 le plus vite possible. Le chrono part à ton premier coup.",
+          "New tiles grow with you, always two steps under your biggest tile.": "Les nouvelles tuiles grandissent avec toi, toujours deux crans sous ta plus grosse tuile.",
+          "No limit and no powers, just your best score": "Sans limite ni pouvoir, juste ton meilleur score",
+          "Reach 2048 as fast as you can": "Atteins 2048 le plus vite possible",
+          "Slide the tiles": "Fais glisser les tuiles",
+          "Start": "Commencer",
+          "Install now": "Installer",
+          "Play the full game": "Jouer au jeu complet",
+          "Play again": "Rejouer",
+          "Score": "Score",
+          "Time": "Temps",
+          "Final score": "Score final",
+          "No moves left": "Plus aucun coup",
+          "Time's up!": "Temps écoulé !",
+          "Level cleared": "Niveau réussi",
+          "Out of moves": "Plus de coups",
+          "Goal": "Objectif",
+          "Moves": "Coups",
+          "Limit": "Limite",
+          "Best tile": "Meilleure tuile",
+          "Side locked": "Côté verrouillé",
+          "Biggest tile": "Plus grosse tuile",
+          "Merges": "Fusions",
+          "Best score": "Meilleur score",
+          "Get a <b>{n}</b> tile": "Obtiens une tuile <b>{n}</b>",
+          "In {n} moves or fewer": "En {n} coups ou moins",
+          "Double": "Double",
+          "Triple": "Triple",
+          "Quad": "Quadruple",
+          "Basics": "Les bases",
+          "Swipe": "Glisser",
+          "Swipe to slide every tile as far as it goes.": "Glisse pour pousser toutes les tuiles jusqu'au bout.",
+          "Each move brings a new 2, sometimes a 4.": "Chaque coup fait apparaître un 2, parfois un 4.",
+          "Merge": "Fusionner",
+          "Two twins that meet merge.": "Deux jumelles qui se rencontrent fusionnent.",
+          "A tile merges once per move.": "Une tuile ne fusionne qu'une fois par coup.",
+          "Keep a corner": "Garde un coin",
+          "Each level starts with its tiles in a corner.": "Chaque niveau démarre avec ses tuiles rangées dans un coin.",
+          "Keep the biggest tile in a corner, then build around it.": "Garde la plus grosse tuile dans un coin puis construis autour d'elle.",
+          "Think before you move": "Réfléchis avant de jouer",
+          "Drag slowly to see which tiles would move.": "Fais glisser lentement pour voir quelles tuiles bougeraient.",
+          "Come back to where you started to cancel.": "Reviens à ton point de départ pour annuler.",
+          "Twins pull": "Les jumelles s'attirent",
+          "Twins in line pull gently at each other.": "Deux jumelles alignées s'attirent doucement.",
+          "They will merge on the next move that way.": "Elles fusionneront au prochain coup dans ce sens.",
+          "Gold tiles": "Tuiles dorées",
+          "From tile 128, a golden edge appears.": "Dès la tuile 128, un bord doré apparaît.",
+          "From tile 2048, a rainbow appears.": "Dès la tuile 2048, l'arc-en-ciel apparaît.",
+          "Every value": "Toutes les valeurs",
+          "The whole ladder of the biome, from 2 to 65536.": "Toute l'échelle du biome, de 2 à 65536.",
+          "Three stars": "Trois étoiles",
+          "The goal tile": "La tuile objectif",
+          "Within the par of moves": "Dans le nombre de coups visé",
+          "And the level's bonus": "Et le bonus du niveau",
+          "A level is won when its goal tile is made.": "Un niveau est gagné dès que sa tuile objectif est faite.",
+          "With no move left, the round is lost.": "S'il ne reste aucun coup possible, la partie est perdue.",
+          "Powers": "Pouvoirs",
+          "Targets": "Cibles",
+          "Reading a target": "Lire une cible",
+          "A target marks cells of the grid, not a tile.": "Une cible vise des cases de la grille, pas une tuile.",
+          "It strikes the target after your next move.": "Elle frappe la cible après ton prochain mouvement.",
+          "Sides": "Côtés",
+          "Twists": "Variantes",
+          "Bubble Bath": "Bain moussant",
+          "Jungle Lodge": "Cabane de la jungle",
+          "Crystal Cave": "Grotte de cristal",
+          "Rice Terraces": "Rizières",
+          "Coconut Beach": "Plage des cocotiers",
+          "Freeze": "Gel",
+          "Stone": "Pierre",
+          "Vertical ghost": "Fantôme vertical",
+          "Horizontal ghost": "Fantôme horizontal",
+          "Mystery": "Mystère",
+          "Fireball": "Boule de feu",
+          "Purple smoke": "Fumée violette",
+          "Comet": "Comète",
+          "Black smoke": "Fumée noire",
+          "Vertical bolt": "Éclair vertical",
+          "Horizontal bolt": "Éclair horizontal",
+          "Switch": "Échange",
+          "Teleport": "Téléport",
+          "Lock": "Verrou",
+          "Merge with its twin to thaw it": "Fusionne avec sa jumelle pour la dégeler",
+          "It slides but never merges": "Elle glisse mais ne fusionne jamais",
+          "Up or down, it slips out of the board if it hits an edge": "Vers le haut ou le bas, elle sort de la grille si elle touche un bord",
+          "Left or right, it slips out of the board if it hits an edge": "Vers la gauche ou la droite, elle sort de la grille si elle touche un bord",
+          "Its number is hidden, it still merges": "Son nombre est caché, elle fusionne quand même",
+          "Burns the cell on the next move": "Brûle la case au prochain mouvement",
+          "Halves the tile's value": "Divise la valeur de la tuile par deux",
+          "Destroys a block of tiles on the next move": "Détruit un carré de tuiles au prochain mouvement",
+          "Halves a block of tiles on the next move": "Divise un carré de tuiles par deux au prochain mouvement",
+          "Removes all the tiles in a column on the next move": "Supprime toutes les tuiles d'une colonne au prochain coup",
+          "Removes all the tiles in a row on the next move": "Supprime toutes les tuiles d'une ligne au prochain coup",
+          "Swaps two cells after your move": "Échange deux cases après ton coup",
+          "Tiles that touch this wall come out the far side": "Les tuiles qui touchent ce mur ressortent de l'autre côté",
+          "That side cannot be played": "Ce côté ne peut plus être joué",
+          "A frozen tile holds its cell like a wall.": "Une tuile gelée reste sur sa case comme un mur.",
+          "Merge a twin into it to thaw it. It melts after five moves.": "Fusionne une jumelle dedans pour la dégeler. Elle fond après cinq coups.",
+          "A stone tile slides but never merges.": "Une tuile de pierre glisse mais ne fusionne jamais.",
+          "It turns back to normal after five moves.": "Elle redevient normale après cinq coups.",
+          "Moving up or down, a ghost with nothing in front slips out of the board.": "Vers le haut ou le bas, un fantôme sans rien devant lui sort de la grille.",
+          "Left or right, it slides like any tile.": "Vers la gauche ou la droite, il glisse comme les autres.",
+          "Moving left or right, a ghost with nothing in front slips out of the board.": "Vers la gauche ou la droite, un fantôme sans rien devant lui sort de la grille.",
+          "Up or down, it slides like any tile.": "Vers le haut ou le bas, il glisse comme les autres.",
+          "Its number is hidden for five moves.": "Son nombre est caché pendant cinq coups.",
+          "It still merges by its real value.": "Elle fusionne quand même selon sa vraie valeur.",
+          "Burns the cell.": "Brûle la case.",
+          "Leave the cell empty, or send a small tile.": "Laisse la case vide ou envoies-y une petite tuile.",
+          "Halves the tile.": "Divise par deux la tuile.",
+          "A 2 vanishes.": "Un 2 disparaît.",
+          "Clears every tile of its column.": "Vide toutes les tuiles de sa colonne.",
+          "Clears every tile of its row.": "Vide toutes les tuiles de sa ligne.",
+          "Smashes every tile of a 2x2 block.": "Écrase toutes les tuiles d'un bloc de 2x2.",
+          "Halves every tile of a 2x2 block.": "Divise par deux toutes les tuiles d'un bloc de 2x2.",
+          "Swaps the tiles of the two marked cells.": "Intervertit les tuiles des deux cases marquées.",
+          "Tiles pass through this wall and come out on the other side of the board.": "Les tuiles traversent ce mur pour se retrouver de l'autre côté de la grille.",
+          "The other tiles of each line close up.": "Les autres tuiles de chaque ligne se resserrent.",
+          "That direction cannot be played while it is active.": "Cette direction ne peut pas être jouée tant qu'il est actif.",
+          "The number counts the moves left.": "Le nombre indique les coups restants.",
+          "Clutter": "Encombrement",
+          "Four": "Quatre",
+          "Storm": "Tempête",
+          "Lasting": "Durée",
+          "Counted": "Compte à rebours",
+          "The board starts crowded": "La grille démarre encombrée",
+          "Half the new tiles are fours": "La moitié des nouvelles tuiles sont des 4",
+          "A power every three or four moves": "Un pouvoir tous les trois ou quatre coups",
+          "Powers last eight moves": "Les pouvoirs durent huit coups",
+          "Past the move limit the round is lost": "Au-delà de la limite de coups, la partie est perdue",
+          "The board starts with eight small tiles in the way.": "La grille démarre avec huit petites tuiles qui gênent.",
+          "Half the new tiles are fours.": "La moitié des nouvelles tuiles sont des 4.",
+          "A power arrives every three or four moves.": "Un pouvoir arrive tous les trois ou quatre coups.",
+          "Powers last eight moves instead of five.": "Les pouvoirs durent huit coups au lieu de cinq.",
+          "The par becomes a limit.": "Le nombre de coups visé devient une limite.",
+          "Past it, the round is lost.": "Au-delà, la partie est perdue.",
+          "End with the biggest tile in a corner": "Finis avec la plus grosse tuile dans un coin",
+          "Thaw {n} frozen tiles": "Dégèle {n} tuiles gelées",
+          "No stone on the board at the end of the game": "Pas de pierre sur la grille à la fin de la partie",
+          "{n} merges in one move": "{n} fusions en un coup",
+          "Send {n} ghosts out": "Fais sortir {n} fantômes",
+          "Lose no ghost above {n}": "Ne perds aucun fantôme au-dessus de {n}",
+          "Merge {n} mystery tiles": "Fusionne {n} tuiles mystère",
+          "Burn no tile": "Ne brûle aucune tuile",
+          "Halve no tile": "Ne divise aucune tuile",
+          "The bolt strikes nothing": "L'éclair frappe dans le vide",
+          "Lose no tile above {n}": "Ne perds aucune tuile au-dessus de {n}",
+          "Let a comet strike nothing": "Fais tomber une comète dans le vide",
+          "Merge right after a switch": "Fusionne juste après un échange",
+          "Send {n} tiles through the portal": "Fais passer {n} tuiles par le portail",
+          "Make no refused move": "Ne tente aucun coup impossible"
+        }
+      }
+    }
+  }
+}

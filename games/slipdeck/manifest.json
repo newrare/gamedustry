@@ -1,7 +1,7 @@
 {
   "slug": "slipdeck",
   "title": "Slipdeck",
-  "version": "1.11.7",
+  "version": "1.11.20",
   "tagline": "Bin or keep the card you are dealt to finish your hand",
   "order": 120,
   "draft": false,
@@ -100,15 +100,17 @@
   },
   "sfx": {
     "pay": "bonus/harpsuccess",
-    "bust": "empty",
-    "warn": "empty",
+    "bust": "miss/lost",
+    "warn": "miss/laserlarge",
     "deal": "card/cardplace03",
-    "keep": "empty",
-    "bin": "card/uirollover",
-    "joker": "empty",
-    "tally": "pickup/uipluck",
-    "saved": "power/forcefield",
-    "tip": "card/bookflip"
+    "keep": "card/cardplace",
+    "bin": "toggle/coin",
+    "joker": "pickup/gem",
+    "tally": "toggle/coinshandle",
+    "saved": "goal/ok",
+    "tip": "card/bookflip",
+    "fate": "pickup/item",
+    "pick": "power/vibearpeggio"
   },
   "copy": {
     "fr": {
@@ -150,7 +152,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Rising difficulty",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -174,7 +176,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficulté progressive",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -365,7 +367,7 @@
           "Risk": "Risque",
           "Common": "Commun",
           "Rare": "Rare",
-          "Epic": "Epique",
+          "Epic": "Épique",
           "Legendary": "Légendaire",
           "Jokers": "Jokers",
           "Fate jokers": "Jokers du destin",
@@ -425,7 +427,7 @@
           "Special cards": "Cartes spéciales",
           "The climb": "La montée",
           "Minimum pair": "Paire minimum",
-          "A lower pair busts the hand. Two pair and better always pay.": "Une paire plus basse tue la main. A partir de deux paires, la main paie toujours.",
+          "A lower pair busts the hand. Two pair and better always pay.": "Une paire plus basse tue la main. À partir de deux paires, la main paie toujours.",
           "x{x} mult": "x{x} mult",
           "Five cards make a hand, paid as poker. The run ends when the deck runs out.": "Cinq cartes font une main, payée comme au poker. Paquet vide, la partie s'arrête.",
           "Each card that makes the hand adds its value in chips. A face is worth 10, an ace 11.": "Chaque carte qui forme la main ajoute sa valeur en jetons. Une figure vaut 10, un as 11.",

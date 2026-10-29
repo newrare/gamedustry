@@ -1,0 +1,162 @@
+  /* =========================================================================
+     SKIN — GELATILE. Everything above is the shared motor stylesheet; the
+     theme lives in the :root tokens and only these rules are game-specific.
+     The menus live in a world of soap foam and bubbles: light lavender and
+     aqua, Gelo's sky blue for the accent and his blush for the second one.
+     ========================================================================= */
+  :root {
+    --bg:#2a2260; --text:#f6f3ff; --muted:#b9b1ec;
+    --accent:#3aa8ff; --cta-a:#7fd0ff; --cta-b:#3a8cff; --cta-text:#06204a;
+    --danger:#ff4d6d; --gold:#ffc83d; --good:#3fcf8e;
+    --gel-pink:#ff6fa8; --gel-lilac:#a58bff;
+  }
+  html, body { background:linear-gradient(180deg, #dcd6ff 0%, #e6f4ff 60%, #f4f0ff 100%); }
+
+  #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#3a3170; }
+  #intro-tagline .w-merge { color:var(--accent); }
+  #intro-tagline .w-goal  { color:var(--gel-pink); }
+  #hud-score { color:#2c2558; text-shadow:0 2px 0 rgba(255,255,255,.7); }
+  #hud-score-lbl { color:#6c64a8; }
+
+  /* ---- intro: the game's own 4x4 board, one move to the right ------------
+     The board is drawn as drawBoard() draws it — a plate, sixteen rounded
+     cells (S 230, GAP 6, CELL 50, the cell's corner 15 % of it) — and the
+     tiles wear the Bubble Bath palette of tileSprite() for 2, 4 and 8. One
+     3.2 s loop: the move lands at 24 %, every tile slides to the right wall
+     by 34 %, the two 2s of the top row stamp into a 4, a new 2 is born in
+     the bottom row, the result holds, then the board fades back. The pieces
+     are the motor's own nodes:
+       .demo-track            the board; ::before a 4 already against the
+                              wall (it does not move), ::after the new 2
+       .demo-target           the 2 that slides three cells into its twin
+       .demo-beam             its twin, stamped into a 4 (two faces)
+       .demo-arrow            an 8 sliding two cells
+     On a phone the finger flicks under the board on the move; on a desk the
+     RIGHT key alone shows up, is pressed on the same beat and goes. */
+  .demo-caption { display:none; }
+  .demo-stage {
+    width:262px; height:326px; overflow:hidden;
+    background:rgba(255,255,255,.45); border-color:rgba(165,139,255,.35);
+  }
+  .demo-swipe .demo-track {
+    display:block; left:16px; top:12px; width:230px; height:230px; right:auto; bottom:auto;
+    border:0; border-radius:10px; background:rgba(201,199,228,.9) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 230 230'%3E%3Cg fill='%23efedfb'%3E%3Crect x='6' y='6' width='50' height='50' rx='7.5'/%3E%3Crect x='62' y='6' width='50' height='50' rx='7.5'/%3E%3Crect x='118' y='6' width='50' height='50' rx='7.5'/%3E%3Crect x='174' y='6' width='50' height='50' rx='7.5'/%3E%3Crect x='6' y='62' width='50' height='50' rx='7.5'/%3E%3Crect x='62' y='62' width='50' height='50' rx='7.5'/%3E%3Crect x='118' y='62' width='50' height='50' rx='7.5'/%3E%3Crect x='174' y='62' width='50' height='50' rx='7.5'/%3E%3Crect x='6' y='118' width='50' height='50' rx='7.5'/%3E%3Crect x='62' y='118' width='50' height='50' rx='7.5'/%3E%3Crect x='118' y='118' width='50' height='50' rx='7.5'/%3E%3Crect x='174' y='118' width='50' height='50' rx='7.5'/%3E%3Crect x='6' y='174' width='50' height='50' rx='7.5'/%3E%3Crect x='62' y='174' width='50' height='50' rx='7.5'/%3E%3Crect x='118' y='174' width='50' height='50' rx='7.5'/%3E%3Crect x='174' y='174' width='50' height='50' rx='7.5'/%3E%3C/g%3E%3C/svg%3E") no-repeat 0 0/100% 100%;
+    box-shadow:0 5px 0 rgba(40,30,90,.14);
+  }
+  /* one tile: tileSprite() in CSS — gradient, top shine, white rim, drop */
+  .demo-swipe .demo-target, .demo-swipe .demo-beam, .demo-swipe .demo-arrow,
+  .demo-swipe .demo-track::before, .demo-swipe .demo-track::after {
+    display:block; position:absolute; width:50px; height:50px; margin:0; box-sizing:border-box;
+    border:1px solid rgba(255,255,255,.3); border-radius:7.5px;
+    background-image:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 50%),
+      linear-gradient(180deg, var(--t-top), var(--t-bot));
+    box-shadow:0 3px 0 rgba(40,30,90,.16);
+    font:800 26px/50px var(--web-font, "Baloo 2", ui-rounded, sans-serif); text-align:center;
+    color:#34264a;
+  }
+  .demo-swipe .demo-target, .demo-swipe .demo-beam, .demo-swipe .demo-track::before { --t-top:#fefdff; --t-bot:#e8dbf8; }
+  .demo-swipe .demo-track::before, .demo-swipe .demo-track::after { content:""; }
+  /* cell (col, row) of the board = stage (22 + 56 col, 18 + 56 row) */
+  .demo-swipe .demo-track::before { content:"4"; left:174px; top:62px; --t-top:#f0e8ff; --t-bot:#d8c7f4; }
+  .demo-swipe .demo-track::after  { content:"2"; left:6px; top:174px; --t-top:#fefdff; --t-bot:#e8dbf8;
+    transform:scale(0); opacity:0; animation:gelBorn 3.2s ease-out infinite; }
+  .demo-swipe .demo-target { left:22px; top:18px; z-index:2; animation:gelSlide3 3.2s cubic-bezier(.3,.8,.35,1) infinite; }
+  .demo-swipe .demo-target::after { content:"2"; }
+  .demo-swipe .demo-ripple { display:none; }
+  .demo-swipe .demo-arrow { left:78px; top:130px; z-index:2; --t-top:#e2d5ff; --t-bot:#c9b6f1;
+    animation:gelSlide2 3.2s cubic-bezier(.3,.8,.35,1) infinite; }
+  .demo-swipe .demo-arrow::after { content:"8"; }
+  .demo-swipe .demo-beam {
+    left:190px; top:18px; z-index:3; transform-origin:50% 100%;
+    animation:gelStamp 3.2s linear infinite, gelBeamFill 3.2s steps(1) infinite;
+  }
+  .demo-swipe .demo-beam::before, .demo-swipe .demo-beam::after { position:absolute; left:0; right:0; top:-1px; }
+  .demo-swipe .demo-beam::before { content:"2"; animation:gelTwo 3.2s steps(1) infinite; }
+  .demo-swipe .demo-beam::after  { content:"4"; animation:gelFour 3.2s steps(1) infinite; }
+  /* the move: 24 % to 34 %, the same beat for every tile, as in a round */
+  @keyframes gelSlide3 {
+    0%, 24%  { transform:translateX(0); opacity:1; }
+    34%      { transform:translateX(168px); opacity:1; }
+    35%      { transform:translateX(168px); opacity:0; }
+    92%      { transform:translateX(0); opacity:0; }
+    98%,100% { transform:translateX(0); opacity:1; }
+  }
+  @keyframes gelSlide2 {
+    0%, 24%  { transform:translateX(0); opacity:1; }
+    34%, 86% { transform:translateX(112px); opacity:1; }
+    92%      { transform:translateX(112px); opacity:0; }
+    93%      { transform:translateX(0); opacity:0; }
+    98%,100% { transform:translateX(0); opacity:1; }
+  }
+  /* the stamp: pressed flat from above, the bottom edge held, then springs */
+  @keyframes gelStamp {
+    0%, 34%  { transform:scale(1, 1); opacity:1; }
+    36%      { transform:scale(1.22, .7); }
+    41%      { transform:scale(.9, 1.12); }
+    46%      { transform:scale(1.05, .95); }
+    51%, 86% { transform:scale(1, 1); opacity:1; }
+    92%      { opacity:0; }
+    98%,100% { opacity:1; }
+  }
+  /* the twin's colour turns from the 2's to the 4's: a gradient does not
+     interpolate, so the whole background is swapped on the beat */
+  @keyframes gelBeamFill {
+    0%   { background-image:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 50%), linear-gradient(180deg, #fefdff, #e8dbf8); }
+    34%  { background-image:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 50%), linear-gradient(180deg, #f0e8ff, #d8c7f4); }
+    93%  { background-image:linear-gradient(180deg, rgba(255,255,255,.26), rgba(255,255,255,0) 50%), linear-gradient(180deg, #fefdff, #e8dbf8); }
+  }
+  @keyframes gelTwo  { 0% { opacity:1; } 34% { opacity:0; } 93% { opacity:1; } }
+  @keyframes gelFour { 0% { opacity:0; } 34% { opacity:1; } 93% { opacity:0; } }
+  /* the new tile, born once the board has settled */
+  @keyframes gelBorn {
+    0%, 40%  { transform:scale(0); opacity:0; }
+    45%      { transform:scale(1.12); opacity:1; }
+    50%, 86% { transform:scale(1); opacity:1; }
+    92%,100% { transform:scale(1); opacity:0; }
+  }
+
+  /* the finger flicks right under the board, on the move */
+  .demo-swipe .demo-hand { left:50%; bottom:-20px; z-index:4;
+    animation:gelFlick 3.2s ease-in-out infinite; }
+  @keyframes gelFlick {
+    0%, 8%   { transform:translateX(-64px); opacity:0; }
+    16%      { transform:translateX(-64px); opacity:1; }
+    34%      { transform:translateX(64px); opacity:1; }
+    44%,100% { transform:translateX(64px); opacity:0; }
+  }
+  /* on a desk (shell.js, Demo) the stage shows the ONE key the move uses,
+     only while it is used: it comes up, goes down on the move and leaves.
+     The legend under the stage still names all four. */
+  .demo-swipe .demo-key { display:none; }
+  .is-desk .desk-keys.demo-swipe .demo-keys { bottom:14px; }
+  .demo-swipe .demo-key.key-right { display:flex; opacity:0; animation:gelKeyR 3.2s linear infinite; }
+  @keyframes gelKeyR {
+    0%, 8% {
+      opacity:0; transform:translateY(-10px); background-color:var(--key-face);
+      box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.35); }
+    14%, 20% {
+      opacity:1; transform:translateY(0); background-color:var(--key-face);
+      box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.35); }
+    24%, 32% {
+      opacity:1; transform:translateY(6px); background-color:var(--key-hit);
+      box-shadow:0 1px 0 var(--key-side), 0 4px 8px rgba(0,0,0,.3); }
+    37%, 42% {
+      opacity:1; transform:translateY(0); background-color:var(--key-face);
+      box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.35); }
+    48%, 100% {
+      opacity:0; transform:translateY(0); background-color:var(--key-face);
+      box-shadow:0 7px 0 var(--key-side), 0 12px 18px rgba(0,0,0,.35); }
+  }
+
+  /* the HUD over a light scene: the side pills turn to frosted soap */
+  .hud-pill { background:rgba(255,255,255,.72); border-color:rgba(165,139,255,.45); color:#2c2558; text-shadow:none; }
+  .hud-pill .lbl { color:#5a4fa0; opacity:.85; }
+  .hud-pill.warn { color:#d8284c; background:rgba(255,236,240,.85); }
+
+  /* the level map over the soap scene: each node's read-out (stars, best
+     score, the level-0 word) sits on a dark soap pill, since the motor's
+     faint white type is written for a dark ground and vanishes on this one */
+  :root .lv-tag { padding:6px 14px; border-radius:16px; background:rgba(22,17,52,.88);
+    box-shadow:0 2px 8px rgba(34,26,82,.25); }
+  :root .lv-tag em, :root .lv-tag .best { color:#fff; }
+  :root .lv-stars s.off .lv-sti { filter:grayscale(1) brightness(.85) opacity(.75); }

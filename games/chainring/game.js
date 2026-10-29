@@ -308,7 +308,7 @@
         case "dark":    return { word: Lang.t("Dark ring"),    sub: Lang.t("Don't tap a dark ring"), icon: "warn" };
         case "gap":     return { word: Lang.t("Mixed ring"),   sub: Lang.t("Tap bright parts, not dark ones"), icon: "eye" };
         case "phantom": return { word: Lang.t("Phantom ring"), sub: Lang.t("Tap a phantom ring only if it shows bright"), icon: "sparkles" };
-        case "fragile": return { word: Lang.t("Fragile ring"), sub: Lang.t("If a fragile ring shatters first, don't tap"), icon: "x" };
+        case "fragile": return { word: Lang.t("Fragile ring"), sub: Lang.t("Don't tap a shattered ring"), icon: "x" };
       }
       return null;
     }
@@ -2202,20 +2202,6 @@
         for (var i = 0; i < n; i++) picRing(cell * (i + 0.5), H / 2, r, specs[i]);
       });
     }
-    /* A world's tile: its kaleidoscope behind (built fresh for the picture
-       and freed after it — the round's own cache is never touched), and one
-       ring of its design with its ball. */
-    function worldPic(b) {
-      var bio = CONFIG.biomes[b];
-      return scenePic(500, 300, bio, function (W, H) {
-        var g = bio.ground, R = Math.ceil(Math.sqrt(W * W + H * H) / 2) + 10, res = Math.min(view.dpr || 1, 1.5);
-        var cv = g.style === "spiral" ? spiral(g, R, res) : kaleido(g, R, res, b * 7 + 1, true);
-        C = { x: W / 2, y: H / 2 };
-        blit(cv, R, 0.3, 1, 1);
-        freeCanvas(cv);
-        picRing(W / 2, H / 2, 118, { c: 1, ballCol: bio.balls[3] });
-      });
-    }
     // The four grades as four rings closing on one ball: the closer the
     // ring when the tap comes, the better the grade (TIERS, tightest first).
     function timingPic() {
@@ -2279,10 +2265,10 @@
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "tap", title: Lang.t("Tap on the beat"), pic: function () { return chartPic(true); }, lines: [
-              Lang.t("Tap the instant a ring touches the ball. The ring glows while your tap can count."),
+              Lang.t("Tap the instant the ball touches a ring. The ring glows while your tap can count."),
               Lang.t("A long flight leaves an empty beat. Tapping on it counts as a miss.") ] },
             { id: "timing", title: Lang.t("Timing"), pic: timingPic, rows: tierRows, lines: [
-              Lang.t("Tapping off the beat or letting a ring by breaks your combo, but costs no points.") ] },
+              Lang.t("Tapping off the beat or making a mistake breaks your combo, but costs no extra points.") ] },
             { id: "combo", title: Lang.t("Combo and mega bonus"), pic: comboPic,
               rows: [[Lang.t("Every {n} hits in a row").replace("{n}", CONFIG.chainEvery), Lang.t("+20 × combo"), GOLD]],
               lines: [
@@ -2292,23 +2278,19 @@
               Lang.t("No tap can stop the spiked ring. Once it reaches the ball, the round is over.") ] },
             { id: "clean", title: Lang.t("The third star"), pic: starsPic, lines: [
               Lang.t("Each stage asks for a score. The third star also limits your misses."),
-              Lang.t("A bad tap, a dark ring tapped or a ring let by is a miss. You get {a}, later only {b}.")
+              Lang.t("A bad tap, a dark ring tapped or a ring let by is a miss.")
                 .replace("{a}", fMax).replace("{b}", fMin) ] },
             { id: "full", title: Lang.t("Full track"), lv: 6, pic: function () { return chartPic(false); }, lines: [
               Lang.t("The last stage of each world lasts its whole track, and asks for a bigger score.") ] }
           ] },
           { key: "neon", label: Lang.t("Neon"), pages: [
-            { id: "neon", title: Lang.t("Rings of light"), lv: 1, pic: function () { return worldPic(GW.neon); }, lines: [
-              Lang.t("The rewind ring arrives.") ] },
             { id: "rewind", title: Lang.t("Rewind ring"), lv: 1, pic: function () {
                 return ringPic(GW.neon, [{ kind: "rewind" }, { c: 1, ball: false }]);
               }, lines: [
-              Lang.t("Tap a rewind ring like any other ring. Every ring behind it is pushed back out."),
+              Lang.t("Tap a 'rewind' ring like any other ring. Every ring behind it is pushed back out."),
               Lang.t("Rewind rings rush back in time for their beat. Trust the music, not your eyes.") ] }
           ] },
           { key: "amber", label: Lang.t("Amber"), pages: [
-            { id: "amber", title: Lang.t("Chainrings"), lv: 7, pic: function () { return worldPic(GW.amber); }, lines: [
-              Lang.t("The sticky ring arrives.") ] },
             { id: "sticky", title: Lang.t("Sticky ring"), lv: 7, pic: function () { return ringPic(GW.amber, [{ kind: "sticky" }]); },
               rows: [[Lang.t("The ball lands"), Lang.t("Tap")],
                      [Lang.t("{n} beats later, the ring bursts").replace("{n}", RIDE), Lang.t("Tap")]],
@@ -2316,8 +2298,6 @@
               Lang.t("The ball sticks to a sticky ring and rides the rim, then the ring bursts.") ] }
           ] },
           { key: "eclipse", label: Lang.t("Eclipse"), pages: [
-            { id: "eclipse", title: Lang.t("Chains"), lv: 13, pic: function () { return worldPic(GW.eclipse); }, lines: [
-              Lang.t("The dark ring arrives, then the phantom ring from stage 16.") ] },
             { id: "dark", title: Lang.t("Dark ring"), lv: 13, pic: function () { return ringPic(GW.eclipse, [{ kind: "dark" }]); },
               rows: [[Lang.t("Left alone"), Lang.t("Perfect"), GOLD], [Lang.t("Tapped"), Lang.t("Miss"), RED]],
               lines: [
@@ -2330,8 +2310,6 @@
               Lang.t("A phantom ring is barely visible as it closes in. It shows its true colour one beat before the ball.") ] }
           ] },
           { key: "glacier", label: Lang.t("Glacier"), pages: [
-            { id: "glacier", title: Lang.t("Crowns"), lv: 19, pic: function () { return worldPic(GW.glacier); }, lines: [
-              Lang.t("The mixed ring arrives, then the fragile ring from stage 22.") ] },
             { id: "gap", title: Lang.t("Mixed ring"), lv: 19, pic: function () {
                 return ringPic(GW.glacier, [{ kind: "gap", phase: Math.PI / 2 + Math.PI / 3 }, { kind: "gap", phase: Math.PI / 2 }]);
               },
@@ -2344,10 +2322,6 @@
               rows: [[Lang.t("Holds"), Lang.t("Tap")], [Lang.t("Shatters"), Lang.t("Leave it")]],
               lines: [
               Lang.t("A fragile ring is cracked. Two beats before the ball arrives, it either shatters or holds.") ] }
-          ] },
-          { key: "nova", label: Lang.t("Nova"), pages: [
-            { id: "nova", title: Lang.t("Ribbons"), lv: 25, pic: function () { return worldPic(GW.nova); }, lines: [
-              Lang.t("Every special ring comes back.") ] }
           ] }
         ];
       }

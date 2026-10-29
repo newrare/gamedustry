@@ -578,15 +578,10 @@
 
 /* THE ROUND'S "!" (meta.js, section 11c), riding on the star pill, just to
    its right and on the same baseline — a child of `#lv-hud`, so it goes where
-   the pill goes. The pill takes no tap; this does.
-
-   `--lv-log-left` / `--lv-log-bottom` are its escape, for a game whose own
-   instrument stands just right of the pill (a launcher at the foot of the
-   frame): `--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)` stands it on
-   top of the pill instead. `games/blight` and `games/echomaze` are the two. */
+   the pill goes. Second from the left of the foot bar (view.css, THE FOOT
+   BAR), in every game: no game moves it. The pill takes no tap; this does. */
 .mt-round-log {
-  position:absolute;
-  left:var(--lv-log-left, calc(100% + 12px)); bottom:var(--lv-log-bottom, -2px);
+  position:absolute; left:calc(100% + 12px); bottom:-2px;
   display:flex; pointer-events:auto;
 }
 .mt-round-log[hidden] { display:none; }

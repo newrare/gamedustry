@@ -111,22 +111,34 @@
 .mt-sub.small { font-size:22px; opacity:.7; }
 
 /* =========================================================================
-   THE CORNER CONTROLS — options and help, from anywhere
+   THE FOOT BAR — the round's one row along the bottom edge
    ========================================================================= */
 
-/* Z-INDEX 40, over the round and under every card (44), because a card is the
+/* ONE ROW, THE SAME IN EVERY GAME:
+
+     [stars / objective] [!]                  [menu] [guide] [help] [options]
+
+   The left end is the level layer's (levels.css `#lv-hud`, meta.css
+   `.mt-round-log`), the right end is this node. All of it sits on the house
+   margin (26) and is 62 tall, centred on one line, so the row reads as one
+   bar and not as two corners. It takes no band out of Layout — the world
+   runs under it — and `Layout.foot` (packages/platform/web.js, footHeight
+   100 = 26 + 62 + 12) is the line a game's instruments stop at.
+
+   Z-INDEX 40, over the round and under every card (44), because a card is the
    one thing that may take the whole frame. */
 #web-ctls {
-  position:absolute; right:0; bottom:0; z-index:40;
-  padding:0 26px calc(var(--inset-bottom) + 26px) 0;
+  position:absolute; right:26px; bottom:calc(var(--inset-bottom) + 26px); z-index:40;
+  height:62px;
   display:flex; align-items:center; gap:14px;
   pointer-events:none;                 /* only the buttons take a tap */
 }
 /* `display:flex` above beats the browser's own [hidden] rule, so the row says
    it again: this bar belongs to a round and to nothing else. */
 #web-ctls[hidden] { display:none; }
-/* The round's own control — the way out — sits in front of the pair and is
-   the one button here whose meaning depends on where the player is. */
+/* The round's own two — the way out and the guide — sit in front of help and
+   options: they are the buttons here whose meaning depends on being in a
+   round. */
 .web-ctl-extra { display:flex; align-items:center; gap:14px; }
 
 /* And once more for a button of the row, for the same reason and one more:

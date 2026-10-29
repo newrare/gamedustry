@@ -99,7 +99,8 @@ var SPAN = {
   grudgeon: 60,     // clockless; the GAME_PILOT below explores the whole dungeon in ~70 s
   bridgessa: 45,    // clockless; a tournée of deals, the GAME_PILOT below plays two or three
   triverse: 15,
-  holepocalypse: 40 // clockless; the GAME_PILOT below clears the free round's three waves in ~45-75 s
+  holepocalypse: 40, // clockless; the GAME_PILOT below clears the free round's three waves in ~45-75 s
+  gelatile: 14      // clockless; the GAME_PILOT below makes the free round's 256 in ~25-55 moves
 };
 
 /* Games whose tap POINT is the aim, not just a trigger. The generic "tap"
@@ -154,6 +155,41 @@ var RACK = {
    anchor - the text the hook is written in front of, inside the first script
             block.  every - frames between two moves, the pause a turn reads in. */
 var GAME_PILOT = {
+  /* gelatile is a 2048: a blind swipe in one direction jams the board in a
+     dozen moves. The pilot is the game's own: it slides the way that keeps
+     the biggest tiles snaked in the bottom-left corner, and steers the big
+     tiles off a target's cells. */
+  gelatile: {
+    every: 20,
+    anchor: "return { reset: reset, update: update, render: render,",
+    js: `
+    window.__G = { play: function () {
+      if (reached || over || ended) return false;
+      var SN = [[0,3],[1,3],[2,3],[3,3],[3,2],[2,2],[1,2],[0,2],[0,1],[1,1],[2,1],[3,1],[3,0],[2,0],[1,0],[0,0]], W = [];
+      SN.forEach(function (c, i) { W[c[1] * 4 + c[0]] = Math.pow(4, 15 - i) / Math.pow(4, 10); });
+      var best = null, bestV = -1e18;
+      ["down", "left", "right", "up"].forEach(function (d) {
+        var p = plan(d); if (!p.valid) return;
+        var g = [], i, v = 0; for (i = 0; i < 16; i++) g.push(0);
+        p.ops.forEach(function (o) {
+          if (o.exit) return;
+          var c = cellAt(d, o.k, o.to), idx = c[1] * 4 + c[0];
+          if (o.merge) g[idx] = o.tile.v * 2; else if (!g[idx]) g[idx] = o.tile.v;
+        });
+        for (i = 0; i < 16; i++) { v += g[i] * W[i]; if (!g[i]) v += 400; }
+        cellPowers.forEach(function (t) {
+          if (t.type === "switch") return;
+          t.cells.forEach(function (c) { var idx = c[1] * 4 + c[0]; v -= g[idx] * W[idx] + (g[idx] >= 16 ? g[idx] * 2000 : 0); });
+        });
+        if (d === "up") v -= 3e4;
+        if (v > bestV) { bestV = v; best = d; }
+      });
+      if (!best) return false;
+      doMove(best);
+      return true;
+    } };
+    `
+  },
   /* holepocalypse is aimed around the tee: a press in the blue band, a drag
      out along the shot. A blind drag lands in whichever band it starts in and
      rarely meets a zombie, so the pilot is the game's own: a full-power
@@ -212,12 +248,13 @@ var GAME_PILOT = {
     } };
     `
   },
-  /* grudgeon is a dungeon of cards and fights: the party card waits for its
-     DESCEND, a shop for a tap outside it, an altar or an event for one of its
-     buttons, and a hero's turn for an action. The pilot answers whichever is
-     open, through the same buttons and the game's own heroAct(), and
-     otherwise walks to a lit room it can reach, at random — a weakness when it holds one,
-     a heal when the party is low, else an attack or the first skill. */
+  /* grudgeon is a dungeon of cards and fights: a shop waits for a tap
+     outside it, an altar or an event for one of its buttons, an event's
+     outcome for a tap anywhere, and a hero's turn for an action. The pilot
+     answers whichever is open, through the same buttons and the game's own
+     heroAct(), and otherwise walks to a lit room it can reach, at random — a
+     weakness when the hero has learnt one, a heal when the party is low,
+     else an attack or the first skill. */
   grudgeon: {
     every: 20,
     anchor: "return { reset: reset, update: update, render: render,",
@@ -226,24 +263,24 @@ var GAME_PILOT = {
       if (ended) return false;
       var lay = document.querySelector("#gd-card:not(.off)");
       if (lay) {
-        var go = lay.querySelector(".btn-shiny"), b = lay.querySelectorAll(".gd-list .btn:not(.is-off)");
-        if (go) go.click();
-        else if (lay.querySelector(".gd-shop")) { if (b.length && Math.random() < 0.4) b[0].click(); else lay.click(); }
+        var b = lay.querySelectorAll(".gd-picks .btn:not(.is-off)");
+        if (lay.querySelector(".gd-shop")) { if (b.length && Math.random() < 0.4) b[0].click(); else lay.click(); }
         else if (b.length) b[Math.floor(Math.random() * b.length)].click();
+        else lay.click();
         return true;
       }
       if (combat) {
         if (combat.phase !== "input") return false;
-        var h = combat.actor, f = combat.foe, pick = "attack", i, sk;
+        var h = combat.actor, f = combat.foe, pick = "attack", i, sk, kn = h.known || h.b.skills;
         for (i = 0; i < 2; i++) {
           sk = SKILLS[h.b.skills[i]];
-          if (sk.sp <= h.sp && sk.kind === "hit" && f.b.weak.indexOf(sk.el) >= 0) pick = h.b.skills[i];
+          if (kn.indexOf(h.b.skills[i]) >= 0 && sk.sp <= h.sp && sk.kind === "hit" && f.b.weak.indexOf(sk.el) >= 0) pick = h.b.skills[i];
         }
         if (pick === "attack") {
           sk = SKILLS[h.b.skills[1]];
           var low = party.filter(function (x) { return !x.dead && x.hp < x.mhp * 0.4; }).length;
-          if (sk.kind === "heal" && sk.sp <= h.sp && low) pick = h.b.skills[1];
-          else if (SKILLS[h.b.skills[0]].sp <= h.sp && Math.random() < 0.5) pick = h.b.skills[0];
+          if (kn.indexOf(h.b.skills[1]) >= 0 && sk.kind === "heal" && sk.sp <= h.sp && low) pick = h.b.skills[1];
+          else if (kn.indexOf(h.b.skills[0]) >= 0 && SKILLS[h.b.skills[0]].sp <= h.sp && Math.random() < 0.5) pick = h.b.skills[0];
         }
         heroAct(pick);
         return true;

@@ -576,19 +576,19 @@
     var INTRO = {
       fire:   ["Fireballs", "Fireballs throw you off after a beat"],
       ice:    ["Ice rocks", "Ice rocks throw you straight up"],
-      geyser: ["Geysers", "The steam lifts whatever it touches"],
+      geyser: ["Steam jets", "The steam lifts whatever it touches"],
       shard:  ["Cracked rocks", "These rocks split into pieces you can land on"],
       dust:   ["Crumbling rocks", "These rocks crumble soon after you land"],
-      bomb:   ["Bombs", "Bombs blow 2 s after you land"],
+      bomb:   ["Bombs", "Bombs blow 2 seconds after you land"],
       surge:  ["Lava surges", "The lava will reach the red line"],
-      claimed:["Dark rocks", "Dark rocks break your chain"],
+      claimed:["Dark rocks", "Dark rocks break your combo"],
       furnace:["Furnace", "Fireballs, surges and bombs"],
       cold:   ["Cold snap", "Ice, cold water and crystals"],
       ascent: ["Updraft", "Geysers, bubbles and crystals"],
       collapse:["Collapse", "Rocks that split, crumble and blow"],
       lair:   ["The lair", "The serpent, the surges and the bubbles"],
       cataclysm:["Cataclysm", "Everything the lava has"],
-      smores: ["S'mores", "One of each gives a life back"],
+      smores: ["S'mores", "Food gives life back"],
       water:  ["Cold water", "Cold water sets a crust you can stand on"],
       magnets:["Magnet crystals", "Crystals catch you and throw you higher"],
       orbs:   ["Lava bubbles", "Ride a bubble up before it pops"],
@@ -3424,18 +3424,6 @@
         });
       };
     }
-    /* A biome's own painted cave, the one its levels are played in, cut to
-       the page's width: its lower half, where the lake and the rocks are. */
-    function scenePic(b) {
-      return function () {
-        var src = CONFIG.art && CONFIG.art[LAD.biomes[b].scene], n;
-        if (!src) return null;
-        n = document.createElement("div");
-        n.style.cssText = "width:520px;height:260px;border-radius:16px;" +
-                          "background:url(\"" + src + "\") 50% 78% / cover no-repeat";
-        return n;
-      };
-    }
     // the level whose row first names a key (ladder.levels[].intro)
     function lvOf(key) {
       for (var i = 0; i < LAD.levels.length; i++) {
@@ -3451,42 +3439,60 @@
     // a figure in seconds, with the player's own decimal mark
     function secs(v) { return String(v).replace(".", Lang.code() === "fr" ? "," : ".") + " s"; }
 
+    /* Every picture of the guide is drawn on its page's own dice: the round's
+       generators (a maze, a rock's skin) roll Math.random, and a page that
+       drew something new each time it was opened would not show the same
+       thing twice. Seeded from the page id, put back after the call. */
+    function seeded(book) {
+      for (var c = 0; c < book.length; c++) {
+        for (var i = 0; i < book[c].pages.length; i++) {
+          (function (pg) {
+            var paint = pg.pic;
+            if (typeof paint !== "function") return;
+            pg.pic = function () {
+              var rnd = Math.random, h = 7, k;
+              for (k = 0; k < pg.id.length; k++) h = (h * 31 + pg.id.charCodeAt(k)) % 2147483629;
+              h += 1;
+              Math.random = function () { h = (h * 16807) % 2147483647; return (h - 1) / 2147483646; };
+              try { return paint.apply(this, arguments); } finally { Math.random = rnd; }
+            };
+          })(book[c].pages[i]);
+        }
+      }
+      return book;
+    }
+
     var guide = {
       chapters: function () {
         function page(key, pic, lines, rows) {
           return { id: key, title: Lang.t(INTRO[key][0]), lv: lvOf(key), pic: pic, lines: lines, rows: rows };
-        }
-        function biome(b, id, line, more) {
-          return { id: id, title: Lang.t(BANDS[b]), lv: LAD.from[b] > 1 ? LAD.from[b] : 0, pic: scenePic(b),
-                   lines: [Lang.t(line)].concat(more ? [Lang.t(more)] : []) };
         }
         // one line: the band's tip, or what it mixes when there is no tip worth giving
         function theme(key, list, lake, tip) {
           return page(key, list ? themePic(list, lake) : serpentPic, [tip ? Lang.t(tip) : Lang.t(INTRO[key][1]) + "."]);
         }
         var pct = function (v) { return "+" + Math.round(v * 100) + " %"; };
-        return [
+        return seeded([
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "fling", title: Lang.t("Tap to fling"), pic: flingPic, lines: [
               Lang.t("Tap where you aim. The marshmallow flies there and sticks to the first rock it meets.") ] },
             { id: "focus", title: Lang.t("Slow motion"), pic: focusPic, lines: [
               Lang.t("Hold your finger down to slow time. A dotted arc shows where you will land.") ] },
             { id: "air", title: Lang.t("Mid-air shot"), pic: airPic, lines: [
-              Lang.t("In mid-air, a tap flings the marshmallow once more."),
-              Lang.t("Every fresh rock you land on reloads the mid-air shot.") ] },
-            { id: "score", title: Lang.t("Score and chain"), pic: scorePic,
+              Lang.t("In mid-air, a Tap flings the marshmallow once more."),
+              Lang.t("Every fresh rock you land on reloads your double jump.") ] },
+            { id: "score", title: Lang.t("Score and combo"), pic: scorePic,
               rows: [[Lang.t("Each fresh rock in a row"), pct(C.chainStep)],
                      [Lang.t("Chain at most"), "×" + C.chainMax]],
               lines: [
-              Lang.t("Only fresh rocks score. The higher the rock, the more it pays."),
-              Lang.t("A dark rock, a fireball or a hit breaks the chain.") ] },
+              Lang.t("Only fresh rocks score. A rock's value increases with its height."),
+              Lang.t("A dark rock, a fireball or a hit breaks your combo.") ] },
             { id: "toast", title: Lang.t("Four lives"), pic: toastPic, lines: [
-              Lang.t("Each hit toasts the marshmallow a shade browner. Each shade takes 8 % off its jump.") ] },
+              Lang.t("Each hit toasts the marshmallow a bit more, shrinking its jump height more and more.") ] },
             { id: "lava", title: Lang.t("The lava"), pic: lavaPic, lines: [
-              Lang.t("Falling in costs three lives. Only a white marshmallow comes back out, charred.") ] }
+              Lang.t("Falling into lava costs three lives. Only a healthy marshmallow can hope to survive it.") ] }
           ] },
           { key: "caldera", label: Lang.t(BANDS[0]), pages: [
-            biome(0, "b-caldera", "Levels 1 to 6: dark rocks, fireballs and lava surges."),
             page("claimed", claimedPic, [
               Lang.t("Some rocks fall already dark. They score nothing."),
               Lang.t("Landing on one breaks your chain.") ]),
@@ -3495,20 +3501,19 @@
                      [Lang.t("A super s'more"), Lang.t("All lives")],
                      [Lang.t("At full life"), "×2 · " + secs(C.smoreBoost)]],
               lines: [
-              Lang.t("Biscuits and chocolates drift down. Catch one of each to make a s'more.") ] },
+              Lang.t("Biscuits and chocolates fall. Catch one of each to make a s'more.") ] },
             page("fire", firePic, [
-              Lang.t("You can land on a fireball, but it scores nothing and breaks the chain."),
+              Lang.t("You can land on a fireball, but it scores nothing and breaks the combo."),
               Lang.t("Jump off before a fireball's ring runs out, or it throws you off a shade browner.") ],
               [[Lang.t("Thrown off after"), secs(C.fireHold)]]),
             page("surge", surgePic, [
               Lang.t("The crust flashes red, and a dashed line shows how high the lava will climb."),
-              Lang.t("Get above the line before the lava rises. It drops back soon after.") ],
+              Lang.t("Stay above the lava line so you don't get toasted.") ],
               [[Lang.t("Warning"), secs(C.surgeWarn)]])
           ] },
           { key: "frost", label: Lang.t(BANDS[1]), pages: [
-            biome(1, "b-frost", "Levels 7 to 12: ice rocks, cold water and magnet crystals."),
             page("ice", icePic, [
-              Lang.t("Ice does not hold you. After a beat, it throws you straight up.") ],
+              Lang.t("Ice holds you only a moment, then throws you up.") ],
               [[Lang.t("Holds you for"), secs(C.iceHold)]]),
             page("water", waterPic, [
               Lang.t("Water drips off the ceiling. On the lava it sets a crust you can stand on."),
@@ -3520,20 +3525,18 @@
               [[Lang.t("Thrown up after"), secs(C.magnetHold)]])
           ] },
           { key: "geysers", label: Lang.t(BANDS[2]), pages: [
-            biome(2, "b-geysers", "Levels 13 to 18: geysers, lava bubbles and the lava serpent."),
             page("geyser", geyserPic, [
               Lang.t("A vent bubbles in the lava, then blows steam up to the ceiling."),
               Lang.t("The steam lifts you in mid-air, and the rocks it touches.") ]),
             page("orbs", orbPic, [
               Lang.t("A bubble rises out of the lake and carries you up with it."),
-              Lang.t("The bubble pops after a while or at the ceiling, and throws you higher.") ]),
+              Lang.t("The bubble pops after a while or at the ceiling.") ]),
             page("serpent", serpentPic, [
               Lang.t("A swirl on the lava marks where the serpent will leap from."),
-              Lang.t("The serpent breaks the rocks in its way. Its bite costs a life.") ],
+              Lang.t("The serpent breaks the rocks in its way. Beware, its bite costs a life.") ],
               [[Lang.t("The swirl warns"), secs(C.serpentWarn)]])
           ] },
           { key: "faults", label: Lang.t(BANDS[3]), pages: [
-            biome(3, "b-faults", "Levels 19 to 24: rocks that split, crumble and blow."),
             page("shard", shardPic, [
               Lang.t("A cracked rock splits soon after your first touch, whether you stay or not."),
               Lang.t("The cracked rock breaks into three fresh pieces you can land on.") ],
@@ -3541,15 +3544,13 @@
             page("dust", dustPic, [
               Lang.t("A crumbling rock falls to dust soon after your first touch."),
               Lang.t("Jump before the ring runs out, or fall with the dust.") ],
-              [[Lang.t("Falls to dust after"), secs(C.dustHold)]]),
+              [[Lang.t("Falls to dust"), secs(C.dustHold)]]),
             page("bomb", bombPic, [
               Lang.t("Your first touch lights the fuse. The dashed circle is the blast's reach."),
-              Lang.t("The blast throws you and breaks your chain. Lava sets bombs off too.") ],
+              Lang.t("The blast throws you and breaks your combo. Note that lava sets bombs off too.") ],
               [[Lang.t("Blows after"), secs(C.bombHold)]])
           ] },
           { key: "core", label: Lang.t(BANDS[4]), pages: [
-            biome(4, "b-core", "Levels 25 to 30: three or four of these dangers at once.",
-                  "Earn all 90 stars and an endless run opens, with everything at once."),
             theme("furnace", ["fire", "bomb", "fire"], "surge", "Jump off fireballs fast. A surge can catch you waiting."),
             theme("cold", ["ice", "water", "magnet"], null, "Ice throws you up and crystals catch you. Chain them to climb."),
             theme("ascent", ["orb", "geyser", "magnet"], "lake", "Steam, bubbles and crystals all send you up. Use them!"),
@@ -3557,7 +3558,7 @@
             theme("lair", null, null, "Watch the swirl and the red line at once."),
             theme("cataclysm", ["bomb", "geyser", "bomb"], "surge", null)
           ] }
-        ];
+        ]);
       }
     };
     // the five biomes' names, as the map's bands write them (web.levels.bands)

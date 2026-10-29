@@ -6,7 +6,7 @@
     /* One sentence, and nothing else — the one rule of the game and nothing
        around them. The stage below plays exactly that: the ball flies past
        the dark buttons, the tap lights them and the ball eats the glass. */
-    tagline: "One <b class=\"w-tap\">tap</b> switches the <b class=\"w-wall\">buttons</b> on and traps the ball with the bricks",
+    tagline: "One <b class=\"w-tap\">tap</b> turns the <b class=\"w-wall\">switches</b> on and traps the ball with the bricks",
     gameSeconds: 0,                  // no clock: the run ends when the balls do
 
     storeUrl: {
@@ -311,7 +311,7 @@
     var LIVE = {};
     LIVE[K_WARP]   = { word: "Warp glass" };
     LIVE[K_SPLIT]  = { word: "Split glass",  sub: "This glass bursts into new bricks",        icon: "warn" };
-    LIVE[K_SEED]   = { word: "Seed glass",   sub: "This glass grows a brick every second", icon: "heart" };
+    LIVE[K_SEED]   = { word: "Seed glass",   sub: "A new brick every second", icon: "heart" };
     LIVE[K_SHIELD] = { word: "Shield glass", sub: "Hit this glass while its shield is down", icon: "lock" };
     var K_MIX = "living";                      // the furnace core's page: all four kinds at once
     var SHOCK = "#7ef9ff", SEED = "#b8ff6a";   // the shield's arc, the seed's sap
@@ -364,7 +364,7 @@
     var B_ROW = "row", B_COL = "col", B_BOMB = "bomb", B_MULTI = "multi";
     var B_BIG = "big", B_FIRE = "fire", B_MAG = "magnet";
     var BONUS = {};
-    BONUS[B_ROW]   = { icon: "icoRow",    word: "Row blast" };
+    BONUS[B_ROW]   = { icon: "icoRow",    word: "Line blast" };
     BONUS[B_COL]   = { icon: "icoCol",    word: "Column blast" };
     BONUS[B_BOMB]  = { icon: "icoBomb",   word: "Bomb" };
     BONUS[B_MULTI] = { icon: "icoMulti",  word: "Multiball" };
@@ -1460,7 +1460,7 @@
        the guide, which the notice's line in the log opens. */
     function tellStage() {
       var own = BIOMES[biome].live, n = 0, i, one = null, say;
-      if (groups > 1) Notify.learn("banks", "Two button colours", { sub: "A tap swaps the button colours", icon: "unlock" });
+      if (groups > 1) Notify.learn("banks", "Two switch colours", { sub: "A tap swaps the switch colours", icon: "unlock" });
       if (!recipe.live) return;
       for (i = 0; i < LIVE_ORDER.length; i++) if (own[LIVE_ORDER[i]]) { n++; one = LIVE_ORDER[i]; }
       if (n !== 1) return;
@@ -1566,7 +1566,7 @@
       bonus = C.pocketBonus * n;
       score += bonus; HUD.setScore(score);
       Sound.clip("gold", 0.4, 1.8);
-      Pop.show("bonus", { word: "Pocket cleared", sub: "+" + bonus, at: popAt() });
+      Pop.show("bonus", { word: "Area cleared", sub: "+" + bonus, at: popAt() });
     }
 
     /* Every comic callout lands in the same band — the strip between the
@@ -2942,37 +2942,9 @@
       for (i = 0; i < 3; i++) { im = document.createElement("img"); im.src = src; im.alt = ""; box.appendChild(im); }
       return box;
     }
-    /* A biome: its painting, and in front of it the bank of buttons, the
-       powers and the living glass it brings, as they stand on its board. */
-    function bandPic(b) {
-      return paintPic(520, 240, function (W, H) {
-        var B = BIOMES[b], a = typeof ArtImages !== "undefined" ? ArtImages[B.scene] : null, s, w, h;
-        var items = [], i, x, y, sz = 1.25, step, live = LIVE_ORDER, hue = BIOME_HUE[b];
-        ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
-        if (a && a.width) {
-          s = Math.max(W / a.width, H / a.height); w = a.width * s; h = a.height * s;
-          ctx.drawImage(a, (W - w) / 2, (H - h) * 0.45, w, h);
-        }
-        ctx.fillStyle = "rgba(7,10,30,.42)"; ctx.fillRect(0, 0, W, H);
-        items.push({ btn: "a" });
-        if (b > 0) items.push({ btn: "b" });
-        for (i = 0; i < B.powers.length; i++) items.push({ bonus: B.powers[i] });
-        for (i = 0; i < live.length; i++) if (B.live[live[i]]) items.push({ kind: live[i] });
-        step = Math.min(BW * sz + 14, (W - 24) / items.length);
-        x = (W - (items.length - 1) * step - BW * sz) / 2; y = H - BH * sz - 30;
-        for (i = 0; i < items.length; i++, x += step) {
-          if (items[i].btn) {
-            ctx.save(); ctx.translate(x + BW * sz / 2, y + BH * sz / 2); ctx.scale(sz, sz);
-            gButton(items[i].btn === "a" ? hue : hueB(hue), items[i].btn, true, -BW / 2, -BH / 2);
-            ctx.restore();
-          } else if (items[i].bonus) gPane(B.tone, x, y, { s: sz, bonus: items[i].bonus });
-          else gPane(items[i].kind === K_WARP ? 4 : B.tone, x, y, { s: sz, kind: items[i].kind, now: 0.4,
-                                                                     tough: items[i].kind === K_SEED });
-        }
-      });
-    }
     // A living pane between two plain ones, or the shield up and down.
     function livePic(kind, tone) {
+      if (kind === K_WARP) return warpPic();
       return paintPic(520, 130, function (W) {
         var s = 1.8, w = BW * s, gap = 30, y = (130 - BH * s) / 2, x = (W - w * 3 - gap * 2) / 2;
         if (kind === K_SHIELD) {
@@ -2984,6 +2956,28 @@
         gPane(kind === K_WARP ? 2 : tone, x, y, { s: s });
         gPane(kind === K_WARP ? 4 : tone, x + w + gap, y, { s: s, kind: kind, now: 0.4, tough: kind === K_SEED });
         gPane(kind === K_WARP ? 1 : tone, x + (w + gap) * 2, y, { s: s, alpha: kind === K_SEED || kind === K_SPLIT ? 0.55 : 1 });
+      });
+    }
+    // The warp brick, a faded ghost on the free spot it will land on, and the
+    // hop between them dotted over the brick that sits in the way.
+    function warpPic() {
+      return paintPic(520, 180, function (W) {
+        var s = 1.8, w = BW * s, h = BH * s, gap = 30, y = 180 - h - 22, x = (W - w * 3 - gap * 2) / 2;
+        var x0 = x + w / 2, x1 = x + (w + gap) * 2 + w / 2, cy = y + h / 2, n = 9, i, u, px, py;
+        gPane(2, x + w + gap, y, { s: s });                               // a plain brick between
+        gPane(4, x + (w + gap) * 2, y, { s: s, alpha: 0.3 });             // the ghost, where it lands
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 3; ctx.setLineDash([9, 7]);
+        rr(ctx, x + (w + gap) * 2 - 3, y - 3, w + 6, h + 6, 14); ctx.stroke();
+        ctx.restore();
+        gPane(4, x, y, { s: s, kind: K_WARP, now: 0.4 });                 // the warp brick itself
+        for (i = 1; i < n; i++) {                                         // the hop, up and over
+          u = i / n; px = x0 + (x1 - x0) * u; py = cy - h * 0.5 - 4 - (1 - (2 * u - 1) * (2 * u - 1)) * 50;
+          ctx.fillStyle = RAINBOW[(i + 2) % RAINBOW.length];
+          ctx.beginPath(); ctx.arc(px, py, 5.5, 0, TAU); ctx.fill();
+        }
+        ctx.fillStyle = "rgba(255,255,255,.9)";                           // and where it comes down
+        ctx.beginPath(); ctx.arc(x1, cy - h * 0.5 - 4, 7, 0, TAU); ctx.fill();
       });
     }
     function mixPic() {
@@ -3054,7 +3048,6 @@
       var B = C.web && C.web.levels && C.web.levels.bands, l = Lang.code ? Lang.code() : "en";
       return B && (B[l] || B.en) ? (B[l] || B.en)[b] : "";
     }
-    function bandLv(b) { return b * 6 + 1; }
     function powerPage(kind, lv, lines) {
       return { id: kind, title: Lang.t(BONUS[kind].word), lv: lv, lines: lines,
                pic: function () { return powerPic(kind); } };
@@ -3063,10 +3056,6 @@
       return { id: kind, title: Lang.t(LIVE[kind].word), lv: lv, lines: lines,
                pic: function () { return livePic(kind, tone); } };
     }
-    function bandPage(b, title, lines) {
-      return { id: "band" + (b + 1), title: title, lv: bandLv(b), lines: lines,
-               pic: function () { return bandPic(b); } };
-    }
     var guide = {
       chapters: function () {
         var pct = function (k) { return Lang.t("{p}% of the wall").replace("{p}", Math.round(C[k] * 100)); };
@@ -3074,17 +3063,17 @@
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "shoot", title: Lang.t("Aim and shoot"), pic: shootPic,
-              lines: [Lang.t("Drag to aim and let go to fire. The dotted line shows the next five bounces.")] },
-            { id: "switches", title: Lang.t("The buttons"), pic: switchesPic,
-              lines: [Lang.t("Tap while the ball flies to light up the buttons. Tap again to switch them off."),
-                      Lang.t("A dark button lets the ball through. A lit one bounces it back.")] },
-            { id: "pocket", title: Lang.t("The pocket"), pic: pocketPic,
-              rows: [[Lang.t("Each brick in a pocket"), "+" + C.pocketBonus]],
-              lines: [Lang.t("Tap as the ball enters a pocket walled by buttons. It stays shut in with the bricks.")] },
+              lines: [Lang.t("Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.")] },
+            { id: "switches", title: Lang.t("The switches"), pic: switchesPic,
+              lines: [Lang.t("Tap while the ball flies to light up the switches. Tap again to switch them off."),
+                      Lang.t("A dark switch lets the ball through. A lit one blocks it.")] },
+            { id: "pocket", title: Lang.t("The area"), pic: pocketPic,
+              rows: [[Lang.t("Each brick in an area"), "+" + C.pocketBonus]],
+              lines: [Lang.t("Tap as the ball enters a closed area. It stays shut in with the bricks.")] },
             { id: "lava", title: Lang.t("The lava"), pic: lavaPic,
               lines: [Lang.t("After a few seconds of flight, the lava pulls the ball down.")] },
             { id: "tough", title: Lang.t("Tough glass"), pic: toughPic,
-              lines: [Lang.t("A brick with a double white rim takes two hits. The first one cracks it."),
+              lines: [Lang.t("A brick with a double white rim takes two hits. The first one only cracks it."),
                       Lang.t("A power breaks this brick in one go.")] },
             { id: "colours", title: Lang.t("Each colour has its price"), pic: tonesPic, lv: 2,
               rows: [[Lang.t("Red"), String(C.colorScore[0]), COLORS[0].core], [Lang.t("Green"), String(C.colorScore[1]), COLORS[1].core],
@@ -3100,42 +3089,32 @@
               lines: [Lang.t("Go one shot over par and the third star is lost.")] }
           ] },
           { key: "band1", label: bandName(0), pages: [
-            bandPage(0, Lang.t("What this biome brings"), [
-              Lang.t("Only red buttons here. You meet the row blast, then the column blast.")]),
-            powerPage(B_ROW, 3, [Lang.t("Break this brick and every brick in its row breaks too.")]),
+            powerPage(B_ROW, 3, [Lang.t("Break this brick and every brick in its line breaks too.")]),
             livePage(K_WARP, 4, 4, [Lang.t("This rainbow brick jumps to a nearby free spot every three seconds."),
                                     Lang.t("The rainbow brick flickers just before it jumps.")]),
             powerPage(B_COL, 5, [Lang.t("Break this brick and every brick in its column breaks too.")])
           ] },
           { key: "band2", label: bandName(1), pages: [
-            bandPage(1, Lang.t("What this biome brings"), [
-              Lang.t("From level 11, yellow buttons join the blue ones.")]),
             powerPage(B_MULTI, 9, [Lang.t("Break this brick to release extra balls.")]),
             livePage(K_SPLIT, 2, 10, [Lang.t("When split glass breaks, new bricks appear on every free spot around it."),
                                       Lang.t("These new bricks count in the wall, so break them too.")]),
-            { id: "banks", title: Lang.t("Two button colours"), pic: banksPic, lv: 11,
-              lines: [Lang.t("A tap swaps the two button colours. One lights up as the other goes dark."),
+            { id: "banks", title: Lang.t("Two switch colours"), pic: banksPic, lv: 11,
+              lines: [Lang.t("A tap swaps the two switch colours. One lights up as the other goes dark."),
                       Lang.t("Every new shot starts with the same colour lit.")] },
             powerPage(B_BOMB, 11, [Lang.t("Break this brick and the eight bricks around it break too.")])
           ] },
           { key: "band3", label: bandName(2), pages: [
-            bandPage(2, Lang.t("What this biome brings"), [
-              Lang.t("Here you meet the big ball and the seed glass.")]),
             powerPage(B_BIG, 15, [Lang.t("The ball that breaks this brick grows bigger for the rest of its flight.")]),
             livePage(K_SEED, 1, 16, [Lang.t("Every second, seed glass grows a new brick next to it."),
                                      Lang.t("Seed glass takes two hits, so break it first.")])
           ] },
           { key: "band4", label: bandName(3), pages: [
-            bandPage(3, Lang.t("What this biome brings"), [
-              Lang.t("Here you meet the fireball and the shield glass.")]),
             powerPage(B_FIRE, 21, [Lang.t("For five seconds, the ball burns through bricks instead of bouncing off them."),
-                                   Lang.t("Lit buttons and raised shields still bounce the ball back.")]),
-            livePage(K_SHIELD, 3, 22, [Lang.t("While shield glass has its shield up, the ball and every power bounce off it."),
+                                   Lang.t("Lit switches and raised shields still bounce the ball back.")]),
+            livePage(K_SHIELD, 3, 22, [Lang.t("While a brick's shield is up, the ball and every power bounce off it."),
                                        Lang.t("Wait for the shield to drop, then hit the glass.")])
           ] },
           { key: "band5", label: bandName(4), pages: [
-            bandPage(4, Lang.t("What this biome brings"), [
-              Lang.t("Here you meet the magnet and all four kinds of living glass at once.")]),
             powerPage(B_MAG, 27, [Lang.t("For five seconds, nearby bricks fly into the ball.")]),
             { id: K_MIX, title: Lang.t("Living glass"), lv: 28, pic: mixPic,
               lines: [Lang.t("The bricks living glass adds count in the wall, so break them too.")] }

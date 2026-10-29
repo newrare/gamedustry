@@ -16,6 +16,19 @@
 */
 window.GAMES = [
   {
+    slug: "gelatile",
+    name: "Gelatile",
+    accent: ["#3aa8ff", "#ff6fa8"],
+    fr: {
+      tagline: "Fusionne les gelées jumelles, déjoue les pièges qui visent la grille et fais grimper la tuile jusqu'à 2048. Plusieurs pouvoirs viennent pimenter les parties au travers de 5 biomes.",
+      tags: ["Fusion", "Réflexion", "Chiffres"]
+    },
+    en: {
+      tagline: "Merge twin jellies, outsmart the traps aiming at the grid and climb the tile all the way to 2048. Several powers spice up your games across 5 biomes.",
+      tags: ["Merge", "Puzzle", "Numbers"]
+    }
+  },
+  {
     slug: "foldiers",
     name: "Foldiers",
     accent: ["#f2b400", "#1f8a96"],
@@ -34,11 +47,11 @@ window.GAMES = [
     accent: ["#9fe03a", "#b46cff"],
     fr: {
       tagline: "Golf vs Zombies : testez votre précision sur le green à travers 5 biomes uniques et battez tous les records ! Pas facile d'ajuster son swing quand une horde de zombies s'invite sur le parcours... Découvrez un mélange explosif de précision, de Tower Defense et de pouvoirs destructeurs !",
-      tags: ["Golf", "Horde de zombies", "Tower Defense"]
+      tags: ["Golf", "Zombie", "Tower Defense"]
     },
     en: {
       tagline: "Golf vs Zombies: test your precision on the green across 5 unique biomes and beat every record! Not easy to adjust your swing when a zombie horde crashes the course… Discover an explosive mix of precision, Tower Defense and destructive powers!",
-      tags: ["Golf", "Zombie horde", "Tower Defense"]
+      tags: ["Golf", "Zombie", "Tower Defense"]
     }
   },
   {
@@ -72,12 +85,12 @@ window.GAMES = [
     name: "Pawko",
     accent: ["#ffb830", "#ff4d6d"],
     fr: {
-      tagline: "Un pachinko de chats. Lâche des vagues de billes et joue la bonne carte au bon moment.",
-      tags: ["Glisse pour lâcher", "Cinquante cartes à combiner", "Score à battre"]
+      tagline: "Entre le hasard cruel d'un pachinko et la stratégie magique, tes pattounes de chat porte-bonheur ne suffiront pas. Maîtrise tes cartes, lance les sorts au millimètre et déclenche un combo dévastateur pour pulvériser tous les records !",
+      tags: ["Card Deck", "Hasard", "Pouvoir"]
     },
     en: {
-      tagline: "A cat's pachinko. Drop waves of balls and play the right card at the right time.",
-      tags: ["Drag to drop", "Fifty cards to combine", "Score to beat"]
+      tagline: "Between the cruel luck of a pachinko and magical strategy, your lucky cat paws won't be enough. Master your cards, cast spells with pinpoint precision and trigger a devastating combo to smash every record!",
+      tags: ["Card deck", "Luck", "Power"]
     }
   },
   {
@@ -98,12 +111,12 @@ window.GAMES = [
     name: "Marshmelt",
     accent: ["#ff9d2e", "#ff7a1a"],
     fr: {
-      tagline: "Ton ami marshmallow saute de rocher en rocher. Grimpe sans t'arrêter, sinon tu brûles.",
-      tags: ["Tap pour sauter", "Sans fin", "Lave"]
+      tagline: "Ton marshmallow rebondit de rocher en rocher. Grimpe sans t'arrêter pour échapper aux flammes.",
+      tags: ["Jump", "Score", "Lave"]
     },
     en: {
       tagline: "Your marshmallow friend hops from rock to rock. Keep climbing or you burn.",
-      tags: ["Tap to jump", "Endless", "Lava"]
+      tags: ["Jump", "Score", "Lava"]
     }
   },
   {
@@ -112,7 +125,7 @@ window.GAMES = [
     accent: ["#7ef9ff", "#4ade80"],
     fr: {
       tagline: "Deux secondes pour tout voir. Laisse tes impulsions guider ton retour.",
-      tags: ["Mémoire", "Echo", "Satisfaisant"]
+      tags: ["Mémoire", "Écho", "Satisfaisant"]
     },
     en: {
       tagline: "Just two seconds to memorise the maze. Find your way back by the echo of your pulses.",
@@ -138,11 +151,11 @@ window.GAMES = [
     accent: ["#35e0ff", "#8b6cff"],
     fr: {
       tagline: "Aligne trois billes de même couleur. Trouve le coup qui déclenchera des explosions en chaîne !",
-      tags: ["Déplace les anneaux", "Aligne trois billes", "Plusieurs billes spéciales"]
+      tags: ["Réflexion", "Combo", "Bonus"]
     },
     en: {
       tagline: "Line up three beads of the same colour. Find the best move to set off explosion after explosion!",
-      tags: ["Move the rings", "Three per ray", "Several special beads"]
+      tags: ["Reflection", "Combo", "Bonus"]
     }
   },
   {
@@ -163,12 +176,12 @@ window.GAMES = [
     name: "Spinshock",
     accent: ["#40ecff", "#ff4fbe"],
     fr: {
-      tagline: "Toupie contre toupie. Tape pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
-      tags: ["Tap précis", "5 biomes", "Physique"]
+      tagline: "Affrontements de toupies intenses. Touche l'écran au moment précis de l'impact pour éjecter tes rivaux et régénérer ta rotation. Deviens le roi de l'arène de combats en éliminant toutes les toupies adverses.",
+      tags: ["Rythme", "Combat", "Physique"]
     },
     en: {
-      tagline: "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
-      tags: ["Timing tap", "5 biomes", "Physics"]
+      tagline: "Top vs top. Tap right on impact to blast your rivals away and wind your spin back up. Become the king of the battle arena by eliminating all the rival tops.",
+      tags: ["Rhythm", "Combat", "Physics"]
     }
   },
   {
@@ -193,7 +206,7 @@ window.GAMES = [
       tags: ["Rythme", "Musique", "Hypnotisant"]
     },
     en: {
-      tagline: "Tap to the beat of the music. A hypnotizing ball bounces inside endless rings without ever losing the beat.",
+      tagline: "Tap to the beat of the music. A hypnotising ball bounces inside endless rings without ever losing the beat.",
       tags: ["Rhythm", "Music", "Hypnotic"]
     }
   },
@@ -202,12 +215,12 @@ window.GAMES = [
     name: "Bouncetry",
     accent: ["#ff3b57", "#2f86ff"],
     fr: {
-      tagline: "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
-      tags: ["Tap pour piéger", "Casse-briques", "Interrupteurs"]
+      tagline: "Un casse-briques ou l'on ne rattrape pas directement la bille. Vise bien pour faire un maximum de rebond en un seul tir. Touche ensuite l'écran pour activer les interrupteur afin de piéger la bille entre les briques.",
+      tags: ["Switch", "Casse-briques", "Interrupteur"]
     },
     en: {
-      tagline: "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
-      tags: ["Tap to trap", "Breakout", "Switch buttons"]
+      tagline: "A brick breaker where you don't catch the ball directly. Aim carefully to get as many bounces as possible in a single shot. Then tap the screen to turn the switches on and trap the ball between the bricks.",
+      tags: ["Switch", "Breakout", "Switch button"]
     }
   },
   {
@@ -228,12 +241,12 @@ window.GAMES = [
     name: "Triverse",
     accent: ["#3ce0ff", "#ff5ad4"],
     fr: {
-      tagline: "Trois cordes de lumière. Swipe pour sauter de l'une à l'autre et éviter les pièges.",
-      tags: ["Swipe pour sauter", "Sans fin", "3 vies"]
+      tagline: "Trois cordes de lumière qui se croisent et se recroisent dans une course hypnotisante. Swipe rapidement pour éviter les pièges ou attraper différents bonus. Plus la distance augmente et plus ton score grandit.",
+      tags: ["Swipe", "Réflexe", "Course"]
     },
     en: {
-      tagline: "Three ropes of light. Swipe to hop from one to the next and dodge the traps.",
-      tags: ["Swipe lanes", "Endless", "3 lives"]
+      tagline: "Three ropes of light that cross and cross again in a hypnotic run. Swipe fast to dodge the traps or grab different bonuses. The further you go, the higher your score climbs.",
+      tags: ["Swipe", "Reflex", "Run"]
     }
   },
   {
@@ -254,12 +267,12 @@ window.GAMES = [
     name: "Orbinity",
     accent: ["#7cf5ff", "#6d5cff"],
     fr: {
-      tagline: "Une comète en orbite. Un jeu de billard à l'échelle d'une galaxie. Libère la comète au bon moment pour couper la gravité et la projeter vers l'astre suivant. Enchaîne les trajectoires sans erreur pour créer un combo !",
-      tags: ["Tap précis", "Gravité coupée", "Chaîne de combos"]
+      tagline: "Une comète en orbite et un billard galactique. Libère la comète au bon moment pour rompre la gravité et la propulser vers l'astre suivant. Enchaîne les trajectoires sans faille pour alimenter ton combo !",
+      tags: ["Précision", "Gravité", "Combo"]
     },
     en: {
-      tagline: "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it toward the next celestial body. Chain trajectories without a mistake to build a combo!",
-      tags: ["Timing tap", "Snap gravity", "Combo chain"]
+      tagline: "A comet in orbit. A billiard game on a galactic scale. Release the comet at the right moment to snap gravity and fling it towards the next celestial body. Chain trajectories without a mistake to build a combo!",
+      tags: ["Precision", "Gravity", "Combo"]
     }
   }
 ];

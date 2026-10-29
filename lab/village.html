@@ -1138,6 +1138,11 @@ ul.stack li.none { padding:4px 0; font-size:11px; color:#4d4d6b; }
           <select id="fRole"></select>
         </div>
 
+        <div class="row" id="rowMode" hidden>
+          <label>Mode</label>
+          <select id="fMode"></select>
+        </div>
+
         <div class="fold" id="foldPlace">
           <div class="head"><i>▾</i>Place and size<b id="sumPlace"></b></div>
           <div class="body">
@@ -1311,6 +1316,10 @@ var DOORS = [
      (pawko). The manifest cannot say whether a game.js does, so it is never
      counted as missing. */
   { key: "cards",     need: "never", en: "Cards",     fr: "Cartes" },
+  /* A MODE — menu.js, `startMode`: the house names one key of `web.modes` in
+     its own `mode` field, and its word is that mode's `mode<Key>` copy, which
+     the build reads; here it is the key itself. Never counted as missing. */
+  { key: "mode",      need: "never", en: "Mode",      fr: "Mode" },
   /* HELP IS THE MAP'S. Level 0 opens it on every board, so a village that
      builds a house for it is a second way to one place — and six buildings is
      what a sheet holds, which makes a wasted one expensive. It stays in the
@@ -2078,7 +2087,7 @@ function houseNode(h, i) {
   if (h.role !== "decor") {
     var lab = document.createElement("div");
     lab.className = "vg-label";
-    lab.textContent = upper(door(h.role)[state.lang]);
+    lab.textContent = upper(h.role === "mode" && h.mode ? h.mode : door(h.role)[state.lang]);
     lab.hidden = !state.labels;
     n.appendChild(lab);
   }
@@ -2151,7 +2160,7 @@ function stackRow(h, l) {
   li.appendChild(name);
 
   var word = document.createElement("em");
-  word.textContent = h.role === "decor" ? "scenery" : door(h.role)[state.lang];
+  word.textContent = h.role === "decor" ? "scenery" : h.role === "mode" && h.mode ? h.mode : door(h.role)[state.lang];
   li.appendChild(word);
 
   /* UP IS FORWARD, and it is the direction the list is read in: the top of
@@ -2234,6 +2243,18 @@ function paintInspector() {
   if (!h) return;
 
   $("fRole").value = h.role;
+  /* A MODE house names which key of `web.modes` it arms: the game's own list
+     but its first key, which is PLAY's (serve-village.mjs, catalogue). */
+  var modes = (game() && game().modes) || [];
+  $("fRole").querySelector('option[value="mode"]').disabled = !modes.length;
+  $("rowMode").hidden = h.role !== "mode";
+  $("fMode").innerHTML = "";
+  modes.forEach(function (k) {
+    var o = document.createElement("option");
+    o.value = k; o.textContent = k;
+    $("fMode").appendChild(o);
+  });
+  $("fMode").value = h.mode || "";
   $("fX").value = h.x; $("vX").textContent = Math.round(h.x);
   $("fY").value = h.y; $("vY").textContent = Math.round(h.y);
   $("fW").value = h.w; $("vW").textContent = Math.round(h.w);
@@ -2930,7 +2951,15 @@ function boot() {
      the panel under this select had moved. The order those decisions are taken
      in is the composer's, and every field below is one they set on purpose. */
   $("fRole").addEventListener("change", function () {
-    edit(function (h) { h.role = $("fRole").value; });
+    edit(function (h) {
+      h.role = $("fRole").value;
+      if (h.role !== "mode") delete h.mode;
+      else if (!h.mode) h.mode = ((game() && game().modes) || [])[0];
+    });
+  });
+
+  $("fMode").addEventListener("change", function () {
+    edit(function (h) { h.mode = $("fMode").value; });
   });
 
   bindRange("fX", function (h, v) { h.x = v; });

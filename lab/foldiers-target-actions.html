@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers actions on the targets</title>
+<meta name="lab-group" content="prototype">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS — ACTIONS ON THE TARGETS. An answer to "giving an order is
+   heavy": the drag that draws an order, the ring of bubbles it opens and the
+   card's action buttons all fight the camera, which pans on the same finger.
+
+   The idea tried here: a whole region is the thing a tap selects again, and
+   once a blue region is in hand, EVERY region it can act on wears its own
+   actions, as paper icons standing on it — attack with every troop, with
+   half, fire the cannon, ride, airlift, move into a region of one's own.
+   One tap picks the source, one tap on an icon gives the order; a drag is
+   only ever the camera, so the two never compete for the finger.
+
+   What the page lets you judge: how the icons are laid on a target (fan,
+   row, ring, along the border, a stack), how many show at once (all, or one
+   per target opened on a tap), how they appear and go (pop, unfold, drop,
+   rise out of the troops, fade, staggered as a wave by distance), what a tap
+   does next (deselect, keep the region, move on to the next one), and what
+   the camera does when a region is selected (nothing, fit what is offscreen,
+   centre). Sizes are design px of the 720x1280 frame.
+
+   The map is a fresh straight-edged Voronoi map (the game's own cut), with
+   the game's camps, a mountain border (no way through, so no icon) and a
+   river (an attack across it loses a point a troop). The pieces are the
+   game's adopted cuts, read from ../assets. Red does nothing: Send resolves
+   the orders with the game's points (attack 2, defence 3, capital +1, river
+   -1) and every camp produces, so a flow can be played for a few ticks.
+
+   G · Chosen is the pick (a stack of pictograms, 72 px, no labels). Its
+   open question was the camera: a selection brings every tappable thing
+   on screen — the region in hand and each target's icons, laid out as they
+   will be — between the HUD and the region card the game opens above Send
+   (mocked here, its height a knob), moving as little as it can: no move if
+   all fits, else the smallest pan, else a zoom out bounded by a floor, else
+   the farthest targets left off with an arrow on the edge (a tap on it
+   brings that target in). The readout at the foot says which it did.
+
+   Nothing here ships. Copy settings is the panel as JSON.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 310px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.seg button:disabled { opacity:.35; cursor:default; }
+.styles { display:flex; flex-direction:column; gap:4px; }
+.styles button { text-align:left; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px;
+  font:600 12px/1.35 inherit; cursor:pointer; }
+.styles button b { display:block; color:#e8e6f5; font-size:13px; }
+.styles button span { color:#8b8ba7; font-weight:500; }
+.styles button.on { border-color:#7ea6ff; background:#20263d; }
+.styles button.dirty b::after { content:" · edited"; color:#e0b050; font-weight:600; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#selinfo { font-size:12px; color:#8b8ba7; font-weight:500; margin-bottom:8px; }
+
+#stage { flex:1; height:100vh; display:flex; align-items:center; justify-content:center; padding:18px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+#view { height:100%; max-height:calc(100vh - 36px); aspect-ratio:720/1280; border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.5);
+  touch-action:none; cursor:grab; background:#1f8a96; }
+#view.panning { cursor:grabbing; }
+#view.over { cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Foldiers targets</h1>
+  <p class="hint">Tap a blue region: every region it can act on wears its actions. A tap on an icon gives the order. A drag is the camera, always (wheel or pinch to zoom).</p>
+  <h3>Preset</h3>
+  <div class="styles" id="presets"></div>
+  <div id="knobs"></div>
+  <h3>Region in hand</h3>
+  <div id="selinfo">None: tap a blue region.</div>
+  <div class="row"><label>Carries</label><div class="seg" id="carry"></div></div>
+  <div class="row"><label>Troops</label><div class="seg" id="troops"></div></div>
+  <div class="btns"><button id="newmap">New map</button><button id="send">Send</button><button id="recam">Camera</button></div>
+  <div class="btns"><button id="reset">Reset preset</button><button id="copy" class="main">Copy settings</button></div>
+</div>
+
+<div id="stage"><canvas id="view"></canvas></div>
+
+<script>
+/* The page's own code: a map, a camera, the icons and the panel. */
+(function () {
+  "use strict";
+
+  // ---- the knobs ------------------------------------------------------------
+  const DEFAULTS = {
+    layout: "fan", density: "all", glyph: "pieces", labels: "on", verdict: "ring",
+    size: 84, gap: 10, lift: 90, follow: "off", stem: "off", spread: "on",
+    appear: "pop", inMs: 260, stagger: 40, waveMs: 60, disappear: "reverse", outMs: 160, idle: "bob",
+    after: "deselect", tapRegion: "all", camera: "fit", dim: 0.35, outline: "on", zoom: 1.0,
+    floor: 0.8, margin: 16, cardH: 240, hints: "on"
+  };
+  const PRESETS = [
+    { name: "A · Fan, pop", note: "Every action over its target, a wave from the troops.", v: {} },
+    { name: "B · Along the border", note: "The icons stand on the border they would cross, unfolding.",
+      v: { layout: "border", lift: 0, size: 72, gap: 4, appear: "unfold", inMs: 320, stagger: 50, idle: "none", labels: "off" } },
+    { name: "C · Compact", note: "One icon a target, the rest on a tap; the region gives All.",
+      v: { density: "compact", layout: "fan", appear: "pop", tapRegion: "all" } },
+    { name: "D · Row on stems", note: "A row pinned to the troops by a stem, dropping in.",
+      v: { layout: "row", stem: "on", lift: 110, appear: "drop", inMs: 380, labels: "off", verdict: "chip" } },
+    { name: "E · Out of the troops", note: "They leave the region in hand and fly back to it.",
+      v: { layout: "ring", lift: 20, appear: "rise", disappear: "fly", inMs: 340, stagger: 20, waveMs: 30 } },
+    { name: "F · Stack, keep in hand", note: "The main action big, the rest small; the region stays selected.",
+      v: { layout: "stack", after: "keep", labels: "off", camera: "centre" } },
+    { name: "G · Chosen", note: "The pick of 2026-10-23: a stack of pictograms, the camera fitting them over the card.",
+      v: { layout: "stack", glyph: "pictograms", labels: "off", size: 72, gap: 0, lift: 50, spread: "off", waveMs: 70, outline: "off" } }
+  ];
+  const CHOSEN = PRESETS.length - 1;
+  const KNOBS = [
+    { h: "Icons" },
+    { k: "layout", o: ["fan", "row", "ring", "border", "stack"] },
+    { k: "density", label: "How many", o: ["all", "compact"] },
+    { k: "glyph", o: ["pieces", "pictograms"] },
+    { k: "labels", o: ["on", "off"] },
+    { k: "verdict", o: ["ring", "chip", "none"] },
+    { k: "size", min: 56, max: 130, step: 2 },
+    { k: "gap", min: -10, max: 40, step: 2 },
+    { k: "lift", label: "Lift above the troops", min: 0, max: 160, step: 5 },
+    { k: "follow", label: "Size follows the zoom", o: ["off", "on"] },
+    { k: "stem", o: ["off", "on"] },
+    { k: "spread", label: "Push neighbours apart", o: ["off", "on"] },
+    { h: "Motion" },
+    { k: "appear", o: ["pop", "unfold", "drop", "rise", "fade"] },
+    { k: "inMs", label: "Appear (ms)", min: 80, max: 700, step: 10 },
+    { k: "stagger", label: "Stagger in a target (ms)", min: 0, max: 150, step: 5 },
+    { k: "waveMs", label: "Wave by distance (ms)", min: 0, max: 200, step: 5 },
+    { k: "disappear", o: ["reverse", "shrink", "fly", "fade"] },
+    { k: "outMs", label: "Disappear (ms)", min: 60, max: 500, step: 10 },
+    { k: "idle", o: ["none", "bob", "breathe"] },
+    { h: "Flow" },
+    { k: "after", label: "After a choice", o: ["deselect", "keep", "next"] },
+    { k: "tapRegion", label: "Tap on a target region", o: ["nothing", "all", "expand"] },
+    { k: "dim", label: "Dim the rest", min: 0, max: 0.7, step: 0.05 },
+    { k: "outline", label: "Outline the targets", o: ["off", "on"] },
+    { h: "Camera" },
+    { k: "camera", label: "On select", o: ["off", "fit", "centre"] },
+    { k: "floor", label: "Fit zooms out to (× the zoom)", min: 0.5, max: 1, step: 0.05 },
+    { k: "margin", label: "Safe margin (px)", min: 0, max: 60, step: 2 },
+    { k: "cardH", label: "Region card height (px)", min: 0, max: 420, step: 10 },
+    { k: "hints", label: "Off-screen hints", o: ["off", "on"] },
+    { k: "zoom", label: "Start zoom", min: 0.5, max: 2, step: 0.05 }
+  ];
+  const STORE = "foldiers-target-actions";
+  let preset = CHOSEN, S = Object.assign({}, DEFAULTS, PRESETS[CHOSEN].v);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved) { Object.assign(S, saved.S || {}); preset = saved.preset | 0; }
+  } catch (e) { /* defaults */ }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify({ S: S, preset: preset })); } catch (e) { /* private window */ } }
+
+  // ---- the game's colours and numbers -----------------------------------------
+  const NEUTRAL = 0, BLUE = 1, RED = 2;
+  const CAMP = [
+    { base: "#b9a77d", light: "#d8c79c", dark: "#8a7a55", rgb: [150, 140, 110] },
+    { base: "#2f63c4", light: "#5b8fe0", dark: "#1d3f8a", rgb: [47, 99, 196] },
+    { base: "#d9412f", light: "#ee6a4a", dark: "#a52a1f", rgb: [217, 65, 47] }
+  ];
+  const OK_COL = "#2f8f4e", BAD_COL = "#c8402f", TIE_COL = "#6d7486";
+  const PAPER = "#f6ecd2", PAPER2 = "#e6d6b0", INK = "#2a2418";
+  const ATTACK_PTS = 2, DEF_PTS = 3, CAPITAL_PTS = 1, RIVER_PTS = -1, CANNON_DAMAGE = 2, LIFT_MAX = 6, LIFT_RANGE = 470;
+  const TERRAIN = [["#a8c870", "#94c060"], ["#e2c66e", "#d4b45a"], ["#79ae60", "#6a9d52"]];
+  const FONT = "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
+
+  // ---- the frame: 720x1280, a mocked HUD on top and Send at the foot --------
+  const FW = 720, FH = 1280, TOP = 130, BOT = 1090, CX = FW / 2, CYM = (TOP + BOT) / 2;
+  const TILT = Math.cos(30 * Math.PI / 180);
+  const SEND = { x: 360, y: 1170, w: 300, h: 84 };
+  // The card of the region in hand stands on Send, as in the game (footTop):
+  // the camera fits against its resting top, whatever its slide is doing.
+  let cardK = 0;
+  const cardTop = () => SEND.y - SEND.h / 2 - 18 - S.cardH;
+  const inCard = (p) => cardK > 0.5 && S.cardH > 0 && p.y >= cardTop() && p.y <= SEND.y - SEND.h / 2 - 18 && p.x >= 16 && p.x <= FW - 16;
+  const cv = document.getElementById("view"), ctx = cv.getContext("2d");
+  let K = 1;
+  function fitCanvas() {
+    const r = cv.getBoundingClientRect();
+    K = Math.max(1, Math.min(2, (r.height * (window.devicePixelRatio || 1)) / FH));
+    cv.width = Math.round(FW * K); cv.height = Math.round(FH * K);
+  }
+
+  // ---- art ---------------------------------------------------------------------
+  const PIECE_FILE = {
+    infB: "army-blue-05", infR: "army-red-05", capB: "army-blue-01", capR: "army-red-01",
+    cavB: "army-blue-07", cavR: "army-red-07", canB: "army-blue-09", canR: "army-red-09",
+    balB: "army-blue-15", balR: "army-red-15", flagN: "scenery-08"
+  };
+  const IMG = {};
+  for (const k in PIECE_FILE) { const im = new Image(); im.src = "../assets/image/object/foldiers-" + PIECE_FILE[k] + ".png"; IMG[k] = im; }
+  const PICT = {};
+  ["sword", "bomb", "zap", "chevrons-right", "chevrons-up", "x", "check"].forEach((n) => {
+    const im = new Image(); im.src = "../assets/motor/lucide/" + n + ".svg"; PICT[n] = im;
+  });
+  const ready = (im) => im && im.complete && im.naturalWidth > 0;
+  const tintCache = {};
+  function tinted(name, col) {
+    const key = name + col;
+    if (tintCache[key]) return tintCache[key];
+    const im = PICT[name];
+    if (!ready(im)) return null;
+    const c = document.createElement("canvas"); c.width = c.height = 96;
+    const g = c.getContext("2d");
+    g.drawImage(im, 0, 0, 96, 96);
+    g.globalCompositeOperation = "source-in"; g.fillStyle = col; g.fillRect(0, 0, 96, 96);
+    return (tintCache[key] = c);
+  }
+
+  // ---- the actions -------------------------------------------------------------
+  const ACT = {
+    all:      { label: "All",       pict: "sword",          piece: "inf", fill: 1 },
+    half:     { label: "Half",      pict: "sword",          piece: "inf", fill: 0.5 },
+    move:     { label: "Move",      pict: "chevrons-right", piece: "inf", fill: 1, friendly: true },
+    movehalf: { label: "Move half", pict: "chevrons-right", piece: "inf", fill: 0.5, friendly: true },
+    fire:     { label: "Fire",      pict: "bomb",           piece: "can" },
+    ride:     { label: "Ride",      pict: "zap",            piece: "cav" },
+    lift:     { label: "Airlift",   pict: "chevrons-up",    piece: "bal" },
+    cancel:   { label: "Cancel",    pict: "x" }
+  };
+
+  // ---- the map: a straight-edged Voronoi cut, the game's way -------------------
+  const W = 1100, H = 1500;
+  let R = [], adj = [], borders = {}, orders = {}, tick = 1, seed = 7;
+  const key = (a, b) => a < b ? a + ":" + b : b + ":" + a;
+  function rng(s) {
+    s = (s >>> 0) || 1;
+    return function () { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  }
+  // keep the side of the bisector of a and b nearest a; every vertex carries
+  // the neighbour across the edge that starts at it (-1 for the frame)
+  function clip(P, a, b, j) {
+    const nx = b.x - a.x, ny = b.y - a.y, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const f = (p) => (p.x - mx) * nx + (p.y - my) * ny;
+    const out = [];
+    for (let k = 0; k < P.length; k++) {
+      const A = P[k], B = P[(k + 1) % P.length], fa = f(A), fb = f(B);
+      if (fa <= 0) out.push(A);
+      if ((fa <= 0) !== (fb <= 0)) {
+        const t = fa / (fa - fb), I = { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t };
+        I.tag = fa <= 0 ? j : A.tag;
+        out.push(I);
+      }
+    }
+    return out;
+  }
+  function centroid(P) {
+    let a = 0, x = 0, y = 0;
+    for (let k = 0; k < P.length; k++) {
+      const p = P[k], q = P[(k + 1) % P.length], c = p.x * q.y - q.x * p.y;
+      a += c; x += (p.x + q.x) * c; y += (p.y + q.y) * c;
+    }
+    return { x: x / (3 * a), y: y / (3 * a) };
+  }
+  function genMap(s) {
+    const rnd = rng(s * 2654435761), COLS = 7, ROWS = 9, seeds = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const x = (c + 0.5 + (rnd() - 0.5) * 0.75) * W / COLS, y = (r + 0.5 + (rnd() - 0.5) * 0.75) * H / ROWS;
+      const nx = (x - W / 2) / (W * 0.5), ny = (y - H / 2) / (H * 0.48);
+      seeds.push({ x: x, y: y, land: nx * nx + ny * ny + (rnd() - 0.5) * 0.4 < 0.8 });
+    }
+    const polys = seeds.map((a, i) => {
+      let P = [{ x: 0, y: 0, tag: -1 }, { x: W, y: 0, tag: -1 }, { x: W, y: H, tag: -1 }, { x: 0, y: H, tag: -1 }];
+      seeds.forEach((b, j) => { if (j !== i && Math.hypot(a.x - b.x, a.y - b.y) < 520) P = clip(P, a, b, j); });
+      return P;
+    });
+    // the largest piece of land, so every region is reachable
+    const nb = (i) => {
+      const L = [];
+      polys[i].forEach((p, k) => {
+        const q = polys[i][(k + 1) % polys[i].length];
+        if (p.tag >= 0 && seeds[p.tag].land && Math.hypot(q.x - p.x, q.y - p.y) > 22 && L.indexOf(p.tag) < 0) L.push(p.tag);
+      });
+      return L;
+    };
+    let best = [];
+    const seen = {};
+    seeds.forEach((sd, i) => {
+      if (!sd.land || seen[i]) return;
+      const comp = [i]; seen[i] = true;
+      for (let h = 0; h < comp.length; h++) nb(comp[h]).forEach((j) => { if (!seen[j]) { seen[j] = true; comp.push(j); } });
+      if (comp.length > best.length) best = comp;
+    });
+    best.sort((a, b) => a - b);
+    const idx = {};
+    best.forEach((g, i) => { idx[g] = i; });
+    R = best.map((g, i) => {
+      const P = polys[g], c = centroid(P);
+      return { id: i, poly: P.map((p) => ({ x: p.x, y: p.y, tag: p.tag >= 0 && idx[p.tag] != null ? idx[p.tag] : -1 })),
+               cx: c.x, cy: c.y, owner: NEUTRAL, troops: 1 + Math.floor(rnd() * 3), terrain: Math.floor(rnd() * 3),
+               capital: false, cannon: false, cav: 0, balloon: false };
+    });
+    adj = best.map((g) => nb(g).map((j) => idx[j]));
+    // the camps: blue in the south-west, red as far as the paths go
+    const dist = (from) => {
+      const D = R.map(() => Infinity); D[from] = 0;
+      const q = [from];
+      for (let h = 0; h < q.length; h++) adj[q[h]].forEach((j) => { if (D[j] === Infinity) { D[j] = D[q[h]] + 1; q.push(j); } });
+      return D;
+    };
+    let bc = 0;
+    R.forEach((r) => { if (r.cy - r.cx * 0.4 > R[bc].cy - R[bc].cx * 0.4) bc = r.id; });
+    const Db = dist(bc);
+    let rc = 0;
+    R.forEach((r) => { if (Db[r.id] > Db[rc] && Db[r.id] !== Infinity) rc = r.id; });
+    const Dr = dist(rc);
+    const take = (D, camp, n) => R.slice().sort((a, b) => D[a.id] - D[b.id]).filter((r) => r.owner === NEUTRAL).slice(0, n)
+      .forEach((r) => { r.owner = camp; r.troops = 3 + Math.floor(rnd() * 6); });
+    take(Db, BLUE, 5); take(Dr, RED, 5);
+    Object.assign(R[bc], { capital: true, troops: 12, cannon: true, cav: 3 });
+    Object.assign(R[rc], { capital: true, troops: 10, cannon: true });
+    const blues = R.filter((r) => r.owner === BLUE && !r.capital);
+    if (blues.length) blues[blues.length - 1].balloon = true;
+    // one mountain and one river on blue's front, one more river further off
+    borders = {};
+    const front = [];
+    R.forEach((r) => { if (r.owner === BLUE) adj[r.id].forEach((j) => { if (R[j].owner !== BLUE) front.push([r.id, j]); }); });
+    const pick = (L) => L.splice(Math.floor(rnd() * L.length), 1)[0];
+    const notCap = front.filter((e) => !R[e[0]].capital);
+    if (notCap.length) { const e = pick(notCap); borders[key(e[0], e[1])] = "mountain"; }
+    const rest = front.filter((e) => !borders[key(e[0], e[1])]);
+    if (rest.length) { const e = pick(rest); borders[key(e[0], e[1])] = "river"; }
+    const far = [];
+    R.forEach((r) => adj[r.id].forEach((j) => { if (j > r.id && r.owner !== BLUE && R[j].owner !== BLUE) far.push([r.id, j]); }));
+    if (far.length) { const e = pick(far); borders[key(e[0], e[1])] = "river"; }
+    orders = {}; tick = 1; sel = -1; openT = -1; icons = [];
+    camHome();
+  }
+  const borderOf = (a, b) => borders[key(a, b)] || "";
+  const isNb = (a, b) => adj[a].indexOf(b) >= 0;
+
+  // ---- what the region in hand can do, target by target ---------------------
+  function sendCount(r, act) {
+    if (act === "all" || act === "move") return r.troops;
+    if (act === "half" || act === "movehalf") return Math.floor(r.troops / 2);
+    if (act === "ride") return r.cav;
+    if (act === "lift") return Math.min(LIFT_MAX, r.troops);
+    return 0;
+  }
+  function targetsOf(s) {
+    const r = R[s], T = {}, list = [];
+    const at = (id) => T[id] || (list.push(T[id] = { id: id, acts: [] }), T[id]);
+    adj[s].forEach((j) => {
+      if (borderOf(s, j) === "mountain") return;
+      if (R[j].owner === BLUE) {
+        if (r.troops > 0) at(j).acts.push("move");
+        if (r.troops > 1) at(j).acts.push("movehalf");
+      } else {
+        if (r.troops > 0) at(j).acts.push("all");
+        if (r.troops > 1) at(j).acts.push("half");
+        if (r.cannon) at(j).acts.push("fire");
+      }
+    });
+    if (r.cav > 0) {
+      // two steps away, over borders a rider can cross
+      adj[s].forEach((m) => {
+        if (borderOf(s, m) === "mountain" || R[m].owner === RED) return;
+        adj[m].forEach((j) => {
+          if (j === s || isNb(s, j) || R[j].owner === BLUE || borderOf(m, j) === "mountain") return;
+          if (at(j).acts.indexOf("ride") < 0) T[j].acts.push("ride");
+        });
+      });
+    }
+    if (r.balloon && r.troops > 0) {
+      R.forEach((t) => {
+        if (t.id === s || isNb(s, t.id) || Math.hypot(t.cx - r.cx, t.cy - r.cy) > LIFT_RANGE) return;
+        at(t.id).acts.push("lift");
+      });
+    }
+    const out = list.filter((t) => t.acts.length);
+    out.sort((a, b) => Math.hypot(R[a.id].cx - r.cx, R[a.id].cy - r.cy) - Math.hypot(R[b.id].cx - r.cx, R[b.id].cy - r.cy));
+    out.forEach((t, i) => { t.rank = i; });
+    return out;
+  }
+  // what an order would do, in the game's points
+  function forecast(s, t, act) {
+    const a = R[s], b = R[t];
+    if (act === "fire") return { col: TIE_COL, text: "−" + CANNON_DAMAGE };
+    if (ACT[act].friendly) return { col: CAMP[BLUE].base, text: "+" + sendCount(a, act) };
+    const n = sendCount(a, act), river = act !== "lift" && borderOf(s, t) === "river";
+    const att = n * (ATTACK_PTS + (river ? RIVER_PTS : 0)), def = b.troops * (DEF_PTS + (b.capital ? CAPITAL_PTS : 0));
+    if (att > def) return { col: OK_COL, text: "+" + Math.max(1, Math.round((att - def) / ATTACK_PTS)), win: true, att: att, def: def };
+    if (att === def) return { col: TIE_COL, text: "=", att: att, def: def };
+    return { col: BAD_COL, text: "lost", att: att, def: def };
+  }
+
+  // ---- the camera ----------------------------------------------------------
+  const cam = { x: W / 2, y: H / 2, z: 1 };
+  let camGoal = null;
+  const scr = (x, y) => ({ x: CX + (x - cam.x) * cam.z, y: CYM + (y - cam.y) * cam.z * TILT });
+  const inv = (px, py) => ({ x: cam.x + (px - CX) / cam.z, y: cam.y + (py - CYM) / (cam.z * TILT) });
+  const ZMIN = 0.42, ZMAX = 2.4;
+  function clampCam(c) { c.x = Math.max(-200, Math.min(W + 200, c.x)); c.y = Math.max(-200, Math.min(H + 200, c.y)); c.z = Math.max(ZMIN, Math.min(ZMAX, c.z)); }
+  function camHome() {
+    const cap = R.find((r) => r.capital && r.owner === BLUE) || R[0];
+    cam.x = cap.cx; cam.y = cap.cy - 120; cam.z = S.zoom; camGoal = null; clampCam(cam);
+  }
+  function zoomAt(px, py, z) {
+    const w = inv(px, py);
+    cam.z = Math.max(ZMIN, Math.min(ZMAX, z));
+    cam.x = w.x - (px - CX) / cam.z; cam.y = w.y - (py - CYM) / (cam.z * TILT);
+    clampCam(cam); camGoal = null;
+  }
+  /* ---- the camera on a selection -------------------------------------------
+     What must be on screen is what can be TAPPED: the region in hand (its
+     troops and their count) and, for every target, the box its icons will
+     stand in — laid out exactly as drawIcons lays them, in screen px around
+     a world anchor. The view is the frame between the HUD and the top of
+     the region card, inset by a safe margin.
+
+     For a zoom z, each item bounds where the camera may be (an interval on
+     x and one on y); every item on screen is the intersection of them all.
+     So the camera moves as little as it can: it stays where it is if the
+     intersection holds it, else it is clamped onto its nearest edge — no
+     recentring. Only when no pan works at the current zoom does it zoom out,
+     step by step and never past `floor` × the zoom it had; and if even that
+     fails, the farthest targets are let go, one at a time, until the rest
+     fit (the region in hand is never let go). What is left off the screen
+     gets an arrow on the edge (`hints`). */
+  function viewRect() {
+    const m = S.margin;
+    return { l: m, r: FW - m, t: TOP + m, b: cardTop() - m };
+  }
+  function fitItems(s) {
+    const r = R[s], D = S.size, items = [];
+    // the region in hand: its troops standing, its count under them
+    items.push({ id: s, ax: r.cx, ay: r.cy, x0: -60, x1: 60, y0: -90, y1: 44, rank: -1 });
+    const srcS = scr(r.cx, r.cy), o = orders[s];
+    targetsOf(s).forEach((tg) => {
+      const t = R[tg.id], A = scr(t.cx, t.cy);
+      let n = tg.acts.length + (o && o.t === tg.id ? 1 : 0);
+      if (S.density === "compact") n = 1;
+      const it = { id: tg.id, ax: t.cx, ay: t.cy, x0: -30, x1: 30, y0: -20, y1: 40, rank: tg.rank };
+      for (let i = 0; i < n; i++) {
+        const fake = { i: i, n: n }, off = layoutOffset(fake, A, srcS), h = D * iconScale(fake) / 2 + 4;
+        it.x0 = Math.min(it.x0, off.x - h); it.x1 = Math.max(it.x1, off.x + h);
+        it.y0 = Math.min(it.y0, off.y - h); it.y1 = Math.max(it.y1, off.y + h + (S.labels === "on" ? 30 : 0));
+      }
+      items.push(it);
+    });
+    return items;
+  }
+  // the camera nearest `from` that shows every item at zoom z, or null
+  function panFor(items, z, from) {
+    const V = viewRect();
+    let xl = -Infinity, xr = Infinity, yt = -Infinity, yb = Infinity;
+    items.forEach((it) => {
+      xr = Math.min(xr, it.ax + (CX + it.x0 - V.l) / z);
+      xl = Math.max(xl, it.ax + (CX + it.x1 - V.r) / z);
+      yb = Math.min(yb, it.ay + (CYM + it.y0 - V.t) / (z * TILT));
+      yt = Math.max(yt, it.ay + (CYM + it.y1 - V.b) / (z * TILT));
+    });
+    if (xl > xr || yt > yb) return null;
+    return { x: Math.max(xl, Math.min(xr, from.x)), y: Math.max(yt, Math.min(yb, from.y)), z: z };
+  }
+  let lastFit = "";
+  function fitCamera(items, from) {
+    const z0 = from.z, zf = Math.max(ZMIN, z0 * S.floor);
+    let list = items.slice().sort((a, b) => a.rank - b.rank), dropped = 0;
+    while (list.length) {
+      for (let k = 0; k <= 10; k++) {
+        const z = z0 + (zf - z0) * k / 10, g = panFor(list, z, from);
+        if (g) {
+          lastFit = (g.x === from.x && g.y === from.y && k === 0 ? "still" : k === 0 ? "pan" : "pan + zoom ×" + (z / z0).toFixed(2)) +
+            (dropped ? " · " + dropped + " off screen" : "");
+          return g;
+        }
+      }
+      if (list.length === 1) break;
+      list.pop(); dropped++;
+    }
+    lastFit = "no fit";
+    const r = items[0];
+    return { x: r.ax, y: r.ay, z: z0 };
+  }
+  // when a region is picked up: bring what it can act on onto the screen
+  function cameraOnSelect() {
+    if (S.camera === "off" || sel < 0) return;
+    const r = R[sel], from = camGoal || cam;
+    if (S.camera === "centre") { camGoal = { x: r.cx, y: r.cy - (S.lift * 0.5) / (cam.z * TILT), z: cam.z }; clampCam(camGoal); return; }
+    camGoal = fitCamera(fitItems(sel), { x: from.x, y: from.y, z: from.z });
+    clampCam(camGoal);
+  }
+  // a target whose icons are off the screen: where its arrow stands on the edge
+  function offscreenHints() {
+    if (S.hints !== "on" || sel < 0) return [];
+    const V = viewRect(), out = [];
+    fitItems(sel).forEach((it) => {
+      if (it.id === sel) return;
+      const A = scr(it.ax, it.ay), x0 = A.x + it.x0, x1 = A.x + it.x1, y0 = A.y + it.y0, y1 = A.y + it.y1;
+      // a box the fit set exactly on the edge is on screen (float rounding)
+      if (x0 >= V.l - 2 && x1 <= V.r + 2 && y0 >= V.t - 2 && y1 <= V.b + 2) return;
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+      out.push({ it: it, x: Math.max(V.l + 34, Math.min(V.r - 34, cx)), y: Math.max(V.t + 34, Math.min(V.b - 34, cy)), ang: Math.atan2(cy - CYM, cx - CX) });
+    });
+    return out;
+  }
+
+  // ---- the icons -----------------------------------------------------------------
+  let sel = -1, openT = -1, icons = [], now = 0;
+  const iconSize = () => S.size * (S.follow === "on" ? Math.max(0.6, Math.min(1.4, cam.z / S.zoom)) : 1);
+  function desired() {
+    if (sel < 0) return [];
+    const out = [], o = orders[sel];
+    targetsOf(sel).forEach((tg) => {
+      let acts = tg.acts.slice();
+      if (o && o.t === tg.id) {
+        // the order already given leads, and its cancel closes the row
+        const at = acts.indexOf(o.act);
+        if (at > 0) { acts.splice(at, 1); acts.unshift(o.act); }
+        acts.push("cancel");
+      }
+      let more = 0;
+      if (S.density === "compact" && openT !== tg.id) { more = acts.length - 1; acts = [acts[0]]; }
+      acts.forEach((a, i) => out.push({ key: sel + ":" + tg.id + ":" + a, src: sel, t: tg.id, act: a, i: i, n: acts.length,
+                                         rank: tg.rank, more: i === 0 ? more : 0 }));
+    });
+    return out;
+  }
+  function refresh() {
+    const want = desired(), byKey = {};
+    want.forEach((w) => { byKey[w.key] = w; });
+    let died = false;
+    icons.forEach((ic) => {
+      if (ic.dead == null && !byKey[ic.key]) { ic.dead = now + (ic.picked ? 0.2 : 0); died = true; }
+    });
+    const late = died ? S.outMs / 1000 * 0.5 : 0;
+    want.forEach((w) => {
+      const ic = icons.find((x) => x.key === w.key && x.dead == null);
+      if (ic) { Object.assign(ic, { i: w.i, n: w.n, rank: w.rank, more: w.more }); return; }
+      icons.push(Object.assign({}, w, { born: now + late, delay: (w.rank * S.waveMs + w.i * S.stagger) / 1000,
+                                         dead: null, ph: Math.random() * 6.28, ox: null, oy: null }));
+    });
+    syncPanel();
+  }
+  // where icon i of n stands, as an offset from its target's troops (screen px)
+  function layoutOffset(ic, A, srcS) {
+    // a label is wider than its icon: give it the room
+    const D = iconSize(), L = S.lift, step = D + S.gap + (S.labels === "on" ? 22 : 0), n = ic.n, i = ic.i;
+    const c = i - (n - 1) / 2;
+    if (S.layout === "row") return { x: c * step, y: -L };
+    if (S.layout === "fan") {
+      if (n === 1) return { x: 0, y: -L };
+      // the chord between two neighbours is one step, whatever the radius
+      const rad = Math.max(D * 0.95, step * (n - 1) / (Math.PI * 0.62)), span = 2 * Math.asin(Math.min(1, step / (2 * rad))) * (n - 1);
+      const th = -Math.PI / 2 + (i / (n - 1) - 0.5) * span;
+      return { x: Math.cos(th) * rad, y: -L + rad + Math.sin(th) * rad };
+    }
+    if (S.layout === "ring") {
+      if (n === 1) return { x: 0, y: -L };
+      const rad = Math.max(D * 0.8, step * n / (Math.PI * 2)), th = -Math.PI / 2 + i * Math.PI * 2 / n;
+      return { x: Math.cos(th) * rad, y: -L * 0.5 + Math.sin(th) * rad };
+    }
+    if (S.layout === "border") {
+      // on the target, between the border the order crosses and its troops,
+      // in a row along that border
+      let dx = A.x - srcS.x, dy = A.y - srcS.y;
+      const len = Math.hypot(dx, dy) || 1;
+      dx /= len; dy /= len;
+      const bx = -dx * len * 0.28, by = -dy * len * 0.28;
+      let px = -dy, py = dx;
+      if (px < 0) { px = -px; py = -py; }
+      return { x: bx + px * c * step, y: by + py * c * step - L };
+    }
+    // stack: the first big, the rest small down its right side
+    if (i === 0) return { x: 0, y: -L };
+    const d2 = D * 0.62, k = i - 1, col = Math.floor(k / 3), rowi = k % 3;
+    return { x: D * 0.5 + d2 * 0.55 + col * (d2 + 6), y: -L - D * 0.32 + rowi * (d2 + 6) };
+  }
+  const iconScale = (ic) => S.layout === "stack" && ic.i > 0 ? 0.62 : 1;
+  function anchorOf(id) { const r = R[id]; return scr(r.cx, r.cy); }
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const easeIn = (t) => t * t * t;
+  const backOut = (t) => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+  const bounceOut = (t) => {
+    if (t < 1 / 2.75) return 7.5625 * t * t;
+    if (t < 2 / 2.75) { t -= 1.5 / 2.75; return 7.5625 * t * t + 0.75; }
+    if (t < 2.5 / 2.75) { t -= 2.25 / 2.75; return 7.5625 * t * t + 0.9375; }
+    t -= 2.625 / 2.75; return 7.5625 * t * t + 0.984375;
+  };
+  // the look of an entrance at progress p (0 hidden, 1 standing)
+  function entrance(style, p) {
+    const T = { s: 1, sy: 1, dy: 0, rot: 0, a: 1, fly: 1, fold: 0 };
+    if (style === "pop") { T.s = p <= 0 ? 0 : backOut(p); T.a = clamp01(p * 4); }
+    else if (style === "unfold") { T.sy = Math.sin(easeOut(p) * Math.PI / 2); T.rot = (1 - p) * -0.35; T.a = clamp01(p * 3); T.fold = 1 - p; }
+    else if (style === "drop") { T.dy = -(1 - bounceOut(p)) * 150; T.a = clamp01(p * 3); }
+    else if (style === "rise") { const k = easeOut(p); T.fly = k; T.s = 0.35 + 0.65 * k; T.a = clamp01(p * 3); }
+    else { T.a = easeOut(p); T.s = 0.92 + 0.08 * p; }
+    return T;
+  }
+  function iconLook(ic) {
+    const pin = clamp01((now - ic.born - ic.delay) / (S.inMs / 1000));
+    let T = entrance(S.appear, pin);
+    if (ic.dead != null && now >= ic.dead) {
+      const po = clamp01((now - ic.dead - ic.i * S.stagger / 2000) / (S.outMs / 1000));
+      if (S.disappear === "reverse") {
+        const U = entrance(S.appear, Math.min(pin, 1 - po));
+        T = U;
+      } else if (S.disappear === "shrink") { T.s *= 1 - easeIn(po); T.a *= 1 - po * 0.5; }
+      else if (S.disappear === "fly") { T.fly = 1 - easeIn(po); T.s *= 1 - po * 0.6; T.a *= 1 - po * 0.7; }
+      else T.a *= 1 - po;
+      T.gone = po >= 1;
+    }
+    if (ic.picked != null) { const k = (now - ic.picked) / 0.22; if (k < 1) T.s *= 1 + 0.28 * Math.sin(k * Math.PI); }
+    if (S.idle === "bob") T.dy += Math.sin(now * 2.6 + ic.ph) * 4;
+    if (S.idle === "breathe") T.s *= 1 + Math.sin(now * 3 + ic.ph) * 0.045;
+    T.live = ic.dead == null && pin > 0.5;
+    return T;
+  }
+
+  // ---- the input: a tap picks, a drag is the camera ------------------------
+  const ptrs = new Map();
+  let gest = null, hoverIcon = null;
+  function toFrame(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * FW, y: (e.clientY - r.top) / r.height * FH };
+  }
+  cv.addEventListener("pointerdown", (e) => {
+    cv.setPointerCapture(e.pointerId);
+    const p = toFrame(e);
+    ptrs.set(e.pointerId, p);
+    if (ptrs.size === 1) gest = { x0: p.x, y0: p.y, cx: cam.x, cy: cam.y, moved: false, pinch: null };
+    else if (ptrs.size === 2 && gest) {
+      const [a, b] = Array.from(ptrs.values());
+      gest.moved = true;
+      gest.pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: cam.z };
+    }
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const p = toFrame(e);
+    if (!ptrs.has(e.pointerId)) {
+      hoverIcon = iconAt(p);
+      cv.classList.toggle("over", !!hoverIcon || inSend(p));
+      return;
+    }
+    ptrs.set(e.pointerId, p);
+    if (!gest) return;
+    if (gest.pinch && ptrs.size >= 2) {
+      const [a, b] = Array.from(ptrs.values());
+      zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, gest.pinch.z0 * Math.hypot(a.x - b.x, a.y - b.y) / gest.pinch.d0);
+      return;
+    }
+    if (!gest.moved && Math.hypot(p.x - gest.x0, p.y - gest.y0) > 12) { gest.moved = true; cv.classList.add("panning"); }
+    if (gest.moved && !gest.pinch) {
+      cam.x = gest.cx - (p.x - gest.x0) / cam.z;
+      cam.y = gest.cy - (p.y - gest.y0) / (cam.z * TILT);
+      clampCam(cam); camGoal = null;
+    }
+  });
+  function lift(e) {
+    if (!ptrs.has(e.pointerId)) return;
+    const p = toFrame(e);
+    ptrs.delete(e.pointerId);
+    if (ptrs.size === 0) {
+      cv.classList.remove("panning");
+      if (gest && !gest.moved && e.type === "pointerup") tap(p);
+      gest = null;
+    }
+  }
+  cv.addEventListener("pointerup", lift);
+  cv.addEventListener("pointercancel", lift);
+  cv.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const p = toFrame(e);
+    zoomAt(p.x, p.y, cam.z * Math.exp(-e.deltaY * 0.0015));
+  }, { passive: false });
+
+  function inSend(p) { return Math.abs(p.x - SEND.x) < SEND.w / 2 && Math.abs(p.y - SEND.y) < SEND.h / 2; }
+  function iconAt(p) {
+    if (inCard(p)) return null;
+    for (let k = icons.length - 1; k >= 0; k--) {
+      const ic = icons[k];
+      if (ic.sx == null || !ic.live) continue;
+      if (Math.hypot(p.x - ic.sx, p.y - ic.sy) <= ic.sd / 2 + 6) return ic;
+    }
+    return null;
+  }
+  function regionAt(w) {
+    for (let i = 0; i < R.length; i++) {
+      const P = R[i].poly;
+      let inside = false;
+      for (let a = 0, b = P.length - 1; a < P.length; b = a++) {
+        if ((P[a].y > w.y) !== (P[b].y > w.y) && w.x < (P[b].x - P[a].x) * (w.y - P[a].y) / (P[b].y - P[a].y) + P[a].x) inside = !inside;
+      }
+      if (inside) return i;
+    }
+    return -1;
+  }
+  function tap(p) {
+    if (inSend(p)) { send(); return; }
+    if (inCard(p)) return;
+    // an arrow on the edge: bring that target in, the least move that does
+    const hint = hints.find((h) => Math.hypot(p.x - h.x, p.y - h.y) <= 34);
+    if (hint) {
+      const from = camGoal || cam;
+      camGoal = panFor([hint.it], from.z, from) || { x: hint.it.ax, y: hint.it.ay, z: from.z };
+      clampCam(camGoal);
+      return;
+    }
+    const ic = iconAt(p);
+    if (ic) { pick(ic); return; }
+    const id = regionAt(inv(p.x, p.y));
+    if (id < 0) { select(-1); return; }
+    if (R[id].owner === BLUE) { select(id === sel ? -1 : id); return; }
+    if (sel >= 0) {
+      const tg = targetsOf(sel).find((t) => t.id === id);
+      if (tg) {
+        if (S.tapRegion === "expand" && S.density === "compact") { openT = openT === id ? -1 : id; refresh(); return; }
+        if (S.tapRegion === "all") {
+          const lead = icons.find((x) => x.t === id && x.i === 0 && x.dead == null);
+          if (lead) give(lead);
+          return;
+        }
+        if (S.tapRegion === "nothing") return;
+      }
+    }
+    select(-1);
+  }
+  function select(id) {
+    if (id === sel) return;
+    sel = id; openT = -1;
+    refresh();
+    cameraOnSelect();
+  }
+  function pick(ic) {
+    if (S.density === "compact" && ic.more > 0 && openT !== ic.t) { openT = ic.t; refresh(); return; }
+    give(ic);
+  }
+  function give(ic) {
+    if (ic.act === "cancel") { delete orders[ic.src]; ic.picked = now; refresh(); return; }
+    orders[ic.src] = { t: ic.t, act: ic.act, born: now };
+    ic.picked = now;
+    if (S.after === "keep") { openT = -1; refresh(); return; }
+    if (S.after === "next") {
+      const free = R.filter((r) => r.owner === BLUE && !orders[r.id] && r.troops > 0 && targetsOf(r.id).length);
+      const nx = free.sort((a, b) => Math.hypot(a.cx - R[ic.src].cx, a.cy - R[ic.src].cy) - Math.hypot(b.cx - R[ic.src].cx, b.cy - R[ic.src].cy))[0];
+      sel = -1; openT = -1;
+      if (nx) { sel = nx.id; refresh(); cameraOnSelect(); } else refresh();
+      return;
+    }
+    sel = -1; openT = -1;
+    refresh();
+  }
+
+  // ---- Send: the bell, in the game's points, red sitting still -------------
+  let sentAt = -9;
+  function send() {
+    const list = Object.keys(orders).map((s) => ({ s: +s, o: orders[s] }));
+    list.forEach(({ s, o }) => {
+      const a = R[s], b = R[o.t], act = o.act;
+      if (a.owner !== BLUE) return;
+      if (act === "fire") { b.troops = Math.max(0, b.troops - CANNON_DAMAGE); return; }
+      const n = sendCount(a, act);
+      if (n <= 0) return;
+      a.troops -= n;
+      if (act === "ride") a.cav -= n;
+      a.cav = Math.min(a.cav, a.troops);
+      if (b.owner === BLUE) { b.troops += n; return; }
+      const river = act !== "lift" && borderOf(s, o.t) === "river";
+      const att = n * (ATTACK_PTS + (river ? RIVER_PTS : 0)), def = b.troops * (DEF_PTS + (b.capital ? CAPITAL_PTS : 0));
+      if (att > def) { b.owner = BLUE; b.troops = Math.max(1, Math.round((att - def) / ATTACK_PTS)); b.cannon = false; }
+      else b.troops = Math.max(0, Math.round((def - att) / DEF_PTS));
+    });
+    R.forEach((r) => { if (r.owner !== NEUTRAL) r.troops += r.capital ? 2 : 1; });
+    orders = {}; tick++; sentAt = now;
+    sel = -1; openT = -1; refresh();
+  }
+
+  // ---- drawing -------------------------------------------------------------
+  function polyPath(P, dy) {
+    ctx.beginPath();
+    P.forEach((p, k) => { const s = scr(p.x, p.y); if (k) ctx.lineTo(s.x, s.y + dy); else ctx.moveTo(s.x, s.y + dy); });
+    ctx.closePath();
+  }
+  function sharedEdge(a, b) {
+    const P = R[a].poly;
+    for (let k = 0; k < P.length; k++) if (P[k].tag === b) return [P[k], P[(k + 1) % P.length]];
+    return null;
+  }
+  function drawGround(targets) {
+    const z = cam.z, thick = 12 * z;
+    // the sea
+    const g = ctx.createLinearGradient(0, 0, 0, FH);
+    g.addColorStop(0, "#156c7a"); g.addColorStop(1, "#38a6ad");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, FW, FH);
+    // the paper's edge, then the sheets
+    R.forEach((r) => { polyPath(r.poly, thick); ctx.fillStyle = "#c9b78c"; ctx.fill(); });
+    R.forEach((r) => { polyPath(r.poly, thick * 0.45); ctx.fillStyle = "#b39f72"; ctx.fill(); });
+    const isT = {};
+    targets.forEach((t) => { isT[t.id] = true; });
+    R.forEach((r) => {
+      polyPath(r.poly, 0);
+      ctx.fillStyle = TERRAIN[r.terrain][r.id % 2]; ctx.fill();
+      if (r.owner !== NEUTRAL) {
+        const c = CAMP[r.owner].rgb;
+        ctx.fillStyle = "rgba(" + c + ",.26)"; ctx.fill();
+        ctx.save(); ctx.clip();
+        ctx.lineWidth = Math.max(4, 11 * z); ctx.strokeStyle = CAMP[r.owner].base; ctx.globalAlpha = 0.85; ctx.lineJoin = "round"; ctx.stroke();
+        ctx.restore();
+      }
+      ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(70,52,24,.38)"; ctx.stroke();
+    });
+    // the borders that matter
+    for (const k in borders) {
+      const [a, b] = k.split(":").map(Number), e = sharedEdge(a, b);
+      if (!e) continue;
+      const p = scr(e[0].x, e[0].y), q = scr(e[1].x, e[1].y);
+      if (borders[k] === "river") {
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#2f7fc0"; ctx.lineWidth = Math.max(5, 12 * z); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+        ctx.strokeStyle = "#7cc3ee"; ctx.lineWidth = Math.max(2, 4 * z); ctx.stroke();
+      } else {
+        const n = Math.max(2, Math.round(Math.hypot(q.x - p.x, q.y - p.y) / (26 * z)));
+        for (let i = 0; i <= n; i++) {
+          const x = p.x + (q.x - p.x) * i / n, y = p.y + (q.y - p.y) * i / n, h = 26 * z, w = 18 * z;
+          ctx.beginPath(); ctx.moveTo(x - w, y + 4 * z); ctx.lineTo(x, y - h); ctx.lineTo(x + w, y + 4 * z); ctx.closePath();
+          ctx.fillStyle = "#8d7a5a"; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x + w, y + 4 * z); ctx.lineTo(x, y + 4 * z); ctx.closePath();
+          ctx.fillStyle = "#6e5d42"; ctx.fill();
+        }
+      }
+    }
+    // the rest dimmed, the region in hand lifted, the targets outlined
+    if (dimK > 0.01 && S.dim > 0) {
+      ctx.fillStyle = "rgba(10,20,30," + (S.dim * dimK).toFixed(3) + ")";
+      R.forEach((r) => { if (r.id !== sel && !isT[r.id]) { polyPath(r.poly, 0); ctx.fill(); } });
+    }
+    if (S.outline === "on" && sel >= 0) {
+      ctx.save();
+      ctx.setLineDash([10, 8]); ctx.lineDashOffset = -now * 30;
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,250,235," + (0.5 + 0.3 * Math.sin(now * 4)).toFixed(2) + ")";
+      targets.forEach((t) => { polyPath(R[t.id].poly, 0); ctx.stroke(); });
+      ctx.restore();
+    }
+    if (sel >= 0) {
+      const up = -9 * z;
+      polyPath(R[sel].poly, 4 * z); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fill();
+      polyPath(R[sel].poly, up); ctx.fillStyle = TERRAIN[R[sel].terrain][sel % 2]; ctx.fill();
+      ctx.fillStyle = "rgba(47,99,196,.34)"; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#fffaf0"; ctx.lineJoin = "round"; ctx.stroke();
+    }
+  }
+  function drawPiece(im, x, y, h, flip) {
+    if (!ready(im)) return;
+    const w = h * im.naturalWidth / im.naturalHeight;
+    ctx.save(); ctx.translate(x, y); if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(im, -w / 2, -h, w, h);
+    ctx.restore();
+  }
+  function chip(x, y, text, fill, ink) {
+    ctx.font = "800 22px " + FONT;
+    const w = Math.max(38, ctx.measureText(text).width + 20), h = 32;
+    ctx.fillStyle = "rgba(0,0,0,.25)"; rrect(x - w / 2 + 2, y - h / 2 + 3, w, h, 9); ctx.fill();
+    ctx.fillStyle = fill; rrect(x - w / 2, y - h / 2, w, h, 9); ctx.fill();
+    ctx.fillStyle = ink || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y + 1);
+  }
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function drawPieces() {
+    const z = cam.z, k = 1.5 * z;
+    const list = R.slice().sort((a, b) => a.cy - b.cy);
+    list.forEach((r) => {
+      const s = scr(r.cx, r.cy), up = r.id === sel ? -9 * z : 0;
+      const c = r.owner === BLUE ? "B" : "R";
+      let hop = 0;
+      if (r.id === sel) hop = -Math.abs(Math.sin(now * 8)) * 8;
+      if (r.capital && r.owner !== NEUTRAL) drawPiece(IMG["cap" + c], s.x - 44 * z, s.y - 24 * z + up, 70 * k);
+      if (r.balloon && r.owner !== NEUTRAL) drawPiece(IMG["bal" + c], s.x + 34 * z, s.y - 46 * z + up + Math.sin(now * 1.6) * 4, 54 * k);
+      if (r.owner === NEUTRAL) drawPiece(IMG.flagN, s.x, s.y + up, 30 * k);
+      else {
+        if (r.cav > 0) drawPiece(IMG["cav" + c], s.x - 34 * z, s.y + 14 * z + up + hop, 42 * k);
+        if (r.troops > 0) drawPiece(IMG["inf" + c], s.x, s.y + up + hop, 40 * k);
+        if (r.cannon) drawPiece(IMG["can" + c], s.x + 38 * z, s.y + 12 * z + up, 26 * k);
+      }
+      chip(s.x, s.y + 22 + up, String(r.troops), CAMP[r.owner].base, r.owner === NEUTRAL ? INK : "#fff");
+    });
+  }
+  // the orders: a folded paper strip from the troops to the target
+  function drawOrders() {
+    for (const s in orders) {
+      const o = orders[s], a = anchorOf(+s), b = anchorOf(o.t);
+      const k = clamp01((now - o.born) / 0.35);
+      const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+      const mx = (a.x + b.x) / 2 - dy / len * len * 0.18, my = (a.y + b.y) / 2 + dx / len * len * 0.18 - len * 0.12;
+      const pts = [];
+      const t0 = 22 / len, t1 = 1 - 30 / len;
+      const steps = 24;
+      for (let i = 0; i <= steps; i++) {
+        const t = t0 + (t1 - t0) * (i / steps) * easeOut(k);
+        const u = 1 - t;
+        pts.push({ x: u * u * a.x + 2 * u * t * mx + t * t * b.x, y: u * u * (a.y - 20) + 2 * u * t * my + t * t * (b.y - 10) });
+      }
+      const fire = o.act === "fire", col = fire ? CAMP[RED].base : CAMP[BLUE].base, light = fire ? "#f6b0a0" : "#cfe0ff";
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      if (fire) ctx.setLineDash([2, 14]);
+      ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+      ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 18; ctx.save(); ctx.translate(0, 4); ctx.stroke(); ctx.restore();
+      ctx.strokeStyle = col; ctx.lineWidth = 16; ctx.stroke();
+      ctx.strokeStyle = light; ctx.lineWidth = 7; ctx.stroke();
+      ctx.setLineDash([]);
+      if (k >= 1) {
+        const p = pts[pts.length - 1], q = pts[pts.length - 3], ang = Math.atan2(p.y - q.y, p.x - q.x);
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(ang);
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-12, -18); ctx.lineTo(-6, 0); ctx.lineTo(-12, 18); ctx.closePath();
+        ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = light; ctx.lineWidth = 3; ctx.stroke();
+        ctx.restore();
+        const m = pts[Math.floor(steps / 2)];
+        chip(m.x, m.y - 4, fire ? "−" + CANNON_DAMAGE : String(sendCount(R[s], o.act)), col);
+      }
+    }
+  }
+  // one paper rosette: facets, the verdict on its rim, the glyph, the figures
+  function drawIcon(ic, x, y, D, T, srcS) {
+    const a = ACT[ic.act], r = R[ic.src], fc = ic.act === "cancel" ? null : forecast(ic.src, ic.t, ic.act);
+    const chosen = orders[ic.src] && orders[ic.src].t === ic.t && orders[ic.src].act === ic.act;
+    ctx.save();
+    ctx.globalAlpha = T.a;
+    ctx.translate(x, y + T.dy);
+    if (S.stem === "on" && S.lift > 20 && S.layout !== "border") {
+      const A = anchorOf(ic.t);
+      ctx.setLineDash([4, 6]); ctx.strokeStyle = "rgba(42,36,24,.7)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(0, D * 0.42 * T.s); ctx.lineTo(A.x - x, A.y - y - T.dy - 6); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.rotate(T.rot);
+    ctx.scale(T.s, T.s * T.sy);
+    // shadow
+    ctx.fillStyle = "rgba(0,0,0,.22)";
+    ctx.beginPath(); ctx.ellipse(3, D * 0.5, D * 0.38, D * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    // the rosette: eight facets, light and shaded in turn
+    const rad = D / 2, V = [];
+    for (let k = 0; k < 8; k++) { const th = -Math.PI / 2 + Math.PI / 8 + k * Math.PI / 4; V.push([Math.cos(th) * rad, Math.sin(th) * rad]); }
+    for (let k = 0; k < 8; k++) {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(V[k][0], V[k][1]); ctx.lineTo(V[(k + 1) % 8][0], V[(k + 1) % 8][1]); ctx.closePath();
+      ctx.fillStyle = k % 2 ? PAPER2 : PAPER; ctx.fill();
+    }
+    // all / half: how much of the region leaves, as a tint over the paper
+    if (a.fill) {
+      ctx.save();
+      ctx.beginPath(); V.forEach((v, k) => k ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1])); ctx.closePath(); ctx.clip();
+      ctx.fillStyle = "rgba(47,99,196,.20)";
+      if (a.fill >= 1) ctx.fillRect(-rad, -rad, D, D); else ctx.fillRect(-rad, 0, D, rad);
+      ctx.restore();
+    }
+    ctx.beginPath(); V.forEach((v, k) => k ? ctx.lineTo(v[0], v[1]) : ctx.moveTo(v[0], v[1])); ctx.closePath();
+    const rim = S.verdict === "ring" && fc ? fc.col : INK;
+    ctx.lineWidth = S.verdict === "ring" && fc ? 6 : 3; ctx.strokeStyle = rim; ctx.lineJoin = "round"; ctx.stroke();
+    if (T.fold > 0) { ctx.fillStyle = "rgba(60,40,10," + (0.35 * T.fold).toFixed(3) + ")"; ctx.fill(); }
+    // the glyph: the game's own piece, or a pictogram
+    const piece = a.piece ? IMG[a.piece + "B"] : null;
+    if (S.glyph === "pieces" && ready(piece)) drawPiece(piece, 0, D * 0.3, D * 0.62);
+    else {
+      const tc = tinted(a.pict, ic.act === "cancel" ? BAD_COL : INK);
+      if (tc) ctx.drawImage(tc, -D * 0.24, -D * 0.24, D * 0.48, D * 0.48);
+    }
+    // the figures: how many leave, and the verdict when it is a chip
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    if (fc && ic.act !== "fire") {
+      const n = ACT[ic.act].friendly ? fc.text.slice(1) : String(sendCount(r, ic.act));
+      smallPill(D * 0.36, D * 0.34, n, CAMP[BLUE].base, "#fff");
+    } else if (ic.act === "fire") smallPill(D * 0.36, D * 0.34, "−" + CANNON_DAMAGE, CAMP[RED].base, "#fff");
+    if (S.verdict === "chip" && fc && fc.att != null) smallPill(-D * 0.36, -D * 0.34, fc.text, fc.col, "#fff");
+    if (ic.more > 0) smallPill(-D * 0.36, D * 0.34, "+" + ic.more, INK, PAPER);
+    if (chosen) {
+      ctx.fillStyle = OK_COL; ctx.beginPath(); ctx.arc(D * 0.36, -D * 0.36, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = PAPER; ctx.stroke();
+      const ck = tinted("check", "#ffffff");
+      if (ck) ctx.drawImage(ck, D * 0.36 - 12, -D * 0.36 - 12, 24, 24);
+    }
+    if (S.labels === "on") {
+      ctx.font = "800 20px " + FONT;
+      ctx.lineWidth = 6; ctx.strokeStyle = PAPER; ctx.lineJoin = "round";
+      ctx.strokeText(a.label, 0, rad + 16); ctx.fillStyle = INK; ctx.fillText(a.label, 0, rad + 16);
+    }
+    ctx.restore();
+  }
+  function smallPill(x, y, text, fill, ink) {
+    ctx.font = "800 20px " + FONT;
+    const w = Math.max(32, ctx.measureText(text).width + 14), h = 28;
+    ctx.fillStyle = fill; rrect(x - w / 2, y - h / 2, w, h, 14); ctx.fill();
+    ctx.lineWidth = 2.5; ctx.strokeStyle = PAPER; ctx.stroke();
+    ctx.fillStyle = ink; ctx.fillText(text, x, y + 1);
+  }
+  function drawIcons(dt) {
+    if (sel < 0 && !icons.length) return;
+    const srcCache = {};
+    const k = Math.min(1, dt * 16);
+    const order = icons.map((ic) => {
+      const A = anchorOf(ic.t), srcS = srcCache[ic.src] || (srcCache[ic.src] = anchorOf(ic.src));
+      const want = ic.dead == null || ic.ox == null ? layoutOffset(ic, A, srcS) : null;
+      return { ic: ic, A: A, srcS: srcS, want: want };
+    });
+    // two targets side by side: push their icons apart until they stop overlapping
+    if (S.spread === "on") {
+      const L = order.filter((o) => o.want);
+      for (let it = 0; it < 6; it++) {
+        for (let a = 0; a < L.length; a++) for (let b = a + 1; b < L.length; b++) {
+          const p = L[a], q = L[b];
+          if (p.ic.t === q.ic.t) continue;
+          const dx = (q.A.x + q.want.x) - (p.A.x + p.want.x), dy = (q.A.y + q.want.y) - (p.A.y + p.want.y);
+          const need = iconSize() * (iconScale(p.ic) + iconScale(q.ic)) / 2 + 6 + (S.labels === "on" ? 10 : 0), d = Math.hypot(dx, dy) || 0.01;
+          if (d >= need) continue;
+          const push = (need - d) / 2, ux = dx / d, uy = dy / d;
+          p.want.x -= ux * push; p.want.y -= uy * push; q.want.x += ux * push; q.want.y += uy * push;
+        }
+      }
+    }
+    order.forEach((o) => {
+      const ic = o.ic;
+      if (!o.want) return;
+      if (ic.ox == null) { ic.ox = o.want.x; ic.oy = o.want.y; } else { ic.ox += (o.want.x - ic.ox) * k; ic.oy += (o.want.y - ic.oy) * k; }
+    });
+    order.sort((p, q) => (p.A.y + p.ic.oy) - (q.A.y + q.ic.oy));
+    order.forEach(({ ic, A, srcS }) => {
+      const T = iconLook(ic);
+      if (T.gone) { ic.remove = true; return; }
+      const fx = A.x + ic.ox, fy = A.y + ic.oy;
+      const x = srcS.x + (fx - srcS.x) * T.fly, y = srcS.y - 30 + (fy - srcS.y + 30) * T.fly;
+      const D = iconSize() * iconScale(ic);
+      ic.sx = x; ic.sy = y + T.dy; ic.sd = D * T.s; ic.live = T.live;
+      if (T.a <= 0.01 || T.s <= 0.01) return;
+      drawIcon(ic, x, y, D, T, srcS);
+    });
+    icons = icons.filter((ic) => !ic.remove);
+  }
+  function drawHud() {
+    // the motor's HUD, mocked: it is the shell's, here for the room it takes
+    ctx.fillStyle = "rgba(16,30,40,.62)"; rrect(16, 16, FW - 32, TOP - 32, 18); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = "800 22px " + FONT; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillText("Tick " + tick, 40, TOP / 2 - 8);
+    ctx.font = "600 20px " + FONT; ctx.fillStyle = "rgba(255,255,255,.6)";
+    ctx.fillText("HUD (the motor's)", 40, TOP / 2 + 20);
+    const blue = R.filter((r) => r.owner === BLUE).length, red = R.filter((r) => r.owner === RED).length;
+    ctx.textAlign = "right"; ctx.font = "800 22px " + FONT;
+    ctx.fillStyle = "#9cc0ff"; ctx.fillText(blue + " regions", FW - 40, TOP / 2 - 8);
+    ctx.fillStyle = "#ffb0a2"; ctx.fillText(red + " red", FW - 40, TOP / 2 + 20);
+    // Send
+    const n = Object.keys(orders).length, pulse = clamp01(1 - (now - sentAt) / 0.4);
+    ctx.save(); ctx.translate(SEND.x, SEND.y); ctx.rotate(-0.02); ctx.scale(1 + pulse * 0.08, 1 + pulse * 0.08);
+    ctx.fillStyle = "rgba(0,0,0,.3)"; rrect(-SEND.w / 2 + 4, -SEND.h / 2 + 6, SEND.w, SEND.h, 14); ctx.fill();
+    ctx.fillStyle = PAPER; rrect(-SEND.w / 2, -SEND.h / 2, SEND.w, SEND.h, 14); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = n ? CAMP[BLUE].base : PAPER2; ctx.stroke();
+    ctx.textAlign = "center"; ctx.fillStyle = CAMP[BLUE].dark; ctx.font = "800 28px " + FONT;
+    ctx.fillText("Send", 0, -12);
+    ctx.font = "500 22px " + FONT; ctx.fillStyle = INK;
+    ctx.fillText(n ? n + (n > 1 ? " orders" : " order") : "No order yet", 0, 18);
+    ctx.restore();
+  }
+  function drawReadout() {
+    const live = icons.filter((ic) => ic.dead == null).length;
+    const tg = sel >= 0 ? targetsOf(sel).length : 0;
+    ctx.font = "600 18px " + FONT; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.fillText("targets " + tg + " · icons " + live + " · zoom " + cam.z.toFixed(2) + (lastFit ? " · fit: " + lastFit : ""), 24, FH - 20);
+  }
+  // the card of the region in hand, mocked: the game's, here for the room it takes
+  function drawCard() {
+    if (cardK < 0.01 || S.cardH <= 0) return;
+    const r = R[cardSel], foot = SEND.y - SEND.h / 2 - 18, h = S.cardH, y = foot - h + (1 - easeOut(cardK)) * (h + 40);
+    if (!r) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, FW, foot + 4); ctx.clip();
+    ctx.fillStyle = "rgba(0,0,0,.28)"; rrect(20, y + 6, FW - 32, h, 16); ctx.fill();
+    ctx.fillStyle = PAPER; rrect(16, y, FW - 32, h, 16); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = PAPER2; ctx.stroke();
+    ctx.beginPath(); ctx.rect(16, y, FW - 32, h); ctx.clip();
+    ctx.textBaseline = "middle";
+    // head: the name on its owner's tag, the land in the corner
+    ctx.font = "800 24px " + FONT;
+    const name = "Region " + r.id + (r.capital ? " · capital" : ""), nw = ctx.measureText(name).width + 28;
+    ctx.fillStyle = CAMP[BLUE].base; rrect(34, y + 14, nw, 40, 10); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText(name, 48, y + 35);
+    ctx.font = "700 20px " + FONT; ctx.textAlign = "right"; ctx.fillStyle = "#6a5e44";
+    ctx.fillText(["Meadow", "Wheat", "Forest"][r.terrain], FW - 38, y + 35);
+    // the figures
+    const stat = (x, cap, n) => {
+      ctx.textAlign = "left"; ctx.fillStyle = INK; ctx.font = "800 34px " + FONT; ctx.fillText(n, x, y + 92);
+      ctx.fillStyle = "#6a5e44"; ctx.font = "700 20px " + FONT; ctx.fillText(cap, x, y + 124);
+    };
+    stat(40, "Troops", String(r.troops));
+    if (r.cav) stat(170, "Riders", String(r.cav));
+    stat(300, "Defence", "×" + (DEF_PTS + (r.capital ? CAPITAL_PTS : 0)));
+    stat(450, "Per tick", "+" + (r.capital ? 2 : 1));
+    ctx.textAlign = "left"; ctx.fillStyle = "#3a3326"; ctx.font = "500 22px " + FONT;
+    ctx.fillText("Holds even if every enemy next door strikes", 40, y + 168);
+    // what stays on the card: the region's own actions (recruit, works...)
+    let x = 34;
+    ["Recruit +3 (5 gold)", "Palisade (4 gold)"].forEach((t) => {
+      ctx.font = "700 20px " + FONT;
+      const w = ctx.measureText(t).width + 30;
+      ctx.fillStyle = CAMP[BLUE].base; rrect(x, y + 192, w, 44, 10); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.fillText(t, x + 15, y + 215);
+      x += w + 12;
+    });
+    ctx.restore();
+  }
+  // the arrows on the edge, one per target left off the screen
+  let hints = [];
+  function drawHints() {
+    hints = cardK > 0.9 ? offscreenHints() : [];
+    hints.forEach((h) => {
+      ctx.save(); ctx.translate(h.x, h.y);
+      ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.arc(2, 4, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = PAPER; ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = CAMP[BLUE].base; ctx.stroke();
+      ctx.rotate(h.ang);
+      ctx.fillStyle = CAMP[BLUE].dark;
+      ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -13); ctx.lineTo(-3, 0); ctx.lineTo(-8, 13); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  // ---- the loop ------------------------------------------------------------------
+  let last = performance.now() / 1000, dimK = 0, cardSel = -1;
+  function frame() {
+    const t = performance.now() / 1000, dt = Math.min(0.05, t - last);
+    last = t; now += dt;
+    if (camGoal) {
+      const k = Math.min(1, dt * 6);
+      cam.x += (camGoal.x - cam.x) * k; cam.y += (camGoal.y - cam.y) * k; cam.z += (camGoal.z - cam.z) * k;
+      if (Math.abs(camGoal.x - cam.x) + Math.abs(camGoal.y - cam.y) < 0.5 && Math.abs(camGoal.z - cam.z) < 0.002) camGoal = null;
+    }
+    dimK += ((sel >= 0 ? 1 : 0) - dimK) * Math.min(1, dt * 8);
+    if (sel >= 0) cardSel = sel;
+    cardK = Math.max(0, Math.min(1, cardK + (sel >= 0 ? dt : -dt) / 0.22));
+    ctx.setTransform(K, 0, 0, K, 0, 0);
+    const targets = sel >= 0 ? targetsOf(sel) : [];
+    drawGround(targets);
+    drawPieces();
+    drawOrders();
+    drawIcons(dt);
+    drawCard();
+    drawHints();
+    drawHud();
+    drawReadout();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- the panel ---------------------------------------------------------------
+  const knobsEl = document.getElementById("knobs"), presetsEl = document.getElementById("presets");
+  const pretty = (k) => k.charAt(0).toUpperCase() + k.slice(1);
+  const ctl = {};
+  function presetValues(i) { return Object.assign({}, DEFAULTS, PRESETS[i].v); }
+  function isDirty() { const P = presetValues(preset); return Object.keys(DEFAULTS).some((k) => P[k] !== S[k]); }
+  function paintPresets() {
+    presetsEl.querySelectorAll("button").forEach((b, i) => {
+      b.classList.toggle("on", i === preset);
+      b.classList.toggle("dirty", i === preset && isDirty());
+    });
+  }
+  PRESETS.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = "<b></b><span></span>";
+    b.querySelector("b").textContent = p.name; b.querySelector("span").textContent = p.note;
+    b.onclick = () => { preset = i; S = presetValues(i); paintKnobs(); changed(true); };
+    presetsEl.appendChild(b);
+  });
+  KNOBS.forEach((d) => {
+    if (d.h) { const h = document.createElement("h3"); h.textContent = d.h; knobsEl.appendChild(h); return; }
+    const row = document.createElement("div"); row.className = "row";
+    const lab = document.createElement("label"); lab.textContent = d.label || pretty(d.k);
+    row.appendChild(lab);
+    if (d.o) {
+      const seg = document.createElement("div"); seg.className = "seg";
+      d.o.forEach((v) => {
+        const b = document.createElement("button"); b.textContent = v; b.dataset.v = v;
+        b.onclick = () => { S[d.k] = v; paintKnobs(); changed(d.k === "zoom"); };
+        seg.appendChild(b);
+      });
+      row.appendChild(seg);
+      ctl[d.k] = { paint: () => seg.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === S[d.k])) };
+    } else {
+      const out = document.createElement("output"); lab.appendChild(out);
+      const inp = document.createElement("input"); inp.type = "range"; inp.min = d.min; inp.max = d.max; inp.step = d.step;
+      inp.oninput = () => { S[d.k] = +inp.value; out.textContent = S[d.k]; changed(false, d.k); };
+      row.appendChild(inp);
+      ctl[d.k] = { paint: () => { inp.value = S[d.k]; out.textContent = S[d.k]; } };
+    }
+    knobsEl.appendChild(row);
+  });
+  function paintKnobs() { for (const k in ctl) ctl[k].paint(); }
+  function changed(recam, k) {
+    save(); paintPresets();
+    if (k === "zoom") { cam.z = S.zoom; clampCam(cam); }
+    if (recam) camHome();
+    // re-deal the icons so a new motion is seen at once
+    if (sel >= 0) { icons.forEach((ic) => { ic.dead = now; }); refresh(); cameraOnSelect(); }
+  }
+
+  // the region in hand: what it carries, how many troops it holds
+  const carryEl = document.getElementById("carry"), troopsEl = document.getElementById("troops"), selInfo = document.getElementById("selinfo");
+  const CARRY = [["cannon", "Cannon"], ["cav", "Cavalry"], ["balloon", "Balloon"]];
+  CARRY.forEach(([k, label]) => {
+    const b = document.createElement("button"); b.textContent = label; b.dataset.k = k;
+    b.onclick = () => {
+      if (sel < 0) return;
+      const r = R[sel];
+      if (k === "cav") r.cav = r.cav ? 0 : Math.min(3, r.troops); else r[k] = !r[k];
+      refresh();
+    };
+    carryEl.appendChild(b);
+  });
+  [["−", -1], ["+", 1], ["1", 0]].forEach(([label, d]) => {
+    const b = document.createElement("button"); b.textContent = label;
+    b.onclick = () => {
+      if (sel < 0) return;
+      const r = R[sel];
+      r.troops = d ? Math.max(0, r.troops + d) : 1;
+      r.cav = Math.min(r.cav, r.troops);
+      refresh();
+    };
+    troopsEl.appendChild(b);
+  });
+  function syncPanel() {
+    const r = sel >= 0 ? R[sel] : null;
+    selInfo.textContent = r ? "Region " + r.id + (r.capital ? " (capital)" : "") + " · " + r.troops + " troops · " + targetsOf(sel).length + " targets" : "None: tap a blue region.";
+    carryEl.querySelectorAll("button").forEach((b) => {
+      b.disabled = !r;
+      b.classList.toggle("on", !!r && (b.dataset.k === "cav" ? r.cav > 0 : !!r[b.dataset.k]));
+    });
+    troopsEl.querySelectorAll("button").forEach((b) => { b.disabled = !r; });
+  }
+
+  document.getElementById("newmap").onclick = () => { seed++; genMap(seed); syncPanel(); };
+  document.getElementById("send").onclick = send;
+  document.getElementById("recam").onclick = camHome;
+  document.getElementById("reset").onclick = () => { S = presetValues(preset); paintKnobs(); changed(true); };
+  document.getElementById("copy").onclick = () => {
+    const txt = JSON.stringify(Object.assign({ preset: PRESETS[preset].name }, S), null, 2);
+    try { navigator.clipboard.writeText(txt); } catch (e) { /* no clipboard */ }
+    console.log(txt);
+  };
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") select(-1);
+    if (e.key === "Enter") send();
+  });
+  window.addEventListener("resize", fitCanvas);
+
+  // for a headless check: the state, read-only
+  window.__lab = { cam: cam, get goal() { return camGoal; }, get sel() { return sel; }, fitItems: fitItems, viewRect: viewRect, scr: scr };
+  fitCanvas();
+  genMap(seed);
+  paintKnobs(); paintPresets(); syncPanel();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

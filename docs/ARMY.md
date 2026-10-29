@@ -113,8 +113,8 @@ prisoner with no cell is not taken either (said once per battle), and the
 end-of-battle offer does not open on a full prison. Both screens are ROOMS
 rather than lists: every bed and every cell, taken or free, as the deck's
 medium card three to a row, with a gauge of the wait under each card (green in
-the infirmary, red turning blue in the prison, where a prisoner stands behind
-bars until they turn), because a ceiling that only shows once it bites is a
+the infirmary, red turning blue in the prison, where a prisoner is no card yet but the
+officer's portrait alone, behind the bars of a cell slot, until they turn), because a ceiling that only shows once it bites is a
 card lost by surprise. A conscript has no id and never reaches a bed, so
 it is always taken in.
 
@@ -331,9 +331,15 @@ stops; a battle they start badly equipped is a game that costs them.
 On the same `endRound` result the game already writes its stat rows into:
 
 ```js
-army: { won: true, hurt: ["3", "11"], dead: ["7"], used: ["3", "5", "11"],
+army: { won: true, hurt: ["3", "11"], gaps: { "3": 1, "11": 3 }, dead: ["7"], slain: [], used: ["3", "5", "11"],
         met: [ { r: 6, t: 1 }, { r: 12, t: 5 }, … ], captives: [ { r: 8, t: 4 }, … ] }
 ```
+
+`gaps` is the tier gap of each wound, by id (the widest when a card was hurt
+twice), which sets its stay in the infirmary.
+
+`slain` is every card a battle fought to the last card cost for good (§5a);
+it is empty unless a surrender was refused.
 
 `used` is every card of the barracks the battle PLAYED, by id — what a
 promotion is earned with (§5b). A game that sends none has its whole deck
@@ -382,6 +388,30 @@ beside it are always the coins.
 wrote its prisoner and then threw, leaving the card on screen and taking a
 prisoner per tap. One tap is also the only one that counts — the card stays
 in the document for its fade.
+
+## 5a. The surrender — neither answer is free
+
+The first turn the army left can neither take the flag nor beat the whole
+camp (`hopeless` in `games/stratideck/game.js`, optimistic on purpose), the
+enemy commander offers a surrender, once a battle (`surrender` in
+`army.js`, section 6a). The round hands the card three things: the cards
+still standing (by id — a conscript is nobody's to hand over), the battle's
+ledger and the refusal.
+
+- **Surrender** costs ONE CARD OF THE ARMY STILL STANDING, picked on the card
+  (SURRENDER with nothing picked is refused with a notice). The battle's
+  ledger is absorbed as a lost battle — its wounds, its dead and its services
+  count, so surrendering is never a way to erase a wound — then the picked
+  card is retired with `why: "surrender"` (a flag), and the round leaves for
+  the village with no end screen and no score, where IN MEMORIAM tells it. An
+  army with no card of the barracks left pays the wounds alone.
+- **Fight on** (the button, a tap, ESCAPE) plays the battle to the end, and
+  every card of the barracks that falls from then on — a lost fight, a draw,
+  a trap, a spell — is LOST for good one time in two (`LAST_STAND`, the round
+  hands it back in `slain`, retired with `why: "slain"`, a skull) and wounded
+  otherwise (the tier gap with what it fell to sets the stay; no bed, the card
+  is lost as usual). A notice says which, and opens the guide's
+  `camp-surrender` page.
 
 ## 5b. Promotions — a card that serves climbs
 
@@ -638,8 +668,9 @@ writes the entry, so the list cannot miss one. It starts empty on a save
 written before 0.15.0 — the losses before it were never kept. **Each cause
 wears its pictogram**, on the card's corner and before the line that says it:
 a sword for a battle, a compass for a squad that never came back, a heart for
-a mission's wound with no bed to lay it in (`why`: `battle`, `mission`,
-`wounds`).
+a mission's wound with no bed to lay it in, a skull for a card fallen in a
+battle fought to the last card, a flag for a card handed over in a surrender
+(`why`: `battle`, `mission`, `wounds`, `slain`, `surrender`).
 
 **A death is told once, on a card that does not celebrate** (`openFallen`, IN
 MEMORIAM): every death since the last one told, however many — one card, the
@@ -672,6 +703,17 @@ the promotions (`announce`), one card per day; the tap that puts a card away
 is what applies it, and the chips fly into the band. A deserter is written in
 the register (`why: "desert"`) without a funeral — the day's card already said
 it — and the tent may find them again like any lost card.
+
+**Several pieces of news are ONE card, the recap** (`openRecap`). When the
+village has two or more to tell — new object cards, the dead, the promotions,
+each day, the raid — they open as one card, *Camp news*, one line each in the order the cards would have come, set on two lines: the title over what it pays or costs as the report's chips, green or red on its edge, and an arrow on the right. A tap on a line opens
+that line's own card over the recap, which settles it as it always did (the
+dead open their files there rather than the register, and the raid's *See the details* puts the recap away unsettled and walks to
+the defense, its lines told again at the next return to the village) and gives
+the recap back without the line. A tap
+anywhere else (*Tap anywhere to accept everything*) settles every line left at once, in that order, the rewards
+flying one beat apart. Neither the scrim nor ESCAPE walks past a bad day: it is
+applied with the rest. A single piece of news keeps its own card.
 
 On a local machine an hour is a second, so a day falls due every four seconds;
 `tools/test/views.mjs` holds them back (`__ARMY__.quietDays`) and draws one on
@@ -759,9 +801,10 @@ better-equipped loser wounded wears a wound badge and a *Wounded* line, and
 the bout that took the flag is ringed in red.
 `Game.defense` hands the duels back as `run.log`, and the report keeps them
 as `log`, `{ a [grade, tier], d [grade, tier] or [object], k judge's kind, h 1 when the winner was wounded }` each. The village shows the report once
-and pays it, and a tap on that card opens the defense straight on this tab (a
-key only pays it: ESCAPE and ENTER put a card away rather than walk
-somewhere); the tab only ever shows the report already read (`df.last`).
+and pays it — the stamp, what it paid or cost and the solidity gauge, which
+says on its own how good the layout was — and its *See the details* button
+opens the defense straight on this tab, while a tap anywhere else or a key
+only pays it; the tab only ever shows the report already read (`df.last`).
 
 `__ARMY__.raid()` writes a report from the validated defense on demand and
 tells it at the village — the test hook, and the way to see one in DEV.

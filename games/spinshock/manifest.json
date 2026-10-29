@@ -1,7 +1,7 @@
 {
   "slug": "spinshock",
   "title": "Spinshock",
-  "version": "1.6.10",
+  "version": "1.6.14",
   "tagline": "Blast then break the rival tops with one tap right on the impact",
   "order": 10,
   "draft": false,
@@ -59,23 +59,23 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Toupie contre toupie. Tape pile au moment de l'impact pour éjecter tes rivaux et relancer ta rotation.",
+      "tagline": "Affrontements de toupies intenses. Touche l'écran au moment précis de l'impact pour éjecter tes rivaux et régénérer ta rotation. Deviens le roi de l'arène de combats en éliminant toutes les toupies adverses.",
       "tags": [
-        "Tap précis",
-        "5 biomes",
+        "Rythme",
+        "Combat",
         "Physique"
       ]
     },
     "en": {
-      "tagline": "Top Vs top. Tap right on impact to blast your rivals away and wind your spin back up.",
+      "tagline": "Top vs top. Tap right on impact to blast your rivals away and wind your spin back up. Become the king of the battle arena by eliminating all the rival tops.",
       "tags": [
-        "Timing tap",
-        "5 biomes",
+        "Rhythm",
+        "Combat",
         "Physics"
       ]
     }
   },
-  "description": "Your top spins in a beyblade dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that marks their shell, launches them into the electric walls and winds your spin back up. Their COLOUR is how they move and what they are immune to — blue stops, charges and dashes and shrugs off the fence, yellow saws its way in and shrugs off the crowd, red flies one straight line and blows up on whatever it touches, black circles you and hands shell points back to the others, and purple splits in two when it breaks. Thirty levels across five dishes, each with its own fence colour, its own roster and its own stretch of the track, and a ten-point boss that nothing but a perfect tap can mark. The top's colour is the only gauge — the run ends when it blows apart.",
+  "description": "Your top spins in a battle dish and loses spin every second. Rival tops charge in: tap on the impact to fire a shockwave that marks their shell, launches them into the electric walls and winds your spin back up. Their colour is how they move and what they are immune to — blue stops, charges and dashes and shrugs off the fence, yellow saws its way in and shrugs off the crowd, red flies one straight line and blows up on whatever it touches, black circles you and hands shell points back to the others, and purple splits in two when it breaks. Thirty levels across five dishes, each with its own fence colour, its own roster and its own stretch of the track, and a ten-point boss that nothing but a perfect tap can mark. The top's colour is the only gauge — the run ends when it blows apart.",
   "store": {
     "copy": {
       "en": {
@@ -86,7 +86,7 @@
           },
           {
             "kicker": "Shockwave",
-            "line": "Smash the others into the <b>walls</b>"
+            "line": "Destroy your <b>enemies</b>"
           },
           {
             "kicker": "Spin",
@@ -97,7 +97,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Varied moves",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -110,18 +110,18 @@
           },
           {
             "kicker": "Onde de choc",
-            "line": "Envoie tes rivaux dans les <b>murs</b>"
+            "line": "Détruis tes <b>ennemis</b>"
           },
           {
             "kicker": "Rotation",
-            "line": "Conserve la <b>vitesse</b>"
+            "line": "Maintiens ta <b>vitesse</b>"
           },
           {
             "kicker": "30 stages",
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Plusieurs mouvements de toupies",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -159,7 +159,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Ejecte puis détruis les toupies rivales d'un <b class=\"w-tap\">tap</b> pile à l'<b class=\"w-hit\">impact</b>",
+        "tagline": "Repousse puis brise les toupies rivales d'un <b class=\"w-tap\">Tap</b> synchronisé au moment de l'<b class=\"w-hit\">impact</b>",
         "strings": {
           " shock": " choc",
           "% spin": "% de rotation",
@@ -167,27 +167,27 @@
           "Best combo": "Meilleur combo",
           "Best score": "Meilleur score",
           "Boss down!": "Boss détruit !",
-          "Boss top": "Toupie boss",
+          "Boss top": "Toupie Boss",
           "Combo x": "Combo x",
           "Double": "Double",
           "Final score": "Score final",
-          "Great": "Super",
+          "Great": "Superbe",
           "Install now": "Installer",
           "KO +": "KO +",
           "Miss": "Raté",
           "OK": "OK",
           "Perfect": "Parfait",
-          "Perfect hits": "Coups parfaits",
-          "Perfect taps only": "Seul un tap parfait l'abîme",
+          "Perfect hits": "Impacts parfaits",
+          "Perfect taps only": "Seul un Tap parfait l'endommage",
           "Play the full game": "Jouer au jeu complet",
           "Replay the demo": "Rejouer la démo",
           "Score": "Score",
-          "Shock to recover": "Un choc la relance",
+          "Shock to recharge": "Déclenche un choc pour recharger",
           "Shockwaves": "Ondes de choc",
           "Spin": "Rotation",
           "Spin lost": "Rotation perdue",
           "Spin master!": "Maître de la toupie !",
-          "Spinning out": "Ta toupie faiblit",
+          "Spinning out": "Perte de vitesse imminente",
           "Tops destroyed": "Toupies détruites",
           "Play": "Jouer",
           "Time's up!": "Temps écoulé !",
@@ -196,54 +196,54 @@
           "Worn bearings": "Roulements usés",
           "Green top": "Toupie verte",
           "Blue top": "Toupie bleue",
-          "The fence can't damage a blue top": "La barrière n'abîme pas une toupie bleue",
+          "The fence can't damage a blue top": "La barrière n'affecte pas la toupie bleue",
           "Yellow top": "Toupie jaune",
-          "Other tops can't damage a yellow top": "Les autres toupies n'abîment pas une toupie jaune",
+          "Immune to contact with other tops": "Insensible aux contacts des autres toupies",
           "Red top": "Toupie rouge",
-          "Only the fence damages a red top": "Seule la barrière abîme une toupie rouge",
+          "Only the fence damages a red top": "Seule la barrière peut l'endommager",
           "Black top": "Toupie noire",
-          "A black top mends the tops it touches": "La toupie noire répare les toupies qu'elle touche",
+          "A black top mends the tops it touches": "La toupie noire répare celles qu'elle touche",
           "Purple top": "Toupie violette",
-          "A large one splits in two": "Une grosse se divise en deux",
+          "A large one splits in two": "La version géante se sépare en deux",
           "The basics": "Les bases",
-          "Tap on the impact": "Touche à l'impact",
-          "The spin gauge": "La jauge de rotation",
-          "A miss": "Un raté",
-          "A small rival hits you": "Une petite rivale te percute",
-          "A large rival hits you": "Une grosse rivale te percute",
-          "The boss hits you": "Le boss te percute",
-          "At zero your top blows apart and the round ends.": "A zéro, ta toupie vole en éclats et la partie s'arrête.",
+          "Tap on the impact": "Précision de l'impact",
+          "The spin gauge": "Indicateur de rotation",
+          "A miss": "Coup manqué",
+          "A small rival hits you": "Impact d'une petite rivale",
+          "A large rival hits you": "Impact d'une grosse rivale",
+          "The boss hits you": "Impact du Boss",
+          "At zero your top blows apart and the round ends.": "Lorsque la rotation atteint zéro, ta toupie vole en éclats et la partie s'achève.",
           "Shell points": "Points de coque",
-          "A perfect": "Un parfait",
-          "The notches around a rival are its shell points. It blows apart when it loses the last one.": "Les crans autour d'une rivale sont ses points de coque. Elle vole en éclats quand elle perd le dernier.",
-          "Combos and chains": "Combos et multi-chocs",
-          "A KO pays the rival's score": "Un KO rapporte le score de la rivale",
-          "Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it.": "Chaque onde de choc qui touche fait grimper le combo. Un raté ou une rivale qui te percute le casse.",
-          "Even a flawless run ends, so score while the bearings last.": "Même une partie parfaite finit par s'arrêter : marque tant que les roulements tiennent.",
-          "Spark": "Etincelle",
-          "Green tops have no protection. Your tap, the fence and other tops all damage them.": "Les toupies vertes n'ont aucune protection. Ton tap, la barrière et les autres toupies les abîment.",
-          "Small and large": "Petites et grosses",
+          "A perfect": "Impact parfait",
+          "The notches around a rival are its health points. It blows apart when it has no health left.": "Les encoches situées autour d'une rivale matérialisent ses points de vie. L'ennemi est détruit lorsqu'il n'a plus de santé.",
+          "Combos and chains": "Enchaînements de combos",
+          "A KO pays the rival's score": "Valeur d'un KO en points",
+          "Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it.": "Chaque onde de choc réussie incrémente ton Combo. Un raté ou un choc encaissé le remet à zéro.",
+          "Even a flawless run ends, so score while the bearings last.": "Toutes les parties ont une fin, alors accumule des points avant que le matériel ne cède.",
+          "Spark": "Étincelle",
+          "Green tops have no protection. Your tap, the fence and other tops all damage them.": "Les toupies vertes n'ont aucune défense particulière et subissent les dégâts de ton onde, de la barrière ainsi que des autres adversaires.",
+          "Small and large": "Gabarits des toupies",
           "Insulated": "Isolant",
           "Split": "Scission",
-          "A large purple top blows apart into two small ones. One top becomes three.": "Une grosse toupie violette éclate en deux petites. Une toupie en devient trois.",
+          "A large purple top blows apart into two small ones. One top becomes two.": "Une grande toupie violette se fragmente en deux modèles réduits, transformant une seule unité en un duo menaçant.",
           "Grounded": "Masse",
           "Overcharge": "Surcharge",
-          "Only a perfect tap damages the boss, one point at a time. Everything else glances off.": "Seul un tap parfait abîme le boss, un point à la fois. Tout le reste ricoche.",
-          "Spin every 5 hits": "Rotation tous les 5 coups",
-          "Max spin drops over time": "Ta rotation max baisse avec le temps",
-          "Tap just before a rival hits you. Your shockwave throws it back and wins you spin.": "Touche juste avant qu'une rivale te percute. Ton onde de choc la repousse et te rend de la rotation.",
-          "The closer to the impact you tap, the more it pays. A gold ring means a perfect.": "Plus tu touches près de l'impact, plus ça rapporte. Un anneau doré signale un parfait.",
-          "Your top keeps slowing down. Every rival that hits you costs spin.": "Ta toupie ralentit sans cesse. Chaque rivale qui te percute lui coûte de la rotation.",
-          "Your shockwave, the fence and a crash into another top each take one point.": "Ton onde de choc, la barrière et un choc contre une autre toupie retirent chacun un point.",
-          "One wave can hit several tops. A double or triple shock wins extra spin.": "Une onde peut toucher plusieurs toupies. Un double ou triple choc rend plus de rotation.",
-          "As the round goes on, your top holds less and less spin.": "Au fil de la partie, ta toupie garde de moins en moins de rotation.",
-          "A large top is slow, but costs far more spin when it hits you.": "Une grosse toupie est lente, mais elle coûte bien plus de rotation quand elle te percute.",
-          "Blue tops stop, charge, then dash along the dashed line.": "Les toupies bleues s'arrêtent, se chargent, puis foncent le long de la ligne pointillée.",
-          "The fence can't damage blue tops. Use your tap, or throw other tops into them.": "La barrière n'abîme pas les toupies bleues. Frappe-les avec ton onde ou projette d'autres toupies dessus.",
-          "Other tops can't damage yellow tops. Use your tap and the fence instead.": "Les autres toupies n'abîment pas les toupies jaunes. Compte sur ton onde et sur la barrière.",
-          "Red tops blow up on the first thing they touch. Only the fence damages them.": "Les toupies rouges explosent au premier contact. Seule la barrière les abîme.",
-          "Send a red top into the fence with your shockwave. Its blast hits every rival around it.": "Envoie une toupie rouge contre la barrière avec ton onde de choc. Son explosion frappe toutes les rivales autour.",
-          "Black tops give a shell point back to every rival they touch. Take them out first.": "Les toupies noires rendent un point de coque à chaque rivale qu'elles touchent. Elimine-les d'abord."
+          "Only a perfect tap damages the boss, one point at a time. Everything else glances off.": "Seul un Timing parfait permet de grignoter un point de coque du boss, toute autre tentative restera sans effet.",
+          "Spin every 5 hits": "Bonus de rotation tous les 5 coups",
+          "Max spin drops over time": "La rotation max baisse peu à peu",
+          "Tap just before a rival hits you. Your shockwave throws it back and wins you spin.": "Interviens juste avant l'impact pour déclencher une onde de choc qui repousse l'adversaire et réalimente ta jauge.",
+          "The closer to the impact you tap, the more it pays. A gold ring means a perfect.": "Plus tu agis près de l'instant critique, plus les gains sont élevés, l'anneau doré confirmant la réussite parfaite.",
+          "Your top keeps slowing down. Every rival that hits you costs spin.": "Ton inertie s'amenuise constamment et chaque collision subie pénalise directement ton niveau de rotation.",
+          "Your shockwave, the fence and a crash into another top each take one point.": "L'utilisation de ton onde, le contact avec la barrière ou un télescopage réduisent la coque d'une unité.",
+          "One wave can hit several tops. A double or triple shock wins extra spin.": "Une même onde peut toucher plusieurs cibles simultanément, octroyant un bonus de rotation en cas de coups multiples.",
+          "As the round goes on, your top holds less and less spin.": "La fatigue de rotation s'installe au fil des minutes, limitant la capacité maximale de ta toupie.",
+          "A large top is slow, but costs far more spin when it hits you.": "Bien que peu mobile, le format lourd inflige de lourdes pertes de rotation en cas de collision.",
+          "Blue tops stop, charge, then dash along the dashed line.": "La toupie bleue s'immobilise pour accumuler de l'énergie avant de foncer en suivant le tracé en pointillés.",
+          "The fence can't damage blue tops. Use your tap, or throw other tops into them.": "La barrière n'a aucun effet sur les toupies bleues. Frappe-les avec ton onde ou projette d'autres toupies sur elles.",
+          "Other tops can't damage yellow tops. Use your tap and the fence instead.": "Insensibles aux assauts des autres toupies, les toupies jaunes ne craignent que ton onde et la barrière.",
+          "Red tops blow up on the first thing they touch. Only the fence damages them.": "Les toupies rouges explosent au moindre contact. Seule la barrière peut les abîmer.",
+          "Send a red top into the fence with your shockwave. Its blast hits every rival around it.": "Projette une toupie rouge contre la barrière grâce à ton onde. Son explosion frappe toutes les rivales autour.",
+          "Black tops give a shell point back to every rival they touch. Take them out first.": "Les toupies noires régénèrent la coque des rivales qu'elles touchent, ce qui en fait la cible prioritaire à abattre."
         }
       }
     },
@@ -257,7 +257,7 @@
       },
       "copy": {
         "en": "Score <b>{n}</b> in the dish",
-        "fr": "Marque <b>{n}</b> dans l'arène"
+        "fr": "Atteins un score de <b>{n}</b> dans l'arène"
       },
       "tune": {
         "spawnEvery": [
@@ -297,7 +297,7 @@
           "Overcharge"
         ],
         "fr": [
-          "Etincelle",
+          "Étincelle",
           "Isolant",
           "Scission",
           "Masse",

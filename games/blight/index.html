@@ -1613,10 +1613,6 @@
     --bg:#0a0e24; --accent:#3aa0ff;
     --cta-a:#ff8fab; --cta-b:#ff3d6b; --cta-text:#ffffff;
     --danger:#ff4d6d;
-    /* THE ROUND'S "!" STANDS ON TOP OF THE LEVEL PILL rather than beside it:
-       the launcher sits at the foot of the frame, just right of the pill, and
-       the "!" beside it would cover it (packages/webshell/meta.css). */
-    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
   }
   html, body { background:radial-gradient(900px 900px at 50% 22%, #16224e 0%, #0a0e24 60%, #05070f 100%); }
   #intro-title {
@@ -1929,8 +1925,10 @@
     bubbleR: 30,                   // radius (diameter 60 => 12 columns fit 720)
     cols: 12,                      // bubbles on a non-offset row (offset rows hold cols-1)
     startRows: 6,                  // rows present at the start
-    launcherOffset: 60,            // launcher this far above Layout.bottom
-    dangerOffset: 150,             // a bubble reaching this line loses the round
+    launcherOffset: 60,            // launcher this far above Layout.foot (the web
+                                   // target's foot bar; Layout.bottom on a playable)
+    dangerOffset: 150,             // a bubble reaching this line (over Layout.foot)
+                                   // loses the round
     maxAimDeg: 82,                 // clamp the aim so you cannot shoot sideways
     shootSpeed: 1150,              // px/sec
     addRowShots: 5,                // push a fresh row down every N shots (pressure)
@@ -1942,8 +1940,9 @@
     blightFill: 1.5,               // seconds for the cloud to fill a fresh bubble
     wallSuperChance: 0.06,         // chance a wall bubble is a rainbow SUPER
     shotSuperChance: 0.12,         // chance the launcher hands you a SUPER
-    gridOffset: 38,                // the wall hangs this far under Layout.top, so the
-                                   // web target's level pill never covers the first row
+    gridOffset: 38,                // the wall hangs this far under Layout.top on a
+                                   // playable; the web target's level pill moved to
+                                   // the foot bar, so there the wall takes the room back
     // The cure is as big as the disease: both of these are read against how
     // much of the wall has turned (see cureTargets).
     cureReach: 2,                  // hex steps the cure travels on a clean board
@@ -2022,7 +2021,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "1.10.9",
+    version: "1.11.3",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2087,7 +2086,7 @@
   // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
   // clear of the device insets, and never closer to the glass than the house
   // margin (see relayout). Recomputed on every resize.
-  var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
+  var Layout = { top: 0, bottom: 0, foot: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
 
   // env(safe-area-inset-*) is only observable through a probe element.
   function safeInsets() {
@@ -2171,14 +2170,17 @@
      lake, a scrolling lane, a shockwave) draws that outside Layout, which is
      the play band and not a clip rect.
 
-     WHAT IT DOES NOT SAY IS THE TWO BOTTOM CORNERS. The web target's round
-     carries MENU / OPTIONS in one and the level's three stars in the other,
-     each about 240 x 58 in from the frame by 26, and neither takes a band out
-     of `Layout` — they are an overlay, so the world still runs under them.
-     A game may therefore draw THROUGH them, and may anchor no INSTRUMENT and
-     no word there. Both are the shell's (packages/webshell/menu.css and
-     levels.css); a game whose own layout owns the left one moves the pill with
-     `--lv-hud-bottom` rather than reserving anything here. */
+     THE FOOT BAR IS `Layout.foot`, NOT `Layout.bottom`. The web target's
+     round carries one bar along the bottom edge — the level's stars and the
+     notices' "!" on the left, MENU / GUIDE / HELP / OPTIONS on the right
+     (packages/webshell/view.css, THE FOOT BAR) — and it takes no band out of
+     `Layout`: it is an overlay, so the world still runs under it and a game
+     may draw THROUGH it. What a game may not do is stand an INSTRUMENT or a
+     word in it, and `Layout.foot` is the line it stops at: the top of that
+     bar (`CONFIG.layout.footHeight`, written by packages/platform/web.js) and
+     plain `Layout.bottom` where there is no bar, so a playable — whose CTA
+     band is already taller — is untouched. A cannon, a launcher, a queue of
+     shots: anchored on `Layout.foot`, never on `Layout.bottom`. */
   var SAFE_PAD = 26;
 
   function relayout() {
@@ -2186,6 +2188,7 @@
     var pad = Math.max(0, m.safePad == null ? SAFE_PAD : m.safePad);
     Layout.top    = view.insetTop + Math.max(m.hudHeight, pad);
     Layout.bottom = view.h - view.insetBottom - Math.max(m.ctaHeight, pad);
+    Layout.foot   = view.h - view.insetBottom - Math.max(m.ctaHeight, m.footHeight || 0, pad);
     Layout.left   = Math.max(m.sideMargin, pad);
     Layout.right  = view.w - Math.max(m.sideMargin, pad);
     Layout.w = Layout.right - Layout.left;
@@ -2230,11 +2233,13 @@
        `dist` to the side, then up. This is how the desktop keyboard fallback
        (section 7) drives a swipe game — the gesture goes through the same
        down/move/up path as a finger, so a game never grows a second input
-       API for the arrow keys. dir is -1 (left) or +1 (right), or "up" for an
-       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump). */
+       API for the arrow keys. dir is -1 (left) or +1 (right), "up" for an
+       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump)
+       or "down" for a downward one (CONFIG.swipeDown — gelatile's four ways). */
     function swipe(dir, dist) {
       var d = dist == null ? 150 : dist, x = Layout.cx, y = Layout.cy;
       if (dir === "up") { at("down", x, y); at("move", x, y - d); at("up", x, y - d); return; }
+      if (dir === "down") { at("down", x, y); at("move", x, y + d); at("up", x, y + d); return; }
       at("down", x, y);
       at("move", x + dir * d, y);
       at("up",   x + dir * d, y);
@@ -3116,7 +3121,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })
@@ -5460,7 +5465,11 @@
       for (i = 0; i < list.length; i++) {
         r = { mouse: list[i].mouse };
         // a key the bootstrap does not bind is a key that does nothing
-        if (CONFIG.keyboard !== false) r.keys = k === "swipe" && CONFIG.swipeUp ? ["left", "right", "up"] : list[i].keys;
+        if (CONFIG.keyboard !== false) {
+          r.keys = list[i].keys;
+          if (k === "swipe" && CONFIG.swipeUp) r.keys = r.keys.concat(["up"]);
+          if (k === "swipe" && CONFIG.swipeDown) r.keys = r.keys.concat(["down"]);
+        }
         out.push(r);
       }
       return out;
@@ -6282,11 +6291,21 @@
     // --- geometry, derived from Layout so the grid never hides under the HUD
     // or the CTA bar and never sits behind a notch ---------------------------
     var GRID_TOP = 0, LX = 0, LY = 0, DANGER_Y = 0, FLOOR_Y = 0, ROWS = 22;
-    // The launcher row: the loaded bubble, the swap ring, the next bubble.
-    var NEXT_X = 0, SWAP_X = 0;
-    // The swap ring's own tap radius stops short of the loaded bubble: a drag
-    // that starts on the bubble is an aim, not a trade.
-    var SWAP_R = 25, SWAP_HIT = 34, NEXT_HIT = 40;
+    /* THE MAGIC LAUNCHER: one object, not three pieces. A rune ring holds the
+       loaded bubble in its main socket; a smaller socket fused to it, low on
+       the right, holds the next one; an engraved double arrow arcs over the
+       seam between them and says the two trade places. Every measure is in
+       design px from the main socket's centre (LX, LY). */
+    var RING_IN = R + 9, RING_OUT = R + 20;      // the main socket's band
+    var SAT_DX = 72, SAT_DY = 18;                // the satellite socket's centre
+    var SAT_IN = 20, SAT_OUT = 27;               // ...and its band
+    var NEXT_R = R * 0.6;                        // the next bubble, in its socket
+    var SAT_X = 0, SAT_Y = 0;
+    /* The swap's hit areas, generous on purpose: the satellite and the arrow
+       trade on the press; the loaded bubble trades on a TAP — a press that
+       travels past TAP_SLOP is an aim like anywhere else on the screen. */
+    var SAT_HIT = 46, ARROW_HIT = 30, MAIN_HIT = R + 14, TAP_SLOP = 16;
+    var ARROW_MX = 59, ARROW_MY = -44;           // the arrow's middle, for its hit
 
     // --- state -------------------------------------------------------------
     var grid;            // grid[r][c] = colour index or null
@@ -6299,14 +6318,23 @@
     var score, ball, nextColor, nextSuper;
     var aimAngle, aiming, aimLoad;
     var shotCount, maxCombo, streak, ended, blackTimer, totalCleared;
+    /* A ROUND ENDS ON A STILL BOARD. `banked` is the score as it stood the
+       last time nothing was moving — no ball in flight, no chain popping, no
+       bubble still falling — and it is what the level's stars are measured
+       against, so the third star (and the end it brings) never lands while a
+       shot is still paying. `endPending` is an ending decided mid-shot
+       (overrun) that waits for the same stillness. */
+    var banked, endPending;
     var fallers, splashes, trail, bgT, fieldY, launchPunch, idleTimer;
     var roundT;          // seconds since the round started — the rot's ramp
     var rotPct, rotCount, liveCount;   // how much of the wall has turned
     var chain;           // the running chain of pops / cures, walked by update()
-    var swapSpin;        // the swap ring, spinning down after a trade
+    var swapT;           // 1 -> 0: the two bubbles trading places along the arc
+    var pressMain;       // a press that began on the loaded bubble: tap or aim?
 
     // --- cached sprites (built once — the core perf win) -------------------
     var bubbleSprites = null, superSprite = null, blackSprite = null, puffSprite = null, bgCanvas = null;
+    var launcherSprite = null, arrowSprite = null;
     /* What each cache was built FOR. A replay used to throw the full-frame
        background away and paint an identical one (3.5 MB of pixels per round,
        reclaimed by a major GC mid-round a few rounds later — the hitch that
@@ -6318,13 +6346,17 @@
       // The wall starts a little under the top band: the level pill of the web
       // target hangs there, and a bubble behind it is a bubble the player
       // cannot read (docs/LEVELS.md — the pill is the shell's, not the HUD's).
-      GRID_TOP = Layout.top + (CONFIG.gridOffset || 0);
+      // Where the foot bar stands (web), the pill is down there with it.
+      GRID_TOP = Layout.top + (Layout.foot < Layout.bottom ? 0 : (CONFIG.gridOffset || 0));
+      /* Everything the player reads or touches at the bottom stands above
+         Layout.foot — the launcher, the danger line, the floor a cut-off
+         bubble bursts on and the bonus it writes. On a playable Layout.foot
+         IS Layout.bottom, so nothing there moved. */
       LX = view.w / 2;
-      LY = Layout.bottom - CONFIG.launcherOffset;
-      DANGER_Y = Layout.bottom - CONFIG.dangerOffset;
-      FLOOR_Y = Layout.bottom - 4;             // where a cut-off bubble bursts
-      NEXT_X = LX + 118;
-      SWAP_X = (LX + R + NEXT_X - R * 0.6) / 2;
+      LY = Layout.foot - CONFIG.launcherOffset;
+      DANGER_Y = Layout.foot - CONFIG.dangerOffset;
+      FLOOR_Y = Layout.foot - 4;
+      SAT_X = LX + SAT_DX; SAT_Y = LY + SAT_DY;
     }
     // A resize changes view.dpr, and the film's rim is a one-pixel affair: the
     // sprites are re-rendered at the new device resolution rather than scaled.
@@ -6767,8 +6799,18 @@
       if (dy > -1) dy = -1;                          // keep the aim upward
       aimAngle = clamp(Math.atan2(dx, -dy), -MAX_AIM, MAX_AIM);
     }
+    // Nothing is still moving on the board: what the score says is final.
+    function settled() { return !ball.flying && !chain && !fallers.length; }
+    /* The round is decided and only waits for the board to settle, or the
+       level layer is already easing the world off for its third star
+       (Loop.rate drops below 1 only then, while a round is playing): either
+       way the next shot is not the player's to take. */
+    function closing() {
+      return ended || endPending !== null || Loop.rate() < 1 ||
+             (liveCount > 0 && rotCount >= liveCount);
+    }
     function fire() {
-      if (ball.flying || ended) return;
+      if (ball.flying || closing()) return;
       ball.vx = Math.sin(aimAngle) * SPEED;
       ball.vy = -Math.cos(aimAngle) * SPEED;
       ball.flying = true;
@@ -6777,7 +6819,7 @@
       trail = [];
       shotCount++;
       launchPunch = 1;
-      aimLoad = 0;
+      aimLoad = 0; swapT = 0;
       if (ball.sup) Sound.clip("shoot", 0.5, 1.2);   // a super leaves the tube brighter
       else Sound.clip("shoot", 0.5, 0.9);
     }
@@ -7193,7 +7235,7 @@
       spared = {};
       if (ended) return;
       if (shotCount > 0 && shotCount % ADD_SHOTS === 0) pushRow();
-      if (lowestBubbleBottom() >= DANGER_Y) { endRun("Overrun!"); return; }
+      if (lowestBubbleBottom() >= DANGER_Y) { endPending = "Overrun!"; return; }
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
       if (nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
     }
@@ -7272,12 +7314,12 @@
       score = 0;
       aimAngle = 0; aiming = false; aimLoad = 0;
       shotCount = 0; maxCombo = 0; streak = 0;
-      ended = false; totalCleared = 0;
+      ended = false; totalCleared = 0; banked = 0; endPending = null;
       // A board dealt clean waits out its grace before the rot turns up at all.
       blackTimer = (levelOpening() && levelOpening().seeds === 0) ? -CONFIG.rotGrace : 0;
       fallers = []; splashes = []; trail = [];
       bgT = 0; roundT = 0; fieldY = 0; launchPunch = 0; idleTimer = Rand.range(1.5, 3);
-      chain = null; spared = {}; swapSpin = 0;
+      chain = null; spared = {}; swapT = 0; pressMain = null;
       rotPct = 0; rotCount = 0; liveCount = 0;
       ball = newBall(pickShootColor(), Rand.chance(SHOT_SUP));
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
@@ -7299,7 +7341,7 @@
        line in the "!" log opens the guide's page of the same id — the round
        is never stopped to teach. A playable has no guide, so it says none of
        this and plays as it always has. Only what the frame cannot say is
-       named: the swap ring, the rot and the two rainbows. A cascade and the
+       named: the swap, the rot and the two rainbows. A cascade and the
        wall coming down a row show themselves as they happen. */
     function learn(id, word, sub) {
       return !!window.__GUIDE__ && Notify.learn(id, word, { sub: sub });
@@ -7308,7 +7350,7 @@
     // rot, a rainbow in the wall and one in the launcher only when dealt.
     function meet() {
       var r, c, rot = false, joker = false;
-      learn("swap", "Swap", "Tap the Swap ring to change bubbles");
+      learn("swap", "Swap", "Tap the small bubble to swap");
       for (r = 0; r < ROWS; r++)
         for (c = 0; c < rowCols(r); c++) {
           if (grid[r][c] === null) continue;
@@ -7329,35 +7371,48 @@
       return b[clamp(Math.floor((CONFIG.level - 1) / 6), 0, b.length - 1)];
     }
 
-    /* The SWAP: the ring between the loaded bubble and the next one, and the
-       next bubble itself — both are the same button, because a thumb aims for
-       the bubble it wants and not for the symbol between them. A tap trades
-       the two; it costs no shot, so the next bubble is finally worth reading. */
+    /* The SWAP, built into the launcher: the satellite socket (the next
+       bubble), the arrow over the seam, and the loaded bubble itself all trade
+       the two — a thumb aims for the bubble it wants, not for a symbol. It
+       costs no shot, so the next bubble is worth reading. */
+    function near(p, x, y, r) {
+      var dx = p.x - x, dy = p.y - y;
+      return dx * dx + dy * dy <= r * r;
+    }
     function inSwapZone(p) {
-      var dx = p.x - SWAP_X, dy = p.y - LY;
-      if (dx * dx + dy * dy <= SWAP_HIT * SWAP_HIT) return true;
-      dx = p.x - NEXT_X; dy = p.y - LY;
-      return dx * dx + dy * dy <= NEXT_HIT * NEXT_HIT;
+      return near(p, SAT_X, SAT_Y, SAT_HIT) || near(p, LX + ARROW_MX, LY + ARROW_MY, ARROW_HIT);
     }
     function doSwap() {
       var c = ball.color, sp = ball.sup;
       ball.color = nextColor; ball.sup = nextSuper;
       nextColor = c; nextSuper = sp;
-      swapSpin = 1;
+      swapT = 1;
       ball.a = 0.8; ball.p = 0; ball.ang = Math.PI / 2;    // both films take the trade
-      Fx.ring(SWAP_X, LY, { from: SWAP_R * 0.4, to: SWAP_R * 2.0,
-        color: "rgba(255,255,255,0.65)", width: 2.5, life: 0.26 });
+      Fx.ring(SAT_X, SAT_Y, { from: NEXT_R * 0.6, to: SAT_OUT * 1.8,
+        color: "rgba(214,170,255,0.7)", width: 2.5, life: 0.26 });
       Sound.clip("stick", 0.3, 1.7);
     }
 
     function onDown(p) {
-      if (ended || ball.flying) return;
+      pressMain = null;
+      if (closing() || ball.flying) return;
       if (inSwapZone(p)) { doSwap(); return; }
+      if (near(p, LX, LY, MAIN_HIT)) { pressMain = { x: p.x, y: p.y }; return; }
       aiming = true; updateAimFromPoint(p);
     }
-    function onMove(p) { if (ended || ball.flying || !aiming) return; updateAimFromPoint(p); }
+    function onMove(p) {
+      if (closing() || ball.flying) return;
+      if (pressMain) {
+        // Off the bubble far enough: it was a drag, and a drag aims.
+        if (near(p, pressMain.x, pressMain.y, TAP_SLOP)) return;
+        pressMain = null; aiming = true;
+      }
+      if (!aiming) return;
+      updateAimFromPoint(p);
+    }
     function onUp(p) {
-      if (ended || ball.flying || !aiming) { aiming = false; return; }
+      if (pressMain) { pressMain = null; if (!closing() && !ball.flying) doSwap(); return; }
+      if (closing() || ball.flying || !aiming) { aiming = false; return; }
       updateAimFromPoint(p); aiming = false; fire();
     }
 
@@ -7365,7 +7420,7 @@
       bgT += dt;
       if (!ended) roundT += dt;                    // the rot's own clock
       if (launchPunch > 0) launchPunch -= dt * 5;
-      if (swapSpin > 0) swapSpin -= dt * 3;
+      if (swapT > 0) swapT = Math.max(0, swapT - dt * 4.5);
       // The waiting bubble is loaded like a sling while the player aims.
       aimLoad = clamp(aimLoad + (aiming && !ball.flying ? dt * 5 : -dt * 6), 0, 1);
       // The freshly pushed row slides down into place.
@@ -7457,7 +7512,19 @@
       measureRot();
       HUD.setRight(Math.round(rotPct * 100) + "%", CONFIG.copy.rotLabel,
                    rotPct >= 0.7 ? "warn" : "");
-      if (liveCount > 0 && rotCount >= liveCount) { endRun(CONFIG.copy.rotten); return; }
+
+      updateFallers(dt);
+
+      /* The board has settled: the score is banked for the stars, and an
+         ending decided while it moved lands now — after the last bubble has
+         arrived and burst, and before the player can take another shot. A
+         wall rotten to the last film waits for the same stillness, since the
+         shot in the air may still cut into it. */
+      if (settled()) {
+        banked = score;
+        if (endPending) { endRun(endPending); return; }
+        if (liveCount > 0 && rotCount >= liveCount) { endRun(CONFIG.copy.rotten); return; }
+      }
 
       // Danger: pulse the overlay glow once the stack creeps down — or once
       // the rot is about to own the wall, whichever is the nearer of the two.
@@ -7465,8 +7532,6 @@
       var rotNear = clamp((rotPct - 0.55) / 0.45, 0, 1);
       if (rotNear > near) Overlay.vignette("#a020ff", rotNear * 0.95);
       else Overlay.vignette("#ff4d6d", near * 0.9);
-
-      updateFallers(dt);
     }
 
     // The film flattens against the wall and springs off it.
@@ -7482,7 +7547,11 @@
       if (chain) flushChain();
       if (ended) return;
       var cell = snapCell(ball.x, ball.y);
-      if (!cell) { endRun("Overrun!"); return; }
+      if (!cell) {                     // no room left: the wall has won
+        endPending = "Overrun!"; trail = [];
+        ball = newBall(nextColor, nextSuper);
+        return;
+      }
       var lx = cellX(cell.r, cell.c), ly = cellY(cell.r);
       var impactAng = Math.atan2(ball.vy, ball.vx);
       var ballCol = ball.sup ? PAL[0] : (PAL[ball.color] || PAL[0]);
@@ -7793,6 +7862,153 @@
       c.fillStyle = e; c.beginPath(); c.arc(x, y, R * 0.5, 0, PI2); c.fill();
       return cv;
     }
+    /* --- THE MAGIC LAUNCHER, as two sprites -------------------------------
+       Built once at device resolution, like the bubbles; this is also the
+       one place a glow may use shadowBlur, since it never runs per frame.
+       The sprite's frame puts the main socket's centre at (LS_OX, LS_OY). */
+    var LS_W = 190, LS_H = 150, LS_OX = 70, LS_OY = 84;
+    function lsCanvas() {
+      var dpr = Math.max(1, view.dpr || 1);
+      var cv = makeCanvas(Math.ceil(LS_W * dpr), Math.ceil(LS_H * dpr));
+      var c = cv.getContext("2d");
+      c.setTransform(dpr, 0, 0, dpr, LS_OX * dpr, LS_OY * dpr);
+      return c;
+    }
+    // The ring and its satellite as one silhouette, grown by `d`.
+    function lsBody(c, d) {
+      c.beginPath(); c.arc(0, 0, RING_OUT + d, 0, PI2); c.fill();
+      c.beginPath(); c.arc(SAT_DX, SAT_DY, SAT_OUT + d, 0, PI2); c.fill();
+      // the neck that fuses them: a fat stroke along the axis
+      c.lineWidth = 30 + d * 2; c.lineCap = "round";
+      c.beginPath(); c.moveTo(RING_OUT * 0.5, SAT_DY * 0.25); c.lineTo(SAT_DX, SAT_DY); c.stroke();
+    }
+    // A thorn off the rim: a curved spike, base on the band, tip out.
+    function lsThorn(c, cx, cy, rr, deg, len, bend) {
+      var a = deg * Math.PI / 180, w = 0.16;
+      var bx0 = cx + Math.cos(a - w) * (rr - 3), by0 = cy + Math.sin(a - w) * (rr - 3);
+      var bx1 = cx + Math.cos(a + w) * (rr - 3), by1 = cy + Math.sin(a + w) * (rr - 3);
+      var ta = a + bend, tx = cx + Math.cos(ta) * (rr + len), ty = cy + Math.sin(ta) * (rr + len);
+      var mx = cx + Math.cos(a) * (rr + len * 0.55), my = cy + Math.sin(a) * (rr + len * 0.55);
+      c.beginPath();
+      c.moveTo(bx0, by0);
+      c.quadraticCurveTo(mx, my, tx, ty);
+      c.quadraticCurveTo(mx + Math.cos(a + w) * 2, my + Math.sin(a + w) * 2, bx1, by1);
+      c.closePath();
+      c.fill(); c.stroke();
+    }
+    // One rune of the band, a stave standing across it with its branches:
+    // four old-runic shapes taken in turn (x runs outward, y along the band).
+    function lsRune(c, rr, a, kind) {
+      c.save();
+      c.rotate(a); c.translate(rr, 0);
+      c.beginPath();
+      if (kind === 3) { c.moveTo(-3.6, 0); c.lineTo(0, -2.6); c.lineTo(3.6, 0); c.lineTo(0, 2.6); c.closePath(); }
+      else {
+        c.moveTo(-4, 0); c.lineTo(4, 0);                                   // the stave
+        if (kind === 0) { c.moveTo(4, 0); c.lineTo(1, -2.8); c.moveTo(4, 0); c.lineTo(1, 2.8); }
+        else if (kind === 1) { c.moveTo(0.5, 0); c.lineTo(3.2, 2.8); c.moveTo(-2.5, 0); c.lineTo(0.2, 2.8); }
+        else { c.moveTo(-0.5, 0); c.lineTo(3.2, -2.8); c.moveTo(-0.5, 0); c.lineTo(3.2, 2.8); }
+      }
+      c.stroke();
+      c.restore();
+    }
+    function makeLauncherSprite() {
+      var c = lsCanvas(), cv = c.canvas, i, g;
+      var mid = (RING_IN + RING_OUT) / 2, axis = Math.atan2(SAT_DY, SAT_DX);
+      // 1. thorns, under the band — never on the satellite's side, never down
+      //    toward the foot bar
+      g = c.createRadialGradient(0, 0, RING_OUT, 0, 0, RING_OUT + 20);
+      g.addColorStop(0, "#2a1046"); g.addColorStop(1, "#6a36b0");
+      c.fillStyle = g; c.strokeStyle = "rgba(196,140,255,0.85)"; c.lineWidth = 1.1;
+      lsThorn(c, 0, 0, RING_OUT, -152, 19, -0.20);
+      lsThorn(c, 0, 0, RING_OUT, -120, 13, 0.16);
+      lsThorn(c, 0, 0, RING_OUT, 176, 17, 0.18);
+      lsThorn(c, 0, 0, RING_OUT, 143, 11, 0.22);
+      c.fillStyle = "#3a1866";
+      lsThorn(c, SAT_DX, SAT_DY, SAT_OUT, -18, 13, -0.24);
+      lsThorn(c, SAT_DX, SAT_DY, SAT_OUT, 34, 9, 0.22);
+      // 2. the lit rim, a glow cast off it
+      c.save();
+      c.shadowColor = "rgba(150,60,255,0.9)"; c.shadowBlur = 12;
+      c.fillStyle = "#8d52de"; c.strokeStyle = "#8d52de";
+      lsBody(c, 1.8);
+      c.restore();
+      // 3. the band: dark enchanted iron, lit from the top left
+      g = c.createLinearGradient(-RING_OUT, -RING_OUT, SAT_DX + SAT_OUT, SAT_DY + SAT_OUT);
+      g.addColorStop(0, "#3b1764"); g.addColorStop(0.55, "#1d0a35"); g.addColorStop(1, "#13072a");
+      c.fillStyle = g; c.strokeStyle = g;
+      lsBody(c, 0);
+      // a thin highlight along the top-left of the outer rim
+      c.lineCap = "round";
+      c.strokeStyle = "rgba(240,210,255,0.45)"; c.lineWidth = 1.6;
+      c.beginPath(); c.arc(0, 0, RING_OUT - 1.5, Math.PI * 1.05, Math.PI * 1.55); c.stroke();
+      c.beginPath(); c.arc(SAT_DX, SAT_DY, SAT_OUT - 1.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
+      // 4. the runes, glowing in the band
+      c.save();
+      c.shadowColor = "rgba(190,110,255,0.95)"; c.shadowBlur = 5;
+      c.strokeStyle = "rgba(226,190,255,0.9)"; c.lineWidth = 1.5; c.lineJoin = "round";
+      for (i = 0; i < 12; i++) {
+        var a = i * Math.PI / 6 + Math.PI / 12, off = Math.atan2(Math.sin(a - axis), Math.cos(a - axis));
+        if (Math.abs(off) < 0.62) continue;          // the neck sits there
+        lsRune(c, mid, a, i % 4);
+      }
+      c.translate(SAT_DX, SAT_DY);
+      c.fillStyle = "rgba(226,190,255,0.9)";
+      for (i = 0; i < 5; i++) {
+        var sa = axis + Math.PI * 0.5 + i * Math.PI * 0.25;
+        c.beginPath(); c.arc(Math.cos(sa) * (SAT_IN + SAT_OUT) / 2, Math.sin(sa) * (SAT_IN + SAT_OUT) / 2, 1.4, 0, PI2); c.fill();
+      }
+      c.restore();
+      // 5. the sockets: a dark well each, a violet light at the bottom of it,
+      //    so a soap film reads against it; an engraved lip around
+      var wells = [[0, 0, RING_IN], [SAT_DX, SAT_DY, SAT_IN]];
+      for (i = 0; i < wells.length; i++) {
+        var wx = wells[i][0], wy = wells[i][1], wr = wells[i][2];
+        g = c.createRadialGradient(wx, wy + wr * 0.2, 0, wx, wy, wr);
+        g.addColorStop(0, "rgba(140,64,230,0.62)");
+        g.addColorStop(0.7, "rgba(36,10,72,0.80)");
+        g.addColorStop(1, "rgba(6,2,16,0.95)");
+        c.fillStyle = g;
+        c.beginPath(); c.arc(wx, wy, wr, 0, PI2); c.fill();
+        c.strokeStyle = "rgba(6,2,16,0.9)"; c.lineWidth = 2;
+        c.beginPath(); c.arc(wx, wy, wr + 1, 0, PI2); c.stroke();
+        c.strokeStyle = "rgba(200,150,255,0.55)"; c.lineWidth = 1.2;
+        c.beginPath(); c.arc(wx, wy, wr + 2.6, Math.PI * 0.1, Math.PI * 0.9); c.stroke();
+      }
+      return cv;
+    }
+    /* The engraved double arrow over the seam: from the main socket's
+       shoulder to the top of the satellite, a head at both ends — the path
+       the two bubbles take when they trade. Its own sprite, so its light can
+       flare without redrawing the ring. */
+    function makeArrowSprite() {
+      var c = lsCanvas(), cv = c.canvas;
+      var x0 = Math.cos(-1.08) * (RING_OUT + 8), y0 = Math.sin(-1.08) * (RING_OUT + 8);
+      var x1 = SAT_DX + Math.cos(-1.66) * (SAT_OUT + 8), y1 = SAT_DY + Math.sin(-1.66) * (SAT_OUT + 8);
+      var cx = 70, cy = -54;
+      function path() {
+        c.beginPath();
+        c.moveTo(x0, y0); c.quadraticCurveTo(cx, cy, x1, y1);
+        head(x0, y0, Math.atan2(y0 - cy, x0 - cx));
+        head(x1, y1, Math.atan2(y1 - cy, x1 - cx));
+      }
+      function head(hx, hy, a) {
+        c.moveTo(hx + Math.cos(a + 2.5) * 8, hy + Math.sin(a + 2.5) * 8);
+        c.lineTo(hx, hy);
+        c.lineTo(hx + Math.cos(a - 2.5) * 8, hy + Math.sin(a - 2.5) * 8);
+      }
+      c.lineCap = "round"; c.lineJoin = "round";
+      // the groove it is cut in
+      c.strokeStyle = "rgba(10,2,24,0.85)"; c.lineWidth = 7;
+      path(); c.stroke();
+      // and the light that runs in it
+      c.save();
+      c.shadowColor = "rgba(180,96,255,1)"; c.shadowBlur = 9;
+      c.strokeStyle = "#e6ccff"; c.lineWidth = 2.6;
+      path(); c.stroke();
+      c.restore();
+      return cv;
+    }
     function freeSprites() {
       if (bubbleSprites)
         for (var i = 0; i < bubbleSprites.length; i++) freeCanvas(bubbleSprites[i]);
@@ -7800,6 +8016,8 @@
       superSprite = freeCanvas(superSprite);
       blackSprite = freeCanvas(blackSprite);
       puffSprite = freeCanvas(puffSprite);
+      launcherSprite = freeCanvas(launcherSprite);
+      arrowSprite = freeCanvas(arrowSprite);
     }
     // The sprites depend on the palette and the bubble size (CONFIG constants)
     // and on the device resolution they are rendered at — nothing else.
@@ -7813,6 +8031,8 @@
       superSprite = makeSuperSprite();
       blackSprite = makeBlackSprite();
       puffSprite = makePuffSprite();
+      launcherSprite = makeLauncherSprite();
+      arrowSprite = makeArrowSprite();
     }
     function buildBackground() {
       /* THE SCENE OF THE BAND. One of the five paintings of CONFIG.art, and
@@ -7978,16 +8198,19 @@
 
       drawSplashes();
 
-      // The preview comes first so the shot lands last; the two never overlap.
-      if (Enter.begin(NEXT_X, LY)) { drawNextPreview(); Enter.end(); }
+      // The launcher is ONE element of the entrance, the next bubble in its
+      // satellite socket; the loaded shot lands last.
       if (Enter.begin(LX, LY)) {
         if (!ball.flying && !ended) drawAim();
         drawLauncher();
+        if (!trading()) drawNext();
         Enter.end();
       }
-      if (!ball.flying && !ended && Enter.begin(SWAP_X, LY)) { drawSwapRing(); Enter.end(); }
       if (ball.flying) drawTrail();
-      if (!ended && Enter.begin(ball.x, ball.y)) { drawBall(); Enter.end(); }
+      if (!ended && Enter.begin(ball.x, ball.y)) {
+        if (trading()) drawTrade(); else drawBall();
+        Enter.end();
+      }
     }
 
     // The shot itself: stretched along its flight the way a water balloon is,
@@ -8070,54 +8293,69 @@
       ctx.globalAlpha = 1;
     }
 
+    /* THE MAGIC LAUNCHER, drawn. The ring, its sockets, runes and thorns are
+       one cached sprite (launcherSprite) and the engraved arrow another
+       (arrowSprite), so a frame lays two images and moves nothing but their
+       scale and the arrow's light: the launch kicks the ring, a trade lights
+       the arrow and swells the satellite. An idle control that moves pulls
+       the eye off the board, so at rest only the bubbles breathe. */
     function drawLauncher() {
-      var punch = launchPunch > 0 ? launchPunch : 0;
-      var ring = (R + 16) * (1 - punch * 0.12) * (1 + 0.012 * Math.sin(bgT * 2.6));
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(LX, LY, ring, 0, PI2); ctx.stroke();
+      drawLauncherAt(LX, LY, swapT > 0 ? swapT : 0, launchPunch > 0 ? launchPunch : 0,
+                     aimLoad > 0 ? aimLoad : 0);
     }
-
-    /* The swap button: a ring with two arrows chasing each other round it,
-       sat between the two bubbles it trades. It spins down after a trade
-       rather than animating for ever — an idle control that moves pulls the
-       eye away from the board. */
-    function drawSwapRing() {
-      var t = swapSpin > 0 ? swapSpin : 0;
-      var rr = SWAP_R * (1 + 0.16 * t), i;
+    function drawLauncherAt(x, y, lit, punch, load) {
+      if (!launcherSprite) return;
+      var k = (1 - punch * 0.08) * (1 + 0.01 * Math.sin((bgT || 0) * 2.6));
       ctx.save();
-      ctx.translate(SWAP_X, LY);
-      ctx.rotate(t * Math.PI * 1.6);
-      ctx.lineCap = "round";
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "rgba(255,255,255," + (0.16 + 0.22 * t).toFixed(3) + ")";
-      ctx.beginPath(); ctx.arc(0, 0, rr, 0, PI2); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255," + (0.42 + 0.45 * t).toFixed(3) + ")";
-      ctx.lineWidth = 3;
-      for (i = 0; i < 2; i++) {
-        var a0 = i * Math.PI + 0.30, a1 = i * Math.PI + Math.PI - 0.60;
-        var ar = rr * 0.60;
-        ctx.beginPath(); ctx.arc(0, 0, ar, a0, a1); ctx.stroke();
-        // the head, laid back along the arc it ends
-        var hx = Math.cos(a1) * ar, hy = Math.sin(a1) * ar, back = a1 - Math.PI / 2;
-        ctx.beginPath();
-        ctx.moveTo(hx + Math.cos(back - 0.55) * 10, hy + Math.sin(back - 0.55) * 10);
-        ctx.lineTo(hx, hy);
-        ctx.lineTo(hx + Math.cos(back + 0.55) * 10, hy + Math.sin(back + 0.55) * 10);
-        ctx.stroke();
+      ctx.translate(x, y);
+      ctx.save();
+      ctx.scale(k, k);
+      ctx.drawImage(launcherSprite, -LS_OX, -LS_OY, LS_W, LS_H);
+      // the main socket wakes up while the player aims: violet from the well
+      if (load > 0.01) {
+        var g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, RING_OUT + 6);
+        g.addColorStop(0, "rgba(176,96,255,0)");
+        g.addColorStop(0.75, "rgba(176,96,255," + (0.30 * load).toFixed(3) + ")");
+        g.addColorStop(1, "rgba(176,96,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, RING_OUT + 6, 0, PI2); ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = clamp(0.7 + 0.3 * lit, 0, 1);
+      ctx.drawImage(arrowSprite, -LS_OX, -LS_OY, LS_W, LS_H);
+      if (lit > 0) {
+        // the trade flares the arrow: one more pass, added on top
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = lit * 0.8;
+        ctx.drawImage(arrowSprite, -LS_OX, -LS_OY, LS_W, LS_H);
       }
       ctx.restore();
     }
 
-    function drawNextPreview() {
-      var nx = NEXT_X, ny = LY, nr = R * 0.6;
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(upper(Lang.t("Next")), nx, ny - nr - 12);
-      ctx.textAlign = "left";
-      drawBubble(nx, ny, nr, nextColor, nextSuper, false, 1, 0, 0, 0,
-                 1 + BREATHE * 1.4 * Math.sin(bgT * 1.9 + 1.1));
+    // The next bubble, sitting in the satellite socket.
+    function drawNext() { drawNextAt(SAT_X, SAT_Y, nextColor, nextSuper); }
+    function drawNextAt(x, y, idx, isSup) {
+      drawBubble(x, y, NEXT_R, idx, isSup, false, 1, isSup ? (bgT || 0) * 0.6 : 0, 0, 0,
+                 1 + BREATHE * 1.4 * Math.sin((bgT || 0) * 1.9 + 1.1));
+    }
+
+    /* THE TRADE: the bubble that was next rides the arrow's arc OVER the seam
+       into the main socket, growing, while the one it replaces dips UNDER it
+       into the satellite, shrinking — the path the arrow promised. */
+    function trading() { return swapT > 0 && !ball.flying && !ended; }
+    function arcPoint(x0, y0, x1, y1, bow, e) {
+      var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + bow, u = 1 - e;
+      return { x: u * u * x0 + 2 * u * e * cx + e * e * x1, y: u * u * y0 + 2 * u * e * cy + e * e * y1 };
+    }
+    function drawTrade() {
+      var e = 1 - swapT;
+      e = e * e * (3 - 2 * e);
+      var down = arcPoint(LX, LY, SAT_X, SAT_Y, 30, e);      // the old shot, under
+      var up = arcPoint(SAT_X, SAT_Y, LX, LY, -56, e);       // the new one, over
+      drawBubble(down.x, down.y, R + (NEXT_R - R) * e, nextColor, nextSuper, false, 1,
+                 nextSuper ? bgT * 0.6 : 0, 0, 0, 1);
+      drawBubble(up.x, up.y, NEXT_R + (R - NEXT_R) * e, ball.color, ball.sup, false, 1,
+                 ball.sup ? bgT * 0.6 : 0, 0.18 * Math.sin(e * Math.PI), -Math.PI / 4, 1);
     }
 
     function drawDangerLine() {
@@ -8135,8 +8373,8 @@
 
     /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
        Every page SHOWS before it tells, and every picture is painted by the
-       round's own renderer: drawBubble, drawInfecting, drawLauncher and
-       drawSwapRing are lent a canvas of their own for the length of the call
+       round's own renderer: drawBubble, drawInfecting, drawLauncherAt and
+       drawNextAt are lent a canvas of their own for the length of the call
        (the round's `ctx` is swapped and given back), so a bubble read in the
        guide is the bubble on the wall, sprite for sprite. The guide can open
        before any round — from the Help card on the title screen — so nothing
@@ -8219,23 +8457,12 @@
       }
       return pts;
     }
-    // The launcher and its swap ring, drawn where the picture wants them:
-    // both draw at the round's own launcher row, so the context is moved.
-    function picLauncher(x, y) {
-      ctx.save(); ctx.translate(x - LX, y - LY); drawLauncher(); ctx.restore();
-    }
-    function picSwapRing(x, y) {
-      ctx.save(); ctx.translate(x - SWAP_X, y - LY); drawSwapRing(); ctx.restore();
-    }
-    // drawNextPreview's own label and bubble, at a point of the picture.
-    function picNext(x, y, b) {
-      var nr = R * 0.6;
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(upper(Lang.t("Next")), x, y - nr - 12);
-      ctx.textAlign = "left";
-      picBubble(x, y, b, nr);
+    // The magic launcher, loaded with `cur` and `next` (picBubble's codes),
+    // at a point of the picture; `lit` flares its arrow as a trade does.
+    function picLauncher(x, y, cur, next, lit) {
+      drawLauncherAt(x, y, lit || 0, 0, 0);
+      picBubble(x + SAT_DX, y + SAT_DY, next, NEXT_R);
+      picBubble(x, y, cur);
     }
     // drawDangerLine's dashes, at full strength.
     function picDanger(W, y) {
@@ -8348,11 +8575,10 @@
               }, rows: goalRows, lines: [
               Lang.t("There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.") ] },
             { id: "aim", title: Lang.t("Aim and shoot"), pic: function () {
-                return paintPic(460, 260, function () {
+                return paintPic(460, 290, function () {
                   var wall = picWall(["ybrrb", "byyb"], 40, 10);
-                  picDots(picPath(150, 210, 1.15, wall, R, 460 - R));
-                  picLauncher(150, 210);
-                  picBubble(150, 210, 0);
+                  picDots(picPath(250, 236, -1.15, wall, R, 460 - R));
+                  picLauncher(250, 236, 0, 2);
                 });
               }, lines: [
               Lang.t("Drag to aim, release to shoot.") ] },
@@ -8379,15 +8605,20 @@
                         [Lang.t("A rotten bubble that falls"), "+" + CONFIG.fallBonus * 2]], lines: [
               Lang.t("Pop what holds a group to the ceiling, and the whole group falls.") ] },
             { id: "swap", title: Lang.t("Swap"), pic: function () {
-                return paintPic(380, 150, function () {
-                  var y = 92, sx = 130 + (SWAP_X - LX), nx = 130 + (NEXT_X - LX);
-                  picLauncher(130, y);
-                  picBubble(130, y, 2);
-                  picSwapRing(sx, y);
-                  picNext(nx, y, "s");
+                return paintPic(380, 190, function () {
+                  // the launcher, a size up: it is the subject of the page
+                  ctx.save();
+                  ctx.translate(158, 100); ctx.scale(1.35, 1.35);
+                  picLauncher(0, 0, 2, "s", 0.7);
+                  // the tap, on the small bubble: two rings going out
+                  ctx.strokeStyle = "rgba(226,190,255,0.75)"; ctx.lineWidth = 2.5;
+                  ctx.beginPath(); ctx.arc(SAT_DX, SAT_DY, SAT_OUT + 7, 0, PI2); ctx.stroke();
+                  ctx.globalAlpha = 0.4;
+                  ctx.beginPath(); ctx.arc(SAT_DX, SAT_DY, SAT_OUT + 15, 0, PI2); ctx.stroke();
+                  ctx.restore();
                 });
               }, lines: [
-              Lang.t("Tap the ring or the next bubble to swap the two."),
+              Lang.t("Tap the small bubble or the launcher to swap the two."),
               Lang.t("Swapping costs no shot. Check the next bubble and fire it first if it fits better.") ] },
             { id: "press", title: Lang.t("The wall comes down"), pic: function () {
                 return paintPic(460, 220, function () {
@@ -8408,10 +8639,26 @@
               Lang.t("A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it."),
               Lang.t("A bubble filling with rot is still active. Pop it before it turns completely.") ] },
             { id: "outbreak", title: Lang.t("The rot spreads"), pic: function () {
-                return paintPic(400, 200, function () {
-                  picWall(["byrby", "ry.yb", "ybrb"], 60, 12);
-                  var p = picCell(60, 12, 1, 2);
-                  picBubble(p.x, p.y, { c: 0, t: 0.12, hole: -Math.PI / 2 });
+                return paintPic(400, 232, function () {
+                  // a wall whose rotten patch was cut off: the hole at the
+                  // bottom left, the cut pieces falling out of it
+                  picWall(["byrbyb", ".yrby", "..rbyb"], 20, 6);
+                  picBubble(66, 152, "x", R, 0.65, -0.2, 0.5);
+                  picBubble(132, 186, "x", R, 0.5, -0.2, -0.4);
+                  // and the rot breaking out somewhere else: a bubble of the
+                  // wall filling with it, the hop dotted from the cut to it
+                  var p = picCell(20, 6, 2, 5);
+                  picBubble(p.x, p.y, { c: 2, t: 0.8, hole: -Math.PI / 2 });
+                  ctx.fillStyle = "#c050ff";
+                  for (var d = 1; d <= 7; d++) {
+                    var u = d / 8, v = 1 - u;
+                    // a quadratic through a control point under the wall
+                    var qx = v * v * 170 + 2 * u * v * 270 + u * u * (p.x - 8),
+                        qy = v * v * 196 + 2 * u * v * 244 + u * u * (p.y + 40);
+                    ctx.globalAlpha = 0.9;
+                    ctx.beginPath(); ctx.arc(qx, qy, 4, 0, PI2); ctx.fill();
+                  }
+                  ctx.globalAlpha = 1;
                 });
               }, lines: [
               Lang.t("Cutting the rot off won't stop it. It will break out somewhere else.") ] }
@@ -8449,6 +8696,7 @@
       if (ended) return;
       ended = true;
       chain = null;
+      banked = score;
       var best = Math.max(score, Store.get("bestScore", 0));
       var stars = score >= 3000 ? 3 : score >= 2000 ? 2 : score > 0 ? 1 : 0;
       endRound({
@@ -8470,9 +8718,11 @@
        motion, and the round ends through the game's own result so the end
        screen keeps these stat rows. Ignored by the playable, which has no
        levels — see docs/LEVELS.md. */
+    function levelProgress() { return banked; }
+
     return { reset: reset, onDown: onDown, onMove: onMove, onUp: onUp,
              update: update, render: render, onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: endRun, guide: guide };
+             levelWon: endRun, levelProgress: levelProgress, guide: guide };
   })();
   /* ===================================================================
      7. BOOTSTRAP — wiring. Rarely edited.
@@ -8566,9 +8816,9 @@
      LEFT / RIGHT (or A / D) mirror a lateral flick for a "swipe" game: the
      engine synthesizes the whole down/move/up gesture through Input.swipe, so
      the game reads the keyboard through the very same code path as a finger.
-     UP (or W) is an upward flick, for a swipe game that sets CONFIG.swipeUp:
-     opt-in, because a game that never reads a vertical flick would take it
-     for a tap. CONFIG.keyboard = false opts out of all of it. */
+     UP (or W) is an upward flick, for a swipe game that sets CONFIG.swipeUp,
+     and DOWN (or S) a downward one behind CONFIG.swipeDown: opt-in, because a
+     game that never reads a vertical flick would take it for a tap. CONFIG.keyboard = false opts out of all of it. */
   function spaceIsATap() {
     if (CONFIG.keyboard === false) return false;
     var demo = CONFIG.intro.demo || "tap";
@@ -8585,6 +8835,7 @@
       if (e.code === "ArrowLeft"  || e.key === "ArrowLeft"  || e.key === "a" || e.key === "A" || e.keyCode === 37) return -1;
       if (e.code === "ArrowRight" || e.key === "ArrowRight" || e.key === "d" || e.key === "D" || e.keyCode === 39) return 1;
       if (CONFIG.swipeUp && (e.code === "ArrowUp" || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.keyCode === 38)) return "up";
+      if (CONFIG.swipeDown && (e.code === "ArrowDown" || e.key === "ArrowDown" || e.key === "s" || e.key === "S" || e.keyCode === 40)) return "down";
       return 0;
     }
     window.addEventListener("keydown", function (e) {

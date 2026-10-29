@@ -1,7 +1,7 @@
 {
   "slug": "echomaze",
   "title": "Echomaze",
-  "version": "1.10.9",
+  "version": "1.10.12",
   "tagline": "Find and aim the right way through the maze to the exit",
   "order": 90,
   "draft": false,
@@ -66,7 +66,7 @@
       "tagline": "Deux secondes pour tout voir. Laisse tes impulsions guider ton retour.",
       "tags": [
         "Mémoire",
-        "Echo",
+        "Écho",
         "Satisfaisant"
       ]
     },
@@ -113,7 +113,7 @@
             "line": "Mémorisation <b>rapide</b>"
           },
           {
-            "kicker": "Echo",
+            "kicker": "Écho",
             "line": "Aide-toi des <b>rebonds</b>"
           },
           {
@@ -173,7 +173,7 @@
           "Great run!": "Beau parcours !",
           "Door forced": "Porte forcée",
           "Maze solved!": "Labyrinthe résolu !",
-          "Escaped!": "Evadé !",
+          "Escaped!": "Évadé !",
           "Exit": "Sortie",
           "Exit sealed": "Sortie verrouillée",
           "Final score": "Score final",
@@ -232,7 +232,7 @@
           "Spot the true exit while the maze is lit, then break the crystal before you go for it.": "Identifie la bonne sortie à la lumière, détruis le cristal, puis fonce vers la liberté.",
           "Pulses go up, never back down": "Les impulsions progressent vers le haut",
           "Only the true exit sends rings": "Seule la vraie sortie émet des anneaux",
-          "Only one door leads to the exit. The others end in dead ends.": "Une seule porte ouvre le passage vers la sortie ; toutes les autres mènent à des impasses.",
+          "Only one door leads to the exit. The others end in dead ends.": "Une seule porte ouvre le passage vers la sortie. Toutes les autres mènent à des impasses.",
           "When a pulse dies in the maze, the last opening it went through becomes a valve.": "Lorsqu'une impulsion s'éteint dans le labyrinthe, le dernier passage qu'elle a emprunté se transforme en valve.",
           "That valve lets pulses up, never back down.": "Cette valve autorise le passage des impulsions vers le haut, mais bloque tout retour en arrière.",
           "A false exit looks exactly like the true one, but it is a trap because it swallows your pulse.": "Extérieurement identique à la vraie, la fausse sortie est un piège car elle absorbe ton impulsion.",

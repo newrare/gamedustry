@@ -337,6 +337,7 @@
        unreadable from outside: the view contract (tools/test/views.mjs) and
        anything else that has to find one door among twelve asks here. */
     n.setAttribute("data-role", h.role);
+    if (h.mode) n.setAttribute("data-mode", h.mode);
     n.style.left = h.x + "px";
     n.style.top = h.y + "px";
     /* THE PLACEMENT, AGAIN AND AS TWO NUMBERS CSS CAN READ. `left` and `top`
@@ -401,8 +402,8 @@
     var word = null;
     if (h.role !== "decor") {
       var hit = el("button", "vg-hit");
-      hit.setAttribute("aria-label", label(h.role));
-      hit.addEventListener("click", doorOf(h.role));
+      hit.setAttribute("aria-label", label(h.role, h));
+      hit.addEventListener("click", doorOf(h.role, h));
       body.appendChild(hit);
 
       /* THE WORD UNDER THE FEET, and it is the PLAYER'S switch rather than the
@@ -421,20 +422,25 @@
     nodes.push({ spec: h, node: n, badge: badge, word: word });
   }
 
-  function doorOf(role) {
+  function doorOf(role, h) {
     if (role === "play") return function () { if (levelled()) LV.playTop(); else W.start(); };
+    /* A MODE IS A DOOR TO A ROUND OF ITS OWN: the house names one key of
+       `web.modes` (`"role": "mode", "mode": "classic"`) and the menu arms it
+       and starts a free round, exactly as the title screen's mode entry does. */
+    if (role === "mode") return function () { MENU.startMode(h && h.mode); };
     return MENU.doors[role] || function () {};
   }
 
   /* A house's word is the ROLE'S, and it comes out of the strings this shell
      already writes — nothing in a village is typed twice. */
-  function label(role) {
+  function label(role, h) {
     /* PLAY IS NAMED AFTER WHAT IT DOES and the map after where it goes. They
        shared one word while the play house WAS the map's door, and a levelled
        village then had a building labelled LEVELS / NIVEAUX where the player
        reads "play" — the verb, not the destination. The map keeps its own
        word; this one is the shell's PLAY in every language. */
     if (role === "play") return MENU.text("play");
+    if (role === "mode") return MENU.modeLabel(h && h.mode);
     if (role === "map") {
       return levelled() ? LV.text("levelsEntry") : MENU.text("play");
     }
@@ -470,7 +476,7 @@
 
   function relabel() {
     for (var i = 0; i < nodes.length; i++) {
-      var word = label(nodes[i].spec.role);
+      var word = label(nodes[i].spec.role, nodes[i].spec);
       var b = nodes[i].node.querySelector(".vg-hit");
       if (b) b.setAttribute("aria-label", word);
       /* Shouted by the motor's own `upper`, like every other word this shell

@@ -1664,7 +1664,7 @@
       }
       opening = false;
       drag.on = false;
-      Sound.cue("pick", 0.45, 1.1, 760, 0.12, "triangle");
+      Sound.cue("pick", 0.45, 1, 760, 0.12, "triangle");
       Music.duck(0.45, 0.3);
     }
     function take(k) {
@@ -1844,8 +1844,51 @@
       for (i = 0; i < ids.length; i++) box.appendChild(jokerNode(ids[i], { w:240 }));
       return box;
     }
+    /* A canvas of its own with the round's `ctx` lent to it for the call, for
+       the pictures that are a scene rather than a row of cards. */
+    function scenePic(W, H, fn) {
+      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx = cv.getContext("2d"); ctx.scale(k, k);
+      try { fn(); } finally { ctx = keep; }
+      return cv;
+    }
+    /* The bin gate as the table draws it, a card flicked into it with the
+       swipe's trail behind it, and under them the bins counter with every
+       token spent: the next card binned is the one that costs a life. */
+    function binsPic(n) {
+      return scenePic(560, 330, function () {
+        var i, gx = 70, gy = 140;
+        drawChevrons(gx, -1, BIN_COL, Lang.t("Bin"), 1, gy, true);
+        for (i = 2; i >= 1; i--) drawCard(card(8, 2), 250 + i * 62, gy + i * 6, 112, 159, -0.14 - i * 0.04, 0.2 / i, null);
+        drawCard(card(8, 2), 250, gy, 112, 159, -0.3, 1, null);
+        binsAt(280, 280, n, n);
+      });
+    }
+    /* The pot as the table draws it: the chips of two binned cards arcing in,
+       and a hand taking its share out as the coins arc on to it. */
+    function potPic() {
+      return scenePic(560, 330, function () {
+        var px = 250, py = 200, hx = 440, hy = 215, i, j, at, hand = [card(6, 1), card(6, 0), card(2, 2), card(9, 3), card(4, 1)];
+        drawCard(card(10, 0), 58, 80, 86, 122, -0.3, 0.9, null);
+        drawCard(card(4, 3), 58, 215, 86, 122, -0.22, 0.9, null);
+        for (i = 0; i < 2; i++) {                          // the chips of each bin, on their way in
+          for (j = 0; j < 2; j++) {
+            at = potCoinPos(58, i ? 215 : 80, px, py, 0.2 + j * 0.3);
+            coinAt(at.x + 36, at.y);
+          }
+        }
+        potAt(px, py, 40, 0.5, false);
+        for (j = 0; j < 2; j++) {                          // its share, on its way out to the hand
+          at = potCoinPos(px + 40, py - 30, hx, hy - 30, 0.2 + j * 0.3);
+          coinAt(at.x, at.y);
+        }
+        for (i = 0; i < hand.length; i++) drawCard(hand[i], hx - 72 + i * 36, hy, 66, 94, (i - 2) * 0.06, 1, null);
+      });
+    }
     // the tip says what just happened ("No bins left"); the page names the rule
-    function binsPage(vars) { var P = tipPage("bins", 0, vars); P.title = Lang.t(TIPS.bins.eye); return P; }
+    function binsPage(vars) { var P = tipPage("bins", 0, vars, function () { return binsPic(vars.n); }); P.title = Lang.t(TIPS.bins.eye); return P; }
     var guide = {
       chapters: function () {
         var bins = { n:CONFIG.play.chuteDepth };
@@ -1863,7 +1906,7 @@
             tipPage("bust", 0, null, function () {
               return cardsPic([card(12, 0, { dim:1 }), card(8, 1, { dim:1 }), card(5, 2, { dim:1 }), card(3, 3, { dim:1 }), card(1, 0, { dim:1 })]);
             }),
-            binsPage(bins), tipPage("pot")
+            binsPage(bins), tipPage("pot", 0, null, potPic)
           ] },
           { key:"jokers", label:Lang.t("Jokers"), pages:[
             tipPage("joker", FAM_LEVEL.Mult, null, function () { return jokersPic([JOKERS[0].id, JOKERS[1].id]); }),
@@ -2041,7 +2084,7 @@
           tip("pot");
         }
         flying.push({ card:c, x:x, y:y, vx:-1700, vy:-160, rot:rot, spin:-3.6, a:1 });
-        Sound.cue("bin", 0.4, 1, 220, 0.07, "sawtooth");
+        Sound.cue("bin", 0.5, 1, 220, 0.07, "sawtooth");
         chute++;
         var cap = chuteCap();
         if (chute > cap) {                                 // the chute overflows
@@ -2432,7 +2475,7 @@
       if (!to) {                                    // a glass that shattered: nothing to throw
         Pop.text(src.x, src.y - 20, s.text, { color:s.col, size:22, life:0.6, tier:1 });
         Fx.burst(src.x, src.y, { color:[MOD_COL.glass, "#ffffff"], count:16, speed:360, life:0.5, grav:900 });
-        Sound.cue("bin", 0.4, 1.3, 260, 0.06, "sawtooth");
+        Sound.cue("bin", 1, 1.3, 260, 0.06, "sawtooth");
         return;
       }
       T.flights.push({ x0:src.x, y0:src.y, to:to, s:s, t:0 });
@@ -2820,12 +2863,14 @@
        pull. A tap on them only nudges the card their way (nudge) — the
        swipe is the game, and the rules are read on the deck and on the card. */
     var CHEV_EVERY = 3.2, CHEV_LEN = 0.9, CHEV_GAP = 0.22;
-    function drawChevrons(x, side, col, label, lit) {
-      var y = L.gateY, i;
+    /* `y` and `still` are the guide's: a gate drawn off the table, its wave at rest */
+    function drawChevrons(x, side, col, label, lit, y, still) {
+      var i;
+      if (y == null) y = L.gateY;
       ctx.lineCap = "round"; ctx.lineJoin = "round";
       for (i = 0; i < 3; i++) {
         // one slow wave every CHEV_EVERY s, each chevron lit CHEV_LEN s, the next one CHEV_GAP s later
-        var u = (clock % CHEV_EVERY - i * CHEV_GAP) / CHEV_LEN, w = u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
+        var u = (clock % CHEV_EVERY - i * CHEV_GAP) / CHEV_LEN, w = !still && u > 0 && u < 1 ? Math.sin(Math.PI * u) : 0;
         var cx = x + side * (i * 18 - 18 + w * 6), a = 0.2 + 0.18 * i + w * 0.7 + lit * 0.5;
         ctx.beginPath();
         ctx.moveTo(cx - side * 9, y - 24); ctx.lineTo(cx + side * 9, y); ctx.lineTo(cx - side * 9, y + 24);
@@ -2951,13 +2996,14 @@
 
     /* The bins: red tokens, one spent per card binned — the price of saying
        no, and the bench says it has to be impossible to miss. */
-    function drawBins() {
-      var cap = chuteCap(), y = L.binsY, i;
+    function drawBins() { binsAt(Layout.cx, L.binsY, chuteCap(), chute); }
+    function binsAt(cx, y, cap, spent) {
+      var i;
       ctx.textBaseline = "middle"; ctx.textAlign = "right"; ctx.font = font(22, 900);
-      ctx.fillStyle = chute >= cap ? BIN_COL : "rgba(255,255,255,.5)";
-      ctx.fillText(upper(Lang.t("Bins")), Layout.cx - 20, y);
+      ctx.fillStyle = spent >= cap ? BIN_COL : "rgba(255,255,255,.5)";
+      ctx.fillText(upper(Lang.t("Bins")), cx - 20, y);
       for (i = 0; i < cap; i++) {
-        var tx = Layout.cx + 10 + i * 34, used = i < chute;
+        var tx = cx + 10 + i * 34, used = i < spent;
         ctx.beginPath(); ctx.arc(tx, y, 14, 0, Math.PI * 2);
         ctx.fillStyle = used ? "rgba(255,255,255,.08)" : "#d5263c"; ctx.fill();
         ctx.lineWidth = 3; ctx.setLineDash(used ? [4, 4] : [5, 3]);
@@ -3295,10 +3341,17 @@
        into it from where the card was flicked. */
     function drawPot() {
       // once the count has thrown the pot's share, the stack shows what is left
-      var left = pot - (tally && tally.potOut ? tally.res.pot : 0);
-      var x = L.potX, y = L.potY, n = Math.min(8, Math.ceil(left / 10)), i;
-      var hit = Math.max(potHit, lit.who === "pot" ? lit.t : 0), k = 1 + 0.2 * hit;
-      var allIn = left > 0 && cardsLeft() < HAND_SIZE;
+      var left = pot - (tally && tally.potOut ? tally.res.pot : 0), i;
+      var hit = Math.max(potHit, lit.who === "pot" ? lit.t : 0);
+      potAt(L.potX, L.potY, left, hit, left > 0 && cardsLeft() < HAND_SIZE);
+      for (i = 0; i < potFly.length; i++) {          // a bin's coins, on their way
+        var f = potFly[i], at = potCoinPos(f.x0, f.y0, L.potX, L.potY, f.t);
+        coinAt(at.x, at.y);
+      }
+    }
+    /* the stack, its name and its figure, centred on (x, y) */
+    function potAt(x, y, left, hit, allIn) {
+      var n = Math.min(8, Math.ceil(left / 10)), i, k = 1 + 0.2 * hit;
       ctx.save();
       ctx.translate(x, y); ctx.scale(k, k);
       ctx.beginPath(); ctx.ellipse(0, 0, 48, 17, 0, 0, Math.PI * 2);
@@ -3331,15 +3384,17 @@
       ctx.font = font(30, 900);
       ctx.fillStyle = left ? GOLD : "rgba(255,255,255,.4)";
       ctx.fillText(String(left), x, y + 62);
-
-      for (i = 0; i < potFly.length; i++) {          // a bin's coins, on their way
-        var f = potFly[i], t = f.t, u = 1 - t;
-        var cxp = (f.x0 + x) / 2, cyp = Math.min(f.y0, y) - 120;
-        var px = u * u * f.x0 + 2 * u * t * cxp + t * t * x, py = u * u * f.y0 + 2 * u * t * cyp + t * t * (y - 20);
-        ctx.beginPath(); ctx.arc(px, py, 15, 0, Math.PI * 2);
-        ctx.fillStyle = GOLD; ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = "#fff3cf"; ctx.stroke();
-      }
+    }
+    /* where a coin is `t` of the way from (x0, y0) to the pot at (x, y): the
+       arc a bin's chips take, up and over */
+    function potCoinPos(x0, y0, x, y, t) {
+      var u = 1 - t, cxp = (x0 + x) / 2, cyp = Math.min(y0, y) - 120;
+      return { x:u * u * x0 + 2 * u * t * cxp + t * t * x, y:u * u * y0 + 2 * u * t * cyp + t * t * (y - 20) };
+    }
+    function coinAt(px, py) {
+      ctx.beginPath(); ctx.arc(px, py, 15, 0, Math.PI * 2);
+      ctx.fillStyle = GOLD; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "#fff3cf"; ctx.stroke();
     }
 
     /* A bust burns half the pot — flames up out of the stack — unless

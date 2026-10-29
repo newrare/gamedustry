@@ -78,17 +78,19 @@
        the four yokai that haunt it, weakest first: a room deep in the map
        draws from the end of the list. `tint` is the glow under the map where
        the band's painted `scene` is missing, and `music` its window of the
-       track. A playable is one round at level 0 and rides the first band. */
+       track. `lead` is the hero who walks in alone: the others are met in
+       the rooms of the dungeon (THE PARTY). A playable is one round at level
+       0 and rides the first band. */
     bands: [
-      { name: "Night school",    tint: "#1d2a52", scene: "backgroundPhone01", music: { from: 25,  length: 29.994 },
+      { name: "Night school",    tint: "#1d2a52", scene: "backgroundPhone01", music: { from: 25,  length: 29.994 }, lead: "kenji",
         foes: ["hanako", "teketeke", "jinmenken", "akamanto"] },
-      { name: "Hospital",        tint: "#173d36", scene: "backgroundPhone02", music: { from: 55,  length: 40.006 },
+      { name: "Hospital",        tint: "#173d36", scene: "backgroundPhone02", music: { from: 55,  length: 40.006 }, lead: "akane",
         foes: ["kuchisake", "ubume", "gaki", "nopperabo"] },
-      { name: "Shrine forest",   tint: "#3d1a1f", scene: "backgroundPhone03", music: { from: 94,  length: 30 },
+      { name: "Shrine forest",   tint: "#3d1a1f", scene: "backgroundPhone03", music: { from: 94,  length: 30 }, lead: "yuki",
         foes: ["kasaobake", "chochin", "jorogumo", "tengu"] },
-      { name: "Drowned village", tint: "#132f45", scene: "backgroundPhone04", music: { from: 124, length: 25 },
+      { name: "Drowned village", tint: "#132f45", scene: "backgroundPhone04", music: { from: 124, length: 25 }, lead: "haru",
         foes: ["kappa", "nureonna", "funayurei", "umibozu"] },
-      { name: "Gate of Yomi",    tint: "#2e1745", scene: "backgroundPhone05", music: { from: 134, length: 25.006 },
+      { name: "Gate of Yomi",    tint: "#2e1745", scene: "backgroundPhone05", music: { from: 134, length: 25.006 }, lead: "kenji",
         foes: ["rokurokubi", "gashadokuro", "oni", "onryo"] }
     ],
 
@@ -110,8 +112,9 @@
       foeAtk: 1.3,       // its blows on top of that
       depth: 0.25,       // how much stronger the room furthest from the start is
       partyLevel: 1,     // the level the party enters at (a persistent roster comes later)
+      recruits: 1,       // heroes waiting in the rooms to join the lead (a stage sets its own: RECRUITS)
       goldRate: 1.0,
-      candles: 3.0,      // the lantern's candles, per room of the map: every step burns one per hero
+      candles: 3.0,      // the lantern's candles, per room of the map, for a party of four that walks in whole
       lampBar: 184,      // the lantern's panel under the map: the candles, the heads, the keys, the split
       cornerClear: 70    // the map stops this far above Layout's foot: the web corners
     }
@@ -196,10 +199,10 @@
     var P = CONFIG.play;
     /* What a stage overrides in CONFIG.play, as the game ships it: a playable,
        the endless run and a free round go back to these. */
-    var P0 = { cols: P.cols, rows: P.rows, fights: P.fights, shops: P.shops, upgrades: P.upgrades, events: P.events, bonus: P.bonus };
+    var P0 = { cols: P.cols, rows: P.rows, fights: P.fights, shops: P.shops, upgrades: P.upgrades, events: P.events, bonus: P.bonus,
+               recruits: P.recruits };
     var FACE = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
     function font(size, weight) { return (weight || 800) + " " + Math.round(size) + "px " + FACE; }
-    var PARTY_KEY = "party:grudgeon";
 
     /* --- the data --------------------------------------------------------- */
 
@@ -221,7 +224,7 @@
       kenji: { name: "Kenji", face: [0.535, 0.135, 0.24], role: "Kendo captain", color: "#5aa9ff", coat: "#1b2133", hair: "#0d0d12", prop: "sword",
                hp: 100, sp: 24, atk: 15, def: 9, spd: 8, skills: ["iai", "ward"] },
       yuki:  { name: "Yuki", face: [0.57, 0.12, 0.26], role: "Onmyoji", color: "#9ce7ff", coat: "#2a2340", hair: "#eef3ff", prop: "talisman",
-               hp: 60, sp: 60, atk: 7, def: 4, spd: 10, skills: ["frost", "foxfire"] },
+               hp: 76, sp: 60, atk: 7, def: 7, spd: 10, skills: ["foxfire", "frost"] },
       haru:  { name: "Haru", face: [0.59, 0.13, 0.24], role: "Occult photographer", color: "#ffd166", coat: "#3a3f4a", hair: "#4a3020", prop: "camera",
                hp: 76, sp: 36, atk: 10, def: 5, spd: 14, skills: ["flash", "ghostshot"] }
     };
@@ -255,7 +258,7 @@
       blessing:  { name: "Blessing",       kind: "heal", fx: "spells02", pow: 0.32,    sp: 12, w: 1.2, icon: "icoHeart",
                    foe: "pacify", ally: "heal",
                    foeText: "Halves its next blow",
-                   allyText: "Heals the whole party by a third of their health" },
+                   allyText: "Heals every hero by a third of their health" },
       iai:       { name: "Iai slash",      kind: "hit", fx: "spells03",  el: "slash",  pow: 2.3, sp: 8,  w: 1.5, icon: "icoFight",
                    foe: "hit", ally: "whet",
                    foeText: "A very strong cut that delays the hero's next turn",
@@ -263,7 +266,7 @@
       ward:      { name: "Spirit ward",    kind: "ward", fx: "spells04", turns: 2,     sp: 6,  w: 0.8, icon: "icoWard",
                    foe: "bind", ally: "ward",
                    foeText: "Pushes it back on the timeline",
-                   allyText: "The party takes 40% less damage from the yokai's next two turns" },
+                   allyText: "Every hero takes 40% less damage during the yokai's next two turns" },
       frost:     { name: "Frost talisman", kind: "hit", fx: "spells05",  el: "ice",    pow: 2.0, sp: 9,  w: 1, icon: "icoSnow",
                    foe: "hit", ally: "imbue",
                    foeText: "A strong blow of ice", allyText: "Their next blow becomes ice" },
@@ -321,6 +324,7 @@
       event:   { art: "items07", icon: "icoEvent",   color: "#b69cff" },
       bonus:   { art: "items05", icon: "icoBonus",   color: "#ffd166" },
       key:     { art: "items15", icon: "icoLock",    color: "#c79bff" },     // a seal-breaker: opens one sealed door
+      ally:    { art: null,      icon: "icoHand",    color: "#7ee0a1" },     // a hero waiting to join: drawn as their head
       empty:   { art: null,      icon: null,         color: "#6c6880" },
       exit:    { art: null,      icon: null,         color: "#ffd166" }      // drawn: a lit torii (drawExit)
     };
@@ -340,7 +344,7 @@
        that wander, the groups the party walks in, and the path a first tap
        on a far room proposes. */
     var feats = {}, candles = 0, candles0 = 0, dark = false, keys = 0, doors = {}, roamers = [];
-    var groups = [], gi = 0, roster = [], aim = null, tree = {};
+    var groups = [], gi = 0, roster = [], aim = null, tree = {}, boons = [];
     var fxs = [];                        // spell pictures playing over the fight
     /* THE BLAST between the map and a fight: 0 is the map in place, 1 is
        every room blown off the frame from the party's room outwards, which
@@ -389,7 +393,9 @@
          5  the band's third yokai
          6  the band's fourth, as the MASTER of the place, in its far room
        so every band brings its four yokai in one at a time and ends on the
-       last of them. The first two stages of a band from the second on keep
+       last of them. The band's lead walks in alone, and the heroes waiting
+       in the rooms grow with the steps too (RECRUITS): none on the first
+       two, then one, two, and the whole party by the last two. The first two stages of a band from the second on keep
        two yokai of the band before, so a map is never one yokai deep. The
        grid, the fights and the other rooms grow with the band.
 
@@ -406,6 +412,7 @@
       { dc: 1, dr: 2, f: 6, obj: "exorcise", fresh: 2 },
       { dc: 2, dr: 3, f: 6, obj: "boss", fresh: 3 }
     ];
+    var RECRUITS = [0, 0, 1, 2, 3, 3];
     function stageOf(n) {
       var b = clamp(Math.floor((n - 1) / 6), 0, CONFIG.bands.length - 1), k = (n - 1) % 6, T = STEPS[k];
       var foes = CONFIG.bands[b].foes, prev = b ? CONFIG.bands[b - 1].foes : [];
@@ -416,7 +423,7 @@
                 fresh: T.fresh != null ? foes[T.fresh] : null, boss: T.obj === "boss" ? foes[3] : null,
                 shops: k >= 1 ? 1 + (b >= 2 ? 1 : 0) : 0, upgrades: k >= 2 ? 1 + (b >= 3 ? 1 : 0) : 0,
                 events: k >= 1 ? 1 + (b >= 1 ? 1 : 0) : 1, bonus: 1 + Math.floor(cols * rows / 20),
-                obj: T.obj, goal: 1, m: 0 };
+                recruits: RECRUITS[k], obj: T.obj, goal: 1, m: 0 };
       if (T.obj === "exorcise") S.goal = Math.max(1, Math.floor(fights / 2.2));
       else if (T.obj === "gold") {
         var expected = fights * (10 + 4 * b) + S.bonus * 10 * (1 + 0.15 * b);
@@ -527,6 +534,7 @@
         if (near < 0 || dist[i] < dist[near]) near = i;
       }
       if (S && S.fresh && !S.boss && near >= 0) cells[near].foe = S.fresh;
+      placeAllies(start, end, dist, far);
 
       if (feats.doors) placeDoors(start, end, dist);
       if (feats.roam) placeRoamers(start, dist);
@@ -535,6 +543,29 @@
       cells[start].state = HERE;
       cur = start;
       reveal(start);
+    }
+
+    /* The heroes who wait in the dungeon (THE PARTY): the ones the band's
+       lead does not walk in with, met one after the other the deeper the
+       party goes — the j-th of n stands about (j + 1) / (n + 1) of the way
+       to the farthest room, in a quiet room when there is one there. */
+    function placeAllies(start, end, dist, far) {
+      var first = leadOf(), wait = [], n, j, i;
+      for (i = 0; i < HERO_IDS.length; i++) if (HERO_IDS[i] !== first) wait.push(HERO_IDS[i]);
+      shuffle(wait);
+      n = Math.min(wait.length, Math.max(0, Math.round(P.recruits)));
+      for (j = 0; j < n; j++) {
+        var want = far * (j + 1) / (n + 1), pick = -1, pq = 0;
+        for (i = 0; i < cells.length; i++) {
+          var c = cells[i];
+          if (i === start || i === end || c.type === "fight" || c.type === "ally" || dist[i] < 1) continue;
+          /* a quiet room near the depth wanted beats any other kind of room */
+          var q = Math.abs(dist[i] - want) + (c.type === "empty" ? 0 : 2) + Math.random() * 0.5;
+          if (pick < 0 || q < pq) { pick = i; pq = q; }
+        }
+        if (pick < 0) break;
+        cells[pick].type = "ally"; cells[pick].ally = wait[j];
+      }
     }
 
     function reveal(i) {
@@ -561,19 +592,73 @@
     function cellY(c) { return geo.oy + c.r * geo.pitch; }
 
     /* ======================================================================
-       THE PARTY
+       THE PARTY — the band's lead walks in ALONE, and the other heroes wait
+       in rooms of the dungeon (placeAllies): walking into one adds that hero
+       to the group, at the party's level and whole — and to the lantern's
+       burn. A hero knows Attack and Guard on arrival and learns their own
+       two scrolls one fight at a time: after each fight won, every hero who
+       fought it learns the next one (learnAfter). The run is the school.
        ====================================================================== */
-    function savedParty() {
-      var s = Store.get(PARTY_KEY, null), out = [], i;
-      if (s && s.length) for (i = 0; i < s.length; i++) if (HEROES[s[i]] && out.indexOf(s[i]) < 0) out.push(s[i]);
-      return out.length ? out.slice(0, 4) : HERO_IDS.slice();
-    }
+    var BASE_SCROLLS = ["attack", "guard"];
+    var KIT = 1;                       // scrolls of their own a hero arrives with: a lead alone needs one
+    function leadOf() { return CONFIG.bands[bandIndex()].lead; }
     function makeHero(id) {
       var b = HEROES[id], k = 1 + 0.07 * (plv - 1);
-      return { id: id, b: b, hero: true,
+      return { id: id, b: b, hero: true, known: BASE_SCROLLS.concat(b.skills.slice(0, KIT)),
                mhp: Math.round(b.hp * k), hp: Math.round(b.hp * k), msp: b.sp, sp: b.sp,
                atk: b.atk * k, def: b.def * k, spd: b.spd, pow: 1,
                guard: false, skip: false, dead: false, lunge: 0, hurt: 0, cast: 0 };
+    }
+    /* The next scroll a hero has still to learn, in the order of their own. */
+    function nextScroll(h) {
+      for (var i = 0; i < h.b.skills.length; i++) if (h.known.indexOf(h.b.skills[i]) < 0) return h.b.skills[i];
+      return null;
+    }
+    /* A hero learns their next scroll: a callout over the room, and the
+       scroll named by a notice the first time any hero learns it, which opens
+       its page of the guide. */
+    function learn(h, at, quiet) {
+      var id = nextScroll(h);
+      if (!id) return null;
+      h.known.push(id);
+      if (!quiet) Pop.show("bonus", { word: SKILLS[id].name, sub: fillIn(Lang.t("{name} learns a scroll"), { name: h.b.name }), at: at });
+      Sound.clip("upgrade", 0.6, 1.2);
+      if (!Notify.learnt().learn) Notify.learn("learn", "New scrolls", { sub: "A second one after a fight won" });
+      else Notify.learn("skill-" + id, Lang.t(SKILLS[id].name), { sub: Lang.t(SKILLS[id].foeText) });
+      return id;
+    }
+    /* After a fight won: whoever fought it and still stands learns, one
+       callout after the other. */
+    function learnAfter(list, delay) {
+      var k = 0;
+      list.forEach(function (h) {
+        if (h.dead || !nextScroll(h)) return;
+        later(delay + 0.8 * k++, function () { if (!ended) learn(h); });
+      });
+    }
+    /* The run's first step: the lead alone, named over the start room. */
+    function descend() {
+      party = roster = [makeHero(leadOf())];
+      groups = [{ heroes: party, at: cur }]; gi = 0;
+      for (var r = 0; r < roamers.length; r++) planRoam(roamers[r]);
+      teach();
+      showBubble(groups[0]);
+    }
+    /* A hero waiting in a room joins the group that walked in. */
+    function takeAlly(cell) {
+      var g = groups[gi], h = makeHero(cell.ally), at = { x: cellX(cell), y: cellY(cell) };
+      for (var i = 0; i < boons.length; i++) boon(h, boons[i]);
+      g.heroes = g.heroes.concat([h]).sort(byOrder);
+      roster.push(h);
+      lead(g);
+      cell.ally = null;
+      Pop.show("bonus", { word: h.b.name, sub: "Joins you", at: at });
+      Sound.clip("levelup", 0.6, 1.1);
+      Fx.burst(at.x, at.y, { color: [h.b.color, "#ffffff"], count: 16, speed: 240, life: 0.5, grav: 160 });
+      Notify.learn("party", "A new hero", { sub: "Each hero burns one more candle" });
+      if (canSplit()) Notify.learn("split", "Split the party", { sub: "Explore with two groups" });
+      showBubble(g);
+      afterRoom(cell);
     }
     function alive() {
       var out = [];
@@ -587,7 +672,7 @@
         h.mhp += gain; if (!h.dead) h.hp += gain;
         h.atk *= 1.07; h.def *= 1.07;
       }
-      Sound.clip("levelup", 0.6);
+      Sound.clip("levelup", 0.6, 0.9);
     }
     function healAll(pct, revive) {
       for (var i = 0; i < party.length; i++) {
@@ -637,8 +722,9 @@
     }
     function closeCard(now) {
       if (!card) return;
-      var n = card.node;
+      var n = card.node, frame = document.getElementById("frame");
       card = null;
+      if (frame) frame.classList.remove("gd-shopping");
       if (now) { if (n.parentNode) n.parentNode.removeChild(n); return; }
       n.classList.add("off");
       setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, 260);
@@ -654,84 +740,10 @@
       return b;
     }
 
-    /* --- the party: one to four heroes, before the first step ------------- */
-    /* THE PARTY CARD says what a hero COSTS before the first step: every
-       tile carries the candle it burns per step, and the lantern under the
-       four reads the candles of the stage, what the party picked burns per
-       step and how many steps that lights — re-read on every tap. */
-    function candleTag(cls) {
-      var t = document.createElement("span"), src = CONFIG.art && CONFIG.art.items09;
-      t.className = cls;
-      if (src) { var im = document.createElement("img"); im.alt = ""; im.src = src; t.appendChild(im); }
-      return t;
-    }
-    function openParty() {
-      var pick = savedParty();
-      var go, lamp;
-      function readLamp() {
-        lamp.querySelector(".gd-lamp-n").textContent = candles;
-        lamp.querySelector(".gd-lamp-why").textContent = partyBurns(pick.length) + ". " + Lang.t("When they run out, the yokai grow stronger");
-      }
-      openCard({
-        eyebrow: band().name, title: "Your party", tap: "Tap a hero to call or dismiss them",
-        build: function (body) {
-          var grid = document.createElement("div"); grid.className = "gd-party";
-          HERO_IDS.forEach(function (id) {
-            var b = HEROES[id], tile = document.createElement("button");
-            tile.type = "button"; tile.className = "gd-hero" + (pick.indexOf(id) >= 0 ? " on" : "");
-            tile.style.setProperty("--hc", b.color);
-            var cv = document.createElement("canvas"); cv.width = cv.height = 150;
-            drawHero(cv.getContext("2d"), { b: b, id: id, dead: false, lunge: 0, hurt: 0, cast: 0 }, 75, 80, 140, 1, 1);
-            var nm = document.createElement("b"); nm.textContent = upper(b.name);
-            var rl = document.createElement("i"); rl.textContent = upper(Lang.t(b.role));
-            var burn = candleTag("gd-burn");
-            tile.appendChild(cv); tile.appendChild(nm); tile.appendChild(rl); tile.appendChild(burn);
-            tile.addEventListener("click", function (e) {
-              e.stopPropagation();
-              var at = pick.indexOf(id);
-              if (at >= 0) {
-                if (pick.length === 1) { Notify.say("Keep at least one hero", { kind: "warn", key: "party" }); Sound.clip("refuse"); return; }
-                pick.splice(at, 1);
-              } else pick.push(id);
-              tile.classList.toggle("on", pick.indexOf(id) >= 0);
-              readLamp();
-              Sound.clip("select");
-            });
-            grid.appendChild(tile);
-          });
-          body.appendChild(grid);
-          lamp = document.createElement("div"); lamp.className = "gd-lamp";
-          /* the candles, then what this party burns per move — the sentence
-             that changes when a hero is called or dismissed */
-          var row = document.createElement("div"); row.className = "gd-lamp-row";
-          row.appendChild(candleTag("gd-lamp-ico"));
-          var col = document.createElement("p"), v = document.createElement("b"), l = document.createElement("i");
-          col.className = "gd-lamp-col"; v.className = "gd-lamp-n"; l.textContent = upper(Lang.t("Candles"));
-          col.appendChild(v); col.appendChild(l); row.appendChild(col);
-          var why = document.createElement("p"); why.className = "gd-lamp-why";
-          lamp.appendChild(row); lamp.appendChild(why);
-          body.appendChild(lamp);
-          readLamp();
-          go = button("Descend", null, "btn-lg btn-shiny", function () {
-            pick.sort(function (a, b) { return HERO_IDS.indexOf(a) - HERO_IDS.indexOf(b); });
-            Store.set(PARTY_KEY, pick);
-            party = roster = pick.map(makeHero);
-            groups = [{ heroes: party, at: cur }]; gi = 0;
-            for (var r = 0; r < roamers.length; r++) planRoam(roamers[r]);
-            closeCard();
-            Sound.clip("step", 0.6);
-            teach();
-            showBubble(groups[0]);
-          });
-          body.appendChild(go);
-        }
-      });
-    }
-
     /* --- a shop: three offers, bought as long as the gold lasts ----------- */
     var WARES = [
-      { id: "herbs",  art: "items01", name: "Healing herbs",   text: "Heals the party by 40%",       price: 20 },
-      { id: "sake",   art: "items02", name: "Sacred sake",     text: "Restores half the party's SP", price: 18 },
+      { id: "herbs",  art: "items01", name: "Healing herbs",   text: "Heals every hero by 40%",       price: 20 },
+      { id: "sake",   art: "items02", name: "Sacred sake",     text: "Restores half of every hero's SP", price: 18 },
       { id: "ofuda",  art: "items03", name: "Ofuda of return", text: "Raises the fallen",            price: 30 },
       { id: "charm",  art: "items04", name: "Iron omamori",    text: "Defense +12% for the run",     price: 35 },
       { id: "beads",  art: "items13", name: "Prayer beads",    text: "Attack +12% for the run",      price: 35 },
@@ -744,8 +756,7 @@
       if (id === "herbs") healAll(0.4, false);
       else if (id === "sake") spAll(0.5);
       else if (id === "ofuda") { for (i = 0; i < party.length; i++) if (party[i].dead) { party[i].dead = false; party[i].hp = Math.round(party[i].mhp * 0.4); } }
-      else if (id === "charm") for (i = 0; i < party.length; i++) party[i].def *= 1.12;
-      else if (id === "beads") for (i = 0; i < party.length; i++) party[i].atk *= 1.12;
+      else if (id === "charm" || id === "beads") bless(id);
       else if (id === "candles") addCandles(Math.round(candles0 * CANDLE_WARE));
     }
     function openShop(cell) {
@@ -780,6 +791,8 @@
         },
         onVeil: function () { closeCard(); afterRoom(cell); }
       });
+      var frame = document.getElementById("frame");
+      if (frame) frame.classList.add("gd-shopping");
     }
 
     /* --- an altar: one blessing out of three, for the rest of the run ----- */
@@ -791,16 +804,20 @@
       { id: "swift", name: "Swift", text: "Speed +2" },
       { id: "spark", name: "Spark", text: "Skills hit 15% harder" }
     ];
+    /* What lasts the whole run — a blessing, an omamori, prayer beads — is
+       laid on every hero met so far, both groups of a split party, and kept
+       in `boons` for the heroes who join later (takeAlly). */
+    function boon(h, id) {
+      if (id === "vigor") { var g = Math.round(h.mhp * 0.15); h.mhp += g; if (!h.dead) h.hp += g; }
+      else if (id === "focus") { h.msp += 10; if (!h.dead) h.sp = h.msp; }
+      else if (id === "edge" || id === "beads") h.atk *= 1.12;
+      else if (id === "shell" || id === "charm") h.def *= 1.12;
+      else if (id === "swift") h.spd += 2;
+      else if (id === "spark") h.pow *= 1.15;
+    }
     function bless(id) {
-      for (var i = 0; i < party.length; i++) {
-        var h = party[i];
-        if (id === "vigor") { var g = Math.round(h.mhp * 0.15); h.mhp += g; if (!h.dead) h.hp += g; }
-        else if (id === "focus") { h.msp += 10; if (!h.dead) h.sp = h.msp; }
-        else if (id === "edge") h.atk *= 1.12;
-        else if (id === "shell") h.def *= 1.12;
-        else if (id === "swift") h.spd += 2;
-        else if (id === "spark") h.pow *= 1.15;
-      }
+      boons.push(id);
+      for (var i = 0; i < roster.length; i++) boon(roster[i], id);
     }
     function openAltar(cell) {
       var offers = shuffle(BLESSINGS.slice()).slice(0, 3);
@@ -821,55 +838,144 @@
       });
     }
 
-    /* --- an event: a scene and two choices -------------------------------- */
+    /* --- an event: a scene, two choices, and what each one does ----------- */
+    /* Every choice ends on an OUTCOME — one of its `outs`, rolled on `p`
+       (the last takes what is left): a line of lore, and what it does to
+       the party (`fx`), written out on the card that follows the scene, so
+       no choice is ever a shrug. An effect is [kind, amount]: gold, heal,
+       hurt (never kills), hurtOne (one hero), sp, candles (a share of the
+       stage's lantern, never down to the dark), level, bless (a blessing
+       of the altar), learn (a hero's next scroll) and fight (the room's
+       yokai was there all along). */
     var EVENTS = [
       { title: "A crying girl", text: "A girl in a school uniform weeps alone at the end of the corridor.",
-        a: { label: "Comfort her", run: function () {
-          if (Math.random() < 0.6) { healAll(0.25, false); return { word: "The girl smiles and fades", kind: "good" }; }
-          hurtAll(0.15); Sound.clip("curse", 0.6); return { word: "The girl had no face", kind: "loss" }; } },
-        b: { label: "Walk past", run: function () { return null; } } },
+        a: { label: "Comfort her", outs: [
+          { p: 0.6, lore: "The girl smiles through her tears, then fades away. Her warmth stays with you.", fx: [["heal", 0.25]] },
+          { lore: "The girl lifts her head. Where her face should be, there is nothing.", fx: [["hurt", 0.15]] } ] },
+        b: { label: "Walk past", outs: [
+          { lore: "The sobbing follows you down the corridor, long after the girl is out of sight.", fx: [["sp", -0.15]] } ] } },
       { title: "A glowing vending machine", text: "It hums in the dark, one button lit, a coin slot waiting.",
-        a: { label: "Insert 15 gold", cost: 15, run: function () {
-          if (Math.random() < 0.5) { spAll(0.4); return { word: "Sacred sake drops", kind: "gain" }; }
-          healAll(0.3, false); return { word: "Healing herbs drop", kind: "gain" }; } },
-        b: { label: "Kick it", run: function () {
-          if (Math.random() < 0.5) { addGold(20); return { word: "Coins spill out", kind: "gain" }; }
-          hurtAll(0.12); return { word: "The machine kicks back", kind: "loss" }; } } },
+        a: { label: "Insert 15 gold", cost: 15, outs: [
+          { p: 0.5, lore: "A can of sacred sake drops with a clunk.", fx: [["sp", 0.4]] },
+          { lore: "A bundle of healing herbs drops into the tray.", fx: [["heal", 0.3]] } ] },
+        b: { label: "Kick it", outs: [
+          { p: 0.5, lore: "Coins pour out of the return slot.", fx: [["gold", 20]] },
+          { lore: "The machine tips over and pins you to the floor.", fx: [["hurt", 0.12]] } ] } },
       { title: "An offering box", text: "A tiny shrine, still tended. Someone left coins in the box.",
-        a: { label: "Offer 20 gold", cost: 20, run: function () { bless("edge"); return { word: "The kami is pleased", kind: "good" }; } },
-        b: { label: "Steal the coins", run: function () { addGold(30); hurtAll(0.2); Sound.clip("curse", 0.6); return { word: "Cursed coins", kind: "loss" }; } } },
+        a: { label: "Offer 20 gold", cost: 20, outs: [
+          { lore: "A warm wind answers the offering. The kami is pleased.", fx: [["bless", "edge"]] } ] },
+        b: { label: "Steal the coins", outs: [
+          { lore: "The coins are ice-cold, and they burn the hand that holds them.", fx: [["gold", 30], ["hurt", 0.2]] } ] } },
       { title: "Footsteps behind you", text: "Slow, wet footsteps. They stop when you stop.",
-        a: { label: "Turn around", run: function () {
-          if (Math.random() < 0.5) return { word: "Nobody there", kind: "info" };
-          return { fight: true }; } },
-        b: { label: "Run", run: function () { spAll(-0.15); return { word: "You lose your breath", kind: "warn" }; } } },
+        a: { label: "Turn around", outs: [
+          { p: 0.5, lore: "Nobody there. Only a candle stub, still warm, on the wet floor.", fx: [["candles", 0.1]] },
+          { lore: "Something was there, and it is not leaving.", fx: [["fight"]] } ] },
+        b: { label: "Run", outs: [
+          { lore: "You run until your lungs burn, and the lantern gutters as you go.", fx: [["sp", -0.15], ["candles", -0.05]] } ] } },
       { title: "A cursed mirror", text: "Your reflection blinks a moment after you do.",
-        a: { label: "Look into it", run: function () {
-          if (Math.random() < 0.5) { levelUp(); return { word: "The party grows stronger", kind: "good" }; }
-          spAll(-0.3); return { word: "The mirror drinks your spirit", kind: "loss" }; } },
-        b: { label: "Cover it", run: function () { return null; } } },
+        a: { label: "Look into it", outs: [
+          { p: 0.5, lore: "Your reflection nods, and you feel stronger.", fx: [["level"]] },
+          { lore: "Your reflection keeps staring, long after you turn away.", fx: [["sp", -0.3]] } ] },
+        b: { label: "Cover it", outs: [
+          { lore: "You hang a jacket over the glass. Something behind it sighs, and the air feels lighter.", fx: [["sp", 0.15]] } ] } },
       { title: "A ringing phone", text: "An old phone rings in an empty classroom.",
-        a: { label: "Answer", run: function () {
-          if (Math.random() < 0.5) { addGold(25); return { word: "A voice leads you to coins", kind: "gain" }; }
-          var h = Rand.pick(alive()); h.hp = Math.max(1, h.hp - Math.round(h.mhp * 0.3)); Sound.clip("curse", 0.6);
-          return { word: "The call was for you", kind: "loss" }; } },
-        b: { label: "Let it ring", run: function () { return null; } } }
+        a: { label: "Answer", outs: [
+          { p: 0.5, lore: "A child's voice tells you where the coins are hidden.", fx: [["gold", 25]] },
+          { lore: "A voice whispers a name, and one of you collapses.", fx: [["hurtOne", 0.3]] } ] },
+        b: { label: "Let it ring", outs: [
+          { lore: "The phone rings on and on. The lantern burns down while you wait.", fx: [["candles", -0.08]] } ] } },
+      { title: "A sensei's ghost", text: "An old swordmaster kneels in an empty dojo, a scroll across his knees.",
+        a: { label: "Offer 15 gold", cost: 15, outs: [
+          { lore: "The old master bows and hands over his scroll.", fx: [["learn"]] } ] },
+        b: { label: "Bow and leave", outs: [
+          { lore: "The old master bows back. You leave the dojo calmer than you came.", fx: [["heal", 0.15]] } ] } },
+      { title: "A box of candles", text: "A box of temple candles, sealed with a paper charm.",
+        a: { label: "Break the seal", outs: [
+          { p: 0.6, lore: "The candles are dry and good, enough for a long walk.", fx: [["candles", 0.25]] },
+          { lore: "The paper charm was holding something in.", fx: [["fight"]] } ] },
+        b: { label: "Take just one", outs: [
+          { lore: "You slip one candle out without touching the charm.", fx: [["candles", 0.08]] } ] } }
     ];
+    var evSeen = [];                     // the events met this run: the next one is another
+    function pct(v) { return Math.round(Math.abs(v) * 100) + (Lang.code() === "fr" ? " %" : "%"); }
+    /* One effect applied: the row it writes on the outcome card,
+       [label, value, good]. */
+    function applyFx(f) {
+      var k = f[0], v = f[1], n, h, i;
+      if (k === "gold") {
+        if (v > 0) { n = Math.round(v * P.goldRate * (1 + 0.15 * bandIndex())); addGold(n); return [Lang.t("Gold"), "+" + n, true]; }
+        n = Math.min(gold, -v); gold -= n; HUD.setLeft(gold, CONFIG.copy.goldLabel); return [Lang.t("Gold"), "-" + n, false];
+      }
+      if (k === "heal") { healAll(v, false); return [Lang.t("Health"), "+" + pct(v), true]; }
+      if (k === "hurt") { hurtAll(v); Sound.clip("curse", 1); return [Lang.t("Health"), "-" + pct(v), false]; }
+      if (k === "hurtOne") {
+        h = Rand.pick(alive());
+        h.hp = Math.max(1, h.hp - Math.round(h.mhp * v));
+        Sound.clip("curse", 1, 0.9);
+        return [fillIn(Lang.t("{name}'s health"), { name: h.b.name }), "-" + pct(v), false];
+      }
+      if (k === "sp") { spAll(v); return ["SP", (v > 0 ? "+" : "-") + pct(v), v > 0]; }
+      if (k === "candles") {
+        n = Math.max(1, Math.round(candles0 * Math.abs(v)));
+        if (v > 0) addCandles(n); else { n = Math.min(n, Math.max(0, candles - 1)); candles -= n; }
+        return [Lang.t("Candles"), (v > 0 ? "+" : "-") + n, v > 0];
+      }
+      if (k === "bless") {
+        for (i = 0; i < BLESSINGS.length; i++) if (BLESSINGS[i].id === v) { bless(v); return [Lang.t(BLESSINGS[i].name), Lang.t(BLESSINGS[i].text), true]; }
+      }
+      if (k === "learn") {
+        /* the hero with the most left to learn, the lead first on a tie */
+        var who = null;
+        for (i = 0; i < roster.length; i++) {
+          h = roster[i];
+          if (!h.dead && nextScroll(h) && (!who || h.known.length < who.known.length)) who = h;
+        }
+        if (who) { var id = learn(who, null, true); return [fillIn(Lang.t("{name} learns"), { name: who.b.name }), Lang.t(SKILLS[id].name), true]; }
+        levelUp();
+        return [Lang.t("Hero level"), "+1", true];
+      }
+      if (k === "level") { levelUp(); return [Lang.t("Hero level"), "+1", true]; }
+      if (k === "fight") return [Lang.t("A yokai attacks"), "", false];
+      return null;
+    }
     function openEvent(cell) {
-      var ev = Rand.pick(EVENTS);
+      var left = EVENTS.filter(function (e) { return evSeen.indexOf(e) < 0; });
+      var ev = Rand.pick(left.length ? left : EVENTS);
+      evSeen.push(ev);
       Sound.clip("event", 0.6);
       function choose(ch) {
         if (ch.cost && gold < ch.cost) { Notify.say("Not enough gold", { kind: "warn", icon: "coin", key: "gold" }); Sound.clip("refuse"); return; }
         if (ch.cost) { gold -= ch.cost; HUD.setLeft(gold, CONFIG.copy.goldLabel); }
-        var out = ch.run();
-        closeCard();
-        if (out && out.fight) {                            // the footsteps were a yokai
-          cell.foe = Rand.pick(band().foes); cell.depth = 0.5;
-          later(0.35, function () { fightAt(groups[gi], cell, {}); });
-          return;
+        var r = Math.random(), out = ch.outs[ch.outs.length - 1], i;
+        for (i = 0; i < ch.outs.length - 1; i++) { if (r < ch.outs[i].p) { out = ch.outs[i]; break; } r -= ch.outs[i].p; }
+        var rows = [], fight = false;
+        for (i = 0; i < out.fx.length; i++) {
+          if (out.fx[i][0] === "fight") fight = true;
+          var row = applyFx(out.fx[i]);
+          if (row) rows.push(row);
         }
-        if (out) Notify.say(out.word, { kind: out.kind, icon: out.kind === "gain" ? "coin" : null });
-        afterRoom(cell);
+        /* the scene gives way to what the choice did: the lore, then its rows */
+        openCard({
+          eyebrow: "Event", title: ev.title, text: out.lore, tap: "Tap to continue",
+          build: function (body) {
+            var ul = dom("ul", "gd-fx");
+            rows.forEach(function (rw) {
+              var li = dom("li", rw[2] ? "is-good" : "is-bad");
+              li.appendChild(dom("span", null, rw[0]));
+              if (rw[1]) li.appendChild(dom("b", null, rw[1]));
+              ul.appendChild(li);
+            });
+            body.appendChild(ul);
+          },
+          onVeil: function () {
+            closeCard();
+            if (fight) {                                     // the yokai of the scene was real
+              held = true;                                   // no step away before it strikes
+              cell.foe = Rand.pick(stage ? stage.pool : band().foes); cell.depth = 0.5;
+              later(0.35, function () { fightAt(groups[gi], cell, {}); });
+            } else afterRoom(cell);
+          }
+        });
       }
       openCard({
         eyebrow: "Event", title: ev.title, tap: "Tap a choice", text: ev.text,
@@ -1008,7 +1114,7 @@
       if (!candles) {
         dark = true;
         Notify.say("The last candle dies", { sub: Lang.t("The yokai grow stronger"), kind: "loss", icon: "hourglass", key: "dark" });
-        Sound.clip("curse", 0.6);
+        Sound.clip("curse", 1, 1.1);
       }
     }
     function addCandles(n) {
@@ -1267,7 +1373,7 @@
     function ambush(hit, pending, then) {
       held = true;
       Notify.say("Ambush", { sub: Lang.t(FOES[hit.r.foe].name) + " " + Lang.t("strikes first"), kind: "warn", icon: "warn", key: "ambush" });
-      Sound.clip("curse", 0.6, 1.2);
+      Sound.clip("curse", 1, 1.2);
       later(0.8, function () { fightAt(hit.g, roamerCell(hit.r), { roamer: hit.r, ambush: true, pending: pending, then: then }); });
     }
     /* A fight for one group: the other joins it late from next door. */
@@ -1327,7 +1433,7 @@
       say("candles", function () { Notify.learn("candles", "The lantern", { sub: "Each step burns a candle per hero" }); });
       if (feats.doors) say("doors", function () { Notify.learn("doors", "Fire doors", { sub: "Once through, no way back" }); });
       if (feats.roam) say("roam", function () { Notify.learn("roam", "Wandering yokai", { sub: "The red arrow is the yokai's next move" }); });
-      if (feats.split) say("split", function () { Notify.learn("split", "Split the party", { sub: "Explore with two groups" }); });
+      if (feats.split && canSplit()) say("split", function () { Notify.learn("split", "Split the party", { sub: "Explore with two groups" }); });
     }
 
     function arrive(cell) {
@@ -1338,6 +1444,7 @@
         case "event":   openEvent(cell); break;
         case "bonus":   takeBonus(cell); break;
         case "key":     takeKey(cell); break;
+        case "ally":    if (cell.ally) takeAlly(cell); else afterRoom(cell); break;
         case "exit":    takeExit(cell); break;
         default:
           /* a quiet room: the party catches its breath */
@@ -1348,7 +1455,7 @@
     function takeKey(cell) {
       keys++;
       Pop.show("bonus", { word: "Seal-breaker", sub: "Opens one sealed door", at: { x: cellX(cell), y: cellY(cell) } });
-      Sound.clip("upgrade", 0.6, 1.2);
+      Sound.clip("upgrade", 0.6, 1.1);
       afterRoom(cell);
     }
     function afterRoom(cell) {
@@ -1394,12 +1501,17 @@
       o.ct = 0; o.n = 0;
       return o;
     }
+    /* A yokai's health and blows by the number of heroes in the fight: four
+       meet it whole, a lone hero about a third of its health and under half
+       its blows — so the band's lead can open a level alone, and every hero
+       who joins is still worth the candle they burn. Benched against the
+       party of four with every scroll it replaced (v0.11.1). */
+    var BY_PARTY = { hp: [0, 0.3, 0.5, 0.75, 1], atk: [0, 0.45, 0.6, 0.8, 1] };
     function makeFoe(cell) {
       var b = FOES[cell.foe], k = P.foePower * (1 + P.depth * (cell.depth || 0)), R = RULES[cell.foe];
-      /* A smaller party faces a thinner, weaker yokai: four heroes meet it
-         whole, one hero meets about half its health and 70% of its blows.
-         The master of a level (`cell.boss`) is the same yokai, grown. */
-      var n = Math.max(1, alive().length), hk = k * (0.4 + 0.15 * n) * 1.3 * P.foeHp, ak = (0.6 + 0.1 * n) * P.foeAtk;
+      /* Fewer heroes face a thinner, weaker yokai (BY_PARTY). The master of a
+         level (`cell.boss`) is the same yokai, grown. */
+      var n = clamp(alive().length, 1, 4), hk = k * BY_PARTY.hp[n] * 1.3 * P.foeHp, ak = BY_PARTY.atk[n] * P.foeAtk;
       if (cell.boss) { hk *= 1.8; ak *= 1.15; }
       if (dark) { hk *= DARK; ak *= DARK; }
       var hp = Math.round(b.hp * hk), spd = b.spd * (R && R.spd || 1);
@@ -1408,8 +1520,29 @@
                acts: 0, plan: [], doing: null, hitSince: false, lastHitter: null, answered: false,
                knocks: 0, streak: 0, flame: 0, drum: 0, water: 0, grudge: 0, rattle: 0, face: 0,
                dry: false, baby: null, cocoon: null, aggro: {},
-               dead: false, fade: 1, known: {} }, 0.25);
+               dead: false, fade: 1, known: loreOf(cell.foe) }, 0.25);
     }
+
+    /* THE BESTIARY. What the party has found each yokai weak to, resisting or
+       neither, element by element — kept across rounds, so a weakness found
+       once is known at every later fight with that yokai, and the guide's
+       page of a yokai shows what was found and nothing more. */
+    function loreKey() { return "lore:" + (CONFIG.slug || "grudgeon"); }
+    var lore = null;
+    function loreAll() { return lore || (lore = Store.get(loreKey(), {}) || {}); }
+    /* a copy, so a fight writes its finds through learnElement only */
+    function loreOf(id) {
+      var src = loreAll()[id] || {}, out = {}, k;
+      for (k in src) if (src.hasOwnProperty(k)) out[k] = src[k];
+      return out;
+    }
+    function learnElement(id, el, what) {
+      var all = loreAll(), mine = all[id] || (all[id] = {});
+      if (mine[el] === what) return;
+      mine[el] = what;
+      Store.set(loreKey(), all);
+    }
+    function wipe() { lore = null; Store.del(loreKey()); }
 
     /* A FIGHT IS A SCENE, NOT A CARD. The rooms blow off the frame from the
        party's own room outwards (BLOW), the band's scene is left bare, the
@@ -1443,8 +1576,6 @@
       Music.duck(0.55, 0.4);
       later(INTRO.foe + 0.35, function () {
         if (combat !== C) return;
-        if (C.foe.boss) Pop.show("danger", { word: C.foe.b.name, sub: "Master of the place" });
-        else Pop.show("danger", { word: C.foe.b.name });
         /* a yokai met for the first time: named once, its page in the guide */
         var R = RULES[C.foe.id];
         Notify.learn("yokai-" + C.foe.id, Lang.t(C.foe.b.name), { sub: R ? Lang.t(R.text) : null, icon: "eye" });
@@ -1647,7 +1778,7 @@
     var RULES = {
       /* --- Night school ---------------------------------------------------- */
       hanako: {
-        text: "On her third knock she hits the whole party, so hold the door",
+        text: "Hanako's third knock hits every hero, so hold the door",
         status: function (f) { return Lang.t("Knock") + " " + f.knocks + "/" + KNOCKS; },
         plan: function (f, j) {
           var k = (f.knocks + j) % KNOCKS + 1;
@@ -1938,6 +2069,7 @@
       if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
       else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
       tgt.known[el] = weak ? "weak" : resist ? "resist" : "normal";
+      learnElement(tgt.id, el, tgt.known[el]);
       if (!resist && Math.random() < 0.08) { crit = true; d *= 1.5; }
       d = Math.max(1, Math.round(d));
       tgt.hp = Math.max(0, tgt.hp - d);
@@ -1982,7 +2114,7 @@
             f.taunt = h; h.guard = true;
             spellOn(s.fx, h, 0.9);
             Pop.show("bonus", { word: "Provoked", sub: h.b.name });
-            Sound.clip("guard", 0.6, 0.9);
+            Sound.clip("guard", 1, 0.9);
           } else if (s.foe === "pacify") {
             f.pacify = true;
             spellOn(s.fx, f, 1.0);
@@ -1991,7 +2123,7 @@
           } else if (s.foe === "bind") {
             spellOn(s.fx, f, 1.0);
             push(f, BIND, "Bound");
-            Sound.clip("guard", 0.6, 0.8);
+            Sound.clip("guard", 1, 0.8);
           }
         });
         later(1.0, function () { endHero(C, h, s.w); });
@@ -2006,7 +2138,7 @@
           var gp = topOf(h);
           Pop.show("score", { word: "+5 SP" });
         } else Pop.show("bonus", { word: "Guarded", sub: x.b.name });
-        Sound.clip("guard", 0.6);
+        Sound.clip("guard", 1);
         later(0.7, function () { endHero(C, h, s.w); });
         return;
       }
@@ -2027,8 +2159,8 @@
       if (s.ally === "ward") {
         h.cast = 0.9; C.ward = s.turns;
         alive().forEach(function (y) { spellOn(s.fx, y, 0.9); });
-        Sound.clip("guard", 0.6, 0.8);
-        Pop.show("bonus", { word: "Spirit ward", sub: "The party takes less damage" });
+        Sound.clip("guard", 1, 0.8);
+        Pop.show("bonus", { word: "Spirit ward", sub: "Less damage taken" });
         later(1.0, function () { endHero(C, h, s.w); });
         return;
       }
@@ -2064,8 +2196,8 @@
         Fx.burst(p.x, p.y + 60, { color: [el.color, "#ffffff"], count: r.weak || r.crit ? 22 : 12, speed: 340, life: 0.5, grav: 120 });
         Pop.show("alert", { word: "-" + r.dmg, at: { x: p.x + Rand.range(-30, 30), y: p.y } });
         if (r.weak) Sound.clip("weak", 0.6);
-        else if (skill && r.resist) Sound.clip("skill", 0.6, 0.8);
-        else if (skill) Sound.clip("skill", 0.6);
+        else if (skill && r.resist) Sound.clip("skill", 0.6, 1.3);
+        else if (skill) Sound.clip("skill", 0.6, 0.7);
         else if (r.resist) Sound.clip("hit", 0.6, 0.8);
         else Sound.clip("hit", 0.6);
         f.hitSince = true; f.lastHitter = h;
@@ -2094,7 +2226,7 @@
       hideBar();
       C.phase = "busy"; C.hover = null; cam.subject = h; h.cast = 0.9;
       spellOn("spells04", h, 0.9);
-      Sound.clip("guard", 0.6, 1.2);
+      Sound.clip("guard", 1, 1.2);
       later(0.3, function () { if (combat === C) ra.run(C.foe); });
       later(1.0, function () { endHero(C, h, 1); });
     }
@@ -2218,12 +2350,14 @@
       Fx.burst(fp.x, fp.y, { color: ["#ffffff", "#b69cff", "#e2364b"], count: 30, speed: 420, life: 0.8, grav: -60 });
       Fx.ring(fp.x, fp.y, { from: 40, to: 260, color: "#fff2a8", width: 8, life: 0.6 });
       Fx.flash("#ffffff", 0.12);
-      Sound.clip("exorcise", 0.7);
+      Sound.clip("exorcise", 0.7, 1.3);
       Pop.show("bonus", { word: "Exorcised", sub: "+" + g + " " + Lang.t("gold") });
       spellOn("spells01", f, 1.5);
       for (var i = 0; i < 60; i++) f.parts.push({ front: true, x: f.sx + Rand.range(-1, 1) * f.s * 0.3, y: f.sy - Math.random() * f.s * 0.9,
         vx: Rand.range(-30, 30), vy: Rand.range(-160, -60), life: Rand.range(0.8, 1.6), t: 0, size: Rand.range(6, 16), col: "#e9e6ff" });
       if (++xp >= 2) later(1.6, function () { xp = 0; levelUp(); });
+      /* whoever fought it learns their next scroll, once back on the map */
+      learnAfter(party.filter(function (h) { return !h.away; }), 2.3);
       /* the party catches its breath: a long climb is lost to attrition
          otherwise, one fight at a time */
       later(1.6, function () { healAll(0.1, false); spAll(0.1); });
@@ -2263,7 +2397,7 @@
       var C = combat, left = 0;
       C.phase = "done";
       hideBar();
-      Sound.clip("down", 0.7, 0.8);
+      Sound.clip("down", 0.7, 0.6);
       Fx.flash("#e2364b", 0.25);
       for (var i = 0; i < roster.length; i++) if (!roster[i].dead) left++;
       if (!left || !otherGroup(C.group)) { later(1.3, function () { finish("wiped"); }); return; }
@@ -2300,9 +2434,15 @@
                on: "any", noSelf: !!s.noSelf, foeText: s.foeText, allyText: s.allyText, el: el, kind: s.kind, off: false };
     }
     function scrollIds(h) {
-      var l = ["attack", h.b.skills[0], h.b.skills[1], "guard"];
+      var l = knownIds(h);
       if (ruleAction()) l.push("rule");
       return l;
+    }
+    /* The hero's own scrolls, in the order of the bar, as far as they know
+       them (THE PARTY). */
+    function knownIds(h) {
+      var l = ["attack", h.b.skills[0], h.b.skills[1], "guard"];
+      return h.known ? l.filter(function (id) { return h.known.indexOf(id) >= 0; }) : l;
     }
     function showBar(h) {
       var frame = document.getElementById("frame");
@@ -2651,6 +2791,7 @@
        the pictogram while neither has decoded. */
     function drawRoomIcon(c, x, y, size, alpha) {
       if (c.type === "exit") { drawExit(x, y, size, alpha); return; }
+      if (c.type === "ally") { if (c.ally) drawHead({ id: c.ally, b: HEROES[c.ally], dead: false }, x, y, size * 0.9, alpha); return; }
       var R = ROOM[c.type], im = c.type === "fight" && c.foe ? spriteArt("foe", c.foe, 1) : artImg(R.art);
       if (c.type === "fight" && c.state === DONE) im = null;
       if (im) { drawFit(ctx, im, x, y, size, alpha); return; }
@@ -2941,7 +3082,7 @@
        the party. A way proposed on the map shows what it would burn next to
        the count. */
     function partyBurns(n) {
-      return n === 1 ? Lang.t("The party burns 1 candle per step") : Lang.t("The party burns {n} candles per step").replace("{n}", n);
+      return n === 1 ? Lang.t("1 candle burns per step") : Lang.t("{n} candles burn per step").replace("{n}", n);
     }
     /* The lantern's first row, centred on `y1` across x0..x0+W: the candle
        count (and `cost`, the way proposed), then one head per hero with the
@@ -3010,7 +3151,7 @@
         if (kim) drawFit(ctx, kim, right - kw - 22, y2, 38, keys ? 1 : 0.45);
         else Icon.draw(ctx, "icoLock", right - kw - 20, y2, 26, "#c79bff");
       }
-      text(dark ? Lang.t("Every step wounds the party") : partyBurns(burnOf(g)), x0 + 6, y2 + 1, 22,
+      text(dark ? Lang.t("Each step costs health") : partyBurns(burnOf(g)), x0 + 6, y2 + 1, 22,
            dark ? "#ff9a9a" : "#fff2c4", "left", 0, 700);
       Enter.end();
     }
@@ -3686,7 +3827,7 @@
       if (tg.foe) { foeCard(nextFoe()); return; }
       if (tg.tile && tg.hero === openTile()) { heroCard(tg.hero); return; }
       C.peek = tg.hero;
-      Sound.clip("select");
+      Sound.clip("select", 0.8, 1.2);
     }
     /* What is under a point of the frame: a hero's tile, the yokai, a hero. */
     function targetAt(p) {
@@ -3714,10 +3855,10 @@
     /* what an intent does, in words, out of what it carries */
     function intentText(it) {
       if (hiddenIntents()) return Lang.t("A spirit blow reveals what it will do");
-      if (it.alt) return Lang.t("Red hits one hero hard, blue drains the whole party: answer neither");
+      if (it.alt) return Lang.t("Red hits one hero hard, blue drains every hero. Answer neither");
       if (it.kind === "leave") return Lang.t("If nobody hits it before this turn, it walks away");
       if (!it.pow && !it.flat) return Lang.t(PASS[it.kind] || "No blow this turn");
-      var l = [Lang.t(it.all ? "A blow on the whole party" : it.prev ? "A blow on the hero who acted just before it" : it.special ? "A heavy blow on one hero" : "A blow on one hero")];
+      var l = [Lang.t(it.all ? "A blow on every hero" : it.prev ? "A blow on the hero who acted just before it" : it.special ? "A heavy blow on one hero" : "A blow on one hero")];
       if (it.drain) l.push(Lang.t("it heals by half the damage"));
       if (it.feast) l.push(Lang.t("it heals by all the damage"));
       if (it.fear) l.push(Lang.t("its target is pushed back on the timeline"));
@@ -3766,7 +3907,7 @@
     }
     function foeCard(focus) {
       var C = combat, f = C.foe, R = RULES[f.id];
-      Sound.clip("select");
+      Sound.clip("select", 0.8, 1.1);
       openCard({
         eyebrow: f.boss ? "Master of the place" : band().name, title: f.b.name, tap: "Tap to close", cls: "gd-info",
         onVeil: function () { closeCard(); },
@@ -3806,7 +3947,7 @@
     function heroCard(h) {
       var C = combat, at = -1, i;
       for (i = 0; i < C.TL.length; i++) if (C.TL[i].u === h) { at = i; break; }
-      Sound.clip("select");
+      Sound.clip("select", 0.8, 0.8);
       openCard({
         eyebrow: h.b.role, title: h.b.name, tap: "Tap to close", cls: "gd-info",
         onVeil: function () { closeCard(); },
@@ -3823,7 +3964,7 @@
           else if (at >= 0) body.appendChild(kv("Turn", whenWord(at)));
           if (inc) body.appendChild(kv("The yokai's next blow", inc.dmg >= h.hp ? "KO" : "-" + inc.dmg, "gd-threat"));
           var list = dom("div", "gd-sk");
-          ["attack", h.b.skills[0], h.b.skills[1], "guard"].forEach(function (id) {
+          knownIds(h).forEach(function (id) {
             var s = SKILLS[id], row = dom("div", "gd-sk-row"), ico = dom("i", "gd-sk-ico"), uri = 'url("' + ASSETS.images[s.icon] + '")';
             ico.style.setProperty("--ink", s.el ? ELEMENTS[s.el].color : "#f4eef8");
             ico.style.setProperty("-webkit-mask-image", uri); ico.style.setProperty("mask-image", uri);
@@ -3839,6 +3980,7 @@
             list.appendChild(row);
           });
           body.appendChild(list);
+          if (nextScroll(h)) body.appendChild(dom("p", "gd-line", Lang.t("Learns a second scroll after a fight won")));
           guideButton(body, "hero-" + h.id);
         }
       });
@@ -4071,11 +4213,11 @@
       gaki: "Every third turn, its special heals it by all the damage it deals",
       jorogumo: "Every third turn, its special wraps one hero in silk, far back on the timeline",
       tengu: "Every third turn, its special blows back every hero not on guard",
-      onryo: "Every third turn, its special hits the whole party, harder the bigger its Grudge"
+      onryo: "Every third turn, its special hits every hero, harder the bigger its Grudge"
     };
     var SPECIAL_MOVE = {
       heavy: "Every third turn, its special hits one hero hard",
-      all: "Every third turn, its special hits the whole party",
+      all: "Every third turn, its special hits every hero",
       drain: "Every third turn, its special heals it by half the damage it deals",
       fear: "Every third turn, its special hits one hero and pushes them back on the timeline"
     };
@@ -4087,21 +4229,36 @@
       var sp = SPECIAL_OWN.hasOwnProperty(id) ? SPECIAL_OWN[id] : SPECIAL_MOVE[F.move];
       var lines = [Lang.t(R.text) + "."];
       if (sp) lines.push(Lang.t(sp) + ".");
+      var weak = foundAs(id, "weak");
       return { id: "yokai-" + id, title: Lang.t(F.name), lv: lv, pic: function () { return foeArt(id); },
-               rows: [[Lang.t("Weak"), elNames(F.weak), ELEMENTS[F.weak[0]].color],
-                      [Lang.t("Resists"), elNames(F.resist), "#a8a2b8"]],
+               rows: [[Lang.t("Weak"), weak, weak === "?" ? "#a8a2b8" : ELEMENTS[F.weak[0]].color],
+                      [Lang.t("Resists"), foundAs(id, "resist"), "#a8a2b8"]],
                lines: lines };
+    }
+    /* What the bestiary holds for one side of a yokai: the elements found
+       that way, "?" while some element is still untried, "—" once every
+       element has been tried and none of them was. */
+    function foundAs(id, what) {
+      var mine = loreAll()[id] || {}, list = [], tried = 0, k;
+      for (k in ELEMENTS) if (ELEMENTS.hasOwnProperty(k) && mine[k]) {
+        tried++;
+        if (mine[k] === what) list.push(k);
+      }
+      if (list.length) return elNames(list);
+      return tried === Object.keys(ELEMENTS).length ? "—" : "?";
     }
     var BAND_NEW = [
       "The lantern burns from the very first step.",
       "Fire doors and seals appear here.",
       "Here, some yokai wander the map.",
-      "Here, your party can split up.",
+      "Here, your heroes can split into two groups.",
       "All of it at once: doors, seals, wandering yokai and the split party."
     ];
     function bandPage(b) {
       var B = CONFIG.bands[b], a = b * 6 + 1;
-      return { id: "band-" + (b + 1), title: Lang.t(B.name), lv: a, pic: function () { return bandPic(b); }, lines: [Lang.t(BAND_NEW[b])] };
+      var L = HEROES[B.lead];
+      return { id: "band-" + (b + 1), title: Lang.t(B.name), lv: a, pic: function () { return bandPic(b); },
+               rows: [[Lang.t("First hero"), L.name, L.color]], lines: [Lang.t(BAND_NEW[b])] };
     }
     function heroPage(id) {
       var H = HEROES[id], lines = [];
@@ -4147,7 +4304,7 @@
             Lang.t("A seal-breaker opens one sealed door. A big map has two seals for a single seal-breaker.") ] });
           if (b === 2) pages.push({ id: "roam", title: Lang.t("Wandering yokai"), lv: 13, pic: roamPic, lines: [
             Lang.t("A wandering yokai roams the corridors. The red arrow shows its next move."),
-            Lang.t("If a wandering yokai walks into your party, it ambushes you and acts first.") ] });
+            Lang.t("A wandering yokai that reaches your room ambushes you and acts first.") ] });
           if (b === 3) pages.push({ id: "split", title: Lang.t("Split the party"), lv: 19, pic: splitPic, lines: [
             Lang.t("Tap Split to divide your party into two groups. Tap a group to lead it."),
             Lang.t("A group next door joins the fight late. If one group falls, the other carries on.") ] });
@@ -4161,8 +4318,10 @@
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "map", title: Lang.t("The map"), pic: mapPic, lines: [
               Lang.t("Tap a lit room to walk there and open it. A far room takes two taps.") ] },
-            { id: "party", title: Lang.t("Your party"), pic: function () { return gRow([heroArt("akane"), heroArt("kenji"), heroArt("yuki"), heroArt("haru")]); },
-              lines: [Lang.t("Call one to four heroes. A bigger party is stronger, but burns the lantern faster.")] },
+            { id: "party", title: Lang.t("Your heroes"), pic: function () { return gRow([heroArt("akane"), heroArt("kenji"), heroArt("yuki"), heroArt("haru")]); },
+              lines: [
+              Lang.t("Each level starts with one hero, a different one in every biome."),
+              Lang.t("The other heroes wait in rooms of the dungeon. Each one who joins burns one more candle.") ] },
             { id: "candles", title: Lang.t("The lantern"), pic: lanternPic,
               rows: [[Lang.t("A step burns"), Lang.t("1 per standing hero")],
                      [Lang.t("Yokai in the dark"), "+25%", "#ff6e6e"], [Lang.t("A step in the dark"), Lang.t("-3% health"), "#ff6e6e"]],
@@ -4175,13 +4334,13 @@
               rows: [[Lang.t("The goal"), "★"], [Lang.t("1.5× the goal"), "★★"], [Lang.t("2.2× the goal"), "★★★"]],
               lines: [
               Lang.t("Each level sets one objective: yokai, gold, the way out or the master."),
-              Lang.t("The run ends when the party falls, or when no room is left to open.") ] }
+              Lang.t("The run ends when your last hero falls, or when no room is left to open.") ] }
           ] },
           { key: "fight", label: Lang.t("The fight"), pages: [
             { id: "fight", title: Lang.t("A fight"), pic: function () { return gRow([heroArt("kenji"), foeArt("hanako")], "gd-gp-duel"); },
               lines: [
               Lang.t("Entering a yokai's room starts a fight. Exorcise the yokai to clear the room."),
-              Lang.t("A smaller party faces a yokai with less health and weaker blows.") ] },
+              Lang.t("Fewer heroes means a yokai with less health and weaker blows.") ] },
             { id: "timeline", title: Lang.t("The timeline"), pic: timelinePic,
               lines: [
               Lang.t("Heroes and yokai take turns along the timeline. Whoever is first in line acts."),
@@ -4196,6 +4355,10 @@
               lines: [
               Lang.t("Tap a scroll, then its target. Tap it twice to throw it at the yokai."),
               Lang.t("Each scroll does one thing on the yokai and another on an ally.") ] },
+            { id: "learn", title: Lang.t("New scrolls"), pic: function () { return scrollsPic(["attack", "iai", "ward", "guard"]); },
+              lines: [
+              Lang.t("A hero arrives with Attack, Guard and one scroll of their own."),
+              Lang.t("After a fight won, every hero who fought learns their second scroll.") ] },
             { id: "elements", title: Lang.t("Weaknesses and resistances"), pic: elementsPic,
               rows: [[Lang.t("A weakness"), Lang.t("×1.6 and one more turn"), "#ffd166"], [Lang.t("Resisted"), Lang.t("×0.5"), "#a8a2b8"]],
               lines: [Lang.t("Try elements to find a yokai's weaknesses. Its health bar keeps track of what you find.")] },
@@ -4210,11 +4373,13 @@
             { id: "shop", title: Lang.t("Shop"), lv: 2, pic: function () { return roomsPic([gRoom("shop", LIT)], 150, 200); }, node: waresNode,
               lines: [Lang.t("The ofuda is sold only once a hero has fallen. When the lantern burns low, candles are always there.")] },
             { id: "altar", title: Lang.t("Altar"), lv: 3, pic: function () { return roomsPic([gRoom("upgrade", LIT)], 150, 200); }, node: blessingsNode,
-              lines: [Lang.t("Pick one blessing out of three. It helps the whole party until the end of the run.")] },
+              lines: [Lang.t("Pick one blessing out of three. It lasts the whole run, for every hero, newcomers included.")] },
             { id: "event", title: Lang.t("Event"), pic: function () { return roomsPic([gRoom("event", LIT)], 150, 200); },
               lines: [
-              Lang.t("Each event offers two choices. Some pay off, others cost gold, health or SP."),
+              Lang.t("Each event offers two choices. Every choice brings a reward or a price."),
               Lang.t("One choice may hide a yokai. An event can wound, but it never kills.") ] },
+            { id: "ally", title: Lang.t("A hero"), lv: 3, pic: function () { return roomsPic([gRoom("ally", LIT, { ally: "akane" })], 150, 200); },
+              lines: [Lang.t("A hero waits in this room. Walk in, and the hero joins you.")] },
             { id: "bonus", title: Lang.t("Bonus"), pic: function () { return roomsPic([gRoom("bonus", LIT)], 150, 200); },
               lines: [Lang.t("A gift on the spot: gold, candles, healing, SP or a fallen hero back.")] },
             { id: "exit", title: Lang.t("Way out"), lv: 4, pic: function () { return roomsPic([gRoom("exit", LIT)], 150, 200); },
@@ -4242,9 +4407,11 @@
       combat = null; walk = null; jobs = []; started = false; ended = false; t = 0;
       party = null; roster = []; groups = []; gi = 0; aim = null; held = false; lampHit = null; peekG = null; peekT = 0;
       feats = featsOf(stage); dark = false; keys = 0;
-      candles = candles0 = Math.round(P.candles * P.cols * P.rows);
+      /* the lantern grows with the heroes waiting in the rooms: a lead
+         alone gets half of what a party of four walking in whole once had */
+      candles = candles0 = Math.round(P.candles * P.cols * P.rows * (2 + Math.max(0, P.recruits)) / 4);
       best = Store.get("bestScore", 0);
-      fxs = []; blow = 0; blowTo = 0; uiTop = 0; slotX = {}; G = null;
+      fxs = []; evSeen = []; boons = []; blow = 0; blowTo = 0; uiTop = 0; slotX = {}; G = null;
       /* The band's own scene behind the round and the end screen, and its
          window of the track; level 0 (a playable, a free round) keeps the
          game's own scene and the whole bed. */
@@ -4260,7 +4427,7 @@
 
     function update(dt) {
       t += dt;
-      if (!started) { started = true; openParty(); }
+      if (!started) { started = true; descend(); }
       if (combat && card) return;          // a card over a fight holds it, whoever's turn it is
       var k, j;
       for (k = 0; k < cells.length; k++) if (cells[k].pop > 0) cells[k].pop = Math.max(0, cells[k].pop - dt);
@@ -4303,12 +4470,12 @@
       var c = cellAt(p);
       if (!c) { aim = null; return; }
       var there = groupIn(c.i, g);
-      if (there && !(aim && aim.to === c.i)) { lead(there); aim = null; showBubble(there); Sound.clip("select"); return; }
+      if (there && !(aim && aim.to === c.i)) { lead(there); aim = null; showBubble(there); Sound.clip("select", 0.8, 0.9); return; }
       if (c.state === HIDDEN) {
         Notify.say("Too dark to reach", { sub: Lang.t("Open a lit room next to this one first"), kind: "info", key: "reach" });
         return;
       }
-      if (c.i === g.at) { aim = null; showBubble(g); Sound.clip("select"); return; }
+      if (c.i === g.at) { aim = null; showBubble(g); Sound.clip("select", 0.8, 0.8); return; }
       plan = pathFor(g, c.i);
       if (!plan) { aim = null; refused(g, c); return; }
       /* a room next door is walked to at once; a far one shows its way and
@@ -4318,7 +4485,7 @@
     }
     function propose(g, to, plan) {
       aim = { to: to, from: g.at, path: plan.path, cost: plan.path.length * burnOf(g) };
-      Sound.clip("select");
+      Sound.clip("select", 0.8, 0.95);
     }
 
     function onResize() {
@@ -4347,7 +4514,7 @@
           { label: "Yokai exorcised", value: foesDown, grade: "accent" },
           { label: "Rooms explored", value: rooms },
           { label: "Gold", value: gold, grade: "gold" },
-          { label: "Party level", value: plv }
+          { label: "Hero level", value: plv }
         ]
       });
     }
@@ -4365,7 +4532,7 @@
       stage = d != null && CONFIG.level ? stageOf(CONFIG.level) : null;
       var src = stage || P0;
       P.cols = src.cols; P.rows = src.rows; P.fights = src.fights;
-      P.shops = src.shops; P.upgrades = src.upgrades; P.events = src.events; P.bonus = src.bonus;
+      P.shops = src.shops; P.upgrades = src.upgrades; P.events = src.events; P.bonus = src.bonus; P.recruits = src.recruits;
     }
     function levelGoal(n) {
       var S = stageOf(n);
@@ -4398,7 +4565,7 @@
     function takeExit(cell) {
       escaped = true;
       Pop.show("bonus", { word: "Way out", at: { x: cellX(cell), y: cellY(cell) } });
-      Sound.clip("upgrade", 0.6);
+      Sound.clip("upgrade", 0.6, 0.9);
       later(0.9, function () { finish("escaped"); });
     }
     /* A torii lit from inside: the gate out of the dungeon. */
@@ -4422,5 +4589,5 @@
 
     return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelProgress: levelProgress, levelTally: levelTally,
-             levelRules: levelRules, levelWon: levelWon, guide: guide };
+             levelRules: levelRules, levelWon: levelWon, guide: guide, wipe: wipe };
   })();

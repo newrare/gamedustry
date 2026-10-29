@@ -94,26 +94,31 @@ zero. **It is not a clip rect**: a world that is meant to bleed off an edge — 
 lava lake, a scrolling lane, an expanding shockwave — is drawn outside `Layout`
 and always was. The rule is about what the player has to READ or TOUCH.
 
-#### The two bottom corners are the shell's
+#### The foot bar is the shell's — `Layout.foot`
 
-`Layout` does not say this, because neither of them takes a band out of it. On
-the **web** target a round carries two overlays, each about 240 × 58 design px
-and 26 in from the frame:
+On the **web** target a round carries ONE bar along the bottom edge, the same
+in every game, 62 design px tall on the 26 px house margin:
 
-| corner       | what sits there          | whose it is                    |
-| ------------ | ------------------------ | ------------------------------ |
-| bottom-right | MENU / OPTIONS           | `packages/webshell/menu.css`   |
-| bottom-left  | the level number + stars | `packages/webshell/levels.css` |
+```
+[stars / objective] [!]                  [menu] [guide] [help] [options]
+```
 
-The world still runs under both, so a game **draws** through them as it always
-did — and **anchors no instrument and no word** in either: a gauge, a counter,
-a label or a status line in a bottom corner is the one thing they cover.
-`games/arcider` is what that cost: its shield rail ran down the left flank with
-the km/h readout at its foot, and both moved to the right, above MENU /
-OPTIONS. A game whose own layout owns the left corner moves the pill instead,
-from its SKIN (`--lv-hud-bottom` / `--lv-hud-left`) — or stops its table above
-that row on the web, which is what `games/slipdeck` does since v1.4.0. See
-[LEVELS.md](LEVELS.md).
+| end   | what sits there                       | whose it is                                            |
+| ----- | ------------------------------------- | ------------------------------------------------------ |
+| left  | the level number + stars, the "!" log | `packages/webshell/levels.css`, `meta.css`             |
+| right | MENU / GUIDE / HELP / OPTIONS         | `packages/webshell/view.css` (THE FOOT BAR), `menu.js` |
+
+It takes no band out of `Layout`, so the world still runs under it and a game
+**draws** through it as it always did — and **anchors no instrument and no
+word** in it. `Layout.foot` is the line an instrument stops at: the bar's top
+plus a breath of 12 (`CONFIG.layout.footHeight = 100`, written by
+`packages/platform/web.js` and `capacitor.js`), and plain `Layout.bottom` on a
+playable, whose CTA band is taller. A cannon, a launcher, a queue of shots is
+anchored on `Layout.foot` (`games/echomaze`, `games/blight`,
+`games/holepocalypse`); `games/arcider` moved its shield rail and km/h to the
+right flank, and `games/slipdeck` / `games/bridgessa` stop their table above
+the bar with their own `WEB_FOOT`. Nothing moves the bar: there is no SKIN
+escape. See [LEVELS.md](LEVELS.md).
 
 ## Screen flow
 
@@ -172,8 +177,11 @@ Each fallback is wired for the mechanic it fits, read off `CONFIG.intro.demo`:
   handlers as a finger and never grows a second input path. Auto-repeat is
   ignored: one press is one flick. UP (or W) is an upward flick,
   `Input.swipe("up")`, for a game that sets `CONFIG.swipeUp = true`
-  (`games/triverse`, whose flick up is the jump) — opt-in, because a game that
-  never reads a vertical flick would take it for a tap.
+  (`games/triverse`, whose flick up is the jump), and DOWN (or S) a downward
+  one, `Input.swipe("down")`, behind `CONFIG.swipeDown = true`
+  (`games/gelatile`, whose board slides four ways) — both opt-in, because a
+  game that never reads a vertical flick would take it for a tap. The intro's
+  key legend adds the arrows each flag binds.
 
 `CONFIG.keyboard = false` turns both off. Keys are consumed with
 `preventDefault()`, so they never scroll the host page nor re-click a focused

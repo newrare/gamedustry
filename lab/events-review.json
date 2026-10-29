@@ -285,10 +285,6 @@
       "what": "Sound.clip L1890 clang()",
       "kit": "1478960a50"
     },
-    "87c5b6b61140": {
-      "at": "2026-10-13",
-      "what": "Pop.show L1563 pocketCleared()"
-    },
     "99190dff1903": {
       "at": "2026-10-19",
       "what": "Pop.show L1853 shotEnd()"
@@ -358,6 +354,10 @@
       "at": "2026-10-21",
       "what": "Sound.clip L2008 smash()",
       "kit": "268d214207"
+    },
+    "d42867cec40e": {
+      "at": "2026-10-25",
+      "what": "Pop.show L1569 pocketCleared()"
     },
     "e4a64a437662": {
       "at": "2026-10-21",
@@ -816,6 +816,159 @@
       "kit": "0e6ce147ce"
     }
   },
+  "foldiers": {
+    "04ed9a535c69": {
+      "at": "2026-10-26",
+      "what": "Pop.show L1667 startResolve()"
+    },
+    "082f16678f7e": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3793 regionActions()",
+      "kit": "268d214207"
+    },
+    "082f16678f7e#2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3796 regionActions()",
+      "kit": "268d214207"
+    },
+    "0d43c75d4dce": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4474 onDown()",
+      "kit": "1478960a50"
+    },
+    "10db75719f10": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1867 applyResolve()",
+      "kit": "8599ed05d6"
+    },
+    "157c1f18d491": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4484 onDown()",
+      "kit": "3d2ece8316"
+    },
+    "1922ab8ff0f1": {
+      "at": "2026-10-23",
+      "what": "Pop.text L1745 applyResolve()"
+    },
+    "1ac0de7ad049": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1663 startResolve()",
+      "kit": "26b338fe5e"
+    },
+    "22b5aacd98a8": {
+      "at": "2026-10-26",
+      "what": "Pop.show L1862 applyResolve()"
+    },
+    "2a01bad5acc5": {
+      "at": "2026-10-23",
+      "what": "Notify.say L1612"
+    },
+    "2a3e2aa78d3e": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2951 bellStep()",
+      "kit": "dad1ecf92a"
+    },
+    "2adab2db8b6a": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1868 applyResolve()",
+      "kit": "debd0f5ba1"
+    },
+    "2fcb20343727": {
+      "at": "2026-10-25",
+      "what": "Pop.text L1682 applyResolve()"
+    },
+    "32145bca5498": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3780 globalActions()",
+      "kit": "1478960a50"
+    },
+    "3b088265d2b2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4031 giveOrder()",
+      "kit": "1478960a50"
+    },
+    "46ba3cdfd276": {
+      "at": "2026-10-25",
+      "what": "Pop.show L1899 generalNews()"
+    },
+    "4d5aaa8e3b5d": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1869 applyResolve()",
+      "kit": "268d214207"
+    },
+    "5007699335e8": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1666 startResolve()",
+      "kit": "978d769c5c"
+    },
+    "52a5c32adc5a": {
+      "at": "2026-10-25",
+      "what": "Pop.show L1788 applyResolve()"
+    },
+    "55fcee169577": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3804 act()",
+      "kit": "1478960a50"
+    },
+    "59e8d121ce25": {
+      "at": "2026-10-25",
+      "what": "Pop.show L3800 regionActions()"
+    },
+    "6451d3e2044a": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1848 applyResolve()",
+      "kit": "bc317233d1"
+    },
+    "6dad3764a2e0": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3831 applyMode()",
+      "kit": "1478960a50"
+    },
+    "901c53cf4065": {
+      "at": "2026-10-25",
+      "what": "Pop.show L1778 applyResolve()"
+    },
+    "915af06c5ac4": {
+      "at": "2026-10-26",
+      "what": "Pop.show L1859 applyResolve()"
+    },
+    "a0bfdb0c6a00": {
+      "at": "2026-10-26",
+      "what": "Pop.show L1863 applyResolve()"
+    },
+    "a3a0e959a8c9": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3797 regionActions()",
+      "kit": "1478960a50"
+    },
+    "a5003e9c2c96": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4015 giveIcon()",
+      "kit": "3d2ece8316"
+    },
+    "ae5439835a1a": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1861 applyResolve()",
+      "kit": "f836bb5299"
+    },
+    "c1f57f62967c": {
+      "at": "2026-10-26",
+      "what": "Pop.text L1858 applyResolve()"
+    },
+    "c441ade7f0ff": {
+      "at": "2026-10-26",
+      "what": "Pop.show L4473 onDown()"
+    },
+    "c98d4c7e2995": {
+      "at": "2026-10-23",
+      "what": "Pop.show L3763 globalActions()"
+    },
+    "f0ced1373352": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2004 checkOutcome()",
+      "kit": "8599ed05d6"
+    }
+  },
   "gearball": {
     "03c5a6e56b41": {
       "at": "2026-10-21",
@@ -991,18 +1144,185 @@
       "what": "Pop.show L2655 catchLost()"
     }
   },
+  "gelatile": {
+    "0517ac800399": {
+      "at": "2026-10-28",
+      "what": "Pop.show L914 doMove()"
+    },
+    "1443ece78486": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L849 doMove()",
+      "kit": "2a9d89a944"
+    },
+    "185ff0c94531": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L988 checkEnd()",
+      "kit": "f90921cfe0"
+    },
+    "185ff0c94531#2": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1003 checkEnd()",
+      "kit": "f90921cfe0"
+    },
+    "1ad0dab8b022": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1038 resolveCell()",
+      "kit": "80f0c8fc0c"
+    },
+    "1ad0dab8b022#2": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1046 resolveCell()",
+      "kit": "80f0c8fc0c"
+    },
+    "229c0f42d7d8": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L977 checkEnd()",
+      "kit": "a93af4ae5e"
+    },
+    "34520f5ba926": {
+      "at": "2026-10-28",
+      "what": "Pop.text L1015 kill()"
+    },
+    "4964ca9d4713": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1080 addPower()",
+      "kit": "1c31154ab7"
+    },
+    "4964ca9d4713#2": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1106 addPower()",
+      "kit": "1c31154ab7"
+    },
+    "4b59c446fef6": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1089 addPower()",
+      "kit": "1c31154ab7"
+    },
+    "581bdadf775b": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1283 lockBreakFx()",
+      "kit": "b6354ddb41"
+    },
+    "660fc4fa2af3": {
+      "at": "2026-10-28",
+      "what": "Pop.show L965 updateMax()"
+    },
+    "72721f396387": {
+      "at": "2026-10-28",
+      "what": "Notify.say L850 doMove()"
+    },
+    "775e1e81f4b9": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1034 resolveCell()",
+      "kit": "107f711963"
+    },
+    "83d58471573a": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L851 doMove()",
+      "kit": "2a9d89a944"
+    },
+    "99d1d1ae105c": {
+      "at": "2026-10-29",
+      "what": "Sound.clip L885 doMove()",
+      "kit": "b489f58708"
+    },
+    "9d0d1bc609e5": {
+      "at": "2026-10-28",
+      "what": "Pop.text L1200 mergeFx()"
+    },
+    "a68170093ac4": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L917 doMove()",
+      "kit": "96365f04af"
+    },
+    "b4005dd6b942": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1061 resolveCell()",
+      "kit": "0f9c26c007"
+    },
+    "c0ad03ef00dd": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1263 cometFx()",
+      "kit": "8f5811fcdc"
+    },
+    "caab51bee286": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L916 doMove()",
+      "kit": "edf5862dea"
+    },
+    "ce02071fe58c": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1051 resolveCell()",
+      "kit": "fbe2b7833c"
+    },
+    "e6b52b90ba73": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1208 shatterFx()",
+      "kit": "b6354ddb41"
+    },
+    "ec7998249058": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L856 doMove()",
+      "kit": "8b28656c43"
+    }
+  },
   "grudgeon": {
+    "0028bf6a7ce0": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L911 applyFx()",
+      "kit": "1a23d863c4"
+    },
+    "0578d36adf98": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1969 heroAct()",
+      "kit": "f90921cfe0"
+    },
     "0877ff7eb510": {
       "at": "2026-10-17",
       "what": "Pop.show L2006 heroAct()"
+    },
+    "0af40d4bbf3d": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L902 takeBonus()",
+      "kit": "9adf1b19ef"
+    },
+    "0bdd9c7980ee": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3809 heroCard()",
+      "kit": "71d41ff8be"
     },
     "0cba0be9e2b2": {
       "at": "2026-10-17",
       "what": "Pop.show L2140 foeAct()"
     },
+    "0d1786cc6397": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L892 takeBonus()",
+      "kit": "9adf1b19ef"
+    },
+    "0d1786cc6397#2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L906 takeBonus()",
+      "kit": "9adf1b19ef"
+    },
+    "0e320a7e340f": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L546 reveal()",
+      "kit": "39d2e1f34c"
+    },
+    "0f36eb4158a7": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2009 heroAct()",
+      "kit": "f913ccd951"
+    },
     "11a9c00431a5": {
       "at": "2026-10-17",
       "what": "Pop.show L2064 hitFoe()"
+    },
+    "13c87a12ad5d": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L656 takeAlly()",
+      "kit": "ee1a20e3a1"
     },
     "17086f2614c3": {
       "at": "2026-10-23",
@@ -1020,6 +1340,35 @@
       "at": "2026-10-17",
       "what": "Pop.show L1350 takeKey()"
     },
+    "1d06aef6c0bc": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L675 levelUp()",
+      "kit": "ee1a20e3a1"
+    },
+    "1ebd4fb32c8e": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L693 build()",
+      "kit": "f90921cfe0"
+    },
+    "1ebd4fb32c8e#2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L768 build()",
+      "kit": "f90921cfe0"
+    },
+    "207af827b427": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2066 hitFoe()",
+      "kit": "de001c2577"
+    },
+    "20e9c885b70a": {
+      "at": "2026-10-28",
+      "what": "Pop.show L624 learn()"
+    },
+    "21e017409a55": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1985 heroAct()",
+      "kit": "f913ccd951"
+    },
     "21eaa0c6f387": {
       "at": "2026-10-17",
       "what": "Pop.show L1988 heroAct()"
@@ -1028,9 +1377,19 @@
       "at": "2026-10-17",
       "what": "Pop.show L1764 planWith()"
     },
+    "28d54aad9ba5": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2070 hitFoe()",
+      "kit": "dad1ecf92a"
+    },
     "2bffaf8d256f": {
       "at": "2026-10-19",
       "what": "Pop.show L978 split()"
+    },
+    "2cf12e4153f0": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L625 learn()",
+      "kit": "c183e94307"
     },
     "2dfa15f509e2": {
       "at": "2026-10-17",
@@ -1040,6 +1399,11 @@
       "at": "2026-10-17",
       "what": "Pop.show L2152 foeAct()"
     },
+    "3599cb4c022e": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L897 takeBonus()",
+      "kit": "6e29a57ba2"
+    },
     "35cebd24253e": {
       "at": "2026-10-23",
       "what": "Notify.say L1129 refused()"
@@ -1047,6 +1411,16 @@
     "370ac1f222a8": {
       "at": "2026-10-16",
       "what": "Notify.say L766 build()"
+    },
+    "39a06b030d95": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2069 hitFoe()",
+      "kit": "dad1ecf92a"
+    },
+    "3c1746687a86": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1922 counter()",
+      "kit": "bb08b284e0"
     },
     "3c23a8b39be5": {
       "at": "2026-10-17",
@@ -1056,17 +1430,23 @@
       "at": "2026-10-23",
       "what": "Notify.say L4308 onDown()"
     },
-    "439141c44816": {
-      "at": "2026-10-17",
-      "what": "Pop.show L1449 startCombat()"
-    },
     "44207bea2c57": {
       "at": "2026-10-17",
       "what": "Notify.say L1968 heroAct()"
     },
+    "447ae14d9f53": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4306 onDown()",
+      "kit": "71d41ff8be"
+    },
     "4528e8adf225": {
       "at": "2026-10-17",
       "what": "Pop.show L2043 heroAct()"
+    },
+    "47c448235a40": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L773 build()",
+      "kit": "9f9928ae3e"
     },
     "496bf9b3a5ce": {
       "at": "2026-10-23",
@@ -1080,6 +1460,11 @@
       "at": "2026-10-17",
       "what": "Pop.text L1920 counter()"
     },
+    "57e65895767c": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3689 fightTap()",
+      "kit": "71d41ff8be"
+    },
     "6046a1829765": {
       "at": "2026-10-17",
       "what": "Pop.show L2148 foeAct()"
@@ -1088,6 +1473,15 @@
       "at": "2026-10-19",
       "what": "Notify.say L2201 join()"
     },
+    "619ded0d66b3": {
+      "at": "2026-10-28",
+      "what": "Pop.show L2141 heroAct()"
+    },
+    "63b2ccd7e8bd": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L978 split()",
+      "kit": "bfd1b79be1"
+    },
     "6802c19487cc": {
       "at": "2026-10-17",
       "what": "Pop.show L1662 action()"
@@ -1095,10 +1489,6 @@
     "6ae34526909b": {
       "at": "2026-10-17",
       "what": "Notify.say L858 choose()"
-    },
-    "6c64ace0f68d": {
-      "at": "2026-10-17",
-      "what": "Pop.show L1447 startCombat()"
     },
     "6e2669dc20f1": {
       "at": "2026-10-17",
@@ -1116,6 +1506,16 @@
       "at": "2026-10-17",
       "what": "Pop.show L1892 onHit()"
     },
+    "7357bd55cb79": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2454 aimScroll()",
+      "kit": "f90921cfe0"
+    },
+    "75c3b296ad6e": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1456 takeKey()",
+      "kit": "c183e94307"
+    },
     "761ce867e0e3": {
       "at": "2026-10-17",
       "what": "Notify.say L2441 aimScroll()"
@@ -1124,6 +1524,11 @@
       "at": "2026-10-19",
       "what": "Pop.show L986 merge()"
     },
+    "78197804d6e2": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1115 burn()",
+      "kit": "1a23d863c4"
+    },
     "78cf22a6e947": {
       "at": "2026-10-17",
       "what": "Pop.show L2041 heroAct()"
@@ -1131,6 +1536,11 @@
     "7b0b8e697430": {
       "at": "2026-10-17",
       "what": "Pop.show L905 takeBonus()"
+    },
+    "7baec927dd26": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2405 select()",
+      "kit": "71d41ff8be"
     },
     "7c3396faf9a6": {
       "at": "2026-10-19",
@@ -1144,17 +1554,52 @@
       "at": "2026-10-17",
       "what": "Pop.show L1720 action()"
     },
+    "7eb47b93097c": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L910 takeBonus()",
+      "kit": "9adf1b19ef"
+    },
     "7f0940b628c6": {
       "at": "2026-10-17",
       "what": "Pop.show L887 takeBonus()"
+    },
+    "7f53fafcfc94": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3769 foeCard()",
+      "kit": "71d41ff8be"
     },
     "81463fd9206e": {
       "at": "2026-10-17",
       "what": "Pop.show L811 build()"
     },
+    "830f1649562b": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L860 openEvent()",
+      "kit": "21591087e8"
+    },
+    "8411d13868c3": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L2154 heroAct()",
+      "kit": "c183e94307"
+    },
     "86d6f02d55ca": {
       "at": "2026-10-17",
       "what": "Pop.text L2020 heroAct()"
+    },
+    "884ad07332f4": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1126 refused()",
+      "kit": "f90921cfe0"
+    },
+    "884ad07332f4#2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1130 refused()",
+      "kit": "f90921cfe0"
+    },
+    "884ad07332f4#3": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1135 refused()",
+      "kit": "f90921cfe0"
     },
     "88dc54b585f7": {
       "at": "2026-10-19",
@@ -1168,6 +1613,16 @@
       "at": "2026-10-17",
       "what": "Pop.show L2042 heroAct()"
     },
+    "9077b9970309": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2097 ruleAct()",
+      "kit": "f913ccd951"
+    },
+    "90db1ee7d2fb": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4321 propose()",
+      "kit": "71d41ff8be"
+    },
     "911f7184e27d": {
       "at": "2026-10-17",
       "what": "Pop.show L2007 heroAct()"
@@ -1180,6 +1635,16 @@
       "at": "2026-10-17",
       "what": "Notify.say L2393 select()"
     },
+    "93d7af6397df": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2221 win()",
+      "kit": "5eba0838ba"
+    },
+    "99912cf30e7d": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1239 stepDone()",
+      "kit": "bfd1b79be1"
+    },
     "9c72456efd4e": {
       "at": "2026-10-17",
       "what": "Pop.show L1701 action()"
@@ -1188,33 +1653,109 @@
       "at": "2026-10-17",
       "what": "Notify.say L1266 ambush()"
     },
-    "a99c1401cfd1": {
-      "at": "2026-10-17",
-      "what": "Pop.show L2030 heroAct()"
+    "a15239f4a166": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2237 letGo()",
+      "kit": "21591087e8"
+    },
+    "a9c82133fb49": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L4531 takeExit()",
+      "kit": "c183e94307"
+    },
+    "aadbcb73ff2e": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1442 startCombat()",
+      "kit": "a22b11f131"
+    },
+    "abee6ce6f1bb": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L4311 onDown()",
+      "kit": "71d41ff8be"
+    },
+    "b0597f0d9e13": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1923 counter()",
+      "kit": "8599ed05d6"
+    },
+    "b1c37bcd0c76": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1994 heroAct()",
+      "kit": "f913ccd951"
+    },
+    "b1c37bcd0c76#2": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2030 heroAct()",
+      "kit": "f913ccd951"
+    },
+    "b2bb3f20e21d": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2015 heroAct()",
+      "kit": "9adf1b19ef"
     },
     "b39aedf8e1d8": {
       "at": "2026-10-17",
       "what": "Pop.show L1743 action()"
     },
+    "b4e88ee9b8ad": {
+      "at": "2026-10-28",
+      "what": "Pop.show L655 takeAlly()"
+    },
     "b5467f10aff7": {
       "at": "2026-10-17",
       "what": "Pop.show L1983 heroAct()"
+    },
+    "b66ec097e9a9": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1990 heroAct()",
+      "kit": "9adf1b19ef"
+    },
+    "b95b8db45660": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2266 lose()",
+      "kit": "8599ed05d6"
     },
     "bb061e5a7600": {
       "at": "2026-10-17",
       "what": "Pop.show L2145 foeAct()"
     },
+    "bb2aae4ef071": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2068 hitFoe()",
+      "kit": "072ee5411a"
+    },
     "c294023995ec": {
       "at": "2026-10-17",
       "what": "Pop.show L1733 live()"
+    },
+    "c5211c7de62b": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2151 foeAct()",
+      "kit": "8599ed05d6"
     },
     "c5883dda9963": {
       "at": "2026-10-17",
       "what": "Pop.text L1004 burn()"
     },
-    "c5f753cd8cf1": {
-      "at": "2026-10-17",
-      "what": "Notify.say L867 choose()"
+    "cdb86141c42c": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2205 join()",
+      "kit": "bfd1b79be1"
+    },
+    "ce50bdf02e1b": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L862 choose()",
+      "kit": "f90921cfe0"
+    },
+    "cf7605e5c53a": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2067 hitFoe()",
+      "kit": "072ee5411a"
+    },
+    "d17b6e16bada": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2128 foeAct()",
+      "kit": "107f711963"
     },
     "d5d33b931e8a": {
       "at": "2026-10-17",
@@ -1228,6 +1769,11 @@
       "at": "2026-10-16",
       "what": "Notify.say L765 build()"
     },
+    "da8d396f1840": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L828 build()",
+      "kit": "c183e94307"
+    },
     "df19b36563f0": {
       "at": "2026-10-17",
       "what": "Pop.show L1820 action()"
@@ -1240,6 +1786,21 @@
       "at": "2026-10-17",
       "what": "Pop.show L1783 planWith()"
     },
+    "e3ccc2793808": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1374 ambush()",
+      "kit": "1a23d863c4"
+    },
+    "e508ff80d854": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L1335 stepDone()",
+      "kit": "c183e94307"
+    },
+    "e67fc77e9964": {
+      "at": "2026-10-28",
+      "what": "Sound.clip L907 applyFx()",
+      "kit": "1a23d863c4"
+    },
     "e86b738ab742": {
       "at": "2026-10-17",
       "what": "Pop.show L897 takeBonus()"
@@ -1248,10 +1809,6 @@
       "at": "2026-10-17",
       "what": "Pop.show L2122 foeAct()"
     },
-    "e9e516c844d0": {
-      "at": "2026-10-23",
-      "what": "Notify.say L693 build()"
-    },
     "ec513245f7b7": {
       "at": "2026-10-17",
       "what": "Notify.say L1131 refused()"
@@ -1259,6 +1816,16 @@
     "ee4b7f519179": {
       "at": "2026-10-17",
       "what": "Pop.show L2113 foeAct()"
+    },
+    "f0f431d92331": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2160 foeAct()",
+      "kit": "bb08b284e0"
+    },
+    "f1ec40ad0110": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L2403 select()",
+      "kit": "f90921cfe0"
     },
     "f50837d91f70": {
       "at": "2026-10-23",
@@ -1856,6 +2423,10 @@
       "at": "2026-10-14",
       "what": "Pop.show L2488 breakCombo()"
     },
+    "879dea362dab": {
+      "at": "2026-10-25",
+      "what": "Notify.say L3707 startOvertime()"
+    },
     "9afa324e9ca4": {
       "at": "2026-10-21",
       "what": "Sound.clip L2002 explode()",
@@ -1870,10 +2441,6 @@
       "at": "2026-10-13",
       "what": "Pop.show L2747 supernova()"
     },
-    "abbea34bde2a": {
-      "at": "2026-10-19",
-      "what": "Notify.say L3728 startOvertime()"
-    },
     "b016eee56913": {
       "at": "2026-10-14",
       "what": "Pop.show L2304 capture()"
@@ -1882,6 +2449,10 @@
       "at": "2026-10-21",
       "what": "Sound.clip L2304 capture()",
       "kit": "edf5862dea"
+    },
+    "c249813e98d9": {
+      "at": "2026-10-25",
+      "what": "Pop.show L2493 breakCombo()"
     },
     "cef52c27c299": {
       "at": "2026-10-22",
@@ -1920,10 +2491,6 @@
     "f11a63b50c61": {
       "at": "2026-10-14",
       "what": "Pop.show L2535 startReaction()"
-    },
-    "f1b8064264c4": {
-      "at": "2026-10-14",
-      "what": "Pop.show L2481 breakCombo()"
     },
     "f675089be060": {
       "at": "2026-10-21",
@@ -2368,14 +2935,14 @@
       "what": "Sound.cue L1119 nextTip()",
       "kit": "39d2e1f34c"
     },
+    "0cad8ab80cef": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L1745 equip()",
+      "kit": "0ab042e336"
+    },
     "19307838ebd5": {
       "at": "2026-10-19",
       "what": "Pop.show L1293 useCall()"
-    },
-    "24871c8b2566": {
-      "at": "2026-10-21",
-      "what": "Sound.cue L2455 landStep()",
-      "kit": "edf5862dea"
     },
     "319e359fea74": {
       "at": "2026-10-16",
@@ -2389,65 +2956,150 @@
       "at": "2026-10-16",
       "what": "Pop.show L1916 loseLife()"
     },
+    "4a1648764934": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2498 landStep()",
+      "kit": "9f9928ae3e"
+    },
     "4a52c5268bab": {
       "at": "2026-10-16",
       "what": "Pop.show L2039 settle()"
+    },
+    "516dca63cd4f": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2595 tickTally()",
+      "kit": "9f9928ae3e"
     },
     "5358a6a2e55b": {
       "at": "2026-10-21",
       "what": "Sound.cue L1153 jokerShow()",
       "kit": "39d2e1f34c"
     },
-    "5ae2a63309bb": {
-      "at": "2026-10-21",
-      "what": "Sound.cue L2352 update()",
-      "kit": "edf5862dea"
+    "53ffc1397259": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2183 settle()",
+      "kit": "96365f04af"
+    },
+    "55a1bd97b446": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2167 settle()",
+      "kit": "f836bb5299"
     },
     "6a44e29d3a39": {
       "at": "2026-10-16",
       "what": "Notify.say L2205 onUp()"
     },
-    "6f9cd020f2b0": {
-      "at": "2026-10-21",
-      "what": "Sound.cue L2463 landStep()",
-      "kit": "edf5862dea"
-    },
     "7c8c264eb937": {
       "at": "2026-10-16",
       "what": "Pop.show L2041 settle()"
+    },
+    "83d4f06602c1": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2506 landStep()",
+      "kit": "9f9928ae3e"
+    },
+    "90901d9e4a14": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2573 tickTally()",
+      "kit": "926a0acc87"
+    },
+    "a07ab70e5ff1": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2483 fireStep()",
+      "kit": "926a0acc87"
+    },
+    "a4a1e49429d0": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2587 tickTally()",
+      "kit": "96365f04af"
     },
     "a7515fbdb2d4": {
       "at": "2026-10-19",
       "what": "Pop.show L1240 useCompass()"
     },
+    "a97ffd7075f4": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2395 update()",
+      "kit": "9f9928ae3e"
+    },
+    "aa5c7ffdc4b4": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2518 opDone()",
+      "kit": "0ab042e336"
+    },
     "ac7fb06d4134": {
       "at": "2026-10-17",
       "what": "Notify.say L1212 useCompass()"
+    },
+    "aea71799dc2a": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L1220 spent()",
+      "kit": "debd0f5ba1"
     },
     "ba599df1e245": {
       "at": "2026-10-16",
       "what": "Notify.say L1584 openPick()"
     },
-    "bc898e1e93d5": {
-      "at": "2026-10-21",
-      "what": "Sound.cue L2552 tickTally()",
-      "kit": "edf5862dea"
+    "bc6778652919": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2109 decide()",
+      "kit": "2d5c728892"
+    },
+    "be340ba53d0a": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2478 fireStep()",
+      "kit": "6e29a57ba2"
+    },
+    "c9026cfd4563": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2046 nextCard()",
+      "kit": "926a0acc87"
+    },
+    "c9b31f2facf4": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2087 decide()",
+      "kit": "6e29a57ba2"
+    },
+    "d5bc9eb37039": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2092 decide()",
+      "kit": "0e6ce147ce"
     },
     "d6bcc82517c3": {
       "at": "2026-10-15",
       "what": "Pop.show L2020 settle()"
     },
+    "d948a6029369": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2161 settle()",
+      "kit": "8599ed05d6"
+    },
     "ec78ec0be923": {
       "at": "2026-10-16",
       "what": "Pop.text L2248 update()"
+    },
+    "ec7be4810713": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2030 seedHand()",
+      "kit": "926a0acc87"
     },
     "ee518f8286cf": {
       "at": "2026-10-19",
       "what": "Pop.show L1749 equip()"
     },
+    "f794b36c6315": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L2558 tickTally()",
+      "kit": "2d5c728892"
+    },
     "fb3e96c1cb41": {
       "at": "2026-10-19",
       "what": "Pop.show L2066 decide()"
+    },
+    "fc0be4f6dd20": {
+      "at": "2026-10-26",
+      "what": "Sound.cue L1667 showPick()",
+      "kit": "0ec33386bb"
     }
   },
   "spinshock": {
@@ -2628,6 +3280,16 @@
       "at": "2026-10-14",
       "what": "Pop.show L1667 resolve()"
     },
+    "042b79a9e057": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1641 resolve()",
+      "kit": "8b28656c43"
+    },
+    "050661e40513": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3384 finish()",
+      "kit": "f47de51ea3"
+    },
     "071bd4c32a38": {
       "at": "2026-10-14",
       "what": "Pop.show L1664 resolve()"
@@ -2649,10 +3311,34 @@
       "at": "2026-10-13",
       "what": "Pop.show L3369 finish()"
     },
+    "166549b404f0": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1594 resolve()",
+      "kit": "a93af4ae5e"
+    },
+    "16c007dcbd30": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1518 objectHit()",
+      "kit": "dad1ecf92a"
+    },
+    "20ed1b617633": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1693 resolve()",
+      "kit": "dad1ecf92a"
+    },
+    "22724a8421d7": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1522 objectHit()",
+      "kit": "dad1ecf92a"
+    },
     "2843eccaf802": {
       "at": "2026-10-22",
       "what": "Sound.clip L1141 onDown()",
       "kit": "b175358740"
+    },
+    "2b09ea9ad998": {
+      "at": "2026-10-28",
+      "what": "Notify.say L1493 fall()"
     },
     "2b89798e6335": {
       "at": "2026-10-19",
@@ -2662,9 +3348,18 @@
       "at": "2026-10-13",
       "what": "Pop.show L1690 resolve()"
     },
+    "301a17a65827": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1500 attack()",
+      "kit": "2d5c728892"
+    },
     "348c13a7c1bf": {
       "at": "2026-10-14",
       "what": "Pop.show L1609 resolve()"
+    },
+    "37c0663ba8ed": {
+      "at": "2026-10-28",
+      "what": "Notify.say L1497 fall()"
     },
     "383f279cbf7d": {
       "at": "2026-10-19",
@@ -2682,6 +3377,21 @@
       "at": "2026-10-19",
       "what": "Notify.say L1152 onDown()"
     },
+    "4f5843997e01": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1653 resolve()",
+      "kit": "bb08b284e0"
+    },
+    "55fb34681922": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L3386 finish()",
+      "kit": "8599ed05d6"
+    },
+    "5698c28329d0": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1700 resolve()",
+      "kit": "bb08b284e0"
+    },
     "571636ec915d": {
       "at": "2026-10-19",
       "what": "Notify.say L1129 onDown()"
@@ -2697,6 +3407,11 @@
     "65c3c5ca86d9": {
       "at": "2026-10-19",
       "what": "Notify.say L1673 resolve()"
+    },
+    "6c5f01401e85": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1714 resolve()",
+      "kit": "926a0acc87"
     },
     "6d13978e8f39": {
       "at": "2026-10-19",
@@ -2716,9 +3431,24 @@
       "at": "2026-10-13",
       "what": "Pop.show L3374 finish()"
     },
+    "862535f96c16": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1604 resolve()",
+      "kit": "8b28656c43"
+    },
     "8b27a294cb34": {
       "at": "2026-10-19",
       "what": "Notify.say L1465 wound()"
+    },
+    "8c8bf5089246": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1551 spellLands()",
+      "kit": "2d5c728892"
+    },
+    "94c9b02934fe": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1993 update()",
+      "kit": "2d5c728892"
     },
     "9a0a352bffd7": {
       "at": "2026-10-14",
@@ -2755,9 +3485,39 @@
       "at": "2026-10-14",
       "what": "Pop.show L1669 resolve()"
     },
+    "d1673fbe3040": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1515 objectHit()",
+      "kit": "2d5c728892"
+    },
+    "d3e2c185c0af": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1987 update()",
+      "kit": "39d2e1f34c"
+    },
+    "e823dc65c5cb": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1585 resolve()",
+      "kit": "39d2e1f34c"
+    },
     "f333b13f5a0f": {
       "at": "2026-10-14",
       "what": "Pop.show L1587 resolve()"
+    },
+    "f4e651a3f41a": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1617 resolve()",
+      "kit": "8b28656c43"
+    },
+    "f5f5b43708b6": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1938 marchStep()",
+      "kit": "2d5c728892"
+    },
+    "f6a87d0c3431": {
+      "at": "2026-10-26",
+      "what": "Sound.clip L1629 resolve()",
+      "kit": "d4ed36e835"
     }
   },
   "template": {

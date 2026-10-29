@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.25.6",
+  "version": "0.26.2",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -248,17 +248,17 @@
     }
   },
   "sfx": {
-    "win": "empty",
-    "tie": "empty",
-    "lose": "empty",
+    "win": "move/fast",
+    "tie": "malus/impactmining",
+    "lose": "burst/hitthud",
     "warn": "warn/marimbataps",
-    "trap": "empty",
-    "clash": "empty",
-    "flag": "empty",
-    "victory": "empty",
-    "defeat": "empty",
+    "trap": "crash/explosion",
+    "clash": "card/cardplace03",
+    "flag": "goal/harprollup",
+    "victory": "bonus/jinglehit",
+    "defeat": "miss/lost",
     "pick": "card/cardfan",
-    "place": "empty",
+    "place": "card/cardplace",
     "flip": "card/bookflip"
   },
   "copy": {
@@ -389,7 +389,7 @@
           "Precise!": "Précis !",
           "Sapper": "Sapeur",
           "Score": "Score",
-          "Scout": "Eclaireur",
+          "Scout": "Éclaireur",
           "Sergeant": "Sergent",
           "Slot locked": "Emplacement verrouillé",
           "Unlocks at level": "Débloqué au stage",
@@ -398,7 +398,7 @@
           "Still wounded": "Encore blessée",
           "Time": "Temps",
           "Time's up!": "Temps écoulé !",
-          "To battle": "A l'assaut",
+          "To battle": "À l'assaut",
           "Trap": "Piège",
           "Trap cleared": "Piège désamorcé",
           "Trap!": "Piège !",
@@ -412,7 +412,7 @@
           "Common": "Commun",
           "Uncommon": "Peu commun",
           "Rare": "Rare",
-          "Epic": "Epique",
+          "Epic": "Épique",
           "Legendary": "Légendaire",
           "Infirmary": "Infirmerie",
           "Prison": "Prison",
@@ -429,27 +429,27 @@
           "No wounds": "Aucune blessure",
           "Prisoner taken": "Prisonnier capturé",
           "Unscathed": "Indemne",
-          "Straw man": "Epouvantail",
+          "Straw man": "Épouvantail",
           "Wooden fence": "Barrière de bois",
           "Rock": "Rocher",
           "Forest": "Forêt",
           "Skull": "Crâne",
           "Book": "Livre",
           "Object": "Objet",
-          "Straw man!": "Epouvantail !",
+          "Straw man!": "Épouvantail !",
           "Fence!": "Barrière !",
           "Rock!": "Rocher !",
           "Lost in the forest": "Perdu en forêt",
-          "Stunned!": "Etourdi !",
+          "Stunned!": "Étourdi !",
           "Bewitched!": "Ensorcelé !",
-          "Straw man torn": "Epouvantail déchiré",
+          "Straw man torn": "Épouvantail déchiré",
           "Fence chopped": "Barrière abattue",
           "Rock smashed": "Rocher brisé",
           "Forest crossed": "Forêt traversée",
           "Skull shattered": "Crâne brisé",
           "Book burnt": "Livre brûlé",
           "Out of the battle": "Hors de combat",
-          "Stunned for the battle": "Etourdi jusqu'à la fin de la bataille",
+          "Stunned for the battle": "Étourdi jusqu'à la fin de la bataille",
           "The spell hits no one": "Le sort ne frappe personne",
           "An ally falls": "Un allié tombe",
           "Struck down by an ally": "Abattu par un allié",
@@ -479,7 +479,7 @@
           "Take a <b>prisoner</b>": "Fais un <b>prisonnier</b>",
           "Wounds": "Blessures",
           "Left standing": "Laissé debout",
-          "A draw": "Egalité",
+          "A draw": "Égalité",
           "The hand": "La main",
           "The camp moves": "Le camp bouge",
           "vs": "vs",
@@ -488,7 +488,7 @@
           "The higher grade wins the fight and takes the cell.": "Le plus haut grade gagne le combat et prend la case.",
           "The winner goes back under the deck. The loser is out for the rest of the battle.": "Le vainqueur repasse sous le paquet. Le vaincu est perdu pour le reste de la bataille.",
           "The tier decides": "Le rang tranche",
-          "Same grade: the better tier wins.": "A grade égal, le meilleur rang l'emporte.",
+          "Same grade: the better tier wins.": "À grade égal, le meilleur rang l'emporte.",
           "After the battle, the wounded card rests in the infirmary. The wider the tier gap, the longer the stay.": "Après la bataille, la carte blessée se repose à l'infirmerie. Plus l'écart de rang est grand, plus le séjour est long.",
           "Beat a lower tier and the enemy is left standing, ready to be captured.": "Bats un rang inférieur et l'ennemi reste debout, prêt à être capturé.",
           "Win the battle, and you can take one of the enemies left standing prisoner.": "Gagne la bataille et tu pourras faire prisonnier un des ennemis restés debout.",
@@ -539,7 +539,7 @@
           "The flag never stands on the front row.": "Le drapeau n'est jamais en première ligne.",
           "New in the camps: {list}.": "Nouveau dans les camps : {list}.",
           "Clear this biome to unlock for your defense: {list}.": "Termine ce biome pour débloquer en défense : {list}.",
-          "Tier gap of {n}": "Ecart de rang de {n}",
+          "Tier gap of {n}": "Écart de rang de {n}",
           "The deck": "Le deck",
           "A wounded card, or one away on a mission, stays in the deck but sits the battle out.": "Une carte blessée ou partie en mission reste dans le deck, mais ne combat pas.",
           "Empty slots are filled with conscripts, who never go to the infirmary.": "Les places vides sont comblées par des conscrits, qui ne vont jamais à l'infirmerie.",
@@ -622,10 +622,18 @@
           "Every officer has a trade, written on the back of the card. Each trade suits one post.": "Chaque officier a un métier, inscrit au dos de sa carte. Chaque métier convient à un seul poste.",
           "Validate your defense. The red army always attacks the last one you validated.": "Valide ta défense. L'armée rouge attaque toujours la dernière validée.",
           "A card on guard stays in your deck. The bottom row is the front.": "Une carte de garde reste dans ton deck. La ligne du bas est le front.",
-          "The raid is led by a copy of your own army, with the rules of a battle.": "L'assaut est mené par une copie de ta propre armée, avec les règles d'une bataille."
+          "The raid is led by a copy of your own army, with the rules of a battle.": "L'assaut est mené par une copie de ta propre armée, avec les règles d'une bataille.",
+          "To the last card": "Jusqu'à la dernière carte",
+          "Surrender": "Se rendre",
+          "1 card handed over": "1 carte livrée",
+          "Each card that falls after": "Chaque carte qui tombe ensuite",
+          "Lost 1 time in 2": "Perdue 1 fois sur 2",
+          "When the battle can no longer be won, the enemy commander offers your surrender.": "Quand la bataille ne peut plus être gagnée, le commandant ennemi te propose de te rendre.",
+          "Surrender, and you hand him one card of your choice. The wounds already taken still count.": "Si tu te rends, tu lui livres une carte de ton choix. Les blessures déjà reçues comptent toujours.",
+          "Fight on, and every card that falls is lost or wounded.": "Si tu continues, chaque carte qui tombe est perdue ou blessée."
         },
         "helpRules": [
-          "Chaque carte a un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le plus haut grade gagne. A grade égal, le meilleur rang l'emporte.",
+          "Chaque carte a un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le plus haut grade gagne. À grade égal, le meilleur rang l'emporte.",
           "Bats un meilleur rang et ta carte est <b>blessée</b>. Bats un rang inférieur et l'ennemi reste <b>debout</b> : tu peux le faire prisonnier.",
           "L'<b>espion</b> tue le maréchal, le <b>sapeur</b> désamorce les pièges, l'<b>éclaireur</b> révèle une carte et revient."
         ]
@@ -1881,7 +1889,7 @@
             },
             "lose": {
               "en": "Halfway up, the mules sat down in the snow and would not budge. {leader} ordered the squad to push, and pushing a sitting mule up a mountain is harder than it sounds, as somebody's back can confirm.",
-              "fr": "A mi-pente, les mules se sont assises dans la neige et n'ont plus bougé. {leader} a ordonné de pousser. Pousser une mule assise jusqu'en haut d'une montagne est plus dur qu'il n'y paraît : le dos de quelqu'un peut en témoigner."
+              "fr": "À mi-pente, les mules se sont assises dans la neige et n'ont plus bougé. {leader} a ordonné de pousser. Pousser une mule assise jusqu'en haut d'une montagne est plus dur qu'il n'y paraît : le dos de quelqu'un peut en témoigner."
             }
           },
           {
@@ -2357,7 +2365,7 @@
             },
             "brief": {
               "en": "Every full moon a cart of silver leaves the red treasury for the front, drawn by two sleepy oxen and guarded by four even sleepier goblins. The full moon is tonight. You know what to do.",
-              "fr": "A chaque pleine lune, une charrette d'argent quitte le trésor rouge pour le front, tirée par deux bœufs somnolents et gardée par quatre gobelins plus somnolents encore. La pleine lune, c'est ce soir. Tu sais ce qu'il te reste à faire."
+              "fr": "À chaque pleine lune, une charrette d'argent quitte le trésor rouge pour le front, tirée par deux bœufs somnolents et gardée par quatre gobelins plus somnolents encore. La pleine lune, c'est ce soir. Tu sais ce qu'il te reste à faire."
             },
             "win": {
               "en": "{leader} swapped the oxen for our own without waking anyone, and the cart rolled into the blue camp with its guards still snoring on top. They were sent home at dawn; the silver, and a ticket found under the seat, stayed.",
@@ -2846,7 +2854,7 @@
             },
             "lose": {
               "en": "The stomping dance lasted nine hours and flattened a good many blue toes. One of ours danced so well that the bride's cousin proposed on the spot, and the answer, to everyone's surprise, was yes.",
-              "fr": "La danse du piétinement a duré neuf heures et écrasé bon nombre d'orteils bleus. L'un des nôtres a si bien dansé que le cousin de la mariée l'a demandé en mariage sur-le-champ. A la surprise générale, la réponse a été oui."
+              "fr": "La danse du piétinement a duré neuf heures et écrasé bon nombre d'orteils bleus. L'un des nôtres a si bien dansé que le cousin de la mariée l'a demandé en mariage sur-le-champ. À la surprise générale, la réponse a été oui."
             }
           },
           {
@@ -2879,7 +2887,7 @@
             },
             "win": {
               "en": "{leader} solved the three riddles, picked six locks and found the seventh had never been closed. Inside, among a great many prize ribbons, lay a neat stack of the fair's golden tickets.",
-              "fr": "{leader} a résolu les trois énigmes, crocheté six serrures et découvert que la septième n'avait jamais été fermée. A l'intérieur, parmi une foule de rubans de concours, attendait une pile de tickets dorés de la foire."
+              "fr": "{leader} a résolu les trois énigmes, crocheté six serrures et découvert que la septième n'avait jamais été fermée. À l'intérieur, parmi une foule de rubans de concours, attendait une pile de tickets dorés de la foire."
             },
             "lose": {
               "en": "{leader} took so long over the third riddle that Tuesday ended, and the door shut on the squad halfway through. A very amused Penny let them out on Wednesday, stiff, sore and slightly squashed.",
@@ -3199,7 +3207,7 @@
             },
             "win": {
               "en": "The dragon was cloth and wicker over twenty goblins, and it fell apart when {leader} tickled its front legs. Inside lay the whole hoard of tribute and, on top of the hoard, a super ticket.",
-              "fr": "Le dragon n'était que toile et osier, porté par vingt gobelins. Il s'est effondré quand {leader} a chatouillé ses pattes avant. A l'intérieur se trouvait tout le tribut et, posé dessus, un super ticket."
+              "fr": "Le dragon n'était que toile et osier, porté par vingt gobelins. Il s'est effondré quand {leader} a chatouillé ses pattes avant. À l'intérieur se trouvait tout le tribut et, posé dessus, un super ticket."
             },
             "lose": {
               "en": "The dragon was cloth and wicker, but its belly held a real furnace. {leader} ordered the retreat in scorched boots, and some of ours were so impressed that they joined the crew as puppeteers.",
@@ -3521,8 +3529,8 @@
           "post": "drill",
           "name": {
             "en": "Horse master",
-            "fr": "Ecuyer",
-            "frF": "Ecuyère"
+            "fr": "Écuyer",
+            "frF": "Écuyère"
           }
         },
         {
@@ -4620,7 +4628,7 @@
           "desc": "old man with a huge white moustache and round cracked goggles, legendary golden armoured sapper suit with blue plates, cradling a glowing blue bomb like a pet, sparks dancing around him",
           "lore": {
             "en": "Gus has been blown up so many times that the bombs now respect him. At seventy-two he defuses traps with his eyes shut, often in the middle of his nap.",
-            "fr": "Gus a sauté tant de fois que les bombes le respectent désormais. A soixante-douze ans, il désamorce les pièges les yeux fermés. Souvent pendant sa sieste."
+            "fr": "Gus a sauté tant de fois que les bombes le respectent désormais. À soixante-douze ans, il désamorce les pièges les yeux fermés. Souvent pendant sa sieste."
           }
         },
         {
@@ -4665,7 +4673,7 @@
           "desc": "broad-shouldered man with black hair under a blue tricorn, a halberd in one hand and a lion shield in the other, a torn straw dummy at his feet",
           "lore": {
             "en": "Hal once spent a whole night guarding a straw man, waiting for it to move first. At dawn he cut it in half, out of principle.",
-            "fr": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. A l'aube, il l'a coupé en deux, par principe."
+            "fr": "Hal a passé une nuit entière à surveiller un épouvantail en attendant qu'il bouge le premier. À l'aube, il l'a coupé en deux, par principe."
           }
         },
         {
@@ -4980,7 +4988,7 @@
           "desc": "very old man with a white beard down to his belt, cloak of blue and gold embroidered with a star map, a legendary golden compass floating and glowing above his palm, a staff topped with a star",
           "lore": {
             "en": "Magnus North is said to have drawn the first map of the world, then walked it to check. At eighty-two, the forests still part before him out of respect.",
-            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. A quatre-vingt-deux ans, il voit encore les forêts s'écarter devant lui par respect."
+            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. À quatre-vingt-deux ans, il voit encore les forêts s'écarter devant lui par respect."
           }
         },
         {
@@ -5070,7 +5078,7 @@
           "desc": "gigantic old man, bald with a braided white beard, legendary golden gauntlets glowing blue, blue lion cape, arms crossed, broken skulls at his feet",
           "lore": {
             "en": "Noah Fear has never been afraid of anything: not dragons, not ghosts, not even his mother-in-law. At sixty-nine, his fist is still the only key the Skull Gate obeys.",
-            "fr": "Noah Fear n'a jamais eu peur de rien : ni des dragons, ni des fantômes, ni même de sa belle-mère. A soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
+            "fr": "Noah Fear n'a jamais eu peur de rien : ni des dragons, ni des fantômes, ni même de sa belle-mère. À soixante-neuf ans, son poing reste la seule clé à laquelle obéit la porte des Crânes."
           }
         },
         {
@@ -5520,7 +5528,7 @@
           "desc": "ancient imp with a huge white moustache and a monocle, legendary golden and crimson armour, sitting on a giant glowing red bomb like a throne, holding a lit fuse like a cigar",
           "lore": {
             "en": "Baron Von Kaboom has blown up more bridges than the kingdom ever built. At eighty-four he lights his pipe on his own fuses and has never once flinched.",
-            "fr": "Le baron Von Kaboom a fait sauter plus de ponts que le royaume n'en a construit. A quatre-vingt-quatre ans, il allume sa pipe sur ses propres mèches sans jamais sourciller."
+            "fr": "Le baron Von Kaboom a fait sauter plus de ponts que le royaume n'en a construit. À quatre-vingt-quatre ans, il allume sa pipe sur ses propres mèches sans jamais sourciller."
           }
         },
         {
@@ -5970,7 +5978,7 @@
           "desc": "gigantic ancient imp with a long white beard braided with small bones, legendary gold and crimson armour, colossal fiery gauntlets, a heap of broken skulls behind him",
           "lore": {
             "en": "Dread Naught fears nothing, because he is what everything else fears. At eighty-eight he still opens the Skull Gate with a single knock.",
-            "fr": "Dread Naught ne craint rien, car c'est lui que tout le reste craint. A quatre-vingt-huit ans, il ouvre encore la porte des Crânes d'un seul coup de poing."
+            "fr": "Dread Naught ne craint rien, car c'est lui que tout le reste craint. À quatre-vingt-huit ans, il ouvre encore la porte des Crânes d'un seul coup de poing."
           }
         },
         {

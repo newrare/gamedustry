@@ -42,11 +42,17 @@ this file does not repeat.
 1. **The player's words, never the code's.** A hit is a *hit* / *dégât*, not
    a *bite*; armour is *armor* / *armure*, not *plates*; a gap is *a way
    through* / *un passage*, not *a gate*. One word per thing for the whole
-   game, the one its HUD and its callouts already use.
+   game, the one its HUD and its callouts already use. **Hits in a row are a
+   *combo* / *Combo*, not a *chain* / *chaîne***: the word players already
+   know (a "chain reaction", a thing that sets off another, is not that and
+   keeps its word). It applies to a game whose copy is not validated yet; a
+   game whose texts are all checked keeps the *chain* it was validated with.
 1. **One idea per sentence, in the order it is lived**: what warns you, then
    what to do. "A ring warns of the next lightning strike." — then the next
    sentence. No chain of colons; one colon at most, and only where a comma
-   or a full stop would not do.
+   or a full stop would not do. **No semicolon in the middle of a sentence**,
+   in either language: two ideas are two sentences, or one joined by a comma
+   or a word ("so", "but" / "donc", "mais").
 1. **Say what to DO when the rule allows it.** A warning reads as advice:
    "Quickly get clear of that side before you get bitten." / "Quitte vite ce
    côté pour ne pas te faire croquer." A bonus reads as an opportunity:
@@ -70,6 +76,13 @@ this file does not repeat.
    next to *tu*). A line typed in a hurry is where the faults hide: vipera's
    "Les murs repousse", "Les points comptes doubles", "avant que la lave
    jaillit" are the kind.
+1. **The English is British**: *colour*, *memorise*, *hypnotising*, *centre*,
+   *armour* — never the American spelling, in every game. House exceptions
+   to the casing rule, in English and in French: **"Game Over"** keeps its
+   two capitals, the way games write it, and **"Tap"**, **"Combo"**,
+   **"Boss"** and **"Timing"** may take a capital anywhere in a line ("Un
+   Tap allume…", "Le Combo multiplie…", "Impact du Boss", "Seul un Timing
+   parfait…") — never flagged, never lowered.
 1. **Do not churn.** A line that already obeys all of this stays as it is,
    byte for byte. Names (a card's, an officer's, a sticker's) are proper
    nouns and are not touched.

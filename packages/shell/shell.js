@@ -1557,7 +1557,11 @@
       for (i = 0; i < list.length; i++) {
         r = { mouse: list[i].mouse };
         // a key the bootstrap does not bind is a key that does nothing
-        if (CONFIG.keyboard !== false) r.keys = k === "swipe" && CONFIG.swipeUp ? ["left", "right", "up"] : list[i].keys;
+        if (CONFIG.keyboard !== false) {
+          r.keys = list[i].keys;
+          if (k === "swipe" && CONFIG.swipeUp) r.keys = r.keys.concat(["up"]);
+          if (k === "swipe" && CONFIG.swipeDown) r.keys = r.keys.concat(["down"]);
+        }
         out.push(r);
       }
       return out;

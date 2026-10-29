@@ -144,11 +144,10 @@ They follow their own rules on top of the ones above.
 - **Normal case.** A capital on the first letter and on a proper noun only.
   Never type a word in capitals ("Chaque TAP" is wrong): the motor's `upper()`
   shouts, and a capital loses its accent on screen.
-- **A capital letter carries no accent, in the source too**: *Evite*,
-  *Eliminé*, *Etoile*, *A toi*, *Ca accélère* (no cedilla either) — accents
-  only on lowercase letters (*Esquive les pièges*). The ligatures Œ and Æ are
-  letters, not accents: *Œuf* stays. Grammar is correct: *Trouve* (imperative, no `s`),
-  agreement checked.
+- **A capital letter keeps its accent in the source**: *Évite*, *Éliminé*,
+  *Étoile*, *À toi*, *Ça accélère* — never *Evite* or *A toi*. Only `upper()`
+  takes the accents off, on screen and nowhere else. Grammar is correct:
+  *Trouve* (imperative, no `s`), agreement checked.
 - **Markup is preserved one-to-one.** Every `<b>` / `<b class="w-…">` of the
   English is kept, on the French word that carries the same meaning (the
   intro's classes drive its colours and its demo).
@@ -157,6 +156,11 @@ They follow their own rules on top of the ones above.
   (`node tools/lab/scan-text.mjs <slug>` prints `file:line`) before adapting
   one. Keep the leading/trailing spaces of the key (`" in "` → `" dans "`), and
   check the assembled line reads as French: `"Top " + 10 + " in " + 84 + "M"`.
+- **"Tap", "Combo", "Boss", "Timing" and "Game Over" may keep their capitals** anywhere in a line
+  (a house exception to the casing rule, see write-copy): never lower them.
+- **No semicolon in the middle of a sentence**: a calque of a long English
+  line often reaches for one. Split it into two sentences, or join with a comma
+  or a word ("donc", "mais", "alors").
 - **Typography as the file writes it**: a plain space before `! ? : ;`; a
   straight apostrophe `'` in a manifest, the curly `’` where the shell's
   tables already use it.
@@ -178,7 +182,11 @@ They follow their own rules on top of the ones above.
 | tap to close (card line) | touche pour fermer           |
 | tap … (an instruction)   | touche …                     |
 | shield                   | bouclier                     |
+| combo / chain (in a row) | Combo, not *chaîne* (1)      |
 | battle royale            | Battle Royale (a genre)      |
+
+(1) In a game whose copy is not validated yet. A game whose texts are all
+checked keeps the *chaîne* it was validated with.
 
 A string the thirteen games share (`Play the full game`, `Install now`…) is
 changed in all of them or in none — say so instead of changing one game.

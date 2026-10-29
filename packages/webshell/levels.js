@@ -117,7 +117,7 @@
                    "rien à débloquer, alors la partie ne s’arrête plus.",
       endlessNote: "Pas d’objectif, pas de chrono, pas de stages — <em>★ 90/90</em>.",
       endlessPlay: "Lancer la partie sans fin",
-      bands: ["Echauffement", "Pression", "Etau", "Surrégime", "Fusion"],
+      bands: ["Échauffement", "Pression", "Étau", "Surrégime", "Fusion"],
       objective: "Objectif", missed: "Objectif manqué",
       scores: "Scores", gameOver: "Game over",
       cleared: "Stage réussi !",
@@ -2036,8 +2036,19 @@
     return 1;
   }
 
-  function play(n) {
+  /* `again` is a REPLAY — the end screen's, the leave card's — which starts
+     the same level with the same hand. Anything else asks the game's loadout
+     card first, where there is one (packages/webshell/loadout.js), and the
+     round starts on its PLAY. */
+  function play(n, again) {
     if (n !== BONUS && !canPlay(n)) return;
+    var LO = window.__LOADOUT__;
+    if (!again && LO && LO.active() &&
+        LO.ask(n, function () { start(n); }, { first: !tutoSeen() && virgin() })) return;
+    start(n);
+  }
+
+  function start(n) {
     arm(n);
     /* The level the map comes back to (`show`). Written on the way IN rather
        than on endRound, so a round the player walked away from is still the
@@ -2156,7 +2167,9 @@
     last: function () { return last; },
     /* The node the map has selected — what an arrival lands on (`show`). */
     picked: function () { return picked; },
-    replayLast: function () { if (last) play(last.level); },
+    replayLast: function () { if (last) play(last.level, true); },
+    /* The same level again, with the same hand: no loadout card (play). */
+    replay: function (n) { if (ON && n >= 1 && n <= BONUS) play(n, true); },
     /* The level the running round was armed with — the endless run's own
        number included — or 0 for a free round. */
     current: function () { return ON ? (endless ? BONUS : (CONFIG.level || 0)) : 0; },

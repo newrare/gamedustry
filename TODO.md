@@ -136,6 +136,18 @@ ______________________________________________________________________
   - shell — under the dev force, a missed objective still shows NEXT on the
     end screen (seen on grudgeon 29).
 
+- [ ] MAIN — **grudgeon's solo start: playtest the bench's tuning**
+  (v0.11.1). A blind pilot (random rooms, no rule scrolls, never guards), 12
+  seeds x 30 levels, put the solo start level with the old party of four
+  holding every scroll: 237 levels won of 360 against 230. It took
+  `BY_PARTY` (a lone hero meets 30% of a yokai's health and 45% of its
+  blows), each hero arriving with their first scroll (`KIT`), Yuki at 76
+  health / 7 defence with Foxfire first. The masters (6, 12, 18, 24, 30) and
+  the way-out stages 10, 22 and 28 stay hard for the pilot, as they were
+  before.
+  In the drowned village, steps 1–2 have no split at all (one hero cannot
+  split).
+
 - [ ] MAIN — **pawko's refusals are silent**: `refuse(word)` computes "Keep
   it for the last wave", "No card played yet"… but its `Notify.say` was taken
   out in 190cee8. Under the word rule a refused action is a notice — put it
@@ -217,19 +229,24 @@ ______________________________________________________________________
 
 **Not before the thirteen are validated and in production on Google Play.**
 
+- [ ] MAIN — **playtest `gelatile`'s thirty levels on a phone**: the balance
+  is a benched pilot's (docs/GELATILE.md §13), the late levels and the finale
+  above all; then compose its village by eye in `make village`.
 - [ ] MAIN — **playtest `holepocalypse`'s thirty levels on a phone**: the
   balance is a scripted pilot's (docs/HOLEPOCALYPSE.md §12), the boss HP and
   the bonus targets above all.
-- [ ] MAIN — decide whether `holepocalypse`'s two supers stay fixed by the
-  level table or become a loadout card before the round (§3 step 7).
+- [ ] MAIN — playtest `holepocalypse`'s loadout card (v0.7.0) on a phone:
+  does the grid of twenty read at a glance, is the last pick the right start,
+  and does a free choice of supers break the balance of a band's levels
+  (the bench drove the table's pairs)?
 - [ ] MAIN — check every `holepocalypse` sprite and effect on the five
   fairways in `lab/holepocalypse-fx.html` (`make events` → `/hole-fx`, Debug
   on): feet on their footprint, effects on their anchor.
 - [ ] MAIN — playtest `foldiers` v0.3.0 on a phone: the Close 30° camera, its
-  double tap and the pinch, the order ring (the 0.28 s rest that opens it,
-  the slide onto a bubble), the drag that starts on the troops only (is a
-  figure big enough to grab at the whole-map zoom? the flag that opens the
-  card, the bare map that pans, "All" given on a release with no choice), the march and the fight of a bell, the card and
+  double tap and the pinch, the actions on the targets (v0.6.0: a tap picks a
+  region up, its targets wear rosettes — are the small ones, 45 design px,
+  big enough under a thumb? does the camera's fit over the card move too
+  much, or too little? the arrows on the edge), the march and the fight of a bell, the card and
   the paper HUD (crumpled, tilted up to 6°: is every word still read at a
   glance, does a tap land on a tilted action), the
   vector ground (sharp edges at every zoom; the frame rate while panning and
@@ -238,6 +255,35 @@ ______________________________________________________________________
   swing under their envelope, fog clouds and the storm drift: `floatOf` —
   enough motion, not seasick?), and whether a 2-minute tick is the
   right pressure at stage 1 (docs/FOLDIERS.md §12).
+- [ ] MAIN — `foldiers`: judge `lab/foldiers-click-orders.html` round 2 (a
+  ring of the region's pieces, only what each can still do, then only that
+  action's targets; three CONVOYS a region, one arrow per target, the cannon
+  firing first inside its convoy, a tap on an arrow opens its card; every
+  troop and piece dealt with explicitly — Defend / Wait — or the region keeps
+  its yellow dot; on the map: production, total, shield on what stays, dot,
+  "!") before porting it. Round 4: the RESERVE (towns, forts and the
+  capital feed one pool, dropped whenever the player likes on a region linked
+  to the capital, or kept to pile up), red playing the same rule, a row of
+  FILTER icons instead of views, and one plate a region (shield, attack in
+  blue, production in beige, warning in orange, one dot); provinces were
+  tried and dropped. Round 5: a stage picker gating every mechanic. Round 6:
+  TROOP FOR TROOP combat (no defence points; a tie leaves nobody; +1 only to
+  a region that holds — red's hold order, Defend, a palisade), red holding
+  and reinforcing before the attacks. Round 7: the bell plays the game's own
+  way, every column at once, two regions on one target being ONE battle,
+  with small +1 / +2 marks over the defenders; the Need chips are gone. Round 8:
+  river −1 on arrows and pins, harbours on the sea only, fleets sailing a sea
+  road one arrow a tick. Round 9: March reaches any region of yours the
+  land joins, one region a tick and one arrow a tick; a RELAY (2 gold, stage
+  15 instead of couriers) on any region of a trip makes it a tick shorter, by
+  land or sea; a purchase short of gold still shows its price and a tap says
+  where to find gold (the mines light up); no gold at the start. Round 10:
+  one word a thing — infantry, cavalry, troops (the two together), tick,
+  output, convoy, Defend — to carry over when porting. Forts and the capital no longer defend: decide what a fort is for
+  (stage 2). Decide whether the reserve replaces local production
+  (the levy route and stage 18's standing orders go with it), and whether to
+  merge the mechanics down to troops, general and cannon before rewriting
+  docs/FOLDIERS.md §8.
 - [ ] CODE — balance `foldiers`' thirty stages with `tools/lab/bench-foldiers.mjs`
   (12 seeds or more): the plain pilot wins most of 1–23 and leaves 24–30
   undecided after sixty ticks (docs/FOLDIERS.md §13).
@@ -246,6 +292,12 @@ ______________________________________________________________________
   picture `foldiers/Carte du monde en origami stratégique.png` is for.
 - [ ] CODE — `foldiers`: the map composer `lab/foldiers-map.html`
   (docs/FOLDIERS.md §5.3), to curate the thirty generated maps.
+- [ ] MAIN — `parrynormal`, the remake of Magic Shield Brick: generate the 22
+  assets of docs/PARRYNORMAL.md §11, and give the old Play app id and its last
+  `versionCode` if it ships as that app's update (§13).
+- [ ] CODE — build `parrynormal` v2.0.0 on the motor from docs/PARRYNORMAL.md
+  (prototype `prototype/parrynormal.html`), multi-touch motor gain first (§3
+  step 2).
 
 ______________________________________________________________________
 

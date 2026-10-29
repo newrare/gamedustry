@@ -1,7 +1,7 @@
 {
   "slug": "gearball",
   "title": "Gearball",
-  "version": "2.10.6",
+  "version": "2.10.9",
   "tagline": "Unlock the gates in time and move the socket under the electric marble",
   "order": 100,
   "draft": false,
@@ -151,7 +151,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Rising difficulty",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -167,7 +167,7 @@
             "line": "<b>Déverrouille</b> les barrières à temps"
           },
           {
-            "kicker": "Electrique",
+            "kicker": "Électrique",
             "line": "Attrape l’<b>étincelle</b>"
           },
           {
@@ -175,7 +175,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Difficulté progressive",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -221,7 +221,7 @@
           "Fuse out": "Mèche éteinte",
           "Combo x": "Combo x",
           "Electric marble": "Bille électrique",
-          "Electric on target": "Electriques au but",
+          "Electric on target": "Électriques au but",
           "Final score": "Score final",
           "Fizzle": "Grillée",
           "Tap an arrival to move the socket under it": "Touche une arrivée pour y déplacer la prise",
@@ -285,7 +285,7 @@
           "A marble down a spiral pays +{n}": "Une bille qui descend une spirale rapporte +{n}",
           "Marble train": "Train de billes",
           "Marbles landing back to back pay +{n} per wagon": "Les billes qui arrivent à la suite rapportent +{n} par wagon",
-          "Chain lightning": "Eclair en chaîne",
+          "Chain lightning": "Éclair en chaîne",
           "A caught electric marble's arc zaps every marble on its way: +{n} each": "L'arc d'une bille électrique attrapée frappe chaque bille sur son passage : +{n} chacune",
           "Packed machine": "Machine pleine",
           "Every marble delivered pays +5% per marble in the machine": "Chaque bille livrée rapporte +5 % par bille dans la machine",
@@ -309,10 +309,10 @@
           "The next wasted electric marble goes back to the feeder": "La prochaine bille électrique ratée retourne à l'alimentation",
           "Quick release": "Vidange express",
           "An unlocked queue runs out {n} times faster": "Une file déverrouillée se vide {n} fois plus vite",
-          "Splitting spark": "Etincelle fourchue",
+          "Splitting spark": "Étincelle fourchue",
           "The next {n} electric marbles split in two at every switch": "Les {n} prochaines billes électriques se dédoublent à chaque aiguillage",
           "The next electric marble splits in two at every switch": "La prochaine bille électrique se dédouble à chaque aiguillage",
-          "Static charge": "Electricité statique",
+          "Static charge": "Électricité statique",
           "An extra electric marble every {n} marbles": "Une bille électrique en plus toutes les {n} billes",
           "Combo anchor": "Ancre de combo",
           "The combo never falls below its last tier": "Le combo ne retombe jamais sous son dernier palier",
@@ -358,7 +358,7 @@
           "The socket recharges in 20 s": "La prise se recharge en 20 s",
           "Common": "Commune",
           "Rare": "Rare",
-          "Epic": "Epique",
+          "Epic": "Épique",
           "Legendary": "Légendaire",
           "Until the next pick": "Jusqu'au prochain choix",
           "Whole shift": "Tout le service",
@@ -390,7 +390,7 @@
           "Biome cards": "Cartes du biome",
           "Risk cards": "Cartes de risque",
           "Legendary cards": "Cartes légendaires",
-          "From here on, a pick can also deal cards like these.": "A partir d'ici, un choix peut aussi donner des cartes comme celles-ci.",
+          "From here on, a pick can also deal cards like these.": "À partir d'ici, un choix peut aussi donner des cartes comme celles-ci.",
           "Combo": "Combo",
           "The basics": "Les bases",
           "The shift": "Le service",

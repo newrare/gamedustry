@@ -21,7 +21,7 @@
   // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
   // clear of the device insets, and never closer to the glass than the house
   // margin (see relayout). Recomputed on every resize.
-  var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
+  var Layout = { top: 0, bottom: 0, foot: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
 
   // env(safe-area-inset-*) is only observable through a probe element.
   function safeInsets() {
@@ -105,14 +105,17 @@
      lake, a scrolling lane, a shockwave) draws that outside Layout, which is
      the play band and not a clip rect.
 
-     WHAT IT DOES NOT SAY IS THE TWO BOTTOM CORNERS. The web target's round
-     carries MENU / OPTIONS in one and the level's three stars in the other,
-     each about 240 x 58 in from the frame by 26, and neither takes a band out
-     of `Layout` — they are an overlay, so the world still runs under them.
-     A game may therefore draw THROUGH them, and may anchor no INSTRUMENT and
-     no word there. Both are the shell's (packages/webshell/menu.css and
-     levels.css); a game whose own layout owns the left one moves the pill with
-     `--lv-hud-bottom` rather than reserving anything here. */
+     THE FOOT BAR IS `Layout.foot`, NOT `Layout.bottom`. The web target's
+     round carries one bar along the bottom edge — the level's stars and the
+     notices' "!" on the left, MENU / GUIDE / HELP / OPTIONS on the right
+     (packages/webshell/view.css, THE FOOT BAR) — and it takes no band out of
+     `Layout`: it is an overlay, so the world still runs under it and a game
+     may draw THROUGH it. What a game may not do is stand an INSTRUMENT or a
+     word in it, and `Layout.foot` is the line it stops at: the top of that
+     bar (`CONFIG.layout.footHeight`, written by packages/platform/web.js) and
+     plain `Layout.bottom` where there is no bar, so a playable — whose CTA
+     band is already taller — is untouched. A cannon, a launcher, a queue of
+     shots: anchored on `Layout.foot`, never on `Layout.bottom`. */
   var SAFE_PAD = 26;
 
   function relayout() {
@@ -120,6 +123,7 @@
     var pad = Math.max(0, m.safePad == null ? SAFE_PAD : m.safePad);
     Layout.top    = view.insetTop + Math.max(m.hudHeight, pad);
     Layout.bottom = view.h - view.insetBottom - Math.max(m.ctaHeight, pad);
+    Layout.foot   = view.h - view.insetBottom - Math.max(m.ctaHeight, m.footHeight || 0, pad);
     Layout.left   = Math.max(m.sideMargin, pad);
     Layout.right  = view.w - Math.max(m.sideMargin, pad);
     Layout.w = Layout.right - Layout.left;
@@ -164,11 +168,13 @@
        `dist` to the side, then up. This is how the desktop keyboard fallback
        (section 7) drives a swipe game — the gesture goes through the same
        down/move/up path as a finger, so a game never grows a second input
-       API for the arrow keys. dir is -1 (left) or +1 (right), or "up" for an
-       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump). */
+       API for the arrow keys. dir is -1 (left) or +1 (right), "up" for an
+       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump)
+       or "down" for a downward one (CONFIG.swipeDown — gelatile's four ways). */
     function swipe(dir, dist) {
       var d = dist == null ? 150 : dist, x = Layout.cx, y = Layout.cy;
       if (dir === "up") { at("down", x, y); at("move", x, y - d); at("up", x, y - d); return; }
+      if (dir === "down") { at("down", x, y); at("move", x, y + d); at("up", x, y + d); return; }
       at("down", x, y);
       at("move", x + dir * d, y);
       at("up",   x + dir * d, y);
@@ -1050,7 +1056,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })

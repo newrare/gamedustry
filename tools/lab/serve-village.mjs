@@ -71,7 +71,7 @@ const DRAFTS = path.join(ROOT, 'lab', 'village-presets.json');
    and only a game that declares `web.army` owes them; `cards` is the CODEX
    (packages/webshell/codex.js), for a game that publishes `Game.codex`. */
 const ROLES = ['play', 'map', 'ranking', 'shop', 'album', 'daily', 'options', 'help',
-  'deck', 'infirmary', 'prison', 'recruit', 'defense', 'cards', 'decor'];
+  'deck', 'infirmary', 'prison', 'recruit', 'defense', 'cards', 'mode', 'decor'];
 
 /* SHARED MATERIAL — `game-<sheet>-NN.png`, the cuts that belong to no game.
    `assets/image/object/` holds two kinds of them under that one prefix and
@@ -185,6 +185,9 @@ function catalogue() {
       levels: !!(m.web && m.web.levels),
       meta: !!(m.web && m.web.meta),
       army: !!(m.web && m.web.army),
+      /* The modes a MODE house may arm: every key of `web.modes` but the
+         first, which is the default PLAY already starts. */
+      modes: ((m.web && m.web.modes) || []).slice(1),
       /* The grounds and the houses, split out of the roles because they are
          the two palettes the page shows first — everything else is in the
          "anything else it owns" reel. */
@@ -297,6 +300,12 @@ function cleanVillage(raw, game) {
       dropped.push(h.art + ': unknown role ' + h.role);
       continue;
     }
+    /* A MODE house is a door to one key of `web.modes`, and a key the game
+       does not declare is a door to nothing (menu.js would arm the default). */
+    if (h.role === 'mode' && (game.modes || []).indexOf(h.mode) < 0) {
+      dropped.push(h.art + ': a mode house with no mode the game declares (' + h.mode + ')');
+      continue;
+    }
     const one = {
       art: h.art,
       role: h.role,
@@ -304,6 +313,7 @@ function cleanVillage(raw, game) {
       y: n(h.y, -400, 1680, 640),
       w: n(h.w, 40, 720, 200)
     };
+    if (h.role === 'mode') one.mode = h.mode;
     /* THE PLANE IT STANDS ON, and it is absent from almost every house. The
        feet answer the painter's order on their own for anything standing on
        the ground, which is what a village mostly is; `layer` is for what does

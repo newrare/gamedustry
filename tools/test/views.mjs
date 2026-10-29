@@ -723,10 +723,11 @@ async function run(url) {
   await evalJs("__WEB__.Enter.skip(); return 1;");
   await check("nothing of the shell is in front of it", "__VIEW__.depth()", 0);
   await check("the corner is up", "document.getElementById('web-ctls').hidden", false);
-  await check("...with the way out in front of the pair",
-    "document.querySelectorAll('#web-ctls .web-ctl-extra .web-ctl').length", 1);
+  await check("...with the way out first, then the guide, in front of the pair",
+    "[].map.call(document.querySelectorAll('#web-ctls .web-ctl-extra .web-ctl'), function (b) { return b.getAttribute('data-extra'); })" +
+    ".join(',').replace(/,guide$/, '')", "menu");
   await check("...and it is the way home, never the way to the map",
-    "/village|menu/i.test(document.querySelector('#web-ctls .web-ctl-extra .web-ctl')" +
+    "/village|menu/i.test(document.querySelector('#web-ctls [data-extra=menu]')" +
     ".getAttribute('aria-label'))", true);
   await check("the band is down over a round — the top is the game's",
     "!document.getElementById('web-hud') || document.getElementById('web-hud').hidden", true);
@@ -764,7 +765,7 @@ async function run(url) {
     JSON.stringify((await clock() > c0) + ":" + await evalJs("return __MODAL__.held();")), "true:false");
   await evalJs("__untick(); return 1;");
 
-  await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
+  await evalJs("document.querySelector('#web-ctls [data-extra=menu]').click(); return 1;");
   await sleep(300);
   await check("the way out asks first", "__MODAL__.top()", "web-card leave");
   await check("...resume first, then one exit per destination — again, home, and the map where there is one",
@@ -809,7 +810,7 @@ async function run(url) {
     await check("escape gives the round back",
       "new Promise(function (ok) { var a = window.__ticks;" +
       " setTimeout(function () { ok(__MODAL__.count() === 0 && window.__ticks > a); }, 400); })", true);
-    await evalJs("document.querySelector('#web-ctls .web-ctl-extra .web-ctl').click(); return 1;");
+    await evalJs("document.querySelector('#web-ctls [data-extra=menu]').click(); return 1;");
     await sleep(300);
     await evalJs("document.querySelector('.wm-modal .web-actions [data-act=home]').click(); return 1;");
     await sleep(500);
@@ -1151,6 +1152,26 @@ async function run(url) {
     await evalJs("document.querySelector('.ar-event .ar-ev-text').click(); return 1;");
     await sleep(400);
     await check("a tap anywhere applies it and puts it away", "__ARMY__.days().q.length + __MODAL__.count()", 0);
+
+    /* SEVERAL PIECES OF NEWS ARE ONE RECAP (army.js, openRecap): a line
+       opens its own card and settles alone, a tap elsewhere settles the rest */
+    console.log("\nthe camp's news — one recap");
+    await evalJs("__ARMY__.drawDay(); __ARMY__.drawDay(); __ARMY__.announce(); return 1;");
+    await sleep(500);
+    await check("two pieces of news open one recap", "__MODAL__.top()", "ar-event ar-recap");
+    await check("...one line per piece of news",
+      "document.querySelectorAll('.ar-recap .ar-rc-row').length >= 2", true);
+    await evalJs("window.__rc = document.querySelectorAll('.ar-recap .ar-rc-row').length;" +
+                 " document.querySelectorAll('.ar-recap .ar-rc-row')[__rc - 1].click(); return 1;");
+    await sleep(500);
+    await check("a line opens its own card over the recap", "__MODAL__.count()", 2);
+    await evalJs("document.querySelector('.ar-event:not(.ar-recap) .mt-card').click(); return 1;");
+    await sleep(500);
+    await check("...which settles that line and gives the recap back",
+      "__MODAL__.top() + ':' + (__rc - document.querySelectorAll('.ar-recap .ar-rc-row').length)", "ar-event ar-recap:1");
+    await evalJs("document.querySelector('.ar-recap .mt-tap').click(); return 1;");
+    await sleep(500);
+    await check("a tap anywhere else settles every line left", "__ARMY__.days().q.length + __MODAL__.count()", 0);
   }
 
   console.log("\nthe floor wins — a round clears everything in front of it");

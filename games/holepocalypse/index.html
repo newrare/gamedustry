@@ -1625,8 +1625,6 @@
     --bg:#0c1a10; --accent:#9fe03a;
     --cta-a:#c4ff4a; --cta-b:#5fbf1a; --cta-text:#102006;
     --danger:#ff4d6d; --gold:#ffd34d;
-    /* the bag's row stands just right of the level pill: the "!" goes on top */
-    --lv-log-left:0; --lv-log-bottom:calc(100% + 10px);
   }
   html, body { background:radial-gradient(900px 900px at 50% 18%, #3a1f5c 0%, #142a18 58%, #070d08 100%); }
   #intro-title {
@@ -2043,7 +2041,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "0.6.21",
+    version: "0.7.10",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2126,7 +2124,7 @@
   // The rectangle gameplay may safely use: below the HUD, above the CTA bar,
   // clear of the device insets, and never closer to the glass than the house
   // margin (see relayout). Recomputed on every resize.
-  var Layout = { top: 0, bottom: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
+  var Layout = { top: 0, bottom: 0, foot: 0, left: 0, right: 0, w: 0, h: 0, cx: 0, cy: 0 };
 
   // env(safe-area-inset-*) is only observable through a probe element.
   function safeInsets() {
@@ -2210,14 +2208,17 @@
      lake, a scrolling lane, a shockwave) draws that outside Layout, which is
      the play band and not a clip rect.
 
-     WHAT IT DOES NOT SAY IS THE TWO BOTTOM CORNERS. The web target's round
-     carries MENU / OPTIONS in one and the level's three stars in the other,
-     each about 240 x 58 in from the frame by 26, and neither takes a band out
-     of `Layout` — they are an overlay, so the world still runs under them.
-     A game may therefore draw THROUGH them, and may anchor no INSTRUMENT and
-     no word there. Both are the shell's (packages/webshell/menu.css and
-     levels.css); a game whose own layout owns the left one moves the pill with
-     `--lv-hud-bottom` rather than reserving anything here. */
+     THE FOOT BAR IS `Layout.foot`, NOT `Layout.bottom`. The web target's
+     round carries one bar along the bottom edge — the level's stars and the
+     notices' "!" on the left, MENU / GUIDE / HELP / OPTIONS on the right
+     (packages/webshell/view.css, THE FOOT BAR) — and it takes no band out of
+     `Layout`: it is an overlay, so the world still runs under it and a game
+     may draw THROUGH it. What a game may not do is stand an INSTRUMENT or a
+     word in it, and `Layout.foot` is the line it stops at: the top of that
+     bar (`CONFIG.layout.footHeight`, written by packages/platform/web.js) and
+     plain `Layout.bottom` where there is no bar, so a playable — whose CTA
+     band is already taller — is untouched. A cannon, a launcher, a queue of
+     shots: anchored on `Layout.foot`, never on `Layout.bottom`. */
   var SAFE_PAD = 26;
 
   function relayout() {
@@ -2225,6 +2226,7 @@
     var pad = Math.max(0, m.safePad == null ? SAFE_PAD : m.safePad);
     Layout.top    = view.insetTop + Math.max(m.hudHeight, pad);
     Layout.bottom = view.h - view.insetBottom - Math.max(m.ctaHeight, pad);
+    Layout.foot   = view.h - view.insetBottom - Math.max(m.ctaHeight, m.footHeight || 0, pad);
     Layout.left   = Math.max(m.sideMargin, pad);
     Layout.right  = view.w - Math.max(m.sideMargin, pad);
     Layout.w = Layout.right - Layout.left;
@@ -2269,11 +2271,13 @@
        `dist` to the side, then up. This is how the desktop keyboard fallback
        (section 7) drives a swipe game — the gesture goes through the same
        down/move/up path as a finger, so a game never grows a second input
-       API for the arrow keys. dir is -1 (left) or +1 (right), or "up" for an
-       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump). */
+       API for the arrow keys. dir is -1 (left) or +1 (right), "up" for an
+       upward flick (a game that opts in with CONFIG.swipeUp — triverse's jump)
+       or "down" for a downward one (CONFIG.swipeDown — gelatile's four ways). */
     function swipe(dir, dist) {
       var d = dist == null ? 150 : dist, x = Layout.cx, y = Layout.cy;
       if (dir === "up") { at("down", x, y); at("move", x, y - d); at("up", x, y - d); return; }
+      if (dir === "down") { at("down", x, y); at("move", x, y + d); at("up", x, y + d); return; }
       at("down", x, y);
       at("move", x + dir * d, y);
       at("up",   x + dir * d, y);
@@ -3155,7 +3159,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })
@@ -5499,7 +5503,11 @@
       for (i = 0; i < list.length; i++) {
         r = { mouse: list[i].mouse };
         // a key the bootstrap does not bind is a key that does nothing
-        if (CONFIG.keyboard !== false) r.keys = k === "swipe" && CONFIG.swipeUp ? ["left", "right", "up"] : list[i].keys;
+        if (CONFIG.keyboard !== false) {
+          r.keys = list[i].keys;
+          if (k === "swipe" && CONFIG.swipeUp) r.keys = r.keys.concat(["up"]);
+          if (k === "swipe" && CONFIG.swipeDown) r.keys = r.keys.concat(["down"]);
+        }
         out.push(r);
       }
       return out;
@@ -6408,7 +6416,7 @@
          is knocked out. */
       mudling: { name: "Mudling", art: "mudder", hp: 1, speed: 0, r: 18, h: 58, walk: [16, 16], hit: [16, 16], ko: [16, 16], noHp: true, still: true },
       runner:  { name: "Runner", hp: 1, speed: 2.2, r: 26, h: 116, walk: [1, 8], hit: [9, 12], ko: [13, 16], fps: 13, straight: true, noBonus: true },
-      necro:   { name: "Necromancer", hp: 5, speed: 0.6, r: 30, h: 124, walk: [1, 4], cast: [5, 8], hit: [9, 12], ko: [13, 16] },
+      necro:   { name: "Necromancer", hp: 3, speed: 0.6, r: 30, h: 124, walk: [1, 4], cast: [5, 8], hit: [9, 12], ko: [13, 16] },
       greenkeeper: { name: "Greenkeeper", boss: true, art: "bossGreenkeeper", hp: 100, speed: 0.55, r: 50, h: 196, walk: [1, 8], hit: [9, 12], ko: [13, 16], straight: true },
       colossus:    { name: "Caddie Colossus", boss: true, art: "bossColossus", hp: 110, speed: 0.45, r: 54, h: 214, walk: [1, 4], act: [5, 8], hit: [9, 10], ko: [11, 12] },
       bog:         { name: "Bog Giant", boss: true, art: "bossBog", hp: 160, speed: 0.45, r: 56, h: 220, walk: [1, 4], act: [5, 8], hit: [9, 10], ko: [11, 12] },
@@ -6492,7 +6500,7 @@
     };
     var BONUS_TEXT = {
       hole: "Sink the hole <b>{n}</b> times",
-      chain: "Make a chain of <b>{n}</b>",
+      chain: "Make a combo of <b>{n}</b>",
       lobHole: "Lob a ball into the hole",
       noLast: "Never need the last stand",
       time: "Win in under <b>{n}</b> s",
@@ -6529,6 +6537,18 @@
     function TOP() { return B.top; }
     function LINE() { return B.line; }
     var TEE_X = 360, TEE_Y = 1186;
+    /* Where the foot line cuts the world: on the web the round's bottom edge
+       is the shell's bar of buttons (`Layout.foot`), and nothing the player
+       reads may stand in it, so the tee rides up to clear it and the bag
+       stands on the left flank as a column instead of a row under the tee.
+       The playable has no such bar (foot is its bottom band) and keeps its
+       tee and its row. */
+    var TEE_Y_PLAYABLE = 1186, TEE_FOOT_GAP = 34, BAG_VERT = false;
+    /* The shell's bar stands on the house margin, 26 design px in from each
+       side: the bag's column lines up on the level pill's left edge and the
+       two supers on the options button's right edge, so the round's
+       instruments and the bar read as one frame (web only, like the column). */
+    var SHELL_EDGE = 26;
     function sx(x) { return ox + x * k; }
     function sy(y) { return oy + y * k; }
     function wx(x) { return (x - ox) / k; }
@@ -6546,6 +6566,15 @@
       k = room >= H - 24 ? 1 : room / (H - 24);
       ox = (W - W * k) / 2;
       oy = 0;
+      teeFit();
+    }
+    // the tee (and, further down, the bag) against the foot line, in world px
+    function teeFit() {
+      var footW = (Layout.foot - oy) / k;
+      BAG_VERT = Layout.foot < Layout.bottom - 1;
+      TEE_Y = BAG_VERT ? Math.min(TEE_Y_PLAYABLE, Math.round(footW - TEE_FOOT_GAP)) : TEE_Y_PLAYABLE;
+      BAG_X = BAG_VERT ? Math.round(wx(SHELL_EDGE)) + BAG_R + 6 : TEE_X + 12;
+      BAG_Y = BAG_VERT ? Math.round(footW) - BAG_FOOT - BAG_R - 6 : TEE_Y + 46;
     }
 
     // ======================================================================
@@ -6835,13 +6864,25 @@
        second kind of cup, dropped anywhere on the fairway: the red flag is
        the shockwave, a coloured one loads its special balls and gives a
        lost flag back. Where the two stand decides the shot. */
+    // a super's centre: its outer ring (SLOT_R + 4, stroked 6 wide) on the
+    // options button's right edge where the shell has its bar, by the wall otherwise
+    function superX(y) {
+      return BAG_VERT ? Math.round(wx(view.w - SHELL_EDGE)) - SLOT_R - 7 : wallR(y) - SLOT_R - 10;
+    }
     function buildCourse() {
       var i, y;
-      // the supers, right, at the foot of the field
-      var ys = [LINE() - 92, LINE() - 200];
-      for (i = 0; i < L.supers.length; i++) {
+      // the supers, right, at the foot of the field — on the web they stand
+      // on the shell's bar like the bag's column opposite them: the first
+      // one's ring BAG_FOOT over the foot line, the second just above it
+      var ys = [LINE() - 92, LINE() - 200], ro = SLOT_R + 7;
+      if (BAG_VERT) {
+        ys[0] = Math.round((Layout.foot - oy) / k) - BAG_FOOT - ro;
+        ys[1] = ys[0] - 2 * ro - 14;
+      }
+      var sup = supersOf();
+      for (i = 0; i < sup.length; i++) {
         y = ys[i];
-        slots.push({ left: false, x: wallR(y) - SLOT_R - 10, y: y, power: L.supers[i], charge: 0, hit: 0 });
+        slots.push({ left: false, x: superX(y), y: y, power: sup[i], charge: 0, hit: 0 });
       }
       // the band's terrain
       var T = B.terrain, n;
@@ -7030,7 +7071,7 @@
       var m = { id: ++monId, kind: kind, x: x, y: y, r: K.r, hp: hp, maxHp: hp, kx: 0, ky: 0,
                 animT: rand(0, 2), phase: rand(0, 6.28), speed: rand(0.88, 1.12), lane: rand(0.1, 0.9),
                 tag: 0, tagT: 0, flash: 0, hitT: 0, frozenT: 0, dead: false, rise: rise ? 0.6 : 0,
-                state: "walk", stateT: 0, actT: rand(3, 6) };
+                state: "walk", stateT: 0, actT: kind === "necro" ? rand(5, 10) : rand(3, 6) };
       if (K.straight) m.lane = -1;
       mons.push(m);
       return m;
@@ -7215,7 +7256,7 @@
         Fx.flash("#ff3030", 0.35);
       } else {
         // the super's own callout names it (firePower); how the gun is played is told once
-        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to fire, tap to putt") });
+        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to aim, release to putt") });
       }
       hudFlags();
     }
@@ -7362,6 +7403,58 @@
         } }
     ];
     function powerOf(key) { for (var i = 0; i < POWERS.length; i++) if (POWERS[i].key === key) return POWERS[i]; return POWERS[0]; }
+
+    /* THE LOADOUT — the two supers are the player's, picked on the shell's
+       card before a level (packages/webshell/loadout.js). The level table's
+       pair is the card's suggestion and what a free round or a tool's round
+       gets. A super is unlocked by the first level whose table deals it. */
+    var POWER_TEXT = {
+      rain: "24 balls rain on the fairway.",
+      fan: "22 balls fired at once, in a fan.",
+      freeze: "The whole horde frozen for a few seconds.",
+      holeblast: "A hole now fires its full shockwave.",
+      seeker: "A ball on each of the 12 zombies nearest the line.",
+      sniper: "3 piercing shots at the toughest zombies.",
+      sprinkler: "Water jets push the whole horde back.",
+      cart: "A golf cart charges up the busiest lane.",
+      boomvolley: "A fan of 5 explosive balls.",
+      splitstorm: "The balls split into 3 at every bounce.",
+      magnet: "For 6 seconds, the hole swallows every nearby ball.",
+      hail: "20 ice balls freeze what they hit.",
+      firestorm: "14 burning balls set the grass alight.",
+      superbounce: "5 balls that never slow down.",
+      cluster: "5 bombs that split in five as they land.",
+      rush: "Hold the gun to fire bursts of balls for 6 seconds.",
+      meteor: "A giant ball crushes the biggest pack.",
+      carpet: "7 rows of blasts sweep up the fairway.",
+      golden: "Gold rain: KOs pay ×3 for 8 seconds.",
+      mower: "Mowers cross the field, just above the line."
+    };
+    var chosen = null;
+    function superLv(key) {
+      for (var n = 1; n <= 30; n++) if (LEVELS[n].supers.indexOf(key) >= 0) return n;
+      return 30;
+    }
+    function rowOf(n) { return n >= 1 && n <= 30 ? LEVELS[n] : n > 30 ? ENDLESS : FREE; }
+    // the two buttons of this round: the player's pick on a level, the table's otherwise
+    function supersOf() {
+      return chosen && (isLevel() || isEndless()) && chosen.length === L.supers.length ? chosen : L.supers;
+    }
+    var loadout = {
+      title: function () { return Lang.t("Your supers"); },
+      slots: function (n) { return rowOf(n).supers.length; },
+      items: function () {
+        var out = [];
+        for (var i = 0; i < POWERS.length; i++) out.push({ id: POWERS[i].key, lv: superLv(POWERS[i].key) });
+        return out;
+      },
+      info: function (id) {
+        var p = powerOf(id);
+        return { name: Lang.t(p.name), text: Lang.t(POWER_TEXT[id] || ""), src: CONFIG.art[p.icon] };
+      },
+      suggest: function (n) { return rowOf(n).supers.slice(); },
+      set: function (ids) { chosen = ids ? ids.slice() : null; }
+    };
 
     function firePower(key) {
       var p = powerOf(key);
@@ -7570,7 +7663,7 @@
       Pop.text(sx(m.x), sy(m.y - 40), "+" + gain, { color: goldT > 0 ? "#ffd34d" : "#e8ff9a", size: 22, life: 0.6, tier: 1 });
       if (n > bestChain) bestChain = n;
       if (n === 4 || n === 6 || n === 8 || n >= 10 && n % 5 === 0) {
-        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Chain x") + n, sub: "+" + gain });
+        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Combo x") + n, sub: "+" + gain });
         Sound.clip("combo", 0.3, 1 + Math.min(n, 12) * 0.03);
       }
       Sound.clip("down", 0.45, 0.9 + Math.random() * 0.2);
@@ -8155,7 +8248,7 @@
         m.actT -= dt;
         if (m.state === "walk" && m.actT <= 0 && m.y > TOP()) { m.state = "cast"; m.stateT = 0; }
         if (m.state === "cast" && m.stateT > 1) {
-          m.state = "walk"; m.actT = 6;
+          m.state = "walk"; m.actT = 10;
           var n = 0;
           while (fallen.length && n < 2) {
             var f = fallen.pop();
@@ -8273,7 +8366,7 @@
         stars: st,
         rows: [
           { label: "Zombies knocked out", value: kills, grade: "accent" },
-          { label: "Best chain", value: "x" + bestChain },
+          { label: "Best combo", value: "x" + bestChain },
           { label: "Holes sunk", value: holesSunk, grade: "good" },
           { label: "Best score", value: best, grade: "gold" }
         ],
@@ -8362,7 +8455,7 @@
     };
     // the zombies named on their first walk-on: a rule the frame cannot say
     var TIPS = {
-      shield: "Lob over it or bank off a fence",
+      shield: "Lob over it or bounce off the edge",
       necro: "It raises fallen zombies. Knock it out first."
     };
 
@@ -8389,6 +8482,7 @@
       drawZones();
       // the arc is painted on the grass: over the ground, under every sprite
       drawBands();
+      if (BAG_VERT) drawBag();
       drawHoles();
       drawFxs(false);
       drawSlots();
@@ -8433,7 +8527,8 @@
       drawReticle();
       drawTee();
       drawPreview();
-      drawBag();
+      if (!BAG_VERT) drawBag();
+      drawBagLabel();
       drawBossBar();
       ctx.restore();
     }
@@ -9297,63 +9392,79 @@
       groundEllipse(x, y, HOLE_R * 1.3); ctx.stroke();
       drawModeRing("direct");
     }
-    /* The bag, a column right of the tee, and the loaded kinds, a column
-       left of it, next one at the bottom: the two bottom corners are the
-       web shell's (the level pill and its "!", MENU / OPTIONS), and a row
-       under the tee ran into the pill. */
-    /* THE BAG: a row of big balls under the tee, the next shot first, each
-       ball wearing the kind it will leave as — a ball out on the course is
-       an empty socket ringed white, the one coming back by itself fills its
-       ring. Left of the tee, the name of the special about to be fired and
-       how many are loaded. The row stands between the web shell's two
-       corners: the level pill bottom left (its "!" is stood on top of it by
-       the SKIN) and the round's controls bottom right. */
+    /* THE BAG: five big balls, the next shot first, each ball wearing the kind
+       it will leave as — a ball out on the course is an empty socket ringed
+       white, the one coming back by itself fills its ring. On the web it is a
+       COLUMN on the left flank, the next ball at the bottom beside the tee
+       and the later ones above it, its foot standing BAG_FOOT over the shell's
+       bar (`Layout.foot`); it is painted with the ground, so a zombie walking
+       by hides it rather than the other way round. The playable keeps the row
+       under the tee. The name of the special about to be fired, and how many
+       are loaded, sits beside the tee (drawBagLabel). */
     var BAG_PITCH = 40, BAG_R = 17, BAG_X = TEE_X + 12, BAG_Y = TEE_Y + 46;
+    var BAG_FOOT = 10;                  // the column's gap over the foot line
+    // the centre of the bag's slot `s`, the next shot being slot 0
+    function bagX(s) { return BAG_VERT ? BAG_X : BAG_X - BAG_PITCH * (BAG_MAX - 1) / 2 + s * BAG_PITCH; }
+    function bagY(s) { return BAG_VERT ? BAG_Y - s * BAG_PITCH : BAG_Y; }
+    // the bag's plate: a pill, lying (the row) or standing (the column)
+    function bagPlate() {
+      var n = BAG_MAX, span = BAG_PITCH * (n - 1) + 2 * BAG_R + 12, th = 2 * BAG_R + 12;
+      if (BAG_VERT) vpill(BAG_X - BAG_R - 6, BAG_Y - BAG_PITCH * (n - 1) - BAG_R - 6, th, span);
+      else pill(bagX(0) - BAG_R - 6, BAG_Y - BAG_R - 6, span, th);
+    }
     function drawBag() {
-      var n = BAG_MAX, x0 = BAG_X - BAG_PITCH * (n - 1) / 2, own = 0, s, x;
-      if (gunPhase()) { drawGunBar(x0); return; }
+      var n = BAG_MAX, own = 0, s, x, y;
+      if (gunPhase()) { drawGunBar(); return; }
       for (s = 0; s < balls.length; s++) if (!balls[s].free && !balls[s].extra) own++;
       ctx.fillStyle = "rgba(8,14,8,0.6)";
-      pill(x0 - BAG_R - 6, BAG_Y - BAG_R - 6, BAG_PITCH * (n - 1) + 2 * BAG_R + 12, 2 * BAG_R + 12);
+      bagPlate();
       ctx.fill();
       for (s = 0; s < n; s++) {
-        x = x0 + s * BAG_PITCH;
+        x = bagX(s); y = bagY(s);
         var kind = !gunPhase() && specials[s] ? modOf(specials[s]) : null;
         if (s < bag) {
           if (kind) {
             ctx.strokeStyle = kind.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R + 2, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, BAG_R + 2, 0, Math.PI * 2); ctx.stroke();
           }
-          if (!drawArt(kind ? kind.ball : "ball01", x, BAG_Y, BAG_R * 2.3)) {
+          if (!drawArt(kind ? kind.ball : "ball01", x, y, BAG_R * 2.3)) {
             ctx.fillStyle = kind ? kind.color : "#ffffff";
-            ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, BAG_R, 0, Math.PI * 2); ctx.fill();
           }
           continue;
         }
         // an empty socket: out on the course, or coming back by itself
         ctx.fillStyle = "rgba(0,0,0,0.45)";
-        ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R - 2, 0, Math.PI * 2); ctx.fill();
-        if (kind) drawArt(kind.ball, x, BAG_Y, BAG_R * 2.3, 0.35);
+        ctx.beginPath(); ctx.arc(x, y, BAG_R - 2, 0, Math.PI * 2); ctx.fill();
+        if (kind) drawArt(kind.ball, x, y, BAG_R * 2.3, 0.35);
         ctx.lineWidth = 3;
         if (s < bag + own) {
           ctx.strokeStyle = "rgba(255,255,255,0.35)";
-          ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, y, BAG_R, 0, Math.PI * 2); ctx.stroke();
         } else if (s === bag + own && regenT > 0) {
           ctx.strokeStyle = "#ffffff";
-          ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(regenT / BAG_REGEN, 0, 1)); ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, y, BAG_R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(regenT / BAG_REGEN, 0, 1)); ctx.stroke();
         }
       }
-      // the special about to be fired, named
+    }
+    /* The special about to be fired, named, beside the tee: left of it in the
+       playable, right of it on the web, where the column stands on the left
+       and the longest name would run into it. */
+    function drawBagLabel() {
       var next = bag > 0 && !gunPhase() && specials.length ? modOf(specials[0]) : null;
       if (!next) return;
-      var count = 0;
+      var count = 0, s;
       for (s = 0; s < specials.length; s++) if (specials[s] === specials[0]) count++;
       var label = upper(Lang.t(next.name)) + (count > 1 ? "  x" + count : "");
-      ctx.font = "800 22px " + FONT; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      // raised a little off the tee's line: its foot clears the level pill
-      var tw = ctx.measureText(label).width, rx = TEE_X - BALL_R - 26, ly = TEE_Y - 12;
+      ctx.font = "800 22px " + FONT; ctx.textBaseline = "middle";
+      // raised a little off the tee's line: its foot clears the level pill;
+      // on the web the bag and the supers hold both flanks of the tee, so it
+      // stands over the ball instead
+      var tw = ctx.measureText(label).width, ly = TEE_Y - 12, rx;
+      if (BAG_VERT) { ctx.textAlign = "center"; rx = TEE_X; ly = TEE_Y - BALL_R - 40; }
+      else { ctx.textAlign = "right"; rx = TEE_X - BALL_R - 26; }
       ctx.fillStyle = "rgba(8,14,8,0.72)";
-      pill(rx - tw - 14, ly - 18, tw + 28, 36);
+      pill(BAG_VERT ? rx - tw / 2 - 14 : rx - tw - 14, ly - 18, tw + 28, 36);
       ctx.fill();
       ctx.strokeStyle = next.color; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = next.color;
@@ -9382,11 +9493,20 @@
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
-    function drawGunBar(x0) {
-      var col = gunColor(), w = BAG_PITCH * (BAG_MAX - 1) + 2 * BAG_R + 12, l = x0 - BAG_R - 6, f = clamp(phaseT / gunMax(), 0, 1);
+    function drawGunBar() {
+      var col = gunColor(), f = clamp(phaseT / gunMax(), 0, 1), n = BAG_MAX;
       ctx.fillStyle = "rgba(8,14,8,0.72)";
-      pill(l, BAG_Y - BAG_R - 6, w, 2 * BAG_R + 12); ctx.fill();
+      bagPlate(); ctx.fill();
       ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+      if (BAG_VERT) {
+        // the target at the foot, the time left draining up the column
+        var top = BAG_Y - BAG_PITCH * (n - 1) - BAG_R - 6, bot = BAG_Y - BAG_R - 8, bh = bot - (top + 16);
+        drawTarget(BAG_X, BAG_Y, BAG_R - 3, col, -time * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; vpill(BAG_X - 6, top + 16, 12, bh); ctx.fill();
+        ctx.fillStyle = col; vpill(BAG_X - 6, bot - Math.max(12, bh * f), 12, Math.max(12, bh * f)); ctx.fill();
+        return;
+      }
+      var w = BAG_PITCH * (n - 1) + 2 * BAG_R + 12, l = bagX(0) - BAG_R - 6;
       drawTarget(l + BAG_R + 8, BAG_Y, BAG_R - 3, col, -time * 2);
       var bx = l + 2 * BAG_R + 18, bw = w - (bx - l) - 14;
       ctx.fillStyle = "rgba(0,0,0,0.5)"; pill(bx, BAG_Y - 6, bw, 12); ctx.fill();
@@ -9420,6 +9540,16 @@
       ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
       ctx.lineTo(x + r, y + h);
       ctx.arc(x + r, y + r, r, Math.PI / 2, Math.PI * 1.5);
+      ctx.closePath();
+    }
+    // the same, standing: the ends are round on the width
+    function vpill(x, y, w, h) {
+      var r = w / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + r);
+      ctx.arc(x + r, y + r, r, Math.PI, 2 * Math.PI);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arc(x + r, y + h - r, r, 0, Math.PI);
       ctx.closePath();
     }
     /* THE BOSS BAR, a red hologram like the hole's: the name in heavy
@@ -9534,6 +9664,7 @@
       return cv;
     }
     function lend(bi, fn) {
+      place();   // the tee and the bag stand where the round puts them, round or not
       var keep = [B, L, time, phase, phaseT, won, over, aim, wind, stress, freezeT, magnetT,
                   specials, bag, cool, coolMax, balls, regenT, skulls, bossRef];
       B = BIOMES[bi || 0]; L = LEVELS[1]; time = PIC_T; phase = "normal"; phaseT = 0; won = false; over = false;
@@ -9624,7 +9755,7 @@
                 });
               }, lines: [
                 Lang.t("Put your finger in the blue band to roll, in the orange band to lob."),
-                Lang.t("Your finger's angle sets the aim. The farther it is from the tee, the harder the shot.") ] },
+                Lang.t("The farther you aim from the tee, the harder the shot.") ] },
             { id: "lob", title: Lang.t("The lob"), lv: 3, pic: function () {
                 return fieldPic(0, 60, 560, 600, 650, 0.5, function () {
                   picMon("walker", 290, 860, 3); picMon("walker", 400, 830, 6); picMon("walker", 480, 900, 1);
@@ -9632,15 +9763,15 @@
                   drawBands(0.5); drawPreview(); paintTee();
                 });
               }, lines: [
-                Lang.t("A lob flies over the horde. It lands softly enough to drop into the hole."),
+                Lang.t("A lob flies over the horde. It lands softly enough to drop into a hole."),
                 Lang.t("The longer the lob, the less precisely it lands.") ] },
             { id: "bag", title: Lang.t("The bag"), pic: function () {
-                return fieldPic(0, 60, 1110, 560, 160, 0.93, function () {
+                return fieldPic(0, 30, 930, 600, 260, 0.9, function () {
                   bag = 3; specials = ["explosive", "explosive"]; regenT = 1.2;
-                  paintTee(); drawBag();
+                  paintTee(); drawBag(); drawBagLabel();
                 });
               }, lines: [
-                Lang.t("Each shot takes a ball from the bag. Once a ball stops rolling, it goes back in.") ] },
+                Lang.t("Each shot uses a ball from your bag. The bag then refills, more or less quickly.") ] },
             { id: "hole", title: Lang.t("The hole"), pic: function () {
                 return fieldPic(0, 130, 400, 460, 340, 0.94, function () {
                   picMon("walker", 230, 650, 4); picMon("walker", 500, 625, 7);
@@ -9655,42 +9786,43 @@
                 });
               }, lines: [
                 Lang.t("Roll a ball into a coloured flag to win 3 balls of its kind."),
-                Lang.t("A coloured flag also gives back a lost flag.") ] },
-            { id: "chain", title: Lang.t("Chains"), pic: function () {
+                Lang.t("A coloured flag also gives back a lost flag (hit point).") ] },
+            { id: "chain", title: Lang.t("Combos"), pic: function () {
                 return fieldPic(0, 130, 520, 460, 230, 1, function () {
                   picMon("walker", 230, 700, 10, true); picMon("walker", 345, 685, 11, true); picMon("walker", 460, 705, 9);
                   picBall("plain", 280, 725);
                 });
               }, lines: [
-                Lang.t("Zombies bounce like billiard balls. Knock one hard into another and both take a hit."),
-                Lang.t("All the KOs of one shot make a chain. The 3rd pays 300, the 4th 400…") ] },
+                Lang.t("Zombies bounce off each other like billiard balls. Knock one into another to damage both."),
+                Lang.t("All the KOs of one shot create a combo. The third pays 300 points, the fourth 400 points…") ] },
             { id: "supers", title: Lang.t("Supers"), pic: function () {
                 return fieldPic(0, 380, 840, 340, 270, 1, function () {
                   picMon("walker", 470, 990, 3);
-                  paintSuper({ x: wallR(1015) - SLOT_R - 10, y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
-                  paintSuper({ x: wallR(907) - SLOT_R - 10, y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
+                  paintSuper({ x: superX(1015), y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
+                  paintSuper({ x: superX(907), y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
                 });
               }, lines: [
-                Lang.t("Every KO charges both supers. 12 KOs fill one."),
-                Lang.t("Tap a full super to fire it. Its balls don't come out of your bag.") ] },
+                Lang.t("Every KO charges your supers. One super meter is completely filled with 12 KOs."),
+                Lang.t("Tap a charged super to launch it. The super's balls don't come out of your bag."),
+                Lang.t("Before each level, pick the super powers you take. New special ones unlock as you climb.") ] },
             { id: "line", title: Lang.t("The line"), pic: function () {
                 return fieldPic(0, 140, 880, 440, 300, 1, function () {
                   picMon("walker", 260, 1060, 2); picMon("walker", 400, 1112, 10, true);
                   drawFx("boom", 3, 430, 1095, 200);
                 });
               }, lines: [
-                Lang.t("A zombie that crosses the white line costs you a flag. Its blast pushes the horde back."),
-                Lang.t("A coloured flag wins one back.") ] },
+                Lang.t("A zombie that crosses the white line explodes. That costs you a flag (hit point). Luckily, the blast pushes the horde back."),
+                Lang.t("Sink a ball in a coloured hole to win back a lost flag (hit point).") ] },
             { id: "last", title: Lang.t("The last stand"), pic: function () {
-                return fieldPic(0, 120, 900, 480, 370, 0.86, function () {
+                return fieldPic(0, 30, 900, 560, 300, 0.86, function () {
                   phase = "last"; phaseT = 5; aim = { x: 300, y: 960, held: 1 };
                   picMon("walker", 230, 965, 9); picMon("walker", 470, 990, 4);
                   for (var i = 1; i <= 4; i++) picBall("plain", TEE_X + (300 - TEE_X) * i / 5, TEE_Y + (960 - TEE_Y) * i / 5);
-                  drawGunAura(); drawReticle(); paintTee(); drawBag();
+                  drawGunAura(); drawReticle(); paintTee(); drawBag(); drawBagLabel();
                 });
               }, lines: [
-                Lang.t("Lose your last flag and you get the gun for 8 s. Only once a round."),
-                Lang.t("Hold to fire, tap to putt. Hold out and you get one flag back.") ] },
+                Lang.t("Lose your last hit point and you get one last chance to win it back by using burst mode for 8 seconds. This is only possible once a round."),
+                Lang.t("Hold to fire in bursts. Hold out and you get one last-chance flag (hit point) back.") ] },
             { id: "goal", title: Lang.t("Goal and stars"), pic: function () {
                 return fieldPic(0, 160, 40, 400, 330, 0.95, function () {
                   picMon("walker", 380, 175, 1); picMon("walker", 300, 215, 4); picMon("walker", 440, 270, 6); picMon("walker", 330, 340, 2);
@@ -9700,13 +9832,21 @@
                 Lang.t("Each level has one goal: survive its waves, sink the hole, knock out a boss…"),
                 Lang.t("The round ends as soon as the goal is met.") ] },
             { id: "boss", title: Lang.t("Bosses"), lv: 6, pic: function () {
-                return fieldPic(0, 130, 1030, 460, 240, 1, function () {
-                  cool = 0.35; coolMax = BOSS_COOLDOWN; bag = 4;
-                  paintTee(); drawBag();
+                // the hole's full shockwave rolling up the fairway to the
+                // boss at the top of it, drawn mid-wave and held
+                return fieldPic(0, 90, 130, 540, 520, 0.64, function () {
+                  var K = KINDS.greenkeeper, keepShock = shock;
+                  bossRef = { kind: "greenkeeper", hp: K.hp * 0.7, maxHp: K.hp, hpShow: K.hp * 0.8, flash: 0, dead: false };
+                  picMon("greenkeeper", 360, 440, K.hit[0], true);
+                  picHole(360, 610); picBall("plain", 335, 648);
+                  drawFx("shock", 3, 360, 610, HOLE_R * 9);
+                  shock = { x: 360, y: 610, R: 300, t: SHOCK_TIME, tag: "pic", hitIds: {}, power: 1, dmg: 0 };
+                  try { for (var w = 0; w < 4; w++) drawShock(); } finally { shock = keepShock; }
+                  drawBossBar();
                 });
-              }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags lost if a boss crosses"), "2"]],
+              }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags (hit points) lost if a boss reaches the line"), "2"]],
               lines: [
-                Lang.t("While a boss is on the field, you can only shoot once every 0.6 s.") ] }
+                Lang.t("While a boss is on the field, your fire rate is slightly changed.") ] }
           ] },
 
           { key: "country", label: Lang.t(B0[0].name), pages: [
@@ -9716,13 +9856,13 @@
                   picMon("walker", 560, 700, 3); picBall("plain", 290, 680);
                 });
               }, lines: [
-                Lang.t("Hit an obstacle hard enough, often enough, and it breaks.") ] },
+                Lang.t("Hit an obstacle hard enough and it breaks.") ] },
             { id: "walker", title: Lang.t(KINDS.walker.name), lv: 1, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 240, 670, 1); picMon("walker", 360, 645, 3); picMon("walker", 480, 680, 6);
                 });
               }, lines: [
-                Lang.t("A walker shambles down its lane toward the line.") ] },
+                Lang.t("A walker shambles toward you without straying far from its lane.") ] },
             { id: "boomer", title: Lang.t(KINDS.boomer.name), lv: 2, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 470, 670, 10, true); picMon("boomer", 280, 670, 2);
@@ -9737,7 +9877,7 @@
                   drawRail(h); picHole(h.x, h.y); picBall("plain", 300, 690);
                 });
               }, lines: [
-                Lang.t("Sink the moving hole while it moves for a bigger shockwave.") ] },
+                Lang.t("Sink the ball in the moving hole for a bigger shockwave.") ] },
             { id: "scars", title: Lang.t("Damaged course"), lv: 5, pic: function () {
                 return fieldPic(0, 100, 470, 520, 290, 1, function () {
                   drawFx("crater", FX.crater.n - 1, 240, 600, 160); drawFx("burn", FX.burn.n - 1, 470, 690, 130);
@@ -9749,7 +9889,7 @@
             { id: "greenkeeper", title: Lang.t(KINDS.greenkeeper.name), lv: 6, pic: function () {
                 return bossPic("greenkeeper", 0, function () { picBumper("course04", 520, 445); });
               }, rows: [hpRow(KINDS.greenkeeper.hp)], lines: [
-                Lang.t("From the front, each hit on the greenkeeper deals only 1 damage. Bank your shots to reach its sides.") ] }
+                Lang.t("From the front, each hit on the greenkeeper deals only one damage. Bank your shots off the edges of the field to maximise damage.") ] }
           ] },
 
           { key: "desert", label: Lang.t(B0[1].name), pages: [
@@ -9767,7 +9907,7 @@
                 });
               }, lines: [
                 Lang.t("The shield zombie's golf bag blocks shots that come straight from below."),
-                Lang.t("Lob over the shield zombie, bank off a fence, or use a piercing, heavy or giant ball.") ] },
+                Lang.t("Lob and aim at the shield zombie's head. You can also bank off one of the edges or use special balls (heavy, giant, etc.).") ] },
             { id: "wind", title: Lang.t("Wind"), lv: 10, pic: function () {
                 return fieldPic(1, 100, 470, 520, 290, 1, function () {
                   picMon("walker", 420, 620, 2);
@@ -9791,13 +9931,13 @@
                 });
               }, lines: [
                 Lang.t("A ball in the water is lost."),
-                Lang.t("Knock a zombie hard into a pond and it drowns.") ] },
+                Lang.t("Knock a zombie into a pond and it drowns.") ] },
             { id: "mudder", title: Lang.t(KINDS.mudder.name), lv: 14, pic: function () {
                 return fieldPic(2, 140, 470, 440, 230, 1, function () {
                   picMon("mudder", 270, 670, 3); picMon("mudling", 430, 655, 16); picMon("mudling", 500, 680, 16);
                 });
               }, lines: [
-                Lang.t("Knocked out, a mudder splits into two mudlings that burst at a touch and splash their neighbours.") ] },
+                Lang.t("Knocked out, a mudder splits into two mudlings that burst at the slightest touch.") ] },
             { id: "night", title: Lang.t("Night"), lv: 16, pic: function () {
                 return fieldPic(2, 100, 420, 520, 340, 0.93, function () {
                   picMon("walker", 300, 560, 2); picMon("walker", 460, 530, 5);
@@ -9805,7 +9945,7 @@
                   picMon("walker", 390, 735, 7);
                 });
               }, lines: [
-                Lang.t("Only the bottom of the field is lit. The horde comes out of the dark.") ] },
+                Lang.t("Only the bottom of the field is lit. The horde then comes out of the dark.") ] },
             { id: "bog", title: Lang.t(KINDS.bog.name), lv: 18, pic: function () {
                 return bossPic("bog", 2, function () { drawMud({ x: 360, y: 470, r: 130, life: 4 }); });
               }, rows: [hpRow(KINDS.bog.hp)], lines: [
@@ -9819,7 +9959,7 @@
                   picMon("walker", 300, 650, 10, true); picMon("walker", 380, 630, 11, true); picMon("walker", 440, 675, 9);
                 });
               }, lines: [
-                Lang.t("Zombies slide on ice too, twice as long when knocked back. Go for big pile-ups.") ] },
+                Lang.t("Zombies slide on ice too, and are knocked back twice as far on that surface. Make the most of big pile-ups.") ] },
             { id: "double", title: Lang.t("Two holes"), lv: 22, pic: function () {
                 return fieldPic(3, 100, 380, 520, 340, 0.94, function () {
                   picHole(240, 680); picHole(480, 660);
@@ -9831,7 +9971,7 @@
                   paintTerrain({ kind: "ice", key: "course10", x: 360, y: 470, rx: 150, ry: 60, life: -1 });
                 });
               }, rows: [hpRow(KINDS.yeti.hp)], lines: [
-                Lang.t("Fire hurts the yeti twice as much.") ] }
+                Lang.t("Fire hurts the yeti twice as much as any other blow.") ] }
           ] },
 
           { key: "graveyard", label: Lang.t(B0[4].name), pages: [
@@ -9847,14 +9987,14 @@
                   picMon("runner", 290, 650, 2); picMon("runner", 440, 685, 6);
                 });
               }, lines: [
-                Lang.t("A runner sprints straight at the line, more than twice as fast as a walker. Shoot fast.") ] },
+                Lang.t("A runner rushes at your flags as if it wanted to win a race.") ] },
             { id: "necro", title: Lang.t(KINDS.necro.name), lv: 26, pic: function () {
                 return fieldPic(4, 140, 470, 440, 230, 1, function () {
                   drawAura(290, 670, 30, 124, 1); picMon("necro", 290, 670, 6);
                   drawAura(460, 680, 30, 118, 0.8); picMon("walker", 460, 680, 1, false, 0.6);
                 });
               }, lines: [
-                Lang.t("Every 6 s, the necromancer stops to bring back the last two zombies knocked out."),
+                Lang.t("Every 10 seconds, the necromancer stops to raise the last two zombies knocked out."),
                 Lang.t("Knock the necromancer out first.") ] },
             { id: "horde", title: Lang.t("Horde"), lv: 28, pic: function () {
                 return fieldPic(4, 120, 450, 480, 270, 1, function () {
@@ -9870,43 +10010,43 @@
                   drawSkulls();
                 });
               }, rows: [hpRow(KINDS.king.hp)], lines: [
-                Lang.t("Send the zombie king's skull balls back at him for 8 damage. One that reaches the line costs a flag.") ] }
+                Lang.t("Send the skull-shaped balls back at the zombie king to deal 8 damage to him. You lose a flag (hit point) if that ball hits you.") ] }
           ] },
 
           { key: "kinds", label: Lang.t("Ball kinds"), pages: [
             { id: "kinds1", title: Lang.t("Explosive and multi"), lv: 1, pic: function () { return kindsPic(0, "explosive", "multi"); }, lines: [
-                Lang.t("The explosive ball blows up on the first zombie it hits, dealing 5 damage around it."),
+                Lang.t("The explosive ball deals 5 damage to nearby enemies."),
                 Lang.t("The multiball splits into three at its first bounce.") ] },
             { id: "kinds2", title: Lang.t("Pierce and heavy"), lv: 7, pic: function () { return kindsPic(1, "pierce", "heavy"); }, lines: [
                 Lang.t("The piercing ball goes through every zombie in its path, dealing 3 damage to each."),
-                Lang.t("The heavy ball deals double damage and knocks zombies far back. No shield stops these two.") ] },
+                Lang.t("The heavy ball deals double damage and knocks zombies farther back. No shield blocks it.") ] },
             { id: "kinds3", title: Lang.t("Homing and split"), lv: 14, pic: function () { return kindsPic(2, "homing", "split"); }, lines: [
-                Lang.t("The homing ball curves toward the nearest zombie for 3 s."),
-                Lang.t("The splitting ball splits in two at each of its first three bounces.") ] },
+                Lang.t("The homing ball curves toward the nearest zombie for 3 seconds."),
+                Lang.t("The splitting ball splits into three at each of its first three bounces.") ] },
             { id: "kinds4", title: Lang.t("Bouncy and fire"), lv: 19, pic: function () { return kindsPic(3, "bouncy", "fire"); }, lines: [
-                Lang.t("For 6 s, the bouncy ball keeps its full speed and bounces off the line."),
+                Lang.t("For 6 seconds, the bouncy ball keeps its full speed and bounces."),
                 Lang.t("The fire ball sets the grass alight where it hits.") ] },
             { id: "kinds5", title: Lang.t("Ice and giant"), lv: 25, pic: function () { return kindsPic(4, "ice", "giant"); }, lines: [
-                Lang.t("The ice ball freezes the zombies it hits for 3 s."),
+                Lang.t("The ice ball freezes the zombies it hits for 3 seconds."),
                 Lang.t("The giant ball is twice as big, deals +1 damage and goes through every shield.") ] }
           ] },
 
           { key: "supers", label: Lang.t("Supers"), pages: [
             { id: "supers1", title: Lang.t(B0[0].name), lv: 1, pic: function () { return supersPic(["rain", "fan", "freeze", "holeblast"]); }, lines: [
                 Lang.t("Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once."),
-                Lang.t("Time freeze stops the horde for 4 s. Hole blast sets off the hole's full shockwave.") ] },
+                Lang.t("Time freeze stops the horde for a few seconds. Hole blast sets off a hole's full shockwave.") ] },
             { id: "supers2", title: Lang.t(B0[1].name), lv: 7, pic: function () { return supersPic(["seeker", "sniper", "sprinkler", "cart"]); }, lines: [
-                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest."),
-                Lang.t("Sprinklers push the whole horde back. The Golf cart charges up the busiest lane.") ] },
+                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest zombies."),
+                Lang.t("Sprinklers push the whole horde back. The golf cart, for its part, charges up the busiest lane.") ] },
             { id: "supers3", title: Lang.t(B0[2].name), lv: 13, pic: function () { return supersPic(["boomvolley", "splitstorm", "magnet", "hail"]); }, lines: [
-                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 ice balls."),
-                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 s, at any speed.") ] },
+                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 icy balls."),
+                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 seconds, at any speed.") ] },
             { id: "supers4", title: Lang.t(B0[3].name), lv: 19, pic: function () { return supersPic(["firestorm", "superbounce", "cluster", "rush"]); }, lines: [
                 Lang.t("Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down."),
-                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun for 6 s.") ] },
+                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun that fires loads of balls for a few seconds.") ] },
             { id: "supers5", title: Lang.t(B0[4].name), lv: 25, pic: function () { return supersPic(["meteor", "carpet", "golden", "mower"]); }, lines: [
                 Lang.t("Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field."),
-                Lang.t("Golden rain makes KOs pay × 3 for 8 s. Mower sends mowers across the field.") ] }
+                Lang.t("Golden rain makes KOs pay ×3 for 8 seconds. Mower sends mowers across the field, crushing zombies.") ] }
           ] }
         ];
       }
@@ -9945,7 +10085,8 @@
     }
     function labState() {
       return { biome: B ? B.key : null, level: CONFIG.level || 0, zombies: living().length, balls: balls ? balls.length : 0,
-               fx: fxs ? fxs.length : 0, specials: specials ? specials.slice() : [], phase: phase };
+               fx: fxs ? fxs.length : 0, specials: specials ? specials.slice() : [], phase: phase,
+               supers: slots ? slots.map(function (s) { return s.power; }) : [] };
     }
     /* A zombie of `kind` on (x, y), or round the middle of the field, put
        straight into `state`: what a round would take a walk to reach. */
@@ -10094,7 +10235,7 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelTally: levelTally,
-             levelRules: levelRules, levelWon: levelWon, guide: guide,
+             levelRules: levelRules, levelWon: levelWon, guide: guide, loadout: loadout,
              lab: { set: function (o) { for (var key in o) if (o.hasOwnProperty(key)) lab[key] = o[key]; },
                     catalog: labCatalog, state: labState, zombie: labZombie, row: labRow, pose: labPose,
                     ball: labBall, load: labLoad, power: firePower, fx: labFx, event: labEvent, clear: labClear } };
@@ -10191,9 +10332,9 @@
      LEFT / RIGHT (or A / D) mirror a lateral flick for a "swipe" game: the
      engine synthesizes the whole down/move/up gesture through Input.swipe, so
      the game reads the keyboard through the very same code path as a finger.
-     UP (or W) is an upward flick, for a swipe game that sets CONFIG.swipeUp:
-     opt-in, because a game that never reads a vertical flick would take it
-     for a tap. CONFIG.keyboard = false opts out of all of it. */
+     UP (or W) is an upward flick, for a swipe game that sets CONFIG.swipeUp,
+     and DOWN (or S) a downward one behind CONFIG.swipeDown: opt-in, because a
+     game that never reads a vertical flick would take it for a tap. CONFIG.keyboard = false opts out of all of it. */
   function spaceIsATap() {
     if (CONFIG.keyboard === false) return false;
     var demo = CONFIG.intro.demo || "tap";
@@ -10210,6 +10351,7 @@
       if (e.code === "ArrowLeft"  || e.key === "ArrowLeft"  || e.key === "a" || e.key === "A" || e.keyCode === 37) return -1;
       if (e.code === "ArrowRight" || e.key === "ArrowRight" || e.key === "d" || e.key === "D" || e.keyCode === 39) return 1;
       if (CONFIG.swipeUp && (e.code === "ArrowUp" || e.key === "ArrowUp" || e.key === "w" || e.key === "W" || e.keyCode === 38)) return "up";
+      if (CONFIG.swipeDown && (e.code === "ArrowDown" || e.key === "ArrowDown" || e.key === "s" || e.key === "S" || e.keyCode === 40)) return "down";
       return 0;
     }
     window.addEventListener("keydown", function (e) {

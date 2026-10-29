@@ -339,6 +339,11 @@
           "takes": [
             { "file": "tone-low-random-01", "start": 0, "length": 0.55 }
           ]
+        },
+        "heal": {
+          "takes": [
+            { "file": "magic-twinkle-02", "start": 0, "length": 0.843, "tail": "fade", "tailLength": 0.773 }
+          ]
         }
       }
     },
@@ -434,6 +439,13 @@
           "takes": [
             { "file": "door-scifi-open-03", "start": 0, "length": 0.4, "tail": "fade", "tailLength": 0.203 }
           ]
+        },
+        "walk": {
+          "takes": [
+            { "file": "click-01", "start": 0, "length": 0.09 },
+            { "file": "click-02", "start": 0, "length": 0.06 },
+            { "file": "click-03", "start": 0, "length": 0.09 }
+          ]
         }
       }
     },
@@ -456,6 +468,11 @@
         "metalclanklong": {
           "takes": [
             { "file": "firework-burst-06", "start": 0, "length": 0.57 }
+          ]
+        },
+        "send": {
+          "takes": [
+            { "file": "jingle-steel-17", "start": 0, "length": 0.492, "tail": "fade", "tailLength": 0.059 }
           ]
         }
       }
@@ -626,6 +643,21 @@
           "takes": [
             { "file": "click-switch-03", "start": 0, "length": 0.18 }
           ]
+        },
+        "coin": {
+          "takes": [
+            { "file": "coins-jingle-08", "start": 0.11, "length": 0.21 }
+          ]
+        },
+        "bambouclick1": {
+          "takes": [
+            { "file": "click-musical-01", "start": 0, "length": 0.267 }
+          ]
+        },
+        "bambouclick2": {
+          "takes": [
+            { "file": "click-musical-02", "start": 0, "length": 0.22 }
+          ]
         }
       }
     },
@@ -695,6 +727,16 @@
           "takes": [
             { "file": "forcefield-02", "start": 0, "length": 0.259 }
           ]
+        },
+        "lost": {
+          "takes": [
+            { "file": "jingle-steel-08", "start": 0, "length": 1.067, "tail": "fade", "tailLength": 0.129 }
+          ]
+        },
+        "bad": {
+          "takes": [
+            { "file": "error-musical-02", "start": 0, "length": 0.353 }
+          ]
         }
       }
     },
@@ -715,6 +757,11 @@
         "errorui": {
           "takes": [
             { "file": "explosion-boom-01", "start": 0.101, "length": 0.17 }
+          ]
+        },
+        "heart": {
+          "takes": [
+            { "file": "heartbeat-01", "start": 0, "length": 0.53 }
           ]
         }
       }
@@ -821,6 +868,16 @@
           "takes": [
             { "file": "powerup-rise-07", "start": 0, "length": 0.986, "tail": "fade", "tailLength": 0.457 },
             { "file": "powerup-rise-07", "start": 0.122, "length": 0.864, "tail": "fade", "tailLength": 0.343 }
+          ]
+        },
+        "ok": {
+          "takes": [
+            { "file": "jingle-steel-05", "start": 0, "length": 0.556, "tail": "fade", "tailLength": 0.222 }
+          ]
+        },
+        "levelup": {
+          "takes": [
+            { "file": "bell-tree-03", "start": 0, "length": 0.873, "tail": "fade", "tailLength": 0.299 }
           ]
         }
       }

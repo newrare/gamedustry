@@ -1,0 +1,2698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers orders by click</title>
+<meta name="lab-group" content="prototype">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS — ORDERS BY CLICK, ROUND 2: CONVOYS. An answer to "a region
+   holding many kinds of troops and pieces is confusing": in the game (v0.6,
+   lab foldiers-target-actions.html) a region picked up puts every action of
+   every piece on every target at once.
+
+   The flow tried here asks one question at a time:
+     1. tap a blue region — its pieces stand in a RING around it (or a sheet
+        lists them), each one only if it can still do something;
+     2. a piece fans out what it can still do — nothing impossible is shown;
+     3. only that action's targets light up, with their forecast; a tap on
+        one gives the order and the ring goes. A count bar says how many.
+   A drag is the camera, always.
+
+   An order is a CONVOY: ONE arrow per target and THREE at most from a
+   region. Everything a region sends to one target rides on that arrow —
+   foot, riders, the general, the drummer, the siege tower, the cannon's
+   shot, which fires first inside its convoy. A fourth target is never
+   offered: once three convoys stand, only their own targets stay lit. The
+   arrow carries the information (how many, which pieces, the verdict on its
+   head, the number it runs in), and a tap on it opens the CONVOY CARD:
+   change the counts, drop a piece or the shot, move it to 1, 2 or 3, cancel
+   it. Convoys run in their number's order; regions run by index.
+
+   Standing orders and the levy route are thin dotted arrows apart, and do
+   not count among the three. One levy route a region: its new troops leave
+   on their own every bell for a region of yours, along your land.
+
+   Every troop and piece must be DEALT WITH: given an order, or told to
+   Defend (troops) or Wait (pieces, a town's buys and standing orders). A
+   standing order set deals with its town. Whatever is not dealt with puts a
+   yellow dot on the region — the regions still to play.
+
+   What a region shows before it is tapped:
+     - a badge on what produces (+2 on the town, +1 on the mine; ↻ when a
+       levy route takes the troops away);
+     - the total of its troops, every kind;
+     - a shield: green, it holds against the biggest red stack next door;
+       yellow, just (a tie or one troop's margin); red, it falls. It is
+       counted on what STAYS, so sending the troops away turns it red;
+     - the yellow dot, something not dealt with yet;
+     - a "!" for the rest that wants attention (a revolt risk, out of
+       supply, hungry once the grain stock runs short).
+   The alerts are the lab's stand-ins for the game's rules, written where
+   they are computed. Red does nothing: Send resolves the orders with the
+   game's points (attack 2, defence 3, capital +1, river −1, general +1 a
+   troop, drummer +1, siege tower ignores the walls, cannon −2).
+
+   ROUND 4 — the reserve, the filters, one plate a region. A camp holding
+   more towns did not crush the other (its troops were born far from the
+   front), and the screen grew unreadable as the mechanics piled up.
+     - THE RESERVE: towns and forts (+1) and the capital (+2) no longer
+       produce where they stand; they feed one reserve (the blue pill in the
+       HUD, with what it gains a bell). The player drops it whenever they
+       like on a region linked to the capital, one tap a region (+1, +3 or
+       all), or keeps it and lets it pile up for a few ticks. Dropped troops
+       are there at once and can march this very tick. "Production: local"
+       is the old rule, for comparison.
+     - RED PLAYS the same rule: it drops its reserve where its front is
+       threatened or where it can take something, and attacks what it beats
+       by a margin. Its attacks leave with yours and land after them.
+     - THE FILTERS: a row of icons under the HUD shows or hides one family
+       of marks each — defence, attack, production, warnings, the troops it
+       takes to win a region you touch, red's plans.
+     - ONE PLATE A REGION OF YOURS, each family in its own colour, always
+       the same: the SHIELD in its verdict's colour (it holds, just, falls,
+       counted on what stays); ATTACK in blue, one icon a troop type and the
+       count free to march; PRODUCTION in beige, one icon a kind (troops,
+       gold, grain) and what it makes a bell; a WARNING in orange, the count
+       of things to know (red stacks next door that can attack, a revolt
+       risk, no supply, hunger), listed on the region's card. One yellow dot
+       a region, for something not dealt with yet.
+     - The arrows no longer wear their number: the order a convoy runs in
+       is set on its card only.
+
+   ROUND 5 — the stages. A column right of the frame picks one of the
+   thirty stages of docs/FOLDIERS.md §8: the map takes the stage's size and
+   only what it has unlocked (forts, mountains, rivers, harbours, mines,
+   riders, the cannon, farms...), the menus, alerts, HUD counters and
+   filters follow. A stage whose rule the lab does not play yet says so and
+   plays as the one before. The filter icons are inline SVG with their word
+   under them: a CSS mask over a file url drew nothing over file://.
+
+   ROUND 6 — troop for troop. No more defence points: 5 against 5 leaves
+   nobody on either side, 6 against 5 takes it with 1 left. Every modifier
+   is one flat point: +1 to a region that HOLDS (red's own hold order, your
+   Defend, a palisade; a siege tower cancels it), river −1, general +1,
+   drummer +1. Forts and the capital no longer defend, they pay the reserve.
+   What a region makes this bell never fights, it lands after the battle.
+   Red now holds its threatened regions and sends help to them, and its
+   reinforcements land before any attack. Send resolves the bell and plays
+   it back: the reinforcements, the shots, then each battle on a plate —
+   both sides' troops, then the hold point (a gold shield that beats) and
+   the reinforcement counted in the defenders, then the sums and the
+   verdict.
+
+   ROUND 7 — the battle plate is gone: the bell plays the game's own way,
+   every column at once (a target attacked from two of your regions is ONE
+   battle, both columns marching and bumping together), with small marks
+   over the defenders for what counted on top — "+2" with a red figure for
+   the reinforcement, a gold shield "+1" for the hold. Every "Need" chip and
+   its filter are gone.
+
+   ROUND 8 — a river under an arrow says its −1 on the arrow and on the
+   target's pin. A harbour stands only where the region touches the sea,
+   and a fleet sails a SEA ROAD: the shortest way through the sea cells of
+   the map, cut into legs a bell long, each its own arrow; it lands at the
+   end of the last one (with any land attack on the same region).
+
+   ROUND 9 — a march deep into your own land: March offers every region of
+   yours your land reaches, one region a bell, one arrow a bell (a fleet's
+   way); the column is its own figure on the road and arrives before red
+   attacks. A RELAY (2 gold, the Relays stage) on any region a trip leaves,
+   crosses or reaches makes it one bell shorter, by land or by sea. Every
+   purchase shows its price even when the gold is short; a tap then says so
+   and lights the gold mines to take. The game starts with no gold.
+
+   ROUND 10 — one word a thing: INFANTRY (never foot), CAVALRY (never
+   riders), TROOPS only for the two together, TICK (never bell), OUTPUT
+   (never production), CONVOY (never column), and DEFEND for the +1 (never
+   hold).
+
+   The full region (the "Full region" button) carries every piece the stage
+   can put on one region; "Region content" strips it down. Nothing here ships. Copy
+   settings is the panel as JSON.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 320px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.styles { display:flex; flex-direction:column; gap:4px; }
+.styles button { text-align:left; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px;
+  font:600 12px/1.35 inherit; cursor:pointer; }
+.styles button b { display:block; color:#e8e6f5; font-size:13px; }
+.styles button span { color:#8b8ba7; font-weight:500; }
+.styles button.on { border-color:#7ea6ff; background:#20263d; }
+.styles button.dirty b::after { content:" · edited"; color:#e0b050; font-weight:600; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#log { font-size:12px; font-weight:500; color:#b9b9d4; }
+#log li { margin:0 0 4px 16px; }
+#log li.h { list-style:none; margin-left:0; color:#7ea6ff; font-weight:700; }
+
+#stages { flex:0 0 250px; padding:22px 14px; background:#12121c; border-left:1px solid #23233a; overflow:auto; max-height:100vh; }
+#stages h3 { margin:0 0 8px; font-size:12px; letter-spacing:1px; color:#7ea6ff; }
+#stages .now { margin:0 0 12px; padding:10px; border-radius:8px; background:#1c1c2c; font-size:12px; font-weight:500; color:#c9c9e0; }
+#stages .now b { display:block; color:#e8e6f5; font-size:13px; margin-bottom:4px; }
+#stages .now small { display:block; margin-top:6px; color:#8b8ba7; }
+#stages button { display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; padding:6px 8px; margin-bottom:3px; background:#1c1c2c;
+  color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px; font:600 12px/1.3 inherit; cursor:pointer; }
+#stages button i { flex:0 0 20px; font-style:normal; color:#7ea6ff; text-align:right; font-variant-numeric:tabular-nums; }
+#stages button em { margin-left:auto; font-style:normal; font-weight:500; font-size:11px; color:#6d6d8a; }
+#stages button.off { color:#6d6d8a; }
+#stages button.past { border-color:#2f4a7a; }
+#stages button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#stages button.on i, #stages button.on em { color:#0b0b12; }
+#stage { flex:1; height:100vh; display:flex; align-items:center; justify-content:center; padding:18px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+#frame { position:relative; height:100%; max-height:calc(100vh - 36px); aspect-ratio:720/1280; border-radius:16px; overflow:hidden;
+  box-shadow:0 18px 50px rgba(0,0,0,.5); background:#1f8a96; }
+#view { position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:grab; }
+#view.panning { cursor:grabbing; }
+#view.over { cursor:pointer; }
+
+/* ---- the mocked game UI, in design px of the 720x1280 frame ------------- */
+#ui { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; pointer-events:none;
+  font:700 22px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:#2a2418; }
+#ui .live { pointer-events:auto; }
+/* a sheet that is away takes no tap: the map under it is the map */
+#ui #card:not(.on), #ui #bar:not(.on), #ui #convoy:not(.on) { pointer-events:none; visibility:hidden; transition-property:transform, opacity, visibility; }
+/* a reset with no weight, so every button class below wins over it */
+:where(#ui) button { font:inherit; color:inherit; cursor:pointer; border:0; background:none; }
+.paper { background:#f6ecd2; border:3px solid #e2d2a8; border-radius:14px; box-shadow:0 6px 0 rgba(70,52,24,.25), 0 14px 30px rgba(0,0,0,.25); }
+
+#hud { position:absolute; left:16px; right:16px; top:20px; height:84px; display:flex; align-items:center; justify-content:space-between; padding:0 24px; }
+#hud .big { font-size:30px; }
+#hud .gold { display:flex; align-items:center; gap:10px; }
+#hud .gold i { width:30px; height:30px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#ffe58a,#d6a21c); border:2px solid #9c7410; }
+#hud .gold i.grain { border-radius:6px 16px; background:linear-gradient(135deg,#f1d27a,#c9962e); border-color:#8a6a20; }
+#hud .big { font-size:28px; }
+#hud .todo { display:flex; align-items:center; gap:8px; }
+#ui #resBtn { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:14px; background:#2f63c4; color:#fff; font-size:26px;
+  box-shadow:0 4px 0 #1d3f8a; }
+#ui #resBtn.zero { background:#cfc6b0; color:#6d6450; box-shadow:0 4px 0 #a99f86; }
+#ui #resBtn.on { outline:4px solid #ffd23a; }
+#ui #resBtn small { font-size:20px; font-weight:600; opacity:.85; }
+#filters { position:absolute; left:16px; right:16px; top:112px; height:80px; display:flex; justify-content:center; gap:8px; }
+#filters button { width:106px; height:76px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  border-radius:14px; background:#f6ecd2; border:3px solid #e2d2a8; box-shadow:0 4px 0 rgba(70,52,24,.25); color:var(--c); }
+#filters button .glyph { width:32px; height:32px; flex:0 0 32px; }
+#filters button span { font-size:20px; line-height:1; color:#2a2418; }
+#filters button.off { background:#d9cfb6; color:#9a8f76; box-shadow:none; transform:translateY(3px); }
+#filters button.off span { color:#8a8068; text-decoration:line-through; }
+#hud .todo i { width:22px; height:22px; border-radius:50%; background:#ffd23a; border:3px solid #2a2418; }
+
+#ui #send { position:absolute; left:210px; top:1128px; width:300px; height:84px; display:flex; align-items:center; justify-content:center; gap:12px;
+  font-size:28px; color:#fff; background:#2f63c4; border-radius:18px; box-shadow:0 6px 0 #1d3f8a, 0 14px 30px rgba(0,0,0,.3); }
+#ui #send:active { transform:translateY(4px); box-shadow:0 2px 0 #1d3f8a; }
+
+/* the cards: the region in hand, the convoy, the target step */
+#card, #convoy, #bar { position:absolute; left:16px; right:16px; bottom:170px; display:flex; flex-direction:column;
+  transform:translateY(30px); opacity:0; transition:transform .22s cubic-bezier(.2,1.4,.4,1), opacity .15s; }
+#card { max-height:660px; }
+#card.on, #convoy.on, #bar.on { transform:none; opacity:1; }
+.head { display:flex; align-items:center; gap:12px; padding:14px 18px 10px; }
+.head .tag { color:#fff; background:#2f63c4; border-radius:10px; padding:4px 12px; white-space:nowrap; }
+.head .sub { color:#7a6a48; font-weight:600; }
+.head .x { margin-left:auto; width:44px; height:44px; flex:0 0 44px; border-radius:50%; background:#e9dcb8; font-size:26px; line-height:44px; text-align:center; }
+.alert { margin:0 18px 12px; padding:8px 12px; border-radius:10px; color:#fff; font-weight:700; }
+.alert + .alert { margin-top:-6px; }
+#card .body { overflow:auto; padding:4px 12px 8px; border-top:2px dashed #e2d2a8; }
+.foot { padding:8px 18px 12px; color:#8a7a55; font-weight:600; font-size:20px; border-top:2px dashed #e2d2a8; }
+
+.piece { width:64px; height:64px; flex:0 0 64px; display:flex; align-items:flex-end; justify-content:center; position:relative; }
+.piece img { max-width:64px; max-height:64px; }
+.piece .n { position:absolute; right:-6px; bottom:-4px; min-width:32px; padding:2px 6px; border-radius:9px; background:#2f63c4; color:#fff; font-size:20px; text-align:center; border:2px solid #f6ecd2; }
+
+/* sheet: one row per piece, what it can still do on the right */
+.el { display:flex; align-items:center; gap:14px; padding:8px 6px; border-radius:12px; }
+.el + .el { border-top:1px solid #eadfc2; }
+.el .nm { flex:0 0 150px; display:flex; flex-direction:column; }
+.el .nm small { font-size:20px; font-weight:600; color:#8a7a55; }
+.acts { flex:1; display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.act { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:12px; background:#fffaf0; border:2px solid #d8c79c;
+  box-shadow:0 3px 0 #d8c79c; white-space:nowrap; }
+.act:active { transform:translateY(2px); box-shadow:0 1px 0 #d8c79c; }
+.act.done { background:#dff0e2; border-color:#2f8f4e; box-shadow:0 3px 0 #2f8f4e; }
+.act.hold { background:#efe6cf; }
+.act .cost { color:#9c7410; font-size:20px; }
+.act.poor { background:#f3ecdc; color:#8a7b5c; }
+.act.poor .cost { color:#c0392b; }
+/* a notice: what a tap could not do, and why */
+#note { position:absolute; left:50%; top:206px; width:max-content; max-width:620px; padding:12px 22px; border-radius:16px; background:#fff6dc;
+  border:3px solid #d6a21c; box-shadow:0 6px 0 rgba(70,52,24,.3); text-align:center; opacity:0; transform:translate(-50%,-16px);
+  transition:opacity .2s, transform .2s; pointer-events:none; }
+#note.on { opacity:1; transform:translate(-50%,0); }
+#note b { display:block; font-size:26px; color:#9c7410; }
+#note small { display:block; margin-top:4px; font-size:22px; font-weight:600; color:#5a4a2a; }
+.glyph { width:26px; height:26px; flex:0 0 26px; display:block; }
+
+/* ring: the pieces stand around the region, a tap fans out what it can do */
+#ring { position:absolute; left:0; top:0; width:0; height:0; }
+.bub { position:absolute; width:84px; height:84px; margin:-42px 0 0 -42px; border-radius:50%; background:#f6ecd2; border:3px solid #e2d2a8;
+  box-shadow:0 5px 0 rgba(70,52,24,.3); display:flex; align-items:center; justify-content:center; transition:transform .18s; }
+.bub img { max-width:60px; max-height:60px; }
+.bub .n { position:absolute; right:-8px; bottom:-6px; min-width:32px; padding:1px 6px; border-radius:9px; background:#2f63c4; color:#fff; font-size:20px; text-align:center; border:2px solid #f6ecd2; }
+.bub.held img { opacity:.45; }
+.bub.held::before { content:"✓"; position:absolute; left:-4px; top:-6px; width:30px; height:30px; border-radius:50%; background:#2f8f4e; color:#fff; font-size:20px; line-height:28px; text-align:center; border:2px solid #f6ecd2; }
+.bub.open { transform:scale(1.15); border-color:#2f63c4; }
+.fan { position:absolute; display:flex; flex-direction:column; gap:8px; }
+.fan .act { box-shadow:0 3px 0 #d8c79c, 0 8px 18px rgba(0,0,0,.25); }
+
+/* the target step: a bar under the map, how many leave */
+#bar { padding:14px 16px; gap:12px; }
+#bar .line { display:flex; align-items:center; gap:12px; }
+#bar .line .what { flex:1; }
+#bar .line .what small { display:block; font-weight:600; font-size:20px; color:#8a7a55; }
+.count { display:flex; align-items:center; gap:10px; }
+.count .num { min-width:64px; text-align:center; font-size:32px; }
+.round { width:52px; height:52px; border-radius:50%; background:#e9dcb8; font-size:30px; }
+.round:disabled { opacity:.35; }
+.chip { padding:10px 16px; border-radius:12px; background:#fffaf0; border:2px solid #d8c79c; }
+.chip.on { background:#2f63c4; border-color:#2f63c4; color:#fff; }
+.cancel { padding:10px 16px; border-radius:12px; background:#f3d3cc; color:#c8402f; }
+
+/* the convoy card */
+#convoy .body { padding:4px 14px 6px; border-top:2px dashed #e2d2a8; }
+.cvr { display:flex; align-items:center; gap:12px; padding:6px 4px; }
+.cvr + .cvr { border-top:1px solid #eadfc2; }
+.cvr .nm { flex:1; }
+.cvr .nm small { display:block; font-weight:600; font-size:20px; color:#8a7a55; }
+.cvr .mini { width:44px; height:44px; border-radius:10px; background:#f3d3cc; color:#c8402f; font-size:24px; }
+.verdict { margin:6px 14px 4px; padding:10px 14px; border-radius:12px; color:#fff; }
+.runs { display:flex; align-items:center; gap:10px; padding:10px 18px 4px; }
+.runs .lbl { flex:1; color:#8a7a55; font-weight:600; }
+.runs .no { width:52px; height:52px; border-radius:50%; background:#e9dcb8; font-size:24px; }
+.runs .no.on { background:#2a2418; color:#f6ecd2; }
+.cvfoot { display:flex; gap:10px; padding:12px 18px 16px; }
+.cvfoot .cancel { flex:1; padding:14px; font-size:24px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Foldiers orders by click</h1>
+  <p class="hint">Tap a blue region, pick a piece and what it does, then tap a lit target: that is a convoy, three at most a region. Tap an arrow to change or cancel its convoy. A drag is the camera (wheel or pinch to zoom). Escape steps back.</p>
+  <h3>Preset</h3>
+  <div class="styles" id="presets"></div>
+  <div id="knobs"></div>
+  <div class="btns"><button id="newmap">New map</button><button id="send2">Send</button><button id="full">Full region</button></div>
+  <div class="btns"><button id="reset">Reset preset</button><button id="copy" class="main">Copy settings</button></div>
+  <h3>Last tick</h3>
+  <ul id="log"><li class="h">Nothing sent yet.</li></ul>
+</div>
+
+<div id="stage"><div id="frame">
+  <canvas id="view"></canvas>
+  <div id="ui">
+    <div id="hud" class="paper"><span class="big" id="tickTx">Tick 1</span>
+      <span class="todo"><i></i><span class="big" id="todoTx">0</span></span>
+      <span class="gold" id="goldHud"><i></i><span class="big" id="goldTx">0</span></span>
+      <span class="gold" id="grainHud"><i class="grain"></i><span class="big" id="grainTx">24</span></span>
+      <button id="resBtn" class="live"><small>Reserve</small><span id="resTx">0</span><small id="incTx"></small></button></div>
+    <div id="filters" class="live"></div>
+    <div id="ring"></div>
+    <div id="card" class="paper live"></div>
+    <div id="convoy" class="paper live"></div>
+    <div id="bar" class="paper live"></div>
+    <button id="send" class="live">Send orders</button>
+    <div id="note"></div>
+  </div>
+</div></div>
+
+<div id="stages">
+  <h3>Stage</h3>
+  <div class="now" id="stageNow"></div>
+  <div id="stageList"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- the knobs ------------------------------------------------------------
+  const DEFAULTS = { menu: "ring", count: "bar", after: "deselect", hold: "tick", dim: 0.45, figures: "move", shield: "hide",
+                     route: "march", content: "full", gold: 0, zoom: 1.0, stage: 1, anim: "on",
+                     prod: "reserve", deposit: "linked", red: "on", autoplace: "off",
+                     f: { def: true, atk: true, prod: true, warn: true, red: false } };
+  const PRESETS = [
+    { name: "A · Ring", note: "The pieces stand in a ring around the region; a tap fans out what each can still do.", v: {} },
+    { name: "B · Sheet", note: "The region card lists the pieces, what each can still do on the same row.", v: { menu: "sheet" } }
+  ];
+  const KNOBS = [
+    { h: "Menu" },
+    { k: "menu", label: "Pieces shown as", o: ["ring", "sheet"] },
+    { k: "count", label: "How many leave", o: ["bar", "all"] },
+    { k: "after", label: "After an order", o: ["deselect", "keep"] },
+    { k: "hold", label: "Defend and wait last", o: ["tick", "kept"] },
+    { k: "dim", label: "Dim what is not a target", min: 0, max: 0.7, step: 0.05 },
+    { h: "On the map" },
+    { k: "figures", label: "Engaged figures", o: ["move", "stay"] },
+    { k: "shield", label: "Shield with no red next door", o: ["grey", "hide"] },
+    { k: "anim", label: "Battles played after Send", o: ["on", "fast", "off"] },
+    { h: "Rules to judge" },
+    { k: "prod", label: "Output", o: ["reserve", "local"] },
+    { k: "deposit", label: "Reserve dropped on", o: ["linked", "any"] },
+    { k: "autoplace", label: "Dropping opens by itself", o: ["on", "off"] },
+    { k: "red", label: "Red plays", o: ["on", "off"] },
+    { k: "route", label: "Levy route (local output)", o: ["march", "instant", "off"] },
+    { h: "Scenario" },
+    { k: "content", label: "Region content", o: ["full", "typical", "foot"] },
+    { k: "gold", label: "Gold at the start", min: 0, max: 30, step: 1 },
+    { k: "zoom", label: "Start zoom", min: 0.5, max: 2, step: 0.05 }
+  ];
+  const STORE = "foldiers-click-orders-8";
+  let preset = 0, S = Object.assign({}, DEFAULTS);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved) { Object.assign(S, saved.S || {}); preset = saved.preset | 0; }
+    S.f = Object.assign({}, DEFAULTS.f, S.f || {});
+  } catch (e) { /* defaults */ }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify({ S: S, preset: preset })); } catch (e) { /* private window */ } }
+
+  // ---- the game's colours and numbers -----------------------------------------
+  const NEUTRAL = 0, BLUE = 1, RED = 2;
+  const CAMP = [
+    { base: "#b9a77d", rgb: [150, 140, 110] },
+    { base: "#2f63c4", rgb: [47, 99, 196] },
+    { base: "#d9412f", rgb: [217, 65, 47] }
+  ];
+  const OK_COL = "#2f8f4e", BAD_COL = "#c8402f", TIE_COL = "#6d7486", RISK_COL = "#d08a12", JUST_COL = "#e0b020", IDLE_COL = "#8a94a8";
+  const INK = "#2a2418", TODO_COL = "#ffd23a";
+  // troop for troop; every modifier is one flat point on its side
+  const HOLD_PTS = 1, RIVER_PTS = -1, GENERAL_PTS = 1, DRUM_PTS = 1;
+  // a fleet sails this far a bell (world units of its sea road); the river's mark
+  const SEA_LEG = 600, RIVER_COL = "#2f7fb5";
+  const CANNON_DAMAGE = 2, LIFT_MAX = 6, LIFT_RANGE = 470, RECRUIT_COST = 3, RECRUIT_TROOPS = 3, CAV_COST = 4, CAV_COUNT = 2, WORK_COST = 4, RELAY_COST = 2;
+  const MAX_CONVOYS = 3, GRAIN_FEED = 6, SUPPLY_RANGE = 3, REVOLT_TICKS = 3;
+  const FARM_GRAIN = 3, WARN_COL = "#e07b12", ATK_COL = "#2f63c4", PROD_COL = "#e9d8ae", PROD_INK = "#5c4a26";
+  // the filter row: each icon shows or hides one family of marks
+  const FILTERS = [
+    { k: "def",  word: "Defence", label: "Defence",                  pict: "shield",      c: "#2f8f4e" },
+    { k: "atk",  word: "Attack",  label: "Attack",                   pict: "sword",       c: ATK_COL },
+    { k: "prod", word: "Output",  label: "Output",                   pict: "trending-up", c: "#8a6a20" },
+    { k: "warn", word: "Alerts",  label: "Warnings",                 pict: "info",        c: WARN_COL },
+    { k: "red",  word: "Red",     label: "Red's plans",              pict: "eye",         c: "#c8402f", lock: "spy" }
+  ];
+  const TERRAIN = [["#a8c870", "#94c060"], ["#e2c66e", "#d4b45a"], ["#79ae60", "#6a9d52"]];
+  const FONT = "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
+  const NAMES = ["Tolen", "Marrow", "Ashby", "Quill", "Fenwick", "Dunmore", "Corrie", "Halden", "Brisk", "Oakmere", "Pell", "Wren",
+    "Larch", "Mirefold", "Sable", "Thorne", "Vellum", "Crease", "Kestrel", "Hollin", "Rook", "Ember", "Gorse", "Linden", "Mossby",
+    "Nettle", "Osier", "Pleat", "Rushby", "Selden", "Tarn", "Umber", "Vane", "Wold", "Yarrow", "Ashen", "Brack", "Cinder", "Dell", "Eyot",
+    "Fallow", "Gable", "Heron", "Ivel", "Jessop", "Kell", "Lowrie", "Merrin", "Norrey", "Orrin", "Pike", "Quarry", "Ravel", "Stour"];
+
+  /* ---- the thirty stages (docs/FOLDIERS.md §8) -------------------------------
+     One rule a stage, everything learned stays. `m` is the mechanic the lab
+     plays (null: not in the lab yet, the stage plays as the one before it),
+     `n` how many regions the map wants. */
+  const STAGES = [
+    { name: "Orders and ticks", m: "base", n: 8, rule: "Draw orders, Send, everything resolves at once. Towns +1, capital +2 into the reserve. Troop for troop: the bigger side wins and keeps the difference, a tie leaves nobody. Defend: +1. A march deep into your land takes one tick a region." },
+    { name: "Forts", m: "fort", n: 9, rule: "A fort adds +1 to the reserve." },
+    { name: "Mountains", m: "mountain", n: 10, rule: "A mountain border cannot be crossed." },
+    { name: "Rivers and bridges", m: "river", n: 12, rule: "Attacking across a river: −1." },
+    { name: "Sea and harbours", m: "sea", n: 14, rule: "A harbour on the coast ships infantry to another harbour, by sea only: one arrow a tick at sea." },
+    { name: "Fog of war", m: null, n: 16, rule: "You only see your regions and their neighbours." },
+    { name: "Gold", m: "gold", n: 18, rule: "A mine pays 1 gold a tick to its owner. A purchase always shows its price, and says where to find the gold it lacks." },
+    { name: "Recruitment", m: "recruit", n: 20, rule: "A town turns 3 gold into +3 infantry." },
+    { name: "Cavalry", m: "cav", n: 21, rule: "Cavalry moves two regions in one tick, through your land or empty land. 4 gold buys 2." },
+    { name: "Artillery", m: "cannon", n: 22, rule: "A cannon fires on a neighbour first: −2 troops there." },
+    { name: "Grain", m: "grain", n: 24, rule: "A region feeds 6 troops; above, the grain stock pays 1 grain a troop, or one deserts. A farm makes +3." },
+    { name: "Supply lines", m: "supply", n: 26, rule: "More than 3 regions from a town or a depot: −1 troop a tick. A wagon builds a depot." },
+    { name: "Scouts", m: "scout", n: 28, rule: "A balloon sees two regions around it." },
+    { name: "Spies", m: "spy", n: 29, rule: "Red's orders show as ghost arrows (the Red filter)." },
+    { name: "Relays", m: "relay", n: 31, rule: "A relay (2 gold) on a region a trip leaves, crosses or reaches makes it one tick shorter, by land or by sea." },
+    { name: "Generals", m: "general", n: 32, rule: "A general gives its convoy +1." },
+    { name: "Morale", m: "drummer", n: 34, rule: "A drummer gives its convoy +1." },
+    { name: "Standing orders", m: "standing", n: 36, rule: "A region keeps an order that fires by itself: if attacked call, if lost retake." },
+    { name: "Winter", m: null, n: 38, rule: "Every 6 ticks winter slows the snow and halves output." },
+    { name: "Storms", m: null, n: 40, rule: "A storm closes the sea lanes under it." },
+    { name: "Rebellions", m: "revolt", n: 42, rule: "A region taken less than 3 ticks ago with under 2 troops may revolt." },
+    { name: "Wonders", m: null, n: 44, rule: "Hold the wonder 5 ticks to win." },
+    { name: "Engineers", m: "engineer", n: 46, rule: "4 gold: a palisade (the region always defends, +1) or a bridge over a river." },
+    { name: "Sieges", m: "siege", n: 48, rule: "A siege tower cancels the defender's Defend +1." },
+    { name: "A third camp", m: null, n: 50, rule: "The green camp plays against everyone." },
+    { name: "Truces", m: null, n: 54, rule: "An envoy offers a truce for 6 ticks." },
+    { name: "Betrayal", m: null, n: 58, rule: "A truce can be broken, at a cost in morale." },
+    { name: "Doctrines", m: null, n: 62, rule: "Pick one doctrine before the stage." },
+    { name: "Airlift", m: "lift", n: 66, rule: "A troop balloon carries 6 infantry three regions away, over sea or mountain." },
+    { name: "The Marshals' duel", m: null, n: 70, rule: "Every mechanic on, a mirror map." }
+  ];
+  const UNLOCK = {};
+  STAGES.forEach((st, i) => { if (st.m) UNLOCK[st.m] = i + 1; });
+  const has = (m) => S.stage >= (UNLOCK[m] || 99);
+  // what each action and piece waits for
+  const ACT_LOCK = { ride: "cav", buycav: "cav", recruit: "recruit", fire: "cannon", ship: "sea", airlift: "lift", scoutMv: "scout",
+                     palisade: "engineer", bridge: "engineer", depot: "supply", relay: "relay", standA: "standing", standL: "standing", route: "standing" };
+  const PIECE_LOCK = { cannon: "cannon", lift: "lift", general: "general", drummer: "drummer", siege: "siege", engineer: "engineer", wagon: "supply", scout: "scout" };
+
+  // ---- the frame ------------------------------------------------------------
+  const FW = 720, FH = 1280, TOP = 196, CX = FW / 2;
+  const TILT = Math.cos(30 * Math.PI / 180);
+  const frame = document.getElementById("frame"), ui = document.getElementById("ui");
+  const cv = document.getElementById("view"), ctx = cv.getContext("2d");
+  const cardEl = document.getElementById("card"), barEl = document.getElementById("bar"), ringEl = document.getElementById("ring");
+  const convoyEl = document.getElementById("convoy");
+  let K = 1;
+  function fitCanvas() {
+    const r = frame.getBoundingClientRect();
+    K = Math.max(1, Math.min(2, (r.height * (window.devicePixelRatio || 1)) / FH));
+    cv.width = Math.round(FW * K); cv.height = Math.round(FH * K);
+    ui.style.transform = "scale(" + (r.height / FH) + ")";
+  }
+  // the bottom of the free map: the top of whatever paper stands over it
+  function viewBottom() {
+    let b = 1128 - 18;
+    [cardEl, barEl, convoyEl].forEach((el) => { if (el.classList.contains("on")) b = Math.min(b, el.offsetTop); });
+    return b;
+  }
+
+  // ---- art ---------------------------------------------------------------------
+  const ARMY = { capital: 1, fort: 2, town: 3, harbour: 4, infantry: 5, archer: 6, cavalry: 7, general: 8,
+                 cannon: 9, wagon: 10, warship: 11, rowboat: 12, tent: 13, watchtower: 14, balloon: 15, flag: 16 };
+  const WORKS = { spy: 1, scout: 2, engineer: 3, drummer: 4, envoy: 5, courier: 6, siege: 7, catapult: 8,
+                  depot: 9, barracks: 10, palisade: 11, bridge: 12, galleon: 13, lift: 14, mine: 15, farm: 16 };
+  const nn = (n) => (n < 10 ? "0" : "") + n;
+  const src = (sheet, camp, n) => "../assets/image/object/foldiers-" + sheet + "-" + camp + "-" + nn(n) + ".png";
+  const IMG = {}, URL_OF = {};
+  function img(key, url) { if (!IMG[key]) { const im = new Image(); im.src = url; IMG[key] = im; URL_OF[key] = url; } return IMG[key]; }
+  ["blue", "red"].forEach((c) => {
+    for (const k in ARMY) img("a-" + k + "-" + c, src("army", c, ARMY[k]));
+    for (const k in WORKS) img("w-" + k + "-" + c, src("works", c, WORKS[k]));
+  });
+  img("nflag", "../assets/image/object/foldiers-scenery-08.png");
+  img("house", "../assets/image/object/foldiers-scenery-07.png");
+  img("oldfort", "../assets/image/object/foldiers-world-12.png");
+  img("wheat", "../assets/image/object/foldiers-scenery-10.png");
+  const ready = (im) => im && im.complete && im.naturalWidth > 0;
+  // the pictograms, inlined out of assets/motor/lucide: a CSS mask on a file
+  // url draws nothing over file://, so the page carries its own copies
+  const SVG = {
+    "bomb": '<circle cx="11" cy="13" r="9" /> <path d="M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95" /> <path d="m22 2-1.5 1.5" />',
+    "chevrons-right": '<path d="m6 17 5-5-5-5" /> <path d="m13 17 5-5-5-5" />',
+    "chevrons-up": '<path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" />',
+    "crosshair": '<circle cx="12" cy="12" r="10" /> <line x1="22" x2="18" y1="12" y2="12" /> <line x1="6" x2="2" y1="12" y2="12" /> <line x1="12" x2="12" y1="6" y2="2" /> <line x1="12" x2="12" y1="22" y2="18" />',
+    "eye": '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" />',
+    "flag": '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528" />',
+    "hourglass": '<path d="M5 22h14" /> <path d="M5 2h14" /> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" /> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />',
+    "info": '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
+    "plus": '<path d="M5 12h14" /> <path d="M12 5v14" />',
+    "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />',
+    "sword": '<path d="m11 19-6-6" /> <path d="m5 21-2-2" /> <path d="m8 16-4 4" /> <path d="M9.5 17.5 21 6V3h-3L6.5 14.5" />',
+    "target": '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />',
+    "trending-up": '<path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" />',
+    "zap": '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z" />'
+  };
+
+  /* ---- what can stand on a region, and what each piece does --------------
+     `art` is the cut it is drawn with, `pool` which count it spends (foot
+     or riders), `once` a piece that gives one order a tick. */
+  const EL = {
+    foot:     { name: "Infantry",      art: "a-infantry", pool: "foot" },
+    cav:      { name: "Cavalry",       art: "a-cavalry",  pool: "cav" },
+    cannon:   { name: "Cannon",        art: "a-cannon",   once: true },
+    lift:     { name: "Troop balloon", art: "w-lift",     once: true, pool: "foot" },
+    harbour:  { name: "Harbour",       art: "a-harbour",  pool: "foot" },
+    general:  { name: "General",       art: "a-general",  once: true },
+    drummer:  { name: "Drummer",       art: "w-drummer",  once: true },
+    siege:    { name: "Siege tower",   art: "w-siege",    once: true },
+    engineer: { name: "Engineer",      art: "w-engineer", once: true },
+    wagon:    { name: "Wagon",         art: "a-wagon",    once: true },
+    scout:    { name: "Scout balloon", art: "a-balloon",  once: true },
+    town:     { name: "Town",          art: "a-town" },
+    capital:  { name: "Capital",       art: "a-capital" },
+    camp:     { name: "Standing",      art: "a-flag" }
+  };
+  /* `t` the kind of target (none: given on the tap), `n` an order that sends
+     troops, `self` an order the region gives itself, `hold` the explicit
+     "nothing this tick" that deals with a piece. */
+  const ACT = {
+    march:    { label: "March",             pict: "sword",          t: "march",  n: true, hint: "Tap a neighbour to attack it, or a region of yours to reinforce it" },
+    ride:     { label: "Ride",              pict: "zap",            t: "ride",   n: true, hint: "Tap a region two steps away, through your land or empty land" },
+    airlift:  { label: "Airlift",           pict: "chevrons-up",    t: "lift",   n: true, max: LIFT_MAX, hint: "Tap a region up to three away, over sea or mountain" },
+    ship:     { label: "Ship",              pict: "chevrons-right", t: "ship",   n: true, hint: "Tap another harbour: the fleet sails round by sea, one arrow a tick" },
+    fire:     { label: "Fire",              pict: "bomb",           t: "fire",   hint: "Tap a neighbour: −2 troops there, before its convoy goes in" },
+    join:     { label: "Join a convoy",     pict: "flag",           t: "join",   hint: "Tap the target of one of this region's convoys" },
+    go:       { label: "Move",              pict: "chevrons-right", t: "go",     hint: "Tap a neighbour of yours" },
+    scoutMv:  { label: "Move",              pict: "eye",            t: "scout",  hint: "Tap a neighbour: the balloon sees two regions around it" },
+    bridge:   { label: "Bridge",            pict: "plus",           t: "bridge", cost: WORK_COST, hint: "Tap the region across the river" },
+    palisade: { label: "Palisade",          pict: "shield",         self: true, cost: WORK_COST },
+    depot:    { label: "Depot",             pict: "flag",           self: true },
+    recruit:  { label: "Recruit +3",        pict: "plus",           self: true, cost: RECRUIT_COST },
+    buycav:   { label: "Cavalry +2",        pict: "plus",           self: true, cost: CAV_COST },
+    relay:    { label: "Relay",             pict: "flag",           self: true, cost: RELAY_COST },
+    standA:   { label: "If attacked, call", pict: "shield",         t: "own",    standing: "A", hint: "Tap the region of yours that reinforces it when it is attacked" },
+    standL:   { label: "If lost, retake",   pict: "crosshair",      t: "own",    standing: "L", hint: "Tap the region of yours that retakes it if it falls" },
+    route:    { label: "Levy route",        pict: "chevrons-right", t: "ownAny", standing: "R", hint: "Tap a region of yours: every tick, the new troops march there" },
+    defend:   { label: "Defend",            pict: "shield",         hold: true },
+    wait:     { label: "Wait",              pict: "hourglass",      hold: true }
+  };
+  const TOWN_ACTS = ["recruit", "buycav", "relay", "standA", "standL", "route", "wait"];
+  const ACTS_OF = {
+    foot: ["march", "defend"], cav: ["march", "ride", "defend"], cannon: ["fire", "go", "wait"], lift: ["airlift", "wait"],
+    harbour: ["ship"], general: ["join", "go", "wait"], drummer: ["join", "go", "wait"], siege: ["join", "go", "wait"],
+    engineer: ["palisade", "bridge", "go", "wait"], wagon: ["depot", "join", "go", "wait"], scout: ["scoutMv", "wait"],
+    town: TOWN_ACTS, capital: TOWN_ACTS, camp: ["relay", "standA", "standL"]
+  };
+  // how a convoy travels to its target: every kind of target rides one way
+  const MODE_OF = { march: "march", fire: "march", go: "march", scout: "march", bridge: "march", join: "march", ride: "ride", lift: "lift", ship: "ship" };
+  const MODE_LABEL = { ride: "Ride", lift: "Airlift", ship: "Fleet" };
+  const PIECES = ["cannon", "lift", "general", "drummer", "siege", "engineer", "wagon", "scout"];
+
+  // ---- the map: a straight-edged Voronoi cut, the game's way -------------------
+  const W = 1100, H = 1500;
+  let SEA = { adj: {}, mid: {}, pt: {}, coast: [] }, routeCache = {};
+  let R = [], adj = [], borders = {}, tick = 1, seed = 7, gold = 0, grain = 24, nextId = 1, fullId = -1;
+  // this tick: the convoys, the orders a region gives itself, what was told to defend or wait
+  let orders = {}, acts = {}, hold = {};
+  // across ticks: the standing orders and levy routes, the levy on the road, the fleets at sea
+  let standing = {}, levies = [], fleets = [], roads = [];
+  const key = (a, b) => a < b ? a + ":" + b : b + ":" + a;
+  function rng(s) {
+    s = (s >>> 0) || 1;
+    return function () { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
+  }
+  function clip(P, a, b, j) {
+    const nx = b.x - a.x, ny = b.y - a.y, mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const f = (p) => (p.x - mx) * nx + (p.y - my) * ny;
+    const out = [];
+    for (let k = 0; k < P.length; k++) {
+      const A = P[k], B = P[(k + 1) % P.length], fa = f(A), fb = f(B);
+      if (fa <= 0) out.push(A);
+      if ((fa <= 0) !== (fb <= 0)) {
+        const t = fa / (fa - fb), I = { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t };
+        I.tag = fa <= 0 ? j : A.tag;
+        out.push(I);
+      }
+    }
+    return out;
+  }
+  function centroid(P) {
+    let a = 0, x = 0, y = 0;
+    for (let k = 0; k < P.length; k++) {
+      const p = P[k], q = P[(k + 1) % P.length], c = p.x * q.y - q.x * p.y;
+      a += c; x += (p.x + q.x) * c; y += (p.y + q.y) * c;
+    }
+    return { x: x / (3 * a), y: y / (3 * a) };
+  }
+  const blankPieces = () => ({ cannon: false, lift: false, general: false, drummer: false, siege: false, engineer: false, wagon: false, scout: false });
+  function genMap(s) {
+    ANIM = null;
+    // as many seeds as the stage wants regions, about three in five end up land
+    const want = STAGES[S.stage - 1].n, tot = want / 0.55, ROWS = Math.max(4, Math.round(Math.sqrt(tot * H / W))), COLS = Math.max(4, Math.round(tot / ROWS));
+    const rnd = rng(s * 2654435761), seeds = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const x = (c + 0.5 + (rnd() - 0.5) * 0.75) * W / COLS, y = (r + 0.5 + (rnd() - 0.5) * 0.75) * H / ROWS;
+      const nx = (x - W / 2) / (W * 0.5), ny = (y - H / 2) / (H * 0.48);
+      seeds.push({ x: x, y: y, land: nx * nx + ny * ny + (rnd() - 0.5) * 0.4 < 0.8 });
+    }
+    const polys = seeds.map((a, i) => {
+      let P = [{ x: 0, y: 0, tag: -1 }, { x: W, y: 0, tag: -1 }, { x: W, y: H, tag: -1 }, { x: 0, y: H, tag: -1 }];
+      seeds.forEach((b, j) => { if (j !== i && Math.hypot(a.x - b.x, a.y - b.y) < 520) P = clip(P, a, b, j); });
+      return P;
+    });
+    const nb = (i) => {
+      const L = [];
+      polys[i].forEach((p, k) => {
+        const q = polys[i][(k + 1) % polys[i].length];
+        if (p.tag >= 0 && seeds[p.tag].land && Math.hypot(q.x - p.x, q.y - p.y) > 22 && L.indexOf(p.tag) < 0) L.push(p.tag);
+      });
+      return L;
+    };
+    let best = [];
+    const seen = {};
+    seeds.forEach((sd, i) => {
+      if (!sd.land || seen[i]) return;
+      const comp = [i]; seen[i] = true;
+      for (let h = 0; h < comp.length; h++) nb(comp[h]).forEach((j) => { if (!seen[j]) { seen[j] = true; comp.push(j); } });
+      if (comp.length > best.length) best = comp;
+    });
+    best.sort((a, b) => a - b);
+    const idx = {};
+    best.forEach((g, i) => { idx[g] = i; });
+    R = best.map((g, i) => {
+      const P = polys[g], c = centroid(P);
+      const poly = P.map((p) => ({ x: p.x, y: p.y, tag: p.tag >= 0 && idx[p.tag] != null ? idx[p.tag] : -1 }));
+      return { id: i, poly: poly, cx: c.x, cy: c.y, owner: NEUTRAL, foot: 1 + Math.floor(rnd() * 3), cav: 0,
+               terrain: Math.floor(rnd() * 3), capital: false, city: rnd() < 0.25, harbour: false, coastal: poly.some((p) => p.tag < 0),
+               mine: rnd() < 0.15 && has("gold"), fort: false, farm: false, takenAt: -99, palisade: false, depot: false, relay: false, pc: blankPieces(), name: NAMES[i % NAMES.length] };
+    });
+    adj = best.map((g) => nb(g).map((j) => idx[j]));
+    /* the sea: every cell that is not a region, linked through the edges it
+       shares; a route runs from edge middle to edge middle, so each of its
+       segments lies inside one sea cell and never cuts across land */
+    const edgeMid = (i, j) => {
+      const P = polys[i];
+      for (let k = 0; k < P.length; k++) {
+        const q = P[(k + 1) % P.length];
+        if (P[k].tag === j && Math.hypot(q.x - P[k].x, q.y - P[k].y) > 22) return { x: (P[k].x + q.x) / 2, y: (P[k].y + q.y) / 2 };
+      }
+      return null;
+    };
+    SEA = { adj: {}, mid: {}, pt: {}, coast: [] }; routeCache = {};
+    seeds.forEach((sd, i) => { if (idx[i] == null) { SEA.adj[i] = []; SEA.pt[i] = { x: sd.x, y: sd.y }; } });
+    Object.keys(SEA.adj).forEach((k) => {
+      const i = +k;
+      polys[i].forEach((p) => {
+        if (p.tag < 0 || idx[p.tag] != null || SEA.adj[i].indexOf(p.tag) >= 0) return;
+        const m = SEA.mid[key(i, p.tag)] || edgeMid(i, p.tag);
+        if (!m) return;
+        SEA.adj[i].push(p.tag); SEA.mid[key(i, p.tag)] = m;
+        if (SEA.adj[p.tag].indexOf(i) < 0) SEA.adj[p.tag].push(i);
+      });
+    });
+    /* the open sea around the sheet: the land reaches its sides and would cut
+       the water in two, so a ring of nodes outside the sheet joins every cell
+       (sea or region) that touches its edge */
+    const RM = 140, ring = [], per = 2 * (W + H + 4 * RM), RN = Math.round(per / 220);
+    for (let k = 0; k < RN; k++) {
+      let d = k * per / RN, x, y;
+      const w = W + 2 * RM, h = H + 2 * RM;
+      if (d < w) { x = -RM + d; y = -RM; } else if ((d -= w) < h) { x = W + RM; y = -RM + d; }
+      else if ((d -= h) < w) { x = W + RM - d; y = H + RM; } else { d -= w; x = -RM; y = H + RM - d; }
+      ring.push(10000 + k); SEA.pt[10000 + k] = { x: x, y: y }; SEA.adj[10000 + k] = [];
+    }
+    ring.forEach((o, k) => {
+      const q = ring[(k + 1) % RN], a = SEA.pt[o], b = SEA.pt[q];
+      SEA.adj[o].push(q); SEA.adj[q].push(o); SEA.mid[key(o, q)] = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    });
+    // the middle of a cell's edges on the sheet's border, each joined to its nearest ring node
+    const rimOf = (P) => {
+      const out = [];
+      P.forEach((v, k) => {
+        const q = P[(k + 1) % P.length];
+        if (v.tag !== -1 || Math.hypot(q.x - v.x, q.y - v.y) <= 22) return;
+        const m = { x: (v.x + q.x) / 2, y: (v.y + q.y) / 2 };
+        let o = ring[0];
+        ring.forEach((r) => { if (Math.hypot(SEA.pt[r].x - m.x, SEA.pt[r].y - m.y) < Math.hypot(SEA.pt[o].x - m.x, SEA.pt[o].y - m.y)) o = r; });
+        out.push({ o: o, m: m });
+      });
+      return out;
+    };
+    Object.keys(SEA.adj).forEach((k) => {
+      const i = +k;
+      if (i >= 10000) return;
+      rimOf(polys[i]).forEach((e) => {
+        if (SEA.adj[i].indexOf(e.o) >= 0) return;
+        SEA.adj[i].push(e.o); SEA.adj[e.o].push(i); SEA.mid[key(i, e.o)] = e.m;
+      });
+    });
+    best.forEach((g, ri) => {
+      SEA.coast[ri] = [];
+      polys[g].forEach((p) => {
+        if (p.tag < 0 || idx[p.tag] != null || SEA.coast[ri].some((c) => c.cell === p.tag)) return;
+        const m = edgeMid(g, p.tag);
+        if (m) SEA.coast[ri].push({ cell: p.tag, m: m });
+      });
+      rimOf(polys[g]).forEach((e) => { if (!SEA.coast[ri].some((c) => c.cell === e.o)) SEA.coast[ri].push({ cell: e.o, m: e.m }); });
+    });
+    const dist = (from) => {
+      const D = R.map(() => Infinity); D[from] = 0;
+      const q = [from];
+      for (let h = 0; h < q.length; h++) adj[q[h]].forEach((j) => { if (D[j] === Infinity) { D[j] = D[q[h]] + 1; q.push(j); } });
+      return D;
+    };
+    let bc = 0;
+    R.forEach((r) => { if (r.cy - r.cx * 0.4 > R[bc].cy - R[bc].cx * 0.4) bc = r.id; });
+    const Db = dist(bc);
+    let rc = 0;
+    R.forEach((r) => { if (Db[r.id] > Db[rc] && Db[r.id] !== Infinity) rc = r.id; });
+    const Dr = dist(rc);
+    const take = (D, camp, n) => R.slice().sort((a, b) => D[a.id] - D[b.id]).filter((r) => r.owner === NEUTRAL).slice(0, n)
+      .forEach((r) => { r.owner = camp; r.foot = 3 + Math.floor(rnd() * 4); });
+    const side = Math.max(3, Math.min(6, Math.round(R.length / 6)));
+    take(Db, BLUE, side); take(Dr, RED, side);
+    Object.assign(R[bc], { capital: true, city: false, foot: 8 });
+    Object.assign(R[rc], { capital: true, city: false, foot: 10 });
+    // the full region: the blue frontier with the most foreign neighbours, on the coast
+    const foreign = (id) => adj[id].filter((j) => R[j].owner !== BLUE).length;
+    let fid = -1, fs = -1;
+    R.forEach((r) => {
+      if (r.owner !== BLUE || r.capital) return;
+      const sc = foreign(r.id) * 2 + (r.coastal ? 3 : 0);
+      if (sc > fs) { fs = sc; fid = r.id; }
+    });
+    fullId = fid;
+    // harbours: the full region, the blue capital if on the coast, three far coasts
+    const coasts = R.filter((r) => onSea(r) && r.owner !== BLUE).sort((a, b) => Db[a.id] - Db[b.id]);
+    if (has("sea")) {
+      [Math.floor(coasts.length / 3), Math.floor(coasts.length * 2 / 3), coasts.length - 1].forEach((i) => { if (coasts[i]) coasts[i].harbour = true; });
+      if (onSea(R[bc])) R[bc].harbour = true;
+    }
+    // one river and one mountain on the full region's front, one more river further off
+    borders = {};
+    const pick = (L) => L.splice(Math.floor(rnd() * L.length), 1)[0];
+    const fr = adj[fid].filter((j) => R[j].owner !== BLUE);
+    if (fr.length && has("river")) { const j = pick(fr); borders[key(fid, j)] = "river"; }
+    if (fr.length >= 2 && has("mountain")) { const j = pick(fr); borders[key(fid, j)] = "mountain"; }
+    const far = [];
+    R.forEach((r) => adj[r.id].forEach((j) => { if (j > r.id && r.owner !== BLUE && R[j].owner !== BLUE) far.push([r.id, j]); }));
+    if (far.length && has("river")) { const e = pick(far); borders[key(e[0], e[1])] = "river"; }
+    // a red outpost next door to the full region, so its shield has something to answer
+    const outpost = adj[fid].find((j) => R[j].owner === NEUTRAL && !borderOf(fid, j));
+    if (outpost != null) { R[outpost].owner = RED; R[outpost].foot = 6; }
+    // one other blue region with riders, so the menu is not only the full one
+    const other = R.find((r) => r.owner === BLUE && !r.capital && r.id !== fid);
+    if (other && has("cav")) other.cav = 2;
+    // a few forts, never on a town
+    R.forEach((r) => { if (!r.capital && !r.city && r.id !== fid && rnd() < 0.1 && has("fort")) r.fort = true; });
+    // a few farms: grain for the stock
+    R.forEach((r) => { if (!r.capital && !r.fort && rnd() < 0.14 && has("grain")) r.farm = true; });
+    equipFull();
+    orders = {}; acts = {}; hold = {}; standing = {}; levies = []; fleets = []; roads = [];
+    tick = 1; gold = S.gold; grain = 24;
+    sel = -1; step = null; openEl = null; openCv = null; logLines = [];
+    reserve = S.prod === "reserve" ? incomeOf(BLUE).total : 0;
+    redReserve = S.prod === "reserve" ? incomeOf(RED).total : 0;
+    startTick();
+    camHome();
+  }
+  // what the full region carries, by the "Region content" knob
+  function equipFull() {
+    const r = R[fullId];
+    if (!r) return;
+    r.pc = blankPieces(); r.harbour = false; r.city = false;
+    if (S.content === "foot") { r.foot = 6; r.cav = 0; return; }
+    if (S.content === "typical") { r.foot = 7; r.cav = has("cav") ? 2 : 0; r.pc.cannon = has("cannon"); r.city = true; return; }
+    r.foot = 9; r.cav = has("cav") ? 4 : 0; r.city = true; r.harbour = has("sea") && onSea(r);
+    PIECES.forEach((k) => { r.pc[k] = has(PIECE_LOCK[k]); });
+  }
+  const borderOf = (a, b) => borders[key(a, b)] || "";
+  // a region whose shore touches the sea (not just the edge of the sheet)
+  const onSea = (r) => (SEA.coast[r.id] || []).length > 0;
+  /* The sea road from harbour a to region b: the shortest way through the
+     sea cells, as a line of world points, cut into legs of SEA_LEG — one leg
+     a bell. null when no sea joins them. */
+  function seaRoute(a, b) {
+    const ck = a + ">" + b;
+    if (ck in routeCache) return routeCache[ck];
+    const A = SEA.coast[a] || [], B = SEA.coast[b] || [], ra = R[a], rb = R[b];
+    if (!A.length || !B.length) return (routeCache[ck] = null);
+    const D = {}, prev = {}, done = {};
+    A.forEach((c) => { const d = Math.hypot(c.m.x - ra.cx, c.m.y - ra.cy); if (D[c.cell] == null || d < D[c.cell]) { D[c.cell] = d; prev[c.cell] = -1; } });
+    for (;;) {
+      let u = null;
+      Object.keys(D).forEach((k) => { if (!done[k] && (u == null || D[k] < D[u])) u = k; });
+      if (u == null) break;
+      done[u] = true;
+      SEA.adj[u].forEach((v) => {
+        const d = D[u] + Math.hypot(SEA.pt[u].x - SEA.pt[v].x, SEA.pt[u].y - SEA.pt[v].y);
+        if (D[v] == null || d < D[v]) { D[v] = d; prev[v] = +u; }
+      });
+    }
+    let end = null, endD = Infinity;
+    B.forEach((c) => { if (D[c.cell] != null && D[c.cell] + Math.hypot(c.m.x - rb.cx, c.m.y - rb.cy) < endD) { endD = D[c.cell] + Math.hypot(c.m.x - rb.cx, c.m.y - rb.cy); end = c; } });
+    if (!end) return (routeCache[ck] = null);
+    const cells = [];
+    for (let c = end.cell; c !== -1; c = prev[c]) cells.unshift(c);
+    const pts = [{ x: ra.cx, y: ra.cy }, A.find((c) => c.cell === cells[0]).m];
+    for (let i = 1; i < cells.length; i++) pts.push(SEA.mid[key(cells[i - 1], cells[i])]);
+    pts.push(end.m, { x: rb.cx, y: rb.cy });
+    // the legs: equal shares of the road, as few as SEA_LEG allows
+    let len = 0;
+    for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    const n = Math.max(1, Math.ceil(len / SEA_LEG)), legs = [];
+    for (let l = 0; l < n; l++) legs.push(subLine(pts, l / n, (l + 1) / n));
+    return (routeCache[ck] = { pts: pts, len: len, legs: legs });
+  }
+  // the part of a line of points between two fractions of its length
+  function subLine(P, f0, f1) {
+    const L = [0];
+    for (let i = 1; i < P.length; i++) L.push(L[i - 1] + Math.hypot(P[i].x - P[i - 1].x, P[i].y - P[i - 1].y));
+    const at = (f) => {
+      const d = f * L[L.length - 1];
+      for (let i = 1; i < P.length; i++) if (L[i] >= d) { const t = (d - L[i - 1]) / ((L[i] - L[i - 1]) || 1); return { x: P[i - 1].x + (P[i].x - P[i - 1].x) * t, y: P[i - 1].y + (P[i].y - P[i - 1].y) * t, i: i }; }
+      return { x: P[P.length - 1].x, y: P[P.length - 1].y, i: P.length };
+    };
+    const a = at(f0), b = at(f1), out = [{ x: a.x, y: a.y }];
+    for (let i = a.i; i < b.i; i++) out.push(P[i]);
+    out.push({ x: b.x, y: b.y });
+    return out;
+  }
+  const isNb = (a, b) => adj[a].indexOf(b) >= 0;
+  const crossable = (a, b) => borderOf(a, b) !== "mountain";
+  // what a region is worth a bell to whoever holds it: capital 2, a town or a fort 1
+  const worthOf = (r) => r.capital ? 2 : (r.city || r.fort) ? 1 : 0;
+  const prodOf = (r) => r.owner === NEUTRAL ? 0 : worthOf(r);
+  function cavReach(s) {
+    const out = {};
+    adj[s].forEach((m) => {
+      if (!crossable(s, m) || R[m].owner === RED) return;
+      adj[m].forEach((j) => {
+        if (j === s || isNb(s, j) || R[j].owner === BLUE || !crossable(m, j)) return;
+        out[j] = m;
+      });
+    });
+    return out;
+  }
+  function ownPath(a, b) {
+    const prev = {}; prev[a] = -1;
+    const q = [a];
+    for (let h = 0; h < q.length; h++) {
+      const c = q[h];
+      if (c === b) break;
+      adj[c].forEach((j) => { if (prev[j] == null && R[j].owner === BLUE && crossable(c, j)) { prev[j] = c; q.push(j); } });
+    }
+    if (prev[b] == null) return null;
+    const P = [];
+    for (let c = b; c !== -1; c = prev[c]) P.unshift(c);
+    return P;
+  }
+  /* A trip of several bells: a march deep into your own land (one region a
+     bell) or a fleet (one leg of sea a bell), one arrow a bell. A relay of
+     yours on any region it leaves, crosses or reaches makes it one bell
+     shorter, never under one. */
+  const relayOn = (ids) => has("relay") && ids.some((id) => R[id].relay && R[id].owner === BLUE);
+  function roadOf(s, t) {
+    const P = ownPath(s, t);
+    if (!P || P.length < 3) return null;
+    const k = P.length - 1, T = Math.max(1, k - (relayOn(P) ? 1 : 0));
+    const pt = (u) => { const i = Math.min(k - 1, Math.floor(u)), f = u - i, a = R[P[i]], b = R[P[i + 1]]; return { x: a.cx + (b.cx - a.cx) * f, y: a.cy + (b.cy - a.cy) * f }; };
+    const legs = [];
+    for (let j = 0; j < T; j++) {
+      const u0 = j * k / T, u1 = (j + 1) * k / T, L = [pt(u0)];
+      for (let i = Math.floor(u0) + 1; i < u1 - 1e-6; i++) L.push({ x: R[P[i]].cx, y: R[P[i]].cy });
+      L.push(pt(u1));
+      legs.push(L);
+    }
+    return { path: P, steps: k, legs: legs, relay: T < k };
+  }
+  function shipOf(s, t) {
+    const rt = seaRoute(s, t);
+    if (!rt) return null;
+    const n = rt.legs.length;
+    if (n < 2 || !relayOn([s, t])) return { legs: rt.legs, relay: false };
+    const legs = [];
+    for (let l = 0; l < n - 1; l++) legs.push(subLine(rt.pts, l / (n - 1), (l + 1) / (n - 1)));
+    return { legs: legs, relay: true };
+  }
+  // the trip of a convoy that takes bells (null for one that lands at this bell)
+  const tripOf = (s, c) => c.mode === "ship" ? shipOf(s, c.to) : c.mode === "road" ? roadOf(s, c.to) : null;
+  // March on a region of yours beyond your neighbours is a march through your land
+  const modeFor = (s, t, A) => A.t === "march" && !isNb(s, t) ? "road" : MODE_OF[A.t];
+
+  /* ---- the convoys of a region ---------------------------------------------
+     A convoy: { id, to, mode, foot, cav, pieces, fire, bridge, lift }. Its
+     place in the region's list is the order it runs in. */
+  const convoysOf = (s) => orders[s] || [];
+  const convoyTo = (s, t) => convoysOf(s).find((c) => c.to === t) || null;
+  const actsOf = (s) => acts[s] || (acts[s] = {});
+  const holdOf = (s) => hold[s] || (hold[s] = {});
+  const freeFoot = (s) => R[s].foot - convoysOf(s).reduce((a, c) => a + c.foot, 0);
+  const freeCav = (s) => R[s].cav - convoysOf(s).reduce((a, c) => a + c.cav, 0);
+  const freeTroops = (s) => freeFoot(s) + freeCav(s);
+  const poolFree = (s, el) => EL[el].pool === "cav" ? freeCav(s) : freeFoot(s);
+  const emptyConvoy = (c) => !c.foot && !c.cav && !c.fire && !c.bridge && !c.pieces.length;
+  function pieceUsed(s, p) {
+    const L = convoysOf(s), a = acts[s] || {};
+    if (L.some((c) => c.pieces.indexOf(p) >= 0)) return true;
+    if (p === "cannon") return L.some((c) => c.fire);
+    if (p === "lift") return L.some((c) => c.lift);
+    if (p === "engineer") return L.some((c) => c.bridge) || !!a.palisade;
+    if (p === "wagon") return !!a.depot;
+    return false;
+  }
+  const goldLeft = () => gold - Object.keys(acts).reduce((a, s) => a + Object.keys(acts[s]).reduce((b, k) => b + (acts[s][k] ? ACT[k].cost || 0 : 0), 0), 0)
+    - Object.keys(orders).reduce((a, s) => a + orders[s].filter((c) => c.bridge).length * WORK_COST, 0);
+
+  // ---- the targets of one action, under the three-convoy rule ----------------
+  function rawTargets(s, t) {
+    const r = R[s];
+    switch (t) {
+      case "march": return adj[s].filter((j) => crossable(s, j)).concat(R.filter((x) => x.owner === BLUE && x.id !== s && !isNb(s, x.id) && ownPath(s, x.id)).map((x) => x.id));
+      case "scout": return adj[s].filter((j) => crossable(s, j));
+      case "fire": return adj[s].filter((j) => crossable(s, j) && R[j].owner !== BLUE);
+      case "go": case "own": return adj[s].filter((j) => crossable(s, j) && R[j].owner === BLUE);
+      case "ride": return Object.keys(cavReach(s)).map(Number);
+      case "lift": return R.filter((x) => x.id !== s && !isNb(s, x.id) && Math.hypot(x.cx - r.cx, x.cy - r.cy) <= LIFT_RANGE).map((x) => x.id);
+      case "ship": return R.filter((x) => x.id !== s && x.harbour && seaRoute(s, x.id)).map((x) => x.id);
+      case "bridge": return adj[s].filter((j) => borderOf(s, j) === "river");
+      case "join": return convoysOf(s).filter((c) => c.mode === "march" && c.foot + c.cav > 0 && R[c.to].owner !== BLUE).map((c) => c.to);
+      case "ownAny": return R.filter((x) => x.id !== s && x.owner === BLUE && ownPath(s, x.id)).map((x) => x.id);
+    }
+    return [];
+  }
+  // a target joins the convoy already going there if it travels the same way;
+  // a new target needs a free convoy, and there are three
+  function targetsOf(s, el, act) {
+    const A = ACT[act], L = rawTargets(s, A.t);
+    if (A.standing) return L;
+    return L.filter((t) => {
+      const c = convoyTo(s, t);
+      if (c) return c.mode === modeFor(s, t, A) && !(act === "fire" && c.fire) && !(act === "bridge" && c.bridge);
+      return convoysOf(s).length < MAX_CONVOYS;
+    });
+  }
+  // can this action be offered now, and is it already given (a toggle)
+  function actState(s, el, act) {
+    const A = ACT[act], r = R[s];
+    if (ACT_LOCK[act] && !has(ACT_LOCK[act])) return { show: false };
+    if (A.hold) return { show: true, done: holdOf(s)[el] === act };
+    if (A.standing) {
+      if (act === "route" && (prodOf(r) === 0 || S.route === "off" || S.prod === "reserve")) return { show: false };
+      const set = (standing[s] || {})[A.standing] != null;
+      return { show: set || rawTargets(s, A.t).length > 0, done: set };
+    }
+    if (A.self) {
+      if (actsOf(s)[act]) return { show: true, done: true };
+      if (act === "palisade" && (r.palisade || pieceUsed(s, "engineer"))) return { show: false };
+      if (act === "depot" && (r.depot || pieceUsed(s, "wagon"))) return { show: false };
+      if (act === "relay" && r.relay) return { show: false };
+      if (A.cost && goldLeft() < A.cost) return { show: true, poor: true };
+      return { show: true };
+    }
+    if (EL[el].once && pieceUsed(s, el)) return { show: false };
+    if (A.cost && goldLeft() < A.cost) return { show: targetsOf(s, el, act).length > 0, poor: true };
+    if (A.n && poolFree(s, el) <= 0) return { show: false };
+    return { show: targetsOf(s, el, act).length > 0 };
+  }
+  const shownActs = (s, el) => ACTS_OF[el].filter((a) => actState(s, el, a).show);
+  function elementsOf(s) {
+    const r = R[s], L = [];
+    if (r.foot > 0) L.push("foot");
+    if (r.cav > 0) L.push("cav");
+    PIECES.forEach((k) => { if (r.pc[k]) L.push(k); });
+    if (r.harbour && r.foot > 0) L.push("harbour");
+    L.push(r.capital ? "capital" : r.city ? "town" : "camp");
+    return L;
+  }
+  // a town owes an order only once the stage gives it one (Wait aside)
+  const townUseful = () => TOWN_ACTS.some((a) => a !== "wait" && (!ACT_LOCK[a] || has(ACT_LOCK[a])));
+  // a piece is in the menu while it can still do something
+  function elVisible(s, el) {
+    if ((el === "town" || el === "capital") && !townUseful()) return false;
+    if (el === "foot") return freeFoot(s) > 0;
+    if (el === "cav") return freeCav(s) > 0;
+    if (el === "harbour") return actState(s, el, "ship").show;
+    if (EL[el].once) return !pieceUsed(s, el) || ACTS_OF[el].some((a) => ACT[a].self && actsOf(s)[a]);
+    return shownActs(s, el).length > 0;
+  }
+  // dealt with: given an order, or told to defend or wait; the harbour and a
+  // plain region's standing orders are tools, never owed
+  function handled(s, el) {
+    if (holdOf(s)[el]) return true;
+    if (el === "foot") return freeFoot(s) <= 0;
+    if (el === "cav") return freeCav(s) <= 0;
+    if (EL[el].once) return pieceUsed(s, el);
+    if (el === "town" || el === "capital") {
+      if (!townUseful()) return true;
+      const a = acts[s] || {}, st = standing[s] || {};
+      return !!(a.recruit || a.buycav || a.relay || st.A != null || st.L != null || st.R != null);
+    }
+    return true;
+  }
+  const pendingEls = (s) => R[s].owner === BLUE ? elementsOf(s).filter((el) => !handled(s, el)) : [];
+
+  // ---- the forecast: the game's points ------------------------------------
+  // the other regions' cannons that fire on t this bell
+  const otherShots = (s, t) => Object.keys(orders).reduce((a, k) => a + (+k !== s ? orders[k].filter((c) => c.to === t && c.fire).length * CANNON_DAMAGE : 0), 0);
+  /* The clash: troop for troop. The attack is its troops plus its flat
+     modifiers (river −1, general +1, drummer +1); the defence its troops,
+     +1 when it holds: red told it to, your Defend, a palisade. A siege
+     tower cancels the hold. The bigger side wins and keeps the difference;
+     a tie leaves nobody on either side. What the region makes this bell
+     never fights: it arrives after the battle. */
+  function attackOf(n, river, pieces) {
+    const mods = [];
+    if (!n) return { v: 0, mods: mods };
+    if (river) mods.push({ t: "River", v: RIVER_PTS });
+    if (pieces.indexOf("general") >= 0) mods.push({ t: "General", v: GENERAL_PTS });
+    if (pieces.indexOf("drummer") >= 0) mods.push({ t: "Drummer", v: DRUM_PTS });
+    return { v: Math.max(0, n + mods.reduce((a, x) => a + x.v, 0)), mods: mods };
+  }
+  function defenceOf(m, holds, siege) {
+    const mods = [];
+    if (holds) mods.push(siege ? { t: "Defend, cancelled", v: 0 } : { t: "Defend", v: HOLD_PTS });
+    return { v: m + mods.reduce((a, x) => a + x.v, 0), mods: mods };
+  }
+  function clash(a, n, d, m) {
+    if (a > d) return { win: true, left: Math.max(1, Math.min(n, a - d)) };
+    return { win: false, tie: a === d, left: a === d ? 0 : Math.min(m, d - a) };
+  }
+  const blueHolds = (id) => { const h = hold[id] || {}; return h.foot === "defend" || h.cav === "defend" || !!R[id].palisade; };
+  const holding = (id) => R[id].owner === RED ? !!redHold[id] : R[id].owner === BLUE ? blueHolds(id) : false;
+  // what red sends to its own region this bell, ahead of every attack
+  const reinfTo = (id) => redPlan.reduce((a, o) => a + (o.kind === "reinf" && o.to === id ? o.n : 0), 0);
+  function forecast(s, c, ex) {
+    ex = ex || {};
+    const b = R[c.to], foot = c.foot + (ex.foot || 0), cav = c.cav + (ex.cav || 0), n = foot + cav;
+    const pieces = c.pieces.concat(ex.pieces || []), fire = c.fire || ex.fire;
+    if (b.owner === BLUE) return n ? { col: CAMP[BLUE].base, text: "+" + n } : null;
+    if (!n) return fire ? { col: RISK_COL, text: "−" + CANNON_DAMAGE } : null;
+    // red's hold and reinforcements are known only through the spies (the Red filter)
+    const spied = on("red") && b.owner === RED;
+    // the convoys of your other regions on the same target go in with this one
+    let Av = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces).v, N = n, siege = pieces.indexOf("siege") >= 0;
+    Object.keys(orders).forEach((k) => {
+      if (+k === s) return;
+      orders[k].forEach((o) => {
+        if (o.to !== c.to || o.mode === "ship" || !(o.foot + o.cav)) return;
+        Av += attackOf(o.foot + o.cav, o.mode === "march" && borderOf(+k, o.to) === "river", o.pieces).v; N += o.foot + o.cav;
+        if (o.pieces.indexOf("siege") >= 0) siege = true;
+      });
+    });
+    const m = Math.max(0, b.foot + b.cav - (fire ? CANNON_DAMAGE : 0) - otherShots(s, c.to)) + (spied ? reinfTo(c.to) : 0);
+    const D = defenceOf(m, spied && !!redHold[c.to], siege);
+    const out = clash(Av, N, D.v, m), text = Av + " vs " + D.v;
+    if (out.win) return { col: OK_COL, text: text, win: true, left: out.left };
+    if (out.tie) return { col: TIE_COL, text: text };
+    return { col: BAD_COL, text: text };
+  }
+  // what a pin on a target says in the target step
+  function pinFor(t) {
+    const st = step, A = ACT[st.act], s = st.s;
+    if (A.standing === "R") { const P = ownPath(s, t); return { col: RISK_COL, text: (P.length - 1) + (P.length === 2 ? " step" : " steps") }; }
+    if (A.standing) return { col: RISK_COL, text: "!" };
+    if (st.act === "bridge") return { col: CAMP[BLUE].base, text: "✓" };
+    if (st.act === "ship" || modeFor(s, t, A) === "road") { const n = (st.act === "ship" ? shipOf(s, t) : roadOf(s, t)).legs.length; return { col: CAMP[BLUE].base, text: n + (n > 1 ? " ticks" : " tick") }; }
+    const c = convoyTo(s, t) || { to: t, mode: MODE_OF[A.t], foot: 0, cav: 0, pieces: [], fire: false };
+    const ex = {};
+    if (A.n) ex[EL[st.el].pool === "cav" ? "cav" : "foot"] = st.n;
+    if (st.act === "fire") ex.fire = true;
+    if (st.act === "join" || st.act === "go" || st.act === "scoutMv") ex.pieces = [st.el];
+    return forecast(s, c, ex) || { col: CAMP[BLUE].base, text: "✓" };
+  }
+
+  // ---- what a region says on the map ----------------------------------------
+  // your troops landing here at the bell: convoys from your regions, the levy on its last step
+  function incoming(id) {
+    if (R[id].owner !== BLUE) return 0;
+    let n = 0;
+    Object.keys(orders).forEach((k) => orders[k].forEach((c) => { if (c.to === id && c.mode !== "ship" && c.mode !== "road") n += c.foot + c.cav; }));
+    roads.concat(fleets).forEach((f) => { if (f.to === id && f.at === f.legs.length - 1) n += f.n; });
+    levies.forEach((l) => { const P = ownPath(l.at, l.to); if (P && P[1] === id && id === l.to) n += l.n; });
+    return n;
+  }
+  const stays = (id) => freeTroops(id) + incoming(id);
+  function yieldOf(id) {
+    const r = R[id], routed = (standing[id] || {}).R != null && S.route !== "off", a = acts[id] || {};
+    return { troops: prodOf(r) + (a.recruit ? RECRUIT_TROOPS : 0) + (a.buycav ? CAV_COUNT : 0), gold: r.mine ? 1 : 0, routed: routed };
+  }
+  // what lands in the region itself at the bell: its production stays home only under the local rule
+  const afterBell = (id) => stays(id) + (S.prod === "reserve" ? ((acts[id] || {}).recruit ? RECRUIT_TROOPS : 0) : yieldOf(id).routed ? 0 : yieldOf(id).troops);
+  // the biggest red stack next door, and what it would attack with
+  function threatOn(id) {
+    let t = null;
+    adj[id].forEach((j) => {
+      const b = R[j], n = b.foot + b.cav - 1;
+      if (b.owner !== RED || !crossable(id, j) || n <= 0) return;
+      t = t || { n: 0, att: 0 };
+      t.n += n; t.att += attackOf(n, borderOf(id, j) === "river", []).v;
+    });
+    return t;
+  }
+  // the shield: what stays against every red stack next door attacking together
+  function shieldOf(id) {
+    const t = threatOn(id);
+    if (!t) return S.shield === "grey" ? { col: IDLE_COL, text: "No red next door" } : null;
+    const def = defenceOf(stays(id), blueHolds(id), false).v;
+    if (t.att > def) return { col: BAD_COL, text: "Falls to " + t.n + " red: " + t.att + " vs " + def };
+    if (def - t.att <= 1) return { col: JUST_COL, text: "Just holds against " + t.n + " red: " + t.att + " vs " + def };
+    return { col: OK_COL, text: "Holds against " + t.n + " red: " + t.att + " vs " + def };
+  }
+  const grainDemand = () => R.reduce((a, r) => a + (r.owner === BLUE ? Math.max(0, afterBell(r.id) - GRAIN_FEED) : 0), 0);
+  function supplySteps(id) {
+    const D = {}; D[id] = 0;
+    const q = [id];
+    for (let h = 0; h < q.length; h++) {
+      const c = q[h], r = R[c];
+      if (r.capital || r.city || r.depot) return D[c];
+      adj[c].forEach((j) => { if (D[j] == null && R[j].owner === BLUE && crossable(c, j)) { D[j] = D[c] + 1; q.push(j); } });
+    }
+    return Infinity;
+  }
+  // the warning: what the region needs looked at, the attacks aside (that is the shield's)
+  function alertsOf(id) {
+    const r = R[id], L = [], after = afterBell(id);
+    if (has("revolt") && tick - r.takenAt < REVOLT_TICKS && after < 2) L.push({ col: WARN_COL, text: "Revolt risk: taken " + (tick - r.takenAt) + " ticks ago, keep 2 troops" });
+    if (has("supply") && supplySteps(id) > SUPPLY_RANGE) L.push({ col: WARN_COL, text: "Out of supply: −1 troop a tick" });
+    if (has("grain") && after > GRAIN_FEED && grainDemand() > grain) L.push({ col: WARN_COL, text: "Hungry: the grain runs out, −1 troop a tick" });
+    return L;
+  }
+
+  /* ---- the reserve and the red camp ---------------------------------------------
+     The reserve is what the towns, forts and capital make; it is dropped
+     whenever the player likes on a region linked to the capital, or kept to
+     pile up. Red earns and drops its own the same way, every tick. */
+  let reserve = 0, redReserve = 0, deploy = {}, redDrop = {}, placeHist = [], placing = false, placeStep = 1, redPlan = [], redHold = {};
+  const on = (k) => !!S.f[k] && FILTERS.some((f) => f.k === k && (!f.lock || has(f.lock)));
+  function stepsFrom(from) {
+    const D = R.map(() => Infinity); D[from] = 0;
+    const q = [from];
+    for (let h = 0; h < q.length; h++) adj[q[h]].forEach((j) => { if (D[j] === Infinity) { D[j] = D[q[h]] + 1; q.push(j); } });
+    return D;
+  }
+  function incomeOf(camp) {
+    let towns = 0;
+    R.forEach((r) => { if (r.owner === camp) towns += worthOf(r); });
+    return { towns: towns, total: towns };
+  }
+  function linkedTo(camp) {
+    const cap = R.find((r) => r.capital && r.owner === camp), out = {};
+    if (!cap) return out;
+    out[cap.id] = true;
+    const q = [cap.id];
+    for (let h = 0; h < q.length; h++) adj[q[h]].forEach((j) => { if (!out[j] && R[j].owner === camp && crossable(q[h], j)) { out[j] = true; q.push(j); } });
+    return out;
+  }
+  const canPlace = (id) => R[id].owner === BLUE && (S.deposit === "any" || !!linkedTo(BLUE)[id]);
+  function place(id, n) {
+    n = Math.min(n, reserve);
+    if (n <= 0) return;
+    R[id].foot += n; deploy[id] = (deploy[id] || 0) + n; reserve -= n; placeHist.push([id, n]);
+    if (!reserve) placing = false;
+  }
+  function unplace() {
+    const h = placeHist.pop();
+    if (!h) return;
+    const k = Math.min(h[1], freeFoot(h[0]));
+    R[h[0]].foot -= k; deploy[h[0]] -= k; reserve += k;
+    if (!deploy[h[0]]) delete deploy[h[0]];
+  }
+  // red: drop the reserve where the front is threatened or where it can take
+  // something, then attack what it beats by a margin, keeping one troop home
+  function redDeploy() {
+    redDrop = {};
+    if (S.red !== "on" || S.prod !== "reserve" || redReserve <= 0) return;
+    let best = null;
+    R.forEach((r) => {
+      if (r.owner !== RED) return;
+      let threat = -Infinity, soft = Infinity;
+      adj[r.id].forEach((j) => {
+        const b = R[j];
+        if (b.owner === RED || !crossable(r.id, j)) return;
+        if (b.owner === BLUE) threat = Math.max(threat, b.foot + b.cav - (r.foot + r.cav));
+        soft = Math.min(soft, (b.foot + b.cav) / (worthOf(b) + 1));
+      });
+      if (soft === Infinity && threat === -Infinity) return;
+      const sc = threat > 0 ? 1000 + threat : -soft;
+      if (!best || sc > best.sc) best = { id: r.id, sc: sc };
+    });
+    if (!best) return;
+    R[best.id].foot += redReserve; redDrop[best.id] = redReserve; redReserve = 0;
+  }
+  // red's bell: attacks where it wins; of the rest, a threatened region holds
+  // and a quiet one sends help to a threatened neighbour
+  function planRed() {
+    redHold = {};
+    if (S.red !== "on") return [];
+    const out = [], busy = {};
+    const threat = (id) => adj[id].reduce((a, j) => R[j].owner === BLUE && crossable(id, j) ? Math.max(a, attackOf(R[j].foot + R[j].cav, borderOf(id, j) === "river", []).v) : a, 0);
+    R.forEach((r) => {
+      const n = r.foot + r.cav;
+      if (r.owner !== RED || n < 2) return;
+      let best = null;
+      adj[r.id].forEach((j) => {
+        const b = R[j];
+        if (b.owner === RED || !crossable(r.id, j)) return;
+        const need = b.foot + b.cav + 1 - (borderOf(r.id, j) === "river" ? RIVER_PTS : 0), go = Math.min(n - 1, Math.ceil(need * 1.25));
+        if (go < need) return;
+        const sc = (worthOf(b) * 2 + (b.owner === BLUE ? 1 : 0) + 1) / need;
+        if (!best || sc > best.sc) best = { kind: "atk", from: r.id, to: j, n: go, sc: sc };
+      });
+      if (best) { out.push(best); busy[r.id] = true; }
+    });
+    R.forEach((r) => { if (r.owner === RED && !busy[r.id] && r.foot + r.cav > 0 && threat(r.id) >= r.foot + r.cav) redHold[r.id] = true; });
+    R.forEach((r) => {
+      const n = r.foot + r.cav;
+      if (r.owner !== RED || busy[r.id] || n < 3 || threat(r.id) > 0) return;
+      let best = null;
+      adj[r.id].forEach((j) => {
+        if (R[j].owner !== RED || !crossable(r.id, j) || !threat(j)) return;
+        const gap = threat(j) - (R[j].foot + R[j].cav);
+        if (!best || gap > best.gap) best = { j: j, gap: gap };
+      });
+      if (!best) return;
+      out.push({ kind: "reinf", from: r.id, to: best.j, n: Math.min(n - 1, Math.max(2, best.gap + 2)) });
+      busy[r.id] = true;
+    });
+    return out;
+  }
+  function redLand(L, log) {
+    const to = L[0].to, b = R[to], n = L.reduce((a, o) => a + o.n, 0);
+    if (b.owner === RED) { b.foot += n; L.forEach((x) => rec({ kind: "move", side: RED, from: x.from, to: to, n: x.n }, [])); return; }
+    const A = { v: 0, mods: [] };
+    L.forEach((x) => { const a = attackOf(x.n, borderOf(x.from, to) === "river", []); A.v += a.v; A.mods = A.mods.concat(a.mods); });
+    const m = b.foot + b.cav, D = defenceOf(m, holding(to), false);
+    const out = clash(A.v, n, D.v, m), was = b.owner, txt = A.v + " vs " + D.v;
+    if (out.win) {
+      b.owner = RED; b.foot = out.left; b.cav = 0; b.pc = blankPieces(); b.takenAt = -99;
+      delete standing[b.id];
+      log.push("Red takes " + b.name + (was === BLUE ? " from you" : "") + ": " + txt + ", " + out.left + " left");
+    } else {
+      b.foot = Math.min(b.foot, out.left); b.cav = Math.max(0, out.left - b.foot);
+      log.push("Red attacks " + b.name + ": " + txt + (out.tie ? ", tie, nobody left" : was === BLUE ? ", you hold" : ", repelled"));
+    }
+    rec({ kind: "battle", side: RED, froms: L.map((x) => ({ from: x.from, n: x.n, cav: 0 })), to: to, n: n, m: m, A: A, D: D, out: out, was: was }, []);
+  }
+  // the start of a tick: red drops its reserve and plans; you drop yours
+  function startTick() {
+    deploy = {}; placeHist = [];
+    redDeploy();
+    redPlan = planRed();
+    placing = S.prod === "reserve" && reserve > 0 && S.autoplace === "on";
+  }
+
+  // ---- giving and changing orders ---------------------------------------------
+  let sel = -1, step = null, openEl = null, openCv = null, now = 0;
+  // step: { s, el, act, n, max } while the player chooses a target; openCv: { s, id }
+  function select(id) {
+    sel = id; step = null; openEl = null; openCv = null;
+    renderUI();
+    if (id >= 0) cameraOnRegion(id);
+  }
+  function choose(el, act) {
+    const s = sel, A = ACT[act];
+    if (A.hold) { const h = holdOf(s); if (h[el] === act) delete h[el]; else h[el] = act; openEl = null; renderUI(); return; }
+    const as = actState(s, el, act);
+    if (as.poor && !as.done) { noGold(A.cost); return; }
+    if (A.self) { const a = actsOf(s); if (a[act]) delete a[act]; else a[act] = true; openEl = null; renderUI(); return; }
+    if (A.standing && (standing[s] || {})[A.standing] != null) { delete standing[s][A.standing]; openEl = null; renderUI(); return; }
+    const max = A.n ? Math.min(poolFree(s, el), A.max || Infinity) : 0;
+    step = { s: s, el: el, act: act, n: max, max: max };
+    renderUI();
+    cameraOnTargets();
+  }
+  function give(t) {
+    const st = step, A = ACT[st.act], s = st.s;
+    if (A.standing) {
+      (standing[s] || (standing[s] = {}))[A.standing] = t;
+    } else {
+      let c = convoyTo(s, t);
+      if (!c) {
+        c = { id: nextId++, to: t, mode: modeFor(s, t, A), foot: 0, cav: 0, pieces: [], fire: false, bridge: false, lift: false };
+        (orders[s] || (orders[s] = [])).push(c);
+      }
+      if (A.n) { if (EL[st.el].pool === "cav") c.cav += st.n; else c.foot += st.n; }
+      if (st.act === "airlift") c.lift = true;
+      if (st.act === "fire") c.fire = true;
+      if (st.act === "bridge") c.bridge = true;
+      if (st.act === "join" || st.act === "go" || st.act === "scoutMv") c.pieces.push(st.el);
+    }
+    delete holdOf(s)[st.el];
+    step = null; openEl = null;
+    if (S.after === "deselect") sel = -1;
+    renderUI();
+    if (sel >= 0) cameraOnRegion(sel);
+  }
+  // the convoy card's edits
+  function cvFind() { if (!openCv) return null; const c = convoysOf(openCv.s).find((x) => x.id === openCv.id); return c || null; }
+  function cvTidy(s, c) {
+    // a convoy with nobody left to march on a red or empty region drops the pieces that went with it
+    if (!c.foot && !c.cav && R[c.to].owner !== BLUE) c.pieces = c.pieces.filter((p) => p === "scout");
+    if (emptyConvoy(c)) { orders[s] = convoysOf(s).filter((x) => x !== c); openCv = null; }
+  }
+  function cvMax(s, c, pool) {
+    if (pool === "cav") return c.cav + freeCav(s);
+    const m = c.foot + freeFoot(s);
+    return c.lift ? Math.min(LIFT_MAX, m) : m;
+  }
+
+  // ---- Send: the bell, convoy by convoy, the log printed in the panel ------
+  let logLines = [];
+  function lose(r, n) { const f = Math.min(r.foot, n); r.foot -= f; r.cav = Math.max(0, r.cav - (n - f)); }
+  function land(s, c, foot, cav, pieces, log, via) {
+    const b = R[c.to], n = foot + cav;
+    if (b.owner === BLUE) {
+      b.foot += foot; b.cav += cav;
+      pieces.forEach((k) => { b.pc[k] = true; });
+      log.push(via + " " + (n ? n + " " : "") + "into " + b.name + (n ? " (now " + (b.foot + b.cav) + ")" : ""));
+      rec({ kind: "move", side: BLUE, from: s, to: c.to, n: n, fleet: c.mode === "ship" || c.mode === "road" }, [s, c.to]);
+      return;
+    }
+    const A = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces), m = b.foot + b.cav;
+    const D = defenceOf(m, holding(c.to), pieces.indexOf("siege") >= 0);
+    const out = clash(A.v, n, D.v, m), was = b.owner, txt = A.v + " vs " + D.v;
+    if (out.win) {
+      const lc = Math.min(cav, out.left);
+      b.owner = BLUE; b.foot = out.left - lc; b.cav = lc; b.pc = blankPieces(); b.takenAt = tick;
+      pieces.forEach((k) => { b.pc[k] = true; });
+      log.push(via + " " + n + " on " + b.name + ": " + txt + ", taken, " + out.left + " left");
+    } else {
+      b.foot = Math.min(b.foot, out.left); b.cav = Math.max(0, out.left - b.foot);
+      log.push(via + " " + n + " on " + b.name + ": " + txt + (out.tie ? ", tie, nobody left" : ", beaten") +
+               (pieces.length ? " (" + pieces.map((k) => EL[k].name.toLowerCase()).join(", ") + " lost)" : ""));
+    }
+    rec({ kind: "battle", side: BLUE, from: s, froms: [{ from: s, n: n, cav: cav, fleet: c.mode === "ship" || c.mode === "road" }], to: c.to, n: n, m: m, A: A, D: D, out: out, was: was }, [s, c.to]);
+  }
+  function assault(to, L, log) {
+    const b = R[to], foot = L.reduce((a, x) => a + x.foot, 0), cav = L.reduce((a, x) => a + x.cav, 0), n = foot + cav;
+    const pieces = L.reduce((a, x) => a.concat(x.pieces), []), A = { v: 0, mods: [] };
+    L.forEach((x) => { const a = attackOf(x.foot + x.cav, x.river, x.pieces); A.v += a.v; A.mods = A.mods.concat(a.mods); });
+    const m = b.foot + b.cav, D = defenceOf(m, holding(to), pieces.indexOf("siege") >= 0);
+    const out = clash(A.v, n, D.v, m), was = b.owner, txt = A.v + " vs " + D.v;
+    const from = L.length > 1 ? L.length + " regions" : R[L[0].s].name;
+    if (out.win) {
+      const lc = Math.min(cav, out.left);
+      b.owner = BLUE; b.foot = out.left - lc; b.cav = lc; b.pc = blankPieces(); b.takenAt = tick;
+      pieces.forEach((k) => { b.pc[k] = true; });
+      log.push("Battle of " + b.name + " (from " + from + "): " + txt + ", taken, " + out.left + " left");
+    } else {
+      b.foot = Math.min(b.foot, out.left); b.cav = Math.max(0, out.left - b.foot);
+      log.push("Battle of " + b.name + " (from " + from + "): " + txt + (out.tie ? ", tie, nobody left" : ", beaten"));
+    }
+    rec({ kind: "battle", side: BLUE, froms: L.map((x) => ({ from: x.s, n: x.foot + x.cav, cav: x.cav, fleet: !!x.fleet, pt: x.pt })), to: to, n: n, m: m, A: A, D: D, out: out, was: was },
+        [to].concat(L.map((x) => x.s)));
+  }
+  function send() {
+    if (ANIM) { skipAll(); return; }
+    const log = ["Tick " + tick], pre = R.map((r) => stOf(r.id));
+    EV = []; tickReinf = {};
+    // red's reinforcements are in place before anything else moves
+    redPlan.filter((o) => o.kind === "reinf").forEach((o) => {
+      const a = R[o.from], b = R[o.to];
+      if (a.owner !== RED || b.owner !== RED) return;
+      const n = Math.min(o.n, a.foot + a.cav - 1);
+      if (n <= 0) return;
+      lose(a, n); b.foot += n; tickReinf[o.to] = (tickReinf[o.to] || 0) + n;
+      log.push("Red reinforces " + b.name + " with " + n + " from " + a.name);
+      rec({ kind: "reinf", side: RED, from: o.from, to: o.to, n: n }, [o.from, o.to]);
+    });
+    // red's attacks leave with yours and land after them
+    const redGo = redPlan.filter((o) => o.kind === "atk" && R[o.from].owner === RED).map((o) => {
+      const n = Math.min(o.n, Math.max(0, R[o.from].foot + R[o.from].cav - 1));
+      lose(R[o.from], n);
+      return { from: o.from, to: o.to, n: n };
+    }).filter((o) => o.n > 0);
+    const extra = {}, assaults = {};
+    R.forEach((r) => {
+      const L = convoysOf(r.id), a = acts[r.id] || {};
+      if (r.owner !== BLUE || (!L.length && !Object.keys(a).length)) return;
+      log.push("· " + r.name);
+      if (a.recruit) { gold -= RECRUIT_COST; extra[r.id] = (extra[r.id] || 0) + RECRUIT_TROOPS; log.push("Infantry +3"); }
+      if (a.buycav) { gold -= CAV_COST; r.cav += CAV_COUNT; log.push("Cavalry +2"); }
+      if (a.palisade) { gold -= WORK_COST; r.palisade = true; log.push("Palisade built"); }
+      if (a.depot) { r.depot = true; log.push("Depot built"); }
+      if (a.relay) { gold -= RELAY_COST; r.relay = true; log.push("Relay built"); }
+      L.forEach((c, i) => {
+        const no = "Convoy " + (i + 1) + ":", b = R[c.to];
+        if (c.fire) {
+          if (b.owner === BLUE) log.push(no + " the cannon holds fire, " + b.name + " is yours");
+          else {
+            const was = b.foot + b.cav; lose(b, CANNON_DAMAGE); log.push(no + " the cannon fires on " + b.name + ", " + was + " → " + (b.foot + b.cav));
+            rec({ kind: "fire", side: BLUE, from: r.id, to: c.to, n: was - (b.foot + b.cav) }, [c.to]);
+          }
+        }
+        if (c.bridge) { gold -= WORK_COST; borders[key(r.id, c.to)] = "bridge"; log.push(no + " bridge to " + b.name); }
+        const foot = Math.min(c.foot, r.foot), cav = Math.min(c.cav, r.cav);
+        r.foot -= foot; r.cav -= cav;
+        c.pieces.forEach((k) => { r.pc[k] = false; });
+        if (c.mode === "ship") {
+          const rt = shipOf(r.id, c.to);
+          fleets.push({ s: r.id, to: c.to, n: foot, legs: rt.legs, at: 0 });
+          log.push(no + " a fleet of " + foot + " sails for " + b.name + " (" + rt.legs.length + (rt.legs.length > 1 ? " ticks" : " tick") + (rt.relay ? ", relay −1)" : ")"));
+          return;
+        }
+        if (c.mode === "road") {
+          const rd = roadOf(r.id, c.to);
+          if (!rd || !(foot + cav)) { r.foot += foot; r.cav += cav; return; }
+          roads.push({ s: r.id, to: c.to, foot: foot, cav: cav, n: foot + cav, legs: rd.legs, at: 0 });
+          log.push(no + " " + (foot + cav) + " march for " + b.name + " (" + rd.legs.length + (rd.legs.length > 1 ? " ticks" : " tick") + (rd.relay ? ", relay −1)" : ")"));
+          return;
+        }
+        if (!foot && !cav && !c.pieces.length) return;
+        if (!foot && !cav && b.owner !== BLUE && c.pieces.indexOf("scout") < 0) return;
+        if (b.owner !== BLUE && foot + cav) {
+          (assaults[c.to] || (assaults[c.to] = [])).push({ s: r.id, foot: foot, cav: cav, pieces: c.pieces, river: c.mode === "march" && borderOf(r.id, c.to) === "river" });
+          log.push(no + " " + (MODE_LABEL[c.mode] || "attack") + " " + (foot + cav) + " on " + b.name);
+          return;
+        }
+        land(r.id, c, foot, cav, c.pieces, log, no + " " + (MODE_LABEL[c.mode] || (b.owner === BLUE ? "move" : "attack")));
+      });
+    });
+    // the fleets sail one leg; one at the end of its road lands, with the land attacks on the same region
+    fleets.forEach((f) => {
+      rec({ kind: "sail", from: f.s, to: f.to, n: f.n, pts: f.legs[f.at], dep: f.at === 0 }, []);
+      f.at++;
+      if (f.at < f.legs.length) return;
+      f.done = true;
+      if (R[f.to].owner !== BLUE) {
+        (assaults[f.to] || (assaults[f.to] = [])).push({ s: f.s, foot: f.n, cav: 0, pieces: [], river: false, fleet: true, pt: f.legs[f.at - 1][0] });
+        log.push("Fleet of " + f.n + " lands on " + R[f.to].name);
+      } else land(f.s, { to: f.to, mode: "ship" }, f.n, 0, [], log, "Fleet lands");
+    });
+    fleets = fleets.filter((f) => !f.done);
+    // the columns on the road walk one leg; one at the end of it arrives, before red attacks
+    roads.forEach((f) => {
+      rec({ kind: "sail", road: true, cav: f.cav >= f.n, from: f.s, to: f.to, n: f.n, pts: f.legs[f.at], dep: f.at === 0 }, []);
+      f.at++;
+      if (f.at < f.legs.length) return;
+      f.done = true;
+      if (R[f.to].owner !== BLUE) {
+        (assaults[f.to] || (assaults[f.to] = [])).push({ s: f.s, foot: f.foot, cav: f.cav, pieces: [], river: false, fleet: true, pt: f.legs[f.at - 1][0] });
+        log.push("Convoy of " + f.n + " finds " + R[f.to].name + " lost and attacks");
+      } else land(f.s, { to: f.to, mode: "road" }, f.foot, f.cav, [], log, "Convoy arrives:");
+    });
+    roads = roads.filter((f) => !f.done);
+    // every attack on one region goes in together: one battle, all their troops
+    Object.keys(assaults).forEach((t) => assault(+t, assaults[t], log));
+    if (redGo.length) log.push("· Red");
+    const redOn = {};
+    redGo.forEach((o) => { (redOn[o.to] || (redOn[o.to] = [])).push(o); });
+    Object.keys(redOn).forEach((t) => redLand(redOn[t], log));
+    if (S.prod === "reserve") {
+      // the bell's troops go to the reserves; a recruit stays where it was bought
+      Object.keys(extra).forEach((k) => { R[k].foot += extra[k]; });
+      const mine = incomeOf(BLUE), red = incomeOf(RED);
+      reserve += mine.total; redReserve += red.total;
+      log.push("Reserve +" + mine.total + " (" + reserve + " waiting)");
+      log.push("Red reserve +" + red.total);
+    } else localBell(extra, log);
+    function localBell(extra, log) {
+    // the levy on the road moves first, then the bell's new troops
+    levies.forEach((l) => {
+      const P = ownPath(l.at, l.to);
+      if (!P) { R[l.at].foot += l.n; l.done = true; log.push("Levy of " + l.n + " stops at " + R[l.at].name + ": the road is cut"); return; }
+      l.at = P[1] != null ? P[1] : l.to;
+      if (l.at === l.to) { R[l.to].foot += l.n; l.done = true; log.push("Levy of " + l.n + " reaches " + R[l.to].name); }
+    });
+    levies = levies.filter((l) => !l.done);
+    R.forEach((r) => {
+      const p = prodOf(r) + (extra[r.id] || 0);
+      if (!p) return;
+      const route = (standing[r.id] || {}).R;
+      if (r.owner === BLUE && route != null && S.route !== "off") {
+        const P = ownPath(r.id, route);
+        if (!P) { delete standing[r.id].R; r.foot += p; log.push(r.name + ": levy route cut, cancelled"); return; }
+        if (S.route === "instant") { R[route].foot += p; log.push(r.name + " levy +" + p + " straight to " + R[route].name); return; }
+        levies.push({ at: r.id, to: route, n: p });
+        log.push(r.name + " levy +" + p + " leaves for " + R[route].name + " (" + (P.length - 1) + " ticks)");
+        return;
+      }
+      r.foot += p;
+    });
+    }
+    const farms = R.filter((r) => r.owner === BLUE && r.farm).length;
+    if (farms) { grain += farms * FARM_GRAIN; log.push("Farms +" + farms * FARM_GRAIN + " grain"); }
+    // grain: the stock feeds the overfed regions; once it is out, each loses one troop
+    const over = has("grain") ? R.filter((r) => r.owner === BLUE && r.foot + r.cav > GRAIN_FEED) : [], need = over.reduce((a, r) => a + r.foot + r.cav - GRAIN_FEED, 0);
+    if (need > grain) { over.forEach((r) => lose(r, 1)); log.push("No grain: " + over.length + " regions lose a troop"); grain = 0; }
+    else if (need) { grain -= need; log.push("Grain −" + need + " (" + grain + " left)"); }
+    const mines = R.filter((r) => r.owner === BLUE && r.mine).length;
+    if (mines) { gold += mines; log.push("Mines +" + mines + " gold"); }
+    orders = {}; acts = {};
+    if (S.hold === "tick") hold = {};
+    tick++; sel = -1; step = null; openCv = null; openEl = null;
+    startTick();
+    logLines = log;
+    playEvents(pre);
+    renderUI(); renderLog();
+  }
+
+  /* ---- the bell, played back the game's way --------------------------------------
+     Send resolves the whole bell at once and records what happened; the map
+     is put back as it was and the bell plays out as in the game, every
+     column at the same time: red's reinforcements and the cannon shots
+     first, then every column marches, those that meet a defence stop short
+     and bump three times — scraps of paper fly, the beaten fold flat, the
+     winners jump. Two of your regions on one target are two columns of ONE
+     battle. Over the target, small marks say what counted on top: "+2" for
+     the reinforcement red brought in, a gold shield "+1" when it held (or
+     you defended). A tap or Send skips it. */
+  let EV = [], tickReinf = {}, ANIM = null;
+  const PRE_S = 0.9, MARCH_S = 1.25, FIGHT_S = 0.95, BUMPS = 0.6, STOP = 0.6, REST_S = 0.45;
+  const stOf = (id) => { const r = R[id]; return { owner: r.owner, foot: r.foot, cav: r.cav, pc: Object.assign({}, r.pc) }; };
+  const putSt = (id, st) => { Object.assign(R[id], { owner: st.owner, foot: st.foot, cav: st.cav, pc: Object.assign({}, st.pc) }); };
+  function rec(e, ids) {
+    e.reinf = e.kind === "battle" && e.was === RED ? (tickReinf[e.to] || 0) : 0;
+    EV.push(e);
+  }
+  const ease = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  function playEvents(pre) {
+    ANIM = null;
+    if (S.anim === "off" || !EV.length) return;
+    const post = R.map((r) => stOf(r.id)), pres = [], cols = [], fights = {}, shots = [], ships = [];
+    EV.forEach((e) => {
+      if (e.kind === "reinf") pres.push({ camp: RED, from: e.from, to: e.to, n: e.n });
+      else if (e.kind === "fire") shots.push({ from: e.from, to: e.to, n: e.n });
+      else if (e.kind === "sail") ships.push(e);
+      else if (e.kind === "move") cols.push({ camp: e.side, from: e.from, to: e.to, n: e.n, cav: false, fleet: !!e.fleet });
+      else e.froms.forEach((f, i) => {
+        let F = fights[e.to];
+        if (!F) F = fights[e.to] = { to: e.to, defCamp: e.was, defIn: e.m > 0, defLose: e.out.win || e.out.tie, reinf: e.reinf, hold: e.D.mods[0] || null, cols: [], hits: 0 };
+        const c = { camp: e.side, from: f.from, to: e.to, n: f.n, cav: f.cav >= f.n, fleet: !!f.fleet, pt: f.pt, fight: F, lose: !e.out.win, mods: i ? 0 : e.A.mods.reduce((a, x) => a + x.v, 0) };
+        F.cols.push(c); cols.push(c);
+      });
+    });
+    // the map as it stood, the columns already out of their regions
+    pre.forEach((st, id) => putSt(id, st));
+    // (a fleet left its harbour last bell)
+    pres.concat(cols).forEach((c) => { if (!c.fleet) lose(R[c.from], c.n); });
+    ships.forEach((e) => { if (e.dep) lose(R[e.from], e.n); });
+    const pre0 = pres.length || shots.length ? PRE_S : 0, fight = Object.keys(fights).length ? FIGHT_S : 0;
+    ANIM = { t: 0, k: S.anim === "fast" ? 0.5 : 1, post: post, pres: pres, cols: cols, fights: fights, shots: shots, ships: ships, scraps: [],
+             pre: pre0, end: pre0 + MARCH_S + fight + REST_S, landed: false };
+    const ids = [];
+    pres.concat(cols, shots, ships).forEach((c) => { ids.push(c.from, c.to); });
+    fitIds(ids);
+  }
+  function endAnim() { ANIM.post.forEach((st, id) => putSt(id, st)); ANIM = null; renderUI(); }
+  function skipAll() { if (ANIM) endAnim(); }
+  function stepAnim(dt) {
+    const A = ANIM;
+    if (!A) return;
+    A.t += dt / A.k;
+    // red's help and the shots land before anyone marches
+    if (!A.landed && A.t >= A.pre) {
+      A.landed = true;
+      A.pres.forEach((c) => { R[c.to].foot += c.n; });
+      A.shots.forEach((c) => lose(R[c.to], c.n));
+    }
+    // three bumps a fight, each throwing scraps in both camps' colours
+    const f = A.t - A.pre - MARCH_S;
+    Object.keys(A.fights).forEach((k) => {
+      const F = A.fights[k];
+      while (F.hits < 3 && f >= BUMPS * (F.hits + 0.5) / 3) {
+        F.hits++;
+        const camps = [F.defCamp].concat(F.cols.map((c) => c.camp));
+        for (let i = 0; i < 7; i++) {
+          const a = Math.random() * Math.PI * 2, sp = 60 + Math.random() * 80;
+          A.scraps.push({ to: F.to, ox: F.cx || 0, oy: F.cy || 0, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 90, t: 0,
+                          life: 0.6 + Math.random() * 0.25, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 18,
+                          col: CAMP[camps[i % camps.length]].base, size: 5 + Math.random() * 5 });
+        }
+      }
+    });
+    A.scraps.forEach((p) => { p.t += dt / A.k; p.vy += 420 * dt; p.ox += p.vx * dt; p.oy += p.vy * dt; p.rot += p.vr * dt; });
+    A.scraps = A.scraps.filter((p) => p.t < p.life);
+    if (A.t >= A.end) endAnim();
+  }
+  // the camera takes in every region the bell touches
+  function fitIds(ids) {
+    requestAnimationFrame(() => {
+      if (!ids.length) return;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      ids.forEach((i) => { x0 = Math.min(x0, R[i].cx); x1 = Math.max(x1, R[i].cx); y0 = Math.min(y0, R[i].cy); y1 = Math.max(y1, R[i].cy); });
+      const top = TOP + 120, bot = 1110 - 60, from = camGoal || cam;
+      const zx = (FW - 200) / Math.max(1, x1 - x0), zy = (bot - top) / Math.max(1, (y1 - y0) * TILT);
+      const z = Math.max(ZMIN, Math.min(from.z, zx, zy));
+      const g = { x: (x0 + x1) / 2, y: camYFor((y0 + y1) / 2, (top + bot) / 2, z), z: z };
+      clampCam(g); camGoal = g;
+    });
+  }
+  function renderLog() {
+    document.getElementById("log").innerHTML = logLines.map((l, i) => "<li" + (i === 0 || l[0] === "·" ? " class=h" : "") + ">" + l.replace(/^· /, "") + "</li>").join("");
+  }
+
+  // ---- the camera ----------------------------------------------------------
+  const cam = { x: W / 2, y: H / 2, z: 1 };
+  let camGoal = null;
+  const viewMidCam = (TOP + 1110) / 2;
+  const scr = (x, y) => ({ x: CX + (x - cam.x) * cam.z, y: viewMidCam + (y - cam.y) * cam.z * TILT });
+  const inv = (px, py) => ({ x: cam.x + (px - CX) / cam.z, y: cam.y + (py - viewMidCam) / (cam.z * TILT) });
+  const ZMIN = 0.42, ZMAX = 2.4;
+  function clampCam(c) { c.x = Math.max(-200, Math.min(W + 200, c.x)); c.y = Math.max(-200, Math.min(H + 200, c.y)); c.z = Math.max(ZMIN, Math.min(ZMAX, c.z)); }
+  function camHome() {
+    const r = R[fullId] || R[0];
+    cam.x = r.cx; cam.y = r.cy; cam.z = S.zoom; camGoal = null; clampCam(cam);
+  }
+  function zoomAt(px, py, z) {
+    const w = inv(px, py);
+    cam.z = Math.max(ZMIN, Math.min(ZMAX, z));
+    cam.x = w.x - (px - CX) / cam.z; cam.y = w.y - (py - viewMidCam) / (cam.z * TILT);
+    clampCam(cam); camGoal = null;
+  }
+  const camYFor = (wy, sy, z) => wy - (sy - viewMidCam) / (z * TILT);
+  // a world point kept inside [top, bot] of the screen, the least move that does
+  function keepIn(wx, wy, top, bot) {
+    requestAnimationFrame(() => {
+      const from = camGoal || cam, sy = viewMidCam + (wy - from.y) * from.z * TILT, sx = CX + (wx - from.x) * from.z;
+      const g = { x: from.x, y: from.y, z: from.z };
+      const b = (typeof bot === "function" ? bot() : bot);
+      if (sy < top || sy > b) g.y = camYFor(wy, (top + b) / 2, from.z);
+      if (sx < 140 || sx > FW - 140) g.x = wx;
+      clampCam(g); camGoal = g;
+    });
+  }
+  function cameraOnRegion(id) {
+    const ring = S.menu === "ring";
+    keepIn(R[id].cx, R[id].cy, TOP + (ring ? 210 : 90), () => viewBottom() - (ring ? 170 : 60));
+  }
+  // the region in hand and every target of the action on screen, zooming out if it must
+  function cameraOnTargets() {
+    requestAnimationFrame(() => {
+      if (!step) return;
+      const ids = [step.s].concat(targetsOf(step.s, step.el, step.act));
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      ids.forEach((i) => { x0 = Math.min(x0, R[i].cx); x1 = Math.max(x1, R[i].cx); y0 = Math.min(y0, R[i].cy); y1 = Math.max(y1, R[i].cy); });
+      const top = TOP + 110, bot = viewBottom() - 40, from = camGoal || cam;
+      const zx = (FW - 160) / Math.max(1, x1 - x0), zy = (bot - top) / Math.max(1, (y1 - y0) * TILT);
+      const z = Math.max(ZMIN, Math.min(from.z, zx, zy));
+      const g = { x: (x0 + x1) / 2, y: camYFor((y0 + y1) / 2, (top + bot) / 2, z), z: z };
+      clampCam(g); camGoal = g;
+    });
+  }
+
+  // ---- the input: a tap picks, a drag is the camera ------------------------
+  const ptrs = new Map();
+  let gest = null;
+  function toFrame(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * FW, y: (e.clientY - r.top) / r.height * FH };
+  }
+  cv.addEventListener("pointerdown", (e) => {
+    cv.setPointerCapture(e.pointerId);
+    const p = toFrame(e);
+    ptrs.set(e.pointerId, p);
+    if (ptrs.size === 1) gest = { x0: p.x, y0: p.y, cx: cam.x, cy: cam.y, moved: false, pinch: null };
+    else if (ptrs.size === 2 && gest) {
+      const [a, b] = Array.from(ptrs.values());
+      gest.moved = true;
+      gest.pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: cam.z };
+    }
+  });
+  cv.addEventListener("pointermove", (e) => {
+    const p = toFrame(e);
+    if (!ptrs.has(e.pointerId)) {
+      const id = regionAt(inv(p.x, p.y));
+      cv.classList.toggle("over", placing ? id >= 0 && canPlace(id) : !!convoyAt(p) || (id >= 0 && (R[id].owner === BLUE || (step && isTarget(id)))));
+      return;
+    }
+    ptrs.set(e.pointerId, p);
+    if (!gest) return;
+    if (gest.pinch && ptrs.size >= 2) {
+      const [a, b] = Array.from(ptrs.values());
+      zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, gest.pinch.z0 * Math.hypot(a.x - b.x, a.y - b.y) / gest.pinch.d0);
+      return;
+    }
+    if (!gest.moved && Math.hypot(p.x - gest.x0, p.y - gest.y0) > 12) { gest.moved = true; cv.classList.add("panning"); }
+    if (gest.moved && !gest.pinch) {
+      cam.x = gest.cx - (p.x - gest.x0) / cam.z;
+      cam.y = gest.cy - (p.y - gest.y0) / (cam.z * TILT);
+      clampCam(cam); camGoal = null;
+    }
+  });
+  function lift(e) {
+    if (!ptrs.has(e.pointerId)) return;
+    const p = toFrame(e);
+    ptrs.delete(e.pointerId);
+    if (ptrs.size === 0) {
+      cv.classList.remove("panning");
+      if (gest && !gest.moved && e.type === "pointerup") tap(p);
+      gest = null;
+    }
+  }
+  cv.addEventListener("pointerup", lift);
+  cv.addEventListener("pointercancel", lift);
+  cv.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const p = toFrame(e);
+    zoomAt(p.x, p.y, cam.z * Math.exp(-e.deltaY * 0.0015));
+  }, { passive: false });
+  window.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (placing) { placing = false; renderUI(); return; }
+    if (openCv) { openCv = null; sel = -1; renderUI(); return; }
+    if (step) { step = null; renderUI(); return; }
+    if (openEl) { openEl = null; renderUI(); return; }
+    select(-1);
+  });
+
+  function regionAt(w) {
+    for (let i = 0; i < R.length; i++) {
+      const P = R[i].poly;
+      let inside = false;
+      for (let a = 0, b = P.length - 1; a < P.length; b = a++) {
+        if ((P[a].y > w.y) !== (P[b].y > w.y) && w.x < (P[b].x - P[a].x) * (w.y - P[a].y) / (P[b].y - P[a].y) + P[a].x) inside = !inside;
+      }
+      if (inside) return i;
+    }
+    return -1;
+  }
+  const isTarget = (id) => !!step && targetsOf(step.s, step.el, step.act).indexOf(id) >= 0;
+  function pinAt(p) {
+    if (!step) return -1;
+    const T = targetsOf(step.s, step.el, step.act);
+    for (let k = 0; k < T.length; k++) {
+      const q = pinPos(T[k]);
+      if (Math.hypot(p.x - q.x, p.y - q.y) < 40) return T[k];
+    }
+    return -1;
+  }
+  // the convoy whose arrow is under the finger
+  function convoyAt(p) {
+    let best = null, bd = 26;
+    Object.keys(orders).forEach((k) => {
+      const s = +k;
+      orders[k].forEach((c) => {
+        const trip = tripOf(s, c);
+        if (trip) {
+          trip.legs.forEach((L) => { for (let t = 0.05; t <= 0.95; t += 0.05) {
+            const w = subLine(L, 0, t), e = w[w.length - 1], q = scr(e.x, e.y), d = Math.hypot(p.x - q.x, p.y - q.y);
+            if (d < bd) { bd = d; best = { s: s, id: c.id }; }
+          } });
+          return;
+        }
+        const C = curveOf(s, c);
+        for (let t = 0.12; t <= 0.98; t += 0.04) {
+          const q = qpt(C, t), d = Math.hypot(p.x - q.x, p.y - q.y);
+          if (d < bd) { bd = d; best = { s: s, id: c.id }; }
+        }
+      });
+    });
+    return best;
+  }
+  function openConvoy(hit) {
+    openCv = hit; sel = hit.s; step = null; openEl = null;
+    renderUI();
+    const c = cvFind(), a = R[hit.s], b = R[c.to];
+    keepIn((a.cx + b.cx) / 2, (a.cy + b.cy) / 2, TOP + 120, () => viewBottom() - 60);
+  }
+  function tap(p) {
+    if (ANIM) { skipAll(); return; }
+    if (placing) {
+      const id = regionAt(inv(p.x, p.y));
+      if (id >= 0 && canPlace(id)) { place(id, placeStep === "all" ? reserve : placeStep); renderUI(); }
+      return;
+    }
+    if (step) {
+      const pin = pinAt(p);
+      if (pin >= 0) { give(pin); return; }
+      const id = regionAt(inv(p.x, p.y));
+      if (id >= 0 && isTarget(id)) { give(id); return; }
+      step = null; renderUI(); return;
+    }
+    const hit = convoyAt(p);
+    if (hit) { openConvoy(hit); return; }
+    if (openCv) { openCv = null; sel = -1; renderUI(); return; }
+    const id = regionAt(inv(p.x, p.y));
+    if (id >= 0 && R[id].owner === BLUE) { select(id === sel ? -1 : id); return; }
+    select(-1);
+  }
+
+  // ---- the mocked UI: the ring or the sheet, the convoy card, the bar ------
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const artUrl = (el) => URL_OF[EL[el].art + "-blue"];
+  const glyph = (n) => '<svg class="glyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + (SVG[n] || "") + "</svg>";
+  const countOf = (s, el) => el === "foot" ? freeFoot(s) : el === "cav" ? freeCav(s) : null;
+  function actHtml(s, el, act) {
+    const A = ACT[act], st = actState(s, el, act);
+    return '<button class="act' + (st.done ? " done" : "") + (A.hold ? " hold" : "") + (st.poor ? " poor" : "") + '" data-el="' + el + '" data-act="' + act + '">' +
+      glyph(A.pict) + esc(A.label) + (A.cost && !st.done ? ' <span class="cost">' + A.cost + " gold</span>" : "") + "</button>";
+  }
+  function elSub(s, el) {
+    if (el === "foot") return freeFoot(s) < R[s].foot ? freeFoot(s) + " of " + R[s].foot + " free" : "";
+    if (el === "cav") return freeCav(s) < R[s].cav ? freeCav(s) + " of " + R[s].cav + " free" : "";
+    if (el === "harbour") return "ships infantry";
+    if (el === "camp") return "orders that wait";
+    if (el === "town" || el === "capital") return "+" + prodOf(R[s]) + " a tick";
+    return "";
+  }
+  function headHtml(s, close) {
+    const r = R[s];
+    let h = '<div class="head"><span class="tag">' + esc(r.name) + '</span><button class="x" data-' + close + '="1">×</button></div>';
+    alertsOf(s).forEach((a) => { h += '<div class="alert" style="background:' + a.col + '">' + esc(a.text) + "</div>"; });
+    return h;
+  }
+  function renderUI() {
+    document.getElementById("tickTx").textContent = "Tick " + tick;
+    document.getElementById("goldTx").textContent = String(goldLeft());
+    document.getElementById("grainTx").textContent = String(grain);
+    document.getElementById("todoTx").textContent = String(R.filter((r) => pendingEls(r.id).length).length);
+    document.getElementById("resTx").textContent = String(reserve);
+    const rb = document.getElementById("resBtn");
+    rb.classList.toggle("zero", reserve <= 0); rb.classList.toggle("on", placing);
+    rb.style.display = S.prod === "reserve" ? "" : "none";
+    document.getElementById("incTx").textContent = "+" + incomeOf(BLUE).total;
+    const fz = document.getElementById("filters");
+    const fl = FILTERS.filter((f) => !f.lock || has(f.lock));
+    if (fz.children.length !== fl.length) fz.innerHTML = fl.map((f) => '<button data-filter="' + f.k + '" title="' + esc(f.label) + '" style="--c:' + f.c + '">' + glyph(f.pict) + "<span>" + esc(f.word) + "</span></button>").join("");
+    fz.querySelectorAll("button").forEach((b) => b.classList.toggle("off", !on(b.dataset.filter)));
+    document.getElementById("goldHud").style.display = has("gold") || has("recruit") ? "" : "none";
+    document.getElementById("grainHud").style.display = has("grain") ? "" : "none";
+    ringEl.innerHTML = "";
+    [cardEl, barEl, convoyEl].forEach((el) => el.classList.remove("on"));
+    document.getElementById("send").textContent = ANIM ? "Skip" : "Send orders";
+    if (ANIM) return;
+    if (placing) { renderPlaceBar(); return; }
+    if (openCv) { renderConvoy(); return; }
+    if (step) { renderBar(); return; }
+    if (sel < 0) return;
+    const s = sel, els = elementsOf(s).filter((el) => elVisible(s, el));
+    let h = headHtml(s, "close");
+    if (S.menu === "sheet") {
+      h += '<div class="body">';
+      els.forEach((el) => {
+        h += '<div class="el"><span class="piece"><img src="' + artUrl(el) + '" alt="">' +
+          (countOf(s, el) != null ? '<span class="n">' + countOf(s, el) + "</span>" : "") + '</span><span class="nm">' + esc(EL[el].name) +
+          "<small>" + esc(elSub(s, el)) + '</small></span><span class="acts">' + shownActs(s, el).map((a) => actHtml(s, el, a)).join("") + "</span></div>";
+      });
+      h += "</div>";
+    } else {
+      els.forEach((el) => {
+        const b = document.createElement("button"), n = countOf(s, el);
+        b.className = "bub live" + (holdOf(s)[el] ? " held" : "") + (openEl === el ? " open" : "");
+        b.dataset.open = openEl === el ? "" : el;
+        b.title = EL[el].name;
+        b.innerHTML = '<img src="' + artUrl(el) + '" alt="">' + (n != null ? '<span class="n">' + n + "</span>" : "");
+        ringEl.appendChild(b);
+      });
+      if (openEl) {
+        const f = document.createElement("div");
+        f.className = "fan live";
+        f.innerHTML = shownActs(s, openEl).map((a) => actHtml(s, openEl, a)).join("");
+        ringEl.appendChild(f);
+      }
+    }
+    cardEl.innerHTML = h;
+    cardEl.classList.add("on");
+  }
+  function renderPlaceBar() {
+    let h = '<div class="line"><span class="piece"><img src="' + URL_OF["a-infantry-blue"] + '" alt=""></span><span class="what">Reserve: ' + reserve +
+      " to drop<small>" + (S.deposit === "any" ? "Tap any region of yours" : "Tap a region of yours linked to your capital") +
+      ': the troops are there now and can march this tick. What you keep waits for later.</small></span><button class="chip on" data-pdone="1">Done</button></div>';
+    h += '<div class="line count">' + [1, 3, "all"].map((v) => '<button class="chip' + (placeStep === v ? " on" : "") + '" data-pstep="' + v + '">' +
+      (v === "all" ? "All" : "+" + v) + "</button>").join("") + '<span style="flex:1"></span><button class="cancel" data-undo="1">Undo</button></div>';
+    barEl.innerHTML = h;
+    barEl.classList.add("on");
+  }
+  function renderBar() {
+    const A = ACT[step.act];
+    let h = '<div class="line"><span class="piece"><img src="' + artUrl(step.el) + '" alt=""></span><span class="what">' + esc(A.label) +
+      "<small>" + esc(A.hint || "") + '</small></span><button class="cancel" data-back="1">Back</button></div>';
+    if (A.n && S.count === "bar") {
+      const half = Math.max(1, Math.floor(step.max / 2));
+      h += '<div class="line count"><button class="round" data-n="-1">−</button><span class="num">' + step.n + '</span><button class="round" data-n="1">+</button>' +
+        '<span style="flex:1"></span><button class="chip' + (step.n === step.max ? " on" : "") + '" data-set="all">All ' + step.max + "</button>" +
+        '<button class="chip' + (step.n === half && half !== step.max ? " on" : "") + '" data-set="half">Half</button></div>';
+    }
+    barEl.innerHTML = h;
+    barEl.classList.add("on");
+  }
+  function renderConvoy() {
+    const c = cvFind();
+    if (!c) { openCv = null; return; }
+    const s = openCv.s, b = R[c.to], L = convoysOf(s), no = L.indexOf(c) + 1;
+    const mode = MODE_LABEL[c.mode] || (b.owner === BLUE ? "Move" : "Attack");
+    let h = '<div class="head"><span class="tag">Convoy ' + no + '</span><span class="sub">' + esc(mode) + " → <b>" + esc(b.name) +
+      '</b></span><button class="x" data-cclose="1">×</button></div><div class="body">';
+    const row = (el, name, sub, ctrl) => '<div class="cvr"><span class="piece"><img src="' + artUrl(el) + '" alt=""></span><span class="nm">' +
+      esc(name) + (sub ? "<small>" + esc(sub) + "</small>" : "") + "</span>" + ctrl + "</div>";
+    const stepper = (pool, n, max) => '<span class="count"><button class="round" data-cs="' + pool + '" data-d="-1"' + (n <= 0 ? " disabled" : "") +
+      '>−</button><span class="num">' + n + '</span><button class="round" data-cs="' + pool + '" data-d="1"' + (n >= max ? " disabled" : "") + ">+</button></span>";
+    if (c.mode !== "ride" && (c.foot || freeFoot(s) > 0)) h += row("foot", "Infantry", (c.lift ? "by balloon, " + LIFT_MAX + " at most" : c.mode === "ship" ? "by sea" : "") , stepper("foot", c.foot, cvMax(s, c, "foot")));
+    if ((c.mode === "march" || c.mode === "ride" || c.mode === "road") && (c.cav || freeCav(s) > 0)) h += row("cav", "Cavalry", "", stepper("cav", c.cav, cvMax(s, c, "cav")));
+    if (c.fire) h += row("cannon", "Cannon", "fires first: −" + CANNON_DAMAGE, '<button class="mini" data-cdrop="fire">×</button>');
+    if (c.bridge) h += row("engineer", "Bridge", WORK_COST + " gold, ready in 2 ticks", '<button class="mini" data-cdrop="bridge">×</button>');
+    c.pieces.forEach((p) => { h += row(p, EL[p].name, "", '<button class="mini" data-cdrop="' + p + '">×</button>'); });
+    h += "</div>";
+    const v = forecast(s, c);
+    if (v) h += '<div class="verdict" style="background:' + v.col + '">' + (b.owner === BLUE ? "Reinforces " + b.name + " " + v.text :
+      v.win ? v.text + ": taken, " + v.left + " left" : v.col === TIE_COL ? v.text + ": a tie, nobody left" :
+      v.text + (v.text.indexOf("vs") >= 0 ? ": beaten" : "")) + "</div>";
+    if (L.length > 1) {
+      h += '<div class="runs"><span class="lbl">Runs</span>';
+      L.forEach((x, i) => { h += '<button class="no' + (x === c ? " on" : "") + '" data-run="' + i + '">' + (i + 1) + "</button>"; });
+      h += "</div>";
+    }
+    h += '<div class="cvfoot"><button class="cancel" data-ccancel="1">Cancel the convoy</button></div>';
+    convoyEl.innerHTML = h;
+    convoyEl.classList.add("on");
+  }
+  // where the ring's bubbles stand this frame
+  function placeRing() {
+    if (S.menu !== "ring" || sel < 0 || step || openCv) return;
+    const kids = Array.from(ringEl.querySelectorAll(".bub")), n = kids.length;
+    if (!n) return;
+    const c = scr(R[sel].cx, R[sel].cy), rad = Math.max(120, n * 92 / (Math.PI * 2));
+    let open = null;
+    kids.forEach((b, i) => {
+      const th = -Math.PI / 2 + i * Math.PI * 2 / n, x = c.x + Math.cos(th) * rad, y = c.y - 30 + Math.sin(th) * rad * 0.85;
+      b.style.left = x + "px"; b.style.top = y + "px";
+      if (b.classList.contains("open")) open = { x: x, y: y, right: Math.cos(th) >= -0.2 };
+    });
+    const f = ringEl.querySelector(".fan");
+    if (f && open) {
+      const w = f.offsetWidth, hh = f.offsetHeight;
+      let x = open.right ? open.x + 54 : open.x - 54 - w;
+      x = Math.max(12, Math.min(FW - 12 - w, x));
+      const y = Math.max(TOP, Math.min(viewBottom() - hh - 8, open.y - hh / 2));
+      f.style.left = x + "px"; f.style.top = y + "px";
+    }
+  }
+  ui.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    const d = b.dataset;
+    if (b.id === "send") { send(); return; }
+    if (b.id === "resBtn") { if (reserve > 0 || placeHist.length) { placing = !placing; sel = -1; step = null; openCv = null; openEl = null; } renderUI(); return; }
+    if (d.filter) { S.f[d.filter] = !S.f[d.filter]; save(); renderUI(); return; }
+    if (d.pdone) { placing = false; renderUI(); return; }
+    if (d.pstep) { placeStep = d.pstep === "all" ? "all" : +d.pstep; renderUI(); return; }
+    if (d.undo) { unplace(); placing = true; renderUI(); return; }
+    if (d.close) { select(-1); return; }
+    if (d.back) { step = null; renderUI(); if (sel >= 0) cameraOnRegion(sel); return; }
+    if (d.open != null) { openEl = d.open || null; renderUI(); return; }
+    if (d.act) { choose(d.el, d.act); return; }
+    if (d.n && step) { step.n = Math.max(1, Math.min(step.max, step.n + +d.n)); renderUI(); return; }
+    if (d.set && step) { step.n = d.set === "all" ? step.max : Math.max(1, Math.floor(step.max / 2)); renderUI(); return; }
+    // the convoy card
+    const c = cvFind();
+    if (d.cclose) { openCv = null; sel = -1; renderUI(); return; }
+    if (!c) return;
+    const s = openCv.s;
+    if (d.cs) { const k = d.cs; c[k] = Math.max(0, Math.min(cvMax(s, c, k), c[k] + +d.d)); cvTidy(s, c); renderUI(); return; }
+    if (d.cdrop) {
+      if (d.cdrop === "fire") c.fire = false;
+      else if (d.cdrop === "bridge") c.bridge = false;
+      else c.pieces = c.pieces.filter((p) => p !== d.cdrop);
+      cvTidy(s, c); renderUI(); return;
+    }
+    if (d.run != null) { const L = convoysOf(s), i = L.indexOf(c), j = +d.run; L.splice(i, 1); L.splice(j, 0, c); renderUI(); return; }
+    if (d.ccancel) { orders[s] = convoysOf(s).filter((x) => x !== c); openCv = null; sel = -1; renderUI(); return; }
+  });
+
+  // ---- drawing -------------------------------------------------------------
+  function polyPath(P, dy) {
+    ctx.beginPath();
+    P.forEach((p, k) => { const s = scr(p.x, p.y); if (k) ctx.lineTo(s.x, s.y + dy); else ctx.moveTo(s.x, s.y + dy); });
+    ctx.closePath();
+  }
+  function sharedEdge(a, b) {
+    const P = R[a].poly;
+    for (let k = 0; k < P.length; k++) if (P[k].tag === b) return [P[k], P[(k + 1) % P.length]];
+    return null;
+  }
+  function drawGround() {
+    const z = cam.z, thick = 12 * z;
+    const g = ctx.createLinearGradient(0, 0, 0, FH);
+    g.addColorStop(0, "#156c7a"); g.addColorStop(1, "#38a6ad");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, FW, FH);
+    R.forEach((r) => { polyPath(r.poly, thick); ctx.fillStyle = "#c9b78c"; ctx.fill(); });
+    R.forEach((r) => { polyPath(r.poly, thick * 0.45); ctx.fillStyle = "#b39f72"; ctx.fill(); });
+    R.forEach((r) => {
+      polyPath(r.poly, 0);
+      ctx.fillStyle = TERRAIN[r.terrain][r.id % 2]; ctx.fill();
+      if (r.owner !== NEUTRAL) {
+        ctx.fillStyle = "rgba(" + CAMP[r.owner].rgb + ",.26)"; ctx.fill();
+        ctx.save(); ctx.clip();
+        ctx.lineWidth = Math.max(4, 11 * z); ctx.strokeStyle = CAMP[r.owner].base; ctx.globalAlpha = 0.85; ctx.lineJoin = "round"; ctx.stroke();
+        ctx.restore();
+      }
+      ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(70,52,24,.38)"; ctx.stroke();
+    });
+    for (const k in borders) {
+      const [a, b] = k.split(":").map(Number), e = sharedEdge(a, b);
+      if (!e) continue;
+      const p = scr(e[0].x, e[0].y), q = scr(e[1].x, e[1].y);
+      if (borders[k] === "river" || borders[k] === "bridge") {
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#2f7fc0"; ctx.lineWidth = Math.max(5, 12 * z); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
+        ctx.strokeStyle = "#7cc3ee"; ctx.lineWidth = Math.max(2, 4 * z); ctx.stroke();
+        if (borders[k] === "bridge") {
+          const mx = (p.x + q.x) / 2, my = (p.y + q.y) / 2, ang = Math.atan2(q.y - p.y, q.x - p.x) + Math.PI / 2;
+          ctx.save(); ctx.translate(mx, my); ctx.rotate(ang);
+          ctx.fillStyle = "#8a6a3c"; ctx.fillRect(-22 * z, -9 * z, 44 * z, 18 * z);
+          ctx.restore();
+        }
+      } else {
+        const n = Math.max(2, Math.round(Math.hypot(q.x - p.x, q.y - p.y) / (26 * z)));
+        for (let i = 0; i <= n; i++) {
+          const x = p.x + (q.x - p.x) * i / n, y = p.y + (q.y - p.y) * i / n, h = 26 * z, w = 18 * z;
+          ctx.beginPath(); ctx.moveTo(x - w, y + 4 * z); ctx.lineTo(x, y - h); ctx.lineTo(x + w, y + 4 * z); ctx.closePath();
+          ctx.fillStyle = "#8d7a5a"; ctx.fill();
+          ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x + w, y + 4 * z); ctx.lineTo(x, y + 4 * z); ctx.closePath();
+          ctx.fillStyle = "#6e5d42"; ctx.fill();
+        }
+      }
+    }
+    // dropping the reserve: every region it can go to outlined
+    if (placing) {
+      ctx.save();
+      ctx.setLineDash([10, 8]); ctx.lineDashOffset = -now * 30; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,210,58," + (0.6 + 0.3 * Math.sin(now * 4)).toFixed(2) + ")";
+      R.forEach((r) => { if (canPlace(r.id)) { polyPath(r.poly, 0); ctx.stroke(); } });
+      ctx.restore();
+    }
+    // the target step: everything that is not a target dimmed, the targets outlined
+    if (step) {
+      const T = targetsOf(step.s, step.el, step.act);
+      if (S.dim > 0) {
+        ctx.fillStyle = "rgba(10,20,30," + S.dim.toFixed(3) + ")";
+        R.forEach((r) => { if (r.id !== step.s && T.indexOf(r.id) < 0) { polyPath(r.poly, 0); ctx.fill(); } });
+      }
+      ctx.save();
+      ctx.setLineDash([10, 8]); ctx.lineDashOffset = -now * 30;
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,250,235," + (0.55 + 0.3 * Math.sin(now * 4)).toFixed(2) + ")";
+      T.forEach((t) => { polyPath(R[t].poly, 0); ctx.stroke(); });
+      ctx.restore();
+    }
+    if (sel >= 0) {
+      const up = -9 * z;
+      polyPath(R[sel].poly, 4 * z); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fill();
+      polyPath(R[sel].poly, up); ctx.fillStyle = TERRAIN[R[sel].terrain][sel % 2]; ctx.fill();
+      ctx.fillStyle = "rgba(47,99,196,.34)"; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = "#fffaf0"; ctx.lineJoin = "round"; ctx.stroke();
+    }
+  }
+  function drawImg(k, x, y, h, a) {
+    const im = IMG[k];
+    if (!ready(im)) return;
+    const w = h * im.naturalWidth / im.naturalHeight;
+    if (a != null) ctx.globalAlpha = a;
+    ctx.drawImage(im, x - w / 2, y - h, w, h);
+    ctx.globalAlpha = 1;
+  }
+  function rrect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function chip(x, y, text, fill, ink) {
+    ctx.font = "800 22px " + FONT;
+    const w = Math.max(38, ctx.measureText(text).width + 20), h = 32;
+    ctx.fillStyle = "rgba(0,0,0,.25)"; rrect(x - w / 2 + 2, y - h / 2 + 3, w, h, 9); ctx.fill();
+    ctx.fillStyle = fill; rrect(x - w / 2, y - h / 2, w, h, 9); ctx.fill();
+    ctx.fillStyle = ink || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y + 1);
+    return w;
+  }
+  function disc(x, y, r, fill, text, size) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#f6ecd2"; ctx.stroke();
+    if (!text) return;
+    ctx.font = "800 " + (size || 20) + "px " + FONT; ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y + 1);
+  }
+  function shieldMark(x, y, col) {
+    const w = 15, h = 18;
+    ctx.beginPath();
+    ctx.moveTo(x, y - h); ctx.lineTo(x + w, y - h + 6); ctx.lineTo(x + w, y);
+    ctx.quadraticCurveTo(x + w, y + h * 0.6, x, y + h); ctx.quadraticCurveTo(x - w, y + h * 0.6, x - w, y);
+    ctx.lineTo(x - w, y - h + 6); ctx.closePath();
+    ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.save(); ctx.translate(2, 3); ctx.fill(); ctx.restore();
+    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#f6ecd2"; ctx.stroke();
+  }
+  // an order on the map: a curved paper strip
+  function curve(a, b, bend) {
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y;
+    return { a: a, b: b, c: { x: mx - dy * bend, y: my + dx * bend } };
+  }
+  const qpt = (C, t) => ({ x: (1 - t) * (1 - t) * C.a.x + 2 * (1 - t) * t * C.c.x + t * t * C.b.x, y: (1 - t) * (1 - t) * C.a.y + 2 * (1 - t) * t * C.c.y + t * t * C.b.y });
+  const groundOf = (id) => { const r = R[id], s = scr(r.cx, r.cy); return { x: s.x, y: s.y + 20 * cam.z }; };
+  const curveOf = (s, c) => curve(groundOf(s), groundOf(c.to), 0.12);
+  function arrow(C, col, w, dash, headCol) {
+    ctx.save();
+    ctx.lineCap = "round"; ctx.lineWidth = w + 4; ctx.strokeStyle = "rgba(246,236,210,.9)";
+    if (dash) ctx.setLineDash(dash);
+    ctx.beginPath(); ctx.moveTo(C.a.x, C.a.y); ctx.quadraticCurveTo(C.c.x, C.c.y, C.b.x, C.b.y); ctx.stroke();
+    ctx.lineWidth = w; ctx.strokeStyle = col; ctx.stroke();
+    ctx.restore();
+    const p = qpt(C, 0.96), q = C.b, ang = Math.atan2(q.y - p.y, q.x - p.x), hs = 10 + w * 1.4;
+    ctx.beginPath(); ctx.moveTo(q.x, q.y);
+    ctx.lineTo(q.x - Math.cos(ang - 0.45) * hs, q.y - Math.sin(ang - 0.45) * hs);
+    ctx.lineTo(q.x - Math.cos(ang + 0.45) * hs, q.y - Math.sin(ang + 0.45) * hs);
+    ctx.closePath(); ctx.fillStyle = headCol || col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(246,236,210,.95)"; ctx.stroke();
+  }
+  // where an arrow from a to b crosses the river between them, on screen
+  function riverCross(a, b, C) {
+    const e = sharedEdge(a, b);
+    if (!e) return null;
+    const p = scr(e[0].x, e[0].y), q = scr(e[1].x, e[1].y), side = (o) => (q.x - p.x) * (o.y - p.y) - (q.y - p.y) * (o.x - p.x);
+    let prev = qpt(C, 0), best = null, bd = Infinity;
+    for (let i = 1; i <= 60; i++) {
+      const o = qpt(C, i / 60);
+      if ((side(prev) <= 0) !== (side(o) <= 0)) return { x: (prev.x + o.x) / 2, y: (prev.y + o.y) / 2, t: (i - 0.5) / 60 };
+      // no crossing (the arrow ends short of it): the nearest point to the river's middle
+      const d = Math.hypot(o.x - (p.x + q.x) / 2, o.y - (p.y + q.y) / 2);
+      if (d < bd) { bd = d; best = { x: o.x, y: o.y, t: i / 60 }; }
+      prev = o;
+    }
+    return best;
+  }
+  // one leg of a sea road: a dashed line over the water, its own head, a little short of both ends
+  function seaArrow(L, col, w, dash) {
+    const P = subLine(L, 0.04, 0.96).map((p) => scr(p.x, p.y));
+    ctx.save();
+    ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.setLineDash(dash || [16, 10]);
+    ctx.beginPath(); P.forEach((p, i) => { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); });
+    ctx.lineWidth = w + 4; ctx.strokeStyle = "rgba(246,236,210,.9)"; ctx.stroke();
+    ctx.lineWidth = w; ctx.strokeStyle = col; ctx.stroke();
+    ctx.restore();
+    const q = P[P.length - 1], p = P[P.length - 2], ang = Math.atan2(q.y - p.y, q.x - p.x), hs = 10 + w * 1.4;
+    ctx.beginPath(); ctx.moveTo(q.x, q.y);
+    ctx.lineTo(q.x - Math.cos(ang - 0.45) * hs, q.y - Math.sin(ang - 0.45) * hs);
+    ctx.lineTo(q.x - Math.cos(ang + 0.45) * hs, q.y - Math.sin(ang + 0.45) * hs);
+    ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "rgba(246,236,210,.95)"; ctx.stroke();
+    return P;
+  }
+  // the convoys: one arrow each, its number, its troops and pieces, the verdict on its head
+  function drawConvoys() {
+    Object.keys(orders).forEach((k) => {
+      const s = +k;
+      orders[k].forEach((c, i) => {
+        const trip = tripOf(s, c);
+        if (trip) {
+          // by sea or deep into your land: one arrow a tick, the count on the first, the relay beside it
+          const open = openCv && openCv.id === c.id, road = c.mode === "road";
+          let first = null;
+          trip.legs.forEach((L, li) => { const P = seaArrow(L, road ? "#5b8fe0" : "#5a7fd0", 7 + (open ? 3 : 0), road ? [14, 10] : null); if (!li) first = P[Math.floor(P.length / 2)]; });
+          if (first && c.foot + c.cav) {
+            const w = chip(first.x, first.y, String(c.foot + c.cav), CAMP[BLUE].base);
+            if (trip.relay) drawImg("w-courier-blue", first.x + w / 2 + 20, first.y + 16, 36);
+          }
+          return;
+        }
+        const C = curveOf(s, c), b = R[c.to], foe = b.owner !== BLUE, n = c.foot + c.cav, v = forecast(s, c);
+        const shot = !n && c.fire && !c.pieces.length;
+        const col = shot ? RISK_COL : c.mode === "lift" || c.mode === "ship" ? "#5a7fd0" : foe ? CAMP[BLUE].base : "#5b8fe0";
+        const open = openCv && openCv.id === c.id;
+        arrow(C, col, (shot ? 4 : 7) + (open ? 3 : 0), foe || shot ? (c.mode === "ship" ? [16, 10] : null) : [14, 10], v && foe ? v.col : col);
+        // the river's −1 where the arrow crosses it; the count keeps clear of it
+        const xr = n && foe && c.mode === "march" && borderOf(s, c.to) === "river" ? riverCross(s, c.to, C) : null;
+        const tq = xr && Math.abs(xr.t - 0.62) < 0.22 ? (xr.t > 0.5 ? xr.t - 0.3 : xr.t + 0.3) : 0.62;
+        // what rides on it: the troops, then the pieces and the shot
+        const q = qpt(C, tq);
+        let x = q.x;
+        if (n) x += chip(q.x, q.y, String(n), CAMP[BLUE].base) / 2 + 4;
+        const icons = (c.fire ? ["cannon"] : []).concat(c.lift ? ["lift"] : []).concat(c.pieces).concat(c.bridge ? ["engineer"] : []);
+        if (xr) chip(xr.x, xr.y, "−1", RIVER_COL);
+        icons.forEach((p, j) => drawImg(EL[p].art + "-blue", x + 14 + j * 24, q.y + 16, 34));
+      });
+    });
+    // standing orders and levy routes: thin, dotted, apart
+    Object.keys(standing).forEach((k) => {
+      const s = +k, st = standing[s];
+      ["A", "L"].forEach((t) => {
+        if (st[t] == null) return;
+        const C = curve(groundOf(s), groundOf(st[t]), t === "A" ? -0.22 : 0.22);
+        ctx.save();
+        ctx.globalAlpha = 0.85; ctx.setLineDash([2, 7]); ctx.lineCap = "round"; ctx.lineWidth = 3; ctx.strokeStyle = RISK_COL;
+        ctx.beginPath(); ctx.moveTo(C.a.x, C.a.y); ctx.quadraticCurveTo(C.c.x, C.c.y, C.b.x, C.b.y); ctx.stroke();
+        ctx.restore();
+        const m = qpt(C, 0.5); disc(m.x, m.y, 11, RISK_COL, "!", 18);
+      });
+      if (st.R != null && S.route !== "off") {
+        const P = ownPath(s, st.R);
+        if (!P) return;
+        ctx.save();
+        ctx.globalAlpha = 0.85; ctx.setLineDash([2, 8]); ctx.lineDashOffset = -now * 18; ctx.lineCap = "round"; ctx.lineWidth = 3; ctx.strokeStyle = "#1d3f8a";
+        ctx.beginPath(); P.forEach((id, i) => { const g = groundOf(id); if (i) ctx.lineTo(g.x, g.y - 6); else ctx.moveTo(g.x, g.y - 6); }); ctx.stroke();
+        ctx.restore();
+        const g = groundOf(st.R); disc(g.x + 26, g.y - 40, 12, "#1d3f8a", "↻", 18);
+      }
+    });
+    levies.forEach((l) => {
+      const g = groundOf(l.at);
+      drawImg("a-infantry-blue", g.x + 34, g.y + 6, 30 * cam.z, 0.9);
+      chip(g.x + 34, g.y + 20, "+" + l.n, "#1d3f8a");
+    });
+    // a fleet at sea: its ship where the last bell left it, the legs still to sail ahead of it
+    if (!ANIM) fleets.forEach((f) => {
+      f.legs.slice(f.at).forEach((L) => seaArrow(L, "#5a7fd0", 5));
+      const q = f.legs[f.at][0], sp = scr(q.x, q.y);
+      drawImg("a-warship-blue", sp.x, sp.y + 14 * cam.z, 56 * cam.z);
+      chip(sp.x + 30 * cam.z + 12, sp.y + 6, String(f.n), CAMP[BLUE].base);
+    });
+    // a column on the road: its figure where the last bell left it, the legs still to walk ahead of it
+    if (!ANIM) roads.forEach((f) => {
+      f.legs.slice(f.at).forEach((L) => seaArrow(L, "#5b8fe0", 5, [14, 10]));
+      const q = f.legs[f.at][0], sp = scr(q.x, q.y);
+      drawImg(f.cav >= f.n ? "a-cavalry-blue" : "a-infantry-blue", sp.x, sp.y + 14 * cam.z, 46 * cam.z);
+      chip(sp.x + 24 * cam.z + 12, sp.y + 6, String(f.n), CAMP[BLUE].base);
+    });
+  }
+  // the pieces standing around a region, as the game lays them
+  const SLOTS = [[-62, 4], [-64, -36], [70, 8], [12, -66], [64, -42], [-30, -72], [96, -14], [-96, -10]];
+  function drawPieces() {
+    const z = cam.z, k = 1.5 * z, moved = S.figures === "move";
+    R.slice().sort((a, b) => a.cy - b.cy).forEach((r) => {
+      const s = scr(r.cx, r.cy), up = r.id === sel ? -9 * z : 0, c = r.owner === RED ? "red" : "blue";
+      if (r.owner === NEUTRAL) {
+        if (r.fort) drawImg("oldfort", s.x - 30 * z, s.y - 10 * z + up, 50 * k);
+        else if (r.city) drawImg("house", s.x - 30 * z, s.y - 10 * z + up, 34 * k);
+        drawImg("nflag", s.x, s.y + up, 30 * k);
+        if (r.mine) drawImg("w-mine-blue", s.x + 56 * z, s.y + 30 * z + up, 26 * k, 0.6);
+        if (r.farm) drawImg("w-farm-blue", s.x - 56 * z, s.y + 4 * z + up, 30 * k, 0.6);
+        if (r.foot) chip(s.x, s.y + 18 * z, String(r.foot), CAMP[0].base);
+        return;
+      }
+      const mine = r.owner === BLUE, ghost = step && step.s === r.id ? 0.55 : 1, L = mine ? convoysOf(r.id) : [];
+      if (r.capital) drawImg("a-capital-" + c, s.x - 4 * z, s.y - 26 * z + up, 70 * k);
+      else if (r.city) drawImg("a-town-" + c, s.x - 4 * z, s.y - 26 * z + up, 44 * k);
+      else if (r.fort) drawImg("a-fort-" + c, s.x - 4 * z, s.y - 26 * z + up, 58 * k);
+      if (r.harbour) drawImg("a-harbour-" + c, s.x - 70 * z, s.y + 40 * z + up, 40 * k);
+      if (r.mine) drawImg("w-mine-" + c, s.x + 64 * z, s.y + 34 * z + up, 26 * k);
+      if (r.farm) drawImg("w-farm-" + c, s.x - 66 * z, s.y - 4 * z + up, 34 * k);
+      let si = 0;
+      PIECES.forEach((p) => {
+        if (!r.pc[p]) return;
+        const sl = SLOTS[si++ % SLOTS.length], art = EL[p].art + "-" + c, fly = p === "lift" || p === "scout";
+        const bob = fly ? Math.sin(now * 1.6 + si) * 4 - 20 * z : 0, h = (fly ? 46 : 32) * k;
+        const used = mine && pieceUsed(r.id, p);
+        // a piece riding a convoy is drawn on its arrow: it leaves home
+        const onArrow = used && L.some((cv) => cv.pieces.indexOf(p) >= 0 || (p === "lift" && cv.lift));
+        if (onArrow && moved) return;
+        drawImg(art, s.x + sl[0] * z, s.y + sl[1] * z + up + bob, h, used ? 0.45 * ghost : ghost);
+      });
+      if (r.palisade) drawImg("w-palisade-" + c, s.x, s.y + 34 * z + up, 26 * k);
+      if (r.depot) drawImg("w-depot-" + c, s.x + 40 * z, s.y + 40 * z + up, 28 * k);
+      if (r.relay) drawImg("w-courier-" + c, s.x - 96 * z, s.y + 12 * z + up, 30 * k);
+      const hop = r.id === sel && !step && !openCv ? -Math.abs(Math.sin(now * 8)) * 8 : 0, ty = s.y + 30 * z + up;
+      const fF = mine ? freeFoot(r.id) : r.foot, fC = mine ? freeCav(r.id) : r.cav;
+      if (moved ? fC > 0 : r.cav > 0) drawImg("a-cavalry-" + c, s.x - 26 * z, ty + hop, 40 * k, !moved && fC <= 0 ? 0.4 : 1);
+      if (moved ? fF > 0 : r.foot > 0) drawImg("a-infantry-" + c, s.x + 12 * z, ty + hop, 38 * k, !moved && fF <= 0 ? 0.4 : 1);
+      // the engaged troops stand at the foot of their convoy's arrow
+      if (moved) L.forEach((cv) => {
+        if (!cv.foot && !cv.cav) return;
+        const f = qpt(curveOf(r.id, cv), 0.16);
+        drawImg((cv.cav && !cv.foot ? "a-cavalry-" : "a-infantry-") + c, f.x, f.y + 10, 32 * k);
+      });
+    });
+  }
+  /* ---- one plate a region of yours ------------------------------------------
+     Row one: the shield (its verdict's colour), the ATTACK group in blue —
+     an icon a troop type, the count free to march — and the WARNING in
+     orange (how many things to know). Row two: the PRODUCTION group in
+     beige — an icon a kind (troops, gold, grain) and what it makes a bell.
+     One yellow dot on the plate's corner while something is not dealt with.
+     Each family is one filter of the row under the HUD. */
+  const GROUP_H = 34;
+  function coinIcon(x, y) { disc(x, y, 9, "#d6a21c"); }
+  function grainIcon(x, y) {
+    ctx.fillStyle = "#c9962e";
+    for (let i = -1; i <= 1; i++) { ctx.beginPath(); ctx.ellipse(x + i * 6, y, 3.4, 8, i * 0.4, 0, Math.PI * 2); ctx.fill(); }
+  }
+  // a group: [{ art | icon, t }], drawn as one pill; returns its width
+  function groupW(segs) {
+    ctx.font = "800 20px " + FONT;
+    return 8 + segs.reduce((a, sg) => a + 24 + 4 + ctx.measureText(sg.t).width + 8, 0);
+  }
+  function group(x0, y, segs, fill, ink) {
+    const w = groupW(segs);
+    ctx.fillStyle = "rgba(0,0,0,.22)"; rrect(x0 + 2, y - GROUP_H / 2 + 3, w, GROUP_H, 10); ctx.fill();
+    ctx.fillStyle = fill; rrect(x0, y - GROUP_H / 2, w, GROUP_H, 10); ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = "rgba(246,236,210,.9)"; ctx.stroke();
+    let x = x0 + 8;
+    segs.forEach((sg) => {
+      if (sg.art) {
+        // a figure stands on its own paper disc, so a blue piece reads on the blue group
+        ctx.beginPath(); ctx.arc(x + 12, y, 12, 0, Math.PI * 2); ctx.fillStyle = "#f6ecd2"; ctx.fill();
+        drawImg(sg.art, x + 12, y + 11, 24);
+      }
+      else sg.icon(x + 12, y);
+      ctx.font = "800 20px " + FONT; ctx.fillStyle = ink; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillText(sg.t, x + 28, y + 1);
+      x += 24 + 4 + ctx.measureText(sg.t).width + 8;
+    });
+    return w;
+  }
+  // where the region's main asset (capital, town, fort) stands on screen, as drawPieces lays it
+  function mainAsset(r, s, up) {
+    const z = cam.z, k = 1.5 * z, c = r.owner === RED ? "red" : "blue";
+    const key = r.capital ? "a-capital-" + c : r.city ? "a-town-" + c : r.fort ? "a-fort-" + c : null;
+    if (!key || !ready(IMG[key])) return null;
+    const h = (r.capital ? 70 : r.city ? 44 : 58) * k, im = IMG[key];
+    return { x: s.x - 4 * z, y: s.y - 26 * z + up, w: h * im.naturalWidth / im.naturalHeight, h: h };
+  }
+  function drawMarks() {
+    const z = cam.z;
+    R.forEach((r) => {
+      const s = scr(r.cx, r.cy), up = r.id === sel ? -9 * z : 0, mine = r.owner === BLUE;
+      const ty = r.owner === NEUTRAL ? s.y + 18 * z : s.y + 30 * z + up + 20 * z, total = r.foot + r.cav;
+      if (!mine) {
+        if (r.owner === RED) chip(s.x, ty, String(total), CAMP[RED].base);
+        if (on("red") && redDrop[r.id]) chip(s.x - 40, ty - 36, "+" + redDrop[r.id], "#8f2a1f");
+        if (on("red") && redHold[r.id] && !ANIM) { shieldMark(s.x + 42, ty, "#8f2a1f"); chip(s.x + 76, ty, "+1", "#8f2a1f"); }
+        return;
+      }
+      // row one: shield, attack, warning
+      const items = [], sh = on("def") ? shieldOf(r.id) : null, A = on("warn") ? alertsOf(r.id) : [];
+      const atk = [];
+      if (on("atk")) {
+        const fF = freeFoot(r.id), fC = freeCav(r.id);
+        if (r.foot > 0 || !r.cav) atk.push({ art: "a-infantry-blue", t: String(fF) });
+        if (r.cav > 0) atk.push({ art: "a-cavalry-blue", t: String(fC) });
+      }
+      if (sh) items.push({ w: 32, draw: (x) => shieldMark(x + 16, ty, sh.col) });
+      let dotX = null;
+      if (atk.length) items.push({ w: groupW(atk), draw: (x) => { dotX = x + group(x, ty, atk, ATK_COL, "#fff") - 4; } });
+      if (A.length) items.push({ w: 30, draw: (x) => {
+        disc(x + 15, ty, 15, WARN_COL, "!", 20);
+        // how many things to know, on its corner
+        if (A.length > 1) disc(x + 28, ty - 13, 11, INK, String(A.length), 18);
+      } });
+      const gap = 6, W = items.reduce((a, it) => a + it.w, 0) + gap * Math.max(0, items.length - 1);
+      let x = s.x - W / 2;
+      items.forEach((it) => { it.draw(x); x += it.w + gap; });
+      // the one dot: something on this region is not dealt with yet
+      if (pendingEls(r.id).length) {
+        const pulse = 1 + Math.sin(now * 5) * 0.12, dx = dotX != null ? dotX : items.length ? s.x - W / 2 + 4 : s.x;
+        ctx.beginPath(); ctx.arc(dx, ty - 17, 9 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = TODO_COL; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      }
+      // row two: what the region makes a bell
+      if (on("prod")) {
+        const prod = [], y = yieldOf(r.id);
+        if (y.troops) prod.push({ art: "a-infantry-blue", t: "+" + y.troops });
+        if (r.mine) prod.push({ icon: coinIcon, t: "+1" });
+        if (r.farm) prod.push({ icon: grainIcon, t: "+" + FARM_GRAIN });
+        if (prod.length) {
+          const m = mainAsset(r, s, up);
+          if (m) group(m.x + m.w / 2 - 8, m.y - m.h * 0.28, prod, PROD_COL, PROD_INK);
+          else group(s.x - groupW(prod) / 2, ty + GROUP_H + 4, prod, PROD_COL, PROD_INK);
+        }
+      }
+      if (placing && deploy[r.id]) chip(s.x - W / 2 - 22, ty - 38, "+" + deploy[r.id], "#e0a800");
+    });
+    // red's plans this tick
+    if (on("red") && !ANIM) redPlan.forEach((o) => {
+      if (R[o.from].owner !== RED) return;
+      const C = curve(groundOf(o.from), groundOf(o.to), -0.12), help = o.kind === "reinf";
+      arrow(C, help ? "#e08a7a" : "#c8402f", help ? 4 : 5, [12, 9], "#8f2a1f");
+      const m = qpt(C, 0.55); chip(m.x, m.y, (help ? "+" : "") + o.n, "#8f2a1f");
+    });
+  }
+  // the target step: a pin over every lit target, its forecast on it; a target
+  // that joins a convoy already going there wears that convoy's number
+  function pinPos(t) { const g = groundOf(t); return { x: g.x, y: g.y - 70 }; }
+  function drawPins() {
+    if (!step) return;
+    const a = groundOf(step.s), L = convoysOf(step.s);
+    targetsOf(step.s, step.el, step.act).forEach((t, i) => {
+      const p = pinPos(t), v = pinFor(t), bob = Math.sin(now * 3 + i) * 3, c = convoyTo(step.s, t);
+      ctx.save();
+      ctx.globalAlpha = 0.35; ctx.setLineDash([2, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "#f6ecd2";
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(p.x, p.y + 30); ctx.stroke();
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(p.x, p.y + bob, 34, 0, Math.PI * 2);
+      ctx.fillStyle = "#f6ecd2"; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = v.col; ctx.stroke();
+      ctx.font = "800 " + (v.text.length > 6 ? 18 : 22) + "px " + FONT;
+      ctx.fillStyle = v.col; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(v.text, p.x, p.y + bob + 1);
+      if (c) disc(p.x + 30, p.y + bob - 26, 13, CAMP[BLUE].base, "+", 20);
+      // crossing a river: the attack loses a point, said on the pin
+      const A = ACT[step.act];
+      if (A.n && MODE_OF[A.t] === "march" && R[t].owner !== BLUE && borderOf(step.s, t) === "river") disc(p.x - 32, p.y + bob - 26, 17, RIVER_COL, "−1", 18);
+      // a sea road: its arrows, one a tick, under the pin
+      if (step.act === "ship") shipOf(step.s, t).legs.forEach((L) => seaArrow(L, "rgba(90,127,208,.55)", 4));
+      if (modeFor(step.s, t, A) === "road") roadOf(step.s, t).legs.forEach((L) => seaArrow(L, "rgba(91,143,224,.6)", 4, [14, 10]));
+    });
+  }
+  // a chip that pops in with a bounce, `age` seconds after it appeared
+  function popChip(x, y, text, fill, age, ink) {
+    const k = age < 0.18 ? 0.4 + age / 0.18 * 0.85 : age < 0.32 ? 1.25 - (age - 0.18) / 0.14 * 0.25 : 1;
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+    const w = chip(0, 0, text, fill, ink);
+    ctx.restore();
+    return w;
+  }
+  // a paper figure: hopped, rocked, flipped, folded flat
+  function drawFig(key, x, y, h, o) {
+    const im = IMG[key];
+    if (!ready(im)) return;
+    const w = h * im.naturalWidth / im.naturalHeight;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, o.alpha == null ? 1 : o.alpha));
+    ctx.translate(x, y - (o.hop || 0)); ctx.rotate(o.rot || 0); ctx.scale(o.flip ? -1 : 1, 1 - (o.fold || 0) * 0.85);
+    ctx.drawImage(im, -w / 2, -h, w, h);
+    ctx.restore();
+  }
+  // three bumps, then the beaten fold flat and the winners jump
+  function fightBeat(f) {
+    const out = { lunge: 0, fold: 0, fade: 0, win: 0 };
+    if (f <= 0) return out;
+    if (f < BUMPS) { out.lunge = Math.pow(Math.abs(Math.sin(f / BUMPS * 3 * Math.PI)), 0.7); return out; }
+    const k = Math.min(1, (f - BUMPS) / (FIGHT_S - BUMPS));
+    out.fold = ease(k); out.fade = Math.max(0, k - 0.5) * 1.6; out.win = Math.sin(k * Math.PI);
+    return out;
+  }
+  // one column on its road: up to three figures, the head carrying the count
+  function drawColumn(c, head, beat, contact) {
+    const z = cam.z, C = curve(groundOf(c.from), groundOf(c.to), c.camp === RED ? -0.1 : 0.1);
+    const len = Math.hypot(C.b.x - C.a.x, C.b.y - C.a.y) || 1, figs = c.n <= 3 ? 1 : c.n <= 8 ? 2 : 3;
+    const key = (c.cav ? "a-cavalry-" : "a-infantry-") + (c.camp === RED ? "red" : "blue");
+    let hd = null;
+    for (let i = figs - 1; i >= 0; i--) {
+      const along = Math.max(0, head - i * 30 * z / len), p = qpt(C, along), q = qpt(C, Math.min(1, along + 0.02));
+      let dx = q.x - p.x, dy = q.y - p.y;
+      const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+      const side = i === 0 ? 0 : i % 2 ? 14 * z : -14 * z;
+      let x = p.x - dy * side, y = p.y + dx * side;
+      if (beat.lunge && contact) { const tx = contact.x - x, ty = contact.y - y, tl = Math.hypot(tx, ty) || 1; x += tx / tl * beat.lunge * 22 * z; y += ty / tl * beat.lunge * 22 * z; }
+      const ph = along * len / (c.cav ? 44 : 28) + i * 0.5, sw = Math.sin(ph * Math.PI), moving = head > 0 && head < (c.fight ? STOP : 1);
+      const o = { flip: C.b.x < C.a.x, hop: moving ? Math.abs(sw) * 7 * z : 0, rot: moving ? sw * 0.13 : Math.sin(now * 22 + i * 2) * 0.03 };
+      if (c.fight && c.lose) { o.fold = beat.fold; o.alpha = 1 - beat.fade; } else if (beat.win) o.hop = beat.win * 12 * z;
+      drawFig(key, x, y + 4, (c.cav ? 50 : 46) * z, o);
+      if (i === 0) hd = { x: x, y: y, a: o.alpha == null ? 1 : o.alpha };
+    }
+    if (hd && hd.a > 0.5) {
+      const w = chip(hd.x + 26 * z + 10, hd.y + 6, String(c.n), c.camp === RED ? "#8f2a1f" : "#1d3f8a");
+      // a general, a drummer, a river: the flat point it adds or loses, beside the count
+      if (c.mods) chip(hd.x + 26 * z + 10 + w / 2 + 22, hd.y + 6, (c.mods > 0 ? "+" : "−") + Math.abs(c.mods), c.mods > 0 ? ATK_COL : TIE_COL);
+    }
+  }
+  function drawAnim() {
+    const A = ANIM;
+    if (!A) return;
+    const t = A.t, z = cam.z, k = Math.max(0, Math.min(1, (t - A.pre) / MARCH_S)), fT = t - A.pre - MARCH_S;
+    // red's reinforcements and the shots, before the march
+    if (t < A.pre) {
+      const kp = ease(Math.min(1, t / (A.pre * 0.85)));
+      A.pres.forEach((c) => { if (kp < 1) drawColumn(c, kp, {}, null); });
+      A.shots.forEach((c) => {
+        const C = curve(groundOf(c.from), groundOf(c.to), 0.1), p = qpt(C, kp);
+        if (kp < 1) disc(p.x, p.y - 30 * z - Math.sin(kp * Math.PI) * 60 * z, 10 * Math.max(0.7, z), INK);
+      });
+    }
+    A.shots.forEach((c) => { if (t >= A.pre) { const g = groundOf(c.to); popChip(g.x + 40 * z, g.y - 60 * z, "−" + c.n, RISK_COL, Math.min(t - A.pre, 1)); } });
+    // the defenders face the attack, bump, then fold or jump
+    Object.keys(A.fights).forEach((id) => {
+      const F = A.fights[id], g = groundOf(F.to);
+      let sx = 0, sy = 0;
+      F.cols.forEach((c) => {
+        const p = c.fleet && c.pt ? scr(c.pt.x, c.pt.y) : qpt(curve(groundOf(c.from), g, c.camp === RED ? -0.1 : 0.1), STOP);
+        sx += p.x; sy += p.y;
+      });
+      sx /= F.cols.length; sy /= F.cols.length;
+      const contact = { x: (g.x + sx) / 2, y: (g.y + sy) / 2 }, b = fightBeat(fT);
+      F.cx = contact.x - g.x; F.cy = contact.y - g.y; F.contact = contact; F.beat = b;
+      if (F.defIn && F.defCamp !== NEUTRAL && t >= A.pre + MARCH_S * 0.5) {
+        const dx = sx - g.x, dy = sy - g.y, dl = Math.hypot(dx, dy) || 1;
+        const o = { flip: dx < 0 };
+        if (F.defLose) { o.fold = b.fold; o.alpha = 1 - b.fade; } else o.hop = b.win * 12 * z;
+        drawFig("a-infantry-" + (F.defCamp === RED ? "red" : "blue"), g.x + dx / dl * (14 + b.lunge * 18) * z, g.y + dy / dl * (14 + b.lunge * 18) * z + 4, 48 * z, o);
+      }
+      // what counted on top of the defenders: the reinforcement, the hold
+      const marks = [];
+      if (F.reinf && t >= A.pre) marks.push({ t: "+" + F.reinf, col: "#8f2a1f", at: A.pre, fig: true });
+      if (F.hold && t >= A.pre + MARCH_S * 0.6) marks.push({ t: F.hold.v ? "+" + F.hold.v : "0", col: F.hold.v ? "#c99a1c" : TIE_COL, at: A.pre + MARCH_S * 0.6, shield: true });
+      let mx = g.x - (marks.length - 1) * 34 * Math.max(0.8, z);
+      marks.forEach((mk) => {
+        const y = g.y - 74 * Math.max(0.8, z), age = t - mk.at;
+        if (mk.shield) {
+          const beat = 1 + (fT > 0 && fT < FIGHT_S ? Math.max(0, Math.sin(fT * 14)) * 0.18 : 0);
+          ctx.save(); ctx.translate(mx - 14, y); ctx.scale(beat, beat); shieldMark(0, 0, mk.col); ctx.restore();
+          popChip(mx + 16, y, mk.t, mk.col, age);
+        } else {
+          popChip(mx + 6, y, mk.t, mk.col, age);
+          drawFig("a-infantry-red", mx - 30, y + 14, 30, {});
+        }
+        mx += 68 * Math.max(0.8, z);
+      });
+    });
+    // the fleets: each sails its leg of the bell while the columns march
+    if (t >= A.pre) A.ships.forEach((e) => {
+      const p = subLine(e.pts, 0, Math.max(0.001, ease(k))), q = p[p.length - 1], sp = scr(q.x, q.y);
+      drawImg(e.road ? (e.cav ? "a-cavalry-blue" : "a-infantry-blue") : "a-warship-blue", sp.x, sp.y + 14 * z, (e.road ? 46 : 56) * z);
+      chip(sp.x + (e.road ? 24 : 30) * z + 12, sp.y + 6, String(e.n), "#1d3f8a");
+    });
+    // every column at once (a fleet's troops are its ship)
+    A.cols.forEach((c) => {
+      const head = ease(k) * (c.fight ? STOP : 1);
+      if (c.fleet) return;
+      if (!c.fight && k >= 1) return;
+      if (t < A.pre) return;
+      drawColumn(c, head, c.fight && fT > 0 ? c.fight.beat || {} : {}, c.fight ? c.fight.contact : null);
+    });
+    // the scraps
+    A.scraps.forEach((p) => {
+      const g = groundOf(p.to);
+      ctx.save(); ctx.globalAlpha = Math.max(0, 1 - p.t / p.life);
+      ctx.translate(g.x + p.ox, g.y + p.oy - 30 * z); ctx.rotate(p.rot);
+      ctx.fillStyle = p.col; ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.66);
+      ctx.restore();
+    });
+  }
+  let last = 0;
+  // a notice under the filters, and the gold mines to take, lit a moment
+  let noteT = 0, mineHint = 0;
+  function say(word, sub) {
+    const el = document.getElementById("note");
+    el.innerHTML = "<b>" + esc(word) + "</b><small>" + esc(sub) + "</small>";
+    el.classList.add("on"); clearTimeout(noteT);
+    noteT = setTimeout(() => el.classList.remove("on"), 2800);
+  }
+  function noGold(cost) {
+    const mines = R.filter((r) => r.owner === BLUE && r.mine).length;
+    say("Not enough gold", cost + " gold needed, " + goldLeft() + " in hand. " +
+        (mines ? "Your mines pay " + mines + " a tick. Take another to go faster." : "Take a gold mine: it pays 1 gold a tick."));
+    mineHint = now + 3;
+  }
+  function drawMineHint() {
+    if (now > mineHint) return;
+    const z = cam.z, a = Math.min(1, mineHint - now), p = (now * 1.4) % 1;
+    R.forEach((r) => {
+      if (!r.mine || r.owner === BLUE) return;
+      const s = scr(r.cx, r.cy), n = r.owner === NEUTRAL, x = s.x + (n ? 56 : 64) * z, y = s.y + (n ? 30 : 34) * z - 18 * z;
+      ctx.save(); ctx.globalAlpha = a * (1 - p); ctx.lineWidth = 5; ctx.strokeStyle = "#d6a21c";
+      ctx.beginPath(); ctx.arc(x, y, (24 + 34 * p) * Math.max(0.7, z), 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = a; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, 24 * Math.max(0.7, z), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    });
+  }
+  function frameTick(t) {
+    const dt = Math.min(0.05, (t - last) / 1000 || 0); last = t; now += dt;
+    if (camGoal) {
+      const k = 1 - Math.pow(0.0015, dt);
+      cam.x += (camGoal.x - cam.x) * k; cam.y += (camGoal.y - cam.y) * k; cam.z += (camGoal.z - cam.z) * k;
+      if (Math.abs(camGoal.x - cam.x) < 0.3 && Math.abs(camGoal.y - cam.y) < 0.3 && Math.abs(camGoal.z - cam.z) < 0.002) camGoal = null;
+    }
+    ctx.setTransform(K, 0, 0, K, 0, 0);
+    drawGround();
+    drawConvoys();
+    drawPieces();
+    drawMineHint();
+    drawMarks();
+    drawPins();
+    stepAnim(dt);
+    drawAnim();
+    placeRing();
+    requestAnimationFrame(frameTick);
+  }
+
+  // ---- the panel ------------------------------------------------------------
+  function buildPanel() {
+    const P = document.getElementById("presets");
+    P.innerHTML = "";
+    PRESETS.forEach((p, i) => {
+      const b = document.createElement("button");
+      b.innerHTML = "<b>" + p.name + "</b><span>" + p.note + "</span>";
+      b.onclick = () => { preset = i; Object.assign(S, DEFAULTS, { gold: S.gold, content: S.content, zoom: S.zoom, f: S.f, stage: S.stage }, p.v); save(); buildPanel(); select(-1); };
+      P.appendChild(b);
+    });
+    const Kn = document.getElementById("knobs");
+    Kn.innerHTML = "";
+    KNOBS.forEach((k) => {
+      if (k.h) { const h = document.createElement("h3"); h.textContent = k.h; Kn.appendChild(h); return; }
+      const row = document.createElement("div");
+      row.className = "row";
+      const lab = document.createElement("label");
+      lab.textContent = k.label || k.k;
+      row.appendChild(lab);
+      if (k.o) {
+        const seg = document.createElement("div");
+        seg.className = "seg";
+        k.o.forEach((o) => {
+          const b = document.createElement("button");
+          b.textContent = o; b.dataset.k = k.k; b.dataset.v = o;
+          b.onclick = () => { set(k.k, o); };
+          seg.appendChild(b);
+        });
+        row.appendChild(seg);
+      } else {
+        const out = document.createElement("output");
+        lab.appendChild(out);
+        const inp = document.createElement("input");
+        inp.type = "range"; inp.min = k.min; inp.max = k.max; inp.step = k.step; inp.dataset.k = k.k;
+        inp.oninput = () => { set(k.k, +inp.value); };
+        row.appendChild(inp);
+      }
+      Kn.appendChild(row);
+    });
+    syncPanel();
+  }
+  function set(k, v) {
+    S[k] = v; save(); syncPanel();
+    if (k === "content") { equipFull(); delete orders[fullId]; delete acts[fullId]; delete hold[fullId]; delete standing[fullId]; }
+    if (k === "gold") gold = v;
+    if (k === "zoom") { cam.z = v; camGoal = null; }
+    if (k === "menu") openEl = null;
+    if (k === "prod" || k === "red" || k === "deposit") { genMap(seed); renderLog(); }
+    renderUI();
+  }
+  function syncPanel() {
+    document.querySelectorAll("#knobs .seg button").forEach((b) => b.classList.toggle("on", String(S[b.dataset.k]) === b.dataset.v));
+    document.querySelectorAll("#knobs input[type=range]").forEach((inp) => {
+      inp.value = S[inp.dataset.k];
+      inp.parentNode.querySelector("output").textContent = S[inp.dataset.k];
+    });
+    const want = Object.assign({}, DEFAULTS, PRESETS[preset].v);
+    const dirty = ["menu", "count", "after", "hold", "dim", "figures", "shield", "route"].some((k) => S[k] !== want[k]);
+    document.querySelectorAll("#presets button").forEach((b, i) => { b.classList.toggle("on", i === preset); b.classList.toggle("dirty", i === preset && dirty); });
+  }
+  function buildStages() {
+    const st = STAGES[S.stage - 1], on = Object.keys(UNLOCK).filter((m) => has(m) && m !== "base").map((m) => STAGES[UNLOCK[m] - 1].name);
+    document.getElementById("stageNow").innerHTML = "<b>" + S.stage + " · " + esc(st.name) + "</b>" + esc(st.rule) +
+      (st.m ? "" : "<small>Not in the lab yet: plays as the stage before.</small>") +
+      "<small>" + R.length + " regions (" + st.n + " in the plan). On: " + (on.length ? esc(on.join(", ")) : "the basics only") + ".</small>";
+    document.getElementById("stageList").innerHTML = STAGES.map((x, i) => '<button data-stage="' + (i + 1) + '" class="' +
+      (i + 1 === S.stage ? "on" : i + 1 < S.stage ? "past" : "") + (x.m ? "" : " off") + '"><i>' + (i + 1) + "</i>" + esc(x.name) +
+      (x.m ? "" : "<em>not in lab</em>") + "</button>").join("");
+  }
+  document.getElementById("stageList").onclick = (e) => {
+    const b = e.target.closest("button[data-stage]");
+    if (!b) return;
+    S.stage = +b.dataset.stage; save();
+    genMap(seed); renderUI(); renderLog(); buildStages();
+  };
+  document.getElementById("newmap").onclick = () => { seed++; genMap(seed); renderUI(); renderLog(); };
+  document.getElementById("send2").onclick = send;
+  document.getElementById("full").onclick = () => { camHome(); select(fullId); };
+  document.getElementById("reset").onclick = () => { document.querySelectorAll("#presets button")[preset].click(); };
+  document.getElementById("copy").onclick = () => {
+    const txt = JSON.stringify({ preset: PRESETS[preset].name, settings: S }, null, 2);
+    if (navigator.clipboard) navigator.clipboard.writeText(txt);
+    document.getElementById("copy").textContent = "Copied";
+    setTimeout(() => { document.getElementById("copy").textContent = "Copy settings"; }, 1200);
+  };
+  window.addEventListener("resize", fitCanvas);
+
+  // for a headless check: where things stand, in design px
+  window.__clickOrders = {
+    pinOf: (t) => pinPos(t), targets: () => step ? targetsOf(step.s, step.el, step.act) : [], foe: (i) => R[i].owner !== BLUE,
+    full: () => fullId, groundOf: (i) => groundOf(i),
+    arrowOf: (s, i) => qpt(curveOf(s, convoysOf(s)[i]), 0.5), convoys: (s) => convoysOf(s).map((c) => c.to),
+    anim: () => ANIM ? { t: ANIM.t, end: ANIM.end, cols: ANIM.cols.map((c) => c.camp + ":" + c.from + ">" + c.to + "x" + c.n), pres: ANIM.pres.length,
+                         fights: Object.keys(ANIM.fights).map((k) => { const F = ANIM.fights[k]; return k + ":" + F.cols.length + "cols" + (F.reinf ? "+r" + F.reinf : "") + (F.hold ? "+h" + F.hold.v : ""); }) } : null,
+    skip: () => { skipAll(); return true; },
+    shield: (id) => shieldOf(id),
+    pick: (id, el, act) => { select(id); choose(el, act); return !!step; },
+    sea: () => ({ harbours: R.filter((r) => r.harbour).map((r) => r.id + (onSea(r) ? "" : "!land")), fleets: fleets.map((f) => f.at + "/" + f.legs.length),
+                  routes: R.filter((r) => r.harbour).map((a) => R.filter((b) => b.harbour && b.id !== a.id).map((b) => { const q = seaRoute(a.id, b.id); return a.id + ">" + b.id + ":" + (q ? q.legs.length : "none"); }).join(" ")).join(" | ") }),
+    dbg: () => ({ R: R, adj: adj, orders: orders, border: borderOf, setPlan: (p, h) => { redPlan = p; redHold = h; } }),
+    redHolds: () => Object.keys(redHold).map(Number), redReinf: () => redPlan.filter((o) => o.kind === "reinf"),
+    stage: (n) => { S.stage = n; genMap(seed); renderUI(); buildStages(); return R.length; },
+    trips: () => ({ roads: roads.map((f) => f.s + ">" + f.to + " " + f.at + "/" + f.legs.length + " x" + f.n), fleets: fleets.map((f) => f.s + ">" + f.to + " " + f.at + "/" + f.legs.length) }),
+    road: (s, t) => { const r = roadOf(s, t); return r ? { path: r.path, ticks: r.legs.length, relay: r.relay } : null; },
+    setGold: (v) => { gold = v; renderUI(); return goldLeft(); },
+    relay: (id) => { R[id].relay = true; renderUI(); return true; },
+    note: () => document.getElementById("note").className + "|" + document.getElementById("note").textContent,
+    acts: (id, el) => ACTS_OF[el].map((a) => { const st = actState(id, el, a); return a + (st.show ? "" : "-") + (st.poor ? "$" : ""); }),
+    state: () => ({ reserve: reserve, placing: placing, redPlan: redPlan.length, tick: tick,
+                    blue: R.filter((r) => r.owner === BLUE).length, red: R.filter((r) => r.owner === RED).length })
+  };
+
+  fitCanvas();
+  buildPanel();
+  genMap(seed);
+  buildStages();
+  renderUI();
+  requestAnimationFrame(frameTick);
+})();
+</script>
+</body>
+</html>

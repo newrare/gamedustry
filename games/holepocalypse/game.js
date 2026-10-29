@@ -288,7 +288,7 @@
          is knocked out. */
       mudling: { name: "Mudling", art: "mudder", hp: 1, speed: 0, r: 18, h: 58, walk: [16, 16], hit: [16, 16], ko: [16, 16], noHp: true, still: true },
       runner:  { name: "Runner", hp: 1, speed: 2.2, r: 26, h: 116, walk: [1, 8], hit: [9, 12], ko: [13, 16], fps: 13, straight: true, noBonus: true },
-      necro:   { name: "Necromancer", hp: 5, speed: 0.6, r: 30, h: 124, walk: [1, 4], cast: [5, 8], hit: [9, 12], ko: [13, 16] },
+      necro:   { name: "Necromancer", hp: 3, speed: 0.6, r: 30, h: 124, walk: [1, 4], cast: [5, 8], hit: [9, 12], ko: [13, 16] },
       greenkeeper: { name: "Greenkeeper", boss: true, art: "bossGreenkeeper", hp: 100, speed: 0.55, r: 50, h: 196, walk: [1, 8], hit: [9, 12], ko: [13, 16], straight: true },
       colossus:    { name: "Caddie Colossus", boss: true, art: "bossColossus", hp: 110, speed: 0.45, r: 54, h: 214, walk: [1, 4], act: [5, 8], hit: [9, 10], ko: [11, 12] },
       bog:         { name: "Bog Giant", boss: true, art: "bossBog", hp: 160, speed: 0.45, r: 56, h: 220, walk: [1, 4], act: [5, 8], hit: [9, 10], ko: [11, 12] },
@@ -372,7 +372,7 @@
     };
     var BONUS_TEXT = {
       hole: "Sink the hole <b>{n}</b> times",
-      chain: "Make a chain of <b>{n}</b>",
+      chain: "Make a combo of <b>{n}</b>",
       lobHole: "Lob a ball into the hole",
       noLast: "Never need the last stand",
       time: "Win in under <b>{n}</b> s",
@@ -409,6 +409,18 @@
     function TOP() { return B.top; }
     function LINE() { return B.line; }
     var TEE_X = 360, TEE_Y = 1186;
+    /* Where the foot line cuts the world: on the web the round's bottom edge
+       is the shell's bar of buttons (`Layout.foot`), and nothing the player
+       reads may stand in it, so the tee rides up to clear it and the bag
+       stands on the left flank as a column instead of a row under the tee.
+       The playable has no such bar (foot is its bottom band) and keeps its
+       tee and its row. */
+    var TEE_Y_PLAYABLE = 1186, TEE_FOOT_GAP = 34, BAG_VERT = false;
+    /* The shell's bar stands on the house margin, 26 design px in from each
+       side: the bag's column lines up on the level pill's left edge and the
+       two supers on the options button's right edge, so the round's
+       instruments and the bar read as one frame (web only, like the column). */
+    var SHELL_EDGE = 26;
     function sx(x) { return ox + x * k; }
     function sy(y) { return oy + y * k; }
     function wx(x) { return (x - ox) / k; }
@@ -426,6 +438,15 @@
       k = room >= H - 24 ? 1 : room / (H - 24);
       ox = (W - W * k) / 2;
       oy = 0;
+      teeFit();
+    }
+    // the tee (and, further down, the bag) against the foot line, in world px
+    function teeFit() {
+      var footW = (Layout.foot - oy) / k;
+      BAG_VERT = Layout.foot < Layout.bottom - 1;
+      TEE_Y = BAG_VERT ? Math.min(TEE_Y_PLAYABLE, Math.round(footW - TEE_FOOT_GAP)) : TEE_Y_PLAYABLE;
+      BAG_X = BAG_VERT ? Math.round(wx(SHELL_EDGE)) + BAG_R + 6 : TEE_X + 12;
+      BAG_Y = BAG_VERT ? Math.round(footW) - BAG_FOOT - BAG_R - 6 : TEE_Y + 46;
     }
 
     // ======================================================================
@@ -715,13 +736,25 @@
        second kind of cup, dropped anywhere on the fairway: the red flag is
        the shockwave, a coloured one loads its special balls and gives a
        lost flag back. Where the two stand decides the shot. */
+    // a super's centre: its outer ring (SLOT_R + 4, stroked 6 wide) on the
+    // options button's right edge where the shell has its bar, by the wall otherwise
+    function superX(y) {
+      return BAG_VERT ? Math.round(wx(view.w - SHELL_EDGE)) - SLOT_R - 7 : wallR(y) - SLOT_R - 10;
+    }
     function buildCourse() {
       var i, y;
-      // the supers, right, at the foot of the field
-      var ys = [LINE() - 92, LINE() - 200];
-      for (i = 0; i < L.supers.length; i++) {
+      // the supers, right, at the foot of the field — on the web they stand
+      // on the shell's bar like the bag's column opposite them: the first
+      // one's ring BAG_FOOT over the foot line, the second just above it
+      var ys = [LINE() - 92, LINE() - 200], ro = SLOT_R + 7;
+      if (BAG_VERT) {
+        ys[0] = Math.round((Layout.foot - oy) / k) - BAG_FOOT - ro;
+        ys[1] = ys[0] - 2 * ro - 14;
+      }
+      var sup = supersOf();
+      for (i = 0; i < sup.length; i++) {
         y = ys[i];
-        slots.push({ left: false, x: wallR(y) - SLOT_R - 10, y: y, power: L.supers[i], charge: 0, hit: 0 });
+        slots.push({ left: false, x: superX(y), y: y, power: sup[i], charge: 0, hit: 0 });
       }
       // the band's terrain
       var T = B.terrain, n;
@@ -910,7 +943,7 @@
       var m = { id: ++monId, kind: kind, x: x, y: y, r: K.r, hp: hp, maxHp: hp, kx: 0, ky: 0,
                 animT: rand(0, 2), phase: rand(0, 6.28), speed: rand(0.88, 1.12), lane: rand(0.1, 0.9),
                 tag: 0, tagT: 0, flash: 0, hitT: 0, frozenT: 0, dead: false, rise: rise ? 0.6 : 0,
-                state: "walk", stateT: 0, actT: rand(3, 6) };
+                state: "walk", stateT: 0, actT: kind === "necro" ? rand(5, 10) : rand(3, 6) };
       if (K.straight) m.lane = -1;
       mons.push(m);
       return m;
@@ -1095,7 +1128,7 @@
         Fx.flash("#ff3030", 0.35);
       } else {
         // the super's own callout names it (firePower); how the gun is played is told once
-        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to fire, tap to putt") });
+        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to aim, release to putt") });
       }
       hudFlags();
     }
@@ -1242,6 +1275,58 @@
         } }
     ];
     function powerOf(key) { for (var i = 0; i < POWERS.length; i++) if (POWERS[i].key === key) return POWERS[i]; return POWERS[0]; }
+
+    /* THE LOADOUT — the two supers are the player's, picked on the shell's
+       card before a level (packages/webshell/loadout.js). The level table's
+       pair is the card's suggestion and what a free round or a tool's round
+       gets. A super is unlocked by the first level whose table deals it. */
+    var POWER_TEXT = {
+      rain: "24 balls rain on the fairway.",
+      fan: "22 balls fired at once, in a fan.",
+      freeze: "The whole horde frozen for a few seconds.",
+      holeblast: "A hole now fires its full shockwave.",
+      seeker: "A ball on each of the 12 zombies nearest the line.",
+      sniper: "3 piercing shots at the toughest zombies.",
+      sprinkler: "Water jets push the whole horde back.",
+      cart: "A golf cart charges up the busiest lane.",
+      boomvolley: "A fan of 5 explosive balls.",
+      splitstorm: "The balls split into 3 at every bounce.",
+      magnet: "For 6 seconds, the hole swallows every nearby ball.",
+      hail: "20 ice balls freeze what they hit.",
+      firestorm: "14 burning balls set the grass alight.",
+      superbounce: "5 balls that never slow down.",
+      cluster: "5 bombs that split in five as they land.",
+      rush: "Hold the gun to fire bursts of balls for 6 seconds.",
+      meteor: "A giant ball crushes the biggest pack.",
+      carpet: "7 rows of blasts sweep up the fairway.",
+      golden: "Gold rain: KOs pay ×3 for 8 seconds.",
+      mower: "Mowers cross the field, just above the line."
+    };
+    var chosen = null;
+    function superLv(key) {
+      for (var n = 1; n <= 30; n++) if (LEVELS[n].supers.indexOf(key) >= 0) return n;
+      return 30;
+    }
+    function rowOf(n) { return n >= 1 && n <= 30 ? LEVELS[n] : n > 30 ? ENDLESS : FREE; }
+    // the two buttons of this round: the player's pick on a level, the table's otherwise
+    function supersOf() {
+      return chosen && (isLevel() || isEndless()) && chosen.length === L.supers.length ? chosen : L.supers;
+    }
+    var loadout = {
+      title: function () { return Lang.t("Your supers"); },
+      slots: function (n) { return rowOf(n).supers.length; },
+      items: function () {
+        var out = [];
+        for (var i = 0; i < POWERS.length; i++) out.push({ id: POWERS[i].key, lv: superLv(POWERS[i].key) });
+        return out;
+      },
+      info: function (id) {
+        var p = powerOf(id);
+        return { name: Lang.t(p.name), text: Lang.t(POWER_TEXT[id] || ""), src: CONFIG.art[p.icon] };
+      },
+      suggest: function (n) { return rowOf(n).supers.slice(); },
+      set: function (ids) { chosen = ids ? ids.slice() : null; }
+    };
 
     function firePower(key) {
       var p = powerOf(key);
@@ -1450,7 +1535,7 @@
       Pop.text(sx(m.x), sy(m.y - 40), "+" + gain, { color: goldT > 0 ? "#ffd34d" : "#e8ff9a", size: 22, life: 0.6, tier: 1 });
       if (n > bestChain) bestChain = n;
       if (n === 4 || n === 6 || n === 8 || n >= 10 && n % 5 === 0) {
-        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Chain x") + n, sub: "+" + gain });
+        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Combo x") + n, sub: "+" + gain });
         Sound.clip("combo", 0.3, 1 + Math.min(n, 12) * 0.03);
       }
       Sound.clip("down", 0.45, 0.9 + Math.random() * 0.2);
@@ -2035,7 +2120,7 @@
         m.actT -= dt;
         if (m.state === "walk" && m.actT <= 0 && m.y > TOP()) { m.state = "cast"; m.stateT = 0; }
         if (m.state === "cast" && m.stateT > 1) {
-          m.state = "walk"; m.actT = 6;
+          m.state = "walk"; m.actT = 10;
           var n = 0;
           while (fallen.length && n < 2) {
             var f = fallen.pop();
@@ -2153,7 +2238,7 @@
         stars: st,
         rows: [
           { label: "Zombies knocked out", value: kills, grade: "accent" },
-          { label: "Best chain", value: "x" + bestChain },
+          { label: "Best combo", value: "x" + bestChain },
           { label: "Holes sunk", value: holesSunk, grade: "good" },
           { label: "Best score", value: best, grade: "gold" }
         ],
@@ -2242,7 +2327,7 @@
     };
     // the zombies named on their first walk-on: a rule the frame cannot say
     var TIPS = {
-      shield: "Lob over it or bank off a fence",
+      shield: "Lob over it or bounce off the edge",
       necro: "It raises fallen zombies. Knock it out first."
     };
 
@@ -2269,6 +2354,7 @@
       drawZones();
       // the arc is painted on the grass: over the ground, under every sprite
       drawBands();
+      if (BAG_VERT) drawBag();
       drawHoles();
       drawFxs(false);
       drawSlots();
@@ -2313,7 +2399,8 @@
       drawReticle();
       drawTee();
       drawPreview();
-      drawBag();
+      if (!BAG_VERT) drawBag();
+      drawBagLabel();
       drawBossBar();
       ctx.restore();
     }
@@ -3177,63 +3264,79 @@
       groundEllipse(x, y, HOLE_R * 1.3); ctx.stroke();
       drawModeRing("direct");
     }
-    /* The bag, a column right of the tee, and the loaded kinds, a column
-       left of it, next one at the bottom: the two bottom corners are the
-       web shell's (the level pill and its "!", MENU / OPTIONS), and a row
-       under the tee ran into the pill. */
-    /* THE BAG: a row of big balls under the tee, the next shot first, each
-       ball wearing the kind it will leave as — a ball out on the course is
-       an empty socket ringed white, the one coming back by itself fills its
-       ring. Left of the tee, the name of the special about to be fired and
-       how many are loaded. The row stands between the web shell's two
-       corners: the level pill bottom left (its "!" is stood on top of it by
-       the SKIN) and the round's controls bottom right. */
+    /* THE BAG: five big balls, the next shot first, each ball wearing the kind
+       it will leave as — a ball out on the course is an empty socket ringed
+       white, the one coming back by itself fills its ring. On the web it is a
+       COLUMN on the left flank, the next ball at the bottom beside the tee
+       and the later ones above it, its foot standing BAG_FOOT over the shell's
+       bar (`Layout.foot`); it is painted with the ground, so a zombie walking
+       by hides it rather than the other way round. The playable keeps the row
+       under the tee. The name of the special about to be fired, and how many
+       are loaded, sits beside the tee (drawBagLabel). */
     var BAG_PITCH = 40, BAG_R = 17, BAG_X = TEE_X + 12, BAG_Y = TEE_Y + 46;
+    var BAG_FOOT = 10;                  // the column's gap over the foot line
+    // the centre of the bag's slot `s`, the next shot being slot 0
+    function bagX(s) { return BAG_VERT ? BAG_X : BAG_X - BAG_PITCH * (BAG_MAX - 1) / 2 + s * BAG_PITCH; }
+    function bagY(s) { return BAG_VERT ? BAG_Y - s * BAG_PITCH : BAG_Y; }
+    // the bag's plate: a pill, lying (the row) or standing (the column)
+    function bagPlate() {
+      var n = BAG_MAX, span = BAG_PITCH * (n - 1) + 2 * BAG_R + 12, th = 2 * BAG_R + 12;
+      if (BAG_VERT) vpill(BAG_X - BAG_R - 6, BAG_Y - BAG_PITCH * (n - 1) - BAG_R - 6, th, span);
+      else pill(bagX(0) - BAG_R - 6, BAG_Y - BAG_R - 6, span, th);
+    }
     function drawBag() {
-      var n = BAG_MAX, x0 = BAG_X - BAG_PITCH * (n - 1) / 2, own = 0, s, x;
-      if (gunPhase()) { drawGunBar(x0); return; }
+      var n = BAG_MAX, own = 0, s, x, y;
+      if (gunPhase()) { drawGunBar(); return; }
       for (s = 0; s < balls.length; s++) if (!balls[s].free && !balls[s].extra) own++;
       ctx.fillStyle = "rgba(8,14,8,0.6)";
-      pill(x0 - BAG_R - 6, BAG_Y - BAG_R - 6, BAG_PITCH * (n - 1) + 2 * BAG_R + 12, 2 * BAG_R + 12);
+      bagPlate();
       ctx.fill();
       for (s = 0; s < n; s++) {
-        x = x0 + s * BAG_PITCH;
+        x = bagX(s); y = bagY(s);
         var kind = !gunPhase() && specials[s] ? modOf(specials[s]) : null;
         if (s < bag) {
           if (kind) {
             ctx.strokeStyle = kind.color; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R + 2, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, BAG_R + 2, 0, Math.PI * 2); ctx.stroke();
           }
-          if (!drawArt(kind ? kind.ball : "ball01", x, BAG_Y, BAG_R * 2.3)) {
+          if (!drawArt(kind ? kind.ball : "ball01", x, y, BAG_R * 2.3)) {
             ctx.fillStyle = kind ? kind.color : "#ffffff";
-            ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x, y, BAG_R, 0, Math.PI * 2); ctx.fill();
           }
           continue;
         }
         // an empty socket: out on the course, or coming back by itself
         ctx.fillStyle = "rgba(0,0,0,0.45)";
-        ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R - 2, 0, Math.PI * 2); ctx.fill();
-        if (kind) drawArt(kind.ball, x, BAG_Y, BAG_R * 2.3, 0.35);
+        ctx.beginPath(); ctx.arc(x, y, BAG_R - 2, 0, Math.PI * 2); ctx.fill();
+        if (kind) drawArt(kind.ball, x, y, BAG_R * 2.3, 0.35);
         ctx.lineWidth = 3;
         if (s < bag + own) {
           ctx.strokeStyle = "rgba(255,255,255,0.35)";
-          ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, 0, Math.PI * 2); ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, y, BAG_R, 0, Math.PI * 2); ctx.stroke();
         } else if (s === bag + own && regenT > 0) {
           ctx.strokeStyle = "#ffffff";
-          ctx.beginPath(); ctx.arc(x, BAG_Y, BAG_R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(regenT / BAG_REGEN, 0, 1)); ctx.stroke();
+          ctx.beginPath(); ctx.arc(x, y, BAG_R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(regenT / BAG_REGEN, 0, 1)); ctx.stroke();
         }
       }
-      // the special about to be fired, named
+    }
+    /* The special about to be fired, named, beside the tee: left of it in the
+       playable, right of it on the web, where the column stands on the left
+       and the longest name would run into it. */
+    function drawBagLabel() {
       var next = bag > 0 && !gunPhase() && specials.length ? modOf(specials[0]) : null;
       if (!next) return;
-      var count = 0;
+      var count = 0, s;
       for (s = 0; s < specials.length; s++) if (specials[s] === specials[0]) count++;
       var label = upper(Lang.t(next.name)) + (count > 1 ? "  x" + count : "");
-      ctx.font = "800 22px " + FONT; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      // raised a little off the tee's line: its foot clears the level pill
-      var tw = ctx.measureText(label).width, rx = TEE_X - BALL_R - 26, ly = TEE_Y - 12;
+      ctx.font = "800 22px " + FONT; ctx.textBaseline = "middle";
+      // raised a little off the tee's line: its foot clears the level pill;
+      // on the web the bag and the supers hold both flanks of the tee, so it
+      // stands over the ball instead
+      var tw = ctx.measureText(label).width, ly = TEE_Y - 12, rx;
+      if (BAG_VERT) { ctx.textAlign = "center"; rx = TEE_X; ly = TEE_Y - BALL_R - 40; }
+      else { ctx.textAlign = "right"; rx = TEE_X - BALL_R - 26; }
       ctx.fillStyle = "rgba(8,14,8,0.72)";
-      pill(rx - tw - 14, ly - 18, tw + 28, 36);
+      pill(BAG_VERT ? rx - tw / 2 - 14 : rx - tw - 14, ly - 18, tw + 28, 36);
       ctx.fill();
       ctx.strokeStyle = next.color; ctx.lineWidth = 2; ctx.stroke();
       ctx.fillStyle = next.color;
@@ -3262,11 +3365,20 @@
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
-    function drawGunBar(x0) {
-      var col = gunColor(), w = BAG_PITCH * (BAG_MAX - 1) + 2 * BAG_R + 12, l = x0 - BAG_R - 6, f = clamp(phaseT / gunMax(), 0, 1);
+    function drawGunBar() {
+      var col = gunColor(), f = clamp(phaseT / gunMax(), 0, 1), n = BAG_MAX;
       ctx.fillStyle = "rgba(8,14,8,0.72)";
-      pill(l, BAG_Y - BAG_R - 6, w, 2 * BAG_R + 12); ctx.fill();
+      bagPlate(); ctx.fill();
       ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke();
+      if (BAG_VERT) {
+        // the target at the foot, the time left draining up the column
+        var top = BAG_Y - BAG_PITCH * (n - 1) - BAG_R - 6, bot = BAG_Y - BAG_R - 8, bh = bot - (top + 16);
+        drawTarget(BAG_X, BAG_Y, BAG_R - 3, col, -time * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; vpill(BAG_X - 6, top + 16, 12, bh); ctx.fill();
+        ctx.fillStyle = col; vpill(BAG_X - 6, bot - Math.max(12, bh * f), 12, Math.max(12, bh * f)); ctx.fill();
+        return;
+      }
+      var w = BAG_PITCH * (n - 1) + 2 * BAG_R + 12, l = bagX(0) - BAG_R - 6;
       drawTarget(l + BAG_R + 8, BAG_Y, BAG_R - 3, col, -time * 2);
       var bx = l + 2 * BAG_R + 18, bw = w - (bx - l) - 14;
       ctx.fillStyle = "rgba(0,0,0,0.5)"; pill(bx, BAG_Y - 6, bw, 12); ctx.fill();
@@ -3300,6 +3412,16 @@
       ctx.arc(x + w - r, y + r, r, -Math.PI / 2, Math.PI / 2);
       ctx.lineTo(x + r, y + h);
       ctx.arc(x + r, y + r, r, Math.PI / 2, Math.PI * 1.5);
+      ctx.closePath();
+    }
+    // the same, standing: the ends are round on the width
+    function vpill(x, y, w, h) {
+      var r = w / 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + r);
+      ctx.arc(x + r, y + r, r, Math.PI, 2 * Math.PI);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arc(x + r, y + h - r, r, 0, Math.PI);
       ctx.closePath();
     }
     /* THE BOSS BAR, a red hologram like the hole's: the name in heavy
@@ -3414,6 +3536,7 @@
       return cv;
     }
     function lend(bi, fn) {
+      place();   // the tee and the bag stand where the round puts them, round or not
       var keep = [B, L, time, phase, phaseT, won, over, aim, wind, stress, freezeT, magnetT,
                   specials, bag, cool, coolMax, balls, regenT, skulls, bossRef];
       B = BIOMES[bi || 0]; L = LEVELS[1]; time = PIC_T; phase = "normal"; phaseT = 0; won = false; over = false;
@@ -3504,7 +3627,7 @@
                 });
               }, lines: [
                 Lang.t("Put your finger in the blue band to roll, in the orange band to lob."),
-                Lang.t("Your finger's angle sets the aim. The farther it is from the tee, the harder the shot.") ] },
+                Lang.t("The farther you aim from the tee, the harder the shot.") ] },
             { id: "lob", title: Lang.t("The lob"), lv: 3, pic: function () {
                 return fieldPic(0, 60, 560, 600, 650, 0.5, function () {
                   picMon("walker", 290, 860, 3); picMon("walker", 400, 830, 6); picMon("walker", 480, 900, 1);
@@ -3512,15 +3635,15 @@
                   drawBands(0.5); drawPreview(); paintTee();
                 });
               }, lines: [
-                Lang.t("A lob flies over the horde. It lands softly enough to drop into the hole."),
+                Lang.t("A lob flies over the horde. It lands softly enough to drop into a hole."),
                 Lang.t("The longer the lob, the less precisely it lands.") ] },
             { id: "bag", title: Lang.t("The bag"), pic: function () {
-                return fieldPic(0, 60, 1110, 560, 160, 0.93, function () {
+                return fieldPic(0, 30, 930, 600, 260, 0.9, function () {
                   bag = 3; specials = ["explosive", "explosive"]; regenT = 1.2;
-                  paintTee(); drawBag();
+                  paintTee(); drawBag(); drawBagLabel();
                 });
               }, lines: [
-                Lang.t("Each shot takes a ball from the bag. Once a ball stops rolling, it goes back in.") ] },
+                Lang.t("Each shot uses a ball from your bag. The bag then refills, more or less quickly.") ] },
             { id: "hole", title: Lang.t("The hole"), pic: function () {
                 return fieldPic(0, 130, 400, 460, 340, 0.94, function () {
                   picMon("walker", 230, 650, 4); picMon("walker", 500, 625, 7);
@@ -3535,42 +3658,43 @@
                 });
               }, lines: [
                 Lang.t("Roll a ball into a coloured flag to win 3 balls of its kind."),
-                Lang.t("A coloured flag also gives back a lost flag.") ] },
-            { id: "chain", title: Lang.t("Chains"), pic: function () {
+                Lang.t("A coloured flag also gives back a lost flag (hit point).") ] },
+            { id: "chain", title: Lang.t("Combos"), pic: function () {
                 return fieldPic(0, 130, 520, 460, 230, 1, function () {
                   picMon("walker", 230, 700, 10, true); picMon("walker", 345, 685, 11, true); picMon("walker", 460, 705, 9);
                   picBall("plain", 280, 725);
                 });
               }, lines: [
-                Lang.t("Zombies bounce like billiard balls. Knock one hard into another and both take a hit."),
-                Lang.t("All the KOs of one shot make a chain. The 3rd pays 300, the 4th 400…") ] },
+                Lang.t("Zombies bounce off each other like billiard balls. Knock one into another to damage both."),
+                Lang.t("All the KOs of one shot create a combo. The third pays 300 points, the fourth 400 points…") ] },
             { id: "supers", title: Lang.t("Supers"), pic: function () {
                 return fieldPic(0, 380, 840, 340, 270, 1, function () {
                   picMon("walker", 470, 990, 3);
-                  paintSuper({ x: wallR(1015) - SLOT_R - 10, y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
-                  paintSuper({ x: wallR(907) - SLOT_R - 10, y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
+                  paintSuper({ x: superX(1015), y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
+                  paintSuper({ x: superX(907), y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
                 });
               }, lines: [
-                Lang.t("Every KO charges both supers. 12 KOs fill one."),
-                Lang.t("Tap a full super to fire it. Its balls don't come out of your bag.") ] },
+                Lang.t("Every KO charges your supers. One super meter is completely filled with 12 KOs."),
+                Lang.t("Tap a charged super to launch it. The super's balls don't come out of your bag."),
+                Lang.t("Before each level, pick the super powers you take. New special ones unlock as you climb.") ] },
             { id: "line", title: Lang.t("The line"), pic: function () {
                 return fieldPic(0, 140, 880, 440, 300, 1, function () {
                   picMon("walker", 260, 1060, 2); picMon("walker", 400, 1112, 10, true);
                   drawFx("boom", 3, 430, 1095, 200);
                 });
               }, lines: [
-                Lang.t("A zombie that crosses the white line costs you a flag. Its blast pushes the horde back."),
-                Lang.t("A coloured flag wins one back.") ] },
+                Lang.t("A zombie that crosses the white line explodes. That costs you a flag (hit point). Luckily, the blast pushes the horde back."),
+                Lang.t("Sink a ball in a coloured hole to win back a lost flag (hit point).") ] },
             { id: "last", title: Lang.t("The last stand"), pic: function () {
-                return fieldPic(0, 120, 900, 480, 370, 0.86, function () {
+                return fieldPic(0, 30, 900, 560, 300, 0.86, function () {
                   phase = "last"; phaseT = 5; aim = { x: 300, y: 960, held: 1 };
                   picMon("walker", 230, 965, 9); picMon("walker", 470, 990, 4);
                   for (var i = 1; i <= 4; i++) picBall("plain", TEE_X + (300 - TEE_X) * i / 5, TEE_Y + (960 - TEE_Y) * i / 5);
-                  drawGunAura(); drawReticle(); paintTee(); drawBag();
+                  drawGunAura(); drawReticle(); paintTee(); drawBag(); drawBagLabel();
                 });
               }, lines: [
-                Lang.t("Lose your last flag and you get the gun for 8 s. Only once a round."),
-                Lang.t("Hold to fire, tap to putt. Hold out and you get one flag back.") ] },
+                Lang.t("Lose your last hit point and you get one last chance to win it back by using burst mode for 8 seconds. This is only possible once a round."),
+                Lang.t("Hold to fire in bursts. Hold out and you get one last-chance flag (hit point) back.") ] },
             { id: "goal", title: Lang.t("Goal and stars"), pic: function () {
                 return fieldPic(0, 160, 40, 400, 330, 0.95, function () {
                   picMon("walker", 380, 175, 1); picMon("walker", 300, 215, 4); picMon("walker", 440, 270, 6); picMon("walker", 330, 340, 2);
@@ -3580,13 +3704,21 @@
                 Lang.t("Each level has one goal: survive its waves, sink the hole, knock out a boss…"),
                 Lang.t("The round ends as soon as the goal is met.") ] },
             { id: "boss", title: Lang.t("Bosses"), lv: 6, pic: function () {
-                return fieldPic(0, 130, 1030, 460, 240, 1, function () {
-                  cool = 0.35; coolMax = BOSS_COOLDOWN; bag = 4;
-                  paintTee(); drawBag();
+                // the hole's full shockwave rolling up the fairway to the
+                // boss at the top of it, drawn mid-wave and held
+                return fieldPic(0, 90, 130, 540, 520, 0.64, function () {
+                  var K = KINDS.greenkeeper, keepShock = shock;
+                  bossRef = { kind: "greenkeeper", hp: K.hp * 0.7, maxHp: K.hp, hpShow: K.hp * 0.8, flash: 0, dead: false };
+                  picMon("greenkeeper", 360, 440, K.hit[0], true);
+                  picHole(360, 610); picBall("plain", 335, 648);
+                  drawFx("shock", 3, 360, 610, HOLE_R * 9);
+                  shock = { x: 360, y: 610, R: 300, t: SHOCK_TIME, tag: "pic", hitIds: {}, power: 1, dmg: 0 };
+                  try { for (var w = 0; w < 4; w++) drawShock(); } finally { shock = keepShock; }
+                  drawBossBar();
                 });
-              }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags lost if a boss crosses"), "2"]],
+              }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags (hit points) lost if a boss reaches the line"), "2"]],
               lines: [
-                Lang.t("While a boss is on the field, you can only shoot once every 0.6 s.") ] }
+                Lang.t("While a boss is on the field, your fire rate is slightly changed.") ] }
           ] },
 
           { key: "country", label: Lang.t(B0[0].name), pages: [
@@ -3596,13 +3728,13 @@
                   picMon("walker", 560, 700, 3); picBall("plain", 290, 680);
                 });
               }, lines: [
-                Lang.t("Hit an obstacle hard enough, often enough, and it breaks.") ] },
+                Lang.t("Hit an obstacle hard enough and it breaks.") ] },
             { id: "walker", title: Lang.t(KINDS.walker.name), lv: 1, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 240, 670, 1); picMon("walker", 360, 645, 3); picMon("walker", 480, 680, 6);
                 });
               }, lines: [
-                Lang.t("A walker shambles down its lane toward the line.") ] },
+                Lang.t("A walker shambles toward you without straying far from its lane.") ] },
             { id: "boomer", title: Lang.t(KINDS.boomer.name), lv: 2, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 470, 670, 10, true); picMon("boomer", 280, 670, 2);
@@ -3617,7 +3749,7 @@
                   drawRail(h); picHole(h.x, h.y); picBall("plain", 300, 690);
                 });
               }, lines: [
-                Lang.t("Sink the moving hole while it moves for a bigger shockwave.") ] },
+                Lang.t("Sink the ball in the moving hole for a bigger shockwave.") ] },
             { id: "scars", title: Lang.t("Damaged course"), lv: 5, pic: function () {
                 return fieldPic(0, 100, 470, 520, 290, 1, function () {
                   drawFx("crater", FX.crater.n - 1, 240, 600, 160); drawFx("burn", FX.burn.n - 1, 470, 690, 130);
@@ -3629,7 +3761,7 @@
             { id: "greenkeeper", title: Lang.t(KINDS.greenkeeper.name), lv: 6, pic: function () {
                 return bossPic("greenkeeper", 0, function () { picBumper("course04", 520, 445); });
               }, rows: [hpRow(KINDS.greenkeeper.hp)], lines: [
-                Lang.t("From the front, each hit on the greenkeeper deals only 1 damage. Bank your shots to reach its sides.") ] }
+                Lang.t("From the front, each hit on the greenkeeper deals only one damage. Bank your shots off the edges of the field to maximise damage.") ] }
           ] },
 
           { key: "desert", label: Lang.t(B0[1].name), pages: [
@@ -3647,7 +3779,7 @@
                 });
               }, lines: [
                 Lang.t("The shield zombie's golf bag blocks shots that come straight from below."),
-                Lang.t("Lob over the shield zombie, bank off a fence, or use a piercing, heavy or giant ball.") ] },
+                Lang.t("Lob and aim at the shield zombie's head. You can also bank off one of the edges or use special balls (heavy, giant, etc.).") ] },
             { id: "wind", title: Lang.t("Wind"), lv: 10, pic: function () {
                 return fieldPic(1, 100, 470, 520, 290, 1, function () {
                   picMon("walker", 420, 620, 2);
@@ -3671,13 +3803,13 @@
                 });
               }, lines: [
                 Lang.t("A ball in the water is lost."),
-                Lang.t("Knock a zombie hard into a pond and it drowns.") ] },
+                Lang.t("Knock a zombie into a pond and it drowns.") ] },
             { id: "mudder", title: Lang.t(KINDS.mudder.name), lv: 14, pic: function () {
                 return fieldPic(2, 140, 470, 440, 230, 1, function () {
                   picMon("mudder", 270, 670, 3); picMon("mudling", 430, 655, 16); picMon("mudling", 500, 680, 16);
                 });
               }, lines: [
-                Lang.t("Knocked out, a mudder splits into two mudlings that burst at a touch and splash their neighbours.") ] },
+                Lang.t("Knocked out, a mudder splits into two mudlings that burst at the slightest touch.") ] },
             { id: "night", title: Lang.t("Night"), lv: 16, pic: function () {
                 return fieldPic(2, 100, 420, 520, 340, 0.93, function () {
                   picMon("walker", 300, 560, 2); picMon("walker", 460, 530, 5);
@@ -3685,7 +3817,7 @@
                   picMon("walker", 390, 735, 7);
                 });
               }, lines: [
-                Lang.t("Only the bottom of the field is lit. The horde comes out of the dark.") ] },
+                Lang.t("Only the bottom of the field is lit. The horde then comes out of the dark.") ] },
             { id: "bog", title: Lang.t(KINDS.bog.name), lv: 18, pic: function () {
                 return bossPic("bog", 2, function () { drawMud({ x: 360, y: 470, r: 130, life: 4 }); });
               }, rows: [hpRow(KINDS.bog.hp)], lines: [
@@ -3699,7 +3831,7 @@
                   picMon("walker", 300, 650, 10, true); picMon("walker", 380, 630, 11, true); picMon("walker", 440, 675, 9);
                 });
               }, lines: [
-                Lang.t("Zombies slide on ice too, twice as long when knocked back. Go for big pile-ups.") ] },
+                Lang.t("Zombies slide on ice too, and are knocked back twice as far on that surface. Make the most of big pile-ups.") ] },
             { id: "double", title: Lang.t("Two holes"), lv: 22, pic: function () {
                 return fieldPic(3, 100, 380, 520, 340, 0.94, function () {
                   picHole(240, 680); picHole(480, 660);
@@ -3711,7 +3843,7 @@
                   paintTerrain({ kind: "ice", key: "course10", x: 360, y: 470, rx: 150, ry: 60, life: -1 });
                 });
               }, rows: [hpRow(KINDS.yeti.hp)], lines: [
-                Lang.t("Fire hurts the yeti twice as much.") ] }
+                Lang.t("Fire hurts the yeti twice as much as any other blow.") ] }
           ] },
 
           { key: "graveyard", label: Lang.t(B0[4].name), pages: [
@@ -3727,14 +3859,14 @@
                   picMon("runner", 290, 650, 2); picMon("runner", 440, 685, 6);
                 });
               }, lines: [
-                Lang.t("A runner sprints straight at the line, more than twice as fast as a walker. Shoot fast.") ] },
+                Lang.t("A runner rushes at your flags as if it wanted to win a race.") ] },
             { id: "necro", title: Lang.t(KINDS.necro.name), lv: 26, pic: function () {
                 return fieldPic(4, 140, 470, 440, 230, 1, function () {
                   drawAura(290, 670, 30, 124, 1); picMon("necro", 290, 670, 6);
                   drawAura(460, 680, 30, 118, 0.8); picMon("walker", 460, 680, 1, false, 0.6);
                 });
               }, lines: [
-                Lang.t("Every 6 s, the necromancer stops to bring back the last two zombies knocked out."),
+                Lang.t("Every 10 seconds, the necromancer stops to raise the last two zombies knocked out."),
                 Lang.t("Knock the necromancer out first.") ] },
             { id: "horde", title: Lang.t("Horde"), lv: 28, pic: function () {
                 return fieldPic(4, 120, 450, 480, 270, 1, function () {
@@ -3750,43 +3882,43 @@
                   drawSkulls();
                 });
               }, rows: [hpRow(KINDS.king.hp)], lines: [
-                Lang.t("Send the zombie king's skull balls back at him for 8 damage. One that reaches the line costs a flag.") ] }
+                Lang.t("Send the skull-shaped balls back at the zombie king to deal 8 damage to him. You lose a flag (hit point) if that ball hits you.") ] }
           ] },
 
           { key: "kinds", label: Lang.t("Ball kinds"), pages: [
             { id: "kinds1", title: Lang.t("Explosive and multi"), lv: 1, pic: function () { return kindsPic(0, "explosive", "multi"); }, lines: [
-                Lang.t("The explosive ball blows up on the first zombie it hits, dealing 5 damage around it."),
+                Lang.t("The explosive ball deals 5 damage to nearby enemies."),
                 Lang.t("The multiball splits into three at its first bounce.") ] },
             { id: "kinds2", title: Lang.t("Pierce and heavy"), lv: 7, pic: function () { return kindsPic(1, "pierce", "heavy"); }, lines: [
                 Lang.t("The piercing ball goes through every zombie in its path, dealing 3 damage to each."),
-                Lang.t("The heavy ball deals double damage and knocks zombies far back. No shield stops these two.") ] },
+                Lang.t("The heavy ball deals double damage and knocks zombies farther back. No shield blocks it.") ] },
             { id: "kinds3", title: Lang.t("Homing and split"), lv: 14, pic: function () { return kindsPic(2, "homing", "split"); }, lines: [
-                Lang.t("The homing ball curves toward the nearest zombie for 3 s."),
-                Lang.t("The splitting ball splits in two at each of its first three bounces.") ] },
+                Lang.t("The homing ball curves toward the nearest zombie for 3 seconds."),
+                Lang.t("The splitting ball splits into three at each of its first three bounces.") ] },
             { id: "kinds4", title: Lang.t("Bouncy and fire"), lv: 19, pic: function () { return kindsPic(3, "bouncy", "fire"); }, lines: [
-                Lang.t("For 6 s, the bouncy ball keeps its full speed and bounces off the line."),
+                Lang.t("For 6 seconds, the bouncy ball keeps its full speed and bounces."),
                 Lang.t("The fire ball sets the grass alight where it hits.") ] },
             { id: "kinds5", title: Lang.t("Ice and giant"), lv: 25, pic: function () { return kindsPic(4, "ice", "giant"); }, lines: [
-                Lang.t("The ice ball freezes the zombies it hits for 3 s."),
+                Lang.t("The ice ball freezes the zombies it hits for 3 seconds."),
                 Lang.t("The giant ball is twice as big, deals +1 damage and goes through every shield.") ] }
           ] },
 
           { key: "supers", label: Lang.t("Supers"), pages: [
             { id: "supers1", title: Lang.t(B0[0].name), lv: 1, pic: function () { return supersPic(["rain", "fan", "freeze", "holeblast"]); }, lines: [
                 Lang.t("Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once."),
-                Lang.t("Time freeze stops the horde for 4 s. Hole blast sets off the hole's full shockwave.") ] },
+                Lang.t("Time freeze stops the horde for a few seconds. Hole blast sets off a hole's full shockwave.") ] },
             { id: "supers2", title: Lang.t(B0[1].name), lv: 7, pic: function () { return supersPic(["seeker", "sniper", "sprinkler", "cart"]); }, lines: [
-                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest."),
-                Lang.t("Sprinklers push the whole horde back. The Golf cart charges up the busiest lane.") ] },
+                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest zombies."),
+                Lang.t("Sprinklers push the whole horde back. The golf cart, for its part, charges up the busiest lane.") ] },
             { id: "supers3", title: Lang.t(B0[2].name), lv: 13, pic: function () { return supersPic(["boomvolley", "splitstorm", "magnet", "hail"]); }, lines: [
-                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 ice balls."),
-                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 s, at any speed.") ] },
+                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 icy balls."),
+                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 seconds, at any speed.") ] },
             { id: "supers4", title: Lang.t(B0[3].name), lv: 19, pic: function () { return supersPic(["firestorm", "superbounce", "cluster", "rush"]); }, lines: [
                 Lang.t("Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down."),
-                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun for 6 s.") ] },
+                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun that fires loads of balls for a few seconds.") ] },
             { id: "supers5", title: Lang.t(B0[4].name), lv: 25, pic: function () { return supersPic(["meteor", "carpet", "golden", "mower"]); }, lines: [
                 Lang.t("Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field."),
-                Lang.t("Golden rain makes KOs pay × 3 for 8 s. Mower sends mowers across the field.") ] }
+                Lang.t("Golden rain makes KOs pay ×3 for 8 seconds. Mower sends mowers across the field, crushing zombies.") ] }
           ] }
         ];
       }
@@ -3825,7 +3957,8 @@
     }
     function labState() {
       return { biome: B ? B.key : null, level: CONFIG.level || 0, zombies: living().length, balls: balls ? balls.length : 0,
-               fx: fxs ? fxs.length : 0, specials: specials ? specials.slice() : [], phase: phase };
+               fx: fxs ? fxs.length : 0, specials: specials ? specials.slice() : [], phase: phase,
+               supers: slots ? slots.map(function (s) { return s.power; }) : [] };
     }
     /* A zombie of `kind` on (x, y), or round the middle of the field, put
        straight into `state`: what a round would take a walk to reach. */
@@ -3974,7 +4107,7 @@
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelTally: levelTally,
-             levelRules: levelRules, levelWon: levelWon, guide: guide,
+             levelRules: levelRules, levelWon: levelWon, guide: guide, loadout: loadout,
              lab: { set: function (o) { for (var key in o) if (o.hasOwnProperty(key)) lab[key] = o[key]; },
                     catalog: labCatalog, state: labState, zombie: labZombie, row: labRow, pose: labPose,
                     ball: labBall, load: labLoad, power: firePower, fx: labFx, event: labEvent, clear: labClear } };

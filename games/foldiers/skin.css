@@ -28,14 +28,17 @@
   #hud-right .hud-pill.warn { color:#fff; background:rgba(217,65,47,.75); }
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
-     The motor's "drag" variant lends its finger. The stage is a scrap of the
+     The motor's "tap" variant lends its finger. The stage is a scrap of the
      paper world: a region of yours under the blue tissue (::before), a
-     neutral one across the border (::after), the folded arrow an order is
-     (.demo-track), and the Send button at the foot (.demo-target).
+     neutral one across the border (::after), the action it wears once yours
+     is picked up — a paper rosette with a sword (.demo-beam) — the folded
+     arrow an order is (.demo-track), and the Send button at the foot
+     (.demo-target).
 
-     One 3.6 s loop: the finger presses the blue region, draws the arrow onto
-     the neutral one, lifts, taps Send; the arrow goes and the neutral region
-     takes the blue tissue. */
+     One 4.2 s loop, three taps: the finger picks the blue region up, the
+     rosette pops on the neutral one, the finger taps it and the arrow
+     unfolds, then it taps Send; the arrow goes and the neutral region takes
+     the blue tissue. */
   .demo-caption { display:none; }
   #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#fbf5e6; }
   #intro-tagline .w-orders { color:#9cc0ff; text-shadow:0 0 18px rgba(91,143,224,.8); }
@@ -49,12 +52,17 @@
       linear-gradient(180deg,#1f8a96,#156c7a);
     border-color:rgba(246,236,210,.3);
   }
-  /* your region: meadow paper under the blue tissue, on its cream beach */
+  /* your region: meadow paper under the blue tissue, on its cream beach; picked up, it wears a white rim */
   .demo-stage::before {
     content:""; position:absolute; left:30px; top:112px; width:170px; height:118px;
     border-radius:46% 54% 42% 58% / 52% 44% 56% 48%;
     background:linear-gradient(rgba(47,99,196,.5), rgba(47,99,196,.5)), #b9d27a;
     box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25);
+    animation:demoPick 4.2s ease-in-out infinite;
+  }
+  @keyframes demoPick {
+    0%, 10%, 46%, 100% { box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
+    13%, 42% { box-shadow:0 0 0 6px #fffaf0, 0 0 0 9px rgba(255,250,240,.6), 0 10px 16px rgba(0,0,0,.25); }
   }
   /* the neutral region across the border: its tissue lands on the bell */
   .demo-stage::after {
@@ -62,53 +70,73 @@
     border-radius:54% 46% 58% 42% / 46% 56% 44% 54%;
     background:#b9d27a;
     box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25);
-    animation:demoTake 3.6s ease-in-out infinite;
+    animation:demoTake 4.2s ease-in-out infinite;
   }
   @keyframes demoTake {
-    0%, 66% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
-    74%, 92% { background:#7f9ec8; box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
+    0%, 70% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
+    76%, 92% { background:#7f9ec8; box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
     100% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
   }
+  /* the action the neutral region wears: a folded paper rosette, its green rim the verdict */
+  .demo-tap .demo-beam {
+    display:block; z-index:2; left:272px; top:34px; bottom:auto; width:64px; height:64px; margin:0;
+    clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); background:#2f8f4e;
+    transform-origin:50% 50%; transform:scale(0);
+    animation:demoAct 4.2s ease-in-out infinite;
+  }
+  .demo-tap .demo-beam::before {
+    content:""; position:absolute; inset:5px; clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232a2418' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m11 19-6-6'/%3E%3Cpath d='m5 21-2-2'/%3E%3Cpath d='m8 16-4 4'/%3E%3Cpath d='M9.5 17.5 21 6V3h-3L6.5 14.5'/%3E%3C/svg%3E") no-repeat center/56%, repeating-conic-gradient(from 22.5deg, #f6ecd2 0 45deg, #e6d6b0 45deg 90deg);
+  }
+  @keyframes demoAct {
+    0%, 15% { transform:scale(0); }
+    20% { transform:scale(1.12); }
+    24%, 38% { transform:scale(1); }
+    42% { transform:scale(1.25); }
+    48%, 100% { transform:scale(0); }
+  }
   /* the order: a folded strip of blue paper, light half over dark half */
-  .demo-drag .demo-track {
-    z-index:2; left:118px; top:150px; right:auto; bottom:auto; width:206px; height:26px; border:0;
+  .demo-tap .demo-track {
+    display:block; z-index:2; left:118px; top:150px; right:auto; bottom:auto; width:206px; height:26px; border:0;
     transform-origin:0 50%; transform:rotate(-24deg) scaleX(0);
     background:linear-gradient(180deg,#5b8fe0 0 50%,#2f63c4 50% 100%);
     clip-path:polygon(0 30%, 84% 30%, 84% 0, 100% 50%, 84% 100%, 84% 70%, 0 70%);
     filter:drop-shadow(3px 5px 0 rgba(10,30,60,.25));
-    animation:demoOrder 3.6s ease-in-out infinite;
+    animation:demoOrder 4.2s ease-in-out infinite;
   }
   @keyframes demoOrder {
-    0%, 12% { transform:rotate(-24deg) scaleX(0); opacity:1; }
-    40%, 64% { transform:rotate(-24deg) scaleX(1); opacity:1; }
-    72%, 100% { transform:rotate(-24deg) scaleX(1); opacity:0; }
+    0%, 40% { transform:rotate(-24deg) scaleX(0); opacity:1; }
+    52%, 66% { transform:rotate(-24deg) scaleX(1); opacity:1; }
+    74%, 100% { transform:rotate(-24deg) scaleX(1); opacity:0; }
   }
   /* Send: a cream paper button with its tick ring */
-  .demo-drag .demo-target {
+  .demo-tap .demo-target {
     display:block; z-index:2; left:auto; right:34px; top:auto; bottom:18px; margin:0; width:76px; height:52px;
     border:3px solid #1d3f8a; border-radius:26px; background:#f6ecd2; box-shadow:0 6px 0 rgba(10,30,60,.25);
   }
-  .demo-drag .demo-target::before {
+  .demo-tap .demo-target::before {
     content:""; position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px;
     border-radius:50%; border:4px solid #e2a40c; border-right-color:rgba(29,63,138,.2);
   }
-  .demo-drag .demo-ripple { border-color:#e2a40c; border-radius:30px; animation:demoSendRip 3.6s ease-out infinite; }
-  .demo-drag .demo-ripple.d2 { animation-delay:.15s; }
-  @keyframes demoSendRip { 0%, 60% { transform:scale(.6); opacity:0; } 63% { opacity:.9; } 78%, 100% { transform:scale(1.7); opacity:0; } }
-  /* the finger: press, draw, lift, tap Send */
-  .demo-drag .demo-hand { z-index:3; animation:demoDraw 3.6s ease-in-out infinite; }
-  @keyframes demoDraw {
+  .demo-tap .demo-ripple { border-color:#e2a40c; border-radius:30px; animation:demoSendRip 4.2s ease-out infinite; }
+  .demo-tap .demo-ripple.d2 { animation-delay:.15s; }
+  @keyframes demoSendRip { 0%, 61% { transform:scale(.6); opacity:0; } 64% { opacity:.9; } 78%, 100% { transform:scale(1.7); opacity:0; } }
+  /* the finger: pick the region up, tap its action, tap Send */
+  .demo-tap .demo-hand { z-index:3; animation:demoTaps 4.2s ease-in-out infinite; }
+  @keyframes demoTaps {
     0%   { transform:translate(-95px, 14px); opacity:0; }
-    8%   { transform:translate(-95px, 14px); opacity:1; }
-    12%  { transform:translate(-95px, 18px) scale(.95); opacity:1; }
-    40%  { transform:translate(95px, -78px) scale(.95); opacity:1; }
-    46%  { transform:translate(95px, -82px); opacity:1; }
-    58%  { transform:translate(118px, 64px); opacity:1; }
-    62%  { transform:translate(118px, 70px) scale(.95); opacity:1; }
+    6%   { transform:translate(-95px, 14px); opacity:1; }
+    10%  { transform:translate(-95px, 18px) scale(.95); opacity:1; }
+    14%  { transform:translate(-95px, 14px); opacity:1; }
+    32%  { transform:translate(94px, -94px); opacity:1; }
+    38%  { transform:translate(94px, -90px) scale(.95); opacity:1; }
+    42%  { transform:translate(94px, -94px); opacity:1; }
+    58%  { transform:translate(118px, 62px); opacity:1; }
+    62%  { transform:translate(118px, 66px) scale(.95); opacity:1; }
     66%  { transform:translate(118px, 62px); opacity:1; }
     80%  { transform:translate(118px, 62px); opacity:0; }
     100% { transform:translate(-95px, 14px); opacity:0; }
   }
-  /* on a desk the finger is a cursor: it clicks as it presses and on Send */
-  .demo-drag .demo-hand { --click-dur:3.6s; --click-at:.43s; }
-  .demo-drag .demo-cursor { top:-24px; }
+  /* on a desk the finger is a cursor: it clicks on the action */
+  .demo-tap .demo-hand { --click-dur:4.2s; --click-at:1.6s; }
+  .demo-tap .demo-cursor { top:-24px; }

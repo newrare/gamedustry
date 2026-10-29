@@ -1072,7 +1072,7 @@
        no immunity, has nothing to decode and is not named. */
     var MEET = {
       b: ["blue",   "Blue top",   "The fence can't damage a blue top"],
-      y: ["yellow", "Yellow top", "Other tops can't damage a yellow top"],
+      y: ["yellow", "Yellow top", "Immune to contact with other tops"],
       r: ["red",    "Red top",    "Only the fence damages a red top"],
       k: ["black",  "Black top",  "A black top mends the tops it touches"],
       p: ["purple", "Purple top", "A large one splits in two"]
@@ -2111,7 +2111,7 @@
       if (warnArmed && spin <= CONFIG.warnAt * cap) {
         warnArmed = false;
         Sound.clip("warn", 0.6, 1);
-        Notify.say("Spinning out", { sub: "Shock to recover", kind: "warn" });
+        Notify.say("Spinning out", { sub: "Shock to recharge", kind: "warn" });
       } else if (!warnArmed && spin >= CONFIG.warnClear * cap) {
         warnArmed = true;
       }
@@ -3016,7 +3016,7 @@
                 });
               },
               rows: [[Lang.t("A perfect"), "-" + CONFIG.perfectDmg]],
-              lines: [Lang.t("The notches around a rival are its shell points. It blows apart when it loses the last one."),
+              lines: [Lang.t("The notches around a rival are its health points. It blows apart when it has no health left."),
                       Lang.t("Your shockwave, the fence and a crash into another top each take one point.")] },
             { id: "combo", title: Lang.t("Combos and chains"), pic: function () {
                 return stage(500, 300, 0.85, function () {
@@ -3083,7 +3083,7 @@
                   gFoe("pl", 110, 130); gFoe("ps", 330, 70); gFoe("ps", 380, 200);
                 });
               },
-              lines: [Lang.t("A large purple top blows apart into two small ones. One top becomes three.")] }
+              lines: [Lang.t("A large purple top blows apart into two small ones. One top becomes two.")] }
           ] },
           { key: "grounded", label: Lang.t("Grounded"), pages: [
             { id: "red", title: Lang.t("Red top"), lv: 19, pic: function () {

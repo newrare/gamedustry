@@ -54,7 +54,7 @@
       scoreLabel: "Score",
       timeLabel:  "Time",
       endScore:   "Final score",
-      gameOver:   "Round over",
+      gameOver:   "Game over",
       timeUp:     "Time's up!",
       jackpot:    "Jackpot!",
       waveLabel:  "Wave",
@@ -200,49 +200,49 @@
       magnet:    { kind: "peg", pct: 15, lv: 1,  w: 4, icon: "icon05", color: "#c46bff", name: "Magnet",  desc: "15% of the pegs turn magnetic" },
       bomb:      { kind: "peg", pct: 10, lv: 1,  w: 4, icon: "icon06", color: "#9aa0b4", name: "Bomb",    desc: "10% of the pegs become bombs" },
       prism:     { kind: "peg", pct: 15, lv: 2,  w: 3, icon: "icon09", color: "#ff9ff3", name: "Prism",   desc: "15% of the pegs split a ball in two" },
-      lucky:     { kind: "peg", pct: 30, lv: 3,  w: 3, icon: "icon10", color: "#5be37a", name: "Lucky",   desc: "30% of the pegs: 1 in 4 pays x10" },
-      lightning: { kind: "peg", pct: 20, lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "20% of the pegs zap their 3 neighbours" },
-      glass:     { kind: "peg", pct: 30, lv: 5,  w: 3, icon: "icon12", color: "#d6f6ff", name: "Glass",   desc: "30% of the pegs pay x5, break after 3 hits" },
-      echo:      { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon13", color: "#9d7bff", name: "Echo",    desc: "15% of the pegs replay the last special a ball hit" },
+      lucky:     { kind: "peg", pct: 30, lv: 3,  w: 3, icon: "icon10", color: "#5be37a", name: "Lucky",   desc: "On 30% of the pegs, one hit in four pays x10" },
+      lightning: { kind: "peg", pct: 20, lv: 4,  w: 3, icon: "icon11", color: "#8fe3ff", name: "Spark",   desc: "20% of the pegs zap 3 neighbours" },
+      glass:     { kind: "peg", pct: 30, lv: 5,  w: 3, icon: "icon12", color: "#d6f6ff", name: "Glass",   desc: "30% of the pegs pay x5 but break after 3 hits" },
+      echo:      { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon13", color: "#9d7bff", name: "Echo",    desc: "15% of the pegs replay the last special the ball triggered" },
       mirror:    { kind: "peg", pct: 15, lv: 7,  w: 3, icon: "icon14", color: "#d8dce8", name: "Mirror",  desc: "15% of the pegs copy the special next to them" },
-      golden:    { kind: "peg", pct: 10, lv: 2,  w: 3, icon: "icon15", color: "#ffd700", name: "Midas",   desc: "10% of the pegs add +0.1 mult on every hit", mult: true },
+      golden:    { kind: "peg", pct: 10, lv: 2,  w: 3, icon: "icon15", color: "#ffd700", name: "Midas",   desc: "10% of the pegs add +0.1 to the global multiplier on every hit", mult: true },
       portal:    { kind: "peg", pct: 6,  lv: 8,  w: 2, icon: "icon16", color: "#6a5cff", name: "Portal",  desc: "6% of the pegs send a ball back to the top" },
-      spike:     { kind: "peg", pct: 5,  lv: 8,  w: 2, icon: "icon17", color: "#ff3355", name: "Spike",   desc: "5% of the pegs destroy a ball for x50" },
+      spike:     { kind: "peg", pct: 5,  lv: 8,  w: 2, icon: "icon17", color: "#ff3355", name: "Spike",   desc: "5% of the pegs destroy a ball but pay x50" },
       // --- waves: one wave, the one the card is played before
-      double:    { kind: "wave", lv: 1,  w: 4, icon: "icon01", color: "#ffd166", name: "Double",  desc: "Classic pegs pay double this wave" },
-      gold:      { kind: "wave", lv: 1,  w: 4, icon: "icon08", color: "#ffb830", name: "Gold",    desc: "Gates pay double this wave, no malus" },
-      balls:     { kind: "wave", lv: 1,  w: 4, icon: "icon07", color: "#ff5c5c", name: "Balls",   desc: "6 more balls in this wave", n: 6 },
-      molten:    { kind: "wave", lv: 2,  w: 3, icon: "icon18", color: "#ff5a1a", name: "Magma",   desc: "Every ball burns for the whole wave" },
-      fever:     { kind: "wave", lv: 2,  w: 3, icon: "icon19", color: "#ff7ab8", name: "Fever",   desc: "+0.1 mult for every special peg hit", mult: true },
+      double:    { kind: "wave", lv: 1,  w: 4, icon: "icon01", color: "#ffd166", name: "Double",  desc: "Classic pegs pay double for this wave" },
+      gold:      { kind: "wave", lv: 1,  w: 4, icon: "icon08", color: "#ffb830", name: "Gold",    desc: "No penalty, and exits pay double" },
+      balls:     { kind: "wave", lv: 1,  w: 4, icon: "icon07", color: "#ff5c5c", name: "Balls",   desc: "6 more balls for this wave", n: 6 },
+      molten:    { kind: "wave", lv: 2,  w: 3, icon: "icon18", color: "#ff5a1a", name: "Magma",   desc: "Balls burn for the whole wave" },
+      fever:     { kind: "wave", lv: 2,  w: 3, icon: "icon19", color: "#ff7ab8", name: "Fever",   desc: "Each special peg hit adds +0.1 to the global multiplier", mult: true },
       twins:     { kind: "wave", lv: 3,  w: 3, icon: "icon20", color: "#6ee08a", name: "Twins",   desc: "Every ball drops with a twin" },
       combo:     { kind: "wave", lv: 3,  w: 3, icon: "icon21", color: "#7be05a", name: "Combo",   desc: "Each hit adds x0.1 to the ball's next hits" },
-      chain:     { kind: "wave", lv: 4,  w: 1, icon: "icon22", color: "#ff8a3c", name: "Chain reaction", desc: "x1.5 mult for every explosion this wave" },
-      heavy:     { kind: "wave", lv: 4,  w: 3, icon: "icon23", color: "#a9a9b8", name: "Heavy",   desc: "Big balls: +0.5 peg a hit" },
-      cryo:      { kind: "wave", lv: 5,  w: 3, icon: "icon24", color: "#7ac8ff", name: "Cryo",    desc: "Every ball drops frozen" },
-      thermal:   { kind: "wave", lv: 5,  w: 2, icon: "icon25", color: "#ff6ad5", name: "Thermal shock", desc: "Fire meeting ice explodes for x10" },
-      lastCall:  { kind: "wave", lv: 6,  w: 1, icon: "icon26", color: "#ffcf5a", name: "Last call", desc: "x3 mult, on the last wave only", mult: true },
+      chain:     { kind: "wave", lv: 4,  w: 1, icon: "icon22", color: "#ff8a3c", name: "Chain reaction", desc: "x1.5 global multiplier for every explosion this wave" },
+      heavy:     { kind: "wave", lv: 4,  w: 3, icon: "icon23", color: "#a9a9b8", name: "Heavy",   desc: "Big balls: +0.5 classic peg a hit" },
+      cryo:      { kind: "wave", lv: 5,  w: 3, icon: "icon24", color: "#7ac8ff", name: "Cryo",    desc: "Every ball is frozen" },
+      thermal:   { kind: "wave", lv: 5,  w: 2, icon: "icon25", color: "#ff6ad5", name: "Thermal shock", desc: "Fire meeting ice explodes for 10 classic pegs" },
+      lastCall:  { kind: "wave", lv: 6,  w: 1, icon: "icon26", color: "#ffcf5a", name: "Last call", desc: "x3 global multiplier, on the last wave only", mult: true },
       bouncy:    { kind: "wave", lv: 8,  w: 3, icon: "icon27", color: "#ff6b6b", name: "Bouncy",  desc: "Livelier balls that last twice as long" },
       ghost:     { kind: "wave", lv: 9,  w: 3, icon: "icon28", color: "#b48cff", name: "Ghost",   desc: "Balls pass through classic pegs" },
       rain:      { kind: "wave", lv: 9,  w: 3, icon: "icon29", color: "#5ab0ff", name: "Rain",    desc: "Balls fall across the whole board" },
-      goldBall:  { kind: "wave", lv: 10, w: 3, icon: "icon30", color: "#ffd700", name: "Gold ball", desc: "One ball is gold: its hits pay x5" },
-      jackpotRush: { kind: "wave", lv: 10, w: 3, icon: "icon31", color: "#ff4d6d", name: "Jackpot rush", desc: "The jackpot gate is twice as wide" },
-      overcharge:{ kind: "wave", lv: 11, w: 2, icon: "icon32", color: "#c46bff", name: "Surge",   desc: "Every ball is charged for the whole wave" },
+      goldBall:  { kind: "wave", lv: 10, w: 3, icon: "icon30", color: "#ffd700", name: "Gold ball", desc: "Gold balls pay x5 on hits and exits" },
+      jackpotRush: { kind: "wave", lv: 10, w: 3, icon: "icon31", color: "#ff4d6d", name: "Jackpot rush", desc: "The jackpot is twice as wide" },
+      overcharge:{ kind: "wave", lv: 11, w: 2, icon: "icon32", color: "#c46bff", name: "Surge",   desc: "Charged balls pay x2 per hit and they pull the other balls" },
       encore:    { kind: "wave", lv: 11, w: 1, icon: "icon33", color: "#ff4d6d", name: "Encore",  desc: "The wave drops a second time" },
-      allIn:     { kind: "wave", lv: 12, w: 1, icon: "icon34", color: "#ffb830", name: "All in",  desc: "x2 mult, but the edge gates take points", mult: true },
+      allIn:     { kind: "wave", lv: 12, w: 1, icon: "icon34", color: "#ffb830", name: "All in",  desc: "x2 global multiplier, but the edge exits become penalty exits", mult: true },
       // --- charms: for the rest of the round, and a second copy stacks
       wildfire:  { kind: "charm", lv: 6,  w: 2, icon: "icon35", color: "#ff7a1a", name: "Wildfire", desc: "After each wave, every fire peg lights a neighbour" },
       pyro:      { kind: "charm", lv: 6,  w: 2, icon: "icon36", color: "#ff5a1a", name: "Pyro",    desc: "Every fire hit adds 1 point to all fire pegs" },
-      collector: { kind: "charm", lv: 6,  w: 2, icon: "icon37", color: "#ffd166", name: "Hoarder", desc: "+0.5 mult for every card played", mult: true },
-      clover:    { kind: "charm", lv: 3,  w: 2, icon: "icon38", color: "#5be37a", name: "Clover",  desc: "Every chance is doubled" },
-      domino:    { kind: "charm", lv: 4,  w: 1, icon: "icon39", color: "#9aa0b4", name: "Domino",  desc: "A blast sets off the bombs near it, +1 mult each" },
-      shards:    { kind: "charm", lv: 5,  w: 2, icon: "icon40", color: "#d6f6ff", name: "Shards",  desc: "+0.5 mult for the round per glass peg broken" },
+      collector: { kind: "charm", lv: 6,  w: 2, icon: "icon37", color: "#ffd166", name: "Hoarder", desc: "+0.5 global multiplier for every card played", mult: true },
+      clover:    { kind: "charm", lv: 3,  w: 2, icon: "icon38", color: "#5be37a", name: "Clover",  desc: "Doubles the chance of 'lucky pegs' as well as golden balls" },
+      domino:    { kind: "charm", lv: 4,  w: 1, icon: "icon39", color: "#9aa0b4", name: "Domino",  desc: "A blast sets off the bombs near it, +1 global multiplier each" },
+      shards:    { kind: "charm", lv: 5,  w: 2, icon: "icon40", color: "#d6f6ff", name: "Shards",  desc: "+0.5 global multiplier for the game per glass peg broken" },
       reverb:    { kind: "charm", lv: 7,  w: 1, icon: "icon41", color: "#9d7bff", name: "Reverb",  desc: "Special pegs trigger twice" },
-      martyr:    { kind: "charm", lv: 8,  w: 2, icon: "icon42", color: "#ff3355", name: "Martyr",  desc: "+0.5 mult for the round per ball lost" },
-      unison:    { kind: "charm", lv: 9,  w: 2, icon: "icon43", color: "#ffe08a", name: "Unison",  desc: "A special on half the board pays x2" },
-      rainbow:   { kind: "charm", lv: 9,  w: 2, icon: "icon44", color: "#ff9ff3", name: "Rainbow", desc: "+1 mult per kind of special on the board", mult: true },
-      interest:  { kind: "charm", lv: 10, w: 2, icon: "icon45", color: "#ffcf5a", name: "Interest", desc: "Every gate adds 1% of your score" },
-      jackpotHunt: { kind: "charm", lv: 10, w: 2, icon: "icon46", color: "#ff4d6d", name: "Jackpot hunt", desc: "x1.1 mult for the round per jackpot ball" },
-      snowball:  { kind: "charm", lv: 11, w: 2, icon: "icon47", color: "#5ad8ff", name: "Snowball", desc: "A frozen ball grows on every ice peg" },
+      martyr:    { kind: "charm", lv: 8,  w: 2, icon: "icon42", color: "#ff3355", name: "Martyr",  desc: "+0.5 global multiplier for the game per ball lost" },
+      unison:    { kind: "charm", lv: 9,  w: 2, icon: "icon43", color: "#ffe08a", name: "Unison",  desc: "If half the pegs share one special, those pegs pay x2" },
+      rainbow:   { kind: "charm", lv: 9,  w: 2, icon: "icon44", color: "#ff9ff3", name: "Rainbow", desc: "Each kind of special on the board adds +1 to the global multiplier", mult: true },
+      interest:  { kind: "charm", lv: 10, w: 2, icon: "icon45", color: "#ffcf5a", name: "Interest", desc: "Every ball in an exit adds 1% of your score" },
+      jackpotHunt: { kind: "charm", lv: 10, w: 2, icon: "icon46", color: "#ff4d6d", name: "Jackpot hunt", desc: "x1.1 global multiplier for the game per jackpot ball" },
+      snowball:  { kind: "charm", lv: 11, w: 2, icon: "icon47", color: "#5ad8ff", name: "Snowball", desc: "A frozen ball grows for every hit on an ice peg" },
       contagion: { kind: "charm", lv: 11, w: 1, icon: "icon48", color: "#c46bff", name: "Spread",  desc: "A charged ball charges every ball it touches" },
       // --- meta: the cards themselves
       blueprint: { kind: "meta", lv: 7,  w: 1, icon: "icon49", color: "#e8e2d0", name: "Copy",    desc: "Plays the last card again" },
@@ -259,9 +259,9 @@
        rainbow epic (`step` is the card's `r-<step>` class: the epic's rim
        and tag band run the rainbow, the canvas draws its pink). */
     var KINDS = {
-      peg:   { name: "Peg",   plural: "Pegs",   span: "For the whole round", color: "#ff8a3c" },
+      peg:   { name: "Peg",   plural: "Pegs",   span: "For the whole game", color: "#ff8a3c" },
       wave:  { name: "Wave",  plural: "Waves",  span: "For one wave",        color: "#5ad8ff" },
-      charm: { name: "Charm", plural: "Charms", span: "Stays for the round", color: "#c46bff" },
+      charm: { name: "Charm", plural: "Charms", span: "Stays for the game", color: "#c46bff" },
       meta:  { name: "Trick", plural: "Tricks", span: "Plays with your cards", color: "#e8e2d0" }
     };
     var KIND_KEYS = ["peg", "wave", "charm", "meta"];
@@ -614,7 +614,7 @@
       // a malus gate on the board: named the first time one is met
       var mal = 0;
       for (var gi = 0; gi < 5; gi++) if (gates[gi].val < 0) mal++;
-      if (mal) Notify.learn("malus", "Malus gate", { sub: "An edge gate takes points away" });
+      if (mal) Notify.learn("malus", "Penalty exit", { sub: "A penalty exit takes points away" });
       Music.play(CONFIG.level ? BAND.music : null);
     }
     function freshBoost() {
@@ -710,7 +710,7 @@
       Sound.clip("card", 0.6, 1);
       /* a charm met for the first time: that it stays is what the card's
          own callout does not say (a trick's callout names what it copied) */
-      if (def.kind === "charm") Notify.learn("kind-charm", "Charms", { sub: "A charm stays for the whole round" });
+      if (def.kind === "charm") Notify.learn("kind-charm", "Charms", { sub: "A charm stays for the whole game" });
       setState("cast");
       return true;
     }
@@ -2293,6 +2293,57 @@
           pic: function () { return bandPic(i); }, lines: lines }
       ] };
     }
+    /* A bomb going off in the middle of a few pegs: the blast's two rings
+       (explode's), and the balls inside its reach thrown straight out
+       from it, each with its dotted run. */
+    function bombPic() {
+      return paintPic(PIC_W, 330, function () {
+        boardPanel(ctx, 4, 4, PIC_W - 8, 322);
+        var bx = PIC_W / 2, by = 165, r, j, k, x, y, a, i, d, ang = [-2.45, -0.3, 1.65];
+        for (k = -2; k <= 2; k++) {
+          for (j = -5; j <= 5; j++) {
+            x = bx + j * PITCH_X + (k % 2 ? PITCH_X / 2 : 0); y = by + k * PITCH_Y;
+            if (x < 24 || x > PIC_W - 24 || Math.hypot(x - bx, y - by) < 78) continue;
+            drawPeg(pegAt("classic", x, y));
+          }
+        }
+        ctx.strokeStyle = rgba("#ff8a3c", 0.55); ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.arc(bx, by, BLAST_REACH * 1.15, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(bx, by, BLAST_REACH * 0.85, 0, Math.PI * 2); ctx.stroke();
+        drawPeg(pegAt("bomb", bx, by, { flash: 0.6 }));
+        for (i = 0; i < ang.length; i++) {
+          for (d = 34; d < 92; d += 14) {
+            ctx.fillStyle = rgba("#ffffff", 0.3 + 0.5 * (d - 34) / 58);
+            ctx.beginPath(); ctx.arc(bx + Math.cos(ang[i]) * d, by + Math.sin(ang[i]) * d, 3.5, 0, Math.PI * 2); ctx.fill();
+          }
+          drawBall(ballAt(bx + Math.cos(ang[i]) * 104, by + Math.sin(ang[i]) * 104), ballImg());
+        }
+      });
+    }
+    // A dotted line between two points, as a ball's run or a copy's link.
+    function dotLine(x1, y1, x2, y2, n, color) {
+      for (var i = 1; i < n; i++) {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n, 2.6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    /* The mirror next to a fire peg, and a ball catching fire off the
+       mirror; below it a ball that hit ice, then the echo, frozen again. */
+    function copiersPic() {
+      var Z = 2;
+      return paintPic(PIC_W, 310, function () {
+        boardPanel(ctx, 4, 4, PIC_W - 8, 302);
+        ctx.scale(Z, Z);
+        var img = ballImg();
+        drawPeg(pegAt("fire", 70, 44)); drawPeg(pegAt("mirror", 138, 44));
+        dotLine(84, 44, 124, 44, 4, "rgba(255,255,255,0.7)");
+        drawBall(ballAt(172, 44, { burn: 1 }), img);
+        drawPeg(pegAt("ice", 70, 108)); drawPeg(pegAt("echo", 138, 108));
+        dotLine(84, 108, 124, 108, 4, "rgba(255,255,255,0.7)");
+        drawBall(ballAt(172, 108, { frozen: 1 }), img);
+      });
+    }
     function mulRow(label, type, color) { return [Lang.t(label), "x" + TYPES[type].mul, color]; }
     var guide = {
       chapters: function () {
@@ -2300,83 +2351,84 @@
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "play", title: Lang.t("Play a card"), pic: playPic,
               lines: [Lang.t("Drag a card from your hand onto the board. The wave drops where you let go.")] },
-            { id: "score", title: Lang.t("Points and mult"),
+            { id: "score", title: Lang.t("Points and global multiplier"),
               pic: function () { return pegsPic([{ type: "classic", ball: {} }, { type: "fire" }, { type: "bumper" }]); },
-              lines: [Lang.t("Each peg a ball touches scores its points, multiplied by the current mult.")] },
+              lines: [Lang.t("Each peg a ball touches scores its points, multiplied by the current global multiplier.")] },
             { id: "hand", title: Lang.t("Your hand"), pic: function () { return cardsPic(["bomb", "gold", "magnet", null], 1); },
               lines: [Lang.t("Tap a card to read it."),
                       Lang.t("A level always deals the same pile.")] },
             { id: "objective", title: Lang.t("Objective and stars"), pic: gaugePic,
-              lines: [Lang.t("Three stars don't end the round. Play on to the last ball to push your score.")] }
+              lines: [Lang.t("Three stars don't end the game. Play on to the last ball to push your score.")] }
           ] },
-          { key: "gates", label: Lang.t("The gates"), pages: [
-            { id: "gates", title: Lang.t("The gates"), pic: function () { return gatesPic(0, 2); },
-              lines: [Lang.t("Every ball ends up in a gate, which pays its value times the mult.")] },
-            { id: "malus", title: Lang.t("Malus gates"), lv: 4, pic: function () { return gatesPic(1, null); },
-              lines: [Lang.t("The Gold card makes malus gates pay for one wave. All in turns the edge gates into malus.")] }
+          { key: "gates", label: Lang.t("The exits"), pages: [
+            { id: "gates", title: Lang.t("The exits"), pic: function () { return gatesPic(0, 2); },
+              lines: [Lang.t("Every ball ends up in an exit. The global multiplier also applies to the exit's value.")] },
+            { id: "malus", title: Lang.t("Penalty exit"), lv: 4, pic: function () { return gatesPic(1, null); },
+              lines: [Lang.t("For one wave, the Gold card makes penalty exits pay points too, while All in turns the edge exits into penalty exits.")] }
           ] },
           { key: "cards", label: Lang.t("The cards"), pages: [
             { id: "kind-peg", title: Lang.t("Peg cards"), lv: 1, pic: function () { return cardsPic(["fire", "ice", "bumper"]); },
-              lines: [Lang.t("A peg card turns some classic pegs into special ones until the end of the round.")] },
+              lines: [Lang.t("A peg card turns some classic pegs into special ones until the end of the game.")] },
             { id: "kind-wave", title: Lang.t("Wave cards"), lv: 1, pic: function () { return cardsPic(["double", "gold", "balls"]); },
-              lines: [Lang.t("A wave card only works for the next wave.")] },
-            { id: "mult", title: Lang.t("The mult cards"), lv: 2, pic: function () { return cardsPic(["golden", "fever", "lastCall"]); },
-              lines: [Lang.t("The mult starts at 1. Every + adds to it, then every x multiplies it."),
-                      Lang.t("Most mult bonuses last one wave. A charm's bonus stays for the round.")] },
+              lines: [Lang.t("A wave card only works for the next volley of balls.")] },
+            { id: "mult", title: Lang.t("The global multiplier cards"), lv: 2, pic: function () { return cardsPic(["golden", "fever", "lastCall"]); },
+              lines: [Lang.t("The global multiplier at the top right can get extra values or additional bonuses."),
+                      Lang.t("The global multiplier applies live. Every hit and every exit is multiplied by the value at that moment."),
+                      Lang.t("Most bonuses tied to the global multiplier last only one wave. The value may therefore be reset at the end of a wave. Charms, on the other hand, last for the whole game.")] },
             { id: "kind-charm", title: Lang.t("Charms"), lv: 3, pic: function () { return cardsPic(["clover", "wildfire", "collector"]); },
-              lines: [Lang.t("A charm stays until the end of the round. A second copy stacks with the first.")] },
+              lines: [Lang.t("A charm stays until the end of the game. Additional copies can stack, along with their effects.")] },
             { id: "kind-meta", title: Lang.t("Tricks"), lv: 7, pic: function () { return cardsPic(["blueprint", "recycler"]); },
-              lines: [Lang.t("Copy plays the last card again. Recall puts it back in your hand.")] },
+              lines: [Lang.t("The Copy spell plays the last card again, whereas Recall puts that card back in your hand.")] },
             { id: "rarity", title: Lang.t("Rarity"), pic: function () { return cardsPic(["fire", "prism", "portal", "chain"], 1); },
               lines: [Lang.t("The rarer the card, the less often the pile deals it.")] }
           ] },
           { key: "pegs", label: Lang.t("Special pegs"), pages: [
             { id: "heat", title: Lang.t("Fire and ice"), lv: 1,
               pic: function () { return pegsPic([{ type: "fire", ball: { burn: 1 } }, { type: "ice", ball: { frozen: 1 } }]); },
-              rows: [mulRow("Fire or ice peg", "fire"), [Lang.t("A burning ball"), Lang.t("+0.5 peg a hit"), "#ff7a1a"],
-                     [Lang.t("A frozen ball"), Lang.t("+1 peg a hit"), "#5ad8ff"]],
-              lines: [Lang.t("A fire peg sets the ball on fire. An ice peg freezes it, and a frozen ball falls slower."),
-                      Lang.t("Fire and ice cancel each other out. With Thermal shock, they explode instead.")] },
+              rows: [mulRow("Fire or ice peg", "fire"), [Lang.t("A burning ball"), Lang.t("+0.5 classic peg a hit"), "#ff7a1a"],
+                     [Lang.t("A frozen ball"), Lang.t("+1 classic peg a hit"), "#5ad8ff"]],
+              lines: [Lang.t("A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it."),
+                      Lang.t("Fire and ice cancel each other out. Thermal shock then causes an explosion.")] },
             { id: "bumper", title: Lang.t("Bumpers and magnets"), lv: 1,
               pic: function () { return pegsPic([{ type: "bumper" }, { type: "magnet", ball: { charged: 1 } }]); },
               rows: [mulRow("Bumper", "bumper"), mulRow("Magnet", "magnet"), [Lang.t("A charged ball"), Lang.t("x2 a hit"), "#c46bff"]],
-              lines: [Lang.t("A magnet pulls balls in and charges them. A charged ball pays double and pulls the others.")] },
+              lines: [Lang.t("A magnet pulls balls in and charges them. A charged ball pays double the points and also pulls the other balls.")] },
             { id: "bomb", title: Lang.t("Bombs"), lv: 1,
-              pic: function () { return pegsPic([{ type: "bomb" }, { type: "bomb", peg: { spent: true } }]); },
+              pic: bombPic,
               rows: [mulRow("Bomb", "bomb")],
               lines: [Lang.t("A bomb goes off once a wave and blasts away every ball near it.")] },
             { id: "prism", title: Lang.t("Prisms and Midas"), lv: 2,
               pic: function () { return pegsPic([{ type: "prism", ball: {} }, { type: "golden" }]); },
               rows: [mulRow("Prism", "prism")],
               lines: [Lang.t("A prism splits a ball in two. The halves can't split again."),
-                      Lang.t("Midas adds +0.1 to the mult on every hit, until the end of the wave.")] },
+                      Lang.t("Midas adds +0.1 to the global multiplier on every hit, until the end of the wave.")] },
             { id: "lucky", title: Lang.t("Lucky pegs"), lv: 3,
               pic: function () { return pegsPic([{ type: "lucky", ball: {} }, { type: "lucky" }]); },
               lines: [Lang.t("One hit in four on a lucky peg pays ten times as much."),
-                      Lang.t("Clover doubles every chance in the game.")] },
+                      Lang.t("Clover doubles the chance of a \"lucky peg\", so it goes to one hit in two. Clover also doubles the number of golden balls.")] },
             { id: "spark", title: Lang.t("Sparks"), lv: 4, pic: sparkPic,
               rows: [mulRow("Spark", "lightning")],
               lines: [Lang.t("A spark zaps its three nearest pegs, which go off as if a ball hit them.")] },
             { id: "glass", title: Lang.t("Glass"), lv: 5,
               pic: function () { return pegsPic([{ type: "glass" }, { type: "glass", peg: { cracks: 1 } }, { type: "glass", peg: { cracks: 2 } }]); },
               rows: [mulRow("Glass", "glass")],
-              lines: [Lang.t("A glass peg pays five pegs a hit. It breaks on its third hit, for the rest of the round."),
-                      Lang.t("With Shards, each broken glass peg adds +0.5 mult.")] },
+              lines: [Lang.t("A glass peg pays five times the points of a classic peg, but it breaks completely on its third hit for the whole game."),
+                      Lang.t("With Shards, each broken glass peg adds +0.5 to the global multiplier.")] },
             { id: "copiers", title: Lang.t("Echo and mirror"), lv: 7,
-              pic: function () { return pegsPic([{ type: "echo" }, { type: "mirror" }, { type: "fire" }]); },
+              pic: copiersPic,
               lines: [Lang.t("An echo replays the last special the ball hit."),
                       Lang.t("A mirror copies the special next to it.")] },
             { id: "portal", title: Lang.t("Portals and spikes"), lv: 8,
               pic: function () { return pegsPic([{ type: "portal", ball: {} }, { type: "spike" }]); },
               rows: [mulRow("Portal", "portal"), mulRow("Spike", "spike", "#ff3355")],
               lines: [Lang.t("A portal sends the ball back up to the top, three times at most."),
-                      Lang.t("A spike destroys the ball but pays fifty pegs for it.")] }
+                      Lang.t("A spike destroys the ball but pays fifty classic pegs for it.")] }
           ] },
-          bandChapter(0, [Lang.t("Every level after the first adds four cards.")]),
+          bandChapter(0, [Lang.t("After level 1, every level adds new cards.")]),
           bandChapter(1, [Lang.t("At level 12, Recall and All in complete the set.")]),
           bandChapter(2, [fillIn(Lang.t("No new cards here. The pile now deals from all {n}."), { n: CARD_KEYS.length })]),
-          bandChapter(3, [Lang.t("From level 22, both edge gates take points away.")]),
-          bandChapter(4, [Lang.t("Both edge gates are malus on every level of the last band.")])
+          bandChapter(3, [Lang.t("From level 22, both edge exits take points away.")]),
+          bandChapter(4, [Lang.t("On every level of the last band, both edge exits are penalty exits.")])
         ];
       }
     };
@@ -2396,7 +2448,7 @@
         score: score,
         stars: stars,
         rows: [
-          { label: "Best mult",  value: fmtMult(bestMult), grade: "accent" },
+          { label: "Best global multiplier",  value: fmtMult(bestMult), grade: "accent" },
           { label: "Peg hits",   value: hits },
           { label: "Best wave",  value: bestWave },
           { label: "Best score", value: best, grade: "gold" }

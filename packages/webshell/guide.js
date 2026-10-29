@@ -63,6 +63,7 @@
 
   var W = window.__WEB__;
   if (!W) return;                       // not a web build
+  var CONFIG = W.CONFIG;                // the single-file build has no global CONFIG
   var G = W.Game && W.Game.guide;
   if (!G || !G.chapters) return;        // a game with no guide: nothing published
 
@@ -247,6 +248,11 @@
     /* the figures before the words: a table is an example too */
     if (P.rows && P.rows.length) {
       var tb = el("div", "gu-rows");
+      // a value that is a phrase rather than a figure ("the ink stops for a
+      // few seconds") is set as words: the whole table, so its values match
+      for (var w = 0; w < P.rows.length; w++) {
+        if (/[^\s\d.,:%×x+\-\/]{4,}.*\s.*[^\s\d]{3,}/.test(String(P.rows[w][1]))) { tb.className += " words"; break; }
+      }
       for (var q = 0; q < P.rows.length; q++) {
         var R = P.rows[q], tr = el("div", "gu-tr");
         tr.appendChild(text("span", "gu-tl", R[0]));
@@ -271,12 +277,12 @@
     var nav = el("div", "gu-nav");
     nav.setAttribute("data-foot", "");      // pinned to the body's foot: the "more" cue stands above it
     var prev = step(B, i, -1), next = step(B, i, 1);
-    nav.appendChild(navBtn("‹", T.prev, prev));
+    nav.appendChild(navBtn("chevronLeft", T.prev, prev));
     var toc = el("button", "btn btn-sm btn-plate gu-toc-btn", icon("list", "ico"));
     toc.appendChild(text("span", "", W.upper(T.contents)));
     toc.addEventListener("click", function () { go(null); });
     nav.appendChild(toc);
-    nav.appendChild(navBtn("›", T.next, next));
+    nav.appendChild(navBtn("chevronRight", T.next, next));
     card.body.appendChild(nav);
   }
 
@@ -287,8 +293,8 @@
     return null;
   }
 
-  function navBtn(glyph, label, id) {
-    var b = el("button", "btn btn-sm btn-icon gu-arrow", glyph);
+  function navBtn(name, label, id) {
+    var b = el("button", "btn btn-sm btn-icon gu-arrow", icon(name, "ico"));
     b.setAttribute("aria-label", label);
     if (id == null) { b.disabled = true; return b; }
     b.addEventListener("click", function () { go(id); });

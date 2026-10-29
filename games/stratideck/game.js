@@ -468,8 +468,11 @@
        one is revealed, and `hiding` is that card on its way over. */
     var hiding;
     /* THE COMMANDER OFFERS A SURRENDER ONCE A BATTLE: `offered` is that
-       offer made, whatever the answer was (HOPELESS, below). */
-    var offered;
+       offer made, whatever the answer was (HOPELESS, below). `bitter` is
+       that offer REFUSED: the battle is fought to the last card, and every
+       card that falls from then on is lost or wounded (`fall`). `slain` is
+       the ids of the cards it cost for good. */
+    var offered, bitter, slain;
     /* THE ENEMY'S REPLY: after every turn the camp may slide one of its
        soldiers one cell, or pass. `march` is that move while it plays. */
     var march;
@@ -1053,7 +1056,7 @@
       kills = 0; ties = 0; losses = 0; precise = 0; scouted = 0; trapsCleared = 0;
       selected = -1; drag = null; turn = null; march = null; ended = false; outcome = null; tAnim = 0;
       mood = "neutral"; lastFoe = null; lastWon = null; hiding = null;
-      flagTaken = false; offered = false;
+      flagTaken = false; offered = false; bitter = false; slain = [];
       HUD.setScoreNow(0);
       showCounts();
       Fx.reset();
@@ -1474,6 +1477,26 @@
       return true;
     }
 
+    /* TO THE LAST CARD. Once the commander's surrender is refused
+       (offerSurrender), a fall is no longer only out of this battle: a card
+       of the barracks that loses its fight, falls with its foe or walks onto
+       a trap is LOST for good one time in `LAST_STAND` (`slain`, struck off
+       the roster by the barracks) and WOUNDED otherwise — a bed in the
+       infirmary, or the card lost when there is none (`wound`). A conscript
+       has no id and nothing to lose. `by` is what it fell to, whose tier gap
+       sets the stay; a trap has none. */
+    var LAST_STAND = 0.5;
+    function fall(c, by) {
+      if (!bitter || !c || !c.id) return;
+      if (Math.random() < LAST_STAND) {
+        slain.push(c.id);
+        Notify.say("Card lost", { sub: cardName(c), kind: "loss", guide: "camp-surrender" });
+        return;
+      }
+      var gap = by && by.tier != null ? Math.max(1, Math.abs(by.tier - c.tier)) : 1;
+      if (wound(c, null, gap)) Notify.say("Wounded", { sub: cardName(c), kind: "warn", icon: "heart", guide: "camp-surrender" });
+    }
+
     function mult() { return Math.min(STREAK_CAP, 1 + STREAK_STEP * Math.max(0, streak - 1)); }
     /* What the tier gap is worth: beating something better equipped pays more
        than walking over a conscript, clamped both ways so it stays a nudge
@@ -1519,12 +1542,11 @@
         Fx.shake(6, 0.2);
       } else if (v.kind === "stray") {
         strayed.push(a);
-        Sound.clip("lose", 0.5, 0.8);
+        Sound.clip("lose", 0.5, 0.7);
         Pop.show("alert", { word: "Out of the battle", sub: cardName(a) });
       } else if (v.kind === "stun") {
         a.stun = true;
         hand[T.i] = a;
-        Sound.clip("tie", 0.55, 0.7);
         Fx.flash("#9b6bff", 0.25, 2.5);
       } else if (v.kind === "spell") {
         spellLands(T);
@@ -1552,11 +1574,10 @@
         Pop.show("score", { word: "The spell hits no one" });
         return;
       }
-      Sound.clip(v.res === "tie" ? "tie" : "lose", 0.6, 0.9);
       Fx.shake(9, 0.25);
-      if (v.deadB) { lostCards.push(b); hand[v.ally] = null; losses++; }
+      if (v.deadB) { lostCards.push(b); hand[v.ally] = null; losses++; fall(b, a); }
       else if (v.hurtB) wound(b, v.ally, Math.abs(a.tier - b.tier));
-      if (v.deadA) { lostCards.push(a); losses++; }
+      if (v.deadA) { lostCards.push(a); losses++; fall(a, b); }
       else { hand[T.i] = a; if (v.hurtA) wound(a, T.i, Math.abs(a.tier - b.tier)); }
       var fell = v.deadA && v.deadB ? "Both fall"
                : v.deadB ? "An ally falls"
@@ -1624,6 +1645,7 @@
         objectHit(T, O);
       } else if (v.kind === "trap") {
         lostCards.push(a);
+        fall(a, null);
         losses++; streak = 0;
         lastWon = false; mood = "happy";
         Sound.clip("trap", 0.7, 1);
@@ -1688,13 +1710,15 @@
         }
       } else if (v.kind === "lose") {
         lostCards.push(a);
+        fall(a, foe);
         losses++; streak = 0;
         lastWon = false; mood = "happy";
-        Sound.clip("lose", 0.6, 1);
+        Sound.clip("lose", 0.85, 1.7);
         Fx.shake(10, 0.28); Fx.flash(RED, 0.25, 2.5);
         Pop.show("alert", { word: cardName(foe, "red") + " " + Lang.t("holds") });
       } else {                                              // tie: both fall
         lostCards.push(a);
+        fall(a, foe);
         ties++; streak = 0;
         pts = TIE * foe.rank;
         grid[T.r][T.c] = null;
@@ -1812,8 +1836,10 @@
        A battle is won two ways: the flag is taken, or every soldier of the
        camp is beaten (the camp emptied is the second one finished). When
        the army that is left can do neither, the camp's commander says so
-       and offers a surrender (packages/webshell/army.js, `surrender`) —
-       the player who refuses plays on to the end screen, but knowing.
+       and offers a surrender (packages/webshell/army.js, `surrender`), and
+       neither answer is free: surrendering hands the commander one card of
+       the army still standing, refusing plays on to the end screen with
+       every fall from then on a real one (`fall`).
 
        THE TEST IS OPTIMISTIC ON PURPOSE, so an offer is never made on a
        battle that could still be won: every card that can go out counts
@@ -1880,13 +1906,30 @@
 
     /* The offer, where there is a barracks to make it: the commander's face
        turns smug, and the web shell asks. A playable has nobody to ask and
-       plays the battle out as it always did. */
+       plays the battle out as it always did. The card is handed what each
+       answer needs: the cards still standing (the price of a surrender, by
+       id — a conscript is nobody's to hand over), the ledger (a surrender
+       still owes the barracks its wounds) and the refusal. */
     function offerSurrender(why) {
       var AR = window.__ARMY__;
       if (!AR || !AR.surrender) return;
       offered = true;
       mood = "happy";
-      AR.surrender(why);
+      AR.surrender(why, {
+        alive: standing(),
+        ledger: function () { var l = ledger(); l.won = false; return l; },
+        fightOn: function () {
+          bitter = true;
+        }
+      });
+    }
+    function standing() {
+      var out = [], c, i;
+      for (i = 0; i < army0.length; i++) {
+        c = army0[i];
+        if (c.id && lostCards.indexOf(c) < 0 && strayed.indexOf(c) < 0) out.push(c.id);
+      }
+      return out;
     }
 
     function enemyTurn() {
@@ -3355,7 +3398,7 @@
       for (k = 0; k < refused.length; k++) if (refused[k].id) dead.push(refused[k].id);
       var played = [];
       for (k in used) if (used.hasOwnProperty(k)) played.push(k);
-      return { hurt: out, gaps: gaps, dead: dead, met: met.slice(0), used: played,
+      return { hurt: out, gaps: gaps, dead: dead, slain: slain.slice(0), met: met.slice(0), used: played,
                captives: best.slice(0, 8).map(function (q) { return { r: q.r, t: q.t }; }) };
     }
 
@@ -3409,7 +3452,7 @@
         /* The barracks reads this and nothing else of the round
            (packages/webshell/army.js). `won` is what decides whether a
            prisoner is offered at all. */
-        army: { won: won, hurt: led.hurt, dead: led.dead, met: led.met, captives: led.captives, used: led.used },
+        army: { won: won, hurt: led.hurt, gaps: led.gaps, dead: led.dead, slain: led.slain, met: led.met, captives: led.captives, used: led.used },
         track: { score: score, kills: kills, losses: losses, ties: ties, scouted: scouted, traps: trapsCleared,
                  objects: smashed, strayed: strayed.length, won: won }
       });
@@ -3823,6 +3866,16 @@
         { id: "camp-promotion", title: Lang.t("Promotion"),
           pic: function () { return gBox("", [gCard({ rank: 5, tier: 2 }, 140), gWord("›"), gCard({ rank: 5, tier: 3, base: 2 }, 140)]); },
           lines: [Lang.t("A victory can raise each card that served by one tier, in a battle, on a mission or at a post.")] },
+        { id: "camp-surrender", title: Lang.t("Surrender"),
+          pic: function () {
+            var im = gArt("enemyHappy", "cd-gfoe") || gCard(null, 140, "mid", "red");
+            return gBox("", [im, gWord("›"), gCard({ rank: 6, tier: 2 }, 130)]);
+          },
+          rows: [[Lang.t("Surrender"), Lang.t("1 card handed over")],
+                 [Lang.t("Each card that falls after"), Lang.t("Lost 1 time in 2")]],
+          lines: [Lang.t("When the battle can no longer be won, the enemy commander offers your surrender."),
+                  Lang.t("Surrender, and you hand him one card of your choice. The wounds already taken still count."),
+                  Lang.t("Fight on, and every card that falls is lost or wounded.")] },
         { id: "camp-events", title: Lang.t("Life in the camp"),
           pic: function () { return gArt("backgroundHome", "cd-gimg") || gBox("", [gCard({ rank: 4, tier: 1 }, 120)]); },
           lines: [Lang.t("Every few hours, something good or bad happens in the camp. You hear of it at the village."),

@@ -432,6 +432,148 @@
       "at": "2026-09-30"
     }
   },
+  "bridgessa": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-01",
+      "hash": "f9f63615cfb3",
+      "at": "2026-10-29"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-02",
+      "hash": "a5aff2eefb15",
+      "at": "2026-10-29"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-03",
+      "hash": "b86ea07b85c4",
+      "at": "2026-10-29"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-04",
+      "hash": "af146e94931e",
+      "at": "2026-10-29"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-05",
+      "hash": "97ae5cb91356",
+      "at": "2026-10-29"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-06",
+      "hash": "aea31d380b34",
+      "at": "2026-10-29"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-07",
+      "hash": "96f3840d71f1",
+      "at": "2026-10-29"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-08",
+      "hash": "535b3d2c339e",
+      "at": "2026-10-29"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-09",
+      "hash": "5e9537037827",
+      "at": "2026-10-29"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-10",
+      "hash": "41c6698a93ec",
+      "at": "2026-10-29"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-11",
+      "hash": "23d47d64a59b",
+      "at": "2026-10-29"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-12",
+      "hash": "efbef28b7107",
+      "at": "2026-10-29"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-13",
+      "hash": "7738e336a495",
+      "at": "2026-10-29"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-14",
+      "hash": "9391049935a2",
+      "at": "2026-10-29"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-15",
+      "hash": "ccea68061cf2",
+      "at": "2026-10-29"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-16",
+      "hash": "27002768646d",
+      "at": "2026-10-29"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-17",
+      "hash": "b1675af85400",
+      "at": "2026-10-29"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-18",
+      "hash": "9a3ea7c96db7",
+      "at": "2026-10-29"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-19",
+      "hash": "342bb65eeb65",
+      "at": "2026-10-29"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "bridgessa-sticker-20",
+      "hash": "f785d89c7d6b",
+      "at": "2026-10-29"
+    }
+  },
   "chainring": {
     "sticker01": {
       "verdict": "ok",
@@ -716,6 +858,148 @@
       "at": "2026-09-27"
     }
   },
+  "foldiers": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-01",
+      "hash": "636ed2cda8f4",
+      "at": "2026-10-29"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-02",
+      "hash": "709b457d196f",
+      "at": "2026-10-29"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-03",
+      "hash": "5252fa93cd11",
+      "at": "2026-10-29"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-04",
+      "hash": "d818256c0725",
+      "at": "2026-10-29"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-05",
+      "hash": "511b8a587f0a",
+      "at": "2026-10-29"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-06",
+      "hash": "9cf121145000",
+      "at": "2026-10-29"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-07",
+      "hash": "cbe6f5f6c924",
+      "at": "2026-10-29"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-08",
+      "hash": "472513375b2e",
+      "at": "2026-10-29"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-09",
+      "hash": "12709c79a07c",
+      "at": "2026-10-29"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-10",
+      "hash": "a09b876d097c",
+      "at": "2026-10-29"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-11",
+      "hash": "d0f1acb3f6ab",
+      "at": "2026-10-29"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-12",
+      "hash": "79deafac7859",
+      "at": "2026-10-29"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-13",
+      "hash": "6f79ea6ceb8f",
+      "at": "2026-10-29"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-14",
+      "hash": "b9fd2ad5146f",
+      "at": "2026-10-29"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-15",
+      "hash": "175d6b033bda",
+      "at": "2026-10-29"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-16",
+      "hash": "69a127469029",
+      "at": "2026-10-29"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-17",
+      "hash": "c2bae842b47a",
+      "at": "2026-10-29"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-18",
+      "hash": "1936f70081db",
+      "at": "2026-10-29"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-19",
+      "hash": "457bef1f3f7f",
+      "at": "2026-10-29"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "foldiers-sticker-20",
+      "hash": "1ec224402737",
+      "at": "2026-10-29"
+    }
+  },
   "gearball": {
     "sticker01": {
       "verdict": "ok",
@@ -856,6 +1140,432 @@
       "cut": "gearball-sticker-20",
       "hash": "986992fe58d3",
       "at": "2026-09-27"
+    }
+  },
+  "gelatile": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-01",
+      "hash": "31233dd7a643",
+      "at": "2026-10-29"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-02",
+      "hash": "d27a6152b5f3",
+      "at": "2026-10-29"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-03",
+      "hash": "f4058e4610cf",
+      "at": "2026-10-29"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-04",
+      "hash": "3820b952998f",
+      "at": "2026-10-29"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-05",
+      "hash": "8b412fe8f0a0",
+      "at": "2026-10-29"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-06",
+      "hash": "2e2b7a78fef0",
+      "at": "2026-10-29"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-07",
+      "hash": "bf7184c1c388",
+      "at": "2026-10-29"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-08",
+      "hash": "116db4f8cffb",
+      "at": "2026-10-29"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-09",
+      "hash": "14da319a3f94",
+      "at": "2026-10-29"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-10",
+      "hash": "68612583b14e",
+      "at": "2026-10-29"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-11",
+      "hash": "45dc391ea1f5",
+      "at": "2026-10-29"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-12",
+      "hash": "42544eb89363",
+      "at": "2026-10-29"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-13",
+      "hash": "501c60362934",
+      "at": "2026-10-29"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-14",
+      "hash": "91c9a1f151c5",
+      "at": "2026-10-29"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-15",
+      "hash": "4c3adba51311",
+      "at": "2026-10-29"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-16",
+      "hash": "2581d3142a8e",
+      "at": "2026-10-29"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-17",
+      "hash": "58728891dfc7",
+      "at": "2026-10-29"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-18",
+      "hash": "d03fb6a32273",
+      "at": "2026-10-29"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-19",
+      "hash": "eec84ac1ab6d",
+      "at": "2026-10-29"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "gelatile-sticker-20",
+      "hash": "eb4e83556ddc",
+      "at": "2026-10-29"
+    }
+  },
+  "grudgeon": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-01",
+      "hash": "ae799a062134",
+      "at": "2026-10-29"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-02",
+      "hash": "89e82eddd8cc",
+      "at": "2026-10-29"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-03",
+      "hash": "86e601544ee3",
+      "at": "2026-10-29"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-04",
+      "hash": "5f4ff0e74090",
+      "at": "2026-10-29"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-05",
+      "hash": "5fddf73c0830",
+      "at": "2026-10-29"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-06",
+      "hash": "292c9d051afb",
+      "at": "2026-10-29"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-07",
+      "hash": "9950f1dfb9cf",
+      "at": "2026-10-29"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-08",
+      "hash": "ea768100f84d",
+      "at": "2026-10-29"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-09",
+      "hash": "71007bbccd78",
+      "at": "2026-10-29"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-10",
+      "hash": "19181e043e5e",
+      "at": "2026-10-29"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-11",
+      "hash": "f76a549c68a1",
+      "at": "2026-10-29"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-12",
+      "hash": "666a3b4ce710",
+      "at": "2026-10-29"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-13",
+      "hash": "b571475c2fae",
+      "at": "2026-10-29"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-14",
+      "hash": "3b5f438b3519",
+      "at": "2026-10-29"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-15",
+      "hash": "b5606775818e",
+      "at": "2026-10-29"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-16",
+      "hash": "0b7c5d0c4f04",
+      "at": "2026-10-29"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-17",
+      "hash": "8369bb18d7db",
+      "at": "2026-10-29"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-18",
+      "hash": "a6ad5d54beac",
+      "at": "2026-10-29"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-19",
+      "hash": "74b9cbceafd2",
+      "at": "2026-10-29"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "grudgeon-sticker-20",
+      "hash": "59515e0c435f",
+      "at": "2026-10-29"
+    }
+  },
+  "holepocalypse": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-01",
+      "hash": "85f041d36f5f",
+      "at": "2026-10-29"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-02",
+      "hash": "3cb4b1813710",
+      "at": "2026-10-29"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-03",
+      "hash": "d8273b544960",
+      "at": "2026-10-29"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-04",
+      "hash": "f0338ce75368",
+      "at": "2026-10-29"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-05",
+      "hash": "4fcb60911eda",
+      "at": "2026-10-29"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-06",
+      "hash": "f431a653e0f2",
+      "at": "2026-10-29"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-07",
+      "hash": "cf0076694190",
+      "at": "2026-10-29"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-08",
+      "hash": "5766330b2080",
+      "at": "2026-10-29"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-09",
+      "hash": "86d8b4d74ab5",
+      "at": "2026-10-29"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-10",
+      "hash": "d7d1412a1188",
+      "at": "2026-10-29"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-11",
+      "hash": "7cb3c04a31c7",
+      "at": "2026-10-29"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-12",
+      "hash": "fc48acc23c0c",
+      "at": "2026-10-29"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-13",
+      "hash": "f22043411e44",
+      "at": "2026-10-29"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-14",
+      "hash": "0b47dbb39fd3",
+      "at": "2026-10-29"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-15",
+      "hash": "77668604d52c",
+      "at": "2026-10-29"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-16",
+      "hash": "f2b8e302ca38",
+      "at": "2026-10-29"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-17",
+      "hash": "5e99b6ce6ae5",
+      "at": "2026-10-29"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-18",
+      "hash": "ad353ccd75ee",
+      "at": "2026-10-29"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-19",
+      "hash": "027adaecfd5d",
+      "at": "2026-10-29"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "holepocalypse-sticker-20",
+      "hash": "f03aba11ab19",
+      "at": "2026-10-29"
     }
   },
   "marshmelt": {

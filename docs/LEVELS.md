@@ -399,25 +399,25 @@ the screen. The bottom-left corner is free in twelve of the thirteen and
 mirrors MENU / OPTIONS in the opposite one, which is what lets it be read at
 size.
 
-The two corners are therefore the SHELL's, and a game anchors no instrument and
-no word in either. Two games had to answer for it:
+The bottom edge is therefore the SHELL's: one foot bar, the pill and its "!"
+on the left, MENU / GUIDE / HELP / OPTIONS on the right (see
+[ENGINE.md](ENGINE.md), *The foot bar is the shell's*), and a game anchors no
+instrument and no word in it — `Layout.foot` is where its instruments stop.
+Five games had to answer for it:
 
-| game             | what was in the corner                            | what moved                                                                                                               |
-| ---------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `games/arcider`  | the shield rail down the left flank, and the km/h | the game: both to the right flank, above MENU / OPTIONS                                                                  |
-| `games/slipdeck` | the five-card hand, edge to edge, and its worth   | the game: on the web its table stops 72 px above the bottom (`WEB_FOOT`, v1.4.0); it used `--lv-hud-bottom:392px` before |
-
-`--lv-hud-left` and `--lv-hud-bottom` are the escape, and they are a SKIN's to
-set.
+| game                  | what was down there                               | what moved                                                                       |
+| --------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `games/arcider`       | the shield rail down the left flank, and the km/h | the game: both to the right flank                                                |
+| `games/slipdeck`      | the five-card hand, edge to edge, and its worth   | the game: on the web its table stops 72 px above the bottom (`WEB_FOOT`, v1.4.0) |
+| `games/echomaze`      | the cannon and its magazine                       | the game: a compact cannon standing on `Layout.foot`                             |
+| `games/blight`        | the launcher, the swap ring and the next bubble   | the game: one launcher holding the next bubble and the swap, on `Layout.foot`    |
+| `games/holepocalypse` | the bag's row of upcoming balls                   | the game: a column on the left flank, above `Layout.foot`                        |
 
 **The pill carries the round's "!"**, just to its right: the wallet band's
 notification log (packages/webshell/meta.js, section 11c), since the band is
 down over a round. It is a child of `#lv-hud`, so it goes wherever the pill
-goes, and it shows once something has been said. A game whose own instrument
-stands right of the pill stands it on top instead, with
-`--lv-log-left:0; --lv-log-bottom:calc(100% + 10px)` in its SKIN — `games/blight`
-(the launcher) and `games/echomaze` (the cannon) are the two. Read the corner off a real frame before writing a number
-(`assets/image/screen/<slug>-NN.jpg` is the web build, not the playable).
+goes, and it shows once something has been said. There is no escape for
+either: the bar is one shape in every game.
 
 What it reads is `Game.levelProgress()` when the game has one and the HUD score
 otherwise — **the same rule as `levelScore`**, so a level can never be scored on
@@ -1251,8 +1251,8 @@ follows the corners.
   Promoting them to `CONFIG.dial` is what a map level setting the clock's
   starting level would need, and it is not done.
 
-  radiam is also the only game that declares `web.modes` at all, and it now
-  declares **one**: `["eclipse"]` arms `CONFIG.mode` and adds nothing to the
+  radiam was the first game to declare `web.modes` (gelatile now declares
+  three, its two extra modes as village houses), and it declares **one**: `["eclipse"]` arms `CONFIG.mode` and adds nothing to the
   menu, so the map is the only way into a round. Its timed dial is still in the
   build and still reachable with `?mode=` for a bench — two ways into a game is
   one too many for a player, and the map is the better one.

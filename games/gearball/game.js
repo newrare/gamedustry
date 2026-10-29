@@ -3385,21 +3385,22 @@
        swapped in and put back. The guide may open before any round, so no
        picture reads L, the wheel or a gate of the machine. A page's level is
        the one the climb first deals the idea on (LAYOUTS, CARD_FAMS). */
-    function machinePic(W, H, sc, x0, y0, paint) {
+    function machinePic(W, H, sc, x0, y0, paint, biome) {
       var cv = document.createElement("canvas"), k = view.dpr || 1;
-      var keep = { ctx: ctx, S: S, sprites: sprites, cog: cogCv, wheel: wheelCv, parts: parts, chargeT: chargeT,
+      var keep = { t: t, ctx: ctx, S: S, sprites: sprites, cog: cogCv, wheel: wheelCv, parts: parts, chargeT: chargeT,
                    marbles: marbles, L: L, dh: TINT.dh, ks: TINT.ks, key: TINT.key, memo: tintMemo,
                    steel: C.steel, steelD: C.steelD, steelL: C.steelL };
       cv.width = Math.round(W * k); cv.height = Math.round(H * k);
       cv.style.width = W + "px"; cv.style.height = H + "px";
       try {
-        setBiome(0);                     // the first biome's violet steel, whatever round lies under the guide
+        setBiome(biome || 0);            // the biome's own steel (the first, violet, unless told), whatever round lies under the guide
+        t = 0;                           // the clock the painters pulse on, so a picture is always the same one
         S = sc; sprites = {}; parts = []; chargeT = 0;
         buildMarbles(sc * k); buildCog(sc * k);
         ctx = cv.getContext("2d"); ctx.scale(k * sc, k * sc); ctx.translate(-x0, -y0);
         paint(sc * k);
       } finally {
-        ctx = keep.ctx; S = keep.S; sprites = keep.sprites; cogCv = keep.cog; wheelCv = keep.wheel;
+        t = keep.t; ctx = keep.ctx; S = keep.S; sprites = keep.sprites; cogCv = keep.cog; wheelCv = keep.wheel;
         parts = keep.parts; chargeT = keep.chargeT; marbles = keep.marbles; L = keep.L;
         TINT.dh = keep.dh; TINT.ks = keep.ks; TINT.key = keep.key; tintMemo = keep.memo;
         C.steel = keep.steel; C.steelD = keep.steelD; C.steelL = keep.steelL;
@@ -3579,21 +3580,106 @@
         drawMarble(picMarble(w, nearestD(w, 270, 112), "k"));
       });
     }
+    /* A switch of the guide's machines at (x, y), its two `ways` [left, right]
+       (lines) and the `dir` it lies at: the object paintWays and paintSwitch read. */
+    function picSw(x, y, ways, dir) {
+      var p = at(ways[dir], 30, {});
+      return { x: x, y: y, dir: dir, kb: dir, spin: 0.4, flash: 0, snap: 0, ang: Math.atan2(p.y - y, p.x - x) };
+    }
+    // Every switch of a picture, ways lit where `lit(ch)` says; `ss` are [x, y, left, right, dir].
+    function picSwitches(ss, lit) {
+      var o = [], i;
+      for (i = 0; i < ss.length; i++) o.push(picSw(ss[i][0], ss[i][1], [ss[i][2], ss[i][3]], ss[i][4]));
+      for (i = 0; i < ss.length; i++) paintWays(o[i], [ss[i][2], ss[i][3]], lit);
+      for (i = 0; i < ss.length; i++) paintSwitch(o[i], lit(ss[i][4] ? ss[i][3] : ss[i][2]), false);
+    }
+    // The arrivals under a picture, at the `xs`, half a mouth `w` wide; the one at index `sock` takes the electric marble.
+    function picArrivals(xs, w, sock) {
+      for (var i = 0; i < xs.length; i++) paintArrival(picBox(xs[i], i === sock), i === sock, w);
+    }
+    // WORKSHOP: a single switch, one line in and two out.
+    function workshopPic() {
+      return machinePic(480, 300, 0.72, 0, 760, function () {
+        var top = picLine(T(333, 765).to(333, 850)),
+            left = picLine(T(333, 850).to(290, 905).to(215, 950).to(200, 1010).to(200, RAIL_END)),
+            right = picLine(T(333, 850).to(376, 905).to(451, 950).to(466, 1010).to(466, RAIL_END));
+        picRails([top, left, right]);
+        picSwitches([[333, 850, left, right, 1]], function (ch) { return ch === right; });
+        drawMarble(picMarble(top, 40, "e"));
+        picArrivals([200, 466], 50, 1);
+      }, 0);
+    }
+    // GLASSWORKS: two switches, the left way a glass tube down to the second one.
+    function glassworksPic() {
+      return machinePic(480, 330, 0.72, 0, 720, function () {
+        var top = picLine(T(400, 725).to(400, 790)),
+            l0 = picLine(T(400, 790).to(350, 825).glass(1).to(290, 872).to(250, 905).glass(0).to(232, 930)),
+            r0 = picLine(T(400, 790).to(455, 840).to(505, 900).to(520, 980).to(520, RAIL_END)),
+            l1 = picLine(T(232, 930).to(190, 985).to(172, 1030).to(170, RAIL_END)),
+            r1 = picLine(T(232, 930).to(275, 985).to(298, 1030).to(300, RAIL_END)), chs = [top, l0, r0, l1, r1];
+        picRails(chs);
+        picSwitches([[400, 790, l0, r0, 0], [232, 930, l1, r1, 1]], function (ch) { return ch === l0 || ch === r1; });
+        marbles = [picMarble(l0, nearestD(l0, 305, 862), "e")];
+        drawMarble(marbles[0]);
+        picOver(chs);
+        L = { props: [] }; drawCovered();
+        picArrivals([170, 300, 520], 50, 1);
+      }, 1);
+    }
+    // MAELSTROM: four switches stepping down the machine, each handing a marble to an arrival or on to the next.
+    function maelstromPic() {
+      return machinePic(480, 330, 0.62, -67, 640, function () {
+        var top = picLine(T(150, 745).to(150, 800)), chs = [top], ss = [], i, x, y, lf, rt, ax = [100, 210, 320, 430, 540];
+        for (i = 0; i < 4; i++) {
+          x = 150 + 110 * i; y = 800 + 50 * i;
+          lf = picLine(T(x, y).to(x - 20, y + 60).to(ax[i] + 4, 1030).to(ax[i], RAIL_END));
+          rt = i < 3 ? picLine(T(x, y).to(x + 55, y + 18).to(x + 110, y + 50))
+                     : picLine(T(x, y).to(x + 45, y + 40).to(x + 60, 1010).to(ax[4], RAIL_END));
+          chs.push(lf, rt); ss.push([x, y, lf, rt, i < 3 ? 1 : 0]);
+        }
+        picRails(chs);
+        picSwitches(ss, function (ch) { return ch === ss[0][3] || ch === ss[1][3] || ch === ss[2][3] || ch === ss[3][2]; });
+        drawMarble(picMarble(top, 22, "e"));
+        picArrivals(ax, 44, 3);
+      }, 2);
+    }
+    // DEPTHS: two lines cross; the right one dives under the left through a pipe mouth and comes out of another.
+    function depthsPic() {
+      return machinePic(480, 330, 0.72, 0, 720, function () {
+        var top = picLine(T(333, 725).to(333, 790)),
+            l = picLine(T(333, 790).to(260, 840).to(240, 890).to(280, 930).to(340, 960).to(420, 1000).to(430, 1030).to(430, RAIL_END)),
+            r = picLine(T(333, 790).to(410, 840).to(430, 890).under().to(380, 935).to(300, 975).to(240, 1010).over().to(205, 1040).to(200, RAIL_END)),
+            chs = [top, l, r];
+        picRails(chs);
+        picSwitches([[333, 790, l, r, 1]], function (ch) { return ch === r; });
+        drawMarble(picMarble(r, nearestD(r, 418, 862), "e"));
+        drawMarble(picMarble(l, nearestD(l, 245, 898), "c"));
+        picArrivals([200, 430], 50, 0);
+      }, 3);
+    }
+    // CLOCKWORK: six switches chained, every one handing a marble to an arrival or on down the chain.
+    function clockworkPic() {
+      return machinePic(480, 340, 0.62, -85, 650, function () {
+        var top = picLine(T(110, 725).to(110, 780)), chs = [top], ss = [], i, x, y, lf, rt, ax = [80, 154, 228, 302, 376, 450, 524];
+        for (i = 0; i < 6; i++) {
+          x = ax[i] + 32; y = 780 + 40 * i;
+          lf = picLine(T(x, y).to(x - 20, y + 40).to(ax[i] + 2, 1030).to(ax[i], RAIL_END));
+          rt = i < 5 ? picLine(T(x, y).to(x + 38, y + 16).to(x + 74, y + 40))
+                     : picLine(T(x, y).to(x + 30, y + 40).to(ax[6] - 4, 1030).to(ax[6], RAIL_END));
+          chs.push(lf, rt); ss.push([x, y, lf, rt, 1]);
+        }
+        picRails(chs);
+        picSwitches(ss, function (ch) { var j; for (j = 0; j < 6; j++) if (ch === ss[j][3]) return true; return false; });
+        drawMarble(picMarble(top, 22, "e"));
+        picArrivals(ax, 32, 6);
+      }, 4);
+    }
+    var BIOME_PICS = [workshopPic, glassworksPic, maelstromPic, depthsPic, clockworkPic];
     function cardsPic(ids, w) {
       var box = document.createElement("div"), i;
       box.className = "gb-gcards";
       for (i = 0; i < ids.length; i++) box.appendChild(cardNode(ids[i], { w: w || 250 }));
       return box;
-    }
-    // A biome's painted hall, cut to a band.
-    function scenePic(b) {
-      var src = (CONFIG.art || {})[CONFIG.biomes[b].scene], n;
-      if (!src) return null;
-      n = document.createElement("div");
-      n.className = "gb-gscene";
-      n.style.width = "480px"; n.style.height = "230px";
-      n.style.backgroundImage = 'url("' + src + '")';
-      return n;
     }
     // what each biome's machines bring, in one line
     var BIOME_LINES = [
@@ -3609,7 +3695,7 @@
     function biomeChapter(b) {
       var B = CONFIG.biomes[b], lv = b * 6 + 1;
       return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
-        { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: function () { return scenePic(b); },
+        { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: BIOME_PICS[b],
           lines: [Lang.t(BIOME_LINES[b])] },
         { id: "cards-" + B.name.toLowerCase(), title: Lang.t("Biome cards"), lv: lv,
           pic: function () { return cardsPic(BIOME_CARDS[b], 230); },

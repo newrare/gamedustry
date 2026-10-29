@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>2048 targets - prototype</title>
+<!--
+  Prototype: how merge-2048.html marks the CELLS a power will strike on the
+  next move (fireball, smoke, comet, bolt, switch), so the player reads that
+  the grid is aimed at, not the tile standing there.
+
+  Round 3, the pick of two rounds of ten: Gutter lines (a ring that lights
+  only the gutters it crosses) on Breathing slot's slow beat. Everything the
+  target draws (tint, ring, border, the switch's link, the power's badge)
+  lies UNDER the tiles: the badge sits in the free space of the gutter
+  crossing at the target's top-right corner.
+
+  Static: the target with a tile standing on it and the same target empty,
+  side by side, nothing moving. Moving: tiles walk through the target.
+  Keys: T next target type, M next view, [ ] palette.
+-->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
+  canvas { display: block; width: 100vw; height: 100vh; touch-action: none;
+           -webkit-user-select: none; user-select: none; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------- tunables
+var N = 4;
+var PING_PERIOD = 2.1;   // one ring every PING_PERIOD seconds (Breathing slot's beat)
+var PING_REACH = 1.4;    // how far the ring travels, in cells
+var PING_ALPHA = 0.6;    // ring opacity as it leaves the target
+var PING_WIDTH = 1.6;    // ring width, in gutters (it is clipped to the gutters)
+var TINT = 0.14;         // the target cell's floor tint
+var BORDER = 0.5;        // the border in the gutter around the target
+var BADGE = 0.14;        // badge radius, in cells: what the gutter crossing holds
+var CYCLE = 2.6;         // moving view: the tiles slide one way, then back
+var SLIDE_T = 0.16;
+var FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+var FONT_K = [0.52, 0.5, 0.42, 0.34, 0.28, 0.24];
+
+function col(x) { var o = []; for (var i = 0; i < N; i++) o.push([x, i]); return o; }
+function row(y) { var o = []; for (var i = 0; i < N; i++) o.push([i, y]); return o; }
+var TYPES = [
+  { key: 'fire',   label: 'Fire',   color: '#ff7a2a', ink: '#2a0d00', cells: [[2, 1]] },
+  { key: 'purple', label: 'Purple', color: '#b04dff', ink: '#ffffff', cells: [[1, 2]] },
+  { key: 'comet',  label: 'Comet',  color: '#5fe6ff', ink: '#00262b', cells: [[1, 1], [2, 1], [1, 2], [2, 2]] },
+  { key: 'black',  label: 'Black',  color: '#4a3f57', ink: '#ffffff', cells: [[2, 2], [3, 2], [2, 3], [3, 3]] },
+  { key: 'boltV',  label: 'Bolt ↕', color: '#ffd21f', ink: '#2b2300', cells: col(2) },
+  { key: 'boltH',  label: 'Bolt ↔', color: '#ffd21f', ink: '#2b2300', cells: row(1) },
+  { key: 'switch', label: 'Switch', color: '#2fd6b4', ink: '#00261f', cells: [[0, 1], [3, 2]], pair: true }
+];
+
+// Static views: this board, with every target cell filled ('with') or
+// emptied ('empty'). A target cell the board leaves empty gets an 8.
+var BASE = [[0, 0, 2], [1, 0, 4], [3, 0, 8], [0, 1, 16], [2, 1, 32], [1, 2, 64], [3, 2, 2], [0, 3, 128], [2, 3, 4], [3, 3, 16]];
+// Moving view: the same tiles left-packed, then right-packed.
+var SCENE = [
+  { v: 2,   a: [0, 0], b: [1, 0] }, { v: 4,  a: [1, 0], b: [2, 0] }, { v: 8, a: [2, 0], b: [3, 0] },
+  { v: 16,  a: [0, 1], b: [2, 1] }, { v: 32, a: [1, 1], b: [3, 1] },
+  { v: 64,  a: [0, 2], b: [3, 2] },
+  { v: 128, a: [0, 3], b: [2, 3] }, { v: 2,  a: [1, 3], b: [3, 3] }
+];
+
+// ------------------------------------------------------------------ colour
+function labToLin(L, a, b) {
+  var l_ = L + 0.3963377774 * a + 0.2158037573 * b, m_ = L - 0.1055613458 * a - 0.0638541728 * b, s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  var l = l_ * l_ * l_, m = m_ * m_ * m_, s = s_ * s_ * s_;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+          -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+}
+function inGamut(c) { return c[0] >= -0.001 && c[0] <= 1.001 && c[1] >= -0.001 && c[1] <= 1.001 && c[2] >= -0.001 && c[2] <= 1.001; }
+function enc(x) { x = Math.max(0, Math.min(1, x)); return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055; }
+function oklch(L, C, h) {
+  L = Math.max(0, Math.min(1, L));
+  var hr = h * Math.PI / 180, ca = Math.cos(hr), sa = Math.sin(hr), lin = labToLin(L, C * ca, C * sa);
+  if (!inGamut(lin)) {
+    var lo = 0, hi = C;
+    for (var i = 0; i < 18; i++) { var mid = (lo + hi) / 2; if (inGamut(labToLin(L, mid * ca, mid * sa))) lo = mid; else hi = mid; }
+    lin = labToLin(L, lo * ca, lo * sa);
+  }
+  return [enc(lin[0]) * 255, enc(lin[1]) * 255, enc(lin[2]) * 255];
+}
+function css(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + (a == null ? 1 : a) + ')'; }
+function hex(h) { return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+var PALETTES = [
+  { name: 'Classic', h: [88, 22],   L: [0.94, 0.56], C: [0.045, 0.2] },
+  { name: 'Lagoon',  h: [185, 258], L: [0.94, 0.45], C: [0.05, 0.16] },
+  { name: 'Forest',  h: [118, 162], L: [0.93, 0.42], C: [0.05, 0.15] },
+  { name: 'Sunset',  h: [75, -28],  L: [0.92, 0.5],  C: [0.06, 0.21] },
+  { name: 'Candy',   h: [355, 290], L: [0.93, 0.5],  C: [0.05, 0.2] },
+  { name: 'Lava',    h: [22, 95],   L: [0.45, 0.88], C: [0.14, 0.19], dark: true },
+  { name: 'Glacier', h: [215, 272], L: [0.95, 0.48], C: [0.025, 0.15] },
+  { name: 'Neon',    h: [320, 150], L: [0.56, 0.87], C: [0.2, 0.2],   dark: true },
+  { name: 'Desert',  h: [85, 38],   L: [0.91, 0.5],  C: [0.04, 0.13] },
+  { name: 'Berry',   h: [12, -55],  L: [0.88, 0.4],  C: [0.07, 0.19] },
+  { name: 'Mint',    h: [178, 140], L: [0.95, 0.45], C: [0.04, 0.15] },
+  { name: 'Autumn',  h: [110, 35],  L: [0.88, 0.46], C: [0.08, 0.16] },
+  { name: 'Royal',   h: [290, 250], L: [0.9, 0.36],  C: [0.05, 0.17] },
+  { name: 'Reef',    h: [25, 200],  L: [0.86, 0.55], C: [0.12, 0.13] },
+  { name: 'Aurora',  h: [150, 305], L: [0.56, 0.86], C: [0.15, 0.17], dark: true }
+];
+PALETTES.forEach(function (p) {
+  var h0 = p.h[0], h1 = p.h[1], hm = (h0 + h1) / 2, dir = h1 >= h0 ? 1 : -1;
+  p.tiles = [];
+  for (var n = 1; n <= 17; n++) {
+    var t = (n - 1) / 10, L, C, h;
+    if (t <= 1) { L = lerp(p.L[0], p.L[1], Math.pow(t, 0.92)); C = lerp(p.C[0], p.C[1], t) + 0.025 * Math.sin(Math.PI * t); h = lerp(h0, h1, t); }
+    else { L = p.L[1] - 0.04 * Math.min(n - 11, 3); C = p.C[1]; h = h1 + dir * 24 * (n - 11); }
+    p.tiles.push({ L: L, top: oklch(L + 0.045, C * 0.95, h), bot: oklch(L - 0.04, C * 1.05, h),
+                   text: L > 0.7 ? oklch(0.3, 0.06, h) : oklch(0.985, 0.01, h) });
+  }
+  if (p.dark) {
+    p.bg = oklch(0.18, 0.03, hm); p.bg2 = oklch(0.12, 0.03, h1); p.board = oklch(0.25, 0.035, hm);
+    p.cell = oklch(0.3, 0.035, hm); p.ink = oklch(0.93, 0.02, hm); p.inkSoft = oklch(0.7, 0.03, hm);
+  } else {
+    p.bg = oklch(0.965, 0.012, h0); p.bg2 = oklch(0.92, 0.022, hm); p.board = oklch(0.8, 0.03, hm);
+    p.cell = oklch(0.86, 0.022, hm); p.ink = oklch(0.3, 0.04, hm); p.inkSoft = oklch(0.5, 0.03, hm);
+  }
+});
+
+// ------------------------------------------------------------------ canvas
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+var W, H, dpr, spriteCache = {}, clock = 0, lastTs = 0;
+
+function rr(g, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  g.beginPath(); g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function rrPath(g, x, y, w, h, r, ccw) {
+  // a rounded rect sub-path, counter-clockwise for an even-odd hole
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  if (!ccw) { g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); }
+  else { g.moveTo(x + r, y); g.arcTo(x, y, x, y + h, r); g.arcTo(x, y + h, x + w, y + h, r); g.arcTo(x + w, y + h, x + w, y, r); g.arcTo(x + w, y, x, y, r); }
+  g.closePath();
+}
+function world() { ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+
+function tileSprite(pi, v, size) {
+  var key = pi + '|' + v + '|' + size;
+  if (spriteCache[key]) return spriteCache[key];
+  var col = PALETTES[pi].tiles[clamp(Math.round(Math.log2(v)), 1, 17) - 1];
+  var pad = Math.ceil(size * 0.08), w = size + pad * 2, r = size * 0.15;
+  var c = document.createElement('canvas'); c.width = c.height = Math.ceil(w * dpr);
+  var g = c.getContext('2d'); g.scale(dpr, dpr);
+  g.fillStyle = 'rgba(0,0,0,' + (PALETTES[pi].dark ? 0.35 : 0.16) + ')'; rr(g, pad, pad + size * 0.05, size, size, r); g.fill();
+  var gr = g.createLinearGradient(0, pad, 0, pad + size);
+  gr.addColorStop(0, css(col.top)); gr.addColorStop(1, css(col.bot));
+  g.fillStyle = gr; rr(g, pad, pad, size, size, r); g.fill();
+  g.save(); rr(g, pad, pad, size, size, r); g.clip();
+  var sh = g.createLinearGradient(0, pad, 0, pad + size * 0.5);
+  sh.addColorStop(0, 'rgba(255,255,255,0.26)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = sh; g.fillRect(pad, pad, size, size * 0.5); g.restore();
+  var label = String(v), fs = size * FONT_K[Math.min(label.length, 6) - 1];
+  g.font = '800 ' + fs + 'px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = css(col.text); g.fillText(label, pad + size / 2, pad + size * 0.52);
+  spriteCache[key] = { c: c, w: w };
+  return spriteCache[key];
+}
+
+// ------------------------------------------------------------------- icons
+function icon(type, x, y, s, ink) {
+  ctx.fillStyle = ink; ctx.strokeStyle = ink; ctx.lineWidth = Math.max(1.2, s * 0.2); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (type === 'fire') {
+    ctx.beginPath(); ctx.moveTo(x, y - s);
+    ctx.bezierCurveTo(x + s * 0.9, y - s * 0.1, x + s * 0.7, y + s * 0.9, x, y + s * 0.9);
+    ctx.bezierCurveTo(x - s * 0.7, y + s * 0.9, x - s * 0.9, y - s * 0.1, x, y - s); ctx.fill();
+  } else if (type === 'purple' || type === 'black') {
+    [[-0.45, 0.2, 0.42], [0.35, 0.25, 0.48], [0, -0.3, 0.5]].forEach(function (c) { ctx.beginPath(); ctx.arc(x + c[0] * s, y + c[1] * s, c[2] * s, 0, 6.283); ctx.fill(); });
+  } else if (type === 'comet') {
+    ctx.beginPath(); ctx.arc(x - s * 0.3, y + s * 0.3, s * 0.45, 0, 6.283); ctx.fill();
+    for (var i = -1; i <= 1; i++) { ctx.beginPath(); ctx.moveTo(x + s * 0.05 + i * s * 0.25, y - s * 0.05 + i * s * 0.25); ctx.lineTo(x + s * 0.9 + i * s * 0.2, y - s * 0.9 + i * s * 0.2); ctx.stroke(); }
+  } else if (type === 'boltV' || type === 'boltH') {
+    ctx.save(); ctx.translate(x, y); if (type === 'boltH') ctx.rotate(Math.PI / 2);
+    ctx.beginPath(); ctx.moveTo(s * 0.2, -s); ctx.lineTo(-s * 0.45, s * 0.1); ctx.lineTo(0, s * 0.1); ctx.lineTo(-s * 0.2, s); ctx.lineTo(s * 0.45, -s * 0.1); ctx.lineTo(0, -s * 0.1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  } else if (type === 'switch') {
+    ctx.beginPath(); ctx.arc(x, y, s * 0.7, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, s * 0.7, Math.PI * 0.1, Math.PI * 0.9); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + s * 0.55, y - s * 0.75); ctx.lineTo(x + s * 0.65, y - s * 0.3); ctx.lineTo(x + s * 0.2, y - s * 0.35); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - s * 0.55, y + s * 0.75); ctx.lineTo(x - s * 0.65, y + s * 0.3); ctx.lineTo(x - s * 0.2, y + s * 0.35); ctx.stroke();
+  }
+  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+}
+function badge(x, y, r, T) {
+  ctx.fillStyle = T.color; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  ctx.lineWidth = Math.max(1, r * 0.14); ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
+  icon(T.key, x, y, r * 0.6, T.ink);
+}
+
+// -------------------------------------------------------------------- board
+// g: { x, y, s (board side), cell, gap, pi } in px.
+function boardGeom(x, y, s, pi) { var gap = s * 0.03; return { x: x, y: y, s: s, gap: gap, cell: (s - gap * (N + 1)) / N, pi: pi }; }
+function gx(g, i) { return g.x + g.gap + i * (g.cell + g.gap); }   // left edge of column i
+function gy(g, j) { return g.y + g.gap + j * (g.cell + g.gap); }
+function cellsRect(g, x0, y0, x1, y1) {
+  return { x: gx(g, x0), y: gy(g, y0), w: (x1 - x0 + 1) * g.cell + (x1 - x0) * g.gap, h: (y1 - y0 + 1) * g.cell + (y1 - y0) * g.gap };
+}
+function inflate(r, d) { return { x: r.x - d, y: r.y - d, w: r.w + d * 2, h: r.h + d * 2 }; }
+function rects(g, T) {
+  if (T.pair) return T.cells.map(function (c) { return cellsRect(g, c[0], c[1], c[0], c[1]); });
+  var x0 = 9, y0 = 9, x1 = -1, y1 = -1;
+  T.cells.forEach(function (c) { x0 = Math.min(x0, c[0]); y0 = Math.min(y0, c[1]); x1 = Math.max(x1, c[0]); y1 = Math.max(y1, c[1]); });
+  return [cellsRect(g, x0, y0, x1, y1)];
+}
+function clipGutters(g) {
+  ctx.beginPath(); rrPath(ctx, g.x, g.y, g.s, g.s, 0);
+  for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) rrPath(ctx, gx(g, x), gy(g, y), g.cell, g.cell, g.cell * 0.15, true);
+  ctx.clip('evenodd');
+}
+
+// The target, all of it under the tiles: the floor tint, one slow ring that
+// lights only the gutters it crosses, the border in the gutter and the
+// switch's link; drawBadges then puts the badge in the gutter crossing at
+// the top-right corner.
+function drawTarget(g, T, t) {
+  var c = hex(T.color), rs = rects(g, T), k = (t % PING_PERIOD) / PING_PERIOD;
+  ctx.fillStyle = css(c, TINT);
+  rs.forEach(function (r) { var f = inflate(r, g.gap * 0.5); rr(ctx, f.x, f.y, f.w, f.h, g.cell * 0.17); ctx.fill(); });
+  ctx.save(); clipGutters(g);
+  ctx.strokeStyle = css(c, (1 - k) * PING_ALPHA); ctx.lineWidth = Math.max(1, g.gap * PING_WIDTH);
+  rs.forEach(function (r) {
+    var f = inflate(r, g.gap * 0.5 + k * g.cell * PING_REACH);
+    rr(ctx, f.x, f.y, f.w, f.h, g.cell * 0.17 + k * g.cell * 0.3); ctx.stroke();
+  });
+  ctx.restore();
+  ctx.strokeStyle = css(c, BORDER); ctx.lineWidth = Math.max(1, g.gap * 0.25);
+  rs.forEach(function (r) { var f = inflate(r, g.gap * 0.5); rr(ctx, f.x, f.y, f.w, f.h, g.cell * 0.17); ctx.stroke(); });
+  if (T.pair) {
+    var A = rs[0], B = rs[1], ax = A.x + A.w / 2, ay = A.y + A.h / 2, bx = B.x + B.w / 2, by = B.y + B.h / 2;
+    var mx = (ax + bx) / 2, my = (ay + by) / 2, dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1;
+    ctx.setLineDash([g.cell * 0.08, g.cell * 0.08]); ctx.lineDashOffset = -t * g.cell * 0.4;
+    ctx.strokeStyle = css(c, 0.6); ctx.lineWidth = Math.max(1, g.gap * 0.4);
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(mx - dy / len * g.cell * 0.6, my + dx / len * g.cell * 0.6, bx, by); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  return rs;
+}
+// drawn outside the board's clip, so a badge on the rim is not cut in half
+function drawBadges(g, T, rs) {
+  rs.forEach(function (r) { badge(r.x + r.w + g.gap / 2, r.y - g.gap / 2, Math.max(5, g.cell * BADGE), T); });
+}
+
+function sceneTiles(T, mode, t) {
+  if (mode === 'moving') {
+    var ph = (t % CYCLE) / CYCLE;
+    var k = ph < 0.5 ? clamp(ph * CYCLE / SLIDE_T, 0, 1) : 1 - clamp((ph - 0.5) * CYCLE / SLIDE_T, 0, 1), e = 1 - Math.pow(1 - k, 3);
+    return SCENE.map(function (s) { return [lerp(s.a[0], s.b[0], e), lerp(s.a[1], s.b[1], e), s.v]; });
+  }
+  var on = {}, out = [];
+  T.cells.forEach(function (c) { on[c[0] + ',' + c[1]] = true; });
+  BASE.forEach(function (b) { if (mode === 'with' || !on[b[0] + ',' + b[1]]) out.push(b); });
+  if (mode === 'with') T.cells.forEach(function (c) {
+    if (!BASE.some(function (b) { return b[0] === c[0] && b[1] === c[1]; })) out.push([c[0], c[1], 8]);
+  });
+  return out;
+}
+
+function drawBoard(g, T, mode) {
+  var P = PALETTES[g.pi];
+  world();
+  ctx.fillStyle = css(P.board); rr(ctx, g.x, g.y, g.s, g.s, g.s * 0.04); ctx.fill();
+  ctx.fillStyle = css(P.cell);
+  for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) { rr(ctx, gx(g, x), gy(g, y), g.cell, g.cell, g.cell * 0.15); ctx.fill(); }
+  ctx.save(); rr(ctx, g.x, g.y, g.s, g.s, g.s * 0.04); ctx.clip();
+  var rs = drawTarget(g, T, clock);
+  ctx.restore();
+  world();
+  drawBadges(g, T, rs);
+  sceneTiles(T, mode, clock).forEach(function (s) {
+    var px = g.x + g.gap + s[0] * (g.cell + g.gap) + g.cell / 2, py = g.y + g.gap + s[1] * (g.cell + g.gap) + g.cell / 2;
+    var rs = Math.max(4, Math.round(g.cell)), spr = tileSprite(g.pi, s[2], rs), sc = g.cell / rs, h = spr.w * sc / 2;
+    ctx.drawImage(spr.c, px - h, py - h, spr.w * sc, spr.w * sc);
+  });
+}
+
+// --------------------------------------------------------------------- page
+var VIEWS = ['static', 'moving'], view = 'static', palIdx = 0, typeIdx = 0, buttons = [];
+var TOP = 100;
+
+function layout() {
+  W = window.innerWidth; H = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  spriteCache = {};
+}
+function button(x, y, w, h, txt, fn, on, fill, ink) {
+  var P = PALETTES[palIdx];
+  world();
+  ctx.fillStyle = fill || (on ? css(P.ink) : css(P.board)); rr(ctx, x, y, w, h, Math.min(9, h / 2)); ctx.fill();
+  if (on && fill) { ctx.strokeStyle = css(P.ink); ctx.lineWidth = 2.5; rr(ctx, x + 1, y + 1, w - 2, h - 2, Math.min(8, h / 2)); ctx.stroke(); }
+  ctx.fillStyle = ink || (on ? css(P.bg) : css(P.ink)); ctx.font = '700 12px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, x + w / 2, y + h / 2 + 0.5);
+  buttons.push({ x: x, y: y, w: w, h: h, fn: fn });
+}
+
+// The panels on screen: one type, or all of them (typeIdx === TYPES.length).
+function panels() {
+  var types = typeIdx < TYPES.length ? [TYPES[typeIdx]] : TYPES, out = [];
+  types.forEach(function (T) {
+    if (view === 'static') { out.push({ T: T, mode: 'with', label: T.label + ' · tile on target' }); out.push({ T: T, mode: 'empty', label: T.label + ' · empty target' }); }
+    else out.push({ T: T, mode: 'moving', label: T.label + ' · tiles moving' });
+  });
+  return out;
+}
+
+function draw() {
+  var P = PALETTES[palIdx];
+  world();
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, css(P.bg)); bg.addColorStop(1, css(P.bg2));
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  buttons = [];
+  var cw = Math.min(W - 24, 1100), x0 = (W - cw) / 2;
+  button(x0, 10, 80, 32, 'Static', function () { view = 'static'; }, view === 'static');
+  button(x0 + 86, 10, 80, 32, 'Moving', function () { view = 'moving'; }, view === 'moving');
+  button(x0 + cw - 140, 10, 30, 32, '‹', function () { palIdx = (palIdx + 14) % 15; });
+  world(); ctx.fillStyle = css(P.ink); ctx.font = '700 13px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(P.name, x0 + cw - 70, 26);
+  button(x0 + cw - 30, 10, 30, 32, '›', function () { palIdx = (palIdx + 1) % 15; });
+  var n = TYPES.length + 1, tw = (cw - (n - 1) * 6) / n;
+  TYPES.forEach(function (ty, i) { button(x0 + i * (tw + 6), 50, tw, 30, ty.label, function () { typeIdx = i; }, i === typeIdx, ty.color, ty.ink); });
+  button(x0 + TYPES.length * (tw + 6), 50, tw, 30, 'All', function () { typeIdx = TYPES.length; }, typeIdx === TYPES.length);
+
+  // lay the panels out as large as the room allows
+  var list = panels(), best = null, availH = H - TOP - 10, gap = 14, lab = 20;
+  for (var cols = 1; cols <= list.length; cols++) {
+    var rows = Math.ceil(list.length / cols), s = Math.min((cw - gap * (cols - 1)) / cols, (availH - rows * lab - gap * (rows - 1)) / rows);
+    if (!best || s > best.s) best = { cols: cols, rows: rows, s: s };
+  }
+  if (view === 'static' && list.length > 2 && best.cols % 2) {
+    // keep a type's two panels on one row
+    var c2 = best.cols + 1, r2 = Math.ceil(list.length / c2);
+    best = { cols: c2, rows: r2, s: Math.min((cw - gap * (c2 - 1)) / c2, (availH - r2 * lab - gap * (r2 - 1)) / r2) };
+  }
+  var s = Math.min(best.s, 520), totalW = best.cols * s + (best.cols - 1) * gap, sx = (W - totalW) / 2;
+  list.forEach(function (pn, i) {
+    var c = i % best.cols, r = Math.floor(i / best.cols), x = sx + c * (s + gap), y = TOP + r * (s + lab + gap);
+    world(); ctx.fillStyle = css(P.inkSoft); ctx.font = '700 12px ' + FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(pn.label, x, y + 8);
+    drawBoard(boardGeom(x, y + lab, s, palIdx), pn.T, pn.mode);
+  });
+}
+
+function frame(ts) {
+  var now = ts / 1000, dt = lastTs ? Math.min(0.05, now - lastTs) : 1 / 60;
+  lastTs = now; clock += dt;
+  draw();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('keydown', function (e) {
+  var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (k === 't') typeIdx = (typeIdx + 1) % (TYPES.length + 1);
+  else if (k === 'm') view = VIEWS[(VIEWS.indexOf(view) + 1) % VIEWS.length];
+  else if (k === '[') palIdx = (palIdx + 14) % 15;
+  else if (k === ']') palIdx = (palIdx + 1) % 15;
+});
+cv.addEventListener('pointerdown', function (e) {
+  for (var i = buttons.length - 1; i >= 0; i--) {
+    var b = buttons[i];
+    if (e.clientX >= b.x && e.clientX <= b.x + b.w && e.clientY >= b.y && e.clientY <= b.y + b.h) { b.fn(); return; }
+  }
+});
+window.addEventListener('resize', layout);
+
+layout();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

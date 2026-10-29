@@ -33,6 +33,14 @@
        relayout(), so Layout is computed with the space already freed. */
     CONFIG.layout.ctaHeight = 0;
 
+    /* Delta 5 — the round's FOOT BAR (packages/webshell/view.css): the level's
+       stars and the "!" on the left, MENU / GUIDE / HELP / OPTIONS on the
+       right, 62 px tall on the house margin of 26, plus a breath of 12 over it.
+       It takes no band out of Layout (the world runs under it); it is the line
+       `Layout.foot` stops a game's instruments at. view.css holds the same
+       three numbers, and the two are changed together. */
+    CONFIG.layout.footHeight = 100;
+
     /* Delta 1 — the bezel packages/frame-web draws needs a margin of
        screen pixels. A phone is below the threshold and gets 0, which is
        the whole point; a tablet is not, and Play reviews on one. */

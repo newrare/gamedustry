@@ -90,7 +90,7 @@
     fr: {
       album: "Stickers", shop: "Boutique",
       draw: "Tirer", drawCost: "1 ticket",
-      mixing: "Ca mélange…",
+      mixing: "Ça mélange…",
       perDraw: "Tickets par tirage",
       newSticker: "Nouveau sticker !", dupe: "Déjà obtenu",
       sell: "Vendre", buy: "Acheter",

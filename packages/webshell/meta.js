@@ -205,7 +205,7 @@
       album: "Stickers", shop: "Boutique", map: "Stages", home: "Accueil", scores: "Classement",
       more: "Plus",
       notices: "Notifications", noticesNote: "Les plus récentes en premier",
-      justNow: "A l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
+      justNow: "À l’instant", minAgo: "Il y a {n} min", hourAgo: "Il y a {n} h",
       owned: "{n}/{t}", newSticker: "Nouveau sticker !", dupe: "Doublon",
       gotCoins: "+{n} pièces", gotTickets: "+{n} ticket", gotTicketsN: "+{n} tickets",
       gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau {n} atteint",
@@ -219,7 +219,7 @@
       adEyebrow: "Récompense", adTapWait: "Récompense dans {n}",
       giftGot: "Ton cadeau", collect: "Récupérer",
       tapCollect: "Touche pour récupérer", tapPick: "Touche une boîte",
-      rarity1: "Commun", rarity2: "Rare", rarity3: "Epique", rarity4: "Légendaire",
+      rarity1: "Commun", rarity2: "Rare", rarity3: "Épique", rarity4: "Légendaire",
       wonBand: "Gagné en terminant {b}", wonClean: "Gagné par un sans-faute sur {b}",
       wonAll: "Gagné en terminant les 30 stages", wonPerfect: "Gagné avec un 90/90 parfait",
       toBand: "Termine {b}", toClean: "Réussis un sans-faute sur {b}",
@@ -3291,9 +3291,9 @@
      A ROUND HAS ITS OWN "!", because the band is down over a round and a
      notice said mid-run is the one most likely to have gone unread. It rides
      ON the level's star pill, just to its right (packages/webshell/levels.js,
-     `#lv-hud`): inside the pill's own box, so it follows it wherever a SKIN
-     moved it (`--lv-hud-left` / `--lv-hud-bottom`) and goes when it goes. Its
-     card pauses the round, like every card over one. */
+     `#lv-hud`): inside the pill's own box, so it stands second from the left
+     of the round's foot bar and goes when the pill goes. Its card pauses the
+     round, like every card over one. */
   var logBoxes = [], logCard = null, logSeen = 0, roundLog = null;
 
   function logChip(cls) {

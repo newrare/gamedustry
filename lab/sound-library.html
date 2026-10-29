@@ -17,7 +17,9 @@
    category its name starts with, with its length, its pack and its users;
    a search box and the categories and packs as facets to narrow the list;
    hover plays it, click copies its name — the name is what a provenance
-   comment writes and what apply-events re-cuts from.
+   comment writes and what apply-events re-cuts from. One category is picked
+   at a time, and hovering a category plays the first file it would list, so
+   a category is heard before it is opened; packs and length stay folded.
 
    It is served by `make events` (tools/lab/serve-events.mjs) at /library,
    beside the bench, because both read the same index (assets/audio/sfx/
@@ -45,6 +47,12 @@ body {
 }
 #panel input[type=text]:focus { outline:0; border-color:#7ea6ff; }
 #panel h2 { display:flex; justify-content:space-between; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:#6f6f92; }
+#panel summary { cursor:pointer; list-style:none; }
+#panel summary::-webkit-details-marker { display:none; }
+#panel summary h2::before { content:"▸"; margin-right:6px; }
+#panel details[open] summary h2::before { content:"▾"; }
+#panel summary h2 span { flex:1; }
+#panel details[open] summary { margin-bottom:6px; }
 #panel h2 a { color:#7ea6ff; text-decoration:none; font-weight:600; cursor:pointer; text-transform:none; letter-spacing:0; }
 .chips { display:flex; flex-wrap:wrap; gap:5px; }
 .chip {
@@ -102,15 +110,15 @@ body {
     <h2>Categories <a id="cat-all">all</a></h2>
     <div class="chips" id="cats"></div>
   </div>
-  <div>
-    <h2>Packs <a id="pack-all">all</a></h2>
+  <details>
+    <summary><h2><span>Packs <b id="pack-n"></b></span><a id="pack-all">all</a></h2></summary>
     <div class="chips" id="packs"></div>
-  </div>
-  <div>
-    <h2>Length</h2>
+  </details>
+  <details>
+    <summary><h2><span>Length <b id="len-n"></b></span></h2></summary>
     <div class="chips" id="lens"></div>
-  </div>
-  <p id="hint">Hover a row to hear it, click to copy its name. <kbd>↑</kbd> <kbd>↓</kbd> walk the list and play, <kbd>enter</kbd> copies, <kbd>/</kbd> searches, <kbd>esc</kbd> clears.</p>
+  </details>
+  <p id="hint">Hover a category to hear its first file, a row to hear it, click to copy its name. <kbd>↑</kbd> <kbd>↓</kbd> walk the list and play, <kbd>enter</kbd> copies, <kbd>/</kbd> searches, <kbd>esc</kbd> clears.</p>
 </aside>
 
 <div id="main">
@@ -145,11 +153,14 @@ body {
   function play(f, row) {
     if (playing) playing.pause();
     if (playingRow) playingRow.classList.remove("playing");
+    playingRow = null;
     const a = audio[f.file] || (audio[f.file] = new Audio("sfx/" + encodeURIComponent(f.file)));
     a.volume = vol();
     try { a.currentTime = 0; } catch (e) {}
     a.play().catch(() => toast("cannot play " + f.file));
-    playing = a; playingRow = row; row.classList.add("playing");
+    playing = a;
+    if (!row) return;
+    playingRow = row; row.classList.add("playing");
     a.onended = () => row.classList.remove("playing");
   }
 
@@ -164,15 +175,37 @@ body {
   }
 
   // ---- facets ------------------------------------------------------------
-  function chips(node, items, set, onChange) {
+  /* `single` makes a click replace the selection instead of adding to it;
+     `onHover(key)` is called after the same intent delay a row waits. */
+  function chips(node, items, set, onChange, single, onHover) {
     node.innerHTML = "";
     items.forEach(([key, label, n]) => {
       const b = document.createElement("button");
       b.className = "chip" + (set.has(key) ? " on" : "");
       b.innerHTML = esc(label) + (n != null ? `<b>${n}</b>` : "");
-      b.onclick = () => { if (set.has(key)) set.delete(key); else set.add(key); onChange(); };
+      b.onclick = () => {
+        if (set.has(key)) set.delete(key);
+        else { if (single) set.clear(); set.add(key); }
+        onChange();
+      };
+      if (onHover) {
+        b.onmouseenter = () => { clearTimeout(hover); hover = setTimeout(() => onHover(key), 110); };
+        b.onmouseleave = () => clearTimeout(hover);
+      }
       node.appendChild(b);
     });
+  }
+  /* The first file a category would list under the other facets and the
+     search — its own first file when they leave it nothing. */
+  function firstOf(cat) {
+    const own = S.files.filter((f) => f.category === cat);
+    return own.find((f) => visible(f, true)) || own[0];
+  }
+  function previewCat(cat) {
+    const f = firstOf(cat);
+    if (!f) return;
+    play(f, null);
+    toast(cat + " · " + f.stem);
   }
   function count(key) {
     const m = {};
@@ -180,16 +213,20 @@ body {
     return Object.keys(m).sort().map((k) => [k, k, m[k]]);
   }
   function drawFacets() {
-    chips(el("cats"), count("category"), S.cats, refresh);
+    chips(el("cats"), count("category"), S.cats, refresh, true, previewCat);
     chips(el("packs"), count("pack"), S.packs, refresh);
     chips(el("lens"), LENS.map((l) => [l.key, l.label, null]), S.lens, refresh);
+    // A folded facet still says it is narrowing the list.
+    el("pack-n").textContent = S.packs.size ? "· " + S.packs.size : "";
+    el("len-n").textContent = S.lens.size ? "· " + S.lens.size : "";
   }
   el("cat-all").onclick = () => { S.cats.clear(); refresh(); };
-  el("pack-all").onclick = () => { S.packs.clear(); refresh(); };
+  // Inside a <summary>: clear without folding or unfolding the facet.
+  el("pack-all").onclick = (e) => { e.preventDefault(); e.stopPropagation(); S.packs.clear(); refresh(); };
 
   // ---- the list ------------------------------------------------------------
-  function visible(f) {
-    if (S.cats.size && !S.cats.has(f.category)) return false;
+  function visible(f, anyCat) {
+    if (!anyCat && S.cats.size && !S.cats.has(f.category)) return false;
     if (S.packs.size && !S.packs.has(f.pack || "?")) return false;
     if (S.lens.size && !LENS.some((l) => S.lens.has(l.key) && l.test(f.seconds))) return false;
     if (S.q) {

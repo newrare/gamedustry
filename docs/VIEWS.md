@@ -47,19 +47,19 @@ is the loop still turning), so the three gift boxes and the prisoner's offer
 freeze it too. A state change (the round ending, a new one starting) drops the
 count, since the motor has stopped or restarted the loop by then.
 
-| card    | opened from                                        | tap closes | ESCAPE closes |
-| ------- | -------------------------------------------------- | ---------- | ------------- |
-| options | a house, the title menu, the corner, a sheet's bar | no         | yes           |
-| help    | the title menu, the corner, a sheet's bar, L0      | no         | yes           |
-| guide   | the help card, a tap on the table, the "!" log     | yes        | yes           |
-| leave   | the round's corner control                         | no         | yes           |
-| daily   | a day of the strip, a house                        | yes        | yes           |
-| gift    | a perfect round, a daily gift                      | no         | no            |
-| prize   | a box that was opened                              | yes        | yes           |
-| ad      | the ×5 offer                                       | no         | no            |
-| sticker | a pull, a tile of the album                        | varies     | varies        |
-| captive | a won battle with an enemy standing                | no         | no            |
-| report  | a squad back from a mission                        | collects   | collects      |
+| card    | opened from                                                  | tap closes | ESCAPE closes |
+| ------- | ------------------------------------------------------------ | ---------- | ------------- |
+| options | a house, the title menu, the corner, a sheet's bar           | no         | yes           |
+| help    | the title menu, the corner, a sheet's bar, L0                | no         | yes           |
+| guide   | the help card, the foot bar, a tap on the table, the "!" log | yes        | yes           |
+| leave   | the round's foot bar (menu)                                  | no         | yes           |
+| daily   | a day of the strip, a house                                  | yes        | yes           |
+| gift    | a perfect round, a daily gift                                | no         | no            |
+| prize   | a box that was opened                                        | yes        | yes           |
+| ad      | the ×5 offer                                                 | no         | no            |
+| sticker | a pull, a tile of the album                                  | varies     | varies        |
+| captive | a won battle with an enemy standing                          | no         | no            |
+| report  | a squad back from a mission                                  | collects   | collects      |
 
 **The guide is a card, and a navigated one**: every rule of the game, a contents
 page and then one page at a time (`packages/webshell/guide.js`). It is a card
@@ -191,7 +191,9 @@ help and leaving a round included), or by the choice it asks for
 (`dismiss: false`). Whatever the line says a tap does, a tap on the card, around
 it or on the line does it.
 
-**The corner controls.** Options, help and the way out — and they are the
+**The corner controls — the round's foot bar.** Options, help, the guide and
+the way out, at the right end of the bar whose left end is the level pill and
+its "!" (view.css, THE FOOT BAR) — and they are the
 ROUND'S, not a view's. Every other surface has somewhere of its own to say the
 same things: the title screen lists OPTIONS and HELP as menu entries, the map's
 level 0 opens the help card, and a view already carries four doors in the band

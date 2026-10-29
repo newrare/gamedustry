@@ -248,7 +248,7 @@
     --rt-paper:#fff8e6;
     --pl-l:-10px;
     --pl-r:-10px;
-    --pl-top:260px;
+    --pl-top:208px;
     --pl-h:82px;
     --pl-rot:0deg;
     --pl-clip:polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
@@ -259,7 +259,7 @@
     --pl-kind-show:block;
     --pl-ink:30%;
     --ds-show:block;
-    --ds-top:350px;
+    --ds-top:298px;
     --ds-side:20px;
     --ds-fs:20px;
     --ds-pad:0;
@@ -267,8 +267,8 @@
     --ds-ink:#fff8e6;
     --ds-shadow:0 2px 0 rgba(0,0,0,.45);
     --ds-box:none;
-    --art-size:200px;
-    --art-top:34px;
+    --art-size:172px;
+    --art-top:30px;
     --art-filter:drop-shadow(3px 3px 0 rgba(0,0,0,.25)) drop-shadow(0 12px 14px rgba(0,0,0,.3));
     --num-l:auto;
     --num-r:50px;

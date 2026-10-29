@@ -73,8 +73,10 @@
     bubbleR: 30,                   // radius (diameter 60 => 12 columns fit 720)
     cols: 12,                      // bubbles on a non-offset row (offset rows hold cols-1)
     startRows: 6,                  // rows present at the start
-    launcherOffset: 60,            // launcher this far above Layout.bottom
-    dangerOffset: 150,             // a bubble reaching this line loses the round
+    launcherOffset: 60,            // launcher this far above Layout.foot (the web
+                                   // target's foot bar; Layout.bottom on a playable)
+    dangerOffset: 150,             // a bubble reaching this line (over Layout.foot)
+                                   // loses the round
     maxAimDeg: 82,                 // clamp the aim so you cannot shoot sideways
     shootSpeed: 1150,              // px/sec
     addRowShots: 5,                // push a fresh row down every N shots (pressure)
@@ -86,8 +88,9 @@
     blightFill: 1.5,               // seconds for the cloud to fill a fresh bubble
     wallSuperChance: 0.06,         // chance a wall bubble is a rainbow SUPER
     shotSuperChance: 0.12,         // chance the launcher hands you a SUPER
-    gridOffset: 38,                // the wall hangs this far under Layout.top, so the
-                                   // web target's level pill never covers the first row
+    gridOffset: 38,                // the wall hangs this far under Layout.top on a
+                                   // playable; the web target's level pill moved to
+                                   // the foot bar, so there the wall takes the room back
     // The cure is as big as the disease: both of these are read against how
     // much of the wall has turned (see cureTargets).
     cureReach: 2,                  // hex steps the cure travels on a clean board
@@ -230,11 +233,21 @@
     // --- geometry, derived from Layout so the grid never hides under the HUD
     // or the CTA bar and never sits behind a notch ---------------------------
     var GRID_TOP = 0, LX = 0, LY = 0, DANGER_Y = 0, FLOOR_Y = 0, ROWS = 22;
-    // The launcher row: the loaded bubble, the swap ring, the next bubble.
-    var NEXT_X = 0, SWAP_X = 0;
-    // The swap ring's own tap radius stops short of the loaded bubble: a drag
-    // that starts on the bubble is an aim, not a trade.
-    var SWAP_R = 25, SWAP_HIT = 34, NEXT_HIT = 40;
+    /* THE MAGIC LAUNCHER: one object, not three pieces. A rune ring holds the
+       loaded bubble in its main socket; a smaller socket fused to it, low on
+       the right, holds the next one; an engraved double arrow arcs over the
+       seam between them and says the two trade places. Every measure is in
+       design px from the main socket's centre (LX, LY). */
+    var RING_IN = R + 9, RING_OUT = R + 20;      // the main socket's band
+    var SAT_DX = 72, SAT_DY = 18;                // the satellite socket's centre
+    var SAT_IN = 20, SAT_OUT = 27;               // ...and its band
+    var NEXT_R = R * 0.6;                        // the next bubble, in its socket
+    var SAT_X = 0, SAT_Y = 0;
+    /* The swap's hit areas, generous on purpose: the satellite and the arrow
+       trade on the press; the loaded bubble trades on a TAP — a press that
+       travels past TAP_SLOP is an aim like anywhere else on the screen. */
+    var SAT_HIT = 46, ARROW_HIT = 30, MAIN_HIT = R + 14, TAP_SLOP = 16;
+    var ARROW_MX = 59, ARROW_MY = -44;           // the arrow's middle, for its hit
 
     // --- state -------------------------------------------------------------
     var grid;            // grid[r][c] = colour index or null
@@ -247,14 +260,23 @@
     var score, ball, nextColor, nextSuper;
     var aimAngle, aiming, aimLoad;
     var shotCount, maxCombo, streak, ended, blackTimer, totalCleared;
+    /* A ROUND ENDS ON A STILL BOARD. `banked` is the score as it stood the
+       last time nothing was moving — no ball in flight, no chain popping, no
+       bubble still falling — and it is what the level's stars are measured
+       against, so the third star (and the end it brings) never lands while a
+       shot is still paying. `endPending` is an ending decided mid-shot
+       (overrun) that waits for the same stillness. */
+    var banked, endPending;
     var fallers, splashes, trail, bgT, fieldY, launchPunch, idleTimer;
     var roundT;          // seconds since the round started — the rot's ramp
     var rotPct, rotCount, liveCount;   // how much of the wall has turned
     var chain;           // the running chain of pops / cures, walked by update()
-    var swapSpin;        // the swap ring, spinning down after a trade
+    var swapT;           // 1 -> 0: the two bubbles trading places along the arc
+    var pressMain;       // a press that began on the loaded bubble: tap or aim?
 
     // --- cached sprites (built once — the core perf win) -------------------
     var bubbleSprites = null, superSprite = null, blackSprite = null, puffSprite = null, bgCanvas = null;
+    var launcherSprite = null, arrowSprite = null;
     /* What each cache was built FOR. A replay used to throw the full-frame
        background away and paint an identical one (3.5 MB of pixels per round,
        reclaimed by a major GC mid-round a few rounds later — the hitch that
@@ -266,13 +288,17 @@
       // The wall starts a little under the top band: the level pill of the web
       // target hangs there, and a bubble behind it is a bubble the player
       // cannot read (docs/LEVELS.md — the pill is the shell's, not the HUD's).
-      GRID_TOP = Layout.top + (CONFIG.gridOffset || 0);
+      // Where the foot bar stands (web), the pill is down there with it.
+      GRID_TOP = Layout.top + (Layout.foot < Layout.bottom ? 0 : (CONFIG.gridOffset || 0));
+      /* Everything the player reads or touches at the bottom stands above
+         Layout.foot — the launcher, the danger line, the floor a cut-off
+         bubble bursts on and the bonus it writes. On a playable Layout.foot
+         IS Layout.bottom, so nothing there moved. */
       LX = view.w / 2;
-      LY = Layout.bottom - CONFIG.launcherOffset;
-      DANGER_Y = Layout.bottom - CONFIG.dangerOffset;
-      FLOOR_Y = Layout.bottom - 4;             // where a cut-off bubble bursts
-      NEXT_X = LX + 118;
-      SWAP_X = (LX + R + NEXT_X - R * 0.6) / 2;
+      LY = Layout.foot - CONFIG.launcherOffset;
+      DANGER_Y = Layout.foot - CONFIG.dangerOffset;
+      FLOOR_Y = Layout.foot - 4;
+      SAT_X = LX + SAT_DX; SAT_Y = LY + SAT_DY;
     }
     // A resize changes view.dpr, and the film's rim is a one-pixel affair: the
     // sprites are re-rendered at the new device resolution rather than scaled.
@@ -715,8 +741,18 @@
       if (dy > -1) dy = -1;                          // keep the aim upward
       aimAngle = clamp(Math.atan2(dx, -dy), -MAX_AIM, MAX_AIM);
     }
+    // Nothing is still moving on the board: what the score says is final.
+    function settled() { return !ball.flying && !chain && !fallers.length; }
+    /* The round is decided and only waits for the board to settle, or the
+       level layer is already easing the world off for its third star
+       (Loop.rate drops below 1 only then, while a round is playing): either
+       way the next shot is not the player's to take. */
+    function closing() {
+      return ended || endPending !== null || Loop.rate() < 1 ||
+             (liveCount > 0 && rotCount >= liveCount);
+    }
     function fire() {
-      if (ball.flying || ended) return;
+      if (ball.flying || closing()) return;
       ball.vx = Math.sin(aimAngle) * SPEED;
       ball.vy = -Math.cos(aimAngle) * SPEED;
       ball.flying = true;
@@ -725,7 +761,7 @@
       trail = [];
       shotCount++;
       launchPunch = 1;
-      aimLoad = 0;
+      aimLoad = 0; swapT = 0;
       if (ball.sup) Sound.clip("shoot", 0.5, 1.2);   // a super leaves the tube brighter
       else Sound.clip("shoot", 0.5, 0.9);
     }
@@ -1141,7 +1177,7 @@
       spared = {};
       if (ended) return;
       if (shotCount > 0 && shotCount % ADD_SHOTS === 0) pushRow();
-      if (lowestBubbleBottom() >= DANGER_Y) { endRun("Overrun!"); return; }
+      if (lowestBubbleBottom() >= DANGER_Y) { endPending = "Overrun!"; return; }
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
       if (nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
     }
@@ -1220,12 +1256,12 @@
       score = 0;
       aimAngle = 0; aiming = false; aimLoad = 0;
       shotCount = 0; maxCombo = 0; streak = 0;
-      ended = false; totalCleared = 0;
+      ended = false; totalCleared = 0; banked = 0; endPending = null;
       // A board dealt clean waits out its grace before the rot turns up at all.
       blackTimer = (levelOpening() && levelOpening().seeds === 0) ? -CONFIG.rotGrace : 0;
       fallers = []; splashes = []; trail = [];
       bgT = 0; roundT = 0; fieldY = 0; launchPunch = 0; idleTimer = Rand.range(1.5, 3);
-      chain = null; spared = {}; swapSpin = 0;
+      chain = null; spared = {}; swapT = 0; pressMain = null;
       rotPct = 0; rotCount = 0; liveCount = 0;
       ball = newBall(pickShootColor(), Rand.chance(SHOT_SUP));
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
@@ -1247,7 +1283,7 @@
        line in the "!" log opens the guide's page of the same id — the round
        is never stopped to teach. A playable has no guide, so it says none of
        this and plays as it always has. Only what the frame cannot say is
-       named: the swap ring, the rot and the two rainbows. A cascade and the
+       named: the swap, the rot and the two rainbows. A cascade and the
        wall coming down a row show themselves as they happen. */
     function learn(id, word, sub) {
       return !!window.__GUIDE__ && Notify.learn(id, word, { sub: sub });
@@ -1256,7 +1292,7 @@
     // rot, a rainbow in the wall and one in the launcher only when dealt.
     function meet() {
       var r, c, rot = false, joker = false;
-      learn("swap", "Swap", "Tap the Swap ring to change bubbles");
+      learn("swap", "Swap", "Tap the small bubble to swap");
       for (r = 0; r < ROWS; r++)
         for (c = 0; c < rowCols(r); c++) {
           if (grid[r][c] === null) continue;
@@ -1277,35 +1313,48 @@
       return b[clamp(Math.floor((CONFIG.level - 1) / 6), 0, b.length - 1)];
     }
 
-    /* The SWAP: the ring between the loaded bubble and the next one, and the
-       next bubble itself — both are the same button, because a thumb aims for
-       the bubble it wants and not for the symbol between them. A tap trades
-       the two; it costs no shot, so the next bubble is finally worth reading. */
+    /* The SWAP, built into the launcher: the satellite socket (the next
+       bubble), the arrow over the seam, and the loaded bubble itself all trade
+       the two — a thumb aims for the bubble it wants, not for a symbol. It
+       costs no shot, so the next bubble is worth reading. */
+    function near(p, x, y, r) {
+      var dx = p.x - x, dy = p.y - y;
+      return dx * dx + dy * dy <= r * r;
+    }
     function inSwapZone(p) {
-      var dx = p.x - SWAP_X, dy = p.y - LY;
-      if (dx * dx + dy * dy <= SWAP_HIT * SWAP_HIT) return true;
-      dx = p.x - NEXT_X; dy = p.y - LY;
-      return dx * dx + dy * dy <= NEXT_HIT * NEXT_HIT;
+      return near(p, SAT_X, SAT_Y, SAT_HIT) || near(p, LX + ARROW_MX, LY + ARROW_MY, ARROW_HIT);
     }
     function doSwap() {
       var c = ball.color, sp = ball.sup;
       ball.color = nextColor; ball.sup = nextSuper;
       nextColor = c; nextSuper = sp;
-      swapSpin = 1;
+      swapT = 1;
       ball.a = 0.8; ball.p = 0; ball.ang = Math.PI / 2;    // both films take the trade
-      Fx.ring(SWAP_X, LY, { from: SWAP_R * 0.4, to: SWAP_R * 2.0,
-        color: "rgba(255,255,255,0.65)", width: 2.5, life: 0.26 });
+      Fx.ring(SAT_X, SAT_Y, { from: NEXT_R * 0.6, to: SAT_OUT * 1.8,
+        color: "rgba(214,170,255,0.7)", width: 2.5, life: 0.26 });
       Sound.clip("stick", 0.3, 1.7);
     }
 
     function onDown(p) {
-      if (ended || ball.flying) return;
+      pressMain = null;
+      if (closing() || ball.flying) return;
       if (inSwapZone(p)) { doSwap(); return; }
+      if (near(p, LX, LY, MAIN_HIT)) { pressMain = { x: p.x, y: p.y }; return; }
       aiming = true; updateAimFromPoint(p);
     }
-    function onMove(p) { if (ended || ball.flying || !aiming) return; updateAimFromPoint(p); }
+    function onMove(p) {
+      if (closing() || ball.flying) return;
+      if (pressMain) {
+        // Off the bubble far enough: it was a drag, and a drag aims.
+        if (near(p, pressMain.x, pressMain.y, TAP_SLOP)) return;
+        pressMain = null; aiming = true;
+      }
+      if (!aiming) return;
+      updateAimFromPoint(p);
+    }
     function onUp(p) {
-      if (ended || ball.flying || !aiming) { aiming = false; return; }
+      if (pressMain) { pressMain = null; if (!closing() && !ball.flying) doSwap(); return; }
+      if (closing() || ball.flying || !aiming) { aiming = false; return; }
       updateAimFromPoint(p); aiming = false; fire();
     }
 
@@ -1313,7 +1362,7 @@
       bgT += dt;
       if (!ended) roundT += dt;                    // the rot's own clock
       if (launchPunch > 0) launchPunch -= dt * 5;
-      if (swapSpin > 0) swapSpin -= dt * 3;
+      if (swapT > 0) swapT = Math.max(0, swapT - dt * 4.5);
       // The waiting bubble is loaded like a sling while the player aims.
       aimLoad = clamp(aimLoad + (aiming && !ball.flying ? dt * 5 : -dt * 6), 0, 1);
       // The freshly pushed row slides down into place.
@@ -1405,7 +1454,19 @@
       measureRot();
       HUD.setRight(Math.round(rotPct * 100) + "%", CONFIG.copy.rotLabel,
                    rotPct >= 0.7 ? "warn" : "");
-      if (liveCount > 0 && rotCount >= liveCount) { endRun(CONFIG.copy.rotten); return; }
+
+      updateFallers(dt);
+
+      /* The board has settled: the score is banked for the stars, and an
+         ending decided while it moved lands now — after the last bubble has
+         arrived and burst, and before the player can take another shot. A
+         wall rotten to the last film waits for the same stillness, since the
+         shot in the air may still cut into it. */
+      if (settled()) {
+        banked = score;
+        if (endPending) { endRun(endPending); return; }
+        if (liveCount > 0 && rotCount >= liveCount) { endRun(CONFIG.copy.rotten); return; }
+      }
 
       // Danger: pulse the overlay glow once the stack creeps down — or once
       // the rot is about to own the wall, whichever is the nearer of the two.
@@ -1413,8 +1474,6 @@
       var rotNear = clamp((rotPct - 0.55) / 0.45, 0, 1);
       if (rotNear > near) Overlay.vignette("#a020ff", rotNear * 0.95);
       else Overlay.vignette("#ff4d6d", near * 0.9);
-
-      updateFallers(dt);
     }
 
     // The film flattens against the wall and springs off it.
@@ -1430,7 +1489,11 @@
       if (chain) flushChain();
       if (ended) return;
       var cell = snapCell(ball.x, ball.y);
-      if (!cell) { endRun("Overrun!"); return; }
+      if (!cell) {                     // no room left: the wall has won
+        endPending = "Overrun!"; trail = [];
+        ball = newBall(nextColor, nextSuper);
+        return;
+      }
       var lx = cellX(cell.r, cell.c), ly = cellY(cell.r);
       var impactAng = Math.atan2(ball.vy, ball.vx);
       var ballCol = ball.sup ? PAL[0] : (PAL[ball.color] || PAL[0]);
@@ -1741,6 +1804,153 @@
       c.fillStyle = e; c.beginPath(); c.arc(x, y, R * 0.5, 0, PI2); c.fill();
       return cv;
     }
+    /* --- THE MAGIC LAUNCHER, as two sprites -------------------------------
+       Built once at device resolution, like the bubbles; this is also the
+       one place a glow may use shadowBlur, since it never runs per frame.
+       The sprite's frame puts the main socket's centre at (LS_OX, LS_OY). */
+    var LS_W = 190, LS_H = 150, LS_OX = 70, LS_OY = 84;
+    function lsCanvas() {
+      var dpr = Math.max(1, view.dpr || 1);
+      var cv = makeCanvas(Math.ceil(LS_W * dpr), Math.ceil(LS_H * dpr));
+      var c = cv.getContext("2d");
+      c.setTransform(dpr, 0, 0, dpr, LS_OX * dpr, LS_OY * dpr);
+      return c;
+    }
+    // The ring and its satellite as one silhouette, grown by `d`.
+    function lsBody(c, d) {
+      c.beginPath(); c.arc(0, 0, RING_OUT + d, 0, PI2); c.fill();
+      c.beginPath(); c.arc(SAT_DX, SAT_DY, SAT_OUT + d, 0, PI2); c.fill();
+      // the neck that fuses them: a fat stroke along the axis
+      c.lineWidth = 30 + d * 2; c.lineCap = "round";
+      c.beginPath(); c.moveTo(RING_OUT * 0.5, SAT_DY * 0.25); c.lineTo(SAT_DX, SAT_DY); c.stroke();
+    }
+    // A thorn off the rim: a curved spike, base on the band, tip out.
+    function lsThorn(c, cx, cy, rr, deg, len, bend) {
+      var a = deg * Math.PI / 180, w = 0.16;
+      var bx0 = cx + Math.cos(a - w) * (rr - 3), by0 = cy + Math.sin(a - w) * (rr - 3);
+      var bx1 = cx + Math.cos(a + w) * (rr - 3), by1 = cy + Math.sin(a + w) * (rr - 3);
+      var ta = a + bend, tx = cx + Math.cos(ta) * (rr + len), ty = cy + Math.sin(ta) * (rr + len);
+      var mx = cx + Math.cos(a) * (rr + len * 0.55), my = cy + Math.sin(a) * (rr + len * 0.55);
+      c.beginPath();
+      c.moveTo(bx0, by0);
+      c.quadraticCurveTo(mx, my, tx, ty);
+      c.quadraticCurveTo(mx + Math.cos(a + w) * 2, my + Math.sin(a + w) * 2, bx1, by1);
+      c.closePath();
+      c.fill(); c.stroke();
+    }
+    // One rune of the band, a stave standing across it with its branches:
+    // four old-runic shapes taken in turn (x runs outward, y along the band).
+    function lsRune(c, rr, a, kind) {
+      c.save();
+      c.rotate(a); c.translate(rr, 0);
+      c.beginPath();
+      if (kind === 3) { c.moveTo(-3.6, 0); c.lineTo(0, -2.6); c.lineTo(3.6, 0); c.lineTo(0, 2.6); c.closePath(); }
+      else {
+        c.moveTo(-4, 0); c.lineTo(4, 0);                                   // the stave
+        if (kind === 0) { c.moveTo(4, 0); c.lineTo(1, -2.8); c.moveTo(4, 0); c.lineTo(1, 2.8); }
+        else if (kind === 1) { c.moveTo(0.5, 0); c.lineTo(3.2, 2.8); c.moveTo(-2.5, 0); c.lineTo(0.2, 2.8); }
+        else { c.moveTo(-0.5, 0); c.lineTo(3.2, -2.8); c.moveTo(-0.5, 0); c.lineTo(3.2, 2.8); }
+      }
+      c.stroke();
+      c.restore();
+    }
+    function makeLauncherSprite() {
+      var c = lsCanvas(), cv = c.canvas, i, g;
+      var mid = (RING_IN + RING_OUT) / 2, axis = Math.atan2(SAT_DY, SAT_DX);
+      // 1. thorns, under the band — never on the satellite's side, never down
+      //    toward the foot bar
+      g = c.createRadialGradient(0, 0, RING_OUT, 0, 0, RING_OUT + 20);
+      g.addColorStop(0, "#2a1046"); g.addColorStop(1, "#6a36b0");
+      c.fillStyle = g; c.strokeStyle = "rgba(196,140,255,0.85)"; c.lineWidth = 1.1;
+      lsThorn(c, 0, 0, RING_OUT, -152, 19, -0.20);
+      lsThorn(c, 0, 0, RING_OUT, -120, 13, 0.16);
+      lsThorn(c, 0, 0, RING_OUT, 176, 17, 0.18);
+      lsThorn(c, 0, 0, RING_OUT, 143, 11, 0.22);
+      c.fillStyle = "#3a1866";
+      lsThorn(c, SAT_DX, SAT_DY, SAT_OUT, -18, 13, -0.24);
+      lsThorn(c, SAT_DX, SAT_DY, SAT_OUT, 34, 9, 0.22);
+      // 2. the lit rim, a glow cast off it
+      c.save();
+      c.shadowColor = "rgba(150,60,255,0.9)"; c.shadowBlur = 12;
+      c.fillStyle = "#8d52de"; c.strokeStyle = "#8d52de";
+      lsBody(c, 1.8);
+      c.restore();
+      // 3. the band: dark enchanted iron, lit from the top left
+      g = c.createLinearGradient(-RING_OUT, -RING_OUT, SAT_DX + SAT_OUT, SAT_DY + SAT_OUT);
+      g.addColorStop(0, "#3b1764"); g.addColorStop(0.55, "#1d0a35"); g.addColorStop(1, "#13072a");
+      c.fillStyle = g; c.strokeStyle = g;
+      lsBody(c, 0);
+      // a thin highlight along the top-left of the outer rim
+      c.lineCap = "round";
+      c.strokeStyle = "rgba(240,210,255,0.45)"; c.lineWidth = 1.6;
+      c.beginPath(); c.arc(0, 0, RING_OUT - 1.5, Math.PI * 1.05, Math.PI * 1.55); c.stroke();
+      c.beginPath(); c.arc(SAT_DX, SAT_DY, SAT_OUT - 1.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
+      // 4. the runes, glowing in the band
+      c.save();
+      c.shadowColor = "rgba(190,110,255,0.95)"; c.shadowBlur = 5;
+      c.strokeStyle = "rgba(226,190,255,0.9)"; c.lineWidth = 1.5; c.lineJoin = "round";
+      for (i = 0; i < 12; i++) {
+        var a = i * Math.PI / 6 + Math.PI / 12, off = Math.atan2(Math.sin(a - axis), Math.cos(a - axis));
+        if (Math.abs(off) < 0.62) continue;          // the neck sits there
+        lsRune(c, mid, a, i % 4);
+      }
+      c.translate(SAT_DX, SAT_DY);
+      c.fillStyle = "rgba(226,190,255,0.9)";
+      for (i = 0; i < 5; i++) {
+        var sa = axis + Math.PI * 0.5 + i * Math.PI * 0.25;
+        c.beginPath(); c.arc(Math.cos(sa) * (SAT_IN + SAT_OUT) / 2, Math.sin(sa) * (SAT_IN + SAT_OUT) / 2, 1.4, 0, PI2); c.fill();
+      }
+      c.restore();
+      // 5. the sockets: a dark well each, a violet light at the bottom of it,
+      //    so a soap film reads against it; an engraved lip around
+      var wells = [[0, 0, RING_IN], [SAT_DX, SAT_DY, SAT_IN]];
+      for (i = 0; i < wells.length; i++) {
+        var wx = wells[i][0], wy = wells[i][1], wr = wells[i][2];
+        g = c.createRadialGradient(wx, wy + wr * 0.2, 0, wx, wy, wr);
+        g.addColorStop(0, "rgba(140,64,230,0.62)");
+        g.addColorStop(0.7, "rgba(36,10,72,0.80)");
+        g.addColorStop(1, "rgba(6,2,16,0.95)");
+        c.fillStyle = g;
+        c.beginPath(); c.arc(wx, wy, wr, 0, PI2); c.fill();
+        c.strokeStyle = "rgba(6,2,16,0.9)"; c.lineWidth = 2;
+        c.beginPath(); c.arc(wx, wy, wr + 1, 0, PI2); c.stroke();
+        c.strokeStyle = "rgba(200,150,255,0.55)"; c.lineWidth = 1.2;
+        c.beginPath(); c.arc(wx, wy, wr + 2.6, Math.PI * 0.1, Math.PI * 0.9); c.stroke();
+      }
+      return cv;
+    }
+    /* The engraved double arrow over the seam: from the main socket's
+       shoulder to the top of the satellite, a head at both ends — the path
+       the two bubbles take when they trade. Its own sprite, so its light can
+       flare without redrawing the ring. */
+    function makeArrowSprite() {
+      var c = lsCanvas(), cv = c.canvas;
+      var x0 = Math.cos(-1.08) * (RING_OUT + 8), y0 = Math.sin(-1.08) * (RING_OUT + 8);
+      var x1 = SAT_DX + Math.cos(-1.66) * (SAT_OUT + 8), y1 = SAT_DY + Math.sin(-1.66) * (SAT_OUT + 8);
+      var cx = 70, cy = -54;
+      function path() {
+        c.beginPath();
+        c.moveTo(x0, y0); c.quadraticCurveTo(cx, cy, x1, y1);
+        head(x0, y0, Math.atan2(y0 - cy, x0 - cx));
+        head(x1, y1, Math.atan2(y1 - cy, x1 - cx));
+      }
+      function head(hx, hy, a) {
+        c.moveTo(hx + Math.cos(a + 2.5) * 8, hy + Math.sin(a + 2.5) * 8);
+        c.lineTo(hx, hy);
+        c.lineTo(hx + Math.cos(a - 2.5) * 8, hy + Math.sin(a - 2.5) * 8);
+      }
+      c.lineCap = "round"; c.lineJoin = "round";
+      // the groove it is cut in
+      c.strokeStyle = "rgba(10,2,24,0.85)"; c.lineWidth = 7;
+      path(); c.stroke();
+      // and the light that runs in it
+      c.save();
+      c.shadowColor = "rgba(180,96,255,1)"; c.shadowBlur = 9;
+      c.strokeStyle = "#e6ccff"; c.lineWidth = 2.6;
+      path(); c.stroke();
+      c.restore();
+      return cv;
+    }
     function freeSprites() {
       if (bubbleSprites)
         for (var i = 0; i < bubbleSprites.length; i++) freeCanvas(bubbleSprites[i]);
@@ -1748,6 +1958,8 @@
       superSprite = freeCanvas(superSprite);
       blackSprite = freeCanvas(blackSprite);
       puffSprite = freeCanvas(puffSprite);
+      launcherSprite = freeCanvas(launcherSprite);
+      arrowSprite = freeCanvas(arrowSprite);
     }
     // The sprites depend on the palette and the bubble size (CONFIG constants)
     // and on the device resolution they are rendered at — nothing else.
@@ -1761,6 +1973,8 @@
       superSprite = makeSuperSprite();
       blackSprite = makeBlackSprite();
       puffSprite = makePuffSprite();
+      launcherSprite = makeLauncherSprite();
+      arrowSprite = makeArrowSprite();
     }
     function buildBackground() {
       /* THE SCENE OF THE BAND. One of the five paintings of CONFIG.art, and
@@ -1926,16 +2140,19 @@
 
       drawSplashes();
 
-      // The preview comes first so the shot lands last; the two never overlap.
-      if (Enter.begin(NEXT_X, LY)) { drawNextPreview(); Enter.end(); }
+      // The launcher is ONE element of the entrance, the next bubble in its
+      // satellite socket; the loaded shot lands last.
       if (Enter.begin(LX, LY)) {
         if (!ball.flying && !ended) drawAim();
         drawLauncher();
+        if (!trading()) drawNext();
         Enter.end();
       }
-      if (!ball.flying && !ended && Enter.begin(SWAP_X, LY)) { drawSwapRing(); Enter.end(); }
       if (ball.flying) drawTrail();
-      if (!ended && Enter.begin(ball.x, ball.y)) { drawBall(); Enter.end(); }
+      if (!ended && Enter.begin(ball.x, ball.y)) {
+        if (trading()) drawTrade(); else drawBall();
+        Enter.end();
+      }
     }
 
     // The shot itself: stretched along its flight the way a water balloon is,
@@ -2018,54 +2235,69 @@
       ctx.globalAlpha = 1;
     }
 
+    /* THE MAGIC LAUNCHER, drawn. The ring, its sockets, runes and thorns are
+       one cached sprite (launcherSprite) and the engraved arrow another
+       (arrowSprite), so a frame lays two images and moves nothing but their
+       scale and the arrow's light: the launch kicks the ring, a trade lights
+       the arrow and swells the satellite. An idle control that moves pulls
+       the eye off the board, so at rest only the bubbles breathe. */
     function drawLauncher() {
-      var punch = launchPunch > 0 ? launchPunch : 0;
-      var ring = (R + 16) * (1 - punch * 0.12) * (1 + 0.012 * Math.sin(bgT * 2.6));
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(LX, LY, ring, 0, PI2); ctx.stroke();
+      drawLauncherAt(LX, LY, swapT > 0 ? swapT : 0, launchPunch > 0 ? launchPunch : 0,
+                     aimLoad > 0 ? aimLoad : 0);
     }
-
-    /* The swap button: a ring with two arrows chasing each other round it,
-       sat between the two bubbles it trades. It spins down after a trade
-       rather than animating for ever — an idle control that moves pulls the
-       eye away from the board. */
-    function drawSwapRing() {
-      var t = swapSpin > 0 ? swapSpin : 0;
-      var rr = SWAP_R * (1 + 0.16 * t), i;
+    function drawLauncherAt(x, y, lit, punch, load) {
+      if (!launcherSprite) return;
+      var k = (1 - punch * 0.08) * (1 + 0.01 * Math.sin((bgT || 0) * 2.6));
       ctx.save();
-      ctx.translate(SWAP_X, LY);
-      ctx.rotate(t * Math.PI * 1.6);
-      ctx.lineCap = "round";
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "rgba(255,255,255," + (0.16 + 0.22 * t).toFixed(3) + ")";
-      ctx.beginPath(); ctx.arc(0, 0, rr, 0, PI2); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,255,255," + (0.42 + 0.45 * t).toFixed(3) + ")";
-      ctx.lineWidth = 3;
-      for (i = 0; i < 2; i++) {
-        var a0 = i * Math.PI + 0.30, a1 = i * Math.PI + Math.PI - 0.60;
-        var ar = rr * 0.60;
-        ctx.beginPath(); ctx.arc(0, 0, ar, a0, a1); ctx.stroke();
-        // the head, laid back along the arc it ends
-        var hx = Math.cos(a1) * ar, hy = Math.sin(a1) * ar, back = a1 - Math.PI / 2;
-        ctx.beginPath();
-        ctx.moveTo(hx + Math.cos(back - 0.55) * 10, hy + Math.sin(back - 0.55) * 10);
-        ctx.lineTo(hx, hy);
-        ctx.lineTo(hx + Math.cos(back + 0.55) * 10, hy + Math.sin(back + 0.55) * 10);
-        ctx.stroke();
+      ctx.translate(x, y);
+      ctx.save();
+      ctx.scale(k, k);
+      ctx.drawImage(launcherSprite, -LS_OX, -LS_OY, LS_W, LS_H);
+      // the main socket wakes up while the player aims: violet from the well
+      if (load > 0.01) {
+        var g = ctx.createRadialGradient(0, 0, R * 0.4, 0, 0, RING_OUT + 6);
+        g.addColorStop(0, "rgba(176,96,255,0)");
+        g.addColorStop(0.75, "rgba(176,96,255," + (0.30 * load).toFixed(3) + ")");
+        g.addColorStop(1, "rgba(176,96,255,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, RING_OUT + 6, 0, PI2); ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = clamp(0.7 + 0.3 * lit, 0, 1);
+      ctx.drawImage(arrowSprite, -LS_OX, -LS_OY, LS_W, LS_H);
+      if (lit > 0) {
+        // the trade flares the arrow: one more pass, added on top
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = lit * 0.8;
+        ctx.drawImage(arrowSprite, -LS_OX, -LS_OY, LS_W, LS_H);
       }
       ctx.restore();
     }
 
-    function drawNextPreview() {
-      var nx = NEXT_X, ny = LY, nr = R * 0.6;
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(upper(Lang.t("Next")), nx, ny - nr - 12);
-      ctx.textAlign = "left";
-      drawBubble(nx, ny, nr, nextColor, nextSuper, false, 1, 0, 0, 0,
-                 1 + BREATHE * 1.4 * Math.sin(bgT * 1.9 + 1.1));
+    // The next bubble, sitting in the satellite socket.
+    function drawNext() { drawNextAt(SAT_X, SAT_Y, nextColor, nextSuper); }
+    function drawNextAt(x, y, idx, isSup) {
+      drawBubble(x, y, NEXT_R, idx, isSup, false, 1, isSup ? (bgT || 0) * 0.6 : 0, 0, 0,
+                 1 + BREATHE * 1.4 * Math.sin((bgT || 0) * 1.9 + 1.1));
+    }
+
+    /* THE TRADE: the bubble that was next rides the arrow's arc OVER the seam
+       into the main socket, growing, while the one it replaces dips UNDER it
+       into the satellite, shrinking — the path the arrow promised. */
+    function trading() { return swapT > 0 && !ball.flying && !ended; }
+    function arcPoint(x0, y0, x1, y1, bow, e) {
+      var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + bow, u = 1 - e;
+      return { x: u * u * x0 + 2 * u * e * cx + e * e * x1, y: u * u * y0 + 2 * u * e * cy + e * e * y1 };
+    }
+    function drawTrade() {
+      var e = 1 - swapT;
+      e = e * e * (3 - 2 * e);
+      var down = arcPoint(LX, LY, SAT_X, SAT_Y, 30, e);      // the old shot, under
+      var up = arcPoint(SAT_X, SAT_Y, LX, LY, -56, e);       // the new one, over
+      drawBubble(down.x, down.y, R + (NEXT_R - R) * e, nextColor, nextSuper, false, 1,
+                 nextSuper ? bgT * 0.6 : 0, 0, 0, 1);
+      drawBubble(up.x, up.y, NEXT_R + (R - NEXT_R) * e, ball.color, ball.sup, false, 1,
+                 ball.sup ? bgT * 0.6 : 0, 0.18 * Math.sin(e * Math.PI), -Math.PI / 4, 1);
     }
 
     function drawDangerLine() {
@@ -2083,8 +2315,8 @@
 
     /* --- the guide: every rule, as pages (packages/webshell/guide.js) -----
        Every page SHOWS before it tells, and every picture is painted by the
-       round's own renderer: drawBubble, drawInfecting, drawLauncher and
-       drawSwapRing are lent a canvas of their own for the length of the call
+       round's own renderer: drawBubble, drawInfecting, drawLauncherAt and
+       drawNextAt are lent a canvas of their own for the length of the call
        (the round's `ctx` is swapped and given back), so a bubble read in the
        guide is the bubble on the wall, sprite for sprite. The guide can open
        before any round — from the Help card on the title screen — so nothing
@@ -2167,23 +2399,12 @@
       }
       return pts;
     }
-    // The launcher and its swap ring, drawn where the picture wants them:
-    // both draw at the round's own launcher row, so the context is moved.
-    function picLauncher(x, y) {
-      ctx.save(); ctx.translate(x - LX, y - LY); drawLauncher(); ctx.restore();
-    }
-    function picSwapRing(x, y) {
-      ctx.save(); ctx.translate(x - SWAP_X, y - LY); drawSwapRing(); ctx.restore();
-    }
-    // drawNextPreview's own label and bubble, at a point of the picture.
-    function picNext(x, y, b) {
-      var nr = R * 0.6;
-      ctx.fillStyle = "rgba(255,255,255,0.55)";
-      ctx.font = "bold 18px -apple-system,Segoe UI,Roboto,sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(upper(Lang.t("Next")), x, y - nr - 12);
-      ctx.textAlign = "left";
-      picBubble(x, y, b, nr);
+    // The magic launcher, loaded with `cur` and `next` (picBubble's codes),
+    // at a point of the picture; `lit` flares its arrow as a trade does.
+    function picLauncher(x, y, cur, next, lit) {
+      drawLauncherAt(x, y, lit || 0, 0, 0);
+      picBubble(x + SAT_DX, y + SAT_DY, next, NEXT_R);
+      picBubble(x, y, cur);
     }
     // drawDangerLine's dashes, at full strength.
     function picDanger(W, y) {
@@ -2296,11 +2517,10 @@
               }, rows: goalRows, lines: [
               Lang.t("There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.") ] },
             { id: "aim", title: Lang.t("Aim and shoot"), pic: function () {
-                return paintPic(460, 260, function () {
+                return paintPic(460, 290, function () {
                   var wall = picWall(["ybrrb", "byyb"], 40, 10);
-                  picDots(picPath(150, 210, 1.15, wall, R, 460 - R));
-                  picLauncher(150, 210);
-                  picBubble(150, 210, 0);
+                  picDots(picPath(250, 236, -1.15, wall, R, 460 - R));
+                  picLauncher(250, 236, 0, 2);
                 });
               }, lines: [
               Lang.t("Drag to aim, release to shoot.") ] },
@@ -2327,15 +2547,20 @@
                         [Lang.t("A rotten bubble that falls"), "+" + CONFIG.fallBonus * 2]], lines: [
               Lang.t("Pop what holds a group to the ceiling, and the whole group falls.") ] },
             { id: "swap", title: Lang.t("Swap"), pic: function () {
-                return paintPic(380, 150, function () {
-                  var y = 92, sx = 130 + (SWAP_X - LX), nx = 130 + (NEXT_X - LX);
-                  picLauncher(130, y);
-                  picBubble(130, y, 2);
-                  picSwapRing(sx, y);
-                  picNext(nx, y, "s");
+                return paintPic(380, 190, function () {
+                  // the launcher, a size up: it is the subject of the page
+                  ctx.save();
+                  ctx.translate(158, 100); ctx.scale(1.35, 1.35);
+                  picLauncher(0, 0, 2, "s", 0.7);
+                  // the tap, on the small bubble: two rings going out
+                  ctx.strokeStyle = "rgba(226,190,255,0.75)"; ctx.lineWidth = 2.5;
+                  ctx.beginPath(); ctx.arc(SAT_DX, SAT_DY, SAT_OUT + 7, 0, PI2); ctx.stroke();
+                  ctx.globalAlpha = 0.4;
+                  ctx.beginPath(); ctx.arc(SAT_DX, SAT_DY, SAT_OUT + 15, 0, PI2); ctx.stroke();
+                  ctx.restore();
                 });
               }, lines: [
-              Lang.t("Tap the ring or the next bubble to swap the two."),
+              Lang.t("Tap the small bubble or the launcher to swap the two."),
               Lang.t("Swapping costs no shot. Check the next bubble and fire it first if it fits better.") ] },
             { id: "press", title: Lang.t("The wall comes down"), pic: function () {
                 return paintPic(460, 220, function () {
@@ -2356,10 +2581,26 @@
               Lang.t("A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it."),
               Lang.t("A bubble filling with rot is still active. Pop it before it turns completely.") ] },
             { id: "outbreak", title: Lang.t("The rot spreads"), pic: function () {
-                return paintPic(400, 200, function () {
-                  picWall(["byrby", "ry.yb", "ybrb"], 60, 12);
-                  var p = picCell(60, 12, 1, 2);
-                  picBubble(p.x, p.y, { c: 0, t: 0.12, hole: -Math.PI / 2 });
+                return paintPic(400, 232, function () {
+                  // a wall whose rotten patch was cut off: the hole at the
+                  // bottom left, the cut pieces falling out of it
+                  picWall(["byrbyb", ".yrby", "..rbyb"], 20, 6);
+                  picBubble(66, 152, "x", R, 0.65, -0.2, 0.5);
+                  picBubble(132, 186, "x", R, 0.5, -0.2, -0.4);
+                  // and the rot breaking out somewhere else: a bubble of the
+                  // wall filling with it, the hop dotted from the cut to it
+                  var p = picCell(20, 6, 2, 5);
+                  picBubble(p.x, p.y, { c: 2, t: 0.8, hole: -Math.PI / 2 });
+                  ctx.fillStyle = "#c050ff";
+                  for (var d = 1; d <= 7; d++) {
+                    var u = d / 8, v = 1 - u;
+                    // a quadratic through a control point under the wall
+                    var qx = v * v * 170 + 2 * u * v * 270 + u * u * (p.x - 8),
+                        qy = v * v * 196 + 2 * u * v * 244 + u * u * (p.y + 40);
+                    ctx.globalAlpha = 0.9;
+                    ctx.beginPath(); ctx.arc(qx, qy, 4, 0, PI2); ctx.fill();
+                  }
+                  ctx.globalAlpha = 1;
                 });
               }, lines: [
               Lang.t("Cutting the rot off won't stop it. It will break out somewhere else.") ] }
@@ -2397,6 +2638,7 @@
       if (ended) return;
       ended = true;
       chain = null;
+      banked = score;
       var best = Math.max(score, Store.get("bestScore", 0));
       var stars = score >= 3000 ? 3 : score >= 2000 ? 2 : score > 0 ? 1 : 0;
       endRound({
@@ -2418,7 +2660,9 @@
        motion, and the round ends through the game's own result so the end
        screen keeps these stat rows. Ignored by the playable, which has no
        levels — see docs/LEVELS.md. */
+    function levelProgress() { return banked; }
+
     return { reset: reset, onDown: onDown, onMove: onMove, onUp: onUp,
              update: update, render: render, onTimeUp: onTimeUp, onResize: onResize,
-             levelWon: endRun, guide: guide };
+             levelWon: endRun, levelProgress: levelProgress, guide: guide };
   })();

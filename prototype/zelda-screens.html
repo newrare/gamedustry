@@ -1,0 +1,1094 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Zelda-like screens</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// Prototype: top-down movement in the Game Boy Link's Awakening grid, with a
+// twist. Question: does flipping between two worlds make good screen puzzles?
+//
+// The world exists twice, in black and white and in colour, with a different
+// layout in each (a river dries up, a bridge appears, a fence is gone). On
+// every screen ONE object or enemy is drawn in the other world's look: a
+// coloured pot in the grey world, a grey stump in the coloured one. Hitting it
+// with the sword flips the whole world. The world you are in carries over from
+// screen to screen, so a screen is solved by arriving in the right one.
+//
+// The Game Boy screen is 160x144 px: 16x16 tiles, 10 columns x 8 rows
+// (160x128), plus a 16 px HUD strip that lives in the inventory here. The play
+// area is drawn at that size in world px into an offscreen buffer, then scaled
+// up with no smoothing into the top of a 720x1280 portrait frame.
+//
+// The art is drawn in colour only; the black-and-white world is the same
+// sheets desaturated at load.
+
+// ---- Tunables --------------------------------------------------------------
+var TILE = 16;            // px per tile
+var COLS = 10, ROWS = 8;  // one screen = 10x8 tiles = 160x128 px
+// The page is the project's portrait frame, 720x1280 design px, scaled to the
+// window: the game screen on top, the inventory under it, the pad at the foot.
+// The Game Boy's own 16 px HUD strip moved into the inventory.
+var FRAME_W = 720, FRAME_H = 1280;
+var VIEW_Y = 24, VIEW_H = 576;     // the game screen's band (160x128 at x4.5)
+var PANEL_Y = 616, PANEL_H = 236;  // inventory: hearts, world, items, map
+var PAD_X = 190, PAD_Y = 1066, PAD_R = 150;  // d-pad centre and reach
+var PAD_DEAD = 22;                 // design px of thumb travel before it moves
+var BTN_X = 560, BTN_Y = 1040, BTN_R = 96;   // A button: the sword
+var PILL_X = 376, PILL_Y = 1226;   // the effects switch
+var WORLD_W = 3, WORLD_H = 3;  // screens in the world
+
+var WALK_SPEED = 60;      // px/s (about 1 px per frame at 60 fps, like the original)
+var DIAG_NORMALISE = false; // the original moves faster on diagonals
+var CORNER_SLIDE = 6;     // px: walking into a corner nudges you around it
+var SCROLL_TIME = 0.55;   // s for a screen-to-screen scroll
+var ENTER_PUSH = 14;      // px walked into the new screen during the scroll
+
+var SWORD_TIME = 0.24;    // s for one swing
+var SWORD_STEPS = 3;      // the swing is 3 poses: side, diagonal, front
+var SWORD_LEN = 13;       // px of blade
+var SWORD_LOCK = true;    // standing still while swinging
+
+var PLAYER_HP = 6;        // half hearts (3 hearts)
+var IFRAMES = 1.0;        // s of blinking after a hit
+var KNOCK_SPEED = 150, KNOCK_TIME = 0.15;
+
+var ENEMY_HP = 2;
+var ENEMY_SPEED = 32;
+var DROP_HEART = 0.3;     // chance an enemy or a bush leaves a heart
+
+var SWITCH_TIME = 0.45;   // s of the circular wipe from one world to the other
+var BW_LEVELS = 0;        // 0: smooth greys; 4: the Game Boy's four shades
+var BW_CONTRAST = 1.15;   // contrast of the grey world around mid-grey
+
+// Effects, all drawn with the 2D canvas (F switches them all, L the scanlines).
+var FX = true;
+var SCANLINES = true, SCAN_ALPHA = 0.16;  // a dark band under every world pixel row
+var BLOOM = 0.9;          // glow around whatever emits light (sparks, the odd one out, the blade)
+var VIGNETTE = 0.42;      // how dark the screen's corners get (0..1)
+var HERO_LIGHT = 46;      // world px radius of the light the hero carries
+var MOTES = 28;           // ambient particles: pollen rising in colour, ash falling in grey
+var WATER_GLINTS = true;  // sun glints on water tiles
+var SHAKE_HIT = 1.5, SHAKE_FLIP = 3;  // world px
+
+// Art density: 1 draws the tiles at 16 px (the Game Boy's own density), 2 at
+// 32 px (the painted sheet's). The world stays 10x8 tiles either way; T switches.
+var RES = 2;
+
+// Procedural pieces (HUD, enemy, fx), darkest to lightest, one set per world.
+var PAL_BW = ['#141414', '#5c5c5c', '#a8a8a8', '#ececec'];
+var PAL_COL = ['#1c1c28', '#2f7a34', '#e0a040', '#f8f0d8'];
+var ENEMY_COL = ['#3a0d0d', '#d8462e', '#ffe0c0'];
+var ENEMY_BW = ['#1a1a1a', '#7a7a7a', '#e0e0e0'];
+
+// ---- World ------------------------------------------------------------------
+// Each screen lists its 8x6 interior once per world; the border ring is trees,
+// opened by the builder towards every neighbour screen (2 tiles wide, centred)
+// unless that world's `block` keeps the side shut.
+// '.' grass  ',' flowers  's' sand  'g' tall grass (cut)  '=' bridge  'x' cut bush
+// '#' tree  'b' bush (cut)  'r' rock  'o' stump  'p' pot  'i' sign  'f' fence
+// 'w' water  '~' shore (grass over water)
+// `keys` is the odd one out of each world, in screen tiles (0..9, 0..7), or
+// 'e' for the screen's first enemy. `enemies` are in screen tiles too.
+// The intended route: start (0,0) grey, flip to colour, down the dry river to
+// (0,1), flip to grey on the grey enemy, right to (1,1), flip to colour for the
+// bridge, right to (2,1), flip to grey to lose the fence, down to (2,2), flip
+// to colour for the bridge to the goal.
+var SCREENS = [
+  [
+    { bw:  ['..,....g', '.##..p..', '........', '..,.....', 'wwwwwwww', '........'],
+      col: ['..,....g', '.##..p..', '........', '..,.....', 'sssssss.', '.p......'],
+      keys: { bw: [6, 2], col: [2, 6] }, block: { bw: [], col: [] },
+      enemies: { bw: [[6, 3]], col: [[6, 6]] } },
+    { bw:  ['r..o..r.', '........', '.r.rr.r.', '........', 'o..b..o.', '........'],
+      col: ['r..o..r.', '........', '.r.rr.r.', '........', 'o..b..o.', '........'],
+      keys: { bw: [4, 5], col: [1, 5] }, block: { bw: ['bottom'], col: ['right'] },
+      enemies: { bw: [[5, 4], [6, 6]], col: [[5, 4], [6, 6]] } },
+    { bw:  ['........', '..wwww..', '..wwww..', '........', '.b....b.', 'g.,..,gg'],
+      col: ['........', '..ssss..', '..ssss..', '........', '.b....b.', 'g.,..,gg'],
+      keys: { bw: [2, 5], col: [7, 5] }, block: { bw: ['bottom'], col: ['bottom'] },
+      enemies: { bw: [[2, 2]], col: [[7, 2]] } }
+  ],
+  [
+    { bw:  ['#.o..o.#', '#......#', '.o.o.o..', '........', '#..o...#', '#.o..o.#'],
+      col: ['#.#..#.#', '#.#..#.#', '..#..###', '..#..###', '#.#....#', '#.#..#.#'],
+      keys: { bw: [2, 3], col: 'e' }, block: { bw: [], col: ['right'] },
+      enemies: { bw: [[6, 4]], col: [[5, 5]] } },
+    { bw:  ['bb.ss.bb', 'bwwwwwwb', 'swwwwwws', 'swwwwwws', 'bwwwwwwb', 'bb.ss.bb'],
+      col: ['bb.ss.bb', 'bwwwwwpb', 's======s', 's======s', 'bwwwwwwb', 'bb.ss.bb'],
+      keys: { bw: [1, 2], col: [7, 2] }, block: { bw: [], col: [] },
+      enemies: { bw: [], col: [[3, 3]] } },
+    { bw:  ['bbbb.bbb', 'bp.gg..b', '..b..b..', '...gg...', 'b..ss..b', 'bbb..bbb'],
+      col: ['bbbb.bbb', 'b..gg..b', '..b..b..', '...gg..i', 'ffffffff', 'bbb..bbb'],
+      keys: { bw: [2, 2], col: [8, 4] }, block: { bw: [], col: [] },
+      enemies: { bw: [[4, 6]], col: [[3, 3], [6, 2]] } }
+  ],
+  [
+    { bw:  ['......i.', '..,..,..', '~~~~....', 'wwww~~..', 'wwwwww~.', 'wwwwwww.'],
+      col: ['........', '..,..,..', 'gggg....', 'gggggg..', 'gggggg..', 'pgggggg.'],
+      keys: { bw: [7, 1], col: [1, 6] }, block: { bw: [], col: [] },
+      enemies: { bw: [[7, 2]], col: [[3, 5]] } },
+    { bw:  ['.r.r..r.', '........', '.ff..ff.', '........', '.o....o.', '..p..r..'],
+      col: ['.r.r..r.', '........', '.##..##.', '........', '.o....o.', '..r..r..'],
+      keys: { bw: [3, 6], col: [2, 5] }, block: { bw: ['right'], col: ['right'] },
+      enemies: { bw: [[4, 4], [7, 4]], col: [[5, 2]] } },
+    { bw:  ['........', '......p.', '~~~~~~~~', 'wwwwwwww', 'ww....ww', 'ww....ww'],
+      col: ['........', '........', '~~~==~~~', 'www==www', 'wwo...ww', 'ww....ww'],
+      keys: { bw: [7, 2], col: [3, 5] }, block: { bw: ['left'], col: ['left'] },
+      enemies: { bw: [[2, 2]], col: [[5, 6]] }, goal: [4, 6] }
+  ]
+];
+var SOLID = { '#': 1, 'r': 1, 'w': 1, 'b': 1, '~': 1, 'o': 1, 'p': 1, 'i': 1, 'f': 1 };
+var CUT = { 'b': 'x', 'g': '.' };   // what the sword leaves behind
+// Cell of each tile in the decor sheet (4x4); 'w' alternates 4 and 5.
+var TILE_CELL = { '.': 0, ',': 1, 's': 2, 'g': 3, 'w': 4, '~': 6, '=': 7,
+                  '#': 8, 'b': 9, 'r': 10, 'o': 11, 'x': 12, 'p': 13, 'i': 14, 'f': 15 };
+
+var SW = COLS * TILE, SH = ROWS * TILE;          // 160 x 128
+var MAP_W = WORLD_W * COLS, MAP_H = WORLD_H * ROWS;
+var base = {}, map = [], world = 'bw';
+
+function other(w) { return w === 'bw' ? 'col' : 'bw'; }
+
+function buildLayer(w) {
+  var m = [];
+  for (var y = 0; y < MAP_H; y++) { m.push([]); for (var x = 0; x < MAP_W; x++) m[y].push('#'); }
+  function open(ox, oy, tx, ty, ix, iy) {
+    m[oy + ty][ox + tx] = 's';
+    if (SOLID[m[oy + iy][ox + ix]]) m[oy + iy][ox + ix] = 's';
+  }
+  for (var sy = 0; sy < WORLD_H; sy++) for (var sx = 0; sx < WORLD_W; sx++) {
+    var s = SCREENS[sy][sx], rows = s[w], shut = s.block[w], ox = sx * COLS, oy = sy * ROWS;
+    for (var r = 0; r < 6; r++) for (var c = 0; c < 8; c++) m[oy + 1 + r][ox + 1 + c] = rows[r].charAt(c);
+    if (sx < WORLD_W - 1 && shut.indexOf('right') < 0)  { open(ox, oy, 9, 3, 8, 3); open(ox, oy, 9, 4, 8, 4); }
+    if (sx > 0 && shut.indexOf('left') < 0)             { open(ox, oy, 0, 3, 1, 3); open(ox, oy, 0, 4, 1, 4); }
+    if (sy > 0 && shut.indexOf('top') < 0)              { open(ox, oy, 4, 0, 4, 1); open(ox, oy, 5, 0, 5, 1); }
+    if (sy < WORLD_H - 1 && shut.indexOf('bottom') < 0) { open(ox, oy, 4, 7, 4, 6); open(ox, oy, 5, 7, 5, 6); }
+  }
+  return m;
+}
+
+function buildWorld() {
+  base.bw = buildLayer('bw');
+  base.col = buildLayer('col');
+}
+
+function copyLayer(w) { return base[w].map(function (row) { return row.slice(); }); }
+
+// Bushes grow back every time a screen is entered, as in the original.
+function resetScreenTiles(sx, sy) {
+  for (var y = 0; y < ROWS; y++) for (var x = 0; x < COLS; x++) {
+    map[sy * ROWS + y][sx * COLS + x] = base[world][sy * ROWS + y][sx * COLS + x];
+  }
+}
+
+// Is world tile (tx, ty) the odd one out of world w?
+function isKeyTile(w, tx, ty) {
+  var sx = Math.floor(tx / COLS), sy = Math.floor(ty / ROWS);
+  if (sx < 0 || sy < 0 || sx >= WORLD_W || sy >= WORLD_H) return false;
+  var k = SCREENS[sy][sx].keys[w];
+  return k instanceof Array && tx === sx * COLS + k[0] && ty === sy * ROWS + k[1];
+}
+
+function tileAt(px, py) {
+  var tx = Math.floor(px / TILE), ty = Math.floor(py / TILE);
+  if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) return '#';
+  return map[ty][tx];
+}
+
+// A box is (x, y) centre with half sizes; boxes are smaller than a tile, so
+// testing the four corners is enough.
+function boxFree(x, y, hw, hh, lim) {
+  var x0 = x - hw, x1 = x + hw - 0.01, y0 = y - hh, y1 = y + hh - 0.01;
+  if (lim && (x0 < lim.x0 || x1 > lim.x1 || y0 < lim.y0 || y1 > lim.y1)) return false;
+  return !SOLID[tileAt(x0, y0)] && !SOLID[tileAt(x1, y0)] && !SOLID[tileAt(x0, y1)] && !SOLID[tileAt(x1, y1)];
+}
+
+// Moves a body to the nearest free spot (used when a flip puts it in a wall).
+function unstick(o, lim) {
+  if (boxFree(o.x, o.y, o.hw, o.hh, lim)) return;
+  for (var r = 1; r <= 24; r++) {
+    for (var a = 0; a < 16; a++) {
+      var x = o.x + Math.round(Math.cos(a / 16 * Math.PI * 2) * r), y = o.y + Math.round(Math.sin(a / 16 * Math.PI * 2) * r);
+      if (boxFree(x, y, o.hw, o.hh, lim)) { o.x = x; o.y = y; return; }
+    }
+  }
+}
+
+function slideAround(o, axis, d, lim) {
+  var step = Math.abs(d);
+  for (var k = 1; k <= CORNER_SLIDE; k++) {
+    if (axis === 'x') {
+      if (boxFree(o.x + d, o.y - k, o.hw, o.hh, lim)) { o.y -= Math.min(step, k); return; }
+      if (boxFree(o.x + d, o.y + k, o.hw, o.hh, lim)) { o.y += Math.min(step, k); return; }
+    } else {
+      if (boxFree(o.x - k, o.y + d, o.hw, o.hh, lim)) { o.x -= Math.min(step, k); return; }
+      if (boxFree(o.x + k, o.y + d, o.hw, o.hh, lim)) { o.x += Math.min(step, k); return; }
+    }
+  }
+}
+
+// Moves one axis at a time; returns true when something blocked it.
+function moveBody(o, dx, dy, slide, lim) {
+  var blocked = false;
+  if (dx) {
+    if (boxFree(o.x + dx, o.y, o.hw, o.hh, lim)) o.x += dx;
+    else { blocked = true; if (slide && !dy) slideAround(o, 'x', dx, lim); }
+  }
+  if (dy) {
+    if (boxFree(o.x, o.y + dy, o.hw, o.hh, lim)) o.y += dy;
+    else { blocked = true; if (slide && !dx) slideAround(o, 'y', dy, lim); }
+  }
+  return blocked;
+}
+
+// ---- State ------------------------------------------------------------------
+var DIRS = { right: [1, 0], down: [0, 1], left: [-1, 0], up: [0, -1] };
+var DIR_KEYS = ['right', 'down', 'left', 'up'];
+
+var START = { sx: 0, sy: 0, tx: 2, ty: 4 };
+var player, enemies = [], pickups = [], parts = [];
+var scr = { x: 0, y: 0 }, camX = 0, camY = 0;
+var trans = null, wipe = null, dead = 0, time = 0, goalT = 0, flips = 0;
+var showGrid = false, showHelp = false, visited = {};  // H shows the debug lines
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function pal() { return world === 'col' ? PAL_COL : PAL_BW; }
+
+function screenLim(inset) {
+  return { x0: scr.x * SW + inset, y0: scr.y * SH + inset, x1: (scr.x + 1) * SW - inset, y1: (scr.y + 1) * SH - inset };
+}
+
+function respawn() {
+  buildWorld();
+  world = 'bw'; map = copyLayer(world); flips = 0;
+  resetMotes();
+  scr.x = START.sx; scr.y = START.sy;
+  visited = {}; visited[scr.x + ',' + scr.y] = 1;
+  camX = scr.x * SW; camY = scr.y * SH;
+  player = {
+    x: camX + START.tx * TILE + 8, y: camY + START.ty * TILE + 8, hw: 6, hh: 5,
+    face: 'down', hp: PLAYER_HP, iframe: 0, knock: 0, kx: 0, ky: 0,
+    swing: 0, swingId: 0, walkT: 0, moving: false
+  };
+  trans = null; wipe = null;
+  spawnEnemies();
+}
+
+function spawnEnemies() {
+  enemies = []; pickups = [];
+  var s = SCREENS[scr.y][scr.x], list = s.enemies[world];
+  for (var i = 0; i < list.length; i++) {
+    var e = { x: scr.x * SW + list[i][0] * TILE + 8, y: scr.y * SH + list[i][1] * TILE + 8, hw: 6, hh: 6,
+              hp: ENEMY_HP, dir: 'down', state: 'wait', t: rand(0.2, 0.8),
+              knock: 0, kx: 0, ky: 0, flash: 0, hitBy: -1, walkT: 0, key: i === 0 && s.keys[world] === 'e' };
+    unstick(e, screenLim(8));
+    enemies.push(e);
+  }
+}
+
+function startTransition(nx, ny) {
+  var dx = nx - scr.x, dy = ny - scr.y;
+  trans = { t: 0, fx: camX, fy: camY, tx: nx * SW, ty: ny * SH,
+            px: player.x, py: player.y, ex: player.x + dx * ENTER_PUSH, ey: player.y + dy * ENTER_PUSH };
+  scr.x = nx; scr.y = ny;
+  visited[nx + ',' + ny] = 1;
+  enemies = []; pickups = [];
+  player.swing = 0; player.knock = 0;
+  resetScreenTiles(nx, ny);
+}
+
+// Flips the whole world; the wipe grows out of the point that was hit.
+function flipWorld(x, y) {
+  wipe = { t: 0, x: x, y: y, oldMap: map, oldWorld: world };
+  world = other(world);
+  map = copyLayer(world);
+  flips++;
+  enemies = []; pickups = [];
+  player.swing = 0; player.knock = 0;
+  unstick(player, screenLim(0));
+  var tones = world === 'col' ? ['#ffe080', '#ff8a5c', '#8ee07a', '#7ab8ff'] : ['#ffffff', '#cfcfcf'];
+  for (var i = 0; i < 30; i++) sparks(x, y, 1, tones[i % tones.length], rand(60, 150));
+  shake(SHAKE_FLIP); flashOn('#ffffff', 0.45);
+  resetMotes();
+}
+
+// ---- Input ------------------------------------------------------------------
+var key = {}, swordPressed = false, pad = null, btnId = null, btnFlash = 0;
+var KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+               ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down' };
+var SWORD_KEYS = { Space: 1, KeyJ: 1, KeyX: 1, KeyK: 1 };
+addEventListener('keydown', function (e) {
+  if (KEYMAP[e.code]) { key[KEYMAP[e.code]] = true; e.preventDefault(); }
+  if (SWORD_KEYS[e.code]) { if (!e.repeat) swordPressed = true; key.sword = true; e.preventDefault(); }
+  if (e.code === 'KeyG') showGrid = !showGrid;
+  if (e.code === 'KeyH') showHelp = !showHelp;
+  if (e.code === 'KeyT') { setRes(RES === 1 ? 2 : 1); resize(); }
+  if (e.code === 'KeyR') respawn();
+  if (e.code === 'KeyF') FX = !FX;
+  if (e.code === 'KeyL') SCANLINES = !SCANLINES;
+});
+addEventListener('keyup', function (e) { if (KEYMAP[e.code]) key[KEYMAP[e.code]] = false; if (SWORD_KEYS[e.code]) key.sword = false; });
+addEventListener('blur', function () { key = {}; });
+
+// Touch (and mouse): the d-pad and the A button, each followed by its own
+// pointer so a thumb on each works at once. The d-pad reads 8 directions from
+// its centre, and a thumb sliding over it keeps steering.
+var cv = document.getElementById('c');
+function toDesign(e) { return { x: (e.clientX * dpr - frameX) / F, y: (e.clientY * dpr - frameY) / F }; }
+function dist(a, x, y) { return Math.sqrt((a.x - x) * (a.x - x) + (a.y - y) * (a.y - y)); }
+cv.addEventListener('pointerdown', function (e) {
+  var p = toDesign(e);
+  if (dist(p, PAD_X, PAD_Y) < PAD_R * 1.3) pad = { id: e.pointerId, x: p.x, y: p.y };
+  else if (dist(p, BTN_X, BTN_Y) < BTN_R * 1.4) { btnId = e.pointerId; swordPressed = true; btnFlash = 0.15; }
+  else if (Math.abs(p.x - PILL_X) < 90 && Math.abs(p.y - PILL_Y) < 34) FX = !FX;
+});
+cv.addEventListener('pointermove', function (e) { if (pad && pad.id === e.pointerId) { var p = toDesign(e); pad.x = p.x; pad.y = p.y; } });
+function release(e) { if (pad && pad.id === e.pointerId) pad = null; if (btnId === e.pointerId) btnId = null; }
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', release);
+
+function readInput() {
+  var ix = (key.right ? 1 : 0) - (key.left ? 1 : 0), iy = (key.down ? 1 : 0) - (key.up ? 1 : 0);
+  if (pad) {
+    var dx = pad.x - PAD_X, dy = pad.y - PAD_Y, len = Math.sqrt(dx * dx + dy * dy);
+    if (len > PAD_DEAD) {
+      if (Math.abs(dx) > len * 0.38) ix = dx > 0 ? 1 : -1;
+      if (Math.abs(dy) > len * 0.38) iy = dy > 0 ? 1 : -1;
+    }
+  }
+  return [ix, iy];
+}
+
+// ---- Update -----------------------------------------------------------------
+function update(dt) {
+  time += dt;
+  updateParts(dt);
+  if (goalT > 0) goalT -= dt;
+  if (btnFlash > 0) btnFlash -= dt;
+  updateFx(dt);
+
+  if (wipe) {
+    wipe.t += dt / SWITCH_TIME;
+    if (wipe.t >= 1) { wipe = null; spawnEnemies(); }
+    swordPressed = false;
+    return;
+  }
+  if (trans) {
+    trans.t += dt / SCROLL_TIME;
+    var k = Math.min(trans.t, 1);
+    camX = trans.fx + (trans.tx - trans.fx) * k;
+    camY = trans.fy + (trans.ty - trans.fy) * k;
+    player.x = trans.px + (trans.ex - trans.px) * k;
+    player.y = trans.py + (trans.ey - trans.py) * k;
+    player.walkT += dt; player.moving = true;
+    if (trans.t >= 1) { trans = null; spawnEnemies(); }
+    swordPressed = false;
+    return;
+  }
+  if (dead > 0) { dead -= dt; swordPressed = false; if (dead <= 0) respawn(); return; }
+
+  var p = player;
+  if (p.iframe > 0) p.iframe -= dt;
+  var inp = readInput(), ix = inp[0], iy = inp[1];
+
+  if (swordPressed && p.swing <= 0 && p.knock <= 0) { p.swing = SWORD_TIME; p.swingId++; }
+  swordPressed = false;
+
+  p.moving = false;
+  if (p.knock > 0) {
+    p.knock -= dt;
+    moveBody(p, p.kx * KNOCK_SPEED * dt, p.ky * KNOCK_SPEED * dt, false, screenLim(0));
+  } else if ((ix || iy) && !(p.swing > 0 && SWORD_LOCK)) {
+    if (p.swing <= 0) {
+      if (ix && iy) {
+        var keep = (p.face === 'left' && ix < 0) || (p.face === 'right' && ix > 0) ||
+                   (p.face === 'up' && iy < 0) || (p.face === 'down' && iy > 0);
+        if (!keep) p.face = ix > 0 ? 'right' : 'left';
+      } else if (ix) p.face = ix > 0 ? 'right' : 'left';
+      else p.face = iy > 0 ? 'down' : 'up';
+    }
+    var sp = WALK_SPEED * dt, mx = ix * sp, my = iy * sp;
+    if (ix && iy && DIAG_NORMALISE) { mx *= 0.7071; my *= 0.7071; }
+    moveBody(p, mx, my, true, null);
+    p.walkT += dt; p.moving = true;
+  }
+
+  if (p.swing > 0) { swordHits(); if (wipe) return; p.swing -= dt; }
+
+  // Crossing a screen edge starts the scroll.
+  var cx = Math.floor(p.x / SW), cy = Math.floor(p.y / SH);
+  if (cx !== scr.x || cy !== scr.y) { startTransition(cx, cy); return; }
+
+  var goal = SCREENS[scr.y][scr.x].goal;
+  if (goal && goalT <= 0) {
+    var gx = scr.x * SW + goal[0] * TILE + 8, gy = scr.y * SH + goal[1] * TILE + 8;
+    if (Math.abs(p.x - gx) < 10 && Math.abs(p.y - gy) < 10) goalT = 3;
+  }
+
+  updateEnemies(dt);
+  updatePickups(dt);
+}
+
+// The swing's three poses, per facing: the hero sheet's column for each, and
+// the blade's angle (degrees, 0 = right, 90 = down) the hitbox follows.
+var SWING_COLS = { down: [2, 3, 4], up: [2, 3, 4], left: [3, 2, 4], right: [3, 2, 4] };
+var SWING_ANG = { down: [30, 60, 90], up: [0, -45, -90], left: [225, 180, 180], right: [-45, 0, 0] };
+
+function swingStep(p) {
+  var prog = 1 - p.swing / SWORD_TIME;
+  return Math.max(0, Math.min(SWORD_STEPS - 1, Math.floor(prog * SWORD_STEPS)));
+}
+
+function bladeAngle(p) {
+  return SWING_ANG[p.face][swingStep(p)] * Math.PI / 180;
+}
+
+function swordHits() {
+  var p = player, a = bladeAngle(p), ca = Math.cos(a), sa = Math.sin(a);
+  for (var d = 5; d <= SWORD_LEN + 4; d += 4) {
+    var hx = p.x + ca * d, hy = p.y - 3 + sa * d, tx = Math.floor(hx / TILE), ty = Math.floor(hy / TILE);
+    if (isKeyTile(world, tx, ty)) { flipWorld(tx * TILE + 8, ty * TILE + 8); return; }
+    if (CUT[tileAt(hx, hy)]) cutBush(tx, ty);
+    for (var i = 0; i < enemies.length; i++) {
+      var e = enemies[i];
+      if (e.hitBy === p.swingId) continue;
+      if (Math.abs(hx - e.x) <= e.hw + 1 && Math.abs(hy - e.y) <= e.hh + 1) {
+        if (e.key) { flipWorld(e.x, e.y); return; }
+        hitEnemy(e);
+      }
+    }
+  }
+}
+
+function cutBush(tx, ty) {
+  map[ty][tx] = CUT[map[ty][tx]];
+  var x = tx * TILE + 8, y = ty * TILE + 8;
+  for (var i = 0; i < 8; i++) {
+    var a = Math.random() * Math.PI * 2, s = rand(20, 60);
+    parts.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 20, t: 0, life: rand(0.3, 0.5), c: pal()[1], s: 2 });
+  }
+  if (Math.random() < DROP_HEART * 0.5) pickups.push({ x: x, y: y, t: 0 });
+}
+
+function hitEnemy(e) {
+  var d = DIRS[player.face];
+  e.hitBy = player.swingId; e.hp--; e.flash = 0.3;
+  e.kx = d[0]; e.ky = d[1]; e.knock = KNOCK_TIME;
+  sparks((e.x + player.x) / 2, (e.y + player.y - 3) / 2, 8, '#ffffff', 110);
+  shake(SHAKE_HIT);
+  if (e.hp <= 0) {
+    sparks(e.x, e.y, 14, world === 'col' ? '#ff9a50' : '#e0e0e0', 80);
+    enemies.splice(enemies.indexOf(e), 1);
+    for (var i = 0; i < 10; i++) {
+      var a = i / 10 * Math.PI * 2;
+      parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * 50, vy: Math.sin(a) * 50, t: 0, life: 0.35, c: pal()[0], s: 3 });
+    }
+    if (Math.random() < DROP_HEART) pickups.push({ x: e.x, y: e.y, t: 0 });
+  }
+}
+
+function hurtPlayer(src) {
+  var p = player;
+  p.hp--; p.iframe = IFRAMES; p.swing = 0;
+  var dx = p.x - src.x, dy = p.y - src.y;
+  if (Math.abs(dx) > Math.abs(dy)) { p.kx = dx > 0 ? 1 : -1; p.ky = 0; } else { p.kx = 0; p.ky = dy > 0 ? 1 : -1; }
+  p.knock = KNOCK_TIME;
+  shake(SHAKE_HIT); flashOn('#ff2020', 0.3);
+  if (p.hp <= 0) {
+    dead = 1.4;
+    for (var i = 0; i < 16; i++) {
+      var a = i / 16 * Math.PI * 2;
+      parts.push({ x: p.x, y: p.y, vx: Math.cos(a) * 60, vy: Math.sin(a) * 60, t: 0, life: 0.6, c: pal()[0], s: 3 });
+    }
+  }
+}
+
+function updateEnemies(dt) {
+  var lim = screenLim(8);
+  for (var i = 0; i < enemies.length; i++) {
+    var e = enemies[i];
+    if (e.flash > 0) e.flash -= dt;
+    if (e.knock > 0) {
+      e.knock -= dt;
+      moveBody(e, e.kx * KNOCK_SPEED * dt, e.ky * KNOCK_SPEED * dt, false, lim);
+    } else if (e.state === 'walk') {
+      var d = DIRS[e.dir];
+      var blocked = moveBody(e, d[0] * ENEMY_SPEED * dt, d[1] * ENEMY_SPEED * dt, false, lim);
+      e.t -= dt; e.walkT += dt;
+      if (blocked || e.t <= 0) { e.state = 'wait'; e.t = rand(0.3, 0.9); }
+    } else {
+      e.t -= dt;
+      if (e.t <= 0) { e.state = 'walk'; e.dir = DIR_KEYS[Math.floor(Math.random() * 4)]; e.t = rand(0.5, 1.6); }
+    }
+    if (player.iframe <= 0 && dead <= 0 &&
+        Math.abs(player.x - e.x) < player.hw + e.hw - 2 && Math.abs(player.y - e.y) < player.hh + e.hh - 1) hurtPlayer(e);
+  }
+}
+
+function updatePickups(dt) {
+  for (var i = pickups.length - 1; i >= 0; i--) {
+    var h = pickups[i];
+    h.t += dt;
+    if (Math.abs(player.x - h.x) < 10 && Math.abs(player.y - h.y) < 10) {
+      player.hp = Math.min(PLAYER_HP, player.hp + 2);
+      pickups.splice(i, 1);
+    } else if (h.t > 8) pickups.splice(i, 1);
+  }
+}
+
+function updateParts(dt) {
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var q = parts[i];
+    q.t += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= 0.9; q.vy *= 0.9;
+    if (q.t >= q.life) parts.splice(i, 1);
+  }
+}
+
+// ---- Draw (native 160x144 world px, RES buffer px each) ---------------------
+// The sheets are cut out of zeldo.png and zeldoDeco.png (repo root), recoloured
+// per material, and turned grey at load (makeGrey):
+// HERO is 5 columns x 4 rows of 48x40 frames at 1 art px per world px, feet on
+// row 33 and the body centred on column 24; rows face down, up, left, right;
+// columns are stand, step, then the three swing poses. TILES16 / TILES32 are
+// the 4x4 decor sheet at 16 and 32 px a tile.
+var HERO_FW = 48, HERO_FH = 40, HERO_FEET = 33, HERO_CX = 24;
+var HERO_ROW = { down: 0, up: 1, left: 2, right: 3 };
+var IMG = {}, GREY = {};
+
+var buf = document.createElement('canvas');
+var b = buf.getContext('2d');
+var g = cv.getContext('2d');
+
+function setRes(r) {
+  RES = r;
+  buf.width = SW * RES; buf.height = SH * RES;
+  b.imageSmoothingEnabled = false;
+  b.setTransform(RES, 0, 0, RES, 0, 0);
+  sizeFx();
+}
+
+// The black-and-white world is the colour art desaturated, never drawn twice.
+function makeGrey(img) {
+  var c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  var x = c.getContext('2d');
+  x.drawImage(img, 0, 0);
+  var d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+  for (var i = 0; i < a.length; i += 4) {
+    var l = (0.299 * a[i] + 0.587 * a[i + 1] + 0.114 * a[i + 2]) / 255;
+    l = Math.max(0, Math.min(1, (l - 0.5) * BW_CONTRAST + 0.5));
+    if (BW_LEVELS > 1) l = Math.round(l * (BW_LEVELS - 1)) / (BW_LEVELS - 1) * 0.86 + 0.07;
+    a[i] = a[i + 1] = a[i + 2] = Math.round(l * 255);
+  }
+  x.putImageData(d, 0, 0);
+  return c;
+}
+
+function px(x, y, w, h, c) { b.fillStyle = c; b.fillRect(x, y, w, h); }
+function rr(x, y, w, h, c) { px(x + 1, y, w - 2, h, c); px(x, y + 1, w, h - 2, c); }
+
+// A tile in world w; the screen's odd one out wears the other world's look.
+function drawTile(t, w, tx, ty, x, y) {
+  var cell = TILE_CELL[t];
+  if (t === 'w') cell += Math.floor(time * 1.5) % 2;
+  var look = isKeyTile(w, tx, ty) ? other(w) : w;
+  var name = RES === 1 ? 'tiles16' : 'tiles32', ts = 16 * RES;
+  var sheet = look === 'col' ? IMG[name] : GREY[name];
+  b.drawImage(sheet, (cell % 4) * ts, Math.floor(cell / 4) * ts, ts, ts, x, y, TILE, TILE);
+}
+
+function drawLayer(m, w, cx, cy) {
+  var tx0 = Math.floor(cx / TILE), ty0 = Math.floor(cy / TILE);
+  for (var ty = ty0; ty <= ty0 + ROWS; ty++) for (var tx = tx0; tx <= tx0 + COLS; tx++) {
+    if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H) continue;
+    drawTile(m[ty][tx], w, tx, ty, tx * TILE - cx, ty * TILE - cy);
+  }
+}
+
+function drawPlayer(p, cx, cy) {
+  if (p.iframe > 0 && Math.floor(time * 20) % 2) return;
+  var col = p.swing > 0 ? SWING_COLS[p.face][swingStep(p)] : (p.moving ? Math.floor(p.walkT * 6) % 2 : 0);
+  // The hitbox's bottom edge is where the feet stand.
+  var sx = Math.round(p.x - cx) - HERO_CX, sy = Math.round(p.y + p.hh - cy) - HERO_FEET;
+  var sheet = world === 'col' ? IMG.hero : GREY.hero;
+  b.drawImage(sheet, col * HERO_FW, HERO_ROW[p.face] * HERO_FH, HERO_FW, HERO_FH, sx, sy, HERO_FW, HERO_FH);
+}
+
+function drawEnemy(e, cx, cy) {
+  var sx = Math.round(e.x - cx) - 7, sy = Math.round(e.y - cy) - 8;
+  var P = (world === 'col') !== e.key ? ENEMY_COL : ENEMY_BW;
+  var fl = e.flash > 0 && Math.floor(time * 24) % 2;
+  var dark = fl ? P[2] : P[0], body = fl ? P[0] : P[1], light = fl ? P[1] : P[2];
+  var lf = e.state === 'walk' ? Math.floor(e.walkT * 8) % 2 : 0;
+  px(sx + 2, sy + 12 + lf, 3, 3, dark); px(sx + 9, sy + 13 - lf, 3, 3, dark);
+  rr(sx + 1, sy + 1, 13, 13, dark); rr(sx + 2, sy + 2, 11, 11, body);
+  // Snout toward its heading
+  var d = DIRS[e.dir], mx = sx + 6 + d[0] * 7, my = sy + 6 + d[1] * 7;
+  px(mx, my, 3, 3, dark);
+  if (e.dir !== 'up') {
+    var ex = e.dir === 'right' ? 3 : e.dir === 'left' ? -3 : 0;
+    px(sx + 4 + ex, sy + 5, 2, 2, light); px(sx + 9 + ex, sy + 5, 2, 2, light);
+  }
+}
+
+var HEART = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'];
+function heartColours() { return world === 'col' ? ['#e03a3a', '#f0c0b0'] : [PAL_BW[0], PAL_BW[2]]; }
+function drawHeart(x, y, fill, k) {
+  var c = heartColours(); k = k || 1;
+  for (var r = 0; r < HEART.length; r++) for (var cc = 0; cc < 7; cc++) {
+    if (HEART[r].charAt(cc) !== '#') continue;
+    var full = fill === 2 || (fill === 1 && cc < 4);
+    px(x + cc * k, y + r * k, k, k, full ? c[0] : c[1]);
+  }
+}
+
+function render() {
+  var cx = Math.round(camX), cy = Math.round(camY);
+  px(0, 0, SW, SH, pal()[3]);
+  if (wipe) {
+    // Old world everywhere, new world inside a circle growing from the hit.
+    drawLayer(wipe.oldMap, wipe.oldWorld, cx, cy);
+    var k = Math.min(1, wipe.t), r = k * k * 210;
+    b.save();
+    b.beginPath(); b.arc(wipe.x - cx, wipe.y - cy, r, 0, Math.PI * 2); b.clip();
+    drawLayer(map, world, cx, cy);
+    b.restore();
+  } else drawLayer(map, world, cx, cy);
+
+  var goal = SCREENS[scr.y][scr.x].goal;
+  if (goal && !trans) drawHeart(scr.x * SW + goal[0] * TILE + 1 - cx, scr.y * SH + goal[1] * TILE + 2 - cy + Math.round(Math.sin(time * 3)), 2, 2);
+
+  for (var i = 0; i < pickups.length; i++) {
+    var h = pickups[i];
+    if (h.t > 6 && Math.floor(time * 10) % 2) continue;
+    drawHeart(Math.round(h.x - cx) - 3, Math.round(h.y - cy) - 3 + Math.round(Math.sin(h.t * 6)), 2);
+  }
+  if (FX) drawMotes();
+  // Painter's order by feet: whoever stands lower is in front.
+  var actors = enemies.slice();
+  if (dead <= 0) actors.push(player);
+  actors.sort(function (a, c) { return a.y - c.y; });
+  for (i = 0; i < actors.length; i++) {
+    if (actors[i] === player) drawPlayer(player, cx, cy); else drawEnemy(actors[i], cx, cy);
+  }
+  for (i = 0; i < parts.length; i++) {
+    var q = parts[i];
+    if (q.glow) b.globalAlpha = 1 - q.t / q.life;
+    px(Math.round(q.x - cx), Math.round(q.y - cy), q.s, q.s, q.c);
+    b.globalAlpha = 1;
+  }
+  if (FX) renderFx(cx, cy);
+}
+
+// ---- Effects ----------------------------------------------------------------
+// Three passes over the play area, at the buffer's resolution:
+// 1. light: a vignette and the lights of the scene (the hero's, the odd one
+//    out's, the sparks') painted on their own canvas and MULTIPLIED over it;
+// 2. emissive: what gives light (sparks, fireflies, the blade's arc, the flip's
+//    ring, glints) drawn on another canvas and ADDED over it, sharp;
+// 3. bloom: that emissive canvas shrunk twice and added back blurred, on the
+//    screen; then scanlines and the flash.
+var lightCv = document.createElement('canvas'), lc = lightCv.getContext('2d');
+var emiCv = document.createElement('canvas'), ec = emiCv.getContext('2d');
+var blur1 = document.createElement('canvas'), bc1 = blur1.getContext('2d');
+var blur2 = document.createElement('canvas'), bc2 = blur2.getContext('2d');
+var motes = [], shakeT = 0, shakeAmp = 0, flashT = 0, flashA = 0, flashCol = '#fff', GLOW = {};
+
+function sizeFx() {
+  lightCv.width = emiCv.width = buf.width; lightCv.height = emiCv.height = buf.height;
+  blur1.width = Math.ceil(buf.width / 4); blur1.height = Math.ceil(buf.height / 4);
+  blur2.width = Math.ceil(buf.width / 8); blur2.height = Math.ceil(buf.height / 8);
+  lc.setTransform(RES, 0, 0, RES, 0, 0); ec.setTransform(RES, 0, 0, RES, 0, 0);
+}
+
+function hexA(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+// A soft round light of one colour, made once and stretched to any radius.
+function glowSprite(colour) {
+  if (GLOW[colour]) return GLOW[colour];
+  var c = document.createElement('canvas'); c.width = c.height = 64;
+  var x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, hexA(colour, 1)); gr.addColorStop(0.35, hexA(colour, 0.45)); gr.addColorStop(1, hexA(colour, 0));
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  return (GLOW[colour] = c);
+}
+function glow(ctx, x, y, r, colour, a) {
+  if (a <= 0) return;
+  ctx.globalAlpha = Math.min(1, a);
+  ctx.drawImage(glowSprite(colour), x - r, y - r, r * 2, r * 2);
+  ctx.globalAlpha = 1;
+}
+
+function sparks(x, y, n, colour, speed) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, v = rand(0.4, 1) * speed;
+    parts.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, life: rand(0.25, 0.55), c: colour, s: 1, glow: colour });
+  }
+}
+function shake(amp) { shakeAmp = Math.max(shakeT > 0 ? shakeAmp : 0, amp); shakeT = 0.25; }
+function flashOn(colour, a) { flashCol = colour; flashA = a; flashT = 0.3; }
+
+// Motes live in screen space (0..160, 0..128): they belong to the air, not the map.
+function newMote(anywhere) {
+  var up = world === 'col';
+  return { x: rand(0, SW), y: anywhere ? rand(0, SH) : (up ? SH + 4 : -4), vx: rand(-4, 4),
+           vy: up ? rand(-10, -4) : rand(6, 14), ph: rand(0, 6.28), s: Math.random() < 0.25 ? 2 : 1 };
+}
+function resetMotes() { motes = []; for (var i = 0; i < MOTES; i++) motes.push(newMote(true)); }
+
+function updateFx(dt) {
+  if (shakeT > 0) shakeT -= dt;
+  if (flashT > 0) flashT -= dt;
+  for (var i = 0; i < motes.length; i++) {
+    var m = motes[i];
+    m.x += (m.vx + Math.sin(time * 1.3 + m.ph) * 6) * dt; m.y += m.vy * dt;
+    if (m.y < -6 || m.y > SH + 6 || m.x < -6 || m.x > SW + 6) motes[i] = newMote(false);
+  }
+}
+
+function drawMotes() {
+  var col = world === 'col';
+  for (var i = 0; i < motes.length; i++) {
+    var m = motes[i];
+    b.globalAlpha = col ? 0.5 + 0.5 * Math.sin(time * 3 + m.ph * 3) : 0.55;
+    px(Math.round(m.x), Math.round(m.y), m.s, m.s, col ? '#fff3b0' : '#c4c4c4');
+  }
+  b.globalAlpha = 1;
+}
+
+// Where the odd one out of this screen stands, if the screen is settled.
+function keyPos() {
+  if (trans || wipe) return null;
+  var k = SCREENS[scr.y][scr.x].keys[world];
+  if (k === 'e') {
+    for (var i = 0; i < enemies.length; i++) if (enemies[i].key) return { x: enemies[i].x, y: enemies[i].y };
+    return null;
+  }
+  return { x: scr.x * SW + k[0] * TILE + 8, y: scr.y * SH + k[1] * TILE + 8 };
+}
+// A coloured thing in the grey world shines warm; a grey thing in colour shines cold.
+function keyGlow() { return world === 'bw' ? '#ffcf5a' : '#cfe6ff'; }
+
+function renderFx(cx, cy) {
+  var col = world === 'col', p = player, kp = keyPos(), i, q;
+
+  // 1. Light
+  lc.globalCompositeOperation = 'source-over';
+  var v = 1 - VIGNETTE, gr = lc.createRadialGradient(SW / 2, SH / 2, 30, SW / 2, SH / 2, 118);
+  gr.addColorStop(0, col ? '#fff6e8' : '#f0f0f0');
+  gr.addColorStop(1, col ? 'rgb(' + Math.round(250 * v) + ',' + Math.round(232 * v) + ',' + Math.round(215 * v) + ')'
+                         : 'rgb(' + Math.round(235 * v) + ',' + Math.round(235 * v) + ',' + Math.round(235 * v) + ')');
+  lc.fillStyle = gr; lc.fillRect(0, 0, SW, SH);
+  lc.globalCompositeOperation = 'lighter';
+  if (dead <= 0) glow(lc, p.x - cx, p.y - 4 - cy, HERO_LIGHT, col ? '#6a5430' : '#484848', 1);
+  if (kp) glow(lc, kp.x - cx, kp.y - cy, 28 + 4 * Math.sin(time * 4), keyGlow(), 0.55);
+  for (i = 0; i < parts.length; i++) {
+    q = parts[i];
+    if (q.glow) glow(lc, q.x - cx, q.y - cy, 9, q.glow, 0.5 * (1 - q.t / q.life));
+  }
+  lc.globalCompositeOperation = 'source-over';
+  b.save(); b.setTransform(1, 0, 0, 1, 0, 0);
+  b.globalCompositeOperation = 'multiply'; b.drawImage(lightCv, 0, 0);
+  b.restore();
+
+  // 2. Emissive
+  ec.clearRect(0, 0, SW, SH);
+  if (kp) {
+    glow(ec, kp.x - cx, kp.y - cy, 12, keyGlow(), 0.35 + 0.15 * Math.sin(time * 4));
+    // Fireflies orbiting the odd one out
+    for (i = 0; i < 4; i++) {
+      var a = time * (1.6 + i * 0.3) + i * 1.57, r = 9 + 3 * Math.sin(time * 2 + i);
+      var fx = kp.x - cx + Math.cos(a) * r, fy = kp.y - 2 - cy + Math.sin(a) * r * 0.7;
+      glow(ec, fx, fy, 5, keyGlow(), 0.7);
+      ec.fillStyle = '#ffffff'; ec.fillRect(Math.round(fx), Math.round(fy), 1, 1);
+    }
+  }
+  for (i = 0; i < parts.length; i++) {
+    q = parts[i];
+    if (!q.glow) continue;
+    glow(ec, q.x - cx, q.y - cy, 4, q.glow, 0.8 * (1 - q.t / q.life));
+  }
+  if (col) for (i = 0; i < motes.length; i++) glow(ec, motes[i].x, motes[i].y, 3, '#fff3b0', 0.18);
+  // The blade's arc, from the first pose to the current one
+  if (p.swing > 0 && dead <= 0) {
+    var A = SWING_ANG[p.face], a0 = A[0] * Math.PI / 180, a1 = bladeAngle(p), ccw = a1 < a0;
+    var prog = 1 - p.swing / SWORD_TIME, tone = col ? '#fff0c0' : '#ffffff';
+    if (a0 !== a1) {
+      ec.strokeStyle = hexA(tone, 0.45 * (1 - prog * 0.5)); ec.lineWidth = 3;
+      ec.beginPath(); ec.arc(p.x - cx, p.y - 3 - cy, 13, a0, a1, ccw); ec.stroke();
+      ec.strokeStyle = hexA(tone, 0.9 * (1 - prog * 0.5)); ec.lineWidth = 1;
+      ec.beginPath(); ec.arc(p.x - cx, p.y - 3 - cy, 15, a0, a1, ccw); ec.stroke();
+    }
+    glow(ec, p.x - cx + Math.cos(a1) * 16, p.y - 3 - cy + Math.sin(a1) * 16, 6, tone, 0.6);
+  }
+  // The flip's ring, on the edge of the wipe
+  if (wipe) {
+    var k = Math.min(1, wipe.t), rr0 = k * k * 210;
+    ec.strokeStyle = hexA(col ? '#ffe080' : '#ffffff', 1 - k * 0.6); ec.lineWidth = 1 + 4 * (1 - k);
+    ec.beginPath(); ec.arc(wipe.x - cx, wipe.y - cy, rr0, 0, Math.PI * 2); ec.stroke();
+  }
+  // Glints on water: each tile winks now and then, on its own phase
+  if (WATER_GLINTS) {
+    var tx0 = Math.floor(cx / TILE), ty0 = Math.floor(cy / TILE);
+    for (var ty = ty0; ty <= ty0 + ROWS; ty++) for (var tx = tx0; tx <= tx0 + COLS; tx++) {
+      if (tx < 0 || ty < 0 || tx >= MAP_W || ty >= MAP_H || map[ty][tx] !== 'w') continue;
+      var h = (tx * 7349 + ty * 3163) % 997, ph = (time * 0.7 + h / 997) % 1;
+      if (ph > 0.1) continue;
+      var gx = tx * TILE - cx + 3 + h % 10, gy = ty * TILE - cy + 3 + (h >> 3) % 10, ga = 1 - ph / 0.1;
+      glow(ec, gx, gy, 4, col ? '#e0f4ff' : '#ffffff', 0.8 * ga);
+      ec.fillStyle = hexA('#ffffff', ga); ec.fillRect(gx - 1, gy, 3, 1); ec.fillRect(gx, gy - 1, 1, 3);
+    }
+  }
+  b.save(); b.setTransform(1, 0, 0, 1, 0, 0);
+  b.globalCompositeOperation = 'lighter'; b.drawImage(emiCv, 0, 0);
+  b.restore();
+
+  // 3. Bloom source: the emissive canvas shrunk twice (smoothing does the blur)
+  bc1.clearRect(0, 0, blur1.width, blur1.height); bc2.clearRect(0, 0, blur2.width, blur2.height);
+  bc1.imageSmoothingEnabled = bc2.imageSmoothingEnabled = true;
+  bc1.drawImage(emiCv, 0, 0, blur1.width, blur1.height);
+  bc2.drawImage(blur1, 0, 0, blur2.width, blur2.height);
+}
+
+// On the screen, inside the view's clip: bloom, scanlines, flash.
+function presentFx(vx, vy) {
+  var w = SW * S, h = SH * S, i;
+  g.save();
+  g.globalCompositeOperation = 'lighter'; g.imageSmoothingEnabled = true;
+  g.globalAlpha = BLOOM * 0.7; g.drawImage(blur1, vx, vy, w, h);
+  g.globalAlpha = BLOOM; g.drawImage(blur2, vx, vy, w, h);
+  g.restore();
+  if (SCANLINES) {
+    g.fillStyle = 'rgba(0,0,0,' + SCAN_ALPHA + ')';
+    for (i = 0; i < SH; i++) g.fillRect(offX, Math.floor(offY + i * S + S * 0.62), w, Math.max(1, Math.round(S * 0.38)));
+  }
+  if (flashT > 0) {
+    g.globalAlpha = flashA * flashT / 0.3; g.fillStyle = flashCol; g.fillRect(offX, offY, w, h); g.globalAlpha = 1;
+  }
+}
+
+// ---- Frame: view, inventory, pad -------------------------------------------
+// F is device px per design px; S is device px per world px in the view.
+var dpr = 1, F = 1, frameX = 0, frameY = 0, S = 1, offX = 0, offY = 0;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  cv.width = Math.floor(innerWidth * dpr); cv.height = Math.floor(innerHeight * dpr);
+  cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
+  F = Math.min(cv.width / FRAME_W, cv.height / FRAME_H);
+  frameX = Math.floor((cv.width - FRAME_W * F) / 2); frameY = Math.floor((cv.height - FRAME_H * F) / 2);
+  // The view fills the frame's width; whole device pixels per world pixel
+  // when rounding down costs little of it.
+  S = Math.min(FRAME_W * F / SW, VIEW_H * F / SH);
+  if (Math.floor(S) >= S * 0.9) S = Math.floor(S);
+  offX = frameX + Math.round((FRAME_W * F - SW * S) / 2);
+  offY = frameY + Math.round(VIEW_Y * F + (VIEW_H * F - SH * S) / 2);
+}
+addEventListener('resize', resize);
+
+function mod(a, n) { return ((a % n) + n) % n; }
+
+function rrect(x, y, w, h, r, fill, stroke, lw) {
+  g.beginPath();
+  g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  if (fill) { g.fillStyle = fill; g.fill(); }
+  if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 4; g.stroke(); }
+}
+
+function text(str, x, y, size, colour, align, bold) {
+  g.font = (bold ? 'bold ' : '') + size + 'px monospace';
+  g.fillStyle = colour; g.textAlign = align || 'left'; g.textBaseline = 'middle';
+  g.fillText(str, x, y);
+}
+
+// Pixel hearts on the frame, k design px per heart pixel.
+function frameHeart(x, y, fill, k) {
+  var c = heartColours();
+  for (var r = 0; r < HEART.length; r++) for (var cc = 0; cc < 7; cc++) {
+    if (HEART[r].charAt(cc) !== '#') continue;
+    var full = fill === 2 || (fill === 1 && cc < 4);
+    g.fillStyle = full ? c[0] : c[1];
+    g.fillRect(x + cc * k, y + r * k, k, k);
+  }
+}
+
+function frameSword(x, y, len) {
+  var col = world === 'col';
+  g.save(); g.translate(x, y); g.rotate(-Math.PI / 4);
+  rrect(-len / 2 + 22, -7, len - 22, 14, 4, col ? '#d4dee8' : '#d0d0d0', '#1c1c28', 3);
+  g.fillStyle = col ? '#9a5a2a' : '#5c5c5c'; g.fillRect(-len / 2, -5, 18, 10);
+  g.fillStyle = col ? '#e0a040' : '#8a8a8a'; g.fillRect(-len / 2 + 16, -16, 8, 32);
+  g.restore();
+}
+
+function drawPanel() {
+  var col = world === 'col', y0 = PANEL_Y;
+  var paper = col ? '#f4ead0' : '#e4e4e4', ink = col ? '#2a2018' : '#202020', dim = col ? '#b8a888' : '#a4a4a4';
+  rrect(24, y0, FRAME_W - 48, PANEL_H, 22, paper, ink, 5);
+
+  // Hearts
+  for (var i = 0; i < PLAYER_HP / 2; i++) {
+    var left = player.hp - i * 2;
+    frameHeart(52 + i * 66, y0 + 30, left >= 2 ? 2 : left === 1 ? 1 : 0, 8);
+  }
+  // Item slots: B is empty for now, A is the sword
+  var sy = y0 + 104;
+  rrect(48, sy, 104, 104, 14, null, ink, 4); text('B', 62, sy + 18, 24, ink, 'left', true);
+  rrect(168, sy, 104, 104, 14, null, ink, 4); text('A', 182, sy + 18, 24, ink, 'left', true);
+  frameSword(222, sy + 58, 76);
+
+  // The world in, and the count of flips
+  var wx = 296, ww = 204;
+  rrect(wx, y0 + 26, ww, 60, 30, col ? '#e0a040' : '#5c5c5c', ink, 4);
+  text(col ? 'Colour' : 'Black and white', wx + ww / 2, y0 + 57, col ? 26 : 20, col ? '#2a2018' : '#f0f0f0', 'center', true);
+  text('Flips ' + flips, wx + ww / 2, y0 + 120, 24, ink, 'center', true);
+  text('Hit the odd', wx + ww / 2, y0 + 168, 22, ink, 'center');
+  text('one out', wx + ww / 2, y0 + 196, 22, ink, 'center');
+
+  // Map of the 3x3 screens: visited ones in the world's look, the current one framed
+  var cell = 46, gap = 6, mx = FRAME_W - 48 - 3 * cell - 2 * gap, my = y0 + 34;
+  for (var yy = 0; yy < WORLD_H; yy++) for (var xx = 0; xx < WORLD_W; xx++) {
+    var cxp = mx + xx * (cell + gap), cyp = my + yy * (cell + gap), seen = visited[xx + ',' + yy];
+    rrect(cxp, cyp, cell, cell, 6, seen ? (col ? '#6cc04a' : '#9a9a9a') : dim, null);
+    if (SCREENS[yy][xx].goal && seen) frameHeart(cxp + 9, cyp + 11, 2, 4);
+    if (xx === scr.x && yy === scr.y) rrect(cxp - 4, cyp - 4, cell + 8, cell + 8, 9, null, ink, 5);
+  }
+  text('Map', mx + (3 * cell + 2 * gap) / 2, my + 3 * cell + 2 * gap + 24, 22, ink, 'center', true);
+}
+
+function drawPad() {
+  var inp = readInput(), ix = inp[0], iy = inp[1];
+  var base = '#2e323a', hi = '#4a505c', lit = world === 'col' ? '#e0a040' : '#bdbdbd';
+  // D-pad: a cross, the pressed arms lit
+  var arm = 46, len = 132;
+  rrect(PAD_X - len, PAD_Y - arm, len * 2, arm * 2, 16, base, '#14161a', 5);
+  rrect(PAD_X - arm, PAD_Y - len, arm * 2, len * 2, 16, base, '#14161a', 5);
+  g.fillStyle = base; g.fillRect(PAD_X - arm + 3, PAD_Y - arm + 3, arm * 2 - 6, arm * 2 - 6);
+  g.fillStyle = lit;
+  if (ix < 0) g.fillRect(PAD_X - len + 10, PAD_Y - arm + 10, len - arm - 10, arm * 2 - 20);
+  if (ix > 0) g.fillRect(PAD_X + arm, PAD_Y - arm + 10, len - arm - 10, arm * 2 - 20);
+  if (iy < 0) g.fillRect(PAD_X - arm + 10, PAD_Y - len + 10, arm * 2 - 20, len - arm - 10);
+  if (iy > 0) g.fillRect(PAD_X - arm + 10, PAD_Y + arm, arm * 2 - 20, len - arm - 10);
+  g.fillStyle = hi; g.beginPath(); g.arc(PAD_X, PAD_Y, 24, 0, Math.PI * 2); g.fill();
+  if (pad) {
+    var dx = pad.x - PAD_X, dy = pad.y - PAD_Y, l = Math.sqrt(dx * dx + dy * dy), k = l > PAD_R ? PAD_R / l : 1;
+    g.fillStyle = 'rgba(255,255,255,0.25)';
+    g.beginPath(); g.arc(PAD_X + dx * k, PAD_Y + dy * k, 40, 0, Math.PI * 2); g.fill();
+  }
+  // A button: the sword
+  var down = btnId !== null || btnFlash > 0 || key.sword, off = down ? 6 : 0;
+  g.fillStyle = '#14161a'; g.beginPath(); g.arc(BTN_X, BTN_Y + 10, BTN_R, 0, Math.PI * 2); g.fill();
+  g.fillStyle = world === 'col' ? (down ? '#a83222' : '#d8462e') : (down ? '#4a4a4a' : '#707070');
+  g.beginPath(); g.arc(BTN_X, BTN_Y + off, BTN_R, 0, Math.PI * 2); g.fill();
+  text('A', BTN_X, BTN_Y + off - 6, 64, '#ffffff', 'center', true);
+  text('Sword', BTN_X, BTN_Y + BTN_R + 46, 24, '#c8ccd4', 'center', true);
+  text('Space / J', BTN_X, BTN_Y + BTN_R + 78, 20, '#7a808c', 'center');
+  text('Arrows / WASD', PAD_X, PAD_Y + PAD_R + 46, 20, '#7a808c', 'center');
+  rrect(PILL_X - 80, PILL_Y - 24, 160, 48, 24, FX ? '#3a4050' : '#24272d', '#14161a', 4);
+  text(FX ? 'Effects on' : 'Effects off', PILL_X, PILL_Y, 20, FX ? '#e8ecf4' : '#7a808c', 'center', true);
+}
+
+function banner(str) {
+  g.fillStyle = 'rgba(0,0,0,0.75)'; g.fillRect(offX, offY + SH * S / 2 - 34 * F, SW * S, 68 * F);
+  g.fillStyle = '#fff'; g.font = 'bold ' + Math.round(32 * F) + 'px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(str, offX + SW * S / 2, offY + SH * S / 2);
+}
+
+function present() {
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+  g.fillStyle = '#1b1d22'; g.fillRect(frameX, frameY, FRAME_W * F, FRAME_H * F);
+  g.imageSmoothingEnabled = false;
+  var k = shakeT > 0 ? shakeAmp * S * shakeT / 0.25 : 0;
+  var vx = offX + Math.round((Math.random() * 2 - 1) * k), vy = offY + Math.round((Math.random() * 2 - 1) * k);
+  g.save();
+  g.beginPath(); g.rect(offX, offY, SW * S, SH * S); g.clip();
+  g.drawImage(buf, 0, 0, buf.width, buf.height, vx, vy, SW * S, SH * S);
+  if (FX) presentFx(vx, vy);
+  g.restore();
+
+  if (showGrid) {
+    g.save();
+    g.beginPath(); g.rect(offX, offY, SW * S, SH * S); g.clip();
+    g.strokeStyle = 'rgba(255,0,80,0.35)'; g.lineWidth = 1;
+    var i, x, y;
+    for (i = 0; i <= COLS + 1; i++) { x = offX + (i * TILE - mod(camX, TILE)) * S + 0.5; g.beginPath(); g.moveTo(x, offY); g.lineTo(x, offY + SH * S); g.stroke(); }
+    for (i = 0; i <= ROWS + 1; i++) { y = offY + (i * TILE - mod(camY, TILE)) * S + 0.5; g.beginPath(); g.moveTo(offX, y); g.lineTo(offX + SW * S, y); g.stroke(); }
+    // Screen borders and the player's hitbox
+    g.strokeStyle = 'rgba(255,0,80,0.9)'; g.lineWidth = 3;
+    g.strokeRect(offX + (scr.x * SW - camX) * S, offY + (scr.y * SH - camY) * S, SW * S, SH * S);
+    g.strokeStyle = 'rgba(0,160,255,0.9)'; g.lineWidth = 2;
+    g.strokeRect(offX + (player.x - player.hw - camX) * S, offY + (player.y - player.hh - camY) * S, player.hw * 2 * S, player.hh * 2 * S);
+    g.restore();
+  }
+
+  if (dead > 0) banner('Knocked out');
+  else if (goalT > 0) banner('Goal reached in ' + flips + ' flips');
+
+  // Everything under the view is laid out in design px.
+  g.setTransform(F, 0, 0, F, frameX, frameY);
+  drawPanel();
+  drawPad();
+
+  if (showHelp) {
+    var tl = Math.floor(mod(player.x, SW) / TILE), tt = Math.floor(mod(player.y, SH) / TILE);
+    var lines = [
+      'Screen ' + scr.x + ',' + scr.y + ' of ' + WORLD_W + 'x' + WORLD_H + '   tile ' + tl + ',' + tt,
+      'Goal: the big heart on screen 2,2',
+      'Hp ' + player.hp + '/' + PLAYER_HP + ' half hearts   enemies ' + enemies.length,
+      'Screen = ' + COLS + 'x' + ROWS + ' tiles of ' + TILE + ' px, drawn at ' + (16 * RES) + ' px',
+      'G grid, T tiles, F effects, L scanlines, R restart, H hide'
+    ];
+    g.font = '20px monospace';
+    var w = 0;
+    for (var k = 0; k < lines.length; k++) w = Math.max(w, g.measureText(lines[k]).width);
+    g.fillStyle = 'rgba(0,0,0,0.7)'; g.fillRect(12, VIEW_Y + 8, w + 24, lines.length * 28 + 16);
+    for (k = 0; k < lines.length; k++) text(lines[k], 24, VIEW_Y + 32 + k * 28, 20, '#fff');
+  }
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+}
+
+// ---- Loop -------------------------------------------------------------------
+var last = 0;
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0);
+  last = now;
+  update(dt);
+  render();
+  present();
+  requestAnimationFrame(frame);
+}
+
+var SRC = {
+  hero: 'data:image/png;base64,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',
+  tiles16: 'data:image/png;base64,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',
+  tiles32: 'data:image/png;base64,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'
+};
+var pending = 0;
+for (var k in SRC) {
+  pending++;
+  IMG[k] = new Image();
+  IMG[k].onload = function () {
+    if (--pending) return;
+    for (var n in IMG) GREY[n] = makeGrey(IMG[n]);
+    setRes(RES);
+    resize();
+    respawn();
+    requestAnimationFrame(function (t) { last = t; requestAnimationFrame(frame); });
+  };
+  IMG[k].src = SRC[k];
+}
+</script>
+</body>
+</html>

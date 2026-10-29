@@ -1,8 +1,8 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "2.8.8",
-  "tagline": "One tap switches the buttons on and traps the ball with the bricks",
+  "version": "2.8.14",
+  "tagline": "One tap turns the switches on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
   "targets": [
@@ -196,19 +196,19 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Un casse-briques aux billes comptées. Vise, puis touche l'écran pour allumer les boutons et enfermer la bille entre les briques de couleur.",
+      "tagline": "Un casse-briques ou l'on ne rattrape pas directement la bille. Vise bien pour faire un maximum de rebond en un seul tir. Touche ensuite l'écran pour activer les interrupteur afin de piéger la bille entre les briques.",
       "tags": [
-        "Tap pour piéger",
+        "Switch",
         "Casse-briques",
-        "Interrupteurs"
+        "Interrupteur"
       ]
     },
     "en": {
-      "tagline": "A brick breaker with a limited supply of balls. Aim, then tap to switch the buttons on and trap the ball with the coloured bricks.",
+      "tagline": "A brick breaker where you don't catch the ball directly. Aim carefully to get as many bounces as possible in a single shot. Then tap the screen to turn the switches on and trap the ball between the bricks.",
       "tags": [
-        "Tap to trap",
+        "Switch",
         "Breakout",
-        "Switch buttons"
+        "Switch button"
       ]
     }
   },
@@ -219,14 +219,14 @@
         "lines": [
           {
             "kicker": "Brick breaker",
-            "line": "With a limited supply of <b>balls</b>"
+            "line": "A game of <b>trajectories</b>"
           },
           {
-            "kicker": "Switch buttons",
-            "line": "Tap to <b>trap the ball</b>"
+            "kicker": "Trap the ball between the bricks and <b>switches</b>",
+            "line": "Tap to <b>trap</b> the ball"
           },
           {
-            "kicker": "Aim line",
+            "kicker": "Aim and shoot",
             "line": "Read the <b>bounces</b> ahead"
           },
           {
@@ -234,7 +234,7 @@
             "line": "<b>Rising</b> difficulty"
           },
           {
-            "kicker": "Challenge",
+            "kicker": "Special bricks",
             "line": "Go for the <b>best score</b>"
           }
         ]
@@ -243,14 +243,14 @@
         "lines": [
           {
             "kicker": "Casse-briques",
-            "line": "Des <b>billes</b> comptées"
+            "line": "Jeu de <b>trajectoires</b>"
           },
           {
-            "kicker": "Interrupteurs",
-            "line": "Touche pour <b>piéger la bille</b>"
+            "kicker": "Bloque la bille entre les briques et des <b>Interrupteurs</b>",
+            "line": "Tape pour <b>piéger</b> la bille"
           },
           {
-            "kicker": "Visée",
+            "kicker": "Vise et tir",
             "line": "Anticipe les <b>rebonds</b>"
           },
           {
@@ -258,7 +258,7 @@
             "line": "Difficulté <b>progressive</b>"
           },
           {
-            "kicker": "Défi",
+            "kicker": "Briques spéciales",
             "line": "Vise le <b>meilleur score</b>"
           }
         ]
@@ -295,12 +295,12 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "Un <b class=\"w-tap\">tap</b> allume les <b class=\"w-wall\">boutons</b> et enferme la bille entre les briques",
+        "tagline": "Un <b class=\"w-tap\">Tap</b> allume les <b class=\"w-wall\">interrupteurs</b> et enferme la bille avec les briques",
         "strings": {
           " balls": " billes",
           "Balls": "Billes",
           "Balls fired": "Billes lancées",
-          "Best combo": "Meilleur combo",
+          "Best combo": "Meilleur Combo",
           "Best score": "Meilleur score",
           "Big ball": "Grosse bille",
           "Bomb": "Bombe",
@@ -310,15 +310,15 @@
           "Combo x3": "Combo x3",
           "Combo x4": "Combo x4",
           "Combo x5": "Combo x5",
-          "Each colour has its price": "Chaque couleur a son prix",
+          "Each colour has its price": "Valeur des couleurs",
           "Final score": "Score final",
           "Fireball": "Bille de feu",
-          "Hit this glass while its shield is down": "Frappe ce verre bouclier baissé",
+          "Hit this glass while its shield is down": "Frappe sans le bouclier",
           "Hot!": "Chaud !",
-          "Huge run!": "Enorme partie !",
+          "Huge run!": "Énorme partie !",
           "Install now": "Installer",
-          "This glass bursts into new bricks": "Ce verre éclate en nouvelles briques",
-          "This glass grows a brick every second": "Ce verre fait pousser une brique par seconde",
+          "This glass bursts into new bricks": "Éclate en nouvelles briques",
+          "A new brick every second": "Une nouvelle brique par seconde",
           "Last ball": "Dernière bille",
           "Living glass": "Verre vivant",
           "Magnet": "Aimant",
@@ -328,9 +328,9 @@
           "Perfect clear": "Tableau parfait",
           "Perfect clear!": "Tableau parfait !",
           "Play the full game": "Jouer au jeu complet",
-          "Pocket cleared": "Poche vidée",
+          "Area cleared": "Zone nettoyée",
           "Replay the demo": "Rejouer la démo",
-          "Row blast": "Souffle de rangée",
+          "Line blast": "Souffle de ligne",
           "Score": "Score",
           "Seed glass": "Verre fertile",
           "Shield glass": "Verre bouclier",
@@ -345,62 +345,56 @@
           "Warp glass": "Verre téléporteur",
           "Break <b>{p}%</b> of the wall": "Casse <b>{p} %</b> du mur",
           "Clear the wall in <b>{b}</b> balls": "Vide le mur en <b>{b}</b> billes",
-          "Two button colours": "Deux couleurs de boutons",
-          "A tap swaps the button colours": "Un tap inverse les couleurs des boutons",
+          "Two switch colours": "Deux couleurs d'interrupteurs",
+          "A tap swaps the switch colours": "Un tap inverse les couleurs",
           "The basics": "Les bases",
-          "Aim and shoot": "Vise et tire",
-          "The buttons": "Les boutons",
-          "Tap while the ball flies to light up the buttons. Tap again to switch them off.": "Touche pendant que la bille vole pour allumer les boutons. Touche encore pour les éteindre.",
-          "A dark button lets the ball through. A lit one bounces it back.": "Eteint, un bouton laisse passer la bille. Allumé, il la renvoie.",
-          "The pocket": "La poche",
+          "Aim and shoot": "Visée et tir",
+          "The switches": "Les interrupteurs",
+          "Tap while the ball flies to light up the switches. Tap again to switch them off.": "Touche l'écran pendant que la bille vole pour allumer les interrupteurs. Tap à nouveau pour les éteindre.",
+          "A dark switch lets the ball through. A lit one blocks it.": "La bille passe au travers d'un interrupteur éteint. Sinon elle sera bloquée.",
+          "The area": "La zone",
           "Tough glass": "Verre renforcé",
-          "A brick with a double white rim takes two hits. The first one cracks it.": "Une brique au double liseré blanc encaisse deux coups. Le premier la fêle.",
-          "A power breaks this brick in one go.": "Un pouvoir casse cette brique d'un coup.",
+          "A brick with a double white rim takes two hits. The first one only cracks it.": "Une brique dotée d'un double liseré blanc nécessite deux impacts. Le premier ne fait que la fêler.",
+          "A power breaks this brick in one go.": "L'utilisation d'un pouvoir permet de détruire cette brique en un seul coup.",
           "Red": "Rouge",
           "Green": "Vert",
           "Blue": "Bleu",
           "Purple": "Violet",
           "Rainbow": "Arc-en-ciel",
-          "Each brick scores the points of its colour, times the combo.": "Chaque brique rapporte les points de sa couleur, multipliés par le combo.",
-          "The combo": "Le combo",
+          "Each brick scores the points of its colour, times the combo.": "Chaque brique rapporte les points de sa propre couleur, multipliés par le niveau du Combo.",
+          "The combo": "Le Combo",
           "{n} bricks in one shot": "{n} briques en un tir",
-          "Every brick broken during a shot counts, even by a power or an extra ball.": "Chaque brique cassée pendant le tir compte, même par un pouvoir ou une bille en plus.",
+          "Every brick broken during a shot counts, even by a power or an extra ball.": "Toutes les briques brisées au cours d'un tir sont comptabilisées, y compris celles détruites par un pouvoir ou une bille supplémentaire.",
           "The stars": "Les étoiles",
           "1 star": "1 étoile",
           "2 stars": "2 étoiles",
           "3 stars": "3 étoiles",
           "{p}% of the wall": "{p} % du mur",
-          "The whole wall within par": "Tout le mur dans le par",
-          "Only red buttons here. You meet the row blast, then the column blast.": "Ici, les boutons sont tous rouges. Tu découvres le souffle de rangée, puis celui de colonne.",
-          "Break this brick and every brick in its row breaks too.": "Casse cette brique et toutes les briques de sa rangée cassent aussi.",
-          "This rainbow brick jumps to a nearby free spot every three seconds.": "Cette brique arc-en-ciel saute vers une case libre voisine toutes les trois secondes.",
-          "The rainbow brick flickers just before it jumps.": "La brique arc-en-ciel clignote juste avant de sauter.",
-          "Break this brick and every brick in its column breaks too.": "Casse cette brique et toutes les briques de sa colonne cassent aussi.",
-          "What this biome brings": "Ce qu'apporte ce biome",
-          "From level 11, yellow buttons join the blue ones.": "Dès le stage 11, des boutons jaunes rejoignent les bleus.",
-          "These new bricks count in the wall, so break them too.": "Ces nouvelles briques comptent dans le mur, casse-les aussi.",
-          "A tap swaps the two button colours. One lights up as the other goes dark.": "Un tap inverse les deux couleurs de boutons. L'une s'allume, l'autre s'éteint.",
-          "Every new shot starts with the same colour lit.": "Chaque nouveau tir repart avec la même couleur allumée.",
-          "Break this brick and the eight bricks around it break too.": "Casse cette brique et les huit briques autour cassent aussi.",
-          "Here you meet the big ball and the seed glass.": "Tu y découvres la grosse bille et le verre fertile.",
-          "The ball that breaks this brick grows bigger for the rest of its flight.": "La bille qui casse cette brique grossit jusqu'à la fin de son vol.",
-          "Seed glass takes two hits, so break it first.": "Le verre fertile encaisse deux coups, alors casse-le en premier.",
-          "Here you meet the fireball and the shield glass.": "Tu y découvres la bille de feu et le verre bouclier.",
-          "For five seconds, the ball burns through bricks instead of bouncing off them.": "Pendant cinq secondes, la bille traverse les briques en les brûlant au lieu de rebondir.",
-          "Lit buttons and raised shields still bounce the ball back.": "Les boutons allumés et les boucliers levés renvoient quand même la bille.",
-          "Here you meet the magnet and all four kinds of living glass at once.": "Tu y découvres l'aimant et les quatre verres vivants à la fois.",
-          "The bricks living glass adds count in the wall, so break them too.": "Les briques ajoutées par le verre vivant comptent dans le mur, casse-les aussi.",
-          "Drag to aim and let go to fire. The dotted line shows the next five bounces.": "Glisse pour viser, lâche pour tirer. Les pointillés montrent les cinq prochains rebonds.",
-          "Each brick in a pocket": "Chaque brique d'une poche",
-          "Tap as the ball enters a pocket walled by buttons. It stays shut in with the bricks.": "Touche quand la bille entre dans une poche fermée par des boutons. Elle y reste enfermée avec les briques.",
-          "After a few seconds of flight, the lava pulls the ball down.": "Après quelques secondes de vol, la lave attire la bille.",
-          "Go one shot over par and the third star is lost.": "Dépasse le par d'un seul tir et la troisième étoile est perdue.",
-          "Break this brick to release extra balls.": "Casse cette brique pour libérer des billes en plus.",
-          "When split glass breaks, new bricks appear on every free spot around it.": "Quand le verre éclaté casse, de nouvelles briques apparaissent sur chaque case libre autour.",
-          "Every second, seed glass grows a new brick next to it.": "Chaque seconde, le verre fertile fait pousser une brique à côté de lui.",
-          "While shield glass has its shield up, the ball and every power bounce off it.": "Tant que le verre bouclier a son bouclier levé, la bille et les pouvoirs rebondissent dessus.",
-          "Wait for the shield to drop, then hit the glass.": "Attends que le bouclier se baisse, puis frappe le verre.",
-          "For five seconds, nearby bricks fly into the ball.": "Pendant cinq secondes, les briques proches volent vers la bille."
+          "The whole wall within par": "Tout le mur dans le 'Par'",
+          "Break this brick and every brick in its line breaks too.": "Détruis cette brique pour faire exploser instantanément toutes les autres briques de sa ligne.",
+          "This rainbow brick jumps to a nearby free spot every three seconds.": "Cette brique arc-en-ciel se téléporte vers une case libre adjacente toutes les trois secondes.",
+          "The rainbow brick flickers just before it jumps.": "Elle émet un léger clignotement juste avant d'effectuer son saut.",
+          "Break this brick and every brick in its column breaks too.": "Détruis cette brique pour faire exploser instantanément toutes les autres briques de sa colonne.",
+          "These new bricks count in the wall, so break them too.": "Puisque ces nouvelles briques fond parties du mur, tu dois impérativement les détruire aussi.",
+          "A tap swaps the two switch colours. One lights up as the other goes dark.": "Un simple Tap inverse les deux couleurs d'interrupteur, si bien que l'une s'allume pendant que l'autre s'éteint.",
+          "Every new shot starts with the same colour lit.": "Chaque nouveau tir commence systématiquement avec la même couleur activée par défaut.",
+          "Break this brick and the eight bricks around it break too.": "Détruis cette brique pour déclencher une détonation qui pulvérise aussi les huit briques environnantes.",
+          "The ball that breaks this brick grows bigger for the rest of its flight.": "La bille qui détruit cette brique grossit de volume pour toute la durée de sa trajectoire.",
+          "Seed glass takes two hits, so break it first.": "Le verre fertile nécessitant deux coups pour être brisé, veille à t'en occuper en priorité.",
+          "For five seconds, the ball burns through bricks instead of bouncing off them.": "Durant cinq secondes, la bille calcine et traverse les briques au lieu de rebondir dessus.",
+          "Lit switches and raised shields still bounce the ball back.": "Attention toutefois, les boutons allumés et les boucliers levés renvoient quand même la bille.",
+          "The bricks living glass adds count in the wall, so break them too.": "Les briques générées par le verre vivant s'ajoutent au total du mur, donc n'oublie pas de les détruire.",
+          "Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.": "Fais glisser ton doigt pour viser, puis relève-le pour tirer, sachant que les pointillés indiquent tes cinq prochains rebonds. Attention la taille de la bille n'est pas prise en compte par le tracé de la trajectoire.",
+          "Each brick in an area": "Brique dans une zone",
+          "Tap as the ball enters a closed area. It stays shut in with the bricks.": "Touche l'écran au moment exact où la bille pénètre dans une zone close pour l'y enfermer avec les briques.",
+          "After a few seconds of flight, the lava pulls the ball down.": "Si le vol se prolonge de quelques secondes, la lave en contrebas exerce alors une force et attire la bille vers le bas.",
+          "Go one shot over par and the third star is lost.": "Dépasser le 'Par' d'un seul tir suffit à te faire perdre l'attribution de la troisième étoile.",
+          "Break this brick to release extra balls.": "Détruis cette brique pour libérer instantanément des billes supplémentaires.",
+          "When split glass breaks, new bricks appear on every free spot around it.": "Lorsque le verre éclaté est détruit, de nouvelles briques surgissent sur toutes les cases libres adjacentes.",
+          "Every second, seed glass grows a new brick next to it.": "À chaque seconde qui s'écoule, le verre fertile génère une nouvelle brique juste à côté de lui.",
+          "While a brick's shield is up, the ball and every power bounce off it.": "Tant que le bouclier d'une brique reste dressé, la bille et les pouvoirs se voient systématiquement repoussés.",
+          "Wait for the shield to drop, then hit the glass.": "Il te faut patienter jusqu'à l'abaissement du bouclier avant de pouvoir frapper efficacement le verre.",
+          "For five seconds, nearby bricks fly into the ball.": "Pendant cinq secondes, les briques situées à proximité sont attirées et viennent s'écraser directement sur la bille."
         }
       }
     },
@@ -413,8 +407,8 @@
         "step": 1
       },
       "copy": {
-        "en": "Clear the wall in <b>{n}</b> balls",
-        "fr": "Vide le mur en <b>{n}</b> billes"
+        "en": "Destroy the wall in <b>{n}</b> balls",
+        "fr": "Détruit le mur en <b>{n}</b> billes"
       },
       "faults": 0,
       "bands": {

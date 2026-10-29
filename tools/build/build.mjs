@@ -492,8 +492,14 @@ const WEB_ONLY_HOLE = /^fairway-0[2-9]$|^(shield|mudder|digger|runner|necro)\d+$
    web-only. */
 const WEB_ONLY_FOLD = /^(army-green|works-(blue|red|green)|world|plains|woods|north|desert|jungle)\d+$/;
 
+/* games/gelatile's biomes: the playable is biome 1, the bubble bath — its
+   scene and its soap material — so the four later scenes and materials are
+   web-only. */
+const WEB_ONLY_GEL = /^(scene|texture)-(jungle|crystal|rice|beach|wood|bamboo|sand)$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
+  if (WEB_ONLY_GEL.test(role)) return true;
   if (WEB_ONLY_FOLD.test(role)) return true;
   if (WEB_ONLY_ROCK.test(role)) return true;
   if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;
@@ -1076,6 +1082,10 @@ async function main() {
                                       `Game.codex`, as a collection. Before
                                       menu.js and village.js, which list its
                                       door and its word
+       loadout.js window.__LOADOUT__ — the card a game that publishes
+                                      `Game.loadout` asks before a level
+                                      starts (levels.js, play). Read at the
+                                      click, so its place only follows codex.js
        guide.js   window.__GUIDE__  — every rule of a game that publishes
                                       `Game.guide`, as a book of pages. Before
                                       menu.js, whose Help card opens it
@@ -1100,6 +1110,7 @@ async function main() {
              await read('packages/webshell/meta.css') + '\n' +
              await read('packages/webshell/army.css') + '\n' +
              await read('packages/webshell/codex.css') + '\n' +
+             await read('packages/webshell/loadout.css') + '\n' +
              await read('packages/webshell/guide.css') + '\n' +
              await read('packages/webshell/village.css') + '\n' +
              await read('packages/webshell/dev.css'),
@@ -1110,6 +1121,7 @@ async function main() {
             await read('packages/webshell/daily.js') + '\n' +
             await read('packages/webshell/army.js') + '\n' +
             await read('packages/webshell/codex.js') + '\n' +
+            await read('packages/webshell/loadout.js') + '\n' +
             await read('packages/webshell/guide.js') + '\n' +
             await read('packages/webshell/menu.js') + '\n' +
             await read('packages/webshell/village.js') + '\n' +

@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>2048 fx - prototype</title>
+<!--
+  Prototype: ten merge effects and ten magnet effects for merge-2048.html,
+  side by side, to pick one of each. Round 2: ten takes on Jelly (fusion /
+  compression) and ten on Particle stream (quiet over long distances, the
+  tiles moving too), the two picks of round 1.
+
+  Merge tab: each card loops a slide and a merge (2+2, 16+16, 128+128,
+  1024+1024 in turn). Magnet tab: each card shows twins side by side (top
+  row) and three cells apart (bottom row). Tap a card to pick it.
+  Play tab: a plain 2048 board wearing the two picks.
+
+  Keys: 1-9 and 0 pick in the current tab, Tab switches tab, S slow motion,
+  [ ] palette, arrows / WASD play.
+-->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
+  canvas { display: block; width: 100vw; height: 100vh; touch-action: none;
+           -webkit-user-select: none; user-select: none; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script>
+// ---------------------------------------------------------------- tunables
+var MOVE_T = 0.12;     // slide, as in merge-2048.html
+var LOOP = 1.9;        // one gallery cycle
+var SLOW = 0.25;       // slow motion speed
+var MAGNET = 0.05;     // base pull, in cells
+var N = 4;
+
+var FONT = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+var FONT_K = [0.52, 0.5, 0.42, 0.34, 0.28, 0.24];
+
+// ------------------------------------------------------------------ colour
+function labToLin(L, a, b) {
+  var l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  var m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  var s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  var l = l_ * l_ * l_, m = m_ * m_ * m_, s = s_ * s_ * s_;
+  return [ 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+          -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+          -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+}
+function inGamut(c) {
+  return c[0] >= -0.001 && c[0] <= 1.001 && c[1] >= -0.001 && c[1] <= 1.001 && c[2] >= -0.001 && c[2] <= 1.001;
+}
+function enc(x) { x = Math.max(0, Math.min(1, x)); return x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055; }
+function oklch(L, C, h) {
+  L = Math.max(0, Math.min(1, L));
+  var hr = h * Math.PI / 180, ca = Math.cos(hr), sa = Math.sin(hr), lin = labToLin(L, C * ca, C * sa);
+  if (!inGamut(lin)) {
+    var lo = 0, hi = C;
+    for (var i = 0; i < 18; i++) { var mid = (lo + hi) / 2; if (inGamut(labToLin(L, mid * ca, mid * sa))) lo = mid; else hi = mid; }
+    lin = labToLin(L, lo * ca, lo * sa);
+  }
+  return [enc(lin[0]) * 255, enc(lin[1]) * 255, enc(lin[2]) * 255];
+}
+function css(c, a) { return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + (a == null ? 1 : a) + ')'; }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function easeOutBack(k) { var c1 = 1.70158, c3 = c1 + 1, q = k - 1; return 1 + c3 * q * q * q + c1 * q * q; }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function mulberry(seed) {
+  var a = (seed * 4294967296) >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// the same fifteen palettes as merge-2048.html
+var PALETTES = [
+  { name: 'Classic', h: [88, 22],    L: [0.94, 0.56], C: [0.045, 0.2] },
+  { name: 'Lagoon',  h: [185, 258],  L: [0.94, 0.45], C: [0.05, 0.16] },
+  { name: 'Forest',  h: [118, 162],  L: [0.93, 0.42], C: [0.05, 0.15] },
+  { name: 'Sunset',  h: [75, -28],   L: [0.92, 0.5],  C: [0.06, 0.21] },
+  { name: 'Candy',   h: [355, 290],  L: [0.93, 0.5],  C: [0.05, 0.2] },
+  { name: 'Lava',    h: [22, 95],    L: [0.45, 0.88], C: [0.14, 0.19], dark: true },
+  { name: 'Glacier', h: [215, 272],  L: [0.95, 0.48], C: [0.025, 0.15] },
+  { name: 'Neon',    h: [320, 150],  L: [0.56, 0.87], C: [0.2, 0.2],   dark: true },
+  { name: 'Desert',  h: [85, 38],    L: [0.91, 0.5],  C: [0.04, 0.13] },
+  { name: 'Berry',   h: [12, -55],   L: [0.88, 0.4],  C: [0.07, 0.19] },
+  { name: 'Mint',    h: [178, 140],  L: [0.95, 0.45], C: [0.04, 0.15] },
+  { name: 'Autumn',  h: [110, 35],   L: [0.88, 0.46], C: [0.08, 0.16] },
+  { name: 'Royal',   h: [290, 250],  L: [0.9, 0.36],  C: [0.05, 0.17] },
+  { name: 'Reef',    h: [25, 200],   L: [0.86, 0.55], C: [0.12, 0.13] },
+  { name: 'Aurora',  h: [150, 305],  L: [0.56, 0.86], C: [0.15, 0.17], dark: true }
+];
+function buildPalette(p) {
+  var h0 = p.h[0], h1 = p.h[1], hm = (h0 + h1) / 2, dir = h1 >= h0 ? 1 : -1;
+  p.tiles = [];
+  for (var n = 1; n <= 17; n++) {
+    var t = (n - 1) / 10, L, C, h;
+    if (t <= 1) { L = lerp(p.L[0], p.L[1], Math.pow(t, 0.92)); C = lerp(p.C[0], p.C[1], t) + 0.025 * Math.sin(Math.PI * t); h = lerp(h0, h1, t); }
+    else { L = p.L[1] - 0.04 * Math.min(n - 11, 3); C = p.C[1]; h = h1 + dir * 24 * (n - 11); }
+    p.tiles.push({ L: L, rgb: oklch(L, C, h), top: oklch(L + 0.045, C * 0.95, h), bot: oklch(L - 0.04, C * 1.05, h),
+                   light: oklch(Math.min(0.97, L + 0.2), C * 0.8, h),
+                   text: L > 0.7 ? oklch(0.3, 0.06, h) : oklch(0.985, 0.01, h) });
+  }
+  if (p.dark) {
+    p.bg = oklch(0.18, 0.03, hm); p.bg2 = oklch(0.12, 0.03, h1); p.board = oklch(0.25, 0.035, hm);
+    p.cell = oklch(0.3, 0.035, hm); p.ink = oklch(0.93, 0.02, hm); p.inkSoft = oklch(0.7, 0.03, hm);
+  } else {
+    p.bg = oklch(0.965, 0.012, h0); p.bg2 = oklch(0.92, 0.022, hm); p.board = oklch(0.8, 0.03, hm);
+    p.cell = oklch(0.86, 0.022, hm); p.ink = oklch(0.3, 0.04, hm); p.inkSoft = oklch(0.5, 0.03, hm);
+  }
+}
+PALETTES.forEach(buildPalette);
+function tileOf(pi, v) { return PALETTES[pi].tiles[clamp(Math.round(Math.log2(v)), 1, 17) - 1]; }
+
+// ------------------------------------------------------------------ canvas
+var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+var W, H, dpr, spriteCache = {}, OX = 0, OY = 0;
+
+function rr(g, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  g.beginPath(); g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+}
+function world() { ctx.setTransform(dpr, 0, 0, dpr, dpr * OX, dpr * OY); }
+function setT(x, y, sx, sy, rot) {
+  var c = Math.cos(rot || 0), s = Math.sin(rot || 0);
+  ctx.setTransform(dpr * c * sx, dpr * s * sx, -dpr * s * sy, dpr * c * sy, dpr * (x + OX), dpr * (y + OY));
+}
+
+function tileSprite(pi, v, size, noText) {
+  var key = pi + '|' + v + '|' + size + '|' + (noText ? 1 : 0);
+  if (spriteCache[key]) return spriteCache[key];
+  var col = tileOf(pi, v), pad = Math.ceil(size * 0.08), w = size + pad * 2, r = size * 0.15;
+  var c = document.createElement('canvas');
+  c.width = c.height = Math.ceil(w * dpr);
+  var g = c.getContext('2d');
+  g.scale(dpr, dpr);
+  g.fillStyle = 'rgba(0,0,0,' + (PALETTES[pi].dark ? 0.35 : 0.16) + ')';
+  rr(g, pad, pad + size * 0.05, size, size, r); g.fill();
+  var gr = g.createLinearGradient(0, pad, 0, pad + size);
+  gr.addColorStop(0, css(col.top)); gr.addColorStop(1, css(col.bot));
+  g.fillStyle = gr; rr(g, pad, pad, size, size, r); g.fill();
+  g.save(); rr(g, pad, pad, size, size, r); g.clip();
+  var sh = g.createLinearGradient(0, pad, 0, pad + size * 0.5);
+  sh.addColorStop(0, 'rgba(255,255,255,0.26)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = sh; g.fillRect(pad, pad, size, size * 0.5);
+  g.restore();
+  var lw = Math.max(1, size * 0.018);
+  g.lineWidth = lw; g.strokeStyle = 'rgba(255,255,255,0.3)';
+  rr(g, pad + lw / 2, pad + lw / 2, size - lw, size - lw, r - lw / 2); g.stroke();
+  if (!noText) {
+    var label = String(v), fs = size * FONT_K[Math.min(label.length, 6) - 1];
+    g.font = '800 ' + fs + 'px ' + FONT; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (col.L <= 0.7) { g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillText(label, pad + size / 2, pad + size * 0.54); }
+    g.fillStyle = css(col.text); g.fillText(label, pad + size / 2, pad + size * 0.52);
+  }
+  spriteCache[key] = { c: c, w: w };
+  return spriteCache[key];
+}
+// o: { s, sx, sy, rot, dx, dy, alpha, flash, noText }
+function drawTile(pi, v, x, y, size, o) {
+  o = o || {};
+  var s = o.s == null ? 1 : o.s, sx = (o.sx == null ? 1 : o.sx) * s, sy = (o.sy == null ? 1 : o.sy) * s;
+  if (sx <= 0.001 || sy <= 0.001) return;
+  var rs = Math.max(4, Math.round(size)), spr = tileSprite(pi, v, rs, o.noText), k = size / rs, h = spr.w * k / 2;
+  var al = o.alpha == null ? 1 : o.alpha;
+  setT(x + (o.dx || 0), y + (o.dy || 0), sx, sy, o.rot);
+  ctx.globalAlpha = al;
+  ctx.drawImage(spr.c, -h, -h, spr.w * k, spr.w * k);
+  if (o.flash > 0) {
+    ctx.globalAlpha = al * Math.min(1, o.flash); ctx.fillStyle = '#fff';
+    rr(ctx, -size / 2, -size / 2, size, size, size * 0.15); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function textAt(pi, v, x, y, size) {
+  var col = tileOf(pi, v), label = String(v), fs = size * FONT_K[Math.min(label.length, 6) - 1];
+  ctx.font = '800 ' + fs + 'px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = css(col.text); ctx.fillText(label, x, y + size * 0.02);
+}
+function merge(a, b) {
+  // combine two tile transforms
+  if (!a) return b || {};
+  if (!b) return a;
+  return { s: (a.s == null ? 1 : a.s) * (b.s == null ? 1 : b.s), sx: (a.sx == null ? 1 : a.sx) * (b.sx == null ? 1 : b.sx),
+           sy: (a.sy == null ? 1 : a.sy) * (b.sy == null ? 1 : b.sy), rot: (a.rot || 0) + (b.rot || 0),
+           dx: (a.dx || 0) + (b.dx || 0), dy: (a.dy || 0) + (b.dy || 0),
+           alpha: a.alpha == null ? b.alpha : a.alpha, flash: Math.max(a.flash || 0, b.flash || 0) };
+}
+
+// ------------------------------------------------------------- juice layer
+var particles = [], rings = [], pushes = [], events = [];
+var clock = 0, lastTs = 0, slow = false;
+
+function later(at, fn) { events.push({ at: at, fn: fn }); }
+function part(o) {
+  o.max = o.life; o.drag = o.drag == null ? 0.92 : o.drag; o.grav = o.grav || 0; o.rot = o.rot || 0; o.vr = o.vr || 0;
+  particles.push(o);
+}
+function burst(x, y, color, n, o) {
+  for (var i = 0; i < n; i++) {
+    var a = o.angle != null ? o.angle + (Math.random() - 0.5) * (o.spread || 1) : Math.random() * 6.283;
+    var sp = o.speed * (0.4 + Math.random() * 0.8), life = (o.life || 0.45) * (0.6 + Math.random() * 0.6);
+    part({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: life, size: o.size * (0.6 + Math.random() * 0.8),
+           color: color, grav: o.grav, drag: o.drag, kind: o.kind || 'dot' });
+  }
+}
+function ring(x, y, color, r0, r1, dur, w) { rings.push({ x: x, y: y, color: color, r0: r0, r1: r1, t0: clock, dur: dur, w: w }); }
+function push(owner, x, y, amp, radius) { pushes.push({ owner: owner, x: x, y: y, amp: amp, radius: radius, t0: clock }); }
+function pushOffset(owner, x, y) {
+  var ox = 0, oy = 0;
+  for (var i = 0; i < pushes.length; i++) {
+    var p = pushes[i];
+    if (p.owner !== owner) continue;
+    var k = (clock - p.t0) / 0.35, dx = x - p.x, dy = y - p.y, d = Math.hypot(dx, dy);
+    if (k >= 1 || d < 2 || d > p.radius) continue;
+    var f = p.amp * Math.sin(Math.PI * k) * (1 - k) * (1 - d / p.radius);
+    ox += dx / d * f; oy += dy / d * f;
+  }
+  return [ox, oy];
+}
+function drawJuice(dt) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (var i = particles.length - 1; i >= 0; i--) {
+    var p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { particles.splice(i, 1); continue; }
+    var dk = Math.pow(p.drag, dt * 60);
+    p.vx *= dk; p.vy = p.vy * dk + p.grav * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+    var a = p.life / p.max;
+    ctx.globalAlpha = p.kind === 'shard' || p.kind === 'rect' ? Math.min(1, a * 2.5) : a;
+    ctx.fillStyle = p.color;
+    if (p.kind === 'rect' || p.kind === 'shard') {
+      var c = Math.cos(p.rot), s = Math.sin(p.rot);
+      ctx.setTransform(dpr * c, dpr * s, -dpr * s, dpr * c, dpr * p.x, dpr * p.y);
+      if (p.kind === 'rect') ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.rot * 1.7)) + 0.5);
+      else {
+        ctx.beginPath(); ctx.moveTo(p.poly[0][0], p.poly[0][1]);
+        for (var j = 1; j < p.poly.length; j++) ctx.lineTo(p.poly[j][0], p.poly[j][1]);
+        ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke();
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0.3, p.size * (p.kind === 'drop' ? 1 : 0.5 + 0.5 * a)), 0, 6.283); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  for (i = rings.length - 1; i >= 0; i--) {
+    var r = rings[i], k = (clock - r.t0) / r.dur;
+    if (k >= 1) { rings.splice(i, 1); continue; }
+    var e = 1 - Math.pow(1 - k, 2);
+    ctx.globalAlpha = 1 - k; ctx.strokeStyle = r.color; ctx.lineWidth = r.w * (1 - k) + 0.5;
+    ctx.beginPath(); ctx.arc(r.x, r.y, Math.max(0.1, lerp(r.r0, r.r1, e)), 0, 6.283); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  for (i = pushes.length - 1; i >= 0; i--) if (clock - pushes[i].t0 > 0.4) pushes.splice(i, 1);
+}
+
+// ------------------------------------------------------------ merge effects
+// S: { x, y, c (cell px), pi, vOld, vNew, u (direction the tiles moved),
+//      bx, by (where the incoming tile is now), col, light, colOld, next,
+//      owner, shakeT }
+// e: seconds since impact (negative while the tiles still slide).
+// pre(S, e, who) transforms the target ('a') or the incoming tile ('b')
+// during the slide; early(S) fires when the slide starts, spawn(S) on impact;
+// tile(S, e) transforms the merged tile, or draw(S, e) replaces its drawing;
+// under / over paint around it.
+//
+// Round 2: ten takes on Jelly, round 1's pick: a fusion that reads as two
+// soft bodies pressed into one.
+function along(S, a, b) { return Math.abs(S.u[0]) > 0 ? { sx: a, sy: b } : { sx: b, sy: a }; }
+function wob(e, a, freq, damp) { return a * Math.exp(-damp * e) * Math.cos(freq * e); }
+function slideK(e) { return clamp((e + MOVE_T) / MOVE_T, 0, 1); }
+// squash along the move with the wall-side edge held in place
+function wallSquash(S, f, across) {
+  var o = along(S, f, across), sh = (1 - f) * S.c / 2;
+  o.dx = S.u[0] * sh; o.dy = S.u[1] * sh;
+  return o;
+}
+// a soft neck between two tile centres
+function goo(x1, y1, x2, y2, c, neck, col) {
+  var dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+  if (len < c * 0.5) return;
+  var ux = dx / len, uy = dy / len, px = -uy, py = ux, hw = c * 0.36, k = c * 0.25;
+  var fx = x1 + ux * k, fy = y1 + uy * k, gx = x2 - ux * k, gy = y2 - uy * k, mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  world(); ctx.fillStyle = col; ctx.beginPath();
+  ctx.moveTo(fx + px * hw, fy + py * hw);
+  ctx.quadraticCurveTo(mx + px * neck, my + py * neck, gx + px * hw, gy + py * hw);
+  ctx.lineTo(gx - px * hw, gy - py * hw);
+  ctx.quadraticCurveTo(mx - px * neck, my - py * neck, fx - px * hw, fy - py * hw);
+  ctx.closePath(); ctx.fill();
+}
+// droplets squeezed out sideways, across the move
+function sideDrops(S, n, size, speed) {
+  var a = Math.atan2(S.u[0], -S.u[1]);
+  [a, a + Math.PI].forEach(function (b) {
+    burst(S.x, S.y, css(S.col), n, { angle: b, spread: 0.7, speed: S.c * speed, size: S.c * size, grav: S.c * 14, kind: 'drop', life: 0.4 });
+  });
+}
+
+var MERGES = [
+  { name: 'Jelly', dur: 0.7,
+    pre: function (S, e, who) { return who === 'b' ? along(S, 1.14, 0.9) : null; },
+    spawn: function (S) { sideDrops(S, 4, 0.05, 3); },
+    tile: function (S, e) { var a = wob(e, 0.26, 26, 7); return along(S, 1 - a, 1 + a * 0.8); } },
+
+  { name: 'Wall squash', dur: 0.7,
+    pre: function (S, e, who) { return who === 'b' ? along(S, 1.16, 0.88) : null; },
+    spawn: function (S) { sideDrops(S, 3, 0.045, 2.6); },
+    tile: function (S, e) { var a = wob(e, 0.32, 24, 6); return wallSquash(S, 1 - a, 1 + a * 0.8); } },
+
+  { name: 'Soft jelly', dur: 1.1,
+    pre: function (S, e, who) { return who === 'b' ? along(S, 1.2, 0.86) : null; },
+    spawn: function (S) { sideDrops(S, 3, 0.06, 2.2); },
+    tile: function (S, e) { var a = wob(e, 0.3, 15, 3.5); return along(S, 1 - a, 1 + a * 0.85); } },
+
+  { name: 'Rubber', dur: 0.4,
+    pre: function (S, e, who) { return who === 'b' ? along(S, 1.08, 0.94) : null; },
+    tile: function (S, e) { var a = wob(e, 0.24, 42, 13); return along(S, 1 - a, 1 + a * 0.7); } },
+
+  { name: 'Absorb', dur: 0.7,
+    pre: function (S, e, who) {
+      var k = Math.max(0, (slideK(e) - 0.45) / 0.55);
+      if (who === 'b') return along(S, 1 - 0.5 * k, 1 - 0.1 * k);
+      return wallSquash(S, 1 + 0.12 * k, 1 - 0.06 * k);
+    },
+    tile: function (S, e) { var a = wob(e, 0.2, 22, 7); return wallSquash(S, 1 + a * 0.6, 1 - a * 0.3); } },
+
+  { name: 'Momentum', dur: 0.6,
+    pre: function (S, e, who) { return who === 'b' ? along(S, 1.12, 0.92) : null; },
+    tile: function (S, e) {
+      var s = 0.13 * Math.exp(-8 * e) * Math.sin(20 * e), o = along(S, 1 - s * 1.8, 1 + s * 1.2);
+      o.dx = S.u[0] * s * S.c; o.dy = S.u[1] * s * S.c;
+      return o;
+    } },
+
+  { name: 'Goo neck', dur: 0.8,
+    under: function (S, e) {
+      if (e < -MOVE_T || e >= 0) return;
+      goo(S.x, S.y, S.bx, S.by, S.c, S.c * (0.1 + 0.26 * slideK(e)), css(S.colOld));
+    },
+    pre: function (S, e, who) { var k = slideK(e); return who === 'b' ? along(S, 1 + 0.1 * k, 1 - 0.06 * k) : null; },
+    tile: function (S, e) { var a = wob(e, 0.3, 20, 6); return along(S, 1 + a * 0.9, 1 - a * 0.6); } },
+
+  { name: 'Ripple', dur: 0.7,
+    tile: function (S, e) { var a = wob(e, 0.2, 24, 7); return along(S, 1 - a, 1 + a * 0.7); },
+    over: function (S, e) {
+      if (e < 0 || e > 0.55) return;
+      world();
+      ctx.save(); rr(ctx, S.x - S.c / 2, S.y - S.c / 2, S.c, S.c, S.c * 0.15); ctx.clip();
+      // rings run from the face the incoming tile hit
+      var ox = S.x - S.u[0] * S.c / 2, oy = S.y - S.u[1] * S.c / 2;
+      for (var i = 0; i < 3; i++) {
+        var k = e / 0.55 - i * 0.18;
+        if (k <= 0 || k >= 1) continue;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.6 * (1 - k)) + ')'; ctx.lineWidth = S.c * 0.05 * (1 - k) + 1;
+        ctx.beginPath(); ctx.arc(ox, oy, k * S.c * 1.3, 0, 6.283); ctx.stroke();
+      }
+      ctx.restore();
+    } },
+
+  { name: 'Dough pinch', dur: 0.75,
+    pre: function (S, e) { var k = slideK(e); return along(S, 1 + 0.06 * k, 1 - 0.14 * k); },
+    spawn: function (S) { sideDrops(S, 6, 0.035, 3.6); },
+    tile: function (S, e) { var a = wob(e, 0.3, 20, 6); return along(S, 1 - a, 1 + a * 0.9); } },
+
+  { name: 'Stamp', dur: 0.7,
+    spawn: function (S) {
+      S.shakeT.shake = Math.max(S.shakeT.shake, S.c * 0.04);
+      [-1, 1].forEach(function (sd) {
+        burst(S.x + sd * S.c * 0.45, S.y + S.c * 0.48, css(S.light, 0.85), 5,
+              { angle: sd > 0 ? 0 : Math.PI, spread: 0.5, speed: S.c * 2.2, size: S.c * 0.07, life: 0.45, drag: 0.88 });
+      });
+    },
+    // pressed from above whatever the move, the bottom edge held
+    tile: function (S, e) { var a = wob(e, 0.3, 18, 7), sy = 1 - a; return { sx: 1 + a * 0.75, sy: sy, dy: (1 - sy) * S.c / 2 }; } }
+];
+
+// ----------------------------------------------------------- magnet effects
+// P: { ax, ay, bx, by (px centres), ux, uy (unit from a to b), d (cells
+//      apart), c, pi, v, col, light, ph }
+// tf(P, t, sg) moves tile a (sg = 1) or b (sg = -1); under / over paint.
+//
+// Round 2: ten takes on Particle stream, round 1's pick. Twins far apart
+// get a quieter version (far(): fewer, smaller, fainter particles), and the
+// tiles themselves move in every take.
+function amp(P) { return P.c * MAGNET * (P.d === 1 ? 1 : 0.6); }
+function far(P) { return P.d === 1 ? 1 : P.d === 2 ? 0.5 : 0.32; }
+function near(P) { return P.d === 1 ? 1 : 0.6; }
+function faces(P, inset) {
+  var k = P.c * (0.5 - inset);
+  return { fx: P.ax + P.ux * k, fy: P.ay + P.uy * k, gx: P.bx - P.ux * k, gy: P.by - P.uy * k,
+           mx: (P.ax + P.bx) / 2, my: (P.ay + P.by) / 2, px: -P.uy, py: P.ux };
+}
+function lean(P, sg, m) { return { dx: P.ux * m * sg, dy: P.uy * m * sg }; }
+// stretch toward the twin, the far edge held in place
+function stretch(P, sg, st) {
+  var o = Math.abs(P.ux) > 0 ? { sx: 1 + st, sy: 1 - st * 0.5 } : { sy: 1 + st, sx: 1 - st * 0.5 }, sh = st * P.c / 2;
+  o.dx = P.ux * sh * sg; o.dy = P.uy * sh * sg;
+  return o;
+}
+// o: { n per side, speed, wob, waves, size, alpha, inset, cross, kind: dot | ring | trail }
+function stream(P, t, o) {
+  world();
+  var f = faces(P, o.inset == null ? 0.22 : o.inset), fd = far(P);
+  var n = Math.max(1, Math.round(o.n * (P.d === 1 ? 1 : 0.55)));
+  for (var side = 0; side < 2; side++) {
+    var sx = side ? f.gx : f.fx, sy = side ? f.gy : f.fy;
+    var ex = o.cross ? (side ? f.fx : f.gx) : f.mx, ey = o.cross ? (side ? f.fy : f.gy) : f.my;
+    for (var i = 0; i < n; i++) {
+      var k = ((t * o.speed + i / n + P.ph + side * 0.5 / n) % 1 + 1) % 1;
+      var w = Math.sin(k * Math.PI * 2 * (o.waves || 1) + i * 1.3) * P.c * (o.wob || 0) * (1 - k);
+      var x = lerp(sx, ex, k) + f.px * w, y = lerp(sy, ey, k) + f.py * w;
+      var r = Math.max(0.7, P.c * o.size * (o.kind === 'ring' ? 0.6 + 0.6 * k : 1 - 0.4 * k) * (P.d === 1 ? 1 : 0.8));
+      ctx.globalAlpha = Math.sin(Math.PI * k) * (o.alpha == null ? 1 : o.alpha) * fd;
+      if (o.kind === 'trail') {
+        var dx = ex - sx, dy = ey - sy, len = Math.hypot(dx, dy) || 1, tl = P.c * 0.14;
+        ctx.strokeStyle = css(P.light); ctx.lineWidth = Math.max(1, r * 1.2); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - dx / len * tl, y - dy / len * tl); ctx.stroke();
+        ctx.lineCap = 'butt';
+      } else if (o.kind === 'ring') {
+        ctx.strokeStyle = css(P.light); ctx.lineWidth = Math.max(1, P.c * 0.014);
+        ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
+      } else {
+        ctx.fillStyle = css(P.light); ctx.strokeStyle = css(P.col, 0.9); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.stroke();
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function pulseLean(P, t) { return amp(P) * (0.7 + 0.3 * Math.sin(t * 6 + P.ph)); }
+
+var MAGNETS = [
+  { name: 'Stream',
+    tf: function (P, t, sg) { return lean(P, sg, pulseLean(P, t)); },
+    over: function (P, t) { stream(P, t, { n: 7, speed: 1.1, wob: 0.1, size: 0.042 }); } },
+
+  { name: 'Stream & stretch',
+    tf: function (P, t, sg) { return stretch(P, sg, 0.05 * (0.6 + 0.4 * Math.sin(t * 5 + P.ph)) * near(P)); },
+    over: function (P, t) { stream(P, t, { n: 6, speed: 1, wob: 0.08, size: 0.038 }); } },
+
+  { name: 'Exchange',
+    // particles cross all the way over; the tiles twitch as they arrive
+    tf: function (P, t, sg) {
+      var fr = ((t * 0.7 + P.ph) * 4 % 1 + 1) % 1, o = lean(P, sg, amp(P) * 0.5);
+      o.s = 1 + 0.03 * Math.exp(-fr * 10) * near(P);
+      return o;
+    },
+    over: function (P, t) { stream(P, t, { n: 4, speed: 0.7, wob: 0.06, size: 0.035, cross: true }); } },
+
+  { name: 'Vortex',
+    tf: function (P, t, sg) {
+      var o = lean(P, sg, amp(P) * 0.5);
+      if (Math.abs(P.ux) > 0) o.rot = sg * P.ux * 0.05 * (0.6 + 0.4 * Math.sin(t * 4 + P.ph)) * near(P);
+      return o;
+    },
+    over: function (P, t) {
+      world();
+      var f = faces(P, 0.5), fd = far(P), n = 8, R = P.c * (P.d === 1 ? 0.14 : 0.2);
+      ctx.fillStyle = css(P.light); ctx.strokeStyle = css(P.col, 0.9); ctx.lineWidth = 1;
+      for (var i = 0; i < n; i++) {
+        var a = t * 3.2 + i * 6.283 / n, r = R * (0.75 + 0.25 * Math.sin(t * 2 + i));
+        ctx.globalAlpha = fd * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(a * 2)));
+        ctx.beginPath(); ctx.arc(f.mx + Math.cos(a) * r, f.my + Math.sin(a) * r, Math.max(0.7, P.c * 0.03), 0, 6.283); ctx.fill(); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } },
+
+  { name: 'Dust',
+    // the quietest: three slow motes and a slow sway
+    tf: function (P, t, sg) { return lean(P, sg, amp(P) * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 2 + P.ph)))); },
+    over: function (P, t) { stream(P, t, { n: 3, speed: 0.45, wob: 0.14, size: 0.028, alpha: 0.6 }); } },
+
+  { name: 'Spark trails',
+    tf: function (P, t, sg) { return lean(P, sg, amp(P) * 0.6 + Math.sin(t * 60 + P.ph * 9) * P.c * 0.006); },
+    over: function (P, t) {
+      stream(P, t, { n: 5, speed: 1.6, wob: 0.03, size: 0.022, kind: 'trail' });
+      var f = faces(P, 0.5), pulse = 0.5 + 0.5 * Math.sin(t * 10 + P.ph);
+      ctx.globalAlpha = far(P) * pulse * 0.8; ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(f.mx, f.my, P.c * 0.04 * (0.6 + 0.4 * pulse), 0, 6.283); ctx.fill();
+      ctx.globalAlpha = 1;
+    } },
+
+  { name: 'Bubbles',
+    tf: function (P, t, sg) {
+      var o = stretch(P, sg, 0.04 * (0.6 + 0.4 * Math.sin(t * 3 + P.ph)) * near(P));
+      o.dy += Math.sin(t * 3 + P.ph + sg) * P.c * 0.008;
+      return o;
+    },
+    over: function (P, t) { stream(P, t, { n: 5, speed: 0.8, wob: 0.12, waves: 1.5, size: 0.05, kind: 'ring' }); } },
+
+  { name: 'Comet pull',
+    // one bead a side with a tail; the tiles pull harder as it travels
+    tf: function (P, t, sg) { var k = ((t * 0.6 + P.ph) % 1 + 1) % 1; return lean(P, sg, amp(P) * (0.4 + 0.9 * Math.sin(Math.PI * k))); },
+    over: function (P, t) {
+      for (var j = 0; j < 5; j++) stream(P, t - j * 0.035, { n: 1, speed: 0.6, wob: 0.05, size: 0.06 * (1 - j * 0.17), alpha: 1 - j * 0.2 });
+    } },
+
+  { name: 'Wave line',
+    tf: function (P, t, sg) { return lean(P, sg, pulseLean(P, t)); },
+    over: function (P, t) {
+      world();
+      var f = faces(P, 0.25), fd = far(P), len = Math.hypot(f.gx - f.fx, f.gy - f.fy), n = Math.max(3, Math.round(len / (P.c * 0.11)));
+      ctx.fillStyle = css(P.light); ctx.strokeStyle = css(P.col, 0.9); ctx.lineWidth = 1;
+      for (var i = 0; i <= n; i++) {
+        var q = i / n, dm = Math.abs(q - 0.5) * 2;   // 1 at the faces, 0 in the middle
+        var w = Math.sin(dm * 9 + t * 8) * P.c * 0.05 * (1 - dm * 0.5);
+        ctx.globalAlpha = fd * (0.35 + 0.65 * (1 - dm));
+        ctx.beginPath(); ctx.arc(lerp(f.fx, f.gx, q) + f.px * w, lerp(f.fy, f.gy, q) + f.py * w, Math.max(0.7, P.c * 0.026), 0, 6.283);
+        ctx.fill(); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    } },
+
+  { name: 'Edge glow',
+    // the faces turned toward each other light up, two shades up the ladder
+    tf: function (P, t, sg) { return lean(P, sg, pulseLean(P, t)); },
+    over: function (P, t) {
+      world();
+      var m = pulseLean(P, t), pulse = 0.55 + 0.45 * Math.sin(t * 4 + P.ph), c = P.c, gc = tileOf(P.pi, P.v * 4).rgb;
+      [[P.ax + P.ux * m, P.ay + P.uy * m, 1], [P.bx - P.ux * m, P.by - P.uy * m, -1]].forEach(function (q) {
+        var ex = q[0] + P.ux * q[2] * c / 2, ey = q[1] + P.uy * q[2] * c / 2;
+        var g = ctx.createLinearGradient(ex, ey, ex - P.ux * q[2] * c * 0.32, ey - P.uy * q[2] * c * 0.32);
+        g.addColorStop(0, css(gc, 0.85 * pulse * far(P))); g.addColorStop(1, css(gc, 0));
+        ctx.save(); rr(ctx, q[0] - c / 2, q[1] - c / 2, c, c, c * 0.15); ctx.clip();
+        ctx.fillStyle = g; ctx.fillRect(q[0] - c / 2, q[1] - c / 2, c, c);
+        ctx.restore();
+      });
+      stream(P, t, { n: 4, speed: 0.9, wob: 0.06, size: 0.03 });
+    } }
+];
+
+// -------------------------------------------------------------------- state
+var tab = 'merge', palIdx = 0, selMerge = 0, selMagnet = 0, buttons = [], cards = [];
+try {
+  var saved = JSON.parse(localStorage.getItem('proto2048fx2') || '{}');
+  if (saved.m != null) selMerge = saved.m;
+  if (saved.g != null) selMagnet = saved.g;
+} catch (e) {}
+function savePick() { try { localStorage.setItem('proto2048fx2', JSON.stringify({ m: selMerge, g: selMagnet })); } catch (e) {} }
+
+function layout() {
+  W = window.innerWidth; H = window.innerHeight;
+  dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  spriteCache = {};
+  var top = 92, gap = 10, cw = Math.min(W - 24, 1100), cols = W >= 760 ? 5 : 2, rows = 10 / cols;
+  var w = (cw - gap * (cols - 1)) / cols, h = Math.min((H - top - 12 - gap * (rows - 1)) / rows, w * 0.9);
+  var x0 = (W - cw) / 2;
+  cards = [];
+  for (var i = 0; i < 10; i++) {
+    cards.push({ i: i, x: x0 + (i % cols) * (w + gap), y: top + Math.floor(i / cols) * (h + gap), w: w, h: h,
+                 t0: i * 0.17, n: -1, fired: false, early: false, shake: 0 });
+  }
+  playLayout();
+}
+
+// ------------------------------------------------------------------ gallery
+var MERGE_VALUES = [2, 16, 128, 1024];
+
+function cardFrame(card, i, name, picked, P) {
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = css(P.board); rr(ctx, card.x, card.y, card.w, card.h, 12); ctx.fill();
+  if (picked) { ctx.strokeStyle = css(P.ink); ctx.lineWidth = 3; rr(ctx, card.x + 1.5, card.y + 1.5, card.w - 3, card.h - 3, 11); ctx.stroke(); }
+  ctx.fillStyle = css(P.ink); ctx.font = '700 13px ' + FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(((i + 1) % 10) + ' · ' + name, card.x + 10, card.y + 15);
+  if (picked) { ctx.textAlign = 'right'; ctx.font = '700 11px ' + FONT; ctx.fillText('Picked', card.x + card.w - 10, card.y + 15); }
+}
+
+function drawMergeCard(card, dt) {
+  var P = PALETTES[palIdx], fx = MERGES[card.i];
+  cardFrame(card, card.i, fx.name, selMerge === card.i, P);
+  var lt = ((clock - card.t0) % LOOP + LOOP) % LOOP, n = Math.floor((clock - card.t0) / LOOP);
+  if (n !== card.n) { card.n = n; card.fired = false; card.early = false; }
+  var cell = Math.min((card.w - 24) / 3.24, card.h - 40), g = cell * 0.12;
+  var sx0 = card.x + (card.w - (cell * 3 + g * 2)) / 2 + cell / 2, cyy = card.y + 28 + (card.h - 28) / 2;
+  function cx(i) { return sx0 + i * (cell + g); }
+  card.shake *= Math.exp(-dt * 14);
+  OX = (Math.random() - 0.5) * 2 * card.shake; OY = (Math.random() - 0.5) * 2 * card.shake;
+  world();
+  ctx.fillStyle = css(P.cell);
+  for (var i = 0; i < 3; i++) { rr(ctx, cx(i) - cell / 2, cyy - cell / 2, cell, cell, cell * 0.15); ctx.fill(); }
+
+  var v = MERGE_VALUES[((n % 4) + 4) % 4], other = v === 2 ? 8 : 2, ts = 0.5, ti = ts + MOVE_T, e = lt - ti;
+  var S = card.S || (card.S = {});
+  S.x = cx(0); S.y = cyy; S.c = cell; S.pi = palIdx; S.vOld = v; S.vNew = v * 2; S.u = [-1, 0];
+  S.col = tileOf(palIdx, v * 2).rgb; S.light = tileOf(palIdx, v * 2).light; S.colOld = tileOf(palIdx, v).rgb;
+  S.next = tileOf(palIdx, v * 4).rgb; S.owner = card; S.shakeT = card;
+  if (lt >= ts && !card.early) { card.early = true; if (fx.early) fx.early(S); }
+  if (e >= 0 && !card.fired) { card.fired = true; if (fx.spawn) fx.spawn(S); }
+
+  var k = clamp((lt - ts) / MOVE_T, 0, 1), ek = 1 - Math.pow(1 - k, 3);
+  S.bx = lerp(cx(1), cx(0), ek); S.by = cyy;
+  if (fx.under && e >= -MOVE_T) fx.under(S, e);
+  // the third tile slides along with the move, and feels any push
+  var px = lerp(cx(2), cx(1), ek), po = pushOffset(card, px, cyy);
+  drawTile(palIdx, other, px + po[0], cyy + po[1], cell);
+  if (e < 0) {
+    drawTile(palIdx, v, cx(0), cyy, cell, fx.pre && lt >= ts ? fx.pre(S, e, 'a') : null);
+    drawTile(palIdx, v, lerp(cx(1), cx(0), ek), cyy, cell, fx.pre && lt >= ts ? fx.pre(S, e, 'b') : null);
+  } else if (e < fx.dur + 0.02 && fx.draw) fx.draw(S, e);
+  else drawTile(palIdx, v * 2, cx(0), cyy, cell, e < fx.dur && fx.tile ? fx.tile(S, e) : null);
+  if (fx.over && e >= -MOVE_T) fx.over(S, e);
+  OX = OY = 0;
+}
+
+function drawMagnetCard(card) {
+  var P = PALETTES[palIdx], fx = MAGNETS[card.i];
+  cardFrame(card, card.i, fx.name, selMagnet === card.i, P);
+  var cell = Math.min((card.w - 24) / 4.36, (card.h - 40) / 2.14), g = cell * 0.12;
+  var sx0 = card.x + (card.w - (cell * 4 + g * 3)) / 2 + cell / 2, y0 = card.y + 28 + (card.h - 28) / 2 - (cell + g) / 2;
+  function cx(i) { return sx0 + i * (cell + g); }
+  world();
+  ctx.fillStyle = css(P.cell);
+  for (var r = 0; r < 2; r++) for (var i = 0; i < 4; i++) { rr(ctx, cx(i) - cell / 2, y0 + r * (cell + g) - cell / 2, cell, cell, cell * 0.15); ctx.fill(); }
+  // top row: twins side by side; bottom row: twins three cells apart
+  var rowsDef = [{ v: 8, a: 0, b: 1, extra: [[2, 32], [3, 2]] }, { v: 64, a: 0, b: 3, extra: [] }];
+  rowsDef.forEach(function (rd, r) {
+    var y = y0 + r * (cell + g), t = tileOf(palIdx, rd.v);
+    var pr = { ax: cx(rd.a), ay: y, bx: cx(rd.b), by: y, ux: 1, uy: 0, d: rd.b - rd.a, c: cell, pi: palIdx, v: rd.v,
+               col: t.rgb, light: t.light, ph: card.i * 0.37 + r * 0.5 };
+    var tm = clock;
+    if (fx.under) fx.under(pr, tm);
+    rd.extra.forEach(function (x) { drawTile(palIdx, x[1], cx(x[0]), y, cell); });
+    drawTile(palIdx, rd.v, pr.ax, y, cell, fx.tf ? fx.tf(pr, tm, 1) : null);
+    drawTile(palIdx, rd.v, pr.bx, y, cell, fx.tf ? fx.tf(pr, tm, -1) : null);
+    if (fx.over) fx.over(pr, tm);
+  });
+}
+
+// --------------------------------------------------------------------- play
+// A plain 2048, no powers, wearing the picked merge and magnet effects.
+var grid = [], dying = [], nextId = 1, score = 0, playOver = false;
+var BS, BX, BY, GAP, CELL, board = { shake: 0 };
+var DV = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+
+function playLayout() {
+  BS = Math.floor(Math.min(W - 32, H - 92 - 90, 520));
+  BX = Math.round((W - BS) / 2); BY = 92 + 56;
+  GAP = BS * 0.03; CELL = (BS - GAP * (N + 1)) / N;
+}
+function bx(x) { return BX + GAP + CELL / 2 + x * (CELL + GAP); }
+function by(y) { return BY + GAP + CELL / 2 + y * (CELL + GAP); }
+function cellAt(dir, k, i) {
+  if (dir === 'left') return [i, k];
+  if (dir === 'right') return [N - 1 - i, k];
+  if (dir === 'up') return [k, i];
+  return [k, N - 1 - i];
+}
+function newTile(v, x, y, born) {
+  return { id: nextId++, v: v, oldV: v, x: x, y: y, born: born, path: { x0: x, y0: y, x1: x, y1: y, t0: 0, dur: 0 }, S: null, impact: -9 };
+}
+function playNew() {
+  grid = []; for (var i = 0; i < N * N; i++) grid.push(null);
+  dying = []; score = 0; playOver = false;
+  spawnTile(clock); spawnTile(clock + 0.06);
+}
+function spawnTile(born) {
+  var e = [];
+  for (var i = 0; i < N * N; i++) if (!grid[i]) e.push(i);
+  if (!e.length) return;
+  var idx = pick(e);
+  grid[idx] = newTile(Math.random() < 0.1 ? 4 : 2, idx % N, Math.floor(idx / N), born);
+}
+function tpos(t) {
+  var p = t.path, k = p.dur > 0 ? clamp((clock - p.t0) / p.dur, 0, 1) : 1, e = 1 - Math.pow(1 - k, 3);
+  return [lerp(p.x0, p.x1, e), lerp(p.y0, p.y1, e)];
+}
+function canMove(dir) {
+  for (var k = 0; k < N; k++) {
+    var last = null, empty = false;
+    for (var i = 0; i < N; i++) {
+      var c = cellAt(dir, k, i), t = grid[c[1] * N + c[0]];
+      if (!t) { empty = true; continue; }
+      if (empty || (last && last.v === t.v)) return true;
+      last = t;
+    }
+  }
+  return false;
+}
+function playMove(dir) {
+  if (playOver || !canMove(dir)) return;
+  var now = clock, next = [], merges = [], i, k;
+  for (i = 0; i < N * N; i++) next.push(null);
+  for (k = 0; k < N; k++) {
+    var target = 0, last = null, lastPos = -1, lastMerged = false;
+    for (i = 0; i < N; i++) {
+      var c = cellAt(dir, k, i), t = grid[c[1] * N + c[0]];
+      if (!t) continue;
+      var p = tpos(t), d;
+      if (last && !lastMerged && last.v === t.v) {
+        d = cellAt(dir, k, lastPos);
+        t.path = { x0: p[0], y0: p[1], x1: d[0], y1: d[1], t0: now, dur: MOVE_T };
+        t.deadAt = now + MOVE_T; dying.push(t);
+        merges.push({ a: last, b: t }); lastMerged = true;
+        continue;
+      }
+      d = cellAt(dir, k, target);
+      t.path = { x0: p[0], y0: p[1], x1: d[0], y1: d[1], t0: now, dur: MOVE_T };
+      t.x = d[0]; t.y = d[1]; next[t.y * N + t.x] = t;
+      last = t; lastPos = target; lastMerged = false; target++;
+    }
+  }
+  grid = next;
+  merges.forEach(function (m) {
+    var a = m.a, fx = MERGES[selMerge], tv = tileOf(palIdx, a.v * 2);
+    a.oldV = a.v; a.v *= 2; score += a.v;
+    var S = { x: bx(a.x), y: by(a.y), c: CELL, pi: palIdx, vOld: a.oldV, vNew: a.v, u: DV[dir], col: tv.rgb, light: tv.light,
+              colOld: tileOf(palIdx, a.oldV).rgb, next: tileOf(palIdx, a.v * 2).rgb, owner: 'play', shakeT: board, fx: fx,
+              bx: bx(m.b.path.x0), by: by(m.b.path.y0) };
+    a.S = S; a.impact = now + MOVE_T; m.b.S = S; m.b.impact = now + MOVE_T;
+    if (fx.early) fx.early(S);
+    later(now + MOVE_T, function () { if (fx.spawn) fx.spawn(S); });
+  });
+  spawnTile(now + MOVE_T * 0.8);
+  playOver = !['left', 'right', 'up', 'down'].some(canMove);
+}
+function settled(t) {
+  return clock >= t.path.t0 + t.path.dur && clock >= t.born + 0.18 && (!t.S || clock >= t.impact + t.S.fx.dur);
+}
+
+function drawPlay(dt) {
+  var P = PALETTES[palIdx];
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // the two pickers and the score
+  var x0 = BX, wq = (BS - 8) / 2;
+  picker(x0, 94, wq, 'Merge', MERGES, selMerge, function (d) { selMerge = (selMerge + d + 10) % 10; savePick(); });
+  picker(x0 + wq + 8, 94, wq, 'Magnet', MAGNETS, selMagnet, function (d) { selMagnet = (selMagnet + d + 10) % 10; savePick(); });
+  ctx.fillStyle = css(P.ink); ctx.font = '800 15px ' + FONT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('Score ' + score, BX, BY + BS + 22);
+  button(BX + BS - 100, BY + BS + 8, 100, 28, 'New game', playNew);
+
+  board.shake *= Math.exp(-dt * 14);
+  OX = (Math.random() - 0.5) * 2 * board.shake; OY = (Math.random() - 0.5) * 2 * board.shake;
+  world();
+  ctx.fillStyle = css(P.board); rr(ctx, BX, BY, BS, BS, BS * 0.04); ctx.fill();
+  ctx.fillStyle = css(P.cell);
+  for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) { rr(ctx, bx(x) - CELL / 2, by(y) - CELL / 2, CELL, CELL, CELL * 0.15); ctx.fill(); }
+
+  // magnet pairs between settled twins that would merge on the next move
+  var tf = {}, pairs = [], mfx = MAGNETS[selMagnet];
+  function addTf(t, o) { if (o) tf[t.id] = merge(tf[t.id], o); }
+  for (y = 0; y < N; y++) for (x = 0; x < N; x++) {
+    var t = grid[y * N + x];
+    if (!t || !settled(t)) continue;
+    [[1, 0], [0, 1]].forEach(function (dv) {
+      for (var s = 1; s < N; s++) {
+        var xx = x + dv[0] * s, yy = y + dv[1] * s;
+        if (xx >= N || yy >= N) break;
+        var u = grid[yy * N + xx];
+        if (!u) continue;
+        if (u.v === t.v && settled(u)) {
+          var tv = tileOf(palIdx, t.v);
+          var pr = { ax: bx(x), ay: by(y), bx: bx(xx), by: by(yy), ux: dv[0], uy: dv[1], d: s, c: CELL, pi: palIdx, v: t.v,
+                     col: tv.rgb, light: tv.light, ph: (t.id * 0.37 + u.id * 0.11) % 1 };
+          pairs.push(pr);
+          if (mfx.tf) { addTf(t, mfx.tf(pr, clock, 1)); addTf(u, mfx.tf(pr, clock, -1)); }
+        }
+        break;
+      }
+    });
+  }
+  pairs.forEach(function (pr) { if (mfx.under) mfx.under(pr, clock); });
+  var live = grid.filter(function (t) { return !!t; });
+  live.forEach(function (t) { if (t.S && t.S.fx.under && clock - t.impact < t.S.fx.dur + 0.6) t.S.fx.under(t.S, clock - t.impact); });
+
+  function paint(t, role) {
+    if (clock < t.born) return;
+    var p = tpos(t), x = bx(p[0]), y = by(p[1]), po = pushOffset('play', x, y);
+    x += po[0]; y += po[1];
+    var o = tf[t.id] || null, bk = (clock - t.born) / 0.18;
+    if (bk < 1) o = merge(o, { s: easeOutBack(bk) });
+    if (t.S && clock < t.impact + t.S.fx.dur) {
+      var e = clock - t.impact, fx = t.S.fx;
+      if (e < 0) {
+        if (role === 'b') { t.S.bx = x; t.S.by = y; }
+        drawTile(palIdx, role === 'a' ? t.oldV : t.v, x, y, CELL, merge(o, fx.pre ? fx.pre(t.S, e, role) : null));
+        return;
+      }
+      if (role === 'b') return;
+      t.S.x = x; t.S.y = y;
+      if (fx.draw) { fx.draw(t.S, e); return; }
+      o = merge(o, fx.tile ? fx.tile(t.S, e) : null);
+    } else if (role === 'b') { if (clock >= t.deadAt) return; }
+    drawTile(palIdx, t.v, x, y, CELL, o);
+  }
+  for (var i = dying.length - 1; i >= 0; i--) if (clock > dying[i].deadAt + 0.05) dying.splice(i, 1);
+  dying.forEach(function (t) { paint(t, 'b'); });
+  live.forEach(function (t) { paint(t, 'a'); });
+  live.forEach(function (t) { if (t.S && t.S.fx.over && clock - t.impact < t.S.fx.dur + 0.6) t.S.fx.over(t.S, clock - t.impact); });
+  pairs.forEach(function (pr) { if (mfx.over) mfx.over(pr, clock); });
+  OX = OY = 0;
+
+  if (playOver) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = css(P.bg, 0.75); rr(ctx, BX, BY, BS, BS, BS * 0.04); ctx.fill();
+    ctx.fillStyle = css(P.ink); ctx.textAlign = 'center'; ctx.font = '800 26px ' + FONT;
+    ctx.fillText('No moves left · tap to restart', BX + BS / 2, BY + BS / 2);
+    buttons.push({ x: BX, y: BY, w: BS, h: BS, fn: playNew });
+  }
+}
+
+// --------------------------------------------------------------------- chrome
+function button(x, y, w, h, label, fn, on) {
+  var P = PALETTES[palIdx];
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = on ? css(P.ink) : css(P.board); rr(ctx, x, y, w, h, Math.min(9, h / 2)); ctx.fill();
+  ctx.fillStyle = on ? css(P.bg) : css(P.ink); ctx.font = '700 12px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, x + w / 2, y + h / 2 + 0.5);
+  buttons.push({ x: x, y: y, w: w, h: h, fn: fn });
+}
+function picker(x, y, w, label, list, sel, step) {
+  var P = PALETTES[palIdx];
+  button(x, y, 30, 44, '‹', function () { step(-1); });
+  button(x + w - 30, y, 30, 44, '›', function () { step(1); });
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = css(P.inkSoft); ctx.font = '600 11px ' + FONT; ctx.fillText(label, x + w / 2, y + 12);
+  ctx.fillStyle = css(P.ink); ctx.font = '800 14px ' + FONT; ctx.fillText(((sel + 1) % 10) + ' · ' + list[sel].name, x + w / 2, y + 30);
+}
+
+function draw(dt) {
+  var P = PALETTES[palIdx];
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  var g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, css(P.bg)); g.addColorStop(1, css(P.bg2));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  buttons = [];
+  var x0 = cards.length ? cards[0].x : 12, cw = cards.length ? cards[cards.length - 1].x + cards[cards.length - 1].w - x0 : W - 24;
+  var tw = 74;
+  button(x0, 10, tw, 32, 'Merge', function () { tab = 'merge'; }, tab === 'merge');
+  button(x0 + tw + 6, 10, tw, 32, 'Magnet', function () { tab = 'magnet'; }, tab === 'magnet');
+  button(x0 + 2 * (tw + 6), 10, tw, 32, 'Play', function () { tab = 'play'; }, tab === 'play');
+  button(x0 + cw - 64, 10, 64, 32, slow ? 'Slow ×¼' : 'Slow', function () { slow = !slow; }, slow);
+  button(x0, 50, 30, 30, '‹', function () { setPal(palIdx - 1); });
+  ctx.fillStyle = css(P.ink); ctx.font = '700 13px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(P.name, x0 + 30 + 40, 65);
+  button(x0 + 110, 50, 30, 30, '›', function () { setPal(palIdx + 1); });
+  ctx.textAlign = 'right'; ctx.font = '600 12px ' + FONT; ctx.fillStyle = css(P.inkSoft);
+  ctx.fillText('Picked: merge ' + ((selMerge + 1) % 10) + ' ' + MERGES[selMerge].name + ' · magnet ' + ((selMagnet + 1) % 10) + ' ' + MAGNETS[selMagnet].name, x0 + cw, 65);
+
+  if (tab === 'play') drawPlay(dt);
+  else {
+    cards.forEach(function (card) {
+      if (tab === 'merge') drawMergeCard(card, dt); else drawMagnetCard(card);
+      buttons.push({ x: card.x, y: card.y, w: card.w, h: card.h, fn: (function (i) {
+        return function () { if (tab === 'merge') selMerge = i; else selMagnet = i; savePick(); };
+      })(card.i) });
+    });
+  }
+  drawJuice(dt);
+}
+function setPal(i) { palIdx = (i + PALETTES.length) % PALETTES.length; }
+
+function frame(ts) {
+  var now = ts / 1000, dt = lastTs ? Math.min(0.05, now - lastTs) : 1 / 60;
+  lastTs = now;
+  dt *= slow ? SLOW : 1;
+  clock += dt;
+  for (var i = events.length - 1; i >= 0; i--) if (clock >= events[i].at) { var f = events[i].fn; events.splice(i, 1); f(); }
+  draw(dt);
+  requestAnimationFrame(frame);
+}
+
+// -------------------------------------------------------------------- input
+var KEYS = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', a: 'left', d: 'right', w: 'up', s: 'down' };
+window.addEventListener('keydown', function (e) {
+  var k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (tab === 'play' && KEYS[k]) { e.preventDefault(); playMove(KEYS[k]); return; }
+  if (k === 'Tab') { e.preventDefault(); tab = tab === 'merge' ? 'magnet' : tab === 'magnet' ? 'play' : 'merge'; return; }
+  if (k === 's') { slow = !slow; return; }
+  if (k === '[') setPal(palIdx - 1);
+  else if (k === ']') setPal(palIdx + 1);
+  else if (/^[0-9]$/.test(k)) {
+    var i = (+k + 9) % 10;
+    if (tab === 'magnet') selMagnet = i; else selMerge = i;
+    savePick();
+  }
+});
+var drag = null;
+cv.addEventListener('pointerdown', function (e) {
+  for (var i = buttons.length - 1; i >= 0; i--) {
+    var b = buttons[i];
+    if (e.clientX >= b.x && e.clientX <= b.x + b.w && e.clientY >= b.y && e.clientY <= b.y + b.h) { b.fn(); return; }
+  }
+  if (tab === 'play') drag = { x: e.clientX, y: e.clientY };
+});
+cv.addEventListener('pointerup', function (e) {
+  if (!drag) return;
+  var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  drag = null;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+  playMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+});
+window.addEventListener('resize', layout);
+
+layout();
+playNew();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

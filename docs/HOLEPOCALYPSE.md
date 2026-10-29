@@ -202,13 +202,18 @@ nothing and give nothing back.
   comes home, and the flag moves to a new spot where it is capped for
   `TARGET_COOL 8` s — a capped cup is rolled over. A super's ball never drops
   in.
-- **The bag is a row of big balls under the tee**, the next shot first, each
-  ball wearing the kind it will leave as; a ball out on the course is an empty
-  socket ringed white, the one coming back by itself fills its ring. Left of
-  the tee, the special about to be fired is named with its count. The tee
-  ball wears its colour in a pulsing ring. The level pill's "!" stands on top
-  of the pill (`--lv-log-left` / `--lv-log-bottom` in the SKIN) to leave the
-  row its room.
+- **The bag is five big balls**, the next shot first, each ball wearing the
+  kind it will leave as; a ball out on the course is an empty socket ringed
+  white, the one coming back by itself fills its ring. On the web it is a
+  **column on the left flank**, standing `BAG_FOOT 10` over the shell's foot bar
+  (`Layout.foot`) with the next ball at the bottom beside the tee and the later
+  ones above it; it is painted with the ground, so a zombie walking by hides
+  it. The tee rides up with it (`TEE_Y 1146` on the web, `1186` kept on the
+  playable, which has no foot bar and keeps the row under the tee) so that the
+  tee, its ball and its reload ring stay clear of the bar. The special about to
+  be fired is named with its count beside the tee, on its right on the web. The
+  tee ball wears its colour in a pulsing ring. The level pill and its "!" are
+  the shell's, in the foot bar: the SKIN no longer moves them.
 
 ### 2.7 The supers — right, tapped
 
@@ -314,9 +319,13 @@ Follow [CLAUDE.md](../CLAUDE.md#how-to-create-a-new-game) and
    (0–3, §8), `Game.levelWon()` ends the round on the goal. `web.levels.tune`
    lerps the pressure (§8).
 1. **Loadout.** The level table fixes the two side-hole kinds (they teach).
-   The two supers: fixed on levels 1–6, then **picked before the round** among
-   the unlocked ones, on one card (`Modal.open`) — *a decision to confirm when
-   building*; the cheap alternative is the level table fixing them too.
+   The supers are **picked before the round** on the shell's loadout card
+   (`Game.loadout`, `packages/webshell/loadout.js`): as many slots as the
+   level's table deals (one on level 1, two after), among every super
+   unlocked — a super opens with the first level whose table deals it — and
+   the twenty on the grid from level 1, the locked ones behind a padlock and
+   their level. The level's own pair is the suggestion and what a free round
+   or a tool's round gets.
 1. **The art pipeline**: `encode-art.mjs holepocalypse` for the backgrounds,
    title and characters; `cut-objects.mjs` for every `-object-*` sheet, with
    `--grid` matching the prompt and `--adopt`; frame sheets on a fixed `scale`
@@ -365,7 +374,7 @@ the climb. Radius is the footprint (§2.10).
 | **Mudder**      | 3    | 4   | 0.9   | 32     | made of swamp mud; its knockout splits it into two **Mudlings** (HP 1, radius 18, speed 1.4)                                         | homing, split, or a pond behind it    | walk 8, hit 4, split 4 (Mudling = scaled)    |
 | ~~Digger~~      | 4    | 3   | 1.1   | 28     | removed in v0.4.0 — burrows (invulnerable, a moving dirt mound), surfaces near the main hole and **drags it** 200 px toward the line | hit it before it digs; Time freeze    | walk 4, dig 4, surface 4, hit 2 + knockout 2 |
 | **Runner**      | 5    | 1   | 2.2   | 26     | sprints straight down                                                                                                                | a fast Direct shot, Seeker rain       | sprint 8, hit 4, knockout 4                  |
-| **Necromancer** | 5    | 5   | 0.6   | 30     | stops every 6 s and raises the last two knocked-out zombies as Walkers                                                               | top priority: Sniper, Meteor          | walk 4, cast 4, hit 4, knockout 4            |
+| **Necromancer** | 5    | 3   | 0.6   | 30     | stops every 10 s and raises the last two knocked-out zombies as Walkers                                                              | top priority: Sniper, Meteor          | walk 4, cast 4, hit 4, knockout 4            |
 
 **The bosses**, one per band, each the climax of level 6 of its band:
 
@@ -464,38 +473,38 @@ whole round instead of fading after four seconds).
 | waves                       | 2       | 3        | 4 + boss |
 | main hole distance from tee | short   | middle   | far      |
 
-| lv  | band | beat     | goal (`levelGoal`)         | new             | modifier    | side holes        | supers (fixed / offered)      | bonus ★★★               |
-| --- | ---- | -------- | -------------------------- | --------------- | ----------- | ----------------- | ----------------------------- | ----------------------- |
-| 1   | 1    | discover | survive 2 waves            | Walker, the arc | —           | explosive         | Ball rain                     | sink the hole once      |
-| 2   | 1    | practice | survive 2 waves            | Boomer          | —           | explosive, multi  | Ball rain, Fan volley         | a chain of 4            |
-| 3   | 1    | use      | sink the hole 2 times      | Lob             | —           | explosive, multi  | Ball rain, Fan volley         | a lob into the hole     |
-| 4   | 1    | twist    | survive 3 waves            | —               | Moving hole | multi, explosive  | Time freeze, Hole blast       | no last stand           |
-| 5   | 1    | exam     | survive 3 waves            | —               | Scorched    | explosive, multi  | Fan volley, Time freeze       | a chain of 6            |
-| 6   | 1    | boss     | defeat the Greenkeeper     | Greenkeeper     | —           | explosive, multi  | Hole blast, Ball rain         | in under 2 min          |
-| 7   | 2    | discover | survive 2 waves            | Shield, bunkers | —           | pierce            | offered: band 1 + Seeker rain | 3 shields by lob        |
-| 8   | 2    | practice | survive 3 waves            | —               | —           | pierce, heavy     | offered: + Sniper             | a chain of 5            |
-| 9   | 2    | use      | knock out 6 shields        | —               | —           | heavy, pierce     | offered: + Sprinklers         | sink the hole twice     |
-| 10  | 2    | twist    | survive 3 waves            | —               | Wind        | pierce, explosive | offered: + Golf cart          | no flag lost twice over |
-| 11  | 2    | exam     | survive 3 waves            | —               | —           | heavy, multi      | offered                       | a chain of 7            |
-| 12  | 2    | boss     | defeat the Caddie Colossus | Caddie Colossus | —           | pierce, heavy     | offered                       | 5 lobs on its head      |
-| 13  | 3    | discover | drown 6 zombies            | water           | —           | heavy             | offered: + Boom volley        | 3 drowned in one shot   |
-| 14  | 3    | practice | survive 3 waves            | Mudder          | —           | homing, heavy     | offered: + Split storm        | a chain of 6            |
-| 15  | 3    | use      | survive 3 waves            | —               | —           | homing, split     | offered: + Magnet hole        | sink the hole 3 times   |
-| 16  | 3    | twist    | survive 3 waves            | —               | Night       | split, pierce     | offered: + Hailstorm          | no last stand           |
-| 17  | 3    | exam     | survive 4 waves            | —               | —           | homing, explosive | offered                       | a chain of 8            |
-| 18  | 3    | boss     | defeat the Bog Giant       | Bog Giant       | —           | heavy, homing     | offered                       | in under 2 min          |
-| 19  | 4    | discover | survive 3 waves            | ice             | —           | bouncy            | offered: + Firestorm          | a 5-zombie pile-up      |
-| 20  | 4    | practice | survive 3 waves            | —               | —           | fire, bouncy      | offered: + Super bounce       | chain of 7              |
-| 21  | 4    | use      | sink the hole 3 times      | —               | —           | fire, split       | offered: + Cluster bombs      | a chain of 8            |
-| 22  | 4    | twist    | survive 4 waves            | —               | Double hole | bouncy, homing    | offered: + Rush               | both holes in one wave  |
-| 23  | 4    | exam     | survive 4 waves            | —               | —           | fire, heavy       | offered                       | no flag lost            |
-| 24  | 4    | boss     | defeat the Yeti            | Yeti            | —           | fire, bouncy      | offered                       | in under 2 min          |
-| 25  | 5    | discover | survive 3 waves            | graves, Runner  | —           | ice               | offered: + Meteor             | no runner across        |
-| 26  | 5    | practice | survive 4 waves            | Necromancer     | —           | ice, giant        | offered: + Carpet strike      | no zombie raised        |
-| 27  | 5    | use      | knock out 3 necromancers   | —               | —           | giant, any        | offered: + Golden rain        | a chain of 10           |
-| 28  | 5    | twist    | survive 4 waves            | —               | Horde       | any, any          | offered: + Mower              | no last stand           |
-| 29  | 5    | exam     | survive 4 waves            | —               | —           | any, any          | offered                       | a chain of 12           |
-| 30  | 5    | boss     | defeat the Zombie King     | Zombie King     | —           | any, any          | offered                       | in under 3 min          |
+| lv  | band | beat     | goal (`levelGoal`)         | new             | modifier    | side holes        | supers (suggested / unlocks) | bonus ★★★               |
+| --- | ---- | -------- | -------------------------- | --------------- | ----------- | ----------------- | ---------------------------- | ----------------------- |
+| 1   | 1    | discover | survive 2 waves            | Walker, the arc | —           | explosive         | Ball rain                    | sink the hole once      |
+| 2   | 1    | practice | survive 2 waves            | Boomer          | —           | explosive, multi  | Ball rain, Fan volley        | a chain of 4            |
+| 3   | 1    | use      | sink the hole 2 times      | Lob             | —           | explosive, multi  | Ball rain, Fan volley        | a lob into the hole     |
+| 4   | 1    | twist    | survive 3 waves            | —               | Moving hole | multi, explosive  | Time freeze, Hole blast      | no last stand           |
+| 5   | 1    | exam     | survive 3 waves            | —               | Scorched    | explosive, multi  | Fan volley, Time freeze      | a chain of 6            |
+| 6   | 1    | boss     | defeat the Greenkeeper     | Greenkeeper     | —           | explosive, multi  | Hole blast, Ball rain        | in under 2 min          |
+| 7   | 2    | discover | survive 2 waves            | Shield, bunkers | —           | pierce            | unlocks: Seeker rain         | 3 shields by lob        |
+| 8   | 2    | practice | survive 3 waves            | —               | —           | pierce, heavy     | unlocks: Sniper              | a chain of 5            |
+| 9   | 2    | use      | knock out 6 shields        | —               | —           | heavy, pierce     | unlocks: Sprinklers          | sink the hole twice     |
+| 10  | 2    | twist    | survive 3 waves            | —               | Wind        | pierce, explosive | unlocks: Golf cart           | no flag lost twice over |
+| 11  | 2    | exam     | survive 3 waves            | —               | —           | heavy, multi      | —                            | a chain of 7            |
+| 12  | 2    | boss     | defeat the Caddie Colossus | Caddie Colossus | —           | pierce, heavy     | —                            | 5 lobs on its head      |
+| 13  | 3    | discover | drown 6 zombies            | water           | —           | heavy             | unlocks: Boom volley         | 3 drowned in one shot   |
+| 14  | 3    | practice | survive 3 waves            | Mudder          | —           | homing, heavy     | unlocks: Split storm         | a chain of 6            |
+| 15  | 3    | use      | survive 3 waves            | —               | —           | homing, split     | unlocks: Magnet hole         | sink the hole 3 times   |
+| 16  | 3    | twist    | survive 3 waves            | —               | Night       | split, pierce     | unlocks: Hailstorm           | no last stand           |
+| 17  | 3    | exam     | survive 4 waves            | —               | —           | homing, explosive | —                            | a chain of 8            |
+| 18  | 3    | boss     | defeat the Bog Giant       | Bog Giant       | —           | heavy, homing     | —                            | in under 2 min          |
+| 19  | 4    | discover | survive 3 waves            | ice             | —           | bouncy            | unlocks: Firestorm           | a 5-zombie pile-up      |
+| 20  | 4    | practice | survive 3 waves            | —               | —           | fire, bouncy      | unlocks: Super bounce        | chain of 7              |
+| 21  | 4    | use      | sink the hole 3 times      | —               | —           | fire, split       | unlocks: Cluster bombs       | a chain of 8            |
+| 22  | 4    | twist    | survive 4 waves            | —               | Double hole | bouncy, homing    | unlocks: Rush                | both holes in one wave  |
+| 23  | 4    | exam     | survive 4 waves            | —               | —           | fire, heavy       | —                            | no flag lost            |
+| 24  | 4    | boss     | defeat the Yeti            | Yeti            | —           | fire, bouncy      | —                            | in under 2 min          |
+| 25  | 5    | discover | survive 3 waves            | graves, Runner  | —           | ice               | unlocks: Meteor              | no runner across        |
+| 26  | 5    | practice | survive 4 waves            | Necromancer     | —           | ice, giant        | unlocks: Carpet strike       | no zombie raised        |
+| 27  | 5    | use      | knock out 3 necromancers   | —               | —           | giant, any        | unlocks: Golden rain         | a chain of 10           |
+| 28  | 5    | twist    | survive 4 waves            | —               | Horde       | any, any          | unlocks: Mower               | no last stand           |
+| 29  | 5    | exam     | survive 4 waves            | —               | —           | any, any          | —                            | a chain of 12           |
+| 30  | 5    | boss     | defeat the Zombie King     | Zombie King     | —           | any, any          | —                            | in under 3 min          |
 
 **After level 30**, the star above it starts the endless run in the
 graveyard: waves forever, every zombie, every kind and super, a best score.
@@ -653,9 +662,10 @@ ______________________________________________________________________
 
 ## 12. What the first build decided
 
-- **The supers are fixed by the level table** on all thirty levels — the cheap
-  alternative of §3 step 7, two per level, rotating the band's new ones in. A
-  loadout card before the round is still open.
+- **The supers are the player's** (v0.7.0): the level table's pair is only
+  the suggestion of the loadout card the shell opens before a level (§3 step
+  7). The card starts from the player's last pick, with the super a level
+  brings in first (tagged NEW); a replay keeps the hand without asking.
 - **A level counts its own stars** (`levelTally`): the goal, then no flag
   lost, then the bonus — cumulative, so the third needs the second.
 - **A boss gives ground**: a hit that does damage knocks it back a step

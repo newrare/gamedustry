@@ -4127,8 +4127,14 @@
                 towers: towers, speedoFont: speedoFont,
                 rx: shieldRail.x, ry: shieldRail.y, rw: shieldRail.w, rh: shieldRail.h,
                 gl: railGlow.l, gr: railGlow.r };
+      /* metrics() deals the stars and the skyline from Rand: a fixed die, so a
+         picture is the same every time it is opened and the round's own
+         stream is left alone. */
+      var rnd = Math.random, die = 48271;
+      Math.random = function () { die = (die * 16807) % 2147483647; return (die - 1) / 2147483646; };
       try { stageDraw(o, W, H); }
       finally {
+        Math.random = rnd;
         BIO = K.BIO; camP = K.camP; camX = K.camX; fov = K.fov; fovZ = K.fovZ;
         elevCar = K.elevCar; phA = K.phA; phB = K.phB; phC = K.phC; phD = K.phD;
         dist = K.dist; runT = K.runT; forks = K.forks; rows = K.rows; rowN = K.rowN;
@@ -4175,13 +4181,16 @@
       list.sort(function (a, b) { return b.p - a.p; });        // far first
       for (i = 0; i < list.length; i++) {
         e = list[i]; k = kAt(e.p);
+        ctx.globalAlpha = e.a != null ? e.a : 1;
         if (e.g) drawGate(e.g, e.last);
         else if (e.r) drawRival(e.r, k);
         else if (e.it.type === "boost") drawPad(e.it, k);
         else if (e.it.type === "ramp") drawRamp(e.it, k);
         else drawStanding(e.it, screenX(itemX(e.it), k), screenY(e.it.p, k), k);
       }
+      ctx.globalAlpha = 1;
       ctx.restore();
+      if (o.over) o.over(cp);
       if (o.ship) stageShip(o.ship, cp);
       ctx.restore();
     }
@@ -4195,7 +4204,7 @@
       }
       if (t.type === "rival") {
         // `seed` zeroes the pilot's own weave, so `off` is where it drives
-        return { p: p, r: { p: p, br: t.br || 0, kind: t.kind, seed: -p * 0.0016,
+        return { p: p, a: t.a, r: { p: p, br: t.br || 0, kind: t.kind, seed: -p * 0.0016,
                             dodge: t.off || 0, hunt: 0, push: 0, pushV: 0, bump: 0 } };
       }
       return { p: p, it: { p: p, off: t.off || 0, type: t.type, br: t.br || 0,
@@ -4211,6 +4220,58 @@
       ctx.translate(x, y); ctx.scale(sc, sc);
       ctx.translate(0, -52); ctx.rotate((sh.lean || 0) * T.leanMax); ctx.translate(0, 52);
       drawShip(T.playerArt, T.shipW, null, 0, 0);
+      ctx.restore();
+    }
+    /* A MOVE, as dots. `t` is { from, to, arc, g0, g1 }: two points of the staged
+       road, each { z, off } ahead of the craft and across the centre line, and
+       the lane change between them eased like a steer. `arc` lifts the middle
+       of it (a jump) by that many design px, `g0` / `g1` leave room for the
+       craft at either end. Dots are evenly spaced on the screen, and the last
+       one is an arrowhead. Called from `o.over`, inside the staged frame. */
+    function stageTrace(cp, t) {
+      var N = 60, pts = [], i, u, e, p, k, x, y, d, seg, run = 0, next, len, a, b, ang, kE;
+      for (i = 0; i <= N; i++) {
+        u = i / N; e = u * u * (3 - 2 * u);
+        p = cp + t.from.z + (t.to.z - t.from.z) * u; k = kAt(p);
+        x = screenX(roadX(p) + t.from.off + (t.to.off - t.from.off) * e, k);
+        y = screenY(p, k) - (40 + (t.arc || 0) * Math.sin(Math.PI * u)) * k;
+        pts.push({ x: x, y: y, k: k });
+      }
+      len = 0;
+      for (i = 1; i <= N; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      ctx.save();
+      ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "rgba(3,4,26,.85)"; ctx.lineWidth = 2;
+      next = t.g0 || 0;
+      for (i = 1; i <= N; i++) {
+        a = pts[i - 1]; b = pts[i];
+        seg = Math.hypot(b.x - a.x, b.y - a.y);
+        while (next <= run + seg && next <= len - (t.g1 || 0) - 20) {
+          u = seg ? (next - run) / seg : 0;
+          x = a.x + (b.x - a.x) * u; y = a.y + (b.y - a.y) * u;
+          ctx.beginPath(); ctx.arc(x, y, 4 + 5 * (a.k + (b.k - a.k) * u), 0, TAU);
+          ctx.fill(); ctx.stroke();
+          next += 24;
+        }
+        run += seg;
+      }
+      // the arrowhead, on the line's own heading, where the dots stop
+      next = len - (t.g1 || 0);
+      for (run = 0, i = 1; i <= N; i++) {
+        a = pts[i - 1]; b = pts[i];
+        seg = Math.hypot(b.x - a.x, b.y - a.y);
+        if (run + seg >= next || i === N) {
+          u = seg ? Math.min(1, (next - run) / seg) : 1;
+          x = a.x + (b.x - a.x) * u; y = a.y + (b.y - a.y) * u;
+          ang = Math.atan2(b.y - a.y, b.x - a.x); kE = a.k + (b.k - a.k) * u;
+          break;
+        }
+        run += seg;
+      }
+      d = 11 + 14 * kE;
+      ctx.translate(x, y); ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.moveTo(d, 0); ctx.lineTo(-d * 0.7, -d * 0.8); ctx.lineTo(-d * 0.7, d * 0.8);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.restore();
     }
     /* Hulls side by side, each in its pool of light: `list` is
@@ -4241,9 +4302,16 @@
     var guide = {
       chapters: function () {
         var gold = "#ffd43b", red = "#ff5a6e", green = "#5cffb0";
-        function foePage(i, id, title, lv, lines) {
+        /* A pilot's page shows what it DOES on the road: the craft on its
+           stage, the player's at the foot, and the move as a dotted path. */
+        function foePage(i, id, title, lv, lines, scene) {
           return { id: id, title: title, lv: lv, lines: lines,
-                   pic: function () { return hullsPic([foeHull(i, 300)]); } };
+                   pic: function () {
+                     return stagePic({ ship: { off: scene.ship }, things: scene.things, cw: 600, at: 0.97,
+                                       over: function (cp) {
+                                         var j; for (j = 0; j < scene.trace.length; j++) stageTrace(cp, scene.trace[j]);
+                                       } }, 520, 300);
+                   } };
         }
         function bandPage(i, id, from, title, lines, things) {
           return { id: id, title: title, lv: from,
@@ -4331,13 +4399,26 @@
               lines: [Lang.t("A mine's blast throws you sideways. Lean the other way to stay on the tarmac."),
                       Lang.t("A mine never blocks the way to a booster.")] },
             { id: "ramp", title: Lang.t("Ramps"), lv: 9,
-              pic: function () { return stagePic({ ship: { off: -40 }, at: 0.98,
-                                                   things: function () { return [{ type: "ramp", z: 90, off: -40 }].concat(wallThings(90 + T.rampWall, 170, false)); } }); },
+              // the wall keeps a gate, and a booster stands in it
+              pic: function () { return stagePic({ ship: { off: -60 }, at: 0.98,
+                                                   things: function () { return [{ type: "ramp", z: 70, off: -60 }].concat(wallThings(250, 110, true)); } }, 520, 340); },
               rows: [[Lang.t("Landing in the gravel"), "-" + T.roughCost + " %", red]],
               lines: [Lang.t("Line up before you take off. You can barely steer in the air.")] },
             { id: "solid", title: Lang.t("Solid walls"), lv: 13,
-              pic: function () { return stagePic({ ship: { off: 30 }, at: 0.98,
-                                                   things: function () { return [{ type: "ramp", z: 90, off: 30 }].concat(wallThings(90 + T.rampWall, null, false)); } }); },
+              // rail to rail: the arc over it is the only way through
+              pic: function () { return stagePic({ ship: { off: 0 }, at: 0.98,
+                                                   things: function () { return [{ type: "ramp", z: 70, off: 0 }].concat(wallThings(250, null, false)); },
+                                                   over: function (cp) {
+                                                     var pz = cp + 260, pk = kAt(pz);
+                                                     stageTrace(cp, { from: { z: 130, off: 0 }, to: { z: 390, off: 0 }, arc: 250, g0: 0, g1: 0 });
+                                                     // the craft over the wall, at the top of its jump
+                                                     ctx.save();
+                                                     ctx.translate(screenX(roadX(pz), pk), screenY(pz, pk) - 250 * pk);
+                                                     ctx.scale(pk * 0.84, pk * 0.84);
+                                                     halo(0, -30, 118 * 0.84, "#35e8ff");
+                                                     drawShip(T.playerArt, T.shipW, null, 0, 0);
+                                                     ctx.restore();
+                                                   } }, 520, 340); },
               lines: [Lang.t("The wall after a ramp may have no way through. Jump over it to avoid a crash.")] }
           ] },
           { key: "pilots", label: Lang.t("The pilots"), pages: [
@@ -4345,15 +4426,35 @@
               pic: function () { return hullsPic([foeHull(0, 88), foeHull(1, 88), foeHull(2, 88), foeHull(3, 88), foeHull(4, 88)], 10); },
               lines: [Lang.t("A craft's colour tells you how it drives, long before you reach it.")] },
             foePage(0, "scout", Lang.t("Scouts"), 0, [
-              Lang.t("Green craft get out of your way.")]),
+              Lang.t("Green craft get out of your way.")],
+              // it was in your lane (the ghost) and slides aside
+              { ship: 0,
+                things: [{ type: "rival", kind: 0, z: 150, off: 40, a: 0.3 }, { type: "rival", kind: 0, z: 150, off: -190 }],
+                trace: [{ from: { z: 150, off: 40 }, to: { z: 150, off: -190 }, g0: 40, g1: 40 }] }),
             foePage(1, "drone", Lang.t("Drones"), 0, [
-              Lang.t("Blue craft drive straight ahead, blind to you and to the road.")]),
+              Lang.t("Blue craft drive straight ahead, blind to you and to the road.")],
+              // straight into the barrier it never saw
+              { ship: -110,
+                things: [{ type: "rival", kind: 1, z: 90, off: 80 }, { type: "block", z: 250, off: 80 }],
+                trace: [{ from: { z: 90, off: 80 }, to: { z: 250, off: 80 }, g0: 55, g1: 25 }] }),
             foePage(2, "stalker", Lang.t("Stalkers"), 7, [
-              Lang.t("Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.")]),
+              Lang.t("Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.")],
+              // slow, and drifting across into the lane you are driving
+              { ship: 0,
+                things: [{ type: "rival", kind: 2, z: 200, off: 190 }],
+                trace: [{ from: { z: 200, off: 190 }, to: { z: 90, off: -10 }, g0: 45, g1: 10 }] }),
             foePage(3, "marshal", Lang.t("Marshals"), 12, [
-              Lang.t("Red craft block your line but never hit on purpose. Only a booster gets you past them easily.")]),
+              Lang.t("Red craft block your line but never hit on purpose. Only a booster gets you past them easily.")],
+              // it was off to one side (the ghost) and slides across to sit in front of you
+              { ship: 90,
+                things: [{ type: "rival", kind: 3, z: 140, off: -140, a: 0.3 }, { type: "rival", kind: 3, z: 140, off: 90 }],
+                trace: [{ from: { z: 140, off: -140 }, to: { z: 140, off: 90 }, g0: 40, g1: 40 }] }),
             foePage(4, "ram", Lang.t("Rams"), 18, [
-              Lang.t("Violet craft come straight for you, and they hit the hardest.")])
+              Lang.t("Violet craft come straight for you, and they hit the hardest.")],
+              // straight at the craft
+              { ship: 0,
+                things: [{ type: "rival", kind: 4, z: 210, off: -170 }],
+                trace: [{ from: { z: 210, off: -170 }, to: { z: 30, off: 0 }, g0: 45, g1: 10 }] })
           ] },
           { key: "climb", label: Lang.t("The climb"), pages: [
             bandPage(0, "dusk", 1, Lang.t("Dusk"), [

@@ -991,16 +991,78 @@
       }
       return box;
     }
+    /* A stamp as the table draws it (stampFace), set at `sk` times its size
+       on the picture and centred on (x, y). */
+    var GSTAMP = { w:190, h:66, sk:1.2 };
+    function stampPic(x, y, tr, won, asked, isMade, warn) {
+      var sp = stampPaper(GSTAMP.w, GSTAMP.h, (view.dpr || 1) * GSTAMP.sk);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(TABLE.stampRot); ctx.scale(GSTAMP.sk, GSTAMP.sk);
+      stampFace(sp, GSTAMP.w, GSTAMP.h, tr, won, asked, isMade, warn);
+      ctx.restore();
+      freeCanvas(sp);
+    }
+    function arrowPic(x1, y1, x2, y2, col) {
+      var a = Math.atan2(y2 - y1, x2 - x1), hd = 16;
+      ctx.save();
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 6; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(a) * hd * 0.6, y2 - Math.sin(a) * hd * 0.6); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - Math.cos(a - 0.5) * hd, y2 - Math.sin(a - 0.5) * hd);
+      ctx.lineTo(x2 - Math.cos(a + 0.5) * hd, y2 - Math.sin(a + 0.5) * hd);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    /* The contract as the round shows it: the stamp, the tricks won out of the
+       tricks asked, first under way and then made (the figure turns teal). */
+    function contractPic() {
+      var sw = GSTAMP.w * GSTAMP.sk, sh = GSTAMP.h * GSTAMP.sk;
+      return paintPic(560, 140, function () {
+        stampPic(20 + sw / 2 + 10, 70, 0, 2, 4, false, false);
+        arrowPic(250, 70, 312, 70, SUN);
+        stampPic(560 - 20 - sw / 2 - 10, 70, 0, 4, 4, true, false);
+      });
+    }
+    /* A heart row as the HUD writes the lives: its pill, its caption, a heart
+       for each life and an empty outline for each one gone. */
+    function livesPill(cx, cy, have, of) {
+      var w = 214, h = 82, i, x;
+      roundRect(cx - w / 2, cy - h / 2, w, h, 18);
+      ctx.fillStyle = "rgba(0,0,0,.42)"; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = "rgba(255,255,255,.22)"; ctx.stroke();
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255,255,255,.65)"; ctx.font = font(18, 800);
+      ctx.fillText(upper(Lang.t("Lives")), cx, cy - 22);
+      for (i = 0; i < of; i++) {
+        x = cx + (i - (of - 1) / 2) * 54;
+        ctx.save(); ctx.translate(x, cy + 14);
+        pipPath(ctx, 1, 40);
+        if (i < have) { ctx.fillStyle = "#fff"; ctx.fill(); }
+        else { ctx.lineWidth = 4; ctx.lineJoin = "round"; ctx.strokeStyle = CORAL; ctx.stroke(); }
+        ctx.restore();
+      }
+    }
+    /* A contract gone down, and the HUD's lives before and after it: one heart
+       fewer. */
+    function livesPic() {
+      return paintPic(560, 270, function () {
+        stampPic(20 + GSTAMP.w * GSTAMP.sk / 2 + 10, 135, 0, 2, 5, false, true);
+        arrowPic(262, 135, 318, 135, CORAL);
+        livesPill(450, 52, 3, 3);
+        arrowPic(450, 104, 450, 164, CORAL);
+        livesPill(450, 218, 2, 3);
+      });
+    }
     var guide = {
       chapters: function () {
         return [
           { key:"basics", label:Lang.t("The basics"), pages:[
             { id:"basics", title:Lang.t(TIPS.basics.title), lines:tipLines("basics", 0, null, [2]),
               pic:function () { return trickPic(C(7, 0), C(10, 0), C(12, 0), C(3, 0), 2); } },
-            { id:"contract", title:Lang.t("The contract"), node:function () { return liveNode(contractNow()); }, lines:[
+            { id:"contract", title:Lang.t("The contract"), pic:contractPic, node:function () { return liveNode(contractNow()); }, lines:[
               Lang.t("The contract is the number of tricks you must win."),
               Lang.t("Every contract can be made, however the hidden cards lie.") ] },
-            { id:"tournee", title:Lang.t("The tournée"), lines:tipLines("tournee") },
+            { id:"tournee", title:Lang.t("The tournée"), lines:tipLines("tournee"), pic:livesPic },
             { id:"dummy", title:Lang.t(TIPS.dummy.title), lines:tipLines("dummy"),
               pic:function () { return rowPic([C(12, 1), C(9, 1), C(4, 1), C(11, 3), C(2, 3)]); } },
             { id:"defence", title:Lang.t(TIPS.defence.title), lines:tipLines("defence"), pic:backsPic }
@@ -2092,14 +2154,13 @@
        tricks won out of the tricks asked as its value. The perforated paper
        is rastered once per size; what it says is drawn live. */
     var stampKey = "", stampSprite = null, STAMP_PAD = 14;
-    function buildStamp() {
-      var w = L.stampW, h = L.stampH, key = w + "x" + h + "@" + view.dpr, c, g, i, n, d, R = 4.5, step = 11;
-      if (key === stampKey) return stampSprite;
-      stampKey = key;
-      freeCanvas(stampSprite);
+    /* the paper alone, at `k` times the table's pixel density (the guide
+       paints it bigger than the table does) */
+    function stampPaper(w, h, k) {
+      var c, g, i, n, d, R = 4.5, step = 11;
       c = document.createElement("canvas");
-      c.width = Math.round((w + 2 * STAMP_PAD) * view.dpr); c.height = Math.round((h + 2 * STAMP_PAD) * view.dpr);
-      g = c.getContext("2d"); g.scale(view.dpr, view.dpr); g.translate(STAMP_PAD, STAMP_PAD);
+      c.width = Math.round((w + 2 * STAMP_PAD) * k); c.height = Math.round((h + 2 * STAMP_PAD) * k);
+      g = c.getContext("2d"); g.scale(k, k); g.translate(STAMP_PAD, STAMP_PAD);
       g.shadowColor = "rgba(4,18,28,.45)"; g.shadowBlur = 10; g.shadowOffsetY = 4;
       g.fillStyle = "#fffaf0"; g.fillRect(0, 0, w, h);
       g.shadowColor = "transparent";
@@ -2116,24 +2177,34 @@
       g.fillStyle = "rgba(46,196,182,.18)"; g.fillRect(9, 9, h - 18, h - 18);
       g.lineWidth = 2; g.strokeStyle = INK_NAVY; g.strokeRect(9, 9, w - 18, h - 18);
       g.beginPath(); g.moveTo(h - 9, 9); g.lineTo(h - 9, h - 9); g.stroke();
-      stampSprite = c;
       return c;
+    }
+    function buildStamp() {
+      var w = L.stampW, h = L.stampH, key = w + "x" + h + "@" + view.dpr;
+      if (key === stampKey) return stampSprite;
+      stampKey = key;
+      freeCanvas(stampSprite);
+      stampSprite = stampPaper(w, h, view.dpr);
+      return stampSprite;
+    }
+    /* what the stamp says, centred on the origin the caller has moved to: the
+       motif (the trump's suit, or NT), the value, and what it is the value of */
+    function stampFace(sp, w, h, tr, won, asked, isMade, warn) {
+      var mx = -w / 2 + h / 2, rx = (h - 9 + w) / 2 - w / 2;
+      ctx.drawImage(sp, -w / 2 - STAMP_PAD, -h / 2 - STAMP_PAD, w + 2 * STAMP_PAD, h + 2 * STAMP_PAD);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      if (tr === NT) { ctx.fillStyle = INK_NAVY; ctx.font = font(24, 800, true); ctx.fillText(upper(Lang.t("NT")), mx, 1); }
+      else pip(tr, mx, 0, 30, SUIT_RED[tr] ? INK_CORAL : INK_NAVY);
+      ctx.fillStyle = warn ? INK_CORAL : isMade ? "#1a6f73" : INK_NAVY;
+      ctx.font = font(28, 800); ctx.fillText(won + " / " + asked, rx, -9);
+      ctx.fillStyle = INK_CORAL; ctx.font = font(18, 800);
+      ctx.fillText(upper(Lang.t("Contract")), rx, 16);
     }
     function drawStamp() {
       if (!Enter.begin(L.stampX, L.stampY)) return;
-      var w = L.stampW, h = L.stampH, sp = buildStamp(), mx = -w / 2 + h / 2, rx = (h - 9 + w) / 2 - w / 2, warn = contractWarn();
       ctx.save();
       ctx.translate(L.stampX, L.stampY); ctx.rotate(TABLE.stampRot);
-      ctx.drawImage(sp, -w / 2 - STAMP_PAD, -h / 2 - STAMP_PAD, w + 2 * STAMP_PAD, h + 2 * STAMP_PAD);
-      // the motif: the trump's suit, or NT
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      if (trump === NT) { ctx.fillStyle = INK_NAVY; ctx.font = font(24, 800, true); ctx.fillText(upper(Lang.t("NT")), mx, 1); }
-      else pip(trump, mx, 0, 30, SUIT_RED[trump] ? INK_CORAL : INK_NAVY);
-      // the value, and what it is the value of
-      ctx.fillStyle = warn ? INK_CORAL : made ? "#1a6f73" : INK_NAVY;
-      ctx.font = font(28, 800); ctx.fillText(ns + " / " + contract, rx, -9);
-      ctx.fillStyle = INK_CORAL; ctx.font = font(18, 800);
-      ctx.fillText(upper(Lang.t("Contract")), rx, 16);
+      stampFace(buildStamp(), L.stampW, L.stampH, trump, ns, contract, made, contractWarn());
       ctx.restore();
       Enter.end();
     }

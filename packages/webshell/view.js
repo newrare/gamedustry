@@ -763,17 +763,22 @@
     return b;
   }
 
-  /* The round's own control, put in front of the pair and taken away again:
-     it is the one button on this bar whose meaning depends on where the
-     player is. */
-  function cornerExtra(item) {
+  /* The round's own controls, put in front of the pair and taken away again:
+     the buttons on this bar whose meaning depends on where the player is.
+     One item or a list of them, in the order they stand. */
+  function cornerExtra(items) {
     if (!ctlBar) return;
     ctlExtra.innerHTML = "";
-    if (!item) return;
-    var b = el("button", "btn btn-icon btn-sm web-ctl", API ? API.icon(item.icon) : "");
-    b.setAttribute("aria-label", item.label || "");
-    b.addEventListener("click", item.on);
-    ctlExtra.appendChild(b);
+    if (!items) return;
+    if (!(items instanceof Array)) items = [items];
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      var b = el("button", "btn btn-icon btn-sm web-ctl", API ? API.icon(item.icon) : "");
+      b.setAttribute("aria-label", item.label || "");
+      if (item.name) b.setAttribute("data-extra", item.name);
+      b.addEventListener("click", item.on);
+      ctlExtra.appendChild(b);
+    }
   }
 
   /* Frame-wide, because the pair is drawn twice: once in this corner, and
@@ -866,7 +871,7 @@
      choice — and keeps home, help and options on their own at the right of
      the bar.
 
-     THE PAIR IS NOT THE CORNER. #web-ctls is still the round's (section 6);
+     THE PAIR IS NOT THE FOOT BAR. #web-ctls is still the round's (section 6);
      what a sheet carries is the same two items, drawn into its own bar,
      because a player on the collection who wants the music off should not
      have to walk back to the village for it. */

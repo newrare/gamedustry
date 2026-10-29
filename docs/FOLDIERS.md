@@ -45,10 +45,11 @@ army on the map moves at once.
 - **Intro tagline (EN):** `Draw your <b class="w-orders">orders</b>, send them before the <b class="w-tick">tick</b> ends and conquer the <b class="w-map">map</b>.`
 - **Intro tagline (FR):** `Trace tes <b class="w-orders">ordres</b>, envoie-les avant la fin du <b class="w-tick">tick</b> et conquiers la <b class="w-map">carte</b>.`
 - **Tags (EN):** strategy, conquest, origami. **(FR):** stratégie, conquête, origami.
-- **Intro demo:** `CONFIG.intro.demo = "drag"` — the shared finger drags from a
-  blue region to a neutral one, a folded arrow follows it, the finger taps
-  *Send*, the two paper armies slide and the region takes the blue tissue.
-  Desk: `intro.desk` = mouse drag, click.
+- **Intro demo:** `CONFIG.intro.demo = "tap"` — the shared finger taps a blue
+  region (it wears a white rim), a paper rosette with a sword pops on the
+  neutral one next door, the finger taps it and a folded arrow unfolds, then
+  it taps *Send* and the region takes the blue tissue. Desk: `intro.desk` =
+  click (pick a region, then an action), drag (move the map), click (Send).
 
 ### 1.1 Who it is for, and the hero who speaks to them
 
@@ -79,35 +80,35 @@ one).
 - **The map** is regions on islands and continents. Every region has an
   **owner** (blue, red, neutral), a **terrain** (§5.2) and a number of
   **troops**. Two regions are neighbours when they share a border.
-- **Orders.** One drag, two steps, and it starts on the region's TROOPS —
-  the figures, which stand on their own ground at the foot of the region
-  with their count and next bell's production (nothing else is placed there:
-  the decor, the works and the plates keep clear of it), stamp on the spot
-  while they are in hand (a region whose card was opened from its flag or its
-  building, an enemy's or a neutral one, sways its building instead); a drag from
-  anywhere else moves the map, and a tap on a FLAG opens the region's card
-  (one layout for every region: its name on its owner's tag followed by
-  what stands on it as tags, its land tagged in the top-right corner, then
-  its building in a frame beside its numbers as captioned figures — troops,
-  riders, per tick, defence — then one line per thing to know behind the
-  sign the map draws for it, then its actions)
-  (the bare map puts it away). Drag the troops onto a target and keep the
-  finger there: a card of paper bubbles opens over it, one per way the
-  order can go — **All**, **Half**, and on a region holding both arms
-  **Foot only** and **Cavalry only** — each with its count (the verdict of
-  its fight is read under the row). Slide onto a bubble and let go to
-  give the order; **let go without a choice — off the bubbles, or before the
-  ring opens — and the first one is given, every troop** (the riders, on a
-  ride); slide well out of the ring to aim again. A tap on troops that have
-  an order, or on its arrow, reopens the choices pinned, to change or cancel
-  it. The choices are one paper card, read top down: the route
-  (*A → B*), the bubbles in a row (**Cancel** last when an order is
-  reopened), and the verdict of the bubble in hand; that bubble wears a green
-  paper rim, the others a grey one. The arrows are drawn over the pieces. One
-  order per region per tick — **two when it holds cavalry and foot**, one per
-  arm, so the riders are never held back by the foot (stage 9); moving
-  between two of your own regions is a
-  reinforcement.
+- **Orders.** Two taps, and a drag only ever moves the map (chosen in
+  `lab/foldiers-target-actions.html`, preset *G · Chosen*). A tap anywhere
+  on a region picks it — a piece standing on it (its troops, its flag, its
+  building) picks ITS region even where it stands over a neighbour's paper —
+  and opens its card (one layout for every region: its name on its owner's
+  tag followed by what stands on it as tags, its land tagged in the
+  top-right corner, then its building in a frame beside its numbers as
+  captioned figures — troops, riders, per tick, defence — then one line per
+  thing to know behind the sign the map draws for it, then its actions).
+  A region of YOURS picked up stamps its troops on the spot, gets a white
+  rim, dims every region it cannot act on, and **every region it can act on
+  wears its actions** as paper rosettes over its troops: the main one big,
+  the others small down its right side — **All**, **Half**, on a region
+  holding both arms **Foot only** and **Cavalry only**, the cavalry's ride
+  two regions away, the cannon's shot, the balloon's airlift, and **Cancel**
+  where an order already goes (that order leads the row and wears a green
+  tick). A rosette's rim is the verdict of its fight, its figure how many
+  leave; a sword attacks, chevrons move into a region of yours. A tap on a
+  rosette gives the order and puts the region down; a tap on the target
+  region itself gives its main action; the sea, or the same region again,
+  puts it down. A tap on an arrow picks its region up again. **The camera
+  brings every rosette on screen** between the resources under the HUD and
+  the top of the card, moving as little as it can: not at all if they all
+  fit, else the smallest pan, else a zoom out to 0.8 of its zoom at most;
+  what still does not fit gets an arrow on the edge of the frame, which a
+  tap follows. The arrows are drawn over the pieces. One order per region
+  per tick — **two when it holds cavalry and foot**, one per arm, so the
+  riders are never held back by the foot (stage 9); moving between two of
+  your own regions is a reinforcement.
 - **The tick resolves everything at once** (both camps' orders):
   1. each order takes its troops out of its region;
   1. two enemy columns crossing the same border meet halfway and cancel each

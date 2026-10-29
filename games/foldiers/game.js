@@ -30,11 +30,11 @@
 
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 26 },
 
-    // The drag stage, re-dressed from the SKIN as two paper regions, a folded
-    // arrow and the blue tissue landing on the neutral one.
-    intro: { logo: null, demo: "drag", caption: "",
-             desk: [{ mouse: ["drag"], does: "Draw an order" }, { mouse: ["click"], does: "Send the orders" },
-                    { keys: ["left", "right", "up", "down"], does: "Move the map" }] },
+    // The tap stage, re-dressed from the SKIN as two paper regions, the
+    // action the neutral one wears, the folded arrow and the blue tissue landing.
+    intro: { logo: null, demo: "tap", caption: "",
+             desk: [{ mouse: ["click"], does: "Pick a region, then an action" }, { mouse: ["drag"], does: "Move the map" },
+                    { mouse: ["click"], does: "Send the orders" }] },
 
     keyboard: true,
 
@@ -85,12 +85,25 @@
      Every picture of the round is the game's painted art (CONFIG.art, out of
      the manifest's `art.objects`), and every sound is a role of the house
      kit mapped in the manifest's `sfx`: nothing to embed here but the bed
-     and one pictogram.
+     and the pictograms.
      =================================================================== */
   var ASSETS = {
     images: {
       // the threat plate's pictogram: assets/motor/lucide/sword.svg
-      "icoSword": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTExIDE5LTYtNiIgLz4gPHBhdGggZD0ibTUgMjEtMi0yIiAvPiA8cGF0aCBkPSJtOCAxNi00IDQiIC8+IDxwYXRoIGQ9Ik05LjUgMTcuNSAyMSA2VjNoLTNMNi41IDE0LjUiIC8+IDwvc3ZnPg=="
+      "icoSword": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTExIDE5LTYtNiIgLz4gPHBhdGggZD0ibTUgMjEtMi0yIiAvPiA8cGF0aCBkPSJtOCAxNi00IDQiIC8+IDxwYXRoIGQ9Ik05LjUgMTcuNSAyMSA2VjNoLTNMNi41IDE0LjUiIC8+IDwvc3ZnPg==",
+      // the actions a target wears (lab/foldiers-target-actions.html): assets/motor/lucide/<name>.svg
+      // bomb
+      "icoBomb": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPGNpcmNsZSBjeD0iMTEiIGN5PSIxMyIgcj0iOSIgLz4gPHBhdGggZD0iTTE0LjM1IDQuNjUgMTYuMyAyLjdhMi40MSAyLjQxIDAgMCAxIDMuNCAwbDEuNiAxLjZhMi40IDIuNCAwIDAgMSAwIDMuNGwtMS45NSAxLjk1IiAvPiA8cGF0aCBkPSJtMjIgMi0xLjUgMS41IiAvPiA8L3N2Zz4=",
+      // zap
+      "icoZap": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTE1LjkxNCA0YTEuNSAxLjUgMCAwMC0yLjQ3NC0xLjU2MWwtOSA5QTEuNSAxLjUgMCAwMDUuNSAxNGg0LjAwMmEuNS41IDAgMDEuNDcxLjY2Nkw4LjA4NiAyMGExLjUgMS41IDAgMDAyLjQ3NSAxLjU2bDktOUExLjUgMS41IDAgMDAxOC41IDEwaC0zLjk5N2EuNS41IDAgMDEtLjQ3Mi0uNjY3eiIgLz4gPC9zdmc+",
+      // chevrons-right
+      "icoChevronsRight": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTYgMTcgNS01LTUtNSIgLz4gPHBhdGggZD0ibTEzIDE3IDUtNS01LTUiIC8+IDwvc3ZnPg==",
+      // chevrons-up
+      "icoChevronsUp": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTE3IDExLTUtNS01IDUiIC8+IDxwYXRoIGQ9Im0xNyAxOC01LTUtNSA1IiAvPiA8L3N2Zz4=",
+      // x
+      "icoX": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTE4IDYgNiAxOCIgLz4gPHBhdGggZD0ibTYgNiAxMiAxMiIgLz4gPC9zdmc+",
+      // check
+      "icoCheck": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi42IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTIwIDYgOSAxN2wtNS01IiAvPiA8L3N2Zz4="
     },
     sounds: {
       // music: assets/audio/music/foldiers.mp3, 30 s → 60 s (the main theme), mono 64 kbps
@@ -112,7 +125,7 @@
      all thirty stages' mechanics on a test map: `planMoves` turns orders
      (data: { to, frac | n, kind, unit }) into columns, `battle` settles one
      region, `resolve` and `applyResolve` play a tick. The AI and the
-     player's drag produce orders through the same functions, and every
+     player's taps produce orders through the same functions, and every
      random draw — the AI's skip, a storm, a revolt, the map itself — goes
      through one seeded generator, so a seed plays the same stage.
 
@@ -1002,7 +1015,7 @@
     // ======================================================================
     //  THE RULES — prototype/conquest-ticks.html, ported. Nothing here knows
     //  the clock, the screen or the input: orders are data, and the same
-    //  functions plan the player's drag, the AI and the forecast.
+    //  functions plan the player's taps, the AI and the forecast.
     // ======================================================================
     var row, stageN, rules, aiCamps, playerCap;
     var orders, cavOrders, aiOrders, aiActs, courierDue, transit, standing, acts, works, balloon, balloonTick;
@@ -1358,7 +1371,7 @@
     // "now": every order the player can see (theirs, plus the red ones a spy or
     // a balloon shows). "worst": the same, plus every enemy neighbour of the
     // region sending everything it has at it (an opportunist in truce counts).
-    function forecast(extra) {
+    function planWith(extra) {
       var plans = playerPlans();
       if (extra) {
         plans = plans.filter(function (p) {
@@ -1368,7 +1381,17 @@
       }
       var base = sortPlans(plans.concat(aiPlans(true)));
       var lands = landingsNow();
-      var P2 = planMoves(base, lands, rules.standing ? standing : null);
+      return { base: base, lands: lands, P: planMoves(base, lands, rules.standing ? standing : null) };
+    }
+    // The same, read at one region only: what an action on a target would do there.
+    function forecastAt(extra, t) {
+      var W2 = planWith(extra), out = { P: W2.P, now: {}, worst: {}, unknown: {}, threat: {}, from: {} };
+      if (W2.P.arrive[t].length) out.now[t] = battle(t, homeOf(t, W2.P), W2.P.arrive[t]);
+      worstAt(t, W2.base, W2.lands, out);
+      return out;
+    }
+    function forecast(extra) {
+      var W2 = planWith(extra), base = W2.base, lands = W2.lands, P2 = W2.P;
       var out = { P: P2, now: {}, worst: {}, unknown: {}, threat: {}, from: {} };
       land.forEach(function (r) {
         if (P2.arrive[r.id].length) out.now[r.id] = battle(r.id, homeOf(r.id, P2), P2.arrive[r.id]);
@@ -1430,7 +1453,7 @@
     }
 
     function forecastNow() {
-      if (Fdirty || !F) { F = phase === "plan" ? forecast(dragExtra()) : null; Fdirty = false; }
+      if (Fdirty || !F) { F = phase === "plan" ? forecast(null) : null; Fdirty = false; }
       return F;
     }
 
@@ -1613,7 +1636,7 @@
 
     function startResolve(byBell) {
       if (phase !== "plan" || pickDoctrine) return;
-      bubble = null; mode = null; drag = null; hover = -1; gesture = null; overlayDirty = true;
+      mode = null; gesture = null; overlayDirty = true;
       var count = playerOrderList().length;
       sentEarly = !byBell && timer < tickLen / 2;
       resolve();
@@ -1637,11 +1660,11 @@
       anim = pending.anim; animT = 0; phase = "resolve";
       stageBell();
       if (byBell) {
-        Sound.clip("bell", 0.7);
+        Sound.clip("bell", 1);
         say("The bell rang", { kind: "warn", sub: count ? Lang.t("Your orders leave as they stand") : Lang.t("No order was drawn") });
       } else {
         Sound.clip("send", 0.7);
-        if (count) Pop.show("streak", { word: "Orders sent" });
+        if (count) Pop.show("ribbon", { word: "Orders sent", at: "bottom" });
       }
       if (count) cranes.push({ t: 0, a: regions[playerCap >= 0 ? playerCap : 0] });
       Fdirty = true;
@@ -1835,13 +1858,13 @@
         Pop.text(sp.x, sp.y - 60, "+" + pts, { color: "#ffd34d", size: 22, tier: 1, life: 0.6 });
         if (i === 0) Pop.show(r.capital ? "perfect" : "score", { word: r.capital ? "Capital taken!" : "Captured!", at: { x: sp.x, y: sp.y - 90 } });
       });
-      if (took.length) { HUD.setScore(score); HUD.punch("#ffd34d"); Sound.clip("capture", 0.8); }
+      if (took.length) { HUD.setScore(score); HUD.punch("#ffd34d"); Sound.clip("capture", 0.6); }
       if (held) { Pop.show("streak", { word: "Held!" }); }
       if (clash) { Pop.show("alert", { word: "Clash" }); }
       lostList.forEach(function (it) {
         say(Lang.t("{camp} took {x}").replace("{camp}", Lang.t(WHO[it.by])).replace("{x}", it.r.name), { kind: "loss" });
       });
-      if (lostList.length) Sound.clip("lost", 0.8);
+      if (lostList.length) Sound.clip("lost", 0.35);
       if (prodSeen && !took.length) Sound.clip("prod", 0.5);
       if (gold[BLUE] > goldBefore) Sound.clip("gold", 0.5);
 
@@ -1978,7 +2001,7 @@
     function checkOutcome() {
       evalObjectives();
       var fail = failReason();
-      if (fail) { lost = fail; say(fail, { kind: "loss" }); Sound.clip("lost", 0.8); return; }
+      if (fail) { lost = fail; say(fail, { kind: "loss" }); Sound.clip("lost", 0.35); return; }
       if (isPlayable()) {
         if (owns(M.roles.redCap) || tick >= 3) { won = true; wonTick = tick; }
         return;
@@ -2357,6 +2380,7 @@
       var want = {};
       regions.forEach(function (r) { want[r.terrain + r.lv] = true; });
       for (var tk in TILES) {
+        if (PIC) break;                      // a guide picture borrows the round's tiles and frees none
         if (/^(sea|beach)/.test(tk) || want[tk]) continue;
         freeCanvas(TILES[tk].cv); delete TILES[tk];
       }
@@ -2435,11 +2459,11 @@
       g.fillStyle = rgbOf(RIDGE_SNOW[0]); g.fill(R2.snowLit);
     }
     // The whole ground through the camera, into g (its transform already in design px).
-    function paintGround(g, G2) {
+    function paintGround(g, G2, box) {
       g.save();
-      g.translate(360 - cam.x * cam.z, viewCy() - cam.y * cam.z * TILT);
+      g.translate(viewCx() - cam.x * cam.z, viewCy() - cam.y * cam.z * TILT);
       g.scale(cam.z, cam.z * TILT);
-      var tl = worldAt(-GC_PAD, -GC_PAD), br = worldAt(view.w + GC_PAD, view.h + GC_PAD);
+      var pad = box ? 0 : GC_PAD, tl = worldAt(-pad, -pad), br = worldAt((box ? box.w : view.w) + pad, (box ? box.h : view.h) + pad);
       g.fillStyle = deepTile();
       g.fillRect(tl.u - 2, tl.v - 2, br.u - tl.u + 4, br.v - tl.v + 4);
       sheet(g, G2.sea2, shallowTile(2), edgeOf(SEA[2]));
@@ -2489,9 +2513,12 @@
     var TILT = Math.cos(30 * Math.PI / 180), CLOSE = 1.9;
     var cam = { x: 0, y: 0, z: CLOSE, tx: null, ty: null, tz: null };
     function footTop() { return sendBox().y - 18; }
-    function viewCy() { return (Layout.top + footTop()) / 2; }
-    function scr(u, v) { return { x: 360 + (u - cam.x) * cam.z, y: viewCy() + (v - cam.y) * cam.z * TILT }; }
-    function worldAt(x, y) { return { u: cam.x + (x - 360) / cam.z, v: cam.y + (y - viewCy()) / (cam.z * TILT) }; }
+    // The guide's pictures lend the camera a frame of their own (PIC, see THE GUIDE): the screen's middle moves, nothing else.
+    var PIC = null;
+    function viewCy() { return PIC ? PIC.cy : (Layout.top + footTop()) / 2; }
+    function viewCx() { return PIC ? PIC.cx : 360; }
+    function scr(u, v) { return { x: viewCx() + (u - cam.x) * cam.z, y: viewCy() + (v - cam.y) * cam.z * TILT }; }
+    function worldAt(x, y) { return { u: cam.x + (x - viewCx()) / cam.z, v: cam.y + (y - viewCy()) / (cam.z * TILT) }; }
     function fitZoom() {
       var w = M.maxX - M.minX + DX * 1.3, h = (M.maxY - M.minY + DY * 1.4) * TILT;
       return Math.max(0.3, Math.min(CLOSE, (Layout.right - Layout.left) / w, (footTop() - Layout.top - 40) / h));
@@ -2513,7 +2540,7 @@
     // Into world space: every ground-plane drawing (the paper, the arrows) goes through it.
     function groundOn() {
       ctx.save();
-      ctx.translate(360 - cam.x * cam.z, viewCy() - cam.y * cam.z * TILT);
+      ctx.translate(viewCx() - cam.x * cam.z, viewCy() - cam.y * cam.z * TILT);
       ctx.scale(cam.z, cam.z * TILT);
     }
 
@@ -2718,6 +2745,18 @@
                rot: Math.sin(time * 0.93 + ph * 2.1) * 0.07 };
     }
 
+    // The storm drifting over the strait, and where it will be at the bell.
+    function drawStorm(time) {
+      if (!storm) return;
+      var st = scr(storm.x, storm.y), ns = nextStorm(), sn = scr(ns.x, ns.y);
+      ctx.save();
+      ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(240,244,255,.8)";
+      ctx.beginPath(); ctx.ellipse(sn.x, sn.y, STORM_R * cam.z, STORM_R * cam.z * TILT, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = "rgba(40,46,66,.28)";
+      ctx.beginPath(); ctx.ellipse(st.x, st.y, STORM_R * cam.z, STORM_R * cam.z * TILT, 0, 0, Math.PI * 2); ctx.fill();
+      drawPiece({ key: worldArt("storm"), tall: TALL.storm, h: 70, bob: "cloud", seed: 0.7 }, st, time);
+    }
     function drawPieces(time) {
       var margin = 160 * cam.z;
       for (var i = 0; i < PIECES.length; i++) {
@@ -2734,17 +2773,7 @@
         else if (p.main && p.reg === focused()) fx = mainFx(time);
         if (Enter.begin(s.x, s.y, { rank: p.rank })) { drawPiece(p, s, time, fx && fx.alpha != null ? fx.alpha : 1, fx); Enter.end(); }
       }
-      // the storm drifting over the strait, and where it will be at the bell
-      if (storm) {
-        var st = scr(storm.x, storm.y), ns = nextStorm(), sn = scr(ns.x, ns.y);
-        ctx.save();
-        ctx.setLineDash([10, 8]); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(240,244,255,.8)";
-        ctx.beginPath(); ctx.ellipse(sn.x, sn.y, STORM_R * cam.z, STORM_R * cam.z * TILT, 0, 0, Math.PI * 2); ctx.stroke();
-        ctx.restore();
-        ctx.fillStyle = "rgba(40,46,66,.28)";
-        ctx.beginPath(); ctx.ellipse(st.x, st.y, STORM_R * cam.z, STORM_R * cam.z * TILT, 0, 0, Math.PI * 2); ctx.fill();
-        drawPiece({ key: worldArt("storm"), tall: TALL.storm, h: 70, bob: "cloud", seed: 0.7 }, st, time);
-      }
+      drawStorm(time);
       if (phase === "resolve") drawColumns(time);
       drawScraps();
       // the poofs of the cannons, and the courier crane of a Send
@@ -3107,15 +3136,6 @@
           else if (it.o.kind === "fire") arrowChips.push({ u: tip[0], v: tip[1], text: "−" + CANNON_DAMAGE, col: "#c0661e" });
           else if (F2) { var vd2 = verdict(it.o.to, F2); if (vd2) arrowChips.push({ u: tip[0], v: tip[1], text: vd2.text, col: vd2.col }); }
         });
-        if (drag && drag.on) {
-          var rf = regions[drag.from], w = worldAt(drag.x, drag.y);
-          var to = hover >= 0 ? [regions[hover].cx, regions[hover].cy] : [w.u, w.v];
-          var pts = curve([rf.tx, rf.ty - 8], to, 0.08, 40, hover >= 0 ? 16 : 4);
-          var ok = hover >= 0 && classify(drag.from, hover, null, BLUE).ok;
-          ctx.globalAlpha = 0.9;
-          paperArrow(pts, ok ? CAMP[BLUE] : { base: "#d8d2c4", light: "#efe9dc", dark: "#8a8170" }, true);
-          ctx.globalAlpha = 1;
-        }
       }
     }
 
@@ -3298,9 +3318,9 @@
       return out;
     }
 
-    /* The order ring's bubble: a folded paper rosette — an octagon of
-       triangles meeting in the middle, light and dark in turn, on a rim in the
-       colour of the verdict. */
+    /* A target's action: a folded paper rosette — an octagon of triangles
+       meeting in the middle, light and dark in turn, on a rim in the colour
+       of the verdict. */
     function ppRadial(w, h, o, r) {
       var n = 8, cx = w / 2, cy = h / 2, R = w / 2, spin = r() * 0.4, outer = [], inner = [];
       for (var i = 0; i < n; i++) {
@@ -3656,11 +3676,11 @@
 
     // ======================================================================
     //  THE TABLE — Send at the foot of the map, the card of the region in
-    //  hand with its actions, the bubble an order is picked in, and the
+    //  hand with its actions, the actions its targets wear, and the
     //  doctrine a late stage opens on. Canvas, in design px; every word at
     //  or above the house floors (20 bold, 22 regular).
     // ======================================================================
-    var selected = -1, hover = -1, drag = null, bubble = null, mode = null, pickDoctrine = false;
+    var selected = -1, mode = null, pickDoctrine = false;
     var gesture = null, lastTap = null, clock = 0, latch = {};
 
     function inBox(p, b) { return b && p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h; }
@@ -3684,11 +3704,10 @@
       if (line) out.push(line);
       return out;
     }
-    /* What a finger lands on. The map itself only moves: a region's TROOPS
-       are what an order is dragged from, and its FLAG, its building and every
-       other asset standing on it (`flag` on the piece) open its card — so a
-       thumb can grab the map anywhere else without picking anything up. The nearest piece whose cut,
-       grown to a thumb, holds the point. */
+    /* What a finger lands on. A tap anywhere on a region picks it; a piece
+       standing on it (its troops, its flag, its building) picks ITS region
+       even where the piece stands over a neighbour's paper. The nearest piece
+       whose cut, grown to a thumb, holds the point. */
     function pieceAt(pt) {
       var best = null, bd = 1e9, z = cam.z;
       for (var i = 0; i < PIECES.length; i++) {
@@ -3719,13 +3738,10 @@
       });
       return best;
     }
-    // The region whose troops the next order concerns: the ones being dragged,
-    // pressed, or in hand. Its figures hop on the spot (see handFx).
+    // The region whose troops the next order concerns: the one in hand. Its
+    // figures hop on the spot (see handFx).
     function inHand() {
       if (phase !== "plan") return -1;
-      if (drag) return drag.from;
-      var g = gesture;
-      if (g && g.hit && g.hit.troop && !g.pan && owns(g.hit.reg)) return g.hit.reg;
       return selected >= 0 && owns(selected) ? selected : -1;
     }
     // A region whose card is open with no troops of yours in hand (an enemy's, a
@@ -3740,13 +3756,14 @@
     }
     // Troops in hand stamp on the spot, each on its own beat; harder once picked up.
     function handFx(p, time) {
-      var live = !!drag || !!(gesture && gesture.hit && gesture.hit.troop), sp = live ? 9 : 5, k = live ? 1 : 0.5;
+      var live = !!(gesture && !gesture.pan && gesture.id === p.reg), sp = live ? 9 : 5, k = live ? 1 : 0.5;
       var a = time * sp + p.u * 0.05;
       return { hop: Math.abs(Math.sin(a)) * 8 * k, rot: Math.sin(a) * 0.07 * k };
     }
     function select(id, still) {
       if (id === selected) return;
       selected = id;
+      if (id >= 0 && !still && phase === "plan" && owns(id)) { fitTargets(id); return; }
       if (id >= 0 && !still) {
         // keep the region in hand above the card that describes it
         // (its middle is halfway between its building and its troops' ground)
@@ -3777,8 +3794,6 @@
       if (rules.cav && (r.city || r.capital)) L.push({ label: Lang.t("Cavalry +{n} ({c} gold)").replace("{n}", CAV_COUNT).replace("{c}", CAV_COST),
         on: gold[BLUE] >= CAV_COST && !doneHere("cav"),
         act: function () { gold[BLUE] -= CAV_COST; acts.push({ kind: "cav", at: s }); Sound.clip("gold", 0.6); } });
-      if (r.cannon) L.push({ label: Lang.t("Fire the cannon"), on: true, mode: "fire" });
-      if (r.lift) L.push({ label: Lang.t("Airlift"), on: true, mode: "lift" });
       if (r.wagon && !r.depot) L.push({ label: Lang.t("Build a depot"), on: !doneHere("depot"), act: function () { acts.push({ kind: "depot", at: s }); Sound.clip("order", 0.6); } });
       if (rules.courier && !r.post && !r.capital) L.push({ label: Lang.t("Courier post ({c} gold)").replace("{c}", POST_COST),
         on: gold[BLUE] >= POST_COST,
@@ -3801,7 +3816,6 @@
     function modeTarget(id) {
       var s = selected;
       if (id < 0 || s < 0) return false;
-      if (mode === "fire" || mode === "lift") return classify(s, id, mode, BLUE).ok;
       if (mode === "standA" || mode === "standL") return id !== s && owns(id) && isNb(s, id) && canCross(s, id);
       if (mode === "balloon") return isNb(s, id);
       if (mode === "bridge") return isNb(s, id) && borderOf(s, id) === "river";
@@ -3809,8 +3823,6 @@
     }
     function applyMode(id) {
       var s = selected;
-      if (mode === "fire") orders[s] = { to: id, kind: "fire" };
-      if (mode === "lift") orders[s] = { to: id, kind: "lift", frac: 1 };
       if (mode === "standA") standing[s] = { to: id, cond: "attacked" };
       if (mode === "standL") standing[s] = { to: id, cond: "lost" };
       if (mode === "balloon") { balloon = id; balloonTick = tick; selected = id; computeSeen(); piecesDirty = true; }
@@ -3819,107 +3831,308 @@
       Sound.clip("order", 0.6);
     }
     var MODE_TEXT = {
-      fire: "Tap the region to bombard: it loses 2 troops before anything moves",
-      lift: "Tap a region within reach: up to 6 troops land at this bell",
       standA: "Tap the region of yours it reinforces when it is attacked",
       standL: "Tap the region of yours it retakes if it is lost",
       balloon: "Tap a neighbouring region: the balloon sees two regions around it",
       bridge: "Tap the region across the river: the bridge is ready in 2 ticks"
     };
 
-    /* ---- the order ring ----------------------------------------------------------
-       One drag, two steps. The finger draws the order onto a region and,
-       still down, rests there a moment: the choices open in a ring of paper
-       bubbles above it (below it near the top of the frame), and the finger
-       slides onto one and lets go to give the order. Let go off the choices,
-       or let go on the region before the ring opens, and the FIRST choice is
-       given — every troop (the riders, on a ride); slide well out of the ring
-       and the arrow aims again. A tap on troops with an order opens the same
-       ring pinned, to change it. */
-    var RING_D = 128, DWELL = 0.28, CARD_HEAD = 48, CARD_FOOT = 56;
-    // The choices of an order from `from` onto `to`, each with its verdict, or
-    // null (and the reason said) when no order can go there.
-    function orderOpts(from, to, editing) {
-      var r = regions[from], c = classify(from, to, null, BLUE);
-      if (!c.ok) {
-        if (c.why) { say(c.why, { kind: "warn" }); Sound.clip("cancel", 0.5); }
-        return null;
-      }
-      var foot = r.troops - r.cav, opts = [];
-      function add(label, o, n) { opts.push({ label: Lang.t(label), n: n, o: o }); }
-      if (c.kind === "cav") add("Cavalry", { to: to, frac: 1, kind: "cav", unit: "cav" }, r.cav);
-      else {
-        add("All", { to: to, frac: 1, kind: c.kind }, r.troops);
-        if (r.troops > 1) add("Half", { to: to, frac: 0.5, kind: c.kind }, Math.floor(r.troops / 2));
-        if (r.cav > 0 && foot > 0 && c.kind === "move") {
-          add("Foot only", { to: to, frac: 1, kind: c.kind, unit: "foot" }, foot);
-          add("Cavalry only", { to: to, frac: 1, kind: c.kind, unit: "cav" }, r.cav);
+    /* ---- the actions on the targets ------------------------------------------
+       lab/foldiers-target-actions.html, preset "G · Chosen". A tap picks a
+       region of yours up, and every region it can act on wears its actions
+       as paper rosettes over its troops: the main one big, the others small
+       down its right side — every troop, half of them, foot or riders only,
+       the cavalry's ride, the cannon's shot, the balloon's airlift, and
+       Cancel where an order already goes. The rim is the forecast's verdict,
+       the figure how many leave. A tap on a rosette gives that order and
+       puts the region down; a tap on the target region itself gives its main
+       one. A drag only ever moves the map. */
+    var ICON_D = 72, ICON_SMALL = 0.62, ICON_LIFT = 50, ICON_IN = 0.26, ICON_OUT = 0.16,
+        ICON_STAGGER = 0.04, ICON_WAVE = 0.07, FIT_FLOOR = 0.8, FIT_MARGIN = 16;
+    var ICON_GLYPH = { all: "icoSword", half: "icoSword", foot: "icoSword", ride: "icoZap", fire: "icoBomb",
+                       lift: "icoChevronsUp", cancel: "icoX" };
+    var icons = [], hints = [], tgCache = null, resBottom = 0, DIM = null;
+    // Every action `from` has on `to`, each with its verdict; the order already
+    // given there first, then Cancel.
+    function actionChoices(from, to) {
+      var r = regions[from], c = classify(from, to, null, BLUE), opts = [];
+      function add(key, label, o, n) { if (n > 0) opts.push({ key: key, label: Lang.t(label), n: n, o: o }); }
+      if (c.ok && r.troops > 0) {
+        var foot = r.troops - r.cav;
+        if (c.kind === "cav") add("ride", "Cavalry", { to: to, frac: 1, kind: "cav", unit: "cav" }, r.cav);
+        else {
+          add("all", "All", { to: to, frac: 1, kind: c.kind }, r.troops);
+          if (r.troops > 1) add("half", "Half", { to: to, frac: 0.5, kind: c.kind }, Math.floor(r.troops / 2));
+          if (r.cav > 0 && foot > 0 && c.kind === "move") {
+            add("foot", "Foot only", { to: to, frac: 1, kind: c.kind, unit: "foot" }, foot);
+            add("ride", "Cavalry only", { to: to, frac: 1, kind: c.kind, unit: "cav" }, r.cav);
+          }
         }
       }
+      if (r.cannon && classify(from, to, "fire", BLUE).ok) add("fire", "Fire the cannon", { to: to, kind: "fire" }, CANNON_DAMAGE);
+      if (r.lift && classify(from, to, "lift", BLUE).ok) add("lift", "Airlift", { to: to, kind: "lift", frac: 1 }, Math.min(LIFT_MAX, r.troops));
+      if (!opts.length) return opts;
       opts.forEach(function (op) {
-        var cc = classifyOrder(from, op.o, BLUE);
-        if (cc.delayed || cc.eta > 0) { op.v = { text: Lang.t("One bell late"), col: LATER_COL }; return; }
-        var Fo = forecast({ camp: BLUE, from: from, o: op.o, alone: !op.o.unit && op.o.frac >= 1 });
-        op.v = verdict(to, Fo);
         var cur = cavSlot(op.o) ? cavOrders[from] : orders[from];
-        op.on = cur && cur.to === to && cur.frac === op.o.frac && (cur.unit || "") === (op.o.unit || "");
+        op.on = !!cur && cur.to === to && (cur.kind || "move") === (op.o.kind || "move") && cur.frac === op.o.frac &&
+                (cur.unit || "") === (op.o.unit || "");
+        if (op.key === "fire") { op.v = { col: "#c0661e" }; return; }
+        var cc = classifyOrder(from, op.o, BLUE);
+        if (cc.delayed || cc.eta > 0) { op.v = { col: LATER_COL }; return; }
+        op.v = verdict(to, forecastAt({ camp: BLUE, from: from, o: op.o, alone: !op.o.unit && op.o.frac >= 1 }, to)) || { col: TIE_COL };
       });
-      if (editing) opts.push({ label: Lang.t("Cancel"), cancel: true });
+      if ((orders[from] && orders[from].to === to) || (cavOrders[from] && cavOrders[from].to === to)) {
+        opts.sort(function (a, b) { return (b.on ? 1 : 0) - (a.on ? 1 : 0); });
+        opts.push({ key: "cancel", label: Lang.t("Cancel"), cancel: true });
+      }
       return opts;
     }
-    function openBubble(from, to, editing, cx, cy, held) {
-      var opts = orderOpts(from, to, editing);
-      if (!opts) return;
-      // the card, read top down: the route, the bubbles in a row, the verdict of
-      // the one in hand — over the finger if it fits, under it otherwise
-      var n = opts.length, D = RING_D, GAP = 12, row = n * D + (n - 1) * GAP, ch = CARD_HEAD + D + CARD_FOOT;
-      var y0 = cy - 70 - ch >= Layout.top ? cy - 70 - ch : Math.min(cy + 70, Layout.bottom - ch);
-      var mx = clamp(cx, Layout.left + row / 2, Layout.right - row / 2), slots = [];
-      for (var i = 0; i < n; i++) slots.push({ x: mx - row / 2 + D / 2 + i * (D + GAP), y: y0 + CARD_HEAD + D / 2 });
-      bubble = { from: from, to: to, opts: opts, slots: slots, cx: cx, cy: cy, mx: mx, y0: y0, h: ch, row: row,
-                 held: !!held, pick: -1, t: 0, editing: editing };
-      Sound.clip("bubble", 0.5);
+    // The targets of `from`, nearest first, kept until something they read changes.
+    function actionTargets(from) {
+      var sig = [from, tick, phase, gold[BLUE], spyTick, truce.join(","), regions[from].troops, regions[from].cav], k;
+      for (k in orders) sig.push(k + ">" + orders[k].to + (orders[k].kind || "") + orders[k].frac + (orders[k].unit || ""));
+      for (k in cavOrders) sig.push(k + "c" + cavOrders[k].to);
+      sig = sig.join("|");
+      if (tgCache && tgCache.sig === sig) return tgCache.list;
+      var r = regions[from], list = [];
+      land.forEach(function (t) {
+        if (t.id === from) return;
+        var opts = actionChoices(from, t.id);
+        if (opts.length) list.push({ to: t.id, opts: opts, d: Math.hypot(t.cx - r.cx, t.cy - r.cy) });
+      });
+      list.sort(function (a, b) { return a.d - b.d; });
+      list.forEach(function (t, i) { t.rank = i; });
+      tgCache = { sig: sig, list: list };
+      return list;
     }
-    // The choice under a point, or -1.
-    function pickAt(p) {
-      if (!bubble) return -1;
-      for (var i = 0; i < bubble.slots.length; i++) {
-        if (Math.hypot(p.x - bubble.slots[i].x, p.y - bubble.slots[i].y) <= RING_D / 2 + 10) return i;
+    function iconsOn() { return phase === "plan" && inHand() >= 0 && !mode && !pickDoctrine && !lockedByCourier(selected); }
+    // How high the rosettes stand over the troops' ground: clear of a soldier at any zoom.
+    function iconLift() { return Math.max(ICON_LIFT, TALL.infantry * cam.z * 0.75); }
+    // Where rosette i of a target stands, from its troops' ground (design px).
+    function iconOffset(i, lift) {
+      if (i === 0) return { x: 0, y: -lift };
+      var d2 = ICON_D * ICON_SMALL, k = i - 1, col = Math.floor(k / 3), row = k % 3;
+      return { x: ICON_D * 0.5 + d2 * 0.55 + col * (d2 + 6), y: -lift - ICON_D * 0.32 + row * (d2 + 6) };
+    }
+    // The rosettes the frame should show, against the ones it does: a new one
+    // pops in (in a wave from the region in hand), a gone one folds away.
+    function syncIcons() {
+      var want = [], byKey = {}, died = false;
+      if (iconsOn()) actionTargets(selected).forEach(function (tg) {
+        tg.opts.forEach(function (op, i) {
+          var w = { key: selected + ":" + tg.to + ":" + op.key, from: selected, to: tg.to, op: op, i: i, rank: tg.rank };
+          want.push(w); byKey[w.key] = w;
+        });
+      });
+      icons.forEach(function (ic) {
+        if (ic.dead == null && !byKey[ic.key]) { ic.dead = clock + (ic.picked != null ? 0.2 : 0); died = true; }
+      });
+      var late = died ? ICON_OUT * 0.5 : 0;
+      want.forEach(function (w) {
+        for (var k = 0; k < icons.length; k++) {
+          var ic = icons[k];
+          if (ic.key === w.key && ic.dead == null) { ic.op = w.op; ic.i = w.i; ic.rank = w.rank; return; }
+        }
+        w.born = clock + late; w.delay = w.rank * ICON_WAVE + w.i * ICON_STAGGER; w.dead = null; w.ph = Math.random() * 6.28;
+        icons.push(w);
+      });
+    }
+    function backOut(t) { var c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); }
+    // A rosette's pop at this instant: its scale, its alpha, its bob.
+    function iconLook(ic) {
+      var pin = clamp((clock - ic.born - ic.delay) / ICON_IN, 0, 1), k = pin, out = ic.dead != null && clock >= ic.dead;
+      if (out) k = Math.min(pin, 1 - clamp((clock - ic.dead - ic.i * ICON_STAGGER / 2) / ICON_OUT, 0, 1));
+      var s = k <= 0 ? 0 : backOut(k);
+      if (ic.picked != null) { var q = (clock - ic.picked) / 0.22; if (q < 1) s *= 1 + 0.28 * Math.sin(q * Math.PI); }
+      return { s: s, a: clamp(k * 4, 0, 1), dy: Math.sin(clock * 2.6 + ic.ph) * 4, gone: out && k <= 0, live: ic.dead == null && pin > 0.5 };
+    }
+    function pill(x, y, text, fill) {
+      ctx.font = font(20, true);
+      var w = Math.max(30, ctx.measureText(text).width + 14), h = 28, r = 14, x0 = x - w / 2, y0 = y - h / 2;
+      ctx.beginPath(); ctx.moveTo(x0 + r, y0);
+      ctx.arcTo(x0 + w, y0, x0 + w, y0 + h, r); ctx.arcTo(x0 + w, y0 + h, x0, y0 + h, r);
+      ctx.arcTo(x0, y0 + h, x0, y0, r); ctx.arcTo(x0, y0, x0 + w, y0, r); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = PAPER; ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, x, y + 1);
+    }
+    function drawIcon(ic, T, D) {
+      var op = ic.op, rim = op.cancel ? BAD_COL : op.v ? op.v.col : TIE_COL, glyph = ICON_GLYPH[op.key];
+      if (glyph === "icoSword" && regions[ic.to].owner === BLUE) glyph = "icoChevronsRight";   // a move, not an attack
+      ctx.save();
+      ctx.globalAlpha = T.a;
+      ctx.translate(ic.sx, ic.sy); ctx.scale(T.s, T.s);
+      var SB = paperOn("bub", "ico" + (ic.i ? "s" : "b") + rim, -D / 2, -D / 2, D, D, { fill: rim, inner: PAPER });
+      var c0 = D / 2, gs = Math.round(D * 0.46);
+      // how much of the region leaves: the paper tinted whole for every troop, half for half
+      if (op.key === "all" || op.key === "half" || op.key === "foot") {
+        ctx.fillStyle = "rgba(47,99,196,.2)"; ctx.beginPath();
+        ctx.arc(c0, c0, D * 0.36, 0, op.key === "half" ? Math.PI : Math.PI * 2); ctx.fill();
       }
-      return -1;
+      var im = Icon.get(glyph, Math.round(gs * view.dpr), op.cancel ? BAD_COL : INK);
+      if (im) ctx.drawImage(im, c0 - gs / 2, c0 - gs / 2, gs, gs);
+      paperOff(SB);
+      if (!op.cancel) pill(D * 0.36, D * 0.34, op.key === "fire" ? "−" + op.n : String(op.n), op.key === "fire" ? "#c0661e" : CAMP[BLUE].base);
+      if (op.on) {
+        // the order given: a green tick on its corner
+        ctx.fillStyle = OK_COL; ctx.beginPath(); ctx.arc(D * 0.36, -D * 0.36, 15, 0, Math.PI * 2); ctx.fill();
+        ctx.lineWidth = 2.5; ctx.strokeStyle = PAPER; ctx.stroke();
+        var ck = Icon.get("icoCheck", Math.round(22 * view.dpr), "#fff");
+        if (ck) ctx.drawImage(ck, D * 0.36 - 11, -D * 0.36 - 11, 22, 22);
+      }
+      ctx.restore();
     }
-    function pickBubble(op) {
-      var b = bubble;
-      bubble = null;
-      giveOrder(b.from, b.editing, op);
+    function drawTargetIcons() {
+      syncIcons();
+      var lift = iconLift(), list = [];
+      icons.forEach(function (ic) {
+        var T = iconLook(ic);
+        if (T.gone) { ic.gone = true; return; }
+        var t = regions[ic.to], A = scr(t.tx, t.ty), off = iconOffset(ic.i, lift);
+        // a row that changes (a Cancel added, a choice gone) slides into place
+        if (ic.ox == null) { ic.ox = off.x; ic.oy = off.y; }
+        else if (ic.dead == null) { ic.ox += (off.x - ic.ox) * 0.3; ic.oy += (off.y - ic.oy) * 0.3; }
+        var D = ICON_D * (ic.i ? ICON_SMALL : 1);
+        ic.sx = A.x + ic.ox; ic.sy = A.y + ic.oy + T.dy; ic.sd = D * T.s; ic.live = T.live;
+        if (T.a > 0.01 && T.s > 0.01) list.push({ ic: ic, T: T, D: D });
+      });
+      icons = icons.filter(function (ic) { return !ic.gone; });
+      list.sort(function (a, b) { return a.ic.sy - b.ic.sy; });
+      list.forEach(function (e) { drawIcon(e.ic, e.T, e.D); });
     }
-    // A drag let go on a region with no choice made: the first one.
-    function giveDefault(from, to) {
-      var opts = orderOpts(from, to, null);
-      if (opts) giveOrder(from, null, opts[0]);
+    function iconAt(p) {
+      for (var k = icons.length - 1; k >= 0; k--) {
+        var ic = icons[k];
+        if (ic.live && ic.sx != null && Math.hypot(p.x - ic.sx, p.y - ic.sy) <= ic.sd / 2 + 6) return ic;
+      }
+      return null;
     }
-    function giveOrder(from, ed, op) {
+    function giveIcon(ic) {
+      var from = ic.from, op = ic.op;
       if (op.cancel) {
-        if (ed === "cav") delete cavOrders[from]; else delete orders[from];
+        if (orders[from] && orders[from].to === ic.to) delete orders[from];
+        if (cavOrders[from] && cavOrders[from].to === ic.to) delete cavOrders[from];
         Sound.clip("cancel", 0.6);
-      } else if (cavSlot(op.o)) {
+      } else giveOrder(from, op);
+      Fdirty = true;
+      ic.picked = clock;
+      select(-1);
+    }
+    function giveOrder(from, op) {
+      if (cavSlot(op.o)) {
         cavOrders[from] = op.o;
         // the cavalry now rides apart: an "all" order already given keeps only the foot
         var o = orders[from];
         if (o && !o.unit && o.frac >= 1 && o.kind === "move") o.unit = "foot";
-        Sound.clip("order", 0.7);
       } else {
         orders[from] = op.o;
         if (!op.o.unit && op.o.frac >= 1) delete cavOrders[from];   // everyone rides together
-        Sound.clip("order", 0.7);
       }
+      Sound.clip("order", 0.7);
       Fdirty = true;
     }
-    function dragExtra() {
-      if (!drag || !drag.on || hover < 0) return null;
-      var c = classify(drag.from, hover, null, BLUE);
-      if (!c.ok || c.delayed || c.eta > 0) return null;
-      return { camp: BLUE, from: drag.from, o: c.kind === "cav" ? { to: hover, frac: 1, kind: "cav", unit: "cav" } : { to: hover, frac: 1, kind: c.kind } };
+    // A tap on a target region itself: its main action, the rosette stamped.
+    function giveLead(to) {
+      if (!iconsOn()) return false;
+      for (var k = 0; k < icons.length; k++) {
+        if (icons[k].to === to && icons[k].i === 0 && icons[k].dead == null) { giveIcon(icons[k]); return true; }
+      }
+      return false;
+    }
+
+    /* ---- the camera on a region picked up ------------------------------------
+       What must be on screen is what can be tapped: the region in hand and
+       every target's rosettes, laid out as they will be, between the
+       resources under the HUD and the top of the region's card. Each item
+       bounds where the camera may stand; it stays put if they all hold it,
+       else moves the least that brings them in — never recentring — and
+       only zooms out when no move does, down to FIT_FLOOR of its zoom. If
+       even that fails, the farthest targets are let go and get an arrow on
+       the edge of the frame (a tap on it brings that one in). */
+    function fitView() {
+      return { l: Layout.left, r: Layout.right, t: Math.max(Layout.top, resBottom) + FIT_MARGIN,
+               b: (CARD ? CARD.y : footTop()) - FIT_MARGIN };
+    }
+    function fitItems(from) {
+      var r = regions[from], lift = iconLift();
+      var items = [{ to: from, u: r.tx, v: r.ty, x0: -60, x1: 60, y0: -TALL.infantry * cam.z - 20, y1: 44, rank: -1 }];
+      actionTargets(from).forEach(function (tg) {
+        var t = regions[tg.to], it = { to: tg.to, u: t.tx, v: t.ty, x0: -30, x1: 30, y0: -20, y1: 40, rank: tg.rank };
+        tg.opts.forEach(function (op, i) {
+          var off = iconOffset(i, lift), h = ICON_D * (i ? ICON_SMALL : 1) / 2 + 6;
+          it.x0 = Math.min(it.x0, off.x - h); it.x1 = Math.max(it.x1, off.x + h + 10);   // +10: the count's pill
+          it.y0 = Math.min(it.y0, off.y - h); it.y1 = Math.max(it.y1, off.y + h + 10);
+        });
+        items.push(it);
+      });
+      return items;
+    }
+    // The camera nearest `from` that shows every item at zoom z, or null.
+    function panFor(items, z, from) {
+      var V = fitView(), cy = viewCy(), xl = -1e9, xr = 1e9, yt = -1e9, yb = 1e9;
+      items.forEach(function (it) {
+        xr = Math.min(xr, it.u + (360 + it.x0 - V.l) / z);
+        xl = Math.max(xl, it.u + (360 + it.x1 - V.r) / z);
+        yb = Math.min(yb, it.v + (cy + it.y0 - V.t) / (z * TILT));
+        yt = Math.max(yt, it.v + (cy + it.y1 - V.b) / (z * TILT));
+      });
+      if (xl > xr || yt > yb) return null;
+      return { x: clamp(from.x, xl, xr), y: clamp(from.y, yt, yb), z: z };
+    }
+    function fitTargets(from) {
+      layoutCard();
+      var items = fitItems(from).sort(function (a, b) { return a.rank - b.rank; });
+      var z0 = cam.tx != null ? cam.tz : cam.z, base = { x: cam.tx != null ? cam.tx : cam.x, y: cam.tx != null ? cam.ty : cam.y };
+      var zf = Math.min(z0, Math.max(fitZoom(), z0 * FIT_FLOOR));
+      while (items.length) {
+        for (var k = 0; k <= 10; k++) {
+          var z = z0 + (zf - z0) * k / 10, g = panFor(items, z, base);
+          if (g) { if (g.x !== base.x || g.y !== base.y || z !== z0) camTo(g.x, g.y, z); return; }
+        }
+        if (items.length === 1) return;
+        items.pop();
+      }
+    }
+    // The arrows on the edge, one per target left off the screen.
+    function drawHints() {
+      hints = [];
+      if (!iconsOn()) return;
+      var V = fitView();
+      fitItems(selected).forEach(function (it) {
+        if (it.to === selected) return;
+        var A = scr(it.u, it.v), x0 = A.x + it.x0, x1 = A.x + it.x1, y0 = A.y + it.y0, y1 = A.y + it.y1;
+        if (x0 >= V.l - 2 && x1 <= V.r + 2 && y0 >= V.t - 2 && y1 <= V.b + 2) return;   // the fit sets a box ON the edge
+        var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+        hints.push({ it: it, x: clamp(cx, V.l + 30, V.r - 30), y: clamp(cy, V.t + 30, V.b - 30), ang: Math.atan2(cy - viewCy(), cx - 360) });
+      });
+      hints.forEach(function (h) {
+        var SB = paperOn("bub", "hint", h.x - 28, h.y - 28, 56, 56, { fill: CAMP[BLUE].base, inner: PAPER });
+        ctx.translate(28, 28); ctx.rotate(h.ang);
+        ctx.fillStyle = CAMP[BLUE].dark;
+        ctx.beginPath(); ctx.moveTo(14, 0); ctx.lineTo(-8, -13); ctx.lineTo(-3, 0); ctx.lineTo(-8, 13); ctx.closePath(); ctx.fill();
+        paperOff(SB);
+      });
+    }
+    function hintAt(p) {
+      for (var i = 0; i < hints.length; i++) if (Math.hypot(p.x - hints[i].x, p.y - hints[i].y) <= 34) return hints[i];
+      return null;
+    }
+    // Under the ground's pieces: the regions out of reach dimmed, the one in hand outlined.
+    function drawReach() {
+      if (!iconsOn() || !GEO) return;
+      var on = {};
+      on[selected] = true;
+      icons.forEach(function (ic) { if (ic.dead == null) on[ic.to] = true; });
+      var k = Object.keys(on).sort().join(",");
+      if (!DIM || DIM.k !== k || DIM.g !== GEO) {
+        var L = [];
+        regions.forEach(function (r) { if (!on[r.id]) L.push(GEO.lands[r.id]); });
+        DIM = { k: k, g: GEO, dim: pathOf(L), sel: pathOf([GEO.lands[selected]]) };
+      }
+      groundOn();
+      ctx.fillStyle = "rgba(10,20,30,.3)"; ctx.fill(DIM.dim);
+      ctx.lineJoin = "round"; ctx.lineWidth = 4 / cam.z; ctx.strokeStyle = "rgba(255,250,235,.9)"; ctx.stroke(DIM.sel);
+      ctx.restore();
     }
 
     // ---- the card of the region in hand ------------------------------------------
@@ -4001,7 +4214,7 @@
     function layoutCard() {
       CARD = null;
       if (phase !== "plan" && phase !== "resolve") return;
-      if (bubble || pickDoctrine) return;
+      if (pickDoctrine) return;
       var x0 = Layout.left, x1 = Layout.right, pad = 18, lines = [], title = "", acts2 = globalActions(), sub = null;
       if (mode) { title = Lang.t("Choose the target"); lines = [Lang.t(MODE_TEXT[mode])]; acts2 = [{ label: Lang.t("Cancel"), on: true, act: function () { mode = null; } }]; }
       else if (selected >= 0) {
@@ -4103,46 +4316,12 @@
       });
     }
 
-    function drawUI() {
-      // the resources this stage counts, under the HUD
-      var res = [];
-      if (rules.gold) {
-        var inc = 0;
-        land.forEach(function (r) { if (r.mine && r.owner === BLUE) inc += doctrine === "merchant" ? 2 : MINE_GOLD; });
-        res.push([Lang.t("Gold") + " " + gold[BLUE] + (inc ? " (+" + inc + ")" : ""), "#a87a10"]);
-      }
-      if (rules.grain) res.push([Lang.t("Grain") + " " + grain, "#8a6a2a"]);
-      if (rules.winter) {
-        var left = SEASON_LEN - (tick + seasonShift) % SEASON_LEN;
-        res.push([Lang.t(isWinter() ? "Winter: spring in {n}" : "Summer: winter in {n}").replace("{n}", left), isWinter() ? "#5b7ea8" : "#5a8a3a"]);
-      }
-      if (rules.wonder) res.push([Lang.t("Wonder") + " " + wonderHold[BLUE] + " / " + WONDER_HOLD, "#8a6a1a"]);
-      if (rules.truce) aiCamps.forEach(function (c) {
-        if (truce[c] > tick) res.push([Lang.t("Truce with {camp}: {n}").replace("{camp}", Lang.t(WHO[c])).replace("{n}", truce[c] - tick), CAMP[c].dark]);
-      });
-      if (doctrine) res.push([Lang.t(DOCTRINES.filter(function (d) { return d.key === doctrine; })[0].name), "#4a4a6a"]);
-      // the left two thirds: the top-right corner under the HUD is where notices land
-      // (the first plate stands in from the edge: its tape hangs off its left)
-      var rx0 = Layout.left + 10, rx = rx0, ry = Layout.top + 26, rmax = Layout.left + (Layout.right - Layout.left) * 0.62;
-      res.forEach(function (it, i) {
-        var w = plateW("chip", it[0], 20);
-        if (rx + w > rmax && rx > rx0) { rx = rx0; ry += 50; }
-        plate("chip", "res" + i, rx + w / 2, ry, it[0], it[1], "#fff", 20);
-        rx += w + 16;
-      });
-
-      // mode targets
-      if (mode && phase === "plan") land.forEach(function (r) {
-        if (!modeTarget(r.id)) return;
-        var s = scr(r.ax, r.ay);
-        ctx.lineWidth = 4; ctx.strokeStyle = "#ffd34d";
-        ctx.beginPath(); ctx.ellipse(s.x, s.y, 46 * cam.z, 46 * cam.z * TILT, 0, 0, Math.PI * 2); ctx.stroke();
-      });
-
-      // Send, with the tick draining out of the paper: an ink wash soaked into
-      // the plate, clipped to its cut, whose wet edge recedes to the left
+    /* Send, with the tick draining out of the paper: an ink wash soaked into
+       the plate, clipped to its cut, whose wet edge recedes to the left. `sb` is
+       its box, the table's or a guide picture's. */
+    function drawSend(sb) {
       if (phase === "plan" || phase === "resolve") {
-        var sb = sendBox(), on = phase === "plan" && !pickDoctrine;
+        var on = phase === "plan" && !pickDoctrine;
         ctx.globalAlpha = on ? 1 : 0.6;
         var SP = paperOn("send", "send", sb.x, sb.y, sb.w, sb.h, gesture && gesture.send ? { fill: "#e9dcb6" } : null);
         var cy = sb.h / 2, frac = phase === "plan" ? 1 - timer / tickLen : 0;
@@ -4183,6 +4362,54 @@
         paperOff(SP);
         ctx.globalAlpha = 1;
       }
+    }
+    // The resources this stage counts, as plates: [text, colour].
+    function resourceList() {
+      var res = [];
+      if (rules.gold) {
+        var inc = 0;
+        land.forEach(function (r) { if (r.mine && r.owner === BLUE) inc += doctrine === "merchant" ? 2 : MINE_GOLD; });
+        res.push([Lang.t("Gold") + " " + gold[BLUE] + (inc ? " (+" + inc + ")" : ""), "#a87a10"]);
+      }
+      if (rules.grain) res.push([Lang.t("Grain") + " " + grain, "#8a6a2a"]);
+      if (rules.winter) {
+        var left = SEASON_LEN - (tick + seasonShift) % SEASON_LEN;
+        res.push([Lang.t(isWinter() ? "Winter: spring in {n}" : "Summer: winter in {n}").replace("{n}", left), isWinter() ? "#5b7ea8" : "#5a8a3a"]);
+      }
+      if (rules.wonder) res.push([Lang.t("Wonder") + " " + wonderHold[BLUE] + " / " + WONDER_HOLD, "#8a6a1a"]);
+      if (rules.truce) aiCamps.forEach(function (c) {
+        if (truce[c] > tick) res.push([Lang.t("Truce with {camp}: {n}").replace("{camp}", Lang.t(WHO[c])).replace("{n}", truce[c] - tick), CAMP[c].dark]);
+      });
+      if (doctrine) res.push([Lang.t(DOCTRINES.filter(function (d) { return d.key === doctrine; })[0].name), "#4a4a6a"]);
+      return res;
+    }
+    function drawUI() {
+      // the resources this stage counts, under the HUD
+      var res = resourceList();
+      // the left two thirds: the top-right corner under the HUD is where notices land
+      // (the first plate stands in from the edge: its tape hangs off its left)
+      var rx0 = Layout.left + 10, rx = rx0, ry = Layout.top + 26, rmax = Layout.left + (Layout.right - Layout.left) * 0.62;
+      res.forEach(function (it, i) {
+        var w = plateW("chip", it[0], 20);
+        if (rx + w > rmax && rx > rx0) { rx = rx0; ry += 50; }
+        plate("chip", "res" + i, rx + w / 2, ry, it[0], it[1], "#fff", 20);
+        rx += w + 16;
+      });
+      resBottom = res.length ? ry + 25 : 0;
+
+      // the actions the targets of the region in hand wear, and the arrows to the ones off screen
+      drawTargetIcons();
+      drawHints();
+
+      // mode targets
+      if (mode && phase === "plan") land.forEach(function (r) {
+        if (!modeTarget(r.id)) return;
+        var s = scr(r.ax, r.ay);
+        ctx.lineWidth = 4; ctx.strokeStyle = "#ffd34d";
+        ctx.beginPath(); ctx.ellipse(s.x, s.y, 46 * cam.z, 46 * cam.z * TILT, 0, 0, Math.PI * 2); ctx.stroke();
+      });
+
+      drawSend(sendBox());
 
       // the card
       layoutCard();
@@ -4211,9 +4438,6 @@
         });
       }
 
-      // the ring of choices
-      if (bubble && phase === "plan") drawRing(bubble);
-
       // the doctrine, before a late stage starts
       if (pickDoctrine) {
         ctx.fillStyle = "rgba(10,18,26,.62)"; ctx.fillRect(0, 0, 720, 1280);
@@ -4229,59 +4453,6 @@
         });
       }
     }
-    // The order ring: a paper bubble per choice, its rim the colour of what it
-    // would do, all of them held by one sheet titled with the route and the
-    // verdict of the choice in hand, over a map dimmed a little.
-    function drawRing(b) {
-      // the bubble in hand: held, the one under the finger (the first until it slides
-      // onto another); pinned, the order as it stands
-      var D = RING_D, onI = -1;
-      b.opts.forEach(function (op, i) { if (op.on && onI < 0) onI = i; });
-      var di = b.pick >= 0 ? b.pick : b.held ? 0 : onI, cur = di >= 0 ? b.opts[di] : null;
-      var kk = ease(clamp(b.t / 0.16, 0, 1));
-      ctx.fillStyle = "rgba(10,18,26," + (0.45 * kk).toFixed(3) + ")"; ctx.fillRect(0, 0, 720, 1280);
-      // no sheet: a small label of the route, the bubbles in a row, the verdict of the one in hand
-      var route = regions[b.from].name + " → " + regions[b.to].name;
-      var hint = cur && cur.v ? cur.v.text : cur && cur.cancel ? Lang.t("Cancel this order") : "";
-      ctx.globalAlpha = kk;
-      var rw = plateW("chip", route, 20);
-      plate("chip", "rroute", clamp(b.mx, 4 + rw / 2, 716 - rw / 2), b.y0 + CARD_HEAD / 2, route, PAPER, INK, 20);
-      if (hint) {
-        var hw = plateW("verdict", hint, 20);
-        plate("verdict", "rv", clamp(b.mx, 4 + hw / 2, 716 - hw / 2), b.y0 + b.h - CARD_FOOT / 2, hint, cur.cancel ? BAD_COL : cur.v.col, "#fff", 20);
-      }
-      ctx.globalAlpha = 1;
-      if (b.held) {
-        // under the finger: let go there and the first choice is given
-        ctx.setLineDash([6, 6]); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,250,235,.85)";
-        ctx.beginPath(); ctx.arc(b.cx, b.cy, 30, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-      }
-      b.opts.forEach(function (op, i) {
-        var q = b.slots[i], k = ease(clamp((b.t - i * 0.035) / 0.16, 0, 1));
-        if (k <= 0) return;
-        var x = b.cx + (q.x - b.cx) * k, y = b.cy + (q.y - b.cy) * k, sc = k * (i === di ? 1.06 : 1);
-        var rim = i === di ? OK_COL : "#9a9384";
-        if (b.held && i === b.pick) {
-          ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,250,235,.8)";
-          ctx.beginPath(); ctx.moveTo(b.cx, b.cy); ctx.lineTo(x, y); ctx.stroke();
-        }
-        // a folded rosette: green paper round the one in hand, grey round the others
-        ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
-        var SB = paperOn("bub", "bub" + i, -D / 2, -D / 2, D, D, { fill: rim, inner: i === di ? "#fff8e2" : PAPER });
-        var c0 = D / 2;
-        if (k >= 0.6) {
-          ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillStyle = op.cancel ? BAD_COL : INK;
-          ctx.font = font(op.cancel ? 44 : 36, true);
-          ctx.fillText(op.cancel ? "×" : String(op.n), c0, c0 - 16);
-          ctx.font = font(20, true); ctx.fillStyle = op.cancel ? BAD_COL : "#4a4030";
-          var lines = wrapLines(op.label, D - 34);
-          if (lines.length > 1) { ctx.fillText(lines[0], c0, c0 + 16, D - 30); ctx.fillText(lines[1], c0, c0 + 37, D - 30); }
-          else ctx.fillText(lines[0], c0, c0 + 24, D - 30);
-        }
-        paperOff(SB); ctx.restore();
-      });
-    }
     function doctrineBox(i) { return { x: 80, y: 450 + i * 160, w: 560, h: 132 }; }
     function actionHit(p) {
       layoutCard();
@@ -4291,6 +4462,8 @@
     }
 
     // ---- input ---------------------------------------------------------------------
+    // A tap picks: a rosette, an arrow on the edge, a region. A drag moves the
+    // map, wherever it starts.
     function onDown(p) {
       if (phase === "over" || !M) return;
       if (pickDoctrine) {
@@ -4300,13 +4473,6 @@
           Pop.show("ribbon", { word: d.name });
           Sound.clip("order", 0.7);
         });
-        gesture = { eaten: true };
-        return;
-      }
-      if (bubble) {
-        var bi = pickAt(p);
-        if (bi >= 0) pickBubble(bubble.opts[bi]);
-        else bubble = null;
         gesture = { eaten: true };
         return;
       }
@@ -4321,37 +4487,15 @@
         Fdirty = true; overlayDirty = true;
         return;
       }
-      var w = worldAt(p.x, p.y);
-      gesture = { x0: p.x, y0: p.y, id: regionAt(w.u, w.v), hit: pieceAt(p), moved: false, cx: cam.x, cy: cam.y };
+      var w = worldAt(p.x, p.y), hit = pieceAt(p);
+      gesture = { x0: p.x, y0: p.y, id: hit ? hit.reg : regionAt(w.u, w.v), icon: iconAt(p), hint: hintAt(p),
+                  moved: false, cx: cam.x, cy: cam.y };
     }
     function onMove(p) {
       var g = gesture;
       if (!g || g.eaten || g.send) return;
-      if (!g.moved && Math.hypot(p.x - g.x0, p.y - g.y0) > 12) {
-        g.moved = true;
-        // an order is dragged from the troops; from anywhere else the map moves
-        var id = g.hit && g.hit.troop ? g.hit.reg : -1;
-        if (phase === "plan" && !mode && id >= 0 && owns(id) && regions[id].troops > 0 && !lockedByCourier(id)) {
-          drag = { from: id, x: p.x, y: p.y, on: true, dwell: 0, ax: p.x, ay: p.y };
-          if (selected !== id) select(id, true);     // the map must not move under a drawing finger
-        } else g.pan = true;
-      }
-      if (drag) {
-        drag.x = p.x; drag.y = p.y;
-        if (bubble && bubble.held) {
-          // the ring is open: the finger picks a choice, or leaves it to aim again
-          bubble.pick = pickAt(p);
-          var bb = bubble;
-          if (bb.pick >= 0 || (p.x > bb.mx - bb.row / 2 - 50 && p.x < bb.mx + bb.row / 2 + 50 &&
-              p.y > Math.min(bb.y0, bb.cy) - 50 && p.y < Math.max(bb.y0 + bb.h, bb.cy) + 50)) return;
-          bubble = null; drag.dwell = 0; drag.ax = p.x; drag.ay = p.y;
-        }
-        var w = worldAt(p.x, p.y), h = regionAt(w.u, w.v);
-        h = h >= 0 && h !== drag.from ? h : -1;
-        if (h !== hover) { hover = h; Fdirty = true; }
-        // the finger rests on its target: the dwell that opens the ring starts over on a move
-        if (h !== drag.hv || Math.hypot(p.x - drag.ax, p.y - drag.ay) > 16) { drag.hv = h; drag.dwell = 0; drag.ax = p.x; drag.ay = p.y; }
-      } else if (g.pan) {
+      if (!g.moved && Math.hypot(p.x - g.x0, p.y - g.y0) > 12) { g.moved = true; g.pan = true; }
+      if (g.pan) {
         cam.x = g.cx - (p.x - g.x0) / cam.z; cam.y = g.cy - (p.y - g.y0) / (cam.z * TILT);
         cam.tx = null; clampCam();
       }
@@ -4361,47 +4505,31 @@
       gesture = null;
       if (!g || g.eaten) return;
       if (g.send) { if (inBox(p, sendBox())) startResolve(false); return; }
-      if (drag) {
-        var from = drag.from, to = hover, b = bubble;
-        drag = null; hover = -1; Fdirty = true;
-        if (b && b.held) { pickBubble(b.opts[b.pick >= 0 ? b.pick : 0]); return; }
-        if (to >= 0) giveDefault(from, to);
+      if (g.moved) return;
+      if (g.hint) {
+        var c = panFor([g.hint.it], cam.z, cam);
+        if (c) camTo(c.x, c.y); else camTo(g.hint.it.u, g.hint.it.v);
         return;
       }
-      if (g.moved) return;
+      if (g.icon && g.icon.dead == null) { giveIcon(g.icon); lastTap = null; return; }
       var now = clock;
       if (lastTap && now - lastTap.t < 0.33 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 40) { toggleZoom(p); lastTap = null; return; }
       lastTap = { t: now, x: p.x, y: p.y };
       if (mode) { if (modeTarget(g.id)) applyMode(g.id); else mode = null; return; }
-      // an arrow reopens its order, as a tap on its troops does
+      var id = g.id;
+      // a target of the region in hand gives its main action
+      if (id >= 0 && id !== selected && !owns(id) && giveLead(id)) return;
+      // an arrow picks its region up again, its order marked among the actions
       var arw = phase === "plan" ? arrowAt(p) : null;
-      if (arw) { select(arw.from, true); editOrder(arw.from, arw.o); return; }
-      // a flag or troops open their region's card; the bare map puts it away
-      var id = g.hit ? g.hit.reg : -1;
-      select(id);
-      if (phase === "plan" && id >= 0 && g.hit.troop && owns(id)) {
-        var o = orders[id] || cavOrders[id];
-        if (o) editOrder(id, o);
-      }
-    }
-    // An order given, reopened: its choices pinned, to change or cancel it
-    // (a shot or an airlift has none, and goes).
-    function editOrder(id, o) {
-      if (o.kind === "fire" || o.kind === "lift") { delete orders[id]; Sound.clip("cancel", 0.6); Fdirty = true; return; }
-      var ts = scr(regions[o.to].ax, regions[o.to].ay);
-      openBubble(id, o.to, o === cavOrders[id] ? "cav" : "main", ts.x, ts.y, false);
+      if (arw && !owns(id)) { select(arw.from); return; }
+      // a region opens its card, a region of yours is picked up; the sea, or the
+      // same region again, puts it down
+      select(id === selected ? -1 : id);
     }
     function toggleZoom(p) {
       var fit = fitZoom(), w = worldAt(p.x, p.y);
       if (cam.z > fit * 1.15) camTo((M.minX + M.maxX) / 2, (M.minY + M.maxY) / 2, fit);
       else camTo(w.u, w.v, CLOSE);
-    }
-    // While an order is dragged toward an edge, the map follows the finger.
-    function edgePan(dt) {
-      if (!drag || bubble) return;
-      var vx = drag.x < 60 ? -1 : drag.x > 660 ? 1 : 0, vy = drag.y < Layout.top + 70 ? -1 : drag.y > footTop() - 40 ? 1 : 0;
-      if (!vx && !vy) return;
-      cam.x += vx * 420 * dt / cam.z; cam.y += vy * 420 * dt / (cam.z * TILT); clampCam();
     }
     /* A desk: ENTER sends, the arrows (or WASD / ZQSD) move the map, the
        wheel and + / − zoom, and the cursor says what is under it — a hand
@@ -4434,16 +4562,18 @@
       if (playing() && phase !== "over") {
         var g = gesture;
         if (g && g.pan) c = "grabbing";
-        else if (drag || (g && g.hit && !g.eaten)) c = "pointer";
-        else if (g && !g.eaten && !g.send) c = "grabbing";
+        else if (g && !g.eaten && !g.send) c = "pointer";
         else if (pickDoctrine) c = "pointer";
-        else if (bubble) { bubble.pick = bubble.held ? bubble.pick : pickAt(p); c = bubble.pick >= 0 ? "pointer" : ""; }
         else if (phase === "plan" && inBox(p, sendBox())) c = "pointer";
         else {
           var a = actionHit(p);
           if (a) c = a === "card" ? "" : "pointer";
+          else if (mode) c = "crosshair";
+          else if (iconAt(p) || hintAt(p)) c = "pointer";
           else {
-            c = mode ? "crosshair" : pieceAt(p) ? "pointer" : "grab";
+            // a region of yours (or a target of the one in hand) answers a tap; the rest of the map is held
+            var w = worldAt(p.x, p.y), hp = pieceAt(p), id = hp ? hp.reg : regionAt(w.u, w.v);
+            c = id >= 0 && (owns(id) || inHand() >= 0 && icons.some(function (ic) { return ic.to === id && ic.dead == null; })) ? "pointer" : "grab";
           }
         }
       }
@@ -4482,8 +4612,7 @@
         if (!playing() || e.touches.length < 2) return;
         var m = spread(e);
         pinch = { d0: m.d, z0: cam.z, w: worldAt(m.x, m.y) };
-        gesture = { eaten: true }; drag = null; hover = -1; overlayDirty = true; Fdirty = true;
-        if (bubble && bubble.held) bubble = null;
+        gesture = { eaten: true };
       }, { passive: false });
       canvas.addEventListener("touchmove", function (e) {
         if (!pinch || e.touches.length < 2) return;
@@ -4538,7 +4667,8 @@
       orders = {}; cavOrders = {}; aiOrders = {}; aiActs = []; courierDue = []; transit = []; standing = {}; acts = []; works = [];
       balloon = M.roles.balloon; balloonTick = -1; playerCap = M.roles.blueCap;
       phase = "plan"; tick = 0; timer = 0; spyTick = -1; anim = []; animT = 0; pending = null;
-      selected = -1; drag = null; hover = -1; mode = null; bubble = null; gesture = null; lastTap = null; keysDown = {}; pinch = null;
+      selected = -1; mode = null; gesture = null; lastTap = null; keysDown = {}; pinch = null;
+      icons = []; hints = []; tgCache = null; DIM = null;
       won = false; wonTick = 0; lost = ""; overT = 0; score = 0; sentEarly = false; firstAttack = {}; latch = {}; ended = false;
       poofs = []; cranes = []; scraps = []; fights = {}; F = null; Fdirty = true;
       rng = makeRng(seed ^ 0x5bd1e995);
@@ -4572,15 +4702,9 @@
       scrapStep(dt);
       cranes.forEach(function (c) { c.t += dt; });
       cranes = cranes.filter(function (c) { return c.t < 1.6; });
-      if (bubble) bubble.t += dt;
       keyPan(dt);
       if (phase === "plan") {
         timer += dt;
-        edgePan(dt);
-        if (drag && !bubble && hover >= 0) {
-          drag.dwell += dt;
-          if (drag.dwell >= DWELL && classify(drag.from, hover, null, BLUE).ok) openBubble(drag.from, hover, null, drag.x, drag.y, true);
-        }
         if (timer >= tickLen) startResolve(true);
       } else if (phase === "resolve") {
         animT += dt;
@@ -4601,6 +4725,7 @@
       if (!M) return;
       if (piecesDirty) buildPieces();
       drawGround();
+      if (!/[?&]hud=0/.test(location.search)) drawReach();
       drawPieces(clock);
       drawOrders();
       if (!/[?&]hud=0/.test(location.search)) { drawTags(); drawUI(); }    // dev: ?hud=0 is the bare map (lab/foldiers-hud.html)
@@ -4661,7 +4786,7 @@
     //  is about, standing on a scrap of the round's own paper.
     // ======================================================================
     var LEARN = {
-      orders: ["Orders and ticks", "Drag your troops to draw an order, then Send"],
+      orders: ["Orders and ticks", "Tap your region, then an action on its target"],
       fort: ["Forts", "Each defender of a fort counts 1 more"],
       mountain: ["Mountains", "Only a pass crosses a ridge"],
       river: ["Rivers", "Each troop attacking across one counts 1 less"],
@@ -4756,125 +4881,517 @@
     }
     function R(label, value) { return [Lang.t(label), value]; }
 
+    /* THE FIELD — the pictures of the pages that move something. Each one is
+       a handful of regions cut on the round's own lattice and drawn by the
+       round's own pipeline: the paper ground and its tissue, the pieces, the
+       order arrows and the tags at their heads, the shields, the Send plate.
+       The renderer reads the module's state (the map, the orders, the camera,
+       the rules...), so `fieldPic` swaps a world of its own in, draws it with
+       `ctx` lent to a canvas, and puts the round's state back as it found it:
+       the guide opens before any round as well as over one. Nothing here
+       rolls a die: the lattice's jitter comes off a fixed seed and the pieces
+       float at time 0, so a page draws the same field every time. */
+    function holdGet() {
+      return { M: M, regions: regions, land: land, adj: adj, borders: borders, bmid: bmid, rules: rules, aiCamps: aiCamps, playerCap: playerCap,
+        orders: orders, cavOrders: cavOrders, aiOrders: aiOrders, aiActs: aiActs, courierDue: courierDue, transit: transit, standing: standing,
+        acts: acts, balloon: balloon, gold: gold, grain: grain, truce: truce, temper: temper, doctrine: doctrine, wonderHold: wonderHold, storm: storm,
+        seasonShift: seasonShift, phase: phase, tick: tick, timer: timer, tickLen: tickLen, spyTick: spyTick, pending: pending, seen: seen,
+        F: F, Fdirty: Fdirty, OVL: OVL, overlayDirty: overlayDirty, GEO: GEO, PIECES: PIECES, piecesDirty: piecesDirty, arrowChips: arrowChips,
+        arrowHits: arrowHits, lastArrowPts: lastArrowPts, selected: selected, mode: mode, pickDoctrine: pickDoctrine, icons: icons, hints: hints,
+        tgCache: tgCache, DIM: DIM, clock: clock, gesture: gesture, poofs: poofs, PIC: PIC, ctx: ctx, LAT: LAT, VSALT: VSALT,
+        cam: { x: cam.x, y: cam.y, z: cam.z, tx: cam.tx, ty: cam.ty, tz: cam.tz } };
+    }
+    function holdSet(h) {
+      M = h.M; regions = h.regions; land = h.land; adj = h.adj; borders = h.borders; bmid = h.bmid; rules = h.rules; aiCamps = h.aiCamps;
+      playerCap = h.playerCap; orders = h.orders; cavOrders = h.cavOrders; aiOrders = h.aiOrders; aiActs = h.aiActs; courierDue = h.courierDue;
+      transit = h.transit; standing = h.standing; acts = h.acts; balloon = h.balloon; gold = h.gold; grain = h.grain; truce = h.truce; temper = h.temper;
+      doctrine = h.doctrine; wonderHold = h.wonderHold; storm = h.storm; seasonShift = h.seasonShift; phase = h.phase; tick = h.tick;
+      timer = h.timer; tickLen = h.tickLen; spyTick = h.spyTick; pending = h.pending; seen = h.seen; F = h.F; Fdirty = h.Fdirty; OVL = h.OVL;
+      overlayDirty = h.overlayDirty; GEO = h.GEO; PIECES = h.PIECES; piecesDirty = h.piecesDirty; arrowChips = h.arrowChips;
+      arrowHits = h.arrowHits; lastArrowPts = h.lastArrowPts; selected = h.selected; mode = h.mode; pickDoctrine = h.pickDoctrine;
+      icons = h.icons; hints = h.hints; tgCache = h.tgCache; DIM = h.DIM; clock = h.clock; gesture = h.gesture; poofs = h.poofs;
+      PIC = h.PIC; ctx = h.ctx; LAT = h.LAT; VSALT = h.VSALT;
+      cam.x = h.cam.x; cam.y = h.cam.y; cam.z = h.cam.z; cam.tx = h.cam.tx; cam.ty = h.cam.ty; cam.tz = h.cam.tz;
+    }
+
+    /* A world of a few cells: `mask` is rows of the lattice, a letter a region
+       (named in reading order) and a dot the sea. It is cut like a stage's map
+       — the Voronoi cells, the raster, the neighbours, the troops' ground —
+       from the same helpers, only without a brief to satisfy. */
+    function fieldMap(mask) {
+      var R0 = makeRng(5), L = lattice(mask.length, mask[0].length, R0), regs = [], ids = {};
+      L.cells.forEach(function (c) {
+        var ch = mask[c.j].charAt(c.i);
+        if (ch === ".") { c.sea = true; return; }
+        c.reg = regs.length; ids[ch] = c.reg; regs.push(newRegion(c.reg, c));
+      });
+      LAT = L; VSALT = L.cells[0].x * 0.0137 + L.cells[0].y * 0.0071;
+      var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9, gx, gy;
+      L.cells.forEach(function (c) { if (!c.sea) c.poly = cellPoly(c); });
+      regs.forEach(function (r) {
+        r.poly = L.at[r.j][r.i].poly; r.lv = 1; r.cx = 0; r.cy = 0; r.cells = 0;
+        r.poly.forEach(function (p) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); });
+      });
+      var x0 = Math.floor(minX - 12), y0 = Math.floor(minY - 12), gw = Math.ceil((maxX + 12 - x0) / CELL), gh = Math.ceil((maxY + 12 - y0) / CELL);
+      var grid = new Int16Array(gw * gh);
+      for (gy = 0; gy < gh; gy++) {
+        for (gx = 0; gx < gw; gx++) {
+          var id = sample(x0 + (gx + 0.5) * CELL, y0 + (gy + 0.5) * CELL);
+          grid[gy * gw + gx] = id;
+          if (id >= 0) { var rg = regs[id]; rg.cx += x0 + (gx + 0.5) * CELL; rg.cy += y0 + (gy + 0.5) * CELL; rg.cells++; }
+        }
+      }
+      regs.forEach(function (r) { r.cx /= r.cells; r.cy /= r.cells; r.ax = (r.cx + r.sx) / 2; r.ay = (r.cy + r.sy) / 2; });
+      // the neighbours, and what the coast gives the harbour
+      var touch = {}, sum = {}, coastSum = regs.map(function () { return [0, 0, 0]; });
+      for (gy = 0; gy < gh; gy++) {
+        for (gx = 0; gx < gw; gx++) {
+          var a = grid[gy * gw + gx];
+          if (a < 0) continue;
+          var nb = [gx + 1 < gw ? grid[gy * gw + gx + 1] : -1, gy + 1 < gh ? grid[(gy + 1) * gw + gx] : -1,
+                    gx > 0 ? grid[gy * gw + gx - 1] : -1, gy > 0 ? grid[(gy - 1) * gw + gx] : -1];
+          for (var t = 0; t < 4; t++) {
+            var b = nb[t];
+            if (b < 0) { var cs = coastSum[a]; cs[0] += x0 + gx * CELL; cs[1] += y0 + gy * CELL; cs[2]++; continue; }
+            if (t >= 2 || b === a) continue;
+            var kk = key(a, b);
+            touch[kk] = (touch[kk] || 0) + 1;
+            if (!sum[kk]) sum[kk] = [0, 0];
+            sum[kk][0] += x0 + (gx + 0.5) * CELL; sum[kk][1] += y0 + (gy + 0.5) * CELL;
+          }
+        }
+      }
+      var A = regs.map(function () { return []; }), MID = {};
+      for (var k2 in touch) {
+        if (touch[k2] < 4) continue;
+        var pr = k2.split(",").map(Number);
+        A[pr[0]].push(pr[1]); A[pr[1]].push(pr[0]);
+        MID[k2] = { x: sum[k2][0] / touch[k2], y: sum[k2][1] / touch[k2] };
+      }
+      regs.forEach(function (r, i) {
+        var cs2 = coastSum[i];
+        if (cs2[2] > 6) { r.coast = true; r.coastX = cs2[0] / cs2[2]; r.coastY = cs2[1] / cs2[2]; }
+        // the troops' own ground, low in the region, and the count beside them
+        var gxA = Math.floor((r.ax - x0) / CELL), vb = r.ay;
+        for (var gyB = Math.floor((r.ay - y0) / CELL); gyB < gh && grid[gyB * gw + gxA] === i; gyB++) vb = y0 + (gyB + 0.5) * CELL;
+        r.tx = r.ax; r.ty = clamp(vb - 44, r.ay + 26, r.ay + 64);
+        var inR = function (u, v) {
+          var gx3 = Math.floor((u - x0) / CELL), gy3 = Math.floor((v - y0) / CELL);
+          return gx3 >= 0 && gx3 < gw && gy3 >= 0 && gy3 < gh && grid[gy3 * gw + gx3] === i;
+        };
+        var spot = [[58, 10], [-58, 10], [0, 34]].filter(function (o) {
+          var u = r.tx + o[0], v = r.ty + o[1];
+          return inR(u - 22, v - 14) && inR(u + 22, v - 14) && inR(u - 22, v + 14) && inR(u + 22, v + 14);
+        })[0] || [0, 34];
+        r.gu = r.tx + spot[0]; r.gv = r.ty + spot[1];
+        r.dBlue = 0; r.comp = 0;
+      });
+      // a tree or two on the free paper, clear of the building, the troops and the count
+      var decor = [];
+      regs.forEach(function (r) {
+        var placed = 0;
+        [[-72, 22], [66, -52], [-66, -40], [74, 40], [0, -78]].forEach(function (o) {
+          var u = r.ax + o[0], v = r.ay + o[1], inside = true;
+          if (placed >= 2) return;
+          for (var oy = -3; oy <= 3 && inside; oy += 3) for (var ox = -3; ox <= 3; ox += 3) {
+            var gx4 = Math.floor((u - x0) / CELL) + ox, gy4 = Math.floor((v - y0) / CELL) + oy;
+            if (gx4 < 0 || gx4 >= gw || gy4 < 0 || gy4 >= gh || grid[gy4 * gw + gx4] !== r.id) { inside = false; break; }
+          }
+          if (!inside || Math.hypot(u - r.tx, v - r.ty) < 66 || Math.hypot(u - r.gu, v - r.gv) < 44) return;
+          decor.push({ u: u, v: v, sheet: "scenery", cell: placed ? 2 : 1, s: 1, reg: r.id });
+          placed++;
+        });
+      });
+      var out = { regions: regs, adj: A, borders: {}, bmid: MID, grid: grid, gw: gw, gh: gh, x0: x0, y0: y0, x1: x0 + gw * CELL, y1: y0 + gh * CELL,
+        lat: L, roles: { blueCap: -1, redCap: -1, greenCap: -1, passes: [], bridges: [], passEnds: [], bridgeEnds: [], isles: [], balloon: -1 },
+        decor: decor, ridge: [], rules: {}, brief: {}, seed: -1, straitY: (minY + maxY) / 2,
+        minX: minX, maxX: maxX, minY: minY, maxY: maxY };
+      return { M: out, ids: ids };
+    }
+
+    // The shorthands a field gives a region.
+    var F_KEYS = { o: "owner", n: "troops" };
+
+    function fieldWorld(sp) {
+      var fm = fieldMap(sp.mask), ids = fm.ids, k;
+      M = fm.M; regions = land = M.regions; adj = M.adj; borders = M.borders; bmid = M.bmid;
+      rules = M.rules = sp.rules || {};
+      aiCamps = [RED]; playerCap = -1;
+      gold = [0, 0, 0, 0, 0]; grain = 8; truce = [0, 0, 0, 0, 0]; temper = ["", "", "", "", ""]; doctrine = ""; wonderHold = [0, 0, 0, 0, 0];
+      orders = {}; cavOrders = {}; aiOrders = { 2: {} }; aiActs = []; courierDue = []; transit = []; standing = {}; acts = []; balloon = -1;
+      seasonShift = 0; storm = null; pending = null; mode = null; selected = -1; pickDoctrine = false; gesture = null;
+      icons = []; hints = []; tgCache = null; DIM = null; poofs = []; arrowChips = []; arrowHits = []; lastArrowPts = null;
+      phase = "plan"; tick = sp.tick == null ? 4 : sp.tick; tickLen = 120; timer = sp.timer || 0; spyTick = sp.spy ? tick : -1;
+      clock = 0; F = null; Fdirty = true; GEO = null; OVL = null; overlayDirty = true; PIECES = []; piecesDirty = true;
+      for (k in sp.borders || {}) { var bp = k.split(","); borders[key(ids[bp[0]], ids[bp[1]])] = sp.borders[k]; }
+      for (k in sp.r || {}) {
+        var r = regions[ids[k]], q = sp.r[k], f;
+        for (f in q) r[F_KEYS[f] || f] = q[f];
+        if (r.owner === BLUE || r.owner === RED) r.city = r.city || r.capital;
+      }
+      function order(o) {
+        var d = { to: ids[o.to], frac: o.frac || 1, kind: o.kind || "move" };
+        if (o.n != null) d.n = o.n;
+        if (o.unit) d.unit = o.unit;
+        return d;
+      }
+      (sp.go || []).forEach(function (o) {
+        var d = order(o);
+        if (cavSlot(d)) cavOrders[ids[o.from]] = d; else orders[ids[o.from]] = d;
+      });
+      (sp.ai || []).forEach(function (o) { aiOrders[RED][ids[o.from]] = order(o); });
+      (sp.stand || []).forEach(function (o) { standing[ids[o.from]] = { to: ids[o.to], cond: o.cond }; });
+      (sp.fleet || []).forEach(function (t) {
+        var a = regions[ids[t.from]], b = regions[ids[t.to]];
+        transit.push({ from: ids[t.from], to: ids[t.to], camp: t.camp || BLUE, kind: t.kind || "fleet", n: t.n || 4, n0: t.n || 4, cav: 0, pieces: [], tags: [],
+          x: a.cx + (b.cx - a.cx) * t.at, y: a.cy + (b.cy - a.cy) * t.at, land: tick + 1, parts: [{ t: "attack", v: ATTACK_PTS }] });
+      });
+      (sp.recruit || []).forEach(function (c) { acts.push({ kind: "recruit", at: ids[c] }); });
+      if (sp.storm) {
+        var sa = regions[ids[sp.storm.a]], sb2 = regions[ids[sp.storm.b]], at = sp.storm.at == null ? 0.5 : sp.storm.at;
+        storm = { x: sa.cx + (sb2.cx - sa.cx) * at, y: sa.cy + (sb2.cy - sa.cy) * at, dx: sp.storm.dx || STORM_STEP };
+      }
+      if (sp.balloon) balloon = ids[sp.balloon];
+      if (sp.gold != null) gold[BLUE] = sp.gold;
+      if (sp.grain != null) grain = sp.grain;
+      if (sp.hold != null) wonderHold[BLUE] = sp.hold;
+      if (sp.truce != null) truce[RED] = tick + sp.truce;
+      if (sp.temper) temper[RED] = sp.temper;
+      if (sp.winter) seasonShift = SEASON_LEN;
+      // a ridge is a row of mountain pieces along its border, from the edge of one region's paper
+      for (k in borders) {
+        if (borders[k] !== "mountain") continue;
+        var ra = regions[+k.split(",")[0]], rb = +k.split(",")[1];
+        ra.poly.forEach(function (pt, i) {
+          if (pt.t !== rb) return;
+          var q2 = ra.poly[(i + 1) % ra.poly.length];
+          [0.2, 0.5, 0.8].forEach(function (f) { M.ridge.push({ u: pt.x + (q2.x - pt.x) * f, v: pt.y + (q2.y - pt.y) * f, s: 1.2, snow: false }); });
+        });
+      }
+      if (sp.poof) poofs.push({ u: regions[ids[sp.poof]].ax, v: regions[ids[sp.poof]].ay, t: 0.3 });
+      if (sp.pick) selected = ids[sp.pick];
+      computeSeen();
+      return ids;
+    }
+
+    // The camera of a field: every region in the frame, as big as the pieces may stand.
+    function fieldCam(W, H, zoom) {
+      var bw = M.maxX - M.minX + 50, bh = (M.maxY - M.minY + 60) * TILT;
+      cam.tx = cam.ty = cam.tz = null;
+      cam.z = clamp(Math.min((W - 20) / bw, (H - 16) / bh) * (zoom || 1), 0.5, 1.5);
+      cam.x = (M.minX + M.maxX) / 2; cam.y = (M.minY + M.maxY) / 2 + 6;
+      PIC.cy = H / 2;
+    }
+
+    function fieldPic(sp, W, H) {
+      W = W || 520; H = H || sp.h || (sp.send ? 356 : 260);
+      var k = view.dpr || 1, cv = document.createElement("canvas"), keep = holdGet();
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      try {
+        PIC = { cx: W / 2, cy: H / 2 };
+        ctx = cv.getContext("2d"); ctx.scale(k, k);
+        fieldWorld(sp);
+        fieldCam(W, H - (sp.send ? 96 : 0), sp.zoom);
+        var G2 = geo();
+        buildOverlay();
+        paintGround(ctx, G2, { w: W, h: H });
+        buildPieces();
+        if (selected >= 0) drawReach();
+        PIECES.forEach(function (p) {
+          if (p.decor && !seen[p.reg]) return;
+          drawPiece(p, scr(p.u, p.v), 0);
+        });
+        drawStorm(0);
+        poofs.forEach(function (pf) {
+          var im = art("poof" + nn(Math.min(16, 1 + Math.floor(pf.t / 0.055)))), s = scr(pf.u, pf.v);
+          if (!im) return;
+          var w = 170 * cam.z, h = w * im.height / im.width;
+          ctx.drawImage(im, s.x - w / 2, s.y - h * 0.62, w, h);
+        });
+        drawOrders();
+        drawTags();
+        // the resources the stage counts, as the plates under the HUD
+        var rx = 10;
+        if (sp.res) resourceList().forEach(function (it, i) { rx += plate("chip", "res" + i, rx + plateW("chip", it[0], 20) / 2, 26, it[0], it[1], "#fff", 20) + 12; });
+        if (selected >= 0) {
+          // the actions the region in hand offers, settled where the pop-in ends
+          syncIcons();
+          icons.forEach(function (ic) { ic.born = -10; ic.delay = 0; ic.ph = 0; });
+          drawTargetIcons();
+        }
+        if (sp.send) drawSend({ x: W / 2 - 150, y: H - 92, w: 300, h: 84 });
+      } finally { holdSet(keep); }
+      return cv;
+    }
+    function fp(id, lv, title, sp, lines, rows, size) {
+      return { id: id, lv: lv, title: Lang.t(title), pic: function () { return fieldPic(sp, size && size[0], size && size[1]); }, rows: rows,
+        lines: lines.map(function (l) { return Lang.t(l); }) };
+    }
+
+    /* The fields, by page. A letter is a region in reading order; `r` gives it
+       an owner (o), troops (n) and what stands on it; `go` is the orders the
+       player has drawn, `ai` the red ones a spy shows, `pick` the region held
+       in hand (its targets wear their actions). */
+    var FIELD = {
+      // a region of yours in hand: the actions its target wears, the order already given ticked
+      orders: { mask: ["AB"], pick: "A",
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { o: RED, n: 3 } } },
+      // two orders waiting, and the Send plate with the tick draining out of it
+      tick: { mask: ["AB", "CD"], send: true, timer: 60, h: 390,
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { n: 2 }, C: { o: BLUE, n: 4, city: true }, D: { n: 1, city: true } },
+        go: [{ from: "A", to: "B" }, { from: "C", to: "D" }] },
+      // ten troops attack four: 20 points against 12 leave 8, so 4 attackers
+      battle: { mask: ["AB"],
+        r: { A: { o: BLUE, n: 10, capital: true }, B: { o: RED, n: 4, city: true } },
+        go: [{ from: "A", to: "B" }] },
+      // the verdict at an arrow's head, the sword on a region that can fall, the shield on one that holds
+      read: { mask: ["AB", "CD"], h: 310,
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { o: RED, n: 4 }, C: { n: 2, city: true }, D: { o: BLUE, n: 5, city: true } },
+        go: [{ from: "A", to: "C" }, { from: "D", to: "B", n: 3 }] },
+      growth: { mask: ["AB"],
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: BLUE, n: 3, city: true } } },
+      fort: { mask: ["AB"],
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: RED, n: 3, fort: true } },
+        go: [{ from: "A", to: "B" }] },
+      // a ridge nobody crosses, and the pass that is the only way through
+      mountain: { mask: ["AB", "CD"], h: 310, borders: { "A,B": "mountain", "C,D": "pass" },
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { n: 2 }, C: { o: BLUE, n: 5, city: true }, D: { n: 2 } },
+        go: [{ from: "A", to: "B" }, { from: "C", to: "D" }] },
+      // across the river one point a troop, over the bridge two
+      river: { mask: ["AB", "CD"], h: 310, borders: { "A,B": "river", "C,D": "bridge" },
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { n: 3 }, C: { o: BLUE, n: 6, city: true }, D: { n: 3 } },
+        go: [{ from: "A", to: "B" }, { from: "C", to: "D" }] },
+      // a fleet on the sea between two harbours, landing at the next bell
+      sea: { mask: ["A.B"], zoom: 1.2,
+        r: { A: { o: BLUE, n: 3, capital: true, harbour: true }, B: { o: RED, n: 4, city: true, harbour: true } },
+        fleet: [{ from: "A", to: "B", at: 0.45, n: 5 }] },
+      // in winter a march into snow takes a tick more
+      winter: { mask: ["AB"], rules: { winter: true }, winter: true, tick: 0, res: true,
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { n: 2, terrain: "snow" } },
+        go: [{ from: "A", to: "B" }] },
+      // the storm over the lane, and the ring where it will be at the bell
+      storm: { mask: ["A.B"], rules: { storm: true }, storm: { a: "A", b: "B", at: 0.4 },
+        r: { A: { o: BLUE, n: 6, capital: true, harbour: true }, B: { n: 3, city: true, harbour: true } },
+        go: [{ from: "A", to: "B", kind: "fleet" }] },
+      // five ticks in a row on the wonder
+      wonder: { mask: ["AB"], rules: { wonder: true }, hold: 3,
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: BLUE, n: 4, wonder: true } } },
+      gold: { mask: ["ABC"], rules: { gold: true }, gold: 3, res: true,
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: BLUE, n: 3, mine: true }, C: { o: BLUE, n: 2, mine: true } } },
+      recruit: { mask: ["AB"], rules: { recruit: true }, recruit: ["B"],
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: BLUE, n: 2, city: true } } },
+      // riders cross the empty region in one tick
+      cav: { mask: ["ABC"], rules: { cav: true },
+        r: { A: { o: BLUE, n: 6, cav: 4, capital: true }, B: { n: 0 }, C: { o: RED, n: 2, city: true } },
+        go: [{ from: "A", to: "C", kind: "cav", unit: "cav" }] },
+      // more mouths than the region feeds
+      grain: { mask: ["AB"], rules: { grain: true }, grain: 8, res: true,
+        r: { A: { o: BLUE, n: 9, capital: true }, B: { o: BLUE, n: 3, farm: true, terrain: "wheat" } } },
+      // a cut-off army, far from every city of its camp, bleeds a troop a tick
+      supply: { mask: ["ABC"], rules: { supply: true },
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { o: RED, n: 3 }, C: { o: BLUE, n: 6, wagon: true } } },
+      // the engineer's palisade stands in the region, his bridge carries the march over the river
+      engineer: { mask: ["AB"], borders: { "A,B": "bridge" },
+        r: { A: { o: BLUE, n: 5, capital: true, engineer: true, palisade: true }, B: { o: RED, n: 3 } },
+        go: [{ from: "A", to: "B" }] },
+      // you see your regions, their neighbours and what a tower reaches; the rest is a cloud
+      fog: { mask: ["ABCD"], rules: { fog: true },
+        r: { A: { o: BLUE, n: 5, capital: true, tower: true }, B: { n: 2 }, C: { o: RED, n: 3, city: true }, D: { o: RED, n: 4 } } },
+      // the balloon sees two regions around it, and the red order aimed at them
+      scout: { mask: ["ABCD"], rules: { fog: true, scout: true }, balloon: "A",
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { n: 2 }, C: { o: RED, n: 4, city: true }, D: { o: RED, n: 4 } },
+        ai: [{ from: "C", to: "B" }] },
+      // every red order of the tick, and the numbers behind them
+      spy: { mask: ["AB", "CD"], h: 310, spy: true,
+        r: { A: { o: RED, n: 5 }, B: { o: BLUE, n: 4, capital: true }, C: { o: BLUE, n: 3, city: true }, D: { o: RED, n: 6, city: true } },
+        ai: [{ from: "A", to: "B" }, { from: "D", to: "C" }] },
+      // the capital is far across the sea: the order walks as footprints
+      courier: { mask: ["A.BC"], rules: { courier: true },
+        r: { A: { o: BLUE, n: 4, capital: true }, B: { o: BLUE, n: 5 }, C: { n: 2, city: true } },
+        go: [{ from: "B", to: "C" }] },
+      cannon: { mask: ["AB"], rules: { cannon: true }, poof: "B",
+        r: { A: { o: BLUE, n: 5, capital: true, cannon: true }, B: { o: RED, n: 5, city: true } },
+        go: [{ from: "A", to: "B", kind: "fire" }] },
+      // the general's troops count a point more
+      general: { mask: ["AB"], rules: { general: true },
+        r: { A: { o: BLUE, n: 5, capital: true, general: true }, B: { o: RED, n: 3 } },
+        go: [{ from: "A", to: "B" }] },
+      morale: { mask: ["AB"], rules: { morale: true },
+        r: { A: { o: BLUE, n: 5, capital: true, drummer: true, morale: 2 }, B: { o: RED, n: 3 } },
+        go: [{ from: "A", to: "B" }] },
+      // a standing order: a dotted line to the neighbour it guards, with the red army next door
+      standing: { mask: ["AC", "B."], h: 300, rules: { standing: true },
+        r: { A: { o: BLUE, n: 5, city: true }, B: { o: BLUE, n: 3 }, C: { o: RED, n: 6 } },
+        stand: [{ from: "A", to: "B", cond: "attacked" }] },
+      // two of the walled capital's neighbours are yours: the siege can begin
+      siege: { mask: [".C", "AB"], h: 300, rules: { siege: true },
+        r: { A: { o: BLUE, n: 8, siege: true }, B: { o: BLUE, n: 4, city: true }, C: { o: RED, n: 3, capital: true, fort: true } },
+        go: [{ from: "A", to: "C" }] },
+      lift: { mask: ["A.B"], rules: { lift: true },
+        r: { A: { o: BLUE, n: 6, capital: true, lift: true }, B: { o: RED, n: 3, city: true } },
+        go: [{ from: "A", to: "B", kind: "lift" }] },
+      revolt: { mask: ["ABC"], rules: { revolt: true }, tick: 4,
+        r: { A: { o: BLUE, n: 6, capital: true }, B: { o: BLUE, n: 1, takenAt: 3 }, C: { o: REBEL, n: 3 } } },
+      // three camps around one region of yours: the sword counts them all
+      green: { mask: ["AB", "C."],
+        r: { A: { o: BLUE, n: 3, capital: true }, B: { o: RED, n: 4 }, C: { o: GREEN, n: 3 } } },
+      // a truce holds the order back
+      truce: { mask: ["AB"], rules: { truce: true }, truce: 4, res: true,
+        r: { A: { o: BLUE, n: 5, capital: true }, B: { o: RED, n: 4, capital: true } },
+        go: [{ from: "A", to: "B" }] },
+      // the truce holds, and the opportunist's strength at the border still counts against you
+      betray: { mask: ["AB"], rules: { truce: true, betray: true }, truce: 3, temper: "opportunist", res: true,
+        r: { A: { o: BLUE, n: 3, capital: true }, B: { o: RED, n: 8, capital: true } } }
+    };
+
+    // The doctrines as the round offers them before a late stage: one paper card each, the piece its rule works on beside it.
+    function doctrinePic() {
+      var W = 520, H = 372, k = view.dpr || 1, cv = document.createElement("canvas"), keep = ctx;
+      cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      try {
+        ctx = cv.getContext("2d"); ctx.scale(k, k);
+        ctx.fillStyle = "#1f8a96"; ctx.fillRect(0, 0, W, H);
+        var piece = [campArt(BLUE, "cavalry"), campArt(BLUE, "fort"), worksArt(BLUE, "mine")], tall = [TALL.cavalry, TALL.fort, TALL.mine];
+        DOCTRINES.forEach(function (d, i) {
+          var bx = { x: 14, y: 12 + i * 120, w: 492, h: 108 }, SD = paperOn("card", "doc" + i, bx.x, bx.y, bx.w, bx.h);
+          var im = art(piece[i]);
+          if (im) { var hh = tall[i] * 1.7, ww = hh * im.width / im.height; ctx.drawImage(im, 58 - ww / 2, bx.h - 14 - hh, ww, hh); }
+          ctx.textAlign = "left"; ctx.textBaseline = "middle";
+          ctx.fillStyle = CAMP[BLUE].dark; ctx.font = font(30, true);
+          ctx.fillText(Lang.t(d.name), 112, 28);
+          ctx.fillStyle = "#3a3326"; ctx.font = font(22, false);
+          wrapLines(Lang.t(d.text), bx.w - 134).forEach(function (l, li) { ctx.fillText(l, 112, 62 + li * 26); });
+          paperOff(SD);
+        });
+      } finally { ctx = keep; }
+      return cv;
+    }
+    function dp(id, lv, title, lines, rows) {
+      return { id: id, lv: lv, title: Lang.t(title), pic: doctrinePic, rows: rows, lines: lines.map(function (l) { return Lang.t(l); }) };
+    }
+
     var guide = {
       chapters: function () {
         var B = SHEET[BLUE], Rd = SHEET[RED], WB = WORKS_OF[BLUE];
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
-            pg("gu-orders", 1, "Orders", [B + "01", "scenery07"], { arrow: [0, 1] }, [
-              "Drag your troops onto a neighbour and let go: they all march there. Keep your finger on it a moment and the choices open around it, to send fewer.",
-              "An order is a draft: tap its troops to change it or cancel it, as often as you like, until it leaves."]),
+            fp("gu-orders", 1, "Orders", FIELD.orders, [
+              "Tap a region of yours: every region it can reach shows its actions. Tap one to give the order.",
+              "The big action sends every troop, like a tap on the region itself. The small ones send fewer, or fire the cannon.",
+              "An order is a draft: tap its region again to change it or cancel it, as often as you like, until it leaves."]),
             (function () {
               var desk = typeof Desk !== "undefined" && Desk.on(), page = pg("gu-map", 1, "Moving the map", [], {}, [
                 "The map is bigger than the screen: drag it anywhere to look around.",
-                "Drag your troops instead and you draw an order. Tap a flag to read its region."].concat(desk ? [
+                "A drag only ever moves the map. Tap any region to read what it holds."].concat(desk ? [
                 "On a computer the hand cursor shows where the map can be grabbed."] : []),
                 desk ? [R("Move the map", Lang.t("drag, or the arrow keys")), R("Zoom", Lang.t("mouse wheel, or + and −")),
                         R("See the whole map", Lang.t("double click")), R("Send the orders", Lang.t("Enter, or Send"))]
-                     : [R("Move the map", Lang.t("drag the empty map")), R("Zoom", Lang.t("pinch with two fingers")),
+                     : [R("Move the map", Lang.t("drag the map")), R("Zoom", Lang.t("pinch with two fingers")),
                         R("See the whole map", Lang.t("double tap")), R("Send the orders", Lang.t("the Send button"))]);
               page.pic = mapPic;
               return page;
             })(),
-            pg("gu-tick", 1, "The tick", ["scenery14", "scenery13"], {}, [
+            fp("gu-tick", 1, "The tick", FIELD.tick, [
               "Every tick is a countdown. Press Send to send your orders at once, or the bell sends them as they stand when it runs out.",
               "Then every army on the map moves together: yours and your rivals'."]),
-            pg("gu-battle", 1, "Battles", [B + "05", Rd + "05"], { arrow: [0, 1] }, [
+            fp("gu-battle", 1, "Battles", FIELD.battle, [
               "Every troop is worth 2 points in attack and 3 in defence. When armies meet in a region, the side with more points wins.",
               "The winner keeps one troop for each troop's worth of points left over: 20 points against 12 leave 8, so 4 attackers.",
               "Two enemy columns crossing the same border meet halfway and cancel out, troop for troop."],
               [R("Attacker", Lang.t("2 per troop")), R("Defender", Lang.t("3 per troop")), R("A tie", Lang.t("nobody left"))]),
-            pg("gu-read", 1, "Reading the map", [B + "16", B + "05"], { tint: BLUE }, [
+            fp("gu-read", 1, "Reading the map", FIELD.read, [
               "The tag at the head of an arrow says what the order will do: take the region, fall short by a few troops, a tie, or risky when a neighbour can still strike.",
               "A red sword by your region counts the enemy troops next door: together they can take it. It stands on their side.",
               "A green shield says your region holds even if they all strike at once."]),
-            pg("gu-growth", 1, "Cities", [B + "01", B + "03"], {}, [
+            fp("gu-growth", 1, "Cities", FIELD.growth, [
               "Cities and capitals raise new troops at every bell, after the battles.",
               "Lose your capital and the stage is lost."],
               [R("Capital", Lang.t("+2 a tick")), R("City", Lang.t("+1 a tick"))])
           ] },
           { key: "land", label: Lang.t("The land"), pages: [
-            pg("gu-fort", 2, "Forts", [B + "02", "world12"], {}, [
+            fp("gu-fort", 2, "Forts", FIELD.fort, [
               "Each defender of a fort counts one point more. An old fort nobody holds still guards whoever takes it."],
               [R("Fort", Lang.t("4 per troop")), R("Open land", Lang.t("3 per troop"))]),
-            pg("gu-mountain", 3, "Mountains", ["scenery03", "world16", "scenery03"], {}, [
+            fp("gu-mountain", 3, "Mountains", FIELD.mountain, [
               "A mountain ridge cannot be crossed. A pass, marked by a signpost, is the only way through it."]),
-            pg("gu-river", 4, "Rivers", [B + "05", WB + "12", Rd + "05"], {}, [
+            fp("gu-river", 4, "Rivers", FIELD.river, [
               "Each troop attacking across a river counts one point less. A bridge carries them across at full strength."],
               [R("Across a river", Lang.t("1 per troop")), R("Over a bridge", Lang.t("2 per troop"))]),
-            pg("gu-sea", 5, "Harbours", [B + "04", B + "11", "~" + B + "04"], {}, [
+            fp("gu-sea", 5, "Harbours", FIELD.sea, [
               "A harbour ships troops to any other harbour. The fleet sails for one tick and lands at the next bell.",
               "Until it lands, its troops defend nothing."]),
-            pg("gu-winter", 19, "Winter", ["world05", "world06", "world07"], { terrain: "snow" }, [
+            fp("gu-winter", 19, "Winter", FIELD.winter, [
               "The season turns every six ticks. In winter, entering snow or a pass takes one tick more, and production halves."],
               [R("Season", Lang.t("every 6 ticks")), R("Production in winter", Lang.t("halved"))]),
-            pg("gu-storm", 20, "Storms", ["world04", B + "11"], {}, [
+            fp("gu-storm", 20, "Storms", FIELD.storm, [
               "A storm drifts over the sea. A sea lane under it is closed, and a fleet caught in it loses a third of its troops.",
               "The dashed ring shows where it will be at the next bell."]),
-            pg("gu-wonder", 22, "Wonders", ["world09"], {}, [
+            fp("gu-wonder", 22, "Wonders", FIELD.wonder, [
               "Hold the wonder for five ticks in a row and the stage is won. If a rival holds it that long first, the stage is lost."])
           ] },
           { key: "supply", label: Lang.t("Supplies"), pages: [
-            pg("gu-gold", 7, "Gold", [WB + "15", "scenery09"], {}, [
+            fp("gu-gold", 7, "Gold", FIELD.gold, [
               "A mine pays one gold to its owner at every bell. Gold buys recruits, cavalry, spies, posts and works."]),
-            pg("gu-recruit", 8, "Recruitment", [WB + "10", B + "05"], {}, [
+            fp("gu-recruit", 8, "Recruitment", FIELD.recruit, [
               "Select one of your cities and recruit: the new troops join at the next bell, after the battles."],
               [R("Recruits", Lang.t("+3 for 3 gold"))]),
-            pg("gu-cav", 9, "Cavalry", [B + "07", B + "05"], {}, [
+            fp("gu-cav", 9, "Cavalry", FIELD.cav, [
               "Riders cross two regions in one tick, through your own or empty land.",
               "A region holding riders and foot can give one order to each."],
               [R("Cavalry", Lang.t("+2 for 4 gold"))]),
-            pg("gu-grain", 11, "Grain", [WB + "16", "plains01"], { terrain: "wheat" }, [
+            fp("gu-grain", 11, "Grain", FIELD.grain, [
               "A region feeds six troops. Each troop above that eats one grain a tick, and a farm makes three.",
               "When the stock runs out, one troop deserts from every overfed region."]),
-            pg("gu-supply", 12, "Supply lines", [B + "10", WB + "09"], {}, [
+            fp("gu-supply", 12, "Supply lines", FIELD.supply, [
               "An army more than three regions from your cities or a depot loses one troop every tick.",
               "A wagon builds a depot in one tick."]),
-            pg("gu-engineer", 23, "Engineers", [WB + "03", WB + "11", WB + "12"], {}, [
+            fp("gu-engineer", 23, "Engineers", FIELD.engineer, [
               "Your engineer builds a palisade, one point more for each defender, or a bridge over a river. He must stay until it is done."],
               [R("Palisade", Lang.t("4 gold, 2 ticks")), R("Bridge", Lang.t("4 gold, 2 ticks"))])
           ] },
           { key: "intel", label: Lang.t("Intelligence"), pages: [
-            pg("gu-fog", 6, "Fog of war", ["world01", B + "14", "world02"], {}, [
+            fp("gu-fog", 6, "Fog of war", FIELD.fog, [
               "You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond reads ?."]),
-            pg("gu-scout", 13, "Scouts", [B + "15", "world03"], {}, [
+            fp("gu-scout", 13, "Scouts", FIELD.scout, [
               "Your balloon sees two regions around it, and the red orders aimed at them, before the bell.",
               "Move it one region a tick."]),
-            pg("gu-spy", 14, "Spies", [WB + "01"], {}, [
+            fp("gu-spy", 14, "Spies", FIELD.spy, [
               "The spy shows every red order of the tick, and every tag and shield counts them."],
               [R("Spy", Lang.t("2 gold"))]),
-            pg("gu-courier", 15, "Couriers", [WB + "06"], {}, [
+            fp("gu-courier", 15, "Couriers", FIELD.courier, [
               "An order from more than four steps from your capital or a courier post leaves one tick late, walking as footprints.",
               "A courier post costs two gold."])
           ] },
           { key: "army", label: Lang.t("The army"), pages: [
-            pg("gu-cannon", 10, "Artillery", [B + "09", Rd + "02"], { arrow: [0, 1] }, [
+            fp("gu-cannon", 10, "Artillery", FIELD.cannon, [
               "A cannon fires on a neighbour before anything moves: two troops fewer there. It cannot move and fire in the same tick."]),
-            pg("gu-general", 16, "Generals", [B + "08", Rd + "08"], {}, [
+            fp("gu-general", 16, "Generals", FIELD.general, [
               "Your general leads the army he stands with: each of its troops counts one point more. If that army is beaten he is captured, and his bonus is lost."],
               [R("Attack", Lang.t("3 per troop")), R("Defence", Lang.t("4 per troop"))]),
-            pg("gu-morale", 17, "Morale", [WB + "04", B + "05"], {}, [
+            fp("gu-morale", 17, "Morale", FIELD.morale, [
               "A win raises an army's morale, a defeat lowers it. A drummer raises it by one every tick.",
               "Each step adds one point to the whole army, or takes one away."],
               [R("Each step", Lang.t("+1 point")), R("Full morale", Lang.t("+3 points"))]),
-            pg("gu-standing", 18, "Standing orders", [B + "13", B + "05"], {}, [
+            fp("gu-standing", 18, "Standing orders", FIELD.standing, [
               "A region can hold one standing order that fires by itself: reinforce a neighbour the moment it is attacked, or retake it if it is lost."]),
-            pg("gu-siege", 24, "Sieges", [WB + "07", Rd + "01"], { arrow: [0, 1] }, [
+            fp("gu-siege", 24, "Sieges", FIELD.siege, [
               "A capital or a fort can only be attacked by a camp that holds two of its neighbours. A siege tower ignores the walls."]),
-            pg("gu-lift", 29, "Airlift", [WB + "14"], {}, [
+            fp("gu-lift", 29, "Airlift", FIELD.lift, [
               "The troop balloon carries up to six troops three regions away, over sea or mountains, in one tick. Everyone sees it coming."])
           ] },
           { key: "rivals", label: Lang.t("Rivals"), pages: [
-            pg("gu-revolt", 21, "Rebellions", ["world11"], {}, [
+            fp("gu-revolt", 21, "Rebellions", FIELD.revolt, [
               "A region taken less than three ticks ago, held by fewer than two troops, may revolt and go over to the rebels."]),
-            pg("gu-green", 25, "A third camp", [SHEET[GREEN] + "01", SHEET[GREEN] + "05"], { tint: GREEN }, [
+            fp("gu-green", 25, "A third camp", FIELD.green, [
               "The green camp plays too, against everyone. Your shields count every enemy next door."]),
-            pg("gu-truce", 26, "Truces", [WB + "05", WORKS_OF[RED] + "05"], {}, [
+            fp("gu-truce", 26, "Truces", FIELD.truce, [
               "Offer a truce: no attack between you and that camp for six ticks. A rival accepts only when it is the weaker."],
               [R("Truce", Lang.t("6 ticks"))]),
-            pg("gu-betray", 27, "Betrayal", [WORKS_OF[RED] + "01"], {}, [
+            fp("gu-betray", 27, "Betrayal", FIELD.betray, [
               "Every rival has a temper. An opportunist breaks a truce when it is stronger at a border, and its morale drops everywhere for it."]),
-            pg("gu-doctrine", 28, "Doctrines", [B + "07", B + "02", WB + "15"], {}, [
+            dp("gu-doctrine", 28, "Doctrines", [
               "Before the stage, pick one doctrine and play by it until the end."],
               [R("Blitz", Lang.t("riders go one region further")), R("Bastion", Lang.t("forts +2 per troop")), R("Merchant", Lang.t("mines pay 2"))]),
             pg("gu-duel", 30, "The Marshals' duel", [B + "08", Rd + "08"], {}, [

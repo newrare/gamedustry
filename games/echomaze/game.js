@@ -15,8 +15,9 @@
     },
 
     designWidth: 720, designHeight: 1280, bg: "#04060f",
-    // The maze hangs below the HUD and the cannon sits above the CTA bar, so
-    // nothing important ever lands under a notch or the install button.
+    // The maze hangs below the HUD and the cannon sits above the CTA bar (the
+    // web round's foot bar: Layout.foot), so nothing important ever lands under
+    // a notch, the install button or the round's controls.
     layout: { hudHeight: 150, ctaHeight: 112, sideMargin: 24 },
     intro: { logo: "logo", demo: "aim", caption: "" },
     hud: { score: true, timer: false },
@@ -174,7 +175,7 @@
                                      // shot goes through, and in the dark that
                                      // is the only read the player gets
     shotCooldown: 0.22,
-    cannonH: 56, muzzle: 88,
+    cannonH: 48, muzzle: 74,     // pivot above the floor; muzzle off the pivot
 
     /* --- the flaps -----------------------------------------------------
            The mouth row is six one-way valves. A pulse coming up from the bay
@@ -492,7 +493,8 @@
       field.left = Layout.left;
       field.right = Layout.right;
       field.top = Layout.top + C.gateH;             // the gate band sits above
-      field.bottom = Layout.bottom - 10;            // the arena floor
+      field.bottom = Layout.foot - 10;              // the arena floor: above the
+                                                    // web round's foot bar
       M.cols = C.cols; M.rows = C.rows;
       M.x0 = field.left;
       M.cw = (field.right - field.left) / M.cols;
@@ -503,6 +505,7 @@
       cannon.y = field.bottom - C.cannonH;
       if (walls) placeWalls();
       placeCrystal();
+      readFont();
       buildBackdrop();
     }
 
@@ -527,7 +530,7 @@
       var g, x, y, s, w, h;
       var key = (typeof ArtImages !== "undefined" && ArtImages[BAND.scene]) ? BAND.scene : C.bands[0].scene;
       var img = (typeof ArtImages !== "undefined" && ArtImages[key]) || null;
-      var sig = view.w + "x" + view.h + "|" + Layout.top + "," + Layout.h + "," + Layout.bottom + "|" +
+      var sig = view.w + "x" + view.h + "|" + Layout.top + "," + Layout.h + "," + Layout.foot + "|" +
                 key + ":" + (img && img.width ? img.width + "x" + img.height : "-") + "|" + BAND.scrim;
       if (bgCv && sig === bgSig) return;
       bgSig = sig;
@@ -553,7 +556,7 @@
       var band = g.createLinearGradient(0, 0, 0, view.h);
       band.addColorStop(0, "rgba(3,5,14,.8)");
       band.addColorStop(clamp(Layout.top / view.h, 0.02, 0.4), "rgba(3,5,14,0)");
-      band.addColorStop(clamp(Layout.bottom / view.h, 0.6, 0.98), "rgba(3,5,14,0)");
+      band.addColorStop(clamp(Layout.foot / view.h, 0.6, 0.98), "rgba(3,5,14,0)");
       band.addColorStop(1, "rgba(3,5,14,.8)");
       g.fillStyle = band; g.fillRect(0, 0, view.w, view.h);
     }
@@ -2610,103 +2613,139 @@
       }
     }
 
-    /* The cannon: a pylon on the arena floor, a deck carrying the magazine, and
-       a barrel that swings with the aim, recoils on the shot and holds a
-       charged pulse in its throat. Flat fills and rings only. */
-    function drawCannon() {
-      var x = cannon.x, y = cannon.y, g, i, a, dx, k, bay;
+    /* The cannon: one round turret standing on the arena floor, ~110 px wide.
+       Its upper half is the housing the barrel swings out of; its lower half is
+       the MAGAZINE — a segmented arc, one segment per pulse of the level's
+       rack, lit while that pulse is still in it — and the swivel cap at the
+       pivot reads the same count as a figure. The barrel recoils on the shot
+       and holds a charged pulse in its throat. Flat fills and rings only.
 
-      ctx.fillStyle = "#080e22";
-      ctx.beginPath();
-      ctx.moveTo(x - 30, y + 16); ctx.lineTo(x + 30, y + 16);
-      ctx.lineTo(x + 50, field.bottom); ctx.lineTo(x - 50, field.bottom);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = rgba(ARC, 0.28);
-      ctx.fillRect(x - 17, y + 26, 5, field.bottom - y - 26);
-      ctx.fillRect(x + 12, y + 26, 5, field.bottom - y - 26);
-      g = ctx.createLinearGradient(0, field.bottom - 20, 0, field.bottom + 4);
-      g.addColorStop(0, "#2c3c66"); g.addColorStop(1, "#0c1228");
-      ctx.fillStyle = g; rr(ctx, x - 62, field.bottom - 20, 124, 22, 8); ctx.fill();
+       The whole object stands above `Layout.foot` (field.bottom is cut there),
+       so the web round's foot bar never covers a piece of it. */
+    var capFont = "";
+    // The game's own face when the web build embedded one, the system stack
+    // otherwise (a playable ships no font). A getComputedStyle read, so once.
+    function readFont() {
+      var v = "", SYS_FONT = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+      try {
+        v = getComputedStyle(document.documentElement).getPropertyValue("--web-font") || "";
+      } catch (e) { v = ""; }
+      v = v.replace(/^\s+|\s+$/g, "");
+      capFont = "800 22px " + (v ? v + "," + SYS_FONT : SYS_FONT);
+    }
+
+    var CAN = {
+      dial: 48,                      // the turret's radius, centred on the pivot
+      plate: 54,                     // half-width of the plate it stands on
+      gauge: 36, gaugeW: 8,          // the magazine arc: radius, thickness
+      span: 150, gap: 5,             // degrees the arc covers, and between segments
+      cap: 20                        // the swivel cap carrying the figure
+    };
+
+    function drawCannon() {
+      var x = cannon.x, y = cannon.y, F = field.bottom, g, i, a, k, n, seg, a0;
+      var R = CAN.dial, D2R = Math.PI / 180;
+
+      // the plate the turret stands on, flush with the arena floor
+      g = ctx.createLinearGradient(0, F - 9, 0, F);
+      g.addColorStop(0, "#34477a"); g.addColorStop(1, "#0c1228");
+      ctx.fillStyle = g; rr(ctx, x - CAN.plate, F - 9, CAN.plate * 2, 9, 4.5); ctx.fill();
+      ctx.fillStyle = rgba(ARC, 0.35); ctx.fillRect(x - CAN.plate + 8, F - 8, CAN.plate * 2 - 16, 1.5);
+
+      // the housing: the upper half of the turret, behind the barrel
+      g = ctx.createLinearGradient(0, y - R, 0, y);
+      g.addColorStop(0, "#41588c"); g.addColorStop(0.55, "#1d2a4c"); g.addColorStop(1, "#0d1428");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, R, Math.PI, TAU); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = rgba(PULSE.core, 0.7); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, R - 1.5, Math.PI, TAU); ctx.stroke();
+      ctx.strokeStyle = "rgba(7,11,26,.75)"; ctx.lineWidth = 2.5;
+      for (i = 1; i < 12; i++) {                 // the traverse scale
+        a = Math.PI + i * Math.PI / 12;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * (R - 12), y + Math.sin(a) * (R - 12));
+        ctx.lineTo(x + Math.cos(a) * (R - 5), y + Math.sin(a) * (R - 5));
+        ctx.stroke();
+      }
 
       // the barrel, authored pointing up and swung onto the aim
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(aimA + Math.PI / 2);
-      ctx.translate(0, recoil * 14);
-      ctx.fillStyle = "rgba(5,9,24,.55)";
-      rr(ctx, -26, -34, 52, 52, 14); ctx.fill();
-      g = ctx.createLinearGradient(-22, 0, 22, 0);
+      ctx.translate(0, recoil * 10);
+      g = ctx.createLinearGradient(-15, 0, 15, 0);
       g.addColorStop(0, "#0c1426"); g.addColorStop(0.3, "#5f7ba8");
       g.addColorStop(0.52, "#a9c8ea"); g.addColorStop(0.78, "#33456c"); g.addColorStop(1, "#0f1628");
-      ctx.fillStyle = g; rr(ctx, -20, -92, 40, 110, 13); ctx.fill();
-      ctx.strokeStyle = "rgba(7,11,26,.85)"; ctx.lineWidth = 3;
-      rr(ctx, -20, -92, 40, 110, 13); ctx.stroke();
+      ctx.fillStyle = g; rr(ctx, -15, -70, 30, 82, 10); ctx.fill();
+      ctx.strokeStyle = "rgba(7,11,26,.85)"; ctx.lineWidth = 2.5;
+      rr(ctx, -15, -70, 30, 82, 10); ctx.stroke();
       ctx.fillStyle = "rgba(255,255,255,.28)";
-      rr(ctx, -13, -84, 6, 92, 3); ctx.fill();
+      rr(ctx, -10, -64, 4.5, 50, 2.25); ctx.fill();
       ctx.fillStyle = rgba(PULSE.core, queue > 0 ? 0.9 : 0.25);
-      rr(ctx, -22, -62, 44, 8, 4); ctx.fill();
-      rr(ctx, -22, -42, 44, 8, 4); ctx.fill();
-      rr(ctx, -22, -22, 44, 8, 4); ctx.fill();
-      g = ctx.createLinearGradient(-27, 0, 27, 0);
+      rr(ctx, -17, -50, 34, 6, 3); ctx.fill();
+      rr(ctx, -17, -36, 34, 6, 3); ctx.fill();
+      g = ctx.createLinearGradient(-20, 0, 20, 0);
       g.addColorStop(0, "#16203a"); g.addColorStop(0.48, "#d4e8ff"); g.addColorStop(1, "#16203a");
-      ctx.fillStyle = g; rr(ctx, -26, -110, 52, 26, 9); ctx.fill();
-      ctx.strokeStyle = "rgba(7,11,26,.8)"; ctx.lineWidth = 3;
-      rr(ctx, -26, -110, 52, 26, 9); ctx.stroke();
-      ctx.fillStyle = "#03060f"; rr(ctx, -13, -106, 26, 19, 6); ctx.fill();
+      ctx.fillStyle = g; rr(ctx, -20, -86, 40, 22, 8); ctx.fill();
+      ctx.strokeStyle = "rgba(7,11,26,.8)"; ctx.lineWidth = 2.5;
+      rr(ctx, -20, -86, 40, 22, 8); ctx.stroke();
+      ctx.fillStyle = "#03060f"; rr(ctx, -10, -83, 20, 16, 5); ctx.fill();
       k = queue > 0 ? 0.55 + 0.45 * Math.sin(clock * 5) : 0;
       for (i = 3; i >= 1; i--) {
         ctx.fillStyle = rgba(PULSE.core, 0.15 * i * k);
-        ctx.beginPath(); ctx.arc(0, -97, 6 + i * 6, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -75, 5 + i * 5, 0, TAU); ctx.fill();
       }
       if (queue > 0) {
         ctx.fillStyle = rgba(PULSE.light, 0.5 + 0.5 * k);
-        ctx.beginPath(); ctx.arc(0, -97, 7.5, 0, TAU); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -75, 6, 0, TAU); ctx.fill();
       }
       ctx.restore();
 
-      // the shoulder the barrel turns in, over the tube's tail
-      g = ctx.createLinearGradient(0, y - 36, 0, y + 18);
-      g.addColorStop(0, "#a9c8ea"); g.addColorStop(0.5, "#334768"); g.addColorStop(1, "#111a2f");
+      /* the magazine: the lower half of the turret, drawn OVER the barrel so
+         its tail never shows mid-swing, with one segment per pulse of the
+         rack. The rack empties from the right, so the lit run always starts
+         at the left end and its length is the count. */
+      g = ctx.createLinearGradient(0, y, 0, y + R);
+      g.addColorStop(0, "#1a2646"); g.addColorStop(1, "#070c1c");
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.arc(x, y, 36, Math.PI, TAU); ctx.closePath(); ctx.fill();
-      ctx.fillRect(x - 36, y, 72, 10);
-      ctx.strokeStyle = rgba(PULSE.core, 0.7); ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.arc(x, y, 36, Math.PI, TAU); ctx.stroke();
-      ctx.strokeStyle = "rgba(7,11,26,.7)"; ctx.lineWidth = 3;
-      for (i = 0; i <= 8; i++) {
-        a = Math.PI + i * Math.PI / 8;
-        ctx.beginPath();
-        ctx.moveTo(x + Math.cos(a) * 27, y + Math.sin(a) * 27);
-        ctx.lineTo(x + Math.cos(a) * 35, y + Math.sin(a) * 35);
-        ctx.stroke();
-      }
-
-      /* the deck and its magazine, drawn LAST: the base has to hide the pivot,
-         or the barrel's tail shows through it mid-swing. One bead per pulse
-         still in the rack. */
-      g = ctx.createLinearGradient(0, y + 2, 0, y + 40);
-      g.addColorStop(0, "#5f78b5"); g.addColorStop(0.45, "#31446c"); g.addColorStop(1, "#10182c");
-      ctx.fillStyle = g; rr(ctx, x - 80, y + 2, 160, 38, 13); ctx.fill();
-      ctx.strokeStyle = "rgba(7,11,26,.7)"; ctx.lineWidth = 3;
-      rr(ctx, x - 80, y + 2, 160, 38, 13); ctx.stroke();
-      ctx.fillStyle = "rgba(255,255,255,.15)"; rr(ctx, x - 72, y + 6, 144, 7, 4); ctx.fill();
-      bay = C.startBalls;
-      ctx.fillStyle = "rgba(3,7,20,.75)";
-      rr(ctx, x - bay * 9 - 7, y + 18, bay * 18 + 14, 18, 9); ctx.fill();
-      for (i = 0; i < bay; i++) {
-        dx = x + (i - (bay - 1) / 2) * 18;
+      ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(7,11,26,.85)"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(x, y, R - 1.25, 0, Math.PI); ctx.stroke();
+      ctx.strokeStyle = "rgba(126,249,255,.18)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x - R + 3, y + 0.75); ctx.lineTo(x + R - 3, y + 0.75); ctx.stroke();
+      n = Math.max(1, C.startBalls);
+      seg = (CAN.span - CAN.gap * (n - 1)) / n;
+      a0 = 90 + CAN.span / 2;                    // the left end, going clockwise
+      ctx.lineCap = "butt";
+      for (i = 0; i < n; i++) {
+        a = (a0 - i * (seg + CAN.gap)) * D2R;    // the segment's far end...
         if (i < queue) {
-          ctx.fillStyle = rgba(PULSE.core, 0.35);
-          ctx.beginPath(); ctx.arc(dx, y + 27, 8, 0, TAU); ctx.fill();
-          ctx.fillStyle = PULSE.core;
-          ctx.beginPath(); ctx.arc(dx, y + 27, 5.6, 0, TAU); ctx.fill();
-          ctx.fillStyle = rgba(PULSE.light, 0.9);
-          ctx.beginPath(); ctx.arc(dx - 1.7, y + 25.4, 2.3, 0, TAU); ctx.fill();
+          ctx.strokeStyle = rgba(PULSE.core, 0.28); ctx.lineWidth = CAN.gaugeW + 6;
+          ctx.beginPath(); ctx.arc(x, y, CAN.gauge, a - seg * D2R, a); ctx.stroke();
+          ctx.strokeStyle = PULSE.core; ctx.lineWidth = CAN.gaugeW;
+          ctx.beginPath(); ctx.arc(x, y, CAN.gauge, a - seg * D2R, a); ctx.stroke();
+          ctx.strokeStyle = rgba(PULSE.light, 0.9); ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(x, y, CAN.gauge - 1.5, a - seg * D2R, a); ctx.stroke();
         } else {
-          ctx.strokeStyle = "rgba(126,249,255,.22)"; ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(dx, y + 27, 5.6, 0, TAU); ctx.stroke();
+          ctx.strokeStyle = "rgba(126,249,255,.2)"; ctx.lineWidth = CAN.gaugeW;
+          ctx.beginPath(); ctx.arc(x, y, CAN.gauge, a - seg * D2R, a); ctx.stroke();
         }
       }
+
+      // the swivel cap, and the count set in it
+      g = ctx.createLinearGradient(0, y - CAN.cap, 0, y + CAN.cap);
+      g.addColorStop(0, "#d4e8ff"); g.addColorStop(0.5, "#4a6390"); g.addColorStop(1, "#141d36");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, CAN.cap, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#050a1a";
+      ctx.beginPath(); ctx.arc(x, y, CAN.cap - 3.5, 0, TAU); ctx.fill();
+      ctx.strokeStyle = rgba(queue > 0 ? PULSE.core : DYING, 0.55); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, CAN.cap - 3.5, 0, TAU); ctx.stroke();
+      if (!capFont) readFont();
+      ctx.font = capFont;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = queue > 0 ? PULSE.light : DYING;
+      ctx.fillText(String(queue), x, y + 1);
     }
 
     /* A pulse is a comet with a charge gauge wrapped round it: the ring closes
@@ -3053,11 +3092,34 @@
       });
     }
 
+    /* Every picture of the guide is drawn on its page's own dice: the round's
+       generators (a maze, a rock's skin) roll Math.random, and a page that
+       drew something new each time it was opened would not show the same
+       thing twice. Seeded from the page id, put back after the call. */
+    function seeded(book) {
+      for (var c = 0; c < book.length; c++) {
+        for (var i = 0; i < book[c].pages.length; i++) {
+          (function (pg) {
+            var paint = pg.pic;
+            if (typeof paint !== "function") return;
+            pg.pic = function () {
+              var rnd = Math.random, h = 7, k;
+              for (k = 0; k < pg.id.length; k++) h = (h * 31 + pg.id.charCodeAt(k)) % 2147483629;
+              h += 1;
+              Math.random = function () { h = (h * 16807) % 2147483647; return (h - 1) / 2147483646; };
+              try { return paint.apply(this, arguments); } finally { Math.random = rnd; }
+            };
+          })(book[c].pages[i]);
+        }
+      }
+      return book;
+    }
+
     var guide = {
       chapters: function () {
         var names = [Lang.t("Dark maze"), Lang.t("False exits"), Lang.t("Crystal lock"),
                      Lang.t("Live fence"), Lang.t("Full surge")];
-        return [
+        return seeded([
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "goal", title: Lang.t("Find the way out"), pic: boardPic, lines: [
               Lang.t("The maze is lit for a moment, then everything goes dark."),
@@ -3108,7 +3170,7 @@
             { id: "surge", title: names[4], lv: 23, pic: surgePic, lines: [
               Lang.t("Spot the true exit while the maze is lit, then break the crystal before you go for it.") ] }
           ] }
-        ];
+        ]);
       }
     };
 

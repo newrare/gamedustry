@@ -481,13 +481,13 @@
     /* `name` and `teach` are the notice a special says the first time it
        lands (learnSpec); the key is also the id of its page in the guide. */
     var SPEC = {
-      charge: { bit: CHARGE, tier: 1, name: "Charge bead", teach: "Pop a charge bead's ray to clear its ring" },
+      charge: { bit: CHARGE, tier: 1, name: "Charge bead", teach: "Pop a charge bead to clear its ring" },
       fire:   { bit: FIRE,   tier: 1, name: "Fire bead",   teach: "Pops both neighbouring rays too" },
       laser:  { bit: LASER,  tier: 1, name: "Laser bead",  teach: "Pops the opposite ray too" },
       score:  { bit: SCORE,  tier: 1, name: "Score bead",  teach: "Multiplies your rays for a few seconds" },
       slow:   { bit: SLOW,   tier: 1, name: "Slow bead",   teach: "Slows the ink for a few seconds" },
       nova:   { bit: NOVA,   tier: 2, name: "Nova bead",   teach: "Matches any colour, like a joker" },
-      bomb:   { bit: BOMB,   tier: 2, name: "Bomb bead",   teach: "Pop a bomb bead's ray to clear the dial" },
+      bomb:   { bit: BOMB,   tier: 2, name: "Bomb bead",   teach: "Pop a bomb bead to clear the dial" },
       ice:    { bit: ICE,    tier: 0, name: "Frozen bead", teach: "Popping a frozen bead freezes its ring" }
     };
 
@@ -3083,6 +3083,13 @@
         q = slotXY(rs, i, k);
         drawBall(rs[i].slots[k], i, q.x, q.y, 1, 1);
       }
+      // beads a move is about to take, ringed: a guide picture's "these go"
+      for (i = 0; o.marks && i < o.marks.length; i++) {
+        q = slotXY(rs, o.marks[i][0], o.marks[i][1]);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = rgba(o.markHex || "#ffffff", 0.95);
+        ctx.beginPath(); ctx.arc(q.x, q.y, rs[o.marks[i][0]].ballR * 1.32, 0, TAU); ctx.stroke();
+      }
       ctx.globalCompositeOperation = "lighter";
       for (i = 0; o.armed && i < o.armed.length; i++) drawArmed(o.armed[i], 0.5);
       for (i = 0; o.flares && i < o.flares.length; i++) drawFlare(o.flares[i]);
@@ -3168,27 +3175,6 @@
       }
     }
 
-    /* A band: its painted hall, and the dial standing in it in that band's
-       machine and first bead style — the room the round is played in. */
-    function bandPic(lv) {
-      var bio = bioAt(lv), img = typeof ArtImages !== "undefined" ? ArtImages[bio.scene] : null;
-      return paintPic(PW, PH, function () {
-        if (img && img.width) {
-          var k = PW / img.width, h = img.height * k;
-          ctx.drawImage(img, 0, (PH - h) / 2, PW, h);
-        } else {
-          ctx.fillStyle = bio.sky[1]; ctx.fillRect(0, 0, PW, PH);
-        }
-        // the well the round sits in (buildBg), so the beads read on the hall
-        var well = ctx.createRadialGradient(PW / 2, PH / 2, 12, PW / 2, PH / 2, 230);
-        well.addColorStop(0, "rgba(5,3,16,.74)");
-        well.addColorStop(0.58, "rgba(5,3,16,.46)");
-        well.addColorStop(1, "rgba(5,3,16,0)");
-        ctx.fillStyle = well; ctx.fillRect(0, 0, PW, PH);
-        lendDial({ x: PW / 2, y: PH / 2, unit: 128, lv: lv }, function (rs) { drawDial(rs, {}); });
-      });
-    }
-
     // The five hues, a bead each.
     function huesPic() {
       return paintPic(PW, 150, function () {
@@ -3204,10 +3190,6 @@
     function specPage(key, lv, title, v, edit, lines, rows, H) {
       return { id: key, title: Lang.t(title), lv: lv, rows: rows,
                pic: function () { return specPic(lv, v, edit, H); }, lines: lines };
-    }
-    function bandPage(id, lv, title, lines) {
-      return { id: id, title: Lang.t(title), lv: lv, lines: lines,
-               pic: function () { return bandPic(lv); } };
     }
 
     var guide = {
@@ -3229,8 +3211,8 @@
               T("Pop several rays in one move and everything the move pays is multiplied.") ] },
             { id: "chain", title: T("The chain"), pic: function () { return hubPic({ combo: 4, charge: 1 }); },
               lines: [
-              T("Each ray raises the chain, up to x8."),
-              T("Pop the next ray within a second, or the chain falls back to zero.") ] },
+              T("Each ray raises the combo, up to x8."),
+              T("Pop the next ray within a second, or the combo falls back to zero.") ] },
             { id: "meter", title: T("Earning a special"), pic: function () { return hubPic({ combo: 0, charge: 2 }); },
               lines: [
               T("Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one."),
@@ -3239,10 +3221,10 @@
           { key: "eclipse", label: T("The eclipse"), pages: [
             { id: "eclipse", title: T("The eclipse"), pic: function () { return dialPic(1, { ink: 4.5 }); },
               rows: [
-              [T("One ray"), T("the ink stops 2 s")],
-              [T("Two rays at once"), T("0.8 ray won back")],
-              [T("Three rays or more"), T("2 rays won back")],
-              [T("A whole ring emptied"), T("3 rays won back")] ], lines: [
+              [T("One ray"), T("the ink stops for a few seconds")],
+              [T("Two rays at once"), T("Ray won back")],
+              [T("Three rays or more"), T("Two rays won back")],
+              [T("A whole ring emptied"), T("Three rays won back")] ], lines: [
               T("Ink rises over the dial from the bottom. A ray under the ink can no longer pop."),
               T("Reach the level's score before the ink covers every ray.") ] },
             { id: "inklevel", title: T("The ink speeds up"), pic: function () { return dialPic(1, { ink: 8 }); },
@@ -3252,8 +3234,6 @@
               T("The dial starts with four colours. The fifth joins once the ink reaches level 10.") ] }
           ] },
           { key: "atelier", label: T("Atelier"), pages: [
-            bandPage("atelier", 1, "Atelier", [
-              T("Levels 1 to 6. The charge bead arrives at level 1, the nova at level 4.") ]),
             specPage("charge", 1, "Charge bead", 1 | CHARGE, function (rs) {
               var k;
               for (k = -3; k <= 3; k++) rs[2].slots[mod(k, N)] = null;
@@ -3264,19 +3244,20 @@
             }, [
               T("Pop a charge bead's ray and a wave takes every bead on its ring."),
               T("The more beads a wave takes, the more each one pays.") ]),
+            /* Not caught mid-wave like the others: a nova's wave is one wide
+               ring, and frozen it reads as nothing. The beat BEFORE it is the
+               rule itself — the nova standing in for the third bead of a
+               lined-up ray, and every bead of that colour ringed: these go. */
             specPage("nova", 4, "Nova bead", NOVA, function (rs) {
-              var q = slotXY(rs, 0, 0);
-              emptyRay(rs, 0);
-              takeWithin(rs, q.x, q.y, 110, 0);
-              return { nova: { x: q.x, y: q.y, t: 0.1, dur: 0.6, hex: D.colours[0] },
-                       flares: [flareOf(0, D.colours[0])] };
+              var i, k, marks = [];
+              rs[0].slots[0] = 0; rs[1].slots[0] = NOVA; rs[2].slots[0] = 0;
+              for (i = 0; i < 3; i++) for (k = 1; k < N; k++) if (rs[i].slots[k] === 0) marks.push([i, k]);
+              return { armed: [0], marks: marks, markHex: D.colours[0] };
             }, [
               T("Like a joker, a nova bead matches any colour on its ray."),
               T("When a nova bead goes off, every bead of its ray's colour leaves the dial.") ])
           ] },
           { key: "lagoon", label: T("Lagoon"), pages: [
-            bandPage("lagoon", 7, "Lagoon", [
-              T("Levels 7 to 12. The bomb arrives at level 7, the score bead at level 10.") ]),
             specPage("bomb", 7, "Bomb bead", 2 | BOMB, function (rs) {
               var q = slotXY(rs, 0, 0);
               emptyRay(rs, 0);
@@ -3292,8 +3273,6 @@
               T("The score bead never multiplies what a wave takes.") ], null, 310)
           ] },
           { key: "reliquary", label: T("Reliquary"), pages: [
-            bandPage("reliquary", 13, "Reliquary", [
-              T("Levels 13 to 18. The fire bead arrives at level 13, the laser at level 15.") ]),
             specPage("fire", 13, "Fire bead", 1 | FIRE, function (rs) {
               emptyRay(rs, 0); emptyRay(rs, -1); emptyRay(rs, 1);
               return { flares: [flareOf(-1, "#ff8a3d"), flareOf(1, "#ff8a3d"), flareOf(0, D.colours[1])] };
@@ -3308,17 +3287,13 @@
               T("Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too.") ])
           ] },
           { key: "sumi", label: T("Sumi"), pages: [
-            bandPage("sumi", 19, "Sumi", [
-              T("Levels 19 to 24. From level 19, some of the new beads arrive frozen.") ]),
             specPage("ice", 19, "Frozen bead", 4 | ICE, function (rs) {
               return { cold: 1 };
             }, [
               T("A frozen bead pops like any bead, but then its ring freezes and cannot turn."),
-              T("Pop two rays to thaw the ring, or wait 8 s.") ])
+              T("Pop two rays to thaw the ring, or wait 8 seconds.") ])
           ] },
           { key: "circuit", label: T("Circuit"), pages: [
-            bandPage("circuit", 25, "Circuit", [
-              T("Levels 25 to 30. The slow bead arrives at level 25.") ]),
             specPage("slow", 25, "Slow bead", 4 | SLOW, function () {
               return { ink: 5, slow: true };
             }, [

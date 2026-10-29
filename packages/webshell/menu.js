@@ -149,7 +149,7 @@
       best: "Best score", noScore: "No round played yet.",
       soonTitle: "Online rankings",
       soonScores: "Coming in a future update — your scores against players from all over the world.",
-      rankRecords: "Records", rankLevels: "Levels",
+      rankRecords: "Records", rankLevels: "Levels", rankModes: "Modes",
       rankPlayer: "Level", rankXpAll: "{n} xp in all", rankXpNext: "{n} xp to level {l}",
       rankStars: "Stars", rankStickers: "Stickers", rankCleared: "Levels cleared",
       rankSum: "Total score", rankRounds: "{n} rounds played", rankRound: "1 round played",
@@ -174,9 +174,9 @@
       best: "Meilleur score", noScore: "Aucune partie jouée.",
       soonTitle: "Classements en ligne",
       soonScores: "Prévus dans une prochaine mise à jour — tes scores face aux joueurs du monde entier.",
-      rankRecords: "Records", rankLevels: "Stages",
+      rankRecords: "Records", rankLevels: "Stages", rankModes: "Modes",
       rankPlayer: "Niveau", rankXpAll: "{n} xp au total", rankXpNext: "{n} xp avant le niveau {l}",
-      rankStars: "Etoiles", rankStickers: "Stickers", rankCleared: "Stages réussis",
+      rankStars: "Étoiles", rankStickers: "Stickers", rankCleared: "Stages réussis",
       rankSum: "Score cumulé", rankRounds: "{n} parties jouées", rankRound: "1 partie jouée",
       rankLevel: "Stage", rankBest: "Record", rankTries: "Essais",
       rankTuto: "Comment jouer", rankTutoSeen: "Lu", rankTutoNew: "Pas encore lu",
@@ -431,6 +431,9 @@
      drawn through Icon (which is canvas-only). Stroked with currentColor, so a
      row's colour is the only thing that dresses them. */
   var ICON = {
+    /* the ranking's MODES tab, under the painted medal (CONFIG.shellArt) —
+       this stroke is its fallback (assets/motor/lucide/medal.svg) */
+    medal: '<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/>',
     back:  '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
     next:  '<path d="m12 5 7 7-7 7"/><path d="M5 12h14"/>',
     music: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
@@ -473,6 +476,10 @@
        opens, and its contents */
     book:   '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
     list:   '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+    /* and its previous / next: drawn, so they sit in the middle of their
+       button whatever the game's face does with a text glyph's baseline */
+    chevronLeft:  '<path d="m15 18-6-6 6-6"/>',
+    chevronRight: '<path d="m9 18 6-6-6-6"/>',
     /* the ranking's own three: the podium's cup (the painted trophy where
        the build has one), the crown on the player's best level, and the
        rocket of a feature on its way */
@@ -501,6 +508,8 @@
        wallet, behind one chip */
     sword:  '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
     skull:  '<path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/>',
+    /* the barracks' register: a card handed over in a surrender */
+    flag:   '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/>',
     /* the barracks' defense: the button that arms it, and the arrows under
        the grid that say which side a raid comes from */
     shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
@@ -1227,9 +1236,16 @@
      figure every build has. */
   var rankBox, rankBody, RK = null;
 
+  /* A game with modes besides its climb publishes their records
+     (`Game.records()`, below), and they are a page of their own: RECORDS is
+     one screen with no room left, and a mode is not a level of the board. */
+  function moded() { return !!(W.Game && W.Game.records); }
+
   function rankTabs() {
-    return [{ key: "rec", label: COPY.rankRecords, icon: "trophy" },
-            { key: "lv", label: COPY.rankLevels, icon: "star" }];
+    var tabs = [{ key: "rec", label: COPY.rankRecords, icon: "trophy" }];
+    if (levelled()) tabs.push({ key: "lv", label: COPY.rankLevels, icon: "star" });
+    if (moded()) tabs.push({ key: "md", label: COPY.rankModes, icon: "medal" });
+    return tabs;
   }
 
   function buildRanking() {
@@ -1241,7 +1257,7 @@
     RK = VW.sheet({ id: "web-rank", tag: "section", body: rankBody, home: COPY.menu });
     rankBox = RK.box;
     RK.tab = "rec";
-    if (levelled()) RK.pages(rankTabs(), rankPick);
+    if (levelled() || moded()) RK.pages(rankTabs(), rankPick);
   }
 
   function rankPick(key) {
@@ -1304,7 +1320,7 @@
 
   function paintRanking() {
     RK.setHead(COPY.scoresTitle, "");
-    if (levelled()) {
+    if (levelled() || moded()) {
       RK.relabel(rankTabs());
       RK.light(RK.tab);
     }
@@ -1312,9 +1328,10 @@
     rankBody.classList.toggle("rk-lv", RK.tab === "lv");
     /* RECORDS is ONE SCREEN and never scrolls (view.js, `fixed`): it is a
        summary, and a summary read half at a time is not one. */
-    rankBody.classList.toggle("fixed", RK.tab !== "lv");
+    rankBody.classList.toggle("fixed", RK.tab === "rec");
     var counters = [];
     if (RK.tab === "lv" && levelled()) paintRankLevels(counters);
+    else if (RK.tab === "md" && moded()) paintRankModes(counters);
     else paintRankRecords(counters);
     countUp(counters);
   }
@@ -1408,6 +1425,32 @@
       rankBody.appendChild(grid);
     }
 
+    rankBody.appendChild(soonNote());
+  }
+
+  /* MODES: one card a mode, out of the game's own `Game.records()` →
+     `[{ key, title, label, value, figure, sub }]`, every string already
+     through Lang.t. `value` is what the card writes (a score, a time), and a
+     number in `figure` is counted up to like every figure of this sheet; a
+     mode never played has neither and says so with `sub`. */
+  function paintRankModes(counters) {
+    var list = W.Game.records() || [];
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var card = el("div", "rk-mode rk-in k-" + (r.key || i));
+      card.style.setProperty("--i", i + 1);
+      card.appendChild(el("span", "rk-md-t", up(r.title || "")));
+      var fig = el("span", "rk-md-fig");
+      if (typeof r.figure === "number") {
+        var v = counted("", r.figure);
+        fig.appendChild(v);
+        counters.push(v);
+      } else fig.appendChild(el("b", "", r.value != null && r.value !== "" ? String(r.value) : "–"));
+      card.appendChild(fig);
+      if (r.label) card.appendChild(el("span", "rk-md-l", up(r.label)));
+      if (r.sub) card.appendChild(el("span", "rk-md-s", r.sub));
+      rankBody.appendChild(card);
+    }
     rankBody.appendChild(soonNote());
   }
 
@@ -1534,7 +1577,13 @@
 
      THE THIRD CONTROL IS THE WAY OUT, and since there are several ways out
      — the round again, home, the map — its pictogram is the MENU and not one
-     of the destinations: the card it opens (`openLeave`) lists the three. */
+     of the destinations: the card it opens (`openLeave`) lists the three.
+
+     THE FOURTH IS THE GUIDE, between the way out and help, on a round only:
+     the book that opens every rule of the game on its contents
+     (packages/webshell/guide.js), so the round's foot bar reads the same in
+     every game — menu, guide, help, options (view.css, THE FOOT BAR). A game
+     that publishes no guide has no book there. */
   function buildControls() {
     VW.corner([
       { name: "help",    icon: "help", label: COPY.help,    on: openHelp },
@@ -1545,11 +1594,10 @@
 
   function roundControl(on) {
     if (!on) { VW.cornerExtra(null); return; }
-    VW.cornerExtra({
-      icon: "menu",
-      label: COPY.menu,
-      on: openLeave
-    });
+    var items = [{ name: "menu", icon: "menu", label: COPY.menu, on: openLeave }];
+    if (GD()) items.push({ name: "guide", icon: "book", label: GD().label(),
+                           on: function () { GD().open(); } });
+    VW.cornerExtra(items);
   }
 
   function labelControls() {
@@ -1605,7 +1653,7 @@
      tears the running round down itself, and writes no score for it. */
   function replay() {
     var n = levelled() ? LV.current() : 0;
-    if (n) { LV.play(n); return; }
+    if (n) { LV.replay(n); return; }
     W.start();
   }
 
@@ -1642,6 +1690,7 @@
     if (metaed()) { MT.setLang(code); AL.setLang(code); DL.setLang(code); }
     if (armied()) AR().setLang(code);
     if (codexed()) CX().setLang(code);
+    if (window.__LOADOUT__ && window.__LOADOUT__.active()) window.__LOADOUT__.setLang(code);
     if (GD()) GD().setLang(code);
     for (var i = 0; i < items.length; i++)
       items[i].node.textContent = (items[i].mt && metaed() ? MT.text(items[i].mt) : null) ||
@@ -1937,6 +1986,8 @@
     }
     /* The codex needs no wallet: a game's cards are read with or without one. */
     if (codexed()) CX().mount({ el: el, icon: icon, art: artImg, lang: LANG });
+    /* The loadout card needs the same: the language and the pictograms. */
+    if (window.__LOADOUT__ && window.__LOADOUT__.active()) window.__LOADOUT__.mount({ el: el, icon: icon, art: artImg, lang: LANG });
     /* The guide needs nothing but the language and the pictograms. */
     if (GD()) GD().mount({ el: el, icon: icon, art: artImg, lang: LANG,
                            text: function (k) { return COPY[k]; } });
@@ -2085,6 +2136,18 @@
        keys — keeps working on nodes that are still there. */
     node: function () { return menu; },
     text: function (k) { return COPY[k]; },
+    /* A MODE STARTED FROM A HOUSE (village.js, `"role": "mode"`): the same
+       three steps as the title screen's mode entry — arm the key, drop the
+       level the last round was armed with, start — and its word is the
+       entry's, `mode<Key>` in `web.copy`. A key the manifest does not list
+       starts nothing. */
+    startMode: function (name) {
+      if (!name || MODES.indexOf(name) < 0) return;
+      armMode(name);
+      if (levelled()) LV.clear();
+      W.start();
+    },
+    modeLabel: function (name) { return name ? (COPY[modeCopyKey(name)] || name) : ""; },
     /* One switch is read by a layer below rather than applied to the motor —
        the village's labels — and it asks here rather than opening the Store key
        a second time: there is one settings object and one place it is read. */
