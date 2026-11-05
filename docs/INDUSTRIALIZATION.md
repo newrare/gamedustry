@@ -676,7 +676,8 @@ building tools that cannot exist.
 - Portal submissions (Newgrounds, CrazyGames, Poki) — uploads and QA rounds.
 - Delivering the playable file to the ad network's console.
 - Choosing which moments to capture: `shoot-screens.mjs` aims each shot at a
-  progression of the round and knows how far its scripted pilot can survive,
+  progression of the round, one capture per stage over at least two biomes,
+  and knows how far its scripted pilot can survive,
   but not which frame sells the game. Play also imposes a 512×512 icon and a
   1024×500 feature graphic.
 - The content itself: design, tagline, icon artwork, translations.

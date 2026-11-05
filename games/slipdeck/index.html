@@ -1850,6 +1850,11 @@
   }
   .sd-xrow canvas { flex:none; display:block; }
   .sd-xrow .sd-hfig { flex:none; }
+  /* the score page's rows: the term, then what it means */
+  .sd-xterm { display:flex; flex-direction:column; gap:2px; min-width:0; text-align:left;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .sd-xterm b { font-size:22px; font-weight:900; line-height:1.15; color:#f5c451; }
+  .sd-xterm em { font-style:normal; font-size:22px; font-weight:600; line-height:1.25; color:#e4f1ea; }
   .sd-xrow em {
     font-style:normal; font-size:22px; font-weight:700; line-height:1.25; color:#e4f1ea; text-align:left;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -1928,6 +1933,8 @@
   .sd-jfam { position:absolute; top:14px; left:0; right:0; font-size:20px; letter-spacing:2px; color:var(--c); }
   .sd-jart { position:relative; width:100%; height:132px; flex:none; display:grid; place-items:center; }
   .sd-jart img { max-width:180px; max-height:132px; object-fit:contain; }
+  .sd-jc.long .sd-jart { height:100px; }
+  .sd-jc.long .sd-jart img { max-height:100px; }
   /* a joker whose painted piece is not cut yet wears its sign */
   .sd-jsign {
     font-size:110px; font-weight:900; line-height:1; color:var(--c);
@@ -1938,6 +1945,14 @@
     text-shadow:0 2px 0 #0b0720; }
   .sd-jtext { position:relative; font-size:22px; line-height:1.2; font-weight:600; color:#ddd6f6;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  /* a joker line's figures, in the count's colours (signHtml): the sign
+     says what it does (+ green, × orange), the number which chip it feeds */
+  .sd-jtext .sd-sg, .sd-rtx .sd-sg, .sd-jtext .sd-sv, .sd-rtx .sd-sv {
+    font:inherit; font-weight:900; letter-spacing:0; }
+  .sd-jtext .sd-sg.p, .sd-rtx .sd-sg.p { color:#5be37a; }
+  .sd-jtext .sd-sg.x, .sd-rtx .sd-sg.x { color:#ff9f1c; }
+  .sd-jtext .sd-sv.c, .sd-rtx .sd-sv.c { color:#4fa8ff; }
+  .sd-jtext .sd-sv.m, .sd-rtx .sd-sv.m { color:#ff4a5e; }
   .sd-jrar { position:absolute; left:0; right:0; bottom:14px; display:flex; justify-content:center; }
   .sd-jrar span { padding:5px 16px 4px; border-radius:999px; background:var(--r); color:#140f26;
     font-size:20px; letter-spacing:2px; }
@@ -2155,6 +2170,10 @@
                            // 4 gives the bench pilot the jokers per run the
                            // old stream dealt it (~3.5 on levels 4-19)
       curseRate:   0.05,   // chance a dealt card is cursed (once unlocked)
+      curseMult:   10,     // what a curse BROKEN pays: a cursed card that is
+                           // part of the poker hand adds this to the multiplier
+                           // (one left out busts the hand; binned, it costs two
+                           // bins, or gives one back with the Exorcist)
       veilRate:    0.05,   // chance a dealt card hides its suit (once unlocked)
       enhanceRate: 0.10,   // chance a dealt card is gold, glass, wild or lucky
       tallyStep:   0.42,   // seconds between two throws of a hand's count
@@ -2273,7 +2292,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "1.11.20",
+    version: "1.12.5",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2466,11 +2485,31 @@
       var r = canvas.getBoundingClientRect();          // accounts for the scale
       return { x: (cx - r.left) / r.width * view.w, y: (cy - r.top) / r.height * view.h };
     }
+    function send(type, p, e) {
+      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+    }
+    /* ONE FINGER, unless the game asks for more. The single-touch path is
+       the one every game was written against and it is kept as it was: the
+       point is the first touch still on the glass. A game that sets
+       `CONFIG.multiTouch = true` gets every finger instead, each event
+       carrying its own `p.id` (the touch's identifier, "mouse" for the
+       mouse) and read out of `changedTouches`, so a thumb held on a dial
+       and a second finger tapping a button are two gestures
+       (games/parrynormal). */
     function emit(type, e) {
+      if (CONFIG.multiTouch && e.changedTouches) {
+        for (var j = 0; j < e.changedTouches.length; j++) {
+          var c = e.changedTouches[j], q = toDesign(c.clientX, c.clientY);
+          q.id = c.identifier;
+          send(type, q, e);
+        }
+        return;
+      }
       var t = (e.touches && e.touches[0]) ? e.touches[0]
             : ((e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : e);
       var p = toDesign(t.clientX, t.clientY);
-      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+      if (CONFIG.multiTouch) p.id = "mouse";
+      send(type, p, e);
     }
     canvas.addEventListener("mousedown", function (e) { emit("down", e); });
     canvas.addEventListener("mousemove", function (e) { emit("move", e); });
@@ -3377,7 +3416,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|des|ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses|notre|nos|votre|vos|leur|leurs|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })
@@ -6501,7 +6540,7 @@
        re-read on every reset, so the web target can lerp them before a round
        starts and a playable reads the same numbers it always did. */
     var HAND_SIZE, DECK_SIZE, CHUTE_DEPTH, SHOE_BIAS, LIVES, SLOTS,
-        PICK_GAUGE, CURSE_RATE, VEIL_RATE, ENHANCE_RATE, TALLY_STEP, POT_ON, STAGE;
+        PICK_GAUGE, CURSE_RATE, CURSE_MULT, VEIL_RATE, ENHANCE_RATE, TALLY_STEP, POT_ON, STAGE;
     function readTunables() {
       var P = CONFIG.play;
       HAND_SIZE    = P.handSize;
@@ -6512,6 +6551,7 @@
       SLOTS        = P.jokerSlots;
       PICK_GAUGE   = P.pickGauge;
       CURSE_RATE   = P.curseRate;
+      CURSE_MULT   = P.curseMult;
       VEIL_RATE    = P.veilRate;
       ENHANCE_RATE = P.enhanceRate;
       TALLY_STEP   = P.tallyStep;
@@ -6550,10 +6590,13 @@
     var BIN_COL = "#ff4a5e", KEEP_COL = "#3ddc97", GOLD = "#f5c451", CYAN = "#7ee8c4";
     var CHIP_COL = "#4fa8ff", MULT_COL = "#ff4a5e";
     var CHIP_BOX = "#2f6fc4", MULT_BOX = "#c42f48";   // the hand's worth: blue chips, red mult
-    /* A ×mult is not a +mult: it MULTIPLIES the red chip. It wears its own
-       colour and its own shape everywhere — an orange burst, never a pill —
-       so "this one doubles" reads before a figure is. */
+    /* A ×mult is not a +mult: it MULTIPLIES the red chip. The body says
+       WHICH chip — blue for the chips, red for the multiplier, a burst for a
+       ×, a pill for a + — and the SIGN says what it does to it: a + in green,
+       a × in orange, everywhere a figure is drawn (signText, and signHtml in
+       the DOM), so "this one adds" and "this one boosts" read apart. */
     var XMULT_COL = "#ff9f1c", XMULT_BOX = "#e8590c";
+    var PLUS_COL = "#5be37a";
 
     /* --- card modifiers ---------------------------------------------------
        A dealt card may carry ONE of: an enhancement (mod), a curse, a veil.
@@ -6562,6 +6605,20 @@
     var MOD_NAME = { gold:"Gold", glass:"Glass", wild:"Wild", lucky:"Lucky" };
     var MOD_COL  = { gold:"#f5c451", glass:"#8fd8ff", wild:"#ff7ad9", lucky:"#42e8b0" };
     var CURSE_COL = "#b98cff", VEIL_COL = "#9aa8a0";
+    /* The whole face of a special card wears its kind, top to bottom, so a
+       gold, a glass or a wild card is told from across the table and not
+       only by its corner mark. `bg` is the face, `ink` the black suits' ink
+       then the red suits': on a deep face the red suits read pink and the
+       black ones white, so the two colours stay apart. */
+    var FACE = {
+      plain: { bg:["#fbf7ec", "#ece2c9"], ink:[INK_BLACK, INK_RED] },
+      gold:  { bg:["#ffe066", "#f2b220", "#c98306"], ink:["#2a1a02", "#9c0f1f"] },
+      glass: { bg:["#4fb3f0", "#1d6fb8", "#0f3b6e"], ink:["#f4fbff", "#ffc2cc"] },
+      wild:  { bg:["#e0279e", "#8a35d6", "#1d8fd8"], ink:["#ffffff", "#ffd0e4"] },
+      lucky: { bg:["#33c97a", "#16864b", "#0a4a2a"], ink:["#f2fff7", "#ffc9d0"] },
+      veil:  { bg:["#7a8781", "#46524d", "#2a312e"], ink:["#d9e2de", "#d9e2de"] },
+      curse: { bg:["#24152f", "#24152f"], ink:["#dcc2f7", "#dcc2f7"] }
+    };
 
     /* rank value: 2..10, J 11, Q 12, K 13, A 14 */
     function rvOf(r) { return r === 0 ? 14 : r + 1; }
@@ -6612,17 +6669,17 @@
     var JOKERS = [
       /* Smeared makes ♣ a spade and ♦ a heart: the suit jokers follow it, or
          the two would fight the one build they are made for. */
-      { id:"spade", name:"Spade lover", fam:"Mult", r:1, text:"+3 mult for every ♠ in the hand",
+      { id:"spade", name:"Spade lover", fam:"Mult", r:1, text:"Adds +3 to the multiplier for every ♠ in the hand",
         score:function (h) { var sm = has("smear"); var n = countWhere(h.cards, function (c) { return c.s === 0 || (sm && c.s === 3) || c.mod === "wild"; }); return n ? { k:"mult", v:3 * n } : null; } },
-      { id:"red", name:"Red tide", fam:"Mult", r:1, text:"+2 mult for every ♥ or ♦ in the hand",
+      { id:"red", name:"Red tide", fam:"Mult", r:1, text:"Adds +2 to the multiplier for every ♥ or ♦ in the hand",
         score:function (h) { var n = countWhere(h.cards, function (c) { return SUIT_RED[c.s] || c.mod === "wild"; }); return n ? { k:"mult", v:2 * n } : null; } },
-      { id:"even", name:"Even steven", fam:"Mult", r:1, text:"+4 mult for every 2, 4, 6, 8 or 10",
+      { id:"even", name:"Even steven", fam:"Mult", r:1, text:"Adds +4 to the multiplier for every 2, 4, 6, 8 or 10",
         score:function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 1 && c.r <= 9 && c.r % 2 === 1; }); return n ? { k:"mult", v:4 * n } : null; } },
-      { id:"court", name:"Royal court", fam:"Mult", r:1, text:"+30 chips for every J, Q or K",
+      { id:"court", name:"Royal court", fam:"Mult", r:1, text:"Adds +30 chips for every J, Q or K",
         score:function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 10; }); return n ? { k:"chips", v:30 * n } : null; } },
-      { id:"jolly", name:"Jolly", fam:"Mult", r:1, text:"+8 mult if the hand holds a pair",
+      { id:"jolly", name:"Jolly", fam:"Mult", r:1, text:"Adds +8 to the multiplier if the hand holds a pair",
         score:function (h) { return h.ev.maxR >= 2 ? { k:"mult", v:8 } : null; } },
-      { id:"low", xm:true, name:"Low tide", fam:"Mult", r:2, text:"×2 mult if no card is above 7 (aces are low)",
+      { id:"low", xm:true, name:"Low tide", fam:"Mult", r:2, text:"Boosts the multiplier ×2 if no card is above 7 (aces are low)",
         score:function (h) { return countWhere(h.cards, function (c) { return c.r > 6; }) === 0 ? { k:"xmult", v:2 } : null; } },
 
       { id:"four", name:"Four fingers", fam:"Rule", r:2, text:"Flushes and straights need one card less" },
@@ -6630,50 +6687,50 @@
       { id:"shortcut", name:"Shortcut", fam:"Rule", r:2, text:"Straights may skip one rank between two cards" },
       { id:"lowbar", name:"Low bar", fam:"Rule", r:1, text:"Any pair pays, however low" },
 
-      { id:"goldbin", name:"Golden bin", fam:"Bin", r:1, text:"+15 chips for every card binned this hand",
+      { id:"goldbin", name:"Golden bin", fam:"Bin", r:1, text:"Adds +15 chips for every card binned this hand",
         score:function (h) { return h.bins ? { k:"chips", v:15 * h.bins } : null; } },
       { id:"deep", name:"Deep chute", fam:"Bin", r:1, text:"+2 bins on every hand" },
       { id:"recycler", name:"Recycler", fam:"Bin", r:2, text:"A binned card goes back under the deck" },
 
-      { id:"ascetic", name:"Ascetic", fam:"Grow", r:2, text:"+1 mult for every card you bin. A bust resets it.",
+      { id:"ascetic", name:"Austere", fam:"Grow", r:2, text:"Adds +1 to the multiplier for every card you bin. A bust resets the count",
         score:function (h, inst) { return inst.n ? { k:"mult", v:inst.n } : null; } },
-      { id:"collector", xm:true, name:"Collector", fam:"Grow", r:4, text:"×1.5, ×2, ×2.5… as you chain the same poker hand",
+      { id:"collector", xm:true, name:"Collector", fam:"Grow", r:4, text:"Boosts the multiplier ×1.5, ×2, ×2.5… as you play the same Poker hand several times in a row",
         score:function (h) { return h.streak > 1 ? { k:"xmult", v:1 + 0.5 * (h.streak - 1) } : null; } },
-      { id:"veteran", name:"Veteran", fam:"Grow", r:2, text:"+1 mult for every hand paid this run",
+      { id:"veteran", name:"Veteran", fam:"Grow", r:2, text:"Adds +1 to the multiplier for every hand paid this run",
         score:function () { return hands ? { k:"mult", v:hands } : null; } },
 
-      { id:"second", name:"Second chance", fam:"Survive", r:2, text:"A bust breaks this joker instead of a life" },
-      { id:"heart", name:"Spare heart", fam:"Survive", r:1, text:"+1 life when taken, −2 mult on every hand",
+      { id:"second", name:"Second chance", fam:"Survive", r:2, text:"A bust breaks this Joker instead of a life" },
+      { id:"heart", name:"Spare heart", fam:"Survive", r:1, text:"+1 life when taken. Takes 2 off the multiplier on every hand",
         score:function () { return { k:"mult", v:-2 }; } },
 
-      { id:"exorcist", name:"Exorcist", fam:"Curse", r:2, text:"A cursed card gives +20 mult instead of busting the hand" },
+      { id:"exorcist", name:"Exorcist", fam:"Curse", r:2, text:"Binning a cursed card gives you a bin back instead of costing two" },
       { id:"seer", name:"Seer", fam:"Curse", r:3, text:"Shows the next card and lifts every veil" },
 
       /* FATE — the card pushed up onto them, once per hand (FATE below): the jokers
          that steer the deal instead of paying for it. */
-      { id:"compass", name:"Compass", fam:"Fate", r:2, act:true, text:"Choose the next card's suit. Push the card up onto it, then down onto a suit." },
-      { id:"reshuffle", name:"Reshuffle", fam:"Fate", r:1, act:true, text:"Sends the card back into the deck, no bin spent. Push the card up onto it." },
-      { id:"pocket", name:"Pocket", fam:"Fate", r:2, act:true, text:"Puts the card aside, or swaps it with the one already there. Push the card up onto it." },
-      { id:"rewind", name:"Rewind", fam:"Fate", r:1, act:true, text:"Puts the last card you binned back into your hand, bin refunded. Push the card up onto it." },
+      { id:"compass", name:"Compass", fam:"Fate", r:2, act:true, text:"Choose the next card's suit. Push the card up onto this Joker, then pick a suit" },
+      { id:"reshuffle", name:"Reshuffle", fam:"Fate", r:1, act:true, text:"Push the card up onto this Joker to send it back into the deck, no bin spent" },
+      { id:"pocket", name:"Pocket", fam:"Fate", r:2, act:true, text:"Push the card up onto this Joker to put it aside, or swap it with the one already stored there" },
+      { id:"rewind", name:"Rewind", fam:"Fate", r:1, act:true, text:"Push the card up onto this Joker to take the last card you binned back into your hand. The bin is refunded too" },
       { id:"counter", name:"Card counter", fam:"Fate", r:1, text:"Shows what is left in the deck: each suit, and the faces" },
-      { id:"called", xm:true, name:"Called shot", fam:"Fate", r:3, act:true, text:"Call a hand before your third card. Make it or better for ×mult, or the hand busts.",
+      { id:"called", xm:true, name:"Called shot", fam:"Fate", r:3, act:true, text:"Call a Poker hand before your third card. Make it or better to boost the multiplier from ×1.5 to ×5, or the hand busts",
         score:function (h) { return h.called && CAT_ORDER[h.ev.cat] >= CAT_ORDER[h.called] ? { k:"xmult", v:CALL_X[h.called] } : null; } },
 
       /* RISK — more than any other joker pays, for a price the run feels. */
-      { id:"greed", xm:true, name:"Greed", fam:"Risk", r:4, text:"×3 mult, but only one bin per hand",
+      { id:"greed", xm:true, name:"Greed", fam:"Risk", r:4, text:"Boosts the multiplier ×3, but only one bin per hand",
         score:function () { return { k:"xmult", v:3 }; } },
 
       /* LUCK — the picks themselves: what they deal, how often, how many. */
-      { id:"charm", name:"Lucky charm", fam:"Luck", r:2, text:"Rare, epic and legendary jokers come twice as often in a pick" },
-      { id:"ticket", name:"Golden ticket", fam:"Luck", r:3, text:"Your next pick deals only epic and legendary jokers. Then the ticket is spent" },
-      { id:"hothand", name:"Hot hand", fam:"Luck", r:1, text:"Every paid hand fills the joker gauge by 1 more" },
-      { id:"third", name:"Third option", fam:"Luck", r:2, text:"Every pick deals three jokers instead of two" },
-      { id:"redeal", name:"Re-deal", fam:"Luck", r:1, text:"Once per pick, deal the jokers again" },
+      { id:"charm", name:"Lucky charm", fam:"Luck", r:2, text:"Rare, epic and legendary Jokers come twice as often in a pick" },
+      { id:"ticket", name:"Golden ticket", fam:"Luck", r:3, text:"Your next pick deals only epic and legendary Jokers. Then the ticket is spent" },
+      { id:"hothand", name:"Hot hand", fam:"Luck", r:1, text:"Every paid hand fills the Joker gauge by 1 more" },
+      { id:"third", name:"Third option", fam:"Luck", r:2, text:"Every pick deals three Jokers instead of two" },
+      { id:"redeal", name:"Re-deal", fam:"Luck", r:1, text:"Once per pick, deal the Jokers again" },
 
       /* THE POT's own three, in the Bin family: a bin is what fills it.
          Croupier and Fireproof are read where the pot is taken and burnt
          (scoreHand, settle); Ante where a hand is paid. */
-      { id:"croupier", sign:"%", name:"Croupier", fam:"Bin", r:2, text:"Every paid hand takes 25% more of the pot" },
+      { id:"croupier", sign:"%", name:"Croupier", fam:"Bin", r:2, text:"Every paid hand takes 25% of the pot on top of its share" },
       { id:"fireproof", sign:"♨", name:"Fireproof", fam:"Bin", r:1, text:"A bust no longer burns the pot" },
       { id:"ante", sign:"+", name:"Ante", fam:"Bin", r:1, text:"Every paid hand puts 15 chips into the pot" },
 
@@ -6681,13 +6738,13 @@
          a time, so WHERE a card lands is a decision no dealt hand of eight
          has: keep the ace now, or let it pass for the lit place. The anchor
          is place 1, the card that ends the hand place 5. */
-      { id:"seat", sign:"★", name:"Lucky seat", fam:"Seat", r:1, text:"Each hand lights up one place. The card you keep there adds its chips twice more.",
+      { id:"seat", sign:"★", name:"Lucky seat", fam:"Seat", r:1, text:"Each hand lights up one place. The card you keep there adds twice its value in chips",
         score:function (h) { var c = h.cards[h.seat]; return c ? { k:"chips", v:2 * rankChips(c.r) } : null; } },
-      { id:"keystone", sign:"◆", xm:true, name:"Keystone", fam:"Seat", r:2, text:"×1.5 mult if the middle card of the hand scores",
+      { id:"keystone", sign:"◆", xm:true, name:"Keystone", fam:"Seat", r:2, text:"Boosts the multiplier ×1.5 if the middle card is part of the Poker hand",
         score:function (h) { var m = (h.cards.length - 1) >> 1; return h.cards.length >= HAND_SIZE && h.ev.scoring[m] ? { k:"xmult", v:1.5 } : null; } },
-      { id:"stairs", sign:"↗", name:"Staircase", fam:"Seat", r:2, text:"+3 mult for every card higher than the one before it",
+      { id:"stairs", sign:"↗", name:"Staircase", fam:"Seat", r:2, text:"Adds +3 to the multiplier for every card higher than the one before it",
         score:function (h) { var n = 0; for (var i = 1; i < h.cards.length; i++) if (rvOf(h.cards[i].r) > rvOf(h.cards[i - 1].r)) n++; return n ? { k:"mult", v:3 * n } : null; } },
-      { id:"lastword", sign:"⇥", name:"Last word", fam:"Seat", r:1, text:"The card that ends the hand adds its chips as mult",
+      { id:"lastword", sign:"⇥", name:"Last word", fam:"Seat", r:1, text:"The card that ends the hand adds its value to the multiplier",
         score:function (h) { var c = h.cards[HAND_SIZE - 1]; return c && h.cards.length >= HAND_SIZE ? { k:"mult", v:rankChips(c.r) } : null; } }
     ];
     var JOKER_BY = {};
@@ -6935,6 +6992,10 @@
       if (cardsLeft() < HAND_SIZE) return 1;           // the last hand: all in
       return Math.min(1, (POT_SHARE[cat] || 0) + (has("croupier") ? 0.25 : 0));
     }
+    function usedBy(parts, i) {
+      for (var q = 0; q < parts.length; q++) if (parts[q].scoring[i]) return true;
+      return false;
+    }
     function scoreHand(cards, preview) {
       var ev = evalHand(cards), i, q;
       var res = { cat:ev.cat, name:ev.name, bust:false, why:"", steps:[], parts:[],
@@ -6949,8 +7010,10 @@
       }
       if (ev.cat === "high") { res.bust = true; res.why = "High card"; }
       else if (!parts.length) { res.bust = true; res.why = "Pair too low"; }
-      else if (!has("exorcist")) {
-        for (i = 0; i < cards.length; i++) if (cards[i].curse) { res.bust = true; res.why = "Cursed"; }
+      else {
+        /* a curse is BROKEN by the poker hand it is part of, and busts the
+           hand from anywhere else */
+        for (i = 0; i < cards.length; i++) if (cards[i].curse && !usedBy(parts, i)) { res.bust = true; res.why = "Cursed"; }
       }
       // a called hand missed busts, but only a FULL hand can miss it
       if (!res.bust && called && cards.length >= HAND_SIZE && CAT_ORDER[ev.cat] < CAT_ORDER[called]) {
@@ -7012,7 +7075,7 @@
           if (shatter[i]) step("card", i, Lang.t("Shattered"), MOD_COL.glass);
           else apply("card", i, { k:"xmult", v:2 });
         }
-        if (c.curse) apply("card", i, { k:"mult", v:20 });     // only reached with Exorcist
+        if (c.curse && part.scoring[i]) apply("card", i, { k:"mult", v:CURSE_MULT });   // a broken curse
       }
       /* the pot's share, as chips — before the jokers, so every one of
          them that multiplies multiplies the pot too */
@@ -7141,42 +7204,42 @@
        =================================================================== */
 
     var TIPS = {
-      basics: { eye:"How to play", title:"Build a poker hand", hands:true, lines:[
+      basics: { eye:"How to play", title:"Build a Poker hand", hands:true, lines:[
         "Swipe right to keep the card, left to bin it.",
-        "Five cards make a hand, paid as poker. The run ends when the deck runs out." ] },
-      count: { eye:"Your first hand", title:"Chips × mult", hands:true, lines:[
-        "Each card that makes the hand adds its value in chips. A face is worth 10, an ace 11.",
-        "Then special cards and jokers add theirs, left to right. The hand pays chips × mult." ] },
-      double: { eye:"How scoring works", title:"Two hands in one", hands:true, lines:[
-        "A hand can make two poker hands at once, like a pair and a flush. It pays both.",
-        "Wild cards and some jokers make a double hand possible." ] },
+        "Five cards make a hand, paid as Poker. The run ends when the deck runs out." ] },
+      count: { eye:"Your first hand", title:"Chips × multiplier", hands:true, lines:[
+        "Each card of the Poker hand adds its value in chips. A face is worth 10, an ace 11.",
+        "Then the game counts the special cards, adds the pot and the Jokers' bonuses. The calculation is always done from left to right. The hand score is chips × multiplier." ] },
+      double: { eye:"How scoring works", title:"Two Poker hands in one", hands:true, lines:[
+        "A hand can make two Poker hands at once, like a pair and a flush. Both are counted and their scores add up.",
+        "Wild cards and some Jokers make building hands easier." ] },
       bust: { eye:"A hand that does not pay", title:"Bust", lines:[
-        "High card, a pair too low or a cursed card: the hand busts and costs a life." ] },
+        "High card, a pair too low or a cursed card left out of the Poker hand: the hand busts and costs a life." ] },
       bins: { eye:"Bins", title:"No bins left", lines:[
         "You may bin {n} cards per hand. The next one costs a life." ] },
       floor: { eye:"New rule", title:"Pairs of {r} or better", say:"A lower pair busts the hand", lines:[
         "From this level on, a single pair only pays from {r} up.",
         "A lower pair busts the hand. Two pair and better always pay." ] },
-      joker: { eye:"New", title:"Jokers", say:"Paid hands fill the joker gauge", lines:[
-        "Paid hands fill the joker gauge, strong ones faster. A full gauge deals you two jokers to choose from.",
-        "A joker lasts the whole run, on every hand." ] },
-      fate: { eye:"New", title:"Fate jokers", say:"Push a card up onto one", lines:[
-        "Push the card up onto a Fate joker to play it. Each one works once per hand." ] },
+      joker: { eye:"New", title:"Jokers", say:"Paid hands fill the Joker gauge", lines:[
+        "Paid hands fill the Joker gauge, strong ones faster. A full gauge deals you two Jokers to choose from.",
+        "A Joker lasts the whole run, on every hand." ] },
+      fate: { eye:"New", title:"Fate jokers", say:"Push a card up onto one of the Jokers", lines:[
+        "Push the card up onto a Fate Joker to play it. Each one works once per hand." ] },
       pot: { eye:"New", title:"The pot", say:"Bins feed the next paid hand", hands:true, lines:[
-        "Binned cards drop their chips into the pot. Each paid hand takes a share, bigger for a strong hand.",
+        "Binned cards drop their value in chips into the pot. Each paid hand takes its pot share, bigger for a strong Poker hand.",
         "A bust burns half the pot. The deck's last hand takes all of it." ] },
-      xmult: { eye:"How scoring works", title:"Add or multiply", say:"A × joker multiplies what is on its left", demo:true, lines:[
-        "A × joker multiplies everything on its left. It pays the most at the right end of the rail." ] },
-      gold:  { eye:"Special card", title:"Gold", lines:[ "A gold card adds 40 chips to its hand." ] },
-      glass: { eye:"Special card", title:"Glass", say:"Doubles the mult, or shatters", lines:[ "A glass card doubles the mult — but one time in four it shatters and gives nothing." ] },
+      xmult: { eye:"How scoring works", title:"Add or multiply", say:"A × boosts the multiplier", demo:true, lines:[
+        "A + adds to the current multiplier, while a × multiplies it by its value. So with Jokers, it is best to have the × ones on the right of the count (the score counter)." ] },
+      gold:  { eye:"Special card", title:"Gold", lines:[ "A gold card adds +40 chips to its hand, even when it is not part of the Poker hand." ] },
+      glass: { eye:"Special card", title:"Glass", say:"Boosts the multiplier ×2, or shatters", lines:[ "A glass card boosts the multiplier ×2, but one time in four it shatters and gives nothing." ] },
       wild:  { eye:"Special card", title:"Wild", say:"Counts as every suit", lines:[ "A wild card counts as every suit: it fits any flush." ] },
-      lucky: { eye:"Special card", title:"Lucky", lines:[ "A lucky card gives +10 mult one time in three." ] },
-      curse: { eye:"Danger", title:"Cursed card", say:"Keep a cursed card and the hand busts", lines:[
-        "Keep a cursed card and the whole hand busts, whatever else it holds. Bin it.",
-        "The Exorcist joker turns a curse into +20 mult." ] },
+      lucky: { eye:"Special card", title:"Lucky", lines:[ "A lucky card adds +10 to the multiplier one time in three." ] },
+      curse: { eye:"Danger", title:"Cursed card", say:"It busts the hand unless it is part of the Poker hand", lines:[
+        "A cursed card busts the hand unless it is part of the Poker hand. Used in it, the curse breaks and adds +{m} to the multiplier.",
+        "Binning a cursed card costs two bins. The Exorcist Joker gives you one back instead." ] },
       veil:  { eye:"Danger", title:"Veiled card", lines:[
         "A veiled card's suit stays hidden until you keep it.",
-        "The Seer joker lifts every veil." ] }
+        "The Seer Joker lifts every veil." ] }
     };
 
     function tipsKey() { return "tips:" + (CONFIG.slug || "slipdeck"); }
@@ -7187,6 +7250,21 @@
 
     function fill(str, vars) {
       return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; });
+    }
+    /* A joker's line as markup, with the count's colours on its figures:
+       the sign green (+) or orange (×), the number blue when it goes to the
+       chips and red when it goes to the multiplier. A + is coloured only
+       when the words after it name the chips or the multiplier, so "+1
+       life" stays plain text. */
+    var SIGN_CHIPS = /^\s+(chips|jetons)\b/, SIGN_MULT = /^\s+(to the multiplier|au multiplicateur)\b/;
+    function signHtml(str) {
+      var s = String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return s.replace(/([+×])(\d+(?:[.,]\d+)?)/g, function (m, sg, num, at, all) {
+        var after = all.slice(at + m.length);
+        var to = sg === "×" || SIGN_MULT.test(after) ? "m" : SIGN_CHIPS.test(after) ? "c" : null;
+        if (!to) return m;
+        return '<b class="sd-sg ' + (sg === "×" ? "x" : "p") + '">' + sg + '</b><b class="sd-sv ' + to + '">' + num + "</b>";
+      });
     }
     /* Queue the tip `key` unless the player has already been told. `id` is
        what is remembered, so a rule that changes (the pair floor) is told
@@ -7228,7 +7306,7 @@
     function jokerCard(i) {
       var inst = rail[i], id = inst.id, J = JOKER_BY[id], lines = [], why;
       var now = id === "ascetic" ? inst.n : id === "veteran" ? hands : 0;
-      if (now) lines.push(fill(Lang.t("Now: +{n} mult"), { n:now }));
+      if (now) lines.push(fill(Lang.t("Now: +{n} to the multiplier"), { n:now }));
       if (id === "collector" && catStreak > 1) lines.push(fill(Lang.t("Now: {n} in a row"), { n:catStreak }));
       if (id === "hothand" || id === "charm" || id === "third" || id === "redeal" || id === "ticket") {
         lines.push(fill(Lang.t("Joker gauge: {n} / {max}"), { n:gauge, max:PICK_GAUGE }));
@@ -7236,7 +7314,7 @@
       if (J.act) { why = fateWhyNot(id); lines.push(why ? Lang.t(why) : Lang.t("Ready")); }
       var btns = [];
       if (J.xm) btns.push({ label:Lang.t("+ or ×"), plate:true, fn:function () { tip("xmult", null, null, true); } });
-      if (J.act && window.__GUIDE__) btns.push({ label:Lang.t("Fate jokers"), plate:true, fn:function () { tip("fate", null, null, true); } });
+      if (J.act && window.__GUIDE__) btns.push({ label:Lang.t("Fate Jokers"), plate:true, fn:function () { tip("fate", null, null, true); } });
       tipQueue.unshift({ joker:id, from:i, lines:lines, ready:J.act && !why, buttons:btns.length ? btns : null });
       if (!tipOpen) nextTip();
     }
@@ -7343,7 +7421,7 @@
     function buildXDemo() {
       var box = document.createElement("div");
       box.className = "sd-xdemo";
-      [["+9", false, 4, 13, "adds to the mult"], ["×2", true, 13, 26, "multiplies the mult"]].forEach(function (d) {
+      [["+9", false, 4, 13, "adds to the multiplier"], ["×2", true, 13, 26, "boosts the multiplier"]].forEach(function (d) {
         var row = document.createElement("div"), k = view.dpr || 1, cv = document.createElement("canvas");
         row.className = "sd-xrow";
         cv.width = Math.round(84 * k); cv.height = Math.round(64 * k);
@@ -7360,6 +7438,51 @@
         var em = document.createElement("em");
         em.textContent = Lang.t(d[4]);
         row.appendChild(em);
+        box.appendChild(row);
+      });
+      return box;
+    }
+
+    /* THE SCORE, word by word: every term the game counts with, each beside
+       the figure the table draws for it, in the order a hand is counted. */
+    function buildScoreDemo() {
+      var box = document.createElement("div");
+      box.className = "sd-xdemo";
+      [[function (g) {
+          pillOn(g, 24, 32, "10", CHIP_BOX, 1); pillOn(g, 88, 32, "2", MULT_BOX, 1);
+          g.font = font(20, 900); g.textAlign = "center"; g.textBaseline = "middle";
+          g.fillStyle = "rgba(255,255,255,.7)"; g.fillText("x", 56, 33);
+        }, "Base",
+        "Base chips × starting multiplier"],
+       [function (g) { pillOn(g, 56, 32, "+11", CHIP_BOX, 1.25); }, "Value",
+        "A card of the Poker hand adds its value in chips. A face is worth 10 and an ace 11"],
+       [function (g) { pillOn(g, 56, 32, "+30", CHIP_BOX, 1.25); }, "+ chips",
+        "Adds chips: a gold card, some Jokers"],
+       [function (g) { pillOn(g, 56, 32, "+45", CHIP_BOX, 1.25); }, "Pot share",
+        "A paid hand takes chips from the pot"],
+       [function (g) { pillOn(g, 56, 32, "+3", MULT_BOX, 1.25); }, "+ multiplier",
+        "Adds to the multiplier"],
+       [function (g) { burstOn(g, 56, 32, "×2", 1.25); }, "× multiplier",
+        "Boosts the multiplier"],
+       [function (g) { pillOn(g, 56, 32, "= 120", "#8a5a10", 1.1); }, "Hand score",
+        "Chips × multiplier, once every card and Joker is counted"],
+       [function (g) { pillOn(g, 56, 32, "Σ", "#8a5a10", 1.25); }, "Final score",
+        "The sum of every hand score in the run"]
+      ].forEach(function (d) {
+        var row = document.createElement("div"), k = view.dpr || 1, cv = document.createElement("canvas");
+        row.className = "sd-xrow";
+        cv.width = Math.round(112 * k); cv.height = Math.round(64 * k);
+        cv.style.width = "112px"; cv.style.height = "64px";
+        var g = cv.getContext("2d");
+        g.scale(k, k);
+        d[0](g);
+        row.appendChild(cv);
+        var tx = document.createElement("div");
+        tx.className = "sd-xterm";
+        tx.innerHTML = "<b></b><em></em>";
+        tx.children[0].textContent = Lang.t(d[1]);
+        tx.children[1].textContent = Lang.t(d[2]);
+        row.appendChild(tx);
         box.appendChild(row);
       });
       return box;
@@ -7554,7 +7677,7 @@
       if (fateWhyNot("rewind")) return;
       var c = lastBin, k;
       lastBin = null;
-      chute = Math.max(0, chute - 1); binsThisHand = Math.max(0, binsThisHand - 1); binned--;
+      chute = Math.max(0, chute - (c.chuteCost != null ? c.chuteCost : 1)); binsThisHand = Math.max(0, binsThisHand - 1); binned--;
       if (c.potted) { pot = Math.max(0, pot - c.potted); c.potted = 0; potHit = 1; }
       for (k = 0; k < rail.length; k++) if (rail[k].id === "ascetic" && rail[k].n > 0) rail[k].n--;
       if (c.recycled) {
@@ -7579,7 +7702,7 @@
       called = cat;
       spent(i, "called");
       Pop.show("bonus", { word:fill(Lang.t("Called: {hand}"), { hand:Lang.t(CAT_NAME[cat]) }),
-                          sub:fill(Lang.t("x{x} mult"), { x:CALL_X[cat] }), at:"top" });
+                          sub:fill(Lang.t("Multiplier ×{x}"), { x:CALL_X[cat] }), at:"top" });
     }
 
     /* ===================================================================
@@ -7727,14 +7850,24 @@
       if (idleT >= hintNext) { hintT = 0; hintNext = idleT + HINT_EVERY; hudHint(true); }
     }
 
-    /* Every element a tap explains (explainAt), in reading order. */
+    /* The box of a counter line (the bins, the gauge) as binsAt and
+       drawGauge lay it out: the label right-aligned at cx - 20, whose width
+       is the language's, then n marks 34 apart from cx + 10. */
+    function lineZone(label, y, n, half) {
+      ctx.font = font(22, 900);
+      var x0 = Layout.cx - 20 - ctx.measureText(upper(Lang.t(label))).width;
+      var x1 = Layout.cx + 10 + (n - 1) * 34 + half;
+      return { x:(x0 + x1) / 2, y:y, w:x1 - x0 + 28, h:44 };
+    }
+    /* Every element a tap explains (explainAt), in reading order. A joker
+       on the rail is not one of them: the hint lights the EMPTY slots, the
+       place a joker will go. */
     function hintZones() {
-      var z = [], i, q, b, cap, x0, x1;
-      for (i = 0; i < SLOTS; i++) if (rail[i] || anyFam()) z.push({ x:railX(i), y:L.railY + 44, r:L.medalR + 6 });
+      var z = [], i, q, b;
+      for (i = 0; i < SLOTS; i++) if (!rail[i] && anyFam()) z.push({ x:railX(i), y:L.railY + 44, r:L.medalR + 6 });
       if (pocket || has("pocket")) { b = pocketBox(); z.push({ x:b.x, y:b.y, w:b.w + 10, h:b.h + 10 }); }
-      cap = chuteCap(); x0 = Layout.cx - 100; x1 = Layout.cx + 24 + (cap - 1) * 34;
-      z.push({ x:(x0 + x1) / 2, y:L.binsY, w:x1 - x0 + 20, h:40 });
-      if (anyFam()) { x1 = Layout.cx + 22 + (PICK_GAUGE - 1) * 34; z.push({ x:(x0 + x1) / 2, y:L.gaugeY, w:x1 - x0 + 20, h:40 }); }
+      z.push(lineZone("Bins", L.binsY, chuteCap(), 14));
+      if (anyFam()) z.push(lineZone("Joker", L.gaugeY, PICK_GAUGE, 12));
       if (POT_ON) z.push({ x:L.potX, y:L.potY, r:58 });
       if (pv && pv.v && hand.length) z.push({ x:Layout.cx, y:L.valueY, w:440, h:46 });
       for (i = 0; i < hand.length; i++) { q = slotPose(i); z.push({ x:q.x, y:q.y, w:L.slotW + 8, h:L.slotH + 8 }); }
@@ -7891,7 +8024,7 @@
       for (i = 0; i < rail.length; i++) {
         if (rail[i].id === "ticket") {                     // spent as the pick opens
           rail.splice(i, 1); minR = 3;
-          Notify.say("Golden ticket", { sub:"Only epic and legendary jokers", kind:"rare", icon:"sparkles" });
+          Notify.say("Golden ticket", { sub:"Only epic and legendary Jokers", kind:"rare", icon:"sparkles" });
           break;
         }
       }
@@ -7924,7 +8057,7 @@
       if (!document.getElementById("frame")) return;
       var lay = overlay(), had = seen(), i, btn;
       eye = eye || (opening ? "A new run" : "Joker gauge full");
-      var body = pickCard(lay, eye, "Pick one", "Tap a joker to take it");
+      var body = pickCard(lay, eye, "Pick one", "Tap a Joker to take it");
       var row = document.createElement("div");
       row.className = "sd-deal";
       for (i = 0; i < deal.length; i++) {
@@ -7972,7 +8105,7 @@
        One row per joker on the rail, at reading size, and the refusal. */
     function showReplace(id) {
       var lay = overlay("sd-swap"), i, row, J = JOKER_BY[id];
-      var body = pickCard(lay, "Rail full", "Replace which joker?", "Tap the joker to replace");
+      var body = pickCard(lay, "Joker row full", "Replace which Joker?", "Tap the Joker to replace");
       var head = document.createElement("p");
       head.className = "sd-newline";
       head.textContent = fill(Lang.t("New: {j}"), { j:Lang.t(J.name) });
@@ -7988,14 +8121,14 @@
           row.innerHTML = '<span class="sd-rart">' + (src ? '<img alt="" draggable="false" src="' + src + '">' : "") +
                           '</span><span class="sd-rtx"><b></b><i></i></span>';
           row.querySelector("b").textContent = upper(Lang.t(R.name));
-          row.querySelector("i").textContent = Lang.t(R.text);
+          row.querySelector("i").innerHTML = signHtml(Lang.t(R.text));
           row.addEventListener("click", function (e) { e.stopPropagation(); closePick(); equip(id, k); });
           body.appendChild(row);
         })(i);
       }
       var keep = document.createElement("button");
       keep.type = "button"; keep.className = "btn btn-sm btn-plate";
-      keep.textContent = upper(Lang.t("Keep my rail"));
+      keep.textContent = upper(Lang.t("Keep my Joker row"));
       keep.addEventListener("click", function (e) { e.stopPropagation(); closePick(); });
       body.appendChild(keep);
       pick = { node:lay, replace:id };
@@ -8034,7 +8167,7 @@
       Fx.burst(railX(i), L.railY + L.railH / 2, { color:[FAM_COL[J.fam], "#ffffff"], count:16, speed:320, life:0.45, grav:300 });
       lit.who = "joker"; lit.idx = i; lit.t = 1;
       // the joker it replaced rides on the callout: one word for one choice
-      Pop.show("bonus", { word:J.name, sub:out ? fill(Lang.t("{j} leaves the rail"), { j:Lang.t(JOKER_BY[out.id].name) }) : null, at:"top" });
+      Pop.show("bonus", { word:J.name, sub:out ? fill(Lang.t("{j} leaves the Joker row"), { j:Lang.t(JOKER_BY[out.id].name) }) : null, at:"top" });
       Sound.cue("joker", 0.5, 1, 700, 0.12, "triangle");
       if (J.act) tip("fate", null, "fate3");     // told again since the push up replaced the drags
       if (J.xm) tip("xmult");
@@ -8058,7 +8191,9 @@
       box.className = "sd-jbox";
       box.style.width = w + "px"; box.style.height = Math.round(w * 1.4) + "px";
       var n = document.createElement("div");
-      n.className = "sd-jc r-" + (ghost ? 1 : J.r) + (ghost ? " ghost" : "");
+      // a line too long for the plate takes room from the picture, never from the type
+      n.className = "sd-jc r-" + (ghost ? 1 : J.r) + (ghost ? " ghost" : "") +
+                    (!ghost && Lang.t(J.text).length > 110 ? " long" : "");
       n.style.setProperty("--sk", w / JC_W);
       n.style.setProperty("--c", ghost ? "#5d567a" : FAM_COL[J.fam]);
       n.style.setProperty("--r", ghost ? "#6d6690" : R.color);
@@ -8070,7 +8205,7 @@
       n.querySelector(".sd-jfam").textContent = ghost ? "" : upper(Lang.t(J.fam));
       if (!src) n.querySelector(".sd-jsign").textContent = J.sign || "?";
       n.querySelector(".sd-jname").textContent = ghost ? "???" : upper(Lang.t(J.name));
-      n.querySelector(".sd-jtext").textContent = ghost ? "" : Lang.t(J.text);
+      n.querySelector(".sd-jtext").innerHTML = ghost ? "" : signHtml(Lang.t(J.text));
       n.querySelector(".sd-jrar span").textContent = ghost ? "???" : upper(Lang.t(R.name));
       // the word stays English in every language, like the album's NEW tag
       if (opt.fresh && !ghost) n.querySelector(".sd-jnew span").textContent = upper("New");
@@ -8180,6 +8315,13 @@
         for (i = 0; i < hand.length; i++) drawCard(hand[i], hx - 72 + i * 36, hy, 66, 94, (i - 2) * 0.06, 1, null);
       });
     }
+    /* the count's tip is the page every scoring word is defined on: its two
+       lines, then the terms beside the figures the table draws for them */
+    function scorePage() {
+      var P = tipPage("count", 0, null, function () { return oneRow("fullHouse"); });
+      P.title = Lang.t("The score"); P.node = buildScoreDemo;
+      return P;
+    }
     // the tip says what just happened ("No bins left"); the page names the rule
     function binsPage(vars) { var P = tipPage("bins", 0, vars, function () { return binsPic(vars.n); }); P.title = Lang.t(TIPS.bins.eye); return P; }
     var guide = {
@@ -8191,8 +8333,8 @@
               return cardsPic([card(6, 1), card(6, 0), card(6, 2), card(1, 3), card(1, 1)]);
             }),
             { id:"hands", title:Lang.t("Poker hands"), node:buildHands, lines:[
-              Lang.t("Each poker hand starts from the chips × mult shown beside it.") ] },
-            tipPage("count", 0, null, function () { return oneRow("fullHouse"); }),
+              Lang.t("Each Poker hand starts from its base, the chips × multiplier shown beside it.") ] },
+            scorePage(),
             tipPage("double", 0, null, function () {
               return cardsPic([card(6, 1), card(8, 1), card(12, 1), card(1, 1), card(6, 0, { mod:"wild" })]);
             }),
@@ -8211,14 +8353,14 @@
             tipPage("wild", 3, null, function () { return cardsPic([card(7, 3, { mod:"wild" })], 150); }),
             tipPage("glass", 5, null, function () { return cardsPic([card(9, 1, { mod:"glass" })], 150); }),
             tipPage("lucky", 5, null, function () { return cardsPic([card(4, 0, { mod:"lucky" })], 150); }),
-            tipPage("curse", 13, null, function () { return cardsPic([card(12, 0, { curse:true })], 150); }),
+            tipPage("curse", 13, { m:CONFIG.play.curseMult }, function () { return cardsPic([card(12, 0, { curse:true })], 150); }),
             tipPage("veil", 16, null, function () { return cardsPic([card(10, 2, { veil:true })], 150); })
           ] },
           { key:"climb", label:Lang.t("The climb"), pages:[
             { id:"floor", title:Lang.t("Minimum pair"), lv:7, pic:function () {
                 return cardsPic([card(6, 0, { dim:1 }), card(6, 1, { dim:1 }), card(7, 2, { gap:1 }), card(7, 3)]);
               }, lines:[
-              Lang.t("From level 7, a single pair needs 8s or better to pay. Then 10s from level 13, jacks from 19."),
+              Lang.t("From level 7, a single pair needs 8s or better to pay, then 10s from level 13. A pair of jacks or better from level 19."),
               Lang.t("A lower pair busts the hand. Two pair and better always pay.") ] }
           ] }
         ];
@@ -8247,7 +8389,7 @@
       info: function (id) {
         var J = JOKER_BY[id], R = RARITY[J.r];
         return { name:Lang.t(J.name), color:FAM_COL[J.fam],
-                 lock:Lang.t("Take it in a round to add it to the collection"),
+                 lock:Lang.t("Take it during a run to add it to your collection"),
                  chips:[{ text:Lang.t(R.name), color:R.color }, { text:Lang.t(J.fam), color:FAM_COL[J.fam] }] };
       }
     };
@@ -8342,7 +8484,7 @@
     /* The card has landed in the middle: if it brings an idea the player
        has not met, this is the moment to tell it. */
     function arrived(c) {
-      if (c.curse) tip("curse");
+      if (c.curse) tip("curse", { m:CURSE_MULT });
       else if (c.veil && !has("seer")) tip("veil");
       else if (c.mod) tip(c.mod);
     }
@@ -8378,7 +8520,13 @@
         }
         flying.push({ card:c, x:x, y:y, vx:-1700, vy:-160, rot:rot, spin:-3.6, a:1 });
         Sound.cue("bin", 0.5, 1, 220, 0.07, "sawtooth");
-        chute++;
+        /* a cursed card is dear to bin: two bins, or one given back with
+           the Exorcist (never under none spent). Rewind takes back what it cost. */
+        var was = chute;
+        chute = !c.curse ? chute + 1 : has("exorcist") ? Math.max(0, chute - 1) : chute + 2;
+        c.chuteCost = chute - was;
+        if (c.curse) Pop.text(Layout.left + 40, L.gateY - 40, has("exorcist") ? "+1 " + Lang.t("bin") : "-2 " + Lang.t("bins"),
+                              { color:has("exorcist") ? GOLD : BIN_COL, size:22, life:0.6, tier:1 });
         var cap = chuteCap();
         if (chute > cap) {                                 // the chute overflows
           chute = 0; overflows++;
@@ -8585,6 +8733,7 @@
       var playing = State === "playing" && !tally && !tipOpen && !pick;
       var want = drag.on ? "grabbing"
                : playing && overCard(p) ? "grab"
+               : playing && railAt(p) >= 0 ? "pointer"      // a joker: its card, not a rule
                : playing && explainAt(p, true) ? "help" : "";
       if (want === cursorNow) return;
       cursorNow = want;
@@ -8594,7 +8743,7 @@
     /* A card's own rule: its modifier, or — a plain card in the hand — the
        pair floor once there is one, the count otherwise. */
     function explainCard(c, inHand) {
-      if (c.curse) tip("curse", null, null, true);
+      if (c.curse) tip("curse", { m:CURSE_MULT }, null, true);
       else if (veiled(c)) tip("veil", null, null, true);
       else if (c.mod) tip(c.mod, null, null, true);
       else if (inHand && STAGE.floor > 2) tip("floor", { r:rankWord(STAGE.floor) }, null, true);
@@ -9093,19 +9242,15 @@
 
       if (w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, 0.10);
       roundRect(-w / 2, -h / 2, w, h, r);
-      if (c.curse) ctx.fillStyle = "#24152f";
-      else {
-        var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
-        g.addColorStop(0, c.mod === "gold" ? "#fff4cf" : c.mod === "glass" ? "#f1f9ff" : c.mod === "lucky" ? "#f1fcef" : "#fbf7ec");
-        g.addColorStop(1, "#ece2c9");
-        ctx.fillStyle = g;
-      }
+      var face = FACE[modKey] || FACE.plain, g = ctx.createLinearGradient(0, -h / 2, 0, h / 2), s;
+      for (s = 0; s < face.bg.length; s++) g.addColorStop(s / (face.bg.length - 1), face.bg[s]);
+      ctx.fillStyle = g;
       ctx.fill();
       ctx.lineWidth = Math.max(2, w * 0.022); ctx.strokeStyle = rim; ctx.stroke();
       roundRect(-w / 2 + w * 0.045, -h / 2 + w * 0.045, w * 0.91, h - w * 0.09, r * 0.7);
       ctx.lineWidth = Math.max(1, w * 0.007); ctx.strokeStyle = rgba(rim, 0.55); ctx.stroke();
 
-      var col = c.curse ? "#dcc2f7" : hidden ? "#5f6a64" : SUIT_RED[c.s] ? INK_RED : INK_BLACK;
+      var col = face.ink[!hidden && SUIT_RED[c.s] ? 1 : 0];
       var small = w * 0.17, pad = w * 0.115, q;
 
       if (!hidden && w > 150) {                       // the suit, as a watermark
@@ -9248,7 +9393,7 @@
       if (pv.lean) {
         var k = 0.6 + 0.4 * pv.pull;
         ctx.beginPath(); ctx.arc(cx, my, R + 10, 0, Math.PI * 2);
-        ctx.lineWidth = 5; ctx.strokeStyle = rgba(xm ? XMULT_COL : col === CHIP_BOX ? CHIP_COL : MULT_COL, 0.35 + 0.45 * pv.pull); ctx.stroke();
+        ctx.lineWidth = 5; ctx.strokeStyle = rgba(col === CHIP_BOX ? CHIP_COL : MULT_COL, 0.35 + 0.45 * pv.pull); ctx.stroke();
         ctx.translate(cx, y); ctx.scale(1 + 0.25 * pv.pull, 1 + 0.25 * pv.pull); ctx.translate(-cx, -y);
         ctx.globalAlpha = k;
       } else ctx.globalAlpha = v.dim ? 0.55 : 0.9;
@@ -9262,11 +9407,25 @@
       g.font = font(20, 900);
       var w = Math.max(34, g.measureText(txt).width + 16);
       roundRectOn(g, -w / 2, -15, w, 30, 15); g.fillStyle = col; g.fill();
-      g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillText(txt, 0, 1);
+      signText(g, txt, 0, 1, 0);
       g.restore();
     }
-    /* The ×mult's mark: a twelve-point burst in orange, rimmed in gold. */
+    /* A signed figure, centred on x: the sign in its own colour (+ green,
+       × orange), the number in white, an outline of `lw` under both. */
+    function signText(g, txt, x, y, lw) {
+      var c = txt.charAt(0), sc = c === "+" ? PLUS_COL : c === "×" ? XMULT_COL : null;
+      var head = sc ? c : "", rest = sc ? txt.slice(1) : txt;
+      var hw = g.measureText(head).width, x0 = x - g.measureText(txt).width / 2;
+      g.textAlign = "left"; g.textBaseline = "middle";
+      if (lw) {
+        g.lineWidth = lw; g.strokeStyle = "rgba(40,6,12,.6)";
+        g.strokeText(head, x0, y); g.strokeText(rest, x0 + hw, y);
+      }
+      if (sc) { g.fillStyle = sc; g.fillText(head, x0, y); }
+      g.fillStyle = "#ffffff"; g.fillText(rest, x0 + hw, y);
+    }
+    /* The ×mult's mark: a twelve-point burst in the multiplier's red,
+       rimmed in gold, its × in orange. */
     function burstOn(g, x, y, txt, s) {
       g.save(); g.translate(x, y); g.scale(s, s);
       g.font = font(22, 900);
@@ -9278,12 +9437,10 @@
       }
       g.closePath();
       var gr = g.createLinearGradient(0, -r, 0, r);
-      gr.addColorStop(0, XMULT_COL); gr.addColorStop(1, XMULT_BOX);
+      gr.addColorStop(0, MULT_COL); gr.addColorStop(1, MULT_BOX);
       g.fillStyle = gr; g.fill();
       g.lineWidth = 3; g.strokeStyle = "#ffe08a"; g.stroke();
-      g.textAlign = "center"; g.textBaseline = "middle";
-      g.lineWidth = 4; g.strokeStyle = "rgba(60,20,0,.55)"; g.strokeText(txt, 0, 1);
-      g.fillStyle = "#ffffff"; g.fillText(txt, 0, 1);
+      signText(g, txt, 0, 1, 4);
       g.restore();
     }
 
@@ -9369,7 +9526,7 @@
       for (i = 0; i < cards.length; i++) if (veiled(cards[i])) return { name:"?", unknown:true };
       var res = scoreHand(cards, true);
       if (!res.bust) return res;
-      if (full || res.why === "Cursed") return res;
+      if (full) return res;              // a curse may still be broken by the cards to come
       /* not full: count it as it stands, dimmed — and a high card is not
          worth a word: the hand shows nothing until it holds something */
       var ev = evalHand(cards), b = BASE[ev.cat], chips = b[0], mult = b[1];
@@ -9518,7 +9675,7 @@
         var u = 1 - t;
         return { x:u * u * f.x0 + 2 * u * t * cxp + t * t * to.x, y:u * u * f.y0 + 2 * u * t * cyp + t * t * to.y };
       }
-      var k = f.t * f.t * (3 - 2 * f.t), col = f.to === "c" ? CHIP_COL : f.to === "x" ? XMULT_COL : MULT_COL;
+      var k = f.t * f.t * (3 - 2 * f.t), col = f.to === "c" ? CHIP_COL : MULT_COL;
       var box = f.to === "c" ? CHIP_BOX : MULT_BOX;
       for (j = 4; j >= 1; j--) {
         var q = at(Math.max(0, k - j * 0.05));
@@ -9534,8 +9691,7 @@
       roundRect(-w / 2, -24, w, 48, 16);
       ctx.fillStyle = box; ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = "#ffffff"; ctx.stroke();
-      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(f.s.text, 0, 2);
+      signText(ctx, f.s.text, 0, 2, 0);
       ctx.restore();
     }
 
@@ -10091,16 +10247,19 @@
     /* Route pointer input to the game only while it is playing. A press
        during the entrance skips it, and the whole gesture it starts is eaten:
        the game never sees a move or an up without the down that opened it. */
-    var eaten = false;
+    /* Eaten per gesture: one finger's press eaten by the entrance never
+       eats another finger's (CONFIG.multiTouch, where `p.id` tells them
+       apart; without it every gesture has the same, absent, id). */
+    var eaten = {};
     Input.on("down", function (p) {
       if (State !== "playing") return;
-      if (Enter.active()) { Enter.skip(); eaten = true; return; }
-      eaten = false;
+      if (Enter.active()) { Enter.skip(); eaten[p.id] = true; return; }
+      eaten[p.id] = false;
       if (Game.onDown) Game.onDown(p);
     });
-    Input.on("move", function (p) { if (State === "playing" && !eaten && !Enter.active() && Game.onMove) Game.onMove(p); });
+    Input.on("move", function (p) { if (State === "playing" && !eaten[p.id] && !Enter.active() && Game.onMove) Game.onMove(p); });
     Input.on("up",   function (p) {
-      if (eaten) { eaten = false; return; }
+      if (eaten[p.id]) { eaten[p.id] = false; return; }
       if (State === "playing" && !Enter.active() && Game.onUp) Game.onUp(p);
     });
 

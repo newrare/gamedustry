@@ -1,0 +1,1396 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>dozer prototype</title>
+<meta name="lab-game" content="none">
+<style>
+  html, body { margin: 0; height: 100%; background: #15181c; overflow: hidden; }
+  #wrap { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
+  #wrap canvas { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
+  #menuBtn { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3;
+    font: 600 14px system-ui, sans-serif; padding: 7px 16px; border-radius: 16px; border: 0;
+    background: rgba(0, 0, 0, 0.5); color: #fff; }
+  #menu { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; max-height: 62%; overflow: auto;
+    background: rgba(18, 20, 24, 0.94); color: #fff; padding: 12px 16px 16px; border-radius: 16px 16px 0 0;
+    font: 14px system-ui, sans-serif; }
+  #menu[hidden] { display: none; }
+  #menu h3 { margin: 4px 0 8px; font: 600 13px system-ui, sans-serif; color: #9aa4ad; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .opts button { flex: 1 1 30%; padding: 10px 4px; border-radius: 10px; border: 1px solid #3a4048;
+    background: #262a31; color: #fff; font: 600 13px system-ui, sans-serif; }
+  .opts button.on { background: #f2b22a; color: #111; border-color: #f2b22a; }
+  #menuPlay { width: 100%; padding: 12px; border: 0; border-radius: 12px; background: #4caf50; color: #fff;
+    font: 700 15px system-ui, sans-serif; }
+</style>
+<div id="wrap"><canvas id="gl"></canvas><canvas id="hud"></canvas>
+  <button id="menuBtn">Menu</button>
+  <div id="menu" hidden>
+    <h3>Camera</h3><div class="opts" id="camList"></div>
+    <h3>Style</h3><div class="opts" id="styleList"></div>
+    <button id="menuPlay">Play</button>
+  </div>
+</div>
+<!-- The one external file: three.js, pinned. A prototype opened over file://
+     cannot import a local module, and the classic build is the one a plain
+     <script> tag loads. A game would embed a vendored copy instead. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Dozer - a bulldozer seen from above, drifting and jumping through a city of
+// boxes and cylinders and flattening it.
+//
+// The question: is driving a heavy machine that SLIDES and FLIES fun, and do
+// the chain reactions (a tower toppling onto its neighbours, a fuel tank
+// blowing up the block, debris shoved into a wall, a slam on landing) make
+// the destruction worth chasing?
+//
+// Controls
+//   phone : drag anywhere = the direction to drive (screen-relative joystick),
+//           a second finger held down = handbrake (drift harder)
+//   desk  : arrows / WASD drive the machine itself, wherever it faces:
+//           up = throttle, left / right = turn, down = brake then reverse,
+//           SPACE = handbrake, R = new city, M = menu (camera and style)
+//   ?bot=1 drives itself toward the nearest building, ?seed=N fixes the city
+//
+// What it does
+//   - the dozer always drives forward; turning hard at speed loses grip and
+//     it drifts. A drift held for half a second gives a boost on release.
+//   - the ground is not flat: it rolls, the streets carry bumps, some blocks
+//     are hills with houses on top, and ramps (along the streets) and kickers
+//     (from a street into a block) throw the dozer in the air. Uphill slows
+//     it, downhill speeds it up.
+//   - in the air there is no grip and little steering. Landing hard SLAMS
+//     the ground around it; coming down on a roof crushes the building.
+//   - the blade (front) hits harder than the sides. A building that survives
+//     a hit bounces the dozer back; one that breaks lets it plough through.
+//   - low buildings crumble. Tall ones topple in the direction they were hit
+//     and smash whatever they land on, which can topple in turn (dominoes).
+//   - red tanks explode, damage everything around them and throw the dozer.
+//   - flying debris damages what it hits; the dozer shoves resting debris.
+//   - every destruction inside the chain window raises the multiplier; one
+//     the dozer makes while drifting pays x2, while airborne x2 (they stack).
+// ---------------------------------------------------------------------------
+
+// ---- tunables ---------------------------------------------------------------
+var ROUND_SECONDS = 90;
+var ARENA = 150;            // side of the square city, world units
+var BLOCK = 24;             // block pitch (block + street)
+var STREET = 9;             // street width
+
+// terrain
+var ROLL_AMP = 0.8;         // the gentle undulation everywhere
+var BUMPS = 26;             // round mounds on the streets
+var BUMP_H = [1.0, 2.2];
+var BUMP_R = [3, 4.5];
+var HILLS = 2;              // blocks raised into a hill, houses on top
+var HILL_H = [4, 7];
+var HILL_R = 9.5;
+var RAMPS = 9;              // along a street
+var RAMP_L = 9, RAMP_W = 3.2, RAMP_H = 3;
+var KICKERS = 5;            // from a street into a block
+var KICK_L = 7, KICK_W = 2.6, KICK_H = 2.4;
+
+// dozer driving
+var MAX_SPEED = 24;         // units / s
+var ACCEL = 30;
+var DRAG = 0.6;             // forward drag, per second
+var COAST_BRAKE = 14;       // braking when no input
+var TURN_RATE = 3.0;        // rad / s at full steer and speed
+var TURN_PIVOT = 0.4;       // share of the turn rate available at a standstill (tracks)
+var TURN_SPEED_REF = 12;    // speed at which the full turn rate is reached
+var STEER_FULL = 0.9;       // angle error (rad) that gives full steer
+var GRIP = 9;               // lateral grip, per second (higher = sticks to its heading)
+var GRIP_DRIFT = 1.0;       // lateral grip while drifting
+var DRIFT_MIN_SPEED = 11;   // below this, no drift without handbrake
+var DRIFT_STEER = 0.6;      // steer amount that starts a drift at speed
+var DRIFT_SLIP = 3.5;       // lateral speed that counts as drifting
+var DRIFT_TURN_MULT = 1.35; // oversteer while drifting
+var BOOST_MIN = 0.5;        // seconds of drift needed for a boost
+var BOOST_TIME = 1.2;       // boost length at full charge
+var BOOST_SPEED = 1.5;      // max speed multiplier while boosting
+var BOOST_ACCEL = 2.2;
+var DOZER_R = 2.5;          // collision radius
+var DOZER_G = 26;           // gravity on the dozer (a little floaty, so a jump reads)
+var SLOPE_G = 22;           // how hard a slope pulls the dozer downhill
+var STEP_MAX = 0.9;         // a rise steeper than this in one step is a wall (a ramp's lip)
+var SNAP = 0.03;            // how far above the ground still counts as touching it
+var AIR_STEER = 0.3;        // share of the turn rate left in the air
+var LAND_MIN = 7;           // vertical impact speed above which a landing slams
+var LAND_R = 8;             // slam radius
+var LAND_DMG = 6;           // slam damage per unit of impact speed above LAND_MIN
+var AIR_MULT = 2;
+var AIR_PTS = 200;          // points per second of air time, paid on landing (from 0.5 s)
+
+// impacts and destruction
+var MIN_IMPACT = 3;         // closing speed under which a contact does no damage
+var DMG_K = 1;
+var BLADE_MULT = 1.6;       // damage when the blade hits
+var SIDE_MULT = 0.7;        // damage when a side or the back hits
+var RESTITUTION = 0.35;
+var PASS_KEEP = 0.72;       // speed kept when ploughing through a broken building
+var GRIND_DPS = 14;         // damage per second while the blade pushes against a wall
+var HP_K = 2.5;             // building hp = HP_K * sqrt(footprint) * (1 + h / 12)
+var TOPPLE_MIN_H = 9;       // buildings this tall topple instead of crumbling
+var TOPPLE_G = 90;          // toppling angular acceleration = TOPPLE_G / h * sin(angle)
+var FALL_DMG = 30;          // damage dealt by a toppled building where it lands
+var FALL_DMG_PER_H = 1.4;
+var TANK_R = 13;            // tank blast radius
+var TANK_DMG = 60;
+var TANK_PUSH = 20;         // blast impulse on the dozer
+var CHUNK_MAX = 500;
+var CHUNK_LIFE = 6;         // seconds a resting chunk stays before sinking
+var CHUNK_HIT_SPEED = 9;    // a chunk faster than this damages what it hits
+var CHUNK_DMG = 0.5;        // damage = CHUNK_DMG * size^3 * speed
+var GRAVITY = 32;           // gravity on debris
+var COMBO_WINDOW = 2.5;     // seconds between two destructions to keep the chain
+var DRIFT_MULT = 2;
+var SKIRT = 2;              // how far a building reaches under its lowest corner (slopes)
+
+// camera
+var CAM_ZOOM = 0.012;       // share of the camera distance added per unit of speed
+// h = height above the target, back = how far behind it (along the screen's
+// up direction), yaw = which way the top of the screen looks: north, iso
+// (45 degrees) or chase (the dozer's heading). ortho = half-height of an
+// orthographic view instead of a lens.
+var CAMS = [
+  { name: "Top down", fov: 28, h: 120, back: 36, yaw: "north" },
+  { name: "Plan", fov: 16, h: 210, back: 2, yaw: "north" },
+  { name: "Three-quarter", fov: 34, h: 62, back: 58, yaw: "north" },
+  { name: "Isometric", ortho: 30, h: 110, back: 155, yaw: "iso" },
+  { name: "Low angle", fov: 46, h: 26, back: 36, yaw: "north" },
+  { name: "Chase", fov: 58, h: 15, back: 24, yaw: "chase", ahead: 12 }
+];
+var CAM_LEAD = 0.45;        // look ahead, seconds of velocity
+var CAM_SMOOTH = 5;
+var SHADOWS = true;
+var JOY_R = 70;             // joystick radius, css px
+var KEY_STEER_RATE = 5;     // keyboard steer ramp, per second (a short tap turns without drifting)
+var KEY_BRAKE = 40;         // down arrow braking while still rolling forward
+var REVERSE_SPEED = 9;
+
+// ---- styles ----------------------------------------------------------------------
+// A style is lights, ground paint, a palette pass over every object colour and
+// a material kind (Lambert, or toon with N light steps). pixel = render scale.
+var hsl = { h: 0, s: 0, l: 0 }, tmpC = null;
+function shade(hex, fn) { tmpC = tmpC || new THREE.Color(); tmpC.setHex(hex).getHSL(hsl); fn(hsl); return tmpC.setHSL(hsl.h, hsl.s, hsl.l).getHex(); }
+var STYLES = [
+  { name: "Pastel", bg: 0x3b3a36, hemi: [0xe4ecff, 0x5a4e40, 1.5], sun: [0xfff0d8, 2.2],
+    ground: { asphalt: "#4d525a", side: "#8e949a", lot: "#7d8a6e", plaza: "#a39a86", dash: "rgba(240, 214, 120, 0.55)" },
+    dirt: 0x6b5f4c, wall: 0x2c2f33, ramp: [0x8a3f12, 0xffb347], mark: 0x1d1a16, dust: 0xc8bca8 },
+  { name: "Toon", toon: 3, bg: 0x2e3440, hemi: [0xffffff, 0x6a6a7a, 1.4], sun: [0xffffff, 2.8],
+    ground: { asphalt: "#3d4452", side: "#b9c2cc", lot: "#69b85a", plaza: "#e3c98f", dash: "#ffe066" },
+    dirt: 0x5b8a3c, wall: 0x22262e, ramp: [0xc0441a, 0xffc93c], mark: 0x1a1d24, dust: 0xffffff,
+    pal: function (hex) { return shade(hex, function (c) { c.s = Math.min(1, c.s * 1.7 + 0.1); }); } },
+  { name: "Clay", bg: 0xd9d4cc, hemi: [0xffffff, 0x8f887d, 1.9], sun: [0xffffff, 2.1],
+    ground: { asphalt: "#c3bdb3", side: "#dcd7cf", lot: "#d0cac0", plaza: "#e4dfd7", dash: "rgba(255, 255, 255, 0.7)" },
+    dirt: 0xbcb5aa, wall: 0xa49e95, ramp: [0xaa9c88, 0xece2d2], mark: 0x8a8378, dust: 0xf0ebe3,
+    pal: function (hex, keep) {
+      if (keep || hex === TANK_COL) return hex;
+      return shade(hex, function (c) { c.h = 0.09; c.s = 0.07; c.l = 0.72 + (c.l - 0.6) * 0.4; });
+    } },
+  { name: "Night", bg: 0x0b0f18, hemi: [0x5a6aa8, 0x1c2030, 1.0], sun: [0xa8bcff, 1.0], fog: true, headlight: true,
+    ground: { asphalt: "#262b35", side: "#444a56", lot: "#2a3a2c", plaza: "#4a4434", dash: "rgba(255, 220, 120, 0.45)" },
+    dirt: 0x14120f, wall: 0x0c0e11, ramp: [0x4a220a, 0xff9a30], mark: 0x050505, dust: 0x6b6a75,
+    pal: function (hex, keep) { return keep ? hex : shade(hex, function (c) { c.l *= 0.8; }); } },
+  { name: "Desert", bg: 0xe3c79a, hemi: [0xfff2d8, 0xa07a4a, 1.4], sun: [0xffe0b0, 2.6],
+    ground: { asphalt: "#8a6f52", side: "#c9a878", lot: "#d9b884", plaza: "#e6c896", dash: "rgba(255, 245, 220, 0.5)" },
+    dirt: 0xcfae7c, wall: 0x8a6a48, ramp: [0x7a4a22, 0xe8a862], mark: 0x5a4028, dust: 0xead6ae,
+    pal: function (hex, keep) {
+      if (keep || hex === TANK_COL) return hex;
+      return shade(hex, function (c) { c.h = 0.06 + c.h * 0.06; c.s = 0.35; c.l = 0.62 + (c.l - 0.6) * 0.5; });
+    } },
+  { name: "Retro pixels", toon: 2, pixel: 0.3, bg: 0x3b3a36, hemi: [0xe4ecff, 0x5a4e40, 1.5], sun: [0xfff0d8, 2.4],
+    ground: { asphalt: "#4d525a", side: "#8e949a", lot: "#7d8a6e", plaza: "#a39a86", dash: "rgba(240, 214, 120, 0.8)" },
+    dirt: 0x6b5f4c, wall: 0x2c2f33, ramp: [0x8a3f12, 0xffb347], mark: 0x1d1a16, dust: 0xc8bca8 }
+];
+var STYLE = STYLES[0];
+function stylize(hex, keep) { return STYLE.pal ? STYLE.pal(hex, keep) : hex; }
+function save(k, v) { try { localStorage.setItem("dozer:" + k, String(v)); } catch (e) {} }
+function load(k) { try { var v = +localStorage.getItem("dozer:" + k); return v > 0 ? v : 0; } catch (e) { return 0; } }
+
+// ---- seeded random ------------------------------------------------------------
+var params = new URLSearchParams(location.search);
+var BOT = params.get("bot") === "1";
+var seed = +params.get("seed") || ((Math.random() * 1e9) | 0);
+var rnd;
+function mulberry(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function rr(a, b) { return a + (b - a) * rnd(); }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+function pick(arr) { return arr[(rnd() * arr.length) | 0]; }
+
+// ---- renderer, scene, lights ---------------------------------------------------
+var glCv = document.getElementById("gl");
+var hud = document.getElementById("hud"), hx = hud.getContext("2d");
+var wrapEl = document.getElementById("wrap");
+var renderer = new THREE.WebGLRenderer({ canvas: glCv, antialias: true });
+var DPR = Math.min(window.devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+renderer.shadowMap.enabled = SHADOWS;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x3b3a36);
+var perspCam = new THREE.PerspectiveCamera(28, 9 / 16, 1, 1500);
+var orthoCam = new THREE.OrthographicCamera(-10, 10, 10, -10, 1, 1500);
+var camera = perspCam;
+
+var hemi = new THREE.HemisphereLight(0xe4ecff, 0x5a4e40, 1.5);
+scene.add(hemi);
+var sun = new THREE.DirectionalLight(0xfff0d8, 2.2);
+sun.castShadow = SHADOWS;
+sun.shadow.mapSize.set(2048, 2048);
+(function (c) { c.left = -60; c.right = 60; c.top = 60; c.bottom = -60; c.near = 1; c.far = 260; })(sun.shadow.camera);
+sun.shadow.bias = -0.0006;
+scene.add(sun); scene.add(sun.target);
+
+var W = 360, H = 640;
+function resize() {
+  H = window.innerHeight;
+  W = Math.min(window.innerWidth, Math.round(H * 9 / 16));
+  wrapEl.style.width = W + "px"; wrapEl.style.height = H + "px";
+  renderer.setSize(W, H);
+  hud.width = W * DPR; hud.height = H * DPR;
+  hud.style.width = W + "px"; hud.style.height = H + "px";
+  perspCam.aspect = W / H; perspCam.updateProjectionMatrix();
+}
+window.addEventListener("resize", resize);
+resize();
+
+// ---- terrain: a baked heightfield plus analytic ramps ---------------------------
+var HALF = ARENA / 2;
+var KB = Math.floor(HALF / BLOCK - 0.5);    // blocks from -KB to KB
+var HF_RES = 0.5, HF_N = Math.round(ARENA / HF_RES) + 1;
+var hf = new Float32Array(HF_N * HF_N);
+var bumps = [], hills = [], ramps = [], hillBlocks = {}, ph = [0, 0, 0];
+
+function baseRaw(x, z) {
+  var e = clamp((HALF - Math.max(Math.abs(x), Math.abs(z))) / 10, 0, 1);
+  if (e <= 0) return 0;
+  var h = ROLL_AMP * (1.2 + 0.7 * Math.sin(x * 0.07 + ph[0]) * Math.sin(z * 0.06 + ph[1]) + 0.5 * Math.sin((x - z) * 0.045 + ph[2]));  // never under 0
+  var list = bumps.concat(hills);
+  for (var i = 0; i < list.length; i++) {
+    var b = list[i], dx = x - b.x, dz = z - b.z, d2 = dx * dx + dz * dz, r2 = b.r * b.r;
+    if (d2 < 9 * r2) h += b.h * Math.exp(-d2 / r2);
+  }
+  return h * e;
+}
+function bake() {
+  for (var j = 0; j < HF_N; j++) for (var i = 0; i < HF_N; i++)
+    hf[j * HF_N + i] = baseRaw(-HALF + i * HF_RES, -HALF + j * HF_RES);
+}
+function Hbase(x, z) {                    // bilinear read of the baked field
+  var fx = (x + HALF) / HF_RES, fz = (z + HALF) / HF_RES;
+  if (fx < 0 || fz < 0 || fx >= HF_N - 1 || fz >= HF_N - 1) return 0;
+  var i = fx | 0, j = fz | 0, tx = fx - i, tz = fz - j, k = j * HF_N + i;
+  var a = hf[k] + (hf[k + 1] - hf[k]) * tx, b = hf[k + HF_N] + (hf[k + HF_N + 1] - hf[k + HF_N]) * tx;
+  return a + (b - a) * tz;
+}
+function rampProfile(r, u) { var t = u / r.L; return r.H * (0.35 * t + 0.65 * t * t); }
+var RA = { h: 0, gx: 0, gz: 0 };
+function rampAt(x, z) {                   // height and slope of a ramp above the base, if on one
+  for (var i = 0; i < ramps.length; i++) {
+    var r = ramps[i];
+    if (x < r.x0 || x > r.x1 || z < r.z0 || z > r.z1) continue;
+    var ox = x - r.sx, oz = z - r.sz, u = ox * r.dx + oz * r.dz;
+    if (u < 0 || u > r.L) continue;
+    var v = ox * r.qx + oz * r.qz;
+    if (v < -r.W || v > r.W) continue;
+    var t = u / r.L, s = r.H / r.L * (0.35 + 1.3 * t);
+    RA.h = rampProfile(r, u); RA.gx = r.dx * s; RA.gz = r.dz * s;
+    return true;
+  }
+  return false;
+}
+var G = { h: 0, gx: 0, gz: 0 };
+function groundAt(x, z) {                 // height + gradient, ramps included (analytic: their lip is a cliff)
+  var e = 0.4;
+  G.h = Hbase(x, z);
+  G.gx = (Hbase(x + e, z) - Hbase(x - e, z)) / (2 * e);
+  G.gz = (Hbase(x, z + e) - Hbase(x, z - e)) / (2 * e);
+  if (rampAt(x, z)) { G.h += RA.h; G.gx += RA.gx; G.gz += RA.gz; }
+  return G;
+}
+function gy(x, z) { var h = Hbase(x, z); if (rampAt(x, z)) h += RA.h; return h; }
+
+function addRamp(lx, lz, dx, dz, L, Wd, Hh) {   // (lx, lz) is the middle of the lip
+  var r = { dx: dx, dz: dz, qx: -dz, qz: dx, L: L, W: Wd, H: Hh, sx: lx - dx * L, sz: lz - dz * L };
+  var ex = Math.abs(dx) * L + Math.abs(dz) * Wd, ez = Math.abs(dz) * L + Math.abs(dx) * Wd;
+  var cx = (lx + r.sx) / 2, cz = (lz + r.sz) / 2;
+  r.x0 = cx - ex / 2 - Wd; r.x1 = cx + ex / 2 + Wd; r.z0 = cz - ez / 2 - Wd; r.z1 = cz + ez / 2 + Wd;
+  ramps.push(r);
+}
+
+function genTerrain() {
+  bumps = []; hills = []; ramps = []; hillBlocks = {};
+  ph = [rr(0, 6.28), rr(0, 6.28), rr(0, 6.28)];
+  var tries = 0;
+  while (hills.length < HILLS && tries++ < 50) {
+    var i = Math.round(rr(-KB, KB)), j = Math.round(rr(-KB, KB)), key = i + "," + j;
+    if ((i === 0 && j === 0) || hillBlocks[key]) continue;
+    hillBlocks[key] = true;
+    hills.push({ x: i * BLOCK, z: j * BLOCK, r: HILL_R, h: rr(HILL_H[0], HILL_H[1]) });
+  }
+  // every street segment between two crossings, shuffled; each takes one feature
+  var segs = [];
+  for (var s = -KB - 1; s <= KB; s++) for (var m = -KB; m <= KB; m++) {
+    segs.push({ x: (s + 0.5) * BLOCK, z: m * BLOCK, ax: "z" });   // street running north-south
+    segs.push({ x: m * BLOCK, z: (s + 0.5) * BLOCK, ax: "x" });   // street running east-west
+  }
+  for (var k = segs.length - 1; k > 0; k--) { var o = (rnd() * (k + 1)) | 0, t = segs[k]; segs[k] = segs[o]; segs[o] = t; }
+  var n = 0, sg, sign;
+  for (k = 0; k < RAMPS && n < segs.length; k++, n++) {
+    sg = segs[n]; sign = rnd() < 0.5 ? -1 : 1;
+    var dx = sg.ax === "x" ? sign : 0, dz = sg.ax === "z" ? sign : 0;
+    if (Math.abs(sg.x + dx * 30) > HALF - 6 || Math.abs(sg.z + dz * 30) > HALF - 6) { dx = -dx; dz = -dz; }  // land inside the city
+    addRamp(sg.x + dx * RAMP_L / 2, sg.z + dz * RAMP_L / 2, dx, dz, RAMP_L, RAMP_W, RAMP_H);
+  }
+  for (k = 0; k < KICKERS && n < segs.length; k++, n++) {
+    sg = segs[n]; sign = rnd() < 0.5 ? -1 : 1;
+    var kx = sg.ax === "z" ? sign : 0, kz = sg.ax === "x" ? sign : 0;   // across the street
+    if (Math.abs(sg.x + kx * 10) > HALF - 8 || Math.abs(sg.z + kz * 10) > HALF - 8) continue;  // never into the wall
+    var off = STREET / 2 - 0.3;
+    addRamp(sg.x + kx * off, sg.z + kz * off, kx, kz, KICK_L, KICK_W, KICK_H);
+  }
+  for (k = 0; k < BUMPS && n < segs.length; k++, n++) {
+    sg = segs[n];
+    var along = rr(-6, 6);
+    bumps.push({ x: sg.x + (sg.ax === "x" ? along : 0), z: sg.z + (sg.ax === "z" ? along : 0),
+      r: rr(BUMP_R[0], BUMP_R[1]), h: rr(BUMP_H[0], BUMP_H[1]) });
+  }
+  bake();
+}
+
+// ---- ground mesh, painted streets ------------------------------------------------
+var TSEG = 150;
+var groundGeo = new THREE.PlaneGeometry(ARENA, ARENA, TSEG, TSEG);
+groundGeo.rotateX(-Math.PI / 2);
+var groundCv = document.createElement("canvas"); groundCv.width = groundCv.height = 1024;
+var groundTex = new THREE.CanvasTexture(groundCv);
+groundTex.colorSpace = THREE.SRGBColorSpace;
+groundTex.anisotropy = 4;
+var dirtMat = new THREE.MeshLambertMaterial({ color: 0x6b5f4c });
+var wallMat = new THREE.MeshLambertMaterial({ color: 0x2c2f33 });
+function drawGround() {
+  var N = groundCv.width, g = groundCv.getContext("2d"), k = N / ARENA, C = STYLE.ground;
+  function X(x) { return (x + HALF) * k; }
+  g.setLineDash([]);
+  g.fillStyle = C.asphalt; g.fillRect(0, 0, N, N);
+  var inner = BLOCK - STREET;
+  for (var i = -KB; i <= KB; i++) for (var j = -KB; j <= KB; j++) {
+    var cx = i * BLOCK, cz = j * BLOCK;
+    g.fillStyle = C.side;
+    g.fillRect(X(cx - inner / 2 - 1.2), X(cz - inner / 2 - 1.2), (inner + 2.4) * k, (inner + 2.4) * k);
+    g.fillStyle = (i === 0 && j === 0) ? C.plaza : C.lot;
+    g.fillRect(X(cx - inner / 2), X(cz - inner / 2), inner * k, inner * k);
+  }
+  g.strokeStyle = C.dash; g.lineWidth = 0.35 * k;            // centre dashes
+  g.setLineDash([2.5 * k, 2.5 * k]);
+  for (var s = -KB - 0.5; s <= KB + 0.5; s += 1) {
+    var p = X(s * BLOCK);
+    g.beginPath(); g.moveTo(p, 0); g.lineTo(p, N); g.stroke();
+    g.beginPath(); g.moveTo(0, p); g.lineTo(N, p); g.stroke();
+  }
+  groundTex.needsUpdate = true;
+}
+(function buildGround() {
+  drawGround();
+  var ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({ map: groundTex }));
+  ground.receiveShadow = true;
+  scene.add(ground);
+  var dirt = new THREE.Mesh(new THREE.PlaneGeometry(ARENA * 4, ARENA * 4), dirtMat);
+  dirt.rotation.x = -Math.PI / 2; dirt.position.y = -0.05; dirt.receiveShadow = true;
+  scene.add(dirt);
+  [[0, -HALF - 1, ARENA + 4, 2], [0, HALF + 1, ARENA + 4, 2], [-HALF - 1, 0, 2, ARENA], [HALF + 1, 0, 2, ARENA]]
+    .forEach(function (w) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w[2], 1.6, w[3]), wallMat);
+      m.position.set(w[0], 0.8, w[1]); m.castShadow = m.receiveShadow = true; scene.add(m);
+    });
+})();
+function shapeGround() {
+  var pos = groundGeo.attributes.position;
+  for (var i = 0; i < pos.count; i++) pos.setY(i, Hbase(pos.getX(i), pos.getZ(i)));
+  pos.needsUpdate = true;
+  groundGeo.computeVertexNormals();
+}
+
+var rampGroup = new THREE.Group(); scene.add(rampGroup);
+var rampMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+var RAMP_LOW = new THREE.Color(0x8a3f12), RAMP_HIGH = new THREE.Color(0xffb347), rampCol = new THREE.Color();
+var lipMat = new THREE.MeshLambertMaterial({ color: 0x2b2b2b, side: THREE.DoubleSide });
+function buildRampMeshes() {
+  while (rampGroup.children.length) { var c = rampGroup.children.pop(); c.geometry.dispose(); }
+  ramps.forEach(function (r) {
+    var S = 10, pos = [], lip = [], cols = [];
+    function P(u, v, top) {
+      var x = r.sx + r.dx * u + r.qx * v, z = r.sz + r.dz * u + r.qz * v, b = Hbase(x, z);
+      return [x, top ? b + rampProfile(r, u) + 0.03 : b - 0.6, z, u / r.L];
+    }
+    function quad(arr, a, b, c, d) {          // dark at the foot, bright at the lip: the slope reads from above
+      [a, b, c, a, c, d].forEach(function (p) {
+        arr.push(p[0], p[1], p[2]);
+        if (arr === pos) { rampCol.copy(RAMP_LOW).lerp(RAMP_HIGH, p[3]); cols.push(rampCol.r, rampCol.g, rampCol.b); }
+      });
+    }
+    for (var i = 0; i < S; i++) {
+      var u0 = i / S * r.L, u1 = (i + 1) / S * r.L;
+      quad(pos, P(u0, -r.W, 1), P(u1, -r.W, 1), P(u1, r.W, 1), P(u0, r.W, 1));
+      quad(pos, P(u0, -r.W, 0), P(u1, -r.W, 0), P(u1, -r.W, 1), P(u0, -r.W, 1));
+      quad(pos, P(u0, r.W, 0), P(u1, r.W, 0), P(u1, r.W, 1), P(u0, r.W, 1));
+    }
+    quad(lip, P(r.L, -r.W, 0), P(r.L, r.W, 0), P(r.L, r.W, 1), P(r.L, -r.W, 1));
+    [[pos, rampMat], [lip, lipMat]].forEach(function (part) {
+      var g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(part[0], 3));
+      if (part[0] === pos) g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+      g.computeVertexNormals();
+      var m = new THREE.Mesh(g, part[1]); m.castShadow = m.receiveShadow = true;
+      rampGroup.add(m);
+    });
+  });
+}
+
+// ---- shared geometry and materials ------------------------------------------------
+var boxGeo = new THREE.BoxGeometry(1, 1, 1);
+var cylGeo = new THREE.CylinderGeometry(1, 1, 1, 20);
+var matCache = {}, toonMaps = {};
+function toonMap(steps) {                 // the light ramp of a toon material: N flat steps
+  if (toonMaps[steps]) return toonMaps[steps];
+  var data = new Uint8Array(steps * 4);
+  for (var i = 0; i < steps; i++) { var v = Math.round(255 * (0.4 + 0.6 * i / (steps - 1))); data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = v; data[i * 4 + 3] = 255; }
+  var t = new THREE.DataTexture(data, steps, 1, THREE.RGBAFormat);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true;
+  return (toonMaps[steps] = t);
+}
+function makeMat(opts) {
+  if (STYLE.toon) { opts.gradientMap = toonMap(STYLE.toon); return new THREE.MeshToonMaterial(opts); }
+  return new THREE.MeshLambertMaterial(opts);
+}
+function mat(hex, keep) {                 // keep: an accent the palette leaves alone (the dozer)
+  var key = hex + (keep ? "k" : "");
+  if (!matCache[key]) matCache[key] = makeMat({ color: stylize(hex, keep) });
+  return matCache[key];
+}
+var colCache = {};
+function col(hex) { if (!colCache[hex]) colCache[hex] = new THREE.Color(hex); return colCache[hex]; }
+var HOUSE_COLS = [0xe8b27a, 0xd98c6c, 0xc9d6a3, 0xa8c3d9, 0xe3d3b0, 0xd4a5b8];
+var TOWER_COLS = [0x9fb4c7, 0xb8a7c9, 0x8fb3a6, 0xc7c2b4, 0xa3b9d6];
+var SILO_COL = 0xd2dade, TANK_COL = 0xd9473b;
+
+// ---- buildings + spatial grid --------------------------------------------------------
+var buildings = [], total = 0, flattened = 0;
+var CELL = 10, G0 = -HALF - 10, GN = Math.ceil((ARENA + 20) / CELL), grid = [];
+var stamp = 0;
+function cellOf(x, z) {
+  var i = Math.floor((x - G0) / CELL), j = Math.floor((z - G0) / CELL);
+  if (i < 0 || j < 0 || i >= GN || j >= GN) return -1;
+  return j * GN + i;
+}
+function gridInsert(b) {
+  var e = b.shape === "box" ? Math.max(b.hw, b.hd) : b.r;
+  var i0 = Math.floor((b.x - e - G0) / CELL), i1 = Math.floor((b.x + e - G0) / CELL);
+  var j0 = Math.floor((b.z - e - G0) / CELL), j1 = Math.floor((b.z + e - G0) / CELL);
+  for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++)
+    if (i >= 0 && j >= 0 && i < GN && j < GN) grid[j * GN + i].push(b);
+}
+var qOut = [];
+function query(x, z, rad) {              // standing buildings near a point
+  qOut.length = 0; stamp++;
+  var i0 = Math.floor((x - rad - G0) / CELL), i1 = Math.floor((x + rad - G0) / CELL);
+  var j0 = Math.floor((z - rad - G0) / CELL), j1 = Math.floor((z + rad - G0) / CELL);
+  for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+    if (i < 0 || j < 0 || i >= GN || j >= GN) continue;
+    var c = grid[j * GN + i];
+    for (var k = 0; k < c.length; k++) {
+      var b = c[k];
+      if (b.alive && b.q !== stamp) { b.q = stamp; qOut.push(b); }
+    }
+  }
+  return qOut;
+}
+
+// Closest point of a building's footprint to (x, z): distance (negative
+// inside), outward normal, and the point itself. Writes into T.
+var T = { d: 0, nx: 0, nz: 0, px: 0, pz: 0 };
+function closest(b, x, z) {
+  if (b.shape === "box") {
+    var cx = clamp(x, b.x - b.hw, b.x + b.hw), cz = clamp(z, b.z - b.hd, b.z + b.hd);
+    var dx = x - cx, dz = z - cz, d = Math.sqrt(dx * dx + dz * dz);
+    if (d > 1e-6) { T.d = d; T.nx = dx / d; T.nz = dz / d; T.px = cx; T.pz = cz; return T; }
+    var ex = b.hw - Math.abs(x - b.x), ez = b.hd - Math.abs(z - b.z);
+    if (ex < ez) { T.nx = x > b.x ? 1 : -1; T.nz = 0; T.d = -ex; T.px = b.x + T.nx * b.hw; T.pz = z; }
+    else { T.nz = z > b.z ? 1 : -1; T.nx = 0; T.d = -ez; T.pz = b.z + T.nz * b.hd; T.px = x; }
+    return T;
+  }
+  var ddx = x - b.x, ddz = z - b.z, dc = Math.sqrt(ddx * ddx + ddz * ddz) || 1e-6;
+  T.nx = ddx / dc; T.nz = ddz / dc; T.d = dc - b.r;
+  T.px = b.x + T.nx * b.r; T.pz = b.z + T.nz * b.r;
+  return T;
+}
+
+function addBuilding(kind, shape, x, z, a, d, h, hex) {
+  var b = { kind: kind, shape: shape, x: x, z: z, h: h, hex: hex, alive: true,
+    shake: 0, hitCd: 0, q: 0, fall: null, crumble: -1 };
+  var ex = shape === "box" ? a / 2 : a, ez = shape === "box" ? d / 2 : a;
+  b.y0 = Math.min(Hbase(x, z), Hbase(x - ex, z - ez), Hbase(x + ex, z - ez), Hbase(x - ex, z + ez), Hbase(x + ex, z + ez));
+  b.base = b.y0 - SKIRT; b.ht = h + SKIRT; b.top = b.y0 + h;
+  var mesh;
+  if (shape === "box") {
+    b.hw = a / 2; b.hd = d / 2;
+    mesh = new THREE.Mesh(boxGeo, mat(hex)); mesh.scale.set(a, b.ht, d);
+    b.area = a * d;
+  } else {
+    b.r = a;
+    mesh = new THREE.Mesh(cylGeo, mat(hex)); mesh.scale.set(a, b.ht, a);
+    b.area = Math.PI * a * a;
+  }
+  mesh.position.set(x, b.base + b.ht / 2, z);
+  mesh.castShadow = mesh.receiveShadow = true;
+  mesh.userData = { hex: hex };
+  scene.add(mesh);
+  b.mesh = mesh;
+  b.vol = b.area * h;
+  b.maxHp = b.hp = HP_K * Math.sqrt(b.area) * (1 + h / 12) * (kind === "tank" ? 0.6 : 1);
+  b.base0 = Math.round(10 * Math.sqrt(b.vol) / 5) * 5;
+  buildings.push(b); gridInsert(b); total++;
+  return b;
+}
+
+function buildCity() {
+  var inner = BLOCK - STREET, q = inner / 4;
+  for (var i = -KB; i <= KB; i++) for (var j = -KB; j <= KB; j++) {
+    if (i === 0 && j === 0) continue;                       // the start plaza
+    var cx = i * BLOCK, cz = j * BLOCK, r = rnd(), k;
+    if (hillBlocks[i + "," + j]) r = 0.5;                     // a hill carries houses
+    if (r < 0.22) {                                           // one big tower
+      var tw = rr(8, 12.5), td = rr(8, 12.5);
+      addBuilding("tower", "box", cx, cz, tw, td, rr(14, 24), pick(TOWER_COLS));
+    } else if (r < 0.4) {                                     // two slim towers
+      var horiz = rnd() < 0.5;
+      for (k = -1; k <= 1; k += 2)
+        addBuilding("tower", "box", cx + (horiz ? k * q : 0), cz + (horiz ? 0 : k * q),
+          horiz ? rr(5, 6.5) : rr(9, 13), horiz ? rr(9, 13) : rr(5, 6.5), rr(11, 22), pick(TOWER_COLS));
+    } else if (r < 0.66) {                                    // houses
+      for (k = 0; k < 4; k++) if (rnd() < 0.85)
+        addBuilding("house", "box", cx + (k % 2 ? q : -q), cz + (k < 2 ? -q : q),
+          rr(4, 6), rr(4, 6), rr(3, 6.5), pick(HOUSE_COLS));
+    } else if (r < 0.84) {                                    // silos in a row
+      var n = 1 + ((rnd() * 3) | 0), horiz2 = rnd() < 0.5;
+      for (k = 0; k < n; k++) {
+        var o = (k - (n - 1) / 2) * 5.2;
+        addBuilding("silo", "cyl", cx + (horiz2 ? o : 0), cz + (horiz2 ? 0 : o), rr(2, 2.5), 0, rr(10, 19), SILO_COL);
+      }
+    } else {                                                  // tank farm
+      for (k = 0; k < 4; k++) if (rnd() < 0.8)
+        addBuilding("tank", "cyl", cx + (k % 2 ? q : -q), cz + (k < 2 ? -q : q), rr(2, 2.7), 0, 3.2, TANK_COL);
+    }
+  }
+  for (var si = -KB; si < KB; si++) for (var sj = -KB; sj < KB; sj++) {  // tanks at crossings
+    var tx = (si + 0.5) * BLOCK, tz = (sj + 0.5) * BLOCK;
+    if (rnd() < 0.18 && !rampNear(tx, tz, 6)) addBuilding("tank", "cyl", tx, tz, 1.8, 0, 3, TANK_COL);
+  }
+}
+function rampNear(x, z, m) {
+  for (var i = 0; i < ramps.length; i++) {
+    var r = ramps[i];
+    if (x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m) return true;
+  }
+  return false;
+}
+
+// ---- the dozer --------------------------------------------------------------------
+var dozer = { x: 0, y: 0, z: 0, a: -Math.PI / 2, vx: 0, vy: 0, vz: 0, ground: true, prevY: 0,
+  drift: false, driftT: 0, driftRecent: 0, boost: 0, boostMax: 1, lastMark: null,
+  airT: 0, airRecent: 0 };
+(function buildDozer() {
+  var g = new THREE.Group();
+  function part(w, h, d, x, y, z, hex) {
+    var m = new THREE.Mesh(boxGeo, mat(hex, true)); m.scale.set(w, h, d); m.position.set(x, y, z);
+    m.userData = { hex: hex, keep: true };
+    m.castShadow = true; g.add(m); return m;
+  }
+  part(4.4, 1.0, 0.9, -0.2, 0.5, 1.25, 0x2a2a2a);            // tracks (forward is +x)
+  part(4.4, 1.0, 0.9, -0.2, 0.5, -1.25, 0x2a2a2a);
+  part(3.4, 1.3, 2.2, -0.3, 1.4, 0, 0xf2b22a);                // body
+  part(1.5, 1.3, 1.7, -0.9, 2.7, 0, 0xe0a020);                // cabin
+  part(1.2, 0.7, 1.5, -0.6, 2.75, 0, 0x37475a);               // windows
+  part(0.3, 1.0, 0.3, 0.6, 2.4, 0.6, 0x333333);               // exhaust
+  part(0.45, 1.4, 3.9, 2.55, 0.8, 0, 0x8a8f96);               // blade
+  part(1.2, 0.3, 0.3, 1.8, 0.9, 0.9, 0x555a60);               // arms
+  part(1.2, 0.3, 0.3, 1.8, 0.9, -0.9, 0x555a60);
+  dozer.flame = part(0.9, 0.5, 0.9, -2.7, 1.3, 0, 0xff8a2a);  // boost flame
+  dozer.flame.material = new THREE.MeshBasicMaterial({ color: 0xffa040 });
+  dozer.flame.userData = {};
+  dozer.flame.visible = false;
+  dozer.mesh = g; scene.add(g);
+})();
+var headlight = new THREE.SpotLight(0xfff1c0, 4000, 90, 0.6, 0.45, 1.5);   // Night style only
+headlight.position.set(2.8, 2.4, 0); headlight.target.position.set(18, 0, 0);
+dozer.mesh.add(headlight); dozer.mesh.add(headlight.target); headlight.visible = false;
+
+// ---- pools: chunks, dust, track marks, blasts --------------------------------------------
+var dummy = new THREE.Object3D(), ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+function instanced(geo, material, n, shadow) {
+  var m = new THREE.InstancedMesh(geo, material, n);
+  m.frustumCulled = false; m.castShadow = !!shadow;
+  for (var i = 0; i < n; i++) { m.setMatrixAt(i, ZERO); m.setColorAt(i, col(0xffffff)); }
+  scene.add(m); return m;
+}
+var chunkMesh = instanced(boxGeo, new THREE.MeshLambertMaterial(), CHUNK_MAX, true);
+var chunks = [], chunkHead = 0;
+for (var ci = 0; ci < CHUNK_MAX; ci++) chunks.push({ on: false });
+function spawnChunk(x, y, z, vx, vy, vz, s, hex) {
+  var c = chunks[chunkHead], idx = chunkHead; chunkHead = (chunkHead + 1) % CHUNK_MAX;
+  c.on = true; c.rest = false; c.life = 0; c.s = s;
+  c.x = x; c.y = y; c.z = z; c.vx = vx; c.vy = vy; c.vz = vz;
+  c.rx = rr(0, 6); c.ry = rr(0, 6); c.rz = rr(0, 6);
+  c.wx = rr(-8, 8); c.wy = rr(-8, 8); c.wz = rr(-8, 8);
+  chunkMesh.setColorAt(idx, col(stylize(hex))); chunkMesh.instanceColor.needsUpdate = true;
+}
+
+var DUST_MAX = 260;
+var dustMesh = instanced(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: 0xc8bca8 }), DUST_MAX, false);
+var dust = [], dustHead = 0;
+for (var di = 0; di < DUST_MAX; di++) dust.push({ on: false });
+function spawnDust(x, y, z, vx, vy, vz, s0, s1, life) {
+  var p = dust[dustHead]; dustHead = (dustHead + 1) % DUST_MAX;
+  p.on = true; p.x = x; p.y = y; p.z = z; p.vx = vx; p.vy = vy; p.vz = vz;
+  p.s0 = s0; p.s1 = s1; p.t = 0; p.life = life;
+}
+
+var MARK_MAX = 1400;
+var markGeo = new THREE.PlaneGeometry(1, 1); markGeo.rotateX(-Math.PI / 2);
+var markMesh = instanced(markGeo, new THREE.MeshBasicMaterial({ color: 0x1d1a16, transparent: true, opacity: 0.32, depthWrite: false }), MARK_MAX, false);
+var markHead = 0, upY = new THREE.Vector3(0, 1, 0);
+var mX = new THREE.Vector3(), mY = new THREE.Vector3(), mZ = new THREE.Vector3(), mM = new THREE.Matrix4();
+function addMark(x0, z0, x1, z1, width) {   // a strip laid on the slope between two points
+  var y0 = gy(x0, z0) + 0.06, y1 = gy(x1, z1) + 0.06;
+  mX.set(x1 - x0, y1 - y0, z1 - z0);
+  var len = mX.length();
+  if (len < 0.01) return;
+  mX.multiplyScalar(1 / len);
+  mZ.crossVectors(mX, upY).normalize();
+  mY.crossVectors(mZ, mX);
+  mX.multiplyScalar(len + 0.05); mZ.multiplyScalar(width);
+  mM.makeBasis(mX, mY, mZ); mM.setPosition((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  markMesh.setMatrixAt(markHead, mM); markMesh.instanceMatrix.needsUpdate = true;
+  markHead = (markHead + 1) % MARK_MAX;
+}
+
+var blasts = [];
+for (var bi = 0; bi < 8; bi++) {
+  var bm = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 10),
+    new THREE.MeshBasicMaterial({ color: 0xffb040, transparent: true, opacity: 0, depthWrite: false }));
+  bm.visible = false; scene.add(bm); blasts.push({ m: bm, t: 1 });
+}
+function spawnBlast(x, y, z, r, hex) {
+  for (var i = 0; i < blasts.length; i++) if (blasts[i].t >= 1) {
+    var b = blasts[i]; b.t = 0; b.r = r; b.m.position.set(x, y, z); b.m.visible = true;
+    b.m.material.color.setHex(hex || 0xffb040); return;
+  }
+}
+
+// ---- game state -------------------------------------------------------------------
+var score = 0, timeLeft = ROUND_SECONDS, over = false, overText = "";
+var combo = 0, comboT = 0, bestCombo = 0, shake = 0;
+var pend = [], floats = [], round = 0, stats = { airMax: 0, slams: 0, crushes: 0 };
+
+function newCity() {
+  rnd = mulberry(seed + round * 7919); round++;
+  for (var i = 0; i < buildings.length; i++) {
+    var b = buildings[i];
+    if (b.fall) scene.remove(b.fall.pivot);
+    scene.remove(b.mesh);
+  }
+  buildings = []; total = 0; flattened = 0;
+  grid = []; for (var g = 0; g < GN * GN; g++) grid.push([]);
+  genTerrain();
+  shapeGround();
+  buildRampMeshes();
+  buildCity();
+  for (var c = 0; c < CHUNK_MAX; c++) { chunks[c].on = false; chunkMesh.setMatrixAt(c, ZERO); }
+  for (var d = 0; d < DUST_MAX; d++) { dust[d].on = false; dustMesh.setMatrixAt(d, ZERO); }
+  for (var m = 0; m < MARK_MAX; m++) markMesh.setMatrixAt(m, ZERO);
+  chunkMesh.instanceMatrix.needsUpdate = dustMesh.instanceMatrix.needsUpdate = markMesh.instanceMatrix.needsUpdate = true;
+  dozer.x = 0; dozer.z = 0; dozer.y = gy(0, 0); dozer.a = -Math.PI / 2;
+  dozer.vx = dozer.vy = dozer.vz = 0; dozer.ground = true;
+  dozer.driftT = 0; dozer.boost = 0; dozer.lastMark = null; dozer.airT = 0; dozer.airRecent = 0;
+  score = 0; timeLeft = ROUND_SECONDS; over = false; combo = 0; comboT = 0; bestCombo = 0;
+  pend = []; floats = []; shake = 0; stats = { airMax: 0, slams: 0, crushes: 0 };
+}
+
+// ---- destruction -------------------------------------------------------------------
+function damage(o, dmg, dx, dz, cause) {
+  if (!o.alive) return;
+  o.hp -= dmg;
+  o.shake = Math.min(1, o.shake + 0.3 + dmg / o.maxHp);
+  if (o.hp <= 0) destroy(o, dx, dz, cause);
+}
+
+function addScore(b, cause) {
+  combo = comboT > 0 ? combo + 1 : 1; comboT = COMBO_WINDOW;
+  if (combo > bestCombo) bestCombo = combo;
+  var mine = cause === "dozer" || cause === "crush" || cause === "slam";
+  var drift = mine && dozer.driftRecent > 0, air = mine && dozer.airRecent > 0;
+  var mult = combo * (drift ? DRIFT_MULT : 1) * (air ? AIR_MULT : 1), pts = b.base0 * mult;
+  score += pts;
+  floats.push({ x: b.x, y: b.y0 + Math.min(b.h, 12) + 2, z: b.z, t: 0,
+    txt: "+" + pts + (mult > 1 ? "  x" + mult : "") + (drift ? "  drift" : "") + (air ? "  air" : "") });
+}
+
+function burst(b, n, dx, dz, push) {
+  for (var i = 0; i < n; i++) {
+    var x, z;
+    if (b.shape === "box") { x = b.x + rr(-b.hw, b.hw); z = b.z + rr(-b.hd, b.hd); }
+    else { var a = rr(0, 6.283), rad = Math.sqrt(rnd()) * b.r; x = b.x + Math.cos(a) * rad; z = b.z + Math.sin(a) * rad; }
+    var ox = x - b.x, oz = z - b.z, ol = Math.sqrt(ox * ox + oz * oz) || 1, out = rr(2, 7);
+    spawnChunk(x, b.y0 + rr(0.4, b.h * 0.8), z,
+      ox / ol * out + dx * rr(0, push), rr(2, 8), oz / ol * out + dz * rr(0, push),
+      rr(0.5, 1.3) * (b.h > 8 ? 1.2 : 1), b.hex);
+  }
+}
+
+function destroy(b, dx, dz, cause) {
+  b.alive = false; flattened++;
+  addScore(b, cause);
+  var dl = Math.sqrt(dx * dx + dz * dz);
+  if (dl < 0.1) { var ra = rr(0, 6.283); dx = Math.cos(ra); dz = Math.sin(ra); } else { dx /= dl; dz /= dl; }
+  if (b.kind === "tank") {
+    scene.remove(b.mesh);
+    burst(b, 14, 0, 0, 0);
+    explode(b.x, b.z);
+    return;
+  }
+  if (b.h >= TOPPLE_MIN_H && cause !== "crush") {   // topple around the base edge it was pushed toward
+    var ext = b.shape === "box" ? Math.abs(dx) * b.hw + Math.abs(dz) * b.hd : b.r;
+    var pivot = new THREE.Object3D();
+    var px = b.x + dx * ext, pz = b.z + dz * ext;
+    pivot.position.set(px, b.y0, pz);
+    scene.remove(b.mesh); b.mesh.position.set(-dx * ext, b.ht / 2 - SKIRT, -dz * ext);
+    pivot.add(b.mesh); scene.add(pivot);
+    b.fall = { pivot: pivot, ax: new THREE.Vector3(dz, 0, -dx), ang: 0.05, w: 0.9,
+      dx: dx, dz: dz, ext: ext, px: px, pz: pz };
+    burst(b, 6, dx, dz, 3);
+    for (var k = 0; k < 6; k++) spawnDust(px + rr(-3, 3), b.y0 + 0.5, pz + rr(-3, 3), rr(-2, 2), rr(0.5, 2), rr(-2, 2), 1, 3, 1.2);
+    return;
+  }
+  b.crumble = 0;                          // sink into the ground
+  burst(b, clamp(Math.round(b.vol / 8), 6, 36), dx, dz, 6);
+  for (var j = 0; j < 8; j++) spawnDust(b.x + rr(-3, 3), b.y0 + rr(0.5, 2), b.z + rr(-3, 3), rr(-3, 3), rr(1, 3), rr(-3, 3), 1, 3.4, 1.1);
+  shake = Math.min(1.2, shake + 0.25);
+}
+
+function landing(b) {                     // a toppled building hits the ground
+  var f = b.fall, len = b.h;
+  var qx = -f.dz, qz = f.dx;
+  var perp = b.shape === "box" ? Math.abs(qx) * b.hw + Math.abs(qz) * b.hd : b.r;
+  var hit = [], dmg = FALL_DMG + FALL_DMG_PER_H * len;
+  for (var t = 0; t <= len; t += 1.5) {
+    var x = f.px + f.dx * t, z = f.pz + f.dz * t, list = query(x, z, perp + 2);
+    for (var i = 0; i < list.length; i++) {
+      var o = list[i];
+      if (o === b || o.fall || hit.indexOf(o) >= 0) continue;
+      if (closest(o, x, z).d < perp) { hit.push(o); pend.push({ t: t / len * 0.15, o: o, dmg: dmg, dx: f.dx, dz: f.dz, cause: "fall" }); }
+    }
+  }
+  var n = clamp(Math.round(len * 2.2), 10, 60);
+  for (var k = 0; k < n; k++) {
+    var tt = rr(0.5, len), off = rr(-perp, perp);
+    var cx = f.px + f.dx * tt + qx * off, cz = f.pz + f.dz * tt + qz * off;
+    spawnChunk(cx, gy(cx, cz) + rr(0.4, f.ext * 2), cz,
+      qx * rr(-5, 5) + f.dx * rr(1, 6), rr(3, 10), qz * rr(-5, 5) + f.dz * rr(1, 6), rr(0.6, 1.5), b.hex);
+  }
+  for (var j = 0; j < 14; j++) {
+    var t2 = rr(0, len), dx = f.px + f.dx * t2 + qx * rr(-perp, perp), dz = f.pz + f.dz * t2 + qz * rr(-perp, perp);
+    spawnDust(dx, gy(dx, dz) + 0.6, dz, qx * rr(-4, 4), rr(1, 3), qz * rr(-4, 4), 1.4, 4.5, 1.4);
+  }
+  shake = Math.min(1.6, shake + len / 22);
+  scene.remove(f.pivot);
+}
+
+function kickChunks(x, z, r, power, up) {   // throw the debris around a point
+  for (var c = 0; c < CHUNK_MAX; c++) {
+    var ch = chunks[c]; if (!ch.on) continue;
+    var cx = ch.x - x, cz = ch.z - z, cd = Math.sqrt(cx * cx + cz * cz);
+    if (cd < r && cd > 0.01) {
+      var f = (1 - cd / r) * power;
+      ch.vx += cx / cd * f; ch.vz += cz / cd * f; ch.vy += f * up; ch.rest = false; ch.life = 0;
+    }
+  }
+}
+
+function explode(x, z) {
+  var y = gy(x, z);
+  spawnBlast(x, y + 1, z, TANK_R * 0.7);
+  shake = Math.min(1.8, shake + 0.9);
+  var list = query(x, z, TANK_R + 6);
+  for (var i = 0; i < list.length; i++) {
+    var o = list[i];
+    if (o.fall) continue;
+    var d = Math.max(0, closest(o, x, z).d);
+    if (d >= TANK_R) continue;
+    pend.push({ t: d / TANK_R * 0.3, o: o, dmg: TANK_DMG * (1 - d / TANK_R), dx: o.x - x, dz: o.z - z, cause: "blast" });
+  }
+  kickChunks(x, z, TANK_R, 22, 0.6);
+  var ddx = dozer.x - x, ddz = dozer.z - z, dd = Math.sqrt(ddx * ddx + ddz * ddz);
+  if (dd < TANK_R && dd > 0.01) {         // the blast throws the dozer too
+    var p = (1 - dd / TANK_R) * TANK_PUSH;
+    dozer.vx += ddx / dd * p; dozer.vz += ddz / dd * p;
+    if (p > 4) { dozer.vy = Math.max(dozer.vy, p * 0.6); dozer.ground = false; }
+  }
+  for (var k = 0; k < 10; k++)
+    spawnDust(x + rr(-2, 2), y + rr(1, 3), z + rr(-2, 2), rr(-6, 6), rr(2, 6), rr(-6, 6), 1.5, 4, 1.0);
+}
+
+function slam(x, z, imp) {                // a hard landing shakes everything around it
+  var power = imp - LAND_MIN, y = gy(x, z);
+  stats.slams++;
+  shake = Math.min(1.6, shake + power / 10);
+  spawnBlast(x, y + 0.3, z, LAND_R * 0.8, 0xe8dcc0);
+  for (var k = 0; k < 16; k++) {
+    var a = k / 16 * 6.283;
+    spawnDust(x + Math.cos(a) * 2, y + 0.5, z + Math.sin(a) * 2, Math.cos(a) * rr(6, 10), rr(0.5, 2), Math.sin(a) * rr(6, 10), 1, 2.6, 0.8);
+  }
+  kickChunks(x, z, LAND_R, power * 0.8, 1.0);
+  var list = query(x, z, LAND_R + 6);
+  for (var i = 0; i < list.length; i++) {
+    var o = list[i];
+    if (o.fall) continue;
+    var d = Math.max(0, closest(o, x, z).d);
+    if (d < LAND_R) damage(o, LAND_DMG * power * (1 - d / LAND_R), o.x - x, o.z - z, "slam");
+  }
+  if (power > 3) floats.push({ x: x, y: y + 3, z: z, t: 0, txt: "Slam" });
+}
+
+// ---- input ----------------------------------------------------------------------
+var joy = { id: -1, sx: 0, sy: 0, x: 0, y: 0 }, brakes = {}, keys = {};
+function local(e) { var r = hud.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+hud.addEventListener("pointerdown", function (e) {
+  if (menuOpen) { setMenu(false); return; }
+  if (over) { newCity(); return; }
+  var p = local(e);
+  try { hud.setPointerCapture(e.pointerId); } catch (err) {}
+  if (joy.id < 0) { joy.id = e.pointerId; joy.sx = joy.x = p.x; joy.sy = joy.y = p.y; }
+  else brakes[e.pointerId] = true;
+});
+hud.addEventListener("pointermove", function (e) {
+  if (e.pointerId !== joy.id) return;
+  var p = local(e); joy.x = p.x; joy.y = p.y;
+  var dx = joy.x - joy.sx, dy = joy.y - joy.sy, d = Math.sqrt(dx * dx + dy * dy);
+  if (d > JOY_R) { joy.sx = joy.x - dx / d * JOY_R; joy.sy = joy.y - dy / d * JOY_R; }  // floating stick
+});
+function lift(e) { if (e.pointerId === joy.id) joy.id = -1; delete brakes[e.pointerId]; }
+hud.addEventListener("pointerup", lift);
+hud.addEventListener("pointercancel", lift);
+window.addEventListener("keydown", function (e) {
+  keys[e.code] = true;
+  if (e.code === "KeyR") newCity();
+  if (e.code === "KeyM") setMenu(!menuOpen);
+  if (e.code === "Escape") setMenu(false);
+  if (e.code === "Space") { e.preventDefault(); if (over) newCity(); }
+});
+window.addEventListener("keyup", function (e) { keys[e.code] = false; });
+
+var inp = { x: 0, z: 0, m: 0, brake: false, rel: false, thr: 0, rev: false, steer: 0 };
+var keySteer = 0;
+function readInput() {
+  inp.x = inp.z = inp.m = 0; inp.rel = false; inp.thr = 0; inp.rev = false; inp.steer = 0;
+  inp.brake = !!keys.Space || Object.keys(brakes).length > 0;
+  if (BOT) {
+    var best = null, bd = 1e9;
+    for (var i = 0; i < buildings.length; i++) {
+      var b = buildings[i]; if (!b.alive) continue;
+      var d = (b.x - dozer.x) * (b.x - dozer.x) + (b.z - dozer.z) * (b.z - dozer.z);
+      if (d < bd) { bd = d; best = b; }
+    }
+    if (best) { var l = Math.sqrt(bd) || 1; inp.x = (best.x - dozer.x) / l; inp.z = (best.z - dozer.z) / l; inp.m = 1; }
+    return;
+  }
+  if (joy.id >= 0) {
+    var jx = (joy.x - joy.sx) / JOY_R, jy = (joy.y - joy.sy) / JOY_R, jl = Math.sqrt(jx * jx + jy * jy);
+    if (jl > 0.15) {                      // screen up is the camera's facing, screen right its side
+      var cfx = Math.cos(cam.yaw), cfz = Math.sin(cam.yaw), crx = -cfz, crz = cfx;
+      inp.m = Math.min(1, jl); inp.x = (crx * jx - cfx * jy) / jl; inp.z = (crz * jx - cfz * jy) / jl;
+    }
+    return;
+  }
+  // keyboard: relative to the machine, not to the screen
+  inp.rel = true;
+  inp.thr = keys.ArrowUp || keys.KeyW ? 1 : 0;
+  inp.rev = !!(keys.ArrowDown || keys.KeyS) && !inp.thr;
+  inp.steer = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
+}
+
+// ---- simulation ------------------------------------------------------------------
+var markT = 0, dustT = 0;
+function stepDozer(dt) {
+  dozer.prevY = dozer.y;
+  var g = groundAt(dozer.x, dozer.z), gx = g.gx, gz = g.gz;
+  var fx = Math.cos(dozer.a), fz = Math.sin(dozer.a), rx = -fz, rz = fx;
+  var vf = dozer.vx * fx + dozer.vz * fz, vl = dozer.vx * rx + dozer.vz * rz;
+  var speed = Math.sqrt(dozer.vx * dozer.vx + dozer.vz * dozer.vz);
+  var steer = 0, throttle = 0;
+  var target = inp.rel ? inp.steer : 0;
+  keySteer += clamp(target - keySteer, -KEY_STEER_RATE * dt, KEY_STEER_RATE * dt);
+  if (inp.rel) { steer = keySteer; throttle = inp.thr; }
+  else if (inp.m > 0) {
+    var diff = wrap(Math.atan2(inp.z, inp.x) - dozer.a);
+    steer = clamp(diff / STEER_FULL, -1, 1);
+    throttle = inp.m * (Math.abs(diff) < 2.2 ? 1 : 0.4);
+  }
+
+  if (dozer.ground) {
+    var driftWant = inp.brake || (Math.abs(steer) > DRIFT_STEER && speed > DRIFT_MIN_SPEED);
+    var turn = TURN_RATE * steer * (TURN_PIVOT + (1 - TURN_PIVOT) * Math.min(1, speed / TURN_SPEED_REF));
+    if (dozer.drift) turn *= DRIFT_TURN_MULT;
+    dozer.a = wrap(dozer.a + turn * dt);
+
+    var boosting = dozer.boost > 0;
+    var maxS = MAX_SPEED * (boosting ? BOOST_SPEED : 1);
+    vf += throttle * ACCEL * (boosting ? BOOST_ACCEL : 1) * dt;
+    vf -= vf * DRAG * dt;
+    if (inp.rev) {
+      if (vf > 0.5) vf -= Math.min(vf, KEY_BRAKE * dt);
+      else vf = Math.max(-REVERSE_SPEED, vf - ACCEL * 0.5 * dt);
+    } else if (throttle === 0) vf -= Math.sign(vf) * Math.min(Math.abs(vf), COAST_BRAKE * dt);
+    if (inp.brake) vf -= vf * 1.2 * dt;
+    if (vf > maxS) vf = maxS;
+    if (vf < -REVERSE_SPEED) vf = -REVERSE_SPEED;
+    vl *= Math.exp(-(driftWant ? GRIP_DRIFT : GRIP) * dt);
+
+    // the heading just turned: re-express the velocity in the new frame
+    var wx = fx * vf + rx * vl, wz = fz * vf + rz * vl;
+    fx = Math.cos(dozer.a); fz = Math.sin(dozer.a); rx = -fz; rz = fx;
+    var nf = wx * fx + wz * fz, nl = wx * rx + wz * rz;
+    dozer.vx = fx * nf + rx * nl; dozer.vz = fz * nf + rz * nl;
+    dozer.drift = Math.abs(nl) > DRIFT_SLIP && speed > 6;
+
+    // a slope pulls the dozer downhill
+    var k = SLOPE_G / (1 + gx * gx + gz * gz);
+    dozer.vx -= gx * k * dt; dozer.vz -= gz * k * dt;
+  } else {                                // airborne: no grip, a little steering, no throttle
+    dozer.a = wrap(dozer.a + TURN_RATE * AIR_STEER * steer * dt);
+    fx = Math.cos(dozer.a); fz = Math.sin(dozer.a); rx = -fz; rz = fx;
+    dozer.drift = false;
+  }
+
+  if (dozer.drift) { dozer.driftT += dt; dozer.driftRecent = 0.35; }
+  else {
+    if (dozer.driftT > BOOST_MIN) { dozer.boostMax = BOOST_TIME * Math.min(1, dozer.driftT / 1.5); dozer.boost = dozer.boostMax; }
+    if (dozer.ground) dozer.driftT = 0;
+    dozer.driftRecent = Math.max(0, dozer.driftRecent - dt);
+  }
+  dozer.boost = Math.max(0, dozer.boost - dt);
+  if (dozer.ground) dozer.airRecent = Math.max(0, dozer.airRecent - dt);
+  else { dozer.airT += dt; dozer.airRecent = 0.4; }
+
+  // horizontal move; a sudden rise (a ramp's lip or side) is a wall
+  var px = dozer.x, pz = dozer.z;
+  dozer.x += dozer.vx * dt; dozer.z += dozer.vz * dt;
+  var lim = HALF - DOZER_R;
+  if (dozer.x < -lim) { dozer.x = -lim; dozer.vx = Math.abs(dozer.vx) * RESTITUTION; }
+  if (dozer.x > lim) { dozer.x = lim; dozer.vx = -Math.abs(dozer.vx) * RESTITUTION; }
+  if (dozer.z < -lim) { dozer.z = -lim; dozer.vz = Math.abs(dozer.vz) * RESTITUTION; }
+  if (dozer.z > lim) { dozer.z = lim; dozer.vz = -Math.abs(dozer.vz) * RESTITUTION; }
+  var mv = Math.sqrt(dozer.vx * dozer.vx + dozer.vz * dozer.vz) || 1;
+  var aheadX = dozer.x + dozer.vx / mv * DOZER_R * 0.8, aheadZ = dozer.z + dozer.vz / mv * DOZER_R * 0.8;
+  if (gy(dozer.x, dozer.z) - dozer.y > STEP_MAX || (mv > 1 && gy(aheadX, aheadZ) - dozer.y > STEP_MAX + 0.6)) {
+    dozer.x = px; dozer.z = pz;
+    dozer.vx *= -0.3; dozer.vz *= -0.3;
+    shake = Math.min(1, shake + 0.15);
+  }
+
+  // vertical: follow the surface while on it, fly when it falls away faster than gravity
+  if (dozer.ground) dozer.vy = dozer.vx * gx + dozer.vz * gz;
+  dozer.vy -= DOZER_G * dt;
+  dozer.y += dozer.vy * dt;
+  var gg = groundAt(dozer.x, dozer.z);
+  if (dozer.y <= gg.h + (dozer.ground ? SNAP : 0)) {
+    if (!dozer.ground) {                  // touchdown
+      var surf = dozer.vx * gg.gx + dozer.vz * gg.gz, imp = surf - dozer.vy;
+      if (imp > LAND_MIN) slam(dozer.x, dozer.z, imp);
+      if (dozer.airT > 0.5) {
+        var pts = Math.round(dozer.airT * AIR_PTS / 5) * 5;
+        score += pts;
+        floats.push({ x: dozer.x, y: gg.h + 4, z: dozer.z, t: 0, txt: "Air " + dozer.airT.toFixed(1) + " s  +" + pts });
+      }
+      if (dozer.airT > stats.airMax) stats.airMax = dozer.airT;
+      dozer.airT = 0;
+      dozer.vx *= 0.92; dozer.vz *= 0.92;
+      for (var lk = 0; lk < 6; lk++) spawnDust(dozer.x + rr(-2, 2), gg.h + 0.4, dozer.z + rr(-2, 2), rr(-3, 3), rr(0.5, 2), rr(-3, 3), 0.8, 2.4, 0.8);
+      dozer.vy = surf;
+    }
+    dozer.y = gg.h; dozer.ground = true;
+  } else dozer.ground = false;
+
+  // buildings
+  var list = query(dozer.x, dozer.z, DOZER_R + 8);
+  for (var i = 0; i < list.length; i++) {
+    var b = list[i];
+    if (b.fall) continue;
+    var h = closest(b, dozer.x, dozer.z);
+    if (h.d >= DOZER_R) continue;
+    if (dozer.y >= b.top - 0.4) continue;                       // flying over the roof
+    if (dozer.prevY >= b.top - 0.4 && h.d < 1) {                // came down on the roof: crush it
+      stats.crushes++;
+      b.hp = 0; destroy(b, dozer.vx, dozer.vz, "crush");
+      floats.push({ x: b.x, y: b.top + 3, z: b.z, t: 0, txt: "Crushed" });
+      shake = Math.min(1.6, shake + 0.6);
+      continue;
+    }
+    var nx = h.nx, nz = h.nz, pen = DOZER_R - h.d, cpx = h.px, cpz = h.pz;
+    var vn = dozer.vx * nx + dozer.vz * nz, closing = -vn;
+    var chipY = Math.max(b.y0, dozer.y);
+    if (closing > MIN_IMPACT && b.hitCd <= 0) {
+      var front = -(fx * nx + fz * nz) > 0.6;
+      var dmg = closing * DMG_K * (front ? BLADE_MULT : SIDE_MULT);
+      b.hitCd = 0.15;
+      for (var c = 0; c < 2 + Math.min(8, dmg / 5); c++)
+        spawnChunk(cpx + nx * 0.4, chipY + rr(0.5, Math.min(b.h, 4)), cpz + nz * 0.4,
+          nx * rr(3, 8) + rr(-3, 3), rr(2, 6), nz * rr(3, 8) + rr(-3, 3), rr(0.35, 0.8), b.hex);
+      shake = Math.min(1.2, shake + dmg / 60);
+      damage(b, dmg, dozer.vx, dozer.vz, "dozer");
+      if (!b.alive) { dozer.vx *= PASS_KEEP; dozer.vz *= PASS_KEEP; continue; }
+    }
+    if (!b.alive) continue;
+    if (dozer.ground && throttle > 0 && -(fx * nx + fz * nz) > 0.6) {   // blade pressed on the wall: grind it
+      b.hp -= GRIND_DPS * throttle * dt;
+      b.shake = Math.min(1, b.shake + dt * 2);
+      if (rnd() < dt * 12) spawnChunk(cpx + nx * 0.4, chipY + rr(0.4, 2), cpz + nz * 0.4, nx * rr(2, 5) + rr(-3, 3), rr(2, 5), nz * rr(2, 5) + rr(-3, 3), rr(0.3, 0.6), b.hex);
+      if (b.hp <= 0) { damage(b, 1, fx, fz, "dozer"); continue; }
+    }
+    dozer.x += nx * pen; dozer.z += nz * pen;
+    vn = dozer.vx * nx + dozer.vz * nz;
+    if (vn < 0) { dozer.vx -= (1 + RESTITUTION) * vn * nx; dozer.vz -= (1 + RESTITUTION) * vn * nz; }
+  }
+
+  // tracks and drift dust
+  markT += dt; dustT += dt;
+  var rearX = dozer.x - fx * 1.9, rearZ = dozer.z - fz * 1.9;
+  var lx = rearX + rx * 1.25, lz = rearZ + rz * 1.25, qx = rearX - rx * 1.25, qz = rearZ - rz * 1.25;
+  var lm = dozer.lastMark;
+  if (!lm) dozer.lastMark = lm = { lx: lx, lz: lz, qx: qx, qz: qz };
+  var md = (lx - lm.lx) * (lx - lm.lx) + (lz - lm.lz) * (lz - lm.lz);
+  if (md > 0.5 || !dozer.ground) {
+    if (md < 9 && dozer.ground) { var wd = dozer.drift ? 1.1 : 0.75; addMark(lm.lx, lm.lz, lx, lz, wd); addMark(lm.qx, lm.qz, qx, qz, wd); }
+    lm.lx = lx; lm.lz = lz; lm.qx = qx; lm.qz = qz;
+  }
+  if (dozer.ground && (dozer.drift || dozer.boost > 0) && dustT > 0.035) {
+    dustT = 0;
+    spawnDust(lx, dozer.y + 0.4, lz, -dozer.vx * 0.1 + rr(-1, 1), rr(0.5, 1.5), -dozer.vz * 0.1 + rr(-1, 1), 0.5, 1.8, 0.7);
+    spawnDust(qx, dozer.y + 0.4, qz, -dozer.vx * 0.1 + rr(-1, 1), rr(0.5, 1.5), -dozer.vz * 0.1 + rr(-1, 1), 0.5, 1.8, 0.7);
+  }
+}
+
+function stepChunks(dt) {
+  var R2 = (DOZER_R + 0.4) * (DOZER_R + 0.4), hs2 = CHUNK_HIT_SPEED * CHUNK_HIT_SPEED;
+  for (var i = 0; i < CHUNK_MAX; i++) {
+    var c = chunks[i]; if (!c.on) continue;
+    c.life += dt;
+    // the dozer shoves debris
+    var dx = c.x - dozer.x, dz = c.z - dozer.z, d2 = dx * dx + dz * dz, dy = c.y - dozer.y;
+    if (dy < 2.8 && dy > -1 && d2 < R2) {
+      var d = Math.sqrt(d2) || 0.01, nx = dx / d, nz = dz / d;
+      var push = dozer.vx * nx + dozer.vz * nz;
+      c.x = dozer.x + nx * (DOZER_R + 0.4); c.z = dozer.z + nz * (DOZER_R + 0.4);
+      if (push > 0) {
+        c.vx = nx * push * 1.3 + dozer.vx * 0.4; c.vz = nz * push * 1.3 + dozer.vz * 0.4;
+        c.vy = Math.max(c.vy, rr(1, 4)); c.rest = false; c.life = 0;
+      }
+    }
+    if (c.rest) {
+      if (c.life > CHUNK_LIFE) { c.y -= dt * 1.2; if (c.y < c.floor - c.s) { c.on = false; chunkMesh.setMatrixAt(i, ZERO); continue; } }
+    } else {
+      c.vy -= GRAVITY * dt;
+      c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt;
+      c.rx += c.wx * dt; c.ry += c.wy * dt; c.rz += c.wz * dt;
+      var floor = gy(c.x, c.z) + c.s * 0.5;
+      if (c.y < floor) {
+        c.y = floor;
+        if (c.vy < 0) c.vy = -c.vy * 0.3;
+        var fr = Math.exp(-6 * dt); c.vx *= fr; c.vz *= fr; c.wx *= 0.8; c.wy *= 0.8; c.wz *= 0.8;
+        if (c.vx * c.vx + c.vz * c.vz + c.vy * c.vy < 0.4) { c.rest = true; c.life = 0; c.vx = c.vy = c.vz = 0; c.floor = floor; }
+      }
+      // flying debris damages what it hits
+      var sp2 = c.vx * c.vx + c.vz * c.vz + c.vy * c.vy;
+      var cell = cellOf(c.x, c.z);
+      if (cell >= 0) {
+        var list = grid[cell];
+        for (var k = 0; k < list.length; k++) {
+          var o = list[k];
+          if (!o.alive || o.fall || c.y > o.top) continue;
+          var h = closest(o, c.x, c.z);
+          if (h.d >= c.s * 0.5) continue;
+          var hnx = h.nx, hnz = h.nz, pen = c.s * 0.5 - h.d;
+          if (sp2 > hs2) damage(o, CHUNK_DMG * c.s * c.s * c.s * Math.sqrt(sp2), c.vx, c.vz, "chain");
+          c.x += hnx * pen; c.z += hnz * pen;
+          var vn = c.vx * hnx + c.vz * hnz;
+          if (vn < 0) { c.vx -= 1.5 * vn * hnx; c.vz -= 1.5 * vn * hnz; }
+          c.vx *= 0.5; c.vz *= 0.5;
+          break;
+        }
+      }
+    }
+    dummy.position.set(c.x, c.y, c.z); dummy.rotation.set(c.rx, c.ry, c.rz); dummy.scale.setScalar(c.s);
+    dummy.updateMatrix(); chunkMesh.setMatrixAt(i, dummy.matrix);
+  }
+  chunkMesh.instanceMatrix.needsUpdate = true;
+}
+
+function stepDust(dt) {
+  for (var i = 0; i < DUST_MAX; i++) {
+    var p = dust[i]; if (!p.on) continue;
+    p.t += dt / p.life;
+    if (p.t >= 1) { p.on = false; dustMesh.setMatrixAt(i, ZERO); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+    var f = Math.exp(-2 * dt); p.vx *= f; p.vy *= f; p.vz *= f;
+    var s = (p.s0 + (p.s1 - p.s0) * p.t) * (p.t > 0.6 ? (1 - p.t) / 0.4 : 1);
+    dummy.position.set(p.x, p.y, p.z); dummy.rotation.set(p.t * 2, p.t * 3, 0); dummy.scale.setScalar(s);
+    dummy.updateMatrix(); dustMesh.setMatrixAt(i, dummy.matrix);
+  }
+  dustMesh.instanceMatrix.needsUpdate = true;
+}
+
+function stepBuildings(dt) {
+  for (var i = 0; i < buildings.length; i++) {
+    var b = buildings[i];
+    b.hitCd -= dt;
+    if (b.alive) {
+      if (b.shake > 0) {
+        b.shake = Math.max(0, b.shake - dt * 3);
+        var s = b.shake * 0.5;
+        b.mesh.position.set(b.x + rr(-s, s), b.base + b.ht / 2, b.z + rr(-s, s));
+      }
+      continue;
+    }
+    if (b.fall) {
+      var f = b.fall;
+      f.w += (TOPPLE_G / b.h) * Math.sin(Math.max(f.ang, 0.08)) * dt;
+      f.ang += f.w * dt;
+      if (f.ang >= Math.PI / 2) { f.ang = Math.PI / 2; landing(b); b.fall = null; continue; }
+      f.pivot.quaternion.setFromAxisAngle(f.ax, f.ang);
+    } else if (b.crumble >= 0 && b.crumble < 1) {
+      b.crumble = Math.min(1, b.crumble + dt / 0.5);
+      var k = 1 - b.crumble;
+      b.mesh.scale.y = Math.max(0.001, b.ht * k);
+      b.mesh.position.set(b.x + rr(-0.3, 0.3), b.base + b.ht * k / 2, b.z + rr(-0.3, 0.3));
+      if (b.crumble >= 1) scene.remove(b.mesh);
+    }
+  }
+  for (var p = pend.length - 1; p >= 0; p--) {
+    var e = pend[p]; e.t -= dt;
+    if (e.t <= 0) { pend.splice(p, 1); if (!e.o.fall) damage(e.o, e.dmg, e.dx, e.dz, e.cause); }
+  }
+  for (var j = 0; j < blasts.length; j++) {
+    var bl = blasts[j]; if (bl.t >= 1) continue;
+    bl.t = Math.min(1, bl.t + dt / 0.45);
+    bl.m.scale.setScalar(bl.r * (0.3 + 0.7 * Math.sqrt(bl.t)));
+    bl.m.material.opacity = 0.85 * (1 - bl.t);
+    if (bl.t >= 1) bl.m.visible = false;
+  }
+}
+
+function step(dt) {
+  readInput();
+  if (!over) {
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; over = true; overText = "Time's up"; }
+  }
+  if (over) { inp.m = 0; inp.thr = 0; inp.rev = false; inp.steer = 0; }
+  var sub = 3, h = dt / sub;
+  for (var s = 0; s < sub; s++) stepDozer(h);
+  stepBuildings(dt);
+  stepChunks(dt);
+  stepDust(dt);
+  comboT = Math.max(0, comboT - dt);
+  if (!over && flattened >= total) { over = true; overText = "City flattened"; score += Math.round(timeLeft) * 50; }
+  for (var f = floats.length - 1; f >= 0; f--) { floats[f].t += dt; if (floats[f].t > 1.2) floats.splice(f, 1); }
+}
+
+// ---- camera + draw ---------------------------------------------------------------
+var CAM = CAMS[0];
+var cam = { x: 0, y: 0, z: 0, zf: 1, yaw: -Math.PI / 2 };   // yaw: the world direction the top of the screen faces
+function placeCamera(dt) {
+  var speed = Math.sqrt(dozer.vx * dozer.vx + dozer.vz * dozer.vz);
+  var k = 1 - Math.exp(-CAM_SMOOTH * dt);
+  if (CAM.yaw === "chase") cam.yaw = wrap(cam.yaw + wrap(dozer.a - cam.yaw) * (1 - Math.exp(-3 * dt)));
+  var fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), ahead = CAM.ahead || 0;
+  var tx = dozer.x + dozer.vx * CAM_LEAD + fx * ahead, tz = dozer.z + dozer.vz * CAM_LEAD + fz * ahead;
+  cam.x += (tx - cam.x) * k; cam.z += (tz - cam.z) * k;
+  cam.y += (dozer.y * 0.7 - cam.y) * k;
+  cam.zf += (1 + speed * CAM_ZOOM - cam.zf) * k * 0.5;
+  shake = Math.max(0, shake - dt * 2.2);
+  var sx = (Math.random() - 0.5) * shake * 1.6, sz = (Math.random() - 0.5) * shake * 1.6;
+  var back = CAM.back * cam.zf, h = CAM.h * cam.zf;
+  camera.position.set(cam.x - fx * back + sx, cam.y + h, cam.z - fz * back + sz);
+  if (CAM.back < 5) camera.up.set(fx, 0, fz); else camera.up.set(0, 1, 0);   // straight down: up is the screen's top
+  camera.lookAt(cam.x + sx, cam.y, cam.z + sz);
+  if (CAM.ortho) {
+    var oh = CAM.ortho * cam.zf, aspect = W / H;
+    orthoCam.left = -oh * aspect; orthoCam.right = oh * aspect; orthoCam.top = oh; orthoCam.bottom = -oh;
+    orthoCam.updateProjectionMatrix();
+  }
+  if (scene.fog) { var d = Math.sqrt(back * back + h * h); scene.fog.near = d * 0.75; scene.fog.far = d * 1.8; }
+  sun.position.set(cam.x + 55, 70, cam.z + 35);   // a lower sun so the slopes read in the shading
+  sun.target.position.set(cam.x, 0, cam.z);
+}
+function applyCam(i) {
+  CAM = CAMS[i]; camIdx = i; save("cam", i);
+  camera = CAM.ortho ? orthoCam : perspCam;
+  if (!CAM.ortho) { perspCam.fov = CAM.fov; perspCam.updateProjectionMatrix(); }
+  cam.yaw = CAM.yaw === "iso" ? -Math.PI / 4 : CAM.yaw === "chase" ? dozer.a : -Math.PI / 2;
+  refreshMenu();
+}
+
+function applyStyle(i) {
+  STYLE = STYLES[i]; styleIdx = i; save("style", i);
+  scene.background.setHex(STYLE.bg);
+  hemi.color.setHex(STYLE.hemi[0]); hemi.groundColor.setHex(STYLE.hemi[1]); hemi.intensity = STYLE.hemi[2];
+  sun.color.setHex(STYLE.sun[0]); sun.intensity = STYLE.sun[1];
+  drawGround();
+  dirtMat.color.setHex(STYLE.dirt); wallMat.color.setHex(STYLE.wall);
+  matCache = {};
+  scene.traverse(function (o) { if (o.isMesh && o.userData.hex !== undefined) o.material = mat(o.userData.hex, o.userData.keep); });
+  chunkMesh.material = makeMat({ color: 0xffffff });         // white times each chunk's own colour
+  dustMesh.material.color.setHex(STYLE.dust); markMesh.material.color.setHex(STYLE.mark);
+  rampMat = makeMat({ vertexColors: true, side: THREE.DoubleSide });
+  RAMP_LOW.setHex(STYLE.ramp[0]); RAMP_HIGH.setHex(STYLE.ramp[1]);
+  buildRampMeshes();
+  headlight.visible = !!STYLE.headlight;
+  scene.fog = STYLE.fog ? new THREE.Fog(STYLE.bg, 100, 300) : null;
+  scene.traverse(function (o) { if (o.material) o.material.needsUpdate = true; });   // fog and lights changed
+  renderer.setPixelRatio(STYLE.pixel || DPR);
+  glCv.style.imageRendering = STYLE.pixel ? "pixelated" : "";
+  resize();
+  refreshMenu();
+}
+
+// ---- the menu ---------------------------------------------------------------------
+var menuEl = document.getElementById("menu"), menuOpen = false, camIdx = 0, styleIdx = 0;
+function setMenu(open) { menuOpen = open; menuEl.hidden = !open; }
+function buildMenu() {
+  function fill(id, list, fn) {
+    var box = document.getElementById(id);
+    list.forEach(function (item, i) {
+      var b = document.createElement("button");
+      b.textContent = item.name;
+      b.onclick = function () { fn(i); };
+      box.appendChild(b);
+    });
+  }
+  fill("camList", CAMS, applyCam);
+  fill("styleList", STYLES, applyStyle);
+  document.getElementById("menuBtn").onclick = function () { setMenu(!menuOpen); };
+  document.getElementById("menuPlay").onclick = function () { setMenu(false); };
+}
+function refreshMenu() {
+  [["camList", camIdx], ["styleList", styleIdx]].forEach(function (p) {
+    var bs = document.getElementById(p[0]).children;
+    for (var i = 0; i < bs.length; i++) bs[i].className = i === p[1] ? "on" : "";
+  });
+}
+
+var qYaw = new THREE.Quaternion(), qTilt = new THREE.Quaternion(), qGoal = new THREE.Quaternion();
+var vN = new THREE.Vector3(), vF = new THREE.Vector3(), vV = new THREE.Vector3();
+function drawDozer(dt) {
+  dozer.mesh.position.set(dozer.x, dozer.y, dozer.z);
+  qYaw.setFromAxisAngle(upY, -dozer.a);
+  if (dozer.ground) {                     // sit on the slope
+    var g = groundAt(dozer.x, dozer.z);
+    vN.set(-g.gx, 1, -g.gz).normalize();
+    qTilt.setFromUnitVectors(upY, vN);
+  } else {                                // nose follows the flight path
+    var fx = Math.cos(dozer.a), fz = Math.sin(dozer.a);
+    var hs = Math.max(4, Math.abs(dozer.vx * fx + dozer.vz * fz));
+    var pitch = Math.atan2(dozer.vy, hs) * 0.7;
+    vF.set(fx, 0, fz); vV.set(fx, Math.tan(pitch), fz).normalize();
+    qTilt.setFromUnitVectors(vF, vV);
+  }
+  qGoal.multiplyQuaternions(qTilt, qYaw);
+  dozer.mesh.quaternion.slerp(qGoal, 1 - Math.exp(-14 * dt));
+  dozer.flame.visible = dozer.boost > 0;
+  if (dozer.boost > 0) dozer.flame.scale.set(0.9 + Math.random() * 1.2, 0.5, 0.9);
+}
+
+var pv = new THREE.Vector3();
+function txt(s, x, y, size, color, align) {
+  hx.font = "700 " + size + "px system-ui, sans-serif";
+  hx.textAlign = align || "left";
+  hx.lineWidth = 4; hx.strokeStyle = "rgba(0,0,0,0.55)"; hx.strokeText(s, x, y);
+  hx.fillStyle = color || "#fff"; hx.fillText(s, x, y);
+}
+function drawHud(fps) {
+  hx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  hx.clearRect(0, 0, W, H);
+  hx.lineJoin = "round";
+  txt("Score " + score, 14, 30, 20);
+  txt("Time " + Math.ceil(timeLeft), 14, 54, 16, timeLeft < 10 ? "#ff8a7a" : "#fff");
+  txt("Flattened " + flattened + " / " + total, 14, 76, 16);
+  var speed = Math.sqrt(dozer.vx * dozer.vx + dozer.vz * dozer.vz);
+  txt(Math.round(fps) + " fps", W - 14, 30, 14, "#cfd6dd", "right");
+  txt("Speed " + speed.toFixed(0), W - 14, 50, 14, "#cfd6dd", "right");
+  txt("Best chain x" + bestCombo, W - 14, 70, 14, "#cfd6dd", "right");
+  if (combo > 1 && comboT > 0) txt("Chain x" + combo, W / 2, 120, 30 + Math.min(combo, 8) * 2, "#ffd34d", "center");
+
+  // drift charge, boost, air time
+  var bw = 140, bx = W / 2 - bw / 2, by = H - 74;
+  hx.fillStyle = "rgba(0,0,0,0.4)"; hx.fillRect(bx, by, bw, 8);
+  if (!dozer.ground && dozer.airT > 0.15) txt("Air " + dozer.airT.toFixed(1) + " s", W / 2, by - 30, 18, "#c9f27a", "center");
+  if (dozer.boost > 0) { hx.fillStyle = "#ff9a3a"; hx.fillRect(bx, by, bw * dozer.boost / BOOST_TIME, 8); txt("Boost", W / 2, by - 8, 16, "#ffb35a", "center"); }
+  else if (dozer.drift) { hx.fillStyle = dozer.driftT > BOOST_MIN ? "#7fe0ff" : "#9aa4ad"; hx.fillRect(bx, by, bw * Math.min(1, dozer.driftT / 1.5), 8); txt("Drift", W / 2, by - 8, 16, "#a6ecff", "center"); }
+
+  for (var i = 0; i < floats.length; i++) {
+    var f = floats[i];
+    pv.set(f.x, f.y + f.t * 5, f.z).project(camera);
+    var a = 1 - Math.max(0, f.t - 0.7) / 0.5;
+    hx.globalAlpha = Math.max(0, a);
+    txt(f.txt, (pv.x + 1) / 2 * W, (1 - pv.y) / 2 * H, 18, "#fff3c4", "center");
+    hx.globalAlpha = 1;
+  }
+
+  if (joy.id >= 0) {
+    hx.strokeStyle = "rgba(255,255,255,0.35)"; hx.lineWidth = 3;
+    hx.beginPath(); hx.arc(joy.sx, joy.sy, JOY_R, 0, 6.283); hx.stroke();
+    hx.fillStyle = "rgba(255,255,255,0.45)";
+    hx.beginPath(); hx.arc(joy.x, joy.y, 22, 0, 6.283); hx.fill();
+  }
+  if (Object.keys(brakes).length || keys.Space) txt("Handbrake", W / 2, H - 100, 14, "#a6ecff", "center");
+  txt("Phone: drag to drive · 2nd finger: handbrake", W / 2, H - 34, 11, "#cfd6dd", "center");
+  txt("Keys: up drive · left / right turn · down brake · space drift · M menu", W / 2, H - 18, 11, "#cfd6dd", "center");
+
+  if (over) {
+    hx.fillStyle = "rgba(0,0,0,0.5)"; hx.fillRect(0, H / 2 - 80, W, 150);
+    txt(overText, W / 2, H / 2 - 30, 34, "#ffd34d", "center");
+    txt("Score " + score + " · " + flattened + " / " + total + " · best chain x" + bestCombo, W / 2, H / 2 + 6, 16, "#fff", "center");
+    txt("Tap to play again", W / 2, H / 2 + 44, 16, "#cfd6dd", "center");
+  }
+}
+
+// ---- loop -----------------------------------------------------------------------
+var last = performance.now(), fpsS = 60;
+function frame(now) {
+  var dt = clamp((now - last) / 1000, 0, 0.05); last = now;
+  if (dt > 0) fpsS += (1 / dt - fpsS) * 0.05;
+  if (!menuOpen) step(dt);                 // the menu pauses the round; the view keeps rendering
+  placeCamera(dt);
+  drawDozer(dt);
+  renderer.render(scene, camera);
+  drawHud(fpsS);
+  window.__s = { score: score, flattened: flattened, total: total, combo: bestCombo, fps: Math.round(fpsS),
+    x: Math.round(dozer.x), y: +dozer.y.toFixed(1), z: Math.round(dozer.z), a: +dozer.a.toFixed(2), ground: dozer.ground,
+    airMax: +stats.airMax.toFixed(2), slams: stats.slams, crushes: stats.crushes, ramps: ramps.length,
+    t: Math.round(ROUND_SECONDS - timeLeft), cam: CAM.name, style: STYLE.name };
+  requestAnimationFrame(frame);
+}
+newCity();
+buildMenu();
+applyStyle(Math.min(load("style"), STYLES.length - 1));
+applyCam(Math.min(load("cam"), CAMS.length - 1));
+requestAnimationFrame(frame);
+</script>

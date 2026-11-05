@@ -232,6 +232,11 @@
   }
   .sd-xrow canvas { flex:none; display:block; }
   .sd-xrow .sd-hfig { flex:none; }
+  /* the score page's rows: the term, then what it means */
+  .sd-xterm { display:flex; flex-direction:column; gap:2px; min-width:0; text-align:left;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .sd-xterm b { font-size:22px; font-weight:900; line-height:1.15; color:#f5c451; }
+  .sd-xterm em { font-style:normal; font-size:22px; font-weight:600; line-height:1.25; color:#e4f1ea; }
   .sd-xrow em {
     font-style:normal; font-size:22px; font-weight:700; line-height:1.25; color:#e4f1ea; text-align:left;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -310,6 +315,8 @@
   .sd-jfam { position:absolute; top:14px; left:0; right:0; font-size:20px; letter-spacing:2px; color:var(--c); }
   .sd-jart { position:relative; width:100%; height:132px; flex:none; display:grid; place-items:center; }
   .sd-jart img { max-width:180px; max-height:132px; object-fit:contain; }
+  .sd-jc.long .sd-jart { height:100px; }
+  .sd-jc.long .sd-jart img { max-height:100px; }
   /* a joker whose painted piece is not cut yet wears its sign */
   .sd-jsign {
     font-size:110px; font-weight:900; line-height:1; color:var(--c);
@@ -320,6 +327,14 @@
     text-shadow:0 2px 0 #0b0720; }
   .sd-jtext { position:relative; font-size:22px; line-height:1.2; font-weight:600; color:#ddd6f6;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  /* a joker line's figures, in the count's colours (signHtml): the sign
+     says what it does (+ green, × orange), the number which chip it feeds */
+  .sd-jtext .sd-sg, .sd-rtx .sd-sg, .sd-jtext .sd-sv, .sd-rtx .sd-sv {
+    font:inherit; font-weight:900; letter-spacing:0; }
+  .sd-jtext .sd-sg.p, .sd-rtx .sd-sg.p { color:#5be37a; }
+  .sd-jtext .sd-sg.x, .sd-rtx .sd-sg.x { color:#ff9f1c; }
+  .sd-jtext .sd-sv.c, .sd-rtx .sd-sv.c { color:#4fa8ff; }
+  .sd-jtext .sd-sv.m, .sd-rtx .sd-sv.m { color:#ff4a5e; }
   .sd-jrar { position:absolute; left:0; right:0; bottom:14px; display:flex; justify-content:center; }
   .sd-jrar span { padding:5px 16px 4px; border-radius:999px; background:var(--r); color:#140f26;
     font-size:20px; letter-spacing:2px; }

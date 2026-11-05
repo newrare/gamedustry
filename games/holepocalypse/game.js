@@ -1313,7 +1313,7 @@
       return chosen && (isLevel() || isEndless()) && chosen.length === L.supers.length ? chosen : L.supers;
     }
     var loadout = {
-      title: function () { return Lang.t("Your supers"); },
+      title: function () { return Lang.t("Bonus"); },
       slots: function (n) { return rowOf(n).supers.length; },
       items: function () {
         var out = [];

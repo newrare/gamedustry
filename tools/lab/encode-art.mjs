@@ -366,6 +366,22 @@ var GOLF_COURSE = { w: 400, h: 400, q: 0.82 };
    neighbour's size. Cut from 328x300 cells and drawn ~100-340 design px. */
 var GOLF_FX = { scale: 0.5, q: 0.8 };
 
+/* games/parrynormal's cast: the witch (`witchNN`, 5 directions x 5 moments),
+   the nineteen monster kinds (`<kind>NN`, a 5x4 sheet of walk, hit and throw
+   frames each) and the dragon (`dragonNN`) are FRAMES swapped in place, so
+   scaled and never boxed (a box shrinks a pose that happens to be taller).
+   The witch is drawn ~100 design px tall and a monster ~90-130, hence the
+   0.5 and 0.42 of cells painted at ~250 and ~280 px; the dragon is the boss,
+   ~250 design px. The extras (toads, fireballs, familiars, bone pile, dirt
+   mound) are frames too. Its `monsterNN` front portraits are only drawn on
+   cards, and its pickups (`pickupNN`) are icons like the golf kinds. */
+var PARRY_WITCH = { scale: 0.5, q: 0.8 };
+var PARRY_MONSTER = { scale: 0.42, q: 0.8 };
+var PARRY_DRAGON = { scale: 0.6, q: 0.8 };
+var PARRY_PORTRAIT = { w: 256, h: 256, q: 0.82 };
+var PARRY_PICKUP = { w: 192, h: 192, q: 0.82 };
+var PARRY_KIND = /^(bat|jack|wisp|spider|zombie|skeleton|ghost|mole|slime|frog|mosquito|shaman|knight|gargoyle|vampire|rat|imp|salamander|priest)\d+$/;
+
 /* games/foldiers' pieces: every cell of its 4x4 sheets — the three armies,
    their works, the world pieces and the five biomes' decor — stands on the
    paper map at its foot, ~20-140 design px tall at the default camera, so 220
@@ -435,6 +451,11 @@ function profileFor(role, slug) {
   if (/^boss-[a-z]+\d+$/.test(role)) return ZOMBIE_BOSS;
   if (/^(kind|super|ball)\d+$/.test(role)) return GOLF_ICON;
   if (/^course\d+$/.test(role)) return GOLF_COURSE;
+  if (/^witch\d+$/.test(role)) return PARRY_WITCH;
+  if (PARRY_KIND.test(role) || /^extra\d+$/.test(role)) return PARRY_MONSTER;
+  if (/^dragon\d+$/.test(role)) return PARRY_DRAGON;
+  if (/^monster\d+$/.test(role)) return PARRY_PORTRAIT;
+  if (/^pickup\d+$/.test(role)) return PARRY_PICKUP;
   if (/^fx-[a-z]+-\d+$/.test(role)) return GOLF_FX;
   if (/^frame-[a-z-]+$/.test(role)) return FRAME;
   if (/^(army|works)-(blue|red|green)\d+$|^(scenery|world|plains|woods|north|desert|jungle)\d+$/.test(role)) return FOLD_PIECE;
@@ -569,7 +590,8 @@ function knownRole(role) {
          /^(crust|smore|snake)\d+$/.test(role) ||
          /^(walker|boomer|shield|mudder|digger|runner|necro|kind|super|ball|course)\d+$/.test(role) ||
          /^boss-[a-z]+\d+$/.test(role) || /^fairway-\d+$/.test(role) || /^(scene|texture)-[a-z]+$/.test(role) || /^fx-[a-z]+-\d+$/.test(role) ||
-         /^frame-[a-z-]+$/.test(role);
+         /^frame-[a-z-]+$/.test(role) ||
+         /^(witch|dragon|extra|monster|pickup)\d+$/.test(role) || PARRY_KIND.test(role);
 }
 
 function masters(all) {

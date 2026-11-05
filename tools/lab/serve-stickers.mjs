@@ -152,6 +152,15 @@ export async function handle(req, res, p) {
 
   if (p === '/api/stickers') return json(res, 200, { games: albums(), review: readStore() });
 
+  /* The back office's tick: every sticker of every album OK on the cut it was
+     given on — a REDO is work left, and a re-cut is to be looked at again. */
+  if (p === '/api/done') {
+    const rev = readStore();
+    const all = albums().flatMap((a) => a.stickers.map((s) => ({ v: rev[a.slug] && rev[a.slug][s.role], hash: s.hash })));
+    const checked = all.filter(({ v, hash }) => v && v.hash === hash && v.verdict === 'ok').length;
+    return json(res, 200, { checked, total: all.length, done: all.length > 0 && checked === all.length });
+  }
+
   if (p === '/api/review' && req.method === 'POST') {
     try { return json(res, 200, { review: await review(await readJson(req, 1e5)) }); }
     catch (e) { return json(res, 400, { error: String(e.message || e) }); }

@@ -12,14 +12,14 @@
   under its own prefix, and the pages that do not are served as files:
 
     /                 the back office
-    /api/labs         what it lists, read off lab/*.html
+    /api/labs         what it lists, read off lab/*.html and prototype/*.html
     /events/          tools/lab/serve-events.mjs   (and /events/sound, /events/library, /events/kit, /events/hole-fx)
     /text/            tools/lab/serve-text.mjs
     /store/           tools/lab/serve-store.mjs
     /village/         tools/lab/serve-village.mjs
     /stickers/        tools/lab/serve-stickers.mjs
-    /lab/  /assets/  /games/  /packages/          read-only files, which is
-                      what a file:// lab page reaches with `../`
+    /lab/  /assets/  /games/  /packages/  /prototype/   read-only files,
+                      which is what a file:// lab page reaches with `../`
 
   A mounted tool is the SAME script its own `make events` runs, started the
   first time it is asked for on a free port of 127.0.0.1 and reached through a
@@ -52,6 +52,7 @@ import { HOST, isMain, portArg, listen, json, notFound, sendFile, text } from '.
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAB = path.join(ROOT, 'lab');
+const PROTO = path.join(ROOT, 'prototype');
 const HOME = path.join(LAB, 'index.html');
 const LIVE = !process.argv.includes('--no-watch');
 
@@ -66,7 +67,7 @@ const TOOLS = [
   { mount: '/stickers/', script: 'serve-stickers.mjs', pages: { 'sticker-review.html': '' } }
 ];
 
-const READ_ONLY = ['lab', 'assets', 'games', 'packages'].map((d) => path.join(ROOT, d));
+const READ_ONLY = ['lab', 'assets', 'games', 'packages', 'prototype'].map((d) => path.join(ROOT, d));
 
 function toolOf(file) {
   for (const t of TOOLS) if (file in t.pages) return { tool: t, url: t.mount + t.pages[file] };
@@ -175,10 +176,15 @@ function summaryOf(src) {
 }
 
 /* Where a page is filed, written in the page itself so a new one needs no
-   registry: `<meta name="lab-group" content="tools|css|prototype">` and, for a
+   registry: `<meta name="lab-group" content="tools|css|tests">` and, for a
    page about one game, `<meta name="lab-game" content="radiam">`. A page that
-   names no group is filed by what it is — a tool with a server, or "other". */
-const GROUPS = ['tools', 'css', 'prototype'];
+   names no group is filed by what it is — a tool with a server, or "other".
+   A tool whose page is a checklist names its tick, `<meta name="lab-done"
+   content="api/done">`, relative to the page: the back office asks it for
+   `{ checked, total, done }` and greens the entry once everything is checked.
+   A page of prototype/ may declare the same two, and nothing else: its
+   group is the folder unless it says otherwise, and its file name its name. */
+const GROUPS = ['tools', 'css', 'tests'];
 const metaOf = (src, name) => (src.match(new RegExp(`<meta name="${name}" content="([^"]*)"`)) || [])[1] || null;
 
 function labs() {
@@ -191,16 +197,46 @@ function labs() {
     const title = (src.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
     const served = toolOf(file);
     const declared = metaOf(src, 'lab-game');
-    const game = (declared && slugs.includes(declared) ? declared : null) ||
+    // A declared tag is kept even before games/<slug>/ exists (parrynormal).
+    const game = declared ||
       slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null;
     const g = metaOf(src, 'lab-group');
     const group = GROUPS.includes(g) ? g : served ? 'tools' : 'other';
     out.push({
       file, title, game, group,
+      path: 'lab/' + file,
       name: nameOf(title, file),
       summary: summaryOf(src),
       url: served ? served.url : '/lab/' + file,
-      server: served ? served.tool.mount.replace(/\//g, '') : null
+      server: served ? served.tool.mount.replace(/\//g, '') : null,
+      done: served && metaOf(src, 'lab-done') ? served.tool.mount + metaOf(src, 'lab-done') : null
+    });
+  }
+  /* A prototype's header is the first comment of its script, `//` lines or a
+     block: `// Compass — units that never step, they pivot.` */
+  const protoSummary = (src) => {
+    const m = src.match(/<script>\s*((?:\/\/.*\n\s*)+|\/\*[\s\S]*?\*\/)/);
+    if (!m) return '';
+    const para = m[1].replace(/^\s*(\/\/|\/\*+|\*\/|\*)/gm, ' ').replace(/[=\-]{4,}/g, ' ').replace(/\s+/g, ' ').trim();
+    const line = summaryOf('/* ==\n' + para + '\n\n');
+    // A file name or a section heading (`Arrow rush`, `tunables`) says nothing.
+    return line.split(' ').length >= 3 ? line : '';
+  };
+  /* Three of them share one <title>, so the file name is what tells them
+     apart: `tnt-coyote-canyon.html` → "Tnt coyote canyon". */
+  for (const file of fs.readdirSync(PROTO).sort()) {
+    if (!file.endsWith('.html')) continue;
+    const src = fs.readFileSync(path.join(PROTO, file), 'utf8');
+    const name = file.replace(/\.html$/, '').replace(/-/g, ' ');
+    const g = metaOf(src, 'lab-group');
+    out.push({
+      file, title: '', group: GROUPS.includes(g) ? g : 'prototype',
+      game: metaOf(src, 'lab-game') || slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null,
+      path: 'prototype/' + file,
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      summary: protoSummary(src),
+      url: '/prototype/' + file,
+      server: null
     });
   }
   return out;

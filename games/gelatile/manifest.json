@@ -1,7 +1,7 @@
 {
   "slug": "gelatile",
   "title": "Gelatile",
-  "version": "0.2.22",
+  "version": "0.3.2",
   "tagline": "Swipe to merge twin jellies, read the board's targets a move ahead and reach the big tile",
   "order": 190,
   "draft": false,
@@ -62,7 +62,8 @@
     "goal": "goal/harprollup",
     "stuck": "miss/bad",
     "fire": "burst/explosion",
-    "comet": "burst/explosioncrunch"
+    "comet": "burst/explosioncrunch",
+    "warn": "warn/heart"
   },
   "copy": {
     "fr": {
@@ -538,7 +539,8 @@
           "Let a comet strike nothing": "Fais tomber une comète dans le vide",
           "Merge right after a switch": "Fusionne juste après un échange",
           "Send {n} tiles through the portal": "Fais passer {n} tuiles par le portail",
-          "Make no refused move": "Ne tente aucun coup impossible"
+          "Make no refused move": "Ne tente aucun coup impossible",
+          "A yellow sign warns of danger ahead of time, then turns red until it strikes.": "Un panneau jaune annonce un danger à l'avance, puis passe au rouge jusqu'à la frappe."
         }
       }
     }

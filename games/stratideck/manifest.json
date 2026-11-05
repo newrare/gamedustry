@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.26.2",
+  "version": "0.26.6",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -263,19 +263,19 @@
   },
   "copy": {
     "fr": {
-      "tagline": "Affronte une armée de monstres et construis le meilleur deck possible pour gagner un maximum de batailles. Convertis les cartes adverses, sois stratégique en défense comme en placement. N'oublie pas que la vie et la gestion du camp sont essentielles pour gagner une guerre. Collectionne des centaines de cartes uniques !",
+      "tagline": "Face à la menace d'une armée rouge impressionnante, la victoire ne dépendra pas du nombre mais de ton sens tactique. Plonge dans un Deckbuilder stratégique sur grille inspiré du jeu de plateau Stratego. Le bluff et la mémorisation sont tes meilleures armes. Déduis les positions adverses, puis capture les cartes ennemies pour les convertir à ta cause. Entre deux duels sous haute tension, prends les rênes de ton campement : fortifie tes défenses, lance des missions d'infiltration, recrute des troupes d'élite et affine ton Deck parmi des centaines de cartes uniques. Sauras-tu déjouer les plans de l'état-major adverse et renverser l'envahisseur ?",
       "tags": [
-        "Gestion, stratégie et mémorisation",
-        "Grade et rang",
-        "Collection et gestion de deck"
+        "Gestion",
+        "Stratégie",
+        "Deck Building"
       ]
     },
     "en": {
-      "tagline": "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
+      "tagline": "Face the threat of an impressive red army: victory will depend not on numbers but on your tactical sense. Dive into a strategic grid-based Deckbuilder inspired by the Stratego board game. Bluffing and memorization are your best weapons. Deduce the enemy positions, then capture enemy cards to convert them to your cause. Between tense duels, take charge of your camp: fortify your defenses, launch infiltration missions, recruit elite troops and refine your Deck among hundreds of unique cards. Will you foil the plans of the enemy general staff and drive out the invader?",
       "tags": [
-        "Management, strategy and memorization",
-        "Grade and tier",
-        "Collection and deck management"
+        "Management",
+        "Strategy",
+        "Deck building"
       ]
     }
   },
@@ -290,19 +290,19 @@
           },
           {
             "kicker": "Hidden",
-            "line": "Find out what is <b>hiding</b>"
+            "line": "<b>Management</b> and camp optimization"
           },
           {
-            "kicker": "Collection and deck building",
-            "line": "Grade wins, <b>tier</b> settles it"
+            "kicker": "Collection and Deck building",
+            "line": "Grade wins, but <b>Tier</b> settles it"
           },
           {
             "kicker": "30 levels",
-            "line": "A camp that <b>grows</b>"
+            "line": "A Deck that <b>grows</b> every day"
           },
           {
             "kicker": "It costs",
-            "line": "Wounded, or taken <b>prisoner</b>"
+            "line": "Take <b>prisoners</b> and convert them to your cause"
           }
         ]
       },
@@ -314,19 +314,19 @@
           },
           {
             "kicker": "Face cachée",
-            "line": "Découvre ce qui se <b>cache</b>"
+            "line": "<b>Gestion</b> et optimisation de camp"
           },
           {
-            "kicker": "Collection et construction de deck",
-            "line": "Le grade gagne, le <b>rang</b> tranche"
+            "kicker": "Collection et création de Deck",
+            "line": "Le Grade l'emporte mais le <b>Rang</b> tranche"
           },
           {
             "kicker": "30 stages",
-            "line": "Un camp qui <b>grandit</b>"
+            "line": "Un Deck qui <b>grandit</b> chaque jour"
           },
           {
             "kicker": "Tout se paie",
-            "line": "Blessé ou fait <b>prisonnier</b>"
+            "line": "Fait des <b>prisonniers</b> et convertis les à ta cause"
           }
         ]
       }
@@ -363,7 +363,7 @@
   "web": {
     "copy": {
       "fr": {
-        "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">grade</b> gagne",
+        "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">Grade</b> gagne",
         "strings": {
           "Army lost": "Armée perdue",
           "Both fall": "Les deux tombent",
@@ -465,7 +465,7 @@
           "A card that strikes it freezes with fear. It goes back to its place in the hand and stays there for the rest of the battle.": "La carte qui le frappe se fige d'effroi. Elle retourne à sa place dans la main et n'en bouge plus jusqu'à la fin de la bataille.",
           "A card that opens it is bewitched. It turns round and strikes a card of its own hand.": "La carte qui l'ouvre est ensorcelée. Elle se retourne et frappe une carte de sa propre main.",
           "Can take down a marshal, but is no fighter against anyone else.": "L'espion peut battre un maréchal, mais il n'est pas fait pour le champ de bataille.",
-          "Reveals a hidden enemy without a fight, then goes back under the deck.": "Révèle un ennemi caché sans combattre, puis repasse sous le paquet.",
+          "Reveals a hidden enemy without a fight, then goes back under the deck.": "Révèle un ennemi caché sans combattre puis repasse sous le paquet.",
           "Clears a trap without blowing up with it.": "Désamorce un piège sans sauter avec lui.",
           "Dumb enough to fight a straw man, and to tear it down.": "Suffisamment stupide pour se battre contre un épouvantail.",
           "Loves chopping down wooden fences.": "Aime découper des barrières de bois.",
@@ -480,7 +480,7 @@
           "Wounds": "Blessures",
           "Left standing": "Laissé debout",
           "A draw": "Égalité",
-          "The hand": "La main",
+          "The hand": "La main de cartes",
           "The camp moves": "Le camp bouge",
           "vs": "vs",
           "Send a card": "Envoyer une carte",
@@ -524,7 +524,7 @@
           "Any card": "Toute carte",
           "The climb": "L'ascension",
           "The camp": "Le camp",
-          "A level's camp is always the same. On a second try, use what the first one taught you.": "Le camp d'un stage est toujours le même. Au second essai, sers-toi de ce que le premier t'a appris.",
+          "A level's camp is always the same. On a second try, use what the first one taught you.": "Le camp d'un stage reste inchangé. À la seconde tentative, retiens la leçon de la première.",
           "Formations": "Formations",
           "The flag at the back, officers around it": "Le drapeau au fond, les officiers autour",
           "Keep": "Donjon",
@@ -546,7 +546,7 @@
           "Every card is a person": "Chaque carte est une personne",
           "Your camp never holds the same officer twice.": "Ton camp n'a jamais deux fois le même officier.",
           "Promotion": "Promotion",
-          "Life in the camp": "La vie au camp",
+          "Life in the camp": "Vie du camp",
           "The higher the kitchen's gauge, the more good days.": "Plus la jauge de la cuisine est haute, plus les bons jours sont fréquents.",
           "A suited trade": "Un métier adapté",
           "Recruits": "Recrues",
@@ -561,17 +561,17 @@
           "Trades": "Métiers",
           "Register": "Registre",
           "The recruiting tent may find a lost officer alive, back at their starting tier.": "La tente de recrutement peut retrouver vivant un officier perdu, à son rang de départ.",
-          "Your defense": "Ta défense",
+          "Your defense": "Ta ligne de défense",
           "A raid after": "Un assaut après",
           "{n} h away": "{n} h d'absence",
           "The raid": "L'assaut",
           "Cards a raid sends": "Cartes engagées par assaut",
           "A lost raid never costs a card, only some coins or a stay in the infirmary.": "Un assaut perdu ne coûte jamais de carte, seulement quelques pièces ou un séjour à l'infirmerie.",
           "The battle": "La bataille",
-          "The grades": "Les grades",
-          "The objects": "Les objets",
+          "The grades": "Hiérarchie des grades",
+          "The objects": "Les objets du camp",
           "The command": "Le commandement",
-          "Defense": "Défense",
+          "Defense": "La défense du camp",
           "Camp": "Camp",
           "Formation": "Formation",
           "Kitchen": "Cuisine",
@@ -593,7 +593,7 @@
           "Beating a lower tier takes a captive": "Battre un rang inférieur fait un captif",
           "Same grade, same tier": "Même grade, même rang",
           "A tilted card has moved": "Une carte penchée a bougé",
-          "Drag a card onto an enemy in the front row, or next to a cell you have emptied.": "Glisse une carte sur un ennemi de la première ligne, ou à côté d'une case que tu as vidée.",
+          "Drag a card onto an enemy in the front row, or next to a cell you have emptied.": "Glisse une carte sur un ennemi de la première ligne ou à côté d'une case que tu as vidée.",
           "Only the last enemy turned over stays face up. For the others, trust your memory.": "Seul le dernier ennemi retourné reste visible. Pour les autres, fie-toi à ta mémoire.",
           "Same grade and same tier: both cards fall.": "Même grade et même rang : les deux cartes tombent.",
           "Beat a better tier and your card wins, but wounded. It then sits out a turn in its slot.": "Bats un meilleur rang et ta carte gagne, mais blessée. Elle passe alors un tour dans son emplacement.",
@@ -623,7 +623,6 @@
           "Validate your defense. The red army always attacks the last one you validated.": "Valide ta défense. L'armée rouge attaque toujours la dernière validée.",
           "A card on guard stays in your deck. The bottom row is the front.": "Une carte de garde reste dans ton deck. La ligne du bas est le front.",
           "The raid is led by a copy of your own army, with the rules of a battle.": "L'assaut est mené par une copie de ta propre armée, avec les règles d'une bataille.",
-          "To the last card": "Jusqu'à la dernière carte",
           "Surrender": "Se rendre",
           "1 card handed over": "1 carte livrée",
           "Each card that falls after": "Chaque carte qui tombe ensuite",
@@ -1510,7 +1509,7 @@
             },
             "lose": {
               "en": "The bush the squad hid in was the goblins' dessert. Our soldiers were found, invited to share, and asked to pay for their portion afterwards, as is the custom at goblin picnics.",
-              "fr": "Le buisson où se cachait l'escouade était le dessert des gobelins. Elle a été découverte, invitée à partager, puis priée de payer sa part, comme le veut la coutume des pique-niques gobelins."
+              "fr": "Le buisson où se cachait l'escouade était le dessert des gobelins. Elle a été découverte, invitée à partager puis priée de payer sa part, comme le veut la coutume des pique-niques gobelins."
             }
           },
           {
@@ -1585,7 +1584,7 @@
             },
             "lose": {
               "en": "The squad of {leader} moved the fence back, then again when an imp moved it forward, and so on until dawn. At sunrise the bill for the broken planks was sent, naturally, to us.",
-              "fr": "L'escouade de {leader} a reculé la clôture, puis l'a reculée encore chaque fois qu'un diablotin l'avançait, jusqu'à l'aube. Au lever du soleil, la facture des planches cassées nous a été envoyée, naturellement."
+              "fr": "L'escouade de {leader} a reculé la clôture puis l'a reculée encore chaque fois qu'un diablotin l'avançait, jusqu'à l'aube. Au lever du soleil, la facture des planches cassées nous a été envoyée, naturellement."
             }
           },
           {
@@ -1768,7 +1767,7 @@
             },
             "win": {
               "en": "{leader} dug under the cross and found nothing, then dug where the cross would be if the map were upside down, and struck a little iron box. It held a golden ticket and no explanation.",
-              "fr": "{leader} a creusé sous la croix sans rien trouver, puis là où elle serait sur la carte à l'envers. La pelle a heurté une petite boîte en fer, qui contenait un ticket doré et aucune explication."
+              "fr": "{leader} a creusé sous la croix sans rien trouver puis là où elle serait sur la carte à l'envers. La pelle a heurté une petite boîte en fer, qui contenait un ticket doré et aucune explication."
             },
             "lose": {
               "en": "The hill was already full of holes, each dug by someone holding the same map. The peddler stood at the top selling shovels, and {leader} had to buy one after the squad broke its own.",
@@ -1802,7 +1801,7 @@
             },
             "brief": {
               "en": "A red supply convoy left this morning under Wendell Wrongway, who has never once arrived where he meant to go. It could be anywhere by now. Send a scout to pick up the wheel tracks, then relieve him of his cargo.",
-              "fr": "Un convoi de ravitaillement rouge est parti ce matin sous les ordres de Wendell Wrongway, qui n'est jamais arrivé là où il voulait aller. Il peut être n'importe où à l'heure qu'il est. Envoie un éclaireur relever les traces de roues, puis soulager Wendell de sa cargaison."
+              "fr": "Un convoi de ravitaillement rouge est parti ce matin sous les ordres de Wendell Wrongway, qui n'est jamais arrivé là où il voulait aller. Il peut être n'importe où à l'heure qu'il est. Envoie un éclaireur relever les traces de roues puis soulager Wendell de sa cargaison."
             },
             "win": {
               "en": "The tracks went twice around the camp in a perfect circle. {leader} waited at the spot Wendell was bound to pass a third time and took the payroll chest without a fight.",
@@ -1923,7 +1922,7 @@
             },
             "win": {
               "en": "{leader} studied the heap for an hour, pulled out a single pebble, and the whole pile rolled politely into the ditch. The merchants passed a hat around and it came back full.",
-              "fr": "{leader} a étudié le tas pendant une heure, puis retiré un seul caillou. Toute la pile a roulé poliment dans le fossé. Les marchands ont fait passer un chapeau qui est revenu plein."
+              "fr": "{leader} a étudié le tas pendant une heure puis retiré un seul caillou. Toute la pile a roulé poliment dans le fossé. Les marchands ont fait passer un chapeau qui est revenu plein."
             },
             "lose": {
               "en": "The squad pulled out the wrong rock first. The pile rearranged itself across the road, a little higher than before, and a soldier who was standing too close came back limping.",
@@ -2200,7 +2199,7 @@
             },
             "win": {
               "en": "The squad of {leader} disarmed forty-one traps and stepped around the forty-second, which was a nest of very small, very loud birds. The depot's cashbox came home, with a ticket clipped to its lid.",
-              "fr": "L'escouade de {leader} a désamorcé quarante et un pièges, puis contourné le quarante-deuxième : un nid de tout petits oiseaux très bruyants. La caisse du dépôt est rentrée, avec un ticket agrafé au couvercle."
+              "fr": "L'escouade de {leader} a désamorcé quarante et un pièges puis contourné le quarante-deuxième : un nid de tout petits oiseaux très bruyants. La caisse du dépôt est rentrée, avec un ticket agrafé au couvercle."
             },
             "lose": {
               "en": "Trap forty-two was a net, and it caught the soldier walking in front. The imps carried their catch off to their camp, very proud of it, while the rest of the squad could only watch from the ridge.",
@@ -2537,7 +2536,7 @@
             },
             "win": {
               "en": "{leader} danced three waltzes with the wrong goblin, the fourth with the right one, and slipped out through the kitchens at midnight. Our new recruit changed into blue in the wagon, still humming the waltz.",
-              "fr": "{leader} a dansé trois valses avec le mauvais gobelin, la quatrième avec le bon, puis a filé par les cuisines à minuit. Notre nouvelle recrue a enfilé l'uniforme bleu dans la charrette, en fredonnant encore la valse."
+              "fr": "{leader} a dansé trois valses avec le mauvais gobelin, la quatrième avec le bon puis a filé par les cuisines à minuit. Notre nouvelle recrue a enfilé l'uniforme bleu dans la charrette, en fredonnant encore la valse."
             },
             "lose": {
               "en": "The squad danced so well that the queen of the ball refused to let one of ours go. Every ball in the red camp now fights over that talent, and a postcard arrives from time to time.",
@@ -2578,7 +2577,7 @@
             },
             "win": {
               "en": "The squad of {leader} stuffed the clapper with socks, lowered the bell on a rope and rolled it home through the night in total silence. Grumblecot slept for two days, then paid us handsomely.",
-              "fr": "L'escouade de {leader} a bourré le battant de chaussettes, descendu la cloche à la corde et l'a roulée jusqu'au village dans un silence total. Grognebourg a dormi deux jours, puis nous a généreusement payés."
+              "fr": "L'escouade de {leader} a bourré le battant de chaussettes, descendu la cloche à la corde et l'a roulée jusqu'au village dans un silence total. Grognebourg a dormi deux jours puis nous a généreusement payés."
             },
             "lose": {
               "en": "Somebody forgot the socks. The bell rang all the way down the tower, the whole red camp woke up, and {leader} brought the squad home half deaf, battered and without the bell.",
@@ -3264,7 +3263,7 @@
             },
             "lose": {
               "en": "The squad dug up a bomb, then a second, then a third, all decoys. The real one went off at teatime behind the wrong tent. The camp still stands, but one of ours was blown clean over the red lines and kept there. The diggers came home sooty and bruised.",
-              "fr": "L'escouade a déterré une bombe, puis une deuxième, puis une troisième, toutes des leurres. La vraie a sauté à l'heure du thé, derrière la mauvaise tente. Le camp tient debout, mais l'un des nôtres a été soufflé par-dessus les lignes rouges, où on le garde. Les autres sont rentrés couverts de suie et de bosses."
+              "fr": "L'escouade a déterré une bombe puis une deuxième puis une troisième, toutes des leurres. La vraie a sauté à l'heure du thé, derrière la mauvaise tente. Le camp tient debout, mais l'un des nôtres a été soufflé par-dessus les lignes rouges, où on le garde. Les autres sont rentrés couverts de suie et de bosses."
             }
           },
           {
@@ -4146,11 +4145,11 @@
             },
             "title": {
               "en": "A change of heart",
-              "fr": "Un revirement"
+              "fr": "Changement d'avis"
             },
             "text": {
               "en": "{c} tasted the camp's bread and asks to change sides at once.",
-              "fr": "{c} a goûté à notre pain et demande à changer de camp sur-le-champ."
+              "fr": "{c} a goûté au pain du camp et exige de rejoindre nos rangs sur-le-champ."
             }
           },
           {
@@ -4165,7 +4164,7 @@
             },
             "text": {
               "en": "An old soldier passing through spent the evening with {c}. By morning: a promotion.",
-              "fr": "Un vieux soldat de passage a conseillé {c} toute la soirée. Au matin : une promotion."
+              "fr": "Un vétéran de passage a coaché {c} toute la soirée. Au réveil : une promotion !"
             }
           },
           {
@@ -4181,7 +4180,7 @@
             },
             "text": {
               "en": "The mail finally got through. The whole camp reads, laughs and trains twice as hard.",
-              "fr": "Le courrier est enfin arrivé. Tout le camp lit, rit et s'entraîne deux fois plus dur."
+              "fr": "Le courrier est arrivé ! Le camp retrouve le sourire et redouble d'ardeur à l'entraînement."
             }
           },
           {
@@ -4208,11 +4207,11 @@
             },
             "title": {
               "en": "An enemy defector",
-              "fr": "Un transfuge ennemi"
+              "fr": "Un déserteur chez l'ennemi"
             },
             "text": {
               "en": "{c} left the red camp in the middle of the night and asks for a cell and a hot meal.",
-              "fr": "{c} a quitté le camp rouge en pleine nuit pour demander une cellule et un repas chaud."
+              "fr": "{c} a fui le camp rouge en pleine nuit pour réclamer une cellule et un repas chaud."
             }
           },
           {
@@ -4228,7 +4227,7 @@
             },
             "text": {
               "en": "Under a loose plank of the command tent: a super ticket, left there by nobody knows who.",
-              "fr": "Sous une planche de la tente de commandement : un super ticket, oublié par on ne sait qui."
+              "fr": "Une bonne surprise sous les lattes de la tente de commandement : un super ticket !"
             },
             "w": 0.4
           },
@@ -4260,7 +4259,7 @@
             },
             "text": {
               "en": "The scouts came back with new missions, and the mission board has been refreshed.",
-              "fr": "Les éclaireurs ont rapporté de nouvelles missions. Le tableau des missions a été renouvelé."
+              "fr": "De retour avec de nouvelles cibles, les éclaireurs mettent à jour le tableau des missions."
             }
           },
           {
@@ -4290,7 +4289,7 @@
             },
             "text": {
               "en": "The squad sent on {m} found a shortcut home. Its report is waiting.",
-              "fr": "L'escouade partie pour {m} a trouvé un raccourci. Son rapport t'attend."
+              "fr": "L'escouade envoyée sur {m} a dégoté un raccourci. Son rapport t'attend !"
             }
           },
           {
@@ -4306,7 +4305,7 @@
             },
             "text": {
               "en": "Sun, a light wind and nothing on fire. The drills went perfectly.",
-              "fr": "Du soleil, un vent léger et rien qui brûle. Les exercices se sont parfaitement déroulés."
+              "fr": "Grand soleil, vent léger et aucun dégât : les exercices sont un succès total."
             }
           },
           {
@@ -4322,7 +4321,7 @@
             },
             "text": {
               "en": "The villagers pooled what they could to thank the camp for its protection.",
-              "fr": "Les villageois ont réuni ce qu'ils pouvaient pour remercier le camp de sa protection."
+              "fr": "Pour remercier le camp de sa protection, les villageois ont cotisé."
             }
           },
           {
@@ -4354,7 +4353,7 @@
             },
             "text": {
               "en": "A messenger from the capital brought a medal and a promotion for {c}.",
-              "fr": "Un messager de la capitale apporte une médaille et une promotion pour {c}."
+              "fr": "Un émissaire de la capitale apporte une décoration et une promotion pour {c}."
             },
             "w": 0.6
           }
@@ -4808,7 +4807,7 @@
           "desc": "older man with a long grey braided beard, legendary golden armour with a blue cape, a massive rune-engraved axe glowing blue, a splintered wooden gate behind him",
           "lore": {
             "en": "Ash Cleaver once split a fortress gate with a single swing and apologised to the carpenter. His axe has a name, a pension and a tent of its own.",
-            "fr": "Ash Cleaver a fendu la porte d'une forteresse d'un seul coup, puis s'est excusé auprès du charpentier. Sa hache a un nom, une pension et sa propre tente."
+            "fr": "Ash Cleaver a fendu la porte d'une forteresse d'un seul coup puis s'est excusé auprès du charpentier. Sa hache a un nom, une pension et sa propre tente."
           }
         },
         {
@@ -4988,7 +4987,7 @@
           "desc": "very old man with a white beard down to his belt, cloak of blue and gold embroidered with a star map, a legendary golden compass floating and glowing above his palm, a staff topped with a star",
           "lore": {
             "en": "Magnus North is said to have drawn the first map of the world, then walked it to check. At eighty-two, the forests still part before him out of respect.",
-            "fr": "On dit que Magnus North a dessiné la première carte du monde, puis l'a parcourue pour vérifier. À quatre-vingt-deux ans, il voit encore les forêts s'écarter devant lui par respect."
+            "fr": "On dit que Magnus North a dessiné la première carte du monde puis l'a parcourue pour vérifier. À quatre-vingt-deux ans, il voit encore les forêts s'écarter devant lui par respect."
           }
         },
         {
@@ -5033,7 +5032,7 @@
           "desc": "burly man with a broken nose and curly dark hair, blue coat, steel gauntlets, cracking his knuckles with a confident smirk",
           "lore": {
             "en": "Colonel Duke Upps settles every argument with one punch, then apologises politely. Skulls, bones and curses do not scare him, but paperwork does.",
-            "fr": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing, puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas, mais la paperasse, si."
+            "fr": "Le colonel Duke Upps règle chaque dispute d'un seul coup de poing puis s'excuse poliment. Crânes, ossements et malédictions ne l'effraient pas, mais la paperasse, si."
           }
         },
         {
@@ -5093,7 +5092,7 @@
           "desc": "earnest young woman with a neat brown bun, a blue general's coat too big for her, clutching a small padlocked book to her chest",
           "lore": {
             "en": "Constance swore her oath on a book with a lock, then lost the key. She has kept every promise since, just to be safe.",
-            "fr": "Constance a prêté serment sur un livre à cadenas, puis en a perdu la clé. Depuis, elle tient toutes ses promesses, par précaution."
+            "fr": "Constance a prêté serment sur un livre à cadenas puis en a perdu la clé. Depuis, elle tient toutes ses promesses, par précaution."
           }
         },
         {
@@ -5498,7 +5497,7 @@
           "desc": "grinning imp with a red plumed helmet and goggles, red and gold armour, holding a lit round bomb, a bundle of dynamite on his belt and a small shovel",
           "lore": {
             "en": "Barry D. Alive digs the traps, fills the traps, then forgets where he put them. The whole camp walks on tiptoe, just in case.",
-            "fr": "Barry D. Alive creuse les pièges, remplit les pièges, puis oublie où il les a mis. Tout le camp marche sur la pointe des pieds, au cas où."
+            "fr": "Barry D. Alive creuse les pièges, remplit les pièges puis oublie où il les a mis. Tout le camp marche sur la pointe des pieds, au cas où."
           }
         },
         {
@@ -5708,7 +5707,7 @@
           "desc": "tiny ancient imp woman with a white hair bun and knitting needles in it, legendary gold and crimson armour, a massive glowing executioner's axe far bigger than her",
           "lore": {
             "en": "Granny Guillotine knits in the evenings and chops in the mornings. Every wooden wall in this war has felt her gentle smile, and then her axe.",
-            "fr": "Granny Guillotine tricote le soir et tranche le matin. Chaque mur de bois de cette guerre a connu son doux sourire, puis sa hache."
+            "fr": "Granny Guillotine tricote le soir et tranche le matin. Chaque mur de bois de cette guerre a connu son doux sourire puis sa hache."
           }
         },
         {
@@ -5828,7 +5827,7 @@
           "desc": "imp woman with moss-green streaks in her hair, hooded red coat with twigs caught in it, a bone compass on a string, sniffing the air",
           "lore": {
             "en": "Fern finds her way by the smell of the moss. The forest tried to swallow her once, and spat her out for being too clever.",
-            "fr": "Fern trouve son chemin à l'odeur de la mousse. La forêt a essayé de l'avaler une fois, puis l'a recrachée : elle était trop maligne."
+            "fr": "Fern trouve son chemin à l'odeur de la mousse. La forêt a essayé de l'avaler une fois puis l'a recrachée : elle était trop maligne."
           }
         },
         {

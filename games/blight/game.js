@@ -828,7 +828,7 @@
           /* An EVENT the player did not make: a notice, not a callout. The
              very first rot a player ever meets is named instead (the guide's
              page on it); every outbreak after that is said as what it is. */
-          if (!rotCount && !learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it."))
+          if (!rotCount && !learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it"))
             Notify.say("The rot spreads", { kind: "warn", guide: "outbreak" });
           Sound.clip("spread", 1, 0.55);
         }
@@ -1299,7 +1299,7 @@
           if (blk[r][c]) rot = true;
           if (sup[r][c]) joker = true;
         }
-      if (rot) learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it.");
+      if (rot) learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it");
       if (joker) learn("joker", "Rainbow bubble", "This bubble will take the right colour");
       if (ball.sup || nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
     }

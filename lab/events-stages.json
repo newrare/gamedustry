@@ -59,6 +59,23 @@
     "wall": 2,
     "worm": 26
   },
+  "parrynormal": {
+    "arrive": 5,
+    "build": 5,
+    "clear": 5,
+    "combo": 16,
+    "frozen": 5,
+    "hit": 5,
+    "ko": 5,
+    "launch": 5,
+    "ouch": 22,
+    "parry": 5,
+    "perfect": 5,
+    "shove": 5,
+    "strike": 5,
+    "super": 5,
+    "take": 5
+  },
   "pawko": {
     "bad": 4,
     "card": 2,

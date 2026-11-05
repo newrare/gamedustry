@@ -170,7 +170,7 @@ chapters of pages, one per rule, biome, object or special card, each with the
 level that first deals it (`lv`). **A page shows before it tells**: a picture
 first (`pic` — the round's own renderer on a canvas, one of the game's cards,
 a cut of its artwork), a table for what a thing pays (`rows`), then two or
-three short lines. The Help card ends on the book's line (*Anytime, tap {book} for more help*), which
+three short lines. The Help card ends on the book's line (*Tap {book} for more help*), which
 opens it, a notice wearing the book and the "!" log open the page a `Notify.learn` named, and a tap on an element of the
 table opens its page with `__GUIDE__.open(id)`. See
 [the guide in CLAUDE.md](../CLAUDE.md#the-guide).

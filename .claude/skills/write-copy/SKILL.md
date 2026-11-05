@@ -52,7 +52,10 @@ this file does not repeat.
    sentence. No chain of colons; one colon at most, and only where a comma
    or a full stop would not do. **No semicolon in the middle of a sentence**,
    in either language: two ideas are two sentences, or one joined by a comma
-   or a word ("so", "but" / "donc", "mais").
+   or a word ("so", "but" / "donc", "mais"). **A notification never ends
+   on a full stop** (a `Notify.say` / `Notify.learn` word or sub, either
+   language): a stop between two sentences stays, the last one goes. Guide
+   pages, cards and lore keep theirs.
 1. **Say what to DO when the rule allows it.** A warning reads as advice:
    "Quickly get clear of that side before you get bitten." / "Quitte vite ce
    côté pour ne pas te faire croquer." A bonus reads as an opportunity:

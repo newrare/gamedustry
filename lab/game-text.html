@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lab — game text</title>
+<title>Lab — Game list text</title>
 <meta name="lab-group" content="tools">
+<meta name="lab-done" content="api/done">
 <style>
 /* ===========================================================================
    COPY DESK — every word a game shows a player, read as COPY.
@@ -49,8 +50,9 @@
    call, or the table it sits in. A dictionary entry wears one pill per
    surface its English reaches, and each of its uses wears its own. Where the
    source cannot say, the pill says so — GAME DATA (a table, named) or IN CODE
-   (built at runtime) — rather than guess. The select beside the filter keeps
-   one surface.
+   (built at runtime) — rather than guess. The surface picker beside the filter
+   keeps one surface, and a surface every row of which is checked in the
+   language on screen wears a tick and goes green.
 
    CHECKED is the proofreader's own mark: a row read and signed off turns
    green, and the mark lands in lab/text-review.json with the text it was
@@ -135,37 +137,40 @@ select, input[type=text], textarea {
   font:inherit; padding:7px 9px;
 }
 select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; }
-/* The game picker is ours and not a <select>: a native popup draws its
+/* The two pickers are ours and not a <select>: a native popup draws its
    options without their colour, and its own tick on the selected entry reads
    as "checked" next to ours. Same picker as the events bench: a dot on the
-   game being edited, a tick and green on a game every row of which is
-   checked, and what is left on the others. */
-#game-pick { position:relative; min-width:230px; }
-#game-pick .gp-btn {
+   entry being read, a tick and green on a game (or a surface) every row of
+   which is checked, and what is left on the others. */
+.gp { position:relative; }
+#game-pick { min-width:230px; }
+#surface-pick { min-width:190px; }
+.gp .gp-btn {
   position:relative; display:flex; align-items:center; gap:8px; width:100%; text-align:left; cursor:pointer;
   padding:7px 28px 7px 9px; border:1px solid #2c2c47; border-radius:7px;
   background:#0b0b12; color:#e8e6f5; font-family:inherit; font-size:13px; font-weight:700; line-height:1.5;
+  white-space:nowrap;
 }
-#game-pick .gp-btn::after { content:"\25BE"; position:absolute; right:10px; top:7px; color:#6f6f92; }
-#game-pick .gp-btn:hover, #game-pick.open .gp-btn, #game-pick .gp-btn:focus { outline:none; border-color:#7ea6ff; }
-#game-pick.done .gp-btn { color:#5fd49a; border-color:#2a5040; }
-#game-pick .gp-list[hidden] { display:none; }
-#game-pick .gp-list {
+.gp .gp-btn::after { content:"\25BE"; position:absolute; right:10px; top:7px; color:#6f6f92; }
+.gp .gp-btn:hover, .gp.open .gp-btn, .gp .gp-btn:focus { outline:none; border-color:#7ea6ff; }
+.gp.done .gp-btn { color:#5fd49a; border-color:#2a5040; }
+.gp .gp-list[hidden] { display:none; }
+.gp .gp-list {
   position:absolute; left:0; min-width:100%; top:calc(100% + 4px); z-index:60;
   max-height:70vh; overflow:auto; padding:5px;
   background:#12121c; border:1px solid #3b3b5f; border-radius:10px; box-shadow:0 18px 50px rgba(0,0,0,.6);
 }
-#game-pick .gp-row {
+.gp .gp-row {
   display:flex; align-items:center; gap:8px; width:100%; padding:6px 9px; text-align:left; cursor:pointer;
   border:0; border-radius:6px; background:none; color:#c9c9e0; white-space:nowrap;
   font-family:inherit; font-size:13px; font-weight:700; line-height:1.4;
 }
-#game-pick .gp-row:hover, #game-pick .gp-row.on { background:#1e2740; color:#e8e6f5; }
-#game-pick .gp-row.done { color:#5fd49a; }
-#game-pick .gp-dot { width:8px; height:8px; border-radius:50%; background:#7ea6ff; flex:0 0 auto; }
-#game-pick .gp-ck { color:#5fd49a; flex:0 0 auto; }
-#game-pick .gp-v { color:#6f6f92; font-weight:600; }
-#game-pick .gp-left { margin-left:auto; padding-left:14px; color:#6f6f92; font-weight:600; font-size:11px; font-variant-numeric:tabular-nums; }
+.gp .gp-row:hover, .gp .gp-row.on { background:#1e2740; color:#e8e6f5; }
+.gp .gp-row.done { color:#5fd49a; }
+.gp .gp-dot { width:8px; height:8px; border-radius:50%; background:#7ea6ff; flex:0 0 auto; }
+.gp .gp-ck { color:#5fd49a; flex:0 0 auto; }
+.gp .gp-v { color:#6f6f92; font-weight:600; }
+.gp .gp-left { margin-left:auto; padding-left:14px; color:#6f6f92; font-weight:600; font-size:11px; font-variant-numeric:tabular-nums; }
 #game-pick .gp-left em { font-style:normal; color:#b89cff; }
 #filter { flex:1 1 200px; min-width:140px; }
 
@@ -234,6 +239,7 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .meta .pill { padding:2px 7px; border-radius:20px; background:#1b1b2b; color:#8b8ba7; font-size:10px; letter-spacing:.3px; }
 .meta .pill.frag { background:#2a2214; color:#c99a4a; }
 .meta .pill.sites { background:#1a2430; color:#7ea6ff; }
+.meta .pill.shared { background:#2e2e44; color:#f2f2ff; }
 .meta .pill.desync { background:#3a2c14; color:#ffb648; }
 .meta .hint { color:#5d5d7c; font-weight:600; }
 .meta .sp { flex:1; }
@@ -241,6 +247,11 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .ico { width:24px; height:22px; border:0; border-radius:6px; background:#1f1f31; color:#8b8ba7; font-size:12px; line-height:1; cursor:pointer; }
 .ico:hover { background:#2a2a44; color:#e8e6f5; }
 .ico.hide { display:none; }
+/* The two icons every row carries get their own hue, so they are told apart at a glance. */
+.ico.edit { background:#1a2430; color:#7ea6ff; }
+.ico.edit:hover { background:#24344a; color:#a9c4ff; }
+.ico.check { background:#15291f; color:#5fd49a; }
+.ico.check:hover { background:#1d3a2b; color:#7de3b0; }
 .ico.check.on { background:#5fd49a; color:#0b0b12; }
 .ico.check.on:hover { background:#7de3b0; }
 .meta .pill.stale { background:#2a2214; color:#c99a4a; }
@@ -297,10 +308,10 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 .sf.hud, .sf.canvas, .sf.float { background:#2a2214; color:#e8b860; }
 .sf.callout { background:#33162a; color:#ff7ac8; }
 .sf.notice { background:#13281f; color:#5fd49a; }
+.sf.tips { background:#2c2a10; color:#e6dc5a; }
 .sf.card, .sf.item, .sf.rank, .sf.info, .sf.panel, .sf.barracks, .sf.mission, .sf.event { background:#271a38; color:#c79cff; }
 .sf.data, .sf.code { background:#1a1a24; color:#7a7a96; }
 .use-h .sf { padding:1px 6px; margin-right:3px; }
-#surface-pick { max-width:190px; }
 
 .loading { padding:60px 0; display:flex; flex-direction:column; align-items:center; gap:14px; color:#6f6f92; }
 .spin { width:28px; height:28px; border-radius:50%; border:3px solid #26263c; border-top-color:#7ea6ff; animation:spin .8s linear infinite; }
@@ -325,7 +336,7 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 
 <div id="head">
   <h1>Copy desk<small id="sub">every word a game shows</small></h1>
-  <div id="game-pick"><button type="button" class="gp-btn" title="the game this page reads"></button><div class="gp-list" hidden></div></div>
+  <div id="game-pick" class="gp"><button type="button" class="gp-btn" title="the game this page reads"></button><div class="gp-list" hidden></div></div>
   <div id="modes">
     <button data-mode="fr" class="on">FR</button>
     <button data-mode="en">EN</button>
@@ -335,7 +346,7 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
   </div>
   <button id="todo" title="show only what is left to read">Hide checked</button>
   <input type="text" id="filter" placeholder="filter — a word, a context, a file  ( / )">
-  <select id="surface-pick" title="keep the rows printed on one surface"><option value="">Every surface</option></select>
+  <div id="surface-pick" class="gp"><button type="button" class="gp-btn" title="keep the rows printed on one surface"></button><div class="gp-list" hidden></div></div>
   <div id="stats"></div>
   <button id="apply">Apply</button>
 </div>
@@ -392,14 +403,73 @@ function surfacePill(s) {
 }
 function surfacesOf(row) { return row.surfaces || (row.surface ? [row.surface] : []); }
 
-// The picker lists the surfaces this game actually uses, in the scanner's order.
+/* ── the surface picker ───────────────────────────────────────────────────
+   The surfaces this game uses in the language on screen, in the scanner's
+   order, each counted on the rows of that language. A surface every row of
+   which is checked wears a tick and goes green, like a game in the game
+   picker; any other says how far along it is. "" is every surface. */
+var sfKeys = [], sfIdx = -1;
+
+// The rows the language on screen reads: a string with no language is read in both.
+function inPool(r) { return mode === "all" || mode === "changed" || mode === "todo" || r.lang === mode || r.lang === "all"; }
+
+function surfaceTally() {
+  var t = { "": { ok: 0, total: 0 } }, any = {};
+  if (scan) scan.rows.forEach(function (r) {
+    var mine = inPool(r), ok = checked(r) && !todo(r);
+    if (mine) { t[""].total++; if (ok) t[""].ok++; }
+    surfacesOf(r).forEach(function (s) {
+      any[s.key] = true;
+      if (!mine) return;
+      var e = t[s.key] || (t[s.key] = { ok: 0, total: 0 });
+      e.total++;
+      if (ok) e.ok++;
+    });
+  });
+  return { t: t, any: any };
+}
+function sfDone(e) { return !!e && e.total > 0 && e.ok === e.total; }
+
+function sfEntry(key, e, inList) {
+  var html = (inList && key === surface ? '<span class="gp-dot"></span>' : "") +
+    (sfDone(e) ? '<span class="gp-ck">✓</span>' : "") +
+    "<span>" + esc(key ? surfaceDef(key).label : "Every surface") +
+    (!inList && scan ? ' <span class="gp-v">· ' + (e ? e.total : 0) + "</span>" : "") + "</span>";
+  if (inList && e) html += '<span class="gp-left">' + (sfDone(e) ? e.total : e.ok + "/" + e.total) + "</span>";
+  return html;
+}
+
 function drawSurfacePick() {
-  var pick = $("surface-pick"), used = {};
-  if (scan) scan.rows.forEach(function (r) { surfacesOf(r).forEach(function (s) { used[s.key] = (used[s.key] || 0) + 1; }); });
-  if (surface && !used[surface]) surface = "";
-  pick.innerHTML = '<option value="">Every surface</option>' + ((scan && scan.surfaces) || []).filter(function (d) { return used[d.key]; })
-    .map(function (d) { return '<option value="' + esc(d.key) + '"' + (d.key === surface ? " selected" : "") + ">" +
-      esc(d.label) + "  ·  " + used[d.key] + "</option>"; }).join("");
+  var box = $("surface-pick"), tally = surfaceTally(), t = tally.t;
+  if (surface && !tally.any[surface]) surface = "";
+  // A surface the language on screen has no row on is left out — unless it is
+  // the one kept, which then reads 0 rather than vanishing from the button.
+  sfKeys = [""].concat(((scan && scan.surfaces) || []).map(function (d) { return d.key; })
+    .filter(function (k) { return (t[k] && t[k].total) || k === surface; }));
+  box.classList.toggle("done", !!scan && sfDone(t[surface]));
+  box.querySelector(".gp-btn").innerHTML = sfEntry(surface, t[surface], false);
+  box.querySelector(".gp-list").innerHTML = sfKeys.map(function (k, i) {
+    return '<button type="button" class="gp-row' + (scan && sfDone(t[k]) ? " done" : "") + (i === sfIdx ? " on" : "") +
+      '" data-key="' + esc(k) + '">' + sfEntry(k, t[k], true) + "</button>";
+  }).join("");
+}
+
+function sfOpen(on) {
+  var box = $("surface-pick"), list = box.querySelector(".gp-list");
+  list.hidden = !on;
+  box.classList.toggle("open", on);
+  if (!on) return;
+  sfIdx = Math.max(0, sfKeys.indexOf(surface));
+  drawSurfacePick();
+  var cur = list.querySelector(".gp-row.on");
+  if (cur) cur.scrollIntoView({ block: "nearest" });
+}
+
+function pickSurface(key) {
+  sfOpen(false);
+  if (key === surface) return;
+  surface = key;
+  draw();
 }
 
 function changed(row) {
@@ -472,6 +542,9 @@ function drawRow(row) {
       : "written in " + sites + " files";
     bits.push('<span class="pill sites" title="applying this row writes all of them">' + extra + "</span>");
   }
+  if (row.shared) bits.push('<span class="pill shared" title="one sentence written by ' + row.shared.length +
+    ' kinds of call, all reading the same French: checking or editing it here does it for every one of them">shared · ' +
+    row.shared.length + "</span>");
   if (row.fragment) bits.push('<span class="pill frag" title="one literal inside a bigger expression">fragment</span>');
   if (row.unused) bits.push('<span class="pill unused" title="nothing in game.js writes this English — stale, or built at runtime">no use found</span>');
   if (dropped(row)) bits.push('<span class="pill drop" title="Apply takes this entry out of the manifest">will be removed</span>');
@@ -489,11 +562,11 @@ function drawRow(row) {
   // A pending edit is not what the file says yet, so there is nothing to sign off.
   // On a row with an action, the check answers it: the English still reads right.
   var on = checked(row) && !todo(row);
+  if (!dropped(row)) bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
   if (!pending(row)) bits.push('<button class="ico check' + (on ? " on" : "") + '" title="' +
     (todo(row) ? "Still right — check it and close the action" :
      on ? "Checked " + esc(mark(row).at) + " — click to take it back" : "Mark as checked") + '">&#10003;</button>');
   if (row.unused && !dropped(row)) bits.push('<button class="ico trash" title="Remove it from the manifest on Apply">&#128465;</button>');
-  if (!dropped(row)) bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
   bits.push('<button class="ico undo' + (pending(row) ? "" : " hide") + '" title="Revert">&#8634;</button>');
 
   var html = '<div class="meta">' + bits.join("") + "</div>";
@@ -568,11 +641,13 @@ function drawHead() {
   var btn = $("apply");
   btn.className = n ? "live" : "";
   btn.innerHTML = n ? "Apply <b>" + n + "</b>" : "Apply";
+  // A check or a change of language moves a surface's count: redraw it with the head.
+  drawSurfacePick();
   if (!scan) { $("stats").innerHTML = ""; $("sub").textContent = "every word a game shows"; return; }
   var s = ['<span><b>' + scan.counts.en + "</b> EN</span>", '<span><b>' + scan.counts.fr + "</b> FR</span>"];
   if (scan.counts.fragments) s.push("<span>" + scan.counts.fragments + " fragments</span>");
   // What is left to read, in the language on screen.
-  var pool = scan.rows.filter(function (r) { return mode === "all" || mode === "changed" || mode === "todo" || r.lang === mode || r.lang === "all"; });
+  var pool = scan.rows.filter(inPool);
   var ok = pool.filter(function (r) { return checked(r) && !todo(r); }).length;
   s.push('<span class="' + (ok && ok === pool.length ? "done" : "") + '"><b>' + ok + "</b> / " + pool.length + " checked</span>");
   var todos = scan.rows.filter(todo).length;
@@ -760,7 +835,30 @@ $("apply").addEventListener("click", function () {
 });
 
 $("filter").addEventListener("input", function () { filter = this.value.trim().toLowerCase(); draw(); });
-$("surface-pick").addEventListener("change", function () { surface = this.value; draw(); });
+(function wireSurfacePick() {
+  var box = $("surface-pick"), btn = box.querySelector(".gp-btn"), list = box.querySelector(".gp-list");
+  btn.addEventListener("click", function () { sfOpen(list.hidden); });
+  list.addEventListener("click", function (e) {
+    var r = e.target.closest(".gp-row");
+    if (r) pickSurface(r.dataset.key);
+  });
+  box.addEventListener("keydown", function (e) {
+    if (list.hidden) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") { e.preventDefault(); sfOpen(true); }
+      return;
+    }
+    if (e.key === "Escape") { e.preventDefault(); sfOpen(false); btn.focus(); return; }
+    if (e.key === "Enter") { e.preventDefault(); if (sfIdx >= 0 && sfIdx < sfKeys.length) pickSurface(sfKeys[sfIdx]); return; }
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    sfIdx = Math.max(0, Math.min(sfKeys.length - 1, sfIdx + (e.key === "ArrowDown" ? 1 : -1)));
+    drawSurfacePick();
+    var on = list.querySelector(".gp-row.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  });
+  document.addEventListener("mousedown", function (e) { if (!box.contains(e.target)) sfOpen(false); });
+  window.addEventListener("blur", function () { sfOpen(false); });
+})();
 var picked = "";
 function pickGame(slug) {
   pickOpen(false);

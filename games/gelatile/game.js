@@ -104,7 +104,10 @@
       powerEveryMin: 4,   // a power every min…max moves
       powerEveryMax: 6,
       maxTargets: 1,      // targets waiting at once
-      fourChance: 0.1     // a spawn is a 4 this often
+      fourChance: 0.1,    // a spawn is a 4 this often
+      lightEvery: 0.6,    // Freeze and Stone wait this share of the usual gap…
+      lightWeight: 2,     // …are drawn this many times more often from a pool…
+      lightBelow: 16      // …and land on a tile under this value
     }
   };
 
@@ -281,7 +284,9 @@
     var grid = [], dying = [], events = [], particles = [], rings = [], fxs = [];
     var nextId = 1, score = 0, moves = 0, merges = 0, maxTile = 0;
     var cellPowers = [], sides = { left: null, right: null, up: null, down: null };
-    var powerCountdown = 5, clock = 0, levelD = null;
+    var powerCountdown = 5, nextPower = null, incoming = null, clock = 0, levelD = null;
+    // the warning sign: when it appeared, when it turned red
+    var signOn = false, signRed = false, signAt = -9, redAt = -9;
     // the fast mode's clock: it starts on the first move and stops on 2048
     var runT = 0, runOn = false, runShown = -1;
     var won = false, over = false, ended = false, endAt = 0, outOfMoves = false, reached = false;
@@ -940,14 +945,41 @@
         powerCountdown--;
         if (powerCountdown <= 0) {
           var got = addRandomPower(now + T + 0.05);
+          incoming = null;
+          nextPower = drawPower();
           // a side power holds a whole wall: the next one waits it out
-          powerCountdown = nextCountdown() + (got && POWER[got].cat === "side" ? powerMoves() : 0);
+          powerCountdown = cadence(nextPower) + (got && POWER[got].cat === "side" ? powerMoves() : 0);
         }
+        // a target is announced one move ahead, so a fast hand slows down
+        if (powerCountdown === 1 && nextPower && POWER[nextPower].cat === "cell") warnTarget(now + T);
       }
       previewDirty = true;
       hudMoves();
       checkEnd(now + T);
       return true;
+    }
+    function isLight(key) { return key === "freeze" || key === "stone"; }
+    // the next power is drawn as soon as the last one lands, so it can be
+    // announced; Freeze and Stone, a nuisance rather than a loss, come more often
+    function drawPower() {
+      if (!L.pool.length) return null;
+      var w = CONFIG.play.lightWeight || 1, tot = 0, r, i;
+      for (i = 0; i < L.pool.length; i++) tot += isLight(L.pool[i]) ? w : 1;
+      r = Math.random() * tot;
+      for (i = 0; i < L.pool.length; i++) { r -= isLight(L.pool[i]) ? w : 1; if (r < 0) return L.pool[i]; }
+      return L.pool[L.pool.length - 1];
+    }
+    function cadence(key) {
+      var n = nextCountdown();
+      return isLight(key) ? Math.max(2, Math.round(n * (CONFIG.play.lightEvery || 1))) : n;
+    }
+    function warnTarget(at) {
+      var m = moves;
+      later(at, function () {
+        if (moves !== m) return;            // already played on: the target is down
+        incoming = nextPower;
+        Sound.clip("warn", 0.35);
+      });
     }
     function nextCountdown() {
       if (L.mod === "storm") return randInt(3, 4);
@@ -1073,6 +1105,7 @@
       var def = POWER[key], at = appearAt == null ? clock : appearAt;
       if (def.cat === "tile") {
         var c = liveTiles().filter(function (t) { return !t.power && t.born <= clock; });
+        if (isLight(key)) c = lightTargets(c);
         if (!c.length) return false;
         var t = pick(c);
         t.power = { type: key, left: powerMoves(), t0: at };
@@ -1109,9 +1142,39 @@
       return false;
     }
     function addRandomPower(at) {
-      var keys = shuffle(L.pool.slice());
+      var first = nextPower || drawPower(), warned = !!first && POWER[first].cat === "cell";
+      if (first && addPower(first, at)) return first;
+      // the drawn power found no place: a target stands in only if one was announced
+      var keys = shuffle(L.pool.filter(function (k) { return k !== first && (warned || POWER[k].cat !== "cell"); }));
       for (var i = 0; i < keys.length; i++) if (addPower(keys[i], at)) return keys[i];
       return null;
+    }
+    /* Freeze and Stone land on the small tiles the next merges need (under
+       16), else on the smallest ones left — never on the biggest */
+    function lightTargets(c) {
+      var below = CONFIG.play.lightBelow || 16, top = 0, lo = Infinity;
+      var small = c.filter(function (t) { return t.v < below; });
+      if (small.length) return small;
+      grid.forEach(function (t) { if (t && t.v > top) top = t.v; });
+      var rest = c.filter(function (t) { return t.v < top; });
+      rest.forEach(function (t) { if (t.v < lo) lo = t.v; });
+      return rest.filter(function (t) { return t.v === lo; });
+    }
+    /* a bolt aims where the weight is: a line's chance grows with its tiles'
+       share of the biggest, so a row of big tiles is the likely threat — and
+       the fairness rule always leaves a move that saves every big one */
+    function boltLine(vertical) {
+      var top = 1, w = [], tot = 0, k, i, t, s, r, out = [];
+      grid.forEach(function (q) { if (q && q.v > top) top = q.v; });
+      for (k = 0; k < N; k++) {
+        s = 0.5;
+        for (i = 0; i < N; i++) { t = vertical ? grid[i * N + k] : grid[k * N + i]; if (t) s += t.v / top; }
+        w.push(s); tot += s;
+      }
+      r = Math.random() * tot;
+      for (k = 0; k < N - 1 && r >= w[k]; k++) r -= w[k];
+      for (i = 0; i < N; i++) out.push(vertical ? [k, i] : [i, k]);
+      return out;
     }
     function rawCells(key) {
       var occ = [], all = [], i;
@@ -1121,9 +1184,7 @@
         var x0 = randInt(0, N - 2), y0 = randInt(0, N - 2);
         return [[x0, y0], [x0 + 1, y0], [x0, y0 + 1], [x0 + 1, y0 + 1]];
       }
-      var out = [];
-      if (key === "boltV") { var x = randInt(0, N - 1); for (i = 0; i < N; i++) out.push([x, i]); return out; }
-      if (key === "boltH") { var y = randInt(0, N - 1); for (i = 0; i < N; i++) out.push([i, y]); return out; }
+      if (key === "boltV" || key === "boltH") return boltLine(key === "boltV");
       // switch: two cells, small tiles preferred — it never picks a big one
       var top = 0;
       grid.forEach(function (t) { if (t && t.v > top) top = t.v; });
@@ -1462,7 +1523,8 @@
                 portal: 0, refused: 0 };
       seedBoard();
       grid.forEach(function (t) { if (t && t.v > maxTile) maxTile = t.v; });
-      powerCountdown = L.first || nextCountdown();
+      nextPower = drawPower(); incoming = null; signOn = false; signRed = false;
+      powerCountdown = L.first || cadence(nextPower);
       runT = 0; runOn = false; runShown = -1;
       Music.play(isLevel() || isEndless() || modeKey() ? B.music : CONFIG.music.cut);
       HUD.setScoreNow(0);
@@ -1905,6 +1967,45 @@
       for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) rrPath(dc, cx(x) - CELL / 2, cy(y) - CELL / 2, CELL, CELL, CELL * 0.15, true);
       dc.clip("evenodd");
     }
+    /* the warning sign, on the board's top-left corner — the one corner no
+       target badge sits on: yellow while a target is on its way (it drops on
+       the next move), red while one is down (it strikes on the next move);
+       it stays up from the first warning to the last strike */
+    function drawIncoming() {
+      var live = cellPowers.length > 0;    // from the move that drops it, so the sign never blinks off
+      var vis = (!!incoming || live) && !reached && !over;
+      if (!vis) { signOn = false; signRed = false; return; }
+      if (!signOn) { signOn = true; signAt = clock; }
+      if (live && !signRed) redAt = clock;
+      signRed = live;
+      var e = clock - signAt, ak = clamp(e / 0.25, 0, 1);
+      var k = ak < 1 ? 1 - Math.pow(1 - ak, 3) * Math.cos(ak * 7) : 1;   // springs in
+      var er = clock - redAt;
+      if (signRed && er < 0.4) k *= 1 + 0.3 * Math.sin(er / 0.4 * Math.PI);   // a punch as it turns red
+      var h = CELL * 0.36 * k, w = h * 1.15, r = h * 0.14;
+      var rim = signRed ? "#4a0010" : "#2b2300", face = signRed ? "#ff3b4e" : "#ffd21f", mark = signRed ? "#ffffff" : "#2b2300";
+      if (h <= 1) return;
+      dc.save();
+      dc.translate(BX + CELL * 0.08, BY + CELL * 0.06);
+      dc.rotate(-0.12 + Math.sin(e * 3) * 0.08);
+      // a rounded triangle: dark rim, coloured face
+      var pts = [[0, -h * 0.62], [w / 2, h * 0.38], [-w / 2, h * 0.38]];
+      dc.beginPath();
+      for (var i = 0; i < 3; i++) {
+        var a = pts[i], b = pts[(i + 1) % 3];
+        dc.lineTo(lerp(a[0], b[0], 0.5), lerp(a[1], b[1], 0.5));
+        dc.arcTo(b[0], b[1], pts[(i + 2) % 3][0], pts[(i + 2) % 3][1], r);
+      }
+      dc.closePath();
+      dc.lineJoin = "round"; dc.lineWidth = Math.max(2, h * 0.1);
+      dc.strokeStyle = rim; dc.stroke();
+      dc.fillStyle = face; dc.fill();
+      // the "!" — a bar and a dot
+      dc.strokeStyle = mark; dc.lineCap = "round"; dc.lineWidth = Math.max(2, h * 0.11);
+      dc.beginPath(); dc.moveTo(0, -h * 0.26); dc.lineTo(0, h * 0.06); dc.stroke();
+      dc.fillStyle = mark; dc.beginPath(); dc.arc(0, h * 0.2, h * 0.065, 0, 6.283); dc.fill();
+      dc.restore();
+    }
     function drawTargets() {
       if (!cellPowers.length) return;
       dc.save(); rr(dc, BX, BY, S, S, S * 0.04); dc.clip();
@@ -2167,6 +2268,7 @@
       drawWallFlash();
       drawFx();
       drawParticles();
+      drawIncoming();
       dc.restore();
       if (flashA > 0.002) { dc.fillStyle = "rgba(255,255,240," + flashA * 0.5 + ")"; dc.fillRect(0, 0, view.w, view.h); }
     }
@@ -2308,7 +2410,8 @@
             { id: "target", title: Lang.t("Reading a target"), lv: 13,
               pic: boardPic({ biome: 2, tiles: [[16, 0, 3], [8, 2, 3], [4, 2, 1]], targets: [["fire", [[2, 1]]]] }),
               lines: [Lang.t("A target marks cells of the grid, not a tile."),
-                      Lang.t("It strikes the target after your next move.")] },
+                      Lang.t("It strikes the target after your next move."),
+                      Lang.t("A yellow sign warns of danger ahead of time, then turns red until it strikes.")] },
             powerPage("fire", 13, [[16, 0, 3], [4, 2, 1]], [["fire", [[2, 1]]]], null,
               ["Burns the cell.", "Leave the cell empty, or send a small tile."]),
             powerPage("purple", 14, [[32, 1, 2], [4, 3, 3]], [["purple", [[1, 2]]]], null,

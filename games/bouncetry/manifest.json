@@ -1,7 +1,7 @@
 {
   "slug": "bouncetry",
   "title": "Bouncetry",
-  "version": "2.8.14",
+  "version": "2.8.15",
   "tagline": "One tap turns the switches on and traps the ball with the bricks",
   "order": 30,
   "draft": false,
@@ -384,7 +384,7 @@
           "For five seconds, the ball burns through bricks instead of bouncing off them.": "Durant cinq secondes, la bille calcine et traverse les briques au lieu de rebondir dessus.",
           "Lit switches and raised shields still bounce the ball back.": "Attention toutefois, les boutons allumés et les boucliers levés renvoient quand même la bille.",
           "The bricks living glass adds count in the wall, so break them too.": "Les briques générées par le verre vivant s'ajoutent au total du mur, donc n'oublie pas de les détruire.",
-          "Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.": "Fais glisser ton doigt pour viser, puis relève-le pour tirer, sachant que les pointillés indiquent tes cinq prochains rebonds. Attention la taille de la bille n'est pas prise en compte par le tracé de la trajectoire.",
+          "Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.": "Fais glisser ton doigt pour viser puis relève-le pour tirer, sachant que les pointillés indiquent tes cinq prochains rebonds. Attention la taille de la bille n'est pas prise en compte par le tracé de la trajectoire.",
           "Each brick in an area": "Brique dans une zone",
           "Tap as the ball enters a closed area. It stays shut in with the bricks.": "Touche l'écran au moment exact où la bille pénètre dans une zone close pour l'y enfermer avec les briques.",
           "After a few seconds of flight, the lava pulls the ball down.": "Si le vol se prolonge de quelques secondes, la lave en contrebas exerce alors une force et attire la bille vers le bas.",

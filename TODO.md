@@ -180,6 +180,16 @@ ______________________________________________________________________
   biome and the menu run past their first loop, chainring's five beds
   included.
 
+- [ ] PLAYTEST — **gearball 2.12.0: slower, shorter, and the switches move
+  only for the electric marble.** The Combo is the uncapped multiplier on the
+  Dynamo (ten notches a step, every module pays). The pace was cut (PACE in
+  game.js, shifts 2 → 5 min, 7 → 5 hearts) until a pilot tapping every 1.2 to
+  2.5 s lasts every shift to level 16 and one in two at level 24; objectives
+  8 000 → 16 000 put its first star at 7–10 runs in 10, the third rare.
+  `roundScore` 40 500. A switch now flips only once the ELECTRIC marble has
+  passed, so its route reads whole as it sets off — the user's idea, to be
+  tried. Play L1, L12, L24: is it fair, and does the electric read well?
+
 - [ ] MAIN — **the stars, every game: one easy, three near-flawless.** The
   meaning is fixed in [docs/LEVELS.md](docs/LEVELS.md) (*The objective, and the
   stars*) and the motor has the two knobs (`web.levels.stars`,

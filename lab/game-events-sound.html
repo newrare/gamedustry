@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lab — game events sound</title>
+<title>Lab — Game list sound</title>
 <meta name="lab-group" content="tools">
+<meta name="lab-done" content="api/done?page=sound">
 <style>
 /* ===========================================================================
    EVENTS BENCH · SOUND — what a game PLAYS, one card per clip, judged on the
@@ -2812,7 +2813,12 @@ function sendCheck(ids, on) {
   })
     .then((r) => r.json())
     .then((res) => {
-      if (res.error) { note(res.error); return; }
+      if (res.error) {
+        // An id the source no longer has: read it again, so the next click lands.
+        if (/source moved/.test(res.error)) { note("the source changed — rows refreshed, check again"); refreshData(); }
+        else note(res.error);
+        return;
+      }
       state.data.review = res.review;
       state.data.stale = res.stale || [];
       state.data.staleKit = res.staleKit || {};
@@ -2971,6 +2977,26 @@ function load(slug) {
   fetch("api/events?game=" + encodeURIComponent(slug))
     .then((r) => r.json())
     .then((d) => { state.data = d; state.status[slug] = d.status; drawPicker(); el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where; render(); });
+}
+
+/* The scan again, without touching the frames or what is pending. An apply
+   rewrites calls, and a call's checkId is its source: until the page reads
+   the source again, a line just applied cannot be checked ("the source moved
+   under the page") and its slider still starts from the old value. The
+   rebuild's reload brings the frames back later; this is the rows, now. */
+function refreshData() {
+  const slug = state.slug;
+  return fetch("api/events?game=" + encodeURIComponent(slug))
+    .then((r) => r.json())
+    .then((d) => {
+      if (slug !== state.slug || !d || d.error) return;
+      state.data = d; state.status[slug] = d.status; drawPicker();
+      el("sub").textContent = d.title + (d.version ? " v" + d.version : "") + " — " + d.where;
+      const list = el("list"), top = list.scrollTop;
+      render();
+      list.scrollTop = top;
+    })
+    .catch(() => {});
 }
 
 /* ===========================================================================
@@ -3895,7 +3921,8 @@ function applyNow() {
       showReport(r);
       note(r.written || (plan.roles.length && !r.error) ? "written — rebuilding" : "nothing written");
       countPending();
-      if (plan.roles.length) loadKit(); else render();
+      if (plan.roles.length) loadKit();
+      if (r.written) refreshData(); else if (!plan.roles.length) render();
     })
     .catch((e) => { note("apply failed: " + e.message); countPending(); });
 }

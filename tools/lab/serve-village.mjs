@@ -542,8 +542,33 @@ function checkStyleCopy() {
 }
 
 
+/* The doors a village owes, by what its game declares — the `need` column of
+   DOORS in lab/village.html, repeated because the page cannot be imported; if
+   the two disagree, the page is right. A door the page never counts as
+   missing (the codex, a mode, help, scenery) is owed by nobody. */
+const OWED = {
+  always: ['ranking', 'options'], levels: ['map'], flat: ['play'],
+  meta: ['daily', 'album', 'shop'], army: ['deck', 'infirmary', 'prison', 'recruit', 'defense']
+};
+
+/* The back office's tick: every door owed by every game's PUSHED village
+   (the manifest, not a draft) stands there exactly once — the composer's
+   checklist, summed. A game with no village owes every door still. */
+function doorsDone() {
+  let checked = 0, total = 0;
+  for (const g of Object.values(catalogue().games)) {
+    const owed = [...OWED.always, ...(g.levels ? OWED.levels : OWED.flat),
+      ...(g.meta ? OWED.meta : []), ...(g.army ? OWED.army : [])];
+    const houses = (g.village && g.village.houses) || [];
+    total += owed.length;
+    checked += owed.filter((k) => houses.filter((h) => h.role === k).length === 1).length;
+  }
+  return { checked, total, done: total > 0 && checked === total };
+}
+
 export async function handle(req, res, p, url) {
   if (p === '/api/catalogue') return json(res, 200, catalogue());
+  if (p === '/api/done') return json(res, 200, doorsDone());
 
   if (p === '/api/draft' && req.method === 'PUT') {
     const b = JSON.parse(await readBody(req, 4 * 1024 * 1024));

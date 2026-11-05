@@ -346,6 +346,14 @@ export async function handle(req, res, p, url) {
 
   // Every game's status, for the picker: parses what the cache does not hold.
   if (p === '/api/status') return json(res, 200, await statusAll());
+  // The back office's tick: every game green in the picker, summed.
+  if (p === '/api/done') {
+    const all = Object.values(await statusAll());
+    const sum = (k) => all.reduce((n, s) => n + s[k], 0);
+    const checked = sum('checked'), total = sum('total');
+    return json(res, 200, { checked, total,
+      done: total > 0 && checked === total && !sum('todo') && !sum('untranslated') });
+  }
 
   if (p === '/api/text') {
     const slug = url.searchParams.get('game');

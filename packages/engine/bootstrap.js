@@ -147,16 +147,19 @@
     /* Route pointer input to the game only while it is playing. A press
        during the entrance skips it, and the whole gesture it starts is eaten:
        the game never sees a move or an up without the down that opened it. */
-    var eaten = false;
+    /* Eaten per gesture: one finger's press eaten by the entrance never
+       eats another finger's (CONFIG.multiTouch, where `p.id` tells them
+       apart; without it every gesture has the same, absent, id). */
+    var eaten = {};
     Input.on("down", function (p) {
       if (State !== "playing") return;
-      if (Enter.active()) { Enter.skip(); eaten = true; return; }
-      eaten = false;
+      if (Enter.active()) { Enter.skip(); eaten[p.id] = true; return; }
+      eaten[p.id] = false;
       if (Game.onDown) Game.onDown(p);
     });
-    Input.on("move", function (p) { if (State === "playing" && !eaten && !Enter.active() && Game.onMove) Game.onMove(p); });
+    Input.on("move", function (p) { if (State === "playing" && !eaten[p.id] && !Enter.active() && Game.onMove) Game.onMove(p); });
     Input.on("up",   function (p) {
-      if (eaten) { eaten = false; return; }
+      if (eaten[p.id]) { eaten[p.id] = false; return; }
       if (State === "playing" && !Enter.active() && Game.onUp) Game.onUp(p);
     });
 

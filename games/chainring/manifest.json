@@ -1,7 +1,7 @@
 {
   "slug": "chainring",
   "title": "Chainring",
-  "version": "1.10.14",
+  "version": "1.10.15",
   "tagline": "Tap to the beat, at the exact instant a ball hits a ring",
   "order": 20,
   "draft": false,
@@ -234,7 +234,7 @@
           "A fragile ring is cracked. Two beats before the ball arrives, it either shatters or holds.": "L'anneau fragile présente des fissures : exactement deux Beats avant le contact, soit il se brise, soit il se maintient.",
           "Nova": "Nova",
           "Trust the beat, not your eyes": "Fie-toi au rythme, pas à tes yeux",
-          "Tap on landing, tap on the burst": "Tape à l'arrivée, puis à l'explosion",
+          "Tap on landing, tap on the burst": "Tape à l'arrivée puis à l'explosion",
           "Don't tap a dark ring": "Ne tape pas les anneaux sombres",
           "Tap bright parts, not dark ones": "Tape sur le clair, pas le sombre",
           "A long flight leaves an empty beat. Tapping on it counts as a miss.": "Une phase de vol prolongée crée une pause dans le rythme. Frapper pendant cet intervalle est comptabilisé comme un raté.",

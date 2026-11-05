@@ -23,12 +23,14 @@
    that refuses a frame) asks for.
 
    The list is filed in three groups the pages declare themselves, with
-   `<meta name="lab-group">`: TOOLS (what a game is built and checked with),
-   CSS (a look being tried before it moves into the motor or a SKIN) and
-   PROTOTYPE (a mechanic tried outside the motor). `<meta name="lab-game">`
-   tags a page with the one game it is about, and a page with none is tagged
-   "all". Inside a group the pages are sorted by tag — "all" first, then the
-   games alphabetically — and by name; each group folds on its heading.
+   `<meta name="lab-group">`: BACKOFFICE (what a game is built and checked with),
+   FRONT (a look being tried before it moves into the motor or a SKIN) and
+   TESTS (a mechanic tried outside the motor), then PROTOTYPE, every page of
+   prototype/, which is filed by its folder unless it declares a group.
+   `<meta name="lab-game">` tags a page with the one game it is about, and a
+   page with none is tagged "all" — "none" for a prototype. Inside a group
+   the pages are sorted by tag — "all" first, then the games alphabetically,
+   "none" last — and by name; each group folds on its heading.
 
    The location is the hash — `#/events/`, `#/lab/button.html` — so a reload
    comes back to the same page, and a page that navigates inside the frame
@@ -39,7 +41,7 @@
 
 :root {
   --bg:#0b0b12; --panel:#12121c; --line:#23233a; --field:#2c2c47;
-  --ink:#e8e6f5; --dim:#8b8ba7; --soft:#9c9cba; --accent:#7ea6ff; --warn:#ffb86b;
+  --ink:#e8e6f5; --dim:#8b8ba7; --soft:#9c9cba; --accent:#7ea6ff; --warn:#ffb86b; --ok:#4dd68c;
 }
 
 html, body { height:100%; }
@@ -96,6 +98,8 @@ body.shut #panel { margin-left:-272px; }
 }
 #list a:hover { background:#1a1a29; color:var(--ink); }
 #list a.on { background:#1e2340; color:var(--ink); }
+/* a checklist tool whose every item is checked */
+#list a.done span, .card.done b { color:var(--ok); }
 #list a span { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 .pill {
@@ -187,15 +191,16 @@ body.home #home { display:block; }
 
   var $ = function (id) { return document.getElementById(id); };
   var LABS = [];
-  var GROUPS = [["tools", "Tools"], ["css", "CSS"], ["prototype", "Prototype"], ["other", "Other"]];
+  var GROUPS = [["tools", "Backoffice"], ["css", "Front"], ["tests", "Tests"], ["prototype", "Prototype"], ["other", "Other"]];
   var frame = $("frame");
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
   }
 
-  // A page about no game in particular is about all of them.
-  function tag(l) { return l.game || "all"; }
+  // A lab page about no game in particular is about all of them; a prototype
+  // about none is about none.
+  function tag(l) { return l.game || (l.path.indexOf("prototype/") === 0 ? "none" : "all"); }
 
   function pills(l) {
     return '<i class="pill' + (l.game ? " game" : "") + '">' + esc(tag(l)) + "</i>";
@@ -212,7 +217,7 @@ body.home #home { display:block; }
       return [g[1], hit.filter(function (l) { return l.group === g[0]; })
         .sort(function (a, b) {
           var ta = tag(a), tb = tag(b);
-          if (ta !== tb) return ta === "all" ? -1 : tb === "all" ? 1 : ta.localeCompare(tb);
+          if (ta !== tb) return ta === "all" || tb === "none" ? -1 : tb === "all" || ta === "none" ? 1 : ta.localeCompare(tb);
           return a.name.localeCompare(b.name);
         }), g[0]];
     }).filter(function (g) { return g[1].length; });
@@ -231,8 +236,9 @@ body.home #home { display:block; }
       var open = q || !shutGroups[g[2]];
       return '<details data-group="' + esc(g[2]) + '"' + (open ? " open" : "") + "><summary><h2>" + g[0] +
         " <small>" + g[1].length + "</small></h2></summary>" + g[1].map(function (l) {
-        return '<a href="#' + esc(l.url) + '"' + (cur && cur.url === l.url ? ' class="on"' : "") +
-          ' title="' + esc(l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>";
+        var cls = (cur && cur.url === l.url ? "on " : "") + (isDone(l) ? "done" : "");
+        return '<a href="#' + esc(l.url) + '"' + (cls ? ' class="' + cls.trim() + '"' : "") +
+          ' title="' + esc(doneTip(l) + l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>";
       }).join("") + "</details>";
     }).join("") || '<h2>Nothing matches</h2>';
   }
@@ -250,10 +256,32 @@ body.home #home { display:block; }
   function renderHome() {
     $("home").innerHTML = groups().map(function (g) {
       return "<h2>" + g[0] + '</h2><div class="grid">' + g[1].map(function (l) {
-        return '<a class="card" href="#' + esc(l.url) + '"><div class="top"><b>' + esc(l.name) + "</b>" + pills(l) +
-          "</div><p>" + esc(l.summary) + "</p><code>lab/" + esc(l.file) + "</code></a>";
+        return '<a class="card' + (isDone(l) ? " done" : "") + '" href="#' + esc(l.url) + '" title="' + esc(doneTip(l)) +
+          '"><div class="top"><b>' + esc(l.name) + "</b>" + pills(l) +
+          "</div><p>" + esc(l.summary) + "</p><code>" + esc(l.path) + "</code></a>";
       }).join("") + "</div>";
     }).join("");
+  }
+
+  /* A tool whose page is a checklist (`lab-done`) says whether everything on
+     it is checked, across every game: its entry goes green when it is. Asked
+     on load and again on every move, since a tick given in the frame changes
+     it. A tool that does not answer simply stays as it is. */
+  var DONE = {};
+  function isDone(l) { return !!(l.done && DONE[l.done] && DONE[l.done].done); }
+  function doneTip(l) {
+    var d = l.done && DONE[l.done];
+    return d ? d.checked + " / " + d.total + " checked" + (d.done ? "" : ", not done") + " — " : "";
+  }
+  function askDone() {
+    LABS.forEach(function (l) {
+      if (!l.done) return;
+      fetch(l.done).then(function (r) { return r.json(); }).then(function (d) {
+        DONE[l.done] = d;
+        renderList();
+        if (!location.hash.slice(1)) renderHome();
+      }).catch(function () {});
+    });
   }
 
   /* The lab the hash points at. `/events/library` is the sound library and
@@ -276,7 +304,7 @@ body.home #home { display:block; }
     document.body.classList.toggle("home", home);
     var l = current();
     $("cur-name").textContent = home ? "All labs" : (l ? l.name : p);
-    $("cur-file").textContent = home ? LABS.length + " pages" : (l ? "lab/" + l.file : "");
+    $("cur-file").textContent = home ? LABS.length + " pages" : (l ? l.path : "");
     document.title = home ? "Lab — back office" : "Lab — " + (l ? l.name : p);
     $("open").href = p || "/";
     if (!home && framePath() !== p) frame.src = p;
@@ -301,7 +329,7 @@ body.home #home { display:block; }
     }
   });
 
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", function () { route(); askDone(); });
   $("filter").addEventListener("input", function () { renderList(); if (!location.hash.slice(1)) renderHome(); });
   $("to-home").addEventListener("click", function () { location.hash = ""; });
   $("reload").addEventListener("click", function () {
@@ -329,6 +357,7 @@ body.home #home { display:block; }
   fetch("api/labs").then(function (r) { return r.json(); }).then(function (list) {
     LABS = list;
     route();
+    askDone();
   }).catch(function () {
     document.body.innerHTML = '<div id="offline"><h1>The back office needs its server</h1>' +
       "<p>The list is read off <code>lab/*.html</code> by <code>tools/lab/serve-lab.mjs</code>. " +

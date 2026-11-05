@@ -1,0 +1,107 @@
+  /* =========================================================================
+     SKIN — PARRYNORMAL. Everything above is the shared motor stylesheet; the
+     theme lives in these tokens and the few rules below: a Halloween night
+     in deep purples, the cyan of the witch's shield as the accent, the
+     purple of her hat, chunky gold numbers.
+     ========================================================================= */
+  :root {
+    --bg:#2b1636; --accent:#19e6ff; --accent2:#6b3fb8;
+    --cta-a:#ffb43a; --cta-b:#ff7a1f; --cta-text:#2a1406;
+    --danger:#ff4d6d; --gold:#ffd23a;
+  }
+  html, body { background:radial-gradient(900px 900px at 50% 20%, #4a2a6e 0%, #2b1636 55%, #120818 100%); }
+  #intro-title {
+    color:#ffd23a;
+    text-shadow:0 4px 0 #6b3fb8, 0 0 30px rgba(25,230,255,.45);
+  }
+  #hud-score { color:#ffd23a; text-shadow:0 3px 0 #5a2a10, 0 0 14px rgba(255,210,58,.5); }
+  .eo-score { text-shadow:0 0 22px rgba(255,210,58,.75); }
+  #cta-bar { border-top:1px solid rgba(25,230,255,.25); }
+
+  /* ---- intro: one sentence, and a stage that plays it ---------------------
+     "Turn the shield to parry the balls and throw the monsters back": the
+     witch's round face under her hat at the top, the cyan arc of shield
+     around her, the dial at the foot of the stage. The shared finger walks
+     round the top of the dial and the arc turns with it; on the right of
+     its swing a blue ball comes in and is parried back out. One 2.4 s loop,
+     the motor's own drag rhythm.
+
+     Geometry, in the 420x280 stage: the witch centred at (210, 108), the
+     arc a 150 px ring round her, the dial a 128 px ring at the bottom. */
+  .demo-caption { display:none; }
+  #intro-tagline { margin-top:18px; font-size:34px; font-weight:700; color:#efe6ff; }
+  #intro-tagline .w-shield { color:var(--accent); text-shadow:0 0 18px rgba(25,230,255,.85); }
+  #intro-tagline .w-monster { color:#ff8a3a; text-shadow:0 0 18px rgba(255,138,58,.7); }
+  #intro-demo { margin-top:30px; }
+
+  .demo-stage {
+    width:420px; height:280px; overflow:hidden;
+    background:
+      radial-gradient(120px 60px at 50% 112%, rgba(0,0,0,.35), transparent 70%),
+      radial-gradient(circle at 50% 40%, #4a2f6a 0%, #2f1b45 55%, #1c0f2a 100%);
+  }
+  /* the witch: a glossy orange face under a purple hat */
+  .demo-drag .demo-target {
+    display:block; left:50%; top:76px; width:64px; height:64px; margin-left:-32px;
+    border:0; border-radius:50%; box-shadow:0 6px 0 rgba(0,0,0,.25);
+    background:
+      radial-gradient(circle at 36% 52%, #3a1f6a 0 5px, transparent 6px),
+      radial-gradient(circle at 64% 52%, #3a1f6a 0 5px, transparent 6px),
+      radial-gradient(circle at 26% 70%, rgba(255,90,90,.55) 0 6px, transparent 8px),
+      radial-gradient(circle at 74% 70%, rgba(255,90,90,.55) 0 6px, transparent 8px),
+      radial-gradient(circle at 40% 30%, #ffe27a 0%, #f5a028 70%, #d97a10 100%);
+  }
+  .demo-drag .demo-target::before {
+    content:""; position:absolute; left:-14px; top:-30px; width:92px; height:44px;
+    background:#6b3fb8;
+    clip-path:polygon(0 100%, 30% 74%, 56% 0, 64% 70%, 100% 100%);
+  }
+  .demo-drag .demo-target::after {
+    content:""; position:absolute; left:4px; top:4px; width:56px; height:7px; border-radius:4px; background:#c0303a;
+  }
+  .demo-drag .demo-ripple { display:none; }
+  /* the shield: the top quarter of a ring round her, turning with the finger */
+  .demo-drag .demo-beam {
+    display:block; left:50%; top:33px; bottom:auto; width:150px; height:150px; margin-left:-75px;
+    border-radius:50%; background:none; border:10px solid transparent; border-top-color:var(--accent);
+    box-sizing:border-box; filter:drop-shadow(0 0 8px rgba(25,230,255,.8));
+    transform-origin:50% 50%; animation:pnArc 2.4s ease-in-out infinite;
+  }
+  @keyframes pnArc { 0%,100%{transform:rotate(-70deg);} 25%,75%{transform:rotate(0deg);} 50%{transform:rotate(70deg);} }
+  /* the dial at the foot */
+  .demo-drag .demo-track {
+    left:50%; right:auto; bottom:-64px; width:128px; height:128px; margin-left:-64px;
+    border:4px solid rgba(255,255,255,.3); border-radius:50%; background:rgba(10,6,20,.35);
+  }
+  .demo-drag .demo-hand { bottom:6px; animation:pnHand 2.4s ease-in-out infinite; }
+  @keyframes pnHand {
+    0%,100% { transform:translate(-64px, 4px); }
+    25%,75% { transform:translate(0, -16px); }
+    50%     { transform:translate(64px, 4px); }
+  }
+  /* the ball, parried on the right of the swing */
+  .demo-drag .demo-arrow {
+    display:block; left:0; top:0; margin:0; width:22px; height:22px; border:0; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #ffffff 0 3px, #78f0ff 4px, #19a8c8 100%);
+    box-shadow:0 0 12px rgba(120,240,255,.8);
+    animation:pnBall 2.4s linear infinite;
+  }
+  @keyframes pnBall {
+    0%,30%  { transform:translate(392px, 18px); opacity:0; }
+    34%     { transform:translate(392px, 18px); opacity:1; }
+    50%     { transform:translate(270px, 70px); opacity:1; }
+    66%     { transform:translate(404px, 150px); opacity:1; }
+    70%,100%{ transform:translate(404px, 150px); opacity:0; }
+  }
+
+  /* ---- the bestiary's card (Game.codex.node): the painted cut on a night
+     card rimmed with its book's colour; a shadow where it is not met yet. */
+  .pn-card {
+    position:relative; display:flex; align-items:center; justify-content:center; box-sizing:border-box;
+    border-radius:20px; border:3px solid var(--pn-col, #19e6ff);
+    background:radial-gradient(circle at 50% 38%, #4a2f6a 0%, #2b1636 60%, #160b20 100%);
+    box-shadow:inset 0 0 24px rgba(0,0,0,.45), 0 6px 0 rgba(0,0,0,.25);
+  }
+  .pn-card img { max-width:84%; max-height:76%; object-fit:contain; }
+  .pn-card.ghost { border-color:rgba(255,255,255,.18); }
+  .pn-card.ghost img { filter:brightness(0); opacity:.5; }

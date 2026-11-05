@@ -60,7 +60,7 @@
   /* Leaving a round from the web shell's corner sets the state back to the
      menu without telling the game: the HUD goes hidden, and so does every
      layer of the round that still stands (they are appended after it). */
-  #hud.hidden ~ #gd-card, #hud.hidden ~ #gd-bar { display:none; }
+  #hud.hidden ~ #gd-card, #hud.hidden ~ #gd-track { display:none; }
   /* The shop stays open while the player buys, so the callout a purchase
      fires is lifted over the card instead of landing behind its veil. */
   #frame.gd-shopping #overlay { z-index:31; }
@@ -89,83 +89,157 @@
   .gd-fx li.is-bad { border-color:rgba(255,110,110,.45); }
   .gd-fx li.is-bad b { color:#ff6e6e; }
 
-  /* ---- the fight's scrolls, under the stage the canvas draws -------------
-     One square scroll per action: the paper between two rods, the action's
-     pictogram inked in its element's colour, its SP price on a blue seal.
-     A tap lifts it (selected) and floats its details (#gd-tip) over the
-     party; a drag carries a ghost of it to its target. */
-  #gd-bar {
-    position:absolute; z-index:29; display:flex; justify-content:center; align-items:flex-end;
-    gap:18px; padding-top:12px;
-  }
-  #gd-bar.off { visibility:hidden; }
-  .gd-scroll {
-    appearance:none; -webkit-appearance:none; position:relative; flex:0 0 auto;
-    width:88px; height:88px; margin:0; padding:0; border:0; background:none; cursor:pointer;
-    touch-action:none; -webkit-user-select:none; user-select:none;
-    transition:transform .14s ease, filter .14s ease, opacity .14s ease;
-  }
-  /* the paper, and the two rods it is rolled on */
-  .gd-paper {
-    position:absolute; inset:9px 4px; border-radius:3px;
-    display:flex; align-items:center; justify-content:center;
-    background:
-      radial-gradient(120% 90% at 50% 45%, rgba(255,250,232,.0) 55%, rgba(120,80,30,.35) 100%),
-      linear-gradient(180deg, #f6ead0 0%, #e8d3a6 55%, #d9bd86 100%);
-    box-shadow:0 8px 16px rgba(0,0,0,.55), inset 0 0 0 1px rgba(90,60,20,.35);
-  }
-  .gd-scroll::before, .gd-scroll::after {
-    content:""; position:absolute; left:-2px; right:-2px; height:12px; border-radius:6px; z-index:1;
-    background:linear-gradient(180deg, #8a3a22 0%, #5a1d10 55%, #2e0c06 100%);
-    box-shadow:0 2px 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,180,140,.35);
-  }
-  .gd-scroll::before { top:2px; }
-  .gd-scroll::after  { bottom:2px; }
-  .gd-scroll.is-rule .gd-paper { background:linear-gradient(180deg, #fff1b8 0%, #f0c95a 60%, #d79a2a 100%); }
-  .gd-scroll.is-rule::before, .gd-scroll.is-rule::after { background:linear-gradient(180deg, #e9c46a, #8a5a12); }
-  .gd-glyph {
-    display:block; width:48px; height:48px; background:var(--ink, #3b3142);
-    -webkit-mask-size:contain; mask-size:contain;
-    -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
-    -webkit-mask-position:center; mask-position:center;
-  }
-  .gd-cost {
-    position:absolute; top:-6px; right:-10px; z-index:2; min-width:34px; height:34px; padding:0 6px; border-radius:17px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px; font-weight:900; line-height:1; color:#eaf8ff;
-    background:radial-gradient(circle at 35% 30%, #4fb2e8, #1b4f86 75%); border:2px solid #0b2140;
-    box-shadow:0 3px 8px rgba(0,0,0,.6);
-  }
-  .gd-scroll:active { transform:scale(.95); }
-  .gd-scroll.is-sel { transform:translateY(-12px) scale(1.08); }
-  .gd-scroll.is-sel .gd-paper { box-shadow:0 0 0 3px #ffd166, 0 0 26px rgba(255,209,102,.7), 0 12px 20px rgba(0,0,0,.6); }
-  .gd-scroll.is-off { filter:grayscale(1) brightness(.6); opacity:.55; }
-  .gd-ghost {
-    position:absolute; z-index:40; pointer-events:none; margin:0;
-    transform:rotate(-8deg) scale(1.05); opacity:.9; transition:none;
-  }
-  .gd-ghost.is-on { transform:rotate(0) scale(1.18); }
-  .gd-ghost.is-on .gd-paper { box-shadow:0 0 0 3px #ffd166, 0 0 30px rgba(255,209,102,.9); }
+  /* ---- the fight's TRACK, under the stage the canvas draws ----------------
+     One slanted card a hero turn, sliding right to left (game.js, THE
+     TRACK): the turn in hand unfolded — the hero's face, name, health and
+     SP, one pack a scroll — the next turn folded to the face, a sliver of
+     the one after at the right edge and of the turn just played at the
+     left. Chosen in lab/grudgeon-cast.html (C · Badges). */
+  #gd-track { position:absolute; left:0; z-index:29; pointer-events:none; transition:opacity .25s ease; font-family:var(--web-font, inherit); }
+  #gd-track.off { opacity:0; }
+  #gd-track.off * { pointer-events:none !important; }
+  .gd-tc { position:absolute; bottom:0; left:740px; width:100px; height:140px; }
+  .gd-tc.anim { transition:left .45s cubic-bezier(.3,.7,.3,1), width .3s ease, height .3s ease; }
+  .gd-plate { position:absolute; inset:0; overflow:hidden; pointer-events:auto; touch-action:none; cursor:pointer;
+    transform:skewX(-10deg); transform-origin:50% 100%; background:rgba(10,6,16,.86);
+    box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.55); transition:box-shadow .2s ease, background .3s ease, filter .2s ease; }
+  .gd-plate::before { content:""; position:absolute; left:0; top:0; bottom:0; width:7px; z-index:2; background:var(--hc); }
+  /* the card in turn: a breath of the hero's colour at the top, a thin rim */
+  .gd-tc.on .gd-plate { background:linear-gradient(180deg, var(--tint), transparent 70%), rgba(12,8,18,.92); box-shadow:0 0 0 2px var(--hc), 0 8px 18px rgba(0,0,0,.55); cursor:default; }
+  .gd-tc.past .gd-plate { filter:brightness(.55) saturate(.7); pointer-events:none; }
+  .gd-tc.is-blue:not(.on) .gd-plate { box-shadow:0 0 0 3px #4f9bff, 0 0 18px rgba(79,155,255,.7), 0 8px 18px rgba(0,0,0,.55); }
+  .gd-tc.is-pin:not(.on) .gd-plate { box-shadow:0 0 0 4px #4f9bff, 0 0 26px rgba(79,155,255,.95), 0 8px 18px rgba(0,0,0,.55); }
+  .gd-tc b, .gd-tc i, .gd-tc s { font-style:normal; text-decoration:none; }
+  /* the hero's art: the whole folded card, a window at the left of the unfolded one */
+  .gd-art { position:absolute; left:-20px; top:0; bottom:0; width:calc(100% + 40px); transform:skewX(10deg);
+    background:#2a1a30 no-repeat; background-size:var(--bsF); background-position:var(--bpF); transition:width .3s ease; }
+  .gd-tc.on .gd-art { width:112px; background-size:var(--bsO); background-position:var(--bpO);
+    -webkit-mask-image:linear-gradient(90deg, #000 65%, transparent); mask-image:linear-gradient(90deg, #000 65%, transparent); }
+  .gd-unf { position:absolute; left:84px; right:12px; top:0; bottom:0; transform:skewX(10deg); opacity:0; pointer-events:none; transition:opacity .2s ease; }
+  .gd-tc.on .gd-unf { opacity:1; pointer-events:auto; transition:opacity .25s ease .2s; }
+  .gd-dhead { display:flex; align-items:center; gap:10px; height:40px; margin:4px 12px 0 8px; }
+  .gd-nm { font-size:28px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:#fff4f0; text-shadow:0 2px 0 rgba(0,0,0,.6); }
+  .gd-marks { display:flex; gap:6px; overflow:hidden; white-space:nowrap; }
+  .gd-marks span { padding:0 8px; border-radius:11px; border:2px solid currentColor; font-size:20px; line-height:20px; font-weight:var(--web-fw, 900); background:rgba(8,5,14,.8); }
+  /* the hero's health and SP, read big, each over its own gauge */
+  .gd-vit { margin-left:auto; display:flex; gap:14px; }
+  .gd-vit b { position:relative; display:flex; align-items:baseline; gap:4px; padding-bottom:5px; font-size:30px; line-height:1; font-weight:var(--web-fw, 900); color:var(--vc); }
+  .gd-vit i { font-size:18px; letter-spacing:1px; opacity:.75; }
+  .gd-vit s { font-size:20px; color:rgba(244,238,248,.5); }
+  .gd-vit b::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px; border-radius:2px;
+    background:linear-gradient(90deg, var(--vc) var(--f), rgba(255,255,255,.14) var(--f)); }
+  /* a scroll's price, previewed: its chunk of the SP gauge blinks */
+  .gd-vit b::before { content:""; position:absolute; z-index:1; bottom:-1px; height:6px; left:var(--k, 0); right:calc(100% - var(--f, 0%));
+    border-radius:2px; background:#fff4f0; opacity:0; }
+  .gd-vit b.is-cost::before { animation:gd-cost .55s ease-in-out infinite alternate; }
+  @keyframes gd-cost { from { opacity:.2; } to { opacity:.95; } }
+  .gd-packs { display:flex; justify-content:space-around; height:146px; padding:0 4px; }
+  #gd-track.busy .gd-packs, .gd-tc:not(.live) .gd-packs { opacity:.4; }
+  .gd-tc:not(.live) .gd-packs * { pointer-events:none !important; }
 
-  /* the selected scroll's details, floated over the party */
+  /* ---- one pack a scroll: the RED side at the yokai, the BLUE side on the
+     ally it shows (a head, or every head piled for the party), the price in
+     the SP blue between them, an hourglass on the red side's flank when the
+     scroll moves the hero's next turn. A yokai's rule is one gold button. */
+  .gd-pk { position:relative; flex:0 0 auto; width:86px; height:146px; }
+  .gd-cost { position:absolute; left:48px; top:92px; z-index:4; font-size:28px; line-height:1; font-weight:var(--web-fw, 900); color:#8fdcff; white-space:nowrap; pointer-events:none;
+    -webkit-text-stroke:6px rgba(6,4,10,.9); paint-order:stroke fill; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+  .gd-ic { position:absolute; pointer-events:auto; touch-action:none; cursor:pointer; -webkit-user-select:none; user-select:none;
+    display:flex; align-items:center; justify-content:center; box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.22);
+    transition:transform .12s ease, filter .12s ease, opacity .12s ease, box-shadow .12s ease; }
+  .gd-ic i { display:block; background:#fff; -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+    -webkit-mask-position:center; mask-position:center; pointer-events:none; }
+  .gd-red { left:6px; top:12px; width:76px; height:76px; border-radius:20px; background:linear-gradient(180deg, #ff5d6e, #b3122e); }
+  .gd-red i { width:44px; height:44px; }
+  .gd-gold { left:6px; top:12px; width:76px; height:76px; border-radius:20px; background:linear-gradient(180deg, #ffe08a, #c98a12); }
+  .gd-gold i { width:44px; height:44px; background:#4a2c00; }
+  /* FLEE: one grey tile, its odds under it */
+  .gd-grey { left:6px; top:12px; width:76px; height:76px; border-radius:20px; background:linear-gradient(180deg, #9aa5b8, #4a5468); }
+  .gd-grey i { width:44px; height:44px; }
+  .gd-pk.is-rule .gd-fig, .gd-pk.is-flee .gd-fig { left:50%; right:auto; top:auto; bottom:-14px; transform:translateX(-50%); padding:2px 7px; line-height:20px;
+    font-size:20px; font-weight:var(--web-fw, 900); color:#fff4f0; }
+  /* what the yokai's rule does to this blow, read before it is played: -80%, +50%, Heals */
+  .gd-rt { position:absolute; left:-6px; top:-14px; z-index:3; padding:1px 7px 0; border-radius:8px; white-space:nowrap; pointer-events:none;
+    background:#e9c46a; color:#2a1a00; font-size:20px; line-height:20px; font-weight:var(--web-fw, 900); box-shadow:0 2px 6px rgba(0,0,0,.5); }
+  .gd-rt:empty { display:none; }
+  .gd-rt.bad { background:#ff5d73; color:#2a0008; }
+  /* six cards in a turn (a rule's card and Flee beside the full kit): the packs tighten */
+  .gd-packs.gd-many .gd-pk { width:72px; }
+  .gd-packs.gd-many .gd-red, .gd-packs.gd-many .gd-gold, .gd-packs.gd-many .gd-grey { left:3px; width:66px; height:66px; }
+  .gd-packs.gd-many .gd-ic i { width:38px; height:38px; }
+  .gd-packs.gd-many .gd-blue { left:-8px; top:70px; width:44px; height:44px; }
+  .gd-packs.gd-many .gd-who { width:38px; height:38px; }
+  .gd-packs.gd-many .gd-cost { left:40px; top:84px; }
+  /* a hero a yokai's malus holds (Jorogumo's silk): violet bubbles round the face */
+  .gd-curse, .gd-stun { position:absolute; left:45px; top:48px; width:0; height:0; z-index:1; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+  .gd-stun { top:36px; }
+  .gd-tc.on .gd-curse { left:38px; top:70px; }
+  .gd-tc.on .gd-stun { left:38px; top:54px; }
+  .gd-tc.cursed .gd-curse, .gd-tc.stunned .gd-stun { opacity:1; }
+  .gd-curse::before { content:""; position:absolute; left:-40px; top:-40px; width:80px; height:80px; border-radius:50%;
+    background:radial-gradient(circle, rgba(154,69,224,.45), rgba(154,69,224,0) 70%); }
+  .gd-curse i { position:absolute; left:0; top:0; width:10px; height:10px; margin:-5px; border-radius:50%; opacity:0;
+    background:radial-gradient(circle at 35% 35%, #f3e6ff 0 18%, #c27cff 32%, #7a2fc0 100%); animation:gd-bubble 1.8s ease-in infinite; }
+  .gd-curse i:nth-child(1) { --bx:-26px; --by:-6px; animation-delay:0s; }
+  .gd-curse i:nth-child(2) { --bx:22px; --by:-14px; animation-delay:.3s; width:8px; height:8px; }
+  .gd-curse i:nth-child(3) { --bx:-14px; --by:-28px; animation-delay:.6s; }
+  .gd-curse i:nth-child(4) { --bx:28px; --by:4px; animation-delay:.9s; width:12px; height:12px; }
+  .gd-curse i:nth-child(5) { --bx:4px; --by:-34px; animation-delay:1.2s; width:8px; height:8px; }
+  .gd-curse i:nth-child(6) { --bx:-30px; --by:12px; animation-delay:1.5s; }
+  @keyframes gd-bubble { 0% { opacity:0; transform:translate(var(--bx), var(--by)) scale(.3); }
+    35% { opacity:.95; } 85% { opacity:.8; transform:translate(var(--bx), calc(var(--by) - 16px)) scale(1); }
+    100% { opacity:0; transform:translate(var(--bx), calc(var(--by) - 20px)) scale(1.3); } }
+  /* a stunned hero (Nure-onna's coil): violet stars circling the face */
+  .gd-stun b { position:absolute; left:-34px; top:-12px; width:68px; height:24px; }
+  .gd-stun i { position:absolute; width:14px; height:14px; margin:-7px; background:#c27cff;
+    clip-path:polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    offset-path:ellipse(34px 10px at 34px 12px); animation:gd-orbit 1.4s linear infinite; }
+  .gd-stun i:nth-child(2) { animation-delay:-.47s; background:#d9a8ff; }
+  .gd-stun i:nth-child(3) { animation-delay:-.93s; }
+  @keyframes gd-orbit { from { offset-distance:0%; } to { offset-distance:100%; } }
+  .gd-blue { left:-6px; top:76px; width:50px; height:50px; border-radius:50%; z-index:3; background:linear-gradient(180deg, #6fb0ff, #1f4fa8);
+    box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); }
+  .gd-blue i { display:none; width:28px; height:28px; }
+  .gd-blue.is-none i { display:block; }              /* no ally to reach: the glyph, greyed */
+  .gd-ic:active { transform:scale(.93); }
+  .gd-ic.is-hot { box-shadow:0 0 0 3px #ffd166, 0 0 18px rgba(255,209,102,.7), 0 6px 12px rgba(0,0,0,.5); }
+  .gd-ic.off { filter:grayscale(1) brightness(.6); opacity:.5; }
+  @media (hover:hover) { .gd-ic:not(.off):hover { filter:brightness(1.12); } }
+  .gd-fig { position:absolute; right:-10px; top:42px; z-index:2; padding:3px 5px; line-height:0; border-radius:8px; pointer-events:none;
+    background:rgba(8,5,14,.94); border:2px solid currentColor; }
+  .gd-fig:empty { display:none; }
+  .gd-hg { display:inline-block; width:18px; height:18px; background:currentColor;
+    -webkit-mask:var(--hg) center/contain no-repeat; mask:var(--hg) center/contain no-repeat; }
+  .gd-who { position:absolute; left:3px; top:3px; width:44px; height:44px; border-radius:50%; background:#2a1a30 no-repeat; pointer-events:none; z-index:2; }
+  .gd-who:empty:not([style]) { display:none; }
+  /* a scroll on the whole party: every head ringed in blue, piled with a small offset */
+  .gd-who.all { position:static; display:flex; width:auto; height:auto; border-radius:0; background:none; }
+  .gd-who.all span { flex:0 0 auto; width:40px; height:40px; margin-left:-34px; border-radius:50%; border:3px solid #4f9bff; box-sizing:border-box;
+    background:#2a1a30 no-repeat; box-shadow:0 0 0 2px rgba(12,8,18,.95), 0 3px 6px rgba(0,0,0,.5); }
+  .gd-who.all span:first-child { margin-left:0; }
+  .gd-blue.is-all { width:auto; padding:0; background:none; box-shadow:none; }
+
+  /* what a scroll does, over the track: a long press, or the mouse resting */
   #gd-tip {
-    position:absolute; z-index:29; box-sizing:border-box; padding:14px 20px; pointer-events:none;
-    border-radius:18px; background:rgba(8,5,14,.9); border:1px solid rgba(255,209,102,.35);
-    box-shadow:0 10px 30px rgba(0,0,0,.6);
-    transition:opacity .15s ease;
+    font-family:var(--web-font, inherit);
+    position:absolute; z-index:30; box-sizing:border-box; padding:10px 18px 12px; pointer-events:none;
+    border-radius:16px; background:rgba(8,5,14,.92); border:1px solid rgba(255,209,102,.3);
+    box-shadow:0 10px 30px rgba(0,0,0,.6); transition:opacity .15s ease;
   }
   #gd-tip.off { opacity:0; }
   #gd-tip p { margin:0; }
   .gd-tip-h { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  .gd-tip-h b { font-size:24px; letter-spacing:2px; font-weight:900; color:var(--ink); }
-  .gd-tip-h i { font-style:normal; font-size:18px; letter-spacing:2px; font-weight:900; color:#8fdcff; }
-  /* a scroll's two faces: on the yokai, on an ally — a label, then what
-     it does there */
-  .gd-tip-faces { display:flex; flex-direction:column; gap:4px; margin-top:6px; }
-  .gd-face { margin:0; font-size:22px; line-height:1.3; font-weight:700; color:#f4eef8; }
-  .gd-face b { margin-right:10px; font-size:18px; letter-spacing:1px; font-weight:900; color:#b69cff; }
-  #gd-tip .gd-tip-a { margin-top:4px; font-size:20px; line-height:1.3; font-weight:700; color:#ffd166; opacity:.85; }
-  #hud.hidden ~ #gd-tip, #hud.hidden ~ .gd-ghost { display:none; }
+  .gd-tip-h b { font-size:28px; letter-spacing:2px; font-weight:var(--web-fw, 900); color:var(--ink); }
+  .gd-tip-h i { font-style:normal; font-size:20px; letter-spacing:2px; font-weight:var(--web-fw, 900); color:#8fdcff; }
+  /* a scroll's two sides: where it lands, what it does there, its figure */
+  #gd-tip .gd-face { margin-top:5px; padding:3px 10px; border-radius:10px; border:2px solid transparent; border-left:6px solid var(--fc);
+    font-size:20px; line-height:1.25; font-weight:700; color:#d9d3e4; }
+  #gd-tip .gd-face b { margin-right:10px; font-family:var(--web-font, inherit); font-size:20px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:var(--fc); }
+  #gd-tip .gd-face em { font-style:normal; margin-left:10px; font-family:var(--web-font, inherit); font-size:24px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:#ffd7cf; white-space:nowrap; }
+  #gd-tip .gd-face.hot { background:rgba(255,255,255,.07); border-color:var(--fc); color:#fff4f0; }
+  #gd-tip .gd-face.na { opacity:.5; }
+  #gd-tip .gd-tip-a { margin-top:6px; font-size:20px; line-height:1.3; font-weight:700; color:#ffd166; }
+  #hud.hidden ~ #gd-tip, #hud.hidden ~ #gd-track { display:none; }
 
   /* ---- the cards of a fight: the yokai, a hero ----------------------------
      A sentence is set in the system face: the game's display face has no
@@ -234,10 +308,10 @@
   .gd-gp-duel > img { height:270px; }
   .gd-gp-skill { align-items:center; gap:18px; }
   .gd-gp-skill > img { height:190px; }
-  .gd-gp-big .gd-scroll { transform:scale(1.6); margin:30px; }
+  .gd-gp-big .gd-pk { transform:scale(1.6); margin:30px 40px; }
   .gu-pic > .gd-gp-fig { max-height:300px; height:300px; width:auto; }
   .gu-pic > .gd-gp-scene { width:480px; height:250px; max-height:none; object-fit:cover; border-radius:14px; }
   .gd-gp-scrolls { display:flex; justify-content:center; gap:22px; padding:10px 0; }
-  .gd-gp-scrolls .gd-scroll { pointer-events:none; }
+  .gd-gp-scrolls .gd-pk, .gd-gp-scrolls .gd-ic { pointer-events:none; }
   .gd-gp-inert { pointer-events:none; }
   .gd-info .gd-more { align-self:center; }

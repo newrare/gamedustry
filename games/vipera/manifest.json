@@ -1,7 +1,7 @@
 {
   "slug": "vipera",
   "title": "Vipera",
-  "version": "1.8.25",
+  "version": "1.8.26",
   "tagline": "Tap to swerve the viper and grow for maximum bonus",
   "order": 80,
   "draft": false,
@@ -382,7 +382,7 @@
           "Don't bump into the logs.": "Ne te cogne pas contre les troncs.",
           "Fireflies help Vipera collect eggs. They fly off at the first hit.": "Les lucioles aident Vipera à ramasser les œufs. Elles partent toutefois au premier dégât reçu.",
           "Only raised spikes are dangerous.": "Seules les pointes relevées sont dangereuses.",
-          "The spikes creep out slowly, then shoot up all at once.": "Les pointes sortent doucement, puis surgissent d'un coup.",
+          "The spikes creep out slowly, then shoot up all at once.": "Les pointes sortent doucement puis surgissent d'un coup.",
           "A ring warns of the next lightning strike.": "Un cercle annonce le prochain impact de foudre.",
           "Lightning can even strike twice in a row.": "La foudre peut même frapper deux fois de suite.",
           "With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.": "Avec ce bonus, les points comptent double. C'est le moment de ramasser un maximum d'œufs et de réussir des chaînes complètes.",

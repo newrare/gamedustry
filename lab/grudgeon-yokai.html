@@ -1,0 +1,3105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Grudgeon yokai rules</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="tests">
+<meta name="lab-game" content="grudgeon">
+<style>
+/* ===========================================================================
+   GRUDGEON YOKAI RULES — one way to beat each of the twenty, outside the motor.
+
+   The question: a player who only throws plain blows, without reading how a
+   yokai behaves, should have little chance against it. So every yokai gets
+   a LOCK (until its key is played every blow still lands, but 80% weaker:
+   a door, a cape, a mask, a parry, a tide; and some yokai punish on top:
+   a fury, a flood, a drum, a grudge), a KEY (the behaviour to read: knock,
+   guard on the charge, answer neither, bow, flee...) and the SIGNALS that
+   say which is which: the gold pill on the yokai's bar, a greyed bar, a
+   yokai drawn as a shadow, a tag on the red face of a scroll before it is
+   played, and a callout when a blow runs into the lock. This page is for
+   judging those signals, not for winning: a fight is endless by default —
+   a hero never falls under 1 HP and an exorcised yokai comes back.
+
+   Every bonus and malus is a round percentage (+50% damage, -80%, +30%
+   attack a fury, +20% slower a water) or a whole number (turns, knocks, gold).
+   A duration counts the YOKAI's turns, the ones on the frieze.
+
+   FLEE is a card of every hero's turn, its odds on it: 50%, +4% a point of
+   speed over the yokai's, between 20% and 90% — or the yokai's own (Teke
+   Teke and Onryo 0%, Jinmenken, Kuchisake, Nopperabo and Gashadokuro 100%).
+   Out, the party is back on the map and the yokai moves to another room
+   (here: the fight starts again, as met in that room — which is the key of
+   Nopperabo and Gashadokuro). Caught, the turn is lost and the yokai strikes
+   the hero who tried.
+
+   The panel's FEEDBACK lists every callout as the game would fire it: its
+   Pop style, its word, its sub. The stage, the track, the frieze and the
+   yokai's bar are lab/grudgeon-cast.html's (look C · Badges), the data
+   games/grudgeon/game.js's; the rules are this page's own and replace the
+   game's RULES once chosen.
+
+   Keys: R restart the fight, N next yokai. #foe=<id> opens a yokai.
+   Nothing here ships.
+   =========================================================================== */
+
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — presets, the knobs, the readout
+   --------------------------------------------------------------------------- */
+#panel { flex:0 0 310px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row.na > label { opacity:.4; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.row.na .seg button, .row.na input { opacity:.4; pointer-events:none; }
+.styles { display:flex; flex-direction:column; gap:4px; }
+.styles button { text-align:left; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px;
+  font:600 12px/1.35 inherit; cursor:pointer; }
+.styles button b { display:block; color:#e8e6f5; font-size:13px; }
+.styles button span { color:#8b8ba7; font-weight:500; }
+.styles button.on { border-color:#7ea6ff; background:#20263d; }
+.styles button.dirty b::after { content:" · edited"; color:#e0b050; font-weight:600; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#readout { margin-top:6px; padding:12px 12px 6px; background:#0b0b12; border:1px solid #2c2c47; border-radius:10px; }
+#readout div { display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; color:#9c9cba; }
+#readout b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+#readout div.big b { font-size:22px; color:#ffd166; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the canvas, and over it the 720x1280 frame the DOM bar lives in
+   --------------------------------------------------------------------------- */
+#stage { flex:1; min-width:0; height:100vh; display:flex; align-items:center; justify-content:center; padding:18px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+#wrap { position:relative; border-radius:14px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.5); background:#07060c; }
+canvas { display:block; width:100%; height:100%; touch-action:none; -webkit-touch-callout:none; }
+#frame { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; pointer-events:none;
+  -webkit-user-select:none; user-select:none; font-family:"Bebas Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+/* Bebas draws a division sign as a tiny plus: the system face draws it */
+.dv { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-weight:800; font-size:.92em; }
+
+/* ---- a refused tap says where to aim: a line, never a modal -------------- */
+#aim { position:absolute; left:50%; top:458px; z-index:31; transform:translateX(-50%); padding:8px 20px 6px; border-radius:14px;
+  background:rgba(8,5,14,.94); border:2px solid #ff8a9a; color:#ffe0e5; font-size:24px; letter-spacing:1px; white-space:nowrap;
+  pointer-events:none; opacity:0; transition:opacity .15s ease; }
+#aim.on { opacity:1; }
+
+/* hit areas shown: the outline of everything the thumb can press */
+
+/* ---- model D: THE DOCK — the info window, the hero row, the frieze -------
+   (the frieze itself is drawn on the canvas, under the row) */
+/* THE TRACK: one card a hero TURN, sliding right to left. The card of the
+   turn just played shows a sliver at the left edge, the hero in turn is
+   unfolded in the middle, the next turn is a whole folded card on the right
+   and the one after a sliver at the right edge. The cards are model A's
+   tiles: slanted, a colour edge on the left, dark, the hero in turn tinted
+   with their colour. A folded card shows the hero's art and nothing else. */
+#drow { position:absolute; left:0; width:720px; bottom:152px; height:196px; z-index:29; }
+.tc { position:absolute; bottom:0; left:740px; width:100px; height:140px; }
+.tc.anim { transition:left .45s cubic-bezier(.3,.7,.3,1), width .3s ease, height .3s ease; }
+.tc .plate { position:absolute; inset:0; overflow:hidden; pointer-events:auto; touch-action:none; cursor:pointer;
+  transform:skewX(-10deg); transform-origin:50% 100%; background:rgba(10,6,16,.86);
+  box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.55); transition:box-shadow .2s ease, background .3s ease, filter .2s ease; }
+.tc .plate::before { content:""; position:absolute; left:0; top:0; bottom:0; width:7px; z-index:2; background:var(--hc); }
+/* the card in turn: a breath of the hero's colour at the top (the tint knob), a thin rim, no glow */
+.tc.on .plate { background:linear-gradient(180deg, var(--tint), transparent 70%), rgba(12,8,18,.92); box-shadow:0 0 0 2px var(--hc), 0 8px 18px rgba(0,0,0,.55); cursor:default; }
+.tc.past .plate { filter:brightness(.55) saturate(.7); pointer-events:none; }
+.tc.is-blue:not(.on) .plate { box-shadow:0 0 0 3px #4f9bff, 0 0 18px rgba(79,155,255,.7), 0 8px 18px rgba(0,0,0,.55); }
+.tc.is-pin:not(.on) .plate { box-shadow:0 0 0 4px #4f9bff, 0 0 26px rgba(79,155,255,.95), 0 8px 18px rgba(0,0,0,.55); }
+.tc b, .tc i { font-weight:400; font-style:normal; }
+/* the hero's art: the whole folded card, a window at the left of the unfolded one */
+.tc .art { position:absolute; left:-20px; top:0; bottom:0; width:calc(100% + 40px); transform:skewX(10deg);
+  background:#2a1a30 no-repeat; background-size:var(--bsF); background-position:var(--bpF); transition:width .3s ease, opacity .3s ease; }
+.tc.on .art { width:112px; background-size:var(--bsO); background-position:var(--bpO); -webkit-mask-image:linear-gradient(90deg, #000 65%, transparent); mask-image:linear-gradient(90deg, #000 65%, transparent); }
+/* a cursed hero: violet bubbles round the face on the card (Jorogumo's cocoon) */
+.tc .curse { position:absolute; left:45px; top:48px; width:0; height:0; z-index:1; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+.tc.on .curse { left:38px; top:70px; }
+.tc.cursed .curse { opacity:1; }
+.tc .curse::before { content:""; position:absolute; left:-40px; top:-40px; width:80px; height:80px; border-radius:50%;
+  background:radial-gradient(circle, rgba(154,69,224,.45), rgba(154,69,224,0) 70%); }
+.tc .curse i { position:absolute; left:0; top:0; width:10px; height:10px; margin:-5px; border-radius:50%; opacity:0;
+  background:radial-gradient(circle at 35% 35%, #f3e6ff 0 18%, #c27cff 32%, #7a2fc0 100%);
+  animation:bubble 1.8s ease-in infinite; }
+.tc .curse i:nth-child(1) { --bx:-26px; --by:-6px; animation-delay:0s; }
+.tc .curse i:nth-child(2) { --bx:22px; --by:-14px; animation-delay:.3s; width:8px; height:8px; }
+.tc .curse i:nth-child(3) { --bx:-14px; --by:-28px; animation-delay:.6s; }
+.tc .curse i:nth-child(4) { --bx:28px; --by:4px; animation-delay:.9s; width:12px; height:12px; }
+.tc .curse i:nth-child(5) { --bx:4px; --by:-34px; animation-delay:1.2s; width:8px; height:8px; }
+.tc .curse i:nth-child(6) { --bx:-30px; --by:12px; animation-delay:1.5s; }
+@keyframes bubble { 0% { opacity:0; transform:translate(var(--bx), var(--by)) scale(.3); }
+  35% { opacity:.95; } 85% { opacity:.8; transform:translate(var(--bx), calc(var(--by) - 16px)) scale(1); }
+  100% { opacity:0; transform:translate(var(--bx), calc(var(--by) - 20px)) scale(1.3); } }
+/* a stunned hero: violet stars circling the face on the card */
+.tc .stun { position:absolute; left:45px; top:36px; width:0; height:0; z-index:1; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+.tc.on .stun { left:38px; top:54px; }
+.tc.stunned .stun { opacity:1; }
+.tc .stun b { position:absolute; left:-34px; top:-12px; width:68px; height:24px; }
+.tc .stun i { position:absolute; width:14px; height:14px; margin:-7px; background:#c27cff;
+  clip-path:polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  offset-path:ellipse(34px 10px at 34px 12px); animation:stunorbit 1.4s linear infinite; }
+.tc .stun i:nth-child(2) { animation-delay:-.47s; background:#d9a8ff; }
+.tc .stun i:nth-child(3) { animation-delay:-.93s; }
+@keyframes stunorbit { from { offset-distance:0%; } to { offset-distance:100%; } }
+.tc .unf { position:absolute; left:84px; right:12px; top:0; bottom:0; transform:skewX(10deg); opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.tc.on .unf { opacity:1; pointer-events:auto; transition:opacity .25s ease .2s; }
+.tc .dhead { display:flex; align-items:center; gap:10px; height:40px; margin:4px 12px 0 8px; }
+.tc .dhead .nm { font-size:28px; letter-spacing:1px; color:#fff4f0; text-shadow:0 2px 0 rgba(0,0,0,.6); }
+.tc .dhead .vit { margin-left:auto; display:flex; gap:14px; }
+.tc .dhead .vit b { position:relative; display:flex; align-items:baseline; gap:4px; padding-bottom:5px; font-size:30px; line-height:1; color:var(--vc); }
+.tc .dhead .vit i { font-size:18px; letter-spacing:1px; opacity:.75; }
+.tc .dhead .vit s { text-decoration:none; font-size:20px; color:rgba(244,238,248,.5); }
+.tc .dhead .vit b::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px; border-radius:2px;
+  background:linear-gradient(90deg, var(--vc) var(--f), rgba(255,255,255,.14) var(--f)); }
+.tc .dhead .chips { display:flex; gap:6px; overflow:hidden; white-space:nowrap; }
+.tc .dhead .chips span { padding:0 8px; border-radius:11px; border:2px solid currentColor; font-size:20px; line-height:18px; background:rgba(8,5,14,.8); }
+.packs { display:flex; justify-content:space-around; height:146px; padding:0 4px; }
+#dock.busy .packs, .tc:not(.live) .packs { opacity:.4; }
+.tc:not(.live) .packs * { pointer-events:none !important; }
+
+/* ---- THE BUTTON: a power is a pack of two icons, red (the yokai) and blue (an
+   ally); a long press on either is its info. The same DOM in every look; the look places it. */
+.pk { position:relative; flex:0 0 auto; width:86px; height:146px; }
+/* what the power costs, either face: a negative figure in the SP blue, no pill,
+   floating between the red icon and the blue one (each look places it) */
+.pk .cost { position:absolute; z-index:4; font-size:28px; line-height:1; color:#8fdcff; white-space:nowrap; pointer-events:none;
+  -webkit-text-stroke:6px rgba(6,4,10,.9); paint-order:stroke fill; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+.ic { position:absolute; pointer-events:auto; touch-action:none; cursor:pointer; border-radius:16px;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.22);
+  transition:transform .12s ease, filter .12s ease, opacity .12s ease, box-shadow .12s ease; }
+.ic i { display:block; background:#fff; -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-position:center; mask-position:center; pointer-events:none; }
+.ic.red { background:linear-gradient(180deg, #ff5d6e, #b3122e); }
+.ic.blue { background:linear-gradient(180deg, #6fb0ff, #1f4fa8); }
+.ic:active { transform:scale(.93); }
+.ic.armed { transform:translateY(-6px) scale(1.06); box-shadow:0 0 0 3px #ffd166, 0 0 22px rgba(255,209,102,.8), 0 10px 16px rgba(0,0,0,.6); }
+.ic.off { filter:grayscale(1) brightness(.6); opacity:.5; }
+@media (hover:hover) { .ic:not(.off):hover { filter:brightness(1.12); } }
+.ic .fig { position:absolute; padding:1px 7px 0; border-radius:8px; white-space:nowrap; z-index:2;
+  background:rgba(8,5,14,.94); border:2px solid currentColor; color:#ffd7cf; font-size:20px; line-height:20px; pointer-events:none; }
+.ic .fig:empty { display:none; }
+.ic .fig.hgo { padding:3px 5px; line-height:0; }
+.pk .ic .fig.hgo { left:auto; bottom:auto; top:-8px; right:-8px; transform:none; }      /* the hourglass: the red icon's top-right corner, in every look */
+.ic .fig span.hg { display:inline-block; width:18px; height:18px; background:currentColor; -webkit-mask:var(--hg) center/contain no-repeat; mask:var(--hg) center/contain no-repeat; }
+.ic .who { position:absolute; width:28px; height:28px; border-radius:50%; border:2px solid #4f9bff; background:#2a1a30 no-repeat; background-size:300% auto; pointer-events:none; z-index:2; }
+/* a power on the whole party: every living head, piled with a small offset */
+.ic .who.all { position:static; display:flex; width:auto; height:auto; border:0; border-radius:0; background:none; --ph:28px; }
+.ic .who.all span { flex:0 0 auto; width:var(--ph); height:var(--ph); margin-left:calc(6px - var(--ph)); border-radius:50%; border:3px solid #4f9bff; background:#2a1a30 no-repeat; background-size:300% auto; box-shadow:0 0 0 2px rgba(12,8,18,.95), 0 3px 6px rgba(0,0,0,.5); }
+.ic .who.all span:first-child { margin-left:0; }
+.ic.blue.is-all { width:auto !important; padding:0; background:none; box-shadow:none; }
+.ic.blue.is-all i { display:none !important; }
+.ic .who:empty:not([style]) { display:none; }
+#frame.hits .ic, #frame.hits .tc .plate { outline:2px dashed rgba(126,166,255,.9); outline-offset:2px; }
+
+/* C · BADGES — an app icon: the red tile is the power, the ally's head a badge
+   hanging on its foot, the info a small badge on its corner */
+.bv-badges .ic.red { left:6px; top:12px; width:76px; height:76px; border-radius:20px; }
+.bv-badges .ic.red i { width:44px; height:44px; }
+.bv-badges .ic.blue { left:-6px; top:76px; width:50px; height:50px; border-radius:50%; box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); z-index:3; }
+.bv-badges .ic.blue i { display:none; width:28px; height:28px; }
+.bv-badges .ic.blue:has(.who:empty:not([style])) i { display:block; }      /* no ally to reach: the glyph, greyed */
+.bv-badges .who { left:3px; top:3px; width:44px; height:44px; border-width:0; }
+.bv-badges .who.all { --ph:40px; }
+.bv-badges .fig { right:-10px; top:42px; }      /* on the right flank: the foot is the ally's, a party pile included */
+.bv-badges .pk .cost { left:48px; top:92px; }
+
+/* the info window, over the row: the power's two faces on a long press */
+#dinfo { position:absolute; left:26px; width:668px; bottom:360px; z-index:30; padding:8px 16px 10px; pointer-events:none;
+  border-radius:16px; background:rgba(8,5,14,.9); border:1px solid rgba(255,209,102,.3); box-shadow:0 10px 30px rgba(0,0,0,.6); }
+#dinfo p { margin:0; }
+#dinfo .h { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+#dinfo .h b { font-size:28px; letter-spacing:2px; font-weight:400; color:var(--ink, #f4eef8); }
+#dinfo .h i { font-style:normal; font-size:20px; letter-spacing:2px; color:#8fdcff; }
+#dinfo .face { margin-top:5px; padding:3px 10px 3px 10px; border-radius:10px; border:2px solid transparent; border-left:6px solid var(--fc);
+  font:700 20px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#d9d3e4; }
+#dinfo .face b { margin-right:10px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:var(--fc); }
+#dinfo .face em { font-style:normal; margin-left:10px; font:400 24px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:#ffd7cf; white-space:nowrap; }
+#dinfo .face.hot { background:rgba(255,255,255,.07); border-color:var(--fc); border-left-width:6px; color:#fff4f0; }
+#dinfo .face.na { opacity:.5; }
+#dinfo .a { margin-top:6px; font:700 20px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#ffd166; }
+#dinfo .stat { margin-top:5px; font:700 22px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#f4eef8; }
+#dinfo .stat b { margin-right:8px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:#b69cff; }
+#dinfo .tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+#dinfo .tags span { padding:3px 12px; border-radius:12px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; border:2px solid currentColor; }
+
+/* ---- THE MOTOR'S HUD BAND, as the game's web build draws it over a fight
+   (packages/shell/motor.css, HUD, with grudgeon's SKIN and its tokens) ---- */
+#hud { position:absolute; left:0; right:0; top:0; z-index:15; pointer-events:none; height:150px; padding:18px 26px 0;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:14px; color:#eafcff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#hud::before { content:""; position:absolute; left:0; right:0; top:0; bottom:0; z-index:-1; background:linear-gradient(180deg, rgba(4,5,16,.62), rgba(4,5,16,0)); }
+#hud-center { position:absolute; left:0; right:0; top:12px; text-align:center; }
+#hud-score { display:inline-block; font-size:78px; font-weight:900; line-height:1; color:#eafcff; text-shadow:0 0 14px rgba(226,54,75,.6); font-variant-numeric:tabular-nums; }
+#hud-score-lbl { margin-top:2px; font-size:18px; font-weight:800; letter-spacing:5px; color:rgba(255,255,255,.55); }
+#hud-left, #hud-right { position:relative; z-index:1; min-width:120px; }
+#hud-right { text-align:right; }
+.hud-pill { display:inline-block; padding:9px 18px; border-radius:18px; background:rgba(0,0,0,.42); border:1px solid rgba(255,255,255,.09);
+  font-size:28px; font-weight:900; text-shadow:0 2px 6px rgba(0,0,0,.5); font-variant-numeric:tabular-nums; }
+.hud-pill .lbl { display:block; font-size:18px; font-weight:800; letter-spacing:2px; opacity:.65; }
+
+/* ---- this page: the yokai picker, the rule, the feedback log ------------ */
+#panel select { width:100%; padding:8px 10px; background:#1c1c2c; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:600 13px/1.2 inherit; }
+#rule { padding:10px 12px; background:#0b0b12; border:1px solid #2c2c47; border-radius:10px; font-weight:500; font-size:12px; color:#c9c9e0; }
+#rule p { margin:0 0 7px; }
+#rule p:last-child { margin-bottom:0; }
+#rule b { display:block; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+#rule .lock b { color:#ff8a9a; } #rule .key b { color:#7ee0a1; } #rule .flee b { color:#9aa5b8; }
+#log { max-height:330px; overflow:auto; padding:6px 8px; background:#0b0b12; border:1px solid #2c2c47; border-radius:10px; font-weight:500; font-size:12px; }
+#log div { padding:4px 0; border-bottom:1px solid #1a1a28; color:#c9c9e0; }
+#log div:first-child { color:#fff; }
+#log i { font-style:normal; color:#6c6c88; margin-right:6px; font-variant-numeric:tabular-nums; }
+#log b { display:inline-block; min-width:52px; margin-right:6px; padding:0 5px; border-radius:5px; font-size:11px; text-align:center; color:#0b0b12; }
+#log span { color:#8b8ba7; }
+
+/* the two single cards of a turn: the yokai's RULE (gold) and FLEE (grey) */
+.pk.solo .ic.red { top:20px; }
+.ic.red.rule { background:linear-gradient(180deg, #f2c94c, #9a6a06); }
+.ic.red.flee { background:linear-gradient(180deg, #9aa5b8, #4a5468); }
+.pk.solo .ic .fig { left:50%; right:auto; top:auto; bottom:-14px; transform:translateX(-50%); color:#fff4f0; }
+/* what the yokai's rule does to this blow, read before it is played */
+.ic .rt { position:absolute; left:-6px; top:-14px; z-index:3; padding:1px 7px 0; border-radius:8px; white-space:nowrap; pointer-events:none;
+  background:#e9c46a; color:#2a1a00; font-size:20px; line-height:20px; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+.ic .rt:empty { display:none; }
+.ic .rt.bad { background:#ff5d73; color:#2a0008; }
+/* six cards in a turn (the full kit): the packs tighten */
+.packs.many .pk { width:72px; }
+.packs.many .ic.red { left:3px; width:66px; height:66px; }
+.packs.many .ic.red i { width:38px; height:38px; }
+.packs.many .ic.blue { left:-8px; top:70px; width:44px; height:44px; }
+.packs.many .who { width:38px; height:38px; }
+.packs.many .pk .cost { left:40px; top:84px; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Grudgeon yokai rules</h1>
+  <p class="hint">One lock and one key a yokai. Pick a yokai, play its fight and read the signals: the gold pill on its bar, the tags on the red faces, the callouts. Nobody wins or loses here: a hero stays at 1 HP and an exorcised yokai comes back.</p>
+  <h3>Fight</h3>
+  <div class="row"><label>Yokai</label><select id="foe"></select></div>
+  <div id="knobs"></div>
+  <div class="btns"><button id="restart">Restart fight</button><button id="nextfoe" class="main">Next yokai</button></div>
+  <h3>Its rule</h3>
+  <div id="rule"></div>
+  <h3>Feedback</h3>
+  <div id="log"></div>
+</div>
+
+<div id="stage">
+  <div id="wrap">
+    <canvas id="view"></canvas>
+    <div id="frame">
+      <div id="hud"><div id="hud-left"></div><div id="hud-center"><div id="hud-score">0</div><div id="hud-score-lbl"></div></div><div id="hud-right"></div></div>
+      <div id="aim"></div>
+      <div id="dock"><div id="dinfo"></div><div id="drow"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code (ES6 — a lab page runs in your browser, not in a
+   mobile WebView). Parts: the data copied from games/grudgeon/game.js, the
+   settings, the fight with its twenty rules and the flight, the camera and
+   projection, the drawing, the casting track, then the panel.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const W = 720, H = 1280;
+  const ART = "../assets/image/embed/grudgeon-";
+  const TAU = Math.PI * 2;
+
+  /* The motor's upper(), copied from lab/button.html: capitals are a look,
+     and a capital carries no accent. */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* =========================================================================
+     0. THE TUNABLES — the numbers of the fight, plain and at the top
+     ========================================================================= */
+  const FOE_HP = 3;          // the yokai's health, x its game value: long fights, this is a bench for signals
+  const FOE_ATK = 1;         // the yokai's blows, x its game value
+  const TICK = 100;          // a unit waits TICK / spd between two turns, at weight 1
+  const SHOW = 7;            // turns on the timeline
+  const SPECIAL_EVERY = 3;   // the yokai's special is every n-th of its turns
+  const FEAR_PUSH = 0.6;     // fear pushes a hero back this share of their wait
+  const HASTEN = 0.6, BIND = 0.8, WHET = 1.5, PACIFY = 0.5;   // the game's own
+  const DRAG_PX = 10;        // a pointer moving this far is a drag, not a tap
+  const EXPOSED = 50;        // % more damage on a yokai whose lock is open
+  const LOCKED = -80;        // % damage a blow keeps against a lock still shut: it lands, 80% weaker
+  const FLEE = { base: 50, perSpd: 4, min: 20, max: 90 };       // the odds of a flight, in %
+  const GOLD = 30;           // the party's purse in a lab fight (Gaki's offering)
+  /* the game's BY_PARTY: fewer heroes face weaker blows (a lone lead, 45%) */
+  const BY_PARTY_HP = [0, 0.3, 0.5, 0.75, 1];     // the game's BY_PARTY.hp: a yokai's health by the heroes facing it
+  const BY_PARTY_ATK = [0, 0.45, 0.6, 0.8, 1];
+  /* =========================================================================
+     1. THE DATA — games/grudgeon/game.js
+     ========================================================================= */
+  const ELEMENTS = {
+    slash:  { name: "Slash",  color: "#e8e6f0", ink: "#3b3142", icon: "sword" },
+    fire:   { name: "Fire",   color: "#ff7a3d", ink: "#b8400f", icon: "flame" },
+    ice:    { name: "Ice",    color: "#8fdcff", ink: "#1f6f9e", icon: "snowflake" },
+    light:  { name: "Light",  color: "#fff2a8", ink: "#9a7406", icon: "sun" },
+    spirit: { name: "Spirit", color: "#b69cff", ink: "#5b35b0", icon: "ghost" }
+  };
+  const HEROES = {
+    akane: { name: "Akane", role: "Shrine maiden",       color: "#c77dff", hp: 72,  sp: 40, atk: 9,  def: 6, spd: 11, skills: ["purify", "blessing"] },
+    kenji: { name: "Kenji", role: "Kendo captain",       color: "#5aa9ff", hp: 100, sp: 24, atk: 15, def: 9, spd: 8,  skills: ["iai", "ward"] },
+    yuki:  { name: "Yuki",  role: "Onmyoji",             color: "#9ce7ff", hp: 76,  sp: 60, atk: 7,  def: 7, spd: 10, skills: ["foxfire", "frost"] },
+    haru:  { name: "Haru",  role: "Occult photographer", color: "#ffd166", hp: 76,  sp: 36, atk: 10, def: 5, spd: 14, skills: ["flash", "ghostshot"] }
+  };
+  const HERO_IDS = ["akane", "kenji", "yuki", "haru"];
+
+  /* `w` is the WEIGHT of an action on the timeline: the hero's next turn comes
+     w times their wait later. Each scroll has TWO FACES: `foe` is what it does
+     thrown at the yokai, `ally` what it does laid on an ally (the caster
+     included, unless `noSelf`). `icon` names a lucide file, standing in for
+     the game's own pictograms. */
+  const SKILLS = {
+    attack:    { name: "Attack",         kind: "hit", fx: "spells13",  el: "slash",  pow: 1.0, sp: 0,  w: 1, icon: "hand-fist",
+                 foe: "hit", ally: "cover", noSelf: true,
+                 foeText: "A plain blow with the hero's weapon",
+                 allyText: "Takes the next blow aimed at them" },
+    guard:     { name: "Guard",          kind: "guard", fx: "spells04", sp: 0, w: 0.6, icon: "shield",
+                 foe: "provoke", ally: "guard",
+                 foeText: "Its next blow at a single hero comes at this one, who stands on guard",
+                 allyText: "Halves the blows they take until their turn (+5 SP on oneself)" },
+    purify:    { name: "Purify",         kind: "hit", fx: "spells01",  el: "light",  pow: 1.7, sp: 8,  w: 1, icon: "sparkles",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of light", allyText: "Their next blow becomes light" },
+    blessing:  { name: "Blessing",       kind: "heal", fx: "spells02", pow: 0.32,    sp: 12, w: 1.2, icon: "heart",
+                 foe: "pacify", ally: "heal",
+                 foeText: "Halves its next blow",
+                 allyText: "Heals every hero by a third of their health" },
+    iai:       { name: "Iai slash",      kind: "hit", fx: "spells03",  el: "slash",  pow: 2.3, sp: 8,  w: 1.5, icon: "sword",
+                 foe: "hit", ally: "whet",
+                 foeText: "A very strong cut that delays the hero's next turn",
+                 allyText: "Their next blow hits 50% harder" },
+    ward:      { name: "Spirit ward",    kind: "ward", fx: "spells04", turns: 2,     sp: 6,  w: 0.8, icon: "book-lock",
+                 foe: "bind", ally: "ward",
+                 foeText: "Pushes it back on the timeline",
+                 allyText: "Every hero takes 40% less damage during the yokai's next two turns" },
+    frost:     { name: "Frost talisman", kind: "hit", fx: "spells05",  el: "ice",    pow: 2.0, sp: 9,  w: 1, icon: "snowflake",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of ice", allyText: "Their next blow becomes ice" },
+    foxfire:   { name: "Foxfire",        kind: "hit", fx: "spells06",  el: "fire",   pow: 2.0, sp: 9,  w: 1, icon: "flame",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of fire", allyText: "Their next blow becomes fire" },
+    flash:     { name: "Flash",          kind: "hit", fx: "spells07",  el: "light",  pow: 1.1, sp: 10, w: 0.7, push: 0.6, icon: "zap",
+                 foe: "hit", ally: "hasten", noSelf: true,
+                 foeText: "A quick blow of light that pushes the yokai back on the timeline",
+                 allyText: "Moves them up the timeline" },
+    ghostshot: { name: "Ghost shot",     kind: "hit", fx: "spells08",  el: "spirit", pow: 1.6, sp: 8,  w: 1, pierce: true, icon: "crosshair",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A spirit blow that goes through most of the yokai's defense",
+                 allyText: "Their next blow becomes spirit" }
+  };
+
+  /* The twenty yokai with the game's numbers (FOES of game.js), and the five
+     bands they stand in: the band's scene, and the LEAD who walks in alone. */
+  const FOES = {
+    hanako:      { name: "Hanako-san",     color: "#d94a5a", hp: 60,  atk: 9,  def: 4,  spd: 9,  weak: ["light"],  resist: ["ice"],    move: "fear",  special: "Third stall" },
+    teketeke:    { name: "Teke Teke",      color: "#c9c2b8", hp: 52,  atk: 11, def: 3,  spd: 16, weak: ["ice"],    resist: ["slash"],  move: "heavy", special: "Teke teke" },
+    jinmenken:   { name: "Jinmenken",      color: "#9a7b5a", hp: 66,  atk: 10, def: 5,  spd: 12, weak: ["fire"],   resist: [],         move: "drain", special: "Leave me be" },
+    akamanto:    { name: "Aka Manto",      color: "#b3122e", hp: 80,  atk: 12, def: 6,  spd: 10, weak: ["spirit"], resist: ["fire"],   move: "all",   special: "Red or blue?" },
+    kuchisake:   { name: "Kuchisake-onna", color: "#d8d2cf", hp: 88,  atk: 13, def: 6,  spd: 13, weak: ["light"],  resist: ["slash"],  move: "heavy", special: "Am I pretty?" },
+    ubume:       { name: "Ubume",          color: "#8fa8a0", hp: 92,  atk: 11, def: 7,  spd: 8,  weak: ["fire"],   resist: ["ice"],    move: "drain", special: "Hold my baby" },
+    gaki:        { name: "Gaki",           color: "#a3b06a", hp: 100, atk: 12, def: 5,  spd: 9,  weak: ["light"],  resist: ["spirit"], move: "drain", special: "Endless hunger" },
+    nopperabo:   { name: "Nopperabo",      color: "#e8e1d8", hp: 96,  atk: 13, def: 8,  spd: 11, weak: ["spirit"], resist: ["light"],  move: "fear",  special: "Faceless" },
+    kasaobake:   { name: "Kasa-obake",     color: "#c0563c", hp: 110, atk: 14, def: 7,  spd: 13, weak: ["fire"],   resist: ["ice"],    move: "all",   special: "Hundred-year rain" },
+    chochin:     { name: "Chochin-obake",  color: "#f0a23c", hp: 104, atk: 15, def: 6,  spd: 12, weak: ["ice"],    resist: ["fire"],   move: "all",   special: "Ghost flame" },
+    jorogumo:    { name: "Jorogumo",       color: "#7a2b6b", hp: 124, atk: 15, def: 9,  spd: 12, weak: ["fire"],   resist: ["slash"],  move: "drain", special: "Silk cocoon" },
+    tengu:       { name: "Tengu",          color: "#c8323a", hp: 130, atk: 17, def: 9,  spd: 15, weak: ["ice"],    resist: ["spirit"], move: "heavy", special: "Gale fan" },
+    kappa:       { name: "Kappa",          color: "#4f9a5a", hp: 136, atk: 16, def: 11, spd: 11, weak: ["spirit"], resist: ["ice"],    move: "heavy", special: "Drag under" },
+    nureonna:    { name: "Nure-onna",      color: "#3d6f7a", hp: 148, atk: 17, def: 10, spd: 12, weak: ["light"],  resist: ["ice"],    move: "drain", special: "Coil" },
+    funayurei:   { name: "Funayurei",      color: "#7fa3b8", hp: 140, atk: 16, def: 9,  spd: 13, weak: ["fire"],   resist: ["slash"],  move: "all",   special: "Lend us a ladle" },
+    umibozu:     { name: "Umibozu",        color: "#22303f", hp: 176, atk: 19, def: 13, spd: 7,  weak: ["light"],  resist: ["slash"],  move: "all",   special: "Black tide" },
+    rokurokubi:  { name: "Rokurokubi",     color: "#c99bb0", hp: 168, atk: 19, def: 11, spd: 13, weak: ["slash"],  resist: ["spirit"], move: "fear",  special: "Long neck" },
+    gashadokuro: { name: "Gashadokuro",    color: "#e6dcc4", hp: 165, atk: 21, def: 15, spd: 6,  weak: ["light"],  resist: ["slash", "ice"], move: "heavy", special: "Bone crush" },
+    oni:         { name: "Oni",            color: "#c4302b", hp: 190, atk: 23, def: 13, spd: 10, weak: ["spirit"], resist: ["fire"],   move: "all",   special: "Thunder drum" },
+    onryo:       { name: "Onryo",          color: "#e9e6f2", hp: 220, atk: 22, def: 12, spd: 14, weak: ["light"],  resist: ["spirit", "ice"], move: "fear", special: "Grudge" }
+  };
+  const BANDS = [
+    { name: "Night school",    scene: "background-phone-01", lead: "kenji", foes: ["hanako", "teketeke", "jinmenken", "akamanto"] },
+    { name: "Hospital",        scene: "background-phone-02", lead: "akane", foes: ["kuchisake", "ubume", "gaki", "nopperabo"] },
+    { name: "Shrine forest",   scene: "background-phone-03", lead: "yuki",  foes: ["kasaobake", "chochin", "jorogumo", "tengu"] },
+    { name: "Drowned village", scene: "background-phone-04", lead: "haru",  foes: ["kappa", "nureonna", "funayurei", "umibozu"] },
+    { name: "Gate of Yomi",    scene: "background-phone-05", lead: "kenji", foes: ["rokurokubi", "gashadokuro", "oni", "onryo"] }
+  ];
+  const FOE_IDS = BANDS.reduce((l, b) => l.concat(b.foes), []);
+  function bandOf(id) { return BANDS.find(b => b.foes.indexOf(id) >= 0) || BANDS[0]; }
+  const MOVE_FX = { strike: "spells13", heavy: "spells14", all: "spells12", drain: "spells11", fear: "spells10" };
+
+  /* The lucide paths of the scrolls' glyphs (assets/motor/lucide/<icon>.svg,
+     24x24, stroked), inlined so a CSS mask works from file:// too — a mask
+     fetched by path is refused on an opaque origin. */
+  const ICON_PATHS = {
+    /* the yokai's next move (drawIntent): what it does, when, its side effects */
+    "axe": '<path d="m14 12-8.381 8.38a1 1 0 0 1-3.001-3L11 9"/><path d="M15 15.5a.5.5 0 0 0 .5.5A6.5 6.5 0 0 0 22 9.5a.5.5 0 0 0-.5-.5h-1.672a2 2 0 0 1-1.414-.586l-5.062-5.062a1.205 1.205 0 0 0-1.704 0L9.352 5.648a1.205 1.205 0 0 0 0 1.704l5.062 5.062A2 2 0 0 1 15 13.828z"/>',
+    "skull": '<path d="m12.5 17-.5-1-.5 1h1z"/><path d="M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="12" r="1"/>',
+    "bomb": '<circle cx="11" cy="13" r="9"/><path d="M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95"/><path d="m22 2-1.5 1.5"/>',
+    "droplet": '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+    "chevrons-right": '<path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/>',
+    "triangle-alert": '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    "star": '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+    "lock": '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    "pause": '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
+    "dices": '<rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/>',
+    "arrow-down": '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
+    "flag": '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+    "timer": '<line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/>',
+    "arrow-right": '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    "eye": '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+    "sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    "ghost": '<path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/>',
+    "hand": '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+    "arrow-left": '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+    "hand-fist": '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>',
+    "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    "sparkles": '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    "heart": '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+    "sword": '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
+    "book-lock": '<path d="M18 6V4a2 2 0 1 0-4 0v2"/><path d="M20 15v6a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H10"/><rect x="12" y="6" width="8" height="5" rx="1"/>',
+    "snowflake": '<path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/>',
+    "flame": '<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/>',
+    "zap": '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+    "hourglass": '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+    "info": '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    "crosshair": '<circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/>'
+  };
+  function iconUri(name) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[name] + "</svg>";
+    return 'url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '")';
+  }
+
+  /* The painted art, as the build ships it (assets/image/embed/). Loaded on
+     first ask; a sprite that has not decoded yet is simply not drawn. */
+  const IMGS = {};
+  function img(key) {
+    let im = IMGS[key];
+    if (!im) { im = new Image(); im.src = ART + key + ".webp"; IMGS[key] = im; }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function preload() {
+    HERO_IDS.forEach(id => { for (let p = 1; p <= 6; p++) img("hero-" + id + "0" + p); });
+    for (let k = 1; k <= 14; k++) img("spells" + (k < 10 ? "0" : "") + k);
+    BANDS.forEach(b => img(b.scene));
+  }
+  function preloadFoe(id) { for (let p = 1; p <= 4; p++) img("foe-" + id + "0" + p); }
+
+  /* =========================================================================
+     2. THE SETTINGS — the knobs of the panel
+     ========================================================================= */
+  const S = { party: 1, kit: "arrival", endless: "on", tags: "on", lore: "found",
+    /* the casting lab's own knobs, fixed at the look the game shipped (C · Badges) */
+    look: "badges", tint: 10, blue: "smart", pin: "on", figs: "order", confirm: "off", longMs: 400, preview: "on", hits: "off" };
+  const KNOBS = [
+    { k: "party", label: "Heroes (the band's lead first)", o: [1, 2, 3, 4] },
+    { k: "kit", label: "Scrolls", o: ["arrival", "full"], names: { arrival: "On arrival: the first one", full: "Both" } },
+    { k: "tags", label: "Rule tag on the red faces", o: ["on", "off"] },
+    { k: "lore", label: "Weak and resist badges on the bar", o: ["found", "all"], names: { found: "Found by a blow (the game)", all: "All, from the start" } },
+    { k: "endless", label: "Endless fight", o: ["on", "off"], names: { on: "On: nobody falls", off: "Off" } }
+  ];
+
+  /* =========================================================================
+     3. THE FIGHT — the timeline, the intents, the scrolls, the rules, the flight
+     ========================================================================= */
+  const P = { persp: 7, tilt: 0.75, unit: 112, groundY: 720, pivotZ: 0.3, heroScale: 0.95, foeScale: 1.15,
+    follow: 0.6, camSpeed: 4, actZoom: 0.2, dash: 0.75, punch: 0.06, shake: 10, hitstop: 0.07, flash: 0.3, bgDim: 0.35, bgZoom: 1.08, vignette: 0.3 };
+  const POS = { foe: [1.2, 1.3], hero: i => [-2.4 + i * 1.0, 0.5 - i * 0.65] };
+
+  let party = [], foe = null, active = 0, turn = 1, busy = false, over = false, extra = false;
+  let ward = 0, lastHero = null, gold = GOLD, fightT = 0, score = 0, foesDown = 0;
+  let T = 0, RT = 0, hitstop = 0, enterT = 0, flashA = 0, flashC = "#ffffff";
+  let jobs = [], tweens = [], parts = [], nums = [], calls = [], fxs = [];
+  let TL = [];
+
+  function anim(i) {
+    return { hx: 0, hz: 0, tx: 0, tz: 0, dash: 0, dashTo: { x: 0, z: 0 }, kx: 0, kz: 0,
+      hurt: 0, lunge: 0, cast: 0, guard: 0, dead: false, flash: 0, boost: 0, fade: 1, phase: i * 1.7, enter: 0, fall: 0, turn: 0, gA: 0 };
+  }
+  function makeHero(id, i) {
+    const b = HEROES[id];
+    return Object.assign(anim(i), { kind: "hero", id, b, i, color: b.color, mhp: b.hp, hp: b.hp, msp: b.sp, sp: b.sp, lag: b.hp,
+      atk: b.atk, def: b.def, spd: b.spd, pow: 1, ct: 0, n: 0, guarding: false, imbue: null, whet: 0, cover: null,
+      known: S.kit === "full" ? b.skills.slice() : b.skills.slice(0, 1) });
+  }
+  /* THE BESTIARY, as the game's: an element is known on a yokai once a blow
+     of it has landed there, and kept for the session. "all" shows every one. */
+  const LORE = {};
+  function knownOf(id) {
+    const out = {}, b = FOES[id];
+    if (S.lore === "all") { b.weak.forEach(e => { out[e] = "weak"; }); b.resist.forEach(e => { out[e] = "resist"; }); return out; }
+    return Object.assign(out, LORE[id] || {});
+  }
+  function learn(f, el) {
+    const v = f.b.weak.indexOf(el) >= 0 ? "weak" : f.b.resist.indexOf(el) >= 0 ? "resist" : "normal";
+    f.known[el] = v; (LORE[f.id] = LORE[f.id] || {})[el] = v;
+  }
+  function makeFoe(id, o) {
+    const b = FOES[id], R = RULES[id], hp = Math.round(b.hp * 1.3 * FOE_HP * BY_PARTY_HP[clamp(+S.party, 1, 4)]), spd = b.spd * (R.spd || 1);
+    const f = Object.assign(anim(0.25), { kind: "foe", id, b, color: b.color, mhp: hp, hp, lag: hp,
+      atk: b.atk * FOE_ATK * BY_PARTY_ATK[clamp(+S.party, 1, 4)], def: b.def, spd, spd0: spd, ct: 0, n: 0, acts: 0, plan: [], doing: null, taunt: null, pacify: false,
+      hitSince: false, lastHitter: null, answered: false, known: knownOf(id), boss: bandOf(id).foes[3] === id });
+    f.st = R.st ? R.st(o || {}) : {};
+    return f;
+  }
+  function all() { return foe ? party.concat([foe]) : party.slice(); }
+  function alive() { return party.filter(h => !h.dead); }
+  function activeHero() { return party[active] && !party[active].dead ? party[active] : null; }
+  function randomHero() { const a = alive(); return a[Math.floor(Math.random() * a.length)]; }
+  function weakestHero() { return alive().slice().sort((a, b) => a.hp - b.hp)[0] || null; }
+  function weakestOther(h) { return alive().filter(x => x !== h).sort((a, b) => a.hp - b.hp)[0] || null; }
+
+  function setTargets(snap) {
+    const pos = party.map((h, i) => POS.hero(i));
+    party.forEach((h, i) => { h.tx = pos[i][0]; h.tz = pos[i][1]; if (snap) { h.hx = h.tx; h.hz = h.tz; } });
+    if (foe) { foe.tx = POS.foe[0]; foe.tz = POS.foe[1]; if (snap) { foe.hx = foe.tx; foe.hz = foe.tz; } }
+  }
+
+  /* --- timing helpers ---------------------------------------------------- */
+  function later(d, fn) { jobs.push({ t: d, fn }); }
+  function tween(o, k, to, d, ease, delay) { tweens.push({ o, k, from: null, to, d, t: -(delay || 0), ease: ease || outCubic }); }
+  function outCubic(q) { return 1 - Math.pow(1 - q, 3); }
+  function inOut(q) { return q * q * (3 - 2 * q); }
+  function outBack(q) { const c = 1.7; return 1 + (c + 1) * Math.pow(q - 1, 3) + c * Math.pow(q - 1, 2); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function copyOf(it, extra) { return Object.assign({}, it, extra); }
+
+  /* --- THE FEEDBACK ------------------------------------------------------
+     `pop` stands for the game's Pop.show(style, { word, sub }): a callout in
+     the middle of the stage, queued behind the one showing, and a line of
+     the panel's log that names its style. */
+  const STYLE = { score: "#ffd166", alert: "#ff5d73", bonus: "#7ee0a1", combo: "#ffd166", danger: "#e2364b", ribbon: "#ff8a9a", streak: "#ffd166", event: "#7ea6ff" };
+  function pop(style, word, sub) {
+    calls.push({ style, word, sub, col: STYLE[style] || "#fff4f0", t: 0, life: style === "combo" || style === "danger" ? 1.4 : 1.1 });
+    if (calls.length > 3) calls.splice(1, calls.length - 3);
+    if (style === "danger") cam.shake = Math.max(cam.shake, P.shake * 1.4);
+    log(style, word, sub);
+  }
+  function note(a, txt, col) { nums.push({ a, txt, col: col || "#ffd166", t: 0, life: 1.1, weak: false, ox: 0, small: true }); }
+
+  /* --- THE TIMELINE ------------------------------------------------------
+     Every living unit counts `ct` down; the lowest acts, a tie goes to the
+     heroes in party order, then to the yokai. Acting puts the unit back at
+     its wait (TICK / spd) times the weight of what it did. */
+  function wait(u) { return TICK / Math.max(1, u.spd); }
+  function units() { return alive().concat(foe && !foe.dead ? [foe] : []); }
+  function lowest(list) { let best = null; list.forEach(e => { if (!best || e.ct < best.ct - 1e-6) best = e; }); return best; }
+  function push(u, share, word, sub) {
+    u.ct += wait(u) * share;
+    if (word) pop(u.kind === "foe" ? "bonus" : "alert", word, sub || (u.kind === "foe" ? "Pushed back" : u.b.name + " loses time"));
+  }
+  function rule() { return foe ? RULES[foe.id] : null; }
+  function weightOf(h, w) { const R = rule(); return R && R.weight ? R.weight(foe, h, w) : w; }
+  function hiddenIntents() { const R = rule(); return !!(R && R.hidden && R.hidden(foe)); }
+
+  /* The next SHOW turns, as the player will see them. While a hero chooses,
+     their own next turn is placed with the weight `w` of the scroll under
+     the pointer, so the row re-sorts itself before anything is chosen. */
+  function timeline(w, guardPrev) {
+    if (!foe || foe.dead || over) return [];
+    const sim = units().map(u => ({ u, ct: u.ct, n: u.n, guarding: u.guarding }));
+    const simOf = u => sim.find(o => o.u === u);
+    const out = [], now = turn === 0 ? activeHero() : null;
+    let last = lastHero;
+    if (now) {
+      out.push({ u: now, key: now.id + ":" + now.n, now: true, hits: [] });
+      const s = simOf(now);
+      s.ct = wait(now) * weightOf(now, w == null ? 1 : w); s.n++; s.guarding = !!guardPrev;
+      last = now;
+    }
+    let fk = 0, wd = ward, hs = now ? 1 : 0;
+    AHEAD = [];
+    while (out.length < SHOW) {
+      const s = lowest(sim); if (!s) break;
+      const d = s.ct; sim.forEach(o => { o.ct -= d; });
+      const e = { u: s.u, key: s.u.id + ":" + s.n, now: !out.length, hits: [] };
+      if (s.u.kind === "foe") {
+        const ki = foe.doing ? fk - 1 : fk;
+        if (ki >= 0) AHEAD[ki] = hs;
+        const it = foe.doing && fk === 0 ? foe.doing : liveIntent(ki);
+        fk++;
+        const mod = fk === 1;            // the yokai's next turn: the one the scrolls bend
+        e.it = it;
+        if (it.alt) e.hits = maybeHits(it, simOf, wd > 0, mod);
+        else {
+          const tg = it.prev ? (last && !last.dead ? [last] : []) : targetsOf(it, mod);
+          e.hits = tg.map(h => { const g = simOf(h); return { h, dmg: estimate(it, h, g && g.guarding, wd > 0, mod) }; });
+        }
+        if (wd > 0) wd--;
+        s.ct = wait(s.u) * it.w;
+      } else {
+        s.guarding = false;
+        s.ct = wait(s.u) * weightOf(s.u, 1);
+        last = s.u;
+        hs++;
+      }
+      s.n++;
+      out.push(e);
+    }
+    AHEAD = [];
+    return out;
+  }
+
+  /* --- THE INTENTS -------------------------------------------------------
+     The yokai plans its turns ahead (`foe.plan`) so the timeline can show
+     them; a rule may plan its own (`plan`) and turn a planned one into
+     another, now, from what happened since (`live`). An intent is { kind,
+     label, targets | all | prev, pow, flat, halve, w, special } plus what it
+     does besides its blow: drain, fear, gale, cocoon, coil, pierce, and
+     `after(f)`, run once it has landed. A turn with no blow says `sub`. */
+  const POW = { strike: 1, heavy: 1.8, all: 0.75, drain: 1.2, fear: 0.9 };
+  function basePlan(f, i) {
+    const sp = (i + 1) % SPECIAL_EVERY === 0, mv = sp ? f.b.move : "strike";
+    const it = { kind: mv, label: sp ? f.b.special : "Strike", fx: mv, w: sp ? 1.2 : 1, special: sp, pow: POW[mv] };
+    if (mv === "all") it.all = true; else it.targets = [randomHero()];
+    if (mv === "drain") it.drain = true;
+    if (mv === "fear") it.fear = true;
+    return it;
+  }
+  function planWith(special) {
+    return (f, j) => { const it = basePlan(f, f.acts + j); return it.special ? copyOf(it, special(f, it)) : it; };
+  }
+  function pass(kind, label, sub, extra) { return Object.assign({ kind, label, sub, pow: 0, w: 1, targets: [] }, extra || {}); }
+  function intent(k) {
+    const R = rule();
+    while (foe.plan.length <= k) { const j = foe.plan.length; foe.plan.push(R && R.plan ? R.plan(foe, j) : basePlan(foe, foe.acts + j)); }
+    return foe.plan[k];
+  }
+  function liveIntent(k) {
+    const R = rule(), it = intent(k);
+    return R && R.live ? R.live(foe, it, k) || it : it;
+  }
+  /* `mod` is true for the yokai's NEXT turn, the one the scrolls laid since its
+     last turn bend: a provoking hero draws a blow aimed at one hero, then a hero
+     covering the one aimed at steps in front. */
+  function targetsOf(it, mod) {
+    if (it.all) return alive();
+    if (it.prev) return lastHero && !lastHero.dead ? [lastHero] : [];
+    const out = (it.targets || []).filter(h => h && !h.dead);
+    if (mod && out.length === 1) {
+      let h = out[0];
+      if (foe.taunt && !foe.taunt.dead) h = foe.taunt;
+      if (h.cover && !h.cover.dead) h = h.cover;
+      return [h];
+    }
+    return out;
+  }
+  /* A yokai's blow is exactly what its intent says: no luck, no crit. A rule
+     may raise its attack by a whole percentage (`atk`, Ubume's fury). */
+  function estimate(it, h, guarded, warded, mod) {
+    if (it.toOne) return Math.max(0, h.hp - 1);           // a blow that leaves every hero on 1 HP (Funayurei's capsize)
+    if (it.halve) return Math.max(1, Math.round(h.hp / 2));
+    if (!it.pow && !it.flat) return 0;
+    const R = rule(), up = R && R.atk ? R.atk(foe) : 0;
+    let d = foe.atk * (it.pow || 0) * (1 + up / 100) * 2.4 * (14 / (14 + h.def)) + (it.flat || 0);
+    if (mod && foe.pacify) d *= PACIFY;
+    if (guarded && !it.pierce) d *= 0.5;
+    if (warded) d *= 0.6;
+    return Math.max(1, Math.round(d));
+  }
+  function maybeHits(it, simOf, warded, mod) {
+    const out = [];
+    [it.alt.red, it.alt.blue].forEach(alt => targetsOf(alt, mod).forEach(h => {
+      const g = simOf(h), d = estimate(alt, h, g && g.guarding, warded, mod), o = out.find(x => x.h === h);
+      if (o) o.dmg = Math.max(o.dmg, d); else out.push({ h, dmg: d, maybe: true });
+    }));
+    return out;
+  }
+
+  /* =========================================================================
+     THE RULES — one lock and one key a yokai. A rule may:
+       lock, key       what the panel says of it (and the game's guide will)
+       flee            { p: odds in %, sub: the line of a failed flight, ok: of a good one }
+       st(o)           its own state, fresh each fight (o.met: met again after a flight)
+       status(f)       the gold pill on its bar
+       ghost(f)        drawn as a shadow (Hanako behind her door)
+       hidden(f)       its intents shown as "?"
+       mod(f, h, id, el)  what it does to a hero's blow, decided BEFORE the blow
+                       so the red face and the bar show it: { pct (whole %:
+                       LOCKED, -80, while its key is not played — a blow always
+                       lands; EXPOSED, +50, once it is), bounce (% back at the
+                       striker), tag (the red face's label), bad (a red tag),
+                       word, sub }. A plain Attack at LOCKED greys the bar.
+       onHit(f, h, s, r, m)  after a hero's blow (s with its element)
+       onStrike(f, h, it, dmg)  after each of its own blows on a hero
+       plan / live     its intents; begin(f) / turn(f) before / after its turns
+       action(f, h)    the gold card of the turn: { label, fig, sub, text, w, run(f, h) }
+       weight(f, h, w) make a hero's actions heavier
+       atk(f)          its blows, + a whole %
+       feast(f)        % of what it drains that heals it (50 for a plain drain)
+       onMet(f)        met again after a flight
+       heroTurn(f, h, struck)  after each whole hero turn, `struck` if it
+                       threw a blow at the yokai; true holds the fight
+     A duration counts its own turns, decremented after each (`turn`). A
+     state opened DURING its turn skips that decrement (`fresh`).
+     ========================================================================= */
+  function tick(st, k) {
+    if (st[k + "Fresh"]) { st[k + "Fresh"] = false; return false; }
+    if (st[k] > 0 && --st[k] === 0) return true;
+    return false;
+  }
+  /* AN OPEN YOKAI stays open for OPEN hero turns at least (`opens` names the
+     states counted that way, decremented at the end of every hero turn). A
+     state opened DURING a hero turn skips that turn's decrement (`fresh`). */
+  const OPEN = 5;
+  function openFor(f, k, fresh) { f.st[k] = OPEN; f.st[k + "Fresh"] = !!fresh; }
+  /* hero turns the timeline has run before the yokai's k-th turn (none outside it) */
+  let AHEAD = [];
+  function openAt(f, k, i) { return (f.st[k] || 0) + (f.st[k + "Fresh"] ? 1 : 0) > (i == null ? 0 : AHEAD[i] || 0); }
+  /* What a rule NEEDS from the party's scrolls (`needs`: an element, or any
+     scroll that strikes): null when the party carries it, else the need. */
+  function missingKey() {
+    const R = rule(), n = R && R.needs;
+    if (!n) return null;
+    const ok = alive().some(h => (h.known || []).some(id => {
+      const s = SKILLS[id];
+      if (!s || !s.el) return false;
+      return n.magic ? s.kind === "hit" : s.el === n.el;
+    }));
+    return ok ? null : n;
+  }
+  function cursedNow(h) { const R = rule(); return foe && !h.dead && R && R.curse && R.curse(foe, h); }
+  const ONRYO_PUSH = 2.2;                  // a blue action pushes Onryo back by this many of the hero's waits: two turns, and a margin
+  /* the moment a yokai's key works, which is also when its trap card shows */
+  function ubumeOffers(f) { const it = intent(0); return !f.st.bare && !f.answered && !!it.special; }
+  function kappaDives(f) { const it = intent(0); return !f.st.dry && !f.answered && !!it.special; }
+  const RULES = {
+    /* --- Night school (Kenji: slash, Guard) --------------------------------- */
+    hanako: {
+      lock: "She hides behind the door of the third stall: every blow goes through the door, -80% damage.",
+      key: "Knock three times (a quick turn, -40% wait): the door opens for good, +50% damage until the end of the fight.",
+      st: () => ({ knocks: 0, open: false }),
+      status: f => f.st.open ? "Door open" : "Door shut · " + f.st.knocks + "/3",
+      ghost: f => !f.st.open,
+      mod: f => f.st.open ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The door holds", sub: "Knock 3 times" },
+      plan: planWith(() => ({ kind: "all", fx: "all", all: true, targets: null, fear: false, pow: 0.75 })),
+      live: (f, it) => !f.st.open && !it.special && it.pow ? copyOf(it, { label: "Who's there?", pow: it.pow * 0.6 }) : it,
+      action: f => f.st.open ? null : {
+        label: "Knock", fig: (f.st.knocks + 1) + "/3", w: 0.6, sub: "Knock " + (f.st.knocks + 1) + " of 3",
+        text: "A quick turn. At the third knock the door opens for good: +50% damage.",
+        run: f2 => {
+          f2.st.knocks++;
+          if (f2.st.knocks < 3) { pop("bonus", "Knock", f2.st.knocks + "/3"); return; }
+          f2.st.open = true; f2.plan = [];
+          pop("combo", "Door open", "+50% damage");
+        } }
+    },
+    teketeke: {
+      lock: "Too fast: she dodges most of every blow while she runs, -80% damage.",
+      key: "Be on Guard when she charges you: her charge stops short (no damage), she trips and lies upside down for 5 of your turns, then spends a turn of hers getting up: +50% damage until she is up. An ice blow trips her too. Fleeing never works.",
+      flee: { p: 0, sub: "She's faster" },
+      spd: 1.4,
+      st: () => ({ down: 0, rising: false }),
+      opens: ["down"],
+      onClose: f => { f.st.rising = true; },
+      status: f => f.st.down ? "Fallen · " + f.st.down : f.st.rising ? "Getting up" : "Running",
+      plan: (f, j) => { const it = basePlan(f, f.acts + j); return copyOf(it, { all: false, targets: [weakestHero()] }); },
+      /* fallen while the hero turns last, then her first turn after is spent getting up */
+      live: (f, it, k) => {
+        if (openAt(f, "down", k)) return pass("fallen", "Fallen", "She lies upside down");
+        if ((f.st.down || f.st.rising) && (k === 0 || openAt(f, "down", k - 1)))
+          return pass("getup", "Getting up", "She turns over", { after: f2 => { f2.st.rising = false; tween(f2, "fall", 0, 0.6, inOut); pop("alert", "She's up again", "She dodges again"); } });
+        return it;
+      },
+      mod: (f, h, id, el) => f.st.down || f.st.rising ? { pct: EXPOSED, tag: "+50%" } : el === "ice" ? { tag: "Trips" } :
+        { pct: LOCKED, tag: "-80%", bad: true, word: "Grazed", sub: "Guard when she charges" },
+      onHit: (f, h, s) => { if (!f.st.down && !f.st.rising && s.el === "ice") tripTeke(f, false); },
+      cancel: (f, it, tg) => !f.st.down && !f.st.rising && tg.length === 1 && tg[0].guarding,
+      onCancel: (f, h) => { pop("bonus", "Blocked", h.b.name + " · no damage"); tripTeke(f, true); }
+    },
+    /* A man-faced dog that wants to be left alone: it never starts a fight.
+       Two hero turns in a row without a blow at it and it walks away; a blow
+       and it stays and fights, until two quiet turns calm it again. */
+    jinmenken: {
+      lock: "Strike him and he stays and fights back, and your blows barely hurt him: -80% damage.",
+      key: "Let 2 of your turns go by without striking him (guard, wait, anything but a blow at him): he walks away, and it counts as exorcised. Fleeing always works.",
+      flee: { p: 100, ok: "He doesn't chase you" },
+      st: () => ({ calm: 0, angry: false }),
+      status: f => f.st.angry ? "Angry" : "Calm " + f.st.calm + "/2",
+      mod: () => ({ pct: LOCKED, tag: "-80%", bad: true, word: "You hit me", sub: "He stays and fights" }),
+      onHit: f => { f.st.angry = true; f.st.calm = 0; f.plan = []; },
+      plan: planWith(() => ({ label: "Bite" })),
+      /* calm, he only watches; angry, he fights like any yokai */
+      live: (f, it) => f.st.angry ? it : pass("watch", "Watching", "He keeps his distance"),
+      heroTurn: (f, h, struck) => {
+        if (struck) return;
+        f.st.calm++;
+        if (f.st.calm === 1) { f.st.angry = false; f.plan = []; pop("bonus", "He sniffs at you", "Calm 1/2 · keep your hands down"); return; }
+        pop("combo", "Leave me be...", "Calm 2/2 · he lowers his head");
+        later(1.2, () => { if (foe === f && !over) letGo(); });
+        return true;                     // the fight holds: he is leaving
+      }
+    },
+    akamanto: {
+      lock: "His red cape takes the blows: -80% damage.",
+      key: "When he asks \"Red or blue?\", answer Neither: the cape falls for 5 of your turns, +50% damage, and without it he cannot ask, his question turns into a red slash. Leave the question and he picks one: red slashes a hero (+120%), blue strangles everyone and drains them.",
+      st: () => ({ bare: 0 }),
+      status: f => f.st.bare ? "Bare · " + f.st.bare : "Cape",
+      opens: ["bare"],
+      onClose: () => pop("alert", "The cape is back", "-80% damage"),
+      shield: f => !f.st.bare,
+      mod: f => f.st.bare ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The cape takes it", sub: "Answer neither" },
+      plan: (f, j) => {
+        const i = f.acts + j;
+        if ((i + 1) % SPECIAL_EVERY) return basePlan(f, i);
+        return { kind: "question", label: f.b.special, tag: "?", special: true, w: 1.2, pow: 0,
+          alt: { red:  { kind: "red", label: "Red", targets: [randomHero()], pow: 2.2, special: true, fx: "heavy", w: 1.2 },
+                 blue: { kind: "blue", label: "Blue", all: true, pow: 0.9, drain: true, special: true, fx: "drain", w: 1.2 } } };
+      },
+      live: (f, it, k) => {
+        if (it.kind !== "question") return it;
+        if (k === 0 && f.answered) return pass("silence", "Silence", "He has no answer", { w: 1.2 });
+        return openAt(f, "bare", k) ? it.alt.red : it;       // no cape, no question: a red slash
+      },
+      action: f => intent(0).kind !== "question" || f.answered || f.st.bare ? null : {
+        label: "Neither", fig: "?", sub: "Refuse to choose", text: "Neither red nor blue: he has no answer and his cape falls, +50% damage for 5 of your turns.",
+        run: f2 => { f2.answered = true; openFor(f2, "bare", true); pop("combo", "Neither", "The cape falls · +50% for 5 turns"); } }
+    },
+
+    /* --- Hospital (Akane: light, Guard) ---------------------------------------- */
+    kuchisake: {
+      lock: "Her mask takes the blows: -80% damage. \"Am I pretty?\" is asked of one hero, and left unanswered it is a slash at +160%. The So-so on offer is a trap: she laughs and the mask stays.",
+      key: "While she asks, the hero she asks strikes her with a plain attack (no scroll): the mask tears, she loses her turn and stays unmasked for 5 of your turns, +50% damage. Fleeing works, but she follows you to the next room.",
+      flee: { p: 100, ok: "She follows you: next room" },
+      st: () => ({ bare: 0 }),
+      status: f => f.st.bare ? "Unmasked · " + f.st.bare : "Masked",
+      opens: ["bare"],
+      onClose: () => pop("alert", "Masked again", "-80% damage · strike her while she asks"),
+      shield: f => !f.st.bare,
+      mod: (f, h, id) => {
+        if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
+        const it = intent(0), asking = it.kind === "ask" && !f.answered && it.targets;
+        if (asking && it.targets[0] === h && id === "attack") return { pct: EXPOSED, tag: "+50%", key: true };
+        const sub = !asking ? "Strike her while she asks" : it.targets[0] !== h ? "Only the one she asks can strike" : "Not a scroll · a plain attack";
+        return { pct: LOCKED, tag: "-80%", bad: true, word: "The mask takes it", sub };
+      },
+      onHit: (f, h, sk, r, m) => { if (m.key) { f.answered = true; openFor(f, "bare", true); pop("combo", "The mask tears", "Unmasked · +50% for 5 turns"); } },
+      plan: planWith(() => ({ kind: "ask", label: "Am I pretty?", tag: "?", pow: 2.6, fx: "heavy", fear: false })),
+      live: (f, it, k) => k === 0 && it.kind === "ask" && f.answered ? pass("confused", "Torn mask", "She loses her turn", { w: 1.2 }) : it,
+      action: (f, h) => {
+        const it = intent(0);
+        if (f.st.bare || it.kind !== "ask" || f.answered || !it.targets || it.targets[0] !== h) return null;
+        return { label: "So-so", fig: "?", sub: "A safe answer?", text: "Tell her she is so-so.",
+          run: () => pop("alert", "She laughs", "Words won't do · strike her while she asks") };
+      }
+    },
+    ubume: {
+      lock: "While she holds her baby, every blow lands at -80% and wakes her fury: +30% to her blows each time. Holding the baby she offers is a trap: it grows heavy (+40% slower) and her guard stays up.",
+      key: "When she offers her baby (\"Hold my baby\"), turn your back on her: Flee. The flight fails, but she lowers her baby to call after you: she loses her turn and her guard is down for 5 of your turns, +50% damage.",
+      st: () => ({ bare: 0, fury: 0 }),
+      atk: f => f.st.fury * 30,
+      status: f => f.st.bare ? "Guard down · " + f.st.bare : f.st.fury ? "Fury +" + f.st.fury * 30 + "%" : "Holds her baby",
+      opens: ["bare"],
+      onClose: () => pop("alert", "She holds it close again", "-80% damage · walk away when she offers"),
+      shield: f => !f.st.bare,
+      mod: f => {
+        if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
+        return { pct: LOCKED, tag: "-80%", bad: true, word: "She shields her baby", sub: ubumeOffers(f) ? "Fury +30% · blows won't reach her" : "Fury +30% · don't fight her" };
+      },
+      onHit: f => { if (!f.st.bare) f.st.fury++; },
+      plan: planWith(() => ({ targets: [weakestHero()], pow: 1.4 })),
+      live: (f, it, k) => k === 0 && it.special && f.answered ? pass("call", "Don't go!", "She reaches out for you", { w: 1.2 }) : it,
+      action: f => !ubumeOffers(f) ? null : {
+        label: "Hold the baby", fig: "", sub: "She offers it", text: "Take the baby she holds out to you.", w: 1.4,
+        run: () => pop("alert", "Heavier and heavier", "Her guard stays up · walk away from her") },
+      onFlee: f => !ubumeOffers(f) ? null : () => {
+        f.answered = true; openFor(f, "bare", true);
+        f.sA = 1.8;                      // the shield flares as it falls
+        pop("bonus", "She won't let you go", "Her shield falls · +50% for 5 turns");
+      }
+    },
+    /* A hungry ghost eats whatever hits it: a plain attack feeds it back its
+       damage as health, and only magic, which it cannot eat, hurts it. */
+    gaki: {
+      lock: "It eats what hits it: a plain attack heals it by the damage it would have dealt.",
+      key: "Magic hurts it: every scroll's blow +50% damage, light most of all (its weakness). An offering of 10 gold makes it eat instead of acting.",
+      needs: { magic: true, word: "No attack scroll", sub: "Only magic hurts it" },
+      status: () => "Starving",
+      plan: (f, j) => copyOf(basePlan(f, f.acts + j), { drain: true }),
+      mod: (f, h, id) => id === "attack" ? { heal: true, tag: "Heals", bad: true, word: "It eats your blow", sub: "Magic hurts it" } : { pct: EXPOSED, tag: "+50%" },
+      action: f => gold < 10 ? null : {
+        label: "Offering", fig: "10", sub: "10 gold · " + (gold - 10) + " left", text: "Throw it 10 gold: it eats instead and loses time.",
+        run: f2 => { gold -= 10; push(f2, 1.0, "It eats", "10 gold · " + gold + " left"); } }
+    },
+    /* Faceless: facing the party it is locked; turned away (its sprite
+       mirrored), it is open. The two phases alternate, counted in hero turns. */
+    nopperabo: {
+      lock: "Facing you, it is out of reach: -80% damage.",
+      key: "It turns its back on you every 3 of your turns: strike then, +200% damage (a blow in the back) for 5 of your turns, until it faces you again.",
+      st: () => ({ facing: 3, away: 0 }),
+      opens: ["facing", "away"],
+      onClose: (f, k) => {
+        if (k === "facing") {
+          openFor(f, "away", true); tween(f, "turn", 1, 0.5, inOut);
+          pop("bonus", "It turns away", "Strike its back · +200% for 5 turns");
+        } else {
+          f.st.facing = 3; tween(f, "turn", 0, 0.5, inOut);      // "facing" was counted before "away" this turn: no fresh
+          pop("alert", "It faces you again", "-80% damage · wait until it turns away");
+        }
+      },
+      status: f => f.st.away ? "Turned away · " + f.st.away : "Facing you · " + f.st.facing,
+      mod: f => f.st.away ? { pct: 200, tag: "+200%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "It faces you", sub: "Wait until it turns away" }
+    },
+
+    /* --- Shrine forest (Yuki: fire, Guard) ------------------------------------- */
+    kasaobake: {
+      lock: "It hops on its one leg: the first blow after each of its turns only grazes it, -80% damage.",
+      key: "A fire blow sets its paper alight for 5 of your turns: it can't hop. Or land a second blow before its turn: it trips and loses time.",
+      needs: { el: "fire", word: "No fire scroll", sub: "Fire stops its hops" },
+      st: () => ({ hits: 0, burn: 0 }),
+      status: f => f.st.burn ? "Alight · " + f.st.burn : "Hops · " + f.st.hits + "/2",
+      opens: ["burn"],
+      onClose: () => pop("alert", "The flame dies", "It hops again"),
+      mod: (f, h, id, el) => f.st.burn ? null : el === "fire" ? { tag: "Burns" } :
+        f.st.hits === 0 ? { pct: LOCKED, tag: "-80%", bad: true, word: "It hops aside", sub: "Fire, or a second blow" } : { tag: "Trips" },
+      onHit: (f, h, s) => {
+        if (f.st.burn) return;
+        if (s.el === "fire") { openFor(f, "burn", true); pop("combo", "Alight", "It can't hop · 5 turns"); return; }
+        if (++f.st.hits === 2) push(f, 0.8, "Tripped", "Off its one leg");
+      },
+      turn: f => { f.st.hits = 0; }
+    },
+    chochin: {
+      lock: "Its flame grows each of its turns (5 at most): its specials grow with it, and at 5 every turn is a Ghost flame on everyone. Fire feeds it: -80% damage and the flame grows by 2.",
+      key: "Ice puts the flame out (back to 0). A hero on Guard under its flame smothers 2.",
+      needs: { el: "ice", word: "No ice scroll", sub: "Ice puts its flame out" },
+      st: () => ({ flame: 0 }),
+      status: f => "Flame " + f.st.flame + "/5",
+      live: (f, it, k) => {
+        const fl = Math.min(5, f.st.flame + k);
+        if (fl >= 5) return { kind: "all", label: "Ghost flame", all: true, pow: 1.2, w: 1, special: true, fx: "all" };
+        return it.special ? copyOf(it, { pow: 0.4 + 0.2 * fl }) : it;
+      },
+      mod: (f, h, id, el) => el === "fire" ? { pct: LOCKED, tag: "-80%", bad: true, word: "It feeds on fire", sub: "Flame +2" } : el === "ice" ? { tag: "Douses" } : null,
+      onHit: (f, h, s) => {
+        if (s.el === "fire") f.st.flame = Math.min(5, f.st.flame + 2);
+        else if (s.el === "ice" && f.st.flame) { f.st.flame = 0; pop("combo", "Doused", "Flame 0/5"); }
+      },
+      onStrike: (f, h, it) => { if (it.special && h.guarding && f.st.flame) { f.st.flame = Math.max(0, f.st.flame - 2); pop("bonus", "Smothered", "Flame -2"); } },
+      turn: f => { f.st.flame = Math.min(5, f.st.flame + 1); }
+    },
+    jorogumo: {
+      lock: "Her silk wraps a hero (they lose time), and she hides behind her prey: while a hero is wrapped, -80% damage.",
+      key: "Cut the silk (another hero) or Struggle (the wrapped one, alone). A fire blow burns the silk. Freed, she cannot wrap anyone for 5 of your turns.",
+      st: () => ({ cocoon: null }),
+      curse: (f, h) => f.st.cocoon === h,
+      status: f => f.st.cocoon ? "Cocoon · " + f.st.cocoon.b.name : f.st.free ? "Silk torn · " + f.st.free : "Weaving",
+      opens: ["free"],
+      onClose: () => pop("alert", "She weaves again", "Her silk is back"),
+      plan: planWith(() => ({ kind: "cocoon", label: "Silk cocoon", cocoon: true, drain: false, pow: 0.8, targets: [randomHero()] })),
+      live: (f, it, k) => it.cocoon && openAt(f, "free", k) ? copyOf(it, { kind: "strike", label: "Silk lash", cocoon: false }) : it,
+      mod: (f, h, id, el) => !f.st.cocoon || f.st.cocoon.dead ? null : el === "fire" ? { tag: "Burns silk" } :
+        { pct: LOCKED, tag: "-80%", bad: true, word: "She hides behind her prey", sub: "Cut the silk" },
+      onHit: (f, h, s) => { if (s.el === "fire" && f.st.cocoon) freeCocoon(f, "The silk burns"); },
+      action: (f, h) => {
+        const c = f.st.cocoon;
+        if (!c || c.dead) return null;
+        if (c === h) return { label: "Struggle", fig: "", sub: "Tear yourself free", text: "You tear the silk: you are free, and your turn is spent.", run: f2 => freeCocoon(f2, "Free") };
+        return { label: "Cut the silk", fig: "", sub: c.b.name + " acts next", text: "You cut " + c.b.name + " free: they act right away.", run: f2 => freeCocoon(f2, "Freed") };
+      }
+    },
+    tengu: {
+      lock: "His fan parries every blow, -80% damage, and throws half of it back at the striker.",
+      key: "Be on Guard when his Gale fan blows: he is winded for 5 of your turns, +50% damage. A hero not on guard is blown back on the timeline.",
+      st: () => ({ winded: 0 }),
+      status: f => f.st.winded ? "Winded · " + f.st.winded : "Fan raised",
+      puff: f => f.st.winded > 0,
+      opens: ["winded"],
+      onClose: () => pop("alert", "Fan raised", "He parries again"),
+      plan: planWith(() => ({ kind: "gale", label: "Gale fan", gale: true, all: true, targets: null, pow: 0.6 })),
+      mod: f => f.st.winded ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, bounce: 50, word: "Parried", sub: "Guard through his gale" },
+      onGale: (f, guarded) => {
+        if (guarded) { openFor(f, "winded", false); pop("combo", "Winded", "+50% damage · 5 turns"); }
+      }
+    },
+
+    /* --- Drowned village (Haru: light, Guard) ---------------------------------- */
+    kappa: {
+      lock: "The water in the dish on its head protects it: -80% damage. The Bow on offer is a trap: it does not bow back.",
+      key: "While it gets ready to Drag under, cast a scroll at it (a blow of magic, not a plain attack): its dish splashes empty, it loses its dive and stays dry for 5 of your turns, +50% damage.",
+      needs: { magic: true, word: "No attack scroll", sub: "Only a scroll empties its dish" },
+      st: () => ({ dry: 0 }),
+      opens: ["dry"],
+      onClose: () => pop("alert", "Refilled", "-80% damage · a scroll before its dive"),
+      status: f => f.st.dry ? "Dry · " + f.st.dry : "Water full",
+      shield: f => !f.st.dry,
+      mod: (f, h, id) => {
+        if (f.st.dry) return { pct: EXPOSED, tag: "+50%" };
+        if (kappaDives(f) && id !== "attack") return { pct: EXPOSED, tag: "+50%", key: true };
+        return { pct: LOCKED, tag: "-80%", bad: true, word: "Its water protects it", sub: kappaDives(f) ? "Not a blade · a scroll" : "Wait for Drag under" };
+      },
+      onHit: (f, h, sk, r, m) => { if (m.key) { f.answered = true; openFor(f, "dry", true); pop("combo", "Splash!", "Its dish is empty · +50% for 5 turns"); } },
+      live: (f, it, k) => k === 0 && it.special && f.answered ? pass("spilled", "Spilled", "It gropes for its water", { w: 1.2 }) : it,
+      action: f => !kappaDives(f) ? null : {
+        label: "Bow", fig: "", sub: "Kappa are polite", text: "Bow to it.",
+        run: () => pop("alert", "It doesn't bow back", "Manners won't empty it · cast a scroll") }
+    },
+    /* Her special STUNS the hero it lands on: they skip their next turn. */
+    nureonna: {
+      lock: "Every other turn her special, Coil, stuns the hero it hits: when their turn comes they can't act, and play again the time after.",
+      key: "Be on Guard when Coil comes at you (the timeline shows who): she slips off the guard, no stun.",
+      status: () => "Coils",
+      /* Coil every other turn: Strike, Coil, Strike, Coil */
+      plan: (f, j) => (f.acts + j) % 2 === 0 ? basePlan(f, 0) :
+        { kind: "heavy", label: f.b.special, fx: "drain", w: 1.2, special: true, stun: true, pow: 1.7, targets: [randomHero()] },
+      onStrike: (f, h, it) => {
+        if (!it.stun || h.dead) return;
+        if (h.guarding) pop("bonus", "Slips off", "The guard holds · no stun");
+        else { h.stun = true; pop("alert", "Stunned", h.b.name + " loses the next turn"); }
+      }
+    },
+    funayurei: {
+      lock: "Each of its specials floods the boat (Water +1). At 4/4 the boat capsizes: a huge blow on every hero, who all drop to 1 HP.",
+      key: "From 3/4, the hero in turn can Pierce the bucket: the water drains by 1. Do it every time it reaches 3, or it capsizes.",
+      st: () => ({ water: 0 }),
+      status: f => "Water " + f.st.water + "/4",
+      plan: planWith(() => ({ after: f2 => { f2.st.water = Math.min(4, f2.st.water + 1); pop("alert", "The boat fills", "Water " + f2.st.water + "/4 · " + (f2.st.water >= 4 ? "it capsizes next turn" : "at 4 it capsizes")); } })),
+      live: (f, it, k) => k === 0 && f.st.water >= 4 ? { kind: "capsize", label: "Capsize", all: true, halve: true, toOne: true, pow: 1, w: 1, special: true, fx: "all",
+        after: f2 => { f2.st.water = 0; pop("danger", "Capsized", "Every hero down to 1 HP"); } } : it,
+      action: f => f.st.water < 3 ? null : {
+        label: "Pierce the bucket", fig: f.st.water + "/4", sub: "Water -1", text: "Punch a hole in the bucket: the water drains by 1, back to " + (f.st.water - 1) + "/4.",
+        run: f2 => { f2.st.water--; pop("bonus", "The water drains", "Water " + f2.st.water + "/4"); } }
+    },
+    umibozu: {
+      lock: "At high tide the sea covers it: -80% damage. Its tides hit every hero.",
+      key: "Read its cycle: rising tide, black tide, then the EBB. After the ebb it is bare for 5 of your turns, +50% damage. Guard through the black tide.",
+      st: () => ({ ebb: 0 }),
+      status: f => f.st.ebb ? "Ebb · " + f.st.ebb : "High tide",
+      dazed: f => f.st.ebb > 0,
+      opens: ["ebb"],
+      onClose: () => pop("alert", "The tide rises", "-80% damage"),
+      plan: (f, j) => {
+        const i = (f.acts + j) % 3;
+        if (i === 0) return { kind: "all", label: "Rising tide", all: true, pow: 0.5, w: 1, fx: "all" };
+        if (i === 1) return { kind: "all", label: "Black tide", all: true, pow: 1.2, w: 1.2, special: true, fx: "all" };
+        return pass("ebb", "Ebb", "The sea pulls back", { after: f2 => { openFor(f2, "ebb", false); pop("combo", "Ebb", "Strike now · +50% for 5 turns"); } });
+      },
+      mod: f => f.st.ebb ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The tide covers it", sub: "Strike at the ebb" }
+    },
+
+    /* --- Gate of Yomi (Kenji: slash, Guard) ----------------------------------- */
+    rokurokubi: {
+      lock: "Its blows reach past any guard. Its body is out of reach: -80% damage.",
+      key: "After its Long neck the neck stays out until its next turn: a slash then cuts it, +100% damage, stuns it, and leaves it open for 5 of your turns, +50% damage. Any other blow at the neck still -80%.",
+      st: () => ({ neck: false, cut: 0 }),
+      status: f => f.st.neck ? "Neck out" : f.st.cut ? "Cut · " + f.st.cut : "Neck in",
+      dazed: f => !!f.st.neck,                    // the stars mark the neck out: the moment a slash cuts
+      opens: ["cut"],
+      onClose: () => pop("alert", "It heals its neck", "-80% damage"),
+      plan: (f, j) => {
+        const i = f.acts + j;
+        if (i % 2 === 1) return { kind: "heavy", label: "Long neck", targets: [randomHero()], pow: 1.6, w: 1, special: true, pierce: true, fx: "heavy",
+          after: f2 => { f2.st.neck = true; pop("combo", "Neck out", "Slash it · +100%"); } };
+        return copyOf(basePlan(f, 0), { pierce: true });
+      },
+      begin: f => { f.st.neck = false; },
+      mod: (f, h, id, el) => f.st.neck && el === "slash" ? { pct: 100, tag: "+100%" } : f.st.cut ? { pct: EXPOSED, tag: "+50%" } :
+        { pct: LOCKED, tag: "-80%", bad: true, word: f.st.neck ? "It slips past" : "Out of reach", sub: f.st.neck ? "Only a slash cuts the neck" : "Wait for the long neck" },
+      onHit: (f, h, s) => { if (f.st.neck && s.el === "slash") { f.st.neck = false; openFor(f, "cut", true); push(f, 0.6, "Neck cut", "Stunned · +50% for 5 turns"); } }
+    },
+    gashadokuro: {
+      lock: "Its bones rattle with every blow: at the third, it crushes every hero.",
+      key: "A light blow scatters the rattle (0/3). Or flee (it always works, it is slow): met again, it is asleep for 5 of your turns, +100% damage.",
+      flee: { p: 100, ok: "Too slow to follow" },
+      st: o => ({ rattle: 0, asleep: o.met ? OPEN : 0 }),
+      opens: ["asleep"],
+      onClose: () => pop("alert", "It wakes", "Rattle 0/3"),
+      plan: planWith(() => ({ label: "Giant's grasp" })),
+      status: f => f.st.asleep ? "Asleep · " + f.st.asleep : "Rattle " + f.st.rattle + "/3",
+      mod: (f, h, id, el) => f.st.asleep ? { pct: 100, tag: "+100%" } : el === "light" ? { tag: "Scatters" } : f.st.rattle === 2 ? { tag: "Crush", bad: true } : null,
+      onHit: (f, h, s) => {
+        if (f.st.asleep) return;
+        if (s.el === "light") { f.st.rattle = 0; pop("bonus", "Scattered", "Rattle 0/3"); return; }
+        if (++f.st.rattle >= 3) { f.st.rattle = 0; boneCrush(f); }
+      },
+      live: (f, it, k) => openAt(f, "asleep", k) ? pass("asleep", "Asleep", "Zzz") : it,
+      onMet: () => pop("combo", "Asleep", "+100% damage · 5 turns")
+    },
+    /* It learns the last kind of blow it took, a plain attack or a scroll:
+       the same kind again only grazes it. The party has to alternate. */
+    oni: {
+      lock: "It learns the last kind of blow it took: a plain attack, or a scroll. The same kind again lands at -80%.",
+      key: "Alternate: a plain attack, then a scroll, then a plain attack... Every blow of the other kind lands in full.",
+      st: () => ({ last: null }),
+      status: f => f.st.last === "blade" ? "Guards blades" : f.st.last === "magic" ? "Guards magic" : "Learning",
+      mod: (f, h, id) => {
+        const type = id === "attack" ? "blade" : "magic";
+        if (f.st.last !== type) return { type };
+        return { type, pct: LOCKED, tag: "-80%", bad: true, word: "It learnt that one",
+          sub: type === "blade" ? "Not a blade twice · cast a scroll" : "Not magic twice · strike with a blade" };
+      },
+      onHit: (f, h, sk, r, m) => { f.st.last = m.type; }
+    },
+    /* Its every turn pays its Grudge back on the whole party: the way is to
+       keep it from ever acting, a blue action pushing its turn back. */
+    onryo: {
+      lock: "It keeps every blow it takes as Grudge, and every one of its turns pays it back on every hero (30% of the Grudge each). Fleeing never works.",
+      key: "Hold it back: every blue action (guard, heal, ward, a scroll on an ally) pushes its turn back by two of yours. Alternate a blow and a blue action and it never strikes. A light blow purifies half the Grudge.",
+      flee: { p: 0, sub: "Its grudge follows you" },
+      st: () => ({ grudge: 0 }),
+      status: f => "Grudge " + f.st.grudge,
+      live: (f, it) => copyOf(it, { all: true, targets: null, fear: false, drain: false, pow: 0.5, flat: Math.round(f.st.grudge * 0.3), label: "Grudge", special: true, fx: "all",
+        after: f2 => { f2.st.grudge = 0; } }),
+      mod: (f, h, id, el) => el === "light" ? { tag: "Purifies" } : { tag: "Grudge", bad: true },
+      onHit: (f, h, s, r) => {
+        if (s.el === "light") { f.st.grudge = Math.round(f.st.grudge / 2); pop("bonus", "Purified", "Grudge -50%"); }
+        else f.st.grudge += r.dmg;
+      },
+      onBlue: (f, h) => { f.ct += wait(h) * ONRYO_PUSH; pop("bonus", "Held back", "Its turn moves back"); }
+    }
+  };
+
+  /* --- what some rules share ------------------------------------------------ */
+  function tripTeke(f, during) {
+    openFor(f, "down", !during); f.st.rising = false; f.plan = [];   // 5 hero turns fallen, then a turn of hers getting up
+    tween(f, "fall", 1, 0.5, outBack);
+    pop("combo", "Tripped", "+50% damage until she's up · 5 turns");
+  }
+  function freeCocoon(f, word) {
+    const h = f.st.cocoon;
+    f.st.cocoon = null;
+    openFor(f, "free", true);
+    if (!h || h.dead) return;
+    h.ct = 0;
+    pop("bonus", word, h.b.name + " acts next");
+  }
+  /* Gashadokuro's answer to its third blow: every hero, crushed. */
+  function boneCrush(f) {
+    later(0.35, () => {
+      if (!foe || foe !== f || f.dead) return;
+      f.lunge = 0.6; f.cast = 1;
+      pop("danger", "Bone crush", "Every hero");
+      alive().forEach(h => { spell("spells14", h, 1.0); hurtHero(h, estimate({ pow: 1.4 }, h, h.guarding, ward > 0, false), f, true); });
+    });
+  }
+  function ruleAction() {
+    const R = rule(), h = activeHero();
+    return R && R.action && h && foe && !foe.dead && !over ? R.action(foe, h) : null;
+  }
+
+  /* --- the beats --------------------------------------------------------- */
+  function impact(target, from, dmg, opts) {
+    opts = opts || {};
+    target.hurt = 0.4; target.flash = 1;
+    const dx = target.hx - from.hx, dz = target.hz - from.hz, d = Math.hypot(dx, dz) || 1;
+    target.kx = dx / d * 0.25; target.kz = dz / d * 0.25;
+    tween(target, "kx", 0, 0.35); tween(target, "kz", 0, 0.35);
+    if (opts.heal) target.hp = Math.min(target.mhp, target.hp + dmg);
+    else target.hp = Math.max(0, target.hp - dmg);
+    nums.push({ a: target, txt: (opts.heal ? "+" : "-") + dmg, col: opts.heal ? "#7ee0a1" : target.kind === "foe" ? (opts.el ? ELEMENTS[opts.el].color : "#ffffff") : "#ff5d73",
+      t: 0, life: 1.1, weak: !!opts.weak, ox: rnd(-20, 20) });
+    if (opts.heal) { target.hurt = 0; target.flash = 0.6; return; }
+    const k = opts.weak ? 1.6 : opts.big ? 1.3 : 1;
+    cam.shake = Math.max(cam.shake, P.shake * k);
+    cam.punch = P.punch * k;
+    hitstop = P.hitstop * k;
+    flashA = P.flash * (opts.weak ? 1 : 0.55); flashC = opts.el ? ELEMENTS[opts.el].color : "#ffffff";
+    cam.subject = target;
+  }
+  /* a blow that lands on nothing: the thud, a grey 0, no health moves */
+  function thud(target) {
+    target.hurt = 0.25;
+    cam.shake = Math.max(cam.shake, P.shake * 0.5);
+    nums.push({ a: target, txt: "0", col: "#9aa0b5", t: 0, life: 1.1, weak: false, ox: rnd(-20, 20) });
+  }
+  /* A hero hurt. In an endless fight they never fall under 1 HP. */
+  function hurtHero(h, dmg, from, big) {
+    impact(h, from, dmg, { big });
+    if (h.hp > 0) return;
+    if (S.endless === "on") { h.hp = 1; pop("alert", h.b.name, "Down"); log("event", "Endless", h.b.name + " kept at 1 HP"); return; }
+    h.dead = true; h.hp = 0;
+    if (foe && foe.st && foe.st.cocoon === h) foe.st.cocoon = null;
+    pop("alert", h.b.name, "Down");
+  }
+  function spell(key, a, scale) { fxs.push({ key, a, t: 0, d: 0.75, s: (scale || 1.1) }); }
+
+  /* The game's damage formula: weak 1.6x (and ONE MORE), resisted 0.5x, 8% crits;
+     then the rule's own modifier `m`, a whole percentage. */
+  function blowMod(h, id, el) { const R = rule(); return (R && R.mod && R.mod(foe, h, id, el)) || {}; }
+  function strike(att, tgt, pow, el, pierce, m) {
+    const def = pierce ? tgt.def * 0.3 : tgt.def;
+    let d = att.atk * pow * 2.4 * (14 / (14 + def));        // no luck: the preview is what lands (a crit apart)
+    let weak = false, resist = false, crit = false;
+    if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
+    else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
+    learn(tgt, el);
+    if (!resist && !m.zero && !m.heal && !m.redirect && !(m.pct < 0) && Math.random() < 0.08) { crit = true; d *= 1.5; }
+    const raw = Math.max(1, Math.round(d));
+    if (m.pct) d *= 1 + m.pct / 100;
+    return { dmg: m.zero ? 0 : Math.max(1, Math.round(d)), raw, weak, resist, crit };
+  }
+  /* The same, without the luck: what a scroll's face promises the yokai. */
+  function hitEstimate(h, id) {
+    const s = SKILLS[id], elId = h.imbue || s.el, mult = h.whet || 1, def = s.pierce ? foe.def * 0.3 : foe.def;
+    let d = h.atk * s.pow * (id === "attack" ? 1 : h.pow) * mult * 2.4 * (14 / (14 + def));
+    const k = foe.known[elId], weak = k === "weak", resist = k === "resist";      // only once FOUND, as the game
+    if (weak) d *= 1.6; else if (resist) d *= 0.5;
+    const m = blowMod(h, id, elId);
+    if (m.pct) d *= 1 + m.pct / 100;
+    /* an element never tried on this yokai may be resisted (half) or a weakness
+       (+60%): the preview is that range, so it never promises a wrong figure
+       and never gives the weakness away */
+    const unsure = !k, z = m.zero || m.redirect;
+    return { dmg: z ? 0 : Math.max(1, Math.round(d)), lo: z ? 0 : Math.max(1, Math.round(unsure ? d * 0.5 : d)), hi: z ? 0 : Math.max(1, Math.round(unsure ? d * 1.6 : d)),
+      unsure, weak, resist, el: elId, m };
+  }
+
+  /* --- THE SCROLLS' FACES ------------------------------------------------
+     What scroll `id` does on target `tg` ({ foe: true } or { hero }), as a
+     label: `word` (what a bar says in words), `fig` (the figure), `sub` (the
+     noun next to the figure), a `tag` (Weak, Resist, +5 SP) and its colour.
+     The yokai's rule card and the flight are no scroll: they have no face. */
+  function fits(id, tg) {
+    if (!tg || !SKILLS[id]) return false;
+    if (tg.foe) return !!foe && !foe.dead;
+    return !!tg.hero && !tg.hero.dead && !(SKILLS[id].noSelf && tg.hero === activeHero());
+  }
+  function faceOn(id, tg) {
+    const s = SKILLS[id], a = activeHero();
+    if (!a || !fits(id, tg)) return null;
+    if (tg.foe) {
+      switch (s.foe) {
+        case "hit": {
+          const r = hitEstimate(a, id);
+          if (r.m.heal) return { kind: "hit", word: "Heals it", fig: "+" + r.dmg, sub: "Heals it", tag: r.m.tag, tagCol: "#7ee0a1", tone: "" };
+          return { kind: "hit", word: "Hit", fig: r.unsure ? "−" + r.lo + " to " + r.hi : "−" + r.dmg, sub: "Hit", tag: r.m.tag || (r.weak ? "Weak" : r.resist ? "Resist" : ""), tagCol: r.weak ? ELEMENTS[r.el].color : "#9aa0b5", tone: "dmg" };
+        }
+        case "provoke": return { kind: "provoke", word: "Provoke", fig: "", sub: "", tag: "", tone: "" };
+        case "pacify":  return { kind: "pacify", word: "Blow −50%", fig: "−50%", sub: "Blow", tag: "", tone: "" };
+        case "bind":    return { kind: "bind", word: "Push back", fig: "", sub: "", tag: "", tone: "" };
+      }
+    }
+    const x = tg.hero;
+    switch (s.ally) {
+      case "cover":  return { kind: "cover", word: "Cover", fig: "", sub: "", tag: "", tone: "" };
+      case "imbue":  return { kind: "imbue", word: "Next: " + ELEMENTS[s.el].name, fig: ELEMENTS[s.el].name, sub: "Next blow", tag: "", tone: "" };
+      case "whet":   return { kind: "whet", word: "Next +50%", fig: "+50%", sub: "Next blow", tag: "", tone: "" };
+      case "hasten": return { kind: "hasten", word: "Hasten", fig: "", sub: "", tag: "", tone: "" };
+      case "guard":  return { kind: "guard", word: "Blows −50%", fig: "−50%", sub: "Blows", tag: x === a ? "+5 SP" : "", tagCol: "#8fdcff", tone: "" };
+      case "heal": {
+        const g = Math.min(x.mhp - x.hp, Math.round(x.mhp * s.pow * a.pow));
+        return { kind: "heal", word: "+" + g + " HP", fig: "+" + g, sub: "HP", tag: "", tone: "heal" };
+      }
+      case "ward":   return { kind: "ward", word: "−40% ×" + s.turns, fig: "−40%", sub: "Ward ×" + s.turns, tag: "", tone: "" };
+    }
+    return null;
+  }
+
+  /* --- the heroes: casting a scroll --------------------------------------- */
+  function canAct() { return !busy && !over && turn === 0 && !!activeHero() && !!foe && !foe.dead; }
+
+  /* The one way a scroll leaves the hero's hand. Returns false when it did not
+     go (no turn, no SP, no face on that target). */
+  function cast(id, tg) {
+    if (!canAct()) return false;
+    const h = activeHero(), s = SKILLS[id];
+    if (s.sp > h.sp) { say("Not enough SP"); return false; }
+    if (!fits(id, tg)) return false;
+    h.sp -= s.sp; busy = true; turn = 1;
+    clearUi();
+    cam.subject = h;
+    const R = rule();
+    if (!tg.foe && R && R.onBlue) later(0.5, () => { if (foe && !foe.dead && !over) R.onBlue(foe, h, id); });   // a blue face played (Onryo)
+    if (tg.foe) {
+      if (s.foe === "hit") { hitFoe(h, id, s); return true; }
+      h.cast = 0.9;
+      later(0.3, () => {
+        if (s.foe === "provoke") {
+          foe.taunt = h; h.guarding = true; spell(s.fx, h, 0.9); pop("bonus", "Provoked", h.b.name);
+        } else if (s.foe === "pacify") {
+          foe.pacify = true; spell(s.fx, foe, 1.0); pop("bonus", "Pacified", "Its next blow −50%");
+        } else if (s.foe === "bind") {
+          spell(s.fx, foe, 1.0); push(foe, BIND, "Bound");
+        }
+      });
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    const x = tg.hero;
+    if (s.ally === "guard") {
+      spell(s.fx, x, 0.9);
+      x.guarding = true; x.guard = 1.2; h.cast = 0.4;
+      if (x === h) { h.sp = Math.min(h.msp, h.sp + 5); pop("score", "+5 SP"); }
+      else pop("bonus", "Guarded", x.b.name);
+      later(0.7, () => endHero(h, s.w));
+      return true;
+    }
+    if (s.ally === "heal") {
+      h.cast = 0.9;
+      later(0.3, () => alive().forEach(y => { spell(s.fx, y, 0.9); impact(y, h, Math.min(y.mhp - y.hp, Math.round(y.mhp * s.pow * h.pow)), { heal: true }); }));
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    if (s.ally === "ward") {
+      h.cast = 0.9; ward = s.turns;
+      alive().forEach(y => spell(s.fx, y, 0.9));
+      pop("bonus", "Spirit ward", "Less damage taken");
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    /* a blow laid on an ally: a gift for their next blow, a body in front of
+       them, or a step up the timeline */
+    h.cast = 0.9;
+    later(0.3, () => {
+      x.flash = 0.6;
+      spell(s.fx, x, 0.9);
+      if (s.ally === "imbue") { x.imbue = s.el; pop("bonus", ELEMENTS[s.el].name, x.b.name); }
+      else if (s.ally === "whet") { x.whet = WHET; pop("bonus", "Whetted", x.b.name); }
+      else if (s.ally === "cover") { x.cover = h; pop("bonus", "Covered", x.b.name); }
+      else if (s.ally === "hasten") { x.ct = Math.max(0, x.ct - wait(x) * HASTEN); pop("bonus", "Hastened", x.b.name); }
+    });
+    later(1.0, () => endHero(h, s.w));
+    return true;
+  }
+  /* A blow at the yokai: the hero dashes most of the way to it and back. The
+     rule's modifier is read the instant it lands: a blow may hit a door (0),
+     heal the yokai, land on a cocoon, be parried back, or land harder. */
+  function hitFoe(h, id, s) {
+    const f = foe, skill = id !== "attack", R = rule();
+    let again = false;
+    const elId = h.imbue || s.el, mult = h.whet || 1, sk = elId === s.el ? s : Object.assign({}, s, { el: elId });
+    h.imbue = null; h.whet = 0;
+    if (skill) h.cast = 0.9; else h.lunge = 0.6;
+    h.dashTo = { x: f.hx + (h.hx - f.hx) * 0.3, z: f.hz + (h.hz - f.hz) * 0.3 };
+    tween(h, "dash", skill ? 0.35 : 1, 0.22);
+    later(skill ? 0.38 : 0.24, () => {
+      const m = blowMod(h, id, elId), r = strike(h, f, s.pow * (skill ? h.pow : 1) * mult, elId, s.pierce, m);
+      spell(r.crit ? "spells14" : s.fx, f, 1.15);
+      f.hitSince = true; f.lastHitter = h; h.struck = true;
+      if (R.shield && R.shield(f)) f.sA = 1.7;
+      if (m.bounce) { const b = Math.max(1, Math.round(r.raw * m.bounce / 100)); later(0.3, () => { if (foe === f) hurtHero(h, b, f); }); }
+      if (m.zero) thud(f);
+      else if (m.heal) impact(f, h, r.dmg, { heal: true });
+      else if (m.redirect && f.st.cocoon) hurtHero(f.st.cocoon, r.dmg, h);
+      else impact(f, h, r.dmg, { el: elId, weak: r.weak });
+      if (m.word) pop("alert", m.word, m.sub);
+      if (f.hp <= 0) return;
+      const landed = !m.zero && !m.heal && !m.redirect, full = landed && !(m.pct < 0);   // a blow the lock cut down earns no ONE MORE
+      if (s.push && landed) push(f, s.push, "Stunned");
+      if (R.onHit) R.onHit(f, h, sk, r, m);
+      if (full && r.weak && !extra) { again = true; pop("combo", "Weak!", "One more"); f.boost = 1; tween(f, "boost", 0, 1.2); }
+      else if (landed && r.crit) pop("streak", "Critical");
+      else if (landed && r.resist) pop("alert", "Resisted");
+    });
+    later(0.62, () => { tween(h, "dash", 0, 0.32, inOut); });
+    later(1.05, () => {
+      cam.subject = null;
+      if (f.hp <= 0) { exorcise(); return; }
+      if (again && !h.dead) { extra = true; busy = false; turn = 0; newTurn(); return; }   // ONE MORE: the same hero, the same slot
+      endHero(h, s.w);
+    });
+  }
+  /* The gold card: what the yokai's rule hands the hero whose turn it is. */
+  function ruleAct() {
+    const ra = ruleAction();
+    if (!ra || !canAct()) return;
+    const h = activeHero();
+    busy = true; turn = 1; clearUi(); cam.subject = h; h.cast = 0.9;
+    spell("spells04", h, 0.9);
+    later(0.3, () => ra.run(foe, h));
+    later(1.0, () => endHero(h, ra.w || 1));
+  }
+  /* FLEE: the odds a hero has of getting the party out. */
+  function fleeOdds(h) {
+    const R = rule();
+    if (R && R.flee && R.flee.p != null) return R.flee.p;
+    return clamp(FLEE.base + FLEE.perSpd * Math.round(h.spd - foe.spd), FLEE.min, FLEE.max);
+  }
+  function flee() {
+    if (!canAct()) return;
+    const h = activeHero(), R = rule(), f = foe, p = fleeOdds(h);
+    busy = true; turn = 1; clearUi(); cam.subject = h;
+    h.dashTo = { x: h.hx - 3, z: h.hz }; tween(h, "dash", 0.6, 0.3);
+    const key = R && R.onFlee ? R.onFlee(f, h) : null;   // a rule may make the flight its key: it fails, nothing strikes
+    later(0.45, () => {
+      if (key) {
+        tween(h, "dash", 0, 0.3, inOut);
+        later(0.3, () => { if (foe === f) key(); });
+        later(1.6, () => endHero(h, 1));
+        return;
+      }
+      if (Math.random() * 100 < p) {
+        pop("bonus", "Escaped", (R.flee && R.flee.ok) || "Back on the map · it moves room");
+        log("event", "Flight", "In the game: back on the map, the yokai in another room. Here: met again.");
+        over = true;
+        party.forEach(x => { tween(x, "enter", 0, 0.5, inOut, 0.2); });
+        later(1.8, () => startFight(foeId, { met: true }));
+        return;
+      }
+      tween(h, "dash", 0, 0.3, inOut);
+      pop("alert", "Can't escape", (R.flee && R.flee.sub) || "It strikes");
+      later(0.55, () => {
+        if (foe !== f) return;
+        f.lunge = 0.6;
+        spell("spells13", h, 1.0);
+        hurtHero(h, estimate({ pow: 1 }, h, false, ward > 0, false), f);
+      });
+      later(1.4, () => endHero(h, 1));
+    });
+  }
+  function endHero(h, w) {
+    if (over) return;
+    const R = rule(), struck = !!h.struck;
+    h.struck = false;
+    if (R && R.opens) R.opens.forEach(k => { if (tick(foe.st, k) && R.onClose) R.onClose(foe, k); });
+    if (R && R.heroTurn && R.heroTurn(foe, h, struck)) { busy = true; cam.subject = null; return; }   // a whole hero turn, a blow at it or none; true holds the fight
+
+    h.n++; h.ct = wait(h) * weightOf(h, w);
+    lastHero = h;
+    cam.subject = null; busy = false;
+    step();
+  }
+
+  /* --- the yokai --------------------------------------------------------- */
+  function foeAct() {
+    if (over || !foe || foe.dead) return;
+    const f = foe, R = rule();
+    if (R.begin) R.begin(f);
+    let it = liveIntent(0);
+    f.plan.shift(); f.acts++;
+    busy = true;
+    if (it.kind === "leave") { letGo(); return; }
+    if (it.kind === "question") it = Math.random() < 0.5 ? it.alt.red : it.alt.blue;
+    f.doing = it;
+    if (!it.pow && !it.flat && !it.halve) {               // a turn with no blow in it
+      pop("bonus", it.label, it.sub || "No blow this turn");
+      later(1.0, () => endFoe(it));
+      return;
+    }
+    const big = !!it.special;
+    cam.subject = f;
+    const tg0 = targetsOf(it, true);
+    if (R.cancel && R.cancel(f, it, tg0)) { cancelBlow(f, it, tg0[0], big); return; }
+    if (big) {
+      f.cast = 1.5; f.boost = 1.5; tween(f, "boost", 0.3, 1.6, inOut);
+      later(0.35, () => pop("ribbon", it.label));
+    } else {
+      f.lunge = 0.6;
+      const h0 = targetsOf(it, true)[0] || randomHero();
+      if (h0) { f.dashTo = { x: h0.hx + (f.hx - h0.hx) * 0.3, z: h0.hz + (f.hz - h0.hz) * 0.3 }; tween(f, "dash", 1, 0.24); }
+      later(0.62, () => { tween(f, "dash", 0, 0.34, inOut); });
+    }
+    later(big ? 1.05 : 0.26, () => {
+      let tg = targetsOf(it, true);
+      if (!tg.length && alive().length) tg = [randomHero()];
+      let total = 0;
+      tg.forEach(h => {
+        const dmg = estimate(it, h, h.guarding, ward > 0, true);
+        total += dmg;
+        spell(MOVE_FX[it.fx] || "spells13", h, 1.0);
+        hurtHero(h, dmg, f, big);
+        if (h.dead) return;
+        if (it.fear) push(h, FEAR_PUSH, "Frozen with fear");
+        if (it.cocoon) { h.ct += wait(h); f.st.cocoon = h; pop("alert", "Wrapped in silk", h.b.name + " loses time"); }
+        if (R.onStrike) R.onStrike(f, h, it, dmg);
+      });
+      if (it.gale) {
+        const guarded = alive().some(h => h.guarding);
+        alive().forEach(h => { if (!h.guarding) h.ct += wait(h) * 0.6; });
+        if (!guarded) pop("alert", "Blown back", "Guard holds firm");
+        if (R.onGale) R.onGale(f, guarded);
+      }
+      const feast = R.feast ? R.feast(f) : it.drain ? 50 : 0;
+      if (feast && total && (it.drain || R.feast)) later(0.3, () => impact(f, f, Math.round(total * feast / 100), { heal: true }));
+      if (ward > 0) ward--;
+      if (big) { flashC = "#e2364b"; flashA = Math.max(flashA, P.flash * 0.8); }
+    });
+    later(big ? 1.9 : 1.05, () => { f.boost = 0; endFoe(it); });
+  }
+  /* A blow the rule cancels before it lands (Teke Teke charging a hero on
+     guard): the dash stops a third of the way, nobody is hurt, the guard
+     flares, and the rule says what follows (`onCancel`). */
+  function cancelBlow(f, it, h, big) {
+    const at = big ? 0.5 : 0;         // a special is named first, then it charges
+    if (big) { f.cast = 0.6; pop("ribbon", it.label); }
+    later(at, () => {
+      if (foe !== f) return;
+      f.lunge = 0.4;
+      f.dashTo = { x: h.hx + (f.hx - h.hx) * 0.3, z: h.hz + (f.hz - h.hz) * 0.3 };
+      tween(f, "dash", 1, 0.24);
+    });
+    later(at + 0.1, () => {
+      if (foe !== f) return;
+      tweens = tweens.filter(t => !(t.o === f && t.k === "dash"));     // the charge stops where it is
+      f.hurt = 0.3; h.guard = 1.2; h.gA = 1.6;
+      spell("spells04", h, 0.9);
+      cam.shake = Math.max(cam.shake, P.shake * 0.6);
+      RULES[f.id].onCancel(f, h, it);
+      tween(f, "dash", 0, 0.5, inOut, 0.15);
+    });
+    later(at + 1.6, () => endFoe(it));
+  }
+  function endFoe(it) {
+    if (over) return;
+    const f = foe, R = rule();
+    if (it.after) it.after(f);
+    if (R.turn) R.turn(f);
+    f.n++; f.ct = wait(f) * it.w;
+    f.hitSince = false; f.answered = false; f.doing = null;
+    f.taunt = null; f.pacify = false;            // a scroll bends one turn of the yokai
+    party.forEach(h => { h.cover = null; });
+    cam.subject = null; busy = false;
+    step();
+  }
+
+  /* --- the scheduler ----------------------------------------------------- */
+  function step() {
+    if (over || !foe || foe.dead) return;
+    if (!alive().length) { wipe(); return; }
+    const u = lowest(units()), d = u.ct;
+    units().forEach(o => { o.ct -= d; });
+    u.ct = 0;
+    if (u.kind === "foe") { turn = 1; later(0.45, foeAct); return; }
+    active = party.indexOf(u); setTargets();
+    u.guarding = false; u.coiled = false; extra = false;
+    turn = 0;
+    newTurn();
+    if (u.stun) {                         // stunned: the card is shown, the turn is lost, the next one is theirs again
+      busy = true; cam.subject = u;
+      pop("alert", "Stunned", u.b.name + " can't act this turn");
+      later(1.6, () => { if (over) return; u.stun = false; endHero(u, 1); });
+    }
+  }
+  /* The three ends of a lab fight: they all start it again. */
+  function exorcise() {
+    const f = foe;
+    if (!f || f.dead) return;
+    busy = true; over = true; clearUi();
+    cam.subject = f;
+    spell("spells01", f, 1.5);
+    f.dead = true;
+    score += Math.round((f.mhp + 40) / 10) * 10; foesDown++;
+    pop("bonus", "Exorcised", "The fight starts again");
+    later(0.3, () => tween(f, "fade", 0, 1.3, inOut));
+    later(2.2, () => startFight(foeId));
+  }
+  function letGo() {
+    const f = foe;
+    busy = true; over = true; clearUi();
+    f.dead = true;
+    foesDown++;
+    pop("bonus", "He walks away", "Laid to rest · counts as exorcised");
+    tween(f, "fade", 0, 1.3, inOut);
+    later(2.4, () => startFight(foeId));
+  }
+  function wipe() {
+    over = true; busy = true; clearUi();
+    pop("alert", "Wiped out", "The fight starts again");
+    later(2.0, () => startFight(foeId));
+  }
+  let foeId = FOE_IDS[0];
+  function partyIds(id) {
+    const lead = bandOf(id).lead;
+    return [lead].concat(HERO_IDS.filter(x => x !== lead)).slice(0, +S.party);
+  }
+  function startFight(id, o) {
+    o = o || {};
+    jobs = []; tweens = []; parts = []; nums = []; calls = []; fxs = [];
+    busy = false; over = false; extra = false; ward = 0; lastHero = null; gold = GOLD;
+    foeId = id; preloadFoe(id);
+    party = partyIds(id).map((pid, i) => makeHero(pid, i));
+    party.forEach(h => { h.ct = wait(h); });
+    foe = makeFoe(id, o);
+    foe.ct = wait(foe);
+    active = 0; turn = 1;
+    clearUi();
+    setTargets(true);
+    enterT = 0;
+    all().forEach((a, i) => { a.enter = 0; tween(a, "enter", 1, 0.55, outCubic, a.kind === "foe" ? 0.62 : 0.45 + i * 0.09); });
+    if (o.fresh) { fightT = 0; logEl.innerHTML = ""; score = 0; foesDown = 0; }
+    log("event", o.met ? "Met again" : "Fight", FOES[id].name + " · " + bandOf(id).name);
+    paintRule();
+    const R = rule();
+    later(1.0, () => { if (o.met && R.onMet) R.onMet(foe); else pop("ribbon", FOES[id].name, bandOf(id).name); });
+    later(2.2, () => { const n = foe && foe.id === id && !over ? missingKey() : null; if (n) pop("alert", n.word, n.sub); });
+    later(1.6, step);
+  }
+
+  /* =========================================================================
+     4. THE CAMERA AND THE PROJECTION
+     ========================================================================= */
+  const cam = { x: W / 2, y: H / 2, z: 1, shake: 0, punch: 0, subject: null, sx: 0, sy: 0 };
+
+  /* A point on the ground (x across, z into the screen) seen by a camera
+     standing `persp` units in front of the pivot: s is the scale there, so a
+     near hero is bigger and lower. */
+  function proj(wx, wz) {
+    const pz = P.pivotZ, dz = wz - pz, x = wx, z = dz + pz;
+    const D = P.persp, q = Math.max(D * 0.3, z + D), k = D / q;
+    return { x: W / 2 + P.unit * x * k, y: P.groundY - P.unit * P.tilt * D * z / q, s: k, z };
+  }
+  function place(a) {
+    const x = a.hx + (a.dashTo.x - a.hx) * a.dash * P.dash + a.kx + (a.kind === "foe" ? 6.5 : -6.5) * (1 - a.enter);
+    const z = a.hz + (a.dashTo.z - a.hz) * a.dash * P.dash + a.kz;
+    const p = proj(x, z);
+    a.wx = x; a.wz = z; a.sx = p.x; a.sy = p.y; a.depth = p.z; a.k = p.s;
+    a.s = (a.kind === "foe" ? 320 * P.foeScale : 200 * P.heroScale) * p.s;
+    a.alpha = 1; a.dy = 0;
+    if (a.kind === "foe") a.dy += Math.sin(T * 1.6) * 8;
+    if (a.hurt > 0) a.sx += Math.sin(a.hurt * 60) * 7;
+    if (a.dead && a.kind === "foe") { a.alpha *= a.fade; a.dy -= (1 - a.fade) * 80; }
+  }
+  function updateCamera(dt) {
+    let tx = W / 2, ty = H / 2, tz = 1;
+    const subj = cam.subject;
+    if (subj && subj.sx != null) {
+      tz = 1 + P.actZoom;
+      tx = W / 2 + (subj.sx - W / 2) * P.follow;
+      ty = H / 2 + (subj.sy + subj.dy - subj.s * 0.45 - H / 2) * P.follow;
+    }
+    const hw = W / 2 / tz, hh = H / 2 / tz;
+    tx = clamp(tx, hw, W - hw); ty = clamp(ty, hh, H - hh);
+    const k = Math.min(1, dt * P.camSpeed);
+    cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; cam.z += (tz - cam.z) * k;
+    cam.punch *= Math.pow(0.0005, dt);
+    cam.shake *= Math.pow(0.002, dt);
+    cam.sx = (Math.random() * 2 - 1) * cam.shake; cam.sy = (Math.random() * 2 - 1) * cam.shake;
+  }
+  function camZoom() { return cam.z + cam.punch; }
+  function applyCamera(g) {
+    g.translate(W / 2 + cam.sx, H / 2 + cam.sy);
+    g.scale(camZoom(), camZoom());
+    g.translate(-cam.x, -cam.y);
+  }
+  /* camera space -> design px on screen (HUD anchors, hit areas) */
+  function toScreen(x, y) {
+    const z = camZoom();
+    return { x: W / 2 + cam.sx + (x - cam.x) * z, y: H / 2 + cam.sy + (y - cam.y) * z };
+  }
+
+  /* =========================================================================
+     5. DRAWING
+     ========================================================================= */
+  const cv = document.getElementById("view");
+  const ctx = cv.getContext("2d");
+  let R = 1;
+
+  function face(size) { return size + 'px "Bebas Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'; }
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function mix(hex, hex2, k) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(hex2.slice(1), 16);
+    const ch = sh => Math.round((a >> sh & 255) * (1 - k) + (b >> sh & 255) * k);
+    return "#" + ((1 << 24) + (ch(16) << 16) + (ch(8) << 8) + ch(0)).toString(16).slice(1);
+  }
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function text(str, x, y, size, col, align, stroke) {
+    ctx.font = face(size); ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    if (stroke) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(6,4,10,.9)"; ctx.strokeText(str, x, y); }
+    ctx.fillStyle = col; ctx.fillText(str, x, y);
+  }
+
+  /* --- sprite caches: a white silhouette per image, for the hit flash ----- */
+  const cache = new Map();
+  function sil(im, col) {
+    const key = "s|" + im.src + "|" + col;
+    let c = cache.get(key);
+    if (!c) {
+      c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      const g = c.getContext("2d");
+      g.drawImage(im, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height);
+      cache.set(key, c);
+    }
+    return c;
+  }
+  /* Where the FACE is on each hero's idle sprite (fractions of the image),
+     measured by eye on assets/image/embed/grudgeon-hero-<id>01.webp: a
+     silhouette's top is a ribbon, a mask or a cowlick, never the face. */
+  const FACE = { akane: { x: 0.56, y: 0.15 }, kenji: { x: 0.59, y: 0.13 }, yuki: { x: 0.56, y: 0.19 }, haru: { x: 0.6, y: 0.135 },
+    tengu: { x: 0.3, y: 0.15 }, umibozu: { x: 0.37, y: 0.15 }, rokurokubi: { x: 0.16, y: 0.22 } };      // a yokai's face, where its bubbles go (grudgeon-foe-<id>01.webp)
+  const heads = new Map();
+  function headOf(im) {
+    let h = heads.get(im.src);
+    if (h) return h;
+    const m = /(?:hero|foe)-([a-z]+)\d/.exec(im.src);
+    h = (m && FACE[m[1]]) || { x: 0.5, y: 0.14 };
+    heads.set(im.src, h);
+    return h;
+  }
+  function portrait(a, x, y, r, square) {
+    const im = poseImg(a, true);
+    ctx.save();
+    ctx.beginPath();
+    if (square) ctx.rect(x - r, y - r, r * 2, r * 2); else ctx.arc(x, y, r, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = mix(a.color, "#07060c", 0.6); ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    if (im) {
+      const hd = headOf(im), side = im.naturalWidth * 0.36;
+      const sx = clamp(hd.x * im.naturalWidth - side / 2, 0, im.naturalWidth - side), sy = clamp(hd.y * im.naturalHeight - side * 0.45, 0, im.naturalHeight - side);
+      ctx.drawImage(im, sx, sy, side, side, x - r, y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+  function poseImg(a, idle) {
+    let pose;
+    if (a.kind === "hero") pose = idle ? 1 : a.dead ? 6 : a.hurt > 0 ? 5 : a.lunge > 0 ? 2 : a.cast > 0 ? 3 : a.guard > 0 ? 4 : 1;
+    else pose = idle ? 1 : a.hurt > 0 ? 3 : a.cast > 0 ? 4 : a.lunge > 0 ? 2 : 1;
+    return img(a.kind + "-" + a.id + "0" + pose) || img(a.kind + "-" + a.id + "01");
+  }
+  function flipOf(a) {
+    if (!foe) return false;
+    if (a.kind === "hero") return a.sx > foe.sx + 30;
+    const xs = party.filter(h => !h.dead), mx = xs.reduce((s, h) => s + h.sx, 0) / (xs.length || 1);
+    return mx > a.sx + 30;
+  }
+
+  function drawActor(a) {
+    const im = poseImg(a), flip = flipOf(a);
+    const br = 1 + Math.sin(T * 2 + a.phase) * 0.014, bx = 1 - (br - 1) * 0.6;
+    const k = im ? a.s / Math.max(im.naturalWidth, im.naturalHeight) : 1;
+    ctx.fillStyle = "rgba(0,0,0," + (0.45 * a.alpha) + ")";
+    ctx.beginPath(); ctx.ellipse(a.sx, a.sy, a.s * 0.3, a.s * 0.3 * 0.22 * P.tilt / 0.75, 0, 0, TAU); ctx.fill();
+    if (!im) { ctx.fillStyle = rgba(a.color, 0.5); ctx.beginPath(); ctx.arc(a.sx, a.sy - a.s * 0.4, a.s * 0.2, 0, TAU); ctx.fill(); return; }
+    const w = im.naturalWidth, h = im.naturalHeight;
+    drawCurse(a);
+    drawGuardAura(a, false); drawGuardAura(a, true); drawFoeShield(a, false); drawFoeShield(a, true);   // behind the sprite, glow then rim
+    ctx.save();
+    ctx.globalAlpha = a.alpha;
+    if (a.fall > 0.001) {              // fallen: turned over around its middle — upside down, still facing the heroes
+      const q = clamp(a.fall, 0, 1);
+      ctx.translate(a.sx, a.sy + a.dy - h * k * br / 2);
+      ctx.rotate(Math.PI * a.fall * (flip ? -1 : 1));
+      ctx.scale(k * bx * (flip ? -1 : 1) * Math.cos(Math.PI * q), k * br);   // the half turn mirrors her: this mirrors her back
+      ctx.translate(0, h / 2);
+    } else {
+      ctx.translate(a.sx, a.sy + a.dy);
+      ctx.scale(k * bx * (flip ? -1 : 1) * Math.cos(Math.PI * (a.turn || 0)), k * br);   // turned away: mirrored, a flip through edge-on
+    }
+    const ghost = a.kind === "foe" && !a.dead && RULES[a.id].ghost && RULES[a.id].ghost(a);
+    if (ghost) {                       // behind a door: a dark shape, the art barely through it
+      ctx.globalAlpha = a.alpha * 0.4; ctx.drawImage(im, -w / 2, -h);
+      ctx.globalAlpha = a.alpha * 0.45; ctx.drawImage(sil(im, "#0b0814"), -w / 2, -h);
+      ctx.globalAlpha = a.alpha;
+    } else ctx.drawImage(im, -w / 2, -h);
+    if (a.dead && a.kind === "hero") { ctx.globalAlpha = a.alpha * 0.45; ctx.drawImage(sil(im, "#05040a"), -w / 2, -h); }
+    if (a.kind === "hero" && a.cA > 0.02 && !a.dead) { ctx.globalAlpha = a.alpha * a.cA * (0.22 + 0.08 * Math.sin(RT * 2.2 + a.phase)); ctx.drawImage(sil(im, "#8a3fd1"), -w / 2, -h); }   // cursed: a sickly tint
+    if (a.flash > 0) { ctx.globalAlpha = a.alpha * a.flash * 0.7; ctx.drawImage(sil(im, "#ffffff"), -w / 2, -h); }
+    ctx.restore();
+    curseBubbles(a, im, flip, k, bx, br);
+    stunStars(a, im, flip, k, bx, br);
+  }
+  /* THE YOKAI'S SHIELD: a red dome round a yokai its rule protects (`shield`,
+     Aka Manto's cape) — a faint glow, a breathing rim and its panels, all
+     behind the sprite. It flares when it takes a blow (sA > 1) and fades as it falls. */
+  function drawFoeShield(a, front) {
+    const g = Math.min(1, a.sA || 0), flare = Math.max(0, (a.sA || 0) - 1);
+    if (g < 0.02 || a.kind !== "foe") return;
+    const grow = 0.8 + 0.2 * g + 0.1 * flare, cx = a.sx, cy = a.sy + a.dy - a.s * 0.44;
+    const rx = a.s * 0.42 * grow, ry = a.s * 0.52 * grow, pul = 0.5 + 0.5 * Math.sin(RT * 2.4 + a.phase);
+    ctx.save();
+    ctx.globalAlpha = a.alpha * SHIELD_A;
+    if (!front) {
+      ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+      const gr = ctx.createRadialGradient(0, 0, ry * 0.3, 0, 0, ry);
+      gr.addColorStop(0, rgba("#ff3048", 0));
+      gr.addColorStop(0.7, rgba("#ff3048", (0.1 + 0.25 * flare) * g));
+      gr.addColorStop(1, rgba("#ff3048", (0.36 + 0.3 * flare) * g));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, TAU); ctx.fill();
+    } else {
+      ctx.lineWidth = 3.5 + 3 * flare; ctx.strokeStyle = rgba("#ff6070", (0.45 + 0.3 * pul + 0.25 * flare) * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = rgba("#ff8090", (0.16 + 0.2 * flare) * g);   // the panels: meridians of the dome
+      for (let i = 1; i <= 2; i++) {
+        const q = i / 3;
+        ctx.beginPath(); ctx.ellipse(cx, cy, rx * q, ry, 0, 0, TAU); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry * q, 0, 0, TAU); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  /* THE GUARD: a shield of light round a hero on guard, for as long as the
+     guard holds (until their next turn) — a faint glow and a breathing rim,
+     both behind the sprite. It flares when it stops a blow (gA > 1). */
+  /* THE CURSE: a hero a yokai's malus holds (`curse`, Jorogumo's cocoon) wears
+     a sickly haze, violet going green at its heart, with bubbles of poison
+     rising through it, behind the sprite, for as long as the malus lasts. */
+  function drawCurse(a) {
+    const g = Math.min(1, a.cA || 0);
+    if (g < 0.02 || a.kind !== "hero" || a.dead) return;
+    const cx = a.sx, cy = a.sy + a.dy - a.s * 0.42, ry = a.s * 0.72, rx = a.s * 0.56;
+    const pul = 0.5 + 0.5 * Math.sin(RT * 2.2 + a.phase);
+    ctx.save();
+    ctx.globalAlpha = a.alpha * g;
+    /* the haze, lit on the dark ground */
+    ctx.globalCompositeOperation = "lighter";
+    ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+    const gr = ctx.createRadialGradient(0, ry * 0.2, ry * 0.05, 0, 0, ry);
+    gr.addColorStop(0, rgba("#7dd36b", 0.42 + 0.14 * pul));
+    gr.addColorStop(0.5, rgba("#9a45e0", 0.42 + 0.12 * pul));
+    gr.addColorStop(1, rgba("#4a1670", 0));
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+  /* small violet bubbles round the cursed hero's head, in front of the sprite */
+  /* bubbles round the head: violet on a cursed hero, white on a winded yokai
+     (`puff`, Tengu out of breath) */
+  function curseBubbles(a, im, flip, k, bx, br) {
+    const hero = a.kind === "hero", g = Math.min(1, (hero ? a.cA : a.pA) || 0);
+    if (g < 0.02 || a.dead || !im) return;
+    const cols = hero ? ["#c27cff", "#9a45e0", "#f3e6ff"] : ["#ffffff", "#dfe8f2", "#ffffff"];
+    const hd = headOf(im), w = im.naturalWidth, h = im.naturalHeight;
+    const hx = a.sx + (hd.x - 0.5) * w * k * bx * (flip ? -1 : 1), hy = a.sy + a.dy + (hd.y - 1) * h * k * br;
+    const R0 = a.s * 0.13;
+    ctx.save();
+    for (let i = 0; i < 8; i++) {                // each bubble swells, drifts up round the head, and pops
+      const q = (RT * (0.45 + 0.05 * (i % 3)) + i / 8) % 1;
+      const ang = i * TAU / 8 + RT * 0.7;
+      const x = hx + Math.cos(ang) * R0 * (1 + 0.25 * q), y = hy + Math.sin(ang) * R0 * 0.55 - q * a.s * 0.12;
+      const r = (3 + (i % 3) * 1.5) * (0.5 + 0.5 * Math.sin(q * Math.PI));
+      ctx.globalAlpha = a.alpha * g * Math.sin(q * Math.PI) * 0.9;
+      ctx.fillStyle = i % 2 ? cols[0] : cols[1];
+      ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+      if (!hero) continue;                 // a puff of breath is plain white
+      ctx.fillStyle = cols[2];
+      ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.3, 0, TAU); ctx.fill();
+    }
+    ctx.restore();
+  }
+  /* little violet stars circling the head: a stunned hero, or a yokai in its
+     open phase (`dazed`: Umibozu at the ebb, Rokurokubi's neck cut) */
+  function stunStars(a, im, flip, k, bx, br) {
+    const g = Math.min(1, a.zA || 0);
+    if (g < 0.02 || a.dead || !im) return;
+    const hd = headOf(im), w = im.naturalWidth, h = im.naturalHeight;
+    const hx = a.sx + (hd.x - 0.5) * w * k * bx * (flip ? -1 : 1), hy = a.sy + a.dy + (hd.y - 1) * h * k * br - a.s * 0.06;
+    const R0 = a.s * 0.15;
+    ctx.save();
+    for (let i = 0; i < 5; i++) {
+      const ang = RT * 2.6 + i * TAU / 5, depth = Math.sin(ang);          // a flat orbit: the stars in front are bigger and brighter
+      const x = hx + Math.cos(ang) * R0, y = hy + depth * R0 * 0.32, r = a.s * (0.024 + 0.01 * depth);   // sized on the sprite: a yokai's stars read as big as a hero's
+      ctx.globalAlpha = a.alpha * g * (0.7 + 0.3 * depth);
+      ctx.fillStyle = i % 2 ? "#d9a8ff" : "#b46cff";
+      ctx.beginPath();
+      for (let p = 0; p < 10; p++) {
+        const rr0 = p % 2 ? r * 0.42 : r, aa = -Math.PI / 2 + p * Math.PI / 5 + RT * 1.5;
+        ctx.lineTo(x + Math.cos(aa) * rr0, y + Math.sin(aa) * rr0);
+      }
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  const SHIELD_A = 0.45;                 // how strong a shield reads: kept faint, it sits behind the sprite
+  function drawGuardAura(a, front) {
+    const g = Math.min(1, a.gA || 0), flare = Math.max(0, (a.gA || 0) - 1);
+    if (g < 0.02 || a.dead || a.kind !== "hero") return;
+    const grow = 0.86 + 0.14 * g + 0.12 * flare, cx = a.sx, cy = a.sy + a.dy - a.s * 0.46;
+    const rx = a.s * 0.4 * grow, ry = a.s * 0.58 * grow, pul = 0.5 + 0.5 * Math.sin(RT * 3 + a.phase);
+    ctx.save();
+    ctx.globalAlpha = a.alpha * SHIELD_A;
+    if (!front) {
+      ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+      const gr = ctx.createRadialGradient(0, 0, ry * 0.25, 0, 0, ry);
+      gr.addColorStop(0, rgba("#8fdcff", 0));
+      gr.addColorStop(0.72, rgba("#8fdcff", (0.1 + 0.25 * flare) * g));
+      gr.addColorStop(1, rgba("#8fdcff", (0.34 + 0.3 * flare) * g));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, TAU); ctx.fill();
+    } else {
+      ctx.lineWidth = 3 + 3 * flare; ctx.strokeStyle = rgba("#bfeaff", (0.4 + 0.35 * pul + 0.25 * flare) * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, TAU); ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba("#8fdcff", 0.22 * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx * 0.9, ry * 0.92, 0, 0, TAU); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawScene() {
+    ctx.fillStyle = "#07060c"; ctx.fillRect(0, 0, W, H);
+    const im = img(bandOf(foeId).scene);
+    if (im) {
+      const cover = Math.max(W / im.naturalWidth, H / im.naturalHeight) * P.bgZoom;
+      ctx.drawImage(im, W / 2 - im.naturalWidth * cover / 2, H / 2 - im.naturalHeight * cover / 2, im.naturalWidth * cover, im.naturalHeight * cover);
+    }
+    const gr = ctx.createRadialGradient(W / 2, H * 0.45, 60, W / 2, H * 0.45, H * 0.75);
+    gr.addColorStop(0, rgba("#05040a", P.bgDim * 0.55)); gr.addColorStop(1, rgba("#0a0f20", Math.min(1, P.bgDim * 1.4)));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  }
+  function drawSpells() {
+    fxs.forEach(e => {
+      const im = img(e.key); if (!im || e.a.sx == null) return;
+      const q = e.t / e.d, s = e.a.s * e.s * (0.7 + 0.4 * Math.min(1, q * 2.5)), k = s / Math.max(im.naturalWidth, im.naturalHeight);
+      ctx.save();
+      ctx.globalAlpha = q < 0.6 ? 1 : 1 - (q - 0.6) / 0.4;
+      ctx.drawImage(im, e.a.sx - im.naturalWidth * k / 2, e.a.sy + e.a.dy - e.a.s * 0.45 - im.naturalHeight * k / 2, im.naturalWidth * k, im.naturalHeight * k);
+      ctx.restore();
+    });
+  }
+  function drawNumbers() {
+    nums.forEach(n => {
+      const a = n.a, q = n.t / n.life;
+      const base = toScreen(a.sx + n.ox, a.sy + a.dy - a.s * 0.82);
+      ctx.save();
+      ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+      text(n.txt, base.x, base.y - q * 70, n.small ? 34 : n.weak ? 64 : 48, n.col, "center", 8);
+      ctx.restore();
+    });
+  }
+  function drawCallouts() {
+    calls.slice(0, 1).forEach(c => {
+      const q = c.t / c.life, pop = q < 0.12 ? outBack(q / 0.12) : 1;
+      ctx.save();
+      ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+      ctx.translate(W / 2, 470); ctx.scale(pop, pop); ctx.rotate(-0.05);
+      const word = upper(c.word), sub = c.sub ? upper(c.sub) : "";
+      ctx.font = face(92); const ws = Math.min(92, 92 * 640 / Math.max(1, ctx.measureText(word).width));
+      text(word, 0, 0, ws, c.col, "center", 14);
+      if (sub) { ctx.font = face(36); text(sub, 0, 70, Math.max(24, Math.min(36, 36 * 640 / Math.max(1, ctx.measureText(sub).width))), "#fff4f0", "center", 8); }
+      ctx.restore();
+    });
+  }
+
+  /* --- the HUD (screen space) -------------------------------------------- */
+  function bar(x, y, w, h, frac, col, lag) {
+    ctx.fillStyle = "rgba(255,255,255,.12)"; rr(ctx, x, y, w, h, h / 2); ctx.fill();
+    if (lag != null && lag > frac) { ctx.fillStyle = "rgba(255,244,240,.75)"; rr(ctx, x, y, Math.max(h, w * lag), h, h / 2); ctx.fill(); }
+    if (frac > 0) { ctx.fillStyle = col; rr(ctx, x, y, Math.max(h, w * frac), h, h / 2); ctx.fill(); }
+  }
+  function hpCol(a) { return a.hp / a.mhp < 0.3 ? "#e2364b" : "#7ee0a1"; }
+  const regions = [];          // what a finger can press on the canvas, rebuilt every frame: tiles, then sprites
+
+  /* The yokai's next turn on the timeline: who it hits and for how much. */
+  function nextFoe() { return TL.find(e => e.it) || null; }
+  function incoming() {
+    const m = new Map(), e = nextFoe();
+    if (e) e.hits.forEach(x => m.set(x.h, x));
+    return m;
+  }
+  /* A unit's lasting marks, as small chips: what a scroll laid on it. */
+  function statusesOf(u) {
+    const out = [];
+    if (u.kind === "hero") {
+      if (u.imbue) out.push({ t: ELEMENTS[u.imbue].name, c: ELEMENTS[u.imbue].color });
+      if (u.whet) out.push({ t: "+50%", c: "#ffd166" });
+      if (foe && foe.st && foe.st.cocoon === u) out.push({ t: "Cocoon", c: "#c79bff" });
+      if (u.stun) out.push({ t: "Stunned", c: "#c27cff" });
+      if (u.cover && !u.cover.dead) out.push({ t: "Covered", c: "#8fdcff" });
+      if (party.some(x => x.cover === u && !x.dead)) out.push({ t: "Covers", c: "#8fdcff" });
+      if (u.guarding) out.push({ t: "Guard", c: "#8fdcff" });
+      if (ward > 0) out.push({ t: "Ward ×" + ward, c: "#9ce7ff" });
+    } else {
+      if (u.taunt && !u.taunt.dead) out.push({ t: "Aims at " + u.taunt.b.name, c: "#ffd166" });
+      if (u.pacify) out.push({ t: "Pacified", c: "#7ee0a1" });
+    }
+    return out;
+  }
+  function chipRow(list, x, y, align) {
+    ctx.font = face(20);
+    const ws = list.map(s => ctx.measureText(upper(s.t)).width + 20);
+    const total = ws.reduce((s, w) => s + w + 6, -6);
+    let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+    list.forEach((s, i) => {
+      ctx.fillStyle = "rgba(8,5,14,.92)"; rr(ctx, cx, y - 14, ws[i], 28, 14); ctx.fill();
+      ctx.strokeStyle = s.c; ctx.lineWidth = 2; ctx.stroke();
+      text(upper(s.t), cx + ws[i] / 2, y + 1, 20, s.c);
+      cx += ws[i] + 6;
+    });
+  }
+
+  function chips(list, x, y, align, label, labelCol) {
+    ctx.font = face(20);
+    let cx = x;
+    const items = [{ t: upper(label), c: labelCol, plain: true }].concat(list.map(el => ({ t: upper(ELEMENTS[el].name), c: ELEMENTS[el].color })));
+    const widths = items.map(it => ctx.measureText(it.t).width + (it.plain ? 6 : 22));
+    const total = widths.reduce((s, w) => s + w + 6, -6);
+    if (align === "center") cx = x - total / 2; else if (align === "right") cx = x - total;
+    items.forEach((it, i) => {
+      if (!it.plain) { ctx.fillStyle = rgba(it.c, 0.18); rr(ctx, cx, y - 15, widths[i], 30, 15); ctx.fill(); ctx.strokeStyle = rgba(it.c, 0.7); ctx.lineWidth = 1.5; ctx.stroke(); }
+      text(it.t, cx + widths[i] / 2, y + 1, 20, it.c);
+      cx += widths[i] + 6;
+    });
+  }
+  /* THE BOSS BAR, ported from games/grudgeon/game.js (drawFoeHud): the
+     yokai's name in the system face, MASTER for a band's fourth, the rule's
+     gold pill on the name's line, a thin health bar in quarters, and riding
+     on it a badge for every element FOUND weak (lit) or resisted (greyed). The lab adds one thing: the bar greyed and a padlock beside the
+     pill while the yokai's lock is shut (a plain Attack lands at -80%). */
+  const FOE_H = 74, LX = 26, LW = W - 52, HUD_TOP = 150 + 6;     // Layout.left / w, fightGeo().top in the web build
+  const SYS = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+  function gfont(size, weight) { return (weight || 800) + " " + Math.round(size) + "px " + SYS; }
+  function gtext(str, x, y, size, col, align, stroke, weight) {
+    ctx.font = gfont(size, weight || 900); ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    if (stroke) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(6,4,10,.9)"; ctx.strokeText(str, x, y); }
+    ctx.fillStyle = col; ctx.fillText(str, x, y);
+  }
+  const glyphs = new Map();
+  function glyph(name, col) {
+    const k = name + "|" + col;
+    let im = glyphs.get(k);
+    if (!im) {
+      im = new Image();
+      im.src = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[name] + "</svg>");
+      glyphs.set(k, im);
+    }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function elementBadge(el, weak, x, y, r) {
+    const E = ELEMENTS[el], pul = weak ? 0.5 + 0.5 * Math.sin(RT * 4) : 0;
+    if (weak) {
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = rgba(E.color, 0.18 + 0.2 * pul);
+      ctx.beginPath(); ctx.arc(x, y, r + 7, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    ctx.save();
+    if (!weak) ctx.globalAlpha *= 0.6;           // resisted: the badge greyed out, nothing struck through
+    ctx.fillStyle = "#0b0712"; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = weak ? E.color : "#5a5668"; ctx.lineWidth = 3; ctx.stroke();
+    const im = glyph(E.icon, weak ? E.color : "#7a7688"), s = r * 1.2;
+    if (im) ctx.drawImage(im, x - s / 2, y - s / 2, s, s);
+    ctx.restore();
+  }
+  function padlock(x, y, col) {
+    ctx.fillStyle = col; rr(ctx, x - 9, y - 2, 18, 13, 3); ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y - 3, 6, Math.PI, 0); ctx.stroke();
+  }
+  function drawFoeHud(topY) {
+    const f = foe; if (!f || f.sx == null) return;
+    const a = (f.dead ? f.fade : 1) * f.enter;
+    if (a <= 0.01) return;
+    const R = RULES[f.id], x = LX, w = LW, name = upper(f.b.name);
+    /* locked: a plain Attack would land at -80% now — the bar greys, a padlock by the pill */
+    const lh = activeHero() || alive()[0], sealed = !f.dead && !!lh && blowMod(lh, "attack", lh.imbue || "slash").pct === LOCKED;
+    ctx.save(); ctx.globalAlpha = a;
+    const gr = ctx.createLinearGradient(0, topY - 8, 0, topY + FOE_H + 10);
+    gr.addColorStop(0, "rgba(6,4,12,.8)"); gr.addColorStop(1, "rgba(6,4,12,0)");
+    ctx.fillStyle = gr; ctx.fillRect(0, topY - 8, W, FOE_H + 18);
+    gtext(name, x, topY + 16, 30, "#f4eef8", "left", 5);
+    ctx.font = gfont(30, 900);
+    const nw = ctx.measureText(name).width;
+    let st = R.status ? R.status(f) : "", sw = 0;
+    let after = x + nw + 12;
+    if (f.boss) { gtext(upper("Master"), after, topY + 18, 18, "#ffd166", "left", 4); after += ctx.measureText(upper("Master")).width + 12; }
+    const miss = !f.dead && missingKey(), wi = miss && glyph("triangle-alert", "#ffb347");
+    if (wi) {                            // the party carries nothing that beats it: a warning by the name
+      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(RT * 4));
+      ctx.drawImage(wi, after, topY + 16 - 15, 30, 30);
+      ctx.globalAlpha = a;
+    }
+    if (st) {
+      st = upper(st);
+      ctx.font = gfont(20, 900);
+      sw = ctx.measureText(st).width + 22;
+      ctx.fillStyle = "rgba(233,196,106,.18)"; rr(ctx, x + w - sw, topY - 2, sw, 30, 15); ctx.fill();
+      ctx.strokeStyle = "rgba(233,196,106,.8)"; ctx.lineWidth = 2; ctx.stroke();
+      gtext(st, x + w - sw / 2, topY + 14, 20, "#ffd166");
+    }
+    if (sealed) padlock(x + w - sw - 20, topY + 13, rgba("#ffd166", 0.75 + 0.25 * Math.sin(RT * 4)));
+    const by = topY + 46, bh = 10;
+    ctx.fillStyle = "rgba(0,0,0,.6)"; rr(ctx, x - 3, by - 3, w + 6, bh + 6, (bh + 6) / 2); ctx.fill();
+    bar(x, by, w, bh, f.hp / f.mhp, sealed ? "#6c6880" : "#e2364b", f.lag / f.mhp);
+    const ih = infoHit();
+    if (ih && f.hp > 0 && ih.dmg > 0 && ih.m.heal) {     // a blow its rule turns into a heal: the chunk it would give back, in green
+      const bl = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin((RT - infoT) * 9));
+      const at = v => x + w * clamp(v, 0, f.mhp) / f.mhp;
+      ctx.fillStyle = rgba("#7ee0a1", bl);
+      ctx.fillRect(at(f.hp), by, Math.max(3, at(f.hp + ih.dmg) - at(f.hp)), bh);
+    } else if (ih && f.hp > 0 && ih.dmg > 0) {
+      /* the chunk the blow takes, blinking; while its element is not found, the
+         sure part (as if resisted) solid and the rest of the range (as if a
+         weakness) fainter */
+      const bl = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin((RT - infoT) * 9));
+      const at = v => x + w * clamp(v, 0, f.mhp) / f.mhp;
+      ctx.fillStyle = rgba("#fff4f0", bl);
+      ctx.fillRect(at(f.hp - ih.lo), by, Math.max(3, at(f.hp) - at(f.hp - ih.lo)), bh);
+      if (ih.hi > ih.lo) { ctx.fillStyle = rgba("#fff4f0", bl * 0.4); ctx.fillRect(at(f.hp - ih.hi), by, at(f.hp - ih.lo) - at(f.hp - ih.hi), bh); }
+    }
+    ctx.fillStyle = "rgba(6,4,12,.8)";
+    for (let i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4 - 1.5, by, 3, bh);
+    const badges = [];
+    for (const el in f.known) if (f.known[el] !== "normal") badges.push({ el, weak: f.known[el] === "weak" });
+    badges.sort((p, q) => (q.weak ? 1 : 0) - (p.weak ? 1 : 0));
+    badges.forEach((b, i) => elementBadge(b.el, b.weak, x + w - 24 - i * 50, by + bh / 2, 20));
+    ctx.restore();
+  }
+
+  let frameDt = 0;
+  function topDmg(e) { return e.hits.reduce((m, x) => Math.max(m, x.dmg), 0); }
+  /* THE INTENT, in words: the yokai's next turn, when it comes, what it does and to whom. */
+  /* THE YOKAI'S NEXT MOVE, drawn rather than written (this page's proposal
+     for the game's drawIntent line), in one row under the bar:
+       WHAT    the move on the same gold pill as the rule's state on the
+               name's line (RUNNING, DOOR SHUT): a pictogram of what it does
+               and its name — dimmed for a turn with no blow
+       > WHO   an arrow, then the head of every hero it lands on and, hanging
+               under each, the damage: KO in red when it would knock them
+               out, a shield on a hero whose guard halves it
+       EXTRA   a round chip per side effect: drains, pushes back, wraps,
+               goes through the guard
+     When it comes is the frieze's to say. A hidden move (Nopperabo) is a
+     "?" pill and no heads. */
+  function moveIcon(it) {
+    if (it.alt) return "dices";
+    if (it.kind === "leave") return "flag";
+    if (!it.pow && !it.flat && !it.halve) return "pause";
+    if (it.halve) return "arrow-down";
+    if (it.drain || it.feast) return "droplet";
+    if (it.fear) return "ghost";
+    if (it.gale) return "chevrons-right";
+    if (it.cocoon || it.coil) return "lock";
+    if (it.all) return "bomb";
+    return it.special ? "skull" : "axe";
+  }
+  function moveExtras(it) {
+    const out = [], R = rule(), feast = R && R.feast ? R.feast(foe) : 0;
+    if ((it.drain || it.feast || feast) && it.pow) out.push({ icon: "droplet", col: "#7ee0a1" });
+    if (it.fear || it.gale) out.push({ icon: "chevrons-right", col: "#b69cff" });
+    if (it.cocoon || it.coil) out.push({ icon: "lock", col: "#c79bff" });
+    if (it.stun) out.push({ icon: "star", col: "#c27cff" });
+    if (it.pierce) out.push({ icon: "shield", col: "#ff8a9a", cross: true });
+    return out;
+  }
+  function icoAt(name, x, y, size, col) {
+    const im = glyph(name, col);
+    if (im) ctx.drawImage(im, x - size / 2, y - size / 2, size, size);
+  }
+  function drawIntent(y) {
+    const e = nextFoe(); if (!e || over || !foe || foe.dead) return;
+    const it = e.it, hidden = hiddenIntents(), cy = y + 24;
+    const blow = !!(it.pow || it.flat || it.halve || it.alt);
+    const heads = hidden || !blow ? [] : e.hits, extras = hidden ? [] : moveExtras(it);
+    let x = LX;
+    /* the room the pill's name has: what the heads and the chips leave */
+    const headsW = heads.length ? 34 + heads.length * 48 : 0, extrasW = extras.length * 40;
+    const room = LX + LW - x - headsW - extrasW - 16 - 36;
+    /* WHAT: the rule pill's style (drawFoeHud): gold, 30 high, the face at 20 */
+    const label = upper(hidden ? "?" : it.label);
+    ctx.font = gfont(20, 900);
+    const ls = clamp(20 * room / Math.max(1, ctx.measureText(label).width), 18, 20);
+    ctx.font = gfont(ls, 900);
+    const plw = 36 + ctx.measureText(label).width + 12;
+    ctx.save();
+    if (!blow) ctx.globalAlpha *= 0.6;
+    ctx.fillStyle = "rgba(233,196,106,.18)"; rr(ctx, x, cy - 15, plw, 30, 15); ctx.fill();
+    ctx.strokeStyle = "rgba(233,196,106,.8)"; ctx.lineWidth = 2; ctx.stroke();
+    icoAt(hidden ? "eye" : moveIcon(it), x + 20, cy, 20, "#ffd166");
+    gtext(label, x + 34, cy + 1, ls, "#ffd166", "left");
+    ctx.restore();
+    x += plw + 8;
+    /* > WHO */
+    if (heads.length) {
+      icoAt("arrow-right", x + 13, cy, 24, "#ff8a9a");
+      x += 34;
+      heads.forEach(t => {
+        const h = t.h, hx = x + 22, ko = !t.maybe && t.dmg >= h.hp;
+        portrait(h, hx, cy - 2, 19, false);
+        ctx.strokeStyle = h.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hx, cy - 2, 20, 0, TAU); ctx.stroke();
+        if (h.guarding && !it.pierce) {                    // the guard halves it: a shield on the head
+          ctx.fillStyle = "#0b0712"; ctx.beginPath(); ctx.arc(hx - 15, cy - 16, 11, 0, TAU); ctx.fill();
+          icoAt("shield", hx - 15, cy - 16, 15, "#8fdcff");
+        }
+        const dt = ko ? "KO" : (t.maybe ? "?" : "") + t.dmg;
+        ctx.font = gfont(18, 900);
+        const dw = ctx.measureText(dt).width + 12;
+        ctx.fillStyle = ko ? "#e2364b" : "#4a0c18"; rr(ctx, hx - dw / 2, cy + 10, dw, 22, 7); ctx.fill();
+        ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+        gtext(dt, hx, cy + 21, 18, ko ? "#fff4f0" : "#ff8a9a");
+        x += 48;
+      });
+    }
+    /* EXTRA */
+    extras.forEach(c => {
+      const ex = x + 20;
+      ctx.fillStyle = "rgba(8,5,14,.9)"; ctx.beginPath(); ctx.arc(ex, cy, 16, 0, TAU); ctx.fill();
+      ctx.strokeStyle = c.col; ctx.lineWidth = 2; ctx.stroke();
+      icoAt(c.icon, ex, cy, 18, c.col);
+      if (c.cross) { ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(ex - 9, cy + 9); ctx.lineTo(ex + 9, cy - 9); ctx.stroke(); }
+      x += 40;
+    });
+  }
+
+  /* THE MINI FRIEZE: the timeline, small, at the foot of the screen — an aid
+     to read the ORDER and the runs of turns: a head a turn in a small bubble,
+     the yokai's blow on a chip on its own. It slides when the order moves. */
+  const FRIEZE_Y = 1140;
+  const fX = new Map();
+  function drawFrieze(y) {
+    if (!foe) return;
+    const seen = new Set(), me = turn === 0 ? activeHero() : null;
+    ctx.save();
+    ctx.fillStyle = "rgba(6,4,12,.6)"; rr(ctx, 16, y, W - 32, 50, 25); ctx.fill();
+    TL.forEach((e, i) => {
+      const r = i ? 15 : 18, tx = 50 + i * 104, yy = y + 25;
+      let x = fX.has(e.key) ? fX.get(e.key) : tx + 60;
+      x += (tx - x) * Math.min(1, frameDt * 12);
+      fX.set(e.key, x); seen.add(e.key);
+      const a = e.u;
+      if (previewId && me && a === me && !e.now) {
+        const pul = 0.5 + 0.5 * Math.sin(RT * 8);
+        ctx.strokeStyle = rgba("#ffd166", 0.5 + 0.5 * pul); ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x, yy, r + 6, 0, TAU); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(6,4,12,.9)"; ctx.beginPath(); ctx.arc(x, yy, r + 2, 0, TAU); ctx.fill();
+      portrait(a, x, yy, r, false);
+      ctx.strokeStyle = a.kind === "foe" ? "#e2364b" : a.color; ctx.lineWidth = i ? 2 : 3;
+      ctx.beginPath(); ctx.arc(x, yy, r + 1, 0, TAU); ctx.stroke();
+      if (e.it) {
+        const it = e.it, label = hiddenIntents() ? "?" : !it.pow && !it.flat && !it.halve && !it.alt ? "-" : (it.all ? "All " : "") + topDmg(e);
+        ctx.font = face(18);
+        const w = ctx.measureText(label).width + 12;
+        ctx.fillStyle = it.special ? "#b3122e" : "rgba(20,8,14,.95)"; rr(ctx, x + r - 2, yy - 11, w, 22, 7); ctx.fill();
+        ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+        text(label, x + r - 2 + w / 2, yy + 1, 18, "#fff4f0");
+      }
+    });
+    for (const k of Array.from(fX.keys())) if (!seen.has(k)) fX.delete(k);
+    ctx.restore();
+  }
+
+  /* THE VITALS: a hero's health (green) over their spirit (blue), floating
+     between their feet, where the selection ring is drawn — no plate. */
+  function drawVitals() {
+    party.forEach(h => {
+      if (h.dead || h.sx == null || h.enter < 0.5) return;
+      const p = toScreen(h.sx, h.sy);
+      ctx.save(); ctx.globalAlpha = Math.min(1, (h.enter - 0.5) * 2);
+      text("" + h.hp, p.x, p.y - 10, 24, h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1", "center", 6);
+      text("" + Math.round(h.sp), p.x, p.y + 13, 22, "#8fdcff", "center", 6);
+      ctx.restore();
+    });
+  }
+
+  /* THE INFO, ON THE GAUGES ONLY (the game's rule since v0.12.0): while a
+     power's info is shown, the yokai bar's chunk it would take blinks — or,
+     for a blow its rule turns into a heal, the chunk it would give back. */
+  let infoPow = null, infoT = 0;
+  function infoHit() {
+    if (!infoPow || !canAct() || !SKILLS[infoPow]) return null;
+    const f = faceOn(infoPow, { foe: true });
+    if (!f || f.kind !== "hit") return null;
+    return hitEstimate(activeHero(), infoPow);
+  }
+
+  /* On the stage, a red ring under every hero the next turn will hit. */
+  function drawReticles() {
+    const pul = 0.5 + 0.5 * Math.sin(RT * 6);
+    incoming().forEach((x, h) => {
+      if (h.dead || h.sx == null) return;
+      ctx.strokeStyle = rgba("#e2364b", 0.45 + 0.45 * pul); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.ellipse(h.sx, h.sy, h.s * 0.34, h.s * 0.34 * 0.3, 0, 0, TAU); ctx.stroke();
+    });
+  }
+  /* The rings on the ground: the hero whose turn it is, the CURRENT TARGET of
+     model B, and the unit a scroll is being dragged over in model A. */
+  function ring(u, col, lw, grow) {
+    if (!u || u.sx == null) return;
+    const rx = u.s * (0.34 + (grow || 0)), ry = rx * 0.3;
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.ellipse(u.sx, u.sy, rx, ry, 0, 0, TAU); ctx.stroke();
+  }
+  function drawRings() {
+    const me = turn === 0 ? activeHero() : null, pul = 0.5 + 0.5 * Math.sin(RT * 4);
+    if (me) ring(me, rgba(me.color, 0.5 + 0.35 * pul), 3, -0.06);
+    // the icon under a finger or the mouse rings where it lands, red on the yokai, blue on the ally
+    if (dHot && canAct()) {
+      if (dHot.side === "red") ring(foe, rgba("#ff5d6e", 0.6 + 0.4 * pul), 6, 0.02);
+      else if (dHot.side === "blue") {
+        const b = blueFor(dHot.id);
+        (b ? (b.all ? alive() : [b.hero]) : []).forEach(h => ring(h, rgba("#4f9bff", 0.6 + 0.4 * pul), 6, 0.02));
+      }
+    }
+  }
+  function drawHitAreas() {
+    if (S.hits !== "on" || !canAct()) return;
+    ctx.save();
+    ctx.setLineDash([8, 6]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(126,166,255,.9)"; ctx.fillStyle = "rgba(126,166,255,.08)";
+    regions.forEach(r => { ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeRect(r.x, r.y, r.w, r.h); });
+    ctx.restore();
+  }
+  function drawHint() {
+    text("R restart · N next yokai", W / 2, 1240, 20, "rgba(240,236,250,.45)");
+  }
+
+  /* --- one frame ---------------------------------------------------------- */
+  function render() {
+    ctx.setTransform(R, 0, 0, R, 0, 0);
+    regions.length = 0;
+    drawScene();
+    ctx.save();
+    applyCamera(ctx);
+    drawReticles();
+    drawRings();
+    all().filter(a => a.sx != null).sort((a, b) => b.depth - a.depth).forEach(drawActor);
+    drawSpells();
+    ctx.restore();
+
+    if (flashA > 0.01) { ctx.fillStyle = rgba(flashC, flashA); ctx.globalCompositeOperation = "lighter"; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = "source-over"; }
+    const gr = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0," + P.vignette + ")");
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+
+    drawVitals();
+    drawNumbers();
+    // the timeline leaves the top for a mini frieze at the foot: the yokai's bar and its next move stay up
+    drawFoeHud(HUD_TOP);
+    drawIntent(HUD_TOP + FOE_H + 4);
+    drawFrieze(FRIEZE_Y);
+    spriteRegions();
+    drawHitAreas();
+    drawCallouts();
+    drawHint();
+  }
+
+  /* --- the clock ---------------------------------------------------------- */
+  function update(rdt) {
+    RT += rdt; frameDt = rdt;
+    let dt = rdt;
+    if (hitstop > 0) { hitstop -= rdt; dt = 0; }
+    T += dt; enterT += dt;
+
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i]; tw.t += dt;
+      if (tw.t < 0) continue;
+      if (tw.from === null) tw.from = tw.o[tw.k];
+      const q = Math.min(1, tw.t / tw.d);
+      tw.o[tw.k] = tw.from + (tw.to - tw.from) * tw.ease(q);
+      if (q >= 1) tweens.splice(i, 1);
+    }
+    for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; j.t -= dt; if (j.t <= 0) { jobs.splice(i, 1); j.fn(); } }
+    all().forEach(a => {
+      a.hx += (a.tx - a.hx) * Math.min(1, dt * 5); a.hz += (a.tz - a.hz) * Math.min(1, dt * 5);
+      a.hurt = Math.max(0, a.hurt - dt); a.lunge = Math.max(0, a.lunge - dt); a.cast = Math.max(0, a.cast - dt);
+      a.guard = Math.max(0, a.guard - dt); a.flash = Math.max(0, a.flash - dt * 5);
+      a.gA += ((a.guarding && !a.dead ? 1 : 0) - a.gA) * Math.min(1, dt * (a.gA > 1 ? 3 : 8));
+      { const R = RULES[a.id], z = a.dead ? 0 : a.kind === "hero" ? (a.stun ? 1 : 0) : (R && R.dazed && R.dazed(a) ? 1 : 0); a.zA = (a.zA || 0) + (z - (a.zA || 0)) * Math.min(1, dt * 6); }
+      if (a.kind === "hero") { const R = rule(), on = foe && !a.dead && R && R.curse && R.curse(foe, a) ? 1 : 0; a.cA = (a.cA || 0) + (on - (a.cA || 0)) * Math.min(1, dt * 4); }
+      if (a.kind === "foe") { const R = RULES[a.id], p = !a.dead && R.puff && R.puff(a) ? 1 : 0; a.pA = (a.pA || 0) + (p - (a.pA || 0)) * Math.min(1, dt * 4); }
+      if (a.kind === "foe") { const R = RULES[a.id], on = !a.dead && R.shield && R.shield(a) ? 1 : 0; a.sA = (a.sA || 0) + (on - (a.sA || 0)) * Math.min(1, dt * (a.sA > 1 ? 3 : 5)); }
+      a.lag += (a.hp - a.lag) * Math.min(1, dt * (a.lag > a.hp ? 1.6 : 8));
+      place(a);
+    });
+    for (let i = fxs.length - 1; i >= 0; i--) { fxs[i].t += dt; if (fxs[i].t >= fxs[i].d) fxs.splice(i, 1); }
+    for (let i = nums.length - 1; i >= 0; i--) { nums[i].t += rdt; if (nums[i].t >= nums[i].life) nums.splice(i, 1); }
+    if (calls.length) { calls[0].t += rdt * (calls.length > 1 ? 1.6 : 1); if (calls[0].t >= calls[0].life) calls.shift(); }
+    if (!over) fightT += dt;
+    flashA *= Math.pow(0.0001, rdt);
+    updateCamera(rdt);
+    previewId = computePreview();
+    TL = timeline(previewId ? previewWeight(previewId) : null, previewId === "guard");
+    syncUi();
+  }
+
+  /* =========================================================================
+     6. CASTING — one tap, three icons a power
+     ========================================================================= */
+  const aimEl = document.getElementById("aim"), frameEl = document.getElementById("frame"), wrap = document.getElementById("wrap");
+
+  let peek = null;           // a character's card held open: { k: "char", u, src: "press" | "hover" }
+  let pressedId = null, hoverId = null;   // the power under a finger / the mouse: the timeline previews it
+  let previewId = null;
+  let aimTimer = 0;
+
+  /* A turn's cards: Attack, the scrolls the hero knows, Guard, then the
+     yokai's RULE card when its rule hands one to this hero now, and FLEE. */
+  function actionsOf(h) {
+    const R = rule(), ra = R && R.action && foe && !foe.dead ? R.action(foe, h) : null;
+    return ["attack"].concat(h.known, ["guard"], ra ? ["rule"] : [], ["flee"]);
+  }
+  /* the weight the timeline previews for a card under the pointer */
+  function previewWeight(id) {
+    if (SKILLS[id]) return SKILLS[id].w;
+    const ra = id === "rule" ? ruleAction() : null;
+    return ra ? ra.w || 1 : 1;
+  }
+  function weightWord(w) { return w < 0.9 ? "Quick" : w > 1.1 ? "Slow" : ""; }
+  function dv(html) { return html.replace(/÷/g, '<span class="dv">÷</span>'); }
+  function designRect(el) {
+    const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect(), sc = w.width / W;
+    return { x: (r.left - w.left) / sc, y: (r.top - w.top) / sc, w: r.width / sc, h: r.height / sc };
+  }
+
+  /* a measured tap: `counted` is whether the world was waiting for the player
+     when the finger went down; `ok` whether the tap did something */
+  function tap(counted, ok) {
+    /* the casting lab counted taps here; this page does not */
+  }
+  function say(msg) {
+    aimEl.textContent = upper(msg);
+    aimEl.classList.add("on");
+    clearTimeout(aimTimer);
+    aimTimer = setTimeout(() => aimEl.classList.remove("on"), 1800);
+  }
+  function clearUi() { peek = null; pressedId = null; hoverId = null; dHot = null; infoId = null; armed = null; }
+
+  /* the timeline previews the power a finger is on, the mouse's, the armed one
+     or the one whose info is open */
+  function computePreview() {
+    if (S.preview !== "on" || !canAct()) return null;
+    return pressedId || hoverId || (armed ? armed.id : null) || infoId || null;
+  }
+
+  /* a new hero's turn (or the same hero's ONE MORE): nothing is held, nobody is pinned */
+  function newTurn() { peek = null; infoId = null; armed = null; pinned = null; dHot = null; }
+
+  /* a tap on a sprite: a hero other than the one in turn is pinned as the blue icons' ally */
+  function tapUnit(u, counted) {
+    if (u.kind === "hero" && u !== activeHero()) pinHero(u, counted); else tap(counted, false);
+  }
+  function tapGround(counted) {
+    if (infoId || armed || pinned) { infoId = null; armed = null; pinned = null; tap(counted, true); } else tap(counted, false);
+  }
+
+  /* --- pointers on the canvas: characters and the ground ---------------------- */
+  function design(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  /* The sprites' boxes: the nearest one wins where they overlap. */
+  function spriteRegions() {
+    const list = all().filter(a => a.sx != null && !a.dead && a.enter > 0.5).sort((a, b) => a.depth - b.depth);
+    const z = camZoom();
+    list.forEach(a => {
+      const p = toScreen(a.sx, a.sy + a.dy), hw = a.s * 0.3 * z, hh = a.s * 0.95 * z;
+      regions.push({ u: a, x: p.x - hw, y: p.y - hh, w: hw * 2, h: hh + 10 * z });
+    });
+  }
+  function unitAt(d) {
+    for (const r of regions) if (d.x >= r.x && d.x <= r.x + r.w && d.y >= r.y && d.y <= r.y + r.h) return r.u;
+    return null;
+  }
+  let g = null, hoverU = null, hoverUT = 0;
+  cv.addEventListener("pointerdown", e => {
+    const live = canAct(), p = design(e), u = live ? unitAt(p) : null;
+    g = { x: e.clientX, y: e.clientY, u, counted: live, moved: false, long: false, timer: 0 };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+    clearTimeout(hoverUT);
+    if (live && u) g.timer = setTimeout(() => { if (g && !g.moved && canAct()) { g.long = true; peek = { k: "char", u, src: "press" }; } }, S.longMs);
+  });
+  cv.addEventListener("pointermove", e => {
+    if (g) {
+      if (!g.moved && Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) >= DRAG_PX) { g.moved = true; clearTimeout(g.timer); }
+      return;
+    }
+    if (e.pointerType !== "mouse" || !canAct()) return;
+    const u = unitAt(design(e));
+    if (u !== hoverU) {
+      hoverU = u; clearTimeout(hoverUT);
+      if (peek && peek.src === "hover") peek = null;
+      if (u) hoverUT = setTimeout(() => { if (hoverU === u && canAct() && !peek) peek = { k: "char", u, src: "hover" }; }, S.longMs);
+    }
+  });
+  cv.addEventListener("pointerleave", () => {
+    clearTimeout(hoverUT); hoverU = null;
+    if (peek && peek.src === "hover") peek = null;
+  });
+  function canvasEnd(cancel) {
+    if (!g) return;
+    const was = g; g = null;
+    clearTimeout(was.timer);
+    if (was.long) { peek = null; if (!cancel) tap(was.counted, true); return; }
+    if (cancel || was.moved || !was.counted || !canAct()) return;
+    if (peek && peek.src === "hover") peek = null;
+    if (was.u) tapUnit(was.u, true); else tapGround(true);
+  }
+  cv.addEventListener("pointerup", () => canvasEnd(false));
+  cv.addEventListener("pointercancel", () => canvasEnd(true));
+
+  /* --- one tap, three icons a power ------------------------------------------
+     Every power is a PACK of the same glyph three times: big RED casts it on
+     the yokai, mid BLUE on an ally, small GREEN opens its info in the window
+     above the row. Nothing asks for a target: the blue icon's ally is picked
+     by the game and shown on the icon (a portrait, or "All"), and a tap on a
+     hero (their folded card, or their sprite) pins them for this turn. */
+  let dHot = null;           // the icon under a finger / the mouse: { id, side }
+  let infoId = null, infoSide = "";   // the power whose info a long press left open, and the face it was on
+  let pinned = null;         // the ally a tap picked for this turn's blue icons
+  let armed = null;          // with a confirm: the icon tapped once, { id, side }
+  let dCards = new Map(), dPast = [], dParty = null;   // the track's cards by turn key, the keys played
+  const dinfoEl = document.getElementById("dinfo"), drowEl = document.getElementById("drow"), dockEl = document.getElementById("dock");
+
+  /* the heroes in the order they act after this turn, each once, the hero in
+     turn included where they come back (a scroll of weight w moves them) */
+  function heroesAfter(w) {
+    const out = [];
+    timeline(w).slice(1).forEach(e => { if (e.u.kind === "hero" && out.indexOf(e.u) < 0) out.push(e.u); });
+    alive().slice().sort((a, b) => a.ct - b.ct).forEach(h => { if (out.indexOf(h) < 0) out.push(h); });
+    return out;
+  }
+  function aimedHero() {
+    const e = nextFoe();
+    return e && !e.it.all && e.hits.length === 1 ? e.hits[0].h : null;
+  }
+  function lowestOf(list) { return list.slice().sort((a, b) => a.hp / a.mhp - b.hp / b.mhp)[0] || null; }
+  /* Where a power's BLUE icon goes, and why (the info window says it). */
+  function blueFor(id) {
+    const s = SKILLS[id], a = activeHero();
+    if (!a || !s) return null;
+    if (s.ally === "heal" || s.ally === "ward") return { all: true, why: "every hero" };
+    const ok = h => !!h && !h.dead && fits(id, { hero: h });
+    const can = alive().filter(ok);
+    if (!can.length) return null;
+    if (S.pin === "on" && ok(pinned)) return { hero: pinned, why: "your pick" };
+    if (S.blue === "lowest") return { hero: lowestOf(can), why: "lowest health" };
+    const order = heroesAfter(s.w).filter(ok);
+    if (S.blue === "next") return { hero: order[0], why: "next to act" };
+    if (s.ally === "cover" || s.ally === "guard") {
+      const x = aimedHero();
+      if (ok(x)) return { hero: x, why: x === a ? "the yokai aims at you" : "the yokai aims at them" };
+      return s.ally === "guard" && ok(a) ? { hero: a, why: "nobody is aimed at alone" } : { hero: lowestOf(can), why: "lowest health" };
+    }
+    if (s.ally === "hasten") return { hero: order[order.length - 1], why: "last to act" };
+    return { hero: order[0], why: "next to strike" };     // imbue, whet: a gift for the next blow
+  }
+
+  /* THE TRACK: one card a hero TURN (a key of the timeline, "haru:3") on
+     five places — the turn just played (a sliver at the left edge), the turn
+     in hand (unfolded), the next (a whole folded card), the one after (a
+     sliver at the right edge), the rest waiting past the right edge. A cast
+     moves every card one place to the left: the card played folds and slides
+     out, the next one slides in and unfolds. A ONE MORE brings it back. */
+  const TRACK = { sliver: 30, gap: 12, open: 534, fold: 90, hOpen: 196, hFold: 140 };
+  function trackUp() {
+    const base = previewId ? timeline(null) : TL, out = [], seen = new Set();
+    base.forEach(e => { if (e.u.kind === "hero" && !seen.has(e.key) && dPast.indexOf(e.key) < 0) { seen.add(e.key); out.push(e); } });
+    return out;
+  }
+  function setSlot(c, x, w, h) {
+    if (c.x === x && c.w === w && c.hh === h) return;
+    c.x = x; c.w = w; c.hh = h;
+    c.el.style.left = x + "px"; c.el.style.width = w + "px"; c.el.style.height = h + "px";
+  }
+  function newCard(key, h) {
+    const el = document.createElement("div"); el.className = "tc";
+    el.style.setProperty("--hc", h.color); el.style.setProperty("--tint", rgba(h.color, S.tint / 100));
+    el.innerHTML = '<div class="plate"><div class="art"></div><div class="curse"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="stun"><b><i></i><i></i><i></i></b></div><div class="unf"><div class="dhead"><b class="nm"></b><span class="chips"></span><span class="vit"><b class="hp" style="--vc:#7ee0a1"></b><b class="sp" style="--vc:#8fdcff"></b></span></div><div class="packs"></div></div></div>';
+    const q = k => el.querySelector(k);
+    const c = { key, h, el, art: q(".art"), packs: q(".packs"), nm: q(".nm"), hpf: q(".vit .hp"), spf: q(".vit .sp"), vKey: "", chips: q(".chips"), stKey: "", artDone: false, icons: [], mounted: false, slot: 9 };
+    c.nm.textContent = upper(h.b.name);
+    wireCard(q(".plate"), c);
+    drowEl.appendChild(el);
+    setSlot(c, W + 20, TRACK.fold, TRACK.hFold);
+    void el.offsetWidth;                  // the first place is taken without a transition
+    el.classList.add("anim");
+    dCards.set(key, c);
+    return c;
+  }
+  /* the hero's idle art, head and shoulders, the face on a set point of the
+     art's window: a folded card and the unfolded one each get their own
+     size and offset (CSS variables), so the face stays put across the fold */
+  function artFit(fc, ratio, w, h, k, cx, cy) {
+    const ih = k * h, iw = ih / ratio;
+    // the sprite is transparent above the head: the image may come down from the top edge
+    const ox = clamp(cx - fc.x * iw, Math.min(0, w - iw), 0), oy = Math.max(cy - fc.y * ih, h - ih);
+    return { size: "auto " + Math.round(ih) + "px", pos: Math.round(ox) + "px " + Math.round(oy) + "px" };
+  }
+  function artOf(c) {
+    const im = img("hero-" + c.h.id + "01");
+    if (!im) return;
+    const fc = headOf(im), ratio = im.naturalHeight / im.naturalWidth;
+    const F = artFit(fc, ratio, TRACK.fold + 40, TRACK.hFold, 2.1, (TRACK.fold + 40) / 2, TRACK.hFold * 0.34);
+    const O = artFit(fc, ratio, 112, TRACK.hOpen, 2.0, 58, TRACK.hOpen * 0.36);   // visible from 20 px, faded past 73 px
+    c.art.style.backgroundImage = 'url("' + ART + "hero-" + c.h.id + '01.webp")';
+    c.art.style.setProperty("--bsF", F.size); c.art.style.setProperty("--bpF", F.pos);
+    c.art.style.setProperty("--bsO", O.size); c.art.style.setProperty("--bpO", O.pos);
+    c.artDone = true;
+  }
+  function mountPacks(c) {
+    c.packs.innerHTML = ""; c.icons = [];
+    const ids = actionsOf(c.h);
+    c.packKey = ids.join(",");
+    c.packs.classList.toggle("many", ids.length > 5);
+    ids.forEach(id => {
+      const s = SKILLS[id], pk = document.createElement("div");
+      if (!s) {                         // the rule card and flee: one tile, no ally face
+        pk.className = "pk solo";
+        pk.innerHTML = '<div class="ic red ' + id + '" data-id="' + id + '" data-side="red"><i></i><b class="fig"></b></div>';
+        const ic = pk.querySelector(".ic"), g = ic.querySelector("i"), uri = iconUri(id === "rule" ? "hand" : "arrow-left");
+        g.style.setProperty("-webkit-mask-image", uri); g.style.setProperty("mask-image", uri);
+        ic.setAttribute("aria-label", id === "rule" ? "Rule" : "Flee");
+        wireIcon(ic, id, "red");
+        c.icons.push({ id, side: "red", el: ic, fig: ic.querySelector(".fig"), who: null, rt: null, key: "" });
+        c.packs.appendChild(pk);
+        return;
+      }
+      pk.className = "pk";
+      pk.innerHTML = '<div class="ic red" data-id="' + id + '" data-side="red"><i></i><b class="fig"></b><b class="rt"></b></div>' +
+        '<div class="ic blue" data-id="' + id + '" data-side="blue"><i></i><b class="who"></b></div>' +
+        (s.sp ? '<b class="cost">−' + s.sp + "</b>" : "");
+      pk.querySelectorAll(".ic").forEach(ic => {
+        const g = ic.querySelector("i"), uri = iconUri(s.icon);
+        g.style.setProperty("-webkit-mask-image", uri); g.style.setProperty("mask-image", uri);
+        ic.setAttribute("aria-label", upper(s.name));
+        wireIcon(ic, id, ic.getAttribute("data-side"));
+        c.icons.push({ id, side: ic.getAttribute("data-side"), el: ic, fig: ic.querySelector(".fig"), who: ic.querySelector(".who"), rt: ic.querySelector(".rt"), key: "" });
+      });
+      c.packs.appendChild(pk);
+    });
+    c.mounted = true;
+  }
+  function headPos(h) {
+    const im = img("hero-" + h.id + "01");
+    if (!im) return null;
+    const hd = headOf(im), ratio = im.naturalHeight / im.naturalWidth;
+    return clamp((3 * hd.x - 0.5) / 2 * 100, 0, 100) + "% " + clamp((0.45 - hd.y * 3 * ratio) / (1 - 3 * ratio) * 100, 0, 100) + "%";
+  }
+  function syncDock() {
+    drowEl.className = "bv-" + S.look;
+    if (dParty !== party) { drowEl.innerHTML = ""; dCards.clear(); dPast = []; dParty = party; }
+    const live = canAct();
+    if (live && TL[0] && TL[0].now) { const k = dPast.indexOf(TL[0].key); if (k >= 0) dPast.splice(k, 1); }   // ONE MORE: the card comes back
+    if (!over && TL.length) {
+      const up = trackUp(), keep = new Set(), past = dPast.length ? dPast[dPast.length - 1] : null;
+      const x0 = TRACK.sliver + TRACK.gap, x1 = x0 + TRACK.open + TRACK.gap, x2 = x1 + TRACK.fold + TRACK.gap;
+      up.forEach((e, i) => {
+        const c = dCards.get(e.key) || newCard(e.key, e.u);
+        keep.add(e.key); c.slot = i;
+        setSlot(c, i === 0 ? x0 : i === 1 ? x1 : x2 + (i - 2) * (TRACK.fold + TRACK.gap), i === 0 ? TRACK.open : TRACK.fold, i === 0 ? TRACK.hOpen : TRACK.hFold);
+      });
+      if (past && dCards.has(past) && !keep.has(past)) {
+        const c = dCards.get(past);
+        keep.add(past); c.slot = -1;
+        setSlot(c, TRACK.sliver - TRACK.fold, TRACK.fold, TRACK.hFold);
+      }
+      dCards.forEach((c, k) => {
+        if (keep.has(k)) return;
+        dCards.delete(k);
+        setSlot(c, -TRACK.fold - 80, TRACK.fold, TRACK.hFold);
+        setTimeout(() => c.el.remove(), 600);
+      });
+    }
+    dockEl.classList.toggle("busy", !live);
+    const hot = live && dHot && dHot.side === "blue" ? blueFor(dHot.id) : null;
+    dCards.forEach(c => {
+      const h = c.h, on = c.slot === 0, isLive = on && live && activeHero() === h;
+      c.el.classList.toggle("on", on);
+      c.el.classList.toggle("cursed", !!cursedNow(c.h));
+      c.el.classList.toggle("stunned", !!c.h.stun && !c.h.dead);
+      c.el.classList.toggle("past", c.slot < 0);
+      c.el.classList.toggle("live", isLive);
+      c.el.classList.toggle("is-pin", live && !on && S.pin === "on" && pinned === h);
+      c.el.classList.toggle("is-blue", !!hot && !on && (hot.all ? !h.dead : hot.hero === h));
+      if (!c.artDone) artOf(c);
+      if (!on) return;
+      if (!c.mounted || (!busy && actionsOf(h).join(",") !== c.packKey)) mountPacks(c);
+      const vk = h.hp + "|" + Math.round(h.sp);
+      if (vk !== c.vKey) {
+        c.vKey = vk;
+        const v = (el, lab, n, m) => { el.innerHTML = "<i>" + upper(lab) + "</i>" + n + "<s>/" + m + "</s>"; el.style.setProperty("--f", Math.round(100 * n / m) + "%"); };
+        v(c.hpf, "HP", h.hp, h.mhp); v(c.spf, "SP", Math.round(h.sp), h.msp);
+        c.hpf.style.setProperty("--vc", h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1");
+      }
+      const st = statusesOf(h), k = st.map(m => m.t).join(",");
+      if (k !== c.stKey) { c.stKey = k; c.chips.innerHTML = st.slice(0, 2).map(m => '<span style="color:' + m.c + '">' + upper(m.t) + "</span>").join(""); }
+      if (isLive) c.icons.forEach(syncIcon);
+    });
+    syncInfo();
+  }
+  /* one icon, once a frame: payable, reachable, its figure and its ally.
+     The red face wears an HOURGLASS when the power moves the frieze — its
+     weight puts the hero's next turn somewhere else among the others: green
+     when it comes sooner, amber when later. A power that leaves the order as
+     it is wears nothing. */
+  const orderMemo = new Map();
+  function orderShift(id) {
+    if (!SKILLS[id]) return 0;
+    const base = TL.map(e => e.key).join(","), k = base + "|" + id;
+    if (orderMemo.has(k)) return orderMemo.get(k);
+    if (orderMemo.size > 64) orderMemo.clear();
+    const a = activeHero(), s = SKILLS[id];
+    const seq = t => t.slice(1).map(e => e.u.id).join(",");
+    const at = t => t.findIndex((e, i) => i > 0 && e.u === a);
+    const t1 = timeline(1), tw = timeline(s.w, id === "guard");
+    let v = 0;
+    if (seq(t1) !== seq(tw)) { const i1 = at(t1) < 0 ? 99 : at(t1), iw = at(tw) < 0 ? 99 : at(tw); v = iw < i1 ? -1 : iw > i1 ? 1 : s.w < 1 ? -1 : 1; }
+    orderMemo.set(k, v);
+    return v;
+  }
+  function syncIcon(o) {
+    if (!SKILLS[o.id]) { syncSolo(o); return; }
+    const a = activeHero(), s = SKILLS[o.id], poor = s.sp > a.sp;
+    /* what the yokai's rule does to this blow, on the red face: Door, Heals, +50%... */
+    if (o.rt) {
+      const f = o.side === "red" && S.tags === "on" ? faceOn(o.id, { foe: true }) : null;
+      const r = f && f.kind === "hit" ? hitEstimate(a, o.id) : null, tag = r && r.m.tag ? r.m.tag : "";
+      const tk = tag + "|" + !!(r && r.m.bad);
+      if (tk !== o.rtKey) { o.rtKey = tk; o.rt.textContent = upper(tag); o.rt.classList.toggle("bad", !!(r && r.m.bad)); }
+    }
+    let off = poor, fig = "", figCol = "", who = null;
+    if (o.side === "red" && S.figs === "order") {
+      const v = orderShift(o.id);
+      if (v) { fig = '<span class="hg"></span>'; figCol = v < 0 ? "#7ee0a1" : "#ffb366"; }
+    } else if (o.side === "red" && S.figs === "damage") {
+      const f = faceOn(o.id, { foe: true });
+      if (f && f.kind === "hit") {
+        const r = hitEstimate(a, o.id);
+        fig = (r.m.heal ? "+" : "") + r.dmg; figCol = r.m.heal ? "#7ee0a1" : r.weak ? ELEMENTS[r.el].color : r.resist ? "#9aa0b5" : "#ffd7cf";
+      }
+    }
+    if (o.side === "blue") { who = blueFor(o.id); if (!who) off = true; }
+    o.el.classList.toggle("off", off);
+    o.el.classList.toggle("armed", !!armed && armed.id === o.id && armed.side === o.side);
+    const heads = who && who.all ? alive() : [];
+    const key = fig + "|" + figCol + "|" + (who ? (who.all ? "all:" + heads.map(h => h.id).join(",") : who.hero.id) : "-");
+    if (key === o.key) return;
+    o.key = key;
+    if (o.fig) { o.fig.innerHTML = fig; o.fig.style.color = figCol; o.fig.classList.toggle("hgo", fig.indexOf("hg") >= 0); o.fig.style.setProperty("--hg", iconUri("hourglass")); }
+    if (o.who) {
+      o.who.className = "who" + (who && who.all ? " all" : "");
+      o.el.classList.toggle("is-all", !!(who && who.all));
+      o.who.removeAttribute("style");
+      o.who.innerHTML = "";
+      heads.forEach(h => {
+        const sp = document.createElement("span"), pos = headPos(h);
+        sp.style.backgroundImage = 'url("' + ART + "hero-" + h.id + '01.webp")';
+        if (pos) sp.style.backgroundPosition = pos;
+        o.who.appendChild(sp);
+      });
+      if (who && who.hero) {
+        const pos = headPos(who.hero);
+        o.who.style.backgroundImage = 'url("' + ART + "hero-" + who.hero.id + '01.webp")';
+        if (pos) o.who.style.backgroundPosition = pos;
+        o.who.style.borderColor = who.hero.color;
+      }
+    }
+  }
+  /* the rule card and flee, once a frame: the figure under the tile */
+  function syncSolo(o) {
+    const a = activeHero();
+    let fig = "";
+    if (o.id === "flee") fig = fleeOdds(a) + "%";
+    else { const ra = ruleAction(); fig = ra ? ra.fig || "" : ""; }
+    if (fig === o.key) return;
+    o.key = fig; o.fig.textContent = upper(fig);
+  }
+  function soloCard(id, hotSide) {
+    let html;
+    if (id === "flee") {
+      const p = fleeOdds(activeHero()), R = rule(), why = R.flee && R.flee.p === 0 ? R.flee.sub : R.flee && R.flee.p === 100 ? R.flee.ok : "";
+      html = '<p class="h"><b>' + upper("Flee") + "</b><i>" + upper(p + "%" + (why ? " · " + why : "")) + "</i></p>" +
+        '<p class="face hot" style="--fc:#9aa5b8"><b>' + upper("Out") + "</b>Back on the map, nothing lost. The yokai is still there, in another room.</p>" +
+        '<p class="face" style="--fc:#ff5d6e"><b>' + upper("Caught") + "</b>The turn is lost and the yokai strikes you.</p>";
+    } else {
+      const ra = ruleAction();
+      if (!ra) return null;
+      html = '<p class="h"><b>' + upper(ra.label) + "</b><i>" + upper(["Its rule", ra.sub, weightWord(ra.w || 1)].filter(Boolean).join(" · ")) + "</i></p>" +
+        '<p class="face hot" style="--fc:#e9c46a"><b>' + upper(FOES[foeId].name) + "</b>" + esc(ra.text || RULES[foeId].key) + "</p>";
+    }
+    return { id, key: "s|" + id + "|" + html, html, ink: id === "flee" ? "#c9d2e0" : "#ffd166" };
+  }
+  /* the info window: what the held / hovered / opened power does, a held
+     character's card, or one line at rest */
+  let infoKey = "";
+  function infoCard(id, hotSide) {
+    if (!SKILLS[id]) return soloCard(id, hotSide);
+    const s = SKILLS[id], a = activeHero(), bits = [];
+    if (s.sp) bits.push(s.sp + " SP");
+    if (s.el) bits.push(ELEMENTS[s.el].name);
+    if (weightWord(s.w)) bits.push(weightWord(s.w));
+    const red = faceOn(id, { foe: true }), b = blueFor(id);
+    const fig = f => f ? (f.fig || f.word) + (f.tag ? " · " + f.tag : "") : "";
+    const row = (side, col, label, txt, em, na) => '<p class="face' + (hotSide === side ? " hot" : "") + (na ? " na" : "") + '" style="--fc:' + col + '"><b>' + upper(label) + "</b>" + txt + (em ? "<em>" + upper(em) + "</em>" : "") + "</p>";
+    let html = '<p class="h"><b>' + upper(s.name) + "</b><i>" + upper(bits.join(" · ")) + "</i></p>";
+    html += row("red", "#ff5d6e", "On the yokai", s.foeText, fig(red));
+    if (!b) html += row("blue", "#4f9bff", "On an ally", s.allyText, "No ally to reach", true);
+    else if (b.all) html += row("blue", "#4f9bff", "On everyone", s.allyText, fig(faceOn(id, { hero: a })));
+    else html += row("blue", "#4f9bff", "On " + (b.hero === a ? "yourself" : b.hero.b.name), b.hero === a && s.ally === "guard" ? "Halves the blows you take until your turn, and gives you +5 SP" : s.allyText,
+      fig(faceOn(id, { hero: b.hero })) + " · " + b.why);
+    if (S.preview === "on") html += '<p class="a">' + againText(id) + "</p>";
+    return { id, key: "s|" + id + "|" + hotSide + "|" + html, html, ink: s.el ? ELEMENTS[s.el].color : "#f4eef8" };
+  }
+  function syncInfo() {
+    let c = null;
+    if (canAct()) {
+      if (peek && peek.k === "char") c = charCard(peek.u);
+      else if (dHot && (dHot.src === "press" || dHot.long)) c = infoCard(dHot.id, dHot.side);
+      else if (armed) c = infoCard(armed.id, armed.side);
+      else if (infoId) c = infoCard(infoId, infoSide);
+    }
+    const pow = c && c.id || null;
+    if (pow !== infoPow) { infoPow = pow; infoT = RT; }
+    if (!c) { if (infoKey) { infoKey = ""; dinfoEl.style.visibility = "hidden"; } return; }
+    const k = c.key + "|" + (S.preview === "on" ? againKey() : "");
+    if (k !== infoKey) { infoKey = k; dinfoEl.innerHTML = dv(c.html); dinfoEl.style.setProperty("--ink", c.ink); }
+    dinfoEl.style.visibility = "visible";
+  }
+  /* a tap on an icon: red / blue cast (or arm, with a confirm) */
+  function tapIcon(id, side, counted) {
+    const a = activeHero(); if (!a) return;
+    if (!SKILLS[id]) {
+      tap(counted, true);
+      infoId = null; dHot = null;
+      if (TL[0] && TL[0].now) { dPast.push(TL[0].key); if (dPast.length > 4) dPast.shift(); }
+      if (id === "rule") ruleAct(); else flee();
+      return;
+    }
+    if (SKILLS[id].sp > a.sp) { say("Not enough SP"); tap(counted, false); return; }
+    const tg = side === "red" ? { foe: true } : (b => !b ? null : b.all ? { hero: a } : { hero: b.hero })(blueFor(id));
+    if (!tg) { say(party.length < 2 ? "No ally to reach" : "Not on oneself"); tap(counted, false); return; }
+    if (S.confirm === "arm" && !(armed && armed.id === id && armed.side === side)) { armed = { id, side }; tap(counted, true); return; }
+    tap(counted, true);
+    armed = null; infoId = null; dHot = null;
+    if (TL[0] && TL[0].now) { dPast.push(TL[0].key); if (dPast.length > 4) dPast.shift(); }   // the track moves on
+    cast(id, tg);
+  }
+  function wireIcon(ic, id, side) {
+    let d = null, hoverT = 0;
+    ic.addEventListener("pointerdown", e => {
+      if (!canAct()) return;
+      e.preventDefault();
+      clearTimeout(hoverT);
+      d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+      try { ic.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+      pressedId = id; dHot = { id, side, src: "press" };
+      d.timer = setTimeout(() => { if (d && !d.moved && canAct()) { d.long = true; dHot = { id, side, src: "press", long: true }; } }, S.longMs);
+    });
+    ic.addEventListener("pointermove", e => {
+      if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= DRAG_PX) { d.moved = true; clearTimeout(d.timer); }
+    });
+    function end(cancel) {
+      if (!d) return;
+      const was = d; d = null;
+      clearTimeout(was.timer);
+      pressedId = null;
+      if (dHot && dHot.src === "press") dHot = null;
+      if (was.long) { if (!cancel) { infoId = id; infoSide = side; tap(true, true); } return; }   // a held icon opens its info, left open: nothing is cast
+      if (cancel || was.moved || !canAct()) return;
+      tapIcon(id, side, true);
+    }
+    ic.addEventListener("pointerup", () => end(false));
+    ic.addEventListener("pointercancel", () => end(true));
+    // a mouse over a red or blue icon previews it: the ring, the timeline, then its info after the delay
+    ic.addEventListener("pointerenter", e => {
+      if (e.pointerType !== "mouse" || d || !canAct()) return;
+      hoverId = id; dHot = { id, side, src: "hover" };
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => { if (dHot && dHot.id === id && dHot.side === side && dHot.src === "hover") dHot.long = true; }, S.longMs);
+    });
+    ic.addEventListener("pointerleave", e => {
+      if (e.pointerType !== "mouse" || d) return;
+      clearTimeout(hoverT);
+      if (hoverId === id) hoverId = null;
+      if (dHot && dHot.src === "hover" && dHot.id === id && dHot.side === side) dHot = null;
+    });
+  }
+  /* a hero picked for the blue icons: their folded card, or their sprite */
+  function pinHero(h, counted) {
+    if (S.pin !== "on" || !h || h.dead) { tap(counted, false); return; }
+    pinned = pinned === h ? null : h;
+    tap(counted, true);
+  }
+  /* a folded card of the track: a tap picks its hero as the blue icons' ally, a long press opens their card */
+  function wireCard(el, c) {
+    let d = null;
+    el.addEventListener("pointerdown", e => {
+      if (!canAct() || c.slot <= 0 || c.h.dead) return;
+      e.preventDefault();
+      d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+      d.timer = setTimeout(() => { if (d && !d.moved && canAct()) { d.long = true; peek = { k: "char", u: c.h, src: "press" }; } }, S.longMs);
+    });
+    el.addEventListener("pointermove", e => {
+      if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= DRAG_PX) { d.moved = true; clearTimeout(d.timer); }
+    });
+    function end(cancel) {
+      if (!d) return;
+      const was = d; d = null;
+      clearTimeout(was.timer);
+      if (was.long) { peek = null; if (!cancel) tap(true, true); return; }
+      if (cancel || was.moved || !canAct()) return;
+      pinHero(c.h, true);
+    }
+    el.addEventListener("pointerup", () => end(false));
+    el.addEventListener("pointercancel", () => end(true));
+  }
+
+  /* --- what the info window reads ---------------------------------------------- */
+  function elName(el) { return el ? ELEMENTS[el].name : ""; }
+  /* where the hero's own next turn lands if this power is cast: read off the timeline */
+  function againText(id) {
+    if (!SKILLS[id]) return "";
+    const a = activeHero();
+    const i = TL.findIndex((e, k) => k > 0 && e.u === a);
+    if (previewId !== id) return "Hold to preview the timeline";
+    if (i < 0) return "Plays again after more than " + (SHOW - 1) + " turns";
+    const others = i - 1;
+    return others <= 0 ? "Plays again right after this" : "Plays again after " + others + (others === 1 ? " other turn" : " other turns");
+  }
+  function charCard(u) {
+    const st = statusesOf(u), ink = u.kind === "foe" ? "#ff8a9a" : u.color;
+    let html = '<p class="h"><b>' + upper(u.b.name) + "</b><i>" + upper(u.kind === "foe" ? "Yokai" : u.b.role) + "</i></p>";
+    html += '<p class="stat"><b>' + upper("HP") + "</b>" + u.hp + " / " + u.mhp + (u.kind === "hero" ? '  <b style="margin-left:14px">' + upper("SP") + "</b>" + Math.round(u.sp) + " / " + u.msp : "") + "</p>";
+    if (u.kind === "foe") {
+      html += '<p class="stat"><b>' + upper("Weak") + "</b>" + u.b.weak.map(elName).join(", ") + '  <b style="margin-left:14px">' + upper("Resists") + "</b>" + (u.b.resist.map(elName).join(", ") || "nothing") + "</p>";
+      const R = RULES[u.id];
+      html += '<p class="a">' + upper(R.status ? R.status(u) : "") + "</p><p class=\"face\" style=\"--fc:#e9c46a\"><b>" + upper("Its rule") + "</b>" + esc(R.lock) + "</p>";
+      const e = hiddenIntents() ? null : nextFoe();
+      if (e) {
+        const it = e.it, at = TL.indexOf(e);
+        html += '<p class="stat"><b>' + upper("Next") + "</b>" + it.label + (it.pow ? " on " + (it.all ? "everyone" : e.hits.map(x => x.h.b.name).join(", ")) + ", " + topDmg(e) : "") + (at > 1 ? " (in " + at + " turns)" : "") + "</p>";
+      }
+    } else if (incoming().get(u)) {
+      html += '<p class="stat"><b>' + upper("Next blow") + "</b>" + incoming().get(u).dmg + " damage</p>";
+    }
+    html += '<div class="tags">' + (st.length ? st.map(s => '<span style="color:' + s.c + '">' + upper(s.t) + "</span>").join("") : '<span style="color:#8a8498">' + upper("No marks") + "</span>") + "</div>";
+    return { key: "c|" + u.id + "|" + u.hp + "|" + Math.round(u.sp) + "|" + st.map(s => s.t).join(",") + "|" + (u.kind === "foe" && nextFoe() ? topDmg(nextFoe()) : ""), html, ink };
+  }
+  function againKey() { return TL.map(e => e.key).join(","); }
+
+  /* once a frame, after the world has moved */
+  const hudL = document.getElementById("hud-left"), hudR = document.getElementById("hud-right"), hudS = document.getElementById("hud-score");
+  let hudKey = "";
+  function syncHud() {
+    const k = gold + "|" + score + "|" + foesDown;
+    if (k === hudKey) return;
+    hudKey = k;
+    hudL.innerHTML = '<div class="hud-pill"><span class="lbl">' + upper("Gold") + "</span>" + gold + "</div>";
+    hudR.innerHTML = '<div class="hud-pill"><span class="lbl">' + upper("Yokai") + "</span>" + foesDown + "</div>";
+    hudS.textContent = score;
+    document.getElementById("hud-score-lbl").textContent = upper("Score");
+  }
+  function syncUi() { syncDock(); syncHud(); }
+
+  /* =========================================================================
+     7. THE PANEL — the yokai picker, the knobs, the rule, the feedback log
+     ========================================================================= */
+  const knobsEl = document.getElementById("knobs"), foeEl = document.getElementById("foe");
+  const ruleEl = document.getElementById("rule"), logEl = document.getElementById("log");
+  const ctl = {};
+  BANDS.forEach(b => {
+    const g = document.createElement("optgroup"); g.label = b.name + " · " + HEROES[b.lead].name;
+    b.foes.forEach(id => { const o = document.createElement("option"); o.value = id; o.textContent = FOES[id].name; g.appendChild(o); });
+    foeEl.appendChild(g);
+  });
+  foeEl.onchange = () => pick(foeEl.value);
+  KNOBS.forEach(d => {
+    const row = document.createElement("div"); row.className = "row";
+    const lab = document.createElement("label"); lab.textContent = d.label;
+    row.appendChild(lab);
+    const seg = document.createElement("div"); seg.className = "seg";
+    d.o.forEach(v => {
+      const b = document.createElement("button"); b.textContent = (d.names && d.names[v]) || v; b.dataset.v = v;
+      b.onclick = () => { S[d.k] = typeof d.o[0] === "number" ? +v : v; paintKnobs(); changed(d.k); };
+      seg.appendChild(b);
+    });
+    row.appendChild(seg);
+    ctl[d.k] = { paint: () => { seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", String(b.dataset.v) === String(S[d.k]))); } };
+    knobsEl.appendChild(row);
+  });
+  function paintKnobs() { for (const k in ctl) ctl[k].paint(); }
+  /* a knob moved: the party and the scrolls are a new fight, the tags a new card */
+  function changed(k) {
+    if (k === "party" || k === "kit") pick(foeId);
+    if (k === "tags") dParty = null;
+    if (k === "lore" && foe) foe.known = knownOf(foe.id);
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+  function paintRule() {
+    const R = RULES[foeId], f = R.flee;
+    const fl = f && f.p === 0 ? "Never works" + (f.sub ? " (" + f.sub.toLowerCase() + ")" : "") + "." :
+      f && f.p === 100 ? "Always works" + (f.ok ? " (" + f.ok.toLowerCase() + ")" : "") + "." :
+      "50%, +4% a point of speed over its own (" + FOES[foeId].spd + "), between 20% and 90%.";
+    ruleEl.innerHTML = '<p class="lock"><b>Lock · plain blows</b>' + esc(R.lock) + '</p><p class="key"><b>Key</b>' + esc(R.key) + '</p><p class="flee"><b>Flee</b>' + esc(fl) + "</p>";
+    foeEl.value = foeId;
+    try { history.replaceState(null, "", "#foe=" + foeId); } catch (e) { /* file:// quirks */ }
+  }
+  /* one line of the feedback, newest on top: the Pop style, the word, the sub */
+  function log(style, word, sub) {
+    const d = document.createElement("div");
+    d.innerHTML = "<i>" + fightT.toFixed(1) + "s</i><b style=\"background:" + (STYLE[style] || "#9aa0b5") + "\">" + esc(style) + "</b>" + esc(word || "") + (sub ? " <span>· " + esc(sub) + "</span>" : "");
+    logEl.insertBefore(d, logEl.firstChild);
+    while (logEl.children.length > 60) logEl.removeChild(logEl.lastChild);
+  }
+  function pick(id) { startFight(id, { fresh: true }); }
+  document.getElementById("restart").onclick = () => pick(foeId);
+  document.getElementById("nextfoe").onclick = () => pick(FOE_IDS[(FOE_IDS.indexOf(foeId) + 1) % FOE_IDS.length]);
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.target === foeEl) return;
+    const k = e.key.toLowerCase();
+    if (k === "r") pick(foeId);
+    else if (k === "n") document.getElementById("nextfoe").click();
+  });
+
+  /* --- the canvas fits its stage; the DOM frame scales with it ------------------ */
+  function fit() {
+    const st = document.getElementById("stage");
+    const aw = st.clientWidth - 36, ah = st.clientHeight - 36;
+    const h = Math.min(ah, aw * H / W), w = h * W / H;
+    wrap.style.width = w + "px"; wrap.style.height = h + "px";
+    frameEl.style.transform = "scale(" + (w / W) + ")";
+    R = Math.max(0.5, Math.min(2, (window.devicePixelRatio || 1) * h / H));
+    cv.width = Math.round(W * R); cv.height = Math.round(H * R);
+  }
+
+  /* --- for a headless check: the state, and a way to play a card ---------------- */
+  const centre = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  window.__lab = {
+    S, canAct, startFight, pick,
+    state() { return { foe: foeId, actor: activeHero() && activeHero().id, foeHp: foe && foe.hp, mhp: foe && foe.mhp, st: foe && JSON.stringify(foe.st, (k, v) => v && v.b ? v.id : v),
+      party: party.map(h => h.id + ":" + h.hp), packs: activeHero() ? actionsOf(activeHero()) : [], tags: Array.from(frameEl.querySelectorAll("#drow .tc.on .rt")).map(e => e.textContent),
+      tl: TL.map(e => e.u.id + (e.it ? "(" + e.it.label + ")" : "")).join(" "), calls: calls.map(c => c.word) }; },
+    /* play a card of the turn: a scroll's red or blue face, "rule" or "flee" */
+    est(id) { const h = activeHero(); if (!h || !foe) return null; const r = hitEstimate(h, id); return { dmg: r.dmg, lo: r.lo, hi: r.hi, pct: r.m.pct || 0, known: JSON.stringify(foe.known), hp: foe.hp, st: JSON.stringify(foe.st, (k, v) => v && v.b ? v.id : v) }; },
+    play(id, side) { if (!canAct()) return false; tapIcon(id, side || "red", false); return true; },
+    where(id, side) { return centre(frameEl.querySelector('#drow .tc.on .ic[data-id="' + id + '"][data-side="' + (side || "red") + '"]')); },
+    log: () => Array.from(logEl.children).map(d => d.textContent).reverse()
+  };
+
+  /* a long press must not open the browser's own menu over the card */
+  wrap.addEventListener("contextmenu", e => e.preventDefault());
+
+  /* --- boot --------------------------------------------------------------- */
+  preload();
+  if (document.fonts && document.fonts.load) document.fonts.load('22px "Bebas Neue"');
+  paintKnobs();
+  const fromHash = /foe=([a-z]+)/.exec(location.hash || "");
+  pick(fromHash && FOES[fromHash[1]] ? fromHash[1] : FOE_IDS[0]);
+  fit();
+  window.addEventListener("resize", fit);
+  let last = performance.now();
+  (function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  })(last);
+})();
+</script>
+</body>
+</html>

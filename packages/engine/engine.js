@@ -145,11 +145,31 @@
       var r = canvas.getBoundingClientRect();          // accounts for the scale
       return { x: (cx - r.left) / r.width * view.w, y: (cy - r.top) / r.height * view.h };
     }
+    function send(type, p, e) {
+      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+    }
+    /* ONE FINGER, unless the game asks for more. The single-touch path is
+       the one every game was written against and it is kept as it was: the
+       point is the first touch still on the glass. A game that sets
+       `CONFIG.multiTouch = true` gets every finger instead, each event
+       carrying its own `p.id` (the touch's identifier, "mouse" for the
+       mouse) and read out of `changedTouches`, so a thumb held on a dial
+       and a second finger tapping a button are two gestures
+       (games/parrynormal). */
     function emit(type, e) {
+      if (CONFIG.multiTouch && e.changedTouches) {
+        for (var j = 0; j < e.changedTouches.length; j++) {
+          var c = e.changedTouches[j], q = toDesign(c.clientX, c.clientY);
+          q.id = c.identifier;
+          send(type, q, e);
+        }
+        return;
+      }
       var t = (e.touches && e.touches[0]) ? e.touches[0]
             : ((e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : e);
       var p = toDesign(t.clientX, t.clientY);
-      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+      if (CONFIG.multiTouch) p.id = "mouse";
+      send(type, p, e);
     }
     canvas.addEventListener("mousedown", function (e) { emit("down", e); });
     canvas.addEventListener("mousemove", function (e) { emit("move", e); });
@@ -1056,7 +1076,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|des|ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses|notre|nos|votre|vos|leur|leurs|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })

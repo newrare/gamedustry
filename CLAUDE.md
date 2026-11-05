@@ -5,7 +5,9 @@ Guidance for AI assistants (and humans) creating playable ads in this repo.
 ## What this project is
 
 A **game factory**. Open tasks live in [TODO.md](TODO.md) — read it before
-proposing next steps, and update it when something lands. One source per game, several outlets: the **playable ad**
+proposing next steps. **Never edit TODO.md unless the user explicitly asks
+for it**: no entry added, ticked, reworded or removed on your own, not even
+when something lands — say what could change there and let them decide. One source per game, several outlets: the **playable ad**
 (single-file HTML for ad networks) is the only one built today; the **web** target
 (the newrare site and itch.io) and an **android** target are
 planned in [docs/INDUSTRIALIZATION.md](docs/INDUSTRIALIZATION.md), which is the
@@ -204,8 +206,8 @@ development pages and answer only to the short rules in their own sections.
      your own.
 1. Publish the rules as **`Game.guide`** — chapters of pages, one page per
    rule, biome, object or special case, each with the level that first deals
-   it (`lv`, locked until then). The Help card ends on the book's line, *Anytime, tap
-   {book} for more help*, which opens it; a `Notify.learn(id)` opens page `id` from the "!" log; and a game
+   it (`lv`, locked until then). The Help card ends on the book's line, *Tap {book} for
+   more help*, which opens it; a `Notify.learn(id)` opens page `id` from the "!" log; and a game
    whose table explains itself on a tap opens the page of what was tapped
    (`__GUIDE__.open(id)`). See [The guide](#the-guide) below.
 1. Give every event a sound **picked from `assets/audio/sfx/`**, trimmed and embedded
@@ -834,12 +836,15 @@ What a view brings:
   never told apart on screen. The look is chosen in `lab/gearball-cards.html`.
 - **a game that publishes `Game.loadout` gets the LOADOUT card** — what the
   player takes into a round, picked before it starts
-  (`packages/webshell/loadout.{js,css}`): the slots on top, what the tile in
-  focus does under them, every item of the game in one grid — the locked ones
-  as dark silhouettes with a padlock and the level that opens them, from level
-  1 — and PLAY at the foot. Every slot is always filled, so PLAY is always
-  live, and a change is TWO TAPS, never a drag: a free tile is held, the slots
-  sway with the swap glyph, the slot tapped takes it. `play(n)` in levels.js asks it on every level
+  (`packages/webshell/loadout.{js,css}`): a bar counting the slots
+  taken, one segment a slot, every item of the game in ONE grid — the equipped ones lit with a
+  check, the locked ones as dark silhouettes with a padlock and the level that
+  opens them, from level 1 — what the tile in focus does under it, and PLAY
+  at the foot. There are no slots to drop into: a tap on a free tile EQUIPS
+  it and, past the slot count, the one equipped FIRST drops out (a queue); a
+  tap on an equipped tile takes it off. The card opens with every slot
+  filled, and PLAY is always live: a slot left empty is topped up with the
+  level's own suggestion. `play(n)` in levels.js asks it on every level
   started from the map, the village, the end screen's NEXT or the ranking;
   never on a REPLAY (`__LEVELS__.replay`, the same hand again), never on the
   first launch, never on a load a tool drives (`?first=0`, `?force=1`). The
@@ -849,7 +854,10 @@ What a view brings:
   `items()` (`{ id, lv }`), `info(id)` (`{ name, text, src }`), `suggest(n)`
   and `set(ids)`, which arms the next round (null: the level's own). An item
   is unlocked once the map has opened its `lv`, the codex's rule.
-  `games/holepocalypse` publishes it: its two supers among the twenty.
+  `games/holepocalypse` and `games/parrynormal` publish it: their supers.
+  The game takes the pick as it stands — the card already locks an item to
+  the climb OPENED, so a game must never re-filter it on the level being
+  played (a super found higher up stays the player's on a level replayed).
 
 **A game that declares `web.village` gets the VILLAGE**, a view between the
 title screen and the map, and it is the place the player lives:
@@ -1066,8 +1074,8 @@ target's; a playable has no guide and keeps the cards it has.
   chart, bridgessa's contract being played). A picture drawn before any round
   must not read round state: guard what is unset until `reset()`.
 - **Three ways in, one book.** The Help card keeps the sentence and the demo,
-  and ends on one line, *Anytime, tap {book} for more help*
-  (FR *À n'importe quel moment, appuie sur {book} pour obtenir plus d'aide*), the book drawn in it: it says
+  and ends on one line, *Tap {book} for more help*
+  (FR *Appuie sur {book} pour plus d'aide*), the book drawn in it: it says
   that a notice wearing the book opens its page, and a tap on the line opens
   the contents over the card. A game whose table explains
   itself on a tap calls `__GUIDE__.open(id)` — the page of what was tapped,
@@ -1904,7 +1912,9 @@ game and both catalogues, so a proofreading pass leaves a tree that still passes
 `node tools/update.mjs`. Three rules make a row honest, and they are why this is
 not a find-and-replace: **one row is every site** — "Length" written at three
 call sites is ONE row and applying it writes all three, which is the bug the
-page exists to prevent; **a mirror is not a second string** — `#intro-title` and
+page exists to prevent — and the same English written by two KINDS of call (a
+callout and a refusal, a table and a ternary) is one row too, tagged
+**shared**, since both read the one French its key holds (`mergeShared`); **a mirror is not a second string** — `#intro-title` and
 `#intro-tagline` are rewritten from `CONFIG` at boot, so they ride on the CONFIG
 row and are written with it rather than being offered on their own; and **a
 fragment keeps its expression** — `st === 3 ? "Apex viper!" : CONFIG.copy.gameOver`
@@ -1927,10 +1937,16 @@ store composer plus one more: they write.
 every page of `lab/`, read off the pages themselves (the `<title>` and the
 headline of the header comment, so a new page is listed with nothing to
 register), filed in three groups the page declares with
-`<meta name="lab-group">` — **TOOLS** (what a game is built and checked
-with), **CSS** (a look tried before it moves into the motor or a SKIN) and
-**PROTOTYPE** (a mechanic tried outside the motor) — and tagged with the one
-game it is about by `<meta name="lab-game">`, and opens each one in a frame
+`<meta name="lab-group">` — **BACKOFFICE** (what a game is built and checked
+with), **FRONT** (a look tried before it moves into the motor or a SKIN) and
+**TESTS** (a mechanic tried outside the motor) — and tagged with the one
+game it is about by `<meta name="lab-game">`; a fourth group, **PROTOTYPE**,
+lists every page of `prototype/`, named by its file and filed by its folder
+unless it declares a group — the same two metas are the one ceremony a
+prototype carries, and one about no game is tagged `none`. A tool whose page
+is a checklist — the five *Game list* pages — names its tick with
+`<meta name="lab-done" content="api/done">`, and its entry goes green once
+every item of every game is checked (`{ checked, total, done }`). It opens each one in a frame
 beside the list; the hash is the
 location, so a reload comes back to the same page. The four tools with a server
 are **proxied under a prefix** — `/events/` (and `/events/library`, `/events/pop`), `/text/`,
@@ -1940,8 +1956,8 @@ synchronous CPU (the copy desk's was ~18 s before it went per game), and in a
 shared process it froze every other tool.
 That prefix is why a page served by a tool **addresses it with relative urls**
 (`api/games`, never `/api/games`) — a new tool page must too. Every other page
-is served as a file under `/lab/`, with `assets/`, `games/` and `packages/`
-read-only beside it, which is what its `../` paths already reach. All of these
+is served as a file under `/lab/` (a prototype under `/prototype/`), with
+`assets/`, `games/` and `packages/` read-only beside it, which is what its `../` paths already reach. All of these
 servers sit on `tools/lib/serve.mjs`: they bind `127.0.0.1`, answer only a
 `Host` naming this machine, and a new lab server starts from it rather than
 from `createServer`.

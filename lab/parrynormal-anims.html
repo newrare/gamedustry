@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Parrynormal animations</title>
+<!-- Filed in the back office (make lab): tools | css | tests, and the one game it is about, if any. -->
+<meta name="lab-group" content="tools">
+<meta name="lab-game" content="parrynormal">
+<style>
+/* ===========================================================================
+   PARRYNORMAL ANIMATIONS — every animation of one character, looping, the
+   way the round draws it.
+
+   Pick a monster (or the witch) and the stage lays out a grid: one ROW per
+   animation the round plays — walk, the attack's wind-up (the red aura
+   arriving) and charge, hurt, thrown, dizzy, a whole sequence, the kind's
+   own trick, the toad — and one
+   COLUMN per direction, the eight the round turns a sprite to (the three
+   left-facing ones are the right-facing columns mirrored, never rotated).
+   Each cell stands on the floor of a biome's painted scene, under that
+   biome's night if asked.
+
+   Nothing here is a copy of the game's numbers: the tables (ENEMIES, SIZES,
+   PALETTES, PALETTE_SKIP, MOODS, TINTS, BIOMES, NIGHTS) are read out of
+   ../games/parrynormal/game.js when the page opens, and the frames are the
+   shipped ones, ../assets/image/embed/parrynormal-<kind>NN.webp. The drawing
+   rules are the round's: the feet measured off each frame's pixels, one
+   scale per kind off its first frame, the shadow, a flier's lift and bob,
+   the lean of a thrown monster on its feet, the tints, the biome palettes.
+   If the round changes how it DRAWS, this page has to follow by hand.
+
+   A cell under the pointer says which file it plays; a click opens it alone,
+   big, with its frame named. Reading pixels needs the page served over http
+   (make lab): over file:// the tables cannot be read either.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 280px;
+  padding:22px 20px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+  overflow-y:auto;
+  max-height:100vh;
+  position:sticky; top:0;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel h2 { margin:22px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+
+.row { margin-bottom:14px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit;
+}
+.check { display:flex; gap:8px; align-items:center; margin-bottom:10px; font-size:12px; color:#9c9cba; cursor:pointer; }
+.check input { accent-color:#7ea6ff; }
+button {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.ghost { background:#23233a; color:#e8e6f5; }
+.duo { display:flex; gap:8px; }
+.duo button { flex:1; }
+
+#about { margin-top:6px; padding:10px 12px; border-radius:8px; background:#0b0b12; border:1px solid #23233a;
+  font-weight:500; font-size:12px; color:#b9b9d6; }
+#about b { color:#e8e6f5; }
+#readout { margin-top:10px; min-height:3.2em; font-weight:500; font-size:12px; color:#8b8ba7; }
+#readout b { color:#ffd36b; }
+
+#stage {
+  flex:1;
+  padding:24px;
+  overflow:auto;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#msg { padding:40px; color:#ff9a9a; font-weight:500; white-space:pre-wrap; }
+canvas { display:block; border-radius:12px; background:#0a0718; box-shadow:0 18px 50px rgba(0,0,0,.5); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Animations</h1>
+  <p class="hint">Is every animation of this character right, in every direction, the way the round plays it?</p>
+
+  <div class="row">
+    <label for="kind">character</label>
+    <select id="kind"></select>
+  </div>
+  <div id="about">Loading the game's tables…</div>
+
+  <h2>Variant</h2>
+  <div class="row">
+    <label for="size">size</label>
+    <select id="size">
+      <option value="normal">Normal</option>
+      <option value="baby">Baby</option>
+      <option value="boss">Giant</option>
+    </select>
+  </div>
+  <div class="row">
+    <label for="pal">colours</label>
+    <select id="pal"></select>
+  </div>
+  <div class="row">
+    <label for="mood">mood</label>
+    <select id="mood">
+      <option value="">None</option>
+      <option value="enraged">Enraged</option>
+      <option value="slowed">Slowed</option>
+      <option value="tired">Tired</option>
+    </select>
+  </div>
+
+  <h2>Stage</h2>
+  <div class="row">
+    <label for="ground">floor</label>
+    <select id="ground"></select>
+  </div>
+  <div class="row">
+    <label for="night">light</label>
+    <select id="night">
+      <option value="off">As painted</option>
+      <option value="far">The biome's night, far from the witch</option>
+      <option value="near">The biome's night, by the witch's lantern</option>
+    </select>
+  </div>
+  <label class="check"><input type="checkbox" id="shadow" checked> Shadow under the feet</label>
+  <label class="check"><input type="checkbox" id="marks"> Show the feet and the frame box</label>
+
+  <h2>Play</h2>
+  <div class="row">
+    <label for="speed">speed <b id="speed-v">1.00</b></label>
+    <input id="speed" type="range" min="0" max="200" value="100" step="5">
+  </div>
+  <div class="row">
+    <label for="zoom">zoom <b id="zoom-v">1.0</b></label>
+    <input id="zoom" type="range" min="50" max="300" value="100" step="10">
+  </div>
+  <div class="duo">
+    <button id="pause" class="ghost">Pause</button>
+    <button id="grid" class="ghost">All cells</button>
+  </div>
+  <p class="hint">A click on a cell opens it alone, big; a second click goes back to the grid.</p>
+  <div id="readout"></div>
+</div>
+
+<div id="stage">
+  <canvas id="view" width="720" height="720"></canvas>
+  <div id="msg" hidden></div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const view = $("view"), ctx = view.getContext("2d");
+  const GAME = "../games/parrynormal/game.js";
+  const EMBED = "../assets/image/embed/parrynormal-";
+
+  // ---- the game's own tables, read out of its source -----------------------
+  /* `var NAME = <literal>;` — the literal is matched bracket by bracket,
+     strings and comments skipped, then evaluated on its own. Every table
+     read here is plain data. */
+  function grab(src, name) {
+    const at = src.indexOf("var " + name + " = ");
+    if (at < 0) throw new Error("game.js has no var " + name);
+    return literal(src, src.indexOf("=", at) + 1);
+  }
+  // the literal that opens at (or after the blanks at) `j`
+  function literal(src, j) {
+    while (/\s/.test(src[j])) j++;
+    let depth = 0, str = null, k = j;
+    for (; k < src.length; k++) {
+      const c = src[k];
+      if (str) { if (c === "\\") k++; else if (c === str) str = null; continue; }
+      if (c === '"' || c === "'") { str = c; continue; }
+      if (c === "/" && src[k + 1] === "/") { k = src.indexOf("\n", k); continue; }
+      if (c === "/" && src[k + 1] === "*") { k = src.indexOf("*/", k) + 1; continue; }
+      if (c === "[" || c === "{" || c === "(") depth++;
+      if (c === "]" || c === "}" || c === ")") { depth--; if (depth === 0) break; }
+    }
+    return new Function("return (" + src.slice(j, k + 1) + ");")();
+  }
+
+  let T = null;                         // the tables
+  const WITCH = { key: "witch", name: "Witch", h: 132, r: 46, rows: 5, beh: "witch", speed: 60, biome: 0 };
+
+  // ---- frames ----------------------------------------------------------------
+  const images = {}, metricCache = {}, probe = document.createElement("canvas");
+  const two = (n) => (n < 10 ? "0" : "") + n;
+  function load(key) {
+    if (images[key]) return images[key].p;
+    const im = new Image(), rec = { im, ok: false };
+    rec.p = new Promise((done) => {
+      im.onload = () => { rec.ok = true; done(); };
+      im.onerror = () => done();
+    });
+    im.src = EMBED + key + ".webp";
+    images[key] = rec;
+    return rec.p;
+  }
+  const img = (key) => images[key] && images[key].ok ? images[key].im : null;
+
+  /* The round's measure (games/parrynormal/game.js, metrics): the lowest
+     opaque row is the feet, the weighted middle of the last quarter of the
+     body their x, the opaque height the body. */
+  function metrics(key) {
+    if (metricCache[key]) return metricCache[key];
+    const im = img(key);
+    if (!im) return null;
+    const w = im.naturalWidth, h = im.naturalHeight, m = { w, h, fx: w / 2, fy: h * 0.96, sh: h * 0.9 };
+    try {
+      const s = Math.min(1, 96 / Math.max(w, h)), cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+      probe.width = cw; probe.height = ch;
+      const c = probe.getContext("2d");
+      c.clearRect(0, 0, cw, ch);
+      c.drawImage(im, 0, 0, cw, ch);
+      const d = c.getImageData(0, 0, cw, ch).data;
+      let top = -1, bot = -1;
+      for (let y = 0; y < ch; y++) {
+        let n = 0;
+        for (let x = 0; x < cw; x++) if (d[(y * cw + x) * 4 + 3] > 160) n++;
+        if (n > 1) { if (top < 0) top = y; bot = y; }
+      }
+      if (bot > 0) {
+        let sxw = 0, sw = 0;
+        const from = Math.max(top, bot - Math.round((bot - top) * 0.25));
+        for (let y = from; y <= bot; y++) for (let x = 0; x < cw; x++) {
+          const a = d[(y * cw + x) * 4 + 3];
+          if (a > 160) { sxw += x * a; sw += a; }
+        }
+        m.fx = (sw ? sxw / sw : cw / 2) / s;
+        m.fy = (bot + 1) / s;
+        m.sh = (bot - top + 1) / s;
+        m.top = top / s;
+      }
+    } catch (e) { /* tainted: the box's guess stands */ }
+    metricCache[key] = m;
+    return m;
+  }
+
+  // ---- the biome palettes (games/parrynormal/game.js, palFrame) --------------
+  function rgb2hsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    let h = 0, s = 0; const l = (mx + mn) / 2;
+    if (d > 0.0001) {
+      s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+      if (mx === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (mx === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+    }
+    return [h, s, l];
+  }
+  function hue2(p, q, t) {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  }
+  function hsl2rgb(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    if (s <= 0) return [l * 255, l * 255, l * 255];
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    return [hue2(p, q, h + 1 / 3) * 255, hue2(p, q, h) * 255, hue2(p, q, h - 1 / 3) * 255];
+  }
+  const wrapDeg = (a) => { a = ((a % 360) + 360) % 360; return a > 180 ? a - 360 : a; };
+  const canvasOf = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, w); c.height = Math.max(1, h); return c; };
+  const hueCache = {}, palCache = {}, tintCache = {};
+  function bodyHue(art) {
+    if (hueCache[art] != null) return hueCache[art];
+    const im = img(art + "01");
+    if (!im) return null;
+    const bins = new Array(36).fill(0);
+    try {
+      const c = canvasOf(im.naturalWidth, im.naturalHeight), g = c.getContext("2d");
+      g.drawImage(im, 0, 0);
+      const d = g.getImageData(0, 0, c.width, c.height).data;
+      for (let i = 0; i < d.length; i += 16) {
+        if (d[i + 3] < 200) continue;
+        const hs = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+        if (hs[1] < 0.25 || hs[2] < 0.15 || hs[2] > 0.85) continue;
+        bins[Math.floor(hs[0] / 10) % 36]++;
+      }
+    } catch (e) { return null; }
+    let best = 0;
+    for (let i = 1; i < 36; i++) if (bins[i] > bins[best]) best = i;
+    return (hueCache[art] = best * 10 + 5);
+  }
+  function palFrame(key, art, pi) {
+    const ck = key + "|" + pi;
+    if (palCache[ck] !== undefined) return palCache[ck];
+    const im = img(key), pal = T.PALETTES[pi], bh = bodyHue(art);
+    if (!im || !pal || bh == null) return null;
+    let c = canvasOf(im.naturalWidth, im.naturalHeight);
+    const g = c.getContext("2d");
+    g.drawImage(im, 0, 0);
+    try {
+      const data = g.getImageData(0, 0, c.width, c.height), d = data.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] < 8) continue;
+        const hs = rgb2hsl(d[i], d[i + 1], d[i + 2]), off = wrapDeg(hs[0] - bh);
+        if (hs[1] < 0.15 || Math.abs(off) > 45) continue;
+        const rgb = hsl2rgb(pal.h + off, Math.min(1, hs[1] * pal.s), Math.min(1, hs[2] * pal.l));
+        d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2];
+      }
+      g.putImageData(data, 0, 0);
+    } catch (e) { c = null; }
+    return (palCache[ck] = c);
+  }
+  function tinted(ck, src, tint) {
+    const k = ck + "|" + tint;
+    if (tintCache[k]) return tintCache[k];
+    const c = canvasOf(src.width || src.naturalWidth, src.height || src.naturalHeight), g = c.getContext("2d");
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = "source-atop";
+    g.fillStyle = T.TINTS[tint];
+    g.fillRect(0, 0, c.width, c.height);
+    return (tintCache[k] = c);
+  }
+
+  // ---- the eight directions (games/parrynormal/game.js, facing) --------------
+  const DIRS = [
+    { vx: 0,  vy: 1,  col: 1, flip: false, name: "Front",                   arrow: "↓" },
+    { vx: 1,  vy: 1,  col: 2, flip: false, name: "Front diagonal",          arrow: "↘" },
+    { vx: 1,  vy: 0,  col: 3, flip: false, name: "Profile",                 arrow: "→" },
+    { vx: 1,  vy: -1, col: 4, flip: false, name: "Back diagonal",           arrow: "↗" },
+    { vx: 0,  vy: -1, col: 5, flip: false, name: "Back",                    arrow: "↑" },
+    { vx: -1, vy: -1, col: 4, flip: true,  name: "Back diagonal, mirrored", arrow: "↖" },
+    { vx: -1, vy: 0,  col: 3, flip: true,  name: "Profile, mirrored",       arrow: "←" },
+    { vx: -1, vy: 1,  col: 2, flip: true,  name: "Front diagonal, mirrored", arrow: "↙" }
+  ];
+
+  // ---- state -----------------------------------------------------------------
+  const P = { kind: "bat", size: "normal", pal: 0, mood: "", ground: 0, night: "off", speed: 1, zoom: 1 };
+  let clock = 0, paused = false, focus = null, layout = null, hover = null;
+  const def = () => P.kind === "witch" ? WITCH : T.EN[P.kind];
+  const artOf = (d) => d.key === "witch" ? "witch" : d.art || d.key;
+  const sizeOf = () => P.kind === "witch" ? { draw: 1, rate: 1, knock: 1 } : T.SIZES[P.size];
+
+  /* The rows: what the round plays, and how. Each returns the frame's row
+     and what is laid on it, for a clock `t` in seconds. */
+  function rowsOf(d) {
+    const last = d.rows || 4, S = sizeOf(), M = P.mood ? T.MOODS[P.mood] : null;
+    const rate = 6 * Math.min(1.8, Math.max(0.6, d.speed / 60)) * S.rate * (M ? M.rate || 1 : 1);
+    const walk = (t) => 1 + (Math.floor(t * rate) % 2);
+    if (d.key === "witch") {
+      return [
+        { name: "Ready", note: "two frames, two a second", f: (t) => ({ row: 1 + (Math.floor(t * 2) % 2) }) },
+        { name: "Launch", note: "a ball leaves the shield", f: () => ({ row: 3 }) },
+        { name: "Hurt", note: "a heart lost (or the shield frozen)", f: (t) => ({ row: 4, tints: [["white", (t % 1) < 0.4 ? 0.5 : 0]] }) },
+        { name: "Cheer", note: "the stage won", f: (t) => ({ row: 5, bob: Math.abs(Math.sin(t * 8)) * 10 }) }
+      ];
+    }
+    /* THE ATTACK (games/parrynormal/game.js, attackStep): a walker within
+       reach stops in its pose (row 3) while the red aura arrives — the
+       wind-up — then rushes the witch at a run, the aura burning — the
+       charge. The Toad Shaman winds up before each spit; the dragon before
+       its rush, which is its row 4; the Dark Priest heals and never charges. */
+    const melee = d.beh !== "shooter" && d.beh !== "healer" && d.beh !== "boss" && d.beh !== "burrow";
+    const A = T.ATTACK[d.key] || {};
+    const W = d.key === "dragon" ? 0.8 : d.beh === "shooter" ? 0.5 : A.windup || T.P.windup;
+    const windup = (u) => ({ row: 3, aura: Math.min(1, u / W), auraIn: u < W });
+    const charge = (t) => ({ row: d.key === "dragon" ? 4 : 1 + (Math.floor(t * rate * 2) % 2), aura: 1, embers: true });
+    const list = [{ name: "Walk", note: "rows 1 and 2, " + rate.toFixed(1) + " steps a second", f: (t) => ({ row: walk(t) }) }];
+    if (melee || d.key === "dragon") {
+      const cs = d.key === "dragon" ? 230 : A.speed || Math.max(T.P.chargeMin, d.speed * S.speed * T.P.chargeK);
+      list.push(
+        { name: "Wind-up", note: "row 3, the red aura arriving over " + W + " s", f: (t) => windup(t % (W + 0.5)) },
+        { name: "Charge", note: (d.key === "dragon" ? "row 4" : "rows 1 and 2 at double pace") + ", aura burning, " + Math.round(cs) + " px/s", f: (t) => charge(t) },
+        { name: "Attack", note: "walk, wind-up, charge, again", f: (t) => {
+          const u = t % (1 + W + 1.2);
+          return u < 1 ? { row: walk(t) } : u < 1 + W ? windup(u - 1) : charge(t);
+        } }
+      );
+    }
+    /* The Gravedigger never charges: its wind-up is a feint, then it digs in
+       where it stands, tunnels round the witch as a mound nothing can touch,
+       and comes up elsewhere walking (games/parrynormal/game.js, burrowDown). */
+    if (d.beh === "burrow") {
+      list.push(
+        { name: "Wind-up", note: "row 3, the red aura arriving over " + W + " s: a feint", f: (t) => windup(t % (W + 0.5)) },
+        { name: "Feint", note: "walk, wind-up, dig in, a mound, up again", f: (t) => {
+          const u = t % (1 + W + 1.6 + 0.6);
+          if (u < 1) return { row: walk(t) };
+          if (u < 1 + W) return windup(u - 1);
+          if (u < 1 + W + 1.6) return { icon: "extra08", at: 0.4, size: 2.6 };
+          return { row: walk(t) };
+        } }
+      );
+    }
+    if (d.beh === "shooter") list.push({ name: "Spit", note: "row 3, the aura arriving over 0.5 s, then the spit", f: (t) => {
+      const u = t % 2;
+      return u < 1 ? { row: walk(t) } : u < 1.5 ? windup(u - 1) : { row: 3, aura: Math.max(0, 1 - (u - 1.5) * 4) };
+    } });
+    if (d.beh === "healer") list.push({ name: "Heal", note: "row 3, a green ring every 2 s", f: (t) => (t % 2) < 0.5 ? { row: 3 } : { row: walk(t) } });
+    list.push({ name: "Hurt", note: "row " + last + ", a hit's white flash", f: (t) => ({ row: last, flash: (t % 1) < 0.12 }) });
+    list.push(
+      { name: "Thrown", note: "the hurt row, leaning back on its feet, dragging dust", f: (t, dir) => thrown(t, dir, last, S) },
+      { name: "Dizzy", note: "the hurt row, swaying on its feet", f: (t) => ({ row: last, lean: Math.sin(t * 18) * 6 * Math.PI / 180 }) },
+      { name: "Sequence", note: melee ? "walk, wind-up, charge, thrown back" : "walk, attack pose, hurt", f: (t, dir) => {
+        if (!melee) { const u = t % 2.4; return u < 1.4 ? { row: walk(t) } : u < 2 ? { row: 3 } : { row: last, flash: u < 2.12 }; }
+        const u = t % (1 + W + 0.8 + 1.6);
+        if (u < 1) return { row: walk(t) };
+        if (u < 1 + W) return windup(u - 1);
+        if (u < 1 + W + 0.8) return charge(t);
+        return Object.assign(thrown(u - 1 - W - 0.8, dir, last, S), { aura: Math.max(0, 1 - (u - 1 - W - 0.8) * 4) });
+      } }
+    );
+    if (d.beh === "stone") list.push({ name: "Stone", note: "out of harm's way 1.2 s in every 3.2", f: (t) => ({ row: walk(t), tints: [["stone", (t % 3.2) > 2 ? 0.7 : 0]] }) });
+    if (d.beh === "phase") list.push({ name: "Fade", note: "balls pass through it 0.9 s in every 2", f: (t) => ({ row: walk(t), alpha: (t % 2) < 0.9 ? 0.3 : 1 }) });
+    if (d.beh === "burrow") list.push({ name: "Underground", note: "the mound it tunnels as, out of reach (extra08)", f: () => ({ icon: "extra08", at: 0.4, size: 2.6 }) });
+    if (d.beh === "bones") list.push({ name: "Pile of bones", note: "falls apart for 2.5 s (extra07)", f: (t) => (t % 4) < 2.5 ? { icon: "extra07", at: 0.5, size: 2.8 } : { row: walk(t) } });
+    if (d.key !== "dragon") list.push({ name: "Toad", note: "the Toadify super (extra01, extra02)", f: (t) => ({ icon: Math.floor(t * 4) % 2 ? "extra02" : "extra01", at: 0.7, size: 2.3 }) });
+    return list;
+  }
+  /* Thrown: a slide away from where it faces, slowing down (knockDamp),
+     leaning back from the push (clamp(-kx / 2400)) on its feet, then a walk
+     back to its spot. Drawn small: the round's slide is far longer. */
+  function thrown(t, dir, last, S) {
+    const u = t % 1.6, damp = T.P.knockDamp, sp0 = T.P.knockSpeed * (S.knock || 1);
+    const l = Math.hypot(dir.vx, dir.vy) || 1, bx = -dir.vx / l, by = -dir.vy / l;
+    if (u < 1) {
+      const sp = sp0 * Math.exp(-damp * u), dist = sp0 / damp * (1 - Math.exp(-damp * u)) * 0.07;
+      const kx = bx * sp;
+      return { row: last, lean: Math.max(-0.4, Math.min(0.4, -kx / 2400)), dx: bx * dist, dy: by * dist, dust: sp > 300 ? sp : 0 };
+    }
+    const back = sp0 / damp * (1 - Math.exp(-damp)) * 0.07 * (1 - (u - 1) / 0.6);
+    return { row: 1 + (Math.floor(t * 6) % 2), dx: bx * back, dy: by * back };
+  }
+
+  // ---- drawing ---------------------------------------------------------------
+  let shadowCv = null;
+  function shadow(x, y, w, a) {
+    if (!shadowCv) {
+      shadowCv = canvasOf(64, 32);
+      const g = shadowCv.getContext("2d"), gr = g.createRadialGradient(32, 16, 2, 32, 16, 30);
+      gr.addColorStop(0, "rgba(0,0,0,0.8)"); gr.addColorStop(0.45, "rgba(0,0,0,0.5)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+      g.save(); g.scale(1, 0.5); g.translate(0, 16);
+      g.fillStyle = gr; g.beginPath(); g.arc(32, 16, 30, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha *= a;
+    ctx.drawImage(shadowCv, x - w / 2, y - w / 4, w, w / 2);
+    ctx.restore();
+  }
+  // frame `idx` of the character, its feet on (x, fy), its body `hh` tall (drawSprite)
+  function sprite(d, idx, flip, x, fy, hh, o) {
+    const art = artOf(d), key = art + two(idx), im = img(key);
+    if (!im) return null;
+    const m = metrics(key), m1 = metrics(art + "01");
+    if (!m || !m1) return null;
+    let src = im, ck = key;
+    if (P.pal && d.key !== "witch") { const pc = palFrame(key, art, P.pal); if (pc) { src = pc; ck = key + "|p" + P.pal; } }
+    const s = hh / m1.sh;
+    ctx.save();
+    if (o.alpha != null && o.alpha < 1) ctx.globalAlpha *= o.alpha;
+    ctx.translate(x, fy);
+    if (o.lean) ctx.rotate(o.lean);
+    if (flip) ctx.scale(-1, 1);
+    const dx = -m.fx * s, dy = -m.fy * s, dw = m.w * s, dh = m.h * s;
+    if (o.aura > 0) aura(ck, src, o.aura, o.auraIn, dx, dy, dw, dh, x + fy);
+    ctx.drawImage(src, dx, dy, dw, dh);
+    const base = ctx.globalAlpha;
+    for (const tn of o.tints || []) {
+      if (!tn || tn[1] <= 0) continue;
+      ctx.globalAlpha = base * tn[1];
+      ctx.drawImage(tinted(ck, src, tn[0]), dx, dy, dw, dh);
+    }
+    ctx.restore();
+    return { key, m, s, dx, dy, dw, dh };
+  }
+  /* The red aura (games/parrynormal/game.js, glowOf / drawAura): the
+     frame's silhouette in red, blurred by drawing it small, laid behind it
+     three times like a flame — the first flat, so it stays red on any floor,
+     the two over it added. Arriving, it closes in on the body's middle. */
+  const glowCache = {};
+  function glowOf(ck, src) {
+    if (glowCache[ck]) return glowCache[ck];
+    const w = src.width || src.naturalWidth, h = src.height || src.naturalHeight, q = 6, pad = Math.round(Math.max(w, h) * 0.12);
+    const sil = tinted(ck, src, "rage");
+    const sm = canvasOf(Math.ceil((w + pad * 2) / q), Math.ceil((h + pad * 2) / q));
+    sm.getContext("2d").drawImage(sil, pad / q, pad / q, w / q, h / q);
+    const c = canvasOf(w + pad * 2, h + pad * 2), g = c.getContext("2d");
+    g.imageSmoothingEnabled = true;
+    g.drawImage(sm, 0, 0, c.width, c.height); g.drawImage(sm, 0, 0, c.width, c.height);
+    c.pad = pad;
+    return (glowCache[ck] = c);
+  }
+  function aura(ck, src, k, arriving, dx, dy, dw, dh, seed) {
+    const gl = glowOf(ck, src), sx = dw / (src.width || src.naturalWidth), p = gl.pad * sx, t = clock;
+    const grow = arriving ? 1 + (1 - k) * 0.9 : 1, cy = dy + dh * 0.55;
+    ctx.save();
+    ctx.translate(0, cy); ctx.scale(grow, grow); ctx.translate(0, -cy);
+    for (let i = 0; i < 3; i++) {
+      const fl = 0.5 + 0.5 * Math.sin(t * (7 + i * 3) + i * 2 + seed);
+      ctx.save();
+      ctx.globalCompositeOperation = i ? "lighter" : "source-over";
+      ctx.globalAlpha = Math.min(1, k * (i ? 0.45 + 0.25 * fl : 0.85));
+      ctx.transform(1, 0, Math.sin(t * 2.3 + i + seed) * 0.06, 1, 0, 0);
+      ctx.scale(1 + 0.05 * i, 1.02 + (0.05 + (0.08 + 0.05 * fl) * i));
+      ctx.drawImage(gl, dx - p, dy - p, dw + p * 2, dh + p * 2);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+  function icon(key, x, y, size, alpha) {
+    const im = img(key);
+    if (!im) return;
+    const w = im.naturalWidth, h = im.naturalHeight, s = size / Math.max(w, h);
+    ctx.save();
+    if (alpha != null) ctx.globalAlpha *= alpha;
+    ctx.drawImage(im, x - w * s / 2, y - h * s / 2, w * s, h * s);
+    ctx.restore();
+  }
+  function moodTints(t) {
+    if (!P.mood) return [];
+    const M = T.MOODS[P.mood];
+    if (P.mood === "enraged") return [["rage", 0.28 + 0.18 * Math.sin(t * 10)]];
+    return M.tint ? [[M.tint, P.mood === "slowed" ? 0.35 : 0.3]] : [];
+  }
+
+  // the floor: the middle of the biome's painted scene, in design px
+  function floor(x, y, w, h) {
+    const b = T.BIOMES[P.ground], im = img("scene-" + b.key);
+    if (!im) { ctx.fillStyle = b.mid; ctx.fillRect(x, y, w, h); return; }
+    const k = im.naturalWidth / 720;
+    ctx.drawImage(im, (360 - w / 2) * k, (700 - h / 2) * k, w * k, h * k, x, y, w, h);
+  }
+  // the biome's night over one cell: its ambient, lit by the monster's own glow (and the lantern)
+  function night(x, y, w, h, cx, cy, r) {
+    if (P.night === "off") return;
+    const n = T.NIGHTS[P.ground], a = parseInt(n.amb.slice(1), 16), k = n.dark;
+    const ch = (s) => Math.round(255 * (1 - k) + ((a >> s) & 255) * k);
+    const amb = "rgb(" + ch(16) + "," + ch(8) + "," + ch(0) + ")";
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    const buf = night.buf || (night.buf = canvasOf(8, 8)), g = buf.getContext("2d");
+    if (buf.width !== Math.ceil(w) || buf.height !== Math.ceil(h)) { buf.width = Math.ceil(w); buf.height = Math.ceil(h); }
+    g.globalCompositeOperation = "source-over"; g.globalAlpha = 1;
+    g.fillStyle = amb; g.fillRect(0, 0, buf.width, buf.height);
+    g.globalCompositeOperation = "lighter";
+    const glow = (gx, gy, gr, col, ga) => {
+      const rg = g.createRadialGradient(gx, gy, 0, gx, gy, gr);
+      rg.addColorStop(0, col); rg.addColorStop(0.35, col.replace("rgb", "rgba").replace(")", ",0.55)")); rg.addColorStop(1, col.replace("rgb", "rgba").replace(")", ",0)"));
+      g.globalAlpha = ga; g.fillStyle = rg; g.fillRect(gx - gr, gy - gr, gr * 2, gr * 2);
+    };
+    glow(cx - x, cy - y, r * 3.4, "rgb(216,208,255)", 0.42);
+    if (P.night === "near") glow(cx - x - w * 0.15, cy - y - h * 0.25, 250, "rgb(255,208,138)", 0.95);
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(buf, x, y);
+    ctx.restore();
+  }
+  // an attacker's red glow, laid after the night as the round's bloom does
+  function redGlow(x, y, w, h, cx, cy, r, k) {
+    if (k <= 0) return;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+    ctx.globalCompositeOperation = "screen";
+    const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 3);
+    rg.addColorStop(0, "rgba(255,42,26," + 0.55 * k + ")"); rg.addColorStop(0.35, "rgba(255,42,26," + 0.3 * k + ")"); rg.addColorStop(1, "rgba(255,42,26,0)");
+    ctx.fillStyle = rg; ctx.fillRect(cx - r * 3, cy - r * 3, r * 6, r * 6);
+    ctx.restore();
+  }
+
+  /* One cell: the floor, the shadow, the character as the row says, the
+     night over it. Returns what was drawn, for the readout. */
+  function cell(x, y, w, h, rowDef, dir, t) {
+    const d = def(), S = sizeOf(), hh = d.h * S.draw, r = d.r * S.draw;
+    floor(x, y, w, h);
+    const o = rowDef.f(t, dir);
+    const cx = x + w / 2 + (o.dx || 0), feet = y + h - Math.max(18, r * 0.9) + (o.dy || 0);
+    let lift = d.lift ? d.lift * S.draw + Math.sin(t * 6) * 4 : 0;
+    if (o.bob) lift += o.bob;
+    if (on("shadow")) {
+      if (d.key === "witch") shadow(cx, feet, r * 2.4, 0.9);
+      else shadow(cx, feet, r * (d.lift ? 1.9 : 2.6), d.lift ? 0.45 : 0.9);
+    }
+    // the dust a thrown monster drags
+    if (o.dust && !d.lift) for (let i = 1; i <= 3; i++) {
+      const l = Math.hypot(dir.vx, dir.vy) || 1;
+      ctx.fillStyle = "rgba(200,190,220," + (0.45 - i * 0.12) + ")";
+      ctx.beginPath(); ctx.arc(cx + dir.vx / l * i * 12, feet - 4 - i * 2, 5 + i * 2, 0, Math.PI * 2); ctx.fill();
+    }
+    let drawn = null;
+    if (o.icon) {
+      icon(o.icon, cx, feet - r * o.at, r * o.size);
+      drawn = { key: o.icon };
+    } else {
+      const tints = [["white", o.flash ? 0.75 : 0]].concat(o.tints || [], d.key === "witch" ? [] : moodTints(t));
+      drawn = sprite(d, (o.row - 1) * 5 + dir.col, dir.flip, cx, feet - lift, hh, { lean: o.lean, alpha: o.alpha, tints, aura: o.aura || 0, auraIn: o.auraIn });
+      // the embers a charge throws up
+      if (o.embers) for (let i = 0; i < 4; i++) {
+        const u = ((clock * 1.6 + i * 0.25) % 1), ex = cx + Math.sin(i * 2.1 + clock * 3) * r * 0.5, ey = feet - lift - hh * (0.3 + u * 0.9);
+        ctx.fillStyle = "rgba(255," + (90 + i * 30) + ",60," + (1 - u) + ")";
+        ctx.beginPath(); ctx.arc(ex, ey, 3 * (1 - u * 0.5), 0, Math.PI * 2); ctx.fill();
+      }
+      if (drawn) drawn.row = o.row;
+      if (drawn && on("marks")) {
+        ctx.save();
+        ctx.translate(cx, feet - lift);
+        if (o.lean) ctx.rotate(o.lean);
+        if (dir.flip) ctx.scale(-1, 1);
+        ctx.strokeStyle = "rgba(255,170,60,.8)"; ctx.lineWidth = 1;
+        ctx.strokeRect(drawn.dx, drawn.dy, drawn.dw, drawn.dh);
+        ctx.restore();
+        ctx.fillStyle = "#3dffd8"; ctx.fillRect(cx - 14, feet - lift - 1, 28, 2);
+      }
+    }
+    night(x, y, w, h, cx, feet - lift - hh * 0.4, r);
+    redGlow(x, y, w, h, cx, feet - lift - r * 0.3, r, o.aura || 0);
+    return drawn;
+  }
+  const on = (id) => $(id).checked;
+
+  // ---- the grid ----------------------------------------------------------------
+  const HEAD = 46, SIDE = 150;
+  function measure() {
+    const d = def(), S = sizeOf(), hh = d.h * S.draw, r = d.r * S.draw, lift = d.lift ? d.lift * S.draw + 4 : 0;
+    const rows = rowsOf(d);
+    if (focus) {
+      const w = Math.max(320, Math.round(Math.max(r * 6, hh * 2.4))), h = Math.round(hh * 2 + lift + r * 2 + 60);
+      return { focus: true, w, h, rows, W: w, H: h + 56 };
+    }
+    const cw = Math.max(110, Math.round(Math.max(r * 3.2, hh * 1.25))), chh = Math.round(hh * 1.3 + lift + r * 1.1 + 34);
+    return { cw, ch: chh, rows, W: SIDE + cw * 8, H: HEAD + chh * rows.length };
+  }
+  /* The zoom asked for, brought down so the grid fits the stage's width: a
+     dragon's grid at 1:1 is wider than most screens. */
+  let Z = 1;
+  function resize() {
+    layout = measure();
+    const room = $("stage").clientWidth - 48;
+    // a cell opened alone is shown big, as big as the stage holds
+    const want = layout.focus ? P.zoom * 2.5 : P.zoom, roomH = window.innerHeight - 48;
+    Z = Math.max(0.2, Math.min(want, room / layout.W, layout.focus ? roomH / layout.H : 99));
+    $("zoom-v").textContent = P.zoom.toFixed(1) + (!layout.focus && Z < P.zoom - 0.01 ? " (fit " + Z.toFixed(2) + ")" : "");
+    const dpr = window.devicePixelRatio || 1, z = Z;
+    view.width = Math.round(layout.W * z * dpr); view.height = Math.round(layout.H * z * dpr);
+    view.style.width = layout.W * z + "px"; view.style.height = layout.H * z + "px";
+  }
+  function label(text, x, y, size, col, align) {
+    ctx.font = "600 " + size + "px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+    ctx.fillStyle = col || "#e8e6f5"; ctx.textAlign = align || "left"; ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+  }
+  function render() {
+    if (!T || !layout) return;
+    const dpr = window.devicePixelRatio || 1, z = Z;
+    ctx.setTransform(dpr * z, 0, 0, dpr * z, 0, 0);
+    ctx.clearRect(0, 0, layout.W, layout.H);
+    ctx.fillStyle = "#0a0718"; ctx.fillRect(0, 0, layout.W, layout.H);
+    const t = clock;
+    if (layout.focus) {
+      const rd = layout.rows[focus.row], dir = DIRS[focus.col];
+      const drawn = cell(0, 0, layout.w, layout.h, rd, dir, t);
+      label(rd.name + " · " + dir.arrow + " " + dir.name, 16, layout.h + 18, 15);
+      label(drawn ? (drawn.key + (drawn.row ? " · row " + drawn.row + ", column " + dir.col + (dir.flip ? ", mirrored" : "") : "")) : "Loading…",
+            16, layout.h + 40, 13, "#ffd36b");
+      return;
+    }
+    for (let c = 0; c < 8; c++) {
+      const dir = DIRS[c], x = SIDE + c * layout.cw + layout.cw / 2;
+      label(dir.arrow, x, 16, 18, dir.flip ? "#ffb35c" : "#e8e6f5", "center");
+      label("column " + dir.col + (dir.flip ? " mirrored" : ""), x, 36, 11, dir.flip ? "#c98a4c" : "#8b8ba7", "center");
+    }
+    layout.rows.forEach((rd, i) => {
+      const y = HEAD + i * layout.ch;
+      label(rd.name, 12, y + layout.ch / 2 - 10, 15);
+      wrapText(rd.note, 12, y + layout.ch / 2 + 10, SIDE - 20, 11, "#8b8ba7");
+      for (let c = 0; c < 8; c++) {
+        const x = SIDE + c * layout.cw;
+        cell(x + 2, y + 2, layout.cw - 4, layout.ch - 4, rd, DIRS[c], t);
+        if (hover && hover.row === i && hover.col === c) {
+          ctx.strokeStyle = "#7ea6ff"; ctx.lineWidth = 2; ctx.strokeRect(x + 2, y + 2, layout.cw - 4, layout.ch - 4);
+        }
+      }
+    });
+  }
+  function wrapText(text, x, y, w, size, col) {
+    ctx.font = "500 " + size + "px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+    const words = text.split(" "), lines = [];
+    let cur = "";
+    for (const wd of words) {
+      const next = cur ? cur + " " + wd : wd;
+      if (ctx.measureText(next).width > w && cur) { lines.push(cur); cur = wd; } else cur = next;
+    }
+    if (cur) lines.push(cur);
+    lines.forEach((l, i) => label(l, x, y + i * (size + 3), size, col));
+  }
+
+  // ---- the loop ----------------------------------------------------------------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (!paused) clock += dt * P.speed;
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---- pointer -------------------------------------------------------------------
+  function cellAt(ev) {
+    if (!layout || layout.focus) return null;
+    const rc = view.getBoundingClientRect(), x = (ev.clientX - rc.left) / Z, y = (ev.clientY - rc.top) / Z;
+    const col = Math.floor((x - SIDE) / layout.cw), row = Math.floor((y - HEAD) / layout.ch);
+    if (col < 0 || col > 7 || row < 0 || row >= layout.rows.length) return null;
+    return { row, col };
+  }
+  view.addEventListener("mousemove", (ev) => {
+    hover = cellAt(ev);
+    const ro = $("readout");
+    if (!hover) { ro.innerHTML = ""; return; }
+    const rd = layout.rows[hover.row], dir = DIRS[hover.col], o = rd.f(clock, dir), d = def();
+    ro.innerHTML = o.icon
+      ? "<b>" + rd.name + "</b> · " + dir.name + "<br>parrynormal-" + o.icon + ".webp"
+      : "<b>" + rd.name + "</b> · " + dir.name + "<br>row " + o.row + ", column " + dir.col + (dir.flip ? ", mirrored" : "") +
+        " · parrynormal-" + artOf(d) + two((o.row - 1) * 5 + dir.col) + ".webp";
+  });
+  view.addEventListener("mouseleave", () => { hover = null; });
+  view.addEventListener("click", (ev) => {
+    if (focus) { focus = null; resize(); return; }
+    const c = cellAt(ev);
+    if (c) { focus = c; resize(); }
+  });
+
+  // ---- controls --------------------------------------------------------------------
+  function store() { try { localStorage.setItem("lab:pn-anims", JSON.stringify(P)); } catch (e) {} }
+  function restore() { try { Object.assign(P, JSON.parse(localStorage.getItem("lab:pn-anims") || "{}")); } catch (e) {} }
+
+  async function pick() {
+    const d = def(), art = artOf(d), n = (d.rows || 4) * 5, jobs = [];
+    for (let i = 1; i <= n; i++) jobs.push(load(art + two(i)));
+    for (const k of ["extra01", "extra02", "extra07", "extra08"]) jobs.push(load(k));
+    jobs.push(load("scene-" + T.BIOMES[P.ground].key));
+    $("about").innerHTML = "Loading " + art + "…";
+    await Promise.all(jobs);
+    const missing = [];
+    for (let i = 1; i <= n; i++) if (!img(art + two(i))) missing.push(art + two(i));
+    const S = sizeOf();
+    $("about").innerHTML = d.key === "witch"
+      ? "<b>The witch</b> · 5 rows of 5 · body " + d.h + " px"
+      : "<b>" + d.name + "</b> · " + T.BIOMES[d.biome].name + " · " + (d.rows || 4) + " rows of 5<br>" +
+        "body " + Math.round(d.h * S.draw) + " px · radius " + Math.round(d.r * S.draw) + " · speed " + d.speed +
+        (d.lift ? " · flies " + d.lift + " px up" : " · walks") + "<br>" + d.beh + (d.line ? " — " + d.line : "") +
+        (P.pal && T.PALETTE_SKIP[d.key] && T.PALETTE_SKIP[d.key][P.pal] ? "<br><b>This palette is skipped in the round.</b>" : "") +
+        (missing.length ? "<br><b>Missing: " + missing.join(", ") + "</b>" : "");
+    resize();
+  }
+  function bind() {
+    const kind = $("kind");
+    kind.innerHTML = "";
+    const og0 = document.createElement("optgroup"); og0.label = "Hero";
+    og0.appendChild(new Option("Witch", "witch")); kind.appendChild(og0);
+    T.BIOMES.forEach((b, bi) => {
+      const og = document.createElement("optgroup"); og.label = b.name;
+      T.ENEMIES.filter((e) => e.biome === bi).forEach((e) => og.appendChild(new Option(e.name + (e.child ? " (from a slime)" : ""), e.key)));
+      kind.appendChild(og);
+    });
+    $("pal").innerHTML = "";
+    T.PALETTES.forEach((p, i) => $("pal").appendChild(new Option(i ? "In " + T.BIOMES[i].name + " colours" : "Its own colours", i)));
+    $("ground").innerHTML = "";
+    T.BIOMES.forEach((b, i) => $("ground").appendChild(new Option(b.name, i)));
+    if (!T.EN[P.kind] && P.kind !== "witch") P.kind = "bat";
+    kind.value = P.kind; $("size").value = P.size; $("pal").value = P.pal; $("mood").value = P.mood;
+    $("ground").value = P.ground; $("night").value = P.night;
+    $("speed").value = P.speed * 100; $("zoom").value = P.zoom * 100;
+    $("speed-v").textContent = P.speed.toFixed(2); $("zoom-v").textContent = P.zoom.toFixed(1);
+
+    kind.addEventListener("change", () => {
+      P.kind = kind.value; focus = null;
+      const d = def();
+      if (d.key !== "witch") { P.ground = d.biome; $("ground").value = P.ground; }   // its own floor first
+      store(); pick();
+    });
+    $("size").addEventListener("change", () => { P.size = $("size").value; store(); pick(); });
+    $("pal").addEventListener("change", () => { P.pal = +$("pal").value; store(); pick(); });
+    $("mood").addEventListener("change", () => { P.mood = $("mood").value; store(); resize(); });
+    $("ground").addEventListener("change", () => { P.ground = +$("ground").value; store(); pick(); });
+    $("night").addEventListener("change", () => { P.night = $("night").value; store(); });
+    $("speed").addEventListener("input", () => { P.speed = $("speed").value / 100; $("speed-v").textContent = P.speed.toFixed(2); store(); });
+    $("zoom").addEventListener("input", () => { P.zoom = $("zoom").value / 100; store(); resize(); });
+    $("pause").addEventListener("click", () => { paused = !paused; $("pause").textContent = paused ? "Play" : "Pause"; });
+    $("grid").addEventListener("click", () => { focus = null; resize(); });
+    window.addEventListener("resize", resize);
+    window.addEventListener("keydown", (e) => { if (e.key === " ") { e.preventDefault(); $("pause").click(); } if (e.key === "Escape") $("grid").click(); });
+  }
+
+  // ---- start ---------------------------------------------------------------------
+  fetch(GAME).then((r) => { if (!r.ok) throw new Error(GAME + " answered " + r.status); return r.text(); }).then((src) => {
+    T = {};
+    for (const k of ["ENEMIES", "SIZES", "PALETTES", "PALETTE_SKIP", "MOODS", "TINTS", "BIOMES", "NIGHTS", "ATTACK"]) T[k] = grab(src, k);
+    // the round's play tunables (CONFIG.play), for the throw: read on their own,
+    // since the rest of CONFIG is not plain data
+    const pl = src.indexOf("    play: {");
+    if (pl < 0) throw new Error("game.js has no CONFIG.play");
+    T.P = literal(src, src.indexOf("{", pl));
+    T.EN = {};
+    T.ENEMIES.forEach((e) => { T.EN[e.key] = e; });
+    restore();
+    if (location.hash.length > 1) { const k = decodeURIComponent(location.hash.slice(1)); if (T.EN[k] || k === "witch") { P.kind = k; if (T.EN[k]) P.ground = T.EN[k].biome; } }
+    bind();
+    pick();
+    requestAnimationFrame(frame);
+    // #<kind> in the address opens that character, and keeps up with the address
+    window.addEventListener("hashchange", () => {
+      const k = decodeURIComponent(location.hash.slice(1));
+      if (!(T.EN[k] || k === "witch") || k === P.kind) return;
+      $("kind").value = k;
+      $("kind").dispatchEvent(new Event("change"));
+    });
+  }).catch((e) => {
+    view.hidden = true;
+    $("msg").hidden = false;
+    $("msg").textContent = "Could not read the game's tables: " + e.message +
+      "\n\nThis page reads ../games/parrynormal/game.js, so it has to be served over http: run make lab and open it from the back office.";
+    $("about").textContent = "Not loaded.";
+  });
+})();
+</script>
+</body>
+</html>

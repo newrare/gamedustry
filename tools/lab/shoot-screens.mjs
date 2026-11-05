@@ -24,8 +24,20 @@
  * where ten shots a second apart are the same one. A timed game's round length
  * is its own `CONFIG.gameSeconds`, read after the round starts (radiam zeroes
  * it for its endless mode); an endless game has no such number, so SPAN below
- * carries how long a run of it is worth sampling. The last two shots are the
- * two screens no progression can reach: the end screen, and the LEVEL MAP.
+ * carries how long a run of it is worth sampling.
+ *
+ * **One capture per stage, and at least two biomes.** A game with a level
+ * climb (`web.levels`) never has two gameplay shots on the same level: eight
+ * shots of one board at four moments are four pictures of one place. Each
+ * shot is given its own level, spread evenly over the thirty, so the gallery
+ * walks the climb — level 2 to level 29, every band of `web.levels.bands`
+ * crossed — and a plan that would stay inside one biome is refused. `--level`
+ * pins every shot to one level, which breaks that rule, so it is a bench
+ * flag: it refuses to write more than one gameplay shot into
+ * assets/image/screen/.
+ *
+ * After the gameplay shots come the screens no progression can reach: the end
+ * screen (only with `--end`), the LEVEL MAP and the village.
  *
  * The map is not a frame of a round either — it is the web shell's own screen,
  * and an empty board is a picture of nothing: thirty grey circles, no stars, a
@@ -42,7 +54,9 @@
  * itself decides when it is ready and the capture happens on that signal.
  *
  * Usage:
- *   node tools/lab/shoot-screens.mjs [slug ...] [--shots 10] [--png] [--keep]
+ *   node tools/lab/shoot-screens.mjs [slug ...] [--shots 8] [--png] [--keep]
+ *     -01..-08 one level each, over 2+ biomes; -09 the map; -10 the village
+ *   node tools/lab/shoot-screens.mjs vipera --end          # + the end screen, -09 (map -10…)
  *   node tools/lab/shoot-screens.mjs vipera --no-build     # reuse dist/itch
  *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source
  *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
@@ -50,10 +64,10 @@
  *   node tools/lab/shoot-screens.mjs vipera --out /tmp/x   # anywhere but assets/image/screen/
  *   node tools/lab/shoot-screens.mjs vipera --level 19 --out /tmp/x   # that level's round (web levels)
  *   GEARBALL_BIOME=3 node tools/lab/shoot-screens.mjs gearball --out /tmp/x   # one biome's machine
- *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -11
+ *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -09
  *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
- *   node tools/lab/shoot-screens.mjs --village-only        # just the village, -12
- *   node tools/lab/shoot-screens.mjs stratideck --cards-only   # the officers, -13…
+ *   node tools/lab/shoot-screens.mjs --village-only        # just the village, -10
+ *   node tools/lab/shoot-screens.mjs stratideck --cards-only   # the officers, -11…
  *   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera  # what each shot caught
  */
 
@@ -100,7 +114,8 @@ var SPAN = {
   bridgessa: 45,    // clockless; a tournée of deals, the GAME_PILOT below plays two or three
   triverse: 15,
   holepocalypse: 40, // clockless; the GAME_PILOT below clears the free round's three waves in ~45-75 s
-  gelatile: 14      // clockless; the GAME_PILOT below makes the free round's 256 in ~25-55 moves
+  gelatile: 14,     // clockless; the GAME_PILOT below makes the free round's 256 in ~25-55 moves
+  parrynormal: 40   // clockless; the GAME_PILOT below clears a stage in ~25-70 s
 };
 
 /* Games whose tap POINT is the aim, not just a trigger. The generic "tap"
@@ -124,7 +139,7 @@ var SWEEP = {
 };
 
 /* Games with a RACK of cards to play before each drop. pawko deals five cards
-   under the HUD and a wave leaves only when one is DRAGGED onto the board, so
+   in its hand and a wave leaves only when one is DRAGGED onto the board, so
    the blind pilot drags the five slots in turn onto the board — a used card,
    and a card pressed while the wave is falling, are both ignored by the game.
 
@@ -132,7 +147,10 @@ var SWEEP = {
    fractions of the band's width.  y - the slot's centre under the band's top,
    in design px.  board - where the card is let go, as a fraction of the band. */
 var RACK = {
-  pawko: { slots: 5, x0: 0.106, dx: 0.197, y: 83, board: 0.4 }
+  /* the hand is at the foot of the frame since the rack moved under the
+     thumb: abs - x0 / dx / y are design px (game.js geometry(): five 118 px
+     cards 12 px apart, centred; DECK_Y = 1280 - cornerClear - CARD_H) */
+  pawko: { slots: 5, abs: true, x0: 100, dx: 130, y: 1120, board: 0.4 }
 };
 
 /* Games no blind gesture can play. stratideck is a turn-based grid: a card is
@@ -186,6 +204,39 @@ var GAME_PILOT = {
       });
       if (!best) return false;
       doMove(best);
+      return true;
+    } };
+    `
+  },
+  /* parrynormal is a shield turned round the witch: a blind tap launches a
+     ball and never aims. The pilot is the game's own: every frame it points
+     the shield at the threat closest to reaching her (an inbound ball, a
+     spit, a monster), launches whenever a ball is in hand and fires a super
+     once two monsters are on the field. */
+  parrynormal: {
+    every: 1,
+    anchor: "return { reset: reset, update: update, render: render,",
+    js: `
+    window.__G = { play: function () {
+      if (mode !== "play" || ended) return false;
+      var best = null, bt = 1e9, i, dx, dy, d;
+      for (i = 0; i < balls.length; i++) {
+        var b = balls[i]; dx = b.x - CX; dy = b.y - CY; d = Math.sqrt(dx * dx + dy * dy) || 1;
+        var vr = (b.vx * dx + b.vy * dy) / d;
+        if (vr < 0) { var t = (d - 130) / Math.max(40, -vr); if (t < bt) { bt = t; best = Math.atan2(dy, dx); } }
+      }
+      for (i = 0; i < spits.length; i++) {
+        dx = spits[i].x - CX; dy = spits[i].y - CY; d = Math.sqrt(dx * dx + dy * dy);
+        if ((d - 130) / 260 < bt) { bt = (d - 130) / 260; best = Math.atan2(dy, dx); }
+      }
+      for (i = 0; i < enemies.length; i++) {
+        var e = enemies[i]; if (e.under) continue;
+        dx = e.x - CX; dy = e.y - CY; d = Math.sqrt(dx * dx + dy * dy);
+        if ((d - 140) / Math.max(30, e.def.speed) < bt) { bt = (d - 140) / Math.max(30, e.def.speed); best = Math.atan2(dy, dx); }
+      }
+      if (best != null) dialAngle = best;
+      if (enemies.length) launchBall();
+      if (enemies.length >= 2) for (i = 0; i < loadout.length; i++) if (!(cds[loadout[i]] > 0)) { fireSuper(i); break; }
       return true;
     } };
     `
@@ -384,12 +435,12 @@ var CARDS = {
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
 var slugs = [];
-var shots = 10;
+var shots = 8;                       // gameplay shots, one level each
 var keep = false;
 var png = false;
 var build = true;
 var playable = false;
-var withEnd = true;
+var withEnd = false;                 // --end: add the end screen after the gameplay shots
 var withMap = true;
 var mapOnly = false;
 var withVillage = true;
@@ -407,6 +458,7 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--no-build") build = false;
   else if (argv[i] === "--playable") playable = true;
   else if (argv[i] === "--no-end") withEnd = false;
+  else if (argv[i] === "--end") withEnd = true;
   else if (argv[i] === "--no-map") withMap = false;
   else if (argv[i] === "--map-only") mapOnly = true;
   else if (argv[i] === "--no-village") withVillage = false;
@@ -418,6 +470,12 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--level") level = parseInt(argv[++i], 10) || 0;
   else if (argv[i] === "--out") outDir = path.resolve(argv[++i]);
   else slugs.push(argv[i]);
+}
+/* --level pins every shot to one stage: a bench, never a gallery. */
+if (level && shots > 1 && outDir === OUT_DIR && !(mapOnly || villageOnly || cardsOnly)) {
+  console.error("--level puts every shot on one stage: one capture per stage is the rule"
+    + " for assets/image/screen/. Pass --out, or --shots 1.");
+  process.exit(1);
 }
 /* The map lives in the web shell, which a playable does not ship. */
 if (playable) { withMap = false; withVillage = false; withCards = false; }
@@ -436,31 +494,58 @@ if (!slugs.length) {
   }).sort();
 }
 
-/* The shot plan. The progressions are spread across the whole round rather
-   than bunched at the start, then the end screen — the one frame no
-   progression can reach, since it only exists after the round — and then the
-   level map, which is not a frame of a round at all.
+/* The stages the gameplay shots are taken on: ONE per shot, never two shots
+   on one level, spread evenly over the climb — eight shots land on 2 6 10 14
+   17 21 25 29, every band crossed. The bands are the manifest's own
+   (`web.levels.bands.from`, the map's 1 7 13 19 25 when a game leaves it
+   out), and a plan inside one band is refused: at least two biomes, or the
+   gallery is one place shot eight times. A game with no climb plays its free
+   round, and --level pins all of them to one stage (a bench, see above). */
+var CLIMB_LEVELS = 30;                               // levels.js: thirty on every board
+function stagesOf(slug, g) {
+  if (level) return Array(g).fill(level);
+  var m = JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8"));
+  var L = m.web && m.web.levels;
+  if (!L || playable) return Array(g).fill(0);
+  var from = (L.bands && L.bands.from) || [1, 7, 13, 19, 25];
+  var out = [], k;
+  for (k = 0; k < g; k++) out.push(1 + Math.floor((k + 0.5) * CLIMB_LEVELS / g));
+  var bandOf = function (lv) { var b = 0; while (b + 1 < from.length && lv >= from[b + 1]) b++; return b; };
+  var bands = {}; out.forEach(function (lv) { bands[bandOf(lv)] = 1; });
+  if (g > 1 && Object.keys(bands).length < 2)
+    throw new Error(slug + ": every shot is in one biome (" + out.join(" ") + ")");
+  if (new Set(out).size !== out.length)
+    throw new Error(slug + ": two shots on one stage (" + out.join(" ") + ")");
+  return out;
+}
+
+/* The shot plan. The gameplay shots, one stage each (stagesOf), each at its
+   own progression of its round — spread from 8% to 96% so the gallery mixes
+   an opening board with a crowded one — then the end screen when asked for,
+   the level map and the village, which are not frames of a round at all.
 
    Every aim carries the NUMBER it is written under, so the map is always
-   `<slug>-11.jpg` whether or not the round was reshot with it: `--map-only`
-   must not renumber the ten pictures already on the itch page. */
+   `<slug>-09.jpg` (with the default eight shots) whether or not the round was
+   reshot with it: `--map-only` must not renumber the pictures already on the
+   itch page. */
 function plan(n, slug) {
   var out = [];
-  var g = withEnd ? n - 1 : n;                       // gameplay shots
+  var e = withEnd ? 1 : 0;
   if (!only) {
-    for (var k = 0; k < g; k++) {
-      out.push({ n: k + 1, seed: k + 1, p: g < 2 ? 0.5 : 0.08 + 0.88 * (k / (g - 1)) });
+    var lv = stagesOf(slug, n);
+    for (var k = 0; k < n; k++) {
+      out.push({ n: k + 1, seed: k + 1, level: lv[k], p: n < 2 ? 0.5 : 0.08 + 0.88 * (k / (n - 1)) });
     }
-    if (withEnd) out.push({ n: n, seed: n, end: true });
+    if (withEnd) out.push({ n: n + 1, seed: n + 1, level: lv[n - 1], end: true });
   }
-  if (withMap) out.push({ n: n + 1, seed: n + 1, map: true });
+  if (withMap) out.push({ n: n + e + 1, seed: n + e + 1, map: true });
   /* The village, and the officers after it: fixed numbers too, the cards
-     front then back, so -13 and -14 are one card's two faces. */
-  if (withVillage) out.push({ n: n + 2, seed: n + 2, village: true });
+     front then back, so -11 and -12 are one card's two faces. */
+  if (withVillage) out.push({ n: n + e + 2, seed: n + e + 2, village: true });
   var cards = withCards ? CARDS[slug] || [] : [];
   for (var c = 0; c < cards.length; c++) {
-    out.push({ n: n + 3 + c * 2, seed: 1, card: c, back: false });
-    out.push({ n: n + 4 + c * 2, seed: 1, card: c, back: true });
+    out.push({ n: n + e + 3 + c * 2, seed: 1, card: c, back: false });
+    out.push({ n: n + e + 4 + c * 2, seed: 1, card: c, back: true });
   }
   return out;
 }
@@ -543,6 +628,13 @@ var DRIVER_JS = `<script>
      it only has to keep a round alive and busy long enough to be worth a shot. */
   function pilot(H, n) {
     var L = H.Layout, demo = (H.CONFIG.intro && H.CONFIG.intro.demo) || "tap";
+    /* A card the round stops for (Game.held: gearball's upgrade pick,
+       slipdeck's joker pick and its full-rail swap) waits for a tap no blind
+       gesture lands on, and every later shot is that card. Take one. */
+    if (n % 20 === 10) {
+      var picks = document.querySelectorAll("#gb-pick:not(.off) .gb-take, .sd-take, .sd-row");
+      if (picks.length) { picks[Math.floor(n / 20) % picks.length].click(); return; }
+    }
     if (window.__G && window.__G.play) {             // the game's own pilot (GAME_PILOT)
       if (n % window.__GEVERY === 0) window.__G.play();
       return;
@@ -551,7 +643,7 @@ var DRIVER_JS = `<script>
     var R = window.__RACK;
     if (R) {
       var kk = n % 24, slot = Math.floor(n / 24) % R.slots;
-      var sx = L.left + L.w * (R.x0 + R.dx * slot), sy = L.top + R.y;
+      var sx = R.abs ? R.x0 + R.dx * slot : L.left + L.w * (R.x0 + R.dx * slot), sy = R.abs ? R.y : L.top + R.y;
       var bx = L.left + L.w * (0.2 + 0.6 * Math.abs(Math.sin(n * 0.013))), by = L.top + L.h * R.board;
       if (kk === 0) H.Input.at("down", sx, sy);
       else if (kk < 12) H.Input.at("move", sx + (bx - sx) * (kk / 12), sy + (by - sy) * (kk / 12));
@@ -752,7 +844,9 @@ var DRIVER_JS = `<script>
     }
     window.__progress = frame;
     if (END) { tickEnd(H); return; }
-    if (ready() && !(dying() && frame < cap)) {
+    /* A card pressed while pawko's wave falls opens its zoom, which the next
+       press shuts: a frame under it shows a card, not the board. */
+    if (ready() && !((dying() || document.getElementById("pk-zoom")) && frame < cap)) {
       H.frameRender();                                // keep the canvas fresh
       window.__shot = 1;                              // the host may capture now
       window.__reached = roundFrame / target;
@@ -940,7 +1034,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
      to the browser, a headless Chrome in a French locale writes REJOUER on
      the replay button of every screenshot. */
   var url = "file://" + file + "?first=0&seed=" + seed + "&span=" + span
-    + "&endless=" + SPAN._endless + "&lang=" + lang + (level ? "&level=" + level : "")
+    + "&endless=" + SPAN._endless + "&lang=" + lang + (aim.level ? "&level=" + aim.level : "")
     + (aim.map ? "&map=1" : aim.village ? "&village=1"
       : aim.card != null ? "&card=" + aim.card + (aim.back ? "&back=1" : "")
       : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));

@@ -4,7 +4,7 @@
   var CONFIG = {
     title:   "Bridgessa",
     /* One sentence, three words in colour: the two hands, the prize, the bet. */
-    tagline: "Play <b class=\"w-hands\">both hands</b> and win the <b class=\"w-tricks\">tricks</b> your <b class=\"w-contract\">contract</b> asks for",
+    tagline: "Play your <b class=\"w-hands\">two hands</b> to <b class=\"w-tricks\">take</b> what your <b class=\"w-contract\">contract</b> demands",
     gameSeconds: 0,                  // no clock: a deal ends with its last trick
 
     // Store links used by every CTA. The right one is picked at runtime from the
@@ -517,29 +517,29 @@
       { id:"promotion",    fam:"hand",    r:2, lv:10, name:"Promotion",      text:"At every deal, your lowest card becomes the highest card of its suit nobody holds." },
       { id:"talon",        fam:"hand",    r:2, lv:13, name:"Talon",          text:"Trade one of your cards for a card nobody holds, once per deal.", act:true },
       { id:"pickpocket",   fam:"hand",    r:3, lv:17, name:"Pickpocket",     text:"Trade one of your cards for a random card of West's, once per deal.", act:true },
-      { id:"reinforcement",fam:"hand",    r:2, lv:21, name:"Reinforcement",  text:"At every deal, the dummy's lowest card becomes an honour of its suit nobody holds." },
+      { id:"reinforcement",fam:"hand",    r:2, lv:21, name:"Reinforcement",  text:"At every deal, the dummy's lowest card becomes an honour (jack, queen, king or ace) of its suit nobody holds." },
       { id:"royaltrump",   fam:"hand",    r:4, lv:28, name:"Royal trump",    text:"At every deal, your lowest card becomes the highest trump nobody holds (your longest suit at no trump)." },
       // RULE — a rule bent, once
       { id:"lead",         fam:"rule",    r:2, lv:16, name:"Opening lead",   text:"You lead the first trick of every deal, instead of West." },
       { id:"freediscard",  fam:"rule",    r:1, lv:18, name:"Free discard",   text:"Your next card does not have to follow suit, once per deal.", act:true },
-      { id:"switch",       fam:"rule",    r:2, lv:19, name:"Switch",         text:"Before the first trick, removes the trump. At no trump, your longest suit becomes trump.", act:true },
+      { id:"switch",       fam:"rule",    r:2, lv:19, name:"Switch",         text:"Before the first trick, removes the trump. Otherwise, at no trump, your longest suit becomes trump.", act:true },
       { id:"miracle",      fam:"rule",    r:3, lv:22, name:"Little miracle", text:"The next 2 you play wins the trick, once per deal.", act:true },
       { id:"sparetrump",   fam:"rule",    r:2, lv:23, name:"Spare trump",    text:"Your next discard counts as a trump, once per deal.", act:true },
       { id:"lastword",     fam:"rule",    r:4, lv:25, name:"Last word",      text:"The last trick of a deal counts as two when you win it." },
       // POINTS — the score, multiplied
-      { id:"double",       fam:"points",  r:1, lv:3,  name:"Double",         text:"Use it before the first trick. A made contract pays ×2, a down costs two lives.", act:true },
+      { id:"double",       fam:"points",  r:1, lv:3,  name:"Double",         text:"Use this favour before the first trick and a made contract pays ×2. Beware: a down then costs two lives.", act:true },
       { id:"goldenfinesse",fam:"points",  r:1, lv:4,  name:"Golden finesse", text:"A finesse pays 150 instead of 50." },
       { id:"royalruff",    fam:"points",  r:1, lv:5,  name:"Royal ruff",     text:"A ruff pays 130 instead of 30." },
-      { id:"streak",       fam:"points",  r:2, lv:7,  name:"Streak",         text:"Every trick won in a row pays 25 % more than the one before." },
-      { id:"honours",      fam:"points",  r:2, lv:12, name:"Honours",        text:"Every ace, king, queen or jack in a trick you win pays 50." },
+      { id:"streak",       fam:"points",  r:2, lv:7,  name:"Streak",         text:"Every trick won in a row pays 25% more than the one before." },
+      { id:"honours",      fam:"points",  r:2, lv:12, name:"Honours",        text:"Every honour (jack, queen, king or ace) in a trick you win pays 50." },
       { id:"slam",         fam:"points",  r:3, lv:15, name:"Slam",           text:"A deal where you win every trick pays ×3." },
       { id:"jackpot",      fam:"points",  r:3, lv:22, name:"Jackpot",        text:"An overtrick pays 450 instead of 150." },
-      { id:"redouble",     fam:"points",  r:4, lv:27, name:"Redouble",       text:"Use it before the first trick. A made contract pays ×4, a down costs three lives.", act:true },
+      { id:"redouble",     fam:"points",  r:4, lv:27, name:"Redouble",       text:"Use this favour before the first trick and a made contract pays ×4. Beware: a down then costs three lives.", act:true },
       // SURVIVAL — the tournée, kept alive
       { id:"pearl",        fam:"survive", r:1, lv:5,  name:"Pearl",          text:"The first contract you go down on costs no life." },
       { id:"rewind",       fam:"survive", r:1, lv:6,  name:"Rewind",         text:"Take the trick back and play it again, once per deal.", act:true },
-      { id:"spareheart",   fam:"survive", r:2, lv:8,  name:"Spare heart",    text:"One more life, as soon as you pick it." },
-      { id:"safetynet",    fam:"survive", r:2, lv:10, name:"Safety net",     text:"Every contract asks one trick less, and pays 25 % less." },
+      { id:"spareheart",   fam:"survive", r:2, lv:8,  name:"Spare heart",    text:"One more life, right away." },
+      { id:"safetynet",    fam:"survive", r:2, lv:10, name:"Safety net",     text:"Every contract asks one trick less, and also pays 25% less." },
       { id:"secondchance", fam:"survive", r:3, lv:13, name:"Second chance",  text:"Once per tournée, a deal you go down on is dealt again." },
       { id:"insurance",    fam:"survive", r:3, lv:18, name:"Insurance",      text:"Going down by a single trick costs no life." },
       // DEFENCE — the defence, shaken
@@ -548,7 +548,7 @@
       { id:"pressure",     fam:"foe",     r:2, lv:17, name:"Pressure",       text:"A defender who leads must lead its longest suit." },
       { id:"silence",      fam:"foe",     r:2, lv:21, name:"Silence",        text:"At every deal, the first time a defender could ruff, it discards instead." },
       { id:"bribe",        fam:"foe",     r:3, lv:24, name:"Bribe",          text:"The next defender plays its lowest card, once per deal.", act:true },
-      { id:"dazzle",       fam:"foe",     r:3, lv:26, name:"Dazzle",         text:"When the dummy plays an honour, the next defender plays its lowest card." }
+      { id:"dazzle",       fam:"foe",     r:3, lv:26, name:"Dazzle",         text:"When the dummy plays an honour (jack, queen, king or ace), the next defender plays its lowest card." }
     ];
     var PERK = {};
     (function () { for (var i = 0; i < PERKS.length; i++) PERK[PERKS[i].id] = PERKS[i]; })();
@@ -715,14 +715,17 @@
        for the first seconds of a tournée, straddling the dummy's edge), and
        its room went to the STAMP, between the hand and the rail. The
        Counter / Compass panel moved up between the HUD and the dummy, its
-       room still reserved, and the dashed ring around the trick went. */
-    var TABLE = { northTop:0, tagGap:10, bScale:1.2, fanStep:34, defInset:6,
-                  railH:60, railGap:50, slotDX:1.12, slotDY:0.6, fan:3, rot:0.08, lift:18,
+       room still reserved, and the dashed ring around the trick went.
+       2026-10-30: the dummy and the trick grew a fifth (dScale), read from
+       across the table as easily as the hand, and the trick's North and
+       South slots drew closer (slotDY) to keep it inside its zone. */
+    var TABLE = { northTop:0, tagGap:10, dScale:1.2, bScale:1.2, fanStep:34, defInset:6,
+                  railH:60, railGap:50, slotDX:1.12, slotDY:0.5, fan:3, rot:0.08, lift:18,
                   stampW:190, stampH:66, stampGap:10, stampRot:-0.05 };
     function layout() {
       var bottom = Layout.bottom - (CONFIG.web ? WEB_FOOT : 0), top = Layout.top;
       var band = bottom - top, k = clamp(band / 1000, 0.74, 1.08), zoneTop, zoneBot, lean, dip;
-      L.dW = Math.round(96 * k); L.dH = Math.round(136 * k);
+      L.dW = Math.round(96 * k * TABLE.dScale); L.dH = Math.round(136 * k * TABLE.dScale);
       L.sW = Math.round(118 * k); L.sH = Math.round(168 * k);
       L.bW = Math.round(58 * k * TABLE.bScale); L.bH = Math.round(82 * k * TABLE.bScale);
       // the Counter / Compass panel's room under the HUD, then the dummy
@@ -848,7 +851,7 @@
         "The rail holds four favours. Some work on their own, the others take a tap, once per deal." ] },
       trump: { eye:"New rule", title:"Trumps", say:"On this deal {s} are trumps", lines:[
         "On this deal {s} are trumps.",
-        "If you cannot follow suit, a trump wins the trick. If several are played, the highest wins." ] },
+        "If you cannot follow suit, the highest trump wins the trick." ] },
       notrump: { eye:"This deal", title:"No trump", lines:[
         "No suit is trump. Only a card of the suit led can win the trick." ] },
       dummy: { eye:"North", title:"The dummy", lines:[
@@ -1082,7 +1085,7 @@
                 [Lang.t("The contract made"), "+300"] ],
               lines:[
               Lang.t("A ruff is a trick you win with a trump when you could not follow suit."),
-              Lang.t("A finesse is a trick you win while a defender still holds a higher card.") ] }
+              Lang.t("With your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card.") ] }
           ] },
           { key:"favours", label:Lang.t("Favours"), pages:[
             { id:"favours", title:Lang.t(TIPS.favours.title), lv:3, lines:tipLines("favours"), pic:favoursPic }
@@ -1207,7 +1210,7 @@
       n.querySelector(".bs-pfam").textContent = upper(Lang.t(F.name));
       n.querySelector(".bs-pname").textContent = ghost ? "???" : upper(Lang.t(P.name));
       n.querySelector(".bs-ptext").textContent = ghost ? "" : Lang.t(P.text);
-      if (act) n.querySelector(".bs-pact").textContent = upper(Lang.t("Used with a tap"));
+      if (act) n.querySelector(".bs-pact").textContent = upper(Lang.t("Used with a Tap"));
       n.querySelector(".bs-prar").textContent = upper(Lang.t(R.name));
       // the sticker reads NEW in every language, like the album's NEW tag
       if (fresh) n.querySelector(".bs-pnew").textContent = upper("New");
@@ -1267,7 +1270,7 @@
       var frame = document.getElementById("frame"), lay = overlay("bs-swap"), mc = document.createElement("div"), body, i;
       mc.className = "mt-card bs-pc";
       mc.innerHTML = '<p class="mt-eyebrow"></p><h2 class="mt-h wrap"></h2><div class="mt-body"></div>';
-      mc.querySelector(".mt-eyebrow").textContent = upper(Lang.t("Rail full"));
+      mc.querySelector(".mt-eyebrow").textContent = upper(Lang.t("Too many favours"));
       mc.querySelector(".mt-h").textContent = upper(Lang.t("Replace which favour?"));
       body = mc.querySelector(".mt-body");
       var nl = document.createElement("p"); nl.className = "bs-newline";
@@ -1288,7 +1291,7 @@
       })(i);
       var keep = document.createElement("button");
       keep.type = "button"; keep.className = "btn btn-sm";
-      keep.textContent = upper(Lang.t("Keep my rail"));
+      keep.textContent = upper(Lang.t("Keep my favours in place"));
       keep.addEventListener("click", function (e) { e.stopPropagation(); closePick(); donePick(); });
       body.appendChild(keep);
       lay.appendChild(mc);
@@ -1318,7 +1321,7 @@
       perksTaken++;
       remember(id);
       // the favour it replaced rides on the callout: one word for one choice
-      Pop.show("bonus", { word:PERK[id].name, sub:out ? fill(Lang.t("{a} leaves the rail"), { a:Lang.t(out) }) : null, at:"top" });
+      Pop.show("bonus", { word:PERK[id].name, sub:out ? fill(Lang.t("{a} leaves your favours"), { a:Lang.t(out) }) : null, at:"top" });
       Sound.cue("perk", 0.5, 0.5, 700, 0.12, "triangle");
       if (id === "spareheart") { lives++; showTour(); }
     }
@@ -1509,7 +1512,7 @@
         if (has("streak") && run > 1) pts = Math.round(pts * (1 + 0.25 * (run - 1)));
         if (made) {
           overtricks++; pts += has("jackpot") ? 450 : 150;
-          Pop.show("combo", { word:"Overtrick!" });
+          Pop.show("combo", { word:"That's better!" });
         }
         dealScore += pts; score += pts; tricksAll++;
         HUD.setScore(score); HUD.punch(SUN);
@@ -1643,7 +1646,7 @@
       var r = has(id), first = ns + ew === 0 && !trick.length;
       if (!r) return "";
       if (done || phase === "between" || phase === "pick") return "Wait for the next deal";
-      if (r.used) return "Used this deal — ready on the next one";
+      if (r.used) return "Ready on the next deal";
       if (id === "switch" || id === "double" || id === "redouble") return first ? (dealMult > 1 && id !== "switch" ? "Already doubled" : "") : "Only before the first trick";
       if (id === "rewind") {
         if (made) return "The contract is made";

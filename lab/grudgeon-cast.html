@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Grudgeon casting</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="tests">
+<meta name="lab-game" content="grudgeon">
+<style>
+/* ===========================================================================
+   GRUDGEON CASTING — how a hero's power reaches its target, outside the motor.
+
+   The question: a hero's turn is played with four POWERS (Attack, two skills,
+   Guard), and every power has TWO FACES — what it does on the yokai and what
+   it does on an ally (the hero in turn included, unless the power says not).
+   The game asks for a scroll and then a target (tap, drag or double tap);
+   the user wants a cast to be ONE TAP, on the yokai, an ally or oneself, with
+   the details one gesture away. Data: SKILLS and HEROES copied from
+   games/grudgeon/game.js.
+
+   The record. On 2026-10-30 three models were played side by side: A the
+   game as it is, B a current target and a bar rewritten for it, C a scroll
+   then chips over every valid target (picked that day). On 2026-10-31 the
+   user's own sketch replaced them all, and the three were taken out of the
+   page: NO TARGET IS EVER CHOSEN.
+
+     THE PACK        every power is two icons of its glyph: RED casts it on
+                     the yokai, BLUE on an ally; a LONG PRESS on either opens
+                     what it does (the green info icon went on 2026-11-01).
+                     The blue face's ally is picked by the game and worn on the
+                     icon (their head, or every living head ringed in blue and
+                     piled with a small offset, for a power on the party): SMART
+                     by default — Cover and Guard to the hero the yokai's next
+                     blow aims at (Guard to oneself when nobody is aimed at
+                     alone), a gift for the next blow (an element, an edge) to
+                     the next hero to strike, Hasten to the one who acts last.
+                     A tap on a hero (their folded card or their sprite) PINS
+                     them as the ally for the turn. The red icon wears an
+                     HOURGLASS, in its top-right corner, only when the power
+                     moves the frieze (its weight puts the hero's next turn
+                     elsewhere among the others): green when sooner, amber
+                     when later. What a power costs is no pill: a negative
+                     figure in the SP blue, floating between the red icon and
+                     the blue one, since either face spends it (2026-11-01).
+     THE TRACK       one card a hero TURN, in the order of the timeline, in
+                     the game's tile (slanted, a colour edge, dark): the turn
+                     in hand UNFOLDED and wide (the hero's face, name, HP and
+                     SP with their gauges, and the four packs), the next turn a whole FOLDED card on its
+                     right, the one after a sliver at the right edge, the turn
+                     just played a sliver at the left edge. A cast folds the
+                     card and slides the track one place left; the next card
+                     unfolds at once, dimmed until its turn comes. A ONE MORE
+                     brings the card back. A folded card shows the art only.
+     THE INFO        a window over the track, shown only when there is
+                     something to read: the power's two faces while a red /
+                     blue icon is pressed or hovered, left open after a long
+                     press until the next tap; a character's card on a long
+                     press on a folded card. While a
+                     power's info is shown, its figures float up on the stage,
+                     again and again, over whom they land on: the blow over the
+                     yokai (its bar's chunk blinking), a heal or a ward over
+                     the ally, and the SP it costs over the caster (the window
+                     hides their feet).
+     THE STAGE       a hero's health (green) over their spirit (blue),
+                     floating between their feet where the selection ring is;
+                     the top keeps the yokai's bar and its next move.
+     THE FRIEZE      the timeline, small, at the foot: a head a turn in a
+                     small bubble, the yokai's blow on a chip beside its own.
+
+   The PRESETS are the BUTTON — four ways to draw a pack, one DOM and four
+   stylesheets (.bv-<look>): A tiles (the first try, given room), B split (one
+   object a power, the blue face as its foot), C badges (an app icon: the
+   ally's head a badge on its foot — picked on 2026-11-01, the default), D
+   cluster (round gems). The knobs: the look, the figure on the red face
+   (the hourglass when the order moves, the damage or none), the tint of the card in turn, the confirm (first tap arms,
+   second casts), where the blue face goes, the pin, the long press delay,
+   the timeline preview, the party size (1 to 4) and the hit areas.
+
+   The READOUT is the measure: casts, taps on the frame, TAPS PER CAST and
+   mis-taps (a tap that did nothing or was refused); a tap while the world is
+   busy is not counted.
+
+   The staging, the intents and the yokai bar are copied from
+   lab/grudgeon-timeline.html (preset "B · Diagonal stage"), minus the
+   folklore rules. The icons are DOM in a 720x1280 frame laid over the canvas
+   and scaled with it; their glyphs are CSS masks of assets/motor/lucide/*.svg,
+   inlined so the page works from file://.
+
+   Keys: R restart the fight, N next yokai. #preset=A|B|C|D opens a look.
+   Nothing here ships. Copy settings is the panel as JSON.
+   =========================================================================== */
+
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  height:100vh; overflow:hidden; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+   PANEL — presets, the knobs, the readout
+   --------------------------------------------------------------------------- */
+#panel { flex:0 0 310px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row.na > label { opacity:.4; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.row.na .seg button, .row.na input { opacity:.4; pointer-events:none; }
+.styles { display:flex; flex-direction:column; gap:4px; }
+.styles button { text-align:left; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:7px;
+  font:600 12px/1.35 inherit; cursor:pointer; }
+.styles button b { display:block; color:#e8e6f5; font-size:13px; }
+.styles button span { color:#8b8ba7; font-weight:500; }
+.styles button.on { border-color:#7ea6ff; background:#20263d; }
+.styles button.dirty b::after { content:" · edited"; color:#e0b050; font-weight:600; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#readout { margin-top:6px; padding:12px 12px 6px; background:#0b0b12; border:1px solid #2c2c47; border-radius:10px; }
+#readout div { display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; color:#9c9cba; }
+#readout b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+#readout div.big b { font-size:22px; color:#ffd166; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the canvas, and over it the 720x1280 frame the DOM bar lives in
+   --------------------------------------------------------------------------- */
+#stage { flex:1; min-width:0; height:100vh; display:flex; align-items:center; justify-content:center; padding:18px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+#wrap { position:relative; border-radius:14px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.5); background:#07060c; }
+canvas { display:block; width:100%; height:100%; touch-action:none; -webkit-touch-callout:none; }
+#frame { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; pointer-events:none;
+  -webkit-user-select:none; user-select:none; font-family:"Bebas Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+/* Bebas draws a division sign as a tiny plus: the system face draws it */
+.dv { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-weight:800; font-size:.92em; }
+
+/* ---- a refused tap says where to aim: a line, never a modal -------------- */
+#aim { position:absolute; left:50%; top:458px; z-index:31; transform:translateX(-50%); padding:8px 20px 6px; border-radius:14px;
+  background:rgba(8,5,14,.94); border:2px solid #ff8a9a; color:#ffe0e5; font-size:24px; letter-spacing:1px; white-space:nowrap;
+  pointer-events:none; opacity:0; transition:opacity .15s ease; }
+#aim.on { opacity:1; }
+
+/* hit areas shown: the outline of everything the thumb can press */
+
+/* ---- model D: THE DOCK — the info window, the hero row, the frieze -------
+   (the frieze itself is drawn on the canvas, under the row) */
+/* THE TRACK: one card a hero TURN, sliding right to left. The card of the
+   turn just played shows a sliver at the left edge, the hero in turn is
+   unfolded in the middle, the next turn is a whole folded card on the right
+   and the one after a sliver at the right edge. The cards are model A's
+   tiles: slanted, a colour edge on the left, dark, the hero in turn tinted
+   with their colour. A folded card shows the hero's art and nothing else. */
+#drow { position:absolute; left:0; width:720px; bottom:152px; height:196px; z-index:29; }
+.tc { position:absolute; bottom:0; left:740px; width:100px; height:140px; }
+.tc.anim { transition:left .45s cubic-bezier(.3,.7,.3,1), width .3s ease, height .3s ease; }
+.tc .plate { position:absolute; inset:0; overflow:hidden; pointer-events:auto; touch-action:none; cursor:pointer;
+  transform:skewX(-10deg); transform-origin:50% 100%; background:rgba(10,6,16,.86);
+  box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.55); transition:box-shadow .2s ease, background .3s ease, filter .2s ease; }
+.tc .plate::before { content:""; position:absolute; left:0; top:0; bottom:0; width:7px; z-index:2; background:var(--hc); }
+/* the card in turn: a breath of the hero's colour at the top (the tint knob), a thin rim, no glow */
+.tc.on .plate { background:linear-gradient(180deg, var(--tint), transparent 70%), rgba(12,8,18,.92); box-shadow:0 0 0 2px var(--hc), 0 8px 18px rgba(0,0,0,.55); cursor:default; }
+.tc.past .plate { filter:brightness(.55) saturate(.7); pointer-events:none; }
+.tc.is-blue:not(.on) .plate { box-shadow:0 0 0 3px #4f9bff, 0 0 18px rgba(79,155,255,.7), 0 8px 18px rgba(0,0,0,.55); }
+.tc.is-pin:not(.on) .plate { box-shadow:0 0 0 4px #4f9bff, 0 0 26px rgba(79,155,255,.95), 0 8px 18px rgba(0,0,0,.55); }
+.tc b, .tc i { font-weight:400; font-style:normal; }
+/* the hero's art: the whole folded card, a window at the left of the unfolded one */
+.tc .art { position:absolute; left:-20px; top:0; bottom:0; width:calc(100% + 40px); transform:skewX(10deg);
+  background:#2a1a30 no-repeat; background-size:var(--bsF); background-position:var(--bpF); transition:width .3s ease, opacity .3s ease; }
+.tc.on .art { width:112px; background-size:var(--bsO); background-position:var(--bpO); -webkit-mask-image:linear-gradient(90deg, #000 65%, transparent); mask-image:linear-gradient(90deg, #000 65%, transparent); }
+.tc .unf { position:absolute; left:84px; right:12px; top:0; bottom:0; transform:skewX(10deg); opacity:0; pointer-events:none; transition:opacity .2s ease; }
+.tc.on .unf { opacity:1; pointer-events:auto; transition:opacity .25s ease .2s; }
+.tc .dhead { display:flex; align-items:center; gap:10px; height:40px; margin:4px 12px 0 8px; }
+.tc .dhead .nm { font-size:28px; letter-spacing:1px; color:#fff4f0; text-shadow:0 2px 0 rgba(0,0,0,.6); }
+.tc .dhead .vit { margin-left:auto; display:flex; gap:14px; }
+.tc .dhead .vit b { position:relative; display:flex; align-items:baseline; gap:4px; padding-bottom:5px; font-size:30px; line-height:1; color:var(--vc); }
+.tc .dhead .vit i { font-size:18px; letter-spacing:1px; opacity:.75; }
+.tc .dhead .vit s { text-decoration:none; font-size:20px; color:rgba(244,238,248,.5); }
+.tc .dhead .vit b::after { content:""; position:absolute; left:0; right:0; bottom:0; height:4px; border-radius:2px;
+  background:linear-gradient(90deg, var(--vc) var(--f), rgba(255,255,255,.14) var(--f)); }
+.tc .dhead .chips { display:flex; gap:6px; overflow:hidden; white-space:nowrap; }
+.tc .dhead .chips span { padding:0 8px; border-radius:11px; border:2px solid currentColor; font-size:20px; line-height:18px; background:rgba(8,5,14,.8); }
+.packs { display:flex; justify-content:space-around; height:146px; padding:0 4px; }
+#dock.busy .packs, .tc:not(.live) .packs { opacity:.4; }
+.tc:not(.live) .packs * { pointer-events:none !important; }
+
+/* ---- THE BUTTON: a power is a pack of two icons, red (the yokai) and blue (an
+   ally); a long press on either is its info. The same DOM in every look; the look places it. */
+.pk { position:relative; flex:0 0 auto; width:86px; height:146px; }
+/* what the power costs, either face: a negative figure in the SP blue, no pill,
+   floating between the red icon and the blue one (each look places it) */
+.pk .cost { position:absolute; z-index:4; font-size:28px; line-height:1; color:#8fdcff; white-space:nowrap; pointer-events:none;
+  -webkit-text-stroke:6px rgba(6,4,10,.9); paint-order:stroke fill; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+.ic { position:absolute; pointer-events:auto; touch-action:none; cursor:pointer; border-radius:16px;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.22);
+  transition:transform .12s ease, filter .12s ease, opacity .12s ease, box-shadow .12s ease; }
+.ic i { display:block; background:#fff; -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
+  -webkit-mask-position:center; mask-position:center; pointer-events:none; }
+.ic.red { background:linear-gradient(180deg, #ff5d6e, #b3122e); }
+.ic.blue { background:linear-gradient(180deg, #6fb0ff, #1f4fa8); }
+.ic:active { transform:scale(.93); }
+.ic.armed { transform:translateY(-6px) scale(1.06); box-shadow:0 0 0 3px #ffd166, 0 0 22px rgba(255,209,102,.8), 0 10px 16px rgba(0,0,0,.6); }
+.ic.off { filter:grayscale(1) brightness(.6); opacity:.5; }
+@media (hover:hover) { .ic:not(.off):hover { filter:brightness(1.12); } }
+.ic .fig { position:absolute; padding:1px 7px 0; border-radius:8px; white-space:nowrap; z-index:2;
+  background:rgba(8,5,14,.94); border:2px solid currentColor; color:#ffd7cf; font-size:20px; line-height:20px; pointer-events:none; }
+.ic .fig:empty { display:none; }
+.ic .fig.hgo { padding:3px 5px; line-height:0; }
+.pk .ic .fig.hgo { left:auto; bottom:auto; top:-8px; right:-8px; transform:none; }      /* the hourglass: the red icon's top-right corner, in every look */
+.ic .fig span.hg { display:inline-block; width:18px; height:18px; background:currentColor; -webkit-mask:var(--hg) center/contain no-repeat; mask:var(--hg) center/contain no-repeat; }
+.ic .who { position:absolute; width:28px; height:28px; border-radius:50%; border:2px solid #4f9bff; background:#2a1a30 no-repeat; background-size:300% auto; pointer-events:none; z-index:2; }
+/* a power on the whole party: every living head, piled with a small offset */
+.ic .who.all { position:static; display:flex; width:auto; height:auto; border:0; border-radius:0; background:none; --ph:28px; }
+.ic .who.all span { flex:0 0 auto; width:var(--ph); height:var(--ph); margin-left:calc(6px - var(--ph)); border-radius:50%; border:3px solid #4f9bff; background:#2a1a30 no-repeat; background-size:300% auto; box-shadow:0 0 0 2px rgba(12,8,18,.95), 0 3px 6px rgba(0,0,0,.5); }
+.ic .who.all span:first-child { margin-left:0; }
+.ic.blue.is-all { width:auto !important; padding:0; background:none; box-shadow:none; }
+.ic.blue.is-all i { display:none !important; }
+.ic .who:empty:not([style]) { display:none; }
+#frame.hits .ic, #frame.hits .tc .plate { outline:2px dashed rgba(126,166,255,.9); outline-offset:2px; }
+
+/* A · TILES — the first try, given room: a red tile, the blue one under it */
+.bv-tiles .ic.red { left:8px; top:8px; width:70px; height:70px; }
+.bv-tiles .ic.red i { width:40px; height:40px; }
+.bv-tiles .ic.blue { left:0; top:94px; width:46px; height:46px; border-radius:13px; }
+.bv-tiles .ic.blue i { width:26px; height:26px; }
+.bv-tiles .fig { left:50%; bottom:-10px; transform:translateX(-50%); }
+.bv-tiles .who { left:-8px; top:-8px; }
+.bv-tiles .pk .cost { left:52px; top:104px; }
+
+/* B · SPLIT — one object a power: the red face on top, the blue face its foot,
+   the info a round tab on the top-left corner */
+.bv-split .ic.red { left:3px; top:8px; width:80px; height:86px; border-radius:22px 22px 6px 6px; }
+.bv-split .ic.red i { width:42px; height:42px; margin-top:-10px; }
+.bv-split .ic.blue { left:3px; top:97px; width:80px; height:44px; border-radius:6px 6px 22px 22px; justify-content:flex-end; padding-right:12px; }
+.bv-split .ic.blue i { width:24px; height:24px; }
+.bv-split .ic.blue.is-all { width:80px !important; justify-content:center; background:linear-gradient(180deg, #6fb0ff, #1f4fa8); }
+.bv-split .fig { left:50%; bottom:4px; transform:translateX(-50%); }
+.bv-split .who { left:8px; top:7px; width:30px; height:30px; }
+.bv-split .pk .cost { right:-6px; top:82px; }
+
+/* C · BADGES — an app icon: the red tile is the power, the ally's head a badge
+   hanging on its foot, the info a small badge on its corner */
+.bv-badges .ic.red { left:6px; top:12px; width:76px; height:76px; border-radius:20px; }
+.bv-badges .ic.red i { width:44px; height:44px; }
+.bv-badges .ic.blue { left:-6px; top:76px; width:50px; height:50px; border-radius:50%; box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); z-index:3; }
+.bv-badges .ic.blue i { display:none; width:28px; height:28px; }
+.bv-badges .ic.blue:has(.who:empty:not([style])) i { display:block; }      /* no ally to reach: the glyph, greyed */
+.bv-badges .who { left:3px; top:3px; width:44px; height:44px; border-width:0; }
+.bv-badges .who.all { --ph:40px; }
+.bv-badges .fig { right:-10px; top:42px; }      /* on the right flank: the foot is the ally's, a party pile included */
+.bv-badges .pk .cost { left:48px; top:92px; }
+
+/* D · CLUSTER — round gems, the big red one in front, the blue one tucked under it */
+.bv-cluster .ic { border-radius:50%; }
+.bv-cluster .ic.red { left:5px; top:8px; width:76px; height:76px; z-index:2; }
+.bv-cluster .ic.red i { width:42px; height:42px; }
+.bv-cluster .ic.blue { left:-6px; top:74px; width:50px; height:50px; box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); z-index:3; }
+.bv-cluster .ic.blue i { width:26px; height:26px; }
+.bv-cluster .fig { left:-8px; top:-4px; }
+.bv-cluster .who { left:-6px; top:-6px; }
+.bv-cluster .pk .cost { left:48px; top:88px; }
+
+/* the info window, over the row: the power's two faces on a long press */
+#dinfo { position:absolute; left:26px; width:668px; bottom:360px; z-index:30; padding:8px 16px 10px; pointer-events:none;
+  border-radius:16px; background:rgba(8,5,14,.9); border:1px solid rgba(255,209,102,.3); box-shadow:0 10px 30px rgba(0,0,0,.6); }
+#dinfo p { margin:0; }
+#dinfo .h { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+#dinfo .h b { font-size:28px; letter-spacing:2px; font-weight:400; color:var(--ink, #f4eef8); }
+#dinfo .h i { font-style:normal; font-size:20px; letter-spacing:2px; color:#8fdcff; }
+#dinfo .face { margin-top:5px; padding:3px 10px 3px 10px; border-radius:10px; border:2px solid transparent; border-left:6px solid var(--fc);
+  font:700 20px/1.25 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#d9d3e4; }
+#dinfo .face b { margin-right:10px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:var(--fc); }
+#dinfo .face em { font-style:normal; margin-left:10px; font:400 24px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:#ffd7cf; white-space:nowrap; }
+#dinfo .face.hot { background:rgba(255,255,255,.07); border-color:var(--fc); border-left-width:6px; color:#fff4f0; }
+#dinfo .face.na { opacity:.5; }
+#dinfo .a { margin-top:6px; font:700 20px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#ffd166; }
+#dinfo .stat { margin-top:5px; font:700 22px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#f4eef8; }
+#dinfo .stat b { margin-right:8px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; color:#b69cff; }
+#dinfo .tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+#dinfo .tags span { padding:3px 12px; border-radius:12px; font:400 20px "Bebas Neue", -apple-system, sans-serif; letter-spacing:1px; border:2px solid currentColor; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Grudgeon casting</h1>
+  <p class="hint">One tap a power: red on the yokai, blue on the ally the game picks; a long press shows what it does. The presets are four ways to draw that button. Play a few turns: the readout at the foot of the panel is the measure.</p>
+  <h3>Preset</h3>
+  <div class="styles" id="presets"></div>
+  <div id="knobs"></div>
+  <div class="btns"><button id="restart">Restart fight</button><button id="nextfoe">Next yokai</button></div>
+  <div class="btns"><button id="reset">Reset preset</button><button id="copy" class="main">Copy settings</button></div>
+  <h3>Readout</h3>
+  <div id="readout">
+    <div><span>Casts</span><b id="ro-casts">0</b></div>
+    <div><span>Taps on the frame</span><b id="ro-taps">0</b></div>
+    <div class="big"><span>Taps per cast</span><b id="ro-tpc">-</b></div>
+    <div><span>Mis-taps</span><b id="ro-mis">0</b></div>
+  </div>
+  <div class="btns"><button id="ro-reset">Reset readout</button></div>
+</div>
+
+<div id="stage">
+  <div id="wrap">
+    <canvas id="view"></canvas>
+    <div id="frame">
+      <div id="aim"></div>
+      <div id="dock"><div id="dinfo"></div><div id="drow"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================================================================
+   The page's own code (ES6 — a lab page runs in your browser, not in a
+   mobile WebView). Parts: the data copied from games/grudgeon/game.js, the
+   settings and their panel, the fight's little simulation, the camera and
+   projection, the drawing, then the three casting models.
+   =========================================================================== */
+(function () {
+  "use strict";
+
+  const W = 720, H = 1280;
+  const ART = "../assets/image/embed/grudgeon-";
+  const TAU = Math.PI * 2;
+
+  /* The motor's upper(), copied from lab/button.html: capitals are a look,
+     and a capital carries no accent. */
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  /* =========================================================================
+     0. THE TUNABLES — the numbers of the fight, plain and at the top
+     ========================================================================= */
+  const FOE_HP = 3;          // the yokai's health, x its game value: short fights, this is a casting bench
+  const FOE_ATK = 1.6;       // the yokai's blows, x its game value
+  const TICK = 100;          // a unit waits TICK / spd between two turns, at weight 1
+  const SHOW = 7;            // turns on the timeline
+  const SPECIAL_EVERY = 3;   // the yokai's special is every n-th of its turns
+  const FEAR_PUSH = 0.6;     // fear pushes a hero back this share of their wait
+  const HASTEN = 0.6, BIND = 0.8, WHET = 1.5, PACIFY = 0.5;   // the game's own, game.js l.285
+  const DOUBLE_TAP = 350;    // ms: a second tap on the same scroll fires it (model A)
+  const DRAG_PX = 10;        // a pointer moving this far is a drag, not a tap
+
+  /* =========================================================================
+     1. THE DATA — games/grudgeon/game.js
+     ========================================================================= */
+  const ELEMENTS = {
+    slash:  { name: "Slash",  color: "#e8e6f0", ink: "#3b3142" },
+    fire:   { name: "Fire",   color: "#ff7a3d", ink: "#b8400f" },
+    ice:    { name: "Ice",    color: "#8fdcff", ink: "#1f6f9e" },
+    light:  { name: "Light",  color: "#fff2a8", ink: "#9a7406" },
+    spirit: { name: "Spirit", color: "#b69cff", ink: "#5b35b0" }
+  };
+  const HEROES = {
+    akane: { name: "Akane", role: "Shrine maiden",       color: "#c77dff", hp: 72,  sp: 40, atk: 9,  def: 6, spd: 11, skills: ["purify", "blessing"] },
+    kenji: { name: "Kenji", role: "Kendo captain",       color: "#5aa9ff", hp: 100, sp: 24, atk: 15, def: 9, spd: 8,  skills: ["iai", "ward"] },
+    yuki:  { name: "Yuki",  role: "Onmyoji",             color: "#9ce7ff", hp: 76,  sp: 60, atk: 7,  def: 7, spd: 10, skills: ["foxfire", "frost"] },
+    haru:  { name: "Haru",  role: "Occult photographer", color: "#ffd166", hp: 76,  sp: 36, atk: 10, def: 5, spd: 14, skills: ["flash", "ghostshot"] }
+  };
+  const HERO_IDS = ["akane", "kenji", "yuki", "haru"];
+
+  /* `w` is the WEIGHT of an action on the timeline: the hero's next turn comes
+     w times their wait later. Each scroll has TWO FACES: `foe` is what it does
+     thrown at the yokai, `ally` what it does laid on an ally (the caster
+     included, unless `noSelf`). `icon` names a lucide file, standing in for
+     the game's own pictograms. */
+  const SKILLS = {
+    attack:    { name: "Attack",         kind: "hit", fx: "spells13",  el: "slash",  pow: 1.0, sp: 0,  w: 1, icon: "hand-fist",
+                 foe: "hit", ally: "cover", noSelf: true,
+                 foeText: "A plain blow with the hero's weapon",
+                 allyText: "Takes the next blow aimed at them" },
+    guard:     { name: "Guard",          kind: "guard", fx: "spells04", sp: 0, w: 0.6, icon: "shield",
+                 foe: "provoke", ally: "guard",
+                 foeText: "Its next blow at a single hero comes at this one, who stands on guard",
+                 allyText: "Halves the blows they take until their turn (+5 SP on oneself)" },
+    purify:    { name: "Purify",         kind: "hit", fx: "spells01",  el: "light",  pow: 1.7, sp: 8,  w: 1, icon: "sparkles",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of light", allyText: "Their next blow becomes light" },
+    blessing:  { name: "Blessing",       kind: "heal", fx: "spells02", pow: 0.32,    sp: 12, w: 1.2, icon: "heart",
+                 foe: "pacify", ally: "heal",
+                 foeText: "Halves its next blow",
+                 allyText: "Heals every hero by a third of their health" },
+    iai:       { name: "Iai slash",      kind: "hit", fx: "spells03",  el: "slash",  pow: 2.3, sp: 8,  w: 1.5, icon: "sword",
+                 foe: "hit", ally: "whet",
+                 foeText: "A very strong cut that delays the hero's next turn",
+                 allyText: "Their next blow hits 50% harder" },
+    ward:      { name: "Spirit ward",    kind: "ward", fx: "spells04", turns: 2,     sp: 6,  w: 0.8, icon: "book-lock",
+                 foe: "bind", ally: "ward",
+                 foeText: "Pushes it back on the timeline",
+                 allyText: "Every hero takes 40% less damage during the yokai's next two turns" },
+    frost:     { name: "Frost talisman", kind: "hit", fx: "spells05",  el: "ice",    pow: 2.0, sp: 9,  w: 1, icon: "snowflake",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of ice", allyText: "Their next blow becomes ice" },
+    foxfire:   { name: "Foxfire",        kind: "hit", fx: "spells06",  el: "fire",   pow: 2.0, sp: 9,  w: 1, icon: "flame",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A strong blow of fire", allyText: "Their next blow becomes fire" },
+    flash:     { name: "Flash",          kind: "hit", fx: "spells07",  el: "light",  pow: 1.1, sp: 10, w: 0.7, push: 0.6, icon: "zap",
+                 foe: "hit", ally: "hasten", noSelf: true,
+                 foeText: "A quick blow of light that pushes the yokai back on the timeline",
+                 allyText: "Moves them up the timeline" },
+    ghostshot: { name: "Ghost shot",     kind: "hit", fx: "spells08",  el: "spirit", pow: 1.6, sp: 8,  w: 1, pierce: true, icon: "crosshair",
+                 foe: "hit", ally: "imbue",
+                 foeText: "A spirit blow that goes through most of the yokai's defense",
+                 allyText: "Their next blow becomes spirit" }
+  };
+
+  /* The four yokai of the first band, with the game's numbers and its plain
+     intents (basePlan below): no folklore rule here. */
+  const FOES = {
+    hanako:    { name: "Hanako-san", color: "#d94a5a", hp: 60, atk: 9,  def: 4, spd: 9,  weak: ["light"],  resist: ["ice"],   move: "fear",  special: "Third stall" },
+    teketeke:  { name: "Teke Teke",  color: "#c9c2b8", hp: 52, atk: 11, def: 3, spd: 16, weak: ["ice"],    resist: ["slash"], move: "heavy", special: "Teke teke" },
+    jinmenken: { name: "Jinmenken",  color: "#9a7b5a", hp: 66, atk: 10, def: 5, spd: 12, weak: ["fire"],   resist: [],        move: "drain", special: "Leave me be" },
+    akamanto:  { name: "Aka Manto",  color: "#b3122e", hp: 80, atk: 12, def: 6, spd: 10, weak: ["spirit"], resist: ["fire"],  move: "all",   special: "Red or blue?" }
+  };
+  const FOE_IDS = ["hanako", "teketeke", "jinmenken", "akamanto"];
+  const SCENE = "background-phone-01";
+  const MOVE_FX = { strike: "spells13", heavy: "spells14", all: "spells12", drain: "spells11", fear: "spells10" };
+
+  /* The lucide paths of the scrolls' glyphs (assets/motor/lucide/<icon>.svg,
+     24x24, stroked), inlined so a CSS mask works from file:// too — a mask
+     fetched by path is refused on an opaque origin. */
+  const ICON_PATHS = {
+    "hand-fist": '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>',
+    "shield": '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    "sparkles": '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    "heart": '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+    "sword": '<path d="m11 19-6-6"/><path d="m5 21-2-2"/><path d="m8 16-4 4"/><path d="M9.5 17.5 21 6V3h-3L6.5 14.5"/>',
+    "book-lock": '<path d="M18 6V4a2 2 0 1 0-4 0v2"/><path d="M20 15v6a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H10"/><rect x="12" y="6" width="8" height="5" rx="1"/>',
+    "snowflake": '<path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/>',
+    "flame": '<path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/>',
+    "zap": '<path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/>',
+    "hourglass": '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+    "info": '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    "crosshair": '<circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/>'
+  };
+  function iconUri(name) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICON_PATHS[name] + "</svg>";
+    return 'url("data:image/svg+xml;utf8,' + encodeURIComponent(svg) + '")';
+  }
+
+  /* The painted art, as the build ships it (assets/image/embed/). Loaded on
+     first ask; a sprite that has not decoded yet is simply not drawn. */
+  const IMGS = {};
+  function img(key) {
+    let im = IMGS[key];
+    if (!im) { im = new Image(); im.src = ART + key + ".webp"; IMGS[key] = im; }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  function preload() {
+    HERO_IDS.forEach(id => { for (let p = 1; p <= 6; p++) img("hero-" + id + "0" + p); });
+    FOE_IDS.forEach(id => { for (let p = 1; p <= 4; p++) img("foe-" + id + "0" + p); });
+    for (let k = 1; k <= 14; k++) img("spells" + (k < 10 ? "0" : "") + k);
+    img(SCENE);
+  }
+
+  /* =========================================================================
+     2. THE SETTINGS — presets, knobs, the readout
+     ========================================================================= */
+  const DEFAULTS = { look: "badges", tint: 10, blue: "smart", pin: "on", figs: "order", confirm: "off", longMs: 400, preview: "on", party: 4, hits: "off" };
+  /* The presets are the BUTTON: four ways to draw a power's three icons. */
+  const PRESETS = [
+    { key: "A", name: "A · Tiles", note: "The first try, given room: a big red tile, the blue one under it.", v: { look: "tiles" } },
+    { key: "B", name: "B · Split", note: "One object a power: the red face on top, the blue face as its foot (the ally's head on it).", v: { look: "split" } },
+    { key: "C", name: "C · Badges", note: "An app icon: the red tile is the power, the ally's head is a badge hanging on its foot.", v: { look: "badges" } },
+    { key: "D", name: "D · Cluster", note: "Two round gems, the big red one in front, the blue one tucked under it.", v: { look: "cluster" } }
+  ];
+  const KNOBS = [
+    { h: "The button" },
+    { k: "look", label: "Look", o: ["tiles", "split", "badges", "cluster"], names: { tiles: "Tiles", split: "Split", badges: "Badges", cluster: "Cluster" } },
+    { k: "figs", label: "Figure on the red face", o: ["order", "damage", "off"], names: { order: "Hourglass if the order moves", damage: "Damage", off: "None" } },
+    { k: "tint", label: "Tint of the card in turn (%)", min: 0, max: 40, step: 2 },
+    { h: "Casting" },
+    { k: "confirm", label: "Confirm", o: ["off", "arm"], names: { off: "Off: one tap casts", arm: "Arm, then confirm" } },
+    { k: "blue", label: "Blue face goes to", o: ["smart", "next", "lowest"], names: { smart: "Smart, per power", next: "Next to act", lowest: "Lowest health" } },
+    { k: "pin", label: "Tap a hero to pick the ally", o: ["on", "off"] },
+    { k: "longMs", label: "Long press delay (ms)", min: 250, max: 700, step: 50 },
+    { k: "preview", label: "Timeline preview", o: ["on", "off"] },
+    { h: "Scene" },
+    { k: "party", label: "Party size", o: [1, 2, 3, 4] },
+    { k: "hits", label: "Hit areas shown", o: ["off", "on"] }
+  ];
+  let preset = 2, S = Object.assign({}, DEFAULTS, PRESETS[2].v);
+  (function fromHash() {
+    const m = /preset=([ABCD])/i.exec(location.hash || "");
+    if (m) { preset = PRESETS.findIndex(p => p.key === m[1].toUpperCase()); S = Object.assign({}, DEFAULTS, PRESETS[preset].v); }
+  })();
+  const stats = { casts: 0, taps: 0, mis: 0 };
+
+  /* =========================================================================
+     3. THE FIGHT — the timeline, the intents and the scrolls' effects
+     ========================================================================= */
+  const P = { persp: 7, tilt: 0.75, unit: 112, groundY: 720, pivotZ: 0.3, heroScale: 0.95, foeScale: 1.15,
+    follow: 0.6, camSpeed: 4, actZoom: 0.2, dash: 0.75, punch: 0.06, shake: 10, hitstop: 0.07, flash: 0.3, bgDim: 0.35, bgZoom: 1.08, vignette: 0.3 };
+  const POS = { foe: [1.2, 1.3], hero: i => [-2.4 + i * 1.0, 0.5 - i * 0.65] };
+
+  let party = [], foe = null, active = 0, turn = 1, busy = false, over = false, extra = false;
+  let ward = 0, lastHero = null;
+  let T = 0, RT = 0, hitstop = 0, enterT = 0, flashA = 0, flashC = "#ffffff";
+  let jobs = [], tweens = [], parts = [], nums = [], calls = [], fxs = [];
+  let TL = [];
+
+  function anim(i) {
+    return { hx: 0, hz: 0, tx: 0, tz: 0, dash: 0, dashTo: { x: 0, z: 0 }, kx: 0, kz: 0,
+      hurt: 0, lunge: 0, cast: 0, guard: 0, dead: false, flash: 0, boost: 0, fade: 1, phase: i * 1.7, enter: 0 };
+  }
+  function makeHero(id, i) {
+    const b = HEROES[id];
+    return Object.assign(anim(i), { kind: "hero", id, b, i, color: b.color, mhp: b.hp, hp: b.hp, msp: b.sp, sp: b.sp, lag: b.hp,
+      atk: b.atk, def: b.def, spd: b.spd, pow: 1, ct: 0, n: 0, guarding: false, imbue: null, whet: 0, cover: null });
+  }
+  function makeFoe(id) {
+    const b = FOES[id], hp = Math.round(b.hp * 1.3 * FOE_HP);
+    return Object.assign(anim(0.25), { kind: "foe", id, b, color: b.color, mhp: hp, hp, lag: hp,
+      atk: b.atk * FOE_ATK, def: b.def, spd: b.spd, ct: 0, n: 0, acts: 0, plan: [], doing: null, taunt: null, pacify: false });
+  }
+  function all() { return foe ? party.concat([foe]) : party.slice(); }
+  function alive() { return party.filter(h => !h.dead); }
+  function activeHero() { return party[active] && !party[active].dead ? party[active] : null; }
+  function randomHero() { const a = alive(); return a[Math.floor(Math.random() * a.length)]; }
+
+  function setTargets(snap) {
+    const pos = party.map((h, i) => POS.hero(i));
+    party.forEach((h, i) => { h.tx = pos[i][0]; h.tz = pos[i][1]; if (snap) { h.hx = h.tx; h.hz = h.tz; } });
+    if (foe) { foe.tx = POS.foe[0]; foe.tz = POS.foe[1]; if (snap) { foe.hx = foe.tx; foe.hz = foe.tz; } }
+  }
+
+  /* --- timing helpers ---------------------------------------------------- */
+  function later(d, fn) { jobs.push({ t: d, fn }); }
+  function tween(o, k, to, d, ease, delay) { tweens.push({ o, k, from: null, to, d, t: -(delay || 0), ease: ease || outCubic }); }
+  function outCubic(q) { return 1 - Math.pow(1 - q, 3); }
+  function inOut(q) { return q * q * (3 - 2 * q); }
+  function outBack(q) { const c = 1.7; return 1 + (c + 1) * Math.pow(q - 1, 3) + c * Math.pow(q - 1, 2); }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  /* --- THE TIMELINE ------------------------------------------------------
+     Every living unit counts `ct` down; the lowest acts, a tie goes to the
+     heroes in party order, then to the yokai. Acting puts the unit back at
+     its wait (TICK / spd) times the weight of what it did. */
+  function wait(u) { return TICK / Math.max(1, u.spd); }
+  function units() { return alive().concat(foe && !foe.dead ? [foe] : []); }
+  function lowest(list) { let best = null; list.forEach(e => { if (!best || e.ct < best.ct - 1e-6) best = e; }); return best; }
+  function push(u, share, word) {
+    u.ct += wait(u) * share;
+    if (word) callout(word, u.kind === "foe" ? "#8fdcff" : "#e2364b", u.kind === "foe" ? "Pushed back" : u.b.name + " loses time");
+  }
+
+  /* The next SHOW turns, as the player will see them. While a hero chooses,
+     their own next turn is placed with the weight `w` of the scroll under
+     the pointer, so the row re-sorts itself before anything is chosen. */
+  function timeline(w, guardPrev) {
+    if (!foe || foe.dead || over) return [];
+    const sim = units().map(u => ({ u, ct: u.ct, n: u.n, guarding: u.guarding }));
+    const out = [];
+    const now = turn === 0 ? activeHero() : null;
+    let last = lastHero;
+    if (now) {
+      out.push({ u: now, key: now.id + ":" + now.n, now: true });
+      const s = sim.find(o => o.u === now);
+      s.ct = wait(now) * (w == null ? 1 : w); s.n++; s.guarding = !!guardPrev;
+      last = now;
+    }
+    let fk = 0, wd = ward;
+    while (out.length < SHOW) {
+      const s = lowest(sim); if (!s) break;
+      const d = s.ct; sim.forEach(o => { o.ct -= d; });
+      const e = { u: s.u, key: s.u.id + ":" + s.n, now: !out.length };
+      if (s.u.kind === "foe") {
+        const it = foe.doing ? (fk++ === 0 ? foe.doing : intent(fk - 2)) : intent(fk++);
+        const mod = fk === 1;            // the yokai's next turn: the one the scrolls bend
+        e.it = it;
+        e.hits = targetsOf(it, mod).map(h => { const g = sim.find(o => o.u === h); return { h, dmg: estimate(it, h, g && g.guarding, wd > 0, mod) }; });
+        if (wd > 0) wd--;
+        s.ct = wait(s.u) * it.w;
+      } else {
+        s.guarding = false;
+        s.ct = wait(s.u);
+        last = s.u;
+      }
+      s.n++;
+      out.push(e);
+    }
+    return out;
+  }
+
+  /* --- THE INTENTS -------------------------------------------------------
+     The yokai plans its turns ahead (`foe.plan`) so the timeline can show them. */
+  const POW = { strike: 1, heavy: 1.8, all: 0.75, drain: 1.2, fear: 0.9 };
+  function basePlan(f, i) {
+    const sp = (i + 1) % SPECIAL_EVERY === 0, mv = sp ? f.b.move : "strike";
+    const it = { kind: mv, label: sp ? f.b.special : "Strike", fx: mv, w: sp ? 1.2 : 1, special: sp, pow: POW[mv] };
+    if (mv === "all") it.all = true; else it.targets = [randomHero()];
+    if (mv === "drain") it.drain = true;
+    if (mv === "fear") it.fear = true;
+    return it;
+  }
+  function intent(k) {
+    while (foe.plan.length <= k) foe.plan.push(basePlan(foe, foe.acts + foe.plan.length));
+    return foe.plan[k];
+  }
+  /* `mod` is true for the yokai's NEXT turn, the one the scrolls laid since its
+     last turn bend: a provoking hero draws a blow aimed at one hero, then a hero
+     covering the one aimed at steps in front. */
+  function targetsOf(it, mod) {
+    if (it.all) return alive();
+    const out = (it.targets || []).filter(h => h && !h.dead);
+    if (mod && out.length === 1) {
+      let h = out[0];
+      if (foe.taunt && !foe.taunt.dead) h = foe.taunt;
+      if (h.cover && !h.cover.dead) h = h.cover;
+      return [h];
+    }
+    return out;
+  }
+  /* A yokai's blow is exactly what its intent says: no luck, no crit. */
+  function estimate(it, h, guarded, warded, mod) {
+    if (!it.pow) return 0;
+    let d = foe.atk * it.pow * 2.4 * (14 / (14 + h.def));
+    if (mod && foe.pacify) d *= PACIFY;
+    if (guarded && !it.pierce) d *= 0.5;
+    if (warded) d *= 0.6;
+    return Math.max(1, Math.round(d));
+  }
+
+  /* --- the beats --------------------------------------------------------- */
+  function impact(target, from, dmg, opts) {
+    opts = opts || {};
+    target.hurt = 0.4; target.flash = 1;
+    const dx = target.hx - from.hx, dz = target.hz - from.hz, d = Math.hypot(dx, dz) || 1;
+    target.kx = dx / d * 0.25; target.kz = dz / d * 0.25;
+    tween(target, "kx", 0, 0.35); tween(target, "kz", 0, 0.35);
+    if (opts.heal) target.hp = Math.min(target.mhp, target.hp + dmg);
+    else target.hp = Math.max(0, target.hp - dmg);
+    nums.push({ a: target, txt: (opts.heal ? "+" : "-") + dmg, col: opts.heal ? "#7ee0a1" : target.kind === "foe" ? (opts.el ? ELEMENTS[opts.el].color : "#ffffff") : "#ff5d73",
+      t: 0, life: 1.1, weak: !!opts.weak, ox: rnd(-20, 20) });
+    if (opts.heal) { target.hurt = 0; target.flash = 0.6; return; }
+    const k = opts.weak ? 1.6 : opts.big ? 1.3 : 1;
+    cam.shake = Math.max(cam.shake, P.shake * k);
+    cam.punch = P.punch * k;
+    hitstop = P.hitstop * k;
+    flashA = P.flash * (opts.weak ? 1 : 0.55); flashC = opts.el ? ELEMENTS[opts.el].color : "#ffffff";
+    cam.subject = target;
+  }
+  function spell(key, a, scale) { fxs.push({ key, a, t: 0, d: 0.75, s: (scale || 1.1) }); }
+  function callout(word, col, sub) { calls.length = 0; calls.push({ word, col, sub, t: 0, life: 1.3 }); }
+  function note(a, txt, col) { nums.push({ a, txt, col: col || "#ffd166", t: 0, life: 1.1, weak: false, ox: 0, small: true }); }
+
+  /* The game's damage formula: weak 1.6x (and ONE MORE), resisted 0.5x, 8% crits. */
+  function strike(att, tgt, pow, el, pierce) {
+    const def = pierce ? tgt.def * 0.3 : tgt.def;
+    let d = att.atk * pow * 2.4 * (14 / (14 + def)) * rnd(0.9, 1.1);
+    let weak = false, resist = false, crit = false;
+    if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
+    else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
+    if (!resist && Math.random() < 0.08) { crit = true; d *= 1.5; }
+    return { dmg: Math.max(1, Math.round(d)), weak, resist, crit };
+  }
+  /* The same, without the luck: what a scroll's label promises the yokai. */
+  function hitEstimate(h, id) {
+    const s = SKILLS[id], elId = h.imbue || s.el, mult = h.whet || 1, def = s.pierce ? foe.def * 0.3 : foe.def;
+    let d = h.atk * s.pow * (id === "attack" ? 1 : h.pow) * mult * 2.4 * (14 / (14 + def));
+    const weak = foe.b.weak.indexOf(elId) >= 0, resist = !weak && foe.b.resist.indexOf(elId) >= 0;
+    if (weak) d *= 1.6; else if (resist) d *= 0.5;
+    return { dmg: Math.max(1, Math.round(d)), weak, resist, el: elId };
+  }
+
+  /* --- THE SCROLLS' FACES ------------------------------------------------
+     What scroll `id` does on target `tg` ({ foe: true } or { hero }), as a
+     label: `word` (what a bar says in words), `fig` (the figure), `sub` (the
+     noun next to the figure), a `tag` (Weak, Resist, +5 SP) and its colour. */
+  function fits(id, tg) {
+    if (!tg) return false;
+    if (tg.foe) return !!foe && !foe.dead;
+    return !!tg.hero && !tg.hero.dead && !(SKILLS[id].noSelf && tg.hero === activeHero());
+  }
+  function faceOn(id, tg) {
+    const s = SKILLS[id], a = activeHero();
+    if (!a || !fits(id, tg)) return null;
+    if (tg.foe) {
+      switch (s.foe) {
+        case "hit": {
+          const r = hitEstimate(a, id);
+          return { kind: "hit", word: "Hit", fig: "−" + r.dmg, sub: "Hit", tag: r.weak ? "Weak" : r.resist ? "Resist" : "", tagCol: r.weak ? ELEMENTS[r.el].color : "#9aa0b5", tone: "dmg" };
+        }
+        case "provoke": return { kind: "provoke", word: "Provoke", fig: "", sub: "", tag: "", tone: "" };
+        case "pacify":  return { kind: "pacify", word: "Blow ÷2", fig: "÷2", sub: "Blow", tag: "", tone: "" };
+        case "bind":    return { kind: "bind", word: "Push back", fig: "", sub: "", tag: "", tone: "" };
+      }
+    }
+    const x = tg.hero;
+    switch (s.ally) {
+      case "cover":  return { kind: "cover", word: "Cover", fig: "", sub: "", tag: "", tone: "" };
+      case "imbue":  return { kind: "imbue", word: "Next: " + ELEMENTS[s.el].name, fig: ELEMENTS[s.el].name, sub: "Next blow", tag: "", tone: "" };
+      case "whet":   return { kind: "whet", word: "Next ×" + WHET, fig: "×" + WHET, sub: "Next blow", tag: "", tone: "" };
+      case "hasten": return { kind: "hasten", word: "Hasten", fig: "", sub: "", tag: "", tone: "" };
+      case "guard":  return { kind: "guard", word: "Blows ÷2", fig: "÷2", sub: "Blows", tag: x === a ? "+5 SP" : "", tagCol: "#8fdcff", tone: "" };
+      case "heal": {
+        const g = Math.min(x.mhp - x.hp, Math.round(x.mhp * s.pow * a.pow));
+        return { kind: "heal", word: "+" + g + " HP", fig: "+" + g, sub: "HP", tag: "", tone: "heal" };
+      }
+      case "ward":   return { kind: "ward", word: "−40% ×" + s.turns, fig: "−40%", sub: "Ward ×" + s.turns, tag: "", tone: "" };
+    }
+    return null;
+  }
+  /* --- the heroes: casting a scroll --------------------------------------- */
+  function canAct() { return !busy && !over && turn === 0 && !!activeHero() && !!foe && !foe.dead; }
+
+  /* The one way a scroll leaves the hero's hand. Returns false when it did not
+     go (no turn, no SP, no face on that target). */
+  function cast(id, tg) {
+    if (!canAct()) return false;
+    const h = activeHero(), s = SKILLS[id];
+    if (s.sp > h.sp) { say("Not enough SP"); return false; }
+    if (!fits(id, tg)) return false;
+    h.sp -= s.sp; busy = true; turn = 1;
+    stats.casts++; paintReadout();
+    clearUi();
+    cam.subject = h;
+    if (tg.foe) {
+      if (s.foe === "hit") { hitFoe(h, id, s); return true; }
+      h.cast = 0.9;
+      later(0.3, () => {
+        if (s.foe === "provoke") {
+          foe.taunt = h; h.guarding = true; spell(s.fx, h, 0.9); callout("Provoked", "#ffd166", h.b.name);
+        } else if (s.foe === "pacify") {
+          foe.pacify = true; spell(s.fx, foe, 1.0); callout("Pacified", "#ffd166", "Its next blow is halved");
+        } else if (s.foe === "bind") {
+          spell(s.fx, foe, 1.0); push(foe, BIND, "Bound");
+        }
+      });
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    const x = tg.hero;
+    if (s.ally === "guard") {
+      spell(s.fx, x, 0.9);
+      x.guarding = true; x.guard = 1.2; h.cast = 0.4;
+      if (x === h) { h.sp = Math.min(h.msp, h.sp + 5); note(h, "+5 SP", "#8fdcff"); }
+      else callout("Guarded", "#8fdcff", x.b.name);
+      later(0.7, () => endHero(h, s.w));
+      return true;
+    }
+    if (s.ally === "heal") {
+      h.cast = 0.9;
+      later(0.3, () => alive().forEach(y => { spell(s.fx, y, 0.9); impact(y, h, Math.min(y.mhp - y.hp, Math.round(y.mhp * s.pow * h.pow)), { heal: true }); }));
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    if (s.ally === "ward") {
+      h.cast = 0.9; ward = s.turns;
+      alive().forEach(y => spell(s.fx, y, 0.9));
+      callout("Spirit ward", "#9ce7ff", "Less damage taken");
+      later(1.0, () => endHero(h, s.w));
+      return true;
+    }
+    /* a blow laid on an ally: a gift for their next blow, a body in front of
+       them, or a step up the timeline */
+    h.cast = 0.9;
+    later(0.3, () => {
+      x.flash = 0.6;
+      spell(s.fx, x, 0.9);
+      if (s.ally === "imbue") { x.imbue = s.el; callout(ELEMENTS[s.el].name, ELEMENTS[s.el].color, x.b.name); }
+      else if (s.ally === "whet") { x.whet = WHET; callout("Whetted", "#ffd166", x.b.name); }
+      else if (s.ally === "cover") { x.cover = h; callout("Covered", "#8fdcff", x.b.name); }
+      else if (s.ally === "hasten") { x.ct = Math.max(0, x.ct - wait(x) * HASTEN); callout("Hastened", "#ffd166", x.b.name); }
+    });
+    later(1.0, () => endHero(h, s.w));
+    return true;
+  }
+  /* A blow at the yokai: the hero dashes most of the way to it and back. What
+     an ally laid on the hero rides on it: an element, an edge. */
+  function hitFoe(h, id, s) {
+    const f = foe, skill = id !== "attack";
+    let again = false;
+    const elId = h.imbue || s.el, mult = h.whet || 1;
+    h.imbue = null; h.whet = 0;
+    if (skill) h.cast = 0.9; else h.lunge = 0.6;
+    h.dashTo = { x: f.hx + (h.hx - f.hx) * 0.3, z: f.hz + (h.hz - f.hz) * 0.3 };
+    tween(h, "dash", skill ? 0.35 : 1, 0.22);
+    later(skill ? 0.38 : 0.24, () => {
+      const r = strike(h, f, s.pow * (skill ? h.pow : 1) * mult, elId, s.pierce);
+      spell(r.crit ? "spells14" : s.fx, f, 1.15);
+      impact(f, h, r.dmg, { el: elId, weak: r.weak });
+      if (f.hp <= 0) return;
+      if (s.push) push(f, s.push, "Stunned");
+      if (r.weak && !extra) { again = true; callout("Weak!", "#ffd166", "One more"); f.boost = 1; tween(f, "boost", 0, 1.2); }
+      else if (r.crit) callout("Critical", "#ffd166");
+      else if (r.resist) callout("Resisted", "#9aa0b5");
+    });
+    later(0.62, () => { tween(h, "dash", 0, 0.32, inOut); });
+    later(1.05, () => {
+      cam.subject = null;
+      if (f.hp <= 0) { exorcise(); return; }
+      if (again && !h.dead) { extra = true; busy = false; turn = 0; newTurn(); return; }   // ONE MORE: the same hero, the same slot
+      endHero(h, s.w);
+    });
+  }
+  function endHero(h, w) {
+    h.n++; h.ct = wait(h) * w;
+    lastHero = h;
+    cam.subject = null; busy = false;
+    step();
+  }
+
+  /* --- the yokai --------------------------------------------------------- */
+  function foeAct() {
+    if (over || !foe || foe.dead) return;
+    const f = foe, it = intent(0);
+    f.plan.shift(); f.acts++;
+    busy = true;
+    f.doing = it;
+    const big = !!it.special;
+    cam.subject = f;
+    if (big) {
+      f.cast = 1.5; f.boost = 1.5; tween(f, "boost", 0.3, 1.6, inOut);
+      later(0.35, () => callout(it.label, "#e2364b"));
+    } else {
+      f.lunge = 0.6;
+      const h0 = targetsOf(it, true)[0] || randomHero();
+      if (h0) { f.dashTo = { x: h0.hx + (f.hx - h0.hx) * 0.3, z: h0.hz + (f.hz - h0.hz) * 0.3 }; tween(f, "dash", 1, 0.24); }
+      later(0.62, () => { tween(f, "dash", 0, 0.34, inOut); });
+    }
+    later(big ? 1.05 : 0.26, () => {
+      let tg = targetsOf(it, true);
+      if (!tg.length && it.pow && alive().length) tg = [randomHero()];
+      let total = 0;
+      tg.forEach(h => {
+        const dmg = estimate(it, h, h.guarding, ward > 0, true);
+        total += dmg;
+        spell(MOVE_FX[it.fx] || "spells13", h, 1.0);
+        impact(h, f, dmg, { big });
+        if (h.hp <= 0) { h.dead = true; h.hp = 0; callout(h.b.name, "#e2364b", "Down"); }
+        else if (it.fear) push(h, FEAR_PUSH, "Frozen with fear");
+      });
+      if (it.drain && total) later(0.3, () => impact(f, f, Math.round(total * 0.5), { heal: true }));
+      if (ward > 0) ward--;
+      if (big) { flashC = "#e2364b"; flashA = Math.max(flashA, P.flash * 0.8); }
+    });
+    later(big ? 1.9 : 1.05, () => { f.boost = 0; endFoe(it); });
+  }
+  function endFoe(it) {
+    const f = foe;
+    f.n++; f.ct = wait(f) * it.w;
+    f.doing = null;
+    f.taunt = null; f.pacify = false;            // a scroll bends one turn of the yokai
+    party.forEach(h => { h.cover = null; });
+    cam.subject = null; busy = false;
+    step();
+  }
+
+  /* --- the scheduler ----------------------------------------------------- */
+  function step() {
+    if (over || !foe || foe.dead) return;
+    if (!alive().length) { wipe(); return; }
+    const u = lowest(units()), d = u.ct;
+    units().forEach(o => { o.ct -= d; });
+    u.ct = 0;
+    if (u.kind === "foe") { turn = 1; later(0.45, foeAct); return; }
+    active = party.indexOf(u); setTargets();
+    u.guarding = false; extra = false;
+    turn = 0;
+    newTurn();
+  }
+  function exorcise() {
+    const f = foe;
+    if (!f || f.dead) return;
+    busy = true; over = true; clearUi();
+    cam.subject = f;
+    spell("spells01", f, 1.5);
+    f.dead = true;
+    callout("Exorcised", "#fff2a8");
+    later(0.3, () => tween(f, "fade", 0, 1.3, inOut));
+    later(2.0, () => { const i = FOE_IDS.indexOf(foeId); startFight(FOE_IDS[(i + 1) % FOE_IDS.length]); });
+  }
+  function wipe() {
+    over = true; busy = true; clearUi();
+    callout("Wiped out", "#e2364b", "Try again");
+    later(2.0, () => startFight(foeId));
+  }
+  let foeId = FOE_IDS[0];
+  function startFight(id) {
+    jobs = []; tweens = []; parts = []; nums = []; calls = []; fxs = [];
+    busy = false; over = false; extra = false; ward = 0; lastHero = null;
+    foeId = id;
+    party = HERO_IDS.slice(0, +S.party).map((pid, i) => makeHero(pid, i));
+    party.forEach(h => { h.ct = wait(h); });
+    foe = makeFoe(id);
+    foe.ct = wait(foe);
+    active = 0; turn = 1;
+    clearUi();
+    setTargets(true);
+    enterT = 0;
+    all().forEach((a, i) => { a.enter = 0; tween(a, "enter", 1, 0.55, outCubic, a.kind === "foe" ? 0.62 : 0.45 + i * 0.09); });
+    later(1.3, step);
+  }
+
+  /* =========================================================================
+     4. THE CAMERA AND THE PROJECTION
+     ========================================================================= */
+  const cam = { x: W / 2, y: H / 2, z: 1, shake: 0, punch: 0, subject: null, sx: 0, sy: 0 };
+
+  /* A point on the ground (x across, z into the screen) seen by a camera
+     standing `persp` units in front of the pivot: s is the scale there, so a
+     near hero is bigger and lower. */
+  function proj(wx, wz) {
+    const pz = P.pivotZ, dz = wz - pz, x = wx, z = dz + pz;
+    const D = P.persp, q = Math.max(D * 0.3, z + D), k = D / q;
+    return { x: W / 2 + P.unit * x * k, y: P.groundY - P.unit * P.tilt * D * z / q, s: k, z };
+  }
+  function place(a) {
+    const x = a.hx + (a.dashTo.x - a.hx) * a.dash * P.dash + a.kx + (a.kind === "foe" ? 6.5 : -6.5) * (1 - a.enter);
+    const z = a.hz + (a.dashTo.z - a.hz) * a.dash * P.dash + a.kz;
+    const p = proj(x, z);
+    a.wx = x; a.wz = z; a.sx = p.x; a.sy = p.y; a.depth = p.z; a.k = p.s;
+    a.s = (a.kind === "foe" ? 320 * P.foeScale : 200 * P.heroScale) * p.s;
+    a.alpha = 1; a.dy = 0;
+    if (a.kind === "foe") a.dy += Math.sin(T * 1.6) * 8;
+    if (a.hurt > 0) a.sx += Math.sin(a.hurt * 60) * 7;
+    if (a.dead && a.kind === "foe") { a.alpha *= a.fade; a.dy -= (1 - a.fade) * 80; }
+  }
+  function updateCamera(dt) {
+    let tx = W / 2, ty = H / 2, tz = 1;
+    const subj = cam.subject;
+    if (subj && subj.sx != null) {
+      tz = 1 + P.actZoom;
+      tx = W / 2 + (subj.sx - W / 2) * P.follow;
+      ty = H / 2 + (subj.sy + subj.dy - subj.s * 0.45 - H / 2) * P.follow;
+    }
+    const hw = W / 2 / tz, hh = H / 2 / tz;
+    tx = clamp(tx, hw, W - hw); ty = clamp(ty, hh, H - hh);
+    const k = Math.min(1, dt * P.camSpeed);
+    cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; cam.z += (tz - cam.z) * k;
+    cam.punch *= Math.pow(0.0005, dt);
+    cam.shake *= Math.pow(0.002, dt);
+    cam.sx = (Math.random() * 2 - 1) * cam.shake; cam.sy = (Math.random() * 2 - 1) * cam.shake;
+  }
+  function camZoom() { return cam.z + cam.punch; }
+  function applyCamera(g) {
+    g.translate(W / 2 + cam.sx, H / 2 + cam.sy);
+    g.scale(camZoom(), camZoom());
+    g.translate(-cam.x, -cam.y);
+  }
+  /* camera space -> design px on screen (HUD anchors, hit areas) */
+  function toScreen(x, y) {
+    const z = camZoom();
+    return { x: W / 2 + cam.sx + (x - cam.x) * z, y: H / 2 + cam.sy + (y - cam.y) * z };
+  }
+
+  /* =========================================================================
+     5. DRAWING
+     ========================================================================= */
+  const cv = document.getElementById("view");
+  const ctx = cv.getContext("2d");
+  let R = 1;
+
+  function face(size) { return size + 'px "Bebas Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'; }
+  function rgba(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function mix(hex, hex2, k) {
+    const a = parseInt(hex.slice(1), 16), b = parseInt(hex2.slice(1), 16);
+    const ch = sh => Math.round((a >> sh & 255) * (1 - k) + (b >> sh & 255) * k);
+    return "#" + ((1 << 24) + (ch(16) << 16) + (ch(8) << 8) + ch(0)).toString(16).slice(1);
+  }
+  function rr(g, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function text(str, x, y, size, col, align, stroke) {
+    ctx.font = face(size); ctx.textAlign = align || "center"; ctx.textBaseline = "middle";
+    if (stroke) { ctx.lineJoin = "round"; ctx.lineWidth = stroke; ctx.strokeStyle = "rgba(6,4,10,.9)"; ctx.strokeText(str, x, y); }
+    ctx.fillStyle = col; ctx.fillText(str, x, y);
+  }
+
+  /* --- sprite caches: a white silhouette per image, for the hit flash ----- */
+  const cache = new Map();
+  function sil(im, col) {
+    const key = "s|" + im.src + "|" + col;
+    let c = cache.get(key);
+    if (!c) {
+      c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      const g = c.getContext("2d");
+      g.drawImage(im, 0, 0); g.globalCompositeOperation = "source-in"; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height);
+      cache.set(key, c);
+    }
+    return c;
+  }
+  /* Where the FACE is on each hero's idle sprite (fractions of the image),
+     measured by eye on assets/image/embed/grudgeon-hero-<id>01.webp: a
+     silhouette's top is a ribbon, a mask or a cowlick, never the face. */
+  const FACE = { akane: { x: 0.56, y: 0.15 }, kenji: { x: 0.59, y: 0.13 }, yuki: { x: 0.56, y: 0.19 }, haru: { x: 0.6, y: 0.135 } };
+  const heads = new Map();
+  function headOf(im) {
+    let h = heads.get(im.src);
+    if (h) return h;
+    const m = /hero-([a-z]+)\d/.exec(im.src);
+    h = (m && FACE[m[1]]) || { x: 0.5, y: 0.14 };
+    heads.set(im.src, h);
+    return h;
+  }
+  function portrait(a, x, y, r, square) {
+    const im = poseImg(a, true);
+    ctx.save();
+    ctx.beginPath();
+    if (square) ctx.rect(x - r, y - r, r * 2, r * 2); else ctx.arc(x, y, r, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = mix(a.color, "#07060c", 0.6); ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    if (im) {
+      const hd = headOf(im), side = im.naturalWidth * 0.36;
+      const sx = clamp(hd.x * im.naturalWidth - side / 2, 0, im.naturalWidth - side), sy = clamp(hd.y * im.naturalHeight - side * 0.45, 0, im.naturalHeight - side);
+      ctx.drawImage(im, sx, sy, side, side, x - r, y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+  function poseImg(a, idle) {
+    let pose;
+    if (a.kind === "hero") pose = idle ? 1 : a.dead ? 6 : a.hurt > 0 ? 5 : a.lunge > 0 ? 2 : a.cast > 0 ? 3 : a.guard > 0 ? 4 : 1;
+    else pose = idle ? 1 : a.hurt > 0 ? 3 : a.cast > 0 ? 4 : a.lunge > 0 ? 2 : 1;
+    return img(a.kind + "-" + a.id + "0" + pose) || img(a.kind + "-" + a.id + "01");
+  }
+  function flipOf(a) {
+    if (!foe) return false;
+    if (a.kind === "hero") return a.sx > foe.sx + 30;
+    const xs = party.filter(h => !h.dead), mx = xs.reduce((s, h) => s + h.sx, 0) / (xs.length || 1);
+    return mx > a.sx + 30;
+  }
+
+  function drawActor(a) {
+    const im = poseImg(a), flip = flipOf(a);
+    const br = 1 + Math.sin(T * 2 + a.phase) * 0.014, bx = 1 - (br - 1) * 0.6;
+    const k = im ? a.s / Math.max(im.naturalWidth, im.naturalHeight) : 1;
+    ctx.fillStyle = "rgba(0,0,0," + (0.45 * a.alpha) + ")";
+    ctx.beginPath(); ctx.ellipse(a.sx, a.sy, a.s * 0.3, a.s * 0.3 * 0.22 * P.tilt / 0.75, 0, 0, TAU); ctx.fill();
+    if (!im) { ctx.fillStyle = rgba(a.color, 0.5); ctx.beginPath(); ctx.arc(a.sx, a.sy - a.s * 0.4, a.s * 0.2, 0, TAU); ctx.fill(); return; }
+    const w = im.naturalWidth, h = im.naturalHeight;
+    ctx.save();
+    ctx.globalAlpha = a.alpha;
+    ctx.translate(a.sx, a.sy + a.dy);
+    ctx.scale(k * bx * (flip ? -1 : 1), k * br);
+    ctx.drawImage(im, -w / 2, -h);
+    if (a.dead && a.kind === "hero") { ctx.globalAlpha = a.alpha * 0.45; ctx.drawImage(sil(im, "#05040a"), -w / 2, -h); }
+    if (a.flash > 0) { ctx.globalAlpha = a.alpha * a.flash * 0.7; ctx.drawImage(sil(im, "#ffffff"), -w / 2, -h); }
+    ctx.restore();
+  }
+
+  function drawScene() {
+    ctx.fillStyle = "#07060c"; ctx.fillRect(0, 0, W, H);
+    const im = img(SCENE);
+    if (im) {
+      const cover = Math.max(W / im.naturalWidth, H / im.naturalHeight) * P.bgZoom;
+      ctx.drawImage(im, W / 2 - im.naturalWidth * cover / 2, H / 2 - im.naturalHeight * cover / 2, im.naturalWidth * cover, im.naturalHeight * cover);
+    }
+    const gr = ctx.createRadialGradient(W / 2, H * 0.45, 60, W / 2, H * 0.45, H * 0.75);
+    gr.addColorStop(0, rgba("#05040a", P.bgDim * 0.55)); gr.addColorStop(1, rgba("#0a0f20", Math.min(1, P.bgDim * 1.4)));
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+  }
+  function drawSpells() {
+    fxs.forEach(e => {
+      const im = img(e.key); if (!im || e.a.sx == null) return;
+      const q = e.t / e.d, s = e.a.s * e.s * (0.7 + 0.4 * Math.min(1, q * 2.5)), k = s / Math.max(im.naturalWidth, im.naturalHeight);
+      ctx.save();
+      ctx.globalAlpha = q < 0.6 ? 1 : 1 - (q - 0.6) / 0.4;
+      ctx.drawImage(im, e.a.sx - im.naturalWidth * k / 2, e.a.sy + e.a.dy - e.a.s * 0.45 - im.naturalHeight * k / 2, im.naturalWidth * k, im.naturalHeight * k);
+      ctx.restore();
+    });
+  }
+  function drawNumbers() {
+    nums.forEach(n => {
+      const a = n.a, q = n.t / n.life;
+      const base = toScreen(a.sx + n.ox, a.sy + a.dy - a.s * 0.82);
+      ctx.save();
+      ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+      text(n.txt, base.x, base.y - q * 70, n.small ? 34 : n.weak ? 64 : 48, n.col, "center", 8);
+      ctx.restore();
+    });
+  }
+  function drawCallouts() {
+    calls.forEach(c => {
+      const q = c.t / c.life, pop = q < 0.12 ? outBack(q / 0.12) : 1;
+      ctx.save();
+      ctx.globalAlpha = q < 0.75 ? 1 : 1 - (q - 0.75) / 0.25;
+      ctx.translate(W / 2, 470); ctx.scale(pop, pop); ctx.rotate(-0.05);
+      text(upper(c.word), 0, 0, 92, c.col, "center", 14);
+      if (c.sub) text(upper(c.sub), 0, 70, 36, "#fff4f0", "center", 8);
+      ctx.restore();
+    });
+  }
+
+  /* --- the HUD (screen space) -------------------------------------------- */
+  function bar(x, y, w, h, frac, col, lag) {
+    ctx.fillStyle = "rgba(255,255,255,.12)"; rr(ctx, x, y, w, h, h / 2); ctx.fill();
+    if (lag != null && lag > frac) { ctx.fillStyle = "rgba(255,244,240,.75)"; rr(ctx, x, y, Math.max(h, w * lag), h, h / 2); ctx.fill(); }
+    if (frac > 0) { ctx.fillStyle = col; rr(ctx, x, y, Math.max(h, w * frac), h, h / 2); ctx.fill(); }
+  }
+  function hpCol(a) { return a.hp / a.mhp < 0.3 ? "#e2364b" : "#7ee0a1"; }
+  const regions = [];          // what a finger can press on the canvas, rebuilt every frame: tiles, then sprites
+
+  /* The yokai's next turn on the timeline: who it hits and for how much. */
+  function nextFoe() { return TL.find(e => e.it) || null; }
+  function incoming() {
+    const m = new Map(), e = nextFoe();
+    if (e) e.hits.forEach(x => m.set(x.h, x));
+    return m;
+  }
+  /* A unit's lasting marks, as small chips: what a scroll laid on it. */
+  function statusesOf(u) {
+    const out = [];
+    if (u.kind === "hero") {
+      if (u.imbue) out.push({ t: ELEMENTS[u.imbue].name, c: ELEMENTS[u.imbue].color });
+      if (u.whet) out.push({ t: "×" + u.whet, c: "#ffd166" });
+      if (u.cover && !u.cover.dead) out.push({ t: "Covered", c: "#8fdcff" });
+      if (party.some(x => x.cover === u && !x.dead)) out.push({ t: "Covers", c: "#8fdcff" });
+      if (u.guarding) out.push({ t: "Guard", c: "#8fdcff" });
+      if (ward > 0) out.push({ t: "Ward ×" + ward, c: "#9ce7ff" });
+    } else {
+      if (u.taunt && !u.taunt.dead) out.push({ t: "Aims at " + u.taunt.b.name, c: "#ffd166" });
+      if (u.pacify) out.push({ t: "Pacified", c: "#7ee0a1" });
+    }
+    return out;
+  }
+  function chipRow(list, x, y, align) {
+    ctx.font = face(20);
+    const ws = list.map(s => ctx.measureText(upper(s.t)).width + 20);
+    const total = ws.reduce((s, w) => s + w + 6, -6);
+    let cx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+    list.forEach((s, i) => {
+      ctx.fillStyle = "rgba(8,5,14,.92)"; rr(ctx, cx, y - 14, ws[i], 28, 14); ctx.fill();
+      ctx.strokeStyle = s.c; ctx.lineWidth = 2; ctx.stroke();
+      text(upper(s.t), cx + ws[i] / 2, y + 1, 20, s.c);
+      cx += ws[i] + 6;
+    });
+  }
+
+  function chips(list, x, y, align, label, labelCol) {
+    ctx.font = face(20);
+    let cx = x;
+    const items = [{ t: upper(label), c: labelCol, plain: true }].concat(list.map(el => ({ t: upper(ELEMENTS[el].name), c: ELEMENTS[el].color })));
+    const widths = items.map(it => ctx.measureText(it.t).width + (it.plain ? 6 : 22));
+    const total = widths.reduce((s, w) => s + w + 6, -6);
+    if (align === "center") cx = x - total / 2; else if (align === "right") cx = x - total;
+    items.forEach((it, i) => {
+      if (!it.plain) { ctx.fillStyle = rgba(it.c, 0.18); rr(ctx, cx, y - 15, widths[i], 30, 15); ctx.fill(); ctx.strokeStyle = rgba(it.c, 0.7); ctx.lineWidth = 1.5; ctx.stroke(); }
+      text(it.t, cx + widths[i] / 2, y + 1, 20, it.c);
+      cx += widths[i] + 6;
+    });
+  }
+  function drawFoeHud(topY) {
+    const f = foe; if (!f || f.sx == null) return;
+    const a = (f.dead ? f.fade : 1) * f.enter;
+    if (a <= 0.01) return;
+    ctx.save(); ctx.globalAlpha = a;
+    const name = upper(f.b.name), x = 26, w = W - 52;
+    const gr = ctx.createLinearGradient(0, topY - 10, 0, topY + 110);
+    gr.addColorStop(0, "rgba(6,4,12,.85)"); gr.addColorStop(1, "rgba(6,4,12,0)");
+    ctx.fillStyle = gr; ctx.fillRect(0, topY - 10, W, 120);
+    text(name, x, topY + 22, 46, "#f4eef8", "left", 6);
+    ctx.font = face(46); const nw = ctx.measureText(name).width;
+    text(upper("Night school"), x + nw + 14, topY + 28, 22, "rgba(226,54,75,.9)", "left");
+    const by = topY + 52;
+    ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(x - 3, by - 3, w + 6, 26);
+    bar(x, by, w, 20, f.hp / f.mhp, "#e2364b", f.lag / f.mhp);
+    const ih = infoHit();
+    if (ih && f.hp > 0) {
+      const x0 = x + w * Math.max(0, f.hp - ih.dmg) / f.mhp, x1 = x + w * f.hp / f.mhp;
+      ctx.fillStyle = rgba("#fff4f0", 0.35 + 0.55 * (0.5 + 0.5 * Math.sin((RT - infoT) * 9)));
+      ctx.fillRect(x0, by, Math.max(3, x1 - x0), 20);
+    }
+    ctx.fillStyle = "rgba(6,4,12,.8)";
+    for (let i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4 - 1.5, by, 3, 20);
+    chips(f.b.weak, x, by + 46, "left", "Weak", "#ff8a9a");
+    if (f.b.resist.length) chips(f.b.resist, x + w, by + 46, "right", "Resists", "#9aa0b5");
+    const st = statusesOf(f);
+    if (st.length) chipRow(st, W / 2, by + 46, "center");
+    ctx.restore();
+  }
+
+  let frameDt = 0;
+  function topDmg(e) { return e.hits.reduce((m, x) => Math.max(m, x.dmg), 0); }
+  /* THE INTENT, in words: the yokai's next turn, when it comes, what it does and to whom. */
+  function drawIntent(y) {
+    const e = nextFoe(); if (!e || over || !foe) return;
+    const it = e.it, at = TL.indexOf(e);
+    const when = upper(at === 0 ? "Now" : at === 1 ? "Next turn" : "In " + at + " turns");
+    text(when, 44, y + 26, 20, "rgba(240,236,250,.75)", "left", 6);
+    ctx.font = face(20); const ww = ctx.measureText(when).width;
+    let what = it.label;
+    if (it.pow) what += "  > " + (it.all ? "all" : e.hits.map(x => x.h.b.name).join(", ")) + "  " + topDmg(e);
+    text(upper(what), 44 + ww + 14, y + 26, 28, it.special ? "#ff8a9a" : "#fff4f0", "left", 7);
+  }
+
+  /* THE MINI FRIEZE: the timeline, small, at the foot of the screen — an aid
+     to read the ORDER and the runs of turns: a head a turn in a small bubble,
+     the yokai's blow on a chip on its own. It slides when the order moves. */
+  const FRIEZE_Y = 1140;
+  const fX = new Map();
+  function drawFrieze(y) {
+    if (!foe) return;
+    const seen = new Set(), me = turn === 0 ? activeHero() : null;
+    ctx.save();
+    ctx.fillStyle = "rgba(6,4,12,.6)"; rr(ctx, 16, y, W - 32, 50, 25); ctx.fill();
+    TL.forEach((e, i) => {
+      const r = i ? 15 : 18, tx = 50 + i * 104, yy = y + 25;
+      let x = fX.has(e.key) ? fX.get(e.key) : tx + 60;
+      x += (tx - x) * Math.min(1, frameDt * 12);
+      fX.set(e.key, x); seen.add(e.key);
+      const a = e.u;
+      if (previewId && me && a === me && !e.now) {
+        const pul = 0.5 + 0.5 * Math.sin(RT * 8);
+        ctx.strokeStyle = rgba("#ffd166", 0.5 + 0.5 * pul); ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(x, yy, r + 6, 0, TAU); ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(6,4,12,.9)"; ctx.beginPath(); ctx.arc(x, yy, r + 2, 0, TAU); ctx.fill();
+      portrait(a, x, yy, r, false);
+      ctx.strokeStyle = a.kind === "foe" ? "#e2364b" : a.color; ctx.lineWidth = i ? 2 : 3;
+      ctx.beginPath(); ctx.arc(x, yy, r + 1, 0, TAU); ctx.stroke();
+      if (e.it) {
+        const it = e.it, label = !it.pow ? "-" : (it.all ? "All " : "") + topDmg(e);
+        ctx.font = face(18);
+        const w = ctx.measureText(label).width + 12;
+        ctx.fillStyle = it.special ? "#b3122e" : "rgba(20,8,14,.95)"; rr(ctx, x + r - 2, yy - 11, w, 22, 7); ctx.fill();
+        ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+        text(label, x + r - 2 + w / 2, yy + 1, 18, "#fff4f0");
+      }
+    });
+    for (const k of Array.from(fX.keys())) if (!seen.has(k)) fX.delete(k);
+    ctx.restore();
+  }
+
+  /* THE VITALS: a hero's health (green) over their spirit (blue), floating
+     between their feet, where the selection ring is drawn — no plate. */
+  function drawVitals() {
+    party.forEach(h => {
+      if (h.dead || h.sx == null || h.enter < 0.5) return;
+      const p = toScreen(h.sx, h.sy);
+      ctx.save(); ctx.globalAlpha = Math.min(1, (h.enter - 0.5) * 2);
+      text("" + h.hp, p.x, p.y - 10, 24, h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1", "center", 6);
+      text("" + Math.round(h.sp), p.x, p.y + 13, 22, "#8fdcff", "center", 6);
+      ctx.restore();
+    });
+  }
+
+  /* THE INFO, ON THE STAGE: while a power's info is shown, what each face
+     would do floats up over the one it lands on, again and again — the
+     blow over the yokai (its bar's chunk blinking), a heal or a ward over
+     the ally (every hero, for a power on the party), and what it costs
+     over the caster, in the SP blue: their feet, where the SP is written,
+     are under the info window. */
+  let infoPow = null, infoT = 0;
+  function infoHit() {
+    if (!infoPow || !canAct()) return null;
+    const f = faceOn(infoPow, { foe: true });
+    if (!f || f.kind !== "hit") return null;
+    return hitEstimate(activeHero(), infoPow);
+  }
+  function floatFig(u, str, col, t0, big, lift) {
+    const q = (((RT - infoT + t0) % 1.4) + 1.4) % 1.4 / 1.4, pop = q < 0.12 ? outBack(q / 0.12) : 1;
+    const base = toScreen(u.sx, u.sy + u.dy - u.s * 0.82);
+    ctx.save();
+    ctx.globalAlpha = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+    ctx.translate(base.x, base.y - 10 - (lift || 0) - q * 60); ctx.scale(pop, pop);
+    text(str, 0, 0, big ? 64 : 48, col, "center", 8);
+    ctx.restore();
+  }
+  function drawInfoFx() {
+    if (!infoPow || !canAct() || busy) return;
+    const a = activeHero(), cost = SKILLS[infoPow].sp;
+    if (cost && a.sx != null) {
+      const b0 = blueFor(infoPow), mine = b0 && (b0.all || b0.hero === a);      // the caster's own blue figure takes the head: the cost goes over it
+      floatFig(a, "−" + cost + " SP", "#8fdcff", 0, false, mine ? 56 : 0);
+    }
+    const r = infoHit();
+    if (r && foe && foe.sx != null) floatFig(foe, "−" + r.dmg, r.weak ? ELEMENTS[r.el].color : r.resist ? "#9aa0b5" : "#ff5d73", 0, r.weak);
+    else if (foe && foe.sx != null) { const f = faceOn(infoPow, { foe: true }); if (f && f.fig) floatFig(foe, f.fig, "#ffd7cf", 0, false); }
+    const b = blueFor(infoPow);
+    if (!b) return;
+    (b.all ? alive() : [b.hero]).forEach((h, i) => {
+      if (h.sx == null) return;
+      const f = faceOn(infoPow, { hero: b.all ? a : h });
+      const g = f && f.kind === "heal" ? faceOn(infoPow, { hero: h }) : f;
+      if (g && g.fig && g.fig !== "+0") floatFig(h, g.fig, g.tone === "heal" ? "#7ee0a1" : "#8fdcff", -0.7 - i * 0.12, false);
+    });
+  }
+
+  /* On the stage, a red ring under every hero the next turn will hit. */
+  function drawReticles() {
+    const pul = 0.5 + 0.5 * Math.sin(RT * 6);
+    incoming().forEach((x, h) => {
+      if (h.dead || h.sx == null) return;
+      ctx.strokeStyle = rgba("#e2364b", 0.45 + 0.45 * pul); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.ellipse(h.sx, h.sy, h.s * 0.34, h.s * 0.34 * 0.3, 0, 0, TAU); ctx.stroke();
+    });
+  }
+  /* The rings on the ground: the hero whose turn it is, the CURRENT TARGET of
+     model B, and the unit a scroll is being dragged over in model A. */
+  function ring(u, col, lw, grow) {
+    if (!u || u.sx == null) return;
+    const rx = u.s * (0.34 + (grow || 0)), ry = rx * 0.3;
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.ellipse(u.sx, u.sy, rx, ry, 0, 0, TAU); ctx.stroke();
+  }
+  function drawRings() {
+    const me = turn === 0 ? activeHero() : null, pul = 0.5 + 0.5 * Math.sin(RT * 4);
+    if (me) ring(me, rgba(me.color, 0.5 + 0.35 * pul), 3, -0.06);
+    // the icon under a finger or the mouse rings where it lands, red on the yokai, blue on the ally
+    if (dHot && canAct()) {
+      if (dHot.side === "red") ring(foe, rgba("#ff5d6e", 0.6 + 0.4 * pul), 6, 0.02);
+      else if (dHot.side === "blue") {
+        const b = blueFor(dHot.id);
+        (b ? (b.all ? alive() : [b.hero]) : []).forEach(h => ring(h, rgba("#4f9bff", 0.6 + 0.4 * pul), 6, 0.02));
+      }
+    }
+  }
+  function drawHitAreas() {
+    if (S.hits !== "on" || !canAct()) return;
+    ctx.save();
+    ctx.setLineDash([8, 6]); ctx.lineWidth = 2; ctx.strokeStyle = "rgba(126,166,255,.9)"; ctx.fillStyle = "rgba(126,166,255,.08)";
+    regions.forEach(r => { ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeRect(r.x, r.y, r.w, r.h); });
+    ctx.restore();
+  }
+  function drawHint() {
+    text("R restart · N next yokai", W / 2, 1240, 20, "rgba(240,236,250,.45)");
+  }
+
+  /* --- one frame ---------------------------------------------------------- */
+  function render() {
+    ctx.setTransform(R, 0, 0, R, 0, 0);
+    regions.length = 0;
+    drawScene();
+    ctx.save();
+    applyCamera(ctx);
+    drawReticles();
+    drawRings();
+    all().filter(a => a.sx != null).sort((a, b) => b.depth - a.depth).forEach(drawActor);
+    drawSpells();
+    ctx.restore();
+
+    if (flashA > 0.01) { ctx.fillStyle = rgba(flashC, flashA); ctx.globalCompositeOperation = "lighter"; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = "source-over"; }
+    const gr = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.75);
+    gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0," + P.vignette + ")");
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
+
+    drawVitals();
+    drawInfoFx();
+    drawNumbers();
+    // the timeline leaves the top for a mini frieze at the foot: the yokai's bar and its next move stay up
+    drawFoeHud(150);
+    drawIntent(272);
+    drawFrieze(FRIEZE_Y);
+    spriteRegions();
+    drawHitAreas();
+    drawCallouts();
+    drawHint();
+  }
+
+  /* --- the clock ---------------------------------------------------------- */
+  function update(rdt) {
+    RT += rdt; frameDt = rdt;
+    let dt = rdt;
+    if (hitstop > 0) { hitstop -= rdt; dt = 0; }
+    T += dt; enterT += dt;
+
+    for (let i = tweens.length - 1; i >= 0; i--) {
+      const tw = tweens[i]; tw.t += dt;
+      if (tw.t < 0) continue;
+      if (tw.from === null) tw.from = tw.o[tw.k];
+      const q = Math.min(1, tw.t / tw.d);
+      tw.o[tw.k] = tw.from + (tw.to - tw.from) * tw.ease(q);
+      if (q >= 1) tweens.splice(i, 1);
+    }
+    for (let i = jobs.length - 1; i >= 0; i--) { const j = jobs[i]; j.t -= dt; if (j.t <= 0) { jobs.splice(i, 1); j.fn(); } }
+    all().forEach(a => {
+      a.hx += (a.tx - a.hx) * Math.min(1, dt * 5); a.hz += (a.tz - a.hz) * Math.min(1, dt * 5);
+      a.hurt = Math.max(0, a.hurt - dt); a.lunge = Math.max(0, a.lunge - dt); a.cast = Math.max(0, a.cast - dt);
+      a.guard = Math.max(0, a.guard - dt); a.flash = Math.max(0, a.flash - dt * 5);
+      a.lag += (a.hp - a.lag) * Math.min(1, dt * (a.lag > a.hp ? 1.6 : 8));
+      place(a);
+    });
+    for (let i = fxs.length - 1; i >= 0; i--) { fxs[i].t += dt; if (fxs[i].t >= fxs[i].d) fxs.splice(i, 1); }
+    for (let i = nums.length - 1; i >= 0; i--) { nums[i].t += rdt; if (nums[i].t >= nums[i].life) nums.splice(i, 1); }
+    for (let i = calls.length - 1; i >= 0; i--) { calls[i].t += rdt; if (calls[i].t >= calls[i].life) calls.splice(i, 1); }
+    flashA *= Math.pow(0.0001, rdt);
+    updateCamera(rdt);
+    previewId = computePreview();
+    TL = timeline(previewId ? SKILLS[previewId].w : null, previewId === "guard");
+    syncUi();
+  }
+
+  /* =========================================================================
+     6. CASTING — one tap, three icons a power
+     ========================================================================= */
+  const aimEl = document.getElementById("aim"), frameEl = document.getElementById("frame"), wrap = document.getElementById("wrap");
+
+  let peek = null;           // a character's card held open: { k: "char", u, src: "press" | "hover" }
+  let pressedId = null, hoverId = null;   // the power under a finger / the mouse: the timeline previews it
+  let previewId = null;
+  let aimTimer = 0;
+
+  function actionsOf(h) { return ["attack", h.b.skills[0], h.b.skills[1], "guard"]; }
+  function weightWord(w) { return w < 0.9 ? "Quick" : w > 1.1 ? "Slow" : ""; }
+  function dv(html) { return html.replace(/÷/g, '<span class="dv">÷</span>'); }
+  function designRect(el) {
+    const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect(), sc = w.width / W;
+    return { x: (r.left - w.left) / sc, y: (r.top - w.top) / sc, w: r.width / sc, h: r.height / sc };
+  }
+
+  /* a measured tap: `counted` is whether the world was waiting for the player
+     when the finger went down; `ok` whether the tap did something */
+  function tap(counted, ok) {
+    if (!counted) return;
+    stats.taps++;
+    if (!ok) stats.mis++;
+    paintReadout();
+  }
+  function say(msg) {
+    aimEl.textContent = upper(msg);
+    aimEl.classList.add("on");
+    clearTimeout(aimTimer);
+    aimTimer = setTimeout(() => aimEl.classList.remove("on"), 1800);
+  }
+  function clearUi() { peek = null; pressedId = null; hoverId = null; dHot = null; infoId = null; armed = null; }
+
+  /* the timeline previews the power a finger is on, the mouse's, the armed one
+     or the one whose info is open */
+  function computePreview() {
+    if (S.preview !== "on" || !canAct()) return null;
+    return pressedId || hoverId || (armed ? armed.id : null) || infoId || null;
+  }
+
+  /* a new hero's turn (or the same hero's ONE MORE): nothing is held, nobody is pinned */
+  function newTurn() { peek = null; infoId = null; armed = null; pinned = null; dHot = null; }
+
+  /* a tap on a sprite: a hero other than the one in turn is pinned as the blue icons' ally */
+  function tapUnit(u, counted) {
+    if (u.kind === "hero" && u !== activeHero()) pinHero(u, counted); else tap(counted, false);
+  }
+  function tapGround(counted) {
+    if (infoId || armed || pinned) { infoId = null; armed = null; pinned = null; tap(counted, true); } else tap(counted, false);
+  }
+
+  /* --- pointers on the canvas: characters and the ground ---------------------- */
+  function design(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  /* The sprites' boxes: the nearest one wins where they overlap. */
+  function spriteRegions() {
+    const list = all().filter(a => a.sx != null && !a.dead && a.enter > 0.5).sort((a, b) => a.depth - b.depth);
+    const z = camZoom();
+    list.forEach(a => {
+      const p = toScreen(a.sx, a.sy + a.dy), hw = a.s * 0.3 * z, hh = a.s * 0.95 * z;
+      regions.push({ u: a, x: p.x - hw, y: p.y - hh, w: hw * 2, h: hh + 10 * z });
+    });
+  }
+  function unitAt(d) {
+    for (const r of regions) if (d.x >= r.x && d.x <= r.x + r.w && d.y >= r.y && d.y <= r.y + r.h) return r.u;
+    return null;
+  }
+  let g = null, hoverU = null, hoverUT = 0;
+  cv.addEventListener("pointerdown", e => {
+    const live = canAct(), p = design(e), u = live ? unitAt(p) : null;
+    g = { x: e.clientX, y: e.clientY, u, counted: live, moved: false, long: false, timer: 0 };
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+    clearTimeout(hoverUT);
+    if (live && u) g.timer = setTimeout(() => { if (g && !g.moved && canAct()) { g.long = true; peek = { k: "char", u, src: "press" }; } }, S.longMs);
+  });
+  cv.addEventListener("pointermove", e => {
+    if (g) {
+      if (!g.moved && Math.abs(e.clientX - g.x) + Math.abs(e.clientY - g.y) >= DRAG_PX) { g.moved = true; clearTimeout(g.timer); }
+      return;
+    }
+    if (e.pointerType !== "mouse" || !canAct()) return;
+    const u = unitAt(design(e));
+    if (u !== hoverU) {
+      hoverU = u; clearTimeout(hoverUT);
+      if (peek && peek.src === "hover") peek = null;
+      if (u) hoverUT = setTimeout(() => { if (hoverU === u && canAct() && !peek) peek = { k: "char", u, src: "hover" }; }, S.longMs);
+    }
+  });
+  cv.addEventListener("pointerleave", () => {
+    clearTimeout(hoverUT); hoverU = null;
+    if (peek && peek.src === "hover") peek = null;
+  });
+  function canvasEnd(cancel) {
+    if (!g) return;
+    const was = g; g = null;
+    clearTimeout(was.timer);
+    if (was.long) { peek = null; if (!cancel) tap(was.counted, true); return; }
+    if (cancel || was.moved || !was.counted || !canAct()) return;
+    if (peek && peek.src === "hover") peek = null;
+    if (was.u) tapUnit(was.u, true); else tapGround(true);
+  }
+  cv.addEventListener("pointerup", () => canvasEnd(false));
+  cv.addEventListener("pointercancel", () => canvasEnd(true));
+
+  /* --- one tap, three icons a power ------------------------------------------
+     Every power is a PACK of the same glyph three times: big RED casts it on
+     the yokai, mid BLUE on an ally, small GREEN opens its info in the window
+     above the row. Nothing asks for a target: the blue icon's ally is picked
+     by the game and shown on the icon (a portrait, or "All"), and a tap on a
+     hero (their folded card, or their sprite) pins them for this turn. */
+  let dHot = null;           // the icon under a finger / the mouse: { id, side }
+  let infoId = null, infoSide = "";   // the power whose info a long press left open, and the face it was on
+  let pinned = null;         // the ally a tap picked for this turn's blue icons
+  let armed = null;          // with a confirm: the icon tapped once, { id, side }
+  let dCards = new Map(), dPast = [], dParty = null;   // the track's cards by turn key, the keys played
+  const dinfoEl = document.getElementById("dinfo"), drowEl = document.getElementById("drow"), dockEl = document.getElementById("dock");
+
+  /* the heroes in the order they act after this turn, each once, the hero in
+     turn included where they come back (a scroll of weight w moves them) */
+  function heroesAfter(w) {
+    const out = [];
+    timeline(w).slice(1).forEach(e => { if (e.u.kind === "hero" && out.indexOf(e.u) < 0) out.push(e.u); });
+    alive().slice().sort((a, b) => a.ct - b.ct).forEach(h => { if (out.indexOf(h) < 0) out.push(h); });
+    return out;
+  }
+  function aimedHero() {
+    const e = nextFoe();
+    return e && !e.it.all && e.hits.length === 1 ? e.hits[0].h : null;
+  }
+  function lowestOf(list) { return list.slice().sort((a, b) => a.hp / a.mhp - b.hp / b.mhp)[0] || null; }
+  /* Where a power's BLUE icon goes, and why (the info window says it). */
+  function blueFor(id) {
+    const s = SKILLS[id], a = activeHero();
+    if (!a) return null;
+    if (s.ally === "heal" || s.ally === "ward") return { all: true, why: "every hero" };
+    const ok = h => !!h && !h.dead && fits(id, { hero: h });
+    const can = alive().filter(ok);
+    if (!can.length) return null;
+    if (S.pin === "on" && ok(pinned)) return { hero: pinned, why: "your pick" };
+    if (S.blue === "lowest") return { hero: lowestOf(can), why: "lowest health" };
+    const order = heroesAfter(s.w).filter(ok);
+    if (S.blue === "next") return { hero: order[0], why: "next to act" };
+    if (s.ally === "cover" || s.ally === "guard") {
+      const x = aimedHero();
+      if (ok(x)) return { hero: x, why: x === a ? "the yokai aims at you" : "the yokai aims at them" };
+      return s.ally === "guard" && ok(a) ? { hero: a, why: "nobody is aimed at alone" } : { hero: lowestOf(can), why: "lowest health" };
+    }
+    if (s.ally === "hasten") return { hero: order[order.length - 1], why: "last to act" };
+    return { hero: order[0], why: "next to strike" };     // imbue, whet: a gift for the next blow
+  }
+
+  /* THE TRACK: one card a hero TURN (a key of the timeline, "haru:3") on
+     five places — the turn just played (a sliver at the left edge), the turn
+     in hand (unfolded), the next (a whole folded card), the one after (a
+     sliver at the right edge), the rest waiting past the right edge. A cast
+     moves every card one place to the left: the card played folds and slides
+     out, the next one slides in and unfolds. A ONE MORE brings it back. */
+  const TRACK = { sliver: 30, gap: 12, open: 534, fold: 90, hOpen: 196, hFold: 140 };
+  function trackUp() {
+    const base = previewId ? timeline(null) : TL, out = [], seen = new Set();
+    base.forEach(e => { if (e.u.kind === "hero" && !seen.has(e.key) && dPast.indexOf(e.key) < 0) { seen.add(e.key); out.push(e); } });
+    return out;
+  }
+  function setSlot(c, x, w, h) {
+    if (c.x === x && c.w === w && c.hh === h) return;
+    c.x = x; c.w = w; c.hh = h;
+    c.el.style.left = x + "px"; c.el.style.width = w + "px"; c.el.style.height = h + "px";
+  }
+  function newCard(key, h) {
+    const el = document.createElement("div"); el.className = "tc";
+    el.style.setProperty("--hc", h.color); el.style.setProperty("--tint", rgba(h.color, S.tint / 100));
+    el.innerHTML = '<div class="plate"><div class="art"></div><div class="unf"><div class="dhead"><b class="nm"></b><span class="chips"></span><span class="vit"><b class="hp" style="--vc:#7ee0a1"></b><b class="sp" style="--vc:#8fdcff"></b></span></div><div class="packs"></div></div></div>';
+    const q = k => el.querySelector(k);
+    const c = { key, h, el, art: q(".art"), packs: q(".packs"), nm: q(".nm"), hpf: q(".vit .hp"), spf: q(".vit .sp"), vKey: "", chips: q(".chips"), stKey: "", artDone: false, icons: [], mounted: false, slot: 9 };
+    c.nm.textContent = upper(h.b.name);
+    wireCard(q(".plate"), c);
+    drowEl.appendChild(el);
+    setSlot(c, W + 20, TRACK.fold, TRACK.hFold);
+    void el.offsetWidth;                  // the first place is taken without a transition
+    el.classList.add("anim");
+    dCards.set(key, c);
+    return c;
+  }
+  /* the hero's idle art, head and shoulders, the face on a set point of the
+     art's window: a folded card and the unfolded one each get their own
+     size and offset (CSS variables), so the face stays put across the fold */
+  function artFit(fc, ratio, w, h, k, cx, cy) {
+    const ih = k * h, iw = ih / ratio;
+    // the sprite is transparent above the head: the image may come down from the top edge
+    const ox = clamp(cx - fc.x * iw, Math.min(0, w - iw), 0), oy = Math.max(cy - fc.y * ih, h - ih);
+    return { size: "auto " + Math.round(ih) + "px", pos: Math.round(ox) + "px " + Math.round(oy) + "px" };
+  }
+  function artOf(c) {
+    const im = img("hero-" + c.h.id + "01");
+    if (!im) return;
+    const fc = headOf(im), ratio = im.naturalHeight / im.naturalWidth;
+    const F = artFit(fc, ratio, TRACK.fold + 40, TRACK.hFold, 2.1, (TRACK.fold + 40) / 2, TRACK.hFold * 0.34);
+    const O = artFit(fc, ratio, 112, TRACK.hOpen, 2.0, 58, TRACK.hOpen * 0.36);   // visible from 20 px, faded past 73 px
+    c.art.style.backgroundImage = 'url("' + ART + "hero-" + c.h.id + '01.webp")';
+    c.art.style.setProperty("--bsF", F.size); c.art.style.setProperty("--bpF", F.pos);
+    c.art.style.setProperty("--bsO", O.size); c.art.style.setProperty("--bpO", O.pos);
+    c.artDone = true;
+  }
+  function mountPacks(c) {
+    c.packs.innerHTML = ""; c.icons = [];
+    actionsOf(c.h).forEach(id => {
+      const s = SKILLS[id], pk = document.createElement("div");
+      pk.className = "pk";
+      pk.innerHTML = '<div class="ic red" data-id="' + id + '" data-side="red"><i></i><b class="fig"></b></div>' +
+        '<div class="ic blue" data-id="' + id + '" data-side="blue"><i></i><b class="who"></b></div>' +
+        (s.sp ? '<b class="cost">−' + s.sp + "</b>" : "");
+      pk.querySelectorAll(".ic").forEach(ic => {
+        const side = ic.getAttribute("data-side"), g = ic.querySelector("i"), uri = iconUri(s.icon);
+        g.style.setProperty("-webkit-mask-image", uri); g.style.setProperty("mask-image", uri);
+        ic.setAttribute("aria-label", upper(s.name));
+        wireIcon(ic, id, ic.getAttribute("data-side"));
+        c.icons.push({ id, side: ic.getAttribute("data-side"), el: ic, fig: ic.querySelector(".fig"), who: ic.querySelector(".who"), key: "" });
+      });
+      c.packs.appendChild(pk);
+    });
+    c.mounted = true;
+  }
+  function headPos(h) {
+    const im = img("hero-" + h.id + "01");
+    if (!im) return null;
+    const hd = headOf(im), ratio = im.naturalHeight / im.naturalWidth;
+    return clamp((3 * hd.x - 0.5) / 2 * 100, 0, 100) + "% " + clamp((0.45 - hd.y * 3 * ratio) / (1 - 3 * ratio) * 100, 0, 100) + "%";
+  }
+  function syncDock() {
+    drowEl.className = "bv-" + S.look;
+    if (dParty !== party) { drowEl.innerHTML = ""; dCards.clear(); dPast = []; dParty = party; }
+    const live = canAct();
+    if (live && TL[0] && TL[0].now) { const k = dPast.indexOf(TL[0].key); if (k >= 0) dPast.splice(k, 1); }   // ONE MORE: the card comes back
+    if (!over && TL.length) {
+      const up = trackUp(), keep = new Set(), past = dPast.length ? dPast[dPast.length - 1] : null;
+      const x0 = TRACK.sliver + TRACK.gap, x1 = x0 + TRACK.open + TRACK.gap, x2 = x1 + TRACK.fold + TRACK.gap;
+      up.forEach((e, i) => {
+        const c = dCards.get(e.key) || newCard(e.key, e.u);
+        keep.add(e.key); c.slot = i;
+        setSlot(c, i === 0 ? x0 : i === 1 ? x1 : x2 + (i - 2) * (TRACK.fold + TRACK.gap), i === 0 ? TRACK.open : TRACK.fold, i === 0 ? TRACK.hOpen : TRACK.hFold);
+      });
+      if (past && dCards.has(past) && !keep.has(past)) {
+        const c = dCards.get(past);
+        keep.add(past); c.slot = -1;
+        setSlot(c, TRACK.sliver - TRACK.fold, TRACK.fold, TRACK.hFold);
+      }
+      dCards.forEach((c, k) => {
+        if (keep.has(k)) return;
+        dCards.delete(k);
+        setSlot(c, -TRACK.fold - 80, TRACK.fold, TRACK.hFold);
+        setTimeout(() => c.el.remove(), 600);
+      });
+    }
+    dockEl.classList.toggle("busy", !live);
+    const hot = live && dHot && dHot.side === "blue" ? blueFor(dHot.id) : null;
+    dCards.forEach(c => {
+      const h = c.h, on = c.slot === 0, isLive = on && live && activeHero() === h;
+      c.el.classList.toggle("on", on);
+      c.el.classList.toggle("past", c.slot < 0);
+      c.el.classList.toggle("live", isLive);
+      c.el.classList.toggle("is-pin", live && !on && S.pin === "on" && pinned === h);
+      c.el.classList.toggle("is-blue", !!hot && !on && (hot.all ? !h.dead : hot.hero === h));
+      if (!c.artDone) artOf(c);
+      if (!on) return;
+      if (!c.mounted) mountPacks(c);
+      const vk = h.hp + "|" + Math.round(h.sp);
+      if (vk !== c.vKey) {
+        c.vKey = vk;
+        const v = (el, lab, n, m) => { el.innerHTML = "<i>" + upper(lab) + "</i>" + n + "<s>/" + m + "</s>"; el.style.setProperty("--f", Math.round(100 * n / m) + "%"); };
+        v(c.hpf, "HP", h.hp, h.mhp); v(c.spf, "SP", Math.round(h.sp), h.msp);
+        c.hpf.style.setProperty("--vc", h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1");
+      }
+      const st = statusesOf(h), k = st.map(m => m.t).join(",");
+      if (k !== c.stKey) { c.stKey = k; c.chips.innerHTML = st.slice(0, 2).map(m => '<span style="color:' + m.c + '">' + upper(m.t) + "</span>").join(""); }
+      if (isLive) c.icons.forEach(syncIcon);
+    });
+    syncInfo();
+  }
+  /* one icon, once a frame: payable, reachable, its figure and its ally.
+     The red face wears an HOURGLASS when the power moves the frieze — its
+     weight puts the hero's next turn somewhere else among the others: green
+     when it comes sooner, amber when later. A power that leaves the order as
+     it is wears nothing. */
+  const orderMemo = new Map();
+  function orderShift(id) {
+    const base = TL.map(e => e.key).join(","), k = base + "|" + id;
+    if (orderMemo.has(k)) return orderMemo.get(k);
+    if (orderMemo.size > 64) orderMemo.clear();
+    const a = activeHero(), s = SKILLS[id];
+    const seq = t => t.slice(1).map(e => e.u.id).join(",");
+    const at = t => t.findIndex((e, i) => i > 0 && e.u === a);
+    const t1 = timeline(1), tw = timeline(s.w, id === "guard");
+    let v = 0;
+    if (seq(t1) !== seq(tw)) { const i1 = at(t1) < 0 ? 99 : at(t1), iw = at(tw) < 0 ? 99 : at(tw); v = iw < i1 ? -1 : iw > i1 ? 1 : s.w < 1 ? -1 : 1; }
+    orderMemo.set(k, v);
+    return v;
+  }
+  function syncIcon(o) {
+    const a = activeHero(), s = SKILLS[o.id], poor = s.sp > a.sp;
+    let off = poor, fig = "", figCol = "", who = null;
+    if (o.side === "red" && S.figs === "order") {
+      const v = orderShift(o.id);
+      if (v) { fig = '<span class="hg"></span>'; figCol = v < 0 ? "#7ee0a1" : "#ffb366"; }
+    } else if (o.side === "red" && S.figs === "damage") {
+      const f = faceOn(o.id, { foe: true });
+      if (f && f.kind === "hit") {
+        const r = hitEstimate(a, o.id);
+        fig = "" + r.dmg; figCol = r.weak ? ELEMENTS[r.el].color : r.resist ? "#9aa0b5" : "#ffd7cf";
+      }
+    }
+    if (o.side === "blue") { who = blueFor(o.id); if (!who) off = true; }
+    o.el.classList.toggle("off", off);
+    o.el.classList.toggle("armed", !!armed && armed.id === o.id && armed.side === o.side);
+    const heads = who && who.all ? alive() : [];
+    const key = fig + "|" + figCol + "|" + (who ? (who.all ? "all:" + heads.map(h => h.id).join(",") : who.hero.id) : "-");
+    if (key === o.key) return;
+    o.key = key;
+    if (o.fig) { o.fig.innerHTML = fig; o.fig.style.color = figCol; o.fig.classList.toggle("hgo", fig.indexOf("hg") >= 0); o.fig.style.setProperty("--hg", iconUri("hourglass")); }
+    if (o.who) {
+      o.who.className = "who" + (who && who.all ? " all" : "");
+      o.el.classList.toggle("is-all", !!(who && who.all));
+      o.who.removeAttribute("style");
+      o.who.innerHTML = "";
+      heads.forEach(h => {
+        const sp = document.createElement("span"), pos = headPos(h);
+        sp.style.backgroundImage = 'url("' + ART + "hero-" + h.id + '01.webp")';
+        if (pos) sp.style.backgroundPosition = pos;
+        o.who.appendChild(sp);
+      });
+      if (who && who.hero) {
+        const pos = headPos(who.hero);
+        o.who.style.backgroundImage = 'url("' + ART + "hero-" + who.hero.id + '01.webp")';
+        if (pos) o.who.style.backgroundPosition = pos;
+        o.who.style.borderColor = who.hero.color;
+      }
+    }
+  }
+  /* the info window: what the held / hovered / opened power does, a held
+     character's card, or one line at rest */
+  let infoKey = "";
+  function infoCard(id, hotSide) {
+    const s = SKILLS[id], a = activeHero(), bits = [];
+    if (s.sp) bits.push(s.sp + " SP");
+    if (s.el) bits.push(ELEMENTS[s.el].name);
+    if (weightWord(s.w)) bits.push(weightWord(s.w));
+    const red = faceOn(id, { foe: true }), b = blueFor(id);
+    const fig = f => f ? (f.fig || f.word) + (f.tag ? " · " + f.tag : "") : "";
+    const row = (side, col, label, txt, em, na) => '<p class="face' + (hotSide === side ? " hot" : "") + (na ? " na" : "") + '" style="--fc:' + col + '"><b>' + upper(label) + "</b>" + txt + (em ? "<em>" + upper(em) + "</em>" : "") + "</p>";
+    let html = '<p class="h"><b>' + upper(s.name) + "</b><i>" + upper(bits.join(" · ")) + "</i></p>";
+    html += row("red", "#ff5d6e", "On the yokai", s.foeText, fig(red));
+    if (!b) html += row("blue", "#4f9bff", "On an ally", s.allyText, "No ally to reach", true);
+    else if (b.all) html += row("blue", "#4f9bff", "On everyone", s.allyText, fig(faceOn(id, { hero: a })));
+    else html += row("blue", "#4f9bff", "On " + (b.hero === a ? "yourself" : b.hero.b.name), b.hero === a && s.ally === "guard" ? "Halves the blows you take until your turn, and gives you +5 SP" : s.allyText,
+      fig(faceOn(id, { hero: b.hero })) + " · " + b.why);
+    if (S.preview === "on") html += '<p class="a">' + againText(id) + "</p>";
+    return { id, key: "s|" + id + "|" + hotSide + "|" + html, html, ink: s.el ? ELEMENTS[s.el].color : "#f4eef8" };
+  }
+  function syncInfo() {
+    let c = null;
+    if (canAct()) {
+      if (peek && peek.k === "char") c = charCard(peek.u);
+      else if (dHot && (dHot.src === "press" || dHot.long)) c = infoCard(dHot.id, dHot.side);
+      else if (armed) c = infoCard(armed.id, armed.side);
+      else if (infoId) c = infoCard(infoId, infoSide);
+    }
+    const pow = c && c.id || null;
+    if (pow !== infoPow) { infoPow = pow; infoT = RT; }
+    if (!c) { if (infoKey) { infoKey = ""; dinfoEl.style.visibility = "hidden"; } return; }
+    const k = c.key + "|" + (S.preview === "on" ? againKey() : "");
+    if (k !== infoKey) { infoKey = k; dinfoEl.innerHTML = dv(c.html); dinfoEl.style.setProperty("--ink", c.ink); }
+    dinfoEl.style.visibility = "visible";
+  }
+  /* a tap on an icon: red / blue cast (or arm, with a confirm) */
+  function tapIcon(id, side, counted) {
+    const a = activeHero(); if (!a) return;
+    if (SKILLS[id].sp > a.sp) { say("Not enough SP"); tap(counted, false); return; }
+    const tg = side === "red" ? { foe: true } : (b => !b ? null : b.all ? { hero: a } : { hero: b.hero })(blueFor(id));
+    if (!tg) { say(party.length < 2 ? "No ally to reach" : "Not on oneself"); tap(counted, false); return; }
+    if (S.confirm === "arm" && !(armed && armed.id === id && armed.side === side)) { armed = { id, side }; tap(counted, true); return; }
+    tap(counted, true);
+    armed = null; infoId = null; dHot = null;
+    if (TL[0] && TL[0].now) { dPast.push(TL[0].key); if (dPast.length > 4) dPast.shift(); }   // the track moves on
+    cast(id, tg);
+  }
+  function wireIcon(ic, id, side) {
+    let d = null, hoverT = 0;
+    ic.addEventListener("pointerdown", e => {
+      if (!canAct()) return;
+      e.preventDefault();
+      clearTimeout(hoverT);
+      d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+      try { ic.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+      pressedId = id; dHot = { id, side, src: "press" };
+      d.timer = setTimeout(() => { if (d && !d.moved && canAct()) { d.long = true; dHot = { id, side, src: "press", long: true }; } }, S.longMs);
+    });
+    ic.addEventListener("pointermove", e => {
+      if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= DRAG_PX) { d.moved = true; clearTimeout(d.timer); }
+    });
+    function end(cancel) {
+      if (!d) return;
+      const was = d; d = null;
+      clearTimeout(was.timer);
+      pressedId = null;
+      if (dHot && dHot.src === "press") dHot = null;
+      if (was.long) { if (!cancel) { infoId = id; infoSide = side; tap(true, true); } return; }   // a held icon opens its info, left open: nothing is cast
+      if (cancel || was.moved || !canAct()) return;
+      tapIcon(id, side, true);
+    }
+    ic.addEventListener("pointerup", () => end(false));
+    ic.addEventListener("pointercancel", () => end(true));
+    // a mouse over a red or blue icon previews it: the ring, the timeline, then its info after the delay
+    ic.addEventListener("pointerenter", e => {
+      if (e.pointerType !== "mouse" || d || !canAct()) return;
+      hoverId = id; dHot = { id, side, src: "hover" };
+      clearTimeout(hoverT);
+      hoverT = setTimeout(() => { if (dHot && dHot.id === id && dHot.side === side && dHot.src === "hover") dHot.long = true; }, S.longMs);
+    });
+    ic.addEventListener("pointerleave", e => {
+      if (e.pointerType !== "mouse" || d) return;
+      clearTimeout(hoverT);
+      if (hoverId === id) hoverId = null;
+      if (dHot && dHot.src === "hover" && dHot.id === id && dHot.side === side) dHot = null;
+    });
+  }
+  /* a hero picked for the blue icons: their folded card, or their sprite */
+  function pinHero(h, counted) {
+    if (S.pin !== "on" || !h || h.dead) { tap(counted, false); return; }
+    pinned = pinned === h ? null : h;
+    tap(counted, true);
+  }
+  /* a folded card of the track: a tap picks its hero as the blue icons' ally, a long press opens their card */
+  function wireCard(el, c) {
+    let d = null;
+    el.addEventListener("pointerdown", e => {
+      if (!canAct() || c.slot <= 0 || c.h.dead) return;
+      e.preventDefault();
+      d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+      d.timer = setTimeout(() => { if (d && !d.moved && canAct()) { d.long = true; peek = { k: "char", u: c.h, src: "press" }; } }, S.longMs);
+    });
+    el.addEventListener("pointermove", e => {
+      if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= DRAG_PX) { d.moved = true; clearTimeout(d.timer); }
+    });
+    function end(cancel) {
+      if (!d) return;
+      const was = d; d = null;
+      clearTimeout(was.timer);
+      if (was.long) { peek = null; if (!cancel) tap(true, true); return; }
+      if (cancel || was.moved || !canAct()) return;
+      pinHero(c.h, true);
+    }
+    el.addEventListener("pointerup", () => end(false));
+    el.addEventListener("pointercancel", () => end(true));
+  }
+
+  /* --- what the info window reads ---------------------------------------------- */
+  function elName(el) { return el ? ELEMENTS[el].name : ""; }
+  /* where the hero's own next turn lands if this power is cast: read off the timeline */
+  function againText(id) {
+    const a = activeHero();
+    const i = TL.findIndex((e, k) => k > 0 && e.u === a);
+    if (previewId !== id) return "Hold to preview the timeline";
+    if (i < 0) return "Plays again after more than " + (SHOW - 1) + " turns";
+    const others = i - 1;
+    return others <= 0 ? "Plays again right after this" : "Plays again after " + others + (others === 1 ? " other turn" : " other turns");
+  }
+  function charCard(u) {
+    const st = statusesOf(u), ink = u.kind === "foe" ? "#ff8a9a" : u.color;
+    let html = '<p class="h"><b>' + upper(u.b.name) + "</b><i>" + upper(u.kind === "foe" ? "Yokai" : u.b.role) + "</i></p>";
+    html += '<p class="stat"><b>' + upper("HP") + "</b>" + u.hp + " / " + u.mhp + (u.kind === "hero" ? '  <b style="margin-left:14px">' + upper("SP") + "</b>" + Math.round(u.sp) + " / " + u.msp : "") + "</p>";
+    if (u.kind === "foe") {
+      html += '<p class="stat"><b>' + upper("Weak") + "</b>" + u.b.weak.map(elName).join(", ") + '  <b style="margin-left:14px">' + upper("Resists") + "</b>" + (u.b.resist.map(elName).join(", ") || "nothing") + "</p>";
+      const e = nextFoe();
+      if (e) {
+        const it = e.it, at = TL.indexOf(e);
+        html += '<p class="stat"><b>' + upper("Next") + "</b>" + it.label + (it.pow ? " on " + (it.all ? "everyone" : e.hits.map(x => x.h.b.name).join(", ")) + ", " + topDmg(e) : "") + (at > 1 ? " (in " + at + " turns)" : "") + "</p>";
+      }
+    } else if (incoming().get(u)) {
+      html += '<p class="stat"><b>' + upper("Next blow") + "</b>" + incoming().get(u).dmg + " damage</p>";
+    }
+    html += '<div class="tags">' + (st.length ? st.map(s => '<span style="color:' + s.c + '">' + upper(s.t) + "</span>").join("") : '<span style="color:#8a8498">' + upper("No marks") + "</span>") + "</div>";
+    return { key: "c|" + u.id + "|" + u.hp + "|" + Math.round(u.sp) + "|" + st.map(s => s.t).join(",") + "|" + (u.kind === "foe" && nextFoe() ? topDmg(nextFoe()) : ""), html, ink };
+  }
+  function againKey() { return TL.map(e => e.key).join(","); }
+
+  /* once a frame, after the world has moved */
+  function syncUi() { syncDock(); }
+
+  /* =========================================================================
+     7. THE PANEL
+     ========================================================================= */
+  const knobsEl = document.getElementById("knobs"), presetsEl = document.getElementById("presets");
+  const ctl = {};
+  function presetValues(i) { return Object.assign({}, DEFAULTS, PRESETS[i].v, { party: S.party, hits: S.hits }); }
+  function isDirty() { const v = presetValues(preset); return KNOBS.some(d => d.k && d.k !== "party" && d.k !== "hits" && v[d.k] !== S[d.k]); }
+  function paintPresets() {
+    presetsEl.querySelectorAll("button").forEach((b, i) => {
+      b.classList.toggle("on", i === preset);
+      b.classList.toggle("dirty", i === preset && isDirty());
+    });
+  }
+  function paintReadout() {
+    document.getElementById("ro-casts").textContent = stats.casts;
+    document.getElementById("ro-taps").textContent = stats.taps;
+    document.getElementById("ro-tpc").textContent = stats.casts ? (stats.taps / stats.casts).toFixed(2) : "-";
+    document.getElementById("ro-mis").textContent = stats.mis;
+  }
+  function resetReadout() { stats.casts = stats.taps = stats.mis = 0; paintReadout(); }
+  PRESETS.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.innerHTML = "<b></b><span></span>";
+    b.querySelector("b").textContent = p.name; b.querySelector("span").textContent = p.note;
+    b.onclick = () => { preset = i; S = presetValues(i); paintKnobs(); changed("look"); try { history.replaceState(null, "", "#preset=" + p.key); } catch (e) { /* file:// quirks */ } };
+    presetsEl.appendChild(b);
+  });
+  KNOBS.forEach(d => {
+    if (d.h) { const h = document.createElement("h3"); h.textContent = d.h; knobsEl.appendChild(h); return; }
+    const row = document.createElement("div"); row.className = "row";
+    const lab = document.createElement("label"); lab.textContent = d.label;
+    row.appendChild(lab);
+    if (d.o) {
+      const seg = document.createElement("div"); seg.className = "seg";
+      d.o.forEach(v => {
+        const b = document.createElement("button"); b.textContent = (d.names && d.names[v]) || v; b.dataset.v = v;
+        b.onclick = () => { S[d.k] = typeof d.o[0] === "number" ? +v : v; if (d.k === "look") preset = Math.max(0, PRESETS.findIndex(p => p.v.look === v)); paintKnobs(); changed(d.k); };
+        seg.appendChild(b);
+      });
+      row.appendChild(seg);
+      ctl[d.k] = { paint: () => { seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", String(b.dataset.v) === String(S[d.k]))); } };
+    } else {
+      const out = document.createElement("output"); lab.appendChild(out);
+      const inp = document.createElement("input"); inp.type = "range"; inp.min = d.min; inp.max = d.max; inp.step = d.step;
+      inp.oninput = () => { S[d.k] = +inp.value; out.textContent = S[d.k]; changed(d.k); };
+      row.appendChild(inp);
+      ctl[d.k] = { paint: () => { inp.value = S[d.k]; out.textContent = S[d.k]; } };
+    }
+    knobsEl.appendChild(row);
+  });
+  function paintKnobs() { for (const k in ctl) ctl[k].paint(); }
+  /* a knob moved: a new look resets the readout, a new glyph or tint rebuilds
+     the cards, a new party size is a new fight, the hit areas are a class */
+  function changed(k) {
+    paintPresets();
+    frameEl.classList.toggle("hits", S.hits === "on");
+    if (k === "look") { resetReadout(); clearUi(); dParty = null; }
+    if (k === "tint") dParty = null;
+    if (k === "confirm") armed = null;
+    if (k === "party") startFight(foeId);
+  }
+  document.getElementById("restart").onclick = () => startFight(foeId);
+  document.getElementById("nextfoe").onclick = () => startFight(FOE_IDS[(FOE_IDS.indexOf(foeId) + 1) % FOE_IDS.length]);
+  document.getElementById("ro-reset").onclick = resetReadout;
+  document.getElementById("reset").onclick = () => { S = presetValues(preset); paintKnobs(); changed("look"); };
+  document.getElementById("copy").onclick = () => {
+    const txt = JSON.stringify(Object.assign({ preset: PRESETS[preset].name }, S), null, 2);
+    try { navigator.clipboard.writeText(txt); } catch (e) { /* no clipboard */ }
+    console.log(txt);
+  };
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "r") startFight(foeId);
+    else if (k === "n") document.getElementById("nextfoe").click();
+  });
+
+  /* --- the canvas fits its stage; the DOM frame scales with it ------------------ */
+  function fit() {
+    const st = document.getElementById("stage");
+    const aw = st.clientWidth - 36, ah = st.clientHeight - 36;
+    const h = Math.min(ah, aw * H / W), w = h * W / H;
+    wrap.style.width = w + "px"; wrap.style.height = h + "px";
+    frameEl.style.transform = "scale(" + (w / W) + ")";
+    R = Math.max(0.5, Math.min(2, (window.devicePixelRatio || 1) * h / H));
+    cv.width = Math.round(W * R); cv.height = Math.round(H * R);
+  }
+
+  /* --- for a headless check: where things are, and the state, read-only ---------- */
+  function clientOf(x, y) {
+    const r = cv.getBoundingClientRect();
+    return { x: r.left + x * r.width / W, y: r.top + y * r.height / H };
+  }
+  const centre = e => { if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  window.__lab = {
+    S, stats,
+    get peek() { return peek; }, get busy() { return busy; }, get over() { return over; }, canAct,
+    get actor() { return activeHero() && activeHero().id; },
+    state() { return { actor: activeHero() && activeHero().id, peek: peek && (peek.k + ":" + peek.u.id),
+      sp: activeHero() && activeHero().sp, infoId, pinned: pinned && pinned.id, armed, foeHp: foe && foe.hp, party: party.map(h => h.id + ":" + h.hp + (h.dead ? "x" : "")), previewId, stats: Object.assign({}, stats) }; },
+    where(name) {
+      if (name.indexOf("unit:") === 0) {
+        const u = name.slice(5) === "foe" ? foe : party.find(h => h.id === name.slice(5)); const r = regions.find(q => q.u === u);
+        return r ? clientOf(r.x + r.w / 2, r.y + r.h * 0.55) : null;
+      }
+      if (name.indexOf("d:") === 0) { const [, id, side] = name.split(":"); return centre(frameEl.querySelector('#drow .tc.on .ic[data-id="' + id + '"][data-side="' + side + '"]')); }
+      if (name.indexOf("dh:") === 0) { const c = Array.from(dCards.values()).find(q => q.h.id === name.slice(3) && q.slot > 0); return c ? centre(c.el) : null; }
+      if (name === "ground") return clientOf(60, 700);
+      return null;
+    },
+    regions: () => regions.map(r => ({ id: r.u.id, x: r.x, y: r.y, w: r.w, h: r.h })),
+    dockInfo: () => ({ info: designRect(dinfoEl), row: Array.from(dCards.values()).sort((a, b) => a.slot - b.slot).map(c => Object.assign({ key: c.key, id: c.h.id, slot: c.slot, on: c.el.classList.contains("on") }, designRect(c.el))),
+      icons: Array.from(frameEl.querySelectorAll("#drow .tc.on .ic")).map(e => Object.assign({ id: e.getAttribute("data-id"), side: e.getAttribute("data-side") }, designRect(e))),
+      blue: actionsOf(activeHero() || party[0]).map(id => { const b = blueFor(id); return id + ":" + (b ? (b.all ? "all" : b.hero.id) : "-"); }) }),
+    startFight, setPreset(i) { preset = i; S = presetValues(i); paintKnobs(); changed("look"); },
+    set(k, v) { S[k] = v; paintKnobs(); changed(k); }
+  };
+
+  /* a long press must not open the browser's own menu over the card */
+  wrap.addEventListener("contextmenu", e => e.preventDefault());
+
+  /* --- boot --------------------------------------------------------------- */
+  preload();
+  if (document.fonts && document.fonts.load) document.fonts.load('22px "Bebas Neue"');
+  paintKnobs(); paintPresets(); paintReadout();
+  frameEl.classList.toggle("hits", S.hits === "on");
+  startFight(FOE_IDS[0]);
+  fit();
+  window.addEventListener("resize", fit);
+  let last = performance.now();
+  (function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+    update(dt);
+    render();
+    requestAnimationFrame(frame);
+  })(last);
+})();
+</script>
+</body>
+</html>

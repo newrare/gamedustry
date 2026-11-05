@@ -120,6 +120,10 @@
                            // 4 gives the bench pilot the jokers per run the
                            // old stream dealt it (~3.5 on levels 4-19)
       curseRate:   0.05,   // chance a dealt card is cursed (once unlocked)
+      curseMult:   10,     // what a curse BROKEN pays: a cursed card that is
+                           // part of the poker hand adds this to the multiplier
+                           // (one left out busts the hand; binned, it costs two
+                           // bins, or gives one back with the Exorcist)
       veilRate:    0.05,   // chance a dealt card hides its suit (once unlocked)
       enhanceRate: 0.10,   // chance a dealt card is gold, glass, wild or lucky
       tallyStep:   0.42,   // seconds between two throws of a hand's count
@@ -208,7 +212,7 @@
        re-read on every reset, so the web target can lerp them before a round
        starts and a playable reads the same numbers it always did. */
     var HAND_SIZE, DECK_SIZE, CHUTE_DEPTH, SHOE_BIAS, LIVES, SLOTS,
-        PICK_GAUGE, CURSE_RATE, VEIL_RATE, ENHANCE_RATE, TALLY_STEP, POT_ON, STAGE;
+        PICK_GAUGE, CURSE_RATE, CURSE_MULT, VEIL_RATE, ENHANCE_RATE, TALLY_STEP, POT_ON, STAGE;
     function readTunables() {
       var P = CONFIG.play;
       HAND_SIZE    = P.handSize;
@@ -219,6 +223,7 @@
       SLOTS        = P.jokerSlots;
       PICK_GAUGE   = P.pickGauge;
       CURSE_RATE   = P.curseRate;
+      CURSE_MULT   = P.curseMult;
       VEIL_RATE    = P.veilRate;
       ENHANCE_RATE = P.enhanceRate;
       TALLY_STEP   = P.tallyStep;
@@ -257,10 +262,13 @@
     var BIN_COL = "#ff4a5e", KEEP_COL = "#3ddc97", GOLD = "#f5c451", CYAN = "#7ee8c4";
     var CHIP_COL = "#4fa8ff", MULT_COL = "#ff4a5e";
     var CHIP_BOX = "#2f6fc4", MULT_BOX = "#c42f48";   // the hand's worth: blue chips, red mult
-    /* A ×mult is not a +mult: it MULTIPLIES the red chip. It wears its own
-       colour and its own shape everywhere — an orange burst, never a pill —
-       so "this one doubles" reads before a figure is. */
+    /* A ×mult is not a +mult: it MULTIPLIES the red chip. The body says
+       WHICH chip — blue for the chips, red for the multiplier, a burst for a
+       ×, a pill for a + — and the SIGN says what it does to it: a + in green,
+       a × in orange, everywhere a figure is drawn (signText, and signHtml in
+       the DOM), so "this one adds" and "this one boosts" read apart. */
     var XMULT_COL = "#ff9f1c", XMULT_BOX = "#e8590c";
+    var PLUS_COL = "#5be37a";
 
     /* --- card modifiers ---------------------------------------------------
        A dealt card may carry ONE of: an enhancement (mod), a curse, a veil.
@@ -269,6 +277,20 @@
     var MOD_NAME = { gold:"Gold", glass:"Glass", wild:"Wild", lucky:"Lucky" };
     var MOD_COL  = { gold:"#f5c451", glass:"#8fd8ff", wild:"#ff7ad9", lucky:"#42e8b0" };
     var CURSE_COL = "#b98cff", VEIL_COL = "#9aa8a0";
+    /* The whole face of a special card wears its kind, top to bottom, so a
+       gold, a glass or a wild card is told from across the table and not
+       only by its corner mark. `bg` is the face, `ink` the black suits' ink
+       then the red suits': on a deep face the red suits read pink and the
+       black ones white, so the two colours stay apart. */
+    var FACE = {
+      plain: { bg:["#fbf7ec", "#ece2c9"], ink:[INK_BLACK, INK_RED] },
+      gold:  { bg:["#ffe066", "#f2b220", "#c98306"], ink:["#2a1a02", "#9c0f1f"] },
+      glass: { bg:["#4fb3f0", "#1d6fb8", "#0f3b6e"], ink:["#f4fbff", "#ffc2cc"] },
+      wild:  { bg:["#e0279e", "#8a35d6", "#1d8fd8"], ink:["#ffffff", "#ffd0e4"] },
+      lucky: { bg:["#33c97a", "#16864b", "#0a4a2a"], ink:["#f2fff7", "#ffc9d0"] },
+      veil:  { bg:["#7a8781", "#46524d", "#2a312e"], ink:["#d9e2de", "#d9e2de"] },
+      curse: { bg:["#24152f", "#24152f"], ink:["#dcc2f7", "#dcc2f7"] }
+    };
 
     /* rank value: 2..10, J 11, Q 12, K 13, A 14 */
     function rvOf(r) { return r === 0 ? 14 : r + 1; }
@@ -319,17 +341,17 @@
     var JOKERS = [
       /* Smeared makes ♣ a spade and ♦ a heart: the suit jokers follow it, or
          the two would fight the one build they are made for. */
-      { id:"spade", name:"Spade lover", fam:"Mult", r:1, text:"+3 mult for every ♠ in the hand",
+      { id:"spade", name:"Spade lover", fam:"Mult", r:1, text:"Adds +3 to the multiplier for every ♠ in the hand",
         score:function (h) { var sm = has("smear"); var n = countWhere(h.cards, function (c) { return c.s === 0 || (sm && c.s === 3) || c.mod === "wild"; }); return n ? { k:"mult", v:3 * n } : null; } },
-      { id:"red", name:"Red tide", fam:"Mult", r:1, text:"+2 mult for every ♥ or ♦ in the hand",
+      { id:"red", name:"Red tide", fam:"Mult", r:1, text:"Adds +2 to the multiplier for every ♥ or ♦ in the hand",
         score:function (h) { var n = countWhere(h.cards, function (c) { return SUIT_RED[c.s] || c.mod === "wild"; }); return n ? { k:"mult", v:2 * n } : null; } },
-      { id:"even", name:"Even steven", fam:"Mult", r:1, text:"+4 mult for every 2, 4, 6, 8 or 10",
+      { id:"even", name:"Even steven", fam:"Mult", r:1, text:"Adds +4 to the multiplier for every 2, 4, 6, 8 or 10",
         score:function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 1 && c.r <= 9 && c.r % 2 === 1; }); return n ? { k:"mult", v:4 * n } : null; } },
-      { id:"court", name:"Royal court", fam:"Mult", r:1, text:"+30 chips for every J, Q or K",
+      { id:"court", name:"Royal court", fam:"Mult", r:1, text:"Adds +30 chips for every J, Q or K",
         score:function (h) { var n = countWhere(h.cards, function (c) { return c.r >= 10; }); return n ? { k:"chips", v:30 * n } : null; } },
-      { id:"jolly", name:"Jolly", fam:"Mult", r:1, text:"+8 mult if the hand holds a pair",
+      { id:"jolly", name:"Jolly", fam:"Mult", r:1, text:"Adds +8 to the multiplier if the hand holds a pair",
         score:function (h) { return h.ev.maxR >= 2 ? { k:"mult", v:8 } : null; } },
-      { id:"low", xm:true, name:"Low tide", fam:"Mult", r:2, text:"×2 mult if no card is above 7 (aces are low)",
+      { id:"low", xm:true, name:"Low tide", fam:"Mult", r:2, text:"Boosts the multiplier ×2 if no card is above 7 (aces are low)",
         score:function (h) { return countWhere(h.cards, function (c) { return c.r > 6; }) === 0 ? { k:"xmult", v:2 } : null; } },
 
       { id:"four", name:"Four fingers", fam:"Rule", r:2, text:"Flushes and straights need one card less" },
@@ -337,50 +359,50 @@
       { id:"shortcut", name:"Shortcut", fam:"Rule", r:2, text:"Straights may skip one rank between two cards" },
       { id:"lowbar", name:"Low bar", fam:"Rule", r:1, text:"Any pair pays, however low" },
 
-      { id:"goldbin", name:"Golden bin", fam:"Bin", r:1, text:"+15 chips for every card binned this hand",
+      { id:"goldbin", name:"Golden bin", fam:"Bin", r:1, text:"Adds +15 chips for every card binned this hand",
         score:function (h) { return h.bins ? { k:"chips", v:15 * h.bins } : null; } },
       { id:"deep", name:"Deep chute", fam:"Bin", r:1, text:"+2 bins on every hand" },
       { id:"recycler", name:"Recycler", fam:"Bin", r:2, text:"A binned card goes back under the deck" },
 
-      { id:"ascetic", name:"Ascetic", fam:"Grow", r:2, text:"+1 mult for every card you bin. A bust resets it.",
+      { id:"ascetic", name:"Austere", fam:"Grow", r:2, text:"Adds +1 to the multiplier for every card you bin. A bust resets the count",
         score:function (h, inst) { return inst.n ? { k:"mult", v:inst.n } : null; } },
-      { id:"collector", xm:true, name:"Collector", fam:"Grow", r:4, text:"×1.5, ×2, ×2.5… as you chain the same poker hand",
+      { id:"collector", xm:true, name:"Collector", fam:"Grow", r:4, text:"Boosts the multiplier ×1.5, ×2, ×2.5… as you play the same Poker hand several times in a row",
         score:function (h) { return h.streak > 1 ? { k:"xmult", v:1 + 0.5 * (h.streak - 1) } : null; } },
-      { id:"veteran", name:"Veteran", fam:"Grow", r:2, text:"+1 mult for every hand paid this run",
+      { id:"veteran", name:"Veteran", fam:"Grow", r:2, text:"Adds +1 to the multiplier for every hand paid this run",
         score:function () { return hands ? { k:"mult", v:hands } : null; } },
 
-      { id:"second", name:"Second chance", fam:"Survive", r:2, text:"A bust breaks this joker instead of a life" },
-      { id:"heart", name:"Spare heart", fam:"Survive", r:1, text:"+1 life when taken, −2 mult on every hand",
+      { id:"second", name:"Second chance", fam:"Survive", r:2, text:"A bust breaks this Joker instead of a life" },
+      { id:"heart", name:"Spare heart", fam:"Survive", r:1, text:"+1 life when taken. Takes 2 off the multiplier on every hand",
         score:function () { return { k:"mult", v:-2 }; } },
 
-      { id:"exorcist", name:"Exorcist", fam:"Curse", r:2, text:"A cursed card gives +20 mult instead of busting the hand" },
+      { id:"exorcist", name:"Exorcist", fam:"Curse", r:2, text:"Binning a cursed card gives you a bin back instead of costing two" },
       { id:"seer", name:"Seer", fam:"Curse", r:3, text:"Shows the next card and lifts every veil" },
 
       /* FATE — the card pushed up onto them, once per hand (FATE below): the jokers
          that steer the deal instead of paying for it. */
-      { id:"compass", name:"Compass", fam:"Fate", r:2, act:true, text:"Choose the next card's suit. Push the card up onto it, then down onto a suit." },
-      { id:"reshuffle", name:"Reshuffle", fam:"Fate", r:1, act:true, text:"Sends the card back into the deck, no bin spent. Push the card up onto it." },
-      { id:"pocket", name:"Pocket", fam:"Fate", r:2, act:true, text:"Puts the card aside, or swaps it with the one already there. Push the card up onto it." },
-      { id:"rewind", name:"Rewind", fam:"Fate", r:1, act:true, text:"Puts the last card you binned back into your hand, bin refunded. Push the card up onto it." },
+      { id:"compass", name:"Compass", fam:"Fate", r:2, act:true, text:"Choose the next card's suit. Push the card up onto this Joker, then pick a suit" },
+      { id:"reshuffle", name:"Reshuffle", fam:"Fate", r:1, act:true, text:"Push the card up onto this Joker to send it back into the deck, no bin spent" },
+      { id:"pocket", name:"Pocket", fam:"Fate", r:2, act:true, text:"Push the card up onto this Joker to put it aside, or swap it with the one already stored there" },
+      { id:"rewind", name:"Rewind", fam:"Fate", r:1, act:true, text:"Push the card up onto this Joker to take the last card you binned back into your hand. The bin is refunded too" },
       { id:"counter", name:"Card counter", fam:"Fate", r:1, text:"Shows what is left in the deck: each suit, and the faces" },
-      { id:"called", xm:true, name:"Called shot", fam:"Fate", r:3, act:true, text:"Call a hand before your third card. Make it or better for ×mult, or the hand busts.",
+      { id:"called", xm:true, name:"Called shot", fam:"Fate", r:3, act:true, text:"Call a Poker hand before your third card. Make it or better to boost the multiplier from ×1.5 to ×5, or the hand busts",
         score:function (h) { return h.called && CAT_ORDER[h.ev.cat] >= CAT_ORDER[h.called] ? { k:"xmult", v:CALL_X[h.called] } : null; } },
 
       /* RISK — more than any other joker pays, for a price the run feels. */
-      { id:"greed", xm:true, name:"Greed", fam:"Risk", r:4, text:"×3 mult, but only one bin per hand",
+      { id:"greed", xm:true, name:"Greed", fam:"Risk", r:4, text:"Boosts the multiplier ×3, but only one bin per hand",
         score:function () { return { k:"xmult", v:3 }; } },
 
       /* LUCK — the picks themselves: what they deal, how often, how many. */
-      { id:"charm", name:"Lucky charm", fam:"Luck", r:2, text:"Rare, epic and legendary jokers come twice as often in a pick" },
-      { id:"ticket", name:"Golden ticket", fam:"Luck", r:3, text:"Your next pick deals only epic and legendary jokers. Then the ticket is spent" },
-      { id:"hothand", name:"Hot hand", fam:"Luck", r:1, text:"Every paid hand fills the joker gauge by 1 more" },
-      { id:"third", name:"Third option", fam:"Luck", r:2, text:"Every pick deals three jokers instead of two" },
-      { id:"redeal", name:"Re-deal", fam:"Luck", r:1, text:"Once per pick, deal the jokers again" },
+      { id:"charm", name:"Lucky charm", fam:"Luck", r:2, text:"Rare, epic and legendary Jokers come twice as often in a pick" },
+      { id:"ticket", name:"Golden ticket", fam:"Luck", r:3, text:"Your next pick deals only epic and legendary Jokers. Then the ticket is spent" },
+      { id:"hothand", name:"Hot hand", fam:"Luck", r:1, text:"Every paid hand fills the Joker gauge by 1 more" },
+      { id:"third", name:"Third option", fam:"Luck", r:2, text:"Every pick deals three Jokers instead of two" },
+      { id:"redeal", name:"Re-deal", fam:"Luck", r:1, text:"Once per pick, deal the Jokers again" },
 
       /* THE POT's own three, in the Bin family: a bin is what fills it.
          Croupier and Fireproof are read where the pot is taken and burnt
          (scoreHand, settle); Ante where a hand is paid. */
-      { id:"croupier", sign:"%", name:"Croupier", fam:"Bin", r:2, text:"Every paid hand takes 25% more of the pot" },
+      { id:"croupier", sign:"%", name:"Croupier", fam:"Bin", r:2, text:"Every paid hand takes 25% of the pot on top of its share" },
       { id:"fireproof", sign:"♨", name:"Fireproof", fam:"Bin", r:1, text:"A bust no longer burns the pot" },
       { id:"ante", sign:"+", name:"Ante", fam:"Bin", r:1, text:"Every paid hand puts 15 chips into the pot" },
 
@@ -388,13 +410,13 @@
          a time, so WHERE a card lands is a decision no dealt hand of eight
          has: keep the ace now, or let it pass for the lit place. The anchor
          is place 1, the card that ends the hand place 5. */
-      { id:"seat", sign:"★", name:"Lucky seat", fam:"Seat", r:1, text:"Each hand lights up one place. The card you keep there adds its chips twice more.",
+      { id:"seat", sign:"★", name:"Lucky seat", fam:"Seat", r:1, text:"Each hand lights up one place. The card you keep there adds twice its value in chips",
         score:function (h) { var c = h.cards[h.seat]; return c ? { k:"chips", v:2 * rankChips(c.r) } : null; } },
-      { id:"keystone", sign:"◆", xm:true, name:"Keystone", fam:"Seat", r:2, text:"×1.5 mult if the middle card of the hand scores",
+      { id:"keystone", sign:"◆", xm:true, name:"Keystone", fam:"Seat", r:2, text:"Boosts the multiplier ×1.5 if the middle card is part of the Poker hand",
         score:function (h) { var m = (h.cards.length - 1) >> 1; return h.cards.length >= HAND_SIZE && h.ev.scoring[m] ? { k:"xmult", v:1.5 } : null; } },
-      { id:"stairs", sign:"↗", name:"Staircase", fam:"Seat", r:2, text:"+3 mult for every card higher than the one before it",
+      { id:"stairs", sign:"↗", name:"Staircase", fam:"Seat", r:2, text:"Adds +3 to the multiplier for every card higher than the one before it",
         score:function (h) { var n = 0; for (var i = 1; i < h.cards.length; i++) if (rvOf(h.cards[i].r) > rvOf(h.cards[i - 1].r)) n++; return n ? { k:"mult", v:3 * n } : null; } },
-      { id:"lastword", sign:"⇥", name:"Last word", fam:"Seat", r:1, text:"The card that ends the hand adds its chips as mult",
+      { id:"lastword", sign:"⇥", name:"Last word", fam:"Seat", r:1, text:"The card that ends the hand adds its value to the multiplier",
         score:function (h) { var c = h.cards[HAND_SIZE - 1]; return c && h.cards.length >= HAND_SIZE ? { k:"mult", v:rankChips(c.r) } : null; } }
     ];
     var JOKER_BY = {};
@@ -642,6 +664,10 @@
       if (cardsLeft() < HAND_SIZE) return 1;           // the last hand: all in
       return Math.min(1, (POT_SHARE[cat] || 0) + (has("croupier") ? 0.25 : 0));
     }
+    function usedBy(parts, i) {
+      for (var q = 0; q < parts.length; q++) if (parts[q].scoring[i]) return true;
+      return false;
+    }
     function scoreHand(cards, preview) {
       var ev = evalHand(cards), i, q;
       var res = { cat:ev.cat, name:ev.name, bust:false, why:"", steps:[], parts:[],
@@ -656,8 +682,10 @@
       }
       if (ev.cat === "high") { res.bust = true; res.why = "High card"; }
       else if (!parts.length) { res.bust = true; res.why = "Pair too low"; }
-      else if (!has("exorcist")) {
-        for (i = 0; i < cards.length; i++) if (cards[i].curse) { res.bust = true; res.why = "Cursed"; }
+      else {
+        /* a curse is BROKEN by the poker hand it is part of, and busts the
+           hand from anywhere else */
+        for (i = 0; i < cards.length; i++) if (cards[i].curse && !usedBy(parts, i)) { res.bust = true; res.why = "Cursed"; }
       }
       // a called hand missed busts, but only a FULL hand can miss it
       if (!res.bust && called && cards.length >= HAND_SIZE && CAT_ORDER[ev.cat] < CAT_ORDER[called]) {
@@ -719,7 +747,7 @@
           if (shatter[i]) step("card", i, Lang.t("Shattered"), MOD_COL.glass);
           else apply("card", i, { k:"xmult", v:2 });
         }
-        if (c.curse) apply("card", i, { k:"mult", v:20 });     // only reached with Exorcist
+        if (c.curse && part.scoring[i]) apply("card", i, { k:"mult", v:CURSE_MULT });   // a broken curse
       }
       /* the pot's share, as chips — before the jokers, so every one of
          them that multiplies multiplies the pot too */
@@ -848,42 +876,42 @@
        =================================================================== */
 
     var TIPS = {
-      basics: { eye:"How to play", title:"Build a poker hand", hands:true, lines:[
+      basics: { eye:"How to play", title:"Build a Poker hand", hands:true, lines:[
         "Swipe right to keep the card, left to bin it.",
-        "Five cards make a hand, paid as poker. The run ends when the deck runs out." ] },
-      count: { eye:"Your first hand", title:"Chips × mult", hands:true, lines:[
-        "Each card that makes the hand adds its value in chips. A face is worth 10, an ace 11.",
-        "Then special cards and jokers add theirs, left to right. The hand pays chips × mult." ] },
-      double: { eye:"How scoring works", title:"Two hands in one", hands:true, lines:[
-        "A hand can make two poker hands at once, like a pair and a flush. It pays both.",
-        "Wild cards and some jokers make a double hand possible." ] },
+        "Five cards make a hand, paid as Poker. The run ends when the deck runs out." ] },
+      count: { eye:"Your first hand", title:"Chips × multiplier", hands:true, lines:[
+        "Each card of the Poker hand adds its value in chips. A face is worth 10, an ace 11.",
+        "Then the game counts the special cards, adds the pot and the Jokers' bonuses. The calculation is always done from left to right. The hand score is chips × multiplier." ] },
+      double: { eye:"How scoring works", title:"Two Poker hands in one", hands:true, lines:[
+        "A hand can make two Poker hands at once, like a pair and a flush. Both are counted and their scores add up.",
+        "Wild cards and some Jokers make building hands easier." ] },
       bust: { eye:"A hand that does not pay", title:"Bust", lines:[
-        "High card, a pair too low or a cursed card: the hand busts and costs a life." ] },
+        "High card, a pair too low or a cursed card left out of the Poker hand: the hand busts and costs a life." ] },
       bins: { eye:"Bins", title:"No bins left", lines:[
         "You may bin {n} cards per hand. The next one costs a life." ] },
       floor: { eye:"New rule", title:"Pairs of {r} or better", say:"A lower pair busts the hand", lines:[
         "From this level on, a single pair only pays from {r} up.",
         "A lower pair busts the hand. Two pair and better always pay." ] },
-      joker: { eye:"New", title:"Jokers", say:"Paid hands fill the joker gauge", lines:[
-        "Paid hands fill the joker gauge, strong ones faster. A full gauge deals you two jokers to choose from.",
-        "A joker lasts the whole run, on every hand." ] },
-      fate: { eye:"New", title:"Fate jokers", say:"Push a card up onto one", lines:[
-        "Push the card up onto a Fate joker to play it. Each one works once per hand." ] },
+      joker: { eye:"New", title:"Jokers", say:"Paid hands fill the Joker gauge", lines:[
+        "Paid hands fill the Joker gauge, strong ones faster. A full gauge deals you two Jokers to choose from.",
+        "A Joker lasts the whole run, on every hand." ] },
+      fate: { eye:"New", title:"Fate jokers", say:"Push a card up onto one of the Jokers", lines:[
+        "Push the card up onto a Fate Joker to play it. Each one works once per hand." ] },
       pot: { eye:"New", title:"The pot", say:"Bins feed the next paid hand", hands:true, lines:[
-        "Binned cards drop their chips into the pot. Each paid hand takes a share, bigger for a strong hand.",
+        "Binned cards drop their value in chips into the pot. Each paid hand takes its pot share, bigger for a strong Poker hand.",
         "A bust burns half the pot. The deck's last hand takes all of it." ] },
-      xmult: { eye:"How scoring works", title:"Add or multiply", say:"A × joker multiplies what is on its left", demo:true, lines:[
-        "A × joker multiplies everything on its left. It pays the most at the right end of the rail." ] },
-      gold:  { eye:"Special card", title:"Gold", lines:[ "A gold card adds 40 chips to its hand." ] },
-      glass: { eye:"Special card", title:"Glass", say:"Doubles the mult, or shatters", lines:[ "A glass card doubles the mult — but one time in four it shatters and gives nothing." ] },
+      xmult: { eye:"How scoring works", title:"Add or multiply", say:"A × boosts the multiplier", demo:true, lines:[
+        "A + adds to the current multiplier, while a × multiplies it by its value. So with Jokers, it is best to have the × ones on the right of the count (the score counter)." ] },
+      gold:  { eye:"Special card", title:"Gold", lines:[ "A gold card adds +40 chips to its hand, even when it is not part of the Poker hand." ] },
+      glass: { eye:"Special card", title:"Glass", say:"Boosts the multiplier ×2, or shatters", lines:[ "A glass card boosts the multiplier ×2, but one time in four it shatters and gives nothing." ] },
       wild:  { eye:"Special card", title:"Wild", say:"Counts as every suit", lines:[ "A wild card counts as every suit: it fits any flush." ] },
-      lucky: { eye:"Special card", title:"Lucky", lines:[ "A lucky card gives +10 mult one time in three." ] },
-      curse: { eye:"Danger", title:"Cursed card", say:"Keep a cursed card and the hand busts", lines:[
-        "Keep a cursed card and the whole hand busts, whatever else it holds. Bin it.",
-        "The Exorcist joker turns a curse into +20 mult." ] },
+      lucky: { eye:"Special card", title:"Lucky", lines:[ "A lucky card adds +10 to the multiplier one time in three." ] },
+      curse: { eye:"Danger", title:"Cursed card", say:"It busts the hand unless it is part of the Poker hand", lines:[
+        "A cursed card busts the hand unless it is part of the Poker hand. Used in it, the curse breaks and adds +{m} to the multiplier.",
+        "Binning a cursed card costs two bins. The Exorcist Joker gives you one back instead." ] },
       veil:  { eye:"Danger", title:"Veiled card", lines:[
         "A veiled card's suit stays hidden until you keep it.",
-        "The Seer joker lifts every veil." ] }
+        "The Seer Joker lifts every veil." ] }
     };
 
     function tipsKey() { return "tips:" + (CONFIG.slug || "slipdeck"); }
@@ -894,6 +922,21 @@
 
     function fill(str, vars) {
       return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vars && vars[k] != null ? vars[k] : m; });
+    }
+    /* A joker's line as markup, with the count's colours on its figures:
+       the sign green (+) or orange (×), the number blue when it goes to the
+       chips and red when it goes to the multiplier. A + is coloured only
+       when the words after it name the chips or the multiplier, so "+1
+       life" stays plain text. */
+    var SIGN_CHIPS = /^\s+(chips|jetons)\b/, SIGN_MULT = /^\s+(to the multiplier|au multiplicateur)\b/;
+    function signHtml(str) {
+      var s = String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return s.replace(/([+×])(\d+(?:[.,]\d+)?)/g, function (m, sg, num, at, all) {
+        var after = all.slice(at + m.length);
+        var to = sg === "×" || SIGN_MULT.test(after) ? "m" : SIGN_CHIPS.test(after) ? "c" : null;
+        if (!to) return m;
+        return '<b class="sd-sg ' + (sg === "×" ? "x" : "p") + '">' + sg + '</b><b class="sd-sv ' + to + '">' + num + "</b>";
+      });
     }
     /* Queue the tip `key` unless the player has already been told. `id` is
        what is remembered, so a rule that changes (the pair floor) is told
@@ -935,7 +978,7 @@
     function jokerCard(i) {
       var inst = rail[i], id = inst.id, J = JOKER_BY[id], lines = [], why;
       var now = id === "ascetic" ? inst.n : id === "veteran" ? hands : 0;
-      if (now) lines.push(fill(Lang.t("Now: +{n} mult"), { n:now }));
+      if (now) lines.push(fill(Lang.t("Now: +{n} to the multiplier"), { n:now }));
       if (id === "collector" && catStreak > 1) lines.push(fill(Lang.t("Now: {n} in a row"), { n:catStreak }));
       if (id === "hothand" || id === "charm" || id === "third" || id === "redeal" || id === "ticket") {
         lines.push(fill(Lang.t("Joker gauge: {n} / {max}"), { n:gauge, max:PICK_GAUGE }));
@@ -943,7 +986,7 @@
       if (J.act) { why = fateWhyNot(id); lines.push(why ? Lang.t(why) : Lang.t("Ready")); }
       var btns = [];
       if (J.xm) btns.push({ label:Lang.t("+ or ×"), plate:true, fn:function () { tip("xmult", null, null, true); } });
-      if (J.act && window.__GUIDE__) btns.push({ label:Lang.t("Fate jokers"), plate:true, fn:function () { tip("fate", null, null, true); } });
+      if (J.act && window.__GUIDE__) btns.push({ label:Lang.t("Fate Jokers"), plate:true, fn:function () { tip("fate", null, null, true); } });
       tipQueue.unshift({ joker:id, from:i, lines:lines, ready:J.act && !why, buttons:btns.length ? btns : null });
       if (!tipOpen) nextTip();
     }
@@ -1050,7 +1093,7 @@
     function buildXDemo() {
       var box = document.createElement("div");
       box.className = "sd-xdemo";
-      [["+9", false, 4, 13, "adds to the mult"], ["×2", true, 13, 26, "multiplies the mult"]].forEach(function (d) {
+      [["+9", false, 4, 13, "adds to the multiplier"], ["×2", true, 13, 26, "boosts the multiplier"]].forEach(function (d) {
         var row = document.createElement("div"), k = view.dpr || 1, cv = document.createElement("canvas");
         row.className = "sd-xrow";
         cv.width = Math.round(84 * k); cv.height = Math.round(64 * k);
@@ -1067,6 +1110,51 @@
         var em = document.createElement("em");
         em.textContent = Lang.t(d[4]);
         row.appendChild(em);
+        box.appendChild(row);
+      });
+      return box;
+    }
+
+    /* THE SCORE, word by word: every term the game counts with, each beside
+       the figure the table draws for it, in the order a hand is counted. */
+    function buildScoreDemo() {
+      var box = document.createElement("div");
+      box.className = "sd-xdemo";
+      [[function (g) {
+          pillOn(g, 24, 32, "10", CHIP_BOX, 1); pillOn(g, 88, 32, "2", MULT_BOX, 1);
+          g.font = font(20, 900); g.textAlign = "center"; g.textBaseline = "middle";
+          g.fillStyle = "rgba(255,255,255,.7)"; g.fillText("x", 56, 33);
+        }, "Base",
+        "Base chips × starting multiplier"],
+       [function (g) { pillOn(g, 56, 32, "+11", CHIP_BOX, 1.25); }, "Value",
+        "A card of the Poker hand adds its value in chips. A face is worth 10 and an ace 11"],
+       [function (g) { pillOn(g, 56, 32, "+30", CHIP_BOX, 1.25); }, "+ chips",
+        "Adds chips: a gold card, some Jokers"],
+       [function (g) { pillOn(g, 56, 32, "+45", CHIP_BOX, 1.25); }, "Pot share",
+        "A paid hand takes chips from the pot"],
+       [function (g) { pillOn(g, 56, 32, "+3", MULT_BOX, 1.25); }, "+ multiplier",
+        "Adds to the multiplier"],
+       [function (g) { burstOn(g, 56, 32, "×2", 1.25); }, "× multiplier",
+        "Boosts the multiplier"],
+       [function (g) { pillOn(g, 56, 32, "= 120", "#8a5a10", 1.1); }, "Hand score",
+        "Chips × multiplier, once every card and Joker is counted"],
+       [function (g) { pillOn(g, 56, 32, "Σ", "#8a5a10", 1.25); }, "Final score",
+        "The sum of every hand score in the run"]
+      ].forEach(function (d) {
+        var row = document.createElement("div"), k = view.dpr || 1, cv = document.createElement("canvas");
+        row.className = "sd-xrow";
+        cv.width = Math.round(112 * k); cv.height = Math.round(64 * k);
+        cv.style.width = "112px"; cv.style.height = "64px";
+        var g = cv.getContext("2d");
+        g.scale(k, k);
+        d[0](g);
+        row.appendChild(cv);
+        var tx = document.createElement("div");
+        tx.className = "sd-xterm";
+        tx.innerHTML = "<b></b><em></em>";
+        tx.children[0].textContent = Lang.t(d[1]);
+        tx.children[1].textContent = Lang.t(d[2]);
+        row.appendChild(tx);
         box.appendChild(row);
       });
       return box;
@@ -1261,7 +1349,7 @@
       if (fateWhyNot("rewind")) return;
       var c = lastBin, k;
       lastBin = null;
-      chute = Math.max(0, chute - 1); binsThisHand = Math.max(0, binsThisHand - 1); binned--;
+      chute = Math.max(0, chute - (c.chuteCost != null ? c.chuteCost : 1)); binsThisHand = Math.max(0, binsThisHand - 1); binned--;
       if (c.potted) { pot = Math.max(0, pot - c.potted); c.potted = 0; potHit = 1; }
       for (k = 0; k < rail.length; k++) if (rail[k].id === "ascetic" && rail[k].n > 0) rail[k].n--;
       if (c.recycled) {
@@ -1286,7 +1374,7 @@
       called = cat;
       spent(i, "called");
       Pop.show("bonus", { word:fill(Lang.t("Called: {hand}"), { hand:Lang.t(CAT_NAME[cat]) }),
-                          sub:fill(Lang.t("x{x} mult"), { x:CALL_X[cat] }), at:"top" });
+                          sub:fill(Lang.t("Multiplier ×{x}"), { x:CALL_X[cat] }), at:"top" });
     }
 
     /* ===================================================================
@@ -1434,14 +1522,24 @@
       if (idleT >= hintNext) { hintT = 0; hintNext = idleT + HINT_EVERY; hudHint(true); }
     }
 
-    /* Every element a tap explains (explainAt), in reading order. */
+    /* The box of a counter line (the bins, the gauge) as binsAt and
+       drawGauge lay it out: the label right-aligned at cx - 20, whose width
+       is the language's, then n marks 34 apart from cx + 10. */
+    function lineZone(label, y, n, half) {
+      ctx.font = font(22, 900);
+      var x0 = Layout.cx - 20 - ctx.measureText(upper(Lang.t(label))).width;
+      var x1 = Layout.cx + 10 + (n - 1) * 34 + half;
+      return { x:(x0 + x1) / 2, y:y, w:x1 - x0 + 28, h:44 };
+    }
+    /* Every element a tap explains (explainAt), in reading order. A joker
+       on the rail is not one of them: the hint lights the EMPTY slots, the
+       place a joker will go. */
     function hintZones() {
-      var z = [], i, q, b, cap, x0, x1;
-      for (i = 0; i < SLOTS; i++) if (rail[i] || anyFam()) z.push({ x:railX(i), y:L.railY + 44, r:L.medalR + 6 });
+      var z = [], i, q, b;
+      for (i = 0; i < SLOTS; i++) if (!rail[i] && anyFam()) z.push({ x:railX(i), y:L.railY + 44, r:L.medalR + 6 });
       if (pocket || has("pocket")) { b = pocketBox(); z.push({ x:b.x, y:b.y, w:b.w + 10, h:b.h + 10 }); }
-      cap = chuteCap(); x0 = Layout.cx - 100; x1 = Layout.cx + 24 + (cap - 1) * 34;
-      z.push({ x:(x0 + x1) / 2, y:L.binsY, w:x1 - x0 + 20, h:40 });
-      if (anyFam()) { x1 = Layout.cx + 22 + (PICK_GAUGE - 1) * 34; z.push({ x:(x0 + x1) / 2, y:L.gaugeY, w:x1 - x0 + 20, h:40 }); }
+      z.push(lineZone("Bins", L.binsY, chuteCap(), 14));
+      if (anyFam()) z.push(lineZone("Joker", L.gaugeY, PICK_GAUGE, 12));
       if (POT_ON) z.push({ x:L.potX, y:L.potY, r:58 });
       if (pv && pv.v && hand.length) z.push({ x:Layout.cx, y:L.valueY, w:440, h:46 });
       for (i = 0; i < hand.length; i++) { q = slotPose(i); z.push({ x:q.x, y:q.y, w:L.slotW + 8, h:L.slotH + 8 }); }
@@ -1598,7 +1696,7 @@
       for (i = 0; i < rail.length; i++) {
         if (rail[i].id === "ticket") {                     // spent as the pick opens
           rail.splice(i, 1); minR = 3;
-          Notify.say("Golden ticket", { sub:"Only epic and legendary jokers", kind:"rare", icon:"sparkles" });
+          Notify.say("Golden ticket", { sub:"Only epic and legendary Jokers", kind:"rare", icon:"sparkles" });
           break;
         }
       }
@@ -1631,7 +1729,7 @@
       if (!document.getElementById("frame")) return;
       var lay = overlay(), had = seen(), i, btn;
       eye = eye || (opening ? "A new run" : "Joker gauge full");
-      var body = pickCard(lay, eye, "Pick one", "Tap a joker to take it");
+      var body = pickCard(lay, eye, "Pick one", "Tap a Joker to take it");
       var row = document.createElement("div");
       row.className = "sd-deal";
       for (i = 0; i < deal.length; i++) {
@@ -1679,7 +1777,7 @@
        One row per joker on the rail, at reading size, and the refusal. */
     function showReplace(id) {
       var lay = overlay("sd-swap"), i, row, J = JOKER_BY[id];
-      var body = pickCard(lay, "Rail full", "Replace which joker?", "Tap the joker to replace");
+      var body = pickCard(lay, "Joker row full", "Replace which Joker?", "Tap the Joker to replace");
       var head = document.createElement("p");
       head.className = "sd-newline";
       head.textContent = fill(Lang.t("New: {j}"), { j:Lang.t(J.name) });
@@ -1695,14 +1793,14 @@
           row.innerHTML = '<span class="sd-rart">' + (src ? '<img alt="" draggable="false" src="' + src + '">' : "") +
                           '</span><span class="sd-rtx"><b></b><i></i></span>';
           row.querySelector("b").textContent = upper(Lang.t(R.name));
-          row.querySelector("i").textContent = Lang.t(R.text);
+          row.querySelector("i").innerHTML = signHtml(Lang.t(R.text));
           row.addEventListener("click", function (e) { e.stopPropagation(); closePick(); equip(id, k); });
           body.appendChild(row);
         })(i);
       }
       var keep = document.createElement("button");
       keep.type = "button"; keep.className = "btn btn-sm btn-plate";
-      keep.textContent = upper(Lang.t("Keep my rail"));
+      keep.textContent = upper(Lang.t("Keep my Joker row"));
       keep.addEventListener("click", function (e) { e.stopPropagation(); closePick(); });
       body.appendChild(keep);
       pick = { node:lay, replace:id };
@@ -1741,7 +1839,7 @@
       Fx.burst(railX(i), L.railY + L.railH / 2, { color:[FAM_COL[J.fam], "#ffffff"], count:16, speed:320, life:0.45, grav:300 });
       lit.who = "joker"; lit.idx = i; lit.t = 1;
       // the joker it replaced rides on the callout: one word for one choice
-      Pop.show("bonus", { word:J.name, sub:out ? fill(Lang.t("{j} leaves the rail"), { j:Lang.t(JOKER_BY[out.id].name) }) : null, at:"top" });
+      Pop.show("bonus", { word:J.name, sub:out ? fill(Lang.t("{j} leaves the Joker row"), { j:Lang.t(JOKER_BY[out.id].name) }) : null, at:"top" });
       Sound.cue("joker", 0.5, 1, 700, 0.12, "triangle");
       if (J.act) tip("fate", null, "fate3");     // told again since the push up replaced the drags
       if (J.xm) tip("xmult");
@@ -1765,7 +1863,9 @@
       box.className = "sd-jbox";
       box.style.width = w + "px"; box.style.height = Math.round(w * 1.4) + "px";
       var n = document.createElement("div");
-      n.className = "sd-jc r-" + (ghost ? 1 : J.r) + (ghost ? " ghost" : "");
+      // a line too long for the plate takes room from the picture, never from the type
+      n.className = "sd-jc r-" + (ghost ? 1 : J.r) + (ghost ? " ghost" : "") +
+                    (!ghost && Lang.t(J.text).length > 110 ? " long" : "");
       n.style.setProperty("--sk", w / JC_W);
       n.style.setProperty("--c", ghost ? "#5d567a" : FAM_COL[J.fam]);
       n.style.setProperty("--r", ghost ? "#6d6690" : R.color);
@@ -1777,7 +1877,7 @@
       n.querySelector(".sd-jfam").textContent = ghost ? "" : upper(Lang.t(J.fam));
       if (!src) n.querySelector(".sd-jsign").textContent = J.sign || "?";
       n.querySelector(".sd-jname").textContent = ghost ? "???" : upper(Lang.t(J.name));
-      n.querySelector(".sd-jtext").textContent = ghost ? "" : Lang.t(J.text);
+      n.querySelector(".sd-jtext").innerHTML = ghost ? "" : signHtml(Lang.t(J.text));
       n.querySelector(".sd-jrar span").textContent = ghost ? "???" : upper(Lang.t(R.name));
       // the word stays English in every language, like the album's NEW tag
       if (opt.fresh && !ghost) n.querySelector(".sd-jnew span").textContent = upper("New");
@@ -1887,6 +1987,13 @@
         for (i = 0; i < hand.length; i++) drawCard(hand[i], hx - 72 + i * 36, hy, 66, 94, (i - 2) * 0.06, 1, null);
       });
     }
+    /* the count's tip is the page every scoring word is defined on: its two
+       lines, then the terms beside the figures the table draws for them */
+    function scorePage() {
+      var P = tipPage("count", 0, null, function () { return oneRow("fullHouse"); });
+      P.title = Lang.t("The score"); P.node = buildScoreDemo;
+      return P;
+    }
     // the tip says what just happened ("No bins left"); the page names the rule
     function binsPage(vars) { var P = tipPage("bins", 0, vars, function () { return binsPic(vars.n); }); P.title = Lang.t(TIPS.bins.eye); return P; }
     var guide = {
@@ -1898,8 +2005,8 @@
               return cardsPic([card(6, 1), card(6, 0), card(6, 2), card(1, 3), card(1, 1)]);
             }),
             { id:"hands", title:Lang.t("Poker hands"), node:buildHands, lines:[
-              Lang.t("Each poker hand starts from the chips × mult shown beside it.") ] },
-            tipPage("count", 0, null, function () { return oneRow("fullHouse"); }),
+              Lang.t("Each Poker hand starts from its base, the chips × multiplier shown beside it.") ] },
+            scorePage(),
             tipPage("double", 0, null, function () {
               return cardsPic([card(6, 1), card(8, 1), card(12, 1), card(1, 1), card(6, 0, { mod:"wild" })]);
             }),
@@ -1918,14 +2025,14 @@
             tipPage("wild", 3, null, function () { return cardsPic([card(7, 3, { mod:"wild" })], 150); }),
             tipPage("glass", 5, null, function () { return cardsPic([card(9, 1, { mod:"glass" })], 150); }),
             tipPage("lucky", 5, null, function () { return cardsPic([card(4, 0, { mod:"lucky" })], 150); }),
-            tipPage("curse", 13, null, function () { return cardsPic([card(12, 0, { curse:true })], 150); }),
+            tipPage("curse", 13, { m:CONFIG.play.curseMult }, function () { return cardsPic([card(12, 0, { curse:true })], 150); }),
             tipPage("veil", 16, null, function () { return cardsPic([card(10, 2, { veil:true })], 150); })
           ] },
           { key:"climb", label:Lang.t("The climb"), pages:[
             { id:"floor", title:Lang.t("Minimum pair"), lv:7, pic:function () {
                 return cardsPic([card(6, 0, { dim:1 }), card(6, 1, { dim:1 }), card(7, 2, { gap:1 }), card(7, 3)]);
               }, lines:[
-              Lang.t("From level 7, a single pair needs 8s or better to pay. Then 10s from level 13, jacks from 19."),
+              Lang.t("From level 7, a single pair needs 8s or better to pay, then 10s from level 13. A pair of jacks or better from level 19."),
               Lang.t("A lower pair busts the hand. Two pair and better always pay.") ] }
           ] }
         ];
@@ -1954,7 +2061,7 @@
       info: function (id) {
         var J = JOKER_BY[id], R = RARITY[J.r];
         return { name:Lang.t(J.name), color:FAM_COL[J.fam],
-                 lock:Lang.t("Take it in a round to add it to the collection"),
+                 lock:Lang.t("Take it during a run to add it to your collection"),
                  chips:[{ text:Lang.t(R.name), color:R.color }, { text:Lang.t(J.fam), color:FAM_COL[J.fam] }] };
       }
     };
@@ -2049,7 +2156,7 @@
     /* The card has landed in the middle: if it brings an idea the player
        has not met, this is the moment to tell it. */
     function arrived(c) {
-      if (c.curse) tip("curse");
+      if (c.curse) tip("curse", { m:CURSE_MULT });
       else if (c.veil && !has("seer")) tip("veil");
       else if (c.mod) tip(c.mod);
     }
@@ -2085,7 +2192,13 @@
         }
         flying.push({ card:c, x:x, y:y, vx:-1700, vy:-160, rot:rot, spin:-3.6, a:1 });
         Sound.cue("bin", 0.5, 1, 220, 0.07, "sawtooth");
-        chute++;
+        /* a cursed card is dear to bin: two bins, or one given back with
+           the Exorcist (never under none spent). Rewind takes back what it cost. */
+        var was = chute;
+        chute = !c.curse ? chute + 1 : has("exorcist") ? Math.max(0, chute - 1) : chute + 2;
+        c.chuteCost = chute - was;
+        if (c.curse) Pop.text(Layout.left + 40, L.gateY - 40, has("exorcist") ? "+1 " + Lang.t("bin") : "-2 " + Lang.t("bins"),
+                              { color:has("exorcist") ? GOLD : BIN_COL, size:22, life:0.6, tier:1 });
         var cap = chuteCap();
         if (chute > cap) {                                 // the chute overflows
           chute = 0; overflows++;
@@ -2292,6 +2405,7 @@
       var playing = State === "playing" && !tally && !tipOpen && !pick;
       var want = drag.on ? "grabbing"
                : playing && overCard(p) ? "grab"
+               : playing && railAt(p) >= 0 ? "pointer"      // a joker: its card, not a rule
                : playing && explainAt(p, true) ? "help" : "";
       if (want === cursorNow) return;
       cursorNow = want;
@@ -2301,7 +2415,7 @@
     /* A card's own rule: its modifier, or — a plain card in the hand — the
        pair floor once there is one, the count otherwise. */
     function explainCard(c, inHand) {
-      if (c.curse) tip("curse", null, null, true);
+      if (c.curse) tip("curse", { m:CURSE_MULT }, null, true);
       else if (veiled(c)) tip("veil", null, null, true);
       else if (c.mod) tip(c.mod, null, null, true);
       else if (inHand && STAGE.floor > 2) tip("floor", { r:rankWord(STAGE.floor) }, null, true);
@@ -2800,19 +2914,15 @@
 
       if (w > 150) shadowUnder(-w / 2, -h / 2, w, h, r, 0.10);
       roundRect(-w / 2, -h / 2, w, h, r);
-      if (c.curse) ctx.fillStyle = "#24152f";
-      else {
-        var g = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
-        g.addColorStop(0, c.mod === "gold" ? "#fff4cf" : c.mod === "glass" ? "#f1f9ff" : c.mod === "lucky" ? "#f1fcef" : "#fbf7ec");
-        g.addColorStop(1, "#ece2c9");
-        ctx.fillStyle = g;
-      }
+      var face = FACE[modKey] || FACE.plain, g = ctx.createLinearGradient(0, -h / 2, 0, h / 2), s;
+      for (s = 0; s < face.bg.length; s++) g.addColorStop(s / (face.bg.length - 1), face.bg[s]);
+      ctx.fillStyle = g;
       ctx.fill();
       ctx.lineWidth = Math.max(2, w * 0.022); ctx.strokeStyle = rim; ctx.stroke();
       roundRect(-w / 2 + w * 0.045, -h / 2 + w * 0.045, w * 0.91, h - w * 0.09, r * 0.7);
       ctx.lineWidth = Math.max(1, w * 0.007); ctx.strokeStyle = rgba(rim, 0.55); ctx.stroke();
 
-      var col = c.curse ? "#dcc2f7" : hidden ? "#5f6a64" : SUIT_RED[c.s] ? INK_RED : INK_BLACK;
+      var col = face.ink[!hidden && SUIT_RED[c.s] ? 1 : 0];
       var small = w * 0.17, pad = w * 0.115, q;
 
       if (!hidden && w > 150) {                       // the suit, as a watermark
@@ -2955,7 +3065,7 @@
       if (pv.lean) {
         var k = 0.6 + 0.4 * pv.pull;
         ctx.beginPath(); ctx.arc(cx, my, R + 10, 0, Math.PI * 2);
-        ctx.lineWidth = 5; ctx.strokeStyle = rgba(xm ? XMULT_COL : col === CHIP_BOX ? CHIP_COL : MULT_COL, 0.35 + 0.45 * pv.pull); ctx.stroke();
+        ctx.lineWidth = 5; ctx.strokeStyle = rgba(col === CHIP_BOX ? CHIP_COL : MULT_COL, 0.35 + 0.45 * pv.pull); ctx.stroke();
         ctx.translate(cx, y); ctx.scale(1 + 0.25 * pv.pull, 1 + 0.25 * pv.pull); ctx.translate(-cx, -y);
         ctx.globalAlpha = k;
       } else ctx.globalAlpha = v.dim ? 0.55 : 0.9;
@@ -2969,11 +3079,25 @@
       g.font = font(20, 900);
       var w = Math.max(34, g.measureText(txt).width + 16);
       roundRectOn(g, -w / 2, -15, w, 30, 15); g.fillStyle = col; g.fill();
-      g.fillStyle = "#ffffff"; g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillText(txt, 0, 1);
+      signText(g, txt, 0, 1, 0);
       g.restore();
     }
-    /* The ×mult's mark: a twelve-point burst in orange, rimmed in gold. */
+    /* A signed figure, centred on x: the sign in its own colour (+ green,
+       × orange), the number in white, an outline of `lw` under both. */
+    function signText(g, txt, x, y, lw) {
+      var c = txt.charAt(0), sc = c === "+" ? PLUS_COL : c === "×" ? XMULT_COL : null;
+      var head = sc ? c : "", rest = sc ? txt.slice(1) : txt;
+      var hw = g.measureText(head).width, x0 = x - g.measureText(txt).width / 2;
+      g.textAlign = "left"; g.textBaseline = "middle";
+      if (lw) {
+        g.lineWidth = lw; g.strokeStyle = "rgba(40,6,12,.6)";
+        g.strokeText(head, x0, y); g.strokeText(rest, x0 + hw, y);
+      }
+      if (sc) { g.fillStyle = sc; g.fillText(head, x0, y); }
+      g.fillStyle = "#ffffff"; g.fillText(rest, x0 + hw, y);
+    }
+    /* The ×mult's mark: a twelve-point burst in the multiplier's red,
+       rimmed in gold, its × in orange. */
     function burstOn(g, x, y, txt, s) {
       g.save(); g.translate(x, y); g.scale(s, s);
       g.font = font(22, 900);
@@ -2985,12 +3109,10 @@
       }
       g.closePath();
       var gr = g.createLinearGradient(0, -r, 0, r);
-      gr.addColorStop(0, XMULT_COL); gr.addColorStop(1, XMULT_BOX);
+      gr.addColorStop(0, MULT_COL); gr.addColorStop(1, MULT_BOX);
       g.fillStyle = gr; g.fill();
       g.lineWidth = 3; g.strokeStyle = "#ffe08a"; g.stroke();
-      g.textAlign = "center"; g.textBaseline = "middle";
-      g.lineWidth = 4; g.strokeStyle = "rgba(60,20,0,.55)"; g.strokeText(txt, 0, 1);
-      g.fillStyle = "#ffffff"; g.fillText(txt, 0, 1);
+      signText(g, txt, 0, 1, 4);
       g.restore();
     }
 
@@ -3076,7 +3198,7 @@
       for (i = 0; i < cards.length; i++) if (veiled(cards[i])) return { name:"?", unknown:true };
       var res = scoreHand(cards, true);
       if (!res.bust) return res;
-      if (full || res.why === "Cursed") return res;
+      if (full) return res;              // a curse may still be broken by the cards to come
       /* not full: count it as it stands, dimmed — and a high card is not
          worth a word: the hand shows nothing until it holds something */
       var ev = evalHand(cards), b = BASE[ev.cat], chips = b[0], mult = b[1];
@@ -3225,7 +3347,7 @@
         var u = 1 - t;
         return { x:u * u * f.x0 + 2 * u * t * cxp + t * t * to.x, y:u * u * f.y0 + 2 * u * t * cyp + t * t * to.y };
       }
-      var k = f.t * f.t * (3 - 2 * f.t), col = f.to === "c" ? CHIP_COL : f.to === "x" ? XMULT_COL : MULT_COL;
+      var k = f.t * f.t * (3 - 2 * f.t), col = f.to === "c" ? CHIP_COL : MULT_COL;
       var box = f.to === "c" ? CHIP_BOX : MULT_BOX;
       for (j = 4; j >= 1; j--) {
         var q = at(Math.max(0, k - j * 0.05));
@@ -3241,8 +3363,7 @@
       roundRect(-w / 2, -24, w, 48, 16);
       ctx.fillStyle = box; ctx.fill();
       ctx.lineWidth = 3; ctx.strokeStyle = "#ffffff"; ctx.stroke();
-      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(f.s.text, 0, 2);
+      signText(ctx, f.s.text, 0, 2, 0);
       ctx.restore();
     }
 

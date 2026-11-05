@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Sprites</title>
+<!-- Filed in the back office (make lab): tools | css | prototype, and the one game it is about, if any. -->
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="parrynormal">
+<style>
+/* ===========================================================================
+   PARRYNORMAL SPRITES — one monster sheet played in the round's camera, to
+   judge its directions, its steps, its attack and its hurt before the game
+   exists.
+
+   A sheet is the grid of docs/PARRYNORMAL.md §1.2: five COLUMNS, the
+   directions (front, front diagonal, profile, back diagonal, back, the
+   diagonals and the profile facing right), and four ROWS, the moments (step 1,
+   step 2, attack, hurt). The page cuts it by cells, measures each frame's feet
+   off its pixels, and plays it the way the game will: the nearest of eight
+   directions, the right-facing columns mirrored for the left, never rotated.
+
+   Four views:
+     - Arena: monsters walk in from the edges toward the witch; the shield
+       follows the pointer and throws back what it meets; a click hits one.
+     - Drive: one monster follows the pointer (or the arrow keys / WASD), the
+       readout says which column and whether it is mirrored.
+     - Directions: the eight directions side by side, walking in place.
+     - Sheet: the sheet itself with its cut, each frame's box and its feet.
+     - Colours: one sheet recoloured into several monsters. The swap moves
+       only the hues near the body's own (the eyes keep theirs), is baked once
+       per variant, and can be mixed in the arena.
+
+   The arena also tries the game's FEEL and LIGHT: a camera that shakes by
+   trauma, punches its zoom toward an impact and holds the world for a few
+   frames on a blow (hit-stop), slow motion on a strike, sparks, rings and
+   dust; and a light map (the canvas way of a lighting shader) — the night's
+   ambient colour multiplied over the scene, lit by the witch, the shield,
+   the scene's crystals, fireflies and every impact — with drifting fog,
+   moon shafts, a colour grade and a vignette. Each layer has its switch, and
+   the corner says what a frame costs.
+
+   The default sheet is ../assets/image/master/parrynormal-object-spider.png.
+   Any other sheet is loaded with the file button or dropped on the stage.
+   Reading pixels needs the page served over http (make lab): over file:// the
+   measure is skipped and every frame is anchored on its cell, as painted.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  min-height:100vh;
+  display:flex;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 280px;
+  padding:22px 20px;
+  background:#12121c;
+  border-right:1px solid #23233a;
+  overflow-y:auto;
+  max-height:100vh;
+}
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:8px 0 18px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel p.note { margin:-6px 0 16px; font-weight:500; font-size:12px; color:#ffb35c; }
+#panel h2 { margin:20px 0 10px; font-size:11px; letter-spacing:1px; color:#6f6f92; }
+
+.row { margin-bottom:14px; }
+.row label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:6px; accent-color:#7ea6ff; }
+.row select, .row input[type=number] {
+  width:100%; margin-top:6px; padding:6px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit;
+}
+.pair { display:flex; gap:10px; }
+.pair > * { flex:1; }
+.check { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:12px; color:#9c9cba; cursor:pointer; }
+.check input { accent-color:#7ea6ff; }
+button {
+  width:100%; margin-top:6px; padding:8px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; letter-spacing:.5px; cursor:pointer;
+}
+button.ghost { background:#23233a; color:#e8e6f5; }
+#file { display:none; }
+
+#stage {
+  flex:1;
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px;
+  background-position:0 0, 16px 16px;
+}
+#stage.drop { outline:3px dashed #7ea6ff; outline-offset:-12px; }
+canvas {
+  height:calc(100vh - 40px); width:auto; max-width:100%;
+  border-radius:12px; background:#0a0718; box-shadow:0 18px 50px rgba(0,0,0,.5);
+  touch-action:none; cursor:crosshair;
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Parrynormal sprites</h1>
+  <p class="hint">Is a monster sheet right once it walks, turns, attacks and gets hit in the round's camera?</p>
+  <p class="note" id="note" hidden></p>
+
+  <div class="row">
+    <label for="mode">view</label>
+    <select id="mode">
+      <option value="arena">Arena</option>
+      <option value="drive">Drive</option>
+      <option value="dirs">Directions</option>
+      <option value="sheet">Sheet</option>
+      <option value="colours">Colours</option>
+    </select>
+  </div>
+
+  <h2>Sheet</h2>
+  <div class="row">
+    <label>file <b id="file-v">spider</b></label>
+    <button class="ghost" id="pick">Load a sheet…</button>
+    <input id="file" type="file" accept="image/png,image/webp">
+  </div>
+  <div class="row pair">
+    <div><label for="cols">columns</label><input id="cols" type="number" min="1" max="8" value="5"></div>
+    <div><label for="rows">rows</label><input id="rows" type="number" min="1" max="8" value="4"></div>
+  </div>
+  <div class="row">
+    <label for="anchor">anchor</label>
+    <select id="anchor">
+      <option value="feet">Feet, measured</option>
+      <option value="cell">Cell, as painted</option>
+    </select>
+  </div>
+  <label class="check"><input type="checkbox" id="clean" checked> Clean the halo (alpha under 80)</label>
+
+  <h2>Colour swap</h2>
+  <div class="row">
+    <label for="preset">preset</label>
+    <select id="preset"></select>
+  </div>
+  <div class="row">
+    <label for="hue">hue shift <b id="hue-v">0</b></label>
+    <input id="hue" type="range" min="-180" max="180" value="0">
+  </div>
+  <div class="row">
+    <label for="sat">saturation <b id="sat-v">100</b></label>
+    <input id="sat" type="range" min="0" max="200" value="100">
+  </div>
+  <div class="row">
+    <label for="light">lightness <b id="light-v">100</b></label>
+    <input id="light" type="range" min="40" max="160" value="100">
+  </div>
+  <div class="row">
+    <label for="tol">hues swapped, either side of the body's <b id="tol-v">50</b></label>
+    <input id="tol" type="range" min="0" max="180" value="50">
+  </div>
+  <p class="hint" id="huefound"></p>
+  <label class="check"><input type="checkbox" id="mix"> Mix the presets in the arena</label>
+
+  <h2>Witch</h2>
+  <div class="row">
+    <label>sheet <b id="wfile-v">none, a stand-in</b></label>
+    <button class="ghost" id="wpick">Load the witch sheet…</button>
+    <input id="wfile" type="file" accept="image/png,image/webp" style="display:none">
+  </div>
+  <div class="row">
+    <label for="wsize">witch frame width <b id="wsize-v">130</b></label>
+    <input id="wsize" type="range" min="60" max="260" value="130">
+  </div>
+  <div class="row">
+    <label for="turn">turn, directions per second <b id="turn-v">14</b></label>
+    <input id="turn" type="range" min="0" max="40" value="14">
+  </div>
+  <div class="row">
+    <label for="breath">breathing <b id="breath-v">3</b></label>
+    <input id="breath" type="range" min="0" max="10" value="3">
+  </div>
+  <p class="hint">She faces the middle of the shield. A turn walks through the directions in between, one at a time; 0 snaps. A click on the floor launches, a bite hurts, a knockout cheers.</p>
+
+  <h2>Feel</h2>
+  <label class="check"><input type="checkbox" id="feel" checked> Camera, hit-stop and sparks</label>
+  <div class="row">
+    <label for="shake">shake <b id="shake-v">50</b></label>
+    <input id="shake" type="range" min="0" max="100" value="50">
+  </div>
+  <div class="row">
+    <label for="stop">hit-stop, ms at a throw <b id="stop-v">60</b></label>
+    <input id="stop" type="range" min="0" max="150" value="60">
+  </div>
+  <div class="row">
+    <label for="zoom">zoom punch <b id="zoom-v">40</b></label>
+    <input id="zoom" type="range" min="0" max="100" value="40">
+  </div>
+  <label class="check"><input type="checkbox" id="sparks" checked> Sparks, rings and dust</label>
+  <label class="check"><input type="checkbox" id="slowmo" checked> Slow motion on a strike</label>
+
+  <h2>Light</h2>
+  <label class="check"><input type="checkbox" id="lighton" checked> Light pass</label>
+  <div class="row">
+    <label for="dark">darkness <b id="dark-v">55</b></label>
+    <input id="dark" type="range" min="0" max="100" value="55">
+  </div>
+  <div class="row">
+    <label for="wlight">witch's light <b id="wlight-v">60</b></label>
+    <input id="wlight" type="range" min="0" max="100" value="60">
+  </div>
+  <div class="row">
+    <label for="slight">shield's light <b id="slight-v">60</b></label>
+    <input id="slight" type="range" min="0" max="100" value="60">
+  </div>
+  <div class="row">
+    <label for="crystal">crystals of the scene <b id="crystal-v">60</b></label>
+    <input id="crystal" type="range" min="0" max="100" value="60">
+  </div>
+  <div class="row">
+    <label for="flies">fireflies <b id="flies-v">14</b></label>
+    <input id="flies" type="range" min="0" max="40" value="14">
+  </div>
+  <div class="row">
+    <label for="fog">fog <b id="fog-v">35</b></label>
+    <input id="fog" type="range" min="0" max="100" value="35">
+  </div>
+  <div class="row">
+    <label for="vig">vignette <b id="vig-v">55</b></label>
+    <input id="vig" type="range" min="0" max="100" value="55">
+  </div>
+  <div class="row">
+    <label for="grade">colour grade</label>
+    <select id="grade">
+      <option value="moon">Moonlight</option>
+      <option value="witch">Witchy violet</option>
+      <option value="warm">Warm lanterns</option>
+      <option value="none">None</option>
+    </select>
+  </div>
+  <label class="check"><input type="checkbox" id="shafts" checked> Moon shafts</label>
+  <label class="check"><input type="checkbox" id="bloom" checked> Bloom on the lights</label>
+  <label class="check"><input type="checkbox" id="half" checked> Light buffer at half resolution</label>
+
+  <h2>Play</h2>
+  <div class="row">
+    <label for="size">frame width <b id="size-v">110</b></label>
+    <input id="size" type="range" min="40" max="260" value="110">
+  </div>
+  <div class="row">
+    <label for="fps">steps per second <b id="fps-v">6</b></label>
+    <input id="fps" type="range" min="1" max="16" value="6">
+  </div>
+  <div class="row">
+    <label for="speed">speed <b id="speed-v">70</b></label>
+    <input id="speed" type="range" min="0" max="240" value="70">
+  </div>
+  <div class="row">
+    <label for="count">monsters <b id="count-v">5</b></label>
+    <input id="count" type="range" min="1" max="14" value="5">
+  </div>
+  <div class="row">
+    <label for="arc">shield arc <b id="arc-v">70</b></label>
+    <input id="arc" type="range" min="0" max="320" value="70">
+  </div>
+  <div class="row">
+    <label for="behave">behaviour</label>
+    <select id="behave">
+      <option value="spider">Spider: stops, waits, leaps</option>
+      <option value="walk">Walks straight in</option>
+    </select>
+  </div>
+  <label class="check"><input type="checkbox" id="shadow" checked> Shadow under the feet</label>
+  <label class="check"><input type="checkbox" id="spin" checked> Spin when thrown</label>
+  <label class="check"><input type="checkbox" id="hyst" checked> Hold a direction near its edge</label>
+  <label class="check"><input type="checkbox" id="marks"> Show the feet</label>
+
+  <div class="row">
+    <button id="pause">Pause / resume</button>
+    <button class="ghost" id="reset">Reset the arena</button>
+  </div>
+</div>
+
+<div id="stage">
+  <canvas id="view" width="720" height="1280"></canvas>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const cv = document.getElementById("view");
+  const ctx = cv.getContext("2d");
+  const W = 720, H = 1280;
+  const CX = 360, CY = 560;           // the witch, above the dial row
+  const DIAL_H = 230;                  // the dial row the game keeps at the bottom
+  const SHIELD_R = 118, SHIELD_W = 16;
+  const KNOCK_SPEED = 1150, KNOCK_DAMP = 3.5, KNOCK_HIT = 280;
+  const DEFAULT_SHEET = "../assets/image/master/parrynormal-object-spider.png";
+  const WITCH_SHEET = "../assets/image/master/parrynormal-object-witch.png";
+  const SCENE = "../assets/image/master/parrynormal-scene-forest.png";
+  const OV = 40;                       // the floor and the light run past the frame, for the shake
+  /* The scene's own lamps, in design px once the forest is cover-fitted:
+     the two crystals on the fence pillars of the top corners. */
+  const SCENE_LIGHTS = [{ x: 119, y: 34, col: "#a07bff" }, { x: 597, y: 34, col: "#a07bff" }];
+
+  /* sector 0 is east, counted clockwise on screen (y down), in eighths:
+     each one is a column of the sheet, mirrored or not. */
+  const DIRS = [
+    { c: 2, f: 0, n: "Right" },
+    { c: 1, f: 0, n: "Down right" },
+    { c: 0, f: 0, n: "Down" },
+    { c: 1, f: 1, n: "Down left" },
+    { c: 2, f: 1, n: "Left" },
+    { c: 3, f: 1, n: "Up left" },
+    { c: 4, f: 0, n: "Up" },
+    { c: 3, f: 0, n: "Up right" },
+  ];
+  const COL_NAMES = ["Front", "Front diagonal", "Profile", "Back diagonal", "Back"];
+  const ROW_NAMES = ["Step 1", "Step 2", "Attack", "Hurt", "Row 5"];
+
+  // ---- knobs ----------------------------------------------------------------
+  const P = {};
+  function bind(id, key) {
+    const el = document.getElementById(id), out = document.getElementById(id + "-v");
+    const write = () => { P[key] = +el.value; if (out) out.textContent = el.value; };
+    el.addEventListener("input", write);
+    write();
+  }
+  ["size", "fps", "speed", "count", "arc", "wsize", "turn", "breath", "shake", "stop", "zoom", "dark", "wlight", "slight", "crystal", "flies", "fog", "vig"].forEach((k) => bind(k, k));
+  const val = (id) => document.getElementById(id);
+  const on = (id) => val(id).checked;
+
+  // ---- the sheet ------------------------------------------------------------
+  let sheet = null;        // { img, cols, rows, cw, ch, frames[r][c], measured }
+  let srcImg = null;
+
+  function note(msg) {
+    const el = val("note");
+    el.hidden = !msg;
+    el.textContent = msg || "";
+  }
+
+  function cut(img, cols, rows, clean) {
+    const cw = img.width / cols, ch = img.height / rows;
+    const frames = [];
+    let measured = true;
+    for (let r = 0; r < rows; r++) {
+      frames.push([]);
+      for (let c = 0; c < cols; c++) {
+        const cell = document.createElement("canvas");
+        cell.width = Math.round(cw); cell.height = Math.round(ch);
+        const cc = cell.getContext("2d");
+        cc.drawImage(img, c * cw, r * ch, cw, ch, 0, 0, cw, ch);
+        let box = { x: 0, y: 0, w: cell.width, h: cell.height };
+        let feet = { x: cell.width / 2, y: cell.height * 0.85 };
+        try {
+          const id = cc.getImageData(0, 0, cell.width, cell.height), d = id.data;
+          let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1, sx = 0, sa = 0;
+          for (let i = 0; i < d.length; i += 4) {
+            let a = d[i + 3];
+            if (clean) {
+              a = a < 80 ? 0 : a >= 200 ? 255 : Math.round((a - 80) / 120 * 255);
+              d[i + 3] = a;
+            }
+            if (a >= 80) {
+              const p = i >> 2, x = p % cell.width, y = (p / cell.width) | 0;
+              if (x < x0) x0 = x; if (x > x1) x1 = x;
+              if (y < y0) y0 = y; if (y > y1) y1 = y;
+              sx += x * a; sa += a;
+            }
+          }
+          if (clean) {
+            keepMain(d, cell.width, cell.height);
+            // the box and the feet again, over what was kept
+            x0 = 1e9; y0 = 1e9; x1 = -1; y1 = -1; sx = 0; sa = 0;
+            for (let i = 0; i < d.length; i += 4) {
+              const a = d[i + 3];
+              if (a < 80) continue;
+              const q = i >> 2, x = q % cell.width, y = (q / cell.width) | 0;
+              if (x < x0) x0 = x; if (x > x1) x1 = x;
+              if (y < y0) y0 = y; if (y > y1) y1 = y;
+              sx += x * a; sa += a;
+            }
+            cc.putImageData(id, 0, 0);
+          }
+          if (x1 >= 0) {
+            box = { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+            feet = { x: sx / sa, y: y1 };
+          }
+        } catch (e) {
+          measured = false;
+        }
+        // crop to the box, keep the anchors relative to the crop
+        const pad = 2;
+        const bx = Math.max(0, box.x - pad), by = Math.max(0, box.y - pad);
+        const bw = Math.min(cell.width - bx, box.w + pad * 2), bh = Math.min(cell.height - by, box.h + pad * 2);
+        const crop = document.createElement("canvas");
+        crop.width = bw; crop.height = bh;
+        crop.getContext("2d").drawImage(cell, bx, by, bw, bh, 0, 0, bw, bh);
+        // the white flash of a hit: the same silhouette, white, made once
+        const flash = document.createElement("canvas");
+        flash.width = bw; flash.height = bh;
+        const fc = flash.getContext("2d");
+        fc.drawImage(crop, 0, 0);
+        fc.globalCompositeOperation = "source-atop";
+        fc.fillStyle = "#fff";
+        fc.fillRect(0, 0, bw, bh);
+        frames[r].push({
+          cv: crop, flash, bx, by, bw, bh,
+          feet: { x: feet.x - bx, y: feet.y - by },
+          cellAnchor: { x: cell.width / 2 - bx, y: cell.height * 0.85 - by },
+          box,
+        });
+      }
+    }
+    return { img, cols, rows, cw, ch, frames, measured };
+  }
+
+  /* An image model leaves crumbs around a figure (the witch's sheet came back
+     with magenta specks): keep the biggest solid island of the cell and any
+     island at least an eighth of its size, and clear everything else. */
+  function keepMain(d, w, h) {
+    const lab = new Int32Array(w * h), sizes = [0], stack = [];
+    let n = 0;
+    for (let p = 0; p < w * h; p++) {
+      if (lab[p] || d[p * 4 + 3] < 80) continue;
+      n++; lab[p] = n; stack.push(p);
+      let s = 0;
+      while (stack.length) {
+        const q = stack.pop(); s++;
+        const x = q % w;
+        const nb = [x > 0 ? q - 1 : -1, x < w - 1 ? q + 1 : -1, q - w, q + w];
+        for (const r of nb) {
+          if (r < 0 || r >= w * h || lab[r] || d[r * 4 + 3] < 80) continue;
+          lab[r] = n; stack.push(r);
+        }
+      }
+      sizes.push(s);
+    }
+    if (n === 0) return;
+    const big = Math.max(...sizes);
+    for (let p = 0; p < w * h; p++) {
+      if (d[p * 4 + 3] === 0) continue;
+      if (!lab[p] || sizes[lab[p]] < big / 8) d[p * 4 + 3] = 0;
+    }
+  }
+
+  function rebuild() {
+    if (!srcImg) return;
+    const cols = Math.max(1, +val("cols").value | 0), rows = Math.max(1, +val("rows").value | 0);
+    sheet = cut(srcImg, cols, rows, on("clean"));
+    note(sheet.measured ? "" : "Pixels unreadable over file:// — frames are anchored on their cell, and the colour swap falls back to a filter on the whole sprite. Open it through make lab, or load the file with the button.");
+    variants.clear();
+    sheet.bodyHue = sheet.measured ? dominantHue(sheet) : 0;
+    val("huefound").textContent = sheet.measured
+      ? "The body's hue, measured on the sheet: " + Math.round(sheet.bodyHue) + "°. Only the hues around it move, so the eyes and the details keep theirs."
+      : "";
+    applyPreset();
+  }
+
+  // ---- colour swap ----------------------------------------------------------
+  /* A swap is baked ONCE per variant into its own frames (the game would do it
+     at load, keyed on the variant): the hue of every pixel near the body's
+     own hue is moved, its saturation and lightness scaled; every other hue
+     (the red eyes, a white fang) is left alone. Never a ctx.filter per frame. */
+  const PRESETS = [
+    { n: "Original" },
+    { n: "Poison green", hue: 115 },
+    { n: "Fire red", hue: 2, sat: 1.15 },
+    { n: "Gold", hue: 44, sat: 1.25, light: 1.3 },
+    { n: "Ice blue", hue: 198, sat: 0.9, light: 1.2 },
+    { n: "Candy pink", hue: 320, light: 1.15 },
+    { n: "Ghost pale", sat: 0.25, light: 1.45 },
+    { n: "Shadow", sat: 0.6, light: 0.6 },
+  ];
+  const variants = new Map();          // key → frames[r][c] canvases
+
+  function rgb2hsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+    if (mx === mn) return [0, 0, l];
+    const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    let h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+  }
+  function hsl2rgb(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    if (s === 0) return [l * 255, l * 255, l * 255];
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    const f = (t) => {
+      t = (t + 1) % 1;
+      return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p;
+    };
+    return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
+  }
+  const hueDist = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+
+  /* The hue most of the body is painted in: a histogram of the opaque,
+     coloured pixels of the whole sheet, weighted by their saturation. */
+  function dominantHue(sh) {
+    const bins = new Float32Array(36);
+    for (const row of sh.frames) for (const fr of row) {
+      const d = fr.cv.getContext("2d").getImageData(0, 0, fr.bw, fr.bh).data;
+      for (let i = 0; i < d.length; i += 16) {
+        if (d[i + 3] < 200) continue;
+        const [h, s] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+        if (s > 0.12) bins[Math.floor(h / 10) % 36] += s;
+      }
+    }
+    let best = 0;
+    for (let i = 1; i < 36; i++) if (bins[i] > bins[best]) best = i;
+    return best * 10 + 5;
+  }
+
+  function currentVariant() {
+    return { shift: +val("hue").value, sat: +val("sat").value / 100, light: +val("light").value / 100, tol: +val("tol").value };
+  }
+  function presetVariant(p) {
+    if (!p || p.n === "Original") return null;
+    const base = sheet ? sheet.bodyHue : 0;
+    let shift = p.hue == null ? 0 : p.hue - base;
+    shift = ((shift + 540) % 360) - 180;
+    return { shift, sat: p.sat || 1, light: p.light || 1, tol: +val("tol").value };
+  }
+  const isPlain = (v) => !v || (v.shift === 0 && v.sat === 1 && v.light === 1);
+  const keyOf = (v) => [v.shift, v.sat, v.light, v.tol].join("|");
+
+  function framesFor(v) {
+    if (isPlain(v) || !sheet.measured) return null;
+    const key = keyOf(v);
+    if (variants.has(key)) return variants.get(key);
+    if (variants.size > 40) variants.clear();
+    const body = sheet.bodyHue;
+    const out = sheet.frames.map((row) => row.map((fr) => {
+      const c = document.createElement("canvas");
+      c.width = fr.bw; c.height = fr.bh;
+      const cc = c.getContext("2d");
+      cc.drawImage(fr.cv, 0, 0);
+      const id = cc.getImageData(0, 0, fr.bw, fr.bh), d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] === 0) continue;
+        let [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+        // how much this pixel belongs to the body: its hue near the body's,
+        // with a soft edge, and a grey outline counted in (its hue is noise)
+        let w = v.tol >= 180 ? 1 : Math.max(0, Math.min(1, (v.tol - hueDist(h, body)) / 20 + 0.5));
+        if (s < 0.08) w = v.tol >= 180 ? 1 : 0.6;
+        if (w === 0) continue;
+        const h2 = h + v.shift;
+        const s2 = Math.min(1, s * v.sat);
+        const l2 = v.light <= 1 ? l * v.light : l + (1 - l) * (v.light - 1);
+        const [r1, g1, b1] = hsl2rgb(h2, s2, l2);
+        d[i] = d[i] + (r1 - d[i]) * w;
+        d[i + 1] = d[i + 1] + (g1 - d[i + 1]) * w;
+        d[i + 2] = d[i + 2] + (b1 - d[i + 2]) * w;
+      }
+      cc.putImageData(id, 0, 0);
+      return c;
+    }));
+    variants.set(key, out);
+    return out;
+  }
+  /* Over file:// nothing can be read back: the same swap as a filter on the
+     whole sprite, eyes included — the cheap version, and the wrong one. */
+  function filterOf(v) {
+    if (isPlain(v)) return "none";
+    return "hue-rotate(" + v.shift + "deg) saturate(" + v.sat + ") brightness(" + v.light + ")";
+  }
+
+  const presetSel = val("preset");
+  PRESETS.forEach((p, i) => { const o = document.createElement("option"); o.value = i; o.textContent = p.n; presetSel.appendChild(o); });
+  presetSel.addEventListener("change", applyPreset);
+  function applyPreset() {
+    if (!sheet) return;
+    const v = presetVariant(PRESETS[+presetSel.value]) || { shift: 0, sat: 1, light: 1 };
+    val("hue").value = v.shift; val("sat").value = Math.round(v.sat * 100); val("light").value = Math.round(v.light * 100);
+    ["hue", "sat", "light"].forEach((id) => { val(id + "-v").textContent = val(id).value; });
+  }
+  ["hue", "sat", "light", "tol"].forEach((id) => val(id).addEventListener("input", () => {
+    val(id + "-v").textContent = val(id).value;
+  }));
+
+  function loadSrc(src, label) {
+    const img = new Image();
+    img.onload = () => { srcImg = img; val("file-v").textContent = label; rebuild(); resetArena(); };
+    img.onerror = () => note("Could not load " + label + ".");
+    img.src = src;
+  }
+
+  val("pick").addEventListener("click", () => val("file").click());
+  function loadFile(file) {
+    if (!file) return;
+    const rd = new FileReader();
+    rd.onload = () => loadSrc(rd.result, file.name.replace(/\.[a-z]+$/i, "").replace(/^parrynormal-object-/, ""));
+    rd.readAsDataURL(file);
+  }
+  val("file").addEventListener("change", (e) => loadFile(e.target.files[0]));
+  const stage = val("stage");
+  stage.addEventListener("dragover", (e) => { e.preventDefault(); stage.classList.add("drop"); });
+  stage.addEventListener("dragleave", () => stage.classList.remove("drop"));
+  stage.addEventListener("drop", (e) => { e.preventDefault(); stage.classList.remove("drop"); loadFile(e.dataTransfer.files[0]); });
+  ["cols", "rows", "clean"].forEach((id) => val(id).addEventListener("change", rebuild));
+
+  // ---- the floor ------------------------------------------------------------
+  const floor = document.createElement("canvas");
+  floor.width = W + OV * 2; floor.height = H + OV * 2;
+  (function paintFloor() {
+    const f = floor.getContext("2d");
+    f.translate(OV, OV);
+    const g = f.createRadialGradient(CX, CY, 60, CX, CY, 900);
+    g.addColorStop(0, "#4a3a63"); g.addColorStop(1, "#231833");
+    f.fillStyle = g; f.fillRect(0, 0, W, H);
+    // big flagstones, faint, so a sliding step reads against something
+    f.strokeStyle = "rgba(20,10,35,.35)"; f.lineWidth = 3;
+    for (let y = 0, row = 0; y < H; y += 120, row++) {
+      f.beginPath(); f.moveTo(0, y); f.lineTo(W, y); f.stroke();
+      for (let x = (row % 2) * 80; x < W; x += 160) { f.beginPath(); f.moveTo(x, y); f.lineTo(x, y + 120); f.stroke(); }
+    }
+    f.fillStyle = "rgba(10,6,20,.55)";
+    f.fillRect(0, H - DIAL_H, W, DIAL_H);
+  })();
+  /* The painted scene, cover-fitted to the frame and to the overscan the
+     shake needs, once it has loaded; the dial row darkened over it. */
+  (function loadScene() {
+    const img = new Image();
+    img.onload = () => {
+      const f = floor.getContext("2d");
+      const s = Math.max(floor.width / img.width, floor.height / img.height);
+      const w = img.width * s, h = img.height * s;
+      f.setTransform(1, 0, 0, 1, 0, 0);
+      f.drawImage(img, (floor.width - w) / 2, (floor.height - h) / 2, w, h);
+      f.fillStyle = "rgba(10,6,20,.45)";
+      f.fillRect(0, OV + H - DIAL_H, floor.width, DIAL_H + OV);
+    };
+    img.src = SCENE;
+  })();
+
+  // ---- input ------------------------------------------------------------------
+  const ptr = { x: CX, y: CY - 300, down: false };
+  function toDesign(e) {
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left) / r.width * W, y: (e.clientY - r.top) / r.height * H };
+  }
+  cv.addEventListener("pointermove", (e) => { const p = toDesign(e); ptr.x = p.x; ptr.y = p.y; });
+  cv.addEventListener("pointerdown", (e) => {
+    const p = toDesign(e); ptr.x = p.x; ptr.y = p.y; ptr.down = true;
+    if (P.mode === "arena" || P.mode === "drive") hitAt(p.x, p.y);
+  });
+  window.addEventListener("pointerup", () => { ptr.down = false; });
+  const keys = {};
+  window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; });
+  window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+
+  // ---- monsters -------------------------------------------------------------
+  let mobs = [], poofs = [], witchHurt = 0, running = true, clock = 0;
+
+  function spawn() {
+    // from a random edge, outside the dial row
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    if (side === 0) { x = Math.random() * W; y = -40; }
+    else if (side === 1) { x = W + 40; y = Math.random() * (H - DIAL_H); }
+    else if (side === 2) { x = -40; y = Math.random() * (H - DIAL_H); }
+    else { x = Math.random() * W; y = H - DIAL_H + 20; }
+    return { x, y, kx: 0, ky: 0, state: "walk", t: 0, anim: Math.random() * 2, hp: 2, sector: -1, spin: 0, flash: 0, squash: 1, leapt: false, pv: Math.floor(Math.random() * PRESETS.length) };
+  }
+  function resetArena() {
+    mobs = [];
+    poofs = [];
+    if (P.mode === "drive") mobs.push(Object.assign(spawn(), { x: CX, y: CY + 200 }));
+    else if (P.mode === "dirs") {
+      for (let s = 0; s < 8; s++) {
+        const a = s * Math.PI / 4;
+        mobs.push({ x: CX + Math.cos(a) * 250, y: CY + 60 + Math.sin(a) * 300, fixed: s, state: "walk", anim: 0, sector: s, spin: 0, flash: 0, squash: 1 });
+      }
+    }
+  }
+  val("reset").addEventListener("click", resetArena);
+  val("pause").addEventListener("click", () => { running = !running; });
+  val("mode").addEventListener("change", () => { P.mode = val("mode").value; resetArena(); });
+  const hashMode = /mode=(\w+)/.exec(location.hash);   // #mode=dirs opens a view
+  if (hashMode && val("mode").querySelector('option[value="' + hashMode[1] + '"]')) val("mode").value = hashMode[1];
+  P.mode = val("mode").value;
+
+  function angDiff(a, b) {
+    let d = a - b;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+  /* The nearest of eight, held a little past its edge so a monster walking
+     along a boundary does not flicker between two columns. */
+  function pickSector(a, cur) {
+    const s = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8;
+    if (cur >= 0 && on("hyst") && Math.abs(angDiff(a, cur * Math.PI / 4)) < Math.PI / 8 + 0.14) return cur;
+    return s;
+  }
+
+  function hitAt(x, y) {
+    let best = null, bd = 1e9;
+    for (const m of mobs) {
+      if (m.state === "ko") continue;
+      const d = Math.hypot(m.x - x, m.y - (y + P.size * 0.3));
+      if (d < bd) { bd = d; best = m; }
+    }
+    if (!best || bd > P.size * 0.7) { witchSay("launch"); return; }
+    hurt(best, P.mode === "arena");
+  }
+  function hurt(m, knock) {
+    m.flash = 1;
+    m.hp = (m.hp || 2) - 1;
+    if (knock) {
+      const a = Math.atan2(m.y - CY, m.x - CX);
+      m.kx = Math.cos(a) * KNOCK_SPEED; m.ky = Math.sin(a) * KNOCK_SPEED;
+      m.state = "slide";
+      // the shield's blow: where it lands, the camera kicks and the world holds its breath
+      impact(CX + Math.cos(a) * SHIELD_R, CY + Math.sin(a) * SHIELD_R, "#5ff0ff", 0.28, 1, 0.025, a);
+      shieldFlash = 1;
+    } else {
+      impact(m.x, m.y - P.size * 0.3, "#ffffff", 0.12, 0.5, 0.012);
+      m.state = m.hp <= 0 ? "ko" : "hurt";
+      m.t = 0;
+    }
+  }
+  function ko(m) { m.state = "ko"; m.t = 0; witchSay("cheer"); }
+  function poof(x, y) {
+    for (let i = 0; i < 10; i++) {
+      const a = Math.random() * Math.PI * 2, s = 60 + Math.random() * 120;
+      poofs.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, t: 0, r: 10 + Math.random() * 12 });
+    }
+  }
+
+  function update(dt) {
+    clock += dt;
+    const shieldA = Math.atan2(ptr.y - CY, ptr.x - CX);
+    const half = P.arc * Math.PI / 360;
+    const stepRate = P.fps * (P.speed > 0 ? Math.max(0.4, P.speed / 70) : 1);
+
+    if (P.mode === "arena") while (mobs.length < P.count) mobs.push(spawn());
+    if (P.mode === "arena" && mobs.length > P.count) mobs.length = P.count;
+
+    for (const m of mobs) {
+      m.flash = Math.max(0, m.flash - dt * 5);
+      m.t += dt;
+
+      if (P.mode === "dirs") {
+        m.anim += dt * P.fps;
+        continue;
+      }
+
+      if (P.mode === "drive") {
+        let vx = 0, vy = 0;
+        if (keys.arrowleft || keys.a || keys.q) vx -= 1;
+        if (keys.arrowright || keys.d) vx += 1;
+        if (keys.arrowup || keys.w || keys.z) vy -= 1;
+        if (keys.arrowdown || keys.s) vy += 1;
+        if (!vx && !vy) {
+          const dx = ptr.x - m.x, dy = ptr.y - (m.y - P.size * 0.3);
+          if (Math.hypot(dx, dy) > 12) { vx = dx; vy = dy; }
+        }
+        if (m.state === "hurt" && m.t > 0.25) m.state = "walk";
+        if (m.state === "ko") { if (m.t > 0.45) { poof(m.x, m.y - 30); Object.assign(m, { state: "walk", hp: 2, squash: 1 }); } else m.squash = 1 - m.t / 0.45 * 0.8; continue; }
+        const l = Math.hypot(vx, vy);
+        if (l > 0 && m.state === "walk") {
+          m.x += vx / l * P.speed * 1.4 * dt; m.y += vy / l * P.speed * 1.4 * dt;
+          m.sector = pickSector(Math.atan2(vy, vx), m.sector);
+          m.anim += dt * stepRate;
+          m.moving = true;
+        } else m.moving = false;
+        m.x = Math.max(30, Math.min(W - 30, m.x)); m.y = Math.max(80, Math.min(H - 20, m.y));
+        continue;
+      }
+
+      // ---- arena ----
+      const dx = CX - m.x, dy = CY - m.y, dist = Math.hypot(dx, dy);
+      const toWitch = Math.atan2(dy, dx);
+      const bodyR = P.size * 0.3;
+
+      if (m.state === "slide") {
+        m.x += m.kx * dt; m.y += m.ky * dt;
+        const k = Math.exp(-KNOCK_DAMP * dt);
+        m.kx *= k; m.ky *= k;
+        if (m.x < 30 || m.x > W - 30) { m.kx = -m.kx; m.x = Math.max(30, Math.min(W - 30, m.x)); }
+        if (m.y < 60 || m.y > H - DIAL_H) { m.ky = -m.ky; m.y = Math.max(60, Math.min(H - DIAL_H, m.y)); }
+        if (on("spin")) m.spin += dt * Math.hypot(m.kx, m.ky) / 60;
+        m.dust = (m.dust || 0) + dt;
+        if (m.dust > 0.05 && Math.hypot(m.kx, m.ky) > 300) { m.dust = 0; dust(m.x, m.y); }
+        // a thrown monster bowls over another (the strike)
+        const sp = Math.hypot(m.kx, m.ky);
+        if (sp > KNOCK_HIT) for (const o of mobs) {
+          if (o === m || o.state === "ko" || o.state === "slide") continue;
+          if (Math.hypot(o.x - m.x, o.y - m.y) < bodyR * 2) {
+            o.kx = m.kx * 0.6; o.ky = m.ky * 0.6; o.state = "slide"; o.flash = 1; o.hp = (o.hp || 2) - 1;
+            impact((o.x + m.x) / 2, (o.y + m.y) / 2 - P.size * 0.25, "#ffb35c", 0.45, 1.4, 0.045, Math.atan2(m.ky, m.kx));
+            slowMo(0.28);
+          }
+        }
+        m.sector = pickSector(toWitch, m.sector);      // pushed backwards, still facing her
+        if (sp < 60) { m.spin = 0; m.kx = m.ky = 0; if (m.hp <= 0) ko(m); else { m.state = "walk"; m.leapt = false; } }
+        continue;
+      }
+      if (m.state === "ko") {
+        m.squash = 1 - Math.min(1, m.t / 0.45) * 0.8;
+        if (m.t > 0.45) { poof(m.x, m.y - 30); flashLight(m.x, m.y - 30, "#ffffff", 140, 0.3); shake(0.12); Object.assign(m, spawn()); }
+        continue;
+      }
+      if (m.state === "hurt") { if (m.t > 0.25) m.state = "walk"; continue; }
+      if (m.state === "bite") {
+        if (m.t > 0.5) { witchHurt = 1; witchSay("hurt"); shake(0.65); hitStop(1.5); punch(-0.03, CX, CY); poof(m.x, m.y - 30); Object.assign(m, spawn()); }
+        continue;
+      }
+      if (m.state === "wait") {
+        m.sector = pickSector(toWitch, m.sector);
+        if (m.t > 0.9) { m.state = "leap"; m.t = 0; }
+        continue;
+      }
+
+      const speed = m.state === "leap" ? 520 : P.speed;
+      if (P.speed === 0 && m.state !== "leap") continue;
+      m.x += Math.cos(toWitch) * speed * dt;
+      m.y += Math.sin(toWitch) * speed * dt;
+      m.sector = pickSector(toWitch, m.sector);
+      if (m.state === "walk") m.anim += dt * stepRate;
+      if (val("behave").value === "spider" && m.state === "walk" && !m.leapt && dist < 270 && dist > SHIELD_R + bodyR + 20) {
+        m.state = "wait"; m.t = 0; m.leapt = true;
+      }
+      // the shield: an arc that throws back what reaches it inside its opening
+      if (dist < SHIELD_R + bodyR && dist > SHIELD_R - 20) {
+        const from = Math.atan2(m.y - CY, m.x - CX);
+        if (P.arc > 0 && Math.abs(angDiff(from, shieldA)) < half) { hurt(m, true); continue; }
+      }
+      if (dist < 46) { m.state = "bite"; m.t = 0; }
+    }
+
+    for (const p of poofs) { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.92; p.vy *= 0.92; }
+    poofs = poofs.filter((p) => p.t < 0.5);
+    witchHurt = Math.max(0, witchHurt - dt * 2);
+    updateWitch(dt, shieldA);
+  }
+
+  // ---- draw -----------------------------------------------------------------
+  function frameOf(m) {
+    const rows = sheet.rows;
+    let r;
+    if (m.state === "walk" || m.state === "wait") r = (m.state === "wait" || (P.mode === "drive" && !m.moving)) ? 0 : Math.floor(m.anim) % 2;
+    else if (m.state === "leap" || m.state === "bite") r = 2;
+    else r = 3;
+    r = Math.min(r, rows - 1);
+    const d = DIRS[m.sector < 0 ? 2 : m.sector];
+    const c = Math.min(d.c, sheet.cols - 1);
+    return { fr: sheet.frames[r][c], flip: d.f, r, c, d };
+  }
+
+  function drawMob(m) {
+    const { fr, flip, r, c } = frameOf(m);
+    const s = P.size / sheet.cw;
+    const v = P.mode === "arena" && on("mix") && m.pv != null ? presetVariant(PRESETS[m.pv]) : currentVariant();
+    const swapped = framesFor(v);
+    const anc = val("anchor").value === "cell" ? fr.cellAnchor : fr.feet;
+    if (on("shadow")) {
+      ctx.fillStyle = "rgba(8,4,18,.38)";
+      ctx.beginPath();
+      ctx.ellipse(m.x, m.y, P.size * 0.34, P.size * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    if (m.spin) {                       // the tumble turns around the body, not the feet
+      const midY = -fr.bh * s * 0.5;
+      ctx.translate(0, midY); ctx.rotate(m.spin); ctx.translate(0, -midY);
+    }
+    ctx.scale(flip ? -s : s, s * (m.squash || 1));
+    if (!swapped && !sheet.measured) ctx.filter = filterOf(v);
+    ctx.drawImage(swapped ? swapped[r][c] : fr.cv, -anc.x, -anc.y);
+    ctx.filter = "none";
+    if (m.flash > 0) { ctx.globalAlpha = m.flash * 0.75; ctx.drawImage(fr.flash, -anc.x, -anc.y); }
+    ctx.restore();
+    if (on("marks")) {
+      ctx.fillStyle = "#19e6ff";
+      ctx.beginPath(); ctx.arc(m.x, m.y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  /* Her sheet is the grid of §11.13: the five directions in columns; the rows
+     ready, ready again (the hat swaying), launch, hurt, cheer. A sheet of four
+     rows (no second ready) is read as ready, launch, hurt, cheer. */
+  function witchFrame() {
+    const ws = witchSheet;
+    const five = ws.rows >= 5;
+    const row = { ready: five ? Math.floor(W8.anim) % 2 : 0, launch: five ? 2 : 1, hurt: five ? 3 : 2, cheer: five ? 4 : 3 }[W8.state];
+    const d = DIRS[W8.sector];
+    return { fr: ws.frames[Math.min(row, ws.rows - 1)][Math.min(d.c, ws.cols - 1)], flip: d.f };
+  }
+
+  function drawWitch() {
+    const shieldA = Math.atan2(ptr.y - CY, ptr.x - CX);
+    const feetY = CY + 34;
+    const br = Math.sin(clock * 2.4) * P.breath * 0.006;          // breathing, by code
+    const pop = W8.state === "launch" ? 1 + 0.08 * Math.sin(Math.min(1, W8.t / 0.3) * Math.PI) : 1;
+    ctx.fillStyle = "rgba(8,4,18,.38)";
+    ctx.beginPath(); ctx.ellipse(CX, feetY, P.wsize * 0.32, P.wsize * 0.09, 0, 0, Math.PI * 2); ctx.fill();
+    if (witchSheet) {
+      const { fr, flip } = witchFrame();
+      const s = P.wsize / witchSheet.cw;
+      ctx.save();
+      ctx.translate(CX, feetY);
+      ctx.scale((flip ? -s : s) * (1 - br) * pop, s * (1 + br) * pop);
+      ctx.drawImage(fr.cv, -fr.feet.x, -fr.feet.y);
+      if (W8.state === "hurt" && W8.t < 0.2) { ctx.globalAlpha = 0.7; ctx.drawImage(fr.flash, -fr.feet.x, -fr.feet.y); }
+      ctx.restore();
+    } else drawWitchStandIn(feetY, br, pop);
+    if (P.mode !== "arena" || P.arc <= 0) return;
+    const half = P.arc * Math.PI / 360;
+    ctx.lineCap = "round";
+    [[SHIELD_W + 14, "rgba(25,230,255,.18)"], [SHIELD_W + 6, "rgba(25,230,255,.35)"], [SHIELD_W, "#19e6ff"]].forEach(([w, col]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.arc(CX, CY, SHIELD_R, shieldA - half, shieldA + half); ctx.stroke();
+    });
+  }
+
+  /* No sheet yet: a face under a hat that turns through the same eight
+     directions, so the turning is judged before the art exists. The face sits
+     on the side she faces and goes behind the head when she faces away; the
+     left half is the right half mirrored, as on a sheet. */
+  function drawWitchStandIn(feetY, br, pop) {
+    const d = DIRS[W8.sector];
+    // column → how far round she is: 0 front, 1 front diagonal, 2 profile, 3 back diagonal, 4 back
+    const turn = d.c / 4;
+    const side = Math.sin(turn * Math.PI);           // 0 front/back, 1 profile
+    const front = Math.cos(turn * Math.PI);          // 1 front, -1 back
+    const r = P.wsize * 0.26;
+    ctx.save();
+    ctx.translate(CX, feetY);
+    ctx.scale((d.f ? -1 : 1) * (1 - br) * pop, (1 + br) * pop);
+    ctx.translate(0, -r - 4);
+    const face = W8.state === "hurt" ? "#ff8a6a" : "#ffc23a";
+    ctx.fillStyle = face;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    // the face's features, on the side she faces
+    if (front > -0.2) {
+      const fx = side * r * 0.55, fy = r * 0.1, k = 0.55 + 0.45 * front;
+      ctx.fillStyle = "#4a2a8a";
+      const eye = (ox) => { ctx.beginPath(); ctx.ellipse(fx + ox * k, fy, r * 0.13 * k, r * 0.2, 0, 0, Math.PI * 2); ctx.fill(); };
+      if (W8.state === "hurt") {
+        ctx.strokeStyle = "#4a2a8a"; ctx.lineWidth = 3;
+        [-1, 1].forEach((o) => { ctx.beginPath(); ctx.moveTo(fx + o * r * 0.3 * k - 6, fy); ctx.lineTo(fx + o * r * 0.3 * k + 6, fy); ctx.stroke(); });
+      } else { eye(-r * 0.3); eye(r * 0.3); }
+      ctx.strokeStyle = "#7a2a3a"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      const smile = W8.state === "cheer" ? 0.5 : 0.25;
+      ctx.arc(fx, fy + r * 0.25, r * smile * k, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    }
+    // the hat: a brim, a crown, a tip flopping away from where she looks
+    ctx.fillStyle = "#6b3fb8";
+    ctx.beginPath(); ctx.ellipse(-side * r * 0.12, -r * 0.62, r * 1.45, r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+    const sway = Math.sin(clock * 2.4) * 0.15 + (W8.state === "cheer" ? -0.35 : 0);
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.75, -r * 0.7); ctx.lineTo(r * 0.75, -r * 0.7);
+    ctx.lineTo(-side * r * 0.9 + sway * r, -r * 2.2);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#8a1e3a";
+    ctx.fillRect(-r * 0.72, -r * 0.92, r * 1.44, r * 0.2);
+    ctx.restore();
+  }
+
+  function label(txt, x, y, size, color, align) {
+    ctx.font = "700 " + size + "px -apple-system,Segoe UI,Roboto,sans-serif";
+    ctx.textAlign = align || "center";
+    ctx.lineWidth = 5; ctx.strokeStyle = "rgba(10,6,20,.85)";
+    ctx.strokeText(txt, x, y);
+    ctx.fillStyle = color || "#e8e6f5";
+    ctx.fillText(txt, x, y);
+  }
+
+  function drawSheet() {
+    ctx.fillStyle = "#14101f"; ctx.fillRect(0, 0, W, H);
+    const s = Math.min((W - 80) / sheet.img.width, (H - 200) / sheet.img.height);
+    const ox = 60, oy = 120, sw = sheet.img.width * s, sh = sheet.img.height * s;
+    ctx.drawImage(sheet.img, ox, oy, sw, sh);
+    ctx.strokeStyle = "rgba(126,166,255,.5)"; ctx.lineWidth = 1;
+    for (let c = 0; c <= sheet.cols; c++) { ctx.beginPath(); ctx.moveTo(ox + c * sheet.cw * s, oy); ctx.lineTo(ox + c * sheet.cw * s, oy + sh); ctx.stroke(); }
+    for (let r = 0; r <= sheet.rows; r++) { ctx.beginPath(); ctx.moveTo(ox, oy + r * sheet.ch * s); ctx.lineTo(ox + sw, oy + r * sheet.ch * s); ctx.stroke(); }
+    for (let r = 0; r < sheet.rows; r++) for (let c = 0; c < sheet.cols; c++) {
+      const fr = sheet.frames[r][c];
+      const cx0 = ox + c * sheet.cw * s, cy0 = oy + r * sheet.ch * s;
+      ctx.strokeStyle = "#ffb35c";
+      ctx.strokeRect(cx0 + fr.box.x * s, cy0 + fr.box.y * s, fr.box.w * s, fr.box.h * s);
+      ctx.fillStyle = "#19e6ff";
+      ctx.beginPath(); ctx.arc(cx0 + (fr.bx + fr.feet.x) * s, cy0 + (fr.by + fr.feet.y) * s, 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+    for (let c = 0; c < sheet.cols; c++) label(COL_NAMES[c] || "Column " + (c + 1), ox + (c + 0.5) * sheet.cw * s, oy - 14, 15, "#9c9cba");
+    for (let r = 0; r < sheet.rows; r++) {
+      ctx.save(); ctx.translate(ox - 16, oy + (r + 0.5) * sheet.ch * s); ctx.rotate(-Math.PI / 2);
+      label(ROW_NAMES[r] || "Row " + (r + 1), 0, 0, 15, "#9c9cba"); ctx.restore();
+    }
+    // the feet line of every row: a frame whose dot leaves it will hop when played
+    label("Orange: the measured box · cyan: the feet", W / 2, oy + sh + 50, 18, "#8b8ba7");
+    label(sheet.img.width + " × " + sheet.img.height + " · cells " + Math.round(sheet.cw) + " × " + Math.round(sheet.ch), W / 2, oy + sh + 80, 18, "#8b8ba7");
+  }
+
+  /* Every preset side by side, plus the panel's own swap: the front step,
+     the profile step and the hurt, at the frame width of the panel. */
+  function drawColours() {
+    ctx.drawImage(floor, -OV, -OV);
+    const list = PRESETS.map((p) => ({ n: p.n, v: presetVariant(p) }));
+    list.push({ n: "The panel's swap", v: currentVariant() });
+    const cols = 3, cellW = W / cols, rowH = 250;
+    const pick = [[0, 0], [0, 2], [Math.min(3, sheet.rows - 1), 0]];
+    const s = Math.min(P.size, cellW / 3.6) / sheet.cw;
+    list.forEach((it, i) => {
+      const x0 = (i % cols) * cellW, y0 = 110 + Math.floor(i / cols) * rowH;
+      const sw = framesFor(it.v);
+      pick.forEach(([r, c], k) => {
+        const fr = sheet.frames[r][Math.min(c, sheet.cols - 1)];
+        const x = x0 + cellW * (k + 1) / 4, y = y0 + 150;
+        ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+        if (!sw && !sheet.measured) ctx.filter = filterOf(it.v);
+        ctx.drawImage(sw ? sw[r][Math.min(c, sheet.cols - 1)] : fr.cv, -fr.feet.x, -fr.feet.y);
+        ctx.restore();
+      });
+      label(it.n, x0 + cellW / 2, y0 + 190, 18, i === list.length - 1 ? "#7ea6ff" : "#e8e6f5");
+    });
+    label("Each swap is baked once into its own frames", W / 2, 60, 22);
+  }
+
+  function render() {
+    if (!sheet) {
+      ctx.fillStyle = "#14101f"; ctx.fillRect(0, 0, W, H);
+      label("Loading the sheet…", W / 2, H / 2, 26);
+      return;
+    }
+    if (P.mode === "sheet") { drawSheet(); return; }
+    if (P.mode === "colours") { drawColours(); return; }
+    ctx.fillStyle = "#0a0614"; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (on("feel")) applyCam(ctx);
+    ctx.drawImage(floor, -OV, -OV);
+    // the painter's order is the feet: lower on the screen is in front, the
+    // witch included (her feet are at CY + 34)
+    const list = mobs.slice().sort((a, b) => a.y - b.y);
+    let witchDrawn = P.mode !== "arena";
+    for (const m of list) {
+      if (!witchDrawn && m.y > CY + 34) { drawWitch(); witchDrawn = true; }
+      drawMob(m);
+    }
+    if (!witchDrawn) drawWitch();
+    for (const p of poofs) {
+      ctx.globalAlpha = (1 - p.t / 0.5) * (p.a || 1);
+      ctx.fillStyle = p.col || "#d9cdf2";
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1 + p.t * 2), 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    drawFx();
+    if (on("lighton")) lightPass();
+    ctx.restore();
+    if (on("lighton")) screenPass();
+    if (P.mode === "dirs") {
+      for (const m of mobs) {
+        const d = DIRS[m.sector];
+        label(d.n, m.x, m.y + 34, 18, "#e8e6f5");
+        label("column " + (d.c + 1) + (d.f ? ", mirrored" : ""), m.x, m.y + 56, 15, d.f ? "#ffb35c" : "#9c9cba");
+      }
+      label("The eight directions, walking in place", W / 2, 60, 22);
+    } else if (P.mode === "drive") {
+      const m = mobs[0];
+      if (m) {
+        const f = frameOf(m);
+        label(f.d.n + " · column " + (f.c + 1) + " " + (COL_NAMES[f.c] || "") + (f.flip ? " · mirrored" : "") + " · " + (ROW_NAMES[f.r] || ""), W / 2, 60, 20);
+      }
+      label("The pointer leads, or arrows / WASD · a click hits", W / 2, 92, 16, "#9c9cba");
+    } else {
+      label("The shield follows the pointer · a click hits a monster", W / 2, 60, 18, "#9c9cba");
+    }
+    label("Dial row", W / 2, H - DIAL_H / 2, 18, "rgba(232,230,245,.35)");
+    label(Math.round(perfFps) + " fps · " + perfMs.toFixed(1) + " ms a frame", W - 20, H - 20, 15, "#8b8ba7", "right");
+  }
+
+  let last = performance.now(), perfMs = 0, perfFps = 60;
+  function frame(now) {
+    const real = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    clockReal += real;
+    updateCam(real);
+    // the hit-stop holds the world, the slow motion slows it; the camera and
+    // the fireflies keep the wall clock
+    let dt = real;
+    if (Cam.stop > 0) { Cam.stop -= real; dt = 0; }
+    else if (Cam.slow > 0) { Cam.slow -= real; dt *= 0.3; }
+    if (running && sheet && dt > 0) { update(dt); updateFx(dt); }
+    updateFlies(real);
+    const t0 = performance.now();
+    render();
+    perfMs = perfMs * 0.95 + (performance.now() - t0) * 0.05;
+    if (real > 0) perfFps = perfFps * 0.95 + (1 / real) * 0.05;
+    requestAnimationFrame(frame);
+  }
+
+  // ---- feel: the camera, the hit-stop, the slow motion ---------------------
+  /* Trauma (0..1) decays on its own and shakes by its square, so a small hit
+     barely moves the frame and a big one rattles it; the zoom is a spring
+     kicked toward the point of impact; the hit-stop freezes the world for a
+     few frames while the camera keeps moving. All in the frame's transform:
+     nothing is redrawn for it. */
+  let clockReal = 0, shieldFlash = 0;
+  const Cam = { trauma: 0, zoom: 0, zv: 0, fx: CX, fy: CY, stop: 0, slow: 0, ox: 0, oy: 0, rot: 0 };
+  const feel = () => on("feel");
+  function shake(a) { if (feel()) Cam.trauma = Math.min(1, Cam.trauma + a * P.shake / 50); }
+  function punch(z, x, y) { if (!feel()) return; Cam.zv += z * 25 * P.zoom / 40; Cam.fx = x; Cam.fy = y; }
+  function hitStop(k) { if (feel()) Cam.stop = Math.max(Cam.stop, k * P.stop / 1000); }
+  function slowMo(s) { if (feel() && on("slowmo")) Cam.slow = Math.max(Cam.slow, s); }
+  function updateCam(dt) {
+    Cam.trauma = Math.max(0, Cam.trauma - dt * 1.6);
+    const t2 = Cam.trauma * Cam.trauma, t = clockReal;
+    Cam.ox = 26 * t2 * (Math.sin(t * 41.3) + 0.6 * Math.sin(t * 17.9 + 1.3)) / 1.6;
+    Cam.oy = 26 * t2 * (Math.sin(t * 37.1 + 2.1) + 0.6 * Math.sin(t * 23.3)) / 1.6;
+    Cam.rot = 0.03 * t2 * Math.sin(t * 29.7 + 0.7);
+    Cam.zv += (-Cam.zoom * 220 - Cam.zv * 18) * dt;
+    Cam.zoom += Cam.zv * dt;
+    Cam.fx += (CX - Cam.fx) * Math.min(1, dt * 2);
+    Cam.fy += (CY - Cam.fy) * Math.min(1, dt * 2);
+    shieldFlash = Math.max(0, shieldFlash - dt * 4);
+  }
+  function applyCam(c) {
+    c.translate(Cam.fx + Cam.ox, Cam.fy + Cam.oy);
+    c.rotate(Cam.rot);
+    c.scale(1 + Cam.zoom, 1 + Cam.zoom);
+    c.translate(-Cam.fx, -Cam.fy);
+  }
+
+  // ---- sparks, rings, dust, short lights ------------------------------------
+  let sparks = [], rings = [], flashes = [];
+  function impact(x, y, col, trauma, stop, zoom, dir) {
+    shake(trauma); hitStop(stop); punch(zoom, x, y);
+    flashLight(x, y, col, 200, 0.25);
+    if (!on("sparks")) return;
+    rings.push({ x, y, t: 0, col });
+    for (let i = 0; i < 14; i++) {
+      const a = (dir != null ? dir + (Math.random() - 0.5) * 1.8 : Math.random() * Math.PI * 2);
+      const s = 380 + Math.random() * 520;
+      sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, t: 0, life: 0.18 + Math.random() * 0.22, col });
+    }
+  }
+  function flashLight(x, y, col, r, life) { flashes.push({ x, y, col, r, t: 0, life }); }
+  function dust(x, y) {
+    if (!on("sparks")) return;
+    poofs.push({ x: x + (Math.random() - 0.5) * 20, y: y - 4, vx: (Math.random() - 0.5) * 40, vy: -20, t: 0, r: 6 + Math.random() * 6, col: "#b9a8d6", a: 0.45 });
+  }
+  function updateFx(dt) {
+    for (const s of sparks) { s.t += dt; s.x += s.vx * dt; s.y += s.vy * dt; s.vx *= 0.9; s.vy *= 0.9; }
+    sparks = sparks.filter((s) => s.t < s.life);
+    for (const r of rings) r.t += dt;
+    rings = rings.filter((r) => r.t < 0.3);
+    for (const f of flashes) f.t += dt;
+    flashes = flashes.filter((f) => f.t < f.life);
+  }
+  function drawFx() {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineCap = "round";
+    for (const s of sparks) {
+      const k = 1 - s.t / s.life;
+      ctx.strokeStyle = s.col; ctx.globalAlpha = k; ctx.lineWidth = 2 + 2 * k;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x - s.vx * 0.035, s.y - s.vy * 0.035); ctx.stroke();
+    }
+    for (const r of rings) {
+      const k = r.t / 0.3;
+      ctx.strokeStyle = r.col; ctx.globalAlpha = 1 - k; ctx.lineWidth = 6 * (1 - k) + 1;
+      ctx.beginPath(); ctx.arc(r.x, r.y, 14 + k * 90, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ---- fireflies -------------------------------------------------------------
+  let flies = [];
+  function updateFlies(dt) {
+    while (flies.length < P.flies) flies.push({ x: Math.random() * W, y: Math.random() * (H - DIAL_H), ph: Math.random() * 10, sp: 10 + Math.random() * 18 });
+    flies.length = Math.min(flies.length, P.flies);
+    for (const f of flies) {
+      f.ph += dt;
+      f.x += Math.cos(f.ph * 0.7 + Math.sin(f.ph * 0.31) * 3) * f.sp * dt;
+      f.y += Math.sin(f.ph * 0.53 + Math.cos(f.ph * 0.23) * 3) * f.sp * dt;
+      if (f.x < -20) f.x = W + 20; if (f.x > W + 20) f.x = -20;
+      if (f.y < -20) f.y = H - DIAL_H; if (f.y > H - DIAL_H) f.y = -20;
+    }
+  }
+
+  // ---- the light pass ---------------------------------------------------------
+  /* A light map, the canvas way of a lighting shader: a buffer filled with
+     the night's ambient colour, every light added on it as a soft round
+     sprite ('lighter'), then laid over the world in 'multiply' — so the floor
+     is dark where nothing shines and takes the colour of what does. The
+     sprites are made once per colour (no gradient built per frame, no
+     shadowBlur), and the buffer runs at half resolution, which is softer and
+     four times cheaper. A second, faint 'screen' pass of the same sprites is
+     the bloom. */
+  const lightCv = document.createElement("canvas"), lctx = lightCv.getContext("2d");
+  const spriteCache = new Map();
+  function lightSprite(col) {
+    if (spriteCache.has(col)) return spriteCache.get(col);
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, col); gr.addColorStop(0.35, rgbaOf(col, 0.55)); gr.addColorStop(1, rgbaOf(col, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    spriteCache.set(col, c);
+    return c;
+  }
+  function rgbaOf(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return "rgba(" + (n >> 16) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + a + ")";
+  }
+  function mixHex(a, b, k) {
+    const x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
+    const ch = (s) => Math.round(((x >> s) & 255) * (1 - k) + ((y >> s) & 255) * k);
+    return "rgb(" + ch(16) + "," + ch(8) + "," + ch(0) + ")";
+  }
+  function lights() {
+    const L = [];
+    const shieldA = Math.atan2(ptr.y - CY, ptr.x - CX), half = P.arc * Math.PI / 360;
+    if (P.mode === "arena") {
+      const fl = 1 + 0.06 * Math.sin(clockReal * 7.3) + 0.04 * Math.sin(clockReal * 13.1);
+      L.push({ x: CX, y: CY - 10, r: (90 + P.wlight * 2.6) * fl, col: "#ffd08a", a: 0.95 });
+      if (P.arc > 0 && P.slight > 0) {
+        const n = Math.max(2, Math.ceil(P.arc / 22));
+        for (let i = 0; i <= n; i++) {
+          const a = shieldA - half + (2 * half) * i / n;
+          L.push({ x: CX + Math.cos(a) * SHIELD_R, y: CY + Math.sin(a) * SHIELD_R, r: 40 + P.slight * 0.9, col: "#5ff0ff", a: 0.5 + 0.5 * shieldFlash });
+        }
+      }
+    }
+    if (P.crystal > 0) for (const s of SCENE_LIGHTS) {
+      const fl = 0.85 + 0.15 * Math.sin(clockReal * 2.1 + s.x);
+      L.push({ x: s.x, y: s.y, r: 60 + P.crystal * 1.6, col: s.col, a: fl });
+    }
+    for (const f of flies) {
+      const blink = 0.5 + 0.5 * Math.sin(f.ph * 3.1);
+      L.push({ x: f.x, y: f.y, r: 34, col: "#d8ff7a", a: 0.25 + 0.6 * blink, fly: true });
+    }
+    for (const f of flashes) L.push({ x: f.x, y: f.y, r: f.r, col: f.col, a: 1 - f.t / f.life });
+    for (const m of mobs) if (m.flash > 0.3) L.push({ x: m.x, y: m.y - P.size * 0.3, r: 90, col: "#ffffff", a: m.flash * 0.6 });
+    return L;
+  }
+  function lightPass() {
+    const k = on("half") ? 0.5 : 1;
+    const bw = Math.round((W + OV * 2) * k), bh = Math.round((H + OV * 2) * k);
+    if (lightCv.width !== bw || lightCv.height !== bh) { lightCv.width = bw; lightCv.height = bh; }
+    lctx.setTransform(1, 0, 0, 1, 0, 0);
+    lctx.globalCompositeOperation = "source-over";
+    lctx.fillStyle = mixHex("#ffffff", "#24164a", P.dark / 100);
+    lctx.fillRect(0, 0, bw, bh);
+    lctx.setTransform(k, 0, 0, k, OV * k, OV * k);
+    lctx.globalCompositeOperation = "lighter";
+    const L = lights();
+    for (const l of L) {
+      lctx.globalAlpha = Math.max(0, Math.min(1, l.a));
+      lctx.drawImage(lightSprite(l.col), l.x - l.r, l.y - l.r, l.r * 2, l.r * 2);
+    }
+    lctx.globalAlpha = 1;
+    // fog: soft banks drifting over the floor, lit by the same map
+    if (P.fog > 0) drawFog();
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    ctx.drawImage(lightCv, -OV, -OV, W + OV * 2, H + OV * 2);
+    ctx.restore();
+    if (on("bloom")) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      for (const l of L) {
+        ctx.globalAlpha = Math.max(0, Math.min(1, l.a)) * (l.fly ? 0.9 : 0.28);
+        const r = l.fly ? 9 : l.r * 0.6;
+        ctx.drawImage(lightSprite(l.col), l.x - r, l.y - r, r * 2, r * 2);
+      }
+      ctx.restore();
+    }
+  }
+  const fogTex = (function () {
+    const c = document.createElement("canvas"); c.width = c.height = 512;
+    const g = c.getContext("2d");
+    for (let i = 0; i < 46; i++) {
+      const x = Math.random() * 512, y = Math.random() * 512, r = 40 + Math.random() * 110;
+      for (const ox of [-512, 0, 512]) for (const oy of [-512, 0, 512]) {
+        const gr = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
+        gr.addColorStop(0, "rgba(255,255,255,.16)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = gr; g.fillRect(x + ox - r, y + oy - r, r * 2, r * 2);
+      }
+    }
+    return c;
+  })();
+  /* The fog is drawn INTO the light map, as light: a bank lifts the floor's
+     brightness where it drifts, so it glows near the witch and stays a faint
+     haze in the dark. */
+  function drawFog() {
+    lctx.globalCompositeOperation = "lighter";
+    lctx.globalAlpha = P.fog / 100 * 0.5;
+    for (const [sp, sc] of [[14, 1.4], [-9, 1]]) {
+      const off = ((clockReal * sp) % (512 * sc) + 512 * sc) % (512 * sc);
+      for (let x = -512 * sc + off - OV; x < W + OV; x += 512 * sc)
+        for (let y = -OV; y < H + OV; y += 512 * sc) lctx.drawImage(fogTex, x, y, 512 * sc, 512 * sc);
+    }
+    lctx.globalAlpha = 1;
+  }
+
+  /* Screen space, after the camera: the moon's shafts, the grade, the
+     vignette and the red edge of a bite. Every layer is a canvas made once. */
+  const vigCv = (function () {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(W / 2, H * 0.44, H * 0.22, W / 2, H * 0.44, H * 0.72);
+    gr.addColorStop(0, "rgba(6,2,16,0)"); gr.addColorStop(1, "rgba(6,2,16,1)");
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    return c;
+  })();
+  const hurtCv = (function () {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(W / 2, H * 0.44, H * 0.18, W / 2, H * 0.44, H * 0.7);
+    gr.addColorStop(0, "rgba(255,40,60,0)"); gr.addColorStop(1, "rgba(255,40,60,1)");
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    return c;
+  })();
+  const shaftCv = (function () {
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.translate(W * 0.85, -60); g.rotate(0.5);
+    for (const [x, w, a] of [[-60, 70, 0.5], [40, 40, 0.35], [130, 90, 0.4], [260, 50, 0.3]]) {
+      const gr = g.createLinearGradient(x, 0, x + w, 0);
+      gr.addColorStop(0, "rgba(190,200,255,0)"); gr.addColorStop(0.5, "rgba(190,200,255," + a + ")"); gr.addColorStop(1, "rgba(190,200,255,0)");
+      g.fillStyle = gr; g.fillRect(x, 0, w, 1300);
+    }
+    // fade the shafts out with distance
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "destination-in";
+    const fd = g.createLinearGradient(W, 0, 0, H * 0.8);
+    fd.addColorStop(0, "rgba(0,0,0,1)"); fd.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = fd; g.fillRect(0, 0, W, H);
+    return c;
+  })();
+  const GRADES = { moon: ["#4b5cff", 0.22], witch: ["#b04bff", 0.2], warm: ["#ff8a3d", 0.16] };
+  function screenPass() {
+    ctx.save();
+    if (on("shafts")) {
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = 0.16 + 0.05 * Math.sin(clockReal * 0.6);
+      ctx.drawImage(shaftCv, 0, 0);
+    }
+    const g = GRADES[val("grade").value];
+    if (g) {
+      ctx.globalCompositeOperation = "soft-light";
+      ctx.globalAlpha = g[1] * 2;
+      ctx.fillStyle = g[0]; ctx.fillRect(0, 0, W, H);
+    }
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = P.vig / 100 * 0.85;
+    ctx.drawImage(vigCv, 0, 0);
+    if (witchHurt > 0) { ctx.globalAlpha = witchHurt * 0.55; ctx.drawImage(hurtCv, 0, 0); }
+    ctx.restore();
+  }
+
+  // ---- the witch ------------------------------------------------------------
+  let witchSheet = null;
+  const W8 = { sector: 2, target: 2, step: 0, state: "ready", t: 0, anim: 0 };
+
+  function witchSay(state) {
+    if (P.mode !== "arena") return;
+    if (state === "launch" && W8.state === "hurt") return;
+    W8.state = state; W8.t = 0;
+  }
+  /* She faces the middle of the shield: the nearest of eight, held a little
+     past its edge. A turn walks through the directions in between, the short
+     way round, at `turn` a second, so she turns rather than flips. */
+  function updateWitch(dt, shieldA) {
+    W8.target = pickSector(shieldA, W8.target);
+    if (P.turn <= 0) W8.sector = W8.target;
+    else if (W8.sector !== W8.target) {
+      W8.step += dt * P.turn;
+      while (W8.step >= 1 && W8.sector !== W8.target) {
+        W8.step -= 1;
+        const diff = ((W8.target - W8.sector + 12) % 8) - 4;
+        W8.sector = (W8.sector + (diff >= 0 ? 1 : -1) + 8) % 8;
+      }
+    } else W8.step = 0;
+    W8.t += dt;
+    W8.anim += dt * 2.5;
+    const hold = { launch: 0.3, hurt: 0.6, cheer: 0.5 }[W8.state];
+    if (hold && W8.t > hold) { W8.state = "ready"; W8.t = 0; }
+  }
+
+  function loadWitch(src, label) {
+    const img = new Image();
+    img.onload = () => {
+      const cols = 5, rows = Math.max(1, Math.round(img.height / (img.width / cols)));
+      witchSheet = cut(img, cols, rows, on("clean"));
+      val("wfile-v").textContent = label + " · " + rows + " rows";
+    };
+    img.onerror = () => { /* no sheet yet: the stand-in turns instead */ };
+    img.src = src;
+  }
+  val("wpick").addEventListener("click", () => val("wfile").click());
+  val("wfile").addEventListener("change", (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => loadWitch(rd.result, f.name.replace(/\.[a-z]+$/i, ""));
+    rd.readAsDataURL(f);
+  });
+
+  loadSrc(DEFAULT_SHEET, "spider");
+  loadWitch(WITCH_SHEET, "witch");
+  // started last: the loop reads the camera and the light, declared above
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

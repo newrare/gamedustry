@@ -375,17 +375,51 @@
       }
       return null;
     }
+    /* How much of what the part SHOWS is still under the fold, in the card's
+       own px. The scroll left is not that: a guide page ends on its padding
+       and a gap, and a part that overflows by those alone hid nothing — the
+       cue then stood over a page read to its last word. So the ink is
+       measured — the text and the pictures, never a box's padding — against
+       the bottom of the window, less the footer pinned over it. Only walked
+       when the scroll left is short: past that, something is under the fold. */
+    function hidden(foot, k) {
+      var left = target.scrollHeight - target.clientHeight - target.scrollTop;
+      if (left <= 8) return 0;
+      if (left > 96) return left;
+      var edge = target.getBoundingClientRect().bottom - (foot ? foot.getBoundingClientRect().height : 0);
+      var ink = -Infinity, r, i;
+      var walker = document.createTreeWalker(target, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+      var range = document.createRange();
+      for (var n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (foot && foot.contains(n)) continue;
+        if (n.nodeType === 3) {
+          if (!/\S/.test(n.nodeValue)) continue;
+          range.selectNodeContents(n);
+          var rs = range.getClientRects();
+          for (i = 0; i < rs.length; i++) if (rs[i].height) ink = Math.max(ink, rs[i].bottom);
+        } else if (/^(IMG|CANVAS|SVG|VIDEO|PICTURE)$/i.test(n.tagName)) {
+          r = n.getBoundingClientRect();
+          if (r.height) ink = Math.max(ink, r.bottom);
+        }
+      }
+      if (range.detach) range.detach();
+      return ink === -Infinity ? 0 : (ink - edge) / k;
+    }
     function update() {
       timer = 0;
       if (dead) return;
       target = scroller();
-      var on = !!target && target.scrollHeight - target.clientHeight - target.scrollTop > 8;
+      var on = false, cr, k = 1, foot = null;
+      if (target) {
+        /* the card is scaled into the frame, and it is scaling in while it opens */
+        cr = card.getBoundingClientRect();
+        k = card.offsetHeight ? cr.height / card.offsetHeight : 1;
+        foot = target.querySelector("[data-foot]");
+        on = hidden(foot, k) > 6;
+      }
       if (on) {
-        /* where the part ends, in the card's own px (the card is scaled into
-           the frame, and it is scaling in while it opens) */
-        var cr = card.getBoundingClientRect(), tr = target.getBoundingClientRect();
-        var k = card.offsetHeight ? cr.height / card.offsetHeight : 1;
-        var foot = target.querySelector("[data-foot]");
+        /* where the part ends, in the card's own px */
+        var tr = target.getBoundingClientRect();
         var bottom = (tr.bottom - cr.top) / k - (foot ? foot.offsetHeight : 0);
         cue.style.top = Math.round(bottom - 62) + "px";
       }

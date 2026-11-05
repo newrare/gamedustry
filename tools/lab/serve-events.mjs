@@ -151,7 +151,7 @@ function start() {
       });
     } catch { console.error(`  cannot watch ${dir}`); }
   }
-  console.log(LIVE ? 'watching      games  packages  lab  template' : 'watching      nothing (--no-watch): an apply still rebuilds');
+  console.log(LIVE ? 'watching      games  packages  lab  template' : 'watching      nothing (--no-watch): an apply still rebuilds and reloads');
   build();
   // The shapes the kit card's alternatives are read from: ~10 s the first time, cached after.
   shapes({ log: (l) => console.log('  ' + l) }).catch((e) => console.error('  shape-sfx: ' + e.message));
@@ -801,6 +801,23 @@ export async function handle(req, res, p, url) {
     return json(res, 200, out);
   }
 
+  /* The back office's tick: is every line of ONE page checked in every unit
+     (the template and the shell included)? `page` is message — the callouts
+     and the notices — or sound, the cues: the picker's green, summed. */
+  if (p === '/api/done') {
+    const side = url.searchParams.get('page') === 'sound' ? 'sound' : 'view';
+    const review = await readReview(), kit = await readKit();
+    const all = await units();
+    all.splice(all.indexOf('template') + 1, 0, SHELL_UNIT);
+    let checked = 0, total = 0;
+    for (const slug of all) {
+      const g = await scanGame(slug);
+      const st = statusOf(g, liveMarks(g, review[slug] || {}, kit).live)[side];
+      checked += st.checked; total += st.total;
+    }
+    return json(res, 200, { checked, total, done: total > 0 && checked === total });
+  }
+
   if (p === '/api/events') {
     const slug = url.searchParams.get('game');
     if (!(await isUnit(slug))) return notFound(res, 'game ' + slug);
@@ -937,6 +954,12 @@ export async function handle(req, res, p, url) {
     }
     for (const a of out.applied) console.log(`  ${stamp}  ✓ ${a.what} → ${a.value}`);
     for (const w of out.skipped) console.log(`  ${stamp}  ! ${w}`);
+    /* Live, the watcher sees the write and rebuilds. Under --no-watch nothing
+       does, and the page went on playing the old build against the old scan:
+       a line just applied could no longer be checked (its checkId had moved)
+       and its new volume was never heard. The rebuild's reload is what brings
+       the page back on the source as it now reads. */
+    if (out.written && !LIVE) build();
     return json(res, 200, out);
   }
 

@@ -69,14 +69,14 @@
   padding:10px 18px; border-radius:14px; background:rgba(255,255,255,.05);
 }
 .gu-tr:nth-child(odd) { background:rgba(255,255,255,.08); }
-.gu-tl { font-size:24px; font-weight:600; color:var(--text);
+.gu-tl { font-size:22px; font-weight:600; color:var(--text);
          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-.gu-tv { flex:0 0 auto; font-size:28px; font-weight:var(--web-fw, 900); color:var(--accent);
+.gu-tv { flex:0 0 auto; font-size:24px; font-weight:var(--web-fw, 900); color:var(--accent);
          font-variant-numeric:tabular-nums; white-space:nowrap; }
 /* a table whose values are phrases: the value wraps at a text size and
    shares the line with its label instead of pushing it off the card */
 .gu-rows.words .gu-tl { flex:1 1 0; min-width:0; }
-.gu-rows.words .gu-tv { flex:0 1 auto; max-width:56%; font-size:22px; line-height:1.15;
+.gu-rows.words .gu-tv { flex:0 1 auto; max-width:56%; font-size:20px; line-height:1.15;
                         white-space:normal; text-align:right; }
 /* the game's own example (a chart, a card): centred, the width it asks for */
 .gu-node { align-self:center; max-width:100%; margin-top:8px; }

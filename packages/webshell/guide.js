@@ -89,12 +89,12 @@
     en: {
       button: "All the rules", title: "All the rules", contents: "Contents",
       prev: "Previous", next: "Next", locked: "Reach level {n}", lockedSay: "Locked",
-      noteTip: "Anytime, tap {book} for more help"
+      noteTip: "Tap {book} for more help"
     },
     fr: {
       button: "Toutes les règles", title: "Toutes les règles", contents: "Sommaire",
       prev: "Précédente", next: "Suivante", locked: "Atteins le stage {n}", lockedSay: "Verrouillée",
-      noteTip: "À n'importe quel moment, appuie sur {book} pour obtenir plus d'aide"
+      noteTip: "Appuie sur {book} pour plus d'aide"
     }
   };
   W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
@@ -249,9 +249,12 @@
     if (P.rows && P.rows.length) {
       var tb = el("div", "gu-rows");
       // a value that is a phrase rather than a figure ("the ink stops for a
-      // few seconds") is set as words: the whole table, so its values match
+      // few seconds") is set as words: the whole table, so its values match.
+      // So is a value carrying one long word ("Multiplicateur +1"), which in
+      // the display face pushes its label off the card.
       for (var w = 0; w < P.rows.length; w++) {
-        if (/[^\s\d.,:%×x+\-\/]{4,}.*\s.*[^\s\d]{3,}/.test(String(P.rows[w][1]))) { tb.className += " words"; break; }
+        var V = String(P.rows[w][1]);
+        if (/[^\s\d.,:%×x+\-\/]{4,}.*\s.*[^\s\d]{3,}/.test(V) || /[^\s\d.,:%×x+\-\/]{9,}/.test(V)) { tb.className += " words"; break; }
       }
       for (var q = 0; q < P.rows.length; q++) {
         var R = P.rows[q], tr = el("div", "gu-tr");

@@ -194,6 +194,17 @@ could not be read.
   where EVERY valid move would land the biggest tile on it. Placement tries
   the four `plan(dir)` and draws again when there is no way out. A power may
   hurt, but it is never unavoidable.
+- **A target is announced one move ahead**: on the move before one drops, a
+  yellow warning sign springs onto the board's top-left corner (the one
+  corner no target badge sits on), with a soft `warn` cue; once the target
+  is down it turns red, and it stays up until the last target has struck. No callout and no frame around the board: a first try with a
+  `danger` callout and a red rim fired every few moves and was far too loud.
+  The next power is drawn as soon as the last one lands (`nextPower`), which
+  is what lets it be announced.
+- **Freeze and Stone are a nuisance, not a loss**: they are drawn twice as
+  often from a mixed pool (`play.lightWeight`), wait 60 % of the usual gap
+  (`play.lightEvery`), and land on a tile under 16 (`play.lightBelow`), else
+  on the smallest tiles left, never on the biggest.
 
 ### 2.7 The five tile powers
 
@@ -852,7 +863,10 @@ ghost's exit (the bench harness is not in the repo; the screenshot pilot in
   sixteenth of the biggest (8 and up) on it, and a power that finds no fair
   place is not dropped. With the biggest alone protected, a comet or a bolt
   every five moves destroyed more than a move adds (2.2 a move on average) and
-  the board never grew.
+  the board never grew. **Since v0.3.0 the bolts aim** at the lines holding the most
+  weight (a line's chance is 0.5 plus its tiles' share of the biggest), under
+  the same rule: the threat is real, and a move that saves every big tile
+  always exists.
 - **The switch never picks a big tile**; it swaps small tiles or empty cells.
 - **A side power never takes a wall the biggest tile leans on**, and the next
   power waits five more moves after one; a lock that is all that stands

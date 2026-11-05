@@ -1852,6 +1852,148 @@
       "at": "2026-09-27"
     }
   },
+  "parrynormal": {
+    "sticker01": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-01",
+      "hash": "e45db9e0ecac",
+      "at": "2026-11-04"
+    },
+    "sticker02": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-02",
+      "hash": "87dcef586c1c",
+      "at": "2026-11-04"
+    },
+    "sticker03": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-03",
+      "hash": "988cf2b6aeab",
+      "at": "2026-11-04"
+    },
+    "sticker04": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-04",
+      "hash": "751705edf428",
+      "at": "2026-11-04"
+    },
+    "sticker05": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-05",
+      "hash": "f89e04677445",
+      "at": "2026-11-04"
+    },
+    "sticker06": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-06",
+      "hash": "c2a5701881df",
+      "at": "2026-11-04"
+    },
+    "sticker07": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-07",
+      "hash": "3a5c97c9ad7c",
+      "at": "2026-11-04"
+    },
+    "sticker08": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-08",
+      "hash": "50a3ae922584",
+      "at": "2026-11-04"
+    },
+    "sticker09": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-09",
+      "hash": "fb8c16704ebe",
+      "at": "2026-11-04"
+    },
+    "sticker10": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-10",
+      "hash": "2420ce21b3e5",
+      "at": "2026-11-04"
+    },
+    "sticker11": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-11",
+      "hash": "c496d7a16ac3",
+      "at": "2026-11-04"
+    },
+    "sticker12": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-12",
+      "hash": "f723eee29ac4",
+      "at": "2026-11-04"
+    },
+    "sticker13": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-13",
+      "hash": "f57fa4dc8c06",
+      "at": "2026-11-04"
+    },
+    "sticker14": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-14",
+      "hash": "6403b4be3f25",
+      "at": "2026-11-04"
+    },
+    "sticker15": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-15",
+      "hash": "62b0756733d5",
+      "at": "2026-11-04"
+    },
+    "sticker16": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-16",
+      "hash": "e733a2a1c617",
+      "at": "2026-11-04"
+    },
+    "sticker17": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-17",
+      "hash": "bc273db1d2bc",
+      "at": "2026-11-04"
+    },
+    "sticker18": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-18",
+      "hash": "5203d661cfa7",
+      "at": "2026-11-04"
+    },
+    "sticker19": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-19",
+      "hash": "84cd626b1feb",
+      "at": "2026-11-04"
+    },
+    "sticker20": {
+      "verdict": "ok",
+      "note": "",
+      "cut": "parrynormal-sticker-20",
+      "hash": "780513248d00",
+      "at": "2026-11-04"
+    }
+  },
   "pawko": {
     "sticker01": {
       "verdict": "ok",

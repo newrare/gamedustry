@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.6.13",
+  "version": "1.6.14",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -360,10 +360,10 @@
           "Pop the next ray within a second, or the combo falls back to zero.": "Valide le rayon suivant en moins d'une seconde pour éviter la réinitialisation complète du Combo.",
           "Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one.": "Deux rayons simultanés ou une chaîne x4 génèrent une bille spéciale. Trois rayons ou une chaîne x8 en génèrent une majeure.",
           "Every 10 rays popped, the level goes up and the ink rises faster.": "Tous les 10 rayons éclatés, le niveau d'encre augmente et accélère.",
-          "The dial starts with four colours. The fifth joins once the ink reaches level 10.": "Le cadran débute avec quatre couleurs, puis une cinquième s'ajoute lorsque l'encre atteint le niveau 10.",
+          "The dial starts with four colours. The fifth joins once the ink reaches level 10.": "Le cadran débute avec quatre couleurs puis une cinquième s'ajoute lorsque l'encre atteint le niveau 10.",
           "Pop a charge bead's ray and a wave takes every bead on its ring.": "Éclate le rayon d'une bille charge pour libérer une onde circulante qui balaye toutes les billes de son anneau.",
           "The score bead never multiplies what a wave takes.": "L'effet multiplicateur de la bille score ne s'applique pas aux billes détruites par une onde.",
-          "Pop two rays to thaw the ring, or wait 8 seconds.": "Éclate deux rayons n'importe où pour dégeler l'anneau, ou patiente simplement 8 secondes."
+          "Pop two rays to thaw the ring, or wait 8 seconds.": "Éclate deux rayons n'importe où pour dégeler l'anneau ou patiente simplement 8 secondes."
         }
       }
     },

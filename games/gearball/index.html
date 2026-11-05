@@ -2102,7 +2102,7 @@
     <div id="screen-intro" class="screen hidden">
       <img id="app-icon" alt="">
       <div id="intro-title">Gearball</div>
-      <div id="intro-tagline"><b class="w-lock">Unlock</b> the gates in time and move the <b class="w-sock">socket</b> under the <b class="w-volt">electric marble</b></div>
+      <div id="intro-tagline">Always <b class="w-lock">catch</b> the <b class="w-sock">electric</b> marbles and <b class="w-volt">unlock</b> the mechanisms</div>
       <div id="intro-demo">
         <div class="demo-stage">
           <div class="demo-track"></div>
@@ -2147,7 +2147,7 @@
     /* One sentence, and the stage below plays it: marbles queue behind a
        locked gate, the finger taps the padlock, the queue runs on and the
        electric marble drops into its socket. */
-    tagline: "<b class=\"w-lock\">Unlock</b> the gates in time and move the <b class=\"w-sock\">socket</b> under the <b class=\"w-volt\">electric marble</b>",
+    tagline: "Always <b class=\"w-lock\">catch</b> the <b class=\"w-sock\">electric</b> marbles and <b class=\"w-volt\">unlock</b> the mechanisms",
     gameSeconds: 60,                 // one shift; losing every heart ends it sooner
 
     // Store links used by every CTA. The right one is picked at runtime from the
@@ -2176,8 +2176,8 @@
 
     // A tap goes to the nearest locked gate or arrival: a gate opens, an
     // arrival becomes the socket. The switches are the machine's own. SPACE
-    // opens the gate that is closest to overflowing; 1-6 move the socket to
-    // the arrivals left to right, Q W E R T Y open the gates.
+    // moves the socket one arrival along, left to right; everything else is
+    // the mouse's.
     intro: { logo: null, demo: "tap", caption: "",
              // on a desk: the mouse — a lock, then an arrival (shell.js, Demo)
              desk: [{ mouse: ["click"] }] },
@@ -2234,7 +2234,7 @@
     biomes: [
       { name: "Workshop",   metal: "#6f63ad", scene: "backgroundPhoneWorkshop" },   // violet steel, the game's own
       { name: "Glassworks", metal: "#5c86bc", scene: "backgroundPhoneGlassworks" },   // ice blue
-      { name: "Maelstrom",  metal: "#6f9d58", scene: "backgroundPhoneMaelstrom" },   // moss green
+      { name: "Gusset",  metal: "#6f9d58", scene: "backgroundPhoneMaelstrom" },   // moss green
       { name: "Depths",     metal: "#b56a4a", scene: "backgroundPhoneDepths" },   // copper
       { name: "Clockwork",  metal: "#ac5da5", scene: "backgroundPhoneClockwork" }    // orchid
     ],
@@ -2254,7 +2254,7 @@
       // the second lines of the first-time notices (Notify.learn), one per mechanic
       hintLock:   "Tap a locked gate's padlock to open it",
       hintVolt:   "Tap an arrival to move the socket under it",
-      hintFuse:   "Gates and electric marbles relight the fuse"
+      hintFuse:   "Open locked gates to keep the voltage up"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -2277,8 +2277,8 @@
       playableBiome: 0,
       hearts: 5,                     // marbles the shift may shatter
       rampSeconds: 60,
-      tempoStart: 0.9, tempoEnd: 1.6,     // time scale of the rails
-      pourStart: 0.9, pourEnd: 0.24,      // seconds between two marbles
+      tempoStart: 0.9, tempoEnd: 1.3,     // time scale of the rails
+      pourStart: 0.9, pourEnd: 0.40,      // seconds between two marbles
       gravity: 780,                  // px/s² along a slope
       friction: 55,                  // px/s² of rolling drag
       vMin: 110, vMax: 400,          // a marble never stalls and never flies off
@@ -2292,33 +2292,32 @@
       electricEvery: 0, electricJitter: 3,
       classicScore: 10,              // x the combo multiplier
       electricScore: 150,            // x the combo multiplier
-      electricJump: 5,               // what an electric on target adds to the combo
+      electricJump: 5,               // notches an electric on target lights
 
-      /* THE COMBO lives on the wheel hub, and only the PLAYER feeds it: a
-         gate opened is +1 per marble it releases (+1 for an empty one), an
-         electric on target is `electricJump`. A delivered marble pays points
-         and nothing else. The multiplier is its tier + 1.
-         THE FUSE keeps it: a ring round the hub, refilled whole by every
+      /* THE COMBO is the multiplier, written x1, x2, x3… on the hub of the
+         DYNAMO (the notched wheel), and only the PLAYER feeds it. Round the
+         hub, a gauge of `notches` notches: a gate opened lights one per
+         marble it releases (one for an empty gate), an electric on target
+         lights `electricJump`. All of them lit, the Combo goes up by one and
+         the gauge starts over. There is no top.
+         THE FUSE keeps it: a ring round the Dynamo, refilled whole by every
          action that feeds the combo, burning down in `fuse[tier]` seconds —
-         but only while there is something to do (a gate locked, the
-         electric marble on its way to another arrival than the socket).
-         Burnt out, the combo drops to the start of the tier below; a
-         shatter, an overflow or a wasted electric still break it to 0. */
-      /* Benched with a human-paced pilot against the old +1-per-marble
-         combo: a player who answers within a second keeps ~95% of the old
-         points a second (the stage objectives are unchanged), one who takes
-         two seconds lets the fuse go out three to five times a shift. */
-      tiers: [8, 25, 60],
-      fuse: [4, 3, 2.2, 1.6],        // seconds the fuse burns, per tier
+         but only while a gate stays locked, a tap the player owes. Burnt
+         out, the Combo drops by one; a shatter, an overflow or a wasted
+         electric still break it back to x1. */
+      notches: 10,
+      fuse: [4, 3, 2.2, 1.6],        // seconds the fuse burns, per Combo (x1, x2, x3, x4 and up)
+      // points a marble scores as it rides a module, x the Combo
+      modulePay: { loop: 4, spiral: 4, land: 4, boost: 2, note: 1 },
 
       /* THE LOCKS — the main verb. Gates are open; at random moments one
          locks, more often as the shift goes on, and more of them at once.
          `minOpen` is how long an unlocked gate is left alone. */
       lockFirst: 4.5,                // seconds before the first lock
       lockRate: 0.15,                // locks per second at the start...
-      lockGain: 1.8,                 // ...plus this much by the end of the ramp
+      lockGain: 0.8,                 // ...plus this much by the end of the ramp
       lockMoreEvery: 0.4,            // one more gate may lock at once every this share of the ramp
-      lockShare: 0.7,                // of the gates, how many may be locked at once, at most
+      lockShare: 0.5,                // of the gates, how many may be locked at once, at most
       minOpenStart: 2.5, minOpenEnd: 0.5,
       flushGap: 0.14,                // seconds between two marbles of an unlock burst
       flushV: 230,                   // px/s a released marble leaves at
@@ -2327,7 +2326,7 @@
 
       // Where a shift lands on the end screen (the web levels grade on their
       // own objective instead — see web.levels in the manifest).
-      star2: 3800, star3: 6800
+      star2: 6000, star3: 9000
     },
 
     /* --- the upgrade cards (section 6, THE UPGRADE CARDS) -----------------
@@ -2461,7 +2460,7 @@
      it down the left edge of the title screen. ---- */
   CONFIG.brand = {
     label: "Newrare",
-    version: "2.10.9",
+    version: "2.12.20",
     mark: "data:image/webp;base64,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"
   };
 
@@ -2480,12 +2479,13 @@
     "crash/impactglasslight": { key: "kit-crash-impactglasslight", n: 1 },
     "launch/phaserup": { key: "kit-launch-phaserup", n: 1 },
     "bounce/impactmetallight": { key: "kit-bounce-impactmetallight", n: 1 },
+    "burst/electric": { key: "kit-burst-electric", n: 1 },
     "toggle/metalclick": { key: "kit-toggle-metalclick", n: 1 },
     "toggle/metallatch": { key: "kit-toggle-metallatch", n: 1 },
     "toggle/coinshandle": { key: "kit-toggle-coinshandle", n: 1 },
     "world/glockping": { key: "kit-world-glockping", n: 1 }
   };
-  CONFIG.sfx = {"deliver":"pickup/glass", "chain":"combo/harprunup", "blackout":"malus/impactmining", "shatter":"crash/impactglassheavy", "heart":"crash/impactglasslight", "chime":"world/glockping", "flip":"toggle/metalclick", "lock":"toggle/metallatch", "unlock":"toggle/coinshandle", "land":"bounce/impactmetallight", "boost":"launch/phaserup"};
+  CONFIG.sfx = {"deliver":"pickup/glass", "chain":"combo/harprunup", "blackout":"malus/impactmining", "shatter":"crash/impactglassheavy", "heart":"crash/impactglasslight", "chime":"world/glockping", "flip":"toggle/metalclick", "lock":"toggle/metallatch", "unlock":"toggle/coinshandle", "land":"bounce/impactmetallight", "boost":"launch/phaserup", "zap":"burst/electric"};
   (function (to, from) { for (var k in from) to[k] = from[k]; })(ASSETS.sounds, {
     "kit-tick-default-1": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAZAAAAAAAAABIAmTzayAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADSVZLjTxAAI6Lq13H0AACA0zrVcIvgkgagcDCLYSxxOc0zrZ90AxaAAAyuQDA31Od1yEIQn/kIxCEITqehGOACG/TU5z5z/+c5zn/QjSN/J9Gp/kqc76kJU5zn/5AMH+HygIQTD/BAEHShzKA+/kMTgg7/4jB8H3gAAcBGSyQWAyW5OpxsBHwM66MkUmYUsYiYN38nKkHAKWxB9ETODQRAYgE4RAky4aFEiq8nCfL6ZdWYl3zpPm96kkkTEu/rTTNFuggkmTpkXiaXmLfQN39NNNJdSKK10fo0aXQ0FuhdnSS6knS6Kklosij9Ps6mUh/9SLTpqgo2V2lbPHOcGAI4mXf54RYKoALVyyZTYmdBZhQGW6Y9CIebiy//tYxAmCEUWHON25gAFxiaUll6Q8mKr2eNlsCo3GFkRlJwZqIBYcF/AM5wOxxRB3OXTVIvF560TJKzqSc4mudVpI/UkbV1LZdJay6Xj7OpJaJitFFKkpKyVrOp0WWy62dJ0fbWjtr6qkkktL0f7e/UklavW21aPVpOjoo9E1RcekXPlg7PSVvf25L8kBTVQEZmZ6KgdhLi4nS8dk9EKQSdcYS7OEOI4iCgzhfj9CxXI+1ULOVeLM0eiIDCVh0lBoGjxYcDQdasFQkDTSwdbI8THoKlX4aU9eR1u/3v7flr//wKp8kV/yuRoAAJAAAY1Tczb4w0EZeA3cyLjRnNJw0VzDFLsMHeSBndfaAXiWCUdWwwMDANjppCqkuw9kGRQW//tYxBuDzBxCpy1lI4AAADSAAAAEDwMiosaHiooJDQVFWoAoqz///9Yr////1iv9TfmRZv+oW/Fv4CFgMEg9TEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-tick-default-2": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAADAAAEgACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD///////////////////////////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAZAAAAAAAAABIBqV+tMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAABvgbWNRhACLvtaofNNAAAELuh+CBDLJpsDhadqOA4CETqB98nhjB8H8oc4frD+oEP+c8HHcP/8u/KHOJ+Ud/kOs/0f/DEHwICHIVG6AwAAjsuDpOzOGjGigxTBB7ypslQonNDqphGMAxRF06govQb24CzgnojKkQPcvhVgqQkpdqZbj2CfCajEMV/jhE+DbGWJwUjkkS6TQva02k0OSOpNJA8PIuy6bIqUtslWqVxoLheMykXWJEmOs2dH6M17dEfC6kpzxdOF8vE0uF1JL6n1KpJLZdnWjj4PcvEiYGpk5eMyUHqcKZLHTxef1o6tHV//8uqNzJNExDINgEjULf/dZZUgFgA1QuzLYGfxtVaUkmlOOpSFwKzRCS//tYxAuDETCBMl3MgAHBjqQJvCXADgSIAAYpKRo1eGZZqceDZp4HC0a5iA586SU/dt3JVjzmcqx1aq87ey7j+Otd/esfx7qU8mn+f6WgqMCqdTwNQeFdFZ2ecocsUFw0+dXLEjZkOmdp0qWKlWHanirmXIu6n3i8axfXJMt8spT3oCVy/N65JWsANNmANtBBaDgZ/Ym3rSzAglZ5dmZWgLAxcAzUuMchTnn8X2fJqqO+Y5EuSphUlqSJtCtWxtDBq88Waa28l9QslRp3WCsRHi2GioSESw1EIaLRE5BEs+Sr7od+eLSOvEq3f+ju2/W63Z32108qdEs6GM3OwzXEK7DA5TMWjTzTWQDp3NF8yCi2adCtalqgSqqylVlgVFlH//tYxBQDzbhamg1lJ0AAADSAAAAEVsLzYAwNlACCM4VOHSiNA5pVZVJNRcHDWokBQqIzRoGRUMP9YrUSAor8qz4qKinFoqK//+oWFhcVZ//Mizf///1CwGCQeUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
@@ -2499,6 +2499,7 @@
     "kit-crash-impactglasslight-1": "data:audio/mpeg;base64,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VGJZ9dtZLHu8xZu87z1XpXTTqfI/VQDCGmjU6AO0w5RAREgFdI8SEKOtVGwk+UkCmHVW3+P6/1xusF4QY0iDKtQtgrxLZv8jtWdVivwa1uELv+oOnSIdlfIyIlnUeRlvLVuOwaPPw18Nc7/7S0sbnlxmSamJIAZ3XJoI9GbS6daocmmbyYZhgYc2KDhUSDABdNFhUTyuriqJxXLBsete6fGJWLpeE8ThqIZgrc2BtilbMtMtIaEhNsPxPVaZhYvT62raASB4ChUWbH7ahVP/qb/V//+KN/////tYxGEDCwRg6G2Z5QG7kk/BzTCg/r//9ZVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
     "kit-launch-phaserup-1": "data:audio/mpeg;base64,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",
     "kit-bounce-impactmetallight-1": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAGAAAH4ABJSUlJSUlJSUlJSUlJSUlJbW1tbW1tbW1tbW1tbW1tbW2SkpKSkpKSkpKSkpKSkpKStra2tra2tra2tra2tra2trbb29vb29vb29vb29vb29vb2/////////////////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAKcAAAAAAAAB+BuAWl8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADJCrVjSXgBJhN6x3MyABAMAYJituoIECAnRoyMLgDAGBsnrf4pSlKXve973fv3jxgQwtgtguBLHBgZInze970o8YE4hhoIYhiHq+dgTiGKBWMjO/fv379+/jvHjygIAgGfcIAQOf9P+nP/+7/BD4g/+D4fu6Tck/gAAAQAgEAgGAO241zH9hL2+kM0nuf8AhZpQLAG9fIj5KC8yUADUkwE4cELDGiCv5ASHBdIBe6BfABa7AHKLYfpDnBa+OJVRmDWxCVGxTAQIQwTx90WwwKWn+Awj/kNLy2UkYk0fX///pE0fSpTIvLROGP///+ySzEwLpqXVVIolEyf/////9RiUjZBiaNn0TI2xg7UnoAAGAABbALFLi3vy+//tYxAcAkDyROb2+AAHmkqNB7PXYs/1+aiUWg8LApiRCZ1pnDJAkHNVTYQ1YjDtnXfx7r96zpZ2IxWMxAt0YHEBj8/HSxiDiUpiuJQJg1NvDv0Fvus2YL+LYmmmIZWD5nMqmZhWlDHnetbpT3///6wRgVhJpFKa4UexyGrIrRGQo/+vfoapMDdhMKZvLn/u5KZ15m9SPHgIAgFcw1iozVKEPMHwCgzMDn2NpFoj0yi3hvu+f+7NqPMpbRJ8KCGDGYVDEZXw+dy+8ZQjWYdhmZhCaBicL1rghUxI7kNOk19dCAsAA4YahqY7AQf+voDoKOstDKoyroVVbk9MQp7fP///5ZQAA4mgn/z/94X7kTZQj2BAKMEw7MhiEP2FLMJg6//tYxA6DkQyRFE7rzsIjEuEB33cAMQMODKAztXkXsX+Z5///+6CUv66zFUYig4YFoABhbEQmxcLqYVwIhgJAlDwKxgUANo3ODEpm5nqVww5a7C7ZgNABFUIcy9EGTA2B+MRM7Iw6wXDAMAPAQASRLLodtAs7//////////+7//1E5c2M7VnWr0uhp4VtDgAjIKCIYRBnBnkn5hiESE0xFEAML5CF1oravd3///53p54mMocBGB4MCgwjHcyGro1a00wdIQwsBAy7GISNsrA5bz2yeit71dylcdCoEBg2iZGNivwZ4Gabj3Ka6AyYfgYDg1DACVhb6cmKuX///7P/rZ/0//r9X///9KoCScHbev7z92qaWxpxV1GAgDmI7lHA//tYxAsCDySTCi6LsEH3EeDl2HIQIABwxhcBXjBwXOyBBU/9Xa0ukLzNAQJgIHDHdID9dGDHEHQCFIYHpgOAjcY9Vrb1+FPGHbYIAQLMNhjM64ZMkQQNgjdMTQRKwAc+ESexbzZ/+U/+j7Zvnnf9H/9f7P6+//0UAEAYAg9UXQjOO94Y/2xL34ZuLAAYdlwb/jkAg7LTmAgEsilZg6Ht7sYkoR4tARxAHDC8VCkmMIA1l5jAJkwsalIb+OX8zpI3Di5wwABAiOmBYOXBtPKGMxA5b/RGttj//OS/22xCSQplP+M7fcn/V0Bqv/4smvRs1Pt1MtuXPiBzMFQEcVxodo8abeNybghn5ABxg2Gpo2PwqA4YzA+8HASZ5JLUn+8Z//tYxBUAkmSO/g7LroIfJZ9V3VVwTZvyB72gIXmIhmnJiEgowDAQDg4Ni2sFXbm//8LdJD7qKfEQoGpKjEgXmBiSmPQDoDmmv1LbTm/yFj4FU/vYK4lQo8pl3ekc0XJKbG3vApZi3hGt1qKhUFirh71uqSxSrx0yvrvhVjP3hBCdiEaYWgkDgBU2cl/ozW/esa0ArBCDSHWB4LBiqqobWOW//H/5+/1Tau0ElboMgQteNy5L/PKYEEllIbXH+tS3AcGwNBOEBopAWRgDQnExIUtH2f/6Fl5lX13qSfWyPrt2qrb0d1P/17rqPgbexu9vfuulW1Bp+cd+ONqHqXxfDp0ko/T31gACAAYAXXnoqg58rC6QMtKvvXuxsA5IAXSI//tYxA0ACbCG/40mYoFwkRuNtD4QFwtmur9/7sfKoD2AfXClybHaXl/9nPCbgMLA2ADGQRsn/kdpLyv/Jdn+p///7uR/V365YABqSM4f2OfFzaDFiSiAKBuxtrsamYdjMsYk3V5HeoIeobKw1y3rXDe1wBp4BhB+lsUDG4Rq///G65cDSPVNPTRO5LqlB7qf//9sKwrR/b7/6062/0sd29ey3+pFTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV",
+    "kit-burst-electric-1": "data:audio/mpeg;base64,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",
     "kit-toggle-metalclick-1": "data:audio/mpeg;base64,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",
     "kit-toggle-metallatch-1": "data:audio/mpeg;base64,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",
     "kit-toggle-coinshandle-1": "data:audio/mpeg;base64,//tYwAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAALAAANgAAqKioqKioqKipAQEBAQEBAQEBVVVVVVVVVVVVqampqampqamqAgICAgICAgICVlZWVlZWVlZWqqqqqqqqqqqrAwMDAwMDAwMDV1dXV1dXV1dXq6urq6urq6ur///////////8AAAAATGF2ZiBsYW1lAAAAAAAAAAAAAAAAJAUAAAAAAAAADYACwk1CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//tYxAAADYTjHBQTAAI1JOk3DrAAAAC///////+93d+CZO9//9/+IjLIEMffGeIiIiIhO7u7vWJ3dnkyaZgDAZO7u7uIIEAgghlkCBBCAQqBAMUVg+OB9/Lg+H4Ph/xACAIA/y4fygPqBDiAEAxh8uDgIAhLggCHLg+D6gfB9/4P/fSj7ff++2BNlKNtuRgXIk1Etz2u3Ovioexu1qZm20yhdD9NFdAmH2b1RKbHe0B+Po8rmble3s2FyzLikiUGKlIMOJnw9W503Evvt/Vw6GRLye6Ld9w9xZdOj77959z5t1XP3Z2TIuJ9LGXni72KaOD4gApEnKElNCBh6D7XzJnHGS4YD+FAB8LyzUMAqlw//////7f//FZYD/Xtret5//tYxAiAEIErQhgXgAH5Qm43BKADhHqVQ+i7n5SaDpmm/rAdw7QH80EngayRkjZrhTHtJWHDvEw7sTw/E/hsZbQt0Q6HizZjG9bmhQ6xLe28b3rUfH/x/9Ylkrr41953/CzPFMAI/eySp1HGKBACGJkXJh8IPWnQpLpIdfZSKkmMIFNMwo2Hqv+PwOB//7LFWpFagFWqCBAU+7T+EG8gK5zUH4/BETqRjxquSBcD0Q6vLk757mzXHg6PGW7GGr/sIghFslEW4tl23f557b+PC5keFSc0fk9L3OTvo9vrnj93ICQgNJyx9//////2PnoYjHq92//T//t//qfOIGHhrnnEhw8kg+qqrLuqzKqZhne6yySSyiwSWPxfhlzsPR8r//tYxAyAEZ4LifiVABIjQTA7BKADtsAgqiKJzQWB6hYMFFxDIBBkUohMeyisJwXoWqsqkTD8jJEKOorlSIhd1SV6nHus00uPCAqcTElLulXN1N/H4mD9C6L3NNX99EO+jdqmuYYVJzXv5qt/mm///Wx7mZinnoquZobRH7af///92zD1OZhBjdUzMzITLxDqyEdwKrRfTO5mEvdxfYcOMROPj0LuFwAYpw/YiEKYLZGe8iH2ep4/J5iFRAg8QDgNthIJCxLMY/ac9H5tTqIrH2e5hjMRERMxppyG23+ee5jf5CRkysyO5rb1YxHPckaf/////2Pcwxj1Uxvahhhh55+hguLnnvRHzvRWaYcv//5OvQAAABwP/LkmikWEk2nO//tYxAcAELG3bbgEAAIWQW9/BHAAP+xcR4Fb9eMHlQqdvUPQqHwdiLAhCWpqCharRh9mjCg2K0WKZwkyYgWnm8GkjVHB6kqqbjof+JG0Rv98EmY/laUdVDRxud9ZKS0y01XNVx2S0TrXUXI6Gvvn+7+douev//5iJ3daZq1pQGBEd0uGxQRDPge2wMHe/g/w/w/s6biIlC8FkqnFHo7cQqGyZ9zLTih4jD9HYw8mysOTRwaShYgfjwXANHCePEE2WflEWROnGDjucNzzpYw8xnaaeotOzKNHwwx/0W2zKaWW92up7HrcvZq2Oonsrn2M56ujWsiV+iOarr0t+rs97GM+3/ajHK5p0cbr/bVrOXGH6FeIiYmnSMEAEmMRXpyD//tYxAcAEK3lZ/xlABH4O+r4hZeAARoIbQ5khqI1cRYaNOOI85xeMWPJmQlQ4fShMULkzjIWUFYLohJTZzZymyIfGmoacRE1DqO7VNVR6WKiyyHPrbc7+nm3fOc7/MU6qPZX6pWjfITTnNXd0OWq0dGvTf8y55xyHsaebZnX0XOmzbJ7WqpppUlNunku9XmduQ+AAAztdVSK9LAoNsdZdGjeYgss6FsQH+h4wayPz6rFEIE49mtY/s2UlqvSx5sx2yGvq1DdcxEpJWa5W3To6t1RrK11KjDCkHWzJMVY+o44gQRi6FLUr2dt2+ZYwhaLTo9cupRlEFRJ2qyKy7OzO9r1RV/e6coRaa2qAAiAiIVaiUQQvxcVQ2YpR4044wDh//tYxAqAEPz3ceLh8lIXPG589IuKDieZnmkJ0JlgoaiiaiM4QhyUc0xC6ja/niUiemo98XiUvm+M/eYavZ4DzMCJiaSkS0F+q3/YG1PqIsCcXJASbwiCKlnXDJl5rwImb2puA8i3xqHHl3A1eOcb0/961LA4EiAzopZ/9bm/lxr97QqHA/q/INExMy7qsRRJIOfWr62qaxmLFg2+La29e/G8yNbxdII5nysFxRSuHESkBZMK72sL5e1+JayLuTMWlm2Iol9OMakMY7UQrj5S3Q6xy62F+NqZPjQ0HsQCpqLPTJns4dQwSK7hUzsfStqxYrHqpWRV/9P/Vv+p3Izu9P////9df//9GzuRg4G9gO/d79Y9AERf2PEQnRuMuh58//tYxAkADinfYcQMXgHwHu06kvACQ4r/M+ywqEDVNFG5mea+uM0HQWoayjhUVsPChY81u29hn18TndQDwqQ0Dq1WkUBqAksNmb7+8wUqr91/M8yXtf/+Y4UBa6/a/o/2v+UtDGQ5kUu3+n6skqgLAQYCu/rVniJiXQaAWqXrIRmhRrguH4QKKlRXrWX/+KPP/6QEMNAuA41GQcy0MVF3kSsCJTMO+fDfv3973veBTMNvY398P4d9/0+///vdty7v9f6+cfGt/dN41SmMZz828s66N0ERcH5d6GClyqhBv//OMSfAoLyjkU/xgTChh6v6VasNrc3NzjRwAAUAQSkJXdlIIH8BD3oAjMIkMHRY6KhEt9PNyWVDyPqUO+FQH5e6//tYxBeAFNoNY/g1gAoTPC2/BNAAyBuzsdLOYOt72FkFRuCCYlvMMONfWykzq6DKfCrWoqGx6eVX9t+XdXNS/e97imKdCUm0Xe1i87lme/3v62E83PsYx/Enb5bP8fLamZOsq754e333fPL2V//onDa311pA+a1X9fzLau3V5Epvz275b9w/2F6x/4A3NzQDNDuC90SNOksJlSP/52ECA6Fb2B13QWrQNB7pF4O6qkhLwWwZSI+mqKlm7GznVjLLlZiZJIoTY0SRdEwKZxEyXXWz1UrupC6zd1q1GVJ1/uv9cxoy8lWcWyNT6Kv7LrstbNzIvbOjt31K//92u6Wi9f6K0lKrrRUf9Xu611Wmhf/5ZTiYmKusQAAAFzZgMQF4//tYxAcAjvTzTfw0AAGZJCh4FAogdp1kISw59C4ssj+SY+JUwQwmBsDYe2tfFyOH1NXI6H/1otaVvaGgl+TUu26mGkrJ0Om4b/njrmqlho0Os6SIZLg+yRBsAPX5ZkWBILGGjidAotoANnDjXNJDVtd6XF3hoCniKSRaFz2siSIoPDzSgOU1E+RDWKFJ6nmTDcH8qrDBHgBILQP+/+Iqc7MZYveBOJfO0utS07GMUpWdumXpo7OznV3OZWZeuhdHSyqAqK1aLxm0FjZMtJOGPUHSz1vPLcqqe+UBp9JJKw2vCl97VgEko5WHkTkj3yPas3PxEm61IdBkEQbABh6bVPw6Dw+GtTUVD5TFh7QtY0WaSnhsK35edpLSOHaVVf/o//tYxB2AzNFhMICgcUGirCLAMCEgCXwwEUDGV5Zc1/ONyKTZghKlrGcv8KTN8YyP4QZQYCcUAXCz9NhINauv/qlE6kfC/+asVGh6KiQFwOgKgARFgWv9YaBbaGJRlKOUoWfJcYdWqwLQ3/yvRTmrVq3Nc1xyrNK0whC4NYFhYPmuMo7Kv+ahg6D65FnNr7JFW+G+f/hmYpaKc0JhqEjxI98qd6//ZWCvy1UABcAAAcMDQUAghwEMEHXal8P+ZSGsOyyRywUwKNRBgO1blTHLUM5NdpUFBYeoNGqw9Vhq331ak2sh/rMtZS2pUgIKIFBYbedzWT/hqGInf/1AUiCzKRkVMtiwFCrv+E3JliISNRQ0TEFNRTMuMTAwqqqqqqqq//tYxDsDzN0g6yGYdEAAADSAAAAEqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq",
@@ -2652,11 +2653,31 @@
       var r = canvas.getBoundingClientRect();          // accounts for the scale
       return { x: (cx - r.left) / r.width * view.w, y: (cy - r.top) / r.height * view.h };
     }
+    function send(type, p, e) {
+      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+    }
+    /* ONE FINGER, unless the game asks for more. The single-touch path is
+       the one every game was written against and it is kept as it was: the
+       point is the first touch still on the glass. A game that sets
+       `CONFIG.multiTouch = true` gets every finger instead, each event
+       carrying its own `p.id` (the touch's identifier, "mouse" for the
+       mouse) and read out of `changedTouches`, so a thumb held on a dial
+       and a second finger tapping a button are two gestures
+       (games/parrynormal). */
     function emit(type, e) {
+      if (CONFIG.multiTouch && e.changedTouches) {
+        for (var j = 0; j < e.changedTouches.length; j++) {
+          var c = e.changedTouches[j], q = toDesign(c.clientX, c.clientY);
+          q.id = c.identifier;
+          send(type, q, e);
+        }
+        return;
+      }
       var t = (e.touches && e.touches[0]) ? e.touches[0]
             : ((e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : e);
       var p = toDesign(t.clientX, t.clientY);
-      for (var i = 0; i < L[type].length; i++) L[type][i](p, e);
+      if (CONFIG.multiTouch) p.id = "mouse";
+      send(type, p, e);
     }
     canvas.addEventListener("mousedown", function (e) { emit("down", e); });
     canvas.addEventListener("mousemove", function (e) { emit("move", e); });
@@ -3563,7 +3584,7 @@
     var FR_TAP    = rx("([Tt])ap");
     var FR_TOUCHE = rx("([Tt])ouche", "-");
     // what "Clique" needs a "sur" in front of: an object, never a place or a "pour"
-    var OBJ = /^(?:(?:un|une|le|la|les|ce|cet|cette|ces|ton|ta|tes|son|sa|ses|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
+    var OBJ = /^(?:(?:un|une|le|la|les|des|ce|cet|cette|ces|mon|ma|mes|ton|ta|tes|son|sa|ses|notre|nos|votre|vos|leur|leurs|chaque|celui|celle|ceux|celles)(?![A-Za-zÀ-ÿ])|l['’]|n['’]importe (?:quel|quelle|quels|quelles|qui|lequel|laquelle)(?![A-Za-zÀ-ÿ]))/;
     var carry = false;                 // a "sur" owed to the next run of text
     function fr(t, prev, next) {
       t = t.replace(FR_EN_UNE, function (a, p, f) { return p + cased(f, "clique") + " sur l'une d'elles"; })
@@ -6657,15 +6678,15 @@
          often. A locked gate holds its marbles in visible slots that fill
          green to red, and shows a big pulsing padlock: a tap opens it and the
          queue runs out. A marble that reaches a FULL locked gate (or a full
-         wheel entry) breaks the combo and drops through the TRAPDOOR past the
+         wheel entry) drops through the TRAPDOOR past the
          last slot, onto the SPILL NETWORK behind the machine — back rails,
          loops, coils and cogs, decor all of it — which carries it to the red
          SINK, where it costs a HEART.
        - an ARRIVAL is a tap target too: the one tapped becomes the SOCKET.
          There is always one ELECTRIC marble in play, cyan and crackling, and
          only the socket takes it. The SWITCHES are the machine's own — each
-         flips at every marble that passes it, its open way lit and its shut
-         way barred — so the player reads where the electric marble is going
+         flips once the electric marble has passed it, its open way lit and its shut
+         way barred — so the player reads the electric marble's whole route
          and moves the socket under it. Caught, it pays big, an arc runs up
          the rails to the hub and the combo jumps; anywhere else it fizzles,
          the combo breaks and the lights go out for half a second.
@@ -8661,7 +8682,7 @@
     var wheel = null, chimes = [], gates = [], fers = [], sink = null;
     var state = "play", t = 0, feedK = 0, feedTurn = 0, lockT = 0, electricIn = 0, arrival = "a0", path = null;
     var score = 0, combo = 0, bestCombo = 0, hearts = 5, heartsMax = 5, best = 0;
-    var heartHit = 0, hubPop = 0, hubBreak = 0, hubZap = 0, zap = 0, overT = 0, ended = false;
+    var heartHit = 0, hubPop = 0, gaugeFull = 0, hubBreak = 0, hubZap = 0, zap = 0, overT = 0, ended = false;
     // THE BLACKOUT: a broken combo cuts the machine's lights, longer the bigger it was.
     var BLACKOUT = 0.5, blackT = 0, blackLen = BLACKOUT;
     /* THE FUSE (1 = lit whole), whether it burns this frame, the sparks
@@ -8708,8 +8729,15 @@
       if (MOD.goldEvery) { goldIn--; if (goldIn <= 0) { goldIn = MOD.goldEvery; return "g"; } }
       return Math.random() < 0.42 ? "k" : "c";          // chrome, or violet glass
     }
-    // The combo's tiers, brought closer by a short-fuse card (tierAt).
-    function tier(c) { var n = 0, i; for (i = 0; i < M.tiers.length; i++) if (c >= tierAt(i)) n = i + 1; return n; }
+    /* `combo` counts the notches lit since the Combo was x1: every
+       `notches()` of them is one step up, with no top. A short-fuse card
+       takes notches off the gauge. */
+    function notches() { return Math.max(4, M.notches - MOD.notchCut); }
+    function tier(c) { return Math.floor(c / notches()); }
+    // where step i + 1 starts: the notch count the Combo reaches x(i + 2) at
+    function tierAt(i) { return (i + 1) * notches(); }
+    // the step the LOOK follows, held at x4 and up: colours, sparks, spin
+    function vtier(c) { return Math.min(TIERS_COL.length - 1, tier(c)); }
     function mult() { return tier(combo) + 1 + MOD.multAdd; }
     function lockedCount() { var n = 0, i; for (i = 0; i < gates.length; i++) if (gates[i].locked) n++; return n; }
     function gaugeColor(k) { return k >= 0.8 ? C.full : k >= 0.5 ? C.amber : C.calm; }
@@ -8782,6 +8810,15 @@
     function popText(mx, my, str, color) {
       Pop.text(toDX(mx), toDY(my), str, { color: color, size: 22, life: 0.6, tier: 1 });
     }
+    /* Points scored, floating up where they were won, dressed by the Combo
+       so the player sees a big one pay: x1 plain in the colour given, then
+       the motor's three glows (cyan, gold, magenta) at x2, x3 and x4 and up,
+       a little bigger and longer at each step. The points alone, no word. */
+    function scorePop(mx, my, pts, color) {
+      var vt = vtier(combo);
+      Pop.text(toDX(mx), toDY(my), "+" + pts,
+               { color: vt ? TIERS_COL[vt] : color, size: 22 + 2 * vt, life: 0.6 + 0.1 * vt, tier: vt });
+    }
 
     /* ---------------- events ----------------------------------------- */
     /* The arrivals that take an electric marble: the socket, and the two
@@ -8839,7 +8876,9 @@
         spark(mc.x, RIM_Y + 20, C.volt, 30, 320);
         ring(mc.x, RIM_Y + 40, C.volt, 20, 180, 0.8, 5);
         ring(mc.x, RIM_Y + 40, C.voltHi, 10, 240, 0.6, 3);
-        Pop.show("bonus", { word: "Charged!", sub: "+" + pts, at: "top" });
+        // the moment at the top, the value on the socket that won it
+        Pop.show("bonus", { word: "Charged!", at: "top" });
+        scorePop(mc.x, RIM_Y - 14, pts, C.volt);
         if (MOD.over) chargeT = MOD.over;
         // a charged socket deals the cards, once the arc has reached the hub
         if (!m.clone && !pendingPick && !held && charge() >= 1) { pendingPick = true; pickT = KC.pickDelay; }
@@ -8871,7 +8910,7 @@
       if (MOD.train && mc.train) pts += Math.round(MOD.train * mc.train * mult());
       score += pts;
       HUD.setScore(score);
-      popText(mc.x, RIM_Y - 14, (MOD.train && mc.train ? Lang.t("Train x") + (mc.train + 1) + " +" : "+") + pts, m.gold ? C.gold2 : mc.col);
+      scorePop(mc.x, RIM_Y - 14, pts, m.gold ? C.gold2 : mc.col);
       mc.kick = 0.3; hubPop = Math.max(hubPop, 0.2);
       spark(mc.x, RIM_Y + 4, m.gold ? C.gold2 : mc.col, m.gold ? 14 : 4, 180);
       Sound.clip("deliver", 0.26, mc.pitch * Rand.range(0.97, 1.04));
@@ -8879,7 +8918,7 @@
     // `quiet` when another callout already speaks on this frame: two Pops
     // fired together land on top of each other.
     function tierUp(quiet) {
-      var tr = tier(combo), tc = TIERS_COL[tr];
+      var tr = vtier(combo), tc = TIERS_COL[tr];
       hubPop = 0.6;
       HUD.punch(tc);
       Fx.shake(5, 0.2);
@@ -8887,9 +8926,10 @@
       ring(L.wheel.cx, L.wheel.cy, tc, RIM, 200, 0.8, 5);
       Sound.clip("chain", 0.42, 0.94 + tr * 0.08);
       Overlay.vignette(tc, 0.5, 500);
+      gaugeFull = 0.35;
       if (quiet) return;
-      if (tr >= 3) Pop.show("ultra", { word: "Overdrive", sub: Lang.t("Combo x") + combo });
-      else Pop.show(tr === 2 ? "perfect" : "combo", { word: Lang.t("Combo x") + combo, sub: "x" + mult() });
+      if (tr >= 3) Pop.show("ultra", { word: "Overdrive", sub: Lang.t("Combo x") + mult() });
+      else Pop.show(tr === 2 ? "perfect" : "combo", { word: Lang.t("Combo x") + mult() });
     }
     // The ring on the hub shatters and the glow goes out.
     function breakCombo(quiet) {
@@ -8909,7 +8949,7 @@
         return;
       }
       if (combo >= 2) {
-        shatterHub(heat(), TIERS_COL[tier(combo)], true);
+        shatterHub(heat(), TIERS_COL[vtier(combo)], true);
         if (!quiet && combo >= tierAt(0)) Pop.show("alert", { word: "Combo lost" });
       }
       combo = 0; fuse = 1;
@@ -8940,12 +8980,12 @@
     /* ---------------- THE COMBO: what feeds it, the fuse that keeps it -- */
     // How big the combo is, 0 at nothing and 1 at the top tier: what every
     // effect that grows with the combo reads.
-    function heat() { return Math.min(1, combo / tierAt(M.tiers.length - 1)); }
+    function heat() { return Math.min(1, combo / tierAt(TIERS_COL.length - 2)); }
     function fuseSecs() { return M.fuse[Math.min(M.fuse.length - 1, tier(combo))]; }
     // Every action that feeds the combo relights the fuse whole.
     function feedFuse() { fuse = 1; fuseOutT = 0; }
     // the combo has started from nothing: the fuse that keeps it is named once
-    function learnFuse() { Notify.learn("fuse", "Combo fuse", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
+    function learnFuse() { Notify.learn("fuse", "Dynamo voltage", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
     /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
        the combo grows when it lands, so the hub counts up in step with what
        the player sees fly in. The fuse is relit at once, on the action. */
@@ -8961,28 +9001,18 @@
       combo += c.n; if (combo > bestCombo) bestCombo = combo;
       if (!was) learnFuse();
       tr = tier(combo);
-      lo = tr ? tierAt(tr - 1) : 0; hi = tr < M.tiers.length ? tierAt(tr) : 0;
-      step = hi ? Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1)) : SCALE.length - 1;
+      lo = tr * notches(); hi = lo + notches();
+      step = Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1));
       hubPop = Math.max(hubPop, 0.25 + 0.2 * heat());
-      spark(L.wheel.cx, L.wheel.cy, TIERS_COL[tr], 6 + Math.round(10 * heat()), 200 + 120 * heat());
+      spark(L.wheel.cx, L.wheel.cy, TIERS_COL[vtier(combo)], 6 + Math.round(10 * heat()), 200 + 120 * heat());
       Sound.clip("chime", 0.22 + 0.14 * heat(), Math.pow(2, SCALE[step] / 12) * (tr >= 2 ? 1.25 : 1));
       if (tr > b) tierUp();
     }
-    // Is the machine waiting on the player? A gate locked, or the electric
-    // marble on a line that can no longer reach the socket.
+    /* Is the machine waiting on the player? A gate locked: a tap they owe.
+       Reading the electric marble's route is the game itself, so the fuse
+       never burns for it. */
     function needsPlayer() {
-      var i, m, id, a, ok;
-      for (i = 0; i < gates.length; i++) if (gates[i].locked) return true;
-      for (i = 0; i < marbles.length; i++) {
-        m = marbles[i];
-        if (!m.e || m.clone || m.spent) continue;
-        id = m.st === "wheel" ? L.wheel.out : m.st === "ferry" ? m.fer.f.out
-           : (m.st === "track" || m.st === "wait" || m.st === "gate" || m.st === "fwait") && m.ch ? m.ch.id : null;
-        if (!id) continue;
-        ok = false;
-        for (a in boxes) if (boxes.hasOwnProperty(a) && isSocket(a) && L.reach[a][id]) ok = true;
-        if (!ok) return true;
-      }
+      for (var i = 0; i < gates.length; i++) if (gates[i].locked) return true;
       return false;
     }
     /* The fuse burnt out: the combo drops to the start of the tier below
@@ -8992,7 +9022,7 @@
       var tr = tier(combo), to = MOD.floor ? (tr ? tierAt(tr - 1) : 0) : (tr >= 2 ? tierAt(tr - 2) : 0), k = heat();
       fuse = 1;
       if (to >= combo) return;
-      shatterHub(k * 0.6, TIERS_COL[tr], false);
+      shatterHub(k * 0.6, TIERS_COL[vtier(combo)], false);
       combo = to;
       stats.fuseOuts++;
       fuseOutT = 0.8;
@@ -9041,11 +9071,10 @@
       ring(m.x, m.y, C.full, R, 170, 0.6, 5);
       Sound.clip("shatter", 0.6, Rand.range(0.92, 1.06));
       Fx.shake(12, 0.3); Fx.flash(C.full, 0.22); Fx.freeze(0.05);
-      var hadCombo = combo >= 2;
-      breakCombo(true);
+      // an overflow costs a heart, never the Combo: the voltage already punishes the locked gate
       if (state !== "play") return;
       if (catchLost(m)) return;
-      Pop.show("alert", { word: "Shattered", sub: hadCombo ? "Combo lost" : "" });
+      Pop.show("alert", { word: "Shattered" });
       loseHeart(heavy ? 3 : 1); heavy = false; paintRun();
     }
     // A safety net: a lost marble rolls back to the feed gear instead of a heart.
@@ -9059,8 +9088,9 @@
     }
     /* A marble that finds a full queue drops through the trapdoor at its
        tail and rides the spill network behind the machine to the red sink.
-       The combo breaks NOW, at the mistake; the heart goes when the marble
-       lands, seconds later and in view, so the player sees it coming. */
+       The Combo is left alone (the voltage already punishes the locked gate);
+       the heart goes when the marble lands, seconds later and in view, so the
+       player sees it coming. */
     function spill(m, sp, g) {
       if (!sp || m.clone) { destroy(m, g); return; }
       m.ch = sp; m.d = 0; m.v = M.vMin; m.lost = true; m.gateOk = true;
@@ -9070,11 +9100,9 @@
       spark(m.x, m.y, C.full, 6, 150);
       Sound.clip("lock", 0.5, 0.72);
       Fx.shake(5, 0.18);
-      var hadCombo = combo >= 2;
-      breakCombo(true);
       if (state !== "play") return;
       // the callout says what happened, and the heart is seen going: no notice
-      Pop.show("alert", { word: "Overflow", sub: hadCombo ? "Combo lost" : "" });
+      Pop.show("alert", { word: "Overflow" });
     }
     // A lost marble reaches the red sink: it is gone, and so is a heart.
     function sinkHit(m) {
@@ -9089,7 +9117,7 @@
       if (MOD.redPays) {
         var pts = Math.round(MOD.redPays * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(x, y - 26, "+" + pts, C.gold2);
+        scorePop(x, y - 26, pts, C.gold2);
         spark(x, y + 10, C.gold2, 14, 220);
         return;
       }
@@ -9120,7 +9148,7 @@
       if (MOD.unlockPay) {
         var pts = Math.round(MOD.unlockPay * mult());
         score += pts; HUD.setScore(score);
-        popText(g.px, g.py - 46, "+" + pts, C.gold2);
+        scorePop(g.px, g.py - 46, pts, C.gold2);
       }
       return true;
     }
@@ -9170,7 +9198,7 @@
     var CARD_FAMS = [
       // 1 · Workshop — the basics: hearts, locks, the first prizes
       { key: "spareHeart", biome: 1, kind: "help", icon: "heart", color: "#ff5d86", name: "Spare heart",
-        text: "+{n} max hearts, filled", one: "+1 max heart, filled", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
+        text: "+{n} extra hearts", one: "+1 extra heart", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "repair", biome: 1, kind: "help", icon: "circle-plus", color: "#6dffb0", name: "Repair",
         text: "{n} lost hearts come back", one: "A lost heart comes back", all: "Every lost heart comes back",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 99, 0]] },
@@ -9179,32 +9207,32 @@
       { key: "lockFreeze", biome: 1, kind: "help", icon: "snowflake", color: "#bff4ff", name: "Lock freeze",
         text: "No gate locks", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
       { key: "masterKey", biome: 1, kind: "help", icon: "unlock", color: "#ffd43b", name: "Master key",
-        text: "{n} keys: tap one to open every locked gate", one: "A key: tap it to open every locked gate",
+        text: "{n} keys: tap one to open every locked gate", one: "Tap the key to open every locked gate",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "widerGate", biome: 1, kind: "help", icon: "layers", color: "#b389ff", name: "Wider gate",
         text: "Your busiest gate holds {n} more marbles", one: "Your busiest gate holds 1 more marble",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "net", biome: 1, kind: "help", icon: "hand", color: "#7fe0c0", name: "Safety net",
-        text: "The next {n} lost marbles roll back to the feeder", tiers: [[1, 2, 0], [2, 4, 0], [3, 6, 0]] },
+        text: "The next {n} lost marbles come back up without costing a heart", tiers: [[1, 2, 0], [2, 4, 0], [3, 6, 0]] },
       { key: "loopPrize", biome: 1, kind: "score", icon: "rotate-cw", color: "#ffb44f", name: "Loop prize",
         text: "A marble through a loop pays +{n}", tiers: [[1, 20, "shift"], [2, 50, "shift"], [3, 100, "shift"]] },
       { key: "jumpstart", biome: 1, kind: "score", icon: "trending-up", color: "#ff9a44", name: "Jumpstart",
-        text: "+{n} combo now", tiers: [[1, 10, 0], [2, 20, 0], [3, 35, 0]] },
+        text: "Combo +{n} now", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "turbo", biome: 1, kind: "score", icon: "rocket", color: "#ff6fd8", name: "Turbo",
-        text: "+1 multiplier", tiers: [[1, 1, 20], [2, 1, "next"], [3, 1, "shift"]] },
+        text: "Combo +1", tiers: [[1, 1, 20], [2, 1, "next"], [3, 1, "shift"]] },
       { key: "gold", biome: 1, kind: "score", icon: "gem", color: "#ffe066", name: "Gold marbles",
         text: "One marble in {n} is gold and pays x5", tiers: [[1, 12, "shift"], [2, 8, "shift"], [3, 5, "shift"]] },
       { key: "glass", biome: 1, kind: "risk", icon: "sword", color: "#e8fdff", name: "Glass cannon",
-        text: "Score x2 for the shift", cost: "-2 max hearts", tiers: [[3, 0, "shift"]] },
+        text: "Score x2 for the whole shift", cost: "Lose 2 hearts", tiers: [[3, 0, "shift"]] },
       { key: "bloodPact", biome: 1, kind: "risk", icon: "skull", color: "#ff3d6e", name: "Blood pact",
-        text: "Every lost heart comes back", cost: "The combo drops to 0", tiers: [[3, 0, 0]] },
+        text: "Every lost heart comes back", cost: "The Combo drops back to x1", tiers: [[3, 0, 0]] },
 
       // 2 · Glassworks — steering, the combo, the prizes that are watched
       { key: "autoSwitch", biome: 2, kind: "help", icon: "arrow-left-right", color: "#7ef9ff", name: "Auto switch",
         text: "The switches steer every electric marble to the socket", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "slowmo", biome: 2, kind: "help", icon: "hourglass", color: "#c9b8ff", name: "Slow motion",
         text: "The machine runs at half speed", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
-      { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Combo shield",
+      { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Protected combo",
         text: "The next {n} mistakes don't break your combo", one: "The next mistake doesn't break your combo",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "rustyLocks", biome: 2, kind: "help", icon: "lock", color: "#d39a6a", name: "Rusty locks",
@@ -9214,25 +9242,25 @@
       { key: "train", biome: 2, kind: "score", icon: "chevrons-right", color: "#ffe6a8", name: "Marble train",
         text: "Marbles landing back to back pay +{n} per wagon", tiers: [[1, 10, "shift"], [2, 20, "shift"], [3, 40, "shift"]] },
       { key: "chain", biome: 2, kind: "score", icon: "zap", color: "#e8fdff", name: "Chain lightning",
-        text: "A caught electric marble's arc zaps every marble on its way: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
+        text: "Every caught electric marble zaps the lane: +{n} for each marble it hits", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
       { key: "packed", biome: 2, kind: "score", icon: "circle-dot", color: "#d9a8ff", name: "Packed machine",
         text: "Every marble delivered pays +5% per marble in the machine", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overclock", biome: 2, kind: "risk", icon: "flame", color: "#ff9a44", name: "Overclock",
-        text: "Score x1.5 for the shift", cost: "The rails run 30% faster", tiers: [[3, 0, "shift"]] },
+        text: "Score x2 for the whole shift", cost: "Speeds up the pace by 30%", tiers: [[3, 0, "shift"]] },
       { key: "allIn", biome: 2, kind: "risk", icon: "hand-fist", color: "#ff5d86", name: "All in",
-        text: "+25 combo now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
+        text: "Combo +3 now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
       { key: "doubleOr", biome: 2, kind: "risk", icon: "dices", color: "#ffd43b", name: "Double or nothing",
         text: "The next electric marble caught doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
       { key: "capacitor", biome: 2, kind: "legend", icon: "medal", color: "#ffd43b", name: "Capacitor",
-        text: "The socket recharges {n}% faster", tiers: [[4, 10, "shift"]] },
+        text: "Cards arrive {n}% faster", tiers: [[4, 10, "shift"]] },
 
       // 3 · Maelstrom — the machine plays itself a little, the sparks split
       { key: "autoGate", biome: 3, kind: "help", icon: "mouse-pointer-click", color: "#6dffb0", name: "Self-opening gate",
         text: "Your busiest gate unlocks itself", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "stiff", biome: 3, kind: "help", icon: "pause", color: "#bdb3ee", name: "Stiff switches",
-        text: "Marbles no longer flip the switches", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+        text: "The switches stay put, even after an electric pass", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "second", biome: 3, kind: "help", icon: "arrow-up", color: "#7ef9ff", name: "Second chance",
-        text: "The next {n} wasted electric marbles go back to the feeder", one: "The next wasted electric marble goes back to the feeder",
+        text: "The next {n} wasted electric marbles come back up for another try", one: "The next wasted electric marble comes back up for another try",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "quickRelease", biome: 3, kind: "help", icon: "download", color: "#9fe8ff", name: "Quick release",
         text: "An unlocked queue runs out {n} times faster", tiers: [[1, 2, "shift"], [2, 3, "shift"], [3, 4, "shift"]] },
@@ -9241,47 +9269,47 @@
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "staticCharge", biome: 3, kind: "score", icon: "magnet", color: "#a8f0ff", name: "Static charge",
         text: "An extra electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
-      { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Combo anchor",
-        text: "The combo never falls below its last tier", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Secured combo",
+        text: "Your Combo never drops, only its notches empty", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "greedy", biome: 3, kind: "risk", icon: "pickaxe", color: "#ffd43b", name: "Greedy locks",
         text: "Every gate you open pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
       { key: "torrent", biome: 3, kind: "risk", icon: "droplet", color: "#5ab0ff", name: "Torrent",
-        text: "Every marble pays x3", cost: "The feeder pours twice as fast", tiers: [[3, 0, 15]] },
+        text: "Every marble pays x3", cost: "Marbles arrive twice as fast", tiers: [[3, 0, 15]] },
       { key: "sacrifice", biome: 3, kind: "risk", icon: "axe", color: "#ff3d6e", name: "Sacrifice",
-        text: "+1 multiplier for the shift", cost: "-1 heart now", tiers: [[3, 0, "shift"]] },
+        text: "Combo +1 for the shift", cost: "-1 heart now", tiers: [[3, 0, "shift"]] },
 
       // 4 · Depths — the lost marbles pay, the current runs everywhere
       { key: "oneLockLess", biome: 4, kind: "help", icon: "minus", color: "#bff4ff", name: "One lock less",
         text: "One gate fewer can be locked at once", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
-      { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slow feeder",
-        text: "The feeder pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slower start gear",
+        text: "The start gear pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overcharge", biome: 4, kind: "score", icon: "sparkles", color: "#7ef9ff", name: "Overcharge",
         text: "A caught electric marble overcharges the machine: every marble pays x3 for {n} s",
         tiers: [[1, 3, "shift"], [2, 6, "shift"], [3, 10, "shift"]] },
       { key: "redJackpot", biome: 4, kind: "score", icon: "target", color: "#ff5d86", name: "Red jackpot",
         text: "A marble in the red socket pays 50 instead of a heart", tiers: [[1, 50, 20], [2, 50, "next"], [3, 50, "shift"]] },
       { key: "narrow", biome: 4, kind: "risk", icon: "arrow-up-down", color: "#d9a8ff", name: "Narrow gates",
-        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one fewer marble", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "Every gate has one fewer slot", tiers: [[3, 0, "shift"]] },
       { key: "blackout", biome: 4, kind: "risk", icon: "eye", color: "#9fb3ff", name: "Blackout",
-        text: "Electric marbles pay x2 for the shift", cost: "You no longer see which way leads to the socket", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "The way leading to the electric socket will be less visible", tiers: [[3, 0, "shift"]] },
       { key: "liveWire", biome: 4, kind: "risk", icon: "circle-x", color: "#a8f0ff", name: "Live wire",
-        text: "An extra electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
-      { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Dynamo",
-        text: "The socket recharges {n}% faster", tiers: [[4, 20, "shift"]] },
+        text: "An extra electric marble every 5 regular marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
+      { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Generator",
+        text: "Cards arrive {n}% faster", tiers: [[4, 20, "shift"]] },
 
       // 5 · Clockwork — the big wagers
       { key: "wide", biome: 5, kind: "help", icon: "move", color: "#7fe0c0", name: "Wide socket",
-        text: "The arrivals beside the socket take electric marbles too", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
-      { key: "shortFuse", biome: 5, kind: "score", icon: "bomb", color: "#ff9a44", name: "Short fuse",
-        text: "The combo tiers come {n}% sooner", tiers: [[1, 20, "shift"], [2, 35, "shift"], [3, 50, "shift"]] },
+        text: "The arrivals beside the blue socket take electric marbles too", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "shortFuse", biome: 5, kind: "score", icon: "bomb", color: "#ff9a44", name: "Filed notches",
+        text: "{n} fewer Combo notches on the Dynamo", tiers: [[1, 2, "shift"], [2, 3, "shift"], [3, 5, "shift"]] },
       { key: "lockdown", biome: 5, kind: "risk", icon: "book-lock", color: "#ffb44f", name: "Lockdown",
-        text: "Marbles leaving a gate pay x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
+        text: "Marbles leaving a gate score x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
       { key: "jam", biome: 5, kind: "risk", icon: "arrow-down", color: "#bdb3ee", name: "Jam session",
-        text: "The combo climbs twice as fast for the shift", cost: "The wheel's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
+        text: "Each marble a gate lets out lights 2 Combo notches", cost: "The Dynamo's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
       { key: "tempt", biome: 5, kind: "risk", icon: "wand-sparkles", color: "#ff6fd8", name: "Tempt fate",
         text: "The next pick deals two epic cards", cost: "-1 heart now", tiers: [[3, 0, 0]] },
       { key: "tesla", biome: 5, kind: "legend", icon: "crown", color: "#ffd43b", name: "Tesla coil",
-        text: "The socket recharges in 20 s", tiers: [[4, 34, "shift"]] }
+        text: "The socket of the next cards recharges in 20 seconds", tiers: [[4, 34, "shift"]] }
     ];
     /* The pictograms, inlined from assets/motor/lucide/ (ISC, see its LICENSE)
        so the DOM card can stroke them in its own colour (currentColor). */
@@ -9381,14 +9409,13 @@
       var O = { tempo: 1, pour: 1, sim: 1, lockRate: 1, lockLess: 0, score: 1, eScore: 1, classicK: 1, multAdd: 0, comboStep: 1,
                 autoSwitch: false, autoGate: {}, frozen: false, wide: false, blind: false, floor: false, fizzleHurts: false,
                 redPays: 0, packed: 0, loop: 0, spiral: 0, train: 0, chain: 0, over: 0, unlockPay: 0, releaseTag: 0,
-                flush: 1, goldEvery: 0, eEvery: M.electricEvery, tierCut: 0, cd: 0 };
+                flush: 1, goldEvery: 0, eEvery: M.electricEvery, notchCut: 0, cd: 0 };
       for (var i = 0; i < effects.length; i++) { var fx = CARD_FX[effects[i].c.fam]; if (fx.mod) fx.mod(O, effects[i].c); }
       MOD = O;
     }
     recompute();
     function cooldown() { return Math.max(KC.minCooldown, KC.cooldown * (1 - MOD.cd)); }
     function charge() { return Math.min(1, (rt - lastPick) / cooldown()); }
-    function tierAt(i) { return Math.max(1, Math.round(M.tiers[i] * (1 - MOD.tierCut))); }
     function addCombo(n) {
       var b = tier(combo);
       feedFuse();
@@ -9430,7 +9457,7 @@
                     can: function () { return gates.length > 0 && gateRoom(gates[busiest()]) > 0; } },
       net:        { now: function (c) { nets += c.v; } },
       loopPrize:  { stack: true, mod: function (O, c) { O.loop += c.v; }, can: function () { return hasMod("loop"); } },
-      jumpstart:  { now: function (c) { addCombo(c.v); } },
+      jumpstart:  { now: function (c) { addCombo(c.v * notches()); } },
       turbo:      { mod: function (O) { O.multAdd += 1; } },
       gold:       { stack: true, mod: function (O, c) { O.goldEvery = O.goldEvery ? Math.min(O.goldEvery, c.v) : c.v; },
                     can: function (c) { return !MOD.goldEvery || MOD.goldEvery > c.v; } },
@@ -9446,8 +9473,8 @@
       train:      { stack: true, mod: function (O, c) { O.train += c.v; } },
       chain:      { stack: true, mod: function (O, c) { O.chain += c.v; } },
       packed:     { mod: function (O) { O.packed += 0.05; } },
-      overclock:  { mod: function (O) { O.score *= 1.5; O.tempo *= 1.3; } },
-      allIn:      { now: function () { addCombo(25); heavy = true; }, can: function () { return !heavy; } },
+      overclock:  { mod: function (O) { O.score *= 2; O.tempo *= 1.3; } },
+      allIn:      { now: function () { addCombo(3 * notches()); heavy = true; }, can: function () { return !heavy; } },
       doubleOr:   { now: function () { dnFlag = true; }, can: function () { return !dnFlag && score > 0; } },
       capacitor:  { stack: true, mod: function (O, c) { O.cd += c.v / 100; }, can: function () { return cooldown() > KC.minCooldown; } },
       autoGate:   { auto: true, mod: function (O, c) { O.autoGate[c.g] = true; } },
@@ -9471,7 +9498,7 @@
       liveWire:   { mod: function (O, c) { O.eEvery = Math.min(O.eEvery || c.v, c.v); O.fizzleHurts = true; } },
       dynamo:     { stack: true, mod: function (O, c) { O.cd += c.v / 100; }, can: function () { return cooldown() > KC.minCooldown; } },
       wide:       { mod: function (O) { O.wide = true; }, can: function () { return L.arr.length > 1; } },
-      shortFuse:  { stack: true, mod: function (O, c) { O.tierCut = Math.max(O.tierCut, c.v / 100); }, can: function (c) { return MOD.tierCut < c.v / 100; } },
+      shortFuse:  { stack: true, mod: function (O, c) { O.notchCut = Math.max(O.notchCut, c.v); }, can: function (c) { return MOD.notchCut < c.v; } },
       lockdown:   { now: function () {
                       for (var i = 0; i < gates.length; i++) {
                         var g = gates[i];
@@ -9769,7 +9796,7 @@
       node: cardNode,
       info: function (id) {
         var c = CARD_BY[id], f = FAM_BY[c.fam], R = RARITY[c.r];
-        return { name: Lang.t(f.name), color: f.color, lock: Lang.t("Pick it in a round to add it to the collection"),
+        return { name: Lang.t(f.name), color: f.color, lock: Lang.t("Pick this card during a round to add it to the collection"),
                  chips: [{ text: Lang.t(R.name), color: R.color }, { text: durText(c) }] };
       }
     };
@@ -9903,11 +9930,11 @@
     function hubPic(c, f, burn) {
       var keep = { combo: combo, fuse: fuse, burn: fuseBurn, zap: hubZap, brk: hubBreak, pop: hubPop, stats: stats, state: state };
       try {
-        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; stats = { delivered: 1 }; state = "play";
+        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; gaugeFull = 0; stats = { delivered: 1 }; state = "play";
         return machinePic(250, 250, 1.04, -120, -120, function (k) {
           var half = RIM + 6;
           buildWheel(k, 10);
-          drawGlow(TIERS_COL[tier(combo)], 0, 0, RIM + 40 + tier(combo) * 26, tier(combo) ? 0.45 : 0);
+          drawGlow(TIERS_COL[vtier(combo)], 0, 0, RIM + 40 + vtier(combo) * 26, vtier(combo) ? 0.45 : 0);
           ctx.drawImage(wheelCv, -half, -half, half * 2, half * 2);
           drawFuse(0, 0, RIM + 9);
           drawHub(0, 0);
@@ -10084,74 +10111,67 @@
       "Every level is a different machine. Here, each one has a single switch.",
       "Two switches, and glass tubes from level 7.",
       "Four switches step down the machine.",
-      "Lines cross. One dives under the other and comes back out of a pipe mouth.",
+      "Lines cross. One dives under the other and comes back out on the other side.",
       "Six switches chained: the biggest machines of the climb."
     ];
-    // two cards a biome shows: one that helps, one that scores or wagers
-    var BIOME_CARDS = [["spareHeart-2", "glass"], ["autoSwitch-2", "doubleOr"], ["second-1", "greedy"],
-                       ["oneLockLess-2", "redJackpot-1"], ["wide-2", "tesla"]];
+    // a biome's chapter is its machines; the cards it adds are the player's to discover
     function biomeChapter(b) {
       var B = CONFIG.biomes[b], lv = b * 6 + 1;
       return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
         { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: BIOME_PICS[b],
-          lines: [Lang.t(BIOME_LINES[b])] },
-        { id: "cards-" + B.name.toLowerCase(), title: Lang.t("Biome cards"), lv: lv,
-          pic: function () { return cardsPic(BIOME_CARDS[b], 230); },
-          lines: [Lang.t("From here on, a pick can also deal cards like these.")] }
+          lines: [Lang.t(BIOME_LINES[b])] }
       ] };
     }
     var guide = {
       chapters: function () {
-        var tiers = [], i, out;
-        for (i = 0; i < M.tiers.length; i++) tiers.push([Lang.t("Combo") + " " + M.tiers[i], "×" + (i + 2)]);
+        var i, out;
         out = [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "shift", title: Lang.t("The shift"), pic: marblesPic,
-              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble caught"), "+" + M.electricScore]],
-              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the combo."),
-                      Lang.t("On a keyboard, space or Q to Y open the gates. Keys 1 to 6 move the socket.")] },
+              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble collected"), "+" + M.electricScore],
+                     [Lang.t("A loop, spiral or jump"), "+" + M.modulePay.loop]],
+              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the Combo."),
+                      Lang.t("On a keyboard, the 'Space' key moves the electric socket one step, left to right, in a loop.")] },
             { id: "lock", title: Lang.t("Locked gates"), pic: lockPic,
-              lines: [Lang.t("Gates lock at random. Tap the padlock to open the gate again."),
-                      Lang.t("Each marble the gate then lets out feeds the combo.")] },
+              lines: [Lang.t("Gates lock at random. Tap the padlock to unlock the gate."),
+                      Lang.t("Each marble a gate lets out lights a notch of the Dynamo.")] },
             { id: "volt", title: Lang.t("The electric marble"), pic: voltPic,
-              rows: [[Lang.t("Combo"), "+" + M.electricJump]],
-              lines: [Lang.t("Tap an arrival to move the socket there. Only the socket takes the electric marble."),
-                      Lang.t("Anywhere else the electric marble fizzles, and the combo breaks.")] },
+              rows: [[Lang.t("Notches"), "+" + M.electricJump]],
+              lines: [Lang.t("Tap an arrival to move the socket there. Only the blue socket captures an electric marble."),
+                      Lang.t("The electric marble breaks the Combo unless the electric socket collects it.")] },
             { id: "switch", title: Lang.t("Switches"), pic: switchPic,
-              lines: [Lang.t("A switch flips each time a marble passes. Its lit way shows where the next one goes.")] },
+              lines: [Lang.t("A switch flips only after an electric marble has passed.")] },
             { id: "spill", title: Lang.t("Overflow"), pic: spillPic,
-              lines: [Lang.t("When a queue is full, the next marble breaks the combo and drops through the trapdoor."),
-                      Lang.t("That marble rolls to the red socket and costs a heart.")] },
-            { id: "combo", title: Lang.t("The combo"), pic: function () { return hubPic(27, 0.85, false); }, rows: tiers,
-              lines: [Lang.t("Opening a gate adds +1 per marble it lets out. A caught electric marble adds +5."),
-                      Lang.t("Losing a marble or wasting an electric one resets the combo to 0.")] },
-            { id: "fuse", title: Lang.t("The fuse"), pic: function () { return hubPic(12, 0.3, true); },
-              lines: [Lang.t("The fuse burns down while the machine waits on you. Open a gate or catch an electric marble."),
-                      Lang.t("If the fuse burns out, the combo drops back one tier.")] }
+              lines: [Lang.t("When a queue is full, the next marble drops through the trapdoor."),
+                      Lang.t("A marble that rolls to the red socket costs a heart.")] },
+            { id: "combo", title: Lang.t("The Dynamo"), pic: function () { return hubPic(27, 0.85, false); },
+              // the electric's row follows M.electricJump (5)
+              rows: [[Lang.t("A marble released, set free"), Lang.t("1 notch")], [Lang.t("An electric marble collected"), Lang.t("5 notches")]],
+              lines: [Lang.t("The Combo multiplies every point you score. When every notch of the Dynamo is lit, the Combo goes up by 1."),
+                      Lang.t("Wasting an electric marble sends the Combo back to x1.")] },
+            { id: "fuse", title: Lang.t("Voltage"), pic: function () { return hubPic(12, 0.3, true); },
+              lines: [Lang.t("The outer ring of the Dynamo shows its voltage. The voltage drops while a gate stays locked."),
+                      Lang.t("Open the gate, or catch an electric marble, and the voltage is full again."),
+                      Lang.t("If the voltage runs out, the Combo drops by 1.")] }
           ] },
           { key: "cards", label: Lang.t("Upgrade cards"), pages: [
             { id: "cards", title: Lang.t("The upgrade pick"), pic: function () { return cardsPic(["spareHeart-1", "turbo-2"]); },
-              lines: [Lang.t("When the socket is charged, catching an electric marble pauses the machine and deals two cards."),
-                      Lang.t("One card helps, the other scores or takes a risk. Take one.")] },
-            { id: "risk", title: Lang.t("Risk cards"), lv: 1, pic: function () { return cardsPic(["glass", "doubleOr"]); },
-              lines: [Lang.t("A risk card pays big, but you pay for it in hearts, speed or half your score.")] },
-            { id: "legend", title: Lang.t("Legendary cards"), lv: 7, pic: function () { return cardsPic(["capacitor", "tesla"]); },
-              lines: [Lang.t("These golden cards are rare. Each one makes the socket recharge faster for the whole shift.")] },
-            { id: "key", title: Lang.t("Master key"), lv: 1, pic: function () { return cardsPic(["masterKey-1"], 300); },
-              lines: [Lang.t("The master key waits under the hearts. Tap it, or press K, to open every locked gate.")] }
+              lines: [Lang.t("When the blue socket is fully charged, catching an electric marble pauses the machine and deals two upgrade cards."),
+                      Lang.t("Choose the best card. One helps you, the other adds points. Sometimes a bonus comes with a risk.")] }
+            // what each card does is the player's to discover: the guide names none
           ] },
           { key: "track", label: Lang.t("The track"), pages: [
             { id: "loops", title: Lang.t("Loops and spirals"), lv: 1, pic: loopsPic,
-              lines: [Lang.t("With the Loop prize and Spiral prize cards, every loop or spiral a marble rides pays.")] },
+              lines: [Lang.t("Every loop, spiral, jump, booster and staircase a marble rides pays a few points, times the Combo.")] },
             { id: "ferry", title: Lang.t("Ferry gears"), lv: 1, pic: ferryPic,
-              lines: [Lang.t("A ferry gear carries a marble over to another line. Watch where it sets it down.")] },
+              lines: [Lang.t("A ferry gear carries a marble over to another line.")] },
             { id: "moves", title: Lang.t("Jumps and boosters"), lv: 2, pic: movesPic,
               lines: [Lang.t("A jump throws the marble into a catcher. A booster speeds it up.")] },
             { id: "tubes", title: Lang.t("Tubes and hoses"), lv: 3, pic: tubesPic,
-              lines: [Lang.t("A glass tube shows its marbles. A striped tube shows them between its bands, a hose hides them."),
-                      Lang.t("The electric marble glows through all of them.")] },
+              lines: [Lang.t("Marbles stay visible in a glass tube, partially visible in a striped tube and hidden in a hose."),
+                      Lang.t("The electric marble always stays visible, even through the tubes.")] },
             { id: "whirl", title: Lang.t("Whirlpools and dives"), lv: 12, pic: whirlPic,
-              lines: [Lang.t("A whirlpool spirals the marble down its drain, behind the machine."),
+              lines: [Lang.t("A whirlpool spirals the marble down its drain."),
                       Lang.t("A line that dives runs under the others and comes back through a pipe mouth.")] }
           ] }
         ];
@@ -10224,7 +10244,7 @@
       for (i = 0; i <= M.preview; i++) queue.push(i < M.preview ? plainKind() : "e");
       state = "play"; t = 0; feedK = 0.3; feedTurn = 0; lockT = M.lockFirst;
       score = 0; combo = 0; bestCombo = 0; heartsMax = M.hearts | 0; hearts = heartsMax; ended = false;
-      heartHit = 0; hubPop = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0; blackLen = BLACKOUT;
+      heartHit = 0; hubPop = 0; gaugeFull = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0; blackLen = BLACKOUT;
       fuse = 1; fuseBurn = false; fuseOutT = 0; comets = []; slowT = 0;
       flow = 0; screwSlot = 0; towerQ = []; revealT = 0.25; chimeGap = 0; clickGap = 0;
       stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0, fuseOuts: 0, heartsLost: 0 };
@@ -10259,7 +10279,7 @@
       // a big break: the machine drops to SLOW_K of its pace and eases back
       if (slowT > 0) { var sk = Math.min(1, slowT / SLOW_TIME * 1.6); slowT -= dt; dt *= 1 - (1 - SLOW_K) * sk; }
       heartHit = Math.max(0, heartHit - dt);
-      hubPop = Math.max(0, hubPop - dt); hubBreak = Math.max(0, hubBreak - dt); hubZap = Math.max(0, hubZap - dt);
+      hubPop = Math.max(0, hubPop - dt); gaugeFull = Math.max(0, gaugeFull - dt); hubBreak = Math.max(0, hubBreak - dt); hubZap = Math.max(0, hubZap - dt);
       blackT = Math.max(0, blackT - dt);
       zap = Math.max(0, zap - dt);
       chimeGap -= dt; clickGap -= dt; landGap -= dt; noteGap -= dt; boostGap -= dt;
@@ -10298,7 +10318,8 @@
           Fx.shake(9, 0.3); Fx.flash(C.volt, 0.22);
           Overlay.vignette(C.volt, 0.6, 900);
           HUD.punch(C.volt);
-          popText(L.wheel.cx, L.wheel.cy - RIM - 20, "+" + ar.jump, C.volt);
+          // zap: the kit's burst/electric (manifest sfx)
+          Sound.clip("zap", 0.6);
           if (tier(combo) > b3) tierUp();
         }
         if (ar.rev && was && ar.t * ARC_SPEED >= P.len) {
@@ -10388,7 +10409,7 @@
       // The wheel turns, faster with the combo tier; a waiting marble boards
       // the first free notch that sweeps past its entry.
       var surge = zapK();
-      wheel.omega += (WHEEL_OMEGA * (1 + TIER_SPIN * tier(combo)) * (1 + ZAP_SPIN * surge) - wheel.omega) * Math.min(1, dt * (zap > 0 ? 5 : 2));
+      wheel.omega += (WHEEL_OMEGA * (1 + TIER_SPIN * vtier(combo)) * (1 + ZAP_SPIN * surge) - wheel.omega) * Math.min(1, dt * (zap > 0 ? 5 : 2));
       // the surge crackles off the rim
       for (j = 0; surge > 0 && j < 4 && parts.length < PART_MAX; j++) {
         if (Math.random() > 0.3 + 0.6 * surge) continue;
@@ -10491,7 +10512,7 @@
         }
       }
       if (m.ch.mods && m.ch.mods.length) moduleFx(m, d0);
-      if ((MOD.loop || MOD.spiral) && m.ch.mods) modulePrize(m, d0);
+      if (m.ch.mods && m.ch.mods.length && !m.lost) modulePrize(m, d0);
       var ch = m.ch;
       gt = ch.gate;
       if (gt && !m.gateOk && (gt.locked || gt.flush)) {
@@ -10525,25 +10546,34 @@
             spark(m.x, m.y, C.voltHi, 14, 260);
           }
           m.ch = CH[L.out[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
-          if (!MOD.frozen) flip(ch.to, true);
+          // only the electric marble flips a switch, once it has passed: the
+          // next electric's whole route can be read before it sets off
+          if (!MOD.frozen && m.e && !m.clone) flip(ch.to, true);
         } else { deliver(m, ch.to); return; }
       }
       place(m);
     }
     function place(m) { var p = at(m.ch, m.d); m.x = p.x; m.y = p.y; m.z = p.z; }
 
-    /* The cards that play on the rails. */
-    // A module prize: a marble over the top of a loop, or out of a spiral.
+    /* A module prize: every module a marble rides pays as it crosses its
+       mark (M.modulePay: the top of a loop, out of a spiral, a jump's
+       landing, a booster, each ledge of a staircase), x the Combo, and the
+       Loop prize and Spiral prize cards add to theirs. A marble on its way
+       to the red socket pays nothing. */
     function modulePrize(m, d0) {
-      var i, md, v, pts, mods = m.ch.mods;
+      var i, md, v, pts, mods = m.ch.mods, big;
       for (i = 0; i < mods.length; i++) {
-        md = mods[i]; v = md.kind === "loop" ? MOD.loop : md.kind === "spiral" ? MOD.spiral : 0;
+        md = mods[i];
+        v = (M.modulePay[md.kind] || 0) + (md.kind === "loop" ? MOD.loop : md.kind === "spiral" ? MOD.spiral : 0);
         if (!v || d0 >= md.d || m.d < md.d) continue;
         pts = Math.round(v * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(m.x, m.y - 30, Lang.t(md.kind === "loop" ? "Loop +" : "Spiral +") + pts, C.amber);
-        spark(m.x, m.y, C.amber, 8, 200);
-        if (chimeGap <= 0) { chimeGap = 0.2; Sound.clip("chime", 0.05, 1.2); }
+        big = md.kind === "loop" || md.kind === "spiral";
+        scorePop(m.x, m.y - 30, pts, C.amber);
+        if (big) {
+          spark(m.x, m.y, C.amber, 8, 200);
+          if (chimeGap <= 0) { chimeGap = 0.2; Sound.clip("chime", 0.05, 1.2); }
+        }
       }
     }
     /* What the moving modules do as a marble crosses their mark: a jump's
@@ -10590,7 +10620,7 @@
         m.zap = ar.id;
         pts = Math.round(MOD.chain * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(m.x, m.y - 24, "+" + pts, C.voltHi);
+        scorePop(m.x, m.y - 24, pts, C.voltHi);
         spark(m.x, m.y, C.voltHi, 6, 200);
       }
     }
@@ -10632,8 +10662,8 @@
         stars: st,
         rows: [
           { label: "Marbles delivered", value: stats.delivered },
-          { label: "Electric on target", value: stats.eOn, grade: "accent" },
-          { label: "Best combo", value: bestCombo, grade: "good" },
+          { label: "Electric marbles on target", value: stats.eOn, grade: "accent" },
+          { label: "Best combo", value: "x" + (tier(bestCombo) + 1), grade: "good" },
           { label: "Best score", value: Math.max(score, best), grade: "gold" }
         ]
       });
@@ -10657,19 +10687,15 @@
       return best_;
     }
     // The gate closest to overflowing, for SPACE: the one a player would reach for.
-    function urgent() {
-      var best_ = null, bk = -1, i, g, k;
-      for (i = 0; i < gates.length; i++) {
-        g = gates[i];
-        if (!g.locked) continue;
-        k = g.q.length / g.cap + (g.q.length ? 0.01 : 0);
-        if (k > bk) { bk = k; best_ = g; }
-      }
-      return best_;
+    // SPACE moves the socket one arrival along, left to right, and wraps round.
+    function cycleSocket() {
+      var i, n = L.arr.length;
+      for (i = 0; i < n; i++) if (L.arr[i].id === arrival) break;
+      moveSocket(L.arr[(i + 1) % n].id);
     }
     function onDown(p) {
       if (state !== "play" || held) return;
-      if (spaceTap) { spaceTap = false; unlock(urgent()); return; }
+      if (spaceTap) { spaceTap = false; cycleSocket(); return; }
       var hit = nearest((p.x - OX) / S, (p.y - OY) / S);
       if (!hit) return;
       if (hit.gate) unlock(hit.gate);
@@ -10677,29 +10703,15 @@
     }
     /* The keyboard. The motor turns SPACE into a tap at the middle of the
        play band, and this listener runs first (section 6 binds before the
-       bootstrap), so it marks that tap as SPACE's: it opens the most urgent
-       lock instead of whatever sits nearest the middle. 1-6 move the socket
-       to the arrivals, left to right, and Q W E R T Y open the gates, as
-       many as the machine has.
-       Only while a round is really running: a card over the round pauses
-       the loop, and `lastTick` stops. */
-    var GATE_KEYS = "qwerty";
+       bootstrap), so it marks that tap as SPACE's: it moves the socket one
+       arrival along instead of hitting whatever sits nearest the middle.
+       Nothing else is on a key: the gates, the cards and the master key are
+       the mouse's. Only while a round is really running: a card over the
+       round pauses the loop, and `lastTick` stops. */
     window.addEventListener("keydown", function (e) {
-      if (State !== "playing" || Enter.active()) return;
-      // the two cards: 1 / 2 or left / right, and nothing else reaches the machine
-      if (held) {
-        if (e.repeat) return;
-        if (e.key === "1" || e.key === "ArrowLeft") { e.preventDefault(); take(0); }
-        else if (e.key === "2" || e.key === "ArrowRight") { e.preventDefault(); take(1); }
-        return;
-      }
+      if (State !== "playing" || Enter.active() || held) return;
       if (Date.now() - lastTick > 250 || state !== "play") return;
-      if ((e.key || "").toLowerCase() === "k" && !e.repeat) { e.preventDefault(); useKey(); return; }
-      if (e.code === "Space" || e.key === " ") { spaceTap = !e.repeat; return; }
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-      var k = (e.key || "").toLowerCase(), n = k >= "1" && k <= "6" ? k.charCodeAt(0) - 49 : -1, g = GATE_KEYS.indexOf(k);
-      if (n >= 0 && n < L.arr.length) { e.preventDefault(); moveSocket(L.arr[n].id); }
-      else if (g >= 0 && k.length === 1 && g < gates.length) { e.preventDefault(); unlock(gates[g]); }
+      if (e.code === "Space" || e.key === " ") spaceTap = !e.repeat;
     });
 
     /* ===============================================================
@@ -10809,7 +10821,7 @@
       return lit[col];
     }
     function drawLitRails() {
-      var tr = tier(combo), Ll;
+      var tr = vtier(combo), Ll;
       if (tr < 2 || state !== "play" || blackT > 0) return;
       Ll = litLayer(TIERS_COL[tr]);
       if (!Ll) return;
@@ -10833,7 +10845,7 @@
       return cv;
     }
     function drawFrameGlow() {
-      var tr = tier(combo), k = heat();
+      var tr = vtier(combo), k = heat();
       if (!tr || state !== "play") return;
       ctx.globalAlpha = (0.12 + 0.38 * k) * (0.8 + 0.2 * Math.sin(t * 3.2));
       ctx.drawImage(edgeGlow(TIERS_COL[tr]), 0, 0, view.w, view.h);
@@ -11465,7 +11477,7 @@
     // The glow behind the wheel: it grows and changes colour with the tier,
     // and goes dark for a moment when the combo breaks.
     function drawTierGlow() {
-      var tr = tier(combo), cx = L.wheel.cx, cy = L.wheel.cy, col, beat;
+      var tr = vtier(combo), cx = L.wheel.cx, cy = L.wheel.cy, col, beat;
       if (hubBreak > 0) drawGlow("#000000", cx, cy, RIM + 60, 0.6 * hubBreak / 0.6);
       if (hubZap > 0) drawGlow(C.volt, cx, cy, RIM + 90, 0.8 * hubZap / 0.7);
       if (!tr) return;
@@ -11532,9 +11544,9 @@
       drawFuse(cx, cy, RIM + 9);
       drawHub(cx, cy);
     }
-    // The combo on the hub: the count, and a ring filling toward the next tier.
+    // The Combo on the Dynamo's hub: the multiplier, and the notches toward the next one.
     function drawHub(cx, cy) {
-      var tr = tier(combo), col = hubZap > 0.3 ? C.voltHi : TIERS_COL[tr], rr = 44, i, a;
+      var tr = vtier(combo), col = hubZap > 0.3 ? C.voltHi : TIERS_COL[tr], rr = 44, i, a;
       ctx.beginPath(); ctx.arc(cx, cy, rr + 7, 0, PI2);
       ctx.fillStyle = hubZap > 0 ? "rgba(10,50,80," + (0.7 + 0.25 * hubZap) + ")" : tca("#09051a", .94); ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = tca("#beb0ff", .4); ctx.stroke();
@@ -11547,19 +11559,20 @@
         ctx.restore();
         return;
       }
-      var lo = tr ? tierAt(tr - 1) : 0, hi = tr < M.tiers.length ? tierAt(tr) : 0;
-      var k = hi ? (combo - lo) / (hi - lo) : 1;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
-      if (hubBreak > 0) {
-        ctx.strokeStyle = rgba(C.full, hubBreak / 0.6); ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
-      } else if (combo > 0) {
-        ctx.strokeStyle = rgba(col, 0.3); ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, -Math.PI / 2, -Math.PI / 2 + PI2 * Math.max(0.04, Math.min(1, k))); ctx.stroke();
-        ctx.strokeStyle = col; ctx.lineWidth = 5;
-        ctx.stroke();
+      /* THE NOTCHES: one tooth per notch of the gauge, lit clockwise from
+         the top as the sparks land; the newest one flares white. All of them
+         flash together for a beat when the Combo goes up (gaugeFull), then
+         the gauge starts over. A break turns every tooth red. */
+      var nn = notches(), lit = gaugeFull > 0 ? nn : combo % nn, step = PI2 / nn, half = step * 0.31, a0, on;
+      ctx.lineCap = "butt";
+      for (i = 0; i < nn; i++) {
+        a0 = -Math.PI / 2 + step * (i + 0.5);
+        on = hubBreak <= 0 && i < lit;
+        ctx.beginPath(); ctx.arc(cx, cy, rr, a0 - half, a0 + half);
+        if (hubBreak > 0) { ctx.strokeStyle = rgba(C.full, 0.25 + 0.75 * hubBreak / 0.6); ctx.lineWidth = 9; ctx.stroke(); continue; }
+        if (!on) { ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.lineWidth = 9; ctx.stroke(); continue; }
+        ctx.strokeStyle = rgba(col, 0.35); ctx.lineWidth = 15; ctx.stroke();
+        ctx.strokeStyle = i === lit - 1 && hubPop > 0.12 ? "#ffffff" : col; ctx.lineWidth = 9; ctx.stroke();
       }
       if (hubZap > 0) {
         ctx.strokeStyle = C.voltHi; ctx.lineWidth = 2;
@@ -11568,11 +11581,12 @@
       var pop = (1 + hubPop * 0.7) * (1 + 0.25 * heat());
       ctx.save(); ctx.translate(cx, cy); ctx.scale(pop, pop);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = font(combo >= 100 ? 30 : 36, 900);
+      var mx = mult();
+      ctx.font = font(mx >= 100 ? 26 : mx >= 10 ? 32 : 38, 900);
       ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .9);
-      ctx.strokeText("x" + combo, 0, 2);
-      ctx.fillStyle = combo > 0 ? col : tc("#6e6390");
-      ctx.fillText("x" + combo, 0, 2);
+      ctx.strokeText("x" + mx, 0, 2);
+      ctx.fillStyle = combo > 0 || mx > 1 ? col : tc("#6e6390");
+      ctx.fillText("x" + mx, 0, 2);
       ctx.restore();
     }
     /* THE FUSE, round the rim of the wheel: the share of it still lit, a
@@ -11610,7 +11624,7 @@
       return [v * v * c.x + 2 * v * u * mx + u * u * x1, v * v * c.y + 2 * v * u * my + u * u * y1];
     }
     function drawComets() {
-      var i, j, c, u, p, col = TIERS_COL[Math.max(1, tier(combo))];
+      var i, j, c, u, p, col = TIERS_COL[Math.max(1, vtier(combo))];
       for (i = 0; i < comets.length; i++) {
         c = comets[i];
         if (c.dl > 0) continue;
@@ -11625,7 +11639,7 @@
        first tier, sparks shed from the second, and from the third the
        current jumping between marbles that roll close together. */
     function drawHeat() {
-      var tr = tier(combo), col, i, j, m, n, g, p, a, b, dx, dy, bolts = 0;
+      var tr = vtier(combo), col, i, j, m, n, g, p, a, b, dx, dy, bolts = 0;
       if (!tr || state !== "play") return;
       col = TIERS_COL[tr]; n = 2 + tr; g = 9 + 3 * tr;
       for (i = 0; i < marbles.length; i++) {
@@ -11660,7 +11674,7 @@
     }
     // Sparks orbiting the wheel, more and faster as the combo grows.
     function drawOrbit() {
-      var tr = tier(combo), n = Math.max(ORBIT_SPARKS[tr], Math.round(20 * heat())), col, i, j, a, rr, aj;
+      var tr = vtier(combo), n = Math.max(ORBIT_SPARKS[tr], Math.round(20 * heat())), col, i, j, a, rr, aj;
       if (!n || state !== "play") return;
       col = TIERS_COL[tr];
       for (i = 0; i < n; i++) {
@@ -11715,7 +11729,7 @@
       }
     }
 
-    /* A SWITCH is the machine's own: it flips at every marble that passes
+    /* A SWITCH is the machine's own: it flips once the electric marble has passed
        it, and the player only reads it. So it says ONE thing, where the next
        marble goes: the open way is lit, with chevrons running down it and
        the tongue of the switch laid along it; the shut way is darkened and
@@ -12198,9 +12212,13 @@
        are set here instead, because they must EASE at the start of every
        biome: a new machine has more switches and gates, so its first level
        drops the pace back and its sixth brings it up past where the last
-       biome ended. `p` runs 0.10 -> 0.45 in biome 1 ... 0.82 -> 1 in biome 5. */
-    var PACE = { tempoEnd: [1.3, 1.9], pourEnd: [0.46, 0.2], lockRate: [0.08, 0.22], lockGain: [0.6, 2.95],
-                 lockMoreEvery: [0.8, 0.23], minOpenEnd: [1.3, 0.35] };
+       biome ended. `p` runs 0.10 -> 0.45 in biome 1 ... 0.82 -> 1 in biome 5.
+       Slowed down in v2.12.0 after a human playtest: the old top end
+       (tempo 1.9, a marble every 0.2 s, +2.95 locks a second) was a bench's
+       pace, not a player's: a pilot that taps every 1.2 to 2.5 s now lasts
+       every shift to level 16, and one in two at level 24. */
+    var PACE = { tempoEnd: [1.1, 1.35], pourEnd: [0.75, 0.5], lockRate: [0.04, 0.08], lockGain: [0.15, 0.5],
+                 lockMoreEvery: [1.0, 0.7], minOpenEnd: [2.8, 1.8] };
     var PACE_BASE = {};
     (function () { for (var k in PACE) if (PACE.hasOwnProperty(k)) PACE_BASE[k] = M[k]; })();
     function applyLevel(d) {
@@ -12373,16 +12391,19 @@
     /* Route pointer input to the game only while it is playing. A press
        during the entrance skips it, and the whole gesture it starts is eaten:
        the game never sees a move or an up without the down that opened it. */
-    var eaten = false;
+    /* Eaten per gesture: one finger's press eaten by the entrance never
+       eats another finger's (CONFIG.multiTouch, where `p.id` tells them
+       apart; without it every gesture has the same, absent, id). */
+    var eaten = {};
     Input.on("down", function (p) {
       if (State !== "playing") return;
-      if (Enter.active()) { Enter.skip(); eaten = true; return; }
-      eaten = false;
+      if (Enter.active()) { Enter.skip(); eaten[p.id] = true; return; }
+      eaten[p.id] = false;
       if (Game.onDown) Game.onDown(p);
     });
-    Input.on("move", function (p) { if (State === "playing" && !eaten && !Enter.active() && Game.onMove) Game.onMove(p); });
+    Input.on("move", function (p) { if (State === "playing" && !eaten[p.id] && !Enter.active() && Game.onMove) Game.onMove(p); });
     Input.on("up",   function (p) {
-      if (eaten) { eaten = false; return; }
+      if (eaten[p.id]) { eaten[p.id] = false; return; }
       if (State === "playing" && !Enter.active() && Game.onUp) Game.onUp(p);
     });
 

@@ -497,9 +497,18 @@ const WEB_ONLY_FOLD = /^(army-green|works-(blue|red|green)|world|plains|woods|no
    web-only. */
 const WEB_ONLY_GEL = /^(scene|texture)-(jungle|crystal|rice|beach|wood|bamboo|sand)$/;
 
+/* games/parrynormal's five biomes: the playable is biome 1 — the forest scene,
+   the witch, the bat and the jack-o'-lantern, the lightning super and the star
+   and pumpkin pickups — so the four later scenes, every other monster and the
+   dragon, the extras, the card portraits and the other pickups are web-only.
+   (Its supers 02+ are covered by WEB_ONLY_HOLE, its stickers and houses by the
+   generic rules above.) */
+const WEB_ONLY_PARRY = /^scene-(graveyard|swamp|crypt|throne)$|^(wisp|spider|zombie|skeleton|ghost|mole|slime|frog|mosquito|shaman|knight|gargoyle|vampire|rat|imp|salamander|priest|dragon|extra|monster)\d+$|^pickup0[3-8]$/;
+
 function webOnlyArt(role, roles) {
   if (WEB_ONLY_ART.includes(role)) return true;
   if (WEB_ONLY_GEL.test(role)) return true;
+  if (WEB_ONLY_PARRY.test(role)) return true;
   if (WEB_ONLY_FOLD.test(role)) return true;
   if (WEB_ONLY_ROCK.test(role)) return true;
   if (WEB_ONLY_ROCK_MATERIAL.test(role)) return true;

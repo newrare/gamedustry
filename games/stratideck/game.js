@@ -6,7 +6,7 @@
     /* One sentence, three words in colour: the gesture, what it lands on and
        the one rule that decides a fight. The stage under it drags a blue card
        onto a face-down red one, which flips and falls. */
-    tagline: "<b class=\"w-drag\">Drag</b> a card onto a <b class=\"w-hidden\">hidden</b> enemy, the higher <b class=\"w-rank\">rank</b> wins",
+    tagline: "<b class=\"w-drag\">Drag</b> a card onto a <b class=\"w-hidden\">hidden</b> enemy, the higher <b class=\"w-rank\">Grade</b> wins",
     /* NO CLOCK. A battle is turn-based: it ends when the enemy camp is empty,
        its flag is taken, or the player's army is spent. */
     gameSeconds: 0,

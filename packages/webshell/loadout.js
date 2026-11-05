@@ -24,21 +24,21 @@
   (`?first=0` or `?force=1`): a bench that starts a level must get a round,
   not a question.
 
-  WHAT IT OFFERS. Every slot is ALWAYS filled, so PLAY is always live: the
-  card opens on the player's LAST pick (remembered per game), with whatever
+  WHAT IT OFFERS. The card opens with every slot already filled, so PLAY
+  straight away plays a sensible hand: the player's LAST pick (remembered per game), with whatever
   THIS level brings in first — a level that introduces an item hands it
   over, tagged NEW, so it is met where the level table meant it to be met —
   then the level's own suggestion fills what is left.
 
-  HOW A SLOT CHANGES — two taps, and neither is a drag. The first round of
-  this card took and dropped tiles and left a dashed slot behind, and it read
-  as tiles to be dragged into slots. So nothing is ever taken out: a tap on
-  a free tile HOLDS it (lifted, in the accent), the slots on top start to
-  sway, wear the swap glyph and their caption says to tap the one it
-  replaces; that tap swaps them. Another free tile holds that one instead,
-  the same tile again lets go. A level with one slot swaps on the first tap,
-  since there is nothing to choose. ESCAPE puts the card away and starts
-  nothing.
+  HOW A PICK CHANGES — one tap, on the grid, and nothing else. Two earlier
+  rounds put the slots on top and asked for a tile to be dropped or swapped
+  into one, and both read as a puzzle about the card rather than a choice
+  of powers. So the card is the grid alone: a tap on a free tile EQUIPS it,
+  and when every slot is already taken the one equipped FIRST goes (a
+  queue, oldest out); a tap on an equipped tile takes it off. A bar of
+  one segment a slot counts the slots taken. PLAY is live with any number equipped: a slot left
+  empty is filled with the level's own suggestion. ESCAPE puts the card away
+  and starts nothing.
 
   THE CONTRACT IS THE GAME'S, and it is six functions on `Game.loadout`:
     title()        the card's title, already in the player's language
@@ -75,9 +75,6 @@
   }
   function text(tag, cls, str) { var n = el(tag, cls); n.textContent = str; return n; }
   function icon(name, cls) { return API ? API.icon(name, cls) : ""; }
-  var SWAP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ' +
-    'stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/>' +
-    '<path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>';
   function fill(str, vals) {
     return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vals[k] == null ? m : vals[k]; });
   }
@@ -86,13 +83,13 @@
 
   var STRINGS = {
     en: {
-      level: "Level {n}", endless: "Endless run", tap: "Tap an icon to swap it in",
-      play: "Play", fresh: "New", taken: "Equipped", swap: "Tap the one it replaces",
+      level: "Level {n}", endless: "Endless run", tap: "Tap an icon to equip it",
+      play: "Play", fresh: "New", taken: "Equipped {n} / {max}",
       lock: "Reach level {n} to unlock it", from: "Lv {n}"
     },
     fr: {
-      level: "Stage {n}", endless: "Partie sans fin", tap: "Touche une icône pour l'échanger",
-      play: "Jouer", fresh: "Nouveau", taken: "Équipés", swap: "Touche celui qu'il remplace",
+      level: "Stage {n}", endless: "Partie sans fin", tap: "Touche une icône pour l'équiper",
+      play: "Jouer", fresh: "Nouveau", taken: "Équipés {n} / {max}",
       lock: "Atteins le stage {n} pour le débloquer", from: "St {n}"
     }
   };
@@ -102,6 +99,7 @@
 
   /* ── 2. what the player has ───────────────────────────────────────────── */
 
+  var CONFIG = W.CONFIG;                // the single-file build has no global CONFIG
   var KEY = "loadout:" + (CONFIG.slug || "game");
 
   function LV() { var l = window.__LEVELS__; return l && l.active() ? l : null; }
@@ -148,41 +146,45 @@
     for (i = 0; i < seed.length && sel.length < want; i++) {
       if (had[seed[i]] && sel.indexOf(seed[i]) < 0) sel.push(seed[i]);
     }
-    var focus = sel[0], held = null, landed = -1;
+    /* The pick is a QUEUE, oldest first: what this level brings in goes to
+       the back, so it is the last one a new tap pushes out. */
+    var fresh = [];
+    for (i = 0; i < sel.length; i++) if (lvOf(sel[i]) === n) fresh.push(sel[i]);
+    sel = sel.filter(function (id) { return fresh.indexOf(id) < 0; }).concat(fresh);
+    function lvOf(id) { for (var j = 0; j < items.length; j++) if (items[j].id === id) return items[j].lv; return 0; }
+
+    var focus = sel[sel.length - 1], gone = null, landed = null;
     var endless = LV() && n > LV().count();
 
-    var cap, plates, detail, grid, tiles = {};
+    var cap, detail, grid, tiles = {};
 
-    // a free tile: held for the swap, or swapped straight in where there is one slot
     function tapTile(id) {
       focus = id;
-      if (!had[id] || sel.indexOf(id) >= 0) { held = null; return; }
-      if (want === 1) { sel[0] = id; landed = 0; held = null; return; }
-      held = held === id ? null : id;
+      if (!had[id]) return;
+      var at = sel.indexOf(id);
+      if (at >= 0) { sel.splice(at, 1); return; }
+      if (sel.length >= want) gone = sel.shift();
+      sel.push(id);
+      landed = id;
     }
-    function tapPlate(i) {
-      if (held) { sel[i] = held; focus = held; held = null; landed = i; return; }
-      focus = sel[i];
-    }
-    function paintPlates() {
-      cap.textContent = W.upper(held ? T.swap : T.taken);
-      cap.classList.toggle("swap", !!held);
-      plates.innerHTML = "";
-      plates.classList.toggle("swap", !!held);
-      for (var s = 0; s < want; s++) {
-        var id = sel[s], inf = G.info(id);
-        var p = el("button", "lo-plate" + (id === focus && !held ? " on" : "") + (s === landed ? " in" : ""));
-        p.type = "button";
-        var img = el("img", "lo-pic");
-        img.src = inf.src || ""; img.alt = "";
-        p.appendChild(img);
-        p.appendChild(text("span", "lo-pname", inf.name));
-        p.appendChild(el("span", "lo-swap", SWAP));
-        p.setAttribute("aria-label", inf.name);
-        p.addEventListener("click", (function (i) { return function () { tapPlate(i); paint(); }; })(s));
-        plates.appendChild(p);
+    // what PLAY takes: the pick, topped up with the level's own where it is short
+    function final() {
+      var out = sel.slice(), pool = (G.suggest(n) || []).concat(owned);
+      for (var j = 0; j < pool.length && out.length < want; j++) {
+        if (had[pool[j]] && out.indexOf(pool[j]) < 0) out.push(pool[j]);
       }
-      landed = -1;
+      return out;
+    }
+    /* How many slots are taken, as a bar of one segment a slot rather than
+       a line of words: read at a glance, and it fills as the player taps. */
+    function paintCap() {
+      if (cap.children.length !== want) {
+        cap.innerHTML = "";
+        for (var s = 0; s < want; s++) cap.appendChild(el("i", "lo-seg"));
+      }
+      for (var k = 0; k < want; k++) cap.children[k].classList.toggle("on", k < sel.length);
+      cap.classList.toggle("full", sel.length >= want);
+      cap.setAttribute("aria-label", fill(T.taken, { n: sel.length, max: want }));
     }
     function paintDetail() {
       detail.innerHTML = "";
@@ -203,12 +205,18 @@
     function paintGrid() {
       for (var id in tiles) {
         if (!tiles.hasOwnProperty(id)) continue;
-        tiles[id].classList.toggle("sel", sel.indexOf(id) >= 0);
-        tiles[id].classList.toggle("held", id === held);
-        tiles[id].classList.toggle("on", id === focus && id !== held);
+        var t = tiles[id];
+        t.classList.toggle("sel", sel.indexOf(id) >= 0);
+        t.classList.toggle("on", id === focus);
+        t.classList.remove("in", "out");
+        if (id === landed || id === gone) {
+          void t.offsetWidth;            // restart the animation on a second tap
+          t.classList.add(id === landed ? "in" : "out");
+        }
       }
+      landed = gone = null;
     }
-    function paint() { paintPlates(); paintDetail(); paintGrid(); }
+    function paint() { paintCap(); paintDetail(); paintGrid(); }
 
     var handle = MD.open({
       kind: "loadout",
@@ -219,7 +227,7 @@
       esc: true,
       fill: function (body) {
         cap = el("div", "lo-cap");
-        plates = el("div", "lo-plates");
+        cap.setAttribute("role", "img");
         detail = el("div", "lo-detail");
         grid = el("div", "lo-grid");
         for (var k = 0; k < items.length; k++) {
@@ -248,18 +256,28 @@
         playBtn.type = "button";
         playBtn.textContent = T.play;
         playBtn.addEventListener("click", function () {
-          W.Store.set(KEY, sel.slice());
-          G.set(sel.slice());
+          var pick = final();
+          W.Store.set(KEY, pick.slice());
+          G.set(pick);
           handle.close();
           go();
         });
         body.appendChild(cap);
-        body.appendChild(plates);
-        body.appendChild(detail);
         body.appendChild(grid);
+        body.appendChild(detail);
         body.appendChild(playBtn);
       }
     });
+    /* The description box keeps ONE height, the tallest any tile of the grid
+       asks for — measured once the card is laid out, in the player's language
+       — so the card never grows or shrinks as the focus moves. */
+    var keep = focus, tall = 0;
+    for (i = 0; i < items.length; i++) {
+      focus = items[i].id; paintDetail();
+      tall = Math.max(tall, detail.offsetHeight);
+    }
+    if (tall) detail.style.height = tall + "px";
+    focus = keep;
     paint();
     return true;
   }

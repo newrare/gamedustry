@@ -1,7 +1,7 @@
 {
   "slug": "pawko",
   "title": "Pawko",
-  "version": "0.8.36",
+  "version": "0.8.37",
   "tagline": "Drop waves of balls down a pinboard of pegs and play a card between waves",
   "order": 140,
   "draft": false,
@@ -436,7 +436,7 @@
           "A level always deals the same pile.": "Chaque stage distribue toujours la même pioche.",
           "A charm stays until the end of the game. Additional copies can stack, along with their effects.": "Un talisman reste actif jusqu'à la fin de la partie. Les exemplaires supplémentaires peuvent se cumuler ainsi que leurs effets.",
           "A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it.": "Un clou de feu enflamme la bille. Un clou de glace ralentit la bille en la gelant.",
-          "Fire and ice cancel each other out. Thermal shock then causes an explosion.": "Le feu et la glace s'annulent. Chaud-froid les fait alors exploser.",
+          "Fire and ice cancel each other out. Be careful though, as Thermal shock creates an explosion.": "Le feu et la glace s'annulent. Attention toutefois car Chaud-froid créer une explosion.",
           "A magnet pulls balls in and charges them. A charged ball pays double the points and also pulls the other balls.": "Un aimant attire les billes et les charge. Une bille chargée rapporte le double de points et attire aussi les autres billes.",
           "A mirror copies the special next to it.": "Un miroir copie le spécial voisin.",
           "After level 1, every level adds new cards.": "Après le premier pachinko, le jeu ajoute des nouvelles cartes par nouveau stage.",

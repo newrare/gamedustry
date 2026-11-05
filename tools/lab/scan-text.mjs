@@ -366,6 +366,7 @@ export const SURFACES = [
   { key: 'panel',    label: 'Game panel',     note: 'a node the game writes itself — a sheet, a pick' },
   { key: 'card',     label: 'Card',           note: 'a card of the game — its name, its text' },
   { key: 'guide',    label: 'Help guide',     note: 'a page of the rules book (Game.guide), opened from Help' },
+  { key: 'tips',     label: 'Tips',           note: 'a TIPS table — a guide page on the web, a tip card in a playable' },
   { key: 'character', label: 'Character',     note: 'a hero, a foe, an officer — name, lore, status, intent' },
   { key: 'world',    label: 'Biome / band',   note: 'a biome or a band of the climb — its name and what it brings' },
   { key: 'item',     label: 'Object / power', note: 'something picked, bought, fired or met on the table' },
@@ -408,13 +409,26 @@ function wrappersOf(clean, frames) {
 }
 
 /* The tables a mechanic is NAMED out of, once per player: a CAPS table
-   indexed just before a Notify.learn (marshmelt's INTRO, spinshock's MEET). */
+   indexed just before a Notify.learn (marshmelt's INTRO, spinshock's MEET).
+   Table → the fields the call reads (`TIPS[key].title`, `.say`), or null
+   when it reads the entry whole or through an alias: a table that also
+   holds the guide's `lines` (slipdeck's, bridgessa's TIPS) is a notice in
+   the two fields the call names and a tip everywhere else. */
 function learnTables(clean) {
-  const out = new Set(), re = /\bNotify\.learn\s*\(/g;
+  const out = new Map(), re = /\bNotify\.learn\s*\(/g;
   let m;
   while ((m = re.exec(clean))) {
-    const back = clean.slice(Math.max(0, m.index - 300), m.index), ix = /\b([A-Z][A-Z0-9_]*)\s*\[/g;
-    let t; while ((t = ix.exec(back))) out.add(t[1]);
+    const back = clean.slice(Math.max(0, m.index - 300), m.index);
+    const end = clean.indexOf(';', m.index), call = clean.slice(m.index, end < 0 ? m.index + 400 : end);
+    const ix = /\b([A-Z][A-Z0-9_]*)\s*\[/g, seen = new Set();
+    let t; while ((t = ix.exec(back))) seen.add(t[1]);
+    for (const name of seen) {
+      const fields = new Set(), fx = new RegExp(`\\b${name}\\s*\\[[^\\]]*\\]\\s*\\.\\s*(\\w+)`, 'g');
+      let f; while ((f = fx.exec(call))) fields.add(f[1]);
+      const was = out.get(name);
+      if (!fields.size || was === null) out.set(name, null);
+      else out.set(name, new Set([...(was || []), ...fields]));
+    }
   }
   return out;
 }
@@ -437,7 +451,8 @@ const TABLE_TOPIC = [
   [/^(?:BIOMES?|BANDS?|BAND_[A-Z_]+|BIOME_[A-Z_]+|WORLDS?|ZONES?)$/, 'world'],
   [/^(?:POWERS?|MODS|WARES|BLESSINGS|ITEMS?|OBJECTS|ABOUT|PERKS?|RELICS?)$/, 'item'],
   [/^(?:TIERS?|TIER_[A-Z_]+|RARITY|RANKS?|GRADES?)$/, 'rank'],
-  [/^(?:TIPS|[A-Z_]+_PAGES)$/, 'guide'],
+  [/^TIPS$/, 'tips'],
+  [/^[A-Z_]+_PAGES$/, 'guide'],
   [/^(?:GOALS?|GOAL_TEXT|BONUS_TEXT)$/, 'level'],
   [/^EVENTS$/, 'event'],
   [/^POST_[A-Z_]+$/, 'barracks'],
@@ -462,6 +477,8 @@ const FN_TOPIC = [
   [/^(?:\w+Sheet|sheet\w+)$/, 'panel'],
   [/^(?:goalLine|unlockLine)$/, 'level'],
   [/^(?:showTip|contractNow|durText|whenWord|weightWord|hitsWord|partyBurns|hpRow|liveryRows)$/, 'info'],
+  // a live part of a guide page (slipdeck's score lexicon, its + / × demo)
+  [/^build\w*Demo$/, 'guide'],
   [/^(?:guide|chapters)$|Pages?$|Chapter$|Pic$/, 'guide']
 ];
 const inGuide = (fn) => /(?:^|\.)(?:guide|chapters)(?:\.|$)|Pages?(?:\.|$)|Chapter(?:\.|$)/.test(fn || '');
@@ -470,7 +487,8 @@ function topicOf(fn, ctx) {
   const guided = inGuide(fn), page = (d) => [guided ? 'guide page' : null, d].filter(Boolean).join(' · ') || null;
   const game = ctx.table && TABLE_TOPIC_GAME[`${ctx.slug}:${ctx.table}`];
   if (game) return sf(game[0], page(game[1]));
-  if (ctx.table && ctx.learn && ctx.learn.has(ctx.table)) return sf('notice', 'first meeting · ' + ctx.table);
+  const learned = ctx.table && ctx.learn ? ctx.learn.get(ctx.table) : undefined;
+  if (learned === null || (learned && learned.has(ctx.key))) return sf('notice', 'first meeting · ' + ctx.table);
   if (ctx.table) for (const [re, key] of TABLE_TOPIC) if (re.test(ctx.table)) return sf(key, page([ctx.table, ctx.key].filter(Boolean).join(' · ')));
   const segs = (fn || '').split('.').reverse();
   for (const s of segs) for (const [re, key, d] of FN_TOPIC) if (re.test(s)) return sf(key, key === 'guide' ? fn : page(d || s + '()'));
@@ -965,11 +983,21 @@ export async function scanText(slug) {
     const other = r.lang === 'fr' ? byPair[r.pair].en : byPair[r.pair].fr;
     if (other != null) r.other = other;
   }
+  /* A key written once for every language and overridden in French
+     (`web.copy.helpAura` beside `web.copy.fr.helpAura`) is the ENGLISH:
+     listed in every language, it showed English in the French list. */
+  for (const r of rows) if (r.lang === 'all' && r.pair && byPair[r.pair] && byPair[r.pair].fr != null) {
+    r.lang = 'en';
+    byPair[r.pair].en = r.text;
+    const fr = rows.find((x) => x.pair === r.pair && x.lang === 'fr');
+    if (fr) fr.other = r.text;
+  }
   // A feminine form reads against the English, the one pair it has.
   for (const r of rows) if (r.echo && byPair[r.echo] && byPair[r.echo].en != null) r.other = byPair[r.echo].en;
 
   const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers, learn } = out.js;
   resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug, learn });
+  mergeShared(rows);
 
   /* WHERE A DICTIONARY ENTRY IS READ. Its key is the English, which says what
      it means but not where it shows: every row of the game that writes that
@@ -1024,6 +1052,41 @@ export async function scanText(slug) {
     slug, title: manifest.title || slug, version: manifest.version || '',
     groups: GROUPS, surfaces: SURFACES, rows, counts, warnings, missing: missing.map((r) => r.text)
   };
+}
+
+/* ONE SENTENCE, ONE ROW. A row merges the sites of ONE kind of call
+   ("Length" at three HUD labels), and the same English written by two kinds
+   — a callout and a refusal, a table and a ternary — came out as two rows.
+   Both read ONE French, since the English is the dictionary key, so they
+   are one decision: two rows asked for it twice, and an English edit on one
+   renamed the key under the other, which then read untranslated. The rows of
+   game.js that write a dictionary key become one, `shared` by the places
+   they came from, with every site, every use and every surface; the first
+   whole row gives its id. */
+function mergeShared(rows) {
+  const keys = new Set(rows.filter((r) => r.group === 'words').map((r) => r.context));
+  const by = new Map();
+  for (const r of rows) if (r.lang === 'en' && r.where === 'game.js' && !r.code && keys.has(r.text)) {
+    if (!by.has(r.text)) by.set(r.text, []);
+    by.get(r.text).push(r);
+  }
+  const gone = new Set();
+  for (const list of by.values()) {
+    if (list.length < 2) continue;
+    const head = list.find((r) => !r.fragment) || list[0];
+    const rest = list.filter((r) => r !== head);
+    head.shared = list.map((r) => ({ id: r.id, context: r.context, group: r.group, fragment: !!r.fragment, expr: r.expr || null }));
+    head.targets = head.targets || []; head.lines = head.lines || (head.line ? [head.line] : []); head.uses = head.uses || [];
+    for (const r of rest) {
+      head.targets.push(...(r.targets || []));
+      head.lines.push(...(r.lines || (r.line ? [r.line] : [])));
+      head.uses.push(...(r.uses || []));
+      gone.add(r);
+    }
+    head.surfaces = uniqueSurfaces(list.flatMap((r) => r.surfaces || []));
+    head.surface = head.surfaces[0] || null;
+  }
+  if (gone.size) for (let i = rows.length - 1; i >= 0; i--) if (gone.has(rows[i])) rows.splice(i, 1);
 }
 
 /* THE ENGLISH OF A TABLE. A guide page, a card, a power or a hero is most

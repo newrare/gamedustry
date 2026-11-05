@@ -5,7 +5,7 @@
     title:   "Grudgeon",
     /* One sentence, three words in colour: the gesture, what it lands on and
        what waits inside. The stage under it taps a lit room of the map. */
-    tagline: "<b class=\"w-tap\">Tap</b> a lit <b class=\"w-room\">room</b> to explore it and <b class=\"w-fight\">exorcise</b> the yokai inside",
+    tagline: "<b class=\"w-tap\">Tap</b> a lit <b class=\"w-room\">tile</b> to explore it. <b class=\"w-fight\">Fight</b> the Yokai hiding inside next",
     /* NO CLOCK. A dungeon is turn-based: the run ends when the party falls,
        when no room is left to open, or on the level's third star. */
     gameSeconds: 0,
@@ -143,6 +143,31 @@
       icoStart: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTQgMjJWNGExIDEgMCAwIDEgLjQtLjhBNiA2IDAgMCAxIDggMmMzIDAgNSAyIDcuMzMzIDJxMiAwIDMuMDY3LS44QTEgMSAwIDAgMSAyMCA0djEwYTEgMSAwIDAgMS0uNC44QTYgNiAwIDAgMSAxNiAxNmMtMyAwLTUtMi04LTJhNiA2IDAgMCAwLTQgMS41MjgiIC8+IDwvc3ZnPg==",
       // icoSkull: lucide skull
       icoSkull: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTEyLjUgMTctLjUtMS0uNSAxaDF6IiAvPiA8cGF0aCBkPSJNMTUgMjJhMSAxIDAgMCAwIDEtMXYtMWEyIDIgMCAwIDAgMS41Ni0zLjI1IDggOCAwIDEgMC0xMS4xMiAwQTIgMiAwIDAgMCA4IDIwdjFhMSAxIDAgMCAwIDEgMXoiIC8+IDxjaXJjbGUgY3g9IjE1IiBjeT0iMTIiIHI9IjEiIC8+IDxjaXJjbGUgY3g9IjkiIGN5PSIxMiIgcj0iMSIgLz4gPC9zdmc+",
+      /* the yokai's next move, drawn (drawIntent), and the HUD's warning */
+      // icoDices: lucide dices
+      icoDices: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHJlY3Qgd2lkdGg9IjEyIiBoZWlnaHQ9IjEyIiB4PSIyIiB5PSIxMCIgcng9IjIiIHJ5PSIyIiAvPiA8cGF0aCBkPSJtMTcuOTIgMTQgMy41LTMuNWEyLjI0IDIuMjQgMCAwIDAgMC0zbC01LTQuOTJhMi4yNCAyLjI0IDAgMCAwLTMgMEwxMCA2IiAvPiA8cGF0aCBkPSJNNiAxOGguMDEiIC8+IDxwYXRoIGQ9Ik0xMCAxNGguMDEiIC8+IDxwYXRoIGQ9Ik0xNSA2aC4wMSIgLz4gPHBhdGggZD0iTTE4IDloLjAxIiAvPiA8L3N2Zz4=",
+      // icoPause: lucide pause
+      icoPause: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHJlY3QgeD0iMTQiIHk9IjMiIHdpZHRoPSI1IiBoZWlnaHQ9IjE4IiByeD0iMSIgLz4gPHJlY3QgeD0iNSIgeT0iMyIgd2lkdGg9IjUiIGhlaWdodD0iMTgiIHJ4PSIxIiAvPiA8L3N2Zz4=",
+      // icoArrowDown: lucide arrow-down
+      icoArrowDown: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTEyIDV2MTQiIC8+IDxwYXRoIGQ9Im0xOSAxMi03IDctNy03IiAvPiA8L3N2Zz4=",
+      // icoDrop: lucide droplet
+      icoDrop: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTEyIDIyYTcgNyAwIDAgMCA3LTdjMC0yLTEtMy45LTMtNS41cy0zLjUtNC00LTYuNWMtLjUgMi41LTIgNC45LTQgNi41QzYgMTEuMSA1IDEzIDUgMTVhNyA3IDAgMCAwIDcgN3oiIC8+IDwvc3ZnPg==",
+      // icoChevrons: lucide chevrons-right
+      icoChevrons: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTYgMTcgNS01LTUtNSIgLz4gPHBhdGggZD0ibTEzIDE3IDUtNS01LTUiIC8+IDwvc3ZnPg==",
+      // icoBomb: lucide bomb
+      icoBomb: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPGNpcmNsZSBjeD0iMTEiIGN5PSIxMyIgcj0iOSIgLz4gPHBhdGggZD0iTTE0LjM1IDQuNjUgMTYuMyAyLjdhMi40MSAyLjQxIDAgMCAxIDMuNCAwbDEuNiAxLjZhMi40IDIuNCAwIDAgMSAwIDMuNGwtMS45NSAxLjk1IiAvPiA8cGF0aCBkPSJtMjIgMi0xLjUgMS41IiAvPiA8L3N2Zz4=",
+      // icoAxe: lucide axe
+      icoAxe: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTE0IDEyLTguMzgxIDguMzhhMSAxIDAgMCAxLTMuMDAxLTNMMTEgOSIgLz4gPHBhdGggZD0iTTE1IDE1LjVhLjUuNSAwIDAgMCAuNS41QTYuNSA2LjUgMCAwIDAgMjIgOS41YS41LjUgMCAwIDAtLjUtLjVoLTEuNjcyYTIgMiAwIDAgMS0xLjQxNC0uNTg2bC01LjA2Mi01LjA2MmExLjIwNSAxLjIwNSAwIDAgMC0xLjcwNCAwTDkuMzUyIDUuNjQ4YTEuMjA1IDEuMjA1IDAgMCAwIDAgMS43MDRsNS4wNjIgNS4wNjJBMiAyIDAgMCAxIDE1IDEzLjgyOHoiIC8+IDwvc3ZnPg==",
+      // icoArrowRight: lucide arrow-right
+      icoArrowRight: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTUgMTJoMTQiIC8+IDxwYXRoIGQ9Im0xMiA1IDcgNy03IDciIC8+IDwvc3ZnPg==",
+      // icoEye: lucide eye
+      icoEye: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTIuMDYyIDEyLjM0OGExIDEgMCAwIDEgMC0uNjk2IDEwLjc1IDEwLjc1IDAgMCAxIDE5Ljg3NiAwIDEgMSAwIDAgMSAwIC42OTYgMTAuNzUgMTAuNzUgMCAwIDEtMTkuODc2IDAiIC8+IDxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiIC8+IDwvc3ZnPg==",
+      // icoStar: lucide star
+      icoStar: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTExLjUyNSAyLjI5NWEuNTMuNTMgMCAwIDEgLjk1IDBsMi4zMSA0LjY3OWEyLjEyMyAyLjEyMyAwIDAgMCAxLjU5NSAxLjE2bDUuMTY2Ljc1NmEuNTMuNTMgMCAwIDEgLjI5NC45MDRsLTMuNzM2IDMuNjM4YTIuMTIzIDIuMTIzIDAgMCAwLS42MTEgMS44NzhsLjg4MiA1LjE0YS41My41MyAwIDAgMS0uNzcxLjU2bC00LjYxOC0yLjQyOGEyLjEyMiAyLjEyMiAwIDAgMC0xLjk3MyAwTDYuMzk2IDIxLjAxYS41My41MyAwIDAgMS0uNzctLjU2bC44ODEtNS4xMzlhMi4xMjIgMi4xMjIgMCAwIDAtLjYxMS0xLjg3OUwyLjE2IDkuNzk1YS41My41MyAwIDAgMSAuMjk0LS45MDZsNS4xNjUtLjc1NWEyLjEyMiAyLjEyMiAwIDAgMCAxLjU5Ny0xLjE2eiIgLz4gPC9zdmc+",
+      // icoFlee: lucide arrow-left
+      icoFlee: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTEyIDE5LTctNyA3LTciIC8+IDxwYXRoIGQ9Ik0xOSAxMkg1IiAvPiA8L3N2Zz4=",
+      // icoAlert: lucide triangle-alert
+      icoAlert: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTIxLjczIDE4LTgtMTRhMiAyIDAgMCAwLTMuNDggMGwtOCAxNEEyIDIgMCAwIDAgNCAyMWgxNmEyIDIgMCAwIDAgMS43My0zIiAvPiA8cGF0aCBkPSJNMTIgOXY0IiAvPiA8cGF0aCBkPSJNMTIgMTdoLjAxIiAvPiA8L3N2Zz4=",
       /* the fight's scrolls and the five elements' badges */
       // icoFist: lucide hand-fist
       icoFist: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTEyLjAzNSAxNy4wMTJhMyAzIDAgMCAwLTMtM2wtLjMxMS0uMDAyYS43Mi43MiAwIDAgMS0uNTA1LTEuMjI5bDEuMTk1LTEuMTk1QTIgMiAwIDAgMSAxMC44MjggMTFIMTJhMiAyIDAgMCAwIDAtNEg5LjI0M2EzIDMgMCAwIDAtMi4xMjIuODc5bC0yLjcwNyAyLjcwN0E0LjgzIDQuODMgMCAwIDAgMyAxNGE4IDggMCAwIDAgOCA4aDJhOCA4IDAgMCAwIDgtOFY3YTIgMiAwIDEgMC00IDB2MmEyIDIgMCAxIDAgNCAwIiAvPiA8cGF0aCBkPSJNMTMuODg4IDkuNjYyQTIgMiAwIDAgMCAxNyA4VjVBMiAyIDAgMSAwIDEzIDUiIC8+IDxwYXRoIGQ9Ik05IDVBMiAyIDAgMSAwIDUgNVYxMCIgLz4gPHBhdGggZD0iTTkgN1Y0QTIgMiAwIDEgMSAxMyA0VjcuMjY4IiAvPiA8L3N2Zz4=",
@@ -156,6 +181,8 @@
       icoSnow: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0ibTEwIDIwLTEuMjUtMi41TDYgMTgiIC8+IDxwYXRoIGQ9Ik0xMCA0IDguNzUgNi41IDYgNiIgLz4gPHBhdGggZD0ibTE0IDIwIDEuMjUtMi41TDE4IDE4IiAvPiA8cGF0aCBkPSJtMTQgNCAxLjI1IDIuNUwxOCA2IiAvPiA8cGF0aCBkPSJtMTcgMjEtMy02aC00IiAvPiA8cGF0aCBkPSJtMTcgMy0zIDYgMS41IDMiIC8+IDxwYXRoIGQ9Ik0yIDEyaDYuNUwxMCA5IiAvPiA8cGF0aCBkPSJtMjAgMTAtMS41IDIgMS41IDIiIC8+IDxwYXRoIGQ9Ik0yMiAxMmgtNi41TDE0IDE1IiAvPiA8cGF0aCBkPSJtNCAxMCAxLjUgMkw0IDE0IiAvPiA8cGF0aCBkPSJtNyAyMSAzLTYtMS41LTMiIC8+IDxwYXRoIGQ9Im03IDMgMyA2aDQiIC8+IDwvc3ZnPg==",
       // icoFlame: lucide flame
       icoFlame: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTEyIDNxMSA0IDQgNi41dDMgNS41YTEgMSAwIDAgMS0xNCAwIDUgNSAwIDAgMSAxLTMgMSAxIDAgMCAwIDUgMGMwLTItMS41LTMtMS41LTVxMC0yIDIuNS00IiAvPiA8L3N2Zz4=",
+      // icoHourglass: lucide hourglass
+      icoHourglass: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTUgMjJoMTQiIC8+IDxwYXRoIGQ9Ik01IDJoMTQiIC8+IDxwYXRoIGQ9Ik0xNyAyMnYtNC4xNzJhMiAyIDAgMCAwLS41ODYtMS40MTRMMTIgMTJsLTQuNDE0IDQuNDE0QTIgMiAwIDAgMCA3IDE3LjgyOFYyMiIgLz4gPHBhdGggZD0iTTcgMnY0LjE3MmEyIDIgMCAwIDAgLjU4NiAxLjQxNEwxMiAxMmw0LjQxNC00LjQxNEEyIDIgMCAwIDAgMTcgNi4xNzJWMiIgLz4gPC9zdmc+",
       // icoZap: lucide zap
       icoZap: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMi40IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiID4gPHBhdGggZD0iTTE1LjkxNCA0YTEuNSAxLjUgMCAwMC0yLjQ3NC0xLjU2MWwtOSA5QTEuNSAxLjUgMCAwMDUuNSAxNGg0LjAwMmEuNS41IDAgMDEuNDcxLjY2Nkw4LjA4NiAyMGExLjUgMS41IDAgMDAyLjQ3NSAxLjU2bDktOUExLjUgMS41IDAgMDAxOC41IDEwaC0zLjk5N2EuNS41IDAgMDEtLjQ3Mi0uNjY3eiIgLz4gPC9zdmc+",
       // icoAim: lucide crosshair
@@ -219,7 +246,7 @@
     /* The four heroes. `coat` / `hair` / `prop` only dress the drawn
        stand-in, which an adopted sprite sheet replaces (spriteArt). */
     var HEROES = {
-      akane: { name: "Akane", face: [0.525, 0.14, 0.24], role: "Shrine maiden", color: "#ff5d73", coat: "#f2efe8", hair: "#141018", prop: "wand",
+      akane: { name: "Akane", face: [0.525, 0.14, 0.24], role: "Shrine maiden", color: "#c77dff", coat: "#f2efe8", hair: "#141018", prop: "wand",
                hp: 72, sp: 40, atk: 9, def: 6, spd: 11, skills: ["purify", "blessing"] },
       kenji: { name: "Kenji", face: [0.535, 0.135, 0.24], role: "Kendo captain", color: "#5aa9ff", coat: "#1b2133", hair: "#0d0d12", prop: "sword",
                hp: 100, sp: 24, atk: 15, def: 9, spd: 8, skills: ["iai", "ward"] },
@@ -266,7 +293,7 @@
       ward:      { name: "Spirit ward",    kind: "ward", fx: "spells04", turns: 2,     sp: 6,  w: 0.8, icon: "icoWard",
                    foe: "bind", ally: "ward",
                    foeText: "Pushes it back on the timeline",
-                   allyText: "Every hero takes 40% less damage during the yokai's next two turns" },
+                   allyText: "Every hero takes 40% less damage during the Yokai's next two turns" },
       frost:     { name: "Frost talisman", kind: "hit", fx: "spells05",  el: "ice",    pow: 2.0, sp: 9,  w: 1, icon: "icoSnow",
                    foe: "hit", ally: "imbue",
                    foeText: "A strong blow of ice", allyText: "Their next blow becomes ice" },
@@ -275,11 +302,11 @@
                    foeText: "A strong blow of fire", allyText: "Their next blow becomes fire" },
       flash:     { name: "Flash",          kind: "hit", fx: "spells07",  el: "light",  pow: 1.1, sp: 10, w: 0.7, push: 0.6, icon: "icoZap",
                    foe: "hit", ally: "hasten", noSelf: true,
-                   foeText: "A quick blow of light that pushes the yokai back on the timeline",
+                   foeText: "A quick blow of light that pushes the Yokai back on the timeline",
                    allyText: "Moves them up the timeline" },
       ghostshot: { name: "Ghost shot",     kind: "hit", fx: "spells08",  el: "spirit", pow: 1.6, sp: 8,  w: 1, pierce: true, icon: "icoAim",
                    foe: "hit", ally: "imbue",
-                   foeText: "A spirit blow that goes through most of the yokai's defense",
+                   foeText: "A spirit blow that goes through most of the Yokai's defense",
                    allyText: "Their next blow becomes spirit" }
     };
     var HASTEN = 0.6, BIND = 0.8, WHET = 1.5, PACIFY = 0.5;
@@ -436,7 +463,7 @@
       if (S.obj === "gold") return Lang.t("Earn <b>{n}</b> gold");
       if (S.obj === "exit") return Lang.t("Find the <b>way out</b>");
       if (S.obj === "boss") return Lang.t("Exorcise the master:") + " <b>" + Lang.t(FOES[S.boss].name) + "</b>";
-      return Lang.t("Exorcise <b>{n}</b> yokai");
+      return Lang.t("Exorcise <b>{n}</b> Yokai");
     }
 
     /* ======================================================================
@@ -745,8 +772,8 @@
       { id: "herbs",  art: "items01", name: "Healing herbs",   text: "Heals every hero by 40%",       price: 20 },
       { id: "sake",   art: "items02", name: "Sacred sake",     text: "Restores half of every hero's SP", price: 18 },
       { id: "ofuda",  art: "items03", name: "Ofuda of return", text: "Raises the fallen",            price: 30 },
-      { id: "charm",  art: "items04", name: "Iron omamori",    text: "Defense +12% for the run",     price: 35 },
-      { id: "beads",  art: "items13", name: "Prayer beads",    text: "Attack +12% for the run",      price: 35 },
+      { id: "charm",  art: "items04", name: "Iron omamori",    text: "Defense +10% for the whole team",     price: 35 },
+      { id: "beads",  art: "items13", name: "Prayer beads",    text: "+10% attack for the whole team",      price: 35 },
       { id: "candles", art: "items09", name: "Candles",        text: "Lights the lantern for a while", price: 16 }
     ];
     var CANDLE_WARE = 0.2, CANDLE_STUB = 0.15;      // shares of the stage's lantern a purchase and a bonus give back
@@ -797,23 +824,23 @@
 
     /* --- an altar: one blessing out of three, for the rest of the run ----- */
     var BLESSINGS = [
-      { id: "vigor", name: "Vigor", text: "Max health +15% and as much healing" },
-      { id: "focus", name: "Focus", text: "Max SP +10, SP refilled" },
-      { id: "edge",  name: "Edge",  text: "Attack +12%" },
-      { id: "shell", name: "Shell", text: "Defense +12%" },
+      { id: "vigor", name: "Vigor", text: "Healing and max health +20%" },
+      { id: "focus", name: "Focus", text: "Refill and +10 max SP" },
+      { id: "edge",  name: "Edge",  text: "Attack +10%" },
+      { id: "shell", name: "Shell", text: "Defense +10%" },
       { id: "swift", name: "Swift", text: "Speed +2" },
-      { id: "spark", name: "Spark", text: "Skills hit 15% harder" }
+      { id: "spark", name: "Spark", text: "+20% damage on skills" }
     ];
     /* What lasts the whole run — a blessing, an omamori, prayer beads — is
        laid on every hero met so far, both groups of a split party, and kept
        in `boons` for the heroes who join later (takeAlly). */
     function boon(h, id) {
-      if (id === "vigor") { var g = Math.round(h.mhp * 0.15); h.mhp += g; if (!h.dead) h.hp += g; }
+      if (id === "vigor") { var g = Math.round(h.mhp * 0.2); h.mhp += g; if (!h.dead) h.hp += g; }
       else if (id === "focus") { h.msp += 10; if (!h.dead) h.sp = h.msp; }
-      else if (id === "edge" || id === "beads") h.atk *= 1.12;
-      else if (id === "shell" || id === "charm") h.def *= 1.12;
+      else if (id === "edge" || id === "beads") h.atk *= 1.1;
+      else if (id === "shell" || id === "charm") h.def *= 1.1;
       else if (id === "swift") h.spd += 2;
-      else if (id === "spark") h.pow *= 1.15;
+      else if (id === "spark") h.pow *= 1.2;
     }
     function bless(id) {
       boons.push(id);
@@ -850,51 +877,51 @@
     var EVENTS = [
       { title: "A crying girl", text: "A girl in a school uniform weeps alone at the end of the corridor.",
         a: { label: "Comfort her", outs: [
-          { p: 0.6, lore: "The girl smiles through her tears, then fades away. Her warmth stays with you.", fx: [["heal", 0.25]] },
-          { lore: "The girl lifts her head. Where her face should be, there is nothing.", fx: [["hurt", 0.15]] } ] },
+          { p: 0.6, lore: "The girl smiles through her tears, then fades away. You still feel her warmth around you.", fx: [["heal", 0.3]] },
+          { lore: "The girl lifts her head, but there is nothing where her face should be.", fx: [["hurt", 0.2]] } ] },
         b: { label: "Walk past", outs: [
-          { lore: "The sobbing follows you down the corridor, long after the girl is out of sight.", fx: [["sp", -0.15]] } ] } },
-      { title: "A glowing vending machine", text: "It hums in the dark, one button lit, a coin slot waiting.",
-        a: { label: "Insert 15 gold", cost: 15, outs: [
+          { lore: "The sobbing follows you down the corridor, long after the girl is out of sight.", fx: [["sp", -0.2]] } ] } },
+      { title: "A glowing vending machine", text: "It isn't even plugged in, yet it's still lit. The vending machine's slot waits for a coin.",
+        a: { label: "Give 15 gold", cost: 15, outs: [
           { p: 0.5, lore: "A can of sacred sake drops with a clunk.", fx: [["sp", 0.4]] },
           { lore: "A bundle of healing herbs drops into the tray.", fx: [["heal", 0.3]] } ] },
         b: { label: "Kick it", outs: [
-          { p: 0.5, lore: "Coins pour out of the return slot.", fx: [["gold", 20]] },
-          { lore: "The machine tips over and pins you to the floor.", fx: [["hurt", 0.12]] } ] } },
-      { title: "An offering box", text: "A tiny shrine, still tended. Someone left coins in the box.",
+          { p: 0.5, lore: "Coins tumble out and fall onto your feet.", fx: [["gold", 20]] },
+          { lore: "The machine tips over and pins you to the floor.", fx: [["hurt", 0.1]] } ] } },
+      { title: "An offering altar", text: "It is tiny but still tended. Lucky you, someone left coins in it.",
         a: { label: "Offer 20 gold", cost: 20, outs: [
           { lore: "A warm wind answers the offering. The kami is pleased.", fx: [["bless", "edge"]] } ] },
         b: { label: "Steal the coins", outs: [
-          { lore: "The coins are ice-cold, and they burn the hand that holds them.", fx: [["gold", 30], ["hurt", 0.2]] } ] } },
-      { title: "Footsteps behind you", text: "Slow, wet footsteps. They stop when you stop.",
+          { lore: "The coins are so ice-cold that they burn the hand that holds them.", fx: [["gold", 30], ["hurt", 0.2]] } ] } },
+      { title: "Sounds of footsteps behind you", text: "They are slow and wet. It is unsettling because the sounds stop when you stop.",
         a: { label: "Turn around", outs: [
-          { p: 0.5, lore: "Nobody there. Only a candle stub, still warm, on the wet floor.", fx: [["candles", 0.1]] },
+          { p: 0.5, lore: "There is nobody there, just a piece of candle on a wet floor.", fx: [["candles", 0.1]] },
           { lore: "Something was there, and it is not leaving.", fx: [["fight"]] } ] },
         b: { label: "Run", outs: [
-          { lore: "You run until your lungs burn, and the lantern gutters as you go.", fx: [["sp", -0.15], ["candles", -0.05]] } ] } },
-      { title: "A cursed mirror", text: "Your reflection blinks a moment after you do.",
+          { lore: "You run until your lungs burn, and then the lantern gutters as you go.", fx: [["sp", -0.2], ["candles", -0.05]] } ] } },
+      { title: "A cursed mirror", text: "Your reflection seems to blink a moment after you do.",
         a: { label: "Look into it", outs: [
           { p: 0.5, lore: "Your reflection nods, and you feel stronger.", fx: [["level"]] },
           { lore: "Your reflection keeps staring, long after you turn away.", fx: [["sp", -0.3]] } ] },
         b: { label: "Cover it", outs: [
-          { lore: "You hang a jacket over the glass. Something behind it sighs, and the air feels lighter.", fx: [["sp", 0.15]] } ] } },
-      { title: "A ringing phone", text: "An old phone rings in an empty classroom.",
+          { lore: "You hang a jacket over the glass. At that very moment something behind it sighs, and the air then feels lighter.", fx: [["sp", 0.2]] } ] } },
+      { title: "A phone is ringing", text: "It is an old phone in an empty room.",
         a: { label: "Answer", outs: [
           { p: 0.5, lore: "A child's voice tells you where the coins are hidden.", fx: [["gold", 25]] },
-          { lore: "A voice whispers a name, and one of you collapses.", fx: [["hurtOne", 0.3]] } ] },
+          { lore: "A voice whispers a name, and then someone collapses to the ground.", fx: [["hurtOne", 0.3]] } ] },
         b: { label: "Let it ring", outs: [
-          { lore: "The phone rings on and on. The lantern burns down while you wait.", fx: [["candles", -0.08]] } ] } },
-      { title: "A sensei's ghost", text: "An old swordmaster kneels in an empty dojo, a scroll across his knees.",
+          { lore: "The phone rings on and on. Your lantern burns down while you wait.", fx: [["candles", -0.08]] } ] } },
+      { title: "A Sensei's ghost", text: "An old swordmaster kneels in an empty dojo with a scroll on his knees.",
         a: { label: "Offer 15 gold", cost: 15, outs: [
           { lore: "The old master bows and hands over his scroll.", fx: [["learn"]] } ] },
         b: { label: "Bow and leave", outs: [
-          { lore: "The old master bows back. You leave the dojo calmer than you came.", fx: [["heal", 0.15]] } ] } },
-      { title: "A box of candles", text: "A box of temple candles, sealed with a paper charm.",
+          { lore: "The old master bows back. You leave the dojo calmer than you came.", fx: [["heal", 0.2]] } ] } },
+      { title: "A box of candles", text: "A full box of new temple candles. It seems sealed with a paper charm, though.",
         a: { label: "Break the seal", outs: [
-          { p: 0.6, lore: "The candles are dry and good, enough for a long walk.", fx: [["candles", 0.25]] },
+          { p: 0.6, lore: "The candles are dry and good, which means you can walk for a long time.", fx: [["candles", 0.25]] },
           { lore: "The paper charm was holding something in.", fx: [["fight"]] } ] },
         b: { label: "Take just one", outs: [
-          { lore: "You slip one candle out without touching the charm.", fx: [["candles", 0.08]] } ] } }
+          { lore: "You manage to slip one candle out without touching the charm.", fx: [["candles", 0.08]] } ] } }
     ];
     var evSeen = [];                     // the events met this run: the next one is another
     function pct(v) { return Math.round(Math.abs(v) * 100) + (Lang.code() === "fr" ? " %" : "%"); }
@@ -935,7 +962,7 @@
         return [Lang.t("Hero level"), "+1", true];
       }
       if (k === "level") { levelUp(); return [Lang.t("Hero level"), "+1", true]; }
-      if (k === "fight") return [Lang.t("A yokai attacks"), "", false];
+      if (k === "fight") return [Lang.t("A Yokai attacks"), "", false];
       return null;
     }
     function openEvent(cell) {
@@ -978,7 +1005,7 @@
         });
       }
       openCard({
-        eyebrow: "Event", title: ev.title, tap: "Tap a choice", text: ev.text,
+        eyebrow: "Event", title: ev.title, tap: "Tap an option", text: ev.text,
         build: function (body) {
           var list = document.createElement("div"); list.className = "gd-picks";
           list.appendChild(button(ev.a.label, null, "", function () { choose(ev.a); }));
@@ -1038,8 +1065,8 @@
        ====================================================================== */
     var CHASE = 4;                     // a wandering yokai smells the party this many corridors away
     var REINF = 2.2;                   // a group next door joins a fight after this many of its own waits
-    var DARK = 1.25;                   // the yokai's health and blows at the hour of the ox
-    var DARK_HURT = 0.03;              // what a step in the dark costs each hero (it never kills)
+    var DARK = 1.3;                    // the yokai's health and blows at the hour of the ox
+    var DARK_HURT = 0.05;              // what a step in the dark costs each hero (it never kills)
     var ROAM_SPD = { tengu: 2 };       // corridors a wandering yokai takes per step of the party
     var held = false;                  // an ambush is being announced: the map takes no tap
     var lampHit = null;                // the split / regroup chip of the lantern's band
@@ -1113,7 +1140,7 @@
       Pop.text(x, y - geo.size * 0.45, "-" + n, { color: "#ffcf7a", size: 22, life: 0.6, tier: 1 });
       if (!candles) {
         dark = true;
-        Notify.say("The last candle dies", { sub: Lang.t("The yokai grow stronger"), kind: "loss", icon: "hourglass", key: "dark" });
+        Notify.say("The last candle dies", { sub: Lang.t("The Yokai grow stronger"), kind: "loss", icon: "hourglass", key: "dark" });
         Sound.clip("curse", 1, 1.1);
       }
     }
@@ -1369,7 +1396,7 @@
         if (c) arrive(c); else afterStep();
       };
     }
-    function roamerCell(r) { var c = cells[r.at]; return { i: c.i, r: c.r, c: c.c, type: "fight", foe: r.foe, depth: r.depth, roam: true }; }
+    function roamerCell(r) { var c = cells[r.at]; return { i: c.i, r: c.r, c: c.c, type: "fight", foe: r.foe, depth: r.depth, roam: true, hpLeft: r.hpLeft, met: r.met }; }
     function ambush(hit, pending, then) {
       held = true;
       Notify.say("Ambush", { sub: Lang.t(FOES[hit.r.foe].name) + " " + Lang.t("strikes first"), kind: "warn", icon: "warn", key: "ambush" });
@@ -1432,7 +1459,7 @@
       function say(id, fn) { if (!Notify.learnt()[id]) later(0.6 + 0.5 * k++, fn); }
       say("candles", function () { Notify.learn("candles", "The lantern", { sub: "Each step burns a candle per hero" }); });
       if (feats.doors) say("doors", function () { Notify.learn("doors", "Fire doors", { sub: "Once through, no way back" }); });
-      if (feats.roam) say("roam", function () { Notify.learn("roam", "Wandering yokai", { sub: "The red arrow is the yokai's next move" }); });
+      if (feats.roam) say("roam", function () { Notify.learn("roam", "Wandering Yokai", { sub: "The red arrow is the Yokai's next move" }); });
       if (feats.split && canSplit()) say("split", function () { Notify.learn("split", "Split the party", { sub: "Explore with two groups" }); });
     }
 
@@ -1480,7 +1507,7 @@
        preset "B · Diagonal stage" (THE STAGE, below).
        ====================================================================== */
     var TICK = 100, SHOW = 7, SPECIAL_EVERY = 3;
-    var ICE_PUSH = 0.5, FEAR_PUSH = 0.6, KNOCKS = 3;
+    var FEAR_PUSH = 0.6;
     var POW = { strike: 1, heavy: 1.8, all: 0.75, drain: 1.2, fear: 0.9 };
     /* what a turn with no blow in it says */
     /* A FIGHT'S ENTRANCE, in seconds from its start: the blast carries the
@@ -1499,6 +1526,7 @@
       o.hurt = 0; o.lunge = 0; o.cast = 0; o.flash = 0; o.boost = 0;
       o.phase = i * 1.7; o.lag = o.hp; o.parts = []; o.acc = 0; o.enterAt = 0;
       o.ct = 0; o.n = 0;
+      o.gA = 0; o.sA = 0; o.cA = 0; o.zA = 0; o.pA = 0;   // the stage's auras: guard, shield, curse, stars, puffs
       return o;
     }
     /* A yokai's health and blows by the number of heroes in the fight: four
@@ -1515,11 +1543,14 @@
       if (cell.boss) { hk *= 1.8; ak *= 1.15; }
       if (dark) { hk *= DARK; ak *= DARK; }
       var hp = Math.round(b.hp * hk), spd = b.spd * (R && R.spd || 1);
-      return anim({ id: cell.foe, b: b, hero: false, boss: !!cell.boss, mhp: hp, hp: hp,
+      /* a yokai the party fled from comes back as it was left: its health,
+         and met again (`met`), which some rules answer */
+      var left = cell.hpLeft ? Math.max(1, Math.round(hp * cell.hpLeft)) : hp;
+      return anim({ id: cell.foe, b: b, hero: false, boss: !!cell.boss, mhp: hp, hp: left,
                atk: b.atk * (1 + 0.6 * (k - 1)) * ak, def: b.def * (1 + 0.3 * (k - 1)), spd: spd, spd0: spd,
                acts: 0, plan: [], doing: null, hitSince: false, lastHitter: null, answered: false,
-               knocks: 0, streak: 0, flame: 0, drum: 0, water: 0, grudge: 0, rattle: 0, face: 0,
-               dry: false, baby: null, cocoon: null, aggro: {},
+               st: R && R.st ? R.st({ met: !!cell.met }) : {}, met: !!cell.met,
+               fall: 0, fallTo: 0, turn: 0, turnTo: 0, sA: 0, zA: 0, pA: 0,
                dead: false, fade: 1, known: loreOf(cell.foe) }, 0.25);
     }
 
@@ -1562,12 +1593,10 @@
       for (var i = 0; i < party.length; i++) {
         var h = anim(party[i], i);
         h.guard = false; h.ct = wait(h); h.enterAt = INTRO.heroes + i * INTRO.gap;
-        h.imbue = null; h.whet = 0; h.cover = null;
+        h.imbue = null; h.whet = 0; h.cover = null; h.stun = false; h.struck = false;
         if (h.away) { h.ct = wait(h) * REINF; h.enterAt = 1e9; }      // off the frame until their turn comes
       }
       C.foe.ct = o.ambush ? 0 : wait(C.foe); C.foe.enterAt = INTRO.foe;
-      var tws = tileWidths();
-      for (i = 0; i < party.length; i++) party[i].tw = tws[i];
       cam.x = view.w / 2; cam.y = view.h / 2; cam.z = 1; cam.rot = 0; cam.punch = 0; cam.subject = null; cam.lb = 0;
       setStage(true);
       blowTo = 1;
@@ -1643,7 +1672,8 @@
         s0.ct = wait(now) * weightOf(now, w == null ? 1 : w); s0.n++; s0.guard = C.hover === "guard";
         last = now;
       }
-      var fk = 0, wd = C.ward;
+      var fk = 0, wd = C.ward, hs = now ? 1 : 0;
+      AHEAD = [];
       while (out.length < SHOW) {
         var s = lowest(sim);
         if (!s) break;
@@ -1651,7 +1681,10 @@
         for (i = 0; i < sim.length; i++) sim[i].ct -= d;
         var e = { u: s.u, key: s.u.id + ":" + s.n, now: !out.length, hits: [] };
         if (!s.u.hero) {
-          var it = f.doing ? (fk++ === 0 ? f.doing : liveIntent(fk - 2)) : liveIntent(fk++);
+          var ki = f.doing ? fk - 1 : fk;
+          if (ki >= 0) AHEAD[ki] = hs;
+          var it = f.doing && fk === 0 ? f.doing : liveIntent(ki);
+          fk++;
           e.it = it;
           var mod = fk === 1;              // the yokai's next turn: the one the scrolls bend
           if (it.alt) e.hits = maybeHits(it, simOf, wd > 0, mod);
@@ -1665,10 +1698,12 @@
           s.guard = false;
           s.ct = wait(s.u) * weightOf(s.u, 1);
           last = s.u;
+          hs++;
         }
         s.n++;
         out.push(e);
       }
+      AHEAD = [];
       return out;
     }
 
@@ -1718,8 +1753,10 @@
     }
     /* A yokai's blow is exactly what its intent says: no luck, no crit. */
     function estimate(it, h, guarded, warded, mod) {
+      if (it.toOne) return Math.max(0, h.hp - 1);           // a blow that leaves every hero on 1 HP (Funayurei's capsize)
       if (!it.pow && !it.flat) return 0;
-      var d = combat.foe.atk * (it.pow || 0) * 2.4 * (14 / (14 + h.def)) + (it.flat || 0);
+      var R = RULES[combat.foe.id], up = R && R.atk ? R.atk(combat.foe) : 0;
+      var d = combat.foe.atk * (it.pow || 0) * (1 + up / 100) * 2.4 * (14 / (14 + h.def)) + (it.flat || 0);
       if (mod && combat.foe.pacify) d *= PACIFY;
       if (guarded && !it.pierce) d *= 0.5;
       if (warded) d *= 0.6;
@@ -1758,64 +1795,164 @@
       };
     }
     var NOTHING = { pow: 0, targets: [], all: false, drain: false, fear: false };
+    /* A turn with no blow in it, saying why: { kind, label, sub }. */
+    function pass(kind, label, sub, extra) {
+      return copyOf({ kind: kind, label: label, sub: sub, pow: 0, w: 1, targets: [] }, extra || {});
+    }
+    function callout(style, word, sub) { Pop.show(style, { word: word, sub: sub }); }
+
+    /* --- the locks ---------------------------------------------------------
+       EVERY yokai has a way to be beaten, and plain blows thrown without it
+       still land, cut down: LOCKED (-80%) while its lock holds, EXPOSED
+       (+50%) while it is open. An open yokai stays open OPEN hero turns at
+       least: a rule names the states counted that way in `opens`, and each
+       hero turn (endHero) takes one off; a state opened DURING a hero turn
+       skips that turn (`fresh`). Every figure is a whole number or a round
+       percentage. Chosen in lab/grudgeon-yokai.html. */
+    var LOCKED = -80, EXPOSED = 50, OPEN = 5, ONRYO_PUSH = 2.2;
+    var FLEE = { base: 50, perSpd: 4, min: 20, max: 90 };
+    function tick(st, k) {
+      if (st[k + "Fresh"]) { st[k + "Fresh"] = false; return false; }
+      if (st[k] > 0 && --st[k] === 0) return true;
+      return false;
+    }
+    function openFor(f, k, fresh) { f.st[k] = OPEN; f.st[k + "Fresh"] = !!fresh; }
+    /* hero turns the timeline has run before the yokai's k-th turn (none
+       outside it): the turns ahead read a state as it will be by then */
+    var AHEAD = [];
+    function openAt(f, k, i) { return (f.st[k] || 0) + (f.st[k + "Fresh"] ? 1 : 0) > (i == null ? 0 : AHEAD[i] || 0); }
+    /* what a rule does to the blow a hero would throw: { pct, tag, bad,
+       word, sub, heal, bounce, key, type } — {} where it does nothing */
+    function blowMod(h, id, el) {
+      var f = combat.foe, R = RULES[f.id];
+      return (R && R.mod && R.mod(f, h, id, el)) || {};
+    }
+    /* What a rule NEEDS from the party's scrolls (`needs`: an element, or
+       any scroll that strikes): null when someone carries it. */
+    function missingKey() {
+      var C = combat, R = C && RULES[C.foe.id], n = R && R.needs, a = alive(), i, j, s;
+      if (!n) return null;
+      for (i = 0; i < a.length; i++) {
+        var l = knownIds(a[i]);
+        for (j = 0; j < l.length; j++) {
+          s = SKILLS[l[j]];
+          if (s && s.el && l[j] !== "attack" && (n.magic ? s.kind === "hit" : s.el === n.el)) return null;
+        }
+      }
+      return n;
+    }
+    /* the moment a yokai's key works, which is also when its trap card shows */
+    function ubumeOffers(f) { return !f.st.bare && !f.answered && !!intent(0).special; }
+    function kappaDives(f) { return !f.st.dry && !f.answered && !!intent(0).special; }
+    function tripTeke(f, during) {
+      openFor(f, "down", !during); f.st.rising = false; f.plan = []; f.fallTo = 1;
+      callout("combo", "Tripped", "+50% attack until she's up");
+    }
 
     /* --- the rules ---------------------------------------------------------
-       One per yokai, out of its legend, and every one of them bends the
-       TIMELINE or what it shows — the fight's one surface. A rule may:
-         text            the line under the boss bar (`status(f)` adds a count)
+       One per yokai, out of its legend. `text` is its line (the notice that
+       names it, its card), `lock` and `key` its page of the guide. A rule may:
+         st(o)           its own state (o.met: met again after a flight)
+         status(f)       the pill on the boss bar's line
+         opens           the states that count hero turns (OPEN)
+         onClose(f, k)   one of them runs out
+         mod(f, h, id, el) the blow a hero would throw (blowMod)
          plan(f, j)      its own intents (j turns from now)
          live(f, it, k)  turn the k-th planned intent into another, now
-         action(f, h)    a scroll it hands the hero whose turn it is, aimed
-                         at the yokai unless it says `on` ("self", "party")
-         onHit(f, h, s, r) answer a hero's blow (s the skill, r the result)
-         turn(f)         run after each of its own turns
-         weight(f, h, w) make a hero's actions heavier
-         hidden(f)       hide its intents
-         def(f)          a factor on its defense
-         spd             a speed of its own
-         onScroll(f, h, id, tg) answer a scroll the instant it is used, on
-                         the yokai (tg.foe) or on an ally (tg.hero) */
+         action(f, h)    the gold card of the turn: { label, sub, w, on, run(f, h) }
+         onHit(f, h, s, r, m) answer a hero's blow
+         onStrike(f, h, it, dmg) its blow has landed on h
+         onGale(f, guarded)    its gale has blown
+         cancel(f, it, tg) / onCancel(f, h)  a blow stopped short
+         onFlee(f, h)    a flight that is its key: a function, or null
+         onBlue(f, h)    a hero played a scroll's blue side
+         heroTurn(f, h, struck)  after each hero turn; true holds the fight
+         turn(f)         after each of its own turns
+         weight(f, h, w) / atk(f) / feast(f) / spd / flee { p, sub, ok }
+         needs { el | magic, word, sub }  what the party must carry
+         shield / ghost / curse(f, h) / puff / dazed  what the stage shows */
     var RULES = {
       /* --- Night school ---------------------------------------------------- */
       hanako: {
-        text: "Hanako's third knock hits every hero, so hold the door",
-        status: function (f) { return Lang.t("Knock") + " " + f.knocks + "/" + KNOCKS; },
-        plan: function (f, j) {
-          var k = (f.knocks + j) % KNOCKS + 1;
-          if (k === KNOCKS) return { kind: "stall", label: f.b.special, all: true, pow: 1.5, w: 1.2, special: true, fx: "all",
-                                     after: function (f2) { f2.knocks = 0; } };
-          return { kind: "knock", label: "Knock", tag: k + "/" + KNOCKS, targets: [randomHero()], pow: 0.6, w: 1, fx: "strike",
-                   after: function (f2) { f2.knocks++; } };
-        },
+        text: "Behind her door, she takes little damage: knock three times to open it for good",
+        lock: "Behind the door of the third stall, every blow lands at -80%.",
+        key: "Knock three times (a quick turn each): the door opens for good, and every blow lands at +50%.",
+        st: function () { return { knocks: 0, open: false }; },
+        status: function (f) { return f.st.open ? Lang.t("Door open") : Lang.t("Door shut") + " · " + f.st.knocks + "/3"; },
+        ghost: function (f) { return !f.st.open; },
+        mod: function (f) { return f.st.open ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The door holds", sub: "Knock 3 times" }; },
+        plan: planWith(function () { return { kind: "all", fx: "all", all: true, targets: null, fear: false, pow: 0.75 }; }),
+        live: function (f, it) { return !f.st.open && !it.special && it.pow ? copyOf(it, { label: "Who's there?", pow: it.pow * 0.6 }) : it; },
         action: function (f) {
-          if (f.knocks < 1) return null;
-          return { label: "Hold the door", sub: "One knock back", run: function (f2) {
-            f2.knocks--; f2.plan = [];
-            Pop.show("bonus", { word: "Door held", sub: "One knock back" });
+          if (f.st.open) return null;
+          return { label: "Knock", w: 0.6, sub: Lang.t("A quick turn") + " · " + (f.st.knocks + 1) + "/3", run: function (f2) {
+            f2.st.knocks++;
+            if (f2.st.knocks < 3) { callout("bonus", "Knock", f2.st.knocks + "/3"); return; }
+            f2.st.open = true; f2.plan = [];
+            callout("combo", "Door open", "+50% damage");
           } };
         }
       },
       teketeke: {
-        text: "Fast, she hunts the weakest hero, but ice stops her",
+        text: "Too fast to hit: be on guard when she charges, and she falls",
+        lock: "While she runs, every blow lands at -80%, and nobody outruns her.",
+        key: "Be on guard when she charges you: she trips and lies upside down for 5 of your turns, +50% damage. Ice trips her too.",
+        flee: { p: 0, sub: "She's faster" },
         spd: 1.4,
-        plan: planWith(function () { return { targets: [weakestHero()] }; }),
-        onHit: function (f, h, s) { if (s.el === "ice") push(f, ICE_PUSH, "Frozen in her tracks"); }
-      },
-      jinmenken: {
-        text: "Don't hit him before \"Leave me be\" and he walks away",
-        plan: function (f, j) {
-          var i = f.acts + j;
-          if (i % 3 === 1) return { kind: "leave", label: "Leave me be", tag: "...", pow: 0, w: 1, targets: [] };
-          return basePlan(f, i);
-        },
+        st: function () { return { down: 0, rising: false }; },
+        opens: ["down"],
+        onClose: function (f) { f.st.rising = true; },
+        status: function (f) { return f.st.down ? Lang.t("Fallen") + " · " + f.st.down : f.st.rising ? Lang.t("Getting up") : Lang.t("Running"); },
+        plan: function (f, j) { return copyOf(basePlan(f, f.acts + j), { all: false, targets: [weakestHero()] }); },
+        /* fallen while the hero turns last, then her first turn after is spent getting up */
         live: function (f, it, k) {
-          if (k === 0 && it.kind === "leave" && f.hitSince && f.lastHitter && !f.lastHitter.dead)
-            return { kind: "bite", label: "You hit me", targets: [f.lastHitter], pow: 1.8, w: 1, special: true, fx: "heavy" };
+          if (openAt(f, "down", k)) return pass("fallen", "Fallen", "She lies upside down");
+          if ((f.st.down || f.st.rising) && (k === 0 || openAt(f, "down", k - 1)))
+            return pass("getup", "Getting up", "She turns over", { after: function (f2) { f2.st.rising = false; f2.fallTo = 0; callout("alert", "She's up again", "She dodges again"); } });
           return it;
+        },
+        mod: function (f, h, id, el) {
+          if (f.st.down || f.st.rising) return { pct: EXPOSED, tag: "+50%" };
+          if (el === "ice") return { tag: "Trips" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "Grazed", sub: "Guard when she charges" };
+        },
+        onHit: function (f, h, s) { if (!f.st.down && !f.st.rising && s.el === "ice") tripTeke(f, false); },
+        cancel: function (f, it, tg) { return !f.st.down && !f.st.rising && tg.length === 1 && tg[0].guard; },
+        onCancel: function (f, h) { callout("bonus", "Blocked", Lang.t(h.b.name) + " · " + Lang.t("no damage")); tripTeke(f, true); }
+      },
+      /* He wants to be left alone: two hero turns in a row without a blow at
+         him and he walks away; a blow, and he stays and fights. */
+      jinmenken: {
+        text: "Don't strike him: two turns of peace and he walks away",
+        lock: "Strike him and he stays and fights, and your blows land at -80%.",
+        key: "Let two of your turns go by without striking him: he walks away, and it counts as exorcised.",
+        flee: { p: 100, ok: "He doesn't chase you" },
+        st: function () { return { calm: 0, angry: false }; },
+        status: function (f) { return f.st.angry ? Lang.t("Angry") : Lang.t("Calm") + " " + f.st.calm + "/2"; },
+        mod: function () { return { pct: LOCKED, tag: "-80%", bad: true, word: "You hit me", sub: "He stays and fights" }; },
+        onHit: function (f) { f.st.angry = true; f.st.calm = 0; f.plan = []; },
+        plan: planWith(function () { return { label: "Bite" }; }),
+        live: function (f, it) { return f.st.angry ? it : pass("watch", "Watching", "He keeps his distance"); },
+        heroTurn: function (f, h, struck) {
+          if (struck) return false;
+          f.st.calm++;
+          if (f.st.calm === 1) { f.st.angry = false; f.plan = []; callout("bonus", "He sniffs at you", "Keep your hands down"); return false; }
+          callout("combo", "Leave me be...", "He lowers his head");
+          var C = combat;
+          later(1.2, function () { if (combat === C && !f.dead) letGo(); });
+          return true;
         }
       },
       akamanto: {
-        text: "Red or blue? Both hurt badly, so answer neither",
+        text: "His cape shields him: when he asks \"Red or blue?\", answer neither",
+        lock: "His red cape takes the blows: -80% damage. Left unanswered, his question is a slash or a drain.",
+        key: "When he asks \"Red or blue?\", answer Neither: the cape falls for 5 of your turns, +50% damage.",
+        st: function () { return { bare: 0 }; },
+        status: function (f) { return f.st.bare ? Lang.t("Bare") + " · " + f.st.bare : Lang.t("Cape"); },
+        opens: ["bare"],
+        onClose: function () { callout("alert", "The cape is back", "-80% damage"); },
+        shield: function (f) { return !f.st.bare; },
+        mod: function (f) { return f.st.bare ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The cape takes it", sub: "Answer neither" }; },
         plan: function (f, j) {
           var i = f.acts + j;
           if ((i + 1) % SPECIAL_EVERY) return basePlan(f, i);
@@ -1824,206 +1961,357 @@
                           blue: { kind: "blue", label: "Blue", all: true, pow: 0.9, drain: true, special: true, fx: "drain", w: 1.2 } } };
         },
         live: function (f, it, k) {
-          return k === 0 && it.kind === "question" && f.answered ? { kind: "silence", label: "Silence", tag: "-", pow: 0, w: 1.2, targets: [] } : it;
+          if (it.kind !== "question") return it;
+          if (k === 0 && f.answered) return pass("silence", "Silence", "He has no answer", { w: 1.2 });
+          return openAt(f, "bare", k) ? it.alt.red : it;       // no cape, no question: a red slash
         },
         action: function (f) {
-          if (intent(0).kind !== "question" || f.answered) return null;
+          if (intent(0).kind !== "question" || f.answered || f.st.bare) return null;
           return { label: "Neither", sub: "Refuse to choose", run: function (f2) {
-            f2.answered = true;
-            Pop.show("bonus", { word: "Neither", sub: "He has no answer" });
+            f2.answered = true; openFor(f2, "bare", true);
+            callout("combo", "Neither", "+50% attack without the cape");
           } };
         }
       },
 
       /* --- Hospital -------------------------------------------------------- */
-      /* "Am I pretty?" is asked of ONE hero, and only that hero can give the
-         answer that disarms her: "so-so". */
       kuchisake: {
-        text: "Only the hero she asks can answer \"so-so\" and disarm her",
-        plan: planWith(function (f, it) { return { kind: "ask", label: f.b.special, tag: "?", pow: 2.0, fx: "heavy" }; }),
-        live: function (f, it, k) {
-          return k === 0 && it.kind === "ask" && f.answered ? copyOf(copyOf(it, NOTHING), { kind: "confused", label: "Confused", tag: "-" }) : it;
+        text: "Her mask shields her: strike her with a plain attack while she asks",
+        lock: "Her mask takes the blows: -80% damage. \"Am I pretty?\" left unanswered is a slash. The So-so on offer is a trap.",
+        key: "While she asks, the hero she asks strikes her with a plain attack: the mask tears for 5 of your turns, +50% damage.",
+        flee: { p: 100, ok: "She follows you to the next room" },
+        st: function () { return { bare: 0 }; },
+        status: function (f) { return f.st.bare ? Lang.t("Unmasked") + " · " + f.st.bare : Lang.t("Masked"); },
+        opens: ["bare"],
+        onClose: function () { callout("alert", "Masked again", "Attack reduced by 80%"); },
+        shield: function (f) { return !f.st.bare; },
+        mod: function (f, h, id) {
+          if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
+          var it = intent(0), asking = it.kind === "ask" && !f.answered && it.targets;
+          if (asking && it.targets[0] === h && id === "attack") return { pct: EXPOSED, tag: "+50%", key: true };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "The mask takes it",
+                   sub: !asking ? "Strike her while she asks" : it.targets[0] !== h ? "Only the one she asks can strike" : "Not a scroll · a plain attack" };
         },
+        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "bare", true); callout("combo", "The mask tears", "+50% attack when unmasked"); } },
+        plan: planWith(function () { return { kind: "ask", label: "Am I pretty?", tag: "?", pow: 2.6, fx: "heavy", fear: false }; }),
+        live: function (f, it, k) { return k === 0 && it.kind === "ask" && f.answered ? pass("confused", "Torn mask", "She loses her turn", { w: 1.2 }) : it; },
         action: function (f, h) {
           var it = intent(0);
-          if (it.kind !== "ask" || f.answered || !it.targets || it.targets[0] !== h) return null;
-          return { label: "So-so", sub: "The only safe answer", run: function (f2) {
-            f2.answered = true;
-            Pop.show("bonus", { word: "So-so", sub: "She doesn't know what to do" });
-          } };
+          if (f.st.bare || it.kind !== "ask" || f.answered || !it.targets || it.targets[0] !== h) return null;
+          return { label: "So-so", sub: "A safe answer?", run: function () { callout("alert", "She laughs", "Strike instead of talking"); } };
         }
       },
-      /* Hold her baby and it grows heavier with every step — but she will not
-         strike the arms that hold her child, and she thanks them for it. */
       ubume: {
-        text: "Whoever holds her baby slows down, but she spares and blesses them",
-        status: function (f) { return f.baby ? Lang.t("Carried by") + " " + f.baby.b.name : ""; },
-        plan: planWith(function () { return { targets: [weakestHero()], pow: 1.4 }; }),
-        live: function (f, it, k) {
-          if (!f.baby || f.baby.dead) return it;
-          if (it.special) return copyOf(copyOf(it, NOTHING), { kind: "thanks", label: "Thank you", tag: "+",
-            after: function (f2) { if (f2.baby && !f2.baby.dead) { f2.baby.atk *= 1.35; Pop.show("bonus", { word: "Blessed", sub: f2.baby.b.name }); } f2.baby = null; } });
-          var tg = targetsOf(it);
-          if (tg.length === 1 && tg[0] === f.baby) return copyOf(it, { targets: [weakestOther(f.baby)] });
-          return it;
+        text: "Her baby shields her: walk away when she offers it to you",
+        lock: "While she holds her baby, blows land at -80% and each one wakes her fury, +30%. Holding her baby is a trap.",
+        key: "When she offers her baby, flee: the flight fails, but her guard is down for 5 of your turns, +50% damage.",
+        st: function () { return { bare: 0, fury: 0 }; },
+        atk: function (f) { return f.st.fury * 30; },
+        status: function (f) { return f.st.bare ? Lang.t("Guard down") + " · " + f.st.bare : f.st.fury ? Lang.t("Fury") + " +" + f.st.fury * 30 + "%" : Lang.t("Holds her baby"); },
+        opens: ["bare"],
+        onClose: function () { callout("alert", "She holds it close again", "With -80% damage, walking away remains an option"); },
+        shield: function (f) { return !f.st.bare; },
+        mod: function (f) {
+          if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "She shields her baby", sub: ubumeOffers(f) ? "Fury +30% · blows won't reach her" : "Fury +30% · don't fight her" };
         },
-        weight: function (f, h, w) { return h === f.baby ? w * 1.4 : w; },
-        action: function (f, h) {
-          if (f.baby) return null;
-          return { label: "Hold the baby", on: "self", sub: "Slower until she takes it back", run: function (f2) {
-            f2.baby = h; f2.plan = [];
-            Pop.show("bonus", { word: "Baby held", sub: h.b.name });
-          } };
+        onHit: function (f) { if (!f.st.bare) f.st.fury++; },
+        plan: planWith(function () { return { targets: [weakestHero()], pow: 1.4 }; }),
+        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("call", "Don't go!", "She reaches out for you", { w: 1.2 }) : it; },
+        action: function (f) {
+          if (!ubumeOffers(f)) return null;
+          return { label: "Hold the baby", sub: "She offers it", w: 1.4, run: function () { callout("alert", "Heavier and heavier", "Walk away from a raised guard "); } };
+        },
+        onFlee: function (f) {
+          if (!ubumeOffers(f)) return null;
+          return function () {
+            f.answered = true; openFor(f, "bare", true); f.sA = 1.8;
+            callout("bonus", "She won't let you go", "Her shield falls");
+          };
         }
       },
-      /* A hungry ghost: what it drains, it eats whole — unless it is fed. */
+      /* A hungry ghost eats whatever hits it: a plain attack feeds it, only
+         magic, which it cannot eat, hurts it. */
       gaki: {
-        text: "It eats what it drains, but an offering of 10 gold keeps it busy",
-        plan: planWith(function () { return { feast: true, pow: 1.3 }; }),
-        action: function (f) {
+        text: "It eats your plain attacks. Only scrolls hurt it",
+        lock: "A plain attack heals it instead of dealing damage.",
+        key: "A scroll deals +50% damage and light even more. An offering of 10 gold forces the Yokai to eat instead of acting.",
+        needs: { magic: true, word: "No attack scroll", sub: "Only magic hurts it" },
+        status: function () { return Lang.t("Starving"); },
+        plan: function (f, j) { return copyOf(basePlan(f, f.acts + j), { drain: true }); },
+        mod: function (f, h, id) { return id === "attack" ? { heal: true, tag: "Heals", bad: true, word: "It eats your blow", sub: "Magic hurts it" } : { pct: EXPOSED, tag: "+50%" }; },
+        action: function () {
           if (gold < 10) return null;
-          return { label: "Make an offering", sub: "10 gold · it eats instead", run: function (f2) {
+          return { label: "Make an offering", sub: "With 10 gold, the Yokai eats instead of attacking", run: function (f2) {
             gold -= 10; HUD.setLeft(gold, CONFIG.copy.goldLabel);
             push(f2, 1.0, "It eats");
           } };
         }
       },
-      /* No face, no intent to read — until a spirit blow shows it. */
+      /* Faceless: facing the party it is locked; turned away (its sprite
+         mirrored), it is open. The two phases alternate, in hero turns. */
       nopperabo: {
-        text: "Faceless, it hides its turns until a spirit blow reveals them",
-        status: function (f) { return f.face > 0 ? Lang.t("Revealed") : Lang.t("Hidden"); },
-        hidden: function (f) { return f.face <= 0; },
-        onHit: function (f, h, s) { if (s.el === "spirit") { f.face = 2; Pop.show("bonus", { word: "Face revealed" }); } },
-        turn: function (f) { if (f.face > 0) f.face--; }
+        text: "Facing you, it can't be hurt: strike its back when it turns away",
+        lock: "Facing you, it is out of reach: -80% damage.",
+        key: "Every 3 of your turns it turns its back: strike then, +200% damage, for 5 of your turns.",
+        st: function () { return { facing: 3, away: 0 }; },
+        opens: ["facing", "away"],
+        onClose: function (f, k) {
+          if (k === "facing") {
+            openFor(f, "away", true); f.turnTo = 1;
+            callout("bonus", "It turns away", "Strike its back");
+          } else {
+            f.st.facing = 3; f.turnTo = 0;     // "facing" was counted before "away" this turn: no fresh
+            callout("alert", "It faces you again", "Wait for an opening");
+          }
+        },
+        status: function (f) { return f.st.away ? Lang.t("Turned away") + " · " + f.st.away : Lang.t("Facing you") + " · " + f.st.facing; },
+        mod: function (f) { return f.st.away ? { pct: 200, tag: "+200%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "It faces you", sub: "Wait until it turns away" }; }
       },
 
       /* --- Shrine forest ---------------------------------------------------- */
-      /* It stands on one leg: two blows between two of its turns trip it. */
       kasaobake: {
-        text: "Hit it twice between two of its turns to knock it off its one leg",
-        status: function (f) { return Lang.t("Hits") + " " + f.streak + "/2"; },
-        onHit: function (f) { if (++f.streak === 2) push(f, 0.8, "Tripped"); },
-        turn: function (f) { f.streak = 0; }
+        text: "It hops aside: set it alight, or land two blows between its turns",
+        lock: "The first blow after each of its turns only grazes it: -80%.",
+        key: "A fire blow sets it alight for 5 of your turns: it can't hop. Or land a second blow before its turn: it trips.",
+        needs: { el: "fire", word: "No fire scroll", sub: "Fire stops its hops" },
+        st: function () { return { hits: 0, burn: 0 }; },
+        status: function (f) { return f.st.burn ? Lang.t("Alight") + " · " + f.st.burn : Lang.t("Hops") + " · " + f.st.hits + "/2"; },
+        opens: ["burn"],
+        onClose: function () { callout("alert", "The flame dies", "It hops again"); },
+        mod: function (f, h, id, el) {
+          if (f.st.burn) return null;
+          if (el === "fire") return { tag: "Burns" };
+          return f.st.hits === 0 ? { pct: LOCKED, tag: "-80%", bad: true, word: "It hops aside", sub: "Fire, or a second blow" } : { tag: "Trips" };
+        },
+        onHit: function (f, h, s) {
+          if (f.st.burn) return;
+          if (s.el === "fire") { openFor(f, "burn", true); callout("combo", "Alight", "It can't hop"); return; }
+          if (++f.st.hits === 2) push(f, 0.8, "Tripped");
+        },
+        turn: function (f) { f.st.hits = 0; }
       },
-      /* Its flame grows with every turn; ice puts it out. */
       chochin: {
-        text: "Its flame grows every turn, but ice puts it out",
-        status: function (f) { return Lang.t("Flame") + " " + f.flame; },
+        text: "Its flame grows every turn: put it out with ice, never feed it fire",
+        lock: "Its flame grows each of its turns, and its specials with it. At 5, every turn burns every hero. Fire feeds it.",
+        key: "Ice puts the flame out. A hero on guard under its special smothers 2 of it.",
+        needs: { el: "ice", word: "No ice scroll", sub: "Ice puts its flame out" },
+        st: function () { return { flame: 0 }; },
+        status: function (f) { return Lang.t("Flame") + " " + f.st.flame + "/5"; },
         live: function (f, it, k) {
-          return it.special ? copyOf(it, { pow: 0.4 + 0.2 * (f.flame + k) }) : it;
+          var fl = Math.min(5, f.st.flame + k);
+          if (fl >= 5) return { kind: "all", label: "Ghost flame", all: true, pow: 1.2, w: 1, special: true, fx: "all" };
+          return it.special ? copyOf(it, { pow: 0.4 + 0.2 * fl }) : it;
         },
-        onHit: function (f, h, s) { if (s.el === "ice" && f.flame) { f.flame = 0; Pop.show("bonus", { word: "Doused" }); } },
-        turn: function (f) { f.flame++; }
+        mod: function (f, h, id, el) {
+          if (el === "fire") return { pct: LOCKED, tag: "-80%", bad: true, word: "It feeds on fire", sub: "Flame +2" };
+          return el === "ice" ? { tag: "Douses" } : null;
+        },
+        onHit: function (f, h, s) {
+          if (s.el === "fire") f.st.flame = Math.min(5, f.st.flame + 2);
+          else if (s.el === "ice" && f.st.flame) { f.st.flame = 0; callout("combo", "Doused", "Flame 0/5"); }
+        },
+        onStrike: function (f, h, it) { if (it.special && h.guard && f.st.flame) { f.st.flame = Math.max(0, f.st.flame - 2); callout("bonus", "Smothered", "Flame -2"); } },
+        turn: function (f) { f.st.flame = Math.min(5, f.st.flame + 1); }
       },
-      /* Its silk wraps one hero far down the timeline; a blade or fire frees. */
       jorogumo: {
-        text: "Its silk traps a hero: cut the silk or burn the spider",
-        plan: planWith(function () { return { kind: "cocoon", cocoon: true, drain: false, pow: 0.8, targets: [randomHero()] }; }),
-        action: function (f, h) {
-          if (!f.cocoon || f.cocoon.dead || f.cocoon === h) return null;
-          return { label: "Cut the silk", on: "party", sub: f.cocoon.b.name + " " + Lang.t("acts next"), run: function (f2) {
-            freeCocoon(f2);
-          } };
+        text: "She hides behind the hero she wraps in silk: free them",
+        lock: "Her silk wraps a hero, who loses time, and while a hero is wrapped every blow lands at -80%.",
+        key: "Cut the silk (another hero), Struggle (the wrapped one) or burn it with fire. Freed, she can't wrap anyone for 5 of your turns.",
+        st: function () { return { cocoon: null, free: 0 }; },
+        curse: function (f, h) { return f.st.cocoon === h; },
+        status: function (f) { return f.st.cocoon ? Lang.t("Cocoon") + " · " + Lang.t(f.st.cocoon.b.name) : f.st.free ? Lang.t("Silk torn") + " · " + f.st.free : Lang.t("Weaving"); },
+        opens: ["free"],
+        onClose: function () { callout("alert", "She weaves again", "Her silk is back"); },
+        plan: planWith(function () { return { kind: "cocoon", label: "Silk cocoon", cocoon: true, drain: false, pow: 0.8, targets: [randomHero()] }; }),
+        live: function (f, it, k) { return it.cocoon && openAt(f, "free", k) ? copyOf(it, { kind: "strike", label: "Silk lash", cocoon: false }) : it; },
+        mod: function (f, h, id, el) {
+          if (!f.st.cocoon || f.st.cocoon.dead) return null;
+          return el === "fire" ? { tag: "Burns silk" } : { pct: LOCKED, tag: "-80%", bad: true, word: "She hides behind her prey", sub: "Cut the silk" };
         },
-        onHit: function (f, h, s) { if (s.el === "fire" && f.cocoon) freeCocoon(f); }
+        onHit: function (f, h, s) { if (s.el === "fire" && f.st.cocoon) freeCocoon(f, "The silk burns"); },
+        action: function (f, h) {
+          var c = f.st.cocoon;
+          if (!c || c.dead) return null;
+          if (c === h) return { label: "Struggle", on: "self", sub: "Tear yourself free", run: function (f2) { freeCocoon(f2, "Free"); } };
+          return { label: "Cut the silk", on: "party", sub: Lang.t(c.b.name) + " " + Lang.t("acts next"), run: function (f2) { freeCocoon(f2, "Freed"); } };
+        }
       },
-      /* Its fan blows the whole party back down the timeline; a hero on guard
-         holds their ground. */
       tengu: {
-        text: "Its fan blows your heroes back, except those on guard",
-        plan: planWith(function () { return { kind: "gale", gale: true, all: true, targets: null, pow: 0.6 }; })
+        text: "His fan parries your blows: stand on guard through his gale",
+        lock: "His fan parries every blow, -80%, and throws half of it back at the striker.",
+        key: "Be on guard when his Gale fan blows: he is winded for 5 of your turns, +50% damage.",
+        st: function () { return { winded: 0 }; },
+        status: function (f) { return f.st.winded ? Lang.t("Winded") + " · " + f.st.winded : Lang.t("Fan raised"); },
+        puff: function (f) { return f.st.winded > 0; },
+        opens: ["winded"],
+        onClose: function () { callout("alert", "Fan raised", "He parries again"); },
+        plan: planWith(function () { return { kind: "gale", label: "Gale fan", gale: true, all: true, targets: null, pow: 0.6 }; }),
+        mod: function (f) { return f.st.winded ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, bounce: 50, word: "Parried", sub: "Guard through his gale" }; },
+        onGale: function (f, guarded) { if (guarded) { openFor(f, "winded", false); callout("combo", "Winded", "+50% damage for 5 turns"); } }
       },
 
       /* --- Drowned village ------------------------------------------------- */
-      /* Bow, and the kappa bows back: the water spills from its head, and it
-         is weak until it has refilled it. */
       kappa: {
-        text: "Bow and it bows back, spilling its water: its defense drops until it refills",
-        status: function (f) { return f.dry ? Lang.t("Dry") : ""; },
-        def: function (f) { return f.dry ? 0.4 : 1; },
-        live: function (f, it, k) {
-          return k === 0 && f.dry ? { kind: "refill", label: "Refill", tag: "-", pow: 0, w: 0.8, targets: [],
-                                       after: function (f2) { f2.dry = false; } } : it;
+        text: "The water on its head shields it: cast a scroll when it gets ready to dive",
+        lock: "The water in its dish protects it: -80% damage. The Bow on offer is a trap.",
+        key: "While it gets ready to Drag under, cast a scroll at it: its dish splashes empty, +50% damage for 5 of your turns.",
+        needs: { magic: true, word: "No attack scroll", sub: "Only a scroll empties its dish" },
+        st: function () { return { dry: 0 }; },
+        opens: ["dry"],
+        onClose: function () { callout("alert", "Refilled", "-80% damage · a scroll before its dive"); },
+        status: function (f) { return f.st.dry ? Lang.t("Dry") + " · " + f.st.dry : Lang.t("Water full"); },
+        shield: function (f) { return !f.st.dry; },
+        mod: function (f, h, id) {
+          if (f.st.dry) return { pct: EXPOSED, tag: "+50%" };
+          if (kappaDives(f) && id !== "attack") return { pct: EXPOSED, tag: "+50%", key: true };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "Its water protects it", sub: kappaDives(f) ? "Not a blade · a scroll" : "Wait for Drag under" };
         },
+        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "dry", true); callout("combo", "Splash!", "Its dish is empty · +50% for 5 turns"); } },
+        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("spilled", "Spilled", "It gropes for its water", { w: 1.2 }) : it; },
         action: function (f) {
-          if (f.dry) return null;
-          return { label: "Bow", sub: "It bows back and spills its water", run: function (f2) {
-            f2.dry = true;
-            Pop.show("bonus", { word: "It bows back", sub: "Its water spills" });
-          } };
+          if (!kappaDives(f)) return null;
+          return { label: "Bow", sub: "Kappa are polite", run: function () { callout("alert", "It doesn't bow back", "Manners won't empty it · cast a scroll"); } };
         }
       },
-      /* She strikes whoever acted just before her — the timeline decides. */
+      /* Her special STUNS the hero it lands on: they skip their next turn. */
       nureonna: {
-        text: "She strikes the hero who acted just before her",
+        text: "Every other turn her Coil stuns a hero: be on guard when it comes",
+        lock: "Every other turn her Coil stuns the hero it hits: they skip their next turn.",
+        key: "Be on guard when Coil comes at you (the timeline shows who): she slips off the guard, no stun.",
+        status: function () { return Lang.t("Coils"); },
         plan: function (f, j) {
-          var it = basePlan(f, f.acts + j);
-          return copyOf(it, { prev: true, all: false, targets: [], label: it.special ? f.b.special : it.label, pow: it.special ? 1.7 : 1 });
-        }
-      },
-      /* Every ladle they get fills the boat: the party grows heavier. A ladle
-         with no bottom empties it. */
-      funayurei: {
-        text: "Each of its specials floods the boat and slows your heroes, but a holed ladle bails it out",
-        status: function (f) { return f.water ? Lang.t("Water") + " " + f.water : ""; },
-        plan: planWith(function () { return { after: function (f2) { f2.water++; } }; }),
-        weight: function (f, h, w) { return w * (1 + 0.2 * f.water); },
-        action: function (f) {
-          if (!f.water) return null;
-          return { label: "Holed ladle", on: "party", sub: "The water drains away", run: function (f2) {
-            f2.water = 0;
-            Pop.show("bonus", { word: "Bailed out" });
-          } };
-        }
-      },
-      /* It hears only who hurts it: it strikes the hero who dealt it the most
-         since its last turn. */
-      umibozu: {
-        text: "It strikes whoever hurt it most since its last turn",
-        live: function (f, it, k) {
-          if (k !== 0 || it.all || !it.pow) return it;
-          var best = null, top = 0, a = alive();
-          for (var i = 0; i < a.length; i++) if ((f.aggro[a[i].id] || 0) > top) { top = f.aggro[a[i].id]; best = a[i]; }
-          return best ? copyOf(it, { targets: [best] }) : it;
+          return (f.acts + j) % 2 === 0 ? basePlan(f, 0) :
+            { kind: "heavy", label: f.b.special, fx: "drain", w: 1.2, special: true, stun: true, pow: 1.7, targets: [randomHero()] };
         },
-        onHit: function (f, h, s, r) { f.aggro[h.id] = (f.aggro[h.id] || 0) + r.dmg; },
-        turn: function (f) { f.aggro = {}; }
+        onStrike: function (f, h, it) {
+          if (!it.stun || h.dead) return;
+          if (h.guard) callout("bonus", "Slips off", "The guard holds · no stun");
+          else { h.stun = true; callout("alert", "Stunned", Lang.t(h.b.name) + " " + Lang.t("loses the next turn")); }
+        }
+      },
+      funayurei: {
+        text: "It floods your boat: pierce the bucket every time the water reaches 3",
+        lock: "Each of its specials floods the boat. At 4/4 the boat capsizes: every hero drops to 1 HP.",
+        key: "From 3/4, Pierce the bucket: the water drains by 1. Do it every time it reaches 3.",
+        st: function () { return { water: 0 }; },
+        status: function (f) { return Lang.t("Water") + " " + f.st.water + "/4"; },
+        plan: planWith(function () {
+          return { after: function (f2) {
+            f2.st.water = Math.min(4, f2.st.water + 1);
+            callout("alert", "The boat fills", f2.st.water + "/4 · " + Lang.t(f2.st.water >= 4 ? "it capsizes next turn" : "at 4 it capsizes"));
+          } };
+        }),
+        live: function (f, it, k) {
+          if (k !== 0 || f.st.water < 4) return it;
+          return { kind: "capsize", label: "Capsize", all: true, toOne: true, pow: 1, w: 1, special: true, fx: "all",
+                   after: function (f2) { f2.st.water = 0; callout("danger", "Capsized", "Every hero down to 1 HP"); } };
+        },
+        action: function (f) {
+          if (f.st.water < 3) return null;
+          return { label: "Pierce the bucket", sub: "Water -1", run: function (f2) { f2.st.water--; callout("bonus", "The water drains", f2.st.water + "/4"); } };
+        }
+      },
+      umibozu: {
+        text: "The tide covers it: strike after the ebb",
+        lock: "At high tide the sea covers it: -80% damage. Its tides hit every hero.",
+        key: "Read its cycle, rising tide, black tide, then the ebb: after the ebb it is bare for 5 of your turns, +50% damage.",
+        st: function () { return { ebb: 0 }; },
+        status: function (f) { return f.st.ebb ? Lang.t("Ebb") + " · " + f.st.ebb : Lang.t("High tide"); },
+        dazed: function (f) { return f.st.ebb > 0; },
+        opens: ["ebb"],
+        onClose: function () { callout("alert", "The tide rises", "-80% damage"); },
+        plan: function (f, j) {
+          var i = (f.acts + j) % 3;
+          if (i === 0) return { kind: "all", label: "Rising tide", all: true, pow: 0.5, w: 1, fx: "all" };
+          if (i === 1) return { kind: "all", label: "Black tide", all: true, pow: 1.2, w: 1.2, special: true, fx: "all" };
+          return pass("ebb", "Ebb", "The sea pulls back", { after: function (f2) { openFor(f2, "ebb", false); callout("combo", "Ebb", "Strike now · +50% for 5 turns"); } });
+        },
+        mod: function (f) { return f.st.ebb ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The tide covers it", sub: "Strike at the ebb" }; }
       },
 
       /* --- Gate of Yomi ----------------------------------------------------- */
       rokurokubi: {
-        text: "Its neck reaches past any guard",
-        plan: function (f, j) { return copyOf(basePlan(f, f.acts + j), { pierce: true }); }
+        text: "Out of reach: slash its neck when it stretches out",
+        lock: "Its blows reach past any guard, and its body is out of reach: -80% damage.",
+        key: "After its Long neck, slash the neck before its next turn: +100%, it is stunned and open for 5 of your turns, +50%.",
+        st: function () { return { neck: false, cut: 0 }; },
+        status: function (f) { return f.st.neck ? Lang.t("Neck out") : f.st.cut ? Lang.t("Cut") + " · " + f.st.cut : Lang.t("Neck in"); },
+        dazed: function (f) { return !!f.st.neck; },
+        opens: ["cut"],
+        onClose: function () { callout("alert", "It heals its neck", "-80% damage"); },
+        plan: function (f, j) {
+          var i = f.acts + j;
+          if (i % 2 === 1) return { kind: "heavy", label: "Long neck", targets: [randomHero()], pow: 1.6, w: 1, special: true, pierce: true, fx: "heavy",
+            after: function (f2) { f2.st.neck = true; callout("combo", "Neck out", "Slash it · +100%"); } };
+          return copyOf(basePlan(f, 0), { pierce: true });
+        },
+        begin: function (f) { f.st.neck = false; },
+        mod: function (f, h, id, el) {
+          if (f.st.neck && el === "slash") return { pct: 100, tag: "+100%" };
+          if (f.st.cut) return { pct: EXPOSED, tag: "+50%" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: f.st.neck ? "It slips past" : "Out of reach", sub: f.st.neck ? "Only a slash cuts the neck" : "Wait for the long neck" };
+        },
+        onHit: function (f, h, s) { if (f.st.neck && s.el === "slash") { f.st.neck = false; openFor(f, "cut", true); push(f, 0.6); callout("combo", "Neck cut", "Stunned · +50% for 5 turns"); } }
       },
-      /* Its bones rattle: every fourth blow it takes, it strikes back. */
       gashadokuro: {
-        text: "Every fourth blow it takes, it strikes back",
-        status: function (f) { return Lang.t("Rattle") + " " + f.rattle + "/4"; },
-        onHit: function (f, h) { if (++f.rattle >= 4) { f.rattle = 0; counter(f, h); } }
+        text: "Its bones rattle with every blow: at the third, it crushes everyone",
+        lock: "Every third blow it takes, it crushes every hero.",
+        key: "A light blow scatters the rattle. Or flee: met again, it is asleep for 5 of your turns, +100% damage.",
+        flee: { p: 100, ok: "Too slow to follow" },
+        st: function (o) { return { rattle: 0, asleep: o.met ? OPEN : 0 }; },
+        status: function (f) { return f.st.asleep ? Lang.t("Asleep") + " · " + f.st.asleep : Lang.t("Rattle") + " " + f.st.rattle + "/3"; },
+        opens: ["asleep"],
+        onClose: function () { callout("alert", "It wakes", "Rattle 0/3"); },
+        plan: planWith(function () { return { label: "Giant's grasp" }; }),
+        mod: function (f, h, id, el) {
+          if (f.st.asleep) return { pct: 100, tag: "+100%" };
+          if (el === "light") return { tag: "Scatters" };
+          return f.st.rattle === 2 ? { tag: "Crush", bad: true } : null;
+        },
+        onHit: function (f, h, s) {
+          if (f.st.asleep) return;
+          if (s.el === "light") { f.st.rattle = 0; callout("bonus", "Scattered", "Rattle 0/3"); return; }
+          if (++f.st.rattle >= 3) { f.st.rattle = 0; boneCrush(f); }
+        },
+        live: function (f, it, k) { return openAt(f, "asleep", k) ? pass("asleep", "Asleep", "Zzz") : it; },
+        onMet: function () { callout("combo", "Asleep", "+100% damage for 5 turns"); }
       },
-      /* It drums faster every turn; beans drive it back. */
+      /* It learns the last kind of blow it took, a plain attack or a scroll:
+         the same kind again only grazes it. The party has to alternate. */
       oni: {
-        text: "It drums faster every turn: throw beans to drive it back",
-        status: function (f) { return Lang.t("Drum") + " " + f.drum; },
-        turn: function (f) { f.drum++; f.spd = f.spd0 * (1 + 0.15 * f.drum); },
-        action: function (f) {
-          if (!f.drum) return null;
-          return { label: "Throw beans", sub: "Oni wa soto!", run: function (f2) {
-            f2.drum = 0; f2.spd = f2.spd0;
-            push(f2, 0.5, "Driven back");
-          } };
-        }
+        text: "It learns your last kind of blow: alternate attacks and scrolls",
+        lock: "It learns the last kind of blow it took, a plain attack or a scroll: the same kind again lands at -80%.",
+        key: "Alternate a plain attack and a scroll: every blow of the other kind lands in full.",
+        st: function () { return { last: null }; },
+        status: function (f) { return f.st.last === "blade" ? Lang.t("Guards blades") : f.st.last === "magic" ? Lang.t("Guards magic") : Lang.t("Learning"); },
+        mod: function (f, h, id) {
+          var type = id === "attack" ? "blade" : "magic";
+          if (f.st.last !== type) return { type: type };
+          return { type: type, pct: LOCKED, tag: "-80%", bad: true, word: "It learnt that one",
+                   sub: type === "blade" ? "Not a blade twice · cast a scroll" : "Not magic twice · strike with a blade" };
+        },
+        onHit: function (f, h, s, r, m) { f.st.last = m.type; }
       },
-      /* It keeps every blow and pays it back in its Grudge; light purifies. */
+      /* Its every turn pays its Grudge back on the whole party: keep it from
+         ever acting, a blue action pushing its turn back. */
       onryo: {
-        text: "It stores every blow as Grudge for its special, but light halves it",
-        status: function (f) { return Lang.t("Grudge") + " " + f.grudge; },
-        live: function (f, it) { return it.special ? copyOf(it, { all: true, targets: null, fear: false, pow: 0.5, flat: Math.round(f.grudge * 0.08),
-                                                                  after: function (f2) { f2.grudge = 0; } }) : it; },
+        text: "Every turn it pays its grudge back: keep pushing its turn back",
+        lock: "It keeps every blow it takes as Grudge, and every one of its turns pays 30% of it back on every hero.",
+        key: "Each of these actions pushes the Yokai back: guard, heal, ward, a scroll on an ally.",
+        flee: { p: 0, sub: "Its grudge follows you" },
+        st: function () { return { grudge: 0 }; },
+        status: function (f) { return Lang.t("Grudge") + " " + f.st.grudge; },
+        live: function (f, it) {
+          return copyOf(it, { all: true, targets: null, fear: false, drain: false, pow: 0.5, flat: Math.round(f.st.grudge * 0.3), label: "Grudge", special: true, fx: "all",
+                              after: function (f2) { f2.st.grudge = 0; } });
+        },
+        mod: function (f, h, id, el) { return el === "light" ? { tag: "Purifies" } : { tag: "Grudge", bad: true }; },
         onHit: function (f, h, s, r) {
-          if (r.weak) { f.grudge = Math.round(f.grudge / 2); Pop.show("bonus", { word: "Purified" }); }
-          else f.grudge += r.dmg;
-        }
+          if (s.el === "light") { f.st.grudge = Math.round(f.st.grudge / 2); callout("bonus", "Purified", "Grudge -50%"); }
+          else f.st.grudge += r.dmg;
+        },
+        onBlue: function (f, h) { f.ct += wait(h) * ONRYO_PUSH; callout("bonus", "Held back", "Its turn moves back"); }
       }
     };
     function weakestOther(h) {
@@ -2031,49 +2319,64 @@
       for (var i = 0; i < a.length; i++) if (a[i] !== h && (!m || a[i].hp < m.hp)) m = a[i];
       return m || h;
     }
-    function freeCocoon(f) {
-      var h = f.cocoon;
-      f.cocoon = null;
+    function freeCocoon(f, word) {
+      var h = f.st.cocoon;
+      f.st.cocoon = null;
+      openFor(f, "free", true);
       if (!h || h.dead) return;
       h.ct = 0;
-      Pop.show("bonus", { word: "Freed", sub: h.b.name });
+      callout("bonus", word, Lang.t(h.b.name) + " " + Lang.t("acts next"));
     }
-    /* Gashadokuro's answer: a blow straight back at the hero who struck. */
-    function counter(f, h) {
+    /* A blow on a hero from outside a turn of the yokai's: a counter, a
+       parried blow thrown back, a failed flight. */
+    function hurtHero(h, dmg, from, big) {
+      var p = topOf(h);
+      h.hp = Math.max(0, h.hp - dmg);
+      impact(h, from, { big: big, color: "#e2364b" });
+      Pop.text(p.x + 40, p.y, "-" + dmg, { color: "#ff5d73", size: 22, life: 0.6, tier: big ? 3 : 1 });
+      Sound.clip("hurt", 0.55);
+      if (h.hp <= 0) {
+        h.dead = true; fell = true;
+        if (combat && combat.foe.st && combat.foe.st.cocoon === h) combat.foe.st.cocoon = null;
+        Pop.show("alert", { word: h.b.name, sub: "Down" });
+        Sound.clip("down", 0.6);
+      }
+    }
+    /* Gashadokuro's answer: a crush on every hero. */
+    function boneCrush(f) {
       var C = combat;
-      later(0.3, function () {
-        if (combat !== C || f.dead || h.dead) return;
-        var dmg = estimate({ pow: 0.6 }, h, h.guard, C.ward > 0), p = topOf(h);
-        h.hp = Math.max(0, h.hp - dmg);
-        f.lunge = 0.5;
-        spellOn("spells14", h, 1.0);
-        impact(h, f, { big: true, color: "#e2364b" });
-        Pop.show("danger", { word: "Bone crush", sub: h.b.name });
-        Pop.text(p.x + 40, p.y, "-" + dmg, { color: "#ff5d73", size: 22, life: 0.6, tier: 3 });
-        Sound.clip("hurt", 0.55);
-        if (h.hp <= 0) { h.dead = true; fell = true; Pop.show("alert", { word: h.b.name, sub: "Down" }); Sound.clip("down", 0.6); }
+      later(0.35, function () {
+        if (combat !== C || f.dead) return;
+        f.lunge = 0.6; f.cast = 1;
+        alive().forEach(function (h) { spellOn("spells14", h, 1.0); hurtHero(h, estimate({ pow: 1.4 }, h, h.guard, C.ward > 0), f, true); });
       });
     }
+    function cursedNow(h) { var C = combat, R = C && RULES[C.foe.id]; return !!(C && !h.dead && R && R.curse && R.curse(C.foe, h)); }
     function ruleAction() {
       var C = combat, R = C && RULES[C.foe.id];
-      return R && R.action && C.phase === "input" && !C.foe.dead ? R.action(C.foe, C.actor) : null;
+      return R && R.action && C.phase === "input" && !C.foe.dead && C.actor && !C.actor.stun ? R.action(C.foe, C.actor) : null;
     }
 
     /* The damage formula of a hero's blow: attack x power, softened by
-       defense, a little luck, then the element: weak 1.6x (and ONE MORE),
-       resisted 0.5x, 8% crits. */
-    function strike(att, tgt, pow, el, pierce) {
-      var DR = RULES[tgt.id], def = (pierce ? tgt.def * 0.3 : tgt.def) * (DR && DR.def ? DR.def(tgt) : 1);
-      var d = att.atk * pow * 2.4 * (14 / (14 + def)) * Rand.range(0.9, 1.1);
+       defense, then the element: weak 1.6x (and ONE MORE), resisted 0.5x,
+       8% crits, then what the yokai's rule does to it (`m`, blowMod): a
+       whole percentage, or a heal. No luck: the preview is what lands. */
+    function strike(att, tgt, pow, el, pierce, m) {
+      m = m || {};
+      var def = pierce ? tgt.def * 0.3 : tgt.def;
+      var d = att.atk * pow * 2.4 * (14 / (14 + def));
       var weak = false, resist = false, crit = false;
       if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
       else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
       tgt.known[el] = weak ? "weak" : resist ? "resist" : "normal";
       learnElement(tgt.id, el, tgt.known[el]);
-      if (!resist && Math.random() < 0.08) { crit = true; d *= 1.5; }
+      if (!resist && !m.heal && !(m.pct < 0) && Math.random() < 0.08) { crit = true; d *= 1.5; }
+      var raw = Math.max(1, Math.round(d));
+      if (m.pct) d *= 1 + m.pct / 100;
       d = Math.max(1, Math.round(d));
-      tgt.hp = Math.max(0, tgt.hp - d);
-      return { dmg: d, weak: weak, resist: resist, crit: crit };
+      if (m.heal) tgt.hp = Math.min(tgt.mhp, tgt.hp + d);
+      else tgt.hp = Math.max(0, tgt.hp - d);
+      return { dmg: d, raw: raw, weak: weak, resist: resist, crit: crit };
     }
     /* A blow landing: the stage's own beat (knockback, cut, punch) and the
        motor's juice, at the target's place on screen. */
@@ -2105,6 +2408,7 @@
       C.phase = "busy"; C.hover = null;
       cam.subject = h;
       if (R && R.onScroll) R.onScroll(f, h, id, tg);
+      if (!tg.foe && R && R.onBlue) later(0.5, function () { if (combat && !f.dead) R.onBlue(f, h, id); });
       if (tg.foe) {
         if (s.foe === "hit") { hitFoe(C, h, id, s); return; }
         h.cast = 0.9;
@@ -2190,24 +2494,29 @@
       h.dashGo = skill ? 0.35 : 1;
       later(skill ? 0.38 : 0.24, function () {
         if (combat !== C) return;
-        var el = ELEMENTS[elId], r = strike(h, f, s.pow * (skill ? h.pow : 1) * mult, elId, s.pierce), p = topOf(f);
+        var R = RULES[f.id], m = blowMod(h, id, elId);
+        if (R && R.shield && R.shield(f)) f.sA = 1.7;    // the shield flares as it takes the blow
+        var el = ELEMENTS[elId], r = strike(h, f, s.pow * (skill ? h.pow : 1) * mult, elId, s.pierce, m), p = topOf(f);
         spellOn(r.crit ? "spells14" : s.fx, f, skill ? 1.15 : 0.8);
         impact(f, h, { weak: r.weak, color: el.color });
         Fx.burst(p.x, p.y + 60, { color: [el.color, "#ffffff"], count: r.weak || r.crit ? 22 : 12, speed: 340, life: 0.5, grav: 120 });
-        Pop.show("alert", { word: "-" + r.dmg, at: { x: p.x + Rand.range(-30, 30), y: p.y } });
+        if (m.heal) { f.flash = 0.6; Pop.text(p.x, p.y, "+" + r.dmg, { color: "#7ee0a1", size: 22, life: 0.6, tier: 1 }); }
+        else Pop.show("alert", { word: "-" + r.dmg, at: { x: p.x + Rand.range(-30, 30), y: p.y } });
+        if (m.bounce) { var bk = Math.max(1, Math.round(r.raw * m.bounce / 100)); later(0.3, function () { if (combat === C && !h.dead) hurtHero(h, bk, f, false); }); }
+        if (m.word) Pop.show("alert", { word: m.word, sub: m.sub, at: "upper" });
         if (r.weak) Sound.clip("weak", 0.6);
         else if (skill && r.resist) Sound.clip("skill", 0.6, 1.3);
         else if (skill) Sound.clip("skill", 0.6, 0.7);
         else if (r.resist) Sound.clip("hit", 0.6, 0.8);
         else Sound.clip("hit", 0.6);
-        f.hitSince = true; f.lastHitter = h;
+        f.hitSince = true; f.lastHitter = h; h.struck = true;
         if (f.hp <= 0) return;
-        if (s.push) push(f, s.push, "Stunned");
-        var R = RULES[f.id];
-        if (R && R.onHit) R.onHit(f, h, sk, r);
-        if (r.weak && !C.extra) { again = true; Pop.show("combo", { word: "Weak!", sub: "One more", at: "center" }); f.boost = 1; }
-        else if (r.crit) Pop.show("streak", { word: "Critical" });
-        else if (r.resist) Pop.show("alert", { word: "Resisted", at: "upper" });
+        var landed = !m.heal, full = landed && !(m.pct < 0);   // a blow the lock cut down earns no ONE MORE
+        if (s.push && landed) push(f, s.push, "Stunned");
+        if (R && R.onHit) R.onHit(f, h, sk, r, m);
+        if (full && r.weak && !C.extra) { again = true; Pop.show("combo", { word: "Weak!", sub: "One more", at: "center" }); f.boost = 1; }
+        else if (landed && r.crit) Pop.show("streak", { word: "Critical" });
+        else if (landed && r.resist && !m.word) Pop.show("alert", { word: "Resisted", at: "upper" });
       });
       later(0.62, function () { h.dashGo = 0; });
       later(1.05, function () {
@@ -2227,11 +2536,88 @@
       C.phase = "busy"; C.hover = null; cam.subject = h; h.cast = 0.9;
       spellOn("spells04", h, 0.9);
       Sound.clip("guard", 1, 1.2);
-      later(0.3, function () { if (combat === C) ra.run(C.foe); });
-      later(1.0, function () { endHero(C, h, 1); });
+      later(0.3, function () { if (combat === C) ra.run(C.foe, h); });
+      later(1.0, function () { endHero(C, h, ra.w || 1); });
+    }
+    /* FLEE: a hero tries to get the party out. Its odds: 50%, +4% a point of
+       speed over the yokai's, between 20% and 90% — or the rule's own. Out,
+       the party is back on the map with nothing lost, and the yokai, still
+       hurt as it was, waits in another room (fled). Caught, the yokai
+       strikes the one who ran. A master bars the way. */
+    function fleeOdds(h) {
+      var f = combat.foe, R = RULES[f.id];
+      if (f.boss) return 0;
+      if (R && R.flee && R.flee.p != null) return R.flee.p;
+      return Math.round(clamp(FLEE.base + FLEE.perSpd * Math.round(h.spd - f.spd), FLEE.min, FLEE.max) / 10) * 10;   // shown to the player: a round figure
+    }
+    function flee() {
+      var C = combat, h = C.actor, f = C.foe, R = RULES[f.id];
+      if (!canCast()) return;
+      var key = R && R.onFlee ? R.onFlee(f, h) : null, p = fleeOdds(h);
+      hideBar();
+      C.phase = "busy"; C.hover = null; cam.subject = h;
+      h.dashTo = { x: h.hx - 2.5, z: h.hz }; h.dashGo = 0.6;
+      Sound.clip("step", 0.6, 1.2);
+      later(0.45, function () {
+        if (combat !== C) return;
+        h.dashGo = 0;
+        if (key) {                         // the flight is the rule's key (Ubume): it fails, nothing strikes
+          later(0.3, function () { if (combat === C) key(); });
+          later(1.6, function () { endHero(C, h, 1); });
+          return;
+        }
+        if (Math.random() * 100 < p) { fled(C); return; }
+        Pop.show("alert", { word: "Can't escape", sub: f.boss ? "The master bars the way" : (R && R.flee && R.flee.sub) || "It strikes" });
+        later(0.55, function () {
+          if (combat !== C || f.dead || h.dead) return;
+          f.lunge = 0.6;
+          spellOn("spells13", h, 1.0);
+          hurtHero(h, estimate({ pow: 1 }, h, false, C.ward > 0), f, false);
+        });
+        later(1.4, function () { endHero(C, h, 1); });
+      });
+    }
+    /* Out: the party walks back onto the map, and the yokai moves to another
+       room, met again there as it was left. */
+    function fled(C) {
+      var f = C.foe, R = RULES[f.id], left = f.hp / f.mhp;
+      Pop.show("bonus", { word: "Escaped", sub: (R && R.flee && R.flee.ok) || "It goes to another room" });
+      C.fled = true; f.dead = true;
+      if (C.roamer) {                      // a wandering yokai steps to a room next door
+        var r = C.roamer, lk = linked(r.at), opts = [], k;
+        for (k = 0; k < lk.length; k++) if (roamFree(lk[k], r) && !groupIn(lk[k])) opts.push(lk[k]);
+        if (opts.length) { r.prev = r.at; r.at = Rand.pick(opts); r.trail = [r.prev, r.at]; r.mt = 0; }
+        r.hpLeft = left; r.met = true;
+        planRoam(r);
+      } else relocate(C.cell, left);
+      leaveFight(C);
+    }
+    /* The room a fled yokai goes to: the nearest room still to open, else
+       the nearest one the party has left behind, which lights up again. */
+    function relocate(cell, left) {
+      var dd = walkDist(cell.i), best = -1, bestDone = -1, i, c;
+      for (i = 0; i < cells.length; i++) {
+        c = cells[i];
+        if (i === cell.i || c.type !== "empty" || c.boss || groupIn(i) || roamerAt(i) || dd[i] < 1) continue;
+        if (c.state === DONE) { if (bestDone < 0 || dd[i] < dd[bestDone]) bestDone = i; }
+        else if (c.state === HIDDEN || c.state === LIT) { if (best < 0 || dd[i] < dd[best]) best = i; }
+      }
+      if (best < 0) best = bestDone;
+      var to = best >= 0 ? cells[best] : cell;
+      if (to !== cell) {
+        to.type = "fight"; to.foe = cell.foe; to.depth = cell.depth;
+        if (to.state === DONE) to.state = LIT;
+        cell.type = "empty"; cell.foe = null;
+      }
+      to.hpLeft = left; to.met = true;
     }
     function endHero(C, h, w) {
       if (combat !== C) return;
+      var f = C.foe, R = RULES[f.id], struck = !!h.struck, i;
+      h.struck = false;
+      /* the states an open yokai counts in hero turns (OPEN) */
+      if (R && R.opens) for (i = 0; i < R.opens.length; i++) if (tick(f.st, R.opens[i]) && R.onClose) R.onClose(f, R.opens[i]);
+      if (R && R.heroTurn && R.heroTurn(f, h, struck)) { C.phase = "busy"; cam.subject = null; return; }   // the rule holds the fight (Jinmenken leaving)
       h.n++; h.ct = wait(h) * weightOf(h, w);
       C.lastHero = h;
       cam.subject = null;
@@ -2240,18 +2626,21 @@
 
     /* --- the yokai -------------------------------------------------------- */
     function foeAct() {
-      var C = combat, f = C.foe;
+      var C = combat, f = C.foe, R = RULES[f.id];
+      if (R && R.begin) R.begin(f);
       var it = liveIntent(0);
       f.plan.shift(); f.acts++;
-      if (it.kind === "leave") { letGo(); return; }
       if (it.kind === "question") it = Math.random() < 0.5 ? it.alt.red : it.alt.blue;
       f.doing = it;
-      if (!it.pow && !it.flat) {                       // a turn with no blow in it
-        Pop.show("bonus", { word: it.label, sub: PASS[it.kind] || "Loses the turn" });
+      if (!it.pow && !it.flat && !it.toOne) {          // a turn with no blow in it
+        Pop.show("bonus", { word: it.label, sub: it.sub || PASS[it.kind] || "Loses the turn" });
         later(1.0, function () { endFoe(C, it); });
         return;
       }
-      var big = !!it.special;
+      var big = !!it.special, tg0 = targetsOf(it, true);
+      /* a blow its rule stops short (Teke Teke on a guard): the charge breaks
+         off, the guard flares, nothing lands */
+      if (R && R.cancel && R.cancel(f, it, tg0)) { cancelBlow(C, it, tg0[0], big); return; }
       cam.subject = f;
       if (big) {
         C.special = 1; f.cast = 1.5; f.boost = 1.5;
@@ -2278,21 +2667,45 @@
           Fx.burst(p.x, p.y + 60, { color: ["#e2364b", "#2a0a14"], count: 10, speed: 240, life: 0.45, grav: 160 });
           if (h.hp <= 0) {
             h.dead = true; h.hp = 0; fell = true;
-            if (f.cocoon === h) f.cocoon = null;
+            if (f.st.cocoon === h) f.st.cocoon = null;
             Pop.show("alert", { word: h.b.name, sub: "Down" });
             Sound.clip("down", 0.6);
           } else if (it.fear) push(h, FEAR_PUSH, "Frozen with fear");
-          else if (it.cocoon) { h.ct += wait(h) * 2; f.cocoon = h; Pop.show("alert", { word: "Wrapped in silk", sub: h.b.name }); }
+          else if (it.cocoon) { h.ct += wait(h); f.st.cocoon = h; Pop.show("alert", { word: "Wrapped in silk", sub: Lang.t(h.b.name) + " " + Lang.t("loses time") }); }
+          if (h.guard && !it.pierce) h.gA = 1.6;          // the guard flares as it holds
+          if (R && R.onStrike) R.onStrike(f, h, it, dmg);
         });
         if (it.gale) {
+          var guarded = alive().some(function (h) { return h.guard; });
           alive().forEach(function (h) { if (!h.guard) h.ct += wait(h) * 0.6; });
-          Pop.show("alert", { word: "Blown back", sub: "Guard holds firm" });
+          if (!guarded) Pop.show("alert", { word: "Blown back", sub: "Guard holds firm" });
+          if (R && R.onGale) R.onGale(f, guarded);
         }
         if ((it.drain || it.feast) && total) { f.hp = Math.min(f.mhp, f.hp + Math.round(total * (it.feast ? 1 : 0.5))); f.flash = 0.6; }
         if (tg.length) Sound.clip("hurt", 0.55);
         if (C.ward > 0) C.ward--;
       });
       later(big ? 1.9 : 1.05, function () { if (combat === C) { C.special = 0; endFoe(C, it); } });
+    }
+    /* The blow broken off: a charge stops short of a hero on guard (the
+       ribbon first on a special, then the dash), the guard flares. */
+    function cancelBlow(C, it, h, big) {
+      var f = C.foe, R = RULES[f.id], at = big ? 0.5 : 0;
+      cam.subject = f;
+      if (big) { f.cast = 1; later(0.35, function () { if (combat === C) Pop.show("ribbon", { word: it.label }); }); }
+      later(at, function () {
+        if (combat !== C) return;
+        f.lunge = 0.6;
+        f.dashTo = { x: h.hx + (f.hx - h.hx) * 0.55, z: h.hz + (f.hz - h.hz) * 0.55 }; f.dashGo = 1;
+      });
+      later(at + 0.12, function () {
+        if (combat !== C) return;
+        f.dashGo = 0; h.gA = 1.8;
+        Sound.clip("guard", 1, 0.8);
+        Fx.shake(8, 0.2);
+        if (R && R.onCancel) R.onCancel(f, h);
+      });
+      later(at + 1.6, function () { if (combat === C) endFoe(C, it); });
     }
     function endFoe(C, it) {
       if (combat !== C) return;
@@ -2325,9 +2738,14 @@
       if (u.hero && u.away) join(u);
       if (!u.hero) { C.phase = "busy"; later(0.45, function () { if (combat === C) foeAct(); }); return; }
       u.guard = false;
-      C.phase = "input"; C.peek = null; C.lastOpen = u;
+      C.phase = "input";
       setStage();
       showBar(u);
+      if (u.stun) {                       // stunned: the card is shown, the turn is lost, the next one is theirs again
+        cam.subject = u;
+        Pop.show("alert", { word: "Stunned", sub: Lang.t(u.b.name) + " " + Lang.t("can't act this turn") });
+        later(1.6, function () { if (combat !== C) return; u.stun = false; C.phase = "busy"; turnPlayed(); endHero(C, u, 1); });
+      }
     }
 
     /* A hero of the group next door reaches the fight: their first turn. */
@@ -2338,8 +2756,9 @@
     }
 
     /* --- a fight's three ends --------------------------------------------- */
-    function win() {
+    function win(walk) {
       var C = combat, f = C.foe, fp = toScreen(f.sx, f.sy - f.s * 0.45);
+      f.dead = true;
       var pts = Math.round((f.mhp + 40) / 10) * 10;
       var g = Math.round((10 + 4 * bandIndex()) * Rand.range(0.8, 1.2) * P.goldRate);
       foesDown++; score += pts; gold += g; goldEarned += g;
@@ -2351,7 +2770,7 @@
       Fx.ring(fp.x, fp.y, { from: 40, to: 260, color: "#fff2a8", width: 8, life: 0.6 });
       Fx.flash("#ffffff", 0.12);
       Sound.clip("exorcise", 0.7, 1.3);
-      Pop.show("bonus", { word: "Exorcised", sub: "+" + g + " " + Lang.t("gold") });
+      Pop.show("bonus", { word: walk ? "He walks away" : "Exorcised", sub: "+" + g + " " + Lang.t("gold") });
       spellOn("spells01", f, 1.5);
       for (var i = 0; i < 60; i++) f.parts.push({ front: true, x: f.sx + Rand.range(-1, 1) * f.s * 0.3, y: f.sy - Math.random() * f.s * 0.9,
         vx: Rand.range(-30, 30), vy: Rand.range(-160, -60), life: Rand.range(0.8, 1.6), t: 0, size: Rand.range(6, 16), col: "#e9e6ff" });
@@ -2363,14 +2782,8 @@
       later(1.6, function () { healAll(0.1, false); spAll(0.1); });
       leaveFight(C);
     }
-    /* Jinmenken left in peace: the room is cleared, nobody was exorcised. */
-    function letGo() {
-      var C = combat;
-      C.foe.dead = true;
-      Notify.say("Leave me be", { sub: Lang.t("The yokai walks away"), kind: "info", key: "rule" });
-      Sound.clip("event", 0.6);
-      leaveFight(C);
-    }
+    /* Jinmenken left in peace: he walks away, and it counts as exorcised. */
+    function letGo() { win(true); }
     /* The heroes run back off the left edge, then the rooms fly home and the
        corridors around this one light up. */
     function leaveFight(C) {
@@ -2382,7 +2795,7 @@
         combat = null; hideBar(true);
         blowTo = 0;
         Music.unduck();
-        if (C.roamer) dropRoamer(C.roamer);
+        if (C.roamer && !C.fled) dropRoamer(C.roamer);
         settle(C);
         later(BLOW, function () {
           if (C.foe.boss && bossDown) finish("lifted");
@@ -2410,19 +2823,30 @@
       });
     }
 
-    /* --- the scrolls: the hero's four actions, and the one a yokai's rule
-       hands them, as square scrolls along the foot of the fight. A tap
-       SELECTS one — it lifts, its details float over the party and the
-       timeline previews its weight — and then a tap on what it is aimed at
-       (the yokai, the hero whose turn it is, or any hero: `on`) fires it.
-       A scroll can also be dragged and dropped on its target. */
+    /* --- THE TRACK: a hero's turn, played in one tap ------------------------
+       One card a hero TURN, in the order of the timeline, slanted like a
+       tile: the turn in hand UNFOLDED (the hero's face, name, health and SP,
+       and one PACK a scroll), the next turn a whole FOLDED card on its right,
+       the one after a sliver at the right edge, the turn just played a sliver
+       at the left edge. Playing a scroll folds the card and slides the track
+       one place left; a ONE MORE brings the card back.
+       A pack is the scroll twice: RED throws it at the yokai, BLUE lays it on
+       the ally the game picks and shows on the button (their head, or every
+       head piled up when it reaches the whole party). One tap plays it: no
+       target is ever chosen. A tap on another hero (their sprite or their
+       folded card) sends the blue side to them for this turn. A long press
+       shows what the scroll does (#gd-tip) and leaves it open until the next
+       tap. The red side wears an HOURGLASS when the scroll moves the hero's
+       next turn among the others: green when sooner, amber when later.
+       Chosen in lab/grudgeon-cast.html. */
     function weightWord(w) { return w < 0.9 ? Lang.t("Quick") : w > 1.1 ? Lang.t("Slow") : ""; }
     function scrollOf(id) {
       var C = combat, ra;
       if (id === "rule") {
         ra = ruleAction();
-        return ra ? { id: id, name: ra.label, sp: 0, w: 1, icon: "icoHand", ink: "#7a4a00", on: ra.on || "foe", text: ra.sub, rule: true } : null;
+        return ra ? { id: id, name: ra.label, sp: 0, w: ra.w || 1, icon: "icoHand", ink: "#7a4a00", on: ra.on || "foe", text: ra.sub, rule: true } : null;
       }
+      if (id === "flee") return { id: id, name: "Flee", sp: 0, w: 1, icon: "icoFlee", ink: "#2a3040", on: "foe", text: "", flee: true };
       var o = scrollInfo(id);
       o.off = !!(C && C.actor && o.sp > C.actor.sp);
       return o;
@@ -2431,232 +2855,555 @@
     function scrollInfo(id) {
       var s = SKILLS[id], el = s.el && ELEMENTS[s.el];
       return { id: id, name: s.name, sp: s.sp, w: s.w, icon: s.icon, ink: el ? el.ink : s.kind === "heal" ? "#a3263e" : "#2b4f7a",
-               on: "any", noSelf: !!s.noSelf, foeText: s.foeText, allyText: s.allyText, el: el, kind: s.kind, off: false };
+               noSelf: !!s.noSelf, foeText: s.foeText, allyText: s.allyText, el: el, kind: s.kind, off: false };
     }
     function scrollIds(h) {
       var l = knownIds(h);
       if (ruleAction()) l.push("rule");
+      l.push("flee");
       return l;
     }
-    /* The hero's own scrolls, in the order of the bar, as far as they know
-       them (THE PARTY). */
+    /* The hero's own scrolls, in the order of the pack row, as far as they
+       know them (THE PARTY). */
     function knownIds(h) {
       var l = ["attack", h.b.skills[0], h.b.skills[1], "guard"];
       return h.known ? l.filter(function (id) { return h.known.indexOf(id) >= 0; }) : l;
     }
-    function showBar(h) {
-      var frame = document.getElementById("frame");
-      if (!frame) return;
-      if (!bar) {
-        bar = document.createElement("div"); bar.id = "gd-bar";
-        frame.appendChild(bar);
-      }
-      bar.innerHTML = "";
-      bar.style.setProperty("--hc", h.b.color);
-      combat.sel = null; combat.hover = null;
-      scrollIds(h).forEach(function (id) { bar.appendChild(scrollNode(scrollOf(id))); });
-      bar.classList.remove("off");
-      showTip();
-      placeBar();
+
+    var TRACK = { sliver: 30, gap: 12, open: 534, fold: 90, hOpen: 196, hFold: 140, frieze: 50, long: 0.4 };
+    var track = null, tip = null, tCards = {}, tPast = [], tFight = null, fm = {};
+    /* The dock, from the foot up: the timeline's frieze on Layout.foot, the
+       track on it, the stage's ground over the track. */
+    function dockGeo() {
+      var fy = Layout.foot - TRACK.frieze, tb = fy - 10;
+      return { frieze: fy, trackBottom: tb, trackTop: tb - TRACK.hOpen };
     }
-    function scrollNode(info) {
-      var b = document.createElement("button");
-      b.type = "button";
-      b.className = "gd-scroll" + (info.rule ? " is-rule" : "") + (info.off ? " is-off" : "");
-      b.setAttribute("data-id", info.id);
-      b.setAttribute("aria-label", upper(Lang.t(info.name)));
-      b.style.setProperty("--ink", info.ink);
-      b.innerHTML = '<span class="gd-paper"><i class="gd-glyph"></i></span>' + (info.sp ? '<b class="gd-cost">' + info.sp + "</b>" : "");
-      var g = b.querySelector(".gd-glyph"), uri = 'url("' + ASSETS.images[info.icon] + '")';
-      g.style.setProperty("-webkit-mask-image", uri); g.style.setProperty("mask-image", uri);
-      dragScroll(b, info.id);
-      b.addEventListener("pointerenter", function (e) {
-        if (e.pointerType === "mouse" && combat && combat.phase === "input" && !combat.sel) combat.hover = info.id;
-      });
-      b.addEventListener("pointerleave", function () {
-        if (combat && combat.phase === "input" && !combat.sel && combat.hover === info.id) combat.hover = null;
-      });
-      return b;
-    }
-    /* One pointer on a scroll is a tap (select it, or put it back) or, past
-       a few px, a drag: a ghost of the scroll follows the finger, the target
-       under it lights up, and letting go on a target fires the scroll. A
-       second tap on the same scroll within DOUBLE_TAP fires it on its
-       default target (`defaultTarget`) instead of putting it back. */
-    var DOUBLE_TAP = 0.35;
-    function dragScroll(b, id) {
-      var d = null, lastTap = -1;
-      b.addEventListener("pointerdown", function (e) {
-        if (!combat || combat.phase !== "input" || card) return;
-        e.preventDefault();
-        d = { x: e.clientX, y: e.clientY, on: false };
-        try { b.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
-      });
-      b.addEventListener("pointermove", function (e) {
-        if (!d) return;
-        var p = toDesign(e.clientX, e.clientY);
-        if (!d.on) {
-          if (Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) < 10) return;
-          if (!select(id, true)) { d = null; return; }
-          d.on = true;
-          ghost = b.cloneNode(true); ghost.className += " gd-ghost";
-          ghost.removeAttribute("data-id");
-          document.getElementById("frame").appendChild(ghost);
-        }
-        ghost.style.left = (p.x - 44) + "px"; ghost.style.top = (p.y - 44) + "px";
-        combat.dropOn = targetAt(p);
-        ghost.classList.toggle("is-on", !!(combat.dropOn && fits(scrollOf(id), combat.dropOn)));
-      });
-      function end(e, cancel) {
-        if (!d) return;
-        var was = d; d = null;
-        if (!was.on) {
-          if (cancel) return;
-          var now = performance.now() / 1000, twice = lastTap >= 0 && now - lastTap < DOUBLE_TAP;
-          lastTap = twice ? -1 : now;
-          if (twice) { if (combat.sel === id || select(id, true)) aimScroll(defaultTarget(scrollOf(id)), false); }
-          else if (combat.sel === id) unselect(); else select(id);
-          return;
-        }
-        dropGhost();
-        if (cancel || !combat || combat.phase !== "input") return;
-        aimScroll(targetAt(toDesign(e.clientX, e.clientY)), true);
-      }
-      b.addEventListener("pointerup", function (e) { end(e, false); });
-      b.addEventListener("pointercancel", function (e) { end(e, true); });
-      b.addEventListener("click", function (e) { e.stopPropagation(); });
-    }
-    var ghost = null;
-    function dropGhost() {
-      if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-      ghost = null;
-      if (combat) combat.dropOn = null;
-    }
-    /* a client point -> design px, the way the motor's Input does it */
-    function toDesign(cx, cy) {
-      var r = document.getElementById("game").getBoundingClientRect();
-      return { x: (cx - r.left) / r.width * view.w, y: (cy - r.top) / r.height * view.h };
-    }
-    function select(id, quiet) {
-      var C = combat, info = scrollOf(id);
-      if (!C || C.phase !== "input" || !info) return false;
-      if (info.off) { Notify.say("Not enough SP", { sub: C.actor.b.name, kind: "warn", key: "sp" }); Sound.clip("refuse"); return false; }
-      C.sel = id; C.hover = id;
-      if (!quiet) Sound.clip("select");
-      markSel();
-      return true;
-    }
-    function unselect() {
+    /* the hero whose turn it is may play now: nothing in flight, no card open */
+    function canCast() {
       var C = combat;
-      if (!C) return;
-      C.sel = null; C.hover = null;
-      markSel();
+      return !!(C && C.phase === "input" && !card && C.actor && C.actor.hero && !C.actor.dead && !C.actor.stun && !C.foe.dead);
     }
-    function markSel() {
-      if (!bar) return;
-      var l = bar.querySelectorAll(".gd-scroll");
-      for (var i = 0; i < l.length; i++) l[i].classList.toggle("is-sel", l[i].getAttribute("data-id") === combat.sel);
-      showTip();
+    /* Does scroll `id` land on `tg` ({ foe: true } or { hero })? On the
+       yokai always; on any hero standing in the fight, the caster too unless
+       the scroll says not (`noSelf`). */
+    function fitsOn(id, tg) {
+      var C = combat;
+      if (!tg) return false;
+      if (tg.foe) return !C.foe.dead;
+      var h = tg.hero;
+      return !!h && !h.dead && !h.away && !(SKILLS[id].noSelf && h === C.actor);
     }
-    /* Does this scroll land on this target? */
-    /* Does this scroll land on this target? A hero's scroll lands on the
-       yokai or on any standing ally (the caster too, unless `noSelf`); a
-       rule's lands where the rule says (`on`). */
-    function fits(info, tg) {
-      if (!info || !tg) return false;
-      if (info.on === "any") return !!tg.foe || !!(tg.hero && !tg.hero.dead && !(info.noSelf && tg.hero === combat.actor));
-      if (info.on === "foe") return !!tg.foe;
-      if (info.on === "self") return tg.hero === combat.actor;
-      return !!(tg.hero && !tg.hero.dead);
+    /* A blow's damage without the luck, as the hero's next blow would land:
+       the element counts only once the party has FOUND what it does here. */
+    /* An element never tried on this yokai may be resisted (half) or a
+       weakness (+60%): the preview is that range (lo to hi), so it never
+       promises a wrong figure and never gives the weakness away. */
+    function hitEstimate(h, id) {
+      var f = combat.foe, s = SKILLS[id], elId = h.imbue || s.el, mult = h.whet || 1;
+      var def = s.pierce ? f.def * 0.3 : f.def;
+      var d = h.atk * s.pow * (id === "attack" ? 1 : h.pow) * mult * 2.4 * (14 / (14 + def));
+      var k = f.known[elId], weak = k === "weak", resist = k === "resist", m = blowMod(h, id, elId), unsure = !k;
+      if (weak) d *= 1.6; else if (resist) d *= 0.5;
+      if (m.pct) d *= 1 + m.pct / 100;
+      return { dmg: Math.max(1, Math.round(d)), lo: Math.max(1, Math.round(unsure ? d * 0.5 : d)), hi: Math.max(1, Math.round(unsure ? d * 1.6 : d)),
+               unsure: unsure, weak: weak, resist: resist, el: elId, m: m };
     }
-    /* Where a double tap sends a scroll: the yokai, or the hero whose turn
-       it is for a scroll that cannot reach the yokai. */
-    function defaultTarget(info) {
-      if (fits(info, { foe: true })) return { foe: true };
-      if (fits(info, { hero: combat.actor })) return { hero: combat.actor };
-      return null;
-    }
-    /* A tap or a drop on `tg` with the selected scroll: it fires, or says
-       what it is aimed at. Nothing under the finger puts the scroll back. */
-    function aimScroll(tg, dropped) {
-      var C = combat, info = scrollOf(C.sel);
-      if (!info) return;
-      if (fits(info, tg)) {
-        var id = C.sel;
-        C.sel = null;
-        if (id === "rule") ruleAct(); else heroAct(id, tg);
-        return;
+    /* What scroll `id` does on `tg`, as a figure: `fig`, a `tag` beside it,
+       `heal` for a figure read in green. Null where it does not land. */
+    function faceOn(id, tg) {
+      var C = combat, s = SKILLS[id], a = C.actor;
+      if (!a || !fitsOn(id, tg)) return null;
+      if (tg.foe) {
+        if (s.foe === "hit") {
+          var r = hitEstimate(a, id);
+          if (r.m.heal) return { fig: "+" + r.dmg, tag: Lang.t("Heals it"), hit: r, heal: true };
+          return { fig: r.unsure ? "-" + r.lo + " " + Lang.t("to") + " " + r.hi : "-" + r.dmg,
+                   tag: r.m.tag ? Lang.t(r.m.tag) : r.weak ? Lang.t("Weak") : r.resist ? Lang.t("Resisted") : "", hit: r };
+        }
+        return { fig: s.foe === "pacify" ? "-50%" : "", tag: "" };
       }
-      if (tg || dropped) {
-        Notify.say(info.on === "any" ? (tg && tg.hero === C.actor ? "Aim at another hero" : "Aim at the yokai or an ally")
-                   : info.on === "foe" ? "Aim at the yokai" : info.on === "self" ? Lang.t("Aim at") + " " + C.actor.b.name : "Aim at a hero",
-                   { kind: "info", icon: "info", key: "aim" });
-        Sound.clip("refuse");
-        return;
-      }
-      unselect();
+      var x = tg.hero;
+      if (s.ally === "imbue") return { fig: Lang.t(ELEMENTS[s.el].name), tag: "" };
+      if (s.ally === "whet") return { fig: "×" + WHET, tag: "" };
+      if (s.ally === "guard") return { fig: "-50%", tag: x === a ? "+5 SP" : "" };
+      if (s.ally === "ward") return { fig: "-40%", tag: "" };
+      if (s.ally === "heal") return { fig: "+" + Math.min(x.mhp - x.hp, Math.round(x.mhp * s.pow * a.pow)), tag: "", heal: true };
+      return { fig: "", tag: "" };
     }
-    /* What the selected scroll does, floated over the party: its name, its
-       price, its element and weight, its effect and where to aim it. */
-    var tip = null;
-    function showTip() {
-      var C = combat, info = C && C.phase === "input" && C.sel ? scrollOf(C.sel) : null;
-      if (!info) { if (tip) tip.classList.add("off"); return; }
-      var frame = document.getElementById("frame");
-      if (!tip) { tip = document.createElement("div"); tip.id = "gd-tip"; frame.appendChild(tip); }
-      var bits = [];
-      if (info.sp) bits.push(info.sp + " SP");
-      if (info.el) bits.push(Lang.t(info.el.name));
-      if (weightWord(info.w)) bits.push(weightWord(info.w));
-      tip.innerHTML = "<p class=\"gd-tip-h\"><b></b><i></i></p><div class=\"gd-tip-faces\"></div><p class=\"gd-tip-a\"></p>";
-      tip.querySelector("b").textContent = upper(Lang.t(info.name));
-      tip.querySelector("i").textContent = upper(bits.join(" · "));
-      var faces = tip.querySelector(".gd-tip-faces");
-      if (info.rule) faces.appendChild(face(null, info.text));
-      else { faces.appendChild(face("On the yokai", info.foeText)); faces.appendChild(face("On an ally", info.allyText)); }
-      tip.querySelector(".gd-tip-a").textContent = Lang.t(info.on === "any" ? "Tap the yokai or an ally, or drop the scroll on one"
-        : info.on === "foe" ? "Tap the yokai, or drop the scroll on it"
-        : info.on === "self" ? "Tap the hero whose turn it is, or drop the scroll on them" : "Tap a hero, or drop the scroll on one");
-      tip.style.setProperty("--ink", info.el ? info.el.color : info.rule ? "#ffd166" : "#f4eef8");
+    /* the heroes in the order they act after this turn, each once, the hero
+       in turn included where they come back (a scroll of weight w moves them) */
+    function heroesAfter(w) {
+      var out = [], tl = timeline(w), i, l;
+      for (i = 1; i < tl.length; i++) if (tl[i].u.hero && !tl[i].u.away && out.indexOf(tl[i].u) < 0) out.push(tl[i].u);
+      l = alive().slice().sort(function (p, q) { return p.ct - q.ct; });
+      for (i = 0; i < l.length; i++) if (out.indexOf(l[i]) < 0) out.push(l[i]);
+      return out;
+    }
+    /* the one hero the yokai's next blow aims at alone, if there is one */
+    function aimedHero() {
+      var e = nextFoe(), l = incoming();
+      return e && !e.it.all && l.length === 1 ? l[0].h : null;
+    }
+    function lowestOf(list) {
+      return list.slice().sort(function (p, q) { return p.hp / p.mhp - q.hp / q.mhp; })[0] || null;
+    }
+    /* Where a scroll's BLUE side goes, and why (the info says it): the ally
+       the player tapped, else Cover and Guard to the hero the yokai's next
+       blow aims at alone (Guard to oneself when nobody is), a gift for the
+       next blow (an element, an edge) to the next hero to strike, Hasten to
+       the one who acts last, a heal or a ward to every hero. */
+    function blueFor(id) {
+      if (fm["b" + id] !== undefined) return fm["b" + id];
+      return (fm["b" + id] = blueOf(id));
+    }
+    function blueOf(id) {
+      var C = combat, s = SKILLS[id], a = C.actor, can = [], order, x, i, l = alive();
+      if (!a) return null;
+      if (s.ally === "heal" || s.ally === "ward") return { all: true, why: "every hero" };
+      for (i = 0; i < l.length; i++) if (fitsOn(id, { hero: l[i] })) can.push(l[i]);
+      if (!can.length) return null;
+      if (C.pin && fitsOn(id, { hero: C.pin })) return { hero: C.pin, why: "your pick" };
+      order = heroesAfter(s.w).filter(function (h) { return fitsOn(id, { hero: h }); });
+      if (s.ally === "cover" || s.ally === "guard") {
+        x = aimedHero();
+        if (x && fitsOn(id, { hero: x })) return { hero: x, why: x === a ? "the Yokai aims at you" : "the Yokai aims at them" };
+        return s.ally === "guard" && fitsOn(id, { hero: a }) ? { hero: a, why: "une personne seule ne peut pas être visée" } : { hero: lowestOf(can), why: "lowest health" };
+      }
+      if (s.ally === "hasten") return { hero: order[order.length - 1] || can[0], why: "last to act" };
+      return { hero: order[0] || can[0], why: "next to strike" };
+    }
+    /* Does this scroll move the hero's next turn among the others? -1 sooner,
+       1 later, 0 the order stays as it is. */
+    function orderShift(id) {
+      if (id === "rule" || id === "flee") return 0;
+      if (fm["o" + id] !== undefined) return fm["o" + id];
+      var a = combat.actor, t1 = timeline(1), tw = timeline(SKILLS[id].w), v = 0;
+      function seq(tl) { var s = ""; for (var i = 1; i < tl.length; i++) s += tl[i].u.id + ","; return s; }
+      function at(tl) { for (var i = 1; i < tl.length; i++) if (tl[i].u === a) return i; return 99; }
+      if (seq(t1) !== seq(tw)) v = at(tw) < at(t1) ? -1 : at(tw) > at(t1) ? 1 : SKILLS[id].w < 1 ? -1 : 1;
+      return (fm["o" + id] = v);
+    }
+
+    /* --- the track's cards ----------------------------------------------- */
+    function frameEl() { return document.getElementById("frame"); }
+    function showBar(h) {
+      var fr = frameEl(), C = combat;
+      if (!fr || !C) return;
+      if (!track) { track = document.createElement("div"); track.id = "gd-track"; fr.appendChild(track); }
+      if (!tip) { tip = document.createElement("div"); tip.id = "gd-tip"; tip.className = "off"; fr.appendChild(tip); }
+      C.hot = null; C.info = null; C.pin = null;
+      track.classList.remove("off");
+      placeBar();
+      syncTrack();
+    }
+    /* the turns the track holds: the hero turns of the timeline as it stands
+       without a preview, minus the ones just played */
+    function trackUp() {
+      var C = combat, base = C.hover ? timeline(null) : C.TL, out = [], seen = {}, i, e;
+      for (i = 0; i < base.length; i++) {
+        e = base[i];
+        if (e.u.hero && !seen[e.key] && tPast.indexOf(e.key) < 0) { seen[e.key] = true; out.push(e); }
+      }
+      return out;
+    }
+    function setSlot(c, x, w, hh) {
+      if (c.x === x && c.w === w && c.hh === hh) return;
+      c.x = x; c.w = w; c.hh = hh;
+      c.el.style.left = x + "px"; c.el.style.width = w + "px"; c.el.style.height = hh + "px";
+    }
+    function newCard(key, h) {
+      var el = document.createElement("div");
+      el.className = "gd-tc";
+      el.style.setProperty("--hc", h.b.color); el.style.setProperty("--tint", rgba(h.b.color, 0.1));
+      el.innerHTML = '<div class="gd-plate"><div class="gd-art"></div>' +
+        '<div class="gd-curse"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="gd-stun"><b><i></i><i></i><i></i></b></div><div class="gd-unf"><div class="gd-dhead"><b class="gd-nm"></b>' +
+        '<span class="gd-marks"></span><span class="gd-vit"><b class="gd-v-hp"></b><b class="gd-v-sp"></b></span></div><div class="gd-packs"></div></div></div>';
+      var c = { key: key, h: h, el: el, art: el.querySelector(".gd-art"), packs: el.querySelector(".gd-packs"),
+                hpf: el.querySelector(".gd-v-hp"), spf: el.querySelector(".gd-v-sp"), marks: el.querySelector(".gd-marks"),
+                vKey: "", mKey: "", pKey: "", artDone: false, icons: [], slot: 9 };
+      el.querySelector(".gd-nm").textContent = upper(Lang.t(h.b.name));
+      c.spf.style.setProperty("--vc", "#8fdcff");
+      wireCard(el.querySelector(".gd-plate"), c);
+      track.appendChild(el);
+      setSlot(c, view.w + 20, TRACK.fold, TRACK.hFold);
+      void el.offsetWidth;                 // the first place is taken without a transition
+      el.classList.add("anim");
+      tCards[key] = c;
+      return c;
+    }
+    /* the hero's idle art, head and shoulders, the face on a set point of
+       the art's window: the folded card and the unfolded one each get their
+       own size and offset, so the face stays put across the fold */
+    function artFit(fc, ratio, w, hh, k, cx, cy) {
+      var ih = k * hh, iw = ih / ratio;
+      var ox = clamp(cx - fc[0] * iw, Math.min(0, w - iw), 0), oy = Math.max(cy - fc[1] * ih, hh - ih);   // transparent over the head: it may come down
+      return { size: "auto " + Math.round(ih) + "px", pos: Math.round(ox) + "px " + Math.round(oy) + "px" };
+    }
+    function artOf(c) {
+      var key = "hero" + camel(c.h.id) + "01", im = spriteArt("hero", c.h.id, 1), src = CONFIG.art && CONFIG.art[key];
+      if (!im || !src) return;
+      var ratio = im.naturalHeight / im.naturalWidth, fc = c.h.b.face || [0.5, 0.15];
+      var F = artFit(fc, ratio, TRACK.fold + 40, TRACK.hFold, 2.1, (TRACK.fold + 40) / 2, TRACK.hFold * 0.34);
+      var O = artFit(fc, ratio, 112, TRACK.hOpen, 2.0, 58, TRACK.hOpen * 0.36);   // seen from 20 px, faded past 73 px
+      c.art.style.backgroundImage = 'url("' + src + '")';
+      c.art.style.setProperty("--bsF", F.size); c.art.style.setProperty("--bpF", F.pos);
+      c.art.style.setProperty("--bsO", O.size); c.art.style.setProperty("--bpO", O.pos);
+      c.artDone = true;
+    }
+    /* a head in a round badge: the face crop of `face`, as a background */
+    function headStyle(el, h) {
+      var key = "hero" + camel(h.id) + "01", im = spriteArt("hero", h.id, 1), src = CONFIG.art && CONFIG.art[key], fc = h.b.face;
+      el.style.backgroundImage = src ? 'url("' + src + '")' : "none";
+      if (!im || !fc) return;
+      var k = 0.8 / fc[2], ratio = im.naturalHeight / im.naturalWidth;
+      el.style.backgroundSize = Math.round(k * 100) + "% auto";
+      el.style.backgroundPosition = clamp((0.5 - fc[0] * k) / (1 - k) * 100, 0, 100) + "% " + clamp((0.5 - fc[1] * k * ratio) / (1 - k * ratio) * 100, 0, 100) + "%";
+    }
+    /* one pack a scroll: the red side, the blue side, the price; a yokai's
+       rule is one gold button */
+    function packNode(id) {
+      var solo = id === "rule" || id === "flee", pk = document.createElement("div"), info = solo ? null : scrollInfo(id);
+      pk.className = "gd-pk" + (solo ? " is-" + id : "");
+      pk.innerHTML = solo
+        ? '<div class="gd-ic ' + (id === "rule" ? "gd-gold" : "gd-grey") + '" data-side="' + id + '"><i></i><b class="gd-fig"></b></div>'
+        : '<div class="gd-ic gd-red" data-side="red"><i></i><b class="gd-fig"></b><b class="gd-rt"></b></div><div class="gd-ic gd-blue" data-side="blue"><i></i><b class="gd-who"></b></div>' +
+          (info.sp ? '<b class="gd-cost">-' + info.sp + "</b>" : "");
+      var l = pk.querySelectorAll(".gd-ic i"), uri = 'url("' + ASSETS.images[info ? info.icon : id === "flee" ? "icoFlee" : "icoHand"] + '")';
+      for (var i = 0; i < l.length; i++) { l[i].style.setProperty("-webkit-mask-image", uri); l[i].style.setProperty("mask-image", uri); }
+      return pk;
+    }
+    function mountPacks(c) {
+      var ids = scrollIds(c.h), i, j, pk, l;
+      c.packs.innerHTML = ""; c.icons = [];
+      c.packs.classList.toggle("gd-many", ids.length > 5);          // six cards in a turn: the packs tighten
+      for (i = 0; i < ids.length; i++) {
+        pk = packNode(ids[i]);
+        l = pk.querySelectorAll(".gd-ic");
+        for (j = 0; j < l.length; j++) {
+          var side = l[j].getAttribute("data-side");
+          l[j].setAttribute("aria-label", upper(Lang.t(SKILLS[ids[i]] ? SKILLS[ids[i]].name : scrollOf(ids[i]).name)));
+          wireIcon(l[j], ids[i], side);
+          c.icons.push({ id: ids[i], side: side, el: l[j], fig: l[j].querySelector(".gd-fig"), who: l[j].querySelector(".gd-who"), rt: l[j].querySelector(".gd-rt"), key: "", rtKey: "" });
+        }
+        c.packs.appendChild(pk);
+      }
+      c.pKey = ids.join(",");
+    }
+    /* the frame's design px -> the track's own */
+    function placeBar() {
+      if (!track) return;
+      var d = dockGeo();
+      track.style.top = d.trackTop + "px"; track.style.height = TRACK.hOpen + "px"; track.style.width = view.w + "px";
+      placeTip();
+    }
+    /* Once a frame: the cards in their places, the card in turn's numbers,
+       marks and packs, and the info. */
+    function syncTrack() {
+      var C = combat, k, i, c, e;
+      if (!track || !C) return;
+      fm = {};
+      if (tFight !== C) { track.innerHTML = ""; tCards = {}; tPast = []; tFight = C; }
+      var live = canCast(), hk = hudIn();
+      track.classList.toggle("off", hk < 0.5 || C.phase === "done" || C.foe.dead || C.leave >= 0);
+      track.classList.toggle("busy", !live);
+      if (live && C.TL[0] && C.TL[0].now) { k = tPast.indexOf(C.TL[0].key); if (k >= 0) tPast.splice(k, 1); }   // ONE MORE: the card comes back
+      var up = trackUp(), keep = {}, past = tPast.length ? tPast[tPast.length - 1] : null;
+      var x0 = TRACK.sliver + TRACK.gap, x1 = x0 + TRACK.open + TRACK.gap, x2 = x1 + TRACK.fold + TRACK.gap;
+      for (i = 0; i < up.length; i++) {
+        e = up[i];
+        c = tCards[e.key] || newCard(e.key, e.u);
+        keep[e.key] = true; c.slot = i;
+        setSlot(c, i === 0 ? x0 : i === 1 ? x1 : x2 + (i - 2) * (TRACK.fold + TRACK.gap), i === 0 ? TRACK.open : TRACK.fold, i === 0 ? TRACK.hOpen : TRACK.hFold);
+      }
+      if (past && tCards[past] && !keep[past]) {
+        c = tCards[past]; keep[past] = true; c.slot = -1;
+        setSlot(c, TRACK.sliver - TRACK.fold, TRACK.fold, TRACK.hFold);
+      }
+      for (k in tCards) {
+        if (!tCards.hasOwnProperty(k) || keep[k]) continue;
+        c = tCards[k]; delete tCards[k];
+        c.el.classList.remove("on", "live");            // folded on its way out: nothing on it answers a tap
+        c.el.classList.add("past");
+        setSlot(c, -TRACK.fold - 80, TRACK.fold, TRACK.hFold);
+        (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600); })(c.el);
+      }
+      var hot = live && C.hot && C.hot.side === "blue" ? blueFor(C.hot.id) : null;
+      for (k in tCards) {
+        if (!tCards.hasOwnProperty(k)) continue;
+        c = tCards[k];
+        var h = c.h, on = c.slot === 0, mine = on && live && C.actor === h;
+        c.el.classList.toggle("on", on);
+        c.el.classList.toggle("past", c.slot < 0);
+        c.el.classList.toggle("live", mine);
+        c.el.classList.toggle("is-pin", live && !on && C.pin === h);
+        c.el.classList.toggle("is-blue", !!hot && !on && (hot.all ? !h.dead : hot.hero === h));
+        c.el.classList.toggle("cursed", cursedNow(h));
+        c.el.classList.toggle("stunned", !!h.stun && !h.dead);
+        if (!c.artDone) artOf(c);
+        if (!on) continue;
+        syncHead(c);
+        if (c.pKey !== scrollIds(h).join(",")) mountPacks(c);
+        if (mine) for (i = 0; i < c.icons.length; i++) syncIcon(c.icons[i]);
+      }
+      syncTip();
+    }
+    /* the card in turn's head: the hero's health and SP with their gauges,
+       and what allies laid on them */
+    function syncHead(c) {
+      var h = c.h, cost = infoPow && SKILLS[infoPow] && canCast() && combat.actor === h ? Math.min(h.sp, SKILLS[infoPow].sp) : 0;
+      var vk = h.hp + "|" + h.sp + "|" + cost, marks = [], mk;
+      if (vk !== c.vKey) {
+        c.vKey = vk;
+        vital(c.hpf, "HP", h.hp, h.mhp);
+        vital(c.spf, "SP", h.sp, h.msp);
+        c.spf.style.setProperty("--k", Math.round(100 * (h.sp - cost) / h.msp) + "%");
+        c.spf.classList.toggle("is-cost", cost > 0);
+        c.hpf.style.setProperty("--vc", h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1");
+      }
+      if (h.imbue) marks.push([Lang.t(ELEMENTS[h.imbue].name), ELEMENTS[h.imbue].color]);
+      if (h.whet) marks.push(["×" + h.whet, "#ffd166"]);
+      if (h.cover && !h.cover.dead) marks.push([Lang.t("Covered"), h.cover.b.color]);
+      if (combat.ward > 0) marks.push([Lang.t("Spirit ward"), "#9ce7ff"]);
+      if (h.stun) marks.unshift([Lang.t("Stunned"), "#c27cff"]);
+      if (combat.foe.st && combat.foe.st.cocoon === h) marks.unshift([Lang.t("Cocoon"), "#c79bff"]);
+      mk = marks.join("|");
+      if (mk === c.mKey) return;
+      c.mKey = mk; c.marks.innerHTML = "";
+      for (var i = 0; i < marks.length && i < 2; i++) {
+        var s = document.createElement("span");
+        s.textContent = upper(marks[i][0]); s.style.color = marks[i][1];
+        c.marks.appendChild(s);
+      }
+    }
+    function vital(el, label, n, m) {
+      el.innerHTML = "<i></i>" + n + "<s></s>";
+      el.querySelector("i").textContent = upper(Lang.t(label));
+      el.querySelector("s").textContent = "/" + m;
+      el.style.setProperty("--f", Math.round(100 * n / m) + "%");
+    }
+    /* one button, once a frame: payable, reachable, its hourglass and its ally */
+    function syncIcon(o) {
+      var C = combat, a = C.actor, off = false, fig = "", figCol = "", who = null, heads = [], i;
+      if (o.id === "flee") { fig = "%" + fleeOdds(a); figCol = "#fff4f0"; }
+      else if (o.id !== "rule") {
+        off = SKILLS[o.id].sp > a.sp;
+        /* what the yokai's rule does to this blow, on the red face: -80%, +50%, Heals... */
+        if (o.rt) {
+          var r = o.side === "red" && SKILLS[o.id].foe === "hit" ? hitEstimate(a, o.id) : null, tag = r && r.m.tag ? r.m.tag : "", tk = tag + "|" + !!(r && r.m.bad);
+          if (tk !== o.rtKey) { o.rtKey = tk; o.rt.textContent = upper(Lang.t(tag)); o.rt.classList.toggle("bad", !!(r && r.m.bad)); }
+        }
+        if (o.side === "red") {
+          var v = orderShift(o.id);
+          if (v) { fig = "hg"; figCol = v < 0 ? "#7ee0a1" : "#ffb366"; }
+        } else {
+          who = blueFor(o.id);
+          if (!who) off = true;
+          else if (who.all) heads = alive();
+        }
+      }
+      o.el.classList.toggle("off", off);
+      o.el.classList.toggle("is-hot", !!C.hot && C.hot.id === o.id && C.hot.side === o.side);
+      var key = fig + "|" + figCol + "|" + (who ? (who.all ? "all:" + heads.map(function (h) { return h.id; }).join(",") : who.hero.id) : "-");
+      if (key === o.key) return;
+      o.key = key;
+      if (o.fig && fig.charAt(0) === "%") { o.fig.textContent = fig.slice(1) + "%"; o.fig.style.color = figCol; }
+      else if (o.fig) {
+        o.fig.innerHTML = fig ? '<span class="gd-hg"></span>' : "";
+        o.fig.style.color = figCol;
+        o.fig.style.setProperty("--hg", 'url("' + ASSETS.images.icoHourglass + '")');
+      }
+      if (!o.who) return;
+      o.who.className = "gd-who" + (who && who.all ? " all" : "");
+      o.el.classList.toggle("is-all", !!(who && who.all));
+      o.el.classList.toggle("is-none", !who);
+      o.who.removeAttribute("style"); o.who.innerHTML = "";
+      for (i = 0; i < heads.length; i++) { var sp = document.createElement("span"); headStyle(sp, heads[i]); o.who.appendChild(sp); }
+      if (who && who.hero) headStyle(o.who, who.hero);
+    }
+
+    /* --- the info: what a scroll does, on a long press --------------------- */
+    var infoPow = null, infoT = 0, tipKey = "";
+    function syncTip() {
+      var C = combat, id = null, side = "";
+      if (canCast()) {
+        if (C.hot && (C.hot.src === "press" || C.hot.long)) { id = C.hot.id; side = C.hot.side; }
+        else if (C.info) { id = C.info.id; side = C.info.side; }
+      }
+      if (id !== infoPow) { infoPow = id; infoT = t; }
+      if (!tip) return;
+      if (!id) { if (tipKey) { tipKey = ""; tip.classList.add("off"); } return; }
+      var html = tipHtml(id, side);
+      if (html !== tipKey) { tipKey = html; tip.innerHTML = html; }
       tip.classList.remove("off");
       placeTip();
     }
-    /* one face of a scroll: where it is aimed, then what it does there */
-    function face(where, what) {
-      var p = document.createElement("p"), t = document.createElement("span");
-      p.className = "gd-face";
-      if (where) { var b = document.createElement("b"); b.textContent = upper(Lang.t(where)); p.appendChild(b); }
-      t.textContent = Lang.t(what);
-      p.appendChild(t);
-      return p;
+    function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+    function tipRow(hot, col, label, txt, em, na) {
+      return '<p class="gd-face' + (hot ? " hot" : "") + (na ? " na" : "") + '" style="--fc:' + col + '"><b>' + esc(upper(label)) + "</b>" +
+        esc(txt) + (em ? "<em>" + esc(upper(em)) + "</em>" : "") + "</p>";
+    }
+    function tipHtml(id, side) {
+      var C = combat, a = C.actor, html, bits = [];
+      if (id === "flee") {
+        var R = RULES[C.foe.id], p = fleeOdds(a), why = C.foe.boss ? "The master bars the way" : R && R.flee ? (R.flee.p === 0 ? R.flee.sub : R.flee.ok) : "";
+        return '<p class="gd-tip-h" style="--ink:#c8cfdc"><b>' + esc(upper(Lang.t("Flee"))) + "</b><i>" + esc(upper(p + "%" + (why ? " · " + Lang.t(why) : ""))) + "</i></p>" +
+          tipRow(true, "#9aa5b8", Lang.t("Out"), Lang.t("Back on the map, nothing lost. The Yokai waits in another room, as hurt as you left it."), "", false) +
+          tipRow(false, "#ff5d6e", Lang.t("Caught"), Lang.t("The turn is lost and the Yokai strikes you."), "", false);
+      }
+      if (id === "rule") {
+        var ra = scrollOf("rule");
+        if (!ra) return "";
+        return '<p class="gd-tip-h" style="--ink:#ffd166"><b>' + esc(upper(Lang.t(ra.name))) + "</b></p>" + tipRow(true, "#ffd166", Lang.t("Its rule"), Lang.t(ra.text), "", false);
+      }
+      var s = SKILLS[id], b = blueFor(id), red = faceOn(id, { foe: true });
+      function figOf(f) { return f ? f.fig + (f.tag ? " · " + f.tag : "") : ""; }
+      if (s.sp) bits.push(s.sp + " SP");
+      if (s.el) bits.push(Lang.t(ELEMENTS[s.el].name));
+      if (weightWord(s.w)) bits.push(weightWord(s.w));
+      html = '<p class="gd-tip-h" style="--ink:' + (s.el ? ELEMENTS[s.el].color : "#f4eef8") + '"><b>' + esc(upper(Lang.t(s.name))) + "</b><i>" + esc(upper(bits.join(" · "))) + "</i></p>";
+      html += tipRow(side === "red", "#ff5d6e", Lang.t("On the Yokai"), Lang.t(s.foeText), figOf(red), false);
+      if (!b) html += tipRow(side === "blue", "#4f9bff", Lang.t("On an ally"), Lang.t(s.allyText), Lang.t("No ally to reach"), true);
+      else if (b.all) html += tipRow(side === "blue", "#4f9bff", Lang.t("On everyone"), Lang.t(s.allyText), figOf(faceOn(id, { hero: a })), false);
+      else html += tipRow(side === "blue", "#4f9bff", b.hero === a ? Lang.t("On yourself") : Lang.t("On") + " " + Lang.t(b.hero.b.name), Lang.t(s.allyText),
+        figOf(faceOn(id, { hero: b.hero })) + " · " + Lang.t(b.why), false);
+      var ag = againText(id);
+      if (ag) html += '<p class="gd-tip-a">' + esc(ag) + "</p>";
+      return html;
+    }
+    /* where the hero's own next turn lands if this scroll is played: read
+       off the timeline, which previews it */
+    function againText(id) {
+      var C = combat, a = C.actor, i, k = -1;
+      if (C.hover !== id) return "";
+      for (i = 1; i < C.TL.length; i++) if (C.TL[i].u === a) { k = i; break; }
+      if (k < 0) return Lang.t("Plays again much later");
+      if (k === 1) return Lang.t("Plays again right after this");
+      return Lang.t("Plays again after") + " " + (k - 1) + " " + Lang.t(k === 2 ? "other turn" : "other turns");
     }
     function placeTip() {
       if (!tip) return;
       tip.style.left = Layout.left + "px";
       tip.style.width = Layout.w + "px";
-      tip.style.top = (tilesTop() - 14 - (tip.offsetHeight || 120)) + "px";
+      tip.style.top = (dockGeo().trackTop - 12 - (tip.offsetHeight || 160)) + "px";
     }
     function hideBar(remove) {
-      dropGhost();
+      if (combat) { combat.hot = null; combat.info = null; combat.hover = null; }
       if (tip) {
         if (remove) { if (tip.parentNode) tip.parentNode.removeChild(tip); tip = null; }
         else tip.classList.add("off");
       }
-      if (combat) { combat.sel = null; combat.hover = null; }
-      if (!bar) return;
-      if (remove) { if (bar.parentNode) bar.parentNode.removeChild(bar); bar = null; return; }
-      bar.classList.add("off");
+      tipKey = ""; infoPow = null;
+      if (!track || !remove) return;
+      if (track.parentNode) track.parentNode.removeChild(track);
+      track = null; tCards = {}; tPast = []; tFight = null;
     }
-    /* The bar stands on the foot of the fight, and the hero tiles above it
-       (`uiTop`). */
-    function placeBar() {
-      if (!bar) return;
-      bar.style.left = Layout.left + "px";
-      bar.style.width = Layout.w + "px";
-      var hgt = bar.offsetHeight || BAR_H, foot = Layout.bottom - P.cornerClear;   // clear of the web corners
-      bar.style.top = (foot - hgt) + "px";
-      uiTop = foot - hgt;
-      placeTip();
+
+    /* --- the buttons -------------------------------------------------------- */
+    /* the turn in hand is played: its card is the one that slides out */
+    function turnPlayed() {
+      var C = combat;
+      C.hot = null; C.info = null;
+      if (C.TL[0] && C.TL[0].now) { tPast.push(C.TL[0].key); if (tPast.length > 4) tPast.shift(); }
+    }
+    /* a tap on a button: red at the yokai, blue on the ally it shows, gold the rule */
+    function tapIcon(id, side) {
+      var C = combat, a = C.actor;
+      if (!canCast()) return;
+      if (id === "rule") { if (ruleAction()) { turnPlayed(); ruleAct(); } return; }
+      if (id === "flee") { turnPlayed(); flee(); return; }
+      if (SKILLS[id].sp > a.sp) { Notify.say("Not enough SP", { sub: a.b.name, kind: "warn", key: "sp" }); Sound.clip("refuse"); return; }
+      var tg = { foe: true };
+      if (side === "blue") {
+        var b = blueFor(id);
+        tg = b ? (b.all ? { hero: a } : { hero: b.hero }) : null;
+      }
+      if (!tg) { Notify.say("No ally to reach", { kind: "info", icon: "info", key: "aim" }); Sound.clip("refuse"); return; }
+      turnPlayed();
+      heroAct(id, tg);
+    }
+    /* One pointer on a button: a tap plays it; held past TRACK.long it shows
+       what the scroll does and plays nothing, the info left open. A mouse
+       resting on it previews it the same way. */
+    function wireIcon(ic, id, side) {
+      var d = null, hoverT = 0;
+      ic.addEventListener("pointerdown", function (e) {
+        if (!canCast()) return;
+        e.preventDefault(); e.stopPropagation();
+        clearTimeout(hoverT);
+        d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+        try { ic.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+        combat.hot = { id: id, side: side, src: "press" };
+        d.timer = setTimeout(function () { if (d && !d.moved && canCast()) { d.long = true; combat.hot = { id: id, side: side, src: "press", long: true }; } }, TRACK.long * 1000);
+      });
+      ic.addEventListener("pointermove", function (e) {
+        if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= 12) { d.moved = true; clearTimeout(d.timer); }
+      });
+      function end(cancel) {
+        if (!d) return;
+        var was = d; d = null;
+        clearTimeout(was.timer);
+        if (combat && combat.hot && combat.hot.src === "press") combat.hot = null;
+        if (!combat) return;
+        if (was.long) { if (!cancel) { combat.info = { id: id, side: side }; Sound.clip("select", 0.8, 1.1); } return; }
+        if (cancel || was.moved) return;
+        tapIcon(id, side);
+      }
+      ic.addEventListener("pointerup", function () { end(false); });
+      ic.addEventListener("pointercancel", function () { end(true); });
+      ic.addEventListener("click", function (e) { e.stopPropagation(); });
+      ic.addEventListener("pointerenter", function (e) {
+        if (e.pointerType !== "mouse" || d || !canCast()) return;
+        combat.hot = { id: id, side: side, src: "hover" };
+        clearTimeout(hoverT);
+        hoverT = setTimeout(function () { var C = combat; if (C && C.hot && C.hot.id === id && C.hot.side === side && C.hot.src === "hover") C.hot.long = true; }, TRACK.long * 1000);
+      });
+      ic.addEventListener("pointerleave", function (e) {
+        if (e.pointerType !== "mouse" || d) return;
+        clearTimeout(hoverT);
+        var C = combat;
+        if (C && C.hot && C.hot.src === "hover" && C.hot.id === id && C.hot.side === side) C.hot = null;
+      });
+    }
+    /* a hero picked for the blue side: their folded card, or their sprite */
+    function pinHero(h) {
+      var C = combat;
+      if (!canCast() || !h || h.dead || h.away) return;
+      C.pin = C.pin === h ? null : h;
+      Sound.clip("select", 0.8, 1.2);
+    }
+    /* a folded card: a tap picks its hero for the blue side, a long press
+       opens their card */
+    function wireCard(el, c) {
+      var d = null;
+      el.addEventListener("pointerdown", function (e) {
+        if (!canCast() || c.slot <= 0 || c.h.dead) return;
+        e.preventDefault();
+        d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
+        try { el.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
+        d.timer = setTimeout(function () { if (d && !d.moved && canCast()) { d.long = true; heroCard(c.h); } }, TRACK.long * 1000);
+      });
+      el.addEventListener("pointermove", function (e) {
+        if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= 12) { d.moved = true; clearTimeout(d.timer); }
+      });
+      function end(cancel) {
+        if (!d) return;
+        var was = d; d = null;
+        clearTimeout(was.timer);
+        if (was.long || cancel || was.moved) return;
+        pinHero(c.h);
+      }
+      el.addEventListener("pointerup", function () { end(false); });
+      el.addEventListener("pointercancel", function () { end(true); });
+      el.addEventListener("click", function (e) { e.stopPropagation(); });
+    }
+    /* one face of a scroll, in a card: where it is aimed, then what it does there */
+    function face(where, what) {
+      var p = document.createElement("p"), tx = document.createElement("span");
+      p.className = "gd-face";
+      if (where) { var b = document.createElement("b"); b.textContent = upper(Lang.t(where)); p.appendChild(b); }
+      tx.textContent = Lang.t(what);
+      p.appendChild(tx);
+      return p;
     }
 
     /* The sprite art, once a sheet is cut and adopted: `hero-akane-01`…`06`
@@ -3169,15 +3916,13 @@
        stands between. Every explanation is in a card a tap opens.
        ====================================================================== */
     var STAGE = { persp: 7, tilt: 0.75, unit: 112, heroScale: 0.95, foeScale: 1.15, foe: [1.2, 1.3] };
-    var TILE_H = 76, BAR_H = 100, ROW_H = 84;
-    var uiTop = 0;                         // the action bar's live top, which the tiles stand on
     var cam = { x: 360, y: 640, z: 1, rot: 0, punch: 0, subject: null, lb: 0 };
     var G = null;                          // fightGeo(), once per frame
 
+    /* The stage's ground stands over the dock (dockGeo): the heroes' feet,
+       their health and SP under them and the yokai's next blow under that. */
     function fightGeo() {
-      var bottom = Layout.bottom - P.cornerClear + 20;
-      var barTop = bottom - BAR_H;
-      return { top: Layout.top + 6, bottom: bottom, barTop: barTop, ground: barTop - 10 - TILE_H - 150 };
+      return { top: Layout.top + 6, ground: dockGeo().trackTop - 78 };
     }
     /* A point of the ground (x across, z into the screen) seen by a camera
        `persp` units in front of it: `s` is the scale there. */
@@ -3408,15 +4153,31 @@
         ctx.restore();
       }
       if (a.hero && !a.dead && C.phase === "input" && C.actor === a) drawRing(a, auraCol(a));
+      /* behind the figure: the curse on a hero, the guard, a yokai's shield */
+      drawCurse(a); drawGuardAura(a); drawFoeShield(a);
+      var FR = !a.hero && RULES[a.id], ghost = !!(FR && FR.ghost && !a.dead && FR.ghost(a));
       /* the figure, breathing, then the light laid over it: the band's shade
-         (deeper with distance, and on the heroes waiting), the rim, a flash */
+         (deeper with distance, and on the heroes waiting), the rim, a flash.
+         Teke Teke fallen turns over round her middle, upside down and still
+         facing the heroes; Nopperabo turned away is mirrored. */
       ctx.save();
       ctx.globalAlpha = a.alpha;
-      ctx.translate(a.sx, a.sy + a.dy);
-      ctx.scale(k * bx, k * br);
+      if (a.fall > 0.001) {
+        ctx.translate(a.sx, a.sy + a.dy - h * k * br / 2);
+        ctx.rotate(Math.PI * a.fall);
+        ctx.scale(k * bx * Math.cos(Math.PI * clamp(a.fall, 0, 1)), k * br);   // the half turn mirrors her: this mirrors her back
+        ctx.translate(0, h / 2);
+      } else {
+        ctx.translate(a.sx, a.sy + a.dy);
+        ctx.scale(k * bx * Math.cos(Math.PI * (a.turn || 0)), k * br);
+      }
+      if (ghost) ctx.globalAlpha = a.alpha * 0.4;         // behind a door: a dark shape, the art barely through it
       ctx.drawImage(im, -w / 2, -h);
+      ctx.globalAlpha = a.alpha;
       ctx.scale(1 / FXK, 1 / FXK);
       var X = -w * FXK / 2, Y = -h * FXK;
+      if (ghost) { ctx.globalAlpha = a.alpha * 0.45; ctx.drawImage(silOf(im, "#0b0814"), X, Y); }
+      if (a.hero && a.cA > 0.02 && !a.dead) { ctx.globalAlpha = a.alpha * a.cA * (0.22 + 0.08 * Math.sin(t * 2.2 + a.phase)); ctx.drawImage(silOf(im, "#8a3fd1"), X, Y); }
       var dim = 0.1 + 0.4 * depth01 * (a.hero ? 1 : 0.5) + (a.hero && C.phase === "input" && C.actor !== a ? 0.25 : 0) + (a.dead ? 0.45 : 0);
       ctx.globalAlpha = a.alpha * Math.min(0.85, dim);
       ctx.drawImage(silOf(im, mix(band().tint, "#05040a", 0.55)), X, Y);
@@ -3427,6 +4188,118 @@
       if (a.flash > 0) { ctx.globalAlpha = a.alpha * a.flash * 0.7; ctx.drawImage(silOf(im, "#ffffff"), X, Y); }
       ctx.restore();
       drawParts(a, true);
+      headSigns(a, im, k, bx, br);
+    }
+    /* THE SIGNALS ON A FIGURE, chosen in lab/grudgeon-yokai.html. Behind it:
+       the GUARD, a shield of light round a hero on guard (it flares as it
+       holds a blow); a yokai's SHIELD, a red dome while its lock holds (it
+       flares as it takes a blow, and as it falls); the CURSE, a violet haze
+       round a hero a rule holds (Jorogumo's silk). All faint: they sit
+       behind the sprite. */
+    var SHIELD_A = 0.45;
+    function drawGuardAura(a) {
+      var g = Math.min(1, a.gA || 0), flare = Math.max(0, (a.gA || 0) - 1);
+      if (g < 0.02 || a.dead || !a.hero) return;
+      var grow = 0.86 + 0.14 * g + 0.12 * flare, cx = a.sx, cy = a.sy + a.dy - a.s * 0.46;
+      var rx = a.s * 0.4 * grow, ry = a.s * 0.58 * grow, pul = 0.5 + 0.5 * Math.sin(t * 3 + a.phase);
+      ctx.save();
+      ctx.globalAlpha = a.alpha * SHIELD_A;
+      ctx.save();
+      ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+      var gr = ctx.createRadialGradient(0, 0, ry * 0.25, 0, 0, ry);
+      gr.addColorStop(0, rgba("#8fdcff", 0));
+      gr.addColorStop(0.72, rgba("#8fdcff", (0.1 + 0.25 * flare) * g));
+      gr.addColorStop(1, rgba("#8fdcff", (0.34 + 0.3 * flare) * g));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = 3 + 3 * flare; ctx.strokeStyle = rgba("#bfeaff", (0.4 + 0.35 * pul + 0.25 * flare) * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2; ctx.strokeStyle = rgba("#8fdcff", 0.22 * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx * 0.9, ry * 0.92, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    function drawFoeShield(a) {
+      var g = Math.min(1, a.sA || 0), flare = Math.max(0, (a.sA || 0) - 1), i, q;
+      if (g < 0.02 || a.hero) return;
+      var grow = 0.8 + 0.2 * g + 0.1 * flare, cx = a.sx, cy = a.sy + a.dy - a.s * 0.44;
+      var rx = a.s * 0.42 * grow, ry = a.s * 0.52 * grow, pul = 0.5 + 0.5 * Math.sin(t * 2.4 + a.phase);
+      ctx.save();
+      ctx.globalAlpha = a.alpha * SHIELD_A;
+      ctx.save();
+      ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+      var gr = ctx.createRadialGradient(0, 0, ry * 0.3, 0, 0, ry);
+      gr.addColorStop(0, rgba("#ff3048", 0));
+      gr.addColorStop(0.7, rgba("#ff3048", (0.1 + 0.25 * flare) * g));
+      gr.addColorStop(1, rgba("#ff3048", (0.36 + 0.3 * flare) * g));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = 3.5 + 3 * flare; ctx.strokeStyle = rgba("#ff6070", (0.45 + 0.3 * pul + 0.25 * flare) * g);
+      ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = rgba("#ff8090", (0.16 + 0.2 * flare) * g);   // the panels: meridians of the dome
+      for (i = 1; i <= 2; i++) {
+        q = i / 3;
+        ctx.beginPath(); ctx.ellipse(cx, cy, rx * q, ry, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry * q, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function drawCurse(a) {
+      var g = Math.min(1, a.cA || 0);
+      if (g < 0.02 || !a.hero || a.dead) return;
+      var cx = a.sx, cy = a.sy + a.dy - a.s * 0.42, ry = a.s * 0.72, rx = a.s * 0.56, pul = 0.5 + 0.5 * Math.sin(t * 2.2 + a.phase);
+      ctx.save();
+      ctx.globalAlpha = a.alpha * g;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(cx, cy); ctx.scale(rx / ry, 1);
+      var gr = ctx.createRadialGradient(0, ry * 0.2, ry * 0.05, 0, 0, ry);
+      gr.addColorStop(0, rgba("#7dd36b", 0.42 + 0.14 * pul));
+      gr.addColorStop(0.5, rgba("#9a45e0", 0.42 + 0.12 * pul));
+      gr.addColorStop(1, rgba("#4a1670", 0));
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(0, 0, ry, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    /* Where a figure's face is on screen: a hero's crop (`face`), a yokai's
+       measured face (FOE_FACE), the top of the picture otherwise. */
+    var FOE_FACE = { tengu: [0.3, 0.15], umibozu: [0.37, 0.15], rokurokubi: [0.16, 0.22] };
+    function headAt(a, im, k, bx, br) {
+      var fc = a.hero ? a.b.face : FOE_FACE[a.id], hd = fc ? { x: fc[0], y: fc[1] } : headOf(im);
+      return { x: a.sx + (hd.x - 0.5) * im.naturalWidth * k * bx, y: a.sy + a.dy + (hd.y - 1) * im.naturalHeight * k * br };
+    }
+    /* In front, round the head: violet bubbles on a cursed hero, white puffs
+       on a winded yokai (Tengu), violet stars on a stunned hero or a yokai in
+       its open phase (Umibozu at the ebb, Rokurokubi's neck out). */
+    function headSigns(a, im, k, bx, br) {
+      var gb = Math.min(1, (a.hero ? a.cA : a.pA) || 0), gs = Math.min(1, a.zA || 0), i;
+      if ((gb < 0.02 && gs < 0.02) || a.dead || !im) return;
+      var hp = headAt(a, im, k, bx, br), R0 = a.s * 0.13;
+      ctx.save();
+      if (gb >= 0.02) for (i = 0; i < 8; i++) {           // each bubble swells, drifts up round the head, and pops
+        var q = (t * (0.45 + 0.05 * (i % 3)) + i / 8) % 1, ang = i * Math.PI * 2 / 8 + t * 0.7;
+        var x = hp.x + Math.cos(ang) * R0 * (1 + 0.25 * q), y = hp.y + Math.sin(ang) * R0 * 0.55 - q * a.s * 0.12;
+        var r = (3 + (i % 3) * 1.5) * (0.5 + 0.5 * Math.sin(q * Math.PI)) * a.s / 280;
+        ctx.globalAlpha = a.alpha * gb * Math.sin(q * Math.PI) * 0.9;
+        ctx.fillStyle = a.hero ? (i % 2 ? "#c27cff" : "#9a45e0") : (i % 2 ? "#ffffff" : "#dfe8f2");
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+        if (!a.hero) continue;                // a puff of breath is plain white
+        ctx.fillStyle = "#f3e6ff";
+        ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 0.35, r * 0.3, 0, Math.PI * 2); ctx.fill();
+      }
+      if (gs >= 0.02) {
+        var R1 = a.s * 0.15, sy = hp.y - a.s * 0.06;
+        for (i = 0; i < 5; i++) {
+          var an = t * 2.6 + i * Math.PI * 2 / 5, dep = Math.sin(an);   // a flat orbit: the stars in front are bigger and brighter
+          var sx = hp.x + Math.cos(an) * R1, yy = sy + dep * R1 * 0.32, rr = a.s * (0.024 + 0.01 * dep);
+          ctx.globalAlpha = a.alpha * gs * (0.7 + 0.3 * dep);
+          ctx.fillStyle = i % 2 ? "#d9a8ff" : "#b46cff";
+          ctx.beginPath();
+          for (var pp = 0; pp < 10; pp++) {
+            var r0 = pp % 2 ? rr * 0.42 : rr, aa = -Math.PI / 2 + pp * Math.PI / 5 + t * 1.5;
+            ctx.lineTo(sx + Math.cos(aa) * r0, yy + Math.sin(aa) * r0);
+          }
+          ctx.closePath(); ctx.fill();
+        }
+      }
+      ctx.restore();
     }
     /* The ritual circle on the ground under the hero whose turn it is. */
     function drawRing(a, col) {
@@ -3503,23 +4376,41 @@
         if (h.dead || h.sx == null) continue;
         var lethal = inc[i].dmg >= h.hp, label = (lethal ? "KO" : "-" + inc[i].dmg) + (inc[i].maybe ? "?" : "");
         ctx.font = font(22, 900);
-        var w = ctx.measureText(label).width + 52, x0 = h.sx - w / 2, y = h.sy + 22;
+        var w = ctx.measureText(label).width + 52, x0 = h.sx - w / 2, y = h.sy + 52;
         ctx.fillStyle = lethal ? rgba("#e2364b", 0.85) : "rgba(24,4,12,.78)"; roundRect(ctx, x0, y - 16, w, 32, 16); ctx.fill();
         ctx.strokeStyle = rgba("#ff5d73", 0.45 + 0.5 * pul); ctx.lineWidth = 2.5; ctx.stroke();
         Icon.draw(ctx, "icoSkull", x0 + 20, y, 24, lethal ? "#ffffff" : "#ff5d73");
         text(label, x0 + 36 + (w - 44) / 2, y + 1, 22, lethal ? "#ffffff" : "#ff8a9a");
       }
     }
-    /* The yokai as a target: a gold ring at its feet while a scroll aimed at
-       it is chosen, full while one is dragged over it. */
-    function drawFoeAim() {
-      var C = combat, f = C.foe, info = C.phase === "input" && C.sel ? scrollOf(C.sel) : null;
-      if (!info || (info.on !== "foe" && info.on !== "any") || f.dead || f.sx == null) return;
-      var on = C.dropOn && C.dropOn.foe, pul = 0.5 + 0.5 * Math.sin(t * 7);
-      ctx.save();
-      ctx.strokeStyle = rgba("#ffd166", on ? 1 : 0.45 + 0.45 * pul); ctx.lineWidth = on ? 6 : 4;
-      ctx.beginPath(); ctx.ellipse(f.sx, f.sy + 6, f.s * 0.32, f.s * 0.08, 0, 0, Math.PI * 2); ctx.stroke();
-      ctx.restore();
+    /* A hero's health (green) over their SP (blue), floating between their
+       feet, on the ring of the hero whose turn it is: no plate. */
+    function drawVitals() {
+      for (var i = 0; i < party.length; i++) {
+        var h = party[i];
+        if (h.dead || h.away || h.sx == null) continue;
+        text("" + h.hp, h.sx, h.sy - 10, 24, h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1", "center", 6);
+        text("" + Math.round(h.sp), h.sx, h.sy + 13, 22, "#8fdcff", "center", 6);
+      }
+    }
+    /* Where the button under a finger or the mouse lands: a red ring under
+       the yokai, a blue one under the ally (every hero for the party). */
+    function drawCastRings() {
+      var C = combat, hot = canCast() ? C.hot : null, b, l, i;
+      if (!hot || !SKILLS[hot.id]) return;
+      if (hot.side === "red") { if (!C.foe.dead && C.foe.sx != null) drawRing(C.foe, "#ff5d6e"); return; }
+      b = blueFor(hot.id);
+      l = b ? (b.all ? alive() : [b.hero]) : [];
+      for (i = 0; i < l.length; i++) if (l[i].sx != null) drawRing(l[i], "#4f9bff");
+    }
+    /* THE PREVIEW: while a scroll's info is up, what it costs is shown on
+       the gauges and nowhere else — the blow's chunk of the boss bar blinks
+       (drawFoeHud), the price's chunk of the SP gauge on the card in turn
+       (syncHead). Nothing floats over the stage: the fight stays readable. */
+    function infoHit() {
+      if (!infoPow || !SKILLS[infoPow] || !canCast()) return null;
+      var f = faceOn(infoPow, { foe: true });
+      return f && f.hit ? f.hit : null;
     }
 
     /* --- the fight, one frame ------------------------------------------------ */
@@ -3530,15 +4421,16 @@
       ctx.globalAlpha = hk;
       drawFloor();
       ctx.globalAlpha = 1;
-      drawFoeAim();
+      drawCastRings();
       for (i = 0; i < us.length; i++) { zmin = Math.min(zmin, us[i].wz); zmax = Math.max(zmax, us[i].wz); }
       us.sort(function (p, q) { return q.wz - p.wz; });
       for (i = 0; i < us.length; i++) {
         a = us[i];
         drawActor(a, zmax > zmin ? (a.wz - zmin) / (zmax - zmin) : 0);
       }
-      ctx.globalAlpha = hk;
+      ctx.globalAlpha = hk * (1 - cam.lb * 0.75);
       drawThreats();
+      drawVitals();
       ctx.globalAlpha = 1;
       /* the spells, over everyone */
       for (i = 0; i < fxs.length; i++) {
@@ -3556,16 +4448,17 @@
         ctx.fillStyle = "#000"; ctx.fillRect(0, 0, view.w, lb); ctx.fillRect(0, view.h - lb, view.w, lb);
       }
 
-      /* the HUD settles in last: the top rows drop from above, the tiles
-         rise from below */
+
+      /* the HUD settles in last: the boss bar and the yokai's next move drop
+         from above, the frieze rises from below (the track is DOM: syncTrack) */
       var y = G.top - 40 * (1 - hk), hudA = (1 - cam.lb * 0.75) * hk;
       ctx.save(); ctx.globalAlpha = hudA * C.foe.alpha;
-      drawTurnOrder(y);
-      drawFoeHud(y + ROW_H + 16);
+      drawFoeHud(y);
+      drawIntent(y + FOE_H + 4);
       ctx.restore();
       ctx.save(); ctx.globalAlpha = hudA * (C.leave >= 0 ? Math.max(0, 1 - C.leave / 0.45) : 1);
       ctx.translate(0, 40 * (1 - hk));
-      drawHeroTiles();
+      drawFrieze(dockGeo().frieze);
       ctx.restore();
     }
 
@@ -3584,26 +4477,115 @@
     function incomingOf(h) { var l = incoming(); for (var i = 0; i < l.length; i++) if (l[i].h === h) return l[i]; return null; }
     function topDmg(e) { var m = 0; for (var i = 0; i < e.hits.length; i++) m = Math.max(m, e.hits[i].dmg); return m; }
 
-    /* THE TIMELINE ROW: the next SHOW turns, portraits only — what a turn
-       holds is in the card a tap on it opens. A turn keeps its x by its key
-       (unit and turn number), so a preview, a push or a one more SLIDES it
-       along. The yokai's turns burn in a violet aura: that is the evil
-       coming. */
+    /* THE FRIEZE: the timeline, small, on the foot of the fight — an aid to
+       read the ORDER and the runs of turns, a head a turn in a small bubble,
+       the yokai's blow on a chip beside its own. A turn keeps its x by its
+       key (unit and turn number), so a preview, a push or a one more SLIDES
+       it along; a tap on a turn opens its card. The yokai's turns burn in a
+       violet aura: that is the evil coming. */
     var slotX = {};
-    function drawTurnOrder(y) {
-      var C = combat, seen = {}, i, key;
-      var me = C.phase === "input" ? C.actor : null, x0 = Layout.left, yy = y + 2 + ROW_H / 2;
+    function drawFrieze(y) {
+      var C = combat, seen = {}, i, key, yy = y + TRACK.frieze / 2;
+      var me = C.phase === "input" ? C.actor : null, x0 = Layout.left + 24, step = (Layout.w - 48) / Math.max(1, SHOW - 1);
       C.slots = [];
-      ctx.fillStyle = "rgba(6,4,12,.55)"; roundRect(ctx, x0 - 10, y + 2, Layout.w + 20, ROW_H, 18); ctx.fill();
+      ctx.fillStyle = "rgba(6,4,12,.6)"; roundRect(ctx, Layout.left - 10, y, Layout.w + 20, TRACK.frieze, TRACK.frieze / 2); ctx.fill();
       for (i = 0; i < C.TL.length; i++) {
-        var e = C.TL[i], r = i ? 26 : 32, tx = x0 + 36 + (i ? 92 + (i - 1) * 86 : 0), a = e.u;
-        var x = slotX.hasOwnProperty(e.key) ? slotX[e.key] : tx + 90;
+        var e = C.TL[i], r = i ? 15 : 18, tx = x0 + i * step, a = e.u;
+        var x = slotX.hasOwnProperty(e.key) ? slotX[e.key] : tx + 60;
         x += (tx - x) * Math.min(1, frameDt * 12);
         slotX[e.key] = x; seen[e.key] = true;
         turnSlot(a, x, yy, r, i, !!(C.hover && me && a === me && !e.now));
-        C.slots.push({ x: x, y: yy, r: r + 10, e: e });
+        if (e.it) blowChip(e, x + r - 2, yy);
+        C.slots.push({ x: x, y: yy, r: r + 14, e: e });
       }
       for (key in slotX) if (slotX.hasOwnProperty(key) && !seen[key]) delete slotX[key];
+    }
+    /* the blow a yokai's turn will land, on a chip beside its bubble */
+    function blowChip(e, x, yy) {
+      var it = e.it, label = hiddenIntents() ? "?" : !it.pow && !it.flat && !it.alt ? "-" : "" + topDmg(e);   // who it hits is on the line under the boss bar
+      label = upper(label);
+      ctx.font = font(18, 900);
+      var w = ctx.measureText(label).width + 12;
+      ctx.fillStyle = it.special ? "#b3122e" : "rgba(20,8,14,.95)"; roundRect(ctx, x, yy - 12, w, 24, 7); ctx.fill();
+      ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+      text(label, x + w / 2, yy + 1, 18, "#fff4f0");
+    }
+    /* THE YOKAI'S NEXT MOVE, under its bar, drawn rather than told: what it
+       is on a pill in the rule pill's gold (the move's glyph and its name),
+       an arrow, the head of every hero it hits with what it costs them (KO
+       on red, a shield on a head on guard), then what it does besides, a
+       chip each. Chosen in lab/grudgeon-yokai.html. */
+    function moveIcon(it) {
+      if (it.alt) return "icoDices";
+      if (!it.pow && !it.flat && !it.toOne) return "icoPause";
+      if (it.toOne) return "icoArrowDown";
+      if (it.drain || it.feast) return "icoDrop";
+      if (it.fear) return "icoGhost";
+      if (it.gale) return "icoChevrons";
+      if (it.cocoon) return "icoLock";
+      if (it.stun) return "icoStar";
+      if (it.all) return "icoBomb";
+      return it.special ? "icoSkull" : "icoAxe";
+    }
+    function moveExtras(it) {
+      var out = [];
+      if ((it.drain || it.feast) && it.pow) out.push({ icon: "icoDrop", col: "#7ee0a1" });
+      if (it.fear || it.gale) out.push({ icon: "icoChevrons", col: "#b69cff" });
+      if (it.cocoon) out.push({ icon: "icoLock", col: "#c79bff" });
+      if (it.stun) out.push({ icon: "icoStar", col: "#c27cff" });
+      if (it.pierce) out.push({ icon: "icoShield", col: "#ff8a9a", cross: true });
+      return out;
+    }
+    function drawIntent(y) {
+      var C = combat, e = nextFoe(), i;
+      if (!e || C.foe.dead) return;
+      var it = e.it, hidden = hiddenIntents(), cy = y + 24, x = Layout.left;
+      var blow = !!(it.pow || it.flat || it.toOne || it.alt);
+      var heads = hidden || !blow ? [] : e.hits, extras = hidden ? [] : moveExtras(it);
+      /* the room the pill's name has: what the heads and the chips leave */
+      var headsW = heads.length ? 34 + heads.length * 48 : 0, extrasW = extras.length * 40;
+      var room = Layout.left + Layout.w - x - headsW - extrasW - 16 - 36;
+      var label = upper(hidden ? "?" : Lang.t(it.label));
+      ctx.font = font(20, 900);
+      var ls = clamp(20 * room / Math.max(1, ctx.measureText(label).width), 18, 20);
+      ctx.font = font(ls, 900);
+      var plw = 36 + ctx.measureText(label).width + 12;
+      ctx.save();
+      if (!blow) ctx.globalAlpha *= 0.6;
+      ctx.fillStyle = "rgba(233,196,106,.18)"; roundRect(ctx, x, cy - 15, plw, 30, 15); ctx.fill();
+      ctx.strokeStyle = "rgba(233,196,106,.8)"; ctx.lineWidth = 2; ctx.stroke();
+      Icon.draw(ctx, hidden ? "icoEye" : moveIcon(it), x + 20, cy, 20, "#ffd166");
+      text(label, x + 34, cy + 1, ls, "#ffd166", "left");
+      ctx.restore();
+      x += plw + 8;
+      if (heads.length) {
+        Icon.draw(ctx, "icoArrowRight", x + 13, cy, 24, "#ff8a9a");
+        x += 34;
+        for (i = 0; i < heads.length; i++) {
+          var hh = heads[i], h = hh.h, hx = x + 22, ko = !hh.maybe && hh.dmg >= h.hp;
+          portrait(h, hx, cy - 2, 19, false);
+          ctx.strokeStyle = h.b.color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hx, cy - 2, 20, 0, Math.PI * 2); ctx.stroke();
+          if (h.guard && !it.pierce) {                    // the guard halves it: a shield on the head
+            ctx.fillStyle = "#0b0712"; ctx.beginPath(); ctx.arc(hx - 15, cy - 16, 11, 0, Math.PI * 2); ctx.fill();
+            Icon.draw(ctx, "icoShield", hx - 15, cy - 16, 15, "#8fdcff");
+          }
+          var dtx = ko ? "KO" : (hh.maybe ? "?" : "") + hh.dmg;
+          ctx.font = font(18, 900);
+          var dw = ctx.measureText(dtx).width + 12;
+          ctx.fillStyle = ko ? "#e2364b" : "#4a0c18"; roundRect(ctx, hx - dw / 2, cy + 10, dw, 22, 7); ctx.fill();
+          ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 1.5; ctx.stroke();
+          text(dtx, hx, cy + 21, 18, ko ? "#fff4f0" : "#ff8a9a");
+          x += 48;
+        }
+      }
+      for (i = 0; i < extras.length; i++) {
+        var c = extras[i], ex = x + 20;
+        ctx.fillStyle = "rgba(8,5,14,.9)"; ctx.beginPath(); ctx.arc(ex, cy, 16, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = c.col; ctx.lineWidth = 2; ctx.stroke();
+        Icon.draw(ctx, c.icon, ex, cy, 18, c.col);
+        if (c.cross) { ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(ex - 9, cy + 9); ctx.lineTo(ex + 9, cy - 9); ctx.stroke(); }
+        x += 40;
+      }
     }
     /* One turn of the row: the aura of evil under a yokai's, the pulse of
        the hero's next turn being previewed (`hover`), the portrait and its
@@ -3652,24 +4634,47 @@
     var FOE_H = 74;
     function drawFoeHud(topY) {
       var C = combat, f = C.foe, x = Layout.left, w = Layout.w, name = upper(Lang.t(f.b.name)), el, i;
+      /* locked: a plain Attack would land at -80% now — the bar greys, a padlock by the pill */
+      var lh = C.actor && C.actor.hero && !C.actor.dead ? C.actor : alive()[0];
+      var sealed = !f.dead && !!lh && blowMod(lh, "attack", lh.imbue || "slash").pct === LOCKED;
       var gr = ctx.createLinearGradient(0, topY - 8, 0, topY + FOE_H + 10);
       gr.addColorStop(0, "rgba(6,4,12,.8)"); gr.addColorStop(1, "rgba(6,4,12,0)");
       ctx.fillStyle = gr; ctx.fillRect(0, topY - 8, view.w, FOE_H + 18);
       text(name, x, topY + 16, 30, "#f4eef8", "left", 5);
       ctx.font = font(30, 900);
       var nw = ctx.measureText(name).width, R = RULES[f.id], st = R && R.status ? R.status(f) : "";
-      if (f.boss) text(upper(Lang.t("Master")), x + nw + 12, topY + 18, 18, "#ffd166", "left", 4);
+      var after = x + nw + 12;
+      if (f.boss) { text(upper(Lang.t("Master")), after, topY + 18, 18, "#ffd166", "left", 4); after += ctx.measureText(upper(Lang.t("Master"))).width + 12; }
+      /* the party carries nothing that beats it: a warning by the name */
+      if (!f.dead && missingKey()) { ctx.save(); ctx.globalAlpha *= 0.7 + 0.3 * Math.sin(t * 4); Icon.draw(ctx, "icoAlert", after + 15, topY + 16, 30, "#ffb347"); ctx.restore(); }
+      var sw = 0;
       if (st) {
         st = upper(st);
         ctx.font = font(20, 900);
-        var sw = ctx.measureText(st).width + 22;
+        sw = ctx.measureText(st).width + 22;
         ctx.fillStyle = "rgba(233,196,106,.18)"; roundRect(ctx, x + w - sw, topY - 2, sw, 30, 15); ctx.fill();
         ctx.strokeStyle = "rgba(233,196,106,.8)"; ctx.lineWidth = 2; ctx.stroke();
         text(st, x + w - sw / 2, topY + 14, 20, "#ffd166");
       }
+      if (sealed) { ctx.save(); ctx.globalAlpha *= 0.75 + 0.25 * Math.sin(t * 4); Icon.draw(ctx, "icoLock", x + w - sw - 20, topY + 13, 24, "#ffd166"); ctx.restore(); }
       var by = topY + 46, bh = 10;
       ctx.fillStyle = "rgba(0,0,0,.6)"; roundRect(ctx, x - 3, by - 3, w + 6, bh + 6, (bh + 6) / 2); ctx.fill();
-      drawBar(x, by, w, bh, f.hp / f.mhp, "#e2364b", f.lag / f.mhp);
+      drawBar(x, by, w, bh, f.hp / f.mhp, sealed ? "#6c6880" : "#e2364b", f.lag / f.mhp);
+      var ih = infoHit();
+      if (ih && f.hp > 0) {
+        var bl = 0.35 + 0.55 * (0.5 + 0.5 * Math.sin((t - infoT) * 9));
+        var at = function (v) { return x + w * clamp(v, 0, f.mhp) / f.mhp; };
+        if (ih.m.heal) {                  // a blow its rule turns into a heal: the chunk it would give back, in green
+          ctx.fillStyle = rgba("#7ee0a1", bl);
+          ctx.fillRect(at(f.hp), by, Math.max(3, at(f.hp + ih.dmg) - at(f.hp)), bh);
+        } else {
+          /* the chunk the blow takes, blinking; while its element is not found,
+             the sure part (as if resisted) solid and the rest fainter */
+          ctx.fillStyle = rgba("#fff4f0", bl);
+          ctx.fillRect(at(f.hp - ih.lo), by, Math.max(3, at(f.hp) - at(f.hp - ih.lo)), bh);
+          if (ih.hi > ih.lo) { ctx.fillStyle = rgba("#fff4f0", bl * 0.4); ctx.fillRect(at(f.hp - ih.hi), by, at(f.hp - ih.lo) - at(f.hp - ih.hi), bh); }
+        }
+      }
       ctx.fillStyle = "rgba(6,4,12,.8)";
       for (i = 1; i < 4; i++) ctx.fillRect(x + w * i / 4 - 1.5, by, 3, bh);
       var badges = [];
@@ -3678,8 +4683,8 @@
       for (i = 0; i < badges.length; i++) elementBadge(badges[i].el, badges[i].weak, x + w - 24 - i * 50, by + bh / 2, 20);
       C.foeHud = { x: x, y: topY, w: w, h: FOE_H };
     }
-    /* An element's badge: lit in its colour on a weakness, grey and struck
-       through on a resistance. */
+    /* An element's badge: lit in its colour on a weakness, greyed on a
+       resistance. */
     function elementBadge(el, weak, x, y, r) {
       var E = ELEMENTS[el], pul = weak ? 0.5 + 0.5 * Math.sin(t * 4) : 0;
       if (weak) {
@@ -3688,109 +4693,14 @@
         ctx.beginPath(); ctx.arc(x, y, r + 7, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
+      ctx.save();
+      if (!weak) ctx.globalAlpha *= 0.6;
       ctx.fillStyle = "#0b0712"; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = weak ? E.color : "#6c6880"; ctx.lineWidth = 3; ctx.stroke();
-      Icon.draw(ctx, E.icon, x, y, r * 1.2, weak ? E.color : "#8a8698");
-      if (!weak) {
-        ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 3; ctx.lineCap = "round";
-        ctx.beginPath(); ctx.moveTo(x - r * 0.62, y + r * 0.62); ctx.lineTo(x + r * 0.62, y - r * 0.62); ctx.stroke();
-      }
+      ctx.strokeStyle = weak ? E.color : "#5a5668"; ctx.lineWidth = 3; ctx.stroke();
+      Icon.draw(ctx, E.icon, x, y, r * 1.2, weak ? E.color : "#7a7688");
+      ctx.restore();
     }
 
-    /* THE HERO TILES: slanted, one per hero, over the scrolls. One tile is
-       OPEN — the hero whose turn it is, or the one the player tapped — and
-       takes the room the others leave: the name, then a bar and its value
-       for the health and for the SP. The others are folded to the portrait
-       and the two values, in green and in blue. The yokai's next blow hangs
-       over the tile it will land on (KO on red when it kills). */
-    var FOLD_W = 120, OPEN_W = 300;
-    function openTile() {
-      var C = combat;
-      if (C.peek && !C.peek.dead) return C.peek;
-      if (C.phase === "input" && C.actor && C.actor.hero) return C.actor;
-      return C.lastOpen && !C.lastOpen.dead ? C.lastOpen : alive()[0] || party[0];
-    }
-    function tileWidths() {
-      var n = party.length, gap = 10, o = openTile(), out = [];
-      var open = Math.min(OPEN_W, Layout.w - (n - 1) * (FOLD_W + gap));
-      for (var i = 0; i < n; i++) out.push(n === 1 || party[i] === o ? open : FOLD_W);
-      return out;
-    }
-    function tilesTop() { return (uiTop || (G || fightGeo()).barTop) - 12 - TILE_H; }
-    function drawHeroTiles() {
-      var n = party.length, gap = 10, C = combat, i, tot = -gap, sk = 0.18, aimP = aimingParty();
-      for (i = 0; i < n; i++) tot += party[i].tw + gap;
-      var x = view.w / 2 - tot / 2, base = tilesTop();
-      C.tiles = [];
-      for (i = 0; i < n; i++) {
-        var h = party[i], tw = h.tw, turn = C.phase === "input" && C.actor === h, th = TILE_H, y = base - (turn ? 8 : 0);
-        var openK = clamp((tw - FOLD_W) / Math.max(1, OPEN_W - FOLD_W), 0, 1), ok = aimP && !h.away && fits(scrollOf(C.sel), { hero: h });
-        ctx.save();                        // a hero still on the way from next door: a ghost of a tile
-        if (h.away) ctx.globalAlpha *= 0.4;
-        ctx.save();
-        ctx.translate(x, y); ctx.transform(1, 0, -sk, 1, th * sk, 0);
-        ctx.fillStyle = turn ? mix(h.b.color, "#0b0610", 0.55) : "rgba(10,6,16,.86)"; ctx.fillRect(0, 0, tw, th);
-        ctx.fillStyle = h.dead ? "#4a4458" : h.b.color; ctx.fillRect(0, 0, 6, th);
-        if (turn) { ctx.strokeStyle = h.b.color; ctx.lineWidth = 3; ctx.strokeRect(0, 0, tw, th); }
-        if (ok) {
-          ctx.strokeStyle = rgba("#ffd166", (C.dropOn && C.dropOn.hero === h ? 1 : 0.45 + 0.45 * Math.sin(t * 7))); ctx.lineWidth = 4;
-          ctx.strokeRect(-3, -3, tw + 6, th + 6);
-        }
-        ctx.restore();
-        /* the portrait, cut by the tile's own slant, the face in the middle */
-        var pw = 64, px = x + th * sk * 0.5 + 6 + pw / 2;
-        ctx.save();
-        ctx.beginPath(); ctx.moveTo(x + th * sk + 6, y); ctx.lineTo(x + th * sk + 6 + pw, y); ctx.lineTo(x + 6 + pw, y + th); ctx.lineTo(x + 6, y + th); ctx.closePath(); ctx.clip();
-        portrait(h, px, y + th / 2, th / 2, true);
-        if (h.dead) { ctx.fillStyle = "rgba(6,4,12,.65)"; ctx.fillRect(x, y, pw + 20, th); }
-        ctx.restore();
-        if (h.dead) Icon.draw(ctx, "icoSkull", px, y + th / 2, 34, "#9a94aa");
-        if (h.guard && !h.dead) {
-          ctx.fillStyle = "rgba(10,30,48,.9)"; ctx.beginPath(); ctx.arc(px - 22, y + th - 16, 15, 0, Math.PI * 2); ctx.fill();
-          Icon.draw(ctx, "icoShield", px - 22, y + th - 16, 20, "#8fdcff");
-        }
-        /* what allies laid on this hero: an element and an edge for the
-           next blow, a body in front of them (in the coverer's colour) */
-        if (!h.dead) {
-          var marks = [];
-          if (h.imbue) marks.push({ ico: ELEMENTS[h.imbue].icon, c: ELEMENTS[h.imbue].color });
-          if (h.whet) marks.push({ ico: "icoFight", c: "#ffd166" });
-          if (h.cover && !h.cover.dead) marks.push({ ico: "icoShield", c: h.cover.b.color });
-          for (var mk = 0; mk < marks.length; mk++) {
-            var mx = px - 20 + mk * 30, my = y + 15;
-            ctx.fillStyle = "rgba(8,5,14,.92)"; ctx.beginPath(); ctx.arc(mx, my, 14, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = marks[mk].c; ctx.lineWidth = 2; ctx.stroke();
-            Icon.draw(ctx, marks[mk].ico, mx, my, 18, marks[mk].c);
-          }
-        }
-        var tx = px + pw / 2 + 8, hpCol = h.dead ? "#6c6880" : h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1", spCol = h.dead ? "#6c6880" : "#8fdcff";
-        if (openK > 0.6) {
-          /* open: the name, then <bar> <value> twice */
-          ctx.save(); ctx.globalAlpha *= (openK - 0.6) / 0.4;
-          var right = x + tw - 4, vw = 46;
-          text(upper(h.b.name), tx, y + 17, 20, h.dead ? "#6c6880" : turn ? "#fff4f0" : h.b.color, "left");
-          drawBar(tx - 3, y + 36, right - vw - tx - 6, 10, h.hp / h.mhp, hpCol === "#6c6880" ? "#4a4458" : hpCol, h.lag / h.mhp);
-          text("" + h.hp, right, y + 41, 20, hpCol, "right");
-          drawBar(tx - 7, y + 58, right - vw - tx - 6, 8, h.sp / h.msp, "#8fdcff");
-          text("" + h.sp, right - 4, y + 62, 20, spCol, "right");
-          ctx.restore();
-        } else {
-          /* folded: the two values alone */
-          ctx.save(); ctx.globalAlpha *= 1 - openK / 0.6;
-          text("" + h.hp, tx - 2, y + 25, 20, hpCol, "left");
-          text("" + h.sp, tx - 6, y + 52, 20, spCol, "left");
-          ctx.restore();
-        }
-        var inc = h.dead ? null : incomingOf(h);
-        if (inc) {
-          var lethal = inc.dmg >= h.hp;
-          threatChip((lethal ? "KO" : "-" + inc.dmg) + (inc.maybe ? "?" : ""), lethal, x + tw + 4, y - 18);   // hung over the tile's top edge
-        }
-        ctx.restore();
-        if (!h.away) C.tiles.push({ x: x, y: y, w: tw + th * sk, h: th, hero: h });
-        x += tw + gap;
-      }
-    }
     /* The yokai's next blow on a hero, a chip whose right edge is `right`:
        its damage, or KO on red when it kills. */
     function threatChip(label, lethal, right, ly) {
@@ -3800,20 +4710,16 @@
       ctx.strokeStyle = "#e2364b"; ctx.lineWidth = 2; ctx.stroke();
       text(label, lx + lw / 2, ly + 14, 20, lethal ? "#fff4f0" : "#ff8a9a");
     }
-    function aimingParty() {
-      var C = combat, info = C.phase === "input" && C.sel ? scrollOf(C.sel) : null;
-      return !!(info && info.on !== "foe");
-    }
 
     /* --- a tap on the fight ------------------------------------------------
-       With a scroll chosen, a tap is its aim. Without one, it asks: a turn
-       of the timeline, the boss bar or the yokai itself opens the yokai's
-       card, a hero's turn their own; a folded tile opens, an open one shows
-       its hero's card. */
+       The scrolls are played on the track (DOM). A tap on the canvas asks:
+       a turn of the frieze, the boss bar or the yokai opens the yokai's card,
+       a hero's turn their own; a tap on another hero sends the scrolls' blue
+       side to them (again: back to the game's pick), a tap on the hero whose
+       turn it is opens their card; anywhere else puts an open info away. */
     function fightTap(p) {
       var C = combat, i, s, tg;
       if (card || C.phase === "done" || C.age < INTRO.hud) return;   // nothing to tap before the HUD is in
-      if (C.phase === "input" && C.sel) { aimScroll(targetAt(p), false); return; }
       for (i = 0; i < (C.slots || []).length; i++) {
         s = C.slots[i];
         if ((p.x - s.x) * (p.x - s.x) + (p.y - s.y) * (p.y - s.y) > s.r * s.r) continue;
@@ -3823,16 +4729,14 @@
       var hb = C.foeHud;
       if (hb && p.x >= hb.x && p.x <= hb.x + hb.w && p.y >= hb.y && p.y <= hb.y + hb.h) { foeCard(nextFoe()); return; }
       tg = targetAt(p);
-      if (!tg) return;
+      if (!tg) { C.info = null; return; }
       if (tg.foe) { foeCard(nextFoe()); return; }
-      if (tg.tile && tg.hero === openTile()) { heroCard(tg.hero); return; }
-      C.peek = tg.hero;
-      Sound.clip("select", 0.8, 1.2);
+      if (canCast() && tg.hero !== C.actor) { C.info = null; pinHero(tg.hero); return; }
+      heroCard(tg.hero);
     }
-    /* What is under a point of the frame: a hero's tile, the yokai, a hero. */
+    /* What is under a point of the frame: the yokai, a hero. */
     function targetAt(p) {
-      var C = combat, i, l = C.tiles || [];
-      for (i = 0; i < l.length; i++) if (p.x >= l[i].x && p.x <= l[i].x + l[i].w && p.y >= l[i].y - 10 && p.y <= l[i].y + l[i].h) return { hero: l[i].hero, tile: true };
+      var C = combat, i;
       var hs = alive().slice().sort(function (a, b) { return a.wz - b.wz; });
       for (i = 0; i < hs.length; i++) if (hitActor(hs[i], p, 0.2)) return { hero: hs[i] };
       if (!C.foe.dead && hitActor(C.foe, p, 0.3)) return { foe: true };
@@ -3854,16 +4758,17 @@
     }
     /* what an intent does, in words, out of what it carries */
     function intentText(it) {
-      if (hiddenIntents()) return Lang.t("A spirit blow reveals what it will do");
+      if (hiddenIntents()) return Lang.t("What it will do is hidden");
       if (it.alt) return Lang.t("Red hits one hero hard, blue drains every hero. Answer neither");
-      if (it.kind === "leave") return Lang.t("If nobody hits it before this turn, it walks away");
-      if (!it.pow && !it.flat) return Lang.t(PASS[it.kind] || "No blow this turn");
-      var l = [Lang.t(it.all ? "A blow on every hero" : it.prev ? "A blow on the hero who acted just before it" : it.special ? "A heavy blow on one hero" : "A blow on one hero")];
-      if (it.drain) l.push(Lang.t("it heals by half the damage"));
-      if (it.feast) l.push(Lang.t("it heals by all the damage"));
+      if (it.toOne) return Lang.t("Every hero drops to 1 HP");
+      if (!it.pow && !it.flat) return Lang.t(it.sub || PASS[it.kind] || "No blow this turn");
+      var l = [Lang.t(it.all ? "A blow on every hero" : it.special ? "A heavy blow on one hero" : "A blow on one hero")];
+      if (it.drain) l.push(Lang.t("it heals halfway"));
+      if (it.feast) l.push(Lang.t("it heals completely"));
       if (it.fear) l.push(Lang.t("its target is pushed back on the timeline"));
       if (it.gale) l.push(Lang.t("every hero not on guard is pushed back"));
-      if (it.cocoon) l.push(Lang.t("its target is wrapped in silk, far back on the timeline"));
+      if (it.cocoon) l.push(Lang.t("its target is wrapped in silk and loses time"));
+      if (it.stun) l.push(Lang.t("its target is stunned and loses the next turn"));
       if (it.pierce) l.push(Lang.t("no guard holds it"));
       return l.join(", ");
     }
@@ -3962,7 +4867,7 @@
           var inc = h.dead ? null : incomingOf(h);
           if (h.dead) body.appendChild(dom("p", "gd-line", Lang.t("This hero has fallen. An ofuda of return brings them back")));
           else if (at >= 0) body.appendChild(kv("Turn", whenWord(at)));
-          if (inc) body.appendChild(kv("The yokai's next blow", inc.dmg >= h.hp ? "KO" : "-" + inc.dmg, "gd-threat"));
+          if (inc) body.appendChild(kv("The Yokai's next blow", inc.dmg >= h.hp ? "KO" : "-" + inc.dmg, "gd-threat"));
           var list = dom("div", "gd-sk");
           knownIds(h).forEach(function (id) {
             var s = SKILLS[id], row = dom("div", "gd-sk-row"), ico = dom("i", "gd-sk-ico"), uri = 'url("' + ASSETS.images[s.icon] + '")';
@@ -3975,7 +4880,7 @@
             if (s.el) bits.push(Lang.t(ELEMENTS[s.el].name));
             if (weightWord(s.w)) bits.push(weightWord(s.w));
             if (bits.length) hd.appendChild(dom("i", null, upper(bits.join(" · "))));
-            tx.appendChild(hd); tx.appendChild(face("On the yokai", s.foeText)); tx.appendChild(face("On an ally", s.allyText));
+            tx.appendChild(hd); tx.appendChild(face("On the Yokai", s.foeText)); tx.appendChild(face("On an ally", s.allyText));
             row.appendChild(ico); row.appendChild(tx);
             list.appendChild(row);
           });
@@ -3995,6 +4900,25 @@
 
     /* --- the fight's clock ---------------------------------------------------- */
     var frameDt = 0;
+    /* The stage's signals, eased in and out: a hero's guard (gA, flaring past
+       1 as it holds a blow), the curse a rule lays on a hero (cA), a stun
+       or a yokai's open phase (zA, stars), its shield (sA), its breath
+       (pA), and how far Teke Teke lies fallen or Nopperabo turns away. */
+    function auras(a, C, dt) {
+      var f = C.foe, R = RULES[f.id];
+      function ease1(v, on, k) { return v + ((on ? 1 : 0) - v) * Math.min(1, dt * (v > 1 ? 3 : k)); }
+      if (a.hero) {
+        a.gA = ease1(a.gA, a.guard && !a.dead, 8);
+        a.cA = ease1(a.cA, !a.dead && R && R.curse && R.curse(f, a), 4);
+        a.zA = ease1(a.zA, a.stun && !a.dead, 6);
+        return;
+      }
+      a.sA = ease1(a.sA, !a.dead && R && R.shield && R.shield(a), 5);
+      a.zA = ease1(a.zA, !a.dead && R && R.dazed && R.dazed(a), 6);
+      a.pA = ease1(a.pA, !a.dead && R && R.puff && R.puff(a), 4);
+      a.fall += (a.fallTo - a.fall) * Math.min(1, dt * 4);
+      a.turn += (a.turnTo - a.turn) * Math.min(1, dt * 5);
+    }
     function updateFight(dt) {
       var C = combat, us = party.concat([C.foe]), i, a, j, p;
       frameDt = dt;
@@ -4009,6 +4933,7 @@
         a.lunge = Math.max(0, a.lunge - dt); a.hurt = Math.max(0, a.hurt - dt); a.cast = Math.max(0, a.cast - dt);
         a.flash = Math.max(0, a.flash - dt * 5); a.boost = Math.max(0, a.boost - dt * 0.8);
         a.lag += (a.hp - a.lag) * Math.min(1, dt * (a.lag > a.hp ? 1.6 : 8));
+        auras(a, C, dt);
         place(a, C);
         spawnEmbers(a, dt);
         for (j = a.parts.length - 1; j >= 0; j--) {
@@ -4018,10 +4943,12 @@
         }
       }
       if (C.foe.dead) C.foe.fade = Math.max(0, C.foe.fade - dt * 0.8);
-      var tws = tileWidths();
-      for (i = 0; i < party.length; i++) party[i].tw += (tws[i] - party[i].tw) * Math.min(1, dt * 12);
       updateCamera(dt);
-      C.TL = timeline(C.hover ? (C.hover === "rule" ? 1 : SKILLS[C.hover].w) : null);
+      /* the scroll under a finger, the mouse or an open info previews its
+         weight on the timeline */
+      C.hover = canCast() ? (C.hot ? C.hot.id : C.info ? C.info.id : null) : null;
+      C.TL = timeline(C.hover ? (SKILLS[C.hover] ? SKILLS[C.hover].w : C.hover === "rule" && ruleAction() ? ruleAction().w || 1 : 1) : null);
+      syncTrack();
     }
 
     /* ======================================================================
@@ -4180,13 +5107,14 @@
         for (var i = 0; i < els.length; i++) elementBadge(els[i][0], els[i][1], 50 + i * 100, 48, 30);
       });
     }
-    /* scrolls as the fight's bar deals them (inert here) */
+    /* scrolls as the fight's track deals them (inert here): the red side,
+       the blue side and the price; a rule's gold button */
     function scrollsPic(ids) {
       var box = dom("div", "gd-gp-scrolls");
       for (var i = 0; i < ids.length; i++) {
-        box.appendChild(scrollNode(ids[i] === "rule"
-          ? { id: "rule", name: "Hold the door", sp: 0, w: 1, icon: "icoHand", ink: "#7a4a00", rule: true }
-          : scrollInfo(ids[i])));
+        var pk = packNode(ids[i]), bl = pk.querySelector(".gd-blue");
+        if (bl) bl.classList.add("is-none");      // no fight, no ally: the blue side wears the glyph
+        box.appendChild(pk);
       }
       return box;
     }
@@ -4204,31 +5132,12 @@
       for (var i = 0; i < list.length; i++) out.push(Lang.t(ELEMENTS[list[i]].name));
       return out.length ? out.join(" · ") : "—";
     }
-    /* What a yokai's special does, every third turn; null where its rule
-       already says it all (Hanako's knocks, Aka Manto's question, the blows
-       of Nure-onna). Read off FOES[].move and RULES. */
-    var SPECIAL_OWN = {
-      hanako: null, akamanto: null, nureonna: null,
-      teketeke: "Every third turn, its special hits the weakest hero hard",
-      gaki: "Every third turn, its special heals it by all the damage it deals",
-      jorogumo: "Every third turn, its special wraps one hero in silk, far back on the timeline",
-      tengu: "Every third turn, its special blows back every hero not on guard",
-      onryo: "Every third turn, its special hits every hero, harder the bigger its Grudge"
-    };
-    var SPECIAL_MOVE = {
-      heavy: "Every third turn, its special hits one hero hard",
-      all: "Every third turn, its special hits every hero",
-      drain: "Every third turn, its special heals it by half the damage it deals",
-      fear: "Every third turn, its special hits one hero and pushes them back on the timeline"
-    };
     /* the level a band's i-th yokai is first met on (stageOf: steps 1, 3, 5
        bring the first three in, step 6 is the fourth's, as master) */
     function metOn(b, i) { return b * 6 + [1, 3, 5, 6][i]; }
     function yokaiPage(b, i) {
       var id = CONFIG.bands[b].foes[i], F = FOES[id], R = RULES[id], lv = metOn(b, i);
-      var sp = SPECIAL_OWN.hasOwnProperty(id) ? SPECIAL_OWN[id] : SPECIAL_MOVE[F.move];
-      var lines = [Lang.t(R.text) + "."];
-      if (sp) lines.push(Lang.t(sp) + ".");
+      var lines = [Lang.t(R.lock), Lang.t(R.key)];
       var weak = foundAs(id, "weak");
       return { id: "yokai-" + id, title: Lang.t(F.name), lv: lv, pic: function () { return foeArt(id); },
                rows: [[Lang.t("Weak"), weak, weak === "?" ? "#a8a2b8" : ELEMENTS[F.weak[0]].color],
@@ -4250,9 +5159,9 @@
     var BAND_NEW = [
       "The lantern burns from the very first step.",
       "Fire doors and seals appear here.",
-      "Here, some yokai wander the map.",
+      "Here, some Yokai wander the map.",
       "Here, your heroes can split into two groups.",
-      "All of it at once: doors, seals, wandering yokai and the split party."
+      "All of it at once: doors, seals, wandering Yokai and the split party."
     ];
     function bandPage(b) {
       var B = CONFIG.bands[b], a = b * 6 + 1;
@@ -4276,7 +5185,7 @@
       return { id: "skill-" + id, title: Lang.t(S.name), pic: function () { return skillPic(id); },
                rows: [["SP", S.sp, "#8fdcff"], [Lang.t("Element"), E ? Lang.t(E.name) : "—", E ? E.color : null],
                       [Lang.t("Speed"), weightWord(S.w) || Lang.t("Normal")]],
-               lines: [fillIn(Lang.t("On the yokai: {text}."), { text: low(Lang.t(S.foeText)) }),
+               lines: [fillIn(Lang.t("On the Yokai: {text}."), { text: low(Lang.t(S.foeText)) }),
                        fillIn(Lang.t("On an ally: {text}."), { text: low(Lang.t(S.allyText)) })] };
     }
     /* the shop's wares and the altar's blessings, as their cards deal them */
@@ -4302,9 +5211,9 @@
           if (b === 1) pages.push({ id: "doors", title: Lang.t("Fire doors and seals"), lv: 7, pic: doorsPic, lines: [
             Lang.t("A fire door opens one way only. Once you are through, the rooms behind it are lost."),
             Lang.t("A seal-breaker opens one sealed door. A big map has two seals for a single seal-breaker.") ] });
-          if (b === 2) pages.push({ id: "roam", title: Lang.t("Wandering yokai"), lv: 13, pic: roamPic, lines: [
-            Lang.t("A wandering yokai roams the corridors. The red arrow shows its next move."),
-            Lang.t("A wandering yokai that reaches your room ambushes you and acts first.") ] });
+          if (b === 2) pages.push({ id: "roam", title: Lang.t("Wandering Yokai"), lv: 13, pic: roamPic, lines: [
+            Lang.t("A wandering Yokai roams the corridors. The red arrow shows its next move."),
+            Lang.t("A wandering Yokai that reaches your room ambushes you and acts first.") ] });
           if (b === 3) pages.push({ id: "split", title: Lang.t("Split the party"), lv: 19, pic: splitPic, lines: [
             Lang.t("Tap Split to divide your party into two groups. Tap a group to lead it."),
             Lang.t("A group next door joins the fight late. If one group falls, the other carries on.") ] });
@@ -4324,7 +5233,7 @@
               Lang.t("The other heroes wait in rooms of the dungeon. Each one who joins burns one more candle.") ] },
             { id: "candles", title: Lang.t("The lantern"), pic: lanternPic,
               rows: [[Lang.t("A step burns"), Lang.t("1 per standing hero")],
-                     [Lang.t("Yokai in the dark"), "+25%", "#ff6e6e"], [Lang.t("A step in the dark"), Lang.t("-3% health"), "#ff6e6e"]],
+                     [Lang.t("Yokai in the dark"), "+30%", "#ff6e6e"], [Lang.t("A step in the dark"), Lang.t("-5% health"), "#ff6e6e"]],
               lines: [
               Lang.t("When the lantern dies, the hour of the ox begins. Lit rooms hide what they hold."),
               Lang.t("Candle stubs from bonus rooms and candles from the shop light the lantern again.") ] },
@@ -4333,39 +5242,47 @@
               },
               rows: [[Lang.t("The goal"), "★"], [Lang.t("1.5× the goal"), "★★"], [Lang.t("2.2× the goal"), "★★★"]],
               lines: [
-              Lang.t("Each level sets one objective: yokai, gold, the way out or the master."),
+              Lang.t("Each level sets one objective: Yokai, gold, the way out or the master."),
               Lang.t("The run ends when your last hero falls, or when no room is left to open.") ] }
           ] },
           { key: "fight", label: Lang.t("The fight"), pages: [
             { id: "fight", title: Lang.t("A fight"), pic: function () { return gRow([heroArt("kenji"), foeArt("hanako")], "gd-gp-duel"); },
               lines: [
-              Lang.t("Entering a yokai's room starts a fight. Exorcise the yokai to clear the room."),
-              Lang.t("Fewer heroes means a yokai with less health and weaker blows.") ] },
+              Lang.t("Entering a Yokai's room starts a fight. Exorcise the Yokai to clear the room."),
+              Lang.t("Fewer heroes means a Yokai with less health and weaker blows.") ] },
             { id: "timeline", title: Lang.t("The timeline"), pic: timelinePic,
               lines: [
-              Lang.t("Heroes and yokai take turns along the timeline. Whoever is first in line acts."),
-              Lang.t("A quick scroll brings the hero's next turn sooner, a slow one later.") ] },
-            { id: "intents", title: Lang.t("The yokai's turns"), pic: intentsPic,
+              Lang.t("Heroes and Yokai take turns along the timeline. Whoever is first in line acts."),
+              Lang.t("A quick scroll brings the hero's next turn sooner, a slow one later."),
+              Lang.t("An hourglass on a scroll means it moves the hero's next turn: green sooner, amber later.") ] },
+            { id: "intents", title: Lang.t("The Yokai's turns"), pic: intentsPic,
               rows: [[Lang.t("Guard"), Lang.t("halves a blow")], [Lang.t("Spirit ward"), Lang.t("-40% for two turns")]],
               lines: [
-              Lang.t("The yokai's turns show what it will do, to whom and how hard. You always know what is coming."),
+              Lang.t("The Yokai's turns show what it will do, to whom and how hard. You always know what is coming."),
               Lang.t("A red KO over a hero means the next blow will knock them out.") ] },
             { id: "scrolls", title: Lang.t("The scrolls"), pic: function () { return scrollsPic(["attack", "purify", "blessing", "guard"]); },
               rows: [[Lang.t("Guard on oneself"), "+5 SP", "#8fdcff"]],
               lines: [
-              Lang.t("Tap a scroll, then its target. Tap it twice to throw it at the yokai."),
-              Lang.t("Each scroll does one thing on the yokai and another on an ally.") ] },
+              Lang.t("Each scroll does one thing on the Yokai and another on an ally."),
+              Lang.t("Tap its red side to throw it at the Yokai, its blue side to lay it on the ally whose face it shows."),
+              Lang.t("Tap another hero to send the blue side to them. Hold a scroll to read what it does.") ] },
             { id: "learn", title: Lang.t("New scrolls"), pic: function () { return scrollsPic(["attack", "iai", "ward", "guard"]); },
               lines: [
               Lang.t("A hero arrives with Attack, Guard and one scroll of their own."),
               Lang.t("After a fight won, every hero who fought learns their second scroll.") ] },
             { id: "elements", title: Lang.t("Weaknesses and resistances"), pic: elementsPic,
               rows: [[Lang.t("A weakness"), Lang.t("×1.6 and one more turn"), "#ffd166"], [Lang.t("Resisted"), Lang.t("×0.5"), "#a8a2b8"]],
-              lines: [Lang.t("Try elements to find a yokai's weaknesses. Its health bar keeps track of what you find.")] },
+              lines: [Lang.t("Try elements to find a Yokai's weaknesses. Its health bar keeps track of what you find.")] },
             { id: "rule", title: Lang.t("Its rule"), pic: function () { return gRow([scrollsPic(["rule"]), foeArt("hanako")], "gd-gp-skill"); },
+              rows: [[Lang.t("Locked"), "-80%", "#ff8a9a"], [Lang.t("Open"), "+50%", "#7ee0a1"]],
               lines: [
-              Lang.t("Every yokai has a rule of its own. Tap the yokai to read it."),
-              Lang.t("When you can answer a yokai's rule, a gold scroll appears. Using it takes the hero's turn.") ] }
+              Lang.t("Every Yokai has its own way to be beaten. Until you find it, your blows deal -80% damage."),
+              Lang.t("Often, a weakness stays open at least 5 turns. Tap the Yokai in battle for more information."),
+              Lang.t("A gold card can be its key, or a trap. Using it takes the hero's turn.") ] },
+            { id: "flee", title: Lang.t("Flee"), pic: function () { return scrollsPic(["flee"]); },
+              lines: [
+              Lang.t("Flee takes the party back onto the map, nothing lost. The Yokai waits in another room, as hurt as you left it."),
+              Lang.t("It works half the time, more for a hero faster than the Yokai. Caught, the Yokai strikes you. A master never lets you go.") ] }
           ] },
           { key: "heroes", label: Lang.t("The heroes"), pages: heroes },
           { key: "skills", label: Lang.t("The scrolls"), pages: skills },
@@ -4377,7 +5294,7 @@
             { id: "event", title: Lang.t("Event"), pic: function () { return roomsPic([gRoom("event", LIT)], 150, 200); },
               lines: [
               Lang.t("Each event offers two choices. Every choice brings a reward or a price."),
-              Lang.t("One choice may hide a yokai. An event can wound, but it never kills.") ] },
+              Lang.t("One choice may hide a Yokai. An event can wound, but it never kills.") ] },
             { id: "ally", title: Lang.t("A hero"), lv: 3, pic: function () { return roomsPic([gRoom("ally", LIT, { ally: "akane" })], 150, 200); },
               lines: [Lang.t("A hero waits in this room. Walk in, and the hero joins you.")] },
             { id: "bonus", title: Lang.t("Bonus"), pic: function () { return roomsPic([gRoom("bonus", LIT)], 150, 200); },
@@ -4385,12 +5302,12 @@
             { id: "exit", title: Lang.t("Way out"), lv: 4, pic: function () { return roomsPic([gRoom("exit", LIT)], 150, 200); },
               lines: [
               Lang.t("A lit torii stands in the farthest room. Walk into it to end the run."),
-              Lang.t("One star for the way out, one for enough yokai on the way, one if no hero falls.") ] },
+              Lang.t("One star for the way out, one for enough Yokai on the way, one if no hero falls.") ] },
             { id: "master", title: Lang.t("Master of the place"), lv: 6,
               pic: function () { return roomsPic([gRoom("fight", LIT, { foe: "akamanto", boss: true })], 150, 200); },
               lines: [
               Lang.t("The master waits in the farthest room. Exorcise it to end the run."),
-              Lang.t("One star for the master, one for enough yokai on the way, one if no hero falls.") ] }
+              Lang.t("One star for the master, one for enough Yokai on the way, one if no hero falls.") ] }
           ] }
         ].concat(bands);
       }
@@ -4411,7 +5328,7 @@
          alone gets half of what a party of four walking in whole once had */
       candles = candles0 = Math.round(P.candles * P.cols * P.rows * (2 + Math.max(0, P.recruits)) / 4);
       best = Store.get("bestScore", 0);
-      fxs = []; evSeen = []; boons = []; blow = 0; blowTo = 0; uiTop = 0; slotX = {}; G = null;
+      fxs = []; evSeen = []; boons = []; blow = 0; blowTo = 0; slotX = {}; G = null;
       /* The band's own scene behind the round and the end screen, and its
          window of the track; level 0 (a playable, a free round) keeps the
          game's own scene and the whole bed. */
@@ -4555,7 +5472,7 @@
       var met = S.obj === "exit" ? escaped : bossDown;
       return [
         { text: goalLine(S), stars: 1, done: met },
-        { text: Lang.t("Exorcise <b>{m}</b> yokai on the way").replace("{m}", S.m), stars: 1,
+        { text: Lang.t("Exorcise <b>{m}</b> Yokai on the way").replace("{m}", S.m), stars: 1,
           done: met && foesDown - (bossDown ? 1 : 0) >= S.m },
         { text: Lang.t("No hero falls"), stars: 1, done: met && !fell }
       ];

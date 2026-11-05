@@ -2388,7 +2388,7 @@
               rows: [mulRow("Fire or ice peg", "fire"), [Lang.t("A burning ball"), Lang.t("+0.5 classic peg a hit"), "#ff7a1a"],
                      [Lang.t("A frozen ball"), Lang.t("+1 classic peg a hit"), "#5ad8ff"]],
               lines: [Lang.t("A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it."),
-                      Lang.t("Fire and ice cancel each other out. Thermal shock then causes an explosion.")] },
+                      Lang.t("Fire and ice cancel each other out. Be careful though, as Thermal shock creates an explosion.")] },
             { id: "bumper", title: Lang.t("Bumpers and magnets"), lv: 1,
               pic: function () { return pegsPic([{ type: "bumper" }, { type: "magnet", ball: { charged: 1 } }]); },
               rows: [mulRow("Bumper", "bumper"), mulRow("Magnet", "magnet"), [Lang.t("A charged ball"), Lang.t("x2 a hit"), "#c46bff"]],

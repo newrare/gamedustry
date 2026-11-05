@@ -161,6 +161,11 @@ They follow their own rules on top of the ones above.
 - **No semicolon in the middle of a sentence**: a calque of a long English
   line often reaches for one. Split it into two sentences, or join with a comma
   or a word ("donc", "mais", "alors").
+- **No comma before *et*, *ou* or *puis***: the English writes "X, and Y",
+  "X, or Y", "X, then Y", and the French does not — « Fais-la tomber ou
+  convertis-la », « Glisse puis relâche ». The same holds at the end of a
+  list (« A, B et C », no serial comma). A comma that closes an incise stays
+  (« Le joker, une fois pris, et… » keeps the one after *pris*).
 - **Typography as the file writes it**: a plain space before `! ? : ;`; a
   straight apostrophe `'` in a manifest, the curly `’` where the shell's
   tables already use it.

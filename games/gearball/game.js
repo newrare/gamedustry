@@ -6,7 +6,7 @@
     /* One sentence, and the stage below plays it: marbles queue behind a
        locked gate, the finger taps the padlock, the queue runs on and the
        electric marble drops into its socket. */
-    tagline: "<b class=\"w-lock\">Unlock</b> the gates in time and move the <b class=\"w-sock\">socket</b> under the <b class=\"w-volt\">electric marble</b>",
+    tagline: "Always <b class=\"w-lock\">catch</b> the <b class=\"w-sock\">electric</b> marbles and <b class=\"w-volt\">unlock</b> the mechanisms",
     gameSeconds: 60,                 // one shift; losing every heart ends it sooner
 
     // Store links used by every CTA. The right one is picked at runtime from the
@@ -35,8 +35,8 @@
 
     // A tap goes to the nearest locked gate or arrival: a gate opens, an
     // arrival becomes the socket. The switches are the machine's own. SPACE
-    // opens the gate that is closest to overflowing; 1-6 move the socket to
-    // the arrivals left to right, Q W E R T Y open the gates.
+    // moves the socket one arrival along, left to right; everything else is
+    // the mouse's.
     intro: { logo: null, demo: "tap", caption: "",
              // on a desk: the mouse — a lock, then an arrival (shell.js, Demo)
              desk: [{ mouse: ["click"] }] },
@@ -93,7 +93,7 @@
     biomes: [
       { name: "Workshop",   metal: "#6f63ad", scene: "backgroundPhoneWorkshop" },   // violet steel, the game's own
       { name: "Glassworks", metal: "#5c86bc", scene: "backgroundPhoneGlassworks" },   // ice blue
-      { name: "Maelstrom",  metal: "#6f9d58", scene: "backgroundPhoneMaelstrom" },   // moss green
+      { name: "Gusset",  metal: "#6f9d58", scene: "backgroundPhoneMaelstrom" },   // moss green
       { name: "Depths",     metal: "#b56a4a", scene: "backgroundPhoneDepths" },   // copper
       { name: "Clockwork",  metal: "#ac5da5", scene: "backgroundPhoneClockwork" }    // orchid
     ],
@@ -113,7 +113,7 @@
       // the second lines of the first-time notices (Notify.learn), one per mechanic
       hintLock:   "Tap a locked gate's padlock to open it",
       hintVolt:   "Tap an arrival to move the socket under it",
-      hintFuse:   "Gates and electric marbles relight the fuse"
+      hintFuse:   "Open locked gates to keep the voltage up"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -136,8 +136,8 @@
       playableBiome: 0,
       hearts: 5,                     // marbles the shift may shatter
       rampSeconds: 60,
-      tempoStart: 0.9, tempoEnd: 1.6,     // time scale of the rails
-      pourStart: 0.9, pourEnd: 0.24,      // seconds between two marbles
+      tempoStart: 0.9, tempoEnd: 1.3,     // time scale of the rails
+      pourStart: 0.9, pourEnd: 0.40,      // seconds between two marbles
       gravity: 780,                  // px/s² along a slope
       friction: 55,                  // px/s² of rolling drag
       vMin: 110, vMax: 400,          // a marble never stalls and never flies off
@@ -151,33 +151,32 @@
       electricEvery: 0, electricJitter: 3,
       classicScore: 10,              // x the combo multiplier
       electricScore: 150,            // x the combo multiplier
-      electricJump: 5,               // what an electric on target adds to the combo
+      electricJump: 5,               // notches an electric on target lights
 
-      /* THE COMBO lives on the wheel hub, and only the PLAYER feeds it: a
-         gate opened is +1 per marble it releases (+1 for an empty one), an
-         electric on target is `electricJump`. A delivered marble pays points
-         and nothing else. The multiplier is its tier + 1.
-         THE FUSE keeps it: a ring round the hub, refilled whole by every
+      /* THE COMBO is the multiplier, written x1, x2, x3… on the hub of the
+         DYNAMO (the notched wheel), and only the PLAYER feeds it. Round the
+         hub, a gauge of `notches` notches: a gate opened lights one per
+         marble it releases (one for an empty gate), an electric on target
+         lights `electricJump`. All of them lit, the Combo goes up by one and
+         the gauge starts over. There is no top.
+         THE FUSE keeps it: a ring round the Dynamo, refilled whole by every
          action that feeds the combo, burning down in `fuse[tier]` seconds —
-         but only while there is something to do (a gate locked, the
-         electric marble on its way to another arrival than the socket).
-         Burnt out, the combo drops to the start of the tier below; a
-         shatter, an overflow or a wasted electric still break it to 0. */
-      /* Benched with a human-paced pilot against the old +1-per-marble
-         combo: a player who answers within a second keeps ~95% of the old
-         points a second (the stage objectives are unchanged), one who takes
-         two seconds lets the fuse go out three to five times a shift. */
-      tiers: [8, 25, 60],
-      fuse: [4, 3, 2.2, 1.6],        // seconds the fuse burns, per tier
+         but only while a gate stays locked, a tap the player owes. Burnt
+         out, the Combo drops by one; a shatter, an overflow or a wasted
+         electric still break it back to x1. */
+      notches: 10,
+      fuse: [4, 3, 2.2, 1.6],        // seconds the fuse burns, per Combo (x1, x2, x3, x4 and up)
+      // points a marble scores as it rides a module, x the Combo
+      modulePay: { loop: 4, spiral: 4, land: 4, boost: 2, note: 1 },
 
       /* THE LOCKS — the main verb. Gates are open; at random moments one
          locks, more often as the shift goes on, and more of them at once.
          `minOpen` is how long an unlocked gate is left alone. */
       lockFirst: 4.5,                // seconds before the first lock
       lockRate: 0.15,                // locks per second at the start...
-      lockGain: 1.8,                 // ...plus this much by the end of the ramp
+      lockGain: 0.8,                 // ...plus this much by the end of the ramp
       lockMoreEvery: 0.4,            // one more gate may lock at once every this share of the ramp
-      lockShare: 0.7,                // of the gates, how many may be locked at once, at most
+      lockShare: 0.5,                // of the gates, how many may be locked at once, at most
       minOpenStart: 2.5, minOpenEnd: 0.5,
       flushGap: 0.14,                // seconds between two marbles of an unlock burst
       flushV: 230,                   // px/s a released marble leaves at
@@ -186,7 +185,7 @@
 
       // Where a shift lands on the end screen (the web levels grade on their
       // own objective instead — see web.levels in the manifest).
-      star2: 3800, star3: 6800
+      star2: 6000, star3: 9000
     },
 
     /* --- the upgrade cards (section 6, THE UPGRADE CARDS) -----------------
@@ -259,15 +258,15 @@
          often. A locked gate holds its marbles in visible slots that fill
          green to red, and shows a big pulsing padlock: a tap opens it and the
          queue runs out. A marble that reaches a FULL locked gate (or a full
-         wheel entry) breaks the combo and drops through the TRAPDOOR past the
+         wheel entry) drops through the TRAPDOOR past the
          last slot, onto the SPILL NETWORK behind the machine — back rails,
          loops, coils and cogs, decor all of it — which carries it to the red
          SINK, where it costs a HEART.
        - an ARRIVAL is a tap target too: the one tapped becomes the SOCKET.
          There is always one ELECTRIC marble in play, cyan and crackling, and
          only the socket takes it. The SWITCHES are the machine's own — each
-         flips at every marble that passes it, its open way lit and its shut
-         way barred — so the player reads where the electric marble is going
+         flips once the electric marble has passed it, its open way lit and its shut
+         way barred — so the player reads the electric marble's whole route
          and moves the socket under it. Caught, it pays big, an arc runs up
          the rails to the hub and the combo jumps; anywhere else it fizzles,
          the combo breaks and the lights go out for half a second.
@@ -2263,7 +2262,7 @@
     var wheel = null, chimes = [], gates = [], fers = [], sink = null;
     var state = "play", t = 0, feedK = 0, feedTurn = 0, lockT = 0, electricIn = 0, arrival = "a0", path = null;
     var score = 0, combo = 0, bestCombo = 0, hearts = 5, heartsMax = 5, best = 0;
-    var heartHit = 0, hubPop = 0, hubBreak = 0, hubZap = 0, zap = 0, overT = 0, ended = false;
+    var heartHit = 0, hubPop = 0, gaugeFull = 0, hubBreak = 0, hubZap = 0, zap = 0, overT = 0, ended = false;
     // THE BLACKOUT: a broken combo cuts the machine's lights, longer the bigger it was.
     var BLACKOUT = 0.5, blackT = 0, blackLen = BLACKOUT;
     /* THE FUSE (1 = lit whole), whether it burns this frame, the sparks
@@ -2310,8 +2309,15 @@
       if (MOD.goldEvery) { goldIn--; if (goldIn <= 0) { goldIn = MOD.goldEvery; return "g"; } }
       return Math.random() < 0.42 ? "k" : "c";          // chrome, or violet glass
     }
-    // The combo's tiers, brought closer by a short-fuse card (tierAt).
-    function tier(c) { var n = 0, i; for (i = 0; i < M.tiers.length; i++) if (c >= tierAt(i)) n = i + 1; return n; }
+    /* `combo` counts the notches lit since the Combo was x1: every
+       `notches()` of them is one step up, with no top. A short-fuse card
+       takes notches off the gauge. */
+    function notches() { return Math.max(4, M.notches - MOD.notchCut); }
+    function tier(c) { return Math.floor(c / notches()); }
+    // where step i + 1 starts: the notch count the Combo reaches x(i + 2) at
+    function tierAt(i) { return (i + 1) * notches(); }
+    // the step the LOOK follows, held at x4 and up: colours, sparks, spin
+    function vtier(c) { return Math.min(TIERS_COL.length - 1, tier(c)); }
     function mult() { return tier(combo) + 1 + MOD.multAdd; }
     function lockedCount() { var n = 0, i; for (i = 0; i < gates.length; i++) if (gates[i].locked) n++; return n; }
     function gaugeColor(k) { return k >= 0.8 ? C.full : k >= 0.5 ? C.amber : C.calm; }
@@ -2384,6 +2390,15 @@
     function popText(mx, my, str, color) {
       Pop.text(toDX(mx), toDY(my), str, { color: color, size: 22, life: 0.6, tier: 1 });
     }
+    /* Points scored, floating up where they were won, dressed by the Combo
+       so the player sees a big one pay: x1 plain in the colour given, then
+       the motor's three glows (cyan, gold, magenta) at x2, x3 and x4 and up,
+       a little bigger and longer at each step. The points alone, no word. */
+    function scorePop(mx, my, pts, color) {
+      var vt = vtier(combo);
+      Pop.text(toDX(mx), toDY(my), "+" + pts,
+               { color: vt ? TIERS_COL[vt] : color, size: 22 + 2 * vt, life: 0.6 + 0.1 * vt, tier: vt });
+    }
 
     /* ---------------- events ----------------------------------------- */
     /* The arrivals that take an electric marble: the socket, and the two
@@ -2441,7 +2456,9 @@
         spark(mc.x, RIM_Y + 20, C.volt, 30, 320);
         ring(mc.x, RIM_Y + 40, C.volt, 20, 180, 0.8, 5);
         ring(mc.x, RIM_Y + 40, C.voltHi, 10, 240, 0.6, 3);
-        Pop.show("bonus", { word: "Charged!", sub: "+" + pts, at: "top" });
+        // the moment at the top, the value on the socket that won it
+        Pop.show("bonus", { word: "Charged!", at: "top" });
+        scorePop(mc.x, RIM_Y - 14, pts, C.volt);
         if (MOD.over) chargeT = MOD.over;
         // a charged socket deals the cards, once the arc has reached the hub
         if (!m.clone && !pendingPick && !held && charge() >= 1) { pendingPick = true; pickT = KC.pickDelay; }
@@ -2473,7 +2490,7 @@
       if (MOD.train && mc.train) pts += Math.round(MOD.train * mc.train * mult());
       score += pts;
       HUD.setScore(score);
-      popText(mc.x, RIM_Y - 14, (MOD.train && mc.train ? Lang.t("Train x") + (mc.train + 1) + " +" : "+") + pts, m.gold ? C.gold2 : mc.col);
+      scorePop(mc.x, RIM_Y - 14, pts, m.gold ? C.gold2 : mc.col);
       mc.kick = 0.3; hubPop = Math.max(hubPop, 0.2);
       spark(mc.x, RIM_Y + 4, m.gold ? C.gold2 : mc.col, m.gold ? 14 : 4, 180);
       Sound.clip("deliver", 0.26, mc.pitch * Rand.range(0.97, 1.04));
@@ -2481,7 +2498,7 @@
     // `quiet` when another callout already speaks on this frame: two Pops
     // fired together land on top of each other.
     function tierUp(quiet) {
-      var tr = tier(combo), tc = TIERS_COL[tr];
+      var tr = vtier(combo), tc = TIERS_COL[tr];
       hubPop = 0.6;
       HUD.punch(tc);
       Fx.shake(5, 0.2);
@@ -2489,9 +2506,10 @@
       ring(L.wheel.cx, L.wheel.cy, tc, RIM, 200, 0.8, 5);
       Sound.clip("chain", 0.42, 0.94 + tr * 0.08);
       Overlay.vignette(tc, 0.5, 500);
+      gaugeFull = 0.35;
       if (quiet) return;
-      if (tr >= 3) Pop.show("ultra", { word: "Overdrive", sub: Lang.t("Combo x") + combo });
-      else Pop.show(tr === 2 ? "perfect" : "combo", { word: Lang.t("Combo x") + combo, sub: "x" + mult() });
+      if (tr >= 3) Pop.show("ultra", { word: "Overdrive", sub: Lang.t("Combo x") + mult() });
+      else Pop.show(tr === 2 ? "perfect" : "combo", { word: Lang.t("Combo x") + mult() });
     }
     // The ring on the hub shatters and the glow goes out.
     function breakCombo(quiet) {
@@ -2511,7 +2529,7 @@
         return;
       }
       if (combo >= 2) {
-        shatterHub(heat(), TIERS_COL[tier(combo)], true);
+        shatterHub(heat(), TIERS_COL[vtier(combo)], true);
         if (!quiet && combo >= tierAt(0)) Pop.show("alert", { word: "Combo lost" });
       }
       combo = 0; fuse = 1;
@@ -2542,12 +2560,12 @@
     /* ---------------- THE COMBO: what feeds it, the fuse that keeps it -- */
     // How big the combo is, 0 at nothing and 1 at the top tier: what every
     // effect that grows with the combo reads.
-    function heat() { return Math.min(1, combo / tierAt(M.tiers.length - 1)); }
+    function heat() { return Math.min(1, combo / tierAt(TIERS_COL.length - 2)); }
     function fuseSecs() { return M.fuse[Math.min(M.fuse.length - 1, tier(combo))]; }
     // Every action that feeds the combo relights the fuse whole.
     function feedFuse() { fuse = 1; fuseOutT = 0; }
     // the combo has started from nothing: the fuse that keeps it is named once
-    function learnFuse() { Notify.learn("fuse", "Combo fuse", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
+    function learnFuse() { Notify.learn("fuse", "Dynamo voltage", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
     /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
        the combo grows when it lands, so the hub counts up in step with what
        the player sees fly in. The fuse is relit at once, on the action. */
@@ -2563,28 +2581,18 @@
       combo += c.n; if (combo > bestCombo) bestCombo = combo;
       if (!was) learnFuse();
       tr = tier(combo);
-      lo = tr ? tierAt(tr - 1) : 0; hi = tr < M.tiers.length ? tierAt(tr) : 0;
-      step = hi ? Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1)) : SCALE.length - 1;
+      lo = tr * notches(); hi = lo + notches();
+      step = Math.floor((combo - lo) / (hi - lo) * (SCALE.length - 1));
       hubPop = Math.max(hubPop, 0.25 + 0.2 * heat());
-      spark(L.wheel.cx, L.wheel.cy, TIERS_COL[tr], 6 + Math.round(10 * heat()), 200 + 120 * heat());
+      spark(L.wheel.cx, L.wheel.cy, TIERS_COL[vtier(combo)], 6 + Math.round(10 * heat()), 200 + 120 * heat());
       Sound.clip("chime", 0.22 + 0.14 * heat(), Math.pow(2, SCALE[step] / 12) * (tr >= 2 ? 1.25 : 1));
       if (tr > b) tierUp();
     }
-    // Is the machine waiting on the player? A gate locked, or the electric
-    // marble on a line that can no longer reach the socket.
+    /* Is the machine waiting on the player? A gate locked: a tap they owe.
+       Reading the electric marble's route is the game itself, so the fuse
+       never burns for it. */
     function needsPlayer() {
-      var i, m, id, a, ok;
-      for (i = 0; i < gates.length; i++) if (gates[i].locked) return true;
-      for (i = 0; i < marbles.length; i++) {
-        m = marbles[i];
-        if (!m.e || m.clone || m.spent) continue;
-        id = m.st === "wheel" ? L.wheel.out : m.st === "ferry" ? m.fer.f.out
-           : (m.st === "track" || m.st === "wait" || m.st === "gate" || m.st === "fwait") && m.ch ? m.ch.id : null;
-        if (!id) continue;
-        ok = false;
-        for (a in boxes) if (boxes.hasOwnProperty(a) && isSocket(a) && L.reach[a][id]) ok = true;
-        if (!ok) return true;
-      }
+      for (var i = 0; i < gates.length; i++) if (gates[i].locked) return true;
       return false;
     }
     /* The fuse burnt out: the combo drops to the start of the tier below
@@ -2594,7 +2602,7 @@
       var tr = tier(combo), to = MOD.floor ? (tr ? tierAt(tr - 1) : 0) : (tr >= 2 ? tierAt(tr - 2) : 0), k = heat();
       fuse = 1;
       if (to >= combo) return;
-      shatterHub(k * 0.6, TIERS_COL[tr], false);
+      shatterHub(k * 0.6, TIERS_COL[vtier(combo)], false);
       combo = to;
       stats.fuseOuts++;
       fuseOutT = 0.8;
@@ -2643,11 +2651,10 @@
       ring(m.x, m.y, C.full, R, 170, 0.6, 5);
       Sound.clip("shatter", 0.6, Rand.range(0.92, 1.06));
       Fx.shake(12, 0.3); Fx.flash(C.full, 0.22); Fx.freeze(0.05);
-      var hadCombo = combo >= 2;
-      breakCombo(true);
+      // an overflow costs a heart, never the Combo: the voltage already punishes the locked gate
       if (state !== "play") return;
       if (catchLost(m)) return;
-      Pop.show("alert", { word: "Shattered", sub: hadCombo ? "Combo lost" : "" });
+      Pop.show("alert", { word: "Shattered" });
       loseHeart(heavy ? 3 : 1); heavy = false; paintRun();
     }
     // A safety net: a lost marble rolls back to the feed gear instead of a heart.
@@ -2661,8 +2668,9 @@
     }
     /* A marble that finds a full queue drops through the trapdoor at its
        tail and rides the spill network behind the machine to the red sink.
-       The combo breaks NOW, at the mistake; the heart goes when the marble
-       lands, seconds later and in view, so the player sees it coming. */
+       The Combo is left alone (the voltage already punishes the locked gate);
+       the heart goes when the marble lands, seconds later and in view, so the
+       player sees it coming. */
     function spill(m, sp, g) {
       if (!sp || m.clone) { destroy(m, g); return; }
       m.ch = sp; m.d = 0; m.v = M.vMin; m.lost = true; m.gateOk = true;
@@ -2672,11 +2680,9 @@
       spark(m.x, m.y, C.full, 6, 150);
       Sound.clip("lock", 0.5, 0.72);
       Fx.shake(5, 0.18);
-      var hadCombo = combo >= 2;
-      breakCombo(true);
       if (state !== "play") return;
       // the callout says what happened, and the heart is seen going: no notice
-      Pop.show("alert", { word: "Overflow", sub: hadCombo ? "Combo lost" : "" });
+      Pop.show("alert", { word: "Overflow" });
     }
     // A lost marble reaches the red sink: it is gone, and so is a heart.
     function sinkHit(m) {
@@ -2691,7 +2697,7 @@
       if (MOD.redPays) {
         var pts = Math.round(MOD.redPays * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(x, y - 26, "+" + pts, C.gold2);
+        scorePop(x, y - 26, pts, C.gold2);
         spark(x, y + 10, C.gold2, 14, 220);
         return;
       }
@@ -2722,7 +2728,7 @@
       if (MOD.unlockPay) {
         var pts = Math.round(MOD.unlockPay * mult());
         score += pts; HUD.setScore(score);
-        popText(g.px, g.py - 46, "+" + pts, C.gold2);
+        scorePop(g.px, g.py - 46, pts, C.gold2);
       }
       return true;
     }
@@ -2772,7 +2778,7 @@
     var CARD_FAMS = [
       // 1 · Workshop — the basics: hearts, locks, the first prizes
       { key: "spareHeart", biome: 1, kind: "help", icon: "heart", color: "#ff5d86", name: "Spare heart",
-        text: "+{n} max hearts, filled", one: "+1 max heart, filled", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
+        text: "+{n} extra hearts", one: "+1 extra heart", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "repair", biome: 1, kind: "help", icon: "circle-plus", color: "#6dffb0", name: "Repair",
         text: "{n} lost hearts come back", one: "A lost heart comes back", all: "Every lost heart comes back",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 99, 0]] },
@@ -2781,32 +2787,32 @@
       { key: "lockFreeze", biome: 1, kind: "help", icon: "snowflake", color: "#bff4ff", name: "Lock freeze",
         text: "No gate locks", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
       { key: "masterKey", biome: 1, kind: "help", icon: "unlock", color: "#ffd43b", name: "Master key",
-        text: "{n} keys: tap one to open every locked gate", one: "A key: tap it to open every locked gate",
+        text: "{n} keys: tap one to open every locked gate", one: "Tap the key to open every locked gate",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "widerGate", biome: 1, kind: "help", icon: "layers", color: "#b389ff", name: "Wider gate",
         text: "Your busiest gate holds {n} more marbles", one: "Your busiest gate holds 1 more marble",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "net", biome: 1, kind: "help", icon: "hand", color: "#7fe0c0", name: "Safety net",
-        text: "The next {n} lost marbles roll back to the feeder", tiers: [[1, 2, 0], [2, 4, 0], [3, 6, 0]] },
+        text: "The next {n} lost marbles come back up without costing a heart", tiers: [[1, 2, 0], [2, 4, 0], [3, 6, 0]] },
       { key: "loopPrize", biome: 1, kind: "score", icon: "rotate-cw", color: "#ffb44f", name: "Loop prize",
         text: "A marble through a loop pays +{n}", tiers: [[1, 20, "shift"], [2, 50, "shift"], [3, 100, "shift"]] },
       { key: "jumpstart", biome: 1, kind: "score", icon: "trending-up", color: "#ff9a44", name: "Jumpstart",
-        text: "+{n} combo now", tiers: [[1, 10, 0], [2, 20, 0], [3, 35, 0]] },
+        text: "Combo +{n} now", tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "turbo", biome: 1, kind: "score", icon: "rocket", color: "#ff6fd8", name: "Turbo",
-        text: "+1 multiplier", tiers: [[1, 1, 20], [2, 1, "next"], [3, 1, "shift"]] },
+        text: "Combo +1", tiers: [[1, 1, 20], [2, 1, "next"], [3, 1, "shift"]] },
       { key: "gold", biome: 1, kind: "score", icon: "gem", color: "#ffe066", name: "Gold marbles",
         text: "One marble in {n} is gold and pays x5", tiers: [[1, 12, "shift"], [2, 8, "shift"], [3, 5, "shift"]] },
       { key: "glass", biome: 1, kind: "risk", icon: "sword", color: "#e8fdff", name: "Glass cannon",
-        text: "Score x2 for the shift", cost: "-2 max hearts", tiers: [[3, 0, "shift"]] },
+        text: "Score x2 for the whole shift", cost: "Lose 2 hearts", tiers: [[3, 0, "shift"]] },
       { key: "bloodPact", biome: 1, kind: "risk", icon: "skull", color: "#ff3d6e", name: "Blood pact",
-        text: "Every lost heart comes back", cost: "The combo drops to 0", tiers: [[3, 0, 0]] },
+        text: "Every lost heart comes back", cost: "The Combo drops back to x1", tiers: [[3, 0, 0]] },
 
       // 2 · Glassworks — steering, the combo, the prizes that are watched
       { key: "autoSwitch", biome: 2, kind: "help", icon: "arrow-left-right", color: "#7ef9ff", name: "Auto switch",
         text: "The switches steer every electric marble to the socket", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "slowmo", biome: 2, kind: "help", icon: "hourglass", color: "#c9b8ff", name: "Slow motion",
         text: "The machine runs at half speed", tiers: [[1, 0, 10], [2, 0, 20], [3, 0, 30]] },
-      { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Combo shield",
+      { key: "shield", biome: 2, kind: "help", icon: "shield", color: "#6dffb0", name: "Protected combo",
         text: "The next {n} mistakes don't break your combo", one: "The next mistake doesn't break your combo",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "rustyLocks", biome: 2, kind: "help", icon: "lock", color: "#d39a6a", name: "Rusty locks",
@@ -2816,25 +2822,25 @@
       { key: "train", biome: 2, kind: "score", icon: "chevrons-right", color: "#ffe6a8", name: "Marble train",
         text: "Marbles landing back to back pay +{n} per wagon", tiers: [[1, 10, "shift"], [2, 20, "shift"], [3, 40, "shift"]] },
       { key: "chain", biome: 2, kind: "score", icon: "zap", color: "#e8fdff", name: "Chain lightning",
-        text: "A caught electric marble's arc zaps every marble on its way: +{n} each", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
+        text: "Every caught electric marble zaps the lane: +{n} for each marble it hits", tiers: [[1, 10, "shift"], [2, 25, "shift"], [3, 50, "shift"]] },
       { key: "packed", biome: 2, kind: "score", icon: "circle-dot", color: "#d9a8ff", name: "Packed machine",
         text: "Every marble delivered pays +5% per marble in the machine", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overclock", biome: 2, kind: "risk", icon: "flame", color: "#ff9a44", name: "Overclock",
-        text: "Score x1.5 for the shift", cost: "The rails run 30% faster", tiers: [[3, 0, "shift"]] },
+        text: "Score x2 for the whole shift", cost: "Speeds up the pace by 30%", tiers: [[3, 0, "shift"]] },
       { key: "allIn", biome: 2, kind: "risk", icon: "hand-fist", color: "#ff5d86", name: "All in",
-        text: "+25 combo now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
+        text: "Combo +3 now", cost: "The next lost marble costs 3 hearts", tiers: [[3, 0, 0]] },
       { key: "doubleOr", biome: 2, kind: "risk", icon: "dices", color: "#ffd43b", name: "Double or nothing",
         text: "The next electric marble caught doubles your score", cost: "A wasted one halves it", tiers: [[3, 0, 0]] },
       { key: "capacitor", biome: 2, kind: "legend", icon: "medal", color: "#ffd43b", name: "Capacitor",
-        text: "The socket recharges {n}% faster", tiers: [[4, 10, "shift"]] },
+        text: "Cards arrive {n}% faster", tiers: [[4, 10, "shift"]] },
 
       // 3 · Maelstrom — the machine plays itself a little, the sparks split
       { key: "autoGate", biome: 3, kind: "help", icon: "mouse-pointer-click", color: "#6dffb0", name: "Self-opening gate",
         text: "Your busiest gate unlocks itself", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "stiff", biome: 3, kind: "help", icon: "pause", color: "#bdb3ee", name: "Stiff switches",
-        text: "Marbles no longer flip the switches", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+        text: "The switches stay put, even after an electric pass", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "second", biome: 3, kind: "help", icon: "arrow-up", color: "#7ef9ff", name: "Second chance",
-        text: "The next {n} wasted electric marbles go back to the feeder", one: "The next wasted electric marble goes back to the feeder",
+        text: "The next {n} wasted electric marbles come back up for another try", one: "The next wasted electric marble comes back up for another try",
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "quickRelease", biome: 3, kind: "help", icon: "download", color: "#9fe8ff", name: "Quick release",
         text: "An unlocked queue runs out {n} times faster", tiers: [[1, 2, "shift"], [2, 3, "shift"], [3, 4, "shift"]] },
@@ -2843,47 +2849,47 @@
         tiers: [[1, 1, 0], [2, 2, 0], [3, 3, 0]] },
       { key: "staticCharge", biome: 3, kind: "score", icon: "magnet", color: "#a8f0ff", name: "Static charge",
         text: "An extra electric marble every {n} marbles", tiers: [[1, 8, "shift"], [2, 7, "shift"], [3, 6, "shift"]] },
-      { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Combo anchor",
-        text: "The combo never falls below its last tier", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "anchor", biome: 3, kind: "score", icon: "flag", color: "#ffb44f", name: "Secured combo",
+        text: "Your Combo never drops, only its notches empty", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "greedy", biome: 3, kind: "risk", icon: "pickaxe", color: "#ffd43b", name: "Greedy locks",
         text: "Every gate you open pays 100", cost: "Gates lock 50% more often", tiers: [[3, 100, "shift"]] },
       { key: "torrent", biome: 3, kind: "risk", icon: "droplet", color: "#5ab0ff", name: "Torrent",
-        text: "Every marble pays x3", cost: "The feeder pours twice as fast", tiers: [[3, 0, 15]] },
+        text: "Every marble pays x3", cost: "Marbles arrive twice as fast", tiers: [[3, 0, 15]] },
       { key: "sacrifice", biome: 3, kind: "risk", icon: "axe", color: "#ff3d6e", name: "Sacrifice",
-        text: "+1 multiplier for the shift", cost: "-1 heart now", tiers: [[3, 0, "shift"]] },
+        text: "Combo +1 for the shift", cost: "-1 heart now", tiers: [[3, 0, "shift"]] },
 
       // 4 · Depths — the lost marbles pay, the current runs everywhere
       { key: "oneLockLess", biome: 4, kind: "help", icon: "minus", color: "#bff4ff", name: "One lock less",
         text: "One gate fewer can be locked at once", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
-      { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slow feeder",
-        text: "The feeder pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "slowPour", biome: 4, kind: "help", icon: "timer", color: "#c9b8ff", name: "Slower start gear",
+        text: "The start gear pours 40% fewer marbles", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
       { key: "overcharge", biome: 4, kind: "score", icon: "sparkles", color: "#7ef9ff", name: "Overcharge",
         text: "A caught electric marble overcharges the machine: every marble pays x3 for {n} s",
         tiers: [[1, 3, "shift"], [2, 6, "shift"], [3, 10, "shift"]] },
       { key: "redJackpot", biome: 4, kind: "score", icon: "target", color: "#ff5d86", name: "Red jackpot",
         text: "A marble in the red socket pays 50 instead of a heart", tiers: [[1, 50, 20], [2, 50, "next"], [3, 50, "shift"]] },
       { key: "narrow", biome: 4, kind: "risk", icon: "arrow-up-down", color: "#d9a8ff", name: "Narrow gates",
-        text: "Electric marbles pay x2 for the shift", cost: "Every gate holds one fewer marble", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "Every gate has one fewer slot", tiers: [[3, 0, "shift"]] },
       { key: "blackout", biome: 4, kind: "risk", icon: "eye", color: "#9fb3ff", name: "Blackout",
-        text: "Electric marbles pay x2 for the shift", cost: "You no longer see which way leads to the socket", tiers: [[3, 0, "shift"]] },
+        text: "Electric marbles pay x2 for the shift", cost: "The way leading to the electric socket will be less visible", tiers: [[3, 0, "shift"]] },
       { key: "liveWire", biome: 4, kind: "risk", icon: "circle-x", color: "#a8f0ff", name: "Live wire",
-        text: "An extra electric marble every 5 marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
-      { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Dynamo",
-        text: "The socket recharges {n}% faster", tiers: [[4, 20, "shift"]] },
+        text: "An extra electric marble every 5 regular marbles", cost: "A wasted electric marble costs a heart", tiers: [[3, 5, "shift"]] },
+      { key: "dynamo", biome: 4, kind: "legend", icon: "trophy", color: "#ffd43b", name: "Generator",
+        text: "Cards arrive {n}% faster", tiers: [[4, 20, "shift"]] },
 
       // 5 · Clockwork — the big wagers
       { key: "wide", biome: 5, kind: "help", icon: "move", color: "#7fe0c0", name: "Wide socket",
-        text: "The arrivals beside the socket take electric marbles too", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
-      { key: "shortFuse", biome: 5, kind: "score", icon: "bomb", color: "#ff9a44", name: "Short fuse",
-        text: "The combo tiers come {n}% sooner", tiers: [[1, 20, "shift"], [2, 35, "shift"], [3, 50, "shift"]] },
+        text: "The arrivals beside the blue socket take electric marbles too", tiers: [[1, 0, 20], [2, 0, "next"], [3, 0, "shift"]] },
+      { key: "shortFuse", biome: 5, kind: "score", icon: "bomb", color: "#ff9a44", name: "Filed notches",
+        text: "{n} fewer Combo notches on the Dynamo", tiers: [[1, 2, "shift"], [2, 3, "shift"], [3, 5, "shift"]] },
       { key: "lockdown", biome: 5, kind: "risk", icon: "book-lock", color: "#ffb44f", name: "Lockdown",
-        text: "Marbles leaving a gate pay x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
+        text: "Marbles leaving a gate score x5", cost: "Every gate locks now", tiers: [[3, 5, 15]] },
       { key: "jam", biome: 5, kind: "risk", icon: "arrow-down", color: "#bdb3ee", name: "Jam session",
-        text: "The combo climbs twice as fast for the shift", cost: "The wheel's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
+        text: "Each marble a gate lets out lights 2 Combo notches", cost: "The Dynamo's entries hold 2 fewer marbles", tiers: [[3, 0, "shift"]] },
       { key: "tempt", biome: 5, kind: "risk", icon: "wand-sparkles", color: "#ff6fd8", name: "Tempt fate",
         text: "The next pick deals two epic cards", cost: "-1 heart now", tiers: [[3, 0, 0]] },
       { key: "tesla", biome: 5, kind: "legend", icon: "crown", color: "#ffd43b", name: "Tesla coil",
-        text: "The socket recharges in 20 s", tiers: [[4, 34, "shift"]] }
+        text: "The socket of the next cards recharges in 20 seconds", tiers: [[4, 34, "shift"]] }
     ];
     /* The pictograms, inlined from assets/motor/lucide/ (ISC, see its LICENSE)
        so the DOM card can stroke them in its own colour (currentColor). */
@@ -2983,14 +2989,13 @@
       var O = { tempo: 1, pour: 1, sim: 1, lockRate: 1, lockLess: 0, score: 1, eScore: 1, classicK: 1, multAdd: 0, comboStep: 1,
                 autoSwitch: false, autoGate: {}, frozen: false, wide: false, blind: false, floor: false, fizzleHurts: false,
                 redPays: 0, packed: 0, loop: 0, spiral: 0, train: 0, chain: 0, over: 0, unlockPay: 0, releaseTag: 0,
-                flush: 1, goldEvery: 0, eEvery: M.electricEvery, tierCut: 0, cd: 0 };
+                flush: 1, goldEvery: 0, eEvery: M.electricEvery, notchCut: 0, cd: 0 };
       for (var i = 0; i < effects.length; i++) { var fx = CARD_FX[effects[i].c.fam]; if (fx.mod) fx.mod(O, effects[i].c); }
       MOD = O;
     }
     recompute();
     function cooldown() { return Math.max(KC.minCooldown, KC.cooldown * (1 - MOD.cd)); }
     function charge() { return Math.min(1, (rt - lastPick) / cooldown()); }
-    function tierAt(i) { return Math.max(1, Math.round(M.tiers[i] * (1 - MOD.tierCut))); }
     function addCombo(n) {
       var b = tier(combo);
       feedFuse();
@@ -3032,7 +3037,7 @@
                     can: function () { return gates.length > 0 && gateRoom(gates[busiest()]) > 0; } },
       net:        { now: function (c) { nets += c.v; } },
       loopPrize:  { stack: true, mod: function (O, c) { O.loop += c.v; }, can: function () { return hasMod("loop"); } },
-      jumpstart:  { now: function (c) { addCombo(c.v); } },
+      jumpstart:  { now: function (c) { addCombo(c.v * notches()); } },
       turbo:      { mod: function (O) { O.multAdd += 1; } },
       gold:       { stack: true, mod: function (O, c) { O.goldEvery = O.goldEvery ? Math.min(O.goldEvery, c.v) : c.v; },
                     can: function (c) { return !MOD.goldEvery || MOD.goldEvery > c.v; } },
@@ -3048,8 +3053,8 @@
       train:      { stack: true, mod: function (O, c) { O.train += c.v; } },
       chain:      { stack: true, mod: function (O, c) { O.chain += c.v; } },
       packed:     { mod: function (O) { O.packed += 0.05; } },
-      overclock:  { mod: function (O) { O.score *= 1.5; O.tempo *= 1.3; } },
-      allIn:      { now: function () { addCombo(25); heavy = true; }, can: function () { return !heavy; } },
+      overclock:  { mod: function (O) { O.score *= 2; O.tempo *= 1.3; } },
+      allIn:      { now: function () { addCombo(3 * notches()); heavy = true; }, can: function () { return !heavy; } },
       doubleOr:   { now: function () { dnFlag = true; }, can: function () { return !dnFlag && score > 0; } },
       capacitor:  { stack: true, mod: function (O, c) { O.cd += c.v / 100; }, can: function () { return cooldown() > KC.minCooldown; } },
       autoGate:   { auto: true, mod: function (O, c) { O.autoGate[c.g] = true; } },
@@ -3073,7 +3078,7 @@
       liveWire:   { mod: function (O, c) { O.eEvery = Math.min(O.eEvery || c.v, c.v); O.fizzleHurts = true; } },
       dynamo:     { stack: true, mod: function (O, c) { O.cd += c.v / 100; }, can: function () { return cooldown() > KC.minCooldown; } },
       wide:       { mod: function (O) { O.wide = true; }, can: function () { return L.arr.length > 1; } },
-      shortFuse:  { stack: true, mod: function (O, c) { O.tierCut = Math.max(O.tierCut, c.v / 100); }, can: function (c) { return MOD.tierCut < c.v / 100; } },
+      shortFuse:  { stack: true, mod: function (O, c) { O.notchCut = Math.max(O.notchCut, c.v); }, can: function (c) { return MOD.notchCut < c.v; } },
       lockdown:   { now: function () {
                       for (var i = 0; i < gates.length; i++) {
                         var g = gates[i];
@@ -3371,7 +3376,7 @@
       node: cardNode,
       info: function (id) {
         var c = CARD_BY[id], f = FAM_BY[c.fam], R = RARITY[c.r];
-        return { name: Lang.t(f.name), color: f.color, lock: Lang.t("Pick it in a round to add it to the collection"),
+        return { name: Lang.t(f.name), color: f.color, lock: Lang.t("Pick this card during a round to add it to the collection"),
                  chips: [{ text: Lang.t(R.name), color: R.color }, { text: durText(c) }] };
       }
     };
@@ -3505,11 +3510,11 @@
     function hubPic(c, f, burn) {
       var keep = { combo: combo, fuse: fuse, burn: fuseBurn, zap: hubZap, brk: hubBreak, pop: hubPop, stats: stats, state: state };
       try {
-        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; stats = { delivered: 1 }; state = "play";
+        combo = c; fuse = f; fuseBurn = burn; hubZap = 0; hubBreak = 0; hubPop = 0; gaugeFull = 0; stats = { delivered: 1 }; state = "play";
         return machinePic(250, 250, 1.04, -120, -120, function (k) {
           var half = RIM + 6;
           buildWheel(k, 10);
-          drawGlow(TIERS_COL[tier(combo)], 0, 0, RIM + 40 + tier(combo) * 26, tier(combo) ? 0.45 : 0);
+          drawGlow(TIERS_COL[vtier(combo)], 0, 0, RIM + 40 + vtier(combo) * 26, vtier(combo) ? 0.45 : 0);
           ctx.drawImage(wheelCv, -half, -half, half * 2, half * 2);
           drawFuse(0, 0, RIM + 9);
           drawHub(0, 0);
@@ -3686,74 +3691,67 @@
       "Every level is a different machine. Here, each one has a single switch.",
       "Two switches, and glass tubes from level 7.",
       "Four switches step down the machine.",
-      "Lines cross. One dives under the other and comes back out of a pipe mouth.",
+      "Lines cross. One dives under the other and comes back out on the other side.",
       "Six switches chained: the biggest machines of the climb."
     ];
-    // two cards a biome shows: one that helps, one that scores or wagers
-    var BIOME_CARDS = [["spareHeart-2", "glass"], ["autoSwitch-2", "doubleOr"], ["second-1", "greedy"],
-                       ["oneLockLess-2", "redJackpot-1"], ["wide-2", "tesla"]];
+    // a biome's chapter is its machines; the cards it adds are the player's to discover
     function biomeChapter(b) {
       var B = CONFIG.biomes[b], lv = b * 6 + 1;
       return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
         { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: BIOME_PICS[b],
-          lines: [Lang.t(BIOME_LINES[b])] },
-        { id: "cards-" + B.name.toLowerCase(), title: Lang.t("Biome cards"), lv: lv,
-          pic: function () { return cardsPic(BIOME_CARDS[b], 230); },
-          lines: [Lang.t("From here on, a pick can also deal cards like these.")] }
+          lines: [Lang.t(BIOME_LINES[b])] }
       ] };
     }
     var guide = {
       chapters: function () {
-        var tiers = [], i, out;
-        for (i = 0; i < M.tiers.length; i++) tiers.push([Lang.t("Combo") + " " + M.tiers[i], "×" + (i + 2)]);
+        var i, out;
         out = [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "shift", title: Lang.t("The shift"), pic: marblesPic,
-              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble caught"), "+" + M.electricScore]],
-              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the combo."),
-                      Lang.t("On a keyboard, space or Q to Y open the gates. Keys 1 to 6 move the socket.")] },
+              rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble collected"), "+" + M.electricScore],
+                     [Lang.t("A loop, spiral or jump"), "+" + M.modulePay.loop]],
+              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the Combo."),
+                      Lang.t("On a keyboard, the 'Space' key moves the electric socket one step, left to right, in a loop.")] },
             { id: "lock", title: Lang.t("Locked gates"), pic: lockPic,
-              lines: [Lang.t("Gates lock at random. Tap the padlock to open the gate again."),
-                      Lang.t("Each marble the gate then lets out feeds the combo.")] },
+              lines: [Lang.t("Gates lock at random. Tap the padlock to unlock the gate."),
+                      Lang.t("Each marble a gate lets out lights a notch of the Dynamo.")] },
             { id: "volt", title: Lang.t("The electric marble"), pic: voltPic,
-              rows: [[Lang.t("Combo"), "+" + M.electricJump]],
-              lines: [Lang.t("Tap an arrival to move the socket there. Only the socket takes the electric marble."),
-                      Lang.t("Anywhere else the electric marble fizzles, and the combo breaks.")] },
+              rows: [[Lang.t("Notches"), "+" + M.electricJump]],
+              lines: [Lang.t("Tap an arrival to move the socket there. Only the blue socket captures an electric marble."),
+                      Lang.t("The electric marble breaks the Combo unless the electric socket collects it.")] },
             { id: "switch", title: Lang.t("Switches"), pic: switchPic,
-              lines: [Lang.t("A switch flips each time a marble passes. Its lit way shows where the next one goes.")] },
+              lines: [Lang.t("A switch flips only after an electric marble has passed.")] },
             { id: "spill", title: Lang.t("Overflow"), pic: spillPic,
-              lines: [Lang.t("When a queue is full, the next marble breaks the combo and drops through the trapdoor."),
-                      Lang.t("That marble rolls to the red socket and costs a heart.")] },
-            { id: "combo", title: Lang.t("The combo"), pic: function () { return hubPic(27, 0.85, false); }, rows: tiers,
-              lines: [Lang.t("Opening a gate adds +1 per marble it lets out. A caught electric marble adds +5."),
-                      Lang.t("Losing a marble or wasting an electric one resets the combo to 0.")] },
-            { id: "fuse", title: Lang.t("The fuse"), pic: function () { return hubPic(12, 0.3, true); },
-              lines: [Lang.t("The fuse burns down while the machine waits on you. Open a gate or catch an electric marble."),
-                      Lang.t("If the fuse burns out, the combo drops back one tier.")] }
+              lines: [Lang.t("When a queue is full, the next marble drops through the trapdoor."),
+                      Lang.t("A marble that rolls to the red socket costs a heart.")] },
+            { id: "combo", title: Lang.t("The Dynamo"), pic: function () { return hubPic(27, 0.85, false); },
+              // the electric's row follows M.electricJump (5)
+              rows: [[Lang.t("A marble released, set free"), Lang.t("1 notch")], [Lang.t("An electric marble collected"), Lang.t("5 notches")]],
+              lines: [Lang.t("The Combo multiplies every point you score. When every notch of the Dynamo is lit, the Combo goes up by 1."),
+                      Lang.t("Wasting an electric marble sends the Combo back to x1.")] },
+            { id: "fuse", title: Lang.t("Voltage"), pic: function () { return hubPic(12, 0.3, true); },
+              lines: [Lang.t("The outer ring of the Dynamo shows its voltage. The voltage drops while a gate stays locked."),
+                      Lang.t("Open the gate, or catch an electric marble, and the voltage is full again."),
+                      Lang.t("If the voltage runs out, the Combo drops by 1.")] }
           ] },
           { key: "cards", label: Lang.t("Upgrade cards"), pages: [
             { id: "cards", title: Lang.t("The upgrade pick"), pic: function () { return cardsPic(["spareHeart-1", "turbo-2"]); },
-              lines: [Lang.t("When the socket is charged, catching an electric marble pauses the machine and deals two cards."),
-                      Lang.t("One card helps, the other scores or takes a risk. Take one.")] },
-            { id: "risk", title: Lang.t("Risk cards"), lv: 1, pic: function () { return cardsPic(["glass", "doubleOr"]); },
-              lines: [Lang.t("A risk card pays big, but you pay for it in hearts, speed or half your score.")] },
-            { id: "legend", title: Lang.t("Legendary cards"), lv: 7, pic: function () { return cardsPic(["capacitor", "tesla"]); },
-              lines: [Lang.t("These golden cards are rare. Each one makes the socket recharge faster for the whole shift.")] },
-            { id: "key", title: Lang.t("Master key"), lv: 1, pic: function () { return cardsPic(["masterKey-1"], 300); },
-              lines: [Lang.t("The master key waits under the hearts. Tap it, or press K, to open every locked gate.")] }
+              lines: [Lang.t("When the blue socket is fully charged, catching an electric marble pauses the machine and deals two upgrade cards."),
+                      Lang.t("Choose the best card. One helps you, the other adds points. Sometimes a bonus comes with a risk.")] }
+            // what each card does is the player's to discover: the guide names none
           ] },
           { key: "track", label: Lang.t("The track"), pages: [
             { id: "loops", title: Lang.t("Loops and spirals"), lv: 1, pic: loopsPic,
-              lines: [Lang.t("With the Loop prize and Spiral prize cards, every loop or spiral a marble rides pays.")] },
+              lines: [Lang.t("Every loop, spiral, jump, booster and staircase a marble rides pays a few points, times the Combo.")] },
             { id: "ferry", title: Lang.t("Ferry gears"), lv: 1, pic: ferryPic,
-              lines: [Lang.t("A ferry gear carries a marble over to another line. Watch where it sets it down.")] },
+              lines: [Lang.t("A ferry gear carries a marble over to another line.")] },
             { id: "moves", title: Lang.t("Jumps and boosters"), lv: 2, pic: movesPic,
               lines: [Lang.t("A jump throws the marble into a catcher. A booster speeds it up.")] },
             { id: "tubes", title: Lang.t("Tubes and hoses"), lv: 3, pic: tubesPic,
-              lines: [Lang.t("A glass tube shows its marbles. A striped tube shows them between its bands, a hose hides them."),
-                      Lang.t("The electric marble glows through all of them.")] },
+              lines: [Lang.t("Marbles stay visible in a glass tube, partially visible in a striped tube and hidden in a hose."),
+                      Lang.t("The electric marble always stays visible, even through the tubes.")] },
             { id: "whirl", title: Lang.t("Whirlpools and dives"), lv: 12, pic: whirlPic,
-              lines: [Lang.t("A whirlpool spirals the marble down its drain, behind the machine."),
+              lines: [Lang.t("A whirlpool spirals the marble down its drain."),
                       Lang.t("A line that dives runs under the others and comes back through a pipe mouth.")] }
           ] }
         ];
@@ -3826,7 +3824,7 @@
       for (i = 0; i <= M.preview; i++) queue.push(i < M.preview ? plainKind() : "e");
       state = "play"; t = 0; feedK = 0.3; feedTurn = 0; lockT = M.lockFirst;
       score = 0; combo = 0; bestCombo = 0; heartsMax = M.hearts | 0; hearts = heartsMax; ended = false;
-      heartHit = 0; hubPop = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0; blackLen = BLACKOUT;
+      heartHit = 0; hubPop = 0; gaugeFull = 0; hubBreak = 0; hubZap = 0; zap = 0; overT = 0; blackT = 0; blackLen = BLACKOUT;
       fuse = 1; fuseBurn = false; fuseOutT = 0; comets = []; slowT = 0;
       flow = 0; screwSlot = 0; towerQ = []; revealT = 0.25; chimeGap = 0; clickGap = 0;
       stats = { delivered: 0, eOn: 0, eWasted: 0, destroyed: 0, spilled: 0, unlocks: 0, locks: 0, moves: 0, fuseOuts: 0, heartsLost: 0 };
@@ -3861,7 +3859,7 @@
       // a big break: the machine drops to SLOW_K of its pace and eases back
       if (slowT > 0) { var sk = Math.min(1, slowT / SLOW_TIME * 1.6); slowT -= dt; dt *= 1 - (1 - SLOW_K) * sk; }
       heartHit = Math.max(0, heartHit - dt);
-      hubPop = Math.max(0, hubPop - dt); hubBreak = Math.max(0, hubBreak - dt); hubZap = Math.max(0, hubZap - dt);
+      hubPop = Math.max(0, hubPop - dt); gaugeFull = Math.max(0, gaugeFull - dt); hubBreak = Math.max(0, hubBreak - dt); hubZap = Math.max(0, hubZap - dt);
       blackT = Math.max(0, blackT - dt);
       zap = Math.max(0, zap - dt);
       chimeGap -= dt; clickGap -= dt; landGap -= dt; noteGap -= dt; boostGap -= dt;
@@ -3900,7 +3898,8 @@
           Fx.shake(9, 0.3); Fx.flash(C.volt, 0.22);
           Overlay.vignette(C.volt, 0.6, 900);
           HUD.punch(C.volt);
-          popText(L.wheel.cx, L.wheel.cy - RIM - 20, "+" + ar.jump, C.volt);
+          // zap: the kit's burst/electric (manifest sfx)
+          Sound.clip("zap", 0.6);
           if (tier(combo) > b3) tierUp();
         }
         if (ar.rev && was && ar.t * ARC_SPEED >= P.len) {
@@ -3990,7 +3989,7 @@
       // The wheel turns, faster with the combo tier; a waiting marble boards
       // the first free notch that sweeps past its entry.
       var surge = zapK();
-      wheel.omega += (WHEEL_OMEGA * (1 + TIER_SPIN * tier(combo)) * (1 + ZAP_SPIN * surge) - wheel.omega) * Math.min(1, dt * (zap > 0 ? 5 : 2));
+      wheel.omega += (WHEEL_OMEGA * (1 + TIER_SPIN * vtier(combo)) * (1 + ZAP_SPIN * surge) - wheel.omega) * Math.min(1, dt * (zap > 0 ? 5 : 2));
       // the surge crackles off the rim
       for (j = 0; surge > 0 && j < 4 && parts.length < PART_MAX; j++) {
         if (Math.random() > 0.3 + 0.6 * surge) continue;
@@ -4093,7 +4092,7 @@
         }
       }
       if (m.ch.mods && m.ch.mods.length) moduleFx(m, d0);
-      if ((MOD.loop || MOD.spiral) && m.ch.mods) modulePrize(m, d0);
+      if (m.ch.mods && m.ch.mods.length && !m.lost) modulePrize(m, d0);
       var ch = m.ch;
       gt = ch.gate;
       if (gt && !m.gateOk && (gt.locked || gt.flush)) {
@@ -4127,25 +4126,34 @@
             spark(m.x, m.y, C.voltHi, 14, 260);
           }
           m.ch = CH[L.out[ch.to][s.dir]]; m.d = rest; m.gateOk = false; s.spin += 0.3;
-          if (!MOD.frozen) flip(ch.to, true);
+          // only the electric marble flips a switch, once it has passed: the
+          // next electric's whole route can be read before it sets off
+          if (!MOD.frozen && m.e && !m.clone) flip(ch.to, true);
         } else { deliver(m, ch.to); return; }
       }
       place(m);
     }
     function place(m) { var p = at(m.ch, m.d); m.x = p.x; m.y = p.y; m.z = p.z; }
 
-    /* The cards that play on the rails. */
-    // A module prize: a marble over the top of a loop, or out of a spiral.
+    /* A module prize: every module a marble rides pays as it crosses its
+       mark (M.modulePay: the top of a loop, out of a spiral, a jump's
+       landing, a booster, each ledge of a staircase), x the Combo, and the
+       Loop prize and Spiral prize cards add to theirs. A marble on its way
+       to the red socket pays nothing. */
     function modulePrize(m, d0) {
-      var i, md, v, pts, mods = m.ch.mods;
+      var i, md, v, pts, mods = m.ch.mods, big;
       for (i = 0; i < mods.length; i++) {
-        md = mods[i]; v = md.kind === "loop" ? MOD.loop : md.kind === "spiral" ? MOD.spiral : 0;
+        md = mods[i];
+        v = (M.modulePay[md.kind] || 0) + (md.kind === "loop" ? MOD.loop : md.kind === "spiral" ? MOD.spiral : 0);
         if (!v || d0 >= md.d || m.d < md.d) continue;
         pts = Math.round(v * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(m.x, m.y - 30, Lang.t(md.kind === "loop" ? "Loop +" : "Spiral +") + pts, C.amber);
-        spark(m.x, m.y, C.amber, 8, 200);
-        if (chimeGap <= 0) { chimeGap = 0.2; Sound.clip("chime", 0.05, 1.2); }
+        big = md.kind === "loop" || md.kind === "spiral";
+        scorePop(m.x, m.y - 30, pts, C.amber);
+        if (big) {
+          spark(m.x, m.y, C.amber, 8, 200);
+          if (chimeGap <= 0) { chimeGap = 0.2; Sound.clip("chime", 0.05, 1.2); }
+        }
       }
     }
     /* What the moving modules do as a marble crosses their mark: a jump's
@@ -4192,7 +4200,7 @@
         m.zap = ar.id;
         pts = Math.round(MOD.chain * mult() * MOD.score);
         score += pts; HUD.setScore(score);
-        popText(m.x, m.y - 24, "+" + pts, C.voltHi);
+        scorePop(m.x, m.y - 24, pts, C.voltHi);
         spark(m.x, m.y, C.voltHi, 6, 200);
       }
     }
@@ -4234,8 +4242,8 @@
         stars: st,
         rows: [
           { label: "Marbles delivered", value: stats.delivered },
-          { label: "Electric on target", value: stats.eOn, grade: "accent" },
-          { label: "Best combo", value: bestCombo, grade: "good" },
+          { label: "Electric marbles on target", value: stats.eOn, grade: "accent" },
+          { label: "Best combo", value: "x" + (tier(bestCombo) + 1), grade: "good" },
           { label: "Best score", value: Math.max(score, best), grade: "gold" }
         ]
       });
@@ -4259,19 +4267,15 @@
       return best_;
     }
     // The gate closest to overflowing, for SPACE: the one a player would reach for.
-    function urgent() {
-      var best_ = null, bk = -1, i, g, k;
-      for (i = 0; i < gates.length; i++) {
-        g = gates[i];
-        if (!g.locked) continue;
-        k = g.q.length / g.cap + (g.q.length ? 0.01 : 0);
-        if (k > bk) { bk = k; best_ = g; }
-      }
-      return best_;
+    // SPACE moves the socket one arrival along, left to right, and wraps round.
+    function cycleSocket() {
+      var i, n = L.arr.length;
+      for (i = 0; i < n; i++) if (L.arr[i].id === arrival) break;
+      moveSocket(L.arr[(i + 1) % n].id);
     }
     function onDown(p) {
       if (state !== "play" || held) return;
-      if (spaceTap) { spaceTap = false; unlock(urgent()); return; }
+      if (spaceTap) { spaceTap = false; cycleSocket(); return; }
       var hit = nearest((p.x - OX) / S, (p.y - OY) / S);
       if (!hit) return;
       if (hit.gate) unlock(hit.gate);
@@ -4279,29 +4283,15 @@
     }
     /* The keyboard. The motor turns SPACE into a tap at the middle of the
        play band, and this listener runs first (section 6 binds before the
-       bootstrap), so it marks that tap as SPACE's: it opens the most urgent
-       lock instead of whatever sits nearest the middle. 1-6 move the socket
-       to the arrivals, left to right, and Q W E R T Y open the gates, as
-       many as the machine has.
-       Only while a round is really running: a card over the round pauses
-       the loop, and `lastTick` stops. */
-    var GATE_KEYS = "qwerty";
+       bootstrap), so it marks that tap as SPACE's: it moves the socket one
+       arrival along instead of hitting whatever sits nearest the middle.
+       Nothing else is on a key: the gates, the cards and the master key are
+       the mouse's. Only while a round is really running: a card over the
+       round pauses the loop, and `lastTick` stops. */
     window.addEventListener("keydown", function (e) {
-      if (State !== "playing" || Enter.active()) return;
-      // the two cards: 1 / 2 or left / right, and nothing else reaches the machine
-      if (held) {
-        if (e.repeat) return;
-        if (e.key === "1" || e.key === "ArrowLeft") { e.preventDefault(); take(0); }
-        else if (e.key === "2" || e.key === "ArrowRight") { e.preventDefault(); take(1); }
-        return;
-      }
+      if (State !== "playing" || Enter.active() || held) return;
       if (Date.now() - lastTick > 250 || state !== "play") return;
-      if ((e.key || "").toLowerCase() === "k" && !e.repeat) { e.preventDefault(); useKey(); return; }
-      if (e.code === "Space" || e.key === " ") { spaceTap = !e.repeat; return; }
-      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-      var k = (e.key || "").toLowerCase(), n = k >= "1" && k <= "6" ? k.charCodeAt(0) - 49 : -1, g = GATE_KEYS.indexOf(k);
-      if (n >= 0 && n < L.arr.length) { e.preventDefault(); moveSocket(L.arr[n].id); }
-      else if (g >= 0 && k.length === 1 && g < gates.length) { e.preventDefault(); unlock(gates[g]); }
+      if (e.code === "Space" || e.key === " ") spaceTap = !e.repeat;
     });
 
     /* ===============================================================
@@ -4411,7 +4401,7 @@
       return lit[col];
     }
     function drawLitRails() {
-      var tr = tier(combo), Ll;
+      var tr = vtier(combo), Ll;
       if (tr < 2 || state !== "play" || blackT > 0) return;
       Ll = litLayer(TIERS_COL[tr]);
       if (!Ll) return;
@@ -4435,7 +4425,7 @@
       return cv;
     }
     function drawFrameGlow() {
-      var tr = tier(combo), k = heat();
+      var tr = vtier(combo), k = heat();
       if (!tr || state !== "play") return;
       ctx.globalAlpha = (0.12 + 0.38 * k) * (0.8 + 0.2 * Math.sin(t * 3.2));
       ctx.drawImage(edgeGlow(TIERS_COL[tr]), 0, 0, view.w, view.h);
@@ -5067,7 +5057,7 @@
     // The glow behind the wheel: it grows and changes colour with the tier,
     // and goes dark for a moment when the combo breaks.
     function drawTierGlow() {
-      var tr = tier(combo), cx = L.wheel.cx, cy = L.wheel.cy, col, beat;
+      var tr = vtier(combo), cx = L.wheel.cx, cy = L.wheel.cy, col, beat;
       if (hubBreak > 0) drawGlow("#000000", cx, cy, RIM + 60, 0.6 * hubBreak / 0.6);
       if (hubZap > 0) drawGlow(C.volt, cx, cy, RIM + 90, 0.8 * hubZap / 0.7);
       if (!tr) return;
@@ -5134,9 +5124,9 @@
       drawFuse(cx, cy, RIM + 9);
       drawHub(cx, cy);
     }
-    // The combo on the hub: the count, and a ring filling toward the next tier.
+    // The Combo on the Dynamo's hub: the multiplier, and the notches toward the next one.
     function drawHub(cx, cy) {
-      var tr = tier(combo), col = hubZap > 0.3 ? C.voltHi : TIERS_COL[tr], rr = 44, i, a;
+      var tr = vtier(combo), col = hubZap > 0.3 ? C.voltHi : TIERS_COL[tr], rr = 44, i, a;
       ctx.beginPath(); ctx.arc(cx, cy, rr + 7, 0, PI2);
       ctx.fillStyle = hubZap > 0 ? "rgba(10,50,80," + (0.7 + 0.25 * hubZap) + ")" : tca("#09051a", .94); ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = tca("#beb0ff", .4); ctx.stroke();
@@ -5149,19 +5139,20 @@
         ctx.restore();
         return;
       }
-      var lo = tr ? tierAt(tr - 1) : 0, hi = tr < M.tiers.length ? tierAt(tr) : 0;
-      var k = hi ? (combo - lo) / (hi - lo) : 1;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "rgba(255,255,255,.08)"; ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
-      if (hubBreak > 0) {
-        ctx.strokeStyle = rgba(C.full, hubBreak / 0.6); ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, 0, PI2); ctx.stroke();
-      } else if (combo > 0) {
-        ctx.strokeStyle = rgba(col, 0.3); ctx.lineWidth = 11;
-        ctx.beginPath(); ctx.arc(cx, cy, rr, -Math.PI / 2, -Math.PI / 2 + PI2 * Math.max(0.04, Math.min(1, k))); ctx.stroke();
-        ctx.strokeStyle = col; ctx.lineWidth = 5;
-        ctx.stroke();
+      /* THE NOTCHES: one tooth per notch of the gauge, lit clockwise from
+         the top as the sparks land; the newest one flares white. All of them
+         flash together for a beat when the Combo goes up (gaugeFull), then
+         the gauge starts over. A break turns every tooth red. */
+      var nn = notches(), lit = gaugeFull > 0 ? nn : combo % nn, step = PI2 / nn, half = step * 0.31, a0, on;
+      ctx.lineCap = "butt";
+      for (i = 0; i < nn; i++) {
+        a0 = -Math.PI / 2 + step * (i + 0.5);
+        on = hubBreak <= 0 && i < lit;
+        ctx.beginPath(); ctx.arc(cx, cy, rr, a0 - half, a0 + half);
+        if (hubBreak > 0) { ctx.strokeStyle = rgba(C.full, 0.25 + 0.75 * hubBreak / 0.6); ctx.lineWidth = 9; ctx.stroke(); continue; }
+        if (!on) { ctx.strokeStyle = "rgba(255,255,255,.1)"; ctx.lineWidth = 9; ctx.stroke(); continue; }
+        ctx.strokeStyle = rgba(col, 0.35); ctx.lineWidth = 15; ctx.stroke();
+        ctx.strokeStyle = i === lit - 1 && hubPop > 0.12 ? "#ffffff" : col; ctx.lineWidth = 9; ctx.stroke();
       }
       if (hubZap > 0) {
         ctx.strokeStyle = C.voltHi; ctx.lineWidth = 2;
@@ -5170,11 +5161,12 @@
       var pop = (1 + hubPop * 0.7) * (1 + 0.25 * heat());
       ctx.save(); ctx.translate(cx, cy); ctx.scale(pop, pop);
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = font(combo >= 100 ? 30 : 36, 900);
+      var mx = mult();
+      ctx.font = font(mx >= 100 ? 26 : mx >= 10 ? 32 : 38, 900);
       ctx.lineJoin = "round"; ctx.lineWidth = 6 / S; ctx.strokeStyle = tca("#060314", .9);
-      ctx.strokeText("x" + combo, 0, 2);
-      ctx.fillStyle = combo > 0 ? col : tc("#6e6390");
-      ctx.fillText("x" + combo, 0, 2);
+      ctx.strokeText("x" + mx, 0, 2);
+      ctx.fillStyle = combo > 0 || mx > 1 ? col : tc("#6e6390");
+      ctx.fillText("x" + mx, 0, 2);
       ctx.restore();
     }
     /* THE FUSE, round the rim of the wheel: the share of it still lit, a
@@ -5212,7 +5204,7 @@
       return [v * v * c.x + 2 * v * u * mx + u * u * x1, v * v * c.y + 2 * v * u * my + u * u * y1];
     }
     function drawComets() {
-      var i, j, c, u, p, col = TIERS_COL[Math.max(1, tier(combo))];
+      var i, j, c, u, p, col = TIERS_COL[Math.max(1, vtier(combo))];
       for (i = 0; i < comets.length; i++) {
         c = comets[i];
         if (c.dl > 0) continue;
@@ -5227,7 +5219,7 @@
        first tier, sparks shed from the second, and from the third the
        current jumping between marbles that roll close together. */
     function drawHeat() {
-      var tr = tier(combo), col, i, j, m, n, g, p, a, b, dx, dy, bolts = 0;
+      var tr = vtier(combo), col, i, j, m, n, g, p, a, b, dx, dy, bolts = 0;
       if (!tr || state !== "play") return;
       col = TIERS_COL[tr]; n = 2 + tr; g = 9 + 3 * tr;
       for (i = 0; i < marbles.length; i++) {
@@ -5262,7 +5254,7 @@
     }
     // Sparks orbiting the wheel, more and faster as the combo grows.
     function drawOrbit() {
-      var tr = tier(combo), n = Math.max(ORBIT_SPARKS[tr], Math.round(20 * heat())), col, i, j, a, rr, aj;
+      var tr = vtier(combo), n = Math.max(ORBIT_SPARKS[tr], Math.round(20 * heat())), col, i, j, a, rr, aj;
       if (!n || state !== "play") return;
       col = TIERS_COL[tr];
       for (i = 0; i < n; i++) {
@@ -5317,7 +5309,7 @@
       }
     }
 
-    /* A SWITCH is the machine's own: it flips at every marble that passes
+    /* A SWITCH is the machine's own: it flips once the electric marble has passed
        it, and the player only reads it. So it says ONE thing, where the next
        marble goes: the open way is lit, with chevrons running down it and
        the tongue of the switch laid along it; the shut way is darkened and
@@ -5800,9 +5792,13 @@
        are set here instead, because they must EASE at the start of every
        biome: a new machine has more switches and gates, so its first level
        drops the pace back and its sixth brings it up past where the last
-       biome ended. `p` runs 0.10 -> 0.45 in biome 1 ... 0.82 -> 1 in biome 5. */
-    var PACE = { tempoEnd: [1.3, 1.9], pourEnd: [0.46, 0.2], lockRate: [0.08, 0.22], lockGain: [0.6, 2.95],
-                 lockMoreEvery: [0.8, 0.23], minOpenEnd: [1.3, 0.35] };
+       biome ended. `p` runs 0.10 -> 0.45 in biome 1 ... 0.82 -> 1 in biome 5.
+       Slowed down in v2.12.0 after a human playtest: the old top end
+       (tempo 1.9, a marble every 0.2 s, +2.95 locks a second) was a bench's
+       pace, not a player's: a pilot that taps every 1.2 to 2.5 s now lasts
+       every shift to level 16, and one in two at level 24. */
+    var PACE = { tempoEnd: [1.1, 1.35], pourEnd: [0.75, 0.5], lockRate: [0.04, 0.08], lockGain: [0.15, 0.5],
+                 lockMoreEvery: [1.0, 0.7], minOpenEnd: [2.8, 1.8] };
     var PACE_BASE = {};
     (function () { for (var k in PACE) if (PACE.hasOwnProperty(k)) PACE_BASE[k] = M[k]; })();
     function applyLevel(d) {

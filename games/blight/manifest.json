@@ -1,7 +1,7 @@
 {
   "slug": "blight",
   "title": "Blight",
-  "version": "1.11.3",
+  "version": "1.11.4",
   "tagline": "Aim, shoot and match 3 bubbles to push the black magic back",
   "order": 40,
   "draft": false,
@@ -225,7 +225,7 @@
           "Cutting the rot off won't stop it. It will break out somewhere else.": "Isoler l'infection ne l'arrête pas. Elle finira par ressurgir ailleurs.",
           "A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.": "Une bulle arc-en-ciel peut relier deux grappes en une seule. Cette bulle Joker ne s'infecte jamais et permet même de décontaminer une zone.",
           "This bubble will take the right colour": "Cette bulle prendra la bonne couleur",
-          "A rotten bubble won't pop. Make it fall or purify it.": "Une bulle infectée n'éclate pas. Fais-la tomber ou convertis-la.",
+          "A rotten bubble won't pop. Make it fall or purify it": "Une bulle infectée n'éclate pas. Fais-la tomber ou convertis-la",
           "Tap the small bubble to swap": "Touche la petite bulle pour échanger"
         }
       }

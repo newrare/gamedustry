@@ -16,6 +16,19 @@
 */
 window.GAMES = [
   {
+    slug: "parrynormal",
+    name: "Parrynormal",
+    accent: ["#19e6ff", "#6b3fb8"],
+    fr: {
+      tagline: "Une petite sorcière pleine de pouvoir, un bouclier magique qui tourne et une nuit pleine de monstres. Renvoie tes propres balles magiques pour repousser la horde d'Halloween au travers de cinq contrées hantées !",
+      tags: ["Pouvoir", "Tower Defense", "Casse-briques"]
+    },
+    en: {
+      tagline: "One little witch full of power, a spinning magic shield and a night full of monsters. Parry your own magic balls to push back the Halloween horde across five haunted lands!",
+      tags: ["Power", "Tower defense", "Brick breaker"]
+    }
+  },
+  {
     slug: "gelatile",
     name: "Gelatile",
     accent: ["#3aa8ff", "#ff6fa8"],
@@ -33,7 +46,7 @@ window.GAMES = [
     name: "Foldiers",
     accent: ["#f2b400", "#1f8a96"],
     fr: {
-      tagline: "Commande une armée de papier sur un monde découpé : trace tes ordres, envoie-les avant la fin du tick, et toutes les armées bougent en même temps.",
+      tagline: "Commande une armée de papier sur un monde découpé : trace tes ordres, envoie-les avant la fin du tick et toutes les armées bougent en même temps.",
       tags: ["Stratégie", "Conquête", "Origami"]
     },
     en: {
@@ -59,12 +72,12 @@ window.GAMES = [
     name: "Bridgessa",
     accent: ["#ff7a59", "#2ec4b6"],
     fr: {
-      tagline: "Le bridge sans les enchères : joue tes deux mains et réussis ton contrat face à une défense qui ne laisse rien passer.",
-      tags: ["Bridge", "Jeu de la carte", "Problèmes"]
+      tagline: "Oubliez les enchères et prenez le contrôle des deux mains dans ce jeu de bridge d'un nouveau genre. Apprenez pas à pas tout en défiant une défense impitoyable... à moins d'utiliser des \"Faveurs\" spéciales pour tricher et renverser la partie !",
+      tags: ["Bridge", "Jeu de carte", "Réflexion"]
     },
     en: {
-      tagline: "Bridge without the bidding: play both hands and make your contract against a defence that never slips.",
-      tags: ["Bridge", "Card play", "Puzzles"]
+      tagline: "Bridge without the bidding: take control of both hands in this new kind of bridge game. Learn step by step while taking on a ruthless defence... unless you use special \"Favours\" to cheat and turn the game around!",
+      tags: ["Bridge", "Card play", "Brain games"]
     }
   },
   {
@@ -72,12 +85,12 @@ window.GAMES = [
     name: "Grudgeon",
     accent: ["#e2364b", "#9b8cff"],
     fr: {
-      tagline: "Un Dungeon Crawler d'horreur japonaise. Explore salle après salle et exorcise les yokai au tour par tour.",
-      tags: ["Touche pour explorer", "Combats au tour par tour", "Vingt yokai"]
+      tagline: "Chaque porte entrouverte cache un cauchemar. Explore les salles maudites d'un Dungeon Crawler horrifique inspiré du folklore japonais. Terrasse les Yokai dans des combats tactiques au tour par tour.",
+      tags: ["RPG", "Horrifique", "Donjon"]
     },
     en: {
-      tagline: "A Japanese horror dungeon crawler. Explore room by room and exorcise the yokai in turn-based fights.",
-      tags: ["Tap to explore", "Turn-based fights", "Twenty yokai"]
+      tagline: "Every half-open door hides a nightmare. Explore the cursed rooms of a horror dungeon crawler inspired by Japanese folklore. Defeat the Yokai in tactical turn-based fights.",
+      tags: ["RPG", "Horror", "Dungeon"]
     }
   },
   {
@@ -98,12 +111,12 @@ window.GAMES = [
     name: "Stratideck",
     accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Affronte une armée de monstres et construis le meilleur deck possible pour gagner un maximum de batailles. Convertis les cartes adverses, sois stratégique en défense comme en placement. N'oublie pas que la vie et la gestion du camp sont essentielles pour gagner une guerre. Collectionne des centaines de cartes uniques !",
-      tags: ["Gestion, stratégie et mémorisation", "Grade et rang", "Collection et gestion de deck"]
+      tagline: "Face à la menace d'une armée rouge impressionnante, la victoire ne dépendra pas du nombre mais de ton sens tactique. Plonge dans un Deckbuilder stratégique sur grille inspiré du jeu de plateau Stratego. Le bluff et la mémorisation sont tes meilleures armes. Déduis les positions adverses, puis capture les cartes ennemies pour les convertir à ta cause. Entre deux duels sous haute tension, prends les rênes de ton campement : fortifie tes défenses, lance des missions d'infiltration, recrute des troupes d'élite et affine ton Deck parmi des centaines de cartes uniques. Sauras-tu déjouer les plans de l'état-major adverse et renverser l'envahisseur ?",
+      tags: ["Gestion", "Stratégie", "Deck Building"]
     },
     en: {
-      tagline: "Face an army of monsters and build the best deck possible to win as many battles as you can. Convert enemy cards, be strategic in defense and positioning. Don't forget that life and camp management is an important part of winning a war. Collect hundreds of unique cards!",
-      tags: ["Management, strategy and memorization", "Grade and tier", "Collection and deck management"]
+      tagline: "Face the threat of an impressive red army: victory will depend not on numbers but on your tactical sense. Dive into a strategic grid-based Deckbuilder inspired by the Stratego board game. Bluffing and memorization are your best weapons. Deduce the enemy positions, then capture enemy cards to convert them to your cause. Between tense duels, take charge of your camp: fortify your defenses, launch infiltration missions, recruit elite troops and refine your Deck among hundreds of unique cards. Will you foil the plans of the enemy general staff and drive out the invader?",
+      tags: ["Management", "Strategy", "Deck building"]
     }
   },
   {
@@ -137,12 +150,12 @@ window.GAMES = [
     name: "Gearball",
     accent: ["#7ef9ff", "#ffb44f"],
     fr: {
-      tagline: "Une machine à billes à faire tourner. Déverrouille les barrières avant qu’elles débordent et déplace la prise pour attraper la bille électrique.",
-      tags: ["Touche pour déverrouiller", "Attrape l’étincelle", "Monte le combo"]
+      tagline: "Voici un jeu frénétique où une machine infernale ne s'arrête jamais ! Entretenez le flux en libérant des barrières sur le fil du rasoir et anticipez les trajectoires pour capturer la précieuse bille électrique. Avec plusieurs dizaines de cartes d'amélioration et des décors mécaniques envoûtants, chaque seconde exige réflexes et précision. Êtes-vous prêt à dompter la machine ?",
+      tags: ["Frénétique", "Anticipation", "Amélioration"]
     },
     en: {
-      tagline: "A marble machine to keep running. Unlock the gates before they overflow and move the socket to catch the electric marble.",
-      tags: ["Tap to unlock", "Catch the spark", "Build the combo"]
+      tagline: "A frantic game where an infernal machine never stops! Keep the flow going by releasing gates right on the razor's edge and anticipate trajectories to catch the precious electric marble. With dozens of upgrade cards and enchanting mechanical settings, every second demands reflexes and precision. Are you ready to tame the machine?",
+      tags: ["Frantic", "Anticipation", "Upgrade"]
     }
   },
   {
@@ -163,12 +176,12 @@ window.GAMES = [
     name: "Slipdeck",
     accent: ["#f5c451", "#3ddc97"],
     fr: {
-      tagline: "Lis chaque carte, garde celles dont ta main a besoin et combine tes jokers pour les plus grosses mains de poker.",
-      tags: ["Swipe pour trier", "Jokers", "Mains de poker"]
+      tagline: "Glisse à droite pour garder et à gauche pour jeter. Redécouvre le Poker en version dynamique et addictive ! Bâtis la main ultime, combine et triche avec des Jokers déjantés. Déclenche des cascades de multiplicateurs pour exploser tous tes scores dans ce jeu de cartes pensé pour mobile.",
+      tags: ["Swipe", "Jokers", "Combiner"]
     },
     en: {
-      tagline: "Read every card, keep the ones your hand needs and build your jokers into the biggest poker hands.",
-      tags: ["Swipe to sort", "Jokers", "Poker hands"]
+      tagline: "Swipe right to keep and left to discard. Rediscover Poker in a dynamic, addictive version! Build the ultimate hand, combine and cheat with wacky Jokers. Trigger cascades of multipliers to blow up all your scores in this card game made for mobile.",
+      tags: ["Swipe", "Jokers", "Combine"]
     }
   },
   {

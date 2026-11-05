@@ -995,7 +995,13 @@ Round.stop()
 
 ```js
 view, Layout, ctx, canvas          // see above
-Input.on("down"|"move"|"up", fn)   // design-space pointer events
+Input.on("down"|"move"|"up", fn)   // design-space pointer events; ONE finger
+                                   //   (the first on the glass) unless
+                                   //   CONFIG.multiTouch = true: then every
+                                   //   finger, each event carrying p.id (its
+                                   //   touch identifier, "mouse" for a mouse),
+                                   //   so a thumb on a dial and a finger on a
+                                   //   button are two gestures (parrynormal)
 Input.at(type, x, y)               // synthesize one (used by the SPACE key)
 Input.swipe(dir, dist)             // synthesize a whole flick (the arrow keys)
 Loop.start(u, r) / stop() / pause() / resume()
