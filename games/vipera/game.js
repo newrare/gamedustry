@@ -1008,26 +1008,23 @@
     }
 
     /* LEARN — a mechanic met for the first time is NAMED, once per player
-       ever (Notify.learn, packages/shell/shell.js), and its line in the "!"
-       log opens its page of the guide (below), which is where the rule is
-       explained. Called where the thing first turns up — a hazard or a
-       pickup when it is laid ahead of the head, the eagle when its shadow
-       comes in, the plates when they are earned, a bite when it costs the
-       body — so the notice lands a moment before the player meets it, never
-       in the middle of a round's opening. The id is the page's id, and every
-       word is a literal at its call so the copy desk reads it.
+       ever (Notify.learn, packages/shell/shell.js), by the title of its page
+       of the guide (below), which the notice's line in the "!" log opens and
+       which is where the rule is explained. Called where the thing first
+       turns up — a hazard or a pickup when it is laid ahead of the head, the
+       eagle when its shadow comes in, the plates when they are earned, a bite
+       when it costs the body — so the notice lands a moment before the player
+       meets it, never in the middle of a round's opening. The id is the
+       page's id.
        Only what the frame cannot say is named: a warning to decode (the
        tips, the ring, the embers, the shadows) and the plates' hidden rule.
        A log or a flame reads at a glance, a pickup's own callout already
        says what it does, and a bite shows what it cost. */
     function learn(id) {
       switch (id) {
-        case "trap": Notify.learn("trap", "Spike traps", { sub: "Watch out for spikes" }); break;
-        case "bolt": Notify.learn("bolt", "Lightning", { sub: "Watch out for lightning" }); break;
-        case "geyser": Notify.learn("geyser", "Geysers", { sub: "Watch out for flames" }); break;
-        case "rock": Notify.learn("rock", "Falling rocks", { sub: "A shadow marks a falling rock" }); break;
-        case "eagle": Notify.learn("eagle", "The eagle", { sub: "The eagle's shadow shows the side it will strike" }); break;
-        case "armour": Notify.learn("armour", "Armor", { sub: "The armor takes the next hit" }); break;
+        case "trap": case "bolt": case "geyser": case "rock": case "eagle": case "armour":
+          Notify.learn(id);
+          break;
       }
     }
 
@@ -3624,8 +3621,8 @@
     // where a geyser stands in its cycle at `f`, whatever the round's clock reads
     function geyserAt(f, seed) { return piece("geyser", seed, { ph: f * T.geyserPeriod - runT }); }
 
-    function guidePage(id, title, lv, pic, lines, rows) {
-      var P = { id: id, title: title, lv: lv, pic: pic, lines: lines };
+    function guidePage(id, title, lv, pic, text, rows) {
+      var P = { id: id, title: title, lv: lv, pic: pic, text: text };
       if (rows) P.rows = rows;
       return P;
     }
@@ -3646,22 +3643,20 @@
                 drawItem(piece("orb", 2), 150, 70);
                 drawViper({ x: 300, y: 150, a: 0.45, n: 8, amp: 16, tongue: 0.2, dir: 1 });
               });
-            }, [Lang.t("Vipera never stops. A tap changes her direction."),
-                Lang.t("Walls push Vipera back, at no cost.")]),
+            }, Lang.t("Vipera never stops. A tap changes her direction.\n\nWalls push Vipera back, at no cost.")),
             guidePage("score", Lang.t("Eggs and score"), 0, function () {
               return floorPic(420, 150, "jungle", 1.25, function () {
                 drawItem(piece("orb", 1), 105, 60);
                 drawItem(piece("mega", 2), 231, 60);
               });
-            }, [Lang.t("Eggs make Vipera grow and score points. A stage ends after a set distance.")],
+            }, Lang.t("Eggs make Vipera grow and score points. A stage ends after a set distance."),
             [[Lang.t("Chain of 5, 10, 15…"), "+40, +80, +120…"]]),
             guidePage("bites", Lang.t("Damage"), 0, function () {
               return floorPic(520, 200, "jungle", 1, function () {
                 drawItem(piece("thorn", 0.4), 330, 55);
                 drawViper({ x: 260, y: 120, a: -0.3, n: 4, hurt: true });
               });
-            }, [Lang.t("Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses."),
-                Lang.t("Then Vipera blinks, and nothing can hurt her for a second.")])
+            }, Lang.t("Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses.\n\nThen Vipera blinks, and nothing can hurt her for a second."))
           ] },
           { key: "viper", label: Lang.t("The viper"), pages: [
             guidePage("tiers", Lang.t("Evolution"), 0, function () {
@@ -3670,13 +3665,12 @@
                   drawViper({ x: 191 + t * 382, y: 62, a: 0, n: TIERS[t].at, amp: 14, ph: t, tier: t });
                 }
               });
-            }, [Lang.t("The longer Vipera gets, the faster she goes. A hit never slows her down.")]),
+            }, Lang.t("The longer Vipera gets, the faster she goes. A hit never slows her down.")),
             guidePage("armour", Lang.t("Armor"), 0, function () {
               return floorPic(520, 240, "jungle", 0.8, function () {
                 drawViper({ x: 580, y: 150, a: Math.PI / 2, n: T.maxLen, amp: 22, ph: 0.6, shield: true, tier: TIERS.length - 1 });
               });
-            }, [Lang.t("At full length, Vipera grows an armor that takes one hit for her."),
-                Lang.t("To get the armor back, grow to full length again or eat a rainbow egg.")])
+            }, Lang.t("At full length, Vipera grows an armor that takes one hit for her.\n\nTo get the armor back, grow to full length again or eat a rainbow egg."))
           ] },
           { key: "jungle", label: Lang.t("Jungle"), pages: [
             guidePage("thorns", Lang.t("Thorns"), 1, function () {
@@ -3686,7 +3680,7 @@
                 drawItem(piece("orb", 3), 264, 100);
                 drawViper({ x: 264, y: 205, a: 0.1, n: 6, amp: 10 });
               });
-            }, [Lang.t("Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns.")])
+            }, Lang.t("Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns."))
           ] },
           { key: "swamp", label: Lang.t("Swamp"), pages: [
             guidePage("log", Lang.t("Drifting logs"), lvS, function () {
@@ -3694,15 +3688,14 @@
                 drawLog(piece("log", 0.5), 170, 70);
                 drawLog(piece("log", 2.6), 350, 170);
               });
-            }, [Lang.t("Don't bump into the logs.")]),
+            }, Lang.t("Don't bump into the logs.")),
             guidePage("fly", Lang.t("Fireflies"), lvS, function () {
               return pickupPic("fly", "swamp", { x: 380, y: 90, n: 6, amp: 10, magnet: true });
-            }, [Lang.t("Fireflies help Vipera collect eggs. They fly off at the first hit.")])
+            }, Lang.t("Fireflies help Vipera collect eggs. They fly off at the first hit."))
           ] },
           { key: "temple", label: Lang.t("Temple"), pages: [
             guidePage("trap", Lang.t("Spike traps"), lvT, function () { return trapsPic(false); },
-              [Lang.t("Only raised spikes are dangerous."),
-               Lang.t("The spikes creep out slowly, then shoot up all at once.")]),
+              Lang.t("Only raised spikes are dangerous.\n\nThe spikes creep out slowly, then shoot up all at once.")),
             guidePage("bolt", Lang.t("Lightning"), lvT, function () {
               return floorPic(520, 260, "temple", 1, function () {
                 var w = T.boltWarn, img = artImage("lightning01"), x = 380, y = 190, bw, bh;
@@ -3717,11 +3710,10 @@
                 drawArt("lightning05", x, y, T.boltR * 2.4, 0.4);
                 ctx.restore();
               });
-            }, [Lang.t("A ring warns of the next lightning strike."),
-                Lang.t("Lightning can even strike twice in a row.")]),
+            }, Lang.t("A ring warns of the next lightning strike.\n\nLightning can even strike twice in a row.")),
             guidePage("idol", Lang.t("Idol"), lvT, function () {
               return pickupPic("idol", "temple", { x: 380, y: 90, n: 6, amp: 10, idol: true });
-            }, [Lang.t("With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains.")])
+            }, Lang.t("With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains."))
           ] },
           { key: "volcano", label: Lang.t("Volcano"), pages: [
             guidePage("geyser", Lang.t("Geysers"), lvV, function () {
@@ -3729,19 +3721,18 @@
                 drawGeyser(geyserAt(0.68, 0.3), 120, 170);
                 drawGeyser(geyserAt(0.86, 1.1), 360, 160);
               });
-            }, [Lang.t("Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.")]),
+            }, Lang.t("Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava.")),
             guidePage("rock", Lang.t("Falling rocks"), lvV, function () {
               return floorPic(520, 240, "volcano", 1, function () {
                 drawRock(piece("rock", 0.2, { fallT: -1, p: camP + T.rockFall + 120 }), 100, 140);
                 drawRock(piece("rock", 1.3, { fallT: ROCK_DROP * 0.45 }), 260, 140);
                 drawRock(piece("rock", 2.1, { fallT: ROCK_DROP }), 420, 140);
               });
-            }, [Lang.t("A shadow always shows where a rock will land. The snake would rather avoid a bump on the head."),
-                Lang.t("Watch out, once landed, rocks stay hot and dangerous.")]),
+            }, Lang.t("A shadow always shows where a rock will land. The snake would rather avoid a bump on the head.\n\nWatch out, once landed, rocks stay hot and dangerous.")),
             guidePage("fire", Lang.t("Fire traps"), lvV, function () { return trapsPic(true); },
-              [Lang.t("Like spike traps, but the flames come out faster.")]),
+              Lang.t("Like spike traps, but the flames come out faster.")),
             guidePage("amber", Lang.t("Amber"), lvV, function () { return pickupPic("amber", "volcano", null); },
-              [Lang.t("Vipera instantly grows to just short of full length.")])
+              Lang.t("Vipera instantly grows to just short of full length."))
           ] },
           { key: "lair", label: Lang.t("Lair"), pages: [
             guidePage("eagle", Lang.t("The eagle"), lvL, function () {
@@ -3753,11 +3744,10 @@
                 eagleSprite(shade, 185, 165, w, true, 0.62);
                 drawViper({ x: 430, y: 120, a: 0.2, n: 8, amp: 12 });
               });
-            }, [Lang.t("The eagle's shadow tells you which side its next attack will come from."),
-                Lang.t("Quickly get clear of that side before you get bitten.")]),
+            }, Lang.t("The eagle's shadow tells you which side its next attack will come from.\n\nQuickly get clear of that side before you get bitten.")),
             guidePage("rainbow", Lang.t("Rainbow egg"), lvL, function () {
               return pickupPic("rainbow", "lair", { x: 380, y: 90, n: 7, amp: 10, shield: true });
-            }, [Lang.t("This egg is so good it instantly gives Vipera a rainbow armor.")])
+            }, Lang.t("This egg is so good it instantly gives Vipera a rainbow armor."))
           ] }
         ];
       }

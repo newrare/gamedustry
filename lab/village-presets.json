@@ -2722,7 +2722,7 @@
         {
           "art": "home01",
           "role": "shop",
-          "x": 150,
+          "x": 140,
           "y": 560,
           "w": 200,
           "badge": {
@@ -2752,7 +2752,7 @@
         {
           "art": "home04",
           "role": "play",
-          "x": 250,
+          "x": 300,
           "y": 770,
           "w": 180,
           "badge": {
@@ -2789,13 +2789,20 @@
         {
           "art": "home06",
           "role": "options",
-          "x": 180,
-          "y": 1000,
+          "x": 110,
+          "y": 870,
           "w": 150,
           "flip": true,
           "light": "flicker",
           "lightEvery": 6.1,
           "lightDelay": 1.7
+        },
+        {
+          "art": "home02",
+          "role": "ranking",
+          "x": 400,
+          "y": 1110,
+          "w": 210
         },
         {
           "art": "empty",
@@ -2807,20 +2814,6 @@
           "lightEvery": 7.1,
           "lightDelay": 2.3,
           "always": true
-        },
-        {
-          "art": "home02",
-          "role": "ranking",
-          "x": 460,
-          "y": 1120,
-          "w": 210
-        },
-        {
-          "art": "empty",
-          "role": "decor",
-          "x": 140,
-          "y": 1150,
-          "w": 200
         }
       ]
     }

@@ -18,7 +18,9 @@
       games/bridgessa) opens it ON THE PAGE of what was tapped;
     - a mechanic met for the first time is named by a notice
       (`Notify.learn`, packages/shell/shell.js) whose line in the "!" log
-      opens its page (packages/webshell/meta.js).
+      opens its page (packages/webshell/meta.js). The notice's words are the
+      page's TITLE ("New: Babies"), and the page wears a NEW tag in the
+      contents — and the round's book a count — until it has been read.
 
   IT IS A CARD, NOT A VIEW. It is opened over a round as often as over a
   menu — a tap on the table is mid-round by definition — and a card is what
@@ -31,7 +33,7 @@
   THE CONTRACT IS THE GAME'S, and it is one function on `Game.guide`:
     chapters()   [{ key, label, pages: [page] }], in reading order, and every
                  string already in the player's language (Lang.t)
-    page         { id, title, eyebrow, pic, lines: [str], rows, lv, node }
+    page         { id, title, eyebrow, pic, text, rows, lv, node }
                    id       unique across the whole guide: what `open(id)`
                             and `Notify.learn(id)` name
                    eyebrow  the line over the title; default the chapter
@@ -41,9 +43,18 @@
                             artwork) or an image src. A page SHOWS before it
                             tells — one picture says what three sentences
                             describe, so every page that can have one has one
-                   lines    the rule, a paragraph each, as text (never markup:
-                            the game's words are data) — short: two or three
-                            lines under the picture, not an essay
+                   title    the name of the thing — and the words of its
+                            discovery notice ("New: <title>"): one name, said
+                            the same everywhere it is said
+                   text     the rule, ONE string — paragraphs split on a blank
+                            line ("\n\n") — as text (never markup: the game's
+                            words are data). One string so a description is
+                            ONE row to translate and check on the copy desk,
+                            and the one description the round's own cards
+                            (a loadout's info, a codex) read too. Short: two
+                            or three sentences under the picture, not an
+                            essay. (`lines`, an array of paragraphs, is the
+                            old form and still read.)
                    rows     what a thing pays or costs, as a table rather than
                             a sentence: [[label, value, colour?]]
                    lv       the level that first uses it: a page whose level
@@ -89,12 +100,12 @@
     en: {
       button: "All the rules", title: "All the rules", contents: "Contents",
       prev: "Previous", next: "Next", locked: "Reach level {n}", lockedSay: "Locked",
-      noteTip: "Tap {book} for more help"
+      noteTip: "Tap {book} for more help", fresh: "New"
     },
     fr: {
       button: "Toutes les règles", title: "Toutes les règles", contents: "Sommaire",
       prev: "Précédente", next: "Suivante", locked: "Atteins le stage {n}", lockedSay: "Verrouillée",
-      noteTip: "Appuie sur {book} pour plus d'aide"
+      noteTip: "Appuie sur {book} pour plus d'aide", fresh: "Nouveau"
     }
   };
   W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
@@ -139,7 +150,34 @@
     for (var i = 0; i < B.flat.length; i++) if (B.flat[i].page.id === id) return i;
     return -1;
   }
-  function has(id) { return indexOf(book(), id) >= 0; }
+  /* "*" is the contents: a notice that names several pages at once
+     ("3 pages to read in the guide", Notify.learn) opens the book on them. */
+  function has(id) { return id === "*" || indexOf(book(), id) >= 0; }
+  /* A page's title, for the notice that names its discovery; null: no page. */
+  function title(id) {
+    var B = book(), i = indexOf(B, id);
+    return i < 0 ? null : B.flat[i].page.title;
+  }
+
+  /* NEW: the pages learnt (Notify.learn) and not read yet. Each wears a tag
+     in the contents, and the round's book counts them — a small promise of
+     what there is to open, which empties as it is read. */
+  function freshSet() { return W.Notify && W.Notify.fresh ? W.Notify.fresh() : {}; }
+  function freshCount() {
+    var s = freshSet(), n = 0;
+    for (var k in s) if (s.hasOwnProperty(k) && has(k)) n++;
+    return n;
+  }
+  /* The count on the round's book (the foot bar's GUIDE, menu.js), redrawn
+     when a page is learnt or read and whenever the bar is built. */
+  function sync() {
+    var b = document.querySelector('.web-ctl[data-extra="guide"]');
+    if (!b) return;
+    var n = freshCount(), tag = b.querySelector(".gu-count");
+    if (!n) { if (tag) tag.parentNode.removeChild(tag); return; }
+    if (!tag) { tag = el("span", "gu-count"); b.appendChild(tag); }
+    tag.textContent = n > 9 ? "9+" : String(n);
+  }
 
   /* THE PAGE OF WHERE THE PLAYER STANDS. A layer whose rooms are explained
      in the guide registers a function that names the page of the room on top
@@ -221,7 +259,9 @@
 
   function row(B, i) {
     var f = B.flat[i], locked = f.locked && !forced[f.page.id];
-    var b = el("button", "gu-row" + (locked ? " locked" : "") + (!locked && f.page.id === last ? " last" : ""));
+    var isNew = !locked && !!freshSet()[f.page.id];
+    var b = el("button", "gu-row" + (locked ? " locked" : "") + (!locked && f.page.id === last ? " last" : "") +
+                         (isNew ? " fresh" : ""));
     if (locked) {
       b.innerHTML = icon("lock", "gu-ic");
       b.appendChild(text("span", "gu-rt", "???"));
@@ -231,6 +271,7 @@
       });
     } else {
       b.appendChild(text("span", "gu-rt", W.upper(f.page.title)));
+      if (isNew) b.appendChild(text("span", "gu-new", W.upper(T.fresh)));
       b.appendChild(el("span", "gu-chev", "›"));
       b.addEventListener("click", function () { go(f.page.id); });
     }
@@ -240,6 +281,7 @@
   function paintPage(B, i) {
     var f = B.flat[i], P = f.page;
     last = P.id;
+    if (W.Notify && W.Notify.read) W.Notify.read(P.id);   // read: NEW no more
     card.set({ eyebrow: P.eyebrow || f.chapter.label, title: P.title });
     var box = el("div", "gu-page");
     var pic = typeof P.pic === "function" ? P.pic() : P.pic;
@@ -266,7 +308,7 @@
       }
       box.appendChild(tb);
     }
-    var lines = P.lines || [];
+    var lines = P.text != null ? String(P.text).split(/\n\s*\n/) : (P.lines || []);
     for (var k = 0; k < lines.length; k++) box.appendChild(text("p", "", lines[k]));
     if (P.node) {
       var n = P.node();
@@ -314,6 +356,7 @@
      the player has met, so it opens whatever its level (`forced`). A guide
      already open turns to it instead of stacking a second card. */
   function open(id) {
+    if (id === "*") id = null;
     if (id != null) {
       if (!has(id)) id = null;
       else forced[id] = true;
@@ -345,6 +388,7 @@
 
   function mount(api) {
     API = api;
+    if (W.Notify && W.Notify.onFresh) W.Notify.onFresh(sync);
     if (api.lang) setLang(api.lang);
     if (W.Dev) {
       unlocked = !!(W.Dev.local && W.Store.get(UNLOCK_KEY, false));
@@ -374,6 +418,8 @@
     tip: function () { return T.noteTip; },
     open: open,
     has: has,
+    title: title,
+    sync: sync,
     here: here,
     current: current
   };

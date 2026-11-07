@@ -197,8 +197,9 @@ development pages and answer only to the short rules in their own sections.
    - **`Notify.say` — what HAPPENED to them**: an event they did not make (a
      wave, a boss, the lava surging, the camp's day), an action REFUSED that
      they tried anyway ("Out of reach", "Follow suit"), and anything said
-     outside a round; **`Notify.learn(id, word, { sub })`** names a MECHANIC
-     the first time a player meets it, once ever, and a **record beaten** is
+     outside a round; **`Notify.learn(id)`** names a MECHANIC the first
+     time a player meets it, once ever — by its guide page's title, "New:
+     <title>", so it writes no word of its own — and a **record beaten** is
      the motor's own (`Record`, nothing to write);
    - **the guide (`Game.guide`) — every RULE**, explained. A lesson is never
      a line on screen during play and never a card on the way into a round.
@@ -1058,7 +1059,7 @@ then one page at a time with previous, contents and next. It is the web
 target's; a playable has no guide and keeps the cards it has.
 
 - **The contract is one function**, `Game.guide.chapters()` →
-  `[{ key, label, pages: [{ id, title, eyebrow, pic, rows, lines, lv, node }] }]`,
+  `[{ key, label, pages: [{ id, title, eyebrow, pic, rows, text, lv, node }] }]`,
   every string already through `Lang.t`. `lv` is the level that first deals
   the idea: until the board opens it the page is **locked** in the contents,
   `???` and the level, as the codex does — a biome stays a discovery. A page
@@ -1069,7 +1070,8 @@ target's; a playable has no guide and keeps the cards it has.
   of the game's cards (`jokerNode`, `favourCard`), or an image src out of
   `CONFIG.art` (a cut object, an enemy, a power-up). `rows` is what a thing
   pays or costs as a table — `[[label, value, colour?]]` — never a sentence of
-  figures. `lines` is then two or three short lines of prose (text, never
+  figures. `text` is then two or three short sentences of prose, ONE string
+  whose paragraphs are split on a blank line (`"…\n\n…"`; text, never
   markup), and `node()` an optional live part under them (slipdeck's poker
   chart, bridgessa's contract being played). A picture drawn before any round
   must not read round state: guard what is unset until `reset()`.
@@ -1100,9 +1102,24 @@ target's; a playable has no guide and keeps the cards it has.
   chevron at its foot while something is still under the fold
   (`packages/webshell/view.js`, `moreCue`), above a footer marked
   `data-foot`; a tap on it scrolls on.
+- **One idea, one title, one description.** A thing the game explains — a
+  monster, a power, a rule — is written ONCE: its name is the page's `title`
+  and its rule the page's `text`, one row each on the copy desk however many
+  paragraphs it holds. An entity keeps both in its own table (`name`, `text`)
+  and every place that shows it reads them from there — its guide page, its
+  loadout or codex card — so no second sentence about it exists anywhere: no
+  notice sub, no `lines` split across rows, no second table of "more".
 - **A mechanic met for the first time is a notice, not a card**:
-  `Notify.learn(id, word, { sub })`, once per player, and its line in the "!"
-  log opens page `id`. The round is never stopped to teach.
+  `Notify.learn(id)`, once per player, and nothing else to write — the notice
+  reads "New: \<the page's title>" ("Nouveau : …", the motor's own words) and
+  its line in the "!" log opens page `id`. The round is never stopped to
+  teach, and it is never flooded either: the page is marked **NEW** in the
+  guide at once (a tag on its row, a count on the round's book, gone when it
+  is read), while the notice waits its turn — nothing in the first 5 s of a
+  round, then one at a time, 10 s apart, two a round, and whatever is left
+  said once as the round ends ("9 pages to read in the guide"). A mechanic the
+  Help card already shows (the gesture, the first sentence) is not learnt at
+  all.
 
 ## The painted artwork
 
@@ -1865,22 +1882,27 @@ game is parsed when it is picked, French first. **Every row says where it is
 read** — the function the call sits in and its line of source, and for a
 dictionary entry every call that writes its English (or the table it is
 defined in; an entry nothing writes is marked *no use found*). **Every row
-also says WHAT it is printed on** — a coloured pill out of one fixed list
-(`SURFACES` in `tools/lab/scan-text.mjs`): the website, a store image, the
-title screen, a notification, a callout, a floating value, a card's name or
-description, the end screen, a mission… read off the manifest path, the call
-the literal reaches (the game's own wrapper around it included) or the table
-it sits in; a dictionary entry wears one per surface its English reaches, a
-select keeps one surface. **What the words are ABOUT is read off the name of
-the table or the function that holds them** (`TABLE_TOPIC` and `FN_TOPIC`):
-a page of the guide is *Help guide*, a hero, a yokai or an officer's lore is
-*Character*, a biome or a band *Biome / band*, a power, a ware or a blessing
-*Object / power*, a tier or a rarity *Rank*, what a tapped piece does now
-*Info card* — and a page of the guide about a character or a biome takes the
-topic, with *guide page* in its detail. A table whose name means something
-else in one game is named in `TABLE_TOPIC_GAME`. Where neither name says
-anything the pill reads *Game data* (a table) or *In code* (a function)
-rather than guess. **A row read and
+is filed in ONE CATEGORY and a SUB of it** — a coloured pill,
+`category · sub` (plus the field for game content), out of ten categories
+fixed with the user (`SURFACES` in `tools/lab/scan-text.mjs`): *Website &
+stores* (site card, store page, store image, dev gallery), *Help card*
+(title, sentence, demo, rules), *Button / menu*, *Play screen* (HUD, board —
+words the game paints with `fillText` —, info card, panel), *Callout* (word,
+sub line, floating value), *Notification* (event, refusal — a notice the code
+turns the player back on —, sub line), *Help guide* (chapter, page title,
+page text, table, live example), *Game content* (character, object / power,
+card, biome / band, rank, each with its field: name, description, lore,
+status, intent…), *Adventure* (barracks, mission, event) and *End &
+objectives* (end title, stat row, objective). It is read off the manifest
+path, the call the literal reaches (the game's own wrapper around it
+included), the table or function that holds it (`TABLE_TOPIC`, `FN_TOPIC`)
+and the field it fills; a text the game reads in several places (a monster's
+one description, on its guide page and its card) is *Game content*, its uses
+saying where. **Nothing is filed by default**: a line the scanner cannot
+place reads *Unsorted* and raises a warning, and the fix is a line in
+`DECLARED` (`slug:TABLE` or `slug:function` → its kind), never a wider guess.
+A dictionary entry wears one pill per place its English reaches; the picker
+keeps one category or one sub. **A row read and
 signed off is CHECKED** — it turns green, and the mark lands in
 `lab/text-review.json` with the text it was given on, so a string edited since
 reads as unchecked again; *Hide checked* leaves what is left to read, and a
@@ -2018,6 +2040,70 @@ edited, is what ships**: the generator is plain polygons, ported onto the
 canvas as THE PAPER of `games/foldiers/game.js` (each piece drawn once into a
 cached canvas, then laid tilted), and its knobs are `LOOK` there — a retune is
 a new *Copy settings* pasted over that object.
+
+`lowpoly-look.html` is **the look-dev bench for a 3D game in low poly**, and
+it is where the final render of `prototype/dozerflip.html` is looked for: a
+still slice of its world — a city of real models out of
+`assets/model/kaykit-city/` (KayKit City Builder Bits, CC0, one palette
+texture shared by every model; `assets/model/sources.tsv` says where each pack
+comes from), plus what the kit has not got, made in code (the skate bowl, a
+ride rail, trees, rocks, a pond, the dozer, a demolition site) — on a diorama
+slab. Every layer of the look is a knob: the sun, the sky as an environment
+light, soft shadows, GTAO, fog, a tilt-shift, a grade in linear light and the
+tone mapping — and what GLOWS, which is what the night presets are made of:
+windows, lamps and traffic lights lit through masks cut out of the kit's
+palette texture (a kit model is one mesh, so a window is told by the swatch it
+samples), neon, crystals and embers, with bloom, a handful of real lights,
+light pools painted on the ground (one quad a lamp, where a real light per
+lamp is what a phone cannot pay for) and a rim light. Seven presets, four by
+day and three by night, and *Copy settings*. **Nothing reads as a second
+pack** because everything samples ONE picture: the code-made objects are
+painted with the kit's own palette texture (their UVs point into a swatch, top
+to bottom, so they carry its gradient), the grass, the sea and the earth are
+picked out of it, everything lit shares one roughness and one shading rule,
+and that texture is a live canvas regraded as a whole — hue, saturation,
+lightness, gradient strength, warmth, five palettes — and exported as a PNG.
+That PNG is the art direction file: a game's colours change by repainting it,
+not its models. The tier colour is tried
+as an ACCENT (a band on the roof, a ring on the pavement, a tint) against the
+prototype's full colour. Its pages run on three.js, which is vendored
+in `lab/vendor/three/` (r170, MIT) and named by an import map, so they open
+through `make lab` and never over `file://`; `?preset=N&cam=K&freeze=1` opens
+a state for a headless shot. GTAO reads its normals off the depth there: its
+own normal pass came out black on one kit tile. Three presets carry the
+signature of the place rather than its light — *Snow day*, *Overgrown*, *Dust
+bowl*: the library's biome over every object but the water, the lights and the
+dozer, an ink outline read off the depth GTAO already renders (a line where
+the depth breaks or bends, so a silhouette and a crease), and a still paper
+grain in the grade.
+
+`models.html` is **the 3D model library**: every object the studio can put in
+a scene, shown the same way — one turntable, one light, the kit's palette
+texture, a kit car beside it for scale and any other object in a second slot —
+with its triangles, its size in units and in road tiles and the palette
+swatches it samples, read off its UVs. Two sources and no third: the packs
+downloaded into `assets/model/<pack>/` (licence in `assets/model/sources.tsv`,
+read back into `assets/model/index.json` by `make models`, since a page cannot
+list a folder) and **the objects made in code, which live in ONE module,
+`lab/models/library.js`** — `ITEMS`, each `{ id, name, category, biome, tags, notes, build(ctx, opts) }`, the id `<category>-<descriptor>` as in the sfx
+library, built standing on y = 0 in the kit's units. `lowpoly-look.html`
+builds its trees, rocks, crystals, rubble and dozer from that same list, so a
+new set (a forest biome) is items added there, seen at once in both pages. A
+code-made object is seeded (*Reseed* shows its variants) and *Export GLB* bakes
+it into a file — the way it becomes a model a 3D game could load. Houses and
+buildings are assembled by the module's house kit (`Shell`): chamfered blocks
+on a plinth, a frame and a sill on every window, a band at every floor,
+roofs in courses, all in the swatches named by `C` — so a new one keeps the
+family's look by using it — merged by colour into a handful of draw calls,
+and turned to face +z as the kit's own buildings do. **A biome is the
+signature laid over all of it**, kit and code alike: the same module's
+`weather(material)` patches a material's shader so the faces turned up take
+the biome's colour (moss, snow, dust), the walls take it from the ground up and
+the foot of everything its grime, in patches cut by one noise — and less on the
+ground than on a roof — while `tufts(object, biome, ctx)` adds the relief
+(clumps of moss, lumps of snow, pebbles) where that same noise, an integer
+hash computed bit for bit in GLSL and in JS, lets the patches be. A biome is a
+row of `BIOMES`; the catalogue's *Weathering* select tries it on any object.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see
@@ -2192,10 +2278,13 @@ Shell (section 5):
   and anything at all said outside a round — the village, the map, a view, a
   card (the web shell's army, OPTIONS and meta layer call it through
   `window.__WEB__.Notify`). `guide` is a page of the game's guide, which the
-  notice's line in the "!" log opens. **`Notify.learn(id, word, {sub, mark})`**
+  notice's line in the "!" log opens. **`Notify.learn(id)`** (`Notify.learn(id, null, { mark })` to re-tell)
   is the one way to name a MECHANIC met for the first time: once per player
-  ever (`guide:<slug>` in Store, erased by OPTIONS), as a notice whose log line
-  opens guide page `id`; `mark` re-tells a rule under a new value. **A record
+  ever (`guide:<slug>` in Store, erased by OPTIONS), as "New: \<title of guide
+  page `id`>", paced (two a round, the rest summed up as it ends) and marking
+  the page NEW in the guide; `mark` re-tells a rule under a new value. Its old
+  `(id, word, { sub })` form is still read, and its words are said only where
+  there is no guide (a playable). **A record
   beaten is the motor's**: `Record` says "New record" once a round, the moment
   the HUD score passes the best (the level's own on the map), and a game
   writes nothing for it. `kind` is `info gain good warn loss rare`, a colour
@@ -2296,6 +2385,14 @@ its own, deployed by Vercel from this repo.
   never ships a playable's install CTA, which from the site would point at the
   site. `site/newrare-website/` is the previous site: excluded from the build,
   kept for reference.
+- **The built pages are pre-rendered in English, for crawlers.** The last step
+  of `build-site.mjs` fills every empty `data-fr` / `data-en` node with its
+  English and bakes the cards into `#gamesGrid` with `gameCard()` — run out of
+  `site/script.js` itself, so a card has ONE writer. `script.js` rewrites the
+  same nodes on load. A card's description is in its markup once and in full:
+  the four-line clamp is CSS, and when it overflows (`fitDescs()`, measured)
+  the fourth line becomes *Read more*, which lifts that same paragraph over the
+  card (`.game.is-open`) — every card keeps one size and no text is copied.
 - **`node tools/lab/serve-site.mjs`** is the loop for working on it: it runs that
   same build and serves `dist/site` with reload on save, so what you look at
   locally is what Vercel would publish. Never add a second way to assemble the

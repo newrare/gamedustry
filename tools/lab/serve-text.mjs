@@ -54,7 +54,7 @@
   pass would throw away the edits still on screen.
 */
 
-import { readFile, writeFile, stat } from 'node:fs/promises';
+import { readFile, writeFile, rename, stat } from 'node:fs/promises';
 import { watch } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -71,8 +71,13 @@ const REVIEW = path.join(ROOT, 'lab', 'text-review.json');
 
 const TODO = path.join(ROOT, 'lab', 'text-todo.json');
 
+/* A missing store is an empty one, and nothing else is: a store that cannot be
+   read or parsed THROWS, so the request fails instead of writing `{}` back over
+   every mark of every game (which is how lab/text-review.json was wiped once). */
 async function readStore(file) {
-  try { return JSON.parse(await readFile(file, 'utf8')); } catch { return {}; }
+  let raw;
+  try { raw = await readFile(file, 'utf8'); } catch (e) { if (e.code === 'ENOENT') return {}; throw e; }
+  return JSON.parse(raw);
 }
 const readReview = () => readStore(REVIEW);
 
@@ -85,7 +90,11 @@ async function writeStore(file, store) {
     sorted[g] = {};
     for (const k of keys) sorted[g][k] = store[g][k];
   }
-  await writeFile(file, JSON.stringify(sorted, null, 2) + '\n');
+  /* Written aside, then renamed over: a request reading the store meanwhile
+     sees the old file or the new one, never a half-written one. */
+  const tmp = file + '.' + process.pid + '.tmp';
+  await writeFile(tmp, JSON.stringify(sorted, null, 2) + '\n');
+  await rename(tmp, file);
   return sorted;
 }
 

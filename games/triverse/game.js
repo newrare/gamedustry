@@ -919,18 +919,18 @@
       for (i = 0; i < n; i++) items.push({ p: from + (stop - from) * (i + 0.5) / n, path: path, type: "gem", air: true, seed: 0 });
     }
     /* A rule MET for the first time is named once per player, ever, by a
-       notice whose line in the "!" log opens the rule's page of the guide
-       (Notify.learn, which keeps the memory). It fires as the hazard is dealt,
+       notice that says the title of the rule's page of the guide and opens it
+       from the "!" log (Notify.learn, which keeps the memory). It fires as the hazard is dealt,
        just above the frame, so the notice and the hazard arrive together.
        Only what the frame cannot say is named: the gesture a laser or a hole
        asks for, the sleep of a blinking mine, a comet's slide and the live
        rope's warning. A springboard and a pendulum read at a glance. */
     function met(kind) {
-      if (kind === "laser")         Notify.learn("laser", "Laser", { sub: "Swipe up to jump over the lasers" });
-      else if (kind === "blink")    Notify.learn("blink", "Blinking mine", { sub: "Ride through an inactive mine" });
-      else if (kind === "break")    Notify.learn("break", "Hole", { sub: "Swipe up to jump over the holes" });
-      else if (kind === "comet")    Notify.learn("comet", "Comet", { sub: "Comets slide down the ropes" });
-      else if (kind === "elec")     Notify.learn("elec", "Live rope", { sub: "Watch out for electricity" });
+      if (kind === "laser")         Notify.learn("laser");
+      else if (kind === "blink")    Notify.learn("blink");
+      else if (kind === "break")    Notify.learn("break");
+      else if (kind === "comet")    Notify.learn("comet");
+      else if (kind === "elec")     Notify.learn("elec");
     }
 
     function spawnRule(kind, p) {
@@ -1175,33 +1175,33 @@
 
       } else if (it.type === "x2") {
         mult = 2; multT = T.multTime;
-        Pop.show("bonus", { word: "Score x2", sub: T.multTime + "s", at: "upperLeft" });
+        Pop.show("bonus", { word: "Score x2", at: "upperLeft" });
         Overlay.vignette("rgba(166,255,61,.8)", 1, 460);
         Fx.burst(x, y, { color: ["#a6ff3d", "#ffffff"], count: 18, speed: 340, life: 0.45 });
         Sound.clip("power", 0.8);
 
       } else if (it.type === "shield") {
         shield = true;
-        Pop.show("bonus", { word: "Shield", sub: "One crash", at: "upperLeft" });
+        Pop.show("bonus", { word: "Shield", at: "upperLeft" });
         Fx.ring(x, y, { from: 20, to: 120, color: "#8ffff2", width: 6, life: 0.4 });
         Sound.clip("power", 0.7, 1.22);
 
       } else if (it.type === "magnet") {
         magnetT = T.magnetTime;
-        Pop.show("bonus", { word: "Magnet", sub: T.magnetTime + "s", at: "upperLeft" });
+        Pop.show("bonus", { word: "Magnet", at: "upperLeft" });
         Fx.ring(x, y, { from: 20, to: 150, color: "#ffd43b", width: 6, life: 0.45 });
         Sound.clip("magnet", 1);
 
       } else if (it.type === "ghost") {
         ghostT = T.ghostTime;
-        Pop.show("bonus", { word: "Ghost", sub: T.ghostTime + "s", at: "upperLeft" });
+        Pop.show("bonus", { word: "Ghost", at: "upperLeft" });
         Fx.ring(x, y, { from: 20, to: 150, color: "#dfe6ff", width: 6, life: 0.45 });
         Sound.clip("ghost", 0.8);
 
       } else if (it.type === "slow") {
         // back to the speed the level opened on: the ramp starts over
         rampT = 0;
-        Pop.show("bonus", { word: "Slow down", sub: "Start speed", at: "upperLeft" });
+        Pop.show("bonus", { word: "Slow down", at: "upperLeft" });
         Overlay.vignette("rgba(120,200,255,.75)", 1, 520);
         Fx.ring(x, y, { from: 20, to: 170, color: "#8fd0ff", width: 6, life: 0.5 });
         Sound.clip("slow", 1, 0.5);
@@ -1253,8 +1253,7 @@
 
       if (lives <= 0) { die(); return; }
       invT = T.invTime;
-      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Crash!"),
-                           sub: lives + (lives === 1 ? Lang.t(" life left") : Lang.t(" lives left")) });
+      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Crash!") });
     }
 
     /* Crossing a pair of mines through the one open rope is a skill beat, so it
@@ -1352,8 +1351,7 @@
       lane = prevLane = best < 0 ? lane : best;
       switchT = 1; invT = T.invTime;
       Fx.ring(pathX(lane, camP), anchorY, { from: 16, to: 120, color: paths[lane].color, width: 6, life: 0.4 });
-      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Fell!"),
-                           sub: lives + (lives === 1 ? Lang.t(" life left") : Lang.t(" lives left")) });
+      Pop.show("streak", { word: lives === 1 ? Lang.t("Last life") : Lang.t("Fell!") });
     }
 
     /* ====================================================================
@@ -2521,54 +2519,39 @@
     function gemRun(path, p0, n, gap) { for (var i = 0; i < n; i++) put("gem", path, p0 + i * gap); }
     function fill(s, v) { return s.replace(/\{(\w+)\}/g, function (m, k) { return v[k] != null ? v[k] : m; }); }
     // every string a page carries is already in the player's language
-    function page(id, title, lv, lines, pic, rows) {
-      return { id: id, title: title, lv: lv, lines: lines, pic: pic, rows: rows };
+    function page(id, title, lv, text, pic, rows) {
+      return { id: id, title: title, lv: lv, text: text, pic: pic, rows: rows };
     }
     var guide = {
       chapters: function () {
         var F = CONFIG.biomeFrom, E = CONFIG.rule.elec;
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
-            page("ropes", Lang.t("Three ropes"), 0, [
-              Lang.t("Swipe left or right to change lanes. You can also tap on either side of the arrow to move it from one rope to the other.")
-            ], function () {
+            page("ropes", Lang.t("Three ropes"), 0, Lang.t("Swipe left or right to change lanes. You can also tap on either side of the arrow to move it from one rope to the other."), function () {
               return scenePic(0, 240, function (o) {
                 prevLane = 1; lane = 2; switchT = 0.55; switchDir = 1;
                 gemRun(2, 120, 3, 80);
               });
             }),
-            page("jump", Lang.t("The jump"), 0, [
-              Lang.t("Swipe up to jump. You can still change rope in the air."),
-              Lang.t("Holes and lasers pass under you. Mines are too tall to jump over.")
-            ], function () {
+            page("jump", Lang.t("The jump"), 0, Lang.t("Swipe up to jump. You can still change rope in the air.\n\nHoles and lasers pass under you. Mines are too tall to jump over."), function () {
               return scenePic(0, 280, function () {
                 jumpP = -T.jumpLen * 0.45;
                 put("gem", 1, 150, { air: true }); put("gem", 1, 240, { air: true });
               });
             }),
-            page("goal", Lang.t("The run"), 0, [
-              Lang.t("Each level asks for a distance. Gems raise the score, never the progress.")
-            ], function () { return scenePic(0, 200, null); }),
-            page("score", Lang.t("Scoring"), 0, [
-              Lang.t("Every gem grows your combo. Watch out though: a crash or a fall breaks it.")
-            ], function () {
+            page("goal", Lang.t("The run"), 0, Lang.t("Each level asks for a distance. Gems raise the score, never the progress."), function () { return scenePic(0, 200, null); }),
+            page("score", Lang.t("Scoring"), 0, Lang.t("Every gem grows your combo. Watch out though: a crash or a fall breaks it."), function () {
               return scenePic(0, 200, function () { gemRun(1, 40, 2, 70); put("star", 2, 100); });
             },
             [[Lang.t("A mega gem"), "120", "#ffd43b"], [Lang.t("A combo of 6, 12…"), "+50, +100…"]]),
-            page("hazards", Lang.t("Mines and traps"), 0, [
-              Lang.t("A trap costs no life, but drains points and breaks the Combo.")
-            ], function () {
+            page("hazards", Lang.t("Mines and traps"), 0, Lang.t("A trap costs no life, but drains points and breaks the Combo."), function () {
               return scenePic(0, 240, function () { put("mine", 0, 150); put("void", 2, 150); gemRun(1, 80, 2, 70); });
             },
             [[Lang.t("A mine"), Lang.t("−1 life"), "#ff2d55"], [Lang.t("A trap"), "−70", "#c07bff"]]),
-            page("pair", Lang.t("Mine pairs"), 0, [
-              Lang.t("When two mines block two ropes, the third one is always open.")
-            ], function () {
+            page("pair", Lang.t("Mine pairs"), 0, Lang.t("When two mines block two ropes, the third one is always open."), function () {
               return scenePic(0, 280, function () { put("mine", 0, 180); put("mine", 2, 180); });
             }, [[Lang.t("Through the open rope"), "+60"]]),
-            page("loops", Lang.t("Loops and figures"), 0, [
-              Lang.t("Ride a figure like a loop to the end to earn a point reward.")
-            ], function () {
+            page("loops", Lang.t("Loops and figures"), 0, Lang.t("Ride a figure like a loop to the end to earn a point reward."), function () {
               return scenePic(0, 240, function () {
                 var r = 70, sp = r * 2.3, x = slotX(1), p0 = 40;
                 paths[1].segs = [{ k: 0, p0: -6000, p1: p0, x: x, step: T.dot },
@@ -2579,59 +2562,38 @@
             })
           ] },
           { key: "pickups", label: Lang.t("Pickups"), pages: [
-            page("x2", Lang.t("Score x2"), 0, [
-              Lang.t("Every gem, combo, loop and mine pair pays double.")
-            ], function () {
+            page("x2", Lang.t("Score x2"), 0, Lang.t("Every gem, combo, loop and mine pair pays double."), function () {
               return scenePic(0, 260, function () { put("x2", 1, 180); gemRun(2, 140, 2, 80); });
             }),
-            page("shield", Lang.t("Shield"), 0, [
-              Lang.t("The shield takes one crash for you. You lose no life and keep your combo."),
-              Lang.t("The shield won't stop you falling into a hole.")
-            ], function () {
+            page("shield", Lang.t("Shield"), 0, Lang.t("The shield takes one crash for you. You lose no life and keep your combo.\n\nThe shield won't stop you falling into a hole."), function () {
               return scenePic(0, 260, function () { shield = true; put("shield", 1, 180); });
             }),
-            page("magnet", Lang.t("Magnet"), 0, [
-              Lang.t("The magnet pulls in the gems of all three ropes, but not the ones in the air.")
-            ], function () {
+            page("magnet", Lang.t("Magnet"), 0, Lang.t("The magnet pulls in the gems of all three ropes, but not the ones in the air."), function () {
               return scenePic(0, 280, function () {
                 magnetT = 3; put("magnet", 1, 230);
                 put("gem", 0, 90); put("gem", 0, 180); put("gem", 2, 120); put("gem", 2, 210);
               });
             }),
-            page("ghost", Lang.t("Ghost"), F[1], [
-              Lang.t("Mines, traps, lasers, comets and live ropes pass through you."),
-              Lang.t("You still fall into holes.")
-            ], function () {
+            page("ghost", Lang.t("Ghost"), F[1], Lang.t("Mines, traps, lasers, comets and live ropes pass through you.\n\nYou still fall into holes."), function () {
               return scenePic(1, 260, function () { ghostT = 3; put("mine", 1, 6); put("ghost", 1, 180); });
             }),
-            page("slow", Lang.t("Slow down"), F[2], [
-              Lang.t("You drop back to the level's starting speed, then speed up again.")
-            ], function () {
+            page("slow", Lang.t("Slow down"), F[2], Lang.t("You drop back to the level's starting speed, then speed up again."), function () {
               return scenePic(2, 260, function () { put("slow", 1, 180); });
             })
           ] },
           { key: "neon", label: Lang.t("Neon"), pages: [
-            page("pad", Lang.t("Springboards"), F[0], [
-              Lang.t("A springboard throws you onto the next rope, the way its chevrons point."),
-              Lang.t("The bounce counts as a jump, so holes and lasers pass under you.")
-            ], function () {
+            page("pad", Lang.t("Springboards"), F[0], Lang.t("A springboard throws you onto the next rope, the way its chevrons point.\n\nThe bounce counts as a jump, so holes and lasers pass under you."), function () {
               return scenePic(0, 300, function () { put("pad", 1, 190, { dir: 1 }); });
             })
           ] },
           { key: "prism", label: Lang.t("Prism"), pages: [
-            page("laser", Lang.t("Lasers"), F[1], [
-              Lang.t("A laser crosses all three ropes, so changing rope won't help."),
-              Lang.t("Swipe up to jump the laser.")
-            ], function () {
+            page("laser", Lang.t("Lasers"), F[1], Lang.t("A laser crosses all three ropes, so changing rope won't help.\n\nSwipe up to jump the laser."), function () {
               return scenePic(1, 280, function () {
                 put("laser", -1, 210);
                 put("gem", 1, 130, { air: true }); put("gem", 1, 250, { air: true });
               });
             }),
-            page("blink", Lang.t("Blinking mines"), F[1], [
-              Lang.t("A blinking mine sleeps and wakes to a rhythm. Its circular arc is visible."),
-              Lang.t("Dodge a blinking mine, or ride through it while it sleeps.")
-            ], function () {
+            page("blink", Lang.t("Blinking mines"), F[1], Lang.t("A blinking mine sleeps and wakes to a rhythm. Its circular arc is visible.\n\nDodge a blinking mine, or ride through it while it sleeps."), function () {
               return scenePic(1, 260, function () {
                 put("blink", 0, 200, { period: 1.5, ph: 0 });
                 put("blink", 2, 200, { period: 1.5, ph: 0.5 });
@@ -2639,10 +2601,7 @@
             })
           ] },
           { key: "storm", label: Lang.t("Storm"), pages: [
-            page("break", Lang.t("Holes"), F[2], [
-              Lang.t("Jump over a hole, or switch to another rope."),
-              Lang.t("Neither the shield nor the ghost will stop you falling.")
-            ], function () {
+            page("break", Lang.t("Holes"), F[2], Lang.t("Jump over a hole, or switch to another rope.\n\nNeither the shield nor the ghost will stop you falling."), function () {
               return scenePic(2, 300, function () {
                 jumpP = -90;
                 put("break", 1, 60, { len: 150 });
@@ -2651,15 +2610,10 @@
             })
           ] },
           { key: "comets", label: Lang.t("Comets"), pages: [
-            page("comet", Lang.t("Comets"), F[3], [
-              Lang.t("A comet slides down a rope at high speed."),
-              Lang.t("Leave the comet's rope before it reaches you.")
-            ], function () {
+            page("comet", Lang.t("Comets"), F[3], Lang.t("A comet slides down a rope at high speed.\n\nLeave the comet's rope before it reaches you."), function () {
               return scenePic(3, 280, function () { put("comet", 1, 150); });
             }),
-            page("pendulum", Lang.t("Pendulums"), F[3], [
-              Lang.t("A pendulum's mine swings between two ropes, and the third one always stays clear.")
-            ], function () {
+            page("pendulum", Lang.t("Pendulums"), F[3], Lang.t("A pendulum's mine swings between two ropes, and the third one always stays clear."), function () {
               return scenePic(3, 260, function () {
                 lane = prevLane = 2;
                 put("pendulum", 0, 200, { b: 1, w: TAU / 1.75, ph: -0.2 });
@@ -2667,10 +2621,8 @@
             })
           ] },
           { key: "fusion", label: Lang.t("Fusion"), pages: [
-            page("elec", Lang.t("Live ropes"), F[4], [
-              fill(Lang.t("Sparks always run along a rope before the electricity strikes."), { w: E.warn }),
-              fill(Lang.t("Then the rope goes live for a few seconds."), { l: E.live })
-            ], function () {
+            page("elec", Lang.t("Live ropes"), F[4],
+              fill(Lang.t("Sparks always run along a rope before the electricity strikes.\n\nThen the rope goes live for a few seconds."), { w: E.warn, l: E.live }), function () {
               return scenePic(4, 280, function () {
                 elec = { rope: 2, start: -600, p0: 60, p1: 900, live: false, liveT: 0, hit: false };
               });

@@ -18,6 +18,7 @@
 #   make events  the callouts / cues bench, at http://localhost:8092/ (and /kit, the house sound kit; /library, the sfx by ear; /pop, the Pop styles)
 #   make sfx     re-index assets/audio/sfx/ into index.json after adding or renaming a file
 #   make kit     re-cut the house sound kit (assets/audio/kit/) after editing kit.json by hand
+#   make models  re-index assets/model/ into index.json after adding or changing a 3D pack
 #   make text    the copy desk, at http://localhost:8093/
 #   make village the village composer, at http://localhost:8094/
 #   make stickers the sticker review desk, at http://localhost:8096/
@@ -32,7 +33,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve preview lab studio store events sfx kit text village stickers meta shots map ng android
+.PHONY: help check test push itch site serve preview lab studio store events sfx kit models text village stickers meta shots map ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -133,6 +134,12 @@ sfx:
 # committed, so tools/update.mjs never runs ffmpeg.
 kit:
 	node tools/lab/cut-kit.mjs
+
+# The 3D model packs read back into assets/model/index.json — triangles, size,
+# category, licence — which lab/models.html lists (a page cannot list a folder).
+# Committed like the sfx index; run when a pack is added or changed.
+models:
+	node tools/lab/index-models.mjs
 
 # Every word a game shows a player, EN and FR side by side, read off the four
 # sources instead of one call at a time. Same reason for a server as the two

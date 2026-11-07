@@ -614,7 +614,7 @@
       // a malus gate on the board: named the first time one is met
       var mal = 0;
       for (var gi = 0; gi < 5; gi++) if (gates[gi].val < 0) mal++;
-      if (mal) Notify.learn("malus", "Penalty exit", { sub: "A penalty exit takes points away" });
+      if (mal) Notify.learn("malus");
       Music.play(CONFIG.level ? BAND.music : null);
     }
     function freshBoost() {
@@ -708,9 +708,10 @@
       castWord = { word: key === "blueprint" || key === "recycler" ? Lang.t(def.name) + ": " + Lang.t(CARDS[lastPlayed].name) : def.name,
                    sub: def.desc, kind: def.kind };
       Sound.clip("card", 0.6, 1);
-      /* a charm met for the first time: that it stays is what the card's
-         own callout does not say (a trick's callout names what it copied) */
-      if (def.kind === "charm") Notify.learn("kind-charm", "Charms", { sub: "A charm stays for the whole game" });
+      /* a charm met for the first time: its guide page says that it stays,
+         which the card's own callout does not (a trick's callout names what
+         it copied) */
+      if (def.kind === "charm") Notify.learn("kind-charm");
       setState("cast");
       return true;
     }
@@ -1414,7 +1415,7 @@
       Fx.burst(b.x, GATE_TOP + 10, { color: [color, "#ffffff"], count: v < 0 ? 6 : 12, speed: 260, life: .5, grav: 500, size: 3, angle: -Math.PI / 2, spread: 1.2 });
       if (g.jackpot) {
         if (charm.jackpotHunt) roundX *= Math.pow(1.1, charm.jackpotHunt);
-        Pop.show("bonus", { word: CONFIG.copy.jackpot, sub: "+" + fmtNum(pts), at: deckSpot(g.cx), hold: 500 });
+        Pop.show("bonus", { word: CONFIG.copy.jackpot, at: deckSpot(g.cx), hold: 500 });
         Sound.clip("gate", 0.6, 1.1);
         Fx.shake(4, 0.2);
       } else if (v < 0) {
@@ -2286,11 +2287,11 @@
       var names = B && (B[Lang.code()] || B.en);
       return names && names[i] ? names[i] : fillIn(Lang.t("Levels {a} to {b}"), { a: i * 6 + 1, b: i * 6 + 6 });
     }
-    function bandChapter(i, lines) {
+    function bandChapter(i, text) {
       var a = i * 6 + 1;
       return { key: "band" + (i + 1), label: bandName(i), pages: [
         { id: "band" + (i + 1), title: fillIn(Lang.t("Levels {a} to {b}"), { a: a, b: a + 5 }), lv: a,
-          pic: function () { return bandPic(i); }, lines: lines }
+          pic: function () { return bandPic(i); }, text: text }
       ] };
     }
     /* A bomb going off in the middle of a few pegs: the blast's two rings
@@ -2350,85 +2351,76 @@
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "play", title: Lang.t("Play a card"), pic: playPic,
-              lines: [Lang.t("Drag a card from your hand onto the board. The wave drops where you let go.")] },
+              text: Lang.t("Drag a card from your hand onto the board. The wave drops where you let go.") },
             { id: "score", title: Lang.t("Points and global multiplier"),
               pic: function () { return pegsPic([{ type: "classic", ball: {} }, { type: "fire" }, { type: "bumper" }]); },
-              lines: [Lang.t("Each peg a ball touches scores its points, multiplied by the current global multiplier.")] },
+              text: Lang.t("Each peg a ball touches scores its points, multiplied by the current global multiplier.") },
             { id: "hand", title: Lang.t("Your hand"), pic: function () { return cardsPic(["bomb", "gold", "magnet", null], 1); },
-              lines: [Lang.t("Tap a card to read it."),
-                      Lang.t("A level always deals the same pile.")] },
+              text: Lang.t("Tap a card to read it.\n\nA level always deals the same pile.") },
             { id: "objective", title: Lang.t("Objective and stars"), pic: gaugePic,
-              lines: [Lang.t("Three stars don't end the game. Play on to the last ball to push your score.")] }
+              text: Lang.t("Three stars don't end the game. Play on to the last ball to push your score.") }
           ] },
           { key: "gates", label: Lang.t("The exits"), pages: [
             { id: "gates", title: Lang.t("The exits"), pic: function () { return gatesPic(0, 2); },
-              lines: [Lang.t("Every ball ends up in an exit. The global multiplier also applies to the exit's value.")] },
+              text: Lang.t("Every ball ends up in an exit. The global multiplier also applies to the exit's value.") },
             { id: "malus", title: Lang.t("Penalty exit"), lv: 4, pic: function () { return gatesPic(1, null); },
-              lines: [Lang.t("For one wave, the Gold card makes penalty exits pay points too, while All in turns the edge exits into penalty exits.")] }
+              text: Lang.t("For one wave, the Gold card makes penalty exits pay points too, while All in turns the edge exits into penalty exits.") }
           ] },
           { key: "cards", label: Lang.t("The cards"), pages: [
             { id: "kind-peg", title: Lang.t("Peg cards"), lv: 1, pic: function () { return cardsPic(["fire", "ice", "bumper"]); },
-              lines: [Lang.t("A peg card turns some classic pegs into special ones until the end of the game.")] },
+              text: Lang.t("A peg card turns some classic pegs into special ones until the end of the game.") },
             { id: "kind-wave", title: Lang.t("Wave cards"), lv: 1, pic: function () { return cardsPic(["double", "gold", "balls"]); },
-              lines: [Lang.t("A wave card only works for the next volley of balls.")] },
+              text: Lang.t("A wave card only works for the next volley of balls.") },
             { id: "mult", title: Lang.t("The global multiplier cards"), lv: 2, pic: function () { return cardsPic(["golden", "fever", "lastCall"]); },
-              lines: [Lang.t("The global multiplier at the top right can get extra values or additional bonuses."),
-                      Lang.t("The global multiplier applies live. Every hit and every exit is multiplied by the value at that moment."),
-                      Lang.t("Most bonuses tied to the global multiplier last only one wave. The value may therefore be reset at the end of a wave. Charms, on the other hand, last for the whole game.")] },
+              text: Lang.t("The global multiplier at the top right can get extra values or additional bonuses.\n\nThe global multiplier applies live. Every hit and every exit is multiplied by the value at that moment.\n\nMost bonuses tied to the global multiplier last only one wave. The value may therefore be reset at the end of a wave. Charms, on the other hand, last for the whole game.") },
             { id: "kind-charm", title: Lang.t("Charms"), lv: 3, pic: function () { return cardsPic(["clover", "wildfire", "collector"]); },
-              lines: [Lang.t("A charm stays until the end of the game. Additional copies can stack, along with their effects.")] },
+              text: Lang.t("A charm stays until the end of the game. Additional copies can stack, along with their effects.") },
             { id: "kind-meta", title: Lang.t("Tricks"), lv: 7, pic: function () { return cardsPic(["blueprint", "recycler"]); },
-              lines: [Lang.t("The Copy spell plays the last card again, whereas Recall puts that card back in your hand.")] },
+              text: Lang.t("The Copy spell plays the last card again, whereas Recall puts that card back in your hand.") },
             { id: "rarity", title: Lang.t("Rarity"), pic: function () { return cardsPic(["fire", "prism", "portal", "chain"], 1); },
-              lines: [Lang.t("The rarer the card, the less often the pile deals it.")] }
+              text: Lang.t("The rarer the card, the less often the pile deals it.") }
           ] },
           { key: "pegs", label: Lang.t("Special pegs"), pages: [
             { id: "heat", title: Lang.t("Fire and ice"), lv: 1,
               pic: function () { return pegsPic([{ type: "fire", ball: { burn: 1 } }, { type: "ice", ball: { frozen: 1 } }]); },
               rows: [mulRow("Fire or ice peg", "fire"), [Lang.t("A burning ball"), Lang.t("+0.5 classic peg a hit"), "#ff7a1a"],
                      [Lang.t("A frozen ball"), Lang.t("+1 classic peg a hit"), "#5ad8ff"]],
-              lines: [Lang.t("A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it."),
-                      Lang.t("Fire and ice cancel each other out. Be careful though, as Thermal shock creates an explosion.")] },
+              text: Lang.t("A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it.\n\nFire and ice cancel each other out. Be careful though, as Thermal shock creates an explosion.") },
             { id: "bumper", title: Lang.t("Bumpers and magnets"), lv: 1,
               pic: function () { return pegsPic([{ type: "bumper" }, { type: "magnet", ball: { charged: 1 } }]); },
               rows: [mulRow("Bumper", "bumper"), mulRow("Magnet", "magnet"), [Lang.t("A charged ball"), Lang.t("x2 a hit"), "#c46bff"]],
-              lines: [Lang.t("A magnet pulls balls in and charges them. A charged ball pays double the points and also pulls the other balls.")] },
+              text: Lang.t("A magnet pulls balls in and charges them. A charged ball pays double the points and also pulls the other balls.") },
             { id: "bomb", title: Lang.t("Bombs"), lv: 1,
               pic: bombPic,
               rows: [mulRow("Bomb", "bomb")],
-              lines: [Lang.t("A bomb goes off once a wave and blasts away every ball near it.")] },
+              text: Lang.t("A bomb goes off once a wave and blasts away every ball near it.") },
             { id: "prism", title: Lang.t("Prisms and Midas"), lv: 2,
               pic: function () { return pegsPic([{ type: "prism", ball: {} }, { type: "golden" }]); },
               rows: [mulRow("Prism", "prism")],
-              lines: [Lang.t("A prism splits a ball in two. The halves can't split again."),
-                      Lang.t("Midas adds +0.1 to the global multiplier on every hit, until the end of the wave.")] },
+              text: Lang.t("A prism splits a ball in two. The halves can't split again.\n\nMidas adds +0.1 to the global multiplier on every hit, until the end of the wave.") },
             { id: "lucky", title: Lang.t("Lucky pegs"), lv: 3,
               pic: function () { return pegsPic([{ type: "lucky", ball: {} }, { type: "lucky" }]); },
-              lines: [Lang.t("One hit in four on a lucky peg pays ten times as much."),
-                      Lang.t("Clover doubles the chance of a \"lucky peg\", so it goes to one hit in two. Clover also doubles the number of golden balls.")] },
+              text: Lang.t("One hit in four on a lucky peg pays ten times as much.\n\nClover doubles the chance of a \"lucky peg\", so it goes to one hit in two. Clover also doubles the number of golden balls.") },
             { id: "spark", title: Lang.t("Sparks"), lv: 4, pic: sparkPic,
               rows: [mulRow("Spark", "lightning")],
-              lines: [Lang.t("A spark zaps its three nearest pegs, which go off as if a ball hit them.")] },
+              text: Lang.t("A spark zaps its three nearest pegs, which go off as if a ball hit them.") },
             { id: "glass", title: Lang.t("Glass"), lv: 5,
               pic: function () { return pegsPic([{ type: "glass" }, { type: "glass", peg: { cracks: 1 } }, { type: "glass", peg: { cracks: 2 } }]); },
               rows: [mulRow("Glass", "glass")],
-              lines: [Lang.t("A glass peg pays five times the points of a classic peg, but it breaks completely on its third hit for the whole game."),
-                      Lang.t("With Shards, each broken glass peg adds +0.5 to the global multiplier.")] },
+              text: Lang.t("A glass peg pays five times the points of a classic peg, but it breaks completely on its third hit for the whole game.\n\nWith Shards, each broken glass peg adds +0.5 to the global multiplier.") },
             { id: "copiers", title: Lang.t("Echo and mirror"), lv: 7,
               pic: copiersPic,
-              lines: [Lang.t("An echo replays the last special the ball hit."),
-                      Lang.t("A mirror copies the special next to it.")] },
+              text: Lang.t("An echo replays the last special the ball hit.\n\nA mirror copies the special next to it.") },
             { id: "portal", title: Lang.t("Portals and spikes"), lv: 8,
               pic: function () { return pegsPic([{ type: "portal", ball: {} }, { type: "spike" }]); },
               rows: [mulRow("Portal", "portal"), mulRow("Spike", "spike", "#ff3355")],
-              lines: [Lang.t("A portal sends the ball back up to the top, three times at most."),
-                      Lang.t("A spike destroys the ball but pays fifty classic pegs for it.")] }
+              text: Lang.t("A portal sends the ball back up to the top, three times at most.\n\nA spike destroys the ball but pays fifty classic pegs for it.") }
           ] },
-          bandChapter(0, [Lang.t("After level 1, every level adds new cards.")]),
-          bandChapter(1, [Lang.t("At level 12, Recall and All in complete the set.")]),
-          bandChapter(2, [fillIn(Lang.t("No new cards here. The pile now deals from all {n}."), { n: CARD_KEYS.length })]),
-          bandChapter(3, [Lang.t("From level 22, both edge exits take points away.")]),
-          bandChapter(4, [Lang.t("On every level of the last band, both edge exits are penalty exits.")])
+          bandChapter(0, Lang.t("After level 1, every level adds new cards.")),
+          bandChapter(1, Lang.t("At level 12, Recall and All in complete the set.")),
+          bandChapter(2, fillIn(Lang.t("No new cards here. The pile now deals from all {n}."), { n: CARD_KEYS.length })),
+          bandChapter(3, Lang.t("From level 22, both edge exits take points away.")),
+          bandChapter(4, Lang.t("On every level of the last band, both edge exits are penalty exits."))
         ];
       }
     };

@@ -1070,16 +1070,10 @@
        guide. The boss is told by spawnBoss. Keyed by the livery's letter,
        the first of a type's key ("bl" a large blue). Green, the baseline with
        no immunity, has nothing to decode and is not named. */
-    var MEET = {
-      b: ["blue",   "Blue top",   "The fence can't damage a blue top"],
-      y: ["yellow", "Yellow top", "Immune to contact with other tops"],
-      r: ["red",    "Red top",    "Only the fence damages a red top"],
-      k: ["black",  "Black top",  "A black top mends the tops it touches"],
-      p: ["purple", "Purple top", "A large one splits in two"]
-    };
+    var MEET = { b: "blue", y: "yellow", r: "red", k: "black", p: "purple" };
     function meet(t) {
-      var m = MEET[t.key.charAt(0)];
-      if (m && phase === "spin") Notify.learn(m[0], m[1], { sub: m[2] });
+      var id = MEET[t.key.charAt(0)];
+      if (id && phase === "spin") Notify.learn(id);
     }
 
     // A livery's own speed on top of its build's — "slow" and "fast" are the
@@ -1102,7 +1096,7 @@
       Overlay.vignette("rgba(255,212,59,.75)", 0.9, 900);
       /* The first boss ever is the lesson, and its line in the log opens the
          boss's page. Later arrivals say nothing: the alarm and the glow do. */
-      Notify.learn("boss", "Boss top", { sub: "Perfect taps only" });
+      Notify.learn("boss");
       return f;
     }
 
@@ -1364,7 +1358,7 @@
           f.y - f.type.r, Lang.t("KO +") + ko, { color: col, size: 22, life: 0.6, tier: 1 });
         if (f.type.perfectOnly) {
           Sound.clip("chain", 0.9, 0.86);
-          Pop.show("ultra", { word: Lang.t("Boss down!"), sub: "+" + ko, at: farSpot() });
+          Pop.show("ultra", { word: Lang.t("Boss down!"), at: farSpot() });
         }
       }
     }
@@ -1686,10 +1680,8 @@
          that impact, and it can never sit on top of the player's own top — which
          is the one thing on screen that must stay readable. */
       var spot = popSpot(lead);
-      Pop.show("score", {
-        word: "+" + gained, sub: CONFIG.tierName[tier],
-        at: spot, cls: "pop-t" + tier
-      });
+      Pop.show("score", { word: CONFIG.tierName[tier], at: spot, cls: "pop-t" + tier });
+      Pop.text(spot.x, spot.y + 44, "+" + gained, { color: "#ffffff", size: 22, life: 0.6, tier: 1 });
       if (hit.length > 1) {
         Pop.show("bonus", {
           word: (hit.length > 2 ? Lang.t("Triple") : Lang.t("Double")) + Lang.t(" shock"),
@@ -1765,7 +1757,7 @@
       Fx.shake(3, 0.12);
       Sound.clip("miss", 1);
       Pop.show("alert", {
-        word: "Miss", sub: "-" + Math.round(CONFIG.whiffCost * 100) + Lang.t("% spin"),
+        word: "Miss",
         at: farSpot()
       });
       if (spin <= 0) fall();
@@ -1818,8 +1810,7 @@
         { color: ["#ff2f6d", "#ffffff", "#ffd43b"], count: 22, speed: 520, size: 7, life: 0.55 });
       Fx.shake(18, 0.36); Fx.flash("#ff2f6d", 0.34, 2.6); Fx.freeze(0.06);
       Sound.clip("crash", 0.85, Rand.range(0.94, 1.06));
-      Pop.show("alert", { word: "Spin lost", at: farSpot(),
-        sub: "-" + Math.round(f.type.cost * 100) + "%" });
+      Pop.show("alert", { word: "Spin lost", at: farSpot() });
       Overlay.vignette("rgba(255,47,109,.9)", 1, 520);
       if (spin <= 0) fall();
     }
@@ -2103,7 +2094,7 @@
          flag only spares this frame loop a Store read once it has asked. */
       if (!wornSaid && cap <= 0.62) {
         wornSaid = true;
-        Notify.learn("wear", "Worn bearings", { sub: "Max spin drops over time" });
+        Notify.learn("wear");
       }
 
       // Spinning-out alarm, armed once per dive into the red. The edge glow is
@@ -2997,8 +2988,7 @@
                   gFoe("gs", 294 + 123 * 0.906, 215 - 123 * 0.423, { gap: 15 });
                 });
               },
-              lines: [Lang.t("Tap just before a rival hits you. Your shockwave throws it back and wins you spin."),
-                      Lang.t("The closer to the impact you tap, the more it pays. A gold ring means a perfect.")] },
+              text: Lang.t("Tap just before a rival hits you. Your shockwave throws it back and wins you spin.\n\nThe closer to the impact you tap, the more it pays. A gold ring means a perfect.") },
             { id: "spin", title: Lang.t("The spin gauge"), pic: function () {
                 return stage(500, 290, 1, function () {
                   gPlayer(115, 145, 0.9, 0.8); gGauge(220, 20, 250, 0.9, 0);
@@ -3006,8 +2996,7 @@
                 });
               },
               rows: [[Lang.t("A miss"), pct(CONFIG.whiffCost)]],
-              lines: [Lang.t("Your top keeps slowing down. Every rival that hits you costs spin."),
-                      Lang.t("At zero your top blows apart and the round ends.")] },
+              text: Lang.t("Your top keeps slowing down. Every rival that hits you costs spin.\n\nAt zero your top blows apart and the round ends.") },
             { id: "shell", title: Lang.t("Shell points"), pic: function () {
                 return stage(480, 220, 1, function () {
                   gFoe("gl", 95, 110, { hp: 4 });
@@ -3016,8 +3005,7 @@
                 });
               },
               rows: [[Lang.t("A perfect"), "-" + CONFIG.perfectDmg]],
-              lines: [Lang.t("The notches around a rival are its health points. It blows apart when it has no health left."),
-                      Lang.t("Your shockwave, the fence and a crash into another top each take one point.")] },
+              text: Lang.t("The notches around a rival are its health points. It blows apart when it has no health left.\n\nYour shockwave, the fence and a crash into another top each take one point.") },
             { id: "combo", title: Lang.t("Combos and chains"), pic: function () {
                 return stage(500, 300, 0.85, function () {
                   gPlayer(294, 230, 0.7);
@@ -3027,8 +3015,7 @@
               },
               rows: [[Lang.t("Spin every 5 hits"), "+" + Math.round(CONFIG.comboSpin * 100) + "%"],
                      [Lang.t("A KO pays the rival's score"), "×" + CONFIG.koScore]],
-              lines: [Lang.t("Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it."),
-                      Lang.t("One wave can hit several tops. A double or triple shock wins extra spin.")] },
+              text: Lang.t("Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it.\n\nOne wave can hit several tops. A double or triple shock wins extra spin.") },
             { id: "wear", title: Lang.t("Worn bearings"), pic: function () {
                 return stage(510, 290, 1, function () {
                   gPlayer(60, 145, 0.8, 0.55);  gGauge(130, 20, 250, 0.8, 0);
@@ -3036,8 +3023,7 @@
                   gPlayer(400, 145, 0.12, 0.55); gGauge(470, 20, 250, 0.12, 110);
                 });
               },
-              lines: [Lang.t("As the round goes on, your top holds less and less spin."),
-                      Lang.t("Even a flawless run ends, so score while the bearings last.")] }
+              text: Lang.t("As the round goes on, your top holds less and less spin.\n\nEven a flawless run ends, so score while the bearings last.") }
           ] },
           { key: "spark", label: Lang.t("Spark"), pages: [
             { id: "green", title: Lang.t("Green top"), lv: 1, pic: function () {
@@ -3048,12 +3034,12 @@
                   gFoe("gs", 220, 70); gFoe("gl", 250, 190);
                 });
               },
-              lines: [Lang.t("Green tops have no protection. Your tap, the fence and other tops all damage them.")] },
+              text: Lang.t("Green tops have no protection. Your tap, the fence and other tops all damage them.") },
             { id: "builds", title: Lang.t("Small and large"), lv: 3, pic: function () {
                 return stage(420, 200, 1, function () { gFoe("gs", 130, 100); gFoe("gl", 290, 100); });
               },
               rows: [[Lang.t("A small rival hits you"), pct(S[0].cost)], [Lang.t("A large rival hits you"), pct(S[1].cost)]],
-              lines: [Lang.t("A large top is slow, but costs far more spin when it hits you.")] }
+              text: Lang.t("A large top is slow, but costs far more spin when it hits you.") }
           ] },
           { key: "insulated", label: Lang.t("Insulated"), pages: [
             { id: "blue", title: Lang.t("Blue top"), lv: 7, pic: function () {
@@ -3063,8 +3049,7 @@
                   gFoe("bl", 120, 150, { hold: 0.65, aimX: 1, aimY: 0 });
                 });
               },
-              lines: [Lang.t("Blue tops stop, charge, then dash along the dashed line."),
-                      Lang.t("The fence can't damage blue tops. Use your tap, or throw other tops into them.")] }
+              text: Lang.t("Blue tops stop, charge, then dash along the dashed line.\n\nThe fence can't damage blue tops. Use your tap, or throw other tops into them.") }
           ] },
           { key: "split", label: Lang.t("Split"), pages: [
             { id: "yellow", title: Lang.t("Yellow top"), lv: 13, pic: function () {
@@ -3074,7 +3059,7 @@
                   gFoe("yl", 290, 150);
                 });
               },
-              lines: [Lang.t("Other tops can't damage yellow tops. Use your tap and the fence instead.")] },
+              text: Lang.t("Other tops can't damage yellow tops. Use your tap and the fence instead.") },
             { id: "purple", title: Lang.t("Purple top"), lv: 16, pic: function () {
                 return stage(480, 260, 1, function () {
                   var c = livery(5).rim[0];
@@ -3083,7 +3068,7 @@
                   gFoe("pl", 110, 130); gFoe("ps", 330, 70); gFoe("ps", 380, 200);
                 });
               },
-              lines: [Lang.t("A large purple top blows apart into two small ones. One top becomes two.")] }
+              text: Lang.t("A large purple top blows apart into two small ones. One top becomes two.") }
           ] },
           { key: "grounded", label: Lang.t("Grounded"), pages: [
             { id: "red", title: Lang.t("Red top"), lv: 19, pic: function () {
@@ -3097,8 +3082,7 @@
                   gFoe("rs", 60, 112, { vx: 650, vy: 0 });
                 });
               },
-              lines: [Lang.t("Red tops blow up on the first thing they touch. Only the fence damages them."),
-                      Lang.t("Send a red top into the fence with your shockwave. Its blast hits every rival around it.")] }
+              text: Lang.t("Red tops blow up on the first thing they touch. Only the fence damages them.\n\nSend a red top into the fence with your shockwave. Its blast hits every rival around it.") }
           ] },
           { key: "overcharge", label: Lang.t("Overcharge"), pages: [
             { id: "black", title: Lang.t("Black top"), lv: 25, pic: function () {
@@ -3110,12 +3094,12 @@
                   gFoe("gl", 270, 165, { hp: 3, mend: 0.3 });
                 });
               },
-              lines: [Lang.t("Black tops give a shell point back to every rival they touch. Take them out first.")] },
+              text: Lang.t("Black tops give a shell point back to every rival they touch. Take them out first.") },
             { id: "boss", title: Lang.t("Boss top"), lv: 27, pic: function () {
                 return stage(420, 280, 1, function () { gFoe("boss", 210, 140, { gap: 15 }); });
               },
               rows: [[Lang.t("Shell points"), String(B.hp)], [Lang.t("The boss hits you"), pct(B.cost)]],
-              lines: [Lang.t("Only a perfect tap damages the boss, one point at a time. Everything else glances off.")] }
+              text: Lang.t("Only a perfect tap damages the boss, one point at a time. Everything else glances off.") }
           ] }
         ];
       }

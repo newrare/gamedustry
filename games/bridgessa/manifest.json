@@ -1,7 +1,7 @@
 {
   "slug": "bridgessa",
   "title": "Bridgessa",
-  "version": "0.7.24",
+  "version": "0.7.26",
   "tagline": "Play both hands and win the tricks your contract asks for",
   "order": 170,
   "draft": false,
@@ -146,6 +146,7 @@
         "helpAura": "<b>Touche</b> ce qui <b>brille</b> pour lire sa règle.",
         "tagline": "Joue tes <b class=\"w-hands\">deux mains</b> afin de <b class=\"w-tricks\">lever</b> ce que ton <b class=\"w-contract\">contrat</b> exige",
         "strings": {
+          "A ruff is a trick you win with a trump when you could not follow suit.\n\nWith your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card.": "Une coupe correspond à une levée remportée grâce à un atout lorsqu'il est impossible de fournir à la couleur demandée.\n\nGrâce à ton partenaire, une impasse consiste à tenter de remporter une levée avec une carte intermédiaire, alors qu'un défenseur possède encore une carte supérieure.",
           "Deal": "Distribuer",
           "Install now": "Installer",
           "Play the full game": "Jouer au jeu complet",
@@ -313,7 +314,6 @@
           "Use": "Utiliser",
           "Double!": "Contre !",
           "Redouble!": "Surcontre !",
-          "Armed for your next card": "Prête pour ta prochaine carte",
           "Tap the card to trade": "Touche la carte à échanger",
           "Tap the card to give West": "Touche la carte à donner à Ouest",
           "Tap a card of your hand first": "Touche d'abord une carte de ta main",
@@ -335,7 +335,6 @@
           "Pick it in a tournée to add it to the collection": "Sélectionne-la au cours d'une tournée pour l'ajouter à ta collection",
           "Used with a Tap": "S'active d'un simple Tap",
           "Safety": "Survie",
-          "On this deal {s} are trumps": "L'atout est {s} pour cette donne",
           "The basics": "Les bases",
           "The contract": "Le contrat",
           "The score": "Le score",
@@ -345,12 +344,10 @@
           "A finesse": "Impasse",
           "An overtrick": "Levée de mieux",
           "The contract made": "Contrat réussi",
-          "A ruff is a trick you win with a trump when you could not follow suit.": "Une coupe correspond à une levée remportée grâce à un atout lorsqu'il est impossible de fournir à la couleur demandée.",
           "You play both hands: yours at the bottom and the dummy at the top.": "Tu diriges les deux mains : la tienne en bas et celle du mort en haut.",
           "The highest card of the suit led wins the trick. Whoever wins it leads the next one.": "La plus forte carte de la couleur demandée remporte la levée et son vainqueur entame la suivante.",
           "Your contract: win {c} of the {n} tricks.": "Ton contrat consiste à remporter {c} des {n} levées.",
           "Each contract you go down on costs a life. The tournée ends when you have none left.": "Chaque contrat chuté fait perdre une vie et la tournée s'arrête lorsque tu n'en as plus.",
-          "Kept until the tournée ends": "Conservée jusqu'à la fin de la tournée",
           "Pick one favour out of three at the start, then after each contract made. It lasts the whole tournée.": "Sélectionne une Faveur parmi trois en début de tournée puis après chaque contrat réussi.",
           "The rail holds four favours. Some work on their own, the others take a tap, once per deal.": "Le rail peut accueillir quatre Faveurs : certaines sont passives, d'autres s'activent d'un Tap une fois par donne.",
           "If you cannot follow suit, the highest trump wins the trick.": "En l'absence de cartes dans la couleur demandée, l'atout le plus fort remporte la levée.",
@@ -360,7 +357,6 @@
           "The defenders play perfectly. They never give a trick away.": "Les défenseurs jouent de manière irréprochable et ne concèdent aucune levée inutilement.",
           "Every contract can be made, however the hidden cards lie.": "Chaque contrat est réalisable quelle que soit la disposition des cartes cachées.",
           "The contract is the number of tricks you must win.": "Le contrat détermine le nombre exact de levées à remporter.",
-          "With your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card.": "Grâce à ton partenaire, une impasse consiste à tenter de remporter une levée avec une carte intermédiaire, alors qu'un défenseur possède encore une carte supérieure.",
           "Tap your card, then the dummy's": "Touche ta carte puis celle du mort"
         }
       }

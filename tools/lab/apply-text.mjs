@@ -131,8 +131,12 @@ export async function applyText(slug, plan) {
     /* Nothing to do — unless page.html has drifted from CONFIG, in which case
        writing the CONFIG value everywhere is exactly the repair. */
     if (edit.text === row.text && row.desync == null) continue;
-    if (/[\r\n]/.test(edit.text)) {
-      skipped.push(`${label}: a game's copy is one line — write a break as <br>`);
+    /* A guide page or a description is one string of paragraphs, split on
+       a blank line (packages/webshell/guide.js, `text`): JSON.stringify
+       writes the break as \n in a JS or JSON literal. Markup is still one
+       line — a break there is <br>. */
+    if (/[\r\n]/.test(edit.text) && row.targets.some((t) => t.kind === 'html')) {
+      skipped.push(`${label}: markup is one line — write a break as <br>`);
       continue;
     }
     for (const t of row.targets) {

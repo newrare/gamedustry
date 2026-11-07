@@ -538,17 +538,32 @@ in the world stays `Pop.text` (radiam's "Frozen", "Blocked"): its whole point
 is where it is drawn.
 
 ```js
-Notify.learn("pot", "The pot", { sub: "Binned chips pay the next paid hand" });
+Notify.learn("pot");
 ```
 
-**`Notify.learn(id, word, opt)` names a mechanic once per player** — the first
-round it is met in, and never again (`guide:<slug>` in Store, erased by the
-OPTIONS row with the rest of the game's data). `id` is the guide page that
-explains it: the notice carries it as its `guide`, and its line in the "!" log
-opens that page. `opt.mark` is what is remembered instead of the id, for a rule
-told again under a new value (slipdeck's pair floor, `floor10`). It returns
-whether it spoke. It holds a notice 3.2 s and defaults to `kind: "rare"` and
-the `sparkles` icon.
+**`Notify.learn(id)` names a mechanic once per player** — the first round it is
+met in, and never again (`guide:<slug>` in Store, erased by the OPTIONS row
+with the rest of the game's data). `id` is the guide page that explains it, and
+**the page is the words**: the notice reads "New: \<the page's title>"
+("Nouveau : …", the motor's own string), carries the book in its icon's slot,
+and a tap on it — or on its line in the "!" log — opens that page. A game
+writes no word and no sub for it, so a discovery exists once, as its page.
+`Notify.learn(id, null, { mark })` remembers `mark` instead of the id, for a
+rule told again under a new value (slipdeck's pair floor, `floor10`). It
+returns whether the mechanic was new. The old `(id, word, { sub })` form is
+still read: its words are said only where there is no guide (a playable).
+
+**A discovery is paced, because a first round meets a dozen.** Learning marks
+the page NEW at once — a tag on its row in the guide's contents and a count on
+the round's book (the foot bar's GUIDE), both gone once the page is read
+(`Notify.fresh()`, `Notify.read(id)`, `guideNew:<slug>` in Store). The notice
+waits in a queue the ROUND lets out, on its own clock (`Notify.tick`, from the
+frame pipeline, so a card, a pause or a hit-stop holds it): nothing in the
+first 5 s after the entrance, one at a time 10 s apart, two a round. What is
+left is said once as the round ends — the page itself when one is left,
+"9 pages to read in the guide" (which opens the contents, guide id `"*"`) when
+several are. Outside a round the queue is said at once, summed up the same
+way.
 
 **`Record` says a record once a round**, the moment the HUD score passes the
 best one ("New record", "Previous: 12 400"). The motor arms it with the game's

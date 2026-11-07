@@ -42,17 +42,20 @@
    the line of source, and for a dictionary entry every call that writes its
    English — the key says what it means, not where it shows.
 
-   And every row opens on WHAT it is printed on — the SURFACE, a coloured pill:
-   the website, a store image, a notification, a callout, a floating value, a
-   card's description, the end screen… One fixed list (SURFACES in
-   tools/lab/scan-text.mjs), read off the source: the path in the manifest,
-   the call the literal is an argument of, the game's own wrapper around that
-   call, or the table it sits in. A dictionary entry wears one pill per
-   surface its English reaches, and each of its uses wears its own. Where the
-   source cannot say, the pill says so — GAME DATA (a table, named) or IN CODE
-   (built at runtime) — rather than guess. The surface picker beside the filter
-   keeps one surface, and a surface every row of which is checked in the
-   language on screen wears a tick and goes green.
+   And every row opens on WHERE it is read — its CATEGORY and the SUB of it,
+   one coloured pill: Website & stores · store image, Notification · refusal,
+   Help guide · page text, Game content · character · lore… Ten categories,
+   one fixed list (SURFACES in tools/lab/scan-text.mjs), read off the source:
+   the path in the manifest, the call the literal is an argument of, the
+   game's own wrapper around that call, the table it sits in and the field it
+   fills. A text the game reads in several places (a monster's description,
+   on its guide page and its card) is GAME CONTENT, and its uses say where. A
+   dictionary entry wears one pill per place its English reaches, and each of
+   its uses wears its own. Nothing is filed by default: a line the scanner
+   cannot place reads UNSORTED, and the fix is a line in DECLARED there. The
+   picker beside the filter keeps one category or one sub of it, and an entry
+   every row of which is checked in the language on screen wears a tick and
+   goes green.
 
    CHECKED is the proofreader's own mark: a row read and signed off turns
    green, and the mark lands in lab/text-review.json with the text it was
@@ -222,7 +225,9 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .group b { font:700 10px/1 inherit; letter-spacing:1.3px; text-transform:uppercase; color:#7ea6ff; }
 .group i { font-style:normal; font-size:11px; color:#6f6f92; }
 
-.row { background:#151522; border:1px solid #22223a; border-left:3px solid #22223a; border-radius:9px; margin-bottom:7px; padding:8px 11px; }
+.row { position:relative; background:#151522; border:1px solid #22223a; border-left:3px solid #22223a; border-radius:9px; margin-bottom:7px; padding:8px 11px; }
+/* the card's buttons, always in its top-right corner; the header keeps clear of them */
+.row .acts { position:absolute; top:7px; right:9px; display:flex; gap:5px; }
 .row:hover { border-color:#2e2e4c; border-left-color:#2e2e4c; }
 .row.changed { border-left-color:#ffb648; background:#211c12; }
 .row.checked { border-left-color:#5fd49a; background:#13221b; border-color:#1f3a2c; }
@@ -232,7 +237,7 @@ select:focus, input:focus, textarea:focus { outline:none; border-color:#7ea6ff; 
 .row.dropped { border-left-color:#e07aa8; background:#22141c; }
 .row.dropped .val { color:#8b6a7a; text-decoration:line-through; }
 
-.meta { display:flex; align-items:center; gap:9px; font-size:11px; flex-wrap:wrap; }
+.meta { display:flex; align-items:center; gap:9px; font-size:11px; flex-wrap:wrap; min-height:22px; padding-right:calc(var(--na, 0) * 29px); }
 .meta .ctx { font-weight:700; color:#c9c9e0; }
 .meta .at { font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color:#7ea6ff; cursor:pointer; }
 .meta .at:hover { text-decoration:underline; }
@@ -276,8 +281,9 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 .prev b { color:#8fe0b8; font-weight:800; }
 .prev::before { content:"renders  "; font-size:10px; letter-spacing:1px; color:#4f4f6b; }
 
-.other { margin-top:4px; font-size:12px; color:#8b8ba7; }
-.other u { text-decoration:none; font:700 10px/1 inherit; letter-spacing:1px; color:#5d5d7c; margin-right:7px; }
+.other { display:flex; align-items:baseline; margin-top:4px; font-size:12px; color:#8b8ba7; }
+.other span { white-space:pre-wrap; word-break:break-word; }
+.other u { flex:0 0 auto; text-decoration:none; font:700 10px/1 inherit; letter-spacing:1px; color:#5d5d7c; margin-right:7px; }
 .expr { margin-top:4px; font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; color:#6f6f92; word-break:break-all; }
 .expr mark { background:none; color:#c99a4a; }
 
@@ -301,16 +307,17 @@ textarea.ed { display:block; width:100%; margin-top:5px; font-size:14px; font-we
 .sf { display:inline-flex; align-items:baseline; gap:5px; padding:2px 8px; border-radius:5px; font-size:10px; font-weight:800;
   letter-spacing:.6px; text-transform:uppercase; white-space:nowrap; background:#1b1b2b; color:#9c9cba; }
 .sf small { font-size:10px; font-weight:600; letter-spacing:.2px; text-transform:none; opacity:.75; }
-.sf.site, .sf.meta, .sf.storeimg, .sf.gallery { background:#13263a; color:#6cc4ff; }
-.sf.title, .sf.help, .sf.guide, .sf.menu, .sf.end, .sf.level { background:#1e2236; color:#a4b4ff; }
-.sf.character { background:#33201a; color:#ff9c7a; }
-.sf.world { background:#122a2a; color:#5fd4cf; }
-.sf.hud, .sf.canvas, .sf.float { background:#2a2214; color:#e8b860; }
+.sf.site { background:#13263a; color:#6cc4ff; }
+.sf.help, .sf.menu { background:#1e2236; color:#a4b4ff; }
+.sf.play { background:#2a2214; color:#e8b860; }
 .sf.callout { background:#33162a; color:#ff7ac8; }
 .sf.notice { background:#13281f; color:#5fd49a; }
-.sf.tips { background:#2c2a10; color:#e6dc5a; }
-.sf.card, .sf.item, .sf.rank, .sf.info, .sf.panel, .sf.barracks, .sf.mission, .sf.event { background:#271a38; color:#c79cff; }
-.sf.data, .sf.code { background:#1a1a24; color:#7a7a96; }
+.sf.guide { background:#2c2a10; color:#e6dc5a; }
+.sf.content { background:#271a38; color:#c79cff; }
+.sf.adventure { background:#33201a; color:#ff9c7a; }
+.sf.end { background:#122a2a; color:#5fd4cf; }
+.sf.unsorted { background:#3a1414; color:#ff8a8a; }
+.gp-row.sub > span { padding-left:16px; opacity:.85; }
 .use-h .sf { padding:1px 6px; margin-right:3px; }
 
 .loading { padding:60px 0; display:flex; flex-direction:column; align-items:center; gap:14px; color:#6f6f92; }
@@ -397,9 +404,17 @@ function surfaceDef(key) {
 }
 function surfacePill(s) {
   if (!s) return "";
-  var d = surfaceDef(s.key);
-  return '<span class="sf ' + esc(s.key) + '" title="' + esc(d.note) + '">' + esc(d.label) +
-    (s.detail ? " <small>" + esc(s.detail) + "</small>" : "") + "</span>";
+  var d = surfaceDef(s.key), name = [d.label, s.sub, s.field].filter(Boolean).join(" · ");
+  return '<span class="sf ' + esc(s.key) + '" title="' + esc(d.note + (s.detail ? " — " + s.detail : "")) + '">' + esc(name) + "</span>";
+}
+/* A picker key is a category ("guide") or one sub of it ("guide/page text"). */
+function sfMatch(s, key) {
+  var i = key.indexOf("/");
+  return i < 0 ? s.key === key : s.key === key.slice(0, i) && s.sub === key.slice(i + 1);
+}
+function sfLabel(key) {
+  var i = key.indexOf("/");
+  return i < 0 ? surfaceDef(key).label : key.slice(i + 1);
 }
 function surfacesOf(row) { return row.surfaces || (row.surface ? [row.surface] : []); }
 
@@ -418,10 +433,12 @@ function surfaceTally() {
   if (scan) scan.rows.forEach(function (r) {
     var mine = inPool(r), ok = checked(r) && !todo(r);
     if (mine) { t[""].total++; if (ok) t[""].ok++; }
-    surfacesOf(r).forEach(function (s) {
-      any[s.key] = true;
+    var keys = {};
+    surfacesOf(r).forEach(function (s) { keys[s.key] = true; if (s.sub) keys[s.key + "/" + s.sub] = true; });
+    Object.keys(keys).forEach(function (k) {
+      any[k] = true;
       if (!mine) return;
-      var e = t[s.key] || (t[s.key] = { ok: 0, total: 0 });
+      var e = t[k] || (t[k] = { ok: 0, total: 0 });
       e.total++;
       if (ok) e.ok++;
     });
@@ -433,7 +450,7 @@ function sfDone(e) { return !!e && e.total > 0 && e.ok === e.total; }
 function sfEntry(key, e, inList) {
   var html = (inList && key === surface ? '<span class="gp-dot"></span>' : "") +
     (sfDone(e) ? '<span class="gp-ck">✓</span>' : "") +
-    "<span>" + esc(key ? surfaceDef(key).label : "Every surface") +
+    "<span>" + esc(key ? (inList ? sfLabel(key) : [surfaceDef(key.split("/")[0]).label, key.split("/")[1]].filter(Boolean).join(" · ")) : "Every category") +
     (!inList && scan ? ' <span class="gp-v">· ' + (e ? e.total : 0) + "</span>" : "") + "</span>";
   if (inList && e) html += '<span class="gp-left">' + (sfDone(e) ? e.total : e.ok + "/" + e.total) + "</span>";
   return html;
@@ -444,13 +461,17 @@ function drawSurfacePick() {
   if (surface && !tally.any[surface]) surface = "";
   // A surface the language on screen has no row on is left out — unless it is
   // the one kept, which then reads 0 rather than vanishing from the button.
-  sfKeys = [""].concat(((scan && scan.surfaces) || []).map(function (d) { return d.key; })
-    .filter(function (k) { return (t[k] && t[k].total) || k === surface; }));
+  sfKeys = [""];
+  ((scan && scan.surfaces) || []).forEach(function (d) {
+    [d.key].concat((d.subs || []).map(function (u) { return d.key + "/" + u; })).forEach(function (k) {
+      if ((t[k] && t[k].total) || k === surface) sfKeys.push(k);
+    });
+  });
   box.classList.toggle("done", !!scan && sfDone(t[surface]));
   box.querySelector(".gp-btn").innerHTML = sfEntry(surface, t[surface], false);
   box.querySelector(".gp-list").innerHTML = sfKeys.map(function (k, i) {
     return '<button type="button" class="gp-row' + (scan && sfDone(t[k]) ? " done" : "") + (i === sfIdx ? " on" : "") +
-      '" data-key="' + esc(k) + '">' + sfEntry(k, t[k], true) + "</button>";
+      (k.indexOf("/") >= 0 ? " sub" : "") + '" data-key="' + esc(k) + '">' + sfEntry(k, t[k], true) + "</button>";
   }).join("");
 }
 
@@ -531,10 +552,13 @@ function drawRow(row) {
   el.dataset.id = row.id;
 
   var sites = row.targets.length;
-  var bits = [];
+  var bits = [], acts = [];
+  // A French game word is keyed by its English: that English is read under
+  // the French, not crammed into the header line.
+  var enUnder = row.lang === "fr" && row.group === "words" && row.other == null;
   surfacesOf(row).slice(0, 3).forEach(function (s) { bits.push(surfacePill(s)); });
   if (surfacesOf(row).length > 3) bits.push('<span class="pill">+' + (surfacesOf(row).length - 3) + "</span>");
-  bits.push('<span class="ctx">' + esc(row.context) + "</span>");
+  if (!enUnder) bits.push('<span class="ctx">' + esc(row.context) + "</span>");
   bits.push('<span class="at" title="click to copy">' + esc(where(row)) + "</span>");
   if (sites > 1) {
     var extra = row.where === "game.js" && row.lines && row.lines.length > 1
@@ -558,23 +582,25 @@ function drawRow(row) {
   if (stale(row)) bits.push('<span class="pill stale" title="checked on &ldquo;' + esc(mark(row).text) +
     '&rdquo; — the text has changed since">changed since checked</span>');
   if (row.hint) bits.push('<span class="hint">' + esc(row.hint) + "</span>");
-  bits.push('<span class="sp"></span>');
   // A pending edit is not what the file says yet, so there is nothing to sign off.
   // On a row with an action, the check answers it: the English still reads right.
   var on = checked(row) && !todo(row);
-  if (!dropped(row)) bits.push('<button class="ico edit" title="Edit">&#9998;</button>');
-  if (!pending(row)) bits.push('<button class="ico check' + (on ? " on" : "") + '" title="' +
+  // The card's own buttons, pinned to its top-right corner whatever the header holds.
+  if (!dropped(row)) acts.push('<button class="ico edit" title="Edit">&#9998;</button>');
+  if (!pending(row)) acts.push('<button class="ico check' + (on ? " on" : "") + '" title="' +
     (todo(row) ? "Still right — check it and close the action" :
      on ? "Checked " + esc(mark(row).at) + " — click to take it back" : "Mark as checked") + '">&#10003;</button>');
-  if (row.unused && !dropped(row)) bits.push('<button class="ico trash" title="Remove it from the manifest on Apply">&#128465;</button>');
-  bits.push('<button class="ico undo' + (pending(row) ? "" : " hide") + '" title="Revert">&#8634;</button>');
+  if (row.unused && !dropped(row)) acts.push('<button class="ico trash" title="Remove it from the manifest on Apply">&#128465;</button>');
+  if (pending(row)) acts.push('<button class="ico undo" title="Revert">&#8634;</button>');
 
-  var html = '<div class="meta">' + bits.join("") + "</div>";
+  var html = '<div class="acts">' + acts.join("") + '</div><div class="meta" style="--na:' + acts.length + '">' + bits.join("") + "</div>";
   html += '<div class="val">' + esc(valueOf(row)) + "</div>";
   if (changed(row)) html += '<div class="was">' + esc(row.text) + "</div>";
   if (hasMarkup(valueOf(row))) html += '<div class="prev">' + preview(valueOf(row)) + "</div>";
   if (row.other != null) {
-    html += '<div class="other"><u>' + (row.lang === "fr" ? "EN" : "FR") + "</u>" + esc(row.other) + "</div>";
+    html += '<div class="other"><u>' + (row.lang === "fr" ? "EN" : "FR") + "</u><span>" + esc(row.other) + "</span></div>";
+  } else if (enUnder) {
+    html += '<div class="other"><u>EN</u><span>' + esc(row.context) + "</span></div>";
   }
   if (todo(row)) html += '<div class="todo-fr"><u>FR NOW</u>' + (todo(row).was != null ? "<s>" + esc(todo(row).was) + "</s>" : "") +
     esc(todo(row).fr) + "</div>";
@@ -591,10 +617,10 @@ function matches(row) {
   if (hideChecked && checked(row) && !todo(row)) return false;
   // A string with no language is read in both, so both modes show it.
   if (mode !== "all" && row.lang !== mode && row.lang !== "all") return false;
-  if (surface && !surfacesOf(row).some(function (s) { return s.key === surface; })) return false;
+  if (surface && !surfacesOf(row).some(function (s) { return sfMatch(s, surface); })) return false;
   if (!filter) return true;
   var hay = (row.context + " " + valueOf(row) + " " + where(row) + " " + (row.other || "") + " " + (row.hint || "") + " " +
-    surfacesOf(row).map(function (s) { return surfaceDef(s.key).label + " " + (s.detail || ""); }).join(" ") + " " +
+    surfacesOf(row).map(function (s) { return [surfaceDef(s.key).label, s.sub, s.field, s.detail].filter(Boolean).join(" "); }).join(" ") + " " +
     (row.uses || []).map(function (u) { return (u.fn || "") + " " + (u.context || ""); }).join(" ")).toLowerCase();
   return hay.indexOf(filter) >= 0;
 }
@@ -708,9 +734,11 @@ function edit(el) {
 
   function close(commit) {
     if (commit) {
-      // A break is <br>, the way the taglines already write one: apply-text
-      // refuses a newline, so it never reaches the source as one.
-      var next = ta.value.replace(/[\r\n]+/g, " ");
+      // A guide page or a description keeps its paragraphs (SHIFT+ENTER,
+      // a blank line between two); markup is one line, where a break is <br>.
+      var multi = (row.targets || []).every(function (t) { return t.kind !== "html"; });
+      var next = multi ? ta.value.replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/^\s+|\s+$/g, "")
+                       : ta.value.replace(/[\r\n]+/g, " ");
       if (next === row.text) delete plan[row.id]; else plan[row.id] = next;
     }
     el.classList.remove("editing");
@@ -784,6 +812,8 @@ function report(res) {
   var box = $("report");
   var html = '<h2>APPLY <button class="ico" id="report-x">&times;</button></h2>';
   if (res.error) html += '<p class="no">' + esc(res.error) + "</p>";
+  // A server that failed answers { error } alone: the error is what to read.
+  res.applied = res.applied || []; res.skipped = res.skipped || [];
   res.applied.forEach(function (a) {
     html += '<p class="ok">' + esc(a.what) + "<small>&ldquo;" + esc(a.from) + "&rdquo; &rarr; &ldquo;" + esc(a.to) + "&rdquo; · " + esc(a.where) + "</small></p>";
   });
@@ -822,7 +852,9 @@ $("apply").addEventListener("click", function () {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ game: scan.slug, edits: edits, remove: remove })
-  }).then(function (r) { return r.json(); }).then(function (res) {
+  }).then(function (r) {
+    return r.json().catch(function () { return { error: "the server answered " + r.status + " " + r.statusText }; });
+  }).then(function (res) {
     if (res.scan) { scan = res.scan; plan = {}; proposeDrops(); drawSurfacePick(); }
     setStatus(res.status);
     // A refused edit keeps its typing, so it can be looked at rather than lost.

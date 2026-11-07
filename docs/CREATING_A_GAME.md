@@ -138,7 +138,7 @@ Pop.show("score", { word:"+" + gained, at:{ x:x, y:y - 40 } });  // every gain
 Pop.show("combo", { word:"Combo x8", sub:"+160" });              // milestone → COMBO x8
 Pop.show("ultra", { word:"Chain x20", sub:"+400" });             // hero beat
 Notify.say("The lava pulls", { kind: "warn" });                   // an event the player did not make
-Notify.learn("lava", "Lava", { sub: "It rises every ten seconds" });  // a mechanic, the first time ever
+Notify.learn("lava");                                             // a mechanic, the first time ever: "New: Lava"
 Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone
@@ -156,8 +156,10 @@ its colour. Retint a style from the SKIN block, never inline.
 a hit, a power, a mistake, and the state it left ("Shield down"). `Notify.say`
 is what HAPPENED to them — an event they did not make (a wave, a boss, the lava
 surging), an action refused that they tried anyway ("Out of reach", "Follow
-suit"), anything said outside a round — and `Notify.learn` names a mechanic the
-first time a player meets it, once ever. A record beaten is said by the motor.
+suit"), anything said outside a round — and `Notify.learn(id)` names a mechanic
+the first time a player meets it, once ever, by the title of its guide page
+(paced by the motor: two a round, the rest summed up). A record beaten is said
+by the motor.
 `Notify` is one chip, top-right, with one look for all the games (chosen in
 [`lab/notify.html`](../lab/notify.html)) — pass a `kind` and, if it helps, an
 `icon`, and nothing else. Never paint a status line on the canvas and never
@@ -170,7 +172,9 @@ chapters of pages, one per rule, biome, object or special card, each with the
 level that first deals it (`lv`). **A page shows before it tells**: a picture
 first (`pic` — the round's own renderer on a canvas, one of the game's cards,
 a cut of its artwork), a table for what a thing pays (`rows`), then two or
-three short lines. The Help card ends on the book's line (*Tap {book} for more help*), which
+three short sentences, as ONE `text` string (paragraphs split on a blank
+line). A thing's name and description are written once, in its own table, and
+read from there by its page, its cards and its notice. The Help card ends on the book's line (*Tap {book} for more help*), which
 opens it, a notice wearing the book and the "!" log open the page a `Notify.learn` named, and a tap on an element of the
 table opens its page with `__GUIDE__.open(id)`. See
 [the guide in CLAUDE.md](../CLAUDE.md#the-guide).

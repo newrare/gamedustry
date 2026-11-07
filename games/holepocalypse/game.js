@@ -924,7 +924,7 @@
     function spawnOne(i) {
       var kind = pickKind();
       // a zombie whose rule the frame cannot say is named the first time one walks on
-      if (TIPS[kind]) Notify.learn(kind, KINDS[kind].name, { sub: Lang.t(TIPS[kind]) });
+      if (kind === "shield" || kind === "necro") Notify.learn(kind);
       if (B.terrain === "grave" && Math.random() < 0.3) {
         var gs = bumpers.filter(function (b) { return b.grave && !b.dead; });
         if (gs.length) {
@@ -955,7 +955,7 @@
       bossRef.lane = 0.5;
       bossRef.t0 = time;
       // an event the player did not make: the first time, it names its page
-      if (!Notify.learn(kind, K.name, { sub: Lang.t("Boss"), kind: "warn" }))
+      if (!Notify.learn(kind))
         Notify.say(K.name, { sub: Lang.t("Boss"), kind: "warn", key: "boss" });
       Sound.clip("boss", 1, 0.6);
       Fx.shake(10, 0.5);
@@ -1080,7 +1080,7 @@
            the moment the tee is ready, rather than being thrown away. */
         if (v && cool > 0 && bossRef && bag > 0) {
           pending = v;
-          Notify.learn("boss", "Reloading", { sub: Lang.t("The boss slows your swing"), kind: "warn" });
+          Notify.learn("boss");
         } else if (v) fire(v.vx, v.vy, false, v.lob ? v : null);
       }
       aim = null;
@@ -1122,14 +1122,13 @@
       if (kd === "last") {
         for (var i = 0; i < mons.length; i++) mons[i].ky -= LAST_PUSH;
         // the round turning on the player: an event, named once as a mechanic
-        if (!Notify.learn("last", "Last stand!", { sub: Lang.t("Hold to fire in bursts"), kind: "warn" }))
+        if (!Notify.learn("last"))
           Notify.say("Last stand!", { sub: Lang.t("Hold to fire in bursts"), kind: "warn", key: "last" });
         Sound.clip("last", 0.4, 0.7);
         Fx.flash("#ff3030", 0.35);
-      } else {
-        // the super's own callout names it (firePower); how the gun is played is told once
-        Notify.learn("supers4", "Rush", { sub: Lang.t("Hold to aim, release to putt") });
       }
+      // a Rush needs no notice: the super's own callout names it (firePower), and
+      // the loadout card the player picked it from says how its gun is played
       hudFlags();
     }
     function updatePhase(dt) {
@@ -1484,7 +1483,7 @@
           var back = flags < FLAGS && phase !== "last";
           if (back) { flags++; hudFlags(); }
           Pop.show("bonus", { word: Lang.t(m.name) + " x" + Math.max(1, n), at: { x: sx(s.x), y: sy(s.y - 70) },
-                              sub: back ? Lang.t("Flag back") + " " + flags + " / " + FLAGS : "" });
+                              sub: back ? "Flag back" : "" });
           Sound.clip("side", 0.8);
           // the flag moves on, and is capped for a while where it lands
           s.cool = TARGET_COOL; s.hit = 0.4; s.shown = kind;
@@ -1535,7 +1534,7 @@
       Pop.text(sx(m.x), sy(m.y - 40), "+" + gain, { color: goldT > 0 ? "#ffd34d" : "#e8ff9a", size: 22, life: 0.6, tier: 1 });
       if (n > bestChain) bestChain = n;
       if (n === 4 || n === 6 || n === 8 || n >= 10 && n % 5 === 0) {
-        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Combo x") + n, sub: "+" + gain });
+        Pop.show(n >= 10 ? "ultra" : "combo", { word: Lang.t("Combo x") + n });
         Sound.clip("combo", 0.3, 1 + Math.min(n, 12) * 0.03);
       }
       Sound.clip("down", 0.45, 0.9 + Math.random() * 0.2);
@@ -2104,7 +2103,7 @@
       Sound.clip("flag", 0.7);
       if (phase === "last") return;           // the gun holds the line: nothing left to lose
       flags -= n; flagsLost += n;
-      Pop.show("alert", { word: "Flag lost", sub: Math.max(0, flags) + " / " + FLAGS });
+      Pop.show("alert", { word: "Flag lost" });
       if (flags <= 0) {
         flags = 0;
         if (!lastUsed) { lastUsed = true; startPhase("last"); }
@@ -2253,19 +2252,22 @@
       if (!started) {
         started = true;
         /* A MECHANIC MET FOR THE FIRST TIME is named once per player
-           (Notify.learn), and its line in the "!" log opens its page of the
-           guide — the rules themselves are the guide's, never a line during
-           play. The web build opens its first round under the Help card; a
-           playable has neither, so it keeps the two words on the controls.
-           Only what the frame cannot say is named: a terrain, a twist or a
-           zombie that reads at a glance is left to the guide. */
+           (Notify.learn) by the title of its page of the guide, which the
+           notice's line in the "!" log opens — the rules themselves are the
+           guide's, never a line during play. The web build opens its first
+           round under the Help card, which already shows the gesture and the
+           flags. A playable has neither card nor guide, so it keeps the two
+           words on the controls: the old form of Notify.learn, whose words
+           are said only where there is no guide. Only what the frame cannot
+           say is named: a terrain, a twist or a zombie that reads at a glance
+           is left to the guide. */
         if (L.help && !window.__GUIDE__) {
           Notify.learn("shot", "Roll or lob", { sub: Lang.t("Blue band to roll, orange band to lob"), kind: "info", hold: 5000 });
           Notify.learn("flags", "Ball flags", { sub: Lang.t("Coloured holes give special balls"), kind: "info" });
         }
-        if (L.lobHelp) Notify.learn("lob", "The lob", { sub: Lang.t("Aim from the orange semicircle to lob") });
+        if (L.lobHelp) Notify.learn("lob");
         var met = MET_TERRAIN[B.terrain];
-        if (met) Notify.learn(met[0], met[1], { sub: Lang.t(met[2]) });
+        if (met) Notify.learn(met);
       }
       updateStress(dt);
       updateControl(dt);
@@ -2318,18 +2320,10 @@
       if (!calm) { updateMonsters(dt); updateSkulls(dt); }
     }
 
-    /* What a band's terrain says the first time it is met: the page of the
-       guide, the word and its line. Sand and ice read at a glance, and so
-       does every twist level (the guide has their pages). */
-    var MET_TERRAIN = {
-      water:  ["ponds", "Whirlpools", "Hit a zombie hard with a pond behind it"],
-      grave:  ["graves", "Graves", "Break graves so no more zombies rise"]
-    };
-    // the zombies named on their first walk-on: a rule the frame cannot say
-    var TIPS = {
-      shield: "Lob over it or bounce off the edge",
-      necro: "It raises fallen zombies. Knock it out first."
-    };
+    /* What a band's terrain names the first time it is met: the page of the
+       guide. Sand and ice read at a glance, and so does every twist level
+       (the guide has their pages). */
+    var MET_TERRAIN = { water: "ponds", grave: "graves" };
 
     // ======================================================================
     //  RENDER
@@ -3625,66 +3619,50 @@
                   aim = { x: TEE_X + 80, y: TEE_Y - 150, held: 0, mode: "direct" };
                   drawBands(0.76); drawPreview(); paintTee();
                 });
-              }, lines: [
-                Lang.t("Put your finger in the blue band to roll, in the orange band to lob."),
-                Lang.t("The farther you aim from the tee, the harder the shot.") ] },
+              }, text: Lang.t("Put your finger in the blue band to roll, in the orange band to lob.\n\nThe farther you aim from the tee, the harder the shot.") },
             { id: "lob", title: Lang.t("The lob"), lv: 3, pic: function () {
                 return fieldPic(0, 60, 560, 600, 650, 0.5, function () {
                   picMon("walker", 290, 860, 3); picMon("walker", 400, 830, 6); picMon("walker", 480, 900, 1);
                   aim = { x: TEE_X + 40, y: TEE_Y - 215, held: 0, mode: "lob" };
                   drawBands(0.5); drawPreview(); paintTee();
                 });
-              }, lines: [
-                Lang.t("A lob flies over the horde. It lands softly enough to drop into a hole."),
-                Lang.t("The longer the lob, the less precisely it lands.") ] },
+              }, text: Lang.t("A lob flies over the horde. It lands softly enough to drop into a hole.\n\nThe longer the lob, the less precisely it lands.") },
             { id: "bag", title: Lang.t("The bag"), pic: function () {
                 return fieldPic(0, 30, 930, 600, 260, 0.9, function () {
                   bag = 3; specials = ["explosive", "explosive"]; regenT = 1.2;
                   paintTee(); drawBag(); drawBagLabel();
                 });
-              }, lines: [
-                Lang.t("Each shot uses a ball from your bag. The bag then refills, more or less quickly.") ] },
+              }, text: Lang.t("Each shot uses a ball from your bag. The bag then refills, more or less quickly.") },
             { id: "hole", title: Lang.t("The hole"), pic: function () {
                 return fieldPic(0, 130, 400, 460, 340, 0.94, function () {
                   picMon("walker", 230, 650, 4); picMon("walker", 500, 625, 7);
                   picHole(360, 690); picBall("plain", 335, 728);
                 });
-              }, lines: [
-                Lang.t("Roll a ball gently into the hole. Too fast, and it skips over."),
-                Lang.t("A long shot, a lob or a bank shot makes a bigger shockwave.") ] },
+              }, text: Lang.t("Roll a ball gently into the hole. Too fast, and it skips over.\n\nA long shot, a lob or a bank shot makes a bigger shockwave.") },
             { id: "flags", title: Lang.t("Ball flags"), pic: function () {
                 return fieldPic(0, 120, 480, 480, 240, 1, function () {
                   picFlag("explosive", 240, 650); picFlag("multi", 480, 640); picBall("plain", 300, 700);
                 });
-              }, lines: [
-                Lang.t("Roll a ball into a coloured flag to win 3 balls of its kind."),
-                Lang.t("A coloured flag also gives back a lost flag (hit point).") ] },
+              }, text: Lang.t("Roll a ball into a coloured flag to win 3 balls of its kind.\n\nA coloured flag also gives back a lost flag (hit point).") },
             { id: "chain", title: Lang.t("Combos"), pic: function () {
                 return fieldPic(0, 130, 520, 460, 230, 1, function () {
                   picMon("walker", 230, 700, 10, true); picMon("walker", 345, 685, 11, true); picMon("walker", 460, 705, 9);
                   picBall("plain", 280, 725);
                 });
-              }, lines: [
-                Lang.t("Zombies bounce off each other like billiard balls. Knock one into another to damage both."),
-                Lang.t("All the KOs of one shot create a combo. The third pays 300 points, the fourth 400 points…") ] },
+              }, text: Lang.t("Zombies bounce off each other like billiard balls. Knock one into another to damage both.\n\nAll the KOs of one shot create a combo. The third pays 300 points, the fourth 400 points…") },
             { id: "supers", title: Lang.t("Supers"), pic: function () {
                 return fieldPic(0, 380, 840, 340, 270, 1, function () {
                   picMon("walker", 470, 990, 3);
                   paintSuper({ x: superX(1015), y: 1015, power: "rain", charge: 1, hit: 0 }, 0.5);
                   paintSuper({ x: superX(907), y: 907, power: "fan", charge: 0.6, hit: 0 }, 0.5);
                 });
-              }, lines: [
-                Lang.t("Every KO charges your supers. One super meter is completely filled with 12 KOs."),
-                Lang.t("Tap a charged super to launch it. The super's balls don't come out of your bag."),
-                Lang.t("Before each level, pick the super powers you take. New special ones unlock as you climb.") ] },
+              }, text: Lang.t("Every KO charges your supers. One super meter is completely filled with 12 KOs.\n\nTap a charged super to launch it. The super's balls don't come out of your bag.\n\nBefore each level, pick the super powers you take. New special ones unlock as you climb.") },
             { id: "line", title: Lang.t("The line"), pic: function () {
                 return fieldPic(0, 140, 880, 440, 300, 1, function () {
                   picMon("walker", 260, 1060, 2); picMon("walker", 400, 1112, 10, true);
                   drawFx("boom", 3, 430, 1095, 200);
                 });
-              }, lines: [
-                Lang.t("A zombie that crosses the white line explodes. That costs you a flag (hit point). Luckily, the blast pushes the horde back."),
-                Lang.t("Sink a ball in a coloured hole to win back a lost flag (hit point).") ] },
+              }, text: Lang.t("A zombie that crosses the white line explodes. That costs you a flag (hit point). Luckily, the blast pushes the horde back.\n\nSink a ball in a coloured hole to win back a lost flag (hit point).") },
             { id: "last", title: Lang.t("The last stand"), pic: function () {
                 return fieldPic(0, 30, 900, 560, 300, 0.86, function () {
                   phase = "last"; phaseT = 5; aim = { x: 300, y: 960, held: 1 };
@@ -3692,17 +3670,13 @@
                   for (var i = 1; i <= 4; i++) picBall("plain", TEE_X + (300 - TEE_X) * i / 5, TEE_Y + (960 - TEE_Y) * i / 5);
                   drawGunAura(); drawReticle(); paintTee(); drawBag(); drawBagLabel();
                 });
-              }, lines: [
-                Lang.t("Lose your last hit point and you get one last chance to win it back by using burst mode for 8 seconds. This is only possible once a round."),
-                Lang.t("Hold to fire in bursts. Hold out and you get one last-chance flag (hit point) back.") ] },
+              }, text: Lang.t("Lose your last hit point and you get one last chance to win it back by using burst mode for 8 seconds. This is only possible once a round.\n\nHold to fire in bursts. Hold out and you get one last-chance flag (hit point) back.") },
             { id: "goal", title: Lang.t("Goal and stars"), pic: function () {
                 return fieldPic(0, 160, 40, 400, 330, 0.95, function () {
                   picMon("walker", 380, 175, 1); picMon("walker", 300, 215, 4); picMon("walker", 440, 270, 6); picMon("walker", 330, 340, 2);
                 });
               }, rows: [[Lang.t("The level's goal"), "★"], [Lang.t("Lose no flag"), "★★"], [Lang.t("The level's bonus"), "★★★"]],
-              lines: [
-                Lang.t("Each level has one goal: survive its waves, sink the hole, knock out a boss…"),
-                Lang.t("The round ends as soon as the goal is met.") ] },
+              text: Lang.t("Each level has one goal: survive its waves, sink the hole, knock out a boss…\n\nThe round ends as soon as the goal is met.") },
             { id: "boss", title: Lang.t("Bosses"), lv: 6, pic: function () {
                 // the hole's full shockwave rolling up the fairway to the
                 // boss at the top of it, drawn mid-wave and held
@@ -3717,8 +3691,7 @@
                   drawBossBar();
                 });
               }, rows: [[Lang.t("A ball deals at most"), "2"], [Lang.t("A full shockwave"), String(SHOCK_BOSS)], [Lang.t("Flags (hit points) lost if a boss reaches the line"), "2"]],
-              lines: [
-                Lang.t("While a boss is on the field, your fire rate is slightly changed.") ] }
+              text: Lang.t("While a boss is on the field, your fire rate is slightly changed.") }
           ] },
 
           { key: "country", label: Lang.t(B0[0].name), pages: [
@@ -3727,41 +3700,34 @@
                   picBumper("course04", 230, 610); picBumper("course05", 480, 590); picBumper("course11", 360, 700);
                   picMon("walker", 560, 700, 3); picBall("plain", 290, 680);
                 });
-              }, lines: [
-                Lang.t("Hit an obstacle hard enough and it breaks.") ] },
+              }, text: Lang.t("Hit an obstacle hard enough and it breaks.") },
             { id: "walker", title: Lang.t(KINDS.walker.name), lv: 1, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 240, 670, 1); picMon("walker", 360, 645, 3); picMon("walker", 480, 680, 6);
                 });
-              }, lines: [
-                Lang.t("A walker shambles toward you without straying far from its lane.") ] },
+              }, text: Lang.t("A walker shambles toward you without straying far from its lane.") },
             { id: "boomer", title: Lang.t(KINDS.boomer.name), lv: 2, pic: function () {
                 return fieldPic(0, 140, 470, 440, 230, 1, function () {
                   picMon("walker", 470, 670, 10, true); picMon("boomer", 280, 670, 2);
                   drawFx("boom", 3, 460, 625, 200);
                 });
-              }, lines: [
-                Lang.t("When knocked out, a boomer bursts and deals 3 damage to every zombie around it."),
-                Lang.t("Burst a boomer inside the pack.") ] },
+              }, text: Lang.t("When knocked out, a boomer bursts and deals 3 damage to every zombie around it.\n\nBurst a boomer inside the pack.") },
             { id: "moving", title: Lang.t("The moving hole"), lv: 4, pic: function () {
                 return fieldPic(0, 100, 380, 520, 330, 1, function () {
                   var h = { x: 420, y: 650, home: 360, amp: 150 };
                   drawRail(h); picHole(h.x, h.y); picBall("plain", 300, 690);
                 });
-              }, lines: [
-                Lang.t("Sink the ball in the moving hole for a bigger shockwave.") ] },
+              }, text: Lang.t("Sink the ball in the moving hole for a bigger shockwave.") },
             { id: "scars", title: Lang.t("Damaged course"), lv: 5, pic: function () {
                 return fieldPic(0, 100, 470, 520, 290, 1, function () {
                   drawFx("crater", FX.crater.n - 1, 240, 600, 160); drawFx("burn", FX.burn.n - 1, 470, 690, 130);
                   drawFx("crack", FX.crack.n - 1, 340, 700, 110); drawFx("boom", FX.boom.n - 1, 480, 560, 200);
                   picMon("walker", 380, 640, 4);
                 });
-              }, lines: [
-                Lang.t("Every crater, scorch and crack stays on the grass for the whole round.") ] },
+              }, text: Lang.t("Every crater, scorch and crack stays on the grass for the whole round.") },
             { id: "greenkeeper", title: Lang.t(KINDS.greenkeeper.name), lv: 6, pic: function () {
                 return bossPic("greenkeeper", 0, function () { picBumper("course04", 520, 445); });
-              }, rows: [hpRow(KINDS.greenkeeper.hp)], lines: [
-                Lang.t("From the front, each hit on the greenkeeper deals only one damage. Bank your shots off the edges of the field to maximise damage.") ] }
+              }, rows: [hpRow(KINDS.greenkeeper.hp)], text: Lang.t("From the front, each hit on the greenkeeper deals only one damage. Bank your shots off the edges of the field to maximise damage.") }
           ] },
 
           { key: "desert", label: Lang.t(B0[1].name), pages: [
@@ -3771,28 +3737,22 @@
                   paintTerrain({ kind: "bunker", key: "course07", x: 470, y: 670, rx: 86, ry: 54, life: -1 });
                   picMon("walker", 260, 640, 3); picBall("plain", 450, 665);
                 });
-              }, lines: [
-                Lang.t("Sand brakes a ball hard the moment it rolls in.") ] },
+              }, text: Lang.t("Sand brakes a ball hard the moment it rolls in.") },
             { id: "shield", title: Lang.t(KINDS.shield.name), lv: 7, pic: function () {
                 return fieldPic(1, 140, 470, 440, 230, 1, function () {
                   picMon("shield", 270, 665, 2); picMon("shield", 440, 650, 10); picBall("plain", 440, 690);
                 });
-              }, lines: [
-                Lang.t("The shield zombie's golf bag blocks shots that come straight from below."),
-                Lang.t("Lob and aim at the shield zombie's head. You can also bank off one of the edges or use special balls (heavy, giant, etc.).") ] },
+              }, text: Lang.t("The shield zombie's golf bag blocks shots that come straight from below.\n\nLob and aim at the shield zombie's head. You can also bank off one of the edges or use special balls (heavy, giant, etc.).") },
             { id: "wind", title: Lang.t("Wind"), lv: 10, pic: function () {
                 return fieldPic(1, 100, 470, 520, 290, 1, function () {
                   picMon("walker", 420, 620, 2);
                   drawFx("wind", 2, 250, 560, 190, 0.85); drawFx("wind", 4, 430, 690, 190, 0.85);
                   picBall("plain", 300, 650);
                 });
-              }, lines: [
-                Lang.t("The wind bends every shot, rolled or lobbed.") ] },
+              }, text: Lang.t("The wind bends every shot, rolled or lobbed.") },
             { id: "colossus", title: Lang.t(KINDS.colossus.name), lv: 12, pic: function () {
                 return bossPic("colossus", 1, function () { picBumper("decor03", 530, 455); });
-              }, rows: [hpRow(KINDS.colossus.hp)], lines: [
-                Lang.t("The colossus blocks direct shots with its shield and throws golf bags that block the lanes."),
-                Lang.t("Lob onto the colossus's head instead. Each ball deals 6 damage.") ] }
+              }, rows: [hpRow(KINDS.colossus.hp)], text: Lang.t("The colossus blocks direct shots with its shield and throws golf bags that block the lanes.\n\nLob onto the colossus's head instead. Each ball deals 6 damage.") }
           ] },
 
           { key: "bayou", label: Lang.t(B0[2].name), pages: [
@@ -3801,27 +3761,22 @@
                   paintTerrain({ kind: "pond", key: "course08", x: 330, y: 555, rx: 92, ry: 60, life: -1 });
                   picMon("walker", 345, 668, 10, true); picBall("plain", 352, 715);
                 });
-              }, lines: [
-                Lang.t("A ball in the water is lost."),
-                Lang.t("Knock a zombie into a pond and it drowns.") ] },
+              }, text: Lang.t("A ball in the water is lost.\n\nKnock a zombie into a pond and it drowns.") },
             { id: "mudder", title: Lang.t(KINDS.mudder.name), lv: 14, pic: function () {
                 return fieldPic(2, 140, 470, 440, 230, 1, function () {
                   picMon("mudder", 270, 670, 3); picMon("mudling", 430, 655, 16); picMon("mudling", 500, 680, 16);
                 });
-              }, lines: [
-                Lang.t("Knocked out, a mudder splits into two mudlings that burst at the slightest touch.") ] },
+              }, text: Lang.t("Knocked out, a mudder splits into two mudlings that burst at the slightest touch.") },
             { id: "night", title: Lang.t("Night"), lv: 16, pic: function () {
                 return fieldPic(2, 100, 420, 520, 340, 0.93, function () {
                   picMon("walker", 300, 560, 2); picMon("walker", 460, 530, 5);
                   drawNight();
                   picMon("walker", 390, 735, 7);
                 });
-              }, lines: [
-                Lang.t("Only the bottom of the field is lit. The horde then comes out of the dark.") ] },
+              }, text: Lang.t("Only the bottom of the field is lit. The horde then comes out of the dark.") },
             { id: "bog", title: Lang.t(KINDS.bog.name), lv: 18, pic: function () {
                 return bossPic("bog", 2, function () { drawMud({ x: 360, y: 470, r: 130, life: 4 }); });
-              }, rows: [hpRow(KINDS.bog.hp)], lines: [
-                Lang.t("Knock the bog giant into a pond. Each dunk costs it 18 hit points.") ] }
+              }, rows: [hpRow(KINDS.bog.hp)], text: Lang.t("Knock the bog giant into a pond. Each dunk costs it 18 hit points.") }
           ] },
 
           { key: "frozen", label: Lang.t(B0[3].name), pages: [
@@ -3830,20 +3785,17 @@
                   paintTerrain({ kind: "ice", key: "course10", x: 360, y: 640, rx: 118, ry: 70, life: -1 });
                   picMon("walker", 300, 650, 10, true); picMon("walker", 380, 630, 11, true); picMon("walker", 440, 675, 9);
                 });
-              }, lines: [
-                Lang.t("Zombies slide on ice too, and are knocked back twice as far on that surface. Make the most of big pile-ups.") ] },
+              }, text: Lang.t("Zombies slide on ice too, and are knocked back twice as far on that surface. Make the most of big pile-ups.") },
             { id: "double", title: Lang.t("Two holes"), lv: 22, pic: function () {
                 return fieldPic(3, 100, 380, 520, 340, 0.94, function () {
                   picHole(240, 680); picHole(480, 660);
                 });
-              }, lines: [
-                Lang.t("Two holes on the fairway, but each one's shockwave covers less ground.") ] },
+              }, text: Lang.t("Two holes on the fairway, but each one's shockwave covers less ground.") },
             { id: "yeti", title: Lang.t(KINDS.yeti.name), lv: 24, pic: function () {
                 return bossPic("yeti", 3, function () {
                   paintTerrain({ kind: "ice", key: "course10", x: 360, y: 470, rx: 150, ry: 60, life: -1 });
                 });
-              }, rows: [hpRow(KINDS.yeti.hp)], lines: [
-                Lang.t("Fire hurts the yeti twice as much as any other blow.") ] }
+              }, rows: [hpRow(KINDS.yeti.hp)], text: Lang.t("Fire hurts the yeti twice as much as any other blow.") }
           ] },
 
           { key: "graveyard", label: Lang.t(B0[4].name), pages: [
@@ -3852,73 +3804,47 @@
                   picBumper("course12", 480, 600, true); picBumper("course12", 290, 610, true);
                   drawAura(290, 690, 30, 118, 0.8); picMon("walker", 290, 690, 1, false, 0.6);
                 });
-              }, lines: [
-                Lang.t("Graves break like obstacles. Once broken, no more zombies rise from them.") ] },
+              }, text: Lang.t("Graves break like obstacles. Once broken, no more zombies rise from them.") },
             { id: "runner", title: Lang.t(KINDS.runner.name), lv: 25, pic: function () {
                 return fieldPic(4, 140, 470, 440, 230, 1, function () {
                   picMon("runner", 290, 650, 2); picMon("runner", 440, 685, 6);
                 });
-              }, lines: [
-                Lang.t("A runner rushes at your flags as if it wanted to win a race.") ] },
+              }, text: Lang.t("A runner rushes at your flags as if it wanted to win a race.") },
             { id: "necro", title: Lang.t(KINDS.necro.name), lv: 26, pic: function () {
                 return fieldPic(4, 140, 470, 440, 230, 1, function () {
                   drawAura(290, 670, 30, 124, 1); picMon("necro", 290, 670, 6);
                   drawAura(460, 680, 30, 118, 0.8); picMon("walker", 460, 680, 1, false, 0.6);
                 });
-              }, lines: [
-                Lang.t("Every 10 seconds, the necromancer stops to raise the last two zombies knocked out."),
-                Lang.t("Knock the necromancer out first.") ] },
+              }, text: Lang.t("Every 10 seconds, the necromancer stops to raise the last two zombies knocked out.\n\nKnock the necromancer out first.") },
             { id: "horde", title: Lang.t("Horde"), lv: 28, pic: function () {
                 return fieldPic(4, 120, 450, 480, 270, 1, function () {
                   var spots = [[220, 560], [330, 540], [440, 565], [530, 590], [270, 640], [390, 630], [500, 670], [200, 700], [330, 710]];
                   for (var i = 0; i < spots.length; i++) picMon("walker", spots[i][0], spots[i][1], 1 + i % 8);
                 });
-              }, lines: [
-                Lang.t("Twice the zombies, but every one falls at the first hit.") ] },
+              }, text: Lang.t("Twice the zombies, but every one falls at the first hit.") },
             { id: "king", title: Lang.t(KINDS.king.name), lv: 30, pic: function () {
                 return bossPic("king", 4, function () {
                   skulls = [{ x: 490, y: 445, back: false }];
                   drawAura(220, 470, 30, 118, 0.8); picMon("walker", 220, 470, 1, false, 0.7);
                   drawSkulls();
                 });
-              }, rows: [hpRow(KINDS.king.hp)], lines: [
-                Lang.t("Send the skull-shaped balls back at the zombie king to deal 8 damage to him. You lose a flag (hit point) if that ball hits you.") ] }
+              }, rows: [hpRow(KINDS.king.hp)], text: Lang.t("Send the skull-shaped balls back at the zombie king to deal 8 damage to him. You lose a flag (hit point) if that ball hits you.") }
           ] },
 
           { key: "kinds", label: Lang.t("Ball kinds"), pages: [
-            { id: "kinds1", title: Lang.t("Explosive and multi"), lv: 1, pic: function () { return kindsPic(0, "explosive", "multi"); }, lines: [
-                Lang.t("The explosive ball deals 5 damage to nearby enemies."),
-                Lang.t("The multiball splits into three at its first bounce.") ] },
-            { id: "kinds2", title: Lang.t("Pierce and heavy"), lv: 7, pic: function () { return kindsPic(1, "pierce", "heavy"); }, lines: [
-                Lang.t("The piercing ball goes through every zombie in its path, dealing 3 damage to each."),
-                Lang.t("The heavy ball deals double damage and knocks zombies farther back. No shield blocks it.") ] },
-            { id: "kinds3", title: Lang.t("Homing and split"), lv: 14, pic: function () { return kindsPic(2, "homing", "split"); }, lines: [
-                Lang.t("The homing ball curves toward the nearest zombie for 3 seconds."),
-                Lang.t("The splitting ball splits into three at each of its first three bounces.") ] },
-            { id: "kinds4", title: Lang.t("Bouncy and fire"), lv: 19, pic: function () { return kindsPic(3, "bouncy", "fire"); }, lines: [
-                Lang.t("For 6 seconds, the bouncy ball keeps its full speed and bounces."),
-                Lang.t("The fire ball sets the grass alight where it hits.") ] },
-            { id: "kinds5", title: Lang.t("Ice and giant"), lv: 25, pic: function () { return kindsPic(4, "ice", "giant"); }, lines: [
-                Lang.t("The ice ball freezes the zombies it hits for 3 seconds."),
-                Lang.t("The giant ball is twice as big, deals +1 damage and goes through every shield.") ] }
+            { id: "kinds1", title: Lang.t("Explosive and multi"), lv: 1, pic: function () { return kindsPic(0, "explosive", "multi"); }, text: Lang.t("The explosive ball deals 5 damage to nearby enemies.\n\nThe multiball splits into three at its first bounce.") },
+            { id: "kinds2", title: Lang.t("Pierce and heavy"), lv: 7, pic: function () { return kindsPic(1, "pierce", "heavy"); }, text: Lang.t("The piercing ball goes through every zombie in its path, dealing 3 damage to each.\n\nThe heavy ball deals double damage and knocks zombies farther back. No shield blocks it.") },
+            { id: "kinds3", title: Lang.t("Homing and split"), lv: 14, pic: function () { return kindsPic(2, "homing", "split"); }, text: Lang.t("The homing ball curves toward the nearest zombie for 3 seconds.\n\nThe splitting ball splits into three at each of its first three bounces.") },
+            { id: "kinds4", title: Lang.t("Bouncy and fire"), lv: 19, pic: function () { return kindsPic(3, "bouncy", "fire"); }, text: Lang.t("For 6 seconds, the bouncy ball keeps its full speed and bounces.\n\nThe fire ball sets the grass alight where it hits.") },
+            { id: "kinds5", title: Lang.t("Ice and giant"), lv: 25, pic: function () { return kindsPic(4, "ice", "giant"); }, text: Lang.t("The ice ball freezes the zombies it hits for 3 seconds.\n\nThe giant ball is twice as big, deals +1 damage and goes through every shield.") }
           ] },
 
           { key: "supers", label: Lang.t("Supers"), pages: [
-            { id: "supers1", title: Lang.t(B0[0].name), lv: 1, pic: function () { return supersPic(["rain", "fan", "freeze", "holeblast"]); }, lines: [
-                Lang.t("Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once."),
-                Lang.t("Time freeze stops the horde for a few seconds. Hole blast sets off a hole's full shockwave.") ] },
-            { id: "supers2", title: Lang.t(B0[1].name), lv: 7, pic: function () { return supersPic(["seeker", "sniper", "sprinkler", "cart"]); }, lines: [
-                Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest zombies."),
-                Lang.t("Sprinklers push the whole horde back. The golf cart, for its part, charges up the busiest lane.") ] },
-            { id: "supers3", title: Lang.t(B0[2].name), lv: 13, pic: function () { return supersPic(["boomvolley", "splitstorm", "magnet", "hail"]); }, lines: [
-                Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 icy balls."),
-                Lang.t("Magnet hole makes the hole swallow every nearby ball for 6 seconds, at any speed.") ] },
-            { id: "supers4", title: Lang.t(B0[3].name), lv: 19, pic: function () { return supersPic(["firestorm", "superbounce", "cluster", "rush"]); }, lines: [
-                Lang.t("Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down."),
-                Lang.t("Cluster bombs split in five as they land. Rush hands you the gun that fires loads of balls for a few seconds.") ] },
-            { id: "supers5", title: Lang.t(B0[4].name), lv: 25, pic: function () { return supersPic(["meteor", "carpet", "golden", "mower"]); }, lines: [
-                Lang.t("Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field."),
-                Lang.t("Golden rain makes KOs pay ×3 for 8 seconds. Mower sends mowers across the field, crushing zombies.") ] }
+            { id: "supers1", title: Lang.t(B0[0].name), lv: 1, pic: function () { return supersPic(["rain", "fan", "freeze", "holeblast"]); }, text: Lang.t("Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once.\n\nTime freeze stops the horde for a few seconds. Hole blast sets off a hole's full shockwave.") },
+            { id: "supers2", title: Lang.t(B0[1].name), lv: 7, pic: function () { return supersPic(["seeker", "sniper", "sprinkler", "cart"]); }, text: Lang.t("Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest zombies.\n\nSprinklers push the whole horde back. The golf cart, for its part, charges up the busiest lane.") },
+            { id: "supers3", title: Lang.t(B0[2].name), lv: 13, pic: function () { return supersPic(["boomvolley", "splitstorm", "magnet", "hail"]); }, text: Lang.t("Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 icy balls.\n\nMagnet hole makes the hole swallow every nearby ball for 6 seconds, at any speed.") },
+            { id: "supers4", title: Lang.t(B0[3].name), lv: 19, pic: function () { return supersPic(["firestorm", "superbounce", "cluster", "rush"]); }, text: Lang.t("Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down.\n\nCluster bombs split in five as they land. Rush hands you the gun that fires loads of balls for a few seconds.") },
+            { id: "supers5", title: Lang.t(B0[4].name), lv: 25, pic: function () { return supersPic(["meteor", "carpet", "golden", "mower"]); }, text: Lang.t("Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field.\n\nGolden rain makes KOs pay ×3 for 8 seconds. Mower sends mowers across the field, crushing zombies.") }
           ] }
         ];
       }

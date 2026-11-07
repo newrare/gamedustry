@@ -268,12 +268,14 @@
 
   /* The few words the MOTOR writes on its own and no game declares: the
      names of the keys and the mouse actions of the how-to-play legend
-     (packages/shell, Demo), and the record beaten mid-round (Record). They ride in the same dictionary as the game's,
+     (packages/shell, Demo), the record beaten mid-round (Record) and the
+     discoveries the guide names (Notify.learn). They ride in the same dictionary as the game's,
      under it, so a game can still word one its own way. */
   var MOTOR_WORDS = {
     fr: { "Space": "Espace", "or": "ou", "Aim": "Viser", "Click": "Cliquer", "Hold": "Maintenir",
           "Drag": "Glisser", "Click, hold and release": "Cliquer, maintenir et relâcher",
-          "New record": "Nouveau record", "Previous: {n}": "Précédent : {n}" }
+          "New record": "Nouveau record", "Previous: {n}": "Précédent : {n}",
+          "New: {title}": "Nouveau : {title}", "{n} pages to read in the guide": "{n} pages à lire dans le guide" }
   };
 
   /* Everything the motor wrote once and would otherwise keep in English: the
@@ -1598,6 +1600,7 @@
     if (GD()) items.push({ name: "guide", icon: "book", label: GD().label(),
                            on: function () { GD().open(); } });
     VW.cornerExtra(items);
+    if (GD() && GD().sync) GD().sync();      // the count of NEW pages on the book
   }
 
   function labelControls() {

@@ -36,6 +36,13 @@
 </head>
 <body>
 
+<!-- the hanko's worn edge (skin.css, HANKO): turbulence pushing a scroll stamp's outline about -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="gd-rough" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
 <div id="safe-probe"></div>
 <div id="backdrop"></div>
 

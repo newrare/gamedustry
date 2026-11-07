@@ -19,7 +19,10 @@
   The brief is an ADAPTATION, not a re-translation: the current English is
   kept when it already says what the new French says, and otherwise moved as
   little as the meaning needs — same markup, same {placeholders}, same spaces
-  at either end (a fragment is glued to an expression), normal case.
+  at either end (a fragment is glued to an expression), normal case, and the
+  same PARAGRAPHS: a guide page or a description is one string whose
+  paragraphs are split on a blank line (packages/webshell/guide.js), and the
+  English keeps a blank line wherever the corrected French has one.
 */
 
 import { execFile } from 'node:child_process';
@@ -37,7 +40,8 @@ Rules:
 - Keep every HTML tag and its attributes exactly (<b class="w-...">, <br>), and every {placeholder}.
 - Keep leading and trailing spaces exactly: some strings are glued to a number or another string.
 - Normal case: a capital on the first letter and on proper nouns only, never a word in capitals.
-- One line, no line breaks, no French.
+- Paragraphs: wherever the corrected French has a blank line (\n\n), the English has one at the same place; no other line break.
+- No French.
 Output ONLY a JSON array of strings, one per item, in the same order. No prose, no code fence.`;
 
 function claude(prompt) {
@@ -69,8 +73,10 @@ export async function translateToEnglish(game, items) {
   if (!Array.isArray(out) || out.length !== items.length || out.some((s) => typeof s !== 'string')) {
     throw new Error(`the translator returned ${Array.isArray(out) ? out.length : 'no'} strings for ${items.length}`);
   }
-  // A line break would be refused by apply-text; a break in game copy is <br>.
-  return out.map((s) => s.replace(/[\r\n]+/g, ' '));
+  /* A paragraph break (a blank line) is kept, as the guide splits on it; any
+     other line break is a space — apply-text refuses one in markup, where a
+     break is <br>, and the French of such a string never carries one. */
+  return out.map((s) => s.replace(/\r/g, '').split(/\n[ \t]*\n\s*/).map((p) => p.replace(/\s*\n\s*/g, ' ')).join('\n\n'));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

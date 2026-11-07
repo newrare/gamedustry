@@ -889,24 +889,24 @@
         "High card, a pair too low or a cursed card left out of the Poker hand: the hand busts and costs a life." ] },
       bins: { eye:"Bins", title:"No bins left", lines:[
         "You may bin {n} cards per hand. The next one costs a life." ] },
-      floor: { eye:"New rule", title:"Pairs of {r} or better", say:"A lower pair busts the hand", lines:[
+      floor: { eye:"New rule", title:"Pairs of {r} or better", learn:true, lines:[
         "From this level on, a single pair only pays from {r} up.",
         "A lower pair busts the hand. Two pair and better always pay." ] },
-      joker: { eye:"New", title:"Jokers", say:"Paid hands fill the Joker gauge", lines:[
+      joker: { eye:"New", title:"Jokers", learn:true, lines:[
         "Paid hands fill the Joker gauge, strong ones faster. A full gauge deals you two Jokers to choose from.",
         "A Joker lasts the whole run, on every hand." ] },
-      fate: { eye:"New", title:"Fate jokers", say:"Push a card up onto one of the Jokers", lines:[
+      fate: { eye:"New", title:"Fate jokers", learn:true, lines:[
         "Push the card up onto a Fate Joker to play it. Each one works once per hand." ] },
-      pot: { eye:"New", title:"The pot", say:"Bins feed the next paid hand", hands:true, lines:[
+      pot: { eye:"New", title:"The pot", learn:true, hands:true, lines:[
         "Binned cards drop their value in chips into the pot. Each paid hand takes its pot share, bigger for a strong Poker hand.",
         "A bust burns half the pot. The deck's last hand takes all of it." ] },
-      xmult: { eye:"How scoring works", title:"Add or multiply", say:"A × boosts the multiplier", demo:true, lines:[
+      xmult: { eye:"How scoring works", title:"Add or multiply", learn:true, demo:true, lines:[
         "A + adds to the current multiplier, while a × multiplies it by its value. So with Jokers, it is best to have the × ones on the right of the count (the score counter)." ] },
       gold:  { eye:"Special card", title:"Gold", lines:[ "A gold card adds +40 chips to its hand, even when it is not part of the Poker hand." ] },
-      glass: { eye:"Special card", title:"Glass", say:"Boosts the multiplier ×2, or shatters", lines:[ "A glass card boosts the multiplier ×2, but one time in four it shatters and gives nothing." ] },
-      wild:  { eye:"Special card", title:"Wild", say:"Counts as every suit", lines:[ "A wild card counts as every suit: it fits any flush." ] },
+      glass: { eye:"Special card", title:"Glass", learn:true, lines:[ "A glass card boosts the multiplier ×2, but one time in four it shatters and gives nothing." ] },
+      wild:  { eye:"Special card", title:"Wild", learn:true, lines:[ "A wild card counts as every suit: it fits any flush." ] },
       lucky: { eye:"Special card", title:"Lucky", lines:[ "A lucky card adds +10 to the multiplier one time in three." ] },
-      curse: { eye:"Danger", title:"Cursed card", say:"It busts the hand unless it is part of the Poker hand", lines:[
+      curse: { eye:"Danger", title:"Cursed card", learn:true, lines:[
         "A cursed card busts the hand unless it is part of the Poker hand. Used in it, the curse breaks and adds +{m} to the multiplier.",
         "Binning a cursed card costs two bins. The Exorcist Joker gives you one back instead." ] },
       veil:  { eye:"Danger", title:"Veiled card", lines:[
@@ -948,17 +948,14 @@
          a page of it: a tap on the table opens that page, and an idea met
          for the first time is NAMED by a notice whose line in the log opens
          it — no card on the way, the round is never stopped to teach. Only
-         a tip with a `say` is named: a hidden rule or a choice to make. What
+         a tip with `learn` is named: a hidden rule or a choice to make. What
          the count, a callout or the HUD already shows (the count, a bust,
          the bins, a gold card) is not. A playable has no guide and keeps the
          cards below. */
       var GD = window.__GUIDE__;
       if (GD) {
         if (again) GD.open(key);
-        else if (TIPS[key].say) {
-          Notify.learn(key, fill(Lang.t(TIPS[key].title), vars),
-                       { sub:fill(Lang.t(TIPS[key].say), vars), mark:id });
-        }
+        else if (TIPS[key].learn) Notify.learn(key, null, { mark:id });
         return;
       }
       var mark = id || key, s = told();
@@ -1838,8 +1835,9 @@
       var i = out ? slot : rail.length - 1;
       Fx.burst(railX(i), L.railY + L.railH / 2, { color:[FAM_COL[J.fam], "#ffffff"], count:16, speed:320, life:0.45, grav:300 });
       lit.who = "joker"; lit.idx = i; lit.t = 1;
-      // the joker it replaced rides on the callout: one word for one choice
-      Pop.show("bonus", { word:J.name, sub:out ? fill(Lang.t("{j} leaves the Joker row"), { j:Lang.t(JOKER_BY[out.id].name) }) : null, at:"top" });
+      // the joker it replaced is told as a notice: a sentence wants the 2.2 s
+      Pop.show("bonus", { word:J.name, at:"top" });
+      if (out) Notify.say(fill(Lang.t("{j} leaves the Joker row"), { j:Lang.t(JOKER_BY[out.id].name) }), { kind:"info", key:"joker-out" });
       Sound.cue("joker", 0.5, 1, 700, 0.12, "triangle");
       if (J.act) tip("fate", null, "fate3");     // told again since the push up replaced the drags
       if (J.xm) tip("xmult");
@@ -1908,7 +1906,7 @@
     function tipPage(key, lv, vars, pic, skip) {
       var T = TIPS[key], lines = [], i;
       for (i = 0; i < T.lines.length; i++) if (!skip || skip.indexOf(i) < 0) lines.push(fill(Lang.t(T.lines[i]), vars));
-      return { id:key, title:fill(Lang.t(T.title), vars), lines:lines, lv:lv, pic:pic };
+      return { id:key, title:fill(Lang.t(T.title), vars), text:lines.join("\n\n"), lv:lv, pic:pic };
     }
     /* A row of cards painted by drawCard on a canvas of its own: the round's
        `ctx` is lent to it for the length of the call, which is how a card in
@@ -2004,8 +2002,8 @@
             tipPage("basics", 0, null, function () {
               return cardsPic([card(6, 1), card(6, 0), card(6, 2), card(1, 3), card(1, 1)]);
             }),
-            { id:"hands", title:Lang.t("Poker hands"), node:buildHands, lines:[
-              Lang.t("Each Poker hand starts from its base, the chips × multiplier shown beside it.") ] },
+            { id:"hands", title:Lang.t("Poker hands"), node:buildHands,
+              text:Lang.t("Each Poker hand starts from its base, the chips × multiplier shown beside it.") },
             scorePage(),
             tipPage("double", 0, null, function () {
               return cardsPic([card(6, 1), card(8, 1), card(12, 1), card(1, 1), card(6, 0, { mod:"wild" })]);
@@ -2031,9 +2029,9 @@
           { key:"climb", label:Lang.t("The climb"), pages:[
             { id:"floor", title:Lang.t("Minimum pair"), lv:7, pic:function () {
                 return cardsPic([card(6, 0, { dim:1 }), card(6, 1, { dim:1 }), card(7, 2, { gap:1 }), card(7, 3)]);
-              }, lines:[
-              Lang.t("From level 7, a single pair needs 8s or better to pay, then 10s from level 13. A pair of jacks or better from level 19."),
-              Lang.t("A lower pair busts the hand. Two pair and better always pay.") ] }
+              },
+              text:Lang.t("From level 7, a single pair needs 8s or better to pay, then 10s from level 13. A pair of jacks or better from level 19.") + "\n\n" +
+                   Lang.t("A lower pair busts the hand. Two pair and better always pay.") }
           ] }
         ];
       }
@@ -2208,7 +2206,7 @@
           Fx.burst(Layout.left + 40, L.gateY, {
             color:[BIN_COL, "#ffffff"], count:8, speed:260, life:0.35, grav:400 });
           if (chute === cap) {
-            Pop.show("alert", { word:"No bins left", sub:"The next bin costs a life" });
+            Pop.show("alert", { word:"No bins left" });
             tip("bins", { n:cap });
           }
         }

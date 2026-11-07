@@ -42,6 +42,7 @@
     }
     if (s !== "playing") { Overlay.clear(); Enter.cancel(); }   // a round left mid-entrance
     Notify.state(s);
+    Notify.round(s);                      // the discoveries' pacing (Notify.learn)
     Ad.track("state", s);
     for (var i = 0; i < stateHooks.length; i++) stateHooks[i](s);
   }
@@ -275,14 +276,16 @@
              that page — in a round too, which the card pauses — and so does
              its line in the log (packages/webshell/meta.js, the "!" card)
 
-         Notify.learn("pot", "The pot", { sub: "Binned chips pay the hand" })
+         Notify.learn("pot")
 
        says a MECHANIC once per player — the first round it is met in — and
        never again (`guide:<slug>` in Store, erased with the game's data). The
-       id is the guide page that explains it, so the notice carries it as its
-       `guide` and the log opens it; `mark` is what is remembered instead of
-       the id, for a rule told again under a new value (slipdeck's pair floor,
-       "floor10"). Returns true when it spoke.
+       id is the guide page that explains it: the notice reads "New: <its
+       title>", carries it as its `guide`, and the log opens it — the game
+       writes no word for it. The page is marked NEW in the guide at once and
+       the notice is PACED (below, `learn`); `mark` is what is remembered
+       instead of the id, for a rule told again under a new value (slipdeck's
+       pair floor, "floor10"). Returns true when the mechanic was new.
 
      ONE LOOK, ONE PLACE, ONE RULE FOR A CROWD — chosen in lab/notify.html
      (the `chip` preset, tuned) and written here as constants, because a
@@ -544,22 +547,111 @@
     /* A MECHANIC, NAMED ONCE PER PLAYER. Every game had its own memory for
        this — once a round, once a session, once ever, under six Store keys —
        and a player told the same lesson every round stops reading notices.
-       One key per game, one mark per id, kept until OPTIONS erases the game. */
+       One key per game, one mark per id, kept until OPTIONS erases the game.
+
+       THE GUIDE'S PAGE IS THE WORDS. `Notify.learn(id)` names no word of its
+       own: the notice reads "New: <the page's title>", one line of the motor
+       for every game, so a discovery is written ONCE — as its page — and
+       never again as a notice's line and sub. A game that still passes a
+       word is heard only where there is no guide to read it from (a
+       playable).
+
+       AND IT IS PACED, because a first round meets a dozen things at once
+       and a stack of notices is a wall nobody reads. Learning marks the page
+       NEW in the guide (a tag on its row, a count on the round's book) at
+       once; the NOTICE waits in a queue that a round lets out:
+
+         - nothing in the first LEARN_QUIET s after the entrance has landed,
+         - one at a time, LEARN_GAP s of round apart,
+         - LEARN_MAX a round.
+
+       What the round did not let out is said ONCE as it ends — the page
+       itself when one is left, "N pages to read in the guide" when several are —
+       and none of it is lost: the pages stay NEW until they are read. The
+       clock is the round's own (`tick`, from the frame pipeline), so a card,
+       a pause or a hit-stop holds it. */
+    var LEARN_QUIET = 5, LEARN_GAP = 10, LEARN_MAX = 2, LEARN_HOLD = 3200;
+    var queue = [], roundT = 0, lastT = -1e9, shown = 0, inRound = false, flushT = 0;
+    var freshFns = [];
+
     function learnKey() { return "guide:" + (CONFIG.slug || "game"); }
+    function freshKey() { return "guideNew:" + (CONFIG.slug || "game"); }
     function learnt() { var s = Store.get(learnKey(), null); return s && typeof s === "object" ? s : {}; }
+    /* The pages learnt and not read yet: { id: 1 }. */
+    function fresh() { var s = Store.get(freshKey(), null); return s && typeof s === "object" ? s : {}; }
+    function setFresh(s) {
+      Store.set(freshKey(), s);
+      for (var i = 0; i < freshFns.length; i++) freshFns[i]();
+    }
+    /* The guide calls this when a page is painted: read, it is NEW no more. */
+    function read(id) { var s = fresh(); if (!s[id]) return; delete s[id]; setFresh(s); }
+    function onFresh(fn) { freshFns.push(fn); }
+
+    function guideTitle(id) {
+      var GD = window.__GUIDE__;
+      return GD && GD.title ? GD.title(id) : null;
+    }
+
     function learn(id, word, opt) {
       opt = opt || {};
       var s = learnt(), mark = opt.mark || id;      // `mark`: a rule told again under a new value
       if (s[mark]) return false;
       s[mark] = 1; Store.set(learnKey(), s);
-      say(word, { sub: opt.sub, kind: opt.kind || "rare", icon: opt.icon === undefined ? "sparkles" : opt.icon,
-                  key: "learn:" + id, hold: opt.hold || 3200, guide: id });
+      if (guideTitle(id) != null) {
+        var f = fresh(); f[id] = 1; setFresh(f);
+        queue.push({ id: id });
+      } else if (word) {
+        queue.push({ id: id, word: word, sub: opt.sub });
+      } else return true;
+      /* Outside a round nothing ticks: the queue is let out on the next turn
+         of the event loop — unless a round is being set up right now (a
+         game's reset() learns before the state turns to "playing"), in which
+         case the round's own clock takes it. */
+      if (!flushT) flushT = setTimeout(function () {
+        flushT = 0;
+        if (State !== "playing" && !Enter.active()) flush();
+      }, 0);
       return true;
     }
-    function unlearn() { Store.del(learnKey()); }
+
+    /* One queued notice, said. */
+    function tell(q) {
+      var title = q.word == null ? guideTitle(q.id) : null;
+      if (q.word == null && title == null) return;
+      say(title != null ? Lang.t("New: {title}").replace("{title}", title) : q.word,
+          { sub: title != null ? "" : q.sub, kind: "rare", icon: "sparkles",
+            key: "learn:" + q.id, hold: LEARN_HOLD, guide: q.id });
+    }
+    /* Whatever is left, in one notice. */
+    function flush() {
+      var left = queue; queue = [];
+      if (left.length === 1) tell(left[0]);
+      else if (left.length > 1) {
+        say(Lang.t("{n} pages to read in the guide").replace("{n}", left.length),
+            { kind: "rare", icon: "sparkles", key: "learn:*", hold: LEARN_HOLD, guide: "*" });
+      }
+    }
+    /* The round's clock: called by the frame pipeline while the world turns
+       (packages/engine/bootstrap.js), never during the entrance or a pause. */
+    function roundTick(dt) {
+      roundT += dt;
+      if (!queue.length || roundT < LEARN_QUIET || roundT - lastT < LEARN_GAP || shown >= LEARN_MAX) return;
+      shown++; lastT = roundT;
+      tell(queue.shift());
+    }
+    function roundState(s) {
+      if (s === "playing") { inRound = true; roundT = 0; lastT = -1e9; shown = 0; return; }
+      if (inRound) { inRound = false; flush(); }
+    }
+
+    function unlearn() {
+      Store.del(learnKey()); Store.del(freshKey()); queue = [];
+      for (var i = 0; i < freshFns.length; i++) freshFns[i]();
+    }
 
     return { say: say, clear: clear, target: target, state: state,
-             history: history, onLog: onLog, learn: learn, learnt: learnt, unlearn: unlearn };
+             history: history, onLog: onLog, learn: learn, learnt: learnt, unlearn: unlearn,
+             tick: roundTick, round: roundState, fresh: fresh, read: read, onFresh: onFresh };
   })();
 
   /* --- Record: the best score, beaten while it happens --------------------

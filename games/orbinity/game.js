@@ -419,22 +419,13 @@
         { rift: true, belt: [[0.2, 0, 0.8, 1]], moon: 0.3, pulsar: 0.3, worm: 1 },      // a steep slant
         { rift: true, belt: [[0, 0.75, 1, 0.3]], moon: 0.3, pulsar: 0.3, worm: 1 }      // the other way
       ],
-      // What a rule says the first time the climb meets it: Notify.learn,
-      // once per player, and each key is the id of the rule's guide page.
+      // The rules the climb names the first time it meets them: Notify.learn,
+      // once per player, and each key is the id of the rule's guide page,
+      // whose title is what the notice reads.
       // Only what the frame cannot say is named: a warning to decode or a
       // hidden rule. Moving planets, the wind's arrows, a binary pair and a
       // belt of rocks read at a glance, so they have a page and no notice.
-      intro: {
-        moon:   { word: "Moons",                sub: "Graze, never hit" },
-        pulsar: { word: "Pulsar shields",       sub: "Sparks warn of the shield" },
-        nebula: { word: "Nebulae",              sub: "Blue slows, orange speeds up" },
-        repel:  { word: "Repulsors",            sub: "Glancing off one is safe" },
-        worm:   { word: "Wormholes",            sub: "In one, out the other, towards a planet" },
-        stream: { word: "Asteroid stream",      sub: "Its lane lights up, then asteroids come in" },
-        patient: { word: "The chain waits",     sub: "Only a mistake breaks it now" },
-        hole:   { word: "Black hole",           sub: "It catches you and flings you to another planet" },
-        rift:   { word: "Open edges",           sub: "Fly out one side, back in the other" }
-      }
+      intro: ["moon", "pulsar", "nebula", "repel", "worm", "stream", "patient", "hole", "rift"]
     }
   };
 
@@ -1812,7 +1803,7 @@
         Fx.burst(p.x, p.y, { color: [NOVA, "#ffffff"], count: 14, speed: 260, size: 5, life: 0.5 });
         Sound.clip("nova", 0.6);
         // named once per player, then the corona speaks for itself
-        Notify.learn("nova", "Supernova", { sub: "Reach the supernova with the chain alive" });
+        Notify.learn("nova");
         return;
       }
     }
@@ -1902,7 +1893,7 @@
       // notice opens that rule's page of the guide; the motor holds it back
       // until the round's entrance has landed.
       for (i = 0; i < intro.length; i++) {
-        Notify.learn(intro[i], LAD.intro[intro[i]].word, { sub: LAD.intro[intro[i]].sub });
+        Notify.learn(intro[i]);
       }
     }
 
@@ -2490,11 +2481,9 @@
       if (had >= 2 || overtime) {
         // A big chain deserves a loud eulogy; a small one just a quick callout.
         if (had >= 5 || overtime) {
-          Pop.show("alert", { word: reason,
-                               sub: overtime ? Lang.t("Run over: x") + had : Lang.t("Combo x") + had + Lang.t(" lost"),
-                               hold: 420 });
+          Pop.show("alert", { word: reason, hold: 420 });
         } else {
-          Pop.show("alert", { word: reason, sub: "Combo lost" });
+          Pop.show("alert", { word: reason });
         }
         if (had >= 2) {
           Pop.show("score", { word: "x" + had + Lang.t(" lost"), cls: "pop-lost",
@@ -3799,8 +3788,9 @@
         intro.push("patient");
       }
       // The first row a rule appears in is where it is introduced.
-      for (k in LAD.intro) {
-        if (!LAD.intro.hasOwnProperty(k) || !row[k]) continue;
+      for (var j = 0; j < LAD.intro.length; j++) {
+        k = LAD.intro[j];
+        if (!row[k]) continue;
         for (i = 0; i < n - 1 && !LAD.levels[i][k]; i++) {}
         if (i === n - 1) intro.push(k);
       }
@@ -4065,9 +4055,7 @@
                   body(430, 140, 34);
                 });
               },
-              lines: [
-                Lang.t("Tap and the comet lets go of its planet. It flies straight on, the way it was turning."),
-                Lang.t("A faint dotted line shows the path the comet would take if you tapped now.") ] },
+              text: Lang.t("Tap and the comet lets go of its planet. It flies straight on, the way it was turning.\n\nA faint dotted line shows the path the comet would take if you tapped now.") },
             { id: "chain", title: Lang.t("The chain"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.85, world: 0, combo: 4, aura: 0.75 }, function () {
@@ -4075,10 +4063,7 @@
                   body(440, 210, 40);
                 });
               },
-              lines: [
-                s(Lang.t("Catch the next planet within a few seconds, or the Combo is lost."), { s: C.window }),
-                s(Lang.t("Circling one planet {n} times breaks it. So do moons, asteroids and, from stage {w}, walls."),
-                  { n: C.maxOrbits, w: softUntil() + 1 }) ] },
+              text: s(Lang.t("Catch the next planet within a few seconds, or the Combo is lost.\n\nCircling one planet {n} times breaks it. So do moons, asteroids and, from stage {w}, walls."), { s: C.window, n: C.maxOrbits, w: softUntil() + 1 }) },
             { id: "score", title: Lang.t("Planet score"),
               pic: function () {
                 var big, small;
@@ -4094,13 +4079,11 @@
               rows: [
                 [Lang.t("Maximum multiplier"), "x" + CONFIG.score.maxMult],
                 [Lang.t("Chain of five planets."), "+" + CONFIG.score.milestone] ],
-              lines: [
-                Lang.t("The smaller the planet, the more it pays.") ] }
+              text: Lang.t("The smaller the planet, the more it pays.") }
           ] },
           { key: "combo", label: Lang.t("Chains"), pages: [
             { id: "tiers", title: Lang.t("The comet evolves"), pic: tiersPic,
-              lines: [
-                Lang.t("The longer the chain, the hotter the comet.") ] },
+              text: Lang.t("The longer the chain, the hotter the comet.") },
             { id: "nova", title: Lang.t("Supernova"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.8, world: 0, combo: 5, aura: 0.8, t: 1 }, function () {
@@ -4108,9 +4091,7 @@
                   flying(35, 340, 105, 120, 235, 130);
                 });
               },
-              lines: [
-                s(Lang.t("From a chain of x{n}, a new planet may appear golden for a few seconds."), { n: NV.minCombo, s: NV.life }),
-                Lang.t("Reach the supernova without breaking the chain. The comet then hops from planet to planet on its own.") ] },
+              text: s(Lang.t("From a chain of x{n}, a new planet may appear golden for a few seconds.\n\nReach the supernova without breaking the chain. The comet then hops from planet to planet on its own."), { n: NV.minCombo, s: NV.life }) },
             { id: "overtime", title: Lang.t("Overtime"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.85, world: 0, combo: 6, aura: 0.2, t: 0.087 }, function () {
@@ -4118,9 +4099,7 @@
                   body(455, 255, 30);
                 });
               },
-              lines: [
-                Lang.t("If time runs out while your chain is alive, the round goes into overtime."),
-                Lang.t("The time to reach the next planet keeps shrinking. The round ends when the chain breaks.") ] }
+              text: Lang.t("If time runs out while your chain is alive, the round goes into overtime.\n\nThe time to reach the next planet keeps shrinking. The round ends when the chain breaks.") }
           ] },
           { key: "inner", label: Lang.t("Inner system"), pages: [
             { id: "nebula", title: Lang.t("Nebulae"), lv: lv("nebula"),
@@ -4130,9 +4109,7 @@
                   flying(30, 400, 120, 260, 240, 215);
                 });
               },
-              lines: [
-                Lang.t("A blue nebula slows the comet to a crawl, and the chain's clock with it."),
-                Lang.t("An orange one speeds the comet up, but not the clock.") ] },
+              text: Lang.t("A blue nebula slows the comet to a crawl, and the chain's clock with it.\n\nAn orange one speeds the comet up, but not the clock.") },
             { id: "orbit", title: Lang.t("Planets on the move"), lv: lv("orbit"),
               pic: function () {
                 var ahead = { x: 0, y: 0 }, sys;
@@ -4155,8 +4132,7 @@
                               ahead.x - sys.p.r - 12, ahead.y]];
                 });
               },
-              lines: [
-                Lang.t("Some planets circle a mini black hole. Aim where the planet is going to be.") ] }
+              text: Lang.t("Some planets circle a mini black hole. Aim where the planet is going to be.") }
           ] },
           { key: "lunar", label: Lang.t("Moons"), pages: [
             { id: "moon", title: Lang.t("Moons"), lv: lv("moon"),
@@ -4166,8 +4142,7 @@
                   circling(body(110, 320, 28), -Math.PI / 2, 1);
                 });
               },
-              lines: [
-                Lang.t("A moon circles its planet. Hit it and the chain is lost, so time your Tap.") ] },
+              text: Lang.t("A moon circles its planet. Hit it and the chain is lost, so time your Tap.") },
             { id: "eclipse", title: Lang.t("Eclipse"), lv: lv("moon"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.7, world: 1, combo: 3, aura: 0.8 }, function () {
@@ -4178,8 +4153,7 @@
               rows: [
                 [Lang.t("One eclipse on the way"), "x2"],
                 [Lang.t("Two eclipses"), "x3"] ],
-              lines: [
-                Lang.t("Skim past a moon without touching it to boost your score.") ] },
+              text: Lang.t("Skim past a moon without touching it to boost your score.") },
             { id: "wind", title: Lang.t("Solar wind"), lv: lv("wind"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.7, world: 1, combo: 2, aura: 0.8, t: 0.4 }, function () {
@@ -4189,8 +4163,7 @@
                   flying(140, 410, 220, 150, 420, 250);
                 });
               },
-              lines: [
-                Lang.t("The solar wind pushes every shot that crosses it. Aim a little into the wind.") ] },
+              text: Lang.t("The solar wind pushes every shot that crosses it. Aim a little into the wind.") },
             { id: "stream", title: Lang.t("Asteroid stream"), lv: lv("stream"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.7, world: 1, row: { stream: true }, t: 10 }, function () {
@@ -4202,8 +4175,7 @@
                                  t0: 8, t1: 9, t2: 11, shown: true, rocks: scatterRocks(3000, 1, nextFamily()) });
                 });
               },
-              lines: [
-                Lang.t("A lane glows red just before asteroids sweep through it. Hitting them breaks the chain.") ] }
+              text: Lang.t("A lane glows red just before asteroids sweep through it. Hitting them breaks the chain.") }
           ] },
           { key: "pulsar", label: Lang.t("Pulsars"), pages: [
             { id: "pulsar", title: Lang.t("Pulsar shields"), lv: lv("pulsar"),
@@ -4213,9 +4185,7 @@
                   flying(40, 380, 110, 180, 230, 170);
                 });
               },
-              lines: [
-                s(Lang.t("Every so often, a pulsar raises a shield for a few seconds. Careful, the comet bounces off it."), { n: PU.shield }),
-                Lang.t("Sparks on the pulsar's rim warn you first. A bounce keeps the chain, but the clock keeps running.") ] },
+              text: s(Lang.t("Every so often, a pulsar raises a shield for a few seconds. Careful, the comet bounces off it.\n\nSparks on the pulsar's rim warn you first. A bounce keeps the chain, but the clock keeps running."), { n: PU.shield }) },
             { id: "patient", title: Lang.t("Time for a chain"), lv: patientLevel(),
               pic: function () {
                 return stage(480, 300, { zoom: 0.85, world: 2, combo: 7, aura: 1 }, function () {
@@ -4223,9 +4193,7 @@
                   body(445, 235, 32);
                 });
               },
-              lines: [
-                Lang.t("The chain no longer runs out of time, however long you circle."),
-                Lang.t("Now only a wall, a moon or an asteroid breaks the chain. In overtime, the clock comes back.") ] },
+              text: Lang.t("The chain no longer runs out of time, however long you circle.\n\nNow only a wall, a moon or an asteroid breaks the chain. In overtime, the clock comes back.") },
             { id: "repel", title: Lang.t("Repulsors"), lv: lv("repel"),
               pic: function () {
                 var o = { zoom: 0.7, world: 2, combo: 3, aura: 0.8, t: 0.3 };
@@ -4239,8 +4207,7 @@
                              [268, 214, 290, 186, 340, 166], [340, 166, 450, 128, 538, 110]];
                 });
               },
-              lines: [
-                Lang.t("A repulsor pushes the comet away. Bouncing off it is safe, so use it to bank a shot.") ] }
+              text: Lang.t("A repulsor pushes the comet away. Bouncing off it is safe, so use it to bank a shot.") }
           ] },
           { key: "abyss", label: Lang.t("Black hole"), pages: [
             { id: "hole", title: Lang.t("Black hole"), lv: lv("hole"),
@@ -4258,9 +4225,7 @@
                     .concat([[290, 180 - R, 380, 180 - R, 452, 114]]);
                 });
               },
-              lines: [
-                Lang.t("Reach a black hole's ring. It swings the comet round, then flings it at a planet."),
-                Lang.t("No tap needed. The chain's clock starts over.") ] },
+              text: Lang.t("Reach a black hole's ring. It swings the comet round, then flings it at a planet.\n\nNo tap needed. The chain's clock starts over.") },
             { id: "binary", title: Lang.t("Binary pair"), lv: lv("binary"),
               pic: function () {
                 return stage(480, 300, { zoom: 0.7, world: 3, combo: 2, aura: 0.8, t: 0.5 }, function () {
@@ -4275,8 +4240,7 @@
                   circling(body(110, 300, 28), -Math.PI / 2, 1);
                 });
               },
-              lines: [
-                Lang.t("A planet and a repulsor circle each other. One pulls, the other pushes.") ] }
+              text: Lang.t("A planet and a repulsor circle each other. One pulls, the other pushes.") }
           ] },
           { key: "rift", label: Lang.t("Rift"), pages: [
             { id: "rift", title: Lang.t("The rift"), lv: lv("rift"),
@@ -4289,9 +4253,7 @@
                   o.trace = [[comet.x + 18, comet.y - 2, 120, 182, 166, 178]];
                 });
               },
-              lines: [
-                Lang.t("All four edges are open. Fly out of one and you come back through the opposite one."),
-                Lang.t("Going through an edge is often the shortest way to a planet.") ] },
+              text: Lang.t("All four edges are open. Fly out of one and you come back through the opposite one.\n\nGoing through an edge is often the shortest way to a planet.") },
             { id: "belt", title: Lang.t("Asteroid belts"), lv: lv("belt"),
               pic: function () {
                 var o = { zoom: 0.7, world: 4, row: { rift: true, belt: [[0.5, 0, 0.5, 1]] }, walls: true,
@@ -4306,8 +4268,7 @@
                              [Wd - 2, 196, Wd - 60, 200, 570, 214]];
                 });
               },
-              lines: [
-                Lang.t("You can't fly through a belt. Go round it through the open edges.") ] },
+              text: Lang.t("You can't fly through a belt. Go round it through the open edges.") },
             { id: "worm", title: Lang.t("Wormholes"), lv: lv("worm"),
               pic: function () {
                 var o = { zoom: 0.7, world: 4, row: { rift: true }, walls: true, combo: 2, aura: 0.8, t: 0.6 };
@@ -4319,8 +4280,7 @@
                              [522, 280, 535, 200, 553, 148]];
                 });
               },
-              lines: [
-                Lang.t("The comet enters one mouth and comes out of the other, aimed at a planet. Your chain is safe.") ] }
+              text: Lang.t("The comet enters one mouth and comes out of the other, aimed at a planet. Your chain is safe.") }
           ] }
         ];
         // every picture is drawn on its page's own seed

@@ -1307,7 +1307,7 @@
       var h = branchHalf(p, forkAmt(p)) - 34;
       items.push({ p: p, off: clamp(off, -h, h), type: type, br: br || 0,
                    seed: Rand.range(0, TAU), used: false });
-      if (type === "bomb") meet("mines", Lang.t("Mines"), Lang.t("Watch out for blasts"));
+      if (type === "bomb") meet("mines");
     }
 
     /* IS THERE A PAD IN THE WAY? One walk over the live item list, which is a
@@ -1377,7 +1377,7 @@
       var a = p + 240, b = a + T.forkLen, side = Rand.chance(0.5) ? -1 : 1;
       var n, i, q, run, pads = [], gaps = [], q0, lo, hi;
       forks.push({ a: a, b: b });
-      meet("fork", Lang.t("Fork"), Lang.t("Choose your path"));
+      meet("fork");
 
       // the charge branch
       run = T.forkLen - T.forkFade * 1.4;
@@ -1464,7 +1464,7 @@
 
       if (Rand.chance(T.rampSolid)) {
         for (x = -hw; x <= hw; x += T.rampStep) place(pw + Rand.range(-10, 10), x, "block", 0);
-        meet("solid", Lang.t("Watch out for walls"), Lang.t("Use the ramp"));
+        meet("solid");
       } else {
         // The gate is pushed away from the ramp's own line, so threading it is a
         // decision taken instead of the jump and not on top of it.
@@ -2472,8 +2472,8 @@
         cutWarned = true;
         safe = flag || rank <= cut.rank;
         Overlay.vignette(safe ? "rgba(53,232,255,.7)" : "rgba(255,45,85,.8)", 1, 620);
-        if (flag) meet("finish", Lang.t("The finish line"), Lang.t("First place guarantees three stars"));
-        else meet("cuts", Lang.t("Checkpoint ahead"), Lang.t("Reach the required rank before the next checkpoint"));
+        if (flag) meet("finish");
+        else meet("cuts");
       }
       if (dist < cut.at) return;
 
@@ -4070,14 +4070,14 @@
        ramp and the slow stalker explain themselves on sight.
        ==================================================================== */
     var asked = {};
-    function meet(id, word, sub) {
+    function meet(id) {
       if (asked[id]) return;
       asked[id] = 1;
-      if (window.__GUIDE__) Notify.learn(id, word, { sub: sub });
+      if (window.__GUIDE__) Notify.learn(id);
     }
     function meetFoe(fo) {
-      if (fo.learn === "marshal") meet("marshal", Lang.t("Marshal"), Lang.t("Only a booster gets you past some craft"));
-      else if (fo.learn === "ram") meet("ram", Lang.t("Ram"), Lang.t("The violet craft hits harder"));
+      if (fo.learn === "marshal") meet("marshal");
+      else if (fo.learn === "ram") meet("ram");
     }
 
     /* --- the pictures ------------------------------------------------------
@@ -4304,8 +4304,8 @@
         var gold = "#ffd43b", red = "#ff5a6e", green = "#5cffb0";
         /* A pilot's page shows what it DOES on the road: the craft on its
            stage, the player's at the foot, and the move as a dotted path. */
-        function foePage(i, id, title, lv, lines, scene) {
-          return { id: id, title: title, lv: lv, lines: lines,
+        function foePage(i, id, title, lv, text, scene) {
+          return { id: id, title: title, lv: lv, text: text,
                    pic: function () {
                      return stagePic({ ship: { off: scene.ship }, things: scene.things, cw: 600, at: 0.97,
                                        over: function (cp) {
@@ -4313,10 +4313,10 @@
                                        } }, 520, 300);
                    } };
         }
-        function bandPage(i, id, from, title, lines, things) {
+        function bandPage(i, id, from, title, text, things) {
           return { id: id, title: title, lv: from,
                    eyebrow: Lang.t("Stages {a} to {b}").replace("{a}", from).replace("{b}", from + 5),
-                   lines: lines,
+                   text: text,
                    pic: function () { return stagePic({ bio: i, focus: 900, at: 0.62, things: things }); } };
         }
         return [
@@ -4324,19 +4324,18 @@
             { id: "steer", title: Lang.t("Lean to steer"),
               pic: function () { return stagePic({ ship: { off: -40, lean: -1 },
                                                    things: [{ type: "boost", z: 170, off: -110 }] }); },
-              lines: [Lang.t("Hold a side of the screen, or an arrow key, to lean that way.")] },
+              text: Lang.t("Hold a side of the screen, or an arrow key, to lean that way.") },
             { id: "race", title: Lang.t("The race"),
               pic: function () { return stagePic({ ship: { off: 30 },
                                                    things: [{ type: "rival", kind: 0, z: 150, off: -130 },
                                                             { type: "rival", kind: 1, z: 250, off: 110 },
                                                             { type: "rival", kind: 0, z: 360, off: -20 }] }); },
-              lines: [Lang.t("You start last. To pass the leaders, you will need a booster.")] },
+              text: Lang.t("You start last. To pass the leaders, you will need a booster.") },
             { id: "cuts", title: Lang.t("Checkpoints"),
               pic: function () { return stagePic({ ship: { off: 0 },
                                                    things: [{ type: "gate", z: 170 },
                                                             { type: "rival", kind: 1, z: 300, off: 90 }] }); },
-              lines: [Lang.t("Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out."),
-                      Lang.t("A green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass.")] },
+              text: Lang.t("Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out.\n\nA green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass.") },
             { id: "finish", title: Lang.t("The finish line"),
               pic: function () { return stagePic({ ship: { off: 0 },
                                                    things: [{ type: "flag", z: 170 },
@@ -4344,19 +4343,19 @@
               rows: [[Lang.t("Reach the stage's distance"), "★", gold],
                      [Lang.t("Cross the finish line"), "★★", gold],
                      [Lang.t("Cross it in first place"), "★★★", gold]],
-              lines: [Lang.t("Your place as you cross the finish line is your final result.")] },
+              text: Lang.t("Your place as you cross the finish line is your final result.") },
             { id: "shield", title: Lang.t("The shield"),
               pic: function () { return hullsPic([{ art: T.playerArt, col: "#35e8ff", w: 140 },
                                                   { art: T.playerArt, col: "#ff2d55", w: 140, tint: 0.75 }]); },
               rows: [[Lang.t("A mine"), "-" + T.bombCost + " %", red],
                      [Lang.t("A barrier"), Lang.t("-29 to -39 %"), red],
                      [Lang.t("Clipping a pilot"), Lang.t("-14 to -21 %"), red]],
-              lines: [Lang.t("Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once.")] },
+              text: Lang.t("Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once.") },
             { id: "score", title: Lang.t("The score"),
               pic: function () { return stagePic({ ship: { off: 20 },
                                                    things: [{ type: "boost", z: 130, off: 20 },
                                                             { type: "boost", z: 330, off: -70 }] }, 520, 170); },
-              lines: [Lang.t("While a booster lasts, metres and cells count double.")] }
+              text: Lang.t("While a booster lasts, metres and cells count double.") }
           ] },
           { key: "road", label: Lang.t("On the road"), pages: [
             { id: "boost", title: Lang.t("Boosters"),
@@ -4364,12 +4363,12 @@
                                                    things: [{ type: "boost", z: 120, off: 0 },
                                                             { type: "boost", z: 290, off: 90 }] }); },
               rows: [[Lang.t("Lasts"), T.boostTime + " s", gold]],
-              lines: [Lang.t("Any hit puts the booster out at once.")] },
+              text: Lang.t("Any hit puts the booster out at once.") },
             { id: "barrier", title: Lang.t("Barriers"),
               pic: function () { return stagePic({ ship: { off: -60 },
                                                    things: [{ type: "block", z: 150, off: 70 },
                                                             { type: "block", z: 300, off: -150 }] }); },
-              lines: [Lang.t("Barriers block your way. Hit one and it breaks, and your speed drops with it.")] },
+              text: Lang.t("Barriers block your way. Hit one and it breaks, and your speed drops with it.") },
             { id: "fork", title: Lang.t("Fork"),
               pic: function () { return stagePic({ fork: [-900, 2600], cw: 760, focus: 160, at: 0.8,
                                                    things: [{ type: "cell", z: 60, br: -1, off: 0 },
@@ -4378,32 +4377,30 @@
                                                             { type: "boost", z: 90, br: 1, off: 0 },
                                                             { type: "bomb", z: 230, br: 1, off: 40 },
                                                             { type: "boost", z: 360, br: 1, off: -20 }] }); },
-              lines: [Lang.t("One branch has the charge cells. The other has boosters, often guarded by mines.")] },
+              text: Lang.t("One branch has the charge cells. The other has boosters, often guarded by mines.") },
             { id: "cells", title: Lang.t("Charge cells"),
               pic: function () { return stagePic({ fork: [-900, 2600], ship: { off: -322 }, cam: -322,
                                                    things: [{ type: "cell", z: 150, br: -1, off: 0 },
                                                             { type: "cell", z: 260, br: -1, off: 40 },
                                                             { type: "cell", z: 370, br: -1, off: -20 }] }); },
               rows: [[Lang.t("A cell"), Lang.t("+10 to +15 % shield"), green]],
-              lines: [Lang.t("Only cells refill your shield. They line the track on some forks."),
-                      Lang.t("Take them in a row for a combo bonus. Gravel or a hit breaks the combo.")] },
+              text: Lang.t("Only cells refill your shield. They line the track on some forks.\n\nTake them in a row for a combo bonus. Gravel or a hit breaks the combo.") },
             { id: "wall", title: Lang.t("Walls"), lv: 3,
               pic: function () { return stagePic({ ship: { off: 90 },
                                                    things: function () { return wallThings(240, 110, true); } }); },
-              lines: [Lang.t("A wall often leaves a way through, with a booster in it.")] },
+              text: Lang.t("A wall often leaves a way through, with a booster in it.") },
             { id: "mines", title: Lang.t("Mines"), lv: 4,
               pic: function () { return stagePic({ ship: { off: 0 },
                                                    things: [{ type: "bomb", z: 130, off: -120 },
                                                             { type: "bomb", z: 230, off: 40 },
                                                             { type: "bomb", z: 340, off: 150 }] }); },
-              lines: [Lang.t("A mine's blast throws you sideways. Lean the other way to stay on the tarmac."),
-                      Lang.t("A mine never blocks the way to a booster.")] },
+              text: Lang.t("A mine's blast throws you sideways. Lean the other way to stay on the tarmac.\n\nA mine never blocks the way to a booster.") },
             { id: "ramp", title: Lang.t("Ramps"), lv: 9,
               // the wall keeps a gate, and a booster stands in it
               pic: function () { return stagePic({ ship: { off: -60 }, at: 0.98,
                                                    things: function () { return [{ type: "ramp", z: 70, off: -60 }].concat(wallThings(250, 110, true)); } }, 520, 340); },
               rows: [[Lang.t("Landing in the gravel"), "-" + T.roughCost + " %", red]],
-              lines: [Lang.t("Line up before you take off. You can barely steer in the air.")] },
+              text: Lang.t("Line up before you take off. You can barely steer in the air.") },
             { id: "solid", title: Lang.t("Solid walls"), lv: 13,
               // rail to rail: the arc over it is the only way through
               pic: function () { return stagePic({ ship: { off: 0 }, at: 0.98,
@@ -4419,58 +4416,48 @@
                                                      drawShip(T.playerArt, T.shipW, null, 0, 0);
                                                      ctx.restore();
                                                    } }, 520, 340); },
-              lines: [Lang.t("The wall after a ramp may have no way through. Jump over it to avoid a crash.")] }
+              text: Lang.t("The wall after a ramp may have no way through. Jump over it to avoid a crash.") }
           ] },
           { key: "pilots", label: Lang.t("The pilots"), pages: [
             { id: "pilots", title: Lang.t("Liveries"),
               pic: function () { return hullsPic([foeHull(0, 88), foeHull(1, 88), foeHull(2, 88), foeHull(3, 88), foeHull(4, 88)], 10); },
-              lines: [Lang.t("A craft's colour tells you how it drives, long before you reach it.")] },
-            foePage(0, "scout", Lang.t("Scouts"), 0, [
-              Lang.t("Green craft get out of your way.")],
+              text: Lang.t("A craft's colour tells you how it drives, long before you reach it.") },
+            foePage(0, "scout", Lang.t("Scouts"), 0, Lang.t("Green craft get out of your way."),
               // it was in your lane (the ghost) and slides aside
               { ship: 0,
                 things: [{ type: "rival", kind: 0, z: 150, off: 40, a: 0.3 }, { type: "rival", kind: 0, z: 150, off: -190 }],
                 trace: [{ from: { z: 150, off: 40 }, to: { z: 150, off: -190 }, g0: 40, g1: 40 }] }),
-            foePage(1, "drone", Lang.t("Drones"), 0, [
-              Lang.t("Blue craft drive straight ahead, blind to you and to the road.")],
+            foePage(1, "drone", Lang.t("Drones"), 0, Lang.t("Blue craft drive straight ahead, blind to you and to the road."),
               // straight into the barrier it never saw
               { ship: -110,
                 things: [{ type: "rival", kind: 1, z: 90, off: 80 }, { type: "block", z: 250, off: 80 }],
                 trace: [{ from: { z: 90, off: 80 }, to: { z: 250, off: 80 }, g0: 55, g1: 25 }] }),
-            foePage(2, "stalker", Lang.t("Stalkers"), 7, [
-              Lang.t("Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly.")],
+            foePage(2, "stalker", Lang.t("Stalkers"), 7, Lang.t("Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly."),
               // slow, and drifting across into the lane you are driving
               { ship: 0,
                 things: [{ type: "rival", kind: 2, z: 200, off: 190 }],
                 trace: [{ from: { z: 200, off: 190 }, to: { z: 90, off: -10 }, g0: 45, g1: 10 }] }),
-            foePage(3, "marshal", Lang.t("Marshals"), 12, [
-              Lang.t("Red craft block your line but never hit on purpose. Only a booster gets you past them easily.")],
+            foePage(3, "marshal", Lang.t("Marshals"), 12, Lang.t("Red craft block your line but never hit on purpose. Only a booster gets you past them easily."),
               // it was off to one side (the ghost) and slides across to sit in front of you
               { ship: 90,
                 things: [{ type: "rival", kind: 3, z: 140, off: -140, a: 0.3 }, { type: "rival", kind: 3, z: 140, off: 90 }],
                 trace: [{ from: { z: 140, off: -140 }, to: { z: 140, off: 90 }, g0: 40, g1: 40 }] }),
-            foePage(4, "ram", Lang.t("Rams"), 18, [
-              Lang.t("Violet craft come straight for you, and they hit the hardest.")],
+            foePage(4, "ram", Lang.t("Rams"), 18, Lang.t("Violet craft come straight for you, and they hit the hardest."),
               // straight at the craft
               { ship: 0,
                 things: [{ type: "rival", kind: 4, z: 210, off: -170 }],
                 trace: [{ from: { z: 210, off: -170 }, to: { z: 30, off: 0 }, g0: 45, g1: 10 }] })
           ] },
           { key: "climb", label: Lang.t("The climb"), pages: [
-            bandPage(0, "dusk", 1, Lang.t("Dusk"), [
-              Lang.t("The road to the first checkpoint is paved with boosters.")],
+            bandPage(0, "dusk", 1, Lang.t("Dusk"), Lang.t("The road to the first checkpoint is paved with boosters."),
               [{ type: "boost", z: 300, off: -60 }, { type: "boost", z: 600, off: 40 }, { type: "rival", kind: 0, z: 900, off: -80 }]),
-            bandPage(1, "day", 7, Lang.t("Day"), [
-              Lang.t("Two checkpoints before the finish.")],
+            bandPage(1, "day", 7, Lang.t("Day"), Lang.t("Two checkpoints before the finish."),
               [{ type: "ramp", z: 420, off: 30 }, { type: "rival", kind: 2, z: 800, off: -90 }]),
-            bandPage(2, "mist", 13, Lang.t("Mist"), [
-              Lang.t("From stage 13, some walls after a ramp have no way through.")],
+            bandPage(2, "mist", 13, Lang.t("Mist"), Lang.t("From stage 13, some walls after a ramp have no way through."),
               [{ type: "bomb", z: 420, off: -80 }, { type: "rival", kind: 3, z: 720, off: 60 }]),
-            bandPage(3, "overcast", 19, Lang.t("Overcast"), [
-              Lang.t("From here on, three checkpoints before the finish.")],
+            bandPage(3, "overcast", 19, Lang.t("Overcast"), Lang.t("From here on, three checkpoints before the finish."),
               [{ type: "gate", z: 520 }, { type: "rival", kind: 4, z: 780, off: 40 }]),
-            bandPage(4, "night", 25, Lang.t("Night"), [
-              Lang.t("Nothing new in this biome, but every hazard and every pilot at once.")],
+            bandPage(4, "night", 25, Lang.t("Night"), Lang.t("Nothing new in this biome, but every hazard and every pilot at once."),
               [{ type: "bomb", z: 380, off: 90 }, { type: "rival", kind: 4, z: 620, off: -70 }, { type: "rival", kind: 3, z: 900, off: 60 }])
           ] }
         ];

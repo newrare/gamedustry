@@ -828,7 +828,7 @@
           /* An EVENT the player did not make: a notice, not a callout. The
              very first rot a player ever meets is named instead (the guide's
              page on it); every outbreak after that is said as what it is. */
-          if (!rotCount && !learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it"))
+          if (!rotCount && !learn("rot"))
             Notify.say("The rot spreads", { kind: "warn", guide: "outbreak" });
           Sound.clip("spread", 1, 0.55);
         }
@@ -1153,8 +1153,7 @@
       // about; a lone streak with a small clear keeps the corner sticker.
       var streakSub = mult > 1 ? "x" + mult + Lang.t(" streak") : cleared + Lang.t(" popped");
       if (chain.cured) {
-        Pop.show("combo", { word: "Purified!", sub: chain.cured + Lang.t(" purified"),
-                            hold: 420, cls: "pop-cure" });
+        Pop.show("combo", { word: "Purified!", hold: 420, cls: "pop-cure" });
       } else if (tier >= 1) {
         Pop.show(TIER_POP[tier], { word: TIER_WORD[tier], sub: streakSub,
                                    hold: tier >= 3 ? 420 : 300 });
@@ -1179,7 +1178,7 @@
       if (shotCount > 0 && shotCount % ADD_SHOTS === 0) pushRow();
       if (lowestBubbleBottom() >= DANGER_Y) { endPending = "Overrun!"; return; }
       nextColor = pickShootColor(); nextSuper = Rand.chance(SHOT_SUP);
-      if (nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
+      if (nextSuper) learn("cure");
     }
 
     // Fireworks when 5+ bubbles fall at once.
@@ -1226,7 +1225,7 @@
       Fx.shake(6, 0.25);
       Sound.clip("press", 0.5, 0.85);                  // the wall grinding one row closer
       for (var sc = 0; sc < n; sc++)
-        if (srow[sc]) { learn("joker", "Rainbow bubble", "This bubble will take the right colour"); break; }
+        if (srow[sc]) { learn("joker"); break; }
     }
 
     function lowestBubbleBottom() {
@@ -1285,23 +1284,23 @@
        this and plays as it always has. Only what the frame cannot say is
        named: the swap, the rot and the two rainbows. A cascade and the
        wall coming down a row show themselves as they happen. */
-    function learn(id, word, sub) {
-      return !!window.__GUIDE__ && Notify.learn(id, word, { sub: sub });
+    function learn(id) {
+      return !!window.__GUIDE__ && Notify.learn(id);
     }
     // What the board a round opens on deals: the swap is always there, the
     // rot, a rainbow in the wall and one in the launcher only when dealt.
     function meet() {
       var r, c, rot = false, joker = false;
-      learn("swap", "Swap", "Tap the small bubble to swap");
+      learn("swap");
       for (r = 0; r < ROWS; r++)
         for (c = 0; c < rowCols(r); c++) {
           if (grid[r][c] === null) continue;
           if (blk[r][c]) rot = true;
           if (sup[r][c]) joker = true;
         }
-      if (rot) learn("rot", "The rot", "A rotten bubble won't pop. Make it fall or purify it");
-      if (joker) learn("joker", "Rainbow bubble", "This bubble will take the right colour");
-      if (ball.sup || nextSuper) learn("cure", "Rainbow shot", "Fire a rainbow into the rot to purify it");
+      if (rot) learn("rot");
+      if (joker) learn("joker");
+      if (ball.sup || nextSuper) learn("cure");
     }
 
     /* Six levels a band, five bands: the same stretches the level map names on
@@ -2484,24 +2483,22 @@
       });
     }
     var BAND_PAGES = [
-      { id: "marsh",  lv: 1,  show: 6, name: "Marsh", lines: [
-        "Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s." ] },
-      { id: "ruins",  lv: 7,  show: 10, name: "Ruins", lines: [
-        "Almost every wall draws a shape: a diamond, a lattice, a ring, a cross." ] },
-      { id: "gorge",  lv: 13, show: 16, name: "Gorge", lines: [
-        "Most walls start with two outbreaks. You will have to hold two fronts at once." ] },
-      { id: "castle", lv: 19, show: 22, name: "Castle", lines: [
-        "New shapes to spot: an arrow, cherries, and more." ] },
-      { id: "throne", lv: 25, show: 28, name: "Throne", lines: [
-        "From level 26, every wall starts with three outbreaks." ] }
+      { id: "marsh",  lv: 1,  show: 6, name: "Marsh", text:
+        "Levels 1 and 2 start clean, with two colours. The rot breaks out after {n} s." },
+      { id: "ruins",  lv: 7,  show: 10, name: "Ruins", text:
+        "Almost every wall draws a shape: a diamond, a lattice, a ring, a cross." },
+      { id: "gorge",  lv: 13, show: 16, name: "Gorge", text:
+        "Most walls start with two outbreaks. You will have to hold two fronts at once." },
+      { id: "castle", lv: 19, show: 22, name: "Castle", text:
+        "New shapes to spot: an arrow, cherries, and more." },
+      { id: "throne", lv: 25, show: 28, name: "Throne", text:
+        "From level 26, every wall starts with three outbreaks." }
     ];
     function bandPage(i) {
-      var B = BAND_PAGES[i], j;
-      var lines = [];
-      for (j = 0; j < B.lines.length; j++) lines.push(fill(Lang.t(B.lines[j]), { n: CONFIG.rotGrace }));
+      var B = BAND_PAGES[i];
       return { id: B.id, title: Lang.t(B.name), lv: B.lv,
                pic: function () { return bandPic(i, B.show); },
-               lines: lines };
+               text: fill(Lang.t(B.text), { n: CONFIG.rotGrace }) };
     }
 
     var guide = {
@@ -2514,24 +2511,21 @@
                 return paintPic(460, 180, function () {
                   picWall(["ryxxby", "xbyxx", "bxxrry"], 50, 4);
                 });
-              }, rows: goalRows, lines: [
-              Lang.t("There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.") ] },
+              }, rows: goalRows, text: Lang.t("There is no clock, only the rot. The round ends when the whole wall is rotten. If your score is still low, always keep some coloured bubbles — a total clear can sometimes be counterproductive.") },
             { id: "aim", title: Lang.t("Aim and shoot"), pic: function () {
                 return paintPic(460, 290, function () {
                   var wall = picWall(["ybrrb", "byyb"], 40, 10);
                   picDots(picPath(250, 236, -1.15, wall, R, 460 - R));
                   picLauncher(250, 236, 0, 2);
                 });
-              }, lines: [
-              Lang.t("Drag to aim, release to shoot.") ] },
+              }, text: Lang.t("Drag to aim, release to shoot.") },
             { id: "match", title: Lang.t("Match three"), pic: function () {
                 return paintPic(460, 210, function () {
                   var wall = picWall(["byrrby", "yb.by"], 50, 6), p = picCell(50, 6, 1, 2);
                   picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
                   picBubble(p.x, 172, 0, R, 1, -0.3, Math.PI / 2);
                 });
-              }, lines: [
-              Lang.t("Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.") ] },
+              }, text: Lang.t("Every shot that pops raises your combo, up to ×6. A shot that pops nothing resets it.") },
             { id: "cascade", title: Lang.t("Falling bubbles"), pic: function () {
                 return paintPic(460, 220, function () {
                   picWall(["yb..by", "b...y"], 50, 6);
@@ -2544,8 +2538,7 @@
                   try { drawSplashes(); } finally { splashes = keepS; }
                 });
               }, rows: [[Lang.t("A bubble that falls"), "+" + CONFIG.fallBonus],
-                        [Lang.t("A rotten bubble that falls"), "+" + CONFIG.fallBonus * 2]], lines: [
-              Lang.t("Pop what holds a group to the ceiling, and the whole group falls.") ] },
+                        [Lang.t("A rotten bubble that falls"), "+" + CONFIG.fallBonus * 2]], text: Lang.t("Pop what holds a group to the ceiling, and the whole group falls.") },
             { id: "swap", title: Lang.t("Swap"), pic: function () {
                 return paintPic(380, 190, function () {
                   // the launcher, a size up: it is the subject of the page
@@ -2559,16 +2552,13 @@
                   ctx.beginPath(); ctx.arc(SAT_DX, SAT_DY, SAT_OUT + 15, 0, PI2); ctx.stroke();
                   ctx.restore();
                 });
-              }, lines: [
-              Lang.t("Tap the small bubble or the launcher to swap the two."),
-              Lang.t("Swapping costs no shot. Check the next bubble and fire it first if it fits better.") ] },
+              }, text: Lang.t("Tap the small bubble or the launcher to swap the two.\n\nSwapping costs no shot. Check the next bubble and fire it first if it fits better.") },
             { id: "press", title: Lang.t("The wall comes down"), pic: function () {
                 return paintPic(460, 220, function () {
                   picWall(["byyrbr", "rbyyb", "yrrbby"], 50, 6);
                   picDanger(460, 204);
                 });
-              }, lines: [
-              Lang.t("The wall moves down after a few shots. A bubble on the red line ends the round.") ] }
+              }, text: Lang.t("The wall moves down after a few shots. A bubble on the red line ends the round.") }
           ] },
           { key: "rot", label: Lang.t("The rot"), pages: [
             { id: "rot", title: Lang.t("The rot"), pic: function () {
@@ -2577,9 +2567,7 @@
                   picBubble(200, 65, { c: 1, t: 0.55, hole: Math.PI });
                   picBubble(310, 65, "x");
                 });
-              }, lines: [
-              Lang.t("A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it."),
-              Lang.t("A bubble filling with rot is still active. Pop it before it turns completely.") ] },
+              }, text: Lang.t("A rotten bubble never pops. Every few seconds, the rot reaches a bubble next to it.\n\nA bubble filling with rot is still active. Pop it before it turns completely.") },
             { id: "outbreak", title: Lang.t("The rot spreads"), pic: function () {
                 return paintPic(400, 232, function () {
                   // a wall whose rotten patch was cut off: the hole at the
@@ -2602,8 +2590,7 @@
                   }
                   ctx.globalAlpha = 1;
                 });
-              }, lines: [
-              Lang.t("Cutting the rot off won't stop it. It will break out somewhere else.") ] }
+              }, text: Lang.t("Cutting the rot off won't stop it. It will break out somewhere else.") }
           ] },
           { key: "rainbow", label: Lang.t("The rainbow"), pages: [
             { id: "joker", title: Lang.t("Rainbow bubble"), pic: function () {
@@ -2612,18 +2599,14 @@
                   picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
                   picBubble(p.x, 172, 0, R, 1, -0.3, Math.PI / 2);
                 });
-              }, lines: [
-              Lang.t("A rainbow bubble in a cluster takes the right colour on impact."),
-              Lang.t("A rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.") ] },
+              }, text: Lang.t("A rainbow bubble in a cluster takes the right colour on impact.\n\nA rainbow bubble can join two groups into one match. This Joker bubble never rots and can even decontaminate an area.") },
             { id: "cure", title: Lang.t("Rainbow shot"), pic: function () {
                 return paintPic(460, 210, function () {
                   var wall = picWall(["xxbxxy", "rx.xb"], 50, 6), p = picCell(50, 6, 1, 2);
                   picDots(picPath(p.x, 172, 0, wall, R, 460 - R));
                   picBubble(p.x, 172, "s", R, 1, -0.3, Math.PI / 2);
                 });
-              }, rows: [[Lang.t("Bubbles saved"), CONFIG.cureMin + " → " + CONFIG.cureMax]], lines: [
-              Lang.t("Fire a rainbow into the rot to give the bubbles their colour back."),
-              Lang.t("The more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.") ] }
+              }, rows: [[Lang.t("Bubbles saved"), CONFIG.cureMin + " → " + CONFIG.cureMax]], text: Lang.t("Fire a rainbow into the rot to give the bubbles their colour back.\n\nThe more rot there is, the more powerful the rainbow. Keep this bubble for the right moment.") }
           ] },
           { key: "climb", label: Lang.t("The climb"), pages: [
             bandPage(0), bandPage(1), bandPage(2), bandPage(3), bandPage(4)

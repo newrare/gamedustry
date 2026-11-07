@@ -4691,7 +4691,7 @@
       handArt();                           // the guide's map page draws it
       HUD.setScoreNow(0);
       hudNow();
-      if (CONFIG.web && LEARN[row.mech]) Notify.learn("gu-" + row.mech, LEARN[row.mech][0], { sub: LEARN[row.mech][1] });
+      if (CONFIG.web && row.mech !== "endless") Notify.learn("gu-" + row.mech);
     }
 
     function update(dt) {
@@ -4785,38 +4785,6 @@
     //  deals it (packages/webshell/guide.js). Every page shows the pieces it
     //  is about, standing on a scrap of the round's own paper.
     // ======================================================================
-    var LEARN = {
-      orders: ["Orders and ticks", "Tap your region, then an action on its target"],
-      fort: ["Forts", "Each defender of a fort counts 1 more"],
-      mountain: ["Mountains", "Only a pass crosses a ridge"],
-      river: ["Rivers", "Each troop attacking across one counts 1 less"],
-      sea: ["Harbours", "Ship troops from harbour to harbour"],
-      fog: ["Fog of war", "You see your regions and their neighbours"],
-      gold: ["Gold", "A mine pays 1 gold a tick"],
-      recruit: ["Recruitment", "3 gold, 3 more troops in a city"],
-      cav: ["Cavalry", "Riders cross two regions in one tick"],
-      cannon: ["Artillery", "A cannon fires before anything moves"],
-      grain: ["Grain", "Big armies eat"],
-      supply: ["Supply lines", "Armies far from a city lose troops"],
-      scout: ["Scouts", "Your balloon sees red orders coming"],
-      spy: ["Spies", "2 gold shows every red order"],
-      courier: ["Couriers", "Far orders leave a tick late"],
-      general: ["Generals", "Your general leads one army"],
-      morale: ["Morale", "Winning armies fight harder"],
-      standing: ["Standing orders", "Orders that fire by themselves"],
-      winter: ["Winter", "Snow slows every march"],
-      storm: ["Storms", "A storm closes the sea lanes"],
-      revolt: ["Rebellions", "A fresh conquest may revolt"],
-      wonder: ["Wonders", "Hold it 5 ticks to win"],
-      engineer: ["Engineers", "Build palisades and bridges"],
-      siege: ["Sieges", "Walls need two neighbours"],
-      green: ["A third camp", "Green fights everyone"],
-      truce: ["Truces", "No attack for 6 ticks"],
-      betray: ["Betrayal", "An opportunist breaks its word"],
-      doctrine: ["Doctrines", "Pick one before the stage"],
-      lift: ["Airlift", "A balloon carries 6 troops over the sea"],
-      duel: ["The Marshals' duel", "The Red Marshal plays fair"]
-    };
 
     // A scrap of meadow paper with pieces standing on it, and an arrow between two of them.
     function picOf(keys, opt) {
@@ -4876,8 +4844,8 @@
       if (hd) { var h = 96, w = h * hd.width / hd.height; g.drawImage(hd, cx - w / 2, cy - h * 0.3, w, h); }
       return cv;
     }
-    function pg(id, lv, title, keys, opt, lines, rows) {
-      return { id: id, lv: lv, title: Lang.t(title), pic: picOf(keys, opt), rows: rows, lines: lines.map(function (l) { return Lang.t(l); }) };
+    function pg(id, lv, title, keys, opt, text, rows) {
+      return { id: id, lv: lv, title: Lang.t(title), pic: picOf(keys, opt), rows: rows, text: Lang.t(text) };
     }
     function R(label, value) { return [Lang.t(label), value]; }
 
@@ -5124,9 +5092,9 @@
       } finally { holdSet(keep); }
       return cv;
     }
-    function fp(id, lv, title, sp, lines, rows, size) {
+    function fp(id, lv, title, sp, text, rows, size) {
       return { id: id, lv: lv, title: Lang.t(title), pic: function () { return fieldPic(sp, size && size[0], size && size[1]); }, rows: rows,
-        lines: lines.map(function (l) { return Lang.t(l); }) };
+        text: Lang.t(text) };
     }
 
     /* The fields, by page. A letter is a region in reading order; `r` gives it
@@ -5268,8 +5236,8 @@
       } finally { ctx = keep; }
       return cv;
     }
-    function dp(id, lv, title, lines, rows) {
-      return { id: id, lv: lv, title: Lang.t(title), pic: doctrinePic, rows: rows, lines: lines.map(function (l) { return Lang.t(l); }) };
+    function dp(id, lv, title, text, rows) {
+      return { id: id, lv: lv, title: Lang.t(title), pic: doctrinePic, rows: rows, text: Lang.t(text) };
     }
 
     var guide = {
@@ -5277,125 +5245,73 @@
         var B = SHEET[BLUE], Rd = SHEET[RED], WB = WORKS_OF[BLUE];
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
-            fp("gu-orders", 1, "Orders", FIELD.orders, [
-              "Tap a region of yours: every region it can reach shows its actions. Tap one to give the order.",
-              "The big action sends every troop, like a tap on the region itself. The small ones send fewer, or fire the cannon.",
-              "An order is a draft: tap its region again to change it or cancel it, as often as you like, until it leaves."]),
+            fp("gu-orders", 1, "Orders", FIELD.orders, "Tap a region of yours: every region it can reach shows its actions. Tap one to give the order.\n\nThe big action sends every troop, like a tap on the region itself. The small ones send fewer, or fire the cannon.\n\nAn order is a draft: tap its region again to change it or cancel it, as often as you like, until it leaves."),
             (function () {
-              var desk = typeof Desk !== "undefined" && Desk.on(), page = pg("gu-map", 1, "Moving the map", [], {}, [
-                "The map is bigger than the screen: drag it anywhere to look around.",
-                "A drag only ever moves the map. Tap any region to read what it holds."].concat(desk ? [
-                "On a computer the hand cursor shows where the map can be grabbed."] : []),
+              var desk = typeof Desk !== "undefined" && Desk.on(), page = pg("gu-map", 1, "Moving the map", [], {}, "The map is bigger than the screen: drag it anywhere to look around.\n\nA drag only ever moves the map. Tap any region to read what it holds.",
                 desk ? [R("Move the map", Lang.t("drag, or the arrow keys")), R("Zoom", Lang.t("mouse wheel, or + and −")),
                         R("See the whole map", Lang.t("double click")), R("Send the orders", Lang.t("Enter, or Send"))]
                      : [R("Move the map", Lang.t("drag the map")), R("Zoom", Lang.t("pinch with two fingers")),
                         R("See the whole map", Lang.t("double tap")), R("Send the orders", Lang.t("the Send button"))]);
+              if (desk) page.text += "\n\n" + Lang.t("On a computer the hand cursor shows where the map can be grabbed.");
               page.pic = mapPic;
               return page;
             })(),
-            fp("gu-tick", 1, "The tick", FIELD.tick, [
-              "Every tick is a countdown. Press Send to send your orders at once, or the bell sends them as they stand when it runs out.",
-              "Then every army on the map moves together: yours and your rivals'."]),
-            fp("gu-battle", 1, "Battles", FIELD.battle, [
-              "Every troop is worth 2 points in attack and 3 in defence. When armies meet in a region, the side with more points wins.",
-              "The winner keeps one troop for each troop's worth of points left over: 20 points against 12 leave 8, so 4 attackers.",
-              "Two enemy columns crossing the same border meet halfway and cancel out, troop for troop."],
+            fp("gu-tick", 1, "The tick", FIELD.tick, "Every tick is a countdown. Press Send to send your orders at once, or the bell sends them as they stand when it runs out.\n\nThen every army on the map moves together: yours and your rivals'."),
+            fp("gu-battle", 1, "Battles", FIELD.battle, "Every troop is worth 2 points in attack and 3 in defence. When armies meet in a region, the side with more points wins.\n\nThe winner keeps one troop for each troop's worth of points left over: 20 points against 12 leave 8, so 4 attackers.\n\nTwo enemy columns crossing the same border meet halfway and cancel out, troop for troop.",
               [R("Attacker", Lang.t("2 per troop")), R("Defender", Lang.t("3 per troop")), R("A tie", Lang.t("nobody left"))]),
-            fp("gu-read", 1, "Reading the map", FIELD.read, [
-              "The tag at the head of an arrow says what the order will do: take the region, fall short by a few troops, a tie, or risky when a neighbour can still strike.",
-              "A red sword by your region counts the enemy troops next door: together they can take it. It stands on their side.",
-              "A green shield says your region holds even if they all strike at once."]),
-            fp("gu-growth", 1, "Cities", FIELD.growth, [
-              "Cities and capitals raise new troops at every bell, after the battles.",
-              "Lose your capital and the stage is lost."],
+            fp("gu-read", 1, "Reading the map", FIELD.read, "The tag at the head of an arrow says what the order will do: take the region, fall short by a few troops, a tie, or risky when a neighbour can still strike.\n\nA red sword by your region counts the enemy troops next door: together they can take it. It stands on their side.\n\nA green shield says your region holds even if they all strike at once."),
+            fp("gu-growth", 1, "Cities", FIELD.growth, "Cities and capitals raise new troops at every bell, after the battles.\n\nLose your capital and the stage is lost.",
               [R("Capital", Lang.t("+2 a tick")), R("City", Lang.t("+1 a tick"))])
           ] },
           { key: "land", label: Lang.t("The land"), pages: [
-            fp("gu-fort", 2, "Forts", FIELD.fort, [
-              "Each defender of a fort counts one point more. An old fort nobody holds still guards whoever takes it."],
+            fp("gu-fort", 2, "Forts", FIELD.fort, "Each defender of a fort counts one point more. An old fort nobody holds still guards whoever takes it.",
               [R("Fort", Lang.t("4 per troop")), R("Open land", Lang.t("3 per troop"))]),
-            fp("gu-mountain", 3, "Mountains", FIELD.mountain, [
-              "A mountain ridge cannot be crossed. A pass, marked by a signpost, is the only way through it."]),
-            fp("gu-river", 4, "Rivers", FIELD.river, [
-              "Each troop attacking across a river counts one point less. A bridge carries them across at full strength."],
+            fp("gu-mountain", 3, "Mountains", FIELD.mountain, "A mountain ridge cannot be crossed. A pass, marked by a signpost, is the only way through it."),
+            fp("gu-river", 4, "Rivers", FIELD.river, "Each troop attacking across a river counts one point less. A bridge carries them across at full strength.",
               [R("Across a river", Lang.t("1 per troop")), R("Over a bridge", Lang.t("2 per troop"))]),
-            fp("gu-sea", 5, "Harbours", FIELD.sea, [
-              "A harbour ships troops to any other harbour. The fleet sails for one tick and lands at the next bell.",
-              "Until it lands, its troops defend nothing."]),
-            fp("gu-winter", 19, "Winter", FIELD.winter, [
-              "The season turns every six ticks. In winter, entering snow or a pass takes one tick more, and production halves."],
+            fp("gu-sea", 5, "Harbours", FIELD.sea, "A harbour ships troops to any other harbour. The fleet sails for one tick and lands at the next bell.\n\nUntil it lands, its troops defend nothing."),
+            fp("gu-winter", 19, "Winter", FIELD.winter, "The season turns every six ticks. In winter, entering snow or a pass takes one tick more, and production halves.",
               [R("Season", Lang.t("every 6 ticks")), R("Production in winter", Lang.t("halved"))]),
-            fp("gu-storm", 20, "Storms", FIELD.storm, [
-              "A storm drifts over the sea. A sea lane under it is closed, and a fleet caught in it loses a third of its troops.",
-              "The dashed ring shows where it will be at the next bell."]),
-            fp("gu-wonder", 22, "Wonders", FIELD.wonder, [
-              "Hold the wonder for five ticks in a row and the stage is won. If a rival holds it that long first, the stage is lost."])
+            fp("gu-storm", 20, "Storms", FIELD.storm, "A storm drifts over the sea. A sea lane under it is closed, and a fleet caught in it loses a third of its troops.\n\nThe dashed ring shows where it will be at the next bell."),
+            fp("gu-wonder", 22, "Wonders", FIELD.wonder, "Hold the wonder for five ticks in a row and the stage is won. If a rival holds it that long first, the stage is lost.")
           ] },
           { key: "supply", label: Lang.t("Supplies"), pages: [
-            fp("gu-gold", 7, "Gold", FIELD.gold, [
-              "A mine pays one gold to its owner at every bell. Gold buys recruits, cavalry, spies, posts and works."]),
-            fp("gu-recruit", 8, "Recruitment", FIELD.recruit, [
-              "Select one of your cities and recruit: the new troops join at the next bell, after the battles."],
+            fp("gu-gold", 7, "Gold", FIELD.gold, "A mine pays one gold to its owner at every bell. Gold buys recruits, cavalry, spies, posts and works."),
+            fp("gu-recruit", 8, "Recruitment", FIELD.recruit, "Select one of your cities and recruit: the new troops join at the next bell, after the battles.",
               [R("Recruits", Lang.t("+3 for 3 gold"))]),
-            fp("gu-cav", 9, "Cavalry", FIELD.cav, [
-              "Riders cross two regions in one tick, through your own or empty land.",
-              "A region holding riders and foot can give one order to each."],
+            fp("gu-cav", 9, "Cavalry", FIELD.cav, "Riders cross two regions in one tick, through your own or empty land.\n\nA region holding riders and foot can give one order to each.",
               [R("Cavalry", Lang.t("+2 for 4 gold"))]),
-            fp("gu-grain", 11, "Grain", FIELD.grain, [
-              "A region feeds six troops. Each troop above that eats one grain a tick, and a farm makes three.",
-              "When the stock runs out, one troop deserts from every overfed region."]),
-            fp("gu-supply", 12, "Supply lines", FIELD.supply, [
-              "An army more than three regions from your cities or a depot loses one troop every tick.",
-              "A wagon builds a depot in one tick."]),
-            fp("gu-engineer", 23, "Engineers", FIELD.engineer, [
-              "Your engineer builds a palisade, one point more for each defender, or a bridge over a river. He must stay until it is done."],
+            fp("gu-grain", 11, "Grain", FIELD.grain, "A region feeds six troops. Each troop above that eats one grain a tick, and a farm makes three.\n\nWhen the stock runs out, one troop deserts from every overfed region."),
+            fp("gu-supply", 12, "Supply lines", FIELD.supply, "An army more than three regions from your cities or a depot loses one troop every tick.\n\nA wagon builds a depot in one tick."),
+            fp("gu-engineer", 23, "Engineers", FIELD.engineer, "Your engineer builds a palisade, one point more for each defender, or a bridge over a river. He must stay until it is done.",
               [R("Palisade", Lang.t("4 gold, 2 ticks")), R("Bridge", Lang.t("4 gold, 2 ticks"))])
           ] },
           { key: "intel", label: Lang.t("Intelligence"), pages: [
-            fp("gu-fog", 6, "Fog of war", FIELD.fog, [
-              "You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond reads ?."]),
-            fp("gu-scout", 13, "Scouts", FIELD.scout, [
-              "Your balloon sees two regions around it, and the red orders aimed at them, before the bell.",
-              "Move it one region a tick."]),
-            fp("gu-spy", 14, "Spies", FIELD.spy, [
-              "The spy shows every red order of the tick, and every tag and shield counts them."],
+            fp("gu-fog", 6, "Fog of war", FIELD.fog, "You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond reads ?."),
+            fp("gu-scout", 13, "Scouts", FIELD.scout, "Your balloon sees two regions around it, and the red orders aimed at them, before the bell.\n\nMove it one region a tick."),
+            fp("gu-spy", 14, "Spies", FIELD.spy, "The spy shows every red order of the tick, and every tag and shield counts them.",
               [R("Spy", Lang.t("2 gold"))]),
-            fp("gu-courier", 15, "Couriers", FIELD.courier, [
-              "An order from more than four steps from your capital or a courier post leaves one tick late, walking as footprints.",
-              "A courier post costs two gold."])
+            fp("gu-courier", 15, "Couriers", FIELD.courier, "An order from more than four steps from your capital or a courier post leaves one tick late, walking as footprints.\n\nA courier post costs two gold.")
           ] },
           { key: "army", label: Lang.t("The army"), pages: [
-            fp("gu-cannon", 10, "Artillery", FIELD.cannon, [
-              "A cannon fires on a neighbour before anything moves: two troops fewer there. It cannot move and fire in the same tick."]),
-            fp("gu-general", 16, "Generals", FIELD.general, [
-              "Your general leads the army he stands with: each of its troops counts one point more. If that army is beaten he is captured, and his bonus is lost."],
+            fp("gu-cannon", 10, "Artillery", FIELD.cannon, "A cannon fires on a neighbour before anything moves: two troops fewer there. It cannot move and fire in the same tick."),
+            fp("gu-general", 16, "Generals", FIELD.general, "Your general leads the army he stands with: each of its troops counts one point more. If that army is beaten he is captured, and his bonus is lost.",
               [R("Attack", Lang.t("3 per troop")), R("Defence", Lang.t("4 per troop"))]),
-            fp("gu-morale", 17, "Morale", FIELD.morale, [
-              "A win raises an army's morale, a defeat lowers it. A drummer raises it by one every tick.",
-              "Each step adds one point to the whole army, or takes one away."],
+            fp("gu-morale", 17, "Morale", FIELD.morale, "A win raises an army's morale, a defeat lowers it. A drummer raises it by one every tick.\n\nEach step adds one point to the whole army, or takes one away.",
               [R("Each step", Lang.t("+1 point")), R("Full morale", Lang.t("+3 points"))]),
-            fp("gu-standing", 18, "Standing orders", FIELD.standing, [
-              "A region can hold one standing order that fires by itself: reinforce a neighbour the moment it is attacked, or retake it if it is lost."]),
-            fp("gu-siege", 24, "Sieges", FIELD.siege, [
-              "A capital or a fort can only be attacked by a camp that holds two of its neighbours. A siege tower ignores the walls."]),
-            fp("gu-lift", 29, "Airlift", FIELD.lift, [
-              "The troop balloon carries up to six troops three regions away, over sea or mountains, in one tick. Everyone sees it coming."])
+            fp("gu-standing", 18, "Standing orders", FIELD.standing, "A region can hold one standing order that fires by itself: reinforce a neighbour the moment it is attacked, or retake it if it is lost."),
+            fp("gu-siege", 24, "Sieges", FIELD.siege, "A capital or a fort can only be attacked by a camp that holds two of its neighbours. A siege tower ignores the walls."),
+            fp("gu-lift", 29, "Airlift", FIELD.lift, "The troop balloon carries up to six troops three regions away, over sea or mountains, in one tick. Everyone sees it coming.")
           ] },
           { key: "rivals", label: Lang.t("Rivals"), pages: [
-            fp("gu-revolt", 21, "Rebellions", FIELD.revolt, [
-              "A region taken less than three ticks ago, held by fewer than two troops, may revolt and go over to the rebels."]),
-            fp("gu-green", 25, "A third camp", FIELD.green, [
-              "The green camp plays too, against everyone. Your shields count every enemy next door."]),
-            fp("gu-truce", 26, "Truces", FIELD.truce, [
-              "Offer a truce: no attack between you and that camp for six ticks. A rival accepts only when it is the weaker."],
+            fp("gu-revolt", 21, "Rebellions", FIELD.revolt, "A region taken less than three ticks ago, held by fewer than two troops, may revolt and go over to the rebels."),
+            fp("gu-green", 25, "A third camp", FIELD.green, "The green camp plays too, against everyone. Your shields count every enemy next door."),
+            fp("gu-truce", 26, "Truces", FIELD.truce, "Offer a truce: no attack between you and that camp for six ticks. A rival accepts only when it is the weaker.",
               [R("Truce", Lang.t("6 ticks"))]),
-            fp("gu-betray", 27, "Betrayal", FIELD.betray, [
-              "Every rival has a temper. An opportunist breaks a truce when it is stronger at a border, and its morale drops everywhere for it."]),
-            dp("gu-doctrine", 28, "Doctrines", [
-              "Before the stage, pick one doctrine and play by it until the end."],
+            fp("gu-betray", 27, "Betrayal", FIELD.betray, "Every rival has a temper. An opportunist breaks a truce when it is stronger at a border, and its morale drops everywhere for it."),
+            dp("gu-doctrine", 28, "Doctrines", "Before the stage, pick one doctrine and play by it until the end.",
               [R("Blitz", Lang.t("riders go one region further")), R("Bastion", Lang.t("forts +2 per troop")), R("Merchant", Lang.t("mines pay 2"))]),
-            pg("gu-duel", 30, "The Marshals' duel", [B + "08", Rd + "08"], {}, [
-              "The Red Marshal sees only what you see, and plays your rules and your tick. Every mechanic is on."])
+            pg("gu-duel", 30, "The Marshals' duel", [B + "08", Rd + "08"], {}, "The Red Marshal sees only what you see, and plays your rules and your tick. Every mechanic is on.")
           ] }
         ];
       }

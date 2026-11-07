@@ -263,7 +263,22 @@ var STYLES = [
     wall: 0x8a6a48, ramp: [0x7a4a22, 0xe8a862], rail: 0xe0d0b8, mark: 0x5a4028, dust: 0xead6ae },
   { name: "Retro pixels", toon: 2, pixel: 0.3, bg: 0x3b3a36, hemi: [0xe4ecff, 0x5a4e40, 1.5], sun: [0xfff0d8, 2.4],
     ground: { dirt: "#6b5f4c", park: "#a9adb2", joint: "rgba(0, 0, 0, 0.18)", asphalt: "#4d525a", side: "#8e949a", lot: "#7d8a6e" },
-    wall: 0x2c2f33, ramp: [0x8a3f12, 0xffb347], rail: 0xc9ced4, mark: 0x1d1a16, dust: 0xc8bca8 }
+    wall: 0x2c2f33, ramp: [0x8a3f12, 0xffb347], rail: 0xc9ced4, mark: 0x1d1a16, dust: 0xc8bca8 },
+  // Low poly: the reference look is the LIGHT more than the polygons. Flat
+  // shaded facets, chamfered edges that catch the sun, baked ambient
+  // occlusion (dark feet on every block, a contact shadow on the ground), a
+  // warm low sun against a blue sky fill, ACES tone mapping, a hazy fog, and a
+  // tilt-shift blur that turns the city into a miniature.
+  { name: "Low poly", lowpoly: true, ao: true, tone: 1.15,
+    post: { band: 0.1, soft: 0.32, blur: 3.2, sat: 1.12, vignette: 0.45 },
+    bg: 0xa9c6d8, fog: [1.0, 3.2], hemi: [0xc4dcff, 0x7a6248, 1.25], sun: [0xffdcae, 3.2], sunPos: [62, 52, 40],
+    ground: { dirt: "#9cbc5e", park: "#ddd3c1", joint: "rgba(90, 70, 40, 0.10)", asphalt: "#646b78", side: "#cfc5b2", lot: "#a8c96f" },
+    wall: 0x9a8d7a, ramp: [0x2b86ad, 0xd6ecef], rail: 0xf4efe4, mark: 0x4a3c2c, dust: 0xeee2c8 },
+  // the same scene with nothing but the shading: no post, no baked occlusion
+  { name: "Low poly raw", lowpoly: true, tone: 1.15,
+    bg: 0xa9c6d8, fog: [1.0, 3.2], hemi: [0xc4dcff, 0x7a6248, 1.25], sun: [0xffdcae, 3.2], sunPos: [62, 52, 40],
+    ground: { dirt: "#9cbc5e", park: "#ddd3c1", joint: "rgba(90, 70, 40, 0.10)", asphalt: "#646b78", side: "#cfc5b2", lot: "#a8c96f" },
+    wall: 0x9a8d7a, ramp: [0x2b86ad, 0xd6ecef], rail: 0xf4efe4, mark: 0x4a3c2c, dust: 0xeee2c8 }
 ];
 var STYLE = STYLES[0];
 function stylize(hex, keep) { return STYLE.pal ? STYLE.pal(hex, keep) : hex; }
@@ -320,8 +335,87 @@ function resize() {
   hud.width = W * DPR; hud.height = H * DPR;
   hud.style.width = W + "px"; hud.style.height = H + "px";
   perspCam.aspect = W / H; perspCam.updateProjectionMatrix();
+  sizePost();
 }
 window.addEventListener("resize", resize);
+
+// ---- post: tilt-shift, grade, tone mapping (styles with a `post` block) ---------
+// The scene is rendered linear into a half-float target, blurred across then
+// down with a radius that grows away from a horizontal band in focus (the band
+// follows the dozer on screen), then graded, tone mapped (ACES, three's own
+// fit) and written as sRGB. Two full-screen passes, 13 taps each.
+var rtScene = null, rtBlur = null, postScene, postCam, postQuad, blurH, blurV, focusY = 0.5, vFocus = new THREE.Vector3();
+var POST_VS = "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
+var POST_BLUR = [
+  "uniform sampler2D tSrc; uniform vec2 uDir; uniform float uFocus, uBand, uSoft, uMax;",
+  "varying vec2 vUv;",
+  "vec3 blurred() {",
+  "  float r = uMax * smoothstep(uBand, uBand + uSoft, abs(vUv.y - uFocus));",
+  "  if (r < 0.05) return texture2D(tSrc, vUv).rgb;",
+  "  vec3 c = vec3(0.0); float ws = 0.0;",
+  "  for (int i = -6; i <= 6; i++) {",
+  "    float fi = float(i), w = exp(-fi * fi / 18.0);",
+  "    c += texture2D(tSrc, vUv + uDir * fi * r / 3.0).rgb * w; ws += w;",
+  "  }",
+  "  return c / ws;",
+  "}"
+].join("\n");
+var POST_GRADE = [
+  "uniform float uExposure, uSat, uVig;",
+  "vec3 aces(vec3 v) {",
+  "  const mat3 IN = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));",
+  "  const mat3 OUT = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));",
+  "  v = IN * (v * uExposure / 0.6);",
+  "  vec3 a = v * (v + 0.0245786) - 0.000090537, b = v * (0.983729 * v + 0.4329510) + 0.238081;",
+  "  return clamp(OUT * (a / b), 0.0, 1.0);",
+  "}",
+  "vec3 srgb(vec3 c) { return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308)))); }"
+].join("\n");
+function sizePost() {
+  if (!rtScene) return;
+  var pr = renderer.getPixelRatio(), w = Math.round(W * pr), h = Math.round(H * pr);
+  rtScene.setSize(w, h); rtBlur.setSize(w, h);
+  blurH.uniforms.uDir.value.set(1 / w, 0); blurV.uniforms.uDir.value.set(0, 1 / h);
+}
+function ensurePost() {
+  if (rtScene) return;
+  rtScene = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 });
+  rtBlur = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
+  function uni() {
+    return { tSrc: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 }, uBand: { value: 0.1 },
+      uSoft: { value: 0.3 }, uMax: { value: 3 }, uExposure: { value: 1 }, uSat: { value: 1 }, uVig: { value: 0 } };
+  }
+  function shader(fs) { return new THREE.ShaderMaterial({ uniforms: uni(), vertexShader: POST_VS, fragmentShader: fs, depthTest: false, depthWrite: false, toneMapped: false }); }
+  blurH = shader(POST_BLUR + "\nvoid main() { gl_FragColor = vec4(blurred(), 1.0); }");
+  blurV = shader(POST_BLUR + "\n" + POST_GRADE + "\nvoid main() {\n" +
+    "  vec3 c = blurred();\n" +
+    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = mix(vec3(l), c, uSat);\n" +
+    "  c = aces(c);\n" +
+    "  c *= mix(1.0, smoothstep(0.95, 0.25, length((vUv - 0.5) * vec2(1.25, 1.0))), uVig);\n" +
+    "  gl_FragColor = vec4(srgb(c), 1.0);\n}");
+  postScene = new THREE.Scene(); postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blurH); postQuad.frustumCulled = false;
+  postScene.add(postQuad);
+  sizePost();
+}
+function renderFrame(dt) {
+  var P = STYLE.post;
+  if (!P) { renderer.setRenderTarget(null); renderer.render(scene, camera); return; }
+  ensurePost();
+  vFocus.copy(dozer.mesh.position).project(camera);      // the band in focus follows the dozer
+  focusY += (clamp(vFocus.y * 0.5 + 0.5, 0.2, 0.8) - focusY) * (1 - Math.exp(-4 * dt));
+  var pr = renderer.getPixelRatio();
+  [blurH, blurV].forEach(function (m) {
+    var u = m.uniforms;
+    u.uFocus.value = focusY; u.uBand.value = P.band; u.uSoft.value = P.soft; u.uMax.value = P.blur * pr;
+    u.uExposure.value = STYLE.tone || 1; u.uSat.value = P.sat; u.uVig.value = P.vignette;
+  });
+  renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
+  blurH.uniforms.tSrc.value = rtScene.texture; postQuad.material = blurH;
+  renderer.setRenderTarget(rtBlur); renderer.render(postScene, postCam);
+  blurV.uniforms.tSrc.value = rtBlur.texture; postQuad.material = blurV;
+  renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+}
 resize();
 
 // ---- terrain: a baked heightfield, and pits sunk into it -----------------------
@@ -610,7 +704,9 @@ var groundCv = document.createElement("canvas"); groundCv.width = groundCv.heigh
 var groundTex = new THREE.CanvasTexture(groundCv);
 groundTex.colorSpace = THREE.SRGBColorSpace;
 groundTex.anisotropy = 4;
-var wallMat = new THREE.MeshLambertMaterial({ color: 0x2c2f33 });
+var groundMat = new THREE.MeshLambertMaterial({ map: groundTex });
+var groundMatLow = new THREE.MeshStandardMaterial({ map: groundTex, flatShading: true, roughness: 1, metalness: 0 });
+var groundMesh = null;
 function drawGround() {
   var N = groundCv.width, g = groundCv.getContext("2d"), k = N / GW, C = STYLE.ground;
   function X(x) { return (x + GW / 2) * k; }
@@ -637,14 +733,9 @@ function drawGround() {
 }
 (function buildGround() {
   drawGround();
-  var ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({ map: groundTex }));
-  ground.receiveShadow = true;
-  scene.add(ground);
-  [[0, -HALF - 1, ARENA + 4, 2], [0, HALF + 1, ARENA + 4, 2], [-HALF - 1, 0, 2, ARENA], [HALF + 1, 0, 2, ARENA]]
-    .forEach(function (w) {
-      var m = new THREE.Mesh(new THREE.BoxGeometry(w[2], 1.6, w[3]), wallMat);
-      m.position.set(w[0], 0.8, w[1]); m.castShadow = m.receiveShadow = true; scene.add(m);
-    });
+  groundMesh = new THREE.Mesh(groundGeo, groundMat);
+  groundMesh.receiveShadow = true;
+  scene.add(groundMesh);
 })();
 function shapeGround() {
   var pos = groundGeo.attributes.position, hole = new Uint8Array(pos.count), keep = [];
@@ -675,12 +766,119 @@ function toonMap(steps) {
 }
 function makeMat(opts) {
   if (STYLE.toon) { opts.gradientMap = toonMap(STYLE.toon); return new THREE.MeshToonMaterial(opts); }
+  if (STYLE.lowpoly) { opts.flatShading = true; opts.roughness = 0.82; opts.metalness = 0; return new THREE.MeshStandardMaterial(opts); }
   return new THREE.MeshLambertMaterial(opts);
 }
-function mat(hex, keep) {                 // keep: a colour no style may touch (the dozer, the tiers)
-  var key = hex + (keep ? "k" : "");
-  if (!matCache[key]) matCache[key] = makeMat({ color: stylize(hex, keep) });
+function mat(hex, keep, ao) {             // keep: a colour no style may touch (the dozer, the tiers)
+  var key = hex + (keep ? "k" : "") + (ao ? "a" : "");   // ao: the geometry carries baked occlusion
+  if (!matCache[key]) matCache[key] = makeMat({ color: stylize(hex, keep), vertexColors: !!ao });
   return matCache[key];
+}
+
+// ---- low poly geometry: chamfered boxes and octagonal drums, with baked AO -----
+// Built at the object's real size (so the chamfer is the same width on a kiosk
+// and on a tower) and then divided back to a unit size, because every block
+// is a unit box scaled by its mesh, and the crumble animates that scale.
+// The vertex colour is the ambient occlusion: dark at the foot, clear higher up.
+var lowGeoCache = {};
+function bakeAO(g, h, d) {                 // d: { base, aoH, aoMin } - height of the ground, lift height, darkest
+  var pos = g.attributes.position, n = pos.count, cols = new Float32Array(n * 3);
+  var base = d.base || 0, aoH = d.aoH || h, lo = d.aoMin === undefined ? 0.8 : d.aoMin;
+  for (var i = 0; i < n; i++) {
+    var y = pos.getY(i) + h / 2 - base, t = clamp(y / aoH, 0, 1);
+    var v = lo + (1 - lo) * t * t * (3 - 2 * t);
+    cols[3 * i] = cols[3 * i + 1] = cols[3 * i + 2] = v;
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+}
+function lowBox(d) {
+  var w = d.w, h = d.h, dp = d.d;
+  var r = clamp(0.07 * Math.min(w, dp), 0.04, 0.45);
+  r = Math.min(r, 0.3 * Math.min(w, h, dp));
+  var hw = w / 2 - r, hd = dp / 2 - r, c = Math.min(r * 0.9, 0.45 * Math.min(hw, hd));
+  var sh = new THREE.Shape();             // the plan, inset by the chamfer and with its corners cut
+  sh.moveTo(-hw + c, -hd); sh.lineTo(hw - c, -hd); sh.lineTo(hw, -hd + c); sh.lineTo(hw, hd - c);
+  sh.lineTo(hw - c, hd); sh.lineTo(-hw + c, hd); sh.lineTo(-hw, hd - c); sh.lineTo(-hw, -hd + c); sh.closePath();
+  var g = new THREE.ExtrudeGeometry(sh, { depth: h - 2 * r, bevelEnabled: true, bevelThickness: r, bevelSize: r,
+    bevelSegments: 1, steps: 1, curveSegments: 1 });
+  g.rotateX(-Math.PI / 2); g.translate(0, r - h / 2, 0);
+  g.deleteAttribute("uv");
+  bakeAO(g, h, d);
+  g.scale(1 / w, 1 / h, 1 / dp);
+  return g;
+}
+function lowDrum(d) {                     // a cylinder of radius d.r and height d.h, eight facets, chamfered rims
+  var R = d.r, h = d.h, r = Math.min(0.12 * R, 0.25 * h, 0.4);
+  var pts = [[0.001, -h / 2], [R - r, -h / 2], [R, -h / 2 + r], [R, h / 2 - r], [R - r, h / 2], [0.001, h / 2]]
+    .map(function (p) { return new THREE.Vector2(p[0], p[1]); });
+  var g = new THREE.LatheGeometry(pts, 8);
+  g.deleteAttribute("uv");
+  bakeAO(g, h, d);
+  g.scale(1 / R, 1 / h, 1 / R);
+  return g;
+}
+function lowGeo(d) {
+  var key = (d.cyl ? "c" : "b") + [d.w, d.h, d.d, d.r, d.base, d.aoH, d.aoMin].map(function (v) { return v === undefined ? "" : (+v).toFixed(2); }).join(",");
+  return lowGeoCache[key] || (lowGeoCache[key] = d.cyl ? lowDrum(d) : lowBox(d));
+}
+// gives a mesh the geometry and the material of the current style; userData:
+// hex / keep / rail / wall for the colour, dims for a block that has a low poly form
+function dress(m) {
+  var u = m.userData, low = !!(STYLE.lowpoly && u.dims);
+  if (u.dims) m.geometry = low ? lowGeo(u.dims) : u.dims.cyl ? cylGeo : boxGeo;
+  m.material = mat(u.rail ? STYLE.rail : u.wall ? STYLE.wall : u.hex, u.keep, low);
+}
+(function buildWalls() {
+  [[0, -HALF - 1, ARENA + 4, 2], [0, HALF + 1, ARENA + 4, 2], [-HALF - 1, 0, 2, ARENA], [HALF + 1, 0, 2, ARENA]]
+    .forEach(function (w) {
+      var m = new THREE.Mesh(boxGeo);
+      m.scale.set(w[2], 1.6, w[3]);
+      m.userData = { wall: true, keep: true, dims: { w: w[2], h: 1.6, d: w[3], aoMin: 0.7 } };
+      dress(m);
+      m.position.set(w[0], 0.8, w[1]); m.castShadow = m.receiveShadow = true; scene.add(m);
+    });
+})();
+
+// ---- contact shadows: a soft dark ring on the ground around every block ---------
+// The baked half of the ambient occlusion. Its alpha is per vertex, from the
+// block's own outline (dark) to the same outline pushed out (clear), laid on
+// the terrain vertex by vertex.
+var AO_SPREAD = 2.4, AO_DARK = 0.5;
+var aoMat = new THREE.MeshBasicMaterial({ color: 0x241a10, vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+  polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+function contactShadow(b) {
+  var outline = [], i;
+  if (b.shape === "box") {                // the rectangle, its corners rounded as it spreads
+    var cs = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+    cs.forEach(function (c, k) {
+      for (var s = 0; s <= 3; s++) {
+        var a = (k + s / 3) * Math.PI / 2;
+        outline.push([b.x + c[0] * b.hw, b.z + c[1] * b.hd, Math.cos(a), Math.sin(a)]);
+      }
+    });
+  } else {
+    for (i = 0; i < 16; i++) { var t = i / 16 * 2 * Math.PI; outline.push([b.x + Math.cos(t) * b.r, b.z + Math.sin(t) * b.r, Math.cos(t), Math.sin(t)]); }
+  }
+  var RINGS = [[0, AO_DARK], [0.3, AO_DARK * 0.5], [1, 0]], pos = [], cols = [], idx = [], M = outline.length, j;
+  for (j = 0; j < RINGS.length; j++) for (i = 0; i < M; i++) {
+    var o = outline[i], x = o[0] + o[2] * AO_SPREAD * RINGS[j][0], z = o[1] + o[3] * AO_SPREAD * RINGS[j][0];
+    pos.push(x, Hbase(x, z) + 0.08, z); cols.push(1, 1, 1, RINGS[j][1]);
+  }
+  for (j = 0; j < RINGS.length - 1; j++) for (i = 0; i < M; i++) {
+    var a0 = j * M + i, a1 = j * M + (i + 1) % M;
+    idx.push(a0, a1 + M, a1, a0, a0 + M, a1 + M);
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 4));
+  g.setIndex(idx);
+  var m = new THREE.Mesh(g, aoMat); m.renderOrder = 1; m.visible = !!STYLE.ao;
+  scene.add(m);
+  return m;
+}
+function dropContactShadow(b) {
+  if (!b.ao) return;
+  scene.remove(b.ao); b.ao.geometry.dispose(); b.ao = null;
 }
 var colCache = {};
 function col(hex) { if (!colCache[hex]) colCache[hex] = new THREE.Color(hex); return colCache[hex]; }
@@ -757,13 +955,14 @@ function buildParkMeshes() {
         if (dx * dx + dz * dz < 2 && r.P[3 * j + 1] < py) clear = false;
       }
       if (!clear) continue;
-      var post = new THREE.Mesh(boxGeo, mat(postHex, true)); post.userData = { hex: postHex, keep: true };
-      post.scale.set(0.24, py - gb, 0.24); post.position.set(px, (py + gb) / 2, pz); post.castShadow = true;
+      var post = new THREE.Mesh(boxGeo); post.userData = { hex: postHex, keep: true, dims: { w: 0.24, h: py - gb, d: 0.24, aoMin: 0.6, aoH: 2 } };
+      dress(post); post.scale.set(0.24, py - gb, 0.24); post.position.set(px, (py + gb) / 2, pz); post.castShadow = true;
       parkGroup.add(post);
     }
     r.pillars.forEach(function (pl) {                 // a spiral turns around a column
-      var gb2 = Hbase(pl.x, pl.z), col2 = new THREE.Mesh(cylGeo, mat(postHex, true));
-      col2.userData = { hex: postHex, keep: true };
+      var gb2 = Hbase(pl.x, pl.z), col2 = new THREE.Mesh(cylGeo);
+      col2.userData = { hex: postHex, keep: true, dims: { cyl: true, r: 0.7, h: pl.top - gb2, aoMin: 0.6, aoH: 3 } };
+      dress(col2);
       col2.scale.set(0.7, pl.top - gb2, 0.7); col2.position.set(pl.x, (pl.top + gb2) / 2, pl.z); col2.castShadow = true;
       parkGroup.add(col2);
     });
@@ -834,18 +1033,21 @@ function addBuilding(kind, shape, x, z, a, d, h, tier) {
   var mesh;
   if (shape === "box") {
     b.hw = a / 2; b.hd = d / 2;
-    mesh = new THREE.Mesh(boxGeo, mat(hex, true)); mesh.scale.set(a, b.ht, d);
+    mesh = new THREE.Mesh(boxGeo); mesh.scale.set(a, b.ht, d);
+    mesh.userData = { hex: hex, keep: true, dims: { w: a, h: b.ht, d: d, base: SKIRT, aoH: 4, aoMin: 0.5 } };
     b.area = a * d;
   } else {
     b.r = a;
-    mesh = new THREE.Mesh(cylGeo, mat(hex, true)); mesh.scale.set(a, b.ht, a);
+    mesh = new THREE.Mesh(cylGeo); mesh.scale.set(a, b.ht, a);
+    mesh.userData = { hex: hex, keep: true, dims: { cyl: true, r: a, h: b.ht, base: SKIRT, aoH: 4, aoMin: 0.5 } };
     b.area = Math.PI * a * a;
   }
   mesh.position.set(x, b.base + b.ht / 2, z);
   mesh.castShadow = mesh.receiveShadow = true;
-  mesh.userData = { hex: hex, keep: true };
+  dress(mesh);
   scene.add(mesh);
   b.mesh = mesh;
+  b.ao = contactShadow(b);
   b.vol = b.area * h;
   b.maxHp = b.hp = HP_K * Math.sqrt(b.area) * (1 + h / 12) * (kind === "tank" ? 0.6 : 1);
   b.base0 = Math.round(10 * Math.sqrt(b.vol) / 5) * 5;
@@ -897,8 +1099,9 @@ var COM = 1.3;                            // centre of mass height: tricks turn 
   var outer = new THREE.Group(), g = new THREE.Group();
   g.position.y = -COM; outer.add(g);
   function part(w, h, d, x, y, z, hex) {
-    var m = new THREE.Mesh(boxGeo, mat(hex, true)); m.scale.set(w, h, d); m.position.set(x, y, z);
-    m.userData = { hex: hex, keep: true };
+    var m = new THREE.Mesh(boxGeo); m.scale.set(w, h, d); m.position.set(x, y, z);
+    m.userData = { hex: hex, keep: true, dims: { w: w, h: h, d: d, aoMin: 0.78 } };
+    dress(m);
     m.castShadow = true; g.add(m); return m;
   }
   part(4.4, 1.0, 0.9, -0.2, 0.5, 1.25, 0x2a2a2a);
@@ -1135,6 +1338,7 @@ function newCity() {
     var b = buildings[i];
     if (b.fall) scene.remove(b.fall.pivot);
     scene.remove(b.mesh);
+    dropContactShadow(b);
   }
   buildings = []; total = 0; flattened = 0;
   grid = []; for (var g = 0; g < GN * GN; g++) grid.push([]);
@@ -1181,6 +1385,7 @@ function burst(b, n, dx, dz, push) {
 }
 function destroy(b, dx, dz, cause) {
   b.alive = false; flattened++;
+  dropContactShadow(b);
   comboAdd(CAUSE_NAME[cause] || "Smash", b.base0);
   floats.push({ x: b.x, y: b.y0 + Math.min(b.h, 12) + 2, z: b.z, t: 0, txt: "+" + b.base0, col: "#fff3c4", size: 16, life: 1.2 });
   var dl = Math.sqrt(dx * dx + dz * dz);
@@ -1870,8 +2075,12 @@ function placeCamera(dt) {
     perspCam.fov = CAM.fov * (1 + 0.14 * clamp((sp3 - 20) / 20, 0, 1)) + fovPunch * CAM.fov / 30;
     perspCam.updateProjectionMatrix();
   }
-  if (scene.fog) { var d = Math.sqrt(back * back + h * h); scene.fog.near = d * 0.75; scene.fog.far = d * 1.8; }
-  sun.position.set(cam.x + 55, 70, cam.z + 35);
+  if (scene.fog) {
+    var d = Math.sqrt(back * back + h * h), fk = STYLE.fog.length ? STYLE.fog : [0.75, 1.8];
+    scene.fog.near = d * fk[0]; scene.fog.far = d * fk[1];
+  }
+  var sp = STYLE.sunPos || [55, 70, 35];
+  sun.position.set(cam.x + sp[0], sp[1], cam.z + sp[2]);
   sun.target.position.set(cam.x, 0, cam.z);
 }
 var menuEl = document.getElementById("menu"), menuOpen = false, camIdx = 0, styleIdx = 0;
@@ -1888,9 +2097,13 @@ function applyStyle(i) {
   hemi.color.setHex(STYLE.hemi[0]); hemi.groundColor.setHex(STYLE.hemi[1]); hemi.intensity = STYLE.hemi[2];
   sun.color.setHex(STYLE.sun[0]); sun.intensity = STYLE.sun[1];
   drawGround();
-  wallMat.color.setHex(STYLE.wall);
+  groundMesh.material = STYLE.lowpoly ? groundMatLow : groundMat;
+  renderer.toneMapping = STYLE.tone && !STYLE.post ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+  renderer.toneMappingExposure = STYLE.tone || 1;
+  sun.shadow.normalBias = STYLE.lowpoly ? 0.05 : 0;
   matCache = {};
-  scene.traverse(function (o) { if (o.isMesh && o.userData.hex !== undefined) o.material = mat(o.userData.rail ? STYLE.rail : o.userData.hex, o.userData.keep); });
+  scene.traverse(function (o) { if (o.isMesh && (o.userData.hex !== undefined || o.userData.wall)) dress(o); });
+  buildings.forEach(function (b) { if (b.ao) b.ao.visible = !!STYLE.ao; });
   chunkMesh.material = makeMat({ color: 0xffffff });
   dustMesh.material.color.setHex(STYLE.dust); markMesh.material.color.setHex(STYLE.mark);
   buildParkMeshes();
@@ -2076,7 +2289,7 @@ function frame(now) {
   placeCamera(rdt);
   drawDozer(rdt);
   updateTrail(rdt);
-  renderer.render(scene, camera);
+  renderFrame(rdt);
   drawHud(fpsS, rdt);
   window.__s = { score: score, level: level, gauge: Math.round(gauge), combo: combo.mult, bestCombo: stats.bestCombo,
     tricks: stats.tricks, bails: stats.bails, perfects: stats.perfects, rides: stats.rides, airMax: +stats.airMax.toFixed(2),

@@ -17,6 +17,7 @@
     if (Fx.frozen(dt)) { Fx.update(dt); Pop.tick(dt); return; }   // hit-stop: only fx advance
     Round.tick(dt);
     if (State !== "playing") return;                // a game may have ended us
+    Notify.tick(dt);                                // lets the discoveries out, paced
     Game.update(dt);
     Fx.update(dt);
     Pop.tick(dt);                                   // Pop's canvas half (Pop.text)

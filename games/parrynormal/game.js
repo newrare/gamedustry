@@ -132,34 +132,39 @@
     //  in the air — it crosses the scene's walls — and `lift` how high above
     //  its shadow it hangs: high enough to read as flight, never the
     //  half-height that reads as a walker floating. Everything else stands
-    //  on its feet. `weak` is what counters it, shown on the guide page.
+    //  on its feet. `shade` moves a walker's shadow when its lowest pixels
+    //  are not under its body — [rise, width]: the rise a share of `h`, the
+    //  width a multiple of `r` (the spider's splayed leg tips). `gait`
+    //  puts a walk into the body when its two walk frames barely differ —
+    //  [bob px, sway degrees, squash], one hop, one rock and one landing a
+    //  step, the shadow left on the ground. `weak` is what counters it, shown on the guide page.
     // ======================================================================
     var ENEMIES = [
-      { key: "bat",        name: "Bat",         biome: 0, hp: 1,  speed: 85,  r: 18, h: 58,  score: 30,   beh: "wobble",   fly: true, lift: 34, weak: ["lightning", "familiars"], line: "Flutters straight at the witch" },
-      { key: "jack",       name: "Jack",        biome: 0, hp: 3,  speed: 50,  r: 26, h: 72,  score: 60,   beh: "walk",     weak: ["lightning", "meteor"],    line: "Not necessarily fast, but it takes attacks well" },
-      { key: "wisp",       name: "Wisp",        biome: 0, hp: 1,  speed: 80,  r: 16, h: 58,  score: 40,   beh: "dash",     fly: true, lift: 30, weak: ["freeze", "salt"],         line: "Dashes in, stops, dashes again" },
-      { key: "spider",     name: "Spider",      biome: 0, hp: 2,  speed: 70,  r: 22, h: 58,  score: 50,   beh: "pounce",   weak: ["freeze", "wave"],         line: "Waits at a distance, then leaps" },
-      { key: "zombie",     name: "Zombie",      biome: 1, hp: 5,  speed: 32,  r: 26, h: 84,  score: 80,   beh: "walk",     weak: ["wave", "banish"],         line: "Very slow, very tough" },
-      { key: "skeleton",   name: "Skeleton",    biome: 1, hp: 2,  speed: 55,  r: 22, h: 76,  score: 60,   beh: "bones",    weak: ["lightning", "meteor"],    line: "Falls apart, then pulls itself together" },
-      { key: "ghost",      name: "Ghost",       biome: 1, hp: 2,  speed: 60,  r: 22, h: 70,  score: 60,   beh: "phase",    fly: true, lift: 12, weak: ["lightning", "broom"],     line: "Balls pass through it when it fades" },
-      { key: "mole",       name: "Gravedigger", biome: 1, hp: 2,  speed: 70,  r: 22, h: 68,  score: 60,   beh: "burrow",   weak: ["wave", "lightning"],      line: "Fakes an attack, then digs away and comes up elsewhere" },
-      { key: "slime",      name: "Slime",       biome: 2, hp: 3,  speed: 45,  r: 26, h: 62,  score: 50,   beh: "split",    weak: ["meteor", "wave"],         line: "Splits in two when it pops" },
+      { key: "bat",        name: "Bat",         biome: 0, hp: 1,  speed: 85,  r: 18, h: 58,  score: 30,   beh: "wobble",   fly: true, lift: 34, weak: ["lightning", "familiars"], text: "Flutters straight at the witch. The slightest attack is enough to get rid of it, but its flight is never perfectly straight." },
+      { key: "jack",       name: "Jack",        biome: 0, hp: 3,  speed: 50,  r: 26, h: 72,  score: 60,   beh: "walk",     weak: ["lightning", "meteor"],    text: "Not necessarily fast, but it takes attacks well. Throw this monster back or attack it with a magic ball." },
+      { key: "wisp",       name: "Wisp",        biome: 0, hp: 1,  speed: 80,  r: 16, h: 58,  score: 40,   beh: "dash",     fly: true, lift: 30, weak: ["freeze", "salt"],         text: "Dashes in, stops, dashes again. Fast or not, your shield stays very effective against it." },
+      { key: "spider",     name: "Spider",      biome: 0, hp: 2,  speed: 70,  r: 22, h: 58,  score: 50,   beh: "pounce",   shade: [0.18, 3.2], gait: [6, 7, 0.08], weak: ["freeze", "wave"],         text: "Waits at a distance, then leaps. Turn the shield towards it before it leaps." },
+      { key: "zombie",     name: "Zombie",      biome: 1, hp: 5,  speed: 32,  r: 26, h: 84,  score: 80,   beh: "walk",     weak: ["wave", "banish"],         text: "Very slow, very tough. Attack this monster so it goes back into its tombstone. Be careful though, as the Zombie sometimes likes to come back out." },
+      { key: "skeleton",   name: "Skeleton",    biome: 1, hp: 2,  speed: 55,  r: 22, h: 76,  score: 60,   beh: "bones",    weak: ["lightning", "meteor"],    text: "Falls apart, then pulls itself together. Hit the pile of bones before it stands up again." },
+      { key: "ghost",      name: "Ghost",       biome: 1, hp: 2,  speed: 60,  r: 22, h: 70,  score: 60,   beh: "phase",    fly: true, lift: 12, weak: ["lightning", "broom"],     text: "Balls pass through it when it fades. The shield always throws it back, whatever its form." },
+      { key: "mole",       name: "Gravedigger", biome: 1, hp: 2,  speed: 70,  r: 22, h: 68,  score: 60,   beh: "burrow",   weak: ["wave", "lightning"],      text: "Fakes an attack, then digs away and comes up elsewhere. Wait for the gravedigger to come up to attack it again." },
+      { key: "slime",      name: "Slime",       biome: 2, hp: 3,  speed: 45,  r: 26, h: 62,  score: 50,   beh: "split",    weak: ["meteor", "wave"],         text: "Splits in two when it pops. The two slimelets it produces are quick, so stay focused." },
       // retired from the round (Toadify already turns any monster into a frog): its
       // sheet is what a toadified monster is drawn with, and its place in this list
       // keeps every other kind's `monsterNN` card where it was
-      { key: "frog",       name: "Bullfrog",    biome: 2, hp: 2,  speed: 55,  r: 22, h: 60,  score: 50,   beh: "walk",     weak: [], line: "", retired: true },
-      { key: "mosquito",   name: "Mosquito",  biome: 2, hp: 1,  speed: 110, r: 11, h: 40,  score: 20,   beh: "swarm",    fly: true, lift: 26, weak: ["wave", "familiars"],      line: "Arrives in a buzzing swarm", group: 5 },
-      { key: "shaman",     name: "Toad Shaman", biome: 2, hp: 3,  speed: 50,  r: 24, h: 76,  score: 80,   beh: "shooter",  weak: ["freeze", "lightning"],    line: "Spits from afar" },
-      { key: "knight",     name: "Knight",      biome: 3, hp: 5,  speed: 40,  r: 26, h: 84,  score: 90,   beh: "armored",  weak: ["lightning", "meteor"],    line: "The witch's shield cannot hurt its armour" },
-      { key: "gargoyle",   name: "Gargoyle",    biome: 3, hp: 3,  speed: 70,  r: 22, h: 68,  score: 80,   beh: "stone",    weak: ["lightning", "banish"],    line: "Turns to stone to be out of harm's way" },
-      { key: "vampire",    name: "Vampire",     biome: 3, hp: 3,  speed: 40,  r: 22, h: 80,  score: 90,   beh: "teleport", weak: ["salt", "lightning"],      line: "Blinks from one side to the other" },
-      { key: "rat",        name: "Rat",        biome: 3, hp: 1,  speed: 125, r: 13, h: 40,  score: 20,   beh: "swarm",    weak: ["wave", "familiars"],      line: "Moves in a fast pack", group: 4 },
-      { key: "imp",        name: "Imp",         biome: 4, hp: 1,  speed: 110, r: 18, h: 60,  score: 50,   beh: "kamikaze", weak: ["salt", "meteor"],         line: "Blows up on the witch's shield" },
-      { key: "salamander", name: "Salamander",  biome: 4, hp: 2,  speed: 120, r: 20, h: 56,  score: 70,   beh: "spiral",   weak: ["freeze", "salt"],         line: "Spirals in from the side" },
-      { key: "priest",     name: "Dark Priest", biome: 4, hp: 3,  speed: 45,  r: 22, h: 80,  score: 100,  beh: "healer",   weak: ["lightning", "banish"],    line: "Heals the monsters around it" },
-      { key: "dragon",     name: "Dragon",      biome: 4, hp: 30, speed: 25,  r: 52, h: 170, score: 1000, beh: "boss",     weak: ["lightning", "banish"],    line: "Spits fireballs", rows: 5 },
+      { key: "frog",       name: "Bullfrog",    biome: 2, hp: 2,  speed: 55,  r: 22, h: 60,  score: 50,   beh: "walk",     weak: [], text: "", retired: true },
+      { key: "mosquito",   name: "Mosquito",  biome: 2, hp: 1,  speed: 110, r: 11, h: 40,  score: 20,   beh: "swarm",    fly: true, lift: 26, weak: ["wave", "familiars"],      text: "Arrives in a buzzing swarm. Use a magic ball to land a Strike on this group of creatures.", group: 5 },
+      { key: "shaman",     name: "Toad Shaman", biome: 2, hp: 3,  speed: 50,  r: 24, h: 76,  score: 80,   beh: "shooter",  weak: ["freeze", "lightning"],    text: "Spits from afar. Convert its spit into a brown ball with your shield." },
+      { key: "knight",     name: "Knight",      biome: 3, hp: 5,  speed: 40,  r: 26, h: 84,  score: 90,   beh: "armored",  weak: ["lightning", "meteor"],    text: "The witch's shield cannot hurt its armour. Only balls, Strikes and magic can hurt it." },
+      { key: "gargoyle",   name: "Gargoyle",    biome: 3, hp: 3,  speed: 70,  r: 22, h: 68,  score: 80,   beh: "stone",    weak: ["lightning", "banish"],    text: "Turns to stone to be out of harm's way. While it is stone, nothing can harm it." },
+      { key: "vampire",    name: "Vampire",     biome: 3, hp: 3,  speed: 40,  r: 22, h: 80,  score: 90,   beh: "teleport", weak: ["salt", "lightning"],      text: "Blinks from one side to the other. It blinks closer each time it teleports, but it is not invincible for all that." },
+      { key: "rat",        name: "Rat",        biome: 3, hp: 1,  speed: 125, r: 13, h: 40,  score: 20,   beh: "swarm",    weak: ["wave", "familiars"],      text: "Moves in a fast pack. The pack will take a Strike attack head-on, so don't hesitate to use a magic ball against the group.", group: 4 },
+      { key: "imp",        name: "Imp",         biome: 4, hp: 1,  speed: 110, r: 18, h: 60,  score: 50,   beh: "kamikaze", weak: ["salt", "meteor"],         text: "Blows up on the witch's shield. Throw this little devil back with a ball before it reaches your shield." },
+      { key: "salamander", name: "Salamander",  biome: 4, hp: 2,  speed: 120, r: 20, h: 56,  score: 70,   beh: "spiral",   weak: ["freeze", "salt"],         text: "Spirals in from the side. It likes to circle around the witch." },
+      { key: "priest",     name: "Dark Priest", biome: 4, hp: 3,  speed: 45,  r: 22, h: 80,  score: 100,  beh: "healer",   weak: ["lightning", "banish"],    text: "Heals the monsters around it. Knock it out first, or the other monsters keep healing." },
+      { key: "dragon",     name: "Dragon",      biome: 4, hp: 30, speed: 25,  r: 52, h: 170, score: 1000, beh: "boss",     weak: ["lightning", "banish"],    text: "Spits fireballs. Use its fireballs to send them back at full power.", rows: 5 },
       // not one of the twenty: what a slime splits into, drawn with the slime's frames
-      { key: "slimelet",   name: "Slimelet",    biome: 2, hp: 1,  speed: 75,  r: 15, h: 38,  score: 20,   beh: "walk",     weak: [], line: "", child: true, art: "slime" }
+      { key: "slimelet",   name: "Slimelet",    biome: 2, hp: 1,  speed: 75,  r: 15, h: 38,  score: 20,   beh: "walk",     weak: [], text: "", child: true, art: "slime" }
     ];
     var EN = {};
     ENEMIES.forEach(function (e, i) { EN[e.key] = e; e.index = i; });
@@ -223,17 +228,17 @@
     /* The supers (§7), in the order of the icon sheet (super01–super11;
        super12 is the witch's own blue ball, worn by the hub). */
     var SUPERS = [
-      { key: "lightning", name: "Lightning",   from: 1,  cd: 10, col: "#9fd8ff", line: "Strikes the 3 monsters nearest the witch" },
-      { key: "freeze",    name: "Freeze",      from: 1,  cd: 15, col: "#bff4ff", line: "The whole world slowed for a few seconds" },
-      { key: "wave",      name: "Shockwave",   from: 3,  cd: 15, col: "#ffd36b", line: "Throws every monster back and digs the Gravediggers up" },
-      { key: "moon",      name: "Full Moon",   from: 5,  cd: 20, col: "#3dff6a", line: "The shield opens wide for a few seconds" },
-      { key: "brew",      name: "Brew",        from: 8,  cd: 20, col: "#c07a44", line: "6 brown balls burst out of the shield" },
-      { key: "familiars", name: "Familiars",   from: 10, cd: 20, col: "#d6a8ff", line: "3 allied bats circle the witch for a few seconds and bite what they meet" },
-      { key: "meteor",    name: "Fire Rain",   from: 13, cd: 20, col: "#ff7a3d", line: "6 fireballs fall on the monsters" },
-      { key: "salt",      name: "Salt Circle", from: 16, cd: 25, col: "#ffffff", line: "Nothing crosses the circle for a few seconds, not even a projectile" },
-      { key: "broom",     name: "Broom",       from: 19, cd: 10, col: "#d29a55", line: "The shield sweeps two full turns in a second" },
-      { key: "toad",      name: "Toadify",     from: 22, cd: 30, col: "#7bd34a", line: "Every monster but the Dragon is a harmless toad for a few seconds" },
-      { key: "banish",    name: "Banish",      from: 25, cd: 30, col: "#ff5af0", line: "The toughest monster vanishes. The Dragon, meanwhile, takes 10 damage" }
+      { key: "lightning", name: "Lightning",   from: 1,  cd: 10, col: "#9fd8ff", text: "Strikes the 3 monsters nearest the witch." },
+      { key: "freeze",    name: "Freeze",      from: 1,  cd: 15, col: "#bff4ff", text: "The whole world slowed for a few seconds." },
+      { key: "wave",      name: "Shockwave",   from: 3,  cd: 15, col: "#ffd36b", text: "Throws every monster back and digs the Gravediggers up." },
+      { key: "moon",      name: "Full Moon",   from: 5,  cd: 20, col: "#3dff6a", text: "The shield opens wide for a few seconds." },
+      { key: "brew",      name: "Brew",        from: 8,  cd: 20, col: "#c07a44", text: "6 brown balls burst out of the shield." },
+      { key: "familiars", name: "Familiars",   from: 10, cd: 20, col: "#d6a8ff", text: "3 allied bats circle the witch for a few seconds and bite what they meet." },
+      { key: "meteor",    name: "Fire Rain",   from: 13, cd: 20, col: "#ff7a3d", text: "6 fireballs fall on the monsters." },
+      { key: "salt",      name: "Salt Circle", from: 16, cd: 25, col: "#ffffff", text: "Nothing crosses the circle for a few seconds, not even a projectile." },
+      { key: "broom",     name: "Broom",       from: 19, cd: 10, col: "#d29a55", text: "The shield sweeps two full turns in a second." },
+      { key: "toad",      name: "Toadify",     from: 22, cd: 30, col: "#7bd34a", text: "Every monster but the Dragon is a harmless toad for a few seconds." },
+      { key: "banish",    name: "Banish",      from: 25, cd: 30, col: "#ff5af0", text: "The toughest monster vanishes. The Dragon, meanwhile, takes 10 damage." }
     ];
     var SU = {};
     SUPERS.forEach(function (s, i) { SU[s.key] = s; s.art = "super" + two(i + 1); });
@@ -241,15 +246,15 @@
     /* The pickups (§2.4), in the order of their sheet (pickup01–07), and the
        level each is first dealt on (§6, "pickup found"). */
     var PICKUPS = [
-      { key: "star",    name: "Star",      col: "#3dff6a", w: 3,   lv: 1,  line: "The shield grows wider for a few seconds, and stars can stack" },
-      { key: "pumpkin", name: "Pumpkin",   col: "#ff8a1f", w: 1.5, lv: 1,  line: "The blast hits the monsters around" },
-      { key: "candle",  name: "Candle",    col: "#fff1c2", w: 1.5, lv: 2,  line: "It throws flames at the nearest monster for a few seconds" },
+      { key: "star",    name: "Star",      col: "#3dff6a", w: 3,   lv: 1,  text: "The shield grows wider for a few seconds, and stars can stack." },
+      { key: "pumpkin", name: "Pumpkin",   col: "#ff8a1f", w: 1.5, lv: 1,  text: "The blast hits the monsters around." },
+      { key: "candle",  name: "Candle",    col: "#fff1c2", w: 1.5, lv: 2,  text: "It throws flames at the nearest monster for a few seconds." },
       // no longer a pickup: a knocked-out zombie leaves it (layTomb). Kept here for its
       // art (pickup04) and so the other pickups keep their sheet numbers
-      { key: "tomb",    name: "Tombstone", col: "#9aa4b8", w: 0,   lv: 99, line: "", retired: true },
-      { key: "web",     name: "Web",       col: "#e8e8f0", w: 1.2, lv: 13, line: "The zone turns sticky and slows monsters down heavily for several seconds" },
-      { key: "potion",  name: "Potion",    col: "#3fe0d0", w: 1.2, lv: 4,  line: "Every brown ball splits in two" },
-      { key: "heart",   name: "Heart",     col: "#e8364a", w: 0.6, lv: 1,  line: "One heart back" }
+      { key: "tomb",    name: "Tombstone", col: "#9aa4b8", w: 0,   lv: 99, text: "", retired: true },
+      { key: "web",     name: "Web",       col: "#e8e8f0", w: 1.2, lv: 13, text: "The zone turns sticky and slows monsters down heavily for several seconds." },
+      { key: "potion",  name: "Potion",    col: "#3fe0d0", w: 1.2, lv: 4,  text: "Every brown ball splits in two." },
+      { key: "heart",   name: "Heart",     col: "#e8364a", w: 0.6, lv: 1,  text: "One heart back." }
     ];
     var PK = {};
     PICKUPS.forEach(function (p, i) { PK[p.key] = p; p.art = "pickup" + two(i + 1); });
@@ -396,7 +401,7 @@
     //  the stone, a mood's tint, a biome's palette) is a copy of the frame
     //  made once and cached, never a ctx.filter.
     // ======================================================================
-    var lazyAsked = {};
+    var lazyAsked = {}, picWait = null;
     function img(key) {
       var im = ArtImages[key];
       if (!im && CONFIG.art && CONFIG.art[key] && !lazyAsked[key]) {
@@ -405,7 +410,10 @@
         im.src = CONFIG.art[key];
         ArtImages[key] = im;
       }
-      return im && im.complete && im.naturalWidth ? im : null;
+      if (im && im.complete && im.naturalWidth) return im;
+      // a guide picture being painted waits for it (paintPic repaints)
+      if (picWait && im && !im.complete) picWait.push(im);
+      return null;
     }
     function artOf(kind) { return EN[kind] ? EN[kind].art || kind : kind; }
     function frames(kind) { return kind === "witch" ? 25 : (EN[kind].rows || 4) * 5; }
@@ -656,6 +664,13 @@
        where the feet touch and a soft edge, so a walker reads as standing
        ON the floor rather than over it. */
     var shadowCv = null;
+    // the shadow under a monster: a flier's is small and faint, a walker's
+    // lies under its body (d.shade) or, by default, centred on its feet
+    function monShadow(d, x, feet, hh, r, a) {
+      if (d.lift) return drawShadow(x, feet, r * 1.9, 0.45);
+      var sh = d.shade;
+      drawShadow(x, feet - (sh ? sh[0] * hh : 0), r * (sh ? sh[1] : 2.6), a);
+    }
     function drawShadow(x, y, w, a) {
       if (!shadowCv) {
         shadowCv = canvasOf(64, 32);
@@ -933,7 +948,7 @@
         if (m > bestMult) bestMult = m;
         Pop.show("combo", { word: "Combo x" + m });
         Sound.clip("combo", 0.6);
-        Notify.learn("combo", Lang.t("Combo"), { sub: Lang.t("The multiplier rises every 10 parries in a row") });
+        Notify.learn("combo");
       }
     }
     function dropCombo() { combo = 0; }
@@ -959,12 +974,12 @@
     /* What a spawn is named by, the first time it is met (§8, §5.1). */
     function announce(p) {
       var d = EN[p.key];
-      Notify.learn(p.key, Lang.t(d.name), { sub: Lang.t(d.line) });
-      if (p.size === "baby") Notify.learn("baby", Lang.t("Babies"), { sub: Lang.t("They are small but fast") });
-      if (p.pal) Notify.learn("palette", Lang.t("A visitor"), { sub: Lang.t("A monster from another land wears this land's colours") });
+      Notify.learn(p.key);
+      if (p.size === "baby") Notify.learn("baby");
+      if (p.pal) Notify.learn("palette");
       if (p.size === "boss" || p.key === "dragon") {
         Notify.say(p.key === "dragon" ? Lang.t("The dragon is coming") : Lang.t("A giant is coming"), { sub: Lang.t(d.name), kind: "warn", icon: "warn", key: "giant" });
-        if (p.size === "boss") Notify.learn("boss", Lang.t("Giant"), { sub: Lang.t("Bowl over heavy monsters or use your magic") });
+        if (p.size === "boss") Notify.learn("boss");
       }
     }
     function spawnPending(p) {
@@ -1001,7 +1016,7 @@
       if (countBalls("brown") >= P.maxBrown) return;
       var v = rotate(b.vx, b.vy, spread);
       spawnBall("brown", b.x, b.y, v.x, v.y);
-      Notify.learn("brown", Lang.t("Brown balls"), { sub: Lang.t("Brown balls score points and cause damage") });
+      Notify.learn("brown");
     }
 
     // --- the shield ----------------------------------------------------------
@@ -1052,7 +1067,7 @@
       flashLight(CX + Math.cos(angle) * P.shieldR, CY + Math.sin(angle) * P.shieldR, "#bfeaff", 220, 0.35);
       camShake(0.25);
       Sound.clip("frozen", 0.5);
-      Notify.learn("ball", Lang.t("Your own ball"), { sub: Lang.t("It deals no damage but freezes the shield for a short moment") });
+      Notify.learn("ball");
     }
     // shards off the ice: `spread` is how much of the arc they leave from
     function iceBurst(spread, n) {
@@ -1126,7 +1141,6 @@
       Sound.clip("ko", 0.5, isBoss(e) ? 0.7 : 1);
       flashLight(e.x, e.y, "#ffffff", isBoss(e) ? 260 : 150, 0.3);
       if (isBoss(e)) { camShake(0.7); if (e.size === "boss") metGiant(e.key); }
-      if (pts && isBoss(e)) Pop.show("score", { word: Lang.t(e.def.name), sub: "+" + pts, at: { x: e.x, y: e.y - e.r - 40 } });
       if (e.def.beh === "split" && !final && !e.toad) {
         // the two slimelets carry on the slide their parent was thrown into
         for (var i = -1; i <= 1; i += 2) {
@@ -1150,11 +1164,7 @@
     /* A mood the player caused is shown once per stage over the monster,
        and named once ever (§5.1). */
     function firstMood(e, mood) {
-      Notify.learn(mood, Lang.t(mood === "enraged" ? "Enraged" : mood === "tired" ? "Tired" : mood === "dizzy" ? "Dizzy" : "Slowed"),
-        { sub: Lang.t(mood === "enraged" ? "A knocked-out monster makes its neighbours angry"
-          : mood === "tired" ? "A monster drags its feet after 3 knockbacks"
-          : mood === "dizzy" ? "A monster stays stunned for a second after being bowled over or thrown"
-          : "Freeze and webs slow monsters down") });
+      Notify.learn(mood);
       if (stageSeen[mood]) return;
       stageSeen[mood] = true;
       if (mood === "enraged") Pop.show("alert", { word: "Enraged", at: { x: e.x, y: e.y - e.r - 30 } });
@@ -1327,7 +1337,7 @@
       ring(e.x, e.y + e.r * 0.85, 8, 60, 0.35, "150,110,70");
       Fx.burst(e.x, e.y + e.r * 0.85, { color: ["#7a5a3c", "#a07850", "#4a3424"], count: 14, speed: 220, life: 0.45, size: 5, grav: 500 });
       Sound.clip("drop", 0.45, 0.7);
-      Notify.learn("dig", Lang.t("A feint"), { sub: Lang.t("The Gravedigger digs in and comes up elsewhere") });
+      Notify.learn("dig");
     }
     function dig(e, edt) {
       e.digT -= edt;
@@ -1379,7 +1389,7 @@
       ring(e.x, e.y - e.r * 0.3, e.r * 2.6, e.r * 0.8, w * 0.8, "255,60,60");
       Sound.clip("charge", 0.35, 1.1);
       // a feint is named when it digs in (burrowDown), not as a charge
-      if (!(ATTACK[e.key] || {}).feint) Notify.learn("attack", Lang.t("Charge"), { sub: Lang.t("A monster glowing red will rush the witch") });
+      if (!(ATTACK[e.key] || {}).feint) Notify.learn("attack");
     }
     function chargeOn(e) {
       e.atk = 2; e.atkT = 0;
@@ -1423,7 +1433,7 @@
       flashLight(e.x, e.y, "#d6a8ff", 200, 0.3);
       camShake(0.3);
       Sound.clip("warp", 0.15);
-      Notify.learn("rescue", Lang.t("Last chance"), { sub: Lang.t("A monster too close to the witch may be teleported far away") });
+      Notify.learn("rescue");
     }
     function tpSpot(e) {
       var x = CX, y = Layout.top + 60;
@@ -1512,7 +1522,6 @@
           camShake(0.35);
           Fx.burst(e.x, e.y + e.r * 0.5, { color: ["rgba(200,190,220,0.7)", "#ffffff"], count: 10, speed: 220, life: 0.4, size: 6, grav: 0 });
           Sound.clip("strike", 0.4, 0.7);
-          Notify.learn("bounce", Lang.t("Giants bounce"), { sub: Lang.t("A thrown-back giant may bounce far away") });
         } else { e.dizzy = MOODS.dizzy.time; firstMood(e, "dizzy"); }
       }
       // a monster the green wave pushes (`soft`) bowls nobody over: that wave hurts no one
@@ -1533,7 +1542,7 @@
             strikes++;
             camShake(0.35);
             flashLight((o.x + e.x) / 2, (o.y + e.y) / 2, "#ffd36b", 150, 0.25);
-            Notify.learn("strike", Lang.t("Strike"), { sub: Lang.t("A monster pushed back hard will bowl over the ones it meets") });
+            Notify.learn("strike");
             firstMood(o, "dizzy");
             hurtEnemy(o, 1, "knock");
           }
@@ -1579,7 +1588,6 @@
         kickShield(Math.atan2(dy, dx), 520 + e.r * 8);
         Sound.clip("shove", 0.5, isBoss(e) ? 0.75 : 1);
         shoves++;
-        Notify.learn("throw", Lang.t("Throw them back"), { sub: Lang.t("The shield sends a monster sliding far away") });
         if (e.def.beh === "pounce") e.state = 0;
         if (e.def.beh === "boss") { e.state = 1; e.st = 0; }
         e.throws++;
@@ -1632,7 +1640,7 @@
       ring(x, y, 10, 70, 0.4, "255,255,255");
       Pop.show("score", { word: pd.name, at: { x: x, y: y - 34 } });
       Sound.clip("take", 0.55);
-      Notify.learn(key, Lang.t(pd.name), { sub: Lang.t(pd.line) });
+      Notify.learn(key);
       if (key === "star") stacks.push(P.starTime);
       if (key === "pumpkin") blast(x, y);
       if (key === "candle") { towers.push({ kind: "candle", x: x, y: y, t: P.candleTime, cd: 0 }); Sound.clip("build", 0.45); }
@@ -1779,7 +1787,7 @@
       towers.push({ kind: "tomb", x: e.x, y: e.y, t: P.tombRise, hp: P.tombHp, rise: Math.random() < P.tombChance,
                     size: e.size === "baby" ? "baby" : "normal", pal: e.pal });
       Sound.clip("down", 0.4);
-      Notify.learn("grave", Lang.t("Tombstone"), { sub: Lang.t("A knocked-out zombie may climb back out of its grave") });
+      Notify.learn("grave");
     }
     function riseFromTomb(t) {
       var z = newEnemy("zombie", t.x, t.y, t.size, t.pal);
@@ -1832,7 +1840,7 @@
         Notify.say(Lang.t("A star lost"), { sub: Lang.t("Using a super power will cost a star on this stage"), kind: "loss", icon: "star", key: "nosuper" });
       Pop.show("score", { word: s.name, at: "hudUnder", rot: -2 });
       Sound.clip("super", 1);
-      Notify.learn(key, Lang.t(s.name), { sub: Lang.t(s.line) });
+      Notify.learn(key);
       var live = enemies.filter(function (e) { return !e.dead && !e.tp; });
 
       if (key === "lightning") {
@@ -2133,7 +2141,7 @@
         Pop.show("score", { word: "Perfect", at: { x: b.x, y: b.y - 50 } });
         ring(b.x, b.y, 6, 40, 0.25, "255,255,255");
         Sound.clip("perfect", 0.5);
-        Notify.learn("perfect", Lang.t("Perfect parry"), { sub: Lang.t("Hit the white notch in the middle: more points, a faster ball") });
+        Notify.learn("perfect");
       } else {
         gain(P.parryScore, b.x, b.y - 20, b.kind === "brown" ? "#ffb347" : "#ffe14d");
         Sound.clip("parry", 1, 0.9 + Math.min(0.6, combo * 0.02));
@@ -2527,7 +2535,7 @@
     function shockWave() {
       var far = Math.max(dist(CX, CY, 0, 0), dist(CX, CY, W, 0), dist(CX, CY, 0, H), dist(CX, CY, W, H)) + 60;
       shocks.push({ t: 0, life: 0.75, r1: far, hit: [] });
-      Notify.learn("wave-green", Lang.t("Second wind"), { sub: Lang.t("The witch throws every monster back if she gets hurt") });
+      Notify.learn("wave-green");
     }
     function shockR(s) { var u = s.t / s.life; return P.heroR + (s.r1 - P.heroR) * (1 - (1 - u) * (1 - u)); }
     function updateShocks(dt) {
@@ -2918,7 +2926,7 @@
       // a flier hangs clearly above a smaller, fainter shadow; a walker stands on its own
       var lift = d.lift ? d.lift * e.S.draw + Math.sin(time * 6 + e.anim) * 4 : 0;
       if (e.hop > 0) lift += Math.sin(e.hop / 0.3 * Math.PI) * 12;
-      drawShadow(e.x, feet, e.r * (d.lift ? 1.9 : 2.6), d.lift ? 0.45 : 0.9);
+      monShadow(d, e.x, feet, hh, e.r, 0.9);
       if (e.under) { if (!drawIcon("extra08", e.x, feet - e.r * 0.4, e.r * 2.6)) drawBlob("mole", e.x, e.y, e.r * 0.7); return; }
       if (e.def.beh === "bones" && e.state === 1) { if (!drawIcon("extra07", e.x, feet - e.r * 0.5, e.r * 2.8)) drawBlob("skeleton", e.x, e.y, e.r * 0.6); return; }
       if (e.toad > 0 && e.key !== "dragon") {
@@ -2952,7 +2960,17 @@
          them. It used to spin around its belly, which lifted the feet off
          the ground and read as a monster flying. */
       var lean = sliding ? clamp(-e.kx / 2400, -0.4, 0.4) : e.dizzy > 0 ? Math.sin(time * 18) * 6 * DEG : 0;
-      var ok = drawSprite(d.art || e.key, (row - 1) * 5 + f[0], f[1], e.x, feet - lift, hh,
+      // the scuttle: a step is one unit of e.anim — up off the floor, rocked
+      // onto the other side, squashed as it lands
+      var walking = d.gait && row < 3 && !e.tp && !(e.tpIn > 0) && !stoned(e);
+      var stepY = 0;
+      if (walking) {
+        var ph = Math.sin(e.anim * Math.PI), up = Math.abs(ph), gs = e.S.draw;
+        stepY = up * d.gait[0] * gs;
+        lean += ph * d.gait[1] * DEG;
+        squash = d.gait[2] * (1 - up) - d.gait[2] * 0.5 * up;
+      }
+      var ok = drawSprite(d.art || e.key, (row - 1) * 5 + f[0], f[1], e.x, feet - lift - stepY, hh,
                           { pal: e.pal, alpha: alpha, tints: tints, lean: lean, squash: squash,
                             aura: e.atkA || 0, auraIn: e.atk === 1 });
       if (!ok) {
@@ -3290,7 +3308,7 @@
       title: function () { return Lang.t("Bonus"); },
       slots: function (n) { return n > 0 && n <= 30 ? slotCount(n) : 4; },
       items: function () { return SUPERS.map(function (s) { return { id: s.key, lv: s.from }; }); },
-      info: function (id) { var s = SU[id]; return { name: Lang.t(s.name), text: Lang.t(s.line), src: CONFIG.art && CONFIG.art[s.art] }; },
+      info: function (id) { var s = SU[id]; return { name: Lang.t(s.name), text: Lang.t(s.text), src: CONFIG.art && CONFIG.art[s.art] }; },
       suggest: function (n) { return suggest(n > 0 && n <= 30 ? n : 30); },
       set: function (ids) { chosen = ids ? ids.slice() : null; }
     };
@@ -3346,13 +3364,13 @@
             for (var b = 1; b < 5; b++) if (r.p[b]) chips.push({ text: Lang.t("Colours: {land}").replace("{land}", Lang.t(BIOMES[b].name)), color: "#d6a8ff" });
             if (r.g) chips.push({ text: Lang.t("Giants knocked out") + " " + r.g, color: "#ff7a8a" });
           }
-          return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.line) + ". " + Lang.t(MORE[d.key]), lock: Lang.t("Meet it in a round"), chips: chips };
+          return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.text), lock: Lang.t("Meet it in a round"), chips: chips };
         }
         if (c.book === "supers") {
           chips.push({ text: d.cd + " s", color: "#19e6ff" });
-          return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.line), chips: chips };
+          return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.text), chips: chips };
         }
-        return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.line), chips: chips };
+        return { name: Lang.t(d.name), color: c.col, text: Lang.t(d.text), chips: chips };
       }
     };
 
@@ -3364,34 +3382,29 @@
     //  guide may open before any round, so `lend` hands those renderers the
     //  little state they read and puts the round's back afterwards.
     // ======================================================================
-    var MORE = {
-      bat: "The slightest attack is enough to get rid of it, but its flight is never perfectly straight.",
-      jack: "Throw this monster back or attack it with a magic ball",
-      wisp: "Fast or not, your shield stays very effective against it",
-      spider: "Turn the shield towards it before it leaps",
-      zombie: "Attack this monster so it goes back into its tombstone. Be careful though, as the Zombie sometimes likes to come back out",
-      skeleton: "Hit the pile of bones before it stands up again",
-      ghost: "The shield always throws it back, whatever its form",
-      mole: "Wait for the gravedigger to come up to attack it again",
-      slime: "The two slimelets it produces are quick, so stay focused",
-      mosquito: "Use a magic ball to land a Strike on this group of creatures",
-      shaman: "Convert its spit into a brown ball with your shield",
-      knight: "Only balls, Strikes and magic can hurt it",
-      gargoyle: "While it is stone, nothing can harm it",
-      vampire: "It blinks closer each time it teleports, but it is not invincible for all that",
-      rat: "The pack will take a Strike attack head-on, so don't hesitate to use a magic ball against the group",
-      imp: "Throw this little devil back with a ball before it reaches your shield",
-      salamander: "It likes to circle around the witch",
-      priest: "Knock it out first, or the other monsters keep healing",
-      dragon: "Use its fireballs to send them back at full power"
-    };
     var PIC_W = 520, PIC_H = 300;
+    /* A sprite sheet loaded on demand (CONFIG.artLazy: a zombie, a mole's
+       mound) may not be there yet when the page opens: the picture is
+       painted with what is loaded, then painted again once every frame it
+       asked for has arrived — never with a stand-in. */
     function paintPic(w, h, fn) {
-      var cv = document.createElement("canvas"), k = view.dpr || 1, keep = ctx;
+      var cv = document.createElement("canvas"), k = view.dpr || 1;
       cv.width = Math.round(w * k); cv.height = Math.round(h * k);
       cv.style.width = w + "px"; cv.style.height = h + "px";
-      ctx = cv.getContext("2d"); ctx.scale(k, k);
-      try { fn(); } finally { ctx = keep; }
+      function draw() {
+        var keep = ctx, outer = picWait, miss;
+        picWait = [];
+        ctx = cv.getContext("2d"); ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, w, h);
+        try { fn(); } finally { miss = picWait; picWait = outer; ctx = keep; }
+        if (!miss.length) return;
+        var left = miss.length;
+        function one() { if (--left === 0) draw(); }
+        miss.forEach(function (im) {
+          im.addEventListener("load", one, { once: true });
+          im.addEventListener("error", one, { once: true });
+        });
+      }
+      draw();
       return cv;
     }
     function lend(fn) {
@@ -3433,10 +3446,11 @@
     function picMon(kind, x, y, o) {
       o = o || {};
       var d = EN[kind], S = SIZES[o.size || "normal"], hh = d.h * S.draw, r = d.r * S.draw, feet = y + r * 0.85;
-      drawShadow(x, feet, r * (d.lift ? 1.9 : 2.6), d.lift ? 0.45 : 0.8);
+      monShadow(d, x, feet, hh, r, 0.8);
       var f = facing(o.vx != null ? o.vx : -x, o.vy != null ? o.vy : -y);
-      if (!drawSprite(kind, ((o.row || 1) - 1) * 5 + f[0], f[1], x, feet - (d.lift ? d.lift * S.draw : 0), hh,
-                      { pal: o.pal || 0, tints: o.tints, lean: o.rot, aura: o.aura || 0 })) drawBlob(kind, x, y, r);
+      // a frame not loaded yet draws nothing: paintPic repaints once it is
+      drawSprite(kind, ((o.row || 1) - 1) * 5 + f[0], f[1], x, feet - (d.lift ? d.lift * S.draw : 0), hh,
+                 { pal: o.pal || 0, tints: o.tints, lean: o.rot, aura: o.aura || 0 });
     }
     function witchShield() { drawWitch(0, 0); drawShield(); }
     function witchPic(fn) { return arenaPic(0, PIC_W / 2, PIC_H / 2 + 10, 0.85, function () { witchShield(); if (fn) fn(); }); }
@@ -3447,65 +3461,38 @@
     var guide = {
       chapters: function () {
         var basics = [
-          { id: "shield", title: Lang.t("The shield"), pic: witchPic(), lv: 1, lines: [
-            Lang.t("An arc of shield turns around the witch. It never closes: a gap always stays open."),
-            Lang.t("Every ball and every monster that touches it bounces off.") ] },
+          { id: "shield", title: Lang.t("The shield"), pic: witchPic(), lv: 1, text: Lang.t("An arc of shield turns around the witch. It never closes: a gap always stays open.\n\nEvery ball and every monster that touches it bounces off.") },
           { id: "aim", title: Lang.t("Turning the shield"), lv: 1, pic: witchPic(function () {
               ctx.save(); ctx.translate(-170, 0); ctx.scale(0.55, 0.55); DIAL_X = 0; DIAL_Y = 0; drawDial(); ctx.restore();
-            }), lines: [
-            Lang.t("On a phone, turn the dial at the bottom: the shield points where your thumb is on it."),
-            Lang.t("With a mouse on a computer, the shield then follows the pointer.") ] },
-          { id: "ball", title: Lang.t("Magic balls"), lv: 1, pic: witchPic(function () { picBall(150, -120, "blue", 300, -200, 2); }), lines: [
-            Lang.t("Tap the middle of the dial (or click) to launch one of your 3 blue balls."),
-            Lang.t("Every ball is pulled back to the witch: parry it out again. If it gets through, the shield freezes for a moment.") ] },
-          { id: "brown", title: Lang.t("Brown balls"), lv: 1, pic: witchPic(function () { picBall(140, -110, "blue", 200, -200, 5); picBall(190, -60, "brown", 250, -100); }), lines: [
-            Lang.t("Every fifth parry of a blue ball drops a brown ball."),
-            Lang.t("A brown ball scores and hurts monsters. It never inflicts any penalty or damage on the witch.") ] },
+            }), text: Lang.t("On a phone, turn the dial at the bottom: the shield points where your thumb is on it.\n\nWith a mouse on a computer, the shield then follows the pointer.") },
+          { id: "ball", title: Lang.t("Magic balls"), lv: 1, pic: witchPic(function () { picBall(150, -120, "blue", 300, -200, 2); }), text: Lang.t("Tap the middle of the dial (or click) to launch one of your 3 blue balls.\n\nEvery ball is pulled back to the witch: parry it out again. If it gets through, the shield freezes for a moment.") },
+          { id: "brown", title: Lang.t("Brown balls"), lv: 1, pic: witchPic(function () { picBall(140, -110, "blue", 200, -200, 5); picBall(190, -60, "brown", 250, -100); }), text: Lang.t("Every fifth parry of a blue ball drops a brown ball.\n\nA brown ball scores and hurts monsters. It never inflicts any penalty or damage on the witch.") },
           { id: "perfect", title: Lang.t("Perfect parry"), lv: 1, pic: witchPic(function () { picBall(Math.cos(angle) * 150, Math.sin(angle) * 150, "blue", 300, -300); }),
-            rows: [[Lang.t("A parry"), "+10"], [Lang.t("A perfect parry"), "+30", "#ffffff"]], lines: [
-            Lang.t("Hit a ball with the white notch in the middle of the shield."),
-            Lang.t("It pays more and sends the ball out faster.") ] },
+            rows: [[Lang.t("A parry"), "+10"], [Lang.t("A perfect parry"), "+30", "#ffffff"]], text: Lang.t("Hit a ball with the white notch in the middle of the shield.\n\nIt pays more and sends the ball out faster.") },
           { id: "combo", title: Lang.t("Combo"), lv: 1, pic: witchPic(),
-            rows: [[Lang.t("Every 10 parries in a row"), Lang.t("Multiplier +1"), "#ffd23a"], [Lang.t("Highest multiplier"), "x5"], [Lang.t("A heart lost or a frozen shield"), Lang.t("Back to x1"), "#ff7a8a"]], lines: [
-            Lang.t("Every parry counts: a ball, a monster or a spit."),
-            Lang.t("The multiplier applies to everything you score.") ] },
-          { id: "throw", title: Lang.t("Throw them back"), lv: 1, pic: witchPic(function () { picMon("jack", 200, -40, { row: 4, vx: -1, vy: 0, rot: 0.3 }); }), lines: [
-            Lang.t("A monster that touches the shield takes a hit and slides far away."),
-            Lang.t("Use your shield against balls but also against monsters. You can also send a ball back at a monster.") ] },
+            rows: [[Lang.t("Every 10 parries in a row"), Lang.t("Multiplier +1"), "#ffd23a"], [Lang.t("Highest multiplier"), "x5"], [Lang.t("A heart lost or a frozen shield"), Lang.t("Back to x1"), "#ff7a8a"]], text: Lang.t("Every parry counts: a ball, a monster or a spit.\n\nThe multiplier applies to everything you score.") },
+          { id: "throw", title: Lang.t("Throw them back"), lv: 1, pic: witchPic(function () { picMon("jack", 200, -40, { row: 4, vx: -1, vy: 0, rot: 0.3 }); }), text: Lang.t("A monster that touches the shield takes a hit and slides far away.\n\nUse your shield against balls but also against monsters. You can also send a ball back at a monster.") },
           { id: "attack", title: Lang.t("Charge"), lv: 1, pic: witchPic(function () {
-              picMon("zombie", 200, -30, { row: 3, vx: -1, vy: 0, aura: 0.6 }); picMon("jack", -190, 20, { row: 1, vx: 1, vy: 0, aura: 1 }); }), lines: [
-            Lang.t("Close to the witch, a monster stops and takes its attack pose."),
-            Lang.t("It will then rush you, red with anger.") ] },
+              picMon("zombie", 200, -30, { row: 3, vx: -1, vy: 0, aura: 0.6 }); picMon("jack", -190, 20, { row: 1, vx: 1, vy: 0, aura: 1 }); }), text: Lang.t("Close to the witch, a monster stops and takes its attack pose.\n\nIt will then rush you, red with anger.") },
           { id: "dig", title: Lang.t("A feint"), lv: FIRST.mole || 7, pic: witchPic(function () {
-              picMon("mole", 190, -40, { row: 3, vx: -1, vy: 0, aura: 0.8 }); drawIcon("extra08", -200, 30, 60); }), lines: [
-            Lang.t("Instead of attacking, the Gravedigger prefers an underground solution."),
-            Lang.t("It stays invincible underground, then comes back up elsewhere.") ] },
-          { id: "strike", title: Lang.t("Strike"), lv: 1, pic: witchPic(function () { picMon("jack", 150, -60, { row: 4, rot: 0.4 }); picMon("bat", 215, -95, { row: 4 }); }), lines: [
-            Lang.t("A monster thrown hard will knock over the others around it."),
-            Lang.t("They obviously take damage and go flying in turn.") ] },
+              picMon("mole", 190, -40, { row: 3, vx: -1, vy: 0, aura: 0.8 }); drawIcon("extra08", -200, 30, 60); }), text: Lang.t("Instead of attacking, the Gravedigger prefers an underground solution.\n\nIt stays invincible underground, then comes back up elsewhere.") },
+          { id: "strike", title: Lang.t("Strike"), lv: 1, pic: witchPic(function () { picMon("jack", 150, -60, { row: 4, rot: 0.4 }); picMon("bat", 215, -95, { row: 4 }); }), text: Lang.t("A monster thrown hard will knock over the others around it.\n\nThey obviously take damage and go flying in turn.") },
           { id: "stars", title: Lang.t("Stars"), lv: 1, pic: arenaPic(0, PIC_W / 2, PIC_H / 2 + 10, 0.85, function () { cheerT = 1; witchShield(); }),
-            rows: [["★", Lang.t("Clear the stage")], ["★★", Lang.t("Lose at most one heart")], ["★★★", Lang.t("Lose no heart")]], lines: [
-            Lang.t("A heart is lost when a monster or a projectile reaches the witch. Your own spells and balls won't hurt you.") ] },
-          { id: "goals", title: Lang.t("Stage objectives"), lv: 1, pic: witchPic(), lines: [
-            Lang.t("Each stage has a different objective"),
-            Lang.t("The monsters keep coming until your goal is complete.") ] },
+            rows: [["★", Lang.t("Clear the stage")], ["★★", Lang.t("Lose at most one heart")], ["★★★", Lang.t("Lose no heart")]], text: Lang.t("A heart is lost when a monster or a projectile reaches the witch. Your own spells and balls won't hurt you.") },
+          { id: "goals", title: Lang.t("Stage objectives"), lv: 1, pic: witchPic(), text: Lang.t("Each stage has a different objective.\n\nThe monsters keep coming until your goal is complete.") },
           { id: "wave-green", title: Lang.t("Second wind"), lv: 1, pic: witchPic(function () {
               ctx.beginPath(); ctx.arc(0, 0, 170, 0, Math.PI * 2);
               ctx.lineWidth = 30; ctx.strokeStyle = "rgba(90,255,140,0.2)"; ctx.stroke();
               ctx.lineWidth = 8; ctx.strokeStyle = "rgba(120,255,160,0.9)"; ctx.stroke();
               picMon("jack", 225, -20, { row: 4, vx: -1, vy: 0, rot: -0.3 }); picMon("spider", -230, -40, { row: 4, vx: 1, vy: 0, rot: 0.3 });
-            }), lines: [
-            Lang.t("When the witch loses a heart, she releases a green shockwave that sends the monsters flying away."),
-            Lang.t("It throws every monster on screen back, without hurting any of them.") ] },
+            }), text: Lang.t("When the witch loses a heart, she releases a green shockwave that sends the monsters flying away.\n\nIt throws every monster on screen back, without hurting any of them.") },
           { id: "rescue", title: Lang.t("Last chance"), lv: 1, pic: witchPic(function () {
               ctx.save(); ctx.globalCompositeOperation = "lighter";
               line(70, -40, 70, -230, 26, "rgba(214,168,255,0.6)"); line(70, -40, 70, -230, 8, "rgba(255,255,255,0.95)");
               line(-220, -230, -220, 10, 26, "rgba(214,168,255,0.6)"); line(-220, -230, -220, 10, 8, "rgba(255,255,255,0.95)");
               ctx.restore();
               picMon("jack", -220, -20, { row: 4 });
-            }), lines: [
-            Lang.t("A monster too close to the witch gets a passive teleport spell that sends it far away."),
-            Lang.t("This spell unfortunately only works once per monster.") ] },
+            }), text: Lang.t("A monster too close to the witch gets a passive teleport spell that sends it far away.\n\nThis spell unfortunately only works once per monster.") },
           { id: "supers", title: Lang.t("Supers"), lv: 1, pic: function () {
               return paintPic(PIC_W, 160, function () {
                 lend(function () {
@@ -3515,60 +3502,39 @@
                   DIAL_X = 260; DIAL_Y = 70; drawHub(); drawSlot(0); drawSlot(1);
                 });
               });
-            }, lines: [
-            Lang.t("Before each game, pick the bonus supers you will need. The number of spells you take in grows with the stages."),
-            Lang.t("Each spell has a cooldown of magic energy. Watch the gauge fill up to use spells at the right time.") ] }
+            }, text: Lang.t("Before each game, pick the bonus supers you will need. The number of spells you take in grows with the stages.\n\nEach spell has a cooldown of magic energy. Watch the gauge fill up to use spells at the right time.") }
         ];
         var mons = KINDS20.map(function (e) {
           return { id: e.key, title: Lang.t(e.name), eyebrow: Lang.t(BIOMES[e.biome].name), lv: FIRST[e.key] || 30, pic: monsterSrc(e.key),
             rows: [[Lang.t("Life"), e.hp + ""], [Lang.t("Speed"), speedWord(e.speed)], [Lang.t("Weak to"), weakNames(e.weak), "#5dff8c"]],
-            lines: [Lang.t(e.line) + ".", Lang.t(MORE[e.key]) + "."] };
+            text: Lang.t(e.text) };
         });
         var variants = [
           { id: "baby", title: Lang.t("Babies"), lv: 3, pic: arenaPic(0, PIC_W / 2, PIC_H / 2, 1, function () {
               picMon("bat", -60, 0, { size: "baby" }); picMon("bat", 0, -10, { size: "baby" }); picMon("bat", 60, 0, { size: "baby" }); }),
-            rows: [[Lang.t("Life"), Lang.t("Half")], [Lang.t("Speed"), "x1.25"], [Lang.t("Thrown"), Lang.t("Further")]], lines: [
-            Lang.t("They are more numerous, smaller and faster, but also much weaker.") ] },
+            rows: [[Lang.t("Life"), Lang.t("Half")], [Lang.t("Speed"), "x1.25"], [Lang.t("Thrown"), Lang.t("Further")]], text: Lang.t("They are more numerous, smaller and faster, but also much weaker.") },
           { id: "boss", title: Lang.t("Giants"), lv: 6, pic: arenaPic(0, PIC_W / 2, PIC_H / 2 - 20, 0.9, function () {
               picMon("jack", -110, 40, {}); picMon("jack", 60, 40, { size: "boss" }); }),
-            rows: [[Lang.t("Life"), "x6"], [Lang.t("Speed"), "x0.7"], [Lang.t("Thrown"), Lang.t("Far, off the walls")], [Lang.t("Score"), "x8", "#ffd23a"]], lines: [
-            Lang.t("A giant often ends the stage. Throw it back so it bounces all over."),
-            Lang.t("A giant stays a generally enraged monster to the end.") ] },
-          { id: "bounce", title: Lang.t("Giants bounce"), lv: 6, pic: arenaPic(0, PIC_W / 2, PIC_H / 2 - 20, 0.9, function () {
-              ctx.setLineDash([10, 10]); ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,255,255,0.6)";
-              ctx.beginPath(); ctx.moveTo(-120, 40); ctx.lineTo(-300, -60); ctx.lineTo(-60, -170); ctx.stroke(); ctx.setLineDash([]);
-              witchShield(); picMon("jack", -60, -150, { size: "boss" }); }), lines: [
-            Lang.t("A giant thrown back by the shield flies farther and bounces off the edges"),
-            Lang.t("A well-placed shield hit can turn a giant into a formidable projectile") ] },
+            rows: [[Lang.t("Life"), "x6"], [Lang.t("Speed"), "x0.7"], [Lang.t("Thrown"), Lang.t("Far, off the walls")], [Lang.t("Score"), "x8", "#ffd23a"]], text: Lang.t("A giant often ends the stage.\n\nThrown back by the shield, it flies farther and bounces off the edges: a well-placed hit turns it into a formidable projectile.\n\nA giant stays enraged to the end.") },
           { id: "enraged", title: Lang.t("Enraged"), lv: 8, pic: arenaPic(0, PIC_W / 2, PIC_H / 2, 1, function () {
-              picMon("jack", -60, 0, { tints: [["rage", 0.4]] }); picMon("jack", 60, 0, { tints: [["rage", 0.4]] }); }), lines: [
-            Lang.t("Knock a monster out next to other monsters and the survivors turn red. They are then faster and more dangerous."),
-            Lang.t("Rage spreads only once.") ] },
+              picMon("jack", -60, 0, { tints: [["rage", 0.4]] }); picMon("jack", 60, 0, { tints: [["rage", 0.4]] }); }), text: Lang.t("Knock a monster out next to other monsters and the survivors turn red. They are then faster and more dangerous.\n\nRage spreads only once.") },
           { id: "palette", title: Lang.t("Visitors"), lv: 9, pic: arenaPic(1, PIC_W / 2, PIC_H / 2, 1, function () {
-              picMon("jack", -70, 0, {}); picMon("jack", 70, 0, { pal: 1 }); }), lines: [
-            Lang.t("A monster from another land won't necessarily have the same colours."),
-            Lang.t("Only its look changes: same life, same speed, same weaknesses.") ] },
+              picMon("jack", -70, 0, {}); picMon("jack", 70, 0, { pal: 1 }); }), text: Lang.t("A monster from another land won't necessarily have the same colours.\n\nOnly its look changes: same life, same speed, same weaknesses.") },
           { id: "slowed", title: Lang.t("Slowed"), lv: 1, pic: arenaPic(0, PIC_W / 2, PIC_H / 2, 1, function () {
-              picMon("bat", 0, 0, { tints: [["cold", 0.45]] }); }), lines: [
-            Lang.t("Freeze and webs slow monsters down. They turn slightly blue during this phase.") ] },
+              picMon("bat", 0, 0, { tints: [["cold", 0.45]] }); }), text: Lang.t("Freeze and webs slow monsters down. They turn slightly blue during this phase.") },
           { id: "dizzy", title: Lang.t("Dizzy"), lv: 1, pic: arenaPic(0, PIC_W / 2, PIC_H / 2, 1, function () {
-              picMon("jack", 0, 0, { row: 4, rot: 0.1 }); }), lines: [
-            Lang.t("Bowled over by a Strike or thrown into a wall, a monster stays put for a second.") ] },
+              picMon("jack", 0, 0, { row: 4, rot: 0.1 }); }), text: Lang.t("Bowled over by a Strike or thrown into a wall, a monster stays put for a second.") },
           { id: "tired", title: Lang.t("Tired"), lv: 1, pic: arenaPic(0, PIC_W / 2, PIC_H / 2, 1, function () {
-              picMon("jack", 0, 0, { tints: [["tired", 0.4]] }); }), lines: [
-            Lang.t("Throw the same monster back three times and it will drag its feet before attacking you again.") ] },
+              picMon("jack", 0, 0, { tints: [["tired", 0.4]] }); }), text: Lang.t("Throw the same monster back three times and it will drag its feet before attacking you again.") },
           { id: "grave", title: Lang.t("Tombstone"), lv: FIRST.zombie || 7, pic: CONFIG.art && CONFIG.art[PK.tomb.art] || null,
-            rows: [[Lang.t("Opens after"), P.tombRise + " s"], [Lang.t("Zombie back"), Math.round(P.tombChance * 100) + " %", "#ff7a8a"]], lines: [
-            Lang.t("A knocked-out zombie goes back into its tombstone. Monsters can chew through it to get back out. Balls are ineffective against tombstones."),
-            Lang.t("A shaking stone is a sign that a Zombie will eventually come out.") ] }
+            rows: [[Lang.t("Opens after"), P.tombRise + " s"], [Lang.t("Zombie back"), Math.round(P.tombChance * 100) + " %", "#ff7a8a"]], text: Lang.t("A knocked-out zombie goes back into its tombstone. Monsters can chew through it to get back out. Balls are ineffective against tombstones.\n\nA shaking stone is a sign that a Zombie will eventually come out.") }
         ];
         var sups = SUPERS.map(function (s) {
           return { id: s.key, title: Lang.t(s.name), lv: s.from, pic: CONFIG.art && CONFIG.art[s.art] || null,
-            rows: [[Lang.t("Cooldown"), s.cd + " s"], [Lang.t("Found on"), Lang.t("Stage") + " " + s.from]], lines: [Lang.t(s.line) + "."] };
+            rows: [[Lang.t("Cooldown"), s.cd + " s"], [Lang.t("Found on"), Lang.t("Stage") + " " + s.from]], text: Lang.t(s.text) };
         });
         var picks = PICKUPS.filter(function (p) { return !p.retired; }).map(function (p) {
-          return { id: p.key, title: Lang.t(p.name), lv: p.lv, pic: CONFIG.art && CONFIG.art[p.art] || null, lines: [
-            Lang.t(p.line) + ".", Lang.t("Any type of magic ball can activate this power-up.") ] };
+          return { id: p.key, title: Lang.t(p.name), lv: p.lv, pic: CONFIG.art && CONFIG.art[p.art] || null, text: Lang.t(p.text) + "\n\n" + Lang.t("Any type of magic ball can activate this power-up.") };
         });
         return [
           { key: "basics", label: Lang.t("Basics"), pages: basics },

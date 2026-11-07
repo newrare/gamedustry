@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Grudgeon scroll buttons</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="grudgeon">
+<style>
+/* ===========================================================================
+   GRUDGEON SCROLLS — ten looks for one pack of the fight track.
+
+   The geometry is the game's and never moves (games/grudgeon/skin.css,
+   ".gd-pk"): an 86x146 pack, the MAIN button (the side played at the yokai,
+   red) 76x76 at 6,12, the SECONDARY one (the ally it reaches, blue) a 50 px
+   disc at -6,76 overlapping its lower-left corner, and the SP price at 48,92.
+   A style only re-dresses those three nodes, scoped `.s-<key>`, and may lay
+   a ::before / ::after inside a button's own box — never move it.
+
+   COPY CSS on a card hands over its <style data-style> block. Porting one is
+   renaming `.s-<key> .main` to `.gd-red`, `.blue2` to `.gd-blue`, `.cost` to
+   `.gd-cost` in the SKIN; `.gd-gold` (a yokai's rule) and `.gd-grey` (Flee)
+   then want the same treatment in their own colour.
+   =========================================================================== */
+
+@font-face { font-family:"Bebas Neue"; src:url(../assets/motor/font/bebasneue.woff2) format("woff2"); }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---- panel ---------------------------------------------------------------- */
+#panel { flex:0 0 260px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; position:sticky; top:0; height:100vh; overflow:auto; }
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:6px 0 18px; color:#8a87a8; font-weight:500; font-size:13px; }
+.row { margin-bottom:16px; }
+.row > label { display:block; margin-bottom:6px; color:#b4b1cc; font-size:13px; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:6px 8px; border-radius:8px; border:1px solid #2c2c46; background:#191928; color:#cfcde6; font:inherit; font-size:12px; cursor:pointer; }
+.seg button.on { background:#e2364b; border-color:#e2364b; color:#fff; }
+.chk { display:flex; align-items:center; gap:8px; cursor:pointer; color:#cfcde6; }
+
+/* ---- the gallery ---------------------------------------------------------- */
+#stage { flex:1; padding:24px; display:grid; grid-template-columns:repeat(auto-fill, minmax(520px, 1fr)); gap:22px; align-content:start; }
+.card { border-radius:16px; background:#12121c; border:1px solid #23233a; overflow:hidden; }
+.card header { display:flex; align-items:baseline; gap:10px; padding:12px 16px; border-bottom:1px solid #23233a; }
+.card header b { font-size:15px; }
+.card header span { flex:1; color:#8a87a8; font-weight:500; font-size:12.5px; }
+.card header button { padding:4px 10px; border-radius:7px; border:1px solid #2c2c46; background:#191928; color:#cfcde6; font:inherit; font-size:12px; cursor:pointer; }
+
+/* the ground: a mock of the fight panel the track sits on, blurred copy behind */
+.ground { position:relative; padding:26px 0 30px; overflow:hidden; }
+.ground .ghost { position:absolute; left:40px; right:40px; top:96px; text-align:center; filter:blur(3px); opacity:.35; pointer-events:none;
+  font:400 30px/1.3 "Bebas Neue", Impact, sans-serif; letter-spacing:2px; color:#e2364b; }
+.ground .ghost small { display:block; font-size:24px; color:#b4b1cc; }
+body.g-dark  .ground { background:radial-gradient(500px 220px at 50% 40%, #1b1824, #0e0c14); }
+body.g-room  .ground { background:radial-gradient(500px 240px at 50% 30%, #3a2340, #140c18 80%); }
+body.g-paper .ground { background:radial-gradient(500px 240px at 50% 30%, #efe3c8, #c9b48d); }
+body.g-paper .ground .ghost { color:#6a1020; }
+
+.zoom { transform-origin:50% 0; }
+body.z2 .zoom { transform:scale(1.6); margin-bottom:90px; }
+
+/* ===========================================================================
+   SHARED GEOMETRY — the game's, verbatim. A style never edits this block.
+   =========================================================================== */
+.packs { position:relative; display:flex; justify-content:center; gap:58px; height:146px; }
+.pk { position:relative; flex:0 0 auto; width:86px; height:146px; }
+.ic { position:absolute; isolation:isolate; display:flex; align-items:center; justify-content:center; cursor:pointer; -webkit-user-select:none; user-select:none;
+  transition:transform .12s ease, filter .12s ease, opacity .12s ease, box-shadow .12s ease; }
+.ic i { position:relative; z-index:2; display:block; background:var(--gc, #fff);
+  -webkit-mask:var(--ico) center/contain no-repeat; mask:var(--ico) center/contain no-repeat; pointer-events:none; }
+.main  { left:6px; top:12px; width:76px; height:76px; }
+.main i { width:44px; height:44px; }
+.blue2 { left:-6px; top:76px; width:50px; height:50px; z-index:3; }
+.blue2 i { width:28px; height:28px; }
+.cost { position:absolute; left:48px; top:92px; z-index:4; white-space:nowrap; pointer-events:none;
+  font:400 28px/1 "Bebas Neue", Impact, sans-serif; }
+.ic:active { transform:scale(.93); }
+.ic.off { filter:grayscale(1) brightness(.6); opacity:.5; }
+/* the hot pick, any shape: a gold contour drawn by the alpha, not by a box */
+.ic.hot { filter:drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 10px rgba(255,209,102,.75)); }
+@media (hover:hover) { .ic:not(.off):hover { filter:brightness(1.12); } .ic.hot:hover { filter:brightness(1.12) drop-shadow(0 0 2px #ffd166) drop-shadow(0 0 10px rgba(255,209,102,.75)); } }
+</style>
+
+<!-- ======================================================================
+     THE STYLES — one block each, scoped .s-<key>. COPY CSS reads them.
+     ====================================================================== -->
+
+<style data-style="a">
+/* A · Current — what the game ships today */
+.s-a .main { border-radius:20px; background:linear-gradient(180deg, #ff5d6e, #b3122e); box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.22); }
+.s-a .blue2 { border-radius:50%; background:linear-gradient(180deg, #6fb0ff, #1f4fa8); box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); }
+.s-a .cost { color:#8fdcff; -webkit-text-stroke:6px rgba(6,4,10,.9); paint-order:stroke fill; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+</style>
+
+<style data-style="b">
+/* B · Ofuda — a paper talisman slip in red ink, a blue ink seal over its corner */
+.s-b .main { --gc:#a3101f; border-radius:3px; transform:rotate(-3deg);
+  background:
+    linear-gradient(180deg, #a3101f 0 9px, transparent 9px) no-repeat,
+    repeating-linear-gradient(97deg, rgba(120,90,40,.07) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #f6ecd4, #e4d3ad);
+  box-shadow:inset 0 0 0 4px #f3e7cb, inset 0 0 0 6px #a3101f, 0 6px 12px rgba(0,0,0,.55); }
+.s-b .main i { top:4px; }
+.s-b .main::after { content:""; position:absolute; left:50%; bottom:7px; width:22px; height:3px; margin-left:-11px; border-radius:2px; background:#1c1414; opacity:.75; }
+.s-b .main:active { transform:rotate(-3deg) scale(.93); }
+.s-b .blue2 { --gc:#f6ecd4; border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, #3466c4, #1a3d8c 70%, #122c66);
+  box-shadow:inset 0 0 0 3px #f6ecd4, inset 0 0 0 5px #1a3d8c, 0 0 0 3px rgba(12,8,18,.9), 0 4px 8px rgba(0,0,0,.5); }
+.s-b .cost { color:#f6ecd4; -webkit-text-stroke:6px #122c66; paint-order:stroke fill; }
+</style>
+
+<style data-style="c">
+/* C · Makimono — a crimson silk scroll on two black-lacquer rods with gold caps; a blue braided knot */
+.s-c .main { --gc:#ffe7b0; top:20px; height:60px; border-radius:2px;
+  background:
+    linear-gradient(90deg, #d6a64a 0 4px, transparent 4px calc(100% - 4px), #d6a64a calc(100% - 4px)),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 3px, transparent 3px 6px),
+    linear-gradient(180deg, #c81d34, #8a0f20);
+  box-shadow:0 6px 12px rgba(0,0,0,.5); }
+.s-c .main i { width:40px; height:40px; }
+.s-c .main::before, .s-c .main::after { content:""; position:absolute; left:-6px; right:-6px; height:11px; border-radius:6px; z-index:1;
+  background:
+    linear-gradient(90deg, #f3cf75 0 7px, transparent 7px calc(100% - 7px), #f3cf75 calc(100% - 7px)),
+    linear-gradient(180deg, #4a3a3a, #120a0a 60%, #000);
+  box-shadow:0 2px 3px rgba(0,0,0,.6); }
+.s-c .main::before { top:-8px; }
+.s-c .main::after { bottom:-8px; }
+.s-c .blue2 { --gc:#eaf2ff; border-radius:50%;
+  background:radial-gradient(circle, #2f63c8 0 52%, transparent 53%),
+    repeating-conic-gradient(#173e94 0 15deg, #4f86e8 15deg 30deg);
+  box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); }
+.s-c .cost { color:#ffe7b0; -webkit-text-stroke:6px #2a0810; paint-order:stroke fill; }
+</style>
+
+<style data-style="d">
+/* D · Hanko — a red carved stamp pressed at an angle, a round blue stamp under it */
+.s-d .ic { filter:url(#rough); }
+.s-d .main { --gc:#f4ead6; border-radius:8px; transform:rotate(4deg);
+  background:#c8142e; box-shadow:inset 0 0 0 4px #c8142e, inset 0 0 0 6px #f4ead6; }
+.s-d .main:active { transform:rotate(4deg) scale(.93); }
+.s-d .blue2 { --gc:#f4ead6; border-radius:50%; background:#2353b4; box-shadow:inset 0 0 0 3px #2353b4, inset 0 0 0 5px #f4ead6; }
+.s-d .ic.off { filter:url(#rough) grayscale(1) brightness(.6); }
+.s-d .ic.hot { filter:url(#rough) drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 10px rgba(255,209,102,.75)); }
+.s-d .cost { color:#9cc0ff; -webkit-text-stroke:6px #0c1630; paint-order:stroke fill; }
+</style>
+
+<style data-style="e">
+/* E · Chōchin — a paper lantern lit red from inside; a blue hitodama spirit flame */
+.s-e .main { --gc:#4a0612; border-radius:40% / 46%;
+  background:
+    repeating-linear-gradient(180deg, rgba(60,0,10,.22) 0 2px, transparent 2px 10px),
+    radial-gradient(ellipse at 50% 45%, #ffd08a 0, #ff6a4e 38%, #c81d34 70%, #6d0a1a 100%);
+  box-shadow:0 0 22px rgba(255,90,60,.45), 0 6px 12px rgba(0,0,0,.5); }
+.s-e .main::before, .s-e .main::after { content:""; position:absolute; left:50%; width:40px; margin-left:-20px; height:8px; border-radius:3px; background:linear-gradient(180deg, #2b2020, #0a0606); z-index:1; }
+.s-e .main::before { top:-3px; }
+.s-e .main::after { bottom:-3px; }
+.s-e .blue2 { --gc:#f2fbff; }
+.s-e .blue2::before { content:""; position:absolute; inset:2px; border-radius:50% 0 50% 50%; transform:rotate(-45deg); z-index:0;
+  background:radial-gradient(circle at 40% 60%, #e6f7ff 0, #6cc4ff 35%, #2a64d6 75%, #173a8a 100%);
+  box-shadow:0 0 14px rgba(108,196,255,.75), 0 0 0 3px rgba(12,8,18,.9); }
+.s-e .blue2 i { top:3px; }
+.s-e .cost { color:#9fdcff; -webkit-text-stroke:6px #08101e; paint-order:stroke fill; text-shadow:0 0 10px rgba(108,196,255,.6); }
+</style>
+
+<style data-style="f">
+/* F · Urushi — red lacquer with a gold rim and a wet highlight; a blue lacquer bead */
+.s-f .main { --gc:#ffe2a0; border-radius:18px;
+  background:linear-gradient(160deg, #e3303f 0%, #9a0e22 55%, #4a0410 100%);
+  box-shadow:0 0 0 3px #c99a3a, 0 0 0 5px #160808, 0 8px 14px rgba(0,0,0,.6), inset 0 -6px 12px rgba(0,0,0,.35); }
+.s-f .main::before { content:""; position:absolute; left:6px; right:6px; top:4px; height:42%; border-radius:14px 14px 40% 40%; z-index:1;
+  background:linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,0)); }
+.s-f .blue2 { --gc:#ffe2a0; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #4d82e6, #1a3d8f 60%, #0b1c48);
+  box-shadow:0 0 0 2px #c99a3a, 0 0 0 4px #160808, 0 4px 8px rgba(0,0,0,.55); }
+.s-f .blue2::before { content:""; position:absolute; left:9px; right:9px; top:4px; height:38%; border-radius:50%; z-index:1;
+  background:linear-gradient(180deg, rgba(255,255,255,.4), rgba(255,255,255,0)); }
+.s-f .cost { color:#ffe2a0; -webkit-text-stroke:6px #160808; paint-order:stroke fill; }
+</style>
+
+<style data-style="g">
+/* G · Ukiyo-e — a woodblock print: flat vermilion, a black key line, the block's offset; Prussian blue */
+.s-g .main { --gc:#f6ead2; border-radius:12px;
+  background:repeating-linear-gradient(100deg, rgba(0,0,0,.07) 0 2px, transparent 2px 8px), #d9472b;
+  border:4px solid #1b1414; box-shadow:5px 5px 0 #1b1414; }
+.s-g .blue2 { --gc:#f6ead2; border-radius:50%;
+  background:repeating-linear-gradient(80deg, rgba(0,0,0,.08) 0 2px, transparent 2px 7px), #2b4c7e;
+  border:3px solid #1b1414; box-shadow:3px 3px 0 #1b1414; }
+.s-g .cost { color:#f6ead2; -webkit-text-stroke:6px #1b1414; paint-order:stroke fill; text-shadow:3px 3px 0 #1b1414; }
+</style>
+
+<style data-style="h">
+/* H · Cloisonné — red enamel in a gold cell, the glyph a gold wire; blue enamel set in silver */
+.s-h .main { border-radius:22px; border:4px solid transparent;
+  background:
+    radial-gradient(circle at 35% 28%, #ff7083, #c8102e 55%, #6d0618) padding-box,
+    linear-gradient(135deg, #fff3c4, #b8862b 35%, #ffe9a8 60%, #8a5a12) border-box;
+  box-shadow:inset 0 0 0 2px rgba(255,226,150,.5), 0 6px 12px rgba(0,0,0,.55); }
+.s-h .main i { background:linear-gradient(160deg, #fff6d0, #e3b04a 50%, #a8741c); }
+.s-h .blue2 { border-radius:50%; border:3px solid transparent;
+  background:
+    radial-gradient(circle at 35% 28%, #7fb2ff, #2357c4 55%, #0f2a6b) padding-box,
+    linear-gradient(135deg, #ffffff, #8a95a8 40%, #e8edf5 65%, #5a6478) border-box;
+  box-shadow:0 0 0 2px rgba(12,8,18,.9), 0 4px 8px rgba(0,0,0,.5); }
+.s-h .blue2 i { background:linear-gradient(160deg, #ffffff, #c4cede 50%, #8a95a8); }
+.s-h .cost { color:#cfe0ff; -webkit-text-stroke:6px #0b1430; paint-order:stroke fill; }
+</style>
+
+<style data-style="i">
+/* I · Neon onryō — a red neon tube on smoked glass; a blue neon ring */
+.s-i .main { --gc:#ffd9df; border-radius:20px; background:rgba(28,4,12,.88); border:3px solid #ff3b5c;
+  box-shadow:0 0 8px #ff3b5c, 0 0 22px rgba(255,59,92,.55), inset 0 0 14px rgba(255,59,92,.45); }
+.s-i .blue2 { --gc:#d8f2ff; border-radius:50%; background:rgba(4,12,28,.92); border:3px solid #38b6ff;
+  box-shadow:0 0 8px #38b6ff, 0 0 18px rgba(56,182,255,.55), inset 0 0 10px rgba(56,182,255,.45); }
+.s-i .ic.hot { animation:s-i-flicker 1.6s steps(1) infinite; }
+@keyframes s-i-flicker { 0%, 100% { opacity:1; } 92% { opacity:.55; } 95% { opacity:1; } 97% { opacity:.7; } }
+.s-i .cost { color:#d8f2ff; -webkit-text-stroke:5px #04101c; paint-order:stroke fill; text-shadow:0 0 8px #38b6ff, 0 0 16px rgba(56,182,255,.6); }
+</style>
+
+<style data-style="j">
+/* J · Gem — a cut ruby, an octagon of facets; a round sapphire */
+.s-j .ic { filter:drop-shadow(0 6px 6px rgba(0,0,0,.55)); }
+.s-j .main { --gc:#fff2f4; }
+.s-j .main::before { content:""; position:absolute; inset:0; z-index:0;
+  clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background:conic-gradient(from 22.5deg, #ff8796, #a0102a, #ff4a63, #6d0618, #ff95a2, #a0102a, #ff4a63, #6d0618, #ff8796); }
+.s-j .main::after { content:""; position:absolute; inset:12px; z-index:1;
+  clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  background:linear-gradient(160deg, rgba(255,190,200,.55), rgba(200,16,46,.5) 45%, rgba(90,4,20,.65)); }
+.s-j .blue2 { --gc:#f0f6ff; }
+.s-j .blue2::before { content:""; position:absolute; inset:0; border-radius:50%; z-index:0;
+  background:conic-gradient(from 0deg, #8fc0ff, #1d4fb8, #5a96ff, #0e2a6e, #a6ceff, #1d4fb8, #5a96ff, #0e2a6e, #8fc0ff);
+  box-shadow:0 0 0 3px rgba(12,8,18,.9); }
+.s-j .blue2::after { content:""; position:absolute; inset:9px; border-radius:50%; z-index:1;
+  background:linear-gradient(160deg, rgba(200,225,255,.5), rgba(29,79,184,.55) 50%, rgba(10,30,80,.7)); }
+.s-j .ic.off { filter:grayscale(1) brightness(.6); }
+.s-j .cost { color:#b8d6ff; -webkit-text-stroke:6px #08122c; paint-order:stroke fill; }
+</style>
+
+<style data-style="k">
+/* K · Oni mask — a red lacquered tile with two horns and a fanged black brow; a blue spirit eye */
+.s-k .main { --gc:#ffe9d8; border-radius:14px 14px 26px 26px;
+  background:linear-gradient(180deg, #1a0b0e 0 12px, transparent 12px) no-repeat, linear-gradient(180deg, #e8384a, #a3132a 60%, #5e0715);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.3), 0 6px 12px rgba(0,0,0,.55); }
+.s-k .main i { top:5px; }
+.s-k .main::before, .s-k .main::after { content:""; position:absolute; top:-12px; width:14px; height:20px; z-index:-1;
+  background:linear-gradient(180deg, #fff3dc, #d9c39b); clip-path:polygon(50% 0, 100% 100%, 0 100%); }
+.s-k .main::before { left:8px; transform:rotate(-14deg); }
+.s-k .main::after { right:8px; transform:rotate(14deg); }
+.s-k .blue2 { --gc:#eaf6ff; border-radius:50%;
+  background:radial-gradient(circle at 50% 50%, #9fe0ff 0, #3a86e8 45%, #142f78 100%);
+  box-shadow:0 0 0 3px #1a0b0e, 0 0 0 5px rgba(234,246,255,.25), 0 4px 8px rgba(0,0,0,.55); }
+.s-k .cost { color:#b8e4ff; -webkit-text-stroke:6px #1a0b0e; paint-order:stroke fill; }
+</style>
+</head>
+<body class="g-dark">
+
+<!-- the hanko's worn edge: a little turbulence pushing the outline about -->
+<svg width="0" height="0" style="position:absolute">
+  <filter id="rough" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<aside id="panel">
+  <h1>Grudgeon scrolls</h1>
+  <p class="hint">Ten looks for one pack: the main button played at the yokai, the secondary one on the ally it reaches, the SP price. The placement is the game's and never moves.</p>
+  <div class="row"><label>Ground</label>
+    <div class="seg" id="ground"><button data-v="dark" class="on">Fight panel</button><button data-v="room">Room</button><button data-v="paper">Paper</button></div>
+  </div>
+  <div class="row"><label>Zoom</label>
+    <div class="seg" id="zoom"><button data-v="1" class="on">×1</button><button data-v="2">×1.6</button></div>
+  </div>
+  <div class="row"><label class="chk"><input type="checkbox" id="states" checked> Show hot and off states</label></div>
+  <p class="hint">Hot: the second pack (the one under the finger). Off: the fourth (too dear). Click a button to feel its press.</p>
+</aside>
+
+<main id="stage"></main>
+
+<script>
+(function () {
+  // The four pictograms of the screenshot, lucide (assets/motor/lucide/), inlined as masks
+  // so the page opens over file:// too (a mask-image url is CORS-checked).
+  var P = {
+    fist: '<path d="M12.035 17.012a3 3 0 0 0-3-3l-.311-.002a.72.72 0 0 1-.505-1.229l1.195-1.195A2 2 0 0 1 10.828 11H12a2 2 0 0 0 0-4H9.243a3 3 0 0 0-2.122.879l-2.707 2.707A4.83 4.83 0 0 0 3 14a8 8 0 0 0 8 8h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v2a2 2 0 1 0 4 0"/><path d="M13.888 9.662A2 2 0 0 0 17 8V5A2 2 0 1 0 13 5"/><path d="M9 5A2 2 0 1 0 5 5V10"/><path d="M9 7V4A2 2 0 1 1 13 4V7.268"/>',
+    sparkles: '<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
+    heart: '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+    shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>'
+  };
+  function ico(k) {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + P[k] + '</svg>';
+    return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
+  }
+
+  var PACKS = [
+    { k: "fist", cost: "" },
+    { k: "sparkles", cost: "-8" },
+    { k: "heart", cost: "-12" },
+    { k: "shield", cost: "" }
+  ];
+
+  var STYLES = [
+    { key: "a", name: "A · Current", note: "What the game ships: gradient tile, gradient disc." },
+    { key: "b", name: "B · Ofuda", note: "A paper talisman in red ink, a blue ink seal." },
+    { key: "c", name: "C · Makimono", note: "Crimson silk on lacquer rods, a braided blue knot." },
+    { key: "d", name: "D · Hanko", note: "A carved red stamp, worn edges, a round blue stamp." },
+    { key: "e", name: "E · Chōchin", note: "A lantern lit from inside, a blue spirit flame." },
+    { key: "f", name: "F · Urushi", note: "Red lacquer, gold rim, wet highlight; a blue bead." },
+    { key: "g", name: "G · Ukiyo-e", note: "Woodblock print: flat colour, black key line, offset." },
+    { key: "h", name: "H · Cloisonné", note: "Enamel in a gold cell, the glyph a gold wire; silver-set blue." },
+    { key: "i", name: "I · Neon onryō", note: "Red neon on smoked glass, a blue neon ring." },
+    { key: "j", name: "J · Gem", note: "A cut ruby octagon, a round sapphire." },
+    { key: "k", name: "K · Oni mask", note: "Red lacquer with horns and a black brow; a blue spirit eye." }
+  ];
+
+  var stage = document.getElementById("stage");
+
+  function packHTML(p, i) {
+    var st = document.getElementById("states").checked;
+    var mainCls = "ic main" + (st && i === 1 ? " hot" : "") + (st && i === 3 ? " off" : "");
+    var blueCls = "ic blue2" + (st && i === 3 ? " off" : "");
+    var m = "--ico:" + ico(p.k).replace(/"/g, "&quot;");
+    return '<div class="pk">' +
+      '<div class="' + mainCls + '"><i style="' + m + '"></i></div>' +
+      '<div class="' + blueCls + '"><i style="' + m + '"></i></div>' +
+      (p.cost ? '<span class="cost">' + p.cost + '</span>' : '') +
+      '</div>';
+  }
+
+  function render() {
+    stage.innerHTML = "";
+    STYLES.forEach(function (s) {
+      var card = document.createElement("section");
+      card.className = "card";
+      card.innerHTML =
+        '<header><b>' + s.name + '</b><span>' + s.note + '</span><button>Copy CSS</button></header>' +
+        '<div class="ground"><div class="ghost">Pick a scroll<small>The yokai strikes in 2 turns</small></div>' +
+        '<div class="zoom"><div class="packs s-' + s.key + '">' + PACKS.map(packHTML).join("") + '</div></div></div>';
+      card.querySelector("button").onclick = function () {
+        var el = document.querySelector('style[data-style="' + s.key + '"]');
+        var css = el.textContent.trim() + "\n";
+        var b = this;
+        navigator.clipboard.writeText(css).then(function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy CSS"; }, 1200); });
+      };
+      stage.appendChild(card);
+    });
+  }
+
+  function seg(id, fn) {
+    var box = document.getElementById(id);
+    box.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      [].forEach.call(box.children, function (c) { c.classList.toggle("on", c === b); });
+      fn(b.getAttribute("data-v"));
+    });
+  }
+  seg("ground", function (v) { document.body.classList.remove("g-dark", "g-room", "g-paper"); document.body.classList.add("g-" + v); });
+  seg("zoom", function (v) { document.body.classList.toggle("z2", v === "2"); });
+  document.getElementById("states").onchange = render;
+  render();
+})();
+</script>
+</body>
+</html>

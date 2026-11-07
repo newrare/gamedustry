@@ -303,16 +303,16 @@
     var stage = 0, recipe = STAGES[0];        // the stage within its biome, and what it switches on
     var par = CONFIG.parBalls;                // shots within which a clear is worth three stars
 
-    /* --- the living glass: what each kind is called, and for the ones whose
-         rule the board cannot show, what the first meeting names
-         (Notify.learn, whose line opens the guide page of the same id) */
+    /* --- the living glass: what each kind is called (its guide page's title;
+         the first meeting of the ones whose rule the board cannot show is
+         Notify.learn, whose line opens the guide page of the same id) */
     var K_WARP = "warp", K_SPLIT = "split", K_SEED = "seed", K_SHIELD = "shield";
     var LIVE_ORDER = [K_WARP, K_SPLIT, K_SEED, K_SHIELD];
     var LIVE = {};
     LIVE[K_WARP]   = { word: "Warp glass" };
-    LIVE[K_SPLIT]  = { word: "Split glass",  sub: "This glass bursts into new bricks",        icon: "warn" };
-    LIVE[K_SEED]   = { word: "Seed glass",   sub: "A new brick every second", icon: "heart" };
-    LIVE[K_SHIELD] = { word: "Shield glass", sub: "Hit this glass while its shield is down", icon: "lock" };
+    LIVE[K_SPLIT]  = { word: "Split glass" };
+    LIVE[K_SEED]   = { word: "Seed glass" };
+    LIVE[K_SHIELD] = { word: "Shield glass" };
     var K_MIX = "living";                      // the furnace core's page: all four kinds at once
     var SHOCK = "#7ef9ff", SEED = "#b8ff6a";   // the shield's arc, the seed's sap
 
@@ -1459,13 +1459,12 @@
        last biome's mix is four kinds already named. Each id is a page of
        the guide, which the notice's line in the log opens. */
     function tellStage() {
-      var own = BIOMES[biome].live, n = 0, i, one = null, say;
-      if (groups > 1) Notify.learn("banks", "Two switch colours", { sub: "A tap swaps the switch colours", icon: "unlock" });
+      var own = BIOMES[biome].live, n = 0, i, one = null;
+      if (groups > 1) Notify.learn("banks");
       if (!recipe.live) return;
       for (i = 0; i < LIVE_ORDER.length; i++) if (own[LIVE_ORDER[i]]) { n++; one = LIVE_ORDER[i]; }
       if (n !== 1) return;
-      say = LIVE[one];
-      if (say.sub) Notify.learn(one, say.word, { sub: say.sub, icon: say.icon });
+      if (one !== K_WARP) Notify.learn(one);
     }
 
     /* --- the switches -------------------------------------------------- */
@@ -1915,16 +1914,16 @@
       var m = comboMult(chain);
       if (m === comboMult(chain - 1)) return;
       if (m === 2) {
-        Pop.show("streak", { word: "Hot!", sub: COMBO_WORD[2], at: popAt() });
+        Pop.show("streak", { word: COMBO_WORD[2], at: popAt() });
         Sound.clip("chain", 0.2, 1);
       } else if (m === 3) {
-        Pop.show("combo", { word: COMBO_WORD[3], sub: "+" + gain, at: popAt() });
+        Pop.show("combo", { word: COMBO_WORD[3], at: popAt() });
         Sound.clip("chain", 0.4, 1.12); Fx.flash("#4bf5ff", 0.18);
       } else if (m === 4) {
-        Pop.show("combo", { word: "Smash!", sub: COMBO_WORD[4], cls: "pop-blast", at: popAt() });
+        Pop.show("combo", { word: COMBO_WORD[4], cls: "pop-blast", at: popAt() });
         Sound.clip("chain", 0.55, 1.25);
       } else {
-        Pop.show("ultra", { word: COMBO_WORD[5], sub: "+" + gain, at: popAt() });
+        Pop.show("ultra", { word: COMBO_WORD[5], at: popAt() });
         Sound.clip("chain", 0.7, 1.4);
         Overlay.vignette("rgba(75,245,255,.85)", 1, 620);
       }
@@ -3048,12 +3047,12 @@
       var B = C.web && C.web.levels && C.web.levels.bands, l = Lang.code ? Lang.code() : "en";
       return B && (B[l] || B.en) ? (B[l] || B.en)[b] : "";
     }
-    function powerPage(kind, lv, lines) {
-      return { id: kind, title: Lang.t(BONUS[kind].word), lv: lv, lines: lines,
+    function powerPage(kind, lv, text) {
+      return { id: kind, title: Lang.t(BONUS[kind].word), lv: lv, text: text,
                pic: function () { return powerPic(kind); } };
     }
-    function livePage(kind, tone, lv, lines) {
-      return { id: kind, title: Lang.t(LIVE[kind].word), lv: lv, lines: lines,
+    function livePage(kind, tone, lv, text) {
+      return { id: kind, title: Lang.t(LIVE[kind].word), lv: lv, text: text,
                pic: function () { return livePic(kind, tone); } };
     }
     var guide = {
@@ -3063,61 +3062,53 @@
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
             { id: "shoot", title: Lang.t("Aim and shoot"), pic: shootPic,
-              lines: [Lang.t("Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.")] },
+              text: Lang.t("Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line.") },
             { id: "switches", title: Lang.t("The switches"), pic: switchesPic,
-              lines: [Lang.t("Tap while the ball flies to light up the switches. Tap again to switch them off."),
-                      Lang.t("A dark switch lets the ball through. A lit one blocks it.")] },
+              text: Lang.t("Tap while the ball flies to light up the switches. Tap again to switch them off.\n\nA dark switch lets the ball through. A lit one blocks it.") },
             { id: "pocket", title: Lang.t("The area"), pic: pocketPic,
               rows: [[Lang.t("Each brick in an area"), "+" + C.pocketBonus]],
-              lines: [Lang.t("Tap as the ball enters a closed area. It stays shut in with the bricks.")] },
+              text: Lang.t("Tap as the ball enters a closed area. It stays shut in with the bricks.") },
             { id: "lava", title: Lang.t("The lava"), pic: lavaPic,
-              lines: [Lang.t("After a few seconds of flight, the lava pulls the ball down.")] },
+              text: Lang.t("After a few seconds of flight, the lava pulls the ball down.") },
             { id: "tough", title: Lang.t("Tough glass"), pic: toughPic,
-              lines: [Lang.t("A brick with a double white rim takes two hits. The first one only cracks it."),
-                      Lang.t("A power breaks this brick in one go.")] },
+              text: Lang.t("A brick with a double white rim takes two hits. The first one only cracks it.\n\nA power breaks this brick in one go.") },
             { id: "colours", title: Lang.t("Each colour has its price"), pic: tonesPic, lv: 2,
               rows: [[Lang.t("Red"), String(C.colorScore[0]), COLORS[0].core], [Lang.t("Green"), String(C.colorScore[1]), COLORS[1].core],
                      [Lang.t("Blue"), String(C.colorScore[2]), COLORS[2].core], [Lang.t("Purple"), String(C.colorScore[3]), COLORS[3].core],
                      [Lang.t("Rainbow"), String(C.colorScore[4]), COLORS[4].core]],
-              lines: [Lang.t("Each brick scores the points of its colour, times the combo.")] },
+              text: Lang.t("Each brick scores the points of its colour, times the combo.") },
             { id: "combo", title: Lang.t("The combo"), pic: comboPic,
               rows: [[panes(C.comboStep), "×2"], [panes(C.comboStep * 4), "×" + C.comboMax]],
-              lines: [Lang.t("Every brick broken during a shot counts, even by a power or an extra ball.")] },
+              text: Lang.t("Every brick broken during a shot counts, even by a power or an extra ball.") },
             { id: "stars", title: Lang.t("The stars"), pic: starsPic,
               rows: [[Lang.t("1 star"), pct("starOne")], [Lang.t("2 stars"), pct("starTwo")],
                      [Lang.t("3 stars"), Lang.t("The whole wall within par")]],
-              lines: [Lang.t("Go one shot over par and the third star is lost.")] }
+              text: Lang.t("Go one shot over par and the third star is lost.") }
           ] },
           { key: "band1", label: bandName(0), pages: [
-            powerPage(B_ROW, 3, [Lang.t("Break this brick and every brick in its line breaks too.")]),
-            livePage(K_WARP, 4, 4, [Lang.t("This rainbow brick jumps to a nearby free spot every three seconds."),
-                                    Lang.t("The rainbow brick flickers just before it jumps.")]),
-            powerPage(B_COL, 5, [Lang.t("Break this brick and every brick in its column breaks too.")])
+            powerPage(B_ROW, 3, Lang.t("Break this brick and every brick in its line breaks too.")),
+            livePage(K_WARP, 4, 4, Lang.t("This rainbow brick jumps to a nearby free spot every three seconds.\n\nThe rainbow brick flickers just before it jumps.")),
+            powerPage(B_COL, 5, Lang.t("Break this brick and every brick in its column breaks too."))
           ] },
           { key: "band2", label: bandName(1), pages: [
-            powerPage(B_MULTI, 9, [Lang.t("Break this brick to release extra balls.")]),
-            livePage(K_SPLIT, 2, 10, [Lang.t("When split glass breaks, new bricks appear on every free spot around it."),
-                                      Lang.t("These new bricks count in the wall, so break them too.")]),
+            powerPage(B_MULTI, 9, Lang.t("Break this brick to release extra balls.")),
+            livePage(K_SPLIT, 2, 10, Lang.t("When split glass breaks, new bricks appear on every free spot around it.\n\nThese new bricks count in the wall, so break them too.")),
             { id: "banks", title: Lang.t("Two switch colours"), pic: banksPic, lv: 11,
-              lines: [Lang.t("A tap swaps the two switch colours. One lights up as the other goes dark."),
-                      Lang.t("Every new shot starts with the same colour lit.")] },
-            powerPage(B_BOMB, 11, [Lang.t("Break this brick and the eight bricks around it break too.")])
+              text: Lang.t("A tap swaps the two switch colours. One lights up as the other goes dark.\n\nEvery new shot starts with the same colour lit.") },
+            powerPage(B_BOMB, 11, Lang.t("Break this brick and the eight bricks around it break too."))
           ] },
           { key: "band3", label: bandName(2), pages: [
-            powerPage(B_BIG, 15, [Lang.t("The ball that breaks this brick grows bigger for the rest of its flight.")]),
-            livePage(K_SEED, 1, 16, [Lang.t("Every second, seed glass grows a new brick next to it."),
-                                     Lang.t("Seed glass takes two hits, so break it first.")])
+            powerPage(B_BIG, 15, Lang.t("The ball that breaks this brick grows bigger for the rest of its flight.")),
+            livePage(K_SEED, 1, 16, Lang.t("Every second, seed glass grows a new brick next to it.\n\nSeed glass takes two hits, so break it first."))
           ] },
           { key: "band4", label: bandName(3), pages: [
-            powerPage(B_FIRE, 21, [Lang.t("For five seconds, the ball burns through bricks instead of bouncing off them."),
-                                   Lang.t("Lit switches and raised shields still bounce the ball back.")]),
-            livePage(K_SHIELD, 3, 22, [Lang.t("While a brick's shield is up, the ball and every power bounce off it."),
-                                       Lang.t("Wait for the shield to drop, then hit the glass.")])
+            powerPage(B_FIRE, 21, Lang.t("For five seconds, the ball burns through bricks instead of bouncing off them.\n\nLit switches and raised shields still bounce the ball back.")),
+            livePage(K_SHIELD, 3, 22, Lang.t("While a brick's shield is up, the ball and every power bounce off it.\n\nWait for the shield to drop, then hit the glass."))
           ] },
           { key: "band5", label: bandName(4), pages: [
-            powerPage(B_MAG, 27, [Lang.t("For five seconds, nearby bricks fly into the ball.")]),
+            powerPage(B_MAG, 27, Lang.t("For five seconds, nearby bricks fly into the ball.")),
             { id: K_MIX, title: Lang.t("Living glass"), lv: 28, pic: mixPic,
-              lines: [Lang.t("The bricks living glass adds count in the wall, so break them too.")] }
+              text: Lang.t("The bricks living glass adds count in the wall, so break them too.") }
           ] }
         ];
       }

@@ -39,6 +39,22 @@
 .gu-row.locked .gu-rt { color:var(--muted); letter-spacing:4px; }
 .gu-row .gu-ic { flex:0 0 auto; width:28px; height:28px; color:var(--muted); }
 .gu-rl { flex:0 0 auto; font-size:22px; color:var(--muted); white-space:nowrap; }
+/* NEW: a page learnt (Notify.learn) and not read yet — a pill in the gold,
+   which empties as the book is read (guide.js, freshSet) */
+.gu-row.fresh { border-color:color-mix(in srgb, var(--gold, #ffd23a) 55%, transparent); }
+.gu-new {
+  flex:0 0 auto; padding:4px 10px; border-radius:999px;
+  font-size:18px; font-weight:900; letter-spacing:2px; line-height:1;
+  color:#0b0b12; background:var(--gold, #ffd23a);
+}
+/* ...and their count on the round's book (the foot bar's GUIDE, guide.js, sync) */
+.web-ctl .gu-count {
+  position:absolute; top:-8px; right:-8px; min-width:28px; height:28px; padding:0 6px;
+  box-sizing:border-box; border-radius:14px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:900; line-height:1; color:#0b0b12;
+  background:var(--gold, #ffd23a); border:2px solid rgba(0,0,0,.65);
+  pointer-events:none;
+}
 
 /* ---- a page ------------------------------------------------------------- */
 .gu-page { flex:1 0 auto; display:flex; flex-direction:column; gap:18px; padding:4px 4px 24px; text-align:left; }

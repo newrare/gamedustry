@@ -1189,7 +1189,7 @@
       // way this board could read as broken.
       if (w.lock) {
         lockFlare = 1;
-        Notify.learn("crystal", "Exit sealed", { sub: "Break the crystal", icon: "lock" });
+        Notify.learn("crystal");
       }
       inline2(w, NB);
       for (i = 0; i < NB.length; i++) {
@@ -1220,7 +1220,7 @@
           Pop.text(x, y - 14, "+" + C.mapScore, { color: "#dffcff", size: 22, life: 0.6, tier: 1 });
         }
         if (mapped % 25 === 0) {
-          Pop.show("combo", { word: mapped + Lang.t(" walls"), sub: "Found", at: popAt() });
+          Pop.show("combo", { word: mapped + Lang.t(" walls"), at: popAt() });
           Sound.clip("power", 0.3, 1.35);
         }
       }
@@ -1296,7 +1296,7 @@
       // Discreet on purpose: a valve is a consolation, not a win. The first
       // one a player ever forges is NAMED (the guide's "valves" page), and
       // every one after that is a plain score callout.
-      if (!Notify.learn("valves", "One-way valve", { sub: "Pulses go up, never back down" }))
+      if (!Notify.learn("valves"))
         Pop.show("score", { word: "One-way valve", sub: "+" + C.valveScore, at: popAt(), hold: 240 });
     }
     // A later pulse pushing one of them open, on its way up.
@@ -1332,7 +1332,7 @@
       Fx.burst(mx, M.y0, { color: [SURGE, "#ffffff"], count: 18, speed: 250,
                            life: 0.45, size: 5 });
       Overlay.vignette(rgba(SURGE, 0.55), 1, 700);
-      Notify.learn("decoys", "False exit", { sub: "Only the true exit sends rings" });
+      Notify.learn("decoys");
     }
 
     /* The key, taken. The bar comes off the gate in the same frame, which is
@@ -1487,7 +1487,7 @@
       applySeal();
       Fx.ring(mx, M.y1, { from: 14, to: 130, color: SURGE, width: 5, life: 0.4 });
       Sound.clip("power", 0.45, 1.1);
-      Pop.show("streak", { word: "Door forced", sub: "Open for good" });
+      Pop.show("streak", { word: "Door forced" });
     }
 
     /* =================================================================
@@ -1666,7 +1666,7 @@
       if (surgeSeq.length) {                       // that is the last of it
         jumpSurge(true);
         // the fence comes up with the dark: named once ever (guide "fence")
-        Notify.learn("fence", "Live fence", { sub: "Fire through the gap" });
+        Notify.learn("fence");
       }
     }
     // What fraction of the board is drawn for free right now: 1 during the
@@ -3121,54 +3121,34 @@
                      Lang.t("Live fence"), Lang.t("Full surge")];
         return seeded([
           { key: "basics", label: Lang.t("The basics"), pages: [
-            { id: "goal", title: Lang.t("Find the way out"), pic: boardPic, lines: [
-              Lang.t("The maze is lit for a moment, then everything goes dark."),
-              Lang.t("Only one door leads to the exit. The others end in dead ends.") ] },
-            { id: "aim", title: Lang.t("Aim and fire"), pic: aimPic, lines: [
-              Lang.t("Drag to aim, let go to fire a pulse."),
-              Lang.t("The sight locks onto your aim. The pulse will go in that direction.") ] },
-            { id: "echo", title: Lang.t("Echoes"), pic: echoPic, lines: [
-              Lang.t("In the dark, a wall only shows where a pulse strikes it, then fades.") ] },
-            { id: "valves", title: Lang.t("One-way valve"), pic: valvePic, lines: [
-              Lang.t("When a pulse dies in the maze, the last opening it went through becomes a valve."),
-              Lang.t("That valve lets pulses up, never back down.") ] },
-            { id: "recap", title: Lang.t("The answer"), pic: recapPic, lines: [
-              Lang.t("Out of pulses and still inside? The maze lights up one last time to show you the solution.") ] },
+            { id: "goal", title: Lang.t("Find the way out"), pic: boardPic, text: Lang.t("The maze is lit for a moment, then everything goes dark.\n\nOnly one door leads to the exit. The others end in dead ends.") },
+            { id: "aim", title: Lang.t("Aim and fire"), pic: aimPic, text: Lang.t("Drag to aim, let go to fire a pulse.\n\nThe sight locks onto your aim. The pulse will go in that direction.") },
+            { id: "echo", title: Lang.t("Echoes"), pic: echoPic, text: Lang.t("In the dark, a wall only shows where a pulse strikes it, then fades.") },
+            { id: "valves", title: Lang.t("One-way valve"), pic: valvePic, text: Lang.t("When a pulse dies in the maze, the last opening it went through becomes a valve.\n\nThat valve lets pulses up, never back down.") },
+            { id: "recap", title: Lang.t("The answer"), pic: recapPic, text: Lang.t("Out of pulses and still inside? The maze lights up one last time to show you the solution.") },
             { id: "score", title: Lang.t("Scoring"), pic: escapePic, rows: [
-              [Lang.t("Each pulse left"), "+" + C.spareBonus] ], lines: [
-              Lang.t("Pulses you have left pay the most. Getting out on the first shot gives the best score.") ] },
+              [Lang.t("Each pulse left"), "+" + C.spareBonus] ], text: Lang.t("Pulses you have left pay the most. Getting out on the first shot gives the best score.") },
             { id: "stars", title: Lang.t("Stars"), pic: starsPic, rows: [
               [Lang.t("Out in 1 pulse"), "3"],
               [Lang.t("Out in 2 pulses"), "2"],
               [Lang.t("Out in 3 or more"), "1"],
-              [Lang.t("No way out"), "0"] ], lines: [
-              Lang.t("When the crystal hides in a dead end, each star allows one more pulse.") ] }
+              [Lang.t("No way out"), "0"] ], text: Lang.t("When the crystal hides in a dead end, each star allows one more pulse.") }
           ] },
           { key: "dark", label: names[0], pages: [
-            { id: "dark", title: names[0], pic: growPic, lines: [
-              Lang.t("Just the maze, its doors and one exit.") ] }
+            { id: "dark", title: names[0], pic: growPic, text: Lang.t("Just the maze, its doors and one exit.") }
           ] },
           { key: "decoys", label: names[1], pages: [
-            { id: "decoys", title: names[1], lv: 4, pic: decoyPic, lines: [
-              Lang.t("A false exit looks exactly like the true one, but it is a trap because it swallows your pulse."),
-              Lang.t("While the maze is lit, only the true exit sends out rings. Remember which one.") ] }
+            { id: "decoys", title: names[1], lv: 4, pic: decoyPic, text: Lang.t("A false exit looks exactly like the true one, but it is a trap because it swallows your pulse.\n\nWhile the maze is lit, only the true exit sends out rings. Remember which one.") }
           ] },
           { key: "crystal", label: names[2], pages: [
-            { id: "crystal", title: Lang.t("The crystal"), lv: 10, pic: crystalPic, lines: [
-              Lang.t("Once the lights go out, a bar seals every exit. Break the crystal to lift it."),
-              Lang.t("Below the doors, your pulse bounces off the crystal and can still reach a door.") ] },
-            { id: "hidden", title: Lang.t("The hidden crystal"), lv: 11, pic: hiddenPic, lines: [
-              Lang.t("The crystal can hide in a dead end of the maze."),
-              Lang.t("Reaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\".") ] }
+            { id: "crystal", title: Lang.t("The crystal"), lv: 10, pic: crystalPic, text: Lang.t("Once the lights go out, a bar seals every exit. Break the crystal to lift it.\n\nBelow the doors, your pulse bounces off the crystal and can still reach a door.") },
+            { id: "hidden", title: Lang.t("The hidden crystal"), lv: 11, pic: hiddenPic, text: Lang.t("The crystal can hide in a dead end of the maze.\n\nReaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\".") }
           ] },
           { key: "fence", label: names[3], pages: [
-            { id: "fence", title: names[3], lv: 18, pic: fencePic, lines: [
-              Lang.t("The gap in the fence moves from door to door in a fixed order. Aim where it goes next."),
-              Lang.t("A pulse that hits the fence is lost, but that door stays open for good.") ] }
+            { id: "fence", title: names[3], lv: 18, pic: fencePic, text: Lang.t("The gap in the fence moves from door to door in a fixed order. Aim where it goes next.\n\nA pulse that hits the fence is lost, but that door stays open for good.") }
           ] },
           { key: "surge", label: names[4], pages: [
-            { id: "surge", title: names[4], lv: 23, pic: surgePic, lines: [
-              Lang.t("Spot the true exit while the maze is lit, then break the crystal before you go for it.") ] }
+            { id: "surge", title: names[4], lv: 23, pic: surgePic, text: Lang.t("Spot the true exit while the maze is lit, then break the crystal before you go for it.") }
           ] }
         ]);
       }

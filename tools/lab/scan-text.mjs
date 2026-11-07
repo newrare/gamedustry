@@ -344,43 +344,117 @@ function scopeIndex(clean, mask) {
 }
 
 /* ── where a player READS it ───────────────────────────────────────────────
-   A group is a screen; a surface is the THING on that screen the words are
-   printed on — a notification chip, a callout, a card's description, a tag on
-   the site. It is what a proofreader needs to judge a line (a notice is read,
-   a callout is felt, a card is read at leisure) and what a dictionary entry,
-   keyed by its English, cannot say on its own. One fixed vocabulary, so the
-   page can colour and filter on it; `detail` carries the rest. */
+   Every row is filed under ONE CATEGORY and one SUB of it — ten categories,
+   chosen with the user (2026-11-06) so a proofreader knows where a line is
+   read without opening the code. Two rules hold it together:
+   - a text the game reads in several places (a monster's description, read
+     by its guide page AND its card) is GAME CONTENT, filed once; its uses
+     say where it is read;
+   - nothing is filed by default: a line the scanner cannot place is
+     UNSORTED, and the fix is a line in DECLARED below, never a guess.
+   The scanner first reads the KIND of thing a line reaches (a callout, a
+   card, a guide page — `inferKind`), then `categorize` files that kind. */
 export const SURFACES = [
-  { key: 'site',     label: 'Website',        note: 'the newrare site — a game card' },
-  { key: 'meta',     label: 'Store page',     note: 'the itch page and the store meta, plain text' },
-  { key: 'storeimg', label: 'Store image',    note: 'printed on a listing screenshot' },
-  { key: 'gallery',  label: 'Dev gallery',    note: 'the root index.html write-up' },
-  { key: 'title',    label: 'Title screen',   note: 'the intro, its sentence and its demo' },
-  { key: 'help',     label: 'Help card',      note: 'one rule per line' },
-  { key: 'menu',     label: 'Button / menu',  note: 'a button or a label of the shell' },
-  { key: 'hud',      label: 'HUD',            note: 'the top band of the round' },
-  { key: 'callout',  label: 'Callout',        note: 'Pop.show — a moment, big and brief' },
-  { key: 'float',    label: 'Floating value', note: 'Pop.text — a number rising from the world' },
-  { key: 'notice',   label: 'Notification',   note: 'Notify.say — a chip top right, read' },
-  { key: 'canvas',   label: 'Canvas',         note: 'painted by the game with fillText' },
-  { key: 'panel',    label: 'Game panel',     note: 'a node the game writes itself — a sheet, a pick' },
-  { key: 'card',     label: 'Card',           note: 'a card of the game — its name, its text' },
-  { key: 'guide',    label: 'Help guide',     note: 'a page of the rules book (Game.guide), opened from Help' },
-  { key: 'tips',     label: 'Tips',           note: 'a TIPS table — a guide page on the web, a tip card in a playable' },
-  { key: 'character', label: 'Character',     note: 'a hero, a foe, an officer — name, lore, status, intent' },
-  { key: 'world',    label: 'Biome / band',   note: 'a biome or a band of the climb — its name and what it brings' },
-  { key: 'item',     label: 'Object / power', note: 'something picked, bought, fired or met on the table' },
-  { key: 'rank',     label: 'Rank',           note: 'a tier, a grade, a rarity, a timing grade' },
-  { key: 'info',     label: 'Info card',      note: 'opened on a tap — what a thing on the table does right now' },
-  { key: 'end',      label: 'End screen',     note: 'the title and the stat rows' },
-  { key: 'level',    label: 'Level objective', note: 'what a star asks for' },
-  { key: 'barracks', label: 'Barracks',       note: 'the army layer\'s screens' },
-  { key: 'mission',  label: 'Mission',        note: 'a briefing or a report' },
-  { key: 'event',    label: 'Event',          note: 'a scene told to the player — a camp day, an encounter and its choices' },
-  { key: 'data',     label: 'Game data',      note: 'a table the game reads, whose name says nothing of where it shows' },
-  { key: 'code',     label: 'In code',        note: 'built at runtime in a function whose name says nothing of where it shows' }
+  { key: 'site',      label: 'Website & stores', note: 'outside the game: the newrare site, the stores, the dev gallery',
+    subs: ['site card', 'store page', 'store image', 'dev gallery'] },
+  { key: 'help',      label: 'Help card',        note: 'how to play — the web Help card, the playable\'s title screen',
+    subs: ['title', 'sentence', 'demo', 'rules'] },
+  { key: 'menu',      label: 'Button / menu',    note: 'a button or a label of the shell' },
+  { key: 'play',      label: 'Play screen',      note: 'what the round shows besides callouts and notices',
+    subs: ['HUD', 'board', 'info card', 'panel'] },
+  { key: 'callout',   label: 'Callout',          note: 'Pop.show — what the player just did, big and brief; Pop.text — a number rising from the world',
+    subs: ['word', 'sub line', 'floating value'] },
+  { key: 'notice',    label: 'Notification',     note: 'Notify.say — what happened to the player, or an action refused: a chip top right',
+    subs: ['event', 'refusal', 'sub line'] },
+  { key: 'guide',     label: 'Help guide',       note: 'a page of the rules book (Game.guide)',
+    subs: ['chapter', 'page title', 'page text', 'table', 'live example'] },
+  { key: 'content',   label: 'Game content',     note: 'what the game is made of — read wherever it shows: guide, card, tile, info',
+    subs: ['character', 'object / power', 'card', 'biome / band', 'rank'] },
+  { key: 'adventure', label: 'Adventure',        note: 'what happens around the round: the camp, its missions, its events',
+    subs: ['barracks', 'mission', 'event'] },
+  { key: 'end',       label: 'End & objectives', note: 'the end screen, and what a star asks for',
+    subs: ['end title', 'stat row', 'objective'] },
+  { key: 'unsorted',  label: 'Unsorted',         note: 'the scanner could not place it: declare its table or function in DECLARED (tools/lab/scan-text.mjs)' }
 ];
 const sf = (key, detail) => ({ key, ...(detail ? { detail } : {}) });
+
+/* THE KIND → ITS CATEGORY AND SUB. A kind is what `inferKind` and
+   `rowSurface` read off the source (a callout, a card, a guide page…); the
+   category is what the copy desk shows. `field` is the key the words fill
+   (`title`, `text`, a cell of `rows`, a table's `name` or `lore`). */
+const CONTENT_SUB = { character: 'character', item: 'object / power', card: 'card', world: 'biome / band', rank: 'rank' };
+const CONTENT_FIELD = { name: 'name', title: 'name', label: 'name', word: 'name', role: 'role', special: 'special move',
+  text: 'description', desc: 'description', info: 'description', line: 'description', tip: 'description',
+  hint: 'description', sub: 'description', one: 'description', all: 'description', more: 'description',
+  foeText: 'description', allyText: 'description', lore: 'lore', status: 'status', lock: 'description', key: 'description' };
+function categorize(s, row) {
+  if (!s || s.cat) return s;
+  const d = s.detail || '', f = s.field || '', fn = s.fn || '', ctx = (row && row.context) || '';
+  const out = (key, sub, extra) => ({ cat: true, key, ...(sub ? { sub } : {}), ...(extra || {}), ...(d ? { detail: d } : {}) });
+  switch (s.key) {
+    case 'site': return out('site', 'site card');
+    case 'meta': return out('site', 'store page');
+    case 'storeimg': return out('site', 'store image');
+    case 'gallery': return out('site', 'dev gallery');
+    case 'title':
+      if (/desk|caption/i.test(ctx + d)) return out('help', 'demo');
+      return out('help', /sentence|tagline/i.test(ctx) ? 'sentence' : 'title');
+    case 'help': return out('help', 'rules');
+    case 'menu': return out('menu');
+    case 'hud': return out('play', 'HUD');
+    case 'canvas': return out('play', 'board');
+    case 'info': return out('play', 'info card');
+    case 'panel': return out('play', 'panel');
+    case 'callout': return out('callout', /sub/.test(d + ctx) || f === 'sub' ? 'sub line' : 'word');
+    case 'float': return out('callout', 'floating value');
+    case 'notice':
+      if (s.refused || /refus|whyNot|WhyNot|deny/i.test(d + fn)) return out('notice', 'refusal');
+      return out('notice', /sub line/.test(d) || f === 'sub' || / sub$/.test(ctx) ? 'sub line' : 'event');
+    case 'guide': case 'tips':
+      if (/build\w*Demo|\bnode\b/.test(fn + ' ' + f)) return out('guide', 'live example');
+      if (f === 'label') return out('guide', 'chapter');
+      if (f === 'title' || f === 'eyebrow') return out('guide', 'page title');
+      if (f === 'rows') return out('guide', 'table');
+      return out('guide', 'page text');
+    case 'character': case 'item': case 'card': case 'world': case 'rank': {
+      let field = CONTENT_FIELD[f] || null;
+      if (/(?:^|\.)status$/.test(fn) || f === 'status') field = 'status';
+      else if (/lore/.test(d)) field = 'lore';
+      else if (/intent/i.test(d + fn)) field = 'intent';
+      else if (/name/.test(d) && !field) field = 'name';
+      else if (/guide page/.test(d) && f === 'title') field = 'name';
+      return out('content', CONTENT_SUB[s.key], field ? { field } : null);
+    }
+    case 'barracks': return out('adventure', 'barracks');
+    case 'mission': return out('adventure', 'mission');
+    case 'event': return out('adventure', 'event');
+    case 'end': return out('end', /stat row/i.test(d + ctx) ? 'stat row' : 'end title');
+    case 'level': return out('end', 'objective');
+    default: return out('unsorted', null, { was: s.key });
+  }
+}
+/* The refuse sound, or a `return` after a notice that is not good news
+   (a favour played, a turn handed over: `kind` good, gain, rare or info). */
+function refusal(code) {
+  if (/["'](?:refuse|deny)["']/.test(code)) return true;
+  return /\breturn\b/.test(code) && !/\bkind\s*:\s*["'](?:good|gain|rare|info)["']/.test(code);
+}
+const catId = (s) => [s.key, s.sub, s.field].join('|');
+function uniqueCats(list) {
+  const seen = new Set(), out = [];
+  for (const s of list) if (s && !seen.has(catId(s))) { seen.add(catId(s)); out.push(s); }
+  return out;
+}
+/* The last pass of a scan: every surface of every row and use, filed. */
+function fileRows(rows) {
+  for (const r of rows) {
+    for (const u of r.uses || []) if (u.surface) u.surface = categorize(u.surface, u);
+    r.surfaces = uniqueCats((r.surfaces || []).map((x) => categorize(x, r)));
+    // an entry nothing reads is read nowhere: its own pill says "no use found"
+    if (!r.surfaces.length && !r.unused) r.surfaces = [categorize(sf('code'), r)];
+    r.surface = r.surfaces[0] || null;
+  }
+}
 
 /* Read off one line of source: the call the words reach. Direct calls first,
    then the game's own wrappers around them (gearball's `popText`), then a
@@ -396,45 +470,22 @@ const LINE_RULES = [
 ];
 
 /* A short function whose body makes one of those calls IS that surface, so a
-   call to it is too. */
+   call to it is too — save the HUD: a function that also refreshes the HUD
+   (grudgeon's fight actions) writes its own words somewhere else. */
 function wrappersOf(clean, frames) {
-  const out = {};
+  const out = {}, count = {};
+  for (const f of frames) if (f.name) count[f.name] = (count[f.name] || 0) + 1;
   for (const f of frames) {
-    if (!f.name || f.end - f.start > 1500) continue;
+    if (!f.name || count[f.name] > 1 || f.end - f.start > 1500) continue;
     const body = clean.slice(f.start, f.end);
-    const hit = LINE_RULES.slice(0, 5).find(([re]) => re.test(body));
+    const hit = LINE_RULES.slice(0, 4).find(([re]) => re.test(body));
     if (hit && !out[f.name]) out[f.name] = hit[1];
   }
   return out;
 }
 
-/* The tables a mechanic is NAMED out of, once per player: a CAPS table
-   indexed just before a Notify.learn (marshmelt's INTRO, spinshock's MEET).
-   Table → the fields the call reads (`TIPS[key].title`, `.say`), or null
-   when it reads the entry whole or through an alias: a table that also
-   holds the guide's `lines` (slipdeck's, bridgessa's TIPS) is a notice in
-   the two fields the call names and a tip everywhere else. */
-function learnTables(clean) {
-  const out = new Map(), re = /\bNotify\.learn\s*\(/g;
-  let m;
-  while ((m = re.exec(clean))) {
-    const back = clean.slice(Math.max(0, m.index - 300), m.index);
-    const end = clean.indexOf(';', m.index), call = clean.slice(m.index, end < 0 ? m.index + 400 : end);
-    const ix = /\b([A-Z][A-Z0-9_]*)\s*\[/g, seen = new Set();
-    let t; while ((t = ix.exec(back))) seen.add(t[1]);
-    for (const name of seen) {
-      const fields = new Set(), fx = new RegExp(`\\b${name}\\s*\\[[^\\]]*\\]\\s*\\.\\s*(\\w+)`, 'g');
-      let f; while ((f = fx.exec(call))) fields.add(f[1]);
-      const was = out.get(name);
-      if (!fields.size || was === null) out.set(name, null);
-      else out.set(name, new Set([...(was || []), ...fields]));
-    }
-  }
-  return out;
-}
-
 /* A table whose NAME says card. Only the name: a table of TIERS may be a
-   card's rarity or a tap's timing grade, and "Game data" is the honest answer
+   card's rarity or a tap's timing grade, and DECLARED is the honest answer
    when the name cannot tell them apart. */
 const CARDISH = /card|upgrade|joker|codex|skill|object|item|relic|charm|perk|rune|spell|rarity/i;
 const FIELD = { name: 'name', title: 'name', label: 'name', text: 'description', desc: 'description',
@@ -459,12 +510,76 @@ const TABLE_TOPIC = [
   [/^COMBO_WORD$/, 'callout'],
   [/^SEAT_NAME$/, 'canvas']
 ];
-// A table whose name means something else in one game.
-const TABLE_TOPIC_GAME = {
+/* A table or a function whose NAME says nothing of where its words show,
+   declared per game: `slug:NAME` → [kind, detail]. This is what keeps the
+   Unsorted category empty — add the line here rather than widen a rule. */
+const DECLARED = {
   'holepocalypse:KINDS': ['character', 'zombie kind'],
   'holepocalypse:TIPS': ['character', 'zombie tip'],
-  'grudgeon:RULES': ['character', 'yokai status'],
-  'grudgeon:ELEMENTS': ['rank', 'element']
+  'grudgeon:RULES': ['character', 'yokai rule'],
+  'grudgeon:ELEMENTS': ['rank', 'element'],
+  // arcider
+  'arcider:showRank': ['hud', 'race position'], 'arcider:ordinal': ['hud', 'race position'], 'arcider:checkCut': ['callout', 'elimination'],
+  // blight
+  'blight:finishClear': ['end', 'stat row'], 'blight:update': ['end', 'end title'],
+  // bouncetry
+  'bouncetry:LIVE': ['item', 'live glass'],
+  // bridgessa
+  'bridgessa:FAM': ['card', 'favour family'], 'bridgessa:reset': ['callout', 'round start'], 'bridgessa:afterDeal': ['callout', 'deal made'],
+  // chainring
+  'chainring:CONFIG': ['world', 'biome name'],
+  // echomaze
+  'echomaze:pulses': ['end', 'stat row'],
+  // foldiers
+  'foldiers:OBJ': ['level', 'objective'], 'foldiers:objText': ['level', 'objective'], 'foldiers:stageText': ['level', 'objective'],
+  'foldiers:TAKE_TEXT': ['level', 'objective'], 'foldiers:STAGES': ['level', 'stage mechanic'],
+  'foldiers:regionActions': ['panel', 'region card'], 'foldiers:actionChoices': ['panel', 'region card'], 'foldiers:WHO': ['panel', 'camp name'],
+  'foldiers:MODE_TEXT': ['panel', 'order hint'], 'foldiers:verdict': ['canvas', 'order preview'], 'foldiers:drawArrows': ['canvas', 'order arrows'],
+  'foldiers:drawSend': ['canvas', 'send button'], 'foldiers:drawTags': ['canvas', 'region tags'], 'foldiers:resourceList': ['hud', 'resources'],
+  'foldiers:why': ['notice', 'refusal'], 'foldiers:DOCTRINES': ['item', 'doctrine'], 'foldiers:failReason': ['end', 'end title'],
+  'foldiers:NATURE': ['world', 'terrain'],
+  // gelatile
+  'gelatile:records': ['menu', 'ranking, modes tab'], 'gelatile:doMove': ['callout', 'merge'], 'gelatile:goalText': ['level', 'objective'],
+  // grudgeon
+  'grudgeon:tipHtml': ['info', 'scroll tip'], 'grudgeon:why': ['info', 'scroll tip'], 'grudgeon:againText': ['info', 'scroll tip'],
+  'grudgeon:faceOn': ['info', 'scroll tip'], 'grudgeon:blueOf': ['info', 'scroll tip'], 'grudgeon:FLEE_TEXT': ['info', 'scroll tip and guide'],
+  'grudgeon:openFightHelp': ['help', 'fight help'], 'grudgeon:fightHelpNode': ['help', 'fight help'],
+  'grudgeon:applyFx': ['float', 'fight'], 'grudgeon:tap': ['menu', 'tap line'], 'grudgeon:label': ['panel', 'fight choice'],
+  'grudgeon:kind': ['panel', 'fight choice'], 'grudgeon:special': ['panel', 'fight action'], 'grudgeon:title': ['panel', 'shop'],
+  'grudgeon:run': ['callout', 'fight'], 'grudgeon:syncHead': ['hud', 'fight'], 'grudgeon:guideButton': ['menu', 'info card'],
+  // holepocalypse
+  'holepocalypse:POWER_TEXT': ['item', 'super'], 'holepocalypse:hudFlags': ['hud', 'flags'], 'holepocalypse:loadout': ['panel', 'loadout'],
+  // marshmelt
+  'marshmelt:INTRO': ['item', 'hazard'],
+  // parrynormal
+  'parrynormal:SUPERS': ['item', 'super'], 'parrynormal:PICKUPS': ['item', 'power-up'], 'parrynormal:speedWord': ['card', 'monster speed'],
+  'parrynormal:SIZE_WORD': ['card', 'monster size'], 'parrynormal:OBJ_LABEL': ['hud', 'objective'], 'parrynormal:OBJ_TEXT': ['level', 'objective'],
+  'parrynormal:showLeft': ['hud', 'objective'], 'parrynormal:loadoutApi': ['panel', 'loadout'],
+  // pawko
+  'pawko:KINDS': ['card', 'card kind'],
+  // slipdeck
+  'slipdeck:CAT_NAME': ['rank', 'poker hand'], 'slipdeck:MOD_NAME': ['card', 'card modifier'], 'slipdeck:scoreHand': ['callout', 'hand scored'],
+  'slipdeck:showPick': ['panel', 'joker pick'], 'slipdeck:showReplace': ['panel', 'joker pick'], 'slipdeck:countPart': ['canvas', 'score count'],
+  'slipdeck:apply': ['canvas', 'score count'], 'slipdeck:drawValue': ['canvas', 'score count'],
+  // spinshock
+  'spinshock:CONFIG': ['callout', 'timing grade'],
+  // stratideck
+  'stratideck:faceNode': ['card', 'object face'], 'stratideck:gVs': ['guide', 'live example'],
+  // triverse
+  'triverse:pushBand': ['callout', 'band'],
+  // functions whose locals hold the words (no table to name)
+  'foldiers:classify': ['notice', 'refusal'], 'foldiers:partsText': ['info', 'attack parts'], 'foldiers:attackParts': ['info', 'attack parts'],
+  'foldiers:defParts': ['info', 'attack parts'], 'foldiers:tryMap': ['info', 'attack parts'], 'foldiers:FIELD': ['info', 'attack parts'],
+  'grudgeon:openShop': ['panel', 'shop'], 'grudgeon:waresNode': ['panel', 'shop'], 'grudgeon:openEvent': ['menu', 'tap line'],
+  'grudgeon:basePlan': ['panel', 'fight action'], 'grudgeon:alt': ['panel', 'fight choice'],
+  'slipdeck:opDone': ['canvas', 'score count'],
+  'grudgeon:heroCard': ['info', 'hero card'], 'grudgeon:foeCard': ['info', 'yokai card'], 'slipdeck:jokerCard': ['panel', 'joker card'],
+  'slipdeck:handsCard': ['panel', 'poker hands card'],
+  'grudgeon:drawLamp': ['canvas', 'lantern chip'],
+  // a yokai's gold card (RULES.<id>.action): its label is a button the hero
+  // plays, not a callout — the line also holds the callout its `run` fires
+  'grudgeon:action': ['card', 'gold card'],
+  'grudgeon:LORE': ['character', 'lore'], 'grudgeon:badgeRow': ['info', 'yokai card']
 };
 const FN_TOPIC = [
   [/^(?:hero|yokai|foe|enemy|boss|officer|zombie|intent)[A-Z]\w*$|^(?:intentText|foeCard)$/, 'character'],
@@ -485,18 +600,37 @@ const inGuide = (fn) => /(?:^|\.)(?:guide|chapters)(?:\.|$)|Pages?(?:\.|$)|Chapt
 
 function topicOf(fn, ctx) {
   const guided = inGuide(fn), page = (d) => [guided ? 'guide page' : null, d].filter(Boolean).join(' · ') || null;
-  const game = ctx.table && TABLE_TOPIC_GAME[`${ctx.slug}:${ctx.table}`];
+  const game = ctx.table && DECLARED[`${ctx.slug}:${ctx.table}`];
   if (game) return sf(game[0], page(game[1]));
-  const learned = ctx.table && ctx.learn ? ctx.learn.get(ctx.table) : undefined;
-  if (learned === null || (learned && learned.has(ctx.key))) return sf('notice', 'first meeting · ' + ctx.table);
+  for (const seg of (fn || '').split('.').reverse()) {
+    const d = DECLARED[`${ctx.slug}:${seg}`];
+    if (d) return sf(d[0], page(d[1] || seg + '()'));
+  }
   if (ctx.table) for (const [re, key] of TABLE_TOPIC) if (re.test(ctx.table)) return sf(key, page([ctx.table, ctx.key].filter(Boolean).join(' · ')));
   const segs = (fn || '').split('.').reverse();
   for (const s of segs) for (const [re, key, d] of FN_TOPIC) if (re.test(s)) return sf(key, key === 'guide' ? fn : page(d || s + '()'));
   return null;
 }
 
+/* The kind of place a line is printed on, then the field it fills and the
+   function it sits in, which `categorize` reads for the sub. */
 function inferSurface(line, fn, ctx) {
+  const s = inferKind(line, fn, ctx);
+  if (!s) return s;
+  /* A notice the code turns the player back on — a `return` or the refuse
+     sound in the same statement — is a REFUSAL; any other is an event. */
+  const stmt = (ctx.next || '').split(/\}\s*(?:else\b|\n)/)[0];
+  const refused = s.key === 'notice' && refusal(line + ' ' + stmt);
+  return { ...s, field: ctx.field || ctx.key || null, fn: fn || null, ...(refused ? { refused: true } : {}) };
+}
+function inferKind(line, fn, ctx) {
   for (const [re, key] of LINE_RULES) if (re.test(line)) return sf(key);
+  // a declared FUNCTION beats a wrapper guess; a declared TABLE is read later
+  for (const seg of (fn || '').split('.').reverse()) {
+    if (/^[A-Z][A-Z0-9_]*$/.test(seg)) continue;
+    const d = DECLARED[`${ctx.slug}:${seg}`];
+    if (d) return sf(d[0], d[1] || seg + '()');
+  }
   for (const [name, key] of Object.entries(ctx.wrappers)) {
     if (new RegExp(`(?:^|[^\\w$.])${name.replace(/\$/g, '\\$')}\\s*\\(`).test(line)) return sf(key, `via ${name}()`);
   }
@@ -544,7 +678,21 @@ function dataContext(clean, off, fn) {
   const back = clean.slice(Math.max(0, off - 900), off);
   const e = back.lastIndexOf('endRound(');
   const inEnd = e >= 0 && !/\}\s*\)\s*;/.test(back.slice(e));
-  return { key: k ? k[1] : null, table, inEnd };
+  /* The FIELD the words fill, through the calls wrapped around them
+     (`title: Lang.t("…")`, `text: fill(Lang.t("…"), …)`), or a cell of a
+     page's `rows: [[label, value]]` table: what the category's sub reads. */
+  const fk = /([\w$]+)\s*:\s*\[?\s*(?:[\w$.]+\(\s*)*$/.exec(lead);
+  let field = fk ? fk[1] : null;
+  if (!field) {
+    const far = clean.slice(Math.max(0, off - 600), off), ri = far.lastIndexOf('rows:');
+    if (ri >= 0) {
+      const tail = far.slice(ri);
+      let depth = 0;
+      for (const ch of tail) { if (ch === '[') depth++; else if (ch === ']') depth--; }
+      if (depth > 0 && !/\b(?:text|title|lines|pic|label)\s*:/.test(tail)) field = 'rows';
+    }
+  }
+  return { key: k ? k[1] : null, table, inEnd, field, next: clean.slice(off, off + 260) };
 }
 
 // A game.js row by what the scanner already knows of it.
@@ -601,11 +749,17 @@ function uniqueSurfaces(list) {
    path cannot place is read off its call sites: a Lang.t literal by the line it
    sits on, a `CONFIG.copy` key by the first line that reads it — which also
    becomes the row's use, since a key alone does not say where it shows. */
-function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug, learn }) {
-  const base = { wrappers, slug, learn };
+function resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug }) {
+  const base = { wrappers, slug };
   for (const r of rows) {
     if (r.group === 'words') continue;               // after its uses are known
-    const known = rowSurface(r);
+    let known = rowSurface(r);
+    /* A notice the code turns the player back on — a `return` or the refuse
+       sound in the same statement — is a REFUSAL; any other is an event. */
+    if (known && known.key === 'notice' && !/ sub$/.test(r.context) && r.targets && r.targets[0] && r.targets[0].file === 'game.js') {
+      const off = r.targets[0].start, stmt = js.slice(off, off + 260).split(/\}\s*(?:else\b|\n)/)[0];
+      if (refusal(lineAt(jsSrc, off) + ' ' + stmt)) known = { ...known, refused: true };
+    }
     if (known) {
       for (const u of r.uses || []) u.surface = known;
     } else if (/^copy\./.test(r.context)) {
@@ -692,7 +846,7 @@ function scanGameJs(src, out, push) {
   const mask = codeMask(clean);
   const lineOf = lineIndex(src);
   const scopeOf = scopeIndex(clean, mask);
-  out.js = { src, clean, lineOf, scopeOf, wrappers: wrappersOf(clean, scopeOf.frames), learn: learnTables(clean) };
+  out.js = { src, clean, lineOf, scopeOf, wrappers: wrappersOf(clean, scopeOf.frames) };
 
   /* --- CONFIG: the copy a game declares rather than writes inline ---------- */
   const cfg = configSpan(clean, mask);
@@ -995,8 +1149,8 @@ export async function scanText(slug) {
   // A feminine form reads against the English, the one pair it has.
   for (const r of rows) if (r.echo && byPair[r.echo] && byPair[r.echo].en != null) r.other = byPair[r.echo].en;
 
-  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers, learn } = out.js;
-  resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug, learn });
+  const { clean: js, lineOf: jsLine, scopeOf: jsScope, src: jsSrc, wrappers } = out.js;
+  resolveSurfaces(rows, { js, jsLine, jsScope, jsSrc, wrappers, slug });
   mergeShared(rows);
 
   /* WHERE A DICTIONARY ENTRY IS READ. Its key is the English, which says what
@@ -1021,7 +1175,7 @@ export async function scanText(slug) {
       if (at != null) {
         const fn = jsScope(at), src = lineAt(jsSrc, at);
         r.uses = [{ context: 'Found in game.js', group: 'data', line: jsLine(at), fn, src,
-          surface: inferSurface(src, fn, { wrappers, slug, learn, ...dataContext(js, at, fn) }) }];
+          surface: inferSurface(src, fn, { wrappers, slug, ...dataContext(js, at, fn) }) }];
       } else r.unused = true;
     }
     // An entry is read wherever its English is: every surface, once each.
@@ -1048,6 +1202,10 @@ export async function scanText(slug) {
     fragments: rows.filter((r) => r.fragment).length,
     untranslated: missing.length
   };
+  fileRows(rows);
+  const isUnsorted = (x) => x && x.key === 'unsorted';
+  const unsorted = rows.filter((r) => r.surfaces.some(isUnsorted) || (r.uses || []).some((u) => isUnsorted(u.surface))).length;
+  if (unsorted) warnings.push(`${unsorted} row${unsorted > 1 ? 's' : ''} unsorted — declare their table or function in DECLARED`);
   return {
     slug, title: manifest.title || slug, version: manifest.version || '',
     groups: GROUPS, surfaces: SURFACES, rows, counts, warnings, missing: missing.map((r) => r.text)
@@ -1149,7 +1307,7 @@ function table(scan, { review, lang: only } = {}) {
       console.log(`  \x1b[90m── ${g.label}\x1b[0m`);
       for (const r of inGroup) {
         const at = r.line ? `${r.where}:${r.line}` : r.where;
-        const shows = (r.surfaces || []).map((s) => SURFACES.find((x) => x.key === s.key).label).join(', ');
+        const shows = (r.surfaces || []).map((s) => [SURFACES.find((x) => x.key === s.key).label, s.sub].filter(Boolean).join(' · ')).join(', ');
         console.log(`    ${pad(at, 16)} ${pad(r.context, 26)} ${pad(shows, 18)} ${r.fragment ? '\x1b[90m·\x1b[0m ' : '  '}${oneLine(r.text)}`);
         // A dictionary entry's English is its key: printed whole when the column cut it.
         if (review && r.group === 'words' && r.context.length > 26) console.log(`    ${pad('', 16)} ${pad('', 26)} ${pad('', 18)}   \x1b[90m${oneLine(r.context)}\x1b[0m`);

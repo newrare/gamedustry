@@ -109,11 +109,7 @@
       endScore:   "Final score",
       gameOver:   "Out of hearts",
       timeUp:     "Shift over",
-      perfect:    "Full power!",
-      // the second lines of the first-time notices (Notify.learn), one per mechanic
-      hintLock:   "Tap a locked gate's padlock to open it",
-      hintVolt:   "Tap an arrival to move the socket under it",
-      hintFuse:   "Open locked gates to keep the voltage up"
+      perfect:    "Full power!"
     },
 
     /* --- the marble machine -----------------------------------------------
@@ -2344,9 +2340,9 @@
       if (m.e && splits > 0) { splits--; m.splitter = true; }
       if (m.e) {
         spark(H0[0], H0[1] - 10, C.volt, 10, 220);
-        // a MECHANIC met for the first time: named once per player ever, its
-        // line in the "!" log opening the guide page that explains it
-        Notify.learn("volt", "Electric marble", { sub: CONFIG.copy.hintVolt, kind: "info", icon: "sparkles", hold: 3400 });
+        // a MECHANIC met for the first time: named once per player ever (the
+        // motor says the title of its guide page, which the "!" log opens)
+        Notify.learn("volt");
       }
     }
     function gateLoad(g) {
@@ -2448,7 +2444,7 @@
         feedFuse();
         pts = Math.round(M.electricScore * MOD.eScore * payK(m));
         score += pts;
-        if (dnFlag && !m.clone) { dnFlag = false; score *= 2; Pop.show("record", { word: "Double!", sub: "x2" }); }
+        if (dnFlag && !m.clone) { dnFlag = false; score *= 2; Pop.show("record", { word: "Double!" }); }
         HUD.setScore(score); HUD.punch(C.volt);
         arcs.push({ t: 0, jump: M.electricJump * MOD.comboStep, rev: false, path: L.pay[id], id: Math.random() });
         mc.kick = 0.7; mc.charge = 1;
@@ -2476,7 +2472,7 @@
           return;
         }
         stats.eWasted++;
-        Pop.show("alert", { word: "Fizzle", sub: combo >= 2 ? "Combo lost" : "" });
+        Pop.show("alert", { word: "Fizzle", at: "center" });
         if (dnFlag) { dnFlag = false; score = Math.floor(score / 2); HUD.setScore(score); Pop.show("alert", { word: "Halved" }); }
         breakCombo(true);
         if (MOD.fizzleHurts) loseHeart();
@@ -2565,7 +2561,7 @@
     // Every action that feeds the combo relights the fuse whole.
     function feedFuse() { fuse = 1; fuseOutT = 0; }
     // the combo has started from nothing: the fuse that keeps it is named once
-    function learnFuse() { Notify.learn("fuse", "Dynamo voltage", { sub: CONFIG.copy.hintFuse, kind: "info", icon: "hourglass" }); }
+    function learnFuse() { Notify.learn("fuse"); }
     /* A spark carrying `n` of combo from (x, y) on the machine to the hub;
        the combo grows when it lands, so the hub counts up in step with what
        the player sees fly in. The fuse is relit at once, on the action. */
@@ -2714,7 +2710,7 @@
       g.locked = true; g.lockAge = 0; stats.locks++; g.locks = (g.locks || 0) + 1;
       ring(g.px, g.py, C.amber, 30, 140, 0.6, 4);
       Sound.clip("lock", 0.46, Rand.range(0.95, 1.05));
-      Notify.learn("lock", "Locked gate", { sub: CONFIG.copy.hintLock, kind: "warn", icon: "lock" });
+      Notify.learn("lock");
     }
     function unlock(g) {
       if (state !== "play" || !g || !g.locked) return false;
@@ -3699,7 +3695,7 @@
       var B = CONFIG.biomes[b], lv = b * 6 + 1;
       return { key: "b" + (b + 1), label: Lang.t(B.name), pages: [
         { id: B.name.toLowerCase(), title: Lang.t("The machines"), lv: lv, pic: BIOME_PICS[b],
-          lines: [Lang.t(BIOME_LINES[b])] }
+          text: Lang.t(BIOME_LINES[b]) }
       ] };
     }
     var guide = {
@@ -3710,49 +3706,39 @@
             { id: "shift", title: Lang.t("The shift"), pic: marblesPic,
               rows: [[Lang.t("A marble delivered"), "+" + M.classicScore], [Lang.t("An electric marble collected"), "+" + M.electricScore],
                      [Lang.t("A loop, spiral or jump"), "+" + M.modulePay.loop]],
-              lines: [Lang.t("Each marble that reaches an arrival scores points, multiplied by the Combo."),
-                      Lang.t("On a keyboard, the 'Space' key moves the electric socket one step, left to right, in a loop.")] },
+              text: Lang.t("Each marble that reaches an arrival scores points, multiplied by the Combo.\n\nOn a keyboard, the 'Space' key moves the electric socket one step, left to right, in a loop.") },
             { id: "lock", title: Lang.t("Locked gates"), pic: lockPic,
-              lines: [Lang.t("Gates lock at random. Tap the padlock to unlock the gate."),
-                      Lang.t("Each marble a gate lets out lights a notch of the Dynamo.")] },
+              text: Lang.t("Gates lock at random. Tap the padlock to unlock the gate.\n\nEach marble a gate lets out lights a notch of the Dynamo.") },
             { id: "volt", title: Lang.t("The electric marble"), pic: voltPic,
               rows: [[Lang.t("Notches"), "+" + M.electricJump]],
-              lines: [Lang.t("Tap an arrival to move the socket there. Only the blue socket captures an electric marble."),
-                      Lang.t("The electric marble breaks the Combo unless the electric socket collects it.")] },
+              text: Lang.t("Tap an arrival to move the socket there. Only the blue socket captures an electric marble.\n\nThe electric marble breaks the Combo unless the electric socket collects it.") },
             { id: "switch", title: Lang.t("Switches"), pic: switchPic,
-              lines: [Lang.t("A switch flips only after an electric marble has passed.")] },
+              text: Lang.t("A switch flips only after an electric marble has passed.") },
             { id: "spill", title: Lang.t("Overflow"), pic: spillPic,
-              lines: [Lang.t("When a queue is full, the next marble drops through the trapdoor."),
-                      Lang.t("A marble that rolls to the red socket costs a heart.")] },
+              text: Lang.t("When a queue is full, the next marble drops through the trapdoor.\n\nA marble that rolls to the red socket costs a heart.") },
             { id: "combo", title: Lang.t("The Dynamo"), pic: function () { return hubPic(27, 0.85, false); },
               // the electric's row follows M.electricJump (5)
               rows: [[Lang.t("A marble released, set free"), Lang.t("1 notch")], [Lang.t("An electric marble collected"), Lang.t("5 notches")]],
-              lines: [Lang.t("The Combo multiplies every point you score. When every notch of the Dynamo is lit, the Combo goes up by 1."),
-                      Lang.t("Wasting an electric marble sends the Combo back to x1.")] },
+              text: Lang.t("The Combo multiplies every point you score. When every notch of the Dynamo is lit, the Combo goes up by 1.\n\nWasting an electric marble sends the Combo back to x1.") },
             { id: "fuse", title: Lang.t("Voltage"), pic: function () { return hubPic(12, 0.3, true); },
-              lines: [Lang.t("The outer ring of the Dynamo shows its voltage. The voltage drops while a gate stays locked."),
-                      Lang.t("Open the gate, or catch an electric marble, and the voltage is full again."),
-                      Lang.t("If the voltage runs out, the Combo drops by 1.")] }
+              text: Lang.t("The outer ring of the Dynamo shows its voltage. The voltage drops while a gate stays locked.\n\nOpen the gate, or catch an electric marble, and the voltage is full again.\n\nIf the voltage runs out, the Combo drops by 1.") }
           ] },
           { key: "cards", label: Lang.t("Upgrade cards"), pages: [
             { id: "cards", title: Lang.t("The upgrade pick"), pic: function () { return cardsPic(["spareHeart-1", "turbo-2"]); },
-              lines: [Lang.t("When the blue socket is fully charged, catching an electric marble pauses the machine and deals two upgrade cards."),
-                      Lang.t("Choose the best card. One helps you, the other adds points. Sometimes a bonus comes with a risk.")] }
+              text: Lang.t("When the blue socket is fully charged, catching an electric marble pauses the machine and deals two upgrade cards.\n\nChoose the best card. One helps you, the other adds points. Sometimes a bonus comes with a risk.") }
             // what each card does is the player's to discover: the guide names none
           ] },
           { key: "track", label: Lang.t("The track"), pages: [
             { id: "loops", title: Lang.t("Loops and spirals"), lv: 1, pic: loopsPic,
-              lines: [Lang.t("Every loop, spiral, jump, booster and staircase a marble rides pays a few points, times the Combo.")] },
+              text: Lang.t("Every loop, spiral, jump, booster and staircase a marble rides pays a few points, times the Combo.") },
             { id: "ferry", title: Lang.t("Ferry gears"), lv: 1, pic: ferryPic,
-              lines: [Lang.t("A ferry gear carries a marble over to another line.")] },
+              text: Lang.t("A ferry gear carries a marble over to another line.") },
             { id: "moves", title: Lang.t("Jumps and boosters"), lv: 2, pic: movesPic,
-              lines: [Lang.t("A jump throws the marble into a catcher. A booster speeds it up.")] },
+              text: Lang.t("A jump throws the marble into a catcher. A booster speeds it up.") },
             { id: "tubes", title: Lang.t("Tubes and hoses"), lv: 3, pic: tubesPic,
-              lines: [Lang.t("Marbles stay visible in a glass tube, partially visible in a striped tube and hidden in a hose."),
-                      Lang.t("The electric marble always stays visible, even through the tubes.")] },
+              text: Lang.t("Marbles stay visible in a glass tube, partially visible in a striped tube and hidden in a hose.\n\nThe electric marble always stays visible, even through the tubes.") },
             { id: "whirl", title: Lang.t("Whirlpools and dives"), lv: 12, pic: whirlPic,
-              lines: [Lang.t("A whirlpool spirals the marble down its drain."),
-                      Lang.t("A line that dives runs under the others and comes back through a pipe mouth.")] }
+              text: Lang.t("A whirlpool spirals the marble down its drain.\n\nA line that dives runs under the others and comes back through a pipe mouth.") }
           ] }
         ];
         for (i = 0; i < CONFIG.biomes.length; i++) out.push(biomeChapter(i));

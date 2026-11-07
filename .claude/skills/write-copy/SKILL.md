@@ -53,9 +53,10 @@ this file does not repeat.
    or a full stop would not do. **No semicolon in the middle of a sentence**,
    in either language: two ideas are two sentences, or one joined by a comma
    or a word ("so", "but" / "donc", "mais"). **A notification never ends
-   on a full stop** (a `Notify.say` / `Notify.learn` word or sub, either
-   language): a stop between two sentences stays, the last one goes. Guide
-   pages, cards and lore keep theirs.
+   on a full stop** (a `Notify.say` word or sub, either language): a stop
+   between two sentences stays, the last one goes. Guide pages, cards and
+   lore keep theirs. A `Notify.learn` has no words to write: it says the
+   title of its guide page.
 1. **Say what to DO when the rule allows it.** A warning reads as advice:
    "Quickly get clear of that side before you get bitten." / "Quitte vite ce
    côté pour ne pas te faire croquer." A bonus reads as an opportunity:
@@ -67,6 +68,12 @@ this file does not repeat.
    each under about 90 characters (two sentences on one line is fine when
    both are short). A card or power: one line, the effect first, its number
    in it. A notice word: three words at most, its sub about six.
+1. **Written once.** A thing the game explains has ONE title and ONE
+   description (`text`, paragraphs split on a blank line), and every place
+   that shows it reads those two: its guide page, its card, its loadout
+   tile, and the "New: <title>" of its discovery. Never write a second,
+   shorter sentence about the same thing for a notice or a card. When two
+   texts say the same thing, keep the better one and delete the other.
 1. **True to the game.** Read the code a line describes before rewording it
    (`node tools/lab/scan-text.mjs <slug>` gives `file:line` for every row).
    A simpler line may drop a detail the player does not need to decide
@@ -117,7 +124,8 @@ apply (one idea per sentence, plain words, grammar), plus:
 ## How a pass runs
 
 1. `node tools/lab/scan-text.mjs <slug> --json` — every row, its `id`, its
-   surface (*Help guide*, *Card*, *Character*, *Mission*…), its French and
+   category and sub (*Help guide · page text*, *Game content · card*,
+   *Adventure · mission*…), its French and
    its marks in `lab/text-review.json`.
 1. **A row the user CHECKED is theirs**: fix its faults (grammar, spelling,
    a false statement) and nothing else; it stays checked. Every other row is

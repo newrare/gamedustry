@@ -102,7 +102,7 @@
       cols: 7,           // the dungeon grid, as old-pawko's level selector drew it...
       rows: 7,           // ...grown to 12 rows by the end of the climb
       loops: 0.15,       // chance of an extra corridor between two rooms (forks)
-      fights: 10,        // rooms with a yokai — never fewer than the level's 2.2x objective
+      fights: 10,        // rooms with a yokai — never fewer than the level's 3x objective
       shops: 2,
       upgrades: 2,
       events: 2,
@@ -233,7 +233,7 @@
 
     /* --- the data --------------------------------------------------------- */
 
-    /* Five elements, Persona's rule: a yokai hit on its weakness takes 1.6x
+    /* Five elements, Persona's rule: a yokai hit on its weakness takes 2x
        and the hero acts ONE MORE time; a resisted element does half. */
     var ELEMENTS = {
       slash:  { name: "Slash",  color: "#e8e6f0", icon: "icoFight", ink: "#3b3142" },
@@ -274,42 +274,52 @@
       attack:    { name: "Attack",         kind: "hit", fx: "spells13",  el: "slash",  pow: 1.0, sp: 0,  w: 1, icon: "icoFist",
                    foe: "hit", ally: "cover", noSelf: true,
                    foeText: "A plain blow with the hero's weapon",
-                   allyText: "Takes the next blow aimed at them" },
+                   allyText: "You step in and take the Yokai's damage if this ally was the Yokai's only target" },
       guard:     { name: "Guard",          kind: "guard", fx: "spells04", sp: 0, w: 0.6, icon: "icoShield",
                    foe: "provoke", ally: "guard",
-                   foeText: "Its next blow at a single hero comes at this one, who stands on guard",
-                   allyText: "Halves the blows they take until their turn (+5 SP on oneself)" },
+                   foeText: "You stand on guard, as the Yokai's next attack will be aimed at you",
+                   allyText: "This hero takes half damage until their next turn with a +5 SP bonus on themselves" },
       purify:    { name: "Purify",         kind: "hit", fx: "spells01",  el: "light",  pow: 1.7, sp: 8,  w: 1, icon: "icoBonus",
                    foe: "hit", ally: "imbue",
-                   foeText: "A strong blow of light", allyText: "Their next blow becomes light" },
+                   foeText: "A strong blow of light", allyText: "This hero's next blow will be light" },
       blessing:  { name: "Blessing",       kind: "heal", fx: "spells02", pow: 0.32,    sp: 12, w: 1.2, icon: "icoHeart",
                    foe: "pacify", ally: "heal",
-                   foeText: "Halves its next blow",
+                   foeText: "Halves the Yokai's next blow",
                    allyText: "Heals every hero by a third of their health" },
       iai:       { name: "Iai slash",      kind: "hit", fx: "spells03",  el: "slash",  pow: 2.3, sp: 8,  w: 1.5, icon: "icoFight",
                    foe: "hit", ally: "whet",
-                   foeText: "A very strong cut that delays the hero's next turn",
-                   allyText: "Their next blow hits 50% harder" },
+                   foeText: "A slow cut that can delay the hero's next turn, but it remains very strong",
+                   allyText: "This hero's next blow hits 50% harder" },
       ward:      { name: "Spirit ward",    kind: "ward", fx: "spells04", turns: 2,     sp: 6,  w: 0.8, icon: "icoWard",
                    foe: "bind", ally: "ward",
-                   foeText: "Pushes it back on the timeline",
-                   allyText: "Every hero takes 40% less damage during the Yokai's next two turns" },
+                   foeText: "Pushes the Yokai's turn back on the timeline",
+                   allyText: "Every hero takes 40% less damage from the Yokai's next two attacks" },
       frost:     { name: "Frost talisman", kind: "hit", fx: "spells05",  el: "ice",    pow: 2.0, sp: 9,  w: 1, icon: "icoSnow",
                    foe: "hit", ally: "imbue",
-                   foeText: "A strong blow of ice", allyText: "Their next blow becomes ice" },
+                   foeText: "A strong blow of ice", allyText: "This hero's next blow will be ice" },
       foxfire:   { name: "Foxfire",        kind: "hit", fx: "spells06",  el: "fire",   pow: 2.0, sp: 9,  w: 1, icon: "icoFlame",
                    foe: "hit", ally: "imbue",
-                   foeText: "A strong blow of fire", allyText: "Their next blow becomes fire" },
+                   foeText: "A strong blow of fire", allyText: "This hero's next blow will be fire" },
       flash:     { name: "Flash",          kind: "hit", fx: "spells07",  el: "light",  pow: 1.1, sp: 10, w: 0.7, push: 0.6, icon: "icoZap",
                    foe: "hit", ally: "hasten", noSelf: true,
-                   foeText: "A quick blow of light that pushes the Yokai back on the timeline",
-                   allyText: "Moves them up the timeline" },
+                   foeText: "A quick blow of light that will push back the Yokai's next attack",
+                   allyText: "This ally will attack sooner" },
       ghostshot: { name: "Ghost shot",     kind: "hit", fx: "spells08",  el: "spirit", pow: 1.6, sp: 8,  w: 1, pierce: true, icon: "icoAim",
                    foe: "hit", ally: "imbue",
-                   foeText: "A spirit blow that goes through most of the Yokai's defense",
-                   allyText: "Their next blow becomes spirit" }
+                   foeText: "A spirit attack that goes through almost all of the Yokai's defences",
+                   allyText: "This hero's next blow will be a spirit attack" }
     };
     var HASTEN = 0.6, BIND = 0.8, WHET = 1.5, PACIFY = 0.5;
+    /* an element on a weakness doubles the blow (and ONE MORE), a resisted
+       one halves it: round figures, since the guide prints them */
+    var WEAK = 2, RESIST = 0.5;
+    /* Flee, said once: the scroll's tip reads `out` and `caught` as its two
+       sides, the guide's page `out` and `odds`. */
+    var FLEE_TEXT = {
+      out: "The escape worked, but the Yokai has moved to another room.",
+      caught: "The turn is lost and the Yokai strikes you.",
+      odds: "Fleeing sometimes works, depending on whether the hero is faster or slower than the Yokai encountered. A failed escape will cost the turn and a blow. Beware, as a 'master' never lets you go."
+    };
 
     /* The twenty yokai, four per band. `move` is what their special does
        every third turn: heavy (one hero, 1.8x), all (every hero, 0.75x),
@@ -337,6 +347,35 @@
       gashadokuro: { name: "Gashadokuro", face: [0.2, 0.21, 0.25],  color: "#e6dcc4", hp: 165, atk: 21, def: 15, spd: 6,  weak: ["light"],  resist: ["slash", "ice"], move: "heavy", special: "Bone crush" },
       oni:         { name: "Oni", face: [0.44, 0.22, 0.25],          color: "#c4302b", horns: true, hp: 190, atk: 23, def: 13, spd: 10, weak: ["spirit"], resist: ["fire"],   move: "all",   special: "Thunder drum" },
       onryo:       { name: "Onryo", face: [0.4, 0.23, 0.22],        color: "#e9e6f2", hair: true,  hp: 220, atk: 22, def: 12, spd: 14, weak: ["light"],  resist: ["spirit", "ice"], move: "fear", special: "Grudge" }
+    };
+
+    /* Each hero's and each yokai's story: what their page of the guide
+       tells. How a fight with them works is their card's, in the fight. */
+    var LORE = {
+      akane: "Akane grew up sweeping the steps of her family's shrine.\n\nSince the night its bell rang on its own, Akane has been purifying the places the Yokai haunt.",
+      kenji: "Kenji captains the school kendo club and, as a result, has never lost a bout.\n\nWhen a classmate mysteriously vanished in the school one night, Kenji took his bamboo sword and set out to find her.",
+      yuki: "Yuki's family has read the stars and bound spirits with paper talismans for a thousand years.\n\nSadly, today nobody else in the family still believes in the old rites.",
+      haru: "Haru sells ghost photos to magazines, and almost all of them are fakes.\n\nThen one day, Haru's camera finally captured a real one. The flash made the ghost scream, or maybe Haru himself.",
+      hanako: "A schoolgirl vanished long ago in the third stall of the girls' toilets, and since then Hanako-san has haunted that stall.\n\nWhoever knocks three times while calling Hanako-san gets a murmur in reply from behind the door. Only those who dare to wait longer will see that door open.",
+      teketeke: "Teke Teke is a girl who lost her legs under a train one winter night.\n\nTeke Teke has nonetheless come back in a form that lets her run very fast. Running away is therefore useless and only a fall can stop her.",
+      jinmenken: "Jinmenken is a stray dog with the face of a man nobody remembers.\n\nJinmenken rummages through the bins at night and mutters \"Leave me be\" to anyone who looks. Those who listen or walk on are never bothered again.",
+      akamanto: "Aka Manto waits in the school and asks a single question. Red cape or blue cape?\n\nWhoever answers red is slashed and whoever answers blue turns as pale as a ghost. Neither answer seems to be the right one.",
+      kuchisake: "Kuchisake-onna walks the streets at dusk with a mask over her mouth.\n\nKuchisake-onna stops passers-by to ask \"Am I pretty?\" and then lowers the mask on a torn smile. No polite answer can save them and only the bravest still dare to reply to these questions.",
+      ubume: "Ubume is a mother who never got to raise her child.\n\nUbume waits by the road on rainy nights and begs passers-by to hold her baby. The baby then grows heavier and heavier in someone else's arms, until escape is no longer possible.",
+      gaki: "A gaki is a soul punished for its greed with a hunger that never ends.\n\nThe belly of a gaki stays empty whatever it swallows. A gaki therefore devours everything within reach and swallows absolutely everything. Only a spell or an offering can calm it for a moment.",
+      nopperabo: "Nopperabo looks like anyone else from behind.\n\nBut Nopperabo turns round to show a smooth face with no eyes, no nose and no mouth. Those who meet it soon learn to wait until it turns its back again.",
+      kasaobake: "Kasa-obake is an old umbrella that came to life on its hundredth birthday.\n\nKasa-obake has hopped about on its one leg ever since and sticks out a long tongue at passers-by. This nimble umbrella still fears fire above all because of its oiled paper.",
+      chochin: "Chochin-obake is a paper lantern left alone too long in a temple.\n\nOne night a tear in the lantern's paper created a mouth. A ghostly flame then lit up inside. That flame warms nothing but grows until it burns everything around it.",
+      jorogumo: "Jorogumo is a four-hundred-year-old spider that took the shape of a beautiful woman.\n\nJorogumo lures travellers to her house in the woods this way and wraps them in silk. Her prey then becomes her shield until someone steps in or she decides to eat.",
+      tengu: "Red-faced and long-nosed Tengu lives at the top of the mountain pines.\n\nA single sweep of Tengu's feather fan raises a gale that throws travellers off the path. Only those who stand firm can catch Tengu out of breath.",
+      kappa: "Kappa lives in the rivers and drags swimmers under.\n\nKappa's strength comes from the water in the dish on its head. Legend says it always returns a bow and spills that water. But unfortunately this Kappa has forgotten its manners.",
+      nureonna: "Nure-onna has a woman's head on the body of a sea serpent.\n\nNure-onna waits on the shore with dripping hair for someone to come closer. Her coils then close around her prey and only those on their guard slip free.",
+      funayurei: "Funayurei is the ghost of drowned sailors. Funayurei rises beside the boats at night and asks for a ladle to fill the boats until they sink.\n\nThat is why wise sailors hand Funayurei a ladle with a hole in it and bail out their boat before it is too late.",
+      umibozu: "Umibozu is a giant as dark as the sea with a bald head and round eyes.\n\nUmibozu rises out of calm water and breaks the boats of those who speak to it. The giant always pulls back in the end like the tide, however.",
+      rokurokubi: "Rokurokubi is a woman like any other by day.\n\nBut at night Rokurokubi's neck stretches across the house to lap the lamp oil or spy on the sleepers.",
+      gashadokuro: "Gashadokuro is a giant skeleton made of the bones of the forgotten dead.\n\nGashadokuro's teeth go Gasha Gasha in the dark just before it grabs you. This slow and heavy giant lets runaways escape and falls asleep waiting for them to come back.",
+      oni: "Oni is a horned ogre who guards the gate of the underworld with an iron club.\n\nEvery child learns at Setsubun that thrown beans drive Oni back. But Oni learns too and the same trick never works twice in a row.",
+      onryo: "Onryo is a vengeful spirit back from the dead with long black hair over a white robe.\n\nThe grudge of an Onryo outlives even those who wronged it. Every blow it takes feeds that grudge and it always pays it back in the end."
     };
 
     /* The room types and the colour their pictogram is lit in. */
@@ -426,8 +465,8 @@
        two yokai of the band before, so a map is never one yokai deep. The
        grid, the fights and the other rooms grow with the band.
 
-       Four objectives: exorcise n yokai and earn n gold (stars at 1x, 1.5x
-       and 2.2x — the level layer's bands), find the way out and exorcise the
+       Four objectives: exorcise n yokai and earn n gold (stars at the
+       objective, twice it and three times it — web.levels.stars), find the way out and exorcise the
        master (a star for it, one for exorcising m yokai on the way, one if no
        hero fell — levelTally).
        ====================================================================== */
@@ -451,10 +490,10 @@
                 shops: k >= 1 ? 1 + (b >= 2 ? 1 : 0) : 0, upgrades: k >= 2 ? 1 + (b >= 3 ? 1 : 0) : 0,
                 events: k >= 1 ? 1 + (b >= 1 ? 1 : 0) : 1, bonus: 1 + Math.floor(cols * rows / 20),
                 recruits: RECRUITS[k], obj: T.obj, goal: 1, m: 0 };
-      if (T.obj === "exorcise") S.goal = Math.max(1, Math.floor(fights / 2.2));
+      if (T.obj === "exorcise") S.goal = Math.max(1, Math.floor(fights / 3));   // three stars: every fight
       else if (T.obj === "gold") {
         var expected = fights * (10 + 4 * b) + S.bonus * 10 * (1 + 0.15 * b);
-        S.goal = Math.max(10, Math.round(expected / 3 / 5) * 5);
+        S.goal = Math.max(10, Math.round(expected / 4 / 5) * 5);   // three stars: 3/4 of the gold on the map
       } else S.m = Math.ceil((fights - (S.boss ? 1 : 0)) / 2);
       return S;
     }
@@ -642,16 +681,15 @@
       return null;
     }
     /* A hero learns their next scroll: a callout over the room, and the
-       scroll named by a notice the first time any hero learns it, which opens
-       its page of the guide. */
+       scroll's page of the guide named the first time any hero learns it. */
     function learn(h, at, quiet) {
       var id = nextScroll(h);
       if (!id) return null;
       h.known.push(id);
       if (!quiet) Pop.show("bonus", { word: SKILLS[id].name, sub: fillIn(Lang.t("{name} learns a scroll"), { name: h.b.name }), at: at });
       Sound.clip("upgrade", 0.6, 1.2);
-      if (!Notify.learnt().learn) Notify.learn("learn", "New scrolls", { sub: "A second one after a fight won" });
-      else Notify.learn("skill-" + id, Lang.t(SKILLS[id].name), { sub: Lang.t(SKILLS[id].foeText) });
+      Notify.learn("learn");
+      Notify.learn("skill-" + id);
       return id;
     }
     /* After a fight won: whoever fought it and still stands learns, one
@@ -682,8 +720,8 @@
       Pop.show("bonus", { word: h.b.name, sub: "Joins you", at: at });
       Sound.clip("levelup", 0.6, 1.1);
       Fx.burst(at.x, at.y, { color: [h.b.color, "#ffffff"], count: 16, speed: 240, life: 0.5, grav: 160 });
-      Notify.learn("party", "A new hero", { sub: "Each hero burns one more candle" });
-      if (canSplit()) Notify.learn("split", "Split the party", { sub: "Explore with two groups" });
+      Notify.learn("party");
+      if (canSplit()) Notify.learn("split");
       showBubble(g);
       afterRoom(cell);
     }
@@ -771,8 +809,8 @@
     var WARES = [
       { id: "herbs",  art: "items01", name: "Healing herbs",   text: "Heals every hero by 40%",       price: 20 },
       { id: "sake",   art: "items02", name: "Sacred sake",     text: "Restores half of every hero's SP", price: 18 },
-      { id: "ofuda",  art: "items03", name: "Ofuda of return", text: "Raises the fallen",            price: 30 },
-      { id: "charm",  art: "items04", name: "Iron omamori",    text: "Defense +10% for the whole team",     price: 35 },
+      { id: "ofuda",  art: "items03", name: "Ofuda of return", text: "Revives fallen heroes",            price: 30 },
+      { id: "charm",  art: "items04", name: "Iron omamori",    text: "+10% defence for the whole team",     price: 35 },
       { id: "beads",  art: "items13", name: "Prayer beads",    text: "+10% attack for the whole team",      price: 35 },
       { id: "candles", art: "items09", name: "Candles",        text: "Lights the lantern for a while", price: 16 }
     ];
@@ -810,7 +848,7 @@
               b.classList.add("is-off", "is-sold");
               Sound.clip("buy", 0.6);
               var br = b.getBoundingClientRect();
-              Pop.show("bonus", { word: w.name, sub: w.text, at: toDesign(br.left + br.width / 2, br.top + br.height / 2) });
+              Pop.show("bonus", { word: w.name, at: toDesign(br.left + br.width / 2, br.top + br.height / 2) });
             }, w.art);
             list.appendChild(b);
           });
@@ -824,12 +862,12 @@
 
     /* --- an altar: one blessing out of three, for the rest of the run ----- */
     var BLESSINGS = [
-      { id: "vigor", name: "Vigor", text: "Healing and max health +20%" },
+      { id: "vigor", name: "Vigour", text: "+20% healing and max health" },
       { id: "focus", name: "Focus", text: "Refill and +10 max SP" },
       { id: "edge",  name: "Edge",  text: "Attack +10%" },
-      { id: "shell", name: "Shell", text: "Defense +10%" },
+      { id: "shell", name: "Shell", text: "Defence +10%" },
       { id: "swift", name: "Swift", text: "Speed +2" },
-      { id: "spark", name: "Spark", text: "+20% damage on skills" }
+      { id: "spark", name: "Spark", text: "+20% damage for attack scrolls" }
     ];
     /* What lasts the whole run — a blessing, an omamori, prayer beads — is
        laid on every hero met so far, both groups of a split party, and kept
@@ -856,7 +894,7 @@
             list.appendChild(button(o.name, Lang.t(o.text), "", function () {
               bless(o.id);
               Sound.clip("upgrade", 0.6);
-              Pop.show("bonus", { word: o.name, sub: o.text });
+              Pop.show("bonus", { word: o.name });
               closeCard(); afterRoom(cell);
             }));
           });
@@ -877,10 +915,10 @@
     var EVENTS = [
       { title: "A crying girl", text: "A girl in a school uniform weeps alone at the end of the corridor.",
         a: { label: "Comfort her", outs: [
-          { p: 0.6, lore: "The girl smiles through her tears, then fades away. You still feel her warmth around you.", fx: [["heal", 0.3]] },
+          { p: 0.6, lore: "The girl smiles through her tears and then fades away. You still feel her warmth around you.", fx: [["heal", 0.3]] },
           { lore: "The girl lifts her head, but there is nothing where her face should be.", fx: [["hurt", 0.2]] } ] },
         b: { label: "Walk past", outs: [
-          { lore: "The sobbing follows you down the corridor, long after the girl is out of sight.", fx: [["sp", -0.2]] } ] } },
+          { lore: "The sobbing follows you down the corridor long after the girl is out of sight.", fx: [["sp", -0.2]] } ] } },
       { title: "A glowing vending machine", text: "It isn't even plugged in, yet it's still lit. The vending machine's slot waits for a coin.",
         a: { label: "Give 15 gold", cost: 15, outs: [
           { p: 0.5, lore: "A can of sacred sake drops with a clunk.", fx: [["sp", 0.4]] },
@@ -896,19 +934,19 @@
       { title: "Sounds of footsteps behind you", text: "They are slow and wet. It is unsettling because the sounds stop when you stop.",
         a: { label: "Turn around", outs: [
           { p: 0.5, lore: "There is nobody there, just a piece of candle on a wet floor.", fx: [["candles", 0.1]] },
-          { lore: "Something was there, and it is not leaving.", fx: [["fight"]] } ] },
+          { lore: "Something was there and it is not leaving.", fx: [["fight"]] } ] },
         b: { label: "Run", outs: [
-          { lore: "You run until your lungs burn, and then the lantern gutters as you go.", fx: [["sp", -0.2], ["candles", -0.05]] } ] } },
+          { lore: "You run until your lungs burn and the lantern gutters as you go.", fx: [["sp", -0.2], ["candles", -0.05]] } ] } },
       { title: "A cursed mirror", text: "Your reflection seems to blink a moment after you do.",
         a: { label: "Look into it", outs: [
-          { p: 0.5, lore: "Your reflection nods, and you feel stronger.", fx: [["level"]] },
+          { p: 0.5, lore: "Your reflection nods and a new strength fills you.", fx: [["level"]] },
           { lore: "Your reflection keeps staring, long after you turn away.", fx: [["sp", -0.3]] } ] },
         b: { label: "Cover it", outs: [
           { lore: "You hang a jacket over the glass. At that very moment something behind it sighs, and the air then feels lighter.", fx: [["sp", 0.2]] } ] } },
       { title: "A phone is ringing", text: "It is an old phone in an empty room.",
         a: { label: "Answer", outs: [
           { p: 0.5, lore: "A child's voice tells you where the coins are hidden.", fx: [["gold", 25]] },
-          { lore: "A voice whispers a name, and then someone collapses to the ground.", fx: [["hurtOne", 0.3]] } ] },
+          { lore: "A voice whispers a name and then someone collapses to the ground.", fx: [["hurtOne", 0.3]] } ] },
         b: { label: "Let it ring", outs: [
           { lore: "The phone rings on and on. Your lantern burns down while you wait.", fx: [["candles", -0.08]] } ] } },
       { title: "A Sensei's ghost", text: "An old swordmaster kneels in an empty dojo with a scroll on his knees.",
@@ -918,7 +956,7 @@
           { lore: "The old master bows back. You leave the dojo calmer than you came.", fx: [["heal", 0.2]] } ] } },
       { title: "A box of candles", text: "A full box of new temple candles. It seems sealed with a paper charm, though.",
         a: { label: "Break the seal", outs: [
-          { p: 0.6, lore: "The candles are dry and good, which means you can walk for a long time.", fx: [["candles", 0.25]] },
+          { p: 0.6, lore: "The candles are dry and intact, so you can walk for a long time.", fx: [["candles", 0.25]] },
           { lore: "The paper charm was holding something in.", fx: [["fight"]] } ] },
         b: { label: "Take just one", outs: [
           { lore: "You manage to slip one candle out without touching the charm.", fx: [["candles", 0.08]] } ] } }
@@ -1021,7 +1059,7 @@
       var x = cellX(cell), y = cellY(cell), roll = Math.random();
       if (alive().length < party.length && roll < 0.25) {
         for (var i = 0; i < party.length; i++) if (party[i].dead) { party[i].dead = false; party[i].hp = Math.round(party[i].mhp * 0.3); break; }
-        Pop.show("bonus", { word: "Soul returned", at: { x: x, y: y } });
+        Pop.show("bonus", { word: "Soul recalled", at: { x: x, y: y } });
         Sound.clip("heal", 0.6);
       } else if (roll < 0.45) {
         var g = Math.round(Rand.range(14, 28) * P.goldRate * (1 + 0.15 * bandIndex()));
@@ -1107,7 +1145,7 @@
       groups.push({ heroes: up.slice(half), at: g.at });
       lead(g);
       aim = null;
-      Pop.show("bonus", { word: "Party split", sub: "Tap a group to lead it", at: { x: cellX(cells[g.at]), y: cellY(cells[g.at]) } });
+      Pop.show("bonus", { word: "Party split", at: { x: cellX(cells[g.at]), y: cellY(cells[g.at]) } });
       Sound.clip("step", 0.6, 1.2);
     }
     function merge(g, o) {
@@ -1452,15 +1490,13 @@
     }
 
     /* What this band brings, NAMED the first time the player meets it — once
-       per player (Notify.learn), each notice the way to its page of the
-       guide, where the rule is told. */
+       per player (Notify.learn, which paces the notices and says the title of
+       the page of the guide where the rule is told). */
     function teach() {
-      var k = 0;
-      function say(id, fn) { if (!Notify.learnt()[id]) later(0.6 + 0.5 * k++, fn); }
-      say("candles", function () { Notify.learn("candles", "The lantern", { sub: "Each step burns a candle per hero" }); });
-      if (feats.doors) say("doors", function () { Notify.learn("doors", "Fire doors", { sub: "Once through, no way back" }); });
-      if (feats.roam) say("roam", function () { Notify.learn("roam", "Wandering Yokai", { sub: "The red arrow is the Yokai's next move" }); });
-      if (feats.split && canSplit()) say("split", function () { Notify.learn("split", "Split the party", { sub: "Explore with two groups" }); });
+      Notify.learn("candles");
+      if (feats.doors) Notify.learn("doors");
+      if (feats.roam) Notify.learn("roam");
+      if (feats.split && canSplit()) Notify.learn("split");
     }
 
     function arrive(cell) {
@@ -1481,7 +1517,7 @@
     }
     function takeKey(cell) {
       keys++;
-      Pop.show("bonus", { word: "Seal-breaker", sub: "Opens one sealed door", at: { x: cellX(cell), y: cellY(cell) } });
+      Pop.show("bonus", { word: "Seal-breaker", at: { x: cellX(cell), y: cellY(cell) } });
       Sound.clip("upgrade", 0.6, 1.1);
       afterRoom(cell);
     }
@@ -1556,8 +1592,7 @@
 
     /* THE BESTIARY. What the party has found each yokai weak to, resisting or
        neither, element by element — kept across rounds, so a weakness found
-       once is known at every later fight with that yokai, and the guide's
-       page of a yokai shows what was found and nothing more. */
+       once is known at every later fight with that yokai (its card, badgeRow). */
     function loreKey() { return "lore:" + (CONFIG.slug || "grudgeon"); }
     var lore = null;
     function loreAll() { return lore || (lore = Store.get(loreKey(), {}) || {}); }
@@ -1573,7 +1608,18 @@
       mine[el] = what;
       Store.set(loreKey(), all);
     }
-    function wipe() { lore = null; Store.del(loreKey()); }
+    /* THE YOKAI EXORCISED AT LEAST ONCE, kept across rounds: how to beat a
+       yokai (its rule, RULES.<id>.text) is told only once the player has
+       beaten it — in its card in a fight and on its page of the guide. */
+    function beatenKey() { return "beaten:" + (CONFIG.slug || "grudgeon"); }
+    var beatenAll = null;
+    function beaten(id) { return !!(beatenAll || (beatenAll = Store.get(beatenKey(), {}) || {}))[id]; }
+    function markBeaten(id) {
+      if (beaten(id)) return;
+      beatenAll[id] = true;
+      Store.set(beatenKey(), beatenAll);
+    }
+    function wipe() { lore = null; beatenAll = null; Store.del(loreKey()); Store.del(beatenKey()); Store.del(fightHelpKey()); }
 
     /* A FIGHT IS A SCENE, NOT A CARD. The rooms blow off the frame from the
        party's own room outwards (BLOW), the band's scene is left bare, the
@@ -1606,8 +1652,7 @@
       later(INTRO.foe + 0.35, function () {
         if (combat !== C) return;
         /* a yokai met for the first time: named once, its page in the guide */
-        var R = RULES[C.foe.id];
-        Notify.learn("yokai-" + C.foe.id, Lang.t(C.foe.b.name), { sub: R ? Lang.t(R.text) : null, icon: "eye" });
+        Notify.learn("yokai-" + C.foe.id);
       });
       later(INTRO.hud, function () { if (combat === C) bareScene(false); });
       later(INTRO.hud + INTRO.hudDur, function () { if (combat === C) step(); });
@@ -1644,7 +1689,7 @@
        the very row it is about. */
     function push(u, share, word) {
       u.ct += wait(u) * share;
-      if (word) Pop.show(u.hero ? "alert" : "bonus", { word: word, sub: u.hero ? u.b.name : "Pushed back" });
+      if (word) Pop.show(u.hero ? "alert" : "bonus", u.hero ? { word: word, at: topOf(u) } : { word: word });
     }
     /* What an action weighs for this hero: a rule may make it heavier. */
     function weightOf(h, w) {
@@ -1846,12 +1891,13 @@
     function kappaDives(f) { return !f.st.dry && !f.answered && !!intent(0).special; }
     function tripTeke(f, during) {
       openFor(f, "down", !during); f.st.rising = false; f.plan = []; f.fallTo = 1;
-      callout("combo", "Tripped", "+50% attack until she's up");
+      callout("combo", "Tripped");
     }
 
     /* --- the rules ---------------------------------------------------------
-       One per yokai, out of its legend. `text` is its line (the notice that
-       names it, its card), `lock` and `key` its page of the guide. A rule may:
+       One per yokai, out of its legend. `text` is its ONE description, two
+       paragraphs (what holds your blows, then how to break it), read by its
+       card in the fight and its page of the guide alike. A rule may:
          st(o)           its own state (o.met: met again after a flight)
          status(f)       the pill on the boss bar's line
          opens           the states that count hero turns (OPEN)
@@ -1874,30 +1920,26 @@
     var RULES = {
       /* --- Night school ---------------------------------------------------- */
       hanako: {
-        text: "Behind her door, she takes little damage: knock three times to open it for good",
-        lock: "Behind the door of the third stall, every blow lands at -80%.",
-        key: "Knock three times (a quick turn each): the door opens for good, and every blow lands at +50%.",
+        text: "Hanako-san hides behind the door of the third stall. A blow through a stall lands at -80% damage.\n\nKnock three times on the stall and she will end up opening the door. A direct attack then lands at +50% damage.",
         st: function () { return { knocks: 0, open: false }; },
         status: function (f) { return f.st.open ? Lang.t("Door open") : Lang.t("Door shut") + " · " + f.st.knocks + "/3"; },
         ghost: function (f) { return !f.st.open; },
-        mod: function (f) { return f.st.open ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The door holds", sub: "Knock 3 times" }; },
+        mod: function (f) { return f.st.open ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The door holds" }; },
         plan: planWith(function () { return { kind: "all", fx: "all", all: true, targets: null, fear: false, pow: 0.75 }; }),
         live: function (f, it) { return !f.st.open && !it.special && it.pow ? copyOf(it, { label: "Who's there?", pow: it.pow * 0.6 }) : it; },
         action: function (f) {
           if (f.st.open) return null;
           return { label: "Knock", w: 0.6, sub: Lang.t("A quick turn") + " · " + (f.st.knocks + 1) + "/3", run: function (f2) {
             f2.st.knocks++;
-            if (f2.st.knocks < 3) { callout("bonus", "Knock", f2.st.knocks + "/3"); return; }
+            if (f2.st.knocks < 3) { callout("bonus", Lang.t("Knock") + " " + f2.st.knocks + "/3"); return; }
             f2.st.open = true; f2.plan = [];
-            callout("combo", "Door open", "+50% damage");
+            callout("combo", "Door open");
           } };
         }
       },
       teketeke: {
-        text: "Too fast to hit: be on guard when she charges, and she falls",
-        lock: "While she runs, every blow lands at -80%, and nobody outruns her.",
-        key: "Be on guard when she charges you: she trips and lies upside down for 5 of your turns, +50% damage. Ice trips her too.",
-        flee: { p: 0, sub: "She's faster" },
+        text: "While Teke Teke runs, she is hard to hit and every attack deals -80% damage. This Yokai is too fast, so you cannot flee.\n\nPut the hero she charges on guard and she will end up tripping. Your attacks deal +50% damage while she is down. An ice blow trips her too.",
+        flee: { p: 0, sub: "Teke Teke is faster" },
         spd: 1.4,
         st: function () { return { down: 0, rising: false }; },
         opens: ["down"],
@@ -1906,53 +1948,49 @@
         plan: function (f, j) { return copyOf(basePlan(f, f.acts + j), { all: false, targets: [weakestHero()] }); },
         /* fallen while the hero turns last, then her first turn after is spent getting up */
         live: function (f, it, k) {
-          if (openAt(f, "down", k)) return pass("fallen", "Fallen", "She lies upside down");
+          if (openAt(f, "down", k)) return pass("fallen", "Fallen", "Teke Teke lies upside down");
           if ((f.st.down || f.st.rising) && (k === 0 || openAt(f, "down", k - 1)))
-            return pass("getup", "Getting up", "She turns over", { after: function (f2) { f2.st.rising = false; f2.fallTo = 0; callout("alert", "She's up again", "She dodges again"); } });
+            return pass("getup", "Getting up", "She turns over", { after: function (f2) { f2.st.rising = false; f2.fallTo = 0; callout("alert", "She's up again"); } });
           return it;
         },
         mod: function (f, h, id, el) {
           if (f.st.down || f.st.rising) return { pct: EXPOSED, tag: "+50%" };
           if (el === "ice") return { tag: "Trips" };
-          return { pct: LOCKED, tag: "-80%", bad: true, word: "Grazed", sub: "Guard when she charges" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "Grazed" };
         },
         onHit: function (f, h, s) { if (!f.st.down && !f.st.rising && s.el === "ice") tripTeke(f, false); },
         cancel: function (f, it, tg) { return !f.st.down && !f.st.rising && tg.length === 1 && tg[0].guard; },
-        onCancel: function (f, h) { callout("bonus", "Blocked", Lang.t(h.b.name) + " · " + Lang.t("no damage")); tripTeke(f, true); }
+        onCancel: function (f, h) { Pop.show("bonus", { word: "Blocked", at: topOf(h) }); tripTeke(f, true); }
       },
       /* He wants to be left alone: two hero turns in a row without a blow at
          him and he walks away; a blow, and he stays and fights. */
       jinmenken: {
-        text: "Don't strike him: two turns of peace and he walks away",
-        lock: "Strike him and he stays and fights, and your blows land at -80%.",
-        key: "Let two of your turns go by without striking him: he walks away, and it counts as exorcised.",
+        text: "If you strike Jinmenken, he will stay to fight and your attacks will stay at -80% damage.\n\nLeave him alone for 2 turns in a row and he walks away exorcised.",
         flee: { p: 100, ok: "He doesn't chase you" },
         st: function () { return { calm: 0, angry: false }; },
         status: function (f) { return f.st.angry ? Lang.t("Angry") : Lang.t("Calm") + " " + f.st.calm + "/2"; },
-        mod: function () { return { pct: LOCKED, tag: "-80%", bad: true, word: "You hit me", sub: "He stays and fights" }; },
+        mod: function () { return { pct: LOCKED, tag: "-80%", bad: true, word: "You hit me" }; },
         onHit: function (f) { f.st.angry = true; f.st.calm = 0; f.plan = []; },
         plan: planWith(function () { return { label: "Bite" }; }),
-        live: function (f, it) { return f.st.angry ? it : pass("watch", "Watching", "He keeps his distance"); },
+        live: function (f, it) { return f.st.angry ? it : pass("watch", "Watching", "Jinmenken keeps his distance"); },
         heroTurn: function (f, h, struck) {
           if (struck) return false;
           f.st.calm++;
-          if (f.st.calm === 1) { f.st.angry = false; f.plan = []; callout("bonus", "He sniffs at you", "Keep your hands down"); return false; }
-          callout("combo", "Leave me be...", "He lowers his head");
+          if (f.st.calm === 1) { f.st.angry = false; f.plan = []; callout("bonus", "He sniffs at you"); return false; }
+          callout("combo", "Leave me be...");
           var C = combat;
           later(1.2, function () { if (combat === C && !f.dead) letGo(); });
           return true;
         }
       },
       akamanto: {
-        text: "His cape shields him: when he asks \"Red or blue?\", answer neither",
-        lock: "His red cape takes the blows: -80% damage. Left unanswered, his question is a slash or a drain.",
-        key: "When he asks \"Red or blue?\", answer Neither: the cape falls for 5 of your turns, +50% damage.",
+        text: "Aka Manto's red cape takes your blows well and you deal -80% damage while he wears it. Every third turn he asks you to choose \"Red or blue?\". A red scroll as your answer hurts one hero, while a blue scroll drains HP from every hero.\n\nAnswer \"Neither\" with the yellow scroll to throw Aka off for a few turns. Your attacks deal +50% damage during that phase.",
         st: function () { return { bare: 0 }; },
-        status: function (f) { return f.st.bare ? Lang.t("Bare") + " · " + f.st.bare : Lang.t("Cape"); },
+        status: function (f) { return f.st.bare ? Lang.t("No cape") + " · " + f.st.bare : Lang.t("With cape"); },
         opens: ["bare"],
-        onClose: function () { callout("alert", "The cape is back", "-80% damage"); },
+        onClose: function () { callout("alert", "The cape is back"); },
         shield: function (f) { return !f.st.bare; },
-        mod: function (f) { return f.st.bare ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The cape takes it", sub: "Answer neither" }; },
+        mod: function (f) { return f.st.bare ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The cape takes it" }; },
         plan: function (f, j) {
           var i = f.acts + j;
           if ((i + 1) % SPECIAL_EVERY) return basePlan(f, i);
@@ -1969,77 +2007,71 @@
           if (intent(0).kind !== "question" || f.answered || f.st.bare) return null;
           return { label: "Neither", sub: "Refuse to choose", run: function (f2) {
             f2.answered = true; openFor(f2, "bare", true);
-            callout("combo", "Neither", "+50% attack without the cape");
+            callout("combo", "Neither");
           } };
         }
       },
 
       /* --- Hospital -------------------------------------------------------- */
       kuchisake: {
-        text: "Her mask shields her: strike her with a plain attack while she asks",
-        lock: "Her mask takes the blows: -80% damage. \"Am I pretty?\" left unanswered is a slash. The So-so on offer is a trap.",
-        key: "While she asks, the hero she asks strikes her with a plain attack: the mask tears for 5 of your turns, +50% damage.",
+        text: "Kuchisake-onna's mask absorbs your blows and you deal -80% damage while she wears it. She will ask a hero \"Am I pretty?\" and slash them hard if they stay silent. The yellow scroll \"So-so\" is obviously a trap.\n\nThe targeted hero must answer with their 'Attack' scroll before she acts. The mask then tears and Kuchisake-onna loses her turn. Your attacks also deal +50% damage for a few turns.",
         flee: { p: 100, ok: "She follows you to the next room" },
         st: function () { return { bare: 0 }; },
         status: function (f) { return f.st.bare ? Lang.t("Unmasked") + " · " + f.st.bare : Lang.t("Masked"); },
         opens: ["bare"],
-        onClose: function () { callout("alert", "Masked again", "Attack reduced by 80%"); },
+        onClose: function () { callout("alert", "Masked again"); },
         shield: function (f) { return !f.st.bare; },
         mod: function (f, h, id) {
           if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
           var it = intent(0), asking = it.kind === "ask" && !f.answered && it.targets;
           if (asking && it.targets[0] === h && id === "attack") return { pct: EXPOSED, tag: "+50%", key: true };
           return { pct: LOCKED, tag: "-80%", bad: true, word: "The mask takes it",
-                   sub: !asking ? "Strike her while she asks" : it.targets[0] !== h ? "Only the one she asks can strike" : "Not a scroll · a plain attack" };
+                   sub: !asking ? "Strike Kuchisake-onna while she asks" : it.targets[0] !== h ? "Only the hero she asks can strike" : "Answer with the 'Attack' scroll" };
         },
-        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "bare", true); callout("combo", "The mask tears", "+50% attack when unmasked"); } },
+        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "bare", true); callout("combo", "The mask tears"); } },
         plan: planWith(function () { return { kind: "ask", label: "Am I pretty?", tag: "?", pow: 2.6, fx: "heavy", fear: false }; }),
         live: function (f, it, k) { return k === 0 && it.kind === "ask" && f.answered ? pass("confused", "Torn mask", "She loses her turn", { w: 1.2 }) : it; },
         action: function (f, h) {
           var it = intent(0);
           if (f.st.bare || it.kind !== "ask" || f.answered || !it.targets || it.targets[0] !== h) return null;
-          return { label: "So-so", sub: "A safe answer?", run: function () { callout("alert", "She laughs", "Strike instead of talking"); } };
+          return { label: "So-so", sub: "A safe answer?", run: function () { callout("alert", "She laughs"); } };
         }
       },
       ubume: {
-        text: "Her baby shields her: walk away when she offers it to you",
-        lock: "While she holds her baby, blows land at -80% and each one wakes her fury, +30%. Holding her baby is a trap.",
-        key: "When she offers her baby, flee: the flight fails, but her guard is down for 5 of your turns, +50% damage.",
+        text: "Ubume shields her baby, so you hold back and deal -80% damage to avoid hurting it. Each blow she takes makes her angrier and adds +30% to her attacks. The yellow scroll \"Hold the baby\" is a trap because she would never leave it with anyone.\n\nFlee with the grey scroll when she offers her baby. The escape will fail but Ubume drops her guard for a few turns. Your attacks then deal +50% damage.",
         st: function () { return { bare: 0, fury: 0 }; },
         atk: function (f) { return f.st.fury * 30; },
         status: function (f) { return f.st.bare ? Lang.t("Guard down") + " · " + f.st.bare : f.st.fury ? Lang.t("Fury") + " +" + f.st.fury * 30 + "%" : Lang.t("Holds her baby"); },
         opens: ["bare"],
-        onClose: function () { callout("alert", "She holds it close again", "With -80% damage, walking away remains an option"); },
+        onClose: function () { callout("alert", "She holds it close again"); },
         shield: function (f) { return !f.st.bare; },
         mod: function (f) {
           if (f.st.bare) return { pct: EXPOSED, tag: "+50%" };
-          return { pct: LOCKED, tag: "-80%", bad: true, word: "She shields her baby", sub: ubumeOffers(f) ? "Fury +30% · blows won't reach her" : "Fury +30% · don't fight her" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "She shields her baby" };
         },
         onHit: function (f) { if (!f.st.bare) f.st.fury++; },
         plan: planWith(function () { return { targets: [weakestHero()], pow: 1.4 }; }),
-        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("call", "Don't go!", "She reaches out for you", { w: 1.2 }) : it; },
+        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("call", "Don't go!", "Ubume reaches out for you", { w: 1.2 }) : it; },
         action: function (f) {
           if (!ubumeOffers(f)) return null;
-          return { label: "Hold the baby", sub: "She offers it", w: 1.4, run: function () { callout("alert", "Heavier and heavier", "Walk away from a raised guard "); } };
+          return { label: "Hold the baby", sub: "She offers it", w: 1.4, run: function () { callout("alert", "Heavier and heavier"); } };
         },
         onFlee: function (f) {
           if (!ubumeOffers(f)) return null;
           return function () {
             f.answered = true; openFor(f, "bare", true); f.sA = 1.8;
-            callout("bonus", "She won't let you go", "Her shield falls");
+            callout("bonus", "She won't let you go");
           };
         }
       },
       /* A hungry ghost eats whatever hits it: a plain attack feeds it, only
          magic, which it cannot eat, hurts it. */
       gaki: {
-        text: "It eats your plain attacks. Only scrolls hurt it",
-        lock: "A plain attack heals it instead of dealing damage.",
-        key: "A scroll deals +50% damage and light even more. An offering of 10 gold forces the Yokai to eat instead of acting.",
-        needs: { magic: true, word: "No attack scroll", sub: "Only magic hurts it" },
+        text: "Gaki is always starving and eats whatever hits it. Your 'Attack' scroll will heal it instead of hurting it. Every other red scroll deals +50% damage and light even more.\n\nThe yellow scroll \"Make an offering\" costs 10 gold and sadly only feeds Gaki a little more.",
+        needs: { magic: true, word: "No attack scroll", sub: "Only magic hurts Gaki" },
         status: function () { return Lang.t("Starving"); },
         plan: function (f, j) { return copyOf(basePlan(f, f.acts + j), { drain: true }); },
-        mod: function (f, h, id) { return id === "attack" ? { heal: true, tag: "Heals", bad: true, word: "It eats your blow", sub: "Magic hurts it" } : { pct: EXPOSED, tag: "+50%" }; },
+        mod: function (f, h, id) { return id === "attack" ? { heal: true, tag: "Heals", bad: true, word: "It eats your blow" } : { pct: EXPOSED, tag: "+50%" }; },
         action: function () {
           if (gold < 10) return null;
           return { label: "Make an offering", sub: "With 10 gold, the Yokai eats instead of attacking", run: function (f2) {
@@ -2051,51 +2083,45 @@
       /* Faceless: facing the party it is locked; turned away (its sprite
          mirrored), it is open. The two phases alternate, in hero turns. */
       nopperabo: {
-        text: "Facing you, it can't be hurt: strike its back when it turns away",
-        lock: "Facing you, it is out of reach: -80% damage.",
-        key: "Every 3 of your turns it turns its back: strike then, +200% damage, for 5 of your turns.",
+        text: "Nopperabo's blank face forces you to keep your distance and you deal -80% damage while it faces you.\n\nAfter a while, Nopperabo turns its back. Keep your strongest red scrolls for that phase because your attacks will deal +200% damage.",
         st: function () { return { facing: 3, away: 0 }; },
         opens: ["facing", "away"],
         onClose: function (f, k) {
           if (k === "facing") {
             openFor(f, "away", true); f.turnTo = 1;
-            callout("bonus", "It turns away", "Strike its back");
+            callout("bonus", "It turns away");
           } else {
             f.st.facing = 3; f.turnTo = 0;     // "facing" was counted before "away" this turn: no fresh
-            callout("alert", "It faces you again", "Wait for an opening");
+            callout("alert", "It faces you again");
           }
         },
         status: function (f) { return f.st.away ? Lang.t("Turned away") + " · " + f.st.away : Lang.t("Facing you") + " · " + f.st.facing; },
-        mod: function (f) { return f.st.away ? { pct: 200, tag: "+200%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "It faces you", sub: "Wait until it turns away" }; }
+        mod: function (f) { return f.st.away ? { pct: 200, tag: "+200%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "It faces you" }; }
       },
 
       /* --- Shrine forest ---------------------------------------------------- */
       kasaobake: {
-        text: "It hops aside: set it alight, or land two blows between its turns",
-        lock: "The first blow after each of its turns only grazes it: -80%.",
-        key: "A fire blow sets it alight for 5 of your turns: it can't hop. Or land a second blow before its turn: it trips.",
-        needs: { el: "fire", word: "No fire scroll", sub: "Fire stops its hops" },
+        text: "Kasa-obake hops aside from the first blow after each of its turns. That partly dodged blow only deals -80% damage.\n\nHit it a second time before its next attack to push back Kasa-obake's turn. Note also that a fire scroll sets it alight for a few turns and stops it hopping aside.",
+        needs: { el: "fire", word: "No fire scroll", sub: "Fire stops Kasa-obake hopping aside" },
         st: function () { return { hits: 0, burn: 0 }; },
         status: function (f) { return f.st.burn ? Lang.t("Alight") + " · " + f.st.burn : Lang.t("Hops") + " · " + f.st.hits + "/2"; },
         opens: ["burn"],
-        onClose: function () { callout("alert", "The flame dies", "It hops again"); },
+        onClose: function () { callout("alert", "The flame dies"); },
         mod: function (f, h, id, el) {
           if (f.st.burn) return null;
           if (el === "fire") return { tag: "Burns" };
-          return f.st.hits === 0 ? { pct: LOCKED, tag: "-80%", bad: true, word: "It hops aside", sub: "Fire, or a second blow" } : { tag: "Trips" };
+          return f.st.hits === 0 ? { pct: LOCKED, tag: "-80%", bad: true, word: "It hops aside" } : { tag: "Trips" };
         },
         onHit: function (f, h, s) {
           if (f.st.burn) return;
-          if (s.el === "fire") { openFor(f, "burn", true); callout("combo", "Alight", "It can't hop"); return; }
-          if (++f.st.hits === 2) push(f, 0.8, "Tripped");
+          if (s.el === "fire") { openFor(f, "burn", true); callout("combo", "Alight"); return; }
+          if (++f.st.hits === 2) push(f, 0.8, "It trips");
         },
         turn: function (f) { f.st.hits = 0; }
       },
       chochin: {
-        text: "Its flame grows every turn: put it out with ice, never feed it fire",
-        lock: "Its flame grows each of its turns, and its specials with it. At 5, every turn burns every hero. Fire feeds it.",
-        key: "Ice puts the flame out. A hero on guard under its special smothers 2 of it.",
-        needs: { el: "ice", word: "No ice scroll", sub: "Ice puts its flame out" },
+        text: "Chochin-obake's flame grows by 1 on each of its turns and makes its special attacks burn harder. Chochin-obake will thus burn all your heroes if its flame reaches 5. A fire scroll only deals -80% damage and also feeds the flame by 2.\n\nAn ice scroll obviously puts the flame out. A hero on 'guard' blocks 2 points of the Yokai's special attack.",
+        needs: { el: "ice", word: "No ice scroll", sub: "Ice puts out Chochin-obake's flame" },
         st: function () { return { flame: 0 }; },
         status: function (f) { return Lang.t("Flame") + " " + f.st.flame + "/5"; },
         live: function (f, it, k) {
@@ -2104,30 +2130,28 @@
           return it.special ? copyOf(it, { pow: 0.4 + 0.2 * fl }) : it;
         },
         mod: function (f, h, id, el) {
-          if (el === "fire") return { pct: LOCKED, tag: "-80%", bad: true, word: "It feeds on fire", sub: "Flame +2" };
+          if (el === "fire") return { pct: LOCKED, tag: "-80%", bad: true, word: "It feeds on fire" };
           return el === "ice" ? { tag: "Douses" } : null;
         },
         onHit: function (f, h, s) {
           if (s.el === "fire") f.st.flame = Math.min(5, f.st.flame + 2);
-          else if (s.el === "ice" && f.st.flame) { f.st.flame = 0; callout("combo", "Doused", "Flame 0/5"); }
+          else if (s.el === "ice" && f.st.flame) { f.st.flame = 0; callout("combo", "Doused"); }
         },
-        onStrike: function (f, h, it) { if (it.special && h.guard && f.st.flame) { f.st.flame = Math.max(0, f.st.flame - 2); callout("bonus", "Smothered", "Flame -2"); } },
+        onStrike: function (f, h, it) { if (it.special && h.guard && f.st.flame) { f.st.flame = Math.max(0, f.st.flame - 2); callout("bonus", "Smothered"); } },
         turn: function (f) { f.st.flame = Math.min(5, f.st.flame + 1); }
       },
       jorogumo: {
-        text: "She hides behind the hero she wraps in silk: free them",
-        lock: "Her silk wraps a hero, who loses time, and while a hero is wrapped every blow lands at -80%.",
-        key: "Cut the silk (another hero), Struggle (the wrapped one) or burn it with fire. Freed, she can't wrap anyone for 5 of your turns.",
+        text: "Jorogumo wraps a hero in a silk cocoon and delays that hero's next turn. Jorogumo then hides behind her prey. As a precaution, you deal -80% damage while the hero stays wrapped.\n\nThe wrapped hero or another hero can also cut the silk with the yellow scroll. A fire scroll is also effective. Jorogumo can't wrap anyone again for a few turns if the cocoon is destroyed.",
         st: function () { return { cocoon: null, free: 0 }; },
         curse: function (f, h) { return f.st.cocoon === h; },
         status: function (f) { return f.st.cocoon ? Lang.t("Cocoon") + " · " + Lang.t(f.st.cocoon.b.name) : f.st.free ? Lang.t("Silk torn") + " · " + f.st.free : Lang.t("Weaving"); },
         opens: ["free"],
-        onClose: function () { callout("alert", "She weaves again", "Her silk is back"); },
+        onClose: function () { callout("alert", "She weaves again"); },
         plan: planWith(function () { return { kind: "cocoon", label: "Silk cocoon", cocoon: true, drain: false, pow: 0.8, targets: [randomHero()] }; }),
         live: function (f, it, k) { return it.cocoon && openAt(f, "free", k) ? copyOf(it, { kind: "strike", label: "Silk lash", cocoon: false }) : it; },
         mod: function (f, h, id, el) {
           if (!f.st.cocoon || f.st.cocoon.dead) return null;
-          return el === "fire" ? { tag: "Burns silk" } : { pct: LOCKED, tag: "-80%", bad: true, word: "She hides behind her prey", sub: "Cut the silk" };
+          return el === "fire" ? { tag: "Burns silk" } : { pct: LOCKED, tag: "-80%", bad: true, word: "She hides behind her prey" };
         },
         onHit: function (f, h, s) { if (s.el === "fire" && f.st.cocoon) freeCocoon(f, "The silk burns"); },
         action: function (f, h) {
@@ -2138,47 +2162,41 @@
         }
       },
       tengu: {
-        text: "His fan parries your blows: stand on guard through his gale",
-        lock: "His fan parries every blow, -80%, and throws half of it back at the striker.",
-        key: "Be on guard when his Gale fan blows: he is winded for 5 of your turns, +50% damage.",
+        text: "Tengu's fan parries your blows and you deal -80% damage. Half of each blow also bounces back in the face of the hero who struck.\n\nGale fan hits every hero and makes them lose turns. Put one hero on guard before it blows and Tengu will be winded for a moment. Your attacks then deal +50% damage during this phase.",
         st: function () { return { winded: 0 }; },
         status: function (f) { return f.st.winded ? Lang.t("Winded") + " · " + f.st.winded : Lang.t("Fan raised"); },
         puff: function (f) { return f.st.winded > 0; },
         opens: ["winded"],
-        onClose: function () { callout("alert", "Fan raised", "He parries again"); },
+        onClose: function () { callout("alert", "Fan raised"); },
         plan: planWith(function () { return { kind: "gale", label: "Gale fan", gale: true, all: true, targets: null, pow: 0.6 }; }),
-        mod: function (f) { return f.st.winded ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, bounce: 50, word: "Parried", sub: "Guard through his gale" }; },
-        onGale: function (f, guarded) { if (guarded) { openFor(f, "winded", false); callout("combo", "Winded", "+50% damage for 5 turns"); } }
+        mod: function (f) { return f.st.winded ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, bounce: 50, word: "Parried" }; },
+        onGale: function (f, guarded) { if (guarded) { openFor(f, "winded", false); callout("combo", "Winded"); } }
       },
 
       /* --- Drowned village ------------------------------------------------- */
       kappa: {
-        text: "The water on its head shields it: cast a scroll when it gets ready to dive",
-        lock: "The water in its dish protects it: -80% damage. The Bow on offer is a trap.",
-        key: "While it gets ready to Drag under, cast a scroll at it: its dish splashes empty, +50% damage for 5 of your turns.",
-        needs: { magic: true, word: "No attack scroll", sub: "Only a scroll empties its dish" },
+        text: "The water in Kappa's dish protects it and you deal -80% damage while the dish is full. The yellow scroll \"Bow\" is a trap.\n\nHit Kappa with any red scroll other than 'Attack' when it gets ready to cast \"Drag under\". The dish then empties and Kappa loses a turn. Your attacks then deal +50% damage while the dish is empty.",
+        needs: { magic: true, word: "No attack scroll", sub: "Use a scroll to empty Kappa's dish" },
         st: function () { return { dry: 0 }; },
         opens: ["dry"],
-        onClose: function () { callout("alert", "Refilled", "-80% damage · a scroll before its dive"); },
-        status: function (f) { return f.st.dry ? Lang.t("Dry") + " · " + f.st.dry : Lang.t("Water full"); },
+        onClose: function () { callout("alert", "Refilled"); },
+        status: function (f) { return f.st.dry ? Lang.t("Dry") + " · " + f.st.dry : Lang.t("Dish full"); },
         shield: function (f) { return !f.st.dry; },
         mod: function (f, h, id) {
           if (f.st.dry) return { pct: EXPOSED, tag: "+50%" };
           if (kappaDives(f) && id !== "attack") return { pct: EXPOSED, tag: "+50%", key: true };
-          return { pct: LOCKED, tag: "-80%", bad: true, word: "Its water protects it", sub: kappaDives(f) ? "Not a blade · a scroll" : "Wait for Drag under" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: "Its water protects it" };
         },
-        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "dry", true); callout("combo", "Splash!", "Its dish is empty · +50% for 5 turns"); } },
-        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("spilled", "Spilled", "It gropes for its water", { w: 1.2 }) : it; },
+        onHit: function (f, h, s, r, m) { if (m.key) { f.answered = true; openFor(f, "dry", true); callout("combo", "Splash!"); } },
+        live: function (f, it, k) { return k === 0 && it.special && f.answered ? pass("spilled", "Spilled", "Kappa hurries to refill its dish", { w: 1.2 }) : it; },
         action: function (f) {
           if (!kappaDives(f)) return null;
-          return { label: "Bow", sub: "Kappa are polite", run: function () { callout("alert", "It doesn't bow back", "Manners won't empty it · cast a scroll"); } };
+          return { label: "Bow", sub: "Kappa are polite", run: function () { callout("alert", "It doesn't bow back"); } };
         }
       },
       /* Her special STUNS the hero it lands on: they skip their next turn. */
       nureonna: {
-        text: "Every other turn her Coil stuns a hero: be on guard when it comes",
-        lock: "Every other turn her Coil stuns the hero it hits: they skip their next turn.",
-        key: "Be on guard when Coil comes at you (the timeline shows who): she slips off the guard, no stun.",
+        text: "Nure-onna's Coil wraps around a hero every other turn. That hero will then lose their next turn.\n\nThe timeline shows who will be the target of Coil. Put that hero on guard to dodge this special.",
         status: function () { return Lang.t("Coils"); },
         plan: function (f, j) {
           return (f.acts + j) % 2 === 0 ? basePlan(f, 0) :
@@ -2186,20 +2204,18 @@
         },
         onStrike: function (f, h, it) {
           if (!it.stun || h.dead) return;
-          if (h.guard) callout("bonus", "Slips off", "The guard holds · no stun");
-          else { h.stun = true; callout("alert", "Stunned", Lang.t(h.b.name) + " " + Lang.t("loses the next turn")); }
+          if (h.guard) callout("bonus", "Slips off");
+          else { h.stun = true; Pop.show("alert", { word: "Stunned", at: topOf(h) }); }
         }
       },
       funayurei: {
-        text: "It floods your boat: pierce the bucket every time the water reaches 3",
-        lock: "Each of its specials floods the boat. At 4/4 the boat capsizes: every hero drops to 1 HP.",
-        key: "From 3/4, Pierce the bucket: the water drains by 1. Do it every time it reaches 3.",
+        text: "Each of Funayurei's special attacks floods a boat by 1. The boat capsizes when it is full and every hero then drops to 1 HP.\n\nThe yellow scroll \"Pierce the Yokai's bucket\" lowers the water by 1. Use it each time there is too much water.",
         st: function () { return { water: 0 }; },
         status: function (f) { return Lang.t("Water") + " " + f.st.water + "/4"; },
         plan: planWith(function () {
           return { after: function (f2) {
             f2.st.water = Math.min(4, f2.st.water + 1);
-            callout("alert", "The boat fills", f2.st.water + "/4 · " + Lang.t(f2.st.water >= 4 ? "it capsizes next turn" : "at 4 it capsizes"));
+            callout("alert", Lang.t("The boat fills") + " " + f2.st.water + "/4");
           } };
         }),
         live: function (f, it, k) {
@@ -2209,60 +2225,54 @@
         },
         action: function (f) {
           if (f.st.water < 3) return null;
-          return { label: "Pierce the bucket", sub: "Water -1", run: function (f2) { f2.st.water--; callout("bonus", "The water drains", f2.st.water + "/4"); } };
+          return { label: "Pierce the Yokai's bucket", sub: "Bail out the boat so it won't capsize", run: function (f2) { f2.st.water--; callout("bonus", Lang.t("The water drains") + " " + f2.st.water + "/4"); } };
         }
       },
       umibozu: {
-        text: "The tide covers it: strike after the ebb",
-        lock: "At high tide the sea covers it: -80% damage. Its tides hit every hero.",
-        key: "Read its cycle, rising tide, black tide, then the ebb: after the ebb it is bare for 5 of your turns, +50% damage.",
+        text: "The sea covers Umibozu at high tide and you deal -80% damage in these conditions. Umibozu's tides will also hit every hero.\n\nThe rising tide and the black tide create an ebb that leaves the Yokai defenceless. Your attacks deal +50% damage at low tide.",
         st: function () { return { ebb: 0 }; },
         status: function (f) { return f.st.ebb ? Lang.t("Ebb") + " · " + f.st.ebb : Lang.t("High tide"); },
         dazed: function (f) { return f.st.ebb > 0; },
         opens: ["ebb"],
-        onClose: function () { callout("alert", "The tide rises", "-80% damage"); },
+        onClose: function () { callout("alert", "The tide rises"); },
         plan: function (f, j) {
           var i = (f.acts + j) % 3;
           if (i === 0) return { kind: "all", label: "Rising tide", all: true, pow: 0.5, w: 1, fx: "all" };
           if (i === 1) return { kind: "all", label: "Black tide", all: true, pow: 1.2, w: 1.2, special: true, fx: "all" };
-          return pass("ebb", "Ebb", "The sea pulls back", { after: function (f2) { openFor(f2, "ebb", false); callout("combo", "Ebb", "Strike now · +50% for 5 turns"); } });
+          return pass("ebb", "Ebb", "The sea pulls back", { after: function (f2) { openFor(f2, "ebb", false); callout("combo", "Ebb"); } });
         },
-        mod: function (f) { return f.st.ebb ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The tide covers it", sub: "Strike at the ebb" }; }
+        mod: function (f) { return f.st.ebb ? { pct: EXPOSED, tag: "+50%" } : { pct: LOCKED, tag: "-80%", bad: true, word: "The tide covers it" }; }
       },
 
       /* --- Gate of Yomi ----------------------------------------------------- */
       rokurokubi: {
-        text: "Out of reach: slash its neck when it stretches out",
-        lock: "Its blows reach past any guard, and its body is out of reach: -80% damage.",
-        key: "After its Long neck, slash the neck before its next turn: +100%, it is stunned and open for 5 of your turns, +50%.",
+        text: "Rokurokubi's body stays out of reach and you deal -80% ranged damage. Its blows also reach past any guard.\n\nStrike the stretched neck with a slash scroll before its next turn for +100% damage. Rokurokubi's turn then comes later and your next attacks deal +50% damage for a while.",
         st: function () { return { neck: false, cut: 0 }; },
         status: function (f) { return f.st.neck ? Lang.t("Neck out") : f.st.cut ? Lang.t("Cut") + " · " + f.st.cut : Lang.t("Neck in"); },
         dazed: function (f) { return !!f.st.neck; },
         opens: ["cut"],
-        onClose: function () { callout("alert", "It heals its neck", "-80% damage"); },
+        onClose: function () { callout("alert", "It heals its neck"); },
         plan: function (f, j) {
           var i = f.acts + j;
           if (i % 2 === 1) return { kind: "heavy", label: "Long neck", targets: [randomHero()], pow: 1.6, w: 1, special: true, pierce: true, fx: "heavy",
-            after: function (f2) { f2.st.neck = true; callout("combo", "Neck out", "Slash it · +100%"); } };
+            after: function (f2) { f2.st.neck = true; callout("combo", "Neck out"); } };
           return copyOf(basePlan(f, 0), { pierce: true });
         },
         begin: function (f) { f.st.neck = false; },
         mod: function (f, h, id, el) {
           if (f.st.neck && el === "slash") return { pct: 100, tag: "+100%" };
           if (f.st.cut) return { pct: EXPOSED, tag: "+50%" };
-          return { pct: LOCKED, tag: "-80%", bad: true, word: f.st.neck ? "It slips past" : "Out of reach", sub: f.st.neck ? "Only a slash cuts the neck" : "Wait for the long neck" };
+          return { pct: LOCKED, tag: "-80%", bad: true, word: f.st.neck ? "It slips past" : "Out of reach" };
         },
-        onHit: function (f, h, s) { if (f.st.neck && s.el === "slash") { f.st.neck = false; openFor(f, "cut", true); push(f, 0.6); callout("combo", "Neck cut", "Stunned · +50% for 5 turns"); } }
+        onHit: function (f, h, s) { if (f.st.neck && s.el === "slash") { f.st.neck = false; openFor(f, "cut", true); push(f, 0.6); callout("combo", "Neck cut"); } }
       },
       gashadokuro: {
-        text: "Its bones rattle with every blow: at the third, it crushes everyone",
-        lock: "Every third blow it takes, it crushes every hero.",
-        key: "A light blow scatters the rattle. Or flee: met again, it is asleep for 5 of your turns, +100% damage.",
-        flee: { p: 100, ok: "Too slow to follow" },
+        text: "Gashadokuro rattles each time you hit it. It will eventually crush every hero on the third hit received.\n\nA light scroll scatters its bones and resets this counter. You can also flee with the grey scroll. Gashadokuro will then go to sleep in another room of the dungeon. If you meet it again, your attacks will deal +100% damage.",
+        flee: { p: 100, ok: "Gashadokuro is too slow to follow you" },
         st: function (o) { return { rattle: 0, asleep: o.met ? OPEN : 0 }; },
         status: function (f) { return f.st.asleep ? Lang.t("Asleep") + " · " + f.st.asleep : Lang.t("Rattle") + " " + f.st.rattle + "/3"; },
         opens: ["asleep"],
-        onClose: function () { callout("alert", "It wakes", "Rattle 0/3"); },
+        onClose: function () { callout("alert", "It wakes"); },
         plan: planWith(function () { return { label: "Giant's grasp" }; }),
         mod: function (f, h, id, el) {
           if (f.st.asleep) return { pct: 100, tag: "+100%" };
@@ -2271,35 +2281,31 @@
         },
         onHit: function (f, h, s) {
           if (f.st.asleep) return;
-          if (s.el === "light") { f.st.rattle = 0; callout("bonus", "Scattered", "Rattle 0/3"); return; }
+          if (s.el === "light") { f.st.rattle = 0; callout("bonus", "Scattered"); return; }
           if (++f.st.rattle >= 3) { f.st.rattle = 0; boneCrush(f); }
         },
         live: function (f, it, k) { return openAt(f, "asleep", k) ? pass("asleep", "Asleep", "Zzz") : it; },
-        onMet: function () { callout("combo", "Asleep", "+100% damage for 5 turns"); }
+        onMet: function () { callout("combo", "Asleep"); }
       },
       /* It learns the last kind of blow it took, a plain attack or a scroll:
          the same kind again only grazes it. The party has to alternate. */
       oni: {
-        text: "It learns your last kind of blow: alternate attacks and scrolls",
-        lock: "It learns the last kind of blow it took, a plain attack or a scroll: the same kind again lands at -80%.",
-        key: "Alternate a plain attack and a scroll: every blow of the other kind lands in full.",
+        text: "Oni remembers the last kind of blow it took. The same kind of attack twice in a row deals -80% damage on the second blow.\n\nAlternate your red scrolls so that each blow lands at full strength.",
         st: function () { return { last: null }; },
         status: function (f) { return f.st.last === "blade" ? Lang.t("Guards blades") : f.st.last === "magic" ? Lang.t("Guards magic") : Lang.t("Learning"); },
         mod: function (f, h, id) {
           var type = id === "attack" ? "blade" : "magic";
           if (f.st.last !== type) return { type: type };
           return { type: type, pct: LOCKED, tag: "-80%", bad: true, word: "It learnt that one",
-                   sub: type === "blade" ? "Not a blade twice · cast a scroll" : "Not magic twice · strike with a blade" };
+                   sub: type === "blade" ? "Not a blade twice · cast a scroll" : "No repeating spells" };
         },
         onHit: function (f, h, s, r, m) { f.st.last = m.type; }
       },
       /* Its every turn pays its Grudge back on the whole party: keep it from
          ever acting, a blue action pushing its turn back. */
       onryo: {
-        text: "Every turn it pays its grudge back: keep pushing its turn back",
-        lock: "It keeps every blow it takes as Grudge, and every one of its turns pays 30% of it back on every hero.",
-        key: "Each of these actions pushes the Yokai back: guard, heal, ward, a scroll on an ally.",
-        flee: { p: 0, sub: "Its grudge follows you" },
+        text: "Onryo stores every blow it takes as Grudge. 30% of that Grudge will be dealt back as damage to every hero on each of the Yokai's turns.\n\nEvery blue scroll you play pushes Onryo's turn back and a light scroll halves the Grudge. You cannot flee because Onryo's grudge follows you everywhere.",
+        flee: { p: 0, sub: "Onryo's grudge follows you" },
         st: function () { return { grudge: 0 }; },
         status: function (f) { return Lang.t("Grudge") + " " + f.st.grudge; },
         live: function (f, it) {
@@ -2308,10 +2314,10 @@
         },
         mod: function (f, h, id, el) { return el === "light" ? { tag: "Purifies" } : { tag: "Grudge", bad: true }; },
         onHit: function (f, h, s, r) {
-          if (s.el === "light") { f.st.grudge = Math.round(f.st.grudge / 2); callout("bonus", "Purified", "Grudge -50%"); }
+          if (s.el === "light") { f.st.grudge = Math.round(f.st.grudge / 2); callout("bonus", "Purified"); }
           else f.st.grudge += r.dmg;
         },
-        onBlue: function (f, h) { f.ct += wait(h) * ONRYO_PUSH; callout("bonus", "Held back", "Its turn moves back"); }
+        onBlue: function (f, h) { f.ct += wait(h) * ONRYO_PUSH; callout("bonus", "Held back"); }
       }
     };
     function weakestOther(h) {
@@ -2325,7 +2331,7 @@
       openFor(f, "free", true);
       if (!h || h.dead) return;
       h.ct = 0;
-      callout("bonus", word, Lang.t(h.b.name) + " " + Lang.t("acts next"));
+      Pop.show("bonus", { word: word, at: topOf(h) });
     }
     /* A blow on a hero from outside a turn of the yokai's: a counter, a
        parried blow thrown back, a failed flight. */
@@ -2338,7 +2344,7 @@
       if (h.hp <= 0) {
         h.dead = true; fell = true;
         if (combat && combat.foe.st && combat.foe.st.cocoon === h) combat.foe.st.cocoon = null;
-        Pop.show("alert", { word: h.b.name, sub: "Down" });
+        Pop.show("alert", { word: "Down", at: topOf(h) });
         Sound.clip("down", 0.6);
       }
     }
@@ -2358,7 +2364,7 @@
     }
 
     /* The damage formula of a hero's blow: attack x power, softened by
-       defense, then the element: weak 1.6x (and ONE MORE), resisted 0.5x,
+       defense, then the element: weak 2x (and ONE MORE), resisted 0.5x,
        8% crits, then what the yokai's rule does to it (`m`, blowMod): a
        whole percentage, or a heal. No luck: the preview is what lands. */
     function strike(att, tgt, pow, el, pierce, m) {
@@ -2366,8 +2372,8 @@
       var def = pierce ? tgt.def * 0.3 : tgt.def;
       var d = att.atk * pow * 2.4 * (14 / (14 + def));
       var weak = false, resist = false, crit = false;
-      if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= 1.6; }
-      else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= 0.5; }
+      if (tgt.b.weak.indexOf(el) >= 0) { weak = true; d *= WEAK; }
+      else if (tgt.b.resist.indexOf(el) >= 0) { resist = true; d *= RESIST; }
       tgt.known[el] = weak ? "weak" : resist ? "resist" : "normal";
       learnElement(tgt.id, el, tgt.known[el]);
       if (!resist && !m.heal && !(m.pct < 0) && Math.random() < 0.08) { crit = true; d *= 1.5; }
@@ -2417,12 +2423,12 @@
           if (s.foe === "provoke") {
             f.taunt = h; h.guard = true;
             spellOn(s.fx, h, 0.9);
-            Pop.show("bonus", { word: "Provoked", sub: h.b.name });
+            Pop.show("bonus", { word: "Provoked", at: topOf(h) });
             Sound.clip("guard", 1, 0.9);
           } else if (s.foe === "pacify") {
             f.pacify = true;
             spellOn(s.fx, f, 1.0);
-            Pop.show("bonus", { word: "Pacified", sub: "Its next blow is halved" });
+            Pop.show("bonus", { word: "Pacified" });
             Sound.clip("heal", 0.6, 0.8);
           } else if (s.foe === "bind") {
             spellOn(s.fx, f, 1.0);
@@ -2441,7 +2447,7 @@
           h.sp = Math.min(h.msp, h.sp + 5);
           var gp = topOf(h);
           Pop.show("score", { word: "+5 SP" });
-        } else Pop.show("bonus", { word: "Guarded", sub: x.b.name });
+        } else Pop.show("bonus", { word: "Guarded", at: topOf(x) });
         Sound.clip("guard", 1);
         later(0.7, function () { endHero(C, h, s.w); });
         return;
@@ -2464,7 +2470,7 @@
         h.cast = 0.9; C.ward = s.turns;
         alive().forEach(function (y) { spellOn(s.fx, y, 0.9); });
         Sound.clip("guard", 1, 0.8);
-        Pop.show("bonus", { word: "Spirit ward", sub: "Less damage taken" });
+        Pop.show("bonus", { word: "Spirit ward" });
         later(1.0, function () { endHero(C, h, s.w); });
         return;
       }
@@ -2475,10 +2481,10 @@
         if (combat !== C) return;
         x.flash = 0.6;
         spellOn(s.fx, x, 0.9);
-        if (s.ally === "imbue") { x.imbue = s.el; Pop.show("bonus", { word: ELEMENTS[s.el].name, sub: x.b.name }); }
-        else if (s.ally === "whet") { x.whet = WHET; Pop.show("bonus", { word: "Whetted", sub: x.b.name }); }
-        else if (s.ally === "cover") { x.cover = h; Pop.show("bonus", { word: "Covered", sub: x.b.name }); }
-        else if (s.ally === "hasten") { x.ct = Math.max(0, x.ct - wait(x) * HASTEN); Pop.show("bonus", { word: "Hastened", sub: x.b.name }); }
+        if (s.ally === "imbue") { x.imbue = s.el; Pop.show("bonus", { word: ELEMENTS[s.el].name, at: topOf(x) }); }
+        else if (s.ally === "whet") { x.whet = WHET; Pop.show("bonus", { word: "Whetted", at: topOf(x) }); }
+        else if (s.ally === "cover") { x.cover = h; Pop.show("bonus", { word: "Covered", at: topOf(x) }); }
+        else if (s.ally === "hasten") { x.ct = Math.max(0, x.ct - wait(x) * HASTEN); Pop.show("bonus", { word: "Hastened", at: topOf(x) }); }
         Sound.clip("upgrade", 0.5, 1.2);
       });
       later(1.0, function () { endHero(C, h, s.w); });
@@ -2501,9 +2507,9 @@
         impact(f, h, { weak: r.weak, color: el.color });
         Fx.burst(p.x, p.y + 60, { color: [el.color, "#ffffff"], count: r.weak || r.crit ? 22 : 12, speed: 340, life: 0.5, grav: 120 });
         if (m.heal) { f.flash = 0.6; Pop.text(p.x, p.y, "+" + r.dmg, { color: "#7ee0a1", size: 22, life: 0.6, tier: 1 }); }
-        else Pop.show("alert", { word: "-" + r.dmg, at: { x: p.x + Rand.range(-30, 30), y: p.y } });
+        else Pop.text(p.x + Rand.range(-30, 30), p.y, "-" + r.dmg, { color: "#ffffff", size: 22, life: 0.6, tier: r.weak || r.crit ? 3 : 1 });
         if (m.bounce) { var bk = Math.max(1, Math.round(r.raw * m.bounce / 100)); later(0.3, function () { if (combat === C && !h.dead) hurtHero(h, bk, f, false); }); }
-        if (m.word) Pop.show("alert", { word: m.word, sub: m.sub, at: "upper" });
+        if (m.word) Pop.show("alert", { word: m.word, at: "upper" });
         if (r.weak) Sound.clip("weak", 0.6);
         else if (skill && r.resist) Sound.clip("skill", 0.6, 1.3);
         else if (skill) Sound.clip("skill", 0.6, 0.7);
@@ -2514,8 +2520,8 @@
         var landed = !m.heal, full = landed && !(m.pct < 0);   // a blow the lock cut down earns no ONE MORE
         if (s.push && landed) push(f, s.push, "Stunned");
         if (R && R.onHit) R.onHit(f, h, sk, r, m);
-        if (full && r.weak && !C.extra) { again = true; Pop.show("combo", { word: "Weak!", sub: "One more", at: "center" }); f.boost = 1; }
-        else if (landed && r.crit) Pop.show("streak", { word: "Critical" });
+        if (full && r.weak && !C.extra) { again = true; Pop.show("combo", { word: "Weak!", at: "center" }); f.boost = 1; }
+        else if (landed && r.crit && !m.word) Pop.show("streak", { word: "Critical" });
         else if (landed && r.resist && !m.word) Pop.show("alert", { word: "Resisted", at: "upper" });
       });
       later(0.62, function () { h.dashGo = 0; });
@@ -2567,7 +2573,7 @@
           return;
         }
         if (Math.random() * 100 < p) { fled(C); return; }
-        Pop.show("alert", { word: "Can't escape", sub: f.boss ? "The master bars the way" : (R && R.flee && R.flee.sub) || "It strikes" });
+        Pop.show("alert", { word: "Can't escape" });
         later(0.55, function () {
           if (combat !== C || f.dead || h.dead) return;
           f.lunge = 0.6;
@@ -2581,7 +2587,7 @@
        room, met again there as it was left. */
     function fled(C) {
       var f = C.foe, R = RULES[f.id], left = f.hp / f.mhp;
-      Pop.show("bonus", { word: "Escaped", sub: (R && R.flee && R.flee.ok) || "It goes to another room" });
+      Pop.show("bonus", { word: "Escaped" });
       C.fled = true; f.dead = true;
       if (C.roamer) {                      // a wandering yokai steps to a room next door
         var r = C.roamer, lk = linked(r.at), opts = [], k;
@@ -2633,7 +2639,7 @@
       if (it.kind === "question") it = Math.random() < 0.5 ? it.alt.red : it.alt.blue;
       f.doing = it;
       if (!it.pow && !it.flat && !it.toOne) {          // a turn with no blow in it
-        Pop.show("bonus", { word: it.label, sub: it.sub || PASS[it.kind] || "Loses the turn" });
+        Pop.show("bonus", { word: it.label });
         later(1.0, function () { endFoe(C, it); });
         return;
       }
@@ -2663,22 +2669,22 @@
           h.hp = Math.max(0, h.hp - dmg);
           spellOn(MOVE_FX[it.fx] || "spells13", h, 1.0);
           impact(h, f, { big: big, color: big ? "#e2364b" : "#ffffff" });
-          Pop.show("alert", { word: "-" + dmg, at: { x: p.x + 40, y: p.y } });
+          Pop.text(p.x + 40, p.y, "-" + dmg, { color: "#ff5d73", size: 22, life: 0.6, tier: big ? 3 : 1 });
           Fx.burst(p.x, p.y + 60, { color: ["#e2364b", "#2a0a14"], count: 10, speed: 240, life: 0.45, grav: 160 });
           if (h.hp <= 0) {
             h.dead = true; h.hp = 0; fell = true;
             if (f.st.cocoon === h) f.st.cocoon = null;
-            Pop.show("alert", { word: h.b.name, sub: "Down" });
+            Pop.show("alert", { word: "Down", at: topOf(h) });
             Sound.clip("down", 0.6);
           } else if (it.fear) push(h, FEAR_PUSH, "Frozen with fear");
-          else if (it.cocoon) { h.ct += wait(h); f.st.cocoon = h; Pop.show("alert", { word: "Wrapped in silk", sub: Lang.t(h.b.name) + " " + Lang.t("loses time") }); }
+          else if (it.cocoon) { h.ct += wait(h); f.st.cocoon = h; Pop.show("alert", { word: "Wrapped in silk", at: p }); }
           if (h.guard && !it.pierce) h.gA = 1.6;          // the guard flares as it holds
           if (R && R.onStrike) R.onStrike(f, h, it, dmg);
         });
         if (it.gale) {
           var guarded = alive().some(function (h) { return h.guard; });
           alive().forEach(function (h) { if (!h.guard) h.ct += wait(h) * 0.6; });
-          if (!guarded) Pop.show("alert", { word: "Blown back", sub: "Guard holds firm" });
+          if (!guarded) Pop.show("alert", { word: "Blown back" });
           if (R && R.onGale) R.onGale(f, guarded);
         }
         if ((it.drain || it.feast) && total) { f.hp = Math.min(f.mhp, f.hp + Math.round(total * (it.feast ? 1 : 0.5))); f.flash = 0.6; }
@@ -2741,9 +2747,12 @@
       C.phase = "input";
       setStage();
       showBar(u);
+      /* the player's first fight ever: once the card has bloomed, how a
+         fight is played (openFightHelp) */
+      if (!u.stun && fightHelpDue()) later(0.7, function () { if (combat === C && C.phase === "input" && C.actor === u) openFightHelp(u); });
       if (u.stun) {                       // stunned: the card is shown, the turn is lost, the next one is theirs again
         cam.subject = u;
-        Pop.show("alert", { word: "Stunned", sub: Lang.t(u.b.name) + " " + Lang.t("can't act this turn") });
+        Pop.show("alert", { word: "Stunned", at: topOf(u) });
         later(1.6, function () { if (combat !== C) return; u.stun = false; C.phase = "busy"; turnPlayed(); endHero(C, u, 1); });
       }
     }
@@ -2762,6 +2771,7 @@
       var pts = Math.round((f.mhp + 40) / 10) * 10;
       var g = Math.round((10 + 4 * bandIndex()) * Rand.range(0.8, 1.2) * P.goldRate);
       foesDown++; score += pts; gold += g; goldEarned += g;
+      markBeaten(f.id);
       if (f.boss) bossDown = true;
       HUD.setScore(score); HUD.punch("#e2364b");
       HUD.setLeft(gold, CONFIG.copy.goldLabel);
@@ -2824,21 +2834,25 @@
     }
 
     /* --- THE TRACK: a hero's turn, played in one tap ------------------------
-       One card a hero TURN, in the order of the timeline, slanted like a
-       tile: the turn in hand UNFOLDED (the hero's face, name, health and SP,
-       and one PACK a scroll), the next turn a whole FOLDED card on its right,
-       the one after a sliver at the right edge, the turn just played a sliver
-       at the left edge. Playing a scroll folds the card and slides the track
-       one place left; a ONE MORE brings the card back.
+       The frieze at the foot of the fight is the only timeline. When a
+       hero's turn reaches its first bubble, the bubble stays where it is and
+       THINKS, like a comic character: two small dots rise off it, then the
+       hero's card grows out of them (a ring bursts off the bubble), the hero
+       standing big on its left, head over its top edge, beside the name,
+       health and SP and one PACK a scroll. Playing a scroll shrinks the card
+       back into the bubble, the dots after it, and the frieze slides on once
+       the action is over; a ONE MORE opens it again.
        A pack is the scroll twice: RED throws it at the yokai, BLUE lays it on
        the ally the game picks and shows on the button (their head, or every
        head piled up when it reaches the whole party). One tap plays it: no
-       target is ever chosen. A tap on another hero (their sprite or their
-       folded card) sends the blue side to them for this turn. A long press
+       target is ever chosen. A tap on another hero's sprite sends the blue
+       side to them for this turn. A long press
        shows what the scroll does (#gd-tip) and leaves it open until the next
-       tap. The red side wears an HOURGLASS when the scroll moves the hero's
-       next turn among the others: green when sooner, amber when later.
-       Chosen in lab/grudgeon-cast.html. */
+       tap. An HOURGLASS inside the pack, where the two sides meet, says the scroll moves the
+       hero's next turn among the others, whichever side is played: green
+       when sooner, amber when later.
+       Chosen in lab/grudgeon-cast.html; the folded cards of the next turns
+       went for the frieze alone (v0.16.0). */
     function weightWord(w) { return w < 0.9 ? Lang.t("Quick") : w > 1.1 ? Lang.t("Slow") : ""; }
     function scrollOf(id) {
       var C = combat, ra;
@@ -2870,12 +2884,17 @@
       return h.known ? l.filter(function (id) { return h.known.indexOf(id) >= 0; }) : l;
     }
 
-    var TRACK = { sliver: 30, gap: 12, open: 534, fold: 90, hOpen: 196, hFold: 140, frieze: 50, long: 0.4 };
-    var track = null, tip = null, tCards = {}, tPast = [], tFight = null, fm = {};
+    /* hOpen: the card's height; think: the room between the frieze and the
+       card where the thought's two dots rise; inset: the first bubble's x in
+       the frieze; art/pop: the hero's box on the card and how far their head
+       stands over its top edge */
+    var TRACK = { hOpen: 206, frieze: 50, think: 36, inset: 24, art: 170, pop: 44, long: 0.4 };
+    var track = null, tip = null, tc = null, tFight = null, fm = {};
+    var bloomAt = -9;                      // when the panel last opened: the ring off its bubble (drawFrieze)
     /* The dock, from the foot up: the timeline's frieze on Layout.foot, the
-       track on it, the stage's ground over the track. */
+       card that blooms out of it, the stage's ground over the card. */
     function dockGeo() {
-      var fy = Layout.foot - TRACK.frieze, tb = fy - 10;
+      var fy = Layout.foot - TRACK.frieze, tb = fy - TRACK.think;
       return { frieze: fy, trackBottom: tb, trackTop: tb - TRACK.hOpen };
     }
     /* the hero whose turn it is may play now: nothing in flight, no card open */
@@ -2896,16 +2915,16 @@
     /* A blow's damage without the luck, as the hero's next blow would land:
        the element counts only once the party has FOUND what it does here. */
     /* An element never tried on this yokai may be resisted (half) or a
-       weakness (+60%): the preview is that range (lo to hi), so it never
+       weakness (x2): the preview is that range (lo to hi), so it never
        promises a wrong figure and never gives the weakness away. */
     function hitEstimate(h, id) {
       var f = combat.foe, s = SKILLS[id], elId = h.imbue || s.el, mult = h.whet || 1;
       var def = s.pierce ? f.def * 0.3 : f.def;
       var d = h.atk * s.pow * (id === "attack" ? 1 : h.pow) * mult * 2.4 * (14 / (14 + def));
       var k = f.known[elId], weak = k === "weak", resist = k === "resist", m = blowMod(h, id, elId), unsure = !k;
-      if (weak) d *= 1.6; else if (resist) d *= 0.5;
+      if (weak) d *= WEAK; else if (resist) d *= RESIST;
       if (m.pct) d *= 1 + m.pct / 100;
-      return { dmg: Math.max(1, Math.round(d)), lo: Math.max(1, Math.round(unsure ? d * 0.5 : d)), hi: Math.max(1, Math.round(unsure ? d * 1.6 : d)),
+      return { dmg: Math.max(1, Math.round(d)), lo: Math.max(1, Math.round(unsure ? d * RESIST : d)), hi: Math.max(1, Math.round(unsure ? d * WEAK : d)),
                unsure: unsure, weak: weak, resist: resist, el: elId, m: m };
     }
     /* What scroll `id` does on `tg`, as a figure: `fig`, a `tag` beside it,
@@ -2924,7 +2943,7 @@
       }
       var x = tg.hero;
       if (s.ally === "imbue") return { fig: Lang.t(ELEMENTS[s.el].name), tag: "" };
-      if (s.ally === "whet") return { fig: "×" + WHET, tag: "" };
+      if (s.ally === "whet") return { fig: "+" + Math.round((WHET - 1) * 100) + "%", tag: "" };
       if (s.ally === "guard") return { fig: "-50%", tag: x === a ? "+5 SP" : "" };
       if (s.ally === "ward") return { fig: "-40%", tag: "" };
       if (s.ally === "heal") return { fig: "+" + Math.min(x.mhp - x.hp, Math.round(x.mhp * s.pow * a.pow)), tag: "", heal: true };
@@ -2967,7 +2986,7 @@
       if (s.ally === "cover" || s.ally === "guard") {
         x = aimedHero();
         if (x && fitsOn(id, { hero: x })) return { hero: x, why: x === a ? "the Yokai aims at you" : "the Yokai aims at them" };
-        return s.ally === "guard" && fitsOn(id, { hero: a }) ? { hero: a, why: "une personne seule ne peut pas être visée" } : { hero: lowestOf(can), why: "lowest health" };
+        return s.ally === "guard" && fitsOn(id, { hero: a }) ? { hero: a, why: "no single hero is targeted" } : { hero: lowestOf(can), why: "lowest health" };
       }
       if (s.ally === "hasten") return { hero: order[order.length - 1] || can[0], why: "last to act" };
       return { hero: order[0] || can[0], why: "next to strike" };
@@ -2996,58 +3015,55 @@
       placeBar();
       syncTrack();
     }
-    /* the turns the track holds: the hero turns of the timeline as it stands
-       without a preview, minus the ones just played */
-    function trackUp() {
-      var C = combat, base = C.hover ? timeline(null) : C.TL, out = [], seen = {}, i, e;
-      for (i = 0; i < base.length; i++) {
-        e = base[i];
-        if (e.u.hero && !seen[e.key] && tPast.indexOf(e.key) < 0) { seen[e.key] = true; out.push(e); }
-      }
-      return out;
+    /* The card over the frieze, edge to edge, growing out of the first
+       bubble (--ox/--oy: its centre in the card's px), and the thought's two
+       dots on the way up from the bubble to the card's corner. */
+    function placeCard(c) {
+      var d = dockGeo(), bx = Layout.left + TRACK.inset, by = d.frieze + TRACK.frieze / 2 - d.trackTop, s = c.el.style, x0 = Layout.left - 6;
+      s.left = x0 + "px"; s.top = "0px"; s.width = (Layout.w + 12) + "px"; s.height = TRACK.hOpen + "px";
+      s.setProperty("--ox", (bx - x0) + "px"); s.setProperty("--oy", by + "px");
+      dotAt(c.dots[0], bx + 17, by - 31, 12);
+      dotAt(c.dots[1], bx + 38, by - 50, 18);
     }
-    function setSlot(c, x, w, hh) {
-      if (c.x === x && c.w === w && c.hh === hh) return;
-      c.x = x; c.w = w; c.hh = hh;
-      c.el.style.left = x + "px"; c.el.style.width = w + "px"; c.el.style.height = hh + "px";
+    function dotAt(el, x, y, dd) {
+      el.style.left = (x - dd / 2) + "px"; el.style.top = (y - dd / 2) + "px"; el.style.width = dd + "px"; el.style.height = dd + "px";
+    }
+    function dropCard(c) {
+      var l = [c.el].concat(c.dots);
+      for (var i = 0; i < l.length; i++) if (l[i].parentNode) l[i].parentNode.removeChild(l[i]);
     }
     function newCard(key, h) {
       var el = document.createElement("div");
       el.className = "gd-tc";
       el.style.setProperty("--hc", h.b.color); el.style.setProperty("--tint", rgba(h.b.color, 0.1));
-      el.innerHTML = '<div class="gd-plate"><div class="gd-art"></div>' +
-        '<div class="gd-curse"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="gd-stun"><b><i></i><i></i><i></i></b></div><div class="gd-unf"><div class="gd-dhead"><b class="gd-nm"></b>' +
-        '<span class="gd-marks"></span><span class="gd-vit"><b class="gd-v-hp"></b><b class="gd-v-sp"></b></span></div><div class="gd-packs"></div></div></div>';
+      el.innerHTML = '<div class="gd-plate"><div class="gd-unf"><div class="gd-dhead"><b class="gd-nm"></b>' +
+        '<span class="gd-marks"></span><span class="gd-vit"><b class="gd-v-hp"></b><b class="gd-v-sp"></b></span></div><div class="gd-packs"></div></div></div>' +
+        '<div class="gd-art"></div><div class="gd-curse"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="gd-stun"><b><i></i><i></i><i></i></b></div>';
       var c = { key: key, h: h, el: el, art: el.querySelector(".gd-art"), packs: el.querySelector(".gd-packs"),
                 hpf: el.querySelector(".gd-v-hp"), spf: el.querySelector(".gd-v-sp"), marks: el.querySelector(".gd-marks"),
-                vKey: "", mKey: "", pKey: "", artDone: false, icons: [], slot: 9 };
+                vKey: "", mKey: "", pKey: "", artDone: false, icons: [], dots: [] };
       el.querySelector(".gd-nm").textContent = upper(Lang.t(h.b.name));
       c.spf.style.setProperty("--vc", "#8fdcff");
-      wireCard(el.querySelector(".gd-plate"), c);
+      for (var i = 0; i < 2; i++) {
+        var dt = document.createElement("div");
+        dt.className = "gd-dot gd-dot" + (i + 1); dt.style.setProperty("--hc", h.b.color);
+        track.appendChild(dt); c.dots.push(dt);
+      }
       track.appendChild(el);
-      setSlot(c, view.w + 20, TRACK.fold, TRACK.hFold);
-      void el.offsetWidth;                 // the first place is taken without a transition
-      el.classList.add("anim");
-      tCards[key] = c;
+      placeCard(c);
       return c;
     }
-    /* the hero's idle art, head and shoulders, the face on a set point of
-       the art's window: the folded card and the unfolded one each get their
-       own size and offset, so the face stays put across the fold */
-    function artFit(fc, ratio, w, hh, k, cx, cy) {
-      var ih = k * hh, iw = ih / ratio;
-      var ox = clamp(cx - fc[0] * iw, Math.min(0, w - iw), 0), oy = Math.max(cy - fc[1] * ih, hh - ih);   // transparent over the head: it may come down
-      return { size: "auto " + Math.round(ih) + "px", pos: Math.round(ox) + "px " + Math.round(oy) + "px" };
-    }
+    /* The hero, big, on the card's left: the idle art scaled so the face
+       (`face`: its centre and side, as the frieze crops it) is about 78 px
+       and stands at the top of the box, which rises TRACK.pop over the
+       card's top edge — the head breaks out of the frame. */
     function artOf(c) {
       var key = "hero" + camel(c.h.id) + "01", im = spriteArt("hero", c.h.id, 1), src = CONFIG.art && CONFIG.art[key];
-      if (!im || !src) return;
-      var ratio = im.naturalHeight / im.naturalWidth, fc = c.h.b.face || [0.5, 0.15];
-      var F = artFit(fc, ratio, TRACK.fold + 40, TRACK.hFold, 2.1, (TRACK.fold + 40) / 2, TRACK.hFold * 0.34);
-      var O = artFit(fc, ratio, 112, TRACK.hOpen, 2.0, 58, TRACK.hOpen * 0.36);   // seen from 20 px, faded past 73 px
+      if (!im || !src || !im.naturalWidth) return;
+      var W = im.naturalWidth, H = im.naturalHeight, fc = c.h.b.face || [0.5, 0.15, 0.36], k = 78 / (fc[2] * W);
       c.art.style.backgroundImage = 'url("' + src + '")';
-      c.art.style.setProperty("--bsF", F.size); c.art.style.setProperty("--bpF", F.pos);
-      c.art.style.setProperty("--bsO", O.size); c.art.style.setProperty("--bpO", O.pos);
+      c.art.style.backgroundSize = Math.round(W * k) + "px " + Math.round(H * k) + "px";
+      c.art.style.backgroundPosition = Math.round(TRACK.art / 2 - fc[0] * W * k) + "px " + Math.round(TRACK.pop + 30 - fc[1] * H * k) + "px";
       c.artDone = true;
     }
     /* a head in a round badge: the face crop of `face`, as a background */
@@ -3066,7 +3082,7 @@
       pk.className = "gd-pk" + (solo ? " is-" + id : "");
       pk.innerHTML = solo
         ? '<div class="gd-ic ' + (id === "rule" ? "gd-gold" : "gd-grey") + '" data-side="' + id + '"><i></i><b class="gd-fig"></b></div>'
-        : '<div class="gd-ic gd-red" data-side="red"><i></i><b class="gd-fig"></b><b class="gd-rt"></b></div><div class="gd-ic gd-blue" data-side="blue"><i></i><b class="gd-who"></b></div>' +
+        : '<div class="gd-ic gd-red" data-side="red"><i></i><b class="gd-rt"></b></div><div class="gd-ic gd-blue" data-side="blue"><i></i><b class="gd-who"></b></div><b class="gd-fig"></b>' +
           (info.sp ? '<b class="gd-cost">-' + info.sp + "</b>" : "");
       var l = pk.querySelectorAll(".gd-ic i"), uri = 'url("' + ASSETS.images[info ? info.icon : id === "flee" ? "icoFlee" : "icoHand"] + '")';
       for (var i = 0; i < l.length; i++) { l[i].style.setProperty("-webkit-mask-image", uri); l[i].style.setProperty("mask-image", uri); }
@@ -3083,7 +3099,7 @@
           var side = l[j].getAttribute("data-side");
           l[j].setAttribute("aria-label", upper(Lang.t(SKILLS[ids[i]] ? SKILLS[ids[i]].name : scrollOf(ids[i]).name)));
           wireIcon(l[j], ids[i], side);
-          c.icons.push({ id: ids[i], side: side, el: l[j], fig: l[j].querySelector(".gd-fig"), who: l[j].querySelector(".gd-who"), rt: l[j].querySelector(".gd-rt"), key: "", rtKey: "" });
+          c.icons.push({ id: ids[i], side: side, el: l[j], fig: l[j].querySelector(".gd-fig") || (side === "red" ? pk.querySelector(".gd-pk > .gd-fig") : null), who: l[j].querySelector(".gd-who"), rt: l[j].querySelector(".gd-rt"), key: "", rtKey: "" });
         }
         c.packs.appendChild(pk);
       }
@@ -3094,57 +3110,40 @@
       if (!track) return;
       var d = dockGeo();
       track.style.top = d.trackTop + "px"; track.style.height = TRACK.hOpen + "px"; track.style.width = view.w + "px";
+      if (tc) placeCard(tc);
       placeTip();
     }
-    /* Once a frame: the cards in their places, the card in turn's numbers,
-       marks and packs, and the info. */
+    /* Once a frame: the card stands open while a hero's turn is in hand
+       (stunned included, its packs dimmed), shrunk into its bubble
+       otherwise; its numbers, marks and packs, and the info. */
     function syncTrack() {
-      var C = combat, k, i, c, e;
+      var C = combat, i, e0 = C && C.TL && C.TL[0];
       if (!track || !C) return;
       fm = {};
-      if (tFight !== C) { track.innerHTML = ""; tCards = {}; tPast = []; tFight = C; }
+      if (tFight !== C) { track.innerHTML = ""; tc = null; tFight = C; }
       var live = canCast(), hk = hudIn();
       track.classList.toggle("off", hk < 0.5 || C.phase === "done" || C.foe.dead || C.leave >= 0);
       track.classList.toggle("busy", !live);
-      if (live && C.TL[0] && C.TL[0].now) { k = tPast.indexOf(C.TL[0].key); if (k >= 0) tPast.splice(k, 1); }   // ONE MORE: the card comes back
-      var up = trackUp(), keep = {}, past = tPast.length ? tPast[tPast.length - 1] : null;
-      var x0 = TRACK.sliver + TRACK.gap, x1 = x0 + TRACK.open + TRACK.gap, x2 = x1 + TRACK.fold + TRACK.gap;
-      for (i = 0; i < up.length; i++) {
-        e = up[i];
-        c = tCards[e.key] || newCard(e.key, e.u);
-        keep[e.key] = true; c.slot = i;
-        setSlot(c, i === 0 ? x0 : i === 1 ? x1 : x2 + (i - 2) * (TRACK.fold + TRACK.gap), i === 0 ? TRACK.open : TRACK.fold, i === 0 ? TRACK.hOpen : TRACK.hFold);
+      var turn = C.phase === "input" && hk >= 0.5 && e0 && e0.now && e0.u === C.actor && C.actor.hero && !C.actor.dead ? e0 : null;
+      if (turn && tc && tc.h !== turn.u) { dropCard(tc); tc = null; }
+      if (turn && !tc) tc = newCard(turn.key, turn.u);
+      if (!tc) return;
+      var c = tc, h = c.h, open = !!turn, was = c.el.classList.contains("open");
+      if (!c.artDone) artOf(c);
+      if (open && !was) {
+        void c.el.offsetWidth;                   // the bubble's shape first, so the rim grows out of it
+        bloomAt = t;
+        Sound.clip("select", 0.55, 1.35);
       }
-      if (past && tCards[past] && !keep[past]) {
-        c = tCards[past]; keep[past] = true; c.slot = -1;
-        setSlot(c, TRACK.sliver - TRACK.fold, TRACK.fold, TRACK.hFold);
-      }
-      for (k in tCards) {
-        if (!tCards.hasOwnProperty(k) || keep[k]) continue;
-        c = tCards[k]; delete tCards[k];
-        c.el.classList.remove("on", "live");            // folded on its way out: nothing on it answers a tap
-        c.el.classList.add("past");
-        setSlot(c, -TRACK.fold - 80, TRACK.fold, TRACK.hFold);
-        (function (el) { setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 600); })(c.el);
-      }
-      var hot = live && C.hot && C.hot.side === "blue" ? blueFor(C.hot.id) : null;
-      for (k in tCards) {
-        if (!tCards.hasOwnProperty(k)) continue;
-        c = tCards[k];
-        var h = c.h, on = c.slot === 0, mine = on && live && C.actor === h;
-        c.el.classList.toggle("on", on);
-        c.el.classList.toggle("past", c.slot < 0);
-        c.el.classList.toggle("live", mine);
-        c.el.classList.toggle("is-pin", live && !on && C.pin === h);
-        c.el.classList.toggle("is-blue", !!hot && !on && (hot.all ? !h.dead : hot.hero === h));
-        c.el.classList.toggle("cursed", cursedNow(h));
-        c.el.classList.toggle("stunned", !!h.stun && !h.dead);
-        if (!c.artDone) artOf(c);
-        if (!on) continue;
-        syncHead(c);
-        if (c.pKey !== scrollIds(h).join(",")) mountPacks(c);
-        if (mine) for (i = 0; i < c.icons.length; i++) syncIcon(c.icons[i]);
-      }
+      c.el.classList.toggle("open", open);
+      c.dots[0].classList.toggle("open", open); c.dots[1].classList.toggle("open", open);
+      c.el.classList.toggle("live", open && live && C.actor === h);
+      c.el.classList.toggle("cursed", cursedNow(h));
+      c.el.classList.toggle("stunned", !!h.stun && !h.dead);
+      if (!open) { syncTip(); return; }
+      syncHead(c);
+      if (c.pKey !== scrollIds(h).join(",")) mountPacks(c);
+      if (live && C.actor === h) for (i = 0; i < c.icons.length; i++) syncIcon(c.icons[i]);
       syncTip();
     }
     /* the card in turn's head: the hero's health and SP with their gauges,
@@ -3161,7 +3160,7 @@
         c.hpf.style.setProperty("--vc", h.hp / h.mhp < 0.3 ? "#ff5d73" : "#7ee0a1");
       }
       if (h.imbue) marks.push([Lang.t(ELEMENTS[h.imbue].name), ELEMENTS[h.imbue].color]);
-      if (h.whet) marks.push(["×" + h.whet, "#ffd166"]);
+      if (h.whet) marks.push(["+" + Math.round((h.whet - 1) * 100) + "%", "#ffd166"]);
       if (h.cover && !h.cover.dead) marks.push([Lang.t("Covered"), h.cover.b.color]);
       if (combat.ward > 0) marks.push([Lang.t("Spirit ward"), "#9ce7ff"]);
       if (h.stun) marks.unshift([Lang.t("Stunned"), "#c27cff"]);
@@ -3240,45 +3239,39 @@
     function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
     function tipRow(hot, col, label, txt, em, na) {
       return '<p class="gd-face' + (hot ? " hot" : "") + (na ? " na" : "") + '" style="--fc:' + col + '"><b>' + esc(upper(label)) + "</b>" +
-        esc(txt) + (em ? "<em>" + esc(upper(em)) + "</em>" : "") + "</p>";
+        esc(txt).replace(/\n\n/g, "<br>") + (em ? "<em>" + esc(upper(em)) + "</em>" : "") + "</p>";
     }
+    /* The long press reads ONE side: the side pressed, under the scroll's
+       name. No figure in it — the damage, the yokai's -80% and the odds are
+       already on the scroll itself, and the frieze says when the hero plays
+       again. */
     function tipHtml(id, side) {
       var C = combat, a = C.actor, html, bits = [];
       if (id === "flee") {
-        var R = RULES[C.foe.id], p = fleeOdds(a), why = C.foe.boss ? "The master bars the way" : R && R.flee ? (R.flee.p === 0 ? R.flee.sub : R.flee.ok) : "";
-        return '<p class="gd-tip-h" style="--ink:#c8cfdc"><b>' + esc(upper(Lang.t("Flee"))) + "</b><i>" + esc(upper(p + "%" + (why ? " · " + Lang.t(why) : ""))) + "</i></p>" +
-          tipRow(true, "#9aa5b8", Lang.t("Out"), Lang.t("Back on the map, nothing lost. The Yokai waits in another room, as hurt as you left it."), "", false) +
-          tipRow(false, "#ff5d6e", Lang.t("Caught"), Lang.t("The turn is lost and the Yokai strikes you."), "", false);
+        var R = RULES[C.foe.id], why = C.foe.boss ? "The master bars the way" : R && R.flee ? (R.flee.p === 0 ? R.flee.sub : R.flee.ok) : "";
+        return '<p class="gd-tip-h" style="--ink:#c8cfdc"><b>' + esc(upper(Lang.t("Flee"))) + "</b>" + (why ? "<i>" + esc(upper(Lang.t(why))) + "</i>" : "") + "</p>" +
+          tipRow(true, "#9aa5b8", Lang.t("Out"), Lang.t(FLEE_TEXT.out), "", false) +
+          tipRow(false, "#ff5d6e", Lang.t("Caught"), Lang.t(FLEE_TEXT.caught), "", false);
       }
       if (id === "rule") {
-        var ra = scrollOf("rule");
+        /* the gold scroll: how to beat this yokai once the player has
+           exorcised it (beaten), the action's own line before that. Its
+           paragraphs run on as one here, to keep the tip compact; the
+           yokai's card and the guide keep them apart. */
+        var ra = scrollOf("rule"), RR = RULES[C.foe.id];
         if (!ra) return "";
-        return '<p class="gd-tip-h" style="--ink:#ffd166"><b>' + esc(upper(Lang.t(ra.name))) + "</b></p>" + tipRow(true, "#ffd166", Lang.t("Its rule"), Lang.t(ra.text), "", false);
+        return '<p class="gd-tip-h" style="--ink:#ffd166"><b>' + esc(upper(Lang.t(ra.name))) + "</b></p>" +
+          tipRow(true, "#ffd166", Lang.t("How to beat it"), RR && RR.text && beaten(C.foe.id) ? Lang.t(RR.text).replace(/\s*\n\n\s*/g, " ") : Lang.t(ra.text), "", false);
       }
-      var s = SKILLS[id], b = blueFor(id), red = faceOn(id, { foe: true });
-      function figOf(f) { return f ? f.fig + (f.tag ? " · " + f.tag : "") : ""; }
+      var s = SKILLS[id], b = blueFor(id);
       if (s.sp) bits.push(s.sp + " SP");
       if (s.el) bits.push(Lang.t(ELEMENTS[s.el].name));
       if (weightWord(s.w)) bits.push(weightWord(s.w));
       html = '<p class="gd-tip-h" style="--ink:' + (s.el ? ELEMENTS[s.el].color : "#f4eef8") + '"><b>' + esc(upper(Lang.t(s.name))) + "</b><i>" + esc(upper(bits.join(" · "))) + "</i></p>";
-      html += tipRow(side === "red", "#ff5d6e", Lang.t("On the Yokai"), Lang.t(s.foeText), figOf(red), false);
-      if (!b) html += tipRow(side === "blue", "#4f9bff", Lang.t("On an ally"), Lang.t(s.allyText), Lang.t("No ally to reach"), true);
-      else if (b.all) html += tipRow(side === "blue", "#4f9bff", Lang.t("On everyone"), Lang.t(s.allyText), figOf(faceOn(id, { hero: a })), false);
-      else html += tipRow(side === "blue", "#4f9bff", b.hero === a ? Lang.t("On yourself") : Lang.t("On") + " " + Lang.t(b.hero.b.name), Lang.t(s.allyText),
-        figOf(faceOn(id, { hero: b.hero })) + " · " + Lang.t(b.why), false);
-      var ag = againText(id);
-      if (ag) html += '<p class="gd-tip-a">' + esc(ag) + "</p>";
-      return html;
-    }
-    /* where the hero's own next turn lands if this scroll is played: read
-       off the timeline, which previews it */
-    function againText(id) {
-      var C = combat, a = C.actor, i, k = -1;
-      if (C.hover !== id) return "";
-      for (i = 1; i < C.TL.length; i++) if (C.TL[i].u === a) { k = i; break; }
-      if (k < 0) return Lang.t("Plays again much later");
-      if (k === 1) return Lang.t("Plays again right after this");
-      return Lang.t("Plays again after") + " " + (k - 1) + " " + Lang.t(k === 2 ? "other turn" : "other turns");
+      if (side !== "blue") return html + tipRow(true, "#ff5d6e", Lang.t("Yokai"), Lang.t(s.foeText), "", false);
+      if (!b) return html + tipRow(true, "#4f9bff", Lang.t("Ally"), Lang.t(s.allyText), Lang.t("No ally to reach"), true);
+      if (b.all) return html + tipRow(true, "#4f9bff", Lang.t("The team"), Lang.t(s.allyText), "", false);
+      return html + tipRow(true, "#4f9bff", b.hero === a ? Lang.t("Oneself") : Lang.t("On") + " " + Lang.t(b.hero.b.name), Lang.t(s.allyText), "", false);
     }
     function placeTip() {
       if (!tip) return;
@@ -3295,15 +3288,78 @@
       tipKey = ""; infoPow = null;
       if (!track || !remove) return;
       if (track.parentNode) track.parentNode.removeChild(track);
-      track = null; tCards = {}; tPast = []; tFight = null;
+      track = null; tc = null; tFight = null;
+    }
+
+    /* --- the fight's own how-to-play -------------------------------------- */
+    /* THE SECOND HELP CARD. The shell's Help card teaches the map — a tile
+       tapped — and a fight is played with other hands: scrolls stamped in
+       four colours, a tap to cast, a long press to read. So the first hero's
+       turn of the player's first fight ever opens a card of its own, over the
+       paused round (the shell's card: web only, a playable keeps its intro).
+       The stage is the round's own stamps (packNode), the blue one wearing
+       the face of the hero in turn, acted out by the shared finger: red,
+       blue, gold, grey, then a long press on red that opens the info. The
+       legend under it lights the row of the stamp being tapped, on the same
+       9 s cycle (skin.css, THE FIGHT'S HOW-TO-PLAY). Once per player:
+       `fightHelp:<slug>`, erased with the rest by OPTIONS (wipe). */
+    function fightHelpKey() { return "fightHelp:" + (CONFIG.slug || "grudgeon"); }
+    function fightHelpDue() { return !!window.__MODAL__ && !Store.get(fightHelpKey(), false); }
+    function openFightHelp(h) {
+      var MD = window.__MODAL__;
+      if (!MD) return;
+      Store.set(fightHelpKey(), true);
+      MD.open({ kind: "web-card gd-fh-card", title: Lang.t("How to play"),
+                fill: function (body) { body.appendChild(fightHelpNode(h)); } });
+    }
+    function fightHelpNode(h) {
+      var box = dom("div", "gd-fh"), line = dom("div", "web-help-line gd-fh-line"), i;
+      line.innerHTML = fillIn(esc(Lang.t("<b>Tap</b> a scroll to use it or <b>hold</b> it to see what it does")), {
+        tap: '<b class="w-tap">' + esc(Lang.t("Tap")) + "</b>",
+        hold: '<b class="w-hold">' + esc(Lang.t("hold")) + "</b>"
+      });
+      box.appendChild(line);
+
+      var st = dom("div", "demo-stage gd-fd"), ids = ["attack", "rule", "flee"];
+      for (i = 0; i < ids.length; i++) {
+        var pk = packNode(ids[i]);
+        pk.classList.add("gd-fd-p" + i);
+        st.appendChild(pk);
+      }
+      var bl = st.querySelector(".gd-blue"), who = bl && bl.querySelector(".gd-who");
+      if (who && h && h.b) headStyle(who, h); else if (bl) bl.classList.add("is-none");
+      st.appendChild(dom("div", "gd-fd-ring"));
+      var tp = dom("div", "gd-fd-tip"), s = SKILLS.attack;
+      tp.innerHTML = '<p class="gd-tip-h" style="--ink:' + ELEMENTS[s.el].color + '"><b>' + esc(upper(Lang.t(s.name))) + "</b></p>" +
+        tipRow(true, "#ff5d6e", Lang.t("Yokai"), Lang.t(s.foeText), "", false);
+      st.appendChild(tp);
+      /* the shared finger: the painted one where the build carries it, a
+         cursor on a desk (motor.css, .desk-mouse) */
+      var hand = dom("div", "demo-hand"), art = CONFIG.shellArt && CONFIG.shellArt.hand;
+      if (art) hand.style.backgroundImage = 'url("' + art + '")';
+      if (document.documentElement.classList.contains("is-desk")) { st.classList.add("desk-mouse"); hand.appendChild(dom("i", "demo-cursor")); }
+      st.appendChild(hand);
+      box.appendChild(st);
+
+      var rows = [["c-red", "Act on the Yokai"], ["c-blue", "Act on the team"],
+                  ["c-gold", "Yokai's special action"], ["c-grey", "Flee the fight"]];
+      var ul = dom("ul", "gd-fd-legend");
+      for (i = 0; i < rows.length; i++) {
+        var li = dom("li", "gd-fd-l" + i);
+        li.appendChild(dom("i", "gd-fd-chip " + rows[i][0]));
+        li.appendChild(dom("span", "", Lang.t(rows[i][1])));
+        ul.appendChild(li);
+      }
+      box.appendChild(ul);
+      return box;
     }
 
     /* --- the buttons -------------------------------------------------------- */
-    /* the turn in hand is played: its card is the one that slides out */
+    /* the turn in hand is played: the phase leaves "input", so the card
+       shrinks back into its bubble on the next syncTrack */
     function turnPlayed() {
       var C = combat;
       C.hot = null; C.info = null;
-      if (C.TL[0] && C.TL[0].now) { tPast.push(C.TL[0].key); if (tPast.length > 4) tPast.shift(); }
     }
     /* a tap on a button: red at the yokai, blue on the ally it shows, gold the rule */
     function tapIcon(id, side) {
@@ -3364,37 +3420,12 @@
         if (C && C.hot && C.hot.src === "hover" && C.hot.id === id && C.hot.side === side) C.hot = null;
       });
     }
-    /* a hero picked for the blue side: their folded card, or their sprite */
+    /* a hero picked for the blue side: a tap on their sprite */
     function pinHero(h) {
       var C = combat;
       if (!canCast() || !h || h.dead || h.away) return;
       C.pin = C.pin === h ? null : h;
       Sound.clip("select", 0.8, 1.2);
-    }
-    /* a folded card: a tap picks its hero for the blue side, a long press
-       opens their card */
-    function wireCard(el, c) {
-      var d = null;
-      el.addEventListener("pointerdown", function (e) {
-        if (!canCast() || c.slot <= 0 || c.h.dead) return;
-        e.preventDefault();
-        d = { x: e.clientX, y: e.clientY, moved: false, long: false, timer: 0 };
-        try { el.setPointerCapture(e.pointerId); } catch (err) { /* an old WebView */ }
-        d.timer = setTimeout(function () { if (d && !d.moved && canCast()) { d.long = true; heroCard(c.h); } }, TRACK.long * 1000);
-      });
-      el.addEventListener("pointermove", function (e) {
-        if (d && !d.moved && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) >= 12) { d.moved = true; clearTimeout(d.timer); }
-      });
-      function end(cancel) {
-        if (!d) return;
-        var was = d; d = null;
-        clearTimeout(was.timer);
-        if (was.long || cancel || was.moved) return;
-        pinHero(c.h);
-      }
-      el.addEventListener("pointerup", function () { end(false); });
-      el.addEventListener("pointercancel", function () { end(true); });
-      el.addEventListener("click", function (e) { e.stopPropagation(); });
     }
     /* one face of a scroll, in a card: where it is aimed, then what it does there */
     function face(where, what) {
@@ -4136,8 +4167,11 @@
       drawParts(a, false);
       /* the aura behind: the yokai's flames, the ritual circle of the turn */
       if (!a.hero && !a.dead) {
-        /* as much aura as health: a yokai at the end of its strength burns low */
-        var hk = clamp(a.lag / a.mhp, 0, 1), gl = glowOf(im, auraCol(a)), pw = 0.8 * (1 + a.boost) * (0.12 + 0.88 * hk);
+        /* as much aura as health: a yokai at the end of its strength burns low.
+           Decoration only (the health bar, the callouts say the same), so it
+           stays discreet (AURA_A) and fades out under the shield (sA). */
+        var hk = clamp(a.lag / a.mhp, 0, 1), gl = glowOf(im, auraCol(a)),
+            pw = AURA_A * 0.8 * (1 + a.boost) * (0.12 + 0.88 * hk) * (1 - Math.min(1, a.sA || 0));
         ctx.save();
         ctx.translate(a.sx, a.sy + a.dy); ctx.scale(k * bx / FXK, k * br / FXK);
         ctx.globalCompositeOperation = "lighter";
@@ -4197,6 +4231,7 @@
        round a hero a rule holds (Jorogumo's silk). All faint: they sit
        behind the sprite. */
     var SHIELD_A = 0.45;
+    var AURA_A = 0.6;   // a yokai's aura, at 60 % of its first strength
     function drawGuardAura(a) {
       var g = Math.min(1, a.gA || 0), flare = Math.max(0, (a.gA || 0) - 1);
       if (g < 0.02 || a.dead || !a.hero) return;
@@ -4330,7 +4365,8 @@
     function spawnEmbers(a, dt) {
       if (a.hero || a.dead || a.sx == null) return;
       var cx = a.sx, cy = a.sy + a.dy - a.s * 0.45, rx = a.s * 0.26, ry = a.s * 0.42;
-      a.acc += dt * 26 * 0.8 * (1 + a.boost) * (0.1 + 0.9 * clamp(a.lag / a.mhp, 0, 1));
+      // the aura's embers follow it: as discreet (AURA_A), gone under the shield (sA)
+      a.acc += dt * 26 * 0.8 * AURA_A * (1 + a.boost) * (0.1 + 0.9 * clamp(a.lag / a.mhp, 0, 1)) * (1 - Math.min(1, a.sA || 0));
       while (a.acc > 1) {
         a.acc--;
         var q = Math.random() * Math.PI * 2;
@@ -4482,13 +4518,17 @@
        the yokai's blow on a chip beside its own. A turn keeps its x by its
        key (unit and turn number), so a preview, a push or a one more SLIDES
        it along; a tap on a turn opens its card. The yokai's turns burn in a
-       violet aura: that is the evil coming. */
+       violet aura: that is the evil coming. A hero's turn in hand makes the
+       first bubble THINK: the hero's card grows out of it (syncTrack), and a
+       ring bursts off it as it opens. */
     var slotX = {};
     function drawFrieze(y) {
       var C = combat, seen = {}, i, key, yy = y + TRACK.frieze / 2;
-      var me = C.phase === "input" ? C.actor : null, x0 = Layout.left + 24, step = (Layout.w - 48) / Math.max(1, SHOW - 1);
+      var me = C.phase === "input" ? C.actor : null, x0 = Layout.left + TRACK.inset, step = (Layout.w - 2 * TRACK.inset) / Math.max(1, SHOW - 1);
+      var e0 = C.TL[0];
       C.slots = [];
       ctx.fillStyle = "rgba(6,4,12,.6)"; roundRect(ctx, Layout.left - 10, y, Layout.w + 20, TRACK.frieze, TRACK.frieze / 2); ctx.fill();
+      if (e0 && e0.u.hero) bloomRing(e0.u, x0, yy);
       for (i = 0; i < C.TL.length; i++) {
         var e = C.TL[i], r = i ? 15 : 18, tx = x0 + i * step, a = e.u;
         var x = slotX.hasOwnProperty(e.key) ? slotX[e.key] : tx + 60;
@@ -4499,6 +4539,17 @@
         C.slots.push({ x: x, y: yy, r: r + 14, e: e });
       }
       for (key in slotX) if (slotX.hasOwnProperty(key) && !seen[key]) delete slotX[key];
+    }
+    /* the ring that bursts off the first bubble as its panel opens (bloomAt) */
+    function bloomRing(h, x, yy) {
+      var col = h.b.color, q = (t - bloomAt) / 0.5;
+      if (q >= 0 && q < 1) {
+        ctx.save();
+        ctx.globalAlpha *= (1 - q) * (1 - q);
+        ctx.strokeStyle = col; ctx.lineWidth = 6 * (1 - q) + 1;
+        ctx.beginPath(); ctx.arc(x, yy, 20 + 70 * (1 - (1 - q) * (1 - q)), 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
     }
     /* the blow a yokai's turn will land, on a chip beside its bubble */
     function blowChip(e, x, yy) {
@@ -4758,18 +4809,18 @@
     }
     /* what an intent does, in words, out of what it carries */
     function intentText(it) {
-      if (hiddenIntents()) return Lang.t("What it will do is hidden");
-      if (it.alt) return Lang.t("Red hits one hero hard, blue drains every hero. Answer neither");
+      if (hiddenIntents()) return Lang.t("The Yokai's next move is hidden");
+      if (it.alt) return Lang.t("Red hits one hero hard and blue drains every hero's HP. Neither answer is correct");
       if (it.toOne) return Lang.t("Every hero drops to 1 HP");
       if (!it.pow && !it.flat) return Lang.t(it.sub || PASS[it.kind] || "No blow this turn");
       var l = [Lang.t(it.all ? "A blow on every hero" : it.special ? "A heavy blow on one hero" : "A blow on one hero")];
       if (it.drain) l.push(Lang.t("it heals halfway"));
       if (it.feast) l.push(Lang.t("it heals completely"));
-      if (it.fear) l.push(Lang.t("its target is pushed back on the timeline"));
+      if (it.fear) l.push(Lang.t("the hero hit is pushed back on the timeline"));
       if (it.gale) l.push(Lang.t("every hero not on guard is pushed back"));
-      if (it.cocoon) l.push(Lang.t("its target is wrapped in silk and loses time"));
-      if (it.stun) l.push(Lang.t("its target is stunned and loses the next turn"));
-      if (it.pierce) l.push(Lang.t("no guard holds it"));
+      if (it.cocoon) l.push(Lang.t("the hero hit is wrapped in silk and loses time"));
+      if (it.stun) l.push(Lang.t("the hero hit is stunned and skips their next turn"));
+      if (it.pierce) l.push(Lang.t("a guard does not stop it"));
       return l.join(", ");
     }
     function hitsWord(e) {
@@ -4823,12 +4874,15 @@
           hp.appendChild(dom("b", null, upper(Lang.t("Health")))); hp.appendChild(bar0); hp.appendChild(dom("span", null, f.hp + " / " + f.mhp));
           body.appendChild(hp);
           body.appendChild(badgeRow(f));
-          if (R) {
-            var rb = dom("div", "gd-rulebox"), st = R.status ? R.status(f) : "";
-            var h = dom("p", "gd-sec"); h.appendChild(dom("b", null, upper(Lang.t("Its rule"))));
+          /* how to beat it: told once the player has exorcised it (beaten);
+             before that only its state is shown, which is live information */
+          var st = R && R.status ? R.status(f) : "", known = R && beaten(f.id);
+          if (known || st) {
+            var rb = dom("div", "gd-rulebox"), h = dom("p", "gd-sec");
+            h.appendChild(dom("b", null, upper(Lang.t(known ? "How to beat it" : "Its state"))));
             if (st) h.appendChild(dom("i", "gd-pill", upper(st)));
             rb.appendChild(h);
-            rb.appendChild(dom("p", "gd-line", Lang.t(R.text)));
+            if (known) Lang.t(R.text).split("\n\n").forEach(function (s) { rb.appendChild(dom("p", "gd-line", s)); });
             body.appendChild(rb);
           }
           var turns = dom("div", "gd-turns"), shown = 0;
@@ -4864,8 +4918,11 @@
             p.appendChild(dom("b", null, upper(Lang.t(r[0])))); p.appendChild(b0); p.appendChild(dom("span", null, r[1] + " / " + r[2]));
             body.appendChild(p);
           });
+          body.appendChild(kv("Attack", String(Math.round(h.atk))));
+          body.appendChild(kv("Defence", String(Math.round(h.def))));
+          body.appendChild(kv("Speed", String(Math.round(h.spd))));
           var inc = h.dead ? null : incomingOf(h);
-          if (h.dead) body.appendChild(dom("p", "gd-line", Lang.t("This hero has fallen. An ofuda of return brings them back")));
+          if (h.dead) body.appendChild(dom("p", "gd-line", Lang.t("This hero has fallen. An ofuda could bring them back")));
           else if (at >= 0) body.appendChild(kv("Turn", whenWord(at)));
           if (inc) body.appendChild(kv("The Yokai's next blow", inc.dmg >= h.hp ? "KO" : "-" + inc.dmg, "gd-threat"));
           var list = dom("div", "gd-sk");
@@ -4885,7 +4942,7 @@
             list.appendChild(row);
           });
           body.appendChild(list);
-          if (nextScroll(h)) body.appendChild(dom("p", "gd-line", Lang.t("Learns a second scroll after a fight won")));
+          if (nextScroll(h)) body.appendChild(dom("p", "gd-line", Lang.t("Win a fight to learn a second scroll")));
           guideButton(body, "hero-" + h.id);
         }
       });
@@ -4895,7 +4952,7 @@
     function guideButton(body, id) {
       var GD = window.__GUIDE__;
       if (!GD || !GD.has(id)) return;
-      body.appendChild(button("Read more", null, "btn-plate gd-more", function () { closeCard(); GD.open(id); }));
+      body.appendChild(button("Read the story", null, "btn-plate gd-more", function () { closeCard(); GD.open(id); }));
     }
 
     /* --- the fight's clock ---------------------------------------------------- */
@@ -5127,34 +5184,18 @@
     function bandPic(b) { return artNode(CONFIG.bands[b].scene, "gd-gp-scene"); }
 
     /* --- the words that are data ------------------------------------------ */
-    function elNames(list) {
-      var out = [];
-      for (var i = 0; i < list.length; i++) out.push(Lang.t(ELEMENTS[list[i]].name));
-      return out.length ? out.join(" · ") : "—";
-    }
     /* the level a band's i-th yokai is first met on (stageOf: steps 1, 3, 5
        bring the first three in, step 6 is the fourth's, as master) */
     function metOn(b, i) { return b * 6 + [1, 3, 5, 6][i]; }
+    /* A character's page is its STORY; its fight is its card's (foeCard,
+       heroCard), which the page points to — tap or click, as the device says. */
+    function isDesk() { return document.documentElement.classList.contains("is-desk"); }
     function yokaiPage(b, i) {
-      var id = CONFIG.bands[b].foes[i], F = FOES[id], R = RULES[id], lv = metOn(b, i);
-      var lines = [Lang.t(R.lock), Lang.t(R.key)];
-      var weak = foundAs(id, "weak");
+      var id = CONFIG.bands[b].foes[i], F = FOES[id], lv = metOn(b, i);
       return { id: "yokai-" + id, title: Lang.t(F.name), lv: lv, pic: function () { return foeArt(id); },
-               rows: [[Lang.t("Weak"), weak, weak === "?" ? "#a8a2b8" : ELEMENTS[F.weak[0]].color],
-                      [Lang.t("Resists"), foundAs(id, "resist"), "#a8a2b8"]],
-               lines: lines };
-    }
-    /* What the bestiary holds for one side of a yokai: the elements found
-       that way, "?" while some element is still untried, "—" once every
-       element has been tried and none of them was. */
-    function foundAs(id, what) {
-      var mine = loreAll()[id] || {}, list = [], tried = 0, k;
-      for (k in ELEMENTS) if (ELEMENTS.hasOwnProperty(k) && mine[k]) {
-        tried++;
-        if (mine[k] === what) list.push(k);
-      }
-      if (list.length) return elNames(list);
-      return tried === Object.keys(ELEMENTS).length ? "—" : "?";
+               text: Lang.t(LORE[id]) + "\n\n" + (isDesk()
+                 ? Lang.t("Click the Yokai in a fight to see its health, its weaknesses and its next turns.")
+                 : Lang.t("Tap the Yokai in a fight to see its health, its weaknesses and its next turns.")) };
     }
     var BAND_NEW = [
       "The lantern burns from the very first step.",
@@ -5167,26 +5208,22 @@
       var B = CONFIG.bands[b], a = b * 6 + 1;
       var L = HEROES[B.lead];
       return { id: "band-" + (b + 1), title: Lang.t(B.name), lv: a, pic: function () { return bandPic(b); },
-               rows: [[Lang.t("First hero"), L.name, L.color]], lines: [Lang.t(BAND_NEW[b])] };
+               rows: [[Lang.t("First hero"), L.name, L.color]], text: Lang.t(BAND_NEW[b]) };
     }
     function heroPage(id) {
-      var H = HEROES[id], lines = [];
-      for (var i = 0; i < H.skills.length; i++) {
-        var S = SKILLS[H.skills[i]];
-        lines.push(fillIn(Lang.t("{name}: {text}."), { name: Lang.t(S.name), text: low(Lang.t(S.kind === "hit" ? S.foeText : S.allyText)) }));
-      }
+      var H = HEROES[id];
       return { id: "hero-" + id, title: H.name, eyebrow: Lang.t(H.role), pic: function () { return heroArt(id); },
-               rows: [[Lang.t("Health"), H.hp, "#7ee0a1"], ["SP", H.sp, "#8fdcff"], [Lang.t("Attack"), H.atk],
-                      [Lang.t("Defense"), H.def], [Lang.t("Speed"), H.spd]],
-               lines: lines };
+               text: Lang.t(LORE[id]) + "\n\n" + (isDesk()
+                 ? Lang.t("Click a hero in a fight to see their health, their turn and their scrolls.")
+                 : Lang.t("Tap a hero in a fight to see their health, their turn and their scrolls.")) };
     }
     function skillPage(id) {
       var S = SKILLS[id], E = S.el && ELEMENTS[S.el];
       return { id: "skill-" + id, title: Lang.t(S.name), pic: function () { return skillPic(id); },
                rows: [["SP", S.sp, "#8fdcff"], [Lang.t("Element"), E ? Lang.t(E.name) : "—", E ? E.color : null],
                       [Lang.t("Speed"), weightWord(S.w) || Lang.t("Normal")]],
-               lines: [fillIn(Lang.t("On the Yokai: {text}."), { text: low(Lang.t(S.foeText)) }),
-                       fillIn(Lang.t("On an ally: {text}."), { text: low(Lang.t(S.allyText)) })] };
+               text: fillIn(Lang.t("On the Yokai: {text}."), { text: low(Lang.t(S.foeText)) }) + "\n\n" +
+                     fillIn(Lang.t("On an ally: {text}."), { text: low(Lang.t(S.allyText)) }) };
     }
     /* the shop's wares and the altar's blessings, as their cards deal them */
     function waresNode() {
@@ -5208,15 +5245,9 @@
         var bands = [], b, i;
         for (b = 0; b < CONFIG.bands.length; b++) {
           var pages = [bandPage(b)];
-          if (b === 1) pages.push({ id: "doors", title: Lang.t("Fire doors and seals"), lv: 7, pic: doorsPic, lines: [
-            Lang.t("A fire door opens one way only. Once you are through, the rooms behind it are lost."),
-            Lang.t("A seal-breaker opens one sealed door. A big map has two seals for a single seal-breaker.") ] });
-          if (b === 2) pages.push({ id: "roam", title: Lang.t("Wandering Yokai"), lv: 13, pic: roamPic, lines: [
-            Lang.t("A wandering Yokai roams the corridors. The red arrow shows its next move."),
-            Lang.t("A wandering Yokai that reaches your room ambushes you and acts first.") ] });
-          if (b === 3) pages.push({ id: "split", title: Lang.t("Split the party"), lv: 19, pic: splitPic, lines: [
-            Lang.t("Tap Split to divide your party into two groups. Tap a group to lead it."),
-            Lang.t("A group next door joins the fight late. If one group falls, the other carries on.") ] });
+          if (b === 1) pages.push({ id: "doors", title: Lang.t("Fire doors and seals"), lv: 7, pic: doorsPic, text: Lang.t("A fire door opens one way only. Once you are through, the rooms left behind are lost.\n\nA seal-breaker opens one sealed door. But sometimes there are more sealed doors than spells to break them.") });
+          if (b === 2) pages.push({ id: "roam", title: Lang.t("Wandering Yokai"), lv: 13, pic: roamPic, text: Lang.t("A wandering Yokai roams the corridors. The red arrow shows its next move.\n\nA wandering Yokai that catches up with you in a room will act.") });
+          if (b === 3) pages.push({ id: "split", title: Lang.t("Split the party"), lv: 19, pic: splitPic, text: Lang.t("Tap 'Split' to divide your party into two groups. Then tap the group of your choice to lead it.\n\nA group in a neighbouring room will join the fight late. If one group falls, the other carries on.") });
           for (i = 0; i < 4; i++) pages.push(yokaiPage(b, i));
           bands.push({ key: "band" + (b + 1), label: Lang.t(CONFIG.bands[b].name), pages: pages });
         }
@@ -5225,89 +5256,60 @@
         for (var id in SKILLS) if (SKILLS.hasOwnProperty(id)) skills.push(skillPage(id));
         return [
           { key: "basics", label: Lang.t("The basics"), pages: [
-            { id: "map", title: Lang.t("The map"), pic: mapPic, lines: [
-              Lang.t("Tap a lit room to walk there and open it. A far room takes two taps.") ] },
+            { id: "map", title: Lang.t("The map"), pic: mapPic, text: Lang.t("Tap a lit room to walk there and open it. A far room takes more taps.") },
             { id: "party", title: Lang.t("Your heroes"), pic: function () { return gRow([heroArt("akane"), heroArt("kenji"), heroArt("yuki"), heroArt("haru")]); },
-              lines: [
-              Lang.t("Each level starts with one hero, a different one in every biome."),
-              Lang.t("The other heroes wait in rooms of the dungeon. Each one who joins burns one more candle.") ] },
+              text: Lang.t("Each level starts with a single hero, who changes from biome to biome.\n\nThe other heroes wait in rooms of the dungeon. Each extra recruit burns more candles.") },
             { id: "candles", title: Lang.t("The lantern"), pic: lanternPic,
               rows: [[Lang.t("A step burns"), Lang.t("1 per standing hero")],
                      [Lang.t("Yokai in the dark"), "+30%", "#ff6e6e"], [Lang.t("A step in the dark"), Lang.t("-5% health"), "#ff6e6e"]],
-              lines: [
-              Lang.t("When the lantern dies, the hour of the ox begins. Lit rooms hide what they hold."),
-              Lang.t("Candle stubs from bonus rooms and candles from the shop light the lantern again.") ] },
+              text: Lang.t("Lit rooms hide what they hold if the lantern is out.\n\nFind or buy candle stubs to light the lantern again.") },
             { id: "goals", title: Lang.t("The objectives"), pic: function () {
                 return roomsPic([gRoom("exit", LIT), gRoom("fight", LIT, { foe: "akamanto", boss: true }), gRoom("fight", LIT, { foe: "hanako" })], 130, 160);
               },
-              rows: [[Lang.t("The goal"), "★"], [Lang.t("1.5× the goal"), "★★"], [Lang.t("2.2× the goal"), "★★★"]],
-              lines: [
-              Lang.t("Each level sets one objective: Yokai, gold, the way out or the master."),
-              Lang.t("The run ends when your last hero falls, or when no room is left to open.") ] }
+              rows: [[Lang.t("Reach the initial objective"), "★"], [Lang.t("Twice the initial objective"), "★★"], [Lang.t("Three times the initial objective"), "★★★"],
+                     [Lang.t("Way out or exorcised Master"), "★"], [Lang.t("Enough Yokai on the way"), "★"], [Lang.t("No hero falls"), "★"]],
+              text: Lang.t("Each level sets one goal: exorcise Yokai or the master, find gold, or get out of the dungeon alive. Tap the stars at the bottom left of the screen to see the objectives required.\n\nThe run ends when your last hero falls or when nothing is left to accomplish.") }
           ] },
           { key: "fight", label: Lang.t("The fight"), pages: [
             { id: "fight", title: Lang.t("A fight"), pic: function () { return gRow([heroArt("kenji"), foeArt("hanako")], "gd-gp-duel"); },
-              lines: [
-              Lang.t("Entering a Yokai's room starts a fight. Exorcise the Yokai to clear the room."),
-              Lang.t("Fewer heroes means a Yokai with less health and weaker blows.") ] },
+              text: Lang.t("Entering a Yokai's room starts a fight. Exorcise the Yokai to clear the room.\n\nBeware, as a Yokai adapts to the size and power of your team.") },
             { id: "timeline", title: Lang.t("The timeline"), pic: timelinePic,
-              lines: [
-              Lang.t("Heroes and Yokai take turns along the timeline. Whoever is first in line acts."),
-              Lang.t("A quick scroll brings the hero's next turn sooner, a slow one later."),
-              Lang.t("An hourglass on a scroll means it moves the hero's next turn: green sooner, amber later.") ] },
+              text: Lang.t("Heroes and Yokai take turns following the timeline. The first in line, on the left, acts.\n\nAn hourglass on a scroll moves the hero's next turn. The turn comes back sooner for a green hourglass but later for an amber one.") },
             { id: "intents", title: Lang.t("The Yokai's turns"), pic: intentsPic,
               rows: [[Lang.t("Guard"), Lang.t("halves a blow")], [Lang.t("Spirit ward"), Lang.t("-40% for two turns")]],
-              lines: [
-              Lang.t("The Yokai's turns show what it will do, to whom and how hard. You always know what is coming."),
-              Lang.t("A red KO over a hero means the next blow will knock them out.") ] },
+              text: Lang.t("The Yokai's actions are always predictable. You know what is coming in advance.\n\nA red KO over a hero means the next blow will knock them out.") },
             { id: "scrolls", title: Lang.t("The scrolls"), pic: function () { return scrollsPic(["attack", "purify", "blessing", "guard"]); },
               rows: [[Lang.t("Guard on oneself"), "+5 SP", "#8fdcff"]],
-              lines: [
-              Lang.t("Each scroll does one thing on the Yokai and another on an ally."),
-              Lang.t("Tap its red side to throw it at the Yokai, its blue side to lay it on the ally whose face it shows."),
-              Lang.t("Tap another hero to send the blue side to them. Hold a scroll to read what it does.") ] },
+              text: Lang.t("Each scroll does one thing on the Yokai and a variant on an ally.\n\nTap its red side to use the action on the Yokai, its blue side to apply it to the ally.\n\nHold a blue or red scroll to read what it does.") },
             { id: "learn", title: Lang.t("New scrolls"), pic: function () { return scrollsPic(["attack", "iai", "ward", "guard"]); },
-              lines: [
-              Lang.t("A hero arrives with Attack, Guard and one scroll of their own."),
-              Lang.t("After a fight won, every hero who fought learns their second scroll.") ] },
+              text: Lang.t("Every hero has attack and guard skills and a scroll of their own.\n\nAfter a fight won, every hero who took part will unlock a special second scroll.") },
             { id: "elements", title: Lang.t("Weaknesses and resistances"), pic: elementsPic,
-              rows: [[Lang.t("A weakness"), Lang.t("×1.6 and one more turn"), "#ffd166"], [Lang.t("Resisted"), Lang.t("×0.5"), "#a8a2b8"]],
-              lines: [Lang.t("Try elements to find a Yokai's weaknesses. Its health bar keeps track of what you find.")] },
-            { id: "rule", title: Lang.t("Its rule"), pic: function () { return gRow([scrollsPic(["rule"]), foeArt("hanako")], "gd-gp-skill"); },
+              rows: [[Lang.t("A weakness"), Lang.t("×2 with 2 attacks in a row"), "#ffd166"], [Lang.t("Resisted"), Lang.t("Half"), "#a8a2b8"]],
+              text: Lang.t("Try several different elements to find a Yokai's weaknesses. The damage prediction will adapt once a weakness is discovered.") },
+            { id: "rule", title: Lang.t("How to beat a Yokai"), pic: function () { return gRow([scrollsPic(["rule"]), foeArt("hanako")], "gd-gp-skill"); },
               rows: [[Lang.t("Locked"), "-80%", "#ff8a9a"], [Lang.t("Open"), "+50%", "#7ee0a1"]],
-              lines: [
-              Lang.t("Every Yokai has its own way to be beaten. Until you find it, your blows deal -80% damage."),
-              Lang.t("Often, a weakness stays open at least 5 turns. Tap the Yokai in battle for more information."),
-              Lang.t("A gold card can be its key, or a trap. Using it takes the hero's turn.") ] },
+              text: Lang.t("Every Yokai has its own way to be beaten. Until you find it, your blows will be much weaker.\n\nAn opening often stays open for several turns. Tap the Yokai in a fight for more information.\n\nA gold scroll can be a solution or a trap.") },
             { id: "flee", title: Lang.t("Flee"), pic: function () { return scrollsPic(["flee"]); },
-              lines: [
-              Lang.t("Flee takes the party back onto the map, nothing lost. The Yokai waits in another room, as hurt as you left it."),
-              Lang.t("It works half the time, more for a hero faster than the Yokai. Caught, the Yokai strikes you. A master never lets you go.") ] }
+              text: Lang.t(FLEE_TEXT.out) + "\n\n" + Lang.t(FLEE_TEXT.odds) }
           ] },
           { key: "heroes", label: Lang.t("The heroes"), pages: heroes },
           { key: "skills", label: Lang.t("The scrolls"), pages: skills },
           { key: "rooms", label: Lang.t("The rooms"), pages: [
             { id: "shop", title: Lang.t("Shop"), lv: 2, pic: function () { return roomsPic([gRoom("shop", LIT)], 150, 200); }, node: waresNode,
-              lines: [Lang.t("The ofuda is sold only once a hero has fallen. When the lantern burns low, candles are always there.")] },
+              text: Lang.t("The Ofuda is sold only once a hero has already fallen. Candles are also always on sale if your lantern burns low.") },
             { id: "altar", title: Lang.t("Altar"), lv: 3, pic: function () { return roomsPic([gRoom("upgrade", LIT)], 150, 200); }, node: blessingsNode,
-              lines: [Lang.t("Pick one blessing out of three. It lasts the whole run, for every hero, newcomers included.")] },
+              text: Lang.t("Pick one blessing out of three choices. It then lasts the whole run, for every hero, newcomers included.") },
             { id: "event", title: Lang.t("Event"), pic: function () { return roomsPic([gRoom("event", LIT)], 150, 200); },
-              lines: [
-              Lang.t("Each event offers two choices. Every choice brings a reward or a price."),
-              Lang.t("One choice may hide a Yokai. An event can wound, but it never kills.") ] },
+              text: Lang.t("In the dungeon, a special event may happen. You will then have to make a clear-cut choice.\n\nYour choice may be beneficial or dangerous depending on the situation.") },
             { id: "ally", title: Lang.t("A hero"), lv: 3, pic: function () { return roomsPic([gRoom("ally", LIT, { ally: "akane" })], 150, 200); },
-              lines: [Lang.t("A hero waits in this room. Walk in, and the hero joins you.")] },
+              text: Lang.t("A hero waits in this room. Walk in and the hero will join you.") },
             { id: "bonus", title: Lang.t("Bonus"), pic: function () { return roomsPic([gRoom("bonus", LIT)], 150, 200); },
-              lines: [Lang.t("A gift on the spot: gold, candles, healing, SP or a fallen hero back.")] },
+              text: Lang.t("Get a gift right away: gold, candles, healing, SP or an Ofuda.") },
             { id: "exit", title: Lang.t("Way out"), lv: 4, pic: function () { return roomsPic([gRoom("exit", LIT)], 150, 200); },
-              lines: [
-              Lang.t("A lit torii stands in the farthest room. Walk into it to end the run."),
-              Lang.t("One star for the way out, one for enough Yokai on the way, one if no hero falls.") ] },
+              text: Lang.t("A Torii stands lit in the farthest room. Walk into it to end the run.\n\nMake sure you have completed all the objectives before leaving the dungeon.") },
             { id: "master", title: Lang.t("Master of the place"), lv: 6,
               pic: function () { return roomsPic([gRoom("fight", LIT, { foe: "akamanto", boss: true })], 150, 200); },
-              lines: [
-              Lang.t("The master waits in the farthest room. Exorcise it to end the run."),
-              Lang.t("One star for the master, one for enough Yokai on the way, one if no hero falls.") ] }
+              text: Lang.t("The master waits in the farthest room. Exorcise it to end the run.\n\nMake sure you have explored the dungeon well before facing it.") }
           ] }
         ].concat(bands);
       }
@@ -5316,8 +5318,16 @@
     /* ======================================================================
        THE MOTOR'S CONTRACT
        ====================================================================== */
+    var devFightHelp = false;
     function reset() {
       closeCard(true); hideBar(true); bareScene(false);
+      /* the fight's how-to-play, one tap away in the DEV view (localhost) */
+      var WB = window.__WEB__;
+      if (!devFightHelp && WB && WB.Dev && WB.Dev.local && WB.Dev.entry) {
+        devFightHelp = true;
+        WB.Dev.entry({ group: "Grudgeon", label: "Fight help", sub: "The how-to-play of the first fight",
+                       run: function () { openFightHelp(combat && combat.actor && combat.actor.hero ? combat.actor : party && party[0]); } });
+      }
       if (!CONFIG.level) applyLevel(null);  // a playable, the endless run, a free round: the game as it ships
       fell = false; goldEarned = 0; escaped = false; bossDown = false;
       score = 0; gold = 0; foesDown = 0; rooms = 0; plv = Math.max(1, Math.round(P.partyLevel)); xp = 0;
@@ -5345,6 +5355,7 @@
     function update(dt) {
       t += dt;
       if (!started) { started = true; descend(); }
+      if (cursorOn && (!combat || ended || card)) setCursor(false);
       if (combat && card) return;          // a card over a fight holds it, whoever's turn it is
       var k, j;
       for (k = 0; k < cells.length; k++) if (cells[k].pop > 0) cells[k].pop = Math.max(0, cells[k].pop - dt);
@@ -5370,6 +5381,27 @@
       if (combat) { G = G || fightGeo(); drawFight(); }
     }
 
+    /* On a desk the pointer says what a click opens in a fight: the yokai
+       (its figure, its bar), a hero, a turn of the frieze — fightTap's own
+       targets. Cleared by update() once the fight or the hover is over. */
+    var cursorOn = false;
+    function setCursor(on) {
+      if (on === cursorOn) return;
+      cursorOn = on;
+      canvas.style.cursor = on ? "pointer" : "";
+    }
+    function tappableAt(p) {
+      var C = combat, i, s, hb;
+      if (!C || ended || card || C.phase === "done" || C.age < INTRO.hud) return false;
+      for (i = 0; i < (C.slots || []).length; i++) {
+        s = C.slots[i];
+        if ((p.x - s.x) * (p.x - s.x) + (p.y - s.y) * (p.y - s.y) <= s.r * s.r) return true;
+      }
+      hb = C.foeHud;
+      if (hb && p.x >= hb.x && p.x <= hb.x + hb.w && p.y >= hb.y && p.y <= hb.y + hb.h) return true;
+      return !!targetAt(p);
+    }
+    function onMove(p) { setCursor(tappableAt(p)); }
     function onDown(p) {
       if (combat && !ended) { fightTap(p); return; }
       if (ended || card || walk || held || !party || !groups.length || blow > 0) return;
@@ -5504,7 +5536,7 @@
       ctx.restore();
     }
 
-    return { reset: reset, update: update, render: render, onDown: onDown, onResize: onResize,
+    return { reset: reset, update: update, render: render, onDown: onDown, onMove: onMove, onResize: onResize,
              applyLevel: applyLevel, levelGoal: levelGoal, levelProgress: levelProgress, levelTally: levelTally,
              levelRules: levelRules, levelWon: levelWon, guide: guide, wipe: wipe };
   })();

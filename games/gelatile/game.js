@@ -144,20 +144,20 @@
     //  THE POWERS — five on a tile, seven on cells (targets), two on a side
     // ======================================================================
     var POWERS = [
-      { key: "freeze",   name: "Freeze",           cat: "tile", color: "#7fd3ff", ink: "#06283a", sub: "Merge with its twin to thaw it" },
-      { key: "stone",    name: "Stone",            cat: "tile", color: "#a08f7a", ink: "#1e1710", sub: "It slides but never merges" },
-      { key: "ghostV",   name: "Vertical ghost",   cat: "tile", color: "#c9b8ff", ink: "#231546", sub: "Up or down, it slips out of the board if it hits an edge" },
-      { key: "ghostH",   name: "Horizontal ghost", cat: "tile", color: "#c9b8ff", ink: "#231546", sub: "Left or right, it slips out of the board if it hits an edge" },
-      { key: "mystery",  name: "Mystery",          cat: "tile", color: "#9aa0a6", ink: "#16181a", sub: "Its number is hidden, it still merges" },
-      { key: "fire",     name: "Fireball",         cat: "cell", color: "#ff7a2a", ink: "#2a0d00", sub: "Burns the cell on the next move" },
-      { key: "purple",   name: "Purple smoke",     cat: "cell", color: "#b04dff", ink: "#ffffff", sub: "Halves the tile's value" },
-      { key: "comet",    name: "Comet",            cat: "cell", color: "#5fe6ff", ink: "#00262b", sub: "Destroys a block of tiles on the next move" },
-      { key: "black",    name: "Black smoke",      cat: "cell", color: "#4a3f57", ink: "#ffffff", sub: "Halves a block of tiles on the next move" },
-      { key: "boltV",    name: "Vertical bolt",    cat: "cell", color: "#ffd21f", ink: "#2b2300", sub: "Removes all the tiles in a column on the next move" },
-      { key: "boltH",    name: "Horizontal bolt",  cat: "cell", color: "#ffd21f", ink: "#2b2300", sub: "Removes all the tiles in a row on the next move" },
-      { key: "switch",   name: "Switch",           cat: "cell", color: "#2fd6b4", ink: "#00261f", sub: "Swaps two cells after your move" },
-      { key: "teleport", name: "Teleport",         cat: "side", color: "#5ad1ff", ink: "#002233", sub: "Tiles that touch this wall come out the far side" },
-      { key: "lock",     name: "Lock",             cat: "side", color: "#ff4d5e", ink: "#ffffff", sub: "That side cannot be played" }
+      { key: "freeze",   name: "Freeze",           cat: "tile", color: "#7fd3ff", ink: "#06283a" },
+      { key: "stone",    name: "Stone",            cat: "tile", color: "#a08f7a", ink: "#1e1710" },
+      { key: "ghostV",   name: "Vertical ghost",   cat: "tile", color: "#c9b8ff", ink: "#231546" },
+      { key: "ghostH",   name: "Horizontal ghost", cat: "tile", color: "#c9b8ff", ink: "#231546" },
+      { key: "mystery",  name: "Mystery",          cat: "tile", color: "#9aa0a6", ink: "#16181a" },
+      { key: "fire",     name: "Fireball",         cat: "cell", color: "#ff7a2a", ink: "#2a0d00" },
+      { key: "purple",   name: "Purple smoke",     cat: "cell", color: "#b04dff", ink: "#ffffff" },
+      { key: "comet",    name: "Comet",            cat: "cell", color: "#5fe6ff", ink: "#00262b" },
+      { key: "black",    name: "Black smoke",      cat: "cell", color: "#4a3f57", ink: "#ffffff" },
+      { key: "boltV",    name: "Vertical bolt",    cat: "cell", color: "#ffd21f", ink: "#2b2300" },
+      { key: "boltH",    name: "Horizontal bolt",  cat: "cell", color: "#ffd21f", ink: "#2b2300" },
+      { key: "switch",   name: "Switch",           cat: "cell", color: "#2fd6b4", ink: "#00261f" },
+      { key: "teleport", name: "Teleport",         cat: "side", color: "#5ad1ff", ink: "#002233" },
+      { key: "lock",     name: "Lock",             cat: "side", color: "#ff4d5e", ink: "#ffffff" }
     ];
     var POWER = {};
     POWERS.forEach(function (p) { POWER[p.key] = p; });
@@ -270,11 +270,11 @@
       noRefuse: "Make no refused move"
     };
     var MODS = {
-      clutter: { name: "Clutter", sub: "The board starts crowded" },
-      fours:   { name: "Four",   sub: "Half the new tiles are fours" },
-      storm:   { name: "Storm",   sub: "A power every three or four moves" },
-      lasting: { name: "Lasting", sub: "Powers last eight moves" },
-      counted: { name: "Counted", sub: "Past the move limit the round is lost" }
+      clutter: { name: "Clutter" },
+      fours:   { name: "Four" },
+      storm:   { name: "Storm" },
+      lasting: { name: "Lasting" },
+      counted: { name: "Counted" }
     };
 
     // ======================================================================
@@ -1098,8 +1098,7 @@
     //  POWERS — dropped at random among the level's pool
     // ======================================================================
     function learnPower(key) {
-      var def = POWER[key];
-      Notify.learn(key, def.name, { sub: Lang.t(def.sub) });
+      Notify.learn(key);
     }
     function addPower(key, appearAt) {
       var def = POWER[key], at = appearAt == null ? clock : appearAt;
@@ -1532,12 +1531,12 @@
       // to beat by points in a race against the clock
       if (modeKey()) {
         Record.arm(L === CLASSIC ? modeRec("classic").best : 0);
-        Notify.learn("mode-" + modeKey(), MODE_NAME[modeKey()], { sub: Lang.t(MODE_SUB[modeKey()]) });
+        Notify.learn("mode-" + modeKey());
       }
       hudGoal();
       hudMoves();
       Fx.reset();
-      if (L.mod) Notify.learn(L.mod, MODS[L.mod].name, { sub: Lang.t(MODS[L.mod].sub) });
+      if (L.mod) Notify.learn(L.mod);
     }
     function hudGoal() {
       if (L.goal) HUD.setLeft(L.goal, CONFIG.copy.goalLabel);
@@ -1615,8 +1614,6 @@
     // ======================================================================
     //  THE MODES — their clock, their records and their end
     // ======================================================================
-    var MODE_NAME = { classic: "Classic", fast: "Fast" };
-    var MODE_SUB = { classic: "No limit and no powers, just your best score", fast: "Reach 2048 as fast as you can" };
     function fmtTime(t) {
       var d = Math.floor(t * 10 + 1e-6), m = Math.floor(d / 600), sec = Math.floor(d / 10) % 60;
       return m + ":" + (sec < 10 ? "0" : "") + sec + "." + (d % 10);
@@ -2349,14 +2346,14 @@
         return cv;
       };
     }
-    function powerPage(key, lv, tiles, targets, sidesSpec, lines) {
+    function powerPage(key, lv, tiles, targets, sidesSpec, text) {
       var def = POWER[key];
       return { id: key, title: Lang.t(def.name), lv: lv,
                pic: boardPic({ biome: bandOf(lv), tiles: tiles, targets: targets, sides: sidesSpec }),
-               lines: lines.map(function (s) { return Lang.t(s); }) };
+               text: Lang.t(text) };
     }
-    function modPage(key, lv, lines) {
-      return { id: key, title: Lang.t(MODS[key].name), lv: lv, lines: lines.map(function (s) { return Lang.t(s); }) };
+    function modPage(key, lv, text) {
+      return { id: key, title: Lang.t(MODS[key].name), lv: lv, text: Lang.t(text) };
     }
     var guide = {
       chapters: function () {
@@ -2364,92 +2361,81 @@
           { key: "basics", label: Lang.t("Basics"), pages: [
             { id: "swipe", title: Lang.t("Swipe"), lv: 1,
               pic: boardPic({ tiles: [[2, 0, 3], [2, 2, 3], [4, 3, 0], [8, 1, 1]], magnet: true }),
-              lines: [Lang.t("Swipe to slide every tile as far as it goes."),
-                      Lang.t("Each move brings a new 2, sometimes a 4.")] },
+              text: Lang.t("Swipe to slide every tile as far as it goes.\n\nEach move brings a new 2, sometimes a 4.") },
             { id: "merge", title: Lang.t("Merge"), lv: 1,
               pic: boardPic({ tiles: [[8, 0, 3], [8, 1, 3], [4, 2, 3], [2, 3, 3]] }),
-              lines: [Lang.t("Two twins that meet merge."),
-                      Lang.t("A tile merges once per move.")] },
+              text: Lang.t("Two twins that meet merge.\n\nA tile merges once per move.") },
             { id: "corner", title: Lang.t("Keep a corner"), lv: 1,
               pic: boardPic({ tiles: [[128, 0, 3], [64, 1, 3], [32, 2, 3], [16, 3, 3], [8, 3, 2], [4, 2, 2]] }),
-              lines: [Lang.t("Each level starts with its tiles in a corner."),
-                      Lang.t("Keep the biggest tile in a corner, then build around it.")] },
+              text: Lang.t("Each level starts with its tiles in a corner.\n\nKeep the biggest tile in a corner, then build around it.") },
             { id: "preview", title: Lang.t("Think before you move"), lv: 1,
               pic: boardPic({ tiles: [[4, 0, 1], [4, 2, 1], [2, 1, 3]], magnet: true }),
-              lines: [Lang.t("Drag slowly to see which tiles would move."),
-                      Lang.t("Come back to where you started to cancel.")] },
+              text: Lang.t("Drag slowly to see which tiles would move.\n\nCome back to where you started to cancel.") },
             { id: "magnet", title: Lang.t("Twins pull"), lv: 1,
               pic: boardPic({ tiles: [[16, 0, 2], [16, 3, 2], [2, 1, 0], [2, 1, 1]], magnet: true }),
-              lines: [Lang.t("Twins in line pull gently at each other."),
-                      Lang.t("They will merge on the next move that way.")] },
+              text: Lang.t("Twins in line pull gently at each other.\n\nThey will merge on the next move that way.") },
             { id: "gold", title: Lang.t("Gold tiles"), lv: 1,
               pic: boardPic({ tiles: [[128, 0, 3], [256, 1, 3], [512, 2, 3], [1024, 3, 3], [2048, 1, 2], [4096, 2, 2]] }),
-              lines: [Lang.t("From tile 128, a golden edge appears."),
-                      Lang.t("From tile 2048, a rainbow appears.")] },
+              text: Lang.t("From tile 128, a golden edge appears.\n\nFrom tile 2048, a rainbow appears.") },
             { id: "values", title: Lang.t("Every value"), lv: 1,
               pic: boardPic({ tiles: (function () { var o = []; for (var i = 0; i < 16; i++) o.push([2 << i, i % 4, Math.floor(i / 4)]); return o; })() }),
-              lines: [Lang.t("The whole ladder of the biome, from 2 to 65536.")] },
+              text: Lang.t("The whole ladder of the biome, from 2 to 65536.") },
             { id: "stars", title: Lang.t("Three stars"), lv: 1,
               rows: [[Lang.t("The goal tile"), "★"], [Lang.t("Within the par of moves"), "★★"], [Lang.t("And the level's bonus"), "★★★"]],
-              lines: [Lang.t("A level is won when its goal tile is made."),
-                      Lang.t("With no move left, the round is lost.")] }
+              text: Lang.t("A level is won when its goal tile is made.\n\nWith no move left, the round is lost.") }
           ] },
           { key: "tiles", label: Lang.t("Powers"), pages: [
             powerPage("freeze", 2, [[16, 1, 3, "freeze", 3], [16, 2, 3], [4, 0, 3]], null, null,
-              ["A frozen tile holds its cell like a wall.", "Merge a twin into it to thaw it. It melts after five moves."]),
+              "A frozen tile holds its cell like a wall.\n\nMerge a twin into it to thaw it. It melts after five moves."),
             powerPage("stone", 3, [[32, 1, 3, "stone", 4], [32, 2, 3], [8, 0, 3]], null, null,
-              ["A stone tile slides but never merges.", "It turns back to normal after five moves."]),
+              "A stone tile slides but never merges.\n\nIt turns back to normal after five moves."),
             powerPage("ghostV", 7, [[8, 1, 0, "ghostV"], [4, 1, 2], [2, 3, 3]], null, null,
-              ["Moving up or down, a ghost with nothing in front slips out of the board.", "Left or right, it slides like any tile."]),
+              "Moving up or down, a ghost with nothing in front slips out of the board.\n\nLeft or right, it slides like any tile."),
             powerPage("ghostH", 8, [[8, 0, 1, "ghostH"], [4, 2, 1], [2, 3, 3]], null, null,
-              ["Moving left or right, a ghost with nothing in front slips out of the board.", "Up or down, it slides like any tile."]),
+              "Moving left or right, a ghost with nothing in front slips out of the board.\n\nUp or down, it slides like any tile."),
             powerPage("mystery", 9, [[64, 1, 2, "mystery"], [64, 2, 2], [8, 0, 3]], null, null,
-              ["Its number is hidden for five moves.", "It still merges by its real value."])
+              "Its number is hidden for five moves.\n\nIt still merges by its real value.")
           ] },
           { key: "targets", label: Lang.t("Targets"), pages: [
             { id: "target", title: Lang.t("Reading a target"), lv: 13,
               pic: boardPic({ biome: 2, tiles: [[16, 0, 3], [8, 2, 3], [4, 2, 1]], targets: [["fire", [[2, 1]]]] }),
-              lines: [Lang.t("A target marks cells of the grid, not a tile."),
-                      Lang.t("It strikes the target after your next move."),
-                      Lang.t("A yellow sign warns of danger ahead of time, then turns red until it strikes.")] },
+              text: Lang.t("A target marks cells of the grid, not a tile.\n\nIt strikes the target after your next move.\n\nA yellow sign warns of danger ahead of time, then turns red until it strikes.") },
             powerPage("fire", 13, [[16, 0, 3], [4, 2, 1]], [["fire", [[2, 1]]]], null,
-              ["Burns the cell.", "Leave the cell empty, or send a small tile."]),
+              "Burns the cell.\n\nLeave the cell empty, or send a small tile."),
             powerPage("purple", 14, [[32, 1, 2], [4, 3, 3]], [["purple", [[1, 2]]]], null,
-              ["Halves the tile.", "A 2 vanishes."]),
+              "Halves the tile.\n\nA 2 vanishes."),
             powerPage("boltV", 15, [[8, 2, 0], [16, 2, 2], [4, 0, 3]], [["boltV", [[2, 0], [2, 1], [2, 2], [2, 3]]]], null,
-              ["Clears every tile of its column."]),
+              "Clears every tile of its column."),
             powerPage("boltH", 15, [[8, 0, 1], [16, 2, 1], [4, 3, 3]], [["boltH", [[0, 1], [1, 1], [2, 1], [3, 1]]]], null,
-              ["Clears every tile of its row."]),
+              "Clears every tile of its row."),
             powerPage("comet", 19, [[64, 1, 1], [8, 2, 2], [256, 0, 3]], [["comet", [[1, 1], [2, 1], [1, 2], [2, 2]]]], null,
-              ["Smashes every tile of a 2x2 block."]),
+              "Smashes every tile of a 2x2 block."),
             powerPage("black", 20, [[64, 1, 1], [8, 2, 2], [256, 0, 3]], [["black", [[1, 1], [2, 1], [1, 2], [2, 2]]]], null,
-              ["Halves every tile of a 2x2 block."]),
+              "Halves every tile of a 2x2 block."),
             powerPage("switch", 21, [[128, 0, 0], [8, 3, 3]], [["switch", [[0, 0], [3, 3]]]], null,
-              ["Swaps the tiles of the two marked cells."])
+              "Swaps the tiles of the two marked cells.")
           ] },
           { key: "sides", label: Lang.t("Sides"), pages: [
             powerPage("teleport", 25, [[8, 0, 2], [4, 2, 2]], null, [["left", "teleport"]],
-              ["Tiles pass through this wall and come out on the other side of the board.", "The other tiles of each line close up."]),
+              "Tiles pass through this wall and come out on the other side of the board.\n\nThe other tiles of each line close up."),
             powerPage("lock", 26, [[8, 0, 2], [4, 2, 2]], null, [["right", "lock"]],
-              ["That direction cannot be played while it is active.", "The number counts the moves left."])
+              "That direction cannot be played while it is active.\n\nThe number counts the moves left.")
           ] },
           { key: "twists", label: Lang.t("Twists"), pages: [
-            modPage("clutter", 4, ["The board starts with eight small tiles in the way."]),
-            modPage("storm", 10, ["A power arrives every three or four moves."]),
-            modPage("fours", 16, ["Half the new tiles are fours."]),
-            modPage("lasting", 22, ["Powers last eight moves instead of five."]),
-            modPage("counted", 28, ["The par becomes a limit.", "Past it, the round is lost."])
+            modPage("clutter", 4, "The board starts with eight small tiles in the way."),
+            modPage("storm", 10, "A power arrives every three or four moves."),
+            modPage("fours", 16, "Half the new tiles are fours."),
+            modPage("lasting", 22, "Powers last eight moves instead of five."),
+            modPage("counted", 28, "The par becomes a limit.\n\nPast it, the round is lost.")
           ] },
           { key: "modes", label: Lang.t("Modes"), pages: [
             { id: "mode-classic", title: Lang.t("Classic"), lv: 1,
               pic: boardPic({ biome: 0, tiles: [[1024, 0, 3], [512, 1, 3], [256, 2, 3], [64, 3, 3], [16, 3, 2], [4, 2, 2], [2, 1, 2]] }),
-              lines: [Lang.t("The bathroom, with no powers and no particular goal."),
-                      Lang.t("Play until no move is possible. Only your score counts.")] },
+              text: Lang.t("The bathroom, with no powers and no particular goal.\n\nPlay until no move is possible. Only your score counts.") },
             { id: "mode-fast", title: Lang.t("Fast"), lv: 1,
               pic: boardPic({ biome: 0, tiles: [[512, 0, 3], [256, 1, 3], [64, 2, 3], [128, 3, 2], [64, 2, 2]] }),
               rows: [[Lang.t("Tile 128"), "16 · 32"], [Lang.t("Tile 1024"), "128 · 256"]],
-              lines: [Lang.t("Reach 2048 as fast as you can. The clock starts on your first move."),
-                      Lang.t("New tiles grow with you, always two steps under your biggest tile.")] }
+              text: Lang.t("Reach 2048 as fast as you can. The clock starts on your first move.\n\nNew tiles grow with you, always two steps under your biggest tile.") }
           ] }
         ];
       }

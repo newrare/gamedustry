@@ -1,7 +1,7 @@
 {
   "slug": "stratideck",
   "title": "Stratideck",
-  "version": "0.26.6",
+  "version": "0.27.7",
   "tagline": "Send your cards against a hidden camp: the higher grade wins, the better tier settles it",
   "order": 150,
   "draft": false,
@@ -365,6 +365,30 @@
       "fr": {
         "tagline": "<b class=\"w-drag\">Glisse</b> une carte sur un ennemi <b class=\"w-hidden\">caché</b> : le plus haut <b class=\"w-rank\">Grade</b> gagne",
         "strings": {
+          "Kills the marshal, whatever its tier, but loses to every other grade.": "Tue le maréchal, quel que soit son rang, mais perd contre tous les autres grades.",
+          "Reveals a hidden card without a fight, then goes back under the deck. Against a revealed card, fights as a grade 2.": "Révèle une carte cachée sans combattre, puis repasse sous le paquet. Contre une carte révélée, combat comme un grade 2.",
+          "Unbeatable on the battlefield, but a spy can catch it off guard. Breaks no object.": "Invincible sur le champ de bataille, mais un espion peut le surprendre. Ne détruit aucun objet.",
+          "The recruiting tent sells officers for coins. New recruits arrive every {n} minutes.\n\nThe tent never sells a spy, scout or sapper, unless your camp has none of that grade.": "La tente de recrutement vend des officiers contre des pièces. De nouvelles recrues arrivent toutes les {n} minutes.\n\nLa tente ne vend jamais d'espion, d'éclaireur ni de sapeur, sauf si ton camp n'en a aucun.",
+          "Drag a card onto an enemy in the front row, or next to a cell you have emptied.\n\nOnly the last enemy turned over stays face up. For the others, trust your memory.": "Glisse une carte sur un ennemi de la première ligne ou à côté d'une case que tu as vidée.\n\nSeul le dernier ennemi retourné reste visible. Pour les autres, fie-toi à ta mémoire.",
+          "The higher grade wins the fight and takes the cell.\n\nThe winner goes back under the deck. The loser is out for the rest of the battle.": "Le plus haut grade gagne le combat et prend la case.\n\nLe vainqueur repasse sous le paquet. Le vaincu est perdu pour le reste de la bataille.",
+          "Same grade: the better tier wins.\n\nSame grade and same tier: both cards fall.": "À grade égal, le meilleur rang l'emporte.\n\nMême grade et même rang : les deux cartes tombent.",
+          "Beat a better tier and your card wins, but wounded. It then sits out a turn in its slot.\n\nAfter the battle, the wounded card rests in the infirmary. The wider the tier gap, the longer the stay.": "Bats un meilleur rang et ta carte gagne, mais blessée. Elle passe alors un tour dans son emplacement.\n\nAprès la bataille, la carte blessée se repose à l'infirmerie. Plus l'écart de rang est grand, plus le séjour est long.",
+          "Beat a lower tier and the enemy is left standing, ready to be captured.\n\nWin the battle, and you can take one of the enemies left standing prisoner.": "Bats un rang inférieur et l'ennemi reste debout, prêt à être capturé.\n\nGagne la bataille et tu pourras faire prisonnier un des ennemis restés debout.",
+          "After each card you play, some of the others go back under the deck.\n\nA wounded or stunned card keeps its slot.": "Après chaque carte jouée, certaines des autres repassent sous le paquet.\n\nUne carte blessée ou étourdie garde son emplacement.",
+          "After each of your cards, the camp may slide one soldier into a cell you emptied.\n\nThe flag, traps and objects never move. A soldier that has moved stays tilted.": "Après chacune de tes cartes, le camp peut glisser un soldat dans une case que tu as vidée.\n\nDrapeau, pièges et objets ne bougent jamais. Un soldat qui a bougé reste penché.",
+          "Tap the deck pile to see the cards still standing and the cards lost.\n\nWhen the deck and the hand are both empty, the battle is lost.": "Touche le paquet pour voir les cartes encore debout et les cartes perdues.\n\nQuand le paquet et la main sont vides, la bataille est perdue.",
+          "A tight win pays the most. A marshal thrown at a sergeant earns little.\n\nBeating a better tier pays more. Every win in a row raises your streak.": "Une victoire serrée rapporte le plus. Un maréchal lancé sur un sergent ne rapporte presque rien.\n\nBattre un meilleur rang rapporte plus. Chaque victoire d'affilée fait monter ta série.",
+          "An \"object\" card never moves. Only one grade has the specialty needed to foil the card.": "Une carte 'objet' ne bouge jamais. Un seul grade possède la spécialité nécessaire pour déjouer la carte.",
+          "A wounded card, or one away on a mission, stays in the deck but sits the battle out.\n\nEmpty slots are filled with conscripts, who never go to the infirmary.": "Une carte blessée ou partie en mission reste dans le deck, mais ne combat pas.\n\nLes places vides sont comblées par des conscrits, qui ne vont jamais à l'infirmerie.",
+          "Each officer is unique: one per army, grade and tier.\n\nYour camp never holds the same officer twice.": "Chaque officier est unique : un par armée, grade et rang.\n\nTon camp n'a jamais deux fois le même officier.",
+          "The stay of a wounded card depends on the tier gap, counted from the end of the battle.\n\nIf no bed is free, the wounded card is lost.": "Le séjour d'une carte blessée dépend de l'écart de rang, à compter de la fin de la bataille.\n\nSi aucun lit n'est libre, la carte blessée est perdue.",
+          "A prisoner who turns joins your army, as a card like any other.\n\nA captive with no free cell walks free.": "Un prisonnier qui change de camp rejoint ton armée, comme n'importe quelle autre carte.\n\nUn captif sans cellule libre repart libre.",
+          "When the battle can no longer be won, the enemy commander offers your surrender.\n\nSurrender, and you hand him one card of your choice. The wounds already taken still count.\n\nFight on, and every card that falls is lost or wounded.": "Quand la bataille ne peut plus être gagnée, le commandant ennemi te propose de te rendre.\n\nSi tu te rends, tu lui livres une carte de ton choix. Les blessures déjà reçues comptent toujours.\n\nSi tu continues, chaque carte qui tombe est perdue ou blessée.",
+          "Every few hours, something good or bad happens in the camp. You hear of it at the village.\n\nThe higher the kitchen's gauge, the more good days.": "Régulièrement, il se passe quelque chose de bon ou de mauvais au camp. Tu l'apprends au village.\n\nPlus la jauge de la cuisine est haute, plus les bons jours sont fréquents.",
+          "A squad away sits out every battle until it is back.\n\nMost missions favour one grade, often a spy, a scout or a sapper.": "Une escouade partie manque toutes les batailles jusqu'à son retour.\n\nLa plupart des missions favorisent un grade, souvent un espion, un éclaireur ou un sapeur.",
+          "Six posts, one officer each. An officer at a post leaves the deck and cannot join a squad.\n\nThe officer's tier fills the post's gauge. A trade that suits the post adds a bonus.": "Six postes, un officier chacun. Un officier en poste quitte le deck et ne peut rejoindre aucune escouade.\n\nLe rang de l'officier remplit la jauge du poste. Un métier adapté au poste ajoute un bonus.",
+          "Validate your defense. The red army always attacks the last one you validated.\n\nA card on guard stays in your deck. The bottom row is the front.": "Valide ta défense. L'armée rouge attaque toujours la dernière validée.\n\nUne carte de garde reste dans ton deck. La ligne du bas est le front.",
+          "The raid is led by a copy of your own army, with the rules of a battle.\n\nA lost raid never costs a card, only some coins or a stay in the infirmary.": "L'assaut est mené par une copie de ta propre armée, avec les règles d'une bataille.\n\nUn assaut perdu ne coûte jamais de carte, seulement quelques pièces ou un séjour à l'infirmerie.",
           "Army lost": "Armée perdue",
           "Both fall": "Les deux tombent",
           "Camp taken!": "Camp conquis !",
@@ -408,7 +432,7 @@
           "Prison full": "Prison pleine",
           "walks free": "repart libre",
           "holds": "résiste",
-          "Basic": "Banal",
+          "Basic": "Basique",
           "Common": "Commun",
           "Uncommon": "Peu commun",
           "Rare": "Rare",
@@ -448,7 +472,6 @@
           "Forest crossed": "Forêt traversée",
           "Skull shattered": "Crâne brisé",
           "Book burnt": "Livre brûlé",
-          "Out of the battle": "Hors de combat",
           "Stunned for the battle": "Étourdi jusqu'à la fin de la bataille",
           "The spell hits no one": "Le sort ne frappe personne",
           "An ally falls": "Un allié tombe",
@@ -464,8 +487,6 @@
           "A card that walks into it gets lost until the end of the battle, but comes back unharmed.": "La carte qui s'y aventure s'y perd jusqu'à la fin de la bataille, mais en revient indemne.",
           "A card that strikes it freezes with fear. It goes back to its place in the hand and stays there for the rest of the battle.": "La carte qui le frappe se fige d'effroi. Elle retourne à sa place dans la main et n'en bouge plus jusqu'à la fin de la bataille.",
           "A card that opens it is bewitched. It turns round and strikes a card of its own hand.": "La carte qui l'ouvre est ensorcelée. Elle se retourne et frappe une carte de sa propre main.",
-          "Can take down a marshal, but is no fighter against anyone else.": "L'espion peut battre un maréchal, mais il n'est pas fait pour le champ de bataille.",
-          "Reveals a hidden enemy without a fight, then goes back under the deck.": "Révèle un ennemi caché sans combattre puis repasse sous le paquet.",
           "Clears a trap without blowing up with it.": "Désamorce un piège sans sauter avec lui.",
           "Dumb enough to fight a straw man, and to tear it down.": "Suffisamment stupide pour se battre contre un épouvantail.",
           "Loves chopping down wooden fences.": "Aime découper des barrières de bois.",
@@ -473,35 +494,22 @@
           "Never gets lost, least of all in a forest.": "Ne se perd jamais et surtout pas en forêt.",
           "Too brave to tremble: shatters the skull without being stunned.": "Trop brave pour trembler : brise le crâne sans être étourdi.",
           "Too learned to be bewitched: burns the book safely.": "Trop savant pour être ensorcelé : brûle le livre sans risque.",
-          "Unbeatable on the battlefield, but a spy can catch it off guard.": "Invincible sur le champ de bataille, mais peut se faire surprendre par un espion.",
           "Retrieve the enemy <b>flag</b>": "Récupère le <b>drapeau</b> ennemi",
           "Win with no <b>wounds</b>": "Gagne sans <b>blessure</b>",
           "Take a <b>prisoner</b>": "Fais un <b>prisonnier</b>",
           "Wounds": "Blessures",
           "Left standing": "Laissé debout",
-          "A draw": "Égalité",
           "The hand": "La main de cartes",
-          "The camp moves": "Le camp bouge",
           "vs": "vs",
           "Send a card": "Envoyer une carte",
           "The grade decides": "Le grade décide",
-          "The higher grade wins the fight and takes the cell.": "Le plus haut grade gagne le combat et prend la case.",
-          "The winner goes back under the deck. The loser is out for the rest of the battle.": "Le vainqueur repasse sous le paquet. Le vaincu est perdu pour le reste de la bataille.",
           "The tier decides": "Le rang tranche",
-          "Same grade: the better tier wins.": "À grade égal, le meilleur rang l'emporte.",
-          "After the battle, the wounded card rests in the infirmary. The wider the tier gap, the longer the stay.": "Après la bataille, la carte blessée se repose à l'infirmerie. Plus l'écart de rang est grand, plus le séjour est long.",
-          "Beat a lower tier and the enemy is left standing, ready to be captured.": "Bats un rang inférieur et l'ennemi reste debout, prêt à être capturé.",
-          "Win the battle, and you can take one of the enemies left standing prisoner.": "Gagne la bataille et tu pourras faire prisonnier un des ennemis restés debout.",
-          "A wounded or stunned card keeps its slot.": "Une carte blessée ou étourdie garde son emplacement.",
           "The camp answers": "Le camp riposte",
           "The enemy commander": "Le commandant ennemi",
           "Your side of the table": "Ton côté de la table",
-          "When the deck and the hand are both empty, the battle is lost.": "Quand le paquet et la main sont vides, la bataille est perdue.",
           "Same grade, or one above": "Même grade ou un au-dessus",
           "Two grades above": "Deux grades au-dessus",
           "Three or more above": "Trois ou plus au-dessus",
-          "A tight win pays the most. A marshal thrown at a sergeant earns little.": "Une victoire serrée rapporte le plus. Un maréchal lancé sur un sergent ne rapporte presque rien.",
-          "Beating a better tier pays more. Every win in a row raises your streak.": "Battre un meilleur rang rapporte plus. Chaque victoire d'affilée fait monter ta série.",
           "Bonuses": "Bonus",
           "{a} + {b} per foe beaten": "{a} + {b} par ennemi vaincu",
           "Victory": "Victoire",
@@ -509,17 +517,9 @@
           "The flag pays more for every enemy you beat on the way to it.": "Le drapeau rapporte plus pour chaque ennemi battu en chemin.",
           "Three stars": "Trois étoiles",
           "A lost battle earns no star, whatever you achieved along the way.": "Une bataille perdue ne rapporte aucune étoile, quoi que tu aies accompli en route.",
-          "Kills the marshal, whatever its tier.": "Tue le maréchal, quel que soit son rang.",
-          "Against any other grade the spy is the weakest card of all.": "Contre tout autre grade, l'espion est la plus faible des cartes.",
-          "Sent at a card already turned over, the scout fights as a grade 2.": "Envoyé sur une carte déjà retournée, l'éclaireur combat comme un grade 2.",
-          "The only card that clears a trap. Any other card is lost with it.": "La seule carte qui désamorce un piège. Toute autre carte saute avec lui.",
-          "Bring as many sappers as the camp hides traps.": "Emmène autant de sapeurs que le camp cache de pièges.",
           "One object each": "Un objet chacun",
           "From sergeant to general, every grade is the only one that breaks one object of the camp.": "Du sergent au général, chaque grade est le seul à pouvoir détruire l'un des objets du camp.",
-          "The highest grade: no soldier outranks it.": "Le plus haut grade : aucun soldat ne le surpasse.",
-          "The marshal breaks no object, and the spy kills it.": "Le maréchal ne détruit aucun objet, mais l'espion le tue.",
           "Objects": "Objets",
-          "No object ever stands next to the flag.": "Aucun objet n'est jamais placé à côté du drapeau.",
           "Broken by": "Détruit par",
           "Any card": "Toute carte",
           "The climb": "L'ascension",
@@ -541,20 +541,13 @@
           "Clear this biome to unlock for your defense: {list}.": "Termine ce biome pour débloquer en défense : {list}.",
           "Tier gap of {n}": "Écart de rang de {n}",
           "The deck": "Le deck",
-          "A wounded card, or one away on a mission, stays in the deck but sits the battle out.": "Une carte blessée ou partie en mission reste dans le deck, mais ne combat pas.",
-          "Empty slots are filled with conscripts, who never go to the infirmary.": "Les places vides sont comblées par des conscrits, qui ne vont jamais à l'infirmerie.",
           "Every card is a person": "Chaque carte est une personne",
-          "Your camp never holds the same officer twice.": "Ton camp n'a jamais deux fois le même officier.",
           "Promotion": "Promotion",
           "Life in the camp": "Vie du camp",
-          "The higher the kitchen's gauge, the more good days.": "Plus la jauge de la cuisine est haute, plus les bons jours sont fréquents.",
           "A suited trade": "Un métier adapté",
           "Recruits": "Recrues",
-          "The recruiting tent sells officers for coins. New recruits arrive every {n} minutes.": "La tente de recrutement vend des officiers contre des pièces. De nouvelles recrues arrivent toutes les {n} minutes.",
           "Missions": "Missions",
           "Management": "Gestion",
-          "Six posts, one officer each. An officer at a post leaves the deck and cannot join a squad.": "Six postes, un officier chacun. Un officier en poste quitte le deck et ne peut rejoindre aucune escouade.",
-          "The officer's tier fills the post's gauge. A trade that suits the post adds a bonus.": "Le rang de l'officier remplit la jauge du poste. Un métier adapté au poste ajoute un bonus.",
           "Suited trades: {list}.": "Métiers adaptés : {list}.",
           "Nobody at the post": "Personne au poste",
           "A gauge of {p}": "Une jauge à {p}",
@@ -566,7 +559,6 @@
           "{n} h away": "{n} h d'absence",
           "The raid": "L'assaut",
           "Cards a raid sends": "Cartes engagées par assaut",
-          "A lost raid never costs a card, only some coins or a stay in the infirmary.": "Un assaut perdu ne coûte jamais de carte, seulement quelques pièces ou un séjour à l'infirmerie.",
           "The battle": "La bataille",
           "The grades": "Hiérarchie des grades",
           "The objects": "Les objets du camp",
@@ -580,68 +572,27 @@
           "How many squads can be away on a mission at once.": "Le nombre d'escouades qui peuvent partir en mission en même temps.",
           "How many beds the infirmary has.": "Le nombre de lits de l'infirmerie.",
           "How many cells the prison has.": "Le nombre de cellules de la prison.",
-          "A captive with no free cell walks free.": "Un captif sans cellule libre repart libre.",
           "The camp's morale: the higher it is, the more good days.": "Le moral du camp : plus il est haut, plus les bons jours sont fréquents.",
-          "Only a sergeant tears down a straw man": "Seul un sergent déchire un épouvantail",
-          "Only a lieutenant chops down a fence": "Seul un lieutenant abat une barrière",
-          "Only a captain smashes a rock": "Seul un capitaine brise un rocher",
-          "Only a major crosses a forest": "Seul un major traverse une forêt",
-          "Only a colonel shatters a skull": "Seul un colonel brise un crâne",
-          "Only a general burns a book": "Seul un général brûle un livre",
-          "Only a sapper clears it": "Seul un sapeur le désamorce",
-          "Beating a better tier costs a wound": "Battre un meilleur rang coûte une blessure",
-          "Beating a lower tier takes a captive": "Battre un rang inférieur fait un captif",
-          "Same grade, same tier": "Même grade, même rang",
-          "A tilted card has moved": "Une carte penchée a bougé",
-          "Drag a card onto an enemy in the front row, or next to a cell you have emptied.": "Glisse une carte sur un ennemi de la première ligne ou à côté d'une case que tu as vidée.",
-          "Only the last enemy turned over stays face up. For the others, trust your memory.": "Seul le dernier ennemi retourné reste visible. Pour les autres, fie-toi à ta mémoire.",
-          "Same grade and same tier: both cards fall.": "Même grade et même rang : les deux cartes tombent.",
-          "Beat a better tier and your card wins, but wounded. It then sits out a turn in its slot.": "Bats un meilleur rang et ta carte gagne, mais blessée. Elle passe alors un tour dans son emplacement.",
-          "After each card you play, some of the others go back under the deck.": "Après chaque carte jouée, certaines des autres repassent sous le paquet.",
-          "After each of your cards, the camp may slide one soldier into a cell you emptied.": "Après chacune de tes cartes, le camp peut glisser un soldat dans une case que tu as vidée.",
-          "The flag, traps and objects never move. A soldier that has moved stays tilted.": "Drapeau, pièges et objets ne bougent jamais. Un soldat qui a bougé reste penché.",
           "Tap the enemy commander to see what the camp started with. He shows the grades, never the tiers.": "Touche le commandant ennemi pour voir la composition du camp au début de la bataille. Il montre les grades, jamais les rangs.",
-          "Tap the deck pile to see the cards still standing and the cards lost.": "Touche le paquet pour voir les cartes encore debout et les cartes perdues.",
-          "Sent at a hidden card, the scout reveals it without fighting and goes back under the deck.": "Envoyé sur une carte cachée, l'éclaireur la révèle sans combattre puis repasse sous le paquet.",
-          "Capture it and the battle is won on the spot.": "Prends-le et la bataille est gagnée sur-le-champ.",
-          "A decoy. A card that strikes it is fooled and goes back under the deck.": "Un leurre. La carte qui le frappe se fait duper et repasse sous le paquet.",
-          "A card that strikes it goes back to the hand. The turn is wasted.": "La carte qui s'y heurte retourne dans la main. Le tour est perdu.",
-          "A card that walks in gets lost for the rest of the battle, but comes back unharmed.": "La carte qui s'y aventure se perd jusqu'à la fin de la bataille, mais revient indemne.",
-          "A card that strikes it is stunned and stays stuck in its slot until the battle ends.": "La carte qui le frappe est étourdie et reste bloquée dans son emplacement jusqu'à la fin de la bataille.",
-          "An object never moves. Only one grade can destroy it. Any other card sets it off.": "Un objet ne bouge jamais. Un seul grade peut le détruire. Toute autre carte le déclenche.",
           "No new object in these camps.": "Aucun nouvel objet dans ces camps.",
-          "Each officer is unique: one per army, grade and tier.": "Chaque officier est unique : un par armée, grade et rang.",
-          "The stay of a wounded card depends on the tier gap, counted from the end of the battle.": "Le séjour d'une carte blessée dépend de l'écart de rang, à compter de la fin de la bataille.",
-          "If no bed is free, the wounded card is lost.": "Si aucun lit n'est libre, la carte blessée est perdue.",
-          "A prisoner who turns joins your army, as a card like any other.": "Un prisonnier qui change de camp rejoint ton armée, comme n'importe quelle autre carte.",
           "A victory can raise each card that served by one tier, in a battle, on a mission or at a post.": "Une victoire peut faire monter d'un rang chaque carte qui a servi, en bataille, en mission ou à un poste.",
-          "Every few hours, something good or bad happens in the camp. You hear of it at the village.": "Régulièrement, il se passe quelque chose de bon ou de mauvais au camp. Tu l'apprends au village.",
-          "The tent never sells a spy, scout or sapper, unless your camp has none of that grade.": "La tente ne vend jamais d'espion, d'éclaireur ni de sapeur, sauf si ton camp n'en a aucun.",
-          "A squad away sits out every battle until it is back.": "Une escouade partie manque toutes les batailles jusqu'à son retour.",
-          "Most missions favour one grade, often a spy, a scout or a sapper.": "La plupart des missions favorisent un grade, souvent un espion, un éclaireur ou un sapeur.",
           "Every officer has a trade, written on the back of the card. Each trade suits one post.": "Chaque officier a un métier, inscrit au dos de sa carte. Chaque métier convient à un seul poste.",
-          "Validate your defense. The red army always attacks the last one you validated.": "Valide ta défense. L'armée rouge attaque toujours la dernière validée.",
-          "A card on guard stays in your deck. The bottom row is the front.": "Une carte de garde reste dans ton deck. La ligne du bas est le front.",
-          "The raid is led by a copy of your own army, with the rules of a battle.": "L'assaut est mené par une copie de ta propre armée, avec les règles d'une bataille.",
           "Surrender": "Se rendre",
           "1 card handed over": "1 carte livrée",
           "Each card that falls after": "Chaque carte qui tombe ensuite",
-          "Lost 1 time in 2": "Perdue 1 fois sur 2",
-          "When the battle can no longer be won, the enemy commander offers your surrender.": "Quand la bataille ne peut plus être gagnée, le commandant ennemi te propose de te rendre.",
-          "Surrender, and you hand him one card of your choice. The wounds already taken still count.": "Si tu te rends, tu lui livres une carte de ton choix. Les blessures déjà reçues comptent toujours.",
-          "Fight on, and every card that falls is lost or wounded.": "Si tu continues, chaque carte qui tombe est perdue ou blessée."
+          "Lost 1 time in 2": "Perdue 1 fois sur 2"
         },
         "helpRules": [
           "Chaque carte a un <b>grade</b> (1 à 10) et un <b>rang</b> (E à S). Le plus haut grade gagne. À grade égal, le meilleur rang l'emporte.",
-          "Bats un meilleur rang et ta carte est <b>blessée</b>. Bats un rang inférieur et l'ennemi reste <b>debout</b> : tu peux le faire prisonnier.",
-          "L'<b>espion</b> tue le maréchal, le <b>sapeur</b> désamorce les pièges, l'<b>éclaireur</b> révèle une carte et revient."
+          "Ton <b>Grade</b> est meilleur mais ton <b>Rang</b> plus faible, tu gagnes le combat mais ta carte est <b>blessée</b>. Sinon tu feras un <b>prisonnier</b> si ton <b>Grade</b> et ton <b>Rang</b> sont supérieur.",
+          "Les cartes possèdes aussi une spécificité : L'<b>espion</b> tue le maréchal, le <b>sapeur</b> désamorce les pièges, etc."
         ]
       },
       "en": {
         "helpRules": [
           "Every card has a <b>grade</b> (1 to 10) and a <b>tier</b> (E to S). The higher grade wins. On equal grades, the better tier wins.",
-          "Beat a better tier and your card is <b>wounded</b>. Beat a lower tier and the enemy is left <b>standing</b>: you can take it prisoner.",
-          "The <b>spy</b> kills the marshal, the <b>sapper</b> clears traps, the <b>scout</b> reveals a card and comes back."
+          "Your <b>Grade</b> is higher but your <b>Rank</b> is lower: you win the fight but your card is <b>wounded</b>. Otherwise you take a <b>prisoner</b> if both your <b>Grade</b> and your <b>Rank</b> are higher.",
+          "Cards also have a special ability: the <b>spy</b> kills the marshal, the <b>sapper</b> clears traps, etc."
         ]
       }
     },
@@ -654,8 +605,8 @@
         "step": 50
       },
       "copy": {
-        "en": "A star each: the <b>flag</b>, <b>no wounds</b>, a <b>prisoner</b>",
-        "fr": "Une étoile par objectif : le <b>drapeau</b>, <b>aucune blessure</b>, un <b>prisonnier</b>"
+        "en": "Grab the <b>flag</b> with no <b>wounds</b>, then take a <b>prisoner</b> to earn 3 stars",
+        "fr": "Récupère le <b>drapeau</b> sans <b>blessure</b> puis fait un <b>prisonnier</b> pour obtenir 3 étoiles"
       },
       "bands": {
         "from": [
@@ -4371,8 +4322,8 @@
           "job": "cook",
           "desc": "skinny young man with messy black hair, an oversized dark-blue hood slipping over his eyes, patched plain cloak, holding one small rusty dagger backwards, tiptoeing pose with a nervous grin",
           "lore": {
-            "en": "A kitchen boy who read too many spy novels. He hides behind curtains that are far too short and has never once been spotted — mostly because nobody ever looks at him.",
-            "fr": "Un commis de cuisine qui a lu trop de romans d'espionnage. Il se cache derrière des rideaux bien trop courts et n'a jamais été repéré — il faut dire que personne ne le regarde jamais."
+            "en": "A kitchen boy who read too many spy novels. He hides behind curtains that are far too short and has never once been spotted. Mind you, nobody ever looks at him.",
+            "fr": "Un commis de cuisine qui a lu trop de romans d'espionnage. Il se cache derrière des rideaux bien trop courts et n'a jamais été repéré. Il faut dire que personne ne le regarde jamais."
           }
         },
         {
@@ -4431,8 +4382,8 @@
           "job": "guard",
           "desc": "dashing man with grey temples and a sharp goatee, elegant black and navy leather coat with gold filigree, a gold-hilted rapier and a hidden wrist blade, bowing theatrically with a sly smile",
           "lore": {
-            "en": "Once the king's pickpocket, now his most trusted blade. He has shaken the hand of every enemy marshal — and counted his own rings afterwards.",
-            "fr": "Jadis pickpocket du roi, aujourd'hui sa lame la plus fidèle. Il a serré la main de tous les maréchaux ennemis — et recompté ses bagues juste après."
+            "en": "Once the king's pickpocket, now his most trusted blade. He has shaken the hand of every enemy marshal, and each time he counted his own rings afterwards.",
+            "fr": "Jadis pickpocket du roi, aujourd'hui sa lame la plus fidèle. Il a serré la main de tous les maréchaux ennemis. Chaque fois, il a recompté ses bagues juste après."
           }
         },
         {
@@ -4506,7 +4457,7 @@
           "job": "cook",
           "desc": "tall dark-skinned woman with short curly hair, long blue ranger coat with gold trim, a long brass telescope, a hawk perched on her leather glove",
           "lore": {
-            "en": "Wanda and her hawk Pip see everything within three valleys. Pip does the looking; Wanda takes the credit, and shares the sausages.",
+            "en": "Wanda and her hawk Pip see everything within three valleys. Pip does the looking and Wanda takes the credit. At least she shares the sausages.",
             "fr": "Wanda et son faucon Pip voient tout à trois vallées à la ronde. Pip ouvre l'œil, Wanda récolte les lauriers. Au moins, elle partage les saucisses."
           }
         },
@@ -4536,8 +4487,8 @@
           "job": "analyst",
           "desc": "elderly woman with long white hair braided with blue ribbons, a monocle glowing blue, flowing blue and gold cape, a legendary golden spyglass with a crystal lens, a small owl on her shoulder",
           "lore": {
-            "en": "They say Clara Voyant can read a card before it is turned. She says she simply pays attention — then winks with the eye behind the glowing lens.",
-            "fr": "On dit que Clara Voyant lit une carte avant qu'elle soit retournée. Elle répond qu'elle fait juste attention — puis cligne de l'œil derrière sa lentille lumineuse."
+            "en": "They say Clara Voyant can read a card before it is turned. She says she simply pays attention, then winks with the eye behind her glowing lens.",
+            "fr": "On dit que Clara Voyant lit une carte avant qu'elle soit retournée. Elle répond qu'elle fait juste attention, puis cligne de l'œil derrière sa lentille lumineuse."
           }
         },
         {
@@ -4716,7 +4667,7 @@
           "job": "masterAtArms",
           "desc": "burly old man with a huge white beard and an eyepatch, gleaming legendary golden armour with a blue lion cape, a giant greatsword planted in the ground, shredded straw dummies around his boots",
           "lore": {
-            "en": "Fifty years a sergeant, he is proud never to have been promoted. Stan Firm has cut down more straw men than there are fields in the kingdom.",
+            "en": "Stan Firm has been a sergeant for fifty years and is proud never to have been promoted. He has cut down more straw men than there are fields in the kingdom.",
             "fr": "Sergent depuis cinquante ans, il est fier de n'avoir jamais été promu. Stan Firm a abattu plus d'épouvantails qu'il n'y a de champs dans le royaume."
           }
         },
@@ -4776,8 +4727,8 @@
           "job": "butcher",
           "desc": "grinning black-haired man in a blue tricorn with a white plume, blue lion cape, holding a heavy double-bitted axe high above his head",
           "lore": {
-            "en": "Buck has never met a wooden wall he liked. He knocks politely on every barrier — once, with the axe.",
-            "fr": "Buck n'a jamais croisé un mur de bois qui lui plaise. Il frappe poliment à chaque barrière — une fois, avec la hache."
+            "en": "Buck has never met a wooden wall he liked. He knocks politely on every barrier. Just once, with his axe.",
+            "fr": "Buck n'a jamais croisé un mur de bois qui lui plaise. Il frappe poliment à chaque barrière. Une seule fois, avec sa hache."
           }
         },
         {
@@ -4866,7 +4817,7 @@
           "job": "commando",
           "desc": "bald burly man with a thick beard, blue tricorn, broad chest in a blue coat with a lion cape, a giant pickaxe on his shoulder",
           "lore": {
-            "en": "Rocco walks through rocks, not around them. The quartermaster gave up ordering him new pickaxes; now he orders new rocks, for practice.",
+            "en": "Rocco walks through rocks, not around them. The quartermaster has given up ordering him new pickaxes. Now he orders him new rocks, for practice.",
             "fr": "Rocco passe à travers les rochers, pas autour. L'intendant a renoncé à lui commander des pioches neuves. Désormais, il lui commande des rochers neufs, pour l'entraînement."
           }
         },
@@ -4941,7 +4892,7 @@
           "job": "postman",
           "desc": "fit man with an auburn beard, blue coat, a backpack stuffed with rolled maps, holding a big brass compass and pointing ahead",
           "lore": {
-            "en": "Miles has walked every road of the kingdom and most of the ones that are not there. In a forest he is never lost; the forest is.",
+            "en": "Miles has walked every road of the kingdom and most of the ones that are not there. In a forest he is never the one who is lost. The forest is.",
             "fr": "Miles a parcouru toutes les routes du royaume et la plupart de celles qui n'existent pas. Dans une forêt, ce n'est jamais lui qui est perdu : c'est la forêt."
           }
         },
@@ -5001,7 +4952,7 @@
           "job": "masterAtArms",
           "desc": "scrappy young man with bandaged knuckles and a bruised cheek, blue coat with torn sleeves, fists raised in a boxing stance, grinning",
           "lore": {
-            "en": "Knox has lost every fight he ever started, and started every fight he ever saw. He is not brave; he simply never learned to be afraid.",
+            "en": "Knox has lost every fight he ever started, and started every fight he ever saw. He is not brave. He simply never learned to be afraid.",
             "fr": "Knox a perdu toutes les bagarres qu'il a commencées et commencé toutes celles qu'il a vues. Il n'est pas courageux : il n'a simplement jamais appris à avoir peur."
           }
         },
@@ -5046,7 +4997,7 @@
           "job": "warden",
           "desc": "long brown-haired man with a full beard, blue colonel's uniform with gold, a lion banner in one hand and an armoured gauntlet fist raised in the other",
           "lore": {
-            "en": "Lionel Hart has walked into the Skull Pass five times, whistling all the way. The skulls rattle; Lionel rattles back.",
+            "en": "Lionel Hart has walked into the Skull Pass five times, whistling all the way. The skulls rattle, and Lionel rattles back.",
             "fr": "Lionel Hart est entré cinq fois dans le col des Crânes en sifflotant tout du long. Les crânes claquent des dents. Lionel leur rend la pareille."
           }
         },
@@ -5136,8 +5087,8 @@
           "job": "interrogator",
           "desc": "woman with long curly red hair, blue tricorn with a white plume, sword raised, a padlocked golden book at her hip, confident smile",
           "lore": {
-            "en": "Ruby Pledge's word is worth more than the royal treasury, and the treasury knows it. Enemy spies have tried every lie on her; she writes them all down and locks the book.",
-            "fr": "La parole de Ruby Pledge vaut plus que le trésor royal. Le trésor le sait. Les espions ennemis ont tout essayé ; elle note chaque mensonge et verrouille le livre."
+            "en": "Ruby Pledge's word is worth more than the royal treasury, and the treasury knows it. Enemy spies have tried every lie on her. She writes each one down and locks the book.",
+            "fr": "La parole de Ruby Pledge vaut plus que le trésor royal. Le trésor le sait. Les espions ennemis ont tenté tous les mensonges. Elle les note un à un et verrouille le livre."
           }
         },
         {
@@ -5316,8 +5267,8 @@
           "job": "liaison",
           "desc": "hooded imp whose red eyes glow in the shadow of a black and red hood, crimson face mask, twin serrated daggers, lunging from a crouch",
           "lore": {
-            "en": "Hal O'Ween only works at night, and only on the darkest ones. He has slipped into three blue camps without leaving a footprint — or a pumpkin.",
-            "fr": "Hal O'Ween ne travaille que la nuit — et seulement les plus noires. Il s'est glissé dans trois camps bleus sans laisser d'empreinte — ni de citrouille."
+            "en": "Hal O'Ween only works at night, and only on the darkest ones. He has slipped into three blue camps without leaving a footprint, or even a pumpkin.",
+            "fr": "Hal O'Ween ne travaille que la nuit, et seulement les plus noires. Il s'est glissé dans trois camps bleus sans laisser la moindre empreinte, ni même une citrouille."
           }
         },
         {
@@ -5406,7 +5357,7 @@
           "job": "masterAtArms",
           "desc": "imp with a huge red feather crest, red and gold light armour, drawing a jagged longbow, glowing red eyes taking aim",
           "lore": {
-            "en": "Bo Stringer can put an arrow through a keyhole and read the letter on the other side. He never shoots first; he just looks, and that is worse.",
+            "en": "Bo Stringer can put an arrow through a keyhole and read the letter on the other side. He never shoots first. He just looks at you, and that is worse.",
             "fr": "Bo Stringer peut planter une flèche dans un trou de serrure et lire la lettre de l'autre côté. Il ne tire jamais le premier : il se contente de regarder. C'est pire."
           }
         },
@@ -5482,7 +5433,7 @@
           "desc": "stocky goblin-like imp with brass goggles, red coat, a big alarm-clock bomb strapped to his back, pliers and coloured wires in hand",
           "lore": {
             "en": "Tick Tockley builds bombs that play a little tune before they go off. He says it is only polite to warn people.",
-            "fr": "Tick Tockley fabrique des bombes qui jouent un petit air avant d'exploser. Il dit que c'est la moindre des politesses de prévenir."
+            "fr": "Tick Tockley fabrique des bombes qui jouent un petit air avant d'exploser. Pour lui, prévenir les gens, c'est la moindre des politesses."
           }
         },
         {
@@ -5541,8 +5492,8 @@
           "job": "guard",
           "desc": "pudgy imp in a red helmet too big for him, a rusty short sword, tripping over his own cape",
           "lore": {
-            "en": "Grunt is the loudest recruit in the camp and the easiest to fool — except by scarecrows, which he attacks on sight because they look shifty.",
-            "fr": "Grunt est la recrue la plus bruyante du camp et la plus facile à duper — sauf par les épouvantails, qu'il attaque à vue parce qu'ils ont l'air louches."
+            "en": "Grunt is the loudest recruit in the camp and the easiest to fool. Only scarecrows have never fooled him. He attacks them on sight because they look shifty.",
+            "fr": "Grunt est la recrue la plus bruyante du camp et la plus facile à duper. Seuls les épouvantails ne l'ont jamais dupé : il les attaque à vue parce qu'ils ont l'air louches."
           }
         },
         {
@@ -5871,7 +5822,7 @@
           "job": "expedition",
           "desc": "tall dark-elf man with long black hair and a silver streak, ornate red and gold major's armour, a golden compass spinning in the air above his hand, cape embroidered with a star chart",
           "lore": {
-            "en": "Merid Ian navigates by the stars, even at noon; he simply knows where they are. No forest has ever kept him longer than a lunch break.",
+            "en": "Merid Ian navigates by the stars, even at noon. He simply knows where they are. No forest has ever kept him longer than a lunch break.",
             "fr": "Merid Ian se guide aux étoiles, même à midi : il sait simplement où elles sont. Aucune forêt ne l'a jamais retenu plus longtemps qu'une pause déjeuner."
           }
         },
@@ -5931,8 +5882,8 @@
           "job": "masterAtArms",
           "desc": "burly goblin-like imp with a shaved head and small tusks, red and black armour, iron gauntlets, one foot on a pile of skulls",
           "lore": {
-            "en": "Mack Maul fears nothing except running out of things to punch. He once punched a ghost; the ghost left the camp the next morning.",
-            "fr": "Mack Maul ne craint rien, sauf de manquer de choses à frapper. Il a un jour cogné un fantôme ; le fantôme a quitté le camp le lendemain matin."
+            "en": "Mack Maul fears nothing except running out of things to punch. He once punched a ghost, and the ghost left the camp the next morning.",
+            "fr": "Mack Maul ne craint rien, sauf de manquer de choses à frapper. Un jour, il a cogné un fantôme. Le fantôme a quitté le camp dès le lendemain matin."
           }
         },
         {
@@ -5946,8 +5897,8 @@
           "job": "warden",
           "desc": "imp woman with long wild white hair, red and gold plumed armour, massive spiked gauntlets, snarling, a smashed skull under her boot",
           "lore": {
-            "en": "Colonel Blanche Fury went white overnight — not from fright, from anger. She has cracked every cursed skull the blue army ever planted.",
-            "fr": "La colonelle Blanche Fury a blanchi en une nuit — pas de peur, de colère. Elle a fendu chaque crâne maudit que l'armée bleue a planté."
+            "en": "Colonel Blanche Fury went white overnight, not from fright but from anger. She has cracked every cursed skull the blue army ever planted.",
+            "fr": "La colonelle Blanche Fury a blanchi en une nuit, non pas de peur mais de colère. Elle a fendu chaque crâne maudit que l'armée bleue a planté."
           }
         },
         {
@@ -5961,8 +5912,8 @@
           "job": "doctor",
           "desc": "towering bald imp with red war paint shaped like a skull on his face, ornate red and gold armour, huge glowing red gauntlets, fist raised",
           "lore": {
-            "en": "Crusher Morgue paints a skull on his face so the real ones know who is in charge. They never argue; he punches them anyway.",
-            "fr": "Crusher Morgue se peint un crâne sur le visage pour que les vrais sachent qui commande. Ils ne discutent jamais ; il les frappe quand même."
+            "en": "Crusher Morgue paints a skull on his face so the real ones know who is in charge. They never argue, but he punches them anyway.",
+            "fr": "Crusher Morgue se peint un crâne sur le visage pour que les vrais sachent qui commande. Ils ne discutent jamais, mais il les frappe quand même."
           }
         },
         {
@@ -6021,8 +5972,8 @@
           "job": "liaison",
           "desc": "dark-elf woman with dark braids wrapped in chains, red and black general's coat, a heavy book sealed with red wax and a padlock, stern look",
           "lore": {
-            "en": "Bonnie Bound wraps her promises in chains, literally. The blue army once offered her a castle to open her book; she used the letter to light a fire.",
-            "fr": "Bonnie Bound enchaîne ses promesses, au sens propre. L'armée bleue lui a offert un château pour ouvrir son livre ; elle a allumé le feu avec la lettre."
+            "en": "Bonnie Bound wraps her promises in chains, literally. The blue army once offered her a castle to open her book. She used the letter to light a fire.",
+            "fr": "Bonnie Bound enchaîne ses promesses, au sens propre. L'armée bleue lui a offert un château pour ouvrir son livre. Elle a allumé le feu avec la lettre."
           }
         },
         {
@@ -6037,7 +5988,7 @@
           "desc": "massive imp in heavy red and gold armour, ferocious grin, gauntleted fist raised, a huge padlocked tome chained to his back",
           "lore": {
             "en": "General Garth Sworn swore loyalty to the red crown with his fist on the book, and dented it. He has never broken his word, only the odd table.",
-            "fr": "Le général Garth Sworn a juré fidélité à la couronne rouge le poing sur le livre — et l'a cabossé. Il n'a jamais trahi sa parole, seulement quelques tables."
+            "fr": "Le général Garth Sworn a juré fidélité à la couronne rouge, le poing sur le livre. Il l'a cabossé. Il n'a jamais trahi sa parole, seulement quelques tables."
           }
         },
         {
@@ -6082,7 +6033,7 @@
           "desc": "tiny imp boy with a huge red crown sliding over his eyes, red cape dragging on the ground, a wooden sceptre, pouting",
           "lore": {
             "en": "Pip Squeak is next in line for the red throne, after forty-two cousins. He practises his royal wave on the pigeons.",
-            "fr": "Pip Squeak est héritier du trône rouge — en quarante-troisième position. Il s'entraîne à faire le salut royal aux pigeons."
+            "fr": "Pip Squeak est l'héritier du trône rouge, juste après quarante-deux cousins. Il s'entraîne à faire le salut royal aux pigeons."
           }
         },
         {

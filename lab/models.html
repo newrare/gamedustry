@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — 3D models</title>
+<meta name="lab-group" content="tools">
+<style>
+/* ===========================================================================
+   LAB — 3D MODELS. Every 3D object the studio can put in a scene, on one page:
+   the packs downloaded into assets/model/ (listed by assets/model/index.json,
+   `make models`) and the objects made in code (lab/models/library.js).
+
+   It answers the question a look bench cannot: does a code-made tree belong
+   to the same family as a kit's building? So every object is shown the same
+   way — one turntable, one light, the kit's palette texture — with what it is
+   made of beside it: triangles, size in the kit's units and in road tiles,
+   and the SWATCHES of the palette it samples, read off its UVs. A second slot
+   puts any other object beside it, and a car of the kit stands in for scale.
+
+   An object made in code is seeded: Reseed shows its variants, and Export GLB
+   hands one over as a file, which is how a code-made object becomes a model a
+   game can load.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below. #<id> opens an object.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+#panel { flex:0 0 320px; height:100vh; overflow-y:auto; padding:18px 16px 40px; background:#12121c; border-right:1px solid #23233a; }
+#panel h1 { font-size:16px; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:16px 0 6px; font-size:12px; color:#9c9cba; font-weight:600; }
+input[type=search], select { width:100%; padding:6px 8px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:4px 9px; border-radius:999px; background:#22223a; border:1px solid #2c2c47; color:#cfd0ea; font-size:11px; cursor:pointer; }
+.chip.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 0; font-size:12px; color:#9c9cba; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+button.wide { width:100%; margin-top:6px; padding:7px 8px; background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:600 12px/1.2 inherit; cursor:pointer; }
+button.wide:disabled { opacity:.4; cursor:default; }
+#info { font-size:12px; color:#cfd0ea; }
+#info dl { display:grid; grid-template-columns:auto 1fr; gap:3px 10px; }
+#info dt { color:#8b8ba7; font-weight:500; }
+#info .notes { margin-top:8px; font-weight:500; color:#9c9cba; }
+.sw { display:inline-flex; align-items:center; gap:4px; margin:2px 6px 2px 0; font:500 11px ui-monospace,Menlo,monospace; color:#9c9cba; }
+.sw i { display:inline-block; width:14px; height:14px; border-radius:3px; border:1px solid #0006; }
+
+#stage { flex:1; display:flex; flex-direction:column; min-width:0; }
+#viewer { position:relative; flex:0 0 52vh; border-bottom:1px solid #23233a; }
+#view { width:100%; height:100%; display:block; touch-action:none; }
+#vlabel { position:absolute; left:14px; top:10px; font-size:13px; color:#e8e6f5; text-shadow:0 1px 2px #000; pointer-events:none; }
+#grid { flex:1; overflow-y:auto; padding:12px 16px 30px; }
+#grid h3 { margin:14px 0 8px; font-size:12px; color:#9c9cba; font-weight:600; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:10px; }
+.card { background:#15151f; border:1px solid #23233a; border-radius:10px; padding:6px; cursor:pointer; }
+.card.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff; }
+.card img { width:100%; aspect-ratio:1; display:block; border-radius:6px; background:#1d1d2a; }
+.card b { display:block; margin-top:4px; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.card small { display:block; font:500 10px/1.3 ui-monospace,Menlo,monospace; color:#8b8ba7; }
+.card .code { color:#ffcf7a; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>3D models</h1>
+  <p class="hint">Every object the studio can place in a scene: the downloaded packs and what is made in code, shown the same way. Drag to orbit, wheel to zoom.</p>
+  <input id="q" type="search" placeholder="Search a name, a category, a tag">
+  <h2>Source</h2><div class="chips" id="packs"></div>
+  <h2>Category</h2><div class="chips" id="cats"></div>
+  <h2>View</h2>
+  <div class="row">Compare with <select id="cmp" style="width:170px"><option value="">Nothing</option></select></div>
+  <div class="row">Shading <select id="shade" style="width:170px"><option value="as">As authored</option><option value="smooth">Smooth</option><option value="flat">Faceted</option></select></div>
+  <div class="row">A car of the kit for scale <input id="car" type="checkbox" checked></div>
+  <div class="row">Wireframe <input id="wire" type="checkbox"></div>
+  <div class="row">Turn <input id="spin" type="checkbox" checked></div>
+  <div class="row">Light background <input id="light" type="checkbox"></div>
+  <h2>Biome</h2>
+  <div class="row">Weathering <select id="biome" style="width:170px"><option value="none">None</option><option value="moss">Moss</option><option value="snow">Snow</option><option value="dust">Dust</option></select></div>
+  <div class="row">Strength <input id="bamt" type="range" min="0" max="1.5" step="0.05" value="1" style="width:170px"></div>
+  <button class="wide" id="reseed">Reseed (code-made objects)</button>
+  <button class="wide" id="export">Export GLB</button>
+  <h2>Object</h2>
+  <div id="info">…</div>
+</div>
+
+<div id="stage">
+  <div id="viewer"><canvas id="view"></canvas><div id="vlabel"></div></div>
+  <div id="grid">Loading…</div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { ITEMS, PAL, paint, mulberry, weather, setBiome, tufts, WEATHER } from "./models/library.js";
+
+const ASSETS = "../assets/model/";
+const ATLAS_URL = ASSETS + "kaykit-city/citybits_texture.png";
+const CODE = "code";
+
+// ---- the list: the packs on disk and the library ---------------------------------
+let entries = [], selected = null, seed = 1;
+const state = { pack: "all", cat: "all", q: "" };
+
+// ---- materials for what is made in code: the kit's palette texture --------------
+const atlasTex = new THREE.TextureLoader().load(ATLAS_URL);
+atlasTex.flipY = false; atlasTex.colorSpace = THREE.SRGBColorSpace;
+let atlasData = null;                    // for the swatch chips
+const atlasImg = new Image(); atlasImg.src = ATLAS_URL;
+atlasImg.onload = () => { const c = document.createElement("canvas"); c.width = atlasImg.width; c.height = atlasImg.height; const g = c.getContext("2d"); g.drawImage(atlasImg, 0, 0); atlasData = g.getImageData(0, 0, c.width, c.height); };
+const mats = {};
+function codeMat(hex, opts) {
+  const key = hex + JSON.stringify(opts || {});
+  return mats[key] || (mats[key] = new THREE.MeshStandardMaterial(Object.assign(PAL[hex]
+    ? { map: atlasTex, roughness: 0.85, metalness: 0 } : { color: hex, roughness: 0.85, metalness: 0 }, opts)));
+}
+const GLOWS = { A: 0x39e6ff, B: 0xb45cff, ember: 0xff6a1a };
+const glowMats = {};
+function glow(k) {
+  return glowMats[k] || (glowMats[k] = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: GLOWS[k] || 0xffffff, emissiveIntensity: 1.6, roughness: 0.2 }));
+}
+function buildCode(e, s) {
+  const rnd = mulberry(s);
+  return e.item.build({ mesh: (geo, hex, opts) => new THREE.Mesh(paint(geo, hex), codeMat(hex, opts)), mat: codeMat, glow, rnd }, e.item.opts || {});
+}
+
+// ---- loading a kit model, once -----------------------------------------------------
+const loader = new GLTFLoader(), gltfCache = {};
+function loadKit(e) {
+  return gltfCache[e.file] || (gltfCache[e.file] = loader.loadAsync(ASSETS + e.file).then((g) => g.scene));
+}
+async function objectOf(e) {
+  return e.pack === CODE ? buildCode(e, seed) : (await loadKit(e)).clone(true);
+}
+
+// ---- a studio: the same light for every object --------------------------------------
+function studio(scene, renderer) {
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x6b5a48, 0.6));
+  const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
+  sun.position.set(4, 7, 5); sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
+  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 30 });
+  scene.add(sun, sun.target);
+  // a soft sky as the environment, so a metal or a glass reads as one
+  const sky = new THREE.Scene(), mat = new THREE.ShaderMaterial({ side: THREE.BackSide,
+    vertexShader: "varying vec3 d; void main() { d = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: "varying vec3 d; void main() { float y = normalize(d).y; vec3 c = y > 0.0 ? mix(vec3(0.85, 0.9, 0.95), vec3(0.45, 0.65, 0.9), y) : vec3(0.42, 0.38, 0.33); gl_FragColor = vec4(c, 1.0); }" });
+  sky.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), mat));
+  const pm = new THREE.PMREMGenerator(renderer);
+  scene.environment = pm.fromScene(sky, 0.04).texture; scene.environmentIntensity = 0.7;
+  return sun;
+}
+function frame(obj) {
+  const box = new THREE.Box3().setFromObject(obj), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  return { box, size, c, r: Math.max(0.25, size.length() / 2) };
+}
+function shadows(o) { o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } }); return o; }
+// the viewer's copy gets its own materials, so its shading and wireframe never reach the thumbnails
+// — and it is the copy the biome weathers, the kit's models as much as ours
+function own(o) { o.traverse((m) => { if (m.isMesh) m.material = Array.isArray(m.material) ? m.material.map((x) => weather(x.clone())) : weather(m.material.clone()); }); return o; }
+// the biome's relief on what is shown: moss, snow lumps, pebbles, painted like the rest
+const tuftMats = {};
+const tuftCtx = { mesh: (geo, hex) => new THREE.Mesh(paint(geo, hex), tuftMats[hex] || (tuftMats[hex] = weather(codeMat(hex).clone()))) };
+function dress() {
+  const biome = document.getElementById("biome").value, amt = +document.getElementById("bamt").value;
+  setBiome(biome, amt);
+  for (const o of [current, compare, car]) {
+    if (!o) continue;
+    for (const c of o.children.filter((c) => c.userData.tuft)) o.remove(c);
+    if (biome === "none" || !o.visible) continue;
+    holder.updateMatrixWorld(true);
+    const t = tufts(o, biome, tuftCtx, amt, new THREE.Matrix4().copy(holder.matrixWorld).invert());
+    if (t) o.add(t);
+  }
+}
+// the box of what is shown, turned back to rest
+function frameShown() {
+  const ry = holder.rotation.y; holder.rotation.y = 0; holder.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  for (const o of holder.children) if (o.visible) box.expandByObject(o);
+  holder.rotation.y = ry; holder.updateMatrixWorld(true);
+  const size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  return { box, size, c, r: Math.max(0.25, size.length() / 2) };
+}
+
+// ---- thumbnails: one offscreen renderer, every object once -------------------------
+const thumbR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+thumbR.setSize(192, 192); thumbR.shadowMap.enabled = true; thumbR.toneMapping = THREE.ACESFilmicToneMapping;
+const thumbS = new THREE.Scene(); studio(thumbS, thumbR);
+const thumbCam = new THREE.PerspectiveCamera(30, 1, 0.01, 200);
+async function thumbnail(e) {
+  const o = shadows(await objectOf(e));
+  thumbS.add(o);
+  const f = frame(o), dist = f.r / Math.sin(15 * Math.PI / 180) * 1.05;
+  thumbCam.position.set(f.c.x + dist * 0.62, f.c.y + dist * 0.45, f.c.z + dist * 0.64);
+  thumbCam.lookAt(f.c); thumbCam.near = dist / 50; thumbCam.far = dist * 4; thumbCam.updateProjectionMatrix();
+  thumbR.render(thumbS, thumbCam);
+  const url = thumbR.domElement.toDataURL("image/png");
+  thumbS.remove(o);
+  return url;
+}
+
+// ---- the viewer ------------------------------------------------------------------
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+studio(scene, renderer);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.01, 200);
+const controls = new OrbitControls(camera, canvas); controls.enableDamping = true;
+// the floor: the kit's road tiles, 2 x 2, so a size reads in tiles at a glance
+const floor = new THREE.Group(); scene.add(floor);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(12, 48).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x8a8f96, roughness: 1 }));
+ground.receiveShadow = true; floor.add(ground);
+const grid = new THREE.GridHelper(24, 12, 0x5a5f66, 0x6c7178); grid.position.y = 0.002; floor.add(grid);
+const holder = new THREE.Group(); scene.add(holder);
+let current = null, compare = null, car = null;
+
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+window.addEventListener("resize", resize);
+
+function applyView() {
+  const light = document.getElementById("light").checked;
+  scene.background = new THREE.Color(light ? 0xe9eef2 : 0x1b1d26);
+  ground.material.color.set(light ? 0xc9ced4 : 0x5a5f66);
+  const shade = document.getElementById("shade").value, wire = document.getElementById("wire").checked;
+  holder.traverse((m) => {
+    if (!m.isMesh) return;
+    for (const mt of [].concat(m.material)) {
+      if (mt.userData.flat0 === undefined) mt.userData.flat0 = mt.flatShading;
+      const f = shade === "as" ? mt.userData.flat0 : shade === "flat";
+      if (mt.flatShading !== f) { mt.flatShading = f; mt.needsUpdate = true; }
+      mt.wireframe = wire;
+    }
+  });
+  if (car) car.visible = document.getElementById("car").checked;
+  layout();
+  dress();
+}
+// the object in the middle, the compared one to its right, the car to its left
+function layout() {
+  if (!current) return;
+  const ry = holder.rotation.y; holder.rotation.y = 0; holder.updateMatrixWorld(true);
+  const fa = frame(current);
+  current.position.set(-fa.c.x + current.position.x, current.position.y - fa.box.min.y, -fa.c.z + current.position.z);
+  let left = -fa.size.x / 2, right = fa.size.x / 2;
+  if (compare) {
+    const fb = frame(compare);
+    compare.position.x += right + 0.4 - fb.box.min.x; compare.position.y -= fb.box.min.y; compare.position.z -= fb.c.z;
+    right = right + 0.4 + fb.size.x;
+  }
+  if (car && car.visible) {
+    const fc = frame(car);
+    car.position.x += left - 0.4 - fc.box.max.x; car.position.y -= fc.box.min.y; car.position.z -= fc.c.z;
+    left = left - 0.4 - fc.size.x;
+  }
+  holder.rotation.y = ry; holder.updateMatrixWorld(true);
+}
+function aim() {
+  const f = frameShown(), dist = f.r / Math.sin(16 * Math.PI / 180) * 1.1;
+  controls.target.copy(f.c);
+  camera.position.set(f.c.x + dist * 0.55, f.c.y + dist * 0.42, f.c.z + dist * 0.72);
+  camera.near = dist / 100; camera.far = dist * 10; camera.updateProjectionMatrix();
+  controls.update();
+}
+
+async function show(e, keepCamera) {
+  selected = e;
+  document.querySelectorAll(".card").forEach((c) => c.classList.toggle("on", c.dataset.id === e.id));
+  holder.clear();
+  current = own(shadows(await objectOf(e))); holder.add(current);
+  const ce = entries.find((x) => x.id === document.getElementById("cmp").value);
+  compare = ce && ce !== e ? own(shadows(await objectOf(ce))) : null;
+  if (compare) holder.add(compare);
+  const carE = entries.find((x) => x.name === "car_sedan");
+  car = carE && e !== carE ? own(shadows(await objectOf(carE))) : null;
+  if (car) holder.add(car);
+  applyView();
+  if (!keepCamera) aim();
+  document.getElementById("vlabel").textContent = e.name + (compare ? "  ·  beside " + ce.name : "") + (car && car.visible ? "  ·  a car for scale" : "");
+  document.getElementById("export").disabled = false;
+  info(e, current);
+  history.replaceState(null, "", "#" + e.id);
+}
+
+// ---- what an object is made of --------------------------------------------------------
+function swatches(obj) {
+  const area = {}, va = new THREE.Vector3(), vb = new THREE.Vector3(), vc = new THREE.Vector3();
+  obj.traverse((m) => {
+    if (!m.isMesh || !m.geometry.attributes.uv || !(m.material.map)) return;
+    const p = m.geometry.attributes.position, uv = m.geometry.attributes.uv, idx = m.geometry.index;
+    const n = idx ? idx.count : p.count;
+    for (let t = 0; t < n; t += 3) {
+      const i0 = idx ? idx.getX(t) : t, i1 = idx ? idx.getX(t + 1) : t + 1, i2 = idx ? idx.getX(t + 2) : t + 2;
+      va.fromBufferAttribute(p, i0); vb.fromBufferAttribute(p, i1); vc.fromBufferAttribute(p, i2);
+      const a = vb.sub(va).cross(vc.sub(va)).length() / 2;
+      const u = (uv.getX(i0) + uv.getX(i1) + uv.getX(i2)) / 3, v = (uv.getY(i0) + uv.getY(i1) + uv.getY(i2)) / 3;
+      const key = Math.min(7, Math.floor(u * 8)) + "," + Math.min(3, Math.floor(v * 4));
+      area[key] = (area[key] || 0) + a;
+    }
+  });
+  const tot = Object.values(area).reduce((s, x) => s + x, 0) || 1;
+  return Object.entries(area).sort((a, b) => b[1] - a[1]).map(([k, a]) => ({ cell: k.split(",").map(Number), share: a / tot }));
+}
+function swatchColour(col, row) {
+  if (!atlasData) return "#888";
+  const x = Math.floor((col + 0.38) * atlasData.width / 8), y = Math.floor((row + 0.3) * atlasData.height / 4), i = (y * atlasData.width + x) * 4, d = atlasData.data;
+  return "rgb(" + d[i] + "," + d[i + 1] + "," + d[i + 2] + ")";
+}
+function counts(obj) {
+  let tris = 0, verts = 0; const ms = new Set();
+  obj.traverse((m) => { if (!m.isMesh) return; const g = m.geometry; verts += g.attributes.position.count; tris += (g.index ? g.index.count : g.attributes.position.count) / 3; [].concat(m.material).forEach((x) => ms.add(x)); });
+  return { tris: Math.round(tris), verts, materials: ms.size };
+}
+function info(e, obj) {
+  const f = frame(obj), c = counts(obj), sw = swatches(obj);
+  const dims = [f.size.x, f.size.y, f.size.z].map((v) => v.toFixed(2)).join(" × ");
+  const tiles = [f.size.x, f.size.z].map((v) => (v / 2).toFixed(2)).join(" × ");
+  const src = e.pack === CODE ? "lab/models/library.js" : "assets/model/" + e.file;
+  document.getElementById("info").innerHTML =
+    "<dl>" +
+    "<dt>Name</dt><dd>" + e.name + "</dd>" +
+    "<dt>Id</dt><dd>" + e.id + "</dd>" +
+    "<dt>Source</dt><dd>" + e.packTitle + "</dd>" +
+    "<dt>Licence</dt><dd>" + e.licence + (e.author ? " · " + e.author : "") + "</dd>" +
+    "<dt>File</dt><dd>" + src + "</dd>" +
+    "<dt>Category</dt><dd>" + e.category + (e.biome ? " · biome " + e.biome : "") + "</dd>" +
+    "<dt>Triangles</dt><dd>" + c.tris + " · " + c.verts + " vertices</dd>" +
+    "<dt>Materials</dt><dd>" + c.materials + "</dd>" +
+    "<dt>Size</dt><dd>" + dims + " (w × h × d)</dd>" +
+    "<dt>Footprint</dt><dd>" + tiles + " road tiles</dd>" +
+    "</dl>" +
+    "<h2>Palette swatches it samples</h2>" +
+    (sw.length ? sw.map((s) => "<span class='sw'><i style='background:" + swatchColour(s.cell[0], s.cell[1]) + "'></i>" + s.cell.join(",") + " " + Math.round(s.share * 100) + "%</span>").join("")
+      : "<span class='sw'>none: flat colours or emissive only</span>") +
+    (e.notes ? "<p class='notes'>" + e.notes + "</p>" : "");
+}
+
+// ---- the panel and the grid -------------------------------------------------------
+function chips(id, values, key) {
+  const box = document.getElementById(id); box.innerHTML = "";
+  for (const [v, label] of values) {
+    const c = document.createElement("span"); c.className = "chip" + (state[key] === v ? " on" : ""); c.textContent = label;
+    c.onclick = () => { state[key] = v; renderPanel(); renderGrid(); };
+    box.appendChild(c);
+  }
+}
+function visible(e) {
+  const q = state.q.toLowerCase();
+  return (state.pack === "all" || e.pack === state.pack) && (state.cat === "all" || e.category === state.cat) &&
+    (!q || (e.name + " " + e.id + " " + e.category + " " + (e.tags || []).join(" ") + " " + (e.biome || "")).toLowerCase().includes(q));
+}
+function renderPanel() {
+  const packs = [...new Set(entries.map((e) => e.pack))];
+  chips("packs", [["all", "All"], ...packs.map((p) => [p, entries.find((e) => e.pack === p).packTitle + " (" + entries.filter((e) => e.pack === p).length + ")"])], "pack");
+  const cats = [...new Set(entries.filter((e) => state.pack === "all" || e.pack === state.pack).map((e) => e.category))].sort();
+  chips("cats", [["all", "All"], ...cats.map((c) => [c, c])], "cat");
+}
+function renderGrid() {
+  const g = document.getElementById("grid"); g.innerHTML = "";
+  const groups = {};
+  for (const e of entries.filter(visible)) (groups[e.packTitle] = groups[e.packTitle] || []).push(e);
+  for (const title in groups) {
+    const h = document.createElement("h3"); h.textContent = title + " · " + groups[title].length; g.appendChild(h);
+    const box = document.createElement("div"); box.className = "cards"; g.appendChild(box);
+    for (const e of groups[title]) {
+      const c = document.createElement("div"); c.className = "card" + (selected === e ? " on" : ""); c.dataset.id = e.id;
+      c.innerHTML = "<img alt=''><b>" + e.name + "</b><small" + (e.pack === CODE ? " class='code'" : "") + ">" + e.category + " · " + e.tris + " tris</small>";
+      if (e.thumb) c.querySelector("img").src = e.thumb;
+      e.card = c;
+      c.onclick = () => show(e);
+      box.appendChild(c);
+    }
+  }
+  if (!g.children.length) g.textContent = "Nothing matches.";
+}
+
+// ---- boot ----------------------------------------------------------------------------
+async function boot() {
+  const index = await (await fetch(ASSETS + "index.json")).json();
+  for (const p of index.packs) for (const m of p.models)
+    entries.push({ id: p.pack + "/" + m.name, name: m.name, pack: p.pack, packTitle: p.title, licence: p.licence, author: p.author,
+      file: m.file, category: m.category, tris: m.tris });
+  for (const it of ITEMS)
+    entries.push({ id: "code/" + it.id, name: it.name, pack: CODE, packTitle: "Made in code", licence: "the studio's own", author: "",
+      category: it.category, biome: it.biome, tags: it.tags, notes: it.notes, item: it, tris: 0 });
+  // code-made first: they are what this page is for
+  entries.sort((a, b) => (a.pack === CODE ? 0 : 1) - (b.pack === CODE ? 0 : 1));
+  const cmp = document.getElementById("cmp");
+  for (const e of entries) { const o = document.createElement("option"); o.value = e.id; o.textContent = e.name + " (" + e.packTitle + ")"; cmp.appendChild(o); }
+  renderPanel(); renderGrid(); resize();
+  const first = entries.find((e) => "#" + e.id === decodeURIComponent(location.hash)) || entries[0];
+  await show(first);
+  // the thumbnails, one by one, without freezing the page
+  for (const e of entries) {
+    e.thumb = await thumbnail(e);
+    if (e.pack === CODE) { const o = buildCode(e, seed); e.tris = counts(o).tris; }
+    if (e.card) { e.card.querySelector("img").src = e.thumb; e.card.querySelector("small").textContent = e.category + " · " + e.tris + " tris"; }
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  window.__models = { ready: true, count: entries.length };
+}
+
+document.getElementById("q").addEventListener("input", (ev) => { state.q = ev.target.value; renderGrid(); });
+for (const id of ["shade", "car", "wire", "light"]) document.getElementById(id).addEventListener("input", () => { applyView(); if (id === "car") aim(); });
+document.getElementById("cmp").addEventListener("input", () => selected && show(selected));
+for (const id of ["biome", "bamt"]) document.getElementById(id).addEventListener("input", dress);
+{ const b = new URLSearchParams(location.search).get("biome"); if (b) document.getElementById("biome").value = b; }
+document.getElementById("reseed").onclick = () => { seed++; if (selected && selected.pack === CODE) show(selected, true); };
+document.getElementById("export").onclick = () => {
+  if (!current || !selected) return;
+  new GLTFExporter().parse(current, (glb) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([glb], { type: "model/gltf-binary" }));
+    a.download = selected.id.split("/").pop() + ".glb"; a.click();
+  }, (err) => alert("Export failed: " + err.message), { binary: true });
+};
+
+(function loop() {
+  if (document.getElementById("spin").checked) holder.rotation.y += 0.004;
+  controls.update();
+  holder.updateMatrixWorld(true); WEATHER.uWFrame.value.copy(holder.matrixWorld).invert();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+})();
+boot().catch((e) => { document.getElementById("grid").textContent = "Could not load: " + e.message + " (open this page through make lab)"; console.error(e); });
+</script>
+</body>
+</html>

@@ -1,11 +1,1 @@
-{
-  "slipdeck": {
-    "game.js:data.a-adds-to-the-multiplier-a-b.1dx3e": {
-      "en": "A + adds to the multiplier, a × boosts it. A × only boosts what was added before it, so it pays the most at the right end of the Joker row.",
-      "fr": "Un + ajoute au multiplicateur existant alors qu'un × l'augmente en multipliant l'existant par la valeur du bonus. Avec les Jokers, il est donc préférable d'avoir des multiplicateur sur le coté droit du calcul (compteur de score).",
-      "was": "Un + ajoute au multiplicateur, un × l'augmente. Un × n'augmente que ce qui a été ajouté avant lui : il rapporte le plus tout à droite de la rangée de Jokers.",
-      "frId": "manifest.json:web.copy.fr.strings.A + adds to the multiplier, a × boosts it. A × only boosts what was added before it, so it pays the most at the right end of the Joker row.",
-      "at": "2026-10-30"
-    }
-  }
-}
+{}

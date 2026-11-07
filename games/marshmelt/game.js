@@ -568,31 +568,30 @@
 
     /* What a level names on its first second, where the thing is new — once
        per player ever (Notify.learn), each key the id of the guide's page that
-       explains it. Its title and line are that notice, and its title the
-       page's. Only what the frame cannot say is announced: a hidden rule, a
+       explains it. Its title is the page's, and the notice reads it. Only what the frame cannot say is announced: a hidden rule, a
        warning to decode, a help worth aiming for. A cracked rock splits in
        plain sight, and a band of the core only mixes what was named before:
        those are QUIET, titles of their pages and nothing more. */
     var INTRO = {
-      fire:   ["Fireballs", "Fireballs throw you off after a beat"],
-      ice:    ["Ice rocks", "Ice rocks throw you straight up"],
-      geyser: ["Steam jets", "The steam lifts whatever it touches"],
-      shard:  ["Cracked rocks", "These rocks split into pieces you can land on"],
-      dust:   ["Crumbling rocks", "These rocks crumble soon after you land"],
-      bomb:   ["Bombs", "Bombs blow 2 seconds after you land"],
-      surge:  ["Lava surges", "The lava will reach the red line"],
-      claimed:["Dark rocks", "Dark rocks break your combo"],
-      furnace:["Furnace", "Fireballs, surges and bombs"],
-      cold:   ["Cold snap", "Ice, cold water and crystals"],
-      ascent: ["Updraft", "Geysers, bubbles and crystals"],
+      fire:   ["Fireballs"],
+      ice:    ["Ice rocks"],
+      geyser: ["Steam jets"],
+      shard:  ["Cracked rocks"],
+      dust:   ["Crumbling rocks"],
+      bomb:   ["Bombs"],
+      surge:  ["Lava surges"],
+      claimed:["Dark rocks"],
+      furnace:["Furnace"],
+      cold:   ["Cold snap"],
+      ascent: ["Updraft"],
       collapse:["Collapse", "Rocks that split, crumble and blow"],
-      lair:   ["The lair", "The serpent, the surges and the bubbles"],
+      lair:   ["The lair"],
       cataclysm:["Cataclysm", "Everything the lava has"],
-      smores: ["S'mores", "Food gives life back"],
-      water:  ["Cold water", "Cold water sets a crust you can stand on"],
-      magnets:["Magnet crystals", "Crystals catch you and throw you higher"],
-      orbs:   ["Lava bubbles", "Ride a bubble up before it pops"],
-      serpent:["Lava serpent", "The serpent leaps from the swirl"]
+      smores: ["S'mores"],
+      water:  ["Cold water"],
+      magnets:["Magnet crystals"],
+      orbs:   ["Lava bubbles"],
+      serpent:["Lava serpent"]
     };
     var QUIET = { shard: 1, furnace: 1, cold: 1, ascent: 1, collapse: 1, lair: 1, cataclysm: 1 };
 
@@ -1424,8 +1423,8 @@
              ? (held.biscuit ? "chocolate" : "biscuit")
              : (Rand.chance(0.5) ? "biscuit" : "chocolate");
         // named once ever, the first time each one falls (the guide's page)
-        if (kind === "super") Notify.learn("smores", "Super s'more", { sub:"Catch the super s'more to get every life back", mark:"super" });
-        else Notify.learn("smores", INTRO.smores[0], { sub:INTRO.smores[1] });
+        if (kind === "super") Notify.learn("smores", null, { mark: "super" });
+        else Notify.learn("smores");
         treats.push({ kind: kind, x: Rand.range(Layout.left + 50, Layout.right - 50), y: Layout.top - 30, ph: Rand.range(0, TAU),
                       design: Rand.int(0, 5) });
       }
@@ -1447,10 +1446,10 @@
         Sound.clip("smore", 0.3, 0.9);
         if (toast > 0) {
           shade(-toast);
-          Pop.show("bonus", { word:"Super s'more!", sub:"Every life back", at:"upper" });
+          Pop.show("bonus", { word:"Every life back", at:"upper" });
         } else {
           boostT = C.smoreBoost;
-          Pop.show("score", { word:"Super s'more!", sub:"Double points", at:"upper" });
+          Pop.show("score", { word:"Double points", at:"upper" });
         }
         Fx.ring(mallow.x, mallow.y, { from:20, to:160, color:"#fff3dd", width:8, life:.5 });
         return;
@@ -1465,10 +1464,10 @@
       Sound.clip("smore", 0.7, 0.85);
       if (toast > 0) {
         shade(-1);
-        Pop.show("bonus", { word:"S'more!", sub:"Life back", at:"upper" });
+        Pop.show("bonus", { word:"Life back", at:"upper" });
       } else {
         boostT = C.smoreBoost;
-        Pop.show("score", { word:"S'more!", sub:"Double points", at:"upper" });
+        Pop.show("score", { word:"Double points", at:"upper" });
       }
       Fx.ring(mallow.x, mallow.y, { from:20, to:120, color:"#ffd166", width:6, life:.4 });
       // the s'more itself, held up for a beat over the body
@@ -1584,8 +1583,7 @@
          of the same key. A notice fired during the entrance waits for it. */
       if (ROW && ROW.intro) {
         for (i = 0; i < ROW.intro.length; i++) {
-          var I = INTRO[ROW.intro[i]];
-          if (I && !QUIET[ROW.intro[i]]) Notify.learn(ROW.intro[i], I[0], { sub: I[1] });
+          if (INTRO[ROW.intro[i]] && !QUIET[ROW.intro[i]]) Notify.learn(ROW.intro[i]);
         }
       }
     }
@@ -1602,7 +1600,7 @@
       HUD.setLeft(4 - toast, "Lives");
       if (n > 0) {
         HUD.punch("#ff6b1a");
-        Notify.learn("toast", "Toasted", { sub:"A toasted marshmallow jumps shorter" });
+        Notify.learn("toast");
       } else HUD.punch("#9dff8a");
     }
     // the jump, as heavy as the toast has made it
@@ -1631,7 +1629,7 @@
       Sound.clip("burn", 0.75, 0.9);
       Fx.flash("#ff6b1a", 0.3, 2.5);
       Fx.shake(9, 0.3);
-      Pop.show("alert", { word:"Scorched!", sub:"Charred", at:"upper" });   // one hit, one callout
+      Pop.show("alert", { word:"Scorched!", at:"upper" });   // one hit, one callout
     }
 
     function die() {
@@ -3464,90 +3462,58 @@
 
     var guide = {
       chapters: function () {
-        function page(key, pic, lines, rows) {
-          return { id: key, title: Lang.t(INTRO[key][0]), lv: lvOf(key), pic: pic, lines: lines, rows: rows };
+        function page(key, pic, text, rows) {
+          return { id: key, title: Lang.t(INTRO[key][0]), lv: lvOf(key), pic: pic, text: text, rows: rows };
         }
-        // one line: the band's tip, or what it mixes when there is no tip worth giving
+        // one text: the band's tip, or what it mixes when there is no tip worth giving
         function theme(key, list, lake, tip) {
-          return page(key, list ? themePic(list, lake) : serpentPic, [tip ? Lang.t(tip) : Lang.t(INTRO[key][1]) + "."]);
+          return page(key, list ? themePic(list, lake) : serpentPic, tip ? Lang.t(tip) : Lang.t(INTRO[key][1]) + ".");
         }
         var pct = function (v) { return "+" + Math.round(v * 100) + " %"; };
         return seeded([
           { key: "basics", label: Lang.t("The basics"), pages: [
-            { id: "fling", title: Lang.t("Tap to fling"), pic: flingPic, lines: [
-              Lang.t("Tap where you aim. The marshmallow flies there and sticks to the first rock it meets.") ] },
-            { id: "focus", title: Lang.t("Slow motion"), pic: focusPic, lines: [
-              Lang.t("Hold your finger down to slow time. A dotted arc shows where you will land.") ] },
-            { id: "air", title: Lang.t("Mid-air shot"), pic: airPic, lines: [
-              Lang.t("In mid-air, a Tap flings the marshmallow once more."),
-              Lang.t("Every fresh rock you land on reloads your double jump.") ] },
+            { id: "fling", title: Lang.t("Tap to fling"), pic: flingPic, text: Lang.t("Tap where you aim. The marshmallow flies there and sticks to the first rock it meets.") },
+            { id: "focus", title: Lang.t("Slow motion"), pic: focusPic, text: Lang.t("Hold your finger down to slow time. A dotted arc shows where you will land.") },
+            { id: "air", title: Lang.t("Mid-air shot"), pic: airPic, text: Lang.t("In mid-air, a Tap flings the marshmallow once more.\n\nEvery fresh rock you land on reloads your double jump.") },
             { id: "score", title: Lang.t("Score and combo"), pic: scorePic,
               rows: [[Lang.t("Each fresh rock in a row"), pct(C.chainStep)],
                      [Lang.t("Chain at most"), "×" + C.chainMax]],
-              lines: [
-              Lang.t("Only fresh rocks score. A rock's value increases with its height."),
-              Lang.t("A dark rock, a fireball or a hit breaks your combo.") ] },
-            { id: "toast", title: Lang.t("Four lives"), pic: toastPic, lines: [
-              Lang.t("Each hit toasts the marshmallow a bit more, shrinking its jump height more and more.") ] },
-            { id: "lava", title: Lang.t("The lava"), pic: lavaPic, lines: [
-              Lang.t("Falling into lava costs three lives. Only a healthy marshmallow can hope to survive it.") ] }
+              text: Lang.t("Only fresh rocks score. A rock's value increases with its height.\n\nA dark rock, a fireball or a hit breaks your combo.") },
+            { id: "toast", title: Lang.t("Four lives"), pic: toastPic, text: Lang.t("Each hit toasts the marshmallow a bit more, shrinking its jump height more and more.") },
+            { id: "lava", title: Lang.t("The lava"), pic: lavaPic, text: Lang.t("Falling into lava costs three lives. Only a healthy marshmallow can hope to survive it.") }
           ] },
           { key: "caldera", label: Lang.t(BANDS[0]), pages: [
-            page("claimed", claimedPic, [
-              Lang.t("Some rocks fall already dark. They score nothing."),
-              Lang.t("Landing on one breaks your chain.") ]),
+            page("claimed", claimedPic, Lang.t("Some rocks fall already dark. They score nothing.\n\nLanding on one breaks your chain.")),
             { id: "smores", title: Lang.t(INTRO.smores[0]), lv: smoresLv(), pic: smoresPic,
               rows: [[Lang.t("A biscuit and a chocolate"), Lang.t("+1 life")],
                      [Lang.t("A super s'more"), Lang.t("All lives")],
                      [Lang.t("At full life"), "×2 · " + secs(C.smoreBoost)]],
-              lines: [
-              Lang.t("Biscuits and chocolates fall. Catch one of each to make a s'more.") ] },
-            page("fire", firePic, [
-              Lang.t("You can land on a fireball, but it scores nothing and breaks the combo."),
-              Lang.t("Jump off before a fireball's ring runs out, or it throws you off a shade browner.") ],
+              text: Lang.t("Biscuits and chocolates fall. Catch one of each to make a s'more.") },
+            page("fire", firePic, Lang.t("You can land on a fireball, but it scores nothing and breaks the combo.\n\nJump off before a fireball's ring runs out, or it throws you off a shade browner."),
               [[Lang.t("Thrown off after"), secs(C.fireHold)]]),
-            page("surge", surgePic, [
-              Lang.t("The crust flashes red, and a dashed line shows how high the lava will climb."),
-              Lang.t("Stay above the lava line so you don't get toasted.") ],
+            page("surge", surgePic, Lang.t("The crust flashes red, and a dashed line shows how high the lava will climb.\n\nStay above the lava line so you don't get toasted."),
               [[Lang.t("Warning"), secs(C.surgeWarn)]])
           ] },
           { key: "frost", label: Lang.t(BANDS[1]), pages: [
-            page("ice", icePic, [
-              Lang.t("Ice holds you only a moment, then throws you up.") ],
+            page("ice", icePic, Lang.t("Ice holds you only a moment, then throws you up."),
               [[Lang.t("Holds you for"), secs(C.iceHold)]]),
-            page("water", waterPic, [
-              Lang.t("Water drips off the ceiling. On the lava it sets a crust you can stand on."),
-              Lang.t("Get off the crust before it cracks back into the lake.") ],
+            page("water", waterPic, Lang.t("Water drips off the ceiling. On the lava it sets a crust you can stand on.\n\nGet off the crust before it cracks back into the lake."),
               [[Lang.t("A crust lasts"), secs(C.crustLife)]]),
-            page("magnets", magnetPic, [
-              Lang.t("In mid-air, a crystal pulls you in and catches you."),
-              Lang.t("Jump from a crystal to go higher than any rock can send you.") ],
+            page("magnets", magnetPic, Lang.t("In mid-air, a crystal pulls you in and catches you.\n\nJump from a crystal to go higher than any rock can send you."),
               [[Lang.t("Thrown up after"), secs(C.magnetHold)]])
           ] },
           { key: "geysers", label: Lang.t(BANDS[2]), pages: [
-            page("geyser", geyserPic, [
-              Lang.t("A vent bubbles in the lava, then blows steam up to the ceiling."),
-              Lang.t("The steam lifts you in mid-air, and the rocks it touches.") ]),
-            page("orbs", orbPic, [
-              Lang.t("A bubble rises out of the lake and carries you up with it."),
-              Lang.t("The bubble pops after a while or at the ceiling.") ]),
-            page("serpent", serpentPic, [
-              Lang.t("A swirl on the lava marks where the serpent will leap from."),
-              Lang.t("The serpent breaks the rocks in its way. Beware, its bite costs a life.") ],
+            page("geyser", geyserPic, Lang.t("A vent bubbles in the lava, then blows steam up to the ceiling.\n\nThe steam lifts you in mid-air, and the rocks it touches.")),
+            page("orbs", orbPic, Lang.t("A bubble rises out of the lake and carries you up with it.\n\nThe bubble pops after a while or at the ceiling.")),
+            page("serpent", serpentPic, Lang.t("A swirl on the lava marks where the serpent will leap from.\n\nThe serpent breaks the rocks in its way. Beware, its bite costs a life."),
               [[Lang.t("The swirl warns"), secs(C.serpentWarn)]])
           ] },
           { key: "faults", label: Lang.t(BANDS[3]), pages: [
-            page("shard", shardPic, [
-              Lang.t("A cracked rock splits soon after your first touch, whether you stay or not."),
-              Lang.t("The cracked rock breaks into three fresh pieces you can land on.") ],
+            page("shard", shardPic, Lang.t("A cracked rock splits soon after your first touch, whether you stay or not.\n\nThe cracked rock breaks into three fresh pieces you can land on."),
               [[Lang.t("Splits after"), secs(C.shardHold)]]),
-            page("dust", dustPic, [
-              Lang.t("A crumbling rock falls to dust soon after your first touch."),
-              Lang.t("Jump before the ring runs out, or fall with the dust.") ],
+            page("dust", dustPic, Lang.t("A crumbling rock falls to dust soon after your first touch.\n\nJump before the ring runs out, or fall with the dust."),
               [[Lang.t("Falls to dust"), secs(C.dustHold)]]),
-            page("bomb", bombPic, [
-              Lang.t("Your first touch lights the fuse. The dashed circle is the blast's reach."),
-              Lang.t("The blast throws you and breaks your combo. Note that lava sets bombs off too.") ],
+            page("bomb", bombPic, Lang.t("Your first touch lights the fuse. The dashed circle is the blast's reach.\n\nThe blast throws you and breaks your combo. Note that lava sets bombs off too."),
               [[Lang.t("Blows after"), secs(C.bombHold)]])
           ] },
           { key: "core", label: Lang.t(BANDS[4]), pages: [

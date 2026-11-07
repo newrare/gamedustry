@@ -834,6 +834,9 @@
        the round is HELD (Game.held). What has been told is kept per player
        (Store, `tips:<slug>`) and erased with the rest of the game's data.
 
+       On the web a tip is the page of the guide of the same id (`learn`: an
+       idea whose first meeting is named by a notice, Notify.learn(id)).
+
        Every element of the table opens its card again on a tap (explainAt,
        below): the deal and the lives in the HUD, the contract's stamp, the
        seat names while they stand, the two defenders, the trick, every
@@ -846,10 +849,10 @@
         "Your contract: win {c} of the {n} tricks." ] },
       tournee: { eye:"The tournée", title:"{d} deals, {l} lives", lines:[
         "Each contract you go down on costs a life. The tournée ends when you have none left." ] },
-      favours: { eye:"New", title:"Favours", say:"Kept until the tournée ends", lines:[
+      favours: { eye:"New", title:"Favours", learn:true, lines:[
         "Pick one favour out of three at the start, then after each contract made. It lasts the whole tournée.",
         "The rail holds four favours. Some work on their own, the others take a tap, once per deal." ] },
-      trump: { eye:"New rule", title:"Trumps", say:"On this deal {s} are trumps", lines:[
+      trump: { eye:"New rule", title:"Trumps", learn:true, lines:[
         "On this deal {s} are trumps.",
         "If you cannot follow suit, the highest trump wins the trick." ] },
       notrump: { eye:"This deal", title:"No trump", lines:[
@@ -884,9 +887,7 @@
       var GD = window.__GUIDE__;
       if (GD) {
         if (again) { GD.open(key); return true; }
-        if (TIPS[key].say) {
-          Notify.learn(key, fill(Lang.t(TIPS[key].title), vars), { sub:fill(Lang.t(TIPS[key].say), vars) });
-        }
+        if (TIPS[key].learn) Notify.learn(key);
         return true;
       }
       var s = told(), T = TIPS[key], lines = [], i;
@@ -933,10 +934,10 @@
        under it, live. Every page SHOWS before it tells: its picture is drawn
        by the table's own renderers (drawCard, the backs, the favour's card),
        so a trick read in the guide is a trick as it lies on the table. */
-    function tipLines(key, from, vars, skip) {
+    function tipText(key, from, vars, skip) {
       var T = TIPS[key], out = [], i;
       for (i = from || 0; i < T.lines.length; i++) if (!skip || skip.indexOf(i) < 0) out.push(fill(Lang.t(T.lines[i]), vars));
-      return out;
+      return out.join("\n\n");
     }
     function liveNode(lines) {
       if (!lines.length) return null;
@@ -1060,20 +1061,19 @@
       chapters: function () {
         return [
           { key:"basics", label:Lang.t("The basics"), pages:[
-            { id:"basics", title:Lang.t(TIPS.basics.title), lines:tipLines("basics", 0, null, [2]),
+            { id:"basics", title:Lang.t(TIPS.basics.title), text:tipText("basics", 0, null, [2]),
               pic:function () { return trickPic(C(7, 0), C(10, 0), C(12, 0), C(3, 0), 2); } },
-            { id:"contract", title:Lang.t("The contract"), pic:contractPic, node:function () { return liveNode(contractNow()); }, lines:[
-              Lang.t("The contract is the number of tricks you must win."),
-              Lang.t("Every contract can be made, however the hidden cards lie.") ] },
-            { id:"tournee", title:Lang.t("The tournée"), lines:tipLines("tournee"), pic:livesPic },
-            { id:"dummy", title:Lang.t(TIPS.dummy.title), lines:tipLines("dummy"),
+            { id:"contract", title:Lang.t("The contract"), pic:contractPic, node:function () { return liveNode(contractNow()); },
+              text:Lang.t("The contract is the number of tricks you must win.") + "\n\n" + Lang.t("Every contract can be made, however the hidden cards lie.") },
+            { id:"tournee", title:Lang.t("The tournée"), text:tipText("tournee"), pic:livesPic },
+            { id:"dummy", title:Lang.t(TIPS.dummy.title), text:tipText("dummy"),
               pic:function () { return rowPic([C(12, 1), C(9, 1), C(4, 1), C(11, 3), C(2, 3)]); } },
-            { id:"defence", title:Lang.t(TIPS.defence.title), lines:tipLines("defence"), pic:backsPic }
+            { id:"defence", title:Lang.t(TIPS.defence.title), text:tipText("defence"), pic:backsPic }
           ] },
           { key:"trumps", label:Lang.t("Trumps"), pages:[
-            { id:"trump", title:Lang.t(TIPS.trump.title), lines:tipLines("trump", 1),
+            { id:"trump", title:Lang.t(TIPS.trump.title), text:tipText("trump", 1),
               pic:function () { return trickPic(C(2, 2), C(11, 2), C(0, 1), C(12, 2), 2); } },
-            { id:"notrump", title:Lang.t(TIPS.notrump.title), lines:tipLines("notrump"),
+            { id:"notrump", title:Lang.t(TIPS.notrump.title), text:tipText("notrump"),
               pic:function () { return trickPic(C(1, 2), C(7, 2), C(11, 2), C(12, 3), 2); } }
           ] },
           { key:"score", label:Lang.t("The score"), pages:[
@@ -1083,12 +1083,10 @@
                 [Lang.t("A finesse"), "+50"],
                 [Lang.t("An overtrick"), "+150"],
                 [Lang.t("The contract made"), "+300"] ],
-              lines:[
-              Lang.t("A ruff is a trick you win with a trump when you could not follow suit."),
-              Lang.t("With your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card.") ] }
+              text:Lang.t("A ruff is a trick you win with a trump when you could not follow suit.\n\nWith your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card.") }
           ] },
           { key:"favours", label:Lang.t("Favours"), pages:[
-            { id:"favours", title:Lang.t(TIPS.favours.title), lv:3, lines:tipLines("favours"), pic:favoursPic }
+            { id:"favours", title:Lang.t(TIPS.favours.title), lv:3, text:tipText("favours"), pic:favoursPic }
           ] }
         ];
       }
@@ -1320,8 +1318,9 @@
       rail[slotIdx] = { id:id, used:0 };
       perksTaken++;
       remember(id);
-      // the favour it replaced rides on the callout: one word for one choice
-      Pop.show("bonus", { word:PERK[id].name, sub:out ? fill(Lang.t("{a} leaves your favours"), { a:Lang.t(out) }) : null, at:"top" });
+      // the favour it replaced is told as a notice: a sentence wants the 2.2 s
+      Pop.show("bonus", { word:PERK[id].name, at:"top" });
+      if (out) Notify.say(fill(Lang.t("{a} leaves your favours"), { a:Lang.t(out) }), { kind:"info", key:"favour-out" });
       Sound.cue("perk", 0.5, 0.5, 700, 0.12, "triangle");
       if (id === "spareheart") { lives++; showTour(); }
     }
@@ -1492,27 +1491,29 @@
     /* the trick is full: who won it, what it pays, what it says */
     function collect() {
       var w = trickWinner(), we = null, led = suitOf(trick[0].c), ourWin = !(w & 1), i, o, higher = false, pts = 0, hon = 0, last = !hands[0].length;
+      // one callout a trick, the rarest first: last word, ruff, finesse, overtrick
+      var said = false;
       for (i = 0; i < trick.length; i++) if (trick[i].p === w) we = trick[i];
       if (ourWin) {
         ns += last && has("lastword") ? 2 : 1;
-        if (last && has("lastword")) Pop.show("bonus", { word:"Last word" });
+        if (last && has("lastword")) { Pop.show("bonus", { word:"Last word" }); said = true; }
         run++; pts = 100;
         if ((suitOf(we.c) === trump || we.asTrump) && led !== trump && !we.miracle) {
           ruffs++; pts += has("royalruff") ? 130 : 30;
-          Pop.show("streak", { word:"Ruffed!" });
+          if (!said) { Pop.show("streak", { word:"Ruffed!" }); said = true; }
         } else if (!we.miracle) {
           /* a FINESSE: the trick fell to a card some defender could still
              beat — the higher card lay with the one who had to play before */
           for (o = 1; o < 4; o += 2) for (i = 0; i < hands[o].length; i++)
             if (suitOf(hands[o][i]) === led && hands[o][i] > we.c) higher = true;
-          if (higher) { finesses++; pts += has("goldenfinesse") ? 150 : 50; Pop.show("bonus", { word:"Finesse!" }); }
+          if (higher) { finesses++; pts += has("goldenfinesse") ? 150 : 50; if (!said) { Pop.show("bonus", { word:"Finesse!" }); said = true; } }
         }
         if (has("honours")) for (i = 0; i < trick.length; i++) if (rankOf(trick[i].c) >= 9) hon++;
         pts += hon * 50;
         if (has("streak") && run > 1) pts = Math.round(pts * (1 + 0.25 * (run - 1)));
         if (made) {
           overtricks++; pts += has("jackpot") ? 450 : 150;
-          Pop.show("combo", { word:"That's better!" });
+          if (!said) Pop.show("combo", { word:"That's better!" });
         }
         dealScore += pts; score += pts; tricksAll++;
         HUD.setScore(score); HUD.punch(SUN);
@@ -1698,7 +1699,7 @@
       }
       if (id === "freediscard" || id === "miracle" || id === "sparetrump" || id === "bribe") {
         armed[id] = true; spend(id);
-        Pop.show("bonus", { word:PERK[id].name, sub:"Armed for your next card", at:"top" });
+        Pop.show("bonus", { word:PERK[id].name, at:"top" });
         return;
       }
       if (id === "mistral") { sel = { id:id, from:null }; Notify.say("Mistral", { sub:"Tap your card, then the dummy's", kind:"info", key:"sel" }); return; }

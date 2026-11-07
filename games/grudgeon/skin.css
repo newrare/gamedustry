@@ -90,34 +90,44 @@
   .gd-fx li.is-bad b { color:#ff6e6e; }
 
   /* ---- the fight's TRACK, under the stage the canvas draws ----------------
-     One slanted card a hero turn, sliding right to left (game.js, THE
-     TRACK): the turn in hand unfolded — the hero's face, name, health and
-     SP, one pack a scroll — the next turn folded to the face, a sliver of
-     the one after at the right edge and of the turn just played at the
-     left. Chosen in lab/grudgeon-cast.html (C · Badges). */
+     ONE card, the hero's turn in hand (game.js, THE TRACK), drawn as a
+     comic THOUGHT: the frieze's first bubble stays where it is, two dots
+     rise off it, and the card grows out of them from the bubble's centre
+     (--ox, --oy) with an overshoot. The hero stands big on its left, free
+     of any frame, head over the card's top edge; the name, health, SP and
+     the packs beside them. Shrinking back, the card goes first, the dots
+     after it. */
   #gd-track { position:absolute; left:0; z-index:29; pointer-events:none; transition:opacity .25s ease; font-family:var(--web-font, inherit); }
   #gd-track.off { opacity:0; }
   #gd-track.off * { pointer-events:none !important; }
-  .gd-tc { position:absolute; bottom:0; left:740px; width:100px; height:140px; }
-  .gd-tc.anim { transition:left .45s cubic-bezier(.3,.7,.3,1), width .3s ease, height .3s ease; }
-  .gd-plate { position:absolute; inset:0; overflow:hidden; pointer-events:auto; touch-action:none; cursor:pointer;
-    transform:skewX(-10deg); transform-origin:50% 100%; background:rgba(10,6,16,.86);
-    box-shadow:0 0 0 2px rgba(255,255,255,.14), 0 8px 18px rgba(0,0,0,.55); transition:box-shadow .2s ease, background .3s ease, filter .2s ease; }
-  .gd-plate::before { content:""; position:absolute; left:0; top:0; bottom:0; width:7px; z-index:2; background:var(--hc); }
-  /* the card in turn: a breath of the hero's colour at the top, a thin rim */
-  .gd-tc.on .gd-plate { background:linear-gradient(180deg, var(--tint), transparent 70%), rgba(12,8,18,.92); box-shadow:0 0 0 2px var(--hc), 0 8px 18px rgba(0,0,0,.55); cursor:default; }
-  .gd-tc.past .gd-plate { filter:brightness(.55) saturate(.7); pointer-events:none; }
-  .gd-tc.is-blue:not(.on) .gd-plate { box-shadow:0 0 0 3px #4f9bff, 0 0 18px rgba(79,155,255,.7), 0 8px 18px rgba(0,0,0,.55); }
-  .gd-tc.is-pin:not(.on) .gd-plate { box-shadow:0 0 0 4px #4f9bff, 0 0 26px rgba(79,155,255,.95), 0 8px 18px rgba(0,0,0,.55); }
+  .gd-dot { position:absolute; box-sizing:border-box; border-radius:50%; border:3px solid var(--hc); background:rgba(12,8,18,.94);
+    box-shadow:0 3px 8px rgba(0,0,0,.5); transform:scale(0); transition:transform .14s ease-in; }
+  .gd-dot1 { transition-delay:.22s; }
+  .gd-dot2 { transition-delay:.16s; }
+  .gd-dot.open { transform:scale(1); transition:transform .22s cubic-bezier(.2,1.8,.4,1); }
+  .gd-dot1.open { transition-delay:0s; }
+  .gd-dot2.open { transition-delay:.07s; }
+  .gd-tc { position:absolute; transform-origin:var(--ox) var(--oy); transform:scale(.05); opacity:0; pointer-events:none;
+    transition:transform .24s cubic-bezier(.55,0,.8,.3), opacity .1s ease .14s; }
+  .gd-tc.open { transform:none; opacity:1; transition:transform .42s cubic-bezier(.2,1.35,.42,1) .12s, opacity .08s ease .12s; }
+  .gd-tc:not(.open) * { pointer-events:none !important; }
+  .gd-plate { position:absolute; inset:0; box-sizing:border-box; overflow:hidden; border-radius:38px; pointer-events:auto; touch-action:none;
+    border:4px solid var(--hc); background:linear-gradient(90deg, var(--tint), transparent 60%), rgba(12,8,18,.94); box-shadow:0 8px 18px rgba(0,0,0,.55); }
+  /* the opening's flash: the hero's colour bursting out of the corner the thought rises to */
+  .gd-plate::after { content:""; position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0;
+    background:radial-gradient(circle at 10% 100%, #fff 0, var(--hc) 16%, transparent 62%); mix-blend-mode:screen; }
+  .gd-tc.open .gd-plate::after { animation:gd-bloom .6s ease-out .2s both; }
+  @keyframes gd-bloom { 0% { opacity:.9; } 100% { opacity:0; } }
   .gd-tc b, .gd-tc i, .gd-tc s { font-style:normal; text-decoration:none; }
-  /* the hero's art: the whole folded card, a window at the left of the unfolded one */
-  .gd-art { position:absolute; left:-20px; top:0; bottom:0; width:calc(100% + 40px); transform:skewX(10deg);
-    background:#2a1a30 no-repeat; background-size:var(--bsF); background-position:var(--bpF); transition:width .3s ease; }
-  .gd-tc.on .gd-art { width:112px; background-size:var(--bsO); background-position:var(--bpO);
-    -webkit-mask-image:linear-gradient(90deg, #000 65%, transparent); mask-image:linear-gradient(90deg, #000 65%, transparent); }
-  .gd-unf { position:absolute; left:84px; right:12px; top:0; bottom:0; transform:skewX(10deg); opacity:0; pointer-events:none; transition:opacity .2s ease; }
-  .gd-tc.on .gd-unf { opacity:1; pointer-events:auto; transition:opacity .25s ease .2s; }
-  .gd-dhead { display:flex; align-items:center; gap:10px; height:40px; margin:4px 12px 0 8px; }
+  /* the hero, big and unframed: cut at the card's foot (inside its rim and
+     its rounded corner), free over its top edge, faded off on the right */
+  .gd-art { position:absolute; left:4px; bottom:4px; width:170px; height:236px; background-repeat:no-repeat; pointer-events:none;
+    clip-path:inset(0 0 0 0 round 0 0 0 34px); -webkit-mask-image:linear-gradient(90deg, #000 72%, transparent); mask-image:linear-gradient(90deg, #000 72%, transparent);
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); transform:scale(.55); transform-origin:50% 100%; transition:transform .15s ease-in; }
+  .gd-tc.open .gd-art { transform:none; transition:transform .5s cubic-bezier(.2,1.7,.4,1) .22s; }
+  .gd-unf { position:absolute; left:172px; right:14px; top:0; bottom:0; opacity:0; transition:opacity .1s ease; }
+  .gd-tc.open .gd-unf { opacity:1; transition:opacity .25s ease .34s; }
+  .gd-dhead { display:flex; align-items:center; gap:10px; height:38px; margin:4px 4px 0 0; }
   .gd-nm { font-size:28px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:#fff4f0; text-shadow:0 2px 0 rgba(0,0,0,.6); }
   .gd-marks { display:flex; gap:6px; overflow:hidden; white-space:nowrap; }
   .gd-marks span { padding:0 8px; border-radius:11px; border:2px solid currentColor; font-size:20px; line-height:20px; font-weight:var(--web-fw, 900); background:rgba(8,5,14,.8); }
@@ -133,16 +143,16 @@
     border-radius:2px; background:#fff4f0; opacity:0; }
   .gd-vit b.is-cost::before { animation:gd-cost .55s ease-in-out infinite alternate; }
   @keyframes gd-cost { from { opacity:.2; } to { opacity:.95; } }
-  .gd-packs { display:flex; justify-content:space-around; height:146px; padding:0 4px; }
-  #gd-track.busy .gd-packs, .gd-tc:not(.live) .gd-packs { opacity:.4; }
+  .gd-packs { display:flex; justify-content:space-around; height:156px; padding:0 4px; }
+  #gd-track.busy .gd-packs, .gd-tc.open:not(.live) .gd-packs { opacity:.4; }
   .gd-tc:not(.live) .gd-packs * { pointer-events:none !important; }
 
   /* ---- one pack a scroll: the RED side at the yokai, the BLUE side on the
      ally it shows (a head, or every head piled for the party), the price in
-     the SP blue between them, an hourglass on the red side's flank when the
+     the SP blue between them, an hourglass inside the pack, on the red side's corner over the blue one, when the
      scroll moves the hero's next turn. A yokai's rule is one gold button. */
-  .gd-pk { position:relative; flex:0 0 auto; width:86px; height:146px; }
-  .gd-cost { position:absolute; left:48px; top:92px; z-index:4; font-size:28px; line-height:1; font-weight:var(--web-fw, 900); color:#8fdcff; white-space:nowrap; pointer-events:none;
+  .gd-pk { position:relative; flex:0 0 auto; width:86px; height:156px; }
+  .gd-cost { position:absolute; left:64px; top:98px; z-index:4; font-size:28px; line-height:1; font-weight:var(--web-fw, 900); color:#8fdcff; white-space:nowrap; pointer-events:none;
     -webkit-text-stroke:6px rgba(6,4,10,.9); paint-order:stroke fill; text-shadow:0 2px 4px rgba(0,0,0,.6); }
   .gd-ic { position:absolute; pointer-events:auto; touch-action:none; cursor:pointer; -webkit-user-select:none; user-select:none;
     display:flex; align-items:center; justify-content:center; box-shadow:0 6px 12px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.22);
@@ -167,14 +177,13 @@
   .gd-packs.gd-many .gd-pk { width:72px; }
   .gd-packs.gd-many .gd-red, .gd-packs.gd-many .gd-gold, .gd-packs.gd-many .gd-grey { left:3px; width:66px; height:66px; }
   .gd-packs.gd-many .gd-ic i { width:38px; height:38px; }
-  .gd-packs.gd-many .gd-blue { left:-8px; top:70px; width:44px; height:44px; }
-  .gd-packs.gd-many .gd-who { width:38px; height:38px; }
-  .gd-packs.gd-many .gd-cost { left:40px; top:84px; }
+  .gd-packs.gd-many .gd-blue { left:-8px; top:70px; width:56px; height:56px; }
+  .gd-packs.gd-many .gd-who { width:50px; height:50px; }
+  .gd-packs.gd-many .gd-cost { left:52px; top:88px; }
+  .gd-packs.gd-many .gd-pk > .gd-fig { left:33px; top:57px; }
   /* a hero a yokai's malus holds (Jorogumo's silk): violet bubbles round the face */
-  .gd-curse, .gd-stun { position:absolute; left:45px; top:48px; width:0; height:0; z-index:1; opacity:0; transition:opacity .3s ease; pointer-events:none; }
-  .gd-stun { top:36px; }
-  .gd-tc.on .gd-curse { left:38px; top:70px; }
-  .gd-tc.on .gd-stun { left:38px; top:54px; }
+  .gd-curse, .gd-stun { position:absolute; left:89px; top:58px; width:0; height:0; z-index:1; opacity:0; transition:opacity .3s ease; pointer-events:none; }
+  .gd-stun { top:6px; }
   .gd-tc.cursed .gd-curse, .gd-tc.stunned .gd-stun { opacity:1; }
   .gd-curse::before { content:""; position:absolute; left:-40px; top:-40px; width:80px; height:80px; border-radius:50%;
     background:radial-gradient(circle, rgba(154,69,224,.45), rgba(154,69,224,0) 70%); }
@@ -197,54 +206,75 @@
   .gd-stun i:nth-child(2) { animation-delay:-.47s; background:#d9a8ff; }
   .gd-stun i:nth-child(3) { animation-delay:-.93s; }
   @keyframes gd-orbit { from { offset-distance:0%; } to { offset-distance:100%; } }
-  .gd-blue { left:-6px; top:76px; width:50px; height:50px; border-radius:50%; z-index:3; background:linear-gradient(180deg, #6fb0ff, #1f4fa8);
+  .gd-blue { left:-6px; top:76px; width:66px; height:66px; border-radius:10px; z-index:3; background:linear-gradient(180deg, #6fb0ff, #1f4fa8);
     box-shadow:0 0 0 3px rgba(12,8,18,.95), 0 4px 8px rgba(0,0,0,.5); }
-  .gd-blue i { display:none; width:28px; height:28px; }
+  .gd-blue i { display:none; width:36px; height:36px; }
   .gd-blue.is-none i { display:block; }              /* no ally to reach: the glyph, greyed */
   .gd-ic:active { transform:scale(.93); }
   .gd-ic.is-hot { box-shadow:0 0 0 3px #ffd166, 0 0 18px rgba(255,209,102,.7), 0 6px 12px rgba(0,0,0,.5); }
   .gd-ic.off { filter:grayscale(1) brightness(.6); opacity:.5; }
   @media (hover:hover) { .gd-ic:not(.off):hover { filter:brightness(1.12); } }
-  .gd-fig { position:absolute; right:-10px; top:42px; z-index:2; padding:3px 5px; line-height:0; border-radius:8px; pointer-events:none;
+  .gd-fig { position:absolute; left:42px; top:68px; z-index:5; padding:3px 5px; line-height:0; border-radius:8px; pointer-events:none;
     background:rgba(8,5,14,.94); border:2px solid currentColor; }
   .gd-fig:empty { display:none; }
+  .gd-red.off ~ .gd-fig { filter:grayscale(1) brightness(.6); opacity:.5; }   /* the scroll out of reach: its hourglass greys with it */
   .gd-hg { display:inline-block; width:18px; height:18px; background:currentColor;
     -webkit-mask:var(--hg) center/contain no-repeat; mask:var(--hg) center/contain no-repeat; }
-  .gd-who { position:absolute; left:3px; top:3px; width:44px; height:44px; border-radius:50%; background:#2a1a30 no-repeat; pointer-events:none; z-index:2; }
+  .gd-who { position:absolute; left:3px; top:3px; width:60px; height:60px; border-radius:6px; background:#2a1a30 no-repeat; pointer-events:none; z-index:2; }
   .gd-who:empty:not([style]) { display:none; }
   /* a scroll on the whole party: every head ringed in blue, piled with a small offset */
   .gd-who.all { position:static; display:flex; width:auto; height:auto; border-radius:0; background:none; }
-  .gd-who.all span { flex:0 0 auto; width:40px; height:40px; margin-left:-34px; border-radius:50%; border:3px solid #4f9bff; box-sizing:border-box;
+  .gd-who.all span { flex:0 0 auto; width:54px; height:54px; margin-left:-46px; border-radius:7px; border:3px solid #4f9bff; box-sizing:border-box;
     background:#2a1a30 no-repeat; box-shadow:0 0 0 2px rgba(12,8,18,.95), 0 3px 6px rgba(0,0,0,.5); }
   .gd-who.all span:first-child { margin-left:0; }
   .gd-blue.is-all { width:auto; padding:0; background:none; box-shadow:none; }
 
+  /* ---- HANKO: a pack is two stamps pressed on the track (lab/grudgeon-scrolls.html,
+     D). The stamp is each button's ::before, its edge worn by the #gd-rough filter
+     of page.html; the glyph, the figures and the ally's face stay crisp over it. */
+  .gd-ic { isolation:isolate; box-shadow:none; }
+  .gd-red, .gd-gold, .gd-grey, .gd-blue { background:none; box-shadow:none; }
+  .gd-ic::before { content:""; position:absolute; inset:0; z-index:-1; border-radius:8px; filter:url(#gd-rough); }
+  .gd-red::before { background:#c8142e; box-shadow:inset 0 0 0 4px #c8142e, inset 0 0 0 6px #f4ead6; transform:rotate(4deg); }
+  .gd-gold::before { background:#e0a524; box-shadow:inset 0 0 0 4px #e0a524, inset 0 0 0 6px #3a2200; transform:rotate(-3deg); }
+  .gd-grey::before { background:#5e687c; box-shadow:inset 0 0 0 4px #5e687c, inset 0 0 0 6px #f4ead6; transform:rotate(3deg); }
+  .gd-red i { background:#f4ead6; transform:rotate(4deg); }
+  .gd-gold i { background:#3a2200; transform:rotate(-3deg); }
+  .gd-grey i { background:#f4ead6; transform:rotate(3deg); }
+  .gd-blue::before { background:#2353b4; box-shadow:inset 0 0 0 3px #2353b4, inset 0 0 0 5px #f4ead6; transform:rotate(-3deg); }
+  .gd-blue i { background:#f4ead6; }
+  .gd-blue.is-all::before { display:none; }
+  .gd-blue .gd-who:not(.all) { left:6px; top:6px; width:54px; height:54px; transform:rotate(-3deg); }
+  .gd-packs.gd-many .gd-blue .gd-who:not(.all) { width:44px; height:44px; }
+  .gd-ic.is-hot { box-shadow:none; }
+  .gd-ic.is-hot::before { filter:url(#gd-rough) drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 1.5px #ffd166) drop-shadow(0 0 10px rgba(255,209,102,.75)); }
+  .gd-cost { color:#9cc0ff; -webkit-text-stroke:6px #0c1630; }
+
   /* what a scroll does, over the track: a long press, or the mouse resting */
-  #gd-tip {
+  #gd-tip, .gd-fd-tip {
     font-family:var(--web-font, inherit);
     position:absolute; z-index:30; box-sizing:border-box; padding:10px 18px 12px; pointer-events:none;
     border-radius:16px; background:rgba(8,5,14,.92); border:1px solid rgba(255,209,102,.3);
     box-shadow:0 10px 30px rgba(0,0,0,.6); transition:opacity .15s ease;
   }
   #gd-tip.off { opacity:0; }
-  #gd-tip p { margin:0; }
+  #gd-tip p, .gd-fd-tip p { margin:0; }
   .gd-tip-h { display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
   .gd-tip-h b { font-size:28px; letter-spacing:2px; font-weight:var(--web-fw, 900); color:var(--ink); }
   .gd-tip-h i { font-style:normal; font-size:20px; letter-spacing:2px; font-weight:var(--web-fw, 900); color:#8fdcff; }
   /* a scroll's two sides: where it lands, what it does there, its figure */
-  #gd-tip .gd-face { margin-top:5px; padding:3px 10px; border-radius:10px; border:2px solid transparent; border-left:6px solid var(--fc);
+  #gd-tip .gd-face, .gd-fd-tip .gd-face { margin-top:5px; padding:3px 10px; border-radius:10px; border:2px solid transparent; border-left:6px solid var(--fc);
     font-size:20px; line-height:1.25; font-weight:700; color:#d9d3e4; }
-  #gd-tip .gd-face b { margin-right:10px; font-family:var(--web-font, inherit); font-size:20px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:var(--fc); }
+  #gd-tip .gd-face b, .gd-fd-tip .gd-face b { margin-right:10px; font-family:var(--web-font, inherit); font-size:20px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:var(--fc); }
   #gd-tip .gd-face em { font-style:normal; margin-left:10px; font-family:var(--web-font, inherit); font-size:24px; letter-spacing:1px; font-weight:var(--web-fw, 900); color:#ffd7cf; white-space:nowrap; }
-  #gd-tip .gd-face.hot { background:rgba(255,255,255,.07); border-color:var(--fc); color:#fff4f0; }
+  #gd-tip .gd-face.hot, .gd-fd-tip .gd-face.hot { background:rgba(255,255,255,.07); border-color:var(--fc); color:#fff4f0; }
   #gd-tip .gd-face.na { opacity:.5; }
-  #gd-tip .gd-tip-a { margin-top:6px; font-size:20px; line-height:1.3; font-weight:700; color:#ffd166; }
   #hud.hidden ~ #gd-tip, #hud.hidden ~ #gd-track { display:none; }
 
   /* ---- the cards of a fight: the yokai, a hero ----------------------------
      A sentence is set in the system face: the game's display face has no
      lowercase, and a line of rules read in capitals is a line skimmed. */
-  .gd-line, .gd-note, .gd-face, #gd-tip .gd-tip-a {
+  .gd-line, .gd-note, .gd-face {
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:0;
   }
   .gd-info .mt-body { gap:16px; align-items:stretch; }
@@ -315,3 +345,76 @@
   .gd-gp-scrolls .gd-pk, .gd-gp-scrolls .gd-ic { pointer-events:none; }
   .gd-gp-inert { pointer-events:none; }
   .gd-info .gd-more { align-self:center; }
+
+  /* ---- THE FIGHT'S HOW-TO-PLAY: the card the first fight opens -----------
+     (game.js, openFightHelp). The round's own stamps on a demo stage, the
+     shared finger tapping red, blue, gold and grey, then holding red until
+     its info opens; the legend lights the row of the stamp being tapped.
+     Every piece runs on ONE 9 s cycle, so the percentages below are one
+     score: a slot of 14 % per stamp (arrive +4, press +7, release +10), then
+     the long press from 60 % to 94 %. Stamp centres in the 500x260 stage:
+     red (134,70), blue (109,121), gold (254,70), grey (374,70). */
+  .gd-fh { display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .gd-fh .web-help-line { padding:0; }
+  .gd-fh-line .w-tap  { color:#9b8cff; animation:gd-fd-wtap 9s ease-in-out infinite; }
+  .gd-fh-line .w-hold { color:#ffd166; animation:gd-fd-whold 9s ease-in-out infinite; }
+  @keyframes gd-fd-wtap  { 0%,55%,100% { opacity:1; } 58%,96% { opacity:.5; } }
+  @keyframes gd-fd-whold { 0%,58%,97%,100% { opacity:.5; } 62%,93% { opacity:1; } }
+  .gd-fd { flex:0 0 auto; width:500px; height:260px; background:rgba(12,8,18,.7); }
+  .gd-fd, .gd-fd * { pointer-events:none !important; }
+  .gd-fd .gd-pk { position:absolute; top:20px; }
+  .gd-fd .gd-fd-p0 { left:90px; }
+  .gd-fd .gd-fd-p1 { left:210px; }
+  .gd-fd .gd-fd-p2 { left:330px; }
+  .gd-fd .gd-red  { animation:gd-fd-red 9s ease-in-out infinite; }
+  .gd-fd .gd-blue { animation:gd-fd-blue 9s ease-in-out infinite; }
+  .gd-fd .gd-gold { animation:gd-fd-gold 9s ease-in-out infinite; }
+  .gd-fd .gd-grey { animation:gd-fd-grey 9s ease-in-out infinite; }
+  @keyframes gd-fd-red  { 0%,5%,10%,61%,94%,100% { transform:scale(1); filter:none; } 7%,9%,63%,92% { transform:scale(.9); filter:brightness(1.3); } }
+  @keyframes gd-fd-blue { 0%,19%,24%,100% { transform:scale(1); filter:none; } 21%,23% { transform:scale(.9); filter:brightness(1.3); } }
+  @keyframes gd-fd-gold { 0%,33%,38%,100% { transform:scale(1); filter:none; } 35%,37% { transform:scale(.9); filter:brightness(1.3); } }
+  @keyframes gd-fd-grey { 0%,47%,52%,100% { transform:scale(1); filter:none; } 49%,51% { transform:scale(.9); filter:brightness(1.3); } }
+  /* the long press: a gold ring closes round the red stamp, then the info opens */
+  .gd-fd-ring { position:absolute; left:134px; top:70px; width:104px; height:104px; margin:-52px 0 0 -52px; z-index:4;
+    border-radius:24px; border:4px solid #ffd166; box-shadow:0 0 16px rgba(255,209,102,.7); opacity:0;
+    animation:gd-fd-ring 9s ease-out infinite; }
+  @keyframes gd-fd-ring { 0%,62% { opacity:0; transform:scale(1.5); } 70%,91% { opacity:1; transform:scale(1); } 95%,100% { opacity:0; transform:scale(1); } }
+  .gd-fd-tip { left:186px; top:118px; width:300px; z-index:5; opacity:0; animation:gd-fd-tip 9s ease-out infinite; }
+  @keyframes gd-fd-tip { 0%,68% { opacity:0; transform:translateY(10px); } 72%,92% { opacity:1; transform:translateY(0); } 96%,100% { opacity:0; transform:translateY(0); } }
+  /* the shared finger, its tip at the point it presses */
+  .gd-fd .demo-hand { display:block; left:0; top:0; bottom:auto; margin:0; z-index:6; animation:gd-fd-hand 9s ease-in-out infinite; }
+  @keyframes gd-fd-hand {
+    0%,4%    { transform:translate(97px,110px); }
+    7%       { transform:translate(97px,78px); }
+    10%      { transform:translate(97px,110px); }
+    18%      { transform:translate(72px,161px); }
+    21%      { transform:translate(72px,129px); }
+    24%      { transform:translate(72px,161px); }
+    32%      { transform:translate(217px,110px); }
+    35%      { transform:translate(217px,78px); }
+    38%      { transform:translate(217px,110px); }
+    46%      { transform:translate(337px,110px); }
+    49%      { transform:translate(337px,78px); }
+    52%      { transform:translate(337px,110px); }
+    60%      { transform:translate(97px,110px); }
+    63%,92%  { transform:translate(97px,78px); }
+    96%,100% { transform:translate(97px,110px); }
+  }
+  /* the legend: one row a colour, lit while its stamp is pressed */
+  .gd-fd-legend { margin:0; padding:0; list-style:none; align-self:stretch; display:flex; flex-direction:column; gap:8px; }
+  .gd-fd-legend li { display:flex; align-items:center; gap:16px; padding:6px 14px; border-radius:12px; background:rgba(255,255,255,.05); opacity:.55;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:22px; line-height:1.25; color:var(--text); }
+  .gd-fd-chip { position:relative; flex:0 0 auto; width:34px; height:34px; }
+  .gd-fd-chip::before { content:""; position:absolute; inset:0; border-radius:6px; filter:url(#gd-rough); }
+  .gd-fd-chip.c-red::before  { background:#c8142e; box-shadow:inset 0 0 0 3px #c8142e, inset 0 0 0 5px #f4ead6; transform:rotate(4deg); }
+  .gd-fd-chip.c-blue::before { background:#2353b4; box-shadow:inset 0 0 0 3px #2353b4, inset 0 0 0 5px #f4ead6; transform:rotate(-3deg); }
+  .gd-fd-chip.c-gold::before { background:#e0a524; box-shadow:inset 0 0 0 3px #e0a524, inset 0 0 0 5px #3a2200; transform:rotate(-3deg); }
+  .gd-fd-chip.c-grey::before { background:#5e687c; box-shadow:inset 0 0 0 3px #5e687c, inset 0 0 0 5px #f4ead6; transform:rotate(3deg); }
+  .gd-fd-l0 { animation:gd-fd-l0 9s ease-in-out infinite; }
+  .gd-fd-l1 { animation:gd-fd-l1 9s ease-in-out infinite; }
+  .gd-fd-l2 { animation:gd-fd-l2 9s ease-in-out infinite; }
+  .gd-fd-l3 { animation:gd-fd-l3 9s ease-in-out infinite; }
+  @keyframes gd-fd-l0 { 0%,1%,12%,100% { opacity:.55; background:rgba(255,255,255,.05); } 3%,10% { opacity:1; background:rgba(255,93,110,.18); } }
+  @keyframes gd-fd-l1 { 0%,15%,26%,100% { opacity:.55; background:rgba(255,255,255,.05); } 17%,24% { opacity:1; background:rgba(79,155,255,.2); } }
+  @keyframes gd-fd-l2 { 0%,29%,40%,100% { opacity:.55; background:rgba(255,255,255,.05); } 31%,38% { opacity:1; background:rgba(224,165,36,.2); } }
+  @keyframes gd-fd-l3 { 0%,43%,54%,100% { opacity:.55; background:rgba(255,255,255,.05); } 45%,52% { opacity:1; background:rgba(154,165,184,.2); } }

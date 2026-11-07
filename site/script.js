@@ -228,51 +228,117 @@ function initHeroCast() {
   box.innerHTML = html;
 }
 
+/* One card, as markup. It is the ONE writer of a card: renderGames() uses it
+   in the browser, and tools/build/build-site.mjs runs this file under a stub
+   to bake the same cards into dist/site/index.html, so a crawler that runs no
+   script still reads every game, its tags and its whole description.
+
+   The description is written once and in full: the clamp to four lines is
+   the stylesheet's, and "Read more" lifts that same node over the card
+   (.game.is-open) rather than copying its text into a second one. */
+function gameCard(g, l) {
+  var copy = g[l] || g.en;
+  var fr = l === 'fr';
+  var tags = '';
+  for (var t = 0; t < copy.tags.length; t++) {
+    tags += '<li>' + escapeHtml(copy.tags[t]) + '</li>';
+  }
+
+  var shots = g.screens > 0
+    ? '<button class="btn btn-ghost btn-sm" type="button" data-shots="' + g.slug + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1 2v9l4-4 3 3 4-5 3 4V7H5z"/></svg>' +
+      (fr ? 'Captures' : 'Screens') +
+      '</button>'
+    : '';
+
+  var desc = 'desc-' + g.slug;
+  return '<article class="game" id="game-' + g.slug + '" style="--g1:' + g.accent[0] + ';--g2:' + g.accent[1] + '">' +
+      '<div class="game-top">' +
+        '<img class="game-icon" src="image/games/' + g.slug + '/icon.png" alt="' + escapeHtml(g.name) + '" width="66" height="66" loading="lazy">' +
+        '<div class="game-id">' +
+          '<h3>' + escapeHtml(g.name) + '</h3>' +
+        '</div>' +
+      '</div>' +
+      '<ul class="game-tags">' + tags + '</ul>' +
+      '<div class="game-full" aria-hidden="true">' +
+        '<span class="game-full-name">' + escapeHtml(g.name) + '</span>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-less tabindex="-1">' +
+          (fr ? 'Fermer' : 'Close') +
+        '</button>' +
+      '</div>' +
+      '<p class="game-desc" id="' + desc + '">' + escapeHtml(copy.tagline) + '</p>' +
+      '<button class="game-more" type="button" data-more aria-controls="' + desc + '" aria-expanded="false">' +
+        (fr ? 'Lire la suite' : 'Read more') +
+      '</button>' +
+      '<div class="game-actions">' +
+        '<button class="btn btn-primary btn-sm" type="button" data-play="' + g.slug + '">' +
+          '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>' +
+          (fr ? 'Jouer' : 'Play') +
+        '</button>' +
+        shots +
+      '</div>' +
+    '</article>';
+}
+
 function renderGames() {
   var grid = document.getElementById('gamesGrid');
   if (!grid) return;
 
   var html = '';
-  for (var i = 0; i < games.length; i++) {
-    var g = games[i];
-    var copy = g[lang] || g.en;
-    var tags = '';
-    for (var t = 0; t < copy.tags.length; t++) {
-      tags += '<li>' + escapeHtml(copy.tags[t]) + '</li>';
-    }
-
-    var shots = g.screens > 0
-      ? '<button class="btn btn-ghost btn-sm" type="button" data-shots="' + g.slug + '">' +
-        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm1 2v9l4-4 3 3 4-5 3 4V7H5z"/></svg>' +
-        (lang === 'fr' ? 'Captures' : 'Screens') +
-        '</button>'
-      : '';
-
-    html +=
-      '<article class="game" style="--g1:' + g.accent[0] + ';--g2:' + g.accent[1] + '">' +
-        '<div class="game-top">' +
-          '<img class="game-icon" src="image/games/' + g.slug + '/icon.png" alt="" width="66" height="66" loading="lazy">' +
-          '<div class="game-id">' +
-            '<h3>' + escapeHtml(g.name) + '</h3>' +
-          '</div>' +
-        '</div>' +
-        '<ul class="game-tags">' + tags + '</ul>' +
-        '<p class="game-desc">' + escapeHtml(copy.tagline) + '</p>' +
-        '<div class="game-actions">' +
-          '<button class="btn btn-primary btn-sm" type="button" data-play="' + g.slug + '">' +
-            '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>' +
-            (lang === 'fr' ? 'Jouer' : 'Play') +
-          '</button>' +
-          shots +
-        '</div>' +
-      '</article>';
-  }
-
+  for (var i = 0; i < games.length; i++) html += gameCard(games[i], lang);
   grid.innerHTML = html;
+  fitDescs();
 
   setStat('statGames', games.length);
   setStat('statLevels', games.length * LEVELS_PER_GAME);
   setStat('statStickers', games.length * STICKERS_PER_GAME);
+}
+
+/* Which blurbs overflow their four lines depends on the card's width, the
+   language and the text, so it is measured, never guessed from a length. The
+   test is made on the unclamped four-line box: a clamped one already fits. */
+function fitDescs() {
+  closeFull();
+  var descs = document.querySelectorAll('.game-desc');
+  for (var i = 0; i < descs.length; i++) {
+    descs[i].classList.remove('is-clamped');
+  }
+  for (var j = 0; j < descs.length; j++) {
+    var d = descs[j];
+    if (d.scrollHeight > d.clientHeight + 1) d.classList.add('is-clamped');
+  }
+}
+
+function openFull(btn) {
+  var card = btn.closest('.game');
+  if (!card) return;
+  closeFull();
+  card.classList.add('is-open');
+  btn.setAttribute('aria-expanded', 'true');
+  var head = card.querySelector('.game-full');
+  if (head) head.setAttribute('aria-hidden', 'false');
+  var close = card.querySelector('[data-less]');
+  if (close) { close.removeAttribute('tabindex'); close.focus(); }
+  var desc = card.querySelector('.game-desc');
+  if (desc) { desc.scrollTop = 0; desc.setAttribute('tabindex', '0'); }
+}
+
+// Returns true when a card was open, so ESCAPE closes one thing at a time.
+function closeFull() {
+  var open = document.querySelectorAll('.game.is-open');
+  for (var i = 0; i < open.length; i++) {
+    var card = open[i];
+    card.classList.remove('is-open');
+    var more = card.querySelector('[data-more]');
+    if (more) more.setAttribute('aria-expanded', 'false');
+    var head = card.querySelector('.game-full');
+    if (head) head.setAttribute('aria-hidden', 'true');
+    var close = card.querySelector('[data-less]');
+    if (close) close.setAttribute('tabindex', '-1');
+    var desc = card.querySelector('.game-desc');
+    if (desc) { desc.removeAttribute('tabindex'); desc.scrollTop = 0; }
+  }
+  return open.length > 0;
 }
 
 /* The web shell gives every game the same board and the same sheet: 30 levels
@@ -571,6 +637,13 @@ document.addEventListener('DOMContentLoaded', function () {
   var toggle = document.getElementById('langToggle');
   if (toggle) toggle.addEventListener('click', toggleLang);
 
+  // A card's width moves with the window, and with it what overflows.
+  var fitTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(fitTimer);
+    fitTimer = setTimeout(fitDescs, 120);
+  });
+
   var year = document.getElementById('year');
   if (year) year.textContent = String(new Date().getFullYear());
 
@@ -581,6 +654,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var shot = e.target.closest ? e.target.closest('[data-shots]') : null;
     if (shot) { openShots(shot.getAttribute('data-shots'), shot); return; }
+
+    var more = e.target.closest ? e.target.closest('[data-more]') : null;
+    if (more) { openFull(more); return; }
+
+    var less = e.target.closest ? e.target.closest('[data-less]') : null;
+    if (less) {
+      var back = less.closest('.game').querySelector('[data-more]');
+      closeFull();
+      if (back) back.focus();
+      return;
+    }
 
     if (e.target.closest && e.target.closest('[data-close]')) { closeTopModal(); return; }
 
@@ -593,7 +677,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') { closeTopModal(); return; }
+    if (e.key === 'Escape') {
+      if (player.root && !player.root.hidden) { closeTopModal(); return; }
+      if (shots.root && !shots.root.hidden) { closeTopModal(); return; }
+      if (closeFull()) return;
+      closeTopModal();
+      return;
+    }
     if (shots.root && !shots.root.hidden) {
       if (e.key === 'ArrowLeft') stepShot(-1);
       if (e.key === 'ArrowRight') stepShot(1);

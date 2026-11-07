@@ -686,6 +686,73 @@ h1 span { display: block; }
   flex: none;
 }
 
+/* A blurb that does not fit its four lines gives up the fourth to the link
+   that opens it whole: the box keeps its height, so every card keeps its size,
+   and no sentence is cut without a way to read the rest. The class is set by
+   fitDescs() after a measure, since only the layout knows what overflows. */
+.game-desc.is-clamped { -webkit-line-clamp: 3; height: calc(3 * 1.5 * 14.5px); margin-bottom: 0; }
+
+.game-more {
+  position: relative;
+  display: none;
+  align-self: flex-start;
+  height: calc(1.5 * 14.5px);
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--g1);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.game-more:hover { text-decoration: underline; }
+.game-desc.is-clamped + .game-more { display: block; }
+
+/* The whole text, laid over its own card rather than copied into a modal:
+   .is-open lifts the SAME paragraph out of its clamp, over a plate that
+   covers the card, so the card keeps its size and the page holds the text
+   once. Closed, the plate is not there at all. */
+.game-full { display: none; }
+
+.game.is-open .game-full {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  border-radius: inherit;
+}
+
+.game-full-name { font-size: 17px; font-weight: 800; line-height: 40px; color: var(--g1); }
+
+.game.is-open .game-desc {
+  position: absolute;
+  z-index: 3;
+  top: 74px;
+  left: 20px;
+  right: 14px;
+  bottom: 20px;
+  height: auto;
+  margin: 0;
+  padding-right: 6px;
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow-y: auto;
+  color: var(--text);
+  scrollbar-width: thin;
+}
+
+.game.is-open .game-desc:focus { outline: none; }
+.game.is-open:hover { transform: none; }
+
 .game-actions { position: relative; display: flex; gap: 8px; }
 
 .game-actions .btn-primary {

@@ -481,14 +481,14 @@
     /* `name` and `teach` are the notice a special says the first time it
        lands (learnSpec); the key is also the id of its page in the guide. */
     var SPEC = {
-      charge: { bit: CHARGE, tier: 1, name: "Charge bead", teach: "Pop a charge bead to clear its ring" },
-      fire:   { bit: FIRE,   tier: 1, name: "Fire bead",   teach: "Pops both neighbouring rays too" },
-      laser:  { bit: LASER,  tier: 1, name: "Laser bead",  teach: "Pops the opposite ray too" },
-      score:  { bit: SCORE,  tier: 1, name: "Score bead",  teach: "Multiplies your rays for a few seconds" },
-      slow:   { bit: SLOW,   tier: 1, name: "Slow bead",   teach: "Slows the ink for a few seconds" },
-      nova:   { bit: NOVA,   tier: 2, name: "Nova bead",   teach: "Matches any colour, like a joker" },
-      bomb:   { bit: BOMB,   tier: 2, name: "Bomb bead",   teach: "Pop a bomb bead to clear the dial" },
-      ice:    { bit: ICE,    tier: 0, name: "Frozen bead", teach: "Popping a frozen bead freezes its ring" }
+      charge: { bit: CHARGE, tier: 1 },
+      fire:   { bit: FIRE,   tier: 1 },
+      laser:  { bit: LASER,  tier: 1 },
+      score:  { bit: SCORE,  tier: 1 },
+      slow:   { bit: SLOW,   tier: 1 },
+      nova:   { bit: NOVA,   tier: 2 },
+      bomb:   { bit: BOMB,   tier: 2 },
+      ice:    { bit: ICE,    tier: 0 }
     };
 
     // Geometry — every one of these is rebuilt from Layout by layout().
@@ -1655,14 +1655,15 @@
 
     /* The first time a special RIDES IN, whatever level it is on: a notice
        naming it, once per player ever (Notify.learn, `guide:<slug>`), whose
-       line in the "!" log opens that special's page. Web only — a playable
+       line in the "!" log opens that special's page, and whose title is what
+       the notice reads. Web only — a playable
        has no guide to open, and its two specials are the ones it shipped
        with. */
     function learnSpec(v) {
       if (!window.__GUIDE__) return;
       for (var key in SPEC) {
         if (SPEC.hasOwnProperty(key) && (v & SPEC[key].bit)) {
-          Notify.learn(key, Lang.t(SPEC[key].name), { sub: Lang.t(SPEC[key].teach) });
+          Notify.learn(key);
           return;
         }
       }
@@ -3187,9 +3188,9 @@
     function flareOf(s, hex) { return { s: mod(s, N), hex: hex, life: D.flareTime }; }
 
     // The special pages, one per bead, at the level the ladder first deals it.
-    function specPage(key, lv, title, v, edit, lines, rows, H) {
+    function specPage(key, lv, title, v, edit, text, rows, H) {
       return { id: key, title: Lang.t(title), lv: lv, rows: rows,
-               pic: function () { return specPic(lv, v, edit, H); }, lines: lines };
+               pic: function () { return specPic(lv, v, edit, H); }, text: text };
     }
 
     var guide = {
@@ -3199,24 +3200,17 @@
           { key: "basics", label: T("The basics"), pages: [
             { id: "turn", title: T("Turn the rings"), pic: function () {
                 return topPic(1, { armed: [0] }, function (rs) { lineUp(rs, 0, 1); });
-              }, lines: [
-              T("Drag a ring to turn it. Line up three beads of one colour on a ray and they pop."),
-              T("A ray pays once the dial stops. Let go of the ring, or hold it still.") ] },
+              }, text: T("Drag a ring to turn it. Line up three beads of one colour on a ray and they pop.\n\nA ray pays once the dial stops. Let go of the ring, or hold it still.") },
             { id: "rays", title: T("What a ray pays"), pic: function () {
                 return topPic(1, { armed: [11, 1] }, function (rs) { lineUp(rs, 11, 3); lineUp(rs, 1, 2); });
               }, rows: [
               [T("Two rays at once"), "×2.5"],
               [T("Three rays at once"), "×5"],
-              [T("Four rays or more"), "×8"] ], lines: [
-              T("Pop several rays in one move and everything the move pays is multiplied.") ] },
+              [T("Four rays or more"), "×8"] ], text: T("Pop several rays in one move and everything the move pays is multiplied.") },
             { id: "chain", title: T("The chain"), pic: function () { return hubPic({ combo: 4, charge: 1 }); },
-              lines: [
-              T("Each ray raises the combo, up to x8."),
-              T("Pop the next ray within a second, or the combo falls back to zero.") ] },
+              text: T("Each ray raises the combo, up to x8.\n\nPop the next ray within a second, or the combo falls back to zero.") },
             { id: "meter", title: T("Earning a special"), pic: function () { return hubPic({ combo: 0, charge: 2 }); },
-              lines: [
-              T("Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one."),
-              T("A special goes off when its ray pops, or when another special's wave reaches it.") ] }
+              text: T("Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one.\n\nA special goes off when its ray pops, or when another special's wave reaches it.") }
           ] },
           { key: "eclipse", label: T("The eclipse"), pages: [
             { id: "eclipse", title: T("The eclipse"), pic: function () { return dialPic(1, { ink: 4.5 }); },
@@ -3224,14 +3218,10 @@
               [T("One ray"), T("the ink stops for a few seconds")],
               [T("Two rays at once"), T("Ray won back")],
               [T("Three rays or more"), T("Two rays won back")],
-              [T("A whole ring emptied"), T("Three rays won back")] ], lines: [
-              T("Ink rises over the dial from the bottom. A ray under the ink can no longer pop."),
-              T("Reach the level's score before the ink covers every ray.") ] },
+              [T("A whole ring emptied"), T("Three rays won back")] ], text: T("Ink rises over the dial from the bottom. A ray under the ink can no longer pop.\n\nReach the level's score before the ink covers every ray.") },
             { id: "inklevel", title: T("The ink speeds up"), pic: function () { return dialPic(1, { ink: 8 }); },
-              lines: [
-              T("Every 10 rays popped, the level goes up and the ink rises faster.") ] },
-            { id: "colour", title: T("A new colour"), pic: huesPic, lines: [
-              T("The dial starts with four colours. The fifth joins once the ink reaches level 10.") ] }
+              text: T("Every 10 rays popped, the level goes up and the ink rises faster.") },
+            { id: "colour", title: T("A new colour"), pic: huesPic, text: T("The dial starts with four colours. The fifth joins once the ink reaches level 10.") }
           ] },
           { key: "atelier", label: T("Atelier"), pages: [
             specPage("charge", 1, "Charge bead", 1 | CHARGE, function (rs) {
@@ -3241,9 +3231,7 @@
               return { sweep: { ring: rs[2], k: 0, t: 3 * D.fuseStep, travel: 6 * D.fuseStep,
                                 dur: 6 * D.fuseStep + 0.18, hex: D.colours[1] },
                        flares: [flareOf(0, D.colours[1])] };
-            }, [
-              T("Pop a charge bead's ray and a wave takes every bead on its ring."),
-              T("The more beads a wave takes, the more each one pays.") ]),
+            }, T("Pop a charge bead's ray and a wave takes every bead on its ring.\n\nThe more beads a wave takes, the more each one pays.")),
             /* Not caught mid-wave like the others: a nova's wave is one wide
                ring, and frozen it reads as nothing. The beat BEFORE it is the
                rule itself — the nova standing in for the third bead of a
@@ -3253,9 +3241,7 @@
               rs[0].slots[0] = 0; rs[1].slots[0] = NOVA; rs[2].slots[0] = 0;
               for (i = 0; i < 3; i++) for (k = 1; k < N; k++) if (rs[i].slots[k] === 0) marks.push([i, k]);
               return { armed: [0], marks: marks, markHex: D.colours[0] };
-            }, [
-              T("Like a joker, a nova bead matches any colour on its ray."),
-              T("When a nova bead goes off, every bead of its ray's colour leaves the dial.") ])
+            }, T("Like a joker, a nova bead matches any colour on its ray.\n\nWhen a nova bead goes off, every bead of its ray's colour leaves the dial."))
           ] },
           { key: "lagoon", label: T("Lagoon"), pages: [
             specPage("bomb", 7, "Bomb bead", 2 | BOMB, function (rs) {
@@ -3263,41 +3249,32 @@
               emptyRay(rs, 0);
               takeWithin(rs, q.x, q.y, 100);
               return { boom: { x: q.x, y: q.y, t: 0.11, dur: 0.85, hex: D.colours[2] } };
-            }, [
-              T("Pop a bomb bead's ray and its wave takes the whole dial, ring after ring.") ]),
+            }, T("Pop a bomb bead's ray and its wave takes the whole dial, ring after ring.")),
             specPage("score", 10, "Score bead", 0 | SCORE | (1 << MULSHIFT), function (rs) {
               emptyRay(rs, 0);
               return { mul: 5, flares: [flareOf(0, D.colours[0])] };
-            }, [
-              T("Pop a score bead's ray to multiply the next rays for a few seconds."),
-              T("The score bead never multiplies what a wave takes.") ], null, 310)
+            }, T("Pop a score bead's ray to multiply the next rays for a few seconds.\n\nThe score bead never multiplies what a wave takes."), null, 310)
           ] },
           { key: "reliquary", label: T("Reliquary"), pages: [
             specPage("fire", 13, "Fire bead", 1 | FIRE, function (rs) {
               emptyRay(rs, 0); emptyRay(rs, -1); emptyRay(rs, 1);
               return { flares: [flareOf(-1, "#ff8a3d"), flareOf(1, "#ff8a3d"), flareOf(0, D.colours[1])] };
-            }, [
-              T("Pop a fire bead's ray and the two rays either side of it pop too."),
-              T("Whatever their colours, on all three rings.") ]),
+            }, T("Pop a fire bead's ray and the two rays either side of it pop too.\n\nWhatever their colours, on all three rings.")),
             specPage("laser", 15, "Laser bead", 2 | LASER, function (rs) {
               emptyRay(rs, 0); emptyRay(rs, N / 2);
               return { beam: { s: 0, t: 0.12, dur: 0.45, hex: D.colours[2] },
                        flares: [flareOf(N / 2, D.colours[2])] };
-            }, [
-              T("Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too.") ])
+            }, T("Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too."))
           ] },
           { key: "sumi", label: T("Sumi"), pages: [
             specPage("ice", 19, "Frozen bead", 4 | ICE, function (rs) {
               return { cold: 1 };
-            }, [
-              T("A frozen bead pops like any bead, but then its ring freezes and cannot turn."),
-              T("Pop two rays to thaw the ring, or wait 8 seconds.") ])
+            }, T("A frozen bead pops like any bead, but then its ring freezes and cannot turn.\n\nPop two rays to thaw the ring, or wait 8 seconds."))
           ] },
           { key: "circuit", label: T("Circuit"), pages: [
             specPage("slow", 25, "Slow bead", 4 | SLOW, function () {
               return { ink: 5, slow: true };
-            }, [
-              T("Pop a slow bead's ray and the ink slows right down.") ])
+            }, T("Pop a slow bead's ray and the ink slows right down."))
           ] }
         ];
       }
