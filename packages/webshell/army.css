@@ -61,6 +61,10 @@
 }
 .ar-card.foe { background:linear-gradient(180deg, #a32626, #4a0d0d); }
 .ar-card.dim { filter:grayscale(.7) brightness(.62); }
+/* the painted card greys its own face and not its wrapper: a mark on its
+   corner (a loss, a wound) and the chip at its foot keep their colour */
+.ar-card.painted.dim { filter:none; }
+.ar-card.painted.dim > .card { filter:grayscale(.7) brightness(.62); }
 
 .ar-card.t0 { --ar:var(--ar-t0); }
 .ar-card.t1 { --ar:var(--ar-t1); }
@@ -120,6 +124,43 @@
   background:none; box-shadow:none;
 }
 .ar-card.painted .ar-tag { left:8%; right:8%; bottom:4%; border-radius:6px; z-index:30; }
+
+/* THE MICRO CARD (army.js, cardTile `micro`): the token with no badge on
+   it, so its corners are free. Bottom-left, the FOOT — the grouped chip
+   (games/stratideck: cardChip, `5B` and the macaron's pictogram) and the
+   tag after it, a pill of its own; top-right, one MARK — what happened to
+   the card on a recap (red: a wound, a loss; green: a promotion) or a
+   count (`+3` who follow, `+10` a mission pays the grade). A screen whose
+   top-right corner is a `+` or a `−` names no mark. */
+.ar-foot {
+  position:absolute; left:-6px; bottom:-8px; z-index:31;
+  display:flex; align-items:center; gap:6px; max-width:calc(100% + 12px);
+}
+.ar-ftag {
+  flex:0 1 auto; min-width:0; height:32px; box-sizing:border-box; padding:0 9px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:16px; background:#0c1122; border:2px solid currentColor;
+  box-shadow:0 3px 8px rgba(0,0,0,.6);
+  font-weight:900; font-size:20px; line-height:1; white-space:nowrap; overflow:hidden;
+  color:var(--accent);
+}
+.ar-ftag.hurt { color:var(--danger, #ff5c5c); }
+.ar-ftag.match { color:var(--gold, #f2c14e); }
+.ar-ftag.icon { width:32px; padding:0; }
+.ar-ftag .ar-ci { width:18px; height:18px; }
+.ar-corner {
+  position:absolute; top:-10px; right:-10px; z-index:31;
+  min-width:36px; height:36px; box-sizing:border-box; padding:0 8px; border-radius:18px;
+  display:flex; align-items:center; justify-content:center;
+  font-style:normal; font-weight:900; font-size:20px; line-height:1;
+  box-shadow:0 3px 8px rgba(0,0,0,.6);
+}
+.ar-corner .ar-ci { width:20px; height:20px; }
+.ar-corner.in   { background:var(--accent); color:#10142c; border:2px solid #0b0d12; }
+.ar-corner.hurt, .ar-corner.lost {
+  width:36px; padding:0; background:#2a0b0e; border:2px solid var(--danger, #ff5c5c); color:var(--danger, #ff5c5c);
+}
+.ar-corner.up { width:36px; padding:0; background:#0d2a14; border:2px solid #51cf66; color:#51cf66; }
 
 /* =========================================================================
    THE DECK
@@ -228,18 +269,28 @@
 
 /* What a card's corner does: leave the formation, or join it. */
 .ar-act {
-  position:absolute; right:-10px; top:-10px; z-index:40;
-  width:40px; height:40px; border-radius:50%;
+  position:absolute; right:-14px; top:-14px; z-index:40;
+  width:56px; height:56px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
-  font-style:normal; font-size:28px; line-height:1;
+  font-style:normal; font-size:38px; font-weight:900; line-height:1;
   border:3px solid #0a1026; box-shadow:0 4px 10px rgba(0,0,0,.6);
 }
 /* the formation's `−` and the picker's `+` are buttons of their own on the
    card's corner: the card's own tap reads its file */
-button.ar-act { appearance:none; -webkit-appearance:none; cursor:pointer; padding:0; width:44px; height:44px; }
+button.ar-act { appearance:none; -webkit-appearance:none; cursor:pointer; padding:0; width:56px; height:56px; }
 button.ar-act:active { transform:scale(.9); }
 .ar-act.del { background:#e23b3b; color:#fff; }
 .ar-act.add { font-weight:900; background:var(--accent); color:#0a1026; }
+/* THE SIGN IS DRAWN, NOT TYPED: a glyph sits on the font's baseline and
+   reads high in its disc, whatever the face. Two bars in the middle of the
+   button, sized to it — the `−` and `+` stay in the markup for no one but
+   the source (the aria-label says what the button does). */
+button.ar-act { font-size:0; }
+button.ar-act::before, button.ar-act.add::after {
+  content:""; position:absolute; left:50%; top:50%; width:46%; height:13%; min-height:4px;
+  border-radius:3px; background:currentColor; transform:translate(-50%, -50%);
+}
+button.ar-act.add::after { transform:translate(-50%, -50%) rotate(90deg); }
 /* the card the picker just put in its slot lands there */
 .ar-slot.arrive .ar-card { animation:ar-arrive .42s cubic-bezier(.2,1.5,.4,1) both; }
 @keyframes ar-arrive { from { transform:scale(.6) translateY(40px); opacity:0; } }
@@ -273,10 +324,10 @@ button.ar-act:active { transform:scale(.9); }
    edge, hence the padding. */
 .ar-picker .mt-card.fixed .mt-body { overflow:visible; }   /* the grid scrolls, and the lit grade may grow past the edge */
 .ar-pick-grid {
-  width:calc(100% + 16px); margin:0 -8px; flex:1 1 auto; min-height:0; box-sizing:border-box;
+  width:calc(100% + 32px); margin:0 -16px; flex:1 1 auto; min-height:0; box-sizing:border-box;
   overflow-x:hidden; overflow-y:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
-  display:grid; grid-template-columns:repeat(5, 100px); grid-auto-rows:max-content; gap:30px 14px;
-  justify-content:center; align-content:start; padding:18px 8px 22px;
+  display:grid; grid-template-columns:repeat(4, 120px); grid-auto-rows:max-content; gap:34px 26px;
+  justify-content:center; align-content:start; padding:20px 16px 22px;
 }
 .ar-pick-grid.empty { align-content:center; }
 .ar-pick-grid {
@@ -286,7 +337,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-pick-grid::-webkit-scrollbar { display:none; }
 .ar-pick-grid .ar-slot { aspect-ratio:auto; }
 .ar-pick-grid .ar-slot .ar-card { height:auto; }
-.ar-pick-grid:not(.painted) .ar-slot { width:100px; height:100px; }
+.ar-pick-grid:not(.painted) .ar-slot { width:120px; height:120px; }
 .ar-pick-grid:not(.painted) .ar-slot .ar-card { height:100%; }
 .ar-pick-grid .ar-none { grid-column:1 / -1; margin:0; }
 
@@ -611,7 +662,7 @@ button.ar-act:active { transform:scale(.9); }
 .ar-post .ar-slot.empty { width:150px; height:150px; border-radius:20px; border-width:3px; }
 .ar-post .ar-slot.empty .ar-plus { font-size:40px; line-height:1; color:rgba(255,255,255,.4); }
 .ar-post .ar-slot.empty:active { transform:scale(.96); }
-.ar-post .ar-act { width:38px; height:38px; font-size:24px; right:-9px; top:-9px; }
+.ar-post .ar-act { width:54px; height:54px; right:-13px; top:-13px; }
 .ar-post-l {
   display:flex; align-items:center; gap:4px;
   font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--muted); white-space:nowrap;
@@ -677,7 +728,7 @@ button.ar-post-l:active { transform:scale(.96); }
 .ar-def .ar-slot.empty { width:112px; height:112px; border-radius:16px; border-width:3px; }
 .ar-def .ar-slot.empty .ar-plus { font-size:34px; line-height:1; color:rgba(255,255,255,.4); }
 .ar-def .ar-slot.empty:active { transform:scale(.96); }
-.ar-def .ar-act { width:34px; height:34px; font-size:22px; right:-8px; top:-8px; }
+.ar-def .ar-act { width:50px; height:50px; right:-12px; top:-12px; }
 .ar-def-front {
   display:flex; align-items:center; justify-content:center; gap:10px; margin:14px 0 0;
   font-size:18px; font-weight:800; letter-spacing:.5px; color:var(--danger, #ff5c5c);
@@ -983,11 +1034,12 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
 
 /* THE BRIEFING: the squad's slots — a required one dashed in the accent,
    an optional one in grey — and the odds under them, live. */
-.ar-squad.painted { grid-template-columns:repeat(5, 86px); }
+/* room between two slots for the `−` hung on each corner */
+.ar-squad.painted { grid-template-columns:repeat(5, 96px); gap:22px; justify-content:center; padding-top:12px; }
 .ar-slot.empty.need { border-color:rgba(242,193,78,.55); }
 .ar-slot.empty.need .ar-plus { color:rgba(242,193,78,.7); }
 .ar-squad .ar-slot.empty:active { transform:scale(.96); }
-.ar-squad .ar-act { width:34px; height:34px; font-size:22px; right:-10px; top:-10px; }
+.ar-squad .ar-act { width:48px; height:48px; right:-12px; top:-12px; }
 
 /* THE ODDS, drawn as a shelf of the album draws its own (meta.css, VERSUS
    ONE: `.al-vs`, `.al-tk`, `.al-ch`), in the colour of how good they are —
@@ -1022,13 +1074,14 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   color:var(--muted); padding-left:14px; border-left:3px solid rgba(255,255,255,.18);
 }
 .ar-rep-text { margin:0; font-size:20px; line-height:1.45; color:rgba(246,241,228,.94); text-align:left; }
-.ar-rep-squad { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.ar-rep-squad { display:flex; flex-wrap:wrap; justify-content:center; gap:22px 16px; padding:10px 0 8px; }
 .ar-rep-squad .ar-card { width:62px; height:82px; }
 .ar-rep-squad .ar-card.painted { width:auto; height:auto; }
 .ar-tag.lost { color:var(--danger, #ff5c5c); }
 .ar-tag.away { color:var(--accent2, #5aa9ff); }
 .ar-rep-out { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-end; gap:18px; }
 .ar-rep-rw { display:flex; flex-direction:column; align-items:center; gap:6px; max-width:180px; }
+.ar-rep-rw.rw-card { gap:16px; }   /* the chip hangs under the card */
 .ar-rep-rw .mt-rw-ico { transform:scale(.6); margin:-38px; }
 .ar-rep-rw .mt-rw-img { width:110px; height:110px; object-fit:contain; }
 .ar-rep-i { width:70px; height:70px; }
@@ -1055,6 +1108,7 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
 }
 .ar-cause .ar-ci { width:17px; height:17px; }
 .ar-reg .ar-card { filter:none; opacity:1; }
+.ar-reg-pills { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; }
 .ar-reg .ar-card > .card { opacity:.6; filter:grayscale(.7); }
 .ar-reg .ar-card:not(.painted) { opacity:.6; filter:grayscale(.7); }
 .ar-reg.back .ar-card > .card { opacity:.9; filter:grayscale(.2); }
@@ -1091,7 +1145,7 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
 .ar-fallen-c {
   appearance:none; -webkit-appearance:none; cursor:pointer;
   background:none; border:0; padding:0; margin:0; color:inherit;
-  display:flex; flex-direction:column; align-items:center; gap:8px; width:96px;
+  display:flex; flex-direction:column; align-items:center; gap:14px; width:120px;
   opacity:0; animation:ar-mourn .9s ease-out forwards;
 }
 .ar-fallen-list.one .ar-fallen-c { width:auto; }
@@ -1105,7 +1159,7 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
 .ar-fallen-c:active .ar-card { transform:scale(.95); }
 .ar-fallen-c .ar-card > .card { filter:grayscale(.85) brightness(.7); }
 .ar-fallen-c .ar-card:not(.painted) { filter:grayscale(.85) brightness(.7); }
-.ar-fallen-list:not(.painted) .ar-fallen-c .ar-card { width:86px; height:86px; }
+.ar-fallen-list:not(.painted) .ar-fallen-c .ar-card { width:120px; height:120px; }
 .ar-fallen-list.one:not(.painted) .ar-fallen-c .ar-card { width:190px; height:190px; }
 .ar-fallen-n {
   max-width:100%; font-size:18px; font-weight:800; letter-spacing:.5px; line-height:1.2;
@@ -1262,15 +1316,15 @@ button.ar-cell.locked { background:none; border:0; padding:0; }
   color:var(--muted); text-align:center;
 }
 .ar-sur-row {
-  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
-  max-height:300px; overflow-y:auto; padding:6px 4px; margin:0 0 6px;
+  display:flex; flex-wrap:wrap; justify-content:center; gap:22px 14px;
+  max-height:340px; overflow-y:auto; padding:12px 10px 14px; margin:0 0 6px;
 }
 .ar-sur-c {
   appearance:none; -webkit-appearance:none; cursor:pointer;
-  background:none; border:0; padding:0; margin:0; width:76px;
+  background:none; border:0; padding:0; margin:0; width:120px;
   border-radius:12px; transition:transform .15s ease, box-shadow .15s ease;
 }
-.ar-sur-c .ar-card:not(.painted) { height:101px; }
+.ar-sur-c .ar-card:not(.painted) { height:120px; }
 .ar-sur-c:active { transform:scale(.95); }
 .ar-sur-c.on { transform:translateY(-4px); box-shadow:0 0 0 3px var(--camp, #ff5c5c), 0 6px 14px rgba(0,0,0,.45); }
 

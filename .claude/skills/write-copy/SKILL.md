@@ -57,6 +57,41 @@ this file does not repeat.
    between two sentences stays, the last one goes. Guide pages, cards and
    lore keep theirs. A `Notify.learn` has no words to write: it says the
    title of its guide page.
+1. **Every sentence follows from the one before.** A text of several
+   sentences is one line of thought that ends on a conclusion, never a
+   list of facts side by side. When sentence B does not visibly follow
+   from sentence A, the link is missing: add the transition word that says
+   how B follows from A (*so*, *but*, *yet*, *that is why*, *since then*,
+   *as a result* / *donc*, *mais*, *pourtant*, *or*, *c'est pourquoi*,
+   *depuis*, *résultat*), or rewrite B so it concludes A. Stratideck's
+   Sterling True, before and after: "Il a oublié la combinaison exprès"
+   just put next to "n'a jamais menti" → "Il garde pourtant un secret
+   d'État… Incapable de mentir si on l'interroge, il a préféré oublier ce
+   code."
+1. **The story holds together.** Each thing is introduced before it is
+   taken for granted. Use *un* / *a* the first time and *le* / *the* only
+   once the reader knows which one: "il en a oublié la combinaison" leaves
+   the reader asking *which* combination, but "un cadenas à code… ce code"
+   does not. A character, an object or a place that the text has not named
+   yet gets an indefinite article (*des diablotins*, not *les diablotins*).
+   A report follows its briefing: the same people, the same objects, the
+   same outcome.
+1. **Fluent sentences, light punctuation.**
+   - **Few commas.** A sentence with three commas or more is two sentences,
+     or one joined by *et* / *and*. Never chain two independent clauses with
+     a bare comma: "l'un a pris une théière, un autre s'est brûlé" → "l'un a
+     pris une théière et un autre s'est brûlé".
+   - **In French, a comma OR a linking word, never both** (*et*, *ou*,
+     *puis*, *alors*, *donc*, *mais*, *sinon*…): "blessée, et passe un tour"
+     → "blessée et passe un tour". Too long without the comma, it is two
+     sentences. See [adapt-fr](../adapt-fr/SKILL.md), house rules.
+   - **No dash in the middle of a text** (`-`, `–`, `—` used as
+     punctuation), in either language: a comma, a full stop or a word does
+     the job. A hyphen inside a word (*petit-déjeuner*, *quatre-vingts*) is
+     spelling, not punctuation.
+   - **Colons sparingly**: one per text at most, and only to announce what
+     follows (a list, a reveal). Two colons in one text means one of them
+     is a full stop or a transition word.
 1. **Say what to DO when the rule allows it.** A warning reads as advice:
    "Quickly get clear of that side before you get bitten." / "Quitte vite ce
    côté pour ne pas te faire croquer." A bonus reads as an opportunity:
@@ -93,6 +128,21 @@ this file does not repeat.
    **"Boss"** and **"Timing"** may take a capital anywhere in a line ("Un
    Tap allume…", "Le Combo multiplie…", "Impact du Boss", "Seul un Timing
    parfait…") — never flagged, never lowered.
+1. **A game's key words are put forward.** Stratideck's two numbers are
+   written with a capital and in bold wherever a rule names them, in both
+   languages: `<b>Grade</b>` / `<b>Grades</b>`, and `<b>Rang</b>` in French,
+   `<b>Tier</b>` in English ("le meilleur <b>Rang</b> l'emporte"). Only where
+   the text is the game's own term: "nos rangs", "une rangée" stay as they
+   are. The tag renders in a guide paragraph or table label and in the
+   barracks' `postsNote` and `hurtGo1`. A title, a chapter and a notice stay
+   plain text.
+   Stratideck also keeps **camp** for ONE thing, the player's own village
+   (the barracks, its posts, its life). The side faced in a battle is
+   **les troupes rouges** / **the red troops** (the red army as a whole is
+   **l'armée rouge**), and the grid it stands on is **le champ de bataille**
+   / **the battlefield**, never "the camp".
+   And **Deck** takes a capital in both languages ("ton Deck", "under the
+   Deck"), like a key word, without the bold.
 1. **Do not churn.** A line that already obeys all of this stays as it is,
    byte for byte. Names (a card's, an officer's, a sticker's) are proper
    nouns and are not touched.
@@ -116,6 +166,11 @@ apply (one idea per sentence, plain words, grammar), plus:
 
 - **Concrete and short**: one or two sentences of scene, a detail the reader
   can picture, no adjective stacking.
+- **A scene is a chain, not a list**: a set-up, what it leads to, and a
+  punchline that follows from both. Read the text aloud. If one sentence
+  could be swapped with another without losing sense, the link between them
+  is missing (see the rules above on transitions, articles and
+  punctuation).
 - **The placeholders are the people**: `{leader}`, `{c}`, `{n}` read as a
   name or a number in the sentence — read the assembled line.
 - **The French is written as French fiction**, never as the English's syntax

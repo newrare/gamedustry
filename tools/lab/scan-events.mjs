@@ -48,6 +48,10 @@ const WATCHED = {
      it holds no WORD — it is a coloured glow over the frame, juice like the
      flash, and there is nothing on it to read, re-style or re-word. */
   'Overlay.vignette':{ kind: 'fx' },
+  /* The full-screen effects, juice for the same reason (packages/shell/screenfx.js). */
+  'ScreenFx.play':   { kind: 'fx' },
+  'ScreenFx.hold':   { kind: 'fx' },
+  'ScreenFx.release':{ kind: 'fx' },
   'Fx.burst':        { kind: 'fx' },
   'Fx.ring':         { kind: 'fx' },
   'Fx.shake':        { kind: 'fx' },
@@ -245,6 +249,9 @@ const DEFAULTS = {
   'Pop.text':         [360, 560, 'TEXT', {}],
   'Notify.say':       ['Notice', {}],
   'Overlay.vignette': ['rgba(255,255,255,.85)', 1, 700],
+  'ScreenFx.play':    ['hit', {}],
+  'ScreenFx.hold':    ['ice', {}],
+  'ScreenFx.release': ['ice'],
   'Fx.burst':         [360, 640, { count: 22, speed: 420, life: 0.55, size: 6, color: '#ffffff' }],
   'Fx.ring':          [360, 640, { from: 24, to: 210, width: 8, life: 0.5, color: '#ffffff' }],
   'Fx.shake':         [8],
@@ -634,7 +641,7 @@ function enclosing(lines, line) {
    is also what tells a game's own beat from one the motor fires for it. */
 export function scanCalls(src, where) {
   const mask = codeMask(src), lineOf = lineIndex(src), lines = src.split('\n');
-  const re = /\b(Pop|Notify|Overlay|Fx|Sound|Music|HUD|Confetti)\.(\w+)\s*\(/g;
+  const re = /\b(Pop|Notify|Overlay|ScreenFx|Fx|Sound|Music|HUD|Confetti)\.(\w+)\s*\(/g;
   const calls = [];
   let m;
   while ((m = re.exec(src))) {

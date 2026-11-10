@@ -718,8 +718,10 @@ async function run(url) {
   await check("the motor is playing", "__WEB__.state()", "playing");
   /* Every round opens on its entrance (Enter, engine.js), which holds the
      world and the clock for a second or two; what follows measures a round
-     that runs, so it is landed here rather than waited out. */
-  await check("...and it opens on its entrance", "__WEB__.Enter.active()", true);
+     that runs, so it is landed here rather than waited out. A game that opts
+     out (`CONFIG.enter = false`, vipera) starts at once and must not hold. */
+  await check("...and it opens on its entrance, unless the game opts out",
+    "__WEB__.Enter.active() === (__WEB__.CONFIG.enter !== false)", true);
   await evalJs("__WEB__.Enter.skip(); return 1;");
   await check("nothing of the shell is in front of it", "__VIEW__.depth()", 0);
   await check("the corner is up", "document.getElementById('web-ctls').hidden", false);
@@ -1156,7 +1158,11 @@ async function run(url) {
     /* SEVERAL PIECES OF NEWS ARE ONE RECAP (army.js, openRecap): a line
        opens its own card and settles alone, a tap elsewhere settles the rest */
     console.log("\nthe camp's news — one recap");
-    await evalJs("__ARMY__.drawDay(); __ARMY__.drawDay(); __ARMY__.announce(); return 1;");
+    /* a day and a promotion: the camp keeps ONE day waiting (`events.stack`),
+       so two days no longer make two pieces of news */
+    await evalJs("var c = __ARMY__.roster()[0]; __ARMY__.drawDay();" +
+                 " __ARMY__.promotions().push({ i: c.i, g: c.g, b: c.t, f: c.t, t: c.t, why: 'test' });" +
+                 " __ARMY__.announce(); return 1;");
     await sleep(500);
     await check("two pieces of news open one recap", "__MODAL__.top()", "ar-event ar-recap");
     await check("...one line per piece of news",

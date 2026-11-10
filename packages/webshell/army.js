@@ -281,9 +281,11 @@
      SERVICE (`s`, counted since its last promotion), and a victory — a battle
      won, a mission brought home — rolls each card that served it for one step
      up the ladder: `base` on the first service, `step` more per service
-     after, never past `max`. The manifest's `web.army.promotion` owns the
-     three numbers; the defaults put a card near one chance in five after a
-     handful of wins. An S has nowhere left to go. */
+     after, never past `max`. ONE VICTORY, ONE PROMOTION AT MOST: of the cards
+     whose roll came up, one is drawn and climbs, and the others keep their
+     services for the next win (`promoteOne`) — a win is not meant to pay
+     the whole deck at once. The manifest's `web.army.promotion` owns the
+     three numbers. An S has nowhere left to go. */
   var UPS = SPEC.promotion || {};
   var UP_BASE = UPS.base != null ? UPS.base : 0.15;
   var UP_STEP = UPS.step != null ? UPS.step : 0.01;
@@ -826,10 +828,19 @@
     /* WHO SERVED IT: every card the battle played (`used`, the round's own
        list; the deck handed over where a game keeps none) and every officer
        at a post. Each counts a service, and a won battle rolls each of them
-       for a promotion — the dead excepted, they are already gone. */
-    var used = a.used || idsOf(CONFIG.army ? CONFIG.army.deck : []), seen = {};
-    for (i = 0; i < used.length; i++) serve(byId(used[i]), a.won, "battle", seen);
-    for (var k in save.po) if (save.po.hasOwnProperty(k)) serve(byId(save.po[k]), a.won, "post", seen);
+       for the ONE promotion it pays — the dead excepted, they are already
+       gone. */
+    var used = a.used || idsOf(CONFIG.army ? CONFIG.army.deck : []), seen = {}, ups = [], uc;
+    for (i = 0; i < used.length; i++) {
+      uc = byId(used[i]);
+      if (serve(uc, a.won, seen)) ups.push({ c: uc, why: "battle" });
+    }
+    for (var k in save.po) {
+      if (!save.po.hasOwnProperty(k)) continue;
+      uc = byId(save.po[k]);
+      if (serve(uc, a.won, seen)) ups.push({ c: uc, why: "post" });
+    }
+    promoteOne(ups);
     n++;
     /* A PRISONER WHO IS ALREADY OURS IS NOT ONE. The camp may field an
        officer who sits in a cell or who enlisted: every officer is one person,
@@ -886,13 +897,22 @@
     return out;
   }
 
-  /* ONE SERVICE, and the roll a victory owes it. `seen` keeps a card from
-     serving twice in one battle (played, and then posted since). */
-  function serve(c, won, why, seen) {
+  /* ONE SERVICE, and the roll a victory owes it: true when the card's roll
+     came up, which makes it a candidate and promotes nothing yet. `seen`
+     keeps a card from serving twice in one battle (played, then posted). */
+  function serve(c, won, seen) {
     if (!c || (seen && seen[c.i])) return false;
     if (seen) seen[c.i] = 1;
     c.s = (c.s || 0) + 1;
-    return won && Math.random() < upChance(c) ? promote(c, why) : false;
+    return !!won && c.t < TOP && Math.random() < upChance(c);
+  }
+
+  /* The one promotion a victory pays, drawn among the candidates its rolls
+     left (`{ c, why }`); the winner is handed back, null when none. */
+  function promoteOne(list) {
+    if (!list.length) return null;
+    var w = list[Math.floor(Math.random() * list.length)];
+    return promote(w.c, w.why) ? w : null;
   }
 
   /* ONE STEP UP THE LADDER. The face moves, the person stays: `b` keeps the
@@ -1013,7 +1033,7 @@
     if (!offer || !offer.length) { offer = null; then(); return; }
     if (inPrison() >= cells()) {
       offer = null;
-      say(T.prisonFull, fill(T.prisonFullSub, { n: cells() }), "warn", "lock");
+      say(T.prisonFull, T.prisonFullSub, "warn", "lock");
       then();
       return;
     }
@@ -1138,7 +1158,7 @@
           img.src = face0; img.alt = "";
           card.appendChild(img);
         }
-        card.appendChild(el("p", "ar-sur-quote", T["surWhy_" + why] || T.surWhy_soldier));
+        card.appendChild(el("p", "ar-sur-quote", why === "trap" ? T.surWhy_trap : T.surWhy_guard));
         card.appendChild(el("p", "mt-sub ar-sur-note", alive.length ? T.surNote : T.surNoteNone));
         card.appendChild(el("p", "mt-sub ar-sur-note risk", T.surRisk));
         /* THE PRICE, PICKED: every card still standing, one tap marks the
@@ -1150,7 +1170,7 @@
           alive.forEach(function (ac) {
             var b = el("button", "ar-sur-c");
             b.type = "button";
-            b.appendChild(cardTile(face(ac), { fmt: "tiny", w: 76 }));
+            b.appendChild(cardTile(face(ac), recap({ fmt: "tiny", w: EV_TINY })));
             b.addEventListener("click", function () {
               pick = ac;
               var on = row.querySelectorAll(".ar-sur-c.on");
@@ -1210,8 +1230,9 @@
      the next time the player stands in the village: arriving in the game,
      or back from a battle (`announce`). What it does lands on the tap that
      puts the card away, so the chips count up in front of the player.
-     A player away for a day finds at most `stack` of them waiting — a camp
-     left alone for a week is not a week of cards to tap through. */
+     A player away for any length of time finds at most `stack` of them
+     waiting (one, in stratideck) — a camp left alone for a week is not a
+     week of cards to tap through. */
   var EVS = SPEC.events || {};
   var EV_LIST = EVS.list || [];
   var EV_BY = {};
@@ -1230,6 +1251,9 @@
     if (!save.ev) save.ev = { t: now(), q: [], h: [] };
     if (!save.ev.q) save.ev.q = [];
     if (!save.ev.h) save.ev.h = [];
+    /* a save written under a bigger `stack` keeps only what the cap allows:
+       a reconnection never tells more days than that */
+    if (save.ev.q.length > EV_STACK) save.ev.q.splice(EV_STACK);
     return save.ev;
   }
 
@@ -1519,7 +1543,7 @@
       case "defector": chip("lock", T.captiveTaken, "gain"); break;
       case "desert": chip("users", T.evLeaves, "risk"); break;
       case "wound": chip("heal", fill(ev.cs.length > 1 ? T.penWoundN : T.penWound1, { n: ev.cs.length }), "risk"); break;
-      case "heal": chip("heal", T.evHealed, "gain"); break;
+      case "heal": chip("heal", T.infHealed, "gain"); break;
       case "healAll": chip("heal", T.infHealed, "gain"); break;
       case "healDelay": chip("heal", fill(T.evHealLater, { h: hoursText(ev.h) }), "risk"); break;
       case "promote": chip("star", fill(T.fileUp, { t: tierName(ev.c.t + 1) }), "gain"); break;
@@ -1539,7 +1563,19 @@
      tap anywhere, and that tap is what applies it — neither the scrim nor
      ESCAPE walks past one without it, since a bad day skipped would be a bad
      day that never happened. */
-  var EV_W = 190, EV_TINY = 96;
+  var EV_W = 190, EV_TINY = 120;
+  /* THE RECAP TOKEN: a card on a card that tells what happened to it (a
+     report, a day of the camp, the fallen) is the micro card, four a row at
+     most, its grade and tier on the grouped chip, and what happened to it
+     one mark on its top-right corner — red for a wound or a loss. */
+  var RECAP = { micro: true, chip: {} };
+  function recap(o) {
+    var out = { micro: true, chip: {} }, k;
+    for (k in o) out[k] = o[k];
+    return out;
+  }
+  var HURT_MARK = { icon: "heal", cls: "hurt" }, LOST_MARK = { icon: "skull", cls: "lost" },
+      UP_MARK = { icon: "arrowUp", cls: "up" };
 
   function openEvents(then) {
     var q = evState().q;
@@ -1603,11 +1639,14 @@
     var kind = ((EV_BY[ev.id] || {}).fx || {}).kind;
     var tile = ev.red
       ? cardTile({ g: c.g, t: c.t, o: kind === "turn" ? "red" : null },
-                 { foe: kind !== "turn", fmt: one ? "mid" : "tiny", w: one ? EV_W : EV_TINY })
+                 one ? { foe: kind !== "turn", fmt: "mid", w: EV_W }
+                     : recap({ foe: kind !== "turn", fmt: "tiny", w: EV_TINY }))
       : cardTile({ g: c.g, t: kind === "promote" ? Math.min(TOP, c.t + 1) : c.t, b: kind === "promote" && c.b == null ? c.t : c.b, o: c.o },
-                 { fmt: one ? "mid" : "tiny", w: one ? EV_W : EV_TINY,
-                   dim: kind === "desert", tag: kind === "wound" ? T.fateHurt : kind === "promote" ? T.fateUp : null,
-                   tagClass: kind === "wound" ? "hurt" : "up" });
+                 one ? { fmt: "mid", w: EV_W,
+                         dim: kind === "desert", tag: kind === "wound" ? T.stHurt : kind === "promote" ? T.fateUp : null,
+                         tagClass: kind === "wound" ? "hurt" : "up" }
+                     : recap({ fmt: "tiny", w: EV_TINY, dim: kind === "desert",
+                               corner: kind === "wound" ? HURT_MARK : kind === "desert" ? LOST_MARK : kind === "promote" ? UP_MARK : null }));
     var b = el("div", "ar-fallen-c");
     b.appendChild(tile);
     if (!one) b.appendChild(text("span", "ar-fallen-n", W.upper(whoName(c.o || "blue", c.g, c.b != null ? c.b : c.t))));
@@ -1645,10 +1684,24 @@
       var p = el("div", "ar-card painted" + (opt.dim ? " dim" : ""));
       /* `base` is the tier the officer was raised at: the portrait is read
          there, the frame, the badge and the pips at `tier` */
-      p.appendChild(W.Game.cardNode({ rank: c.g, tier: c.t, base: c.b != null ? c.b : null, o: c.o || null },
-        { fmt: opt.fmt || "full", w: opt.w || 120, ghost: !!opt.ghost,
+      var card = { rank: c.g, tier: c.t, base: c.b != null ? c.b : null, o: c.o || null };
+      p.appendChild(W.Game.cardNode(card,
+        { fmt: opt.fmt || "full", w: opt.w || 120, ghost: !!opt.ghost, micro: !!opt.micro,
           side: opt.obj ? "none" : opt.foe ? "red" : "blue" }));
-      if (opt.tag) p.appendChild(el("div", "ar-tag" + (opt.tagClass ? " " + opt.tagClass : ""), opt.tag));
+      /* THE MICRO CARD'S FOOT: the grouped chip bottom-left (`opt.chip`,
+         { perk, tier }), and the tag rides after it as a pill of its own
+         rather than as a band across the face; `opt.corner` is the one
+         mark the top-right corner wears ({ word | icon, cls }). */
+      var foot = opt.micro && (opt.chip || opt.tag) && W.Game.cardChip ? el("div", "ar-foot") : null;
+      if (foot) {
+        if (opt.chip && !opt.obj && c.t != null) foot.appendChild(W.Game.cardChip(card, opt.chip));
+        if (opt.tag) foot.appendChild(el("span", "ar-ftag" + (opt.tagClass ? " " + opt.tagClass : ""), opt.tag));
+        if (foot.childNodes.length) p.appendChild(foot);
+      } else if (opt.tag) p.appendChild(el("div", "ar-tag" + (opt.tagClass ? " " + opt.tagClass : ""), opt.tag));
+      if (opt.corner) {
+        p.appendChild(el("i", "ar-corner" + (opt.corner.cls ? " " + opt.corner.cls : ""),
+          opt.corner.icon ? icon(opt.corner.icon, "ar-ci") : opt.corner.word));
+      }
       return p;
     }
     var tiered = c.t != null && !opt.ghost;
@@ -1792,7 +1845,7 @@
 
   function paintRoster() {
     var i, c;
-    head(DK, T.deckTitle, "");
+    head(DK, T.tab_deck, "");
     DK.deckHead.innerHTML = W.upper(T.deckSection) +
       ' <b>' + save.d.length + " / " + deckCap() + '</b>';
     /* NO LINE ABOUT THE GAPS: an empty slot says it is empty, and the room
@@ -1826,7 +1879,7 @@
   function lockTap(k) {
     return function (e) {
       if (e) e.stopPropagation();
-      say(fill(T.lockSay, { post: T["post_" + k] }), jobsOf(k).join(" · "), "info", "lock");
+      say(fill(T.lockSay, { post: postName(k) }), jobsOf(k).join(" · "), "info", "lock");
       W.Sound.ui("deny", 0.35);
     };
   }
@@ -1836,7 +1889,7 @@
   function lockedSlot(k) {
     var b = el("button", "ar-slot empty locked");
     b.appendChild(el("span", "ar-lock", icon("lock", "ar-ci")));
-    b.setAttribute("aria-label", fill(T.lockSay, { post: T["post_" + k] }));
+    b.setAttribute("aria-label", fill(T.lockSay, { post: postName(k) }));
     b.addEventListener("click", lockTap(k));
     return b;
   }
@@ -1847,7 +1900,7 @@
     var c = el("button", "ar-cell free locked");
     c.appendChild(el("div", "ar-free-slot", icon("lock", "ar-ci")));
     c.appendChild(text("div", "ar-rowsub", W.upper(T.locked)));
-    c.setAttribute("aria-label", fill(T.lockSay, { post: T["post_" + k] }));
+    c.setAttribute("aria-label", fill(T.lockSay, { post: postName(k) }));
     c.addEventListener("click", lockTap(k));
     return c;
   }
@@ -1858,7 +1911,7 @@
     var row = el("button", "ar-row free locked");
     row.appendChild(el("div", "ar-free-slot", icon("lock", "ar-ci")));
     row.appendChild(text("div", "ar-rowsub", W.upper(T.locked)));
-    row.setAttribute("aria-label", fill(T.lockSay, { post: T["post_" + k] }));
+    row.setAttribute("aria-label", fill(T.lockSay, { post: postName(k) }));
     row.addEventListener("click", lockTap(k));
     return row;
   }
@@ -1882,7 +1935,7 @@
     var b = el("button", "ar-slot" + (DK.justIn === c.i ? " arrive" : ""));
     var hurt = !fit(c), away = awayRun(c.i);
     b.appendChild(cardTile(face(c), {
-      dim: hurt || !!away, tag: hurt ? untilText(c.w - now()) : away ? T.away : null,
+      dim: hurt || !!away, tag: hurt ? untilText(c.w - now()) : away ? T.stAway : null,
       tagClass: hurt ? "hurt" : "away", fmt: "mid", w: LINE_W
     }));
     b.setAttribute("aria-label", T.fileOpen);
@@ -1929,7 +1982,7 @@
      `height`): the card never changes size between two grades, so the strip
      under the finger never moves, and the grid is what scrolls. A token's tap reads who it is at full size; the `+` on its
      corner is the one control that takes it. */
-  var PICK_W = 100;
+  var PICK_W = 120;
   var PICK_H = 880;                         // the picker card, design px
 
   function openPicker() {
@@ -2030,7 +2083,8 @@
     var b = el("button", "ar-slot pool");
     var tag = o.tag ? o.tag(c) : null;
     b.appendChild(cardTile(c.obj ? { g: c.g, t: null } : face(c), {
-      obj: !!c.obj, fmt: "tiny", w: PICK_W, tag: tag ? tag.word : null, tagClass: tag ? tag.cls : ""
+      obj: !!c.obj, fmt: "tiny", w: PICK_W, micro: true, chip: { perk: true },
+      tag: tag ? tag.word : null, tagClass: tag ? tag.cls : ""
     }));
     b.setAttribute("aria-label", T.fileOpen);
     b.addEventListener("click", function () {
@@ -2104,7 +2158,7 @@
   }
 
   function paintCollection() {
-    head(DK, T.collTitle, "");
+    head(DK, T.tab_coll, "");
     var X = DK.cx, box = DK.pane.coll, i, side, book, n, b;
     box.innerHTML = "";
     DK.car = null;
@@ -2377,7 +2431,7 @@
   function paintInfirmary() {
     var list = hurtList(), i;
     var cap = beds();
-    head(IN, T.infTitle, fill(T.infSub, { n: list.length, m: cap }));
+    head(IN, T.infirmary, fill(T.infSub, { n: list.length, m: cap }));
     IN.list.innerHTML = "";
     /* EVERY BED IS DRAWN, taken or not: the ceiling is the rule, and a
        rule that only shows once it bites is a card lost by surprise. */
@@ -2552,7 +2606,7 @@
   function paintDfStrat() {
     var d = dfState(), i, flag = dfFlag(d.g), dirty = dfDirty();
     /* a validated grid says nothing: the button gone is the sign */
-    head(DF, T.defenseTitle, !flag ? T.dfSubFlag : dirty ? (d.v ? T.dfSubDirty : T.dfSubNew) : "");
+    head(DF, T.defense, !flag ? T.dfNeedFlag : dirty ? (d.v ? T.dfSubDirty : T.dfSubNew) : "");
     DF.grid.innerHTML = "";
     for (i = 0; i < DF_N; i++) DF.grid.appendChild(dfSlot(i));
     DF.justIn = -1;
@@ -2590,9 +2644,9 @@
      report still waiting at the village is not read here first: the village
      is where it pays. */
   function paintDfReport() {
-    var d = dfState(), rep = d.last, P = DF.pane.rep, i;
+    var d = dfState(), rep = d.last, P = DF.pane.rep, i, log;
     P.innerHTML = "";
-    head(DF, T.defenseTitle, rep ? fill(T.dfRepSub, { d: whenText(rep.at) }) : T.dfRepNoneSub);
+    head(DF, T.defense, rep ? fill(T.dfRepSub, { d: whenText(rep.at) }) : T.dfRepNoneSub);
     if (!rep) {
       P.appendChild(text("p", "ar-note ar-drep-note", fill(T.dfRepNone, { n: DF_ATT.awayHours || 4 })));
       return;
@@ -2610,10 +2664,13 @@
     g.appendChild(bar);
     g.appendChild(el("b", "", rep.sol + "%"));
     top.appendChild(g);
-    if (rep.log) {
+    /* every report carries its duels (dfReport); one with none shows the
+       verdict and the solidity alone */
+    log = rep.log || [];
+    if (log.length) {
       var nc = 0, nf = 0;
-      for (i = 0; i < rep.log.length; i++) {
-        var sd = duelSide(rep.log[i].k);
+      for (i = 0; i < log.length; i++) {
+        var sd = duelSide(log[i].k);
         if (sd === "camp") nc++; else if (sd === "foe") nf++;
       }
       var tally = el("div", "ar-chips ar-drep-tally");
@@ -2622,13 +2679,10 @@
       top.appendChild(tally);
     }
     P.appendChild(top);
-    if (!rep.log) {
-      P.appendChild(text("p", "ar-note ar-drep-note", T.dfRepNoLog));
-      return;
-    }
-    P.appendChild(el("h3", "ar-sec ar-drep-sec", W.upper(T.dfRepOrder) + " <b>" + rep.log.length + "</b>"));
+    if (!log.length) return;
+    P.appendChild(el("h3", "ar-sec ar-drep-sec", W.upper(T.dfRepOrder) + " <b>" + log.length + "</b>"));
     var list = el("div", "ar-bouts" + (PAINTED ? " painted" : ""));
-    for (i = 0; i < rep.log.length; i++) list.appendChild(duelRow(rep.log[i], i + 1));
+    for (i = 0; i < log.length; i++) list.appendChild(duelRow(log[i], i + 1));
     P.appendChild(list);
   }
 
@@ -2674,7 +2728,7 @@
     w.appendChild(fileDoor(tile, who, obj ? "none" : foe ? "red" : "blue"));
     if (hurt) {
       var h = el("i", "ar-bout-hurt", icon("heal", "ar-ci"));
-      h.setAttribute("aria-label", T.fateHurt);
+      h.setAttribute("aria-label", T.stHurt);
       w.appendChild(h);
     }
     return w;
@@ -2702,7 +2756,7 @@
     mid.appendChild(el("b", "ar-bout-n", String(n)));
     mid.appendChild(text("span", "ar-bout-vs", W.upper(T.duVs)));
     mid.appendChild(text("span", "ar-bout-res", res));
-    if (L.h) mid.appendChild(el("span", "ar-bout-wound", icon("heal", "ar-ci") + "<span>" + T.fateHurt + "</span>"));
+    if (L.h) mid.appendChild(el("span", "ar-bout-wound", icon("heal", "ar-ci") + "<span>" + T.stHurt + "</span>"));
     row.appendChild(mid);
     row.appendChild(duelCard(L.d, false, dim.indexOf("d") >= 0, false));
     return row;
@@ -2733,8 +2787,8 @@
         b.addEventListener("click", function () { openFile({ g: e.r, obj: true }, "none", b); });
       } else {
         var off = !free(c);
-        b.appendChild(cardTile(face(c), { fmt: "tiny", w: DF_W, dim: off,
-          tag: off ? (!fit(c) ? T.fateHurt : T.dfOff) : null, tagClass: off ? "hurt" : "" }));
+        b.appendChild(cardTile(face(c), { fmt: "tiny", w: DF_W, dim: off, micro: true, chip: {},
+          tag: off ? icon(!fit(c) ? "heal" : "clock", "ar-ci") : null, tagClass: off ? "hurt icon" : "" }));
         b.addEventListener("click", function () { openFile(whoOf(c), "blue", b); });
       }
       b.setAttribute("aria-label", T.fileOpen);
@@ -2764,7 +2818,7 @@
     var d = dfState(), flag = dfFlag(d.g);
     pickCard({
       grade: { g: 0 }, take: T.dfTake,
-      eyebrow: flag ? T.defenseTitle : T.dfFlagFirst,
+      eyebrow: flag ? T.defense : T.dfNeedFlag,
       title: T.dfPick, empty: T.availNone,
       objects: function () {
         var own = unlocked(), out = [], i, r;
@@ -2990,10 +3044,10 @@
         card.appendChild(el("div", "ar-stamp " + (rep.ok ? "ok" : "ko"), W.upper(rep.ok ? T.dfStampHeld : T.dfStampLost)));
         card.appendChild(text("p", "ar-ev-text", rep.ok ? T.dfTextHeld : T.dfTextLost));
         var tiles = [], i, c;
-        if (rep.ok) for (i = 0; i < (rep.pr || []).length; i++) tiles.push(cardTile({ g: rep.pr[i].g, t: rep.pr[i].t }, { foe: true, fmt: "tiny", w: EV_TINY }));
+        if (rep.ok) for (i = 0; i < (rep.pr || []).length; i++) tiles.push(cardTile({ g: rep.pr[i].g, t: rep.pr[i].t }, recap({ foe: true, fmt: "tiny", w: EV_TINY })));
         else for (i = 0; i < (rep.hurt || []).length; i++) {
           c = byId(rep.hurt[i]);
-          if (c) tiles.push(cardTile(face(c), { fmt: "tiny", w: EV_TINY, tag: T.fateHurt, tagClass: "hurt" }));
+          if (c) tiles.push(cardTile(face(c), recap({ fmt: "tiny", w: EV_TINY, corner: HURT_MARK })));
         }
         if (tiles.length) {
           var row = el("div", "ar-fallen-list" + (PAINTED ? " painted" : ""));
@@ -3044,7 +3098,7 @@
     var out = [], chip;
     if (rep.ok) {
       if ((rep.pr || []).length) out.push(mkChip("lock", fill(rep.pr.length > 1 ? T.dfPrisonersN : T.dfPrisoners1, { n: rep.pr.length }), "gain"));
-      else if (rep.full) out.push(mkChip("lock", T.dfPrisonFull, "risk"));
+      else if (rep.full) out.push(mkChip("lock", T.prisonFull, "risk"));
       if (rep.coins) { chip = mkChip("coin", MT.rewardLabel(MT.reward("coins", rep.coins)), "gain"); chip.setAttribute("data-rw", "coins"); out.push(chip); }
       if (rep.xp) { chip = mkChip("xp", MT.rewardLabel(MT.reward("xp", rep.xp)), "gain"); chip.setAttribute("data-rw", "xp"); out.push(chip); }
     } else {
@@ -3111,7 +3165,7 @@
     var i;
     save.p.sort(function (a, b) { return a.u - b.u; });
     var cap = cells();
-    head(PR, T.prisonTitle, fill(T.prisonSub, { n: save.p.length, m: cap }));
+    head(PR, T.prison, fill(T.prisonSub, { n: save.p.length, m: cap }));
     PR.list.innerHTML = "";
     for (i = 0; i < Math.max(cap, save.p.length); i++) {
       PR.list.appendChild(i < save.p.length ? prisonCell(save.p[i]) : freeCell(T.prisonFree));
@@ -3242,9 +3296,8 @@
   /* A PLAYER IS NEVER STUCK FOR A GRADE. Every grade the camp has none of gets
      a place on the shelf, flagged `m`, at the lowest tier nobody holds and for
      `R_NEED` coins — the specials included, since a camp without a spy has no
-     answer to a marshal and one without a sapper none to a trap: that is not
-     the tent selling the solution, it is the tent handing back a piece the
-     army cannot play without. Checked every time the shelf is read and not
+     answer to a marshal and one without a sapper none to a trap: a missing
+     grade is served first, before anything the draw put on the shelf. Checked every time the shelf is read and not
      only when it is rolled, so a grade lost mid-shelf (or a tent that burned)
      is answered at once rather than in six hours. The place is taken from an
      offer nobody bought and nobody needs, a fallen one last; with none left
@@ -3321,14 +3374,12 @@
     for (i = 0; i <= TOP; i++) total += w[i] || 0;
     x = Math.random() * total;
     for (i = 0; i <= TOP; i++) { x -= w[i] || 0; if (x <= 0) { t = i; break; } }
-    /* The grade is flat over what the game lets a player own, minus the three
-       specials, which the tent never sells: a spy, a scout and a sapper are
-       ANSWERS to something, and a tent that sold them would be selling the
-       solution rather than the army. (One of them lost in the war is the
-       exception, found by `fallenPool`: that is buying back what the army
-       had, not the answer to a question.) */
+    /* The grade is flat over every grade the game lets a player own, the
+       three specials included: the tent sells the whole army. A grade the
+       camp has none of does not wait on this draw — `cover` gives it a place
+       of its own on every shelf. */
     var pool = [];
-    for (i = 0; i < GRADES.length; i++) if (GRADES[i].r >= 4) pool.push(GRADES[i].r);
+    for (i = 0; i < GRADES.length; i++) pool.push(GRADES[i].r);
     if (!pool.length) pool = [4];
     return { g: pool[Math.floor(Math.random() * pool.length)], t: t };
   }
@@ -3395,7 +3446,7 @@
          a purchase the player does not feel. */
       if (got && save.d.length < deckCap()) save.d.push(got.i);
       persist();
-      say(fill(o.f ? T.returned : T.recruited, { c: whoName(o.o || "blue", o.g, o.t) }),
+      say(fill(o.f ? T.returned : T.enlisted, { c: whoName(o.o || "blue", o.g, o.t) }),
           W.Lang.t(gradeName(o.g)) + " · " + tierName(o.t), "gain", "user");
       W.Sound.ui("win", 0.8, 1.18);
     });
@@ -3595,12 +3646,15 @@
       for (i = 0; i < (m.reward || []).length; i++) rep.rw.push(rollReward(m.reward[i]));
     }
     /* EVERY CARD SENT SERVED, and a squad brought home rolls each of them
-       for a promotion. The report shows who climbed (`u`) as it was written
-       — the squad as it LEFT, which is the card the player sent — and the
-       card that congratulates them follows it (`announce`). */
+       for the ONE promotion it pays. The report shows who climbed (`u`) as
+       it was written — the squad as it LEFT, which is the card the player
+       sent — and the card that congratulates them follows it (`announce`). */
+    var ups = [], up;
     for (i = 0; i < sq.length; i++) {
-      if (serve(byId(sq[i].i), ok, "mission")) sq[i].u = byId(sq[i].i).t;
+      if (serve(byId(sq[i].i), ok)) ups.push({ c: byId(sq[i].i), why: "mission", q: sq[i] });
     }
+    up = promoteOne(ups);
+    if (up) up.q.u = up.c.t;
     if (m && !ok) {
       for (i = 0; i < (m.fail || []).length; i++) {
         var f = m.fail[i];
@@ -3680,7 +3734,7 @@
         got = enrol(save, rw.g, rw.t);
         if (got) {
           if (save.d.length < deckCap()) save.d.push(got.i);
-          say(fill(T.recruited, { c: whoName("blue", rw.g, rw.t) }),
+          say(fill(T.enlisted, { c: whoName("blue", rw.g, rw.t) }),
               W.Lang.t(gradeName(rw.g)) + " · " + tierName(rw.t), "gain", "user");
         } else {
           /* the officer joined by another door since the report was
@@ -3749,7 +3803,7 @@
   }
   function penText(f) {
     if (f.kind === "coins") return fill(T.penCoins, { n: MT.num(f.n) });
-    if (f.kind === "lose") return fill(f.n > 1 ? T.penLoseN : T.penLose1, { n: f.n });
+    if (f.kind === "lose") return fill(f.n > 1 ? T.cardLostN : T.cardLost1, { n: f.n });
     return fill(f.n > 1 ? T.penWoundN : T.penWound1, { n: f.n });
   }
   function penIcon(f) { return f.kind === "coins" ? "coin" : f.kind === "lose" ? "skull" : "heal"; }
@@ -3801,7 +3855,7 @@
     if (RT.brief && !MISSION[RT.brief.m]) RT.brief = null;
     if (RT.brief) { paintBrief(box); return; }
     /* TWO SECTIONS AND NO SUBTITLE: the slots, then the history. */
-    head(RT, T.misTitle, "");
+    head(RT, T.tab_mis, "");
 
     /* 1. THE SLOTS, every one the missions' post could ever open, and each
        drawn in the one state it is in — a report to read, a squad away, a
@@ -3892,7 +3946,8 @@
     var n = el("button", "ar-mis row");
     var lead = el("div", "ar-mis-lead");
     if (m.favor && GRADE[m.favor]) {
-      lead.appendChild(cardTile({ g: m.favor, t: 0 }, { fmt: "tiny", w: 72, tag: "+" + M_FAVOR, tagClass: "in" }));
+      lead.appendChild(cardTile({ g: m.favor, t: 0 }, { fmt: "tiny", w: 72, micro: true, chip: { tier: false },
+        corner: { word: "+" + M_FAVOR, cls: "in" } }));
     } else {
       lead.classList.add("plain");
       lead.innerHTML = icon("compass", "ar-ci");
@@ -3939,7 +3994,7 @@
       icon(back ? "check" : "clock", "ar-ci") + "<span>" + (back ? T.runBack : untilText(run.e - now())) + "</span>"));
     row.appendChild(mid);
     if (back) {
-      var b = el("button", "btn btn-sm", icon("file", "ar-ci") + "<span>" + W.upper(T.readReport) + "</span>");
+      var b = el("button", "btn btn-sm", icon("file", "ar-ci") + "<span>" + W.upper(T.tab_rep) + "</span>");
       b.addEventListener("click", function () {
         if (mstate().r.indexOf(run) < 0) return;
         openReport(resolve(run));
@@ -3960,7 +4015,7 @@
     mid.appendChild(text("div", "ar-rowname", W.upper(m ? loc(m.title) : "???")));
     mid.appendChild(el("div", "ar-when ok", icon("check", "ar-ci") + "<span>" + T.runBack + "</span>"));
     row.appendChild(mid);
-    var b = el("button", "btn btn-sm", icon("file", "ar-ci") + "<span>" + W.upper(T.readReport) + "</span>");
+    var b = el("button", "btn btn-sm", icon("file", "ar-ci") + "<span>" + W.upper(T.tab_rep) + "</span>");
     b.addEventListener("click", function () { openReport(rep); });
     row.appendChild(b);
     return row;
@@ -3973,9 +4028,10 @@
       c = byId(ids[i]) || (known && known[i]) || null;
       if (c && (!best || cmpCard(c, best) < 0)) best = c;
     }
-    if (best) box.appendChild(cardTile(face(best), { fmt: "tiny", w: 76 }));
+    var more = ids.length > 1 ? { word: "+" + (ids.length - 1), cls: "in" } : null;
+    if (best) box.appendChild(cardTile(face(best), { fmt: "tiny", w: 76, micro: true, chip: {}, corner: more }));
     else box.appendChild(el("div", "ar-free-slot"));
-    if (ids.length > 1) box.appendChild(el("i", "ar-stack-n", "+" + (ids.length - 1)));
+    if (!best && more) box.appendChild(el("i", "ar-stack-n", more.word));
     return box;
   }
 
@@ -4007,7 +4063,7 @@
     card.appendChild(stakes(m));
     box.appendChild(card);
 
-    box.appendChild(sec(T.squadSec, pick.length + " / " + sq[1]));
+    box.appendChild(sec(T.theSquad, pick.length + " / " + sq[1]));
     var slots = el("div", "ar-slots ar-squad" + (PAINTED ? " painted" : ""));
     for (i = 0; i < sq[1]; i++) slots.appendChild(i < pick.length ? squadSlot(pick[i], m) : needSlot(i < sq[0], m));
     box.appendChild(slots);
@@ -4090,9 +4146,7 @@
   function squadSlot(c, m) {
     var w = el("div", "ar-slot-w");
     var b = el("button", "ar-slot" + (RT.justIn === c.i ? " arrive" : ""));
-    b.appendChild(cardTile(face(c), {
-      fmt: "tiny", w: 86, tag: m.favor === c.g ? "+" + M_FAVOR : null, tagClass: "in"
-    }));
+    b.appendChild(cardTile(face(c), { fmt: "tiny", w: 96, micro: true, chip: {} }));
     b.setAttribute("aria-label", T.fileOpen);
     b.addEventListener("click", function () { openFile(whoOf(c), "blue", b); });
     w.appendChild(b);
@@ -4115,7 +4169,7 @@
     if (RT.brief.pick.length >= sq[1]) { say(T.squadFull, "", "warn"); return; }
     pickCard({
       grade: RT.pick, take: T.squadTake,
-      eyebrow: T.squadSec + " · " + RT.brief.pick.length + " / " + sq[1],
+      eyebrow: T.theSquad + " · " + RT.brief.pick.length + " / " + sq[1],
       title: T.pickTitle, empty: T.availNone,
       list: function () {
         var all = available(), out = [];
@@ -4159,8 +4213,8 @@
       /* what the mission cost and who it promoted are told once the report
          is put away, on the cards that say it (`announce`) */
       onClose: function () { if (!past && done) announce(); },
-      eyebrow: T.repEyebrow, title: m ? loc(m.title) : T.misTitle,
-      tap: rep.rw.length && !past ? T.repCollect : T.repClose,
+      eyebrow: T.repEyebrow, title: m ? loc(m.title) : T.tab_mis,
+      tap: rep.rw.length && !past ? T.repCollect : undefined,
       fill: function (card, close, handle) {
         /* THE BRIEF THE SQUAD LEFT ON, then how it went: a report is read
            hours after the mission was picked, and an outcome with no pretext
@@ -4173,19 +4227,18 @@
         var row = el("div", "ar-rep-squad" + (PAINTED ? " painted" : ""));
         for (var i = 0; i < rep.sq.length; i++) {
           var q = rep.sq[i];
-          row.appendChild(cardTile(face(q), {
-            fmt: "tiny", w: 76, dim: q.f === "lost",
-            tag: q.f === "hurt" ? T.fateHurt : q.f === "lost" ? T.fateLost : q.u != null ? T.fateUp : null,
-            tagClass: q.f === "hurt" ? "hurt" : q.f === "lost" ? "lost" : "up"
-          }));
+          row.appendChild(cardTile(face(q), recap({
+            fmt: "tiny", w: EV_TINY, dim: q.f === "lost",
+            corner: q.f === "hurt" ? HURT_MARK : q.f === "lost" ? LOST_MARK : q.u != null ? UP_MARK : null
+          })));
         }
         card.appendChild(row);
 
         var out = el("div", "ar-rep-out");
         for (i = 0; i < rep.rw.length; i++) {
-          var rw = rep.rw[i], cell = el("div", "ar-rep-rw " + rw.kind);
+          var rw = rep.rw[i], cell = el("div", "ar-rep-rw rw-" + rw.kind);   // never a bare "card": the game's own card class
           cell.setAttribute("data-rw", String(i));
-          if (rw.kind === "card") cell.appendChild(cardTile({ g: rw.g, t: rw.t }, { fmt: "tiny", w: 96 }));
+          if (rw.kind === "card") cell.appendChild(cardTile({ g: rw.g, t: rw.t }, recap({ fmt: "tiny", w: EV_TINY })));
           else if (rw.kind === "super") cell.innerHTML = '<span class="ar-rep-ico">' + icon("ticketSuper", "ar-rep-i") + "</span>";
           else cell.innerHTML = MT.rewardArt(rw);
           cell.appendChild(text("div", "ar-rep-lbl", rewardText(rw)));
@@ -4232,7 +4285,7 @@
 
   function paintPosts() {
     var box = RT.pane.posts, i, n = 0, row;
-    head(RT, T.postsTitle, T.campSub);
+    head(RT, T.tab_posts, T.campSub);
     box.innerHTML = "";
     for (i = 0; i < POSTS.length; i++) if (postCard(POSTS[i].k)) n++;
     box.appendChild(sec(T.campPosts, n + " / " + POSTS.length));
@@ -4256,7 +4309,7 @@
 
   function paintRoll() {
     var box = DK.pane.roll, i, all, grid;
-    head(DK, T.campTitle, "");
+    head(DK, T.tab_roll, "");
     box.innerHTML = "";
     all = rollList();
     box.appendChild(sec(T.campRoll, String(all.length)));
@@ -4272,15 +4325,15 @@
     var cell = el("div", "ar-post"), c = postCard(p.k), b;
     /* THE POST'S NAME IS A DOOR TO WHAT IT DOES: what its gauge buys, and
        the five trades that suit it. */
-    var name = el("button", "ar-post-l", icon(p.icon, "ar-ci") + "<span>" + W.upper(T["post_" + p.k]) + "</span>");
-    name.setAttribute("aria-label", fill(T.postJobs, { post: T["post_" + p.k] }));
+    var name = el("button", "ar-post-l", icon(p.icon, "ar-ci") + "<span>" + W.upper(postName(p.k)) + "</span>");
+    name.setAttribute("aria-label", fill(T.postJobs, { post: postName(p.k) }));
     name.addEventListener("click", function () {
       /* The post's rule is a page of the game's guide where it has one
          (packages/webshell/guide.js); the notice is the playable-free
          fallback, for a game whose guide does not name it. */
       var GD = window.__GUIDE__;
       if (GD && GD.has("post-" + p.k)) { GD.open("post-" + p.k); return; }
-      say(T["post_" + p.k], T["pd_" + p.k] + ". " + fill(T.postJobsLine, { j: jobsOf(p.k).join(" · ") }), "info", p.icon);
+      say(postName(p.k), jobsOf(p.k).join(" · "), "info", p.icon);
     });
     cell.appendChild(name);
     if (c) {
@@ -4335,7 +4388,7 @@
     if (postCard(k)) return;
     pickCard({
       grade: RT.pick, take: T.postTake,
-      eyebrow: T["post_" + k], title: T.postPick,
+      eyebrow: postName(k), title: T.postPick,
       /* a card guarding the camp is on a job already (section 8c') */
       list: function () {
         var all = reserveList(true), out = [];
@@ -4354,7 +4407,7 @@
         RT.justIn = c.i;
         persist();
         say(fill(T.posted, { c: whoName(c.o || "blue", c.g, baseOf(c)) }),
-            T["post_" + k] + " " + postPct(k) + "% · " + postEffect(k), "good", "check");
+            postName(k) + " " + postPct(k) + "% · " + postEffect(k), "good", "check");
         W.Sound.ui("tap", 0.45, 1.1);
       }
     });
@@ -4428,7 +4481,7 @@
      row is only a door to who they were. */
   function paintRegister() {
     var box = RT.pane.reg, i, list;
-    head(RT, T.regTitle, "");
+    head(RT, T.tab_reg, "");
     box.innerHTML = "";
     box.appendChild(sec(T.regSec, String(save.x.length)));
     if (!save.x.length) { box.appendChild(el("p", "ar-none", T.regNone)); return; }
@@ -4457,8 +4510,10 @@
      one it was raised at for who it is */
   function lostFace(e) { return { g: e.g, t: e.t, b: e.b, o: e.o }; }
   function lostWho(e) { return { o: e.o || "blue", g: e.g, t: e.t, b: e.b }; }
-  function lostCard(e, fmt, w) {
-    var tile = cardTile(lostFace(e), { fmt: fmt, w: w });
+  function lostCard(e, fmt, w, more) {
+    var o = { fmt: fmt, w: w }, k;
+    for (k in more || {}) o[k] = more[k];
+    var tile = cardTile(lostFace(e), o);
     tile.appendChild(el("i", "ar-cause " + (e.why || "battle"), icon(causeIcon(e), "ar-ci")));
     return tile;
   }
@@ -4466,10 +4521,20 @@
   function regRow(e) {
     var row = el("div", "ar-row ar-reg" + (e.back ? " back" : ""));
     var side = e.o || "blue";
-    row.appendChild(fileDoor(lostCard(e, "tiny", 76), lostWho(e), "blue"));
+    row.appendChild(fileDoor(lostCard(e, "tiny", 76, { micro: true }), lostWho(e), "blue"));
+    /* the grade and the tier beside the card and not on it: the micro card
+       keeps its corner for the cause, and no macaron — a card lost has no
+       use left to say */
+    if (PAINTED && W.Game.cardChip) {
+      var pills = el("div", "ar-reg-pills"), cc = { rank: e.g, tier: e.t };
+      pills.appendChild(W.Game.cardChip(cc, { only: "grade" }));
+      pills.appendChild(W.Game.cardChip(cc, { only: "tier" }));
+      row.appendChild(pills);
+    }
     var mid = el("div", "ar-mid");
     mid.appendChild(text("div", "ar-rowname", W.upper(whoName(side, e.g, e.b != null ? e.b : e.t))));
-    mid.appendChild(text("div", "ar-rowsub", W.upper(W.Lang.t(gradeName(e.g))) + " · " + tierName(e.t)));
+    /* the grade's name and not its tier: the tier is the pill beside the card */
+    mid.appendChild(text("div", "ar-rowsub", W.upper(W.Lang.t(gradeName(e.g)))));
     var when = el("div", "ar-when ko " + (e.why || "battle"), icon(causeIcon(e), "ar-ci") + "<span></span>");
     when.lastChild.textContent = causeText(e);
     mid.appendChild(when);
@@ -4550,7 +4615,7 @@
       fill: function (card) {
         /* a card with no back is no control: the modal's dismiss takes it */
         flip = el(back ? "button" : "div", "ar-flip fly");
-        if (back) flip.setAttribute("aria-label", T.fileTurn);
+        if (back) flip.setAttribute("aria-label", T.fileHint);
         flip.style.width = FILE_W + "px";
         flip.style.height = FILE_H + "px";
         flip.style.visibility = "hidden";     // until it stands on the small card
@@ -4678,7 +4743,7 @@
           last: p ? W.upper(p.last) : "???",
           facts: facts,
           job: job ? W.upper(jobName(job, p)) : "",
-          jobPost: job ? W.upper(fill(T.jobFor, { post: T["post_" + job.post] })) : "",
+          jobPost: job ? W.upper(fill(T.jobFor, { post: postName(job.post) })) : "",
           skill: gradeSkill(who.g),
           lore: lore[LANG] || lore.en || "",
           army: W.upper(who.o === "red" ? T.armyRed : T.armyBlue),
@@ -4748,7 +4813,7 @@
     b.appendChild(fl);
     if (job) {
       b.appendChild(text("div", "ar-fb-job",
-        W.upper(jobName(job, p)) + " · " + W.upper(fill(T.jobFor, { post: T["post_" + job.post] }))));
+        W.upper(jobName(job, p)) + " · " + W.upper(fill(T.jobFor, { post: postName(job.post) }))));
     }
     var skill = gradeSkill(who.g);
     if (skill) b.appendChild(text("p", "ar-fb-skill", skill));
@@ -4844,7 +4909,7 @@
       out.push({
         title: T.fallenTitle, tone: "ko",
         chips: function () {
-          return [mkChip("users", dead.length === 1 ? T.fallenEyebrow1 : fill(T.fallenEyebrowN, { n: dead.length }), "risk")];
+          return [mkChip("users", dead.length === 1 ? T.cardLost1 : fill(T.cardLostN, { n: dead.length }), "risk")];
         },
         /* the round's way of telling it: a card opens its file, since a door
            out to the register would walk away from the recap under it */
@@ -4997,7 +5062,7 @@
      a door to the register, where the line stays; a tap anywhere else puts
      it away. Marked told the moment it opens, so a reload never holds the
      same funeral twice. */
-  var FALLEN_W = 190, FALLEN_TINY = 86;
+  var FALLEN_W = 190, FALLEN_TINY = EV_TINY;
 
   /* `round`: told over the battle, where a door out to the camp would walk
      out of a round that has not ended yet — so a card there opens its file,
@@ -5009,7 +5074,7 @@
     MT.setArmy(save);
     MD.open({
       kind: "ar-fallen", dismiss: true, esc: true, onClose: then,
-      eyebrow: one ? T.fallenEyebrow1 : fill(T.fallenEyebrowN, { n: list.length }),
+      eyebrow: one ? T.cardLost1 : fill(T.cardLostN, { n: list.length }),
       title: T.fallenTitle,
       tap: round ? T.tapContinue : T.fallenTap,
       fill: function (card, close) {
@@ -5025,9 +5090,13 @@
           k = order[i];
           e = by[k][0];
           var line = el("p", "ar-fallen-l " + k, icon(causeIcon(e), "ar-ci") + "<span></span>");
+          /* one card: its name and its cause; several: the cause without a
+             mission (they may come from different ones) and how many */
           line.lastChild.textContent = one
-            ? fill(T["fallen1_" + k] || T.fallen1_battle, { c: whoName(e.o || "blue", e.g, e.b != null ? e.b : e.t), m: missionTitle(e) })
-            : fill(T[(by[k].length === 1 ? "fallenS_" : "fallenN_") + k] || T.fallenN_battle, { n: by[k].length });
+            ? whoName(e.o || "blue", e.g, e.b != null ? e.b : e.t) + " · " + causeText(e)
+            : k === "slain"
+              ? fill(by[k].length > 1 ? T.lostSlainN : T.lostSlain1, { n: by[k].length })
+              : causeText({ why: k }) + (by[k].length > 1 ? " ×" + by[k].length : "");
           why.appendChild(line);
         }
         card.appendChild(why);
@@ -5041,16 +5110,11 @@
     W.Sound.cue("defeat", 0.55, 0.8, 110, 0.6, "sine");
   }
 
-  function missionTitle(e) {
-    var m = e.m ? MISSION[e.m] : null;
-    return m ? loc(m.title) : "";
-  }
-
   /* One of the fallen: the card, greyed, the cause on its corner, the name
      under it where there is room for one — and the way to the register. */
   function fallenDoor(e, one, close, round) {
     var b = el("button", "ar-fallen-c");
-    var tile = lostCard(e, one ? "mid" : "tiny", one ? FALLEN_W : FALLEN_TINY);
+    var tile = lostCard(e, one ? "mid" : "tiny", one ? FALLEN_W : FALLEN_TINY, one ? null : RECAP);
     b.appendChild(tile);
     if (!one) b.appendChild(text("span", "ar-fallen-n", W.upper(whoName(e.o || "blue", e.g, e.b != null ? e.b : e.t))));
     b.setAttribute("aria-label", round ? T.fileOpen : T.fallenOpen);
@@ -5075,13 +5139,15 @@
       title: T.hurtTitle,
       tap: T.tapContinue,
       fill: function (card) {
-        var line = el("p", "ar-fallen-l hurt", icon("heal", "ar-ci") + "<span></span>");
-        line.lastChild.textContent = one
-          ? fill(T.hurt1, { c: whoName(list[0].o || "blue", list[0].g, baseOf(list[0])) })
-          : fill(T.hurtN, { n: list.length });
-        var why = el("div", "ar-fallen-why");
-        why.appendChild(line);
-        card.appendChild(why);
+        /* the eyebrow and the sentence under the cards already count
+           several, so the line only names the one */
+        if (one) {
+          var line = el("p", "ar-fallen-l hurt", icon("heal", "ar-ci") + "<span></span>");
+          line.lastChild.textContent = fill(T.hurt1, { c: whoName(list[0].o || "blue", list[0].g, baseOf(list[0])) });
+          var why = el("div", "ar-fallen-why");
+          why.appendChild(line);
+          card.appendChild(why);
+        }
         var row = el("div", "ar-fallen-list" + (one ? " one" : "") + (PAINTED ? " painted" : ""));
         for (i = 0; i < list.length; i++) row.appendChild(hurtDoor(list[i], one));
         card.appendChild(row);
@@ -5096,7 +5162,13 @@
         }).split("{t}");
         for (i = 0; i < parts.length; i++) {
           if (i) foot.appendChild(text("b", "ar-hurt-t", waitWords(longest)));
-          foot.appendChild(document.createTextNode(parts[i]));
+          /* a key word may be put forward with <b> (the tier's word): that tag
+             only, the rest of the sentence stays text */
+          var bits = parts[i].split(/<b>|<\/b>/);
+          for (var q = 0; q < bits.length; q++) {
+            if (!bits[q]) continue;
+            foot.appendChild(q % 2 ? text("b", "", bits[q]) : document.createTextNode(bits[q]));
+          }
         }
         card.appendChild(foot);
       }
@@ -5106,7 +5178,7 @@
 
   function hurtDoor(c, one) {
     var b = el("button", "ar-fallen-c hurt");
-    var tile = cardTile(face(c), { fmt: one ? "mid" : "tiny", w: one ? FALLEN_W : FALLEN_TINY });
+    var tile = cardTile(face(c), one ? { fmt: "mid", w: FALLEN_W } : recap({ fmt: "tiny", w: FALLEN_TINY, corner: HURT_MARK }));
     b.appendChild(tile);
     if (!one) b.appendChild(text("span", "ar-fallen-n", W.upper(whoName(c.o || "blue", c.g, baseOf(c)))));
     b.setAttribute("aria-label", T.fileOpen);
@@ -5159,8 +5231,8 @@
         function page() {
           var e = list[ix];
           handle.set({
-            eyebrow: list.length > 1 ? fill(T.upEyebrowN, { i: ix + 1, n: list.length }) : T.upEyebrow,
-            tap: ix < list.length - 1 ? T.upNext : T.upClose
+            eyebrow: T.upEyebrow,
+            tap: ix < list.length - 1 ? T.upNext : undefined
           });
           stage.innerHTML = "";
           var row = el("div", "ar-up" + (PAINTED ? " painted" : ""));
@@ -5276,13 +5348,13 @@
                   value: MT.num((save.ms && save.ms.w) || 0),
                   go: function () { VW.go("recruit", { tab: "mis" }); } });
     }
-    rows.push({ pic: icon("file", "mt-ci"), label: T.bandOwned, value: own + "/" + all,
+    rows.push({ pic: icon("file", "mt-ci"), label: T.tab_coll, value: own + "/" + all,
                 go: function () { VW.go("deck", { tab: "coll" }); } });
-    rows.push({ pic: '<i class="ar-hc blue"></i>', label: T.bandBlue, value: MT.num(blue),
+    rows.push({ pic: '<i class="ar-hc blue"></i>', label: T.cx_blue, value: MT.num(blue),
                 go: function () { VW.go("deck"); } });
-    rows.push({ pic: '<i class="ar-hc red"></i>', label: T.bandRed, value: MT.num(inPrison()),
+    rows.push({ pic: '<i class="ar-hc red"></i>', label: T.cx_red, value: MT.num(inPrison()),
                 go: function () { VW.go("prison"); } });
-    rows.push({ pic: '<i class="ar-hc turn"></i>', label: T.bandTurn, value: MT.num(turn),
+    rows.push({ pic: '<i class="ar-hc turn"></i>', label: T.turncoat, value: MT.num(turn),
                 go: function () { VW.go("deck"); } });
     return rows;
   }
@@ -5482,343 +5554,283 @@
 
   var STRINGS = {
     en: {
-      deck: "Cards", infirmary: "Infirmary", prison: "Prison", recruit: "Command", defense: "Defense",
-      bandTitle: "Your army", bandMissions: "Missions accomplished", bandOwned: "Collection",
-      bandBlue: "Blue", bandRed: "Red", bandTurn: "Turncoat",
-      deckTitle: "Deck",
+      deck: "Cards", infirmary: "Infirmary", prison: "Prison", recruit: "Command", defense: "Defence",
+      bandTitle: "Your army", bandMissions: "Missions accomplished",
+      
       deckSection: "Formation", fillBest: "Auto-fill",
       filled1: "1 card added", filledN: "{n} cards added",
-      pickTitle: "Choose a card", pickAll: "Every grade", pickEmpty: "No card is free to join the deck",
-      deckTake: "Put this card in the deck",
+      pickTitle: "Choose a card", pickAll: "Every grade", pickEmpty: "No card is free to join the Deck",
+      deckTake: "Put this card in the Deck",
       f_all: "All",
       f_had: "Owned", f_met: "Met", f_miss: "Missing",
-      deckFullWarn: "The deck is full",
-      deckDrop: "Leave this card behind", inDeck: "In deck",
+      deckFullWarn: "The Deck is full",
+      deckDrop: "Leave this card behind",
       tab_roll: "Camp", tab_deck: "Deck", tab_coll: "Collection",
-      collTitle: "Collection",
       cx_blue: "Blue", cx_red: "Red", cx_turn: "Turncoats", cx_obj: "Objects",
       ghostTurn: "Enlist this officer to read their file",
       cxNone: "Nobody here", prev: "Previous", next: "Next",
       ghostBlue: "Recruit this officer to read their file",
       ghostRed: "Meet this officer in battle to read their file",
-      fileOpen: "Read this officer's file", fileTurn: "Turn the card over",
+      fileOpen: "Read this officer's file",
       fileHint: "Tap the card to turn it over", age: "Age {n}",
       g_man: "Man", g_woman: "Woman", g_male: "Male", g_female: "Female",
-      armyBlue: "Blue army", armyRed: "Red camp", turncoat: "Turncoat",
-      objKind: "Object", objBy: "Destroyed by: {g}", objByAny: "Any card captures it",
+      armyBlue: "Blue army", armyRed: "Red army", turncoat: "Turncoat",
+      objKind: "Object", objBy: "Destroyed by: {g}", objByAny: "Can be captured by any <b>Grade</b>",
       objGhostBand: "Clear the {b} biome to get it", objGhostNone: "Not available yet",
-      infTitle: "Infirmary", infSub: "{n} / {m} beds taken", infFree: "Free bed",
-      infFull: "Infirmary full", prisonFree: "Free cell",
-      prisonFull: "Prison full", prisonFullSub: "{n} cells, all taken: no prisoner this time",
+      infSub: "{n} / {m} beds taken", infFree: "Free bed",
+      prisonFree: "Free cell",
+      prisonFull: "Prison full", prisonFullSub: "No new prisoner",
       infHealed: "Back on their feet", locked: "Locked",
-      prisonTitle: "Prison", prisonSub: "{n} / {m} cells taken",
-      defenseTitle: "Defense",
-      dfSubFlag: "Place your flag first of all", dfSubNew: "Protect the flag, then validate",
-      dfSubDirty: "Changes not validated yet",
+      prisonSub: "{n} / {m} cells taken",
+      dfNeedFlag: "Place your flag first", dfSubNew: "Protect the flag, then validate",
+      dfSubDirty: "Defence strategy not validated yet",
       dfFront: "The enemy attacks here",
       dfNote: "Place your flag, then protect it with your cards and your objects.",
       dfValidate: "Validate", dfUndo: "Undo changes",
-      dfNeedFlag: "Place your flag first",
-      dfValidated: "Defense validated", dfValidatedSub: "It guards the camp while you are away",
-      dfOff: "Absent", dfDrop: "Remove from the defense", dfPick: "Place a card", dfTake: "Place",
-      dfFlagFirst: "Your flag comes first",
+      dfValidated: "Defence validated", dfValidatedSub: "Your defence guards the camp while you are away",
+      dfOff: "Absent", dfDrop: "Remove from the defence", dfPick: "Place a card", dfTake: "Place",
       dfRepEyebrow: "While you were away", dfRepHeld: "The camp held", dfRepLost: "The flag was taken",
       dfStampHeld: "Defended", dfStampLost: "Captured",
       dfTextHeld: "The red army attacked your camp and never reached the flag, but some of its soldiers stayed behind.",
-      dfTextLost: "The red army broke through your defense and took the flag.",
-      dfPrisoners1: "1 prisoner", dfPrisonersN: "{n} prisoners", dfPrisonFull: "Prison full: no new prisoner",
+      dfTextLost: "The red army broke through your defence and took the flag.",
+      dfPrisoners1: "1 prisoner", dfPrisonersN: "{n} prisoners",
       dfSolid: "Solidity",
       tab_strat: "Strategy", tab_rep: "Report",
       dfRepSub: "Last raid: {d}", dfRepNoneSub: "No raid yet",
-      dfRepNone: "No raid yet. Validate a defense: the red army will attack it when you come back after {n} hours away.",
-      dfRepNoLog: "The duels of this raid were not recorded.",
+      dfRepNone: "No raid yet. Validate your defence to avoid a surprise attack from the red army.",
       dfRepSee: "See the details",
       dfRepOrder: "Order of attack", dfRepCamp: "Pushed back: {n}", dfRepFoe: "Broken through: {n}",
       duVs: "vs", duWin: "{w} wins", duTie: "Both fall", duFlag: "Flag taken",
-      duTrap: "{a} falls in the trap", duClear: "{a} clears the trap", duSmash: "{a} clears the way",
-      duBlock: "{a} is held back", duStray: "{a} gets lost", duStun: "{a} is stunned",
+      duTrap: "{a} falls in the trap", duClear: "{a} disarms the trap", duSmash: "{a} clears the way",
+      duBlock: "{a} is held back", duStray: "{a} gets lost", duStun: "{a} freezes in fear",
       duSpell: "{a} is bewitched", duScout: "{a} reveals the card",
       dfUnlockEyebrow: "{b} cleared", dfUnlockEyebrowN: "Biomes cleared",
-      dfUnlockTitleN: "New object cards",
-      dfUnlockText1: "It joins your collection. Your defense can now hold up to {n} of it.",
-      dfUnlockTextN: "They join your collection. Your defense can now hold up to {n} of each.",
+      dfUnlockTitleN: "New objects",
+      dfUnlockText1: "It joins your collection. Your defence can now hold up to {n} of it.",
+      dfUnlockTextN: "They join your collection. Your defence can now hold up to {n} of each.",
       enlist: "Enlist", hire: "Recruit", enlisted: "{c} joins your army",
-      recruitTitle: "Recruiting tent", recruitSub: "New faces in {t}",
-      sold: "Recruited", recruited: "{c} recruited",
+      recruitTitle: "Recruiting tent", recruitSub: "New recruits in {t}",
+      sold: "Recruited",
       tooPoor: "Not enough coins",
       captiveTitle: "Victory loot", or: "or",
       captiveTaken: "Taken to the prison",
       captiveTap: "Tap a card to take it",
-      ready: "Ready", soon: "Any moment", uD: "d", uH: "h", uM: "m",
+      ready: "Ready", soon: "Any moment now", uD: "d", uH: "h", uM: "m",
       wDay: "day", wDays: "days", wHour: "hour", wHours: "hours",
-      away: "On mission",
       tab_tent: "Recruits", tab_mis: "Missions",
-      misTitle: "Missions",
       misBoard: "Mission board", slotNext: "New mission in {t}",
       boardNext: "New missions in {t}",
       misLog: "Reports", logEmpty: "No squad has come back.",
       prepare: "Prepare",
-      runBack: "Back at camp", readReport: "Report",
+      runBack: "Back at camp",
       oddsShort: "{p} success", oddsLabel: "Chance of success",
       diff: "Difficulty {n} of 5",
       squadN: "{a} cards", squadRange: "{a} to {b} cards",
       favor: "{g} +{n}",
-      rwSuper: "+{n} super ticket", rwSticker: "A sticker", rwCard: "An officer · {g} · {t}",
+      rwSuper: "+{n} super ticket", rwSticker: "A sticker", rwCard: "A {g} of <b>Tier</b> {t}",
       penCoins: "-{n} coins",
       penWound1: "1 card wounded", penWoundN: "{n} cards wounded",
-      penLose1: "1 card lost", penLoseN: "{n} cards lost",
+      cardLost1: "1 card lost", cardLostN: "{n} cards lost",
       briefTitle: "Briefing",
-      squadSec: "The squad", squadTake: "Add this card to the squad", squadDrop: "Take this card out of the squad",
-      availNone: "No card is free: every one is wounded or already away.",
+      squadTake: "Add this card to the squad", squadDrop: "Take this card out of the squad",
+      availNone: "No card is free",
       squadFull: "The squad is full",
       needMore1: "1 more card to send the squad", needMoreN: "{n} more cards to send the squad",
       send: "Send the squad", cancel: "Cancel",
       sent: "Squad on its way", sentSub: "Back in {t}",
       repEyebrow: "Mission report", repWin: "Success", repLose: "Failure",
-      fateHurt: "Wounded", fateLost: "Lost", theSquad: "The squad",
-      repCollect: "Tap anywhere to collect", repClose: "Tap anywhere to close",
+      fateLost: "Lost", theSquad: "The squad",
+      repCollect: "Tap anywhere to collect",
       tab_posts: "Management", tab_reg: "Register",
-      postsTitle: "Management", campTitle: "Camp",
       campSub: "An officer at a post can no longer fight or go on a mission",
       campPosts: "Posts", campRoll: "In the camp", campNone: "The camp is empty",
-      post_inf: "Infirmary", post_pri: "Prison", post_drill: "Formation", post_ops: "Missions", post_cmd: "Camp",
       post_cook: "Kitchen",
       role_inf: "Infirmary manager", role_pri: "Prison warden", role_drill: "Drill instructor",
       role_ops: "Mission officer", role_cmd: "In command", role_cook: "Camp cook",
       postPick: "Choose an officer", postTake: "Assign this card to the post",
-      postDrop: "Relieve this officer", posted: "{c} takes up the post",
+      postDrop: "Relieve this officer", posted: "{c} takes the post",
       stHurt: "Wounded", stAway: "On mission", stDeck: "In formation", stIdle: "Available",
       stJail: "In prison", stTurned: "Ready to enlist",
-      regTitle: "Register", regSec: "Cards lost",
-      regNone: "No card lost yet. Cards that die in battle or on a mission are written here.",
-      lostBattle: "Fell in battle", lostMission: "Lost on a mission · {m}", lostMissionAny: "Lost on a mission",
-      lostWounds: "Died of wounds · {m}", lostWoundsAny: "Died of wounds after a mission",
+      regSec: "Cards lost",
+      regNone: "No card lost yet. Cards that fall in battle or on a mission are written here.",
+      lostBattle: "No bed left in the infirmary", lostMission: "Never came back from the mission {m}", lostMissionAny: "Never came back from a mission",
+      lostWounds: "Wounded on the mission {m}, with no bed left in the infirmary", lostWoundsAny: "Wounded on a mission, with no bed left in the infirmary",
       regBack: "Found alive, back in service",
       fresh: "New", backAlive: "Rescue", inCamp: "Already in the camp", returned: "{c} is back in service",
-      fateUp: "Promoted", fileUp: "Promoted: {t}",
-      fallenTitle: "In memoriam", fallenEyebrow1: "A card is lost", fallenEyebrowN: "{n} cards lost",
-      fallenTap: "Tap a card for the register, anywhere else to close",
+      fateUp: "Promoted", fileUp: "Promotion: {t}",
+      fallenTitle: "In memoriam",
+      fallenTap: "Tap a card to see the full register, anywhere else to close",
       fallenOpen: "Open the register",
-      fallen1_battle: "{c}: wounded in battle, with no bed left in the infirmary",
-      fallen1_mission: "{c}: never came back from the mission {m}",
-      fallen1_wounds: "{c}: wounded on the mission {m}, with no bed left in the infirmary",
-      fallenS_battle: "1 card wounded in battle, with no bed left in the infirmary",
-      fallenS_mission: "1 card that never came back from a mission",
-      fallenS_wounds: "1 card wounded on a mission, with no bed left in the infirmary",
-      fallenN_battle: "{n} cards wounded in battle, with no bed left in the infirmary",
-      fallenN_mission: "{n} cards that never came back from a mission",
-      fallenN_wounds: "{n} cards wounded on a mission, with no bed left in the infirmary",
       fallenFoot1: "Their name is written in the register. Who knows, the recruiting tent may find them alive one day.",
       fallenFootN: "Their names are written in the register. Who knows, the recruiting tent may find one of them alive one day.",
       tapContinue: "Tap anywhere to continue",
       surEyebrow: "The enemy commander", surTitle: "Surrender?",
       surWhy_trap: "Mines guard my flag, and you have no sapper left to clear them.",
-      surWhy_object: "What guards my flag, none of your cards can break.",
-      surWhy_soldier: "What guards my flag, none of your cards can beat.",
-      surNote: "This battle can no longer be won. Surrender, and you hand me one of your cards: it leaves your camp for good. The wounds already taken still count.",
-      surNoteNone: "This battle can no longer be won. You have no card left to hand me: surrender, and only the wounds already taken count.",
-      surRisk: "Fight on, and every card that falls is lost or wounded.",
+      surWhy_guard: "None of your cards can get past the traps that guard my flag.",
+      surNote: "This battle can no longer be won. Surrender, and you hand me one of your cards: it then leaves your camp for good.",
+      surNoteNone: "This battle can no longer be won and you have no card left to hand me: surrender, and only the wounds already taken count.",
+      surRisk: "Fight on, and every card that falls is either lost or wounded.",
       surPick: "Pick the card you hand over",
       surNo: "Fight on", surYes: "Surrender", surTap: "Tap to fight on",
-      lostSlain: "Fell in a battle fought to the last card",
+      lostSlain: "Lost for honour", lostSlain1: "1 card lost for honour", lostSlainN: "{n} cards lost for honour",
       lostSurrender: "Handed over to the enemy in a surrender",
-      fallen1_slain: "{c}: fell in a battle fought to the last card",
-      fallenS_slain: "1 card fallen in a battle fought to the last card",
-      fallenN_slain: "{n} cards fallen in a battle fought to the last card",
-      fallen1_surrender: "{c}: handed over to the enemy commander",
-      fallenS_surrender: "1 card handed over to the enemy",
-      fallenN_surrender: "{n} cards handed over to the enemy",
       hurtTitle: "Wounded", hurtEyebrow1: "To the infirmary", hurtEyebrowN: "{n} cards to the infirmary",
-      hurt1: "{c}: wounded in battle", hurtN: "{n} cards wounded in battle",
-      hurtGo1: "{g} {c}, tier {r}, must go to the infirmary for {t}.",
-      hurtGoN: "{n} cards must go to the infirmary for {t}.",
-      upTitle: "Promotion!", upEyebrow: "A card climbs", upEyebrowN: "Promotion {i} / {n}",
-      upNext: "Tap for the next one", upClose: "Tap to close",
+      hurt1: "{c}: wounded",
+      hurtGo1: "{g} {c}, <b>Tier</b> {r}, goes to the infirmary for {t}.",
+      hurtGoN: "{n} cards go to the infirmary for {t}.",
+      upTitle: "Promotion!", upEyebrow: "A card climbs",
+      upNext: "Tap for the next one",
       deckCut1: "1 card back in reserve", deckCutN: "{n} cards back in reserve",
       deckCutSub: "The formation holds fewer slots now",
       lockSay: "Post an officer to {post} to open it",
-      postsNote: "An officer's tier fills the post's gauge. A trade that suits the post adds {b}. Tap a post's name to learn more.",
+      postsNote: "An officer's <b>Tier</b> fills the post's gauge. A trade that suits the post adds {b}. Tap a post's name to learn more.",
       fx_cmd: "Captives: {n}/{m}", fx_drill: "Deck: {n}/{m}", fx_ops: "Missions: {n}/{m}",
       fx_inf: "Beds: {n}/{m}", fx_pri: "Cells: {n}/{m}", fx_cook: "Morale: {n}/{m}",
-      pd_cmd: "Captives offered after a won battle", pd_drill: "Slots in your deck",
-      pd_ops: "Mission slots", pd_inf: "Beds in the infirmary",
-      pd_pri: "Cells in the prison", pd_cook: "The camp's morale: the higher it is, the more good days",
-      postJobsLine: "Suited trades: {j}",
-      postJobs: "Trades suited to {post}", jobFor: "Suits {post}",
+      postJobs: "Trades suited to {post}", jobFor: "Ideal post: {post}",
       lostDesert: "Deserted the camp",
-      evEyebrow: "Life in the camp", evEyebrowN: "Life in the camp · {n} news",
+      evEyebrow: "Life in the camp", evEyebrowN: "Life in the camp · {n} updates",
       evGood: "Good news", evBad: "Bad news",
       rcTitle: "Camp news", rcTap: "Tap anywhere to accept everything",
       rcObj1: "New object card", rcObjN: "{n} object cards", rcUpN: "{n} promotions",
       evTicketLost: "-{n} ticket", evJoins: "Joins your army", evLeaves: "Leaves the camp",
-      evHealed: "Back on their feet", evHealLater: "+{h} in the infirmary",
+      evHealLater: "+{h} in the infirmary",
       evEscaped: "Escaped", evJailLater: "+{h} in prison",
       evTent: "New recruits at the tent", evTentBurn: "No recruits until the next batch",
-      evBoard: "New missions on the board", evLate: "+{h} away"
+      evBoard: "New missions on the board", evLate: "+{h} late"
     },
     fr: {
       deck: "Cartes", infirmary: "Infirmerie", prison: "Prison", recruit: "Commandement", defense: "Défense",
-      bandTitle: "Ton armée", bandMissions: "Missions réussies", bandOwned: "Collection",
-      bandBlue: "Bleu", bandRed: "Rouge", bandTurn: "Transfuge",
-      deckTitle: "Deck",
+      bandTitle: "Ton armée", bandMissions: "Missions réussies",
+      
       deckSection: "Formation", fillBest: "Compléter",
       filled1: "1 carte ajoutée", filledN: "{n} cartes ajoutées",
-      pickTitle: "Choisis une carte", pickAll: "Tous les grades", pickEmpty: "Aucune carte n'est libre pour le deck",
-      deckTake: "Mettre cette carte dans le deck",
+      pickTitle: "Choisis une carte", pickAll: "Tous les grades", pickEmpty: "Aucune carte n'est libre pour le Deck",
+      deckTake: "Mettre cette carte dans le Deck",
       f_all: "Toutes",
       f_had: "Possédées", f_met: "Rencontrées", f_miss: "Manquantes",
-      deckFullWarn: "Le deck est plein",
-      deckDrop: "Laisser cette carte", inDeck: "Dans le deck",
+      deckFullWarn: "Le Deck est plein",
+      deckDrop: "Laisser cette carte",
       tab_roll: "Camp", tab_deck: "Deck", tab_coll: "Collection",
-      collTitle: "Collection",
       cx_blue: "Bleu", cx_red: "Rouge", cx_turn: "Transfuges", cx_obj: "Objets",
       ghostTurn: "Enrôle cet officier pour lire sa fiche",
       cxNone: "Personne ici", prev: "Précédent", next: "Suivant",
       ghostBlue: "Recrute cet officier pour lire sa fiche",
       ghostRed: "Affronte cet officier au combat pour lire sa fiche",
-      fileOpen: "Lire la fiche de cet officier", fileTurn: "Retourner la carte",
+      fileOpen: "Lire la fiche de cet officier",
       fileHint: "Touche la carte pour la retourner", age: "{n} ans",
       g_man: "Homme", g_woman: "Femme", g_male: "Mâle", g_female: "Femelle",
-      armyBlue: "Armée bleue", armyRed: "Camp rouge", turncoat: "Transfuge",
-      objKind: "Objet", objBy: "Détruit par : {g}", objByAny: "Toute carte peut le prendre",
+      armyBlue: "Armée bleue", armyRed: "Armée rouge", turncoat: "Transfuge",
+      objKind: "Objet", objBy: "Détruit par : {g}", objByAny: "Peut être capturé par n'importe quel <b>Grade</b>",
       objGhostBand: "Termine le biome {b} pour l'obtenir", objGhostNone: "Pas encore disponible",
-      infTitle: "Infirmerie", infSub: "{n} / {m} lits occupés", infFree: "Lit libre",
-      infFull: "Infirmerie pleine", prisonFree: "Cellule libre",
-      prisonFull: "Prison pleine", prisonFullSub: "{n} cellules, toutes prises : pas de prisonnier cette fois",
+      infSub: "{n} / {m} lits occupés", infFree: "Lit libre",
+      prisonFree: "Cellule libre",
+      prisonFull: "Prison pleine", prisonFullSub: "Aucun nouveau prisonnier",
       infHealed: "De nouveau sur pied", locked: "Verrouillé",
-      prisonTitle: "Prison", prisonSub: "{n} / {m} cellules occupées",
-      defenseTitle: "Défense",
-      dfSubFlag: "Place tout d'abord ton drapeau", dfSubNew: "Protège le drapeau puis valide",
-      dfSubDirty: "Changements pas encore validés",
+      prisonSub: "{n} / {m} cellules occupées",
+      dfNeedFlag: "Place tout d'abord ton drapeau", dfSubNew: "Protège le drapeau puis valide",
+      dfSubDirty: "Stratégie de défense pas encore validée",
       dfFront: "L'ennemi attaque ici",
       dfNote: "Place ton drapeau puis protège-le avec tes cartes et tes objets.",
       dfValidate: "Valider", dfUndo: "Annuler les changements",
-      dfNeedFlag: "Place d'abord ton drapeau",
-      dfValidated: "Défense validée", dfValidatedSub: "Elle garde le camp pendant ton absence",
+      dfValidated: "Défense validée", dfValidatedSub: "Ta défense garde le camp pendant ton absence",
       dfOff: "Absent", dfDrop: "Retirer de la défense", dfPick: "Placer une carte", dfTake: "Placer",
-      dfFlagFirst: "Ton drapeau d'abord",
       dfRepEyebrow: "Pendant ton absence", dfRepHeld: "Le camp a tenu", dfRepLost: "Le drapeau est tombé",
       dfStampHeld: "Défendu", dfStampLost: "Capturé",
       dfTextHeld: "L'armée rouge a attaqué ton camp sans jamais atteindre le drapeau, mais certains de ses soldats sont restés.",
       dfTextLost: "L'armée rouge a percé ta défense et pris le drapeau.",
-      dfPrisoners1: "1 prisonnier", dfPrisonersN: "{n} prisonniers", dfPrisonFull: "Prison pleine : aucun nouveau prisonnier",
+      dfPrisoners1: "1 prisonnier", dfPrisonersN: "{n} prisonniers",
       dfSolid: "Solidité",
       tab_strat: "Stratégie", tab_rep: "Rapport",
       dfRepSub: "Dernier assaut : {d}", dfRepNoneSub: "Aucun assaut pour l'instant",
-      dfRepNone: "Aucun assaut pour l'instant. Valide une défense : l'armée rouge l'attaquera si tu reviens après {n} heures d'absence.",
-      dfRepNoLog: "Les duels de cet assaut n'ont pas été enregistrés.",
+      dfRepNone: "Aucun assaut pour l'instant. Valide ta défense pour éviter une attaque surprise de l'armée rouge.",
       dfRepSee: "Voir le détail",
       dfRepOrder: "Ordre d'attaque", dfRepCamp: "Repoussés : {n}", dfRepFoe: "Percées : {n}",
       duVs: "vs", duWin: "{w} gagne", duTie: "Les deux tombent", duFlag: "Drapeau pris",
       duTrap: "{a} tombe dans le piège", duClear: "{a} désamorce le piège", duSmash: "{a} ouvre le passage",
       duBlock: "{a} doit reculer", duStray: "{a} se perd", duStun: "{a} se fige de peur",
-      duSpell: "{a} tombe sous le sort", duScout: "{a} révèle la carte",
+      duSpell: "{a} subit un sort", duScout: "{a} révèle la carte",
       dfUnlockEyebrow: "Biome {b} terminé", dfUnlockEyebrowN: "Biomes terminés",
-      dfUnlockTitleN: "Nouvelles cartes objets",
+      dfUnlockTitleN: "Nouveaux objets",
       dfUnlockText1: "Elle rejoint ta collection. Ta défense peut maintenant en accueillir jusqu'à {n}.",
       dfUnlockTextN: "Elles rejoignent ta collection. Ta défense peut maintenant accueillir jusqu'à {n} exemplaires de chacune.",
       enlist: "Enrôler", hire: "Recruter", enlisted: "{c} rejoint ton armée",
-      recruitTitle: "Tente de recrutement", recruitSub: "De nouvelles têtes dans {t}",
-      sold: "Recruté", recruited: "{c} s'engage",
+      recruitTitle: "Tente de recrutement", recruitSub: "De nouvelles recrues dans {t}",
+      sold: "Recruté",
       tooPoor: "Pas assez de pièces",
       captiveTitle: "Butin de victoire", or: "ou",
       captiveTaken: "Direction la prison",
       captiveTap: "Touche une carte pour la prendre",
       ready: "Prêt", soon: "D'un instant à l'autre", uD: "j", uH: "h", uM: "min",
       wDay: "jour", wDays: "jours", wHour: "heure", wHours: "heures",
-      away: "En mission",
       tab_tent: "Recrues", tab_mis: "Missions",
-      misTitle: "Missions",
       misBoard: "Tableau des missions", slotNext: "Nouvelle mission dans {t}",
       boardNext: "Nouvelles missions dans {t}",
       misLog: "Rapports", logEmpty: "Aucune escouade n'est rentrée.",
       prepare: "Préparer",
-      runBack: "De retour au camp", readReport: "Rapport",
+      runBack: "De retour au camp",
       oddsShort: "{p} de réussite", oddsLabel: "Chances de réussite",
       diff: "Difficulté {n} sur 5",
       squadN: "{a} cartes", squadRange: "{a} à {b} cartes",
       favor: "{g} +{n}",
-      rwSuper: "+{n} super ticket", rwSticker: "Un sticker", rwCard: "Un officier · {g} · {t}",
+      rwSuper: "+{n} super ticket", rwSticker: "Un sticker", rwCard: "Un {g} de <b>Rang</b> {t}",
       penCoins: "-{n} pièces",
       penWound1: "1 carte blessée", penWoundN: "{n} cartes blessées",
-      penLose1: "1 carte perdue", penLoseN: "{n} cartes perdues",
+      cardLost1: "1 carte perdue", cardLostN: "{n} cartes perdues",
       briefTitle: "Briefing",
-      squadSec: "L'escouade", squadTake: "Ajouter cette carte à l'escouade", squadDrop: "Retirer cette carte de l'escouade",
-      availNone: "Aucune carte n'est libre : toutes sont blessées ou déjà en mission.",
+      squadTake: "Ajouter cette carte à l'escouade", squadDrop: "Retirer cette carte de l'escouade",
+      availNone: "Aucune carte n'est libre",
       squadFull: "L'escouade est complète",
       needMore1: "Encore 1 carte pour envoyer l'escouade", needMoreN: "Encore {n} cartes pour envoyer l'escouade",
       send: "Envoyer l'escouade", cancel: "Annuler",
       sent: "Escouade en route", sentSub: "De retour dans {t}",
       repEyebrow: "Rapport de mission", repWin: "Réussite", repLose: "Échec",
-      fateHurt: "Blessée", fateLost: "Perdue", theSquad: "L'escouade",
-      repCollect: "Touche n'importe où pour récupérer", repClose: "Touche n'importe où pour fermer",
+      fateLost: "Perdue", theSquad: "L'escouade",
+      repCollect: "Touche n'importe où pour récupérer",
       tab_posts: "Gestion", tab_reg: "Registre",
-      postsTitle: "Gestion", campTitle: "Camp",
       campSub: "Un officier affecté à un poste ne peut plus combattre et ne peut plus partir en mission",
       campPosts: "Postes", campRoll: "Au camp", campNone: "Le camp est vide",
-      post_inf: "Infirmerie", post_pri: "Prison", post_drill: "Formation", post_ops: "Missions", post_cmd: "Camp",
       post_cook: "Cuisine",
       role_inf: "Chef de l'infirmerie", role_pri: "Gardien-chef", role_drill: "Instructeur de formation",
       role_ops: "Officier des missions", role_cmd: "Au commandement", role_cook: "Cuisinier du camp",
       postPick: "Choisis un officier", postTake: "Affecter cette carte au poste",
-      postDrop: "Relever cet officier", posted: "{c} prend son poste",
+      postDrop: "Relever cet officier", posted: "{c} prend le poste",
       stHurt: "Blessée", stAway: "En mission", stDeck: "En formation", stIdle: "Disponible",
-      stJail: "En prison", stTurned: "Prête à s'enrôler",
-      regTitle: "Registre", regSec: "Cartes perdues",
+      stJail: "En prison", stTurned: "Enrôlement possible",
+      regSec: "Cartes perdues",
       regNone: "Aucune carte perdue pour l'instant. Les cartes tombées au combat ou en mission sont inscrites ici.",
-      lostBattle: "Tombée au combat", lostMission: "Perdue en mission · {m}", lostMissionAny: "Perdue en mission",
-      lostWounds: "Morte de ses blessures · {m}", lostWoundsAny: "Morte de ses blessures après une mission",
+      lostBattle: "Plus de lit disponible à l'infirmerie", lostMission: "Disparu pendant la mission {m}", lostMissionAny: "Disparu en mission",
+      lostWounds: "Blessé sur la mission {m} sans lit à l'infirmerie", lostWoundsAny: "Blessé en mission sans lit libre à l'infirmerie",
       regBack: "Retrouvée vivante, de retour en service",
-      fresh: "New", backAlive: "Rescapé", inCamp: "Déjà au camp", returned: "{c} reprend du service",
+      fresh: "Nouveau", backAlive: "Sauvetage", inCamp: "Déjà au camp", returned: "{c} reprend du service",
       fateUp: "Promue", fileUp: "Promotion : {t}",
-      fallenTitle: "In memoriam", fallenEyebrow1: "Une carte est perdue", fallenEyebrowN: "{n} cartes perdues",
-      fallenTap: "Touche une carte pour le registre, ailleurs pour fermer",
+      fallenTitle: "In memoriam",
+      fallenTap: "Touche une carte pour voir le registre complet, ailleurs pour fermer",
       fallenOpen: "Ouvrir le registre",
-      fallen1_battle: "{c} : blessure au combat, plus aucun lit libre à l'infirmerie",
-      fallen1_mission: "{c} : disparition pendant la mission {m}",
-      fallen1_wounds: "{c} : blessure pendant la mission {m}, plus aucun lit libre à l'infirmerie",
-      fallenS_battle: "1 carte blessée au combat, sans lit libre à l'infirmerie",
-      fallenS_mission: "1 carte jamais revenue de mission",
-      fallenS_wounds: "1 carte blessée en mission, sans lit libre à l'infirmerie",
-      fallenN_battle: "{n} cartes blessées au combat, sans lit libre à l'infirmerie",
-      fallenN_mission: "{n} cartes jamais revenues de mission",
-      fallenN_wounds: "{n} cartes blessées en mission, sans lit libre à l'infirmerie",
       fallenFoot1: "Son nom est inscrit au registre. Qui sait, la tente de recrutement retrouvera peut-être cette carte en vie.",
       fallenFootN: "Leurs noms sont inscrits au registre. Qui sait, la tente de recrutement en retrouvera peut-être une en vie.",
       tapContinue: "Touche n'importe où pour continuer",
       surEyebrow: "Le commandant ennemi", surTitle: "Se rendre ?",
-      surWhy_trap: "Des mines gardent mon drapeau. Il ne te reste aucun sapeur pour les lever.",
-      surWhy_object: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le détruire.",
-      surWhy_soldier: "Ce qui garde mon drapeau, aucune de tes cartes ne peut le battre.",
-      surNote: "Cette bataille ne peut plus être gagnée. Si tu te rends, tu me livres une de tes cartes : elle quitte ton camp pour de bon. Les blessures déjà reçues comptent toujours.",
-      surNoteNone: "Cette bataille ne peut plus être gagnée. Il ne te reste aucune carte à me livrer : si tu te rends, seules les blessures déjà reçues comptent.",
+      surWhy_trap: "Des mines protègent mon drapeau et il ne te reste aucun sapeur pour les désamorcer.",
+      surWhy_guard: "Aucune de tes cartes ne peut venir à bout des pièges qui protègent mon drapeau.",
+      surNote: "Cette bataille ne peut plus être gagnée. Si tu te rends, tu me livres une de tes cartes : elle quitte alors ton camp pour de bon.",
+      surNoteNone: "Cette bataille ne peut plus être gagnée et il ne te reste aucune carte à me livrer : si tu te rends, seules les blessures déjà reçues comptent.",
       surRisk: "Si tu continues, chaque carte qui tombe est perdue ou blessée.",
       surPick: "Choisis la carte à livrer",
       surNo: "Continuer", surYes: "Se rendre", surTap: "Touche pour continuer",
-      lostSlain: "Tombé dans une bataille menée jusqu'à la dernière carte",
-      lostSurrender: "Livré à l'ennemi lors d'une reddition",
-      fallen1_slain: "{c} : tombé dans une bataille menée jusqu'à la dernière carte",
-      fallenS_slain: "1 carte tombée dans une bataille menée jusqu'à la dernière carte",
-      fallenN_slain: "{n} cartes tombées dans une bataille menée jusqu'à la dernière carte",
-      fallen1_surrender: "{c} : livré au commandant ennemi",
-      fallenS_surrender: "1 carte livrée à l'ennemi",
-      fallenN_surrender: "{n} cartes livrées à l'ennemi",
+      lostSlain: "Perdue pour l'honneur", lostSlain1: "1 carte perdue pour l'honneur", lostSlainN: "{n} cartes perdues pour l'honneur",
+      lostSurrender: "Remise à l'ennemi lors d'une reddition",
       hurtTitle: "Blessés", hurtEyebrow1: "Direction l'infirmerie", hurtEyebrowN: "{n} cartes à l'infirmerie",
-      hurt1: "{c} : blessure au combat", hurtN: "{n} cartes blessées au combat",
-      hurtGo1: "{g} {c}, rang {r}, part à l'infirmerie pour {t}.",
-      hurtGoN: "{n} cartes doivent partir à l'infirmerie pendant {t}.",
-      upTitle: "Promotion !", upEyebrow: "Une carte progresse", upEyebrowN: "Promotion {i} / {n}",
-      upNext: "Touche pour la suivante", upClose: "Touche pour fermer",
+      hurt1: "{c} : blessure",
+      hurtGo1: "{g} {c}, <b>Rang</b> {r}, part à l'infirmerie pour {t}.",
+      hurtGoN: "{n} cartes partent à l'infirmerie pour {t}.",
+      upTitle: "Promotion !", upEyebrow: "Une carte progresse",
+      upNext: "Touche pour la suivante",
       deckCut1: "1 carte retourne en réserve", deckCutN: "{n} cartes retournent en réserve",
       deckCutSub: "La formation compte moins de places",
       lockSay: "Affecte un officier au poste {post} pour l'ouvrir",
-      postsNote: "Le rang de l'officier remplit la jauge du poste. Un métier adapté y ajoute {b}. Touche le nom d'un poste pour en savoir plus.",
+      postsNote: "Le <b>Rang</b> de l'officier remplit la jauge du poste. Un métier adapté y ajoute {b}. Touche le nom d'un poste pour en savoir plus.",
       fx_cmd: "Captifs : {n}/{m}", fx_drill: "Deck : {n}/{m}", fx_ops: "Missions : {n}/{m}",
       fx_inf: "Lits : {n}/{m}", fx_pri: "Cellules : {n}/{m}", fx_cook: "Moral : {n}/{m}",
-      pd_cmd: "Captifs proposés après une victoire", pd_drill: "Places dans ton deck",
-      pd_ops: "Emplacements de mission", pd_inf: "Lits à l'infirmerie",
-      pd_pri: "Cellules dans la prison", pd_cook: "Le moral du camp : plus il est haut, plus les bons jours sont fréquents",
-      postJobsLine: "Métiers adaptés : {j}",
       postJobs: "Métiers adaptés au poste {post}", jobFor: "Poste idéal : {post}",
       lostDesert: "A déserté le camp",
       evEyebrow: "Vie du camp", evEyebrowN: "Vie du camp · {n} nouvelles",
@@ -5826,7 +5838,7 @@
       rcTitle: "Nouvelles du camp", rcTap: "Touche n'importe où pour tout accepter",
       rcObj1: "Nouvelle carte objet", rcObjN: "{n} cartes objets", rcUpN: "{n} promotions",
       evTicketLost: "-{n} ticket", evJoins: "Rejoint ton armée", evLeaves: "Quitte le camp",
-      evHealed: "De retour sur pied", evHealLater: "+{h} à l'infirmerie",
+      evHealLater: "+{h} à l'infirmerie",
       evEscaped: "Évasion", evJailLater: "+{h} en prison",
       evTent: "Nouvelles recrues à la tente", evTentBurn: "Plus de recrues jusqu'au prochain renouvellement",
       evBoard: "Nouvelles missions au tableau", evLate: "+{h} de retard"
@@ -5834,6 +5846,10 @@
   };
   W.Desk.table(STRINGS);       // a desk says "click" where a finger says "tap" (engine, Desk)
   var LANG = "en", T = STRINGS.en;
+  /* A post is named after the room it runs: one word for both, so the copy
+     holds it once. Only the kitchen has no room of its own. */
+  var POST_NAME = { inf: "infirmary", pri: "prison", drill: "deckSection", ops: "tab_mis", cmd: "tab_roll", cook: "post_cook" };
+  function postName(k) { return T[POST_NAME[k]] || k; }
 
   function setLang(code) {
     LANG = STRINGS[code] ? code : "en";

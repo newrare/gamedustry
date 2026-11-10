@@ -40,12 +40,14 @@ MD := docs/ README.md CLAUDE.md TODO.md
 help:
 	@grep -E '^#   make ' Makefile | sed 's/^# \{0,1\}//'
 
-# The one thing in this repo that is checked by running it rather than by
+# The two things in this repo that are checked by running them rather than by
 # comparing bytes: the view stack, the modal layer, the wallet band and what
-# ESCAPE does are all what the DOM does, and none of it can be read off a
-# source file. It builds the game it drives, so it needs nothing else first.
+# ESCAPE does (views.mjs, which builds the game it drives), then the full-screen
+# effects and every game playing under them without an exception (screenfx.mjs,
+# which reads the committed playables: `make check` first).
 test:
 	node tools/test/views.mjs $(GAME)
+	node tools/test/screenfx.mjs $(GAME)
 
 # `update.mjs` builds every artifact and both catalogues, then runs the three
 # checks Actions used to run: the artifacts match their sources, the catalogues

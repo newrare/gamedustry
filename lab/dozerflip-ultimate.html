@@ -1,0 +1,2928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Dozerflip ultimate</title>
+<meta name="lab-group" content="tests">
+<meta name="lab-game" content="dozerflip">
+<style>
+/* ===========================================================================
+   LAB — DOZERFLIP ULTIMATE. The five dozerflip benches played as ONE zone:
+
+     - THE MACHINE (dozer-anim.html): the rigged hero dozer of
+       lab/models/library.js — tracks that run, a blade that lifts, reaches
+       and spins — with the air tricks played as dozer-anim plays them
+       (crouch, launch, the blade in the air, the landing ring) and the
+       impossible blade's electric arcs, which here are the FURY.
+     - ITS COLOURS (lowpoly-direction.html): the Arctic direction, a white
+       machine with a red cab, on the scene's arctic palette.
+     - THE LIGHT (lowpoly-look.html): three ambiances, one per future biome —
+       Arctic at the blue hour (the default, snow over everything), Golden
+       hour and Lava dusk — each one the look bench's preset: sky and
+       environment light, fog, GTAO, bloom, tilt-shift, the grade, and what
+       glows (windows, lamps, rails, crystals, embers, headlights).
+     - THE DRIVE AND THE CAMERA (juice-3d.html): gas, brake, steer, drift; the
+       chase camera that lags, looks ahead and into the turn, the FOV that
+       opens with speed, trauma shake, hit-stop, the squash, the dust, the
+       debris, the sparks, the shockwave rings, the speed lines and the blur.
+     - THE PARK (prototype/dozerflip.html): pools (a round pool, a half-pipe,
+       a bowl) ridden on their curved walls, each with an ARROW standing off
+       its wall that throws the dozer out over the lip; round JUMPS taken from
+       any side, which kick it up as it leaves them; and ride rails with loops,
+       spirals and rolls — under one of the prototype's cameras.
+
+   A level is two phases. THE RACE: half a minute down a walled corridor of
+   turns, a hairpin and a chicane, behind juice-3d's chase camera. Then the
+   corridor opens into THE ZONE (the park and the city), and the camera rises
+   to the view picked in the panel (the prototype's list) for the freestyle
+   and the destruction. Bonuses down the corridor push the dozer and raise
+   the level's multiplier, and the finish line is the lip of a ramp the width
+   of the road: over it, the dozer lands in the zone in FURY. From the zone
+   the ramp's back is a wall, so there is no way back. After that, a full
+   gauge waits for a dash on the ground to start the fury.
+
+   The loop: tricks (flips, air, grinds, carves, drifts, perfect landings)
+   charge the SUPER gauge. Full, the dozer goes into FURY: the gauge drains,
+   and while it lasts everything it touches comes down. Outside the fury a
+   house or a building takes a lot of hits (a dash does more) — props, trees
+   and cars break any time.
+
+   Space: on the ground, jump (a short crouch first); in the air, a trick that
+   fits the air time left. Twice quickly on the ground: a DASH (the charge);
+   twice quickly in the air: an AIR DASH, out by the nearest lip over a pool
+   (where the nose points elsewhere). Shift is the dash on its own key.
+
+   The one panel is the ambiance. Served over HTTP only (make lab): three.js
+   is an ES module, vendored in lab/vendor/three/ and named by the import map.
+   ?amb=0|1|2 opens an ambiance, ?seed=N another park, ?skip=1 the zone at once.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+#stage { flex:1; min-width:0; display:flex; align-items:center; justify-content:center; padding:12px; }
+#frame { position:relative; overflow:hidden; border-radius:14px; background:#10131c; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+#view { display:block; width:100%; height:100%; touch-action:none; }
+.ov { position:absolute; pointer-events:none; }
+
+#side { flex:0 0 270px; height:100vh; overflow-y:auto; padding:18px 16px 30px; background:#12121c; border-left:1px solid #23233a; }
+#side h1 { font-size:16px; }
+#side p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#side h2 { margin:16px 0 6px; font-size:12px; color:#9c9cba; }
+.chips { display:flex; flex-direction:column; gap:6px; }
+.chip { padding:8px 10px; text-align:left; background:#1b1b2c; color:#cfd0ea; border:1px solid #2c2c47; border-radius:9px; font:600 12.5px/1.3 inherit; cursor:pointer; }
+.chip small { display:block; font-weight:500; font-size:11px; color:#8b8ba7; }
+.chip.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.chip.on small { color:#1b2a4a; }
+.keys { font:500 12px/1.75 inherit; color:#9c9cba; }
+.keys kbd { display:inline-block; min-width:22px; padding:0 5px; margin-right:3px; text-align:center;
+  background:#22223a; border:1px solid #2c2c47; border-radius:5px; color:#e8e6f5; font:600 11px/18px ui-monospace,Menlo,monospace; }
+#stats { margin-top:14px; font:500 11px/1.5 ui-monospace,Menlo,monospace; color:#7c7c9a; white-space:pre; }
+
+/* ---- the screen effects (juice-3d) ------------------------------------------ */
+#lines { inset:-25%; opacity:0;
+  background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.95) 0deg .5deg, transparent .5deg 5.5deg, rgba(255,255,255,.7) 5.5deg 5.8deg, transparent 5.8deg 11deg);
+  -webkit-mask:radial-gradient(closest-side, transparent 52%, #000 92%); mask:radial-gradient(closest-side, transparent 52%, #000 92%);
+  animation:lines-jit .21s steps(1) infinite; }
+@keyframes lines-jit { 0% { transform:rotate(0deg); } 33% { transform:rotate(2.1deg) scale(1.02); } 66% { transform:rotate(-1.6deg) scale(.99); } }
+#vig { inset:0; opacity:0; box-shadow:inset 0 0 110px 26px var(--vig, #ff5a2a); }
+#flash { inset:0; opacity:0; background:#fff; }
+
+/* ---- the HUD ---------------------------------------------------------------- */
+#score { left:16px; top:14px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.55); }
+#score b { display:block; font-size:30px; line-height:1.05; font-variant-numeric:tabular-nums; letter-spacing:.5px; }
+#score span { display:block; font-weight:600; font-size:13px; opacity:.85; }
+#gauge { left:50%; bottom:22px; width:62%; height:30px; transform:translateX(-50%); }
+#gauge .bar { position:absolute; left:0; right:0; bottom:0; height:14px; border-radius:8px; background:rgba(10,14,30,.55);
+  border:2px solid rgba(255,255,255,.75); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.35); }
+#gauge .bar i { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:6px;
+  background:linear-gradient(90deg, #6fe3ff, #b78cff); transition:background .3s; }
+#gauge label { position:absolute; left:0; right:0; bottom:16px; text-align:center; font-size:13px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
+#gauge.full .bar i { background:linear-gradient(90deg, #ffe066, #ff9a3a); }
+#gauge.fury .bar { border-color:#ffd166; animation:fury-pulse .35s ease-in-out infinite alternate; }
+#gauge.fury .bar i { background:linear-gradient(90deg, #ff3a2a, #ffb02a); }
+@keyframes fury-pulse { to { box-shadow:0 0 18px 4px rgba(255,120,40,.85); } }
+
+#callouts { left:0; right:0; top:22%; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.co { text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.6); animation:co-in .16s ease-out; transition:opacity .35s, transform .35s; }
+.co b { display:block; font-size:24px; font-weight:800; line-height:1.1; }
+.co.big b { font-size:34px; }
+.co span { display:block; font-size:15px; font-weight:700; opacity:.92; }
+.co.out { opacity:0; transform:translateY(-14px); }
+@keyframes co-in { from { transform:scale(.6); opacity:0; } 70% { transform:scale(1.08); } }
+.fp { position:absolute; transform:translate(-50%, -50%); font-size:17px; font-weight:800; color:#fff; text-shadow:0 2px 5px rgba(0,0,0,.6); white-space:nowrap; }
+#notice { left:50%; bottom:64px; transform:translateX(-50%); padding:5px 12px; border-radius:9px; background:rgba(10,12,24,.7);
+  color:#fff; font-size:13px; font-weight:600; white-space:nowrap; opacity:0; transition:opacity .3s; }
+#notice.on { opacity:1; }
+#loading { inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:30px; color:#cfd0ea; font-size:14px; background:#10131c; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="stage">
+  <div id="frame">
+    <canvas id="view"></canvas>
+    <div class="ov" id="lines"></div>
+    <div class="ov" id="vig"></div>
+    <div class="ov" id="flash"></div>
+    <div class="ov" id="floats"></div>
+    <div class="ov" id="score"><b id="scoreN">0</b><span id="scoreSub"></span></div>
+    <div class="ov" id="callouts"></div>
+    <div class="ov" id="notice"></div>
+    <div class="ov" id="gauge"><label id="gaugeTxt">Super</label><div class="bar"><i id="gaugeFill"></i></div></div>
+    <div class="ov" id="loading">Loading the kit…</div>
+  </div>
+</div>
+
+<div id="side">
+  <h1>Dozerflip ultimate</h1>
+  <p class="hint">Half a minute of race, then the zone. Tricks charge the super gauge; full, the dozer goes into fury and the city comes down. Outside the fury, a building takes many hits.</p>
+  <h2>Ambiance</h2>
+  <div class="chips" id="amb"></div>
+  <h2>Zone camera</h2>
+  <div class="chips" id="zcam"></div>
+  <h2>Keys</h2>
+  <div class="keys">
+    <div><kbd>W</kbd><kbd>↑</kbd> gas · <kbd>S</kbd><kbd>↓</kbd> brake, reverse</div>
+    <div><kbd>A</kbd><kbd>D</kbd> steer (hard at speed: a drift)</div>
+    <div><kbd>Space</kbd> jump · in the air: a trick</div>
+    <div><kbd>Space</kbd> ×2 on the ground: dash</div>
+    <div><kbd>Space</kbd> ×2 in the air: air dash (out of a pool)</div>
+    <div>In a pool: drive into the arrow to be thrown out</div>
+    <div>Gauge full: the next dash on the ground starts the fury</div>
+    <div>Race: each bonus is a push, and +0.1 to the multiplier of every point</div>
+    <div><kbd>Shift</kbd> dash · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> ambiance · <kbd>C</kbd> zone camera</div>
+    <div><kbd>R</kbd> restart the level · <kbd>N</kbd> skip the race</div>
+  </div>
+  <h2>Touch</h2>
+  <div class="keys">Hold and drag sideways to steer (the gas is on), tap to jump or trick, double tap to dash.</div>
+  <div id="stats"></div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { item, PAL, paint, mulberry, bevelBox, jitter, puffGeometry, setBiome, weatherShader } from "./models/library.js";
+
+const qs = new URLSearchParams(location.search);
+const $ = (id) => document.getElementById(id);
+const V3 = THREE.Vector3, TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const sat = (u) => clamp(u, 0, 1);
+const lerp = (a, b, u) => a + (b - a) * u;
+const ease = (k, dt) => 1 - Math.exp(-k * dt);
+const smooth = (u) => { u = sat(u); return u * u * (3 - 2 * u); };
+const easeIO = (u) => { u = sat(u); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+const ringSpring = (t, amp, freq, damp) => t < 0 ? 0 : amp * Math.exp(-damp * t) * Math.cos(TAU * freq * t);
+const noise = (t, s) => Math.sin(t + s) * 0.55 + Math.sin(t * 2.17 + s * 3.1) * 0.3 + Math.sin(t * 4.31 + s * 7.7) * 0.15;
+const wrapA = (a) => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; };
+let rnd = mulberry(+(qs.get("seed") || 23));
+const rr = (a, b) => a + (b - a) * rnd();
+const ri = (a, b) => Math.floor(rr(a, b + 1));
+const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+const mr = (a, b) => a + (b - a) * Math.random();
+
+// =============================================================================
+// 1. TUNING — the prototype's numbers at this dozer's size (about 2.2 long)
+// =============================================================================
+const KS = 2;                 // the kit and the library, scaled up to the dozer (a road tile is 4)
+const DS = 1.6;               // the hero dozer's own scale
+const TILE = 4;
+const G = 26;                 // gravity
+// the drive (juice-3d's lot, the prototype's grip)
+const CRUISE = 11, BOOST_V = 16, DASH_V = 24, REVERSE_V = 6, FURY_SPEED = 1.25;
+const ACCEL = 10, BRAKE = 26, COAST = 4, COAST_PIT = 1;
+const TURN = 1.7, TURN_PIVOT = 0.35, TURN_REF = 6, AIR_TURN = 1.3, STEER_EASE = 6;   // juice-3d's steering: eased in, 1.7 rad/s at most
+const GRIP = 9, GRIP_DRIFT = 1.4, DRIFT_MIN = 12.5, DRIFT_STEER = 0.6, DRIFT_SLIP = 2.6, HAND_MIN = 7;   // a drift: past cruise speed, or brake + steer
+// the buttons: one tap, two taps
+const JUMP_V = 10, CROUCH = 0.22, DTAP = 0.28;
+const DASH_T = 0.42, DASH_CD = 0.45, AIR_DASH_V = 14, AIR_DASH_UP = 5;
+// the surface
+const SNAP = 0.1, STEP = 0.35, DETACH = 0.2, PIT_ASSIST = 1.1, PIT_EXIT_PUSH = 1.5, D_R = 1.05;
+// tricks and their points
+const TRICK_MARGIN = 0.08, CHAIN_BONUS = 0.5, SKETCHY_AT = 0.75, PERFECT_WINDOW = 0.25, PERFECT_PTS = 120;
+const BAIL_STUN = 0.7, REVERT_PTS = 50, DRIFT_RATE = 60, RAIL_RATE = 90, CARVE_RATE = 40, AIR_RATE = 50;
+// the super gauge and the fury
+const GAUGE_K = 1 / 900, FURY_TIME = 10;
+// what breaks
+const HP = { building: 160, house: 80, car: 18, tree: 6, prop: 1, crystal: 1 };
+const PTS = { building: 800, house: 500, car: 150, tree: 40, prop: 30, crystal: 60 };
+const FURY_PTS = 3, DASH_DMG = 1.8, BLADE_MULT = 1.6, SIDE_MULT = 0.7, MIN_IMPACT = 2.5, RESTITUTION = 0.35, GRIND_DPS = 14;
+// rails: the prototype's recipes, scaled
+const RK = 0.45, RAIL_DS = 0.16, RAIL_START_H = 0.36, RAIL_CATCH = 1.1, RAIL_RIDE = 0.12;
+const RAIL_MIN = 8, RAIL_MAX = 19, RAIL_G = 8, RAIL_PUSH = 2.4, RAIL_COOL = 0.8, RAIL_COUNT = 4;
+// the camera: juice-3d's chase in the race, the prototype's top-down view in the zone (its numbers x 0.45)
+const CAM_FOV = 60, CAM_D = 6.2, CAM_H = 3.1;
+const TOP = { lead: 0.45, zoom: 0.016, blend: 1.6 };
+const ZCAMS = [   // the zone's camera: the prototype's list (its numbers x 0.45), and the race's own chase
+  { name: "Three-quarter", note: "Half way up, north ahead.", fov: 34, h: 28, back: 26 },
+  { name: "Low angle", note: "Close and low behind, north ahead.", fov: 46, h: 11.7, back: 16.2 },
+  { name: "Top down", note: "The prototype's default: high, north up.", fov: 28, h: 54, back: 16 },
+  { name: "Isometric", note: "Far and narrow, turned 45°.", fov: 12, h: 50, back: 70, yaw: "iso" },
+  { name: "High chase", note: "The prototype's chase: above and behind the nose.", fov: 58, h: 6.8, back: 10.8, yaw: "chase", ahead: 5.4 },
+  { name: "Race chase", note: "The race's camera, kept in the zone.", chase: true }
+];
+let zcIdx = clamp(+(qs.get("cam") ?? (() => { try { return localStorage.getItem("dozerflipUltimate:cam") || 0; } catch (e) { return 0; } })()), 0, ZCAMS.length - 1) | 0;
+// the race: a walled corridor into the zone, about 30 s long
+const TRACK_HW = 4.5, TRACK_DS = 0.5, WALL_H = 0.6, WALL_T = 0.35, COUNT_T = 2.4;
+const TRACK_CMDS = [["S", 26], ["T", 90, 14], ["S", 16], ["T", -90, 12], ["S", 12], ["T", -100, 11], ["S", 18], ["T", 150, 10],
+  ["S", 22], ["T", -70, 16], ["T", 70, 16], ["S", 14], ["T", 60, 14], ["S", 10], ["T", -110, 12], ["S", 30]];
+// the arrows that throw the dozer out of a pool
+// the jumps: round mounds taken from any side, their slope rising to a steep rim, a kick up as it is left
+const BUMP_KICK = 7, BUMP_LIP = 1.5;
+// the race's end: one big ramp the width of the road, thrown over the gate into the zone (its back is a wall)
+const LAUNCH_LEN = 7, LAUNCH_H = 2.6, LAUNCH_KICK = 8, LAUNCH_V = 13;
+// the race's bonuses: a push now, +0.1 to the multiplier of every point of the level
+const BONUS_STEP = 0.1, BONUS_PUSH = 3, BONUS_R = 1.5, BONUS_GAP = 26;
+const ARROW_VY = 15, ARROW_VH = 5, ARROW_R = 1.5, ARROW_W = 0.5, ARROW_CD = 1.2, ARROW_PTS = 40;
+// the world
+const WX = 29.5, WZ0 = -45.5, WZ1 = 39.5;
+const PLAZA = { x0: -26, x1: 26, z0: -42, z1: -2 };
+
+const TRICKS = [   // the prototype's list and points, dozer-anim's turns (pitch +1 = nose up = backflip)
+  { name: "Nose grab", dur: 0.36, pts: 40, grab: 1 },
+  { name: "Kickflip", dur: 0.5, pts: 120, roll: 1 },
+  { name: "360", dur: 0.55, pts: 130, yaw: 1 },
+  { name: "Frontflip", dur: 0.7, pts: 200, pitch: -1 },
+  { name: "Backflip", dur: 0.7, pts: 200, pitch: 1 },
+  { name: "Helicopter", dur: 0.8, pts: 250, yaw: 2, blade: "by" },
+  { name: "Corkscrew", dur: 0.85, pts: 280, yaw: 1, roll: 1 },
+  { name: "Triple kickflip", dur: 1.0, pts: 360, roll: 3, blade: "bx" },
+  { name: "Double backflip", dur: 1.15, pts: 420, pitch: 2 },
+  { name: "Rodeo 720", dur: 1.3, pts: 500, yaw: 2, pitch: 1 },
+  { name: "Dozer tornado", dur: 1.6, pts: 650, yaw: 3, roll: 2, blade: "bz" }
+];
+const RAIL_TRICKS = [
+  { name: "Rail hop 360", dur: 0.6, pts: 90, yaw: 1, hop: 1 },
+  { name: "Rail kickflip", dur: 0.55, pts: 90, roll: 1, hop: 1 },
+  { name: "Blade stand", dur: 0.7, pts: 110, stand: 1 }
+];
+
+// =============================================================================
+// 2. THE AMBIANCES — lowpoly-look's presets, one per future biome
+// =============================================================================
+const BASE = {
+  sunAz: 220, sunEl: 38, sunColor: "#fff1dc", sunInt: 2.2,
+  skyTop: "#9cc8ee", skyHorizon: "#dfeaf0", groundColor: "#b9a888", envInt: 0.7, hemiInt: 0.15,
+  shadowRadius: 4, gtao: true, aoRadius: 1.0, aoIntensity: 0.8, fogNear: 1.6, fogFar: 5,
+  tiltBand: 0.12, tiltSoft: 0.3, tiltBlur: 2.5,
+  tone: "aces", exposure: 0.95, saturation: 1.12, contrast: 1.06, warmth: 0.02, tint: 0, lift: "#2a3550", liftAmt: 0.04, vignette: 0.25,
+  roughness: 0.85, palHue: 0, palSat: 0.72, palVal: 0.03, palGrad: 0.85, palWarm: 0.02,
+  windowGlow: 0, windowColor: "#ffcf7a", windowShare: 0.6, lampGlow: 0, lampColor: "#ffd08a",
+  neonGlow: 0.2, crystalGlow: 0.6, crystalA: "#39e6ff", crystalB: "#b45cff", emberGlow: 0.4, emberColor: "#ff6a1a",
+  lightInt: 0, headlights: false, poolInt: 0, bloom: 0.12, bloomRadius: 0.4, bloomThreshold: 1.0,
+  rimColor: "#9fd0ff", rimStr: 0, rimPow: 3, biome: "none"
+};
+const KIT_PAL = { palHue: 0, palSat: 1, palVal: 0, palGrad: 1, palWarm: 0 };
+const NIGHT = { ...KIT_PAL, aoIntensity: 0.9, windowShare: 0.6, lightInt: 1, poolInt: 1.2, headlights: true };
+const AMBS = [
+  { name: "Arctic · blue hour", note: "The default: snow on every roof, a white machine with a red cab, the lights coming on.",
+    ...NIGHT, sunAz: 230, sunEl: 4, sunColor: "#9ab0ff", sunInt: 0.6,
+    skyTop: "#1d3a7a", skyHorizon: "#8fa5d8", groundColor: "#2a2a40", envInt: 0.5, hemiInt: 0.1,
+    shadowRadius: 4, fogNear: 1.5, fogFar: 5, tiltBand: 0.1, tiltSoft: 0.3, tiltBlur: 2.5,
+    tone: "agx", exposure: 1.2, saturation: 1.1, contrast: 1.05, warmth: -0.02, lift: "#203060", liftAmt: 0.05, vignette: 0.4,
+    palHue: 8, palSat: 0.8, palVal: 0, palGrad: 1, palWarm: -0.04,
+    windowGlow: 1.6, windowColor: "#ffd28a", lampGlow: 3, lampColor: "#ffe2a8", neonGlow: 1.2,
+    crystalGlow: 1.5, emberGlow: 2, bloom: 0.7, bloomRadius: 0.5, bloomThreshold: 0.75, rimColor: "#9fd0ff", rimStr: 0.2, rimPow: 3,
+    biome: "snow",
+    // the scene's arctic palette (lowpoly-direction): snow, ice-blue concrete, slate
+    ground: "#f4f8fb", plaza: "#d6e2ec", joint: "rgba(90,120,160,0.22)", earth: "#a9bccd",
+    poolLow: "#5fb8de", poolHigh: "#e6eef4", dust: "#eef3f8", fury: "#ff4a3a", road: "#9fb4c8" },
+  { name: "Golden hour", note: "A low warm sun over grass: the summer biome.",
+    sunAz: 255, sunEl: 18, sunColor: "#ffb36b", sunInt: 3.6,
+    skyTop: "#7f9ccf", skyHorizon: "#ffd2a1", groundColor: "#6e4e3a", envInt: 0.6, hemiInt: 0.25,
+    shadowRadius: 3, aoIntensity: 1.0, fogNear: 1.0, fogFar: 3.0, tiltBand: 0.1, tiltSoft: 0.3, tiltBlur: 3,
+    tone: "aces", exposure: 1.1, saturation: 1.15, contrast: 1.08, warmth: 0.08, tint: 0.02, lift: "#3a2a5a", liftAmt: 0.06, vignette: 0.45,
+    palHue: -6, palSat: 0.85, palVal: 0.02, palGrad: 1, palWarm: 0.06,
+    ground: "#9cb84f", plaza: "#d9d2c4", joint: "rgba(70,62,54,0.25)", earth: "#8a5e3c",
+    poolLow: "#4fa9cc", poolHigh: "#e7e1d5", dust: "#d2c29c", fury: "#ff5a2a", road: "#6f6a64" },
+  { name: "Lava dusk", note: "An orange horizon, ash on the ground, embers in the rubble.",
+    ...NIGHT, sunAz: 260, sunEl: 8, sunColor: "#ff7a3a", sunInt: 1.4,
+    skyTop: "#1a1f4a", skyHorizon: "#ff8a4a", groundColor: "#3a1a10", envInt: 0.35, hemiInt: 0.08,
+    shadowRadius: 3, fogNear: 1.3, fogFar: 4, tiltBand: 0.1, tiltSoft: 0.3, tiltBlur: 3,
+    tone: "aces", exposure: 1.15, saturation: 1.2, contrast: 1.12, warmth: 0.04, lift: "#2a1050", liftAmt: 0.1, vignette: 0.5,
+    windowGlow: 1.5, windowColor: "#ffb060", lampGlow: 3, lampColor: "#ffc070", neonGlow: 1.5,
+    crystalGlow: 2.2, crystalA: "#3fe0ff", crystalB: "#6a7bff", emberGlow: 4, emberColor: "#ff5a10",
+    bloom: 0.8, bloomRadius: 0.55, bloomThreshold: 0.7, rimColor: "#ff8a4a", rimStr: 0.25, rimPow: 2.5,
+    ground: "#4a3c38", plaza: "#7a6a64", joint: "rgba(20,10,8,0.35)", earth: "#5a3020",
+    poolLow: "#c8502a", poolHigh: "#8a7a72", dust: "#7a6a66", fury: "#ffb02a", road: "#3a302e" }
+].map((a) => Object.assign({}, BASE, a));
+let ambIdx = clamp(+(qs.get("amb") ?? (() => { try { return localStorage.getItem("dozerflipUltimate:amb") || 0; } catch (e) { return 0; } })()), 0, AMBS.length - 1) | 0;
+let P = AMBS[ambIdx];
+
+// the Arctic direction on the machine (lowpoly-direction): role hex -> colour
+const ARCTIC = { 0xf2b22a: "#eef2f5", 0xe0a020: "#d23c3c", 0x2a2a2e: "#26313d", 0x8a8f96: "#9db0c2",
+  0x37475a: "#5fb8de", 0x1d1d1d: "#d23c3c", 0xf7f8f9: "#fff6e6" };
+
+// =============================================================================
+// 3. RENDERER, SKY, LIGHTS
+// =============================================================================
+const frameEl = $("frame"), canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.info.autoReset = false;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(CAM_FOV, 9 / 16, 0.1, 300);
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.3);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -28, right: 28, top: 28, bottom: -28, near: 1, far: 140 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+scene.add(sun, sun.target);
+
+// the sky: a gradient that is the background AND, prefiltered, the light from all round
+const skyScene = new THREE.Scene();
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false,
+  uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, gnd: { value: new THREE.Color() },
+    sunDir: { value: new V3() }, sunCol: { value: new THREE.Color() } },
+  vertexShader: "varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: [
+    "uniform vec3 top, hor, gnd, sunDir, sunCol; varying vec3 vDir;",
+    "void main() {",
+    "  vec3 d = normalize(vDir); float y = d.y;",
+    "  vec3 c = y > 0.0 ? mix(hor, top, pow(y, 0.6)) : mix(hor, gnd, pow(-y, 0.35));",
+    "  c += sunCol * (pow(max(dot(d, sunDir), 0.0), 600.0) * 30.0 + pow(max(dot(d, sunDir), 0.0), 12.0) * 0.25);",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"].join("\n")
+});
+skyScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 48, 24), skyMat));
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null;
+// the background: the same sky as a dome round the camera, so the horizon sits where it should
+const skyDome = new THREE.Mesh(new THREE.SphereGeometry(200, 32, 16), skyMat);
+skyDome.renderOrder = -10; skyDome.frustumCulled = false;
+scene.add(skyDome);
+function sunDir(out) {
+  const az = P.sunAz * Math.PI / 180, el = P.sunEl * Math.PI / 180;
+  return out.set(Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az));
+}
+function rebuildSky() {
+  skyMat.uniforms.top.value.set(P.skyTop); skyMat.uniforms.hor.value.set(P.skyHorizon);
+  skyMat.uniforms.gnd.value.set(P.groundColor);
+  sunDir(skyMat.uniforms.sunDir.value); skyMat.uniforms.sunCol.value.set(P.sunColor);
+  skyDome.visible = false;
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(skyScene, 0.02);
+  scene.environment = envRT.texture;
+  skyDome.visible = true;
+}
+
+// =============================================================================
+// 4. ONE PALETTE — the kit's texture, regraded, sampled by kit and code alike
+// =============================================================================
+let atlas = null, atlasImg = null, atlasBase = null, atlasCanvas = null, atlasTex = null;
+function readAtlas(img) {
+  atlasImg = img;
+  atlasCanvas = document.createElement("canvas"); atlasCanvas.width = img.width; atlasCanvas.height = img.height;
+  const g = atlasCanvas.getContext("2d", { willReadFrequently: true }); g.drawImage(img, 0, 0);
+  atlasBase = g.getImageData(0, 0, img.width, img.height);
+  atlasTex = new THREE.CanvasTexture(atlasCanvas); atlasTex.flipY = false; atlasTex.colorSpace = THREE.SRGBColorSpace;
+}
+function rgb2hsl(r, g, b) {
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx === mn) return [0, 0, l];
+  const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+  const h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+function hsl2rgb(h, s, l) {
+  if (!s) return [l, l, l];
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+  const f = (t) => { t = (t % 1 + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; };
+  return [f(h + 1 / 3), f(h), f(h - 1 / 3)];
+}
+function regradePalette() {
+  if (!atlasBase) return;
+  const W = atlasBase.width, H = atlasBase.height, src = atlasBase.data, out = new ImageData(W, H), d = out.data;
+  const cw = W / 8, ch = H / 4, mean = [];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 8; c++) {
+    let R = 0, Gg = 0, B = 0, n = 0;
+    for (let y = r * ch; y < (r + 1) * ch; y += 4) for (let x = c * cw; x < (c + 1) * cw; x += 4) { const i = (y * W + x) * 4; R += src[i]; Gg += src[i + 1]; B += src[i + 2]; n++; }
+    mean.push([R / n, Gg / n, B / n]);
+  }
+  const hue = P.palHue / 360, sa = P.palSat, val = P.palVal, grad = P.palGrad, warm = P.palWarm;
+  for (let y = 0; y < H; y++) {
+    const row = Math.min(3, Math.floor(y / ch));
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4, m = mean[row * 8 + Math.min(7, Math.floor(x / cw))];
+      const r0 = (m[0] + (src[i] - m[0]) * grad) / 255, g0 = (m[1] + (src[i + 1] - m[1]) * grad) / 255, b0 = (m[2] + (src[i + 2] - m[2]) * grad) / 255;
+      const hsl = rgb2hsl(clamp(r0, 0, 1), clamp(g0, 0, 1), clamp(b0, 0, 1));
+      const c = hsl2rgb(hsl[0] + hue, clamp(hsl[1] * sa, 0, 1), clamp(hsl[2] + val, 0, 1));
+      d[i] = clamp(c[0] * (1 + warm) * 255, 0, 255); d[i + 1] = clamp(c[1] * 255, 0, 255); d[i + 2] = clamp(c[2] * (1 - warm) * 255, 0, 255); d[i + 3] = src[i + 3];
+    }
+  }
+  atlasCanvas.getContext("2d").putImageData(out, 0, 0);
+  atlas = out; atlasTex.needsUpdate = true;
+}
+const matCache = {};
+function flatMat(hex, opts) {
+  const key = hex + JSON.stringify(opts || {});
+  return matCache[key] || (matCache[key] = new THREE.MeshStandardMaterial(Object.assign({ color: hex, roughness: 0.85, metalness: 0 }, opts)));
+}
+const kitMats = {};
+function kitMat(opts) {
+  const key = JSON.stringify(opts || {});
+  return kitMats[key] || (kitMats[key] = new THREE.MeshStandardMaterial(Object.assign({ map: atlasTex, roughness: 0.85, metalness: 0 }, opts)));
+}
+const matFor = (hex, opts) => PAL[hex] ? kitMat(opts) : flatMat(hex, opts);
+function pmesh(geo, hex, opts) { paint(geo, hex); return new THREE.Mesh(geo, matFor(hex, opts)); }
+const crystalMats = {};
+const emberMat = new THREE.MeshStandardMaterial({ color: 0x3a1a0a, emissive: 0xff6a1a, emissiveIntensity: 1, flatShading: true, roughness: 0.6 });
+emberMat.userData.noWeather = true;
+const LIB = { mesh: pmesh, mat: matFor, rnd: () => rnd(), glow: (k) => k === "ember" ? emberMat : crystalMats[k] };
+
+// ---- the rim light, and the biome laid over every lit material (lowpoly-look)
+const RIM = { uRimColor: { value: new THREE.Color() }, uRimStr: { value: 0 }, uRimPow: { value: 3 } };
+function rimify(m) {
+  if (!m || !m.isMeshStandardMaterial || m.userData.rim) return;
+  m.userData.rim = true;
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, RIM);
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nuniform vec3 uRimColor; uniform float uRimStr, uRimPow;")
+      .replace("#include <emissivemap_fragment>", [
+        "#include <emissivemap_fragment>",
+        "vec3 rimEye = isOrthographic ? vec3(0.0, 0.0, 1.0) : normalize(vViewPosition);",
+        "totalEmissiveRadiance += uRimColor * uRimStr * pow(1.0 - clamp(dot(normal, rimEye), 0.0, 1.0), uRimPow);"].join("\n"));
+    if (!m.userData.noWeather) weatherShader(sh);
+  };
+  m.customProgramCacheKey = () => m.userData.noWeather ? "rim" : "rim|weather";
+  m.needsUpdate = true;
+}
+const rimifyAll = (root) => root.traverse((o) => { if (o.material) [].concat(o.material).forEach(rimify); });
+
+// ---- what glows on the kit: masks cut out of its palette texture (lowpoly-look)
+const masks = {};
+function buildMasks() {
+  const cw = atlasImg.width / 8, ch = atlasImg.height / 4;
+  const mk = (cells, keepColour) => {
+    const c = document.createElement("canvas"); c.width = atlasImg.width; c.height = atlasImg.height;
+    const g = c.getContext("2d"); g.fillStyle = "#000"; g.fillRect(0, 0, c.width, c.height);
+    for (const [col, row] of cells) {
+      if (keepColour) g.drawImage(atlasImg, col * cw, row * ch, cw, ch, col * cw, row * ch, cw, ch);
+      else { g.fillStyle = "#fff"; g.fillRect(col * cw, row * ch, cw, ch); }
+    }
+    const t = new THREE.CanvasTexture(c); t.flipY = false; t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  masks.windows = mk([[1, 0], [2, 1], [1, 1], [0, 1]]);
+  masks.lamp = mk([[3, 1]]);
+  masks.police = mk([[4, 1], [1, 1]], true);
+}
+// ---- light pools: an additive disc on the ground, where a real light per lamp would cost too much
+const poolTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.2, "rgba(255,255,255,0.6)");
+  gr.addColorStop(0.55, "rgba(255,255,255,0.16)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+})();
+const lightPools = [];
+function lightPool(x, y, z, r, kind, parent = scene, sx = 1) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(2 * r * sx, 2 * r).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ map: poolTex, color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  m.position.set(x, y, z); m.renderOrder = 2;
+  parent.add(m); lightPools.push({ m, kind });
+  return m;
+}
+const shadowy = (o, cast = true, receive = true) => { o.traverse((m) => { if (m.isMesh) { m.castShadow = cast; m.receiveShadow = receive; } }); return o; };
+
+// =============================================================================
+// 5. THE SURFACE — flat ground, pools sunk into it, ramps on it (the prototype's pits)
+// =============================================================================
+// A pit is a segment A-B swept by a profile: a flat floor out to F, then a
+// quarter circle of radius R that ends vertical at the lip (y = 0). A-B of
+// length 0 is a round pool, a long one a half-pipe. A ramp is a wedge: a plane
+// from h0 to h1 over its length, vertical sides. A BUMP is the jump: a round
+// mound, concave from the ground to a steep rim round a small flat top, so it
+// is taken from any side and throws the dozer up wherever it comes from.
+const pits = [], ramps = [], bumps = [];
+function addBump(x, z, rb, rt, h) { const b = { x, z, rb, rt, h, kind: "bump" }; bumps.push(b); return b; }
+function bumpH(b, r) { if (r <= b.rt) return b.h; const u = (b.rb - r) / (b.rb - b.rt); return b.h * u * u; }
+function bumpSlope(b, r) { return r <= b.rt ? 0 : 2 * b.h * (b.rb - r) / ((b.rb - b.rt) * (b.rb - b.rt)); }   // -dh/dr
+function addPit(ax, az, bx, bz, F, R) {
+  const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz);
+  const p = { ax, az, bx, bz, len, ux: len > 0.01 ? dx / len : 1, uz: len > 0.01 ? dz / len : 0, F, R, yc: 0, y0: -R };
+  const e = F + R;
+  p.x0 = Math.min(ax, bx) - e; p.x1 = Math.max(ax, bx) + e; p.z0 = Math.min(az, bz) - e; p.z1 = Math.max(az, bz) + e;
+  pits.push(p); return p;
+}
+function addRamp(x, z, dx, dz, len, hw, h0, h1, base, kind) {
+  const l = Math.hypot(dx, dz);
+  const r = { x, z, dx: dx / l, dz: dz / l, len, hw, h0, h1, k: (h1 - h0) / len, base, kind };
+  ramps.push(r); return r;
+}
+const PL = { r: 0, ex: 1, ez: 0 };
+function pitR(p, x, z) {
+  const t = clamp((x - p.ax) * p.ux + (z - p.az) * p.uz, 0, p.len);
+  const dx = x - (p.ax + p.ux * t), dz = z - (p.az + p.uz * t), r = Math.hypot(dx, dz);
+  PL.r = r;
+  if (r > 1e-4) { PL.ex = dx / r; PL.ez = dz / r; } else { PL.ex = -p.uz; PL.ez = p.ux; }
+  return r;
+}
+function pitAt(x, z) {
+  for (const p of pits) {
+    if (x < p.x0 || x > p.x1 || z < p.z0 || z > p.z1) continue;
+    if (pitR(p, x, z) < p.F + p.R) return p;
+  }
+  return null;
+}
+function pitH(p, r) {
+  if (r <= p.F) return p.y0;
+  const w = Math.min(r - p.F, p.R);
+  return p.y0 + p.R - Math.sqrt(Math.max(0, p.R * p.R - w * w));
+}
+// the height of what is under (x, z), ramps included — for the camera and the props
+function groundY(x, z) {
+  const p = pitAt(x, z); let h = p ? pitH(p, PL.r) : 0;
+  for (const b of bumps) { const r = Math.hypot(x - b.x, z - b.z); if (r < b.rb) h = Math.max(h, bumpH(b, r)); }
+  for (const r of ramps) {
+    const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
+    if (u >= 0 && u <= r.len && Math.abs(l) <= r.hw) h = Math.max(h, r.h0 + r.k * u);
+  }
+  return h;
+}
+// the surface under a point: how far above it (d), its normal, a pit wall's curvature
+// and where "up the wall" is; blocked when the point is inside a ramp's wedge
+const S = { d: 0, h: 0, nx: 0, ny: 1, nz: 0, pit: null, kap: 0, sphi: 0, ex: 0, ez: 0, ramp: null, blocked: false };
+function pitSurf(x, y, z) {
+  const p = pitAt(x, z);
+  S.pit = p; S.ramp = null; S.blocked = false;
+  if (p) {
+    const r = PL.r, w = r - p.F;
+    S.ex = PL.ex; S.ez = PL.ez;
+    if (w <= 0) { S.h = p.y0; S.d = y - p.y0; S.nx = 0; S.ny = 1; S.nz = 0; S.kap = 0; S.sphi = 0; return; }
+    const cy = p.y0 + p.R, dy = y - cy;
+    S.h = pitH(p, r); S.kap = 1 / p.R;
+    if (dy < -0.02) {   // under the arc's centre: the closest point on the arc (at the lip's height, the deck's rule: straight down)
+      const dist = Math.sqrt(w * w + dy * dy) || 1e-6, sp = w / dist;
+      S.nx = -PL.ex * sp; S.ny = -dy / dist; S.nz = -PL.ez * sp; S.sphi = sp;
+      S.d = p.R - dist;
+      return;
+    }
+    const sp2 = Math.min(1, w / p.R), cp = Math.sqrt(1 - sp2 * sp2);
+    S.nx = -PL.ex * sp2; S.ny = cp; S.nz = -PL.ez * sp2; S.sphi = sp2;
+    S.d = y - S.h;
+    return;
+  }
+  for (const q of pits) {   // just past the lip but still below it: the wall's own face
+    if (y > q.yc - 0.02 || x < q.x0 - 1 || x > q.x1 + 1 || z < q.z0 - 1 || z > q.z1 + 1) continue;
+    const over = pitR(q, x, z) - q.F - q.R;
+    if (over < 0 || over > 0.7) continue;
+    S.pit = q; S.ex = PL.ex; S.ez = PL.ez; S.nx = -PL.ex; S.ny = 0; S.nz = -PL.ez;
+    S.d = -over; S.h = q.yc; S.kap = 1 / q.R; S.sphi = 1;
+    return;
+  }
+  S.h = 0; S.nx = 0; S.ny = 1; S.nz = 0; S.d = y; S.kap = 0; S.sphi = 0;
+}
+function surf(x, y, z) {
+  pitSurf(x, y, z);
+  for (const b of bumps) {
+    const dx = x - b.x, dz = z - b.z, r = Math.hypot(dx, dz);
+    if (r >= b.rb) continue;
+    const h = bumpH(b, r);
+    if (h < S.h - 0.005) continue;
+    const g = bumpSlope(b, r), c = 1 / Math.sqrt(1 + g * g), ex = r > 1e-4 ? dx / r : 0, ez = r > 1e-4 ? dz / r : 0;
+    S.h = h; S.d = (y - h) * c; S.nx = g * ex * c; S.ny = c; S.nz = g * ez * c;
+    S.pit = null; S.kap = 0; S.sphi = 0; S.ramp = b; S.blocked = false;
+    return S;
+  }
+  for (const r of ramps) {
+    const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
+    if (u < 0 || u > r.len || Math.abs(l) > r.hw) continue;
+    const h = r.h0 + r.k * u;
+    if (h < S.h - 0.005) continue;
+    if (y < h - STEP) { S.blocked = true; S.ramp = r; return S; }   // into its side, or its back
+    const c = 1 / Math.sqrt(1 + r.k * r.k);
+    S.h = h; S.d = (y - h) * c; S.nx = -r.k * r.dx * c; S.ny = c; S.nz = -r.k * r.dz * c;
+    S.pit = null; S.kap = 0; S.sphi = 0; S.ramp = r;
+    return S;
+  }
+  return S;
+}
+
+// =============================================================================
+// 6. THE RAILS — the prototype's turtle, its recipes, at this size
+// =============================================================================
+const AX_Y = new V3(0, 1, 0), V1 = new V3();
+function RailBuilder(x, y, z, yaw) {
+  this.P = []; this.F = []; this.U = []; this.T = []; this.segs = []; this.pillars = [];
+  this.p = new V3(x, y, z); this.f = new V3(Math.cos(yaw), 0, Math.sin(yaw)); this.u = new V3(0, 1, 0);
+  this.tag = -1; this.push();
+}
+RailBuilder.prototype.push = function () {
+  const p = this.p, f = this.f, u = this.u;
+  this.P.push(p.x, p.y, p.z); this.F.push(f.x, f.y, f.z); this.U.push(u.x, u.y, u.z); this.T.push(this.tag);
+};
+RailBuilder.prototype.seg = function (name, pts) { this.segs.push({ name, pts }); this.tag = this.segs.length - 1; return this; };
+RailBuilder.prototype.end = function () { this.tag = -1; return this; };
+RailBuilder.prototype.S = function (L) {
+  L *= RK; const n = Math.max(1, Math.ceil(L / RAIL_DS));
+  for (let i = 0; i < n; i++) { this.p.addScaledVector(this.f, L / n); this.push(); }
+  return this;
+};
+RailBuilder.prototype.Pi = function (deg, R, side) {
+  R *= RK; side = (side || 0) * RK;
+  const a = deg * Math.PI / 180, L = Math.abs(a) * R, n = Math.max(1, Math.ceil(L / RAIL_DS));
+  const s = V1.crossVectors(this.f, this.u).normalize().clone();
+  for (let i = 0; i < n; i++) {
+    this.p.addScaledVector(this.f, L / n); if (side) this.p.addScaledVector(s, side / n);
+    this.f.applyAxisAngle(s, a / n); this.u.applyAxisAngle(s, a / n);
+    this.push();
+  }
+  return this;
+};
+RailBuilder.prototype.Y = function (deg, R) {
+  R *= RK;
+  const a = deg * Math.PI / 180, L = Math.abs(a) * R, n = Math.max(1, Math.ceil(L / RAIL_DS));
+  const fh = Math.hypot(this.f.x, this.f.z) || 1, sg = deg > 0 ? 1 : -1;
+  const pil = { x: this.p.x - this.f.z / fh * R * sg, z: this.p.z + this.f.x / fh * R * sg, top: this.p.y };
+  for (let i = 0; i < n; i++) {
+    this.p.addScaledVector(this.f, L / n);
+    this.f.applyAxisAngle(AX_Y, -a / n); this.u.applyAxisAngle(AX_Y, -a / n);
+    this.push(); pil.top = Math.max(pil.top, this.p.y);
+  }
+  if (Math.abs(deg) >= 300) this.pillars.push(pil);
+  return this;
+};
+RailBuilder.prototype.Ro = function (deg, L) {
+  L *= RK; const a = deg * Math.PI / 180, n = Math.max(1, Math.ceil(L / RAIL_DS));
+  for (let i = 0; i < n; i++) { this.p.addScaledVector(this.f, L / n); this.u.applyAxisAngle(this.f, a / n); this.push(); }
+  return this;
+};
+const RAIL_RECIPES = [
+  (b, s) => { b.S(7).Pi(12, 18).S(5).Pi(-12, 18).S(3).seg("Loop", 320).Pi(360, 6.5, 3.8 * s).end().S(5).Pi(40, 12); },
+  (b, s) => { b.S(6).Pi(14, 16).Pi(-14, 16).seg("Loop", 300).Pi(360, 5.5, 3.4 * s).end().S(3)
+    .seg("Loop", 300).Pi(360, 5.5, 3.4 * s).end().S(4).Pi(45, 10); },
+  (b, s) => { b.S(6).Pi(16, 12).seg("Spiral", 380).Y(540 * s, 7).end().Pi(-16, 12).S(2)
+    .seg("Barrel roll", 220).Ro(360 * s, 15).end().Pi(-8, 20).S(4).Pi(42, 10); },
+  (b, s) => { b.S(6).Pi(22, 16).S(8).Pi(-22, 16).seg("Barrel roll", 220).Ro(-360 * s, 14).end().S(3)
+    .Y(90 * s, 11).S(4).seg("Corkscrew", 240).Ro(360 * s, 12).end().Pi(30, 10); },
+  (b, s) => { b.S(6).Pi(10, 14).Pi(-10, 14).Y(60 * s, 12).seg("Corkscrew", 240).Ro(360 * s, 12).end()
+    .Y(-120 * s, 12).seg("Corkscrew", 240).Ro(-360 * s, 12).end().Y(60 * s, 12).Pi(38, 10); }
+];
+const rails = [];
+const RAIL_COLS = [[0xff3d8b, 0xffffff], [0x2ee6ff, 0x1b2a6b], [0xffd400, 0x26262a], [0x7cff4f, 0x14532d], [0xb26bff, 0xffffff]];
+function nearPit(x, z, m) { for (const p of pits) if (pitR(p, x, z) < p.F + p.R + m) return true; return false; }
+function nearRamp(x, z, m) {
+  for (const b of bumps) if (Math.hypot(x - b.x, z - b.z) < b.rb + m) return true;
+  for (const r of ramps) {
+    const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
+    if (u > -m && u < r.len + m && Math.abs(l) < r.hw + m) return true;
+  }
+  return false;
+}
+function railOk(b) {
+  const P_ = b.P, n = P_.length / 3;
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+  for (let i = 0; i < n; i++) {
+    const x = P_[3 * i], y = P_[3 * i + 1], z = P_[3 * i + 2];
+    if (Math.abs(x) > WX - 2 || z < WZ0 + 2 || z > -2 || y > 16) return false;
+    if (y < 0.2) return false;
+    if (y < 5 && nearPit(x, z, 1.6)) return false;
+    if (y < 4 && nearRamp(x, z, 2)) return false;
+    if (y < 4 && Math.hypot(x - PARK_SPOT.x, z - PARK_SPOT.z) < 6) return false;
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+  }
+  for (const r of rails) {
+    if (x1 < r.x0 - 3 || x0 > r.x1 + 3 || z1 < r.z0 - 3 || z0 > r.z1 + 3) continue;
+    for (let i = 0; i < n; i += 3) for (let j = 0; j < r.n; j += 3) {
+      const dx = P_[3 * i] - r.P[3 * j], dy = P_[3 * i + 1] - r.P[3 * j + 1], dz = P_[3 * i + 2] - r.P[3 * j + 2];
+      if (dx * dx + dy * dy + dz * dz < 6) return false;
+    }
+  }
+  b.box = [x0, x1, z0, z1];
+  return true;
+}
+function makeRail(b, cols) {
+  const n = b.T.length;
+  return { P: Float32Array.from(b.P), F: Float32Array.from(b.F), U: Float32Array.from(b.U), T: Int16Array.from(b.T),
+    n, len: (n - 1) * RAIL_DS, segs: b.segs, pillars: b.pillars, col: cols, cool: 0,
+    x0: b.box[0], x1: b.box[1], z0: b.box[2], z1: b.box[3] };
+}
+const RS = { px: 0, py: 0, pz: 0, fx: 0, fy: 0, fz: 0, ux: 0, uy: 0, uz: 0 };
+function railSample(r, s) {
+  const i = clamp(Math.floor(s), 0, r.n - 2), t = clamp(s - i, 0, 1), a = 3 * i, b = a + 3, P_ = r.P, F = r.F, U = r.U;
+  RS.px = P_[a] + (P_[b] - P_[a]) * t; RS.py = P_[a + 1] + (P_[b + 1] - P_[a + 1]) * t; RS.pz = P_[a + 2] + (P_[b + 2] - P_[a + 2]) * t;
+  const fx = F[a] + (F[b] - F[a]) * t, fy = F[a + 1] + (F[b + 1] - F[a + 1]) * t, fz = F[a + 2] + (F[b + 2] - F[a + 2]) * t, fl = Math.hypot(fx, fy, fz) || 1;
+  const ux = U[a] + (U[b] - U[a]) * t, uy = U[a + 1] + (U[b + 1] - U[a + 1]) * t, uz = U[a + 2] + (U[b + 2] - U[a + 2]) * t, ul = Math.hypot(ux, uy, uz) || 1;
+  RS.fx = fx / fl; RS.fy = fy / fl; RS.fz = fz / fl; RS.ux = ux / ul; RS.uy = uy / ul; RS.uz = uz / ul;
+  return RS;
+}
+
+// =============================================================================
+// 7. THE ZONE — the park north (z < 0), the city south (z > 0)
+// =============================================================================
+const START = { x: 0, z: 36, yaw: -Math.PI / 2 };     // moved to the corridor's start once it is laid
+const PARK_SPOT = { x: 0, z: -4 };                     // kept clear of rails
+const ZONE_IN = { x: 0, z: 36, yaw: -Math.PI / 2 };    // where ?skip=1 and N drop the dozer
+const ARROWS = [];
+function layoutPark() {
+  // the pools; each one's way out is an arrow standing off the wall, halfway up it, on the plaza's side
+  const pool = addPit(-14, -30, -14, -30, 3, 3);
+  const pipe = addPit(-9, -13, 7, -13, 1.8, 3);
+  const bowl = addPit(14, -33, 14, -28, 2.4, 3);
+  // (ax, az): the point of the pool's axis it stands out from; (dx, dz): out, toward the lip
+  const arrow = (p, ax, az, dx, dz) => {
+    const l = Math.hypot(dx, dz); dx /= l; dz /= l;
+    const w = p.R * ARROW_W, r = p.F + w, sp = w / p.R, cp = Math.sqrt(1 - sp * sp);
+    const sx = ax + dx * r, sy = p.y0 + p.R * (1 - cp), sz = az + dz * r, nx = -dx * sp, ny = cp, nz = -dz * sp;
+    ARROWS.push({ p, dx, dz, sx, sy, sz, nx, ny, nz, x: sx + nx * 0.8, y: sy + ny * 0.8, z: sz + nz * 0.8, lean: Math.asin(sp), cd: 0, t: rnd() * 5, g: null });
+  };
+  arrow(pool, -14, -30, 1, 0);
+  arrow(pipe, -9, -13, -1, 0);      // the half-pipe: one up each end wall, out along its axis, never in the way across it
+  arrow(pipe, 7, -13, 1, 0);
+  arrow(bowl, 14, -30.5, -1, 0);
+  // jumps on the plaza
+  addBump(-3, -24, 3.4, 0.7, 1.6);
+  addBump(4, -38, 3.4, 0.7, 1.6);
+  addBump(-20, -6, 3.2, 0.7, 1.5);
+  addBump(20, -8, 3.2, 0.7, 1.5);
+  // the rails: a recipe dropped at a seeded spot and heading, kept if it fits
+  let tries = 0;
+  while (rails.length < RAIL_COUNT && tries++ < 3000) {
+    const x = rr(-WX + 3, WX - 3), z = rr(WZ0 + 3, -3);
+    if (nearPit(x, z, 2.5) || nearRamp(x, z, 2)) continue;
+    const yaw = Math.floor(rr(0, 8)) * Math.PI / 4 + rr(-0.2, 0.2);
+    const b = new RailBuilder(x, RAIL_START_H, z, yaw);
+    RAIL_RECIPES[(rails.length * 2 + Math.floor(tries / 300)) % RAIL_RECIPES.length](b, rnd() < 0.5 ? 1 : -1);   // a different recipe each
+    if (railOk(b)) rails.push(makeRail(b, RAIL_COLS[rails.length % RAIL_COLS.length]));
+  }
+}
+
+// ---- the ground: one picture for the plaza and the snow (or grass), holes for the pools and the city
+const GX0 = -40, GX1 = 40, GZ0 = -56, GZ1 = 0;
+const groundCv = document.createElement("canvas"); groundCv.width = 1024; groundCv.height = Math.round(1024 * (GZ1 - GZ0) / (GX1 - GX0));
+const groundTex = new THREE.CanvasTexture(groundCv); groundTex.colorSpace = THREE.SRGBColorSpace; groundTex.anisotropy = 8;
+const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1 });
+const farMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
+function drawGround() {
+  const g = groundCv.getContext("2d"), k = groundCv.width / (GX1 - GX0);
+  const X = (x) => (x - GX0) * k, Z = (z) => (z - GZ0) * k;
+  g.fillStyle = P.ground; g.fillRect(0, 0, groundCv.width, groundCv.height);
+  const r2 = mulberry(5);
+  for (let i = 0; i < 260; i++) {
+    const x = r2() * groundCv.width, y = r2() * groundCv.height, rad = 8 + r2() * 40, dark = r2() < 0.5;
+    const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+    gr.addColorStop(0, dark ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  g.fillStyle = P.plaza; g.fillRect(X(PLAZA.x0), Z(PLAZA.z0), (PLAZA.x1 - PLAZA.x0) * k, (PLAZA.z1 - PLAZA.z0) * k);
+  g.strokeStyle = P.joint; g.lineWidth = 1.5;
+  for (let s = PLAZA.x0; s <= PLAZA.x1; s += 3) { g.beginPath(); g.moveTo(X(s), Z(PLAZA.z0)); g.lineTo(X(s), Z(PLAZA.z1)); g.stroke(); }
+  for (let s = PLAZA.z0; s <= PLAZA.z1; s += 3) { g.beginPath(); g.moveTo(X(PLAZA.x0), Z(s)); g.lineTo(X(PLAZA.x1), Z(s)); g.stroke(); }
+  for (let i = 0; i < 1400; i++) { g.fillStyle = r2() < 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)"; g.fillRect(X(rr2(r2, PLAZA.x0, PLAZA.x1)), Z(rr2(r2, PLAZA.z0, PLAZA.z1)), 2, 2); }
+  groundTex.needsUpdate = true;
+  farMat.color.set(P.ground);
+}
+const rr2 = (r, a, b) => a + (b - a) * r();
+const v2 = (x, z) => new THREE.Vector2(x, -z);
+function lipRing(p, off) {          // the outline of a pit at distance off from its segment
+  const out = [], n = 18;
+  for (let k = 0; k <= n; k++) { const t = -Math.PI / 2 + Math.PI * k / n, c = Math.cos(t), s = Math.sin(t);
+    out.push([p.bx, p.bz, p.ux * c - p.uz * s, p.uz * c + p.ux * s]); }
+  for (let k = 0; k <= n; k++) { const t = Math.PI / 2 + Math.PI * k / n, c = Math.cos(t), s = Math.sin(t);
+    out.push([p.ax, p.az, p.ux * c - p.uz * s, p.uz * c + p.ux * s]); }
+  return off == null ? out : out.map((a) => [a[0] + a[2] * off, a[1] + a[3] * off]);
+}
+function buildGround() {
+  const outer = new THREE.Shape([v2(GX0, GZ0), v2(GX1, GZ0), v2(GX1, GZ1), v2(GX0, GZ1)].reverse());
+  for (const p of pits) outer.holes.push(new THREE.Path(lipRing(p, p.F + p.R).map((a) => v2(a[0], a[1]))));
+  const geo = new THREE.ShapeGeometry(outer);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, uv = geo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) - GX0) / (GX1 - GX0), 1 - (pos.getZ(i) - GZ0) / (GZ1 - GZ0));
+  const ground = new THREE.Mesh(geo, groundMat); ground.receiveShadow = true; scene.add(ground);
+  // the city's side and the land beyond the zone: one plain plane just under — with a hole
+  // where the park's own ground is, or it would lid the pools sunk under it
+  const farShape = new THREE.Shape([v2(-500, -500), v2(500, -500), v2(500, 500), v2(-500, 500)].reverse());
+  farShape.holes.push(new THREE.Path([v2(GX0, GZ0), v2(GX1, GZ0), v2(GX1, GZ1), v2(GX0, GZ1)]));
+  const far = new THREE.Mesh(new THREE.ShapeGeometry(farShape).rotateX(-Math.PI / 2), farMat);
+  far.position.y = -0.24; far.receiveShadow = true; scene.add(far);
+  drawGround();
+}
+// the pools: rings of the outline at each (offset, y) of the profile, painted bottom to top
+const poolSheets = [];
+function buildPits() {
+  for (const p of pits) {
+    const ring = lipRing(p), prof = [[0, p.y0, 0], [p.F, p.y0, 0.04]];
+    for (let j = 1; j <= 12; j++) { const a = j / 12 * Math.PI / 2; prof.push([p.F + p.R * Math.sin(a), p.y0 + p.R * (1 - Math.cos(a)), 0.04 + 0.96 * j / 12]); }
+    const posA = [], ts = [], idx = [], M = ring.length;
+    for (let j = 0; j < prof.length; j++) for (let k = 0; k < M; k++) {
+      const a = ring[k]; posA.push(a[0] + a[2] * prof[j][0], prof[j][1], a[1] + a[3] * prof[j][0]); ts.push(prof[j][2]);
+    }
+    for (let j = 0; j < prof.length - 1; j++) for (let k = 0; k < M; k++) {
+      const a0 = j * M + k, a1 = j * M + (k + 1) % M; idx.push(a0, a1, a1 + M, a0, a1 + M, a0 + M);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(posA, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(posA.length), 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9, side: THREE.DoubleSide }));
+    m.material.userData.noWeather = true; m.receiveShadow = true; scene.add(m);
+    poolSheets.push({ g, ts });
+    // the coping: a metal tube round the lip
+    const lip = lipRing(p, p.F + p.R + 0.04).map((a) => new V3(a[0], 0.05, a[1]));
+    const cope = pmesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lip, true), lip.length * 2, 0.09, 6, true), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
+    scene.add(shadowy(cope));
+  }
+  paintPools();
+  buildArrows();
+}
+// the way out of a pool: a fat arrow floating over the floor, pointing over the lip, and its glow
+const arrowMat = new THREE.MeshStandardMaterial({ color: "#ffd23a", emissive: "#ff9a1a", emissiveIntensity: 0.8, roughness: 0.35, flatShading: true });
+arrowMat.userData.noWeather = true;
+function buildArrows() {
+  const sh = new THREE.Shape([new THREE.Vector2(-0.75, -0.17), new THREE.Vector2(0.05, -0.17), new THREE.Vector2(0.05, -0.46),
+    new THREE.Vector2(0.8, 0), new THREE.Vector2(0.05, 0.46), new THREE.Vector2(0.05, 0.17), new THREE.Vector2(-0.75, 0.17)]);
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: 0.22, bevelEnabled: true, bevelThickness: 0.05, bevelSize: 0.05, bevelSegments: 1 }).translate(0, 0, -0.11);
+  for (const a of ARROWS) {
+    const g = new THREE.Group(), tilt = new THREE.Group(), m = new THREE.Mesh(geo, arrowMat);
+    m.castShadow = true; tilt.add(m); tilt.rotation.z = a.lean + 0.55; g.add(tilt);   // pointing up the wall, and out over the lip
+    g.position.set(a.x, a.y, a.z); g.rotation.y = -Math.atan2(a.dz, a.dx); scene.add(g);
+    const ringM = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.25, 32).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xffc23a, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    ringM.position.set(a.sx + a.nx * 0.04, a.sy + a.ny * 0.04, a.sz + a.nz * 0.04);   // lying on the wall under it
+    ringM.quaternion.setFromUnitVectors(UP, new V3(a.nx, a.ny, a.nz)); ringM.renderOrder = 2; scene.add(ringM);
+    a.g = g; a.m = m; a.ring = ringM;
+  }
+}
+function updateArrows(rdt) {
+  for (const a of ARROWS) {
+    a.t += rdt; a.cd = Math.max(0, a.cd - rdt);
+    const back = 1 - smooth(a.cd / ARROW_CD * 1.4 - 0.2);
+    const b = 0.15 * Math.sin(a.t * 2.6);
+    a.g.position.set(a.x + a.nx * b, a.y + a.ny * b, a.z + a.nz * b);
+    a.m.rotation.x = a.t * 2.2;                 // it turns on its own axis, to catch the eye
+    a.g.scale.setScalar(0.25 + 0.75 * back);
+    arrowMat.emissiveIntensity = 0.8 + 0.5 * Math.sin(a.t * 6);
+    a.ring.material.opacity = (0.35 + 0.3 * Math.sin(a.t * 6)) * back;
+    a.ring.scale.setScalar(1 + 0.08 * Math.sin(a.t * 6));
+  }
+}
+// touched: thrown up and out over the lip, nose first, the trick button live
+function touchArrows() {
+  for (const a of ARROWS) {
+    if (a.cd > 0) continue;
+    const dx = D.x - a.x, dz = D.z - a.z, dy = D.y + comY - a.y;
+    if (dx * dx + dy * dy + dz * dz > ARROW_R * ARROW_R) continue;
+    a.cd = ARROW_CD;
+    D.crouch = 0;
+    if (D.ground) takeoff("launch", null, 0, 0);
+    const A = D.air;
+    if (A.cur) cancelTrick();
+    A.assist = null; A.heading = Math.atan2(a.dz, a.dx); A.dashes = 0;
+    D.vx = a.dx * ARROW_VH; D.vz = a.dz * ARROW_VH; D.vy = ARROW_VY;
+    D.f.set(a.dx, 0, a.dz); bodyQuat(D.f, UP, D.q);
+    trick("Launch", ARROW_PTS, "#ffd23a");
+    E.st = 0.3; E.fovKick += 6; E.trauma = Math.min(1, E.trauma + 0.25); slowmo(0.5, 0.12);
+    ring(new V3(a.sx, a.sy, a.sz), 3, 0.45, 0xffc23a);
+    sparks(new V3(a.x, a.y, a.z), 24, 10, 0xffd23a);
+    return;
+  }
+}
+function paintPools() {
+  const a = new THREE.Color(P.poolLow), b = new THREE.Color(P.poolHigh), c = new THREE.Color();
+  for (const s of poolSheets) {
+    const col = s.g.attributes.color;
+    for (let i = 0; i < s.ts.length; i++) { c.copy(a).lerp(b, smooth(s.ts[i] * 1.4 - 0.2)); col.setXYZ(i, c.r, c.g, c.b); }
+    col.needsUpdate = true;
+  }
+}
+// the ramps: a wedge, its top a plane, its sides and back vertical
+function buildBumps() {
+  for (const b of bumps) {
+    const prof = [new THREE.Vector2(0, b.h), new THREE.Vector2(b.rt, b.h)];
+    for (let k = 1; k <= 10; k++) { const r = b.rt + (b.rb - b.rt) * k / 10; prof.push(new THREE.Vector2(r, bumpH(b, r))); }
+    const m = pmesh(new THREE.LatheGeometry(prof, 28), 0xd9d2c4, { flatShading: true });
+    m.position.set(b.x, 0.005, b.z); scene.add(shadowy(m));
+    const lip = pmesh(new THREE.TorusGeometry(b.rt, 0.07, 6, 28).rotateX(Math.PI / 2), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
+    lip.position.set(b.x, b.h + 0.02, b.z); scene.add(shadowy(lip));
+  }
+}
+function buildRamps() {
+  buildBumps();
+  for (const r of ramps) {
+    const W = (u, l, y) => new V3(r.x + r.dx * u - r.dz * l, y, r.z + r.dz * u + r.dx * l);
+    const a0 = W(0, -r.hw, r.h0), a1 = W(0, r.hw, r.h0), b0 = W(r.len, -r.hw, r.h1), b1 = W(r.len, r.hw, r.h1);
+    const c0 = W(r.len, -r.hw, r.base), c1 = W(r.len, r.hw, r.base), d0 = W(0, -r.hw, r.base), d1 = W(0, r.hw, r.base);
+    const tris = [a0, b1, b0, a0, a1, b1, b0, b1, c1, b0, c1, c0, a0, b0, c0, a0, c0, d0, a1, c1, b1, a1, d1, c1];
+    const g = new THREE.BufferGeometry().setFromPoints(tris); g.computeVertexNormals();
+    const m = pmesh(g, r.kind === "launch" ? 0xf2b22a : 0xd9d2c4, { flatShading: true, side: THREE.DoubleSide });
+    scene.add(shadowy(m));
+    // a metal edge where the top meets the lip (or the air)
+    const e0 = W(r.len - 0.06, 0, r.h1 + 0.02), e = pmesh(new THREE.CylinderGeometry(0.06, 0.06, r.hw * 2, 6).rotateX(Math.PI / 2), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
+    e.position.copy(e0); e.rotation.y = -Math.atan2(r.dz, r.dx); scene.add(shadowy(e));
+  }
+}
+let railMats = [];
+function buildRails() {
+  for (const r of rails) {
+    const rad = 0.09, seg = 6, pos = [], col = [], idx = [], ca = new THREE.Color(r.col[0]), cb = new THREE.Color(r.col[1]);
+    const side = new V3(), f = new V3(), u = new V3();
+    for (let i = 0; i < r.n; i++) {
+      f.set(r.F[3 * i], r.F[3 * i + 1], r.F[3 * i + 2]); u.set(r.U[3 * i], r.U[3 * i + 1], r.U[3 * i + 2]); side.crossVectors(f, u).normalize();
+      const c = Math.floor(i * RAIL_DS / 0.35) % 2 ? cb : ca;
+      for (let k = 0; k < seg; k++) {
+        const a = k / seg * TAU, cx = Math.cos(a) * rad, sx = Math.sin(a) * rad;
+        pos.push(r.P[3 * i] + u.x * cx + side.x * sx, r.P[3 * i + 1] + u.y * cx + side.y * sx, r.P[3 * i + 2] + u.z * cx + side.z * sx);
+        col.push(c.r, c.g, c.b);
+      }
+    }
+    for (let i = 0; i < r.n - 1; i++) for (let k = 0; k < seg; k++) {
+      const a0 = i * seg + k, a1 = i * seg + (k + 1) % seg; idx.push(a0, a1, a1 + seg, a0, a1 + seg, a0 + seg);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setIndex(idx); g.computeVertexNormals();
+    const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, emissive: r.col[0], emissiveIntensity: 0 });
+    mat.userData.noWeather = true; railMats.push(mat);
+    scene.add(shadowy(new THREE.Mesh(g, mat)));
+    // posts where nothing of the rail runs under them, a pillar in a spiral
+    let lastPost = -99;
+    for (let i = 8; i < r.n; i++) {
+      const x = r.P[3 * i], y = r.P[3 * i + 1], z = r.P[3 * i + 2];
+      if (r.U[3 * i + 1] < 0.8 || y < 0.25 || i - lastPost < 9) continue;
+      let clear = true;
+      for (let j = 0; j < r.n && clear; j += 2) if (j !== i && Math.hypot(r.P[3 * j] - x, r.P[3 * j + 2] - z) < 0.45 && r.P[3 * j + 1] < y - 0.3) clear = false;
+      if (!clear) continue;
+      lastPost = i;
+      const post = pmesh(bevelBox(0.08, y, 0.08, 0.015), 0x55595f); post.position.set(x, y / 2, z); scene.add(shadowy(post));
+    }
+    for (const pl of r.pillars) {
+      const h = pl.top - 0.2, pil = pmesh(jitter(new THREE.CylinderGeometry(0.22, 0.28, h, 7), 0.004, 3), 0x55595f);
+      pil.position.set(pl.x, h / 2, pl.z); scene.add(shadowy(pil));
+    }
+    // the way in: a ring on the ground at its start
+    const ringM = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 28).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: r.col[0], transparent: true, opacity: 0.85, depthWrite: false }));
+    ringM.position.set(r.P[0] - r.F[0] * 0.6, 0.02, r.P[2] - r.F[2] * 0.6); ringM.renderOrder = 1; scene.add(ringM);
+  }
+}
+
+// =============================================================================
+// 7b. THE RACE — a walled corridor of turns, from the start line to the zone's gate
+// =============================================================================
+// The corridor is the turtle's path of TRACK_CMDS (S = straight, T = turn by
+// degrees on a radius), sampled every TRACK_DS, placed so that it ends on the
+// city's middle road at the zone's south edge, heading north. Its walls are the
+// one rule of the race: the dozer is held between them, and bounces off.
+const TR = { P: null, N: 0, len: 0, hint: 0, s: 0, kick: [] };   // P: x, z, tangent x, tangent z per sample
+function layoutTrack() {
+  const pts = [[0, 0, -Math.PI / 2]], starts = [];
+  let x = 0, z = 0, a = -Math.PI / 2;
+  for (const c of TRACK_CMDS) {
+    starts.push(pts.length - 1);
+    if (c[0] === "S") { const n = Math.ceil(c[1] / TRACK_DS); for (let i = 0; i < n; i++) { x += Math.cos(a) * c[1] / n; z += Math.sin(a) * c[1] / n; pts.push([x, z, a]); } }
+    else {
+      const th = c[1] * Math.PI / 180, L = Math.abs(th) * c[2], n = Math.ceil(L / TRACK_DS);
+      for (let i = 0; i < n; i++) { a += th / n; x += Math.cos(a) * L / n; z += Math.sin(a) * L / n; pts.push([x, z, a]); }
+    }
+  }
+  const ox = -x, oz = WZ1 + 0.5 - z;
+  TR.N = pts.length; TR.P = new Float32Array(TR.N * 4); TR.len = (TR.N - 1) * TRACK_DS;
+  pts.forEach((q, i) => TR.P.set([q[0] + ox, q[1] + oz, Math.cos(q[2]), Math.sin(q[2])], 4 * i));
+  START.x = TR.P[8]; START.z = TR.P[9]; START.yaw = -Math.PI / 2;
+  // three jumps mid-straight, in the middle of the road: a lane is left on each side
+  for (const ci of [0, 6, 8]) {
+    const i = starts[ci] + Math.round(TRACK_CMDS[ci][1] / TRACK_DS * (ci ? 0.5 : 0.7)), [cx, cz] = TR.P.subarray(4 * i, 4 * i + 4);
+    addBump(cx, cz, 2.8, 0.5, 1.3);
+    TR.kick.push(i);
+  }
+  // the end: a ramp across the whole road, its lip on the finish line, under the gate
+  const iTop = TR.N - 1, iLow = iTop - Math.round(LAUNCH_LEN / TRACK_DS);
+  const [lx, lz, ltx, ltz] = TR.P.subarray(4 * iLow, 4 * iLow + 4);
+  addRamp(lx, lz, ltx, ltz, LAUNCH_LEN, TRACK_HW - 0.05, 0, LAUNCH_H, 0, "launch");
+  TR.launch = iLow;
+  // the bonuses: rows of three across a lane that moves from row to row, one high over each jump
+  const lanes = [-2.6, 0, 2.6];
+  for (let s0 = 14; s0 < TR.len - 16; s0 += BONUS_GAP) {
+    const lane = lanes[ri(0, 2)];
+    for (let k = 0; k < 3; k++) {
+      const i = Math.round((s0 + k * 3) / TRACK_DS);
+      if (i >= iLow - 6 || TR.kick.some((j) => Math.abs(j - i) < 10)) continue;
+      const [cx, cz, tx, tz] = TR.P.subarray(4 * i, 4 * i + 4);
+      BONUS.push({ x: cx - tz * lane, y: 0.9, z: cz + tx * lane, taken: false, t: rnd() * 6 });
+    }
+  }
+  for (const i of TR.kick) { const [cx, cz] = TR.P.subarray(4 * i, 4 * i + 4); BONUS.push({ x: cx, y: 4, z: cz, taken: false, t: rnd() * 6 }); }
+}
+const BONUS = [];
+let bonusMesh = null;
+function buildBonus() {
+  const mat = new THREE.MeshStandardMaterial({ color: "#2ab8e6", emissive: "#4fe8ff", emissiveIntensity: 1.4, roughness: 0.25, flatShading: true });
+  mat.userData.noWeather = true;
+  bonusMesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.42, 0).scale(1, 1.35, 1), mat, BONUS.length);
+  bonusMesh.castShadow = true; bonusMesh.frustumCulled = false; scene.add(bonusMesh);
+}
+function updateBonus(rdt) {
+  for (let i = 0; i < BONUS.length; i++) {
+    const b = BONUS[i]; b.t += rdt;
+    dummy.position.set(b.x, b.y + 0.15 * Math.sin(b.t * 3), b.z); dummy.rotation.set(0, b.t * 2.4, 0);
+    dummy.scale.setScalar(b.taken ? 0 : 1 + 0.08 * Math.sin(b.t * 9)); dummy.updateMatrix();
+    bonusMesh.setMatrixAt(i, dummy.matrix);
+  }
+  bonusMesh.instanceMatrix.needsUpdate = true;
+}
+function touchBonus() {
+  for (const b of BONUS) {
+    if (b.taken) continue;
+    const dx = D.x - b.x, dy = D.y + comY - b.y, dz = D.z - b.z;
+    if (dx * dx + dy * dy + dz * dz > BONUS_R * BONUS_R) continue;
+    b.taken = true; GS.bonus++;
+    GS.mult = Math.round((GS.mult + BONUS_STEP) * 10) / 10;
+    // a push along where it is going, past cruise speed for a moment
+    const hv = Math.hypot(D.vx, D.vz);
+    if (hv > 0.5) { const k = Math.min(hv + BONUS_PUSH, BOOST_V + 2) / hv; D.vx *= k; D.vz *= k; }
+    D.boost = Math.max(D.boost, 0.8);
+    E.fovKick += 3; E.st = Math.max(E.st, 0.15);
+    floatPts(new V3(b.x, b.y + 0.6, b.z), "×" + GS.mult.toFixed(1), "#4fe8ff");
+    sparks(new V3(b.x, b.y, b.z), 14, 7, 0x4fe8ff);
+  }
+}
+const trackAt = (i) => TR.P.subarray(4 * i, 4 * i + 4);
+function trackDist(x, z, step = 2) {
+  let d = 1e9;
+  for (let i = 0; i < TR.N; i += step) d = Math.min(d, Math.hypot(x - TR.P[4 * i], z - TR.P[4 * i + 1]));
+  return d;
+}
+const roadCv = document.createElement("canvas"); roadCv.width = roadCv.height = 128;
+const roadTex = new THREE.CanvasTexture(roadCv); roadTex.colorSpace = THREE.SRGBColorSpace; roadTex.wrapT = THREE.RepeatWrapping; roadTex.anisotropy = 8;
+const roadMat = new THREE.MeshStandardMaterial({ map: roadTex, roughness: 1 }); roadMat.userData.noWeather = true;
+function drawRoad() {       // one picture across the road and 4 units along it: edge lines, a dash
+  const g = roadCv.getContext("2d"), r2 = mulberry(9);
+  g.fillStyle = P.road; g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 300; i++) { g.fillStyle = r2() < 0.5 ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)"; g.fillRect(r2() * 128, r2() * 128, 2, 2); }
+  g.fillStyle = "rgba(255,255,255,0.85)"; g.fillRect(6, 0, 3, 128); g.fillRect(119, 0, 3, 128);
+  g.fillStyle = "rgba(255,255,255,0.55)"; g.fillRect(62, 0, 4, 60);
+  roadTex.needsUpdate = true;
+}
+const checkTex = canvasTexOnce(64, 16, (g) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? "#1c1b26" : "#f4f4f4"; g.fillRect(i * 4, j * 4, 4, 4); } });
+function canvasTexOnce(w, h, draw) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d")); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.magFilter = THREE.NearestFilter; return t; }
+function buildTrack() {
+  const N = TR.N, hw = TRACK_HW;
+  // the road: a ribbon over the samples
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i < N; i++) {
+    const [cx, cz, tx, tz] = trackAt(i), nx = -tz, nz = tx;
+    pos.push(cx + nx * hw, 0.015, cz + nz * hw, cx - nx * hw, 0.015, cz - nz * hw);
+    uv.push(0, i * TRACK_DS / 4, 1, i * TRACK_DS / 4);
+    if (i < N - 1) { const a = 2 * i; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  }
+  const rg = new THREE.BufferGeometry();
+  rg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  rg.setIndex(idx); rg.computeVertexNormals();
+  for (let i = 0; i < rg.attributes.normal.count; i++) rg.attributes.normal.setXYZ(i, 0, 1, 0);
+  const road = new THREE.Mesh(rg, roadMat); road.receiveShadow = true; scene.add(road);
+  // the walls: low red and white blocks on both edges, flat faces
+  const wp = [], wc = [], red = new THREE.Color("#d23c3c"), white = new THREE.Color("#f2f2f2");
+  for (let i = 0; i < N - 1; i++) {
+    const A = trackAt(i), B = trackAt(i + 1), c = Math.floor(i * TRACK_DS / 2) % 2 ? red : white;
+    for (const sg of [-1, 1]) {
+      const at = (q, off, y) => [q[0] - q[3] * off * sg, y, q[1] + q[2] * off * sg];
+      const ib = [at(A, hw, 0), at(B, hw, 0)], it = [at(A, hw, WALL_H), at(B, hw, WALL_H)], ot = [at(A, hw + WALL_T, WALL_H), at(B, hw + WALL_T, WALL_H)], ob = [at(A, hw + WALL_T, 0), at(B, hw + WALL_T, 0)];
+      const quad = (p0, p1, p2, p3) => { const t = sg > 0 ? [p0, p1, p2, p0, p2, p3] : [p0, p2, p1, p0, p3, p2]; for (const v of t) { wp.push(...v); wc.push(c.r, c.g, c.b); } };
+      quad(ib[0], it[0], it[1], ib[1]); quad(it[0], ot[0], ot[1], it[1]); quad(ot[0], ob[0], ob[1], ot[1]);
+    }
+  }
+  const wg = new THREE.BufferGeometry();
+  wg.setAttribute("position", new THREE.Float32BufferAttribute(wp, 3)); wg.setAttribute("color", new THREE.Float32BufferAttribute(wc, 3));
+  wg.computeVertexNormals();
+  const wm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, flatShading: true, side: THREE.DoubleSide }); wm.userData.noWeather = true;
+  scene.add(shadowy(new THREE.Mesh(wg, wm)));
+  // the land round it: a plain plane at the road's height, from the city's edge south
+  let x0 = 1e9, x1 = -1e9, z1 = -1e9;
+  for (let i = 0; i < N; i++) { x0 = Math.min(x0, TR.P[4 * i]); x1 = Math.max(x1, TR.P[4 * i]); z1 = Math.max(z1, TR.P[4 * i + 1]); }
+  const land = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 80, z1 - CITY.z0 - 40 + 40).rotateX(-Math.PI / 2), farMat);
+  land.position.set((x0 + x1) / 2, 0, (CITY.z0 + 40 + z1 + 40) / 2); land.receiveShadow = true; scene.add(land);
+  // the start and the zone's gate: an arch with a neon beam, a chequered line under it
+  for (const i of [2, N - 1]) {
+    const [cx, cz, tx, tz] = trackAt(i), nx = -tz, nz = tx, rot = -Math.atan2(tz, tx);
+    const ah = i === 2 ? 4.3 : 8.2;   // the gate stands high: the ramp throws the dozer under it
+    for (const sg of [-1, 1]) {
+      const pil = pmesh(bevelBox(0.5, ah - 0.1, 0.5, 0.06), 0x55595f);
+      pil.position.set(cx + nx * sg * (hw + 0.6), (ah - 0.1) / 2, cz + nz * sg * (hw + 0.6)); pil.rotation.y = rot; scene.add(shadowy(pil));
+    }
+    const beamMat = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: i === 2 ? 0xffd400 : 0x2ee6ff, emissiveIntensity: 0, roughness: 0.4 });
+    beamMat.userData.noWeather = true; railMats.push(beamMat);
+    const beam = new THREE.Mesh(bevelBox(0.45, 0.55, 2 * hw + 1.8, 0.06), beamMat);
+    beam.position.set(cx, ah, cz); beam.rotation.y = rot; scene.add(shadowy(beam));
+    const line = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 2 * hw).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: checkTex, roughness: 0.9 }));
+    line.material.userData.noWeather = true; line.receiveShadow = true; scene.add(line);
+    if (i === 2) { line.position.set(cx, 0.025, cz); line.rotation.y = rot; }
+    else {   // the finish line is the ramp's lip: painted on its top, at its slope
+      const sl = Math.atan2(LAUNCH_H, LAUNCH_LEN), back = 0.65;
+      line.position.set(cx - tx * back * Math.cos(sl), LAUNCH_H - back * Math.sin(sl) + 0.02, cz - tz * back * Math.cos(sl));
+      line.rotation.set(0, rot, sl);
+    }
+  }
+  // trees and rocks beyond the walls (they stand), boxes and bins on the road (they fly)
+  const deco = new THREE.Group();
+  for (let i = 0; i < N; i += 7) for (const sg of [-1, 1]) {
+    if (rnd() < 0.3) continue;
+    const [cx, cz, tx, tz] = trackAt(i), off = hw + rr(2.2, 16), x = cx - tz * sg * off, z = cz + tx * sg * off;
+    if (z < WZ1 + 6 && Math.abs(x) < WX + 8) continue;
+    if (trackDist(x, z) < hw + 1.8) continue;
+    if (rnd() < 0.85) { const g = item(rnd() < 0.6 ? "tree-conifer" : "tree-round").build(LIB); g.position.set(x, 0, z); g.scale.setScalar(KS * rr(1.1, 2)); g.rotation.y = rr(0, TAU); deco.add(g); }
+    else { const g = item("rock-single").build(LIB); g.position.set(x, 0, z); g.scale.setScalar(KS * rr(1, 2.2)); g.rotation.y = rr(0, TAU); deco.add(g); }
+  }
+  scene.add(shadowy(mergeLocal(deco)));
+  for (let k = 0, tries = 0; k < 18 && tries < 200; tries++) {
+    const i = ri(40, TR.launch - 10);
+    if (TR.kick.some((j) => Math.abs(j - i) < 14)) continue;
+    const [cx, cz, tx, tz] = trackAt(i), l = rr(-hw + 1.2, hw - 1.2);
+    prop(pick(["box_A", "box_B", "trash_A", "trash_B", "firehydrant", "box_A"]), cx - tz * l, cz + tx * l, rr(0, TAU)); k++;
+  }
+}
+// the race's one rule: held between the walls (and behind the start line), bounced off them
+function trackStep() {
+  const P_ = TR.P, N = TR.N;
+  let best = TR.hint, bd = 1e9;
+  for (let i = Math.max(0, TR.hint - 40), e = Math.min(N, TR.hint + 41); i < e; i++) {
+    const dx = D.x - P_[4 * i], dz = D.z - P_[4 * i + 1], d = dx * dx + dz * dz;
+    if (d < bd) { bd = d; best = i; }
+  }
+  TR.hint = best;
+  const cx = P_[4 * best], cz = P_[4 * best + 1], tx = P_[4 * best + 2], tz = P_[4 * best + 3], nx = -tz, nz = tx;
+  const along = (D.x - cx) * tx + (D.z - cz) * tz, l = (D.x - cx) * nx + (D.z - cz) * nz;
+  TR.s = best * TRACK_DS + along;
+  if (best === 0 && along < 0) {
+    D.x -= along * tx; D.z -= along * tz;
+    const v = D.vx * tx + D.vz * tz; if (v < 0) { D.vx -= (1 + RESTITUTION) * v * tx; D.vz -= (1 + RESTITUTION) * v * tz; }
+  }
+  const lim = TRACK_HW - dims.wid * 0.55;
+  if (Math.abs(l) <= lim) return;
+  const sg = Math.sign(l);
+  D.x -= nx * sg * (Math.abs(l) - lim); D.z -= nz * sg * (Math.abs(l) - lim);
+  const vn = (D.vx * nx + D.vz * nz) * sg;
+  const wx = D.x + nx * sg * dims.wid * 0.55, wz = D.z + nz * sg * dims.wid * 0.55;
+  if (vn > 0) {
+    D.vx -= (1 + RESTITUTION) * vn * nx * sg; D.vz -= (1 + RESTITUTION) * vn * nz * sg;
+    if (vn > 2.5) {
+      E.trauma = Math.min(1, E.trauma + Math.min(0.4, vn * 0.04)); E.jv += 2;
+      sparks(new V3(wx, D.y + 0.4, wz), Math.min(14, 3 + vn), 7, 0xffc94d);
+    }
+  }
+  // scraping along it: sparks off the side, a little speed lost
+  if (Math.random() < 0.35) P_SPARK.spawn({ pos: new V3(wx, D.y + mr(0.2, 0.5), wz), vel: new V3(-D.vx * 0.3 + mr(-2, 2), mr(1, 3), -D.vz * 0.3 + mr(-2, 2)),
+    life: mr(0.2, 0.4), s0: 0.04, len: 0.3, grav: 14, col: new THREE.Color(0xffb040).multiplyScalar(2) });
+  D.vx *= 0.995; D.vz *= 0.995;
+}
+
+// ---- the kit, the city, the props
+const KIT = "../assets/model/kaykit-city/";
+const kit = {};
+const DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
+const CITY = { cols: 15, rows: 10, x0: -30, z0: 0 };
+const ctx = (i) => CITY.x0 + (i + 0.5) * TILE, ctz = (j) => CITY.z0 + (j + 0.5) * TILE;
+const inCity = (i, j) => i >= 0 && j >= 0 && i < CITY.cols && j < CITY.rows;
+const isRoad = (i, j) => inCity(i, j) && (j % 3 === 0 || i % 3 === 1);
+const Yax = new V3(0, 1, 0);
+function rotFor(canon, need) {
+  for (let q = 0; q < 4; q++) {
+    const th = q * Math.PI / 2;
+    const got = canon.map((d) => { const v = new V3(DIRS[d][0], 0, DIRS[d][1]).applyAxisAngle(Yax, th); return Math.round(v.x) + "," + Math.round(v.z); }).sort().join(";");
+    const want = need.map((d) => DIRS[d][0] + "," + DIRS[d][1]).sort().join(";");
+    if (got === want) return th;
+  }
+  return 0;
+}
+const facing = (dir) => rotFor(["S"], [dir]);
+const BLOCKS = [   // [block row][block col]: what stands on a block of 2 x 2 lots
+  ["strip", "houses", "kit", "lib", "houses", "strip"],
+  ["strip", "kit", "lib", "kit", "parking", "strip"],
+  ["strip", "houses", "green", "kit", "houses", "strip"]
+];
+const blockOf = (i, j) => BLOCKS[Math.floor(j / 3)][Math.floor((i + 1) / 3)];
+
+// the static ground of the city: one InstancedMesh per kit tile
+const tiles = {};
+function addTile(name, x, z, rot) {
+  (tiles[name] || (tiles[name] = [])).push(new THREE.Matrix4().compose(new V3(x, -0.2, z), new THREE.Quaternion().setFromAxisAngle(Yax, rot), new V3(KS, KS, KS)));
+}
+function buildTiles() {
+  for (const name in tiles) {
+    const src = kit[name]; src.updateMatrixWorld(true);
+    src.traverse((m) => {
+      if (!m.isMesh) return;
+      const list = tiles[name], im = new THREE.InstancedMesh(m.geometry, m.material, list.length), tmp = new THREE.Matrix4();
+      list.forEach((mx, k) => im.setMatrixAt(k, tmp.multiplyMatrices(mx, m.matrixWorld)));
+      im.receiveShadow = true; im.castShadow = false;
+      scene.add(im);
+    });
+  }
+}
+
+// ---- what breaks: every object the dozer can hit, its box, its life
+const DES = [];
+const CELL = 6, GRID = new Map();
+const gkey = (i, j) => i * 1000 + j;
+function register(obj, kind, opts = {}) {
+  obj.updateMatrixWorld(true);
+  const box = new THREE.Box3();
+  if (opts.box) box.copy(opts.box); else box.setFromObject(obj);
+  const pad = opts.pad || 0;
+  const d = { obj, kind, hp: HP[kind], hp0: HP[kind], pts: PTS[kind], alive: true,
+    x0: box.min.x - pad, x1: box.max.x + pad, z0: box.min.z - pad, z1: box.max.z + pad, top: box.max.y,
+    cx: (box.min.x + box.max.x) / 2, cz: (box.min.z + box.max.z) / 2,
+    home: { p: obj.position.clone(), q: obj.quaternion.clone(), s: obj.scale.clone() },
+    shake: 0, hitCd: 0, warnCd: 0, mat: opts.mat || null, pool: opts.pool || null, fly: null, fall: null, rubble: null,
+    hex: opts.hex || 0xbcbcbb, litRoll: rnd(), litK: rr(0.55, 1), solid: kind === "building" || kind === "house" || kind === "car" };
+  DES.push(d);
+  for (let i = Math.floor(d.x0 / CELL); i <= Math.floor(d.x1 / CELL); i++)
+    for (let j = Math.floor(d.z0 / CELL); j <= Math.floor(d.z1 / CELL); j++) {
+      const k = gkey(i, j); if (!GRID.has(k)) GRID.set(k, []); GRID.get(k).push(d);
+    }
+  return d;
+}
+const qOut = [];
+function query(x, z, rad) {
+  qOut.length = 0;
+  const seen = new Set();
+  for (let i = Math.floor((x - rad) / CELL); i <= Math.floor((x + rad) / CELL); i++)
+    for (let j = Math.floor((z - rad) / CELL); j <= Math.floor((z + rad) / CELL); j++) {
+      const l = GRID.get(gkey(i, j)); if (!l) continue;
+      for (const d of l) if (!seen.has(d)) { seen.add(d); qOut.push(d); }
+    }
+  return qOut;
+}
+
+function place(name, x, z, rot = 0, s = KS, y = -0.2) {
+  const o = kit[name].clone(true);
+  o.position.set(x, y, z); o.rotation.y = rot; o.scale.setScalar(s);
+  shadowy(o); scene.add(o);
+  return o;
+}
+// a code-made object of the library, fitted into a lot
+function placeLib(id, x, z, rot, fit, kind) {
+  const g = item(id).build(LIB);
+  const box = new THREE.Box3().setFromObject(g), size = box.getSize(new V3());
+  const s = fit / Math.max(size.x, size.z);
+  g.scale.setScalar(s); g.position.set(x, 0, z); g.rotation.y = rot;
+  shadowy(g); scene.add(g);
+  // its own copy of the painted material, so its windows light and its cracks darken alone
+  const own = new Map();
+  g.traverse((m) => {
+    if (!m.isMesh || !m.material.map) return;
+    if (!own.has(m.material)) { const c = m.material.clone(); c.emissiveMap = masks.windows; c.emissive.set(0); own.set(m.material, c); }
+    m.material = own.get(m.material);
+  });
+  shadowy(mergeLocal(g));
+  return register(g, kind, { mat: [...own.values()][0] || null, hex: 0xc9b8a8 });
+}
+const KIT_BUILDINGS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const LIB_BUILDINGS = ["building-apartment", "building-office", "building-shop", "building-mansard", "building-setback", "building-hotel", "building-school", "building-firestation"];
+const LIB_HOUSES = ["house-cottage", "house-narrow", "house-bungalow", "house-cabin", "house-townhouse", "house-farmhouse", "house-modern", "house-chalet", "house-turret"];
+const CARS = ["car_sedan", "car_taxi", "car_hatchback", "car_stationwagon", "car_police"];
+const lampPools = new Map();
+function lamp(x, z, road) {
+  const o = place("streetlight", x, z, rotFor(["W"], [road]), KS, 0);
+  o.updateMatrixWorld(true);
+  const head = o.localToWorld(new V3(-0.2, 0, 0));
+  const pl = lightPool(head.x, 0.02, head.z, 1.7, "lamp");
+  return register(o, "prop", { pool: pl, pad: 0.15 });
+}
+function prop(name, x, z, rot, kind = "prop", s = KS) { return register(place(name, x, z, rot, s, 0), kind, { pad: 0.1 }); }
+const decor = new THREE.Group();
+function tree(x, z, s, kind = "tree") {
+  const g = item(rnd() < 0.55 ? "tree-conifer" : "tree-round").build(LIB);
+  g.position.set(x, 0, z); g.scale.setScalar(s); g.rotation.y = rr(0, TAU);
+  if (!kind) { decor.add(g); return g; }
+  scene.add(shadowy(mergeLocal(g)));
+  const b = new THREE.Box3().setFromObject(g), c = b.getCenter(new V3());
+  const box = new THREE.Box3(new V3(c.x - 0.35, 0, c.z - 0.35), new V3(c.x + 0.35, b.max.y, c.z + 0.35));
+  return register(g, kind, { box });
+}
+function buildCity() {
+  for (let j = 0; j < CITY.rows; j++) for (let i = 0; i < CITY.cols; i++) {
+    const x = ctx(i), z = ctz(j);
+    if (isRoad(i, j)) {
+      const need = Object.keys(DIRS).filter((d) => isRoad(i + DIRS[d][0], j + DIRS[d][1]));
+      let name = "road_straight", canon = ["N", "S"];
+      if (need.length === 4) { name = "road_junction"; canon = ["N", "E", "S", "W"]; }
+      else if (need.length === 3) { name = "road_tsplit"; canon = ["N", "E", "S"]; }
+      else if (need.length === 2 && !(need.includes("N") && need.includes("S")) && !(need.includes("E") && need.includes("W"))) { name = "road_corner"; canon = ["E", "S"]; }
+      else if (need.length === 1) canon = need.includes("N") || need.includes("S") ? ["N", "S"] : ["E", "W"];
+      let th = rotFor(canon, need.length === 1 ? (need.includes("N") || need.includes("S") ? ["N", "S"] : ["E", "W"]) : need);
+      if (name === "road_straight" && need.some((d) => { const ni = i + DIRS[d][0], nj = j + DIRS[d][1]; return Object.keys(DIRS).filter((e) => isRoad(ni + DIRS[e][0], nj + DIRS[e][1])).length >= 3; })) name = "road_straight_crossing";
+      addTile(name, x, z, th);
+      // parked cars in the lanes, never on a junction
+      if (need.length === 2 && rnd() < 0.3) {
+        const ew = need.includes("E"), lane = rnd() < 0.5 ? 1 : -1, car = pick(CARS);
+        if (ew) prop(car, x + rr(-0.8, 0.8), z + lane * 0.9, lane > 0 ? Math.PI / 2 : -Math.PI / 2, "car");
+        else prop(car, x - lane * 0.9, z + rr(-0.8, 0.8), lane > 0 ? 0 : Math.PI, "car");
+      }
+      continue;
+    }
+    addTile("base", x, z, 0);
+    const road = ["S", "N", "E", "W"].find((d) => isRoad(i + DIRS[d][0], j + DIRS[d][1]));
+    const rot = facing(road || "S"), type = blockOf(i, j);
+    // a lamp on the kerb of every lot that touches a road
+    if (road && rnd() < 0.75) {
+      const dv = DIRS[road], off = (dv[1] ? (i % 2 ? 1 : -1) : (j % 2 ? 1 : -1)) * 1.2;
+      lamp(x + dv[0] * 1.56 + (dv[1] ? off : 0), z + dv[1] * 1.56 + (dv[0] ? off : 0), road);
+    }
+    if (type === "kit") {
+      const name = "building_" + pick(KIT_BUILDINGS) + "_withoutBase";
+      const o = place(name, x, z, rot);
+      const mat = o.getObjectByProperty("isMesh", true).material.clone();
+      mat.emissiveMap = masks.windows; mat.emissive.set(0);
+      o.traverse((m) => { if (m.isMesh) m.material = mat; });
+      register(o, "building", { mat, hex: 0xa7a3a0 });
+    } else if (type === "lib") placeLib(pick(LIB_BUILDINGS), x, z, rot, 3.5, "building");
+    else if (type === "houses") placeLib(pick(LIB_HOUSES), x, z, rot, 3.0, "house");
+    else if (type === "parking") {
+      for (let k = 0; k < 3; k++) if (rnd() < 0.8) prop(pick(CARS), x - 1.1 + k * 1.1, z + rr(-0.3, 0.3), rnd() < 0.5 ? 0 : Math.PI, "car");
+    } else if (type === "green") {
+      tree(x + rr(-0.8, 0.8), z + rr(-0.8, 0.8), KS * rr(1.1, 1.4));
+      for (let n = 0; n < 2; n++) prop("bush", x + rr(-1.4, 1.4), z + rr(-1.4, 1.4), rr(0, TAU), "prop", KS * rr(1.3, 1.8));
+      if (rnd() < 0.5) prop("bench", x + rr(-0.6, 0.6), z + 1.2, facing(road || "S"));
+    } else {   // a strip of pavement: benches, bins, bushes, hydrants, a tree
+      const k = rnd(), fx = rr(-0.6, 0.6), fz = rr(-0.6, 0.6);
+      if (k < 0.3) { prop("bench", x + fx, z + fz, facing(road || "S")); prop(pick(["trash_A", "trash_B"]), x + fx + 0.9, z + fz, rr(0, TAU)); }
+      else if (k < 0.55) for (let n = 0; n < 3; n++) prop("bush", x + rr(-1.2, 1.2), z + rr(-1.2, 1.2), rr(0, TAU), "prop", KS * rr(1.2, 1.7));
+      else if (k < 0.75) { prop("dumpster", x + fx, z + fz, facing(road || "S")); prop(pick(["box_A", "box_B"]), x + fx + 0.9, z + fz + 0.4, rr(0, TAU)); }
+      else if (k < 0.9) tree(x + fx, z + fz, KS * rr(1.0, 1.3));
+      else prop("firehydrant", x + fx, z + fz, rr(0, TAU));
+    }
+  }
+}
+function buildParkDecor() {
+  const avoidPark = (x, z, m) => nearPit(x, z, m) || nearRamp(x, z, m) || rails.some((r) => {
+    for (let i = 0; i < r.n; i += 4) if (Math.hypot(r.P[3 * i] - x, r.P[3 * i + 2] - z) < m) return true;
+    return false;
+  });
+  // trees and rocks round the plaza, inside the zone (they break) and beyond it (they stand)
+  let n = 0, tries = 0;
+  while (n < 40 && tries++ < 800) {
+    const x = rr(-WX + 0.8, WX - 0.8), z = rr(WZ0 + 0.8, -1.5);
+    const onPlaza = x > PLAZA.x0 - 0.5 && x < PLAZA.x1 + 0.5 && z > PLAZA.z0 - 0.5 && z < PLAZA.z1 + 0.5;
+    if (onPlaza || avoidPark(x, z, 2)) continue;
+    tree(x, z, KS * rr(1.0, 1.6)); n++;
+  }
+  for (let k = 0; k < 90; k++) {
+    const a = rr(0, TAU), x = clamp(Math.cos(a) * 60, -38, 38) + rr(-3, 3), z = clamp(Math.sin(a) * 60, -54, 46) + rr(-3, 3);
+    if (Math.abs(x) < WX + 2 && z > WZ0 - 2 && z < WZ1 + 2) continue;
+    if (trackDist(x, z) < TRACK_HW + 2) continue;
+    tree(x, z, KS * rr(1.2, 2.2), null);
+  }
+  for (let k = 0; k < 46; k++) {   // the edges of the zone, east and west of the city too
+    const side = rnd() < 0.5 ? -1 : 1, x = side * rr(WX + 1.5, WX + 10), z = rr(WZ0 - 8, WZ1 + 8);
+    tree(x, z, KS * rr(1.2, 2), null);
+  }
+  for (let k = 0; k < 14; k++) {   // rocks on the plaza's margins
+    const x = rr(-WX + 0.5, WX - 0.5), z = rr(WZ0 + 0.5, -1.5);
+    if (x > PLAZA.x0 && x < PLAZA.x1 && z > PLAZA.z0 && z < PLAZA.z1) continue;
+    const g = item("rock-single").build(LIB); g.position.set(x, 0, z); g.scale.setScalar(KS * rr(1, 2)); g.rotation.y = rr(0, TAU); decor.add(g);
+  }
+  scene.add(shadowy(mergeLocal(decor)));
+  // crystals: the cold light against the warm one
+  for (const k of ["A", "B"]) {
+    crystalMats[k] = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: 0xffffff, emissiveIntensity: 1, flatShading: true, roughness: 0.15, metalness: 0.1 });
+    crystalMats[k].userData.noWeather = true;
+  }
+  for (const [x, z, k] of [[-27.5, -43, "A"], [27.5, -43, "B"], [-27.5, -4, "B"], [27.5, -4, "A"], [0, -44, "A"]]) {
+    const g = item("crystal-cluster").build(LIB, { key: k, n: 7 });
+    g.position.set(x, 0, z); g.scale.setScalar(KS * 1.3); scene.add(shadowy(g, true, false));
+    const pl = lightPool(x, 0.03, z, 3, "crystal" + k);
+    const b = new THREE.Box3().setFromObject(g);
+    register(g, "crystal", { pool: pl, box: b.expandByScalar(-0.2) }).crystal = k;
+  }
+  // benches round the pools
+  for (const p of pits) prop("bench", p.ax - (p.F + p.R + 1.4) * p.uz, p.az + (p.F + p.R + 1.4) * p.ux, Math.atan2(p.ux, p.uz));
+}
+
+// =============================================================================
+// 8. THE DOZER — the hero of the library, rigged, in the Arctic direction
+// =============================================================================
+// root (position, body orientation) > lean (weight transfer) > hop (a rail hop)
+// > tumble (a trick, about the centre of mass) > offs > squash (from the ground
+// up) > the model, scaled. The body is a frame f (nose) / n (roof) on the ground,
+// a quaternion in the air, the rail's own frame on a rail.
+const root = new THREE.Group(), lean = new THREE.Group(), hop = new THREE.Group(), tumble = new THREE.Group(), offs = new THREE.Group(), squash = new THREE.Group();
+root.add(lean); lean.add(hop); hop.add(tumble); tumble.add(offs); offs.add(squash); scene.add(root);
+tumble.rotation.order = "YZX";
+const dmats = new Map();
+const lampMat = new THREE.MeshStandardMaterial({ color: "#fff6e6", emissive: "#ffe2a8", emissiveIntensity: 0.4, roughness: 0.3 });
+const beaconMat = new THREE.MeshStandardMaterial({ color: "#ff3a2a", emissive: "#ff2a1a", emissiveIntensity: 0, flatShading: true });
+for (const m of [lampMat, beaconMat]) m.userData.noWeather = true;
+const DLIB = {
+  mesh(geo, hex, opt = {}) {
+    let m;
+    if (hex === 0xf7f8f9) m = lampMat;
+    else {
+      const key = hex + "|" + (opt.roughness ?? "") + "|" + (opt.metalness ?? "");
+      m = dmats.get(key);
+      if (!m) {
+        const glass = hex === 0x37475a;
+        m = new THREE.MeshStandardMaterial({ color: ARCTIC[hex] || hex, roughness: glass ? 0.2 : opt.roughness ?? 0.7, metalness: glass ? 0.15 : opt.metalness ?? 0, flatShading: true });
+        m.userData.noWeather = true; dmats.set(key, m);
+      }
+    }
+    const mesh = new THREE.Mesh(geo, m); mesh.castShadow = mesh.receiveShadow = true; return mesh;
+  },
+  glow: () => lampMat, rnd: Math.random
+};
+let model = null, rig = null, comY = 0.5, exhaustPt = null;
+const dims = { len: 2.2, wid: 1, h: 1.1 };
+const armMats = [];
+function buildDozer() {
+  model = item("vehicle-dozer-hero").build(DLIB, { toy: 0.5, detail: 2, rig: true });
+  rig = model.userData.rig;
+  model.scale.setScalar(DS);
+  squash.add(model);
+  const box = new THREE.Box3().setFromObject(model);
+  model.position.x = -(box.min.x + box.max.x) / 2;
+  const size = box.getSize(new V3());
+  dims.len = size.x; dims.wid = size.z; dims.h = size.y;
+  comY = dims.h * 0.38;
+  tumble.position.y = comY; offs.position.y = -comY;
+  exhaustPt = model.userData.exhaust ? model.userData.exhaust.clone() : null;
+  model.traverse((m) => { if (m.isMesh && m.userData.part === "beacon") m.material = beaconMat; });
+  // the arm and the blade wear their own copies: they glow alone in the fury
+  const copies = new Map();
+  rig.arm.traverse((m) => {
+    if (!m.isMesh || !m.material.emissive || m.material === lampMat) return;
+    if (!copies.has(m.material)) { const c = m.material.clone(); copies.set(m.material, c); armMats.push(c); }
+    m.material = copies.get(m.material);
+  });
+}
+// headlights: a real spot ahead and a pool of its light, on at night
+const headSpot = new THREE.SpotLight(0xffffff, 0, 16, 0.55, 0.7, 2);
+const headPool = lightPool(3.2, 0.03, 0, 1.4, "head", root, 1.6);
+
+// =============================================================================
+// 9. THE JUICE — particles, sprites, rings, ghosts, the trail (juice-3d), the
+//    impossible blade (dozer-anim)
+// =============================================================================
+const dummy = new THREE.Object3D();
+class Pool {
+  constructor(geo, mat, max, opts = {}) {
+    this.mesh = new THREE.InstancedMesh(geo, mat, max);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.frustumCulled = false; this.mesh.castShadow = !!opts.shadow;
+    this.mesh.setColorAt(0, new THREE.Color());
+    this.additive = !!opts.additive; this.max = max; this.next = 0;
+    this.p = Array.from({ length: max }, () => ({ alive: false, pos: new V3(), vel: new V3(), dir: null, col: new THREE.Color(), rot: new THREE.Euler() }));
+    this.mesh.count = 0; scene.add(this.mesh);
+  }
+  spawn(o) {
+    const q = this.p[this.next]; this.next = (this.next + 1) % this.max;
+    q.alive = true; q.age = 0; q.life = o.life || 1; q.s0 = o.s0 ?? 0.1; q.s1 = o.s1 ?? q.s0;
+    q.grav = o.grav || 0; q.drag = o.drag || 0; q.bounce = o.bounce || 0; q.len = o.len || 0; q.dir = o.dir || null;
+    q.spin = o.spin || 0; q.shrink = o.shrink !== false; q.aspect = o.aspect || [1, 1, 1]; q.floor = o.floor ?? -99;
+    q.pos.copy(o.pos); q.vel.copy(o.vel || new V3()); q.col.set(o.col ?? 0xffffff);
+    q.rot.set(mr(0, TAU), mr(0, TAU), mr(0, TAU));
+    return q;
+  }
+  update(dt) {
+    const X = new V3(1, 0, 0), d = new V3(), c = new THREE.Color();
+    let n = 0;
+    for (const q of this.p) {
+      if (!q.alive) continue;
+      q.age += dt;
+      if (q.age >= q.life) { q.alive = false; continue; }
+      q.vel.y -= q.grav * dt;
+      if (q.drag) q.vel.multiplyScalar(Math.exp(-q.drag * dt));
+      q.pos.addScaledVector(q.vel, dt);
+      const t = q.age / q.life;
+      let s = q.s0 + (q.s1 - q.s0) * (1 - (1 - t) * (1 - t));
+      if (q.shrink) s *= 1 - t * t;
+      if (q.bounce && q.pos.y < q.floor + s * 0.5) { q.pos.y = q.floor + s * 0.5; q.vel.y = Math.abs(q.vel.y) * q.bounce; q.vel.x *= 0.7; q.vel.z *= 0.7; q.spin *= 0.7; }
+      dummy.position.copy(q.pos);
+      if (q.len) {
+        d.copy(q.dir || q.vel); const l = d.length();
+        dummy.quaternion.setFromUnitVectors(X, l > 1e-4 ? d.multiplyScalar(1 / l) : X);
+        dummy.scale.set(q.len * (q.dir ? 1 - t : Math.min(1, l * 0.04 + 0.2)), s, s);
+      } else {
+        q.rot.x += q.spin * dt; q.rot.y += q.spin * 0.7 * dt;
+        dummy.rotation.copy(q.rot);
+        dummy.scale.set(s * q.aspect[0], s * q.aspect[1], s * q.aspect[2]);
+      }
+      dummy.updateMatrix();
+      this.mesh.setMatrixAt(n, dummy.matrix);
+      this.mesh.setColorAt(n, this.additive ? c.copy(q.col).multiplyScalar(1 - t) : q.col);
+      n++;
+    }
+    this.mesh.count = n;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  }
+  clear() { for (const q of this.p) q.alive = false; this.mesh.count = 0; }
+}
+const puffGeo = new THREE.IcosahedronGeometry(1, 0);
+const noW = (m) => { m.userData.noWeather = true; return m; };
+const P_DUST = new Pool(puffGeo, noW(new THREE.MeshStandardMaterial({ flatShading: true, roughness: 1 })), 500);
+const P_SMOKE = new Pool(puffGeo, noW(new THREE.MeshStandardMaterial({ flatShading: true, roughness: 1 })), 200);
+const P_SPARK = new Pool(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), 300, { additive: true });
+const P_DEBRIS = new Pool(bevelBox(1, 0.8, 0.9, 0.1), noW(new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.8 })), 400, { shadow: true });
+const POOLS = [P_DUST, P_SMOKE, P_SPARK, P_DEBRIS];
+
+function canvasTex(w, h, draw) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const powTex = {};
+function powTexture(word, fill = "#ffd23a", core = "#ff6a3a") {
+  const key = word + fill;
+  return powTex[key] || (powTex[key] = canvasTex(256, 256, (g) => {
+    const star = (r0, r1, n, rot) => { g.beginPath(); for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n, r = i % 2 ? r0 : r1 * (0.85 + 0.15 * Math.sin(i * 7.3)); g.lineTo(128 + Math.cos(a) * r, 128 + Math.sin(a) * r); } g.closePath(); };
+    star(62, 122, 11, 0.2); g.fillStyle = "#1c1b26"; g.fill();
+    star(52, 108, 11, 0.2); g.fillStyle = fill; g.fill();
+    star(36, 74, 11, 0.45); g.fillStyle = core; g.fill();
+    g.font = "900 50px -apple-system,Segoe UI,Roboto,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.lineWidth = 10; g.strokeStyle = "#1c1b26"; g.strokeText(word, 128, 132);
+    g.fillStyle = "#ffffff"; g.fillText(word, 128, 132);
+  }));
+}
+class SpritePool {
+  constructor(max) {
+    this.s = Array.from({ length: max }, () => {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false, depthTest: false }));
+      sp.visible = false; sp.renderOrder = 20; scene.add(sp); return { sp, alive: false, pos: new V3() };
+    });
+    this.next = 0;
+  }
+  spawn(o) {
+    const q = this.s[this.next]; this.next = (this.next + 1) % this.s.length;
+    Object.assign(q, { alive: true, age: 0, life: o.life, s0: o.s0, rot: o.rot || 0 });
+    q.pos.copy(o.pos); q.sp.material.map = o.map; q.sp.material.needsUpdate = true;
+    q.sp.visible = true; return q;
+  }
+  update(dt) {
+    for (const q of this.s) {
+      if (!q.alive) continue;
+      q.age += dt;
+      if (q.age >= q.life) { q.alive = false; q.sp.visible = false; continue; }
+      const t = q.age / q.life, a = Math.min(1, q.age / 0.12);
+      const s = q.s0 * (a < 1 ? a * 1.3 : 1.3 - 0.3 * Math.min(1, (q.age - 0.12) / 0.1));
+      q.sp.position.copy(q.pos); q.sp.scale.set(s, s, 1);
+      q.sp.material.rotation = q.rot; q.sp.material.opacity = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+    }
+  }
+}
+const S_POW = new SpritePool(6);
+function pow(word, at, scale, fill, core) { S_POW.spawn({ pos: at, life: 0.7, s0: 1.15 * scale, rot: mr(-0.25, 0.25), map: powTexture(word, fill, core) }); }
+
+const RINGS = Array.from({ length: 6 }, () => {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.82, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
+  m.visible = false; m.renderOrder = 2; scene.add(m); return { m, age: 0, life: 0.5, r: 1, alive: false };
+});
+let ringNext = 0;
+function ring(pos, r, life = 0.5, color = 0xffffff) {
+  const q = RINGS[ringNext]; ringNext = (ringNext + 1) % RINGS.length;
+  Object.assign(q, { age: 0, life, r, alive: true }); q.m.position.set(pos.x, pos.y + 0.04, pos.z); q.m.material.color.set(color); q.m.visible = true;
+}
+
+// afterimages: the dozer's shape, flat colour, on its past positions (dash and fury)
+const GHOSTS = 5, HIST = 26, GHOST_STEP = 3;
+const hist = Array.from({ length: HIST }, () => new THREE.Matrix4());
+let histHead = 0;
+const ghosts = [];
+function buildGhosts() {
+  const tmp = model.clone(true), parts = [];
+  tmp.position.set(0, 0, 0); tmp.scale.setScalar(1); tmp.updateMatrixWorld(true);
+  tmp.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== "position") g.deleteAttribute(k);
+    g.morphAttributes = {};
+    parts.push(g.applyMatrix4(o.matrixWorld));
+  });
+  const geo = mergeGeometries(parts);
+  for (let i = 0; i < GHOSTS; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: 0x9fe6ff, transparent: true, opacity: 0, depthWrite: false });
+    const w = new THREE.Mesh(geo, m); w.matrixAutoUpdate = false; w.visible = false; w.userData.mat = m;
+    scene.add(w); ghosts.push(w);
+  }
+}
+// the light trail: two ribbons from the rear corners
+const TN = 22;
+const trailPos = new Float32Array(TN * 6), trailCol = new Float32Array(TN * 6);
+const trailGeo = new THREE.BufferGeometry();
+trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3).setUsage(THREE.DynamicDrawUsage));
+trailGeo.setAttribute("color", new THREE.BufferAttribute(trailCol, 3).setUsage(THREE.DynamicDrawUsage));
+{ const idx = []; for (let i = 0; i < TN - 1; i++) { const a = 2 * i; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trailGeo.setIndex(idx); }
+const trail = new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+trail.frustumCulled = false; scene.add(trail);
+
+// ---- the impossible blade: electric arcs from the push arms to the blade (dozer-anim)
+const rT = new V3(), rV = new V3(), rSd = new V3();
+class Ribbon {
+  constructor(n, opacity) {
+    this.n = n;
+    const g = new THREE.BufferGeometry(), idx = [];
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array((n + 1) * 6), 3));
+    g.setAttribute("color", new THREE.BufferAttribute(new Float32Array((n + 1) * 6), 3));
+    for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    g.setIndex(idx);
+    this.mat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    this.mesh = new THREE.Mesh(g, this.mat); this.mesh.frustumCulled = false; this.mesh.renderOrder = 5; this.mesh.visible = false;
+    scene.add(this.mesh);
+  }
+  draw(pts, width, bright) {
+    const pos = this.mesh.geometry.attributes.position, colA = this.mesh.geometry.attributes.color, n = this.n;
+    for (let i = 0; i <= n; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)];
+      rT.subVectors(b, a); rV.subVectors(camera.position, pts[i]); rSd.crossVectors(rT, rV).normalize();
+      const w = width * (0.35 + 0.65 * Math.sin(Math.PI * i / n)) / 2, c = bright;
+      pos.setXYZ(i * 2, pts[i].x + rSd.x * w, pts[i].y + rSd.y * w, pts[i].z + rSd.z * w);
+      pos.setXYZ(i * 2 + 1, pts[i].x - rSd.x * w, pts[i].y - rSd.y * w, pts[i].z - rSd.z * w);
+      colA.setXYZ(i * 2, c, c, c); colA.setXYZ(i * 2 + 1, c, c, c);
+    }
+    pos.needsUpdate = colA.needsUpdate = true;
+  }
+}
+const ARC_SEG = 14, ARCS = 8, arcs = [];
+for (let i = 0; i < ARCS; i++) arcs.push({ glow: new Ribbon(ARC_SEG, 0.35), core: new Ribbon(ARC_SEG, 1),
+  pts: Array.from({ length: ARC_SEG + 1 }, () => new V3()), off: Array.from({ length: ARC_SEG + 1 }, () => new V3()), v: 0, u: 0, next: 0 });
+const bladeLight = new THREE.PointLight("#5fd8ff", 0, 5, 2);
+scene.add(bladeLight);
+const fxA = new V3(), fxB = new V3(), fxD = new V3(), fxM = new V3();
+let magic = 0;
+function arcEnds(a, i, A, B) {
+  if (i < 4) { const s = i < 2 ? -1 : 1; rig.armTip(s, A); rig.bladePoint(s * (0.15 + 0.5 * Math.abs(a.u)), a.v * 0.8, B); }
+  else { rig.bladePoint(a.u, a.v, A); rig.bladePoint(-a.u * 0.6, -a.v * 0.7, B); }
+}
+const offTurn = (a) => { const r = ((a % TAU) + TAU) % TAU; return Math.min(r, TAU - r); };
+
+// =============================================================================
+// 10. THE GAME STATE
+// =============================================================================
+const D = {
+  x: START.x, y: 0, z: START.z, vx: 0, vy: 0, vz: 0, f: new V3(Math.cos(START.yaw), 0, Math.sin(START.yaw)), n: new V3(0, 1, 0),
+  q: new THREE.Quaternion(), qVis: new THREE.Quaternion(), a: START.yaw, ground: true, pit: null, prevY: 0,
+  crouch: 0, dashT: 0, dashCd: 0, stun: 0, boost: 0, drift: false, driftT: 0, driftPts: 0, carvePts: 0, slideT: 0,
+  throttle: 0, steer: 0, vf: 0, acc: 0, vPrev: 0, yawRate: 0, tL: 0, tR: 0, sL: 0, sR: 0, rail: null, railF: new V3(1, 0, 0), railU: new V3(0, 1, 0),
+  air: { t: 0, cur: null, queued: false, lastEnd: -9, n: 0, kind: "", assist: null, rLock: 0, turn: 0, turnRate: 0, lastName: "", dashes: 0, heading: null, taps: 0, lastTap: -9 },
+  resid: new THREE.Euler(0, 0, 0, "YZX"), landT: 9, pitch: 0, roll: 0
+};
+const GS = { score: 0, gauge: 0, fury: false, furyT: 0, destroyed: 0, total: 0, noticeCd: 0,
+  phase: "count", countT: COUNT_T, raceT: 0, saidFull: false, mult: 1, bonus: 0, sealed: true };   // phase: count, race, zone
+const E = { sq: 0, st: 0, jp: 0, jv: 0, trauma: 0, fovKick: 0, flash: 0, vig: 0, ghost: 0, trail: 0, slowK: 1, slowT: 0, slowTo: 1, hitStop: 0,
+  dustAcc: 0, smokeAcc: 0 };
+const IN = { gas: 0, brake: 0, left: 0, right: 0, touch: false, touchSteer: 0 };
+let RT = 0;
+
+function addGauge(pts) {
+  if (GS.fury) return;
+  GS.gauge = Math.min(1, GS.gauge + pts * GAUGE_K);
+  if (GS.gauge < 1 || GS.saidFull) return;
+  GS.saidFull = true; callout("Super ready", "dash on the ground to unleash it", "#ffd23a", false);   // the player fires it, with a dash
+}
+// the race's start, its end, and the way straight to the zone
+function stepPhase(dt) {
+  if (GS.phase === "count") {
+    const before = GS.countT; GS.countT -= dt;
+    for (const [at, word] of [[COUNT_T, "3"], [COUNT_T * 2 / 3, "2"], [COUNT_T / 3, "1"]]) if (before >= at - 1e-6 && GS.countT < at - 1e-6) callout(word, null, "#ffffff", true);
+    if (GS.countT <= 0) { GS.phase = "race"; GS.raceT = 0; callout("Go!", "to the zone", "#ffd23a", true); E.fovKick += 4; }
+    return;
+  }
+  if (GS.phase === "race") {
+    GS.raceT += dt;
+    if (D.z < WZ1 - 0.5 && Math.abs(D.x) < WX) enterZone();
+  }
+}
+function enterZone() {   // over the finish line: the zone, and the fury for the arrival
+  GS.phase = "zone"; GS.sealed = false;
+  callout("Freestyle zone", "race " + GS.raceT.toFixed(1) + " s", "#9fe6ff", true);
+  E.flash = Math.max(E.flash, 0.25);
+  if (!GS.fury) { GS.gauge = 1; GS.saidFull = false; startFury(); }
+}
+function placeAt(p, phase) {
+  Object.assign(D, { x: p.x, y: 0, z: p.z, vx: 0, vy: 0, vz: 0, ground: true, rail: null, crouch: 0, stun: 0, dashT: 0, a: p.yaw, pit: null });
+  D.f.set(Math.cos(p.yaw), 0, Math.sin(p.yaw)); D.n.set(0, 1, 0); bodyQuat(D.f, D.n, D.qVis); D.q.copy(D.qVis);
+  Object.assign(D.air, { cur: null, assist: null, queued: false, dashes: 0, heading: null }); D.resid.set(0, 0, 0);
+  cam.yaw = p.yaw; cam.ready = false; cam.k = phase === "zone" ? 1 : 0; cam.top.ready = false;
+  GS.phase = phase; GS.sealed = true; GS.countT = COUNT_T; GS.raceT = 0; TR.hint = 0;
+}
+function skipToZone() { if (!ready) return; placeAt(ZONE_IN, "zone"); callout("Freestyle zone", null, "#9fe6ff", true); }
+function startFury() {
+  GS.fury = true; GS.furyT = FURY_TIME;
+  callout("Fury!", "everything breaks", P.fury, true);
+  E.flash = 0.6; E.trauma = Math.min(1, E.trauma + 0.5); E.fovKick += 6; slowmo(0.35, 0.25);
+  ring(root.position, 6, 0.6, 0xffb02a);
+  sparks(root.position.clone().setY(D.y + 1), 50, 14, 0xffd34d);
+}
+function endFury() {
+  GS.fury = false; GS.furyT = 0; GS.gauge = 0;
+  callout("Fury over", "charge the gauge again", "#cfe6ff", false);
+}
+function addScore(pts) { const v = Math.round(pts * GS.mult); GS.score += v; return v; }   // the race's multiplier, on every point
+function trick(name, pts, color, big) {
+  pts = Math.round(pts);
+  const got = addScore(pts); addGauge(pts);
+  callout(name, "+" + got, color || "#ffffff", big);
+}
+function slowmo(k, t) { E.slowTo = k; E.slowT = t; }
+
+// =============================================================================
+// 11. INPUT — one tap, two taps, a key for the dash
+// =============================================================================
+function press() {
+  if (!ready || GS.phase === "count") return;
+  if (D.rail) { railTrick(); return; }
+  if (D.ground) {
+    if (D.crouch > 0) { D.crouch = 0; groundDash(); return; }    // the second tap of a double tap
+    if (D.stun > 0) return;
+    D.crouch = CROUCH;
+    return;
+  }
+  const A = D.air;
+  if (A.taps === 1 && RT - A.lastTap < DTAP) { A.taps = 0; airDash(); return; }
+  A.taps = 1; A.lastTap = RT;
+  if (D.stun <= 0) pressAir();
+}
+function dashKey() { if (!ready || GS.phase === "count") return; if (D.rail) return; if (D.ground) { D.crouch = 0; groundDash(); } else airDash(); }
+function groundDash() {
+  if (D.dashCd > 0 || D.stun > 0) return;
+  if (!GS.fury && GS.gauge >= 1) { GS.saidFull = false; startFury(); }   // a full gauge is unleashed by a dash
+  D.dashT = DASH_T; D.dashCd = DASH_T + DASH_CD;
+  E.st = 0.35; E.fovKick += 7; E.trauma = Math.min(1, E.trauma + 0.2);
+  for (let i = 0; i < 18; i++) dustAt(i % 2 ? 1 : -1, -0.45, 1.4, 1.4);
+  callout("Dash", null, "#9fe6ff", false);
+}
+function airDash() {
+  const A = D.air;
+  if (A.dashes >= (GS.fury ? 3 : 1) || D.stun > 0) return;
+  A.dashes++;
+  // over a pool: out by the nearest lip, high enough to clear it; elsewhere: where the nose points
+  let dx = Math.cos(D.a), dz = Math.sin(D.a), vh = AIR_DASH_V, vy = AIR_DASH_UP;
+  const hv = Math.hypot(D.vx, D.vz);
+  if (hv > 2) { dx = D.vx / hv; dz = D.vz / hv; }
+  const pit = A.assist || pitAt(D.x, D.z);
+  if (pit) {
+    pitR(pit, D.x, D.z);
+    if (PL.r > 0.4) { dx = PL.ex; dz = PL.ez; }
+    vh = 9; vy = Math.sqrt(2 * G * (Math.max(0, pit.yc - D.y) + 1.4));
+  }
+  D.vx = dx * vh; D.vz = dz * vh; D.vy = Math.max(D.vy, vy);
+  A.assist = null; A.heading = Math.atan2(dz, dx);
+  if (A.cur) { cancelTrick(); }
+  E.st = 0.35; E.fovKick += 8; E.trauma = Math.min(1, E.trauma + 0.25);
+  ring(root.position, 2.5, 0.35, 0x9fe6ff);
+  for (let i = 0; i < 14; i++) P_SMOKE.spawn({ pos: root.position.clone().add(new V3(mr(-0.5, 0.5), comY, mr(-0.5, 0.5))), vel: new V3(-dx * mr(2, 5), mr(-1, 1), -dz * mr(2, 5)),
+    life: mr(0.4, 0.7), s0: 0.15, s1: 0.5, drag: 3, col: 0xeef6ff });
+  callout("Air dash", null, "#9fe6ff", false);
+}
+const KEYMAP = { KeyW: "gas", ArrowUp: "gas", KeyS: "brake", ArrowDown: "brake", KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right" };
+addEventListener("keydown", (e) => {
+  if (KEYMAP[e.code]) { IN[KEYMAP[e.code]] = 1; e.preventDefault(); return; }
+  if (e.repeat) return;
+  if (e.code === "Space") { press(); e.preventDefault(); }
+  else if (e.code === "ShiftLeft" || e.code === "ShiftRight") dashKey();
+  else if (e.code === "KeyR") resetCity();
+  else if (e.code === "KeyN") skipToZone();
+  else if (e.code === "KeyC") setZoneCam(zcIdx + 1);
+  else if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3") setAmb(+e.code.slice(5) - 1);
+});
+addEventListener("keyup", (e) => { if (KEYMAP[e.code]) IN[KEYMAP[e.code]] = 0; });
+addEventListener("pointerup", () => { if (document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur(); });
+{
+  let id = -1, sx = 0, sy = 0, t0 = 0, moved = false;
+  canvas.addEventListener("pointerdown", (e) => { id = e.pointerId; sx = e.clientX; sy = e.clientY; t0 = performance.now(); moved = false; IN.touch = e.pointerType !== "mouse"; canvas.setPointerCapture(id); });
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== id) return;
+    const dx = e.clientX - sx; if (Math.abs(dx) > 10 || Math.abs(e.clientY - sy) > 10) moved = true;
+    IN.touchSteer = clamp(dx / 60, -1, 1);
+  });
+  const up = (e) => {
+    if (e.pointerId !== id) return;
+    if (!moved && performance.now() - t0 < 250) press();
+    id = -1; IN.touchSteer = 0; IN.touch = false;
+  };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", up);
+}
+const steerIn = () => clamp(IN.right - IN.left + IN.touchSteer, -1, 1);
+const gasIn = () => GS.phase === "count" ? 0 : IN.touch || IN.gas ? 1 : 0;
+
+// =============================================================================
+// 12. THE PHYSICS — on a surface, in the air, on a rail (the prototype's model)
+// =============================================================================
+const tq = new THREE.Quaternion(), qS = new THREE.Quaternion(), bF = new V3(), uT = new V3(), fT = new V3(), mB = new THREE.Matrix4();
+function bodyQuat(f, n, out) {
+  rT.crossVectors(f, n).normalize(); rV.crossVectors(rT, f).normalize();
+  mB.makeBasis(f, rV, rT); return out.setFromRotationMatrix(mB);
+}
+function takeoff(kind, pit, ex, ez) {
+  const A = D.air;
+  if (D.carvePts >= 20) trick("Carve", D.carvePts, "#ffb35a");
+  D.carvePts = 0; endDrift();
+  if (D.crouch > 0) { D.vx += D.n.x * JUMP_V * 0.8; D.vy += D.n.y * JUMP_V * 0.8; D.vz += D.n.z * JUMP_V * 0.8; }   // the late ollie
+  D.crouch = 0;
+  Object.assign(A, { t: 0, cur: null, queued: false, lastEnd: -9, n: 0, kind, assist: null, turn: 0, turnRate: 0, dashes: 0, heading: null, taps: 0, lastTap: -9 });
+  D.ground = false; D.drift = false;
+  bodyQuat(D.f, D.n, D.q);
+  if (kind === "pit" && pit) {    // straight up the wall: it comes back in, turned round
+    const vr = D.vx * ex + D.vz * ez, vh2 = D.vx * D.vx + D.vz * D.vz, vt = Math.sqrt(Math.max(0, vh2 - vr * vr));
+    if (D.n.y < 0.35 && D.vy > 3 && D.vy > PIT_ASSIST * vt) {
+      A.assist = pit; A.rLock = pit.F + pit.R - 0.06;
+      A.turnRate = Math.PI / Math.max(0.3, 0.6 * 2 * D.vy / G);
+    } else { D.vx += ex * PIT_EXIT_PUSH; D.vz += ez * PIT_EXIT_PUSH; }
+  }
+  E.sq = -0.22;
+  if (kind === "ollie" || kind === "pit") for (let i = 0; i < 10; i++) dustAt(i % 2 ? 1 : -1, -0.4, 1.6);
+}
+function predictAir() {
+  const A = D.air, h = A.assist ? A.assist.yc - 0.4 : Math.max(groundY(D.x, D.z), groundY(D.x + D.vx * 0.4, D.z + D.vz * 0.4));
+  const dy = D.y - h;
+  return (D.vy + Math.sqrt(Math.max(0, D.vy * D.vy + 2 * G * dy))) / G;
+}
+function startTrick() {
+  const A = D.air, rem = predictAir(), fits = [];
+  for (let i = 1; i < TRICKS.length; i++) if (TRICKS[i].dur + TRICK_MARGIN <= rem && TRICKS[i].name !== A.lastName) fits.push(TRICKS[i]);
+  fits.sort((a, b) => b.dur - a.dur);
+  const def = fits.length ? fits[Math.floor(Math.random() * Math.min(3, fits.length))] : TRICKS[0];
+  A.cur = { def, t: 0, k: A.n }; A.lastName = def.name;
+}
+function finishTrick(mult, label) {
+  const A = D.air, c = A.cur;
+  const pts = c.def.pts * (1 + CHAIN_BONUS * c.k) * mult;
+  trick((label ? label + " " : "") + c.def.name.toLowerCase().replace(/^./, (s) => label ? s : s.toUpperCase()), pts, mult < 1 ? "#ffcf7a" : c.k > 0 ? "#7af2ff" : "#c9f27a", c.def.dur >= 1);
+  A.n++; A.lastEnd = A.t; A.cur = null;
+}
+function cancelTrick() {   // an air dash cuts the trick short: no points, the body eases back
+  trickEuler(D.air.cur, D.resid); D.resid.x = wrapA(D.resid.x); D.resid.y = wrapA(D.resid.y); D.resid.z = wrapA(D.resid.z);
+  D.air.cur = null; D.air.queued = false;
+}
+function pressAir() { const A = D.air; if (A.cur) A.queued = true; else startTrick(); }
+function landVerdict() {
+  const A = D.air; let ok = true;
+  if (A.cur) {
+    if (A.cur.t >= SKETCHY_AT) { trickEuler(A.cur, D.resid); D.resid.x = wrapA(D.resid.x); D.resid.y = wrapA(D.resid.y); D.resid.z = wrapA(D.resid.z); finishTrick(0.5, "Sketchy"); }
+    else { bail(); ok = false; }
+  } else if (A.n > 0 && A.t - A.lastEnd <= PERFECT_WINDOW) {
+    trick("Perfect landing", PERFECT_PTS, "#ffd34d", true);
+    D.boost = 1.2;
+    ring(root.position, 5, 0.5, 0xffd34d);
+    sparks(root.position.clone().setY(D.y + 0.4), 30, 10, 0xffd34d);
+    slowmo(0.35, 0.16); E.fovKick += 5; E.trauma = Math.min(1, E.trauma + 0.25);
+  }
+  if (ok) {
+    if (A.t > 0.6) trick(A.t > 1.3 ? "Big air" : "Air", AIR_RATE * A.t, "#e8f7ff");
+    else if (A.n === 0 && A.t > 0.3) trick("Ollie", 15, "#e8f7ff");
+  }
+  A.cur = null; A.queued = false; A.assist = null;
+  return ok;
+}
+function bail() {
+  const c = D.air.cur;
+  trickEuler(c, D.resid); D.resid.x = wrapA(D.resid.x); D.resid.y = wrapA(D.resid.y); D.resid.z = wrapA(D.resid.z);
+  D.stun = BAIL_STUN; GS.gauge = Math.max(0, GS.gauge - 0.08);
+  callout("Bail", "the trick was not over", "#ff6a5a", true);
+  E.trauma = Math.min(1, E.trauma + 0.45); E.jv += 5;
+}
+function stepAir(dt) {
+  const A = D.air;
+  A.t += dt;
+  if (A.cur) {
+    A.cur.t += dt / A.cur.def.dur;
+    if (A.cur.t >= 1) { finishTrick(1); if (A.queued) { A.queued = false; startTrick(); } }
+  }
+  const st = steerIn();
+  if (A.assist) {          // a pit air turns round to come back down the wall nose first
+    if (A.turn < Math.PI) { const d = Math.min(A.turnRate * dt, Math.PI - A.turn); A.turn += d; D.q.multiply(qS.setFromAxisAngle(Yax, d)); }
+  } else {
+    // air control: A / D turn the nose and the flight together
+    if (st && D.stun <= 0) {
+      const a = -st * AIR_TURN * dt, c = Math.cos(a), s = Math.sin(a), vx = D.vx;
+      D.vx = vx * c + D.vz * s; D.vz = -vx * s + D.vz * c;
+      if (A.heading != null) A.heading -= a;
+      D.q.premultiply(qS.setFromAxisAngle(Yax, a));
+    }
+    // level out along the flight path, the nose kept (or turned to a dash)
+    bF.set(1, 0, 0).applyQuaternion(D.q);
+    let hx = bF.x, hz = bF.z, hl = Math.hypot(hx, hz);
+    if (A.heading != null) { hx = Math.cos(A.heading); hz = Math.sin(A.heading); hl = 1; }
+    else if (hl < 0.2) { hx = D.vx; hz = D.vz; hl = Math.hypot(hx, hz) || 1; }
+    hx /= hl; hz /= hl;
+    const vh = Math.hypot(D.vx, D.vz), pa = Math.atan2(D.vy, Math.max(4, vh)) * 0.5;
+    fT.set(hx * Math.cos(pa), Math.sin(pa), hz * Math.cos(pa)); uT.set(-hx * Math.sin(pa), Math.cos(pa), -hz * Math.sin(pa));
+    bodyQuat(fT, uT, tq); D.q.slerp(tq, 1 - Math.exp(-(A.heading != null ? 8 : 2.5) * dt));
+  }
+  D.vy -= G * dt;
+  const px = D.x, pz = D.z;
+  D.x += D.vx * dt; D.y += D.vy * dt; D.z += D.vz * dt;
+  if (A.assist && D.y > A.assist.yc - 0.9) {   // held over the lip, whatever the speed along it
+    const p = A.assist; pitR(p, D.x, D.z);
+    const ax = D.x - PL.ex * PL.r, az = D.z - PL.ez * PL.r;
+    D.x = ax + PL.ex * A.rLock; D.z = az + PL.ez * A.rLock;
+    const vr = D.vx * PL.ex + D.vz * PL.ez; D.vx -= vr * PL.ex; D.vz -= vr * PL.ez;
+  }
+  bF.set(1, 0, 0).applyQuaternion(D.q); uT.set(0, 1, 0).applyQuaternion(D.q);
+  if (uT.y > 0.5 && bF.x * bF.x + bF.z * bF.z > 0.09) D.a = Math.atan2(bF.z, bF.x);
+  if (tryCatchRail()) return;
+  const s = surf(D.x, D.y, D.z);
+  if (s.blocked) { D.x = px; D.z = pz; D.vx *= -0.2; D.vz *= -0.2; return; }
+  if (s.d <= 0) touchdown(s);
+}
+function touchdown(s) {
+  const nx = s.nx, ny = s.ny, nz = s.nz, pit = s.pit, d = s.d, h = s.h;
+  const vn = D.vx * nx + D.vy * ny + D.vz * nz, imp = -vn;
+  const fromPit = D.air.kind === "pit" || D.air.kind === "fall", airT = D.air.t;
+  D.vx -= vn * nx; D.vy -= vn * ny; D.vz -= vn * nz;
+  D.vx *= 0.96; D.vy *= 0.96; D.vz *= 0.96;
+  D.n.set(nx, ny, nz);
+  bF.set(1, 0, 0).applyQuaternion(D.q);
+  const bn = bF.dot(D.n); bF.addScaledVector(D.n, -bn);
+  if (bF.lengthSq() < 0.04) { bF.set(D.vx, D.vy, D.vz); bF.addScaledVector(D.n, -bF.dot(D.n)); }
+  if (bF.lengthSq() < 1e-4) bF.set(Math.cos(D.a), 0, Math.sin(D.a));
+  D.f.copy(bF.normalize());
+  const clean = landVerdict();
+  if (pit) { D.x -= nx * d; D.y -= ny * d; D.z -= nz * d; } else D.y = h;
+  D.ground = true; D.pit = pit; D.landT = 0;
+  bodyQuat(D.f, D.n, D.qVis);
+  // the landing: squash, jelly, shake, dust, a ring, and for a hard one sparks and a hit-stop
+  const k = clamp(imp / JUMP_V, 0, 1.6);
+  E.sq = 0.3 * k; E.jv += 4 * k; E.trauma = Math.min(1, E.trauma + 0.4 * k); E.fovKick -= 2.5 * k;
+  if (k > 0.9) E.hitStop = 0.04;
+  if (k > 0.3) {
+    ring(root.position, dims.len * 1.3, 0.45);
+    for (let i = 0; i < 16; i++) {
+      const a = mr(0, TAU), sp = mr(3, 6) * k;
+      P_DUST.spawn({ pos: new V3(D.x + Math.cos(a) * dims.len * 0.45, D.y + 0.1, D.z + Math.sin(a) * dims.len * 0.45), vel: new V3(Math.cos(a) * sp, mr(0.3, 1.2), Math.sin(a) * sp),
+        life: mr(0.35, 0.55), s0: dims.len * 0.04, s1: dims.len * 0.1, drag: 3, col: new THREE.Color(P.dust).offsetHSL(0, 0, mr(-0.05, 0.03)) });
+    }
+  }
+  if (k > 0.8) sparks(new V3(D.x, D.y + 0.1, D.z), 16, 7, 0xffc94d);
+  // landing on a roof in the fury: it comes down
+  if (GS.fury) slamCrush();
+  const sp = Math.hypot(D.vx, D.vy, D.vz);
+  if (clean && sp > 4) {   // landed turned: backwards reverts, sideways slides
+    const c = (D.f.x * D.vx + D.f.y * D.vy + D.f.z * D.vz) / sp;
+    if (c < -0.55) { D.f.set(D.vx / sp, D.vy / sp, D.vz / sp); bodyQuat(D.f, D.n, D.qVis); trick("Revert", REVERT_PTS, "#e8f7ff"); }
+    else if (c < 0.89) D.slideT = 0.7;
+  }
+  if (clean && pit && !fromPit && airT > 0.15) trick("Drop in", 60, "#ffb35a");
+}
+function endDrift() {
+  if (D.driftT > 0.5) D.boost = 1.2 * Math.min(1, D.driftT / 1.5);
+  if (D.driftPts >= 15) callout("Drift", "+" + addScore(D.driftPts), "#a6ecff", false);
+  D.driftT = 0; D.driftPts = 0;
+}
+function stepGround(dt) {
+  const s = surf(D.x, D.y, D.z), kickR = s.ramp && (s.ramp.kind === "bump" || s.ramp.kind === "launch") ? s.ramp : null, onBump = !!(kickR && kickR.kind === "bump");
+  const nx = s.nx, ny = s.ny, nz = s.nz, pit = s.pit, kap = s.kap, sphi = s.sphi, ex = s.ex, ez = s.ez;
+  D.n.set(nx, ny, nz); D.pit = pit;
+  const f = D.f; let fn = f.x * nx + f.y * ny + f.z * nz;
+  f.x -= fn * nx; f.y -= fn * ny; f.z -= fn * nz;
+  if (f.lengthSq() < 0.04) { f.set(Math.cos(D.a), 0, Math.sin(D.a)); fn = f.dot(D.n); f.addScaledVector(D.n, -fn); }
+  f.normalize();
+  let rx = f.y * nz - f.z * ny, ry = f.z * nx - f.x * nz, rz = f.x * ny - f.y * nx;
+  let vx = D.vx, vy = D.vy, vz = D.vz;
+  let vf = vx * f.x + vy * f.y + vz * f.z, vl = vx * rx + vy * ry + vz * rz;
+  const speed = Math.hypot(vf, vl);
+  // how hard the surface pushes back: gravity into it, plus the curve of a pit wall
+  const vs = kap > 0 ? vx * ex * ny + vy * sphi + vz * ez * ny : 0;
+  const N = G * ny + kap * vs * vs, trac = clamp(N / G, 0, 1);
+  if (pit && ny < 0.5 && N < DETACH * G) { takeoff("fall", null, 0, 0); return; }   // too slow for the wall
+  // the crouch before a jump, and the jump
+  if (D.crouch > 0) {
+    D.crouch -= dt;
+    if (D.crouch <= 0) {
+      D.crouch = 0;
+      D.vx += nx * JUMP_V; D.vy += ny * JUMP_V; D.vz += nz * JUMP_V;
+      takeoff(pit ? "pit" : "ollie", pit, ex, ez);
+      return;
+    }
+  }
+  const stunned = D.stun > 0;
+  D.steer += ((stunned ? 0 : steerIn()) - D.steer) * ease(STEER_EASE, dt);
+  const steer = D.steer, throttle = stunned ? 0 : gasIn(), brake = !stunned && IN.brake;
+  D.throttle = throttle;
+  const fk = GS.fury ? FURY_SPEED : 1;
+  const hand = brake && Math.abs(steer) > DRIFT_STEER && speed > HAND_MIN;   // the handbrake: a drift, not a stop
+  const driftWant = D.slideT > 0 || hand || (Math.abs(steer) > DRIFT_STEER && speed > DRIFT_MIN && ny > 0.8);
+  D.slideT = Math.max(0, D.slideT - dt);
+  let turn = TURN * steer * (TURN_PIVOT + (1 - TURN_PIVOT) * Math.min(1, speed / TURN_REF));
+  if (D.drift) turn *= 1.35;
+  if (vf < -0.5) turn = -turn;
+  const maxS = (D.boost > 0 ? BOOST_V : CRUISE) * fk;
+  if (throttle && vf < maxS) vf = Math.min(maxS, vf + ACCEL * (D.boost > 0 ? 1.8 : 1) * (GS.fury ? 1.4 : 1) * trac * dt);
+  if (vf > maxS && !pit && D.dashT <= 0) vf -= (vf - maxS) * 1.5 * dt;
+  if (brake) { if (vf > 0.5) vf -= Math.min(vf, (hand ? BRAKE * 0.15 : BRAKE) * dt); else vf = Math.max(-REVERSE_V, vf - ACCEL * 0.6 * dt); }
+  else if (!throttle) vf -= Math.sign(vf) * Math.min(Math.abs(vf), (pit ? COAST_PIT : COAST) * dt);
+  if (D.dashT > 0) vf = Math.max(vf, DASH_V * fk);
+  vl *= Math.exp(-(driftWant ? GRIP_DRIFT : GRIP) * trac * dt);
+  // turn the nose about the normal, then hand the speed over to the new heading
+  const ca = Math.cos(turn * dt), sa = Math.sin(turn * dt);
+  const wx = f.x * vf + rx * vl, wy = f.y * vf + ry * vl, wz = f.z * vf + rz * vl;
+  f.set(f.x * ca + rx * sa, f.y * ca + ry * sa, f.z * ca + rz * sa).normalize();
+  rx = f.y * nz - f.z * ny; ry = f.z * nx - f.x * nz; rz = f.x * ny - f.y * nx;
+  const nf = wx * f.x + wy * f.y + wz * f.z, nl = wx * rx + wy * ry + wz * rz;
+  vx = f.x * nf + rx * nl; vy = f.y * nf + ry * nl; vz = f.z * nf + rz * nl;
+  D.drift = Math.abs(nl) > DRIFT_SLIP && speed > 6 && ny > 0.8;
+  D.yawRate = turn; D.vf = nf;
+  const gk = G * ny;
+  vx += gk * nx * dt; vy += (gk * ny - G) * dt; vz += gk * nz * dt;
+  D.vx = vx; D.vy = vy; D.vz = vz;
+  if (ny > 0.5 && f.x * f.x + f.z * f.z > 0.09) D.a = Math.atan2(f.z, f.x);
+  // drift and carve fill the gauge while they last
+  if (D.drift) { D.driftT += dt; D.driftPts += DRIFT_RATE * dt; addGauge(DRIFT_RATE * dt); }
+  else if (D.driftT > 0) endDrift();
+  if (pit && ny < 0.85 && speed > 6) { D.carvePts += CARVE_RATE * dt; addGauge(CARVE_RATE * dt); }
+  else if (D.carvePts > 0 && ny > 0.95) { if (D.carvePts >= 20) trick("Carve", D.carvePts, "#ffb35a"); D.carvePts = 0; }
+  const px = D.x, pz = D.z;
+  D.x += vx * dt; D.y += vy * dt; D.z += vz * dt;
+  if (tryCatchRail()) return;
+  const s2 = surf(D.x, D.y, D.z);
+  if (s2.blocked) {   // into the side of a ramp: a wall
+    D.x = px; D.z = pz; D.y -= vy * dt;
+    const r = s2.ramp, lx = -r.dz, lz = r.dx, side = ((px - r.x) * lx + (pz - r.z) * lz) > 0 ? 1 : -1;
+    const along = Math.abs(((px - r.x) * r.dx + (pz - r.z) * r.dz) - r.len) < 0.4;
+    const ox = along ? r.dx : lx * side, oz = along ? r.dz : lz * side, vo = D.vx * ox + D.vz * oz;
+    if (vo < 0) { D.vx -= (1 + RESTITUTION) * vo * ox; D.vz -= (1 + RESTITUTION) * vo * oz; E.trauma = Math.min(1, E.trauma + 0.15); }
+    return;
+  }
+  if (pit && ny < 0.5 && s2.pit !== pit && !s2.ramp) { takeoff("pit", pit, ex, ez); return; }   // over the lip: launched
+  // over a bump's rim: the slope ends steeper than what follows, and the dozer leaves it
+  if (onBump && s2.d <= SNAP && vx * s2.nx + vy * s2.ny + vz * s2.nz > BUMP_LIP) { bumpLaunch(kickR); return; }
+  if (s2.d <= SNAP) {
+    if (s2.pit || s2.ramp) {   // a curve or a slope bends the path: keep the speed, turn it along the surface
+      if (s2.pit) { D.x -= s2.nx * s2.d; D.y -= s2.ny * s2.d; D.z -= s2.nz * s2.d; } else D.y = s2.h;
+      const v0 = Math.hypot(vx, vy, vz), vn = vx * s2.nx + vy * s2.ny + vz * s2.nz;
+      vx -= vn * s2.nx; vy -= vn * s2.ny; vz -= vn * s2.nz;
+      const v1 = Math.hypot(vx, vy, vz) || 1;
+      D.vx = vx * v0 / v1; D.vy = vy * v0 / v1; D.vz = vz * v0 / v1;
+    } else {
+      D.y = s2.h;
+      const vn2 = vx * s2.nx + vy * s2.ny + vz * s2.nz;
+      if (vn2 < 0) { D.vx -= vn2 * s2.nx; D.vy -= vn2 * s2.ny; D.vz -= vn2 * s2.nz; }
+    }
+  } else if (kickR && D.vy > 2) bumpLaunch(kickR);
+  else takeoff(pit ? "pit" : "ground", pit, ex, ez);
+}
+function bumpLaunch(r) {     // thrown high: the slope's own speed, plus a kick
+  takeoff("ollie", null, 0, 0);
+  if (r.kind === "launch") {   // the finish line: over it and into the zone, whatever the speed it came with
+    if (GS.phase === "race") enterZone();
+    const hv = Math.max(Math.hypot(D.vx, D.vz), LAUNCH_V);
+    D.vx = r.dx * hv; D.vz = r.dz * hv; D.vy += LAUNCH_KICK;
+    E.fovKick += 8; E.st = 0.3; E.trauma = Math.min(1, E.trauma + 0.3); slowmo(0.55, 0.3);
+    return;
+  }
+  if (Math.hypot(D.vx, D.vy, D.vz) > 4) { D.vy += BUMP_KICK; E.fovKick += 4; E.st = 0.2; }
+}
+
+// ---- rails: caught, ridden to the end, thrown
+function tryCatchRail() {
+  const sp2 = D.vx * D.vx + D.vy * D.vy + D.vz * D.vz;
+  if (sp2 < 4) return false;
+  let best = null, bi = 0, bd = RAIL_CATCH * RAIL_CATCH;
+  for (const r of rails) {
+    if (r.cool > 0 || D.x < r.x0 - 2 || D.x > r.x1 + 2 || D.z < r.z0 - 2 || D.z > r.z1 + 2) continue;
+    for (let i = 0; i < r.n; i++) {
+      const dx = r.P[3 * i] - D.x, dz = r.P[3 * i + 2] - D.z, d2 = dx * dx + dz * dz;
+      if (d2 >= bd) continue;
+      const dy = r.P[3 * i + 1] - D.y;
+      if (dy < -0.6 || dy > 1.2) continue;
+      best = r; bi = i; bd = d2;
+    }
+  }
+  if (!best) return false;
+  const fdot = D.vx * best.F[3 * bi] + D.vy * best.F[3 * bi + 1] + D.vz * best.F[3 * bi + 2], dir = fdot >= 0 ? 1 : -1;
+  if (bi < 12 && dir < 0 || bi > best.n - 12 && dir > 0) return false;   // in by the start, never out of the end
+  if (!D.ground) {   // a trick cut short by a rail is lost, never a bail
+    const A = D.air;
+    if (A.cur) cancelTrick();
+    if (A.t > 0.6) trick("Air", AIR_RATE * A.t, "#e8f7ff");
+  }
+  if (D.carvePts >= 20) trick("Carve", D.carvePts, "#ffb35a");
+  D.carvePts = 0; endDrift();
+  D.rail = { r: best, s: bi, dir, v: clamp(Math.abs(fdot), RAIL_MIN, RAIL_MAX), pts: 0, seg: best.T[bi], got: {}, trick: null };
+  D.ground = false; D.drift = false; D.crouch = 0;
+  railSample(best, bi);
+  sparks(new V3(RS.px, RS.py, RS.pz), 18, 8, best.col[0]);
+  return true;
+}
+function railTrick() { const R = D.rail; if (!R.trick) R.trick = { def: RAIL_TRICKS[Math.floor(Math.random() * RAIL_TRICKS.length)], t: 0 }; }
+function stepRail(dt) {
+  const R = D.rail, r = R.r, n = r.n;
+  railSample(r, R.s);
+  R.v = clamp(R.v + (-RAIL_G * RS.fy * R.dir + RAIL_PUSH) * dt, RAIL_MIN, RAIL_MAX);
+  R.s += R.dir * R.v * dt / RAIL_DS;
+  const done = R.s <= 0 || R.s >= n - 1;
+  R.s = clamp(R.s, 0, n - 1);
+  const tag = r.T[Math.round(R.s)];
+  if (tag !== R.seg || done) {   // a loop, a spiral, a roll: scored when it is behind
+    if (R.seg >= 0 && !R.got[R.seg]) { R.got[R.seg] = 1; const sg = r.segs[R.seg]; trick(sg.name, sg.pts, "#ff9ad5", true); }
+    R.seg = tag;
+  }
+  R.pts += RAIL_RATE * dt; addGauge(RAIL_RATE * dt);
+  if (R.trick) { R.trick.t += dt / R.trick.def.dur; if (R.trick.t >= 1) { trick(R.trick.def.name, R.trick.def.pts, "#7af2ff"); R.trick = null; } }
+  railSample(r, R.s);
+  const fx = RS.fx * R.dir, fy = RS.fy * R.dir, fz = RS.fz * R.dir;
+  D.railF.set(fx, fy, fz); D.railU.set(RS.ux, RS.uy, RS.uz);
+  D.x = RS.px + RS.ux * RAIL_RIDE; D.y = RS.py + RS.uy * RAIL_RIDE; D.z = RS.pz + RS.uz * RAIL_RIDE;
+  D.vx = fx * R.v; D.vy = fy * R.v; D.vz = fz * R.v;
+  if (RS.uy > 0.5 && fx * fx + fz * fz > 0.09) D.a = Math.atan2(fz, fx);
+  if (Math.random() < dt * 40) P_SPARK.spawn({ pos: new V3(RS.px, RS.py, RS.pz), vel: new V3(-fx * R.v * 0.25 + mr(-3, 3) + RS.ux * mr(1, 3), -fy * R.v * 0.25 + RS.uy * mr(1, 3) + mr(-1, 2), -fz * R.v * 0.25 + mr(-3, 3) + RS.uz * mr(1, 3)),
+    life: mr(0.25, 0.5), s0: 0.04, len: 0.3, grav: 14, col: new THREE.Color(Math.random() < 0.3 ? 0xffffff : 0xffb040).multiplyScalar(2) });
+  if (done) {   // the end throws the dozer along the bar
+    callout("Grind", "+" + addScore(R.pts), "#c9f27a", false);
+    r.cool = RAIL_COOL; D.rail = null;
+    if (R.trick) R.trick = null;
+    D.f.copy(D.railF); D.n.copy(D.railU);
+    takeoff("rail", null, 0, 0);
+    sparks(new V3(D.x, D.y, D.z), 20, 10, r.col[0]);
+  }
+}
+
+// ---- the city in the dozer's way
+const cp = { x: 0, z: 0, nx: 0, nz: 0, d: 0 };
+function closest(b, x, z) {
+  const px = clamp(x, b.x0, b.x1), pz = clamp(z, b.z0, b.z1);
+  let dx = x - px, dz = z - pz, d = Math.hypot(dx, dz);
+  if (d < 1e-4) {   // inside: out by the nearest face
+    const l = x - b.x0, r = b.x1 - x, u = z - b.z0, w = b.z1 - z, m = Math.min(l, r, u, w);
+    if (m === l) { dx = -1; dz = 0; } else if (m === r) { dx = 1; dz = 0; } else if (m === u) { dx = 0; dz = -1; } else { dx = 0; dz = 1; }
+    cp.x = px; cp.z = pz; cp.nx = dx; cp.nz = dz; cp.d = -m; return cp;
+  }
+  cp.x = px; cp.z = pz; cp.nx = dx / d; cp.nz = dz / d; cp.d = d; return cp;
+}
+function collide(dt) {
+  const fx = Math.cos(D.a), fz = Math.sin(D.a);
+  const list = query(D.x, D.z, D_R + 4);
+  for (let i = 0; i < list.length; i++) {
+    const b = list[i];
+    if (!b.alive || b.fall || b.fly) continue;
+    const h = closest(b, D.x, D.z);
+    if (h.d >= D_R) continue;
+    if (D.y >= b.top - 0.3) continue;
+    const vn0 = D.vx * h.nx + D.vz * h.nz, closing = -vn0, front = -(fx * h.nx + fz * h.nz) > 0.6;
+    if (!b.solid) {   // a prop, a tree, a crystal: it goes, whatever the speed
+      if (Math.hypot(D.vx, D.vz) > 2 || GS.fury) { kick(b, h); D.vx *= 0.94; D.vz *= 0.94; }
+      continue;
+    }
+    if (D.prevY >= b.top - 0.3 && h.d < 0.5) {   // came down on the roof
+      if (GS.fury) { destroy(b, D.vx, D.vz, "crush"); continue; }
+      hit(b, 30, h, "crush");
+      if (b.alive) { D.y = b.top; D.vy = 8; if (D.ground) takeoff("ground", null, 0, 0); D.vx += (D.x - b.cx) * 2; D.vz += (D.z - b.cz) * 2; }
+      continue;
+    }
+    if (GS.fury) {   // the fury: whatever it touches comes down, whatever the speed
+      destroy(b, D.vx, D.vz, "dozer"); D.vx *= 0.88; D.vz *= 0.88; continue;
+    }
+    if (closing > MIN_IMPACT && b.hitCd <= 0) {
+      const dmg = closing * (front ? BLADE_MULT : SIDE_MULT) * (D.dashT > 0 ? DASH_DMG : 1);
+      b.hitCd = 0.15;
+      hit(b, dmg, h, "dozer");
+      if (!b.alive) { D.vx *= 0.72; D.vz *= 0.72; continue; }
+    }
+    if (!b.alive) continue;
+    if (D.ground && D.throttle > 0 && front) {   // the blade pressed on a wall grinds it down
+      b.hp -= GRIND_DPS * D.throttle * dt; b.shake = Math.min(1, b.shake + dt * 2);
+      if (Math.random() < dt * 20) P_SPARK.spawn({ pos: new V3(h.x, D.y + mr(0.3, 1.2), h.z), vel: new V3(h.nx * mr(2, 6) + mr(-3, 3), mr(1, 5), h.nz * mr(2, 6) + mr(-3, 3)), life: 0.3, s0: 0.04, len: 0.3, grav: 14, col: new THREE.Color(0xffb040).multiplyScalar(2) });
+      if (b.hp <= 0) { destroy(b, fx, fz, "dozer"); continue; }
+      crack(b);
+    }
+    // pushed out, bounced
+    D.x += h.nx * (D_R - h.d); D.z += h.nz * (D_R - h.d);
+    const vn = D.vx * h.nx + D.vz * h.nz;
+    if (vn < 0) { D.vx -= (1 + RESTITUTION) * vn * h.nx; D.vz -= (1 + RESTITUTION) * vn * h.nz; }
+  }
+}
+function slamCrush() {   // a fury landing flattens what it lands next to
+  for (const b of query(D.x, D.z, 4)) if (b.alive && !b.fall && b.solid) { const h = closest(b, D.x, D.z); if (h.d < 2.5) destroy(b, D.vx, D.vz, "crush"); }
+}
+function crack(b) { if (b.mat && b.mat.color) b.mat.color.setScalar(0.55 + 0.45 * Math.max(0, b.hp) / b.hp0); }
+function hit(b, dmg, h, cause) {
+  b.hp -= dmg; b.shake = 1;
+  const y = Math.max(0, D.y);
+  const chips = Math.min(10, 2 + dmg / 6);
+  for (let c = 0; c < chips; c++) P_DEBRIS.spawn({ pos: new V3(h.x + h.nx * 0.3, y + mr(0.4, Math.min(b.top, 3)), h.z + h.nz * 0.3), vel: new V3(h.nx * mr(3, 7) + mr(-3, 3), mr(2, 6), h.nz * mr(3, 7) + mr(-3, 3)),
+    life: mr(0.8, 1.4), s0: mr(0.12, 0.26), grav: 22, bounce: 0.35, spin: mr(-12, 12), shrink: false, col: b.hex, floor: groundY(h.x, h.z) });
+  sparks(new V3(h.x, y + 0.8, h.z), Math.min(16, 4 + dmg / 4), 9, b.hp > 0 ? 0xbfd6ff : 0xffb040);
+  E.trauma = Math.min(1, E.trauma + Math.min(0.5, dmg / 120)); E.jv += 2; E.st = -0.25;
+  if (b.hp <= 0) { destroy(b, D.vx, D.vz, cause); return; }
+  crack(b);
+  E.hitStop = Math.max(E.hitStop, 0.05);
+  pow("Clang!", new V3(h.x, y + 1.6, h.z), 0.7, "#cfd8e6", "#8a96a8");
+  if (b.warnCd <= 0 && !GS.fury) { b.warnCd = 2; notice("Too solid: fill the super gauge, or dash into it"); }
+}
+// a prop kicked: it flies, tumbles and goes
+function kick(b, h) {
+  b.alive = false; b.fly = { t: 0, v: new V3(D.vx * 0.8 + mr(-2, 2) - h.nx * 2, mr(4, 8) + (GS.fury ? 4 : 0), D.vz * 0.8 + mr(-2, 2) - h.nz * 2),
+    w: new V3(mr(-8, 8), mr(-6, 6), mr(-8, 8)) };
+  if (b.pool) b.pool.visible = false;
+  const pts = addScore(b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
+  floatPts(new V3(b.cx, b.top + 0.5, b.cz), "+" + pts, GS.fury ? P.fury : "#ffffff");
+  if (b.kind === "crystal") sparks(new V3(b.cx, 1, b.cz), 30, 9, b.crystal === "A" ? 0x39e6ff : 0xb45cff);
+  else for (let c = 0; c < 6; c++) P_DEBRIS.spawn({ pos: new V3(b.cx, mr(0.2, 0.8), b.cz), vel: new V3(mr(-4, 4), mr(2, 6), mr(-4, 4)), life: mr(0.6, 1), s0: mr(0.08, 0.16), grav: 22, bounce: 0.35, spin: mr(-12, 12), shrink: false, col: 0x8e8a83 });
+  E.trauma = Math.min(1, E.trauma + 0.08);
+}
+// a house or a building comes down: it shakes, sinks and crumbles, and leaves rubble
+function destroy(b, dx, dz, cause) {
+  if (!b.alive) return;
+  b.alive = false; b.fall = { t: 0, dx: dx || 0, dz: dz || 0, tilt: mr(-0.25, 0.25), y0: b.obj.position.y, burst: 0 };
+  const pts = addScore(b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
+  const top = new V3(b.cx, b.top * 0.6, b.cz);
+  floatPts(top.clone().setY(b.top + 1), "+" + pts, GS.fury ? P.fury : "#ffffff");
+  pow(b.kind === "car" ? "Crash!" : GS.fury ? "Boom!" : "Bam!", top.clone().setY(b.top + 0.5), b.kind === "car" ? 0.9 : 1.3);
+  ring(new V3(b.cx, 0, b.cz), Math.max(b.x1 - b.x0, b.z1 - b.z0) * 1.1, 0.5);
+  E.trauma = Math.min(1, E.trauma + (b.kind === "car" ? 0.3 : 0.55)); E.hitStop = Math.max(E.hitStop, b.kind === "car" ? 0.05 : 0.085);
+  E.flash = Math.max(E.flash, b.kind === "car" ? 0.25 : 0.5); E.fovKick -= 3;
+  if (b.pool) b.pool.visible = false;
+  if (b.kind === "car") { b.fall = null; b.fly = { t: 0, v: new V3((dx || 0) * 0.9 + mr(-2, 2), mr(8, 13), (dz || 0) * 0.9 + mr(-2, 2)), w: new V3(mr(-9, 9), mr(-6, 6), mr(-9, 9)), keep: true }; }
+}
+function updateDestruction(dt) {
+  for (const b of DES) {
+    b.hitCd -= dt; b.warnCd -= dt;
+    if (b.shake > 0 && !b.fall && !b.fly) {
+      b.shake = Math.max(0, b.shake - dt * 3);
+      const s = b.shake * 0.08;
+      b.obj.position.set(b.home.p.x + Math.sin(RT * 61) * s, b.home.p.y, b.home.p.z + Math.sin(RT * 47) * s);
+    }
+    if (b.fall) {
+      const F = b.fall; F.t += dt;
+      const u = F.t / 0.7, e = easeIO(u);
+      b.obj.scale.set(b.home.s.x * (1 + 0.08 * e), b.home.s.y * (1 - 0.82 * e), b.home.s.z * (1 + 0.08 * e));
+      b.obj.position.set(b.home.p.x + Math.sin(RT * 70) * 0.1 * (1 - u), F.y0 - 0.3 * e, b.home.p.z + Math.sin(RT * 53) * 0.1 * (1 - u));
+      b.obj.rotation.z = F.tilt * e * 0.4;
+      // the crumble: debris and dust in bursts while it sinks
+      while (F.burst < 6 && F.t > F.burst * 0.1) {
+        F.burst++;
+        const w = b.x1 - b.x0, d = b.z1 - b.z0;
+        const pl = Math.hypot(F.dx, F.dz) || 1, px = F.dx / pl, pz = F.dz / pl;
+        for (let c = 0; c < 9; c++) P_DEBRIS.spawn({ pos: new V3(b.x0 + Math.random() * w, mr(0.3, b.top * (1 - e * 0.7)), b.z0 + Math.random() * d),
+          vel: new V3(px * mr(2, 6) + mr(-3, 3), mr(3, 8), pz * mr(2, 6) + mr(-3, 3)), life: mr(1, 1.6), s0: mr(0.1, 0.26), grav: 22, bounce: 0.35, spin: mr(-10, 10), shrink: false,
+          col: Math.random() < 0.6 ? b.hex : 0x8e8a83, floor: 0 });
+        for (let c = 0; c < 8; c++) { const a = mr(0, TAU); P_DUST.spawn({ pos: new V3(b.cx + Math.cos(a) * w * 0.5, 0.3, b.cz + Math.sin(a) * d * 0.5),
+          vel: new V3(Math.cos(a) * mr(2, 4), mr(0.5, 2), Math.sin(a) * mr(2, 4)), life: mr(0.8, 1.2), s0: 0.2, s1: mr(0.5, 0.9), drag: 2, col: new THREE.Color(P.dust).offsetHSL(0, 0, mr(-0.08, 0)) }); }
+      }
+      if (u >= 1) { b.obj.visible = false; b.fall = null; addRubble(b); }
+    }
+    if (b.fly) {
+      const F = b.fly, o = b.obj; F.t += dt;
+      F.v.y -= G * dt; o.position.addScaledVector(F.v, dt);
+      o.rotation.x += F.w.x * dt; o.rotation.y += F.w.y * dt; o.rotation.z += F.w.z * dt;
+      const gy = groundY(o.position.x, o.position.z) - 0.1;
+      if (o.position.y < gy && F.v.y < 0) { o.position.y = gy; F.v.y *= -0.3; F.v.x *= 0.6; F.v.z *= 0.6; F.w.multiplyScalar(0.6); }
+      if (F.t > 1.6) { const k = Math.max(0, 1 - (F.t - 1.6) / 0.4); o.scale.copy(b.home.s).multiplyScalar(k); if (k <= 0) { o.visible = false; b.fly = null; } }
+    }
+  }
+}
+// every mesh of g baked into one per material, in g's own space — so a tree, a
+// house or a heap is one or two draw calls and can still fly, fall and be reset
+function mergeLocal(g) {
+  g.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), rel = new THREE.Matrix4(), bins = new Map();
+  g.traverse((m) => {
+    if (!m.isMesh) return;
+    rel.multiplyMatrices(inv, m.matrixWorld);
+    const geo = (m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone()).applyMatrix4(rel);
+    for (const k of Object.keys(geo.attributes)) if (!/^(position|normal|uv|color)$/.test(k)) geo.deleteAttribute(k);
+    geo.morphAttributes = {};
+    const key = m.material;
+    if (!bins.has(key)) bins.set(key, []);
+    bins.get(key).push(geo);
+  });
+  for (const c of [...g.children]) g.remove(c);
+  for (const [mat, geos] of bins) {
+    const sig = (geo) => Object.keys(geo.attributes).sort().join();
+    const groups = new Map();
+    for (const geo of geos) { const k = sig(geo); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(geo); }
+    for (const list of groups.values()) {
+      const merged = list.length > 1 ? mergeGeometries(list) : list[0];
+      if (merged) g.add(new THREE.Mesh(merged, mat)); else list.forEach((geo) => g.add(new THREE.Mesh(geo, mat)));
+    }
+  }
+  return g;
+}
+function addRubble(b) {
+  const w = Math.max(b.x1 - b.x0, b.z1 - b.z0);
+  const heap = item("rubble-heap").build(LIB, { color: b.hex });
+  heap.scale.set(w * 0.45, w * 0.3, w * 0.45); heap.position.set(b.cx, 0, b.cz); heap.rotation.y = mr(0, TAU);
+  const merged = shadowy(mergeLocal(heap));
+  rimifyAll(merged); scene.add(merged);
+  const emb = item("rubble-embers").build(LIB); emb.scale.setScalar(w * 0.45); emb.position.set(b.cx, 0, b.cz);
+  scene.add(emb);
+  const pl = lightPool(b.cx, 0.04, b.cz, w * 0.9, "ember");
+  b.rubble = [merged, emb, pl];
+  applyGlow();
+}
+function resetCity() {   // the level again: the city rebuilt, the dozer back on the start line
+  for (const b of DES) {
+    b.alive = true; b.hp = b.hp0; b.fall = b.fly = null; b.shake = 0;
+    b.obj.visible = true; b.obj.position.copy(b.home.p); b.obj.quaternion.copy(b.home.q); b.obj.scale.copy(b.home.s);
+    if (b.mat && b.mat.color) b.mat.color.setScalar(1);
+    if (b.pool) b.pool.visible = true;
+    if (b.rubble) {
+      for (const o of b.rubble) { scene.remove(o); const i = lightPools.findIndex((p) => p.m === o); if (i >= 0) lightPools.splice(i, 1); }
+      b.rubble = null;
+    }
+  }
+  GS.score = 0; GS.destroyed = 0; GS.gauge = 0; GS.fury = false; GS.furyT = 0; GS.saidFull = false; GS.mult = 1; GS.bonus = 0;
+  for (const b of BONUS) b.taken = false;
+  placeAt(START, "count");
+  applyGlow();
+}
+
+// =============================================================================
+// 13. EMITTERS — dust, smoke, sparks (juice-3d)
+// =============================================================================
+const tmpV = new V3();
+const bodyLocal = (x, y, z, out = tmpV) => root.localToWorld(out.set(x, y, z));
+function dustAt(side, xk, upk, big = 1) {
+  const p = bodyLocal(dims.len * xk, 0.05, side * dims.wid * 0.42, new V3());
+  P_DUST.spawn({ pos: p, vel: new V3(-D.vx * 0.25 + mr(-0.6, 0.6), mr(0.5, 1.6) * upk, -D.vz * 0.25 + mr(-0.6, 0.6)),
+    life: mr(0.4, 0.6), s0: dims.len * 0.03 * big, s1: dims.len * 0.08 * big, drag: 2.5, col: new THREE.Color(P.dust).offsetHSL(0, 0, mr(-0.06, 0.04)) });
+}
+function sparks(at, n, speed, hex) {
+  for (let i = 0; i < n; i++) {
+    const v = new V3(mr(-1, 1), mr(0.3, 1.2), mr(-1, 1)).normalize().multiplyScalar(speed * mr(0.5, 1.2));
+    P_SPARK.spawn({ pos: at.clone(), vel: v, life: mr(0.25, 0.5), s0: 0.05, len: 0.4, grav: 14, col: new THREE.Color(hex).multiplyScalar(2.2) });
+  }
+}
+function emit(dt) {
+  const sp = Math.hypot(D.vx, D.vz);
+  if (D.ground && sp > 1.5 && D.n.y > 0.8) {
+    E.dustAcc += dt * (D.drift ? 40 : D.dashT > 0 ? 34 : sp * 1.0);
+    while (E.dustAcc >= 1) {
+      E.dustAcc--;
+      if (D.drift) {
+        const p = bodyLocal(-dims.len * 0.45, 0.08, (Math.random() < 0.5 ? -1 : 1) * dims.wid * 0.42, new V3());
+        P_DUST.spawn({ pos: p, vel: new V3(mr(-1, 1), mr(0.4, 1.4), mr(-1, 1)), life: mr(0.6, 0.9), s0: dims.len * 0.05, s1: dims.len * 0.16, drag: 2, col: new THREE.Color(P.dust).offsetHSL(0, 0, mr(-0.05, 0.05)) });
+      } else dustAt(Math.random() < 0.5 ? -1 : 1, -0.45, 1, D.dashT > 0 ? 1.4 : 1);
+    }
+  }
+  if (exhaustPt) {
+    E.smokeAcc += dt * (GS.fury ? 22 : D.dashT > 0 || D.boost > 0 ? 18 : sp < 0.5 ? 5 : 3);
+    while (E.smokeAcc >= 1) {
+      E.smokeAcc--;
+      const p = model.localToWorld(new V3().copy(exhaustPt));
+      const black = GS.fury || D.dashT > 0;
+      P_SMOKE.spawn({ pos: p, vel: new V3(-D.vx * 0.15 + mr(-0.3, 0.3), mr(1, 2) + (black ? 1 : 0), -D.vz * 0.15 + mr(-0.3, 0.3)),
+        life: mr(0.7, 1.1), s0: 0.05, s1: black ? 0.3 : 0.18, drag: 1.5, col: GS.fury ? new THREE.Color(0x3a2a26) : black ? 0x3a3a3e : new THREE.Color(0xd4d7dc).offsetHSL(0, 0, mr(-0.06, 0.04)) });
+    }
+  }
+  histHead = (histHead + 1) % HIST; hist[histHead].copy(model.matrixWorld);
+}
+
+// =============================================================================
+// 14. THE POSE — the body, the tricks, the blade, the tracks
+// =============================================================================
+function trickEuler(c, out) {   // a trick's turn on top of the body: whole turns, back where it started
+  if (!c) { out.set(0, 0, 0); return out; }
+  const r = easeIO(c.t), d = c.def;
+  return out.set((d.roll || 0) * TAU * r, (d.yaw || 0) * TAU * r, (d.pitch || 0) * TAU * r);
+}
+const tE = new THREE.Euler(0, 0, 0, "YZX");
+const pose = { lift: 0, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0 }, pv = { bx: 0, by: 0, bz: 0 };
+function applyDozer(dt) {
+  root.position.set(D.x, D.y, D.z);
+  // the body: the surface's frame on the ground (eased, so a bump never snaps it), the air's quaternion, the rail's frame
+  if (D.rail) bodyQuat(D.railF, D.railU, D.qVis);
+  else if (D.ground) { bodyQuat(D.f, D.n, tq); D.qVis.slerp(tq, 1 - Math.exp(-16 * dt)); }
+  else D.qVis.copy(D.q);
+  root.quaternion.copy(D.qVis);
+  // weight transfer (juice-3d): nose up on the gas, down on the brake, rolled out of a turn
+  if (dt > 0) { D.acc += ((D.vf - D.vPrev) / dt - D.acc) * ease(10, dt); D.vPrev = D.vf; }
+  const pT = D.ground ? clamp(D.acc * 0.009, -0.14, 0.14) : 0, rT2 = D.ground ? clamp(-D.yawRate * Math.abs(D.vf) * 0.012, -0.2, 0.2) : 0;
+  D.pitch += (pT - D.pitch) * ease(9, dt); D.roll += (rT2 - D.roll) * ease(9, dt);
+  lean.rotation.set(D.roll, 0, D.pitch);
+  // the trick (or a rail trick), and what is left of a trick cut short easing back
+  D.resid.x *= Math.exp(-14 * dt); D.resid.y *= Math.exp(-14 * dt); D.resid.z *= Math.exp(-14 * dt);
+  let hopY = 0;
+  Object.assign(pose, { lift: 0.06, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0 });
+  if (D.rail && D.rail.trick) {
+    const T = D.rail.trick, d = T.def, r = easeIO(T.t);
+    tE.set((d.roll || 0) * TAU * r, (d.yaw || 0) * TAU * r, d.stand ? -0.6 * Math.sin(Math.PI * T.t) : 0);
+    if (d.hop) hopY = 0.7 * Math.sin(Math.PI * T.t);
+    if (d.stand) { pose.lift = -0.05; pose.tilt = 0.5 * Math.sin(Math.PI * T.t); }
+  } else if (!D.ground && !D.rail && D.air.cur) {
+    const c = D.air.cur, d = c.def, r = easeIO(c.t);
+    trickEuler(c, tE);
+    if (d.grab) { const g = smooth(c.t / 0.25) * (1 - smooth((c.t - 0.75) / 0.2)); pose.lift = 1.4 * g; pose.tilt = -0.6 * g; pose.reach = 0.3 * g; }
+    if (d.blade === "by") pose.by = -2 * TAU * r;
+    if (d.blade === "bx") pose.bx = -3 * TAU * r;
+    if (d.blade === "bz") { pose.bz = 3 * TAU * r; pose.reach = 0.8 * Math.sin(Math.PI * c.t); }
+  } else tE.set(0, 0, 0);
+  tumble.rotation.set(tE.x + D.resid.x, tE.y + D.resid.y, tE.z + D.resid.z);
+  hop.position.y += (hopY - hop.position.y) * ease(20, dt);
+  // the blade: up in the air (dozer-anim's jump), down and out in a dash, raised in the fury
+  if (!D.ground && !D.rail && !(D.air.cur && D.air.cur.def.grab)) pose.lift = Math.max(pose.lift, 0.38 * Math.min(1, D.air.t * 3));
+  if (D.dashT > 0) { pose.lift = -0.04; pose.reach = Math.max(pose.reach, 0.55); pose.tilt = 0.15; }
+  if (GS.fury && D.ground && D.dashT <= 0) { pose.lift = 0.12 + 0.04 * Math.sin(RT * 14); pose.reach = Math.max(pose.reach, 0.25); }
+  if (D.crouch > 0) pose.lift = -0.05;
+  D.landT += dt;
+  pose.lift += -ringSpring(D.landT, 0.12, 1.8, 5);
+  // the tracks: each its own distance, spinning free in the air
+  const ht = rig.halfTrack * DS;
+  let sL = D.vf - D.yawRate * ht, sR = D.vf + D.yawRate * ht;
+  if (D.rail) sL = sR = D.rail.v * 0.6; else if (!D.ground) sL = sR = 3;
+  const k = 1 - Math.exp(-dt * (D.ground ? 14 : 3));
+  D.sL += (sL - D.sL) * k; D.sR += (sR - D.sR) * k;
+  D.tL += D.sL * dt / DS; D.tR += D.sR * dt / DS;
+  rig.set({ lift: pose.lift, tilt: pose.tilt, spinX: pose.bx, spinY: pose.by, spinZ: pose.bz, reach: pose.reach, trackL: D.tL, trackR: D.tR });
+  // squash & stretch, the jelly, the engine's rumble (juice-3d), around the base
+  E.st += ((D.dashT > 0 ? 0.22 : GS.fury ? 0.06 : 0) - E.st) * ease(7, dt);
+  E.sq += ((D.crouch > 0 ? 0.24 : 0) - E.sq) * ease(D.crouch > 0 ? 30 : 9, dt);
+  E.jv += (-260 * E.jp - 10 * E.jv) * dt; E.jp += E.jv * dt;
+  const idle = D.ground ? (Math.hypot(D.vx, D.vz) < 0.5 ? 1 : 0.35) * 0.02 * Math.sin(RT * 3.2) : 0;
+  const sq = clamp(E.sq + E.jp + idle, -0.45, 0.55), sy = 1 - sq, sxz = 1 / Math.sqrt(sy);
+  const stv = clamp(E.st, -0.45, 0.6);
+  squash.scale.set(sxz * (1 + stv), sy / Math.sqrt(1 + stv), sxz / Math.sqrt(1 + stv));
+  const rk = D.ground ? (0.5 + Math.min(1, Math.hypot(D.vx, D.vz) / CRUISE) * 0.5 + (GS.fury ? 1 : 0)) : 0;
+  offs.position.set(0, -comY + rk * 0.012 * dims.h * noise(RT * 40, 1), rk * 0.006 * noise(RT * 29, 9));
+  // the beacon turns; in the fury it never stops
+  beaconMat.emissiveIntensity = (GS.fury ? 3 : 1.2) * Math.max(0, Math.sin(RT * (GS.fury ? 16 : 9))) + 0.15;
+  root.updateMatrixWorld(true);
+}
+
+// ---- the arcs: the impossible blade, and the fury
+function updateMagic(dt) {
+  let m = sat((offTurn(pose.bx) + offTurn(pose.by) + offTurn(pose.bz)) / 0.12);
+  if (dt > 0) m = Math.max(m, sat((Math.abs(pose.bx - pv.bx) + Math.abs(pose.by - pv.by) + Math.abs(pose.bz - pv.bz)) / dt / 1.5));
+  m = Math.max(m, sat((Math.abs(pose.tilt) - 0.6) / 0.15), sat((pose.reach - 0.6) / 0.25), sat((pose.lift - 0.75) / 0.15));
+  pv.bx = pose.bx; pv.by = pose.by; pv.bz = pose.bz;
+  const target = Math.max(m, GS.fury ? 1 : 0);
+  magic += (target - magic) * Math.min(1, dt * (target > magic ? 14 : 4));
+  const on = magic > 0.02, flick = 0.55 + 0.45 * Math.random();
+  const glow = GS.fury ? P.fury : "#6fe3ff";
+  for (const mt of armMats) { mt.emissive.set(glow); mt.emissiveIntensity = on ? magic * 0.35 * flick : 0; }
+  rig.bladeCentre(fxM);
+  bladeLight.position.copy(fxM); bladeLight.color.set(glow); bladeLight.intensity = on ? magic * 6 * flick : 0;
+  for (let i = 0; i < ARCS; i++) {
+    const a = arcs[i];
+    a.glow.mesh.visible = a.core.mesh.visible = on;
+    if (!on) continue;
+    a.glow.mat.color.set(glow); a.core.mat.color.set("#ffffff");
+    arcEnds(a, i, fxA, fxB);
+    fxD.subVectors(fxB, fxA); const len = fxD.length();
+    if ((a.next -= dt) < 0) {
+      a.next = 0.04 + Math.random() * 0.06; a.v = Math.random() * 2 - 1; a.u = Math.random() * 2 - 1;
+      for (let k = 0; k <= ARC_SEG; k++) a.off[k].set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(len * 0.22);
+      if (Math.random() < magic * 0.5) { arcEnds(a, i, fxA, fxB); P_SPARK.spawn({ pos: fxB.clone(), vel: new V3(mr(-1, 1), mr(0.2, 1), mr(-1, 1)).multiplyScalar(2), life: 0.3, s0: 0.03, len: 0.15, grav: 6, col: new THREE.Color(glow).multiplyScalar(2) }); }
+    }
+    for (let k = 0; k <= ARC_SEG; k++) { const t = k / ARC_SEG; a.pts[k].copy(fxA).addScaledVector(fxD, t).addScaledVector(a.off[k], Math.sin(Math.PI * t)); }
+    const fl = magic * (0.6 + 0.4 * Math.random());
+    a.glow.draw(a.pts, 0.16 * magic, fl); a.core.draw(a.pts, 0.03, fl);
+  }
+}
+
+// =============================================================================
+// 15. THE CAMERA — juice-3d's chase in the race (it lags, looks ahead and into
+//     the turn), the prototype's top-down view in the zone, one blend between
+// =============================================================================
+const cam = { pos: new V3(), look: new V3(), ready: false, fov: CAM_FOV, yaw: START.yaw, lift: 0, k: 0,
+  top: { x: 0, y: 0, z: 0, zf: 1, yaw: -Math.PI / 2, ready: false } };
+const cFwd = new V3(), cRight = new V3(), cWant = new V3(), cLook = new V3(), UP = new V3(0, 1, 0), camAt = new V3(), camLook = new V3();
+function updateCamera(dt, rdt) {
+  // the heading it sits behind: the travel, held still up a wall, over a lip, upside down on a rail
+  const hv = Math.hypot(D.vx, D.vz), sp = Math.hypot(hv, D.vy);
+  const steep = D.rail ? Math.abs(D.railF.y) > 0.45 || D.railU.y < 0.3 : D.ground ? D.n.y < 0.7 : !!D.air.assist;
+  if (!steep) {
+    let want = null;
+    const back = D.ground && (D.vx * D.f.x + D.vz * D.f.z) < -0.5;
+    if (D.ground && !back) want = D.a;     // on the ground: right behind the nose, as juice-3d sits on the car's forward
+    else if (!D.ground && hv > 2.5 && hv > 0.55 * sp) want = Math.atan2(D.vz, D.vx);
+    else if (D.ground) want = Math.atan2(D.f.z, D.f.x);
+    if (want != null) cam.yaw += wrapA(want - cam.yaw) * ease(D.ground ? 10 : 2.5, dt);
+  }
+  cFwd.set(Math.cos(cam.yaw), 0, Math.sin(cam.yaw)); cRight.set(-cFwd.z, 0, cFwd.x);
+  const v = Math.hypot(D.vx, D.vy, D.vz);
+  // below the deck (a pool), the camera stays over the lip and looks down into it
+  const below = Math.min(0, D.y), inPit = !!(D.pit || (!D.ground && !D.rail && pitAt(D.x, D.z)));
+  cam.lift += ((inPit ? 1.6 : 0) - cam.lift) * ease(2.5, dt);
+  cWant.set(D.x, Math.max(0, D.y) * 0.6 + below * 0.15 + cam.lift, D.z).addScaledVector(cFwd, -(CAM_D + v * 0.1)).addScaledVector(UP, CAM_H);
+  cLook.set(D.x, D.y * 0.8 + dims.h * 0.6, D.z).addScaledVector(cFwd, v * 0.12).addScaledVector(cRight, D.ground ? D.yawRate * 1.2 : 0);
+  const gy = groundY(cWant.x, cWant.z);
+  if (cWant.y < gy + 1.2) cWant.y = gy + 1.2;
+  if (!cam.ready) { cam.pos.copy(cWant); cam.look.copy(cLook); cam.ready = true; }
+  cam.pos.lerp(cWant, ease(7, dt)); cam.look.lerp(cLook, ease(12, dt));
+  // the zone's view (the prototype's "Top down"): north up, high, a little behind,
+  // ahead of the dozer by where it is going, backing off with speed
+  const ZC = ZCAMS[zcIdx], Z = ZC.chase ? ZCAMS[0] : ZC;
+  const T = cam.top, hs = Math.hypot(D.vx, D.vz), tk = ease(5, rdt);
+  const yawWant = Z.yaw === "iso" ? -Math.PI / 4 : Z.yaw === "chase" ? D.a : -Math.PI / 2;
+  if (!T.ready) { Object.assign(T, { x: D.x, y: D.y * 0.7, z: D.z, zf: 1, yaw: yawWant, ready: true }); }
+  T.yaw += wrapA(yawWant - T.yaw) * ease(3, rdt);
+  const fx = Math.cos(T.yaw), fz = Math.sin(T.yaw), ah = Z.ahead || 0;
+  T.x += (D.x + D.vx * TOP.lead + fx * ah - T.x) * tk; T.z += (D.z + D.vz * TOP.lead + fz * ah - T.z) * tk;
+  T.y += (D.y * 0.7 - T.y) * tk; T.zf += (1 + Math.min(hs, 24) * TOP.zoom - T.zf) * tk * 0.5;
+  cam.k += ((GS.phase === "zone" && !ZC.chase ? 1 : 0) - cam.k) * ease(TOP.blend, rdt);
+  const k = smooth(cam.k), far0 = Math.hypot(Z.h, Z.back) / Math.hypot(CAM_H, CAM_D);
+  camAt.set(T.x - fx * Z.back * T.zf, T.y + Z.h * T.zf, T.z - fz * Z.back * T.zf).lerp(cam.pos, 1 - k);
+  camLook.set(T.x, T.y, T.z).lerp(cam.look, 1 - k);
+  // shake: trauma squared, on real time so it rattles through a hit-stop (wider from up there)
+  E.trauma = Math.max(0, E.trauma - 1.4 * rdt);
+  const sk = 1 + k * (Math.sqrt(far0) - 1), t2 = E.trauma * E.trauma * 0.45 * sk;   // wider from further away
+  const sv = tmpV.set(noise(RT * 28, 1), noise(RT * 31, 2), noise(RT * 26, 3)).multiplyScalar(t2);
+  camera.position.copy(camAt).add(sv);
+  camera.lookAt(cLook.copy(camLook).addScaledVector(sv, 0.5));
+  camera.rotateZ(t2 * 0.12 * noise(RT * 22, 5) / sk);
+  E.fovKick *= Math.exp(-4 * rdt);
+  const fovChase = CAM_FOV + (v / BOOST_V) * 10 + E.fovKick;
+  const fovTop = Z.fov * (1 + 0.14 * clamp((v - 14) / 10, 0, 1)) + E.fovKick * Z.fov / CAM_FOV;
+  const fovT = lerp(fovChase, fovTop, k);
+  cam.fov += (fovT - cam.fov) * ease(8, rdt);
+  if (Math.abs(camera.fov - cam.fov) > 0.01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
+  skyDome.position.copy(camera.position);
+  // the fog starts past what is being looked at, wherever the camera stands
+  if (scene.fog) {
+    const extra = Math.max(0, camera.position.distanceTo(camLook) - CAM_D);
+    scene.fog.near = 16 * P.fogNear + extra; scene.fog.far = 16 * Math.max(P.fogFar, P.fogNear + 0.1) + extra;
+    // nothing past the fog is drawn (in the race, the whole city ahead), and the sky sits just inside
+    const far = scene.fog.far + 25;
+    if (Math.abs(camera.far - far) > 1) { camera.far = far; camera.updateProjectionMatrix(); }
+    skyDome.scale.setScalar(far * 0.85 / 200);
+  }
+}
+
+// =============================================================================
+// 16. POST — GTAO, bloom, tilt-shift, the radial blur, the grade (lowpoly-look, juice-3d)
+// =============================================================================
+const QUAD_VS = "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }";
+const TILT = {
+  uniforms: { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 }, uBand: { value: 0.1 }, uSoft: { value: 0.3 }, uMax: { value: 3 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform vec2 uDir; uniform float uFocus, uBand, uSoft, uMax; varying vec2 vUv;",
+    "void main() {",
+    "  float r = uMax * smoothstep(uBand, uBand + uSoft, abs(vUv.y - uFocus));",
+    "  if (r < 0.05) { gl_FragColor = texture2D(tDiffuse, vUv); return; }",
+    "  vec4 c = vec4(0.0); float ws = 0.0;",
+    "  for (int i = -6; i <= 6; i++) { float fi = float(i), w = exp(-fi * fi / 18.0); vec4 s = texture2D(tDiffuse, vUv + uDir * fi * r / 3.0); if (s == s) { c += s * w; ws += w; } }",
+    "  gl_FragColor = ws > 0.0 ? c / ws : vec4(0.0);",
+    "}"].join("\n")
+};
+const BLUR = {
+  uniforms: { tDiffuse: { value: null }, center: { value: new THREE.Vector2(0.5, 0.5) }, strength: { value: 0 }, ca: { value: 0 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 center; uniform float strength; uniform float ca; varying vec2 vUv;
+    void main() {
+      vec2 d = vUv - center; float m = smoothstep(0.07, 0.45, length(d));
+      vec4 acc = vec4(0.0);
+      for (int i = 0; i < 10; i++) { float t = float(i) / 9.0; acc += texture2D(tDiffuse, vUv - d * strength * m * t); }
+      acc /= 10.0;
+      float r = texture2D(tDiffuse, vUv - d * ca * m).r, b = texture2D(tDiffuse, vUv + d * ca * m).b;
+      gl_FragColor = vec4(mix(acc.r, r, 0.5), acc.g, mix(acc.b, b, 0.5), 1.0);
+    }`
+};
+const GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uCon: { value: 1 }, uWarm: { value: 0 }, uTint: { value: 0 },
+    uLift: { value: new THREE.Color() }, uLiftAmt: { value: 0 }, uVig: { value: 0 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform float uSat, uCon, uWarm, uTint, uLiftAmt, uVig; uniform vec3 uLift; varying vec2 vUv;",
+    "void main() {",
+    "  vec3 c = texture2D(tDiffuse, vUv).rgb;",
+    "  c *= vec3(1.0 + uWarm, 1.0 - uTint, 1.0 - uWarm);",
+    "  c = 0.18 * pow(max(c, vec3(1e-5)) / 0.18, vec3(uCon));",
+    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));",
+    "  c = mix(vec3(l), c, uSat);",
+    "  c += uLift * uLiftAmt * (1.0 - smoothstep(0.0, 0.35, l));",
+    "  c *= mix(1.0, smoothstep(0.95, 0.25, length((vUv - 0.5) * vec2(1.0, 1.25))), uVig);",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"].join("\n")
+};
+let composer = null, gtaoPass, bloomPass, tiltH, tiltV, blurPass, gradePass;
+let W = 360, H = 640;
+function buildComposer() {
+  if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); gtaoPass.dispose(); }
+  const pr = renderer.getPixelRatio();
+  const rt = new THREE.WebGLRenderTarget(W * pr, H * pr, { type: THREE.HalfFloatType, samples: 4 });
+  composer = new EffectComposer(renderer, rt);
+  composer.addPass(new RenderPass(scene, camera));
+  gtaoPass = new GTAOPass(scene, camera, W * pr, H * pr);
+  for (const m of [gtaoPass.gtaoMaterial, gtaoPass.pdMaterial]) { m.defines.NORMAL_VECTOR_TYPE = 0; m.needsUpdate = true; }
+  composer.addPass(gtaoPass);
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(W * pr, H * pr), P.bloom, P.bloomRadius, P.bloomThreshold);
+  composer.addPass(bloomPass);
+  tiltH = new ShaderPass(TILT); tiltV = new ShaderPass(TILT);
+  composer.addPass(tiltH); composer.addPass(tiltV);
+  blurPass = new ShaderPass(BLUR); blurPass.enabled = false; composer.addPass(blurPass);
+  gradePass = new ShaderPass(GRADE); composer.addPass(gradePass);
+  composer.addPass(new OutputPass());
+  composer.setSize(W, H);
+  sizePost(); applyPost();
+}
+function sizePost() {
+  const pr = renderer.getPixelRatio();
+  tiltH.uniforms.uDir.value.set(1 / (W * pr), 0); tiltV.uniforms.uDir.value.set(0, 1 / (H * pr));
+}
+function applyPost() {
+  if (!composer) return;
+  gtaoPass.enabled = P.gtao; gtaoPass.blendIntensity = P.aoIntensity;
+  gtaoPass.updateGtaoMaterial({ radius: P.aoRadius, distanceExponent: 1, thickness: 1, scale: 1, samples: 16 });
+  bloomPass.enabled = P.bloom > 0; bloomPass.strength = P.bloom; bloomPass.radius = P.bloomRadius; bloomPass.threshold = P.bloomThreshold;
+  for (const t of [tiltH, tiltV]) {   // milder than the diorama's: a chase camera looks far
+    const u = t.uniforms; u.uBand.value = P.tiltBand + 0.08; u.uSoft.value = P.tiltSoft; u.uMax.value = P.tiltBlur * 0.6 * renderer.getPixelRatio();
+  }
+  const u = gradePass.uniforms;
+  u.uSat.value = P.saturation; u.uCon.value = P.contrast; u.uWarm.value = P.warmth; u.uTint.value = P.tint;
+  u.uLift.value.set(P.lift); u.uLiftAmt.value = P.liftAmt; u.uVig.value = P.vignette;
+}
+
+// =============================================================================
+// 17. THE AMBIANCE — everything a preset moves
+// =============================================================================
+const TONES = { agx: THREE.AgXToneMapping, aces: THREE.ACESFilmicToneMapping, neutral: THREE.NeutralToneMapping, none: THREE.NoToneMapping };
+function applyGlow() {
+  const wc = new THREE.Color(P.windowColor), lc = new THREE.Color(P.lampColor);
+  const cA = new THREE.Color(P.crystalA), cB = new THREE.Color(P.crystalB), ec = new THREE.Color(P.emberColor);
+  for (const b of DES) {
+    if (!b.mat || !b.mat.emissive || (b.kind !== "building" && b.kind !== "house")) continue;
+    const on = b.litRoll < P.windowShare && b.alive;
+    b.mat.emissive.copy(wc); b.mat.emissiveIntensity = on ? P.windowGlow * b.litK : 0;
+  }
+  for (const [name, mask] of [["streetlight", "lamp"], ["car_police", "police"]]) {
+    if (!kit[name]) continue;
+    kit[name].traverse((m) => {
+      if (!m.isMesh) return;
+      if (m.material.emissiveMap !== masks[mask]) { m.material.emissiveMap = masks[mask]; m.material.needsUpdate = true; }
+      if (mask === "lamp") { m.material.emissive.copy(lc); m.material.emissiveIntensity = P.lampGlow; }
+      else { m.material.emissive.set(0xffffff); m.material.emissiveIntensity = P.lampGlow * 0.6; }
+    });
+  }
+  for (const m of railMats) m.emissiveIntensity = P.neonGlow * 0.6;
+  crystalMats.A.emissive.copy(cA); crystalMats.A.emissiveIntensity = P.crystalGlow;
+  crystalMats.B.emissive.copy(cB); crystalMats.B.emissiveIntensity = P.crystalGlow;
+  emberMat.emissive.copy(ec); emberMat.emissiveIntensity = P.emberGlow;
+  lampMat.emissive.copy(lc); lampMat.emissiveIntensity = P.headlights ? 1.6 : 0.4;
+  const colourOf = { lamp: lc, crystalA: cA, crystalB: cB, ember: ec, head: lc };
+  const glowOf = { lamp: P.lampGlow / 3, crystalA: P.crystalGlow / 2.5, crystalB: P.crystalGlow / 2.5, ember: P.emberGlow / 3, head: P.headlights ? 1 : 0 };
+  for (const p of lightPools) {
+    const k = P.poolInt * Math.min(1.5, glowOf[p.kind]);
+    p.m.material.color.copy(colourOf[p.kind]).multiplyScalar(k * 0.4);
+    p.m.material.opacity = k > 0.01 ? 1 : 0;
+  }
+  headSpot.visible = P.headlights; headSpot.color.copy(lc); headSpot.intensity = P.lightInt * 40;
+  RIM.uRimColor.value.set(P.rimColor); RIM.uRimStr.value = P.rimStr; RIM.uRimPow.value = P.rimPow;
+}
+function applyAmbiance() {
+  hemi.color.set(P.skyTop); hemi.groundColor.set(P.groundColor); hemi.intensity = P.hemiInt;
+  sun.color.set(P.sunColor); sun.intensity = P.sunInt; sun.shadow.radius = P.shadowRadius; sun.shadow.blurSamples = 16;
+  scene.environmentIntensity = P.envInt;
+  renderer.toneMapping = TONES[P.tone]; renderer.toneMappingExposure = P.exposure;
+  rebuildSky();
+  scene.fog = scene.fog || new THREE.Fog(0xffffff, 20, 80);
+  scene.fog.color.set(P.skyHorizon);
+  scene.fog.near = 16 * P.fogNear; scene.fog.far = 16 * Math.max(P.fogFar, P.fogNear + 0.1);
+  skyMat.fog = false;
+  // one roughness for everything lit, kit and code
+  scene.traverse((o) => { if (o.isMesh) [].concat(o.material).forEach((m) => { if (m.isMeshStandardMaterial && !m.metalness && !m.emissiveIntensity && !m.vertexColors && !m.userData.noWeather) m.roughness = P.roughness; }); });
+  regradePalette(); drawGround(); drawRoad(); paintPools();
+  setBiome(P.biome, 1);
+  document.documentElement.style.setProperty("--vig", P.fury);
+  frameEl.style.setProperty("--vig", P.fury);
+  applyGlow(); applyPost();
+  ambBtns.forEach((b, i) => b.classList.toggle("on", i === ambIdx));
+}
+const ambBtns = [];
+AMBS.forEach((a, i) => {
+  const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `${a.name}<small>${a.note}</small>`;
+  b.onclick = () => setAmb(i); $("amb").appendChild(b); ambBtns.push(b);
+});
+const zcBtns = [];
+ZCAMS.forEach((c, i) => {
+  const b = document.createElement("button"); b.className = "chip"; b.innerHTML = `${c.name}<small>${c.note}</small>`;
+  b.onclick = () => setZoneCam(i); $("zcam").appendChild(b); zcBtns.push(b);
+});
+function setZoneCam(i) {
+  zcIdx = ((i % ZCAMS.length) + ZCAMS.length) % ZCAMS.length;
+  try { localStorage.setItem("dozerflipUltimate:cam", zcIdx); } catch (e) {}
+  cam.top.ready = false;
+  zcBtns.forEach((b, k) => b.classList.toggle("on", k === zcIdx));
+}
+setZoneCam(zcIdx);
+function setAmb(i) {
+  ambIdx = clamp(i, 0, AMBS.length - 1); P = AMBS[ambIdx];
+  try { localStorage.setItem("dozerflipUltimate:amb", ambIdx); } catch (e) {}
+  if (ready) applyAmbiance(); else ambBtns.forEach((b, k) => b.classList.toggle("on", k === ambIdx));
+}
+
+// =============================================================================
+// 18. THE HUD — score, gauge, callouts, floating points (DOM over the frame)
+// =============================================================================
+const callEl = $("callouts"), floatsEl = $("floats"), noticeEl = $("notice");
+function callout(word, sub, color, big) {
+  const d = document.createElement("div"); d.className = "co" + (big ? " big" : "");
+  d.innerHTML = `<b></b>${sub ? "<span></span>" : ""}`;
+  d.querySelector("b").textContent = word; d.querySelector("b").style.color = color || "#fff";
+  if (sub) d.querySelector("span").textContent = sub;
+  callEl.prepend(d);
+  while (callEl.children.length > 3) callEl.lastChild.remove();
+  setTimeout(() => { d.classList.add("out"); setTimeout(() => d.remove(), 350); }, big ? 1100 : 800);
+}
+const floats = [];
+function floatPts(at, text, color) {
+  const d = document.createElement("div"); d.className = "fp"; d.textContent = text; d.style.color = color;
+  floatsEl.appendChild(d); floats.push({ d, at: at.clone(), t: 0 });
+}
+let noticeT = 0;
+function notice(text) { noticeEl.textContent = text; noticeEl.classList.add("on"); noticeT = 2.4; }
+const proj = new V3();
+function updateHud(rdt) {
+  $("scoreN").textContent = GS.score.toLocaleString("en");
+  $("scoreSub").textContent = (GS.phase === "zone" ? GS.destroyed + " / " + GS.total + " destroyed"
+    : "Race " + GS.raceT.toFixed(1) + " s · " + Math.round(100 * clamp(TR.s / TR.len, 0, 1)) + " %") + " · ×" + GS.mult.toFixed(1);
+  const g = $("gauge");
+  $("gaugeFill").style.width = (100 * GS.gauge).toFixed(1) + "%";
+  g.classList.toggle("fury", GS.fury); g.classList.toggle("full", !GS.fury && GS.gauge > 0.85);
+  $("gaugeTxt").textContent = GS.fury ? "Fury " + GS.furyT.toFixed(1) + " s" : GS.gauge >= 1 ? "Super ready · dash" : "Super";
+  for (let i = floats.length - 1; i >= 0; i--) {
+    const f = floats[i]; f.t += rdt;
+    if (f.t > 1.1) { f.d.remove(); floats.splice(i, 1); continue; }
+    proj.copy(f.at).project(camera);
+    f.d.style.left = ((proj.x * 0.5 + 0.5) * W) + "px"; f.d.style.top = ((-proj.y * 0.5 + 0.5) * H - f.t * 50) + "px";
+    f.d.style.opacity = proj.z < 1 ? (f.t < 0.8 ? 1 : 1 - (f.t - 0.8) / 0.3) : 0;
+  }
+  if ((noticeT -= rdt) <= 0) noticeEl.classList.remove("on");
+}
+// the screen: speed lines, the fury's edge, the flash, the blur
+const elLines = $("lines"), elVig = $("vig"), elFlash = $("flash");
+function updateScreen(rdt) {
+  const v = Math.hypot(D.vx, D.vz), speedK = clamp((v - 13) / 8, 0, 1);
+  elLines.style.opacity = (speedK * 0.5 + (D.dashT > 0 ? 0.45 : 0) + (GS.fury ? 0.2 : 0)).toFixed(3);
+  E.vig += ((GS.fury ? 0.5 + 0.2 * Math.sin(RT * 8) : 0) - E.vig) * ease(6, rdt);
+  elVig.style.opacity = E.vig.toFixed(3);
+  E.flash = Math.max(0, E.flash - 4 * rdt);
+  elFlash.style.opacity = E.flash.toFixed(3);
+  const b = speedK * 0.03 + (D.dashT > 0 ? 0.05 : 0) + (GS.fury ? 0.015 : 0);
+  blurPass.enabled = b > 0.0005;
+  if (blurPass.enabled) {
+    proj.set(D.x, D.y + dims.h * 0.5, D.z).project(camera);
+    blurPass.uniforms.center.value.set(proj.x * 0.5 + 0.5, proj.y * 0.5 + 0.5);
+    blurPass.uniforms.strength.value = b; blurPass.uniforms.ca.value = b * 0.18;
+  }
+}
+function updatePieces(dt, rdt) {
+  for (const p of POOLS) p.update(dt);
+  S_POW.update(rdt);
+  for (const q of RINGS) {
+    if (!q.alive) continue;
+    q.age += dt; const t = q.age / q.life;
+    if (t >= 1) { q.alive = false; q.m.visible = false; continue; }
+    const s = q.r * (0.25 + 0.75 * (1 - (1 - t) * (1 - t)));
+    q.m.scale.set(s, 1, s); q.m.material.opacity = 0.7 * (1 - t);
+  }
+  // afterimages in a dash, a dash in the air, the fury
+  const fast = D.dashT > 0 || GS.fury || (!D.ground && D.air.dashes > 0), dashing = D.dashT > 0 || (!D.ground && D.air.dashes > 0);
+  E.ghost += ((dashing ? 1 : 0) - E.ghost) * ease(dashing ? 10 : 5, rdt);
+  const gc = GS.fury ? P.fury : "#9fe6ff";
+  for (let i = 0; i < ghosts.length; i++) {
+    const g = ghosts[i];
+    g.visible = E.ghost > 0.02;
+    if (!g.visible) continue;
+    g.matrix.copy(hist[(histHead - (i + 1) * GHOST_STEP + HIST * 4) % HIST]); g.matrixWorldNeedsUpdate = true;
+    g.userData.mat.color.set(gc); g.userData.mat.opacity = E.ghost * 0.26 * (1 - i / GHOSTS);
+  }
+  E.trail += ((fast || D.rail ? 1 : 0) - E.trail) * ease(fast ? 8 : 2.5, rdt);
+  if (dt > 0) {
+    trailPos.copyWithin(6, 0, (TN - 1) * 6);
+    const l = bodyLocal(-dims.len * 0.48, dims.h * 0.35, -dims.wid * 0.48, new V3()), r = bodyLocal(-dims.len * 0.48, dims.h * 0.35, dims.wid * 0.48, new V3());
+    trailPos.set([l.x, l.y, l.z, r.x, r.y, r.z], 0);
+  }
+  const tc = new THREE.Color(GS.fury ? P.fury : D.rail ? new THREE.Color(D.rail.r.col[0]) : "#9fe6ff");
+  for (let i = 0; i < TN; i++) {
+    const k = (1 - i / (TN - 1)) ** 2 * E.trail * 0.9;
+    for (let j = 0; j < 2; j++) { const o = 6 * i + 3 * j; trailCol[o] = tc.r * k; trailCol[o + 1] = tc.g * k; trailCol[o + 2] = tc.b * k; }
+  }
+  trail.visible = E.trail > 0.01;
+  trailGeo.attributes.position.needsUpdate = true; trailGeo.attributes.color.needsUpdate = true;
+}
+
+// =============================================================================
+// 19. THE LOOP
+// =============================================================================
+function resize() {
+  const st = $("stage");
+  H = Math.floor(st.clientHeight - 24); W = Math.floor(H * 9 / 16);
+  if (W > st.clientWidth - 24) { W = Math.floor(st.clientWidth - 24); H = Math.floor(W * 16 / 9); }
+  frameEl.style.width = W + "px"; frameEl.style.height = H + "px";
+  renderer.setSize(W, H, false);
+  camera.aspect = W / H; camera.updateProjectionMatrix();
+  if (composer) { composer.setSize(W, H); sizePost(); applyPost(); }
+}
+addEventListener("resize", resize);
+
+let ready = false, fps = 60, statT = 0;
+const clock = new THREE.Clock();
+const vFocus = new V3(), sunV = new V3();
+let focusY = 0.5;
+function simulate(dt) {
+  const n = Math.max(1, Math.ceil(dt / (1 / 120))), h = dt / n;
+  for (let i = 0; i < n; i++) {
+    D.prevY = D.y;
+    D.stun = Math.max(0, D.stun - h); D.dashT = Math.max(0, D.dashT - h); D.dashCd = Math.max(0, D.dashCd - h); D.boost = Math.max(0, D.boost - h);
+    if (D.rail) stepRail(h); else if (D.ground) stepGround(h); else stepAir(h);
+    if (!D.rail) { collide(h); touchArrows(); if (GS.phase === "race") touchBonus(); }
+    stepPhase(h);
+    if (GS.phase !== "zone") { trackStep(); continue; }
+    // the zone's edge
+    if (D.x < -WX) { D.x = -WX; D.vx = Math.abs(D.vx) * RESTITUTION; }
+    if (D.x > WX) { D.x = WX; D.vx = -Math.abs(D.vx) * RESTITUTION; }
+    if (D.z < WZ0) { D.z = WZ0; D.vz = Math.abs(D.vz) * RESTITUTION; }
+    // the south edge closes behind the dozer once it is in (it arrives over it, from the ramp)
+    if (!GS.sealed && D.z < WZ1 - 1) GS.sealed = true;
+    if (GS.sealed && D.z > WZ1) { D.z = WZ1; D.vz = -Math.abs(D.vz) * RESTITUTION; }
+  }
+  for (const r of rails) r.cool = Math.max(0, r.cool - dt);
+  if (GS.fury) { GS.furyT -= dt; GS.gauge = Math.max(0, GS.furyT / FURY_TIME); if (GS.furyT <= 0) endFury(); }
+}
+function frame() {
+  requestAnimationFrame(frame);
+  const rdt = Math.min(0.05, clock.getDelta());
+  RT += rdt;
+  fps += (1 / Math.max(rdt, 1e-3) - fps) * 0.05;
+  if (!ready) return;
+  // the clock: the hit-stop freezes it, the slow motion stretches it
+  const c = D.air.cur, big = !D.ground && c && c.def.dur >= 1 && c.t > 0.12 && c.t < 0.82;
+  E.slowT -= rdt;
+  const slowWant = E.slowT > 0 ? E.slowTo : big ? 0.75 : 1;
+  E.slowK += (slowWant - E.slowK) * ease(slowWant < E.slowK ? 14 : 8, rdt);
+  let dt = rdt * E.slowK;
+  if (E.hitStop > 0) { E.hitStop -= rdt; dt = 0; }
+  if (dt > 0) { simulate(dt); updateDestruction(dt); }
+  applyDozer(dt);
+  if (dt > 0) emit(dt);
+  updatePieces(dt, rdt);
+  updateMagic(rdt);
+  updateArrows(rdt); updateBonus(rdt);
+  updateCamera(dt, rdt);
+  updateScreen(rdt);
+  // the sun follows the dozer, so its shadows are always sharp round it
+  sunDir(sunV).multiplyScalar(60);
+  sun.position.set(D.x, 0, D.z).add(sunV); sun.target.position.set(D.x, 0, D.z);
+  // the band in focus follows the dozer on screen
+  vFocus.set(D.x, D.y, D.z).project(camera);
+  focusY += (clamp(vFocus.y * 0.5 + 0.5, 0.15, 0.85) - focusY) * ease(5, rdt);
+  tiltH.uniforms.uFocus.value = tiltV.uniforms.uFocus.value = focusY;
+  renderer.info.reset();
+  composer.render(rdt);
+  updateHud(rdt);
+  if ((statT -= rdt) < 0) {
+    statT = 0.5;
+    const inf = renderer.info.render;
+    $("stats").textContent = `${Math.round(fps)} fps · ${inf.calls} draws\n${Math.round(inf.triangles / 1000)}k triangles\nspeed ${Math.hypot(D.vx, D.vz).toFixed(1)} · ${D.rail ? "rail" : D.ground ? (D.pit ? "pool" : "ground") : "air"} · ${GS.phase}`;
+  }
+}
+// a bench's handle: the simulation stepped by hand at 60 Hz, no frame drawn
+function tick(sec) {
+  for (let i = 0, n = Math.round(sec * 60); i < n; i++) { RT += 1 / 60; simulate(1 / 60); updateDestruction(1 / 60); applyDozer(1 / 60); updateCamera(1 / 60, 1 / 60); }
+  const A = D.air;
+  return [GS.phase, D.x.toFixed(2), D.y.toFixed(2), D.z.toFixed(2), D.rail ? "rail" : D.ground ? "ground" : "air", "ny " + D.n.y.toFixed(2), "v " + Math.hypot(D.vx, D.vy, D.vz).toFixed(1),
+    A.assist ? "assist" : "", A.cur ? A.cur.def.name + " " + A.cur.t.toFixed(2) : "", "dash " + A.dashes, "score " + GS.score, "gauge " + GS.gauge.toFixed(2), GS.fury ? "FURY" : ""].join(" · ");
+}
+window.__ultimate = { tick, setZoneCam, bumps, BONUS, rails, D, GS, E, cam, IN, startFury, P: () => P, DES, setAmb, press, dashKey, resetCity, skipToZone, placeAt, TR, ARROWS, pits, scene, renderer, ready: () => ready };
+
+// =============================================================================
+// BOOT
+// =============================================================================
+const NAMES = ["base", "road_straight", "road_straight_crossing", "road_corner", "road_tsplit", "road_junction",
+  ...KIT_BUILDINGS.map((c) => "building_" + c + "_withoutBase"),
+  "streetlight", "firehydrant", "bench", "trash_A", "trash_B", "bush", "dumpster", "box_A", "box_B", ...CARS];
+resize();
+setAmb(ambIdx);
+requestAnimationFrame(frame);
+const loader = new GLTFLoader();
+// thirty files at once: a fetch the server drops is asked again rather than failing the page
+const loadKit = (n, tries = 4) => loader.loadAsync(KIT + n + ".gltf")
+  .catch((e) => tries > 1 ? new Promise((r) => setTimeout(r, 250)).then(() => loadKit(n, tries - 1)) : Promise.reject(e));
+Promise.all(NAMES.map((n) => loadKit(n).then((g) => { kit[n] = g.scene; })))
+  .then(() => {
+    kit.base.traverse((m) => { if (m.isMesh && m.material.map && !atlasImg) readAtlas(m.material.map.image); });
+    for (const n in kit) kit[n].traverse((m) => { if (m.isMesh && m.material.map) m.material.map = atlasTex; });
+    buildMasks();
+    layoutPark(); layoutTrack();
+    buildGround(); buildPits(); buildRamps(); buildRails(); buildTrack(); buildBonus();
+    buildCity(); buildTiles(); buildParkDecor();
+    GS.total = DES.length;
+    buildDozer(); buildGhosts();
+    headSpot.position.set(0.6, 1.0, 0); headSpot.target.position.set(6, 0, 0);
+    root.add(headSpot, headSpot.target);
+    // what glows and water keep their colours under a biome; the dozer stays clean
+    rimifyAll(scene);
+    for (const n in kit) rimifyAll(kit[n]);
+    buildComposer();
+    ready = true;
+    applyAmbiance();
+    $("loading").remove();
+    if (qs.get("skip")) placeAt(ZONE_IN, "zone"); else placeAt(START, "count");
+  })
+  .catch((e) => { $("loading").textContent = "Could not load the kit: " + e.message + " (open this page through make lab)"; console.error(e); });
+</script>
+</body>
+</html>

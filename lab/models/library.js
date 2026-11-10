@@ -876,6 +876,242 @@ const BUILDINGS = [
 
 
 // =============================================================================
+// THE HERO DOZER — the art-direction bench's model (lowpoly-direction.html)
+// =============================================================================
+// The same machine as vehicle-dozer, with a silhouette worth judging: rounded
+// tracks with cleats, a curved blade on push arms, a cab of pillars under an
+// overhanging roof. Two knobs are the bench's questions:
+//   toy    0 = the proportions of a real machine, 1 = a toy's (short chunky
+//          tracks, a big cab, a big blade), past 1 a caricature;
+//   detail 0, 1, 2 = what is modelled at all, so a part that costs triangles
+//          and adds nothing to the silhouette is seen doing so.
+// Every mesh carries userData.role (body, trim, dark, metal, glass, accent,
+// light): a page that recolours by role reads it, and a page that does not
+// still gets the kit's swatches through the hexes below.
+const DOZER_ROLE = { body: 0xf2b22a, trim: 0xe0a020, dark: 0x2a2a2e, metal: 0x8a8f96, glass: 0x37475a, accent: 0x1d1d1d, light: 0xf7f8f9 };
+const DOZER_REAL = { trackL: 4.6, trackH: 1.0, trackW: 0.9, gap: 1.25, hoodH: 0.8, cabL: 1.5, cabH: 1.5, cabW: 1.9,
+  bladeH: 1.35, bladeW: 3.8, bladeT: 0.2, bladeC: 0.22, exhH: 0.9, exhR: 0.11, lamp: 0.22 };
+const DOZER_TOY = { trackL: 3.7, trackH: 1.35, trackW: 1.15, gap: 1.3, hoodH: 0.95, cabL: 1.9, cabH: 2.1, cabW: 2.3,
+  bladeH: 2.0, bladeW: 4.6, bladeT: 0.28, bladeC: 0.34, exhH: 1.3, exhR: 0.18, lamp: 0.36 };
+
+// a track: a slot shape (two half circles and two runs), extruded across
+function trackGeo(L, H, W, seg) {
+  const bev = Math.min(0.07, W * 0.12), h = H - 2 * bev, r = h / 2, hl = L / 2 - bev - r;
+  const s = new THREE.Shape();
+  s.moveTo(-hl, -r); s.lineTo(hl, -r); s.absarc(hl, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  s.lineTo(-hl, r); s.absarc(-hl, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+  const g = new THREE.ExtrudeGeometry(s, { depth: W - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev,
+    bevelSegments: 1, curveSegments: seg });
+  g.translate(0, 0, -(W - 2 * bev) / 2);
+  return g;
+}
+// a blade: a curved plate, concave forward (+x), its back's middle at x = 0
+function bladeGeo(H, W, T, C, n) {
+  const s = new THREE.Shape(), bev = 0.03, bx = (i) => C * Math.pow(2 * i / n - 1, 2);
+  s.moveTo(bx(0), 0);
+  for (let i = 1; i <= n; i++) s.lineTo(bx(i), H * i / n);
+  for (let i = n; i >= 0; i--) s.lineTo(bx(i) + T, H * i / n);
+  const g = new THREE.ExtrudeGeometry(s, { depth: W - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 1 });
+  g.translate(0, 0, -(W - 2 * bev) / 2);
+  return g;
+}
+
+// opts.rig = true builds the same machine ARTICULATED, for the animation bench
+// (dozer-anim.html): the blade on a lifting arm, wheels that turn, a track
+// made of links that run round its loop. The
+// groups exist either way (at rest they move nothing); what only a rig needs
+// — the wheel bolts, the links — is built behind the flag.
+// g.userData.rig.set({ lift, tilt, spinX, spinY, spinZ, reach, trackL, trackR })
+// poses it: lift / tilt / spin in radians, reach in body units, the tracks
+// as the distance each one has run, in world units (+ forward).
+function buildHeroDozer(ctx, opts = {}) {
+  const t = opts.toy == null ? 0.6 : opts.toy, det = opts.detail == null ? 2 : opts.detail, k = 0.27, rig = !!opts.rig;
+  const D = {};
+  for (const key in DOZER_REAL) D[key] = DOZER_REAL[key] + (DOZER_TOY[key] - DOZER_REAL[key]) * t;
+  const g = new THREE.Group(), inner = new THREE.Group();
+  inner.name = "body"; inner.scale.setScalar(k); g.add(inner); g.userData.k = k;
+  inner.userData.o = new THREE.Vector3();
+  // a part is placed in the body's coordinates whatever group it goes into:
+  // every group records where its origin stands in the body (userData.o)
+  const add = (geo, role, x, y, z, opt, par = inner) => {
+    const m = ctx.mesh(geo, DOZER_ROLE[role], opt), o = par.userData.o;
+    m.userData.role = role; m.position.set(x - o.x, y - o.y, z - o.z); par.add(m); return m;
+  };
+  const box = (w, h, d, role, x, y, z, r = 0.06, opt, par) => add(bevelBox(w, h, d, r), role, x, y, z, opt, par);
+  const cyl = (r, h, role, x, y, z, axis, seg = 8, opt, par) => {
+    const geo = new THREE.CylinderGeometry(r, r, h, seg);
+    if (axis === "z") geo.rotateX(Math.PI / 2); else if (axis === "x") geo.rotateZ(Math.PI / 2);
+    return add(geo, role, x, y, z, opt, par);
+  };
+  const group = (name, par, o) => {
+    const q = new THREE.Group(); q.name = name; q.userData.o = o.clone();
+    q.position.copy(o).sub(par.userData.o); par.add(q); return q;
+  };
+  const seg = [2, 3, 5][det], metal = { roughness: 0.4, metalness: 0.5 }, paintOpt = { roughness: 0.55 };
+  const L = D.trackL, TH = D.trackH, span = D.gap;
+  const wheels = [], links = [[], []], tracks = [];
+
+  // ---- the tracks, their wheels, rollers and cleats
+  const deckFront = -L / 2 + D.cabL + 0.35;
+  for (const s of [-1, 1]) {
+    tracks.push(add(trackGeo(L, TH, D.trackW, seg), "dark", 0, TH / 2, s * span));
+    const ox = L / 2 - TH / 2, zf = s * (span + D.trackW / 2 + 0.02);
+    // a wheel turns about z; rig: bolts on its face, so the turn is seen
+    const wheel = (r, x, y, n, sides) => {
+      const w = cyl(r, 0.12, "metal", x, y, zf, "z", sides, metal);
+      if (!rig) return w;
+      wheels.push({ m: w, r, side: s });
+      for (let i = 0; i < n; i++) {
+        const a = i / n * TAU, b = add(bevelBox(r * 0.26, r * 0.26, 0.04, 0.01), "dark", 0, 0, 0);
+        w.add(b); b.position.set(Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62, s * 0.07); b.rotation.z = a;
+      }
+      const bar = add(bevelBox(r * 1.5, r * 0.22, 0.03, 0.01), "dark", 0, 0, 0);
+      w.add(bar); bar.position.z = s * 0.075;
+      return w;
+    };
+    if (det >= 1) {
+      wheel(TH * 0.36, -ox, TH / 2, 5, seg * 3);       // sprocket
+      wheel(TH * 0.3, ox, TH / 2, 4, seg * 3);       // idler
+    }
+    if (det >= 2) {
+      for (let i = 0; i < 4; i++) wheel(TH * 0.15, -ox + (i + 1) * 2 * ox / 5, TH * 0.22, 2, 6);
+      if (!rig) for (let i = 0; i < 7; i++) {
+        const x = deckFront + 0.1 + i * (ox - deckFront - 0.1) / 6;
+        box(0.12, 0.1, D.trackW, "dark", x, TH + 0.02, s * span, 0.02);
+      }
+    }
+    // rig: the cleats all round the loop, every one a link that runs on it
+    if (rig && det >= 1) {
+      const R = TH / 2, perim = 4 * ox + TAU * R, n = Math.round(perim / (det >= 2 ? 0.3 : 0.45));
+      for (let i = 0; i < n; i++) links[(s + 1) / 2].push(box(0.12, 0.1, D.trackW, "dark", 0, 0, s * span, 0.02));
+      links[(s + 1) / 2].ox = ox; links[(s + 1) / 2].R = R; links[(s + 1) / 2].perim = perim;
+    }
+  }
+
+  // ---- the deck over the tracks at the back, the hood between them at the front
+  const deckY = TH + 0.1, deckTop = deckY + 0.08, deckW = 2 * span + D.trackW + 0.12;
+  box(deckFront + L / 2, 0.16, deckW, "body", (deckFront - L / 2) / 2, deckY, 0, 0.04, paintOpt);
+  const hoodW = 2 * span - D.trackW * 0.6, hoodBot = TH * 0.4, hoodTop = TH + D.hoodH;
+  const hoodBack = deckFront - 0.2, hoodFront = L / 2 - 0.1, hoodL = hoodFront - hoodBack, hoodX = (hoodFront + hoodBack) / 2;
+  box(hoodL, hoodTop - hoodBot, hoodW, "body", hoodX, (hoodTop + hoodBot) / 2, 0, 0.08, paintOpt);
+  if (det >= 1) {
+    box(hoodL * 0.86, 0.08, hoodW * 0.78, "trim", hoodX - 0.04, hoodTop + 0.03, 0, 0.02, paintOpt);
+    box(0.06, (hoodTop - hoodBot) * 0.55, hoodW * 0.7, "dark", hoodFront + 0.02, hoodBot + (hoodTop - hoodBot) * 0.42, 0, 0.02);
+    for (const s of [-1, 1]) cyl(D.lamp / 2, 0.1, "light", hoodFront + 0.05, hoodTop - D.lamp * 0.7, s * hoodW * 0.36, "x", seg * 3);
+  }
+  if (det >= 2) {
+    for (let i = 0; i < 3; i++) box(0.05, 0.05, hoodW * 0.66, "metal", hoodFront + 0.06, hoodBot + (hoodTop - hoodBot) * (0.25 + i * 0.17), 0, 0.01, metal);
+    for (const s of [-1, 1]) box(0.08, D.lamp * 1.1, D.lamp * 1.1, "dark", hoodFront + 0.01, hoodTop - D.lamp * 0.7, s * hoodW * 0.36, 0.02);
+  }
+  // the exhaust
+  if (det >= 1) {
+    const ex = hoodBack + hoodL * 0.3, ez = hoodW * 0.25;
+    const pipe = cyl(D.exhR, D.exhH, "dark", ex, hoodTop + D.exhH / 2, ez, null, seg * 3);
+    pipe.userData.part = "exhaust";
+    g.userData.exhaust = new THREE.Vector3(ex, hoodTop + D.exhH + 0.05, ez).multiplyScalar(k);
+    if (det >= 2) cyl(D.exhR * 1.3, 0.07, "dark", ex, hoodTop + D.exhH, ez, null, seg * 3);
+  }
+
+  // ---- the cab: one box at detail 0, pillars, glass and an overhanging roof above
+  const cabX = -L / 2 + 0.15 + D.cabL / 2, cb = deckTop, CH = D.cabH, CL = D.cabL, CW = D.cabW;
+  if (det === 0) {
+    box(CL, CH, CW, "trim", cabX, cb + CH / 2, 0, 0.08, paintOpt);
+    box(CL + 0.04, CH * 0.42, CW + 0.04, "glass", cabX, cb + CH * 0.64, 0, 0.03, { roughness: 0.15, metalness: 0.3 });
+  } else {
+    box(CL, CH * 0.38, CW, "trim", cabX, cb + CH * 0.19, 0, 0.06, paintOpt);
+    box(CL * 0.92, CH * 0.52, CW * 0.92, "glass", cabX, cb + CH * 0.38 + CH * 0.26, 0, 0.03, { roughness: 0.15, metalness: 0.3 });
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      box(0.13, CH * 0.54, 0.13, "trim", cabX + sx * (CL / 2 - 0.07), cb + CH * 0.38 + CH * 0.26, sz * (CW / 2 - 0.07), 0.03, paintOpt);
+    }
+    box(CL + 0.26, 0.18, CW + 0.26, "body", cabX, cb + CH - 0.07, 0, 0.05, paintOpt);
+  }
+  if (det >= 2) {
+    const beacon = cyl(0.12, 0.2, "accent", cabX - CL * 0.2, cb + CH + 0.12, 0, null, 8);       // the beacon
+    beacon.userData.part = "beacon";
+    for (const s of [-1, 1]) cyl(D.lamp * 0.35, 0.08, "light", cabX + CL / 2 + 0.12, cb + CH - 0.22, s * CW * 0.3, "x", 8);
+    box(0.5, 0.06, 0.25, "dark", cabX + CL * 0.1, deckTop - 0.25, (CW / 2 + 0.25), 0.015);   // the step
+  }
+
+  // ---- the blade and its push arms (no pistons: two bars from the hood to the
+  // blade stood in the way of every lift and spin). The arm turns about its pivot at
+  // the back of the push arms (lift); the mount is the blade's middle (tilt,
+  // reach); the spin group under it turns the blade on any axis.
+  const x0 = L / 2 + 0.32, BH = D.bladeH, BW = D.bladeW, BT = D.bladeT, BC = D.bladeC, a0 = -0.4;
+  const P0 = new THREE.Vector3(a0, TH * 0.5, 0), M0 = new THREE.Vector3(x0 + (BC + BT) / 2, 0.03 + BH / 2, 0);
+  const arm = group("arm", inner, P0), mount = group("mount", arm, M0), spin = group("spin", mount, M0);
+  add(bladeGeo(BH, BW, BT, BC, seg), "body", x0, 0.03, 0, paintOpt, spin);
+  g.userData.bladeFront = (x0 + BC + BT) * k;
+  const arms = [];
+  if (det >= 1) {
+    box(BT + 0.12, 0.14, BW * 0.98, "metal", x0 + BC + BT / 2, 0.09, 0, 0.02, metal, spin);       // the cutting edge
+    const yy = 0.82, sx = x0 + BT + BC * Math.pow(2 * yy - 1, 2) + 0.03;
+    box(0.04, 0.13, BW * 0.9, "accent", sx, 0.03 + BH * yy, 0, 0.01, undefined, spin);            // the hazard band
+    for (const s of [-1, 1]) {
+      box(BC + BT + 0.1, BH * 0.92, 0.09, "body", x0 + (BC + BT) / 2, 0.03 + BH * 0.46, s * (BW / 2 - 0.02), 0.02, paintOpt, spin);
+      const az = s * (span + D.trackW / 2 + 0.14);
+      arms.push(box(x0 - a0, 0.24, 0.18, "metal", (x0 + a0) / 2, TH * 0.5, az, 0.04, metal, arm)); // the push arm
+    }
+  }
+  if (det >= 2) {
+    // the ripper at the back
+    box(0.3, 0.26, 2 * span * 0.7, "body", -L / 2 - 0.2, TH * 0.75, 0, 0.04, paintOpt);
+    const tooth = box(0.16, TH * 0.95, 0.18, "metal", -L / 2 - 0.36, TH * 0.42, 0, 0.03, metal);
+    tooth.rotation.z = -0.2;
+  }
+
+  if (rig) {
+    const span0 = x0 - a0;
+    // a link at distance u along its loop: top run forward, front arc down,
+    // bottom run back, rear arc up (the loop seen from +z turns clockwise)
+    const onLoop = (m, u, ox, R, perim) => {
+      u = ((u % perim) + perim) % perim;
+      let cx, th;
+      if (u < 2 * ox) { cx = -ox + u; th = Math.PI / 2; }
+      else if ((u -= 2 * ox) < Math.PI * R) { cx = ox; th = Math.PI / 2 - u / R; }
+      else if ((u -= Math.PI * R) < 2 * ox) { cx = ox - u; th = -Math.PI / 2; }
+      else { u -= 2 * ox; cx = -ox; th = -Math.PI / 2 - u / R; }
+      const rr = R - 0.01;
+      m.position.x = cx + rr * Math.cos(th); m.position.y = TH / 2 + rr * Math.sin(th);
+      m.rotation.z = th - Math.PI / 2;
+    };
+    const st = { lift: 0, tilt: 0, spinX: 0, spinY: 0, spinZ: 0, reach: 0, trackL: 0, trackR: 0 };
+    const set = (o) => {
+      Object.assign(st, o);
+      arm.rotation.z = st.lift;
+      mount.position.set(M0.x - P0.x + st.reach, M0.y - P0.y, 0);
+      mount.rotation.z = st.tilt;
+      spin.rotation.set(st.spinX, st.spinY, st.spinZ, "XYZ");
+      for (const m of arms) { m.scale.x = (span0 + st.reach) / span0; m.position.x = (span0 + st.reach) / 2; }
+      const dist = [st.trackL / k, st.trackR / k];
+      for (const w of wheels) w.m.rotation.z = -dist[(w.side + 1) / 2] / w.r;
+      for (let s = 0; s < 2; s++) {
+        const ls = links[s]; if (!ls.length) continue;
+        for (let i = 0; i < ls.length; i++) onLoop(ls[i], i * ls.perim / ls.length + dist[s], ls.ox, ls.R, ls.perim);
+      }
+    };
+    set({});
+    // what touches the ground: the track outlines and the cab roof (body
+    // coordinates), the blade's eight corners (the spin group's)
+    const bodyPts = [], bladePts = [], ox = L / 2 - TH / 2, hb = (BC + BT) / 2 + 0.06;
+    for (const s of [-1, 1]) for (let i = 0; i < 16; i++) {
+      const th = i / 16 * TAU, c = Math.cos(th);
+      bodyPts.push(new THREE.Vector3((c >= 0 ? ox : -ox) + TH / 2 * c, TH / 2 + TH / 2 * Math.sin(th), s * (span + D.trackW / 2)));
+    }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) bodyPts.push(new THREE.Vector3(cabX + sx * (CL + 0.26) / 2, cb + CH + 0.02, sz * (CW + 0.26) / 2));
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) bladePts.push(new THREE.Vector3(sx * hb, sy * BH / 2, sz * BW / 2));
+    // world anchors for an effect between the arm and the blade (matrices must be current)
+    const armZ = span + D.trackW / 2 + 0.14;
+    const armTip = (s, out) => arm.localToWorld(out.set(span0 + st.reach, 0, s * armZ));
+    const bladePoint = (u, v, out) => spin.localToWorld(out.set(-(BC + BT) / 2 + BC * v * v + 0.02, v * BH / 2, u * BW / 2));
+    const bladeCentre = (out) => spin.localToWorld(out.set(0, 0, 0));
+    g.userData.rig = { inner, arm, mount, spin, wheels, links, tracks, set, state: st, bodyPts, bladePts,
+      armTip, bladePoint, bladeCentre, bladeHalfW: BW / 2 * k, bladeHalfH: BH / 2 * k,
+      halfTrack: span * k, trackH: TH * k };
+  }
+  return g;
+}
+
+// =============================================================================
 // THE ITEMS
 // =============================================================================
 export const ITEMS = [
@@ -956,6 +1192,11 @@ export const ITEMS = [
       g.add(inner);
       return g;
     }
+  },
+  {
+    id: "vehicle-dozer-hero", name: "Bulldozer (hero)", category: "vehicle", biome: "city", tags: ["hero", "dozerflip"],
+    notes: "The art-direction bench's dozer: slot tracks, a curved blade, a pillared cab. opts.toy (0 real, 1 toy, 1.5 caricature) and opts.detail (0–2); every mesh has userData.role. opts.rig articulates it (userData.rig, see dozer-anim.html).",
+    build: buildHeroDozer
   },
   {
     id: "rubble-heap", name: "Rubble heap", category: "rubble", biome: "city", tags: ["destruction", "dozerflip"],

@@ -1388,6 +1388,11 @@
       updateFx(dt);
       if (freezeT > 0 && freezeT <= dt) living().forEach(function (m) { if (m.frozenT <= 0) iceOff(m); });
       freezeT = Math.max(0, freezeT - dt); goldT = Math.max(0, goldT - dt); magnetT = Math.max(0, magnetT - dt);
+      /* the screen's ice is the house's (ScreenFx "ice": the shared frame
+         closing in over a cold tint), held while time is frozen and let go
+         0.4 s early, so it has faded out when the world moves again */
+      if (freezeT > 0.4) { if (!ScreenFx.active("ice")) ScreenFx.hold("ice"); }
+      else if (ScreenFx.active("ice")) ScreenFx.release("ice");
       var i, j;
       for (i = 0; i < slots.length; i++) { if (slots[i].left) slots[i].cool -= dt; slots[i].hit -= dt; }
       for (i = drops.length - 1; i >= 0; i--) {
@@ -2378,17 +2383,6 @@
       drawShock();
       if (lab.debug) drawLab();
       if (L.mod === "night") drawNight();
-      if (freezeT > 0) {
-        ctx.fillStyle = "rgba(150,220,255," + Math.min(0.18, freezeT * 0.1) + ")"; ctx.fillRect(0, 0, W, H);
-        // the shared ice frame closes in from the edges and lets go as the freeze ends
-        var ice = img("frameIce");
-        if (ice) {
-          ctx.save();
-          ctx.globalAlpha = Math.min(1, (FREEZE_TIME - freezeT) / 0.3, freezeT / 0.4);
-          ctx.drawImage(ice, 0, 0, W, H);
-          ctx.restore();
-        }
-      }
       drawGunAura();
       drawReticle();
       drawTee();

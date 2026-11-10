@@ -140,6 +140,8 @@ Pop.show("ultra", { word:"Chain x20", sub:"+400" });             // hero beat
 Notify.say("The lava pulls", { kind: "warn" });                   // an event the player did not make
 Notify.learn("lava");                                             // a mechanic, the first time ever: "New: Lava"
 Overlay.vignette("#ffd43b", 1, 520);                             // the glow under it
+ScreenFx.play("bonus");                                           // a full-screen effect, by name
+ScreenFx.hold("ice"); /* … */ ScreenFx.release("ice");            // a state that lasts (a freeze)
 Sound.clip("hit", .6, 1 + Math.min(combo, 14) * .045);   // one sample, pitched
 Sound.clip("chain", .85);                                // the milestone
 ```

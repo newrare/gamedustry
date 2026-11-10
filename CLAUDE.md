@@ -190,6 +190,8 @@ development pages and answer only to the short rules in their own sections.
      happy, 2 or 1 → neutral, 0 → sad.
 1. Wire the feel through the shared layers: `HUD.setScore/punch/setLeft`,
    `Fx.burst/ring/shake/flash/freeze`, `Overlay.vignette` for the glow,
+   `ScreenFx` for every full-screen effect (a hit, danger, a freeze, a bonus,
+   a boost — never a tint, an edge or a frame painted on the canvas),
    `Sound.clip` — and put every word in ONE of three places:
    - **`Pop.show` / `Pop.text` — what the player just DID**, in the scene: a
      hit, a score, a combo, a power fired, a mistake as it happens (`alert`),
@@ -773,10 +775,8 @@ What a view brings:
   screen a stray tap can close is not a screen anything is composed on. CARDS
   has three tabs: CAMP (the roll of every card the camp holds and what it is
   doing), DECK and COLLECTION. The command has four: MANAGEMENT, RECRUITS,
-  MISSIONS, REGISTER. RECRUITS spends the meta layer's own coins and never rolls the three
-  specials: a spy, a scout and a sapper are ANSWERS to something, and a tent
-  that sold them would be selling the solution rather than the army. A grade
-  the roster holds none of — a special included — is the one exception: it is
+  MISSIONS, REGISTER. RECRUITS spends the meta layer's own coins and rolls every grade, the
+  three specials included. A grade the roster holds none of comes first: it is
   always on the shelf, at its lowest free tier, for `recruit.needPrice` coins,
   because a player stuck for a grade is a closed door and not a cost. MISSIONS
   sends a squad of two to five cards away for 20 minutes to 6 real hours on one of
@@ -810,8 +810,9 @@ What a view brings:
   preloaded (`CONFIG.artLazy`). **And every officer is ONE person**: the camp
   never holds the same one twice, whatever door they came through. A card
   played in a battle, sent on a mission or holding a post counts a service,
-  and a victory rolls it up one tier (about one chance in five,
-  `web.army.promotion`) — the face climbs, the portrait and the back of the
+  and a victory promotes ONE of the cards that served it, one tier up (each
+  rolls about one chance in five, `web.army.promotion`, and one is drawn among
+  the rolls that came up) — the face climbs, the portrait and the back of the
   card keep the tier it was raised at, and a card says so on a PROMOTION card.
   A card lost is written in the register with its cause, told once on an IN
   MEMORIAM card at the village, and the tent may find it alive again. See
@@ -1072,7 +1073,7 @@ target's; a playable has no guide and keeps the cards it has.
   pays or costs as a table — `[[label, value, colour?]]` — never a sentence of
   figures. `text` is then two or three short sentences of prose, ONE string
   whose paragraphs are split on a blank line (`"…\n\n…"`; text, never
-  markup), and `node()` an optional live part under them (slipdeck's poker
+  markup — save `<b>…</b>`, the one tag let through, for a key word), and `node()` an optional live part under them (slipdeck's poker
   chart, bridgessa's contract being played). A picture drawn before any round
   must not read round state: guard what is unset until `reset()`.
 - **Three ways in, one book.** The Help card keeps the sentence and the demo,
@@ -1551,9 +1552,9 @@ that beat or the block around it is worse than saying so.
 
 **The juice is scanned but not listed.** `Fx.burst/ring/shake/flash/freeze` and
 `HUD.punch` are drawn by the frame pipeline, which only turns inside a round, so
-a button for them would do nothing; and `Overlay.vignette` is a coloured glow
-over the frame rather than a notification — it carries no word, so there is
-nothing on it to read, re-style or re-word. `scan-events.mjs` prints all of it,
+a button for them would do nothing; and `Overlay.vignette` and `ScreenFx` are
+effects over the frame rather than notifications — they carry no word, so
+there is nothing on them to read, re-style or re-word. `scan-events.mjs` prints all of it,
 because it is what holds a beat together.
 
 **Both pages put the game's own moment under each event.** A callout or a cue
@@ -1701,6 +1702,15 @@ the patch bump and the rebuild that touching a game's sources owes. The segment
 at the top says which of the three — manifest, draft, empty — is ON SCREEN, a
 source nothing is stored in is disabled rather than silent, and switching asks
 before it replaces unsaved work.
+
+`screen-fx.html` is **the full-screen effects template** (*Template screen
+FX* in the back office): the motor's `ScreenFx` loaded as it ships
+(`packages/shell/screenfx.{js,css}`) and mounted on a 720x1280 stage over a
+capture of any game's round. Every preset plays on a click or holds, every
+field of it is a knob, a click on the stage moves where the rays and the
+lines come from, a switch shows a game that has not adopted the painted frame,
+and *Copy settings* is the line to paste into `PRESETS` — what is tuned there
+is what every game plays.
 
 `sticker-review.html` is **the sticker review desk** (`make stickers`): every
 adopted sticker of every game on one page, to be checked by eye and marked
@@ -2105,6 +2115,23 @@ ground than on a roof — while `tufts(object, biome, ctx)` adds the relief
 hash computed bit for bit in GLSL and in JS, lets the patches be. A biome is a
 row of `BIOMES`; the catalogue's *Weathering* select tries it on any object.
 
+`hd2d-look.html` is **the HD-2D bench**: a game's own 2D cuts (its
+`art.objects` and its three moods) stood up in a small 3D diorama built from
+`lab/models/library.js`, to see whether flat painted pieces and a lit world
+read as one picture. A sprite is a billboard standing on the middle of its
+base, turned on the vertical axis and leaning back, animated in stepped frames
+(a family's consecutive cuts make a flipbook); it is lit by the scene through
+a normal map generated from its own alpha, casts its silhouette from an
+invisible card turned to the sun, and sits on a contact blob. The scene can be
+rendered at a fraction of the screen and blown up without smoothing, with the
+sprites and the ground resampled so one texel is one render pixel and the
+orthographic camera snapped to that grid. Its own depth texture carries the
+sprites' alpha-tested silhouettes, so GTAO, the depth of field and the god
+rays never see their quads. Six presets (pixel day and night, golden dusk,
+paper standees, painted, and the flat baseline they are judged against);
+click a cut, then the scene to place it. Same three.js setup as
+`lowpoly-look.html`.
+
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see
 [docs/LEVELS.md](docs/LEVELS.md)). None of these pages ship, and they are the one
@@ -2303,9 +2330,20 @@ Shell (section 5):
   that fills the top of the frame (bouncetry, echomaze). Chosen in
   `lab/notify.html`; see
   [docs/ENGINE.md](docs/ENGINE.md#notify--the-one-voice-for-information).
-- `Overlay.vignette/clear` — the dramatic full-frame glow, and the way to wipe
-  the layer. It carries no word: the motor's old `toast/banner/reward` were
-  deleted when `Notify` took the informative words.
+- `ScreenFx.play(name, opts)` / `hold(name)` / `release(name)` — **the
+  full-screen effects**, called by what happened: `hit danger bonus heal shield power ice fire poison water mud wind knight-blue knight-red sunburst speed dark`. Never paint a tint, an edge or a frame over the whole screen by
+  hand: a preset is retuned with `CONFIG.screenFx`, a new one is
+  `ScreenFx.define`, and a painted frame is worn once the game adopts it
+  (`"frame-ice": "game-frame-ice"` in `art.objects`), its edge standing in
+  until then. Tuned in `lab/screen-fx.html` (*Template screen FX*), which
+  loads `packages/shell/screenfx.{js,css}` as they ship; a change there passes
+  `make test` (`tools/test/screenfx.mjs`) and is measured with
+  `tools/lab/bench-screenfx.mjs`. See
+  [docs/ENGINE.md](docs/ENGINE.md#screenfx--full-screen-effects-by-name).
+- `Overlay.vignette/clear` — the free-colour glow over the frame (the colour
+  of what was just picked up), drawn by `ScreenFx.glow` under the HUD, and the
+  way to wipe the layer. It carries no word: the motor's old
+  `toast/banner/reward` were deleted when `Notify` took the informative words.
 - `Decor.dress(node, {count, spots, size, opacity, front})` / `Decor.clear(node)`
   — one to three of the game's own painted objects around a screen, out of
   `assets/image/embed/<slug>-decor-NN.webp`. The motor dresses the end screen and the
@@ -2488,6 +2526,9 @@ its own, deployed by Vercel from this repo.
 - [ ] No text under its floor (18 / 20 / 20 / 22 design px by case and
   weight, hard constraint 8), on the canvas or in the DOM, on a phone viewport
   — and no screen whose layout broke to get there.
+- [ ] Every full-screen effect is a `ScreenFx` preset (or `Overlay.vignette`
+  for a free-colour glow): no tint, edge or frame painted over the whole
+  screen on the canvas, and `make test` passes.
 - [ ] Every word is in its one place: what the player did is `Pop`, an event,
   a refusal or a first-time mechanic is `Notify.say` / `Notify.learn`, a rule
   is a page of `Game.guide` — no message painted on the canvas, no message

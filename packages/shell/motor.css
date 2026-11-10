@@ -362,8 +362,9 @@
   @keyframes nt-punch { 40% { transform:scale(1.18); } }
 
   /* Dramatic edge glow — pulse it on a milestone or a near-death moment. */
-  #ov-vignette { position:absolute; inset:0; opacity:0; transition:opacity .5s ease;
-    box-shadow:inset 0 0 130px 34px var(--accent); }
+  /* #ov-vignette is no longer painted: Overlay.vignette draws through
+     ScreenFx.glow (packages/shell/screenfx.js). The node stays in every
+     page.html, empty and unstyled, until a game's markup is next touched. */
 
   /* =========================================================================
      POP LAYER — comic / manga onomatopoeia callouts (the Pop module).
@@ -1552,7 +1553,10 @@
     opacity:0; transform:translateX(-40px); transition:opacity .5s ease-out, transform .5s ease-out;
   }
   .eo-row.show { opacity:1; transform:translateX(0); }
-  .eo-val { font-variant-numeric:tabular-nums; color:var(--text); }
+  /* A label long enough to wrap stays flush left like its one-line
+     neighbours (the column centres its text), and the figure keeps its line. */
+  .eo-lab { flex:1 1 auto; min-width:0; text-align:left; }
+  .eo-val { flex:none; white-space:nowrap; text-align:right; font-variant-numeric:tabular-nums; color:var(--text); }
   /* grades: accent / good / warn / bad / gold (gold gets the sparks and the glow) */
   .eo-row.accent .eo-val { color:var(--gold); }
   .eo-row.good .eo-val   { color:var(--good); }

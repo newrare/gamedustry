@@ -55,8 +55,8 @@ proper nouns and are **never translated**.
 1. **Keep the English where French players keep it**: tap, swipe, combo,
    joker, bonus, score, top 10, boost — lowercase like any common noun. A
    GENRE is a proper noun and keeps its capitals: Battle Royale.
-1. **No ", et" and no ", ou".** Either a comma or the conjunction, never both
-   in a row. And never two "et" in one sentence: split it into two sentences
+1. **No ", et", ", ou", ", puis", ", alors", ", mais"…** Either a comma or
+   the linking word, never both in a row (house rule below). And never two "et" in one sentence: split it into two sentences
    rather than chaining ("Esquive pièges et rivaux. Choisis ta voie : vitesse
    ou bouclier.", not "Esquive les pièges et tes rivaux, et choisis…").
 1. **A tag or a label must make sense on its own**, read by someone who has
@@ -161,11 +161,18 @@ They follow their own rules on top of the ones above.
 - **No semicolon in the middle of a sentence**: a calque of a long English
   line often reaches for one. Split it into two sentences, or join with a comma
   or a word ("donc", "mais", "alors").
-- **No comma before *et*, *ou* or *puis***: the English writes "X, and Y",
-  "X, or Y", "X, then Y", and the French does not — « Fais-la tomber ou
-  convertis-la », « Glisse puis relâche ». The same holds at the end of a
-  list (« A, B et C », no serial comma). A comma that closes an incise stays
-  (« Le joker, une fois pris, et… » keeps the one after *pris*).
+- **A comma OR a linking word, never both**: two parts of a sentence are
+  joined by a comma, or by a word (*et*, *ou*, *ni*, *puis*, *alors*,
+  *donc*, *mais*, *car*, *sinon*…), never by the two in a row. The English
+  writes "X, and Y", "X, or Y", "X, then Y", "X, so Y", and the French does
+  not — « Fais-la tomber ou convertis-la », « Glisse puis relâche », « Elle
+  gagne mais en sort blessée et passe un tour », never « blessée, et passe ».
+  When the sentence is too long without its comma, it is two sentences:
+  « Garde une cellule libre. Sinon, ton captif repart. » The same holds at
+  the end of a list (« A, B et C », no serial comma). A comma that closes an
+  incise stays (« Le joker, une fois pris, et… » keeps the one after *pris*),
+  and so does the comma AFTER a linking word that opens a sentence
+  (« Sinon, … », « Alors, … »).
 - **Typography as the file writes it**: a plain space before `! ? : ;`; a
   straight apostrophe `'` in a manifest, the curly `’` where the shell's
   tables already use it.

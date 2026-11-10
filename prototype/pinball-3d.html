@@ -1,0 +1,705 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>pinball 3d prototype</title>
+<meta name="lab-game" content="none">
+<style>
+  html, body { margin: 0; height: 100%; background: #0d0f12; overflow: hidden; touch-action: none;
+    user-select: none; -webkit-user-select: none; }
+  #wrap { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
+  #gl { display: block; touch-action: none; }
+  #hud { position: absolute; left: 0; right: 0; top: 0; padding: 10px 14px; color: #fff; pointer-events: none;
+    display: flex; justify-content: space-between; align-items: flex-start; font: 600 14px system-ui, sans-serif; }
+  #score { font: 800 30px system-ui, sans-serif; letter-spacing: 1px; }
+  #side { text-align: right; line-height: 1.5; }
+  #msgs { position: absolute; left: 0; right: 0; top: 13%; text-align: center; pointer-events: none; color: #fff;
+    font: 800 22px system-ui, sans-serif; text-shadow: 0 2px 6px #000; }
+  #msgs div { transition: opacity 0.3s; }
+  #over { position: absolute; left: 0; right: 0; top: 0; bottom: 0; display: none; flex-direction: column;
+    align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.6); color: #fff;
+    font: 700 22px system-ui, sans-serif; gap: 10px; }
+  #hint { position: absolute; left: 0; right: 0; bottom: 6px; text-align: center; color: #8d97a1;
+    font: 12px system-ui, sans-serif; pointer-events: none; }
+  #dbg { position: absolute; left: 8px; bottom: 24px; color: #7f8a95; font: 11px ui-monospace, monospace;
+    pointer-events: none; white-space: pre; }
+</style>
+<div id="wrap">
+  <canvas id="gl"></canvas>
+  <div id="hud"><div><div id="score">0</div></div><div id="side"></div></div>
+  <div id="msgs"></div>
+  <div id="dbg"></div>
+  <div id="hint">Flippers: ← → (or Z / M), tap left / right half · Launch: hold Space or hold a tap</div>
+  <div id="over"><div id="overScore"></div><div style="font-size:15px;font-weight:500">Tap or Space to play again</div></div>
+</div>
+<!-- The one external file: three.js, pinned, like prototype/dozerflip.html.
+     A prototype opened over file:// cannot import a local module. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script>
+// ---------------------------------------------------------------------------
+// Pinball 3D - one fixed view, basic scores, no decor.
+//
+// The question: does a pinball table with real 3D shots - two crossing ramps
+// you must hit hard enough to climb, a glass tube that carries the ball back to
+// the plunger - feel good under a finger, and do the shots read from one view?
+//
+// Physics model
+//   - The FIELD is 2D: the ball moves on the tilted plane (x across, y up the
+//     table), gravity TILT_G pulls it down the table, and it collides with
+//     segments (walls, slingshots, drop targets, a one-way gate), circles
+//     (pop bumpers) and two tapered rotating flippers. Fixed sub-steps.
+//   - A RAMP is a 3D rail: crossing its mouth moving forward hands the ball to
+//     a 1D motion along the curve, where gravity is TILT_G along the table plus
+//     LIFT_G for the height. Too slow and it rolls back out of the mouth; over
+//     the top it rides down and drops onto an inlane, feeding a flipper.
+//   - The TUBE is a glass pipe fed by the scoop: the ball is held, then carried
+//     at constant speed to the plunger lane - a free skill shot.
+//
+// Table units: the ball's diameter is 1. The table is 20.6 x 40.3.
+// ---------------------------------------------------------------------------
+
+// --- tunables ---------------------------------------------------------------
+var TILT_G = 55;          // gravity down the table (units/s²)
+var LIFT_G = 150;         // gravity against height on a ramp (units/s² per unit of slope)
+var BALL_R = 0.5;
+var WALL_E = 0.45;        // restitution on walls
+var FLIP_E = 0.22;        // restitution on flippers (lower: they catch)
+var BUMPER_KICK = 17;     // speed a pop bumper adds along its normal
+var SLING_KICK = 14;      // speed a slingshot adds
+var MAX_SPEED = 90;
+var ROLL_DRAG = 0.10;     // per second, on the field
+var FLIP_LEN = 3.4, FLIP_R0 = 0.42, FLIP_R1 = 0.22;
+var FLIP_REST = -0.52, FLIP_UP = 0.52;   // radians, left flipper frame
+var FLIP_W_UP = 26, FLIP_W_DOWN = 14;     // rad/s
+var PLUNGER_MIN = 40, PLUNGER_MAX = 88, PLUNGER_CHARGE = 0.9; // speed range, seconds to full
+var RAIL_DRAG = 0.25, RAIL_ROLL = 2;      // linear drag and rolling resistance on ramps
+var RAIL_EXIT_MAX = 38;                   // speed cap when a ramp drops the ball back on the field
+var TUBE_SPEED = 24, HOLD_TIME = 0.6;
+var SCOOP_MAX = 32;                       // faster than this, the ball rattles over the scoop
+var BALLS = 3, BALL_SAVE = 6;             // seconds of ball save after a launch
+var SUBSTEP = 1 / 720;
+
+// --- scores -----------------------------------------------------------------
+var PTS = { bumper: 100, sling: 10, lane: 250, lanes: 2000, drop: 500, bank: 5000,
+  ramp: 2000, orbit: 1000, scoop: 3000 };
+
+// --- url switches: ?bot=1 plays by itself, &fast=N runs N frames per frame,
+// &report=S writes the stats into #dbg after S simulated seconds ----------------
+var Q = new URLSearchParams(location.search);
+var BOT = Q.get("bot") === "1", FAST = +Q.get("fast") || 1, REPORT = +Q.get("report") || 0;
+
+// --- table ------------------------------------------------------------------
+var W = 20.6, LANE_X = 19.0, MIDX = 9.5, TOP_Y = 40.3;
+var walls = [], bumpers = [], flippers = [], rails = [], lanes = [], drops = [];
+
+function wall(ax, ay, bx, by, o) {
+  var s = { ax: ax, ay: ay, bx: bx, by: by, r: 0.08, kind: "wall", cool: 0, flash: 0 };
+  if (o) for (var k in o) s[k] = o[k];
+  walls.push(s);
+  return s;
+}
+function arcWall(cx, cy, rad, a0, a1, n, o) {
+  var px = 0, py = 0;
+  for (var i = 0; i <= n; i++) {
+    var a = a0 + (a1 - a0) * i / n, x = cx + Math.cos(a) * rad, y = cy + Math.sin(a) * rad;
+    if (i) wall(px, py, x, y, o);
+    px = x; py = y;
+  }
+}
+function mx(x) { return 2 * MIDX - x; }
+
+// outer shell + plunger lane
+wall(0, 10.4, 0, 30);
+arcWall(10.3, 30, 10.3, Math.PI, 0, 48);
+wall(W, 30, W, 0);
+wall(LANE_X, 0, LANE_X, 28.0);
+var gate = wall(LANE_X, 28.0, W, 29.2, { kind: "gate", nx: -0.6, ny: 0.8 }); // one-way, upward
+wall(LANE_X, 1.0, W, 1.0, { kind: "plunger" });
+// funnels to the flippers
+wall(0, 10.4, 5.15, 5.35);
+wall(mx(0), 10.4, mx(5.15), 5.35);
+// slingshots (the edge facing the middle kicks)
+function sling(f) {
+  wall(f(1.9), 12.8, f(1.9), 10.2);
+  wall(f(1.9), 10.2, f(4.25), 8.1);
+  return wall(f(1.9), 12.8, f(4.25), 8.1, { kind: "sling", r: 0.12 });
+}
+var slings = [sling(function (x) { return x; }), sling(mx)];
+// left orbit lane
+wall(1.6, 19.5, 1.6, 29.5);
+// top rollover lanes
+[6.75, 8.6, 10.4, 12.25].forEach(function (x) { wall(x, 33.6, x, 35.6, { r: 0.15 }); });
+[7.675, 9.5, 11.325].forEach(function (x) { lanes.push({ x: x, y: 34.6, lit: false, mesh: null }); });
+// drop target bank on the right
+[13.2, 14.35, 15.5].forEach(function (y) { drops.push(wall(16.3, y, 16.3, y + 1.1, { kind: "drop", r: 0.15, down: false })); });
+var bankTimer = 0;
+// pop bumpers
+[[7.0, 27.2], [12.0, 27.2], [9.5, 30.8]].forEach(function (p) {
+  bumpers.push({ x: p[0], y: p[1], rad: 1.0, cool: 0, flash: 0, mesh: null });
+});
+// scoop: a horseshoe open to the flippers, the sink in the middle
+var SCOOP = { x: 9.5, y: 21.5 };
+arcWall(SCOOP.x, SCOOP.y, 1.2, -0.26, Math.PI + 0.26, 14);
+// flippers
+function flipper(px, side) { var f = { px: px, py: 4.6, side: side, a: FLIP_REST, w: 0, pressed: false, mesh: null }; flippers.push(f); return f; }
+var flipL = flipper(5.6, 1), flipR = flipper(mx(5.6), -1);
+function flipAngle(f) { return f.side > 0 ? f.a : Math.PI - f.a; }
+
+// rails: ramps and the tube. Points are table coordinates (x, y, floor height).
+function rail(kind, name, pts, color) {
+  var curve = new THREE.CatmullRomCurve3(pts.map(function (p) { return new THREE.Vector3(p[0], p[1], p[2]); }), false, "centripetal");
+  var N = Math.ceil(curve.getLength() * 4);
+  var sp = curve.getSpacedPoints(N), cum = [0];
+  sp.forEach(function (p) { if (p.z < 0) p.z = 0; });
+  for (var i = 1; i < sp.length; i++) cum.push(cum[i - 1] + sp[i].distanceTo(sp[i - 1]));
+  var dx = pts[1][0] - pts[0][0], dy = pts[1][1] - pts[0][1], dl = Math.hypot(dx, dy);
+  var r = { kind: kind, name: name, sp: sp, cum: cum, len: cum[cum.length - 1], color: color,
+    ex: pts[0][0], ey: pts[0][1], dx: dx / dl, dy: dy / dl, made: 0, fail: 0 };
+  rails.push(r);
+  return r;
+}
+var MOUTH = 1.0, CAPTURE = 0.3;
+function mouth(r) {
+  var nx = -r.dy, ny = r.dx, back = -0.3, deep = 1.6;
+  function p(l, a) { return [r.ex + nx * l + r.dx * a, r.ey + ny * l + r.dy * a]; }
+  var a1 = p(MOUTH, back), b1 = p(MOUTH, deep), a2 = p(-MOUTH, back), b2 = p(-MOUTH, deep);
+  wall(a1[0], a1[1], b1[0], b1[1]);
+  wall(a2[0], a2[1], b2[0], b2[1]);
+  wall(b1[0], b1[1], b2[0], b2[1]);
+}
+var rampL = rail("ramp", "Left ramp", [
+  [6.0, 18, 0], [5.6, 20, 0.35], [4.6, 24, 1.2], [3.9, 28, 2.2], [4.4, 31.5, 3.2], [6.4, 34.8, 3.7],
+  [10, 36.4, 3.9], [13.8, 35.4, 3.7], [16.4, 32.5, 3.3], [17.6, 28, 2.8], [17.9, 22, 2.0],
+  [17.9, 16.5, 1.2], [17.9, 12.5, 0.45], [17.9, 10.9, 0.05], [17.75, 10.3, 0]], 0x3fa9f5);
+var rampR = rail("ramp", "Right ramp", [
+  [13.0, 18, 0], [13.4, 20, 0.35], [14.6, 24, 1.2], [15.2, 27.5, 2.0], [14.2, 30.8, 2.4], [11.8, 32.6, 2.5],
+  [7.4, 32.6, 2.4], [3.0, 30.0, 2.1], [1.3, 26, 1.7], [0.9, 21, 1.2], [0.9, 16, 0.6],
+  [1.0, 12.0, 0.12], [1.25, 10.3, 0]], 0xf5a33f);
+var tube = rail("tube", "Tube", [
+  [9.5, 21.5, 0], [9.6, 22.4, 1.2], [10.6, 23.1, 2.4], [13, 22.7, 3.2], [16, 21.6, 3.6], [18.4, 20.4, 3.6],
+  [19.8, 17.5, 2.6], [19.8, 12, 1.4], [19.8, 6, 0.5], [19.8, 3.0, 0]], 0x9fe0ff);
+mouth(rampL); mouth(rampR);
+
+// --- game state -------------------------------------------------------------
+var ball = { x: 19.8, y: 1.5, vx: 0, vy: 0, mode: "field", rail: null, s: 0, rv: 0, ri: 0, z: 0, hold: 0 };
+var score = 0, ballNo = 1, mult = 1, over = false, simTime = 0;
+var charge = 0, charging = false, saveUntil = 0, launched = false;
+var lastRamp = -99, combo = 0, stillTime = 0;
+var stats = { ramps: 0, rampFails: 0, scoops: 0, orbits: 0, bumpers: 0, drains: 0, saves: 0, banks: 0,
+  lanesSets: 0, nudges: 0, escapes: 0, maxSpeed: 0, launches: 0, shots: [] };
+
+function newGame() {
+  score = 0; ballNo = 1; mult = 1; over = false;
+  lanes.forEach(function (l) { l.lit = false; });
+  drops.forEach(function (d) { d.down = false; });
+  serve();
+  document.getElementById("over").style.display = "none";
+}
+function serve() {
+  ball.mode = "field"; ball.x = 19.8; ball.y = 1.5; ball.vx = ball.vy = 0; ball.z = 0;
+  launched = false; combo = 0;
+}
+function award(key, label, factor) {
+  var p = PTS[key] * (factor || 1) * mult;
+  score += p;
+  if (label) say(label + "  +" + p);
+}
+
+// --- messages ---------------------------------------------------------------
+var msgs = [];
+function say(t) { msgs.push({ t: t, life: 1.4 }); if (msgs.length > 3) msgs.shift(); }
+
+// --- physics ----------------------------------------------------------------
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+function bounce(nx, ny, e, kick) {
+  var vn = ball.vx * nx + ball.vy * ny;
+  if (vn < 0) { ball.vx -= (1 + e) * vn * nx; ball.vy -= (1 + e) * vn * ny; }
+  if (kick) { ball.vx += nx * kick; ball.vy += ny * kick; }
+  return -vn;
+}
+
+function hitSeg(s) {
+  if (s.kind === "drop" && s.down) return;
+  var ex = s.bx - s.ax, ey = s.by - s.ay;
+  var t = clamp(((ball.x - s.ax) * ex + (ball.y - s.ay) * ey) / (ex * ex + ey * ey), 0, 1);
+  var cx = s.ax + ex * t, cy = s.ay + ey * t;
+  var dx = ball.x - cx, dy = ball.y - cy, d2 = dx * dx + dy * dy, rr = BALL_R + s.r;
+  if (d2 >= rr * rr) return;
+  if (s.kind === "gate" && (ball.x - s.ax) * s.nx + (ball.y - s.ay) * s.ny < 0) return;
+  var d = Math.sqrt(d2) || 1e-6, nx = dx / d, ny = dy / d;
+  ball.x = cx + nx * rr; ball.y = cy + ny * rr;
+  var vin = ball.vx * nx + ball.vy * ny;
+  if (s.kind === "sling" && -vin > 2 && s.cool <= 0) {
+    bounce(nx, ny, WALL_E, SLING_KICK); s.cool = 0.12; s.flash = 0.15; award("sling");
+  } else {
+    var hit = bounce(nx, ny, WALL_E, 0);
+    if (s.kind === "drop" && hit > 1) {
+      s.down = true; award("drop", "Target");
+      if (drops.every(function (q) { return q.down; })) { award("bank", "Bank down!"); stats.banks++; bankTimer = 1.5; }
+    }
+  }
+}
+
+function hitBumper(b) {
+  var dx = ball.x - b.x, dy = ball.y - b.y, d2 = dx * dx + dy * dy, rr = BALL_R + b.rad;
+  if (d2 >= rr * rr) return;
+  var d = Math.sqrt(d2) || 1e-6, nx = dx / d, ny = dy / d;
+  ball.x = b.x + nx * rr; ball.y = b.y + ny * rr;
+  if (b.cool <= 0) { bounce(nx, ny, WALL_E, BUMPER_KICK); b.cool = 0.06; b.flash = 0.15; award("bumper"); stats.bumpers++; }
+  else bounce(nx, ny, WALL_E, 0);
+}
+
+function hitFlipper(f) {
+  var th = flipAngle(f), ex = Math.cos(th) * FLIP_LEN, ey = Math.sin(th) * FLIP_LEN;
+  var t = clamp(((ball.x - f.px) * ex + (ball.y - f.py) * ey) / (FLIP_LEN * FLIP_LEN), 0, 1);
+  var cx = f.px + ex * t, cy = f.py + ey * t, rad = FLIP_R0 + (FLIP_R1 - FLIP_R0) * t;
+  var dx = ball.x - cx, dy = ball.y - cy, d2 = dx * dx + dy * dy, rr = BALL_R + rad;
+  if (d2 >= rr * rr) return;
+  var d = Math.sqrt(d2) || 1e-6, nx = dx / d, ny = dy / d;
+  ball.x = cx + nx * rr; ball.y = cy + ny * rr;
+  // surface velocity of the flipper at the contact point
+  var w = f.side > 0 ? f.w : -f.w, qx = cx + nx * rad - f.px, qy = cy + ny * rad - f.py;
+  var sx = -w * qy, sy = w * qx;
+  var rvn = (ball.vx - sx) * nx + (ball.vy - sy) * ny;
+  if (rvn < 0) {
+    ball.vx -= (1 + FLIP_E) * rvn * nx; ball.vy -= (1 + FLIP_E) * rvn * ny;
+    if (f.w > 0) f.shot = Math.max(f.shot || 0, Math.hypot(ball.vx, ball.vy));
+  }
+}
+
+function railAt(r, s) {
+  var i = ball.ri;
+  while (i < r.cum.length - 2 && r.cum[i + 1] < s) i++;
+  while (i > 0 && r.cum[i] > s) i--;
+  ball.ri = i;
+  var a = r.sp[i], b = r.sp[i + 1], L = r.cum[i + 1] - r.cum[i] || 1e-6, k = clamp((s - r.cum[i]) / L, 0, 1);
+  return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k,
+    ty: (b.y - a.y) / L, tz: (b.z - a.z) / L };
+}
+function railExitDir(r) {
+  var n = r.sp.length, a = r.sp[n - 4], b = r.sp[n - 1], dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1;
+  return { x: dx / l, y: dy / l };
+}
+function enterRail(r, speed) {
+  ball.mode = r.kind === "tube" ? "hold" : "rail"; ball.rail = r; ball.ri = 0;
+  ball.s = r.kind === "tube" ? 0 : CAPTURE; ball.rv = speed; ball.hold = HOLD_TIME;
+}
+function leaveRail(atEnd) {
+  var r = ball.rail;
+  ball.mode = "field"; ball.z = 0; ball.rail = null;
+  if (atEnd) {
+    var p = r.sp[r.sp.length - 1], dir = railExitDir(r);
+    var sp = r.kind === "tube" ? 6 : Math.min(ball.rv, RAIL_EXIT_MAX);
+    ball.x = p.x; ball.y = p.y; ball.vx = dir.x * sp; ball.vy = dir.y * sp;
+    if (r.kind === "ramp") {
+      combo = simTime - lastRamp < 5 ? combo + 1 : 1; lastRamp = simTime;
+      award("ramp", combo > 1 ? r.name + " combo x" + combo : r.name, combo);
+      r.made++; stats.ramps++;
+    } else launched = false; // back in the plunger lane: a new skill shot, no ball save to restart
+  } else {
+    // rolled back out of the mouth
+    ball.x = r.ex - r.dx * 0.6; ball.y = r.ey - r.dy * 0.6;
+    ball.vx = r.dx * ball.rv; ball.vy = r.dy * ball.rv;
+    r.fail++; stats.rampFails++; say("Too weak");
+  }
+}
+
+function plungerReady() { return ball.mode === "field" && ball.x > LANE_X && ball.y < 3 && Math.hypot(ball.vx, ball.vy) < 3; }
+function release() {
+  if (plungerReady()) {
+    ball.vy = PLUNGER_MIN + (PLUNGER_MAX - PLUNGER_MIN) * charge; ball.vx = 0;
+    stats.launches++;
+  }
+  charge = 0; charging = false;
+}
+
+function step(dt) {
+  simTime += dt;
+  // flippers
+  flippers.forEach(function (f) {
+    if (f.pressed) { f.w = FLIP_W_UP; f.a += f.w * dt; if (f.a >= FLIP_UP) { f.a = FLIP_UP; f.w = 0; } }
+    else { if (f.shot) { stats.shots.push(Math.round(f.shot)); f.shot = 0; } f.w = -FLIP_W_DOWN; f.a += f.w * dt; if (f.a <= FLIP_REST) { f.a = FLIP_REST; f.w = 0; } }
+  });
+  walls.forEach(function (s) { if (s.cool > 0) s.cool -= dt; });
+  bumpers.forEach(function (b) { if (b.cool > 0) b.cool -= dt; });
+
+  if (ball.mode === "hold") {
+    ball.hold -= dt;
+    if (ball.hold <= 0) { ball.mode = "tube"; ball.s = 0; }
+    return;
+  }
+  if (ball.mode === "tube") {
+    ball.s += TUBE_SPEED * dt;
+    if (ball.s >= ball.rail.len) leaveRail(true);
+    return;
+  }
+  if (ball.mode === "rail") {
+    var q = railAt(ball.rail, ball.s);
+    var acc = -(TILT_G * q.ty + LIFT_G * q.tz) - RAIL_DRAG * ball.rv - RAIL_ROLL * Math.sign(ball.rv);
+    ball.rv += acc * dt;
+    ball.s += ball.rv * dt;
+    if (ball.s >= ball.rail.len) leaveRail(true);
+    else if (ball.s <= 0) leaveRail(false);
+    return;
+  }
+
+  // field
+  var px = ball.x, py = ball.y;
+  ball.vy -= TILT_G * dt;
+  var drag = 1 - ROLL_DRAG * dt;
+  ball.vx *= drag; ball.vy *= drag;
+  var sp = Math.hypot(ball.vx, ball.vy);
+  if (sp > MAX_SPEED) { ball.vx *= MAX_SPEED / sp; ball.vy *= MAX_SPEED / sp; }
+  ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+
+  for (var i = 0; i < walls.length; i++) hitSeg(walls[i]);
+  for (i = 0; i < bumpers.length; i++) hitBumper(bumpers[i]);
+  hitFlipper(flipL); hitFlipper(flipR);
+
+  // ramp mouths
+  for (i = 0; i < rails.length; i++) {
+    var r = rails[i];
+    if (r.kind !== "ramp") continue;
+    var pa = (px - r.ex) * r.dx + (py - r.ey) * r.dy, na = (ball.x - r.ex) * r.dx + (ball.y - r.ey) * r.dy;
+    var lat = (ball.x - r.ex) * -r.dy + (ball.y - r.ey) * r.dx, fwd = ball.vx * r.dx + ball.vy * r.dy;
+    if (pa < CAPTURE && na >= CAPTURE && Math.abs(lat) < MOUTH && fwd > 0) { enterRail(r, fwd); return; }
+  }
+  // scoop
+  if (Math.hypot(ball.x - SCOOP.x, ball.y - SCOOP.y) < 0.55 && Math.hypot(ball.vx, ball.vy) < SCOOP_MAX) {
+    award("scoop", "Tube!"); stats.scoops++; enterRail(tube, 0); return;
+  }
+  // sensors
+  lanes.forEach(function (l) {
+    if (Math.abs(ball.x - l.x) < 0.8 && (py - l.y) * (ball.y - l.y) <= 0 && py !== ball.y) {
+      if (!l.lit) { l.lit = true; award("lane", "Lane"); }
+      if (lanes.every(function (k) { return k.lit; })) {
+        mult = Math.min(mult + 1, 5); award("lanes", "Multiplier x" + mult); stats.lanesSets++;
+        lanes.forEach(function (k) { k.lit = false; });
+      }
+    }
+  });
+  if (ball.x < 1.6 && py < 24 && ball.y >= 24) { award("orbit", "Orbit"); stats.orbits++; }
+  if (!launched && ball.x > LANE_X && py < 28 && ball.y >= 28) { launched = true; saveUntil = simTime + BALL_SAVE; }
+  if (bankTimer > 0) { bankTimer -= dt; if (bankTimer <= 0) drops.forEach(function (d) { d.down = false; }); }
+  // stuck somewhere away from the flippers and the plunger: nudge
+  if (Math.hypot(ball.vx, ball.vy) < 0.4 && ball.y > 7.5 && ball.x < LANE_X) {
+    stillTime += dt;
+    if (stillTime > 3) { ball.vx = (Math.random() - 0.5) * 8; ball.vy = 6; stillTime = 0; stats.nudges++; say("Nudge"); }
+  } else stillTime = 0;
+  // drain / escape
+  if (ball.y < -1) drain();
+  else if (ball.x < -1 || ball.x > W + 1 || ball.y > TOP_Y + 1.5) { stats.escapes++; serve(); }
+  sp = Math.hypot(ball.vx, ball.vy);
+  if (sp > stats.maxSpeed) stats.maxSpeed = sp;
+}
+
+function drain() {
+  stats.drains++;
+  if (launched && simTime < saveUntil) { stats.saves++; say("Ball saved"); serve(); return; }
+  if (ballNo >= BALLS) {
+    over = true; ball.mode = "out";
+    document.getElementById("overScore").textContent = "Game over · " + score.toLocaleString("en");
+    document.getElementById("over").style.display = BOT ? "none" : "flex";
+    if (BOT) setTimeout(newGame, 50);
+    return;
+  }
+  ballNo++; mult = 1; serve(); say("Ball " + ballNo);
+}
+
+// --- input ------------------------------------------------------------------
+var keys = {};
+var LEFT_KEYS = { ArrowLeft: 1, KeyZ: 1, ShiftLeft: 1, KeyA: 1 };
+var RIGHT_KEYS = { ArrowRight: 1, KeyM: 1, ShiftRight: 1, Slash: 1, KeyL: 1 };
+var PLUNGE_KEYS = { Space: 1, ArrowDown: 1, Enter: 1 };
+var pointers = {};
+function syncFlippers() {
+  var l = false, r = false;
+  for (var k in keys) { if (LEFT_KEYS[k]) l = true; if (RIGHT_KEYS[k]) r = true; }
+  for (var id in pointers) { if (pointers[id].side < 0) l = true; else r = true; }
+  if (!BOT) { flipL.pressed = l; flipR.pressed = r; }
+}
+addEventListener("keydown", function (e) {
+  if (e.repeat) return;
+  if (e.code === "KeyD") { showDbg = !showDbg; return; }
+  if (over && PLUNGE_KEYS[e.code]) { newGame(); return; }
+  keys[e.code] = true;
+  if (PLUNGE_KEYS[e.code]) charging = true;
+  syncFlippers();
+  if (LEFT_KEYS[e.code] || RIGHT_KEYS[e.code] || PLUNGE_KEYS[e.code]) e.preventDefault();
+});
+addEventListener("keyup", function (e) {
+  delete keys[e.code];
+  if (PLUNGE_KEYS[e.code]) release();
+  syncFlippers();
+});
+var glCanvas = document.getElementById("gl");
+var wrapEl = document.getElementById("wrap");
+wrapEl.addEventListener("pointerdown", function (e) {
+  if (over) { newGame(); return; }
+  var rect = glCanvas.getBoundingClientRect();
+  pointers[e.pointerId] = { side: e.clientX - rect.left < rect.width / 2 ? -1 : 1 };
+  if (plungerReady()) { charging = true; pointers[e.pointerId].plunge = true; }
+  syncFlippers();
+});
+function pointerEnd(e) {
+  var p = pointers[e.pointerId];
+  if (!p) return;
+  delete pointers[e.pointerId];
+  if (p.plunge) release();
+  syncFlippers();
+}
+addEventListener("pointerup", pointerEnd);
+addEventListener("pointercancel", pointerEnd);
+
+// --- bot (?bot=1): flips when the ball comes near a flipper -----------------
+var botT = { L: 0, R: 0, plunge: 0 };
+function bot(dt) {
+  [["L", flipL], ["R", flipR]].forEach(function (pair) {
+    var f = pair[1], k = pair[0];
+    botT[k] -= dt;
+    if (botT[k] > 0) return;
+    if (f.pressed) { f.pressed = false; botT[k] = 0.2; return; }
+    var th = flipAngle(f), mx2 = f.px + Math.cos(th) * FLIP_LEN * 0.6, my = f.py + Math.sin(th) * FLIP_LEN * 0.6;
+    if (ball.mode === "field" && Math.hypot(ball.x - mx2, ball.y - my) < 1.9 + Math.random() * 0.8 && ball.vy < 3) {
+      f.pressed = true; botT[k] = 0.15 + Math.random() * 0.15;
+    }
+  });
+  if (plungerReady()) {
+    if (!charging) { charging = true; botT.plunge = 0.4 + Math.random() * 0.6; }
+    botT.plunge -= dt;
+    if (botT.plunge <= 0) release();
+  }
+}
+
+// --- rendering --------------------------------------------------------------
+var renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, preserveDrawingBuffer: BOT });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0f12);
+var camera = new THREE.PerspectiveCamera(40, 9 / 16, 0.5, 400);
+scene.add(new THREE.HemisphereLight(0xe6eeff, 0x2a2f38, 1.1));
+var sun = new THREE.DirectionalLight(0xffffff, 2.0);
+sun.position.set(-10, 40, 14);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+var sc = sun.shadow.camera; sc.left = -26; sc.right = 26; sc.top = 26; sc.bottom = -26; sc.near = 1; sc.far = 120;
+scene.add(sun);
+
+// table (x, y, height) -> three (X, Y up, Z toward the player)
+function tv(x, y, z) { return new THREE.Vector3(x - W / 2, z, 20 - y); }
+
+function mat(color, o) { var m = new THREE.MeshStandardMaterial({ color: color, roughness: 0.6, metalness: 0.05 }); if (o) for (var k in o) m[k] = o[k]; return m; }
+var floor = new THREE.Mesh(new THREE.PlaneGeometry(W, TOP_Y + 0.6), mat(0x24324a));
+floor.rotation.x = -Math.PI / 2; floor.position.copy(tv(W / 2, TOP_Y / 2, -0.01)); floor.receiveShadow = true;
+scene.add(floor);
+
+var M = {
+  wall: mat(0x8a94a3), rubber: mat(0xe8eef5), sling: mat(0xf0e25a), drop: mat(0xff7043),
+  gate: mat(0x5c6672), bumper: mat(0xd94a6a), cap: mat(0xffffff), flip: mat(0xf2f2f2),
+  lane: mat(0x3a4250), laneOn: mat(0xffd54a, { emissive: new THREE.Color(0xffb300), emissiveIntensity: 0.8 }),
+  hole: mat(0x05070a), ball: new THREE.MeshStandardMaterial({ color: 0xdfe3e8, roughness: 0.18, metalness: 0.55 })
+};
+
+walls.forEach(function (s) {
+  if (s.kind === "plunger") return;
+  var len = Math.hypot(s.bx - s.ax, s.by - s.ay), h = s.kind === "gate" ? 0.25 : 0.9;
+  var m = s.kind === "sling" ? M.sling.clone() : s.kind === "drop" ? M.drop : s.kind === "gate" ? M.gate : s.r > 0.1 ? M.rubber : M.wall;
+  var mesh = new THREE.Mesh(new THREE.BoxGeometry(len + s.r * 2, h, s.r * 2 + 0.06), m);
+  mesh.position.copy(tv((s.ax + s.bx) / 2, (s.ay + s.by) / 2, h / 2));
+  mesh.rotation.y = Math.atan2(s.by - s.ay, s.bx - s.ax);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  scene.add(mesh);
+  s.mesh = mesh;
+});
+bumpers.forEach(function (b) {
+  var g = new THREE.Group();
+  var body = new THREE.Mesh(new THREE.CylinderGeometry(b.rad, b.rad, 0.8, 28), M.bumper.clone());
+  body.position.y = 0.4; body.castShadow = true;
+  var cap = new THREE.Mesh(new THREE.CylinderGeometry(b.rad * 0.85, b.rad * 0.9, 0.2, 28), M.cap);
+  cap.position.y = 0.9;
+  g.add(body); g.add(cap);
+  g.position.copy(tv(b.x, b.y, 0));
+  scene.add(g);
+  b.mesh = g; b.body = body;
+});
+lanes.forEach(function (l) {
+  var m = new THREE.Mesh(new THREE.CircleGeometry(0.35, 20), M.lane);
+  m.rotation.x = -Math.PI / 2; m.position.copy(tv(l.x, l.y - 0.8, 0.01));
+  scene.add(m); l.mesh = m;
+});
+var hole = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24), M.hole);
+hole.rotation.x = -Math.PI / 2; hole.position.copy(tv(SCOOP.x, SCOOP.y, 0.01)); scene.add(hole);
+var plunger = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.6, 0.8), mat(0xb0b8c4));
+scene.add(plunger);
+
+// flippers: a tapered capsule extruded, pivot at the origin, pointing +x
+(function () {
+  var sh = new THREE.Shape();
+  sh.moveTo(0, FLIP_R0); sh.lineTo(FLIP_LEN, FLIP_R1);
+  sh.absarc(FLIP_LEN, 0, FLIP_R1, Math.PI / 2, -Math.PI / 2, true);
+  sh.lineTo(0, -FLIP_R0);
+  sh.absarc(0, 0, FLIP_R0, -Math.PI / 2, Math.PI / 2, true);
+  var g = new THREE.ExtrudeGeometry(sh, { depth: 0.7, bevelEnabled: false, curveSegments: 10 });
+  g.rotateX(-Math.PI / 2);
+  flippers.forEach(function (f) {
+    var m = new THREE.Mesh(g, M.flip); m.castShadow = true;
+    m.position.copy(tv(f.px, f.py, 0)); scene.add(m); f.mesh = m;
+  });
+})();
+
+// rails: a translucent floor ribbon plus two side rails for ramps, a glass pipe for the tube
+rails.forEach(function (r) {
+  if (r.kind === "tube") {
+    var curve = new THREE.CatmullRomCurve3(r.sp.map(function (p) { return tv(p.x, p.y, p.z + BALL_R); }));
+    var glass = new THREE.MeshStandardMaterial({ color: r.color, transparent: true, opacity: 0.22, roughness: 0.1,
+      metalness: 0, side: THREE.DoubleSide, depthWrite: false });
+    scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 160, 0.66, 14, false), glass));
+    var rim = new THREE.MeshStandardMaterial({ color: r.color, roughness: 0.3 });
+    [0.25, 0.5, 0.75].forEach(function (t) {
+      var ring = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.05, 6, 20), rim);
+      ring.position.copy(curve.getPointAt(t)); ring.lookAt(ring.position.clone().add(curve.getTangentAt(t)));
+      scene.add(ring);
+    });
+    return;
+  }
+  var pos = [], idx = [], left = [], right = [], n = r.sp.length;
+  for (var i = 0; i < n; i++) {
+    var a = r.sp[Math.max(0, i - 1)], b = r.sp[Math.min(n - 1, i + 1)];
+    var dx = b.x - a.x, dy = b.y - a.y, l = Math.hypot(dx, dy) || 1, nx = -dy / l * 0.85, ny = dx / l * 0.85;
+    var p = r.sp[i], h = p.z + 0.02;
+    var L = tv(p.x + nx, p.y + ny, h), R = tv(p.x - nx, p.y - ny, h);
+    pos.push(L.x, L.y, L.z, R.x, R.y, R.z);
+    left.push(tv(p.x + nx, p.y + ny, h + 0.65)); right.push(tv(p.x - nx, p.y - ny, h + 0.65));
+    if (i) { var k = i * 2; idx.push(k - 2, k - 1, k, k - 1, k + 1, k); }
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  var ribbon = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: r.color, transparent: true, opacity: 0.55,
+    side: THREE.DoubleSide, roughness: 0.4, depthWrite: false }));
+  ribbon.castShadow = true;
+  scene.add(ribbon);
+  var railMat = new THREE.MeshStandardMaterial({ color: 0xe0e6ee, roughness: 0.25, metalness: 0.6 });
+  [left, right].forEach(function (pts) {
+    var m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), n, 0.07, 6, false), railMat);
+    m.castShadow = true; scene.add(m);
+  });
+  // a few posts so the height reads
+  for (var j = 12; j < n - 8; j += 22) {
+    var q = r.sp[j]; if (q.z < 0.6) continue;
+    var post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, q.z, 6), railMat);
+    post.position.copy(tv(q.x, q.y, q.z / 2)); scene.add(post);
+  }
+});
+
+var ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), M.ball);
+ballMesh.castShadow = true;
+scene.add(ballMesh);
+
+// --- frame and camera fit ---------------------------------------------------
+var VW = 0, VH = 0, CAM_EL = 0.98; // camera elevation, radians from the table plane
+function resize() {
+  VH = innerHeight; VW = Math.min(innerWidth, Math.round(VH * 9 / 16));
+  wrapEl.style.width = VW + "px"; wrapEl.style.height = VH + "px";
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setSize(VW, VH);
+  camera.aspect = VW / VH;
+  fitCamera();
+}
+function fitCamera() {
+  var target = tv(W / 2, TOP_Y / 2 - 1, 0), dir = new THREE.Vector3(0, Math.sin(CAM_EL), Math.cos(CAM_EL));
+  var pts = [];
+  [0, W].forEach(function (x) { [0, TOP_Y].forEach(function (y) { pts.push(tv(x, y, 0), tv(x, y, 1)); }); });
+  pts.push(tv(10, 36.4, 4.6));
+  camera.clearViewOffset();
+  var lo = 10, hi = 300, ymin = 0, ymax = 0;
+  for (var it = 0; it < 40; it++) {
+    var dist = (lo + hi) / 2;
+    camera.position.copy(target).addScaledVector(dir, dist); camera.lookAt(target); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+    var xmax = 0; ymin = 9; ymax = -9;
+    pts.forEach(function (p) { var q = p.clone().project(camera); xmax = Math.max(xmax, Math.abs(q.x)); ymin = Math.min(ymin, q.y); ymax = Math.max(ymax, q.y); });
+    if (xmax < 0.96 && ymax - ymin < 1.78) hi = dist; else lo = dist;
+  }
+  camera.position.copy(target).addScaledVector(dir, hi); camera.lookAt(target); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+  ymin = 9; ymax = -9;
+  pts.forEach(function (p) { var q = p.clone().project(camera); ymin = Math.min(ymin, q.y); ymax = Math.max(ymax, q.y); });
+  // centre the table slightly low, leaving the top band for the score
+  var want = -0.07, off = ((ymin + ymax) / 2 - want) / 2 * VH;
+  camera.setViewOffset(VW, VH, 0, -off, VW, VH);
+}
+addEventListener("resize", resize);
+resize();
+
+// --- frame update -----------------------------------------------------------
+var showDbg = BOT, last = performance.now(), fps = 60;
+var scoreEl = document.getElementById("score"), sideEl = document.getElementById("side");
+var msgsEl = document.getElementById("msgs"), dbgEl = document.getElementById("dbg");
+
+function draw(dt) {
+  flippers.forEach(function (f) { f.mesh.rotation.y = flipAngle(f); });
+  bumpers.forEach(function (b) {
+    if (b.flash > 0) b.flash -= dt;
+    var k = Math.max(0, b.flash) / 0.15;
+    b.body.material.emissive.setRGB(k, k * 0.7, k * 0.3);
+    b.mesh.scale.setScalar(1 + k * 0.12);
+  });
+  slings.forEach(function (s) { if (s.flash > 0) s.flash -= dt; s.mesh.material.emissive.setRGB(Math.max(0, s.flash) * 6, Math.max(0, s.flash) * 5, 0); });
+  drops.forEach(function (d) { var y = d.down ? -0.5 : 0.45; d.mesh.position.y += (y - d.mesh.position.y) * Math.min(1, dt * 20); });
+  lanes.forEach(function (l) { l.mesh.material = l.lit ? M.laneOn : M.lane; });
+  plunger.position.copy(tv(19.8, 0.7 - charge * 1.0, 0.3));
+
+  var p;
+  if (ball.mode === "rail" || ball.mode === "tube") {
+    var q = railAt(ball.rail, ball.s); p = tv(q.x, q.y, q.z + BALL_R);
+  } else if (ball.mode === "hold") p = tv(SCOOP.x, SCOOP.y, BALL_R - 0.45);
+  else p = tv(ball.x, ball.y, BALL_R);
+  ballMesh.position.copy(p);
+  ballMesh.visible = ball.mode !== "out";
+
+  scoreEl.textContent = score.toLocaleString("en");
+  sideEl.innerHTML = "Ball " + Math.min(ballNo, BALLS) + " / " + BALLS + "<br>x" + mult +
+    (launched && simTime < saveUntil ? "<br>Ball save " + Math.ceil(saveUntil - simTime) : "");
+  msgs.forEach(function (m) { m.life -= dt; });
+  msgs = msgs.filter(function (m) { return m.life > 0; });
+  msgsEl.innerHTML = msgs.map(function (m) { return '<div style="opacity:' + Math.min(1, m.life * 2).toFixed(2) + '">' + m.t + "</div>"; }).join("");
+
+  if (showDbg) {
+    var sp = ball.mode === "rail" ? Math.abs(ball.rv) : Math.hypot(ball.vx, ball.vy);
+    var line = ball.mode + "  speed " + sp.toFixed(1) + "  charge " + charge.toFixed(2) + "  fps " + fps.toFixed(0) +
+      "\nramps L " + rampL.made + "/" + (rampL.made + rampL.fail) + "  R " + rampR.made + "/" + (rampR.made + rampR.fail) +
+      "  t " + simTime.toFixed(0) + "s";
+    if (BOT) line += "\n" + JSON.stringify(stats);
+    dbgEl.textContent = line;
+  } else dbgEl.textContent = "";
+  renderer.render(scene, camera);
+}
+
+function frame(now) {
+  var dt = clamp((now - last) / 1000, 0, 1 / 30); last = now;
+  fps += (1 / Math.max(dt, 1e-3) - fps) * 0.05;
+  for (var f = 0; f < FAST; f++) simulate(FAST > 1 ? 1 / 60 : dt);
+  draw(dt);
+  if (REPORT && simTime >= REPORT && !document.body.dataset.done) {
+    document.body.dataset.done = "1";
+    document.title = "REPORT " + JSON.stringify(stats) + " ramps L " + rampL.made + "/" + rampL.fail + " R " + rampR.made + "/" + rampR.fail;
+  }
+  requestAnimationFrame(frame);
+}
+function simulate(dt) {
+  if (BOT) bot(dt);
+  if (charging) charge = Math.min(1, charge + dt / PLUNGER_CHARGE);
+  if (!over) { var n = Math.ceil(dt / SUBSTEP); for (var i = 0; i < n; i++) step(dt / n); }
+}
+newGame();
+// ?bot=1&sim=S: play S seconds synchronously, no rendering, stats in the title
+if (BOT && +Q.get("sim")) {
+  var trace = [], tr = +Q.get("trace") || 0;
+  while (simTime < +Q.get("sim")) {
+    simulate(1 / 60);
+    if (simTime < tr && Math.round(simTime * 60) % 6 === 0) trace.push(ball.mode[0] + ball.x.toFixed(1) + "," + ball.y.toFixed(1));
+  }
+  if (tr) document.body.dataset.trace = trace.join(" ");
+  document.title = "REPORT " + JSON.stringify(stats) + " L " + rampL.made + "/" + rampL.fail + " R " + rampR.made + "/" + rampR.fail + " score " + score;
+}
+requestAnimationFrame(frame);
+</script>

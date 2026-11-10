@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Dozer animation</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="dozerflip">
+<style>
+/* ===========================================================================
+   LAB — DOZER ANIMATION. The hero bulldozer of lab/models/library.js
+   (vehicle-dozer-hero, the one lowpoly-direction.html dresses) built with
+   opts.rig, so it MOVES: every animation dozerflip could ask of it, one
+   button each, played on an endless ground the camera follows.
+
+     - THE RIG (library.js): the blade sits on an arm that LIFTS about its
+       pivot at the back of the push arms, a mount that TILTS it and REACHES
+       forward (the push arms stretch), and a spin group that turns it on any
+       axis — so a 360 propeller, windmill or rotor never needs a second
+       model. The sprocket, the idler and the rollers turn (bolts on their
+       faces show it), the track is a loop of links that runs round its slot,
+       each track on its own distance. No pistons: the two bars from the
+       hood to the blade stood in the way of every lift and spin.
+     - THE BODY (this page): root (position, heading) > hop (height) > tumble
+       (pitch, roll and air yaw about the centre of mass) > squash (from the
+       ground up). Every frame the machine is SETTLED: on the ground the
+       lowest of its contact points (track outlines, cab roof, the blade's
+       corners) is put on y = 0, so a wheelie pivots on the rear, a blade
+       stand on the blade and a bail on the side, with nothing scripted for
+       it; in the air it is only kept above the ground.
+     - THE CLIPS: drive (idle, forward and back, pivot, slalom, donut), the
+       blade (lift, bounce, circle, headbang, propeller, windmill,
+       turntable, copter), the air tricks named as dozerflip's prototype
+       names them (kickflip, 360, frontflip, backflip, helicopter,
+       corkscrew… dozer tornado), and stunts (wheelie, blade stand, bail).
+       A clip is a function of its own time, so the scrubber can stop any
+       frame of it; the showreel chains them all.
+     - THE IMPOSSIBLE BLADE: when the blade does what no hinge can (a spin
+       on any axis, a tilt past its stops, an arm that telescopes or lifts
+       past the top), arcs from the push arms' tips hold it — ELECTRIC
+       (jagged, flickering, sparks) or MAGNETIC (curved field lines with
+       light flowing along them, rings round the blade) — with the blade
+       glowing and lighting the machine. Its strength is read off the pose,
+       never switched by a clip: a real lift shows nothing.
+     - MANUAL: every channel of the pose on a slider. DRIVE: the arrows (or
+       WASD) drive on the two tracks, SPACE jumps with a trick picked at
+       random, Q / E move the blade, F spins it.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below.
+   ?clip=<name>&t=<s>&pause=1&cam=<n>&fx=<electric|magnetic|both|off> opens a state directly.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 320px; height:100vh; overflow-y:auto;
+  padding:18px 16px 40px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:.5px; }
+#panel p.hint { margin:6px 0 12px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#stats { font:500 12px/1.4 ui-monospace,Menlo,monospace; color:#9c9cba; margin-bottom:10px; white-space:pre; }
+
+.sub { font-size:11px; color:#6c6c8a; margin:10px 0 5px; font-weight:600; }
+.clips { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.clips button { padding:6px 8px; text-align:left; background:#1b1b2c; color:#cfd0ea; border:1px solid #2c2c47; border-radius:8px;
+  font:600 11.5px/1.25 inherit; cursor:pointer; }
+.clips button:hover { border-color:#4a4a72; }
+.clips button.on { background:#f2b22a; color:#0b0b12; border-color:#f2b22a; }
+
+.btns { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
+.btns button {
+  flex:1 1 30%; padding:7px 8px;
+  background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px;
+  font:600 12px/1.2 inherit; cursor:pointer;
+}
+.btns button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+
+details { border-top:1px solid #23233a; padding:8px 0; margin-top:8px; }
+summary { cursor:pointer; font-size:13px; color:#cfd0ea; list-style:none; display:flex; justify-content:space-between; }
+summary::after { content:"›"; transform:rotate(90deg); transition:transform .15s; color:#6c6c8a; }
+details:not([open]) summary::after { transform:none; }
+.body { padding-top:8px; }
+
+.row { margin-bottom:9px; }
+.row label { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:4px; padding:5px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px;
+}
+.row.bool label { align-items:center; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+.keys { font:500 12px/1.6 inherit; color:#9c9cba; }
+.keys kbd { display:inline-block; min-width:22px; padding:0 5px; margin-right:4px; text-align:center;
+  background:#22223a; border:1px solid #2c2c47; border-radius:5px; color:#e8e6f5; font:600 11px/18px ui-monospace,Menlo,monospace; }
+
+#stage { flex:1; position:relative; min-width:0; }
+#view { display:block; width:100%; height:100%; touch-action:none; }
+#hud { position:absolute; left:24px; top:20px; pointer-events:none; text-shadow:0 1px 4px rgba(0,0,0,.55); color:#fff; max-width:60%; }
+#hud b { display:block; font-size:22px; letter-spacing:.3px; }
+#hud span { display:block; font-weight:500; font-size:13px; opacity:.9; }
+#bar { position:absolute; left:24px; right:24px; bottom:18px; height:6px; border-radius:3px; background:rgba(0,0,0,.25); overflow:hidden; pointer-events:none; }
+#bar i { display:block; height:100%; width:0; background:#f2b22a; }
+#trick { position:absolute; left:50%; top:22%; transform:translateX(-50%); font-size:28px; font-weight:800; color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,.6); pointer-events:none; opacity:0; transition:opacity .25s; }
+#trick.on { opacity:1; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Dozer animation</h1>
+  <p class="hint">The hero dozer, rigged: tracks and wheels that roll, a blade that lifts, bounces and spins, and the air tricks of the prototype. Pick a clip; drag to orbit, wheel to zoom.</p>
+  <div id="stats">loading…</div>
+  <div class="btns">
+    <button id="bPlay">Pause</button>
+    <button id="bLoop" class="on">Loop clip</button>
+    <button id="bReel">Showreel</button>
+  </div>
+  <div class="row"><label>Speed <b id="vSpeed">×1</b></label><input id="speed" type="range" min="0.05" max="2" step="0.05" value="1"></div>
+  <div class="row"><label>Scrub <b id="vScrub">0.00 s</b></label><input id="scrub" type="range" min="0" max="1" step="0.001" value="0"></div>
+  <div id="clipList"></div>
+
+  <details id="manual">
+    <summary>Manual pose</summary>
+    <div class="body" id="manualRows"></div>
+    <div class="btns"><button id="bManual">Pose by hand</button><button id="bZero">Zero</button></div>
+  </details>
+
+  <details id="drive">
+    <summary>Drive</summary>
+    <div class="body">
+      <div class="btns"><button id="bDrive">Drive with the keyboard</button></div>
+      <div class="keys">
+        <div><kbd>↑</kbd><kbd>↓</kbd> forward, reverse (or <kbd>W</kbd><kbd>S</kbd>)</div>
+        <div><kbd>←</kbd><kbd>→</kbd> turn on the tracks (or <kbd>A</kbd><kbd>D</kbd>)</div>
+        <div><kbd>Space</kbd> jump, with a random trick</div>
+        <div><kbd>Q</kbd><kbd>E</kbd> blade up, down · <kbd>F</kbd> spin it</div>
+      </div>
+    </div>
+  </details>
+
+  <details id="look" open>
+    <summary>Look and camera</summary>
+    <div class="body" id="lookRows"></div>
+  </details>
+</div>
+
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div id="hud"><b id="hudName"></b><span id="hudDesc"></span></div>
+  <div id="trick"></div>
+  <div id="bar"><i></i></div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { item } from "./models/library.js";
+
+const qs = new URLSearchParams(location.search);
+const TAU = Math.PI * 2;
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const sat = (u) => clamp(u, 0, 1);
+const ease = (u) => { u = sat(u); return u * u * (3 - 2 * u); };
+const easeIO = (u) => { u = sat(u); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+const lerp = (a, b, u) => a + (b - a) * u;
+// a damped spring that starts at amp: what a landing, a slam or a stop rings with
+const ring = (t, amp, freq, damp) => t < 0 ? 0 : amp * Math.exp(-damp * t) * Math.cos(TAU * freq * t);
+
+// a spin that winds up, holds and winds down, ending on a whole number of turns
+function spinCurve(t, t0, t1, ramp, turns) {
+  const T = t1 - t0, wm = turns * TAU / (T - ramp), total = turns * TAU;
+  if (t <= t0) return 0;
+  if (t >= t1) return total;
+  if (t < t0 + ramp) return wm * (t - t0) * (t - t0) / (2 * ramp);
+  if (t > t1 - ramp) return total - wm * (t1 - t) * (t1 - t) / (2 * ramp);
+  return wm * ramp / 2 + wm * (t - t0 - ramp);
+}
+
+// =============================================================================
+// THE STAGE — renderer, light, an endless ground that follows the machine
+// =============================================================================
+const canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#bcd8ee");
+scene.fog = new THREE.Fog("#cfe2ef", 9, 26);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 120);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.1; controls.maxPolarAngle = Math.PI * 0.49;
+controls.minDistance = 1.5; controls.maxDistance = 25;
+
+scene.add(new THREE.HemisphereLight("#d6e8ff", "#80705e", 1.15));
+const sun = new THREE.DirectionalLight("#fff1dc", 2.7);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 24 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+const SUN_OFF = new THREE.Vector3(4, 8, 5);
+
+// the ground: a checker of two dirts, one metre a square, with a fine grain —
+// snapped to its own tile under the machine, so it never ends
+const gc = document.createElement("canvas"); gc.width = gc.height = 256;
+{
+  const g = gc.getContext("2d"), cols = ["#b99a72", "#ab8c66"];
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) { g.fillStyle = cols[(i + j) % 2]; g.fillRect(i * 128, j * 128, 128, 128); }
+  for (let n = 0; n < 2600; n++) {
+    g.fillStyle = Math.random() < 0.5 ? "rgba(70,50,30,0.10)" : "rgba(255,240,210,0.10)";
+    g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2);
+  }
+  g.strokeStyle = "rgba(60,40,20,0.18)"; g.lineWidth = 2; g.strokeRect(1, 1, 254, 254);
+}
+const gtex = new THREE.CanvasTexture(gc);
+gtex.colorSpace = THREE.SRGBColorSpace; gtex.wrapS = gtex.wrapT = THREE.RepeatWrapping;
+gtex.repeat.set(40, 40); gtex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ map: gtex, roughness: 0.95 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+// =============================================================================
+// THE MACHINE — the library's hero dozer, rigged, inside the body chain
+// =============================================================================
+const root = new THREE.Group(), hop = new THREE.Group(), tumble = new THREE.Group(), offs = new THREE.Group(), squash = new THREE.Group();
+root.add(hop); hop.add(tumble); tumble.add(offs); offs.add(squash); scene.add(root);
+tumble.rotation.order = "YZX";   // the air yaw, then the flip, then the roll about the machine's own length
+
+const MATS = new Map();
+const LIB = {
+  mesh(geo, hex, opt = {}) {
+    const key = hex + "|" + (opt.roughness ?? "") + "|" + (opt.metalness ?? "");
+    let m = MATS.get(key);
+    if (!m) {
+      m = hex === 0xf7f8f9 ? new THREE.MeshBasicMaterial({ color: "#fff2cc" })
+        : new THREE.MeshStandardMaterial({ color: hex, roughness: opt.roughness ?? 0.72, metalness: opt.metalness ?? 0, flatShading: true });
+      MATS.set(key, m);
+    }
+    const mesh = new THREE.Mesh(geo, m); mesh.castShadow = mesh.receiveShadow = true; return mesh;
+  },
+  glow: () => new THREE.MeshBasicMaterial({ color: "#fff2cc" }),
+  rnd: Math.random
+};
+const beaconMat = new THREE.MeshStandardMaterial({ color: "#ff8a1a", emissive: "#ff5a00", emissiveIntensity: 0, flatShading: true });
+let dozer = null, rig = null, comY = 0.3, exhaustPt = null, tris = 0;
+const glowMats = [];
+
+function buildDozer() {
+  if (dozer) { squash.remove(dozer); dozer.traverse((m) => { if (m.geometry) m.geometry.dispose(); }); }
+  dozer = item("vehicle-dozer-hero").build(LIB, { toy: L.toy, detail: L.detail, rig: true });
+  rig = dozer.userData.rig;
+  squash.add(dozer);
+  dozer.position.set(0, 0, 0);
+  const box = new THREE.Box3().setFromObject(dozer);
+  dozer.position.x = -(box.min.x + box.max.x) / 2;        // the root turns about the machine's middle
+  comY = box.max.y * 0.38;
+  tumble.position.y = comY; offs.position.y = -comY;
+  exhaustPt = dozer.userData.exhaust ? dozer.userData.exhaust.clone() : null;
+  tris = 0;
+  dozer.traverse((m) => {
+    if (!m.isMesh) return;
+    if (m.userData.part === "beacon") m.material = beaconMat;
+    const g = m.geometry; tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+  });
+  // the arm and the blade wear their own copies of their materials: they glow alone
+  for (const mt of glowMats) mt.dispose();
+  glowMats.length = 0;
+  const copies = new Map();
+  rig.arm.traverse((m) => {
+    if (!m.isMesh || !m.material.emissive) return;
+    if (!copies.has(m.material)) { const c = m.material.clone(); copies.set(m.material, c); glowMats.push(c); }
+    m.material = copies.get(m.material);
+  });
+}
+
+// =============================================================================
+// THE POSE — every channel a clip may write; REST is the machine parked
+// =============================================================================
+const REST = { v: 0, w: 0, h: 0, pitch: 0, roll: 0, yaw: 0, sq: 1, lift: 0, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0,
+  air: false, rev: 0, tl: null, tr: null, shake: 1, beacon: 0, smoke: 1 };
+const pose = Object.assign({}, REST);
+
+// =============================================================================
+// THE CLIPS — each one a function of its own time: f(t, p) writes the pose
+// =============================================================================
+const CLIPS = [];
+const clip = (group, name, dur, desc, f, events = []) => CLIPS.push({ group, name, dur, desc, f, events });
+
+// ---- drive
+clip("Drive", "Idle", 4, "The engine running: a rumble in the body, a breath in the blade, smoke.", (t, p) => {
+  p.lift = 0.03 * Math.sin(TAU * t / 2); p.shake = 1.6;
+});
+clip("Drive", "Forward and back", 6, "Accelerate, brake on the nose, reverse, brake on the tail: the body leans with the speed.", (t, p) => {
+  const s = Math.sin(TAU * t / 6); p.v = 1.7 * Math.sign(s) * Math.pow(Math.abs(s), 0.6); p.smoke = 1 + Math.abs(s) * 2;
+});
+clip("Drive", "Pivot turn", 3.5, "The two tracks turn against each other: a full turn on the spot.", (t, p) => {
+  p.w = Math.PI * Math.PI / 3.5 * Math.sin(Math.PI * t / 3.5);
+});
+clip("Drive", "Slalom", 4, "Forward, weaving: each track speeds up and slows down in turn, the body rolls out of the turn.", (t, p) => {
+  p.v = 1.5; p.w = 1.8 * Math.sin(TAU * t / 2); p.lift = 0.12;
+});
+clip("Drive", "Donut", 4, "A tight circle at full speed, blade up, leaning out.", (t, p) => {
+  const u = ease(t / 0.6) * (1 - ease((t - 3.4) / 0.6)); p.v = 1.3 * u; p.w = 2.6 * u; p.lift = 0.3 * u; p.smoke = 1 + 2 * u;
+});
+
+// ---- the blade
+clip("Blade", "Lift", 3, "The arm lifts the blade to the top and sets it down on the ground again.", (t, p) => {
+  const u = (1 - Math.cos(TAU * t / 3)) / 2; p.lift = lerp(-0.06, 0.55, easeIO(u)); p.tilt = -0.2 * u;
+});
+// a ball dropped from the top: arcs of a quarter of the height each time
+const BOUNCE = (() => {
+  const H = 0.6, g = 7, arcs = []; let t = 0.5, h = H;
+  arcs.push({ t0: 0.5, t1: 0.5 + Math.sqrt(2 * h / g), top: h, fall: true });
+  t = arcs[0].t1;
+  for (let i = 0; i < 4; i++) { h *= 0.3; const d = 2 * Math.sqrt(2 * h / g); arcs.push({ t0: t, t1: t + d, top: h }); t += d; }
+  return { arcs, g, end: t, H };
+})();
+const bounceLift = (t) => {
+  if (t < 0.5) return BOUNCE.H * ease(t / 0.5);
+  for (const a of BOUNCE.arcs) if (t < a.t1) {
+    if (a.fall) return a.top - 0.5 * BOUNCE.g * (t - a.t0) * (t - a.t0);
+    const m = (a.t0 + a.t1) / 2; return a.top - 0.5 * BOUNCE.g * (t - m) * (t - m);
+  }
+  return 0;
+};
+clip("Blade", "Bounce", 2.6, "Lifted and dropped: the blade bounces on the ground like a ball, the body nods on every hit.", (t, p) => {
+  p.lift = bounceLift(t);
+  let k = 0;
+  for (const a of BOUNCE.arcs) k += ring(t - a.t1, 0.06 * Math.sqrt(a.top / BOUNCE.H + 0.05), 3, 9) * (t >= a.t1 ? 1 : 0);
+  p.sq = 1 - k * 0.8; p.pitch = -k * 0.6;
+}, BOUNCE.arcs.map((a) => ({ t: a.t1, kind: "thud" })));
+clip("Blade", "Circle", 2.4, "The blade traces a circle in front of the machine: up, out, down, back.", (t, p) => {
+  const a = TAU * t / 2.4; p.lift = 0.22 + 0.2 * Math.sin(a); p.reach = 0.7 + 0.7 * Math.cos(a); p.tilt = -0.25 * Math.sin(a);
+});
+clip("Blade", "Headbang", 2, "A nod on every beat, 120 to the minute: the blade and the whole body.", (t, p) => {
+  const b = Math.abs(Math.sin(TAU * t)); p.lift = 0.1 + 0.18 * b; p.tilt = 0.45 * Math.sin(TAU * t); p.pitch = 0.04 * b; p.sq = 1 - 0.03 * b;
+});
+clip("Blade", "Propeller", 5, "Lifted, pushed out, then six turns about the machine's own length.", (t, p) => {
+  const up = ease(t / 0.6) * (1 - ease((t - 4.3) / 0.6));
+  p.lift = 0.6 * up; p.reach = 0.9 * up; p.bx = spinCurve(t, 0.6, 4.3, 1, 6);
+});
+clip("Blade", "Windmill", 5, "Four turns end over end, across the machine.", (t, p) => {
+  const up = ease(t / 0.6) * (1 - ease((t - 4.3) / 0.6));
+  p.lift = 0.32 * up; p.reach = 1 * up; p.bz = -spinCurve(t, 0.6, 4.3, 1, 4);
+});
+clip("Blade", "Turntable", 5, "Pushed far out, the blade turns flat about itself: three turns.", (t, p) => {
+  const up = ease(t / 0.7) * (1 - ease((t - 4.3) / 0.7));
+  p.lift = 0.3 * up; p.reach = 1.7 * up; p.by = spinCurve(t, 0.7, 4.3, 1, 3);
+});
+clip("Blade", "Copter", 7.5, "The arm goes up, the blade lies flat and becomes a rotor: the dozer takes off, turns once, lands.", (t, p) => {
+  const up = ease(t / 0.9) * (1 - ease((t - 6.4) / 0.9)), flat = ease((t - 0.6) / 0.5) * (1 - ease((t - 6.1) / 0.5));
+  p.lift = 1.35 * up; p.tilt = -p.lift; p.reach = 0.6 * up; p.bz = Math.PI / 2 * flat;
+  p.by = spinCurve(t, 1.1, 6.1, 1.2, 14);
+  const fly = ease((t - 2.2) / 1) * (1 - ease((t - 4.9) / 0.9));
+  p.h = 1.1 * fly + 0.06 * Math.sin(TAU * t / 1.1) * fly; p.air = fly > 0.001;
+  p.yaw = TAU * easeIO((t - 3) / 1.8); p.pitch = 0.05 * Math.sin(TAU * t / 1.6) * fly; p.roll = 0.05 * Math.cos(TAU * t / 1.3) * fly;
+  p.rev = 1.5 * fly; p.smoke = 1 + 2 * up;
+}, [{ t: 4.9 + 0.9, kind: "land" }]);
+
+// ---- air tricks: the prototype's list, the air time fitted to each
+const TRICKS = [
+  { name: "Ollie", air: 0.85, desc: "A plain jump: crouch, launch, the blade lifts in the air and slams on the landing." },
+  { name: "Nose grab", air: 0.85, grab: 1, desc: "The blade swings up and over the hood for the whole air." },
+  { name: "Kickflip", air: 0.95, roll: 1, desc: "One roll about the machine's length." },
+  { name: "360", air: 1, yaw: 1, desc: "A full flat turn in the air." },
+  { name: "Frontflip", air: 1.15, pitch: -1, desc: "Nose down, over the blade, back on the tracks." },
+  { name: "Backflip", air: 1.15, pitch: 1, desc: "Nose up, over the cab." },
+  { name: "Helicopter", air: 1.25, yaw: 2, desc: "Two flat turns, the blade spinning the other way." , blade: "by" },
+  { name: "Corkscrew", air: 1.3, yaw: 1, roll: 1, desc: "A turn and a roll at once." },
+  { name: "Triple kickflip", air: 1.45, roll: 3, desc: "Three rolls, the blade spinning with them." , blade: "bx" },
+  { name: "Double backflip", air: 1.6, pitch: 2, desc: "Two backflips, big air." },
+  { name: "Rodeo 720", air: 1.75, yaw: 2, pitch: 1, desc: "Two flat turns through a backflip." },
+  { name: "Dozer tornado", air: 2.1, yaw: 3, roll: 2, desc: "Three turns, two rolls, and the blade windmilling through all of it.", blade: "bz" }
+];
+const CROUCH = 0.22, LAND = 0.75;
+function jumpPose(tr, t, p) {
+  const air = tr.air, H = 0.45 + 0.62 * air;
+  if (t < CROUCH) {
+    const u = t / CROUCH; p.sq = 1 - 0.2 * Math.sin(u * Math.PI / 2); p.lift = -0.05 * u; p.pitch = -0.05 * u;
+  } else if (t < CROUCH + air) {
+    const u = (t - CROUCH) / air, r = easeIO((u - 0.1) / 0.75);
+    p.air = true; p.h = 4 * H * u * (1 - u);
+    p.sq = 1 + 0.16 * Math.exp(-u * 9) - 0.02 * Math.sin(Math.PI * u);
+    p.yaw = (tr.yaw || 0) * TAU * r; p.pitch = (tr.pitch || 0) * TAU * r; p.roll = (tr.roll || 0) * TAU * r;
+    p.lift = 0.38 * Math.sin(Math.PI * u); p.rev = 3;
+    if (tr.grab) { const g = ease(u / 0.25) * (1 - ease((u - 0.75) / 0.2)); p.lift = 1.4 * g; p.tilt = -0.6 * g; p.reach = 0.3 * g; }
+    if (tr.blade === "by") p.by = -2 * TAU * r;
+    if (tr.blade === "bx") p.bx = -3 * TAU * r;
+    if (tr.blade === "bz") { p.bz = 3 * TAU * r; p.reach = 0.8 * Math.sin(Math.PI * u); }
+  } else {
+    const lt = t - CROUCH - air;
+    p.sq = 1 - ring(lt, 0.24, 2.2, 6);
+    p.lift = -ring(lt, 0.14, 1.8, 5) + 0.04 * Math.exp(-4 * lt);
+    p.pitch = ring(lt, -0.06, 1.6, 6);
+  }
+}
+for (const tr of TRICKS) {
+  clip("Air tricks", tr.name, CROUCH + tr.air + LAND + 0.45, tr.desc, (t, p) => jumpPose(tr, t, p),
+    [{ t: CROUCH, kind: "launch" }, { t: CROUCH + tr.air, kind: "land" }]);
+}
+
+// ---- stunts: the settling puts the right point on the ground by itself
+clip("Stunts", "Wheelie", 4.5, "On the rear of the tracks, the blade up, driving: it wobbles, then drops back on its nose.", (t, p) => {
+  const up = ease((t - 0.3) / 0.5) * (1 - ease((t - 3.4) / 0.35));
+  p.v = 1.2 * ease(t / 0.4) * (1 - ease((t - 4) / 0.5)); p.pitch = up * (0.5 + 0.05 * Math.sin(TAU * t * 1.3)) + ring(t - 3.75, -0.06, 2, 6);
+  p.lift = 0.5 * up; p.smoke = 1 + 2 * up; p.sq = 1 - ring(t - 3.75, 0.12, 2.2, 6);
+}, [{ t: 3.75, kind: "land" }]);
+clip("Stunts", "Blade stand", 4, "Nose down on the blade, the tracks spinning in the air behind.", (t, p) => {
+  const up = ease((t - 0.3) / 0.6) * (1 - ease((t - 3) / 0.5));
+  p.pitch = -0.75 * up + 0.04 * Math.sin(TAU * t * 1.7) * up; p.lift = -0.08 * up; p.tilt = 0.5 * up;
+  p.tl = p.tr = 4 * up; p.sq = 1 - ring(t - 3.5, 0.12, 2.2, 6);
+}, [{ t: 3.5, kind: "land" }]);
+clip("Stunts", "Bail", 4.2, "A jump with too much roll: it lands on its side, rocks, and rights itself.", (t, p) => {
+  const air = 0.9, H = 1;
+  if (t < CROUCH) { p.sq = 1 - 0.2 * Math.sin(t / CROUCH * Math.PI / 2); return; }
+  if (t < CROUCH + air) {
+    const u = (t - CROUCH) / air; p.air = true; p.h = 4 * H * u * (1 - u); p.roll = TAU * 0.27 * easeIO(u / 0.9); p.rev = 3; p.lift = 0.3 * Math.sin(Math.PI * u);
+    return;
+  }
+  const lt = t - CROUCH - air;
+  // on its side, it rocks (a ring about a quarter turn), then rolls back on its tracks
+  const back = easeIO((lt - 1.4) / 0.7);
+  p.roll = lerp(TAU * 0.25 + ring(lt, 0.25, 1.4, 3), 0, back);
+  p.sq = 1 - ring(lt - 2.1, 0.18, 2.2, 6); p.rev = 3 * Math.exp(-lt); p.shake = 0;
+}, [{ t: CROUCH, kind: "launch" }, { t: CROUCH + 0.9, kind: "land" }, { t: CROUCH + 0.9 + 2.1, kind: "land" }]);
+
+// ---- the hand and the keyboard: not in the list, opened from their panels
+const MANUAL = { group: "", name: "Manual pose", dur: 1, desc: "Every channel of the pose on a slider.", events: [], f: (t, p) => {
+  for (const r of MROWS) p[r[0]] = M[r[0]] * (r[4] || 1);
+  p.air = p.h > 0.001; p.rev = 0;
+  p.v = (p.tl + p.tr) / 2; p.w = (p.tr - p.tl) / (2 * rig.halfTrack);   // driven by its two tracks
+} };
+const DRIVE = { group: "", name: "Drive", dur: 1, desc: "Arrows or WASD to drive, Space to jump, Q / E the blade, F to spin it.", events: [], f: null };
+
+// =============================================================================
+// THE PANEL
+// =============================================================================
+const L = { toy: 0.6, detail: 2, cam: 0, follow: true, dust: true, smoke: true, shadows: true, blade: "electric", fxAmt: 1 };
+const M = {};
+const MROWS = [   // [key, label, min, max, unit multiplier]
+  ["lift", "Blade lift (°)", -10, 80, Math.PI / 180], ["tilt", "Blade tilt (°)", -90, 90, Math.PI / 180],
+  ["reach", "Blade reach", 0, 2, 1],
+  ["bx", "Blade spin x (°)", -180, 180, Math.PI / 180], ["by", "Blade spin y (°)", -180, 180, Math.PI / 180], ["bz", "Blade spin z (°)", -180, 180, Math.PI / 180],
+  ["tl", "Left track speed", -3, 3, 1], ["tr", "Right track speed", -3, 3, 1],
+  ["h", "Height", 0, 2, 1], ["pitch", "Pitch (°)", -180, 180, Math.PI / 180], ["roll", "Roll (°)", -180, 180, Math.PI / 180],
+  ["yaw", "Air yaw (°)", -180, 180, Math.PI / 180], ["sq", "Squash", 0.6, 1.4, 1]
+];
+function zeroManual() { for (const r of MROWS) M[r[0]] = r[0] === "sq" ? 1 : 0; }
+zeroManual();
+function slider(parent, label, min, max, step, get, set, fmt = (v) => (+v).toFixed(2)) {
+  const row = document.createElement("div"); row.className = "row";
+  row.innerHTML = `<label>${label} <b></b></label><input type="range" min="${min}" max="${max}" step="${step}">`;
+  const inp = row.querySelector("input"), b = row.querySelector("b");
+  const sync = () => { inp.value = get(); b.textContent = fmt(get()); };
+  inp.oninput = () => { set(+inp.value); b.textContent = fmt(get()); };
+  parent.appendChild(row); sync(); return sync;
+}
+const manualSyncs = MROWS.map((r) => slider($("manualRows"), r[1], r[2], r[3], (r[3] - r[2]) / 200,
+  () => M[r[0]], (v) => { M[r[0]] = v; play(MANUAL); }));
+$("bManual").onclick = () => play(MANUAL);
+$("bZero").onclick = () => { zeroManual(); manualSyncs.forEach((s) => s()); play(MANUAL); };
+$("bDrive").onclick = () => play(DRIVE);
+
+const CAMS = [
+  { name: "Three-quarter", az: 40, el: 20, dist: 6 },
+  { name: "Side", az: 0, el: 6, dist: 5.6 },
+  { name: "Front", az: 90, el: 10, dist: 5.2 },
+  { name: "Top", az: 30, el: 70, dist: 7 },
+  { name: "Chase", az: -90, el: 16, dist: 5.2, chase: true },
+  { name: "Low hero", az: 60, el: 3, dist: 4 }
+];
+{
+  const box = $("lookRows");
+  slider(box, "Toy proportions", 0, 1.5, 0.05, () => L.toy, (v) => { L.toy = v; buildDozer(); });
+  const sel = (label, opts, get, set) => {
+    const row = document.createElement("div"); row.className = "row";
+    row.innerHTML = `<label>${label}</label><select>${opts.map((o, i) => `<option value="${i}">${o}</option>`).join("")}</select>`;
+    const s = row.querySelector("select"); s.value = get(); s.onchange = () => set(+s.value); box.appendChild(row); return s;
+  };
+  sel("Detail", ["0 · blocks", "1 · parts", "2 · everything"], () => L.detail, (v) => { L.detail = v; buildDozer(); });
+  L.camSel = sel("Camera", CAMS.map((c) => c.name), () => L.cam, (v) => { L.cam = v; placeCam(); });
+  const bool = (label, key, on) => {
+    const row = document.createElement("div"); row.className = "row bool";
+    row.innerHTML = `<label>${label} <input type="checkbox"></label>`;
+    const c = row.querySelector("input"); c.checked = L[key]; c.onchange = () => { L[key] = c.checked; if (on) on(); }; box.appendChild(row);
+  };
+  bool("Camera follows", "follow");
+  bool("Dust", "dust"); bool("Exhaust smoke", "smoke");
+  bool("Shadows", "shadows", () => { sun.castShadow = L.shadows; });
+  const BLADE_FX = ["electric", "magnetic", "both", "off"];
+  const fxSel = sel("Impossible blade", ["Electric arcs", "Magnetic field", "Both", "Off"], () => BLADE_FX.indexOf(L.blade), (v) => { L.blade = BLADE_FX[v]; });
+  slider(box, "Effect strength", 0, 1.5, 0.05, () => L.fxAmt, (v) => { L.fxAmt = v; });
+  if (qs.has("fx")) { L.blade = qs.get("fx"); fxSel.value = BLADE_FX.indexOf(L.blade); }
+}
+
+// the clip list, by group
+const buttons = new Map();
+{
+  const box = $("clipList"); let grid = null, last = "";
+  for (const c of CLIPS) {
+    if (c.group !== last) {
+      last = c.group;
+      const h = document.createElement("div"); h.className = "sub"; h.textContent = c.group; box.appendChild(h);
+      grid = document.createElement("div"); grid.className = "clips"; box.appendChild(grid);
+    }
+    const b = document.createElement("button"); b.textContent = c.name; b.title = c.desc;
+    b.onclick = () => { reel = false; $("bReel").classList.remove("on"); play(c); };
+    grid.appendChild(b); buttons.set(c, b);
+  }
+}
+
+// =============================================================================
+// THE PLAYER — the current clip, its time, the showreel
+// =============================================================================
+let cur = null, ct = 0, paused = false, loop = true, reel = false, speed = 1;
+function play(c, t = 0) {
+  cur = c; ct = t;
+  for (const [k, b] of buttons) b.classList.toggle("on", k === c);
+  $("bManual").classList.toggle("on", c === MANUAL);
+  $("bDrive").classList.toggle("on", c === DRIVE);
+  $("hudName").textContent = c.name; $("hudDesc").textContent = c.desc;
+  $("scrub").max = c.dur;
+  if (c === DRIVE) { Object.assign(DR, { v: 0, w: 0, jt: -1, lift: 0, spin: 0, sa: 0, spinOn: false }); document.activeElement.blur(); }
+}
+$("bPlay").onclick = () => { paused = !paused; $("bPlay").textContent = paused ? "Play" : "Pause"; };
+$("bLoop").onclick = () => { loop = !loop; $("bLoop").classList.toggle("on", loop); $("bLoop").textContent = loop ? "Loop clip" : "Play once"; };
+$("bReel").onclick = () => { reel = !reel; $("bReel").classList.toggle("on", reel); if (reel) play(CLIPS[1]); };
+$("speed").oninput = () => { speed = +$("speed").value; $("vSpeed").textContent = "×" + (+speed.toFixed(2)); };
+$("scrub").oninput = () => { ct = +$("scrub").value; if (!paused) $("bPlay").onclick(); };
+
+// ---- the keyboard drive
+const keys = new Set();
+const DR = { v: 0, w: 0, jt: -1, trick: null, lift: 0, spin: 0, sa: 0, spinOn: false };
+addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  const k = e.key.toLowerCase(); keys.add(k);
+  if (cur !== DRIVE) return;
+  if (k === " ") {
+    e.preventDefault();
+    if (DR.jt < 0) { DR.trick = TRICKS[Math.floor(Math.random() * TRICKS.length)]; DR.jt = 0; showTrick(DR.trick.name); }
+  }
+  if (k === "f") DR.spinOn = !DR.spinOn;
+  if (k.startsWith("arrow")) e.preventDefault();
+});
+addEventListener("keyup", (e) => { keys.delete(e.key.toLowerCase()); if (cur === DRIVE && e.key === " ") e.preventDefault(); });
+let trickTimer = 0;
+function showTrick(s) { const el = $("trick"); el.textContent = s; el.classList.add("on"); clearTimeout(trickTimer); trickTimer = setTimeout(() => el.classList.remove("on"), 1300); }
+DRIVE.f = (t, p, dt) => {
+  const fwd = (keys.has("arrowup") || keys.has("w") ? 1 : 0) - (keys.has("arrowdown") || keys.has("s") ? 1 : 0);
+  const turn = (keys.has("arrowleft") || keys.has("a") ? 1 : 0) - (keys.has("arrowright") || keys.has("d") ? 1 : 0);
+  DR.v += (fwd * 2.2 - DR.v) * Math.min(1, dt * (fwd ? 2.2 : 3.5));
+  DR.w += (turn * 2.2 - DR.w) * Math.min(1, dt * 6);
+  const bl = (keys.has("q") ? 1 : 0) - (keys.has("e") ? 1 : 0);
+  DR.lift = clamp(DR.lift + bl * dt * 1.2, -0.08, 1.2);
+  // the spin waits for the arm: up and out first, then the turns; off, it finishes its turn
+  DR.sa += ((DR.spinOn || DR.spin > 0 ? 1 : 0) - DR.sa) * Math.min(1, dt * 5);
+  if (DR.spinOn && DR.sa > 0.9) DR.spin += dt * 12;
+  else if (!DR.spinOn && DR.spin > 0) { const left = TAU - DR.spin % TAU; DR.spin = left < dt * 12 || left > TAU - 1e-3 ? 0 : DR.spin + dt * 12; }
+  p.v = DR.v; p.w = DR.w; p.smoke = 1 + Math.abs(DR.v);
+  if (DR.jt >= 0) {
+    const tr = DR.trick, end = CROUCH + tr.air + LAND;
+    const t0 = DR.jt; DR.jt += dt;
+    jumpPose(tr, DR.jt, p);
+    if (t0 < CROUCH && DR.jt >= CROUCH) fire("launch");
+    if (t0 < CROUCH + tr.air && DR.jt >= CROUCH + tr.air) fire("land");
+    if (DR.jt >= end) DR.jt = -1;
+  }
+  const sa = ease(DR.sa);
+  p.lift += Math.max(DR.lift, 0.6 * sa); p.reach = Math.max(p.reach, 0.9 * sa, 0.6 * sat((DR.lift - 0.1) * 3)); p.bx += DR.spin;
+};
+
+// =============================================================================
+// DUST AND SMOKE — low poly puffs out of one pool
+// =============================================================================
+const PUFFS = [], puffGeo = new THREE.IcosahedronGeometry(1, 0);
+for (let i = 0; i < 180; i++) {
+  const m = new THREE.Mesh(puffGeo, new THREE.MeshStandardMaterial({ transparent: true, depthWrite: false, flatShading: true, roughness: 1 }));
+  m.visible = false; scene.add(m); PUFFS.push({ m, life: 0, age: 0, vel: new THREE.Vector3(), s0: 0, s1: 0, a: 0 });
+}
+let puffI = 0;
+function puff(pos, vel, color, s0, s1, life, a) {
+  const p = PUFFS[puffI++ % PUFFS.length];
+  p.m.position.copy(pos); p.vel.copy(vel); p.m.material.color.set(color);
+  Object.assign(p, { s0, s1, life, age: 0, a }); p.m.visible = true; p.m.rotation.set(Math.random() * 3, Math.random() * 3, 0);
+}
+function updatePuffs(dt) {
+  for (const p of PUFFS) {
+    if (!p.m.visible) continue;
+    p.age += dt; const u = p.age / p.life;
+    if (u >= 1) { p.m.visible = false; continue; }
+    p.m.position.addScaledVector(p.vel, dt); p.vel.multiplyScalar(Math.exp(-2.2 * dt)); p.vel.y += dt * 0.15;
+    p.m.scale.setScalar(lerp(p.s0, p.s1, Math.sqrt(u))); p.m.material.opacity = p.a * (1 - u) * (1 - u);
+    p.m.rotation.x += dt; p.m.rotation.y += dt * 0.7;
+  }
+}
+const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
+function dustAt(n, spread, up) {
+  if (!L.dust) return;
+  for (const s of [-1, 1]) for (const x of [-0.45, 0, 0.45]) for (let i = 0; i < n; i++) {
+    tmp.set(x + (Math.random() - 0.5) * 0.3, 0.04, s * rig.halfTrack);
+    root.localToWorld(tmp); tmp.y = 0.05;
+    const a = Math.random() * TAU;
+    puff(tmp, tmp2.set(Math.cos(a) * spread, up * (0.4 + Math.random()), Math.sin(a) * spread), "#cbb38e", 0.05, 0.22 + Math.random() * 0.12, 0.7 + Math.random() * 0.4, 0.75);
+  }
+}
+function fire(kind) {
+  if (kind === "land") dustAt(2, 1.6, 0.6);
+  if (kind === "launch") dustAt(1, 1, 0.4);
+  if (kind === "thud") dustAt(1, 0.8, 0.3);
+}
+
+// =============================================================================
+// THE IMPOSSIBLE BLADE — when the blade leaves what a hinge can do (a spin on
+// any axis, a tilt past its stops, an arm that telescopes or lifts past the
+// top), something has to be SEEN holding it: electric arcs from the push arms'
+// tips to the blade, or a magnetic field (curved field lines, rings round the
+// blade). Its strength is read off the pose every frame, so a clip never
+// switches it on by hand: a real lift or a headbang shows nothing.
+// =============================================================================
+const FX = {
+  electric: { core: "#ffffff", glow: "#6fe3ff", light: "#5fd8ff" },
+  magnetic: { core: "#f3e6ff", glow: "#a46bff", light: "#9a66ff" }
+};
+// how far a pose is from what the machine can really do, 0 to 1
+const offTurn = (a) => { const r = ((a % TAU) + TAU) % TAU; return Math.min(r, TAU - r); };
+function impossible(p, pv, dt) {
+  let m = sat((offTurn(p.bx) + offTurn(p.by) + offTurn(p.bz)) / 0.12);
+  if (dt > 0) m = Math.max(m, sat((Math.abs(p.bx - pv.bx) + Math.abs(p.by - pv.by) + Math.abs(p.bz - pv.bz)) / dt / 1.5));
+  m = Math.max(m, sat((Math.abs(p.tilt) - 0.6) / 0.15), sat((p.reach - 0.15) / 0.25), sat((p.lift - 0.75) / 0.15));
+  return m;
+}
+
+// a ribbon turned to the camera along a polyline: a line with a width
+class Ribbon {
+  constructor(n, color, opacity) {
+    this.n = n;
+    const g = new THREE.BufferGeometry(), idx = [];
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array((n + 1) * 6), 3));
+    g.setAttribute("color", new THREE.BufferAttribute(new Float32Array((n + 1) * 6), 3));
+    for (let i = 0; i < n; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    g.setIndex(idx);
+    this.mat = new THREE.MeshBasicMaterial({ color, vertexColors: true, transparent: true, opacity, blending: THREE.AdditiveBlending,
+      depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+    this.mesh = new THREE.Mesh(g, this.mat); this.mesh.frustumCulled = false; this.mesh.renderOrder = 5;
+    scene.add(this.mesh);
+  }
+  // pts: n + 1 world points; bright(i): 0..1 along it
+  draw(pts, width, bright) {
+    const pos = this.mesh.geometry.attributes.position, colA = this.mesh.geometry.attributes.color, n = this.n;
+    for (let i = 0; i <= n; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)];
+      rT.subVectors(b, a); rV.subVectors(camera.position, pts[i]); rS.crossVectors(rT, rV).normalize();
+      const w = width * (0.35 + 0.65 * Math.sin(Math.PI * i / n)) / 2, c = bright(i / n);
+      pos.setXYZ(i * 2, pts[i].x + rS.x * w, pts[i].y + rS.y * w, pts[i].z + rS.z * w);
+      pos.setXYZ(i * 2 + 1, pts[i].x - rS.x * w, pts[i].y - rS.y * w, pts[i].z - rS.z * w);
+      colA.setXYZ(i * 2, c, c, c); colA.setXYZ(i * 2 + 1, c, c, c);
+    }
+    pos.needsUpdate = colA.needsUpdate = true;
+  }
+}
+const rT = new THREE.Vector3(), rV = new THREE.Vector3(), rS = new THREE.Vector3();
+const ARC_SEG = 14, ARCS = 8;
+const arcs = [];
+for (let i = 0; i < ARCS; i++) {
+  arcs.push({ glow: new Ribbon(ARC_SEG, "#ffffff", 0.35), core: new Ribbon(ARC_SEG, "#ffffff", 1),
+    pts: Array.from({ length: ARC_SEG + 1 }, () => new THREE.Vector3()), off: Array.from({ length: ARC_SEG + 1 }, () => new THREE.Vector3()),
+    v: Math.random() * 2 - 1, u: 0, next: 0, phase: Math.random() * TAU });
+}
+const fieldRings = [0, 1, 2].map((i) => {
+  const m = new THREE.Mesh(new THREE.TorusGeometry(1, 0.012, 6, 64), new THREE.MeshBasicMaterial({ color: "#a46bff", transparent: true,
+    opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+  m.frustumCulled = false; scene.add(m); return m;
+});
+const bladeLight = new THREE.PointLight("#5fd8ff", 0, 2.5, 2);
+scene.add(bladeLight);
+// sparks: little bright chips thrown where an arc lands
+const SPARKS = [], sparkMat = new THREE.MeshBasicMaterial({ color: "#c8f6ff", blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, toneMapped: false });
+const sparkGeo = new THREE.BoxGeometry(0.014, 0.014, 0.05);
+for (let i = 0; i < 80; i++) { const m = new THREE.Mesh(sparkGeo, sparkMat); m.visible = false; scene.add(m); SPARKS.push({ m, v: new THREE.Vector3(), life: 0, age: 0 }); }
+let sparkI = 0;
+function spark(at) {
+  const s = SPARKS[sparkI++ % SPARKS.length];
+  s.m.position.copy(at); s.v.set(Math.random() - 0.5, Math.random() * 0.8 + 0.2, Math.random() - 0.5).multiplyScalar(1.6);
+  s.life = 0.25 + Math.random() * 0.3; s.age = 0; s.m.visible = true;
+}
+const fxA = new THREE.Vector3(), fxB = new THREE.Vector3(), fxD = new THREE.Vector3(), fxN = new THREE.Vector3(), fxM = new THREE.Vector3();
+const fxQ = new THREE.Quaternion(), fxE = new THREE.Euler();
+let magic = 0, fxTime = 0;
+
+// where arc i runs: 0..3 from an arm tip to the blade (two a side), 4..7 across the blade
+function arcEnds(a, i, A, B) {
+  if (i < 4) {
+    const s = i < 2 ? -1 : 1;
+    rig.armTip(s, A); rig.bladePoint(s * (0.15 + 0.5 * Math.abs(a.u)), a.v * 0.8, B);
+  } else {
+    rig.bladePoint(a.u, a.v, A); rig.bladePoint(-a.u * 0.6, -a.v * 0.7, B);
+  }
+}
+function updateMagic(dt) {
+  const style = L.blade;
+  const target = style === "off" ? 0 : st.magicT * L.fxAmt;
+  magic += (target - magic) * Math.min(1, dt * (target > magic ? 14 : 4));
+  fxTime += dt;
+  const on = magic > 0.02;
+  const elec = style === "electric" || style === "both", magn = style === "magnetic" || style === "both";
+  const pal = FX[elec ? "electric" : "magnetic"];
+  root.updateMatrixWorld(true);
+  // the blade glows, lights the machine round it
+  const flick = elec ? 0.55 + 0.45 * Math.random() : 0.75 + 0.25 * Math.sin(fxTime * 7);
+  for (const mt of glowMats) { mt.emissive.set(pal.glow); mt.emissiveIntensity = on ? magic * 0.26 * flick : 0; }
+  rig.bladeCentre(fxM);
+  bladeLight.position.copy(fxM); bladeLight.color.set(pal.light); bladeLight.intensity = on ? magic * 3 * flick : 0;
+  // the arcs
+  for (let i = 0; i < ARCS; i++) {
+    const a = arcs[i];
+    const used = on && (i < 4 ? true : elec);
+    a.glow.mesh.visible = a.core.mesh.visible = used;
+    if (!used) continue;
+    a.glow.mat.color.set(pal.glow); a.core.mat.color.set(pal.core);
+    arcEnds(a, i, fxA, fxB);
+    fxD.subVectors(fxB, fxA); const len = fxD.length();
+    if (elec) {
+      // a new jagged path every few frames, the ends pinned, sparks where it lands
+      if ((a.next -= dt) < 0) {
+        a.next = 0.04 + Math.random() * 0.06; a.v = Math.random() * 2 - 1; a.u = Math.random() * 2 - 1;
+        for (let k = 0; k <= ARC_SEG; k++) a.off[k].set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(len * 0.22);
+        if (Math.random() < magic * 0.8) { arcEnds(a, i, fxA, fxB); for (let n = 0; n < 2; n++) spark(fxB); }
+      }
+      for (let k = 0; k <= ARC_SEG; k++) {
+        const t = k / ARC_SEG, env = Math.sin(Math.PI * t);
+        a.pts[k].copy(fxA).addScaledVector(fxD, t).addScaledVector(a.off[k], env);
+      }
+      const fl = magic * (0.6 + 0.4 * Math.random());
+      a.glow.draw(a.pts, 0.11 * magic, () => fl);
+      a.core.draw(a.pts, 0.022, () => fl);
+    } else {
+      // a field line: a smooth bow that turns about the line, light flowing along it
+      a.phase += dt * 1.6;
+      fxN.set(0, 1, 0).cross(fxD).normalize(); if (fxN.lengthSq() < 0.5) fxN.set(1, 0, 0);
+      fxN.applyAxisAngle(fxD.clone().normalize(), a.phase + i * 1.3);
+      const bow = len * (0.25 + 0.15 * Math.sin(fxTime * 2 + i));
+      for (let k = 0; k <= ARC_SEG; k++) {
+        const t = k / ARC_SEG;
+        a.pts[k].copy(fxA).addScaledVector(fxD, t).addScaledVector(fxN, bow * Math.sin(Math.PI * t));
+      }
+      const ph = fxTime * 5 + i;
+      a.glow.draw(a.pts, 0.1 * magic, (t) => magic * (0.45 + 0.55 * Math.max(0, Math.sin(t * 9 - ph))));
+      a.core.draw(a.pts, 0.018, (t) => magic * (0.3 + 0.7 * Math.max(0, Math.sin(t * 9 - ph))));
+    }
+  }
+  // the field's rings round the blade, turning like a gyroscope
+  rig.spin.getWorldQuaternion(fxQ);
+  fieldRings.forEach((m, i) => {
+    m.visible = on && magn;
+    if (!m.visible) return;
+    m.material.color.set(FX.magnetic.glow);
+    m.position.copy(fxM);
+    const r = rig.bladeHalfW * (1.05 + 0.18 * i) * (1 + 0.04 * Math.sin(fxTime * 4 + i * 2));
+    m.scale.setScalar(r);
+    fxE.set(fxTime * (0.7 + i * 0.4), i * 1.1 + fxTime * 0.3, i * 0.7);
+    m.quaternion.copy(fxQ).multiply(new THREE.Quaternion().setFromEuler(fxE));
+    m.material.opacity = magic * (0.35 + 0.2 * Math.sin(fxTime * 6 + i * 2));
+  });
+  // the sparks fall and go out
+  for (const s of SPARKS) {
+    if (!s.m.visible) continue;
+    s.age += dt; if (s.age >= s.life) { s.m.visible = false; continue; }
+    s.v.y -= 6 * dt; s.m.position.addScaledVector(s.v, dt);
+    s.m.lookAt(fxN.copy(s.m.position).add(s.v));
+    s.m.scale.setScalar(1 - s.age / s.life);
+  }
+}
+
+// =============================================================================
+// THE FRAME — run the clip, integrate the motion, pose and settle the body
+// =============================================================================
+const st = { pv: { bx: 0, by: 0, bz: 0 }, magicT: 0, x: 0, z: 0, heading: 0, tL: 0, tR: 0, sL: 0, sR: 0, lp: 0, lr: 0, vPrev: 0, acc: 0, time: 0, smokeT: 0, dustT: 0 };
+const v3 = new THREE.Vector3();
+
+// the blade counts once the body tumbles or flies: parked, a blade set below
+// the tracks digs into the ground instead of lifting the machine
+function lowestY(withBlade) {
+  root.updateMatrixWorld(true);
+  let lo = Infinity;
+  for (const p of rig.bodyPts) lo = Math.min(lo, v3.copy(p).applyMatrix4(rig.inner.matrixWorld).y);
+  if (withBlade) for (const p of rig.bladePts) lo = Math.min(lo, v3.copy(p).applyMatrix4(rig.spin.matrixWorld).y);
+  return lo;
+}
+
+function step(dt) {
+  const pdt = paused ? 0 : dt * speed;
+  // ---- the clip's time, its events, the loop or the next clip of the reel
+  const t0 = ct;
+  if (cur !== DRIVE && cur !== MANUAL) {
+    ct += pdt;
+    for (const e of cur.events) if (t0 < e.t && ct >= e.t) fire(e.kind);
+    if (ct >= cur.dur) {
+      if (reel) { const i = CLIPS.indexOf(cur); pdt === 0 || playNext(i); }
+      else if (loop) ct %= cur.dur; else { ct = cur.dur; }
+    }
+  } else ct += pdt;
+  // ---- the pose
+  Object.assign(pose, REST);
+  if (cur === DRIVE) DRIVE.f(ct, pose, pdt); else cur.f(Math.min(ct, cur.dur), pose, pdt);
+
+  // ---- how impossible the blade is right now (the effect reads it)
+  st.magicT = impossible(pose, st.pv, pdt);
+  st.pv.bx = pose.bx; st.pv.by = pose.by; st.pv.bz = pose.bz;
+
+  // ---- the motion on the ground: heading, position, each track's distance
+  st.heading += pose.w * pdt;
+  st.x += Math.cos(st.heading) * pose.v * pdt; st.z -= Math.sin(st.heading) * pose.v * pdt;
+  const ht = rig.halfTrack;
+  let sL = pose.v - pose.w * ht, sR = pose.v + pose.w * ht;
+  if (pose.tl != null) sL = pose.tl; if (pose.tr != null) sR = pose.tr;
+  if (pose.air) { sL = sR = pose.rev; }
+  const k = 1 - Math.exp(-pdt * (pose.air ? 3 : 14));
+  st.sL += (sL - st.sL) * k; st.sR += (sR - st.sR) * k;
+  st.tL += st.sL * pdt; st.tR += st.sR * pdt;
+
+  // ---- the lean: the nose lifts as it speeds up, the body rolls out of a turn
+  if (pdt > 0) { st.acc += ((pose.v - st.vPrev) / pdt - st.acc) * Math.min(1, pdt * 8); st.vPrev = pose.v; }
+  const grounded = !pose.air;
+  const lpT = grounded ? clamp(st.acc * 0.05, -0.12, 0.12) : 0, lrT = grounded ? clamp(pose.v * pose.w * 0.05, -0.12, 0.12) : 0;
+  st.lp += (lpT - st.lp) * Math.min(1, pdt * 6); st.lr += (lrT - st.lr) * Math.min(1, pdt * 6);
+
+  // ---- place it all
+  rig.set({ lift: pose.lift, tilt: pose.tilt, spinX: pose.bx, spinY: pose.by, spinZ: pose.bz, reach: pose.reach, trackL: st.tL, trackR: st.tR });
+  root.position.set(st.x, 0, st.z); root.rotation.y = st.heading;
+  tumble.rotation.set(pose.roll + st.lr, pose.yaw, pose.pitch + st.lp);
+  const sq = pose.sq, side = 1 / Math.sqrt(sq);
+  squash.scale.set(side, sq, side);
+  st.time += pdt;
+  const sh = pose.shake * 0.006 * (paused ? 0 : 1);
+  offs.position.set(0, -comY + sh * Math.sin(st.time * 71), sh * 0.5 * Math.sin(st.time * 53));
+  hop.position.y = pose.h;
+  // ---- settle: on the ground the lowest point touches it; in the air it stays above
+  const lo = lowestY(!grounded || Math.abs(pose.pitch) > 0.05 || Math.abs(pose.roll) > 0.05);
+  if (grounded) hop.position.y -= lo; else if (lo < 0) hop.position.y -= lo;
+
+  // ---- the beacon turns, the smoke and the track dust
+  beaconMat.emissiveIntensity = 1.2 * Math.max(0, Math.sin(st.time * 9)) + 0.15;
+  if (pdt > 0 && L.smoke && exhaustPt) {
+    st.smokeT -= pdt * (2.5 * pose.smoke);
+    if (st.smokeT < 0) {
+      st.smokeT += 1;
+      dozer.localToWorld(tmp.copy(exhaustPt));
+      puff(tmp, tmp2.set((Math.random() - 0.5) * 0.1, 0.5 + Math.random() * 0.3, (Math.random() - 0.5) * 0.1), "#5a5a60", 0.03, 0.14, 1.1, 0.55);
+    }
+  }
+  if (pdt > 0 && L.dust && grounded && hop.position.y < 0.05) {
+    st.dustT -= pdt * (Math.abs(st.sL) + Math.abs(st.sR)) * 3;
+    if (st.dustT < 0) {
+      st.dustT += 1;
+      for (const s of [-1, 1]) {
+        const sp = s < 0 ? st.sL : st.sR; if (Math.abs(sp) < 0.25) continue;
+        tmp.set(-Math.sign(sp) * 0.5, 0.03, s * rig.halfTrack); root.localToWorld(tmp); tmp.y = 0.04;
+        tmp2.set(-Math.cos(st.heading) * Math.sign(sp) * 0.3, 0.25, Math.sin(st.heading) * Math.sign(sp) * 0.3);
+        puff(tmp, tmp2, "#cbb38e", 0.04, 0.16, 0.6, 0.5);
+      }
+    }
+  }
+  updatePuffs(pdt);
+}
+function playNext(i) {
+  const next = CLIPS[(i + 1) % CLIPS.length];
+  play(next.name === "Idle" ? CLIPS[1] : next);
+}
+
+// =============================================================================
+// THE CAMERA — a preset view, carried along with the machine
+// =============================================================================
+const camOff = new THREE.Vector3();
+function placeCam() {
+  const c = CAMS[L.cam], az = (c.az * Math.PI / 180) + (c.chase ? st.heading : 0), el = c.el * Math.PI / 180;   // 0 = the side (+z), 90 = the front, -90 = behind
+  const tgt = new THREE.Vector3(st.x, 0.35, st.z);
+  controls.target.copy(tgt);
+  camera.position.set(tgt.x + Math.cos(el) * Math.sin(az) * c.dist, tgt.y + Math.sin(el) * c.dist, tgt.z + Math.cos(el) * Math.cos(az) * c.dist);
+  controls.update();
+}
+function followCam() {
+  const c = CAMS[L.cam];
+  const tgt = tmp.set(st.x, 0.35 + hop.position.y * 0.45, st.z);
+  if (c.chase) {
+    const az = c.az * Math.PI / 180 + st.heading, el = c.el * Math.PI / 180;
+    camOff.set(Math.cos(el) * Math.sin(az) * c.dist, Math.sin(el) * c.dist, Math.cos(el) * Math.cos(az) * c.dist);
+    const want = tmp2.copy(tgt).add(camOff);
+    camera.position.lerp(want, 0.08); controls.target.lerp(tgt, 0.15);
+  } else if (L.follow) {
+    const d = tmp2.subVectors(tgt, controls.target).multiplyScalar(0.12);
+    controls.target.add(d); camera.position.add(d);
+  }
+  controls.update();
+}
+
+// =============================================================================
+// RUN
+// =============================================================================
+function resize() {
+  const r = $("stage").getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+
+buildDozer();
+resize();
+{
+  const want = qs.get("clip"), c = CLIPS.find((x) => x.name.toLowerCase() === (want || "").toLowerCase());
+  play(c || CLIPS[0], +(qs.get("t") || 0));
+  if (qs.has("cam")) { L.cam = clamp(+qs.get("cam"), 0, CAMS.length - 1); L.camSel.value = L.cam; }
+  if (qs.get("pause") === "1") { paused = true; $("bPlay").textContent = "Play"; }
+}
+placeCam();
+let last = performance.now(), fps = 60, statT = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  fps += (1 / Math.max(dt, 1e-3) - fps) * 0.05;
+  step(dt);
+  followCam();
+  updateMagic(dt);
+  sun.position.copy(root.position).add(SUN_OFF); sun.target.position.copy(root.position);
+  ground.position.set(Math.round(st.x / 2) * 2, 0, Math.round(st.z / 2) * 2);
+  renderer.render(scene, camera);
+  if (cur !== DRIVE && cur !== MANUAL) {
+    $("bar").firstElementChild.style.width = (100 * Math.min(1, ct / cur.dur)) + "%";
+    $("scrub").value = Math.min(ct, cur.dur);
+  }
+  if ((statT -= dt) < 0) {
+    statT = 0.25;
+    $("vScrub").textContent = Math.min(ct, cur.dur).toFixed(2) + " s";
+    $("stats").textContent = `${cur.name} · ${cur === DRIVE || cur === MANUAL ? "live" : cur.dur.toFixed(2) + " s"}\n` +
+      `dozer ${Math.round(tris).toLocaleString("en")} tris · ${Math.round(fps)} fps\n` +
+      `tracks L ${st.sL.toFixed(2)} R ${st.sR.toFixed(2)} u/s`;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__dozer = { CLIPS, play, st, pose, rig: () => rig };
+</script>
+</body>
+</html>

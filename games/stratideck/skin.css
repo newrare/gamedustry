@@ -30,108 +30,327 @@
   #hud-left .hud-pill.warn { color:var(--danger); background:rgba(60,0,16,.45); }
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
-     The motor's "drag" variant lends its sliding hand; the track becomes the
-     hand of blue cards at the foot of the stage, the target becomes one
-     face-down red card in the enemy row, the stage's ::before the rest of
-     that row and its ::after the flash of the clash.
+     THE DEMO. The motor's "drag" variant lends the stage and its finger; the
+     cards on it are the round's own, dealt by `buildDemo` (game.js) into
+     `.sd-world`. One 17 s loop in four acts (1 % = 0.17 s):
 
-     One 3.2 s loop: the finger picks the middle card up, carries it to the
-     red one, which turns over on a 7 against the 9 it was struck with, flashes
-     and falls; the finger fades and comes back for the next one. */
+       0-24 %   the General (9) is lifted out of the hand, dragged along a
+                dashed trail onto a hidden red card, which turns over on a
+                Colonel (8): "9 > 8", the Colonel falls, the General takes
+                its cell
+       24-49 %  a Major A on a hidden Major E: "7 = 7", then "A > E", and the
+                loser is led away to the right flank under a padlock — a
+                prisoner
+       49-66 %  the camera closes on the Sapper's macaron, which rings: the
+                corner that says what a grade is for
+       66-91 %  the Sapper on the last hidden card, a trap: its macaron beats
+                the mine, the trap breaks and the Sapper takes the cell
+       91-100 % the table fades back to the deal
+
+     Stage space: 440 x 228, columns at x 120 / 220 / 320, the camp's row
+     from y 6, the hand's from y 142, an 80 px token. A card strikes at
+     -56 px (touching the one it hits) and takes the cell at -136 px.
+     The stage is as short as the drag allows: in the web shell's Help card
+     it sits with the sentence, the rules and the guide's line in a body of
+     700 px that must not scroll. */
   .demo-caption { display:none; }
   #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#dfe6f5; }
   #intro-tagline .w-drag   { color:var(--army); text-shadow:0 0 18px rgba(90,169,255,.75); }
   #intro-tagline .w-hidden { color:var(--camp); text-shadow:0 0 18px rgba(255,92,92,.75); }
   #intro-tagline .w-rank   { color:var(--accent); text-shadow:0 0 18px rgba(242,193,78,.8); }
 
+  #intro-demo { margin-top:4px; }
+  .is-desk .demo-legend { margin-top:4px; }
   .demo-stage {
-    width:420px; height:270px; overflow:hidden;
-    background:radial-gradient(320px 240px at 50% 30%, rgba(30,48,110,.55), rgba(8,12,30,.6));
+    width:440px; height:228px; overflow:hidden;
+    background:radial-gradient(340px 200px at 50% 40%, rgba(30,48,110,.6), rgba(8,12,30,.65));
     border-color:rgba(242,193,78,.22);
   }
-  /* the rest of the enemy row: two more face-down red cards beside the target */
-  .demo-stage::before {
-    content:""; position:absolute; left:50%; top:22px; width:268px; height:92px; margin-left:-134px;
-    background:
-      linear-gradient(180deg,#7a1b1b,#2c0707) 0 0 / 76px 92px no-repeat,
-      linear-gradient(180deg,#7a1b1b,#2c0707) 100% 0 / 76px 92px no-repeat;
-    border-radius:9px; opacity:.85;
+  /* the motor's own pieces give way to the cards: the finger stays */
+  .demo-drag .demo-track, .demo-drag .demo-target { display:none; }
+
+  .sd-world {
+    position:absolute; left:0; top:0; width:440px; height:228px; transform-origin:0 0;
+    animation:sdWorld 17s linear infinite;
   }
-  /* the clash: a burst of gold on the target */
-  .demo-stage::after {
-    content:""; position:absolute; left:50%; top:22px; width:76px; height:92px; margin-left:-38px;
-    border-radius:50%; background:radial-gradient(circle, rgba(242,193,78,.95), rgba(242,193,78,0) 70%);
-    opacity:0; animation:demoFlash 3.2s ease-out infinite; pointer-events:none;
+  .sd-cell, .sd-c, .sd-f, .sd-trail, .sd-flash, .sd-vs, .sd-ring, .sd-lock { position:absolute; }
+  .sd-cell { width:80px; height:80px; border-radius:14px; margin:-2px 0 0 -2px; }
+  .sd-cell.row-e { top:6px; background:rgba(120,20,20,.22); border:2px solid rgba(255,92,92,.18); }
+  .sd-cell.row-h { top:142px; border:2px dashed rgba(90,169,255,.35); }
+  .sd-cell.e0, .sd-cell.h0, .sd-c.e0, .sd-c.h0 { left:80px; }
+  .sd-cell.e1, .sd-cell.h1, .sd-c.e1, .sd-c.h1 { left:180px; }
+  .sd-cell.e2, .sd-cell.h2, .sd-c.e2, .sd-c.h2 { left:280px; }
+  .sd-c { width:80px; height:80px; }
+  .sd-c.e0, .sd-c.e1, .sd-c.e2 { top:6px; z-index:2; }
+  .sd-c.h0, .sd-c.h1, .sd-c.h2 { top:142px; z-index:5; }
+  .sd-f { left:0; top:0; width:80px; height:80px; border-radius:15px; }
+
+  /* the dashed trail a drag leaves, from the hand's slot up to the strike */
+  .sd-trail {
+    top:126px; width:6px; height:56px; margin-left:-3px; transform-origin:50% 100%; transform:scaleY(0);
+    background:repeating-linear-gradient(0deg, rgba(242,193,78,.95) 0 10px, transparent 10px 18px);
+    filter:drop-shadow(0 0 6px rgba(242,193,78,.7)); opacity:0;
   }
-  @keyframes demoFlash {
-    0%,44%  { opacity:0; transform:scale(.6); }
-    48%     { opacity:1; transform:scale(1.7); }
-    60%,100%{ opacity:0; transform:scale(2.1); }
+  .sd-trail.t0 { left:120px; animation:sdTrail0 17s linear infinite; }
+  .sd-trail.t1 { left:220px; animation:sdTrail1 17s linear infinite; }
+  .sd-trail.t2 { left:320px; animation:sdTrail2 17s linear infinite; }
+  @keyframes sdTrail1 {
+    0%,3.88%    { transform:scaleY(0); opacity:1; }
+    9.88%,21.18%{ transform:scaleY(1); opacity:1; }
+    23.29%,100% { transform:scaleY(1); opacity:0; }
+  }
+  @keyframes sdTrail2 {
+    0%,27.53%   { transform:scaleY(0); opacity:1; }
+    33.53%,45.18%{ transform:scaleY(1); opacity:1; }
+    47.29%,100% { transform:scaleY(1); opacity:0; }
+  }
+  @keyframes sdTrail0 {
+    0%,70.59%   { transform:scaleY(0); opacity:1; }
+    76.47%,85.88%{ transform:scaleY(1); opacity:1; }
+    88.24%,100% { transform:scaleY(1); opacity:0; }
   }
 
-  /* the hand: the two cards still on the table, and the empty slot between */
-  .demo-drag .demo-track {
-    left:50%; right:auto; bottom:16px; width:204px; height:64px; margin-left:-102px; border:0;
-    background:
-      linear-gradient(180deg,#2a56b8,#112a66) 0 0 / 56px 64px no-repeat,
-      linear-gradient(180deg,#2a56b8,#112a66) 100% 0 / 56px 64px no-repeat,
-      repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px) 74px 0 / 56px 2px no-repeat,
-      repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px) 74px 100% / 56px 2px no-repeat;
-    border-radius:7px;
+  /* a card lifted, dragged, striking, then taking the cell: one path per act */
+  .sd-c.h1 { animation:sdH1 17s ease-in-out infinite; }
+  .sd-c.h2 { animation:sdH2 17s ease-in-out infinite; }
+  .sd-c.h0 { animation:sdH0 17s ease-in-out infinite; }
+  @keyframes sdH1 {
+    0%,2.82%    { transform:translateY(0) scale(1); }
+    3.88%       { transform:translateY(-8px) scale(1.12); }
+    9.88%       { transform:translateY(-56px) scale(1.12); }
+    10.59%,21.88%{ transform:translateY(-56px) scale(1); }
+    24%,94.9%   { transform:translateY(-136px) scale(1); }
+    95%,100%    { transform:translateY(0) scale(1); }
+  }
+  @keyframes sdH2 {
+    0%,26.47%   { transform:translateY(0) scale(1); }
+    27.53%      { transform:translateY(-8px) scale(1.12); }
+    33.53%      { transform:translateY(-56px) scale(1.12); }
+    34.24%,45.88%{ transform:translateY(-56px) scale(1); }
+    48%,94.9%   { transform:translateY(-136px) scale(1); }
+    95%,100%    { transform:translateY(0) scale(1); }
+  }
+  @keyframes sdH0 {
+    0%,69.41%   { transform:translateY(0) scale(1); }
+    70.59%      { transform:translateY(-8px) scale(1.12); }
+    76.47%      { transform:translateY(-56px) scale(1.12); }
+    77.06%,87.65%{ transform:translateY(-56px) scale(1); }
+    90%,94.9%   { transform:translateY(-136px) scale(1); }
+    95%,100%    { transform:translateY(0) scale(1); }
+  }
+  /* the halo of a card in hand, while the finger holds it */
+  .sd-c.h1 .sd-f { animation:sdLift1 17s linear infinite; }
+  .sd-c.h2 .sd-f { animation:sdLift2 17s linear infinite; }
+  .sd-c.h0 .sd-f { animation:sdLift0 17s linear infinite; }
+  @keyframes sdLift1 {
+    0%,2.82%,10.59%,100% { box-shadow:0 0 0 0 rgba(242,193,78,0); }
+    3.88%,9.88%          { box-shadow:0 0 0 5px rgba(242,193,78,.9), 0 14px 26px rgba(0,0,0,.6); }
+  }
+  @keyframes sdLift2 {
+    0%,26.47%,34.24%,100% { box-shadow:0 0 0 0 rgba(242,193,78,0); }
+    27.53%,33.53%         { box-shadow:0 0 0 5px rgba(242,193,78,.9), 0 14px 26px rgba(0,0,0,.6); }
+  }
+  @keyframes sdLift0 {
+    0%,69.41%,77.06%,100% { box-shadow:0 0 0 0 rgba(242,193,78,0); }
+    70.59%,76.47%         { box-shadow:0 0 0 5px rgba(242,193,78,.9), 0 14px 26px rgba(0,0,0,.6); }
   }
 
-  /* the target: one face-down red card that turns over and falls */
-  .demo-drag .demo-target {
-    display:block; left:50%; top:22px; width:76px; height:92px; margin-left:-38px;
-    border:3px solid rgba(217,164,65,.75); border-radius:9px; box-shadow:0 8px 20px rgba(0,0,0,.5);
-    background:linear-gradient(180deg,#a32626,#4a0d0d);
-    animation:demoFoe 3.2s ease-in-out infinite;
+  /* a hidden card turns over: the back folds away, the face unfolds */
+  .sd-c.e1 .sd-f:not(.face) { animation:sdBack1 17s linear infinite; }
+  .sd-c.e1 .sd-f.face       { animation:sdFace1 17s linear infinite; }
+  .sd-c.e2 .sd-f:not(.face) { animation:sdBack2 17s linear infinite; }
+  .sd-c.e2 .sd-f.face       { animation:sdFace2 17s linear infinite; }
+  .sd-c.e0 .sd-f:not(.face) { animation:sdBack0 17s linear infinite; }
+  .sd-c.e0 .sd-f.face       { animation:sdFace0 17s linear infinite; }
+  @keyframes sdBack1 {
+    0%,11.29%   { transform:perspective(500px) rotateY(0); opacity:1; }
+    12.35%      { transform:perspective(500px) rotateY(90deg); opacity:1; }
+    12.4%,94.9% { transform:perspective(500px) rotateY(90deg); opacity:0; }
+    95%,100%    { transform:perspective(500px) rotateY(0); opacity:1; }
   }
-  .demo-drag .demo-ripple { display:none; }
-  .demo-drag .demo-target::before, .demo-drag .demo-target::after {
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    font-weight:900; color:#f6f1e4;
+  @keyframes sdFace1 {
+    0%,12.35%   { transform:perspective(500px) rotateY(-90deg); opacity:0; }
+    12.4%       { transform:perspective(500px) rotateY(-90deg); opacity:1; }
+    13.41%,94.9%{ transform:perspective(500px) rotateY(0); opacity:1; }
+    95%,100%    { transform:perspective(500px) rotateY(-90deg); opacity:0; }
   }
-  .demo-drag .demo-target::before { content:"?"; font-size:40px; animation:demoFoeQ 3.2s linear infinite; }
-  .demo-drag .demo-target::after  { content:"7"; font-size:46px; opacity:0; animation:demoFoeN 3.2s linear infinite; }
-  @keyframes demoFoe {
-    0%,40%   { transform:rotateY(0) translateY(0) rotate(0); opacity:1; }
-    46%      { transform:rotateY(90deg); opacity:1; }
-    52%,58%  { transform:rotateY(0) scale(1.08); opacity:1; }
-    72%,96%  { transform:translateY(26px) rotate(14deg) scale(.8); opacity:0; }
-    100%     { transform:translateY(0) rotate(0) scale(1); opacity:1; }
+  @keyframes sdBack2 {
+    0%,34.94%   { transform:perspective(500px) rotateY(0); opacity:1; }
+    36%         { transform:perspective(500px) rotateY(90deg); opacity:1; }
+    36.05%,94.9%{ transform:perspective(500px) rotateY(90deg); opacity:0; }
+    95%,100%    { transform:perspective(500px) rotateY(0); opacity:1; }
   }
-  @keyframes demoFoeQ { 0%,45%{opacity:1;} 46%,96%{opacity:0;} 100%{opacity:1;} }
-  @keyframes demoFoeN { 0%,46%{opacity:0;} 47%,100%{opacity:1;} }
+  @keyframes sdFace2 {
+    0%,36%      { transform:perspective(500px) rotateY(-90deg); opacity:0; }
+    36.05%      { transform:perspective(500px) rotateY(-90deg); opacity:1; }
+    37.06%,94.9%{ transform:perspective(500px) rotateY(0); opacity:1; }
+    95%,100%    { transform:perspective(500px) rotateY(-90deg); opacity:0; }
+  }
+  @keyframes sdBack0 {
+    0%,77.65%   { transform:perspective(500px) rotateY(0); opacity:1; }
+    78.82%      { transform:perspective(500px) rotateY(90deg); opacity:1; }
+    78.87%,94.9%{ transform:perspective(500px) rotateY(90deg); opacity:0; }
+    95%,100%    { transform:perspective(500px) rotateY(0); opacity:1; }
+  }
+  @keyframes sdFace0 {
+    0%,78.82%   { transform:perspective(500px) rotateY(-90deg); opacity:0; }
+    78.87%      { transform:perspective(500px) rotateY(-90deg); opacity:1; }
+    80%,94.9%   { transform:perspective(500px) rotateY(0); opacity:1; }
+    95%,100%    { transform:perspective(500px) rotateY(-90deg); opacity:0; }
+  }
 
-  /* the finger, carrying the card it picked up */
-  .demo-drag .demo-hand { z-index:3; animation:demoCarry 3.2s ease-in-out infinite; }
-  .demo-drag .demo-hand::before {
-    content:"9"; position:absolute; left:50%; top:-54px; width:56px; height:68px; margin-left:-28px;
-    display:flex; align-items:center; justify-content:center; font-weight:900; font-size:32px; color:#f6f1e4;
-    background:linear-gradient(180deg,#2a56b8,#112a66); border:3px solid rgba(242,193,78,.85); border-radius:8px;
-    box-shadow:0 10px 22px rgba(0,0,0,.55), 0 0 18px rgba(242,193,78,.35);
-    animation:demoCarried 3.2s ease-in-out infinite;
+  /* act 1's loser falls out of its cell */
+  .sd-c.e1 { animation:sdKo 17s ease-in infinite; }
+  @keyframes sdKo {
+    0%,20.47%   { transform:translateY(0) rotate(0) scale(1); opacity:1; }
+    23.29%,94.9%{ transform:translateY(40px) rotate(22deg) scale(.45); opacity:0; }
+    95%,100%    { transform:translateY(0) rotate(0) scale(1); opacity:1; }
   }
-  @keyframes demoCarry {
-    0%,12%   { transform:translateY(0);     opacity:1; }
-    40%,58%  { transform:translateY(-96px); opacity:1; }
-    66%      { transform:translateY(-96px); opacity:0; }
-    67%,92%  { transform:translateY(0);     opacity:0; }
-    100%     { transform:translateY(0);     opacity:1; }
+  /* act 4's trap is cleared: it breaks where it stood */
+  .sd-c.e0 { animation:sdDefuse 17s ease-in infinite; }
+  @keyframes sdDefuse {
+    0%,85.88%   { transform:rotate(0) scale(1); opacity:1; filter:none; }
+    86.5%       { transform:rotate(-6deg) scale(1.08); opacity:1; filter:grayscale(1) brightness(1.4); }
+    88.82%,94.9%{ transform:rotate(-24deg) scale(.4); opacity:0; filter:grayscale(1); }
+    95%,100%    { transform:rotate(0) scale(1); opacity:1; filter:none; }
   }
-  @keyframes demoCarried {
-    0%,44%   { transform:scale(1);    opacity:1; }
-    50%      { transform:scale(1.18); opacity:1; }
-    58%      { transform:scale(1);    opacity:1; }
-    66%,100% { opacity:0; }
+  /* act 2's loser is not destroyed: led away to the flank, a prisoner */
+  .sd-c.e2 { animation:sdCapture 17s ease-in-out infinite; }
+  @keyframes sdCapture {
+    0%,45.18%   { transform:translate(0,0) scale(1); }
+    47.65%,94.9%{ transform:translate(74px,66px) scale(.72); }
+    95%,100%    { transform:translate(0,0) scale(1); }
   }
-  /* on a DESK the cursor holds the card it carries: drawn OVER it (the motor
-     paints the cursor after the hand's ::before), its tip in the middle of
-     the card, and its wave is the press that picks the card up (shell.js,
-     Demo) */
-  .demo-drag .demo-hand { --click-dur:3.2s; --click-at:.2s; }
-  .demo-drag .demo-cursor { top:-24px; }
+  .sd-lock {
+    z-index:30; right:-14px; top:-14px; width:46px; height:46px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%);
+    box-shadow:0 0 0 4px var(--accent), 0 0 0 6px #0b0d12, 0 6px 14px rgba(0,0,0,.6);
+    opacity:0; animation:sdLock 17s ease-out infinite;
+  }
+  .sd-lock svg { width:62%; height:62%; fill:none; stroke:#f6e6b4; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+  @keyframes sdLock {
+    0%,46.59%   { transform:scale(.2); opacity:0; }
+    48%         { transform:scale(1.25); opacity:1; }
+    49.06%,94.9%{ transform:scale(1); opacity:1; }
+    95%,100%    { transform:scale(.2); opacity:0; }
+  }
+
+  /* the clash: a burst of gold where the two cards meet */
+  .sd-flash {
+    top:41px; width:90px; height:90px; margin-left:-45px; border-radius:50%; z-index:6;
+    background:radial-gradient(circle, rgba(255,240,190,.95), rgba(242,193,78,.6) 35%, rgba(242,193,78,0) 70%);
+    opacity:0; pointer-events:none;
+  }
+  .sd-flash.x0 { left:120px; animation:sdFlash0 17s ease-out infinite; }
+  .sd-flash.x1 { left:220px; animation:sdFlash1 17s ease-out infinite; }
+  .sd-flash.x2 { left:320px; animation:sdFlash2 17s ease-out infinite; }
+  @keyframes sdFlash1 { 0%,10.5%{opacity:0; transform:scale(.5);} 11%{opacity:1; transform:scale(1.4);} 13.5%,100%{opacity:0; transform:scale(2);} }
+  @keyframes sdFlash2 { 0%,34.2%{opacity:0; transform:scale(.5);} 34.7%{opacity:1; transform:scale(1.4);} 37.2%,100%{opacity:0; transform:scale(2);} }
+  @keyframes sdFlash0 { 0%,77%{opacity:0; transform:scale(.5);} 77.5%{opacity:1; transform:scale(1.4);} 80%,100%{opacity:0; transform:scale(2);} }
+
+  /* the verdicts: a figure is all a fight needs to be read */
+  .sd-vs {
+    z-index:8; top:90px; height:48px; padding:0 14px; border-radius:24px;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(8,12,30,.92); border:2px solid rgba(242,193,78,.8);
+    box-shadow:0 8px 20px rgba(0,0,0,.6), 0 0 18px rgba(242,193,78,.35);
+    font-size:32px; font-weight:900; line-height:1; color:var(--accent); opacity:0;
+  }
+  .sd-vs b { font-weight:900; text-shadow:0 0 12px currentColor; }
+  .sd-vs i { font-style:normal; color:#f6f1e4; }
+  .sd-vs.v1 { left:274px; animation:sdV1 17s ease-out infinite; }
+  .sd-vs.v2, .sd-vs.v3 { left:90px; }
+  .sd-vs.v2 { animation:sdV2 17s ease-out infinite; }
+  .sd-vs.v3 { animation:sdV3 17s ease-out infinite; }
+  .sd-vs.v4 { left:178px; padding:0 10px; animation:sdV4 17s ease-out infinite; }
+  /* act 4's plate: the Sapper's macaron, then the trap card it beats */
+  .sd-pk {
+    width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 32%, #34406a, #0c1122 74%); box-shadow:0 0 0 3px var(--gold);
+  }
+  .sd-pk svg { width:62%; height:62%; fill:none; stroke:#f6e6b4; stroke-width:2.1; stroke-linecap:round; stroke-linejoin:round; }
+  .sd-vs .card { flex:0 0 auto; }
+  @keyframes sdV1 { 0%,14%{opacity:0; transform:scale(.4);} 15.18%{opacity:1; transform:scale(1.15);} 16.2%,20.47%{opacity:1; transform:scale(1);} 21.88%,100%{opacity:0; transform:scale(1);} }
+  @keyframes sdV2 { 0%,37.7%{opacity:0; transform:scale(.4);} 38.82%{opacity:1; transform:scale(1.15);} 39.8%,41.29%{opacity:1; transform:scale(1);} 42.35%,100%{opacity:0; transform:scale(1);} }
+  @keyframes sdV3 { 0%,42.3%{opacity:0; transform:scale(.4);} 43.41%{opacity:1; transform:scale(1.15);} 44.4%,47.29%{opacity:1; transform:scale(1);} 48.71%,100%{opacity:0; transform:scale(1);} }
+  @keyframes sdV4 { 0%,81.1%{opacity:0; transform:scale(.4);} 82.35%{opacity:1; transform:scale(1.15);} 83.4%,87.65%{opacity:1; transform:scale(1);} 88.82%,100%{opacity:0; transform:scale(1);} }
+
+  /* the badges the verdict is read on swell while it stands — and in act 4
+     the macaron itself */
+  .sd-c.h1 .c-badge.rank, .sd-c.e1 .c-badge.rank { animation:sdBadge1 17s ease-in-out infinite; }
+  .sd-c.h2 .c-badge.rank, .sd-c.e2 .c-badge.rank { animation:sdBadge2 17s ease-in-out infinite; }
+  .sd-c.h2 .c-badge.tier, .sd-c.e2 .c-badge.tier { animation:sdBadge3 17s ease-in-out infinite; }
+  .sd-c.h0 .c-perk { animation:sdBadge4 17s ease-in-out infinite; }
+  @keyframes sdBadge1 { 0%,14%,21.88%,100%{scale:1;} 15.18%,20.47%{scale:1.35;} }
+  @keyframes sdBadge2 { 0%,37.7%,42.35%,100%{scale:1;} 38.82%,41.29%{scale:1.35;} }
+  @keyframes sdBadge3 { 0%,42.3%,48.71%,100%{scale:1;} 43.41%,47.29%{scale:1.6;} }
+  @keyframes sdBadge4 { 0%,81.1%,88.82%,100%{scale:1;} 82.35%,87.65%{scale:1.5;} }
+
+  /* act 3: the camera closes on the Sapper's macaron (91, 210 on the
+     stage) and brings it to (220, 114), three times its size, then backs
+     out for act 4 */
+  @keyframes sdWorld {
+    0%,49.41%   { transform:translate(0,0) scale(1); opacity:1; }
+    53.65%,62.94%{ transform:translate(-53px,-516px) scale(3); opacity:1; }
+    66.47%,91.76%{ transform:translate(0,0) scale(1); opacity:1; }
+    94.12%,95%  { transform:translate(0,0) scale(1); opacity:0; }
+    100%        { transform:translate(0,0) scale(1); opacity:1; }
+  }
+  .sd-ring {
+    z-index:30; left:73px; top:192px; width:36px; height:36px; border-radius:50%;
+    border:2px solid var(--accent); box-shadow:0 0 6px var(--accent); opacity:0;
+  }
+  .sd-ring.r1 { animation:sdRing1 17s ease-out infinite; }
+  .sd-ring.r2 { animation:sdRing2 17s ease-out infinite; }
+  @keyframes sdRing1 { 0%,54.3%{opacity:0; transform:scale(1);} 54.35%{opacity:1; transform:scale(1);} 59.29%,100%{opacity:0; transform:scale(2.1);} }
+  @keyframes sdRing2 { 0%,57.8%{opacity:0; transform:scale(1);} 57.88%{opacity:1; transform:scale(1);} 62.82%,100%{opacity:0; transform:scale(2.1);} }
+
+  /* the finger: its tip is the top-centre of its box, so a tip at (x, y)
+     on the stage is translate(x - 37, y). It presses at 2.82, 26.47, 55.76
+     and 69.41 %, which is when the desk's cursor clicks. */
+  .demo-drag .demo-hand {
+    left:0; top:0; bottom:auto; margin:0; z-index:40;
+    animation:sdHand 17s ease-in-out infinite;
+  }
+  @keyframes sdHand {
+    0%          { transform:translate(183px,210px); opacity:0; }
+    1.76%       { transform:translate(183px,186px); opacity:1; }
+    2.82%       { transform:translate(183px,182px) scale(.94); opacity:1; }
+    3.88%       { transform:translate(183px,182px); opacity:1; }
+    9.88%,10.59%{ transform:translate(183px,126px); opacity:1; }
+    12.71%      { transform:translate(183px,146px); opacity:0; }
+    23.29%      { transform:translate(283px,210px); opacity:0; }
+    25.41%      { transform:translate(283px,186px); opacity:1; }
+    26.47%      { transform:translate(283px,182px) scale(.94); opacity:1; }
+    27.53%      { transform:translate(283px,182px); opacity:1; }
+    33.53%,34.24%{ transform:translate(283px,126px); opacity:1; }
+    36.35%      { transform:translate(283px,146px); opacity:0; }
+    52.24%      { transform:translate(183px,196px); opacity:0; }
+    54.35%      { transform:translate(183px,166px); opacity:1; }
+    55.76%      { transform:translate(183px,159px) scale(.94); opacity:1; }
+    57.18%,62.12%{ transform:translate(183px,166px); opacity:1; }
+    63.53%      { transform:translate(83px,196px); opacity:0; }
+    67.06%      { transform:translate(83px,210px); opacity:0; }
+    68.24%      { transform:translate(83px,186px); opacity:1; }
+    69.41%      { transform:translate(83px,182px) scale(.94); opacity:1; }
+    70.59%      { transform:translate(83px,182px); opacity:1; }
+    76.47%,77.06%{ transform:translate(83px,126px); opacity:1; }
+    79.41%,100% { transform:translate(83px,146px); opacity:0; }
+  }
+  /* on a DESK the cursor rides the same path, and clicks on each press */
+  .demo-drag .demo-click { animation:sdClick 17s ease-out infinite; }
+  @keyframes sdClick {
+    0%,2.8%      { transform:scale(.2); opacity:0; }
+    2.82%        { transform:scale(.2); opacity:1; }
+    6%,26.45%    { transform:scale(1.5); opacity:0; }
+    26.47%       { transform:scale(.2); opacity:1; }
+    29.6%,55.74% { transform:scale(1.5); opacity:0; }
+    55.76%       { transform:scale(.2); opacity:1; }
+    58.9%,69.39% { transform:scale(1.5); opacity:0; }
+    69.41%       { transform:scale(.2); opacity:1; }
+    72.5%,100%   { transform:scale(1.5); opacity:0; }
+  }
 
   /* ---- THE CARDS -----------------------------------------------------------
      What follows, between THE CARD ITSELF and END OF THE CARD, is THE card
@@ -767,6 +986,47 @@
 .card.back .c-back { inset:0; z-index:4; display:flex; align-items:center; justify-content:center; }
 .card.back .c-back img { width:56%; filter:drop-shadow(0 1em 1.6em rgba(0,0,0,.7)); }
 .card.back .c-back::after { content:"?"; position:absolute; bottom:8%; font-size:max(calc(18px * var(--sk, 1)), 14em); font-weight:900; color:rgba(255,255,255,.75); text-shadow:0 .1em 0 rgba(0,0,0,.5); }
+/* ---- THE MICRO CARD — the tiny token of the barracks' lists ------------- */
+/* The token with its badges off (game.js, cardNode `micro`): the corners
+   are left to the control that acts on the card, and what the badges said
+   is the grouped chip below, laid by the barracks where the screen wants
+   it (packages/webshell/army.js, cardTile `chip`). */
+.card.micro .c-badge, .card.micro .c-perk { display:none; }
+/* THE FACE, framed higher and wider than the round's token: the chip
+   covers the bottom-left quarter, so the window is the top 11 to 61 % of
+   the portrait — where every officer's face sits — at twice the square's
+   height (checked on the 60 blue portraits, a contact sheet of the cast). */
+.card.micro.fmt-tiny .c-hero img { height:calc(100% * 2); margin-left:-2%; margin-top:28%; }
+/* THE GROUPED CHIP (game.js, cardChip): the grade, the tier and the
+   macaron's pictogram on one pill — 5B and the sword — dressed as the
+   card's own badges (section 5): the rarity is the fill (`--rar`, set by
+   cardChip), a gloss over it and a shade under, the gold rim of the grade
+   badge, the figures white with the badge's own shadow. A tier alone wears
+   the tier seal's dark steel rim. In design px and not in the card's em:
+   it is read at the same size on a 100px token and on a 130px one. */
+.c-chip {
+  --rar:#7d8597;
+  display:inline-flex; align-items:center; gap:1px; height:32px; padding:0 9px; box-sizing:border-box;
+  border-radius:16px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.1) 46%, rgba(255,255,255,0) 52%, rgba(0,0,0,.3) 100%),
+    var(--rar);
+  box-shadow:0 0 0 2px var(--gold), 0 0 0 4px #0b0d12, 0 3px 8px rgba(0,0,0,.6);
+  font-family:var(--web-font, inherit); font-weight:var(--web-fw, 900); font-size:21px; line-height:1;
+  white-space:nowrap; color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.45), 0 0 6px rgba(0,0,0,.4);
+}
+.c-chip b, .c-chip i { font-style:normal; font-weight:inherit; }
+.c-chip svg {
+  width:20px; height:20px; margin-left:4px; overflow:visible;
+  fill:none; stroke:#fff; stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.45));
+}
+/* no tier: steel, the badges' neutral metal */
+.c-chip.plain { background:linear-gradient(180deg, #e9eef5 0%, #a7b0bd 48%, #6d7683 52%, #b9c2cd 100%); }
+/* one part alone, set side by side with the other (the register) */
+.c-chip.only-grade, .c-chip.only-tier { width:46px; height:40px; border-radius:20px; justify-content:center; font-size:24px; padding:0; }
+.c-chip.only-tier { box-shadow:0 0 0 2px #1a1d24, 0 0 0 4px #0b0d12, 2px 3px 0 rgba(0,0,0,.78); }
 .card.back.fmt-tiny .c-back img { width:70%; }
 .card.back.fmt-tiny .c-back::after { display:none; }
 

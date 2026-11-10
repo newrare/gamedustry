@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Template screen FX</title>
+<!-- Filed in the back office (make lab): tools | css | tests, and the one game it is about, if any. -->
+<meta name="lab-group" content="tools">
+<!-- The module under test, as it ships: this page tunes what the motor runs. -->
+<link rel="stylesheet" href="../packages/shell/screenfx.css">
+<style>
+/* ===========================================================================
+   SCREEN FX — the full-screen effects catalogue and configurator.
+
+   The motor's `ScreenFx` (packages/shell/screenfx.js + .css) is loaded here
+   AS IT SHIPS and mounted on this page's own 720x1280 stage, over a real
+   capture of a round (assets/image/screen/). So the presets played here are
+   the presets a game plays with `ScreenFx.play("hit")` — nothing is copied.
+
+   What the page does:
+     - every house preset on a button: a click plays it once, the switch
+       beside the buttons holds it instead (Release puts it away);
+     - every field of the selected preset as a knob, applied live;
+     - "Game has the frame" off shows what a game that has NOT adopted the
+       painted frame gets (the edge fallback);
+     - a click on the stage moves `at` — where the bloom, the rays and the
+       speed lines come from — and a right click puts it back in the middle;
+     - Copy settings hands over the preset as the line to paste into PRESETS
+       of packages/shell/screenfx.js, Copy call the line a game writes.
+
+   The edits are kept per preset in this browser (localStorage) until Reset.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; background:#0b0b12; color:#e8e6f5; overflow:hidden;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+button, select, input { font:inherit; color:inherit; }
+
+#panel {
+  flex:0 0 340px; height:100vh; overflow-y:auto; padding:18px 18px 40px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:15px; letter-spacing:1px; text-transform:uppercase; }
+#panel .lede { color:#8d8aa8; font-weight:500; margin:4px 0 14px; font-size:12px; }
+.sec { margin:16px 0 8px; color:#8d8aa8; font-size:11px; letter-spacing:1px; text-transform:uppercase;
+  display:flex; justify-content:space-between; align-items:center; }
+
+#presets { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+#presets button {
+  position:relative; padding:8px 4px 8px 16px; border-radius:8px; border:1px solid #2b2b45;
+  background:#1a1a29; cursor:pointer; text-align:left; font-size:12px; white-space:nowrap; overflow:hidden;
+}
+#presets button::before {
+  content:""; position:absolute; left:6px; top:50%; width:6px; height:6px; margin-top:-3px;
+  border-radius:50%; background:var(--sw, #888);
+}
+#presets button:hover { border-color:#4a4a72; }
+#presets button.sel { border-color:#8f7bff; background:#231f3f; }
+#presets button.on::after {
+  content:""; position:absolute; right:6px; top:6px; width:6px; height:6px; border-radius:50%;
+  background:#5dff9e; box-shadow:0 0 6px #5dff9e;
+}
+#presets button.edited { font-style:italic; }
+
+.row { display:grid; grid-template-columns:92px 1fr 52px; align-items:center; gap:8px; margin:5px 0; }
+.row label { color:#b9b6d3; font-weight:500; }
+.row .v { text-align:right; color:#8d8aa8; font-variant-numeric:tabular-nums; font-weight:500; }
+.row input[type=range] { width:100%; accent-color:#8f7bff; }
+.row select { width:100%; background:#1a1a29; border:1px solid #2b2b45; border-radius:6px; padding:3px 6px; }
+.row input[type=color] { width:100%; height:24px; border:1px solid #2b2b45; border-radius:6px; background:none; padding:0 2px; }
+.hint { color:#6f6c8a; font-weight:500; font-size:11px; margin:2px 0 6px 100px; }
+
+.bar { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.btn { padding:6px 10px; border-radius:7px; border:1px solid #2b2b45; background:#1a1a29; cursor:pointer; }
+.btn:hover { border-color:#4a4a72; }
+.btn.primary { background:#5b45e0; border-color:#7b66ff; }
+.btn.on { background:#1d4733; border-color:#3fcf86; }
+.chk { display:flex; align-items:center; gap:8px; margin:6px 0; color:#b9b6d3; font-weight:500; cursor:pointer; }
+.chk input { accent-color:#8f7bff; }
+
+#out {
+  width:100%; min-height:86px; margin-top:6px; padding:8px; border-radius:8px; resize:vertical;
+  background:#0d0d16; border:1px solid #23233a; color:#b8f3c8; font:500 11px/1.4 ui-monospace,Menlo,monospace;
+}
+#toast { color:#5dff9e; font-weight:500; min-height:18px; font-size:12px; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the 720x1280 frame, scaled to the window, over a round's capture.
+   --------------------------------------------------------------------------- */
+#view { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-width:0; }
+#tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; }
+#tools select { background:#1a1a29; border:1px solid #2b2b45; border-radius:6px; padding:4px 6px; }
+#holder { position:relative; }
+#frame {
+  position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0;
+  overflow:hidden; background:#151522; border-radius:28px; box-shadow:0 20px 60px rgba(0,0,0,.6);
+  cursor:crosshair;
+}
+#shot { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+#fx { /* .sfx-layer is added by ScreenFx.mount */ }
+#mock-hud {
+  position:absolute; left:0; right:0; top:0; height:150px; z-index:15; pointer-events:none;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.5);
+}
+#mock-hud b { font:900 64px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#mock-hud span { font:700 22px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; letter-spacing:2px; }
+#at-dot {
+  position:absolute; z-index:20; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%;
+  border:3px dashed #fff; pointer-events:none; opacity:.8; display:none;
+}
+#status { color:#8d8aa8; font-weight:500; font-size:12px; min-height:18px; }
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <h1>Template screen FX</h1>
+  <p class="lede">The motor's full-screen effects, as they ship. Click to play once, or hold.</p>
+
+  <div class="sec">Presets <span id="count"></span></div>
+  <div id="presets"></div>
+
+  <div class="bar">
+    <button class="btn" id="b-hold">Hold</button>
+    <button class="btn" id="b-release">Release</button>
+    <button class="btn" id="b-clear">Clear all</button>
+    <button class="btn" id="b-reset">Reset preset</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="c-repeat"> Repeat the one-shot every 2 s</label>
+  <label class="chk"><input type="checkbox" id="c-art" checked> Game has the painted frame</label>
+  <label class="chk"><input type="checkbox" id="c-hud" checked> Show a HUD (the layer stands under it)</label>
+
+  <div class="sec">Selected · <span id="sel-name"></span></div>
+  <div id="knobs"></div>
+
+  <div class="sec">Hand over</div>
+  <div class="bar">
+    <button class="btn primary" id="b-copy">Copy settings</button>
+    <button class="btn" id="b-call">Copy call</button>
+    <button class="btn" id="b-all">Copy all edited</button>
+  </div>
+  <div id="toast"></div>
+  <textarea id="out" spellcheck="false" readonly></textarea>
+</aside>
+
+<main id="view">
+  <div id="tools">
+    <select id="s-game"></select>
+    <button class="btn" id="b-prev">Prev</button>
+    <span id="shot-n" style="min-width:52px;text-align:center"></span>
+    <button class="btn" id="b-next">Next</button>
+  </div>
+  <div id="holder">
+    <div id="frame">
+      <img id="shot" alt="">
+      <div id="fx"></div>
+      <div id="mock-hud"><b>12 450</b><span>Score</span></div>
+      <div id="at-dot"></div>
+    </div>
+  </div>
+  <div id="status"></div>
+</main>
+
+<script src="../packages/shell/screenfx.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---- the backdrops: a capture of each game's round ------------------- */
+  var SHOTS = {
+    arcider: 10, blight: 10, bouncetry: 10, bridgessa: 10, chainring: 10, echomaze: 10,
+    gearball: 10, gelatile: 10, grudgeon: 12, holepocalypse: 10, marshmelt: 10, orbinity: 10,
+    parrynormal: 10, pawko: 10, radiam: 10, slipdeck: 10, spinshock: 10, stratideck: 22,
+    triverse: 10, vipera: 10
+  };
+  var THEMES = ["ice", "lava", "slime", "mud", "water", "wind", "knight-blue", "knight-red"];
+
+  /* ---- every knob, in the order of the panel ---------------------------- */
+  var KNOBS = [
+    { k: "color",      t: "color", label: "Colour" },
+    { k: "color2",     t: "color", label: "Colour 2", hint: "bloom, rays, lines" },
+    { k: "alpha",      t: "range", label: "Strength", min: 0, max: 1, step: 0.01 },
+    { k: "tint",       t: "range", label: "Tint", min: 0, max: 0.6, step: 0.01 },
+    { k: "edge",       t: "range", label: "Edge", min: 0, max: 1, step: 0.01 },
+    { k: "soft",       t: "range", label: "Edge soft", min: 0, max: 1, step: 0.01 },
+    { k: "shape",      t: "select", label: "Edge shape", opts: ["rim", "round"] },
+    { k: "line",       t: "range", label: "Line px", min: 0, max: 30, step: 1 },
+    { k: "glow",       t: "range", label: "Bloom", min: 0, max: 1, step: 0.01 },
+    { k: "frame",      t: "select", label: "Frame", opts: [""].concat(THEMES) },
+    { k: "rays",       t: "range", label: "Rays", min: 0, max: 48, step: 1 },
+    { k: "raysAlpha",  t: "range", label: "Rays alpha", min: 0, max: 1, step: 0.01 },
+    { k: "spin",       t: "range", label: "Spin °/s", min: -180, max: 180, step: 5 },
+    { k: "lines",      t: "range", label: "Speed lines", min: 0, max: 120, step: 1 },
+    { k: "linesAlpha", t: "range", label: "Lines alpha", min: 0, max: 1, step: 0.01 },
+    { k: "bars",       t: "range", label: "Bars px", min: 0, max: 260, step: 5 },
+    { k: "pulse",      t: "select", label: "Pulse", opts: ["none", "beat", "breathe", "flicker", "blink", "flash"] },
+    { k: "period",     t: "range", label: "Period s", min: 0.1, max: 3, step: 0.01 },
+    { k: "count",      t: "range", label: "Pulse count", min: 0, max: 10, step: 1, hint: "0 = endless; N = a one-shot of N turns" },
+    { k: "enter",      t: "select", label: "Entrance", opts: ["fade", "close", "slam"] },
+    { k: "blend",      t: "select", label: "Blend", opts: ["normal", "screen", "multiply", "overlay"] },
+    { k: "in",         t: "range", label: "In s", min: 0, max: 2, step: 0.01 },
+    { k: "hold",       t: "range", label: "Hold s", min: 0, max: 3, step: 0.05, hint: "one-shot only, ignored under a pulse count" },
+    { k: "out",        t: "range", label: "Out s", min: 0, max: 2, step: 0.01 }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var BASE = ScreenFx.base();
+  var NAMES = ScreenFx.presets();
+  var SHIPPED = {};                    // name -> the preset as screenfx.js has it
+  NAMES.forEach(function (n) { SHIPPED[n] = ScreenFx.spec(n); });
+
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem("lab-screenfx") || "{}") || {}; } catch (e) {}
+  var edits = store.edits || {};       // name -> { field: value } over the shipped preset
+  var sel = store.sel && SHIPPED[store.sel] ? store.sel : "hit";
+  var holding = {};                    // name -> true while held from this page
+  var hasArt = true, repeatTimer = null;
+  function save() {
+    try { localStorage.setItem("lab-screenfx", JSON.stringify({ edits: edits, sel: sel, game: $("s-game").value, shot: shot })); } catch (e) {}
+  }
+
+  /* ---- mount the module on this stage ----------------------------------- */
+  function mount() {
+    ScreenFx.mount($("fx"), {
+      art: function (theme) { return hasArt ? "../assets/image/master/game-frame-" + theme + ".png" : null; }
+    });
+    holding = {};
+  }
+  mount();
+
+  function current(name) {
+    var s = {}, k, src = SHIPPED[name], e = edits[name] || {};
+    for (k in BASE) s[k] = BASE[k];
+    for (k in src) s[k] = src[k];
+    for (k in e) s[k] = e[k];
+    return s;
+  }
+
+  /* ---- play / hold ------------------------------------------------------ */
+  function play(name) { ScreenFx.play(name, current(name)); markLive(); }
+  function hold(name) { holding[name] = true; ScreenFx.hold(name, current(name)); markLive(); }
+  function release(name) { delete holding[name]; ScreenFx.release(name); setTimeout(markLive, 20); }
+  function markLive() {
+    var bs = $("presets").children;
+    for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("on", !!holding[bs[i].dataset.name]);
+    $("b-hold").classList.toggle("on", !!holding[sel]);
+    showOut();
+    var s = current(sel);
+    var hd = s.count > 0 && s.pulse !== "none" ? s.count * s.period : +s.hold;
+    $("status").textContent = sel + " · in " + s["in"] + " s, hold " + (+hd).toFixed(2) + " s, out " + s.out +
+      " s · one-shot " + (+s["in"] + hd + +s.out).toFixed(2) + " s" +
+      (s.frame ? " · frame " + s.frame + (hasArt ? "" : " (not adopted: edge fallback)") : "");
+  }
+  /* a knob moved: what is on screen follows at once */
+  function refresh() {
+    if (holding[sel]) ScreenFx.hold(sel, current(sel));
+    else play(sel);
+    markEdited(); markLive(); save(); showOut();
+  }
+
+  /* ---- the preset buttons ----------------------------------------------- */
+  function buildPresets() {
+    var box = $("presets"); box.innerHTML = "";
+    NAMES.forEach(function (n) {
+      var b = document.createElement("button");
+      b.dataset.name = n; b.textContent = n;
+      b.style.setProperty("--sw", current(n).frame ? "#cfe8ff" : current(n).color);
+      b.onclick = function () {
+        select(n);
+        if (holding[n]) return;
+        play(n);
+      };
+      box.appendChild(b);
+    });
+    $("count").textContent = NAMES.length;
+    markEdited();
+  }
+  function markEdited() {
+    var bs = $("presets").children;
+    for (var i = 0; i < bs.length; i++) {
+      var n = bs[i].dataset.name;
+      bs[i].classList.toggle("sel", n === sel);
+      bs[i].classList.toggle("edited", !!(edits[n] && Object.keys(edits[n]).length));
+      bs[i].style.setProperty("--sw", current(n).frame ? "#cfe8ff" : current(n).color);
+    }
+  }
+  function select(n) { sel = n; $("sel-name").textContent = n; buildKnobs(); markEdited(); markLive(); save(); showOut(); }
+
+  /* ---- the knobs -------------------------------------------------------- */
+  function fmt(v) { return typeof v === "number" ? (Math.round(v * 100) / 100).toString() : String(v || "—"); }
+  function hex(c) { return /^#[0-9a-f]{6}$/i.test(c) ? c : /^#[0-9a-f]{3}$/i.test(c) ? "#" + c.slice(1).replace(/(.)/g, "$1$1") : "#ffffff"; }
+  function setField(k, v) {
+    edits[sel] = edits[sel] || {};
+    if (JSON.stringify(v) === JSON.stringify((SHIPPED[sel][k] !== undefined ? SHIPPED[sel] : BASE)[k])) delete edits[sel][k];
+    else edits[sel][k] = v;
+    refresh();
+  }
+  function buildKnobs() {
+    var box = $("knobs"); box.innerHTML = "";
+    var s = current(sel);
+    KNOBS.forEach(function (K) {
+      var row = document.createElement("div"); row.className = "row";
+      var lab = document.createElement("label"); lab.textContent = K.label;
+      var val = document.createElement("span"); val.className = "v";
+      var inp;
+      if (K.t === "range") {
+        inp = document.createElement("input"); inp.type = "range";
+        inp.min = K.min; inp.max = K.max; inp.step = K.step; inp.value = s[K.k];
+        val.textContent = fmt(s[K.k]);
+        inp.oninput = function () { var v = +inp.value; val.textContent = fmt(v); setField(K.k, v); };
+      } else if (K.t === "color") {
+        inp = document.createElement("input"); inp.type = "color"; inp.value = hex(s[K.k]);
+        val.textContent = s[K.k];
+        inp.oninput = function () { val.textContent = inp.value; setField(K.k, inp.value); };
+      } else {
+        inp = document.createElement("select");
+        K.opts.forEach(function (o) {
+          var op = document.createElement("option"); op.value = o; op.textContent = o || "none";
+          inp.appendChild(op);
+        });
+        inp.value = s[K.k] || "";
+        inp.onchange = function () { setField(K.k, inp.value); };
+      }
+      row.appendChild(lab); row.appendChild(inp); row.appendChild(val);
+      box.appendChild(row);
+      if (K.hint) { var h = document.createElement("div"); h.className = "hint"; h.textContent = K.hint; box.appendChild(h); }
+    });
+    var at = edits[sel] && edits[sel].at;
+    var d = $("at-dot");
+    d.style.display = at ? "block" : "none";
+    if (at) { d.style.left = at.x + "px"; d.style.top = at.y + "px"; }
+  }
+
+  /* ---- the hand-over ---------------------------------------------------- */
+  function lit(v) { return typeof v === "string" ? JSON.stringify(v) : JSON.stringify(v); }
+  /* the preset as it would read in PRESETS: every field that differs from BASE */
+  function presetLine(n) {
+    var s = current(n), parts = [];
+    for (var k in s) {
+      if (k === "at") continue;
+      if (JSON.stringify(s[k]) !== JSON.stringify(BASE[k])) parts.push((k === "in" ? '"in"' : k) + ": " + lit(s[k]));
+    }
+    var key = /^[a-z]+$/.test(n) ? n : JSON.stringify(n);
+    return "      " + key + ": { " + parts.join(", ") + " },";
+  }
+  /* the call a game writes: only what differs from the shipped preset */
+  function callLine(n) {
+    var e = edits[n] || {}, parts = [];
+    for (var k in e) parts.push((k === "in" ? '"in"' : k) + ": " + lit(e[k]));
+    var verb = holding[n] ? "hold" : "play";
+    return 'ScreenFx.' + verb + '("' + n + '"' + (parts.length ? ", { " + parts.join(", ") + " }" : "") + ");" +
+      (holding[n] ? '\n// … then: ScreenFx.release("' + n + '");' : "");
+  }
+  function showOut() { $("out").value = presetLine(sel) + "\n\n" + callLine(sel); }
+  function copy(text, what) {
+    $("out").value = text;
+    var done = function () { $("toast").textContent = what + " copied"; setTimeout(function () { $("toast").textContent = ""; }, 1600); };
+    try { navigator.clipboard.writeText(text).then(done, function () { $("out").select(); document.execCommand("copy"); done(); }); }
+    catch (e) { $("out").select(); document.execCommand("copy"); done(); }
+  }
+
+  /* ---- the stage -------------------------------------------------------- */
+  var shot = store.shot || 1;
+  function buildGames() {
+    var s = $("s-game");
+    Object.keys(SHOTS).forEach(function (g) { var o = document.createElement("option"); o.value = g; o.textContent = g; s.appendChild(o); });
+    var o = document.createElement("option"); o.value = ""; o.textContent = "flat ground"; s.appendChild(o);
+    s.value = store.game !== undefined && (store.game === "" || SHOTS[store.game]) ? store.game : "holepocalypse";
+  }
+  function showShot() {
+    var g = $("s-game").value, n = SHOTS[g] || 0;
+    if (shot > n) shot = 1; if (shot < 1) shot = n || 1;
+    var img = $("shot");
+    if (!g) { img.style.display = "none"; $("shot-n").textContent = "—"; }
+    else {
+      img.style.display = "";
+      img.src = "../assets/image/screen/" + g + "-" + (shot < 10 ? "0" : "") + shot + ".jpg";
+      $("shot-n").textContent = shot + " / " + n;
+    }
+    save();
+  }
+  function fit() {
+    var v = $("view"), avail = v.clientHeight - 90, availW = v.clientWidth - 40;
+    var k = Math.min(avail / 1280, availW / 720);
+    $("frame").style.transform = "scale(" + k + ")";
+    $("holder").style.width = (720 * k) + "px";
+    $("holder").style.height = (1280 * k) + "px";
+    fit.k = k;
+  }
+  function stagePoint(ev) {
+    var r = $("frame").getBoundingClientRect();
+    return { x: Math.round((ev.clientX - r.left) / fit.k), y: Math.round((ev.clientY - r.top) / fit.k) };
+  }
+
+  /* ---- wiring ----------------------------------------------------------- */
+  $("b-hold").onclick = function () { if (holding[sel]) release(sel); else hold(sel); };
+  $("b-release").onclick = function () { release(sel); };
+  $("b-clear").onclick = function () { holding = {}; ScreenFx.clear(); markLive(); };
+  $("b-reset").onclick = function () { delete edits[sel]; buildKnobs(); refresh(); };
+  $("b-copy").onclick = function () { copy(presetLine(sel), "Preset"); };
+  $("b-call").onclick = function () { copy(callLine(sel), "Call"); };
+  $("b-all").onclick = function () {
+    var lines = NAMES.filter(function (n) { return edits[n] && Object.keys(edits[n]).length; }).map(presetLine);
+    copy(lines.length ? lines.join("\n") : "// no preset edited", lines.length + " presets");
+  };
+  $("c-repeat").onchange = function () {
+    clearInterval(repeatTimer);
+    if (this.checked) repeatTimer = setInterval(function () { if (!holding[sel]) play(sel); }, 2000);
+  };
+  $("c-art").onchange = function () {
+    hasArt = this.checked;
+    var held = Object.keys(holding);
+    mount();
+    held.forEach(hold);
+    markLive();
+  };
+  $("c-hud").onchange = function () { $("mock-hud").style.display = this.checked ? "" : "none"; };
+  $("s-game").onchange = function () { shot = 1; showShot(); };
+  $("b-prev").onclick = function () { shot--; showShot(); };
+  $("b-next").onclick = function () { shot++; showShot(); };
+  $("frame").addEventListener("click", function (ev) { setField("at", stagePoint(ev)); buildKnobs(); });
+  $("frame").addEventListener("contextmenu", function (ev) {
+    ev.preventDefault();
+    if (edits[sel]) delete edits[sel].at;
+    buildKnobs(); refresh();
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target.tagName === "INPUT" || ev.target.tagName === "SELECT") return;
+    if (ev.key === " ") { ev.preventDefault(); play(sel); }
+    if (ev.key === "Escape") $("b-clear").onclick();
+  });
+  window.addEventListener("resize", fit);
+
+  buildGames(); showShot(); buildPresets(); select(sel); fit();
+
+  /* `#fx=ice&game=vipera&shot=3` opens with that preset held (a headless shot) */
+  var hq = {};
+  location.hash.replace(/^#/, "").split("&").forEach(function (kv) { var p = kv.split("="); if (p[0]) hq[p[0]] = decodeURIComponent(p[1] || ""); });
+  if (hq.game !== undefined) { $("s-game").value = hq.game; shot = +hq.shot || 1; showShot(); }
+  if (hq.art === "0") { $("c-art").checked = false; $("c-art").onchange(); }
+  if (hq.fx && SHIPPED[hq.fx]) { select(hq.fx); hold(hq.fx); }
+})();
+</script>
+</body>
+</html>

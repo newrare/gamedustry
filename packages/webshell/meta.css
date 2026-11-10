@@ -1539,7 +1539,13 @@
   font-size:26px; font-weight:800; line-height:1.15;
   animation:mt-erow-in .32s ease both;
 }
-.mt-erow .l { min-width:0; }
+.mt-erow .l { min-width:0; text-align:left; }
+/* SEE THE SCORES AGAIN (meta.js, cerSwap): the motor's quiet link, smaller
+   and tighter so the way out under it barely moves, arriving with it. */
+#screen-end .mt-escores {
+  margin-top:8px; padding:6px 16px; font-size:22px; font-weight:700;
+  animation:mt-offer-in .3s ease .6s both;
+}
 .mt-erow .v { flex:none; color:var(--gold); white-space:nowrap; }
 .mt-erow .v.new { color:var(--good); }
 .mt-erow.boosted .v { animation:mt-erow-boost .5s cubic-bezier(.2,1.6,.4,1) both; }

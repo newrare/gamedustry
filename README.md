@@ -335,8 +335,8 @@ the real `Pop` styles, the real SKIN, the real samples at their own volume and
 pitch. The list has two sides — **view** (the `Pop` callouts and the
 `Notify.say` notifications) and **sound** (the bed, the sfx
 pack, the library and the cues). The juice carries no word and is scanned but
-not listed: `Fx.*`, `HUD.punch`, and `Overlay.vignette`, which is a glow over
-the frame rather than a notification.
+not listed: `Fx.*`, `HUD.punch`, `Overlay.vignette` and `ScreenFx`, which are
+effects over the frame rather than notifications.
 
 Each row is editable — the pop's style, the word, the anchor, the file a clip is
 cut from and how long the cut is (the whole of `assets/audio/sfx/` opens from

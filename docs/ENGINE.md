@@ -13,6 +13,7 @@ A playable always needs the same things, so the motor owns them:
 | **Intro**      | Logo, title, one-line pitch, an **animated how-to-play demo**, start button.                                                                                                                                                                                               |
 | **HUD**        | Top band: big animated score, timer, two free slots. Kept clear of notches and camera cut-outs.                                                                                                                                                                            |
 | **Overlay**    | The dramatic edge glow over the game view, and the host of the Pop layer.                                                                                                                                                                                                  |
+| **ScreenFx**   | Full-screen effects called by name — a hit, danger, a bonus, a freeze, a sunburst, speed lines, a painted frame — over the canvas and under the HUD.                                                                                                                       |
 | **Pop**        | Comic / manga callouts over the game view: what the player just DID — score gains, combo milestones, hero beats, a mistake as it happens.                                                                                                                                  |
 | **Notify**     | What HAPPENED to the player, on every screen: an event they did not make, an input refused, a record, a mechanic met the first time, anything said on a menu. A chip pinned top-right.                                                                                     |
 | **CTA bar**    | Bottom band with the install button, visible during the whole round, lifted above the home indicator.                                                                                                                                                                      |
@@ -501,10 +502,93 @@ Overlay.vignette("#ff2d55", 0.9, 600);   // edge glow (ms = auto-off)
 Overlay.clear();                         // wipe everything
 ```
 
-It carries no word. `Overlay.toast`, `Overlay.banner` and `Overlay.reward` were
-the motor's first three notification voices; no game called them once `Pop` took
-the loud words, and they were deleted with their CSS and their three nodes when
-`Notify` (below) took the informative ones.
+It carries no word. It is the free-colour glow — the colour of the item just
+picked up, of the lane, of the tier — and it is drawn by `ScreenFx.glow`
+(below): same arguments, same .5 s ease, `ms` still turning it off, but as
+gradient strips under the HUD instead of a blurred box-shadow over it. A
+state or an event the house has a name for (a hit, a freeze, a bonus) is a
+`ScreenFx` preset, not a vignette. `Overlay.toast`, `Overlay.banner` and
+`Overlay.reward` were the motor's first three notification voices; no game
+called them once `Pop` took the loud words, and they were deleted with their
+CSS and their three nodes when `Notify` (below) took the informative ones.
+
+### `ScreenFx` — full-screen effects, by name
+
+```js
+ScreenFx.play("hit");                       // one-shot: in, hold, out
+ScreenFx.play("bonus", { color: "#7cf" });  // any field of the preset, overridden
+ScreenFx.hold("ice");                       // on while a state lasts…
+ScreenFx.release("ice");                    // …and off when it ends
+ScreenFx.active("ice");                     // is it up?
+ScreenFx.clear();                           // everything off (the motor does it when a round is left)
+ScreenFx.define("rage", { color: "#f30", edge: 0.4, pulse: "flicker" });
+```
+
+What a game used to paint over its whole screen by hand — a tinted `fillRect`
+for a freeze, a red edge on a hit, a painted ice frame — is one call here, so
+the colours, the timings and the cost are the house's. **A preset is named
+after what HAPPENED, never after what it looks like**: `hit`, `danger`,
+`bonus`, `heal`, `shield`, `power`, `ice`, `fire`, `poison`, `water`, `mud`,
+`wind`, `knight-blue`, `knight-red`, `sunburst`, `speed`, `dark`. A
+game retunes one for itself with `CONFIG.screenFx = { hit: { color: "…" } }`.
+
+An effect is a stack of optional layers under one colour pair (`color`,
+`color2`), one pulse (`beat`, `breathe`, `flicker`, `blink`, `flash`, every
+`period` seconds — `count: N` plays N turns, and a one-shot then lasts exactly
+that: `danger` is two flashes), one entrance (`fade`, `close`, `slam`) and one
+blend: a flat `tint`, an `edge` coming in from the glass (`shape: "rim"`, four
+bands of one thickness, or `"round"`, a vignette), a crisp `line` on the
+glass, a `glow` from a point, a painted `frame`, a sunburst (`rays`, `spin`),
+speed `lines` and cinema `bars`. `at: { x, y }` (design px) is where the
+glow, the rays and the lines come from. `in` / `hold` / `out` are seconds, in
+real time — a slow motion does not stretch them.
+
+**Which layer for which beat.** `Fx.flash` is the impact itself, a white or
+coloured fill of the canvas for a fraction of a second; `Overlay.vignette` is
+a glow in a colour the game picks per event; `ScreenFx` is everything with a
+name — a state held (`ice`, `shield`, `speed`, `dark`) or an event the house
+draws the same in every game (`hit`, `danger`, `bonus`, `sunburst`). A game
+never paints a full-screen tint, edge or frame on its canvas: holepocalypse's
+and parrynormal's freezes and parrynormal's hurt edge were, and are presets
+now.
+
+**A painted frame is adopted, never shipped by default.** The shared frames
+(`assets/image/master/game-frame-<theme>.png`) are ~140 KB each, so a preset
+wears one only when the game names it in `art.objects`
+(`"frame-ice": "game-frame-ice"` → `CONFIG.art.frameIce`); without it the
+preset draws its edge, at least 0.3 in, in the same colour — `hold("ice")`
+reads as frozen in every game. A frame is web-only art in a game that lists
+it so (holepocalypse's playable strips it, and gets the edge).
+
+**It may only animate opacity and transform, and it rasterizes almost
+nothing.** It stands over a live canvas, so every node is promoted up front
+(`will-change`), the pulse is an opacity, the entrance a scale, the sunburst a
+rotation and the speed lines a stepped transform. A rim is four nodes each ONE
+PIXEL long, stretched along its side by a transform: a gradient is rasterized
+over the box it is painted in, so four frame-sized gradients cost seventy
+times the old blurred vignette, and the strips cost less than it. The
+sunburst and the lines are a square just large enough to reach the farthest
+corner. The layer is `#sfx-layer`, a child of `#frame` at z-index 14 — under
+the HUD (15), so a frame never covers the score — made on first use;
+`?perf=1&off=sfx` takes it out on a device.
+
+**Measured and tested.** `node tools/lab/bench-screenfx.mjs [slug] [--gpu]`
+puts every preset and the glow beside what they replaced (the blurred
+vignette, a tint and a frame drawn on the canvas every frame): software
+raster per firing, or frame intervals in a real window. On vipera the glow
+costs 0.00 ms where the old vignette cost 0.05 (one colour), 0.13 where it
+cost 0.44 (four colours); every row holds 120 fps on the GPU. `make test`
+runs `tools/test/screenfx.mjs`: the contract (the layer's place and z-order,
+play / hold / release, the frame and its fallback, danger's two flashes, the
+vignette's contract, a round ending clears everything) and every game played
+four seconds under every effect without an exception. A change to the
+module, or a game moved onto it, passes both.
+
+The module is two files, `packages/shell/screenfx.{js,css}`, joined to the
+shell and the motor stylesheet by the builder, because `lab/screen-fx.html`
+(*Template screen FX* in the back office) loads them as they are: the presets
+are tuned on the code that ships, over a capture of a round, and *Copy
+settings* is the line to paste into `PRESETS`.
 
 ### `Notify` — the one voice for information
 
@@ -721,7 +805,8 @@ same beat again:
 
 | `off=`  | what it takes out                                            |
 | ------- | ------------------------------------------------------------ |
-| `vig`   | `Overlay.vignette` — a blurred repaint of the whole frame    |
+| `vig`   | `Overlay.vignette` — the glow (ScreenFx.glow)                |
+| `sfx`   | `ScreenFx`, the full-screen effects layer, outright          |
 | `decor` | the layers behind a callout's word (band, dots, rays, ring…) |
 | `word`  | the word's own glyph layers (stroke, extrusion, glow)        |
 | `pops`  | every callout, outright                                      |

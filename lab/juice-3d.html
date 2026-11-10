@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — 3D juice</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="dozerflip">
+<style>
+/* ===========================================================================
+   LAB — 3D JUICE. How a plain 3D model is made to feel alive with almost
+   nothing: the bulldozer of prototype/dozerflip.html by default, any object
+   of lab/models/library.js or of the kit in the picker.
+
+   The model itself is never edited. Everything on this page is one of four
+   tricks, and each card says what it costs:
+     - DEFORMATION: nested groups around the model move, turn and scale it —
+       squash & stretch, weight transfer, a shear that drags the top behind, a
+       jelly spring, an engine idle, a drift angle. A matrix a frame.
+     - 2D SPRITES: flat pictures drawn on a canvas once — a blob shadow, a
+       comic impact, cartoon puffs, a shockwave ring, skid marks, a motion arc.
+       One quad each.
+     - PARTICLES: one InstancedMesh per kind — dust, exhaust smoke, sparks,
+       debris, wind streaks. Hundreds of bits, one draw call.
+     - SPEED & CAMERA: the lens, the clock and the screen react — FOV, camera
+       lag, shake, hit-stop, slow motion, afterimages, a light trail, manga
+       speed lines and a flash in CSS, and the one full-screen pass (a radial
+       blur).
+
+   The object drives on an endless lot (the ground is re-centred under it, its
+   texture world-locked), and every action — gas, brake, steer, boost, jump,
+   trick, smash a crate — says which effects answered it, on the stage and by
+   lighting their card. Hold Q (or the compare button) to see it bare.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+#panel, #fxpanel { height:100vh; overflow-y:auto; background:#12121c; padding:16px 14px 40px; }
+#panel { flex:0 0 290px; border-right:1px solid #23233a; }
+#fxpanel { flex:0 0 340px; border-left:1px solid #23233a; }
+h1 { font-size:16px; }
+p.hint { margin:6px 0 12px; font-weight:500; font-size:12px; color:#8b8ba7; }
+h2 { margin:16px 0 6px; font-size:12px; color:#9c9cba; font-weight:600; }
+select, input[type=color] { padding:5px 7px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px; }
+select { width:100%; }
+input[type=color] { width:44px; height:26px; padding:2px; }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 0; font-size:12px; color:#9c9cba; }
+.row select { width:150px; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#ffcf3a; }
+.row input[type=range] { width:130px; accent-color:#ffcf3a; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:4px 10px; border-radius:999px; background:#22223a; border:1px solid #2c2c47; color:#cfd0ea; font:600 11px/1.4 inherit; cursor:pointer; }
+.chip.on { background:#ffcf3a; color:#14110a; border-color:#ffcf3a; }
+.acts { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.acts button, button.wide { padding:7px 6px; background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:600 12px/1.2 inherit; cursor:pointer; user-select:none; touch-action:none; }
+.acts button small { display:block; font:500 10px/1.3 ui-monospace,Menlo,monospace; color:#8b8ba7; }
+.acts button.held, .acts button:active { background:#ffcf3a; color:#14110a; }
+.acts button.held small, .acts button:active small { color:#4a3d10; }
+button.wide { width:100%; margin-top:8px; }
+button.wide.held { background:#ff7a6a; color:#14110a; }
+
+/* ---- the effects, one card each ------------------------------------------- */
+.fam { margin-bottom:14px; }
+.fam header { display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid #23233a; }
+.fam header b { flex:1; font-size:13px; }
+.fam header .count { font:500 11px ui-monospace,Menlo,monospace; color:#8b8ba7; }
+.chev { width:20px; background:none; border:0; color:#9c9cba; cursor:pointer; font-size:12px; transition:transform .15s; }
+.fam.shut .chev { transform:rotate(-90deg); }
+.fam.shut .list, .fam.shut .famnote { display:none; }
+.famnote { margin:6px 0 8px; font-weight:500; font-size:11.5px; color:#8b8ba7; }
+.mini { padding:2px 7px; border-radius:6px; background:#22223a; border:1px solid #2c2c47; color:#cfd0ea; font:600 10.5px/1.4 inherit; cursor:pointer; }
+.fx { margin:6px 0; padding:8px 9px; border-radius:9px; background:#171724; border:1px solid #23233a; transition:border-color .25s, background .25s; }
+.fx.off { opacity:.55; }
+.fx.ping { border-color:#ffcf3a; background:#2a2617; transition:none; }
+.fx-h { display:flex; align-items:center; gap:6px; }
+.fx-h label { flex:1; display:flex; align-items:center; gap:7px; cursor:pointer; font-size:12.5px; }
+.fx-h input { width:15px; height:15px; accent-color:#ffcf3a; }
+.fx p { margin:3px 0 4px; font-weight:500; font-size:11.5px; line-height:1.4; color:#a9a9c4; }
+.fx-s { display:flex; align-items:center; gap:8px; }
+.fx-s input { flex:1; accent-color:#ffcf3a; }
+.fx-s output { width:34px; text-align:right; font:500 11px ui-monospace,Menlo,monospace; color:#cfd0ea; }
+.fx-m { display:flex; justify-content:space-between; gap:6px; margin-top:3px; font:500 10.5px/1.3 ui-monospace,Menlo,monospace; }
+.fx-m .cost { color:#7fd6a4; }
+.fx-m .when { color:#8b8ba7; text-align:right; }
+
+/* ---- the stage ------------------------------------------------------------- */
+#stage { flex:1; position:relative; min-width:0; overflow:hidden; background:#9fc4e8; }
+#view { width:100%; height:100%; display:block; }
+.ov { position:absolute; pointer-events:none; }
+/* manga speed lines: one repeating conic gradient, masked to the edges, and a
+   CSS animation that jumps it between three angles so the lines flicker */
+#lines { inset:-25%; opacity:0;
+  background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.95) 0deg .5deg, transparent .5deg 5.5deg, rgba(255,255,255,.7) 5.5deg 5.8deg, transparent 5.8deg 11deg);
+  -webkit-mask:radial-gradient(closest-side, transparent 52%, #000 92%); mask:radial-gradient(closest-side, transparent 52%, #000 92%);
+  animation:lines-jit .21s steps(1) infinite; }
+@keyframes lines-jit { 0% { transform:rotate(0deg); } 33% { transform:rotate(2.1deg) scale(1.02); } 66% { transform:rotate(-1.6deg) scale(.99); } }
+#vig { inset:0; opacity:0; box-shadow:inset 0 0 180px 50px var(--vig, #ffcf3a); }
+#flash { inset:0; opacity:0; background:#fff; }
+#stats { left:12px; top:10px; font:500 11px ui-monospace,Menlo,monospace; color:#14202c; background:rgba(255,255,255,.6); padding:3px 8px; border-radius:6px; }
+#bare { right:12px; top:10px; font:700 12px inherit; color:#fff; background:#ff5a4a; padding:3px 10px; border-radius:6px; display:none; }
+#log { left:12px; bottom:44px; display:flex; flex-direction:column-reverse; gap:5px; max-width:70%; }
+#log div { font:600 12px/1.35 inherit; color:#fff; background:rgba(14,14,24,.78); padding:4px 10px; border-radius:7px; animation:log-in .18s ease-out; transition:opacity .4s; }
+#log div b { color:#ffcf3a; }
+#log div i { font-style:normal; color:#8b8ba7; }
+@keyframes log-in { from { transform:translateX(-14px); opacity:0; } }
+#keys { left:0; right:0; bottom:10px; text-align:center; font:500 11px ui-monospace,Menlo,monospace; color:#14202c; }
+#keys span { background:rgba(255,255,255,.6); padding:3px 9px; border-radius:6px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>3D juice</h1>
+  <p class="hint">A plain 3D model made to feel alive with almost nothing: the model is never touched, only what is around it. Every card on the right says what it costs and when it fires.</p>
+
+  <h2>Object</h2>
+  <select id="obj"></select>
+  <div class="row">Forward axis <select id="axis"><option value="+x">+x</option><option value="-x">-x</option><option value="+z">+z</option><option value="-z">-z</option></select></div>
+  <div class="row">Accent (ghosts, trail, vignette) <input id="accent" type="color" value="#ffcf3a"></div>
+
+  <h2>Drive</h2>
+  <div class="acts">
+    <button data-hold="gas">Gas<small>W ↑</small></button>
+    <button data-hold="brake">Brake<small>S ↓</small></button>
+    <button data-hold="left">Left<small>A ←</small></button>
+    <button data-hold="right">Right<small>D →</small></button>
+    <button data-act="boost">Boost<small>Shift</small></button>
+    <button data-act="jump">Jump<small>Space</small></button>
+    <button data-act="trick">Trick<small>Space in the air</small></button>
+    <button data-act="smash">Smash a crate<small>F</small></button>
+  </div>
+  <div class="row">Auto demo (a key takes over) <input id="demo" type="checkbox" checked></div>
+  <div class="row">Cruise (gas always on) <input id="cruise" type="checkbox"></div>
+  <div class="row">Time scale <input id="time" type="range" min="0.1" max="1" step="0.05" value="1"></div>
+
+  <h2>Camera</h2>
+  <div class="chips" id="cams"></div>
+
+  <h2>Scene</h2>
+  <div class="row">Shadow map (the scene drawn twice) <input id="shadow" type="checkbox"></div>
+
+  <h2>Presets</h2>
+  <div class="chips" id="presets"></div>
+  <button class="wide" id="bareBtn">Hold to compare: no effects (Q)</button>
+  <button class="wide" id="copy">Copy settings</button>
+</div>
+
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div class="ov" id="lines"></div>
+  <div class="ov" id="vig"></div>
+  <div class="ov" id="flash"></div>
+  <div class="ov" id="stats"></div>
+  <div class="ov" id="bare">No effects</div>
+  <div class="ov" id="log"></div>
+  <div class="ov" id="keys"><span>W gas · S brake · A D steer (a drift at speed) · Shift boost · Space jump, again for a trick · F smash · hold Q: no effects</span></div>
+</div>
+
+<div id="fxpanel"><div id="fams"></div></div>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { ITEMS, PAL, paint, mulberry, bevelBox } from "./models/library.js";
+
+const $ = (id) => document.getElementById(id);
+const V3 = THREE.Vector3, TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ease = (k, dt) => 1 - Math.exp(-k * dt);
+const rr = (a, b) => a + (b - a) * Math.random();
+const noise = (t, s) => Math.sin(t * 1.0 + s) * 0.55 + Math.sin(t * 2.17 + s * 3.1) * 0.3 + Math.sin(t * 4.31 + s * 7.7) * 0.15;
+
+// =============================================================================
+// 1. THE EFFECTS — what can be switched, what it sells, what it costs
+// =============================================================================
+const FAMILIES = [
+  { key: "deform", name: "Deformation", note: "The model is never edited: four nested groups around it move, turn and scale it. Works on any object, costs a matrix a frame." },
+  { key: "sprite", name: "2D sprites", note: "Flat pictures drawn once on a canvas, facing the camera or lying on the ground. One quad each." },
+  { key: "particle", name: "Particles", note: "One InstancedMesh per kind, low-poly bits in the same style as the model: hundreds of them for one draw call." },
+  { key: "speed", name: "Speed & camera", note: "The lens, the clock and the screen react, so the object does not have to. Mostly free, two of them are CSS." }
+];
+const FX = [
+  { fam: "deform", key: "squash", name: "Squash & stretch", what: "Crouches before a jump, stretches on take-off, flattens on landing, stretches long on a boost, crushes on a hit.", cost: "Scale only", when: "Jump · land · boost · hit" },
+  { fam: "deform", key: "lean", name: "Weight transfer", what: "Nose up on the gas, nose down on the brake, rolls out of a turn, follows its arc in the air.", cost: "Rotation only", when: "Gas · brake · turn · air" },
+  { fam: "deform", key: "shear", name: "Drag shear", what: "The top lags behind when it speeds up and runs ahead when it brakes, like a cartoon car.", cost: "One matrix", when: "Gas · brake · boost" },
+  { fam: "deform", key: "jelly", name: "Jelly spring", what: "Every knock rings on a damped spring for half a second, so a landing has an aftershock.", cost: "Two numbers", when: "Land · hit" },
+  { fam: "deform", key: "idle", name: "Engine life", what: "A fast rumble and a slow breath: it is never a still model, even parked.", cost: "Transform only", when: "Always" },
+  { fam: "deform", key: "slip", name: "Drift angle", what: "In a hard turn at speed the body turns further than its path.", cost: "Rotation only", when: "Turn at speed" },
+  { fam: "sprite", key: "blob", name: "Blob shadow", what: "A soft disc under it that shrinks and fades as it rises: its height reads at once. The shadow map does it with a second pass.", cost: "1 quad", when: "Always · air" },
+  { fam: "sprite", key: "pow", name: "Comic impact", what: "A drawn star with a word, popped with an overshoot on a hit, a hard landing or a boost.", cost: "1 sprite", when: "Hit · land · boost" },
+  { fam: "sprite", key: "puffs", name: "Cartoon puffs", what: "Flat drawn clouds out of the exhaust, an outline and one shade.", cost: "Sprites, 1 texture", when: "Always · boost" },
+  { fam: "sprite", key: "ring", name: "Shockwave ring", what: "A flat ring spreading on the ground under an impact.", cost: "1 quad", when: "Land · hit" },
+  { fam: "sprite", key: "skid", name: "Skid marks", what: "Dark strips left on the ground, which stay and fade: the trace of what it did.", cost: "1 draw call", when: "Drift · brake" },
+  { fam: "sprite", key: "swoosh", name: "Motion arc", what: "A pale arc along the path of a flip, so a spin reads even in a single frame.", cost: "1 mesh", when: "Trick" },
+  { fam: "particle", key: "dust", name: "Track dust", what: "Kicked from the rear, more with speed and the gas; white tyre smoke in a drift, a cloud from the front on a brake, a ring of it on landing.", cost: "1 draw call", when: "Drive · drift · brake · land" },
+  { fam: "particle", key: "smoke", name: "Exhaust smoke", what: "Low-poly puffs rising from the back, thick and black on a boost.", cost: "1 draw call", when: "Always · boost" },
+  { fam: "particle", key: "sparks", name: "Sparks", what: "Additive streaks stretched along their velocity, on a hard landing and a hit.", cost: "1 draw call", when: "Land · hit" },
+  { fam: "particle", key: "debris", name: "Debris", what: "Chunks of what was hit, with gravity, a spin and a bounce.", cost: "1 draw call", when: "Hit" },
+  { fam: "particle", key: "streaks", name: "Wind streaks", what: "White lines hanging in the air that it races past: speed shown by the world.", cost: "1 draw call", when: "High speed" },
+  { fam: "speed", key: "fov", name: "Field of view", what: "The lens widens with speed, kicks on a boost and punches on an impact.", cost: "Free", when: "Speed · boost · land · hit" },
+  { fam: "speed", key: "camlag", name: "Camera lag", what: "The camera falls behind when it speeds up, swings late into a turn and looks ahead. Off, it is glued.", cost: "Free", when: "Always" },
+  { fam: "speed", key: "shake", name: "Camera shake", what: "Trauma that decays, shaking by its square: small knocks barely move it, a big one rattles.", cost: "Free", when: "Land · hit · boost" },
+  { fam: "speed", key: "hitstop", name: "Hit-stop", what: "The world freezes for 80 ms on a hit while the camera still shakes: that is weight.", cost: "Free", when: "Hit · hard landing" },
+  { fam: "speed", key: "slowmo", name: "Slow motion", what: "Time slows in the middle of a trick and catches up for the landing.", cost: "Free", when: "Trick" },
+  { fam: "speed", key: "ghosts", name: "Afterimages", what: "Tinted copies of the model left on its past positions.", cost: "5 extra draws", when: "Boost · air · drift" },
+  { fam: "speed", key: "trail", name: "Light trail", what: "Two additive ribbons out of the rear corners.", cost: "1 draw call", when: "Boost · air · drift" },
+  { fam: "speed", key: "lines", name: "Speed lines", what: "Manga lines round the frame, a conic gradient masked to the edges and jumped by a CSS animation.", cost: "CSS", when: "High speed · boost" },
+  { fam: "speed", key: "flash", name: "Flash & vignette", what: "A white flash on a hit, a coloured edge while boosting.", cost: "CSS", when: "Hit · boost" },
+  { fam: "speed", key: "blur", name: "Radial blur", what: "Everything but the middle smears outward, with a touch of colour fringing. The one full-screen pass of the page.", cost: "1 full-screen pass", when: "Speed · boost" }
+];
+const FXK = Object.fromEntries(FX.map((f) => [f.key, f]));
+const ALL = Object.fromEntries(FX.map((f) => [f.key, 1]));
+const PRESETS = {
+  "None": {},
+  "Subtle": { squash: 0.5, lean: 0.6, idle: 0.6, blob: 1, dust: 0.6, smoke: 0.6, fov: 0.6, camlag: 0.7, shake: 0.5 },
+  "Arcade": { squash: 1, lean: 1, jelly: 0.8, idle: 1, slip: 1, blob: 1, ring: 1, skid: 1, dust: 1, smoke: 1, sparks: 1, debris: 1, streaks: 1, fov: 1, camlag: 1, shake: 1, hitstop: 1, trail: 1, blur: 0.8 },
+  "Cartoon": { squash: 1.6, lean: 1.3, shear: 1.2, jelly: 1.5, idle: 1.4, slip: 1.2, blob: 1, pow: 1, puffs: 1, ring: 1, swoosh: 1, skid: 1, debris: 1, fov: 1.2, camlag: 1, shake: 1.2, hitstop: 1.2, slowmo: 1, lines: 1, flash: 1 },
+  "All": ALL
+};
+
+const cfg = {};
+let bare = false;
+const on = (k) => !bare && cfg[k].on && cfg[k].amt > 0;
+const amt = (k) => (on(k) ? cfg[k].amt : 0);
+
+// =============================================================================
+// 2. THE SCENE — renderer, light, the endless lot, cones, the crate
+// =============================================================================
+const stage = $("stage"), cv = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.info.autoReset = false;
+const scene = new THREE.Scene();
+const SKY = 0x9fc4e8;
+scene.background = new THREE.Color(SKY);
+scene.fog = new THREE.Fog(SKY, 28, 70);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+
+scene.add(new THREE.HemisphereLight(0xdfeaff, 0x7a6a58, 1.1));
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.4);
+sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.02;
+Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: 1, far: 40 });
+scene.add(sun, sun.target);
+const SUN_OFF = new V3(6, 12, 4);
+
+// the post chain: always through the composer so the look never shifts when
+// the blur is switched; the blur pass itself is only enabled while it does something
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const blurPass = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, center: { value: new THREE.Vector2(0.5, 0.5) }, strength: { value: 0 }, ca: { value: 0 } },
+  vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 center; uniform float strength; uniform float ca; varying vec2 vUv;
+    void main() {
+      vec2 d = vUv - center; float m = smoothstep(0.07, 0.45, length(d));
+      vec4 acc = vec4(0.0);
+      for (int i = 0; i < 10; i++) { float t = float(i) / 9.0; acc += texture2D(tDiffuse, vUv - d * strength * m * t); }
+      acc /= 10.0;
+      float r = texture2D(tDiffuse, vUv - d * ca * m).r, b = texture2D(tDiffuse, vUv + d * ca * m).b;
+      gl_FragColor = vec4(mix(acc.r, r, 0.5), acc.g, mix(acc.b, b, 0.5), 1.0);
+    }`
+});
+blurPass.enabled = false;
+composer.addPass(blurPass);
+composer.addPass(new OutputPass());
+
+// ---- the lot: one plane re-centred under the object, its texture world-locked
+const TILE = 8, GROUND = 160;
+function groundTexture() {
+  const c = document.createElement("canvas"); c.width = c.height = 512;
+  const g = c.getContext("2d"), r = mulberry(7);
+  g.fillStyle = "#c4beb2"; g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 1600; i++) { g.fillStyle = r() < 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.09)"; const s = 1 + r() * 3; g.fillRect(r() * 512, r() * 512, s, s); }
+  g.strokeStyle = "rgba(70,62,54,0.3)"; g.lineWidth = 3;
+  for (let i = 0; i <= 4; i++) { const p = i * 128; g.beginPath(); g.moveTo(p, 0); g.lineTo(p, 512); g.moveTo(0, p); g.lineTo(512, p); g.stroke(); }
+  g.fillStyle = "rgba(255,255,255,0.75)";
+  for (let i = 0; i < 4; i++) g.fillRect(i * 128 + 40, 253, 48, 6);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(GROUND / TILE, GROUND / TILE);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(GROUND, GROUND).rotateX(-Math.PI / 2),
+  new THREE.MeshStandardMaterial({ map: groundTexture(), roughness: 0.95 }));
+ground.receiveShadow = true; scene.add(ground);
+
+// ---- cones on a hashed lattice round the object: what the eye measures speed against
+const CONE_SP = 9, CONE_R = 5, CONE_MAX = (2 * CONE_R + 1) ** 2;
+const coneMesh = new THREE.InstancedMesh(new THREE.ConeGeometry(0.2, 0.55, 8).translate(0, 0.32, 0),
+  new THREE.MeshStandardMaterial({ color: 0xff7a2a, roughness: 0.6 }), CONE_MAX);
+const coneBase = new THREE.InstancedMesh(new THREE.BoxGeometry(0.42, 0.06, 0.42).translate(0, 0.03, 0),
+  new THREE.MeshStandardMaterial({ color: 0x33302c, roughness: 0.9 }), CONE_MAX);
+for (const m of [coneMesh, coneBase]) { m.castShadow = true; m.frustumCulled = false; scene.add(m); }
+const hash2 = (i, j) => { const n = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return n - Math.floor(n); };
+const dummy = new THREE.Object3D();
+function updateCones() {
+  let n = 0;
+  const ci = Math.round(S.x / CONE_SP), cj = Math.round(S.z / CONE_SP);
+  for (let i = -CONE_R; i <= CONE_R; i++) for (let j = -CONE_R; j <= CONE_R; j++) {
+    const a = ci + i, b = cj + j;
+    if (hash2(a, b) > 0.3) continue;
+    const x = a * CONE_SP + (hash2(b, a) - 0.5) * 6, z = b * CONE_SP + (hash2(a + 3, b - 7) - 0.5) * 6;
+    if ((x - S.x) ** 2 + (z - S.z) ** 2 < 6) continue;
+    dummy.position.set(x, 0, z); dummy.rotation.set(0, hash2(a, b) * 9, 0); dummy.scale.setScalar(1); dummy.updateMatrix();
+    coneMesh.setMatrixAt(n, dummy.matrix); coneBase.setMatrixAt(n, dummy.matrix); n++;
+  }
+  coneMesh.count = coneBase.count = n;
+  coneMesh.instanceMatrix.needsUpdate = coneBase.instanceMatrix.needsUpdate = true;
+}
+
+// ---- the crate a smash spawns ahead
+const CRATE_HEX = 0xc98a4b;
+const crate = new THREE.Group();
+{
+  const box = new THREE.Mesh(bevelBox(0.9, 0.9, 0.9, 0.06), new THREE.MeshStandardMaterial({ color: CRATE_HEX, roughness: 0.8 }));
+  box.position.y = 0.45; crate.add(box);
+  const plank = new THREE.MeshStandardMaterial({ color: 0x9a6232, roughness: 0.8 });
+  for (const s of [-1, 1]) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(0.94, 0.12, 0.94), plank); p.position.y = 0.45 + s * 0.3; crate.add(p);
+  }
+  crate.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+}
+crate.visible = false; scene.add(crate);
+const crateS = { alive: false, x: 0, z: 0 };
+
+// =============================================================================
+// 3. THE OBJECT — loaded, normalised, and hung in a rig of nested groups
+// =============================================================================
+// root    world position, heading (+ the drift angle)
+//  tilt    pitch and roll: weight transfer
+//   flipG   pivot at mid-height: tricks turn round it
+//    deform  a raw matrix: squash, stretch, shear, jelly (around the base)
+//     shake   engine rumble
+//      holder  the model, turned so it drives along +x, scaled, centred, base on y = 0
+const root = new THREE.Group(), tilt = new THREE.Group(), flipG = new THREE.Group(), deform = new THREE.Group(), shake = new THREE.Group();
+root.add(tilt); tilt.add(flipG); flipG.add(deform); deform.add(shake); scene.add(root);
+deform.matrixAutoUpdate = false;
+let holder = null, dims = { len: 2, wid: 1, h: 1 };
+const AXES = { "+x": 0, "-x": Math.PI, "+z": Math.PI / 2, "-z": -Math.PI / 2 };
+
+// materials for what is made in code: the kit's palette texture, as models.html does
+const ASSETS = "../assets/model/";
+const atlasTex = new THREE.TextureLoader().load(ASSETS + "kaykit-city/citybits_texture.png");
+atlasTex.flipY = false; atlasTex.colorSpace = THREE.SRGBColorSpace;
+const mats = {};
+function codeMat(hex, opts) {
+  const key = hex + JSON.stringify(opts || {});
+  return mats[key] || (mats[key] = new THREE.MeshStandardMaterial(Object.assign(PAL[hex]
+    ? { map: atlasTex, roughness: 0.85, metalness: 0 } : { color: hex, roughness: 0.85, metalness: 0 }, opts)));
+}
+const glowMats = {};
+const glow = (k) => glowMats[k] || (glowMats[k] = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: { A: 0x39e6ff, B: 0xb45cff, ember: 0xff6a1a }[k] || 0xffffff, emissiveIntensity: 1.6 }));
+function buildCode(item) {
+  return item.build({ mesh: (geo, hex, opts) => new THREE.Mesh(paint(geo, hex), codeMat(hex, opts)), mat: codeMat, glow, rnd: mulberry(3) }, item.opts || {});
+}
+const loader = new GLTFLoader(), kitCache = {};
+const loadKit = (file) => kitCache[file] || (kitCache[file] = loader.loadAsync(ASSETS + file).then((g) => g.scene));
+
+// the picker: the library first (the dozer on top), then the kit
+const ENTRIES = ITEMS.filter((i) => i.category !== "fx").map((i) => ({ id: i.id, name: i.name, group: "Made in code", kind: "code", item: i, axis: "+x" }));
+ENTRIES.sort((a, b) => (b.id === "vehicle-dozer") - (a.id === "vehicle-dozer"));
+async function loadEntries() {
+  try {
+    const idx = await (await fetch(ASSETS + "index.json")).json();
+    for (const p of idx.packs) for (const m of p.models) {
+      // kit cars are modelled along z (size 0.42 x 0.94): +z is a guess, the select fixes it
+      ENTRIES.push({ id: p.pack + "/" + m.name, name: m.name.replace(/_/g, " "), group: p.title, kind: "kit", file: m.file, axis: "+z", cat: m.category });
+    }
+  } catch (e) { /* no index: the library alone */ }
+  const sel = $("obj"), groups = {};
+  for (const e of ENTRIES) {
+    if (!groups[e.group]) { groups[e.group] = document.createElement("optgroup"); groups[e.group].label = e.group; sel.appendChild(groups[e.group]); }
+    const o = document.createElement("option"); o.value = e.id; o.textContent = e.name; groups[e.group].appendChild(o);
+  }
+}
+
+let loadSeq = 0;
+async function setObject(id, axis) {
+  const e = ENTRIES.find((x) => x.id === id) || ENTRIES[0], seq = ++loadSeq;
+  ui.obj = e.id; ui.axis = axis || e.axis;
+  $("obj").value = ui.obj; $("axis").value = ui.axis;
+  const model = e.kind === "code" ? buildCode(e.item) : (await loadKit(e.file)).clone(true);
+  if (seq !== loadSeq) return;
+  if (holder) shake.remove(holder);
+  holder = new THREE.Group(); holder.add(model);
+  holder.rotation.y = AXES[ui.axis]; holder.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(holder), size = box.getSize(new V3()), c = box.getCenter(new V3());
+  const s = Math.min(2 / Math.max(size.x, size.z, 1e-3), 2.4 / Math.max(size.y, 1e-3));
+  holder.scale.setScalar(s); holder.position.set(-c.x * s, -box.min.y * s, -c.z * s);
+  dims = { len: size.x * s, wid: size.z * s, h: size.y * s };
+  model.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  shake.add(holder);
+  buildGhosts(); resetTrail();
+  save();
+}
+
+// a point of the model's own space (x forward, y up from the base, z to the right) in the world
+const tmpV = new V3();
+const local = (x, y, z, out = tmpV) => shake.localToWorld(out.set(x, y, z));
+
+// =============================================================================
+// 4. THE PIECES — particles, sprites, skid marks, ghosts, the trail
+// =============================================================================
+class Pool {
+  constructor(geo, mat, max, opts = {}) {
+    this.mesh = new THREE.InstancedMesh(geo, mat, max);
+    this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.mesh.frustumCulled = false; this.mesh.castShadow = !!opts.shadow;
+    this.mesh.setColorAt(0, new THREE.Color());
+    this.additive = !!opts.additive; this.max = max; this.next = 0;
+    this.p = Array.from({ length: max }, () => ({ alive: false, pos: new V3(), vel: new V3(), dir: null, col: new THREE.Color(), rot: new THREE.Euler() }));
+    this.mesh.count = 0; scene.add(this.mesh);
+  }
+  spawn(o) {
+    const q = this.p[this.next]; this.next = (this.next + 1) % this.max;
+    q.alive = true; q.age = 0; q.life = o.life || 1; q.s0 = o.s0 ?? 0.1; q.s1 = o.s1 ?? q.s0;
+    q.grav = o.grav || 0; q.drag = o.drag || 0; q.bounce = o.bounce || 0; q.len = o.len || 0; q.dir = o.dir || null;
+    q.spin = o.spin || 0; q.shrink = o.shrink !== false; q.aspect = o.aspect || [1, 1, 1];
+    q.pos.copy(o.pos); q.vel.copy(o.vel || new V3()); q.col.set(o.col ?? 0xffffff);
+    q.rot.set(rr(0, TAU), rr(0, TAU), rr(0, TAU));
+    return q;
+  }
+  update(dt) {
+    const X = new V3(1, 0, 0), d = new V3(), c = new THREE.Color();
+    let n = 0;
+    for (const q of this.p) {
+      if (!q.alive) continue;
+      q.age += dt;
+      if (q.age >= q.life) { q.alive = false; continue; }
+      q.vel.y -= q.grav * dt;
+      if (q.drag) q.vel.multiplyScalar(Math.exp(-q.drag * dt));
+      q.pos.addScaledVector(q.vel, dt);
+      const t = q.age / q.life;
+      let s = q.s0 + (q.s1 - q.s0) * (1 - (1 - t) * (1 - t));
+      if (q.shrink) s *= 1 - t * t;
+      if (q.bounce && q.pos.y < s * 0.5) { q.pos.y = s * 0.5; q.vel.y = Math.abs(q.vel.y) * q.bounce; q.vel.x *= 0.7; q.vel.z *= 0.7; q.spin *= 0.7; }
+      dummy.position.copy(q.pos);
+      if (q.len) {
+        d.copy(q.dir || q.vel); const l = d.length();
+        dummy.quaternion.setFromUnitVectors(X, l > 1e-4 ? d.multiplyScalar(1 / l) : X);
+        dummy.scale.set(q.len * (q.dir ? 1 - t : Math.min(1, l * 0.04 + 0.2)), s, s);
+      } else {
+        q.rot.x += q.spin * dt; q.rot.y += q.spin * 0.7 * dt;
+        dummy.rotation.copy(q.rot);
+        dummy.scale.set(s * q.aspect[0], s * q.aspect[1], s * q.aspect[2]);
+      }
+      dummy.updateMatrix();
+      this.mesh.setMatrixAt(n, dummy.matrix);
+      this.mesh.setColorAt(n, this.additive ? c.copy(q.col).multiplyScalar(1 - t) : q.col);
+      n++;
+    }
+    this.mesh.count = n;
+    this.mesh.instanceMatrix.needsUpdate = true;
+    if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
+  }
+  clear() { for (const q of this.p) q.alive = false; this.mesh.count = 0; }
+}
+const puffGeo = new THREE.IcosahedronGeometry(1, 0);
+const P_DUST = new Pool(puffGeo, new THREE.MeshStandardMaterial({ flatShading: true, roughness: 1 }), 400);
+const P_SMOKE = new Pool(puffGeo, new THREE.MeshStandardMaterial({ flatShading: true, roughness: 1 }), 200);
+const P_SPARK = new Pool(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), 200, { additive: true });
+const P_DEBRIS = new Pool(bevelBox(1, 0.8, 0.9, 0.1), new THREE.MeshStandardMaterial({ flatShading: true, roughness: 0.8 }), 120, { shadow: true });
+const P_STREAK = new Pool(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, depthWrite: false }), 160);
+const POOLS = [P_DUST, P_SMOKE, P_SPARK, P_DEBRIS, P_STREAK];
+
+// ---- drawn textures, made once
+function canvasTex(w, h, draw) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const blobTex = canvasTex(128, 128, (g) => {
+  const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  r.addColorStop(0, "rgba(0,0,0,0.85)"); r.addColorStop(0.55, "rgba(0,0,0,0.45)"); r.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+});
+const puffTex = canvasTex(128, 128, (g) => {
+  g.lineWidth = 7; g.strokeStyle = "#3a3a44";
+  const lobes = [[64, 72, 38], [40, 64, 26], [88, 62, 28], [62, 44, 26]];
+  for (const [x, y, r] of lobes) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke(); }
+  for (const [x, y, r] of lobes) { g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  g.fillStyle = "rgba(120,130,160,0.35)";
+  for (const [x, y, r] of lobes) { g.beginPath(); g.arc(x + r * 0.25, y + r * 0.35, r * 0.6, 0, TAU); g.fill(); }
+});
+const powTex = {};
+function powTexture(word) {
+  return powTex[word] || (powTex[word] = canvasTex(256, 256, (g) => {
+    const star = (r0, r1, n, rot) => { g.beginPath(); for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n, r = i % 2 ? r0 : r1 * (0.85 + 0.15 * Math.sin(i * 7.3)); g.lineTo(128 + Math.cos(a) * r, 128 + Math.sin(a) * r); } g.closePath(); };
+    star(62, 122, 11, 0.2); g.fillStyle = "#1c1b26"; g.fill();
+    star(52, 108, 11, 0.2); g.fillStyle = "#ffd23a"; g.fill();
+    star(36, 74, 11, 0.45); g.fillStyle = "#ff6a3a"; g.fill();
+    g.font = "900 52px -apple-system,Segoe UI,Roboto,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.lineWidth = 10; g.strokeStyle = "#1c1b26"; g.strokeText(word, 128, 132);
+    g.fillStyle = "#ffffff"; g.fillText(word, 128, 132);
+  }));
+}
+
+// ---- the blob shadow
+const blob = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false }));
+blob.renderOrder = 1; scene.add(blob);
+
+// ---- sprites with a life: cartoon puffs, comic impacts
+class SpritePool {
+  constructor(tex, max) {
+    this.s = Array.from({ length: max }, () => {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+      sp.visible = false; scene.add(sp); return { sp, alive: false, pos: new V3(), vel: new V3() };
+    });
+    this.next = 0;
+  }
+  spawn(o) {
+    const q = this.s[this.next]; this.next = (this.next + 1) % this.s.length;
+    Object.assign(q, { alive: true, age: 0, life: o.life, s0: o.s0, s1: o.s1, pop: !!o.pop, rot: o.rot || 0 });
+    q.pos.copy(o.pos); q.vel.copy(o.vel || new V3());
+    if (o.map) q.sp.material.map = o.map;
+    q.sp.visible = true; return q;
+  }
+  update(dt) {
+    for (const q of this.s) {
+      if (!q.alive) continue;
+      q.age += dt;
+      if (q.age >= q.life) { q.alive = false; q.sp.visible = false; continue; }
+      const t = q.age / q.life;
+      q.pos.addScaledVector(q.vel, dt); q.sp.position.copy(q.pos);
+      let s;
+      if (q.pop) { const a = Math.min(1, q.age / 0.12); s = q.s0 * (a < 1 ? a * 1.3 : 1.3 - 0.3 * Math.min(1, (q.age - 0.12) / 0.1)); }
+      else s = q.s0 + (q.s1 - q.s0) * Math.sqrt(t);
+      q.sp.scale.set(s, s, 1);
+      q.sp.material.rotation = q.rot;
+      q.sp.material.opacity = q.pop ? (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4) : 0.95 * (1 - t * t);
+    }
+  }
+  clear() { for (const q of this.s) { q.alive = false; q.sp.visible = false; } }
+}
+const S_PUFF = new SpritePool(puffTex, 40);
+const S_POW = new SpritePool(powTexture("Bam!"), 4);
+
+// ---- shockwave rings, flat on the ground
+const RINGS = Array.from({ length: 5 }, () => {
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.82, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0 }));
+  m.visible = false; m.renderOrder = 2; scene.add(m); return { m, age: 0, life: 0.5, r: 1, alive: false };
+});
+let ringNext = 0;
+function ring(pos, r, life = 0.5) {
+  const q = RINGS[ringNext]; ringNext = (ringNext + 1) % RINGS.length;
+  Object.assign(q, { age: 0, life, r, alive: true }); q.m.position.set(pos.x, 0.03, pos.z); q.m.visible = true;
+}
+
+// ---- skid marks: strips laid on the ground, one InstancedMesh
+const SKID_N = 700, SKID_LIFE = 5;
+const skidMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+  // opaque, a darker tone of the ground: transparent strips would darken where they overlap and read as a ladder
+  new THREE.MeshBasicMaterial({ color: 0x6f6a62, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), SKID_N);
+skidMesh.frustumCulled = false; skidMesh.count = 0; skidMesh.renderOrder = 1; scene.add(skidMesh);
+const skids = Array.from({ length: SKID_N }, () => ({ alive: false, x: 0, z: 0, yaw: 0, len: 0, w: 0, age: 0 }));
+let skidNext = 0;
+const lastSkid = [null, null];
+
+// ---- the motion arc of a flip
+const swoosh = new THREE.Mesh(new THREE.TorusGeometry(1, 0.035, 4, 40, Math.PI * 1.1),
+  new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, depthWrite: false, opacity: 0, blending: THREE.AdditiveBlending, toneMapped: false }));
+swoosh.visible = false; tilt.add(swoosh);
+
+// ---- afterimages: copies of the model on its past positions
+const GHOSTS = 5, HIST = 26, GHOST_STEP = 3;
+const hist = Array.from({ length: HIST }, () => new THREE.Matrix4());
+let histHead = 0;
+const ghosts = [];
+// a ghost is flat colour, so it needs positions and nothing else: every part of
+// the model is baked into ONE geometry, and a ghost costs one draw call however
+// many pieces the model is made of
+function ghostGeometry() {
+  const tmp = holder.clone(true), parts = [];
+  tmp.updateMatrixWorld(true);
+  tmp.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== "position") g.deleteAttribute(k);
+    g.morphAttributes = {};
+    parts.push(g.applyMatrix4(o.matrixWorld));
+  });
+  return parts.length ? mergeGeometries(parts) : null;
+}
+function buildGhosts() {
+  for (const g of ghosts) scene.remove(g);
+  ghosts.length = 0;
+  const geo = ghostGeometry();
+  for (let i = 0; i < GHOSTS; i++) {
+    const m = new THREE.MeshBasicMaterial({ color: ui.accent, transparent: true, opacity: 0, depthWrite: false });
+    let c;
+    if (geo) c = new THREE.Mesh(geo, m);
+    else { c = holder.clone(true); c.traverse((o) => { if (o.isMesh) { o.material = m; o.castShadow = false; o.receiveShadow = false; } }); }
+    const w = new THREE.Group(); w.matrixAutoUpdate = false; w.add(c); w.userData.mat = m; w.visible = false;
+    scene.add(w); ghosts.push(w);
+  }
+  shake.updateMatrixWorld(true);
+  for (const h of hist) h.copy(shake.matrixWorld);
+}
+
+// ---- the light trail: two ribbons from the rear corners
+const TN = 22;
+const trailPos = new Float32Array(TN * 6), trailCol = new Float32Array(TN * 6);
+const trailGeo = new THREE.BufferGeometry();
+trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3).setUsage(THREE.DynamicDrawUsage));
+trailGeo.setAttribute("color", new THREE.BufferAttribute(trailCol, 3).setUsage(THREE.DynamicDrawUsage));
+{ const idx = []; for (let i = 0; i < TN - 1; i++) { const a = 2 * i; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trailGeo.setIndex(idx); }
+const trail = new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+trail.frustumCulled = false; scene.add(trail);
+function resetTrail() {
+  if (!holder) return;
+  root.updateMatrixWorld(true);
+  const p = local(-dims.len / 2, dims.h * 0.35, 0);
+  for (let i = 0; i < TN * 2; i++) trailPos.set([p.x, p.y, p.z], i * 3);
+  trailCol.fill(0);
+}
+
+// =============================================================================
+// 5. THE SIMULATION — a toy car on an endless lot
+// =============================================================================
+const P = { cruise: 9, boostV: 20, accel: 7, boostA: 20, brakeA: 20, coast: 4, g: 26, jumpV: 10, crouch: 0.11, boostT: 1.3 };
+const S = { x: 0, z: 0, yaw: 0, v: 0, vPrev: 0, acc: 0, steer: 0, yawRate: 0, slip: 0, drifting: false,
+  y: 0, vy: 0, air: false, crouch: 0, flip: null, trickQueued: false, trickN: 0, boostT: 0, charge: 0, pitch: 0, roll: 0 };
+const E = { sq: 0, st: 0, jp: 0, jv: 0, trauma: 0, fovKick: 0, flash: 0, vig: 0, ghost: 0, trail: 0, slowK: 1, hitStop: 0,
+  dustAcc: 0, smokeAcc: 0, puffAcc: 0, streakAcc: 0, brakeAcc: 0 };
+const inp = { gas: false, brake: false, left: false, right: false };
+const fwd = new V3(), left = new V3(), UP = new V3(0, 1, 0);
+let T = 0, RT = 0;
+
+function boost() {
+  if (S.boostT > 0.3 || S.air) return;
+  S.boostT = P.boostT;
+  E.fovKick += 7 * amt("fov"); E.trauma = Math.min(1, E.trauma + 0.25 * amt("shake"));
+  if (on("smoke")) for (let i = 0; i < 14; i++) smokePuff(true);
+  if (on("puffs")) for (let i = 0; i < 4; i++) cartoonPuff(true);
+  if (on("pow")) pow("Vroom!", local(-dims.len * 0.7, dims.h * 1.1, 0, new V3()), 0.8);
+  say("Boost", ["squash", "shear", "lean", "fov", "shake", "smoke", "puffs", "pow", "ghosts", "trail", "lines", "flash", "blur", "streaks"]);
+}
+function jump() {
+  if (S.air || S.crouch > 0) { trick(); return; }
+  S.crouch = P.crouch;
+  say("Jump", ["squash", "lean", "dust", "blob"]);
+}
+function takeoff() {
+  S.air = true; S.vy = P.jumpV;
+  E.sq = -0.22;
+  if (on("dust")) for (let i = 0; i < 14; i++) dustAt(i % 2 ? 1 : -1, -0.4, 1.8);
+  if (S.trickQueued) { S.trickQueued = false; startTrick(); }
+}
+const TRICKS = { z: "Backflip", x: "Barrel roll", y: "Flat spin" };
+function trick() {
+  if (S.crouch > 0) { S.trickQueued = true; return; }
+  if (S.air && !S.flip) startTrick();
+}
+function startTrick() {
+  const ax = ["z", "x", "y"][S.trickN++ % 3];
+  const rem = (S.vy + Math.sqrt(Math.max(0, S.vy * S.vy + 2 * P.g * S.y))) / P.g;
+  S.flip = { ax, t: 0, dur: clamp(rem * 0.8, 0.35, 0.75) };
+  E.fovKick += 3 * amt("fov");
+  say(TRICKS[ax], ["swoosh", "slowmo", "ghosts", "trail", "fov", "lean"]);
+}
+function land() {
+  const imp = clamp(-S.vy / P.jumpV, 0, 1.6);
+  S.y = 0; S.vy = 0; S.air = false; S.flip = null;
+  E.sq = 0.3 * imp; E.jv += 4 * imp;
+  E.trauma = Math.min(1, E.trauma + 0.45 * imp * amt("shake"));
+  E.fovKick -= 2.5 * imp * amt("fov");
+  if (on("hitstop") && imp > 0.9) E.hitStop = 0.04 * amt("hitstop");
+  const base = root.position.clone();
+  if (on("ring")) ring(base, dims.len * 1.3 * amt("ring"), 0.45);
+  if (on("dust")) for (let i = 0; i < 26; i++) {
+    const a = rr(0, TAU), sp = rr(3, 6) * imp;
+    P_DUST.spawn({ pos: new V3(base.x + Math.cos(a) * dims.len * 0.45, 0.08, base.z + Math.sin(a) * dims.len * 0.45), vel: new V3(Math.cos(a) * sp, rr(0.3, 1.2), Math.sin(a) * sp),
+      life: rr(0.5, 0.8), s0: dims.len * 0.06 * amt("dust"), s1: dims.len * 0.16 * amt("dust"), drag: 3, col: new THREE.Color(0xd2c29c).offsetHSL(0, 0, rr(-0.05, 0.05)) });
+  }
+  if (on("sparks") && imp > 0.8) sparks(base.clone().setY(0.1), 18, 7, 0xffc94d);
+  if (on("pow") && imp > 0.9) pow("Thud!", base.clone().setY(dims.h * 1.2), 0.9);
+  say("Land", ["squash", "jelly", "shake", "hitstop", "ring", "dust", "sparks", "pow", "fov"]);
+}
+function smash() {
+  if (S.air) return;
+  fwdOf(S.yaw, fwd);
+  const d = Math.max(6, S.v * 0.8);
+  crateS.alive = true; crateS.x = S.x + fwd.x * d; crateS.z = S.z + fwd.z * d;
+  crate.position.set(crateS.x, 0, crateS.z); crate.rotation.y = S.yaw; crate.visible = true;
+  S.charge = 2.5;
+  say("Smash", [], "a crate ahead, drive into it");
+}
+function hit() {
+  crateS.alive = false; crate.visible = false;
+  S.v *= 0.55;
+  E.st = -0.28; E.jv += 3;
+  E.trauma = Math.min(1, E.trauma + 0.65 * amt("shake"));
+  E.fovKick -= 4 * amt("fov");
+  E.flash = 0.8 * Math.min(1, amt("flash"));
+  if (on("hitstop")) E.hitStop = 0.085 * amt("hitstop");
+  const at = new V3(crateS.x, 0.45, crateS.z);
+  if (on("debris")) for (let i = 0; i < 26; i++) {
+    const v = new V3(fwd.x * rr(2, 7) + rr(-3, 3), rr(3, 8), fwd.z * rr(2, 7) + rr(-3, 3));
+    P_DEBRIS.spawn({ pos: at.clone().add(new V3(rr(-0.3, 0.3), rr(-0.3, 0.3), rr(-0.3, 0.3))), vel: v, life: rr(1.2, 2), s0: rr(0.1, 0.24) * Math.min(1.5, amt("debris")),
+      grav: 22, bounce: 0.35, spin: rr(-12, 12), shrink: false, col: Math.random() < 0.6 ? CRATE_HEX : 0x9a6232 });
+  }
+  if (on("sparks")) sparks(at, 30, 10, 0xffe08a);
+  if (on("pow")) pow("Bam!", at.clone().setY(dims.h * 1.3), 1.1);
+  if (on("ring")) ring(at, dims.len * 1.1 * amt("ring"), 0.4);
+  say("Hit", ["squash", "jelly", "hitstop", "shake", "flash", "debris", "sparks", "pow", "ring", "fov"]);
+}
+const fwdOf = (yaw, out) => out.set(Math.cos(yaw), 0, -Math.sin(yaw));
+const leftOf = (yaw, out) => out.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+
+function sim(dt) {
+  const gas = inp.gas || ui.cruise || S.charge > 0;
+  S.charge = Math.max(0, S.charge - dt);
+  const target = S.boostT > 0 ? P.boostV : gas && !inp.brake ? P.cruise : 0;
+  const rate = S.air ? 0 : inp.brake ? P.brakeA : target > S.v ? (S.boostT > 0 ? P.boostA : P.accel) : P.coast;
+  S.v += clamp(target - S.v, -rate * dt, rate * dt);
+  const accRaw = (S.v - S.vPrev) / dt; S.vPrev = S.v;
+  S.acc += (accRaw - S.acc) * ease(10, dt);
+  S.boostT = Math.max(0, S.boostT - dt);
+
+  const steerIn = (inp.left ? 1 : 0) - (inp.right ? 1 : 0);
+  S.steer += (steerIn - S.steer) * ease(6, dt);
+  S.yawRate = S.steer * 1.7 * clamp(S.v / 5, 0, 1) * (S.air ? 0.3 : 1);
+  S.yaw += S.yawRate * dt;
+  S.drifting = !S.air && Math.abs(S.steer) > 0.5 && S.v > 6;
+  S.slip += ((S.drifting ? S.steer * 0.6 : 0) - S.slip) * ease(5, dt);
+  fwdOf(S.yaw, fwd); leftOf(S.yaw, left);
+  S.x += fwd.x * S.v * dt; S.z += fwd.z * S.v * dt;
+
+  if (S.crouch > 0) { S.crouch -= dt; if (S.crouch <= 0) { S.crouch = 0; takeoff(); } }
+  if (S.air) {
+    S.vy -= P.g * dt; S.y += S.vy * dt;
+    if (S.flip) { S.flip.t += dt; if (S.flip.t >= S.flip.dur) S.flip = null; }
+    if (S.y <= 0 && S.vy < 0) land();
+  }
+  if (crateS.alive && !S.air) {
+    const dx = crateS.x - S.x, dz = crateS.z - S.z;
+    if (dx * dx + dz * dz < (dims.len * 0.5 + 0.5) ** 2) hit();
+    else if (dx * fwd.x + dz * fwd.z < -3) { crateS.alive = false; crate.visible = false; }
+  }
+
+  // the effect state: everything eases back to rest on its own
+  E.st += ((S.boostT > 0 ? 0.16 : 0) - E.st) * ease(7, dt);
+  E.sq += ((S.crouch > 0 ? 0.24 : 0) - E.sq) * ease(S.crouch > 0 ? 30 : 9, dt);
+  E.jv += (-260 * E.jp - 10 * E.jv) * dt; E.jp += E.jv * dt;
+  E.fovKick *= Math.exp(-4 * dt);
+}
+
+// =============================================================================
+// 6. APPLYING IT — the rig, the emitters, the camera, the screen
+// =============================================================================
+const M = new THREE.Matrix4();
+function applyRig(dt) {
+  root.position.set(S.x, S.y, S.z);
+  root.rotation.y = S.yaw + S.slip * amt("slip");
+  // weight transfer, eased so it overshoots nothing and never snaps
+  const lk = amt("lean");
+  const pitchT = lk * (S.air ? clamp(S.vy * 0.025, -0.3, 0.3) : clamp(S.acc * 0.009, -0.16, 0.16));
+  const rollT = lk * clamp(S.yawRate * S.v * 0.014, -0.24, 0.24);
+  S.pitch += (pitchT - S.pitch) * ease(9, dt); S.roll += (rollT - S.roll) * ease(9, dt);
+  tilt.rotation.set(S.roll, 0, S.pitch);
+  // a trick turns round the middle of the body
+  flipG.position.y = dims.h * 0.5;
+  flipG.rotation.set(0, 0, 0);
+  if (S.flip) {
+    const p = S.flip.t / S.flip.dur, a = (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2) * TAU;
+    flipG.rotation[S.flip.ax] = S.flip.ax === "x" ? -a : a;
+  }
+  // deform: one matrix around the base — squash, stretch, shear
+  const idleK = S.air ? 0 : S.v < 0.5 ? 1 : 0.35;
+  let sq = amt("squash") * E.sq + amt("jelly") * E.jp + amt("idle") * idleK * 0.02 * Math.sin(T * 3.2);
+  sq = clamp(sq, -0.45, 0.55);
+  const sy = 1 - sq, sxz = 1 / Math.sqrt(sy);
+  const st = clamp(amt("squash") * E.st, -0.45, 0.6), sx = sxz * (1 + st), k = 1 / Math.sqrt(1 + st);
+  const sh = amt("shear") * clamp(-S.acc * 0.022, -0.4, 0.4);
+  M.set(sx, sh, 0, 0, 0, sy * k, 0, -dims.h * 0.5, 0, 0, sxz * k, 0, 0, 0, 0, 1);
+  deform.matrix.copy(M); deform.matrixWorldNeedsUpdate = true;
+  // engine rumble
+  const rk = amt("idle") * (S.air ? 0 : 0.5 + Math.min(1, S.v / P.cruise) * 0.5 + (S.boostT > 0 ? 1 : 0));
+  shake.position.set(0, rk * 0.012 * dims.h * noise(T * 40, 1), 0);
+  shake.rotation.set(rk * 0.012 * noise(T * 33, 4), 0, rk * 0.008 * noise(T * 29, 9));
+  root.updateMatrixWorld(true);
+}
+
+function dustAt(side, xk, upk) {
+  const a = amt("dust"), p = local(dims.len * xk, 0.05, side * dims.wid * 0.42, new V3());
+  P_DUST.spawn({ pos: p, vel: new V3(-fwd.x * S.v * 0.25 + left.x * rr(-0.6, 0.6), rr(0.5, 1.6) * upk, -fwd.z * S.v * 0.25 + left.z * rr(-0.6, 0.6)),
+    life: rr(0.5, 0.8), s0: dims.len * 0.04 * a, s1: dims.len * 0.13 * a, drag: 2.5, col: new THREE.Color(0xc9b48a).offsetHSL(0, 0, rr(-0.06, 0.06)) });
+}
+function smokePuff(black) {
+  const a = amt("smoke"), p = local(-dims.len * 0.32, dims.h * 0.97, dims.wid * 0.15, new V3());
+  P_SMOKE.spawn({ pos: p, vel: new V3(-fwd.x * S.v * 0.15 + rr(-0.3, 0.3), rr(1, 2) + (black ? 1 : 0), -fwd.z * S.v * 0.15 + rr(-0.3, 0.3)),
+    life: rr(0.8, 1.3), s0: dims.len * 0.03 * a, s1: dims.len * (black ? 0.16 : 0.1) * a, drag: 1.5, col: black ? 0x2b2b2e : new THREE.Color(0xa4a4a8).offsetHSL(0, 0, rr(-0.06, 0.06)) });
+}
+function cartoonPuff(big) {
+  const a = amt("puffs"), p = local(-dims.len * 0.45, dims.h * 0.8, dims.wid * rr(-0.2, 0.2), new V3());
+  S_PUFF.spawn({ pos: p, vel: new V3(-fwd.x * S.v * 0.2 + rr(-0.3, 0.3), rr(0.6, 1.2), -fwd.z * S.v * 0.2 + rr(-0.3, 0.3)),
+    life: rr(0.6, 0.9), s0: dims.len * 0.1 * a, s1: dims.len * (big ? 0.42 : 0.26) * a, rot: rr(0, TAU) });
+}
+function sparks(at, n, speed, hex) {
+  const a = amt("sparks");
+  for (let i = 0; i < n; i++) {
+    const v = new V3(rr(-1, 1), rr(0.3, 1.2), rr(-1, 1)).normalize().multiplyScalar(speed * rr(0.5, 1.2));
+    P_SPARK.spawn({ pos: at.clone(), vel: v, life: rr(0.25, 0.5), s0: 0.035 * a, len: 0.35 * a, grav: 14, col: new THREE.Color(hex).multiplyScalar(2.2) });
+  }
+}
+function pow(word, at, scale) {
+  S_POW.spawn({ pos: at, life: 0.7, s0: dims.len * 0.9 * scale * Math.min(1.5, amt("pow")), pop: true, rot: rr(-0.25, 0.25), map: powTexture(word) });
+}
+
+function emit(dt) {
+  // track dust; white tyre smoke in a drift; a cloud from the front on a brake
+  if (on("dust") && !S.air && S.v > 1.5) {
+    E.dustAcc += dt * (S.drifting ? 46 : S.v * 2 + Math.max(0, S.acc) * 1.2);
+    while (E.dustAcc >= 1) {
+      E.dustAcc--;
+      if (S.drifting) {
+        const a = amt("dust"), p = local(-dims.len * 0.45, 0.08, (Math.random() < 0.5 ? -1 : 1) * dims.wid * 0.42, new V3());
+        P_DUST.spawn({ pos: p, vel: new V3(rr(-1, 1), rr(0.4, 1.4), rr(-1, 1)), life: rr(0.8, 1.2), s0: dims.len * 0.06 * a, s1: dims.len * 0.24 * a, drag: 2, col: new THREE.Color(0xeeeeea).offsetHSL(0, 0, rr(-0.05, 0)) });
+      } else dustAt(Math.random() < 0.5 ? -1 : 1, -0.45, 1);
+    }
+    if (inp.brake && S.v > 3) { E.brakeAcc += dt * 30; while (E.brakeAcc >= 1) { E.brakeAcc--; dustAt(Math.random() < 0.5 ? -1 : 1, 0.45, 0.7); } }
+  }
+  if (on("smoke")) {
+    E.smokeAcc += dt * (S.boostT > 0 ? 26 : S.v < 0.5 ? 5 : 3);
+    while (E.smokeAcc >= 1) { E.smokeAcc--; smokePuff(S.boostT > 0); }
+  }
+  if (on("puffs")) {
+    E.puffAcc += dt * (S.boostT > 0 ? 9 : S.v < 0.5 ? 2.5 : 1.5);
+    while (E.puffAcc >= 1) { E.puffAcc--; cartoonPuff(S.boostT > 0); }
+  }
+  // wind streaks hang in the air: the object races past them
+  if (on("streaks") && S.v > 10) {
+    E.streakAcc += dt * (S.v - 10) * 7 * amt("streaks");
+    while (E.streakAcc >= 1) {
+      E.streakAcc--;
+      const lat = rr(0.6, 3) * (Math.random() < 0.5 ? -1 : 1) * Math.max(1, dims.wid);
+      const p = new V3(S.x, rr(0.2, 2.4) * dims.h + S.y, S.z).addScaledVector(fwd, rr(0, 5)).addScaledVector(left, lat);
+      P_STREAK.spawn({ pos: p, life: rr(0.2, 0.35), s0: 0.025, len: S.v * 0.13, dir: fwd.clone(), shrink: false });
+    }
+  }
+  // skid marks behind the rear corners
+  const skidding = on("skid") && !S.air && (S.drifting || (inp.brake && S.v > 3));
+  for (let i = 0; i < 2; i++) {
+    const p = local(-dims.len * 0.42, 0, (i ? 1 : -1) * dims.wid * 0.38, new V3());
+    if (skidding && lastSkid[i]) {
+      const dx = p.x - lastSkid[i].x, dz = p.z - lastSkid[i].z, l = Math.hypot(dx, dz);
+      if (l > 0.12) {
+        const q = skids[skidNext]; skidNext = (skidNext + 1) % SKID_N;
+        Object.assign(q, { alive: true, x: (p.x + lastSkid[i].x) / 2, z: (p.z + lastSkid[i].z) / 2, yaw: Math.atan2(-dz, dx), len: l + 0.02, w: dims.wid * 0.16 * Math.min(1.5, amt("skid")), age: 0 });
+        lastSkid[i] = p;
+      }
+    } else lastSkid[i] = skidding ? p : null;
+  }
+  // the history the ghosts are placed on
+  histHead = (histHead + 1) % HIST; hist[histHead].copy(shake.matrixWorld);
+}
+
+function updatePieces(dt, rdt) {
+  for (const p of POOLS) p.update(dt);
+  S_PUFF.update(dt); S_POW.update(dt);
+  for (const q of RINGS) {
+    if (!q.alive) continue;
+    q.age += dt; const t = q.age / q.life;
+    if (t >= 1) { q.alive = false; q.m.visible = false; continue; }
+    const s = q.r * (0.25 + 0.75 * (1 - (1 - t) * (1 - t)));
+    q.m.scale.set(s, 1, s); q.m.material.opacity = 0.7 * (1 - t);
+  }
+  let n = 0;
+  for (const q of skids) {
+    if (!q.alive) continue;
+    q.age += dt;
+    if (q.age > SKID_LIFE) { q.alive = false; continue; }
+    dummy.position.set(q.x, 0.012, q.z); dummy.rotation.set(0, q.yaw, 0);
+    dummy.scale.set(q.len, 1, q.w * (1 - Math.pow(q.age / SKID_LIFE, 2))); dummy.updateMatrix();
+    skidMesh.setMatrixAt(n++, dummy.matrix);
+  }
+  skidMesh.count = n; skidMesh.instanceMatrix.needsUpdate = true;
+
+  // blob shadow
+  blob.visible = on("blob");
+  if (blob.visible) {
+    const k = 1 / (1 + S.y * 0.35);
+    blob.position.set(S.x, 0.015, S.z); blob.rotation.y = root.rotation.y;
+    blob.scale.set(dims.len * 1.25 * k, 1, dims.wid * 1.45 * k);
+    blob.material.opacity = 0.55 * Math.min(1, amt("blob")) / (1 + S.y * 0.5);
+  }
+  // motion arc
+  swoosh.visible = on("swoosh") && !!S.flip;
+  if (swoosh.visible) {
+    const p = S.flip.t / S.flip.dur, r = Math.max(dims.len, dims.h) * 0.62, a = flipG.rotation[S.flip.ax];
+    swoosh.position.set(0, dims.h * 0.5, 0); swoosh.scale.setScalar(r);
+    if (S.flip.ax === "z") swoosh.rotation.set(0, 0, a + Math.PI * 0.4);
+    else if (S.flip.ax === "x") swoosh.rotation.set(0, Math.PI / 2, -a - Math.PI * 0.4, "YXZ");
+    else swoosh.rotation.set(Math.PI / 2, 0, -a - Math.PI * 0.4);
+    swoosh.material.opacity = Math.sin(p * Math.PI) * 0.75 * Math.min(1, amt("swoosh"));
+  }
+  // afterimages and the trail fade in while it boosts, flies or drifts
+  const fast = S.boostT > 0 || S.air || S.drifting;
+  E.ghost += ((on("ghosts") && fast ? 1 : 0) - E.ghost) * ease(fast ? 10 : 4, rdt);
+  for (let i = 0; i < ghosts.length; i++) {
+    const g = ghosts[i];
+    g.visible = E.ghost > 0.02;
+    if (!g.visible) continue;
+    g.matrix.copy(hist[(histHead - (i + 1) * GHOST_STEP + HIST * 4) % HIST]); g.matrixWorldNeedsUpdate = true;
+    g.userData.mat.opacity = E.ghost * 0.42 * (1 - i / GHOSTS) * Math.min(1, amt("ghosts"));
+  }
+  E.trail += ((on("trail") && fast ? 1 : 0) - E.trail) * ease(fast ? 8 : 2.5, rdt);
+  if (dt > 0) {
+    trailPos.copyWithin(6, 0, (TN - 1) * 6);
+    const l = local(-dims.len * 0.48, dims.h * 0.35, -dims.wid * 0.48, new V3()), r = local(-dims.len * 0.48, dims.h * 0.35, dims.wid * 0.48, new V3());
+    trailPos.set([l.x, l.y, l.z, r.x, r.y, r.z], 0);
+  }
+  const tc = new THREE.Color(ui.accent);
+  for (let i = 0; i < TN; i++) {
+    let k = 1 - i / (TN - 1); k = k * k * E.trail * 0.9 * Math.min(1.5, amt("trail") || 1);
+    for (let j = 0; j < 2; j++) { const o = 6 * i + 3 * j; trailCol[o] = tc.r * k; trailCol[o + 1] = tc.g * k; trailCol[o + 2] = tc.b * k; }
+  }
+  trail.visible = E.trail > 0.01;
+  trailGeo.attributes.position.needsUpdate = true; trailGeo.attributes.color.needsUpdate = true;
+}
+
+// ---- the camera
+const cam = { pos: new V3(), look: new V3(), ready: false, fov: 50 };
+const CAMS = { chase: "Chase", side: "Side", front: "Front", top: "Top" };
+function updateCamera(dt, rdt) {
+  const lag = amt("camlag"), d = Math.max(4.5, dims.len * 3.2) + lag * S.v * 0.12, h = Math.max(2.2, dims.h * 2.2);
+  const off = new V3();
+  if (ui.cam === "chase") off.copy(fwd).multiplyScalar(-d).addScaledVector(UP, h);
+  else if (ui.cam === "side") off.copy(left).multiplyScalar(d * 1.05).addScaledVector(UP, h * 0.55);
+  else if (ui.cam === "front") off.copy(fwd).multiplyScalar(d * 0.85).addScaledVector(left, d * 0.55).addScaledVector(UP, h * 0.8);
+  else off.copy(fwd).multiplyScalar(-d * 0.35).addScaledVector(UP, d * 1.6);
+  const want = new V3(S.x, S.y * 0.6, S.z).add(off);
+  const look = new V3(S.x, S.y * 0.8 + dims.h * 0.5, S.z);
+  if (lag) look.addScaledVector(fwd, S.v * 0.12 * lag).addScaledVector(left, S.yawRate * 1.2 * lag);
+  if (!cam.ready) { cam.pos.copy(want); cam.look.copy(look); cam.ready = true; }
+  const k = lag ? ease(4 / Math.max(0.4, lag), dt) : 1;
+  cam.pos.lerp(want, k); cam.look.lerp(look, lag ? ease(8, dt) : 1);
+  // shake: trauma squared, on real time so it rattles through a hit-stop
+  E.trauma = Math.max(0, E.trauma - 1.4 * rdt);
+  const t2 = E.trauma * E.trauma * 0.45;
+  const sv = new V3(noise(RT * 28, 1), noise(RT * 31, 2), noise(RT * 26, 3)).multiplyScalar(t2);
+  camera.position.copy(cam.pos).add(sv);
+  camera.lookAt(cam.look.clone().addScaledVector(sv, 0.5));
+  camera.rotateZ(t2 * 0.12 * noise(RT * 22, 5));
+  const fovT = 50 + amt("fov") * (S.v / P.boostV) * 12 + E.fovKick;
+  cam.fov += (fovT - cam.fov) * ease(8, rdt);
+  if (Math.abs(camera.fov - cam.fov) > 0.01) { camera.fov = cam.fov; camera.updateProjectionMatrix(); }
+  sun.position.set(S.x, 0, S.z).add(SUN_OFF); sun.target.position.set(S.x, 0, S.z);
+  ground.position.set(Math.round(S.x / TILE) * TILE, 0, Math.round(S.z / TILE) * TILE);
+}
+
+// ---- the screen: CSS layers and the blur pass
+const elLines = $("lines"), elVig = $("vig"), elFlash = $("flash");
+const proj = new V3();
+function updateScreen(rdt) {
+  const speedK = clamp((S.v - 11) / 8, 0, 1);
+  elLines.style.opacity = (amt("lines") * (speedK * 0.6 + (S.boostT > 0 ? 0.4 : 0))).toFixed(3);
+  E.vig += ((S.boostT > 0 ? 1 : 0) - E.vig) * ease(6, rdt);
+  elVig.style.opacity = (E.vig * 0.75 * Math.min(1, amt("flash"))).toFixed(3);
+  E.flash = Math.max(0, E.flash - 4 * rdt);
+  elFlash.style.opacity = E.flash.toFixed(3);
+  const b = amt("blur") * (speedK * 0.035 + (S.boostT > 0 ? 0.05 : 0));
+  blurPass.enabled = b > 0.0005;
+  if (blurPass.enabled) {
+    proj.set(S.x, S.y + dims.h * 0.5, S.z).project(camera);
+    blurPass.uniforms.center.value.set(proj.x * 0.5 + 0.5, proj.y * 0.5 + 0.5);
+    blurPass.uniforms.strength.value = b; blurPass.uniforms.ca.value = b * 0.18;
+  }
+}
+
+// =============================================================================
+// 7. THE AUTO DEMO — every action in turn, on a loop
+// =============================================================================
+const DEMO = [
+  [0.0, () => { inp.gas = true; inp.left = inp.right = inp.brake = false; }],
+  [1.7, boost],
+  [3.3, () => { inp.left = true; }],
+  [4.7, () => { inp.left = false; }],
+  [5.3, jump], [5.55, trick],
+  [7.0, smash],
+  [9.2, () => { inp.right = true; }],
+  [10.2, () => { inp.right = false; }],
+  [10.6, jump], [10.85, trick],
+  [12.4, () => { inp.gas = false; inp.brake = true; }],
+  [13.7, () => { inp.brake = false; }],
+  [15.6, jump], [15.85, trick],
+  [17.5, null]
+];
+let demoT = 0, demoI = 0;
+function demo(dt) {
+  if (!ui.demo) return;
+  demoT += dt;
+  while (demoI < DEMO.length && demoT >= DEMO[demoI][0]) {
+    const f = DEMO[demoI][1];
+    if (f) f(); else { demoT = 0; demoI = -1; }
+    demoI++;
+  }
+}
+function stopDemo() {
+  if (!ui.demo) return;
+  ui.demo = false; $("demo").checked = false;
+  inp.gas = inp.brake = inp.left = inp.right = false; save();
+}
+
+// =============================================================================
+// 8. THE PANELS — the effect cards, the log, the controls
+// =============================================================================
+const ui = { obj: "vehicle-dozer", axis: "+x", accent: "#ffcf3a", cam: "chase", demo: true, cruise: false, time: 1, shadow: false, preset: "Arcade" };
+const STORE = "lab:juice-3d";
+function save() { try { localStorage.setItem(STORE, JSON.stringify({ ui, cfg })); } catch (e) {} }
+function restore() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(STORE)); } catch (e) {}
+  for (const f of FX) cfg[f.key] = { on: f.key in PRESETS.Arcade, amt: PRESETS.Arcade[f.key] ?? 1 };
+  if (s) { Object.assign(ui, s.ui || {}); for (const k in s.cfg || {}) if (cfg[k]) cfg[k] = s.cfg[k]; }
+}
+
+function buildFxUI() {
+  const rootEl = $("fams"); rootEl.innerHTML = "";
+  for (const fam of FAMILIES) {
+    const sec = document.createElement("section"); sec.className = "fam"; sec.dataset.fam = fam.key;
+    sec.innerHTML = `<header><button class="chev">▾</button><b>${fam.name}</b><span class="count"></span><button class="mini" data-all="1">All</button><button class="mini" data-all="0">None</button></header><p class="famnote">${fam.note}</p><div class="list"></div>`;
+    sec.querySelector(".chev").onclick = () => sec.classList.toggle("shut");
+    for (const b of sec.querySelectorAll("[data-all]")) b.onclick = () => { for (const f of FX) if (f.fam === fam.key) cfg[f.key].on = b.dataset.all === "1"; syncUI(); save(); };
+    const list = sec.querySelector(".list");
+    for (const f of FX.filter((x) => x.fam === fam.key)) {
+      const d = document.createElement("div"); d.className = "fx"; d.dataset.k = f.key;
+      d.innerHTML = `<div class="fx-h"><label><input type="checkbox"><b>${f.name}</b></label><button class="mini solo" title="This effect alone">Solo</button></div>
+        <p>${f.what}</p><div class="fx-s"><input type="range" min="0" max="2" step="0.05"><output></output></div>
+        <div class="fx-m"><span class="cost">${f.cost}</span><span class="when">${f.when}</span></div>`;
+      const cb = d.querySelector("input[type=checkbox]"), sl = d.querySelector("input[type=range]");
+      cb.onchange = () => { cfg[f.key].on = cb.checked; syncUI(); save(); };
+      sl.oninput = () => { cfg[f.key].amt = +sl.value; cfg[f.key].on = cfg[f.key].amt > 0; syncUI(); save(); };
+      d.querySelector(".solo").onclick = () => { for (const g of FX) cfg[g.key].on = g.key === f.key; if (!cfg[f.key].amt) cfg[f.key].amt = 1; ui.preset = ""; syncUI(); save(); };
+      list.appendChild(d);
+    }
+    rootEl.appendChild(sec);
+  }
+}
+function syncUI() {
+  for (const d of document.querySelectorAll(".fx")) {
+    const c = cfg[d.dataset.k];
+    d.querySelector("input[type=checkbox]").checked = c.on;
+    d.querySelector("input[type=range]").value = c.amt;
+    d.querySelector("output").textContent = c.amt.toFixed(2);
+    d.classList.toggle("off", !c.on);
+  }
+  for (const sec of document.querySelectorAll(".fam")) {
+    const fx = FX.filter((f) => f.fam === sec.dataset.fam);
+    sec.querySelector(".count").textContent = fx.filter((f) => cfg[f.key].on).length + " / " + fx.length;
+  }
+  for (const c of document.querySelectorAll("#presets .chip")) c.classList.toggle("on", c.dataset.p === ui.preset);
+  for (const c of document.querySelectorAll("#cams .chip")) c.classList.toggle("on", c.dataset.c === ui.cam);
+}
+function applyPreset(name) {
+  const p = PRESETS[name]; ui.preset = name;
+  for (const f of FX) cfg[f.key] = { on: f.key in p, amt: p[f.key] ?? 1 };
+  syncUI(); save();
+}
+
+// the log: what an action did, and which cards answered it
+const logEl = $("log");
+function say(action, keys, note) {
+  const fired = keys.filter(on);
+  for (const k of fired) {
+    const d = document.querySelector(`.fx[data-k="${k}"]`);
+    if (d) { d.classList.add("ping"); clearTimeout(d._t); d._t = setTimeout(() => d.classList.remove("ping"), 260); }
+  }
+  const row = document.createElement("div");
+  row.innerHTML = `<b>${action}</b> ` + (note ? `<i>${note}</i>` : fired.length ? fired.map((k) => FXK[k].name).join(" · ") : "<i>no effect on</i>");
+  logEl.prepend(row);
+  while (logEl.children.length > 5) logEl.lastChild.remove();
+  setTimeout(() => { row.style.opacity = 0; setTimeout(() => row.remove(), 400); }, 2600);
+}
+
+function bindPanel() {
+  $("obj").onchange = (e) => setObject(e.target.value);
+  $("axis").onchange = (e) => setObject(ui.obj, e.target.value);
+  $("accent").oninput = (e) => { ui.accent = e.target.value; for (const g of ghosts) g.userData.mat.color.set(ui.accent); stage.style.setProperty("--vig", ui.accent); save(); };
+  $("demo").onchange = (e) => { ui.demo = e.target.checked; demoT = 0; demoI = 0; inp.gas = inp.brake = inp.left = inp.right = false; save(); };
+  $("cruise").onchange = (e) => { ui.cruise = e.target.checked; save(); };
+  $("time").oninput = (e) => { ui.time = +e.target.value; save(); };
+  $("shadow").onchange = (e) => { ui.shadow = e.target.checked; applyShadow(); save(); };
+  const cams = $("cams");
+  for (const k in CAMS) { const c = document.createElement("button"); c.className = "chip"; c.dataset.c = k; c.textContent = CAMS[k]; c.onclick = () => { ui.cam = k; syncUI(); save(); }; cams.appendChild(c); }
+  const pres = $("presets");
+  for (const k in PRESETS) { const c = document.createElement("button"); c.className = "chip"; c.dataset.p = k; c.textContent = k; c.onclick = () => applyPreset(k); pres.appendChild(c); }
+  for (const b of document.querySelectorAll("[data-act]")) b.onclick = () => { stopDemo(); ACTS[b.dataset.act](); };
+  for (const b of document.querySelectorAll("[data-hold]")) {
+    const k = b.dataset.hold;
+    b.onpointerdown = (e) => { stopDemo(); inp[k] = true; b.classList.add("held"); b.setPointerCapture(e.pointerId); };
+    b.onpointerup = b.onpointercancel = () => { inp[k] = false; b.classList.remove("held"); };
+  }
+  const bb = $("bareBtn");
+  bb.onpointerdown = (e) => { setBare(true); bb.setPointerCapture(e.pointerId); };
+  bb.onpointerup = bb.onpointercancel = () => setBare(false);
+  $("copy").onclick = async () => {
+    const out = { object: ui.obj, axis: ui.axis, accent: ui.accent, effects: Object.fromEntries(FX.filter((f) => cfg[f.key].on).map((f) => [f.key, cfg[f.key].amt])) };
+    try { await navigator.clipboard.writeText(JSON.stringify(out, null, 2)); $("copy").textContent = "Copied"; } catch (e) { $("copy").textContent = "Copy refused"; }
+    setTimeout(() => { $("copy").textContent = "Copy settings"; }, 1200);
+  };
+}
+const ACTS = { boost, jump, trick, smash };
+function setBare(v) { bare = v; $("bare").style.display = v ? "block" : "none"; $("bareBtn").classList.toggle("held", v); }
+function applyShadow() {
+  renderer.shadowMap.enabled = ui.shadow;
+  scene.traverse((o) => { if (o.material) for (const m of [].concat(o.material)) m.needsUpdate = true; });
+}
+
+const KEYMAP = { KeyW: "gas", ArrowUp: "gas", KeyS: "brake", ArrowDown: "brake", KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right" };
+addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if (e.code === "KeyQ") { setBare(true); return; }
+  if (KEYMAP[e.code]) { stopDemo(); inp[KEYMAP[e.code]] = true; e.preventDefault(); return; }
+  if (e.repeat) return;
+  if (e.code === "Space") { stopDemo(); jump(); e.preventDefault(); }
+  else if (e.code === "ShiftLeft" || e.code === "ShiftRight") { stopDemo(); boost(); }
+  else if (e.code === "KeyF") { stopDemo(); smash(); }
+  else if (e.code === "KeyT") { stopDemo(); trick(); }
+});
+// a clicked button keeps the focus, and SPACE would click it again: give it back
+addEventListener("pointerup", () => { if (document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur(); });
+addEventListener("keyup", (e) => {
+  if (e.code === "KeyQ") setBare(false);
+  if (KEYMAP[e.code]) inp[KEYMAP[e.code]] = false;
+});
+
+// =============================================================================
+// 9. THE LOOP
+// =============================================================================
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); composer.setSize(w, h); composer.setPixelRatio(renderer.getPixelRatio());
+  camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+const clock = new THREE.Clock();
+let fpsAcc = 0, fpsN = 0, fps = 60;
+const statsEl = $("stats");
+function frame() {
+  requestAnimationFrame(frame);
+  const rdt = Math.min(0.05, clock.getDelta());
+  RT += rdt;
+  // the clock: the hit-stop freezes it, the slow motion stretches it
+  const wantSlow = on("slowmo") && S.flip && S.flip.t / S.flip.dur > 0.12 && S.flip.t / S.flip.dur < 0.82;
+  E.slowK += ((wantSlow ? 1 - 0.65 * Math.min(1, amt("slowmo")) : 1) - E.slowK) * ease(wantSlow ? 14 : 8, rdt);
+  let dt = rdt * ui.time * E.slowK;
+  if (E.hitStop > 0) { E.hitStop -= rdt; dt = 0; }
+  if (holder && dt > 0) {
+    T += dt;
+    demo(dt); sim(dt);
+    applyRig(dt); emit(dt);
+  } else if (holder) applyRig(0);
+  updatePieces(dt, rdt);
+  updateCones();
+  fwdOf(S.yaw, fwd); leftOf(S.yaw, left);
+  updateCamera(dt, rdt);
+  updateScreen(rdt);
+  renderer.info.reset();
+  composer.render();
+  fpsAcc += rdt; fpsN++;
+  if (fpsAcc > 0.5) { fps = Math.round(fpsN / fpsAcc); fpsAcc = 0; fpsN = 0; }
+  const inf = renderer.info.render;
+  statsEl.textContent = `${inf.calls} draw calls · ${(inf.triangles / 1000).toFixed(1)}k triangles · ${fps} fps · speed ${S.v.toFixed(1)}` +
+    (E.hitStop > 0 ? " · hit-stop" : E.slowK < 0.95 ? " · slow motion" : "") + (ui.time < 1 ? ` · time ×${ui.time}` : "");
+}
+
+// a handle for a headless shot or the console, nothing reads it
+window.__juice = { S, E, cfg, root, tilt, flipG, deform, shake };
+
+restore();
+buildFxUI(); bindPanel();
+$("demo").checked = ui.demo; $("cruise").checked = ui.cruise; $("time").value = ui.time; $("shadow").checked = ui.shadow; $("accent").value = ui.accent;
+stage.style.setProperty("--vig", ui.accent);
+applyShadow(); syncUI(); resize();
+await loadEntries();
+await setObject(ui.obj, ui.axis);
+frame();
+</script>
+</body>
+</html>

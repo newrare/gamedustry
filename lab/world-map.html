@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — World map</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   LAB — WORLD MAP. Can the over-world of a platformer — the map a player walks
+   from level to level — be GENERATED, in 3D, and still read as a place someone
+   drew? Plateaus stepped like a layer cake with striped cliffs, a sea ringed in
+   foam, rivers that fall off every terrace, a road from level to level that
+   climbs a ladder and crosses a bridge, a castle at the end of every region.
+
+   One seed makes one map, in this order (GENERATE, below):
+
+     1. MASK      where the land is, one of four shapes: a continent, an
+                  archipelago (one biome per island), a lake country (land
+                  everywhere, lakes punched in it) and a coast (land at the
+                  back, the sea at the front).
+     2. REGIONS   the land cut into "worlds", nearest seed with a warped
+                  distance, each given a biome; the route visits them in order
+                  (a greedy tour from the front left), so the first is a meadow
+                  and the last the darkest biome on the list.
+     3. RELIEF    the elevation, scaled and lifted per biome (a snow region is
+                  a mountain, a volcano a cone with a crater) and blurred across
+                  the borders, then cut into TERRACES: one contour per level,
+                  traced by marching squares, filled flat at its height and
+                  walled down to the level under it. 0 terraces is the smooth
+                  low-poly hill instead.
+     4. WATER     one sea plane at y = 0, read off a distance field to the land
+                  (shallows, depth bands, foam rings that roll in, wave strokes);
+                  lakes are holes in the land, so they are the same sea.
+     5. RIVERS    from the high ground to the sea down a Dijkstra field that
+                  hates climbing; a ribbon draped on the terrain, and wherever it
+                  crosses a contour it hugs the wall down: a waterfall.
+     6. ROUTE     level nodes per region, joined in order by A* on the grid
+                  (climbing a terrace costs, water costs more, an existing road
+                  is cheap so roads merge), plus a few forks to a secret node.
+                  Each climb is a ladder or a stair, a river crossed is a plank
+                  bridge, a short water run a bridge, a long one a dotted sea
+                  route. The last node of a region is a fort, the last of all a
+                  castle.
+     7. DECOR     the biome's trees, rocks, houses, cacti… instanced, in
+                  clusters, kept off the road, the rivers and the cliff edges;
+                  clouds overhead that cast shadows, a frame of clouds round the
+                  edge.
+
+   Cliffs are not textured: a shader paints them off world position — vertical
+   stripes, horizontal strata, a darker foot, and the grass LIP hanging over
+   the edge with a dark line under it, its length wobbling along the contour.
+
+   The look is a set of knobs (light, ink outline, GTAO, bloom, tilt-shift,
+   grade, posterise) and a RENDER SCALE: under 1 the frame is rendered small
+   and blown up without smoothing, which is the pixel-art map.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below.
+   ?preset=N&seed=S&cam=K&freeze=1 open a state directly (a headless shot).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 310px; height:100vh; overflow-y:auto;
+  padding:18px 16px 40px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:.5px; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#stats { font:500 12px/1.4 ui-monospace,Menlo,monospace; color:#9c9cba; margin-bottom:12px; white-space:pre; }
+
+details { border-top:1px solid #23233a; padding:8px 0; }
+summary { cursor:pointer; font-size:13px; color:#cfd0ea; list-style:none; display:flex; justify-content:space-between; }
+summary::after { content:"›"; transform:rotate(90deg); transition:transform .15s; color:#6c6c8a; }
+details:not([open]) summary::after { transform:none; }
+.body { padding-top:8px; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select {
+  width:100%; margin-top:4px; padding:5px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px;
+}
+.row.color label, .row.bool label { align-items:center; }
+.row input[type=color] { width:44px; height:24px; border:1px solid #2c2c47; border-radius:6px; background:none; padding:0; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+
+.btns { display:flex; flex-wrap:wrap; gap:6px; }
+.btns button, button.wide {
+  flex:1 1 45%; padding:7px 8px;
+  background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px;
+  font:600 12px/1.2 inherit; cursor:pointer;
+}
+.btns button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+button.wide { width:100%; margin-top:6px; }
+.seedrow { display:flex; gap:6px; align-items:center; margin-bottom:8px; }
+.seedrow input {
+  flex:1; min-width:0; padding:6px 8px; background:#0b0b12; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:6px; font:500 12px ui-monospace,Menlo,monospace;
+}
+.seedrow button { flex:0 0 auto; width:auto; padding:7px 10px; }
+
+#stage { flex:1; position:relative; overflow:hidden; background:#0b0b12; }
+#view { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+#view.pixel { image-rendering:pixelated; }
+#loading { position:absolute; left:20px; top:16px; font-size:13px; color:#9c9cba; }
+#nodeTip {
+  position:absolute; pointer-events:none; display:none;
+  padding:4px 8px; border-radius:6px; background:rgba(10,12,24,.82); color:#e8e6f5;
+  font:500 12px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>World map</h1>
+  <p class="hint">A level-select over-world generated from a seed: terraces, rivers, a road from level to level, one biome per region. Drag to orbit, wheel to zoom, click a level to walk there.</p>
+  <div id="stats">loading…</div>
+  <div id="controls"></div>
+</div>
+
+<div id="stage">
+  <div id="loading">Generating…</div>
+  <canvas id="view"></canvas>
+  <div id="nodeTip"></div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { SimplexNoise } from "three/addons/math/SimplexNoise.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { mulberry, TAU } from "./models/library.js";
+
+const qs = new URLSearchParams(location.search);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("lab-world-map:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("lab-world-map:" + k, JSON.stringify(v)); } catch (e) { /* private window */ } }
+};
+
+// =============================================================================
+// BIOMES — what a region is made of. Colours are the region's own; the route,
+// the water and the light are the map's.
+//   top / rim     the terrace top, and the band along its edge
+//   cliff         the walls under it
+//   beach         the ground-level band along the sea (null: the top goes on)
+//   lift / scale  how the biome moves the relief (a snow region is a mountain)
+//   peak          a cone at the region's seed (crater: a lava pool on top)
+//   deco          [kind, weight] scattered on it; density and clustering
+//   landmark      what a level of this biome may stand in
+// =============================================================================
+const BIOMES = {
+  meadow: { name: "Meadow", top: "#7ccb4e", rim: "#a8e070", cliff: "#d29a5e", beach: "#f1dc9c",
+    lift: 0, scale: 1, peak: 0, density: 0.22, cluster: 0.35,
+    deco: [["round", 5], ["bush", 4], ["rock", 1], ["flower", 3]], leaf: ["#3f9a3a", "#4fae3f", "#2f8a3a"], landmark: ["house", "tower"] },
+  forest: { name: "Forest", top: "#4f9d3a", rim: "#76bf52", cliff: "#b9834f", beach: "#e8d394",
+    lift: 0.1, scale: 1.05, peak: 0, density: 0.85, cluster: 0.55,
+    deco: [["pine", 6], ["round", 4], ["bush", 1]], leaf: ["#2d7a37", "#25683a", "#3a8a3c"], landmark: ["tower", "cave"] },
+  autumn: { name: "Autumn", top: "#9aa83a", rim: "#c3c25a", cliff: "#a8723e", beach: "#ecd08e",
+    lift: 0.05, scale: 1, peak: 0, density: 0.6, cluster: 0.5,
+    deco: [["round", 6], ["pine", 3], ["bush", 2]], leaf: ["#e0782c", "#d6542a", "#e8a83a", "#b8a43a", "#c8402e"], landmark: ["house", "cave"] },
+  desert: { name: "Desert", top: "#ebd08e", rim: "#f6e4b0", cliff: "#cf8b52", beach: null,
+    lift: -0.05, scale: 0.7, peak: 0, density: 0.2, cluster: 0.3,
+    deco: [["spire", 5], ["rock", 3], ["cactus", 3], ["mesa", 1]], leaf: ["#5c9a48", "#6aa84f"], landmark: ["temple", "cave"] },
+  snow: { name: "Snow", top: "#f2f6fb", rim: "#ffffff", cliff: "#a6bad2", beach: "#dfe9f3",
+    lift: 0.25, scale: 1.35, peak: 0.45, density: 0.45, cluster: 0.5,
+    deco: [["snowpine", 6], ["rock", 2], ["peak", 1]], leaf: ["#2f6a52", "#3a7a5c"], landmark: ["tower", "cave"] },
+  tropic: { name: "Tropic", top: "#69cf5a", rim: "#9be27c", cliff: "#c99460", beach: "#f6e6a6",
+    lift: -0.05, scale: 0.85, peak: 0, density: 0.35, cluster: 0.4,
+    deco: [["palm", 6], ["bush", 3], ["round", 1]], leaf: ["#3aa84a", "#2f9a52", "#4cb84a"], landmark: ["house", "lighthouse"] },
+  town: { name: "Town", top: "#9bc06a", rim: "#c4d98e", cliff: "#b98a62", beach: "#ead7a0",
+    lift: -0.05, scale: 0.6, peak: 0, density: 0.5, cluster: 0.75,
+    deco: [["house", 8], ["round", 2]], leaf: ["#3f9a3a", "#4fae3f"], roofs: ["#c8483a", "#b85a36", "#d0683a", "#4a6ea8"], landmark: ["house", "lighthouse"] },
+  volcano: { name: "Volcano", top: "#6e5d56", rim: "#8a766c", cliff: "#4a3b38", beach: "#3b302e",
+    lift: 0.15, scale: 1.1, peak: 0.8, crater: true, density: 0.3, cluster: 0.4,
+    deco: [["dead", 3], ["rock", 4], ["spire", 2]], leaf: ["#5a4a44"], landmark: ["fort"] },
+  gloom: { name: "Gloom", top: "#6c5c8e", rim: "#8c7cb0", cliff: "#3e3552", beach: "#4a4060",
+    lift: 0.1, scale: 1, peak: 0, density: 0.45, cluster: 0.5,
+    deco: [["dead", 4], ["crystal", 2], ["rock", 2], ["pine", 2]], leaf: ["#3a3060", "#4a3a6a"], landmark: ["fort", "tower"] }
+};
+const BIOME_KEYS = Object.keys(BIOMES);
+// the route ends in the darkest biome on the list
+const FINALE = ["volcano", "gloom", "snow"];
+
+// =============================================================================
+// SETTINGS — every knob; PRESETS are starting points, each a different style
+// =============================================================================
+const BASE = {
+  seed: 1234,
+  // the map
+  shape: "continent", mapW: 44, mapH: 32, cell: 0.25, coastNoise: 0.55, coastFreq: 0.09, landSize: 1,
+  islands: 9, lakes: 4, lakeSize: 1,
+  regions: 6, warp: 2.2, mount: 0.5,
+  // the relief
+  levels: 4, step: 0.7, ground: 0.22, relief: 0.15, smoothH: 2.4, snowLine: 0.95,
+  // the biomes the regions are drawn from
+  b_meadow: true, b_forest: true, b_autumn: false, b_desert: true, b_snow: true, b_tropic: false, b_town: false, b_volcano: true, b_gloom: false,
+  // cliffs
+  lip: 0.14, lipLine: 0.55, stripes: 0.18, stripeFreq: 3.2, strata: 0.1, strataFreq: 5, cliffFoot: 0.45, rimW: 0.4, grain: 0.35, patches: 0.12,
+  // water
+  shallow: "#6fd6e6", deep: "#2f6fd0", foamCol: "#ffffff", shallowW: 1.6, bands: 0, foam: 0.7, foamW: 1.6, waves: 0.5, rivers: 3, riverW: 0.42, river: "#4fb8f0",
+  // route
+  nodesPer: 2, nodeGap: 3.5, forks: 2, pathW: 0.3, path: "#f3dfa4", pathEdge: 0.45, dots: true, climb: "ladder", maxBridge: 3.5, progress: 0.35, walk: true, walkSpeed: 1.6,
+  // decor
+  decoDensity: 1, decoScale: 1, clouds: 6, edgeClouds: 0.6, cloudH: 3.6, cloudOpacity: 1, cloudShadows: true,
+  // light
+  sunAz: 320, sunEl: 52, sun: "#fff3dc", sunInt: 2.6, hemiSky: "#cfe6ff", hemiGround: "#6a7a50", hemiInt: 1.15, shadows: true, shadowSoft: 2, bg: "#2f6fd0",
+  // camera
+  fov: 24, zoom: 1,
+  // post
+  outline: 0.55, outlineSens: 0.004, outlineThick: 1, ink: "#2a2438",
+  gtao: true, aoIntensity: 0.8, aoRadius: 0.5, bloom: 0.15, bloomRadius: 0.4, bloomThreshold: 1.1,
+  tilt: false, tiltFocus: 0.5, tiltBand: 0.18, tiltSoft: 0.3, tiltBlur: 2.5,
+  tone: "neutral", exposure: 1.05, saturation: 1.15, contrast: 1.05, warmth: 0.02, tint: 0, lift: "#203060", liftAmt: 0.05, vignette: 0.25,
+  pixel: 1, posterize: 0
+};
+const PRESETS = [
+  { name: "Plateaus", cam: 1, levels: 3, step: 1.1, mount: 0.25, coastFreq: 0.07, warp: 1.5, lip: 0.16, stripes: 0.26, strata: 0.06, relief: 0.1 },  // the layer-cake continent: tall striped terraces, ladders, a dotted road
+  { name: "Archipelago", cam: 1, shape: "islands", islands: 13, mapW: 50, mapH: 34, levels: 3, step: 0.55, relief: 0.35, regions: 13,
+    b_autumn: true, b_tropic: true, b_town: true, b_gloom: true, coastNoise: 0.4, mount: 0.7,
+    shallow: "#5ec4e8", deep: "#2a5fb8", bands: 0, foam: 0.5, waves: 0.6, rivers: 2, edgeClouds: 1, clouds: 7, dots: false,
+    pathEdge: 0.2, outline: 0.25, saturation: 1.2, tilt: true, tiltBlur: 2.2, lip: 0.08, stripes: 0.08, strata: 0.18, grain: 0.15, patches: 0.2 },
+  { name: "Lake country", cam: 2, shape: "lakes", lakes: 5, lakeSize: 1.1, levels: 3, step: 0.5, relief: 0.4, regions: 5,
+    b_meadow: false, b_desert: false, b_autumn: true, b_volcano: false, b_gloom: true, mount: 0.6,
+    shallow: "#3fe0e8", deep: "#1f7fd8", shallowW: 1.2, foam: 0.35, waves: 0.7, rivers: 4, river: "#3fd0f0",
+    dots: false, path: "#f0c878", pathEdge: 0.3, climb: "stairs", decoDensity: 1.3, edgeClouds: 0.3, clouds: 3,
+    outline: 0.3, saturation: 1.3, contrast: 1.12, sunEl: 45, lip: 0.06, stripes: 0.05, strata: 0.2, grain: 0.5, patches: 0.25,
+    tilt: true, tiltBlur: 1.6 },
+  { name: "Pixel coast", cam: 0, shape: "coast", levels: 4, step: 0.5, relief: 0.1, regions: 5, coastNoise: 0.7,
+    b_desert: false, b_volcano: false, b_snow: false, b_town: true, b_tropic: false, b_forest: true, b_autumn: false,
+    shallow: "#8fd8e0", deep: "#3a8ac0", bands: 4, shallowW: 3, foam: 0.6, waves: 0.5, foamW: 2.4,
+    dots: false, path: "#d8c890", pathEdge: 0.2, edgeClouds: 0, clouds: 5, cloudOpacity: 0.55, cloudH: 2.6,
+    outline: 0.35, pixel: 0.3, posterize: 24, gtao: false, saturation: 1.0, contrast: 1.0, lip: 0.05, stripes: 0.12, strata: 0.25,
+    grain: 0.2, sunEl: 60, fov: 20 }
+];
+// what changes the map itself (a rebuild); everything else is applied live
+const REBUILD = new Set(["seed", "shape", "mapW", "mapH", "cell", "coastNoise", "coastFreq", "landSize", "islands", "lakes", "lakeSize",
+  "regions", "warp", "mount", "levels", "step", "ground", "relief", "smoothH", "snowLine", "rimW", "rivers", "riverW", "nodesPer", "nodeGap",
+  "forks", "pathW", "dots", "climb", "maxBridge", "progress", "decoDensity", "decoScale", "clouds", "edgeClouds", "cloudH",
+  ...BIOME_KEYS.map((k) => "b_" + k)]);
+const SCHEMA = [
+  ["Map", [
+    ["shape", "Shape", "select", ["continent", "islands", "lakes", "coast"]],
+    ["mapW", "Width", "range", 20, 80, 1], ["mapH", "Depth", "range", 16, 60, 1],
+    ["cell", "Grid cell (detail)", "range", 0.15, 0.5, 0.05],
+    ["landSize", "Land size", "range", 0.6, 1.4, 0.02],
+    ["coastNoise", "Coast wiggle", "range", 0, 1.2, 0.02], ["coastFreq", "Coast scale", "range", 0.03, 0.25, 0.005],
+    ["islands", "Islands", "range", 2, 24, 1], ["lakes", "Lakes", "range", 0, 12, 1], ["lakeSize", "Lake size", "range", 0.4, 2, 0.05],
+    ["regions", "Regions", "range", 1, 14, 1], ["warp", "Region border warp", "range", 0, 6, 0.1],
+    ["mount", "Mountains", "range", 0, 1.5, 0.02]]],
+  ["Biomes", BIOME_KEYS.map((k) => ["b_" + k, BIOMES[k].name, "bool"])],
+  ["Relief", [
+    ["levels", "Terraces (0: smooth hills)", "range", 0, 7, 1], ["step", "Terrace height", "range", 0.2, 1.5, 0.05],
+    ["ground", "Ground over the sea", "range", 0.05, 0.6, 0.01], ["relief", "Bumps on a terrace", "range", 0, 1, 0.05],
+    ["smoothH", "Hill height (smooth)", "range", 0.5, 6, 0.1], ["snowLine", "Snow line", "range", 0.5, 1.2, 0.01]]],
+  ["Cliffs", [
+    ["lip", "Grass lip", "range", 0, 0.3, 0.005], ["lipLine", "Line under the lip", "range", 0, 1, 0.05],
+    ["stripes", "Vertical stripes", "range", 0, 0.5, 0.01], ["stripeFreq", "Stripe width", "range", 0.5, 8, 0.1],
+    ["strata", "Strata", "range", 0, 0.5, 0.01], ["strataFreq", "Strata per unit", "range", 1, 12, 0.5],
+    ["cliffFoot", "Dark foot", "range", 0, 1, 0.05], ["rimW", "Rim band on a top", "range", 0, 1, 0.05],
+    ["grain", "Grass tufts", "range", 0, 1, 0.05], ["patches", "Colour patches", "range", 0, 0.5, 0.01]]],
+  ["Water", [
+    ["shallow", "Shallows", "color"], ["deep", "Deep", "color"], ["shallowW", "Shallow width", "range", 0.3, 4, 0.1],
+    ["bands", "Depth bands (0: smooth)", "range", 0, 8, 1], ["foamCol", "Foam", "color"], ["foam", "Foam rings", "range", 0, 1, 0.05],
+    ["foamW", "Foam reach", "range", 0.3, 4, 0.1], ["waves", "Wave strokes", "range", 0, 1, 0.05],
+    ["rivers", "Rivers", "range", 0, 8, 1], ["riverW", "River width", "range", 0.15, 1, 0.01], ["river", "River colour", "color"]]],
+  ["Route", [
+    ["nodesPer", "Levels per region", "range", 1, 5, 1], ["nodeGap", "Gap between levels", "range", 1.5, 8, 0.1],
+    ["forks", "Forks to a secret level", "range", 0, 6, 1], ["progress", "Cleared", "range", 0, 1, 0.01],
+    ["pathW", "Road width", "range", 0.1, 0.7, 0.01], ["path", "Road", "color"], ["pathEdge", "Road edge", "range", 0, 1, 0.05],
+    ["dots", "Dots on the road", "bool"], ["climb", "A terrace is climbed by", "select", ["ladder", "stairs"]],
+    ["maxBridge", "Longest bridge", "range", 0, 8, 0.25], ["walk", "Walk the route", "bool"], ["walkSpeed", "Walk speed", "range", 0.3, 5, 0.1]]],
+  ["Decor", [
+    ["decoDensity", "Density", "range", 0, 2.5, 0.05], ["decoScale", "Scale", "range", 0.5, 2, 0.05],
+    ["clouds", "Clouds overhead", "range", 0, 20, 1], ["edgeClouds", "Cloud frame", "range", 0, 1.5, 0.05],
+    ["cloudH", "Cloud height", "range", 1, 8, 0.1], ["cloudOpacity", "Cloud opacity", "range", 0.2, 1, 0.05],
+    ["cloudShadows", "Clouds cast shadows", "bool"]]],
+  ["Light", [
+    ["sun", "Sun", "color"], ["sunInt", "Sun intensity", "range", 0, 6, 0.05],
+    ["sunAz", "Sun azimuth", "range", 0, 360, 5], ["sunEl", "Sun elevation", "range", 10, 89, 1],
+    ["shadows", "Shadows", "bool"], ["shadowSoft", "Shadow softness", "range", 0, 6, 0.5],
+    ["hemiSky", "Sky light", "color"], ["hemiGround", "Ground light", "color"], ["hemiInt", "Ambient", "range", 0, 3, 0.05],
+    ["bg", "Background", "color"]]],
+  ["Camera", [["fov", "Field of view (low: flat map)", "range", 8, 60, 1], ["zoom", "Distance", "range", 0.4, 2, 0.02]]],
+  ["Post", [
+    ["pixel", "Render scale (under 1: pixels)", "range", 0.15, 1, 0.01], ["posterize", "Posterise (0: off)", "range", 0, 48, 1],
+    ["outline", "Ink outline", "range", 0, 1, 0.01], ["outlineSens", "Outline sensitivity", "range", 0.0005, 0.02, 0.0005],
+    ["outlineThick", "Outline thickness", "range", 0.5, 3, 0.1], ["ink", "Ink", "color"],
+    ["gtao", "Ambient occlusion", "bool"], ["aoIntensity", "Occlusion", "range", 0, 2, 0.05], ["aoRadius", "Occlusion radius", "range", 0.1, 1.5, 0.05],
+    ["bloom", "Bloom", "range", 0, 2, 0.05], ["bloomRadius", "Bloom radius", "range", 0, 1, 0.05], ["bloomThreshold", "Bloom threshold", "range", 0, 2, 0.05],
+    ["tilt", "Tilt-shift", "bool"], ["tiltFocus", "Focus line", "range", 0, 1, 0.01], ["tiltBand", "Sharp band", "range", 0, 0.5, 0.01],
+    ["tiltSoft", "Falloff", "range", 0.05, 0.8, 0.01], ["tiltBlur", "Blur", "range", 0, 6, 0.1]]],
+  ["Grade", [
+    ["tone", "Tone mapping", "select", ["neutral", "aces", "agx", "none"]], ["exposure", "Exposure", "range", 0.3, 2.5, 0.05],
+    ["saturation", "Saturation", "range", 0, 2, 0.02], ["contrast", "Contrast", "range", 0.6, 1.6, 0.02],
+    ["warmth", "Warmth", "range", -0.3, 0.3, 0.01], ["tint", "Green / magenta", "range", -0.2, 0.2, 0.01],
+    ["lift", "Shadow colour", "color"], ["liftAmt", "Shadow colour amount", "range", 0, 0.3, 0.01], ["vignette", "Vignette", "range", 0, 1, 0.02]]]
+];
+// cameras: elevation of the view in degrees, and its azimuth
+const CAMS = [{ name: "Top", el: 82, az: 0 }, { name: "Map", el: 58, az: 0 }, { name: "Low", el: 36, az: 0 }, { name: "Corner", el: 44, az: 35 }];
+
+let presetIdx = +(qs.get("preset") ?? store.get("preset", 0)) || 0;
+if (!PRESETS[presetIdx]) presetIdx = 0;
+let P = Object.assign({}, BASE, PRESETS[presetIdx], qs.has("preset") ? {} : store.get("settings", {}));
+// any setting from the url (a headless shot): ?zoom=0.5&pixel=0.3
+for (const [k, v] of qs) if (k in BASE && k !== "preset") P[k] = typeof BASE[k] === "number" ? +v : typeof BASE[k] === "boolean" ? v === "1" || v === "true" : v;
+let camIdx = qs.has("cam") ? +qs.get("cam") : (PRESETS[presetIdx].cam ?? 1);
+let saveTimer = 0;
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(() => { store.set("settings", P); store.set("preset", presetIdx); }, 300); }
+
+// =============================================================================
+// SCENE
+// =============================================================================
+const stage = document.getElementById("stage");
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(P.fov, 1, 0.5, 400);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = 1.45;
+controls.screenSpacePanning = false;
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+
+// one material for everything built of vertex colours (landmarks, ladders, bridges)
+const propMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true });
+const glowMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffa040, emissiveIntensity: 3, roughness: 1 });
+const lavaMat = new THREE.MeshStandardMaterial({ color: 0x401000, emissive: 0xff5a14, emissiveIntensity: 2.2, roughness: 1, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+const crystalMat = new THREE.MeshStandardMaterial({ color: 0x8060c0, emissive: 0xa070ff, emissiveIntensity: 1.6, roughness: 0.3, flatShading: true });
+const puffMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c8, roughness: 1, flatShading: true, transparent: true, opacity: 0.8 });
+
+// ---- geometry helpers -------------------------------------------------------
+function colorize(g, hex, shade = 0) {
+  g = g.index ? g.toNonIndexed() : g;
+  const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3);
+  const pos = g.attributes.position;
+  let y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < n; i++) { y0 = Math.min(y0, pos.getY(i)); y1 = Math.max(y1, pos.getY(i)); }
+  for (let i = 0; i < n; i++) {
+    const k = 1 - shade * (1 - (pos.getY(i) - y0) / Math.max(1e-4, y1 - y0));  // darker towards the foot
+    a[i * 3] = c.r * k; a[i * 3 + 1] = c.g * k; a[i * 3 + 2] = c.b * k;
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(a, 3));
+  if (g.attributes.uv) g.deleteAttribute("uv");
+  return g;
+}
+const at = (g, x, y, z, ry = 0, s = 1) => { g.scale(s, s, s); if (ry) g.rotateY(ry); g.translate(x, y, z); return g; };
+const box = (w, h, d) => new THREE.BoxGeometry(w, h, d).translate(0, h / 2, 0);
+const cyl = (r0, r1, h, n = 8) => new THREE.CylinderGeometry(r1, r0, h, n).translate(0, h / 2, 0);
+const cone = (r, h, n = 8) => new THREE.ConeGeometry(r, h, n).translate(0, h / 2, 0);
+const blob = (r, d = 0) => new THREE.IcosahedronGeometry(r, d);
+function mergeMesh(parts, mat = propMat) {
+  const m = new THREE.Mesh(mergeGeometries(parts), mat);
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+const jitterGeo = (g, amt, rnd) => mergeVertsJitter(g, amt, rnd);
+// move every vertex, the same move for vertices that share a position (so the mesh stays closed)
+function mergeVertsJitter(g, amt, rnd) {
+  const pos = g.attributes.position, seen = new Map();
+  for (let i = 0; i < pos.count; i++) {
+    const k = pos.getX(i).toFixed(3) + "," + pos.getY(i).toFixed(3) + "," + pos.getZ(i).toFixed(3);
+    let d = seen.get(k);
+    if (!d) { d = [(rnd() - 0.5) * amt, (rnd() - 0.5) * amt, (rnd() - 0.5) * amt]; seen.set(k, d); }
+    pos.setXYZ(i, pos.getX(i) + d[0], pos.getY(i) + d[1], pos.getZ(i) + d[2]);
+  }
+  return g;
+}
+
+// =============================================================================
+// TERRAIN MATERIAL — tops and cliffs in one mesh. The vertex colour is the
+// base; the shader adds what a vertex cannot carry: the stripes and strata of a
+// cliff, its darker foot, the grass lip hanging over the edge (its length
+// wobbling along the contour) and the line under it, the tufts and the patches
+// on a top. aW = (is a wall, y of the wall's top, the wall's height).
+// =============================================================================
+const TERR = {
+  uLip: { value: 0.1 }, uLipLine: { value: 0.6 }, uStripe: { value: 0.2 }, uStripeF: { value: 3 }, uStrata: { value: 0.1 },
+  uStrataF: { value: 5 }, uFoot: { value: 0.5 }, uGrain: { value: 0.3 }, uPatch: { value: 0.1 }
+};
+const NOISE_GLSL = `
+float wh(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
+float wh2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float wv(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(wh2(i), wh2(i + vec2(1.0, 0.0)), f.x), mix(wh2(i + vec2(0.0, 1.0)), wh2(i + vec2(1.0, 1.0)), f.x), f.y); }
+`;
+const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, flatShading: false });
+terrainMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, TERR);
+  sh.vertexShader = sh.vertexShader
+    .replace("#include <common>", "#include <common>\nattribute vec3 aLip; attribute vec3 aW; varying vec3 vLip; varying vec3 vW; varying vec3 vWP; varying vec3 vWN;")
+    .replace("#include <begin_vertex>", "#include <begin_vertex>\nvWP = (modelMatrix * vec4(position, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * normal); vLip = aLip; vW = aW;");
+  sh.fragmentShader = sh.fragmentShader
+    .replace("#include <common>", "#include <common>\nuniform float uLip, uLipLine, uStripe, uStripeF, uStrata, uStrataF, uFoot, uGrain, uPatch;\nvarying vec3 vLip; varying vec3 vW; varying vec3 vWP; varying vec3 vWN;\n" + NOISE_GLSL)
+    .replace("#include <color_fragment>", `#include <color_fragment>
+  if (vW.x > 0.5) {
+    float depth = vW.y - vWP.y;
+    float u = abs(vWN.x) > abs(vWN.z) ? vWP.z : vWP.x;
+    float drip = uLip * (0.45 + 0.55 * wv(vec2(u * 6.0, 3.1))) * (0.7 + 0.6 * wh(floor(u * 10.0)));
+    vec3 c = diffuseColor.rgb;
+    c *= 1.0 - uStripe * wv(vec2(u * uStripeF, 0.5)) - uStripe * 0.5 * wh(floor(u * uStripeF * 2.0));
+    c *= 1.0 - uStrata * wh(floor((vWP.y + 0.08 * sin(u * 1.7)) * uStrataF) + 17.0);
+    c *= mix(1.0 - uFoot, 1.0, clamp(1.0 - depth / max(vW.z, 0.1), 0.0, 1.0));
+    if (depth < drip) c = vLip;
+    else if (depth < drip + 0.035) c *= 1.0 - uLipLine;
+    diffuseColor.rgb = c;
+  } else {
+    vec2 q = vWP.xz;
+    diffuseColor.rgb *= 1.0 + uPatch * (wv(q * 0.7) - 0.5) * 2.0;
+    float t = wh2(floor(q * 9.0));
+    vec2 f = fract(q * 9.0) - 0.5;
+    if (t > 1.0 - uGrain * 0.25 && abs(f.x) < 0.22 && f.y > -0.1 && f.y < 0.3) diffuseColor.rgb *= 0.78;
+  }`);
+};
+
+// =============================================================================
+// WATER — one sea plane at y = 0, lit (so the clouds' shadows fall on it). Its
+// colour is read off a distance field to the land, baked into a texture each
+// time the map is generated: shallows to deep (smooth or in bands), foam rings
+// rolling in, a white line on the shore, and wave strokes drifting.
+// =============================================================================
+const SEA = {
+  tDist: { value: null }, uMin: { value: new THREE.Vector2() }, uSize: { value: new THREE.Vector2(1, 1) }, uMaxD: { value: 6 },
+  uShallow: { value: new THREE.Color() }, uDeep: { value: new THREE.Color() }, uFoam: { value: new THREE.Color() },
+  uShallowW: { value: 1.5 }, uBands: { value: 0 }, uFoamAmt: { value: 0.7 }, uFoamW: { value: 1.5 }, uWaves: { value: 0.3 }, uTime: { value: 0 }
+};
+const seaMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55, metalness: 0 });
+seaMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, SEA);
+  sh.vertexShader = sh.vertexShader
+    .replace("#include <common>", "#include <common>\nvarying vec3 vWP;")
+    .replace("#include <begin_vertex>", "#include <begin_vertex>\nvWP = (modelMatrix * vec4(position, 1.0)).xyz;");
+  sh.fragmentShader = sh.fragmentShader
+    .replace("#include <common>", `#include <common>
+uniform sampler2D tDist; uniform vec2 uMin, uSize; uniform float uMaxD, uShallowW, uBands, uFoamAmt, uFoamW, uWaves, uTime;
+uniform vec3 uShallow, uDeep, uFoam; varying vec3 vWP;\n` + NOISE_GLSL)
+    .replace("#include <color_fragment>", `#include <color_fragment>
+  vec2 suv = (vWP.xz - uMin) / uSize;
+  float d = uMaxD;
+  if (suv.x > 0.0 && suv.y > 0.0 && suv.x < 1.0 && suv.y < 1.0) d = texture2D(tDist, suv).r * uMaxD;
+  float k = smoothstep(0.0, uShallowW, d);
+  if (uBands > 0.5) k = floor(k * uBands + 0.5) / uBands;
+  vec3 c = mix(uShallow, uDeep, k);
+  float wob = 0.12 * (wv(vWP.xz * 1.3 + uTime * 0.1) - 0.5);
+  float ring = fract((d + wob) * 1.6 - uTime * 0.22);
+  float band = smoothstep(0.0, 0.06, ring) * (1.0 - smoothstep(0.1, 0.22, ring));
+  float reach = 1.0 - smoothstep(0.0, uFoamW, d);
+  float shore = 1.0 - smoothstep(0.04, 0.12, d + wob * 0.5);
+  vec2 sp = vWP.xz * vec2(0.55, 4.5) + vec2(uTime * 0.12, uTime * 0.02);
+  float strokes = smoothstep(0.86, 0.9, wv(sp) * (0.75 + 0.25 * wv(vWP.xz * 0.21 + 5.0))) * (0.3 + 0.7 * k);
+  c = mix(c, uFoam, clamp(band * reach * uFoamAmt + shore + strokes * uWaves * 0.6, 0.0, 1.0));
+  diffuseColor.rgb = c;`);
+};
+const seaMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), seaMat);
+seaMesh.receiveShadow = true;
+scene.add(seaMesh);
+
+// a river: a ribbon whose v runs down the stream; it streaks and froths where it falls
+const RIV = { uTime: { value: 0 }, uCol: { value: new THREE.Color() }, uFoam: { value: new THREE.Color() } };
+const riverMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+riverMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, RIV);
+  sh.vertexShader = sh.vertexShader
+    .replace("#include <common>", "#include <common>\nattribute vec3 aR; varying vec3 vR;")
+    .replace("#include <begin_vertex>", "#include <begin_vertex>\nvR = aR;");
+  sh.fragmentShader = sh.fragmentShader
+    .replace("#include <common>", "#include <common>\nuniform float uTime; uniform vec3 uCol, uFoam; varying vec3 vR;\n" + NOISE_GLSL)
+    .replace("#include <color_fragment>", `#include <color_fragment>
+  float across = abs(vR.x - 0.5) * 2.0;
+  float fall = vR.z;
+  float flow = wv(vec2(vR.x * 5.0, vR.y * 2.2 - uTime * (1.4 + fall * 3.0)));
+  vec3 c = uCol * (0.92 + 0.16 * flow);
+  float foam = smoothstep(0.72, 0.95, across) + fall * smoothstep(0.35, 0.6, flow) + smoothstep(0.83, 0.9, flow) * 0.6;
+  diffuseColor.rgb = mix(c, uFoam, clamp(foam, 0.0, 1.0));`);
+};
+// the road: a ribbon with a darker edge
+const ROAD = { uCol: { value: new THREE.Color() }, uEdge: { value: 0.4 } };
+const roadMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 });
+roadMat.onBeforeCompile = (sh) => {
+  Object.assign(sh.uniforms, ROAD);
+  sh.vertexShader = sh.vertexShader
+    .replace("#include <common>", "#include <common>\nattribute vec2 aR; varying vec2 vR;")
+    .replace("#include <begin_vertex>", "#include <begin_vertex>\nvR = aR;");
+  sh.fragmentShader = sh.fragmentShader
+    .replace("#include <common>", "#include <common>\nuniform vec3 uCol; uniform float uEdge; varying vec2 vR;\n" + NOISE_GLSL)
+    .replace("#include <color_fragment>", `#include <color_fragment>
+  float across = abs(vR.x - 0.5) * 2.0;
+  vec3 c = uCol * (0.95 + 0.1 * wv(vec2(vR.x * 4.0, vR.y * 3.0)));
+  c *= 1.0 - uEdge * smoothstep(0.7, 0.9, across);
+  diffuseColor.rgb = c;`);
+};
+
+// =============================================================================
+// THE MAP — what generate() fills, and the helpers that read it back
+// =============================================================================
+let NX = 0, NZ = 0, CELL = 0.25, X0 = 0, Z0 = 0;
+let F = null;      // the terrace field: the coast is F = 0, terrace L begins at F = L
+let EN = null;     // the elevation, 0 at the coast and ~1 at the top
+let REG = null;    // region of each corner
+let BUMP = null;   // the bumps on a terrace top, 0..1
+let topCol = null, rimCol = null, cliffCol = null, beachCol = null, beachOn = null;  // blurred colour fields
+let regions = [];  // { x, z, biome, order }
+let OCC = null;    // what the decor must stay off: road, river, level
+let RIVER = null;  // river corners
+let mapGroup = null;
+const animated = [];  // things the loop moves
+let nodes = [], walkLegs = [], mainCount = 0;
+const stats = { tris: 0, ms: 0, nodes: 0 };
+
+const idx = (i, j) => j * NX + i;
+const wx = (i) => X0 + i * CELL, wz = (j) => Z0 + j * CELL;
+function bil(arr, x, z) {
+  let fx = (x - X0) / CELL, fz = (z - Z0) / CELL;
+  fx = Math.max(0, Math.min(NX - 1.001, fx)); fz = Math.max(0, Math.min(NZ - 1.001, fz));
+  const i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
+  const a = arr[idx(i, j)], b = arr[idx(i + 1, j)], c = arr[idx(i, j + 1)], d = arr[idx(i + 1, j + 1)];
+  return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
+}
+function bil3(arr, x, z, out) {
+  let fx = (x - X0) / CELL, fz = (z - Z0) / CELL;
+  fx = Math.max(0, Math.min(NX - 1.001, fx)); fz = Math.max(0, Math.min(NZ - 1.001, fz));
+  const i = Math.floor(fx), j = Math.floor(fz), u = fx - i, v = fz - j;
+  const w = [(1 - u) * (1 - v), u * (1 - v), (1 - u) * v, u * v], k = [idx(i, j), idx(i + 1, j), idx(i, j + 1), idx(i + 1, j + 1)];
+  out[0] = out[1] = out[2] = 0;
+  for (let n = 0; n < 4; n++) for (let c = 0; c < 3; c++) out[c] += arr[k[n] * 3 + c] * w[n];
+  return out;
+}
+const levelsOn = () => P.levels > 0;
+// the terrace a point stands on (-1: water)
+function levelAt(x, z) {
+  const f = bil(F, x, z);
+  if (f < 0) return -1;
+  return levelsOn() ? Math.min(P.levels, Math.floor(f)) : 0;
+}
+// the height of terrace L's top at a point (or the hill, smooth)
+function topY(L, x, z) {
+  if (!levelsOn()) return P.ground + Math.max(0, bil(EN, x, z)) * P.smoothH;
+  return P.ground + L * P.step + P.relief * P.step * 0.4 * bil(BUMP, x, z);
+}
+function surfaceY(x, z) { const L = levelAt(x, z); return L < 0 ? 0 : topY(L, x, z); }
+// how far a point is inside its terrace (0 at its own edge, 1 at the next one up)
+function insideness(x, z) { const f = bil(F, x, z); if (f < 0) return -1; return levelsOn() ? f - Math.floor(f) : Math.min(1, f); }
+
+// ---- small tools --------------------------------------------------------------
+class Heap {
+  constructor() { this.k = []; this.v = []; }
+  push(key, val) {
+    const k = this.k, v = this.v; let i = k.length; k.push(key); v.push(val);
+    while (i > 0) { const p = (i - 1) >> 1; if (v[p] <= val) break; k[i] = k[p]; v[i] = v[p]; i = p; }
+    k[i] = key; v[i] = val;
+  }
+  pop() {
+    const k = this.k, v = this.v, top = k[0], last = k.pop(), lv = v.pop(), n = k.length;
+    if (n) {
+      let i = 0;
+      for (;;) {
+        let c = 2 * i + 1; if (c >= n) break;
+        if (c + 1 < n && v[c + 1] < v[c]) c++;
+        if (v[c] >= lv) break;
+        k[i] = k[c]; v[i] = v[c]; i = c;
+      }
+      k[i] = last; v[i] = lv;
+    }
+    return top;
+  }
+  get size() { return this.k.length; }
+}
+function blurField(src, comps, r, passes = 2) {
+  let a = src, b = new Float32Array(src.length);
+  for (let p = 0; p < passes; p++) {
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) for (let c = 0; c < comps; c++) {   // horizontal
+      let s = 0, n = 0;
+      for (let d = -r; d <= r; d++) { const ii = i + d; if (ii < 0 || ii >= NX) continue; s += a[idx(ii, j) * comps + c]; n++; }
+      b[idx(i, j) * comps + c] = s / n;
+    }
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) for (let c = 0; c < comps; c++) {   // vertical
+      let s = 0, n = 0;
+      for (let d = -r; d <= r; d++) { const jj = j + d; if (jj < 0 || jj >= NZ) continue; s += b[idx(i, jj) * comps + c]; n++; }
+      a[idx(i, j) * comps + c] = s / n;
+    }
+  }
+  return a;
+}
+const hexRGB = (h) => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
+
+// =============================================================================
+// GENERATE
+// =============================================================================
+function generate() {
+  const t0 = performance.now();
+  const rnd = mulberry(P.seed * 9301 + 49297);
+  const sx = new SimplexNoise({ random: rnd });
+  const fbm = (x, z, oct, f) => { let s = 0, a = 1, n = 0; for (let o = 0; o < oct; o++) { s += sx.noise(x * f, z * f) * a; n += a; a *= 0.5; f *= 2.03; } return s / n; };
+  const ridged = (x, z, f) => { let s = 0, a = 1, n = 0; for (let o = 0; o < 4; o++) { s += (1 - Math.abs(sx.noise(x * f + 31.7, z * f - 11.3))) * a; n += a; a *= 0.5; f *= 2.1; } return s / n; };
+
+  CELL = P.cell;
+  NX = Math.round(P.mapW / CELL) + 1; NZ = Math.round(P.mapH / CELL) + 1;
+  X0 = -P.mapW / 2; Z0 = -P.mapH / 2;
+  const N = NX * NZ, hw = P.mapW / 2, hh = P.mapH / 2;
+
+  // ---- 1. MASK ----------------------------------------------------------------
+  const M = new Float32Array(N);
+  const isles = [];
+  if (P.shape === "islands") {
+    // islands thrown with a minimum distance, the first one the biggest
+    for (let t = 0; t < 600 && isles.length < P.islands; t++) {
+      const x = (rnd() * 2 - 1) * hw * 0.82, z = (rnd() * 2 - 1) * hh * 0.8;
+      const r = (isles.length === 0 ? 0.24 : 0.09 + rnd() * 0.11) * Math.min(P.mapW, P.mapH) * P.landSize;
+      if (isles.every((o) => Math.hypot(o.x - x, o.z - z) > (o.r + r) * 1.08)) isles.push({ x, z, r });
+    }
+  }
+  const lakes = [];
+  if (P.shape === "lakes") {
+    for (let t = 0; t < 400 && lakes.length < P.lakes; t++) {
+      const x = (rnd() * 2 - 1) * hw * 0.7, z = (rnd() * 2 - 1) * hh * 0.7, r = (1.6 + rnd() * 2.4) * P.lakeSize;
+      if (lakes.every((o) => Math.hypot(o.x - x, o.z - z) > (o.r + r) * 1.3)) lakes.push({ x, z, r });
+    }
+  }
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
+    const x = wx(i), z = wz(j), nx = x / hw, nz = z / hh, n = fbm(x, z, 5, P.coastFreq) * P.coastNoise;
+    let m;
+    if (P.shape === "islands") {
+      m = -1;
+      for (const o of isles) m = Math.max(m, 1 - Math.hypot(x - o.x, z - o.z) / o.r);
+      m += n * 0.8;
+    } else if (P.shape === "lakes") {
+      const e = Math.max(Math.abs(nx), Math.abs(nz));
+      m = 0.55 * P.landSize - Math.pow(e, 6) * 0.9 + n * 0.6;
+      for (const o of lakes) { const d = Math.hypot(x - o.x, z - o.z) / o.r; if (d < 1.6) m -= Math.max(0, 1 - d) * 1.4 - n * 0.15 * (1 - d); }
+    } else if (P.shape === "coast") {
+      m = (-nz * 0.75 + 0.15 * P.landSize) + n + 0.18 * sx.noise(x * 0.05, 7.7) - Math.pow(Math.abs(nx), 8) * 0.2;
+    } else {
+      m = 1 - Math.hypot(nx * 0.95, nz) * 1.12 / P.landSize + n;
+    }
+    M[idx(i, j)] = m;
+  }
+  // nothing touches the edge of the frame: a continent keeps a wide sea round it,
+  // a coast or a lake country is closed by a cliff a step inside the frame
+  {
+    const open = P.shape === "continent" || P.shape === "islands", band = open ? 2.5 : 0.9;
+    for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
+      const e = Math.min(i, j, NX - 1 - i, NZ - 1 - j) * CELL;
+      if (e < band) M[idx(i, j)] -= (band - e) * (open ? 0.25 : 1.2);
+    }
+  }
+
+  // ---- 2. REGIONS ---------------------------------------------------------------
+  const land = [];
+  for (let n = 0; n < N; n++) if (M[n] > 0.05) land.push(n);
+  let seeds = [];
+  if (P.shape === "islands") {
+    for (const o of isles) seeds.push({ x: o.x, z: o.z, r: o.r });
+  } else {
+    const want = Math.max(1, P.regions), gap = Math.sqrt(land.length * CELL * CELL / want) * 0.75;
+    for (let t = 0; t < 3000 && seeds.length < want && land.length; t++) {
+      const n = land[Math.floor(rnd() * land.length)], x = wx(n % NX), z = wz(Math.floor(n / NX));
+      if (seeds.every((s) => Math.hypot(s.x - x, s.z - z) > gap)) seeds.push({ x, z, r: gap });
+    }
+    if (!seeds.length) seeds.push({ x: 0, z: 0, r: 5 });
+  }
+  // the route's order: from the front left, nearest next
+  seeds.sort((a, b) => (b.z - b.x * 0.6) - (a.z - a.x * 0.6));
+  const order = [seeds.shift()];
+  while (seeds.length) {
+    const l = order[order.length - 1];
+    let bi = 0, bd = Infinity;
+    seeds.forEach((s, k) => { const d = Math.hypot(s.x - l.x, s.z - l.z); if (d < bd) { bd = d; bi = k; } });
+    order.push(seeds.splice(bi, 1)[0]);
+  }
+  regions = order;
+  // biomes: the first is the gentlest enabled, the last the darkest, the rest shuffled
+  let pool = BIOME_KEYS.filter((k) => P["b_" + k]);
+  if (!pool.length) pool = ["meadow"];
+  const first = ["meadow", "tropic", "forest", "town", "autumn"].find((k) => pool.includes(k)) || pool[0];
+  const last = FINALE.find((k) => pool.includes(k) && k !== first) || pool[pool.length - 1];
+  const middle = pool.filter((k) => k !== first && k !== last);
+  for (let k = middle.length - 1; k > 0; k--) { const r = Math.floor(rnd() * (k + 1)); [middle[k], middle[r]] = [middle[r], middle[k]]; }
+  regions.forEach((r, k) => {
+    r.order = k;
+    if (k === 0) r.biome = first;
+    else if (k === regions.length - 1 && regions.length > 1) r.biome = last;
+    else r.biome = middle.length ? middle[(k - 1) % middle.length] : (k % 2 ? last : first);
+  });
+  REG = new Int16Array(N);
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
+    const x = wx(i), z = wz(j);
+    const qx = x + sx.noise(x * 0.12, z * 0.12 + 50) * P.warp, qz = z + sx.noise(x * 0.12 + 90, z * 0.12) * P.warp;
+    let best = 0, bd = Infinity;
+    regions.forEach((r, k) => { const d = Math.hypot(qx - r.x, qz - r.z) / (P.shape === "islands" ? r.r : 1); if (d < bd) { bd = d; best = k; } });
+    REG[idx(i, j)] = best;
+  }
+
+  // ---- 3. RELIEF ------------------------------------------------------------------
+  // the biome's own lift and scale, blurred over the borders so a region is a plateau, not a wall
+  const mod = new Float32Array(N * 2);
+  for (let n = 0; n < N; n++) { const b = BIOMES[regions[REG[n]].biome]; mod[n * 2] = b.lift; mod[n * 2 + 1] = b.scale; }
+  blurField(mod, 2, Math.max(2, Math.round(1.2 / CELL)), 2);
+  EN = new Float32Array(N);
+  let emax = 0;
+  const peaks = regions.map((r) => ({ r, b: BIOMES[r.biome], R: Math.max(2.2, (r.r || 4) * 0.55) }));
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) {
+    const n = idx(i, j), m = M[n];
+    if (m <= 0) continue;
+    const x = wx(i), z = wz(j), inland = Math.min(1, m * 3);
+    let e = (m * 0.9 + ridged(x, z, 0.07) * P.mount * inland * 0.8) * mod[n * 2 + 1] + mod[n * 2] * Math.min(1, m * 4);
+    for (const p of peaks) {
+      if (!p.b.peak) continue;
+      const d = Math.hypot(x - p.r.x, z - p.r.z) / p.R;
+      if (d < 1) e += p.b.peak * Math.pow(1 - d, 1.4) * inland;
+      if (p.b.crater && d < 0.18) e -= p.b.peak * 0.35 * (1 - d / 0.18);
+    }
+    EN[n] = Math.max(0.001, e);
+  }
+  // normalise: the 98th percentile of the land is 1
+  const sorted = Array.from(EN).filter((v) => v > 0).sort((a, b) => a - b);
+  emax = sorted.length ? sorted[Math.floor(sorted.length * 0.98)] : 1;
+  F = new Float32Array(N);
+  const L = Math.max(1, P.levels);
+  for (let n = 0; n < N; n++) {
+    if (M[n] > 0) { EN[n] = EN[n] / emax; F[n] = Math.min(L + 0.95, EN[n] * (L + 0.6)); }
+    else { EN[n] = 0; F[n] = M[n] * 3; }
+  }
+  // a coast that is a hair's breadth from zero makes slivers: push it off
+  for (let n = 0; n < N; n++) if (Math.abs(F[n]) < 0.02) F[n] = F[n] < 0 ? -0.02 : 0.02;
+  if (levelsOn()) for (let n = 0; n < N; n++) { if (F[n] >= 0) { const fr = F[n] - Math.floor(F[n]); if (fr < 0.02) F[n] += 0.02 - fr; } }
+  BUMP = new Float32Array(N);
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) BUMP[idx(i, j)] = 0.5 + 0.5 * fbm(wx(i) + 200, wz(j), 3, 0.35);
+
+  // colour fields, blurred so two biomes meet in a gradient
+  topCol = new Float32Array(N * 3); rimCol = new Float32Array(N * 3); cliffCol = new Float32Array(N * 3);
+  beachCol = new Float32Array(N * 3); beachOn = new Float32Array(N);
+  const cache = {};
+  for (const k of BIOME_KEYS) { const b = BIOMES[k]; cache[k] = { t: hexRGB(b.top), r: hexRGB(b.rim), c: hexRGB(b.cliff), s: hexRGB(b.beach || b.top), on: b.beach ? 1 : 0 }; }
+  for (let n = 0; n < N; n++) {
+    const c = cache[regions[REG[n]].biome];
+    for (let k = 0; k < 3; k++) { topCol[n * 3 + k] = c.t[k]; rimCol[n * 3 + k] = c.r[k]; cliffCol[n * 3 + k] = c.c[k]; beachCol[n * 3 + k] = c.s[k]; }
+    beachOn[n] = c.on;
+  }
+  const br = Math.max(1, Math.round(0.6 / CELL));
+  blurField(topCol, 3, br); blurField(rimCol, 3, br); blurField(cliffCol, 3, br); blurField(beachCol, 3, br); blurField(beachOn, 1, br);
+
+  // ---- build ------------------------------------------------------------------------
+  if (mapGroup) { scene.remove(mapGroup); mapGroup.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+  mapGroup = new THREE.Group();
+  scene.add(mapGroup);
+  animated.length = 0;
+  OCC = new Uint8Array(N); RIVER = new Uint8Array(N);
+  stats.tris = 0;
+
+  buildTerrain();
+  buildSea();
+  const ctx = { rnd, sx, fbm };
+  buildRivers(ctx);
+  buildRoute(ctx);
+  buildDecor(ctx);
+  buildClouds(ctx);
+  mapGroup.traverse((o) => { if (o.isMesh && o.geometry) { const g = o.geometry, c = (g.index ? g.index.count : g.attributes.position.count) / 3; stats.tris += c * (o.isInstancedMesh ? o.count : 1); } });
+  stats.ms = performance.now() - t0;
+  fitShadow();
+}
+
+// =============================================================================
+// TERRAIN — marching squares, one contour per terrace
+// =============================================================================
+function buildTerrain() {
+  const pos = [], col = [], lip = [], aw = [];
+  const tmp = [0, 0, 0], tmp2 = [0, 0, 0], snow = hexRGB("#f6f9fd");
+  const Lmax = levelsOn() ? P.levels : 0;
+  const pushV = (x, y, z, c, l, w0, w1, w2) => { pos.push(x, y, z); col.push(c[0], c[1], c[2]); lip.push(l[0], l[1], l[2]); aw.push(w0, w1, w2); };
+  // the colour of a top at a point
+  const topColor = (L, x, z, out) => {
+    bil3(topCol, x, z, out);
+    const f = bil(F, x, z), inside = levelsOn() ? f - L : f;
+    const rim = P.rimW > 0 ? 1 - Math.min(1, Math.max(0, inside / (P.rimW * 0.8 + 0.001))) : 0;
+    if (rim > 0) { bil3(rimCol, x, z, tmp2); for (let k = 0; k < 3; k++) out[k] += (tmp2[k] - out[k]) * rim * 0.85; }
+    if (L === 0) {
+      const sb = bil(beachOn, x, z) * (1 - Math.min(1, Math.max(0, (f - 0.05) / 0.3)));
+      if (sb > 0) { bil3(beachCol, x, z, tmp2); for (let k = 0; k < 3; k++) out[k] += (tmp2[k] - out[k]) * sb; }
+    }
+    // snow on the peaks, never in a crater
+    const reg = regions[REG[idx(Math.round((x - X0) / CELL), Math.round((z - Z0) / CELL))]];
+    const e = bil(EN, x, z), s = BIOMES[reg.biome].crater ? 0 : Math.min(1, Math.max(0, (e - P.snowLine) / 0.06));
+    if (s > 0) for (let k = 0; k < 3; k++) out[k] += (snow[k] - out[k]) * s;
+    return out;
+  };
+  const corner = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  for (let L = 0; L <= Lmax; L++) {
+    const t = L;  // contour threshold
+    for (let j = 0; j < NZ - 1; j++) for (let i = 0; i < NX - 1; i++) {
+      const v = corner.map(([a, b]) => F[idx(i + a, j + b)]);
+      const inside = v.map((q) => q >= t);
+      if (!inside.some(Boolean)) continue;
+      const above = levelsOn() && L < Lmax && v.every((q) => q >= t + 1);   // a higher terrace covers this cell whole
+      // the inside polygon, walking the square; boundary edges between two crossing points
+      const poly = [], cross = [];
+      for (let k = 0; k < 4; k++) {
+        const a = k, b = (k + 1) % 4;
+        const ax = wx(i + corner[a][0]), az = wz(j + corner[a][1]), bx = wx(i + corner[b][0]), bz = wz(j + corner[b][1]);
+        if (inside[a]) poly.push([ax, az, false]);
+        if (inside[a] !== inside[b]) {
+          const s = (t - v[a]) / (v[b] - v[a]);
+          poly.push([ax + (bx - ax) * s, az + (bz - az) * s, true]);
+        }
+      }
+      if (!above) {
+        const cs = poly.map((p) => topColor(L, p[0], p[1], [0, 0, 0]));
+        const ys = poly.map((p) => topY(L, p[0], p[1]));
+        for (let k = 1; k < poly.length - 1; k++) {
+          for (const q of [0, k + 1, k]) pushV(poly[q][0], ys[q], poly[q][1], cs[q], cs[q], 0, 0, 0);
+        }
+      }
+      // walls: an edge of the polygon from one crossing point to the next
+      for (let k = 0; k < poly.length; k++) {
+        const p = poly[k], q = poly[(k + 1) % poly.length];
+        if (!(p[2] && q[2])) continue;
+        // outward: towards the side under the threshold
+        let nx = q[1] - p[1], nz = -(q[0] - p[0]);
+        const mx = (p[0] + q[0]) / 2, mz = (p[1] + q[1]) / 2, len = Math.hypot(nx, nz) || 1;
+        if (bil(F, mx + nx / len * 0.03, mz + nz / len * 0.03) >= t) { nx = -nx; nz = -nz; }
+        const pTop = topY(L, p[0], p[1]), qTop = topY(L, q[0], q[1]);
+        const pBot = L > 0 ? topY(L - 1, p[0], p[1]) - 0.02 : -0.6, qBot = L > 0 ? topY(L - 1, q[0], q[1]) - 0.02 : -0.6;
+        const cp = bil3(cliffCol, p[0], p[1], [0, 0, 0]), cq = bil3(cliffCol, q[0], q[1], [0, 0, 0]);
+        const lp = topColor(L, p[0], p[1], [0, 0, 0]), lq = topColor(L, q[0], q[1], [0, 0, 0]);
+        // winding so the face looks outward: (p, q) along the wall, up is +y
+        const ex = q[0] - p[0], ez = q[1] - p[1];
+        // the face (A bot, B bot, B top) faces (-ez, 0, ex) for B - A = (ex, ez): pick A so it faces out
+        const ok = (-ez * nx + ex * nz) > 0;
+        const A = ok ? [p, pTop, pBot, cp, lp] : [q, qTop, qBot, cq, lq], B = ok ? [q, qTop, qBot, cq, lq] : [p, pTop, pBot, cp, lp];
+        const hA = A[1] - A[2], hB = B[1] - B[2];
+        pushV(A[0][0], A[2], A[0][1], A[3], A[4], 1, A[1], hA);
+        pushV(B[0][0], B[2], B[0][1], B[3], B[4], 1, B[1], hB);
+        pushV(B[0][0], B[1], B[0][1], B[3], B[4], 1, B[1], hB);
+        pushV(A[0][0], A[2], A[0][1], A[3], A[4], 1, A[1], hA);
+        pushV(B[0][0], B[1], B[0][1], B[3], B[4], 1, B[1], hB);
+        pushV(A[0][0], A[1], A[0][1], A[3], A[4], 1, A[1], hA);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute("aLip", new THREE.Float32BufferAttribute(lip, 3));
+  g.setAttribute("aW", new THREE.Float32BufferAttribute(aw, 3));
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, terrainMat);
+  m.castShadow = true; m.receiveShadow = true;
+  mapGroup.add(m);
+}
+
+// the sea's distance field: chamfer distance to the land at twice the grid's resolution
+function buildSea() {
+  const S = 2, DX = (NX - 1) * S + 1, DZ = (NZ - 1) * S + 1, h = CELL / S, BIG = 1e9;
+  const d = new Float32Array(DX * DZ);
+  for (let j = 0; j < DZ; j++) for (let i = 0; i < DX; i++) d[j * DX + i] = bil(F, X0 + i * h, Z0 + j * h) >= 0 ? 0 : BIG;
+  const D1 = h, D2 = h * Math.SQRT2;
+  for (let j = 0; j < DZ; j++) for (let i = 0; i < DX; i++) {
+    let v = d[j * DX + i]; if (!v) continue;
+    if (i > 0) v = Math.min(v, d[j * DX + i - 1] + D1);
+    if (j > 0) { v = Math.min(v, d[(j - 1) * DX + i] + D1); if (i > 0) v = Math.min(v, d[(j - 1) * DX + i - 1] + D2); if (i < DX - 1) v = Math.min(v, d[(j - 1) * DX + i + 1] + D2); }
+    d[j * DX + i] = v;
+  }
+  for (let j = DZ - 1; j >= 0; j--) for (let i = DX - 1; i >= 0; i--) {
+    let v = d[j * DX + i]; if (!v) continue;
+    if (i < DX - 1) v = Math.min(v, d[j * DX + i + 1] + D1);
+    if (j < DZ - 1) { v = Math.min(v, d[(j + 1) * DX + i] + D1); if (i < DX - 1) v = Math.min(v, d[(j + 1) * DX + i + 1] + D2); if (i > 0) v = Math.min(v, d[(j + 1) * DX + i - 1] + D2); }
+    d[j * DX + i] = v;
+  }
+  const maxD = 6, data = new Uint8Array(DX * DZ * 4);
+  for (let n = 0; n < DX * DZ; n++) { const v = Math.min(255, Math.round(Math.min(d[n], maxD) / maxD * 255)); data[n * 4] = v; data[n * 4 + 3] = 255; }
+  if (SEA.tDist.value) SEA.tDist.value.dispose();
+  const tex = new THREE.DataTexture(data, DX, DZ, THREE.RGBAFormat);
+  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter; tex.needsUpdate = true;
+  SEA.tDist.value = tex; SEA.uMaxD.value = maxD;
+  SEA.uMin.value.set(X0, Z0); SEA.uSize.value.set(P.mapW, P.mapH);
+  const big = Math.max(P.mapW, P.mapH) * 6;
+  seaMesh.scale.set(big, 1, big);
+}
+
+// =============================================================================
+// DRAPE — a polyline laid on the terrain; where it crosses a contour, the exact
+// crossing is found and the line goes straight down the wall there
+// =============================================================================
+function crossing(a, b, La, Lb) {
+  let lo = 0, hi = 1;
+  for (let k = 0; k < 14; k++) { const m = (lo + hi) / 2; if (levelAt(a[0] + (b[0] - a[0]) * m, a[1] + (b[1] - a[1]) * m) === La) lo = m; else hi = m; }
+  return [a[0] + (b[0] - a[0]) * lo, a[1] + (b[1] - a[1]) * lo, lo];
+}
+function resample(pts, step) {
+  const out = [pts[0]];
+  let carry = 0;
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    let s = step - carry;
+    while (s < len) { out.push([a[0] + (b[0] - a[0]) * s / len, a[1] + (b[1] - a[1]) * s / len]); s += step; }
+    carry = len - (s - step);
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
+}
+function chaikin(pts, it = 2) {
+  for (let n = 0; n < it; n++) {
+    const o = [pts[0]];
+    for (let k = 0; k < pts.length - 1; k++) {
+      const a = pts[k], b = pts[k + 1];
+      o.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+    }
+    o.push(pts[pts.length - 1]);
+    pts = o;
+  }
+  return pts;
+}
+// a ribbon along points [{x, y, z, w, fall}]; attr per vertex: (across 0..1, along, fall)
+function ribbon(pts, attrName, comps) {
+  const pos = [], att = [], index = [];
+  let along = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const p = pts[k], a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)];
+    let dx = b.x - a.x, dz = b.z - a.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    if (k > 0) along += Math.hypot(p.x - pts[k - 1].x, p.y - pts[k - 1].y, p.z - pts[k - 1].z);
+    const hw = p.w / 2;
+    pos.push(p.x + dz * hw, p.y, p.z - dx * hw, p.x - dz * hw, p.y, p.z + dx * hw);
+    if (comps === 3) att.push(0, along, p.fall || 0, 1, along, p.fall || 0); else att.push(0, along, 1, along);
+    if (k > 0) { const o = (k - 1) * 2; index.push(o, o + 1, o + 2, o + 1, o + 3, o + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute(attrName, new THREE.Float32BufferAttribute(att, comps));
+  g.setIndex(index);
+  g.computeVertexNormals();
+  // a ribbon may be wound either way; its normals point up regardless
+  const nrm = g.attributes.normal;
+  for (let k = 0; k < nrm.count; k++) if (nrm.getY(k) < 0) nrm.setXYZ(k, -nrm.getX(k), -nrm.getY(k), -nrm.getZ(k));
+  return g;
+}
+const markOcc = (x, z, r, arr = OCC) => {
+  const ci = Math.round((x - X0) / CELL), cj = Math.round((z - Z0) / CELL), R = Math.ceil(r / CELL);
+  for (let j = cj - R; j <= cj + R; j++) for (let i = ci - R; i <= ci + R; i++) {
+    if (i < 0 || j < 0 || i >= NX || j >= NZ) continue;
+    if ((i - ci) ** 2 + (j - cj) ** 2 <= R * R) arr[idx(i, j)] = 1;
+  }
+};
+
+// =============================================================================
+// RIVERS — from the high ground to the sea, down a field that hates climbing
+// =============================================================================
+function seaField() {
+  const N = NX * NZ, D = new Float32Array(N).fill(Infinity), par = new Int32Array(N).fill(-1), h = new Heap();
+  for (let n = 0; n < N; n++) if (F[n] < 0) { D[n] = 0; h.push(n, 0); }
+  const nb = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, 1.414], [1, -1, 1.414], [-1, 1, 1.414], [-1, -1, 1.414]];
+  while (h.size) {
+    const n = h.pop(), i = n % NX, j = (n - i) / NX, dn = D[n];
+    for (const [di, dj, c] of nb) {
+      const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= NX || jj >= NZ) continue;
+      const m = idx(ii, jj); if (F[m] < 0) continue;
+      // walking out from the sea: going down (= the river climbing) is what costs
+      const cost = c * (1 + 40 * Math.max(0, EN[n] - EN[m]) + 0.6 * Math.abs(F[n] - F[m]));
+      if (dn + cost < D[m]) { D[m] = dn + cost; par[m] = n; h.push(m, D[m]); }
+    }
+  }
+  return par;
+}
+function buildRivers({ rnd }) {
+  if (P.rivers <= 0) return;
+  const par = seaField();
+  const cand = [];
+  for (let n = 0; n < NX * NZ; n++) if (EN[n] > 0.55 && F[n] >= 0) cand.push(n);
+  const srcs = [];
+  for (let t = 0; t < 500 && srcs.length < P.rivers && cand.length; t++) {
+    const n = cand[Math.floor(rnd() * cand.length)], x = wx(n % NX), z = wz(Math.floor(n / NX));
+    if (srcs.every((s) => Math.hypot(s.x - x, s.z - z) > 6)) srcs.push({ n, x, z });
+  }
+  const parts = [];
+  for (const s of srcs) {
+    const cells = [];
+    let n = s.n;
+    while (n >= 0 && cells.length < 2000) { cells.push(n); n = par[n]; if (n >= 0 && F[n] < 0) { cells.push(n); break; } }
+    if (cells.length < 12) continue;
+    let pts = chaikin(cells.map((c) => [wx(c % NX), wz(Math.floor(c / NX))]), 3);
+    pts = resample(pts, 0.12);
+    const out = [];
+    const total = pts.length;
+    for (let k = 0; k < pts.length; k++) {
+      const p = pts[k], w = P.riverW * (0.55 + 0.45 * k / total), L = levelAt(p[0], p[1]);
+      if (k > 0) {
+        const q = pts[k - 1], Lq = levelAt(q[0], q[1]);
+        if (L !== Lq && Lq >= 0) {
+          // a fall: the lip, then straight down the wall, a hair outward
+          const c = crossing(q, p, Lq, L);
+          const dx = p[0] - q[0], dz = p[1] - q[1], l = Math.hypot(dx, dz) || 1;
+          const yTop = topY(Lq, c[0], c[1]) + 0.03, yBot = L < 0 ? 0.01 : topY(L, c[0], c[1]) + 0.03;
+          out.push({ x: c[0], z: c[1], y: yTop, w, fall: 0 });
+          out.push({ x: c[0] + dx / l * 0.04, z: c[1] + dz / l * 0.04, y: yTop - 0.02, w, fall: 1 });
+          out.push({ x: c[0] + dx / l * 0.1, z: c[1] + dz / l * 0.1, y: yBot, w: w * 1.1, fall: 1 });
+          markOcc(c[0], c[1], 0.6);
+        }
+      }
+      const y = L < 0 ? 0.01 : surfaceY(p[0], p[1]) + 0.03;
+      out.push({ x: p[0], z: p[1], y, w, fall: 0 });
+      markOcc(p[0], p[1], w * 0.5 + 0.35);
+      markOcc(p[0], p[1], w * 0.5 + 0.05, RIVER);
+      if (L < 0) break;
+    }
+    parts.push(ribbon(out, "aR", 3));
+  }
+  if (!parts.length) return;
+  const m = new THREE.Mesh(mergeGeometries(parts), riverMat);
+  m.receiveShadow = true;
+  mapGroup.add(m);
+}
+
+// =============================================================================
+// ROUTE — the levels, and the road between them
+// =============================================================================
+function buildRoute({ rnd }) {
+  nodes = []; walkLegs = [];
+  const okNode = (n) => {
+    if (F[n] < 0 || RIVER[n] || OCC[n]) return false;
+    const x = wx(n % NX), z = wz(Math.floor(n / NX)), ins = insideness(x, z);
+    if (levelsOn() && (ins < 0.3 || ins > 0.85)) return false;
+    if (!levelsOn() && ins < 0.25) return false;
+    // flat around it: the four neighbours at one cell and a half on the same terrace
+    const L = levelAt(x, z), r = 0.55;
+    return [[r, 0], [-r, 0], [0, r], [0, -r]].every(([a, b]) => levelAt(x + a, z + b) === L);
+  };
+  // levels per region, spread out
+  regions.forEach((reg, ri) => {
+    const cand = [];
+    for (let n = 0; n < NX * NZ; n++) if (REG[n] === ri && okNode(n)) cand.push(n);
+    const picks = [];
+    const want = ri === regions.length - 1 ? P.nodesPer + 1 : P.nodesPer;
+    for (let t = 0; t < 800 && picks.length < want && cand.length; t++) {
+      const n = cand[Math.floor(rnd() * cand.length)], x = wx(n % NX), z = wz(Math.floor(n / NX));
+      if (picks.concat(nodes).every((o) => Math.hypot(o.x - x, o.z - z) > P.nodeGap)) picks.push({ n, x, z, region: ri, biome: reg.biome });
+    }
+    // within the region: nearest next, starting from where the route came in
+    let from = nodes.length ? nodes[nodes.length - 1] : { x: X0, z: -Z0 };
+    while (picks.length) {
+      let bi = 0, bd = Infinity;
+      picks.forEach((p, k) => { const d = Math.hypot(p.x - from.x, p.z - from.z); if (d < bd) { bd = d; bi = k; } });
+      from = picks.splice(bi, 1)[0];
+      nodes.push(from);
+    }
+  });
+  if (!nodes.length) return;
+  // kinds: home, levels, a fort closing each region, the castle at the end
+  nodes.forEach((nd, k) => {
+    const b = BIOMES[nd.biome], nextReg = nodes[k + 1] ? nodes[k + 1].region : -1;
+    nd.kind = "level";
+    if (k === 0) nd.kind = "home";
+    else if (k === nodes.length - 1) nd.kind = "castle";
+    else if (nextReg !== nd.region) nd.kind = "fort";
+    else if (rnd() < 0.4) nd.kind = b.landmark[Math.floor(rnd() * b.landmark.length)];
+    nd.num = k;
+    markOcc(nd.x, nd.z, 0.7);
+  });
+  // forks: a secret level off the road, a little way out
+  const extra = [];
+  for (let f = 0; f < P.forks; f++) {
+    const base = nodes[1 + Math.floor(rnd() * Math.max(1, nodes.length - 2))];
+    if (!base) break;
+    for (let t = 0; t < 200; t++) {
+      const a = rnd() * TAU, d = P.nodeGap * (0.8 + rnd() * 0.6), x = base.x + Math.cos(a) * d, z = base.z + Math.sin(a) * d;
+      const i = Math.round((x - X0) / CELL), j = Math.round((z - Z0) / CELL);
+      if (i < 1 || j < 1 || i >= NX - 1 || j >= NZ - 1) continue;
+      const n = idx(i, j);
+      if (!okNode(n)) continue;
+      if (nodes.concat(extra).some((o) => Math.hypot(o.x - x, o.z - z) < P.nodeGap * 0.7)) continue;
+      extra.push({ n, x: wx(i), z: wz(j), region: REG[n], biome: regions[REG[n]].biome, kind: "secret", from: base });
+      markOcc(wx(i), wz(j), 0.7);
+      break;
+    }
+  }
+  // the roads: A* on the grid, 4-neighbour (a climb is then square to the wall)
+  const roadCells = new Uint8Array(NX * NZ);
+  const astar = (s, g) => {
+    const N = NX * NZ, G = new Float32Array(N).fill(Infinity), par = new Int32Array(N).fill(-1), h = new Heap();
+    const gi = g % NX, gj = (g - gi) / NX;
+    G[s] = 0; h.push(s, 0);
+    const lv = (n) => (F[n] < 0 ? -1 : levelsOn() ? Math.min(P.levels, Math.floor(F[n])) : 0);
+    while (h.size) {
+      const n = h.pop();
+      if (n === g) break;
+      const i = n % NX, j = (n - i) / NX, ln = lv(n);
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const ii = i + di, jj = j + dj; if (ii < 1 || jj < 1 || ii >= NX - 1 || jj >= NZ - 1) continue;
+        const m = idx(ii, jj), lm = lv(m);
+        let c = 1;
+        if (lm < 0) c += 2.5;
+        else if (ln >= 0 && lm !== ln) { if (Math.abs(lm - ln) > 2) continue; c += 9 * Math.abs(lm - ln); }
+        if (RIVER[m]) c += 5;
+        if (lm >= 0 && levelsOn()) { const fr = F[m] - Math.floor(F[m]); if (fr < 0.2 || fr > 0.9) c += 1.5; }
+        if (roadCells[m]) c *= 0.35;
+        const nd = G[n] + c;
+        if (nd < G[m]) { G[m] = nd; par[m] = n; h.push(m, nd + (Math.abs(ii - gi) + Math.abs(jj - gj)) * 0.35); }
+      }
+    }
+    if (par[g] < 0 && s !== g) return null;
+    const out = []; let n = g;
+    while (n >= 0) { out.push(n); if (n === s) break; n = par[n]; }
+    return out.reverse();
+  };
+  const legs = [];
+  for (let k = 1; k < nodes.length; k++) legs.push([nodes[k - 1], nodes[k], false]);
+  for (const e of extra) legs.push([e.from, e, true]);
+  const roadParts = [], dotPts = [], seaDots = [], ladders = [], bridges = [];
+  for (const [a, b, secret] of legs) {
+    const cells = astar(a.n, b.n);
+    if (!cells) continue;
+    cells.forEach((c) => (roadCells[c] = 1));
+    let pts = cells.map((c) => [wx(c % NX), wz(Math.floor(c / NX))]);
+    // smooth only where the road stays on one terrace: a corner cut never slips off a cliff
+    pts = chaikin(pts, 2).filter((p, k, arr) => k === 0 || k === arr.length - 1 ||
+      levelAt(p[0], p[1]) === levelAt(...nearestCellPt(p, cells)));
+    pts = resample(pts, 0.1);
+    const leg = layRoad(pts, roadParts, dotPts, seaDots, ladders, bridges);
+    if (!secret) walkLegs.push(leg);
+    pts.forEach((p) => markOcc(p[0], p[1], P.pathW * 0.5 + 0.25));
+  }
+  mainCount = nodes.length;
+  nodes = nodes.concat(extra);
+  if (roadParts.length) { const m = new THREE.Mesh(mergeGeometries(roadParts), roadMat); m.receiveShadow = true; mapGroup.add(m); }
+  // the road's dots
+  if (P.dots && dotPts.length) {
+    const g = colorize(new THREE.CylinderGeometry(0.055, 0.055, 0.03, 8), "#c88a3a");
+    const m = new THREE.InstancedMesh(g, propMat, dotPts.length), o = new THREE.Object3D();
+    dotPts.forEach((p, k) => { o.position.set(p.x, p.y + 0.02, p.z); o.updateMatrix(); m.setMatrixAt(k, o.matrix); });
+    m.receiveShadow = true; mapGroup.add(m);
+  }
+  if (seaDots.length) {
+    const g = colorize(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 8), "#ffffff");
+    const m = new THREE.InstancedMesh(g, propMat, seaDots.length), o = new THREE.Object3D();
+    seaDots.forEach((p, k) => { o.position.set(p.x, 0.02, p.z); o.updateMatrix(); m.setMatrixAt(k, o.matrix); });
+    mapGroup.add(m);
+  }
+  for (const l of ladders) mapGroup.add(P.climb === "stairs" ? stairs(l) : ladder(l));
+  for (const b of bridges) mapGroup.add(bridge(b));
+  for (const nd of nodes) mapGroup.add(nodeMesh(nd, rnd));
+  stats.nodes = nodes.length;
+}
+function nearestCellPt(p, cells) {
+  // the grid cell of a path nearest to a smoothed point
+  const i = Math.round((p[0] - X0) / CELL), j = Math.round((p[1] - Z0) / CELL);
+  return [wx(i), wz(j)];
+}
+// one leg of road: ribbons on each terrace, a ladder at each climb, a bridge
+// over a river or a short water run, a dotted line on a long one
+function layRoad(pts, roadParts, dotPts, seaDots, ladders, bridges) {
+  const walk = [];      // what the walker follows: {x, y, z}
+  let run = [];
+  const flush = () => { if (run.length > 1) roadParts.push(ribbon(run, "aR", 2)); run = []; };
+  let since = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const p = pts[k], L = levelAt(p[0], p[1]);
+    if (L < 0) {
+      // water: find the whole run, then bridge it or dot it
+      let e = k; while (e < pts.length && levelAt(pts[e][0], pts[e][1]) < 0) e++;
+      const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, e)];
+      const len = (e - k) * 0.1;
+      const ya = surfaceY(a[0], a[1]), yb = surfaceY(b[0], b[1]);
+      if (len <= P.maxBridge) {
+        bridges.push({ a: { x: a[0], z: a[1], y: ya }, b: { x: b[0], z: b[1], y: yb } });
+        flush();
+        for (let q = k; q < e; q++) { const s = (q - k + 1) / (e - k + 1); walk.push({ x: pts[q][0], z: pts[q][1], y: ya + (yb - ya) * s + 0.08 }); }
+      } else {
+        flush();
+        for (let q = k; q < e; q += 3) seaDots.push({ x: pts[q][0], z: pts[q][1] });
+        for (let q = k; q < e; q++) walk.push({ x: pts[q][0], z: pts[q][1], y: 0.05 });
+      }
+      k = e - 1;
+      continue;
+    }
+    if (k > 0) {
+      const q = pts[k - 1], Lq = levelAt(q[0], q[1]);
+      if (Lq >= 0 && Lq !== L) {
+        const c = crossing(q, p, Lq, L);
+        const up = L > Lq, lo = up ? Lq : L, hi = up ? L : Lq;
+        const dx = (p[0] - q[0]) * (up ? 1 : -1), dz = (p[1] - q[1]) * (up ? 1 : -1), l = Math.hypot(dx, dz) || 1;
+        const y0 = topY(lo, c[0], c[1]), y1 = topY(hi, c[0], c[1]);
+        // the ladder stands on the low side, its face to the wall
+        ladders.push({ x: c[0], z: c[1], y0, y1, dx: dx / l, dz: dz / l });
+        run.push({ x: c[0], z: c[1], y: topY(Lq, c[0], c[1]) + 0.02, w: P.pathW });
+        flush();
+        walk.push({ x: c[0], z: c[1], y: topY(Lq, c[0], c[1]) + 0.02 }, { x: c[0], z: c[1], y: topY(L, c[0], c[1]) + 0.02 });
+        run.push({ x: c[0], z: c[1], y: topY(L, c[0], c[1]) + 0.02, w: P.pathW });
+      }
+      if (RIVER[idx(Math.round((p[0] - X0) / CELL), Math.round((p[1] - Z0) / CELL))]) {
+        const d = Math.hypot(p[0] - q[0], p[1] - q[1]) || 1;
+        if (!bridges.length || Math.hypot(bridges[bridges.length - 1].a.x - p[0], bridges[bridges.length - 1].a.z - p[1]) > 0.6) {
+          const y = surfaceY(p[0], p[1]);
+          const ux = (p[0] - q[0]) / d, uz = (p[1] - q[1]) / d;
+          bridges.push({ a: { x: p[0] - ux * P.riverW * 0.9, z: p[1] - uz * P.riverW * 0.9, y }, b: { x: p[0] + ux * P.riverW * 0.9, z: p[1] + uz * P.riverW * 0.9, y }, small: true });
+        }
+      }
+    }
+    const y = topY(L, p[0], p[1]) + 0.02;
+    run.push({ x: p[0], z: p[1], y, w: P.pathW });
+    walk.push({ x: p[0], z: p[1], y });
+    since += 0.1;
+    if (since >= 0.45) { since = 0; dotPts.push({ x: p[0], z: p[1], y }); }
+  }
+  flush();
+  return walk;
+}
+function ladder({ x, z, y0, y1, dx, dz }) {
+  const h = y1 - y0 + 0.08, parts = [], wood = "#8a5a32", rung = "#b07a42";
+  const ox = x - dx * 0.06, oz = z - dz * 0.06;      // just off the wall
+  const px = -dz, pz = dx;
+  for (const s of [-1, 1]) parts.push(colorize(box(0.04, h, 0.04), wood).translate(px * s * 0.12, 0, pz * s * 0.12));
+  for (let y = 0.1; y < h - 0.02; y += 0.12) parts.push(colorize(new THREE.BoxGeometry(0.26, 0.025, 0.04), rung).rotateY(Math.atan2(px, pz) + Math.PI / 2).translate(0, y, 0));
+  const m = mergeMesh(parts);
+  m.position.set(ox, y0, oz);
+  return m;
+}
+function stairs({ x, z, y0, y1, dx, dz }) {
+  const h = y1 - y0, n = Math.max(2, Math.round(h / 0.12)), parts = [], ry = Math.atan2(dx, dz);
+  for (let k = 0; k < n; k++) {
+    const sh = h * (k + 1) / n, d = 0.13;
+    parts.push(colorize(box(0.36, sh, d), k % 2 ? "#b8a890" : "#a89880", 0.3).translate(0, 0, -(n - 1 - k) * d - d / 2 - 0.01));
+  }
+  const m = mergeMesh(parts);
+  m.rotation.y = ry; m.position.set(x, y0, z);
+  return m;
+}
+function bridge({ a, b, small }) {
+  const dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz), parts = [];
+  const n = Math.max(2, Math.round(len / 0.11)), ry = Math.atan2(dx, dz);
+  for (let k = 0; k < n; k++) {
+    const s = (k + 0.5) / n, sag = small ? 0 : Math.sin(s * Math.PI) * Math.min(0.15, len * 0.03);
+    const y = a.y + (b.y - a.y) * s - sag + 0.05;
+    parts.push(colorize(new THREE.BoxGeometry(P.pathW * 1.5, 0.04, len / n * 0.82), k % 2 ? "#9a6a3c" : "#b07a46").translate(0, y, (s - 0.5) * len));
+  }
+  if (!small) for (let k = 0; k <= Math.floor(len / 0.8); k++) {
+    const s = Math.min(1, k * 0.8 / len), y = a.y + (b.y - a.y) * s;
+    for (const side of [-1, 1]) parts.push(colorize(cyl(0.03, 0.03, y + 0.3, 6), "#6a4424").translate(side * P.pathW * 0.8, -0.2, (s - 0.5) * len));
+  }
+  const m = mergeMesh(parts);
+  m.rotation.y = ry; m.position.set((a.x + b.x) / 2, 0, (a.z + b.z) / 2);
+  return m;
+}
+
+// ---- the levels: a pad, and a landmark on the ones that are more than a level --
+const NODE_COL = { cleared: "#d84040", open: "#f2c430", locked: "#9a98a8", secret: "#4a8ae8" };
+function nodeMesh(nd, rnd) {
+  const g = new THREE.Group();
+  const y = surfaceY(nd.x, nd.z);
+  g.position.set(nd.x, y, nd.z);
+  const done = (k) => k / Math.max(1, mainCount - 1) < P.progress;
+  const cleared = nd.kind !== "secret" && done(nd.num);
+  const current = nd.kind !== "secret" && !cleared && (nd.num === 0 || done(nd.num - 1));
+  nd.state = nd.kind === "secret" ? "secret" : cleared ? "cleared" : current ? "open" : "locked";
+  const big = nd.kind !== "level" && nd.kind !== "secret";
+  const pad = mergeMesh([
+    colorize(cyl(0.3, 0.27, 0.07, 18), "#3a3040"),
+    colorize(cyl(0.24, 0.22, 0.05, 18), NODE_COL[nd.state]).translate(0, 0.06, 0)
+  ]);
+  if (big) pad.position.set(0, 0, 0.5);
+  g.add(pad);
+  if (nd.state === "open") animated.push({ pulse: pad, phase: rnd() * TAU });
+  const lm = landmark(nd.kind, nd.biome, rnd);
+  if (lm) { g.add(lm); lm.rotation.y = (rnd() - 0.5) * 0.4; }
+  nd.y = y;
+  return g;
+}
+function landmark(kind, biome, rnd) {
+  const parts = [];
+  const b = BIOMES[biome];
+  const roof = b.roofs ? b.roofs[Math.floor(rnd() * b.roofs.length)] : "#c8483a";
+  const stone = biome === "gloom" || biome === "volcano" ? "#5a5068" : biome === "desert" ? "#e0c08a" : "#c8c4bc";
+  const door = "#2a2030";
+  if (kind === "home" || kind === "house") {
+    parts.push(colorize(box(0.6, 0.38, 0.5), "#f1e4cc", 0.2));
+    const r = new THREE.CylinderGeometry(0.01, 0.42, 0.3, 4, 1); r.rotateY(Math.PI / 4); r.scale(1.05, 1, 0.9); r.translate(0, 0.53, 0);
+    parts.push(colorize(r, roof, 0.2));
+    parts.push(colorize(box(0.12, 0.2, 0.02), door).translate(0, 0, 0.255));
+    parts.push(colorize(box(0.08, 0.2, 0.08), "#8a7a6a").translate(0.16, 0.55, -0.05));
+  } else if (kind === "tower" || kind === "lighthouse") {
+    const lh = kind === "lighthouse";
+    for (let k = 0; k < 4; k++) parts.push(colorize(cyl(0.2 - k * 0.012, 0.2 - (k + 1) * 0.012, 0.26, 10), lh ? (k % 2 ? "#d84040" : "#f4f0e8") : stone, 0.15).translate(0, k * 0.26, 0));
+    parts.push(colorize(cyl(0.2, 0.2, 0.08, 10), "#5a4a40").translate(0, 1.04, 0));
+    parts.push(colorize(cone(0.24, 0.36, 10), lh ? "#3a3a48" : roof).translate(0, 1.12, 0));
+    parts.push(colorize(box(0.1, 0.18, 0.02), door).translate(0, 0, 0.195));
+  } else if (kind === "cave") {
+    const r = colorize(jitterGeo(new THREE.DodecahedronGeometry(0.42, 1), 0.08, rnd).scale(1.2, 0.8, 1), biome === "snow" ? "#c8d4e4" : "#8a7a6a", 0.4);
+    parts.push(r.translate(0, 0.15, -0.05));
+    parts.push(colorize(new THREE.CircleGeometry(0.18, 12, 0, Math.PI), "#120c10").translate(0, 0.02, 0.36));
+  } else if (kind === "temple") {
+    for (let k = 0; k < 4; k++) parts.push(colorize(box(0.8 - k * 0.18, 0.14, 0.8 - k * 0.18), k % 2 ? "#d8b878" : "#e6c88e", 0.2).translate(0, k * 0.14, 0));
+    parts.push(colorize(box(0.18, 0.2, 0.18), "#c09858").translate(0, 0.56, 0));
+    parts.push(colorize(box(0.12, 0.14, 0.02), door).translate(0, 0, 0.41));
+  } else if (kind === "fort" || kind === "castle") {
+    const big = kind === "castle", s = big ? 1.25 : 0.9;
+    const wall = big ? stone : biome === "gloom" || biome === "volcano" ? "#4a4052" : "#a8a090";
+    const rf = big ? "#3a58b8" : biome === "gloom" || biome === "volcano" ? "#8a2a3a" : "#c8483a";
+    parts.push(colorize(box(0.9 * s, 0.34 * s, 0.6 * s), wall, 0.25));
+    for (let k = -2; k <= 2; k++) parts.push(colorize(box(0.1 * s, 0.08 * s, 0.6 * s), wall).translate(k * 0.2 * s, 0.34 * s, 0));
+    for (const [tx, tz] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) {
+      parts.push(colorize(cyl(0.13 * s, 0.13 * s, 0.6 * s, 8), wall, 0.25).translate(tx * 0.45 * s, 0, tz * 0.3 * s));
+      parts.push(colorize(cone(0.17 * s, 0.3 * s, 8), rf).translate(tx * 0.45 * s, 0.6 * s, tz * 0.3 * s));
+    }
+    if (big) {
+      parts.push(colorize(box(0.36 * s, 0.85 * s, 0.32 * s), wall, 0.2).translate(0, 0, -0.05 * s));
+      parts.push(colorize(cone(0.3 * s, 0.4 * s, 4).rotateY(Math.PI / 4), rf).translate(0, 0.85 * s, -0.05 * s));
+      parts.push(colorize(cyl(0.012, 0.012, 0.3, 4), "#4a4048").translate(0, 1.25 * s, -0.05 * s));
+      parts.push(colorize(box(0.16, 0.1, 0.01), "#f2c430").translate(0.08, 1.25 * s + 0.18, -0.05 * s));
+    }
+    parts.push(colorize(box(0.16 * s, 0.22 * s, 0.02), door).translate(0, 0, 0.305 * s));
+  } else return null;
+  return mergeMesh(parts);
+}
+
+// =============================================================================
+// DECOR — the biome's things, instanced, in clusters
+// =============================================================================
+const KINDS = {
+  round: { parts: [{ g: () => colorize(cyl(0.035, 0.045, 0.2, 5), "#6a4a30"), fixed: true }, { g: () => colorize(blob(0.19, 0).scale(1, 1.05, 1).translate(0, 0.32, 0), "#ffffff", 0.35) }], s: [0.8, 1.25] },
+  pine: { parts: [{ g: () => colorize(cyl(0.03, 0.04, 0.14, 5), "#5a3a26"), fixed: true },
+    { g: () => colorize(mergeGeometries([cone(0.22, 0.3, 7).translate(0, 0.1, 0), cone(0.17, 0.26, 7).translate(0, 0.26, 0), cone(0.11, 0.22, 7).translate(0, 0.42, 0)]), "#ffffff", 0.4) }], s: [0.8, 1.35] },
+  snowpine: { parts: [{ g: () => colorize(cyl(0.03, 0.04, 0.14, 5), "#5a3a26"), fixed: true },
+    { g: () => colorize(mergeGeometries([cone(0.22, 0.3, 7).translate(0, 0.1, 0), cone(0.17, 0.26, 7).translate(0, 0.26, 0), cone(0.11, 0.22, 7).translate(0, 0.42, 0)]), "#ffffff", 0.4) },
+    { g: () => colorize(mergeGeometries([cone(0.15, 0.1, 7).translate(0, 0.32, 0), cone(0.1, 0.09, 7).translate(0, 0.48, 0), cone(0.065, 0.1, 7).translate(0, 0.6, 0)]), "#f6f9fd"), fixed: true }], s: [0.8, 1.3] },
+  palm: { parts: [{ g: () => { const segs = []; for (let k = 0; k < 4; k++) segs.push(cyl(0.035, 0.03, 0.13, 5).rotateZ(-0.12 * k).translate(Math.sin(0.12 * k) * 0.13 * k * 0.5, k * 0.125, 0)); return colorize(mergeGeometries(segs), "#9a7046"); }, fixed: true },
+    { g: () => { const l = []; for (let k = 0; k < 6; k++) l.push(new THREE.ConeGeometry(0.05, 0.32, 4).rotateZ(Math.PI / 2 + 0.35).translate(0.16, 0, 0).rotateY(k * TAU / 6).translate(0.09, 0.5, 0)); return colorize(mergeGeometries(l), "#ffffff", 0.3); } }], s: [0.9, 1.3] },
+  bush: { parts: [{ g: () => colorize(mergeGeometries([blob(0.1, 0).translate(0, 0.07, 0), blob(0.08, 0).translate(0.09, 0.05, 0.02), blob(0.07, 0).translate(-0.08, 0.05, -0.02)]), "#ffffff", 0.3) }], s: [0.7, 1.2] },
+  flower: { parts: [{ g: () => colorize(mergeGeometries([blob(0.035, 0).translate(0, 0.04, 0), blob(0.03, 0).translate(0.06, 0.03, 0.03), blob(0.03, 0).translate(-0.05, 0.03, 0.04)]), "#ffffff"), palette: ["#f4f070", "#f08aa8", "#ffffff", "#f0a040"] }], s: [0.8, 1.2] },
+  rock: { parts: [{ g: (rnd) => colorize(jitterGeo(new THREE.DodecahedronGeometry(0.12, 0), 0.05, rnd).scale(1.2, 0.8, 1).translate(0, 0.06, 0), "#9a948a", 0.35), fixed: true }], s: [0.7, 1.6] },
+  spire: { parts: [{ g: () => colorize(cone(0.17, 0.42, 6).translate(0, -0.02, 0), "#c88a52", 0.45), fixed: true }], s: [0.7, 1.4] },
+  mesa: { parts: [{ g: () => colorize(cyl(0.3, 0.24, 0.32, 7), "#d8955a", 0.45), fixed: true }], s: [0.8, 1.3] },
+  cactus: { parts: [{ g: () => colorize(mergeGeometries([cyl(0.045, 0.045, 0.32, 6), cyl(0.03, 0.03, 0.12, 6).translate(0.08, 0.14, 0), cyl(0.03, 0.03, 0.1, 6).translate(-0.08, 0.1, 0),
+    box(0.08, 0.03, 0.03).translate(0.04, 0.12, 0), box(0.08, 0.03, 0.03).translate(-0.04, 0.09, 0)]), "#4f9a4a", 0.3), fixed: true }], s: [0.8, 1.3] },
+  dead: { parts: [{ g: () => colorize(mergeGeometries([cyl(0.03, 0.022, 0.36, 5), cyl(0.014, 0.01, 0.16, 4).rotateZ(0.8).translate(0.05, 0.22, 0), cyl(0.013, 0.01, 0.14, 4).rotateZ(-0.9).translate(-0.05, 0.27, 0)]), "#4a3a34", 0.2), fixed: true }], s: [0.8, 1.3] },
+  crystal: { parts: [{ g: () => mergeGeometries([new THREE.OctahedronGeometry(0.08, 0).scale(0.7, 2, 0.7).translate(0, 0.13, 0), new THREE.OctahedronGeometry(0.06, 0).scale(0.7, 1.8, 0.7).rotateZ(0.4).translate(0.07, 0.08, 0)]), mat: crystalMat }], s: [0.8, 1.5] },
+  peak: { parts: [{ g: () => colorize(cone(0.5, 0.9, 7), "#8a96a8", 0.5), fixed: true }, { g: () => colorize(cone(0.24, 0.43, 7).translate(0, 0.48, 0), "#f6f9fd"), fixed: true }], s: [0.8, 1.3] },
+  house: { parts: [{ g: () => colorize(box(0.26, 0.2, 0.22), "#f1e4cc", 0.25), fixed: true },
+    { g: () => { const r = new THREE.CylinderGeometry(0.005, 0.2, 0.15, 4, 1); r.rotateY(Math.PI / 4); r.scale(1.0, 1, 0.85); return colorize(r.translate(0, 0.275, 0), "#ffffff", 0.2); }, roof: true }], s: [0.85, 1.25] }
+};
+function buildDecor({ rnd, sx }) {
+  if (P.decoDensity <= 0) return;
+  const inst = {};   // kind -> [{x, y, z, ry, s, tint}]
+  const gap = 0.34 / Math.sqrt(P.decoDensity);
+  for (let z = Z0 + gap / 2; z < -Z0; z += gap) for (let x = X0 + gap / 2; x < -X0; x += gap) {
+    const px = x + (rnd() - 0.5) * gap * 0.9, pz = z + (rnd() - 0.5) * gap * 0.9;
+    const i = Math.round((px - X0) / CELL), j = Math.round((pz - Z0) / CELL);
+    if (i < 0 || j < 0 || i >= NX || j >= NZ) continue;
+    const n = idx(i, j);
+    if (F[n] < 0 || OCC[n]) continue;
+    const ins = insideness(px, pz);
+    if (ins < 0.12 || (levelsOn() && ins > 0.93)) continue;
+    const L = levelAt(px, pz);
+    if ([[0.12, 0], [-0.12, 0], [0, 0.12], [0, -0.12]].some(([a, b]) => levelAt(px + a, pz + b) !== L)) continue;
+    const b = BIOMES[regions[REG[n]].biome];
+    const cl = 0.5 + 0.5 * sx.noise(px * 0.28 + 13, pz * 0.28 - 7);
+    const p = b.density * (1 - b.cluster + b.cluster * Math.pow(cl, 1.5) * 2);
+    if (rnd() > p * 0.55) continue;
+    let tot = 0; for (const [, w] of b.deco) tot += w;
+    let r = rnd() * tot, kind = b.deco[0][0];
+    for (const [k, w] of b.deco) { r -= w; if (r <= 0) { kind = k; break; } }
+    if (kind === "peak" && bil(EN, px, pz) < 0.7) kind = "snowpine";
+    const K = KINDS[kind];
+    const s = (K.s[0] + rnd() * (K.s[1] - K.s[0])) * P.decoScale;
+    (inst[kind] = inst[kind] || []).push({ x: px, y: topY(L, px, pz), z: pz, ry: rnd() * TAU, s, b, r: rnd() });
+  }
+  const o = new THREE.Object3D(), c = new THREE.Color();
+  for (const kind in inst) {
+    const list = inst[kind], K = KINDS[kind];
+    K.parts.forEach((part) => {
+      const geo = part.g(rnd);
+      const m = new THREE.InstancedMesh(geo, part.mat || propMat, list.length);
+      list.forEach((it, k) => {
+        o.position.set(it.x, it.y - 0.01, it.z); o.rotation.set(0, it.ry, 0); o.scale.setScalar(it.s); o.updateMatrix();
+        m.setMatrixAt(k, o.matrix);
+        if (!part.fixed && !part.mat) {
+          const pal = part.palette || (part.roof ? it.b.roofs || ["#c8483a"] : it.b.leaf);
+          c.set(pal[Math.floor(it.r * pal.length) % pal.length]);
+          c.offsetHSL((it.r - 0.5) * 0.03, 0, (it.r - 0.5) * 0.08);
+          m.setColorAt(k, c);
+        }
+      });
+      m.castShadow = true; m.receiveShadow = true;
+      mapGroup.add(m);
+    });
+  }
+  // a volcano's crater: lava, and smoke rising out of it
+  regions.forEach((r) => {
+    const b = BIOMES[r.biome];
+    if (!b.crater) return;
+    const y = surfaceY(r.x, r.z);
+    const R = Math.max(2.2, (r.r || 4) * 0.55) * 0.15;   // the crater is the inner 0.18 of the cone
+    const lava = new THREE.Mesh(new THREE.CircleGeometry(R, 20).rotateX(-Math.PI / 2), lavaMat);
+    lava.position.set(r.x, y + 0.03, r.z); mapGroup.add(lava);
+    const puffs = [];
+    for (let k = 0; k < 6; k++) { const pm = new THREE.Mesh(blob(1, 0), puffMat); mapGroup.add(pm); puffs.push(pm); }
+    animated.push({ smoke: puffs, x: r.x, y: y + 0.1, z: r.z });
+  });
+}
+
+// =============================================================================
+// CLOUDS — overhead (they drift and cast shadows) and a frame round the edge
+// =============================================================================
+const cloudMat = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 1, flatShading: true, emissive: 0xdde6f2, emissiveIntensity: 0.35, transparent: true });
+function cloudGeo(rnd, s) {
+  const parts = [];
+  const n = 5 + Math.floor(rnd() * 5);
+  for (let k = 0; k < n; k++) {
+    const a = (k / n - 0.5) * 2, r = (0.55 + rnd() * 0.5) * (1 - Math.abs(a) * 0.4);
+    parts.push(blob(r, 1).scale(1, 0.75, 1).translate(a * 1.3 + (rnd() - 0.5) * 0.3, r * 0.3 + rnd() * 0.15, (rnd() - 0.5) * 0.7));
+  }
+  const g = mergeGeometries(parts.map((p) => p.index ? p.toNonIndexed() : p));
+  g.scale(s, s, s);
+  // the underside a touch blue
+  const pos = g.attributes.position, col = new Float32Array(pos.count * 3);
+  for (let k = 0; k < pos.count; k++) { const t = Math.min(1, Math.max(0, pos.getY(k) / s * 1.5 + 0.3)); col[k * 3] = 0.78 + 0.22 * t; col[k * 3 + 1] = 0.84 + 0.16 * t; col[k * 3 + 2] = 0.95 + 0.05 * t; }
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  return g;
+}
+function buildClouds({ rnd }) {
+  for (let k = 0; k < P.clouds; k++) {
+    const m = new THREE.Mesh(cloudGeo(rnd, 0.6 + rnd() * 0.6), cloudMat);
+    m.position.set(X0 + rnd() * P.mapW, P.cloudH + rnd() * 0.8, Z0 + rnd() * P.mapH);
+    m.castShadow = P.cloudShadows; m.userData.cloudShadow = true;
+    mapGroup.add(m);
+    animated.push({ cloud: m, speed: 0.25 + rnd() * 0.25 });
+  }
+  if (P.edgeClouds > 0) {
+    const per = Math.round((P.mapW + P.mapH) * 0.22 * P.edgeClouds);
+    for (let k = 0; k < per; k++) {
+      const t = rnd(), side = Math.floor(rnd() * 4);
+      const x = side < 2 ? X0 + t * P.mapW : side === 2 ? X0 - 0.5 : -X0 + 0.5;
+      const z = side >= 2 ? Z0 + t * P.mapH : side === 0 ? Z0 - 0.5 : -Z0 + 0.5;
+      const m = new THREE.Mesh(cloudGeo(rnd, (1.1 + rnd() * 1.0) * Math.max(0.6, P.edgeClouds)), cloudMat);
+      m.position.set(x + (rnd() - 0.5) * 1.5, 0.6 + rnd() * 1.2, z + (rnd() - 0.5) * 1.5);
+      m.rotation.y = rnd() * TAU;
+      mapGroup.add(m);
+    }
+  }
+}
+
+// =============================================================================
+// THE WALKER — a marker that walks the route, level to level
+// =============================================================================
+const walker = new THREE.Group();
+{
+  const body = mergeMesh([
+    colorize(cyl(0.09, 0.07, 0.2, 10), "#e8483a", 0.25),
+    colorize(blob(0.08, 1).translate(0, 0.27, 0), "#f6d0a8"),
+    colorize(cyl(0.09, 0.09, 0.03, 10).translate(0, 0.32, 0), "#e8483a"),
+    colorize(cone(0.07, 0.08, 10).translate(0, 0.34, 0), "#e8483a")
+  ]);
+  walker.add(body);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.12, 14).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false }));
+  shadow.position.y = 0.01;
+  walker.add(shadow);
+  scene.add(walker);
+}
+let walkPath = [], walkLen = [], walkT = 0, walkTarget = null, walkIdle = 0;
+function setWalkPath() {
+  walkPath = [];
+  walkLegs.forEach((leg) => leg.forEach((p) => walkPath.push(p)));
+  walkLen = [0];
+  for (let k = 1; k < walkPath.length; k++) {
+    const a = walkPath[k - 1], b = walkPath[k];
+    walkLen.push(walkLen[k - 1] + Math.hypot(b.x - a.x, (b.y - a.y) * 1.6, b.z - a.z));
+  }
+  // start on the level being played
+  const cur = nodes.find((n) => n.state === "open") || nodes[0];
+  walkT = cur ? nodeDist(cur) : 0;
+  walkTarget = null;
+}
+function nodeDist(nd) {
+  let best = 0, bd = Infinity;
+  walkPath.forEach((p, k) => { const d = Math.hypot(p.x - nd.x, p.z - nd.z); if (d < bd) { bd = d; best = k; } });
+  return walkLen[best] || 0;
+}
+function walkerAt(t) {
+  if (walkPath.length < 2) return null;
+  let lo = 0, hi = walkLen.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (walkLen[m] <= t) lo = m; else hi = m; }
+  const a = walkPath[lo], b = walkPath[hi], s = (t - walkLen[lo]) / Math.max(1e-6, walkLen[hi] - walkLen[lo]);
+  return { x: a.x + (b.x - a.x) * s, y: a.y + (b.y - a.y) * s, z: a.z + (b.z - a.z) * s, dx: b.x - a.x, dz: b.z - a.z };
+}
+
+// =============================================================================
+// POST — the chain of lowpoly-look.html (ink from GTAO's depth, bloom, tilt,
+// grade), plus a posterise for the pixel map
+// =============================================================================
+const QUAD_VS = "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }";
+const OUTLINE = {
+  uniforms: { tDiffuse: { value: null }, tDepth: { value: null }, uTexel: { value: new THREE.Vector2() },
+    cameraNear: { value: 0.1 }, cameraFar: { value: 400 }, uStr: { value: 0 }, uSens: { value: 0.004 }, uThick: { value: 1 }, uInk: { value: new THREE.Color() } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "#include <packing>",
+    "uniform sampler2D tDiffuse, tDepth; uniform vec2 uTexel; uniform float cameraNear, cameraFar, uStr, uSens, uThick; uniform vec3 uInk; varying vec2 vUv;",
+    "float vz(vec2 uv) { float d = texture2D(tDepth, uv).x; return -perspectiveDepthToViewZ(d, cameraNear, cameraFar); }",
+    "float dev(float a, float c, float b) { float p = 2.0 / (1.0 / a + 1.0 / b); return abs(c - p) / c; }",
+    "void main() {",
+    "  vec4 col = texture2D(tDiffuse, vUv);",
+    "  if (uStr <= 0.0) { gl_FragColor = col; return; }",
+    "  vec2 o = uTexel * uThick; float c = vz(vUv);",
+    "  float e = max(dev(vz(vUv - vec2(o.x, 0.0)), c, vz(vUv + vec2(o.x, 0.0))), dev(vz(vUv - vec2(0.0, o.y)), c, vz(vUv + vec2(0.0, o.y))));",
+    "  e = max(e, max(dev(vz(vUv - o), c, vz(vUv + o)), dev(vz(vUv + vec2(-o.x, o.y)), c, vz(vUv + vec2(o.x, -o.y)))));",
+    "  float k = smoothstep(uSens, uSens * 2.5, e) * uStr;",
+    "  gl_FragColor = vec4(mix(col.rgb, col.rgb * uInk, k), col.a);",
+    "}"].join("\n")
+};
+const TILT = {
+  uniforms: { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 }, uBand: { value: 0.1 }, uSoft: { value: 0.3 }, uMax: { value: 3 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform vec2 uDir; uniform float uFocus, uBand, uSoft, uMax; varying vec2 vUv;",
+    "void main() {",
+    "  float r = uMax * smoothstep(uBand, uBand + uSoft, abs(vUv.y - uFocus));",
+    "  if (r < 0.05) { gl_FragColor = texture2D(tDiffuse, vUv); return; }",
+    "  vec4 c = vec4(0.0); float ws = 0.0;",
+    "  for (int i = -6; i <= 6; i++) { float fi = float(i), w = exp(-fi * fi / 18.0); c += texture2D(tDiffuse, vUv + uDir * fi * r / 3.0) * w; ws += w; }",
+    "  gl_FragColor = c / ws;",
+    "}"].join("\n")
+};
+const GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uCon: { value: 1 }, uWarm: { value: 0 }, uTint: { value: 0 },
+    uLift: { value: new THREE.Color() }, uLiftAmt: { value: 0 }, uVig: { value: 0 }, uPost: { value: 0 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform float uSat, uCon, uWarm, uTint, uLiftAmt, uVig, uPost; uniform vec3 uLift; varying vec2 vUv;",
+    "void main() {",
+    "  vec3 c = texture2D(tDiffuse, vUv).rgb;",
+    "  c *= vec3(1.0 + uWarm, 1.0 - uTint, 1.0 - uWarm);",
+    "  c = 0.18 * pow(max(c, vec3(1e-5)) / 0.18, vec3(uCon));",
+    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));",
+    "  c = mix(vec3(l), c, uSat);",
+    "  c += uLift * uLiftAmt * (1.0 - smoothstep(0.0, 0.35, l));",
+    "  c *= mix(1.0, smoothstep(0.95, 0.25, length((vUv - 0.5) * vec2(1.0, 1.25))), uVig);",
+    // posterise in a perceptual space, so the steps are even to the eye
+    "  if (uPost > 0.5) { vec3 g = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2)); g = floor(g * uPost + 0.5) / uPost; c = pow(g, vec3(2.2)); }",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"].join("\n")
+};
+let composer = null, gtaoPass, outlinePass, bloomPass, tiltH, tiltV, gradePass;
+let W = 800, H = 600;
+function buildComposer() {
+  if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); if (gtaoPass) gtaoPass.dispose(); }
+  const pr = renderer.getPixelRatio();
+  const rt = new THREE.WebGLRenderTarget(W * pr, H * pr, { type: THREE.HalfFloatType, samples: P.pixel < 1 ? 0 : 4 });
+  composer = new EffectComposer(renderer, rt);
+  composer.addPass(new RenderPass(scene, camera));
+  gtaoPass = new GTAOPass(scene, camera, W * pr, H * pr);
+  for (const m of [gtaoPass.gtaoMaterial, gtaoPass.pdMaterial]) { m.defines.NORMAL_VECTOR_TYPE = 0; m.needsUpdate = true; }
+  composer.addPass(gtaoPass);
+  outlinePass = new ShaderPass(OUTLINE); outlinePass.uniforms.tDepth.value = gtaoPass.depthTexture;
+  composer.addPass(outlinePass);
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(W * pr, H * pr), P.bloom, P.bloomRadius, P.bloomThreshold);
+  composer.addPass(bloomPass);
+  tiltH = new ShaderPass(TILT); tiltV = new ShaderPass(TILT);
+  composer.addPass(tiltH); composer.addPass(tiltV);
+  gradePass = new ShaderPass(GRADE); composer.addPass(gradePass);
+  composer.addPass(new OutputPass());
+  composer.setSize(W, H);
+  tiltH.uniforms.uDir.value.set(1 / (W * pr), 0); tiltV.uniforms.uDir.value.set(0, 1 / (H * pr));
+  outlinePass.uniforms.uTexel.value.set(1 / (W * pr), 1 / (H * pr));
+}
+
+// =============================================================================
+// APPLY — the panel's values onto the scene
+// =============================================================================
+const TONES = { agx: THREE.AgXToneMapping, aces: THREE.ACESFilmicToneMapping, neutral: THREE.NeutralToneMapping, none: THREE.NoToneMapping };
+function fitShadow() {
+  const s = sun.shadow.camera, r = Math.hypot(P.mapW, P.mapH) / 2 + 2;
+  s.left = -r; s.right = r; s.top = r; s.bottom = -r; s.near = 1; s.far = 120; s.updateProjectionMatrix();
+}
+function applyAll() {
+  scene.background = new THREE.Color(P.bg);
+  TERR.uLip.value = P.lip; TERR.uLipLine.value = P.lipLine; TERR.uStripe.value = P.stripes; TERR.uStripeF.value = P.stripeFreq;
+  TERR.uStrata.value = P.strata; TERR.uStrataF.value = P.strataFreq; TERR.uFoot.value = P.cliffFoot; TERR.uGrain.value = P.grain; TERR.uPatch.value = P.patches;
+  SEA.uShallow.value.set(P.shallow); SEA.uDeep.value.set(P.deep); SEA.uFoam.value.set(P.foamCol);
+  SEA.uShallowW.value = P.shallowW; SEA.uBands.value = P.bands; SEA.uFoamAmt.value = P.foam; SEA.uFoamW.value = P.foamW; SEA.uWaves.value = P.waves;
+  RIV.uCol.value.set(P.river); RIV.uFoam.value.set(P.foamCol);
+  ROAD.uCol.value.set(P.path); ROAD.uEdge.value = P.pathEdge;
+  hemi.color.set(P.hemiSky); hemi.groundColor.set(P.hemiGround); hemi.intensity = P.hemiInt;
+  sun.color.set(P.sun); sun.intensity = P.sunInt;
+  const az = P.sunAz * Math.PI / 180, el = P.sunEl * Math.PI / 180, D = 50;
+  sun.position.set(Math.sin(az) * Math.cos(el) * D, Math.sin(el) * D, Math.cos(az) * Math.cos(el) * D);
+  sun.target.position.set(0, 0, 0);
+  sun.castShadow = P.shadows; sun.shadow.radius = P.shadowSoft;
+  cloudMat.opacity = P.cloudOpacity; cloudMat.depthWrite = P.cloudOpacity > 0.95;
+  walker.visible = P.walk;
+  renderer.toneMapping = TONES[P.tone]; renderer.toneMappingExposure = P.exposure;
+  if (camera.fov !== P.fov) { camera.fov = P.fov; camera.updateProjectionMatrix(); applyCam(camIdx, true); }
+  if (composer) {
+    gtaoPass.enabled = P.gtao || P.outline > 0; gtaoPass.blendIntensity = P.gtao ? P.aoIntensity : 0;
+    gtaoPass.updateGtaoMaterial({ radius: P.aoRadius, distanceExponent: 1, thickness: 1, scale: 1, samples: 16 });
+    const ou = outlinePass.uniforms;
+    ou.uStr.value = P.outline; ou.uSens.value = P.outlineSens; ou.uThick.value = P.outlineThick; ou.uInk.value.set(P.ink);
+    ou.cameraNear.value = camera.near; ou.cameraFar.value = camera.far;
+    bloomPass.enabled = P.bloom > 0; bloomPass.strength = P.bloom; bloomPass.radius = P.bloomRadius; bloomPass.threshold = P.bloomThreshold;
+    tiltH.enabled = tiltV.enabled = P.tilt && P.tiltBlur > 0;
+    for (const t of [tiltH, tiltV]) { const u = t.uniforms; u.uFocus.value = P.tiltFocus; u.uBand.value = P.tiltBand; u.uSoft.value = P.tiltSoft; u.uMax.value = P.tiltBlur * renderer.getPixelRatio(); }
+    const u = gradePass.uniforms;
+    u.uSat.value = P.saturation; u.uCon.value = P.contrast; u.uWarm.value = P.warmth; u.uTint.value = P.tint;
+    u.uLift.value.set(P.lift); u.uLiftAmt.value = P.liftAmt; u.uVig.value = P.vignette; u.uPost.value = P.posterize;
+  }
+}
+// the camera: frame the whole map at the chosen elevation
+function applyCam(i, keepAngle) {
+  camIdx = i;
+  const c = CAMS[i] || CAMS[1];
+  const el = c.el * Math.PI / 180, az = c.az * Math.PI / 180, t = Math.tan(camera.fov * Math.PI / 360), asp = W / H;
+  const dist = Math.max(P.mapW / (2 * t * asp) * 1.02, (P.mapH * Math.sin(el) + 1.5 * Math.cos(el)) / (2 * t) * 1.04) * P.zoom;
+  if (keepAngle) {
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    camera.position.copy(controls.target).addScaledVector(dir, dist);
+  } else {
+    controls.target.set(0, 0.4, 0);
+    camera.position.set(Math.sin(az) * Math.cos(el) * dist, Math.sin(el) * dist + 0.4, Math.cos(az) * Math.cos(el) * dist);
+  }
+  camera.near = Math.max(0.3, dist * 0.04); camera.far = dist * 4; camera.updateProjectionMatrix();
+  controls.update();
+  if (outlinePass) { outlinePass.uniforms.cameraNear.value = camera.near; outlinePass.uniforms.cameraFar.value = camera.far; }
+  camBtns.forEach((b, k) => b.classList.toggle("on", k === camIdx));
+}
+
+// =============================================================================
+// PANEL
+// =============================================================================
+const inputs = {}, presetBtns = [], camBtns = [];
+let seedEl;
+function fmt(v, step) { return typeof v === "number" ? (step >= 1 ? v.toFixed(0) : step >= 0.1 ? v.toFixed(1) : step >= 0.01 ? v.toFixed(2) : v.toFixed(4)) : v; }
+let rebuildTimer = 0;
+function rebuildSoon() { clearTimeout(rebuildTimer); rebuildTimer = setTimeout(rebuild, 160); }
+function rebuild() { generate(); setWalkPath(); applyAll(); seedEl.value = P.seed; }
+function button(label, cls, fn) { const b = document.createElement("button"); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; return b; }
+function refreshButtons() { presetBtns.forEach((b, k) => b.classList.toggle("on", k === presetIdx)); camBtns.forEach((b, k) => b.classList.toggle("on", k === camIdx)); }
+function buildPanel() {
+  const root = document.getElementById("controls");
+  const sec = (title, open) => { const d = document.createElement("details"); d.open = open; d.innerHTML = "<summary>" + title + "</summary><div class='body'></div>"; root.appendChild(d); return d.querySelector(".body"); };
+  const btnRow = (parent) => { const r = document.createElement("div"); r.className = "btns"; parent.appendChild(r); return r; };
+
+  let b = sec("Styles", true), row = btnRow(b);
+  PRESETS.forEach((p, i) => row.appendChild(button(p.name, "", () => {
+    const seed = P.seed;
+    presetIdx = i; P = Object.assign({}, BASE, PRESETS[i], { seed });
+    syncPanel(); resize(); rebuild(); applyCam(PRESETS[i].cam ?? 1); refreshButtons(); saveSoon();
+  })));
+  presetBtns.push(...row.children);
+
+  b = sec("Seed", true);
+  const sr = document.createElement("div"); sr.className = "seedrow";
+  seedEl = document.createElement("input"); seedEl.value = P.seed; seedEl.spellcheck = false;
+  seedEl.addEventListener("change", () => { P.seed = Math.max(1, parseInt(seedEl.value, 10) || 1); rebuild(); saveSoon(); });
+  sr.append(seedEl, button("New map", "", () => { P.seed = 1 + Math.floor(Math.random() * 999999); rebuild(); saveSoon(); }));
+  b.appendChild(sr);
+
+  b = sec("Camera", true); row = btnRow(b);
+  CAMS.forEach((c, i) => row.appendChild(button(c.name, "", () => applyCam(i))));
+  camBtns.push(...row.children);
+  b.appendChild(button("Freeze / resume", "wide", () => { frozen = !frozen; }));
+
+  for (const [title, items] of SCHEMA) {
+    b = sec(title, false);
+    for (const [key, label, type, a, c, step] of items) {
+      const r = document.createElement("div"); r.className = "row " + type;
+      let el;
+      if (type === "range") { el = document.createElement("input"); el.type = "range"; el.min = a; el.max = c; el.step = step; }
+      else if (type === "color") { el = document.createElement("input"); el.type = "color"; }
+      else if (type === "bool") { el = document.createElement("input"); el.type = "checkbox"; }
+      else { el = document.createElement("select"); a.forEach((o) => { const op = document.createElement("option"); op.value = o; op.textContent = o; el.appendChild(op); }); }
+      const lab = document.createElement("label"), out = document.createElement("b");
+      lab.append(label, type === "range" ? out : el);
+      r.appendChild(lab); if (type === "range") r.appendChild(el);
+      el.addEventListener("input", () => {
+        P[key] = type === "range" ? +el.value : type === "bool" ? el.checked : el.value;
+        if (type === "range") out.textContent = fmt(P[key], step);
+        if (key === "pixel") resize();
+        if (key === "zoom") applyCam(camIdx, true);
+        if (REBUILD.has(key)) rebuildSoon(); else applyAll();
+        saveSoon();
+      });
+      inputs[key] = { el, out, type, step };
+      b.appendChild(r);
+    }
+  }
+  b = sec("Settings", false);
+  const cp = button("Copy settings", "wide", () => {
+    const t = JSON.stringify(P, null, 2);
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { cp.textContent = "Copied"; setTimeout(() => (cp.textContent = "Copy settings"), 1200); }, () => prompt("Settings", t));
+  });
+  const ps = button("Paste settings", "wide", () => {
+    const t = prompt("Paste the settings JSON"); if (!t) return;
+    try { P = Object.assign({}, BASE, JSON.parse(t)); syncPanel(); resize(); rebuild(); saveSoon(); } catch (e) { alert("Not valid JSON"); }
+  });
+  b.append(cp, ps);
+}
+function syncPanel() {
+  for (const k in inputs) {
+    const { el, out, type, step } = inputs[k];
+    if (type === "bool") el.checked = !!P[k]; else el.value = P[k];
+    if (type === "range") out.textContent = fmt(P[k], step);
+  }
+  if (seedEl) seedEl.value = P.seed;
+}
+
+// ---- picking a level: hover names it, a click walks there ---------------------
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = document.getElementById("nodeTip");
+const KIND_NAME = { home: "Home", level: "Level", fort: "Fort", castle: "Castle", house: "House", tower: "Tower", cave: "Cave", temple: "Temple", lighthouse: "Lighthouse", secret: "Secret level" };
+function pickNode(ev) {
+  const r = canvas.getBoundingClientRect();
+  mouse.set((ev.clientX - r.left) / r.width * 2 - 1, -(ev.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  let best = null, bd = 0.6;
+  for (const nd of nodes) {
+    const d = ray.ray.distanceToPoint(new THREE.Vector3(nd.x, (nd.y || 0) + 0.2, nd.z));
+    if (d < bd) { bd = d; best = nd; }
+  }
+  return best;
+}
+canvas.addEventListener("pointermove", (ev) => {
+  const nd = pickNode(ev);
+  if (!nd) { tip.style.display = "none"; return; }
+  const r = stage.getBoundingClientRect();
+  tip.style.display = "block"; tip.style.left = (ev.clientX - r.left + 14) + "px"; tip.style.top = (ev.clientY - r.top + 10) + "px";
+  tip.textContent = KIND_NAME[nd.kind] + (nd.kind === "secret" ? "" : " " + (nd.num + 1)) + " · " + BIOMES[nd.biome].name + " · " + nd.state;
+});
+let downAt = null;
+canvas.addEventListener("pointerdown", (ev) => { downAt = [ev.clientX, ev.clientY]; });
+canvas.addEventListener("pointerup", (ev) => {
+  if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 4) return;
+  const nd = pickNode(ev);
+  if (nd && nd.kind !== "secret") { walkTarget = nodeDist(nd); walkIdle = -6; }
+});
+
+// =============================================================================
+// LOOP
+// =============================================================================
+function resize() {
+  const r = stage.getBoundingClientRect();
+  W = Math.max(200, Math.floor(r.width)); H = Math.max(200, Math.floor(r.height));
+  const pr = P.pixel < 1 ? P.pixel : Math.min(2, window.devicePixelRatio || 1);
+  renderer.setPixelRatio(pr);
+  renderer.setSize(W, H, false);
+  canvas.classList.toggle("pixel", P.pixel < 1);
+  camera.aspect = W / H; camera.updateProjectionMatrix();
+  buildComposer(); applyAll();
+}
+window.addEventListener("resize", () => { resize(); applyCam(camIdx, true); });
+
+let frozen = qs.has("freeze"), time = 0, last = performance.now(), fpsAcc = 0, fpsN = 0, fps = 0;
+const statsEl = document.getElementById("stats");
+function tick(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!frozen) time += dt;
+  SEA.uTime.value = time; RIV.uTime.value = time;
+  for (const a of animated) {
+    if (a.cloud) {
+      if (!frozen) a.cloud.position.x += a.speed * dt;
+      if (a.cloud.position.x > -X0 + 3) a.cloud.position.x = X0 - 3;
+    } else if (a.pulse) {
+      const s = 1 + 0.12 * Math.sin(time * 4 + a.phase);
+      a.pulse.scale.set(s, 1, s);
+    } else if (a.smoke) {
+      a.smoke.forEach((m, k) => {
+        const ph = (time * 0.18 + k / a.smoke.length) % 1, s = (0.08 + ph * 0.28) * Math.min(1, ph / 0.12) * (ph > 0.8 ? (1 - ph) / 0.2 : 1);
+        m.position.set(a.x + ph * 0.5 + Math.sin(ph * 4 + k) * 0.08, a.y + ph * 1.6, a.z + Math.cos(ph * 3 + k) * 0.08);
+        m.scale.setScalar(Math.max(0.001, s));
+      });
+    }
+  }
+  // the walker: to a clicked level, or round the route when idle
+  if (walkPath.length > 1 && P.walk) {
+    const total = walkLen[walkLen.length - 1];
+    if (!frozen) {
+      // idle a while: walk on to the next level, round and round (a demo of the map)
+      if (walkTarget == null && (walkIdle += dt) > 2.2) {
+        walkIdle = 0;
+        const main = nodes.slice(0, mainCount), here = main.findIndex((n) => Math.abs(nodeDist(n) - walkT) < 0.05);
+        const next = main[(here + 1) % main.length];
+        if (next) walkTarget = nodeDist(next);
+        if (here === main.length - 1) walkT = 0, walkTarget = null;
+      }
+      if (walkTarget != null) {
+        const d = walkTarget - walkT, stepLen = P.walkSpeed * dt;
+        if (Math.abs(d) <= stepLen) { walkT = walkTarget; walkTarget = null; } else walkT += Math.sign(d) * stepLen;
+      }
+    }
+    walkT = Math.max(0, Math.min(total, walkT));
+    const p = walkerAt(walkT);
+    if (p) {
+      walker.position.set(p.x, p.y + (walkTarget != null ? Math.abs(Math.sin(time * 12)) * 0.04 : 0), p.z);
+      if (Math.hypot(p.dx, p.dz) > 1e-4 && walkTarget != null) walker.rotation.y = Math.atan2(p.dx, p.dz) + (walkTarget < walkT ? Math.PI : 0);
+    }
+  }
+  controls.update();
+  composer.render();
+  fpsAcc += dt; fpsN++;
+  if (fpsAcc > 0.5) {
+    fps = fpsN / fpsAcc; fpsAcc = 0; fpsN = 0;
+    const counts = {};
+    regions.forEach((r) => (counts[r.biome] = (counts[r.biome] || 0) + 1));
+    statsEl.textContent = NX + " × " + NZ + " grid · " + Math.round(stats.tris / 1000) + "k tris\n" +
+      regions.length + " regions · " + stats.nodes + " levels\n" +
+      regions.map((r) => BIOMES[r.biome].name).join(" → ") + "\n" +
+      "build " + stats.ms.toFixed(0) + " ms · " + fps.toFixed(0) + " fps";
+  }
+  requestAnimationFrame(tick);
+}
+
+buildPanel();
+syncPanel();
+resize();
+rebuild();
+applyCam(camIdx);
+refreshButtons();
+document.getElementById("loading").remove();
+requestAnimationFrame(tick);
+window.__ready = true;
+window.__worldMap = { nodes: () => nodes.map((n) => ({ kind: n.kind, biome: n.biome, state: n.state, x: +n.x.toFixed(2), z: +n.z.toFixed(2) })), stats: () => stats };
+</script>
+</body>
+</html>

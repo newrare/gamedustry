@@ -6,7 +6,7 @@
     /* One sentence, three words in colour: the gesture, what it lands on and
        the one rule that decides a fight. The stage under it drags a blue card
        onto a face-down red one, which flips and falls. */
-    tagline: "<b class=\"w-drag\">Drag</b> a card onto a <b class=\"w-hidden\">hidden</b> enemy, the higher <b class=\"w-rank\">Grade</b> wins",
+    tagline: "<b class=\"w-drag\">Drag</b> one of your blue cards onto a red enemy tile.",
     /* NO CLOCK. A battle is turn-based: it ends when the enemy camp is empty,
        its flag is taken, or the player's army is spent. */
     gameSeconds: 0,
@@ -88,7 +88,7 @@
       endScore:   "Final score",
       gameOver:   "Army lost",
       timeUp:     "Time's up!",
-      victory:    "Camp taken!",
+      victory:    "Victory!",
       flagTaken:  "Flag captured!",
       cardsLabel: "Cards",
       foesLabel:  "Foes"
@@ -333,13 +333,13 @@
        words. The trap and the flag are objects here too. */
     var ABOUT = {
       11: { by: SAPPER, text: "A mine hidden among the soldiers. Any card that strikes it is lost with it." },
-      12: { by: 0, text: "The enemy's standard. Capture it and the battle is won on the spot, whatever still stands in the camp." },
-      13: { by: 4, text: "A decoy dressed as a soldier. A card that strikes it is fooled and goes back to the bottom of the deck." },
-      14: { by: 5, text: "A wall of stakes. A card that strikes it goes back to its place in the hand. The turn is wasted." },
-      15: { by: 6, text: "A boulder in the way. A card that strikes it goes back to its place in the hand. The turn is wasted." },
-      16: { by: 7, text: "A card that walks into it gets lost until the end of the battle, but comes back unharmed." },
-      17: { by: 8, text: "A card that strikes it freezes with fear. It goes back to its place in the hand and stays there for the rest of the battle." },
-      18: { by: 9, text: "A card that opens it is bewitched. It turns round and strikes a card of its own hand." }
+      12: { by: 0, text: "The enemy's standard. Capture it and the battle is won on the spot. This is true even if enemies are still left on the battlefield." },
+      13: { by: 4, text: "A decoy dressed as a soldier. A card that strikes it is fooled and goes back to the bottom of the Deck." },
+      14: { by: 5, text: "A wall of stakes. A card that strikes it goes back to its place in the hand, but a turn is wasted." },
+      15: { by: 6, text: "A boulder in the way. You can no longer play, and the card goes back to its place." },
+      16: { by: 7, text: "A card that walks into it gets completely lost until the end of the battle. The card is not harmed, but can no longer be played." },
+      17: { by: 8, text: "A card that discovers the skull freezes with fear. The petrified card goes back to the hand but can no longer be played." },
+      18: { by: 9, text: "The soldier who reveals this card is bewitched. He turns round and strikes an ally." }
     };
     /* The barracks' door into it: the text in the player's language and the
        breaker's grade, which the shell names in its own words. */
@@ -355,16 +355,16 @@
        that grade, a stranger's or a turncoat's included (army.js, fileBack),
        and on the grade's page of the guide. */
     var SKILL = {
-      1:  "Kills the marshal, whatever its tier, but loses to every other grade.",
-      2:  "Reveals a hidden card without a fight, then goes back under the deck. Against a revealed card, fights as a grade 2.",
+      1:  "Weak in combat against any <b>Grade</b>, but can still quietly defeat a Marshal.",
+      2:  "Observes and reveals a hidden card without fighting it.",
       3:  "Clears a trap without blowing up with it.",
-      4:  "Dumb enough to fight a straw man, and to tear it down.",
+      4:  "Dumb enough to fight a straw man.",
       5:  "Loves chopping down wooden fences.",
       6:  "Loves breaking stones and rocks.",
       7:  "Never gets lost, least of all in a forest.",
-      8:  "Too brave to tremble: shatters the skull without being stunned.",
-      9:  "Too learned to be bewitched: burns the book safely.",
-      10: "Unbeatable on the battlefield, but a spy can catch it off guard. Breaks no object."
+      8:  "Never frightened, and a skull breaker.",
+      9:  "Too pragmatic and logical to be bewitched by a mere book.",
+      10: "The strongest in direct combat against any <b>Grade</b>, but it can be caught off guard or captured by a spy."
     };
     function gradeInfo(r) {
       return SKILL[r] ? Lang.t(SKILL[r]) : "";
@@ -1689,7 +1689,7 @@
             } else {
               captives.push({ r: foe.rank, t: foe.tier, seq: captives.length });
               pts += CAPTIVE_PAY;
-              Pop.show("bonus", { word: "Captive" });
+              Pop.show("bonus", { word: "Prisoner" });
               Notify.learn("standing");
             }
           } else if (v.margin <= 1) {
@@ -2351,7 +2351,113 @@
       var n = faceNode(c, fmt, opt.side || "blue", !!opt.ghost);
       sizeNode(n, opt.w || 120, fmt);
       n.style.setProperty("--bgi", artUrl(CONFIG.bands[0].scene));
+      /* THE MICRO CARD: the tiny square with its three badges taken off, so
+         a card on a list of the barracks keeps its corners for the one
+         control that acts on it (a `+`, a `−`). What the badges said is
+         then one grouped chip (cardChip), which the barracks lays where
+         the screen wants it. */
+      if (opt.micro) n.classList.add("micro");
       return n;
+    }
+    /* THE GROUPED CHIP: the grade, the tier in its rarity colour and the
+       macaron's pictogram on one pill — `5B` and the sword. `opt.tier`
+       false leaves the tier out (a grade token with no tier of its own),
+       `opt.perk` adds the pictogram, `opt.only` draws one part alone
+       ("grade" or "tier"), for a row that sets them side by side. */
+    function cardChip(c, opt) {
+      opt = opt || {};
+      var n = document.createElement("span"), t = clamp(c.tier | 0, 0, TOP_TIER);
+      var officer = c.rank <= 10, html = "";
+      var grade = opt.only !== "tier", tier = opt.only !== "grade" && opt.tier !== false && c.tier != null;
+      /* dressed as the card's own badges: the rarity is the FILL, the
+         figures are white — a C chip is green as the C card's shield is.
+         A chip with no tier on it (a grade token) is plain steel. */
+      var tinted = c.tier != null && opt.tier !== false;
+      n.className = "c-chip" + (opt.only ? " only-" + opt.only : "") + (tinted ? "" : " plain");
+      if (tinted) n.style.setProperty("--rar", TIER_COLOR[t]);
+      if (grade) html += "<b>" + (officer ? c.rank : "") + "</b>";
+      if (tier) html += "<i>" + TIERS[t] + "</i>";
+      if (opt.perk && !opt.only && officer && PERK[c.rank])
+        html += '<svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[c.rank] + "</svg>";
+      n.innerHTML = html;
+      return n;
+    }
+
+    /* THE HOW-TO-PLAY STAGE, dealt with the round's own cards. The motor's
+       demo (#intro-demo) lends its box and its finger; what the finger acts
+       on is built here out of `cardNode`, so the badges, the tiers and the
+       macaron a player reads in the demo are the ones they meet in a round.
+       Every move is the SKIN's (THE DEMO, skin.css), one 17 s loop in four
+       acts, and every node below is named for the act it plays in:
+
+         1  the General (9) is dragged onto a hidden card: a Colonel (8),
+            "9 > 8", and the Colonel falls
+         2  a Major A is dragged onto a hidden Major E: "7 = 7", then
+            "A > E", and the loser is led away a prisoner (A and not S: the
+            top of the ladder is one more letter to explain)
+         3  the camera closes on the Sapper's macaron: what a grade is FOR
+         4  the Sapper is dragged onto the last hidden card, a trap, and
+            clears it: its macaron beats the mine
+
+       Tiny tokens only, the camp's own format: no plate, so no word on the
+       stage and nothing to rewrite when the language changes. */
+    function buildDemo() {
+      var stage = document.querySelector("#intro-demo .demo-stage");
+      if (!stage || stage.querySelector(".sd-world")) return;
+      var W = 80, LOCK = '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>';
+      function div(cls, parent, html) {
+        var d = document.createElement("div");
+        d.className = cls;
+        if (html) d.innerHTML = html;
+        if (parent) parent.appendChild(d);
+        return d;
+      }
+      /* a card in a slot: the slot moves it, the inner box flips it */
+      function token(cls, c, side, parent) {
+        var slot = div("sd-c " + cls, parent), flip = div("sd-f", slot);
+        flip.appendChild(c ? cardNode(c, { fmt: "tiny", w: W, side: side }) : faceNode(null, "tiny", side));
+        if (!c) sizeNode(flip.firstChild, W, "tiny");
+        return slot;
+      }
+      function versus(cls, a, op, b, ca, cb) {
+        return div("sd-vs " + cls, world,
+          '<b style="color:' + ca + '">' + a + "</b><i>" + op + '</i><b style="color:' + cb + '">' + b + "</b>");
+      }
+      var world = div("sd-world");
+      // the board: the camp's row and the hand's, as empty cells under the cards
+      ["e0", "e1", "e2"].forEach(function (k) { div("sd-cell row-e " + k, world); });
+      ["h0", "h1", "h2"].forEach(function (k) { div("sd-cell row-h " + k, world); });
+      // the drag, drawn behind the card that makes it
+      div("sd-trail t0", world);
+      div("sd-trail t1", world);
+      div("sd-trail t2", world);
+      // the camp: three face-down cards, all of which turn over
+      var e0 = token("e0", null, "red", world);
+      e0.appendChild(div("sd-f face", null)).appendChild(cardNode({ rank: TRAP }, { fmt: "tiny", w: W, side: "red" }));
+      var e1 = token("e1", null, "red", world);
+      e1.appendChild(div("sd-f face", null)).appendChild(cardNode({ rank: 8, tier: 2 }, { fmt: "tiny", w: W, side: "red" }));
+      var e2 = token("e2", null, "red", world);
+      e2.appendChild(div("sd-f face", null)).appendChild(cardNode({ rank: 7, tier: 0 }, { fmt: "tiny", w: W, side: "red" }));
+      e2.appendChild(div("sd-lock", null, '<svg viewBox="0 0 24 24" aria-hidden="true">' + LOCK + "</svg>"));
+      // the hand: the Sapper stays for act 3, the other two strike
+      token("h0", { rank: SAPPER, tier: 1 }, "blue", world);
+      token("h1", { rank: GENERAL, tier: 2 }, "blue", world);
+      token("h2", { rank: 7, tier: 4 }, "blue", world);
+      // the clashes and the verdicts
+      div("sd-flash x0", world);
+      div("sd-flash x1", world);
+      div("sd-flash x2", world);
+      versus("v1", "9", "&gt;", "8", BLUE, RED);
+      versus("v2", "7", "=", "7", BLUE, RED);
+      versus("v3", TIERS[4], "&gt;", TIERS[0], TIER_COLOR[4], TIER_COLOR[0]);
+      // act 4: the Sapper's macaron against the mine it was made for
+      div("sd-vs v4", world,
+        '<span class="sd-pk"><svg viewBox="0 0 24 24" aria-hidden="true">' + PERK[SAPPER] + "</svg></span><i>&gt;</i>")
+        .appendChild(cardNode({ rank: TRAP }, { fmt: "tiny", w: 42, side: "red" }));
+      // act 3: the rings round the Sapper's macaron
+      div("sd-ring r1", world);
+      div("sd-ring r2", world);
+      stage.insertBefore(world, stage.firstChild);
     }
 
     /* THE BACK OF AN OFFICER'S FILE, for the barracks (packages/webshell/
@@ -3306,7 +3412,7 @@
         if (kind === "army") cbox = armySheet();
         else {
           var cg = campGrid();
-          var cc = sheetCard("camp", "Enemy camp", cg.total, "At the start of the battle");
+          var cc = sheetCard("camp", "Red troops", cg.total, "At the start of the battle");
           cc.body.appendChild(cg.node);
           cbox = cc.box;
         }
@@ -3585,7 +3691,7 @@
     var POST_NAME = { cmd: "Camp", drill: "Formation", ops: "Missions", inf: "Infirmary", pri: "Prison", cook: "Kitchen" };
     var POST_READS = {
       cmd:   "How many captives you are offered after a victory.",
-      drill: "How many slots your deck has.",
+      drill: "Your Deck's capacity.",
       ops:   "How many squads can be away on a mission at once.",
       inf:   "How many beds the infirmary has.",
       pri:   "How many cells the prison has.",
@@ -3606,6 +3712,14 @@
       if (k === "cook") return gPct((r[0] + p / 100 * (r[1] - r[0])) * 100);
       var v = r[0] + Math.round(p / 100 * (r[1] - r[0]));
       return String(k === "cmd" ? Math.max(1, v) : v);
+    }
+    /* the same, worded for the guide's table: the slots a gauge opens (the
+       ones it has not opened are drawn locked), or the kitchen's good days */
+    function postWords(k, p) {
+      var v = postAt(k, p);
+      if (k === "cook") return gFill(Lang.t("{p} good days"), { p: v });
+      if (v === "1") return gFill(Lang.t("{n} slot"), { n: v });
+      return gFill(Lang.t("{n} slots"), { n: v });
     }
     function jobName(j) {
       return (j.name && (j.name[Lang.code()] || j.name.en)) || j.k;
@@ -3656,11 +3770,11 @@
       return [
         { id: "send", title: Lang.t("Send a card"),
           pic: function () { return gBox("", [gCard({ rank: 6, tier: 2 }, 140), gWord("›"), gCard(null, 140, "mid", "red")]); },
-          text: Lang.t("Drag a card onto an enemy in the front row, or next to a cell you have emptied.\n\nOnly the last enemy turned over stays face up. For the others, trust your memory.") },
+          text: Lang.t("Drag one of your cards onto an enemy in the front row or in an accessible cell.\n\nOnly the last enemy you turned over stays face up, so try to remember the others.") },
         { id: "grade", title: Lang.t("The grade decides"),
           pic: function () { return gBox("", [gCard({ rank: 7, tier: 2 }, 140), gVs(), gCard({ rank: 6, tier: 2 }, 140, "mid", "red")]); },
           rows: grades,
-          text: Lang.t("The higher grade wins the fight and takes the cell.\n\nThe winner goes back under the deck. The loser is out for the rest of the battle.") },
+          text: Lang.t("In a fight, the higher <b>Grade</b> always wins and takes the cell.\n\nWhen your card wins, it goes back under the Deck, ready to fight again. The loser is out until the end of the battle.") },
         { id: "tier", title: Lang.t("The tier decides"),
           pic: function () {
             var kids = [];
@@ -3668,50 +3782,50 @@
             return gBox("tight", kids);
           },
           rows: tiers,
-          text: Lang.t("Same grade: the better tier wins.\n\nSame grade and same tier: both cards fall.") },
+          text: Lang.t("Between two equal <b>Grades</b>, the better <b>Tier</b> wins.\n\nSame <b>Grade</b> and same <b>Tier</b>? Then both cards fall together.") },
         { id: "wounds", title: Lang.t("Wounds"),
           pic: function () { return gBox("", [gVeil({ rank: 7, tier: 1 }, 150, "wound"), gVs(), gCard({ rank: 5, tier: 3 }, 150, "mid", "red")]); },
-          text: Lang.t("Beat a better tier and your card wins, but wounded. It then sits out a turn in its slot.\n\nAfter the battle, the wounded card rests in the infirmary. The wider the tier gap, the longer the stay.") },
-        { id: "standing", title: Lang.t("Left standing"),
+          text: Lang.t("When your card beats an enemy of a better <b>Tier</b>, it wins but comes out wounded, and sits out its next turn.\n\nAfter the battle, your wounded card rests in the infirmary. The bigger the <b>Tier</b> gap, the longer it stays in bed.") },
+        { id: "standing", title: Lang.t("Captured alive"),
           pic: function () { return gBox("", [gCard({ rank: 8, tier: 3 }, 150), gVs(), gCard({ rank: 6, tier: 1 }, 150, "mid", "red")]); },
-          text: Lang.t("Beat a lower tier and the enemy is left standing, ready to be captured.\n\nWin the battle, and you can take one of the enemies left standing prisoner.") },
+          text: Lang.t("When your card beats an enemy of a lower <b>Tier</b>, it does not wipe the enemy out but captures him alive.\n\nWin the battle, and you can bring one of those captives back to your prison.") },
         { id: "hand", title: Lang.t("The hand"),
           pic: function () {
             return gBox("tight", [gCard({ rank: 4, tier: 1 }, 84, "tiny"), gCard({ rank: 9, tier: 2 }, 84, "tiny"), gLocked(84), gLocked(84), gLocked(84)]);
           },
-          text: Lang.t("After each card you play, some of the others go back under the deck.\n\nA wounded or stunned card keeps its slot.") },
-        { id: "enemy-turn", title: Lang.t("The camp answers"),
+          text: Lang.t("Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot, though.") },
+        { id: "enemy-turn", title: Lang.t("The enemy answers"),
           pic: function () {
             return gBox("", [gCard(null, 130, "mid", "red"), gTilt(gCard(null, 130, "mid", "red"), -5), gCard(null, 130, "mid", "red")]);
           },
-          text: Lang.t("After each of your cards, the camp may slide one soldier into a cell you emptied.\n\nThe flag, traps and objects never move. A soldier that has moved stays tilted.") },
+          text: Lang.t("After each of your moves, the red troops may slide a soldier into a cell you have emptied.\n\nThe flag, the traps and the objects never move. A soldier who has moved stays tilted, so you can spot him.") },
         { id: "commander", title: Lang.t("The enemy commander"),
           pic: function () { var im = gArt("enemyNeutral", "cd-gfoe"); return im ? gBox("", [im]) : gCard(null, 140, "mid", "red"); },
-          text: Lang.t("Tap the enemy commander to see what the camp started with. He shows the grades, never the tiers.") },
-        { id: "table", title: Lang.t("Your side of the table"),
+          text: Lang.t("Tap the enemy commander to see the red troops available at the start of the battle. He tells you the <b>Grades</b>, but never the <b>Tiers</b>.") },
+        { id: "table", title: Lang.t("Your troops"),
           pic: function () {
             var a = gArt("infirmary", "cd-gtent"), b = gArt("prison", "cd-gtent");
             return a || b ? gBox("", [a, b]) : gBox("", [gCard(null, 110)]);
           },
-          text: Lang.t("Tap the deck pile to see the cards still standing and the cards lost.\n\nWhen the deck and the hand are both empty, the battle is lost.") },
+          text: Lang.t("Tap your Deck to see which cards you still have and which ones you have lost.\n\nOnce your Deck and your hand are both empty, the battle is lost.") },
         { id: "score", title: Lang.t("Score"),
           pic: function () { return gBox("", [gCard({ rank: 7, tier: 2 }, 130), gVs(), gCard({ rank: 6, tier: 3 }, 130, "mid", "red")]); },
-          rows: [[Lang.t("Same grade, or one above"), "×2"],
-                 [Lang.t("Two grades above"), "×1"],
+          rows: [[Lang.t("Same <b>Grade</b>, or one above"), "×2"],
+                 [Lang.t("Two <b>Grades</b> above"), "×1"],
                  [Lang.t("Three or more above"), "×½"]],
-          text: Lang.t("A tight win pays the most. A marshal thrown at a sergeant earns little.\n\nBeating a better tier pays more. Every win in a row raises your streak.") },
+          text: Lang.t("A tight win pays the most points, so a marshal thrown at a sergeant earns very little.\n\nBeating a better <b>Tier</b> pays more too, and every win in a row raises your Combo or overall score.") },
         { id: "bonuses", title: Lang.t("Bonuses"),
           pic: function () { return gBox("", [gObj(FLAG, 150), gObj(TRAP, 150)]); },
-          rows: [[Lang.t("Flag captured"), gFill(Lang.t("{a} + {b} per foe beaten"), { a: FLAG_PAY, b: ROUTED })],
-                 [Lang.t("Victory"), gFill(Lang.t("+{n} per card left"), { n: SURVIVOR })]],
-          text: Lang.t("The flag pays more for every enemy you beat on the way to it.") },
+          rows: [[Lang.t("Flag captured"), gFill(Lang.t("{a} pts + {b} pts per foe beaten"), { a: FLAG_PAY, b: ROUTED })],
+                 [Lang.t("Victory"), gFill(Lang.t("+{n} pts per card left"), { n: SURVIVOR })]],
+          text: Lang.t("The more enemies you beat on the way to capturing the flag, the more points it will pay out.") },
         { id: "stars", title: Lang.t("Three stars"),
           pic: function () {
             var s = CONFIG.shellArt && CONFIG.shellArt.star;
             return s ? gBox("", [gImg(s, "cd-gstar"), gImg(s, "cd-gstar"), gImg(s, "cd-gstar")]) : gBox("", [gObj(FLAG, 150)]);
           },
           rows: [[Lang.t("Flag captured"), "★"], [Lang.t("No wounds"), "★"], [Lang.t("Prisoner taken"), "★"]],
-          text: Lang.t("A lost battle earns no star, whatever you achieved along the way.") }
+          text: Lang.t("Losing a battle means a complete defeat, even if some objectives were met.") }
       ];
     }
 
@@ -3737,7 +3851,7 @@
             return gBox("tight", kids);
           },
           rows: rows,
-          text: Lang.t("From sergeant to general, every grade is the only one that breaks one object of the camp.") },
+          text: Lang.t("From sergeant to general, each <b>specialty</b> can break one particular object on the battlefield.") },
         { id: "marshal", title: gName(MARSHAL),
           pic: function () { return gBox("", [gCard({ rank: MARSHAL, tier: 4 }, 180, "mid")]); },
           text: Lang.t(SKILL[MARSHAL]) }
@@ -3751,7 +3865,7 @@
           for (var r = STRAW; r <= BOOK; r++) kids.push(gObj(r, 70, "tiny"));
           return gBox("tight", kids);
         },
-        text: Lang.t("An \"object\" card never moves. Only one grade has the specialty needed to foil the card.") }];
+        text: Lang.t("An \"object\" card never moves. A specific <b>Grade</b> has the skill needed to foil the card.") }];
       var order = [FLAG, TRAP, STRAW, FENCE, ROCK, FOREST, SKULL, BOOK];
       order.forEach(function (r) {
         var by = ABOUT[r].by, lv = objectLevel(r);
@@ -3772,15 +3886,15 @@
       var pages = [
         { id: "climb", title: Lang.t("The climb"),
           pic: function () { return gArt(CONFIG.bands[0].scene, "cd-gimg") || gBox("", [gCard(null, 120, "mid", "red")]); },
-          text: Lang.t("A level's camp is always the same. On a second try, use what the first one taught you.") },
+          text: Lang.t("On a given level, the red troops are always the same. If you lose, come back and use what your first try taught you.") },
         { id: "formations", title: Lang.t("Formations"),
           pic: function () { return gBox("", [gCard(null, 110, "mid", "red"), gObj(FLAG, 150), gCard(null, 110, "mid", "red")]); },
           rows: [[Lang.t("The flag at the back, officers around it"), Lang.t("Keep")],
-                 [Lang.t("The best grades on the front row"), Lang.t("Wall")],
+                 [Lang.t("The best <b>Grades</b> on the front row"), Lang.t("Wall")],
                  [Lang.t("The flag down one side"), Lang.t("Flank")],
                  [Lang.t("The flag in the middle, officers at the back"), Lang.t("Deep")],
                  [Lang.t("A trap in a corner, guarded as if it were the flag"), Lang.t("Decoy")]],
-          text: Lang.t("The flag never stands on the front row.") }
+          text: Lang.t("The enemy almost never puts its flag on the front row.") }
       ];
       gBands().forEach(function (b) {
         var fresh = [], k;
@@ -3789,9 +3903,9 @@
         // the trap is new where it is first dealt, ahead of the objects
         if (TRAP_LEVEL >= b.from && TRAP_LEVEL <= b.to) fresh.unshift(TRAP);
         var lines = [];
-        lines.push(fresh.length ? gFill(Lang.t("New in the camps: {list}."), { list: objectNames(fresh) })
-                                : Lang.t("No new object in these camps."));
-        if (unlock[b.k] && unlock[b.k].length) lines.push(gFill(Lang.t("Clear this biome to unlock for your defense: {list}."), { list: objectNames(unlock[b.k]) }));
+        lines.push(fresh.length ? gFill(Lang.t("New in this biome: {list}."), { list: objectNames(fresh) })
+                                : Lang.t("No new object in this biome."));
+        if (unlock[b.k] && unlock[b.k].length) lines.push(gFill(Lang.t("Clear this biome and you can use these in your own defence: {list}."), { list: objectNames(unlock[b.k]) }));
         pages.push({ id: "band-" + (b.k + 1), title: b.name, lv: b.from,
           pic: function () { return gArt(b.scene, "cd-gimg") || gBox("", [gCard(null, 120, "mid", "red")]); },
           text: lines.join("\n\n") });
@@ -3802,43 +3916,43 @@
     function campPages() {
       var A = gArmy(), con = A.conscript || { r: 4, t: 0 };
       var heal = [], g;
-      for (g = 1; g < TOP_TIER + 1; g++) heal.push([gFill(Lang.t("Tier gap of {n}"), { n: g }), gHours(healHours(g))]);
+      for (g = 1; g < TOP_TIER + 1; g++) heal.push([gFill(Lang.t("<b>Tier</b> gap of {n}"), { n: g }), gHours(healHours(g))]);
       var jail = [];
       [SPY, 4, 6, 8, MARSHAL].forEach(function (r) { jail.push([gName(r), gHours(jailHours(r))]); });
       return [
-        { id: "camp-deck", title: Lang.t("The deck"),
+        { id: "camp-deck", title: Lang.t("The Deck"),
           pic: function () {
             return gBox("tight", [gCard({ rank: 10, tier: 1 }, 76, "tiny"), gCard({ rank: 7, tier: 1 }, 76, "tiny"),
                                   gCard({ rank: 3, tier: 0 }, 76, "tiny"), gCard({ rank: con.r, tier: con.t }, 76, "tiny")]);
           },
-          text: Lang.t("A wounded card, or one away on a mission, stays in the deck but sits the battle out.\n\nEmpty slots are filled with conscripts, who never go to the infirmary.") },
-        { id: "camp-cast", title: Lang.t("Every card is a person"),
+          text: Lang.t("A wounded card, or one away on a mission, stays in your Deck but cannot fight.\n\nReplacements fill the empty slots, and they never end up in the infirmary.") },
+        { id: "camp-cast", title: Lang.t("Every card is a soldier"),
           pic: function () { return gBox("", [gCard({ rank: 8, tier: 3 }, 180, "mid"), gCard({ rank: 8, tier: 3 }, 180, "mid", "red")]); },
-          text: Lang.t("Each officer is unique: one per army, grade and tier.\n\nYour camp never holds the same officer twice.") },
+          text: Lang.t("Within an army, every officer is unique.\n\nSo your camp never holds the same officer twice.") },
         { id: "camp-infirmary", title: Lang.t("Infirmary"),
           pic: function () { var h = gArt("home05", "cd-gtent"); return gBox("", [h, gVeil({ rank: 6, tier: 2 }, 150, "wound")]); },
           rows: heal,
-          text: Lang.t("The stay of a wounded card depends on the tier gap, counted from the end of the battle.\n\nIf no bed is free, the wounded card is lost.") },
+          text: Lang.t("How long a wounded card stays depends on the <b>Tier</b> gap there was in combat.\n\nKeep a close eye on the available beds. If none is free, the wounded card is lost completely.") },
         { id: "camp-prison", title: Lang.t("Prison"),
           pic: function () {
             return gBox("", [gCard({ rank: 6, tier: 2 }, 140, "mid", "red"), gWord("›"), gCard({ rank: 6, tier: 2, o: "red" }, 140, "mid", "blue")]);
           },
           rows: jail,
-          text: Lang.t("A prisoner who turns joins your army, as a card like any other.\n\nA captive with no free cell walks free.") },
+          text: Lang.t("Give a prisoner time and he will change sides, then join your army like any other card.\n\nKeep a cell free, or your captive will escape right away.") },
         { id: "camp-promotion", title: Lang.t("Promotion"),
           pic: function () { return gBox("", [gCard({ rank: 5, tier: 2 }, 140), gWord("›"), gCard({ rank: 5, tier: 3, base: 2 }, 140)]); },
-          text: Lang.t("A victory can raise each card that served by one tier, in a battle, on a mission or at a post.") },
+          text: Lang.t("After a victory, one of the cards that served in the battle, on a mission or at a post may climb one <b>Tier</b>.") },
         { id: "camp-surrender", title: Lang.t("Surrender"),
           pic: function () {
             var im = gArt("enemyHappy", "cd-gfoe") || gCard(null, 140, "mid", "red");
             return gBox("", [im, gWord("›"), gCard({ rank: 6, tier: 2 }, 130)]);
           },
           rows: [[Lang.t("Surrender"), Lang.t("1 card handed over")],
-                 [Lang.t("Each card that falls after"), Lang.t("Lost 1 time in 2")]],
-          text: Lang.t("When the battle can no longer be won, the enemy commander offers your surrender.\n\nSurrender, and you hand him one card of your choice. The wounds already taken still count.\n\nFight on, and every card that falls is lost or wounded.") },
+                 [Lang.t("Fight on"), gFill(Lang.t("{p} risk of losing a failed card"), { p: gPct(LAST_STAND * 100) })]],
+          text: Lang.t("When the battle can no longer be won, the enemy commander offers to take your surrender.\n\nIf you give up, you hand him one card of your choice, and the wounds already taken still count.\n\nIf you fight on, every card that falls will be lost or wounded.") },
         { id: "camp-events", title: Lang.t("Life in the camp"),
           pic: function () { return gArt("backgroundHome", "cd-gimg") || gBox("", [gCard({ rank: 4, tier: 1 }, 120)]); },
-          text: Lang.t("Every few hours, something good or bad happens in the camp. You hear of it at the village.\n\nThe higher the kitchen's gauge, the more good days.") }
+          text: Lang.t("Regularly, good or bad events take place at the camp.\n\nYou will learn that good kitchen management brings good events more often.") }
       ];
     }
 
@@ -3849,23 +3963,23 @@
           pic: function () {
             return gBox("tight", [gCard({ rank: 4, tier: 0 }, 120), gCard({ rank: 7, tier: 2 }, 120), gCard({ rank: 10, tier: 5 }, 120)]);
           },
-          text: gFill(Lang.t("The recruiting tent sells officers for coins. New recruits arrive every {n} minutes.\n\nThe tent never sells a spy, scout or sapper, unless your camp has none of that grade."), { n: R.refreshMinutes || 20 }) },
+          text: gFill(Lang.t("Every {n} minutes, new recruits of every <b>Grade</b> turn up at the recruiting tent. Watch out: they do not all ask the same bounty to join your army.\n\nIf your camp is missing a particular officer, the tent always keeps one in reserve for only {p} coins."), { n: R.refreshMinutes || 20, p: R.needPrice != null ? R.needPrice : 20 }) },
         { id: "camp-missions", title: Lang.t("Missions"),
           pic: function () {
             return gBox("tight", [gCard({ rank: SCOUT, tier: 2 }, 96, "tiny"), gCard({ rank: SAPPER, tier: 1 }, 96, "tiny"), gCard({ rank: 6, tier: 3 }, 96, "tiny")]);
           },
-          text: Lang.t("A squad away sits out every battle until it is back.\n\nMost missions favour one grade, often a spy, a scout or a sapper.") },
+          text: Lang.t("A squad on a mission misses every battle until it comes back.\n\nMost missions favour one <b>Grade</b>, often a spy, a scout or a sapper. So pick your squad with care.") },
         { id: "camp-posts", title: Lang.t("Management"),
           pic: function () { return gBox("", [gCard(postOfficer("inf"), 150), gCard(postOfficer("cook"), 150)]); },
-          text: Lang.t("Six posts, one officer each. An officer at a post leaves the deck and cannot join a squad.\n\nThe officer's tier fills the post's gauge. A trade that suits the post adds a bonus.") }
+          text: Lang.t("The camp has six posts, each held by one officer. An officer at a post leaves your Deck and cannot join a squad.\n\nThe officer's <b>Tier</b> fills the post's gauge. A suitable trade also adds a bonus to the targeted post.") }
       ];
       POST_KEYS.forEach(function (k) {
         var lines = [Lang.t(POST_READS[k])], jobs = postJobs(k);
         if (jobs.length) lines.push(gFill(Lang.t("Suited trades: {list}."), { list: jobs.join(", ") }));
         pages.push({ id: "post-" + k, title: Lang.t(POST_NAME[k]),
           pic: function () { return gBox("", [gCard(postOfficer(k), 200, "mid")]); },
-          rows: [[Lang.t("Nobody at the post"), postAt(k, 0)],
-                 [gFill(Lang.t("A gauge of {p}"), { p: gPct(100) }), postAt(k, 100)]],
+          rows: [[Lang.t("Nobody at the post"), postWords(k, 0)],
+                 [Lang.t("Full gauge"), postWords(k, 100)]],
           text: lines.join("\n\n") });
       });
       pages.push({ id: "camp-trades", title: Lang.t("Trades"),
@@ -3875,18 +3989,18 @@
           return gBox("tight", kids);
         },
         rows: [[Lang.t("A suited trade"), "+" + gPct(PP.match != null ? PP.match : 10)]],
-        text: Lang.t("Every officer has a trade, written on the back of the card. Each trade suits one post."),
+        text: Lang.t("Every officer has a trade, written on the back of the card. Each trade can suit a specific post in the camp."),
         node: tradesNode });
       pages.push({ id: "camp-register", title: Lang.t("Register"),
         pic: function () { return gBox("", [gCard({ rank: 7, tier: 2 }, 150, "mid", "blue", true), gCard({ rank: 4, tier: 1 }, 150, "mid", "blue", true)]); },
-        text: Lang.t("The recruiting tent may find a lost officer alive, back at their starting tier.") });
+        text: Lang.t("A lost officer is not always gone for good. The recruiting tent may find him alive, back at his starting <b>Tier</b>.") });
       return pages;
     }
 
     function defensePages() {
       var D = gArmy().defense || {}, AT = D.attack || {};
       return [
-        { id: "camp-defense", title: Lang.t("Your defense"),
+        { id: "camp-defense", title: Lang.t("Your defence"),
           pic: function () {
             var lay = [STRAW, FENCE, FLAG, FENCE, ROCK,
                        6, null, 8, null, 7,
@@ -3901,12 +4015,12 @@
             }
             return gBox("", [grid]);
           },
-          rows: [[Lang.t("A raid after"), gFill(Lang.t("{n} h away"), { n: AT.awayHours || 4 })]],
-          text: Lang.t("Validate your defense. The red army always attacks the last one you validated.\n\nA card on guard stays in your deck. The bottom row is the front.") },
+          rows: [[Lang.t("The red troops attack after"), gFill(Lang.t("{n} h away"), { n: AT.awayHours || 4 })]],
+          text: Lang.t("Validate your defence setup to protect your flag while you are away. The red army always attacks the last strategy put in place.\n\nA soldier assigned to defence stays active in your Deck all the same. The bottom row of the screen remains your front line.") },
         { id: "camp-raid", title: Lang.t("The raid"),
           pic: function () { return gBox("", [gCard({ rank: 7, tier: 2 }, 140, "mid", "red"), gVs(), gObj(FENCE, 140, "mid")]); },
-          rows: [[Lang.t("Cards a raid sends"), String(AT.turns || 12)]],
-          text: Lang.t("The raid is led by a copy of your own army, with the rules of a battle.\n\nA lost raid never costs a card, only some coins or a stay in the infirmary.") }
+          rows: [[Lang.t("Attack size"), gFill(Lang.t("{n} attacking red cards"), { n: AT.turns || 12 })]],
+          text: Lang.t("A raid is an attack by the red troops on your defence while you are away. It is led by a red army of the same level as yours and follows the usual rules of a battle.\n\nLosing a raid means wounds or plundered resources.") }
       ];
     }
 
@@ -3922,15 +4036,19 @@
         if (CONFIG.web && CONFIG.web.army) {
           out.push({ key: "camp", label: Lang.t("The camp"), pages: campPages() });
           out.push({ key: "command", label: Lang.t("The command"), pages: commandPages() });
-          if (CONFIG.web.army.defense) out.push({ key: "defense", label: Lang.t("Defense"), pages: defensePages() });
+          if (CONFIG.web.army.defense) out.push({ key: "defense", label: Lang.t("Defence"), pages: defensePages() });
         }
         return out;
       }
     };
 
+    /* the demo is dealt once every table above exists (buildDemo) */
+    if (document.querySelector("#intro-demo")) buildDemo();
+    else document.addEventListener("DOMContentLoaded", buildDemo);
+
     return { reset: reset, update: update, render: render,
              onDown: onDown, onMove: onMove, onUp: onUp, onResize: onResize,
              applyLevel: applyLevel, levelWon: levelWon, levelStars: levelStars, levelTally: levelTally, levelRules: levelRules,
-             cardNode: cardNode, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo,
+             cardNode: cardNode, cardChip: cardChip, cardBack: cardBack, objectInfo: objectInfo, gradeInfo: gradeInfo,
              defense: defenseSim, guide: guide };
   })();

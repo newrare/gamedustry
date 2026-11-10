@@ -68,6 +68,9 @@
   letter-spacing:0; text-transform:none;
 }
 .gu-page p + p { color:color-mix(in srgb, var(--text) 82%, var(--muted)); }
+/* a key word a page puts forward (<b>, guide.js `rich`) reads at full
+   strength, a following paragraph's muted tone included */
+.gu-page p b { font-weight:800; color:var(--text); }
 /* THE EXAMPLE, first (guide.js, `pic`): the game's own picture on a soft
    plate, centred, never wider than the page */
 .gu-pic {
@@ -87,6 +90,7 @@
 .gu-tr:nth-child(odd) { background:rgba(255,255,255,.08); }
 .gu-tl { font-size:22px; font-weight:600; color:var(--text);
          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+.gu-tl b { font-weight:800; }
 .gu-tv { flex:0 0 auto; font-size:24px; font-weight:var(--web-fw, 900); color:var(--accent);
          font-variant-numeric:tabular-nums; white-space:nowrap; }
 /* a table whose values are phrases: the value wraps at a text size and

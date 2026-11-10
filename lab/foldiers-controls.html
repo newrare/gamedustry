@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers control schemes</title>
+<meta name="lab-group" content="tests">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS — CONTROL SCHEMES, A CLEAN SHEET. Five ways to command a paper
+   war on a phone, none of them a HUD over a map nor a menu on a region.
+   They all answer the same four questions, which pile up as the stages add
+   mechanics (cavalry, cannons, gold, generals, engineers, warnings…):
+
+     1. what stands on a region (troops, pieces, buildings, output, alerts);
+     2. how to give it an order, with simple taps;
+     3. what is still to do, and what is still available;
+     4. what is already planned.
+
+   The schemes, one idea each:
+     - DISPATCHES: the game asks, you answer. Every region with something to
+       decide is a card on a deck; the card says what is there and offers a
+       few answers with their verdict. Left-over troops come back as a card.
+     - STAMPS: verb first. Pick a stamp (attack, fire, recruit…), the map
+       shows only what can use it and the one number that matters for it.
+     - POP-UP BOOK: a region opens as a page. Its contents stand at full size
+       in the middle, its neighbours are flaps around it, where they lie on
+       the map. Piece, then flap.
+     - FRONTS: think in fronts, not regions. Every enemy region you touch is a
+       tug-of-war; + and − commit troops and the staff picks who leaves.
+     - HAND: every troop group and piece left to play is a card in the hand.
+       A card played on a target sticks there as a tag.
+
+   The world is the lab's own: a straight-edged Voronoi map, three scenarios
+   (early, mid, late) loading more mechanics onto the regions, the game's
+   sprites, troop for troop combat (+1 fort, +1 Defend, −2 a cannon shot,
+   +1 a general or a drummer), red reinforcing and striking once a tick.
+   `#scheme=stamps&level=3&demo=1` opens a state for a headless shot.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body { height:100vh; display:flex; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+/* ---- panel ---------------------------------------------------------------- */
+#panel { flex:0 0 330px; padding:20px 18px; background:#12121c; border-right:1px solid #23233a; overflow:auto; }
+#panel h1 { font-size:16px; letter-spacing:.5px; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:16px 0 8px; font-size:12px; letter-spacing:1px; color:#7ea6ff; }
+#schemes button { display:block; width:100%; text-align:left; padding:8px 10px; margin-bottom:6px; background:#1c1c2c; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:8px; font:inherit; cursor:pointer; }
+#schemes button b { display:block; font-size:13px; }
+#schemes button span { display:block; font-weight:500; font-size:11.5px; color:#9c9cba; margin-top:2px; }
+#schemes button.on { background:#7ea6ff; border-color:#7ea6ff; color:#0b0b12; }
+#schemes button.on span { color:#1b2440; }
+.seg { display:flex; gap:4px; flex-wrap:wrap; }
+.seg button { flex:1; padding:6px 8px; background:#1c1c2c; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#answers { margin-top:4px; padding:10px 12px; border-radius:8px; background:#1c1c2c; font-weight:500; font-size:12px; color:#c9c9e0; }
+#answers p { margin-bottom:7px; }
+#answers p:last-child { margin-bottom:0; }
+#answers i { font-style:normal; display:inline-block; width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%;
+  background:#7ea6ff; color:#0b0b12; font-weight:800; font-size:11px; margin-right:6px; }
+#log { margin-top:8px; font-weight:500; font-size:11.5px; color:#8b8ba7; white-space:pre-line; }
+
+/* ---- stage + frame ------------------------------------------------------------ */
+#stage { flex:1; display:flex; align-items:center; justify-content:center; padding:16px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+#frameBox { position:relative; overflow:hidden; border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,.55); }
+#frame { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; }
+#view { position:absolute; left:0; top:0; width:720px; height:1280px; touch-action:none; }
+#ui { position:absolute; left:0; top:0; width:720px; height:1280px; pointer-events:none; color:#2a2418;
+  font:700 22px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+#ui .live, #ui button { pointer-events:auto; }
+:where(#ui) button { font:inherit; color:inherit; cursor:pointer; border:0; background:none; }
+:where(#ui) svg { width:1em; height:1em; vertical-align:-.15em; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+#ui img { pointer-events:none; }
+
+/* ---- paper ----------------------------------------------------------------- */
+.paper { background:#f4ecd8; border:3px solid #2a2418; border-radius:14px; box-shadow:0 7px 0 rgba(42,36,24,.28); }
+.pbtn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:64px; padding:6px 14px; border-radius:14px;
+  background:#fffaf0; border:3px solid #2a2418 !important; box-shadow:0 5px 0 #2a2418; font-size:22px; }
+.pbtn:active { transform:translateY(4px); box-shadow:0 1px 0 #2a2418; }
+.pbtn.dim { opacity:.4; }
+.pill { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:999px; color:#fff; font-size:20px; white-space:nowrap; }
+.v-ok { background:#2f8f4e; } .v-just { background:#c99a10; } .v-tie { background:#6d7486; } .v-bad { background:#c8402f; } .v-none { background:#8a94a8; }
+.chip { display:inline-flex; align-items:center; gap:2px; font-size:22px; white-space:nowrap; }
+.chip img { height:44px; }
+.chip.prod { background:#e9d8ae; color:#5c4a26; border-radius:10px; padding:0 8px; font-size:20px; }
+.chip.warn { background:#e07b12; color:#fff; border-radius:10px; padding:0 8px; font-size:20px; }
+
+/* ---- the top band ---------------------------------------------------------------- */
+.hud { position:absolute; left:10px; right:10px; top:10px; height:84px; display:flex; align-items:center; gap:10px; padding:0 8px 0 16px; }
+.hud .tick { font-size:22px; line-height:1.05; }
+.hud .tick small { display:block; font-size:20px; color:#6b5c3c; }
+.hud .res { flex:1; display:flex; gap:12px; justify-content:center; }
+.hud .res span { display:inline-flex; align-items:center; gap:4px; font-size:24px; }
+.hud .res em { font-style:normal; font-size:20px; color:#6b5c3c; }
+.hud .send { min-height:66px; padding:4px 18px; background:#2f63c4; color:#fff; border-radius:14px; box-shadow:0 5px 0 #1d3f80; line-height:1; }
+.hud .send small { display:block; font-size:20px; margin-top:3px; color:#ffe58a; }
+.hud .send.done small { color:#c9f5d5; }
+.dot { display:inline-block; width:16px; height:16px; border-radius:50%; background:#ffd23a; border:3px solid #2a2418; vertical-align:middle; }
+
+/* ---- 1. dispatches --------------------------------------------------------------- */
+.dp { position:absolute; left:14px; right:14px; top:742px; bottom:12px; }
+.dp .layer { position:absolute; inset:0; }
+.dp .layer.l1 { transform:translate(8px,-10px) rotate(1.6deg); background:#e9dfc6; }
+.dp .layer.l2 { transform:translate(-6px,-18px) rotate(-1.4deg); background:#e2d6b8; }
+.dp .card { position:absolute; inset:0; padding:14px 18px; display:flex; flex-direction:column; gap:10px; }
+.dp .top { display:flex; align-items:center; gap:10px; font-size:20px; color:#6b5c3c; }
+.dp .top .left { flex:1; }
+.dp .top button { font-size:20px; padding:4px 12px; border-radius:10px; background:#e9dfc6; }
+.dp .title { display:flex; align-items:center; gap:10px; font-size:34px; line-height:1; }
+.dp .title .camp { width:18px; height:34px; border-radius:4px; }
+.dp .what { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; min-height:50px; }
+.dp .situ { font-size:22px; display:flex; align-items:center; gap:8px; }
+.dp .situ .sh { width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; color:#fff; font-size:22px; }
+.dp .amt { display:flex; align-items:center; gap:12px; font-size:22px; }
+.dp .amt button { width:60px; height:56px; border-radius:12px; background:#fffaf0; border:3px solid #2a2418 !important; font-size:30px; }
+.dp .amt b { min-width:72px; text-align:center; font-size:30px; }
+.dp .amt em { font-style:normal; color:#6b5c3c; }
+.dp .ans { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:auto; }
+.dp .ans .pbtn { justify-content:flex-start; text-align:left; line-height:1.05; }
+.dp .ans .pbtn .tx { flex:1; }
+.dp .ans .pbtn.wide { grid-column:1 / -1; justify-content:center; }
+.dp .ans .pbtn.attack { background:#dfe8fb; } .dp .ans .pbtn.hold { background:#e3f1e5; }
+.dp .given { position:absolute; right:-6px; top:-62px; padding:6px 14px; border-radius:12px; display:flex; align-items:center; gap:8px; }
+.dp .glist { display:flex; flex-direction:column; gap:8px; overflow:auto; }
+.dp .glist .row { display:flex; align-items:center; gap:10px; padding:6px 10px; border-radius:10px; background:#fffaf0; border:2px solid #cbbd99; font-size:22px; }
+.dp .glist .row .tx { flex:1; }
+.dp .glist .row button { width:48px; height:48px; border-radius:10px; background:#f3d6cf; }
+.dp .note { font-size:22px; color:#6b5c3c; font-weight:600; }
+
+/* ---- 2. stamps ------------------------------------------------------------------- */
+.st-tray { position:absolute; left:10px; right:10px; bottom:12px; height:118px; display:flex; justify-content:space-around; align-items:center; padding:0 6px; }
+.st-tray .stamp { position:relative; width:68px; height:86px; border-radius:12px 12px 20px 20px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:#c79a5a; box-shadow:0 5px 0 #6b4a20; color:#2a2418; font-size:40px; }
+.st-tray .stamp:after { content:""; position:absolute; left:6px; right:6px; bottom:-2px; height:10px; border-radius:4px; background:var(--ink,#2f63c4); }
+.st-tray .stamp.on { transform:translateY(-16px) rotate(-6deg); box-shadow:0 14px 0 rgba(0,0,0,.25); background:#e2b878; }
+.st-tray .stamp.off { opacity:.35; }
+.st-tray .stamp .bd { position:absolute; right:-10px; top:-12px; min-width:34px; height:34px; padding:0 6px; border-radius:17px; background:#2a2418; color:#fff;
+  font-size:20px; line-height:34px; text-align:center; }
+.st-tray .stamp .bd.owed { background:#ffd23a; color:#2a2418; border:3px solid #2a2418; line-height:28px; }
+.st-hint { position:absolute; left:20px; right:20px; bottom:142px; padding:8px 14px; display:flex; align-items:center; gap:10px; font-size:22px; }
+.st-hint .tx { flex:1; }
+.st-hint b { color:#2f63c4; }
+
+/* ---- 3. pop-up book -------------------------------------------------------------- */
+.pp-bar { position:absolute; left:14px; right:14px; bottom:12px; height:84px; display:flex; align-items:center; gap:12px; padding:0 14px; font-size:22px; }
+.pp-bar .tx { flex:1; }
+.pp-page { position:absolute; left:10px; top:110px; width:700px; height:1160px; }
+.pp-tile { position:absolute; left:180px; top:240px; width:340px; height:460px; padding:12px; display:flex; flex-direction:column; gap:8px; overflow:hidden; }
+.pp-tile svg.sil { position:absolute; inset:0; width:100%; height:100%; z-index:0; }
+.pp-tile > * { position:relative; z-index:1; }
+.pp-tile .nm { display:flex; align-items:center; gap:8px; font-size:30px; line-height:1; }
+.pp-tile .nm .camp { width:14px; height:30px; border-radius:4px; }
+.pp-tile .nm small { margin-left:auto; font-size:20px; color:#6b5c3c; }
+.pp-tile .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.pp-tile .pc { position:relative; height:100px; border-radius:12px; background:rgba(255,250,240,.86); border:3px solid #cbbd99 !important;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:4px; font-size:22px; }
+.pp-tile .pc img { height:58px; }
+.pp-tile .pc.sel { border-color:#2f63c4 !important; background:#dfe8fb; transform:translateY(-6px); box-shadow:0 6px 0 #2f63c4; }
+.pp-tile .pc.done { opacity:.45; }
+.pp-tile .pc .tk { position:absolute; right:-6px; top:-8px; padding:0 7px; border-radius:8px; background:#2a2418; color:#fff; font-size:20px; }
+.pp-tile .pc .owe { position:absolute; left:-4px; top:-6px; }
+.pp-tile .blds { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; margin-top:auto; }
+.pp-tile .defend { align-self:stretch; }
+.pp-tile .defend.on { background:#cfe9d6; }
+.pp-flap { position:absolute; width:170px; height:80px; padding:4px 10px 4px 16px; display:flex; flex-direction:column; justify-content:center; line-height:1.05;
+  background:#fffaf0; border:3px solid #2a2418 !important; border-radius:12px; box-shadow:0 5px 0 rgba(42,36,24,.3); font-size:22px; text-align:left; overflow:visible; }
+.pp-flap:before { content:""; position:absolute; left:0; top:0; bottom:0; width:9px; border-radius:9px 0 0 9px; background:var(--camp); }
+.pp-flap .row2 { display:flex; align-items:center; gap:6px; font-size:20px; color:#6b5c3c; }
+.pp-flap .row2 img { height:30px; }
+.pp-flap.lit { background:#fff4c4; box-shadow:0 0 0 6px #ffd23a, 0 5px 0 rgba(42,36,24,.3); }
+.pp-flap.off { opacity:.4; }
+.pp-flap .tick { position:absolute; right:-10px; top:-18px; transform:rotate(5deg); padding:0 8px; border-radius:8px; color:#fff; font-size:20px; border:2px solid #2a2418; }
+.pp-flap .vd { position:absolute; right:-8px; bottom:-16px; }
+.pp-close { position:absolute; right:12px; top:12px; width:60px; height:60px; border-radius:14px; background:#e9dfc6; font-size:30px; }
+.pp-act { position:absolute; left:200px; right:16px; top:860px; display:flex; flex-direction:column; gap:12px; }
+.pp-act .row { display:flex; gap:10px; align-items:center; }
+.pp-act .row .pbtn { flex:1; }
+.pp-act .amt { display:flex; align-items:center; gap:12px; font-size:22px; }
+.pp-act .amt button { width:64px; height:60px; border-radius:12px; background:#fffaf0; border:3px solid #2a2418 !important; font-size:30px; }
+.pp-act .amt b { min-width:60px; text-align:center; font-size:32px; }
+.pp-act .help { font-size:20px; color:#6b5c3c; font-weight:600; }
+
+/* ---- 4. fronts ------------------------------------------------------------------- */
+.fr-tray { position:absolute; left:12px; right:12px; bottom:12px; height:200px; padding:10px 16px; display:flex; flex-direction:column; gap:8px; }
+.fr-tray .t1 { display:flex; align-items:center; gap:10px; font-size:24px; }
+.fr-tray .t1 small { font-size:20px; color:#6b5c3c; }
+.fr-tray .t1 .x { margin-left:auto; width:52px; height:52px; border-radius:12px; background:#e9dfc6; font-size:26px; }
+.fr-tray .t2 { display:flex; align-items:center; gap:10px; }
+.fr-tray .big { width:78px; height:72px; border-radius:16px; background:#fffaf0; border:3px solid #2a2418 !important; box-shadow:0 5px 0 #2a2418; font-size:36px; }
+.fr-tray .score { min-width:150px; text-align:center; font-size:34px; padding:6px 10px; border-radius:14px; color:#fff; }
+.fr-tray .src { flex:1; font-size:20px; color:#6b5c3c; line-height:1.15; }
+.fr-tray .pbtn.on { background:#cfe9d6; }
+
+/* ---- 5. hand ---------------------------------------------------------------------- */
+.hd { position:absolute; left:0; right:0; bottom:0; height:296px; }
+.hd .strip { position:absolute; left:14px; right:14px; top:0; height:62px; display:flex; align-items:center; gap:10px; padding:0 12px; font-size:22px; }
+.hd .strip .tx { flex:1; font-size:20px; color:#6b5c3c; line-height:1.1; }
+.hd .strip button.s { width:54px; height:46px; border-radius:10px; background:#fffaf0; border:3px solid #2a2418 !important; font-size:28px; line-height:1; }
+.hd .strip b { min-width:56px; text-align:center; font-size:28px; }
+.hd .count { position:absolute; left:12px; bottom:20px; width:76px; text-align:center; font-size:20px; color:#fff; line-height:1.1; }
+.hd .count b { display:block; font-size:40px; }
+.hd .row { position:absolute; left:92px; right:0; bottom:10px; height:204px; display:flex; align-items:flex-end; overflow-x:auto; overflow-y:visible; padding:0 30px 0 10px; scrollbar-width:none; }
+.hd .row::-webkit-scrollbar { display:none; }
+.hd .card { flex:0 0 140px; height:190px; margin-right:-34px; position:relative; padding:6px 8px; display:flex; flex-direction:column; align-items:center;
+  transition:transform .15s; transform-origin:50% 100%; }
+.hd .card .nm { align-self:stretch; padding:1px 4px; border-radius:7px; color:#fff; font-size:20px; text-align:center; white-space:nowrap; overflow:hidden; }
+.hd .card img.big { height:74px; margin-top:4px; }
+.hd .card .n { font-size:36px; line-height:1; }
+.hd .card .sub { font-size:20px; color:#6b5c3c; display:flex; gap:6px; align-items:center; }
+.hd .card .sub img { height:26px; }
+.hd .card.opt { border-style:dashed !important; background:#efe6cf; }
+.hd .card.sel { transform:translateY(-18px) rotate(0deg) !important; z-index:5; box-shadow:0 0 0 6px #ffd23a, 0 7px 0 rgba(42,36,24,.28); }
+.hd .card.dim { opacity:.4; }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <h1>Foldiers — control schemes</h1>
+  <p class="hint">Five ways to see a region, give orders, see what is left and what is planned — tap only, mobile first. Same world for all five.</p>
+  <h3>Scheme</h3>
+  <div id="schemes"></div>
+  <h3>What it answers</h3>
+  <div id="answers"></div>
+  <h3>Scenario</h3>
+  <div class="seg" id="levels"></div>
+  <h3>Map</h3>
+  <div class="seg">
+    <button id="btnNew">New map</button>
+    <button id="btnClear">Clear orders</button>
+  </div>
+  <h3>Marks on every scheme</h3>
+  <div class="seg" id="toggles"></div>
+  <div id="log"></div>
+</div>
+
+<div id="stage">
+  <div id="frameBox">
+    <div id="frame">
+      <canvas id="view"></canvas>
+      <div id="ui"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- the frame, the colours, the numbers --------------------------------------
+  const FW = 720, FH = 1280, MAP_Y = 106, MW = 696, MH = 872;
+  const NEU = 0, BLUE = 1, RED = 2;
+  const CAMP = ["#b9a77d", "#2f63c4", "#d9412f"];
+  const LAND = [null, ["#a9c1ee", "#b9cdf3"], ["#eeb1a4", "#f3c2b6"]];
+  const landOf = (r) => (r.owner === NEU ? r.ter : LAND[r.owner][r.id % 2]);
+  const CAMP_WORD = ["Neutral", "Yours", "Red"];
+  const INK = "#2a2418", OK = "#2f8f4e", JUST = "#c99a10", TIE = "#6d7486", BAD = "#c8402f", TODO = "#ffd23a", WARN = "#e07b12";
+  const VCOL = { ok: OK, just: JUST, tie: TIE, bad: BAD, none: "#8a94a8" };
+  const TERRAIN = ["#cfdc9a", "#e6d29a", "#b9d58e", "#d9cf9e", "#c4d79a"];
+  const FONT = "system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
+  const RECRUIT_COST = 3, RECRUIT_N = 3, WORK_COST = 4, CANNON = 2;
+  const NAMES = ["Tolen", "Marrow", "Ashby", "Quill", "Fenwick", "Dunmore", "Corrie", "Halden", "Brisk", "Oakmere", "Pell", "Wren",
+    "Larch", "Mirefold", "Sable", "Thorne", "Vellum", "Crease", "Kestrel", "Hollin", "Rook", "Ember", "Gorse", "Linden", "Mossby", "Nettle"];
+  const LEVELS = [null,
+    { name: "Early", n: 10, note: "stage 1–4: troops, towns, the capital" },
+    { name: "Mid", n: 16, note: "stage 7–11: + forts, mines, gold, recruits, cavalry, cannons" },
+    { name: "Late", n: 22, note: "stage 16–24: + general, drummer, siege tower, engineer, wagon, farms, alerts" }];
+
+  // ---- the pictograms (lucide paths, one string each so canvas and DOM share them)
+  const IC = {
+    sword: "M14.5 17.5 3 6V3h3l11.5 11.5 M13 19l6-6 M16 16l4 4 M19 21l2-2",
+    shield: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+    move: "m6 17 5-5-5-5 M13 17l5-5-5-5",
+    bomb: "M2 13a9 9 0 1 0 18 0a9 9 0 1 0-18 0 M14.35 4.65 16.3 2.7a2.41 2.41 0 0 1 3.4 0l1.6 1.6a2.4 2.4 0 0 1 0 3.4l-1.95 1.95 M22 2l-1.5 1.5",
+    join: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M5 7a4 4 0 1 0 8 0a4 4 0 1 0-8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+    hammer: "m15 12-8.5 8.5a2.12 2.12 0 0 1-3-3L12 9 M17.64 15 22 10.64 M20.91 11.7l-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91",
+    coin: "M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0 M8 12h8 M12 8v8",
+    star: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
+    erase: "m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21 M22 21H7 M5 11l9 9",
+    x: "M18 6 6 18 M6 6l12 12",
+    check: "M20 6 9 17l-5-5",
+    wait: "M5 22h14 M5 2h14 M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22 M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2",
+    mail: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M22 7l-10 6L2 7",
+    left: "m15 18-6-6 6-6", right: "m9 18 6-6-6-6", plus: "M5 12h14 M12 5v14", minus: "M5 12h14",
+    alert: "M12 9v4 M12 17h.01 M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z",
+    book: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+    cards: "M2 7h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2z M8 7V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-4",
+    flag: "M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"
+  };
+  const svg = (k) => '<svg viewBox="0 0 24 24"><path d="' + IC[k] + '"/></svg>';
+  const P2D = {};
+  function icon(k, x, y, size, col, lw) {
+    if (!P2D[k]) P2D[k] = new Path2D(IC[k]);
+    ctx.save(); ctx.translate(x - size / 2, y - size / 2); ctx.scale(size / 24, size / 24);
+    ctx.lineWidth = lw || 2.6; ctx.lineCap = ctx.lineJoin = "round"; ctx.strokeStyle = col; ctx.stroke(P2D[k]); ctx.restore();
+  }
+
+  // ---- the game's sprites ----------------------------------------------------------
+  const ART = { inf: ["army", 5], cav: ["army", 7], general: ["army", 8], cannon: ["army", 9], wagon: ["army", 10], capital: ["army", 1], fort: ["army", 2],
+    town: ["army", 3], drummer: ["works", 4], siege: ["works", 7], engineer: ["works", 3], depot: ["works", 9], palisade: ["works", 11], mine: ["works", 15], farm: ["works", 16] };
+  const nn = (n) => (n < 10 ? "0" : "") + n;
+  const url = (k, camp) => "../assets/image/object/foldiers-" + ART[k][0] + "-" + (camp === RED ? "red" : "blue") + "-" + nn(ART[k][1]) + ".png";
+  const IMG = {};
+  function im(k, camp) { const u = url(k, camp); if (!IMG[u]) { IMG[u] = new Image(); IMG[u].src = u; } return IMG[u]; }
+  for (const k in ART) { im(k, BLUE); im(k, RED); }
+  const imgTag = (k, camp, cls) => '<img src="' + url(k, camp) + '"' + (camp === NEU ? ' style="filter:grayscale(1) sepia(.5)"' : "") + (cls ? ' class="' + cls + '"' : "") + ">";
+  function sprite(k, camp, x, y, h) { // bottom-centred at x, y
+    const i = im(k, camp); if (!i.complete || !i.naturalWidth) return;
+    const w = h * i.naturalWidth / i.naturalHeight;
+    if (camp === NEU) ctx.filter = "grayscale(1) sepia(.5)";
+    ctx.drawImage(i, x - w / 2, y - h, w, h); ctx.filter = "none";
+  }
+  const PIECE_NAME = { cannon: "Cannon", general: "General", drummer: "Drummer", siege: "Siege tower", engineer: "Engineer", wagon: "Wagon" };
+
+  // ---- state -------------------------------------------------------------------------
+  const STORE = "foldiers-controls-1";
+  const S = { scheme: "dispatch", level: 2, seed: 7, dots: true, shields: true };
+  try { Object.assign(S, JSON.parse(localStorage.getItem(STORE) || "{}")); } catch (e) { /* defaults */ }
+  const HASH = {};
+  location.hash.replace(/^#/, "").split("&").forEach((kv) => { const p = kv.split("="); if (p[0]) HASH[p[0]] = decodeURIComponent(p[1] || ""); });
+  if (HASH.scheme) S.scheme = HASH.scheme;
+  if (HASH.level) S.level = +HASH.level;
+  if (HASH.seed) S.seed = +HASH.seed;
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) { /* private window */ } }
+
+  let W = null;          // the world
+  let O = [];            // this tick's orders
+  let U = {};            // the scheme's own UI state
+  let oid = 1, pid = 1, flash = null, lastLog = "";
+
+  function rng(seed) { let a = seed >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // ---- the map: a straight-edged Voronoi cut ---------------------------------------
+  function clipPoly(poly, a, b, c) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const P = poly[i], Q = poly[(i + 1) % poly.length];
+      const dp = a * P.x + b * P.y - c, dq = a * Q.x + b * Q.y - c;
+      if (dp <= 0) out.push(P);
+      if ((dp < 0 && dq > 0) || (dp > 0 && dq < 0)) { const t = dp / (dp - dq); out.push({ x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }); }
+    }
+    return out;
+  }
+  function genWorld() {
+    const L = S.level, n = LEVELS[L].n, rnd = rng(S.seed * 977 + L * 31);
+    const cols = Math.max(3, Math.round(Math.sqrt(n * MW / MH))), rows = Math.ceil(n / cols);
+    const pts = [];
+    for (let i = 0; i < rows; i++) for (let j = 0; j < cols && pts.length < n; j++) {
+      const cw = MW / cols, ch = MH / rows, off = (i % 2) * cw * 0.25;
+      pts.push({ x: clamp((j + 0.5) * cw + off + (rnd() - 0.5) * cw * 0.55, 30, MW - 30), y: (i + 0.5) * ch + (rnd() - 0.5) * ch * 0.55 });
+    }
+    const C = 70, land = [{ x: 8 + C, y: 8 }, { x: MW - 8 - C, y: 8 }, { x: MW - 8, y: 8 + C }, { x: MW - 8, y: MH - 8 - C }, { x: MW - 8 - C, y: MH - 8 }, { x: 8 + C, y: MH - 8 }, { x: 8, y: MH - 8 - C }, { x: 8, y: 8 + C }];
+    const names = NAMES.slice(); for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = names[i]; names[i] = names[j]; names[j] = t; }
+    const R = pts.map((p, i) => {
+      let poly = land;
+      pts.forEach((q, j) => { if (i !== j) poly = clipPoly(poly, 2 * (q.x - p.x), 2 * (q.y - p.y), q.x * q.x + q.y * q.y - p.x * p.x - p.y * p.y); });
+      let A = 0, cx = 0, cy = 0;
+      poly.forEach((P, k) => { const Q = poly[(k + 1) % poly.length], f = P.x * Q.y - Q.x * P.y; A += f; cx += (P.x + Q.x) * f; cy += (P.y + Q.y) * f; });
+      A /= 2;
+      return { id: i, name: names[i], poly, cx: cx / (6 * A), cy: cy / (6 * A), nb: [], owner: NEU, inf: 0, cav: 0, pieces: [], b: {}, warn: [], ter: TERRAIN[Math.floor(rnd() * TERRAIN.length)] };
+    });
+    // neighbours: a shared edge longer than a crumb
+    R.forEach((r, i) => R.forEach((s, j) => {
+      if (j <= i) return;
+      const p = pts[i], q = pts[j], a = 2 * (q.x - p.x), b = 2 * (q.y - p.y), c = q.x * q.x + q.y * q.y - p.x * p.x - p.y * p.y, len = Math.hypot(a, b);
+      const on = r.poly.filter((P) => Math.abs(a * P.x + b * P.y - c) / len < 0.6);
+      if (on.length >= 2 && Math.hypot(on[0].x - on[1].x, on[0].y - on[1].y) > 16) { r.nb.push(j); s.nb.push(i); }
+    }));
+    // camps: blue grows from the bottom, red from the top
+    const bc = R.reduce((a, r) => (r.cy - r.cx * 0.15 > a.cy - a.cx * 0.15 ? r : a));
+    const rc = R.reduce((a, r) => (r.cy + r.cx * 0.15 < a.cy + a.cx * 0.15 ? r : a));
+    const hops = (s) => { const d = R.map(() => 99); d[s.id] = 0; const q = [s.id]; while (q.length) { const u = q.shift(); R[u].nb.forEach((v) => { if (d[v] > d[u] + 1) { d[v] = d[u] + 1; q.push(v); } }); } return d; };
+    const dB = hops(bc), dR = hops(rc);
+    const order = R.slice().sort((a, b) => (dB[a.id] - dR[a.id]) - (dB[b.id] - dR[b.id]) || (b.cy - a.cy));
+    const k = Math.round(n * 0.38);
+    order.forEach((r, i) => { r.owner = i < k ? BLUE : i >= n - k ? RED : NEU; });
+    bc.owner = BLUE; rc.owner = RED;
+    // what stands on it
+    R.forEach((r) => {
+      r.inf = r.owner === NEU ? Math.floor(rnd() * 3) : 1 + Math.floor(rnd() * 5);
+      if (rnd() < 0.32) r.b.town = true;
+    });
+    bc.b.capital = true; bc.b.town = false; bc.inf = 6;
+    rc.b.capital = true; rc.b.town = false; rc.inf = 7;
+    const front = (r) => r.nb.some((v) => R[v].owner !== r.owner);
+    const blues = R.filter((r) => r.owner === BLUE), reds = R.filter((r) => r.owner === RED);
+    const pick = (list, f) => { const l = list.filter(f || (() => true)); return l.length ? l[Math.floor(rnd() * l.length)] : null; };
+    const put = (r, k) => { if (r) r.pieces.push({ id: pid++, k }); };
+    if (L >= 2) {
+      R.forEach((r) => { if (r.owner !== NEU && rnd() < 0.4) r.cav = 1 + Math.floor(rnd() * 3); });
+      [pick(blues, (r) => !r.b.capital), pick(reds, (r) => !r.b.capital)].forEach((r) => { if (r) r.b.fort = true; });
+      for (let i = 0; i < 3; i++) { const r = pick(R, (r) => !r.b.capital && !r.b.mine); if (r) r.b.mine = true; }
+      put(pick(blues, front), "cannon"); put(pick(blues, (r) => front(r) && !r.pieces.length), "cannon"); put(pick(reds, front), "cannon");
+    }
+    if (L >= 3) {
+      const fr = blues.filter(front).sort((a, b) => b.inf - a.inf);
+      put(fr[0], "general"); put(fr[1] || fr[0], "drummer"); put(fr[2] || fr[0], "siege");
+      put(pick(blues, (r) => !front(r)) || bc, "engineer"); put(pick(blues, (r) => !front(r) && !r.b.capital) || bc, "wagon");
+      for (let i = 0; i < 2; i++) { const r = pick(R, (r) => !r.b.capital && !r.b.farm); if (r) r.b.farm = true; }
+      const low = blues.filter((r) => front(r) && !r.b.capital).sort((a, b) => a.inf - b.inf)[0];
+      if (low) low.warn.push("Revolt risk");
+    }
+    W = { R, L, tick: 1, gold: [0, 0, 5, 9][L], grain: L >= 3 ? 4 : 0, reserve: [0, 2, 3, 5][L], clock: 120 };
+    O = []; U = {};
+    alerts();
+  }
+
+  // ---- the rules the schemes read ----------------------------------------------------
+  const R_ = (i) => W.R[i];
+  const isBlue = (r) => r.owner === BLUE;
+  const troops = (r) => r.inf + r.cav;
+  const ordersFrom = (r, k) => O.filter((o) => o.from === r.id && (!k || o.k === k));
+  const ordersTo = (r, k) => O.filter((o) => o.to === r.id && (!k || o.k === k));
+  const troopOrder = (o) => o.k === "attack" || o.k === "move";
+  function freeOf(r) { let i = r.inf, c = r.cav; O.forEach((o) => { if (troopOrder(o) && o.from === r.id) { i -= o.inf; c -= o.cav; } }); return { inf: i, cav: c, n: i + c }; }
+  const free = (r) => freeOf(r).n;
+  const defended = (r) => O.some((o) => o.k === "defend" && o.from === r.id);
+  const pieceOrder = (p) => O.find((o) => o.piece === p.id);
+  const owesTroops = (r) => isBlue(r) && free(r) > 0 && !defended(r);
+  const piecesOwed = (r) => (isBlue(r) ? r.pieces.filter((p) => !pieceOrder(p)) : []);
+  const todoOf = (r) => (owesTroops(r) ? 1 : 0) + piecesOwed(r).length;
+  const todoCount = () => W.R.reduce((a, r) => a + todoOf(r), 0);
+  const goldLeft = () => W.gold - O.reduce((a, o) => a + (o.cost || 0), 0);
+  const reserveLeft = () => W.reserve - O.reduce((a, o) => a + (o.k === "drop" ? o.n : 0), 0);
+  const recruitOf = (r) => O.find((o) => o.k === "recruit" && o.from === r.id);
+  const canRecruit = (r) => W.L >= 2 && isBlue(r) && (r.b.town || r.b.capital) && !recruitOf(r) && goldLeft() >= RECRUIT_COST;
+  const enemyNb = (r) => r.nb.map(R_).filter((s) => !isBlue(s));
+  const blueNb = (r) => r.nb.map(R_).filter(isBlue);
+  const frontline = (r) => r.nb.some((v) => !isBlue(R_(v)));
+  const outputOf = (r) => ({ reserve: r.b.capital ? 2 : (r.b.town ? 1 : 0) + (r.b.fort ? 1 : 0), gold: r.b.mine ? 1 : 0, grain: r.b.farm ? 3 : 0 });
+
+  // the forecast of a target: everything sent there this tick, troop for troop
+  function forecast(t, extra) {
+    let att = extra || 0, siege = false;
+    O.forEach((o) => {
+      if (o.to !== t.id) return;
+      if (o.k === "attack") att += o.inf + o.cav;
+      if (o.k === "join") { const p = pieceById(o.piece); if (p && p.k === "siege") siege = true; else att += 1; }
+    });
+    const shots = O.filter((o) => o.k === "fire" && o.to === t.id).length;
+    const def = Math.max(0, troops(t) - CANNON * shots) + (t.b.fort && !siege ? 1 : 0);
+    const v = att === 0 ? "none" : att > def + 1 ? "ok" : att === def + 1 ? "just" : att === def ? "tie" : "bad";
+    return { att, def, v };
+  }
+  function pieceById(id) { for (const r of W.R) for (const p of r.pieces) if (p.id === id) return p; return null; }
+  function pieceHome(id) { return W.R.find((r) => r.pieces.some((p) => p.id === id)); }
+  // just enough to take it with a troop to spare, or everything
+  function suggest(from, t) { const f = forecast(t); return clamp(f.def + 2 - f.att, 1, free(from)); }
+  // what every red neighbour sends together, each keeping one troop home
+  const threat = (r) => r.nb.map(R_).filter((s) => s.owner === RED).reduce((a, s) => a + Math.max(0, troops(s) - 1), 0);
+  function staying(r) {
+    let n = free(r) + (defended(r) || r.b.palisade ? 1 : 0);
+    O.forEach((o) => { if (o.to === r.id && (o.k === "move" || o.k === "drop")) n += o.k === "drop" ? o.n : o.inf + o.cav; });
+    return n;
+  }
+  function shield(r) { const t = threat(r); if (!t) return { v: "none", t, s: staying(r) }; const s = staying(r); return { v: s > t + 1 ? "ok" : s > t ? "just" : "bad", t, s }; }
+  const urgency = (r) => (shield(r).v === "bad" ? 100 : 0) + threat(r) + (frontline(r) ? 10 : 0) + free(r) * 0.1;
+  function alerts() {
+    W.R.forEach((r) => { r.warn = r.warn.filter((w) => w === "Revolt risk"); });
+    if (W.L < 3) return;
+    // supply: more than 3 regions of yours from a town, the capital or a depot
+    const src = W.R.filter((r) => isBlue(r) && (r.b.town || r.b.capital || r.b.depot)).map((r) => r.id);
+    const d = W.R.map(() => 99); const q = src.slice(); src.forEach((i) => { d[i] = 0; });
+    while (q.length) { const u = q.shift(); R_(u).nb.forEach((v) => { if (isBlue(R_(v)) && d[v] > d[u] + 1) { d[v] = d[u] + 1; q.push(v); } }); }
+    W.R.forEach((r) => { if (isBlue(r) && d[r.id] > 2) r.warn.push("Out of supply"); });
+    if (W.grain <= 0) W.R.filter(isBlue).sort((a, b) => troops(b) - troops(a)).slice(0, 1).forEach((r) => r.warn.push("Hungry"));
+  }
+
+  // ---- giving orders -------------------------------------------------------------------
+  function setTroops(from, to, k, n) {
+    O = O.filter((o) => !(troopOrder(o) && o.from === from.id && o.to === to.id));
+    const f = freeOf(from); n = clamp(n, 0, f.n);
+    if (!n) { dropOrphans(from); return null; }
+    const inf = Math.min(f.inf, n), cav = n - inf;
+    const o = { id: oid++, k, from: from.id, to: to.id, inf, cav, t0: now() };
+    O.push(o);
+    O = O.filter((x) => !(x.k === "defend" && x.from === from.id && free(from) === 0));
+    return o;
+  }
+  const sentTo = (from, to) => { const o = O.find((x) => troopOrder(x) && x.from === from.id && x.to === to.id); return o ? o.inf + o.cav : 0; };
+  function sendTroops(from, to, n) { return setTroops(from, to, isBlue(to) ? "move" : "attack", sentTo(from, to) + n); }
+  // a piece riding with a convoy that no longer goes there comes home
+  function dropOrphans(from) { O = O.filter((o) => !(o.k === "join" && o.from === from.id && !O.some((a) => a.k === "attack" && a.from === from.id && a.to === o.to))); }
+  function cancel(o) { O = O.filter((x) => x !== o); if (troopOrder(o)) dropOrphans(R_(o.from)); }
+  function toggleDefend(r) { const o = O.find((x) => x.k === "defend" && x.from === r.id); if (o) cancel(o); else O.push({ id: oid++, k: "defend", from: r.id, t0: now() }); }
+  function pieceAct(p, k, to) {
+    const home = pieceHome(p.id), had = pieceOrder(p);
+    if (had) cancel(had);
+    if (had && had.k === k && had.to === (to ? to.id : undefined)) return null;
+    const o = { id: oid++, k, from: home.id, to: to ? to.id : undefined, piece: p.id, t0: now() };
+    if (k === "build") { o.cost = p.k === "engineer" ? WORK_COST : 0; if (o.cost > goldLeft()) return null; }
+    O.push(o); return o;
+  }
+  function recruit(r) { const o = recruitOf(r); if (o) { cancel(o); return; } if (canRecruit(r)) O.push({ id: oid++, k: "recruit", from: r.id, cost: RECRUIT_COST, t0: now() }); }
+  function drop(r, n) {
+    n = Math.min(n, reserveLeft()); if (n <= 0 || !isBlue(r)) return;
+    const o = O.find((x) => x.k === "drop" && x.to === r.id);
+    if (o) { o.n += n; o.t0 = now(); } else O.push({ id: oid++, k: "drop", to: r.id, n, t0: now() });
+  }
+  // what a piece can do: its targets and the word of each
+  function pieceChoices(p) {
+    const r = pieceHome(p.id), out = [];
+    if (p.k === "cannon") enemyNb(r).forEach((t) => { const f = forecast(t); out.push({ k: "fire", t, label: "Fire on " + t.name, sub: troops(t) + " → " + Math.max(0, troops(t) - CANNON) }); });
+    if (p.k === "general" || p.k === "drummer" || p.k === "siege") ordersFrom(r, "attack").forEach((a) => { const t = R_(a.to); out.push({ k: "join", t, label: "With the attack on " + t.name, sub: p.k === "siege" ? "fort +1 gone" : "+1" }); });
+    if (p.k === "engineer") out.push({ k: "build", label: "Palisade here", sub: WORK_COST + " gold", off: goldLeft() < WORK_COST });
+    if (p.k === "wagon") out.push({ k: "build", label: "Depot here", sub: "supply" });
+    return out;
+  }
+
+  // ---- Send: the tick, roughly the game's -------------------------------------------
+  function send() {
+    const R = W.R, rnd = rng(S.seed * 131 + W.tick * 7), lines = [];
+    const def = new Set(O.filter((o) => o.k === "defend").map((o) => o.from));
+    O.filter((o) => o.k === "fire").forEach((o) => { const t = R_(o.to); let d = CANNON; const a = Math.min(t.inf, d); t.inf -= a; d -= a; t.cav = Math.max(0, t.cav - d); lines.push("Cannon hits " + t.name); });
+    O.filter((o) => o.k === "drop").forEach((o) => { R_(o.to).inf += o.n; W.reserve -= o.n; });
+    O.filter((o) => troopOrder(o)).forEach((o) => { const f = R_(o.from); f.inf -= o.inf; f.cav -= o.cav; });
+    const targets = [...new Set(O.filter((o) => o.k === "attack").map((o) => o.to))];
+    targets.forEach((ti) => {
+      const t = R_(ti); let inf = 0, cav = 0, bonus = 0, siege = false;
+      const joins = O.filter((o) => o.k === "join" && o.to === ti);
+      O.filter((o) => o.k === "attack" && o.to === ti).forEach((o) => { inf += o.inf; cav += o.cav; });
+      joins.forEach((o) => { const p = pieceById(o.piece); if (p.k === "siege") siege = true; else bonus++; });
+      const att = inf + cav + bonus, dd = troops(t) + (t.b.fort && !siege ? 1 : 0);
+      if (att > dd) {
+        const left = Math.min(att - dd, inf + cav), c = Math.min(cav, left);
+        t.owner = BLUE; t.cav = c; t.inf = left - c; t.pieces = [];
+        joins.forEach((o) => { const p = pieceById(o.piece), h = pieceHome(o.piece); h.pieces = h.pieces.filter((x) => x !== p); t.pieces.push(p); });
+        if (W.L >= 3 && left < 2) t.warn = ["Revolt risk"];
+        lines.push("You take " + t.name + " (" + att + " v " + dd + ")");
+      } else {
+        let lost = att; const a = Math.min(t.inf, lost); t.inf -= a; lost -= a; t.cav = Math.max(0, t.cav - lost);
+        lines.push(t.name + " holds (" + att + " v " + dd + ")");
+      }
+    });
+    O.filter((o) => o.k === "move").forEach((o) => { const t = R_(o.to); t.inf += o.inf; t.cav += o.cav; });
+    O.filter((o) => o.k === "recruit").forEach((o) => { R_(o.from).inf += RECRUIT_N; });
+    O.filter((o) => o.k === "build").forEach((o) => { const p = pieceById(o.piece), h = R_(o.from); if (p.k === "engineer") h.b.palisade = true; else h.b.depot = true; });
+    W.gold -= O.reduce((a, o) => a + (o.cost || 0), 0);
+    // output
+    R.forEach((r) => { if (isBlue(r)) { const out = outputOf(r); W.reserve += out.reserve; W.gold += out.gold; W.grain += out.grain; } });
+    if (W.L >= 3) W.grain -= Math.max(0, Math.ceil(R.filter(isBlue).reduce((a, r) => a + troops(r), 0) / 8) - 2);
+    // red: grows, then strikes where it wins
+    R.forEach((r) => { if (r.owner === RED && rnd() < 0.55) r.inf += 1; });
+    let best = null;
+    // one strike a tick, a region of yours first, else a neutral one it beats
+    R.forEach((r) => { if (r.owner !== RED) return; r.nb.map(R_).filter((b) => b.owner !== RED).forEach((b) => {
+      const m = troops(r) - 1 - (troops(b) + (b.b.fort ? 1 : 0) + (def.has(b.id) || b.b.palisade ? 1 : 0)), w = m + (isBlue(b) ? 10 : 0);
+      if (m > 0 && !b.b.capital && (!best || w > best.w)) best = { r, b, m, w };
+    }); });
+    if (best) { const was = best.b.owner; best.b.owner = RED; best.b.inf = best.m; best.b.cav = 0; best.b.pieces = []; best.b.warn = []; best.r.inf = 1; best.r.cav = 0; lines.push("Red takes " + best.b.name + (was === NEU ? " (neutral)" : "")); }
+    O = []; U = {}; W.tick++; W.clock = 120;
+    alerts();
+    lastLog = "Tick " + (W.tick - 1) + ": " + (lines.length ? lines.join(" · ") : "quiet");
+    refresh();
+  }
+
+  // ---- the schemes ----------------------------------------------------------------------
+  const now = () => performance.now() / 1000;
+  // the cards of the dispatch deck and of the hand: what is owed, then what is offered
+  function items() {
+    const out = [], blues = W.R.filter(isBlue).sort((a, b) => urgency(b) - urgency(a));
+    const stuck = [];
+    blues.forEach((r) => {
+      if (owesTroops(r)) out.push({ key: "t" + r.id, k: "troops", r, owed: true });
+      // a piece with nothing to act on yet waits behind every other owed card
+      piecesOwed(r).forEach((p) => (pieceChoices(p).length ? out : stuck).push({ key: "p" + p.id, k: "piece", r, p, owed: true }));
+    });
+    out.push(...stuck);
+    if (reserveLeft() > 0 && !(U.dismiss || {}).reserve) out.push({ key: "reserve", k: "reserve", owed: false });
+    blues.forEach((r) => { if (canRecruit(r) && !(U.dismiss || {})["r" + r.id]) out.push({ key: "r" + r.id, k: "recruit", r, owed: false }); });
+    return out;
+  }
+  const situLine = (r) => {
+    const sh = shield(r), reds = r.nb.map(R_).filter((s) => s.owner === RED);
+    if (!reds.length) return { v: "none", tx: "No red next door" };
+    const who = reds.map((s) => s.name + " " + troops(s)).join(", ");
+    return { v: sh.v, tx: (sh.v === "bad" ? "Falls" : sh.v === "just" ? "Just holds" : "Holds") + " — " + sh.s + " v " + sh.t + " (" + who + ")" };
+  };
+  function contentsHTML(r, opt) {
+    const camp = r.owner, f = isBlue(r) ? freeOf(r) : { inf: r.inf, cav: r.cav };
+    let h = "";
+    if (r.inf || !r.cav) h += '<span class="chip">' + imgTag("inf", camp) + (isBlue(r) && opt !== "all" && f.inf !== r.inf ? f.inf + "<small>/" + r.inf + "</small>" : r.inf) + "</span>";
+    if (r.cav) h += '<span class="chip">' + imgTag("cav", camp) + (isBlue(r) && opt !== "all" && f.cav !== r.cav ? f.cav + "<small>/" + r.cav + "</small>" : r.cav) + "</span>";
+    r.pieces.forEach((p) => { h += '<span class="chip">' + imgTag(p.k, camp) + "</span>"; });
+    ["capital", "town", "fort", "mine", "farm", "palisade", "depot"].forEach((b) => { if (r.b[b]) h += '<span class="chip">' + imgTag(b === "capital" ? "capital" : b, camp) + "</span>"; });
+    if (isBlue(r)) { const o = outputOf(r); if (o.reserve) h += '<span class="chip prod">' + svg("star") + " +" + o.reserve + "</span>"; if (o.gold) h += '<span class="chip prod">' + svg("coin") + " +" + o.gold + "</span>"; if (o.grain) h += '<span class="chip prod">grain +' + o.grain + "</span>"; }
+    r.warn.forEach((w) => { h += '<span class="chip warn">' + svg("alert") + " " + w + "</span>"; });
+    return h;
+  }
+  const vPill = (f) => '<span class="pill v-' + f.v + '">' + f.att + " v " + f.def + "</span>";
+  function stepper(val, max, auto) {
+    return '<button data-a="amt" data-d="-1">' + svg("minus") + "</button><b>" + (auto ? "auto" : val) + "</b>" +
+      '<button data-a="amt" data-d="1">' + svg("plus") + "</button><em>of " + max + "</em>";
+  }
+  function orderWord(o) {
+    const f = o.from != null ? R_(o.from) : null, t = o.to != null ? R_(o.to) : null, p = o.piece ? pieceById(o.piece) : null;
+    switch (o.k) {
+      case "attack": return f.name + " attacks " + t.name + " · " + (o.inf + o.cav);
+      case "move": return f.name + " → " + t.name + " · " + (o.inf + o.cav);
+      case "defend": return f.name + " defends +1";
+      case "fire": return "Cannon of " + f.name + " fires on " + t.name;
+      case "join": return PIECE_NAME[p.k] + " goes with the attack on " + t.name;
+      case "build": return (p.k === "engineer" ? "Palisade" : "Depot") + " at " + f.name;
+      case "wait": return PIECE_NAME[p.k] + " of " + f.name + " waits";
+      case "recruit": return f.name + " recruits +" + RECRUIT_N;
+      case "drop": return "Reserve: +" + o.n + " on " + t.name;
+    }
+    return o.k;
+  }
+
+  const SCHEMES = {
+    // ============================================================ 1. DISPATCHES
+    dispatch: {
+      name: "Dispatches",
+      note: "The game asks, you answer: one card a decision, a few answers with their verdict.",
+      answers: [
+        "The card: everything on the region, its output, the threat — one region at a time. Tap any region on the map for its card.",
+        "Big answer buttons with their verdict, the count pre-set to just enough. The lit pins on the map answer too.",
+        "The deck: how many dispatches are left. Owed first, then what is offered (reserve, recruits), which you may set aside.",
+        "The pile of given dispatches above the card, arrows on the map. Tap the pile to read or cancel one."
+      ],
+      uiTop: () => 732,
+      deck() {
+        const all = items(), skip = U.skip || [];
+        return all.filter((it) => skip.indexOf(it.key) < 0).concat(skip.map((k) => all.find((it) => it.key === k)).filter(Boolean));
+      },
+      cur() { const d = this.deck(); return d.find((it) => it.key === U.cur) || d[0] || null; },
+      region() { if (U.intel != null) return R_(U.intel); const c = this.cur(); return c && c.r ? c.r : null; },
+      amount(it, t) {
+        if (it.k === "reserve") return U.amt != null ? clamp(U.amt, 1, reserveLeft()) : 1;
+        return U.amt != null ? clamp(U.amt, 1, free(it.r)) : suggest(it.r, t);
+      },
+      choices(it) {
+        const out = [];
+        if (it.k === "troops") {
+          const r = it.r;
+          enemyNb(r).map((t) => ({ t, f: forecast(t, this.amount(it, t)) })).sort((a, b) => (b.f.att - b.f.def) - (a.f.att - a.f.def)).slice(0, 3)
+            .forEach((x) => out.push({ cls: "attack", ic: "sword", label: "Attack " + x.t.name, f: x.f, go: () => sendTroops(r, x.t, this.amount(it, x.t)), t: x.t }));
+          blueNb(r).sort((a, b) => urgency(b) - urgency(a)).slice(0, 2)
+            .forEach((t) => out.push({ cls: "move", ic: "move", label: "To " + t.name, sub: shield(t).v === "bad" ? "it falls" : "", go: () => sendTroops(r, t, U.amt != null ? this.amount(it) : free(r)), t }));
+          out.push({ cls: "hold", ic: "shield", label: "Defend +1", sub: free(r) + " stay", go: () => toggleDefend(r), wide: out.length % 2 === 0 });
+        } else if (it.k === "piece") {
+          pieceChoices(it.p).forEach((c) => out.push({ cls: c.k === "fire" ? "attack" : "", ic: c.k === "fire" ? "bomb" : c.k === "join" ? "join" : "hammer", label: c.label, sub: c.sub, off: c.off, t: c.t, go: () => pieceAct(it.p, c.k, c.t) }));
+          if (!out.length) out.push({ note: "No attack leaves " + it.r.name + " yet: give its troops one first." });
+          out.push({ ic: "wait", label: "Wait", go: () => pieceAct(it.p, "wait"), wide: out.length % 2 === 0 });
+        } else if (it.k === "recruit") {
+          out.push({ cls: "attack", ic: "coin", label: "Recruit +" + RECRUIT_N, sub: RECRUIT_COST + " gold", go: () => recruit(it.r) });
+          out.push({ ic: "wait", label: "Not now", go: () => { U.dismiss = Object.assign({}, U.dismiss, { [it.key]: 1 }); } });
+        } else if (it.k === "reserve") {
+          W.R.filter((r) => isBlue(r) && frontline(r)).sort((a, b) => urgency(b) - urgency(a)).slice(0, 3).forEach((r) => {
+            const sh = shield(r);
+            out.push({ cls: "hold", ic: "star", label: "Drop on " + r.name, sub: sh.v === "none" ? "" : sh.s + " v " + sh.t, t: r, go: () => drop(r, this.amount(it)) });
+          });
+          out.push({ ic: "wait", label: "Keep it", go: () => { U.dismiss = Object.assign({}, U.dismiss, { reserve: 1 }); }, wide: out.length % 2 === 0 });
+        }
+        return out;
+      },
+      dom() {
+        const given = O.length;
+        const pile = '<button class="given paper live" data-a="given">' + svg("mail") + " " + given + " given</button>";
+        let body;
+        if (U.given) {
+          body = '<div class="top"><span class="left">Given this tick</span><button data-a="back">Back</button></div>' +
+            '<div class="glist">' + (O.length ? O.map((o) => '<div class="row"><span class="tx">' + orderWord(o) + '</span><button data-a="cancel" data-o="' + o.id + '">' + svg("x") + "</button></div>").join("") : '<p class="note">Nothing yet.</p>') + "</div>";
+        } else if (U.intel != null) {
+          const r = R_(U.intel), sit = isBlue(r) ? situLine(r) : null;
+          const mine = isBlue(r) ? O.filter((o) => o.from === r.id || o.to === r.id) : O.filter((o) => o.to === r.id);
+          body = '<div class="top"><span class="left">' + CAMP_WORD[r.owner] + (isBlue(r) ? " · nothing left to decide" : "") + '</span><button data-a="back">Back</button></div>' +
+            '<div class="title"><span class="camp" style="background:' + CAMP[r.owner] + '"></span>' + r.name + "</div>" +
+            '<div class="what">' + contentsHTML(r, "all") + "</div>" +
+            (sit ? '<div class="situ"><span class="sh v-' + sit.v + '">' + svg("shield") + "</span>" + sit.tx + "</div>" : "") +
+            (!isBlue(r) && O.some((o) => o.to === r.id && o.k === "attack") ? '<div class="situ">' + vPill(forecast(r)) + " your attack</div>" : "") +
+            '<div class="glist">' + mine.map((o) => '<div class="row"><span class="tx">' + orderWord(o) + '</span><button data-a="cancel" data-o="' + o.id + '">' + svg("x") + "</button></div>").join("") + "</div>";
+        } else {
+          const d = this.deck(), it = this.cur();
+          if (!it) {
+            body = '<div class="top"><span class="left">The deck is empty</span></div><div class="title">Every order is given</div>' +
+              '<p class="note">Send now, or tap a region to change what it does.</p><div class="ans"><button class="pbtn wide live" data-a="send">' + svg("check") + " Send the orders</button></div>";
+          } else {
+            const owed = d.filter((x) => x.owed).length, pos = d.findIndex((x) => x.key === it.key) + 1;
+            let title, what = "", situ = "", amt = "";
+            if (it.k === "reserve") {
+              title = '<span class="camp" style="background:#e9d8ae"></span>Reserve';
+              what = '<span class="chip">' + imgTag("inf", BLUE) + reserveLeft() + '</span><span class="chip prod">' + svg("star") + " drop it on a region at the front</span>";
+              amt = '<div class="amt live">Drop ' + stepper(this.amount(it), reserveLeft(), false) + "</div>";
+            } else {
+              const r = it.r, sit = situLine(r);
+              title = '<span class="camp" style="background:' + CAMP[r.owner] + '"></span>' + r.name + (it.k === "piece" ? " · " + PIECE_NAME[it.p.k] : it.k === "recruit" ? " · town" : "");
+              what = contentsHTML(r);
+              situ = '<div class="situ"><span class="sh v-' + sit.v + '">' + svg("shield") + "</span>" + sit.tx + "</div>";
+              if (it.k === "troops") amt = '<div class="amt live">Send ' + stepper(U.amt != null ? this.amount(it) : 0, free(r), U.amt == null) + "</div>";
+            }
+            const ch = this.choices(it);
+            body = '<div class="top"><span class="left">' + (it.owed ? "Dispatch " + pos + " of " + d.length + " · " + owed + " owed" : "Offer · " + pos + " of " + d.length) + "</span>" +
+              (d.length > 1 ? '<button data-a="later">Later ' + svg("right") + "</button>" : "") + "</div>" +
+              '<div class="title">' + title + "</div>" + '<div class="what">' + what + "</div>" + situ + amt +
+              '<div class="ans">' + ch.map((c, i) => c.note ? '<p class="note" style="grid-column:1/-1">' + c.note + "</p>" :
+                '<button class="pbtn live ' + (c.cls || "") + (c.wide ? " wide" : "") + (c.off ? " dim" : "") + '" data-a="ans" data-i="' + i + '">' + svg(c.ic) +
+                '<span class="tx">' + c.label + (c.sub ? '<br><small style="font-size:20px;color:#6b5c3c">' + c.sub + "</small>" : "") + "</span>" + (c.f ? vPill(c.f) : "") + "</button>").join("") + "</div>";
+          }
+        }
+        const layers = U.given || U.intel != null ? "" : '<div class="layer paper l2"></div><div class="layer paper l1"></div>';
+        return '<div class="dp live">' + layers + '<div class="card paper">' + body + "</div>" + pile + "</div>";
+      },
+      act(a, el) {
+        const it = this.cur();
+        if (a === "ans") { const c = this.choices(it)[+el.dataset.i]; if (c && !c.off) { c.go(); U.amt = null; U.cur = null; } }
+        if (a === "later" && it) { U.skip = (U.skip || []).filter((k) => k !== it.key).concat([it.key]); U.cur = null; U.amt = null; }
+        if (a === "amt" && it) { const max = it.k === "reserve" ? reserveLeft() : free(it.r); const base = U.amt != null ? U.amt : it.k === "reserve" ? 1 : free(it.r); U.amt = clamp(base + (+el.dataset.d), 1, max); }
+        if (a === "given") { U.given = !U.given; U.intel = null; }
+        if (a === "back") { U.given = false; U.intel = null; }
+        if (a === "cancel") { const o = O.find((x) => x.id === +el.dataset.o); if (o) cancel(o); }
+      },
+      tapRegion(r) {
+        const it = U.intel == null && !U.given ? this.cur() : null;
+        if (it) { const c = this.choices(it).find((c) => c.t === r && !c.off); if (c && it.r !== r) { c.go(); U.amt = null; U.cur = null; return; } }
+        U.given = false; U.amt = null;
+        const mine = this.deck().find((x) => x.r === r);
+        if (mine) { U.cur = mine.key; U.intel = null; } else U.intel = r.id;
+      },
+      hl(r) { const reg = this.region(); if (!reg) return null; if (r === reg) return "sel"; const it = U.intel == null ? this.cur() : null; if (it && this.choices(it).some((c) => c.t === r)) return "lit"; return "dim"; },
+      overlay() {
+        const it = U.intel == null && !U.given ? this.cur() : null; if (!it) return;
+        this.choices(it).forEach((c) => {
+          if (!c.t || c.t === it.r) return;
+          const p = scr(c.t.cx, c.t.cy);
+          if (c.f) pin(p.x, p.y - 44, c.f.att + " v " + c.f.def, VCOL[c.f.v]);
+          else pin(p.x, p.y - 44, c.ic === "star" ? "+" + this.amount(it) : c.ic === "move" ? "→" : "•", "#2f63c4");
+        });
+      },
+      arrows: "chip"
+    },
+
+    // ============================================================ 2. STAMPS
+    stamps: {
+      name: "Stamps",
+      note: "Verb first: pick a stamp, the map shows only what can use it and the one number that matters.",
+      answers: [
+        "The stamp in hand is the filter: Attack shows free troops, Fire the cannons, Recruit the towns, Reserve what is left. No stamp: tap a region for its tag.",
+        "Stamp → region → target. Tap the mark again for +1 troop; the eraser takes an order back.",
+        "A badge on every stamp: how many can still use it. Yellow on Defend: troops nobody has dealt with yet.",
+        "Ink marks on the map, one per order, always shown."
+      ],
+      uiTop: () => 1118,
+      list() {
+        const L = W.L, blues = W.R.filter(isBlue), pieces = [].concat(...blues.map((r) => piecesOwed(r)));
+        return [
+          { k: "attack", ic: "sword", word: "Attack", ink: "#2f63c4", n: blues.filter((r) => free(r) > 0 && enemyNb(r).length).length },
+          { k: "move", ic: "move", word: "Move", ink: "#2f63c4", n: blues.filter((r) => free(r) > 0 && blueNb(r).length).length },
+          { k: "defend", ic: "shield", word: "Defend", ink: OK, n: blues.filter(owesTroops).length, owed: true },
+          L >= 2 && { k: "fire", ic: "bomb", word: "Fire", ink: BAD, n: pieces.filter((p) => p.k === "cannon").length, owed: true },
+          L >= 3 && { k: "join", ic: "join", word: "Lead", ink: "#7a4fc4", n: pieces.filter((p) => p.k === "general" || p.k === "drummer" || p.k === "siege").length, owed: true },
+          L >= 3 && { k: "build", ic: "hammer", word: "Build", ink: "#8a6a20", n: pieces.filter((p) => p.k === "engineer" || p.k === "wagon").length, owed: true },
+          L >= 2 && { k: "recruit", ic: "coin", word: "Recruit", ink: "#c99a10", n: blues.filter(canRecruit).length },
+          { k: "reserve", ic: "star", word: "Reserve", ink: "#c9a45a", n: reserveLeft() },
+          { k: "erase", ic: "erase", word: "Erase", ink: "#6d7486", n: O.length }
+        ].filter(Boolean);
+      },
+      // can r use the stamp in hand as a source (or as its one tap)
+      source(r, k) {
+        if (!isBlue(r)) return false;
+        if (k === "attack") return free(r) > 0 && enemyNb(r).length > 0;
+        if (k === "move") return free(r) > 0 && blueNb(r).length > 0;
+        if (k === "defend") return free(r) > 0 || defended(r);
+        if (k === "fire") return r.pieces.some((p) => p.k === "cannon");
+        if (k === "join") return r.pieces.some((p) => /general|drummer|siege/.test(p.k)) && ordersFrom(r, "attack").length > 0;
+        if (k === "build") return r.pieces.some((p) => p.k === "engineer" || p.k === "wagon");
+        if (k === "recruit") return (r.b.town || r.b.capital) && (canRecruit(r) || !!recruitOf(r));
+        if (k === "reserve") return reserveLeft() > 0 && frontline(r);
+        if (k === "erase") return O.some((o) => o.from === r.id || o.to === r.id);
+        return false;
+      },
+      targets(r, k) {
+        if (!r) return [];
+        if (k === "attack" || k === "fire") return enemyNb(r);
+        if (k === "move") return blueNb(r);
+        if (k === "join") return ordersFrom(r, "attack").map((o) => R_(o.to));
+        return [];
+      },
+      oneTap: { defend: 1, build: 1, recruit: 1, reserve: 1, erase: 1 },
+      badge(r, k) {
+        if (k === "attack" || k === "move" || k === "defend") return String(free(r));
+        if (k === "fire") return "";
+        if (k === "recruit") return recruitOf(r) ? "✓" : RECRUIT_COST + "g";
+        if (k === "reserve") { const o = O.find((x) => x.k === "drop" && x.to === r.id); return o ? "+" + o.n : "+"; }
+        return "";
+      },
+      dom() {
+        const L = this.list(), k = U.stamp, s = L.find((x) => x.k === k);
+        let hint = "";
+        if (s) {
+          const src = U.src != null ? R_(U.src) : null;
+          const tx = {
+            attack: src ? "Tap a red or grey neighbour of <b>" + src.name + "</b> — again for +1" : "Tap a region of yours with free troops",
+            move: src ? "Tap a region of yours next to <b>" + src.name + "</b>" : "Tap a region of yours with free troops",
+            defend: "Tap a region: its troops stay, +1", fire: src ? "Tap the region the cannon of <b>" + src.name + "</b> fires on" : "Tap a region with a cannon",
+            join: src ? "Tap the attack it goes with" : "Tap a region with a general, a drummer or a siege tower — and an attack",
+            build: "Tap a region with an engineer (palisade, " + WORK_COST + " gold) or a wagon (depot)", recruit: "Tap a town: " + RECRUIT_COST + " gold → +" + RECRUIT_N + " infantry",
+            reserve: "Tap a region at the front: +1 each tap (" + reserveLeft() + " left)", erase: "Tap a region or a mark to take its orders back"
+          }[k];
+          hint = '<div class="st-hint paper live"><span style="font-size:30px;color:' + s.ink + '">' + svg(s.ic) + '</span><span class="tx"><b style="color:' + s.ink + '">' + s.word + "</b> — " + tx + '</span><button data-a="drop" style="font-size:30px">' + svg("x") + "</button></div>";
+        }
+        return hint + '<div class="st-tray paper live">' + L.map((x) =>
+          '<button class="stamp' + (x.k === k ? " on" : "") + (!x.n && x.k !== k ? " off" : "") + '" style="--ink:' + x.ink + '" data-a="stamp" data-k="' + x.k + '" title="' + x.word + '">' + svg(x.ic) +
+          (x.n ? '<span class="bd' + (x.owed ? " owed" : "") + '">' + x.n + "</span>" : "") + "</button>").join("") + "</div>";
+      },
+      act(a, el) {
+        if (a === "stamp") { const k = el.dataset.k; U.stamp = U.stamp === k ? null : k; U.src = null; U.info = null; }
+        if (a === "drop") { U.stamp = null; U.src = null; }
+      },
+      tapRegion(r) {
+        const k = U.stamp;
+        if (!k) { U.info = U.info === r.id ? null : r.id; return; }
+        if (this.oneTap[k]) {
+          if (!this.source(r, k)) return nope(r);
+          if (k === "defend") toggleDefend(r);
+          if (k === "recruit") recruit(r);
+          if (k === "reserve") drop(r, 1);
+          if (k === "build") { const p = r.pieces.find((p) => p.k === "engineer" || p.k === "wagon"); pieceAct(p, "build"); }
+          if (k === "erase") O.filter((o) => o.from === r.id || o.to === r.id).forEach(cancel);
+          return;
+        }
+        const src = U.src != null ? R_(U.src) : null;
+        if (src && this.targets(src, k).indexOf(r) >= 0) {
+          if (k === "attack" || k === "move") { const had = sentTo(src, r); sendTroops(src, r, had ? 1 : (k === "attack" ? suggest(src, r) : free(src))); }
+          if (k === "fire") pieceAct(src.pieces.find((p) => p.k === "cannon"), "fire", r);
+          if (k === "join") { const p = src.pieces.find((p) => /general|drummer|siege/.test(p.k) && !pieceOrder(p)) || src.pieces.find((p) => /general|drummer|siege/.test(p.k)); pieceAct(p, "join", r); }
+          if ((k === "attack" || k === "move") && !free(src)) U.src = null;
+          if (k === "fire") U.src = null;
+          return;
+        }
+        if (this.source(r, k)) { U.src = U.src === r.id ? null : r.id; return; }
+        nope(r);
+      },
+      hl(r) {
+        const k = U.stamp;
+        if (!k) return U.info === r.id ? "sel" : null;
+        const src = U.src != null ? R_(U.src) : null;
+        if (src) return r === src ? "sel" : this.targets(src, k).indexOf(r) >= 0 ? "lit" : "dim";
+        return this.source(r, k) ? "lit" : "dim";
+      },
+      overlay() {
+        const k = U.stamp;
+        if (!k) { if (U.info != null) infoTag(R_(U.info)); return; }
+        const src = U.src != null ? R_(U.src) : null;
+        if (src) {
+          this.targets(src, k).forEach((t) => {
+            const p = scr(t.cx, t.cy);
+            if (k === "attack") { const f = forecast(t, sentTo(src, t) ? 1 : suggest(src, t)); pin(p.x, p.y - 46, f.att + " v " + f.def, VCOL[f.v]); }
+            if (k === "fire") pin(p.x, p.y - 46, troops(t) + " → " + Math.max(0, troops(t) - CANNON), BAD);
+            if (k === "move") pin(p.x, p.y - 46, "+" + free(src), "#2f63c4");
+          });
+          return;
+        }
+        // the stamp chooses the layer: one number a region, the one this verb needs
+        W.R.forEach((r) => { if (!this.source(r, k)) return; const b = this.badge(r, k); if (!b) return; const p = scr(r.cx, r.cy); pin(p.x + 34, p.y - 40, b, k === "defend" ? "#2a2418" : "#2f63c4"); });
+      },
+      tapMark(o) {
+        const k = U.stamp;
+        if (k === "erase") { cancel(o); return true; }
+        if (troopOrder(o) && (k === o.k)) { sendTroops(R_(o.from), R_(o.to), 1); return true; }
+        return false;
+      },
+      arrows: "stamp"
+    },
+
+    // ============================================================ 3. POP-UP BOOK
+    popup: {
+      name: "Pop-up book",
+      note: "A region opens as a page: its contents at full size in the middle, its neighbours as flaps around it.",
+      answers: [
+        "The page: every piece and building at full size, its output and alerts — nothing stacked on a map.",
+        "Piece, then flap. Defend under the pieces. A flap with nothing picked turns the page to that neighbour.",
+        "Pieces still standing on the tile are still to play; ‹ › walk the regions left to play; the mini map dots them.",
+        "Tickets pinned on the flaps; the mini map and the closed map show the arrows."
+      ],
+      uiTop: () => (U.open != null ? FH : 1170),
+      todo() { return W.R.filter((r) => todoOf(r) > 0).sort((a, b) => urgency(b) - urgency(a)); },
+      flaps(r) {
+        const nb = r.nb.map(R_).map((t) => ({ t, a: Math.atan2(t.cy - r.cy, t.cx - r.cx) })).sort((a, b) => a.a - b.a);
+        const gap = Math.min(2 * Math.PI / Math.max(nb.length, 1), 0.72);
+        for (let it = 0; it < 40; it++) for (let i = 0; i < nb.length; i++) {
+          const A = nb[i], B = nb[(i + 1) % nb.length]; let d = B.a - A.a; if (i === nb.length - 1) d += 2 * Math.PI;
+          if (nb.length > 1 && d < gap) { const m = (gap - d) / 2; A.a -= m; B.a += m; }
+        }
+        const cx = 350, cy = 470, hx = 270, hy = 282;
+        return nb.map((x) => { const c = Math.cos(x.a), s = Math.sin(x.a), t = Math.min(Math.abs(c) > 1e-3 ? hx / Math.abs(c) : 1e9, Math.abs(s) > 1e-3 ? hy / Math.abs(s) : 1e9);
+          return { t: x.t, x: clamp(cx + c * t - 85, 6, 700 - 176), y: clamp(cy + s * t - 40, 70, 830 - 86) }; });
+      },
+      selPieces(r) { return U.sel === "troops" ? null : r.pieces.find((p) => p.id === U.sel); },
+      litFor(r, t) {
+        if (!isBlue(r) || U.sel == null) return false;
+        if (U.sel === "troops") return free(r) > 0 || sentTo(r, t) > 0;
+        const p = this.selPieces(r); if (!p) return false;
+        return pieceChoices(p).some((c) => c.t === t);
+      },
+      dom() {
+        if (U.open == null) {
+          const td = this.todo();
+          return '<div class="pp-bar paper live">' + svg("book") + '<span class="tx">' + (td.length ? td.length + " regions to play — tap one, or" : "Every region is played") + "</span>" +
+            (td.length ? '<button class="pbtn" data-a="next">Open ' + td[0].name + " " + svg("right") + "</button>" : '<button class="pbtn" data-a="send">' + svg("check") + " Send</button>") + "</div>";
+        }
+        const r = R_(U.open), mine = isBlue(r), f = freeOf(r), td = this.todo();
+        // the tile: the region's own silhouette behind its pieces
+        const xs = r.poly.map((p) => p.x), ys = r.poly.map((p) => p.y), x0 = Math.min(...xs), y0 = Math.min(...ys), sw = Math.max(...xs) - x0, sh = Math.max(...ys) - y0;
+        const k = Math.min(300 / sw, 420 / sh), ox = (340 - sw * k) / 2, oy = (460 - sh * k) / 2;
+        const path = r.poly.map((p, i) => (i ? "L" : "M") + ((p.x - x0) * k + ox).toFixed(1) + " " + ((p.y - y0) * k + oy).toFixed(1)).join(" ") + "Z";
+        const sil = '<svg class="sil" viewBox="0 0 340 460" style="stroke:none"><path d="' + path + '" style="fill:' + landOf(r) + ';stroke:#2a2418;stroke-width:3;opacity:.75"/></svg>';
+        let pcs = "";
+        if (troops(r)) {
+          const done = mine && !owesTroops(r);
+          pcs += '<button class="pc' + (U.sel === "troops" ? " sel" : "") + (done ? " done" : "") + '" data-a="sel" data-p="troops">' +
+            (mine && owesTroops(r) && S.dots ? '<span class="owe dot"></span>' : "") +
+            (r.cav ? '<span style="display:flex;align-items:flex-end">' + imgTag("inf", r.owner).replace("<img", '<img style="height:52px"') + imgTag("cav", r.owner).replace("<img", '<img style="height:52px"') + "</span>" : imgTag("inf", r.owner)) +
+            "<span>" + (mine ? f.n + (f.n !== troops(r) ? "<small>/" + troops(r) + "</small>" : "") : troops(r)) + "</span>" +
+            (mine && defended(r) ? '<span class="tk" style="background:#2f8f4e">' + svg("shield") + "</span>" : "") + "</button>";
+        }
+        r.pieces.forEach((p) => {
+          const o = mine ? pieceOrder(p) : null;
+          pcs += '<button class="pc' + (U.sel === p.id ? " sel" : "") + (o ? " done" : "") + '" data-a="sel" data-p="' + p.id + '">' +
+            (mine && !o && S.dots ? '<span class="owe dot"></span>' : "") + imgTag(p.k, r.owner) + '<span style="font-size:20px">' + PIECE_NAME[p.k] + "</span>" +
+            (o ? '<span class="tk">' + (o.k === "fire" ? svg("bomb") + " " + R_(o.to).name : o.k === "join" ? "→ " + R_(o.to).name : o.k === "wait" ? svg("wait") : svg("hammer")) + "</span>" : "") + "</button>";
+        });
+        let blds = "";
+        ["capital", "town", "fort", "mine", "farm", "palisade", "depot"].forEach((b) => { if (r.b[b]) blds += '<span class="chip">' + imgTag(b, r.owner).replace("<img", '<img style="height:46px"') + "</span>"; });
+        if (mine) {
+          const out = outputOf(r);
+          if (out.reserve) blds += '<span class="chip prod">' + svg("star") + " +" + out.reserve + "</span>";
+          if (out.gold) blds += '<span class="chip prod">' + svg("coin") + " +" + out.gold + "</span>";
+          if (out.grain) blds += '<span class="chip prod">grain +' + out.grain + "</span>";
+          if (r.b.town || r.b.capital) { if (W.L >= 2) { const ro = recruitOf(r); blds += '<button class="chip prod live" data-a="recruit" style="border:2px solid #5c4a26;' + (ro ? "background:#cfe9d6" : canRecruit(r) ? "" : "opacity:.5") + '">' + svg("coin") + (ro ? " +" + RECRUIT_N + " " + svg("check") : " recruit " + RECRUIT_COST + "g") + "</button>"; } }
+        }
+        r.warn.forEach((w) => { blds += '<span class="chip warn">' + svg("alert") + " " + w + "</span>"; });
+        const tile = '<div class="pp-tile paper live">' + sil + '<div class="nm"><span class="camp" style="background:' + CAMP[r.owner] + '"></span>' + r.name +
+          "<small>" + (mine ? (todoOf(r) ? todoOf(r) + " to play" : "all played") : CAMP_WORD[r.owner]) + "</small></div>" +
+          '<div class="grid">' + pcs + "</div>" + '<div class="blds">' + blds + "</div></div>";
+        // the flaps: its neighbours, where they lie
+        const flaps = this.flaps(r).map((fl, i) => {
+          const t = fl.t, lit = this.litFor(r, t);
+          const os = O.filter((o) => (o.from === r.id && o.to === t.id) || (o.to === t.id && o.k === "fire" && o.from === r.id));
+          let tick = "";
+          const tro = os.find(troopOrder), fire = os.find((o) => o.k === "fire"), joins = os.filter((o) => o.k === "join");
+          if (tro) { const fc = forecast(t); tick = '<span class="tick ' + (tro.k === "attack" ? "v-" + fc.v : "") + '" style="' + (tro.k === "move" ? "background:#2f63c4" : "") + '">' + (tro.k === "attack" ? svg("sword") : svg("move")) + " " + (tro.inf + tro.cav) + (joins.length ? " +" + joins.length : "") + (fire ? " " + svg("bomb") : "") + "</span>"; }
+          else if (fire) tick = '<span class="tick v-bad">' + svg("bomb") + "</span>";
+          let vd = "";
+          if (lit && U.sel === "troops" && !isBlue(t)) { const fc = forecast(t, sentTo(r, t) ? 1 : suggest(r, t)); vd = '<span class="vd">' + vPill(fc) + "</span>"; }
+          const def = isBlue(t) ? free(t) + "/" + troops(t) : troops(t);
+          return '<button class="pp-flap live' + (lit ? " lit" : U.sel != null && mine ? " off" : "") + '" style="left:' + fl.x + "px;top:" + fl.y + "px;--camp:" + CAMP[t.owner] + '" data-a="flap" data-r="' + t.id + '">' +
+            "<span>" + t.name + "</span>" + '<span class="row2">' + imgTag("inf", t.owner) + def + (t.b.fort ? " " + imgTag("fort", t.owner) : "") + (isBlue(t) && todoOf(t) && S.dots ? ' <span class="dot"></span>' : "") + "</span>" + tick + vd + "</button>";
+        }).join("");
+        // under it: how many leave, Defend, the regions left
+        let act = "";
+        if (mine) {
+          if (U.sel === "troops") act += '<div class="amt live">Each tap on a flap ' + (U.amt ? "sends <b>" + U.amt + "</b>" : "sends <b>auto</b>") + '<button data-a="amt" data-d="-1">' + svg("minus") + '</button><button data-a="amt" data-d="1">' + svg("plus") + "</button></div>";
+          else if (U.sel != null) act += '<p class="help">Tap the flap it acts on, or</p><div class="row"><button class="pbtn live" data-a="wait">' + svg("wait") + " Wait</button></div>";
+          else act += '<p class="help">Pick a piece, then a flap. A flap alone opens that region.</p>';
+          if (troops(r)) act += '<div class="row"><button class="pbtn live' + (defended(r) ? " on" : "") + '" data-a="defend" style="' + (defended(r) ? "background:#cfe9d6" : "") + '">' + svg("shield") + " Defend +1 · " + free(r) + " stay</button></div>";
+        } else act += '<p class="help">' + CAMP_WORD[r.owner] + " region. " + (O.some((o) => o.to === r.id) ? "Your attack: " + forecast(r).att + " v " + forecast(r).def : "Open one of yours to give orders.") + "</p>";
+        const i = td.indexOf(r);
+        act += '<div class="row"><button class="pbtn live" data-a="prev"' + (td.length ? "" : ' disabled style="opacity:.4"') + ">" + svg("left") + '</button><span style="flex:2;text-align:center;font-size:22px">' +
+          (td.length ? td.length + " to play" : "All played") + '</span><button class="pbtn live" data-a="' + (td.length ? "next" : "send") + '">' + (td.length ? svg("right") : svg("check") + " Send") + "</button></div>";
+        return '<div class="pp-page">' + tile + flaps + '<div class="pp-act">' + act + '</div><button class="pp-close live" data-a="close">' + svg("x") + "</button></div>";
+      },
+      act(a, el) {
+        const r = U.open != null ? R_(U.open) : null, td = this.todo();
+        if (a === "next" || a === "prev") {
+          if (!td.length) return;
+          const i = r ? td.indexOf(r) : -1;
+          const n = a === "next" ? td[(i + 1) % td.length] : td[(i - 1 + td.length) % td.length];
+          U.open = n.id; U.sel = null; U.amt = null;
+        }
+        if (a === "close") { U.open = null; U.sel = null; }
+        if (!r) return;
+        if (a === "sel" && isBlue(r)) { const p = el.dataset.p === "troops" ? "troops" : +el.dataset.p; U.sel = U.sel === p ? null : p; U.amt = null; }
+        if (a === "amt") U.amt = clamp((U.amt || 1) + (+el.dataset.d), 1, Math.max(1, troops(r)));
+        if (a === "defend") toggleDefend(r);
+        if (a === "recruit") recruit(r);
+        if (a === "wait") { const p = this.selPieces(r); if (p) pieceAct(p, "wait"); U.sel = null; }
+        if (a === "flap") {
+          const t = R_(+el.dataset.r);
+          if (!isBlue(r) || U.sel == null) { U.open = t.id; U.sel = null; U.amt = null; return; }
+          if (!this.litFor(r, t)) return;
+          if (U.sel === "troops") {
+            if (!free(r) && sentTo(r, t)) setTroops(r, t, isBlue(t) ? "move" : "attack", 0);
+            else sendTroops(r, t, U.amt || (isBlue(t) ? free(r) : sentTo(r, t) ? 1 : suggest(r, t)));
+            if (!free(r)) U.sel = null;
+          } else {
+            const p = this.selPieces(r), c = pieceChoices(p).find((c) => c.t === t);
+            if (c) pieceAct(p, c.k, t); U.sel = null;
+          }
+        }
+      },
+      tapRegion(r) { U.open = r.id; U.sel = null; U.amt = null; },
+      hl(r) { return U.open === r.id ? "sel" : null; },
+      overlay() {},
+      arrows: "chip",
+      mini: true
+    },
+
+    // ============================================================ 4. FRONTS
+    fronts: {
+      name: "Fronts",
+      note: "Think in fronts, not regions: + and − commit troops to a front, the staff picks who leaves.",
+      answers: [
+        "A banner on each front: your troops v theirs, coloured by the outcome. Threatened regions of yours wear a shield banner. Tap a region for its tag.",
+        "Tap a banner, then + / − / Enough. Cannon and general toggles sit beside the score.",
+        "Free troops on each region of yours (yellow while nobody has dealt with them), and their total in the tray.",
+        "The banners are the plan; thin arrows say who goes where."
+      ],
+      uiTop: () => 1090,
+      list() {
+        const out = [];
+        W.R.forEach((t) => { if (!isBlue(t) && t.nb.some((v) => isBlue(R_(v)))) out.push({ key: "a" + t.id, k: "attack", r: t }); });
+        W.R.forEach((r) => { if (isBlue(r) && threat(r) > 0) out.push({ key: "h" + r.id, k: "hold", r }); });
+        return out;
+      },
+      sel() { return this.list().find((f) => f.key === U.sel) || null; },
+      score(f) { if (f.k === "attack") return forecast(f.r); const s = shield(f.r); return { att: s.s, def: s.t, v: s.v }; },
+      // + takes one troop from the neighbour that can best spare it
+      plus(f) {
+        const srcs = blueNb(f.r).filter((s) => free(s) > 0 && s !== f.r).sort((a, b) => (free(b) - Math.max(0, threat(b) - staying(b) + 1)) - (free(a) - Math.max(0, threat(a) - staying(a) + 1)));
+        if (!srcs.length) return false;
+        sendTroops(srcs[0], f.r, 1); return true;
+      },
+      minus(f) {
+        const os = O.filter((o) => troopOrder(o) && o.to === f.r.id).sort((a, b) => (b.inf + b.cav) - (a.inf + a.cav));
+        if (!os.length) return; const o = os[0]; setTroops(R_(o.from), f.r, o.k, o.inf + o.cav - 1);
+      },
+      dom() {
+        const f = this.sel(), blues = W.R.filter(isBlue), freeN = blues.reduce((a, r) => a + free(r), 0), owed = blues.filter(owesTroops).length;
+        if (!f) {
+          const fr = this.list();
+          return '<div class="fr-tray paper live"><div class="t1">' + svg("flag") + " " + fr.filter((x) => x.k === "attack").length + " fronts · " + fr.filter((x) => x.k === "hold").length + " to hold" +
+            '<small style="margin-left:auto">' + freeN + " free troops in " + owed + " regions</small></div>" +
+            '<div class="t2">' + (W.L >= 2 ? '<button class="pbtn" data-a="recruitAll"' + (blues.some(canRecruit) ? "" : ' style="opacity:.4"') + ">" + svg("coin") + " Recruit (" + blues.filter(canRecruit).length + ")</button>" : "") +
+            '<button class="pbtn" data-a="dropAuto"' + (reserveLeft() ? "" : ' style="opacity:.4"') + ">" + svg("star") + " Reserve " + reserveLeft() + " → front</button>" +
+            '<button class="pbtn" data-a="holdRest"' + (owed ? "" : ' style="opacity:.4"') + ">" + svg("shield") + " Rest defends</button></div></div>";
+        }
+        const sc = this.score(f), r = f.r;
+        const srcs = O.filter((o) => troopOrder(o) && o.to === r.id).map((o) => R_(o.from).name + " " + (o.inf + o.cav)).join(" · ");
+        let tog = "";
+        if (f.k === "attack") {
+          blueNb(r).forEach((s) => s.pieces.forEach((p) => {
+            if (p.k === "cannon") { const o = pieceOrder(p), on = o && o.k === "fire" && o.to === r.id; tog += '<button class="pbtn' + (on ? " on" : "") + '" data-a="piece" data-p="' + p.id + '">' + svg("bomb") + " −2</button>"; }
+            if (/general|drummer|siege/.test(p.k) && sentTo(s, r)) { const o = pieceOrder(p), on = o && o.k === "join" && o.to === r.id; tog += '<button class="pbtn' + (on ? " on" : "") + '" data-a="piece" data-p="' + p.id + '">' + imgTag(p.k, BLUE).replace("<img", '<img style="height:40px"') + (p.k === "siege" ? " fort" : " +1") + "</button>"; }
+          }));
+        } else tog = '<button class="pbtn' + (defended(r) ? " on" : "") + '" data-a="defend">' + svg("shield") + " Defend +1</button>";
+        return '<div class="fr-tray paper live"><div class="t1">' + (f.k === "attack" ? svg("sword") : svg("shield")) + " " + r.name + " <small>" + (f.k === "attack" ? CAMP_WORD[r.owner] + (r.b.fort ? " · fort +1" : "") : "yours, threatened") + "</small>" +
+          '<button class="x" data-a="unsel">' + svg("x") + "</button></div>" +
+          '<div class="t2"><button class="big" data-a="minus">' + svg("minus") + '</button><span class="score v-' + sc.v + '">' + sc.att + " v " + sc.def + '</span><button class="big" data-a="plus">' + svg("plus") + "</button>" +
+          '<button class="pbtn" data-a="enough">Enough</button>' + tog + "</div>" +
+          '<div class="src">' + (srcs ? "From " + srcs : f.k === "attack" ? "Nobody goes yet" : "No help sent yet") + "</div></div>";
+      },
+      act(a, el) {
+        const f = this.sel();
+        if (a === "unsel") U.sel = null;
+        if (a === "plus" && f) { if (!this.plus(f)) nope(f.r); }
+        if (a === "minus" && f) this.minus(f);
+        if (a === "enough" && f) { let n = 0; while (n++ < 40) { const sc = this.score(f); if (sc.v === "ok" || !this.plus(f)) break; } }
+        if (a === "defend" && f) toggleDefend(f.r);
+        if (a === "piece" && f) { const p = pieceById(+el.dataset.p); const k = p.k === "cannon" ? "fire" : "join"; pieceAct(p, k, f.r); }
+        if (a === "recruitAll") W.R.filter(canRecruit).sort((a, b) => urgency(b) - urgency(a)).forEach((r) => { if (canRecruit(r)) recruit(r); });
+        if (a === "dropAuto") { while (reserveLeft() > 0) { const r = W.R.filter((r) => isBlue(r) && frontline(r)).sort((a, b) => (shield(a).s - shield(a).t) - (shield(b).s - shield(b).t))[0]; if (!r) break; drop(r, 1); } }
+        if (a === "holdRest") W.R.filter(owesTroops).forEach((r) => toggleDefend(r));
+      },
+      tapRegion(r) {
+        const f = this.list().find((x) => x.r === r);
+        if (f) { U.sel = U.sel === f.key ? null : f.key; U.info = null; } else { U.info = U.info === r.id ? null : r.id; U.sel = null; }
+      },
+      hl(r) { const f = this.sel(); if (!f) return U.info === r.id ? "sel" : null; if (r === f.r) return "sel"; return O.some((o) => troopOrder(o) && o.to === f.r.id && o.from === r.id) ? "lit" : (f.k === "attack" ? blueNb(f.r) : blueNb(f.r)).indexOf(r) >= 0 ? null : "dim"; },
+      overlay() {
+        const sel = this.sel();
+        this.list().forEach((f) => {
+          const sc = this.score(f), p = scr(f.r.cx, f.r.cy), on = sel && sel.key === f.key;
+          banner(p.x, p.y - 44, f.k, sc, on, () => { U.sel = on ? null : f.key; U.info = null; });
+        });
+        W.R.forEach((r) => { if (!isBlue(r) || !free(r)) return; const p = scr(r.cx, r.cy); pin(p.x + 8, p.y, free(r) + " free", owesTroops(r) ? TODO : "#fffaf0", INK); });
+        if (U.info != null) infoTag(R_(U.info));
+      },
+      arrows: "thin",
+      noMarker: true
+    },
+
+    // ============================================================ 5. HAND
+    hand: {
+      name: "Hand of cards",
+      note: "Every troop group and piece left to play is a card; a card played sticks on its target as a tag.",
+      answers: [
+        "Tap a region: its cards come first and the others fade, and its tag opens on the map.",
+        "Card → target (its own region: Defend or Wait). The strip over the hand sets how many go.",
+        "The hand is what is left: owed cards solid, offers dashed. The counter says how many.",
+        "Tags on the map, one per order; tap a tag to take the card back."
+      ],
+      uiTop: () => 1004,
+      cards() { const c = items(); if (U.filter == null) return c; return c.filter((x) => x.r && x.r.id === U.filter).concat(c.filter((x) => !(x.r && x.r.id === U.filter))); },
+      sel() { return items().find((x) => x.key === U.sel) || null; },
+      amount(c, t) { if (c.k === "reserve") return U.amt || 1; return U.amt ? clamp(U.amt, 1, free(c.r)) : (t && !isBlue(t) ? (sentTo(c.r, t) ? 1 : suggest(c.r, t)) : free(c.r)); },
+      targets(c) {
+        if (!c) return [];
+        if (c.k === "troops") return c.r.nb.map(R_);
+        if (c.k === "piece") return pieceChoices(c.p).filter((x) => x.t).map((x) => x.t);
+        if (c.k === "reserve") return W.R.filter((r) => isBlue(r) && frontline(r));
+        if (c.k === "recruit") return [c.r];
+        return [];
+      },
+      dom() {
+        const cs = this.cards(), c = this.sel(), owed = cs.filter((x) => x.owed).length;
+        let strip = "";
+        if (c && (c.k === "troops" || c.k === "reserve")) {
+          const max = c.k === "reserve" ? reserveLeft() : free(c.r);
+          strip = '<div class="strip paper live">' + (c.k === "troops" ? "Send" : "Drop") + ' <button class="s" data-a="amt" data-d="-1">' + svg("minus") + "</button><b>" + (U.amt || (c.k === "reserve" ? 1 : "auto")) +
+            '</b><button class="s" data-a="amt" data-d="1">' + svg("plus") + '</button><span class="tx">of ' + max + " — tap a target" + (c.k === "troops" ? ", or " + c.r.name + " to defend" : "") + "</span></div>";
+        } else if (c && c.k === "piece") strip = '<div class="strip paper live"><span class="tx">' + PIECE_NAME[c.p.k] + " — tap where it acts" + (pieceChoices(c.p).some((x) => x.t) ? "" : " (nothing yet)") + ", or " + c.r.name + " to wait" + (c.p.k === "engineer" || c.p.k === "wagon" ? " / build" : "") + "</span></div>";
+        else if (c && c.k === "recruit") strip = '<div class="strip paper live"><span class="tx">Tap ' + c.r.name + " to recruit +" + RECRUIT_N + " for " + RECRUIT_COST + ' gold</span><button class="pbtn" data-a="dismiss">Not now</button></div>';
+        else strip = '<div class="strip paper live"><span class="tx">' + (cs.length ? "Pick a card. Tap a region to bring its cards forward; tap a tag to take one back." : "The hand is empty — Send when you are ready.") + "</span></div>";
+        const cards = cs.map((x, i) => {
+          const dim = (U.filter != null && !(x.r && x.r.id === U.filter)) || (c && c.key !== x.key);
+          const rot = (i - (cs.length - 1) / 2) * 1.6;
+          let big, n = "", sub = "";
+          if (x.k === "troops") { const f = freeOf(x.r); big = imgTag(f.inf ? "inf" : "cav", BLUE, "big"); n = f.n; sub = (f.cav && f.inf ? imgTag("inf", BLUE) + f.inf + " " + imgTag("cav", BLUE) + f.cav : "troops"); }
+          else if (x.k === "piece") { big = imgTag(x.p.k, BLUE, "big"); sub = PIECE_NAME[x.p.k]; }
+          else if (x.k === "recruit") { big = imgTag("town", BLUE, "big"); n = "+" + RECRUIT_N; sub = RECRUIT_COST + " gold"; }
+          else { big = imgTag("inf", BLUE, "big"); n = reserveLeft(); sub = "reserve"; }
+          const nm = x.r ? x.r.name : "Reserve", col = x.k === "reserve" || x.k === "recruit" ? "#8a6a20" : x.r && shield(x.r).v === "bad" ? BAD : "#2f63c4";
+          return '<button class="card paper live' + (x.owed ? "" : " opt") + (U.sel === x.key ? " sel" : "") + (dim && U.sel !== x.key ? " dim" : "") + '" style="transform:rotate(' + rot.toFixed(1) + 'deg)" data-a="card" data-k="' + x.key + '">' +
+            '<span class="nm" style="background:' + col + '">' + nm + "</span>" + big + '<span class="n">' + n + '</span><span class="sub">' + sub + "</span></button>";
+        }).join("");
+        return '<div class="hd">' + strip + '<div class="count">' + svg("cards") + "<b>" + cs.length + "</b>" + owed + " owed</div>" + '<div class="row live">' + cards + "</div></div>";
+      },
+      act(a, el) {
+        const c = this.sel();
+        if (a === "card") { const k = el.dataset.k; U.sel = U.sel === k ? null : k; U.amt = null; }
+        if (a === "amt" && c) { const max = c.k === "reserve" ? reserveLeft() : free(c.r); U.amt = clamp((U.amt || (c.k === "reserve" ? 1 : max)) + (+el.dataset.d), 1, max); }
+        if (a === "dismiss" && c) { U.dismiss = Object.assign({}, U.dismiss, { [c.key]: 1 }); U.sel = null; }
+      },
+      tapRegion(r) {
+        const c = this.sel();
+        if (c) {
+          if (c.k === "troops") {
+            if (r === c.r) { toggleDefend(r); U.sel = null; return; }
+            if (c.r.nb.indexOf(r.id) >= 0) { sendTroops(c.r, r, this.amount(c, r)); if (!free(c.r)) U.sel = null; U.amt = null; return; }
+          }
+          if (c.k === "piece") {
+            if (r === c.r) { const b = pieceChoices(c.p).find((x) => x.k === "build" && !x.off); pieceAct(c.p, b ? "build" : "wait"); U.sel = null; return; }
+            const ch = pieceChoices(c.p).find((x) => x.t === r); if (ch) { pieceAct(c.p, ch.k, r); U.sel = null; return; }
+          }
+          if (c.k === "reserve" && isBlue(r) && frontline(r)) { drop(r, this.amount(c)); if (!reserveLeft()) U.sel = null; return; }
+          if (c.k === "recruit" && r === c.r) { recruit(r); U.sel = null; return; }
+          return nope(r);
+        }
+        U.filter = U.filter === r.id ? null : r.id;
+        const row = ui.querySelector(".hd .row"); if (row) row.scrollLeft = 0;
+      },
+      hl(r) {
+        const c = this.sel();
+        if (!c) return U.filter === r.id ? "sel" : null;
+        if (c.r === r) return "sel";
+        return this.targets(c).indexOf(r) >= 0 ? "lit" : "dim";
+      },
+      overlay() {
+        const c = this.sel();
+        if (c) this.targets(c).forEach((t) => {
+          if (t === c.r) return; const p = scr(t.cx, t.cy);
+          if (c.k === "troops" && !isBlue(t)) { const f = forecast(t, this.amount(c, t)); pin(p.x, p.y - 46, f.att + " v " + f.def, VCOL[f.v]); }
+          else if (c.k === "troops") pin(p.x, p.y - 46, "+" + this.amount(c, t), "#2f63c4");
+          else if (c.k === "reserve") { const sh = shield(t); pin(p.x, p.y - 46, "+" + this.amount(c) + (sh.v === "none" ? "" : " · " + sh.s + " v " + sh.t), VCOL[sh.v === "none" ? "none" : sh.v]); }
+          else if (c.p && c.p.k === "cannon") pin(p.x, p.y - 46, troops(t) + " → " + Math.max(0, troops(t) - CANNON), BAD);
+          else pin(p.x, p.y - 46, "+1", "#7a4fc4");
+        });
+        else if (U.filter != null) infoTag(R_(U.filter));
+      },
+      arrows: "tag"
+    }
+  };
+  const SCH = () => SCHEMES[S.scheme] || SCHEMES.dispatch;
+
+  // ---- camera ----------------------------------------------------------------------------
+  const cam = { s: 1, ox: 12, oy: MAP_Y }, camGoal = { s: 1, ox: 12, oy: MAP_Y };
+  function aimCamera() {
+    const top = SCH().uiTop(), s = Math.min(1, (top - MAP_Y - 10) / MH);
+    camGoal.s = s; camGoal.ox = (FW - MW * s) / 2; camGoal.oy = MAP_Y + Math.max(0, (top - MAP_Y - 10 - MH * s) / 2);
+  }
+  const scr = (x, y, c) => { c = c || cam; return { x: c.ox + x * c.s, y: c.oy + y * c.s }; };
+
+  // ---- drawing ------------------------------------------------------------------------------
+  const frame = document.getElementById("frame"), ui = document.getElementById("ui"), cv = document.getElementById("view"), ctx = cv.getContext("2d");
+  let K = 1, DPR = 1, hits = [];
+  function fit() {
+    const st = document.getElementById("stage"), w = st.clientWidth - 32, h = st.clientHeight - 32;
+    K = Math.min(w / FW, h / FH);
+    document.getElementById("frameBox").style.width = FW * K + "px"; document.getElementById("frameBox").style.height = FH * K + "px";
+    frame.style.transform = "scale(" + K + ")";
+    DPR = Math.min(3, K * (window.devicePixelRatio || 1)); cv.width = Math.round(FW * DPR); cv.height = Math.round(FH * DPR);
+  }
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function pin(x, y, text, bg, fg) {
+    ctx.font = "800 22px " + FONT; const w = ctx.measureText(text).width + 22, h = 34;
+    ctx.save(); ctx.fillStyle = "rgba(42,36,24,.3)"; rr(x - w / 2, y - h / 2 + 4, w, h, 17); ctx.fill();
+    ctx.fillStyle = bg; rr(x - w / 2, y - h / 2, w, h, 17); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = fg || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, x, y + 1); ctx.restore();
+    return { x: x - w / 2, y: y - h / 2, w, h };
+  }
+  function nope(r) { flash = { r: r.id, t: now() }; }
+  function regionPath(r, c, inset) {
+    ctx.beginPath();
+    const cx = r.cx, cy = r.cy;
+    r.poly.forEach((P, i) => { const k = inset ? 1 - inset / Math.max(20, Math.hypot(P.x - cx, P.y - cy)) : 1; const p = scr(cx + (P.x - cx) * k, cy + (P.y - cy) * k, c); i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
+    ctx.closePath();
+  }
+  function drawMap(c, small) {
+    const sc = SCH(), t = now();
+    W.R.forEach((r) => {
+      regionPath(r, c, small ? 1 : 2.5);
+      ctx.fillStyle = landOf(r); ctx.fill();
+      const h = sc.hl(r);
+      if (h === "dim") { ctx.fillStyle = "rgba(30,40,40,.42)"; ctx.fill(); }
+      if (h === "lit") { ctx.fillStyle = "rgba(255,230,120," + (0.22 + 0.12 * Math.sin(t * 5)) + ")"; ctx.fill(); }
+      ctx.lineWidth = small ? 1.5 : h === "sel" ? 6 : 2.5; ctx.strokeStyle = h === "sel" ? "#ffd23a" : INK; ctx.stroke();
+      if (h === "sel" && !small) { ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
+      if (flash && flash.r === r.id && t - flash.t < 0.5) { ctx.fillStyle = "rgba(200,64,47," + (0.5 - (t - flash.t)) + ")"; ctx.fill(); }
+    });
+    if (small) {
+      W.R.forEach((r) => { if (isBlue(r) && todoOf(r) && S.dots) { const p = scr(r.cx, r.cy, c); ctx.fillStyle = TODO; ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); } });
+      drawArrows(c, "thin"); return;
+    }
+    // the region's mark: its main building, a disc with its troops, its name
+    W.R.forEach((r) => {
+      const p = scr(r.cx, r.cy, c), s = Math.max(0.72, c.s);
+      const main = r.b.capital ? "capital" : r.b.fort ? "fort" : r.b.town ? "town" : r.b.mine ? "mine" : null;
+      if (main) sprite(main, r.owner, p.x - 30 * s, p.y + 8 * s, (r.b.capital ? 70 : 56) * s);
+      r.pieces.forEach((pc, i) => sprite(pc.k, r.owner, p.x + (34 + i * 20) * s, p.y + 14 * s, 40 * s));
+      if (!sc.noMarker || !isBlue(r)) {
+        const R0 = 23 * s;
+        ctx.beginPath(); ctx.arc(p.x, p.y, R0, 0, 7); ctx.fillStyle = r.owner === NEU ? "#efe3c2" : CAMP[r.owner]; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+        ctx.fillStyle = r.owner === NEU ? INK : "#fff"; ctx.font = "800 " + Math.round(24 * s) + "px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(troops(r)), p.x, p.y + 1);
+      }
+      if (S.dots && isBlue(r) && todoOf(r) && !sc.noMarker) { ctx.beginPath(); ctx.arc(p.x + 20 * s, p.y - 20 * s, 9, 0, 7); ctx.fillStyle = TODO; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); }
+      if (S.shields && isBlue(r)) { const sh = shield(r); if (sh.v !== "none" && sh.v !== "ok") { icon("shield", p.x - 26 * s, p.y - 24 * s, 24, VCOL[sh.v], 3.2); } }
+      if (r.warn.length) { ctx.beginPath(); ctx.arc(p.x - 24 * s, p.y + 24 * s, 12, 0, 7); ctx.fillStyle = WARN; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = INK; ctx.stroke(); ctx.fillStyle = "#fff"; ctx.font = "900 20px " + FONT; ctx.fillText("!", p.x - 24 * s, p.y + 25 * s); }
+      if (c.s >= 0.7) { ctx.font = "700 20px " + FONT; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.lineWidth = 4; ctx.strokeStyle = "rgba(255,250,235,.85)"; ctx.strokeText(r.name, p.x, p.y + 50 * s); ctx.fillStyle = INK; ctx.fillText(r.name, p.x, p.y + 50 * s); }
+    });
+  }
+  // the orders on the map; each scheme picks how their label reads
+  function bend(a, b, k) { const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, dx = b.x - a.x, dy = b.y - a.y; return { x: mx - dy * k, y: my + dx * k }; }
+  function arrow(a, b, col, w, dashed) {
+    const c = bend(a, b, 0.14), L = Math.hypot(b.x - c.x, b.y - c.y), ux = (b.x - c.x) / L, uy = (b.y - c.y) / L;
+    const tip = { x: b.x - ux * 18, y: b.y - uy * 18 }, base = { x: tip.x - ux * (w + 14), y: tip.y - uy * (w + 14) };
+    ctx.save(); ctx.lineCap = "round"; if (dashed) ctx.setLineDash([10, 9]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo(c.x, c.y, base.x, base.y);
+    ctx.lineWidth = w + 5; ctx.strokeStyle = INK; ctx.stroke(); ctx.lineWidth = w; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(tip.x, tip.y); ctx.lineTo(base.x - uy * (w + 9), base.y + ux * (w + 9)); ctx.lineTo(base.x + uy * (w + 9), base.y - ux * (w + 9)); ctx.closePath();
+    ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke(); ctx.restore();
+    return { mid: bend(a, b, 0.07), tip: base };
+  }
+  function drawArrows(c, style) {
+    const t = now();
+    O.forEach((o) => {
+      const f = o.from != null ? R_(o.from) : null, to = o.to != null ? R_(o.to) : null;
+      if (troopOrder(o) || o.k === "fire" || o.k === "join") {
+        if (o.k === "join") return;
+        const a = scr(f.cx, f.cy, c), b = scr(to.cx, to.cy, c);
+        const col = o.k === "fire" ? BAD : o.k === "move" ? "#7fa3e6" : "#2f63c4";
+        const w = style === "thin" ? 5 : o.k === "fire" ? 5 : 10;
+        const g = arrow(a, b, col, w, o.k === "fire");
+        if (style === "thin" || c !== cam) return;
+        const n = o.k === "fire" ? null : o.inf + o.cav + O.filter((j) => j.k === "join" && j.from === o.from && j.to === o.to).length;
+        const label = o.k === "fire" ? "−2" : (o.k === "attack" ? "" : "→") + n;
+        if (style === "chip") pin(g.mid.x, g.mid.y, label, o.k === "fire" ? BAD : o.k === "attack" ? VCOL[forecast(to).v] : "#2f63c4");
+        if (style === "stamp") stampMark(g.tip.x, g.tip.y, o, label);
+        if (style === "tag") tag(g.tip.x, g.tip.y, o, label);
+      }
+    });
+    if (c !== cam && style === "thin") return;
+    O.forEach((o) => {
+      const r = o.k === "drop" ? R_(o.to) : o.from != null ? R_(o.from) : null; if (!r) return;
+      const p = scr(r.cx, r.cy, c), s = Math.max(0.72, c.s);
+      if (o.k === "defend") icon("shield", p.x, p.y - 40 * s, 30, OK, 4);
+      if (o.k === "recruit") { const b = pin(p.x - 40 * s, p.y - 38 * s, "+" + RECRUIT_N, "#c99a10"); if (style === "tag" || style === "stamp") hits.push({ b, fn: () => tapOrderMark(o) }); }
+      if (o.k === "drop") { const b = pin(p.x + 38 * s, p.y - 38 * s, "+" + o.n, "#c9a45a", INK); if (style === "tag" || style === "stamp") hits.push({ b, fn: () => tapOrderMark(o) }); }
+      if (o.k === "build") icon("hammer", p.x + 40 * s, p.y - 34 * s, 28, "#8a6a20", 3.4);
+    });
+  }
+  function tapOrderMark(o) { const sc = SCH(); if (sc.tapMark && sc.tapMark(o)) return refresh(); if (S.scheme === "hand") { cancel(o); refresh(); } }
+  function stampMark(x, y, o, label) {
+    const age = now() - (o.t0 || 0), k = age < 0.2 ? 1.7 - 0.7 * age / 0.2 : 1, rot = ((o.id * 37) % 11 - 5) * 0.04;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(k, k);
+    const col = o.k === "fire" ? BAD : o.k === "move" ? "#2f63c4" : "#1f3f8a";
+    ctx.font = "900 24px " + FONT; const w = Math.max(56, ctx.measureText(label).width + 40), h = 40;
+    ctx.globalAlpha = 0.9; ctx.fillStyle = "rgba(255,250,235,.85)"; rr(-w / 2, -h / 2, w, h, 6); ctx.fill();
+    ctx.lineWidth = 4; ctx.strokeStyle = col; ctx.setLineDash([2, 3]); rr(-w / 2, -h / 2, w, h, 6); ctx.stroke(); ctx.setLineDash([]);
+    icon(o.k === "fire" ? "bomb" : o.k === "move" ? "move" : "sword", -w / 2 + 16, 0, 20, col, 3);
+    ctx.fillStyle = col; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(label, 10, 1);
+    ctx.restore();
+    hits.push({ b: { x: x - w / 2, y: y - h / 2, w, h }, fn: () => tapOrderMark(o) });
+  }
+  function tag(x, y, o, label) {
+    const w = 78, h = 46;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(((o.id * 29) % 9 - 4) * 0.03);
+    ctx.fillStyle = "rgba(42,36,24,.3)"; rr(-w / 2, -h / 2 + 5, w, h, 8); ctx.fill();
+    ctx.fillStyle = "#fffaf0"; rr(-w / 2, -h / 2, w, h, 8); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    ctx.fillStyle = o.k === "fire" ? BAD : o.k === "attack" ? VCOL[forecast(R_(o.to)).v] : "#2f63c4"; ctx.fillRect(-w / 2 + 3, -h / 2 + 3, 10, h - 6);
+    if (o.k === "fire") sprite("cannon", BLUE, 8, 18, 36); else sprite(o.cav && !o.inf ? "cav" : "inf", BLUE, -6, 18, 38);
+    ctx.fillStyle = INK; ctx.font = "800 22px " + FONT; ctx.textAlign = "right"; ctx.textBaseline = "middle"; if (o.k !== "fire") ctx.fillText(label, w / 2 - 6, 1);
+    ctx.restore();
+    hits.push({ b: { x: x - w / 2, y: y - h / 2, w, h }, fn: () => tapOrderMark(o) });
+  }
+  function banner(x, y, k, sc, on, fn) {
+    ctx.font = "900 24px " + FONT;
+    const tl = String(sc.att), tr = String(sc.def), wl = Math.max(36, ctx.measureText(tl).width + 18), wr = Math.max(36, ctx.measureText(tr).width + 18), w = wl + wr + 34, h = on ? 50 : 44;
+    ctx.save(); ctx.translate(x, y); if (on) ctx.scale(1.12, 1.12);
+    ctx.fillStyle = "rgba(42,36,24,.3)"; rr(-w / 2, -h / 2 + 5, w, h, 10); ctx.fill();
+    ctx.fillStyle = "#fffaf0"; rr(-w / 2, -h / 2, w, h, 10); ctx.fill();
+    ctx.fillStyle = "#2f63c4"; rr(-w / 2, -h / 2, wl, h, 10); ctx.fill();
+    ctx.fillStyle = k === "attack" ? "#7a6a4a" : BAD; rr(w / 2 - wr, -h / 2, wr, h, 10); ctx.fill();
+    ctx.fillStyle = VCOL[sc.v]; ctx.beginPath(); ctx.arc(0, 0, 15, 0, 7); ctx.fill();
+    ctx.lineWidth = on ? 5 : 3; ctx.strokeStyle = on ? "#ffd23a" : INK; rr(-w / 2, -h / 2, w, h, 10); ctx.stroke();
+    if (on) { ctx.lineWidth = 2; ctx.strokeStyle = INK; ctx.stroke(); }
+    icon(k === "attack" ? "sword" : "shield", 0, 0, 18, "#fff", 3);
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(tl, -w / 2 + wl / 2, 1); ctx.fillText(tr, w / 2 - wr / 2, 1);
+    ctx.restore();
+    hits.push({ b: { x: x - w / 2 - 6, y: y - h / 2 - 6, w: w + 12, h: h + 12 }, fn });
+  }
+  // a paper tag beside a region: everything on it, the scheme-free way to read one
+  function infoTag(r) {
+    const p = scr(r.cx, r.cy), rows = [];
+    rows.push({ t: r.name + " · " + CAMP_WORD[r.owner], bold: true });
+    const tr = []; if (r.inf || !r.cav) tr.push(["inf", r.inf]); if (r.cav) tr.push(["cav", r.cav]); r.pieces.forEach((pc) => tr.push([pc.k, ""]));
+    rows.push({ spr: tr });
+    const bl = []; ["capital", "town", "fort", "mine", "farm", "palisade", "depot"].forEach((b) => { if (r.b[b]) bl.push([b, ""]); });
+    if (bl.length) rows.push({ spr: bl });
+    if (isBlue(r)) { const o = outputOf(r), parts = []; if (o.reserve) parts.push("+" + o.reserve + " reserve"); if (o.gold) parts.push("+" + o.gold + " gold"); if (o.grain) parts.push("+" + o.grain + " grain"); if (parts.length) rows.push({ t: parts.join(" · "), col: "#5c4a26", bg: "#e9d8ae" }); }
+    if (isBlue(r)) { const s = situLine(r); if (s.v !== "none") rows.push({ t: s.tx.split(" (")[0], col: VCOL[s.v] }); }
+    r.warn.forEach((w) => rows.push({ t: "! " + w, col: WARN }));
+    ctx.font = "700 20px " + FONT;
+    const w = Math.max(200, ...rows.map((x) => x.t ? ctx.measureText(x.t).width + 28 : x.spr.length * 62 + 20)), h = rows.reduce((a, x) => a + (x.spr ? 56 : 30), 16);
+    let x = p.x + 60, y = p.y - h / 2; if (x + w > FW - 10) x = p.x - 60 - w; y = clamp(y, MAP_Y + 4, SCH().uiTop() - h - 8);
+    ctx.save(); ctx.fillStyle = "rgba(42,36,24,.3)"; rr(x, y + 6, w, h, 12); ctx.fill(); ctx.fillStyle = "#f4ecd8"; rr(x, y, w, h, 12); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+    let yy = y + 10;
+    rows.forEach((row) => {
+      if (row.spr) { row.spr.forEach((s, i) => { sprite(s[0], r.owner, x + 34 + i * 62, yy + 48, 46); if (s[1] !== "") { ctx.fillStyle = INK; ctx.font = "800 22px " + FONT; ctx.textAlign = "left"; ctx.fillText(String(s[1]), x + 52 + i * 62, yy + 44); } }); yy += 56; return; }
+      if (row.bg) { ctx.fillStyle = row.bg; rr(x + 8, yy, w - 16, 28, 8); ctx.fill(); }
+      ctx.fillStyle = row.col || INK; ctx.font = (row.bold ? "800 " : "700 ") + "20px " + FONT; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(row.t, x + 14, yy + 3); yy += 30;
+    });
+    ctx.restore();
+  }
+  function frameDraw() {
+    const t = now();
+    for (const k of ["s", "ox", "oy"]) cam[k] += (camGoal[k] - cam[k]) * 0.2;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = "#3f9c96"; ctx.fillRect(0, 0, FW, FH);
+    ctx.fillStyle = "rgba(255,255,255,.05)"; for (let y = 0; y < FH; y += 22) ctx.fillRect(0, y, FW, 2);
+    hits = [];
+    if (!W) return;
+    const sc = SCH();
+    drawMap(cam, false);
+    drawArrows(cam, sc.arrows);
+    sc.overlay();
+    if (sc.mini && U.open != null) {
+      // the page stands over the map, and keeps a window on it
+      ctx.fillStyle = "#efe5cc"; rr(10, 110, 700, 1160, 18); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.fillStyle = "rgba(42,36,24,.06)"; for (let y = 130; y < 1260; y += 34) ctx.fillRect(24, y, 672, 2);
+      const mc = { s: 0.236, ox: 26, oy: 960 };
+      ctx.fillStyle = "#3f9c96"; rr(18, 952, 180, 222, 12); ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = INK; ctx.stroke();
+      drawMap(mc, true);
+      hits.push({ b: { x: 18, y: 952, w: 180, h: 222 }, fn: () => { U.open = null; U.sel = null; refresh(); } });
+    }
+  }
+  function loop() { frameDraw(); requestAnimationFrame(loop); }
+
+  // ---- the top band and the DOM -------------------------------------------------------------
+  function hud() {
+    const td = todoCount(), res = [];
+    if (W.L >= 2) res.push("<span>" + svg("coin") + goldLeft() + (goldLeft() !== W.gold ? "<em>/" + W.gold + "</em>" : "") + "</span>");
+    if (W.L >= 3) res.push('<span style="' + (W.grain <= 0 ? "color:#c8402f" : "") + '">grain ' + W.grain + "</span>");
+    const inc = W.R.filter(isBlue).reduce((a, r) => a + outputOf(r).reserve, 0);
+    res.push("<span>" + svg("star") + reserveLeft() + "<em>+" + inc + "</em></span>");
+    const m = Math.floor(W.clock / 60), s = Math.floor(W.clock % 60);
+    return '<div class="hud paper live"><div class="tick">Tick ' + W.tick + "<small>" + m + ":" + (s < 10 ? "0" : "") + s + "</small></div>" +
+      '<div class="res">' + res.join("") + "</div>" +
+      '<button class="send' + (td ? "" : " done") + '" data-a="send">Send<small>' + (td ? td + " to do" : "all set") + "</small></button></div>";
+  }
+  function refresh() {
+    aimCamera();
+    ui.innerHTML = hud() + SCH().dom();
+    panelAnswers();
+    window.__lab = { S, W, O, U, todo: todoCount() };
+  }
+  ui.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-a]"); if (!el || el.disabled) return;
+    const a = el.dataset.a;
+    if (a === "send") { send(); return; }
+    SCH().act(a, el); refresh();
+  });
+
+  // ---- input on the map ---------------------------------------------------------------------------
+  let down = null;
+  function pos(e) { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) * FW / b.width, y: (e.clientY - b.top) * FH / b.height }; }
+  function inPoly(x, y, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c; } return c; }
+  cv.addEventListener("pointerdown", (e) => { down = pos(e); });
+  cv.addEventListener("pointerup", (e) => {
+    const p = pos(e); if (!down || Math.hypot(p.x - down.x, p.y - down.y) > 14) { down = null; return; } down = null;
+    tap(p.x, p.y);
+  });
+  function tap(x, y) {
+    for (let i = hits.length - 1; i >= 0; i--) { const b = hits[i].b; if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { hits[i].fn(); refresh(); return; } }
+    if (S.scheme === "popup" && U.open != null) return;
+    const mx = (x - cam.ox) / cam.s, my = (y - cam.oy) / cam.s;
+    const r = W.R.find((r) => inPoly(mx, my, r.poly));
+    if (!r) { U.info = null; U.filter = null; U.src = null; U.sel = S.scheme === "hand" || S.scheme === "fronts" ? null : U.sel; refresh(); return; }
+    SCH().tapRegion(r); refresh();
+  }
+
+  // ---- the panel ------------------------------------------------------------------------------
+  function panelAnswers() {
+    const sc = SCH();
+    document.getElementById("answers").innerHTML = sc.answers.map((a, i) => "<p><i>" + (i + 1) + "</i>" + a + "</p>").join("");
+    document.querySelectorAll("#schemes button").forEach((b) => b.classList.toggle("on", b.dataset.k === S.scheme));
+    document.querySelectorAll("#levels button").forEach((b) => b.classList.toggle("on", +b.dataset.l === S.level));
+    document.querySelectorAll("#toggles button").forEach((b) => b.classList.toggle("on", !!S[b.dataset.k]));
+    document.getElementById("log").textContent = (LEVELS[S.level].note) + (lastLog ? "\n" + lastLog : "");
+  }
+  function buildPanel() {
+    const sp = document.getElementById("schemes");
+    sp.innerHTML = Object.keys(SCHEMES).map((k, i) => '<button data-k="' + k + '"><b>' + (i + 1) + " · " + SCHEMES[k].name + "</b><span>" + SCHEMES[k].note + "</span></button>").join("");
+    sp.onclick = (e) => { const b = e.target.closest("button"); if (!b) return; S.scheme = b.dataset.k; U = {}; save(); refresh(); };
+    const lv = document.getElementById("levels");
+    lv.innerHTML = [1, 2, 3].map((l) => '<button data-l="' + l + '">' + LEVELS[l].name + "</button>").join("");
+    lv.onclick = (e) => { const b = e.target.closest("button"); if (!b) return; S.level = +b.dataset.l; save(); lastLog = ""; genWorld(); refresh(); };
+    const tg = document.getElementById("toggles");
+    tg.innerHTML = '<button data-k="dots">Yellow to-do dots</button><button data-k="shields">Shield when weak</button>';
+    tg.onclick = (e) => { const b = e.target.closest("button"); if (!b) return; S[b.dataset.k] = !S[b.dataset.k]; save(); refresh(); };
+    document.getElementById("btnNew").onclick = () => { S.seed = (S.seed * 7 + 3) % 997; save(); lastLog = ""; genWorld(); refresh(); };
+    document.getElementById("btnClear").onclick = () => { O = []; U = {}; refresh(); };
+  }
+
+  // ---- a state for a headless shot: a few orders given, something in hand ---------------------
+  function demo() {
+    const blues = W.R.filter((r) => isBlue(r) && frontline(r)).sort((a, b) => free(b) - free(a));
+    const a = blues[0]; if (a) { const t = enemyNb(a)[0]; if (t) sendTroops(a, t, suggest(a, t)); }
+    const b = blues[1]; if (b) toggleDefend(b);
+    const sc = S.scheme;
+    if (sc === "dispatch") { /* the deck opens on the next card */ }
+    if (sc === "stamps") { U.stamp = "attack"; const s = W.R.find((r) => isBlue(r) && free(r) > 0 && enemyNb(r).length && r !== a); if (s) U.src = s.id; }
+    if (sc === "popup") { const r = W.R.filter((r) => todoOf(r) > 0).sort((x, y) => urgency(y) - urgency(x))[0]; if (r) { U.open = r.id; U.sel = "troops"; } }
+    if (sc === "fronts") { const f = SCHEMES.fronts.list().find((f) => f.k === "attack"); if (f) { SCHEMES.fronts.plus(f); SCHEMES.fronts.plus(f); U.sel = f.key; } }
+    if (sc === "hand") { const c = items()[0]; if (c) U.sel = c.key; }
+  }
+
+  // ---- go -------------------------------------------------------------------------------------
+  window.addEventListener("error", (e) => { document.getElementById("log").textContent += "\nERROR " + e.message + " @" + e.lineno; });
+  buildPanel(); fit(); genWorld();
+  if (HASH.demo) demo();
+  refresh();
+  // `do=r:Tolen;a:ans,i,0;send` replays taps for a headless check: a region by name, a control by data-a (and one data field), Send
+  if (HASH.do) HASH.do.split(";").forEach((st) => {
+    const i = st.indexOf(":"), k = i < 0 ? st : st.slice(0, i), v = i < 0 ? "" : st.slice(i + 1);
+    if (k === "r") { const r = W.R.find((x) => x.name === v); if (r) { SCH().tapRegion(r); refresh(); } }
+    if (k === "a") { const q = v.split(","); const el = [...ui.querySelectorAll('[data-a="' + q[0] + '"]')].find((e) => !q[1] || e.dataset[q[1]] === q[2]); if (el) el.click(); }
+    if (k === "send") send();
+  });
+  for (const k of ["s", "ox", "oy"]) cam[k] = camGoal[k];
+  window.addEventListener("resize", () => { fit(); });
+  setInterval(() => { if (W && W.clock > 0) { W.clock -= 1; const t = ui.querySelector(".hud .tick small"); if (t) { const m = Math.floor(W.clock / 60), s = Math.floor(W.clock % 60); t.textContent = m + ":" + (s < 10 ? "0" : "") + s; } } }, 1000);
+  loop();
+})();
+</script>
+</body>
+</html>

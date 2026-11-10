@@ -419,7 +419,10 @@ ledger and the refusal.
 battle fought while it held a post (`s` on the card, counted since its last
 promotion). **A victory** — a battle won, a mission brought home — rolls every
 card that served it for one step up the ladder, E to D, D to C… S has nowhere
-left to go:
+left to go. **A victory pays one promotion at most**: of the cards whose roll
+came up, one is drawn and climbs, and the others keep their services for the
+next win (`promoteOne`), because a win is not meant to pay the whole deck at
+once:
 
 ```
 chance = min(max, base + step × (services − 1))      web.army.promotion: 0.15, 0.01, 0.30
@@ -442,7 +445,9 @@ more on it (`Promotion : C`). The round gets both (`CONFIG.army.deck[i].b`,
 before and after at the medium size, the name, the step and what earned it. A
 battle's are told on the battle itself, before the end screen (§5c); a
 mission's follow its report the moment it is put away. Several are one card whose pages
-a tap turns — neither the scrim nor a stray key skips a page nobody read.
+a tap turns — neither the scrim nor a stray key skips a page nobody read. Each
+page came from a different victory (several missions back while the player was
+away), so the pages carry no counter: every one reads *A card climbs*.
 
 ## 5c. The battle tells what it cost before it shows the score
 
@@ -497,11 +502,10 @@ the price stops meaning anything. It turns over every twenty minutes
 (`refreshMinutes`; a manifest may still write `refreshHours`). Nothing
 re-rolls it early — the ad that did was removed in 0.15.0.
 
-**The tent never rolls the three specials.** A spy, a scout and a sapper are
-ANSWERS to something — the marshal, the fog, the traps — and a tent that sold
-them would be selling the solution rather than the army.
+**The tent rolls every grade**, the three specials included, flat over the
+ten: the tent sells the whole army.
 
-**But a player is never stuck for a grade.** Every grade the roster holds none
+**And a missing grade comes first.** Every grade the roster holds none
 of — the specials included — gets a place on the shelf at the lowest tier
 nobody holds, for `recruit.needPrice` coins (20) whatever its grade: a camp
 without a spy has no answer to a marshal, and that is a door shut rather than
@@ -550,8 +554,7 @@ A squad worth exactly `need` reads `par` (70 %), and the odds never reach 0 or
 100: a mission that cannot fail is a wait, one that cannot succeed is a trap.
 **A mission may favour one grade** (`favor`), and the specials are what most of
 them favour — a reconnaissance wants a scout, a stolen letter a spy, a
-trapped bridge a sapper — which gives the three cards the tent never rolls a
-use off the grid.
+trapped bridge a sapper — which gives the three specials a use off the grid.
 
 **The squad is away for the whole wait**: still in the deck, since the deck is
 the player's standing choice, and out of every battle until it is back — the
@@ -697,7 +700,8 @@ cards than the smallest deck), and never aimed at an officer holding a post.
 
 A day is DRAWN the first time the village opens after its hour — the card it
 is about included — and kept in `ev.q`, so no reload re-rolls it; at most
-`events.stack` (3) wait, a week away is not a week of cards. It is TOLD at the
+`events.stack` (1) waits, however long the player was away: a reconnection
+after a week tells ONE day, never a week of cards. It is TOLD at the
 village only, on arrival in the game or back from a battle, after the dead and
 the promotions (`announce`), one card per day; the tap that puts a card away
 is what applies it, and the chips fly into the band. A deserter is written in

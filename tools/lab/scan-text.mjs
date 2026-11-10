@@ -414,7 +414,8 @@ function categorize(s, row) {
       if (/build\w*Demo|\bnode\b/.test(fn + ' ' + f)) return out('guide', 'live example');
       if (f === 'label') return out('guide', 'chapter');
       if (f === 'title' || f === 'eyebrow') return out('guide', 'page title');
-      if (f === 'rows') return out('guide', 'table');
+      /* a cell of `rows`, or a helper DECLARED as building one (`['guide', 'rows']`) */
+      if (f === 'rows' || /(?:^| · )rows$/.test(d)) return out('guide', 'table');
       return out('guide', 'page text');
     case 'character': case 'item': case 'card': case 'world': case 'rank': {
       let field = CONTENT_FIELD[f] || null;
@@ -565,6 +566,7 @@ const DECLARED = {
   'spinshock:CONFIG': ['callout', 'timing grade'],
   // stratideck
   'stratideck:faceNode': ['card', 'object face'], 'stratideck:gVs': ['guide', 'live example'],
+  'stratideck:postWords': ['guide', 'rows'],
   // triverse
   'triverse:pushBand': ['callout', 'band'],
   // functions whose locals hold the words (no table to name)

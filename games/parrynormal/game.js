@@ -81,7 +81,7 @@
       repelPush: 240, spinKick: 0.5, wallBounce: 0.96, substeps: 4,
       ricochetsForBrown: 5, maxBrown: 24, parryScore: 10, comboStep: 10, maxMult: 5,
       perfectDeg: 8, perfectScore: 20, perfectSpeed: 1.3,
-      maxBlue: 3, ballCd: 2, launchSpeed: 620, shieldLock: 0.5,
+      maxBlue: 3, ballCd: 0.25, launchSpeed: 620, shieldLock: 0.5,
       knockSpeed: 1150, knockDamp: 3.5, knockBoss: 0.45, knockHit: 280, knockPass: 0.6,
       bossKnock: 1, bossDamp: 1.5, bossBounce: 0.85, tpUp: 0.18, tpDown: 0.2,
       attackRange: 270, windup: 0.6, chargeK: 2, chargeMin: 110, chargeMax: 200, attackCd: 1.6,
@@ -842,7 +842,7 @@
       mode = "play"; ended = false; wonAt = -1; endAt = 0; time = 0;
       balls = []; spits = []; enemies = []; pending = []; pickups = []; towers = [];
       rings = []; chain = []; bolts = []; meteors = []; familiars = []; stacks = []; shocks = []; banishes = []; flames = []; blasts = [];
-      Cam.trauma = 0; Cam.zoom = 0; Cam.zv = 0; Cam.hurt = 0; flashes = []; motes = [];
+      Cam.trauma = 0; Cam.zoom = 0; Cam.zv = 0; flashes = []; motes = [];
       fx = { freeze: 0, moon: 0, sweep: 0, salt: 0, familiars: 0, jam: 0, lock: 0 };
       dialAngle = angle = prevAngle = lockAngle = -Math.PI / 2; omega = 0; arcNow = P.baseArc;
       ballCd = 0; spring = { s: 0, v: 0, at: 0 }; launchT = 0; cheerT = 0;
@@ -2299,6 +2299,9 @@
       for (var bo = bolts.length - 1; bo >= 0; bo--) { bolts[bo].t -= dt; if (bolts[bo].t <= 0) bolts.splice(bo, 1); }
 
       var wdt = dt * (fx.freeze > 0 ? P.freezeScale : 1);      // the world's own clock
+      // the screen's ice (ScreenFx "ice"), held while the freeze lasts
+      if (fx.freeze > 0.4) { if (!ScreenFx.active("ice")) ScreenFx.hold("ice"); }
+      else if (ScreenFx.active("ice")) ScreenFx.release("ice");
       var g = P.gravity + P.gravityStage * lvl;
 
       // the monsters come in turn
@@ -2484,7 +2487,7 @@
          ko       it throws one and knocks it out         — a blow
          hurt     a monster or a spit gets to the witch   — the frame rattles,
                   the edges of the screen burn red */
-    var Cam = { trauma: 0, zoom: 0, zv: 0, fx: 360, fy: 560, ox: 0, oy: 0, rot: 0, clock: 0, last: 0, hurt: 0 };
+    var Cam = { trauma: 0, zoom: 0, zv: 0, fx: 360, fy: 560, ox: 0, oy: 0, rot: 0, clock: 0, last: 0 };
     var IMPACTS = {
       parry:   { trauma: 0.2,  zoom: 0.004, stop: 0,     col: "#5ff0ff", light: 110 },
       perfect: { trauma: 0.28, zoom: 0.01,  stop: 0.02,  col: "#ffffff", light: 150 },
@@ -2501,14 +2504,13 @@
       flashLight(x, y, k.col, k.light, kind === "hurt" ? 0.5 : 0.25);
       if (k.sparks) Fx.burst(x, y, { color: [k.col, "#ffffff"], count: k.sparks, speed: 520, life: 0.25, size: 4, grav: 0,
                                      angle: dir, spread: dir == null ? null : 1.8 });
-      if (kind === "hurt") Cam.hurt = 1;
+      if (kind === "hurt") ScreenFx.play("hit");             // the red rim: the house's own
     }
     function camTick() {
       var now = (window.performance && performance.now) ? performance.now() : Date.now();
       var dt = Cam.last ? Math.min(0.05, (now - Cam.last) / 1000) : 0;
       Cam.last = now; Cam.clock += dt;
       Cam.trauma = Math.max(0, Cam.trauma - dt * 1.6);
-      Cam.hurt = Math.max(0, Cam.hurt - dt * 1.4);
       var t2 = Cam.trauma * Cam.trauma, t = Cam.clock;
       Cam.ox = 26 * t2 * (Math.sin(t * 41.3) + 0.6 * Math.sin(t * 17.9 + 1.3)) / 1.6;
       Cam.oy = 26 * t2 * (Math.sin(t * 37.1 + 2.1) + 0.6 * Math.sin(t * 23.3)) / 1.6;
@@ -2752,7 +2754,7 @@
     /* Screen space, after the camera: the moon's shafts, the vignette in the
        biome's own dark, and the red edge of a heart lost. Canvases made once
        per frame size (and per biome for the vignette). */
-    var vigCv = null, vigKey = "", hurtCv = null, hurtKey = "", shaftCv = null, shaftKey = "";
+    var vigCv = null, vigKey = "", shaftCv = null, shaftKey = "";
     function edgeCanvas(col, inner) {
       var c = canvasOf(W, H), g = c.getContext("2d"), v = hexRgb(col);
       var gr = g.createRadialGradient(W / 2, H * 0.44, H * inner, W / 2, H * 0.44, H * 0.72);
@@ -2788,11 +2790,6 @@
       if (vigKey !== key + n.vig) { vigKey = key + n.vig; vigCv = freeCanvas(vigCv); vigCv = edgeCanvas(n.vig, 0.22); }
       ctx.globalAlpha = 0.5;
       ctx.drawImage(vigCv, 0, 0);
-      if (Cam.hurt > 0) {
-        if (hurtKey !== key) { hurtKey = key; hurtCv = freeCanvas(hurtCv); hurtCv = edgeCanvas("#ff2840", 0.18); }
-        ctx.globalAlpha = Cam.hurt * 0.75;
-        ctx.drawImage(hurtCv, 0, 0);
-      }
       ctx.restore();
     }
 
@@ -3008,7 +3005,6 @@
       ctx.fillStyle = "#07040d"; ctx.fillRect(0, 0, W, H);
       applyCam();
       drawScene(biome);
-      if (fx.freeze > 0) { ctx.fillStyle = "rgba(190,240,255,0.10)"; ctx.fillRect(0, 0, W, H); }
       var i;
       // the ground: webs, the salt circle, the pickups, the warning rings, meteor shadows
       for (i = 0; i < towers.length; i++) {
@@ -3249,12 +3245,16 @@
       var slot = slotAt(p);
       if (slot >= 0) { ptrs[p.id] = "button"; fireSuper(slot); return; }
       if (desk) { aimAt(p); launchBall(); return; }
-      if (dist(p.x, p.y, DIAL_X, DIAL_Y) < P.hubR + 10) { ptrs[p.id] = "button"; launchBall(); return; }
+      /* The hub launches, and the thumb that pressed it keeps the shield: held
+         there, it becomes the dial's as soon as it slides off the middle, so a
+         launch never asks for a second touch to steer. */
+      if (dist(p.x, p.y, DIAL_X, DIAL_Y) < P.hubR + 10) { ptrs[p.id] = "hub"; launchBall(); return; }
       ptrs[p.id] = "dial";
       steer(p);
     }
     function onMove(p) {
       if (p.id === "mouse") { desk = true; aimAt(p); return; }
+      if (ptrs[p.id] === "hub" && dist(p.x, p.y, DIAL_X, DIAL_Y) > P.hubR * 0.5) ptrs[p.id] = "dial";
       if (ptrs[p.id] === "dial") steer(p);
     }
     function onUp(p) { delete ptrs[p.id]; }

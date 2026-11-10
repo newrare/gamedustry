@@ -89,6 +89,13 @@
     return n;
   }
   function text(tag, cls, str) { var n = el(tag, cls); n.textContent = str; return n; }
+  /* A page's prose may put a KEY WORD forward with <b>…</b> (stratideck's
+     Grade and Rang): that one tag is let through, everything else is
+     escaped, so a page is still text and never markup. */
+  function rich(tag, cls, str) {
+    var esc = String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return el(tag, cls, esc.replace(/&lt;(\/?)b&gt;/g, "<$1b>"));
+  }
   function icon(name, cls) { return API ? API.icon(name, cls) : ""; }
   function fill(str, vals) {
     return String(str).replace(/\{(\w+)\}/g, function (m, k) { return vals[k] == null ? m : vals[k]; });
@@ -300,7 +307,7 @@
       }
       for (var q = 0; q < P.rows.length; q++) {
         var R = P.rows[q], tr = el("div", "gu-tr");
-        tr.appendChild(text("span", "gu-tl", R[0]));
+        tr.appendChild(rich("span", "gu-tl", R[0]));
         var v = text("b", "gu-tv", String(R[1]));
         if (R[2]) v.style.color = R[2];
         tr.appendChild(v);
@@ -309,7 +316,7 @@
       box.appendChild(tb);
     }
     var lines = P.text != null ? String(P.text).split(/\n\s*\n/) : (P.lines || []);
-    for (var k = 0; k < lines.length; k++) box.appendChild(text("p", "", lines[k]));
+    for (var k = 0; k < lines.length; k++) box.appendChild(rich("p", "", lines[k]));
     if (P.node) {
       var n = P.node();
       if (n) { n.classList.add("gu-node"); box.appendChild(n); }

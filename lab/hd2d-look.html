@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — HD-2D look</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   LAB — HD-2D LOOK. A game's own 2D cuts stood up in a small 3D diorama,
+   to see whether flat painted pieces and a lit 3D world can read as one
+   picture before any game is built on the idea.
+
+   The trick (Octopath Traveler, Triangle Strategy) is a controlled friction
+   between a modern 3D render and flat 2D pieces, and every lever of it is a
+   knob here:
+
+   - BILLBOARDS: a sprite is a quad standing on its feet (the middle of its
+     base, the village composer's rule), turned toward the camera on the
+     vertical axis only, leaning back a little so a view from above does not
+     squash it. Its animation is cel animation: stepped frames, never tweened.
+   - PIXELS: the scene can be rendered at a fraction of the screen and blown
+     up without smoothing, the sprites resampled so that ONE texel of theirs
+     is one pixel of that render (constant texel density, the ground
+     included), and the orthographic camera and the sprites snapped to that
+     grid so nothing shimmers while the view moves.
+   - LIGHT: a sprite is lit by the same sun, sky and lanterns as the world,
+     through a normal map generated here from its own alpha (a pillow out of
+     the distance to its edge, plus a relief out of its luminance). Its
+     shadow is its silhouette, cast by an invisible card turned toward the
+     sun, so it never thins to a line when the camera turns; a soft contact
+     blob grounds it.
+   - DIORAMA: depth of field or tilt-shift, bloom, light beams, god rays,
+     motes or fireflies, fog, a grade with split toning and a vignette.
+
+   The sprites are the game's adopted cuts (art.objects of its manifest,
+   assets/image/object/) plus its three character moods. Pick a game, click a
+   cut, click the scene to stand it there; drag a sprite to move it. The 3D
+   pieces are lab/models/library.js, flat-coloured.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below.
+   ?preset=N&cam=K&freeze=1 open a state directly (what a headless shot uses).
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; height:100vh; overflow:hidden;
+  background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+#panel {
+  flex:0 0 320px; height:100vh; overflow-y:auto;
+  padding:18px 16px 40px;
+  background:#12121c; border-right:1px solid #23233a;
+}
+#panel h1 { font-size:16px; letter-spacing:.5px; }
+#panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#stats { font:500 12px/1.4 ui-monospace,Menlo,monospace; color:#9c9cba; margin-bottom:12px; }
+
+details { border-top:1px solid #23233a; padding:8px 0; }
+summary { cursor:pointer; font-size:13px; color:#cfd0ea; list-style:none; display:flex; justify-content:space-between; }
+summary::after { content:"›"; transform:rotate(90deg); transition:transform .15s; color:#6c6c8a; }
+details:not([open]) summary::after { transform:none; }
+.body { padding-top:8px; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row select, .row input[type=search] {
+  width:100%; margin-top:4px; padding:5px 8px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px;
+}
+.row.color label, .row.bool label { align-items:center; }
+.row input[type=color] { width:44px; height:24px; border:1px solid #2c2c47; border-radius:6px; background:none; padding:0; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+
+.btns { display:flex; flex-wrap:wrap; gap:6px; }
+.btns button, button.wide {
+  flex:1 1 45%; padding:7px 8px;
+  background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px;
+  font:600 12px/1.2 inherit; cursor:pointer;
+}
+.btns button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.btns button:disabled { opacity:.4; cursor:default; }
+button.wide { width:100%; margin-top:6px; }
+
+/* the palette: the game's cuts, one tile each */
+#palette {
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(52px, 1fr)); gap:4px;
+  max-height:270px; overflow-y:auto; margin-top:6px; padding:4px;
+  background:#0b0b12; border:1px solid #23233a; border-radius:8px;
+}
+#palette .tile {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border:1px solid transparent; border-radius:6px; cursor:pointer; background:#16161f;
+}
+#palette .tile:hover { border-color:#3a3a5c; }
+#palette .tile.armed { border-color:#7ea6ff; background:#1d2440; }
+#palette .tile img { max-width:44px; max-height:44px; object-fit:contain; pointer-events:none; }
+#paletteNote, #selNote { margin-top:6px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#selNote b { color:#e8e6f5; }
+
+#stage {
+  flex:1; display:flex; align-items:center; justify-content:center; padding:20px; position:relative;
+  background-image:
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%),
+    linear-gradient(45deg, #16161f 25%, transparent 25% 75%, #16161f 75%);
+  background-size:32px 32px; background-position:0 0, 16px 16px;
+}
+#view { display:block; border-radius:18px; box-shadow:0 18px 50px rgba(0,0,0,.5); touch-action:none; }
+#view.pixelated { image-rendering:pixelated; }
+#view.armed { cursor:crosshair; }
+#loading { position:absolute; font-size:13px; color:#9c9cba; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <h1>HD-2D look</h1>
+  <p class="hint">A game's 2D cuts standing in a lit 3D diorama. Click a cut, then the scene to place it; drag a sprite to move it, Delete removes it. Drag the empty view to orbit, wheel to zoom.</p>
+  <div id="stats">loading…</div>
+  <div id="controls"></div>
+</div>
+
+<div id="stage">
+  <div id="loading">Building the diorama…</div>
+  <canvas id="view"></canvas>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+// the 3D pieces made in code, shared with models.html and lowpoly-look.html
+import { item, mulberry } from "./models/library.js";
+
+const qs = new URLSearchParams(location.search);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+let rnd = mulberry(7);
+
+// the games whose cuts the palette offers (a page cannot list games/, so they are named)
+const GAMES = ["foldiers", "arcider", "blight", "bouncetry", "bridgessa", "chainring", "echomaze", "gearball", "gelatile",
+  "grudgeon", "holepocalypse", "marshmelt", "orbinity", "parrynormal", "pawko", "radiam", "slipdeck", "spinshock",
+  "stratideck", "triverse", "vipera"];
+
+// =============================================================================
+// SETTINGS — every knob of the look, the presets and the panel's schema
+// =============================================================================
+const BASE = {
+  // pixels: the render's own resolution, the grid things snap to, the sprites' texel density
+  pixel: 2, snap: true, drift: false, pixelate: true, ppuMode: "screen", ppu: 40, posterize: 0, alphaCut: 0.5,
+  // sprites
+  billboard: "plane", lean: 0.3, lit: 0.85, spriteRough: 0.85, normals: true, bulge: 0.2, relief: 0.5, normalScale: 1,
+  border: 0, borderColor: "#f4efe4", animFps: 6, flipFrames: 4,
+  // shadows and occlusion
+  shadow: "card", blob: 0.3, receive: true, shadowType: "pcf soft", shadowRadius: 3, shadowMap: 2048,
+  gtao: true, aoRadius: 0.35, aoIntensity: 0.9,
+  // sun and sky
+  sunAz: 215, sunEl: 42, sunColor: "#fff0d8", sunInt: 2.6,
+  skyTop: "#8fc3ec", skyHorizon: "#e8eef0", groundColor: "#a89a78", envInt: 0.6, hemiInt: 0.2,
+  bg: "sky", bgColor: "#1b1828",
+  // lights
+  lanternGlow: 0.6, lanternColor: "#ffc46b", lanternInt: 0, heroLight: 0, heroColor: "#ffcf8a",
+  // atmosphere
+  fog: true, fogNear: 0.9, fogFar: 2.2,
+  particles: "dust", partCount: 160, partSize: 0.04, partColor: "#fff2c8", partGlow: 1.5,
+  beams: 0.35, rays: 0.4, raysSource: "bright", raysThresh: 0.75, raysDecay: 0.96, raysDensity: 0.6,
+  // depth of field and tilt-shift
+  dof: false, dofTarget: "selected", dofBand: 0.04, dofSoft: 0.25, dofBlur: 5,
+  tilt: true, tiltFollow: true, tiltFocus: 0.55, tiltBand: 0.14, tiltSoft: 0.3, tiltBlur: 2.2,
+  // bloom and grade
+  bloom: 0.35, bloomRadius: 0.5, bloomThreshold: 0.85,
+  tone: "aces", exposure: 1.0, saturation: 1.12, contrast: 1.06, warmth: 0.03, tint: 0,
+  lift: "#2a3560", liftAmt: 0.05, highColor: "#ffe2b0", highAmt: 0.15, vignette: 0.35, grain: 0
+};
+const PRESETS = [
+  { name: "HD-2D day" },
+  { name: "HD-2D night", sunAz: 300, sunEl: 35, sunColor: "#7f9cff", sunInt: 0.55,
+    skyTop: "#0a0f2c", skyHorizon: "#26224a", groundColor: "#16121e", envInt: 0.4, hemiInt: 0.1,
+    bg: "void", bgColor: "#0b0a16", lanternGlow: 4, lanternInt: 2.5, heroLight: 2,
+    particles: "fireflies", partCount: 90, partSize: 0.05, partColor: "#d8ff7a", partGlow: 4,
+    beams: 0, rays: 0, fogNear: 0.85, fogFar: 1.8,
+    bloom: 0.9, bloomRadius: 0.55, bloomThreshold: 0.6, exposure: 1.15, saturation: 1.15, warmth: -0.02,
+    lift: "#1a2a6a", liftAmt: 0.08, highColor: "#ffc070", highAmt: 0.2, vignette: 0.5 },
+  { name: "Golden dusk", sunAz: 250, sunEl: 14, sunColor: "#ffad62", sunInt: 3.4,
+    skyTop: "#6f8fcf", skyHorizon: "#ffcf98", groundColor: "#6e4e3a", envInt: 0.5, hemiInt: 0.2,
+    lanternGlow: 2, lanternInt: 1, beams: 0.9, rays: 0.9, raysThresh: 0.6,
+    partColor: "#ffd9a0", partGlow: 2.5, fogNear: 0.8, fogFar: 1.8,
+    bloom: 0.6, bloomThreshold: 0.75, warmth: 0.08, highColor: "#ffc080", highAmt: 0.25,
+    lift: "#3a2a5a", liftAmt: 0.07, vignette: 0.45 },
+  { name: "Paper diorama", pixel: 1, snap: false, pixelate: false, lean: 0.2,
+    bulge: 0.06, relief: 0.3, normalScale: 0.6, border: 0.035, borderColor: "#f6f1e6",
+    shadow: "card", blob: 0.25, shadowRadius: 4, particles: "none", beams: 0, rays: 0,
+    bg: "void", bgColor: "#e9e1d2", fogNear: 1.2, fogFar: 3,
+    dof: true, dofBand: 0.03, dofSoft: 0.3, dofBlur: 4, tilt: false,
+    bloom: 0.15, saturation: 1.02, contrast: 1.04, warmth: 0.03, liftAmt: 0.03, highAmt: 0.05, vignette: 0.25, grain: 0.45 },
+  { name: "Painted clean", pixel: 1, snap: false, pixelate: false, lean: 0.25,
+    bulge: 0.15, relief: 0.4, normalScale: 0.9, particles: "dust", partCount: 80, beams: 0.25, rays: 0.25,
+    tiltBand: 0.16, tiltBlur: 2, bloom: 0.3, vignette: 0.3 },
+  { name: "Flat (no integration)", pixel: 1, snap: false, pixelate: false, billboard: "toward", lean: 0,
+    lit: 0, normals: false, shadow: "none", blob: 0, gtao: false, fog: false,
+    particles: "none", beams: 0, rays: 0, dof: false, tilt: false, bloom: 0, lanternGlow: 0,
+    saturation: 1, contrast: 1, warmth: 0, liftAmt: 0, highAmt: 0, vignette: 0, grain: 0 }
+].map((p) => Object.assign({}, BASE, p));
+
+const CAMS = [
+  { name: "HD-2D", fov: 22, el: 42, az: 0, dist: 24, target: [0, 0, 0.3] },
+  { name: "Three-quarter", fov: 30, el: 46, az: 22, dist: 24, target: [0, 0, 0] },
+  { name: "Isometric", ortho: 6.6, el: 30, az: 45, dist: 40, target: [0, 0, 0] },
+  { name: "Top ortho", ortho: 6.8, el: 55, az: 0, dist: 40, target: [0, 0, 0.3] },
+  { name: "Low", fov: 34, el: 13, az: -24, dist: 13, target: [0.4, 0.3, 1.2] }
+];
+
+// [key, label, type, min, max, step] — or options for a select
+const SCHEMA = [
+  ["Pixels", [
+    ["pixel", "Pixel size (screen px per render px)", "range", 1, 6, 1],
+    ["snap", "Snap the camera and the sprites to the pixel grid (orthographic)", "bool"],
+    ["drift", "Camera drift (to see the shimmer)", "bool"],
+    ["pixelate", "Resample sprites and ground to one texel density", "bool"],
+    ["ppuMode", "Texel density", "select", [["screen", "One texel = one render pixel"], ["manual", "Manual"]]],
+    ["ppu", "Texels per unit (manual)", "range", 8, 128, 1],
+    ["posterize", "Colour levels (0 = off)", "range", 0, 16, 1],
+    ["alphaCut", "Alpha cut", "range", 0.05, 0.95, 0.01]]],
+  ["Sprites", [
+    ["billboard", "Billboard", "select", [["plane", "Y lock, camera plane"], ["toward", "Y lock, toward the camera"], ["sphere", "Spherical"], ["fixed", "Fixed (no billboard)"]]],
+    ["lean", "Lean back (share of the camera's pitch)", "range", 0, 1, 0.01],
+    ["lit", "Lit by the scene (0 = unlit)", "range", 0, 1, 0.01],
+    ["spriteRough", "Roughness", "range", 0.3, 1, 0.01],
+    ["normals", "Normal map from the alpha", "bool"],
+    ["bulge", "Pillow (share of the sprite's size)", "range", 0.02, 0.5, 0.01],
+    ["relief", "Relief from the luminance", "range", 0, 2, 0.05],
+    ["normalScale", "Normal strength", "range", 0, 3, 0.05],
+    ["border", "Paper border (share of the height)", "range", 0, 0.08, 0.002],
+    ["borderColor", "Border colour", "color"],
+    ["animFps", "Animation frame rate", "range", 1, 24, 1],
+    ["flipFrames", "Flipbook frames (cuts of the family)", "range", 2, 8, 1]]],
+  ["Shadows and occlusion", [
+    ["shadow", "Sprite shadow", "select", [["card", "Card turned to the sun"], ["billboard", "The billboard itself"], ["none", "None"]]],
+    ["blob", "Contact blob", "range", 0, 1, 0.01],
+    ["receive", "Sprites receive shadows", "bool"],
+    ["shadowType", "Shadow filter", "select", ["pcf", "pcf soft", "vsm"]], ["shadowRadius", "Shadow softness", "range", 0, 12, 0.5],
+    ["shadowMap", "Shadow map", "select", [1024, 2048, 4096]],
+    ["gtao", "Ambient occlusion (GTAO)", "bool"], ["aoRadius", "Occlusion radius", "range", 0.05, 1.5, 0.05],
+    ["aoIntensity", "Occlusion strength", "range", 0, 1.5, 0.05]]],
+  ["Sun and sky", [
+    ["sunAz", "Sun direction", "range", 0, 360, 1], ["sunEl", "Sun height", "range", 4, 88, 1],
+    ["sunColor", "Sun colour", "color"], ["sunInt", "Sun intensity", "range", 0, 6, 0.05],
+    ["skyTop", "Sky", "color"], ["skyHorizon", "Horizon", "color"], ["groundColor", "Light bounced off the ground", "color"],
+    ["envInt", "Sky light (environment)", "range", 0, 2.5, 0.05], ["hemiInt", "Hemisphere fill", "range", 0, 2, 0.05],
+    ["bg", "Behind the diorama", "select", [["sky", "Sky"], ["void", "Flat colour"]]], ["bgColor", "Flat colour", "color"]]],
+  ["Lights", [
+    ["lanternGlow", "Lantern glow", "range", 0, 6, 0.05], ["lanternColor", "Lantern colour", "color"],
+    ["lanternInt", "Lantern light on the scene", "range", 0, 6, 0.05],
+    ["heroLight", "Light carried by the selected sprite", "range", 0, 6, 0.05], ["heroColor", "Its colour", "color"]]],
+  ["Atmosphere", [
+    ["fog", "Fog", "bool"], ["fogNear", "Starts at (× camera distance)", "range", 0.3, 3, 0.05],
+    ["fogFar", "Full at (× camera distance)", "range", 0.6, 6, 0.05],
+    ["particles", "Particles", "select", [["none", "None"], ["dust", "Dust motes"], ["fireflies", "Fireflies"], ["snow", "Snow"]]],
+    ["partCount", "Count", "range", 0, 600, 10], ["partSize", "Size", "range", 0.01, 0.15, 0.005],
+    ["partColor", "Colour", "color"], ["partGlow", "Glow", "range", 0, 6, 0.05],
+    ["beams", "Light beams", "range", 0, 2, 0.01],
+    ["rays", "God rays", "range", 0, 3, 0.01],
+    ["raysSource", "Rays from", "select", [["bright", "Every bright pixel"], ["sky", "The sky only"]]],
+    ["raysThresh", "Rays threshold", "range", 0, 1.5, 0.01], ["raysDecay", "Rays decay", "range", 0.85, 1, 0.005],
+    ["raysDensity", "Rays length", "range", 0.1, 1.5, 0.01]]],
+  ["Depth of field", [
+    ["dof", "Depth of field", "bool"],
+    ["dofTarget", "Focus on", "select", [["selected", "The selected sprite"], ["centre", "The centre of the view"]]],
+    ["dofBand", "Sharp zone (× distance)", "range", 0, 0.3, 0.005], ["dofSoft", "Falloff (× distance)", "range", 0.02, 1, 0.01],
+    ["dofBlur", "Blur", "range", 0, 12, 0.1]]],
+  ["Tilt-shift", [
+    ["tilt", "Tilt-shift", "bool"], ["tiltFollow", "Focus follows the selected sprite", "bool"],
+    ["tiltFocus", "Focus line", "range", 0, 1, 0.01],
+    ["tiltBand", "Sharp band", "range", 0, 0.4, 0.01], ["tiltSoft", "Falloff", "range", 0.02, 0.6, 0.01],
+    ["tiltBlur", "Blur", "range", 0, 8, 0.1]]],
+  ["Bloom", [
+    ["bloom", "Bloom strength", "range", 0, 2.5, 0.01], ["bloomRadius", "Bloom radius", "range", 0, 1, 0.01],
+    ["bloomThreshold", "Bloom threshold", "range", 0, 2, 0.01]]],
+  ["Grade", [
+    ["tone", "Tone mapping", "select", ["agx", "aces", "neutral", "none"]], ["exposure", "Exposure", "range", 0.3, 2.5, 0.01],
+    ["saturation", "Saturation", "range", 0, 2, 0.01], ["contrast", "Contrast", "range", 0.6, 1.6, 0.01],
+    ["warmth", "Warmth", "range", -0.2, 0.2, 0.005], ["tint", "Green / magenta", "range", -0.1, 0.1, 0.005],
+    ["lift", "Shadow colour", "color"], ["liftAmt", "Shadow colour amount", "range", 0, 0.3, 0.005],
+    ["highColor", "Highlight colour", "color"], ["highAmt", "Highlight colour amount", "range", 0, 1, 0.01],
+    ["vignette", "Vignette", "range", 0, 1, 0.01], ["grain", "Paper grain", "range", 0, 1, 0.01]]]
+];
+
+const STORE_KEY = "hd2dLook";
+function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { return null; } }
+const stored = load();
+let presetIdx = qs.has("preset") ? +qs.get("preset") : stored ? stored.preset : 0;
+let camIdx = qs.has("cam") ? +qs.get("cam") : stored ? stored.cam : 0;
+let aspect = stored && stored.aspect || "portrait";
+let gameSlug = qs.get("game") || (stored && stored.game) || "foldiers";
+let P = Object.assign({}, BASE, qs.has("preset") || !stored ? PRESETS[presetIdx] || PRESETS[0] : stored.P);
+let frozen = qs.get("freeze") === "1";
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ P, cam: camIdx, preset: presetIdx, aspect, game: gameSlug,
+      sprites: sprites.map((s) => ({ name: s.name, url: s.url, family: s.family, size: s.size, flip: s.flip, anim: s.anim, x: s.x, z: s.z })) }));
+  } catch (e) {}
+}
+
+// =============================================================================
+// RENDERER, SCENE, LIGHTS, SKY
+// =============================================================================
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true;
+renderer.info.autoReset = false;
+const scene = new THREE.Scene();
+const perspCam = new THREE.PerspectiveCamera(22, 9 / 16, 1, 200);
+const orthoCam = new THREE.OrthographicCamera(-5, 5, 9, -9, 0.1, 200);
+let camera = perspCam, controls = null;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 0.3);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2);
+sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 120 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+
+function sunDir(out) {
+  const az = P.sunAz * Math.PI / 180, el = P.sunEl * Math.PI / 180;
+  return out.set(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az));
+}
+
+// the sky: a gradient sphere prefiltered (PMREM) into the scene's environment,
+// so everything — the sprites included — takes a soft coloured light from all around
+const skyScene = new THREE.Scene();
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false,
+  uniforms: { top: { value: new THREE.Color() }, hor: { value: new THREE.Color() }, gnd: { value: new THREE.Color() },
+    sunDir: { value: new THREE.Vector3() }, sunCol: { value: new THREE.Color() } },
+  vertexShader: "varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+  fragmentShader: [
+    "uniform vec3 top, hor, gnd, sunDir, sunCol; varying vec3 vDir;",
+    "void main() {",
+    "  vec3 d = normalize(vDir); float y = d.y;",
+    "  vec3 c = y > 0.0 ? mix(hor, top, pow(y, 0.6)) : mix(hor, gnd, pow(-y, 0.35));",
+    "  c += sunCol * (pow(max(dot(d, sunDir), 0.0), 600.0) * 30.0 + pow(max(dot(d, sunDir), 0.0), 12.0) * 0.25);",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"].join("\n")
+});
+skyScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 48, 24), skyMat));
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null;
+const skyCanvas = document.createElement("canvas"); skyCanvas.width = 2; skyCanvas.height = 256;
+const skyTex = new THREE.CanvasTexture(skyCanvas); skyTex.colorSpace = THREE.SRGBColorSpace;
+const bgColor = new THREE.Color();
+let skyTimer = 0;
+function rebuildSky() {
+  const u = skyMat.uniforms;
+  u.top.value.set(P.skyTop); u.hor.value.set(P.skyHorizon); u.gnd.value.set(P.groundColor);
+  sunDir(u.sunDir.value); u.sunCol.value.set(P.sunColor);
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(skyScene, 0.04);
+  scene.environment = envRT.texture;
+  const g = skyCanvas.getContext("2d"), gr = g.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, P.skyTop); gr.addColorStop(1, P.skyHorizon);
+  g.fillStyle = gr; g.fillRect(0, 0, 2, 256); skyTex.needsUpdate = true;
+  applyBackground();
+}
+function rebuildSkySoon() { clearTimeout(skyTimer); skyTimer = setTimeout(rebuildSky, 90); }
+function applyBackground() {
+  if (P.bg === "sky") scene.background = skyTex;
+  else { bgColor.set(P.bgColor); scene.background = bgColor; }
+}
+
+// =============================================================================
+// TEXTURES — the ground, stone, earth, wood and water, painted at the texel density
+// =============================================================================
+// one integer hash and a value noise, so a texture is the same pattern at every density:
+// it is evaluated in world units, and only the size of a texel changes
+function hash2(x, y) {
+  let h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function vnoise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return lerp(lerp(hash2(xi, yi), hash2(xi + 1, yi), u), lerp(hash2(xi, yi + 1), hash2(xi + 1, yi + 1), u), v);
+}
+// the same noise wrapped on a lattice of p cells, for a texture that tiles one world unit
+function vnoiseP(x, y, p) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, m = (a) => ((a % p) + p) % p;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return lerp(lerp(hash2(m(xi), m(yi)), hash2(m(xi + 1), m(yi)), u), lerp(hash2(m(xi), m(yi + 1)), hash2(m(xi + 1), m(yi + 1)), u), v);
+}
+const fbm = (x, y) => 0.5 * vnoise(x, y) + 0.3 * vnoise(x * 2.1 + 5, y * 2.1) + 0.2 * vnoise(x * 4.3, y * 4.3 + 9);
+// a hex as the sRGB bytes a canvas wants (THREE.Color would hand back linear values)
+const hexRGB = (h) => { const n = parseInt(String(h).replace("#", ""), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const mixRGB = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+
+// the diorama's footprint, and the path through it (world x, z)
+const SLAB = { x0: -4, x1: 4, z0: -5, z1: 5 };
+const PLATEAU = { x0: -4, x1: 1.2, z0: -5, z1: -1.8, h: 0.45 };
+const CHANNEL = { z0: 1.6, z1: 2.3, bed: -0.12, water: -0.035 };
+const PATH = [[0.85, 5.3], [0.85, 2.5], [0.7, 1.2], [-0.2, 0.05], [-1.0, -0.7], [-1.0, -1.9], [-1.3, -2.45], [-2.3, -2.75]];
+function distPath(x, z) {
+  let best = 1e9;
+  for (let i = 0; i < PATH.length - 1; i++) {
+    const [ax, az] = PATH[i], [bx, bz] = PATH[i + 1], dx = bx - ax, dz = bz - az;
+    const t = clamp(((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz), 0, 1);
+    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+  }
+  return best;
+}
+
+const GRASS = [hexRGB("#4f8a3c"), hexRGB("#6fa84a"), hexRGB("#8cc25a")];
+const DIRT = [hexRGB("#9a7448"), hexRGB("#b89260"), hexRGB("#cfae7a")];
+const MUD = hexRGB("#4d4034"), FLOWERS = [hexRGB("#f4e27a"), hexRGB("#f6f0e6"), hexRGB("#e98aa0")];
+
+function posterizeData(d, levels) {
+  if (!levels) return;
+  const n = levels - 1;
+  for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] / 255 * n) / n * 255;
+}
+function canvasTexture(cv, pixel, repeat) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.SRGBColorSpace;
+  if (pixel) { t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; }
+  else { t.anisotropy = 8; }
+  if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+// paint a canvas texel by texel, fn(worldX, worldY) -> [r, g, b]
+function paintCanvas(w, h, fn) {
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d"), img = g.createImageData(w, h), d = img.data;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const c = fn(i, j), o = (j * w + i) * 4;
+    d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+  }
+  if (P.pixelate) posterizeData(d, P.posterize);
+  g.putImageData(img, 0, 0);
+  return cv;
+}
+function groundColour(x, z, texel) {
+  const n = fbm(x * 0.7, z * 0.7), speck = hash2(Math.floor(x * 16), Math.floor(z * 16));
+  let c = n < 0.42 ? mixRGB(GRASS[0], GRASS[1], n / 0.42) : mixRGB(GRASS[1], GRASS[2], (n - 0.42) / 0.58);
+  c = mixRGB(c, speck > 0.5 ? GRASS[2] : GRASS[0], 0.18 * Math.abs(speck - 0.5) * 2);
+  // flowers: one per lucky cell of a world grid, at least one texel wide
+  const cx = Math.floor(x / 0.22), cz = Math.floor(z / 0.22), hf = hash2(cx + 91, cz - 37);
+  if (hf > 0.93) {
+    const fx = (cx + 0.2 + 0.6 * hash2(cx, cz + 5)) * 0.22, fz = (cz + 0.2 + 0.6 * hash2(cx + 3, cz)) * 0.22;
+    if (Math.hypot(x - fx, z - fz) < Math.max(0.025, texel * 0.6)) c = FLOWERS[Math.floor(hf * 1000) % 3];
+  }
+  // the path, with a ragged edge
+  const dp = distPath(x, z) - (0.3 + 0.06 * (vnoise(x * 6, z * 6) - 0.5));
+  if (dp < 0) { const m = fbm(x * 3, z * 3); c = m < 0.5 ? mixRGB(DIRT[0], DIRT[1], m * 2) : mixRGB(DIRT[1], DIRT[2], (m - 0.5) * 2); }
+  else if (dp < 0.05) c = mixRGB(c, DIRT[0], 0.5);
+  // the channel's bed
+  if (z > CHANNEL.z0 - 0.02 && z < CHANNEL.z1 + 0.02) c = mixRGB(MUD, DIRT[0], 0.3 * vnoise(x * 5, z * 5));
+  return c;
+}
+// the tiling ones: every period is a whole number of cells per world unit, so they meet seamlessly
+function stoneColour(u, v, texel) {
+  const bw = 1 / 3, bh = 1 / 7;
+  const row = Math.floor(v / bh), off = (row & 1) * bw / 2, col = Math.floor((u + off) / bw);
+  const lu = (u + off) - col * bw, lv = v - row * bh, edge = Math.max(texel, 0.012);
+  if (lu < edge || lv < edge) return hexRGB("#6f6a63");
+  const k = hash2(((col % 3) + 3) % 3, row), base = mixRGB(hexRGB("#9a948a"), hexRGB("#c2baab"), k);
+  return mixRGB(base, hexRGB("#857e74"), 0.35 * vnoiseP(u * 9, v * 9, 9));
+}
+function earthColour(u, v) {
+  const strata = 0.5 + 0.5 * Math.sin(TAU * v * 2 + vnoiseP(u * 2, v * 2, 2) * 3);
+  let c = mixRGB(hexRGB("#6b4a33"), hexRGB("#8a6142"), strata * 0.7 + 0.3 * vnoiseP(u * 6, v * 6, 6));
+  if (hash2(Math.floor(u * 14), Math.floor(v * 14)) > 0.96) c = hexRGB("#8e877c");
+  return c;
+}
+function woodColour(u, v, texel) {
+  const plank = Math.floor(u * 8), lu = u - plank / 8;
+  if (lu < Math.max(texel, 0.01)) return hexRGB("#4a3020");
+  const k = hash2(plank, 3), grain = vnoiseP(u * 32, v * 3, 3);
+  return mixRGB(mixRGB(hexRGB("#8c5a38"), hexRGB("#a8724a"), k), hexRGB("#704528"), grain * 0.4);
+}
+function waterColour(u, v) {
+  // broken glints on a calm blue, periodic in both directions
+  const w = Math.sin(TAU * (u * 2 + 0.25 * Math.sin(TAU * v * 3))) * Math.sin(TAU * (v * 5 + 0.3 * Math.sin(TAU * u * 2)));
+  const n = vnoiseP(u * 8, v * 8, 8);
+  return w * n > 0.42 ? [225, 244, 255] : w * n > 0.25 ? [140, 196, 224] : n > 0.6 ? [84, 152, 196] : [74, 140, 188];
+}
+
+const groundMat = new THREE.MeshStandardMaterial({ roughness: 0.95 });
+const stoneMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+const earthMat = new THREE.MeshStandardMaterial({ roughness: 1 });
+const woodMat = new THREE.MeshStandardMaterial({ roughness: 0.85 });
+const waterMat = new THREE.MeshStandardMaterial({ roughness: 0.12, metalness: 0, transparent: true, opacity: 0.82, color: 0xbfe6ff });
+let worldPpu = 0;
+function bakeWorld(ppu) {
+  worldPpu = ppu;
+  const px = P.pixelate, tex = 1 / ppu;
+  const gw = Math.round((SLAB.x1 - SLAB.x0) * ppu), gh = Math.round((SLAB.z1 - SLAB.z0) * ppu);
+  const ground = paintCanvas(gw, gh, (i, j) => groundColour(SLAB.x0 + (i + 0.5) * tex, SLAB.z0 + (j + 0.5) * tex, tex));
+  // the other materials tile one world unit; their uvs are in world units (wallBox)
+  const tile = Math.max(4, Math.round(ppu));
+  const stone = paintCanvas(tile, tile, (i, j) => stoneColour((i + 0.5) / tile, 1 - (j + 0.5) / tile, 1 / tile));
+  const earth = paintCanvas(tile, tile, (i, j) => earthColour((i + 0.5) / tile, 1 - (j + 0.5) / tile));
+  const wood = paintCanvas(tile, tile, (i, j) => woodColour((i + 0.5) / tile, 1 - (j + 0.5) / tile, 1 / tile));
+  const water = paintCanvas(tile, tile, (i, j) => waterColour((i + 0.5) / tile, (j + 0.5) / tile, 1 / tile));
+  for (const [m, cv, rep] of [[groundMat, ground, false], [stoneMat, stone, true], [earthMat, earth, true], [woodMat, wood, true], [waterMat, water, true]]) {
+    if (m.map) m.map.dispose();
+    m.map = canvasTexture(cv, px, rep); m.needsUpdate = true;
+  }
+}
+
+// =============================================================================
+// THE DIORAMA — a slab with a plateau, stairs, a channel and its bridge, and the
+// library's houses and trees; every walkable surface is in `walkable`
+// =============================================================================
+const world = new THREE.Group(); scene.add(world);
+const walkable = [];
+function shadowy(o, cast = true, receive = true) { o.traverse((m) => { if (m.isMesh) { m.castShadow = cast; m.receiveShadow = receive; } }); return o; }
+// a box whose uvs are in world units on every face, so a tiling texture keeps one texel size
+function wallBox(w, h, d, mat, x, y, z, walk) {
+  const g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv;
+  const dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+  for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) { const i = f * 4 + k; uv.setXY(i, uv.getX(i) * dims[f][0], uv.getY(i) * dims[f][1]); }
+  const m = shadowy(new THREE.Mesh(g, mat));
+  m.position.set(x, y + h / 2, z); world.add(m); m.updateMatrixWorld();
+  if (walk) walkable.push(m);
+  return m;
+}
+// a horizontal plane over a rectangle, its uvs pointing into the ground texture by world position
+function topPlane(x0, x1, z0, z1, y) {
+  const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); g.translate((x0 + x1) / 2, y, (z0 + z1) / 2);
+  const p = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) - SLAB.x0) / (SLAB.x1 - SLAB.x0), 1 - (p.getZ(i) - SLAB.z0) / (SLAB.z1 - SLAB.z0));
+  const m = shadowy(new THREE.Mesh(g, groundMat), false, true);
+  world.add(m); walkable.push(m);
+  return m;
+}
+// the library lends its builders our materials: flat colours, one per hex
+const matCache = new Map();
+function matFor(hex, opts) {
+  const k = hex + "|" + (opts ? JSON.stringify(opts) : "");
+  if (!matCache.has(k)) matCache.set(k, new THREE.MeshStandardMaterial({ color: hex, roughness: opts && opts.roughness != null ? opts.roughness : 0.85, metalness: opts && opts.metalness || 0 }));
+  return matCache.get(k);
+}
+const lampMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1a, roughness: 0.6, emissive: 0xffc46b, emissiveIntensity: 1 });
+const LIB = { mesh: (geo, hex, opts) => new THREE.Mesh(geo, matFor(hex, opts)), mat: matFor, rnd: () => rnd(), glow: () => lampMat };
+function placeItem(id, x, z, rotY = 0, s = 1) {
+  const g = shadowy(item(id).build(LIB));
+  g.position.set(x, groundAt(x, z), z); g.rotation.y = rotY; g.scale.setScalar(s); g.updateMatrixWorld(true);
+  world.add(g); return g;
+}
+const lanterns = [];
+function lantern(x, z) {
+  const y = groundAt(x, z), g = new THREE.Group();
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.62, 0.05), matFor(0x5a3a24)); post.position.y = 0.31;
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.035, 0.035), matFor(0x5a3a24)); arm.position.set(0.06, 0.6, 0);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.13, 0.1), lampMat); head.position.set(0.12, 0.5, 0);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.06, 4), matFor(0x3a2a1a)); cap.position.set(0.12, 0.6, 0); cap.rotation.y = Math.PI / 4;
+  g.add(post, arm, head, cap); shadowy(g); head.castShadow = false;
+  g.position.set(x, y, z); world.add(g);
+  const light = new THREE.PointLight(0xffc46b, 0, 3.2, 2); light.position.set(x + 0.12, y + 0.48, z);
+  world.add(light); lanterns.push(light);
+}
+const raycaster = new THREE.Raycaster(), DOWN = new THREE.Vector3(0, -1, 0), tmpV = new THREE.Vector3();
+function groundAt(x, z) {
+  raycaster.set(tmpV.set(x, 20, z), DOWN);
+  const hit = raycaster.intersectObjects(walkable, false)[0];
+  return hit ? hit.point.y : 0;
+}
+function buildDiorama() {
+  const { x0, x1, z0, z1 } = SLAB;
+  // the slab in three blocks round the channel, and the channel's bed
+  wallBox(x1 - x0, 0.7, CHANNEL.z0 - z0, earthMat, 0, -0.7, (z0 + CHANNEL.z0) / 2);
+  wallBox(x1 - x0, 0.7, z1 - CHANNEL.z1, earthMat, 0, -0.7, (CHANNEL.z1 + z1) / 2);
+  wallBox(x1 - x0, 0.7 + CHANNEL.bed - 0.002, CHANNEL.z1 - CHANNEL.z0, earthMat, 0, -0.7, (CHANNEL.z0 + CHANNEL.z1) / 2);
+  topPlane(x0, x1, z0, CHANNEL.z0, 0.002);
+  topPlane(x0, x1, CHANNEL.z1, z1, 0.002);
+  topPlane(x0, x1, CHANNEL.z0, CHANNEL.z1, CHANNEL.bed);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, CHANNEL.z1 - CHANNEL.z0), waterMat);
+  water.rotation.x = -Math.PI / 2; water.position.set(0, CHANNEL.water, (CHANNEL.z0 + CHANNEL.z1) / 2);
+  water.receiveShadow = true; world.add(water);
+  const wuv = water.geometry.attributes.uv;
+  for (let i = 0; i < wuv.count; i++) wuv.setXY(i, wuv.getX(i) * (x1 - x0), wuv.getY(i) * (CHANNEL.z1 - CHANNEL.z0));
+  // the plateau: stone walls, a grass top, stairs down to the path
+  const Pl = PLATEAU;
+  wallBox(Pl.x1 - Pl.x0, Pl.h, Pl.z1 - Pl.z0, stoneMat, (Pl.x0 + Pl.x1) / 2, 0, (Pl.z0 + Pl.z1) / 2);
+  topPlane(Pl.x0, Pl.x1, Pl.z0, Pl.z1, Pl.h + 0.002);
+  for (let k = 0; k < 3; k++) wallBox(0.8, 0.15 * (k + 1), 0.9 - 0.3 * k, stoneMat, -1.0, 0, Pl.z1 + (0.9 - 0.3 * k) / 2, true);
+  // the bridge: a deck of planks on two beams, two rails
+  wallBox(1.0, 0.07, 1.2, woodMat, 0.85, 0, (CHANNEL.z0 + CHANNEL.z1) / 2, true);
+  for (const sx of [-0.47, 0.47]) {
+    for (const sz of [-0.55, 0, 0.55]) wallBox(0.05, 0.25, 0.05, woodMat, 0.85 + sx, 0.07, (CHANNEL.z0 + CHANNEL.z1) / 2 + sz);
+    wallBox(0.05, 0.04, 1.2, woodMat, 0.85 + sx, 0.3, (CHANNEL.z0 + CHANNEL.z1) / 2);
+  }
+  // the library's pieces
+  rnd = mulberry(7);
+  placeItem("house-cottage", -2.7, -3.5, 0.15);
+  placeItem("house-cabin", 2.7, -3.7, -0.3);
+  for (const [x, z, s] of [[-3.5, -4.5, 1], [0.5, -4.5, 0.9], [-3.6, -2.3, 0.8], [3.6, -1.0, 1.1]]) placeItem("tree-conifer", x, z, rnd() * TAU, s);
+  for (const [x, z, s] of [[-3.2, 3.9, 1], [3.4, 0.6, 0.85], [-3.4, 0.9, 0.75]]) placeItem("tree-round", x, z, rnd() * TAU, s);
+  for (const [x, z, s] of [[-2.0, 0.4, 0.6], [2.4, 1.0, 0.5], [-1.6, 4.3, 0.7], [3.4, 4.5, 0.6], [-0.2, -3.0, 0.45]]) placeItem("rock-single", x, z, rnd() * TAU, s);
+  lantern(-0.25, -0.55); lantern(1.6, 2.9); lantern(-1.8, -2.1);
+}
+
+// =============================================================================
+// SPRITES — a cut baked into a texture at the texel density, a normal map out of
+// its alpha, a quad standing on its feet, an invisible card that casts its shadow
+// =============================================================================
+const imgCache = new Map();
+function loadImage(url) {
+  if (!imgCache.has(url)) imgCache.set(url, new Promise((ok, ko) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ko(new Error(url)); im.src = url; }));
+  return imgCache.get(url);
+}
+// a downscale by halves, so a 400 px cut reaching 20 texels is averaged rather than sampled
+function scaled(img, w, h) {
+  let src = img, sw = img.naturalWidth || img.width, sh = img.naturalHeight || img.height;
+  while (sw > w * 2 && sh > h * 2) {
+    const c = document.createElement("canvas"); c.width = Math.max(w, Math.round(sw / 2)); c.height = Math.max(h, Math.round(sh / 2));
+    const g = c.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(src, 0, 0, c.width, c.height);
+    src = c; sw = c.width; sh = c.height;
+  }
+  return src;
+}
+// chamfer distance (3-4) from every texel where mask is 1 to the nearest where it is 0;
+// `edge` is what lies outside the canvas: 0 for the distance to the art's edge (the
+// canvas border is an edge), far for the distance from the art (it is not art)
+function chamfer(mask, w, h, edge = 0) {
+  const d = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) d[i] = mask[i] ? 1e9 : 0;
+  const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h) ? edge : d[y * w + x];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x; if (!d[i]) continue;
+    d[i] = Math.min(d[i], at(x - 1, y) + 3, at(x - 1, y - 1) + 4, at(x, y - 1) + 3, at(x + 1, y - 1) + 4);
+  }
+  for (let y = h - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) {
+    const i = y * w + x; if (!d[i]) continue;
+    d[i] = Math.min(d[i], at(x + 1, y) + 3, at(x + 1, y + 1) + 4, at(x, y + 1) + 3, at(x - 1, y + 1) + 4);
+  }
+  for (let i = 0; i < w * h; i++) d[i] /= 3;
+  return d;
+}
+const bakeCache = new Map();
+function bakeKey(url, size) {
+  return [url, P.pixelate ? Math.max(8, Math.round(size * currentPpu())) : "hd", P.pixelate, P.posterize, P.border, P.borderColor, P.bulge, P.relief, P.alphaCut].join("|");
+}
+// bake one cut: { map, nrm, alpha, w, h, art (texel height of the art alone), bottom (empty rows under the feet) }
+function bake(img, url, size) {
+  const key = bakeKey(url, size);
+  if (bakeCache.has(key)) return bakeCache.get(key);
+  const iw = img.naturalWidth, ih = img.naturalHeight, px = P.pixelate;
+  const th = px ? Math.max(8, Math.round(size * currentPpu())) : Math.min(512, ih);
+  const tw = Math.max(1, Math.round(iw * th / ih));
+  const bp = Math.round(P.border * th), w = tw + 2 * bp, h = th + 2 * bp;
+  const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const g = cv.getContext("2d", { willReadFrequently: true });
+  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
+  g.drawImage(scaled(img, tw, th), bp, bp, tw, th);
+  const id = g.getImageData(0, 0, w, h), d = id.data, n = w * h, cut = P.alphaCut * 255;
+  if (px) {
+    for (let i = 0; i < n; i++) d[i * 4 + 3] = d[i * 4 + 3] >= cut ? 255 : 0;   // a pixel is in or out
+    posterizeData(d, P.posterize);
+  }
+  // the paper border: the art dilated by bp texels, laid under it
+  if (bp > 0) {
+    const out = new Uint8Array(n); for (let i = 0; i < n; i++) out[i] = d[i * 4 + 3] < cut ? 1 : 0;
+    const dist = chamfer(out, w, h, 1e9), bc = hexRGB(P.borderColor);
+    for (let i = 0; i < n; i++) {
+      if (dist[i] > bp + 0.5) continue;
+      const a = d[i * 4 + 3] / 255;
+      for (let k = 0; k < 3; k++) d[i * 4 + k] = d[i * 4 + k] * a + bc[k] * (1 - a);
+      d[i * 4 + 3] = 255;
+    }
+  }
+  g.putImageData(id, 0, 0);
+  const alpha = new Uint8Array(n), inside = new Uint8Array(n);
+  let bottom = 0;
+  for (let i = 0; i < n; i++) { alpha[i] = d[i * 4 + 3]; inside[i] = alpha[i] >= cut ? 1 : 0; }
+  for (let y = h - 1; y >= 0; y--) { let any = false; for (let x = 0; x < w; x++) if (inside[y * w + x]) { any = true; break; } if (any) { bottom = h - 1 - y; break; } }
+  // the normal map: a pillow out of the distance to the edge, a relief out of the luminance
+  const R = Math.max(1, P.bulge * Math.min(w, h)), din = chamfer(inside, w, h), H = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    if (!inside[i]) continue;
+    const t = Math.min(din[i] / R, 1), dome = 1 - (1 - t) * (1 - t);
+    const luma = (0.2126 * d[i * 4] + 0.7152 * d[i * 4 + 1] + 0.0722 * d[i * 4 + 2]) / 255;
+    H[i] = R * 0.7 * dome + P.relief * luma * (2 + R * 0.1);
+  }
+  const nc = document.createElement("canvas"); nc.width = w; nc.height = h;
+  const ng = nc.getContext("2d"), nid = ng.createImageData(w, h), nd = nid.data;
+  const hAt = (x, y) => H[clamp(y, 0, h - 1) * w + clamp(x, 0, w - 1)];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x, o = i * 4;
+    let nx = 0, ny = 0, nz = 1;
+    if (inside[i]) {
+      const gx = (hAt(x + 1, y - 1) + 2 * hAt(x + 1, y) + hAt(x + 1, y + 1) - hAt(x - 1, y - 1) - 2 * hAt(x - 1, y) - hAt(x - 1, y + 1)) / 8;
+      const gy = (hAt(x - 1, y + 1) + 2 * hAt(x, y + 1) + hAt(x + 1, y + 1) - hAt(x - 1, y - 1) - 2 * hAt(x, y - 1) - hAt(x + 1, y - 1)) / 8;
+      // the image's y runs down and the texture's v up: dh/dv = -gy
+      const l = Math.hypot(gx, gy, 1); nx = -gx / l; ny = gy / l; nz = 1 / l;
+    }
+    nd[o] = (nx * 0.5 + 0.5) * 255; nd[o + 1] = (ny * 0.5 + 0.5) * 255; nd[o + 2] = (nz * 0.5 + 0.5) * 255; nd[o + 3] = 255;
+  }
+  ng.putImageData(nid, 0, 0);
+  const map = canvasTexture(cv, px, false);
+  const nrm = new THREE.CanvasTexture(nc); nrm.colorSpace = THREE.NoColorSpace;
+  if (px) { nrm.magFilter = nrm.minFilter = THREE.NearestFilter; nrm.generateMipmaps = false; }
+  const out = { map, nrm, alpha, w, h, art: th, bottom, canvas: cv };
+  bakeCache.set(key, out);
+  return out;
+}
+function clearBakes() {
+  for (const b of bakeCache.values()) { b.map.dispose(); b.nrm.dispose(); }
+  bakeCache.clear();
+}
+
+const sprites = [];
+let selected = null, spriteSeq = 0;
+const blobTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(0.55, "rgba(0,0,0,0.55)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+})();
+const blobGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+
+// the sprite's own material, and the card's: invisible, but carrying the map and the
+// alpha test, since the shadow pass copies map, alphaTest and side off the object's material
+function spriteMaterial() {
+  const m = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, metalness: 0, emissive: 0xffffff });
+  const cm = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });
+  return [m, cm];
+}
+function styleSprite(s) {
+  const m = s.mat;
+  m.alphaTest = P.alphaCut; m.roughness = P.spriteRough;
+  m.color.setScalar(P.lit); m.emissiveIntensity = 1 - P.lit;
+  const a2c = P.pixel === 1;
+  if (m.alphaToCoverage !== a2c) { m.alphaToCoverage = a2c; m.needsUpdate = true; }
+  m.normalScale.setScalar(P.normalScale);
+  s.cardMat.alphaTest = P.alphaCut;
+  s.mesh.castShadow = P.shadow === "billboard"; s.card.castShadow = P.shadow === "card";
+  s.mesh.receiveShadow = P.receive;
+  s.blob.material.opacity = P.blob; s.blob.visible = P.blob > 0;
+}
+// the frame a sprite shows: its texture, its normal map, a quad sized to it
+function showFrame(s, k) {
+  const f = s.frames[k]; if (!f || s.shown === k) return;
+  s.shown = k;
+  const m = s.mat, needs = !!m.normalMap !== !!P.normals;
+  m.map = f.bake.map; m.emissiveMap = f.bake.map; m.normalMap = P.normals ? f.bake.nrm : null;
+  s.cardMat.map = f.bake.map;
+  if (needs || !m.userData.compiled) { m.needsUpdate = true; s.cardMat.needsUpdate = true; m.userData.compiled = true; }
+  s.mesh.geometry = s.card.geometry = f.geo;
+}
+function frameGeometry(b, size) {
+  const upt = size / b.art, wu = b.w * upt, hu = b.h * upt;
+  const g = new THREE.PlaneGeometry(wu, hu);
+  g.translate(0, hu / 2 - b.bottom * upt, 0);
+  return g;
+}
+async function bakeSprite(s) {
+  const ticket = ++s.ticket;
+  const urls = s.anim === "flipbook" ? flipbookUrls(s) : [s.url];
+  const imgs = await Promise.all(urls.map((u) => loadImage(u).catch(() => null)));
+  if (ticket !== s.ticket || s.removed) return;
+  for (const f of s.frames) f.geo.dispose();
+  s.frames = [];
+  imgs.forEach((im, i) => { if (im) { const b = bake(im, urls[i], s.size); s.frames.push({ bake: b, geo: frameGeometry(b, s.size) }); } });
+  s.shown = -1; s.mat.userData.compiled = false;
+  showFrame(s, 0);
+  const b = s.frames[0] && s.frames[0].bake;
+  if (b) s.blob.scale.set(b.w * s.size / b.art * 0.75, 1, Math.min(0.5, b.w * s.size / b.art * 0.35));
+  styleSprite(s);
+}
+function rebakeAll() { clearBakes(); sprites.forEach(bakeSprite); }
+let rebakeTimer = 0;
+function rebakeSoon() { clearTimeout(rebakeTimer); rebakeTimer = setTimeout(() => { rebakeAll(); bakeWorld(currentPpu()); }, 140); }
+
+function addSprite(o) {
+  const [mat, cardMat] = spriteMaterial();
+  const group = new THREE.Group(), mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.01, 0.01), mat);
+  const card = new THREE.Mesh(mesh.geometry, cardMat), blob = new THREE.Mesh(blobGeo, new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, color: 0x000000 }));
+  blob.position.y = 0.012; blob.renderOrder = 1;
+  group.add(mesh, card, blob); world.add(group);
+  const s = Object.assign({ id: ++spriteSeq, size: 0.9, flip: false, anim: "none", x: 0, z: 0 }, o,
+    { group, mesh, card, blob, mat, cardMat, frames: [], shown: -1, ticket: 0, phase: Math.random() * 10, removed: false });
+  s.family = s.family || familyOf(s.name);
+  mesh.userData.sprite = s;
+  s.y = groundAt(s.x, s.z);
+  sprites.push(s);
+  bakeSprite(s);
+  return s;
+}
+function removeSprite(s) {
+  s.removed = true; world.remove(s.group);
+  for (const f of s.frames) f.geo.dispose();
+  s.mat.dispose(); s.cardMat.dispose(); s.blob.material.dispose();
+  sprites.splice(sprites.indexOf(s), 1);
+  if (selected === s) select(null);
+  save();
+}
+const familyOf = (name) => name.replace(/-?\d+$/, "");
+function flipbookUrls(s) {
+  const fam = paletteEntries.filter((e) => e.family === s.family);
+  if (!fam.length) return [s.url];
+  const i = Math.max(0, fam.findIndex((e) => e.url === s.url)), out = [];
+  for (let k = 0; k < Math.min(P.flipFrames, fam.length); k++) out.push(fam[(i + k) % fam.length].url);
+  return out;
+}
+
+// the selection: a ring on the ground, and the light the sprite may carry
+const ring = new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 40).rotateX(-Math.PI / 2),
+  new THREE.MeshBasicMaterial({ color: 0x7ea6ff, transparent: true, opacity: 0.8, depthWrite: false }));
+ring.renderOrder = 2; ring.visible = false; scene.add(ring);
+const heroLamp = new THREE.PointLight(0xffcf8a, 0, 3, 2); scene.add(heroLamp);
+
+// =============================================================================
+// ATMOSPHERE — particles, light beams
+// =============================================================================
+const dotTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 32;
+  const g = c.getContext("2d"), gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.4, "rgba(255,255,255,0.6)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+  return new THREE.CanvasTexture(c);
+})();
+const MAXP = 600;
+const partGeo = new THREE.BufferGeometry();
+const partPos = new Float32Array(MAXP * 3), partCol = new Float32Array(MAXP * 3), partSeed = new Float32Array(MAXP * 4);
+partGeo.setAttribute("position", new THREE.BufferAttribute(partPos, 3));
+partGeo.setAttribute("color", new THREE.BufferAttribute(partCol, 3));
+for (let i = 0; i < MAXP; i++) {
+  partSeed[i * 4] = lerp(SLAB.x0, SLAB.x1, Math.random()); partSeed[i * 4 + 1] = Math.random() * 2.2;
+  partSeed[i * 4 + 2] = lerp(SLAB.z0, SLAB.z1, Math.random()); partSeed[i * 4 + 3] = Math.random() * 100;
+}
+const partMat = new THREE.PointsMaterial({ map: dotTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true, sizeAttenuation: true });
+const points = new THREE.Points(partGeo, partMat); points.frustumCulled = false; scene.add(points);
+const partColor = new THREE.Color();
+function updateParticles(t) {
+  const kind = P.particles, n = kind === "none" ? 0 : Math.min(MAXP, P.partCount);
+  points.visible = n > 0; partGeo.setDrawRange(0, n);
+  if (!n) return;
+  partColor.set(P.partColor).multiplyScalar(P.partGlow);
+  for (let i = 0; i < n; i++) {
+    const sx = partSeed[i * 4], sy = partSeed[i * 4 + 1], sz = partSeed[i * 4 + 2], ph = partSeed[i * 4 + 3];
+    let x, y, z, k = 1;
+    if (kind === "snow") {
+      y = 2.4 - ((t * 0.25 + ph) % 2.4); x = sx + Math.sin(t * 0.6 + ph) * 0.15; z = sz + Math.cos(t * 0.5 + ph) * 0.1;
+    } else if (kind === "fireflies") {
+      x = sx + Math.sin(t * 0.35 + ph) * 0.5; y = 0.15 + sy * 0.45 + Math.sin(t * 0.8 + ph * 2) * 0.12; z = sz + Math.cos(t * 0.3 + ph) * 0.5;
+      k = Math.max(0, Math.sin(t * 1.7 + ph * 3)) ** 3;
+    } else {
+      x = sx + Math.sin(t * 0.12 + ph) * 0.4; y = 0.2 + sy * 0.9 + Math.sin(t * 0.25 + ph) * 0.2; z = sz + Math.cos(t * 0.1 + ph) * 0.4;
+      k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.9 + ph));
+    }
+    partPos[i * 3] = x; partPos[i * 3 + 1] = y; partPos[i * 3 + 2] = z;
+    partCol[i * 3] = partColor.r * k; partCol[i * 3 + 1] = partColor.g * k; partCol[i * 3 + 2] = partColor.b * k;
+  }
+  partGeo.attributes.position.needsUpdate = true; partGeo.attributes.color.needsUpdate = true;
+  // an orthographic camera does not attenuate points: their size is then in pixels
+  partMat.size = camera.isOrthographicCamera ? P.partSize * pxPerUnit() : P.partSize;
+  partMat.sizeAttenuation = !camera.isOrthographicCamera;
+}
+// a beam: an additive quad along the sun's direction, turned round its own axis toward the camera
+const beamTex = (() => {
+  const c = document.createElement("canvas"); c.width = 64; c.height = 128;
+  const g = c.getContext("2d"), id = g.createImageData(64, 128);
+  for (let y = 0; y < 128; y++) for (let x = 0; x < 64; x++) {
+    const u = (x + 0.5) / 64 - 0.5, v = (y + 0.5) / 128;
+    const a = Math.exp(-u * u * 28) * Math.min(1, v * 5) * Math.min(1, (1 - v) * 1.6);
+    const o = (y * 64 + x) * 4; id.data[o] = id.data[o + 1] = id.data[o + 2] = 255; id.data[o + 3] = a * 255;
+  }
+  g.putImageData(id, 0, 0);
+  return new THREE.CanvasTexture(c);
+})();
+const BEAMS = [[-0.4, 0.5, 0.7], [1.7, -0.9, 0.5], [-2.4, -2.9, 0.8], [2.3, 3.1, 0.6], [-2.6, 2.3, 0.55]];
+const beams = BEAMS.map(([x, z, w]) => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: beamTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  m.matrixAutoUpdate = false; m.frustumCulled = false; scene.add(m);
+  return { m, x, z, w, ph: Math.random() * 10 };
+});
+const vA = new THREE.Vector3(), vN = new THREE.Vector3(), vR = new THREE.Vector3(), vC = new THREE.Vector3(), sunCol = new THREE.Color();
+function updateBeams(t) {
+  sunDir(vA); sunCol.set(P.sunColor);
+  for (const b of beams) {
+    b.m.visible = P.beams > 0; if (!b.m.visible) continue;
+    const L = 3.2, y0 = b.y != null ? b.y : (b.y = groundAt(b.x, b.z));
+    vC.set(b.x, y0, b.z).addScaledVector(vA, L / 2);
+    vN.copy(camera.position).sub(vC); vN.addScaledVector(vA, -vN.dot(vA)).normalize();
+    vR.crossVectors(vA, vN).normalize();
+    b.m.matrix.makeBasis(vR.clone().multiplyScalar(b.w), vA.clone().multiplyScalar(L), vN).setPosition(vC);
+    b.m.matrixWorldNeedsUpdate = true;
+    b.m.material.color.copy(sunCol).multiplyScalar(P.beams * 0.35 * (0.75 + 0.25 * Math.sin(t * 0.4 + b.ph)));
+  }
+}
+
+// =============================================================================
+// POST — the scene is rendered into its own target with a depth texture (so the
+// sprites' alpha-tested silhouettes are in the depth, never their quads), then
+// GTAO, god rays, depth of field, bloom, tilt-shift, the grade, the tone mapping
+// =============================================================================
+const QUAD_VS = "varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }";
+const DEPTH_GLSL = [
+  "#include <packing>",
+  "uniform sampler2D tDepth; uniform float cameraNear, cameraFar, uOrtho;",
+  "float vz(vec2 uv) { float d = texture2D(tDepth, uv).x; return uOrtho > 0.5 ? -orthographicDepthToViewZ(d, cameraNear, cameraFar) : -perspectiveDepthToViewZ(d, cameraNear, cameraFar); }"
+].join("\n");
+const depthUniforms = () => ({ tDepth: { value: null }, cameraNear: { value: 1 }, cameraFar: { value: 200 }, uOrtho: { value: 0 } });
+const SOURCE = {
+  uniforms: { tDiffuse: { value: null }, tScene: { value: null } },
+  vertexShader: QUAD_VS,
+  fragmentShader: "uniform sampler2D tScene; varying vec2 vUv; void main() { gl_FragColor = texture2D(tScene, vUv); }"
+};
+// god rays: bright pixels (or the sky alone) smeared along the line to the sun's point on screen
+const RAYS = {
+  uniforms: Object.assign(depthUniforms(), { tDiffuse: { value: null }, uSun: { value: new THREE.Vector2(0.5, 1.2) }, uStr: { value: 0 },
+    uDecay: { value: 0.96 }, uDensity: { value: 0.6 }, uThresh: { value: 0.75 }, uSky: { value: 0 }, uVis: { value: 1 }, uColor: { value: new THREE.Color() } }),
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse, tDepth; uniform vec2 uSun; uniform float uStr, uDecay, uDensity, uThresh, uSky, uVis; uniform vec3 uColor; varying vec2 vUv;",
+    "void main() {",
+    "  vec4 base = texture2D(tDiffuse, vUv);",
+    "  if (uStr <= 0.0 || uVis <= 0.0) { gl_FragColor = base; return; }",
+    "  vec2 st = (vUv - uSun) * uDensity / 48.0, uv = vUv; float ill = 1.0; vec3 acc = vec3(0.0);",
+    "  for (int i = 0; i < 48; i++) {",
+    "    uv -= st; vec3 s = texture2D(tDiffuse, uv).rgb;",
+    "    float m = uSky > 0.5 ? step(0.9999, texture2D(tDepth, uv).x) : 1.0;",
+    "    acc += s * max(dot(s, vec3(0.2126, 0.7152, 0.0722)) - uThresh, 0.0) * m * ill; ill *= uDecay;",
+    "  }",
+    "  gl_FragColor = vec4(base.rgb + acc / 48.0 * uStr * uColor * uVis, base.a);",
+    "}"].join("\n")
+};
+// depth of field: a golden-angle gather whose radius is the circle of confusion,
+// read off the scene's depth relative to the focus distance
+const DOF = {
+  uniforms: Object.assign(depthUniforms(), { tDiffuse: { value: null }, uTexel: { value: new THREE.Vector2() },
+    uFocus: { value: 10 }, uBand: { value: 0.05 }, uSoft: { value: 0.3 }, uMax: { value: 0 } }),
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    DEPTH_GLSL,
+    "uniform sampler2D tDiffuse; uniform vec2 uTexel; uniform float uFocus, uBand, uSoft, uMax; varying vec2 vUv;",
+    "float coc(vec2 uv) { return smoothstep(uBand, uBand + uSoft, abs(vz(uv) - uFocus) / uFocus) * uMax; }",
+    "void main() {",
+    "  vec4 col = texture2D(tDiffuse, vUv); float c0 = coc(vUv);",
+    "  if (uMax <= 0.0 || c0 < 0.5) { gl_FragColor = col; return; }",
+    "  vec3 acc = col.rgb; float ws = 1.0;",
+    "  for (int i = 0; i < 36; i++) {",
+    "    float fi = float(i) + 0.5, r = sqrt(fi / 36.0) * c0, a = fi * 2.39996;",
+    "    vec2 uv = vUv + vec2(cos(a), sin(a)) * r * uTexel;",
+    "    float w = clamp(coc(uv) / max(r, 1.0), 0.0, 1.0);",   // an in-focus sample does not spread into the blur
+    "    acc += texture2D(tDiffuse, uv).rgb * w; ws += w;",
+    "  }",
+    "  gl_FragColor = vec4(acc / ws, col.a);",
+    "}"].join("\n")
+};
+const TILT = {
+  uniforms: { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 },
+    uBand: { value: 0.1 }, uSoft: { value: 0.3 }, uMax: { value: 3 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform vec2 uDir; uniform float uFocus, uBand, uSoft, uMax; varying vec2 vUv;",
+    "void main() {",
+    "  float r = uMax * smoothstep(uBand, uBand + uSoft, abs(vUv.y - uFocus));",
+    "  if (r < 0.05) { gl_FragColor = texture2D(tDiffuse, vUv); return; }",
+    "  vec4 c = vec4(0.0); float ws = 0.0;",
+    "  for (int i = -6; i <= 6; i++) { float fi = float(i), w = exp(-fi * fi / 18.0); c += texture2D(tDiffuse, vUv + uDir * fi * r / 3.0) * w; ws += w; }",
+    "  gl_FragColor = c / ws;",
+    "}"].join("\n")
+};
+const GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uCon: { value: 1 }, uWarm: { value: 0 }, uTint: { value: 0 },
+    uLift: { value: new THREE.Color() }, uLiftAmt: { value: 0 }, uHigh: { value: new THREE.Color() }, uHighAmt: { value: 0 },
+    uVig: { value: 0 }, uGrain: { value: 0 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    "uniform sampler2D tDiffuse; uniform float uSat, uCon, uWarm, uTint, uLiftAmt, uHighAmt, uVig, uGrain; uniform vec3 uLift, uHigh; varying vec2 vUv;",
+    "float gh(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }",
+    "float gv(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);",
+    "  return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }",
+    "const vec3 LW = vec3(0.2126, 0.7152, 0.0722);",
+    "void main() {",
+    "  vec3 c = texture2D(tDiffuse, vUv).rgb;",
+    "  c *= vec3(1.0 + uWarm, 1.0 - uTint, 1.0 - uWarm);",
+    "  c = 0.18 * pow(max(c, vec3(1e-5)) / 0.18, vec3(uCon));          // contrast around mid-grey, in linear light",
+    "  float l = dot(c, LW);",
+    "  c = mix(vec3(l), c, uSat);",
+    "  c += uLift * uLiftAmt * (1.0 - smoothstep(0.0, 0.35, l));       // the shadows take a colour",
+    "  c = mix(c, c * uHigh / max(dot(uHigh, LW), 1e-3), smoothstep(0.35, 1.0, l) * uHighAmt);   // the highlights another",
+    "  c *= mix(1.0, smoothstep(0.95, 0.25, length((vUv - 0.5) * vec2(1.0, 1.25))), uVig);",
+    "  vec2 q = gl_FragCoord.xy;",
+    "  c *= 1.0 + uGrain * (0.09 * (gh(q) - 0.5) + 0.07 * (gv(q / 3.0 + vec2(gv(q / 40.0) * 6.0, 0.0)) - 0.5) + 0.05 * (gv(q / 90.0) - 0.5));",
+    "  gl_FragColor = vec4(c, 1.0);",
+    "}"].join("\n")
+};
+
+let sceneRT = null, composer = null, srcPass, gtaoPass, raysPass, dofPass, bloomPass, tiltH, tiltV, gradePass;
+let W = 360, H = 640, RW = 360, RH = 640;
+function buildComposer() {
+  if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); gtaoPass.dispose(); bloomPass.dispose(); }
+  if (sceneRT) { sceneRT.depthTexture.dispose(); sceneRT.dispose(); }
+  sceneRT = new THREE.WebGLRenderTarget(RW, RH, { type: THREE.HalfFloatType, samples: P.pixel === 1 ? 4 : 0, depthTexture: new THREE.DepthTexture(RW, RH) });
+  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(RW, RH, { type: THREE.HalfFloatType }));
+  composer.setPixelRatio(1);
+  srcPass = new ShaderPass(SOURCE); srcPass.uniforms.tScene.value = sceneRT.texture; composer.addPass(srcPass);
+  // the occlusion reads OUR depth (the sprites' silhouettes, not their quads) and
+  // rebuilds its normals from it; it never renders the scene itself
+  gtaoPass = new GTAOPass(scene, camera, RW, RH);
+  gtaoPass._renderGBuffer = false;
+  for (const m of [gtaoPass.gtaoMaterial, gtaoPass.pdMaterial]) {
+    m.defines.NORMAL_VECTOR_TYPE = 0; m.defines.DEPTH_SWIZZLING = "x"; m.uniforms.tDepth.value = sceneRT.depthTexture; m.needsUpdate = true;
+  }
+  composer.addPass(gtaoPass);
+  raysPass = new ShaderPass(RAYS); raysPass.uniforms.tDepth.value = sceneRT.depthTexture; composer.addPass(raysPass);
+  dofPass = new ShaderPass(DOF); dofPass.uniforms.tDepth.value = sceneRT.depthTexture; composer.addPass(dofPass);
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(RW, RH), P.bloom, P.bloomRadius, P.bloomThreshold); composer.addPass(bloomPass);
+  tiltH = new ShaderPass(TILT); tiltV = new ShaderPass(TILT); composer.addPass(tiltH); composer.addPass(tiltV);
+  gradePass = new ShaderPass(GRADE); composer.addPass(gradePass);
+  composer.addPass(new OutputPass());
+  composer.setSize(RW, RH);
+  sizePost(); applyPost();
+}
+function sizePost() {
+  tiltH.uniforms.uDir.value.set(1 / RW, 0); tiltV.uniforms.uDir.value.set(0, 1 / RH);
+  dofPass.uniforms.uTexel.value.set(1 / RW, 1 / RH);
+}
+const TONES = { agx: THREE.AgXToneMapping, aces: THREE.ACESFilmicToneMapping, neutral: THREE.NeutralToneMapping, none: THREE.NoToneMapping };
+const SHADOWS = { pcf: THREE.PCFShadowMap, "pcf soft": THREE.PCFSoftShadowMap, vsm: THREE.VSMShadowMap };
+function applyPost() {
+  if (!composer) return;
+  const k = RH / 640;                               // blur radii are tuned on a 640 px tall render
+  gtaoPass.enabled = P.gtao;
+  gtaoPass.blendIntensity = P.aoIntensity;
+  gtaoPass.updateGtaoMaterial({ radius: P.aoRadius, distanceExponent: 1, thickness: 1, scale: 1, samples: 16 });
+  const ru = raysPass.uniforms;
+  raysPass.enabled = P.rays > 0;
+  ru.uStr.value = P.rays; ru.uDecay.value = P.raysDecay; ru.uDensity.value = P.raysDensity; ru.uThresh.value = P.raysThresh;
+  ru.uSky.value = P.raysSource === "sky" ? 1 : 0; ru.uColor.value.set(P.sunColor);
+  dofPass.enabled = P.dof && P.dofBlur > 0;
+  const du = dofPass.uniforms; du.uBand.value = P.dofBand; du.uSoft.value = P.dofSoft; du.uMax.value = P.dofBlur * k;
+  bloomPass.enabled = P.bloom > 0; bloomPass.strength = P.bloom; bloomPass.radius = P.bloomRadius; bloomPass.threshold = P.bloomThreshold;
+  tiltH.enabled = tiltV.enabled = P.tilt && P.tiltBlur > 0;
+  for (const t of [tiltH, tiltV]) { const u = t.uniforms; u.uBand.value = P.tiltBand; u.uSoft.value = P.tiltSoft; u.uMax.value = P.tiltBlur * k; }
+  const u = gradePass.uniforms;
+  u.uSat.value = P.saturation; u.uCon.value = P.contrast; u.uWarm.value = P.warmth; u.uTint.value = P.tint;
+  u.uLift.value.set(P.lift); u.uLiftAmt.value = P.liftAmt; u.uHigh.value.set(P.highColor); u.uHighAmt.value = P.highAmt;
+  u.uVig.value = P.vignette; u.uGrain.value = P.grain;
+}
+
+// =============================================================================
+// APPLY — the panel's values onto the scene
+// =============================================================================
+const REBAKE = /^(pixelate|ppu|ppuMode|posterize|border|borderColor|bulge|relief|alphaCut|flipFrames)$/;
+let lastShadow = "";
+function applyAll(key) {
+  hemi.color.set(P.skyTop); hemi.groundColor.set(P.groundColor); hemi.intensity = P.hemiInt;
+  sun.color.set(P.sunColor); sun.intensity = P.sunInt;
+  scene.environmentIntensity = P.envInt;
+  renderer.toneMapping = TONES[P.tone]; renderer.toneMappingExposure = P.exposure;
+  const sk = P.shadowType + P.shadowMap;
+  if (sk !== lastShadow) {
+    lastShadow = sk;
+    renderer.shadowMap.type = SHADOWS[P.shadowType];
+    sun.shadow.mapSize.set(+P.shadowMap, +P.shadowMap);
+    if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    scene.traverse((o) => { if (o.material) [].concat(o.material).forEach((m) => { m.needsUpdate = true; }); });
+  }
+  sun.shadow.radius = P.shadowRadius; sun.shadow.blurSamples = 16;
+  if (!key || /^(sky|ground|sun)/.test(key)) rebuildSkySoon();
+  if (/^bg/.test(key || "")) applyBackground();
+  scene.fog = P.fog ? (scene.fog || new THREE.Fog(0xffffff, 10, 50)) : null;
+  if (scene.fog) scene.fog.color.set(P.bg === "sky" ? P.skyHorizon : P.bgColor);
+  lampMat.emissive.set(P.lanternColor); lampMat.emissiveIntensity = P.lanternGlow;
+  for (const l of lanterns) { l.color.set(P.lanternColor); l.intensity = P.lanternInt; l.visible = P.lanternInt > 0; }
+  heroLamp.color.set(P.heroColor);
+  canvas.classList.toggle("pixelated", P.pixel > 1);
+  if (key === "pixel") { resize(); rebakeSoon(); }
+  if (key && REBAKE.test(key)) rebakeSoon();
+  for (const s of sprites) {
+    styleSprite(s);
+    if (key === "normals") { s.shown = -1; s.mat.userData.compiled = false; showFrame(s, 0); }
+  }
+  applyPost();
+  save();
+}
+
+// =============================================================================
+// CAMERA, SIZE, TEXEL DENSITY
+// =============================================================================
+function applyCam(i) {
+  camIdx = i; const C = CAMS[i];
+  camera = C.ortho ? orthoCam : perspCam;
+  const el = C.el * Math.PI / 180, az = C.az * Math.PI / 180, t = new THREE.Vector3().fromArray(C.target);
+  camera.position.set(t.x + C.dist * Math.cos(el) * Math.sin(az), t.y + C.dist * Math.sin(el), t.z + C.dist * Math.cos(el) * Math.cos(az));
+  if (C.ortho) { camera.zoom = 1; orthoCam.userData.half = C.ortho; } else perspCam.fov = C.fov;
+  if (controls) controls.dispose();
+  controls = new OrbitControls(camera, canvas);
+  controls.target.copy(t); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47;
+  controls.update();
+  resize(); if (!composer) buildComposer();
+  refreshButtons(); save();
+  rebakeSoon();
+}
+function resize() {
+  const st = document.getElementById("stage"), ar = aspect === "portrait" ? 9 / 16 : 16 / 9;
+  H = Math.floor(st.clientHeight - 40); W = Math.floor(H * ar);
+  if (W > st.clientWidth - 40) { W = Math.floor(st.clientWidth - 40); H = Math.floor(W / ar); }
+  // the render's own size: the screen divided by the pixel size (device pixels when it is 1)
+  const pr = P.pixel > 1 ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  RW = Math.max(2, Math.round(W * pr / P.pixel)); RH = Math.max(2, Math.round(H * pr / P.pixel));
+  renderer.setSize(RW, RH, false);
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  perspCam.aspect = W / H; perspCam.updateProjectionMatrix();
+  const half = orthoCam.userData.half || 6.6;
+  Object.assign(orthoCam, { top: half, bottom: -half, left: -half * W / H, right: half * W / H }); orthoCam.updateProjectionMatrix();
+  if (composer) { buildComposer(); }
+}
+window.addEventListener("resize", () => { resize(); rebakeSoon(); });
+// render pixels per world unit at the focus: what "one texel = one render pixel" resamples to
+function pxPerUnit() {
+  if (!controls) return 40;
+  if (camera.isOrthographicCamera) return RH / ((camera.top - camera.bottom) / camera.zoom);
+  const d = camera.position.distanceTo(controls.target);
+  return RH / (2 * d * Math.tan(camera.fov * Math.PI / 360));
+}
+function currentPpu() {
+  if (!P.pixelate) return 96;
+  return clamp(P.ppuMode === "screen" ? pxPerUnit() : P.ppu, 6, 160);
+}
+
+// =============================================================================
+// PANEL
+// =============================================================================
+const presetBtns = [], camBtns = [], aspectBtns = [];
+function refreshButtons() {
+  presetBtns.forEach((b, i) => b.classList.toggle("on", i === presetIdx));
+  camBtns.forEach((b, i) => b.classList.toggle("on", i === camIdx));
+  aspectBtns.forEach((b) => b.classList.toggle("on", b.dataset.v === aspect));
+}
+const inputs = {};
+function fmt(v, step) { return typeof v === "number" ? (step >= 1 ? v.toFixed(0) : step >= 0.1 ? v.toFixed(1) : step >= 0.01 ? v.toFixed(2) : v.toFixed(3)) : v; }
+function sec(title, open) {
+  const d = document.createElement("details"); d.open = open;
+  d.innerHTML = "<summary>" + title + "</summary><div class='body'></div>";
+  document.getElementById("controls").appendChild(d);
+  return d.querySelector(".body");
+}
+function btnRow(parent) { const r = document.createElement("div"); r.className = "btns"; parent.appendChild(r); return r; }
+function button(parent, text, fn, cls) { const b = document.createElement("button"); b.textContent = text; b.onclick = fn; if (cls) b.className = cls; parent.appendChild(b); return b; }
+let selBody = null;
+function buildPanel() {
+  // the sprites: the game, its cuts, the one selected
+  let b = sec("Sprites", true);
+  const gr = document.createElement("div"); gr.className = "row";
+  gr.innerHTML = "<label>Game</label>";
+  const gsel = document.createElement("select");
+  for (const g of GAMES) { const o = document.createElement("option"); o.value = g; o.textContent = g; gsel.appendChild(o); }
+  gsel.value = gameSlug; gsel.onchange = () => { gameSlug = gsel.value; loadPalette(); save(); };
+  gr.appendChild(gsel); b.appendChild(gr);
+  const fr = document.createElement("div"); fr.className = "row";
+  const filter = document.createElement("input"); filter.type = "search"; filter.placeholder = "Filter the cuts"; filter.id = "filter";
+  filter.oninput = renderPalette; fr.appendChild(filter); b.appendChild(fr);
+  const pal = document.createElement("div"); pal.id = "palette"; b.appendChild(pal);
+  const note = document.createElement("div"); note.id = "paletteNote"; b.appendChild(note);
+  let row = btnRow(b);
+  button(row, "Default sprites", () => { while (sprites.length) removeSprite(sprites[0]); defaultSprites(); save(); });
+  button(row, "Clear all", () => { while (sprites.length) removeSprite(sprites[0]); save(); });
+  selBody = sec("Selected sprite", true);
+  renderInspector();
+  b = sec("Presets", true); row = btnRow(b);
+  PRESETS.forEach((p, i) => presetBtns.push(button(row, p.name, () => {
+    presetIdx = i; const keep = P.pixel; P = Object.assign({}, PRESETS[i]); syncPanel();
+    if (P.pixel !== keep) resize();
+    applyAll(); rebakeSoon(); refreshButtons();
+  })));
+  b = sec("Camera", true); row = btnRow(b);
+  CAMS.forEach((c, i) => camBtns.push(button(row, c.name, () => applyCam(i))));
+  row = btnRow(b);
+  for (const [v, t] of [["portrait", "Portrait 9:16"], ["landscape", "Landscape 16:9"]]) {
+    const bt = button(row, t, () => { aspect = v; resize(); refreshButtons(); rebakeSoon(); save(); }); bt.dataset.v = v; aspectBtns.push(bt);
+  }
+  button(b, "Freeze / resume", () => { frozen = !frozen; }, "wide");
+  for (const [title, items] of SCHEMA) {
+    b = sec(title, false);
+    for (const [key, label, type, a, c, step] of items) {
+      const r = document.createElement("div"); r.className = "row " + type;
+      let el;
+      if (type === "range") { el = document.createElement("input"); el.type = "range"; el.min = a; el.max = c; el.step = step; }
+      else if (type === "color") { el = document.createElement("input"); el.type = "color"; }
+      else if (type === "bool") { el = document.createElement("input"); el.type = "checkbox"; }
+      else { el = document.createElement("select"); a.forEach((o) => { const op = document.createElement("option"); const [v, t] = Array.isArray(o) ? o : [o, String(o)]; op.value = v; op.textContent = t; el.appendChild(op); }); }
+      const lab = document.createElement("label"), out = document.createElement("b");
+      lab.append(label, type === "range" ? out : el);
+      r.appendChild(lab); if (type === "range") r.appendChild(el);
+      el.addEventListener("input", () => {
+        P[key] = type === "range" ? +el.value : type === "bool" ? el.checked : type === "select" && typeof BASE[key] === "number" ? +el.value : el.value;
+        if (type === "range") out.textContent = fmt(P[key], step);
+        applyAll(key);
+      });
+      inputs[key] = { el, out, type, step };
+      b.appendChild(r);
+    }
+  }
+  b = sec("Settings", false);
+  const cp = button(b, "Copy settings", () => {
+    const s = JSON.stringify(P, null, 2);
+    (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(() => { cp.textContent = "Copied"; setTimeout(() => (cp.textContent = "Copy settings"), 1200); }, () => prompt("Settings", s));
+  }, "wide");
+  button(b, "Paste settings", () => {
+    const s = prompt("Paste the settings JSON"); if (!s) return;
+    try { P = Object.assign({}, BASE, JSON.parse(s)); syncPanel(); resize(); applyAll(); rebakeSoon(); } catch (e) { alert("Not valid JSON"); }
+  }, "wide");
+}
+function syncPanel() {
+  for (const key in inputs) {
+    const { el, out, type, step } = inputs[key];
+    if (type === "bool") el.checked = !!P[key]; else el.value = P[key];
+    if (type === "range") out.textContent = fmt(P[key], step);
+  }
+}
+const ANIMS = [["none", "None"], ["breathe", "Breathe (2 frames)"], ["hop", "Hop"], ["sway", "Sway"], ["walk", "Walk back and forth"], ["flipbook", "Flipbook (the family's cuts)"]];
+function renderInspector() {
+  if (!selBody) return;
+  selBody.innerHTML = "";
+  const s = selected;
+  const note = document.createElement("div"); note.id = "selNote";
+  note.innerHTML = s ? "<b>" + s.name + "</b>" : "Nothing selected. Click a sprite in the scene.";
+  selBody.appendChild(note);
+  if (!s) return;
+  const sz = document.createElement("div"); sz.className = "row";
+  sz.innerHTML = "<label>Height (units) <b>" + s.size.toFixed(2) + "</b></label>";
+  const r = document.createElement("input"); r.type = "range"; r.min = 0.15; r.max = 3; r.step = 0.05; r.value = s.size;
+  r.oninput = () => { s.size = +r.value; sz.querySelector("b").textContent = s.size.toFixed(2); clearTimeout(s.sizeT); s.sizeT = setTimeout(() => { bakeSprite(s); save(); }, 80); };
+  sz.appendChild(r); selBody.appendChild(sz);
+  const an = document.createElement("div"); an.className = "row";
+  an.innerHTML = "<label>Animation</label>";
+  const sel = document.createElement("select");
+  for (const [v, t] of ANIMS) { const o = document.createElement("option"); o.value = v; o.textContent = t; sel.appendChild(o); }
+  sel.value = s.anim; sel.onchange = () => { const was = s.anim; s.anim = sel.value; if (was === "flipbook" || s.anim === "flipbook") bakeSprite(s); save(); };
+  an.appendChild(sel); selBody.appendChild(an);
+  const fl = document.createElement("div"); fl.className = "row bool";
+  const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = s.flip; cb.onchange = () => { s.flip = cb.checked; save(); };
+  const lab = document.createElement("label"); lab.append("Flip horizontally (F)", cb); fl.appendChild(lab); selBody.appendChild(fl);
+  const row = btnRow(selBody);
+  button(row, "Duplicate (D)", duplicateSelected);
+  button(row, "Remove (Delete)", () => removeSprite(s));
+}
+function duplicateSelected() {
+  const s = selected; if (!s) return;
+  const n = addSprite({ name: s.name, url: s.url, family: s.family, size: s.size, flip: s.flip, anim: s.anim, x: s.x + 0.45, z: s.z + 0.2 });
+  select(n); save();
+}
+function select(s) {
+  selected = s; ring.visible = !!s && !frozen;
+  renderInspector();
+}
+
+// =============================================================================
+// PALETTE — the game's adopted cuts and its three moods
+// =============================================================================
+let paletteEntries = [], armed = null;
+async function loadPalette() {
+  paletteEntries = []; armed = null; canvas.classList.remove("armed");
+  renderPalette();
+  try {
+    const m = await (await fetch("../games/" + gameSlug + "/manifest.json")).json();
+    const seen = new Set(), out = [];
+    for (const mood of ["happy", "neutral", "sad"]) out.push({ name: gameSlug + "-character-" + mood, url: "../assets/image/embed/" + gameSlug + "-character-" + mood + ".webp", family: gameSlug + "-character" });
+    const objects = (m.art && m.art.objects) || {};
+    for (const role in objects) {
+      const name = objects[role];
+      if (seen.has(name) || /^game-frame/.test(name)) continue;
+      seen.add(name);
+      out.push({ name, url: "../assets/image/object/" + name + ".png", family: familyOf(name) });
+    }
+    out.sort((a, b) => a.name < b.name ? -1 : 1);
+    paletteEntries = out;
+  } catch (e) { paletteEntries = []; }
+  renderPalette();
+}
+function renderPalette() {
+  const pal = document.getElementById("palette"); if (!pal) return;
+  const f = (document.getElementById("filter").value || "").trim().toLowerCase();
+  pal.innerHTML = "";
+  const list = paletteEntries.filter((e) => !f || e.name.toLowerCase().includes(f));
+  for (const e of list) {
+    const t = document.createElement("div"); t.className = "tile" + (armed === e ? " armed" : ""); t.title = e.name;
+    const im = document.createElement("img"); im.loading = "lazy"; im.src = e.url; im.alt = "";
+    im.onerror = () => t.remove();
+    t.appendChild(im);
+    t.onclick = () => { armed = armed === e ? null : e; canvas.classList.toggle("armed", !!armed); renderPalette(); };
+    t.ondblclick = () => { armed = null; canvas.classList.remove("armed"); const n = addSprite({ name: e.name, url: e.url, family: e.family, x: controls.target.x, z: controls.target.z }); select(n); renderPalette(); save(); };
+    pal.appendChild(t);
+  }
+  document.getElementById("paletteNote").textContent = armed ? "Click the scene to stand " + armed.name + " there (Escape cancels)."
+    : list.length + " cuts of " + gameSlug + ". Click one, then the scene; a double click drops it in the middle.";
+}
+// the scene a game opens on: hand-placed for foldiers, the first cut of a few families otherwise
+const SPOTS = [[0.3, 3.5], [-0.6, 0.25], [1.7, 0.5], [-2.0, -2.9], [2.5, 3.6], [-2.6, 1.6], [2.2, -2.2]];
+function defaultSprites() {
+  if (gameSlug === "foldiers") {
+    const o = (n) => "../assets/image/object/foldiers-" + n + ".png";
+    for (const [n, size, x, z, anim] of [
+      ["army-blue-05", 0.85, 0.35, 3.4, "breathe"], ["works-blue-01", 0.85, -0.55, 0.2, "sway"],
+      ["woods-02", 1.6, 2.9, -0.5], ["woods-02", 1.3, -3.0, 2.6], ["plains-01", 0.7, 2.0, 0.9],
+      ["decor-02", 0.95, -2.0, -2.95, "sway"], ["army-red-02", 1.35, 2.7, 3.7], ["army-blue-01", 1.7, -1.0, -4.3]
+    ]) addSprite({ name: "foldiers-" + n, url: o(n), size, x, z, anim: anim || "none" });
+    return;
+  }
+  const fams = [];
+  for (const e of paletteEntries) if (!/sticker|cloud|home|gallery|gift/.test(e.family) && !fams.find((f) => f.family === e.family)) fams.push(e);
+  fams.slice(0, SPOTS.length).forEach((e, i) => addSprite({ name: e.name, url: e.url, family: e.family, size: /character/.test(e.name) ? 1.2 : 0.9, x: SPOTS[i][0], z: SPOTS[i][1], anim: i === 0 ? "breathe" : "none" }));
+}
+
+// =============================================================================
+// POINTER — place, select, drag
+// =============================================================================
+const ndc = new THREE.Vector2();
+let drag = null, down = null;
+function toNdc(e) { const r = canvas.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); }
+function hitSprite() {
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(sprites.map((s) => s.mesh), false);
+  for (const h of hits) {
+    const s = h.object.userData.sprite, f = s.frames[s.shown]; if (!f || !h.uv) continue;
+    const b = f.bake, x = clamp(Math.floor(h.uv.x * b.w), 0, b.w - 1), y = clamp(Math.floor((1 - h.uv.y) * b.h), 0, b.h - 1);
+    if (b.alpha[y * b.w + x] >= P.alphaCut * 255) return s;   // the quad's transparent part is not the sprite
+  }
+  return null;
+}
+function hitGround() {
+  raycaster.setFromCamera(ndc, camera);
+  const h = raycaster.intersectObjects(walkable, false)[0];
+  return h ? h.point : null;
+}
+canvas.addEventListener("pointerdown", (e) => {
+  toNdc(e); down = { x: e.clientX, y: e.clientY };
+  if (armed) {
+    const p = hitGround();
+    if (p) {
+      const s = addSprite({ name: armed.name, url: armed.url, family: armed.family, x: p.x, z: p.z });
+      if (!e.shiftKey) { armed = null; canvas.classList.remove("armed"); renderPalette(); }
+      select(s); save(); controls.enabled = false; drag = s; try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      return;
+    }
+  }
+  const s = hitSprite();
+  if (s) { select(s); drag = s; controls.enabled = false; try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
+}, { capture: true });
+canvas.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  toNdc(e); const p = hitGround();
+  if (p) { drag.x = p.x; drag.z = p.z; drag.y = p.y; }
+});
+canvas.addEventListener("pointerup", (e) => {
+  if (drag) { drag = null; controls.enabled = true; save(); return; }
+  if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 4 && !armed) select(null);
+});
+window.addEventListener("keydown", (e) => {
+  if (/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName) && document.activeElement.type !== "range" && document.activeElement.type !== "checkbox") return;
+  if (e.key === "Escape") { armed = null; canvas.classList.remove("armed"); renderPalette(); }
+  if (!selected) return;
+  if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); removeSprite(selected); }
+  else if (e.key === "f" || e.key === "F") { selected.flip = !selected.flip; renderInspector(); save(); }
+  else if (e.key === "d" || e.key === "D") duplicateSelected();
+});
+
+// =============================================================================
+// LOOP
+// =============================================================================
+const camRight = new THREE.Vector3(), camUp = new THREE.Vector3(), camFwd = new THREE.Vector3(), savedPos = new THREE.Vector3();
+const vS = new THREE.Vector3(), vFocus = new THREE.Vector3();
+let last = performance.now(), fps = 60, statT = 0, clock = 0, focusY = 0.5, ppuT = 0;
+const HOP = [0, 1, 2, 1, 0, 0], SWAY = [0, 1, 0, -1];
+// snap a world position to the render's pixel grid, in the camera's own plane
+function snapToGrid(v, step) {
+  vS.copy(v).applyMatrix4(camera.matrixWorldInverse);
+  vS.x = Math.round(vS.x / step) * step; vS.y = Math.round(vS.y / step) * step;
+  return v.copy(vS.applyMatrix4(camera.matrixWorld));
+}
+function updateSprites(t) {
+  const step = Math.floor(t * P.animFps);
+  camFwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
+  const pitch = Math.asin(clamp(-camFwd.y, -1, 1));
+  const planeYaw = Math.atan2(-camFwd.x, -camFwd.z);
+  const sd = sunDir(vA), sunYaw = Math.atan2(sd.x, sd.z);
+  const snap = P.snap && camera.isOrthographicCamera, px = 1 / pxPerUnit();
+  for (const s of sprites) {
+    const k = step + Math.floor(s.phase * 7);
+    let x = s.x, z = s.z, y = s.y, sx = 1, sy = 1, rz = 0, flip = s.flip, frame = 0;
+    if (s.anim === "breathe") { const b = k & 1; sy = 1 + 0.035 * b; sx = 1 - 0.015 * b; }
+    else if (s.anim === "hop") y += HOP[k % HOP.length] * 0.03 * s.size;
+    else if (s.anim === "sway") rz = SWAY[k % SWAY.length] * 0.05;
+    else if (s.anim === "walk") {
+      const a = t * 0.45 + s.phase; x += Math.sin(a) * 0.6; y = groundAt(x, z) + (k & 1) * 0.02 * s.size;
+      flip = (Math.cos(a) < 0) !== s.flip;
+    } else if (s.anim === "flipbook" && s.frames.length) frame = k % s.frames.length;
+    showFrame(s, frame);
+    s.group.position.set(x, y, z);
+    if (snap) snapToGrid(s.group.position, px);
+    let yaw = 0;
+    if (P.billboard === "plane") yaw = planeYaw;
+    else if (P.billboard === "toward") yaw = Math.atan2(camera.position.x - x, camera.position.z - z);
+    if (P.billboard === "sphere") { s.mesh.quaternion.copy(camera.quaternion); s.mesh.rotateZ(rz); }
+    else s.mesh.rotation.set(-pitch * P.lean, yaw, rz, "YXZ");
+    s.mesh.scale.set((flip ? -1 : 1) * sx, sy, 1);
+    s.card.rotation.set(0, sunYaw, 0); s.card.scale.copy(s.mesh.scale);
+    s.blob.position.y = s.y - y + 0.012;
+  }
+  if (selected) {
+    const sel = selected;
+    ring.position.set(sel.group.position.x, sel.y + 0.015, sel.group.position.z);
+    const f = sel.frames[0]; ring.scale.setScalar(f ? Math.max(0.6, f.bake.w * sel.size / f.bake.art * 0.9) : 1);
+    vS.copy(camera.position).sub(sel.group.position).setY(0).normalize();
+    heroLamp.position.copy(sel.group.position).addScaledVector(vS, 0.3).setY(sel.y + sel.size * 0.8);
+  }
+  heroLamp.intensity = selected ? P.heroLight : 0; heroLamp.visible = !!selected && P.heroLight > 0;
+}
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  fps += (1 / Math.max(dt, 1e-3) - fps) * 0.05;
+  if (!frozen) clock += dt;
+  controls.update();
+  // drift and snap move the camera for this frame only: the controls keep their own position
+  savedPos.copy(camera.position);
+  camera.updateMatrixWorld();
+  camRight.setFromMatrixColumn(camera.matrixWorld, 0); camUp.setFromMatrixColumn(camera.matrixWorld, 1);
+  if (P.drift) camera.position.addScaledVector(camRight, Math.sin(clock * 0.3) * 1.2).addScaledVector(camUp, Math.sin(clock * 0.21) * 0.4);
+  if (P.snap && camera.isOrthographicCamera) {
+    const s = 1 / pxPerUnit(), a = camera.position.dot(camRight), b = camera.position.dot(camUp);
+    camera.position.addScaledVector(camRight, Math.round(a / s) * s - a).addScaledVector(camUp, Math.round(b / s) * s - b);
+  }
+  camera.updateMatrixWorld();
+  // the texel density follows the zoom: re-resampled once the view settles
+  if (P.pixelate && P.ppuMode === "screen" && (ppuT -= dt) < 0) {
+    ppuT = 0.3; const p = currentPpu();
+    if (Math.abs(p - worldPpu) / worldPpu > 0.08) rebakeSoon();
+  }
+  updateSprites(clock);
+  updateParticles(clock);
+  updateBeams(clock);
+  if (waterMat.map && !frozen) waterMat.map.offset.set(Math.floor(clock * P.animFps * 0.5) / Math.max(8, worldPpu), 0);
+  sunDir(sun.position).multiplyScalar(40); sun.target.position.set(0, 0, 0);
+  if (scene.fog) { const dd = camera.position.distanceTo(controls.target); scene.fog.near = dd * P.fogNear; scene.fog.far = dd * Math.max(P.fogFar, P.fogNear + 0.1); }
+  // the post's uniforms that follow the view
+  const near = camera.near, far = camera.far, ortho = camera.isOrthographicCamera ? 1 : 0;
+  for (const p of [raysPass, dofPass]) { const u = p.uniforms; u.cameraNear.value = near; u.cameraFar.value = far; u.uOrtho.value = ortho; }
+  vS.copy(sunDir(vA)).multiplyScalar(100).add(camera.position).project(camera);
+  raysPass.uniforms.uSun.value.set(vS.x * 0.5 + 0.5, vS.y * 0.5 + 0.5);
+  camFwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
+  raysPass.uniforms.uVis.value = clamp((camFwd.dot(vA) + 0.6) / 0.6, 0, 1);
+  const focusOn = P.dofTarget === "selected" && selected ? vFocus.copy(selected.group.position).setY(selected.y + selected.size * 0.5) : vFocus.copy(controls.target);
+  dofPass.uniforms.uFocus.value = Math.max(0.1, vS.copy(focusOn).sub(camera.position).dot(camFwd));
+  const want = P.tiltFollow && selected ? clamp(vS.copy(focusOn).project(camera).y * 0.5 + 0.5, 0.1, 0.9) : P.tiltFocus;
+  focusY += (want - focusY) * (1 - Math.exp(-5 * dt));
+  tiltH.uniforms.uFocus.value = tiltV.uniforms.uFocus.value = focusY;
+  renderer.info.reset();
+  renderer.setRenderTarget(sceneRT); renderer.render(scene, camera); renderer.setRenderTarget(null);
+  composer.render(dt);
+  camera.position.copy(savedPos); camera.updateMatrixWorld();
+  if ((statT -= dt) < 0) {
+    statT = 0.5;
+    document.getElementById("stats").textContent = Math.round(fps) + " fps · " + RW + "×" + RH + " render · " + Math.round(currentPpu()) + " texels/unit · " +
+      renderer.info.render.calls + " draws · " + sprites.length + " sprites";
+  }
+  window.__hd2d = { ready: true, fps: Math.round(fps), sprites, P: () => P, scene, renderer, THREE, cam: () => camera,
+    set: (o) => { Object.assign(P, o); syncPanel(); resize(); applyAll(); rebakeSoon(); }, select, preset: (i) => presetBtns[i].click(), pick: (x, y) => { ndc.set(x, y); const g = hitGround(), s = hitSprite(); return { ground: g && g.toArray().map((v) => +v.toFixed(2)), sprite: s && s.name }; } };
+  requestAnimationFrame(frame);
+}
+
+// =============================================================================
+// BOOT
+// =============================================================================
+buildDiorama();
+buildPanel(); syncPanel();
+document.getElementById("loading").remove();
+rebuildSky();
+applyCam(Math.min(camIdx, CAMS.length - 1));
+bakeWorld(currentPpu());
+applyAll();
+refreshButtons();
+loadPalette().then(() => {
+  if (stored && stored.sprites && stored.game === gameSlug && !qs.has("game")) for (const o of stored.sprites) addSprite(o);
+  else defaultSprites();
+  if (sprites[0]) select(frozen ? null : sprites[0]);
+  save();
+});
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -40,7 +40,7 @@
         if (document.activeElement === b) b.blur();
       });
     }
-    if (s !== "playing") { Overlay.clear(); Enter.cancel(); }   // a round left mid-entrance
+    if (s !== "playing") { Overlay.clear(); ScreenFx.clear(); Enter.cancel(); }   // a round left mid-entrance
     Notify.state(s);
     Notify.round(s);                      // the discoveries' pacing (Notify.learn)
     Ad.track("state", s);
@@ -210,33 +210,20 @@
      and `Notify` (below) the informative ones. What is left is the one layer
      that carries no word at all. */
   var Overlay = (function () {
-    var timers = [];
-    function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-
     // Edge glow — hold it on during danger, or pulse it on a milestone.
-    /* The edge glow is a blurred inset shadow over the WHOLE frame, so writing
-       it repaints and re-rasterizes every pixel of the frame — at a phone's
-       raster scale, 2.4 Mpx convolved with a 200-odd-pixel blur, off the main
-       thread, on whichever frame the game happened to celebrate something.
-       Opacity alone is composited and free, so the paint is written only when
-       the colour actually changes. A game that pulses the same colour on every
-       pickup — which is what a game does — now pays for it once a round.
-       If a beat still costs too much here, `?perf=1&off=vig` on the URL takes
-       the whole layer out of the picture on the device (see Perf below). */
-    var vigColor = null;
-    function vignette(color, alpha, ms) {
-      var el = $("ov-vignette");
-      if (color && color !== vigColor) {
-        vigColor = color;
-        el.style.boxShadow = "inset 0 0 130px 34px " + color;
-      }
-      el.style.opacity = alpha == null ? 1 : alpha;
-      if (ms) later(function () { el.style.opacity = 0; }, ms);
-    }
+    /* It is ScreenFx's glow now (packages/shell/screenfx.js): the same call,
+       the same colour, alpha, .5 s ease and `ms`, drawn as four 1 px
+       gradient strips the compositor stretches along the glass instead of
+       an inset box-shadow with 130 px of blur over the whole frame. That
+       blur was a repaint of every pixel on every new colour; the strips
+       cost less on a CPU rasterizer and no blur pass on a GPU
+       (tools/lab/bench-screenfx.mjs). It stands under the HUD with the
+       other full-screen effects. The #ov-vignette node of every page.html
+       is no longer painted; `?perf=1&off=vig` still takes the glow out. */
+    function vignette(color, alpha, ms) { ScreenFx.glow(color, alpha, ms); }
 
     function clear() {
-      timers.forEach(clearTimeout); timers = [];
-      $("ov-vignette").style.opacity = 0;
+      ScreenFx.glowOff();                 // its timers with it
       Pop.clear();
     }
     return { vignette: vignette, clear: clear };
@@ -1908,7 +1895,7 @@
           ? '<span class="spark">✦</span> ' + upper(Lang.t(r.label)) + ' <span class="spark">✦</span>'
           : upper(Lang.t(r.label));
         html += '<div class="eo-row' + (r.grade ? " " + r.grade : "") + '" id="eo-row-' + i + '">' +
-                '<span>' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
+                '<span class="eo-lab">' + label + '</span><span class="eo-val" id="eo-val-' + i + '">0</span></div>';
       });
       box.innerHTML = html;
 
@@ -2056,8 +2043,9 @@
        So the bisect moves here: turn one thing off, play the same beat, watch
        `worst`. What is available, from the cheapest guess to the broadest:
 
-         vig     Overlay.vignette — a full-frame repaint, because the colour is
-                 assigned per call, blurred over the whole frame
+         vig     Overlay.vignette — the glow (ScreenFx.glow), outright
+         sfx     ScreenFx, the full-screen effects layer, outright (read by
+                 ScreenFx itself, which is defined after this module)
          fx      the canvas juice: bursts, rings, the full-frame flash, shake
          pops    every callout, outright
        and, once `pops` has been shown to be the one, inside a callout:

@@ -23,6 +23,7 @@
     packages/shell/motor.css        packages/shell/script-open.js
     packages/engine/engine.js       packages/platform/<mraid|web|capacitor>.js
     packages/shell/shell.js         packages/engine/bootstrap.js
+    packages/shell/screenfx.{css,js} (joined to motor.css and shell.js)
     packages/shell/script-close.js
     games/<slug>/page.html          {{MOTOR_CSS}} {{SKIN_CSS}} {{SCRIPT}}
     games/<slug>/skin.css           games/<slug>/game.js
@@ -208,15 +209,24 @@ const PLATFORM = target === 'android' ? 'packages/platform/capacitor.js'
                : 'packages/platform/mraid.js';
 
 async function loadMotor() {
-  const [motorCss, scriptOpen, engine, platform, shell, bootstrap, scriptClose] = await Promise.all([
+  const [motorCssOwn, scriptOpen, engine, platform, shellOwn, bootstrap, scriptClose, sfxCss, sfxJs] = await Promise.all([
     read('packages/shell/motor.css'),
     read('packages/shell/script-open.js'),
     read('packages/engine/engine.js'),
     read(PLATFORM),
     read('packages/shell/shell.js'),
     read('packages/engine/bootstrap.js'),
-    read('packages/shell/script-close.js')
+    read('packages/shell/script-close.js'),
+    read('packages/shell/screenfx.css'),
+    read('packages/shell/screenfx.js')
   ]);
+  /* The full-screen effects (ScreenFx) are two files of their own rather
+     than a block of shell.js and motor.css, because lab/screen-fx.html loads
+     them as they are: the page that tunes the presets runs the code that
+     ships. They join the motor here, the stylesheet after motor.css and the
+     module after the shell, so nothing downstream knows they were apart. */
+  const motorCss = motorCssOwn + '\n' + sfxCss;
+  const shell = shellOwn + '\n' + sfxJs;
 
   /* Delta 1 — the desktop dressing rides with the motor stylesheet, before the
      SKIN, so a game can still override any of it. Web target only: a playable
@@ -241,7 +251,7 @@ const WEB_HANDLE = `  /* ---- web target: the handle packages/webshell reads. In
   window.__WEB__ = {
     CONFIG: CONFIG, ASSETS: ASSETS,
     Store: Store, Sound: Sound, Music: Music, Pop: Pop, Notify: Notify, Lang: Lang, Desk: Desk, upper: upper,
-    Fx: Fx, Overlay: Overlay, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
+    Fx: Fx, Overlay: Overlay, ScreenFx: ScreenFx, Beat: Beat, Game: Game, Round: Round, Loop: Loop, Enter: Enter,
     Fit: Fit, HUD: HUD, Decor: Decor, Art: Art, view: view, Layout: Layout, Record: Record,
     start: startGame, setState: setState, onState: onState, onResult: onResult,
     onOutro: onOutro, onReveal: onReveal, onEndBeat: onEndBeat, Confetti: Confetti,

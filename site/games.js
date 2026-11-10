@@ -111,11 +111,11 @@ window.GAMES = [
     name: "Stratideck",
     accent: ["#f2c14e", "#5aa9ff"],
     fr: {
-      tagline: "Face à la menace d'une armée rouge impressionnante, la victoire ne dépendra pas du nombre mais de ton sens tactique. Plonge dans un Deckbuilder stratégique sur grille inspiré du jeu de plateau Stratego. Le bluff et la mémorisation sont tes meilleures armes. Déduis les positions adverses, puis capture les cartes ennemies pour les convertir à ta cause. Entre deux duels sous haute tension, prends les rênes de ton campement : fortifie tes défenses, lance des missions d'infiltration, recrute des troupes d'élite et affine ton Deck parmi des centaines de cartes uniques. Sauras-tu déjouer les plans de l'état-major adverse et renverser l'envahisseur ?",
+      tagline: "Face à la menace d'une armée rouge impressionnante, la victoire ne dépendra pas du nombre mais de ton sens tactique. Plonge dans un Deckbuilder stratégique sur grille inspiré du jeu de plateau Stratego. Le bluff et la mémorisation sont tes meilleures armes. Déduis les positions adverses puis capture les cartes ennemies pour les convertir à ta cause. Entre deux duels sous haute tension, prends les rênes de ton campement : fortifie tes défenses, lance des missions d'infiltration, recrute des troupes d'élite et affine ton Deck parmi des centaines de cartes uniques. Sauras-tu déjouer les plans de l'état-major adverse et renverser l'envahisseur ?",
       tags: ["Gestion", "Stratégie", "Deck Building"]
     },
     en: {
-      tagline: "Face the threat of an impressive red army: victory will depend not on numbers but on your tactical sense. Dive into a strategic grid-based Deckbuilder inspired by the Stratego board game. Bluffing and memorization are your best weapons. Deduce the enemy positions, then capture enemy cards to convert them to your cause. Between tense duels, take charge of your camp: fortify your defenses, launch infiltration missions, recruit elite troops and refine your Deck among hundreds of unique cards. Will you foil the plans of the enemy general staff and drive out the invader?",
+      tagline: "Face the threat of an impressive red army: victory will depend not on numbers but on your tactical sense. Dive into a strategic grid-based Deckbuilder inspired by the Stratego board game. Bluffing and memorisation are your best weapons. Deduce the enemy positions, then capture enemy cards to convert them to your cause. Between tense duels, take charge of your camp: fortify your defences, launch infiltration missions, recruit elite troops and refine your Deck among hundreds of unique cards. Will you foil the plans of the enemy general staff and drive out the invader?",
       tags: ["Management", "Strategy", "Deck building"]
     }
   },

@@ -75,20 +75,13 @@ const CSS = {
   noface: ".pop-ltr::before{display:none!important}",
   nowc: ".pop-out,.pop-anim,.pop-word{will-change:auto!important}",
   nodecor: ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}",
-  novig: "#ov-vignette{box-shadow:none!important}",
-  /* Candidate replacements for the vignette's blurred inset shadow, which is
-     repainted on every call because the colour is assigned per call. */
-  viggrad: "#ov-vignette{box-shadow:none!important;" +
-    "background:radial-gradient(ellipse at center,transparent 42%,var(--vig,rgba(0,229,255,.85)) 130%)!important}",
-  vigsmall: "#ov-vignette{box-shadow:inset 0 0 60px 18px var(--vig,rgba(0,229,255,.85))!important}",
+  /* The vignette's blurred inset shadow was replaced by ScreenFx.glow's
+     stretched gradient strips (tools/lab/bench-screenfx.mjs measures the
+     two); `novig` takes the glow out. */
+  novig: ".sfx-glow{display:none!important}",
   nowc: ".pop-out,.pop-anim,.pop-word{will-change:auto!important}",
   nodecor: ".pop-d,.pop-d-dash,.pop-d-spark{display:none!important}",
-  novig: "#ov-vignette{box-shadow:none!important}",
-  /* Candidate replacements for the vignette's blurred inset shadow, which is
-     repainted on every call because the colour is assigned per call. */
-  viggrad: "#ov-vignette{box-shadow:none!important;" +
-    "background:radial-gradient(ellipse at center,transparent 42%,var(--vig,rgba(0,229,255,.85)) 130%)!important}",
-  vigsmall: "#ov-vignette{box-shadow:inset 0 0 60px 18px var(--vig,rgba(0,229,255,.85))!important}",
+  novig: ".sfx-glow{display:none!important}",
   oldlook: ".pop-d-lines::before,.pop-d-stripes::before,.pop-d-chevrons::before{display:none!important}" +
     ".pop-d-lines{background:repeating-linear-gradient(90deg,rgba(255,255,255,.20) 0 5px,transparent 5px 17px)!important}" +
     ".pop-d-stripes{background:repeating-linear-gradient(-45deg,#ffd400 0 30px,#141020 30px 60px)!important}" +

@@ -178,6 +178,7 @@
       gotXp: "+{n} xp", levelUp: "Level up!", levelUpNote: "Player level {n} reached",
       pickOne: "Pick one",
       bonusTitle: "Three-star bonus",
+      seeScores: "See the scores again", seePrizes: "See the rewards again",
       boostMul: "Multiply your {k}", boostMore: "One more", boostCost: "Watch an ad",
       mulXp: "xp", mulCoins: "coins", mulTicket: "tickets",
       adOfferBtn: "Watch an ad", adOfferGift: "A gift",
@@ -211,6 +212,7 @@
       gotXp: "+{n} xp", levelUp: "Niveau supérieur !", levelUpNote: "Niveau {n} atteint",
       pickOne: "Choisis",
       bonusTitle: "Bonus trois étoiles",
+      seeScores: "Revoir les scores", seePrizes: "Revoir les récompenses",
       boostMul: "Multiplie tes {k}", boostMore: "Un de plus", boostCost: "Voir une pub",
       mulXp: "xp", mulCoins: "pièces", mulTicket: "tickets",
       adOfferBtn: "Voir une pub", adOfferGift: "Un cadeau",
@@ -2909,6 +2911,9 @@
     var box = $("eo-stats");
     if (!box) return;
     if (!box.style.minHeight) box.style.minHeight = box.offsetHeight + "px";
+    /* The round's own rows are kept, not thrown away: the link under the
+       prizes puts them back (`cerSwap`). */
+    if (!c.scoreRows) c.scoreRows = Array.prototype.slice.call(box.children);
     box.innerHTML = "";
     for (var i = 0; i < nodes.length; i++) box.appendChild(nodes[i]);
   }
@@ -3051,6 +3056,7 @@
       return r;
     });
     cerRows(c, rows);
+    cerSwap(c, rows);
 
     /* THE BONUS CARRIES ITS OFFER, and it is the card's offer, worded the
        same: what is multiplied, the plate, the price under it. It stays once
@@ -3067,6 +3073,30 @@
         flyReward(it.badge.getBoundingClientRect(), it.rw, it.before, null);
       }, CER_FLY_AT + 240 + j * CER_FLY_GAP);
     });
+  }
+
+  /* SEE THE SCORES AGAIN. The rows gave their room to the prizes while the
+     reveal was still being read, and the sequence is not slowed down for it:
+     a quiet link under the prizes' rows, above the way out, swaps the round's
+     own rows back in — and the prizes' rows on the next tap. The column keeps
+     the height the score rows had (`cerRows`), so nothing moves. */
+  function cerSwap(c, prizeRows) {
+    var box = $("eo-stats");
+    if (!box || !c.scoreRows || !c.scoreRows.length) return;
+    var showScores = false;
+    var a = el("button", "link mt-escores", T.seeScores);
+    a.type = "button";
+    a.addEventListener("click", function () {
+      if (cer !== c) return;
+      showScores = !showScores;
+      var list = showScores ? c.scoreRows : prizeRows;
+      box.innerHTML = "";
+      for (var i = 0; i < list.length; i++) box.appendChild(list[i]);
+      a.textContent = showScores ? T.seePrizes : T.seeScores;
+      W.Sound.ui("tap", 0.5);
+    });
+    box.parentNode.insertBefore(a, box.nextSibling);
+    c.swap = a;
   }
 
   function cerOffer(c, it) {
@@ -3128,6 +3158,7 @@
     if (!c) return;
     if (c.picking && c.rewards) grant(c.rewards[c.picked >= 0 ? c.picked : 0]);
     if (c.layer && c.layer.parentNode) c.layer.parentNode.removeChild(c.layer);
+    if (c.swap && c.swap.parentNode) c.swap.parentNode.removeChild(c.swap);
     for (var i = 0; i < c.stars.length; i++) c.stars[i].node.classList.remove("mt-out");
     var screen = $("screen-end");
     if (screen) screen.classList.remove("mt-cer");
