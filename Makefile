@@ -7,8 +7,8 @@
 #
 #   make check   the three build gates, before a commit
 #   make test [GAME=<slug>]     the web shell's view system, in a real build
-#   make push    check, push, then publish the 13 to itch
-#   make itch    re-publish to itch without pushing
+#   make push [GAME=<slug>]   check, push, then publish to itch (every game, or one)
+#   make itch [GAME=<slug>]   re-publish to itch without pushing
 #   make site    assemble dist/site locally
 #   make serve   the dev loop, with reload on save
 #   make preview the same site built once, no reload — restart it to rebuild
@@ -71,7 +71,7 @@ push: check
 	  exit 1; \
 	}
 	git push
-	node tools/publish/deploy-itch.mjs --all
+	node tools/publish/deploy-itch.mjs $(if $(GAME),--game=$(GAME),--all)
 	@echo ""
 	@echo "Vercel redeploys the site from the push on its own."
 	@echo "On itch, tick 'played in the browser' on any upload that is new."
@@ -79,7 +79,7 @@ push: check
 # butler uploads a build and cannot touch the page around it: the title, copy,
 # tags, cover, screenshots and that checkbox have no public API.
 itch:
-	node tools/publish/deploy-itch.mjs --all
+	node tools/publish/deploy-itch.mjs $(if $(GAME),--game=$(GAME),--all)
 
 site:
 	node tools/build/build-site.mjs
