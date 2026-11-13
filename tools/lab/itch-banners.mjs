@@ -25,7 +25,10 @@
   `home06`, `character-happy`); the title is the section's `title` in
   `itch.page.en`, shouted the house way (accents off).
 
-  Transparent WebP, shot at twice the 960 px it is shown at, into
+  Every piece is read at full size (the master, the object cut) and never
+  drawn past its own pixels, and an edge a piece is painted cut on fades out.
+  Transparent WebP, shot at twice the size it is shown at, framed on
+  everything drawn (glow included) so nothing is cropped, into
   assets/image/itch/ beside the covers. tools/build/build-site.mjs serves them
   at newrare.app/image/itch/<slug>/, which is the URL the description points
   at (tools/publish/itch-page.mjs).
@@ -44,7 +47,9 @@ const EMBED = path.join(ROOT, 'assets', 'image', 'embed');
 const SCREEN = path.join(ROOT, 'assets', 'image', 'screen');
 const FONTS = path.join(ROOT, 'assets', 'motor', 'font');
 const OUT = path.join(ROOT, 'assets', 'image', 'itch');
-const W = 960, DSF = 2, Q = 88;
+/* M is the room left around the stage so a piece may lean past its edge,
+   PAD how far a glow reaches past the box it belongs to. */
+const DSF = 2, Q = 90, M = 120, PAD = 34, VIEW = 1100;
 
 const argv = process.argv.slice(2);
 const keep = argv.includes('--keep');
@@ -65,10 +70,21 @@ function dataUri(file, mime) {
   return 'data:' + mime + ';base64,' + fs.readFileSync(file).toString('base64');
 }
 
-function piece(slug, role) {
-  const f = path.join(EMBED, `${slug}-${role}.webp`);
-  if (!fs.existsSync(f)) throw new Error(`${slug}: no ${path.relative(ROOT, f)} — a piece is a role of assets/image/embed/`);
-  return dataUri(f, 'image/webp');
+/* The sharpest file the game owns for a role: a banner shows a piece bigger
+   than the shipping cut in assets/image/embed/ was sized for, and an upscaled
+   cut is a blurred one. So the character is read from its master, an adopted
+   object from its full-size cut in assets/image/object/, and the embed only
+   when neither exists. */
+function piece(slug, role, m) {
+  const objects = (m.art && m.art.objects) || {};
+  const tries = [
+    path.join(ROOT, 'assets', 'image', 'master', `${slug}-${role}.png`),
+    objects[role] && path.join(ROOT, 'assets', 'image', 'object', `${objects[role]}.png`),
+    path.join(EMBED, `${slug}-${role}.webp`)
+  ].filter(Boolean);
+  const f = tries.find((t) => fs.existsSync(t));
+  if (!f) throw new Error(`${slug}: no picture for the role ${role} (master, object cut or embed)`);
+  return dataUri(f, f.endsWith('.png') ? 'image/png' : 'image/webp');
 }
 
 /* Capitals the house way: accents come off, a unit glued to a digit keeps its
@@ -94,75 +110,104 @@ function fontOf(m) {
    script once the face has loaded (a band's width is the title's), and
    `window.__done` says the frame is ready to shoot. */
 
-function pageOf(m, font, body, script) {
+function pageOf(m, font, w, body, script) {
   const a = (m.theme && m.theme.accent) || '#4bf5ff';
   const b = (m.theme && m.theme.accent2) || a;
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 @font-face { font-family: 'Game'; src: url(${font.src}) format('woff2'); font-weight: 100 900; }
 html, body { margin: 0; background: transparent; }
-#stage { position: relative; width: ${W}px; overflow: visible; --a: ${a}; --b: ${b}; }
-.pc { position: absolute; display: block; filter: drop-shadow(0 10px 14px rgba(0,0,0,.6)); }
+#stage { position: absolute; left: ${M}px; top: ${M}px; width: ${w}px; overflow: visible; --a: ${a}; --b: ${b}; }
+.pc { position: absolute; display: block; filter: drop-shadow(0 8px 10px rgba(0,0,0,.6)); }
 /* A section heading. */
-.band { position: absolute; left: 50%; transform: translateX(-50%); height: 116px; padding: 0 128px;
-  display: flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 58px;
-  border: 4px solid transparent;
+.band { position: absolute; left: 50%; transform: translateX(-50%); height: 88px; padding: 0 92px;
+  display: flex; align-items: center; justify-content: center; white-space: nowrap; border-radius: 44px;
+  border: 3px solid transparent;
   background: linear-gradient(180deg, rgba(20,16,52,.96), rgba(6,6,22,.96)) padding-box,
               linear-gradient(90deg, var(--a), var(--b)) border-box;
-  box-shadow: 0 0 34px color-mix(in srgb, var(--a) 55%, transparent), 0 16px 34px rgba(0,0,0,.6); }
-.band span { font-family: 'Game'; font-weight: ${font.weight}; font-size: 60px; letter-spacing: .05em; line-height: 1;
-  color: #fff; text-shadow: 0 0 22px color-mix(in srgb, var(--a) 80%, transparent), 0 3px 0 rgba(0,0,0,.45); }
+  box-shadow: 0 0 26px color-mix(in srgb, var(--a) 55%, transparent), 0 12px 26px rgba(0,0,0,.6); }
+.band span { font-family: 'Game'; font-weight: ${font.weight}; font-size: 46px; letter-spacing: .05em; line-height: 1;
+  color: #fff; text-shadow: 0 0 18px color-mix(in srgb, var(--a) 80%, transparent), 0 2px 0 rgba(0,0,0,.45); }
 /* The showcase. */
-.shot { position: absolute; border-radius: 26px; border: 5px solid transparent; overflow: hidden;
+.shot { position: absolute; border-radius: 20px; border: 4px solid transparent; overflow: hidden;
   background: linear-gradient(#000,#000) padding-box, linear-gradient(160deg, var(--a), var(--b)) border-box;
-  box-shadow: 0 0 40px color-mix(in srgb, var(--a) 40%, transparent), 0 22px 40px rgba(0,0,0,.65); }
-.shot img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 21px; }
+  box-shadow: 0 0 30px color-mix(in srgb, var(--a) 40%, transparent), 0 16px 30px rgba(0,0,0,.65); }
+.shot img { display: block; width: 100%; height: 100%; border-radius: 16px; }
 </style></head><body><div id="stage">${body}</div><script>
+var DSF = ${DSF};
+/* Never bigger than the file: a piece is drawn at most at its own pixels. */
+function put(el, cx, bottom, h, r) {
+  h = Math.min(h, el.naturalHeight / DSF);
+  var w = h * el.naturalWidth / el.naturalHeight;
+  el.style.height = h + 'px'; el.style.left = (cx - w / 2) + 'px';
+  el.style.top = (bottom - h) + 'px'; el.style.transform = 'rotate(' + (r || 0) + 'deg)';
+}
+/* A piece painted cut (a character stopping at the hips, hair sawn off by its
+   frame) has opaque pixels on that edge, which read as a hard line on the
+   page. Each such edge fades out instead. */
+function fadeCuts(el) {
+  var n = 96, c = document.createElement('canvas');
+  c.width = n; c.height = Math.max(1, Math.round(n * el.naturalHeight / el.naturalWidth));
+  var g = c.getContext('2d'); g.drawImage(el, 0, 0, c.width, c.height);
+  var d = g.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height;
+  function cut(len, at) { var k = 0; for (var i = 0; i < len; i++) if (d[at(i) * 4 + 3] > 60) k++; return k / len > 0.06; }
+  var masks = [];
+  if (cut(W, function (i) { return (H - 1) * W + i; })) masks.push('linear-gradient(to top, transparent 0, #000 24%)');
+  if (cut(W, function (i) { return i; }))               masks.push('linear-gradient(to bottom, transparent 0, #000 16%)');
+  if (cut(H, function (i) { return i * W; }))           masks.push('linear-gradient(to right, transparent 0, #000 16%)');
+  if (cut(H, function (i) { return i * W + W - 1; }))   masks.push('linear-gradient(to left, transparent 0, #000 16%)');
+  if (!masks.length) return;
+  el.style.webkitMaskImage = el.style.maskImage = masks.join(',');
+  el.style.webkitMaskComposite = 'source-in'; el.style.maskComposite = 'intersect';
+}
 (async function () {
   await document.fonts.ready;
   await Promise.all([].map.call(document.images, function (i) { return i.decode().catch(function () {}); }));
+  [].forEach.call(document.querySelectorAll('img.pc'), fadeCuts);
   ${script}
+  /* The shot is everything drawn, its glow included, so nothing is cut by
+     the frame: the union of every element's box, plus the shadow's reach. */
+  var box = null;
+  [].forEach.call(document.querySelectorAll('#stage > *'), function (el) {
+    var r = el.getBoundingClientRect();
+    box = box ? { l: Math.min(box.l, r.left), t: Math.min(box.t, r.top), r: Math.max(box.r, r.right), b: Math.max(box.b, r.bottom) }
+              : { l: r.left, t: r.top, r: r.right, b: r.bottom };
+  });
+  var P = ${PAD};
+  var x = Math.max(0, Math.floor(box.l - P)), y = Math.max(0, Math.floor(box.t - P));
+  window.__clip = { x: x, y: y, width: Math.ceil(box.r + P) - x, height: Math.ceil(box.b + P) - y };
   window.__done = true;
 })();
 </script></body></html>`;
 }
 
-/* A band at the bottom half of a 300 px stage, so the pieces stuck on its
-   ends can rise above it. Three slots, used in order: left end, right end,
-   above the right third. */
+/* A section heading: the band, its two end pieces and one above its right
+   third. The title steps its size down rather than the pieces off. */
 function sectionPage(m, font, title, pics) {
+  const w = 720;
   const imgs = pics.map((src, i) => `<img class="pc" id="p${i}" src="${src}">`).join('');
-  const body = `<div class="band" id="band" style="top:150px"><span>${upper(title)}</span></div>${imgs}`;
+  const body = `<div class="band" id="band" style="top:96px"><span>${upper(title)}</span></div>${imgs}`;
   const script = `
-  var st = document.getElementById('stage'); st.style.height = '300px';
-  /* The band never runs wider than the stage leaves room for its end pieces:
-     a long title steps its size down rather than its pieces off the picture. */
-  var bandEl = document.getElementById('band'), span = bandEl.firstChild, size = 60;
-  while (bandEl.offsetWidth > ${W} - 150 && size > 36) { size -= 2; span.style.fontSize = size + 'px'; }
+  var bandEl = document.getElementById('band'), span = bandEl.firstChild, size = 46;
+  while (bandEl.offsetWidth > ${w} - 110 && size > 30) { size -= 2; span.style.fontSize = size + 'px'; }
+  var st = document.getElementById('stage').getBoundingClientRect();
   var band = bandEl.getBoundingClientRect();
-  function clampX(x, h) { return Math.max(h * 0.42, Math.min(${W} - h * 0.42, x)); }
-  var SLOTS = [
-    { x: clampX(band.left + 20, 196),  y: band.bottom + 18, h: 196, r: -11 },
-    { x: clampX(band.right - 20, 196), y: band.bottom + 18, h: 196, r: 9 },
-    { x: band.left + band.width * 0.72, y: band.top + 26, h: 120, r: 14 }
-  ];
+  var L = band.left - st.left, R = band.right - st.left, T = band.top - st.top, B = band.bottom - st.top;
+  var SLOTS = [[L + 14, B + 14, 132, -11], [R - 14, B + 14, 132, 9], [L + (R - L) * 0.72, T + 18, 86, 14]];
   for (var i = 0; i < SLOTS.length; i++) {
     var el = document.getElementById('p' + i); if (!el) break;
-    var s = SLOTS[i], w = s.h * el.naturalWidth / el.naturalHeight;
-    el.style.height = s.h + 'px';
-    el.style.left = (s.x - w / 2) + 'px';
-    el.style.top = (s.y - s.h) + 'px';
-    el.style.transform = 'rotate(' + s.r + 'deg)';
+    put(el, SLOTS[i][0], SLOTS[i][1], SLOTS[i][2], SLOTS[i][3]);
   }`;
-  return pageOf(m, font, body, script);
+  return pageOf(m, font, w, body, script);
 }
 
-/* Three captures fanned out, the middle one raised, the character standing in
-   front of the left one and a piece on the right. 560 px tall. */
+/* Three captures fanned out, the middle one raised, the character in front of
+   the left one and a piece or two on the right. */
 function showcasePage(m, font, shots, front, pics) {
+  const w = 800;
   const fan = [
-    { x: 300, y: 62, w: 230, r: -9, z: 1 },
-    { x: 480, y: 26, w: 262, r: 0, z: 2 },
-    { x: 660, y: 62, w: 230, r: 9, z: 1 }
+    { x: 250, y: 46, w: 188, r: -9, z: 1 },
+    { x: 400, y: 14, w: 214, r: 0, z: 2 },
+    { x: 550, y: 46, w: 188, r: 9, z: 1 }
   ];
   let body = shots.map((src, i) => {
     const f = fan[i];
@@ -172,16 +217,10 @@ function showcasePage(m, font, shots, front, pics) {
   if (front) body += `<img class="pc" id="front" src="${front}" style="z-index:3">`;
   body += pics.map((src, i) => `<img class="pc" id="p${i}" src="${src}" style="z-index:3">`).join('');
   const script = `
-  var st = document.getElementById('stage'); st.style.height = '540px';
-  function put(el, cx, bottom, h, r) {
-    var w = h * el.naturalWidth / el.naturalHeight;
-    el.style.height = h + 'px'; el.style.left = (cx - w / 2) + 'px';
-    el.style.top = (bottom - h) + 'px'; el.style.transform = 'rotate(' + r + 'deg)';
-  }
-  var f = document.getElementById('front'); if (f) put(f, 150, 540, 400, 0);
-  var p = document.getElementById('p0'); if (p) put(p, 815, 520, 190, 10);
-  var q = document.getElementById('p1'); if (q) put(q, 835, 200, 130, -8);`;
-  return pageOf(m, font, body, script);
+  var f = document.getElementById('front'); if (f) put(f, 150, 420, 300, 0);
+  var p = document.getElementById('p0'); if (p) put(p, 668, 412, 120, 10);
+  var q = document.getElementById('p1'); if (q) put(q, 690, 150, 100, -8);`;
+  return pageOf(m, font, w, body, script);
 }
 
 // ── Chrome over the DevTools protocol ──────────────────────────────────────
@@ -230,7 +269,7 @@ async function shoot(client, html, out, tmp) {
   const t = await client.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId: sid } = await client.send('Target.attachToTarget', { targetId: t.targetId, flatten: true });
   try {
-    await client.send('Emulation.setDeviceMetricsOverride', { width: W, height: 800, deviceScaleFactor: DSF, mobile: false }, sid);
+    await client.send('Emulation.setDeviceMetricsOverride', { width: VIEW, height: 900, deviceScaleFactor: DSF, mobile: false }, sid);
     await client.send('Emulation.setDefaultBackgroundColorOverride', { color: { r: 0, g: 0, b: 0, a: 0 } }, sid);
     await client.send('Page.navigate', { url: 'file://' + file }, sid);
     for (let i = 0; i < 100; i++) {
@@ -238,14 +277,12 @@ async function shoot(client, html, out, tmp) {
       if (r.result && r.result.value) break;
       await sleep(100);
     }
-    const h = (await client.send('Runtime.evaluate', {
-      expression: 'document.getElementById("stage").offsetHeight', returnByValue: true }, sid)).result.value;
+    const clip = (await client.send('Runtime.evaluate', { expression: 'window.__clip', returnByValue: true }, sid)).result.value;
     const shot = await client.send('Page.captureScreenshot', {
-      format: 'webp', quality: Q, captureBeyondViewport: true,
-      clip: { x: 0, y: 0, width: W, height: h, scale: 1 }
+      format: 'webp', quality: Q, captureBeyondViewport: true, clip: { ...clip, scale: 1 }
     }, sid);
     fs.writeFileSync(out, Buffer.from(shot.data, 'base64'));
-    return { kb: Math.round(fs.statSync(out).size / 1024), h };
+    return { kb: Math.round(fs.statSync(out).size / 1024), w: clip.width, h: clip.height };
   } finally {
     await client.send('Target.closeTarget', { targetId: t.targetId });
   }
@@ -268,12 +305,12 @@ for (const slug of slugs) {
       return dataUri(f, 'image/jpeg');
     });
     jobs.push({ out: path.join(OUT, `${slug}-showcase.webp`),
-      html: showcasePage(m, font, shots, sc.front ? piece(slug, sc.front) : null, (sc.pieces || []).map((r) => piece(slug, r))) });
+      html: showcasePage(m, font, shots, sc.front ? piece(slug, sc.front, m) : null, (sc.pieces || []).map((r) => piece(slug, r, m))) });
   }
   for (const s of en.sections || []) {
     if (!s.title) continue;
     jobs.push({ out: path.join(OUT, `${slug}-section-${s.key}.webp`),
-      html: sectionPage(m, font, s.title, (art[s.key] || []).map((r) => piece(slug, r))) });
+      html: sectionPage(m, font, s.title, (art[s.key] || []).map((r) => piece(slug, r, m))) });
   }
 }
 
@@ -286,7 +323,7 @@ const pages = fs.mkdtempSync(path.join(os.tmpdir(), 'itch-banner-pages-'));
 try {
   for (const job of jobs) {
     const r = await shoot(client, job.html, job.out, pages);
-    console.log(`OK    ${path.relative(ROOT, job.out)}  (${W}x${r.h} shown, ${r.kb} KB)`);
+    console.log(`OK    ${path.relative(ROOT, job.out)}  (${r.w}x${r.h} shown, ${r.kb} KB)`);
   }
 } finally {
   client.close();

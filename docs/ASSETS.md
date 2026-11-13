@@ -961,8 +961,9 @@ words live in `itch.page` of the manifest, in English (the itch page has one
 language) — `hook`, `pitch`, `sections` (`key`, `title`, `text`, `list`) and
 `outro` — and its pictures are composed out of the game's own pieces:
 `itch.page.art.showcase` fans three captures behind the character, and
-`itch.page.art.<key>` names the two or three pieces (embed roles: `sticker16`,
-`decor-06`, `home06`) stuck on a section's neon band, whose title is set in the
+`itch.page.art.<key>` names the two or three pieces (roles: `sticker16`,
+`decor-06`, `home06`, read at full size from the master or the object cut,
+never drawn past their own pixels, an edge painted cut faded out) stuck on a section's neon band, whose title is set in the
 game's typeface. They are transparent WebP, and the site build copies them to
 `image/games/<slug>/itch-*.webp`, which is the URL the description points at —
 so the site has to be pushed before the HTML is pasted; `itch-page.mjs` probes

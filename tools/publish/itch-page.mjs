@@ -84,8 +84,10 @@ function banner(slug, name, alt) {
     console.error(`  no ${path.relative(ROOT, file)} — run node tools/lab/itch-banners.mjs ${slug}`);
     return '';
   }
-  const s = sizeOf(file) || { w: 1920, h: 600 };
-  return center(img(`${SITE}/image/games/${slug}/itch-${name}.webp`, alt, 960, Math.round(s.h * 960 / s.w)));
+  /* Shot at twice the size it is meant to be seen at (itch-banners.mjs,
+     DSF): showing it bigger is what makes a low-resolution piece blur. */
+  const s = sizeOf(file) || { w: 1600, h: 600 };
+  return center(img(`${SITE}/image/games/${slug}/itch-${name}.webp`, alt, Math.round(s.w / 2), Math.round(s.h / 2)));
 }
 
 async function build(slug) {
