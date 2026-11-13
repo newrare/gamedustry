@@ -1,0 +1,1077 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/marshmelt — do not edit",
+ "slug": "marshmelt",
+ "stamp": "2564d7c4a009a396",
+ "en": {
+  "title": "Marshmelt",
+  "howTo": "Tap where you aim to fling the marshmallow from rock to rock over the lava",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "fling",
+      "title": "Click to fling",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click where you aim. The marshmallow flies there and sticks to the first rock it meets."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fling.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "focus",
+      "title": "Slow motion",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Hold your finger down to slow time. A dotted arc shows where you will land."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "focus.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "air",
+      "title": "Mid-air shot",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "In mid-air, a Click flings the marshmallow once more.",
+       "Every fresh rock you land on reloads your double jump."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "air.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score and combo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Only fresh rocks score. A rock's value increases with its height.",
+       "A dark rock, a fireball or a hit breaks your combo."
+      ],
+      "rows": [
+       [
+        "Each fresh rock in a row",
+        "+25 %",
+        null
+       ],
+       [
+        "Chain at most",
+        "×4",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "toast",
+      "title": "Four lives",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each hit toasts the marshmallow a bit more, shrinking its jump height more and more."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "toast.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lava",
+      "title": "The lava",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Falling into lava costs three lives. Only a healthy marshmallow can hope to survive it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lava.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "caldera",
+    "label": "Caldera",
+    "pages": [
+     {
+      "id": "claimed",
+      "title": "Dark rocks",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Some rocks fall already dark. They score nothing.",
+       "Landing on one breaks your chain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "claimed.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "smores",
+      "title": "S'mores",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Biscuits and chocolates fall. Catch one of each to make a s'more."
+      ],
+      "rows": [
+       [
+        "A biscuit and a chocolate",
+        "+1 life",
+        null
+       ],
+       [
+        "A super s'more",
+        "All lives",
+        null
+       ],
+       [
+        "At full life",
+        "×2 · 10 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "smores.webp",
+       "w": 520,
+       "h": 190,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Fireballs",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "You can land on a fireball, but it scores nothing and breaks the combo.",
+       "Jump off before a fireball's ring runs out, or it throws you off a shade browner."
+      ],
+      "rows": [
+       [
+        "Thrown off after",
+        "1.15 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "surge",
+      "title": "Lava surges",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "The crust flashes red, and a dashed line shows how high the lava will climb.",
+       "Stay above the lava line so you don't get toasted."
+      ],
+      "rows": [
+       [
+        "Warning",
+        "1.4 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "surge.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "frost",
+    "label": "Frozen sulphur",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Ice rocks",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Ice holds you only a moment, then throws you up."
+      ],
+      "rows": [
+       [
+        "Holds you for",
+        "0.3 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "water",
+      "title": "Cold water",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Water drips off the ceiling. On the lava it sets a crust you can stand on.",
+       "Get off the crust before it cracks back into the lake."
+      ],
+      "rows": [
+       [
+        "A crust lasts",
+        "6 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "water.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnets",
+      "title": "Magnet crystals",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "In mid-air, a crystal pulls you in and catches you.",
+       "Jump from a crystal to go higher than any rock can send you."
+      ],
+      "rows": [
+       [
+        "Thrown up after",
+        "1.6 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "magnets.en.webp",
+       "w": 520,
+       "h": 210,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "geysers",
+    "label": "Geysers",
+    "pages": [
+     {
+      "id": "geyser",
+      "title": "Steam jets",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A vent bubbles in the lava, then blows steam up to the ceiling.",
+       "The steam lifts you in mid-air, and the rocks it touches."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "geyser.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "orbs",
+      "title": "Lava bubbles",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "A bubble rises out of the lake and carries you up with it.",
+       "The bubble pops after a while or at the ceiling."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "orbs.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "serpent",
+      "title": "Lava serpent",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "A swirl on the lava marks where the serpent will leap from.",
+       "The serpent breaks the rocks in its way. Beware, its bite costs a life."
+      ],
+      "rows": [
+       [
+        "The swirl warns",
+        "1.3 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "serpent.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "faults",
+    "label": "Fault lines",
+    "pages": [
+     {
+      "id": "shard",
+      "title": "Cracked rocks",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A cracked rock splits soon after your first touch, whether you stay or not.",
+       "The cracked rock breaks into three fresh pieces you can land on."
+      ],
+      "rows": [
+       [
+        "Splits after",
+        "1 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shard.webp",
+       "w": 520,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dust",
+      "title": "Crumbling rocks",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "A crumbling rock falls to dust soon after your first touch.",
+       "Jump before the ring runs out, or fall with the dust."
+      ],
+      "rows": [
+       [
+        "Falls to dust",
+        "0.85 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "dust.webp",
+       "w": 520,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bombs",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Your first touch lights the fuse. The dashed circle is the blast's reach.",
+       "The blast throws you and breaks your combo. Note that lava sets bombs off too."
+      ],
+      "rows": [
+       [
+        "Blows after",
+        "2 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 320,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "core",
+    "label": "The core",
+    "pages": [
+     {
+      "id": "furnace",
+      "title": "Furnace",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Jump off fireballs fast. A surge can catch you waiting."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "furnace.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cold",
+      "title": "Cold snap",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Ice throws you up and crystals catch you. Chain them to climb."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cold.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ascent",
+      "title": "Updraft",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Steam, bubbles and crystals all send you up. Use them!"
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ascent.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "collapse",
+      "title": "Collapse",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Rocks that split, crumble and blow."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "collapse.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lair",
+      "title": "The lair",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "Watch the swirl and the red line at once."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lair.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cataclysm",
+      "title": "Cataclysm",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Everything the lava has."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cataclysm.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Marshmelt",
+  "howTo": "Touche l'écran pour propulser le marshmallow de rocher en rocher au-dessus de la lave",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "fling",
+      "title": "Propulsion par Clic",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur l'endroit visé pour y projeter le marshmallow, qui se fige sur le premier rocher rencontré."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fling.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "focus",
+      "title": "Ralenti",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Maintiens ton doigt appuyé pour activer le ralenti, tandis qu'un arc en pointillés indique ta zone d'atterrissage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "focus.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "air",
+      "title": "Tir aérien",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Effectue un nouveau Clic en plein vol pour propulser le marshmallow une seconde fois.",
+       "Chaque rocher neuf sur lequel tu te poses réinitialise ton double saut."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "air.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score et Combo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Seuls les rochers neufs rapportent des points. Leur valeur augmente avec la hauteur du rocher.",
+       "Un rocher sombre, une boule de feu ou un impact brisent ton Combo."
+      ],
+      "rows": [
+       [
+        "Bonus par rocher neuf consécutif",
+        "+25 %",
+        null
+       ],
+       [
+        "Chaîne maximale",
+        "×4",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "toast",
+      "title": "Quatre vies",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque dégât grille un peu plus le marshmallow, ce qui diminue de plus en plus sa hauteur de saut."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "toast.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lava",
+      "title": "La lave",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tomber dans la lave coûte trois vies. Seul un marshmallow en pleine santé peut espérer y survivre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lava.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "caldera",
+    "label": "Caldeira",
+    "pages": [
+     {
+      "id": "claimed",
+      "title": "Rochers sombres",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Certains rochers apparaissent d'emblée assombris et ne rapportent aucun point.",
+       "T'y poser détruit instantanément ta chaîne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "claimed.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "smores",
+      "title": "S'mores",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Des biscuits et des carrés de chocolat tombent. Attrape-les tous les deux pour confectionner un s'more."
+      ],
+      "rows": [
+       [
+        "Un biscuit et un chocolat",
+        "+1 vie",
+        null
+       ],
+       [
+        "Un super s'more",
+        "Toutes les vies",
+        null
+       ],
+       [
+        "Vies au maximum",
+        "×2 · 10 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "smores.webp",
+       "w": 520,
+       "h": 190,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Boules de feu",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Atterrir sur une boule de feu est possible, mais cela ne rapporte aucun point et brise le Combo.",
+       "Saute avant l'expiration du temps imparti pour éviter d'être éjecté en étant davantage grillé."
+      ],
+      "rows": [
+       [
+        "Délai d'éjection",
+        "1,15 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "surge",
+      "title": "Vagues de lave",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "La croûte se met à clignoter en rouge tandis qu'une ligne pointillée matérialise l'amplitude de la future montée de lave.",
+       "Sois plus haut que la ligne de la lave pour ne pas griller."
+      ],
+      "rows": [
+       [
+        "Temps d'avertissement",
+        "1,4 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "surge.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "frost",
+    "label": "Soufre glacé",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Rochers de glace",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "La glace ne te retient qu'un instant puis te projette vers le haut."
+      ],
+      "rows": [
+       [
+        "Durée de maintien",
+        "0,3 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "water",
+      "title": "Eau froide",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Des gouttes d'eau tombent du plafond et forment une croûte solide sur la lave pour s'y poser.",
+       "Quitte la croûte glacée avant qu'elle ne se rompe et ne replonge dans le lac."
+      ],
+      "rows": [
+       [
+        "Durée de la croûte",
+        "6 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "water.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnets",
+      "title": "Cristaux magnétiques",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Durant ton vol, un cristal magnétique t'attire et te capture.",
+       "Utilise l'impulsion d'un cristal pour atteindre des hauteurs inaccessibles aux simples rochers."
+      ],
+      "rows": [
+       [
+        "Délai de projection",
+        "1,6 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "magnets.fr.webp",
+       "w": 520,
+       "h": 209,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "geysers",
+    "label": "Geysers",
+    "pages": [
+     {
+      "id": "geyser",
+      "title": "Jets de vapeur",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Une cheminée bouillonne dans la lave puis propulse un jet de vapeur jusqu'au plafond.",
+       "Le jet de vapeur soulève ton personnage en plein vol ainsi que tous les rochers qu'il croise."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "geyser.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "orbs",
+      "title": "Bulles de lave",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Une bulle émerge du lac pour t'emporter dans son ascension.",
+       "La bulle éclate au bout d'un moment ou au contact du plafond."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "orbs.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "serpent",
+      "title": "Serpent de lave",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "Un tourbillon sur la surface de la lave indique l'endroit exact d'où le serpent va jaillir.",
+       "Le monstre pulvérise les rochers sur son passage. Attention, sa morsure coûte une vie."
+      ],
+      "rows": [
+       [
+        "Délai d'alerte du remous",
+        "1,3 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "serpent.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "faults",
+    "label": "Failles",
+    "pages": [
+     {
+      "id": "shard",
+      "title": "Rochers fissurés",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Un rocher fissuré se brise peu après ton contact initial, que tu restes dessus ou non.",
+       "Le rocher fissuré se disloque en trois fragments neufs qui peuvent servir tes prochains sauts."
+      ],
+      "rows": [
+       [
+        "Délai d'éclatement",
+        "1 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shard.webp",
+       "w": 520,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dust",
+      "title": "Rochers friables",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Un rocher friable se désintègre en poussière peu de temps après que tu l'as touché.",
+       "Saute avant que l'indicateur ne se vide, sous peine de t'effondrer avec la poussière."
+      ],
+      "rows": [
+       [
+        "Désintégration",
+        "0,85 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "dust.webp",
+       "w": 520,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bombes",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Ton premier contact allume la mèche. Le cercle en pointillés délimite le rayon de l'explosion.",
+       "L'explosion te projette violemment et rompt ton Combo. Il est important de noter que la lave peut également déclencher les bombes."
+      ],
+      "rows": [
+       [
+        "Délai avant explosion",
+        "2 s",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 320,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "core",
+    "label": "Le cœur",
+    "pages": [
+     {
+      "id": "furnace",
+      "title": "Fournaise",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Quitte rapidement les boules de feu, car une vague pourrait te surprendre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "furnace.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cold",
+      "title": "Vague de froid",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Propulse-toi grâce à la glace et attrape les cristaux pour enchaîner les ascensions."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cold.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ascent",
+      "title": "Courant ascendant",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Jets de vapeur, bulles et cristaux propulsent ton personnage vers le haut. Apprends à en profiter !"
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ascent.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "collapse",
+      "title": "Effondrement",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Rochers fissurés, friables et explosifs."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "collapse.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lair",
+      "title": "L'antre",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "Surveille simultanément le tourbillon et la ligne rouge."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lair.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cataclysm",
+      "title": "Cataclysme",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Le déchaînement complet de la lave."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cataclysm.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

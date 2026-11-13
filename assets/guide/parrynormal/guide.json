@@ -1,0 +1,3047 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/parrynormal — do not edit",
+ "slug": "parrynormal",
+ "stamp": "0b23ceed31a7b348",
+ "en": {
+  "title": "Parrynormal",
+  "howTo": "Turn the shield to parry your balls and also throw the monsters back",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Basics",
+    "pages": [
+     {
+      "id": "shield",
+      "title": "The shield",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "An arc of shield turns around the witch. It never closes: a gap always stays open.",
+       "Every ball and every monster that touches it bounces off."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "aim",
+      "title": "Turning the shield",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "On a phone, turn the dial at the bottom: the shield points where your thumb is on it.",
+       "With a mouse on a computer, the shield then follows the pointer."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "aim.en.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ball",
+      "title": "Magic balls",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Click the middle of the dial (or click) to launch one of your 3 blue balls.",
+       "Every ball is pulled back to the witch: parry it out again. If it gets through, the shield freezes for a moment."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ball.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "brown",
+      "title": "Brown balls",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every fifth parry of a blue ball drops a brown ball.",
+       "A brown ball scores and hurts monsters. It never inflicts any penalty or damage on the witch."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "brown.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "perfect",
+      "title": "Perfect parry",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Hit a ball with the white notch in the middle of the shield.",
+       "It pays more and sends the ball out faster."
+      ],
+      "rows": [
+       [
+        "A parry",
+        "+10",
+        null
+       ],
+       [
+        "A perfect parry",
+        "+30",
+        "#ffffff"
+       ]
+      ],
+      "pic": {
+       "file": "perfect.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Combo",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every parry counts: a ball, a monster or a spit.",
+       "The multiplier applies to everything you score."
+      ],
+      "rows": [
+       [
+        "Every 10 parries in a row",
+        "Multiplier +1",
+        "#ffd23a"
+       ],
+       [
+        "Highest multiplier",
+        "x5",
+        null
+       ],
+       [
+        "A heart lost or a frozen shield",
+        "Back to x1",
+        "#ff7a8a"
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "throw",
+      "title": "Throw them back",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A monster that touches the shield takes a hit and slides far away.",
+       "Use your shield against balls but also against monsters. You can also send a ball back at a monster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "throw.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "attack",
+      "title": "Charge",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Close to the witch, a monster stops and takes its attack pose.",
+       "It will then rush you, red with anger."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "attack.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dig",
+      "title": "A feint",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Instead of attacking, the Gravedigger prefers an underground solution.",
+       "It stays invincible underground, then comes back up elsewhere."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dig.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "strike",
+      "title": "Strike",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A monster thrown hard will knock over the others around it.",
+       "They obviously take damage and go flying in turn."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "strike.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Stars",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A heart is lost when a monster or a projectile reaches the witch. Your own spells and balls won't hurt you."
+      ],
+      "rows": [
+       [
+        "★",
+        "Clear the stage",
+        null
+       ],
+       [
+        "★★",
+        "Lose at most one heart",
+        null
+       ],
+       [
+        "★★★",
+        "Lose no heart",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goals",
+      "title": "Stage objectives",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Each stage has a different objective.",
+       "The monsters keep coming until your goal is complete."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goals.en.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wave-green",
+      "title": "Second wind",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "When the witch loses a heart, she releases a green shockwave that sends the monsters flying away.",
+       "It throws every monster on screen back, without hurting any of them."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wave-green.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rescue",
+      "title": "Last chance",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A monster too close to the witch gets a passive teleport spell that sends it far away.",
+       "This spell unfortunately only works once per monster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rescue.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers",
+      "title": "Supers",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Before each game, pick the bonus supers you will need. The number of spells you take in grows with the stages.",
+       "Each spell has a cooldown of magic energy. Watch the gauge fill up to use spells at the right time."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers.webp",
+       "w": 520,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "monsters",
+    "label": "Monsters",
+    "pages": [
+     {
+      "id": "bat",
+      "title": "Bat",
+      "eyebrow": "Haunted Forest",
+      "lv": 1,
+      "text": [
+       "Flutters straight at the witch. The slightest attack is enough to get rid of it, but its flight is never perfectly straight."
+      ],
+      "rows": [
+       [
+        "Life",
+        "1",
+        null
+       ],
+       [
+        "Speed",
+        "Fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Familiars",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "bat.webp",
+       "w": 288,
+       "h": 181,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "jack",
+      "title": "Jack",
+      "eyebrow": "Haunted Forest",
+      "lv": 2,
+      "text": [
+       "Not necessarily fast, but it takes attacks well. Throw this monster back or attack it with a magic ball."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Fire Rain",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "jack.webp",
+       "w": 248,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "wisp",
+      "title": "Wisp",
+      "eyebrow": "Haunted Forest",
+      "lv": 4,
+      "text": [
+       "Dashes in, stops, dashes again. Fast or not, your shield stays very effective against it."
+      ],
+      "rows": [
+       [
+        "Life",
+        "1",
+        null
+       ],
+       [
+        "Speed",
+        "Fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Freeze, Salt Circle",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "wisp.webp",
+       "w": 222,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "spider",
+      "title": "Spider",
+      "eyebrow": "Haunted Forest",
+      "lv": 5,
+      "text": [
+       "Waits at a distance, then leaps. Turn the shield towards it before it leaps."
+      ],
+      "rows": [
+       [
+        "Life",
+        "2",
+        null
+       ],
+       [
+        "Speed",
+        "Fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Freeze, Shockwave",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "spider.webp",
+       "w": 288,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "zombie",
+      "title": "Zombie",
+      "eyebrow": "Graveyard",
+      "lv": 7,
+      "text": [
+       "Very slow, very tough. Attack this monster so it goes back into its tombstone. Be careful though, as the Zombie sometimes likes to come back out."
+      ],
+      "rows": [
+       [
+        "Life",
+        "5",
+        null
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ],
+       [
+        "Weak to",
+        "Shockwave, Banish",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "zombie.webp",
+       "w": 220,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skeleton",
+      "title": "Skeleton",
+      "eyebrow": "Graveyard",
+      "lv": 8,
+      "text": [
+       "Falls apart, then pulls itself together. Hit the pile of bones before it stands up again."
+      ],
+      "rows": [
+       [
+        "Life",
+        "2",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Fire Rain",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "skeleton.webp",
+       "w": 268,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "ghost",
+      "title": "Ghost",
+      "eyebrow": "Graveyard",
+      "lv": 10,
+      "text": [
+       "Balls pass through it when it fades. The shield always throws it back, whatever its form."
+      ],
+      "rows": [
+       [
+        "Life",
+        "2",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Broom",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "ghost.webp",
+       "w": 288,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "mole",
+      "title": "Gravedigger",
+      "eyebrow": "Graveyard",
+      "lv": 11,
+      "text": [
+       "Fakes an attack, then digs away and comes up elsewhere. Wait for the gravedigger to come up to attack it again."
+      ],
+      "rows": [
+       [
+        "Life",
+        "2",
+        null
+       ],
+       [
+        "Speed",
+        "Fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Shockwave, Lightning",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "mole.webp",
+       "w": 270,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "slime",
+      "title": "Slime",
+      "eyebrow": "Witch's Swamp",
+      "lv": 13,
+      "text": [
+       "Splits in two when it pops. The two slimelets it produces are quick, so stay focused."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Fire Rain, Shockwave",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "slime.webp",
+       "w": 288,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "mosquito",
+      "title": "Mosquito",
+      "eyebrow": "Witch's Swamp",
+      "lv": 14,
+      "text": [
+       "Arrives in a buzzing swarm. Use a magic ball to land a Strike on this group of creatures."
+      ],
+      "rows": [
+       [
+        "Life",
+        "1",
+        null
+       ],
+       [
+        "Speed",
+        "Very fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Shockwave, Familiars",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "mosquito.webp",
+       "w": 278,
+       "h": 256,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "shaman",
+      "title": "Toad Shaman",
+      "eyebrow": "Witch's Swamp",
+      "lv": 16,
+      "text": [
+       "Spits from afar. Convert its spit into a brown ball with your shield."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Freeze, Lightning",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "shaman.webp",
+       "w": 280,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "knight",
+      "title": "Knight",
+      "eyebrow": "Castle Crypt",
+      "lv": 19,
+      "text": [
+       "The witch's shield cannot hurt its armour. Only balls, Strikes and magic can hurt it."
+      ],
+      "rows": [
+       [
+        "Life",
+        "5",
+        null
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Fire Rain",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "knight.webp",
+       "w": 204,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "gargoyle",
+      "title": "Gargoyle",
+      "eyebrow": "Castle Crypt",
+      "lv": 20,
+      "text": [
+       "Turns to stone to be out of harm's way. While it is stone, nothing can harm it."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Banish",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "gargoyle.webp",
+       "w": 288,
+       "h": 243,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "vampire",
+      "title": "Vampire",
+      "eyebrow": "Castle Crypt",
+      "lv": 22,
+      "text": [
+       "Blinks from one side to the other. It blinks closer each time it teleports, but it is not invincible for all that."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ],
+       [
+        "Weak to",
+        "Salt Circle, Lightning",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "vampire.webp",
+       "w": 254,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "rat",
+      "title": "Rat",
+      "eyebrow": "Castle Crypt",
+      "lv": 23,
+      "text": [
+       "Moves in a fast pack. The pack will take a Strike attack head-on, so don't hesitate to use a magic ball against the group."
+      ],
+      "rows": [
+       [
+        "Life",
+        "1",
+        null
+       ],
+       [
+        "Speed",
+        "Very fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Shockwave, Familiars",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "rat.webp",
+       "w": 276,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "imp",
+      "title": "Imp",
+      "eyebrow": "Dragon's Throne",
+      "lv": 25,
+      "text": [
+       "Blows up on the witch's shield. Throw this little devil back with a ball before it reaches your shield."
+      ],
+      "rows": [
+       [
+        "Life",
+        "1",
+        null
+       ],
+       [
+        "Speed",
+        "Very fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Salt Circle, Fire Rain",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "imp.webp",
+       "w": 280,
+       "h": 277,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "salamander",
+      "title": "Salamander",
+      "eyebrow": "Dragon's Throne",
+      "lv": 26,
+      "text": [
+       "Spirals in from the side. It likes to circle around the witch."
+      ],
+      "rows": [
+       [
+        "Life",
+        "2",
+        null
+       ],
+       [
+        "Speed",
+        "Very fast",
+        null
+       ],
+       [
+        "Weak to",
+        "Freeze, Salt Circle",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "salamander.webp",
+       "w": 288,
+       "h": 214,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "priest",
+      "title": "Dark Priest",
+      "eyebrow": "Dragon's Throne",
+      "lv": 28,
+      "text": [
+       "Heals the monsters around it. Knock it out first, or the other monsters keep healing."
+      ],
+      "rows": [
+       [
+        "Life",
+        "3",
+        null
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Banish",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "priest.webp",
+       "w": 208,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "dragon",
+      "title": "Dragon",
+      "eyebrow": "Dragon's Throne",
+      "lv": 30,
+      "text": [
+       "Spits fireballs. Use its fireballs to send them back at full power."
+      ],
+      "rows": [
+       [
+        "Life",
+        "30",
+        null
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ],
+       [
+        "Weak to",
+        "Lightning, Banish",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "dragon.webp",
+       "w": 288,
+       "h": 250,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "variants",
+    "label": "Variants",
+    "pages": [
+     {
+      "id": "baby",
+      "title": "Babies",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "They are more numerous, smaller and faster, but also much weaker."
+      ],
+      "rows": [
+       [
+        "Life",
+        "Half",
+        null
+       ],
+       [
+        "Speed",
+        "x1.25",
+        null
+       ],
+       [
+        "Thrown",
+        "Further",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "baby.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Giants",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "A giant often ends the stage.",
+       "Thrown back by the shield, it flies farther and bounces off the edges: a well-placed hit turns it into a formidable projectile.",
+       "A giant stays enraged to the end."
+      ],
+      "rows": [
+       [
+        "Life",
+        "x6",
+        null
+       ],
+       [
+        "Speed",
+        "x0.7",
+        null
+       ],
+       [
+        "Thrown",
+        "Far, off the walls",
+        null
+       ],
+       [
+        "Score",
+        "x8",
+        "#ffd23a"
+       ]
+      ],
+      "pic": {
+       "file": "boss.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "enraged",
+      "title": "Enraged",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Knock a monster out next to other monsters and the survivors turn red. They are then faster and more dangerous.",
+       "Rage spreads only once."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "enraged.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "palette",
+      "title": "Visitors",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "A monster from another land won't necessarily have the same colours.",
+       "Only its look changes: same life, same speed, same weaknesses."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "palette.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "slowed",
+      "title": "Slowed",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Freeze and webs slow monsters down. They turn slightly blue during this phase."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slowed.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dizzy",
+      "title": "Dizzy",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Bowled over by a Strike or thrown into a wall, a monster stays put for a second."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dizzy.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tired",
+      "title": "Tired",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Throw the same monster back three times and it will drag its feet before attacking you again."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tired.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "grave",
+      "title": "Tombstone",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A knocked-out zombie goes back into its tombstone. Monsters can chew through it to get back out. Balls are ineffective against tombstones.",
+       "A shaking stone is a sign that a Zombie will eventually come out."
+      ],
+      "rows": [
+       [
+        "Opens after",
+        "5 s",
+        null
+       ],
+       [
+        "Zombie back",
+        "40 %",
+        "#ff7a8a"
+       ]
+      ],
+      "pic": {
+       "file": "grave.webp",
+       "w": 224,
+       "h": 209,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supers",
+    "label": "Supers",
+    "pages": [
+     {
+      "id": "lightning",
+      "title": "Lightning",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Strikes the 3 monsters nearest the witch."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "10 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "lightning.webp",
+       "w": 182,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "freeze",
+      "title": "Freeze",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The whole world slowed for a few seconds."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "15 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "freeze.webp",
+       "w": 214,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "wave",
+      "title": "Shockwave",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Throws every monster back and digs the Gravediggers up."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "15 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "wave.webp",
+       "w": 224,
+       "h": 160,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "moon",
+      "title": "Full Moon",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "The shield opens wide for a few seconds."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "20 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "moon.webp",
+       "w": 224,
+       "h": 222,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "brew",
+      "title": "Brew",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "6 brown balls burst out of the shield."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "20 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 8",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "brew.webp",
+       "w": 224,
+       "h": 208,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "familiars",
+      "title": "Familiars",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "3 allied bats circle the witch for a few seconds and bite what they meet."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "20 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 10",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "familiars.webp",
+       "w": 224,
+       "h": 203,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "meteor",
+      "title": "Fire Rain",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "6 fireballs fall on the monsters."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "20 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 13",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "meteor.webp",
+       "w": 224,
+       "h": 213,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "salt",
+      "title": "Salt Circle",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Nothing crosses the circle for a few seconds, not even a projectile."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "25 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 16",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "salt.webp",
+       "w": 224,
+       "h": 166,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "broom",
+      "title": "Broom",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "The shield sweeps two full turns in a second."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "10 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 19",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "broom.webp",
+       "w": 218,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "toad",
+      "title": "Toadify",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Every monster but the Dragon is a harmless toad for a few seconds."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "30 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 22",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "toad.webp",
+       "w": 224,
+       "h": 218,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "banish",
+      "title": "Banish",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "The toughest monster vanishes. The Dragon, meanwhile, takes 10 damage."
+      ],
+      "rows": [
+       [
+        "Cooldown",
+        "30 s",
+        null
+       ],
+       [
+        "Found on",
+        "Stage 25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "banish.webp",
+       "w": 224,
+       "h": 221,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pickups",
+    "label": "Pickups",
+    "pages": [
+     {
+      "id": "star",
+      "title": "Star",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The shield grows wider for a few seconds, and stars can stack.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "star.webp",
+       "w": 224,
+       "h": 214,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "pumpkin",
+      "title": "Pumpkin",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The blast hits the monsters around.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pumpkin.webp",
+       "w": 192,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "candle",
+      "title": "Candle",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "It throws flames at the nearest monster for a few seconds.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "candle.webp",
+       "w": 192,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "web",
+      "title": "Web",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "The zone turns sticky and slows monsters down heavily for several seconds.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "web.webp",
+       "w": 224,
+       "h": 203,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "potion",
+      "title": "Potion",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Every brown ball splits in two.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "potion.webp",
+       "w": 196,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "heart",
+      "title": "Heart",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "One heart back.",
+       "Any type of magic ball can activate this power-up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "heart.webp",
+       "w": 224,
+       "h": 197,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Parrynormal",
+  "howTo": "Tourne le bouclier pour renvoyer tes balles mais aussi repousser les monstres",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Bases",
+    "pages": [
+     {
+      "id": "shield",
+      "title": "Le bouclier",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un arc de bouclier magique tourne autour de la sorcière afin de la protéger.",
+       "Il peut ainsi repousser autant les balles magiques que les monstres hideux."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "aim",
+      "title": "Tourner le bouclier",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Sur mobile, tourne le cadran en bas : le bouclier pointe là où se trouve ton pouce.",
+       "Avec une souris sur ordinateur, le bouclier suit alors le pointeur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "aim.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ball",
+      "title": "Balles magiques",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Clique sur le centre du cadran (ou clique) pour lancer l'une de tes 3 balles bleues.",
+       "Chaque balle reviendra fatalement vers la sorcière. Utilise alors ton bouclier pour te protéger et la relancer ailleurs."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ball.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "brown",
+      "title": "Balles marron",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Toutes les 5 parades, une nouvelle balle bonus marron apparaît.",
+       "Une balle marron rapporte des points et blesse les monstres. Elle n'inflige aucun malus ou dégât à la sorcière."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "brown.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "perfect",
+      "title": "Parade parfaite",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Frappe une balle avec le centre du bouclier pour une parade parfaite.",
+       "Elle rapporte plus de points et la balle repart plus vite vers les monstres."
+      ],
+      "rows": [
+       [
+        "Une parade",
+        "+10",
+        null
+       ],
+       [
+        "Une parade parfaite",
+        "+30",
+        "#ffffff"
+       ]
+      ],
+      "pic": {
+       "file": "perfect.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Combo",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque parade est comptabilisée. Repousse les balles, monstres ou projectiles.",
+       "Le multiplicateur s'applique à l'ensemble des éléments qui rapportent des points."
+      ],
+      "rows": [
+       [
+        "Toutes les 10 parades d'affilée",
+        "Multiplicateur +1",
+        "#ffd23a"
+       ],
+       [
+        "Multiplicateur max",
+        "x5",
+        null
+       ],
+       [
+        "Un cœur perdu ou un bouclier gelé",
+        "Retour à x1",
+        "#ff7a8a"
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "throw",
+      "title": "Repousse-les",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un monstre qui touche le bouclier encaisse un coup et glisse au loin.",
+       "Utilise ton bouclier contre les balles mais aussi contre les monstres. Tu peux aussi renvoyer une balle vers un monstre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "throw.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "attack",
+      "title": "Charge",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Près de la sorcière, un monstre s'arrête et se place en position d'attaque.",
+       "Il foncera sur toi ensuite rouge de colère."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "attack.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dig",
+      "title": "Une feinte",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Au lieu d'attaquer, le fossoyeur préfère une solution souterraine.",
+       "Il reste invincible sous terre puis ressort ailleurs."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dig.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "strike",
+      "title": "Strike",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un monstre lancé fort renversera les autres autour.",
+       "Ils prennent bien évidemment des dégâts et valsent à leur tour."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "strike.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Étoiles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un cœur est perdu quand un monstre ou un projectile touche la sorcière. Tes propres sorts et balles ne te feront pas de dégâts."
+      ],
+      "rows": [
+       [
+        "★",
+        "Termine le stage",
+        null
+       ],
+       [
+        "★★",
+        "Ne perds pas plus d'un cœur",
+        null
+       ],
+       [
+        "★★★",
+        "Ne perds aucun cœur",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goals",
+      "title": "Objectifs des stages",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque stage possède un objectif différent.",
+       "Les monstres arrivent sans cesse jusqu'à ce que ton objectif soit terminé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goals.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wave-green",
+      "title": "Second souffle",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Lorsque la sorcière perd un cœur, elle libère une onde de choc verte qui propulse les monstres au loin.",
+       "Cette onde repousse tous les monstres mais n'en blesse aucun."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wave-green.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rescue",
+      "title": "Dernière chance",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un monstre trop proche de la sorcière subit un sort passif de téléportation qui l'envoie au loin.",
+       "Ce sort ne fonctionne malheureusement qu'une seule fois par monstre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rescue.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers",
+      "title": "Supers",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Avant chaque partie, choisis les supers bonus dont tu auras besoin. Le nombre de sorts que tu emportes augmente avec les stages.",
+       "Chaque sort possède un temps de rechargement d'énergie magique. Surveille le remplissage pour utiliser les sorts au bon moment."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers.webp",
+       "w": 520,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "monsters",
+    "label": "Monstres",
+    "pages": [
+     {
+      "id": "bat",
+      "title": "Chauve-souris",
+      "eyebrow": "Forêt hantée",
+      "lv": 1,
+      "text": [
+       "Voltige droit sur la sorcière. La moindre attaque suffit à s'en débarrasser mais son vol n'est jamais parfaitement droit."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "1",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Familiers",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "bat.webp",
+       "w": 288,
+       "h": 181,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "jack",
+      "title": "Citrouille",
+      "eyebrow": "Forêt hantée",
+      "lv": 2,
+      "text": [
+       "Pas forcément rapide mais il encaisse bien les attaques. Repousse ce monstre ou attaque-le avec une balle magique."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Pluie de feu",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "jack.webp",
+       "w": 248,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "wisp",
+      "title": "Feu follet",
+      "eyebrow": "Forêt hantée",
+      "lv": 4,
+      "text": [
+       "Fonce, s'arrête, refonce. Rapide ou non, ton bouclier reste très efficace contre lui."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "1",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Gel, Cercle de sel",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "wisp.webp",
+       "w": 222,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "spider",
+      "title": "Araignée",
+      "eyebrow": "Forêt hantée",
+      "lv": 5,
+      "text": [
+       "Attend à distance puis bondit. Tourne le bouclier vers elle avant qu'elle ne bondisse."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "2",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Gel, Onde de choc",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "spider.webp",
+       "w": 288,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "zombie",
+      "title": "Zombie",
+      "eyebrow": "Cimetière",
+      "lv": 7,
+      "text": [
+       "Très lent, très coriace. Attaque ce monstre pour qu'il retourne dans sa tombe. Attention toutefois car parfois le Zombie aime en ressortir."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "5",
+        null
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ],
+       [
+        "Faible contre",
+        "Onde de choc, Bannissement",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "zombie.webp",
+       "w": 220,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skeleton",
+      "title": "Squelette",
+      "eyebrow": "Cimetière",
+      "lv": 8,
+      "text": [
+       "Se disloque puis se reconstitue. Frappe le tas d'os avant qu'il ne se relève."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "2",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Pluie de feu",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "skeleton.webp",
+       "w": 268,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "ghost",
+      "title": "Fantôme",
+      "eyebrow": "Cimetière",
+      "lv": 10,
+      "text": [
+       "Les balles le traversent quand il s'efface. Le bouclier le repousse toujours, quelle que soit sa forme."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "2",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Balai",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "ghost.webp",
+       "w": 288,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "mole",
+      "title": "Fossoyeur",
+      "eyebrow": "Cimetière",
+      "lv": 11,
+      "text": [
+       "Feint une attaque, puis creuse et ressort ailleurs. Attends que le fossoyeur remonte pour l'attaquer de nouveau."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "2",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Onde de choc, Foudre",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "mole.webp",
+       "w": 270,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "slime",
+      "title": "Slime",
+      "eyebrow": "Marais de la sorcière",
+      "lv": 13,
+      "text": [
+       "Se divise en deux quand il éclate. Les deux mini-slimes qu'il produit sont vifs, donc garde ta concentration."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Pluie de feu, Onde de choc",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "slime.webp",
+       "w": 288,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "mosquito",
+      "title": "Moustique",
+      "eyebrow": "Marais de la sorcière",
+      "lv": 14,
+      "text": [
+       "Arrive en essaim bourdonnant. Utilise une balle magique pour faire un Strike dans ce groupe de créatures."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "1",
+        null
+       ],
+       [
+        "Vitesse",
+        "Très rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Onde de choc, Familiers",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "mosquito.webp",
+       "w": 278,
+       "h": 256,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "shaman",
+      "title": "Crapaud chaman",
+      "eyebrow": "Marais de la sorcière",
+      "lv": 16,
+      "text": [
+       "Crache de loin. Convertis son crachat en balle marron grâce à ton bouclier."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Gel, Foudre",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "shaman.webp",
+       "w": 280,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "knight",
+      "title": "Chevalier",
+      "eyebrow": "Crypte du château",
+      "lv": 19,
+      "text": [
+       "Le bouclier de la sorcière est inefficace contre son armure. Seuls les balles, les Strikes et la magie peuvent le blesser."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "5",
+        null
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Pluie de feu",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "knight.webp",
+       "w": 204,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "gargoyle",
+      "title": "Gargouille",
+      "eyebrow": "Crypte du château",
+      "lv": 20,
+      "text": [
+       "Se change en pierre pour être à l'abri des coups. Tant qu'elle est de pierre, elle ne craint rien."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Bannissement",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "gargoyle.webp",
+       "w": 288,
+       "h": 243,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "vampire",
+      "title": "Vampire",
+      "eyebrow": "Crypte du château",
+      "lv": 22,
+      "text": [
+       "Se téléporte d'un côté à l'autre. Il se rapproche à chaque téléportation mais n'est pas invincible pour autant."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ],
+       [
+        "Faible contre",
+        "Cercle de sel, Foudre",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "vampire.webp",
+       "w": 254,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "rat",
+      "title": "Rat",
+      "eyebrow": "Crypte du château",
+      "lv": 23,
+      "text": [
+       "Il se déplace en meute rapide. La meute subira de plein fouet une attaque Strike, n'hésite pas à utiliser une balle magique contre le groupe."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "1",
+        null
+       ],
+       [
+        "Vitesse",
+        "Très rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Onde de choc, Familiers",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "rat.webp",
+       "w": 276,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "imp",
+      "title": "Diablotin",
+      "eyebrow": "Trône du dragon",
+      "lv": 25,
+      "text": [
+       "Explose sur le bouclier de la sorcière. Repousse ce petit diable avec une balle avant qu'il atteigne ton bouclier."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "1",
+        null
+       ],
+       [
+        "Vitesse",
+        "Très rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Cercle de sel, Pluie de feu",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "imp.webp",
+       "w": 280,
+       "h": 277,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "salamander",
+      "title": "Salamandre",
+      "eyebrow": "Trône du dragon",
+      "lv": 26,
+      "text": [
+       "Arrive en spirale par le côté. Elle aime tourner en cercles autour de la sorcière."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "2",
+        null
+       ],
+       [
+        "Vitesse",
+        "Très rapide",
+        null
+       ],
+       [
+        "Faible contre",
+        "Gel, Cercle de sel",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "salamander.webp",
+       "w": 288,
+       "h": 214,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "priest",
+      "title": "Prêtre noir",
+      "eyebrow": "Trône du dragon",
+      "lv": 28,
+      "text": [
+       "Soigne les monstres autour de lui. Mets-le KO en premier, sinon les autres monstres continueront d'être soignés."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "3",
+        null
+       ],
+       [
+        "Vitesse",
+        "Normal",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Bannissement",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "priest.webp",
+       "w": 208,
+       "h": 288,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "dragon",
+      "title": "Dragon",
+      "eyebrow": "Trône du dragon",
+      "lv": 30,
+      "text": [
+       "Crache des boules de feu. Sers-toi de ses boules de feu pour les lui renvoyer en pleine puissance."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "30",
+        null
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ],
+       [
+        "Faible contre",
+        "Foudre, Bannissement",
+        "#5dff8c"
+       ]
+      ],
+      "pic": {
+       "file": "dragon.webp",
+       "w": 288,
+       "h": 250,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "variants",
+    "label": "Variantes",
+    "pages": [
+     {
+      "id": "baby",
+      "title": "Bébés",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Ils sont plus nombreux, plus petits et rapides mais aussi beaucoup plus faibles."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "Moitié",
+        null
+       ],
+       [
+        "Vitesse",
+        "x1.25",
+        null
+       ],
+       [
+        "Projeté",
+        "Plus loin",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "baby.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Géants",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Un géant termine souvent le stage.",
+       "Repoussé par le bouclier, il part plus loin et rebondit sur les bords : un coup bien placé en fait un projectile redoutable.",
+       "Un géant reste enragé jusqu'au bout."
+      ],
+      "rows": [
+       [
+        "Vie",
+        "x6",
+        null
+       ],
+       [
+        "Vitesse",
+        "x0.7",
+        null
+       ],
+       [
+        "Projeté",
+        "Loin, en rebondissant",
+        null
+       ],
+       [
+        "Score",
+        "x8",
+        "#ffd23a"
+       ]
+      ],
+      "pic": {
+       "file": "boss.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "enraged",
+      "title": "Enragé",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Mets un monstre KO à côté d'autres monstres et les survivants deviennent rouges. Ils sont alors plus rapides et plus dangereux.",
+       "La rage ne se propage qu'une fois."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "enraged.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "palette",
+      "title": "Visiteurs",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Un monstre d'une autre contrée n'aura pas forcément les mêmes couleurs.",
+       "Seul son look change : même vie, même vitesse, mêmes faiblesses."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "palette.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "slowed",
+      "title": "Ralenti",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Le gel et les toiles ralentissent les monstres. Ils deviennent légèrement bleus pendant cette phase."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slowed.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dizzy",
+      "title": "Étourdi",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Renversé par un Strike ou projeté contre un mur, un monstre reste étourdi une seconde."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dizzy.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tired",
+      "title": "Fatigué",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Repousse trois fois le même monstre et il traînera des pieds pour t'attaquer de nouveau."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tired.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "grave",
+      "title": "Pierre tombale",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Un zombie mis KO retourne dans sa pierre tombale. Les monstres peuvent la ronger pour en ressortir. Les balles sont inefficaces contre les tombes.",
+       "Une pierre qui tremble est le signe qu'un Zombie va finir par sortir."
+      ],
+      "rows": [
+       [
+        "S'ouvre après",
+        "5 s",
+        null
+       ],
+       [
+        "Retour du zombie",
+        "40 %",
+        "#ff7a8a"
+       ]
+      ],
+      "pic": {
+       "file": "grave.webp",
+       "w": 224,
+       "h": 209,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supers",
+    "label": "Supers",
+    "pages": [
+     {
+      "id": "lightning",
+      "title": "Foudre",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Frappe les 3 monstres les plus proches de la sorcière."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "10 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "lightning.webp",
+       "w": 182,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "freeze",
+      "title": "Gel",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Tout le monde est ralenti pendant quelques secondes."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "15 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "freeze.webp",
+       "w": 214,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "wave",
+      "title": "Onde de choc",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Repousse tous les monstres et déterre les fossoyeurs."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "15 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "wave.webp",
+       "w": 224,
+       "h": 160,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "moon",
+      "title": "Pleine lune",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Le bouclier s'ouvre en grand pendant quelques secondes."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "20 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "moon.webp",
+       "w": 224,
+       "h": 222,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "brew",
+      "title": "Chaudron",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "6 balles marron jaillissent du bouclier."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "20 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 8",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "brew.webp",
+       "w": 224,
+       "h": 208,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "familiars",
+      "title": "Familiers",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "3 chauves-souris alliées tournent autour de la sorcière pendant quelques secondes et mordent tout ce qu'elles croisent."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "20 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 10",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "familiars.webp",
+       "w": 224,
+       "h": 203,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "meteor",
+      "title": "Pluie de feu",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "6 boules de feu s'abattent sur les monstres."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "20 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 13",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "meteor.webp",
+       "w": 224,
+       "h": 213,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "salt",
+      "title": "Cercle de sel",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Rien ne franchit le cercle pendant quelques secondes, pas même un projectile."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "25 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 16",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "salt.webp",
+       "w": 224,
+       "h": 166,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "broom",
+      "title": "Balai",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Le bouclier fait deux tours complets en une seconde."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "10 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 19",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "broom.webp",
+       "w": 218,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "toad",
+      "title": "Crapautage",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Tous les monstres sauf le Dragon deviennent des crapauds inoffensifs pendant quelques secondes."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "30 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 22",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "toad.webp",
+       "w": 224,
+       "h": 218,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "banish",
+      "title": "Bannissement",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Le monstre le plus coriace disparaît. Le Dragon, quant à lui, encaisse 10 dégâts."
+      ],
+      "rows": [
+       [
+        "Recharge",
+        "30 s",
+        null
+       ],
+       [
+        "Trouvé au",
+        "Stage 25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "banish.webp",
+       "w": 224,
+       "h": 221,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pickups",
+    "label": "Bonus",
+    "pages": [
+     {
+      "id": "star",
+      "title": "Étoile",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Le bouclier s'élargit pendant quelques secondes en sachant que les étoiles peuvent se cumuler.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "star.webp",
+       "w": 224,
+       "h": 214,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "pumpkin",
+      "title": "Potiron",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "L'explosion frappe les monstres autour.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pumpkin.webp",
+       "w": 192,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "candle",
+      "title": "Bougie",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Elle lance des flammèches sur le monstre le plus proche pendant quelques secondes.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "candle.webp",
+       "w": 192,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "web",
+      "title": "Toile",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "La zone devient collante et ralentit fortement les monstres pendant plusieurs secondes.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "web.webp",
+       "w": 224,
+       "h": 203,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "potion",
+      "title": "Potion",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Chaque balle marron se divise en deux.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "potion.webp",
+       "w": 196,
+       "h": 224,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "heart",
+      "title": "Cœur",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un cœur récupéré.",
+       "N'importe quel type de balle magique peut activer ce bonus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "heart.webp",
+       "w": 224,
+       "h": 197,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

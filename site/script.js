@@ -33,7 +33,40 @@ function prefersMotion() {
 var LANG_KEY = 'newrare.lang';
 var lang = 'en';
 
+/* WHERE THE SITE'S ROOT IS, from this page. The built site has pages at
+   several depths — /, /fr, /guide/<slug>, /fr/guide/<slug> — and every one of
+   them loads this file, so a path this file builds (a game's icon, its build,
+   its screenshots) is prefixed with the way back to the root, which the
+   builder writes on <html data-root>. The hand-written pages carry none: they
+   sit at the root and the prefix is empty. */
+var ROOT = (document.documentElement && document.documentElement.getAttribute('data-root')) || '';
+
+/* THE LANGUAGE IS THE URL'S, on the built site. tools/build/build-site.mjs
+   writes every page twice — /… in English, /fr/… in French — so that a
+   crawler reads each language at an address of its own, and names the pair in
+   <link rel="alternate" hreflang>. A page that carries those links IS its
+   language: the toggle is then a navigation to the other address, and the
+   visitor's choice is remembered so the tiny script the builder puts in the
+   <head> can send them straight to it next time.
+
+   A page with no alternates is the raw site/ folder opened as files, where
+   one page holds both languages and the switch is made in place, as it
+   always was. */
+function alternates() {
+  var links = document.querySelectorAll('link[rel="alternate"][hreflang]');
+  var out = null;
+  for (var i = 0; i < links.length; i++) {
+    var code = links[i].getAttribute('hreflang');
+    if (code !== 'fr' && code !== 'en') continue;
+    out = out || {};
+    // The path only: a preview deployment and localhost stay on themselves.
+    out[code] = links[i].getAttribute('href').replace(/^https?:\/\/[^/]+/, '') || '/';
+  }
+  return out && out.fr && out.en ? out : null;
+}
+
 function readLang() {
+  if (alternates()) return document.documentElement.lang === 'fr' ? 'fr' : 'en';
   try {
     var saved = localStorage.getItem(LANG_KEY);
     if (saved === 'fr' || saved === 'en') return saved;
@@ -81,6 +114,8 @@ function applyLang() {
   var nodes = document.querySelectorAll('[data-fr][data-en]');
   for (var i = 0; i < nodes.length; i++) {
     var text = nodes[i].getAttribute('data-' + lang);
+    // A <meta> says its text in `content`: the description, the share card.
+    if (nodes[i].tagName === 'META') { nodes[i].setAttribute('content', text); continue; }
     nodes[i].textContent = shouts(nodes[i]) ? upper(text) : text;
   }
   document.documentElement.lang = lang;
@@ -93,10 +128,16 @@ function applyLang() {
 }
 
 function toggleLang() {
-  lang = lang === 'fr' ? 'en' : 'fr';
-  saveLang(lang);
+  var next = lang === 'fr' ? 'en' : 'fr';
+  saveLang(next);
+  track('lang', { lang: next });
+
+  // The built site: the other language is the other address (see alternates).
+  var alt = alternates();
+  if (alt) { location.href = alt[next] + location.hash; return; }
+
+  lang = next;
   applyLang();
-  track('lang', { lang: lang });
 }
 
 /* ──────────────────────────── 2. navigation ─────────────────────────── */
@@ -178,6 +219,63 @@ function initSpy(anchors) {
   for (var s = 0; s < sections.length; s++) spy.observe(sections[s]);
 }
 
+/* THE GUIDE'S CONTENTS FOLLOW THE READER (a guide page, tools/build/
+   site-guide.mjs). The chapter being read is lit and unfolds its pages, the
+   entry being read is lit inside it; on a phone, where the contents are a bar
+   of chapters, the lit one is slid into view. The band is a strip a third of
+   the way down the screen, where the eye reads. */
+function initGuideSpy() {
+  var side = document.querySelector('.g-side');
+  if (!side || !window.IntersectionObserver) return;
+
+  var chLinks = {}, pageLinks = {};
+  var a = side.querySelectorAll('a[href^="#"]');
+  for (var i = 0; i < a.length; i++) {
+    var id = a[i].getAttribute('href').slice(1);
+    (a[i].classList.contains('g-side-ch') ? chLinks : pageLinks)[id] = a[i];
+  }
+  var bar = side.querySelector('ol');
+  var current = { ch: null, page: null };
+
+  function light(map, id, key) {
+    if (current[key] === id) return;
+    if (current[key] && map[current[key]]) {
+      map[current[key]].classList.remove('is-active');
+      if (key === 'ch') map[current[key]].parentNode.classList.remove('is-open');
+    }
+    current[key] = id;
+    var link = map[id];
+    if (!link) return;
+    link.classList.add('is-active');
+    if (key !== 'ch') return;
+    link.parentNode.classList.add('is-open');
+    // The phone's bar slides sideways only: scrollIntoView would move the page too.
+    if (bar && bar.scrollWidth > bar.clientWidth + 1) {
+      bar.scrollTo({ left: link.offsetLeft - 16, behavior: prefersMotion() ? 'smooth' : 'auto' });
+    }
+  }
+
+  var seen = {};
+  var spy = new IntersectionObserver(function (entries) {
+    for (var i = 0; i < entries.length; i++) seen[entries[i].target.id] = entries[i].isIntersecting;
+    var nodes = document.querySelectorAll('.g-chapter, .g-entry');
+    for (var j = 0; j < nodes.length; j++) {
+      if (!seen[nodes[j].id]) continue;
+      if (nodes[j].classList.contains('g-chapter')) light(chLinks, nodes[j].id, 'ch');
+      else {
+        light(pageLinks, nodes[j].id, 'page');
+        var ch = nodes[j].closest('.g-chapter');
+        if (ch) light(chLinks, ch.id, 'ch');
+      }
+    }
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  var all = document.querySelectorAll('.g-chapter, .g-entry');
+  for (var k = 0; k < all.length; k++) spy.observe(all[k]);
+  var first = document.querySelector('.g-chapter');
+  if (first) light(chLinks, first.id, 'ch');
+}
+
 /* ──────────────────────────── 3. playables ──────────────────────────── */
 
 var games = (window.GAMES || []).filter(function (g) {
@@ -221,7 +319,7 @@ function initHeroCast() {
   for (var s = 0; s < sides.length; s++) {
     var g = pool[s];
     html += '<img class="hero-face hero-face-' + sides[s] + '"' +
-            ' src="image/games/' + g.slug + '/character.webp"' +
+            ' src="' + ROOT + 'image/games/' + g.slug + '/character.webp"' +
             ' alt="" aria-hidden="true" loading="lazy" decoding="async"' +
             ' style="animation-delay:' + (s * -2.4).toFixed(1) + 's">';
   }
@@ -251,13 +349,26 @@ function gameCard(g, l) {
       '</button>'
     : '';
 
+  /* The way to the game's guide page — its rules, chapter by chapter, which
+     the builder writes from the game's own guide (tools/build/site-guide.mjs)
+     and marks with `guide: true`. A real link, in the baked markup too: it is
+     how a crawler walks from the front page to every guide. */
+  var guide = g.guide
+    ? '<a class="game-guide" href="' + (fr ? '/fr' : '') + '/guide/' + g.slug + '"' +
+      ' aria-label="' + escapeHtml(g.name) + ' — ' + (fr ? 'guide et règles' : 'guide and rules') + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v15.5a.5.5 0 0 1-.5.5H7a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2zm0 13.2c.3-.1.7-.2 1-.2h10V5H6v11.2zM7 18a1 1 0 0 0 0 2h10v-2H7zm2-10h6v2H9V8z"/></svg>' +
+      'Guide' +
+      '</a>'
+    : '';
+
   var desc = 'desc-' + g.slug;
   return '<article class="game" id="game-' + g.slug + '" style="--g1:' + g.accent[0] + ';--g2:' + g.accent[1] + '">' +
       '<div class="game-top">' +
-        '<img class="game-icon" src="image/games/' + g.slug + '/icon.png" alt="' + escapeHtml(g.name) + '" width="66" height="66" loading="lazy">' +
+        '<img class="game-icon" src="' + ROOT + 'image/games/' + g.slug + '/icon.png" alt="' + escapeHtml(g.name) + '" width="66" height="66" loading="lazy">' +
         '<div class="game-id">' +
           '<h3>' + escapeHtml(g.name) + '</h3>' +
         '</div>' +
+        guide +
       '</div>' +
       '<ul class="game-tags">' + tags + '</ul>' +
       '<div class="game-full" aria-hidden="true">' +
@@ -396,7 +507,7 @@ function openPlayer(slug, trigger) {
   /* The game reads ?lang= and dresses its own menu with it (see
      packages/webshell/menu.js), so the page and the game it embeds are never
      in two different languages. */
-  var url = 'games/' + slug + '/index.html?lang=' + lang;
+  var url = ROOT + 'games/' + slug + '/index.html?lang=' + lang;
   /* ?perf=1 on the page is forwarded to the game. The probe that reports the
      frame cost lives in the motor (docs/ENGINE.md), so the flag has to reach
      the iframe: on the page itself it would do nothing, which is exactly the
@@ -473,13 +584,13 @@ function openShots(key, trigger) {
   var dir, count, label;
 
   if (set) {
-    dir = set.dir;
+    dir = ROOT + set.dir;
     count = set.count;
     label = set.label;
   } else {
     var g = gameBySlug(key);
     if (!g || !g.screens) return;
-    dir = 'image/games/' + g.slug + '/';
+    dir = ROOT + 'image/games/' + g.slug + '/';
     count = g.screens;
     label = g.name;
   }
@@ -628,6 +739,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initPlayer();
   initShots();
   initLegal();
+  initGuideSpy();
   applyLang();
   /* Once, and deliberately not from applyLang(): the cast carries no text, so
      a language toggle has nothing to rewrite there — and re-drawing it would
@@ -636,6 +748,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var toggle = document.getElementById('langToggle');
   if (toggle) toggle.addEventListener('click', toggleLang);
+
+  /* A guide page starts its game with a plain link (tools/build/site-guide.mjs):
+     it is counted like the player's "open in a new tab". */
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest ? e.target.closest('[data-track-play]') : null;
+    if (link) track('play_tab', { game: link.getAttribute('data-track-play'), from: 'guide' });
+  });
 
   // A card's width moves with the window, and with it what overflows.
   var fitTimer = 0;

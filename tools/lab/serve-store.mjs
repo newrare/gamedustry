@@ -149,13 +149,14 @@ function writePreset(key, comp) {
      · A `multi` IS ALLOCATED IN ONE GO — three consecutive numbers, because
        the three panels are one picture cut at the seams and the gallery sorts
        them by that number.
-     · THE ITCH COVER IS NOT A GALLERY. It keeps its bare `<slug>-thumb` while
-       that is free, and is numbered after it.
+     · THE ITCH COVER AND THE FEATURE GRAPHIC ARE NOT A GALLERY. Each keeps
+       its bare `<slug>-itch` / `<slug>-feature` while that is free, and is
+       numbered after it.
 
    It only reads: asking twice changes nothing, which is what lets the page
    show the next name while a card is being composed. */
 function nextNames(slug, format, count) {
-  const store = format === 'thumb' ? 'itch' : 'google';
+  const store = format === 'itch' ? 'itch' : 'google';
   const taken = new Set();
   for (const lang of ['en', 'fr']) {
     for (const f of ls(path.join(STORE_DIR, store, lang))) {
@@ -164,9 +165,9 @@ function nextNames(slug, format, count) {
   }
 
   const names = [];
-  if (format === 'thumb') {
+  if (format === 'itch' || format === 'feature') {
     for (let i = 0; names.length < count && i < 1000; i++) {
-      const n = i === 0 ? `${slug}-thumb` : `${slug}-thumb-${String(i + 1).padStart(2, '0')}`;
+      const n = i === 0 ? `${slug}-${format}` : `${slug}-${format}-${String(i + 1).padStart(2, '0')}`;
       if (!taken.has(n)) names.push(n);
     }
     return { store, names };
@@ -191,7 +192,7 @@ function nextNames(slug, format, count) {
 /* A save writes one file and only under assets/image/<store>/<lang>/. The name
    is the one /api/next handed out, but it still arrives over HTTP, so it is
    scrubbed to the shape the store images already have rather than trusted. The
-   name is also what picks the destination — a `-thumb` is the itch cover,
+   name is also what picks the destination — an `-itch` is the itch cover,
    everything else is cut to Play's specs — which is the same rule
    tools/lab/shoot-store.mjs applies. */
 function safeName(name) {
@@ -209,7 +210,7 @@ export async function handle(req, res, p, url) {
     const slug = safeSlug(url.searchParams.get('slug'));
     if (!slug) return json(res, 400, { error: 'bad slug' });
     const asked = url.searchParams.get('format');
-    const format = ['phone', 'desk', 'thumb', 'multi'].includes(asked) ? asked : 'phone';
+    const format = ['phone', 'desk', 'itch', 'feature', 'multi'].includes(asked) ? asked : 'phone';
     const count = Math.max(1, Math.min(8, Number(url.searchParams.get('count')) || 1));
     return json(res, 200, nextNames(slug, format, count));
   }
@@ -233,7 +234,7 @@ export async function handle(req, res, p, url) {
     /* JPEG, always: 182 pictures of painted artwork over a capture is 34 MB
        as JPEG and 450 MB as PNG, and a store listing has no use for a
        lossless one — see docs/ASSETS.md. */
-    const out = path.join(STORE_DIR, /-thumb/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
+    const out = path.join(STORE_DIR, /-itch(-\d+)?$/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
     /* A slot is written once. The name came from /api/next, so a collision
        here means two saves raced or a stale page asked — either way the
        picture on disk is somebody's and is not overwritten. */

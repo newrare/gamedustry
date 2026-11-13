@@ -1,0 +1,1073 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/gelatile — do not edit",
+ "slug": "gelatile",
+ "stamp": "f1796bdd5f01ee30",
+ "en": {
+  "title": "Gelatile",
+  "howTo": "Swipe to merge identical tiles to reach your goal",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Basics",
+    "pages": [
+     {
+      "id": "swipe",
+      "title": "Swipe",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Swipe to slide every tile as far as it goes.",
+       "Each move brings a new 2, sometimes a 4."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "swipe.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "merge",
+      "title": "Merge",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Two twins that meet merge.",
+       "A tile merges once per move."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "merge.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "corner",
+      "title": "Keep a corner",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Each level starts with its tiles in a corner.",
+       "Keep the biggest tile in a corner, then build around it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "corner.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "preview",
+      "title": "Think before you move",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Drag slowly to see which tiles would move.",
+       "Come back to where you started to cancel."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "preview.en.webp",
+       "w": 260,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnet",
+      "title": "Twins pull",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Twins in line pull gently at each other.",
+       "They will merge on the next move that way."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gold",
+      "title": "Gold tiles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "From tile 128, a golden edge appears.",
+       "From tile 2048, a rainbow appears."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gold.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "values",
+      "title": "Every value",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The whole ladder of the biome, from 2 to 65536."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "values.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Three stars",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A level is won when its goal tile is made.",
+       "With no move left, the round is lost."
+      ],
+      "rows": [
+       [
+        "The goal tile",
+        "★",
+        null
+       ],
+       [
+        "Within the par of moves",
+        "★★",
+        null
+       ],
+       [
+        "And the level's bonus",
+        "★★★",
+        null
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "key": "tiles",
+    "label": "Powers",
+    "pages": [
+     {
+      "id": "freeze",
+      "title": "Freeze",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "A frozen tile holds its cell like a wall.",
+       "Merge a twin into it to thaw it. It melts after five moves."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "freeze.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stone",
+      "title": "Stone",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A stone tile slides but never merges.",
+       "It turns back to normal after five moves."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stone.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghostV",
+      "title": "Vertical ghost",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Moving up or down, a ghost with nothing in front slips out of the board.",
+       "Left or right, it slides like any tile."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghostV.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghostH",
+      "title": "Horizontal ghost",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Moving left or right, a ghost with nothing in front slips out of the board.",
+       "Up or down, it slides like any tile."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghostH.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mystery",
+      "title": "Mystery",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Its number is hidden for five moves.",
+       "It still merges by its real value."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mystery.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "targets",
+    "label": "Targets",
+    "pages": [
+     {
+      "id": "target",
+      "title": "Reading a target",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A target marks cells of the grid, not a tile.",
+       "It strikes the target after your next move.",
+       "A yellow sign warns of danger ahead of time, then turns red until it strikes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "target.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Fireball",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Burns the cell.",
+       "Leave the cell empty, or send a small tile."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "purple",
+      "title": "Purple smoke",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Halves the tile.",
+       "A 2 vanishes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "purple.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boltV",
+      "title": "Vertical bolt",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Clears every tile of its column."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boltV.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boltH",
+      "title": "Horizontal bolt",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Clears every tile of its row."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boltH.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "comet",
+      "title": "Comet",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Smashes every tile of a 2x2 block."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "comet.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "black",
+      "title": "Black smoke",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "Halves every tile of a 2x2 block."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "black.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switch",
+      "title": "Switch",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Swaps the tiles of the two marked cells."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switch.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "sides",
+    "label": "Sides",
+    "pages": [
+     {
+      "id": "teleport",
+      "title": "Teleport",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Tiles pass through this wall and come out on the other side of the board.",
+       "The other tiles of each line close up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "teleport.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lock",
+      "title": "Lock",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "That direction cannot be played while it is active.",
+       "The number counts the moves left."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lock.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "twists",
+    "label": "Twists",
+    "pages": [
+     {
+      "id": "clutter",
+      "title": "Clutter",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "The board starts with eight small tiles in the way."
+      ],
+      "rows": []
+     },
+     {
+      "id": "storm",
+      "title": "Storm",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "A power arrives every three or four moves."
+      ],
+      "rows": []
+     },
+     {
+      "id": "fours",
+      "title": "Four",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Half the new tiles are fours."
+      ],
+      "rows": []
+     },
+     {
+      "id": "lasting",
+      "title": "Lasting",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Powers last eight moves instead of five."
+      ],
+      "rows": []
+     },
+     {
+      "id": "counted",
+      "title": "Counted",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "The par becomes a limit.",
+       "Past it, the round is lost."
+      ],
+      "rows": []
+     }
+    ]
+   },
+   {
+    "key": "modes",
+    "label": "Modes",
+    "pages": [
+     {
+      "id": "mode-classic",
+      "title": "Classic",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The bathroom, with no powers and no particular goal.",
+       "Play until no move is possible. Only your score counts."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mode-classic.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mode-fast",
+      "title": "Fast",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Reach 2048 as fast as you can. The clock starts on your first move.",
+       "New tiles grow with you, always two steps under your biggest tile."
+      ],
+      "rows": [
+       [
+        "Tile 128",
+        "16 · 32",
+        null
+       ],
+       [
+        "Tile 1024",
+        "128 · 256",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "mode-fast.en.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Gelatile",
+  "howTo": "Glisse pour fusionner les tuiles identiques afin d'atteindre ton objectif",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "swipe",
+      "title": "Glisser",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Glisse pour pousser toutes les tuiles jusqu'au bout.",
+       "Chaque coup fait apparaître un 2, parfois un 4."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "swipe.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "merge",
+      "title": "Fusionner",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Deux jumelles qui se rencontrent fusionnent.",
+       "Une tuile ne fusionne qu'une fois par coup."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "merge.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "corner",
+      "title": "Garde un coin",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque niveau démarre avec ses tuiles rangées dans un coin.",
+       "Garde la plus grosse tuile dans un coin puis construis autour d'elle."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "corner.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "preview",
+      "title": "Réfléchis avant de jouer",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Fais glisser lentement pour voir quelles tuiles bougeraient.",
+       "Reviens à ton point de départ pour annuler."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "preview.fr.webp",
+       "w": 260,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnet",
+      "title": "Les jumelles s'attirent",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Deux jumelles alignées s'attirent doucement.",
+       "Elles fusionneront au prochain coup dans ce sens."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.fr.webp",
+       "w": 260,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gold",
+      "title": "Tuiles dorées",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Dès la tuile 128, un bord doré apparaît.",
+       "Dès la tuile 2048, l'arc-en-ciel apparaît."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gold.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "values",
+      "title": "Toutes les valeurs",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Toute l'échelle du biome, de 2 à 65536."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "values.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Trois étoiles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un niveau est gagné dès que sa tuile objectif est faite.",
+       "S'il ne reste aucun coup possible, la partie est perdue."
+      ],
+      "rows": [
+       [
+        "La tuile objectif",
+        "★",
+        null
+       ],
+       [
+        "Dans le nombre de coups visé",
+        "★★",
+        null
+       ],
+       [
+        "Et le bonus du niveau",
+        "★★★",
+        null
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "key": "tiles",
+    "label": "Pouvoirs",
+    "pages": [
+     {
+      "id": "freeze",
+      "title": "Gel",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Une tuile gelée reste sur sa case comme un mur.",
+       "Fusionne une jumelle dedans pour la dégeler. Elle fond après cinq coups."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "freeze.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stone",
+      "title": "Pierre",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une tuile de pierre glisse mais ne fusionne jamais.",
+       "Elle redevient normale après cinq coups."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stone.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghostV",
+      "title": "Fantôme vertical",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Vers le haut ou le bas, un fantôme sans rien devant lui sort de la grille.",
+       "Vers la gauche ou la droite, il glisse comme les autres."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghostV.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghostH",
+      "title": "Fantôme horizontal",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Vers la gauche ou la droite, un fantôme sans rien devant lui sort de la grille.",
+       "Vers le haut ou le bas, il glisse comme les autres."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghostH.fr.webp",
+       "w": 260,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mystery",
+      "title": "Mystère",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Son nombre est caché pendant cinq coups.",
+       "Elle fusionne quand même selon sa vraie valeur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mystery.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "targets",
+    "label": "Cibles",
+    "pages": [
+     {
+      "id": "target",
+      "title": "Lire une cible",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Une cible vise des cases de la grille, pas une tuile.",
+       "Elle frappe la cible après ton prochain mouvement.",
+       "Un panneau jaune annonce un danger à l'avance, puis passe au rouge jusqu'à la frappe."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "target.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Boule de feu",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Brûle la case.",
+       "Laisse la case vide ou envoies-y une petite tuile."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "purple",
+      "title": "Fumée violette",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Divise par deux la tuile.",
+       "Un 2 disparaît."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "purple.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boltV",
+      "title": "Éclair vertical",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Vide toutes les tuiles de sa colonne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boltV.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boltH",
+      "title": "Éclair horizontal",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Vide toutes les tuiles de sa ligne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boltH.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "comet",
+      "title": "Comète",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Écrase toutes les tuiles d'un bloc de 2x2."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "comet.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "black",
+      "title": "Fumée noire",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "Divise par deux toutes les tuiles d'un bloc de 2x2."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "black.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switch",
+      "title": "Échange",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Intervertit les tuiles des deux cases marquées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switch.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "sides",
+    "label": "Côtés",
+    "pages": [
+     {
+      "id": "teleport",
+      "title": "Téléport",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Les tuiles traversent ce mur pour se retrouver de l'autre côté de la grille.",
+       "Les autres tuiles de chaque ligne se resserrent."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "teleport.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lock",
+      "title": "Verrou",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Cette direction ne peut pas être jouée tant qu'il est actif.",
+       "Le nombre indique les coups restants."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lock.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "twists",
+    "label": "Variantes",
+    "pages": [
+     {
+      "id": "clutter",
+      "title": "Encombrement",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "La grille démarre avec huit petites tuiles qui gênent."
+      ],
+      "rows": []
+     },
+     {
+      "id": "storm",
+      "title": "Tempête",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Un pouvoir arrive tous les trois ou quatre coups."
+      ],
+      "rows": []
+     },
+     {
+      "id": "fours",
+      "title": "Quatre",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "La moitié des nouvelles tuiles sont des 4."
+      ],
+      "rows": []
+     },
+     {
+      "id": "lasting",
+      "title": "Durée",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Les pouvoirs durent huit coups au lieu de cinq."
+      ],
+      "rows": []
+     },
+     {
+      "id": "counted",
+      "title": "Compte à rebours",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Le nombre de coups visé devient une limite.",
+       "Au-delà, la partie est perdue."
+      ],
+      "rows": []
+     }
+    ]
+   },
+   {
+    "key": "modes",
+    "label": "Modes",
+    "pages": [
+     {
+      "id": "mode-classic",
+      "title": "Classique",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "La salle de bain, sans pouvoir ni objectif particulier.",
+       "Joue jusqu'à ce qu'aucun coup ne soit possible. Seul ton score compte."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mode-classic.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mode-fast",
+      "title": "Rapide",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Atteins 2048 le plus vite possible. Le chrono part à ton premier coup.",
+       "Les nouvelles tuiles grandissent avec toi, toujours deux crans sous ta plus grosse tuile."
+      ],
+      "rows": [
+       [
+        "Tuile 128",
+        "16 · 32",
+        null
+       ],
+       [
+        "Tuile 1024",
+        "128 · 256",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "mode-fast.fr.webp",
+       "w": 260,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

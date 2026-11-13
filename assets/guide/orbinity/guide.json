@@ -1,0 +1,803 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/orbinity — do not edit",
+ "slug": "orbinity",
+ "stamp": "2d74d9280f773685",
+ "en": {
+  "title": "Orbinity",
+  "howTo": "Tap to fling the cometfrom planet to planet and chain the combos",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "fling",
+      "title": "Click to fling",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click and the comet lets go of its planet. It flies straight on, the way it was turning.",
+       "A faint dotted line shows the path the comet would take if you clicked now."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fling.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "The chain",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Catch the next planet within a few seconds, or the Combo is lost.",
+       "Circling one planet 3 times breaks it. So do moons, asteroids and, from stage 13, walls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Planet score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The smaller the planet, the more it pays."
+      ],
+      "rows": [
+       [
+        "Maximum multiplier",
+        "x10",
+        null
+       ],
+       [
+        "Chain of five planets.",
+        "+25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "combo",
+    "label": "Chains",
+    "pages": [
+     {
+      "id": "tiers",
+      "title": "The comet evolves",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The longer the chain, the hotter the comet."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tiers.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "nova",
+      "title": "Supernova",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "From a chain of x3, a new planet may appear golden for a few seconds.",
+       "Reach the supernova without breaking the chain. The comet then hops from planet to planet on its own."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nova.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "overtime",
+      "title": "Overtime",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "If time runs out while your chain is alive, the round goes into overtime.",
+       "The time to reach the next planet keeps shrinking. The round ends when the chain breaks."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "overtime.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "inner",
+    "label": "Inner system",
+    "pages": [
+     {
+      "id": "nebula",
+      "title": "Nebulae",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A blue nebula slows the comet to a crawl, and the chain's clock with it.",
+       "An orange one speeds the comet up, but not the clock."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nebula.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "orbit",
+      "title": "Planets on the move",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Some planets circle a mini black hole. Aim where the planet is going to be."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "orbit.en.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lunar",
+    "label": "Moons",
+    "pages": [
+     {
+      "id": "moon",
+      "title": "Moons",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A moon circles its planet. Hit it and the chain is lost, so time your Click."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moon.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "eclipse",
+      "title": "Eclipse",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Skim past a moon without touching it to boost your score."
+      ],
+      "rows": [
+       [
+        "One eclipse on the way",
+        "x2",
+        null
+       ],
+       [
+        "Two eclipses",
+        "x3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "eclipse.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wind",
+      "title": "Solar wind",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "The solar wind pushes every shot that crosses it. Aim a little into the wind."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wind.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stream",
+      "title": "Asteroid stream",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "A lane glows red just before asteroids sweep through it. Hitting them breaks the chain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stream.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pulsar",
+    "label": "Pulsars",
+    "pages": [
+     {
+      "id": "pulsar",
+      "title": "Pulsar shields",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Every so often, a pulsar raises a shield for a few seconds. Careful, the comet bounces off it.",
+       "Sparks on the pulsar's rim warn you first. A bounce keeps the chain, but the clock keeps running."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pulsar.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "patient",
+      "title": "Time for a chain",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "The chain no longer runs out of time, however long you circle.",
+       "Now only a wall, a moon or an asteroid breaks the chain. In overtime, the clock comes back."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "patient.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "repel",
+      "title": "Repulsors",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "A repulsor pushes the comet away. Bouncing off it is safe, so use it to bank a shot."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "repel.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "abyss",
+    "label": "Black hole",
+    "pages": [
+     {
+      "id": "hole",
+      "title": "Black hole",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Reach a black hole's ring. It swings the comet round, then flings it at a planet.",
+       "No click needed. The chain's clock starts over."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hole.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "binary",
+      "title": "Binary pair",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "A planet and a repulsor circle each other. One pulls, the other pushes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "binary.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rift",
+    "label": "Rift",
+    "pages": [
+     {
+      "id": "rift",
+      "title": "The rift",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "All four edges are open. Fly out of one and you come back through the opposite one.",
+       "Going through an edge is often the shortest way to a planet."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rift.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "belt",
+      "title": "Asteroid belts",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "You can't fly through a belt. Go round it through the open edges."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "belt.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "worm",
+      "title": "Wormholes",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "The comet enters one mouth and comes out of the other, aimed at a planet. Your chain is safe."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "worm.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Orbinity",
+  "howTo": "Tape pour propulser la comètede planète en planète et enchaîner les combos",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "fling",
+      "title": "Clic pour tirer",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Effectue un Clic pour libérer la comète de sa planète. Elle file tout droit dans la direction de sa rotation.",
+       "Une discrète ligne de points montre la trajectoire que prendrait la comète si tu faisais un Clic maintenant."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fling.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "La chaîne",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Atteins la planète suivante en quelques secondes pour éviter de perdre ton Combo.",
+       "Faire 3 tours autour de la même planète brise la chaîne, tout comme les lunes, les astéroïdes et les murs dès le stage 13."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score des planètes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus une planète est petite, plus elle octroie de points."
+      ],
+      "rows": [
+       [
+        "Multiplicateur maximal",
+        "x10",
+        null
+       ],
+       [
+        "Chaîne de cinq planètes.",
+        "+25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.fr.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "combo",
+    "label": "Les chaînes",
+    "pages": [
+     {
+      "id": "tiers",
+      "title": "Évolution de la comète",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus ta chaîne s'allonge, plus la comète gagne en intensité."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tiers.fr.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "nova",
+      "title": "Supernova",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "À partir d'un Combo x3, une nouvelle planète peut se parer d'or pendant quelques secondes.",
+       "Atteins la supernova sans rompre ta chaîne pour que la comète saute d'elle-même d'une planète à l'autre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nova.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "overtime",
+      "title": "Prolongation",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Si le temps imparti s'épuise alors que ta chaîne est active, la partie bascule en prolongation.",
+       "Le temps imparti pour atteindre la planète suivante se réduit progressivement. La partie s'achève dès que la chaîne se rompt."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "overtime.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "inner",
+    "label": "Système intérieur",
+    "pages": [
+     {
+      "id": "nebula",
+      "title": "Nébuleuses",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une nébuleuse bleue ralentit fortement la comète, ainsi que le chrono de ta chaîne.",
+       "Une nébuleuse orange accélère la comète, mais laisse le chrono inchangé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nebula.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "orbit",
+      "title": "Planètes mobiles",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Certaines planètes gravitent autour d'un mini trou noir. Anticipe leur trajectoire pour viser juste."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "orbit.fr.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lunar",
+    "label": "Lunes",
+    "pages": [
+     {
+      "id": "moon",
+      "title": "Lunes",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Une lune orbite autour de sa planète. La percuter rompt la chaîne, alors chronomètre bien ton Clic."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moon.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "eclipse",
+      "title": "Éclipse",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Frôle une lune sans la percuter pour accroître ton score."
+      ],
+      "rows": [
+       [
+        "Une éclipse en approche",
+        "x2",
+        null
+       ],
+       [
+        "Deux éclipses",
+        "x3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "eclipse.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wind",
+      "title": "Vent solaire",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Le vent solaire dévie chaque tir le traversant. Pense à viser légèrement à contre-courant."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wind.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stream",
+      "title": "Flux d'astéroïdes",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Un couloir s'illumine en rouge juste avant le passage d'astéroïdes. Les percuter brise immédiatement ta chaîne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stream.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pulsar",
+    "label": "Pulsars",
+    "pages": [
+     {
+      "id": "pulsar",
+      "title": "Boucliers de pulsar",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Régulièrement, un pulsar active un bouclier pendant quelques secondes. Attention car la comète va rebondir sur ce bouclier.",
+       "Des étincelles sur le bord du pulsar te préviennent. Un rebond préserve la chaîne, mais le chrono continue de défiler."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pulsar.fr.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "patient",
+      "title": "Le temps d'une chaîne",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Ta chaîne ne subit plus de limite de temps, peu importe la durée de tes rotations.",
+       "Désormais, seuls un mur, une lune ou un astéroïde peuvent rompre la chaîne. Le chrono fait son retour en prolongation."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "patient.fr.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "repel",
+      "title": "Répulseurs",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Le répulseur repousse la comète sans danger. Sers-t'en comme d'une bande pour ajuster ton tir."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "repel.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "abyss",
+    "label": "Trou noir",
+    "pages": [
+     {
+      "id": "hole",
+      "title": "Trou noir",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Atteins l'anneau d'un trou noir pour qu'il emporte la comète dans une vrille avant de la propulser vers une planète.",
+       "Aucun clic n'est requis. Le chrono de la chaîne est réinitialisé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hole.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "binary",
+      "title": "Système binaire",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "Une planète et un répulseur tournent de concert. L'une attire, l'autre repousse."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "binary.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rift",
+    "label": "Faille",
+    "pages": [
+     {
+      "id": "rift",
+      "title": "La faille",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Les quatre bords de l'écran sont ouverts. Sortir par l'un te fait réapparaître par le côté opposé.",
+       "Franchir un bord constitue souvent le moyen le plus direct d'atteindre une planète."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rift.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "belt",
+      "title": "Ceintures d'astéroïdes",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Il est impossible de traverser une ceinture. Contourne-la par les extrémités ouvertes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "belt.fr.webp",
+       "w": 480,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "worm",
+      "title": "Trous de ver",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "La comète entre par une ouverture et ressort par l'autre en direction d'une planète, protégeant ainsi ta chaîne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "worm.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

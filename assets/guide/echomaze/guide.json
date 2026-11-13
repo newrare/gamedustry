@@ -1,0 +1,573 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/echomaze — do not edit",
+ "slug": "echomaze",
+ "stamp": "b45733f726766248",
+ "en": {
+  "title": "Echomaze",
+  "howTo": "Find and aim the right way through the maze to the exit",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "goal",
+      "title": "Find the way out",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The maze is lit for a moment, then everything goes dark.",
+       "Only one door leads to the exit. The others end in dead ends."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goal.en.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "aim",
+      "title": "Aim and fire",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Drag to aim, let go to fire a pulse.",
+       "The sight locks onto your aim. The pulse will go in that direction."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "aim.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "echo",
+      "title": "Echoes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "In the dark, a wall only shows where a pulse strikes it, then fades."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "echo.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "valves",
+      "title": "One-way valve",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When a pulse dies in the maze, the last opening it went through becomes a valve.",
+       "That valve lets pulses up, never back down."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "valves.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "recap",
+      "title": "The answer",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Out of pulses and still inside? The maze lights up one last time to show you the solution."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "recap.en.webp",
+       "w": 520,
+       "h": 312,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Scoring",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Pulses you have left pay the most. Getting out on the first shot gives the best score."
+      ],
+      "rows": [
+       [
+        "Each pulse left",
+        "+1500",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.en.webp",
+       "w": 520,
+       "h": 190,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Stars",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When the crystal hides in a dead end, each star allows one more pulse."
+      ],
+      "rows": [
+       [
+        "Out in 1 pulse",
+        "3",
+        null
+       ],
+       [
+        "Out in 2 pulses",
+        "2",
+        null
+       ],
+       [
+        "Out in 3 or more",
+        "1",
+        null
+       ],
+       [
+        "No way out",
+        "0",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 380,
+       "h": 152,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "dark",
+    "label": "Dark maze",
+    "pages": [
+     {
+      "id": "dark",
+      "title": "Dark maze",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Just the maze, its doors and one exit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dark.en.webp",
+       "w": 520,
+       "h": 216,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "decoys",
+    "label": "False exits",
+    "pages": [
+     {
+      "id": "decoys",
+      "title": "False exits",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "A false exit looks exactly like the true one, but it is a trap because it swallows your pulse.",
+       "While the maze is lit, only the true exit sends out rings. Remember which one."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "decoys.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "crystal",
+    "label": "Crystal lock",
+    "pages": [
+     {
+      "id": "crystal",
+      "title": "The crystal",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Once the lights go out, a bar seals every exit. Break the crystal to lift it.",
+       "Below the doors, your pulse bounces off the crystal and can still reach a door."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "crystal.en.webp",
+       "w": 520,
+       "h": 262,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hidden",
+      "title": "The hidden crystal",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "The crystal can hide in a dead end of the maze.",
+       "Reaching the crystal sometimes costs an extra pulse. In that case, one more pulse will still count as a \"Perfect read\"."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hidden.en.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fence",
+    "label": "Live fence",
+    "pages": [
+     {
+      "id": "fence",
+      "title": "Live fence",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "The gap in the fence moves from door to door in a fixed order. Aim where it goes next.",
+       "A pulse that hits the fence is lost, but that door stays open for good."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fence.en.webp",
+       "w": 520,
+       "h": 210,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "surge",
+    "label": "Full surge",
+    "pages": [
+     {
+      "id": "surge",
+      "title": "Full surge",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Spot the true exit while the maze is lit, then break the crystal before you go for it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "surge.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Echomaze",
+  "howTo": "Trouve et vise le bon chemin du labyrinthe jusqu'à la sortie",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "goal",
+      "title": "Trouver la sortie",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le labyrinthe s'illumine brièvement avant de plonger dans le noir complet.",
+       "Une seule porte ouvre le passage vers la sortie. Toutes les autres mènent à des impasses."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goal.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "aim",
+      "title": "Vise et tir",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Fais glisser ton doigt pour viser puis relève-le pour lancer une impulsion.",
+       "Le réticule se bloque sur ta visée. L'impulsion ira dans cette direction."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "aim.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "echo",
+      "title": "Les échos",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Puisque l'obscurité règne, les murs ne se révèlent qu'aux points d'impact de tes impulsions, avant de s'effacer."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "echo.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "valves",
+      "title": "Valve à sens unique",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lorsqu'une impulsion s'éteint dans le labyrinthe, le dernier passage qu'elle a emprunté se transforme en valve.",
+       "Cette valve autorise le passage des impulsions vers le haut, mais bloque tout retour en arrière."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "valves.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "recap",
+      "title": "La solution",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tu as épuisé tes impulsions sans trouver la sortie ? Le labyrinthe s'éclaire une dernière fois pour te montrer la solution."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "recap.fr.webp",
+       "w": 520,
+       "h": 312,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Calcul des points",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus tu économises d'impulsions, plus ton score s'envole. Réussir du premier coup garantit le meilleur score."
+      ],
+      "rows": [
+       [
+        "Chaque impulsion conservée",
+        "+1500",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.fr.webp",
+       "w": 520,
+       "h": 189,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Étoiles",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Si le cristal se dissimule dans un cul-de-sac, chaque étoile obtenue t'octroie une impulsion supplémentaire."
+      ],
+      "rows": [
+       [
+        "Sortie en 1 impulsion",
+        "3",
+        null
+       ],
+       [
+        "Sortie en 2 impulsions",
+        "2",
+        null
+       ],
+       [
+        "Sortie en 3 impulsions ou plus",
+        "1",
+        null
+       ],
+       [
+        "Bloqué (aucune sortie)",
+        "0",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 380,
+       "h": 152,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "dark",
+    "label": "Noir total",
+    "pages": [
+     {
+      "id": "dark",
+      "title": "Noir total",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un labyrinthe épuré, ses portes d'accès et une unique sortie à découvrir."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dark.fr.webp",
+       "w": 520,
+       "h": 216,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "decoys",
+    "label": "Fausses sorties",
+    "pages": [
+     {
+      "id": "decoys",
+      "title": "Fausses sorties",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Extérieurement identique à la vraie, la fausse sortie est un piège car elle absorbe ton impulsion.",
+       "Pendant que le labyrinthe est éclairé, seule la vraie sortie émet des ondes circulaires. Mémorise bien sa position."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "decoys.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "crystal",
+    "label": "Verrou de cristal",
+    "pages": [
+     {
+      "id": "crystal",
+      "title": "Le cristal",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Dès que l'obscurité s'installe, une barre bloque toutes les sorties. Tu dois briser le cristal pour la désactiver.",
+       "Situé sous les portes, le cristal renvoie ton impulsion par rebond, lui permettant d'atteindre une porte."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "crystal.fr.webp",
+       "w": 520,
+       "h": 262,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hidden",
+      "title": "Le cristal caché",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Le cristal est susceptible de se dissimuler au fond d'une impasse.",
+       "Atteindre le cristal consomme parfois une impulsion supplémentaire. Dans ce cas, une impulsion de plus sera quand même considérée en  \"Lecture parfaite\"."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hidden.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fence",
+    "label": "Barrière active",
+    "pages": [
+     {
+      "id": "fence",
+      "title": "Barrière active",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "La brèche de la barrière se déplace d'une porte à l'autre selon un ordre cyclique. Anticipe son prochain emplacement pour viser.",
+       "Bien qu'une impulsion touchant la barrière soit perdue, la porte correspondante reste ouverte définitivement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fence.fr.webp",
+       "w": 520,
+       "h": 209,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "surge",
+    "label": "Surcharge",
+    "pages": [
+     {
+      "id": "surge",
+      "title": "Surcharge",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Identifie la bonne sortie à la lumière, détruis le cristal puis fonce vers la liberté."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "surge.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

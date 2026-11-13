@@ -1,0 +1,777 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/gearball — do not edit",
+ "slug": "gearball",
+ "stamp": "c88d7165338d792a",
+ "en": {
+  "title": "Gearball",
+  "howTo": "Always catch the electric marbles and unlock the mechanisms",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "shift",
+      "title": "The shift",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each marble that reaches an arrival scores points, multiplied by the Combo.",
+       "On a keyboard, the 'Space' key moves the electric socket one step, left to right, in a loop."
+      ],
+      "rows": [
+       [
+        "A marble delivered",
+        "+10",
+        null
+       ],
+       [
+        "An electric marble collected",
+        "+150",
+        null
+       ],
+       [
+        "A loop, spiral or jump",
+        "+4",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shift.en.webp",
+       "w": 384,
+       "h": 136,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lock",
+      "title": "Locked gates",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Gates lock at random. Click the padlock to unlock the gate.",
+       "Each marble a gate lets out lights a notch of the Dynamo."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lock.en.webp",
+       "w": 476,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "volt",
+      "title": "The electric marble",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click an arrival to move the socket there. Only the blue socket captures an electric marble.",
+       "The electric marble breaks the Combo unless the electric socket collects it."
+      ],
+      "rows": [
+       [
+        "Notches",
+        "+5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "volt.en.webp",
+       "w": 456,
+       "h": 309,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switch",
+      "title": "Switches",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A switch flips only after an electric marble has passed."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switch.en.webp",
+       "w": 320,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spill",
+      "title": "Overflow",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When a queue is full, the next marble drops through the trapdoor.",
+       "A marble that rolls to the red socket costs a heart."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "spill.webp",
+       "w": 374,
+       "h": 319,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "The Dynamo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The Combo multiplies every point you score. When every notch of the Dynamo is lit, the Combo goes up by 1.",
+       "Wasting an electric marble sends the Combo back to x1."
+      ],
+      "rows": [
+       [
+        "A marble released, set free",
+        "1 notch",
+        null
+       ],
+       [
+        "An electric marble collected",
+        "5 notches",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 250,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fuse",
+      "title": "Voltage",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The outer ring of the Dynamo shows its voltage. The voltage drops while a gate stays locked.",
+       "Open the gate, or catch an electric marble, and the voltage is full again.",
+       "If the voltage runs out, the Combo drops by 1."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fuse.webp",
+       "w": 250,
+       "h": 250,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "Upgrade cards",
+    "pages": [
+     {
+      "id": "cards",
+      "title": "The upgrade pick",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When the blue socket is fully charged, catching an electric marble pauses the machine and deals two upgrade cards.",
+       "Choose the best card. One helps you, the other adds points. Sometimes a bonus comes with a risk."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cards.en.webp",
+       "w": 552,
+       "h": 396,
+       "kind": "cut",
+       "alt": "COMMON SPARE HEART +1 extra heart NOW RARE TURBO Combo +1 UNTIL THE NEXT PICK"
+      }
+     }
+    ]
+   },
+   {
+    "key": "track",
+    "label": "The track",
+    "pages": [
+     {
+      "id": "loops",
+      "title": "Loops and spirals",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every loop, spiral, jump, booster and staircase a marble rides pays a few points, times the Combo."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "loops.en.webp",
+       "w": 480,
+       "h": 263,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ferry",
+      "title": "Ferry gears",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A ferry gear carries a marble over to another line."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ferry.en.webp",
+       "w": 442,
+       "h": 286,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "moves",
+      "title": "Jumps and boosters",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "A jump throws the marble into a catcher. A booster speeds it up."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moves.en.webp",
+       "w": 482,
+       "h": 287,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tubes",
+      "title": "Tubes and hoses",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Marbles stay visible in a glass tube, partially visible in a striped tube and hidden in a hose.",
+       "The electric marble always stays visible, even through the tubes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tubes.en.webp",
+       "w": 480,
+       "h": 264,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "whirl",
+      "title": "Whirlpools and dives",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "A whirlpool spirals the marble down its drain.",
+       "A line that dives runs under the others and comes back through a pipe mouth."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "whirl.en.webp",
+       "w": 456,
+       "h": 287,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b1",
+    "label": "Workshop",
+    "pages": [
+     {
+      "id": "workshop",
+      "title": "The machines",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every level is a different machine. Here, each one has a single switch."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "workshop.en.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b2",
+    "label": "Glassworks",
+    "pages": [
+     {
+      "id": "glassworks",
+      "title": "The machines",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Two switches, and glass tubes from level 7."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "glassworks.en.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b3",
+    "label": "Gusset",
+    "pages": [
+     {
+      "id": "gusset",
+      "title": "The machines",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Four switches step down the machine."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gusset.en.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b4",
+    "label": "Depths",
+    "pages": [
+     {
+      "id": "depths",
+      "title": "The machines",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Lines cross. One dives under the other and comes back out on the other side."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "depths.en.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b5",
+    "label": "Clockwork",
+    "pages": [
+     {
+      "id": "clockwork",
+      "title": "The machines",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Six switches chained: the biggest machines of the climb."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "clockwork.en.webp",
+       "w": 480,
+       "h": 340,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Gearball",
+  "howTo": "Attrape toujours les billes électriques et déverrouille les mécanismes",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "shift",
+      "title": "La partie",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque bille atteignant une arrivée rapporte des points multipliés par le Combo.",
+       "Au clavier, la touche 'Espace' décale l'arrivée électrique d'un cran, de gauche à droite de manière cyclique."
+      ],
+      "rows": [
+       [
+        "Bille livrée",
+        "+10",
+        null
+       ],
+       [
+        "Bille électrique récupérée",
+        "+150",
+        null
+       ],
+       [
+        "Looping, spirale ou tremplin",
+        "+4",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shift.fr.webp",
+       "w": 384,
+       "h": 136,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lock",
+      "title": "Barrières verrouillées",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les barrières se verrouillent au hasard : clique sur leur cadenas pour les débloquer.",
+       "Chaque bille libérée d'une barrière allume un cran de la Dynamo."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lock.fr.webp",
+       "w": 476,
+       "h": 279,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "volt",
+      "title": "La bille électrique",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur une arrivée pour l'activer. Seule l'arrivée bleue peut capturer une bille électrique.",
+       "La bille électrique casse le Combo si elle n'est pas récupérée par une arrivée électrique."
+      ],
+      "rows": [
+       [
+        "Crans",
+        "+5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "volt.fr.webp",
+       "w": 456,
+       "h": 309,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switch",
+      "title": "Aiguillages",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un aiguillage ne bascule qu'après un passage électrique."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switch.fr.webp",
+       "w": 320,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spill",
+      "title": "Débordement",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lorsqu'une file est pleine, la bille suivante tombe par la trappe.",
+       "Une bille qui roule vers l'arrivée rouge fait perdre un cœur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "spill.webp",
+       "w": 374,
+       "h": 319,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "La Dynamo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le Combo multiplie tous tes points. Quand tous les crans de la Dynamo sont allumés, le Combo s'incrémente de 1.",
+       "Rater une bille électrique ramène le Combo à x1."
+      ],
+      "rows": [
+       [
+        "Bille libérée, délivrée",
+        "1 cran",
+        null
+       ],
+       [
+        "Bille électrique récupérée",
+        "5 crans",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 250,
+       "h": 250,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fuse",
+      "title": "La Tension",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "L'anneau extérieur de la Dynamo indique sa tension. Cette tension baisse lorsqu'une barrière reste verrouillée.",
+       "La tension remonte à son maximum lorsqu'une barrière s'ouvre ou qu'une bille électrique est capturée.",
+       "Si la tension tombe à zéro, le Combo diminue de 1."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fuse.webp",
+       "w": 250,
+       "h": 250,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "Cartes d'amélioration",
+    "pages": [
+     {
+      "id": "cards",
+      "title": "Le choix d'amélioration",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lorsque l'arrivée bleue est complètement chargée, capturer une bille électrique met la machine en pause et propose deux cartes d'amélioration.",
+       "Choisis la meilleure carte. L'une t'aide, l'autre augmente tes points et parfois un bonus s'accompagne d'un risque."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cards.fr.webp",
+       "w": 552,
+       "h": 395,
+       "kind": "cut",
+       "alt": "COMMUNE COEUR DE RECHANGE +1 cœur en plus IMMEDIAT RARE TURBO +1 au Combo JUSQU'AU PROCHAIN CHOIX"
+      }
+     }
+    ]
+   },
+   {
+    "key": "track",
+    "label": "La piste",
+    "pages": [
+     {
+      "id": "loops",
+      "title": "Loopings et Spirales",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque looping, spirale, tremplin, booster ou escalier franchi par une bille rapporte quelques points, multipliés par le Combo."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "loops.fr.webp",
+       "w": 480,
+       "h": 264,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ferry",
+      "title": "Engrenages passeurs",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un engrenage passeur transporte une bille vers une autre voie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ferry.fr.webp",
+       "w": 442,
+       "h": 285,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "moves",
+      "title": "Tremplins et Propulseurs",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Un tremplin projette la bille dans un réceptacle, tandis qu'un propulseur accélère sa course."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moves.fr.webp",
+       "w": 482,
+       "h": 287,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tubes",
+      "title": "Tubes et Soufflets",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Les billes restent visibles dans un tube de verre, partiellement visibles dans un tube rayé et masquées dans un soufflet.",
+       "La bille électrique reste toujours visible même à travers des conduits."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tubes.fr.webp",
+       "w": 480,
+       "h": 263,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "whirl",
+      "title": "Tourbillons et plongées",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Un tourbillon entraine la bille jusqu'à son siphon.",
+       "Une voie qui plonge passe sous les autres et ressort par l'embouchure d'un tuyau."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "whirl.fr.webp",
+       "w": 456,
+       "h": 287,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b1",
+    "label": "Atelier",
+    "pages": [
+     {
+      "id": "workshop",
+      "title": "Les machines",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque stage est une machine différente. Ici, elles ne possèdent qu'un seul aiguillage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "workshop.fr.webp",
+       "w": 480,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b2",
+    "label": "Verrerie",
+    "pages": [
+     {
+      "id": "glassworks",
+      "title": "Les machines",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Deux aiguillages et l'apparition de tubes de verre dès le stage 7."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "glassworks.fr.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b3",
+    "label": "Gousset",
+    "pages": [
+     {
+      "id": "gusset",
+      "title": "Les machines",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Quatre aiguillages structurent la machine en escalier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gusset.fr.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b4",
+    "label": "Profondeurs",
+    "pages": [
+     {
+      "id": "depths",
+      "title": "Les machines",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Les voies se croisent : l'une plonge sous l'autre et réapparaît de l'autre côté."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "depths.fr.webp",
+       "w": 480,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "b5",
+    "label": "Horlogerie",
+    "pages": [
+     {
+      "id": "clockwork",
+      "title": "Les machines",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Six aiguillages enchaînés pour former les plus grandes machines de l'ascension."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "clockwork.fr.webp",
+       "w": 480,
+       "h": 340,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

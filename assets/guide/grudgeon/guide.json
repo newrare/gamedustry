@@ -1,0 +1,2841 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/grudgeon — do not edit",
+ "slug": "grudgeon",
+ "stamp": "12b83d3f7a1c3b05",
+ "en": {
+  "title": "Grudgeon",
+  "howTo": "Tap a lit tile to explore it. Fight the Yokai hiding inside next",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "map",
+      "title": "The map",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click a lit room to walk there and open it. A far room takes more clicks."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "map.webp",
+       "w": 380,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "party",
+      "title": "Your heroes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each level starts with a single hero, who changes from biome to biome.",
+       "The other heroes wait in rooms of the dungeon. Each extra recruit burns more candles."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "party.webp",
+       "w": 554,
+       "h": 252,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "candles",
+      "title": "The lantern",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lit rooms hide what they hold if the lantern is out.",
+       "Find or buy candle stubs to light the lantern again."
+      ],
+      "rows": [
+       [
+        "A step burns",
+        "1 per standing hero",
+        null
+       ],
+       [
+        "Yokai in the dark",
+        "+30%",
+        "#ff6e6e"
+       ],
+       [
+        "A step in the dark",
+        "-5% health",
+        "#ff6e6e"
+       ]
+      ],
+      "pic": {
+       "file": "candles.en.webp",
+       "w": 520,
+       "h": 136,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goals",
+      "title": "The objectives",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each level sets one goal: exorcise Yokai or the master, find gold, or get out of the dungeon alive. Click the stars at the bottom left of the screen to see the objectives required.",
+       "The run ends when your last hero falls or when nothing is left to accomplish."
+      ],
+      "rows": [
+       [
+        "Reach the initial objective",
+        "★",
+        null
+       ],
+       [
+        "Twice the initial objective",
+        "★★",
+        null
+       ],
+       [
+        "Three times the initial objective",
+        "★★★",
+        null
+       ],
+       [
+        "Way out or exorcised Master",
+        "★",
+        null
+       ],
+       [
+        "Enough Yokai on the way",
+        "★",
+        null
+       ],
+       [
+        "No hero falls",
+        "★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "goals.webp",
+       "w": 480,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fight",
+    "label": "The fight",
+    "pages": [
+     {
+      "id": "fight",
+      "title": "A fight",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Entering a Yokai's room starts a fight. Exorcise the Yokai to clear the room.",
+       "Beware, as a Yokai adapts to the size and power of your team."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fight.webp",
+       "w": 482,
+       "h": 302,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "timeline",
+      "title": "The timeline",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Heroes and Yokai take turns following the timeline. The first in line, on the left, acts.",
+       "An hourglass on a scroll moves the hero's next turn. The turn comes back sooner for a green hourglass but later for an amber one."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "timeline.webp",
+       "w": 470,
+       "h": 150,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "intents",
+      "title": "The Yokai's turns",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The Yokai's actions are always predictable. You know what is coming in advance.",
+       "A red KO over a hero means the next blow will knock them out."
+      ],
+      "rows": [
+       [
+        "Guard",
+        "halves a blow",
+        null
+       ],
+       [
+        "Spirit ward",
+        "-40% for two turns",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "intents.webp",
+       "w": 470,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scrolls",
+      "title": "The scrolls",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each scroll does one thing on the Yokai and a variant on an ally.",
+       "Click its red side to use the action on the Yokai, its blue side to apply it to the ally.",
+       "Hold a blue or red scroll to read what it does."
+      ],
+      "rows": [
+       [
+        "Guard on oneself",
+        "+5 SP",
+        "#8fdcff"
+       ]
+      ],
+      "pic": {
+       "file": "scrolls.webp",
+       "w": 442,
+       "h": 208,
+       "kind": "cut",
+       "alt": "-8 -12"
+      }
+     },
+     {
+      "id": "learn",
+      "title": "New scrolls",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every hero has attack and guard skills and a scroll of their own.",
+       "After a fight won, every hero who took part will unlock a special second scroll."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "learn.webp",
+       "w": 442,
+       "h": 208,
+       "kind": "cut",
+       "alt": "-8 -6"
+      }
+     },
+     {
+      "id": "elements",
+      "title": "Weaknesses and resistances",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Try several different elements to find a Yokai's weaknesses. The damage prediction will adapt once a weakness is discovered."
+      ],
+      "rows": [
+       [
+        "A weakness",
+        "×2 with 2 attacks in a row",
+        "#ffd166"
+       ],
+       [
+        "Resisted",
+        "Half",
+        "#a8a2b8"
+       ]
+      ],
+      "pic": {
+       "file": "elements.webp",
+       "w": 500,
+       "h": 96,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rule",
+      "title": "How to beat a Yokai",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every Yokai has its own way to be beaten. Until you find it, your blows will be much weaker.",
+       "An opening often stays open for several turns. Click the Yokai in a fight for more information.",
+       "A gold scroll can be a solution or a trap."
+      ],
+      "rows": [
+       [
+        "Locked",
+        "-80%",
+        "#ff8a9a"
+       ],
+       [
+        "Open",
+        "+50%",
+        "#7ee0a1"
+       ]
+      ],
+      "pic": {
+       "file": "rule.webp",
+       "w": 276,
+       "h": 222,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "flee",
+      "title": "Flee",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The escape worked, but the Yokai has moved to another room.",
+       "Fleeing sometimes works, depending on whether the hero is faster or slower than the Yokai encountered. A failed escape will cost the turn and a blow. Beware, as a 'master' never lets you go."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "flee.webp",
+       "w": 118,
+       "h": 208,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "heroes",
+    "label": "The heroes",
+    "pages": [
+     {
+      "id": "hero-akane",
+      "title": "Akane",
+      "eyebrow": "Shrine maiden",
+      "lv": null,
+      "text": [
+       "Akane grew up sweeping the steps of her family's shrine.",
+       "Since the night its bell rang on its own, Akane has been purifying the places the Yokai haunt.",
+       "Click a hero in a fight to see their health, their turn and their scrolls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-akane.webp",
+       "w": 306,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-kenji",
+      "title": "Kenji",
+      "eyebrow": "Kendo captain",
+      "lv": null,
+      "text": [
+       "Kenji captains the school kendo club and, as a result, has never lost a bout.",
+       "When a classmate mysteriously vanished in the school one night, Kenji took his bamboo sword and set out to find her.",
+       "Click a hero in a fight to see their health, their turn and their scrolls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-kenji.webp",
+       "w": 294,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-yuki",
+      "title": "Yuki",
+      "eyebrow": "Onmyoji",
+      "lv": null,
+      "text": [
+       "Yuki's family has read the stars and bound spirits with paper talismans for a thousand years.",
+       "Sadly, today nobody else in the family still believes in the old rites.",
+       "Click a hero in a fight to see their health, their turn and their scrolls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-yuki.webp",
+       "w": 280,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-haru",
+      "title": "Haru",
+      "eyebrow": "Occult photographer",
+      "lv": null,
+      "text": [
+       "Haru sells ghost photos to magazines, and almost all of them are fakes.",
+       "Then one day, Haru's camera finally captured a real one. The flash made the ghost scream, or maybe Haru himself.",
+       "Click a hero in a fight to see their health, their turn and their scrolls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-haru.webp",
+       "w": 276,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "skills",
+    "label": "The scrolls",
+    "pages": [
+     {
+      "id": "skill-attack",
+      "title": "Attack",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a plain blow with the hero's weapon.",
+       "On an ally: you step in and take the Yokai's damage if this ally was the Yokai's only target."
+      ],
+      "rows": [
+       [
+        "SP",
+        "0",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Slash",
+        "#e8e6f0"
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-attack.webp",
+       "w": 198,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skill-guard",
+      "title": "Guard",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: you stand on guard, as the Yokai's next attack will be aimed at you.",
+       "On an ally: this hero takes half damage until their next turn with a +5 SP bonus on themselves."
+      ],
+      "rows": [
+       [
+        "SP",
+        "0",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "—",
+        null
+       ],
+       [
+        "Speed",
+        "Quick",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-guard.webp",
+       "w": 198,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skill-purify",
+      "title": "Purify",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a strong blow of light.",
+       "On an ally: this hero's next blow will be light."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Light",
+        "#fff2a8"
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-purify.webp",
+       "w": 308,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     },
+     {
+      "id": "skill-blessing",
+      "title": "Blessing",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: halves the Yokai's next blow.",
+       "On an ally: heals every hero by a third of their health."
+      ],
+      "rows": [
+       [
+        "SP",
+        "12",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "—",
+        null
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-blessing.webp",
+       "w": 308,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-12"
+      }
+     },
+     {
+      "id": "skill-iai",
+      "title": "Iai slash",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a slow cut that can delay the hero's next turn, but it remains very strong.",
+       "On an ally: this hero's next blow hits 50% harder."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Slash",
+        "#e8e6f0"
+       ],
+       [
+        "Speed",
+        "Slow",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-iai.webp",
+       "w": 302,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     },
+     {
+      "id": "skill-ward",
+      "title": "Spirit ward",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: pushes the Yokai's turn back on the timeline.",
+       "On an ally: every hero takes 40% less damage from the Yokai's next two attacks."
+      ],
+      "rows": [
+       [
+        "SP",
+        "6",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "—",
+        null
+       ],
+       [
+        "Speed",
+        "Quick",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-ward.webp",
+       "w": 302,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-6"
+      }
+     },
+     {
+      "id": "skill-frost",
+      "title": "Frost talisman",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a strong blow of ice.",
+       "On an ally: this hero's next blow will be ice."
+      ],
+      "rows": [
+       [
+        "SP",
+        "9",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Ice",
+        "#8fdcff"
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-frost.webp",
+       "w": 292,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-9"
+      }
+     },
+     {
+      "id": "skill-foxfire",
+      "title": "Foxfire",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a strong blow of fire.",
+       "On an ally: this hero's next blow will be fire."
+      ],
+      "rows": [
+       [
+        "SP",
+        "9",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Fire",
+        "#ff7a3d"
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-foxfire.webp",
+       "w": 292,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-9"
+      }
+     },
+     {
+      "id": "skill-flash",
+      "title": "Flash",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a quick blow of light that will push back the Yokai's next attack.",
+       "On an ally: this ally will attack sooner."
+      ],
+      "rows": [
+       [
+        "SP",
+        "10",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Light",
+        "#fff2a8"
+       ],
+       [
+        "Speed",
+        "Quick",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-flash.webp",
+       "w": 290,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-10"
+      }
+     },
+     {
+      "id": "skill-ghostshot",
+      "title": "Ghost shot",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On the Yokai: a spirit attack that goes through almost all of the Yokai's defences.",
+       "On an ally: this hero's next blow will be a spirit attack."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Element",
+        "Spirit",
+        "#b69cff"
+       ],
+       [
+        "Speed",
+        "Normal",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-ghostshot.webp",
+       "w": 290,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rooms",
+    "label": "The rooms",
+    "pages": [
+     {
+      "id": "shop",
+      "title": "Shop",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "The Ofuda is sold only once a hero has already fallen. Candles are also always on sale if your lantern burns low."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shop.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      },
+      "node": {
+       "file": "shop--node.en.webp",
+       "w": 554,
+       "h": 657,
+       "kind": "cut",
+       "alt": "HEALING HERBS Heals every hero by 40% · 20 gold SACRED SAKE Restores half of every hero's SP · 18 gold OFUDA OF RETURN Revives fallen heroes · 30 gold IRON OMAMORI +10% defence for the whole team · 35 gold PRAYER BEADS +10% attack for the whole team · 35 gold CANDLES Lights the lantern for a while · 16 gold"
+      }
+     },
+     {
+      "id": "altar",
+      "title": "Altar",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Pick one blessing out of three choices. It then lasts the whole run, for every hero, newcomers included."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "altar.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      },
+      "node": {
+       "file": "altar--node.en.webp",
+       "w": 554,
+       "h": 496,
+       "kind": "cut",
+       "alt": "VIGOUR +20% healing and max health FOCUS Refill and +10 max SP EDGE Attack +10% SHELL Defence +10% SWIFT Speed +2 SPARK +20% damage for attack scrolls"
+      }
+     },
+     {
+      "id": "event",
+      "title": "Event",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "In the dungeon, a special event may happen. You will then have to make a clear-cut choice.",
+       "Your choice may be beneficial or dangerous depending on the situation."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "event.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ally",
+      "title": "A hero",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A hero waits in this room. Walk in and the hero will join you."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ally.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bonus",
+      "title": "Bonus",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Get a gift right away: gold, candles, healing, SP or an Ofuda."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bonus.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "exit",
+      "title": "Way out",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "A Torii stands lit in the farthest room. Walk into it to end the run.",
+       "Make sure you have completed all the objectives before leaving the dungeon."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "exit.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "master",
+      "title": "Master of the place",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "The master waits in the farthest room. Exorcise it to end the run.",
+       "Make sure you have explored the dungeon well before facing it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "master.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "Night school",
+    "pages": [
+     {
+      "id": "band-1",
+      "title": "Night school",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The lantern burns from the very first step."
+      ],
+      "rows": [
+       [
+        "First hero",
+        "Kenji",
+        "#5aa9ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-1.en.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-hanako",
+      "title": "Hanako-san",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A schoolgirl vanished long ago in the third stall of the girls' toilets, and since then Hanako-san has haunted that stall.",
+       "Whoever knocks three times while calling Hanako-san gets a murmur in reply from behind the door. Only those who dare to wait longer will see that door open.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-hanako.webp",
+       "w": 254,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-teketeke",
+      "title": "Teke Teke",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Teke Teke is a girl who lost her legs under a train one winter night.",
+       "Teke Teke has nonetheless come back in a form that lets her run very fast. Running away is therefore useless and only a fall can stop her.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-teketeke.webp",
+       "w": 468,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-jinmenken",
+      "title": "Jinmenken",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Jinmenken is a stray dog with the face of a man nobody remembers.",
+       "Jinmenken rummages through the bins at night and mutters \"Leave me be\" to anyone who looks. Those who listen or walk on are never bothered again.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-jinmenken.webp",
+       "w": 454,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-akamanto",
+      "title": "Aka Manto",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Aka Manto waits in the school and asks a single question. Red cape or blue cape?",
+       "Whoever answers red is slashed and whoever answers blue turns as pale as a ghost. Neither answer seems to be the right one.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-akamanto.webp",
+       "w": 312,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Hospital",
+    "pages": [
+     {
+      "id": "band-2",
+      "title": "Hospital",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Fire doors and seals appear here."
+      ],
+      "rows": [
+       [
+        "First hero",
+        "Akane",
+        "#c77dff"
+       ]
+      ],
+      "pic": {
+       "file": "band-2.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "doors",
+      "title": "Fire doors and seals",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A fire door opens one way only. Once you are through, the rooms left behind are lost.",
+       "A seal-breaker opens one sealed door. But sometimes there are more sealed doors than spells to break them."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "doors.en.webp",
+       "w": 510,
+       "h": 140,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kuchisake",
+      "title": "Kuchisake-onna",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Kuchisake-onna walks the streets at dusk with a mask over her mouth.",
+       "Kuchisake-onna stops passers-by to ask \"Am I pretty?\" and then lowers the mask on a torn smile. No polite answer can save them and only the bravest still dare to reply to these questions.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kuchisake.en.webp",
+       "w": 364,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-ubume",
+      "title": "Ubume",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Ubume is a mother who never got to raise her child.",
+       "Ubume waits by the road on rainy nights and begs passers-by to hold her baby. The baby then grows heavier and heavier in someone else's arms, until escape is no longer possible.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-ubume.webp",
+       "w": 356,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-gaki",
+      "title": "Gaki",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "A gaki is a soul punished for its greed with a hunger that never ends.",
+       "The belly of a gaki stays empty whatever it swallows. A gaki therefore devours everything within reach and swallows absolutely everything. Only a spell or an offering can calm it for a moment.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-gaki.webp",
+       "w": 274,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-nopperabo",
+      "title": "Nopperabo",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Nopperabo looks like anyone else from behind.",
+       "But Nopperabo turns round to show a smooth face with no eyes, no nose and no mouth. Those who meet it soon learn to wait until it turns its back again.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-nopperabo.webp",
+       "w": 284,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "Shrine forest",
+    "pages": [
+     {
+      "id": "band-3",
+      "title": "Shrine forest",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Here, some Yokai wander the map."
+      ],
+      "rows": [
+       [
+        "First hero",
+        "Yuki",
+        "#9ce7ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-3.en.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "roam",
+      "title": "Wandering Yokai",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A wandering Yokai roams the corridors. The red arrow shows its next move.",
+       "A wandering Yokai that catches up with you in a room will act."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "roam.webp",
+       "w": 480,
+       "h": 156,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kasaobake",
+      "title": "Kasa-obake",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Kasa-obake is an old umbrella that came to life on its hundredth birthday.",
+       "Kasa-obake has hopped about on its one leg ever since and sticks out a long tongue at passers-by. This nimble umbrella still fears fire above all because of its oiled paper.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kasaobake.webp",
+       "w": 310,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-chochin",
+      "title": "Chochin-obake",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Chochin-obake is a paper lantern left alone too long in a temple.",
+       "One night a tear in the lantern's paper created a mouth. A ghostly flame then lit up inside. That flame warms nothing but grows until it burns everything around it.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-chochin.webp",
+       "w": 314,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-jorogumo",
+      "title": "Jorogumo",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "Jorogumo is a four-hundred-year-old spider that took the shape of a beautiful woman.",
+       "Jorogumo lures travellers to her house in the woods this way and wraps them in silk. Her prey then becomes her shield until someone steps in or she decides to eat.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-jorogumo.webp",
+       "w": 436,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-tengu",
+      "title": "Tengu",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Red-faced and long-nosed Tengu lives at the top of the mountain pines.",
+       "A single sweep of Tengu's feather fan raises a gale that throws travellers off the path. Only those who stand firm can catch Tengu out of breath.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-tengu.webp",
+       "w": 340,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Drowned village",
+    "pages": [
+     {
+      "id": "band-4",
+      "title": "Drowned village",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Here, your heroes can split into two groups."
+      ],
+      "rows": [
+       [
+        "First hero",
+        "Haru",
+        "#ffd166"
+       ]
+      ],
+      "pic": {
+       "file": "band-4.en.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "split",
+      "title": "Split the party",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Click 'Split' to divide your party into two groups. Then click the group of your choice to lead it.",
+       "A group in a neighbouring room will join the fight late. If one group falls, the other carries on."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "split.webp",
+       "w": 480,
+       "h": 236,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kappa",
+      "title": "Kappa",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Kappa lives in the rivers and drags swimmers under.",
+       "Kappa's strength comes from the water in the dish on its head. Legend says it always returns a bow and spills that water. But unfortunately this Kappa has forgotten its manners.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kappa.webp",
+       "w": 314,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-nureonna",
+      "title": "Nure-onna",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Nure-onna has a woman's head on the body of a sea serpent.",
+       "Nure-onna waits on the shore with dripping hair for someone to come closer. Her coils then close around her prey and only those on their guard slip free.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-nureonna.en.webp",
+       "w": 408,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-funayurei",
+      "title": "Funayurei",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Funayurei is the ghost of drowned sailors. Funayurei rises beside the boats at night and asks for a ladle to fill the boats until they sink.",
+       "That is why wise sailors hand Funayurei a ladle with a hole in it and bail out their boat before it is too late.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-funayurei.webp",
+       "w": 372,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-umibozu",
+      "title": "Umibozu",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "Umibozu is a giant as dark as the sea with a bald head and round eyes.",
+       "Umibozu rises out of calm water and breaks the boats of those who speak to it. The giant always pulls back in the end like the tide, however.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-umibozu.webp",
+       "w": 394,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Gate of Yomi",
+    "pages": [
+     {
+      "id": "band-5",
+      "title": "Gate of Yomi",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "All of it at once: doors, seals, wandering Yokai and the split party."
+      ],
+      "rows": [
+       [
+        "First hero",
+        "Kenji",
+        "#5aa9ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-5.en.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-rokurokubi",
+      "title": "Rokurokubi",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Rokurokubi is a woman like any other by day.",
+       "But at night Rokurokubi's neck stretches across the house to lap the lamp oil or spy on the sleepers.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-rokurokubi.webp",
+       "w": 334,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-gashadokuro",
+      "title": "Gashadokuro",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Gashadokuro is a giant skeleton made of the bones of the forgotten dead.",
+       "Gashadokuro's teeth go Gasha Gasha in the dark just before it grabs you. This slow and heavy giant lets runaways escape and falls asleep waiting for them to come back.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-gashadokuro.webp",
+       "w": 410,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-oni",
+      "title": "Oni",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "Oni is a horned ogre who guards the gate of the underworld with an iron club.",
+       "Every child learns at Setsubun that thrown beans drive Oni back. But Oni learns too and the same trick never works twice in a row.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-oni.webp",
+       "w": 350,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-onryo",
+      "title": "Onryo",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Onryo is a vengeful spirit back from the dead with long black hair over a white robe.",
+       "The grudge of an Onryo outlives even those who wronged it. Every blow it takes feeds that grudge and it always pays it back in the end.",
+       "Click the Yokai in a fight to see its health, its weaknesses and its next turns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-onryo.webp",
+       "w": 422,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Grudgeon",
+  "howTo": "Touche une case éclairée pour l'explorer. Combat ensuite le Yokai qui s'y cache",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "map",
+      "title": "La carte",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur une salle éclairée pour y aller et l'ouvrir. Une salle lointaine demande plus de clics."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "map.webp",
+       "w": 380,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "party",
+      "title": "Tes héros",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque stage commence avec un unique héros, qui varie selon le biome.",
+       "Les autres héros patientent dans les salles du donjon. Chaque recrue supplémentaire augmente la consommation de bougies."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "party.webp",
+       "w": 554,
+       "h": 252,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "candles",
+      "title": "La lanterne",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les salles éclairées cachent leur contenu si la lanterne est éteinte.",
+       "Trouve ou achète des morceaux de bougie pour rallumer la lanterne."
+      ],
+      "rows": [
+       [
+        "Un pas brûle",
+        "1 par héros debout",
+        null
+       ],
+       [
+        "Les Yokai dans l'obscurité",
+        "+30%",
+        "#ff6e6e"
+       ],
+       [
+        "Un pas dans le noir",
+        "-5% de santé",
+        "#ff6e6e"
+       ]
+      ],
+      "pic": {
+       "file": "candles.fr.webp",
+       "w": 520,
+       "h": 136,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goals",
+      "title": "Les objectifs de mission",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque stage fixe un but : exorciser des Yokai ou Maître, trouver de l'or ou sortir vivant du donjon. Clique sur les étoiles en bas à gauche de l'écran pour voir les objectifs demandés.",
+       "L'expédition s'arrête quand ton dernier héros tombe ou quand il ne reste plus rien à accomplir."
+      ],
+      "rows": [
+       [
+        "Atteins l'objectif initial",
+        "★",
+        null
+       ],
+       [
+        "Le double de l'objectif initial",
+        "★★",
+        null
+       ],
+       [
+        "Le triple de l'objectif initial",
+        "★★★",
+        null
+       ],
+       [
+        "Sortie ou Maître exorcisé",
+        "★",
+        null
+       ],
+       [
+        "Assez de Yokai en chemin",
+        "★",
+        null
+       ],
+       [
+        "Aucun héros ne tombe",
+        "★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "goals.webp",
+       "w": 480,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fight",
+    "label": "Le système de combat",
+    "pages": [
+     {
+      "id": "fight",
+      "title": "Un combat",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Entre dans la salle d'un Yokai pour démarrer un combat. Exorcise-le pour libérer la salle.",
+       "Attention car un Yokai s'adapte au nombre et à la puissance de ton équipe."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fight.webp",
+       "w": 482,
+       "h": 302,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "timeline",
+      "title": "La frise chronologique",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Héros et Yokai jouent chacun leur tour en suivant la frise. Le premier de la file à gauche agit.",
+       "Un sablier sur un parchemin déplace le prochain tour du héros. Le tour reviendra plus tôt pour un sablier vert mais plus tard pour un sablier ambre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "timeline.webp",
+       "w": 470,
+       "h": 150,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "intents",
+      "title": "Les tours du Yokai",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les actions du Yokai sont toujours prévisibles. Tu sais donc ce qui t'attend à l'avance.",
+       "Un KO rouge au-dessus d'un héros annonce que le prochain coup le mettra à terre."
+      ],
+      "rows": [
+       [
+        "Garde",
+        "divise un coup par deux",
+        null
+       ],
+       [
+        "Rempart spirituel",
+        "-40% pendant deux tours",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "intents.webp",
+       "w": 470,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scrolls",
+      "title": "Les parchemins",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque parchemin a un effet sur le Yokai et une variante sur un allié.",
+       "Clique sur son côté rouge pour lancer l'action sur le Yokai, son côté bleu pour l'appliquer à l'allié.",
+       "Maintiens un parchemin bleu ou rouge pour lire ce qu'il fait."
+      ],
+      "rows": [
+       [
+        "Garde sur soi",
+        "+5 SP",
+        "#8fdcff"
+       ]
+      ],
+      "pic": {
+       "file": "scrolls.webp",
+       "w": 442,
+       "h": 208,
+       "kind": "cut",
+       "alt": "-8 -12"
+      }
+     },
+     {
+      "id": "learn",
+      "title": "Nouveaux parchemins",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque héros dispose de compétences d'attaque, de garde et d'un parchemin personnel.",
+       "À l'issue d'un combat victorieux, chaque participant débloquera un second parchemin spécial."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "learn.webp",
+       "w": 442,
+       "h": 208,
+       "kind": "cut",
+       "alt": "-8 -6"
+      }
+     },
+     {
+      "id": "elements",
+      "title": "Faiblesses et résistances",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Essaie plusieurs éléments différents pour trouver les faiblesses d'un Yokai. La prédiction de dégâts s'adaptera si la faiblesse est découverte."
+      ],
+      "rows": [
+       [
+        "Une faiblesse",
+        "×2 avec 2 attaques de suite",
+        "#ffd166"
+       ],
+       [
+        "Résistance",
+        "Moitié",
+        "#a8a2b8"
+       ]
+      ],
+      "pic": {
+       "file": "elements.webp",
+       "w": 500,
+       "h": 96,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rule",
+      "title": "Comment vaincre un Yokai",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque Yokai a sa propre façon d'être vaincu. Tant que tu ne l'as pas trouvée, tes coups seront beaucoup plus faibles.",
+       "Souvent, une faille reste ouverte plusieurs tours. Clique sur le Yokai en partie pour plus d'informations.",
+       "Un parchemin doré peut être une solution ou un piège."
+      ],
+      "rows": [
+       [
+        "Verrouillé",
+        "-80%",
+        "#ff8a9a"
+       ],
+       [
+        "Ouvert",
+        "+50%",
+        "#7ee0a1"
+       ]
+      ],
+      "pic": {
+       "file": "rule.webp",
+       "w": 276,
+       "h": 222,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "flee",
+      "title": "Fuir",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "La fuite est réussie mais le Yokai s'est déplacé dans une autre salle.",
+       "La fuite marche parfois, cela dépend si le héros est plus rapide ou non que le Yokai rencontré. Une fuite ratée coûtera le tour et un coup. Attention car un 'maître' ne te laisse jamais partir."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "flee.webp",
+       "w": 118,
+       "h": 208,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "heroes",
+    "label": "Les héros",
+    "pages": [
+     {
+      "id": "hero-akane",
+      "title": "Akane",
+      "eyebrow": "Prêtresse",
+      "lv": null,
+      "text": [
+       "Akane a grandi en balayant les marches du sanctuaire familial.",
+       "Depuis la nuit où la cloche a sonné toute seule, Akane purifie les lieux hantés par les Yokai.",
+       "Clique sur un héros en combat pour voir sa santé, son tour et ses parchemins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-akane.webp",
+       "w": 306,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-kenji",
+      "title": "Kenji",
+      "eyebrow": "Capitaine de kendo",
+      "lv": null,
+      "text": [
+       "Kenji est capitaine du club de kendo du lycée et n'a de ce fait jamais perdu un combat.",
+       "Quand une nuit, une camarade a mystérieusement disparu dans le lycée, Kenji a pris son sabre de bambou afin de partir à sa recherche.",
+       "Clique sur un héros en combat pour voir sa santé, son tour et ses parchemins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-kenji.webp",
+       "w": 294,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-yuki",
+      "title": "Yuki",
+      "eyebrow": "Onmyoji",
+      "lv": null,
+      "text": [
+       "Depuis mille ans, la famille de Yuki lit les étoiles et lie les esprits avec des talismans de papier.",
+       "Malheureusement aujourd'hui, plus personne d'autre dans la famille ne croit aux anciens rites.",
+       "Clique sur un héros en combat pour voir sa santé, son tour et ses parchemins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-yuki.webp",
+       "w": 280,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "hero-haru",
+      "title": "Haru",
+      "eyebrow": "Photographe du paranormal",
+      "lv": null,
+      "text": [
+       "Haru vend des photos de fantômes aux magazines, presque toutes truquées.",
+       "Puis un jour, l'appareil de Haru en a finalement capturé un vrai. Le flash a fait hurler le fantôme ou bien Haru lui-même.",
+       "Clique sur un héros en combat pour voir sa santé, son tour et ses parchemins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hero-haru.webp",
+       "w": 276,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "skills",
+    "label": "Les parchemins",
+    "pages": [
+     {
+      "id": "skill-attack",
+      "title": "Attaque",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : un coup simple avec l'arme du héros.",
+       "Sur un allié : tu t'interposes et prends les dégâts du Yokai si cet allié était la seule cible du Yokai."
+      ],
+      "rows": [
+       [
+        "SP",
+        "0",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Tranchant",
+        "#e8e6f0"
+       ],
+       [
+        "Vitesse",
+        "Normale",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-attack.webp",
+       "w": 198,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skill-guard",
+      "title": "Garde",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : tu te mets en garde car la prochaine attaque du Yokai sera pour toi.",
+       "Sur un allié : ce héros subit deux fois moins de dégâts jusqu'à son prochain tour avec un bonus de +5 SP sur soi-même."
+      ],
+      "rows": [
+       [
+        "SP",
+        "0",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "—",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-guard.webp",
+       "w": 198,
+       "h": 268,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "skill-purify",
+      "title": "Purification",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : un puissant coup de lumière.",
+       "Sur un allié : le prochain coup de ce héros sera de lumière."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Lumière",
+        "#fff2a8"
+       ],
+       [
+        "Vitesse",
+        "Normale",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-purify.webp",
+       "w": 308,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     },
+     {
+      "id": "skill-blessing",
+      "title": "Bénédiction",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : divise par deux le prochain coup du Yokai.",
+       "Sur un allié : soigne chaque héros d'un tiers de sa santé."
+      ],
+      "rows": [
+       [
+        "SP",
+        "12",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "—",
+        null
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-blessing.webp",
+       "w": 308,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-12"
+      }
+     },
+     {
+      "id": "skill-iai",
+      "title": "Coup d'iai",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : une coupe lente qui peut ralentir le prochain tour du héros mais elle reste très puissante.",
+       "Sur un allié : le prochain coup de ce héros frappe 50% plus fort."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Tranchant",
+        "#e8e6f0"
+       ],
+       [
+        "Vitesse",
+        "Lent",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-iai.webp",
+       "w": 302,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     },
+     {
+      "id": "skill-ward",
+      "title": "Rempart spirituel",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : repousse le tour du Yokai sur la frise.",
+       "Sur un allié : chaque héros subit 40% de dégâts en moins pour les deux prochaines attaques du Yokai."
+      ],
+      "rows": [
+       [
+        "SP",
+        "6",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "—",
+        null
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-ward.webp",
+       "w": 302,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-6"
+      }
+     },
+     {
+      "id": "skill-frost",
+      "title": "Talisman de givre",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : un puissant coup de glace.",
+       "Sur un allié : le prochain coup de ce héros sera en glace."
+      ],
+      "rows": [
+       [
+        "SP",
+        "9",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Glace",
+        "#8fdcff"
+       ],
+       [
+        "Vitesse",
+        "Normale",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-frost.webp",
+       "w": 292,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-9"
+      }
+     },
+     {
+      "id": "skill-foxfire",
+      "title": "Feu follet",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : un puissant coup de flammes.",
+       "Sur un allié : le prochain coup de ce héros sera en feu."
+      ],
+      "rows": [
+       [
+        "SP",
+        "9",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Feu",
+        "#ff7a3d"
+       ],
+       [
+        "Vitesse",
+        "Normale",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-foxfire.webp",
+       "w": 292,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-9"
+      }
+     },
+     {
+      "id": "skill-flash",
+      "title": "Flash",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : un rapide coup de lumière qui repoussera la prochaine attaque du Yokai.",
+       "Sur un allié : cet allié attaquera plus tôt."
+      ],
+      "rows": [
+       [
+        "SP",
+        "10",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Lumière",
+        "#fff2a8"
+       ],
+       [
+        "Vitesse",
+        "Rapide",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-flash.webp",
+       "w": 290,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-10"
+      }
+     },
+     {
+      "id": "skill-ghostshot",
+      "title": "Cliché spectral",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur le Yokai : une attaque d'esprit qui traverse presque toutes les défenses du Yokai.",
+       "Sur un allié : le prochain coup de ce héros sera une attaque d'esprit."
+      ],
+      "rows": [
+       [
+        "SP",
+        "8",
+        "#8fdcff"
+       ],
+       [
+        "Élément",
+        "Esprit",
+        "#b69cff"
+       ],
+       [
+        "Vitesse",
+        "Normale",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "skill-ghostshot.webp",
+       "w": 290,
+       "h": 222,
+       "kind": "cut",
+       "alt": "-8"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rooms",
+    "label": "Les salles",
+    "pages": [
+     {
+      "id": "shop",
+      "title": "Boutique",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "L'Ofuda n'est vendu que si un héros est déjà tombé. Des bougies sont aussi toujours en vente si ta lanterne faiblit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shop.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      },
+      "node": {
+       "file": "shop--node.fr.webp",
+       "w": 554,
+       "h": 657,
+       "kind": "cut",
+       "alt": "HERBES DE SOIN Soigne chaque héros de 40% · 20 or SAKE SACRE Rend à chaque héros la moitié de ses SP · 18 or OFUDA DU RETOUR Réanime les héros tombés · 30 or OMAMORI DE FER +10% de défense pour toute l'équipe · 35 or CHAPELET +10% d'attaque pour toute l'équipe · 35 or BOUGIES Rallume la lanterne pendant un moment · 16 or"
+      }
+     },
+     {
+      "id": "altar",
+      "title": "Autel",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Choisis une bénédiction parmi trois choix. Elle dure ensuite pour toute l'expédition et pour chaque héros, même ceux qui te rejoignent ensuite."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "altar.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      },
+      "node": {
+       "file": "altar--node.fr.webp",
+       "w": 554,
+       "h": 496,
+       "kind": "cut",
+       "alt": "VIGUEUR +20% de soin et santé max CONCENTRATION Recharge et +10 de SP max AFFUTAGE Attaque +10% CARAPACE Défense +10% VIVACITE Vitesse +2 ETINCELLE +20% de dégâts pour les parchemins d'attaque"
+      }
+     },
+     {
+      "id": "event",
+      "title": "Évènement",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Dans le donjon, un événement particulier peut arriver. Tu devras alors faire un choix tranché.",
+       "Ton choix pourra être bénéfique ou dangereux suivant la situation."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "event.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ally",
+      "title": "Un héros",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Un héros attend dans cette salle. Entre et il te rejoindra."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ally.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bonus",
+      "title": "Bonus",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Obtiens un cadeau immédiatement : or, bougies, soin, SP ou Ofuda."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bonus.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "exit",
+      "title": "La sortie",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Un Torii éclairé attend dans la salle la plus lointaine. Entres-y pour terminer l'expédition.",
+       "Assure-toi d'avoir rempli tous les objectifs avant de sortir du donjon."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "exit.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "master",
+      "title": "Maître des lieux",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Le maître attend dans la salle la plus lointaine. Exorcise-le pour terminer l'expédition.",
+       "Assure-toi d'avoir bien exploré le donjon avant de l'affronter."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "master.webp",
+       "w": 200,
+       "h": 180,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "École de nuit",
+    "pages": [
+     {
+      "id": "band-1",
+      "title": "École de nuit",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "La lanterne brûle dès le premier pas."
+      ],
+      "rows": [
+       [
+        "Premier héros",
+        "Kenji",
+        "#5aa9ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-1.fr.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-hanako",
+      "title": "Hanako-san",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une écolière a disparu il y a bien longtemps dans la troisième cabine des toilettes des filles et Hanako-san hante cette cabine depuis.",
+       "Quiconque toque trois fois en appelant Hanako-san obtient en réponse un murmure derrière la porte. Seuls ceux qui oseront attendre plus longtemps verront cette porte s'ouvrir.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-hanako.webp",
+       "w": 254,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-teketeke",
+      "title": "Teke Teke",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Teke Teke est une jeune fille qui a perdu ses jambes sous un train un soir d'hiver.",
+       "Teke Teke est pourtant revenue sous une apparence lui permettant de courir très vite. Il est donc inutile de la fuir et seule une chute peut l'arrêter.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-teketeke.webp",
+       "w": 468,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-jinmenken",
+      "title": "Jinmenken",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Jinmenken est un chien errant qui porte le visage d'un homme dont personne ne se souvient.",
+       "Jinmenken fouille les poubelles la nuit et marmonne « Laisse-moi » à qui le regarde. Ceux qui l'écoutent ou ceux qui passent leur chemin ne sont plus jamais importunés.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-jinmenken.webp",
+       "w": 454,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-akamanto",
+      "title": "Aka Manto",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Aka Manto attend dans le lycée et pose une seule question. Cape rouge ou cape bleue ?",
+       "Celui qui répond rouge se fait trancher et celui qui répond bleu devient pâle comme un fantôme. Aucune des deux réponses ne semble être bonne.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-akamanto.webp",
+       "w": 312,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Hôpital",
+    "pages": [
+     {
+      "id": "band-2",
+      "title": "Hôpital",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Ici apparaissent les portes coupe-feu et les sceaux."
+      ],
+      "rows": [
+       [
+        "Premier héros",
+        "Akane",
+        "#c77dff"
+       ]
+      ],
+      "pic": {
+       "file": "band-2.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "doors",
+      "title": "Les portes coupe-feu et les sceaux",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Une porte coupe-feu ne s'ouvre que dans un sens. Une fois la porte franchie, les salles laissées derrière sont perdues.",
+       "Un brise-sceau ouvre une porte scellée. Mais parfois il y a plus de portes scellées que de sorts pour les briser."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "doors.fr.webp",
+       "w": 510,
+       "h": 139,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kuchisake",
+      "title": "Kuchisake-onna",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Kuchisake-onna arpente les rues au crépuscule avec un masque sur la bouche.",
+       "Kuchisake-onna arrête les passants pour leur demander « Suis-je jolie ? » puis baisse son masque sur un sourire déchiré. Aucune réponse polie ne peut les sauver et seuls les plus courageux osent encore répondre à ces questions.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kuchisake.fr.webp",
+       "w": 364,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-ubume",
+      "title": "Ubume",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Ubume est une mère qui n'a jamais pu élever son enfant.",
+       "Ubume attend au bord de la route les nuits de pluie et supplie les passants de porter son bébé. Le bébé devient alors de plus en plus lourd dans les bras d'un autre et ceci jusqu'à ce que la fuite ne soit plus possible.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-ubume.webp",
+       "w": 356,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-gaki",
+      "title": "Gaki",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Un gaki est une âme punie de son avidité par une faim sans fin.",
+       "Le ventre d'un gaki reste vide quoi qu'il avale. Un gaki dévore donc tout ce qui passe à sa portée et avale absolument tout. Seul un sort ou une offrande peut l'apaiser un instant.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-gaki.webp",
+       "w": 274,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-nopperabo",
+      "title": "Nopperabo",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Nopperabo ressemble à n'importe qui de dos.",
+       "Mais Nopperabo se retourne et dévoile un visage lisse, sans yeux, sans nez et sans bouche. Ceux qui le croisent apprennent vite à attendre qu'il leur tourne à nouveau le dos.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-nopperabo.webp",
+       "w": 284,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "Forêt du sanctuaire",
+    "pages": [
+     {
+      "id": "band-3",
+      "title": "Forêt du sanctuaire",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Ici, des Yokai rôdent sur la carte."
+      ],
+      "rows": [
+       [
+        "Premier héros",
+        "Yuki",
+        "#9ce7ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-3.fr.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "roam",
+      "title": "Les Yokai errants",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Un Yokai errant arpente les couloirs. La flèche rouge montre son prochain pas.",
+       "Un Yokai errant qui te rattrape dans une salle jouera."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "roam.webp",
+       "w": 480,
+       "h": 156,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kasaobake",
+      "title": "Kasa-obake",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Kasa-obake est un vieux parapluie qui a pris vie le jour de ses cent ans.",
+       "Kasa-obake sautille depuis sur son unique pied et tire une longue langue aux passants. Ce parapluie agile craint pourtant le feu plus que tout à cause de son papier huilé.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kasaobake.webp",
+       "w": 310,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-chochin",
+      "title": "Chochin-obake",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Chochin-obake est une lanterne de papier oubliée trop longtemps dans un temple.",
+       "Une nuit, une déchirure dans le papier de la lanterne a créé une bouche. Une flamme spectrale s'y est ensuite allumée. Cette flamme ne réchauffe rien mais grandit jusqu'à tout brûler autour d'elle.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-chochin.webp",
+       "w": 314,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-jorogumo",
+      "title": "Jorogumo",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "Jorogumo est une araignée de quatre cents ans qui a pris l'apparence d'une belle femme.",
+       "Jorogumo attire ainsi les voyageurs dans sa maison au fond des bois et les enveloppe de soie. Ses proies deviennent alors son bouclier jusqu'à ce que quelqu'un intervienne ou qu'elle décide de manger.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-jorogumo.webp",
+       "w": 436,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-tengu",
+      "title": "Tengu",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Tengu au visage rouge et au long nez vit au sommet des pins de la montagne.",
+       "Un seul coup de l'éventail de plumes de Tengu soulève une tempête qui jette les voyageurs hors du chemin. Seuls ceux qui tiennent bon peuvent surprendre Tengu à bout de souffle.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-tengu.webp",
+       "w": 340,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Village englouti",
+    "pages": [
+     {
+      "id": "band-4",
+      "title": "Village englouti",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Ici, tes héros peuvent se séparer en deux groupes."
+      ],
+      "rows": [
+       [
+        "Premier héros",
+        "Haru",
+        "#ffd166"
+       ]
+      ],
+      "pic": {
+       "file": "band-4.fr.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "split",
+      "title": "La division de l'équipe",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Clique 'Diviser' pour séparer ton équipe en deux groupes. Clique alors le groupe de ton choix pour le guider.",
+       "Un groupe dans une salle voisine rejoindra le combat en retard. Si un groupe tombe, l'autre continue."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "split.webp",
+       "w": 480,
+       "h": 236,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yokai-kappa",
+      "title": "Kappa",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Kappa vit dans les rivières et entraîne les baigneurs au fond.",
+       "La force de Kappa vient de l'eau de la soucoupe sur sa tête. La légende dit qu'il rend toujours un salut et renverse alors cette eau. Mais malheureusement ce Kappa a oublié ses manières.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-kappa.webp",
+       "w": 314,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-nureonna",
+      "title": "Nure-onna",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Nure-onna a une tête de femme sur un corps de serpent de mer.",
+       "Les cheveux ruisselants, Nure-onna attend sur le rivage que quelqu'un s'approche plus près. Ses anneaux se referment alors sur sa proie et seuls ceux qui restent sur leurs gardes parviennent à s'en échapper.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-nureonna.fr.webp",
+       "w": 408,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-funayurei",
+      "title": "Funayurei",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Funayurei est le fantôme des marins noyés. Funayurei surgit la nuit près des barques et réclame une louche pour remplir les bateaux jusqu'à ce qu'ils coulent.",
+       "C'est pourquoi les marins avisés tendent à Funayurei une louche percée et écopent leur barque avant qu'il ne soit trop tard.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-funayurei.webp",
+       "w": 372,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-umibozu",
+      "title": "Umibozu",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "Umibozu est un géant noir comme la mer au crâne chauve et aux yeux ronds.",
+       "Umibozu surgit des eaux calmes et brise les barques de ceux qui lui adressent la parole. Le géant finit cependant toujours par se retirer comme la marée.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-umibozu.webp",
+       "w": 394,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Porte de Yomi",
+    "pages": [
+     {
+      "id": "band-5",
+      "title": "Porte de Yomi",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Tout à la fois : portes, sceaux, Yokai errants et équipe divisée."
+      ],
+      "rows": [
+       [
+        "Premier héros",
+        "Kenji",
+        "#5aa9ff"
+       ]
+      ],
+      "pic": {
+       "file": "band-5.fr.webp",
+       "w": 512,
+       "h": 282,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-rokurokubi",
+      "title": "Rokurokubi",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Rokurokubi est une femme comme les autres le jour.",
+       "Mais la nuit, le cou de Rokurokubi s'étire à travers la maison pour laper l'huile des lampes ou épier les dormeurs.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-rokurokubi.webp",
+       "w": 334,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-gashadokuro",
+      "title": "Gashadokuro",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Gashadokuro est un squelette géant fait des os des morts oubliés.",
+       "Les dents de Gashadokuro font Gasha Gasha dans le noir juste avant qu'il ne t'attrape. Ce géant lent et lourd laisse filer les fuyards et s'endort en attendant leur retour.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-gashadokuro.webp",
+       "w": 410,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-oni",
+      "title": "Oni",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "Oni est un ogre cornu qui garde la porte des Enfers avec une massue de fer.",
+       "Chaque enfant apprend à Setsubun que des haricots lancés font reculer Oni. Mais Oni apprend lui aussi et la même ruse ne marche jamais deux fois de suite.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-oni.webp",
+       "w": 350,
+       "h": 332,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "yokai-onryo",
+      "title": "Onryo",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Onryo est un esprit vengeur revenu de la mort avec de longs cheveux noirs sur une robe blanche.",
+       "La rancune d'un Onryo survit même à ceux qui l'ont offensé. Chaque coup qu'il reçoit nourrit cette rancune et il finit toujours par la rendre.",
+       "Clique sur le Yokai en combat pour voir sa santé, ses faiblesses et ses prochains tours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yokai-onryo.webp",
+       "w": 422,
+       "h": 332,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

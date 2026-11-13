@@ -1,0 +1,1109 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/pawko — do not edit",
+ "slug": "pawko",
+ "stamp": "2a28433e273c7171",
+ "en": {
+  "title": "Pawko",
+  "howTo": "Drag a card onto the board to drop a wave of balls",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "play",
+      "title": "Play a card",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Drag a card from your hand onto the board. The wave drops where you let go."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "play.webp",
+       "w": 520,
+       "h": 315,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Points and global multiplier",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each peg a ball touches scores its points, multiplied by the current global multiplier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.en.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hand",
+      "title": "Your hand",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click a card to read it.",
+       "A level always deals the same pile."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hand.en.webp",
+       "w": 528,
+       "h": 160,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "objective",
+      "title": "Objective and stars",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Three stars don't end the game. Play on to the last ball to push your score."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "objective.en.webp",
+       "w": 520,
+       "h": 239,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "gates",
+    "label": "The exits",
+    "pages": [
+     {
+      "id": "gates",
+      "title": "The exits",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every ball ends up in an exit. The global multiplier also applies to the exit's value."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gates.webp",
+       "w": 520,
+       "h": 158,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "malus",
+      "title": "Penalty exit",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "For one wave, the Gold card makes penalty exits pay points too, while All in turns the edge exits into penalty exits."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "malus.webp",
+       "w": 520,
+       "h": 158,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "The cards",
+    "pages": [
+     {
+      "id": "kind-peg",
+      "title": "Peg cards",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A peg card turns some classic pegs into special ones until the end of the game."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-peg.en.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-wave",
+      "title": "Wave cards",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A wave card only works for the next volley of balls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-wave.en.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mult",
+      "title": "The global multiplier cards",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "The global multiplier at the top right can get extra values or additional bonuses.",
+       "The global multiplier applies live. Every hit and every exit is multiplied by the value at that moment.",
+       "Most bonuses tied to the global multiplier last only one wave. The value may therefore be reset at the end of a wave. Charms, on the other hand, last for the whole game."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mult.en.webp",
+       "w": 508,
+       "h": 197,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-charm",
+      "title": "Charms",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A charm stays until the end of the game. Additional copies can stack, along with their effects."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-charm.en.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-meta",
+      "title": "Tricks",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "The Copy spell plays the last card again, whereas Recall puts that card back in your hand."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-meta.en.webp",
+       "w": 342,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rarity",
+      "title": "Rarity",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The rarer the card, the less often the pile deals it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rarity.en.webp",
+       "w": 528,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pegs",
+    "label": "Special pegs",
+    "pages": [
+     {
+      "id": "heat",
+      "title": "Fire and ice",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A fire peg sets the ball on fire. An ice peg slows the ball down by freezing it.",
+       "Fire and ice cancel each other out. Be careful though, as Thermal shock creates an explosion."
+      ],
+      "rows": [
+       [
+        "Fire or ice peg",
+        "x2",
+        null
+       ],
+       [
+        "A burning ball",
+        "+0.5 classic peg a hit",
+        "#ff7a1a"
+       ],
+       [
+        "A frozen ball",
+        "+1 classic peg a hit",
+        "#5ad8ff"
+       ]
+      ],
+      "pic": {
+       "file": "heat.webp",
+       "w": 520,
+       "h": 197,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bumper",
+      "title": "Bumpers and magnets",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A magnet pulls balls in and charges them. A charged ball pays double the points and also pulls the other balls."
+      ],
+      "rows": [
+       [
+        "Bumper",
+        "x3",
+        null
+       ],
+       [
+        "Magnet",
+        "x2",
+        null
+       ],
+       [
+        "A charged ball",
+        "x2 a hit",
+        "#c46bff"
+       ]
+      ],
+      "pic": {
+       "file": "bumper.en.webp",
+       "w": 486,
+       "h": 215,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bombs",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A bomb goes off once a wave and blasts away every ball near it."
+      ],
+      "rows": [
+       [
+        "Bomb",
+        "x25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "prism",
+      "title": "Prisms and Midas",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "A prism splits a ball in two. The halves can't split again.",
+       "Midas adds +0.1 to the global multiplier on every hit, until the end of the wave."
+      ],
+      "rows": [
+       [
+        "Prism",
+        "x2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "prism.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lucky",
+      "title": "Lucky pegs",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "One hit in four on a lucky peg pays ten times as much.",
+       "Clover doubles the chance of a \"lucky peg\", so it goes to one hit in two. Clover also doubles the number of golden balls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lucky.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spark",
+      "title": "Sparks",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "A spark zaps its three nearest pegs, which go off as if a ball hit them."
+      ],
+      "rows": [
+       [
+        "Spark",
+        "x2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "spark.webp",
+       "w": 424,
+       "h": 289,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "glass",
+      "title": "Glass",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "A glass peg pays five times the points of a classic peg, but it breaks completely on its third hit for the whole game.",
+       "With Shards, each broken glass peg adds +0.5 to the global multiplier."
+      ],
+      "rows": [
+       [
+        "Glass",
+        "x5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "glass.webp",
+       "w": 520,
+       "h": 195,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "copiers",
+      "title": "Echo and mirror",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "An echo replays the last special the ball hit.",
+       "A mirror copies the special next to it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "copiers.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "portal",
+      "title": "Portals and spikes",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "A portal sends the ball back up to the top, three times at most.",
+       "A spike destroys the ball but pays fifty classic pegs for it."
+      ],
+      "rows": [
+       [
+        "Portal",
+        "x2",
+        null
+       ],
+       [
+        "Spike",
+        "x50",
+        "#ff3355"
+       ]
+      ],
+      "pic": {
+       "file": "portal.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "Lobby",
+    "pages": [
+     {
+      "id": "band1",
+      "title": "Levels 1 to 6",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "After level 1, every level adds new cards."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band1.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Tables",
+    "pages": [
+     {
+      "id": "band2",
+      "title": "Levels 7 to 12",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "At level 12, Recall and All in complete the set."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band2.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "High roller",
+    "pages": [
+     {
+      "id": "band3",
+      "title": "Levels 13 to 18",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "No new cards here. The pile now deals from all 50."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band3.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Vault",
+    "pages": [
+     {
+      "id": "band4",
+      "title": "Levels 19 to 24",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "From level 22, both edge exits take points away."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band4.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Jackpot",
+    "pages": [
+     {
+      "id": "band5",
+      "title": "Levels 25 to 30",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "On every level of the last band, both edge exits are penalty exits."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band5.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Pawko",
+  "howTo": "Glisse une carte sur le plateau pour lancer une vague de billes",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "play",
+      "title": "Jouer une carte",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Glisse une carte de ta main sur le plateau. La vague part de l'endroit où tu relâches la carte."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "play.webp",
+       "w": 520,
+       "h": 315,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Points et multiplicateur global",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque clou touché rapporte des points. Le multiplicateur global du moment sera utilisé pour le calcul."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.fr.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hand",
+      "title": "Ta main",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur une carte pour lire sa description.",
+       "Chaque stage distribue toujours la même pioche."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hand.fr.webp",
+       "w": 528,
+       "h": 160,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "objective",
+      "title": "Objectif et étoiles",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Obtenir trois étoiles ne termine pas la partie. Continue jusqu'à la dernière bille pour améliorer ton score."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "objective.fr.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "gates",
+    "label": "Les sorties",
+    "pages": [
+     {
+      "id": "gates",
+      "title": "Les sorties",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque bille termine sa course dans une sortie. Le multiplicateur global s'applique aussi sur la valeur de la sortie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gates.webp",
+       "w": 520,
+       "h": 158,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "malus",
+      "title": "Sortie malus",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "La carte Or permet aux sorties malus de rapporter quand même des points pendant une vague, tandis que Tapis transforme les sorties latérales en malus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "malus.webp",
+       "w": 520,
+       "h": 158,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "Les cartes",
+    "pages": [
+     {
+      "id": "kind-peg",
+      "title": "Cartes Clou",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une carte Clou transforme certains clous classiques en clous spéciaux jusqu'à la fin de la partie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-peg.fr.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-wave",
+      "title": "Cartes Vague",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une carte Vague ne s'applique qu'à la prochaine salve de billes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-wave.fr.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mult",
+      "title": "Les cartes à multiplicateur global",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Le multiplicateur global en haut à droite peut obtenir des valeurs supplémentaires ou des bonus additionnels.",
+       "Le multiplicateur global s'applique en direct. Chaque impact et chaque sortie sont multipliés par la valeur du moment.",
+       "La plupart des bonus liés au multiplicateur global ne durent qu'une vague. La valeur peut donc être réinitialisée à la fin d'une vague. Les talismans quant à eux durent toute la partie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mult.fr.webp",
+       "w": 508,
+       "h": 197,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-charm",
+      "title": "Talismans",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Un talisman reste actif jusqu'à la fin de la partie. Les exemplaires supplémentaires peuvent se cumuler ainsi que leurs effets."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-charm.fr.webp",
+       "w": 508,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kind-meta",
+      "title": "Ruses",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Le sort 'copie' rejoue la dernière carte alors que 'retour' remet cette carte dans ta main."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kind-meta.fr.webp",
+       "w": 342,
+       "h": 198,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rarity",
+      "title": "Rareté",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus une carte est rare, moins souvent elle apparaît dans la pioche."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rarity.fr.webp",
+       "w": 528,
+       "h": 160,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pegs",
+    "label": "Clous spéciaux",
+    "pages": [
+     {
+      "id": "heat",
+      "title": "Feu et glace",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un clou de feu enflamme la bille. Un clou de glace ralentit la bille en la gelant.",
+       "Le feu et la glace s'annulent. Attention toutefois car Chaud-froid créer une explosion."
+      ],
+      "rows": [
+       [
+        "Clou de feu ou de glace",
+        "x2",
+        null
+       ],
+       [
+        "Une bille en feu",
+        "+50% des points d'un clou classique par impact",
+        "#ff7a1a"
+       ],
+       [
+        "Une bille gelée",
+        "+100% des points d'un clou classique par impact",
+        "#5ad8ff"
+       ]
+      ],
+      "pic": {
+       "file": "heat.webp",
+       "w": 520,
+       "h": 197,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bumper",
+      "title": "Bumpers et aimants",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un aimant attire les billes et les charge. Une bille chargée rapporte le double de points et attire aussi les autres billes."
+      ],
+      "rows": [
+       [
+        "Bumper",
+        "x3",
+        null
+       ],
+       [
+        "Aimant",
+        "x2",
+        null
+       ],
+       [
+        "Une bille chargée",
+        "x2 sur chaque impact de la bille",
+        "#c46bff"
+       ]
+      ],
+      "pic": {
+       "file": "bumper.fr.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bombes",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une bombe explose une fois par vague et repousse toutes les billes proches."
+      ],
+      "rows": [
+       [
+        "Bombe",
+        "x25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "prism",
+      "title": "Prismes et Midas",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Un prisme divise une bille en deux. Les deux moitiés ne peuvent pas être divisées à nouveau.",
+       "Sur toute la durée d'une vague, Midas ajoute +0,1 au multiplicateur global pour chaque impact."
+      ],
+      "rows": [
+       [
+        "Prisme",
+        "x2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "prism.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lucky",
+      "title": "Clous chanceux",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Un quart des contacts sur un 'clou chanceux' rapporte x10 pour l'impact.",
+       "Trèfle double la chance d'un 'clou chanceux' et passe donc à un impact sur deux. Trèfle double aussi le nombre de billes dorées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lucky.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spark",
+      "title": "Éclairs",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Un éclair frappe les trois clous les plus proches et ils se comportent comme si une bille les avait touchés."
+      ],
+      "rows": [
+       [
+        "Éclair",
+        "x2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "spark.webp",
+       "w": 424,
+       "h": 289,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "glass",
+      "title": "Verre",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Un clou de verre rapporte cinq fois les points d'un clou classique mais il casse complètement au troisième impact pour toute la partie.",
+       "Avec Éclats, chaque clou de verre cassé ajoute +0,5 au multiplicateur global."
+      ],
+      "rows": [
+       [
+        "Verre",
+        "x5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "glass.webp",
+       "w": 520,
+       "h": 195,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "copiers",
+      "title": "Écho et miroir",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Un écho reproduit le dernier spécial touché par la bille.",
+       "Un miroir copie le spécial voisin."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "copiers.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "portal",
+      "title": "Portails et pointes",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Un portail renvoie la bille en haut du plateau, trois fois au maximum.",
+       "Une pointe détruit la bille mais rapporte 50 fois les points d'un clou classique."
+      ],
+      "rows": [
+       [
+        "Portail",
+        "x2",
+        null
+       ],
+       [
+        "Pointe",
+        "x50",
+        "#ff3355"
+       ]
+      ],
+      "pic": {
+       "file": "portal.webp",
+       "w": 486,
+       "h": 216,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "Hall",
+    "pages": [
+     {
+      "id": "band1",
+      "title": "Stages 1 à 6",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Après le premier pachinko, le jeu ajoute des nouvelles cartes par nouveau stage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band1.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Tables",
+    "pages": [
+     {
+      "id": "band2",
+      "title": "Stages 7 à 12",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Au stage 12, Retour et Tapis complètent la série."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band2.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "Flambeur",
+    "pages": [
+     {
+      "id": "band3",
+      "title": "Stages 13 à 18",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Aucune nouvelle carte ici. La pioche peut désormais contenir les 50 cartes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band3.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Coffre",
+    "pages": [
+     {
+      "id": "band4",
+      "title": "Stages 19 à 24",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "À partir du stage 22, les deux sorties latérales deviennent des malus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band4.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Jackpot",
+    "pages": [
+     {
+      "id": "band5",
+      "title": "Stages 25 à 30",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Dans la dernière zone, les deux sorties latérales infligent systématiquement un malus pour chaque stage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band5.webp",
+       "w": 200,
+       "h": 331,
+       "kind": "cut"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

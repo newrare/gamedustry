@@ -1,0 +1,673 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/radiam — do not edit",
+ "slug": "radiam",
+ "stamp": "9c2970287832cc22",
+ "en": {
+  "title": "Radiam",
+  "howTo": "Turn one or more rings to line up three beads on one ray",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "turn",
+      "title": "Turn the rings",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Drag a ring to turn it. Line up three beads of one colour on a ray and they pop.",
+       "A ray pays once the dial stops. Let go of the ring, or hold it still."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "turn.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rays",
+      "title": "What a ray pays",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Pop several rays in one move and everything the move pays is multiplied."
+      ],
+      "rows": [
+       [
+        "Two rays at once",
+        "×2.5",
+        null
+       ],
+       [
+        "Three rays at once",
+        "×5",
+        null
+       ],
+       [
+        "Four rays or more",
+        "×8",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "rays.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "The chain",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each ray raises the combo, up to x8.",
+       "Pop the next ray within a second, or the combo falls back to zero."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "meter",
+      "title": "Earning a special",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Two rays at once or a x4 chain earn a special. Three rays or a x8 chain earn a big one.",
+       "A special goes off when its ray pops, or when another special's wave reaches it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "meter.en.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "eclipse",
+    "label": "The eclipse",
+    "pages": [
+     {
+      "id": "eclipse",
+      "title": "The eclipse",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Ink rises over the dial from the bottom. A ray under the ink can no longer pop.",
+       "Reach the level's score before the ink covers every ray."
+      ],
+      "rows": [
+       [
+        "One ray",
+        "the ink stops for a few seconds",
+        null
+       ],
+       [
+        "Two rays at once",
+        "Ray won back",
+        null
+       ],
+       [
+        "Three rays or more",
+        "Two rays won back",
+        null
+       ],
+       [
+        "A whole ring emptied",
+        "Three rays won back",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "eclipse.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "inklevel",
+      "title": "The ink speeds up",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every 10 rays popped, the level goes up and the ink rises faster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "inklevel.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colour",
+      "title": "A new colour",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The dial starts with four colours. The fifth joins once the ink reaches level 10."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "colour.en.webp",
+       "w": 520,
+       "h": 150,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "atelier",
+    "label": "Atelier",
+    "pages": [
+     {
+      "id": "charge",
+      "title": "Charge bead",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Pop a charge bead's ray and a wave takes every bead on its ring.",
+       "The more beads a wave takes, the more each one pays."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "charge.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "nova",
+      "title": "Nova bead",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Like a joker, a nova bead matches any colour on its ray.",
+       "When a nova bead goes off, every bead of its ray's colour leaves the dial."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nova.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lagoon",
+    "label": "Lagoon",
+    "pages": [
+     {
+      "id": "bomb",
+      "title": "Bomb bead",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Pop a bomb bead's ray and its wave takes the whole dial, ring after ring."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score bead",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Pop a score bead's ray to multiply the next rays for a few seconds.",
+       "The score bead never multiplies what a wave takes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "reliquary",
+    "label": "Reliquary",
+    "pages": [
+     {
+      "id": "fire",
+      "title": "Fire bead",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Pop a fire bead's ray and the two rays either side of it pop too.",
+       "Whatever their colours, on all three rings."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "laser",
+      "title": "Laser bead",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "laser.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "sumi",
+    "label": "Sumi",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Frozen bead",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A frozen bead pops like any bead, but then its ring freezes and cannot turn.",
+       "Pop two rays to thaw the ring, or wait 8 seconds."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "label": "Circuit",
+    "pages": [
+     {
+      "id": "slow",
+      "title": "Slow bead",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Pop a slow bead's ray and the ink slows right down."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slow.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Radiam",
+  "howTo": "Tourne un ou plusieurs anneaux pour aligner trois billes sur un rayon",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "turn",
+      "title": "Rotation des anneaux",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Fais glisser un anneau pour le faire pivoter. Aligne trois billes identiques sur un même rayon pour les faire éclater.",
+       "Un rayon valide ses points dès que le cadran s'immobilise. Relâche l'anneau ou garde-le fixe."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "turn.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rays",
+      "title": "Valeur d'un rayon",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Éclate plusieurs rayons en un seul mouvement pour appliquer un multiplicateur à l'ensemble."
+      ],
+      "rows": [
+       [
+        "Deux rayons simultanés",
+        "×2.5",
+        null
+       ],
+       [
+        "Trois rayons simultanés",
+        "×5",
+        null
+       ],
+       [
+        "Quatre rayons ou plus",
+        "×8",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "rays.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "La chaîne",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque rayon validé fait monter ton Combo, jusqu'à un maximum de x8.",
+       "Valide le rayon suivant en moins d'une seconde pour éviter la réinitialisation complète du Combo."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "meter",
+      "title": "Obtenir une bille spéciale",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Deux rayons simultanés ou une chaîne x4 génèrent une bille spéciale. Trois rayons ou une chaîne x8 en génèrent une majeure.",
+       "La bille spéciale s'active dès que son rayon éclate ou lorsqu'elle est touchée par l'onde d'une autre spéciale."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "meter.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "eclipse",
+    "label": "L'éclipse",
+    "pages": [
+     {
+      "id": "eclipse",
+      "title": "L'éclipse",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "L'encre monte depuis le bas du cadran. Tout rayon recouvert par l'encre se retrouve bloqué.",
+       "Atteins l'objectif de score du stage avant que l'encre n'engloutisse la totalité des rayons."
+      ],
+      "rows": [
+       [
+        "Un rayon",
+        "l'encre s'arrête quelques secondes",
+        null
+       ],
+       [
+        "Deux rayons simultanés",
+        "Rayon regagné",
+        null
+       ],
+       [
+        "Trois rayons ou plus",
+        "Deux rayons regagnés",
+        null
+       ],
+       [
+        "Un anneau entièrement vidé",
+        "Trois rayons regagnés",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "eclipse.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "inklevel",
+      "title": "Accélération de l'encre",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tous les 10 rayons éclatés, le niveau d'encre augmente et accélère."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "inklevel.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colour",
+      "title": "Une nouvelle couleur",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le cadran débute avec quatre couleurs puis une cinquième s'ajoute lorsque l'encre atteint le niveau 10."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "colour.fr.webp",
+       "w": 520,
+       "h": 149,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "atelier",
+    "label": "Atelier",
+    "pages": [
+     {
+      "id": "charge",
+      "title": "Bille charge",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Éclate le rayon d'une bille charge pour libérer une onde circulante qui balaye toutes les billes de son anneau.",
+       "Chaque bille emportée par une onde rapporte un bonus proportionnel au nombre total de billes touchées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "charge.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "nova",
+      "title": "Bille nova",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "À la manière d'un joker, la bille nova s'associe à n'importe quelle couleur présente sur son rayon.",
+       "L'activation d'une bille nova élimine instantanément du cadran toutes les billes correspondant à la couleur de son rayon."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "nova.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lagoon",
+    "label": "Lagon",
+    "pages": [
+     {
+      "id": "bomb",
+      "title": "Bille bombe",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Éclate le rayon d'une bille bombe pour que son onde nettoie séquentiellement l'intégralité du cadran."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Bille score",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Éclate le rayon d'une bille score afin de multiplier les gains des rayons suivants pendant un court instant.",
+       "L'effet multiplicateur de la bille score ne s'applique pas aux billes détruites par une onde."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "reliquary",
+    "label": "Reliquaire",
+    "pages": [
+     {
+      "id": "fire",
+      "title": "Bille de feu",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Éclate le rayon d'une bille de feu pour faire exploser simultanément les deux rayons adjacents.",
+       "Ces deux rayons éclatent sur les trois anneaux, sans distinction de couleur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "laser",
+      "title": "Bille laser",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Éclate le rayon d'une bille laser pour déclencher un faisceau traversant qui détruit le rayon situé à l'opposé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "laser.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "sumi",
+    "label": "Sumi",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Bille gelée",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Une bille gelée éclate normalement, mais bloque immédiatement son anneau qui ne peut plus tourner.",
+       "Éclate deux rayons n'importe où pour dégeler l'anneau ou patiente simplement 8 secondes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "circuit",
+    "label": "Circuit",
+    "pages": [
+     {
+      "id": "slow",
+      "title": "Bille sablier",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Éclate le rayon d'une bille sablier pour réduire considérablement la vitesse de progression de l'encre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slow.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

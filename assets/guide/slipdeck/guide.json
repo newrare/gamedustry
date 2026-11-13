@@ -1,0 +1,649 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/slipdeck — do not edit",
+ "slug": "slipdeck",
+ "stamp": "d2e679587006441d",
+ "en": {
+  "title": "Slipdeck",
+  "howTo": "Bin or keep the card you are dealt to finish your hand",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "basics",
+      "title": "Build a Poker hand",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Swipe right to keep the card, left to bin it.",
+       "Five cards make a hand, paid as Poker. The run ends when the deck runs out."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "basics.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hands",
+      "title": "Poker hands",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each Poker hand starts from its base, the chips × multiplier shown beside it."
+      ],
+      "rows": [],
+      "node": {
+       "file": "hands--node.en.webp",
+       "w": 554,
+       "h": 878,
+       "kind": "cut",
+       "alt": "ROYAL FLUSH 150 x 10 Pot 100% STRAIGHT FLUSH 100 x 8 Pot 100% FOUR OF A KIND 60 x 7 Pot 80% FULL HOUSE 40 x 4 Pot 60% FLUSH 35 x 4 Pot 50% STRAIGHT 30 x 4 Pot 40% THREE OF A KIND 30 x 3 Pot 30% TWO PAIR 20 x 2 Pot 20% PAIR 10 x 2 Pot 10% J or better"
+      }
+     },
+     {
+      "id": "count",
+      "title": "The score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each card of the Poker hand adds its value in chips. A face is worth 10, an ace 11.",
+       "Then the game counts the special cards, adds the pot and the Jokers' bonuses. The calculation is always done from left to right. The hand score is chips × multiplier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "count.en.webp",
+       "w": 554,
+       "h": 124,
+       "kind": "cut",
+       "alt": "FULL HOUSE 40 x 4 Pot 60%"
+      },
+      "node": {
+       "file": "count--node.en.webp",
+       "w": 554,
+       "h": 759,
+       "kind": "cut",
+       "alt": "Base Base chips × starting multiplier Value A card of the Poker hand adds its value in chips. A face is worth 10 and an ace 11 + chips Adds chips: a gold card, some Jokers Pot share A paid hand takes chips from the pot + multiplier Adds to the multiplier × multiplier Boosts the multiplier Hand score Chips × multiplier, once every card and Joker is counted Final score The sum of every hand score in"
+      }
+     },
+     {
+      "id": "double",
+      "title": "Two Poker hands in one",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A hand can make two Poker hands at once, like a pair and a flush. Both are counted and their scores add up.",
+       "Wild cards and some Jokers make building hands easier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "double.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bust",
+      "title": "Bust",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "High card, a pair too low or a cursed card left out of the Poker hand: the hand busts and costs a life."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bust.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bins",
+      "title": "Bins",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "You may bin 3 cards per hand. The next one costs a life."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bins.en.webp",
+       "w": 528,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pot",
+      "title": "The pot",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Binned cards drop their value in chips into the pot. Each paid hand takes its pot share, bigger for a strong Poker hand.",
+       "A bust burns half the pot. The deck's last hand takes all of it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pot.webp",
+       "w": 528,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "jokers",
+    "label": "Jokers",
+    "pages": [
+     {
+      "id": "joker",
+      "title": "Jokers",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Paid hands fill the Joker gauge, strong ones faster. A full gauge deals you two Jokers to choose from.",
+       "A Joker lasts the whole run, on every hand."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "joker.en.webp",
+       "w": 528,
+       "h": 368,
+       "kind": "cut",
+       "alt": "MULT SPADE LOVER Adds +3 to the multiplier for every ♠ in the hand COMMON MULT RED TIDE Adds +2 to the multiplier for every ♥ or ♦ in the hand COMMON"
+      }
+     },
+     {
+      "id": "xmult",
+      "title": "Add or multiply",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "A + adds to the current multiplier, while a × multiplies it by its value. So with Jokers, it is best to have the × ones on the right of the count (the score counter)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "xmult.en.webp",
+       "w": 554,
+       "h": 194,
+       "kind": "cut",
+       "alt": "4 → 13 adds to the multiplier 13 → 26 boosts the multiplier"
+      }
+     },
+     {
+      "id": "fate",
+      "title": "Fate jokers",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Push the card up onto a Fate Joker to play it. Each one works once per hand."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fate.en.webp",
+       "w": 528,
+       "h": 368,
+       "kind": "cut",
+       "alt": "FATE COMPASS Choose the next card's suit. Push the card up onto this Joker, then pick a suit RARE FATE RESHUFFLE Push the card up onto this Joker to send it back into the deck, no bin spent COMMON"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "Special cards",
+    "pages": [
+     {
+      "id": "gold",
+      "title": "Gold",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A gold card adds +40 chips to its hand, even when it is not part of the Poker hand."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gold.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wild",
+      "title": "Wild",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A wild card counts as every suit: it fits any flush."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wild.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "glass",
+      "title": "Glass",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "A glass card boosts the multiplier ×2, but one time in four it shatters and gives nothing."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "glass.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lucky",
+      "title": "Lucky",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "A lucky card adds +10 to the multiplier one time in three."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lucky.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "curse",
+      "title": "Cursed card",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A cursed card busts the hand unless it is part of the Poker hand. Used in it, the curse breaks and adds +10 to the multiplier.",
+       "Binning a cursed card costs two bins. The Exorcist Joker gives you one back instead."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "curse.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "veil",
+      "title": "Veiled card",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "A veiled card's suit stays hidden until you keep it.",
+       "The Seer Joker lifts every veil."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "veil.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "The climb",
+    "pages": [
+     {
+      "id": "floor",
+      "title": "Minimum pair",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "From level 7, a single pair needs 8s or better to pay, then 10s from level 13. A pair of jacks or better from level 19.",
+       "A lower pair busts the hand. Two pair and better always pay."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "floor.webp",
+       "w": 432,
+       "h": 187,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Slipdeck",
+  "howTo": "Jette ou garde la carte proposée pour composer ta main",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "basics",
+      "title": "Constituer une combinaison",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Glisse vers la droite pour conserver la carte. Vers la gauche pour la jeter.",
+       "Cinq cartes forment une main évaluée selon les règles du Poker. La partie s'achève lorsque le paquet est vide."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "basics.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hands",
+      "title": "Combinaisons",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque combinaison part de sa base : les jetons × multiplicateur affichés à côté."
+      ],
+      "rows": [],
+      "node": {
+       "file": "hands--node.fr.webp",
+       "w": 554,
+       "h": 878,
+       "kind": "cut",
+       "alt": "QUINTE FLUSH ROYALE 150 x 10 Pot 100% QUINTE FLUSH 100 x 8 Pot 100% CARRE 60 x 7 Pot 80% FULL 40 x 4 Pot 60% COULEUR 35 x 4 Pot 50% SUITE 30 x 4 Pot 40% BRELAN 30 x 3 Pot 30% DEUX PAIRES 20 x 2 Pot 20% PAIRE 10 x 2 Pot 10% J ou mieux"
+      }
+     },
+     {
+      "id": "count",
+      "title": "Le score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque carte de la combinaison ajoute sa valeur en jetons. Une figure vaut 10, un As 11.",
+       "Puis le jeu compte les cartes spéciales, ajoute le pot et les bonus des Jokers. Le calcul se fait toujours de gauche à droite. Le score de la main vaut jetons × multiplicateur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "count.fr.webp",
+       "w": 554,
+       "h": 124,
+       "kind": "cut",
+       "alt": "FULL 40 x 4 Pot 60%"
+      },
+      "node": {
+       "file": "count--node.fr.webp",
+       "w": 554,
+       "h": 842,
+       "kind": "cut",
+       "alt": "Base Jetons de base × multiplicateur par défaut Valeur Une carte de la combinaison ajoute sa valeur en jetons. En sachant qu'une figure vaut 10 et un As vaut 11 + jetons Ajoute des jetons : une carte en or, certains Jokers Part du pot Une main gagnante utilisera des jetons du pot + multiplicateur Ajoute au multiplicateur × multiplicateur Augmente le multiplicateur Score de la main Jetons × multipl"
+      }
+     },
+     {
+      "id": "double",
+      "title": "Deux combinaisons en une",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une main peut faire deux combinaisons à la fois, comme une paire et une couleur. Les deux sont comptées et leurs scores s'additionnent.",
+       "Les cartes caméléon ainsi que certains Jokers facilitent la création de mains."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "double.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bust",
+      "title": "Main morte",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une carte haute, une paire trop faible ou une carte maudite hors de la combinaison entraînent une main morte et retirent une vie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bust.webp",
+       "w": 472,
+       "h": 187,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bins",
+      "title": "Défausses",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tu as droit à 3 défausses par main. Au-delà, chaque suppression coûte une vie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bins.fr.webp",
+       "w": 528,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pot",
+      "title": "Le pot",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les cartes jetées versent leur valeur en jetons dans le pot. Chaque main payée prend sa part du pot, plus grande pour une combinaison forte.",
+       "Une main morte supprime la moitié du pot. La toute dernière main du paquet récupère l'intégralité du solde."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pot.webp",
+       "w": 528,
+       "h": 330,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "jokers",
+    "label": "Jokers",
+    "pages": [
+     {
+      "id": "joker",
+      "title": "Jokers",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Chaque main payée recharge la jauge de Joker, plus rapidement avec des mains puissantes. Une jauge pleine te permet de choisir entre deux Jokers.",
+       "Un Joker acquis reste actif sur l'ensemble des mains jusqu'au terme de la partie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "joker.fr.webp",
+       "w": 528,
+       "h": 368,
+       "kind": "cut",
+       "alt": "MULT PASSION PIQUES Ajoute +3 au multiplicateur pour chaque ♠ de la main COMMUN MULT MAREE ROUGE Ajoute +2 au multiplicateur pour chaque ♥ ou ♦ de la main COMMUN"
+      }
+     },
+     {
+      "id": "xmult",
+      "title": "Addition ou multiplication",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Un + ajoute au multiplicateur existant alors qu'un × l'augmente en multipliant l'existant par la valeur du bonus. Avec les Jokers, il est donc préférable d'avoir des multiplicateurs sur le côté droit du calcul (compteur de score)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "xmult.fr.webp",
+       "w": 554,
+       "h": 194,
+       "kind": "cut",
+       "alt": "4 → 13 ajoute au multiplicateur 13 → 26 augmente le multiplicateur"
+      }
+     },
+     {
+      "id": "fate",
+      "title": "Fate jokers",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Glisse une carte vers le haut sur un Joker du destin pour l'activer. Chacun ne s'utilise qu'une fois par main."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fate.fr.webp",
+       "w": 528,
+       "h": 368,
+       "kind": "cut",
+       "alt": "DESTIN BOUSSOLE Définis la couleur de la prochaine carte. Glisse la carte vers ce Joker puis choisis une couleur RARE DESTIN MELANGE Glisse la carte vers ce Joker pour la renvoyer dans le paquet sans consommer de défausse COMMUN"
+      }
+     }
+    ]
+   },
+   {
+    "key": "cards",
+    "label": "Cartes spéciales",
+    "pages": [
+     {
+      "id": "gold",
+      "title": "Or",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une carte en or ajoute +40 jetons à sa main, même hors de la combinaison."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gold.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wild",
+      "title": "Caméléon",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une carte caméléon s'adapte à toutes les familles de carte et complète ainsi n'importe quelle couleur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wild.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "glass",
+      "title": "Verre",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Une carte de verre augmente le multiplicateur ×2, mais une fois sur quatre la carte se brise et ne donne rien."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "glass.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lucky",
+      "title": "Chance",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Une carte chance ajoute +10 au multiplicateur une fois sur trois."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lucky.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "curse",
+      "title": "Carte maudite",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Une carte maudite fait mourir la main si elle ne fait pas partie de la combinaison. La malédiction est brisée dans le cas contraire et ajoute +10 au multiplicateur.",
+       "Jeter une carte maudite coûte deux défausses. Avec le Joker Exorciste, elle t'en rend une à la place."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "curse.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "veil",
+      "title": "Carte voilée",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "La couleur d'une carte voilée reste secrète tant que tu ne la conserves pas.",
+       "Le Joker Voyant supprime tous les voiles."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "veil.webp",
+       "w": 178,
+       "h": 241,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "L'ascension",
+    "pages": [
+     {
+      "id": "floor",
+      "title": "Paire minimale",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Dès le stage 7, une paire seule doit être de 8 minimum pour payer puis de 10 au stage 13. Une paire de valets au minimum à partir du stage 19.",
+       "Une paire inférieure invalide la main. Les doubles paires et combinaisons supérieures passent toujours."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "floor.webp",
+       "w": 432,
+       "h": 187,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

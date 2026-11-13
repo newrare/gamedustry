@@ -1,0 +1,783 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/triverse — do not edit",
+ "slug": "triverse",
+ "stamp": "588c1156a7a0c290",
+ "en": {
+  "title": "Triverse",
+  "howTo": "Swipe to jump from path to path",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "ropes",
+      "title": "Three ropes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Swipe left or right to change lanes. You can also click on either side of the arrow to move it from one rope to the other."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ropes.en.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "jump",
+      "title": "The jump",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Swipe up to jump. You can still change rope in the air.",
+       "Holes and lasers pass under you. Mines are too tall to jump over."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "jump.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goal",
+      "title": "The run",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each level asks for a distance. Gems raise the score, never the progress."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goal.en.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Scoring",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every gem grows your combo. Watch out though: a crash or a fall breaks it."
+      ],
+      "rows": [
+       [
+        "A mega gem",
+        "120",
+        "#ffd43b"
+       ],
+       [
+        "A combo of 6, 12…",
+        "+50, +100…",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.en.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hazards",
+      "title": "Mines and traps",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A trap costs no life, but drains points and breaks the Combo."
+      ],
+      "rows": [
+       [
+        "A mine",
+        "−1 life",
+        "#ff2d55"
+       ],
+       [
+        "A trap",
+        "−70",
+        "#c07bff"
+       ]
+      ],
+      "pic": {
+       "file": "hazards.en.webp",
+       "w": 520,
+       "h": 239,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pair",
+      "title": "Mine pairs",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When two mines block two ropes, the third one is always open."
+      ],
+      "rows": [
+       [
+        "Through the open rope",
+        "+60",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "pair.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "loops",
+      "title": "Loops and figures",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Ride a figure like a loop to the end to earn a point reward."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "loops.en.webp",
+       "w": 520,
+       "h": 239,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pickups",
+    "label": "Pickups",
+    "pages": [
+     {
+      "id": "x2",
+      "title": "Score x2",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every gem, combo, loop and mine pair pays double."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "x2.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Shield",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The shield takes one crash for you. You lose no life and keep your combo.",
+       "The shield won't stop you falling into a hole."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnet",
+      "title": "Magnet",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The magnet pulls in the gems of all three ropes, but not the ones in the air."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghost",
+      "title": "Ghost",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Mines, traps, lasers, comets and live ropes pass through you.",
+       "You still fall into holes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghost.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "slow",
+      "title": "Slow down",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "You drop back to the level's starting speed, then speed up again."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slow.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "neon",
+    "label": "Neon",
+    "pages": [
+     {
+      "id": "pad",
+      "title": "Springboards",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A springboard throws you onto the next rope, the way its chevrons point.",
+       "The bounce counts as a jump, so holes and lasers pass under you."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pad.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "prism",
+    "label": "Prism",
+    "pages": [
+     {
+      "id": "laser",
+      "title": "Lasers",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A laser crosses all three ropes, so changing rope won't help.",
+       "Swipe up to jump the laser."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "laser.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "blink",
+      "title": "Blinking mines",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A blinking mine sleeps and wakes to a rhythm. Its circular arc is visible.",
+       "Dodge a blinking mine, or ride through it while it sleeps."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "blink.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "storm",
+    "label": "Storm",
+    "pages": [
+     {
+      "id": "break",
+      "title": "Holes",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Jump over a hole, or switch to another rope.",
+       "Neither the shield nor the ghost will stop you falling."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "break.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "comets",
+    "label": "Comets",
+    "pages": [
+     {
+      "id": "comet",
+      "title": "Comets",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A comet slides down a rope at high speed.",
+       "Leave the comet's rope before it reaches you."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "comet.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pendulum",
+      "title": "Pendulums",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A pendulum's mine swings between two ropes, and the third one always stays clear."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pendulum.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fusion",
+    "label": "Fusion",
+    "pages": [
+     {
+      "id": "elec",
+      "title": "Live ropes",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Sparks always run along a rope before the electricity strikes.",
+       "Then the rope goes live for a few seconds."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "elec.en.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Triverse",
+  "howTo": "Swipe pour sauter de voie en voie",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "ropes",
+      "title": "Trois cordes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Swipe à gauche ou à droite pour changer de voie. Tu peux aussi Clic d'un côté ou de l'autre de la flèche pour la déplacer d'une corde à l'autre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ropes.fr.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "jump",
+      "title": "Le saut",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Swipe vers le haut pour exécuter un saut tout en gardant la possibilité de changer de corde en plein vol.",
+       "Les trous et les lasers s'esquivent par le haut, contrairement aux mines qui s'avèrent trop imposantes pour être survolées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "jump.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goal",
+      "title": "La course",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque stage exige une distance cible, les gemmes augmentant ton score sans influer sur la progression."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "goal.fr.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Les points",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque gemme collectée alimente ton Combo. Attention toutefois car une collision ou une chute le réinitialise."
+      ],
+      "rows": [
+       [
+        "Une méga gemme",
+        "120",
+        "#ffd43b"
+       ],
+       [
+        "Paliers de combo à 6, 12…",
+        "+50, +100…",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.fr.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hazards",
+      "title": "Mines et pièges",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un piège ne coûte pas de vie, mais il te fait perdre des points et ton Combo."
+      ],
+      "rows": [
+       [
+        "Une mine",
+        "−1 vie",
+        "#ff2d55"
+       ],
+       [
+        "Un piège",
+        "−70",
+        "#c07bff"
+       ]
+      ],
+      "pic": {
+       "file": "hazards.fr.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pair",
+      "title": "Paires de mines",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lorsque deux mines bloquent simultanément deux cordes, la troisième reste toujours dégagée."
+      ],
+      "rows": [
+       [
+        "Franchissement par la corde libre",
+        "+60",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "pair.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "loops",
+      "title": "Boucles et figures",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Suis une figure comme une boucle jusqu'à la fin pour obtenir une récompense de point."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "loops.fr.webp",
+       "w": 520,
+       "h": 239,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pickups",
+    "label": "Bonus",
+    "pages": [
+     {
+      "id": "x2",
+      "title": "Score x2",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Toutes tes gemmes, la progressions de combo, les figures et paires de mines franchies rapportent le double de points."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "x2.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Bouclier",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le bouclier absorbe un impact à ta place, te préservant de la perte de vie et maintenant ton Combo intact.",
+       "Cette protection reste impuissante si tu bascules dans un précipice."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "magnet",
+      "title": "Aimant",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "L'aimant attire vers lui les gemmes disposées sur les trois cordes, ignorant toutefois celles qui flottent en hauteur."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ghost",
+      "title": "Fantôme",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "En fantôme, tu traverses les mines, les pièges, les lasers, les comètes et les cordes électrifiées.",
+       "Tu tombes quand même dans les trous."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ghost.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "slow",
+      "title": "Ralenti",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Ton allure rétrograde instantanément vers la vitesse initiale du stage avant de réaccélérer progressivement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "slow.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "neon",
+    "label": "Néon",
+    "pages": [
+     {
+      "id": "pad",
+      "title": "Tremplins",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un tremplin te catapulte automatiquement vers la corde voisine en suivant la direction indiquée par ses chevrons.",
+       "L'impulsion fait office de saut, te permettant de survoler les trous et les barrières laser."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pad.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "prism",
+    "label": "Prisme",
+    "pages": [
+     {
+      "id": "laser",
+      "title": "Lasers",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Un faisceau laser balaye l'ensemble des trois cordes, rendant le simple changement de voie inefficace.",
+       "Swipe vers le haut pour survoler la ligne laser."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "laser.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "blink",
+      "title": "Mines clignotantes",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Une mine clignotante alterne sommeil et activité selon une cadence précise, matérialisée par un arc circulaire visible.",
+       "Contourne une mine clignotante ou franchis-la sereinement pendant sa phase d'inactivité."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "blink.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "storm",
+    "label": "Orage",
+    "pages": [
+     {
+      "id": "break",
+      "title": "Trous",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Saute directement au-dessus des trous ou bifurque momentanément vers une autre corde.",
+       "Ni l'armure du bouclier ni l'état de fantôme ne te protégeront d'une chute dans un trou."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "break.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "comets",
+    "label": "Comètes",
+    "pages": [
+     {
+      "id": "comet",
+      "title": "Comètes",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Une comète fonce à toute allure sur une corde avec une vitesse importante.",
+       "Abandonne d'urgence la corde ciblée avant d'encaisser l'impact."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "comet.fr.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pendulum",
+      "title": "Pendules",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "La charge explosive d'un pendule se balance alternativement entre deux cordes, laissant la troisième totalement libre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pendulum.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "fusion",
+    "label": "Fusion",
+    "pages": [
+     {
+      "id": "elec",
+      "title": "Cordes électrifiées",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Des étincelles parcourent toujours une corde avant que l'électricité ne frappe.",
+       "La corde passe sous haute tension durant quelques secondes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "elec.fr.webp",
+       "w": 520,
+       "h": 279,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

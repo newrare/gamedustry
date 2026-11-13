@@ -347,6 +347,32 @@ that moves the per-game odds; the portfolio only multiplies them.
   that passes earns a second round of variants. Attribute the installs it sent:
   `?from=` on a site link, the Play install referrer on a store link
 
+### Search — the site and its guides
+
+The site writes every page in English (`/…`) and French (`/fr/…`), a guide
+page per game (`/guide/<slug>`), a `sitemap.xml` and a `robots.txt`
+(`tools/build/build-site.mjs`). Google finds the sitemap through `robots.txt`
+on its own; declaring it is what makes the indexing visible and faster.
+
+- [ ] MAIN — **declare the site in Google Search Console**, once the build
+  with `sitemap.xml` is deployed (`https://newrare.app/sitemap.xml` must
+  answer the XML, not a 404):
+  1. <https://search.google.com/search-console> → *Add property* → **Domain**
+     → `newrare.app`; copy the `google-site-verification=…` TXT record
+  1. OVH (the DNS is there: `ns111.ovh.net`) → *Web Cloud → Domain names →
+     newrare.app → DNS zone → Add an entry* → **TXT**, sub-domain empty, the
+     value pasted; leave the `v=spf1 …` record alone (the mail's)
+  1. back in Search Console → *Verify* (minutes to a few hours of propagation)
+  1. *Sitemaps* → `sitemap.xml` → *Submit*; expect "Success" and 48 URLs
+  1. *URL inspection* → *Request indexing* for `/`, `/fr`, `/guide`,
+     `/fr/guide` (the quota is about ten a day)
+  1. Bing Webmaster Tools → *Import from Google Search Console* (covers
+     DuckDuckGo and Ecosia too)
+- [ ] MAIN — **a share image** for the home and the privacy page: 1200×630,
+  the studio's look. Their `og:image` is the 192 px logo today (`headBlock` in
+  `build-site.mjs`), which a social network shows as a thumbnail rather than
+  a card; the guide pages already share their game's desk scene
+
 ### The portals — traffic that is already reachable
 
 Un-parked on 2026-09-18. Finished web builds are an asset here and a

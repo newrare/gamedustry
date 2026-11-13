@@ -328,7 +328,7 @@ function sheets() {
 }
 
 // --- Chrome over the DevTools protocol -----------------------------------
-// The same tiny client as tools/lab/encode-art.mjs and shoot-cover.mjs, kept
+// The same tiny client as tools/lab/encode-art.mjs and shoot-store.mjs, kept
 // local for the same reason: forty lines beat a module nothing else imports.
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

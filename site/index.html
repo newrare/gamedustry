@@ -5,12 +5,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#05060c">
+  <!-- The page's name and its two sentences, in both languages like every
+       other text here: script.js writes them on load, and the builder bakes
+       them into / and /fr/ with the rest of the <head> (canonical, hreflang,
+       the share image, the structured data — tools/build/build-site.mjs). -->
   <meta name="description"
-    content="Newrare makes games that are satisfying, fun and fast. The whole collection plays in the browser, one tap away.">
-  <meta property="og:title" content="Newrare — Game Studio">
-  <meta property="og:description" content="Satisfying, fun and fast. One tap away, no install, no account.">
+    data-fr="Studio de jeux indépendant. Arcade, réflexion, cartes, stratégie : toute la collection se joue gratuitement dans le navigateur, sans installation ni compte."
+    data-en="Independent game studio. Arcade, puzzle, cards, strategy: the whole collection plays free in your browser, on phone or desktop. No install, no account."
+    content="Independent game studio. Arcade, puzzle, cards, strategy: the whole collection plays free in your browser, on phone or desktop. No install, no account.">
+  <meta property="og:title"
+    data-fr="Newrare — Jeux gratuits sur navigateur, sans installation"
+    data-en="Newrare — Free browser games, no install"
+    content="Newrare — Free browser games, no install">
+  <meta property="og:description"
+    data-fr="Satisfaisants, fun et rapides. Un clic et la partie démarre : pas d’installation, pas de compte."
+    data-en="Satisfying, fun and fast. One tap away, no install, no account."
+    content="Satisfying, fun and fast. One tap away, no install, no account.">
   <meta property="og:type" content="website">
-  <title>Newrare — Game Studio</title>
+  <title data-fr="Newrare — Jeux gratuits sur navigateur, sans installation"
+    data-en="Newrare — Free browser games, no install | Indie game studio">Newrare — Free browser games, no install | Indie game studio</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/x-icon" href="./image/favicon.ico">
   <link rel="apple-touch-icon" href="./image/logo.png">
@@ -29,6 +42,9 @@
 
       <nav class="nav-links" id="navLinks" aria-label="Main">
         <a href="#playables" data-fr="Jeux" data-en="Games"></a>
+        <!-- The guides are pages the builder writes (tools/build/site-guide.mjs):
+             the link is live on the built site and names nothing in this folder. -->
+        <a href="guide/index.html" data-fr="Guides" data-en="Guides"></a>
         <a href="#apps" data-fr="Applis" data-en="Apps"></a>
         <a href="#studio" data-fr="Studio" data-en="Studio"></a>
         <a href="#contact" data-fr="Contact" data-en="Contact"></a>
@@ -356,6 +372,7 @@
       </div>
       <nav class="foot-links" aria-label="Footer">
         <a href="#playables" data-fr="Jeux" data-en="Games"></a>
+        <a href="guide/index.html" data-fr="Guides" data-en="Guides"></a>
         <a href="#apps" data-fr="Applis" data-en="Apps"></a>
         <a href="#studio" data-fr="Studio" data-en="Studio"></a>
         <a href="#contact" data-fr="Contact" data-en="Contact"></a>

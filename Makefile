@@ -23,8 +23,10 @@
 #   make village the village composer, at http://localhost:8094/
 #   make stickers the sticker review desk, at http://localhost:8096/
 #   make meta    the itch page copy, one file per game
-#   make shots [GAME=<slug>]   the eleven captures → assets/image/screen/
-#   make map   [GAME=<slug>]   just the eleventh, the level map
+#   make shots [GAME=<slug>]   every level of two biomes, the map, the village and
+#                              each door x tab → assets/image/screen/ (old ones deleted)
+#   make map   [GAME=<slug>]   just the level map
+#   make guides [GAME=<slug>]  re-read the site's guide pages out of the games, words AND pictures
 #   make android GAME=<slug>   the signed .aab for the Play Console
 #   make ng      zip the 13 for a Newgrounds submission
 #
@@ -33,7 +35,7 @@
 
 MD := docs/ README.md CLAUDE.md TODO.md
 
-.PHONY: help check test push itch site serve preview lab studio store events sfx kit models text village stickers meta shots map ng android
+.PHONY: help check test push itch site serve preview lab studio store events sfx kit models text village stickers meta shots map guides ng android
 
 # Matched, not a line range: adding a target used to mean editing a `sed` range
 # here too, and forgetting silently truncated this list.
@@ -172,12 +174,13 @@ meta:
 	node tools/publish/store-meta.mjs --all --out=dist/meta
 
 # A scripted pilot replays every game's web build in headless Chrome and writes
-# twelve pictures per game: ten of the round, from its first seconds to the end
-# screen, the level map (-11) and the village (-12) — plus, for a game with an
-# army (stratideck), five officers at full size, face then back (-13 to -22).
-# Two minutes a game, so GAME=<slug> is how one is redone; `make map` is the
-# eleventh alone, and it renumbers none of the ten (so do --village-only and
-# --cards-only on the tool itself).
+# one picture per level of the first two biomes (the middle of each round,
+# -01 to -12), the level map, the village with its words off, then, for a game
+# with an army (stratideck), five officers face then back, and last every door
+# of the village once per tab of its sheet. A full run deletes the game's old
+# pictures first. Several minutes a game, so GAME=<slug> is how one is redone;
+# `make map` is the map alone and renumbers nothing (so do --village-only,
+# --doors-only and --cards-only on the tool itself).
 #
 # The images are an input, like the painted art: nothing rebuilds them, and the
 # site picks them up on its next build — `make check && make site` after a run.
@@ -186,6 +189,14 @@ shots:
 
 map:
 	node tools/lab/shoot-screens.mjs $(GAME) --map-only
+
+# The site's guide pages (/guide/<slug>, both languages) are the games' own
+# guides, read out of their web build into assets/guide/<slug>/. `make check`
+# already refreshes the WORDS of any game that changed; this retakes the
+# pictures too — a dozen seconds a game — for a page that was added or one
+# that draws something new.
+guides:
+	node tools/build/gen-guides.mjs --shoot $(GAME)
 
 # One game to one .aab. The web build, the Capacitor project and Gradle, in
 # that order — gen-native re-runs the build itself, so this target is the same

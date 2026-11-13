@@ -26,18 +26,36 @@
  * it for its endless mode); an endless game has no such number, so SPAN below
  * carries how long a run of it is worth sampling.
  *
- * **One capture per stage, and at least two biomes.** A game with a level
- * climb (`web.levels`) never has two gameplay shots on the same level: eight
- * shots of one board at four moments are four pictures of one place. Each
- * shot is given its own level, spread evenly over the thirty, so the gallery
- * walks the climb — level 2 to level 29, every band of `web.levels.bands`
- * crossed — and a plan that would stay inside one biome is refused. `--level`
- * pins every shot to one level, which breaks that rule, so it is a bench
- * flag: it refuses to write more than one gameplay shot into
- * assets/image/screen/.
+ * **One capture per level, every level of the first two biomes.** A game
+ * with a level climb (`web.levels`) is shot once on each level of its first
+ * two bands of `web.levels.bands` (levels 1 to 12 on the map's default
+ * 1 7 13 19 25), each at the MIDDLE of its round: the gallery is then twelve
+ * different boards, two worlds and whatever enemies, objects and specials
+ * those levels deal, rather than one board at several moments. `--biomes N`
+ * takes more bands. `--level` pins every shot to one level, which breaks
+ * the rule, so it is a bench flag: it refuses to write more than one gameplay
+ * shot into assets/image/screen/. A game with no climb shoots `--shots` free
+ * rounds spread over its progression.
  *
- * After the gameplay shots come the screens no progression can reach: the end
- * screen (only with `--end`), the LEVEL MAP and the village.
+ * After the gameplay shots come the screens no progression can reach, in
+ * this order: the end screen (only with `--end`), the LEVEL MAP, the village
+ * with its buildings' words turned off (the OPTIONS switch a player who knows
+ * the place uses), then EVERY DOOR of the village — the collection, the shop,
+ * the ranking, the codex, the daily road, the options, the barracks' rooms —
+ * once per TAB of the sheet it opens (a card has one picture). The doors are
+ * found off the manifest's `web.village.houses` and the tabs off the sheet's
+ * own bar, so a new tab is shot with nothing to declare here.
+ *
+ * Every page load starts on a wiped storage, then the driver writes the
+ * history a player a few sessions in would have — the climb's first band and
+ * a half, a wallet, half the stickers with a few doubles, some gallery pieces
+ * — through the shell's own functions, so the map, the band, the album and
+ * the shop are a place someone plays rather than thirty grey circles and an
+ * empty collection.
+ *
+ * A full run of a game DELETES its old `<slug>-NN` pictures first: the plan's
+ * length changes with the game (its bands, its doors, its tabs), and a shot
+ * left over from a longer plan would sit in the gallery as a stranger.
  *
  * The map is not a frame of a round either — it is the web shell's own screen,
  * and an empty board is a picture of nothing: thirty grey circles, no stars, a
@@ -54,21 +72,27 @@
  * itself decides when it is ready and the capture happens on that signal.
  *
  * Usage:
- *   node tools/lab/shoot-screens.mjs [slug ...] [--shots 8] [--png] [--keep]
- *     -01..-08 one level each, over 2+ biomes; -09 the map; -10 the village
- *   node tools/lab/shoot-screens.mjs vipera --end          # + the end screen, -09 (map -10…)
+ *   node tools/lab/shoot-screens.mjs [slug ...] [--png] [--keep]
+ *     -01..-12 one level each (two biomes), then the map, the village,
+ *     every door x tab, and stratideck's officers last
+ *   node tools/lab/shoot-screens.mjs vipera --biomes 3     # levels 1-18
+ *   node tools/lab/shoot-screens.mjs vipera --end          # + the end screen after the levels
  *   node tools/lab/shoot-screens.mjs vipera --no-build     # reuse dist/itch
- *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source
+ *   node tools/lab/shoot-screens.mjs vipera --playable     # the old source, free rounds only
  *   node tools/lab/shoot-screens.mjs vipera --ctls         # keep MENU/OPTIONS
  *   node tools/lab/shoot-screens.mjs vipera --lang fr      # default: en
  *   node tools/lab/shoot-screens.mjs vipera --out /tmp/x   # anywhere but assets/image/screen/
  *   node tools/lab/shoot-screens.mjs vipera --level 19 --out /tmp/x   # that level's round (web levels)
  *   GEARBALL_BIOME=3 node tools/lab/shoot-screens.mjs gearball --out /tmp/x   # one biome's machine
- *   node tools/lab/shoot-screens.mjs --map-only            # just the map, -09
- *   node tools/lab/shoot-screens.mjs vipera --no-map       # the round only
- *   node tools/lab/shoot-screens.mjs --village-only        # just the village, -10
- *   node tools/lab/shoot-screens.mjs stratideck --cards-only   # the officers, -11…
+ *   node tools/lab/shoot-screens.mjs --map-only            # just the map
+ *   node tools/lab/shoot-screens.mjs --village-only        # just the village
+ *   node tools/lab/shoot-screens.mjs --doors-only          # just the doors and their tabs
+ *   node tools/lab/shoot-screens.mjs vipera --no-doors     # everything but the doors
+ *   node tools/lab/shoot-screens.mjs stratideck --cards-only   # the officers
  *   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera  # what each shot caught
+ *
+ * An -only flag rewrites its own pictures under the numbers a full run gives
+ * them and deletes nothing.
  */
 
 import { spawn, spawnSync } from "node:child_process";
@@ -382,6 +406,10 @@ var GAME_PILOT = {
       if (ended && !window.__endAt) window.__endAt = window.__progress;   // SHOOT_DEBUG
       var pick = document.querySelector(".ar-pick-t");  // the victory reward holds the outro
       if (pick) { pick.click(); return true; }
+      /* the commander's surrender offer holds the round: fight on */
+      var sur = document.querySelector(".ar-sur-quote");
+      var on = sur && sur.parentNode.querySelector(".web-actions .btn:not(.btn-danger)");
+      if (on) { on.click(); return true; }
       if (ended || turn || march || sheet || State !== "playing") return false;
       var best = null, low = -1, keys = [], i, k;
       for (k in targets) if (targets.hasOwnProperty(k)) keys.push(k);
@@ -435,7 +463,8 @@ var CARDS = {
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
 var slugs = [];
-var shots = 8;                       // gameplay shots, one level each
+var shots = 8;                       // free-round shots, for a game with no climb
+var biomes = 2;                      // --biomes N: every level of the first N bands
 var keep = false;
 var png = false;
 var build = true;
@@ -447,12 +476,15 @@ var withVillage = true;
 var villageOnly = false;
 var withCards = true;
 var cardsOnly = false;
+var withDoors = true;
+var doorsOnly = false;
 var ctls = false;
 var lang = "en";
 var level = 0;                       // --level N: the round is that level's (web levels)
 var outDir = OUT_DIR;
 for (var i = 0; i < argv.length; i++) {
   if (argv[i] === "--shots") shots = parseInt(argv[++i], 10);
+  else if (argv[i] === "--biomes") biomes = Math.max(1, parseInt(argv[++i], 10) || 2);
   else if (argv[i] === "--keep") keep = true;
   else if (argv[i] === "--png") png = true;
   else if (argv[i] === "--no-build") build = false;
@@ -465,6 +497,8 @@ for (var i = 0; i < argv.length; i++) {
   else if (argv[i] === "--village-only") villageOnly = true;
   else if (argv[i] === "--no-cards") withCards = false;
   else if (argv[i] === "--cards-only") cardsOnly = true;
+  else if (argv[i] === "--no-doors") withDoors = false;
+  else if (argv[i] === "--doors-only") doorsOnly = true;
   else if (argv[i] === "--ctls") ctls = true;
   else if (argv[i] === "--lang") lang = argv[++i];
   else if (argv[i] === "--level") level = parseInt(argv[++i], 10) || 0;
@@ -472,82 +506,101 @@ for (var i = 0; i < argv.length; i++) {
   else slugs.push(argv[i]);
 }
 /* --level pins every shot to one stage: a bench, never a gallery. */
-if (level && shots > 1 && outDir === OUT_DIR && !(mapOnly || villageOnly || cardsOnly)) {
+if (level && shots > 1 && outDir === OUT_DIR && !(mapOnly || villageOnly || cardsOnly || doorsOnly)) {
   console.error("--level puts every shot on one stage: one capture per stage is the rule"
     + " for assets/image/screen/. Pass --out, or --shots 1.");
   process.exit(1);
 }
 /* The map lives in the web shell, which a playable does not ship. */
-if (playable) { withMap = false; withVillage = false; withCards = false; }
-/* An -only flag keeps its own screen and drops everything else, so it
-   renumbers nothing already on disk. */
-var only = mapOnly || villageOnly || cardsOnly;
+if (playable) { withMap = false; withVillage = false; withCards = false; withDoors = false; }
+/* An -only flag keeps its own screens and drops everything else; the plan is
+   still numbered in full, so it renumbers nothing already on disk. */
+var only = mapOnly || villageOnly || cardsOnly || doorsOnly;
 if (only) {
   withEnd = false;
   withMap = withMap && mapOnly;
   withVillage = withVillage && villageOnly;
   withCards = withCards && cardsOnly;
+  withDoors = withDoors && doorsOnly;
 }
+/* A full run into the gallery is a fresh set: the game's old pictures go
+   first (see the header). A bench into --out, a partial run or a run with
+   a whole section switched off leaves them alone. */
+var fresh = !only && outDir === OUT_DIR && !level
+  && withMap && withVillage && withDoors && withCards;
 if (!slugs.length) {
   slugs = fs.readdirSync(GAMES_DIR).filter(function (d) {
     return fs.existsSync(path.join(GAMES_DIR, d, "manifest.json"));
   }).sort();
 }
 
-/* The stages the gameplay shots are taken on: ONE per shot, never two shots
-   on one level, spread evenly over the climb — eight shots land on 2 6 10 14
-   17 21 25 29, every band crossed. The bands are the manifest's own
+function manifestOf(slug) {
+  return JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8"));
+}
+
+/* The levels the gameplay shots are taken on: EVERY level of the first
+   `biomes` bands, one shot each. The bands are the manifest's own
    (`web.levels.bands.from`, the map's 1 7 13 19 25 when a game leaves it
-   out), and a plan inside one band is refused: at least two biomes, or the
-   gallery is one place shot eight times. A game with no climb plays its free
-   round, and --level pins all of them to one stage (a bench, see above). */
+   out). A game with no climb (or a playable) gets `shots` free rounds,
+   level 0, and --level pins `shots` of them to one level (a bench). */
+var BANDS = [1, 7, 13, 19, 25];                      // levels.js: the map's default bands
 var CLIMB_LEVELS = 30;                               // levels.js: thirty on every board
-function stagesOf(slug, g) {
-  if (level) return Array(g).fill(level);
-  var m = JSON.parse(fs.readFileSync(path.join(GAMES_DIR, slug, "manifest.json"), "utf8"));
-  var L = m.web && m.web.levels;
-  if (!L || playable) return Array(g).fill(0);
-  var from = (L.bands && L.bands.from) || [1, 7, 13, 19, 25];
-  var out = [], k;
-  for (k = 0; k < g; k++) out.push(1 + Math.floor((k + 0.5) * CLIMB_LEVELS / g));
-  var bandOf = function (lv) { var b = 0; while (b + 1 < from.length && lv >= from[b + 1]) b++; return b; };
-  var bands = {}; out.forEach(function (lv) { bands[bandOf(lv)] = 1; });
-  if (g > 1 && Object.keys(bands).length < 2)
-    throw new Error(slug + ": every shot is in one biome (" + out.join(" ") + ")");
-  if (new Set(out).size !== out.length)
-    throw new Error(slug + ": two shots on one stage (" + out.join(" ") + ")");
+function stagesOf(slug) {
+  if (level) return Array(shots).fill(level);
+  var L = manifestOf(slug).web && manifestOf(slug).web.levels;
+  if (!L || playable) return Array(shots).fill(0);
+  var from = (L.bands && L.bands.from) || BANDS;
+  var last = biomes < from.length ? from[biomes] - 1 : CLIMB_LEVELS;
+  var out = [];
+  for (var lv = from[0] || 1; lv <= last; lv++) out.push(lv);
   return out;
 }
 
-/* The shot plan. The gameplay shots, one stage each (stagesOf), each at its
-   own progression of its round — spread from 8% to 96% so the gallery mixes
-   an opening board with a crowded one — then the end screen when asked for,
-   the level map and the village, which are not frames of a round at all.
+/* The village's doors, in the order the gallery shows them: the meta
+   layer's rooms first, then the cards, the road and the options, then the
+   barracks. Only the ones the game's village actually builds are shot; `play`,
+   `map`, a `mode` house and the decor open no room of their own. */
+var DOOR_ORDER = ["album", "shop", "ranking", "cards", "daily", "options",
+                  "deck", "recruit", "defense", "infirmary", "prison"];
+function doorsOf(slug) {
+  var v = manifestOf(slug).web && manifestOf(slug).web.village;
+  if (!v || !v.houses) return [];
+  var built = {};
+  v.houses.forEach(function (h) { built[h.role] = 1; });
+  return DOOR_ORDER.filter(function (r) { return built[r]; });
+}
 
-   Every aim carries the NUMBER it is written under, so the map is always
-   `<slug>-09.jpg` (with the default eight shots) whether or not the round was
-   reshot with it: `--map-only` must not renumber the pictures already on the
-   itch page. */
-function plan(n, slug) {
+/* The shot plan. The gameplay shots, one level each (stagesOf), each at the
+   middle of its round — a level shot at its middle is the board in full
+   swing, neither the empty opening nor the end — then the end screen when
+   asked for, the level map, the village and the officers, which are not
+   frames of a round at all. The doors come last because their count is only
+   known once their sheets are open (a tab is found on the sheet's bar), so
+   `doorsFrom` is the number the first of them is written under.
+
+   Every aim carries the NUMBER it is written under whether or not it is shot
+   this run: `--map-only` must not renumber the pictures already on disk. */
+function plan(slug) {
   var out = [];
-  var e = withEnd ? 1 : 0;
-  if (!only) {
-    var lv = stagesOf(slug, n);
-    for (var k = 0; k < n; k++) {
-      out.push({ n: k + 1, seed: k + 1, level: lv[k], p: n < 2 ? 0.5 : 0.08 + 0.88 * (k / (n - 1)) });
-    }
-    if (withEnd) out.push({ n: n + 1, seed: n + 1, level: lv[n - 1], end: true });
+  var lv = stagesOf(slug), n = lv.length;
+  var free = lv[0] === 0 && !level;                  // free rounds: spread the progression
+  var shoot = !only;
+  for (var k = 0; k < n; k++) {
+    out.push({ n: k + 1, seed: lv[k] || k + 1, level: lv[k], shoot: shoot,
+               p: free && n > 1 ? 0.08 + 0.88 * (k / (n - 1)) : 0.5 });
   }
-  if (withMap) out.push({ n: n + e + 1, seed: n + e + 1, map: true });
-  /* The village, and the officers after it: fixed numbers too, the cards
-     front then back, so -11 and -12 are one card's two faces. */
-  if (withVillage) out.push({ n: n + e + 2, seed: n + e + 2, village: true });
-  var cards = withCards ? CARDS[slug] || [] : [];
+  var at = n + 1;
+  if (withEnd) out.push({ n: at++, seed: n + 1, level: lv[n - 1], end: true, shoot: true });
+  out.push({ n: at++, seed: 1, map: true, shoot: withMap });
+  out.push({ n: at++, seed: 1, village: true, shoot: withVillage });
+  /* The officers, front then back, so two consecutive numbers are one card's
+     two faces. */
+  var cards = CARDS[slug] || [];
   for (var c = 0; c < cards.length; c++) {
-    out.push({ n: n + e + 3 + c * 2, seed: 1, card: c, back: false });
-    out.push({ n: n + e + 4 + c * 2, seed: 1, card: c, back: true });
+    out.push({ n: at++, seed: 1, card: c, back: false, shoot: withCards });
+    out.push({ n: at++, seed: 1, card: c, back: true, shoot: withCards });
   }
-  return out;
+  return { aims: out, doorsFrom: at };
 }
 
 // --- Injected code -------------------------------------------------------
@@ -559,6 +612,9 @@ var SEED_JS = `<script>
   var s = (parseInt(q.get("seed"), 10) || 1) * 2654435761 % 2147483647;
   if (s <= 0) s += 2147483646;
   Math.random = function () { s = s * 16807 % 2147483647; return (s - 1) / 2147483646; };
+  /* Every file:// page of this profile shares one storage: wiped, so a shot
+     never inherits the climb, the wallet or a switch of the shot before it. */
+  try { localStorage.clear(); } catch (e) {}
 })();
 </script>`;
 
@@ -572,7 +628,8 @@ var HOOK_JS = `
   window.__H = {
     startGame: startGame, frameUpdate: frameUpdate, frameRender: frameRender,
     Loop: Loop, Input: Input, Layout: Layout, CONFIG: CONFIG, Beat: Beat,
-    Pop: Pop, Overlay: Overlay, Notify: Notify, Enter: Enter, state: function () { return State; }
+    Pop: Pop, Overlay: Overlay, Notify: Notify, Enter: Enter, state: function () { return State; },
+    ScreenFx: typeof ScreenFx !== "undefined" ? ScreenFx : null
   };
 `;
 
@@ -597,6 +654,8 @@ var DRIVER_JS = `<script>
   var VILLAGE = q.get("village") === "1";            // shoot the village
   var CARD = q.has("card") ? parseInt(q.get("card"), 10) : -1;   // an officer, by CARDS index
   var BACK = q.get("back") === "1";                  // ...turned over
+  var DOOR = q.get("door") || "";                    // a village door, by role
+  var TAB = parseInt(q.get("tab"), 10) || 0;         // ...and the tab of its sheet
   var SPAN = parseInt(q.get("span"), 10) || 0;       // measured reach, 0 = none
   var ENDLESS = parseInt(q.get("endless"), 10) || 30;
   var LEVEL = parseInt(q.get("level"), 10) || 0;     // --level: play that level's round
@@ -730,7 +789,29 @@ var DRIVER_JS = `<script>
      very frames that show the banner. Deferring past them is what stops a
      store gallery full of game-overs; cap is the bound, so a game that warns
      constantly still hands back a frame. */
-  function dying() { return !!document.querySelector("#ov-pops .pop-danger"); }
+  /* A game's own red vignette (Overlay.vignette, vipera's life lost) is a
+     free colour rather than a named preset, so it is read off the glow node
+     the motor draws it in: up, and red. */
+  function redGlow() {
+    var g = document.querySelector(".sfx-glow");
+    if (!g || +getComputedStyle(g).opacity < 0.08) return false;
+    var m = g.innerHTML.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);
+    return !!m && +m[1] > 170 && +m[2] < 110 && +m[3] < 150;
+  }
+  function dying() {
+    var H = window.__H, F = H && H.ScreenFx;
+    /* ...and the same goes for the frame turning red around a hit, a mistake
+       callout (\`alert\`: MAGNET LOST) and a round already over, whose outro
+       burns the frame: a gallery of the game going wrong sells nothing. */
+    if (H && H.state() !== "playing") return true;
+    var W = window.__WEB__;
+    if (W && W.ending && W.ending()) return true;     // the outro: a missed level burns red
+    if (F && (F.active("hit") || F.active("danger") || F.active("fire"))) return true;
+    if (redGlow()) return true;
+    var MD = window.__MODAL__;
+    if (MD && MD.any && MD.any()) return true;        // a card over the round
+    return !!document.querySelector("#ov-pops .pop-danger, #ov-pops .pop-alert");
+  }
 
   /* The end screen is not a frame of the simulation, it is a DOM cinematic on
      the wall clock. So the round is played out — the pilot dies, or the clock
@@ -756,7 +837,7 @@ var DRIVER_JS = `<script>
     if (!started) {
       if (H.state() !== "intro" || !window.__LV) return;
       if (!window.__LEVELS__ || !window.__LEVELS__.active()) { window.__skip = 1; return; }
-      climb();
+      history();
       document.getElementById("btn-start").click();   // the player's own click
       started = true;
       endedAt = Date.now();
@@ -768,7 +849,7 @@ var DRIVER_JS = `<script>
       var door = document.querySelector('[data-role="map"] .vg-hit');
       if (door) { door.click(); window.__viaVillage = 1; endedAt = Date.now(); }
     }
-    if (Date.now() - endedAt >= MAP_MS) window.__shot = 1;
+    if (Date.now() - endedAt >= MAP_MS) { H.Notify.clear(); window.__shot = 1; }
   }
 
   /* The board with a history on it, through the layer's own record() — the
@@ -782,21 +863,102 @@ var DRIVER_JS = `<script>
     }
   }
 
-  /* The village is a DOM view, like the map: the climb is written, PLAY is
+  /* ...and a player's pockets to go with it, through the meta layer's own
+     functions: a wallet, a level of xp (about six), half the album with
+     three doubles to sell, a super ticket and a few gallery pieces. An empty
+     album is twenty white silhouettes, a picture of nothing. */
+  var OWNED = [1, 2, 3, 4, 6, 7, 9, 10, 12, 15], DOUBLES = [2, 6, 9];
+  function pockets() {
+    var MT = window.__META__;
+    if (!MT || !MT.active()) return;
+    MT.addCoins(1240);
+    MT.addXp(15000);
+    MT.addTickets(2);
+    if (MT.addSupers) MT.addSupers(1);
+    if (MT.addPieces) MT.addPieces(7);
+    var total = MT.total(), i;
+    for (i = 0; i < OWNED.length; i++) if (OWNED[i] <= total) MT.give(OWNED[i]);
+    for (i = 0; i < DOUBLES.length; i++) if (DOUBLES[i] <= total) MT.give(DOUBLES[i]);
+  }
+  function history() {
+    if (window.__LV && window.__LEVELS__ && window.__LEVELS__.active()) climb();
+    pockets();
+  }
+
+  /* The village is a DOM view, like the map: the history is written, PLAY is
      clicked — which is what opens the hub — and the wall clock settles its
-     houses in. A game with no village has none to shoot and says so. */
+     houses in. Its buildings' words are turned off first, the switch a
+     player who knows the place flips in OPTIONS: the picture is the place,
+     not a legend. A game with no village has none to shoot and says so. */
   var VILLAGE_MS = 2600;
+  function openVillage(H) {
+    if (H.state() !== "intro") return false;
+    if (!(H.CONFIG.web && H.CONFIG.web.village)) { window.__skip = 1; return false; }
+    history();
+    if (window.__VILLAGE__ && window.__VILLAGE__.setLabels) window.__VILLAGE__.setLabels(false);
+    document.getElementById("btn-start").click();
+    started = true;
+    endedAt = Date.now();
+    return true;
+  }
+  /* The hub may greet the player with a card of its own — the objects a band
+     handed over, a camp's day, a promotion (army.js) — which is a moment,
+     not the place. Each is put away by its own tap line's way (closeTop),
+     and the hub is given a beat to settle under it; \`calm\` says whether
+     the place is bare now. Bounded: a card that keeps coming back is shot. */
+  var calmTries = 0;
+  function calm() {
+    var MD = window.__MODAL__;
+    if (!MD || !MD.any || !MD.any() || calmTries >= 8) return true;
+    MD.closeTop(); calmTries++;                       // one a beat: a card leaves animated
+    return false;
+  }
+  var CALM_MS = 700;
   function tickVillage(H) {
-    if (!started) {
-      if (H.state() !== "intro") return;
-      if (!(H.CONFIG.web && H.CONFIG.web.village)) { window.__skip = 1; return; }
-      if (window.__LV && window.__LEVELS__ && window.__LEVELS__.active()) climb();
-      document.getElementById("btn-start").click();
-      started = true;
-      endedAt = Date.now();
-    }
+    if (!started && !openVillage(H)) return;
     window.__progress = (window.__progress || 0) + 1;
-    if (Date.now() - endedAt >= VILLAGE_MS) window.__shot = 1;
+    var t = Date.now() - endedAt;
+    if (phase === 0 && t >= VILLAGE_MS) { calm(); phase = 1; endedAt = Date.now(); }
+    else if (phase === 1 && t >= CALM_MS) {
+      if (!calm()) { endedAt = Date.now(); return; }
+      H.Notify.clear(); window.__shot = 1;
+    }
+  }
+
+  /* A DOOR of the village, through the house's own hit box — the player's
+     tap — and one TAB of the sheet it opens, through the tab's own button.
+     The host learns how many tabs there are from \`__tabs\` on the first
+     tab's shot, and asks for the others one page load each. A door that
+     opens nothing (a role this build does not carry) is skipped, and so is a
+     tab past the last. */
+  var DOOR_MS = 1800, TAB_MS = 1300;
+  function tickDoor(H) {
+    if (!started && !openVillage(H)) return;
+    window.__progress = (window.__progress || 0) + 1;
+    var t = Date.now() - endedAt;
+    if (phase === 0 && t >= VILLAGE_MS) { calm(); phase = 1; endedAt = Date.now(); }
+    else if (phase === 1 && t >= CALM_MS) {
+      if (!calm()) { endedAt = Date.now(); return; }
+      var hit = document.querySelector('[data-role="' + DOOR + '"] .vg-hit');
+      var M = window.__MENU__;
+      if (hit) hit.click();
+      else if (M && M.doors && M.doors[DOOR]) M.doors[DOOR]();
+      else { window.__skip = 1; return; }
+      phase = 2; endedAt = Date.now();
+    } else if (phase === 2 && t >= DOOR_MS) {
+      var VW = window.__VIEW__, MD = window.__MODAL__;
+      if (!((VW && VW.top() && VW.top() !== "village") || (MD && MD.any && MD.any()))) {
+        window.__skip = 1; return;
+      }
+      var tabs = document.querySelectorAll(".wv-screen.on .wv-tab");
+      window.__tabs = tabs.length;
+      if (TAB >= Math.max(1, tabs.length)) { window.__skip = 1; return; }
+      if (tabs.length) tabs[TAB].click();
+      phase = 3; endedAt = Date.now();
+    } else if (phase === 3 && t >= TAB_MS) {
+      H.Notify.clear();
+      window.__shot = 1;
+    }
   }
 
   /* An officer's file opens over the village, which is where the deck it is
@@ -831,6 +993,7 @@ var DRIVER_JS = `<script>
     if (!H) return;
     if (MAP) { tickMap(H); return; }
     if (VILLAGE) { tickVillage(H); return; }
+    if (DOOR) { tickDoor(H); return; }
     if (CARD >= 0) { tickCard(H); return; }
     if (!started) {
       if (H.state() !== "intro") return;              // still loading
@@ -1036,6 +1199,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   var url = "file://" + file + "?first=0&seed=" + seed + "&span=" + span
     + "&endless=" + SPAN._endless + "&lang=" + lang + (aim.level ? "&level=" + aim.level : "")
     + (aim.map ? "&map=1" : aim.village ? "&village=1"
+      : aim.door ? "&door=" + aim.door + "&tab=" + (aim.tab || 0)
       : aim.card != null ? "&card=" + aim.card + (aim.back ? "&back=1" : "")
       : aim.end ? "&end=1" : "&p=" + aim.p.toFixed(3));
   await client.send("Page.navigate", { url: url }, sid);
@@ -1063,7 +1227,7 @@ async function shoot(client, sid, file, seed, aim, span, outPath) {  // span: se
   // and the late shots are duplicates of the middle ones.
   if (process.env.SHOOT_DEBUG) {
     process.stdout.write("  " + path.basename(outPath) + " "
-      + (aim.map ? "map" : aim.village ? "village" : aim.card != null ? "card" + aim.card + (aim.back ? "b" : "f")
+      + (aim.map ? "map" : aim.village ? "village" : aim.door ? aim.door + "/" + (aim.tab || 0) : aim.card != null ? "card" + aim.card + (aim.back ? "b" : "f")
         : aim.end ? "end" : "p=" + aim.p.toFixed(2)) + " "
       + await evaluate(client, sid,
       'JSON.stringify({ frames: window.__progress, reached: +(window.__reached || 1).toFixed(2),' +
@@ -1094,26 +1258,48 @@ var client = await cdp(chrome.port);
 var sid = await openPage(client);
 
 
+/* One picture: written under its number, reported as NN (shot), -NN (nothing
+   to shoot there) or !NN (failed). */
+async function take(slug, file, aim, span, line) {
+  var tag = String(aim.n).padStart(2, "0");
+  var name = slug + "-" + tag + (png ? ".png" : ".jpg");
+  try {
+    var shot = await shoot(client, sid, file, aim.seed, aim, span, path.join(outDir, name));
+    line.push(shot ? tag : "-" + tag);
+    return shot;
+  } catch (e) {
+    failed++;
+    line.push("!" + tag);
+    process.stderr.write("\n" + name + ": " + e.message + "\n");
+    return false;
+  }
+}
+
 for (var s = 0; s < slugs.length; s++) {
   var slug = slugs[s];
   var file = prepare(slug, tmpDir);
   var span = SPAN[slug] || 0;
-  var aims = plan(shots, slug);
+  var p = plan(slug);
   var line = [];
-  for (var a = 0; a < aims.length; a++) {
-    var aim = aims[a];
-    var tag = String(aim.n).padStart(2, "0");
-    var name = slug + "-" + tag + (png ? ".png" : ".jpg");
-    var outPath = path.join(outDir, name);
-    try {
-      // The seed is the shot number, so two shots of one game are two
-      // different runs sampled at two different points of the round.
-      var shot = await shoot(client, sid, file, aim.seed, aim, span, outPath);
-      line.push(shot ? tag : "-" + tag);              // -NN: nothing to shoot
-    } catch (e) {
-      failed++;
-      line.push("!" + tag);
-      process.stderr.write("\n" + name + ": " + e.message + "\n");
+  if (fresh) {
+    fs.readdirSync(outDir).filter(function (f) {
+      return new RegExp("^" + slug + "-\\d+\\.(jpg|png)$").test(f);
+    }).forEach(function (f) { fs.unlinkSync(path.join(outDir, f)); });
+  }
+  for (var a = 0; a < p.aims.length; a++) {
+    if (p.aims[a].shoot) await take(slug, file, p.aims[a], span, line);
+  }
+  /* The doors, numbered on from the plan: the first tab of a door says how
+     many its sheet has, and each of the others is one more page load. */
+  var at = p.doorsFrom;
+  var doors = withDoors ? doorsOf(slug) : [];
+  for (var d = 0; d < doors.length; d++) {
+    var first = { n: at, seed: 1, door: doors[d], tab: 0 };
+    if (!(await take(slug, file, first, span, line))) continue;
+    at++;
+    var count = (await evaluate(client, sid, "window.__tabs || 0")) || 1;
+    for (var k = 1; k < count; k++) {
+      if (await take(slug, file, { n: at, seed: 1, door: doors[d], tab: k }, span, line)) at++;
     }
   }
   console.log(slug + "  " + line.join(" "));

@@ -33,7 +33,7 @@
  * WHY CHROME AND NOT AN IMAGE LIBRARY
  * -----------------------------------
  * The repo has no dependencies and no image library, and it is not going to
- * grow one to resize a PNG. What it does have is the trick `shoot-cover.mjs`
+ * grow one to resize a PNG. What it does have is the trick `shoot-store.mjs`
  * already relies on: headless Chrome resamples with a high-quality filter and
  * encodes WebP through `canvas.toDataURL`, alpha included. macOS `sips` was the
  * other candidate and cannot write WebP (read-only in its format list); its
@@ -789,7 +789,7 @@ function isStale(job) {
 }
 
 // --- Chrome over the DevTools protocol -----------------------------------
-// Same tiny CDP client as tools/lab/shoot-cover.mjs, kept local: two copies of
+// Same tiny CDP client as tools/lab/shoot-store.mjs, kept local: two copies of
 // forty lines beat a shared module nothing else would import.
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }

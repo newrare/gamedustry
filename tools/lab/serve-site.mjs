@@ -138,7 +138,15 @@ createServer(async (req, res) => {
     return;
   }
 
+  /* The addresses Vercel serves (vercel.json): no trailing slash and no
+     .html on a page — /fr, /guide/vipera, /privacy — so a path that is not a
+     file is tried as a folder's index.html, then as a standing .html page. */
   let rel = pathname.endsWith('/') ? pathname + 'index.html' : pathname;
+  if (!path.extname(rel)) {
+    for (const guess of [rel + '/index.html', rel + '.html']) {
+      if (existsSync(path.join(OUT, guess))) { rel = guess; break; }
+    }
+  }
   const file = path.join(OUT, rel);
   if (!file.startsWith(OUT)) { res.writeHead(403).end('no'); return; }
 

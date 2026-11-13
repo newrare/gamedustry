@@ -1,0 +1,609 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/spinshock — do not edit",
+ "slug": "spinshock",
+ "stamp": "dad5126314379708",
+ "en": {
+  "title": "Spinshock",
+  "howTo": "Blast then break the rival tops with one tap right on the impact",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "tap",
+      "title": "Click on the impact",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click just before a rival hits you. Your shockwave throws it back and wins you spin.",
+       "The closer to the impact you click, the more it pays. A gold ring means a perfect."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tap.en.webp",
+       "w": 500,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spin",
+      "title": "The spin gauge",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Your top keeps slowing down. Every rival that hits you costs spin.",
+       "At zero your top blows apart and the round ends."
+      ],
+      "rows": [
+       [
+        "A miss",
+        "-5%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "spin.en.webp",
+       "w": 500,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shell",
+      "title": "Shell points",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The notches around a rival are its health points. It blows apart when it has no health left.",
+       "Your shockwave, the fence and a crash into another top each take one point."
+      ],
+      "rows": [
+       [
+        "A perfect",
+        "-2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shell.webp",
+       "w": 480,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Combos and chains",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every shockwave that hits adds one to the combo. A miss, or a rival hitting you, breaks it.",
+       "One wave can hit several tops. A double or triple shock wins extra spin."
+      ],
+      "rows": [
+       [
+        "Spin every 5 hits",
+        "+5%",
+        null
+       ],
+       [
+        "A KO pays the rival's score",
+        "×2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.en.webp",
+       "w": 500,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wear",
+      "title": "Worn bearings",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "As the round goes on, your top holds less and less spin.",
+       "Even a flawless run ends, so score while the bearings last."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wear.en.webp",
+       "w": 510,
+       "h": 290,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "spark",
+    "label": "Spark",
+    "pages": [
+     {
+      "id": "green",
+      "title": "Green top",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Green tops have no protection. Your click, the fence and other tops all damage them."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "green.webp",
+       "w": 480,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "builds",
+      "title": "Small and large",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A large top is slow, but costs far more spin when it hits you."
+      ],
+      "rows": [
+       [
+        "A small rival hits you",
+        "-9%",
+        null
+       ],
+       [
+        "A large rival hits you",
+        "-23%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "builds.en.webp",
+       "w": 420,
+       "h": 200,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "insulated",
+    "label": "Insulated",
+    "pages": [
+     {
+      "id": "blue",
+      "title": "Blue top",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Blue tops stop, charge, then dash along the dashed line.",
+       "The fence can't damage blue tops. Use your click, or throw other tops into them."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "blue.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "split",
+    "label": "Split",
+    "pages": [
+     {
+      "id": "yellow",
+      "title": "Yellow top",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Other tops can't damage yellow tops. Use your click and the fence instead."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yellow.webp",
+       "w": 500,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "purple",
+      "title": "Purple top",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "A large purple top blows apart into two small ones. One top becomes two."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "purple.webp",
+       "w": 480,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "grounded",
+    "label": "Grounded",
+    "pages": [
+     {
+      "id": "red",
+      "title": "Red top",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Red tops blow up on the first thing they touch. Only the fence damages them.",
+       "Send a red top into the fence with your shockwave. Its blast hits every rival around it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "red.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "overcharge",
+    "label": "Overcharge",
+    "pages": [
+     {
+      "id": "black",
+      "title": "Black top",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Black tops give a shell point back to every rival they touch. Take them out first."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "black.webp",
+       "w": 480,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Boss top",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Only a perfect click damages the boss, one point at a time. Everything else glances off."
+      ],
+      "rows": [
+       [
+        "Shell points",
+        "10",
+        null
+       ],
+       [
+        "The boss hits you",
+        "-32%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "boss.webp",
+       "w": 420,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Spinshock",
+  "howTo": "Repousse puis brise les toupies rivales d'un Tap synchronisé au moment de l'impact",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "tap",
+      "title": "Précision de l'impact",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Interviens juste avant l'impact pour déclencher une onde de choc qui repousse l'adversaire et réalimente ta jauge.",
+       "Plus tu agis près de l'instant critique, plus les gains sont élevés, l'anneau doré confirmant la réussite parfaite."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tap.fr.webp",
+       "w": 500,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "spin",
+      "title": "Indicateur de rotation",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Ton inertie s'amenuise constamment et chaque collision subie pénalise directement ton niveau de rotation.",
+       "Lorsque la rotation atteint zéro, ta toupie vole en éclats et la partie s'achève."
+      ],
+      "rows": [
+       [
+        "Coup manqué",
+        "-5%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "spin.fr.webp",
+       "w": 500,
+       "h": 289,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shell",
+      "title": "Points de coque",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les encoches situées autour d'une rivale matérialisent ses points de vie. L'ennemi est détruit lorsqu'il n'a plus de santé.",
+       "L'utilisation de ton onde, le contact avec la barrière ou un télescopage réduisent la coque d'une unité."
+      ],
+      "rows": [
+       [
+        "Impact parfait",
+        "-2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "shell.webp",
+       "w": 480,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Enchaînements de combos",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque onde de choc réussie incrémente ton Combo. Un raté ou un choc encaissé le remet à zéro.",
+       "Une même onde peut toucher plusieurs cibles simultanément, octroyant un bonus de rotation en cas de coups multiples."
+      ],
+      "rows": [
+       [
+        "Bonus de rotation tous les 5 coups",
+        "+5%",
+        null
+       ],
+       [
+        "Valeur d'un KO en points",
+        "×2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.fr.webp",
+       "w": 500,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wear",
+      "title": "Roulements usés",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "La fatigue de rotation s'installe au fil des minutes, limitant la capacité maximale de ta toupie.",
+       "Toutes les parties ont une fin, alors accumule des points avant que le matériel ne cède."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wear.fr.webp",
+       "w": 510,
+       "h": 290,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "spark",
+    "label": "Étincelle",
+    "pages": [
+     {
+      "id": "green",
+      "title": "Toupie verte",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Les toupies vertes n'ont aucune défense particulière et subissent les dégâts de ton onde, de la barrière ainsi que des autres adversaires."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "green.webp",
+       "w": 480,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "builds",
+      "title": "Gabarits des toupies",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Bien que peu mobile, le format lourd inflige de lourdes pertes de rotation en cas de collision."
+      ],
+      "rows": [
+       [
+        "Impact d'une petite rivale",
+        "-9%",
+        null
+       ],
+       [
+        "Impact d'une grosse rivale",
+        "-23%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "builds.fr.webp",
+       "w": 420,
+       "h": 199,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "insulated",
+    "label": "Isolant",
+    "pages": [
+     {
+      "id": "blue",
+      "title": "Toupie bleue",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "La toupie bleue s'immobilise pour accumuler de l'énergie avant de foncer en suivant le tracé en pointillés.",
+       "La barrière n'a aucun effet sur les toupies bleues. Frappe-les avec ton onde ou projette d'autres toupies sur elles."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "blue.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "split",
+    "label": "Scission",
+    "pages": [
+     {
+      "id": "yellow",
+      "title": "Toupie jaune",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Insensibles aux assauts des autres toupies, les toupies jaunes ne craignent que ton onde et la barrière."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "yellow.webp",
+       "w": 500,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "purple",
+      "title": "Toupie violette",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Une grande toupie violette se fragmente en deux modèles réduits, transformant une seule unité en un duo menaçant."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "purple.webp",
+       "w": 480,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "grounded",
+    "label": "Masse",
+    "pages": [
+     {
+      "id": "red",
+      "title": "Toupie rouge",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Les toupies rouges explosent au moindre contact. Seule la barrière peut les abîmer.",
+       "Projette une toupie rouge contre la barrière grâce à ton onde. Son explosion frappe toutes les rivales autour."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "red.webp",
+       "w": 520,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "overcharge",
+    "label": "Surcharge",
+    "pages": [
+     {
+      "id": "black",
+      "title": "Toupie noire",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Les toupies noires régénèrent la coque des rivales qu'elles touchent, ce qui en fait la cible prioritaire à abattre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "black.webp",
+       "w": 480,
+       "h": 280,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Toupie Boss",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Seul un Timing parfait permet de grignoter un point de coque du boss, toute autre tentative restera sans effet."
+      ],
+      "rows": [
+       [
+        "Points de coque",
+        "10",
+        null
+       ],
+       [
+        "Impact du Boss",
+        "-32%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "boss.webp",
+       "w": 420,
+       "h": 280,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

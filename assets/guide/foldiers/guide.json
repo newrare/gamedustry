@@ -1,0 +1,1793 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/foldiers — do not edit",
+ "slug": "foldiers",
+ "stamp": "ce16fd3c1d742e9e",
+ "en": {
+  "title": "Foldiers",
+  "howTo": "Give your troops their orders before the turn ends and conquer the board",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "gu-orders",
+      "title": "Your hand",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Click one of your regions: the cards of the region's troops come into your hand. One card per troop, per piece or per purchase.",
+       "Click a card to activate it or to give an order."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-orders.en.webp",
+       "w": 552,
+       "h": 402,
+       "kind": "cut",
+       "alt": "1 2 3 Infantry Cannon Recruit +3 3"
+      }
+     },
+     {
+      "id": "gu-stack",
+      "title": "Card stacks",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Troops of the same type come as a stack, one card per troop, all numbered.",
+       "Click a single card in the stack to pick a batch: the fourth card sends four troops into the battle or convoy. Click the same card to cancel the batch, or another card to change the number."
+      ],
+      "rows": [
+       [
+        "Fourth card",
+        "4 troops",
+        null
+       ],
+       [
+        "Over 12 troops",
+        "the last card takes them all",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-stack.en.webp",
+       "w": 378,
+       "h": 236,
+       "kind": "cut",
+       "alt": "1 2 3 4 5 6 Infantry"
+      }
+     },
+     {
+      "id": "gu-target",
+      "title": "The target",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "You can choose a target region when one or more cards are active in your hand.",
+       "The pin over each potential target shows the theoretical result of a battle."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-target.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-convoy",
+      "title": "Convoys",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Once the target region is selected, the order is recorded. The arrow represents the order and the convoy involved.",
+       "Click an arrow to cancel this order."
+      ],
+      "rows": [
+       [
+        "Convoys a region",
+        "3 at most",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-convoy.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-defend",
+      "title": "Defend and wait",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every troop and every piece can receive an order each turn. The card icon on a region tells you that orders are still left to give.",
+       "Pick troops. Click a target region to move, attack or defend.",
+       "Once an order is given on the spot, the troop switches to defence or construction. You can cancel this order by clicking the troop's icon."
+      ],
+      "rows": [
+       [
+        "Defend",
+        "+1 in defence",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-defend.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-map",
+      "title": "Moving the board",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The board is bigger than the screen. Move it to look around.",
+       "A drag only ever moves the board. Select a region of yours to show its details and action cards.",
+       "On a computer the cursor changes where the board can be grabbed."
+      ],
+      "rows": [
+       [
+        "Move the board",
+        "drag, or↑←↓→",
+        null
+       ],
+       [
+        "Zoom",
+        "mouse wheel, or+−",
+        null
+       ],
+       [
+        "See the whole board",
+        "double click",
+        null
+       ],
+       [
+        "Send the orders",
+        "ENTERor Send",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-map.en.webp",
+       "w": 400,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-tick",
+      "title": "The turn",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Every turn has a countdown. Press Send to confirm your orders, or they leave as they stand when the available time runs out.",
+       "Then all the troops on the board act at the same time: yours and your rivals'."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-tick.en.webp",
+       "w": 520,
+       "h": 390,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-battle",
+      "title": "Battles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A battle is troop for troop. The bigger side wins and keeps the difference: 1 troop will remain on site for 5 vs 4.",
+       "A tie leaves nobody on either side. Two enemy convoys crossing the same border meet halfway."
+      ],
+      "rows": [
+       [
+        "Attack",
+        "1 per troop",
+        null
+       ],
+       [
+        "Defence",
+        "1 per troop",
+        null
+       ],
+       [
+        "A tie",
+        "nobody left",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-battle.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-read",
+      "title": "Reading the board",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Once an order is given, a convoy is created on the board. This movement as a convoy is shown by an arrow. You can cancel an order by clicking the arrow.",
+       "A badge on a building tells you what it will bring in at the end of the turn: often extra recruits or gold.",
+       "The colour of the shield icon gives you a prediction of your region's current defence: nothing to fear in green. The region just holds in yellow. Red clearly signals danger."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-read.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-reserve",
+      "title": "The reserve",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Your capital and your towns recruit troops into the reserve at the end of every turn.",
+       "Click the <b>Reserve</b> button, then a region you own to increase your troops. Lose your capital and the stage is lost."
+      ],
+      "rows": [
+       [
+        "Capital",
+        "+2 a turn",
+        null
+       ],
+       [
+        "Town",
+        "+1 a turn",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-reserve.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "land",
+    "label": "The land",
+    "pages": [
+     {
+      "id": "gu-fort",
+      "title": "Forts",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "A fort defends whoever holds it: its walls add a defence bonus of 2 to the current troops. It also lets you recruit one troop a turn.",
+       "Be careful though, as a siege tower in the attack convoy breaks this fort defence."
+      ],
+      "rows": [
+       [
+        "Defence",
+        "+2",
+        null
+       ],
+       [
+        "Reserve",
+        "+1 a turn",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-fort.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-mountain",
+      "title": "Mountains",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A mountain ridge cannot be crossed and only a pass lets you through. Adapt your strategy, keeping in mind that you will have to go around the mountains."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-mountain.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-river",
+      "title": "Rivers",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "An attack across a river loses one troop. A bridge will carry it across at full strength."
+      ],
+      "rows": [
+       [
+        "Across a river",
+        "−1",
+        null
+       ],
+       [
+        "Over a bridge",
+        "no loss",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-river.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-sea",
+      "title": "Harbours",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "A harbour can send infantry to any other harbour. The fleet may take several turns to reach its destination.",
+       "A troop at sea no longer defends any region on the ground."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-sea.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-wonder",
+      "title": "Wonders",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "The wonder shines on the board from the first turn. Win this region to influence the wonder.",
+       "Every turn you hold the region, the gauge moves one step toward your side. It moves back if your rival holds the region. The gauge doesn't move, or stops moving, if nobody clearly holds the region.",
+       "Fill the gauge with your colour to win. You lose if the opponent fills it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-wonder.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "weather",
+    "label": "The weather",
+    "pages": [
+     {
+      "id": "gu-snow",
+      "title": "Snow",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Every turn the weather is announced on one region. It will strike at the end of the turn. Snow takes half of the troops present with it.",
+       "Pull your troops out before it strikes."
+      ],
+      "rows": [
+       [
+        "Snow",
+        "half the troops",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-snow.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-storm",
+      "title": "Storms",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "The weather can turn into a storm. A storm destroys every troop left in a region."
+      ],
+      "rows": [
+       [
+        "Storm",
+        "every troop",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-storm.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-fronts",
+      "title": "Weather fronts",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "The weather affects two regions at the same time."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-fronts.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supply",
+    "label": "Supplies",
+    "pages": [
+     {
+      "id": "gu-gold",
+      "title": "Gold",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A mine pays 1 gold a turn to the region's owner. Gold buys new recruits, cavalry or works."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-gold.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-recruit",
+      "title": "Recruitment",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Your capital or a town lets you recruit infantry for gold. The recruits arrive after the battles at the end of the turn."
+      ],
+      "rows": [
+       [
+        "Recruits",
+        "+3 for 3 gold",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-recruit.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-cav",
+      "title": "Cavalry",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Cavalry rides 2 regions in a single turn. You recruit it in a town for gold. However, an army can intercept cavalry before it reaches its destination."
+      ],
+      "rows": [
+       [
+        "Cavalry",
+        "+2 for 4 gold",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-cav.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-engineer",
+      "title": "Engineers",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Your engineer can build a palisade on the region where he stands. This construction gives you an extra defence bonus. He can also create a bridge over a river next to him."
+      ],
+      "rows": [
+       [
+        "Palisade",
+        "4 gold",
+        null
+       ],
+       [
+        "Bridge",
+        "4 gold",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-engineer.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "intel",
+    "label": "Intelligence",
+    "pages": [
+     {
+      "id": "gu-fog",
+      "title": "Fog of war",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond remains a mystery."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-fog.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-scout",
+      "title": "Scouts",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Your balloon reveals the regions within 2 spaces around it. So you can see the rival troops in advance.",
+       "Move it strategically to get a good read of the board."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-scout.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-spy",
+      "title": "Spies",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Your spy observes the neighbouring rival regions. It can note on the board: their convoys, their troops and the upcoming reinforcements.",
+       "Move it strategically to get a good view of the terrain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-spy.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "army",
+    "label": "The army",
+    "pages": [
+     {
+      "id": "gu-cannon",
+      "title": "Artillery",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "A cannon fires on a neighbour before the troops arrive on the field. Its shot can therefore lead a convoy."
+      ],
+      "rows": [
+       [
+        "Shot",
+        "−2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-cannon.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-siege",
+      "title": "Sieges",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "A siege tower joining an attack then cancels the opponent's defence action: any palisades and a fort's walls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-siege.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "upgrades",
+    "label": "Upgrades",
+    "pages": [
+     {
+      "id": "gu-upgrades",
+      "title": "Winning upgrades",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "A shining badge on a region is an upgrade. Win the region to get it. This bonus stays active for the whole game.",
+       "A rival that takes the region before you does not win this upgrade. So you can always keep attacking it to get the upgrade yourself.",
+       "The upgrade folds away in the paper at the bottom of the screen. Click it to unfold it, then click a badge to read its effect."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-upgrades.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-towns2",
+      "title": "Bigger towns",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "A town now recruits 2 troops for your reserve every turn."
+      ],
+      "rows": [
+       [
+        "Town",
+        "+2 a turn",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-towns2.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-veterans",
+      "title": "Veterans",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "A convoy with infantry attacks with one troop more as a bonus."
+      ],
+      "rows": [
+       [
+        "Infantry convoy",
+        "+1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-veterans.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-longguns",
+      "title": "Long guns",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "A cannon now fires up to two regions away."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-longguns.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-shells",
+      "title": "Heavy shells",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "A cannon shot now takes three troops."
+      ],
+      "rows": [
+       [
+        "Shot",
+        "−3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-shells.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-mines2",
+      "title": "Rich mines",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "A mine now pays 2 gold a turn."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-mines2.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-charge",
+      "title": "Cavalry charge",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "A convoy with cavalry attacks with one troop more as a bonus."
+      ],
+      "rows": [
+       [
+        "Cavalry convoy",
+        "+1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-charge.en.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-forts2",
+      "title": "Stone forts",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "A fort now adds 2 troops a turn to your reserve."
+      ],
+      "rows": [
+       [
+        "Fort",
+        "+2 a turn",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-forts2.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-capital3",
+      "title": "Royal capital",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Your capital lets you recruit 3 extra troops for your reserve each turn."
+      ],
+      "rows": [
+       [
+        "Capital",
+        "+3 a turn",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-capital3.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-barracks",
+      "title": "Barracks",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Recruiting now gives 5 infantry for the same amount of gold."
+      ],
+      "rows": [
+       [
+        "Recruits",
+        "+5 for 3 gold",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-barracks.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-ships",
+      "title": "Fast ships",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "A fleet now sails twice as far in a single turn."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-ships.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rivals",
+    "label": "Rivals",
+    "pages": [
+     {
+      "id": "gu-green",
+      "title": "A third camp",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "The green camp also plays against red or blue. Your defence abilities are calculated for every rival next door."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-green.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-duel",
+      "title": "The Marshals' duel",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "The Red Marshal lets no opening pass: he attacks as soon as he has the upper hand."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-duel.en.webp",
+       "w": 400,
+       "h": 230,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Foldiers",
+  "howTo": "Donne des ordres à tes troupes avant la fin du tour et conquiers le plateau",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "gu-orders",
+      "title": "Ta main",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Clique sur une de tes régions : les cartes des troupes de la région arrivent dans ta main. Une carte par troupe, par pièce ou par achat.",
+       "Clique sur une carte pour l'activer ou passer un ordre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-orders.fr.webp",
+       "w": 552,
+       "h": 402,
+       "kind": "cut",
+       "alt": "1 2 3 Infanterie Canon Recruter +3 3"
+      }
+     },
+     {
+      "id": "gu-stack",
+      "title": "Piles de cartes",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Les troupes de même type arrivent en pile, une carte par troupe, toutes numérotées.",
+       "Clique sur une seule carte dans la pile pour prendre un lot : la quatrième carte envoie donc quatre troupes dans la bataille ou le convoi. Clique sur la même carte pour annuler le lot ou bien une autre carte pour changer le nombre."
+      ],
+      "rows": [
+       [
+        "Quatrième carte",
+        "4 troupes",
+        null
+       ],
+       [
+        "Plus de 12 troupes",
+        "la dernière les prend toutes",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-stack.fr.webp",
+       "w": 378,
+       "h": 236,
+       "kind": "cut",
+       "alt": "1 2 3 4 5 6 Infanterie"
+      }
+     },
+     {
+      "id": "gu-target",
+      "title": "La cible",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Tu peux choisir une région cible lorsqu'une ou plusieurs cartes sont actives dans ta main.",
+       "L'étiquette au-dessus de chaque cible potentielle annonce le résultat théorique d'une bataille."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-target.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-convoy",
+      "title": "Les convois",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une fois la région cible sélectionnée, l'ordre est enregistré. La flèche représente l'ordre et le convoi impliqué.",
+       "Clique sur une flèche pour annuler cet ordre."
+      ],
+      "rows": [
+       [
+        "Convois par région",
+        "3 au plus",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-convoy.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-defend",
+      "title": "Défendre et attendre",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque troupe et chaque pièce peuvent recevoir un ordre par tour. L'icône en forme de cartes sur une région t'indique qu'il reste des ordres à passer.",
+       "Choisis des troupes. Clique sur une région cible pour déplacer, attaquer ou défendre.",
+       "Une fois un ordre donné sur place, la troupe passe en défense ou construction. Tu peux annuler cet ordre en appuyant sur l'icône de la troupe."
+      ],
+      "rows": [
+       [
+        "Défendre",
+        "+1 en défense",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-defend.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-map",
+      "title": "Se déplacer sur le plateau",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Le plateau est plus grand que l'écran. Déplace-le pour regarder autour.",
+       "Un glissement ne fait que déplacer le plateau. Sélectionne une de tes régions pour afficher les détails et cartes d'actions.",
+       "Sur ordinateur, le curseur change de forme là où le plateau peut être attrapé."
+      ],
+      "rows": [
+       [
+        "Déplacer le plateau",
+        "glisser ou↑←↓→",
+        null
+       ],
+       [
+        "Zoom",
+        "molette ou+−",
+        null
+       ],
+       [
+        "Voir tout le plateau",
+        "double clic",
+        null
+       ],
+       [
+        "Envoyer les ordres",
+        "ENTREEou Envoyer",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-map.fr.webp",
+       "w": 400,
+       "h": 229,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-tick",
+      "title": "Le tour",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Chaque tour possède un compte à rebours. Clique sur le bouton Envoyer pour valider tes ordres. Sinon, ils partiront tels quels à la fin du temps disponible.",
+       "Ensuite, toutes les troupes du plateau agissent en même temps : les tiennes comme celles de tes rivaux."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-tick.fr.webp",
+       "w": 520,
+       "h": 390,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-battle",
+      "title": "Batailles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une bataille se joue troupe contre troupe. Le camp le plus nombreux gagne et garde la différence : il restera donc 1 troupe sur place pour 5 vs 4.",
+       "Une égalité ne laisse personne. Deux convois ennemis qui franchissent la même frontière se rencontrent à mi-chemin."
+      ],
+      "rows": [
+       [
+        "Attaque",
+        "1 par troupe",
+        null
+       ],
+       [
+        "Défense",
+        "1 par troupe",
+        null
+       ],
+       [
+        "Égalité",
+        "aucun survivant",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-battle.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-read",
+      "title": "Lire le plateau",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une fois un ordre passé, un convoi est créé sur le plateau. Ce déplacement en convoi est représenté par une flèche. Tu peux annuler un ordre en appuyant sur la flèche.",
+       "Une pastille sur un bâtiment t'indique ce qu'il rapportera à la fin du tour : souvent des recrues supplémentaires ou de l'or.",
+       "La couleur de l'icône du bouclier te donne une prédiction sur la défense actuelle de ta région : rien n'est à craindre en vert. La région tient de justesse en jaune. Le rouge indique clairement un danger."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-read.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-reserve",
+      "title": "La réserve",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Ta capitale ainsi que tes villes recrutent des troupes en réserve à la fin de chaque tour.",
+       "Clique sur le bouton <b>Réserve</b>, puis une région que tu possèdes pour augmenter tes troupes. Si tu perds ta capitale, le stage est perdu."
+      ],
+      "rows": [
+       [
+        "Capitale",
+        "+2 par tour",
+        null
+       ],
+       [
+        "Ville",
+        "+1 par tour",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-reserve.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "land",
+    "label": "Le terrain",
+    "pages": [
+     {
+      "id": "gu-fort",
+      "title": "Forts",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Un fort protège celui qui le tient : ses murs ajoutent un bonus de 2 défenses aux troupes actuelles. Il permet aussi de recruter une troupe par tour.",
+       "Attention toutefois, car un beffroi dans le convoi d'attaque brise cette défense de fort."
+      ],
+      "rows": [
+       [
+        "Défense",
+        "+2",
+        null
+       ],
+       [
+        "Réserve",
+        "+1 par tour",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-fort.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-mountain",
+      "title": "Montagnes",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une crête de montagne est infranchissable et seul un col permet de passer. Adapte ta stratégie en tenant compte qu'il faudra contourner les montagnes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-mountain.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-river",
+      "title": "Rivières",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Une attaque à travers une rivière perd une troupe. Un pont la fera passer sans perte."
+      ],
+      "rows": [
+       [
+        "À travers une rivière",
+        "−1",
+        null
+       ],
+       [
+        "Par un pont",
+        "sans perte",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-river.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-sea",
+      "title": "Ports",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Un port permet d'envoyer de l'infanterie vers n'importe quel autre port. La flotte peut mettre plusieurs tours avant d'arriver à destination.",
+       "Une troupe en mer ne défend plus de région au sol."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-sea.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-wonder",
+      "title": "Merveilles",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "La merveille brille sur le plateau dès le premier tour. Gagne cette région pour agir sur l'influence de la merveille.",
+       "Chaque tour où tu tiens la région, la jauge avance d'un cran vers ton côté. Elle recule si ton rival tient la région. La jauge ne bouge pas ou plus si personne ne possède clairement la région.",
+       "Remplis la jauge de ta couleur pour gagner. Tu perds si elle est remplie par l'adversaire."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-wonder.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "weather",
+    "label": "La météo",
+    "pages": [
+     {
+      "id": "gu-snow",
+      "title": "Neige",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "À chaque tour, la météo est annoncée sur une région. Elle frappera à la fin du tour. La neige emporte avec elle la moitié des troupes présentes.",
+       "Évacue tes troupes avant qu'elle ne frappe."
+      ],
+      "rows": [
+       [
+        "Neige",
+        "la moitié des troupes",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-snow.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-storm",
+      "title": "Tempêtes",
+      "eyebrow": null,
+      "lv": 20,
+      "text": [
+       "La météo peut se transformer en tempête. Celle-ci détruit toutes les troupes restées sur une région."
+      ],
+      "rows": [
+       [
+        "Tempête",
+        "toutes les troupes",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-storm.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-fronts",
+      "title": "Fronts météo",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "La météo intervient sur deux régions en même temps."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-fronts.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supply",
+    "label": "Intendance",
+    "pages": [
+     {
+      "id": "gu-gold",
+      "title": "Or",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Une mine rapporte 1 or par tour au propriétaire de la région. L'or permet d'acheter de nouvelles recrues, de la cavalerie ou des ouvrages."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-gold.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-recruit",
+      "title": "Recrutement",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "Ta capitale ou une ville te permet de recruter de l'infanterie contre de l'or. Les recrues arriveront après la bataille à la fin du tour."
+      ],
+      "rows": [
+       [
+        "Recrues",
+        "+3 pour 3 or",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-recruit.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-cav",
+      "title": "Cavalerie",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "La cavalerie avance de 2 régions en un seul tour. Elle se recrute en ville contre de l'or. Toutefois, la cavalerie peut être interceptée par une armée avant d'arriver à destination."
+      ],
+      "rows": [
+       [
+        "Cavalerie",
+        "+2 pour 4 or",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-cav.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-engineer",
+      "title": "Ingénieurs",
+      "eyebrow": null,
+      "lv": 23,
+      "text": [
+       "Ton ingénieur peut construire une palissade sur la région où il se trouve. Cette construction t'apporte un Bonus de défense supplémentaire. Il peut aussi créer un pont sur une rivière voisine."
+      ],
+      "rows": [
+       [
+        "Palissade",
+        "4 or",
+        null
+       ],
+       [
+        "Pont",
+        "4 or",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-engineer.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "intel",
+    "label": "Renseignement",
+    "pages": [
+     {
+      "id": "gu-fog",
+      "title": "Brouillard de guerre",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Tu ne vois que tes régions et leurs voisines. Un poste d'observation voit à deux régions. Au-delà, tout reste un mystère."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-fog.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-scout",
+      "title": "Éclaireurs",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Ton ballon permet la découverte des régions à 2 cases aux alentours. Tu peux donc voir les troupes adverses à l'avance.",
+       "Déplace-le stratégiquement pour obtenir une bonne lecture du plateau."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-scout.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-spy",
+      "title": "Espions",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Ton espion observe les régions rivales voisines. Il peut noter sur le plateau : leurs convois, leurs troupes et les futurs renforts.",
+       "Déplace-le stratégiquement pour avoir une bonne vision du terrain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-spy.webp",
+       "w": 520,
+       "h": 310,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "army",
+    "label": "L'armée",
+    "pages": [
+     {
+      "id": "gu-cannon",
+      "title": "Artillerie",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Un canon tire sur une région voisine avant que les troupes arrivent sur le terrain. Son tir peut donc ouvrir la voie à un convoi."
+      ],
+      "rows": [
+       [
+        "Tir",
+        "−2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-cannon.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-siege",
+      "title": "Sièges",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "Un beffroi qui accompagne une attaque annulera alors l'action de défense adverse : les éventuelles palissades et murs d'un fort."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-siege.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "upgrades",
+    "label": "Améliorations",
+    "pages": [
+     {
+      "id": "gu-upgrades",
+      "title": "Gagner des améliorations",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Un badge qui brille sur une région est une amélioration. Gagne la région pour l'obtenir. Ce Bonus restera actif sur toute la partie.",
+       "Un rival qui prend la région avant toi ne gagnera pas cette amélioration. Tu peux donc toujours continuer de l'attaquer afin de l'obtenir.",
+       "L'amélioration se range dans le papier plié en bas de l'écran. Clique dessus pour le déplier. Clique sur un badge pour lire son effet."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-upgrades.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-towns2",
+      "title": "Villes plus grandes",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Une ville recrute maintenant 2 troupes pour la réserve à chaque tour."
+      ],
+      "rows": [
+       [
+        "Ville",
+        "+2 par tour",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-towns2.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-veterans",
+      "title": "Vétérans",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Un convoi qui possède de l'infanterie attaquera avec une troupe de plus en Bonus."
+      ],
+      "rows": [
+       [
+        "Convoi d'infanterie",
+        "+1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-veterans.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-longguns",
+      "title": "Longue portée",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "Un canon tire maintenant jusqu'à deux régions."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-longguns.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-shells",
+      "title": "Obus lourds",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Un tir de canon retire maintenant trois troupes."
+      ],
+      "rows": [
+       [
+        "Tir",
+        "−3",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-shells.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-mines2",
+      "title": "Mines riches",
+      "eyebrow": null,
+      "lv": 17,
+      "text": [
+       "Une mine rapporte maintenant 2 or par tour."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-mines2.fr.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-charge",
+      "title": "Charge de cavalerie",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Un convoi qui possède de la cavalerie attaquera avec une troupe de plus en Bonus."
+      ],
+      "rows": [
+       [
+        "Convoi de cavalerie",
+        "+1",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-charge.fr.webp",
+       "w": 520,
+       "h": 259,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-forts2",
+      "title": "Forts de pierre",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Un fort ajoute à ta réserve 2 troupes par tour."
+      ],
+      "rows": [
+       [
+        "Fort",
+        "+2 par tour",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-forts2.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-capital3",
+      "title": "Capitale royale",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Ta capitale permet de recruter 3 troupes supplémentaires pour ta réserve à chaque tour."
+      ],
+      "rows": [
+       [
+        "Capitale",
+        "+3 par tour",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-capital3.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-barracks",
+      "title": "Casernes",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Recruter donne maintenant 5 fantassins pour la même somme d'or."
+      ],
+      "rows": [
+       [
+        "Recrues",
+        "+5 pour 3 or",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gu-barracks.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-ships",
+      "title": "Navires rapides",
+      "eyebrow": null,
+      "lv": 29,
+      "text": [
+       "Une flotte navigue maintenant deux fois plus loin en un seul tour."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-ships.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "rivals",
+    "label": "Rivaux",
+    "pages": [
+     {
+      "id": "gu-green",
+      "title": "Un troisième camp",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Le camp vert joue également contre rouge ou bleu. Tes capacités de défense sont calculées pour tous les rivaux voisins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-green.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "gu-duel",
+      "title": "Le duel des maréchaux",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Le Maréchal Rouge ne laisse passer aucune occasion : il attaque dès qu'il a l'avantage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "gu-duel.fr.webp",
+       "w": 400,
+       "h": 229,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,895 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/bouncetry — do not edit",
+ "slug": "bouncetry",
+ "stamp": "dbbf1b785e265fe7",
+ "en": {
+  "title": "Bouncetry",
+  "howTo": "One tap turns the switches on and traps the ball with the bricks",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "shoot",
+      "title": "Aim and shoot",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Drag to aim and let go to fire. The dotted line shows the next five bounces. Note that the ball's size is not accounted for by the trajectory line."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shoot.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switches",
+      "title": "The switches",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click while the ball flies to light up the switches. Click again to switch them off.",
+       "A dark switch lets the ball through. A lit one blocks it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switches.en.webp",
+       "w": 520,
+       "h": 190,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pocket",
+      "title": "The area",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click as the ball enters a closed area. It stays shut in with the bricks."
+      ],
+      "rows": [
+       [
+        "Each brick in an area",
+        "+25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "pocket.webp",
+       "w": 520,
+       "h": 252,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lava",
+      "title": "The lava",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "After a few seconds of flight, the lava pulls the ball down."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lava.en.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tough",
+      "title": "Tough glass",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A brick with a double white rim takes two hits. The first one only cracks it.",
+       "A power breaks this brick in one go."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tough.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colours",
+      "title": "Each colour has its price",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Each brick scores the points of its colour, times the combo."
+      ],
+      "rows": [
+       [
+        "Red",
+        "10",
+        "#ff5a1f"
+       ],
+       [
+        "Green",
+        "20",
+        "#3ddc6e"
+       ],
+       [
+        "Blue",
+        "30",
+        "#2f9bff"
+       ],
+       [
+        "Purple",
+        "40",
+        "#b44dff"
+       ],
+       [
+        "Rainbow",
+        "60",
+        "#ff4fd8"
+       ]
+      ],
+      "pic": {
+       "file": "colours.en.webp",
+       "w": 520,
+       "h": 109,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "The combo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every brick broken during a shot counts, even by a power or an extra ball."
+      ],
+      "rows": [
+       [
+        "5 bricks in one shot",
+        "×2",
+        null
+       ],
+       [
+        "20 bricks in one shot",
+        "×5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 520,
+       "h": 160,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "The stars",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Go one shot over par and the third star is lost."
+      ],
+      "rows": [
+       [
+        "1 star",
+        "60% of the wall",
+        null
+       ],
+       [
+        "2 stars",
+        "90% of the wall",
+        null
+       ],
+       [
+        "3 stars",
+        "The whole wall within par",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 356,
+       "h": 144,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "Lava fields",
+    "pages": [
+     {
+      "id": "row",
+      "title": "Line blast",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Break this brick and every brick in its line breaks too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "row.webp",
+       "w": 520,
+       "h": 100,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "warp",
+      "title": "Warp glass",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "This rainbow brick jumps to a nearby free spot every three seconds.",
+       "The rainbow brick flickers just before it jumps."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "warp.en.webp",
+       "w": 520,
+       "h": 180,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "col",
+      "title": "Column blast",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Break this brick and every brick in its column breaks too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "col.en.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Night works",
+    "pages": [
+     {
+      "id": "multi",
+      "title": "Multiball",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Break this brick to release extra balls."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "multi.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "split",
+      "title": "Split glass",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "When split glass breaks, new bricks appear on every free spot around it.",
+       "These new bricks count in the wall, so break them too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "split.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "banks",
+      "title": "Two switch colours",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "A click swaps the two switch colours. One lights up as the other goes dark.",
+       "Every new shot starts with the same colour lit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "banks.webp",
+       "w": 520,
+       "h": 169,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bomb",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Break this brick and the eight bricks around it break too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "Green forge",
+    "pages": [
+     {
+      "id": "big",
+      "title": "Big ball",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "The ball that breaks this brick grows bigger for the rest of its flight."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "big.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "seed",
+      "title": "Seed glass",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Every second, seed glass grows a new brick next to it.",
+       "Seed glass takes two hits, so break it first."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "seed.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Machine hall",
+    "pages": [
+     {
+      "id": "fire",
+      "title": "Fireball",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "For five seconds, the ball burns through bricks instead of bouncing off them.",
+       "Lit switches and raised shields still bounce the ball back."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Shield glass",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "While a brick's shield is up, the ball and every power bounce off it.",
+       "Wait for the shield to drop, then hit the glass."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Furnace core",
+    "pages": [
+     {
+      "id": "magnet",
+      "title": "Magnet",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "For five seconds, nearby bricks fly into the ball."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "living",
+      "title": "Living glass",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "The bricks living glass adds count in the wall, so break them too."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "living.webp",
+       "w": 520,
+       "h": 120,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Bouncetry",
+  "howTo": "Un Tap allume les interrupteurs et enferme la bille avec les briques",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "shoot",
+      "title": "Visée et tir",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Fais glisser ton doigt pour viser puis relève-le pour tirer, sachant que les pointillés indiquent tes cinq prochains rebonds. Attention la taille de la bille n'est pas prise en compte par le tracé de la trajectoire."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shoot.fr.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "switches",
+      "title": "Les interrupteurs",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur l'écran pendant que la bille vole pour allumer les interrupteurs. Clic à nouveau pour les éteindre.",
+       "La bille passe au travers d'un interrupteur éteint. Sinon elle sera bloquée."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "switches.fr.webp",
+       "w": 520,
+       "h": 189,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "pocket",
+      "title": "La zone",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur l'écran au moment exact où la bille pénètre dans une zone close pour l'y enfermer avec les briques."
+      ],
+      "rows": [
+       [
+        "Brique dans une zone",
+        "+25",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "pocket.webp",
+       "w": 520,
+       "h": 252,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lava",
+      "title": "La lave",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Si le vol se prolonge de quelques secondes, la lave en contrebas exerce alors une force et attire la bille vers le bas."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lava.fr.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "tough",
+      "title": "Verre renforcé",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une brique dotée d'un double liseré blanc nécessite deux impacts. Le premier ne fait que la fêler.",
+       "L'utilisation d'un pouvoir permet de détruire cette brique en un seul coup."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tough.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colours",
+      "title": "Valeur des couleurs",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Chaque brique rapporte les points de sa propre couleur, multipliés par le niveau du Combo."
+      ],
+      "rows": [
+       [
+        "Rouge",
+        "10",
+        "#ff5a1f"
+       ],
+       [
+        "Vert",
+        "20",
+        "#3ddc6e"
+       ],
+       [
+        "Bleu",
+        "30",
+        "#2f9bff"
+       ],
+       [
+        "Violet",
+        "40",
+        "#b44dff"
+       ],
+       [
+        "Arc-en-ciel",
+        "60",
+        "#ff4fd8"
+       ]
+      ],
+      "pic": {
+       "file": "colours.fr.webp",
+       "w": 520,
+       "h": 110,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Le Combo",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Toutes les briques brisées au cours d'un tir sont comptabilisées, y compris celles détruites par un pouvoir ou une bille supplémentaire."
+      ],
+      "rows": [
+       [
+        "5 briques en un tir",
+        "×2",
+        null
+       ],
+       [
+        "20 briques en un tir",
+        "×5",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "combo.webp",
+       "w": 520,
+       "h": 160,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Les étoiles",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Dépasser le 'Par' d'un seul tir suffit à te faire perdre l'attribution de la troisième étoile."
+      ],
+      "rows": [
+       [
+        "1 étoile",
+        "60 % du mur",
+        null
+       ],
+       [
+        "2 étoiles",
+        "90 % du mur",
+        null
+       ],
+       [
+        "3 étoiles",
+        "Tout le mur dans le 'Par'",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 356,
+       "h": 144,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band1",
+    "label": "Champs de lave",
+    "pages": [
+     {
+      "id": "row",
+      "title": "Souffle de ligne",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Détruis cette brique pour faire exploser instantanément toutes les autres briques de sa ligne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "row.webp",
+       "w": 520,
+       "h": 100,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "warp",
+      "title": "Verre téléporteur",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Cette brique arc-en-ciel se téléporte vers une case libre adjacente toutes les trois secondes.",
+       "Elle émet un léger clignotement juste avant d'effectuer son saut."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "warp.fr.webp",
+       "w": 520,
+       "h": 179,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "col",
+      "title": "Souffle de colonne",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Détruis cette brique pour faire exploser instantanément toutes les autres briques de sa colonne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "col.fr.webp",
+       "w": 520,
+       "h": 219,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band2",
+    "label": "Usine de nuit",
+    "pages": [
+     {
+      "id": "multi",
+      "title": "Multibille",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Détruis cette brique pour libérer instantanément des billes supplémentaires."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "multi.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "split",
+      "title": "Verre éclaté",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Lorsque le verre éclaté est détruit, de nouvelles briques surgissent sur toutes les cases libres adjacentes.",
+       "Puisque ces nouvelles briques fond parties du mur, tu dois impérativement les détruire aussi."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "split.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "banks",
+      "title": "Deux couleurs d'interrupteurs",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Un simple Clic inverse les deux couleurs d'interrupteur, si bien que l'une s'allume pendant que l'autre s'éteint.",
+       "Chaque nouveau tir commence systématiquement avec la même couleur activée par défaut."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "banks.webp",
+       "w": 520,
+       "h": 169,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bomb",
+      "title": "Bombe",
+      "eyebrow": null,
+      "lv": 11,
+      "text": [
+       "Détruis cette brique pour déclencher une détonation qui pulvérise aussi les huit briques environnantes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bomb.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band3",
+    "label": "Forge verte",
+    "pages": [
+     {
+      "id": "big",
+      "title": "Grosse bille",
+      "eyebrow": null,
+      "lv": 15,
+      "text": [
+       "La bille qui détruit cette brique grossit de volume pour toute la durée de sa trajectoire."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "big.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "seed",
+      "title": "Verre fertile",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "À chaque seconde qui s'écoule, le verre fertile génère une nouvelle brique juste à côté de lui.",
+       "Le verre fertile nécessitant deux coups pour être brisé, veille à t'en occuper en priorité."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "seed.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band4",
+    "label": "Salle des machines",
+    "pages": [
+     {
+      "id": "fire",
+      "title": "Bille de feu",
+      "eyebrow": null,
+      "lv": 21,
+      "text": [
+       "Durant cinq secondes, la bille calcine et traverse les briques au lieu de rebondir dessus.",
+       "Attention toutefois, les boutons allumés et les boucliers levés renvoient quand même la bille."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Verre bouclier",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Tant que le bouclier d'une brique reste dressé, la bille et les pouvoirs se voient systématiquement repoussés.",
+       "Il te faut patienter jusqu'à l'abaissement du bouclier avant de pouvoir frapper efficacement le verre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 520,
+       "h": 130,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "band5",
+    "label": "Cœur du four",
+    "pages": [
+     {
+      "id": "magnet",
+      "title": "Aimant",
+      "eyebrow": null,
+      "lv": 27,
+      "text": [
+       "Pendant cinq secondes, les briques situées à proximité sont attirées et viennent s'écraser directement sur la bille."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "magnet.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "living",
+      "title": "Verre vivant",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Les briques générées par le verre vivant s'ajoutent au total du mur, donc n'oublie pas de les détruire."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "living.webp",
+       "w": 520,
+       "h": 120,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

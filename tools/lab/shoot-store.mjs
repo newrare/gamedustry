@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Shoot the store listing images of every game into assets/image/<store>/<lang>/.
  *
- * Three formats, one composition (lab/store-card.html), one punchline written
+ * Four formats, one composition (lab/store-card.html), one punchline written
  * over each of them in the player's language:
  *
  *   phone   1080x1920  the Google Play phone slot and the itch.io screenshots.
@@ -12,7 +12,8 @@
  *                      game's landscape scene with the phone standing in it,
  *                      which is what the web build already looks like on a
  *                      wide window.
- *   thumb    630x500   the itch.io cover, shown down to 315x250 in a grid.
+ *   itch     630x500   the itch.io cover, shown down to 315x250 in a grid.
+ *   feature 1024x500   the Google Play feature graphic.
  *
  * Every piece is one the game already owns — the captures out of
  * assets/image/screen/, the character, the logotype, the landscape scene and the
@@ -55,10 +56,10 @@ var PRESETS = path.join(ROOT, "lab", "store-presets.json");
 var GAMES_DIR = path.join(ROOT, "games");
 /* The two destinations: `phone` and `desk` are cut to what Play asks for and
    land in assets/image/google/<lang>/ — itch reuses the phone gallery rather
-   than having its own size — and the 630x500 `thumb` is the itch cover, so it
-   lands in assets/image/itch/<lang>/. */
+   than having its own size — like the 1024x500 `feature` graphic; the 630x500
+   `itch` cover lands in assets/image/itch/<lang>/. */
 var OUT_DIR = path.join(ROOT, "assets", "image");
-function storeOf(format) { return format === "thumb" ? "itch" : "google"; }
+function storeOf(format) { return format === "itch" ? "itch" : "google"; }
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 var DSF = 2;                                  // supersampling; Chrome resamples
 
@@ -68,7 +69,8 @@ var DSF = 2;                                  // supersampling; Chrome resamples
 var FORMATS = {
   phone: { w: 720,  h: 1280, out: [1080, 1920] },
   desk:  { w: 1280, h: 720,  out: [1920, 1080] },
-  thumb: { w: 630,  h: 500,  out: [630, 500] }
+  itch:  { w: 630,  h: 500,  out: [630, 500] },
+  feature: { w: 1024, h: 500, out: [1024, 500] }
 };
 
 /* The faces, in the order a gallery uses them. `sad` is deliberately never
@@ -79,7 +81,7 @@ var FACE_CYCLE = ["happy", "neutral", "happy", "sad"];
 // --- CLI -----------------------------------------------------------------
 var argv = process.argv.slice(2);
 var slugs = [];
-var formats = ["phone", "desk", "thumb"];
+var formats = ["phone", "desk", "itch", "feature"];
 var langs = ["en", "fr"];
 var keep = false, listOnly = false, png = false;
 for (var i = 0; i < argv.length; i++) {
@@ -92,7 +94,7 @@ for (var i = 0; i < argv.length; i++) {
   else slugs.push(argv[i]);
 }
 formats.forEach(function (f) {
-  if (!FORMATS[f]) { console.error("--format must be phone / desk / thumb"); process.exit(1); }
+  if (!FORMATS[f]) { console.error("--format must be phone / desk / itch / feature"); process.exit(1); }
 });
 langs.forEach(function (l) {
   if (l !== "en" && l !== "fr") { console.error("--lang must be en / fr"); process.exit(1); }
@@ -216,17 +218,19 @@ function planOf(m, lang) {
       out: slug + "-desk-" + String(k + 1).padStart(2, "0")
     });
   });
-  jobs.push({
-    format: "thumb",
-    shot: Math.round((first + last) / 2),
-    line: lines[0],
-    face: "happy",
-    side: "left",
-    pos: "top",
-    logo: 1,
-    objn: 2,
-    objOff: 0,
-    out: slug + "-thumb"
+  ["itch", "feature"].forEach(function (f) {
+    jobs.push({
+      format: f,
+      shot: Math.round((first + last) / 2),
+      line: lines[0],
+      face: "happy",
+      side: "left",
+      pos: "top",
+      logo: 1,
+      objn: 2,
+      objOff: 0,
+      out: slug + "-" + f
+    });
   });
   return jobs.filter(function (j) { return formats.indexOf(j.format) >= 0; });
 }

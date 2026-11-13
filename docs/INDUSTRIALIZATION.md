@@ -413,7 +413,7 @@ Three families, by what they are for.
 
 | family           | tools                                                                                                                                                           |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-cover`, `shoot-screens`, `bench-pop` (what a callout costs on an emulated phone) |
+| `tools/lab/`     | `serve-site.mjs` (the site + live reload), `embed-asset`, `embed-icon`, `shoot-screens`, `shoot-store`, `bench-pop` (what a callout costs on an emulated phone) |
 | `tools/build/`   | `build.mjs`, `extract.mjs`, `build-site.mjs`, `check-size`                                                                                                      |
 | `tools/publish/` | `deploy-itch.mjs` (butler push, target read from the manifest), `store-meta.mjs` (the itch page copy, generated from the manifest), `gen-native` (phase 8)      |
 
@@ -675,9 +675,10 @@ building tools that cannot exist.
 - The AdMob ad units and their link to the listing.
 - Portal submissions (Newgrounds, CrazyGames, Poki) — uploads and QA rounds.
 - Delivering the playable file to the ad network's console.
-- Choosing which moments to capture: `shoot-screens.mjs` aims each shot at a
-  progression of the round, one capture per stage over at least two biomes,
-  and knows how far its scripted pilot can survive,
+- Choosing which moments to capture: `shoot-screens.mjs` shoots every level
+  of the first two biomes at the middle of its round, the map, the village
+  and each tab of every village door, and knows how far its scripted pilot
+  can survive,
   but not which frame sells the game. Play also imposes a 512×512 icon and a
   1024×500 feature graphic.
 - The content itself: design, tagline, icon artwork, translations.

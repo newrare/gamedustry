@@ -1357,8 +1357,9 @@ rule — a plinko board, a lottery blower, a slot reel.
 `assets/image/gear/` as transparent PNGs to lay over a screenshot,
 `store-card.html` is the store listing composer — a real frame of play dressed
 with the game's own character, objects and logotype and one punchline of its
-manifest over it, printed FR and EN at once, in four formats (`phone` 1080×1920 for Play and itch, `desk`
-1920×1080 for the Play tablet slot, `thumb` 630×500 for the itch cover, and
+manifest over it, printed FR and EN at once, in five formats (`phone` 1080×1920 for Play and itch, `desk`
+1920×1080 for the Play tablet slot, `itch` 630×500 for the itch cover,
+`feature` 1024×500 for the Play feature graphic, and
 `multi`, three phone slots composed as one picture and cut at the seams on
 save, so a motif carries from one gallery screenshot to the next). It is
 the one lab page with a server of its own (`make store`,
@@ -2460,9 +2461,57 @@ its own, deployed by Vercel from this repo.
 - **Every page loads the same `script.js`**, so each `init…()` returns quietly
   when its markup is absent. Add a page, not a second behaviour file.
 - **Bilingual FR/EN through one attribute pair.** Any text node carrying
-  `data-fr` and `data-en` is filled by `applyLang()`; the choice is remembered in
-  `localStorage` and defaults to the browser language. Never hard-code a visible
-  string in the markup, and never add a third mechanism.
+  `data-fr` and `data-en` is filled by `applyLang()` — a `<meta>` gets it as
+  its `content`, which is how the description and the share card are written
+  in both languages, and `<title>` carries the pair too. Never hard-code a
+  visible string in the markup, and never add a third mechanism.
+- **On the built site the language is the URL's.** `build-site.mjs` writes every
+  page twice — `/…` in English, `/fr/…` in French — because a crawler runs no
+  toggle: one address holding both languages is one language to a search
+  engine. A built page names its twin in `<link rel="alternate" hreflang>`, and
+  `script.js` reads that: the toggle is then a navigation to the other address,
+  and the choice is remembered in `localStorage`. One line in the `<head>`,
+  written by the builder, sends a visitor to their language before the page
+  paints — a saved choice, else a browser that asks for French — and **never
+  moves a crawler**, which has no saved choice and asks for English. The raw
+  `site/` folder has no alternates and keeps the in-place switch. Addresses
+  carry no trailing slash and no `.html` (`/fr`, `/guide/vipera`, `/privacy`):
+  that is what `vercel.json` serves, so it is what a link, a canonical and the
+  sitemap say.
+- **Every page gets its `<head>` from the builder**: canonical, hreflang
+  (en, fr, x-default), `og:url` / `og:locale` / `og:image`, the Twitter card
+  and the JSON-LD (the studio, the site and the list of games on the home; a
+  `VideoGame` and its breadcrumb on a guide). `sitemap.xml` and `robots.txt`
+  are written by the same step. All of it is absolute, on `SITE_URL`
+  (`https://newrare.app`), so a preview deployment never claims to be the
+  canonical copy. The game builds under `/games/` are `noindex`
+  (`X-Robots-Tag`, `vercel.json`): a build has no text, and the page that
+  describes a game is its guide.
+- **Each game's guide is a page of the site**, `/guide/<slug>` and
+  `/fr/guide/<slug>`, plus the index at `/guide` — a hero on the game's own
+  desk scene (`-background-desk`, copied as `backdrop.webp`, also the page's
+  share image) with its happy face, how it is played, the screenshots, then
+  the contents in a column that follows the reader (a bar of chapters on a
+  phone) beside every page of the in-game guide as an entry linked by its id
+  (`/guide/vipera#armour`): its picture beside the words (above them for a
+  panorama, and always on a phone), its text, its table as tiles. One page per game and not one per rule: a rule is two
+  sentences, and five hundred thin pages are worth less than twenty-one full
+  ones. **Not a word of it is written for the site**:
+  `tools/build/gen-guides.mjs` runs the game's web build in a headless Chrome,
+  asks it for `Game.guide.chapters()` in each language and writes
+  `assets/guide/<slug>/guide.json` — GENERATED, never edited, committed like
+  `assets/image/embed/` because the Vercel build has no Chrome. A rule is
+  therefore edited in ONE place, the game (`game.js`, `web.copy.fr.strings`,
+  the copy desk), and `node tools/update.mjs` re-reads any game whose
+  `game.js` or manifest moved (a second apiece; its `--check` is one of the
+  gates), so the site follows on its own. The PICTURES — each page's `pic` and
+  `node`, shot where the in-game guide draws them, on a transparent ground,
+  one file when both languages draw the same thing — are only retaken by
+  `make guides [GAME=<slug>]` (`gen-guides.mjs --shoot`): run it when a page is
+  added or draws something new. `tools/build/site-guide.mjs` writes the pages;
+  the only strings it owns are their chrome ("How to play", "From level 4").
+  The site shows every page of a guide, including the ones the game keeps
+  locked until their level.
 - **Game copy lives in `games.js`**, one short tagline and three tags per
   language. Long developer descriptions stay in the root `index.html` gallery.
 - **The cards are ordered by creation, newest first**: the first commit that
@@ -2487,11 +2536,16 @@ its own, deployed by Vercel from this repo.
   never ships a playable's install CTA, which from the site would point at the
   site. `site/newrare-website/` is the previous site: excluded from the build,
   kept for reference.
-- **The built pages are pre-rendered in English, for crawlers.** The last step
-  of `build-site.mjs` fills every empty `data-fr` / `data-en` node with its
-  English and bakes the cards into `#gamesGrid` with `gameCard()` — run out of
+- **The built pages are pre-rendered, for crawlers.** `build-site.mjs` fills
+  every empty `data-fr` / `data-en` node with the text of the page's language
+  and bakes the cards into `#gamesGrid` with `gameCard()` — run out of
   `site/script.js` itself, so a card has ONE writer. `script.js` rewrites the
-  same nodes on load. A card's description is in its markup once and in full:
+  same nodes on load. A hand-written page links another by FILE
+  (`index.html#studio`, `privacy.html`, `guide/index.html`) and loads its
+  files by relative path; the builder turns the first into the address of the
+  page's language and prefixes the second with the way back to the root
+  (`<html data-root>`, which `script.js` reads as `ROOT` for every path it
+  builds). A card's description is in its markup once and in full:
   the four-line clamp is CSS, and when it overflows (`fitDescs()`, measured)
   the fourth line becomes *Read more*, which lifts that same paragraph over the
   card (`.game.is-open`) — every card keeps one size and no text is copied.
@@ -2538,8 +2592,9 @@ its own, deployed by Vercel from this repo.
   never loaded, so no caller checks anything. The games stay clean: nothing is
   injected into them, and what they report (phase 4) they will `postMessage` to
   the page.
-- **`vercel.json` owns the deploy**: build command, output directory, headers.
-  Change it there, never in the dashboard.
+- **`vercel.json` owns the deploy**: build command, output directory, headers,
+  and one rewrite per standing page (`/privacy`, `/fr/privacy`). Change it
+  there, never in the dashboard.
 - **The games are played in an iframe** inside a 9:16 modal (`#player`), which is
   how a portrait creative is shown on a desktop screen. The page's own language
   rides along as `?lang=`, so the game's menu is never in the other language.

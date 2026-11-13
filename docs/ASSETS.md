@@ -747,19 +747,20 @@ three of its own objects, its logotype, its typeface, and one punchline in the
 player's language.
 
 `lab/store-card.html` is the composition and `tools/lab/shoot-store.mjs` shoots
-it, in four formats and two languages:
+it, in five formats and two languages:
 
-| format  | shipped         | where it goes                                     |
-| ------- | --------------- | ------------------------------------------------- |
-| `phone` | 1080 × 1920     | the Play phone slot, and the itch screenshots     |
-| `desk`  | 1920 × 1080     | the Play tablet slot, and the desktop picture     |
-| `thumb` | 630 × 500       | the itch cover, shown down to 315 × 250 in a grid |
-| `multi` | 3 × 1080 × 1920 | the same phone slots, composed as one picture     |
+| format    | shipped         | where it goes                                     |
+| --------- | --------------- | ------------------------------------------------- |
+| `phone`   | 1080 × 1920     | the Play phone slot, and the itch screenshots     |
+| `desk`    | 1920 × 1080     | the Play tablet slot, and the desktop picture     |
+| `itch`    | 630 × 500       | the itch cover, shown down to 315 × 250 in a grid |
+| `feature` | 1024 × 500      | the Play feature graphic                          |
+| `multi`   | 3 × 1080 × 1920 | the same phone slots, composed as one picture     |
 
-`multi` is composed by hand only — `shoot-store.mjs` shoots the other three.
+`multi` is composed by hand only — `shoot-store.mjs` shoots the other four.
 
 ```bash
-node tools/lab/shoot-store.mjs                    # 13 games, en + fr, all three
+node tools/lab/shoot-store.mjs                    # 13 games, en + fr, all four
 node tools/lab/shoot-store.mjs radiam --lang fr
 node tools/lab/shoot-store.mjs radiam --format desk
 node tools/lab/shoot-store.mjs --lines            # print the copy, shoot nothing
@@ -849,8 +850,8 @@ language, so six files.
 
 **The name is not typed, and neither is the format.** A listing image is a
 numbered slot of a store gallery, so the server hands out the next free numbers
-— `<slug>-NN` for a phone or a `multi`, `<slug>-desk-NN`, `<slug>-thumb` for
-the itch cover — and **refuses to write over a file that is already there**.
+— `<slug>-NN` for a phone or a `multi`, `<slug>-desk-NN`, `<slug>-feature`
+for the Play feature graphic, `<slug>-itch` for the itch cover — and **refuses to write over a file that is already there**.
 Both languages are allocated together, so `en/<slug>-05.jpg` and
 `fr/<slug>-05.jpg` are always the same composition, and a `multi` takes its
 three numbers in one go. A second press of Save is therefore a second picture,
@@ -877,8 +878,8 @@ so there is no tagline to pick and no other game's copy, only the line the URL
 carries (which is how the batch shoot hands the copy over); and Save is off, because a canvas that drew a `file://` image is tainted
 and cannot be exported. The page says so, in red, at the top of its panel.
 
-Output is `assets/image/google/<lang>/<slug>-NN.jpg` and `-desk-NN.jpg`, and
-`assets/image/itch/<lang>/<slug>-thumb.jpg`
+Output is `assets/image/google/<lang>/<slug>-NN.jpg`, `-desk-NN.jpg` and
+`-feature.jpg`, and `assets/image/itch/<lang>/<slug>-itch.jpg`
 — **JPEG like `assets/image/screen/`**, because 182 pictures of painted artwork over a
 capture is 34 MB as JPEG and 450 MB as PNG. The composer writes nothing else;
 `--png` is a flag of the batch shoot, for a piece that has to stay lossless. `node tools/publish/store-meta.mjs --game=<slug> --play --lang=fr` names the set it should be uploaded with.

@@ -1,0 +1,2703 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/stratideck — do not edit",
+ "slug": "stratideck",
+ "stamp": "34a8fe9080ab7987",
+ "en": {
+  "title": "Stratideck",
+  "howTo": "Drag one of your blue cards onto a red enemy tile.",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The battle",
+    "pages": [
+     {
+      "id": "send",
+      "title": "Send a card",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Drag one of your cards onto an enemy in the front row or in an accessible cell.",
+       "Only the last enemy you turned over stays face up, so try to remember the others."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "send.en.webp",
+       "w": 374,
+       "h": 172,
+       "kind": "cut",
+       "alt": "CAPTAIN 6 C ›"
+      }
+     },
+     {
+      "id": "grade",
+      "title": "The grade decides",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "In a fight, the higher <b>Grade</b> always wins and takes the cell.",
+       "When your card wins, it goes back under the Deck, ready to fight again. The loser is out until the end of the battle."
+      ],
+      "rows": [
+       [
+        "Spy",
+        "1",
+        null
+       ],
+       [
+        "Scout",
+        "2",
+        null
+       ],
+       [
+        "Sapper",
+        "3",
+        null
+       ],
+       [
+        "Sergeant",
+        "4",
+        null
+       ],
+       [
+        "Lieutenant",
+        "5",
+        null
+       ],
+       [
+        "Captain",
+        "6",
+        null
+       ],
+       [
+        "Major",
+        "7",
+        null
+       ],
+       [
+        "Colonel",
+        "8",
+        null
+       ],
+       [
+        "General",
+        "9",
+        null
+       ],
+       [
+        "Marshal",
+        "10",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "grade.en.webp",
+       "w": 404,
+       "h": 171,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "tier",
+      "title": "The tier decides",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Between two equal <b>Grades</b>, the better <b>Tier</b> wins.",
+       "Same <b>Grade</b> and same <b>Tier</b>? Then both cards fall together."
+      ],
+      "rows": [
+       [
+        "Basic",
+        "E",
+        "#c8773f"
+       ],
+       [
+        "Common",
+        "D",
+        "#aab1c6"
+       ],
+       [
+        "Uncommon",
+        "C",
+        "#51cf66"
+       ],
+       [
+        "Rare",
+        "B",
+        "#4dabf7"
+       ],
+       [
+        "Epic",
+        "A",
+        "#c77dff"
+       ],
+       [
+        "Legendary",
+        "S",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "tier.webp",
+       "w": 508,
+       "h": 98,
+       "kind": "cut",
+       "alt": "6 E 6 D 6 C 6 B 6 A 6 S"
+      }
+     },
+     {
+      "id": "wounds",
+      "title": "Wounds",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When your card beats an enemy of a better <b>Tier</b>, it wins but comes out wounded, and sits out its next turn.",
+       "After the battle, your wounded card rests in the infirmary. The bigger the <b>Tier</b> gap, the longer it stays in bed."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wounds.webp",
+       "w": 424,
+       "h": 182,
+       "kind": "cut",
+       "alt": "MAJOR 7 D VS LIEUTENANT 5 B"
+      }
+     },
+     {
+      "id": "standing",
+      "title": "Captured alive",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When your card beats an enemy of a lower <b>Tier</b>, it does not wipe the enemy out but captures him alive.",
+       "Win the battle, and you can bring one of those captives back to your prison."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "standing.en.webp",
+       "w": 424,
+       "h": 182,
+       "kind": "cut",
+       "alt": "COLONEL 8 B VS CAPTAIN 6 D"
+      }
+     },
+     {
+      "id": "hand",
+      "title": "The hand",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each time you play a card, some of the other cards in your hand go back under the Deck.",
+       "A wounded or stunned card keeps its slot and takes up a slot needlessly."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hand.en.webp",
+       "w": 516,
+       "h": 116,
+       "kind": "cut",
+       "alt": "4 D 9 C"
+      }
+     },
+     {
+      "id": "enemy-turn",
+      "title": "The enemy answers",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "After each of your moves, the red troops may send a soldier into an available slot.",
+       "The flag, the traps and the objects never move. The card of a soldier who has already moved stays slightly tilted, so you can spot it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "enemy-turn.en.webp",
+       "w": 474,
+       "h": 161,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "commander",
+      "title": "The enemy commander",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click the enemy commander to see the red troops available at the start of the battle. He tells you the <b>Grades</b>, but never the <b>Tiers</b>."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "commander.webp",
+       "w": 282,
+       "h": 331,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "table",
+      "title": "Your troops",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click your Deck to see which cards you still have and which ones you have lost.",
+       "Once your Deck and your hand are both empty, the battle is lost."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "table.webp",
+       "w": 470,
+       "h": 178,
+       "kind": "cut",
+       "alt": "› 8 C 4 D 6 B"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A tight win pays the most points, so a marshal thrown at a sergeant earns very little.",
+       "Beating a better <b>Tier</b> pays more too, and every win in a row raises your Combo or overall score."
+      ],
+      "rows": [
+       [
+        "Same <b>Grade</b>, or one above",
+        "×2",
+        null
+       ],
+       [
+        "Two <b>Grades</b> above",
+        "×1",
+        null
+       ],
+       [
+        "Three or more above",
+        "×½",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.en.webp",
+       "w": 384,
+       "h": 162,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS CAPTAIN 6 B"
+      }
+     },
+     {
+      "id": "bonuses",
+      "title": "Bonuses",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The more enemies you beat on the way to capturing the flag, the more points it will pay out."
+      ],
+      "rows": [
+       [
+        "Flag captured",
+        "260 pts + 34 pts per foe beaten",
+        null
+       ],
+       [
+        "Victory",
+        "+30 pts per card left",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bonuses.en.webp",
+       "w": 358,
+       "h": 242,
+       "kind": "cut",
+       "alt": "FLAG OBJECT TRAP OBJECT"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Three stars",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Losing a battle means a complete defeat, even if some objectives were met."
+      ],
+      "rows": [
+       [
+        "Flag captured",
+        "★",
+        null
+       ],
+       [
+        "No wounds",
+        "★",
+        null
+       ],
+       [
+        "Prisoner taken",
+        "★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 348,
+       "h": 120,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "grades",
+    "label": "The grades",
+    "pages": [
+     {
+      "id": "spy",
+      "title": "Spy",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Weak in combat against any <b>Grade</b>, but can still quietly defeat a Marshal."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "spy.en.webp",
+       "w": 434,
+       "h": 212,
+       "kind": "cut",
+       "alt": "SPY 1 C VS MARSHAL 10 A"
+      }
+     },
+     {
+      "id": "scout",
+      "title": "Scout",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Observes and reveals a hidden card without fighting it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scout.en.webp",
+       "w": 404,
+       "h": 212,
+       "kind": "cut",
+       "alt": "SCOUT 2 C ›"
+      }
+     },
+     {
+      "id": "sapper",
+      "title": "Sapper",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clears a trap without blowing up with it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "sapper.en.webp",
+       "w": 434,
+       "h": 212,
+       "kind": "cut",
+       "alt": "SAPPER 3 C VS TRAP"
+      }
+     },
+     {
+      "id": "breakers",
+      "title": "One object each",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "From sergeant to general, each <b>specialty</b> can break one particular object on the battlefield."
+      ],
+      "rows": [
+       [
+        "Sergeant",
+        "Straw man",
+        null
+       ],
+       [
+        "Lieutenant",
+        "Wooden fence",
+        null
+       ],
+       [
+        "Captain",
+        "Rock",
+        null
+       ],
+       [
+        "Major",
+        "Forest",
+        null
+       ],
+       [
+        "Colonel",
+        "Skull",
+        null
+       ],
+       [
+        "General",
+        "Book",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "breakers.en.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut",
+       "alt": "4 C 5 C 6 C 7 C 8 C 9 C"
+      }
+     },
+     {
+      "id": "marshal",
+      "title": "Marshal",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The strongest in direct combat against any <b>Grade</b>, but it can be caught off guard or captured by a spy."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "marshal.en.webp",
+       "w": 212,
+       "h": 212,
+       "kind": "cut",
+       "alt": "MARSHAL 10 A"
+      }
+     }
+    ]
+   },
+   {
+    "key": "objects",
+    "label": "The objects",
+    "pages": [
+     {
+      "id": "objects",
+      "title": "Objects",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "An \"object\" card never moves. A specific <b>Grade</b> has the skill needed to foil the card."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "objects.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "object-flag",
+      "title": "Flag",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The enemy's standard. Capture it and the battle is won on the spot. This is true even if enemies are still left on the battlefield."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Any card",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-flag.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "FLAG OBJECT SERGEANT 4 E"
+      }
+     },
+     {
+      "id": "object-trap",
+      "title": "Trap",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A mine hidden among the soldiers. Any card that strikes it is lost with it."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Sapper",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-trap.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "TRAP OBJECT SAPPER 3 C"
+      }
+     },
+     {
+      "id": "object-straw",
+      "title": "Straw man",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A decoy dressed as a soldier. A card that strikes it is fooled and goes back to the bottom of the Deck."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Sergeant",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-straw.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "STRAW MAN OBJECT SERGEANT 4 C"
+      }
+     },
+     {
+      "id": "object-fence",
+      "title": "Wooden fence",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A wall of stakes. A card that strikes it goes back to its place in the hand, but a turn is wasted."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Lieutenant",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-fence.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "WOODEN FENCE OBJECT LIEUTENANT 5 C"
+      }
+     },
+     {
+      "id": "object-rock",
+      "title": "Rock",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "A boulder in the way. You can no longer play, and the card goes back to its place."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Captain",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-rock.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "ROCK OBJECT CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "object-forest",
+      "title": "Forest",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "A card that walks into it gets completely lost until the end of the battle. The card is not harmed, but can no longer be played."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Major",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-forest.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "FOREST OBJECT MAJOR 7 C"
+      }
+     },
+     {
+      "id": "object-skull",
+      "title": "Skull",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A card that discovers the skull freezes with fear. The petrified card goes back to the hand but can no longer be played."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "Colonel",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-skull.en.webp",
+       "w": 514,
+       "h": 270,
+       "kind": "cut",
+       "alt": "SKULL OBJECT COLONEL 8 C CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "object-book",
+      "title": "Book",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "The soldier who reveals this card is bewitched. He turns round and strikes an ally."
+      ],
+      "rows": [
+       [
+        "Broken by",
+        "General",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-book.en.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "BOOK OBJECT GENERAL 9 C"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "The climb",
+    "pages": [
+     {
+      "id": "climb",
+      "title": "The climb",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "On a given level, the red troops are always the same. If you lose, come back and use what your first try taught you."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "climb.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "formations",
+      "title": "Formations",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The enemy almost never puts its flag on the front row."
+      ],
+      "rows": [
+       [
+        "The flag at the back, officers around it",
+        "Keep",
+        null
+       ],
+       [
+        "The best <b>Grades</b> on the front row",
+        "Wall",
+        null
+       ],
+       [
+        "The flag down one side",
+        "Flank",
+        null
+       ],
+       [
+        "The flag in the middle, officers at the back",
+        "Deep",
+        null
+       ],
+       [
+        "A trap in a corner, guarded as if it were the flag",
+        "Decoy",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "formations.en.webp",
+       "w": 454,
+       "h": 242,
+       "kind": "cut",
+       "alt": "FLAG OBJECT"
+      }
+     },
+     {
+      "id": "band-1",
+      "title": "Outpost",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "New in this biome: Trap, Straw man, Wooden fence."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-1.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-2",
+      "title": "Palisade",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "New in this biome: Rock, Forest."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-2.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-3",
+      "title": "Warcamp",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "New in this biome: Skull."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-3.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-4",
+      "title": "Siege",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "New in this biome: Book."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-4.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-5",
+      "title": "Citadel",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "No new object in this biome."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-5.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "camp",
+    "label": "The camp",
+    "pages": [
+     {
+      "id": "camp-deck",
+      "title": "The Deck",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A wounded card, or one away on a mission, stays in your Deck but cannot fight.",
+       "Replacements fill the empty slots, and they never end up in the infirmary."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-deck.en.webp",
+       "w": 384,
+       "h": 108,
+       "kind": "cut",
+       "alt": "10 D 7 D 3 E 4 E"
+      }
+     },
+     {
+      "id": "camp-cast",
+      "title": "Every card is a soldier",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Within an army, every officer is unique.",
+       "So your camp never holds the same officer twice."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-cast.en.webp",
+       "w": 418,
+       "h": 211,
+       "kind": "cut",
+       "alt": "COLONEL 8 B COLONEL 8 B"
+      }
+     },
+     {
+      "id": "camp-infirmary",
+      "title": "Infirmary",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "How long a wounded card stays depends on the <b>Tier</b> gap there was in combat.",
+       "Keep a close eye on the available beds. If none is free, the wounded card is lost completely."
+      ],
+      "rows": [
+       [
+        "<b>Tier</b> gap of 1",
+        "1 h",
+        null
+       ],
+       [
+        "<b>Tier</b> gap of 2",
+        "7 h",
+        null
+       ],
+       [
+        "<b>Tier</b> gap of 3",
+        "13 h",
+        null
+       ],
+       [
+        "<b>Tier</b> gap of 4",
+        "18 h",
+        null
+       ],
+       [
+        "<b>Tier</b> gap of 5",
+        "24 h",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-infirmary.en.webp",
+       "w": 398,
+       "h": 182,
+       "kind": "cut",
+       "alt": "CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "camp-prison",
+      "title": "Prison",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Give a prisoner time and he will change sides, then join your army like any other card.",
+       "Keep a cell free, or your captive will escape right away."
+      ],
+      "rows": [
+       [
+        "Spy",
+        "4 h",
+        null
+       ],
+       [
+        "Sergeant",
+        "19 h",
+        null
+       ],
+       [
+        "Captain",
+        "28 h",
+        null
+       ],
+       [
+        "Colonel",
+        "38 h",
+        null
+       ],
+       [
+        "Marshal",
+        "48 h",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-prison.en.webp",
+       "w": 374,
+       "h": 172,
+       "kind": "cut",
+       "alt": "CAPTAIN 6 C › CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "camp-promotion",
+      "title": "Promotion",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "After a victory, one of the cards that served in the battle, on a mission or at a post may climb one <b>Tier</b>."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-promotion.webp",
+       "w": 374,
+       "h": 172,
+       "kind": "cut",
+       "alt": "LIEUTENANT 5 C › LIEUTENANT 5 B"
+      }
+     },
+     {
+      "id": "camp-surrender",
+      "title": "Surrender",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When the battle can no longer be won, the enemy commander offers to take your surrender.",
+       "If you give up, you hand him one card of your choice, and the wounds already taken still count.",
+       "If you fight on, every card that falls will be lost or wounded."
+      ],
+      "rows": [
+       [
+        "Surrender",
+        "1 card handed over",
+        null
+       ],
+       [
+        "Fight on",
+        "50% risk of losing a failed card",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-surrender.en.webp",
+       "w": 476,
+       "h": 332,
+       "kind": "cut",
+       "alt": "› CAPTAIN 6 C"
+      }
+     },
+     {
+      "id": "camp-events",
+      "title": "Life in the camp",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Regularly, good or bad events take place at the camp.",
+       "You will learn that good kitchen management brings good events more often."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-events.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "command",
+    "label": "The command",
+    "pages": [
+     {
+      "id": "camp-recruit",
+      "title": "Recruits",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every 20 minutes, new recruits of every <b>Grade</b> turn up at the recruiting tent. Watch out: they do not all ask the same bounty to join your army.",
+       "If your camp is missing a particular officer, the tent always keeps one in reserve for only 20 coins."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-recruit.en.webp",
+       "w": 424,
+       "h": 152,
+       "kind": "cut",
+       "alt": "SERGEANT 4 E MAJOR 7 C MARSHAL 10 S"
+      }
+     },
+     {
+      "id": "camp-missions",
+      "title": "Missions",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A squad on a mission misses every battle until it comes back.",
+       "Most missions favour one <b>Grade</b>, often a spy, a scout or a sapper. So pick your squad with care."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-missions.webp",
+       "w": 352,
+       "h": 128,
+       "kind": "cut",
+       "alt": "2 C 3 D 6 B"
+      }
+     },
+     {
+      "id": "camp-posts",
+      "title": "Management",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The camp has six posts, each held by one officer. An officer at a post leaves your Deck and cannot join a squad.",
+       "The officer's <b>Tier</b> fills the post's gauge. A suitable trade also adds a bonus to the targeted post."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-posts.en.webp",
+       "w": 358,
+       "h": 182,
+       "kind": "cut",
+       "alt": "SAPPER 3 S LIEUTENANT 5 S"
+      }
+     },
+     {
+      "id": "post-cmd",
+      "title": "Camp",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "How many captives you are offered after a victory.",
+       "Suited trades: Carpenter, Courier, Chaplain, Archivist, Governor."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "1 slot",
+        null
+       ],
+       [
+        "Full gauge",
+        "3 slots",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-cmd.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "GENERAL 9 S"
+      }
+     },
+     {
+      "id": "post-drill",
+      "title": "Formation",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Your Deck's capacity.",
+       "Suited trades: Instructor, Master-at-arms, Tactician, Commando instructor, Horse master."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "12 slots",
+        null
+       ],
+       [
+        "Full gauge",
+        "20 slots",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-drill.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "MARSHAL 10 S"
+      }
+     },
+     {
+      "id": "post-ops",
+      "title": "Missions",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "How many squads can be away on a mission at once.",
+       "Suited trades: Cartographer, Intelligence analyst, Liaison officer, Signaller, Expedition leader."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "2 slots",
+        null
+       ],
+       [
+        "Full gauge",
+        "6 slots",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-ops.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "MAJOR 7 S"
+      }
+     },
+     {
+      "id": "post-inf",
+      "title": "Infirmary",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "How many beds the infirmary has.",
+       "Suited trades: Surgeon, Nurse, Stretcher-bearer, Pharmacist, Doctor."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "2 slots",
+        null
+       ],
+       [
+        "Full gauge",
+        "9 slots",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-inf.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "SAPPER 3 S"
+      }
+     },
+     {
+      "id": "post-pri",
+      "title": "Prison",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "How many cells the prison has.",
+       "Suited trades: Warden, Interrogator, Guard, Jailer, Judge."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "2 slots",
+        null
+       ],
+       [
+        "Full gauge",
+        "9 slots",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-pri.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "COLONEL 8 S"
+      }
+     },
+     {
+      "id": "post-cook",
+      "title": "Kitchen",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The camp's morale: the higher it is, the more good days.",
+       "Suited trades: Cook, Baker, Butcher, Dietitian, Brewer."
+      ],
+      "rows": [
+       [
+        "Nobody at the post",
+        "30% good days",
+        null
+       ],
+       [
+        "Full gauge",
+        "90% good days",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-cook.en.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "LIEUTENANT 5 S"
+      }
+     },
+     {
+      "id": "camp-trades",
+      "title": "Trades",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every officer has a trade, written on the back of the card. Each trade can suit a specific post in the camp."
+      ],
+      "rows": [
+       [
+        "A suited trade",
+        "+10%",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-trades.en.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut",
+       "alt": "9 S 10 S 7 S 3 S 8 S 5 S"
+      },
+      "node": {
+       "file": "camp-trades--node.en.webp",
+       "w": 554,
+       "h": 575,
+       "kind": "cut",
+       "alt": "Camp Carpenter, Courier, Chaplain, Archivist, Governor Formation Instructor, Master-at-arms, Tactician, Commando instructor, Horse master Missions Cartographer, Intelligence analyst, Liaison officer, Signaller, Expedition leader Infirmary Surgeon, Nurse, Stretcher-bearer, Pharmacist, Doctor Prison Warden, Interrogator, Guard, Jailer, Judge Kitchen Cook, Baker, Butcher, Dietitian, Brewer"
+      }
+     },
+     {
+      "id": "camp-register",
+      "title": "Register",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A lost officer is not always gone for good. The recruiting tent may find him alive, back at his starting <b>Tier</b>."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-register.webp",
+       "w": 358,
+       "h": 182,
+       "kind": "cut",
+       "alt": "??? 7 C ??? 4 D"
+      }
+     }
+    ]
+   },
+   {
+    "key": "defense",
+    "label": "Defence",
+    "pages": [
+     {
+      "id": "camp-defense",
+      "title": "Your defence",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Validate your defence setup to protect your flag while you are away. The red army always attacks the last strategy put in place.",
+       "A soldier assigned to defence stays active in your Deck all the same. The bottom row of the screen remains your front line."
+      ],
+      "rows": [
+       [
+        "The red troops attack after",
+        "4 h away",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-defense.en.webp",
+       "w": 378,
+       "h": 306,
+       "kind": "cut",
+       "alt": "6 C 8 C 7 C 4 C 5 C 9 C"
+      }
+     },
+     {
+      "id": "camp-raid",
+      "title": "The raid",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A raid is an attack by the red troops on your defence while you are away. It is led by a red army of the same level as yours and follows the usual rules of a battle.",
+       "Losing a raid means wounds or plundered resources."
+      ],
+      "rows": [
+       [
+        "Attack size",
+        "12 attacking red cards",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-raid.en.webp",
+       "w": 404,
+       "h": 172,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS WOODEN FENCE"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Stratideck",
+  "howTo": "Glisse une de tes cartes bleues sur une case ennemie rouge.",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "La bataille",
+    "pages": [
+     {
+      "id": "send",
+      "title": "Envoyer une carte",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Glisse une de tes cartes sur un ennemi de la première ligne ou d'une case accessible.",
+       "Seul le dernier ennemi retourné reste visible. Alors, essaie de te souvenir des autres."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "send.fr.webp",
+       "w": 374,
+       "h": 171,
+       "kind": "cut",
+       "alt": "CAPITAINE 6 C ›"
+      }
+     },
+     {
+      "id": "grade",
+      "title": "Le grade décide",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Dans un combat, le plus haut <b>Grade</b> gagne toujours et prend la case.",
+       "Quand ta carte gagne, elle repasse sous le paquet, prête à repartir au combat. Le vaincu est hors jeu jusqu'à la fin de la bataille."
+      ],
+      "rows": [
+       [
+        "Espion",
+        "1",
+        null
+       ],
+       [
+        "Éclaireur",
+        "2",
+        null
+       ],
+       [
+        "Sapeur",
+        "3",
+        null
+       ],
+       [
+        "Sergent",
+        "4",
+        null
+       ],
+       [
+        "Lieutenant",
+        "5",
+        null
+       ],
+       [
+        "Capitaine",
+        "6",
+        null
+       ],
+       [
+        "Major",
+        "7",
+        null
+       ],
+       [
+        "Colonel",
+        "8",
+        null
+       ],
+       [
+        "Général",
+        "9",
+        null
+       ],
+       [
+        "Maréchal",
+        "10",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "grade.fr.webp",
+       "w": 404,
+       "h": 172,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "tier",
+      "title": "Le rang tranche",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Entre deux <b>Grades</b> égaux, c'est le meilleur <b>Rang</b> qui l'emporte.",
+       "Même <b>Grade</b> et même <b>Rang</b> ? Les deux cartes tombent ensemble."
+      ],
+      "rows": [
+       [
+        "Basique",
+        "E",
+        "#c8773f"
+       ],
+       [
+        "Commun",
+        "D",
+        "#aab1c6"
+       ],
+       [
+        "Peu commun",
+        "C",
+        "#51cf66"
+       ],
+       [
+        "Rare",
+        "B",
+        "#4dabf7"
+       ],
+       [
+        "Épique",
+        "A",
+        "#c77dff"
+       ],
+       [
+        "Légendaire",
+        "S",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "tier.webp",
+       "w": 508,
+       "h": 98,
+       "kind": "cut",
+       "alt": "6 E 6 D 6 C 6 B 6 A 6 S"
+      }
+     },
+     {
+      "id": "wounds",
+      "title": "Blessures",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Quand ta carte bat un ennemi de meilleur <b>Rang</b>, elle gagne mais en sort blessée et passe son prochain tour.",
+       "Après la bataille, ta carte blessée se repose à l'infirmerie. Plus l'écart de <b>Rang</b> est grand, plus elle reste alitée longtemps."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wounds.webp",
+       "w": 424,
+       "h": 182,
+       "kind": "cut",
+       "alt": "MAJOR 7 D VS LIEUTENANT 5 B"
+      }
+     },
+     {
+      "id": "standing",
+      "title": "Capturé vivant",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Quand ta carte bat un ennemi de <b>Rang</b> inférieur, elle ne l'élimine pas : elle le capture vivant.",
+       "Gagne la bataille et tu pourras ramener l'un de ces captifs dans ta prison."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "standing.fr.webp",
+       "w": 424,
+       "h": 182,
+       "kind": "cut",
+       "alt": "COLONEL 8 B VS CAPITAINE 6 D"
+      }
+     },
+     {
+      "id": "hand",
+      "title": "La main de cartes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque fois que tu joues une carte, certaines des autres cartes de ta main repassent sous le paquet.",
+       "Une carte blessée ou étourdie garde sa place et occupe un emplacement inutilement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hand.fr.webp",
+       "w": 516,
+       "h": 115,
+       "kind": "cut",
+       "alt": "4 D 9 C"
+      }
+     },
+     {
+      "id": "enemy-turn",
+      "title": "L'ennemi riposte",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Après chacun de tes coups, les troupes rouges peuvent envoyer un soldat dans un emplacement disponible.",
+       "Le drapeau, les pièges et les objets ne bougent jamais. La carte d'un soldat qui s'est déjà déplacé reste légèrement penchée pour que tu puisses la repérer."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "enemy-turn.fr.webp",
+       "w": 474,
+       "h": 162,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "commander",
+      "title": "Le commandant ennemi",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur le commandant ennemi pour voir les troupes rouges disponibles au début de la bataille. Il te révèle les <b>Grades</b> mais jamais les <b>Rangs</b>."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "commander.webp",
+       "w": 282,
+       "h": 331,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "table",
+      "title": "Tes troupes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique sur ton paquet pour voir les cartes qui te restent et celles que tu as perdues.",
+       "Une fois ton paquet et ta main vides, la bataille est perdue."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "table.webp",
+       "w": 470,
+       "h": 178,
+       "kind": "cut",
+       "alt": "› 8 C 4 D 6 B"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une victoire serrée rapporte le plus de points. Un maréchal lancé sur un sergent ne rapporte donc presque rien.",
+       "Battre un meilleur <b>Rang</b> rapporte aussi davantage. Chaque victoire d'affilée fait en plus monter ton Combo ou score global."
+      ],
+      "rows": [
+       [
+        "Même <b>Grade</b> ou un au-dessus",
+        "×2",
+        null
+       ],
+       [
+        "Deux <b>Grades</b> au-dessus",
+        "×1",
+        null
+       ],
+       [
+        "Trois ou plus au-dessus",
+        "×½",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.fr.webp",
+       "w": 384,
+       "h": 162,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS CAPITAINE 6 B"
+      }
+     },
+     {
+      "id": "bonuses",
+      "title": "Bonus",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus tu bats d'ennemis vers la conquête du drapeau et plus ce dernier rapportera de points."
+      ],
+      "rows": [
+       [
+        "Drapeau capturé",
+        "260 pts + 34 pts par ennemi vaincu",
+        null
+       ],
+       [
+        "Victoire",
+        "+30 pts par carte restante",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bonuses.fr.webp",
+       "w": 358,
+       "h": 242,
+       "kind": "cut",
+       "alt": "DRAPEAU OBJET PIEGE OBJET"
+      }
+     },
+     {
+      "id": "stars",
+      "title": "Trois étoiles",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Perdre une bataille signifie une défaite complète même si des objectifs étaient remplis."
+      ],
+      "rows": [
+       [
+        "Drapeau capturé",
+        "★",
+        null
+       ],
+       [
+        "Aucune blessure",
+        "★",
+        null
+       ],
+       [
+        "Prisonnier capturé",
+        "★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "stars.webp",
+       "w": 348,
+       "h": 120,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "grades",
+    "label": "Hiérarchie des grades",
+    "pages": [
+     {
+      "id": "spy",
+      "title": "Espion",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Faible en combat contre n'importe quel <b>Grade</b> mais peut quand même vaincre discrètement un Maréchal."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "spy.fr.webp",
+       "w": 434,
+       "h": 212,
+       "kind": "cut",
+       "alt": "ESPION 1 C VS MARECHAL 10 A"
+      }
+     },
+     {
+      "id": "scout",
+      "title": "Éclaireur",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Observe et révèle une carte cachée sans la combattre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scout.fr.webp",
+       "w": 404,
+       "h": 212,
+       "kind": "cut",
+       "alt": "ECLAIREUR 2 C ›"
+      }
+     },
+     {
+      "id": "sapper",
+      "title": "Sapeur",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Désamorce un piège sans sauter avec lui."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "sapper.fr.webp",
+       "w": 434,
+       "h": 212,
+       "kind": "cut",
+       "alt": "SAPEUR 3 C VS PIEGE"
+      }
+     },
+     {
+      "id": "breakers",
+      "title": "Un objet chacun",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Du sergent au général, chaque <b>spécialité</b> permet de briser un objet bien particulier présent sur le champ de bataille."
+      ],
+      "rows": [
+       [
+        "Sergent",
+        "Épouvantail",
+        null
+       ],
+       [
+        "Lieutenant",
+        "Barrière de bois",
+        null
+       ],
+       [
+        "Capitaine",
+        "Rocher",
+        null
+       ],
+       [
+        "Major",
+        "Forêt",
+        null
+       ],
+       [
+        "Colonel",
+        "Crâne",
+        null
+       ],
+       [
+        "Général",
+        "Livre",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "breakers.fr.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut",
+       "alt": "4 C 5 C 6 C 7 C 8 C 9 C"
+      }
+     },
+     {
+      "id": "marshal",
+      "title": "Maréchal",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le plus fort en combat direct contre n'importe quel <b>Grade</b>, il peut toutefois se faire surprendre ou capturer par un espion."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "marshal.fr.webp",
+       "w": 212,
+       "h": 212,
+       "kind": "cut",
+       "alt": "MARECHAL 10 A"
+      }
+     }
+    ]
+   },
+   {
+    "key": "objects",
+    "label": "Les objets",
+    "pages": [
+     {
+      "id": "objects",
+      "title": "Objets",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une carte « objet » ne bouge jamais. Un <b>Grade</b> spécifique possède la compétence nécessaire pour déjouer la carte."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "objects.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "object-flag",
+      "title": "Drapeau",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "L'étendard ennemi. Prends-le et la bataille est gagnée sur-le-champ. Ceci même s'il reste encore des ennemis sur le champ de bataille."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Toute carte",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-flag.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "DRAPEAU OBJET SERGENT 4 E"
+      }
+     },
+     {
+      "id": "object-trap",
+      "title": "Piège",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Une mine cachée parmi les soldats. Toute carte qui la frappe saute avec elle."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Sapeur",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-trap.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "PIEGE OBJET SAPEUR 3 C"
+      }
+     },
+     {
+      "id": "object-straw",
+      "title": "Épouvantail",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Un leurre habillé en soldat. La carte qui le frappe est dupée et retourne sous le paquet."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Sergent",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-straw.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "EPOUVANTAIL OBJET SERGENT 4 C"
+      }
+     },
+     {
+      "id": "object-fence",
+      "title": "Barrière de bois",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Une palissade de pieux. La carte qui la frappe retourne à sa place dans la main mais un tour est perdu."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Lieutenant",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-fence.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "BARRIERE DE BOIS OBJET LIEUTENANT 5 C"
+      }
+     },
+     {
+      "id": "object-rock",
+      "title": "Rocher",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Un bloc en travers du chemin. Tu ne peux plus jouer et la carte retourne à sa place."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Capitaine",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-rock.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "ROCHER OBJET CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "object-forest",
+      "title": "Forêt",
+      "eyebrow": null,
+      "lv": 8,
+      "text": [
+       "La carte qui s'y aventure se perd complètement jusqu'à la fin de la bataille. La carte n'est pas blessée mais ne peut plus être jouée."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Major",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-forest.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "FORET OBJET MAJOR 7 C"
+      }
+     },
+     {
+      "id": "object-skull",
+      "title": "Crâne",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "La carte qui découvre le crâne se fige d'effroi. La carte pétrifiée retourne dans la main mais ne peut plus être jouée."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Colonel",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-skull.fr.webp",
+       "w": 514,
+       "h": 270,
+       "kind": "cut",
+       "alt": "CRANE OBJET COLONEL 8 C CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "object-book",
+      "title": "Livre",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Le soldat qui découvre cette carte devient ensorcelé. Il se retourne et frappe alors un allié."
+      ],
+      "rows": [
+       [
+        "Détruit par",
+        "Général",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "object-book.fr.webp",
+       "w": 358,
+       "h": 270,
+       "kind": "cut",
+       "alt": "LIVRE OBJET GENERAL 9 C"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "L'ascension",
+    "pages": [
+     {
+      "id": "climb",
+      "title": "L'ascension",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sur un même stage, les troupes rouges sont toujours les mêmes. Si tu perds, reviens et sers-toi de ce que ta première tentative t'a appris."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "climb.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "formations",
+      "title": "Formations",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "L'ennemi ne place presque jamais son drapeau en première ligne."
+      ],
+      "rows": [
+       [
+        "Le drapeau au fond, les officiers autour",
+        "Donjon",
+        null
+       ],
+       [
+        "Les meilleurs <b>Grades</b> en première ligne",
+        "Muraille",
+        null
+       ],
+       [
+        "Le drapeau sur un côté",
+        "Flanc",
+        null
+       ],
+       [
+        "Le drapeau au milieu, les officiers au fond",
+        "Profondeur",
+        null
+       ],
+       [
+        "Un piège dans un coin, gardé comme si c'était le drapeau",
+        "Leurre",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "formations.fr.webp",
+       "w": 454,
+       "h": 242,
+       "kind": "cut",
+       "alt": "DRAPEAU OBJET"
+      }
+     },
+     {
+      "id": "band-1",
+      "title": "Avant-poste",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Nouveau dans ce biome : Piège, Épouvantail, Barrière de bois."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-1.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-2",
+      "title": "Palissade",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Nouveau dans ce biome : Rocher, Forêt."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-2.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-3",
+      "title": "Camp de guerre",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Nouveau dans ce biome : Crâne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-3.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-4",
+      "title": "Siège",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Nouveau dans ce biome : Livre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-4.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "band-5",
+      "title": "Citadelle",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Aucun nouvel objet dans ce biome."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "band-5.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "camp",
+    "label": "Le camp",
+    "pages": [
+     {
+      "id": "camp-deck",
+      "title": "Le Deck",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une carte blessée ou partie en mission reste dans ton Deck mais ne peut pas combattre.",
+       "Des remplaçants comblent les places vides et ceux-ci ne finissent jamais à l'infirmerie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-deck.fr.webp",
+       "w": 384,
+       "h": 108,
+       "kind": "cut",
+       "alt": "10 D 7 D 3 E 4 E"
+      }
+     },
+     {
+      "id": "camp-cast",
+      "title": "Chaque carte est un soldat",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Par armée, chaque officier est unique.",
+       "Ton camp n'accueille donc jamais deux fois le même officier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-cast.fr.webp",
+       "w": 418,
+       "h": 211,
+       "kind": "cut",
+       "alt": "COLONEL 8 B COLONEL 8 B"
+      }
+     },
+     {
+      "id": "camp-infirmary",
+      "title": "Infirmerie",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "La durée du séjour d'une carte blessée dépend de l'écart de <b>Rang</b> qu'il y avait en combat.",
+       "Surveille bien les lits disponibles. Si aucun n'est libre, la carte blessée est complètement perdue."
+      ],
+      "rows": [
+       [
+        "Écart de <b>Rang</b> de 1",
+        "1 h",
+        null
+       ],
+       [
+        "Écart de <b>Rang</b> de 2",
+        "7 h",
+        null
+       ],
+       [
+        "Écart de <b>Rang</b> de 3",
+        "13 h",
+        null
+       ],
+       [
+        "Écart de <b>Rang</b> de 4",
+        "18 h",
+        null
+       ],
+       [
+        "Écart de <b>Rang</b> de 5",
+        "24 h",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-infirmary.fr.webp",
+       "w": 398,
+       "h": 182,
+       "kind": "cut",
+       "alt": "CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "camp-prison",
+      "title": "Prison",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Laisse du temps à un prisonnier et il finira par changer de camp pour rejoindre ton armée, comme n'importe quelle carte.",
+       "Garde une cellule libre sinon ton captif s'échappera directement."
+      ],
+      "rows": [
+       [
+        "Espion",
+        "4 h",
+        null
+       ],
+       [
+        "Sergent",
+        "19 h",
+        null
+       ],
+       [
+        "Capitaine",
+        "28 h",
+        null
+       ],
+       [
+        "Colonel",
+        "38 h",
+        null
+       ],
+       [
+        "Maréchal",
+        "48 h",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-prison.fr.webp",
+       "w": 374,
+       "h": 172,
+       "kind": "cut",
+       "alt": "CAPITAINE 6 C › CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "camp-promotion",
+      "title": "Promotion",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Après une victoire, l'une des cartes qui ont servi en bataille, en mission ou à un poste peut monter d'un <b>Rang</b>."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-promotion.webp",
+       "w": 374,
+       "h": 172,
+       "kind": "cut",
+       "alt": "LIEUTENANT 5 C › LIEUTENANT 5 B"
+      }
+     },
+     {
+      "id": "camp-surrender",
+      "title": "Se rendre",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Quand la bataille ne peut plus être gagnée, le commandant ennemi te propose de te rendre.",
+       "Si tu acceptes, tu lui livres une carte de ton choix. Les blessures déjà reçues comptent toujours.",
+       "Si tu continues le combat, chaque carte qui tombera sera perdue ou blessée."
+      ],
+      "rows": [
+       [
+        "Se rendre",
+        "1 carte livrée",
+        null
+       ],
+       [
+        "Continuer",
+        "50 % de risque de perdre une carte ayant échoué",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-surrender.fr.webp",
+       "w": 476,
+       "h": 332,
+       "kind": "cut",
+       "alt": "› CAPITAINE 6 C"
+      }
+     },
+     {
+      "id": "camp-events",
+      "title": "Vie du camp",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Régulièrement, des évènements bons ou mauvais se déroulent au niveau du campement.",
+       "Tu apprendras qu'une bonne gestion de la cuisine apporte plus souvent de bons évènements."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-events.webp",
+       "w": 552,
+       "h": 312,
+       "kind": "cut"
+      }
+     }
+    ]
+   },
+   {
+    "key": "command",
+    "label": "Le commandement",
+    "pages": [
+     {
+      "id": "camp-recruit",
+      "title": "Recrues",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Toutes les 20 minutes, de nouvelles recrues de tous les <b>Grades</b> se présentent à la tente de recrutement. Attention, toutes ne réclament pas la même prime pour accepter de rejoindre ton armée.",
+       "Si ton camp manque d'un officier particulier, la tente t'en garde toujours un en réserve pour 20 pièces seulement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-recruit.fr.webp",
+       "w": 424,
+       "h": 152,
+       "kind": "cut",
+       "alt": "SERGENT 4 E MAJOR 7 C MARECHAL 10 S"
+      }
+     },
+     {
+      "id": "camp-missions",
+      "title": "Missions",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une escouade en mission manque toutes les batailles jusqu'à son retour.",
+       "La plupart des missions avantagent un <b>Grade</b>, souvent l'espion, l'éclaireur ou le sapeur. Alors choisis bien ton escouade."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-missions.webp",
+       "w": 352,
+       "h": 128,
+       "kind": "cut",
+       "alt": "2 C 3 D 6 B"
+      }
+     },
+     {
+      "id": "camp-posts",
+      "title": "Gestion",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le camp compte six postes, chacun tenu par un officier. Un officier en poste quitte ton Deck et ne peut rejoindre aucune escouade.",
+       "Le <b>Rang</b> de l'officier remplit la jauge du poste. Un métier adapté ajoute aussi un bonus sur le poste visé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-posts.fr.webp",
+       "w": 358,
+       "h": 182,
+       "kind": "cut",
+       "alt": "SAPEUR 3 S LIEUTENANT 5 S"
+      }
+     },
+     {
+      "id": "post-cmd",
+      "title": "Camp",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le nombre de captifs proposés après une victoire.",
+       "Métiers adaptés : Charpentier, Courriériste, Aumônier, Archiviste, Gouverneur."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "1 emplacement",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "3 emplacements",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-cmd.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "GENERAL 9 S"
+      }
+     },
+     {
+      "id": "post-drill",
+      "title": "Formation",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "La capacité de ton Deck.",
+       "Métiers adaptés : Instructeur, Maître d'armes, Tacticien, Moniteur commando, Écuyer."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "12 emplacements",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "20 emplacements",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-drill.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "MARECHAL 10 S"
+      }
+     },
+     {
+      "id": "post-ops",
+      "title": "Missions",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le nombre d'escouades qui peuvent partir en mission en même temps.",
+       "Métiers adaptés : Cartographe, Analyste du renseignement, Officier de liaison, Transmetteur, Chef d'expédition."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "2 emplacements",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "6 emplacements",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-ops.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "MAJOR 7 S"
+      }
+     },
+     {
+      "id": "post-inf",
+      "title": "Infirmerie",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le nombre de lits de l'infirmerie.",
+       "Métiers adaptés : Chirurgien, Infirmier, Brancardier, Pharmacien, Médecin."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "2 emplacements",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "9 emplacements",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-inf.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "SAPEUR 3 S"
+      }
+     },
+     {
+      "id": "post-pri",
+      "title": "Prison",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le nombre de cellules de la prison.",
+       "Métiers adaptés : Surveillant, Interrogateur, Garde, Geôlier, Juge."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "2 emplacements",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "9 emplacements",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-pri.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "COLONEL 8 S"
+      }
+     },
+     {
+      "id": "post-cook",
+      "title": "Cuisine",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le moral du camp : plus il est haut, plus les bons jours sont fréquents.",
+       "Métiers adaptés : Cuisinier, Boulanger, Boucher, Diététicien, Brasseur."
+      ],
+      "rows": [
+       [
+        "Personne au poste",
+        "30 % de bons jours",
+        null
+       ],
+       [
+        "Jauge pleine",
+        "90 % de bons jours",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "post-cook.fr.webp",
+       "w": 232,
+       "h": 232,
+       "kind": "cut",
+       "alt": "LIEUTENANT 5 S"
+      }
+     },
+     {
+      "id": "camp-trades",
+      "title": "Métiers",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque officier a un métier, inscrit au dos de sa carte. Chaque métier peut convenir à un poste précis dans le camp."
+      ],
+      "rows": [
+       [
+        "Un métier adapté",
+        "+10 %",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-trades.fr.webp",
+       "w": 532,
+       "h": 102,
+       "kind": "cut",
+       "alt": "9 S 10 S 7 S 3 S 8 S 5 S"
+      },
+      "node": {
+       "file": "camp-trades--node.fr.webp",
+       "w": 554,
+       "h": 634,
+       "kind": "cut",
+       "alt": "Camp Charpentier, Courriériste, Aumônier, Archiviste, Gouverneur Formation Instructeur, Maître d'armes, Tacticien, Moniteur commando, Écuyer Missions Cartographe, Analyste du renseignement, Officier de liaison, Transmetteur, Chef d'expédition Infirmerie Chirurgien, Infirmier, Brancardier, Pharmacien, Médecin Prison Surveillant, Interrogateur, Garde, Geôlier, Juge Cuisine Cuisinier, Boulanger, Bouc"
+      }
+     },
+     {
+      "id": "camp-register",
+      "title": "Registre",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un officier perdu ne l'est pas toujours pour de bon. La tente de recrutement peut le retrouver vivant, revenu à son <b>Rang</b> de départ."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "camp-register.webp",
+       "w": 358,
+       "h": 182,
+       "kind": "cut",
+       "alt": "??? 7 C ??? 4 D"
+      }
+     }
+    ]
+   },
+   {
+    "key": "defense",
+    "label": "La défense du camp",
+    "pages": [
+     {
+      "id": "camp-defense",
+      "title": "Ta ligne de défense",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Valide ta configuration de défense pour protéger ton drapeau pendant ton absence. L'armée rouge attaque toujours la dernière stratégie mise en place.",
+       "Un soldat affecté à la défense reste quand même actif dans ton Deck. La ligne du bas de l'écran reste ta ligne de front."
+      ],
+      "rows": [
+       [
+        "Les troupes rouges attaquent après",
+        "4 h d'absence",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-defense.fr.webp",
+       "w": 378,
+       "h": 305,
+       "kind": "cut",
+       "alt": "6 C 8 C 7 C 4 C 5 C 9 C"
+      }
+     },
+     {
+      "id": "camp-raid",
+      "title": "L'assaut",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un assaut est une attaque des troupes rouges contre ta défense pendant ton absence. Il est mené par une armée rouge du même niveau que la tienne et suit les règles habituelles d'une bataille.",
+       "Perdre un assaut signifie des blessures ou un pillage de ressources."
+      ],
+      "rows": [
+       [
+        "Taille de l'attaque",
+        "12 cartes rouges attaquantes",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "camp-raid.fr.webp",
+       "w": 404,
+       "h": 172,
+       "kind": "cut",
+       "alt": "MAJOR 7 C VS BARRIERE DE BOIS"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

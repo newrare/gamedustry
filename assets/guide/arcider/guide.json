@@ -1,0 +1,971 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/arcider — do not edit",
+ "slug": "arcider",
+ "stamp": "b387c88604c1ed9d",
+ "en": {
+  "title": "Arcider",
+  "howTo": "Lean your ship left or right to overtake and never break your shield",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "steer",
+      "title": "Lean to steer",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Hold a side of the screen, or an arrow key, to lean that way."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "steer.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "race",
+      "title": "The race",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "You start last. To pass the leaders, you will need a booster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "race.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cuts",
+      "title": "Checkpoints",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each checkpoint asks for a rank. This battle royale is merciless: fall short and you are out.",
+       "A green rank means your place is good enough for the next checkpoint. Red means you still have rivals to pass."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cuts.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "finish",
+      "title": "The finish line",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Your place as you cross the finish line is your final result."
+      ],
+      "rows": [
+       [
+        "Reach the stage's distance",
+        "★",
+        "#ffd43b"
+       ],
+       [
+        "Cross the finish line",
+        "★★",
+        "#ffd43b"
+       ],
+       [
+        "Cross it in first place",
+        "★★★",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "finish.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "The shield",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Going fast never drains your shield, only hits damage it. Careful: an empty shield ends the race at once."
+      ],
+      "rows": [
+       [
+        "A mine",
+        "-24 %",
+        "#ff5a6e"
+       ],
+       [
+        "A barrier",
+        "-29 to -39 %",
+        "#ff5a6e"
+       ],
+       [
+        "Clipping a pilot",
+        "-14 to -21 %",
+        "#ff5a6e"
+       ]
+      ],
+      "pic": {
+       "file": "shield.webp",
+       "w": 340,
+       "h": 142,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "The score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "While a booster lasts, metres and cells count double."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "road",
+    "label": "On the road",
+    "pages": [
+     {
+      "id": "boost",
+      "title": "Boosters",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Any hit puts the booster out at once."
+      ],
+      "rows": [
+       [
+        "Lasts",
+        "3 s",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "boost.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "barrier",
+      "title": "Barriers",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Barriers block your way. Hit one and it breaks, and your speed drops with it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "barrier.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fork",
+      "title": "Fork",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "One branch has the charge cells. The other has boosters, often guarded by mines."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fork.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cells",
+      "title": "Charge cells",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Only cells refill your shield. They line the track on some forks.",
+       "Take them in a row for a combo bonus. Gravel or a hit breaks the combo."
+      ],
+      "rows": [
+       [
+        "A cell",
+        "+10 to +15 % shield",
+        "#5cffb0"
+       ]
+      ],
+      "pic": {
+       "file": "cells.en.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wall",
+      "title": "Walls",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A wall often leaves a way through, with a booster in it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wall.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mines",
+      "title": "Mines",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "A mine's blast throws you sideways. Lean the other way to stay on the tarmac.",
+       "A mine never blocks the way to a booster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mines.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ramp",
+      "title": "Ramps",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Line up before you take off. You can barely steer in the air."
+      ],
+      "rows": [
+       [
+        "Landing in the gravel",
+        "-12 %",
+        "#ff5a6e"
+       ]
+      ],
+      "pic": {
+       "file": "ramp.webp",
+       "w": 520,
+       "h": 340,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "solid",
+      "title": "Solid walls",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "The wall after a ramp may have no way through. Jump over it to avoid a crash."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "solid.webp",
+       "w": 520,
+       "h": 340,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pilots",
+    "label": "The pilots",
+    "pages": [
+     {
+      "id": "pilots",
+      "title": "Liveries",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A craft's colour tells you how it drives, long before you reach it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pilots.webp",
+       "w": 500,
+       "h": 110,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scout",
+      "title": "Scouts",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Green craft get out of your way."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scout.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "drone",
+      "title": "Drones",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Blue craft drive straight ahead, blind to you and to the road."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "drone.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stalker",
+      "title": "Stalkers",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Yellow craft are slow and steer into you. Easy to catch, hard to pass cleanly."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stalker.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "marshal",
+      "title": "Marshals",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Red craft block your line but never hit on purpose. Only a booster gets you past them easily."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "marshal.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ram",
+      "title": "Rams",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Violet craft come straight for you, and they hit the hardest."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ram.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "The climb",
+    "pages": [
+     {
+      "id": "dusk",
+      "title": "Dusk",
+      "eyebrow": "Stages 1 to 6",
+      "lv": 1,
+      "text": [
+       "The road to the first checkpoint is paved with boosters."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dusk.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "day",
+      "title": "Day",
+      "eyebrow": "Stages 7 to 12",
+      "lv": 7,
+      "text": [
+       "Two checkpoints before the finish."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "day.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mist",
+      "title": "Mist",
+      "eyebrow": "Stages 13 to 18",
+      "lv": 13,
+      "text": [
+       "From stage 13, some walls after a ramp have no way through."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mist.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "overcast",
+      "title": "Overcast",
+      "eyebrow": "Stages 19 to 24",
+      "lv": 19,
+      "text": [
+       "From here on, three checkpoints before the finish."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "overcast.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "night",
+      "title": "Night",
+      "eyebrow": "Stages 25 to 30",
+      "lv": 25,
+      "text": [
+       "Nothing new in this biome, but every hazard and every pilot at once."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "night.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Arcider",
+  "howTo": "Penche ton vaisseau à gauche ou à droite pour doubler sans jamais briser ton bouclier",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "steer",
+      "title": "Tourner",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Maintiens ou appuie sur un côté de l'écran pour tourner de ce côté."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "steer.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "race",
+      "title": "La course",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tu pars dernier. Utilise des Boosters pour doubler les premiers."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "race.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cuts",
+      "title": "Check Points",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque Check Point exige un classement. Cette course en Battle Royale est sans pitié : si ta position ne suffit pas, tu es éliminé.",
+       "Un rang affiché en vert indique que ta place suffit pour le prochain Check Point. En rouge, il te faut encore doubler des adversaires."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "cuts.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "finish",
+      "title": "La ligne d'arrivée",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Ta place sur la ligne d'arrivée déterminera ton classement final."
+      ],
+      "rows": [
+       [
+        "Atteins la distance du stage",
+        "★",
+        "#ffd43b"
+       ],
+       [
+        "Franchis la ligne d'arrivée",
+        "★★",
+        "#ffd43b"
+       ],
+       [
+        "Franchis-la en tête",
+        "★★★",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "finish.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Le bouclier",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Aller vite ne consomme pas le bouclier, seuls les chocs l'endommagent. Attention : un bouclier vide termine la course immédiatement."
+      ],
+      "rows": [
+       [
+        "Une mine",
+        "-24 %",
+        "#ff5a6e"
+       ],
+       [
+        "Une barrière",
+        "-29 à -39 %",
+        "#ff5a6e"
+       ],
+       [
+        "Accrocher un pilote",
+        "-14 à -21 %",
+        "#ff5a6e"
+       ]
+      ],
+      "pic": {
+       "file": "shield.webp",
+       "w": 340,
+       "h": 142,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Le score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tant qu'un Booster est actif, la distance et les cellules régénératives comptent double."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "score.webp",
+       "w": 520,
+       "h": 170,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "road",
+    "label": "Sur la route",
+    "pages": [
+     {
+      "id": "boost",
+      "title": "Boosters",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le moindre choc coupe immédiatement le Booster."
+      ],
+      "rows": [
+       [
+        "Durée",
+        "3 s",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "boost.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "barrier",
+      "title": "Barrières",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les barrières bloquent la route. Si tu en percutes une, elle se brise et ta vitesse chute."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "barrier.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fork",
+      "title": "Embranchement",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une branche offre des cellules de charge, l'autre des Boosters souvent gardés par des mines."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fork.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "cells",
+      "title": "Cellules de charge",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Seules les cellules rechargent ton bouclier. Elles jalonnent la course sur certains embranchements.",
+       "Prends-les à la suite pour obtenir un combo bonus. Le hors-piste ou un choc casse le combo."
+      ],
+      "rows": [
+       [
+        "Une cellule",
+        "+10 à +15 % de bouclier",
+        "#5cffb0"
+       ]
+      ],
+      "pic": {
+       "file": "cells.fr.webp",
+       "w": 520,
+       "h": 299,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wall",
+      "title": "Murs",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Souvent, un mur laisse un passage avec un Booster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wall.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mines",
+      "title": "Mines",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Le souffle d'une mine te projette sur un côté. Contre-braque pour rester sur la piste.",
+       "Une mine ne barre jamais l'accès à un Booster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mines.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ramp",
+      "title": "Tremplins",
+      "eyebrow": null,
+      "lv": 9,
+      "text": [
+       "Aligne-toi avant de décoller car en l'air, tu tournes à peine."
+      ],
+      "rows": [
+       [
+        "Hors-piste",
+        "-12 %",
+        "#ff5a6e"
+       ]
+      ],
+      "pic": {
+       "file": "ramp.webp",
+       "w": 520,
+       "h": 340,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "solid",
+      "title": "Murs pleins",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Le mur après un tremplin peut n'avoir aucun passage. Saute par-dessus pour éviter le crash."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "solid.webp",
+       "w": 520,
+       "h": 340,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "pilots",
+    "label": "Les pilotes",
+    "pages": [
+     {
+      "id": "pilots",
+      "title": "Livrées",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "La couleur d'un vaisseau te dit comment il pilote, bien avant que tu l'atteignes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "pilots.webp",
+       "w": 500,
+       "h": 110,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scout",
+      "title": "Éclaireurs",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les verts s'écartent de ta route."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scout.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "drone",
+      "title": "Drones",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les bleus foncent tout droit, sans voir quoi que ce soit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "drone.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "stalker",
+      "title": "Traqueurs",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Les jaunes sont lents et se rabattent sur toi. Faciles à rattraper, durs à doubler sans choc."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "stalker.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "marshal",
+      "title": "Gendarmes",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Les rouges te barrent la route sans jamais attaquer volontairement. Seul un Booster permet de les dépasser facilement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "marshal.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "ram",
+      "title": "Béliers",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Les violets te foncent dessus. Ce sont eux qui frappent le plus fort."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ram.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "climb",
+    "label": "La remontée",
+    "pages": [
+     {
+      "id": "dusk",
+      "title": "Crépuscule",
+      "eyebrow": "Stages 1 à 6",
+      "lv": 1,
+      "text": [
+       "La route jusqu'au premier Check Point est pavée de Boosters."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dusk.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "day",
+      "title": "Plein jour",
+      "eyebrow": "Stages 7 à 12",
+      "lv": 7,
+      "text": [
+       "Deux Check Points avant l'arrivée."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "day.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mist",
+      "title": "Brume",
+      "eyebrow": "Stages 13 à 18",
+      "lv": 13,
+      "text": [
+       "À partir du stage 13, certains murs n'ont plus aucun passage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mist.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "overcast",
+      "title": "Ciel couvert",
+      "eyebrow": "Stages 19 à 24",
+      "lv": 19,
+      "text": [
+       "À partir de maintenant, il y aura trois Check Points avant l'arrivée."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "overcast.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "night",
+      "title": "Nuit",
+      "eyebrow": "Stages 25 à 30",
+      "lv": 25,
+      "text": [
+       "Rien de nouveau dans ce biome, mais tous les dangers et tous les pilotes sont réunis."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "night.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,1663 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/holepocalypse — do not edit",
+ "slug": "holepocalypse",
+ "stamp": "989bf5ef241f8dc1",
+ "en": {
+  "title": "Holepocalypse",
+  "howTo": "Fling golf balls at the zombie horde or aim for a hole to get destructive powers",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "shot",
+      "title": "Roll or lob",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Put your finger in the blue band to roll, in the orange band to lob.",
+       "The farther you aim from the tee, the harder the shot."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shot.webp",
+       "w": 394,
+       "h": 319,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lob",
+      "title": "The lob",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "A lob flies over the horde. It lands softly enough to drop into a hole.",
+       "The longer the lob, the less precisely it lands."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lob.webp",
+       "w": 300,
+       "h": 325,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bag",
+      "title": "The bag",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each shot uses a ball from your bag. The bag then refills, more or less quickly."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bag.en.webp",
+       "w": 528,
+       "h": 234,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hole",
+      "title": "The hole",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Roll a ball gently into the hole. Too fast, and it skips over.",
+       "A long shot, a lob or a bank shot makes a bigger shockwave."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hole.webp",
+       "w": 432,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "flags",
+      "title": "Ball flags",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Roll a ball into a coloured flag to win 3 balls of its kind.",
+       "A coloured flag also gives back a lost flag (hit point)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "flags.en.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "Combos",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Zombies bounce off each other like billiard balls. Knock one into another to damage both.",
+       "All the KOs of one shot create a combo. The third pays 300 points, the fourth 400 points…"
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 460,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers",
+      "title": "Supers",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Every KO charges your supers. One super meter is completely filled with 12 KOs.",
+       "Click a charged super to launch it. The super's balls don't come out of your bag.",
+       "Before each level, pick the super powers you take. New special ones unlock as you climb."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers.webp",
+       "w": 340,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "line",
+      "title": "The line",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A zombie that crosses the white line explodes. That costs you a flag (hit point). Luckily, the blast pushes the horde back.",
+       "Sink a ball in a coloured hole to win back a lost flag (hit point)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "line.webp",
+       "w": 440,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "last",
+      "title": "The last stand",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lose your last hit point and you get one last chance to win it back by using burst mode for 8 seconds. This is only possible once a round.",
+       "Hold to fire in bursts. Hold out and you get one last-chance flag (hit point) back."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "last.en.webp",
+       "w": 482,
+       "h": 258,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goal",
+      "title": "Goal and stars",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each level has one goal: survive its waves, sink the hole, knock out a boss…",
+       "The round ends as soon as the goal is met."
+      ],
+      "rows": [
+       [
+        "The level's goal",
+        "★",
+        null
+       ],
+       [
+        "Lose no flag",
+        "★★",
+        null
+       ],
+       [
+        "The level's bonus",
+        "★★★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "goal.en.webp",
+       "w": 380,
+       "h": 314,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Bosses",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "While a boss is on the field, your fire rate is slightly changed."
+      ],
+      "rows": [
+       [
+        "A ball deals at most",
+        "2",
+        null
+       ],
+       [
+        "A full shockwave",
+        "15",
+        null
+       ],
+       [
+        "Flags (hit points) lost if a boss reaches the line",
+        "2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "boss.en.webp",
+       "w": 346,
+       "h": 333,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "country",
+    "label": "Country Club",
+    "pages": [
+     {
+      "id": "bumpers",
+      "title": "Obstacles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Hit an obstacle hard enough and it breaks."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bumpers.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "walker",
+      "title": "Walker",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "A walker shambles toward you without straying far from its lane."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "walker.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boomer",
+      "title": "Boomer",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "When knocked out, a boomer bursts and deals 3 damage to every zombie around it.",
+       "Burst a boomer inside the pack."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boomer.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "moving",
+      "title": "The moving hole",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Sink the ball in the moving hole for a bigger shockwave."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moving.webp",
+       "w": 520,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scars",
+      "title": "Damaged course",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Every crater, scorch and crack stays on the grass for the whole round."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scars.en.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "greenkeeper",
+      "title": "Greenkeeper",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "From the front, each hit on the greenkeeper deals only one damage. Bank your shots off the edges of the field to maximise damage."
+      ],
+      "rows": [
+       [
+        "Hit points",
+        "100",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "greenkeeper.en.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "desert",
+    "label": "Desert Links",
+    "pages": [
+     {
+      "id": "bunkers",
+      "title": "Bunkers",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Sand brakes a ball hard the moment it rolls in."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bunkers.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Shield",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "The shield zombie's golf bag blocks shots that come straight from below.",
+       "Lob and aim at the shield zombie's head. You can also bank off one of the edges or use special balls (heavy, giant, etc.)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wind",
+      "title": "Wind",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "The wind bends every shot, rolled or lobbed."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wind.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colossus",
+      "title": "Caddie Colossus",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "The colossus blocks direct shots with its shield and throws golf bags that block the lanes.",
+       "Lob onto the colossus's head instead. Each ball deals 6 damage."
+      ],
+      "rows": [
+       [
+        "Hit points",
+        "110",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "colossus.en.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "bayou",
+    "label": "Bayou Course",
+    "pages": [
+     {
+      "id": "ponds",
+      "title": "Ponds",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A ball in the water is lost.",
+       "Knock a zombie into a pond and it drowns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ponds.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mudder",
+      "title": "Mudder",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Knocked out, a mudder splits into two mudlings that burst at the slightest touch."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mudder.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "night",
+      "title": "Night",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Only the bottom of the field is lit. The horde then comes out of the dark."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "night.webp",
+       "w": 484,
+       "h": 316,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bog",
+      "title": "Bog Giant",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Knock the bog giant into a pond. Each dunk costs it 18 hit points."
+      ],
+      "rows": [
+       [
+        "Hit points",
+        "160",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bog.en.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "frozen",
+    "label": "Frozen Links",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Ice",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Zombies slide on ice too, and are knocked back twice as far on that surface. Make the most of big pile-ups."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "double",
+      "title": "Two holes",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Two holes on the fairway, but each one's shockwave covers less ground."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "double.webp",
+       "w": 488,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yeti",
+      "title": "Yeti",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "Fire hurts the yeti twice as much as any other blow."
+      ],
+      "rows": [
+       [
+        "Hit points",
+        "260",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "yeti.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "graveyard",
+    "label": "Graveyard Greens",
+    "pages": [
+     {
+      "id": "graves",
+      "title": "Graves",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Graves break like obstacles. Once broken, no more zombies rise from them."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "graves.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "runner",
+      "title": "Runner",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "A runner rushes at your flags as if it wanted to win a race."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "runner.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "necro",
+      "title": "Necromancer",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Every 10 seconds, the necromancer stops to raise the last two zombies knocked out.",
+       "Knock the necromancer out first."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "necro.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "horde",
+      "title": "Horde",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Twice the zombies, but every one falls at the first hit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "horde.webp",
+       "w": 480,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "king",
+      "title": "Zombie King",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Send the skull-shaped balls back at the zombie king to deal 8 damage to him. You lose a flag (hit point) if that ball hits you."
+      ],
+      "rows": [
+       [
+        "Hit points",
+        "240",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "king.en.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "kinds",
+    "label": "Ball kinds",
+    "pages": [
+     {
+      "id": "kinds1",
+      "title": "Explosive and multi",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "The explosive ball deals 5 damage to nearby enemies.",
+       "The multiball splits into three at its first bounce."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds1.webp",
+       "w": 480,
+       "h": 239,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds2",
+      "title": "Pierce and heavy",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "The piercing ball goes through every zombie in its path, dealing 3 damage to each.",
+       "The heavy ball deals double damage and knocks zombies farther back. No shield blocks it."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds2.en.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds3",
+      "title": "Homing and split",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "The homing ball curves toward the nearest zombie for 3 seconds.",
+       "The splitting ball splits into three at each of its first three bounces."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds3.en.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds4",
+      "title": "Bouncy and fire",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "For 6 seconds, the bouncy ball keeps its full speed and bounces.",
+       "The fire ball sets the grass alight where it hits."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds4.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds5",
+      "title": "Ice and giant",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "The ice ball freezes the zombies it hits for 3 seconds.",
+       "The giant ball is twice as big, deals +1 damage and goes through every shield."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds5.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supers",
+    "label": "Supers",
+    "pages": [
+     {
+      "id": "supers1",
+      "title": "Country Club",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Ball rain drops 24 balls on the fairway. Fan volley fires 22 at once.",
+       "Time freeze stops the horde for a few seconds. Hole blast sets off a hole's full shockwave."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers1.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers2",
+      "title": "Desert Links",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Seeker rain hits the 12 zombies nearest the line. Sniper pierces the 3 toughest zombies.",
+       "Sprinklers push the whole horde back. The golf cart, for its part, charges up the busiest lane."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers2.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers3",
+      "title": "Bayou Course",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Boom volley fires 5 explosive balls, Split storm 3 splitting ones, Hailstorm 20 icy balls.",
+       "Magnet hole makes the hole swallow every nearby ball for 6 seconds, at any speed."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers3.en.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers4",
+      "title": "Frozen Links",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Firestorm rains 14 burning balls. Super bounce fires 5 that never slow down.",
+       "Cluster bombs split in five as they land. Rush hands you the gun that fires loads of balls for a few seconds."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers4.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers5",
+      "title": "Graveyard Greens",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Meteor crushes the biggest pack. Carpet strike bombs seven rows up the field.",
+       "Golden rain makes KOs pay ×3 for 8 seconds. Mower sends mowers across the field, crushing zombies."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers5.webp",
+       "w": 500,
+       "h": 124,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Holepocalypse",
+  "howTo": "Lance des balles de golf sur la horde de zombies ou vise un trou pour obtenir des pouvoirs destructeurs",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "shot",
+      "title": "Tir roulé ou lob",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Pose ton doigt dans la bande bleue pour rouler, dans l'orange pour faire un lob.",
+       "Plus tu vises loin du tee, plus le tir est puissant."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shot.webp",
+       "w": 394,
+       "h": 319,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "lob",
+      "title": "Le lob",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Un lob survole la horde et retombe assez doucement pour entrer dans un trou.",
+       "Plus le lob est long, moins il est précis à l'atterrissage."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "lob.webp",
+       "w": 300,
+       "h": 325,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bag",
+      "title": "Le sac",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque tir consomme une balle de ton sac. Le sac finit ensuite par se recharger plus ou moins vite."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bag.fr.webp",
+       "w": 528,
+       "h": 234,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "hole",
+      "title": "Le trou",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Fais rouler une balle doucement dans le trou. Si elle va trop vite, elle passe par-dessus.",
+       "Un tir lointain, un lob ou un tir par la bande donne une plus grosse onde de choc."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "hole.webp",
+       "w": 432,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "flags",
+      "title": "Drapeaux de couleur",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Fais rouler une balle dans un drapeau de couleur pour gagner 3 balles du même type.",
+       "Un drapeau de couleur te rend aussi un drapeau (point de vie) perdu."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "flags.fr.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "chain",
+      "title": "Combos",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les zombies rebondissent entre eux comme au billard. Projettes-en un sur un autre pour infliger des dégâts aux deux.",
+       "Tous les KO d'un tir créent un Combo. Le troisième rapporte 300 points, le quatrième 400 points…"
+      ],
+      "rows": [],
+      "pic": {
+       "file": "chain.webp",
+       "w": 460,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers",
+      "title": "Supers",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque KO charge tes supers pouvoirs. Une jauge de super est complètement remplie avec 12 KO.",
+       "Clique sur un super chargé pour le lancer. Les balles du super ne sortent pas de ton sac.",
+       "Avant chaque stage, choisis les supers pouvoirs que tu emportes. Des nouveaux spéciaux se débloquent au fil de ta progression."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers.webp",
+       "w": 340,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "line",
+      "title": "La ligne",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Un zombie qui franchit la ligne blanche explose. Cela te coûte alors un drapeau (point de vie). Heureusement l'explosion repousse la horde.",
+       "Rentre une balle dans un trou de couleur pour récupérer un drapeau (point de vie) perdu."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "line.webp",
+       "w": 440,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "last",
+      "title": "Le dernier rempart",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Si tu perds ton dernier point de vie, tu as une dernière chance de le récupérer en utilisant le mode rafale pendant 8 secondes. Ceci n'est en revanche possible qu'une seule fois par partie.",
+       "Maintiens pour tirer en rafale. Tiens bon pour récupérer un drapeau (point de vie) de la dernière chance."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "last.fr.webp",
+       "w": 482,
+       "h": 257,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "goal",
+      "title": "Objectif et étoiles",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque stage a un but : survivre aux vagues, rentrer la balle, battre un Boss, etc.",
+       "La partie se termine dès que l'objectif est atteint."
+      ],
+      "rows": [
+       [
+        "L'objectif du stage",
+        "★",
+        null
+       ],
+       [
+        "Ne perds aucun drapeau",
+        "★★",
+        null
+       ],
+       [
+        "Le bonus du stage",
+        "★★★",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "goal.fr.webp",
+       "w": 380,
+       "h": 313,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boss",
+      "title": "Boss",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Lorsqu'un Boss est sur le terrain, ta cadence de tir est modifiée légèrement."
+      ],
+      "rows": [
+       [
+        "Dégât maximal d'une balle",
+        "2",
+        null
+       ],
+       [
+        "Onde de choc complète",
+        "15",
+        null
+       ],
+       [
+        "Drapeaux (points de vie) perdus si un boss atteint la ligne",
+        "2",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "boss.fr.webp",
+       "w": 346,
+       "h": 333,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "country",
+    "label": "Country club",
+    "pages": [
+     {
+      "id": "bumpers",
+      "title": "Obstacles",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Frappe un obstacle assez fort pour le détruire."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bumpers.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "walker",
+      "title": "Rôdeur",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Le rôdeur avance vers toi sans trop dévier de son couloir."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "walker.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "boomer",
+      "title": "Boomer",
+      "eyebrow": null,
+      "lv": 2,
+      "text": [
+       "Une fois KO, le boomer explose et inflige 3 dégâts aux zombies alentour.",
+       "Fais éclater un boomer au milieu du groupe."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "boomer.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "moving",
+      "title": "Le trou mobile",
+      "eyebrow": null,
+      "lv": 4,
+      "text": [
+       "Rentre la balle dans le trou en mouvement pour obtenir une plus grande onde."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "moving.webp",
+       "w": 520,
+       "h": 330,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "scars",
+      "title": "Parcours endommagé",
+      "eyebrow": null,
+      "lv": 5,
+      "text": [
+       "Chaque cratère, brûlure et fissure reste sur le gazon toute la partie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "scars.fr.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "greenkeeper",
+      "title": "Jardinier",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "De face, chaque coup n'inflige qu'un seul dégât au jardinier. Joue les rebonds avec les bords du terrain pour maximiser les dégâts."
+      ],
+      "rows": [
+       [
+        "Points de vie",
+        "100",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "greenkeeper.fr.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "desert",
+    "label": "Links du désert",
+    "pages": [
+     {
+      "id": "bunkers",
+      "title": "Bunkers",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Le sable freine net la balle dès qu'elle y pénètre."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bunkers.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "shield",
+      "title": "Bouclier",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Le sac du zombie bouclier bloque les tirs directs venant d'en bas.",
+       "Fais un lob et vise la tête du zombie bouclier. Tu peux aussi faire un ricochet sur l'un des bords ou utiliser des balles spéciales (lourde, géante, etc.)."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "shield.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "wind",
+      "title": "Vent",
+      "eyebrow": null,
+      "lv": 10,
+      "text": [
+       "Le vent dévie chaque tir, roulé ou en lob."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "wind.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "colossus",
+      "title": "Caddie colosse",
+      "eyebrow": null,
+      "lv": 12,
+      "text": [
+       "Le caddie colosse bloque les tirs directs avec son bouclier et lance des sacs de golf qui bloquent les couloirs.",
+       "Fais plutôt un lob sur la tête du colosse. Chaque balle fait 6 dégâts."
+      ],
+      "rows": [
+       [
+        "Points de vie",
+        "110",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "colossus.fr.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "bayou",
+    "label": "Parcours du Bayou",
+    "pages": [
+     {
+      "id": "ponds",
+      "title": "Étangs",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Une balle dans l'eau est perdue.",
+       "Envoie un zombie dans un étang pour qu'il se noie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ponds.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "mudder",
+      "title": "Boueux",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "Une fois KO, le boueux se divise en deux mini boueux qui éclatent au moindre contact."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "mudder.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "night",
+      "title": "Nuit",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Seul le bas du terrain est éclairé. La horde surgit alors de l'obscurité."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "night.webp",
+       "w": 484,
+       "h": 316,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bog",
+      "title": "Géant du marais",
+      "eyebrow": null,
+      "lv": 18,
+      "text": [
+       "Envoie le géant du marais dans un étang. Chaque plongeon lui coûte 18 points de vie."
+      ],
+      "rows": [
+       [
+        "Points de vie",
+        "160",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "bog.fr.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "frozen",
+    "label": "Links gelés",
+    "pages": [
+     {
+      "id": "ice",
+      "title": "Glace",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Les zombies glissent aussi sur la glace et sont repoussés deux fois plus loin sur cette surface. Optimise les carambolages."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "ice.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "double",
+      "title": "Deux trous",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "Deux trous sur le fairway, mais l'onde de choc de chacun couvre moins de terrain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "double.webp",
+       "w": 488,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "yeti",
+      "title": "Yéti",
+      "eyebrow": null,
+      "lv": 24,
+      "text": [
+       "Le feu blesse le yéti deux fois plus qu'un autre coup."
+      ],
+      "rows": [
+       [
+        "Points de vie",
+        "260",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "yeti.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "graveyard",
+    "label": "Green du cimetière",
+    "pages": [
+     {
+      "id": "graves",
+      "title": "Tombes",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Une tombe se casse comme un obstacle. Une fois brisée, aucun zombie n'en sort."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "graves.webp",
+       "w": 520,
+       "h": 290,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "runner",
+      "title": "Coureur",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Le coureur fonce vers tes drapeaux comme s'il voulait gagner une course."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "runner.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "necro",
+      "title": "Nécromancien",
+      "eyebrow": null,
+      "lv": 26,
+      "text": [
+       "Toutes les 10 secondes, le nécromancien s'arrête pour relever les deux derniers zombies KO.",
+       "Mets le nécromancien KO en premier."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "necro.webp",
+       "w": 440,
+       "h": 230,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "horde",
+      "title": "Horde",
+      "eyebrow": null,
+      "lv": 28,
+      "text": [
+       "Deux fois plus de zombies, mais chacun tombe au premier coup."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "horde.webp",
+       "w": 480,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "king",
+      "title": "Roi zombie",
+      "eyebrow": null,
+      "lv": 30,
+      "text": [
+       "Renvoie les balles en forme de crâne au roi zombie pour lui infliger 8 dégâts. Tu perds un drapeau (point de vie) si cette balle te touche."
+      ],
+      "rows": [
+       [
+        "Points de vie",
+        "240",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "king.fr.webp",
+       "w": 474,
+       "h": 308,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "kinds",
+    "label": "Balles spéciales",
+    "pages": [
+     {
+      "id": "kinds1",
+      "title": "Explosive et multiballe",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "La balle explosive inflige 5 dégâts aux ennemis proches.",
+       "La multiballe se sépare en trois dès son premier rebond."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds1.webp",
+       "w": 480,
+       "h": 239,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds2",
+      "title": "Perforante et lourde",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "La balle perforante traverse les zombies sur sa route et inflige 3 dégâts à chacun.",
+       "La balle lourde double les dégâts et repousse plus loin les zombies. Aucun bouclier ne la bloque."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds2.fr.webp",
+       "w": 480,
+       "h": 239,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds3",
+      "title": "Chercheuse et scindée",
+      "eyebrow": null,
+      "lv": 14,
+      "text": [
+       "La balle chercheuse vise le zombie le plus proche pendant 3 secondes.",
+       "La balle scindée se divise en trois lors de ses trois premiers rebonds."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds3.fr.webp",
+       "w": 480,
+       "h": 239,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds4",
+      "title": "Rebond et feu",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Pendant 6 secondes, la balle rebondissante garde sa vitesse et rebondit.",
+       "La balle de feu enflamme l'herbe à l'impact."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds4.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "kinds5",
+      "title": "Glace et géante",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "La balle de glace gèle les zombies touchés pendant 3 secondes.",
+       "La balle géante est deux fois plus grosse, fait +1 dégât et traverse tous les boucliers."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "kinds5.webp",
+       "w": 480,
+       "h": 240,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "supers",
+    "label": "Supers",
+    "pages": [
+     {
+      "id": "supers1",
+      "title": "Country club",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "La pluie de balles lâche 24 balles sur le fairway. La salve en éventail en tire 22 d'un coup.",
+       "Le temps figé arrête la horde pendant quelques secondes. L'onde de choc active toute la puissance d'un trou."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers1.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers2",
+      "title": "Links du désert",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "La pluie guidée touche les 12 zombies les plus proches de la ligne. Le sniper perce les 3 zombies les plus résistants.",
+       "Les arroseurs repoussent toute la horde. La voiturette, quant à elle, fonce dans le couloir le plus chargé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers2.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers3",
+      "title": "Parcours du Bayou",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "La salve explosive tire 5 balles explosives, la tempête scindée 3 balles scindées, la grêle 20 balles glacées.",
+       "Le trou aimanté avale toute balle proche pendant 6 secondes, peu importe sa vitesse."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers3.fr.webp",
+       "w": 500,
+       "h": 124,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers4",
+      "title": "Links gelés",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "La tempête de feu lâche 14 balles enflammées. Le super rebond en tire 5 qui ne ralentissent jamais.",
+       "La grappe de bombes se divise en cinq à l'atterrissage. La rafale te donne le canon qui tire plein de balles pendant quelques secondes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers4.webp",
+       "w": 500,
+       "h": 125,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "supers5",
+      "title": "Green du cimetière",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Le météore écrase le plus gros groupe. Le tapis de bombes frappe 7 rangées en remontant le terrain.",
+       "Avec la pluie d'or, les KO rapportent ×3 pendant 8 secondes. Les tondeuses balayent et écrasent les zombies sur le terrain."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "supers5.webp",
+       "w": 500,
+       "h": 124,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

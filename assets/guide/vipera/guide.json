@@ -1,0 +1,671 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/vipera — do not edit",
+ "slug": "vipera",
+ "stamp": "025b179eabd7a8fd",
+ "en": {
+  "title": "Vipera",
+  "howTo": "Tap to change direction and grab the bonuses to grow",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "swerve",
+      "title": "Moving",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Vipera never stops. A click changes her direction.",
+       "Walls push Vipera back, at no cost."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "swerve.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Eggs and score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Eggs make Vipera grow and score points. A stage ends after a set distance."
+      ],
+      "rows": [
+       [
+        "Chain of 5, 10, 15…",
+        "+40, +80, +120…",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.webp",
+       "w": 420,
+       "h": 150,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bites",
+      "title": "Damage",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each hit costs a life. Vipera shrinks back to her starting size and loses her bonuses.",
+       "Then Vipera blinks, and nothing can hurt her for a second."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bites.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "viper",
+    "label": "The viper",
+    "pages": [
+     {
+      "id": "tiers",
+      "title": "Evolution",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The longer Vipera gets, the faster she goes. A hit never slows her down."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tiers.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "armour",
+      "title": "Armor",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "At full length, Vipera grows an armor that takes one hit for her.",
+       "To get the armor back, grow to full length again or eat a rainbow egg."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "armour.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "jungle",
+    "label": "Jungle",
+    "pages": [
+     {
+      "id": "thorns",
+      "title": "Thorns",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Red thorns are dangerous, but there is always a way through. The best players will notice you can even slip between two close thorns."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "thorns.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "swamp",
+    "label": "Swamp",
+    "pages": [
+     {
+      "id": "log",
+      "title": "Drifting logs",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Don't bump into the logs."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "log.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fly",
+      "title": "Fireflies",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Fireflies help Vipera collect eggs. They fly off at the first hit."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fly.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "temple",
+    "label": "Temple",
+    "pages": [
+     {
+      "id": "trap",
+      "title": "Spike traps",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Only raised spikes are dangerous.",
+       "The spikes creep out slowly, then shoot up all at once."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "trap.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bolt",
+      "title": "Lightning",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "A ring warns of the next lightning strike.",
+       "Lightning can even strike twice in a row."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bolt.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "idol",
+      "title": "Idol",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "With this bonus, points count double. Now is the time to grab as many eggs as you can and complete full chains."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "idol.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "volcano",
+    "label": "Volcano",
+    "pages": [
+     {
+      "id": "geyser",
+      "title": "Geysers",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Embers rise just before the lava bursts. And remember, Vipera really doesn't like lava."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "geyser.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rock",
+      "title": "Falling rocks",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A shadow always shows where a rock will land. The snake would rather avoid a bump on the head.",
+       "Watch out, once landed, rocks stay hot and dangerous."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rock.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Fire traps",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Like spike traps, but the flames come out faster."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "amber",
+      "title": "Amber",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Vipera instantly grows to just short of full length."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "amber.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lair",
+    "label": "Lair",
+    "pages": [
+     {
+      "id": "eagle",
+      "title": "The eagle",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "The eagle's shadow tells you which side its next attack will come from.",
+       "Quickly get clear of that side before you get bitten."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "eagle.webp",
+       "w": 520,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rainbow",
+      "title": "Rainbow egg",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "This egg is so good it instantly gives Vipera a rainbow armor."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rainbow.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Vipera",
+  "howTo": "Tap pour changer de direction et attrape les Bonus pour grandir",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "swerve",
+      "title": "Déplacement",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Vipera avance sans arrêt. Un clic change sa direction.",
+       "Les murs repoussent Vipera, sans dégât."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "swerve.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "score",
+      "title": "Œufs et score",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les œufs font grandir Vipera et rapportent des points. Le stage se termine après une certaine distance."
+      ],
+      "rows": [
+       [
+        "Chaîne de 5, 10, 15…",
+        "+40, +80, +120…",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "score.webp",
+       "w": 420,
+       "h": 150,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bites",
+      "title": "Dégâts",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque dégât coûte une vie. Vipera reprend alors sa taille de départ et perd ses bonus.",
+       "Ensuite, Vipera clignote et plus rien ne peut la blesser pendant une seconde."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bites.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "viper",
+    "label": "La vipère",
+    "pages": [
+     {
+      "id": "tiers",
+      "title": "Évolution",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Plus Vipera est longue, plus elle va vite. Un dégât ne la ralentit pas."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tiers.webp",
+       "w": 520,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "armour",
+      "title": "Armure",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Arrivée à sa taille maximale, Vipera se couvre d'une armure qui encaisse un dégât.",
+       "Pour retrouver cette armure, atteins de nouveau la taille maximale ou mange un œuf arc-en-ciel."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "armour.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "jungle",
+    "label": "Jungle",
+    "pages": [
+     {
+      "id": "thorns",
+      "title": "Épines",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Les épines rouges sont dangereuses, mais un passage reste toujours libre. Les meilleurs joueurs remarqueront qu'on peut même se faufiler entre deux épines rapprochées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "thorns.webp",
+       "w": 520,
+       "h": 230,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "swamp",
+    "label": "Marais",
+    "pages": [
+     {
+      "id": "log",
+      "title": "Troncs flottants",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Ne te cogne pas contre les troncs."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "log.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fly",
+      "title": "Lucioles",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "Les lucioles aident Vipera à ramasser les œufs. Elles partent toutefois au premier dégât reçu."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fly.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "temple",
+    "label": "Temple",
+    "pages": [
+     {
+      "id": "trap",
+      "title": "Pièges à pointes",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Seules les pointes relevées sont dangereuses.",
+       "Les pointes sortent doucement puis surgissent d'un coup."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "trap.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "bolt",
+      "title": "Foudre",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Un cercle annonce le prochain impact de foudre.",
+       "La foudre peut même frapper deux fois de suite."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "bolt.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "idol",
+      "title": "Idole",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Avec ce bonus, les points comptent double. C'est le moment de ramasser un maximum d'œufs et de réussir des chaînes complètes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "idol.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "volcano",
+    "label": "Volcan",
+    "pages": [
+     {
+      "id": "geyser",
+      "title": "Geysers",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Des braises montent juste avant que la lave jaillisse. Et rappelons-le, Vipera n'aime pas du tout la lave."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "geyser.webp",
+       "w": 520,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rock",
+      "title": "Chutes de rochers",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Une ombre montre toujours le point d'impact d'un rocher. Le serpent préfère éviter les bosses sur la tête.",
+       "Attention, une fois au sol, les rochers restent brûlants et dangereux."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rock.webp",
+       "w": 520,
+       "h": 240,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fire",
+      "title": "Pièges de feu",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Comme les pièges à pointes, mais les flammes sortent plus vite."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "fire.webp",
+       "w": 520,
+       "h": 220,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "amber",
+      "title": "Ambre",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "Vipera grandit d'un coup jusqu'à presque sa taille maximale."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "amber.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "lair",
+    "label": "Repaire",
+    "pages": [
+     {
+      "id": "eagle",
+      "title": "L'aigle",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "L'ombre de l'aigle annonce de quel côté viendra sa prochaine attaque.",
+       "Quitte vite ce côté pour ne pas te faire croquer."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "eagle.webp",
+       "w": 520,
+       "h": 320,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "rainbow",
+      "title": "Œuf arc-en-ciel",
+      "eyebrow": null,
+      "lv": 25,
+      "text": [
+       "Cet œuf est si bon qu'il donne aussitôt à Vipera une armure arc-en-ciel."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rainbow.webp",
+       "w": 520,
+       "h": 260,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

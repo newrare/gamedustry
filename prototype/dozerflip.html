@@ -4,23 +4,23 @@
 <title>dozerflip prototype</title>
 <meta name="lab-game" content="none">
 <style>
-  html, body { margin: 0; height: 100%; background: #15181c; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #1a1140; overflow: hidden; }
   #wrap { position: absolute; top: 0; left: 50%; transform: translateX(-50%); }
   #wrap canvas { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
-  #menuBtn { position: absolute; top: 58px; right: 10px; z-index: 3;
-    font: 600 13px system-ui, sans-serif; padding: 6px 12px; border-radius: 14px; border: 0;
-    background: rgba(0, 0, 0, 0.5); color: #fff; }
+  #menuBtn { position: absolute; top: 62px; right: 10px; z-index: 3;
+    font: 800 13px "Arial Rounded MT Bold", "Avenir Next", system-ui, sans-serif; padding: 7px 14px; border-radius: 16px;
+    border: 2px solid #2a1160; background: #6a3ff0; color: #fff; box-shadow: 0 3px 0 #2a1160; }
   #menu { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; max-height: 62%; overflow: auto;
-    background: rgba(18, 20, 24, 0.94); color: #fff; padding: 12px 16px 16px; border-radius: 16px 16px 0 0;
+    background: rgba(34, 18, 84, 0.95); color: #fff; padding: 12px 16px 16px; border-radius: 18px 18px 0 0;
     font: 14px system-ui, sans-serif; }
   #menu[hidden] { display: none; }
-  #menu h3 { margin: 4px 0 8px; font: 600 13px system-ui, sans-serif; color: #9aa4ad; }
+  #menu h3 { margin: 4px 0 8px; font: 700 13px system-ui, sans-serif; color: #b9a9ee; }
   .opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-  .opts button { flex: 1 1 30%; padding: 10px 4px; border-radius: 10px; border: 1px solid #3a4048;
-    background: #262a31; color: #fff; font: 600 13px system-ui, sans-serif; }
-  .opts button.on { background: #f2b22a; color: #111; border-color: #f2b22a; }
-  #menuPlay { width: 100%; padding: 12px; border: 0; border-radius: 12px; background: #4caf50; color: #fff;
-    font: 700 15px system-ui, sans-serif; }
+  .opts button { flex: 1 1 30%; padding: 10px 4px; border-radius: 12px; border: 2px solid #4a2a9a;
+    background: #35206e; color: #fff; font: 700 13px system-ui, sans-serif; }
+  .opts button.on { background: #ffc21f; color: #2a1160; border-color: #ffc21f; }
+  #menuPlay { width: 100%; padding: 12px; border: 0; border-radius: 14px; background: #ff3fa4; color: #fff;
+    font: 800 15px system-ui, sans-serif; box-shadow: 0 4px 0 #a01a6a; }
 </style>
 <div id="wrap"><canvas id="gl"></canvas><canvas id="hud"></canvas>
   <button id="menuBtn">Menu</button>
@@ -78,6 +78,17 @@
 //     the combo holds; back on flat ground it has COMBO_WINDOW seconds to get
 //     a new move, then it is banked: points x multiplier.
 //
+// The look ("Arcade", the default style; the menu keeps the earlier ones)
+//   - a toy bulldozer in yellow and orange on purple tracks, with a violet
+//     cab, a silver blade and lights that glow; it rocks on its tracks, its
+//     treads roll, its blade lifts in the air and it wears a pink glow while a
+//     combo is alive.
+//   - a skate city under a saturated blue sky: tier blocks with a white roof
+//     and windows, candy-striped rails on trusses, orange ramps with a hazard
+//     lip, purple asphalt with yellow paint, low poly trees, cones, barriers
+//     and hedges to run over, a skyline and clouds behind the walls.
+//   - bloom, ribbons, star flashes, hit-stop and a jelly wobble on every hit.
+//
 // Controls
 //   phone : drag = drive (direction on screen). A quick tap or a second
 //           finger = jump, in the air a trick; a second finger held = drift.
@@ -90,7 +101,7 @@
 // ---- tunables ---------------------------------------------------------------
 var ROUND_SECONDS = 180;
 var ARENA = 200;            // side of the square map, world units
-var MARGIN = 30;            // ground painted around the walls
+var MARGIN = 56;            // ground painted around the walls
 var ZC = 56;                // zone centres at (+-ZC, +-ZC)
 var ZH = 28;                // zone half size
 var ALLEY = 5;              // street between two lots inside a zone
@@ -136,10 +147,11 @@ var RAIL_TRICKS = [
 
 // ride rails
 var RAIL_COUNT = 9;
+var RAIL_TUBE = 0.42;       // the bar's radius
 var RAIL_DS = 0.35;         // sample spacing along a rail
 var RAIL_START_H = 0.8;     // the way in, above the ground
 var RAIL_CATCH = 2.2;       // how close the dozer must pass
-var RAIL_RIDE = 0.35;       // the tracks sit this far above the bar
+var RAIL_RIDE = 0.45;       // the tracks sit this far above the bar
 var RAIL_MIN = 16, RAIL_MAX = 42;   // ride speed: never slow enough to stall a loop
 var RAIL_G = 18;            // how much a climb slows the ride, a dive speeds it
 var RAIL_PUSH = 5;
@@ -225,24 +237,40 @@ var JOY_R = 70;
 var TAP_MS = 220;           // a touch shorter than this, that barely moved, is a tap
 
 var TIERS = [null,
-  { name: "Green", hex: 0x4cbf56 }, { name: "Blue", hex: 0x3d7be8 }, { name: "Purple", hex: 0x9b59d0 },
-  { name: "Pink", hex: 0xf06aa8 }, { name: "Red", hex: 0xe0433a }, { name: "Orange", hex: 0xf59331 },
-  { name: "Yellow", hex: 0xf5d033 }, { name: "Cyan", hex: 0x3fd0d8 }, { name: "White", hex: 0xf2f2f2 },
-  { name: "Black", hex: 0x2a2a30 }];
+  { name: "Green", hex: 0x46d160 }, { name: "Blue", hex: 0x3b86ff }, { name: "Purple", hex: 0x9a55f2 },
+  { name: "Pink", hex: 0xff5aa8 }, { name: "Red", hex: 0xf5483b }, { name: "Orange", hex: 0xff8f2e },
+  { name: "Yellow", hex: 0xffd22e }, { name: "Cyan", hex: 0x2fd9de }, { name: "White", hex: 0xf3efff },
+  { name: "Black", hex: 0x2e2744 }];
+function tierGlow(t) { return t >= 10 ? 0xffffff : TIERS[t].hex; }   // the colour a tier glows with (black glows white)
 var ZONES = [
   { cx: -ZC, cz: ZC, t0: 1, t1: 2 },        // south-west, next to the start
   { cx: ZC, cz: ZC, t0: 3, t1: 4 },
   { cx: ZC, cz: -ZC, t0: 5, t1: 7 },
   { cx: -ZC, cz: -ZC, t0: 8, t1: 10 }
 ];
-var RAIL_COLS = [[0xff3d8b, 0xffffff], [0x2ee6ff, 0x1b2a6b], [0xffd400, 0x26262a], [0x7cff4f, 0x14532d],
-  [0xb26bff, 0xffffff], [0xff7a1a, 0x2b1a0a]];
+var RAIL_COLS = [[0xff3fa4, 0xffffff], [0x2ee6ff, 0xffffff], [0xffc928, 0xffffff], [0x7cf04a, 0xffffff],
+  [0xa66bff, 0xffffff], [0xff7a1a, 0xffffff]];
+// what the city is dressed with, whatever the tier
+var PAL = { cap: 0xf1eaff, glass: 0xa9e6ff, glassDim: 0x6fb4f2, trunk: 0x8a5a36, leaf: [0x8be04a, 0x6fd13f, 0xa6ee58],
+  hedge: 0x58c43c, cone: 0xff7a1a, barrier: 0xece5fa, stripe: 0xff7a1a, truss: 0x5a63e6, glow: 0xff3fa4 };
 function hexCss(hex) { return "#" + ("000000" + hex.toString(16)).slice(-6); }
 
 // ---- styles ----------------------------------------------------------------------
 var hsl = { h: 0, s: 0, l: 0 }, tmpC = null;
 function shade(hex, fn) { tmpC = tmpC || new THREE.Color(); tmpC.setHex(hex).getHSL(hsl); fn(hsl); return tmpC.setHSL(hsl.h, hsl.s, hsl.l).getHex(); }
 var STYLES = [
+  // Arcade: the reference look. Flat shaded low poly in candy colours, a warm
+  // sun against a lavender sky fill (so every shadow turns purple), a gradient
+  // sky with a skyline, bloom on everything that glows, a tone curve that
+  // keeps the hue of a bright colour instead of washing it out, and a light
+  // tilt-shift.
+  { name: "Arcade", arcade: true, lowpoly: true, ao: true, tone: 1.0, outline: true,
+    post: { band: 0.26, soft: 0.5, blur: 1.0, sat: 1.2, vignette: 0.14, bloom: 0.85, arcade: true },
+    sky: [0x1846e0, 0x2b8cff, 0x9be2ff], bg: 0x9be2ff, fogAbs: [230, 800],
+    hemi: [0xe8e4ff, 0xb596f2, 2.2], sun: [0xffe4b8, 2.4], sunPos: [58, 66, 44],
+    ground: { dirt: "#62cf46", park: "#8d7dc6", joint: "rgba(44, 22, 96, 0.10)", asphalt: "#5e5096", side: "#efe7fd", lot: "#c3b4ec",
+      line: "#ffd84a", deck: "#cfc3ee" },
+    wall: 0xece5fa, ramp: [0xf0782a, 0xffdcaa], rail: 0xfff0fa, mark: 0x2a1650, dust: 0xfff3ff },
   { name: "Pastel", bg: 0x3b3a36, hemi: [0xe4ecff, 0x5a4e40, 1.5], sun: [0xfff0d8, 2.2],
     ground: { dirt: "#6b5f4c", park: "#a9adb2", joint: "rgba(0, 0, 0, 0.12)", asphalt: "#4d525a", side: "#8e949a", lot: "#7d8a6e" },
     wall: 0x2c2f33, ramp: [0x8a3f12, 0xffb347], rail: 0xc9ced4, mark: 0x1d1a16, dust: 0xc8bca8 },
@@ -282,8 +310,8 @@ var STYLES = [
 ];
 var STYLE = STYLES[0];
 function stylize(hex, keep) { return STYLE.pal ? STYLE.pal(hex, keep) : hex; }
-function save(k, v) { try { localStorage.setItem("dozerflip:" + k, String(v)); } catch (e) {} }
-function load(k) { try { var v = +localStorage.getItem("dozerflip:" + k); return v > 0 ? v : 0; } catch (e) { return 0; } }
+function save(k, v) { try { localStorage.setItem("dozerflip2:" + k, String(v)); } catch (e) {} }
+function load(k) { try { var v = +localStorage.getItem("dozerflip2:" + k); return v > 0 ? v : 0; } catch (e) { return 0; } }
 
 // ---- seeded random ------------------------------------------------------------
 var params = new URLSearchParams(location.search);
@@ -339,12 +367,15 @@ function resize() {
 }
 window.addEventListener("resize", resize);
 
-// ---- post: tilt-shift, grade, tone mapping (styles with a `post` block) ---------
-// The scene is rendered linear into a half-float target, blurred across then
-// down with a radius that grows away from a horizontal band in focus (the band
-// follows the dozer on screen), then graded, tone mapped (ACES, three's own
-// fit) and written as sRGB. Two full-screen passes, 13 taps each.
-var rtScene = null, rtBlur = null, postScene, postCam, postQuad, blurH, blurV, focusY = 0.5, vFocus = new THREE.Vector3();
+// ---- post: bloom, tilt-shift, grade, tone mapping (styles with a `post` block) ----
+// The scene is rendered linear into a half-float target. What is brighter than
+// white (the lights, the ribbons, the sparks: their colours are written above
+// 1 on purpose) is pulled out at half size and blurred at a quarter: the bloom.
+// The frame is then blurred across and down with a radius that grows away from
+// a horizontal band in focus (the band follows the dozer on screen), the bloom
+// is added, and the result is graded, tone mapped and written as sRGB.
+var rtScene = null, rtBlur = null, rtHalf = null, rtGlowA = null, rtGlowB = null;
+var postScene, postCam, postQuad, blurH, blurV, brightM, glowM, focusY = 0.5, vFocus = new THREE.Vector3();
 var POST_VS = "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }";
 var POST_BLUR = [
   "uniform sampler2D tSrc; uniform vec2 uDir; uniform float uFocus, uBand, uSoft, uMax;",
@@ -360,8 +391,26 @@ var POST_BLUR = [
   "  return c / ws;",
   "}"
 ].join("\n");
+var POST_BRIGHT = [
+  "uniform sampler2D tSrc; uniform vec2 uDir; uniform float uThresh; varying vec2 vUv;",
+  "void main() {",
+  "  vec3 c = texture2D(tSrc, vUv + uDir * vec2(-1.0, -1.0)).rgb + texture2D(tSrc, vUv + uDir * vec2(1.0, -1.0)).rgb",
+  "    + texture2D(tSrc, vUv + uDir * vec2(-1.0, 1.0)).rgb + texture2D(tSrc, vUv + uDir * vec2(1.0, 1.0)).rgb;",
+  "  c = min(c * 0.25, vec3(8.0)); float l = max(c.r, max(c.g, c.b));",
+  "  gl_FragColor = vec4(c * smoothstep(uThresh, uThresh + 0.7, l), 1.0);",
+  "}"
+].join("\n");
+var POST_GLOW = [
+  "uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;",
+  "void main() {",
+  "  vec3 c = texture2D(tSrc, vUv).rgb * 0.2270;",
+  "  c += (texture2D(tSrc, vUv + uDir * 1.3846).rgb + texture2D(tSrc, vUv - uDir * 1.3846).rgb) * 0.3162;",
+  "  c += (texture2D(tSrc, vUv + uDir * 3.2308).rgb + texture2D(tSrc, vUv - uDir * 3.2308).rgb) * 0.0702;",
+  "  gl_FragColor = vec4(c, 1.0);",
+  "}"
+].join("\n");
 var POST_GRADE = [
-  "uniform float uExposure, uSat, uVig;",
+  "uniform sampler2D tGlow; uniform float uExposure, uSat, uVig, uGlow, uArcade;",
   "vec3 aces(vec3 v) {",
   "  const mat3 IN = mat3(vec3(0.59719, 0.07600, 0.02840), vec3(0.35458, 0.90834, 0.13383), vec3(0.04823, 0.01566, 0.83777));",
   "  const mat3 OUT = mat3(vec3(1.60475, -0.10208, -0.00327), vec3(-0.53108, 1.10813, -0.07276), vec3(-0.07367, -0.00605, 1.07602));",
@@ -369,34 +418,55 @@ var POST_GRADE = [
   "  vec3 a = v * (v + 0.0245786) - 0.000090537, b = v * (0.983729 * v + 0.4329510) + 0.238081;",
   "  return clamp(OUT * (a / b), 0.0, 1.0);",
   "}",
+  // the arcade curve works on the brightest channel, so a colour keeps its hue
+  // and its saturation all the way up; only what is far above white (the core
+  // of a glow) is let go to white
+  "vec3 arcade(vec3 c) {",
+  "  c *= uExposure;",
+  "  float l = max(c.r, max(c.g, c.b));",
+  "  float m = l < 0.72 ? l : 0.72 + 0.28 * (1.0 - exp(-(l - 0.72) / 0.28));",
+  "  c *= m / max(l, 1e-4);",
+  "  return mix(c, vec3(1.0), clamp((l - 1.3) / 3.2, 0.0, 0.92));",
+  "}",
   "vec3 srgb(vec3 c) { return mix(pow(c, vec3(0.41666)) * 1.055 - vec3(0.055), c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308)))); }"
 ].join("\n");
 function sizePost() {
   if (!rtScene) return;
   var pr = renderer.getPixelRatio(), w = Math.round(W * pr), h = Math.round(H * pr);
   rtScene.setSize(w, h); rtBlur.setSize(w, h);
+  rtHalf.setSize(w >> 1, h >> 1); rtGlowA.setSize(w >> 2, h >> 2); rtGlowB.setSize(w >> 2, h >> 2);
   blurH.uniforms.uDir.value.set(1 / w, 0); blurV.uniforms.uDir.value.set(0, 1 / h);
+  brightM.uniforms.uDir.value.set(1 / w, 1 / h);
 }
 function ensurePost() {
   if (rtScene) return;
   rtScene = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, samples: 4 });
   rtBlur = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
+  rtHalf = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
+  rtGlowA = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
+  rtGlowB = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType, depthBuffer: false });
   function uni() {
-    return { tSrc: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 }, uBand: { value: 0.1 },
-      uSoft: { value: 0.3 }, uMax: { value: 3 }, uExposure: { value: 1 }, uSat: { value: 1 }, uVig: { value: 0 } };
+    return { tSrc: { value: null }, tGlow: { value: null }, uDir: { value: new THREE.Vector2() }, uFocus: { value: 0.5 }, uBand: { value: 0.1 },
+      uSoft: { value: 0.3 }, uMax: { value: 3 }, uExposure: { value: 1 }, uSat: { value: 1 }, uVig: { value: 0 },
+      uGlow: { value: 0 }, uArcade: { value: 0 }, uThresh: { value: 1.5 } };
   }
   function shader(fs) { return new THREE.ShaderMaterial({ uniforms: uni(), vertexShader: POST_VS, fragmentShader: fs, depthTest: false, depthWrite: false, toneMapped: false }); }
   blurH = shader(POST_BLUR + "\nvoid main() { gl_FragColor = vec4(blurred(), 1.0); }");
   blurV = shader(POST_BLUR + "\n" + POST_GRADE + "\nvoid main() {\n" +
-    "  vec3 c = blurred();\n" +
-    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = mix(vec3(l), c, uSat);\n" +
-    "  c = aces(c);\n" +
+    "  vec3 c = blurred() + texture2D(tGlow, vUv).rgb * uGlow;\n" +
+    "  float l = dot(c, vec3(0.2126, 0.7152, 0.0722)); c = max(mix(vec3(l), c, uSat), 0.0);\n" +
+    "  c = uArcade > 0.5 ? arcade(c) : aces(c);\n" +
     "  c *= mix(1.0, smoothstep(0.95, 0.25, length((vUv - 0.5) * vec2(1.25, 1.0))), uVig);\n" +
     "  gl_FragColor = vec4(srgb(c), 1.0);\n}");
+  brightM = shader(POST_BRIGHT); glowM = shader(POST_GLOW);
   postScene = new THREE.Scene(); postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), blurH); postQuad.frustumCulled = false;
   postScene.add(postQuad);
   sizePost();
+}
+function postPass(material, src, target) {
+  material.uniforms.tSrc.value = src.texture; postQuad.material = material;
+  renderer.setRenderTarget(target); renderer.render(postScene, postCam);
 }
 function renderFrame(dt) {
   var P = STYLE.post;
@@ -409,12 +479,20 @@ function renderFrame(dt) {
     var u = m.uniforms;
     u.uFocus.value = focusY; u.uBand.value = P.band; u.uSoft.value = P.soft; u.uMax.value = P.blur * pr;
     u.uExposure.value = STYLE.tone || 1; u.uSat.value = P.sat; u.uVig.value = P.vignette;
+    u.uGlow.value = P.bloom || 0; u.uArcade.value = P.arcade ? 1 : 0;
   });
   renderer.setRenderTarget(rtScene); renderer.render(scene, camera);
-  blurH.uniforms.tSrc.value = rtScene.texture; postQuad.material = blurH;
-  renderer.setRenderTarget(rtBlur); renderer.render(postScene, postCam);
-  blurV.uniforms.tSrc.value = rtBlur.texture; postQuad.material = blurV;
-  renderer.setRenderTarget(null); renderer.render(postScene, postCam);
+  if (P.bloom) {                          // bright pass at half size, two blurs at a quarter
+    var qw = rtGlowA.width, qh = rtGlowA.height;
+    postPass(brightM, rtScene, rtHalf);
+    glowM.uniforms.uDir.value.set(1 / qw, 0); postPass(glowM, rtHalf, rtGlowA);
+    glowM.uniforms.uDir.value.set(0, 1 / qh); postPass(glowM, rtGlowA, rtGlowB);
+    glowM.uniforms.uDir.value.set(2.2 / qw, 0); postPass(glowM, rtGlowB, rtGlowA);
+    glowM.uniforms.uDir.value.set(0, 2.2 / qh); postPass(glowM, rtGlowA, rtGlowB);
+  }
+  blurV.uniforms.tGlow.value = rtGlowB.texture;
+  postPass(blurH, rtScene, rtBlur);
+  postPass(blurV, rtBlur, null);
 }
 resize();
 
@@ -696,43 +774,128 @@ function genPark() {
 }
 
 // ---- ground mesh, painted, with a hole cut for every pit ---------------------------
+// Everything flat is paint: the asphalt and its warm pools of light, the
+// yellow lines, the chevrons that point at a rail, the orange of a bump, the
+// deck around a pit, the start grid. It is redrawn with every new map.
 var GW = ARENA + 2 * MARGIN;
-var groundGeo = new THREE.PlaneGeometry(GW, GW, 160, 160);
+var groundGeo = new THREE.PlaneGeometry(GW, GW, 200, 200);
 groundGeo.rotateX(-Math.PI / 2);
 var groundIdx0 = Array.prototype.slice.call(groundGeo.index.array);
-var groundCv = document.createElement("canvas"); groundCv.width = groundCv.height = 1536;
+var groundCv = document.createElement("canvas"); groundCv.width = groundCv.height = /Mobi|Android/i.test(navigator.userAgent) ? 2048 : 3072;
 var groundTex = new THREE.CanvasTexture(groundCv);
 groundTex.colorSpace = THREE.SRGBColorSpace;
-groundTex.anisotropy = 4;
+groundTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 var groundMat = new THREE.MeshLambertMaterial({ map: groundTex });
 var groundMatLow = new THREE.MeshStandardMaterial({ map: groundTex, flatShading: true, roughness: 1, metalness: 0 });
 var groundMesh = null;
 function drawGround() {
-  var N = groundCv.width, g = groundCv.getContext("2d"), k = N / GW, C = STYLE.ground;
+  var N = groundCv.width, g = groundCv.getContext("2d"), k = N / GW, C = STYLE.ground, A = !!STYLE.arcade;
+  var gr = mulberry(4242), i, j, s;       // its own dice: the paint never moves the map
   function X(x) { return (x + GW / 2) * k; }
-  g.setLineDash([]);
+  function dashes(x0, z0, x1, z1, w, on, off, color) {
+    g.strokeStyle = color; g.lineWidth = w * k; g.lineCap = "butt"; g.setLineDash(on ? [on * k, off * k] : []);
+    g.beginPath(); g.moveTo(X(x0), X(z0)); g.lineTo(X(x1), X(z1)); g.stroke(); g.setLineDash([]);
+  }
+  function chevron(x, z, dx, dz, size, w, color) {       // a ">" pointing along (dx, dz)
+    var px = -dz, pz = dx, h = size / 2;
+    g.strokeStyle = color; g.lineWidth = w * k; g.lineCap = "round"; g.lineJoin = "miter";
+    g.beginPath(); g.moveTo(X(x - dx * h + px * h), X(z - dz * h + pz * h)); g.lineTo(X(x + dx * h), X(z + dz * h));
+    g.lineTo(X(x - dx * h - px * h), X(z - dz * h - pz * h)); g.stroke();
+  }
+  function pool(x, z, r, rgb, a) {        // a soft round pool of colour
+    var gd = g.createRadialGradient(X(x), X(z), 0, X(x), X(z), r * k);
+    gd.addColorStop(0, "rgba(" + rgb + "," + a + ")"); gd.addColorStop(1, "rgba(" + rgb + ",0)");
+    g.fillStyle = gd; g.fillRect(X(x - r), X(z - r), 2 * r * k, 2 * r * k);
+  }
+  function stadium(p, r, color) {         // a pit's outline pushed out to r, filled
+    g.fillStyle = g.strokeStyle = color;
+    if (p.len < 0.1) { g.beginPath(); g.arc(X(p.ax), X(p.az), r * k, 0, 6.283); g.fill(); return; }
+    g.lineCap = "round"; g.lineWidth = 2 * r * k;
+    g.beginPath(); g.moveTo(X(p.ax), X(p.az)); g.lineTo(X(p.bx), X(p.bz)); g.stroke();
+  }
+  g.setLineDash([]); g.globalAlpha = 1;
   g.fillStyle = C.dirt; g.fillRect(0, 0, N, N);
+  if (A) {                                // the lawn: lighter and darker patches, mown in stripes, a pavement, flower beds
+    for (i = 0; i < 200; i++) pool(-GW / 2 + gr() * GW, -GW / 2 + gr() * GW, 8 + gr() * 14, gr() < 0.5 ? "150,240,90" : "40,150,60", 0.22);
+    g.save(); g.translate(N / 2, N / 2); g.rotate(Math.PI / 4); g.fillStyle = "rgba(255,255,255,0.07)";
+    for (s = -GW; s < GW; s += 12) g.fillRect(s * k, -GW * k, 6 * k, 2 * GW * k);
+    g.restore();
+    g.strokeStyle = C.side; g.lineWidth = 3.4 * k; g.strokeRect(X(-HALF - 5.2), X(-HALF - 5.2), (ARENA + 10.4) * k, (ARENA + 10.4) * k);
+    var petals = ["#ff8fd0", "#ffd84a", "#ffffff", "#ff7a6a"];
+    for (i = 0; i < 70; i++) {
+      var d0 = HALF + 10 + gr() * (MARGIN - 14), u0 = (gr() * 2 - 1) * d0, sd = Math.floor(gr() * 4), bx0 = sd === 0 ? -d0 : sd === 1 ? d0 : u0, bz0 = sd === 2 ? -d0 : sd === 3 ? d0 : u0;
+      g.fillStyle = petals[i % 4];
+      for (j = 0; j < 14; j++) { g.beginPath(); g.arc(X(bx0 + (gr() - 0.5) * 7), X(bz0 + (gr() - 0.5) * 7), (0.22 + gr() * 0.2) * k, 0, 6.283); g.fill(); }
+    }
+  }
   g.fillStyle = C.park; g.fillRect(X(-HALF), X(-HALF), ARENA * k, ARENA * k);
+  if (A) {
+    for (i = 0; i < 26; i++) pool(-HALF + gr() * ARENA, -HALF + gr() * ARENA, 16 + gr() * 22, "255,170,110", 0.26);   // the sun on the asphalt
+    for (i = 0; i < 12; i++) pool(-HALF + gr() * ARENA, -HALF + gr() * ARENA, 14 + gr() * 18, "70,50,170", 0.2);
+  }
   g.strokeStyle = C.joint; g.lineWidth = 0.25 * k;          // concrete slab joints
-  for (var s = -HALF; s <= HALF; s += 6) {
+  for (s = -HALF; s <= HALF; s += 6) {
     g.beginPath(); g.moveTo(X(s), X(-HALF)); g.lineTo(X(s), X(HALF)); g.stroke();
     g.beginPath(); g.moveTo(X(-HALF), X(s)); g.lineTo(X(HALF), X(s)); g.stroke();
+  }
+  var line = C.line || "rgba(255, 255, 255, 0.55)", RING = (ZC + ZH + HALF) / 2;
+  [-RING, RING].forEach(function (v) {    // the ring road and the two avenues: a dashed centre line
+    dashes(-HALF + 4, v, HALF - 4, v, 0.5, 3, 3, line); dashes(v, -HALF + 4, v, HALF - 4, 0.5, 3, 3, line);
+  });
+  dashes(0, -HALF + 4, 0, HALF - 4, 0.5, 3, 3, line); dashes(-HALF + 4, 0, HALF - 4, 0, 0.5, 3, 3, line);
+  if (A) {
+    g.strokeStyle = C.side; g.lineWidth = 1.2 * k; g.strokeRect(X(-HALF + 0.6), X(-HALF + 0.6), (ARENA - 1.2) * k, (ARENA - 1.2) * k);
+    [-1, 1].forEach(function (sg) {       // chevrons down the avenues, toward the pits
+      for (i = 0; i < 3; i++) {
+        chevron(sg * (16 + i * 3), 9, sg, 0, 2.2, 0.55, line); chevron(sg * (16 + i * 3), -9, sg, 0, 2.2, 0.55, line);
+        chevron(9, sg * (16 + i * 3), 0, sg, 2.2, 0.55, line); chevron(-9, sg * (16 + i * 3), 0, sg, 2.2, 0.55, line);
+      }
+    });
   }
   var P = 2 * ZH / 3, inner = P - ALLEY;
   ZONES.forEach(function (zn) {
     g.fillStyle = C.asphalt; g.fillRect(X(zn.cx - ZH - 1), X(zn.cz - ZH - 1), (2 * ZH + 2) * k, (2 * ZH + 2) * k);
+    if (A) {
+      pool(zn.cx, zn.cz, ZH * 1.2, "255,150,110", 0.16);
+      for (i = -1; i <= 1; i += 2) {      // the alleys between the lots
+        dashes(zn.cx + i * P / 2, zn.cz - ZH, zn.cx + i * P / 2, zn.cz + ZH, 0.3, 1.6, 1.6, "rgba(255,255,255,0.5)");
+        dashes(zn.cx - ZH, zn.cz + i * P / 2, zn.cx + ZH, zn.cz + i * P / 2, 0.3, 1.6, 1.6, "rgba(255,255,255,0.5)");
+      }
+    }
     g.strokeStyle = hexCss(TIERS[zn.t0].hex); g.lineWidth = 1.2 * k;   // the zone's lowest tier on its border
     g.strokeRect(X(zn.cx - ZH - 1), X(zn.cz - ZH - 1), (2 * ZH + 2) * k, (2 * ZH + 2) * k);
-    for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) {
+    for (i = -1; i <= 1; i++) for (j = -1; j <= 1; j++) {
       var lx = zn.cx + i * P, lz = zn.cz + j * P;
       g.fillStyle = C.side; g.fillRect(X(lx - inner / 2 - 0.8), X(lz - inner / 2 - 0.8), (inner + 1.6) * k, (inner + 1.6) * k);
       g.fillStyle = C.lot; g.fillRect(X(lx - inner / 2), X(lz - inner / 2), inner * k, inner * k);
     }
   });
+  var rampLo = hexCss(STYLE.ramp[0]), rampHi = hexCss(STYLE.ramp[1]);
+  mounds.forEach(function (b) {           // a bump wears the colour of a ramp
+    var R = b.r * 1.12, gd = g.createRadialGradient(X(b.x), X(b.z), 0, X(b.x), X(b.z), R * k);
+    gd.addColorStop(0, rampHi); gd.addColorStop(0.7, rampLo); gd.addColorStop(0.88, rampLo); gd.addColorStop(1, "rgba(0,0,0,0)");
+    g.globalAlpha = 0.9; g.fillStyle = gd; g.beginPath(); g.arc(X(b.x), X(b.z), R * k, 0, 6.283); g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = "rgba(255,255,255,0.85)"; g.lineWidth = 0.3 * k; g.setLineDash([1.2 * k, 1.2 * k]);
+    g.beginPath(); g.arc(X(b.x), X(b.z), b.r * 0.5 * k, 0, 6.283); g.stroke(); g.setLineDash([]);
+  });
+  pits.forEach(function (p) {             // the deck around a pit, and a line that says "edge"
+    var e = p.F + p.R;
+    if (A) { g.globalAlpha = 0.28; stadium(p, e + 7, "#3a2478"); g.globalAlpha = 1; stadium(p, e + 5.1, line); }
+    stadium(p, e + 4.6, C.deck || C.side);
+  });
+  rails.forEach(function (r) {            // three chevrons in the rail's colour lead to its way in
+    var fx = r.F[0], fz = r.F[2], fl = Math.sqrt(fx * fx + fz * fz) || 1;
+    for (i = 1; i <= 3; i++) chevron(r.P[0] - fx / fl * (1.5 + i * 2.4), r.P[2] - fz / fl * (1.5 + i * 2.4), fx / fl, fz / fl, 2.6, 0.75, hexCss(r.col[0]));
+  });
+  if (A) {                                // the start: a chequered line and the way to go
+    for (i = -6; i < 6; i++) for (j = 0; j < 2; j++) {
+      g.fillStyle = (i + j) & 1 ? "#ffffff" : "#2e2744"; g.fillRect(X(START.x + i), X(START.z + 3 + j), k, k);
+    }
+    for (i = 0; i < 3; i++) chevron(START.x, START.z - 6 - i * 3, 0, -1, 3.4, 0.8, line);
+  }
   groundTex.needsUpdate = true;
 }
 (function buildGround() {
-  drawGround();
   groundMesh = new THREE.Mesh(groundGeo, groundMat);
   groundMesh.receiveShadow = true;
   scene.add(groundMesh);
@@ -755,6 +918,67 @@ function shapeGround() {
 // ---- shared geometry and materials ------------------------------------------------
 var boxGeo = new THREE.BoxGeometry(1, 1, 1);
 var cylGeo = new THREE.CylinderGeometry(1, 1, 1, 20);
+var cyl6 = new THREE.CylinderGeometry(1, 1, 1, 6), cyl8 = new THREE.CylinderGeometry(1, 1, 1, 8), cyl10 = new THREE.CylinderGeometry(1, 1, 1, 10);
+var icoGeo = new THREE.IcosahedronGeometry(1, 0);
+var colCache = {};
+function col(hex) { if (!colCache[hex]) colCache[hex] = new THREE.Color(hex); return colCache[hex]; }
+var QI = new THREE.Quaternion(), UPY = new THREE.Vector3(0, 1, 0);
+var QZ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);    // a cylinder laid along z
+var QX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2);   // a cylinder laid along x
+var mxP = new THREE.Vector3(), mxS = new THREE.Vector3();
+function mx(w, h, d, x, y, z, q) { return new THREE.Matrix4().compose(mxP.set(x, y, z), q || QI, mxS.set(w, h, d)); }
+function sheared(m, row, col, k) {        // m, with its unit shape leaning: axis `row` slides by k per unit of axis `col`
+  var sh = new THREE.Matrix4(); sh.elements[col * 4 + row] = k; return m.multiply(sh);
+}
+
+// ---- merged geometry: many coloured pieces, one mesh --------------------------------
+// The city is dressed with small things (a roof, its windows, a tree, a cone)
+// and one mesh per thing would be thousands of draw calls. A Merger takes any
+// geometry with a matrix and a colour and hands back ONE geometry whose colours
+// are per vertex.
+var mgV = new THREE.Vector3(), mgN = new THREE.Vector3(), mgNM = new THREE.Matrix3(), mgC = new THREE.Color();
+function flatGeo(geo) { return geo.index ? geo.userData.flat || (geo.userData.flat = geo.toNonIndexed()) : geo; }
+function Merger() { this.pos = []; this.nor = []; this.col = []; }
+Merger.prototype.add = function (geo, m4, hex, ao) {    // ao: keep the occlusion the geometry was baked with, under the colour
+  var g = flatGeo(geo), P = g.attributes.position, Nn = g.attributes.normal, A = ao ? g.attributes.color : null;
+  mgNM.getNormalMatrix(m4); mgC.setHex(hex);
+  for (var i = 0; i < P.count; i++) {
+    mgV.fromBufferAttribute(P, i).applyMatrix4(m4); this.pos.push(mgV.x, mgV.y, mgV.z);
+    if (Nn) { mgN.fromBufferAttribute(Nn, i).applyMatrix3(mgNM).normalize(); this.nor.push(mgN.x, mgN.y, mgN.z); } else this.nor.push(0, 1, 0);
+    var k = A ? A.getX(i) : 1; this.col.push(mgC.r * k, mgC.g * k, mgC.b * k);
+  }
+  return this;
+};
+Merger.prototype.box = function (w, h, d, x, y, z, hex, q) { return this.add(lowGeo({ w: w, h: h, d: d, aoMin: 1 }), mx(w, h, d, x, y, z, q), hex); };
+Merger.prototype.cyl = function (geo, r, h, x, y, z, hex, q) { return this.add(geo, mx(r, h, r, x, y, z, q), hex); };
+var mgA = new THREE.Vector3(), mgB = new THREE.Vector3();
+Merger.prototype.quad = function (a, b, c, d, hex, out) {   // four corners in a ring; `out` says which side is the face
+  mgA.set(b[0] - a[0], b[1] - a[1], b[2] - a[2]); mgB.set(c[0] - a[0], c[1] - a[1], c[2] - a[2]); mgN.crossVectors(mgA, mgB).normalize();
+  if (mgN.x * out[0] + mgN.y * out[1] + mgN.z * out[2] < 0) { var t = b; b = d; d = t; mgN.multiplyScalar(-1); }
+  mgC.setHex(hex);
+  var v = [a, b, c, a, c, d];
+  for (var i = 0; i < 6; i++) { this.pos.push(v[i][0], v[i][1], v[i][2]); this.nor.push(mgN.x, mgN.y, mgN.z); this.col.push(mgC.r, mgC.g, mgC.b); }
+  return this;
+};
+Merger.prototype.build = function () {
+  var g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(this.pos, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(this.nor, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(this.col, 3));
+  return g;
+};
+function vcMesh(geo, shadow) {            // a mesh whose colours are its vertices'
+  var m = new THREE.Mesh(geo); m.userData = { vc: true }; dress(m);
+  m.castShadow = !!shadow; m.receiveShadow = true; return m;
+}
+function mixHex(a, b, t) { return mgC.setHex(a).lerp(col(b), t).getHex(); }
+// a colour brighter than white, for what glows: the bloom picks it up
+function glowMat(hex, power, opts) {
+  var o = opts || {}; o.color = 0xffffff;
+  var m = new THREE.MeshBasicMaterial(o); m.color.setHex(hex).multiplyScalar(power); m.userData = { hex: hex };
+  return m;
+}
+function setGlow(m, hex, power) { m.color.setHex(hex).multiplyScalar(power); }
 var matCache = {}, toonMaps = {};
 function toonMap(steps) {
   if (toonMaps[steps]) return toonMaps[steps];
@@ -822,22 +1046,154 @@ function lowGeo(d) {
   return lowGeoCache[key] || (lowGeoCache[key] = d.cyl ? lowDrum(d) : lowBox(d));
 }
 // gives a mesh the geometry and the material of the current style; userData:
-// hex / keep / rail / wall for the colour, dims for a block that has a low poly form
+// hex / keep / rail / wall for the colour, dims for a block that has a low poly
+// form, vc for a merged geometry that brings its own colours
 function dress(m) {
   var u = m.userData, low = !!(STYLE.lowpoly && u.dims);
   if (u.dims) m.geometry = low ? lowGeo(u.dims) : u.dims.cyl ? cylGeo : boxGeo;
-  m.material = mat(u.rail ? STYLE.rail : u.wall ? STYLE.wall : u.hex, u.keep, low);
+  m.material = u.vc ? mat(0xffffff, true, true) : mat(u.rail ? STYLE.rail : u.wall ? STYLE.wall : u.hex, u.keep, low);
 }
-(function buildWalls() {
-  [[0, -HALF - 1, ARENA + 4, 2], [0, HALF + 1, ARENA + 4, 2], [-HALF - 1, 0, 2, ARENA], [HALF + 1, 0, 2, ARENA]]
-    .forEach(function (w) {
-      var m = new THREE.Mesh(boxGeo);
-      m.scale.set(w[2], 1.6, w[3]);
-      m.userData = { wall: true, keep: true, dims: { w: w[2], h: 1.6, d: w[3], aoMin: 0.7 } };
-      dress(m);
-      m.position.set(w[0], 0.8, w[1]); m.castShadow = m.receiveShadow = true; scene.add(m);
-    });
+function restyle(o) { return o.isMesh && (o.userData.hex !== undefined || o.userData.wall || o.userData.vc); }
+(function buildWalls() {                  // the arena's edge: a kerb of orange and white blocks
+  var M = new Merger(), L = 5, n = ARENA / L, i, hex;
+  for (i = 0; i < n; i++) {
+    hex = i & 1 ? PAL.stripe : PAL.barrier;
+    var o = -HALF + (i + 0.5) * L, geo = lowGeo({ w: L, h: 1.7, d: 2, aoMin: 0.72 });
+    M.add(geo, mx(L, 1.7, 2, o, 0.85, -HALF - 1), hex, true); M.add(geo, mx(L, 1.7, 2, o, 0.85, HALF + 1), hex, true);
+    geo = lowGeo({ w: 2, h: 1.7, d: L, aoMin: 0.72 });
+    M.add(geo, mx(2, 1.7, L, -HALF - 1, 0.85, o), hex, true); M.add(geo, mx(2, 1.7, L, HALF + 1, 0.85, o), hex, true);
+  }
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) { M.box(2.6, 2.3, 2.6, c[0] * (HALF + 1), 1.15, c[1] * (HALF + 1), PAL.truss); });
+  scene.add(vcMesh(M.build(), true));
 })();
+
+// ---- the sky, the clouds, the skyline (styles with a `sky`) ---------------------------
+// None of it is in play: a dome painted from the horizon up, clouds that drift
+// around it, the land past the map's edge, a ring of hazy towers and three
+// giant loops, and the trees between the wall and all that.
+var bmD = new THREE.Vector3(), bmQ = new THREE.Quaternion();
+function beam(M, x0, y0, z0, x1, y1, z1, t, hex) {       // a square bar from one point to another
+  bmD.set(x1 - x0, y1 - y0, z1 - z0);
+  var len = bmD.length(); bmQ.setFromUnitVectors(UPY, bmD.multiplyScalar(1 / len));
+  M.add(boxGeo, mx(t, len, t, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, bmQ), hex);
+}
+function treeGeo() {                      // a trunk and three faceted balls of leaves
+  var M = new Merger(), q = new THREE.Quaternion(), e = new THREE.Euler();
+  M.cyl(cyl6, 0.32, 2.3, 0, 1.15, 0, PAL.trunk);
+  M.add(icoGeo, mx(1.55, 1.4, 1.55, 0, 3.3, 0, q.setFromEuler(e.set(0.3, 0.5, 0.1))), PAL.leaf[1]);
+  M.add(icoGeo, mx(1.0, 0.95, 1.0, 0.55, 4.25, 0.3, q.setFromEuler(e.set(1.1, 0.2, 0.7))), PAL.leaf[2]);
+  M.add(icoGeo, mx(0.95, 0.85, 0.95, -0.7, 2.75, -0.45, q.setFromEuler(e.set(0.4, 1.3, 0.2))), PAL.leaf[0]);
+  return M.build();
+}
+function coneGeo() {
+  var M = new Merger(), m = new THREE.Matrix4();
+  M.box(0.84, 0.12, 0.84, 0, 0.06, 0, PAL.cone);
+  M.add(new THREE.CylinderGeometry(0.1, 0.36, 0.95, 8), m.makeTranslation(0, 0.59, 0), PAL.cone);
+  M.add(new THREE.CylinderGeometry(0.216, 0.278, 0.22, 8), m.makeTranslation(0, 0.56, 0), 0xffffff);
+  return M.build();
+}
+function barrierGeo() {                   // a concrete block with three orange slashes across it
+  var M = new Merger();
+  M.box(3.0, 0.45, 0.95, 0, 0.225, 0, PAL.barrier); M.box(3.0, 0.78, 0.6, 0, 0.82, 0, PAL.barrier);
+  for (var i = -1; i <= 1; i++) M.add(boxGeo, sheared(mx(0.5, 0.8, 0.64, i * 0.95, 0.82, 0), 0, 1, 0.9), PAL.stripe);
+  return M.build();
+}
+function hedgeGeo() {
+  var M = new Merger();
+  M.box(4.6, 1.25, 1.5, 0, 0.625, 0, PAL.hedge); M.box(4.1, 0.4, 1.05, 0, 1.4, 0, PAL.leaf[2]);
+  return M.build();
+}
+function loopGeo(R, tube, hexA, hexB) {   // a candy-striped ring, standing up
+  var g = new THREE.TorusGeometry(R, tube, 6, 28).toNonIndexed(), P = g.attributes.position, cols = new Float32Array(P.count * 3);
+  for (var t = 0; t < P.count; t += 3) {  // a triangle takes the colour of the slice it sits in
+    var cx = P.getX(t) + P.getX(t + 1) + P.getX(t + 2), cy = P.getY(t) + P.getY(t + 1) + P.getY(t + 2);
+    var c = col(Math.floor((Math.atan2(cy, cx) + Math.PI) / (2 * Math.PI) * 14) & 1 ? hexB : hexA);
+    for (var v = 0; v < 3; v++) { cols[3 * (t + v)] = c.r; cols[3 * (t + v) + 1] = c.g; cols[3 * (t + v) + 2] = c.b; }
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+  return g;
+}
+var skyGeo = new THREE.SphereGeometry(900, 24, 16);
+var skyMesh = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+skyMesh.frustumCulled = false; skyMesh.renderOrder = -10; scene.add(skyMesh);
+var backdrop = new THREE.Group(), cloudGroup = new THREE.Group();
+scene.add(backdrop); scene.add(cloudGroup);
+function paintSky() {
+  var S3 = STYLE.sky, pos = skyGeo.attributes.position, cols = new Float32Array(pos.count * 3);
+  var top = new THREE.Color(S3[0]), mid = new THREE.Color(S3[1]), hor = new THREE.Color(S3[2]), c = new THREE.Color();
+  for (var i = 0; i < pos.count; i++) {
+    var t = clamp(pos.getY(i) / 900, 0, 1);
+    if (t < 0.2) c.copy(hor).lerp(mid, t / 0.2); else c.copy(mid).lerp(top, Math.pow((t - 0.2) / 0.8, 0.7));
+    cols[3 * i] = c.r; cols[3 * i + 1] = c.g; cols[3 * i + 2] = c.b;
+  }
+  skyGeo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
+}
+function buildBackdrop() {
+  [backdrop, cloudGroup].forEach(function (grp) {
+    while (grp.children.length) { var c = grp.children.pop(); if (c.geometry && c.geometry !== boxGeo) c.geometry.dispose(); }
+  });
+  skyMesh.visible = backdrop.visible = cloudGroup.visible = !!STYLE.sky;
+  if (!STYLE.sky) return;
+  paintSky();
+  var r = mulberry(777), haze = STYLE.sky[2], tc = new THREE.Color(), i;
+  function inst(geo, n, shadow) {
+    var m = new THREE.InstancedMesh(geo, makeMat({ color: 0xffffff }), n);
+    m.frustumCulled = false; m.castShadow = !!shadow; m.receiveShadow = !!shadow; backdrop.add(m); return m;
+  }
+  function put(m, k, w, h, d, x, y, z, hex) { m.setMatrixAt(k, mx(w, h, d, x, y, z)); m.setColorAt(k, tc.setHex(hex)); }
+  var disc = new THREE.Shape(), hole = new THREE.Path(), e = GW / 2 - 1;      // the land past the map, with the map cut out of it
+  disc.absarc(0, 0, 1400, 0, 2 * Math.PI, false);
+  hole.moveTo(-e, -e); hole.lineTo(-e, e); hole.lineTo(e, e); hole.lineTo(e, -e); hole.closePath(); disc.holes.push(hole);
+  var land = new THREE.Mesh(new THREE.ShapeGeometry(disc, 40), makeMat({ color: new THREE.Color(STYLE.ground.dirt) }));
+  land.rotation.x = -Math.PI / 2; land.position.y = -0.05; backdrop.add(land);
+  // the skyline: every tower fades into the haze with the distance
+  var N = 130, body = inst(boxGeo, N), cap = inst(boxGeo, N), band = inst(boxGeo, N * 9), nb = 0;
+  var hues = [0xf2553f, 0x9a55f2, 0x4a7dff, 0xff6fae, 0xffa23a, 0x6a5af0];
+  for (i = 0; i < N; i++) {
+    var d = 172 + r() * r() * 250, u = (r() * 2 - 1) * d, side = Math.floor(r() * 4);
+    var x = side === 0 ? -d : side === 1 ? d : u, z = side === 2 ? -d : side === 3 ? d : u;
+    var w = 9 + r() * 14, dp = 9 + r() * 14, h = 12 + r() * r() * 58 + (d - 150) * 0.1, k = 0.1 + 0.62 * clamp((d - 170) / 250, 0, 1);
+    put(body, i, w, h, dp, x, h / 2 - 0.4, z, mixHex(hues[Math.floor(r() * hues.length)], haze, k));
+    put(cap, i, w + 1.5, 1.2, dp + 1.5, x, h, z, mixHex(PAL.cap, haze, k * 0.8));
+    for (var y = 4.5; y < h - 2.5 && nb < N * 9; y += 5) put(band, nb++, w + 0.3, 1.5, dp + 0.3, x, y, z, mixHex(PAL.glass, haze, k * 0.7));
+  }
+  band.count = nb;
+  [body, cap, band].forEach(function (m) { m.instanceColor.needsUpdate = true; });
+  // three giant loops on their trusses
+  [[-180, -134, 0.5, 17, 0], [190, -52, -0.9, 14, 1], [44, -200, 0.15, 20, 4], [-200, 70, 1.2, 15, 2]].forEach(function (L) {
+    var R = L[3], M = new Merger(), g = new THREE.Group();
+    var ring = vcMesh(loopGeo(R, R * 0.1, RAIL_COLS[L[4]][0], 0xffffff)); ring.position.y = R * 1.1 + 2;
+    [-1, 1].forEach(function (sg) {
+      beam(M, sg * R * 1.25, 0, 0, sg * R * 0.72, R * 1.1 + 2 - R * 0.7, 0, 1.1, PAL.truss);
+      beam(M, sg * R * 1.25, 0, 0, sg * R * 0.2, 2.2, 0, 0.9, PAL.truss);
+      beam(M, sg * R * 0.72, R * 0.4 + 2, 0, 0, 2.2, 0, 0.8, PAL.truss);
+    });
+    M.box(R * 2.7, 1.2, 3.4, 0, 0.6, 0, PAL.truss);
+    g.add(ring); g.add(vcMesh(M.build()));
+    g.position.set(L[0], 0, L[1]); g.rotation.y = L[2]; backdrop.add(g);
+  });
+  // the trees between the wall and the city
+  var tg = treeGeo(), trees = new THREE.InstancedMesh(tg, mat(0xffffff, true, true), 200), q = new THREE.Quaternion(), m4 = new THREE.Matrix4();
+  trees.userData = { vc: true }; trees.frustumCulled = false; trees.castShadow = true;
+  for (i = 0; i < 200; i++) {
+    var d2 = 110 + r() * 58, u2 = (r() * 2 - 1) * d2, s2 = Math.floor(r() * 4), sc = 1 + r() * 0.9;
+    m4.compose(mxP.set(s2 === 0 ? -d2 : s2 === 1 ? d2 : u2, 0, s2 === 2 ? -d2 : s2 === 3 ? d2 : u2), q.setFromAxisAngle(UPY, r() * 6.283), mxS.set(sc, sc * (0.9 + r() * 0.3), sc));
+    trees.setMatrixAt(i, m4);
+  }
+  backdrop.add(trees);
+  // the clouds, one mesh, turning slowly around the map
+  var CM = new Merger();
+  for (i = 0; i < 22; i++) {
+    var an = r() * 6.283, rad = 230 + r() * 360, cx = Math.cos(an) * rad, cz = Math.sin(an) * rad, cy = 46 + r() * 70 + rad * 0.07, n = 3 + Math.floor(r() * 3), cs = 0.8 + r() * 0.9;
+    for (var j = 0; j < n; j++) {
+      var o = (j - (n - 1) / 2) * 9 * cs, bulge = 1 - Math.abs(j - (n - 1) / 2) / n;
+      CM.add(icoGeo, mx((8 + r() * 4) * cs, (3.2 + 3.4 * bulge) * cs, (6 + r() * 3) * cs, cx - Math.sin(an) * o, cy + bulge * 1.6 * cs, cz + Math.cos(an) * o,
+        q.setFromAxisAngle(UPY, r() * 6.283)), 0xffffff);
+    }
+  }
+  var clouds = new THREE.Mesh(CM.build(), new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, emissive: 0x8b97e6, emissiveIntensity: 0.62, fog: false }));
+  clouds.frustumCulled = false; cloudGroup.add(clouds);
+}
 
 // ---- contact shadows: a soft dark ring on the ground around every block ---------
 // The baked half of the ambient occlusion. Its alpha is per vertex, from the
@@ -880,8 +1236,6 @@ function dropContactShadow(b) {
   if (!b.ao) return;
   scene.remove(b.ao); b.ao.geometry.dispose(); b.ao = null;
 }
-var colCache = {};
-function col(hex) { if (!colCache[hex]) colCache[hex] = new THREE.Color(hex); return colCache[hex]; }
 
 // ---- pit and rail meshes -------------------------------------------------------------
 var parkGroup = new THREE.Group(); scene.add(parkGroup);
@@ -895,6 +1249,15 @@ function pitRing(p) {                     // the pit's outline: an anchor on the
   for (i = 0; i < ns; i++) out.push([p.ax + (p.bx - p.ax) * i / ns, p.az + (p.bz - p.az) * i / ns, -qx, -qz]);
   return out;
 }
+var hazardTex = (function () {            // yellow and dark slashes, for the lip of a pit
+  var c = document.createElement("canvas"); c.width = c.height = 64;
+  var g = c.getContext("2d");
+  g.fillStyle = "#ffd22e"; g.fillRect(0, 0, 64, 64); g.fillStyle = "#33205e";
+  for (var i = -2; i < 3; i++) { g.beginPath(); g.moveTo(i * 32, 64); g.lineTo(i * 32 + 16, 64); g.lineTo(i * 32 + 80, 0); g.lineTo(i * 32 + 64, 0); g.closePath(); g.fill(); }
+  var t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+})();
 function buildParkMeshes() {
   while (parkGroup.children.length) {
     var c = parkGroup.children.pop();
@@ -903,51 +1266,61 @@ function buildParkMeshes() {
   railDecals = [];
   var low = new THREE.Color(STYLE.ramp[0]), high = new THREE.Color(STYLE.ramp[1]), tc = new THREE.Color();
   var pitMat = makeMat({ vertexColors: true, side: THREE.DoubleSide });
-  var deckMat = makeMat({ color: new THREE.Color(STYLE.ground.side) });
-  function sheet(ring, prof, material, colored) {    // rings of the outline at each (r, y) of a profile
-    var pos = [], cols = [], idx = [], M = ring.length, j, k;
-    for (j = 0; j < prof.length; j++) for (k = 0; k < M; k++) {
-      var a = ring[k];
+  var deckMat = makeMat({ map: hazardTex }), slabMat = makeMat({ color: new THREE.Color(STYLE.ground.deck || STYLE.ground.side) });
+  // rings of the outline at each (r, y) of a profile. mode "col": coloured by
+  // the profile's third number; mode "uv": mapped along the outline, for the stripes
+  function sheet(ring, prof, material, mode) {
+    var pos = [], cols = [], uvs = [], idx = [], M = ring.length, W2 = mode === "uv" ? M + 1 : M, j, k, len = [0];
+    for (k = 0; k < M; k++) {
+      var p0 = ring[k], p1 = ring[(k + 1) % M], r0 = prof[0][0];
+      len.push(len[k] + Math.sqrt(Math.pow(p1[0] + p1[2] * r0 - p0[0] - p0[2] * r0, 2) + Math.pow(p1[1] + p1[3] * r0 - p0[1] - p0[3] * r0, 2)));
+    }
+    var tiles = Math.max(1, Math.round(len[M] / 3.2));
+    for (j = 0; j < prof.length; j++) for (k = 0; k < W2; k++) {
+      var a = ring[k % M];
       pos.push(a[0] + a[2] * prof[j][0], prof[j][1], a[1] + a[3] * prof[j][0]);
-      if (colored) { tc.copy(low).lerp(high, prof[j][2]); cols.push(tc.r, tc.g, tc.b); }
+      if (mode === "col") { tc.copy(low).lerp(high, prof[j][2]); cols.push(tc.r, tc.g, tc.b); }
+      if (mode === "uv") uvs.push(len[k] / len[M] * tiles, prof[j][2]);
     }
     for (j = 0; j < prof.length - 1; j++) for (k = 0; k < M; k++) {
-      var a0 = j * M + k, a1 = j * M + (k + 1) % M;
-      idx.push(a0, a1, a1 + M, a0, a1 + M, a0 + M);
+      var a0 = j * W2 + k, a1 = j * W2 + (mode === "uv" ? k + 1 : (k + 1) % M);
+      idx.push(a0, a1, a1 + W2, a0, a1 + W2, a0 + W2);
     }
     var g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
-    if (colored) g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    if (mode === "col") g.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    if (mode === "uv") g.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
     g.setIndex(idx); g.computeVertexNormals();
     var m = new THREE.Mesh(g, material); m.receiveShadow = true; parkGroup.add(m);
   }
   pits.forEach(function (p) {
-    var ring = pitRing(p), prof = [[0, p.y0, 0.1], [p.F, p.y0, 0.15]];
-    for (var j = 1; j <= 12; j++) { var a = j / 12 * Math.PI / 2; prof.push([p.F + p.R * Math.sin(a), p.y0 + p.R * (1 - Math.cos(a)), 0.15 + 0.85 * j / 12]); }
-    sheet(ring, prof, pitMat, true);
-    sheet(ring, [[p.F + p.R, p.yc + 0.04], [p.F + p.R + 2.6, p.yc + 0.04]], deckMat, false);
+    var ring = pitRing(p), prof = [[0, p.y0, 0.05], [p.F, p.y0, 0.12]];
+    for (var j = 1; j <= 12; j++) { var a = j / 12 * Math.PI / 2; prof.push([p.F + p.R * Math.sin(a), p.y0 + p.R * (1 - Math.cos(a)), 0.12 + 0.88 * Math.pow(j / 12, 1.4)]); }
+    sheet(ring, prof, pitMat, "col");
+    sheet(ring, [[p.F + p.R, p.yc + 0.05, 0], [p.F + p.R + 1.7, p.yc + 0.05, 0.53]], deckMat, "uv");   // the hazard lip
+    sheet(ring, [[p.F + p.R + 1.7, p.yc + 0.05], [p.F + p.R + 4.3, p.yc + 0.04]], slabMat);            // the slab that closes the hole cut in the ground
     var pts = ring.map(function (a) { return new THREE.Vector3(a[0] + a[2] * (p.F + p.R + 0.05), p.yc + 0.14, a[1] + a[3] * (p.F + p.R + 0.05)); });
-    var cope = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), ring.length * 2, 0.3, 6, true), mat(STYLE.rail, true));
-    cope.userData = { hex: STYLE.rail, keep: true, rail: true };
+    var cope = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), ring.length * 2, 0.3, 6, true),
+      STYLE.arcade ? glowMat(0xffe2f4, 1.75) : mat(STYLE.rail, true));     // the coping catches the light
     parkGroup.add(cope);
   });
-  var railMat = makeMat({ vertexColors: true });
+  var railMat = makeMat({ vertexColors: true }), TM = new Merger();
   rails.forEach(function (r) {
     var pts = [], i;
     for (i = 0; i < r.n; i += 2) pts.push(new THREE.Vector3(r.P[3 * i], r.P[3 * i + 1], r.P[3 * i + 2]));
     if ((r.n - 1) % 2) pts.push(new THREE.Vector3(r.P[3 * r.n - 3], r.P[3 * r.n - 2], r.P[3 * r.n - 1]));
-    var segs = pts.length * 2, geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), segs, 0.3, 8, false);
+    var segs = pts.length * 2, geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), segs, RAIL_TUBE, 8, false);
     var cnt = geo.attributes.position.count, cols = new Float32Array(cnt * 3), ca = col(r.col[0]), cb = col(r.col[1]);
     for (i = 0; i < cnt; i++) {           // candy stripes along the bar
-      var ringI = Math.floor(i / 9), cc = Math.floor(ringI / segs * r.len / 1.6) % 2 ? cb : ca;
+      var ringI = Math.floor(i / 9), cc = Math.floor(ringI / segs * r.len / 1.5) % 2 ? cb : ca;
       cols[3 * i] = cc.r; cols[3 * i + 1] = cc.g; cols[3 * i + 2] = cc.b;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(cols, 3));
     var bar = new THREE.Mesh(geo, railMat); bar.castShadow = true; parkGroup.add(bar);
-    var postHex = 0x55595f, step = Math.round(5 / RAIL_DS);
-    for (i = step; i < r.n - 4; i += step) {          // posts where the bar is upright and nothing runs under it
-      var px = r.P[3 * i], py = r.P[3 * i + 1], pz = r.P[3 * i + 2], gb = Hbase(px, pz);
-      if (r.U[3 * i + 1] < 0.92 || py - gb < 1.2) continue;
+    var step = Math.round(5 / RAIL_DS);
+    for (i = step; i < r.n - 4; i += step) {          // a truss where the bar is upright and nothing runs under it
+      var px = r.P[3 * i], py = r.P[3 * i + 1], pz = r.P[3 * i + 2], gb = Hbase(px, pz), hgt = py - gb;
+      if (r.U[3 * i + 1] < 0.92 || hgt < 1.2) continue;
       var clear = true;
       for (var j = 0; j < r.n && clear; j += 2) {
         if (Math.abs(j - i) < 8) continue;
@@ -955,22 +1328,26 @@ function buildParkMeshes() {
         if (dx * dx + dz * dz < 2 && r.P[3 * j + 1] < py) clear = false;
       }
       if (!clear) continue;
-      var post = new THREE.Mesh(boxGeo); post.userData = { hex: postHex, keep: true, dims: { w: 0.24, h: py - gb, d: 0.24, aoMin: 0.6, aoH: 2 } };
-      dress(post); post.scale.set(0.24, py - gb, 0.24); post.position.set(px, (py + gb) / 2, pz); post.castShadow = true;
-      parkGroup.add(post);
+      var fx = r.F[3 * i], fz = r.F[3 * i + 2], fl = Math.sqrt(fx * fx + fz * fz) || 1, sx = -fz / fl, sz = fx / fl;
+      var spread = clamp(hgt * 0.3, 0.5, 2.4), t = clamp(0.2 + hgt * 0.02, 0.24, 0.42);
+      [-1, 1].forEach(function (sg) {     // two legs, feet apart
+        var qx = px + sx * spread * sg, qz = pz + sz * spread * sg;
+        beam(TM, qx, Hbase(qx, qz) - 0.2, qz, px, py - RAIL_TUBE * 0.5, pz, t, PAL.truss);
+        TM.add(boxGeo, mx(0.9, 0.22, 0.9, qx, Hbase(qx, qz) + 0.1, qz), mixHex(PAL.truss, 0xffffff, 0.35));
+      });
+      if (hgt > 4.5) beam(TM, px - sx * spread * 0.5, gb + hgt * 0.5, pz - sz * spread * 0.5, px + sx * spread * 0.5, gb + hgt * 0.5, pz + sz * spread * 0.5, t * 0.8, PAL.truss);
     }
     r.pillars.forEach(function (pl) {                 // a spiral turns around a column
-      var gb2 = Hbase(pl.x, pl.z), col2 = new THREE.Mesh(cylGeo);
-      col2.userData = { hex: postHex, keep: true, dims: { cyl: true, r: 0.7, h: pl.top - gb2, aoMin: 0.6, aoH: 3 } };
-      dress(col2);
-      col2.scale.set(0.7, pl.top - gb2, 0.7); col2.position.set(pl.x, (pl.top + gb2) / 2, pl.z); col2.castShadow = true;
-      parkGroup.add(col2);
+      var gb2 = Hbase(pl.x, pl.z), hh = pl.top - gb2;
+      TM.cyl(cyl8, 0.8, hh, pl.x, gb2 + hh / 2, pl.z, PAL.truss);
+      TM.cyl(cyl8, 1.15, 0.5, pl.x, pl.top + 0.25, pl.z, PAL.cap); TM.cyl(cyl8, 1.2, 0.4, pl.x, gb2 + 0.2, pl.z, PAL.cap);
     });
-    var dg = new THREE.RingGeometry(1.7, 2.5, 32); dg.rotateX(-Math.PI / 2);   // the way in: a ring on the ground
-    var decal = new THREE.Mesh(dg, new THREE.MeshBasicMaterial({ color: r.col[0], transparent: true, opacity: 0.8, depthWrite: false }));
+    var dg = new THREE.RingGeometry(1.8, 2.5, 32); dg.rotateX(-Math.PI / 2);   // the way in: a ring on the ground
+    var decal = new THREE.Mesh(dg, glowMat(r.col[0], 1.5, { transparent: true, opacity: 0.8, depthWrite: false }));
     decal.position.set(r.P[0], Hbase(r.P[0], r.P[2]) + 0.08, r.P[2]);
     parkGroup.add(decal); railDecals.push(decal);
   });
+  if (TM.pos.length) parkGroup.add(vcMesh(TM.build(), true));
 }
 
 // ---- buildings + spatial grid --------------------------------------------------------
@@ -1021,6 +1398,92 @@ function closest(b, x, z) {
   return T;
 }
 
+// What a block wears over its tier colour: a white roof slab with the tier
+// colour again inside it (from above, a roof must still say its tier), rows of
+// windows, a door on a house. One merged geometry, built in the block's own unit
+// space so that it crumbles and topples with it.
+function blockDeco(b, a, d) {
+  var M = new Merger(), ht = b.ht, hex = b.hex, dr = mulberry(buildings.length * 7919 + 13);
+  var capHex = b.tier === 9 ? 0xc6bfee : mixHex(hex, 0xffffff, 0.86), inHex = mixHex(hex, 0xffffff, 0.14);
+  var ua = b.shape === "box" ? a : a, ud = b.shape === "box" ? d : a;   // a drum's unit is its radius
+  function U(geo, w, h, dp, x, y, z, c) { M.add(geo, mx(w / ua, h / ht, dp / ud, x / ua, y / ht, z / ud), c); }
+  function pane(x, y, z, w, h, nx, nz, c) {           // a flat panel on a wall, facing (nx, nz)
+    var tx = -nz * w / 2, tz = nx * w / 2;
+    M.quad([(x - tx) / ua, (y - h / 2) / ht, (z - tz) / ud], [(x + tx) / ua, (y - h / 2) / ht, (z + tz) / ud],
+      [(x + tx) / ua, (y + h / 2) / ht, (z + tz) / ud], [(x - tx) / ua, (y + h / 2) / ht, (z - tz) / ud], c, [nx, 0, nz]);
+  }
+  var top = ht / 2, floor0 = -ht / 2 + SKIRT;
+  if (b.shape === "box") {
+    U(lowGeo({ w: a + 0.8, h: 0.55, d: d + 0.8, aoMin: 1 }), a + 0.8, 0.55, d + 0.8, 0, top + 0.1, 0, capHex);
+    U(boxGeo, a - 0.8, 0.3, d - 0.8, 0, top + 0.42, 0, inHex);
+    if (b.h > 8) U(boxGeo, 1.4, 0.8, 1.4, (dr() < 0.5 ? -1 : 1) * (a / 2 - 1.5), top + 0.9, (dr() < 0.5 ? -1 : 1) * (d / 2 - 1.5), 0xb6ace0);
+    [[0, 1, a, d], [0, -1, a, d], [1, 0, d, a], [-1, 0, d, a]].forEach(function (f) {    // normal, the wall's width, its depth
+      var wide = f[2], n = Math.max(1, Math.floor((wide - 1.3) / 2.1)), gap = (wide - 1.3) / n, pw = Math.min(1.15, gap * 0.6);
+      for (var y = floor0 + 1.75; y + 1.3 < top; y += 2.55) for (var i = 0; i < n; i++) {
+        var o = (i - (n - 1) / 2) * gap;
+        pane(f[0] * (f[3] / 2 + 0.04) + f[1] * o, y, f[1] * (f[3] / 2 + 0.04) + f[0] * o, pw, 1.35, f[0], f[1], dr() < 0.22 ? PAL.glassDim : PAL.glass);
+      }
+    });
+    if (b.h < 8) pane(0, floor0 + 0.85, d / 2 + 0.06, Math.min(1.1, a * 0.3), 1.7, 0, 1, mixHex(hex, 0x1a0f3a, 0.55));
+  } else if (b.kind === "tank") {         // a tank says "boom": a yellow lid and a red valve
+    U(cyl8, a + 0.25, 0.4, a + 0.25, 0, top + 0.1, 0, 0xffd22e);
+    U(cyl8, a * 0.45, 0.5, a * 0.45, 0, top + 0.5, 0, 0xf5483b);
+    U(cyl8, a + 0.12, 0.5, a + 0.12, 0, floor0 + 1.5, 0, 0xffd22e);
+  } else {
+    U(cyl8, a + 0.35, 0.5, a + 0.35, 0, top + 0.1, 0, capHex);
+    U(cyl8, a - 0.3, 0.3, a - 0.3, 0, top + 0.4, 0, inHex);
+    for (var yb = floor0 + 3.2; yb + 1 < top; yb += 4.2) U(cyl8, a + 0.1, 0.45, a + 0.1, 0, yb, 0, capHex);
+  }
+  return M.build();
+}
+// what stands on the roads to be run over: one instanced mesh per kind
+var PROPS = {};
+function propKind(name, geo, cap) {
+  var m = new THREE.InstancedMesh(geo, mat(0xffffff, true, true), cap);
+  m.userData = { vc: true }; m.castShadow = m.receiveShadow = true; m.frustumCulled = false;
+  scene.add(m); PROPS[name] = { mesh: m, n: 0, cap: cap };
+}
+function placeProp(b, ox, oz, squash) {
+  dummy.position.set(b.x + ox, b.y0 - 0.05, b.z + oz); dummy.rotation.set(0, b.yaw, 0); dummy.scale.set(b.sc * (2 - squash), b.sc * squash, b.sc * (2 - squash));
+  dummy.updateMatrix(); b.prop.mesh.setMatrixAt(b.pi, dummy.matrix); b.prop.mesh.instanceMatrix.needsUpdate = true;
+}
+function addProp(name, shape, x, z, a, d, h, hex, pts, yaw, sc) {
+  var K = PROPS[name], ext = shape === "box" ? Math.max(a, d) / 2 : a;
+  if (K.n >= K.cap || Math.abs(x) > HALF - 1.5 || Math.abs(z) > HALF - 1.5) return null;
+  if (railBlocked(x, z, ext, Hbase(x, z) + h) || nearPit(x, z, 1.5) || nearLowRail(x, z, 3.5)) return null;
+  if (Math.abs(x - START.x) < 8 && Math.abs(z - START.z) < 12) return null;
+  var b = { kind: name, prop: K, pi: K.n++, shape: shape, x: x, z: z, h: h, hex: hex, tier: 1, alive: true,
+    shake: 0, hitCd: 0, warnCd: 0, q: 0, fall: null, crumble: -1, yaw: yaw || 0, sc: sc || 1, wob: 0, mesh: null, ao: null };
+  b.y0 = Hbase(x, z); b.base = b.y0 - SKIRT; b.ht = h + SKIRT; b.top = b.y0 + h;
+  if (shape === "box") { b.hw = a / 2; b.hd = d / 2; b.area = a * d; } else { b.r = a; b.area = Math.PI * a * a; }
+  b.vol = b.area * h; b.maxHp = b.hp = 0.01; b.base0 = pts;
+  placeProp(b, 0, 0, 1);
+  buildings.push(b); gridInsert(b);
+  return b;
+}
+propKind("tree", treeGeo(), 96); propKind("cone", coneGeo(), 64); propKind("barrier", barrierGeo(), 32); propKind("hedge", hedgeGeo(), 64);
+function dressCity() {
+  var i, k, sp, e = ZH + 3.4;
+  ZONES.forEach(function (zn) {           // a row of trees around every zone
+    for (var side = 0; side < 4; side++) for (k = -2; k <= 2; k++) {
+      var o = k * 12.5 + rr(-1.5, 1.5);
+      addProp("tree", "cyl", zn.cx + (side === 0 ? -e : side === 1 ? e : o), zn.cz + (side === 2 ? -e : side === 3 ? e : o), 0.55, 0, 4.6, PAL.leaf[1], 15, rr(0, 6.283), rr(0.85, 1.25));
+    }
+  });
+  for (i = 0; i < 10; i++) {              // lines of cones
+    sp = roadSpot(5); var horiz = rnd() < 0.5;
+    for (k = -2; k <= 2; k++) addProp("cone", "cyl", sp.x + (horiz ? k * 2.4 : 0), sp.z + (horiz ? 0 : k * 2.4), 0.42, 0, 1.0, PAL.cone, 5, rr(0, 6.283), 1);
+  }
+  for (i = 0; i < 11; i++) {              // barriers, two by two
+    sp = roadSpot(6); var hz = rnd() < 0.5;
+    for (k = -1; k <= 1; k += 2) addProp("barrier", "box", sp.x + (hz ? k * 1.7 : 0), sp.z + (hz ? 0 : k * 1.7), hz ? 3.0 : 0.95, hz ? 0.95 : 3.0, 1.2, PAL.barrier, 20, hz ? 0 : Math.PI / 2, 1);
+  }
+  for (i = 0; i < 4; i++) for (var u = -HALF + 12; u < HALF - 8; u += 13) {   // hedges along the wall
+    if (rnd() < 0.3) continue;
+    var w = HALF - 2.6;
+    addProp("hedge", "box", i === 0 ? -w : i === 1 ? w : u, i === 2 ? -w : i === 3 ? w : u, i < 2 ? 1.5 : 4.6, i < 2 ? 4.6 : 1.5, 1.6, PAL.hedge, 10, i < 2 ? Math.PI / 2 : 0, 1);
+  }
+}
 function addBuilding(kind, shape, x, z, a, d, h, tier) {
   var ext0 = shape === "box" ? Math.max(a, d) / 2 : a;
   if (railBlocked(x, z, ext0, Hbase(x, z) + h)) return null;   // the rails win
@@ -1045,8 +1508,9 @@ function addBuilding(kind, shape, x, z, a, d, h, tier) {
   mesh.position.set(x, b.base + b.ht / 2, z);
   mesh.castShadow = mesh.receiveShadow = true;
   dress(mesh);
+  mesh.add(vcMesh(blockDeco(b, a, d), true));
   scene.add(mesh);
-  b.mesh = mesh;
+  b.mesh = mesh; b.wob = 0;
   b.ao = contactShadow(b);
   b.vol = b.area * h;
   b.maxHp = b.hp = HP_K * Math.sqrt(b.area) * (1 + h / 12) * (kind === "tank" ? 0.6 : 1);
@@ -1084,6 +1548,7 @@ function buildCity() {
     }
   });
   kiosks.forEach(function (k) { addBuilding("house", "box", k.x, k.z, rr(2.8, 3.6), rr(2.8, 3.6), rr(2.5, 3.5), k.tier); });
+  dressCity();
 }
 
 // ---- the dozer --------------------------------------------------------------------
@@ -1095,30 +1560,141 @@ var dozer = { x: 0, y: 0, z: 0, a: -Math.PI / 2, vx: 0, vy: 0, vz: 0, ground: tr
   rail: null, railF: new THREE.Vector3(1, 0, 0), railU: new THREE.Vector3(0, 1, 0), squash: 0,
   air: { t: 0, cur: null, queued: false, lastEnd: -9, n: 0, kind: "ground", assist: null, rLock: 0, turn: 0, turnRate: 0, lastName: "" } };
 var COM = 1.3;                            // centre of mass height: tricks turn around it
+// The machine, after the reference: a tall violet cab under a wide roof slab,
+// a hood with an exhaust and two round lights, a silver blade framed in yellow,
+// purple tracks on lavender wheels. Built in its own units (x forward, y up,
+// the ground at 0) and scaled to the dozer's physics.
+//   tracks (flat on the ground): the two belts, their treads, the wheels, the blade
+//   body (rocks on the tracks): hood, cab, roof, lights
+// DZ keeps what moves: the treads, the wheels, the blade, the body's lean, the
+// beacon, the glow outline, the flames.
+var DZ = { phL: 0, phR: 0, roll: 0, rollV: 0, pitch: 0, pitchV: 0, blade: 0, bladeV: 0, glow: 0, vf: 0, a: 0, puffT: 0, beaconT: 0,
+  hulls: [], wheels: [], flames: [], lamps: [] };
+var TRK = { cx: -0.2, a: 1.65, r: 0.65, z: 1.45, w: 1.05, n: 26 };     // a belt: a stadium, half straight a, end radius r
+TRK.len = 4 * TRK.a + 2 * Math.PI * TRK.r;
+var DOZER_SCALE = 0.9, DOZER_X = -0.32, HULL = 0.085;
 (function buildDozer() {
-  var outer = new THREE.Group(), g = new THREE.Group();
-  g.position.y = -COM; outer.add(g);
-  function part(w, h, d, x, y, z, hex) {
-    var m = new THREE.Mesh(boxGeo); m.scale.set(w, h, d); m.position.set(x, y, z);
-    m.userData = { hex: hex, keep: true, dims: { w: w, h: h, d: d, aoMin: 0.78 } };
-    dress(m);
-    m.castShadow = true; g.add(m); return m;
+  var outer = new THREE.Group(), g = new THREE.Group(), lean = new THREE.Group(), body = new THREE.Group(), blade = new THREE.Group();
+  g.position.set(DOZER_X, -COM, 0); g.scale.setScalar(DOZER_SCALE); outer.add(g);
+  lean.position.y = 1.3; body.position.y = -1.3; lean.add(body); g.add(lean);
+  blade.position.set(1.9, 0.75, 0); g.add(blade);
+  var Y = 0xffc21f, YL = 0xffd94a, O = 0xffa51e, OD = 0xe27a12, V = 0x5b2ee6, VL = 0x9d82ff, PD = 0x3a2278, PL = 0x7a52e8, LAV = 0xb9a9ee, STEEL = 0xefeaff, DARK = 0x2c1a55;
+  var MT = new Merger(), HT = new Merger(), MB = new Merger(), HB = new Merger(), MBL = new Merger(), HBL = new Merger();
+  function box(M, H, w, h, d, x, y, z, hex) {             // a chamfered box, and its inflated twin for the glow outline
+    M.box(w, h, d, x, y, z, hex);
+    if (H) H.add(boxGeo, mx(w + 2 * HULL, h + 2 * HULL, d + 2 * HULL, x, y, z), 0xffffff);
   }
-  part(4.4, 1.0, 0.9, -0.2, 0.5, 1.25, 0x2a2a2a);
-  part(4.4, 1.0, 0.9, -0.2, 0.5, -1.25, 0x2a2a2a);
-  part(3.4, 1.3, 2.2, -0.3, 1.4, 0, 0xf2b22a);
-  part(1.5, 1.3, 1.7, -0.9, 2.7, 0, 0xe0a020);
-  part(1.2, 0.7, 1.5, -0.6, 2.75, 0, 0x37475a);
-  part(0.3, 1.0, 0.3, 0.6, 2.4, 0.6, 0x333333);
-  part(0.45, 1.4, 3.9, 2.55, 0.8, 0, 0x8a8f96);
-  part(1.2, 0.3, 0.3, 1.8, 0.9, 0.9, 0x555a60);
-  part(1.2, 0.3, 0.3, 1.8, 0.9, -0.9, 0x555a60);
-  dozer.flame = part(0.9, 0.5, 0.9, -2.7, 1.3, 0, 0xff8a2a);
-  dozer.flame.material = new THREE.MeshBasicMaterial({ color: 0xffa040 });
-  dozer.flame.userData = {};
-  dozer.flame.visible = false;
-  dozer.inner = g; dozer.mesh = outer; scene.add(outer);
+  function drum(M, H, geo, r, len, x, y, z, hex, q) {
+    M.cyl(geo, r, len, x, y, z, hex, q);
+    if (H) H.cyl(geo, r + HULL, len + 2 * HULL, x, y, z, 0xffffff, q);
+  }
+  function belt(r, w) {                                    // the stadium, extruded across the track
+    var sh = new THREE.Shape();
+    sh.moveTo(TRK.cx - TRK.a, 0.65 - r); sh.lineTo(TRK.cx + TRK.a, 0.65 - r);
+    sh.absarc(TRK.cx + TRK.a, 0.65, r, -Math.PI / 2, Math.PI / 2, false);
+    sh.lineTo(TRK.cx - TRK.a, 0.65 + r);
+    sh.absarc(TRK.cx - TRK.a, 0.65, r, Math.PI / 2, Math.PI * 1.5, false);
+    var e = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: false, curveSegments: 5 });
+    e.translate(0, 0, -w / 2); e.deleteAttribute("uv");
+    return e;
+  }
+  var m4 = new THREE.Matrix4(), beltGeo = belt(TRK.r - 0.07, TRK.w), beltHull = belt(TRK.r + HULL + 0.05, TRK.w + 2 * HULL + 0.1);
+  [-1, 1].forEach(function (sg) {
+    MT.add(beltGeo, m4.makeTranslation(0, 0, sg * TRK.z), PD); HT.add(beltHull, m4.makeTranslation(0, 0, sg * TRK.z), 0xffffff);
+    var zo = sg * (TRK.z + TRK.w / 2 + 0.04);
+    [-0.95, -0.2, 0.55].forEach(function (x) { MT.cyl(cyl8, 0.21, 0.16, x, 0.3, zo, LAV, QZ); });      // the small rollers
+    MT.add(boxGeo, mx(2.5, 0.17, 0.1, -0.2, 0.66, zo, QI), 0x8f7fd8);
+  });
+  box(MT, null, 3.5, 0.7, 1.9, -0.2, 0.92, 0, OD);       // the belly between the belts
+  // the body
+  box(MB, HB, 2.6, 0.24, 4.0, -1.3, 1.5, 0, Y);          // the deck over the tracks, under the cab
+  box(MB, HB, 2.3, 1.05, 1.9, 0.85, 1.87, 0, O);         // the hood
+  box(MB, null, 1.6, 0.1, 1.3, 0.9, 2.42, 0, YL);
+  box(MB, null, 0.1, 0.5, 1.15, 2.01, 1.68, 0, 0x4a2a9a);  // the grille
+  [-1, 1].forEach(function (sg) { drum(MB, null, cyl10, 0.31, 0.16, 2.0, 2.02, sg * 0.62, STEEL, QX); });
+  drum(MB, HB, cyl8, 0.17, 1.2, 1.05, 2.98, 0.5, DARK);  // the exhaust
+  drum(MB, null, cyl8, 0.24, 0.16, 1.05, 3.58, 0.5, 0x4a2a9a);
+  box(MB, HB, 2.05, 0.6, 2.5, -1.3, 1.9, 0, O);          // the cab: a base, the glass, four posts, the roof slab
+  box(MB, HB, 1.74, 1.3, 2.24, -1.3, 2.83, 0, V);
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (c) { box(MB, null, 0.24, 1.32, 0.24, -1.3 + c[0] * 0.9, 2.83, c[1] * 1.14, Y); });
+  box(MB, HB, 2.45, 0.3, 2.9, -1.3, 3.63, 0, Y);
+  box(MB, null, 2.0, 0.07, 2.4, -1.3, 3.8, 0, YL);
+  [0.3, -0.25].forEach(function (z, i) {                   // a slash of light across each window
+    MB.add(boxGeo, sheared(mx(0.05, 1.05, i ? 0.14 : 0.3, -0.42, 2.83, z), 2, 1, i ? 3.2 : 1.5), VL);
+    [-1, 1].forEach(function (sg) { MB.add(boxGeo, sheared(mx(i ? 0.14 : 0.3, 1.05, 0.05, -1.3 + z, 2.83, sg * 1.125), 0, 1, i ? 3.2 : 1.5), VL); });
+  });
+  // the blade: a hollow curve, silver with a pale band, framed in yellow
+  var hw = 2.3, prof = [0, 0.1, 0.36, 0.64, 0.9, 1].map(function (t) { return [1.0 + 0.44 * (2 * t - 1) * (2 * t - 1), -0.7 + 2.05 * t]; });
+  var faces = [Y, STEEL, 0xffeea0, STEEL, Y], th = 0.26, j;
+  for (j = 0; j < 5; j++) {
+    var p0 = prof[j], p1 = prof[j + 1];
+    MBL.quad([p0[0], p0[1], -hw], [p0[0], p0[1], hw], [p1[0], p1[1], hw], [p1[0], p1[1], -hw], faces[j], [1, 0, 0]);
+    MBL.quad([p0[0] - th, p0[1], -hw], [p0[0] - th, p0[1], hw], [p1[0] - th, p1[1], hw], [p1[0] - th, p1[1], -hw], O, [-1, 0, 0]);
+  }
+  MBL.quad([prof[5][0] - th, prof[5][1], -hw], [prof[5][0], prof[5][1], -hw], [prof[5][0], prof[5][1], hw], [prof[5][0] - th, prof[5][1], hw], YL, [0, 1, 0]);
+  MBL.quad([prof[0][0] - th, prof[0][1], -hw], [prof[0][0], prof[0][1], -hw], [prof[0][0], prof[0][1], hw], [prof[0][0] - th, prof[0][1], hw], OD, [0, -1, 0]);
+  [-1, 1].forEach(function (sg) {
+    box(MBL, null, 0.78, 2.1, 0.18, 1.02, 0.325, sg * (hw + 0.05), Y);        // the cheeks
+    box(MBL, null, 1.5, 0.22, 0.26, 0.2, 0.0, sg * 0.82, 0x9a8fd8);           // the push arms
+    box(MBL, null, 0.3, 0.5, 0.4, 0.75, 0.3, sg * 0.82, LAV);
+  });
+  HBL.add(boxGeo, mx(0.85 + 2 * HULL, 2.1 + 2 * HULL, 2 * hw + 0.3 + 2 * HULL, 1.02, 0.325, 0), 0xffffff);
+  var tracks = vcMesh(MT.build(), true), bodyM = vcMesh(MB.build(), true), bladeM = vcMesh(MBL.build(), true);
+  g.add(tracks); body.add(bodyM); blade.add(bladeM);
+  // the glow outline: every big part again, inflated and seen from inside
+  DZ.hullMat = glowMat(PAL.glow, 2, { side: THREE.BackSide, transparent: true, opacity: 0, depthWrite: false });
+  [[HT, g], [HB, body], [HBL, blade]].forEach(function (h) { var m = new THREE.Mesh(h[0].build(), DZ.hullMat); m.visible = false; h[1].add(m); DZ.hulls.push(m); });
+  // the treads: one small bar per link, laid along the belt every frame
+  DZ.treads = new THREE.InstancedMesh(boxGeo, mat(PL, true), TRK.n * 2);
+  DZ.treads.userData = { hex: PL, keep: true }; DZ.treads.castShadow = true; DZ.treads.frustumCulled = false; g.add(DZ.treads);
+  // the four big wheels turn: a lavender disc, a hub, a bolt off-centre to show it
+  var WM = new Merger();
+  WM.cyl(cyl10, 0.47, 0.16, 0, 0, 0, LAV, QZ); WM.cyl(cyl6, 0.22, 0.24, 0, 0, 0, 0x7d6bd0, QZ); WM.cyl(cyl6, 0.08, 0.28, 0.3, 0, 0, 0xf1eaff, QZ);
+  var wheelGeo = WM.build();
+  [[-1.85, -1], [1.45, -1], [-1.85, 1], [1.45, 1]].forEach(function (w) {
+    var m = vcMesh(wheelGeo, false); m.position.set(w[0], 0.65, w[1] * (TRK.z + TRK.w / 2 + 0.05)); g.add(m); DZ.wheels.push(m);
+  });
+  // what glows: the two headlights, the two roof lamps, the beacon
+  DZ.lampMat = glowMat(0xfff0ff, 3.2);
+  function lamp(parent, geo, r, len, x, y, z, q) { var m = new THREE.Mesh(geo, DZ.lampMat); m.scale.set(r, len, r); m.quaternion.copy(q); m.position.set(x, y, z); parent.add(m); return m; }
+  [-1, 1].forEach(function (sg) { lamp(body, cyl10, 0.22, 0.2, 2.03, 2.02, sg * 0.62, QX); lamp(body, cyl8, 0.17, 0.2, -0.1, 3.5, sg * 0.8, QX); });
+  DZ.beaconMat = glowMat(0x7a3ff0, 1);
+  DZ.beacon = lamp(body, cyl8, 0.21, 0.4, -2.0, 3.98, -0.85, QI); DZ.beacon.material = DZ.beaconMat;
+  // the boost: two jets out of the back
+  var coneG = new THREE.ConeGeometry(1, 1, 6); coneG.rotateZ(Math.PI / 2); coneG.translate(-0.5, 0, 0);   // the tip points back, the base at 0
+  DZ.flameMat = glowMat(0xff8a1e, 3, { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  DZ.flameCore = glowMat(0xfff2b0, 3.5, { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  [-1, 1].forEach(function (sg) {
+    [[DZ.flameMat, 0.36], [DZ.flameCore, 0.2]].forEach(function (f) {
+      var m = new THREE.Mesh(coneG, f[0]); m.position.set(-2.62, 1.75, sg * 0.7); m.userData.r = f[1]; m.visible = false; body.add(m); DZ.flames.push(m);
+    });
+  });
+  DZ.body = body; DZ.lean = lean; DZ.bladeG = blade; DZ.g = g;
+  dozer.inner = body; dozer.mesh = outer; scene.add(outer);
 })();
+// where a tread link sits: s along the belt (0 at the back of the top run, moving forward)
+var TP = { x: 0, y: 0, a: 0 };
+function treadAt(s) {
+  var a = TRK.a, r = TRK.r, arc = Math.PI * r, th;
+  s = ((s % TRK.len) + TRK.len) % TRK.len;
+  if (s < 2 * a) { TP.x = TRK.cx - a + s; TP.y = 2 * r; TP.a = 0; return TP; }
+  s -= 2 * a;
+  if (s < arc) { th = Math.PI / 2 - s / r; TP.x = TRK.cx + a + r * Math.cos(th); TP.y = r + r * Math.sin(th); TP.a = th - Math.PI / 2; return TP; }
+  s -= arc;
+  if (s < 2 * a) { TP.x = TRK.cx + a - s; TP.y = 0; TP.a = Math.PI; return TP; }
+  s -= 2 * a; th = -Math.PI / 2 - s / r;
+  TP.x = TRK.cx - a + r * Math.cos(th); TP.y = r + r * Math.sin(th); TP.a = th - Math.PI / 2;
+  return TP;
+}
+function layTreads() {
+  var sp = TRK.len / TRK.n, k = 0;
+  for (var side = -1; side <= 1; side += 2) for (var i = 0; i < TRK.n; i++) {
+    var p = treadAt(i * sp + (side < 0 ? DZ.phR : DZ.phL));
+    dummy.position.set(p.x, p.y, side * TRK.z); dummy.rotation.set(0, 0, p.a); dummy.scale.set(0.2, 0.15, TRK.w + 0.1);
+    dummy.updateMatrix(); DZ.treads.setMatrixAt(k++, dummy.matrix);
+  }
+  DZ.treads.instanceMatrix.needsUpdate = true;
+}
 var headlight = new THREE.SpotLight(0xfff1c0, 4000, 90, 0.6, 0.45, 1.5);
 headlight.position.set(2.8, 2.4, 0); headlight.target.position.set(18, 0, 0);
 dozer.inner.add(headlight); dozer.inner.add(headlight.target); headlight.visible = false;
@@ -1148,21 +1724,24 @@ function spawnChunk(x, y, z, vx, vy, vz, s, hex) {
   c.wx = rr(-8, 8); c.wy = rr(-8, 8); c.wz = rr(-8, 8);
   chunkMesh.setColorAt(idx, col(hex)); chunkMesh.instanceColor.needsUpdate = true;
 }
-var DUST_MAX = 260;
+var DUST_MAX = 320, DUST_SIZE = 0.7;
 var dustMesh = instanced(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: 0xc8bca8 }), DUST_MAX, false);
 var dust = [], dustHead = 0;
 for (var di = 0; di < DUST_MAX; di++) dust.push({ on: false });
-function spawnDust(x, y, z, vx, vy, vz, s0, s1, life) {
-  var p = dust[dustHead]; dustHead = (dustHead + 1) % DUST_MAX;
+function spawnDust(x, y, z, vx, vy, vz, s0, s1, life, hex) {
+  var p = dust[dustHead];
+  dustMesh.setColorAt(dustHead, col(hex || 0xffffff)); dustMesh.instanceColor.needsUpdate = true;
+  dustHead = (dustHead + 1) % DUST_MAX;
   p.on = true; p.x = x; p.y = y; p.z = z; p.vx = vx; p.vy = vy; p.vz = vz;
   p.s0 = s0; p.s1 = s1; p.t = 0; p.life = life;
 }
 var MARK_MAX = 1400;
 var markGeo = new THREE.PlaneGeometry(1, 1); markGeo.rotateX(-Math.PI / 2);
-var markMesh = instanced(markGeo, new THREE.MeshBasicMaterial({ color: 0x1d1a16, transparent: true, opacity: 0.32, depthWrite: false }), MARK_MAX, false);
+var markMesh = instanced(markGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.4, depthWrite: false }), MARK_MAX, false);
 var markHead = 0, upY = new THREE.Vector3(0, 1, 0);
 var mX = new THREE.Vector3(), mY = new THREE.Vector3(), mZ = new THREE.Vector3(), mM = new THREE.Matrix4();
-function addMark(x0, z0, x1, z1, width) {
+function addMark(x0, z0, x1, z1, width, hex) {
+  markMesh.setColorAt(markHead, col(hex)); markMesh.instanceColor.needsUpdate = true;
   var y0 = gy(x0, z0) + 0.06, y1 = gy(x1, z1) + 0.06;
   mX.set(x1 - x0, y1 - y0, z1 - z0);
   var len = mX.length();
@@ -1221,7 +1800,7 @@ function stepSparks(dt) {
 }
 // shockwave rings laid on a surface
 var rings = [], AX_X = new THREE.Vector3(1, 0, 0), AX_Z = new THREE.Vector3(0, 0, 1);
-for (var ri0 = 0; ri0 < 10; ri0++) {
+for (var ri0 = 0; ri0 < 18; ri0++) {
   var rm = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 48), new THREE.MeshBasicMaterial({ transparent: true,
     blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   rm.visible = false; scene.add(rm); rings.push({ m: rm, t: 1 });
@@ -1245,46 +1824,93 @@ function stepRings(dt) {
     if (g.t >= 1) g.m.visible = false;
   }
 }
-// the trail: a ribbon from track to track, left behind in the air and on rails
-var TRAIL_N = 44;
-var trailPos = new Float32Array(TRAIL_N * 6), trailCol = new Float32Array(TRAIL_N * 6);
-var trailGeo = new THREE.BufferGeometry();
-trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3));
-trailGeo.setAttribute("color", new THREE.BufferAttribute(trailCol, 3));
-(function () { var idx = []; for (var i = 0; i < TRAIL_N - 1; i++) { var a = 2 * i; idx.push(a, a + 1, a + 3, a, a + 3, a + 2); } trailGeo.setIndex(idx); })();
-var trailMesh = new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true,
-  blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-trailMesh.frustumCulled = false; scene.add(trailMesh);
-var trailOn = 0, trailC = new THREE.Color(), tvL = new THREE.Vector3(), tvR = new THREE.Vector3();
-function resetTrail() {
-  for (var i = 0; i < TRAIL_N; i++) { trailPos[6 * i] = trailPos[6 * i + 3] = dozer.x; trailPos[6 * i + 1] = trailPos[6 * i + 4] = dozer.y; trailPos[6 * i + 2] = trailPos[6 * i + 5] = dozer.z; }
-  trailCol.fill(0); trailOn = 0;
+// the ribbons: light left behind by an edge of the machine. Two off the back of
+// the tracks in the air, on a rail and in a boost; two more off the tips of the
+// blade while a trick turns, which is what wraps the dozer in a swirl.
+var TRAIL_N = 46, ribbons = [];
+function makeRibbon(ax, ay, az, bx, by, bz) {
+  var R = { pos: new Float32Array(TRAIL_N * 6), col: new Float32Array(TRAIL_N * 6), on: 0, a: new THREE.Vector3(ax, ay, az), b: new THREE.Vector3(bx, by, bz) };
+  R.geo = new THREE.BufferGeometry();
+  R.geo.setAttribute("position", new THREE.BufferAttribute(R.pos, 3));
+  R.geo.setAttribute("color", new THREE.BufferAttribute(R.col, 3));
+  var idx = []; for (var i = 0; i < TRAIL_N - 1; i++) { var a = 2 * i; idx.push(a, a + 1, a + 3, a, a + 3, a + 2); }
+  R.geo.setIndex(idx);
+  R.mesh = new THREE.Mesh(R.geo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  R.mesh.frustumCulled = false; scene.add(R.mesh); ribbons.push(R);
+  return R;
 }
-function updateTrail(dt) {
-  var want = !dozer.ground || dozer.rail || dozer.boost > 0 ? 1 : 0;
-  trailOn += clamp(want - trailOn, -dt * 2.5, dt * 8);
-  dozer.mesh.updateMatrixWorld();
-  tvL.set(-2.0, 0.45 - COM, 1.35); dozer.mesh.localToWorld(tvL);
-  tvR.set(-2.0, 0.45 - COM, -1.35); dozer.mesh.localToWorld(tvR);
-  trailPos.copyWithin(6, 0, (TRAIL_N - 1) * 6);
-  trailPos[0] = tvL.x; trailPos[1] = tvL.y; trailPos[2] = tvL.z; trailPos[3] = tvR.x; trailPos[4] = tvR.y; trailPos[5] = tvR.z;
-  var hex = dozer.rail ? dozer.rail.r.col[0] : level >= 10 ? 0xffffff : TIERS[level].hex;
-  trailC.setHex(hex).lerp(col(0xffffff), 0.25);
-  for (var i = 0; i < TRAIL_N; i++) {
-    var k = 1 - i / (TRAIL_N - 1); k = k * k * trailOn * 0.9;
-    for (var j = 0; j < 2; j++) { var o = 6 * i + 3 * j; trailCol[o] = trailC.r * k; trailCol[o + 1] = trailC.g * k; trailCol[o + 2] = trailC.b * k; }
+// (each edge leans outward, so a ribbon has a width from above and from the side)
+var RB = { l: makeRibbon(-2.55, -COM + 0.2, 0.85, -2.55, -COM + 1.0, 1.75), r: makeRibbon(-2.55, -COM + 0.2, -0.85, -2.55, -COM + 1.0, -1.75),
+  bl: makeRibbon(2.6, -COM + 0.5, 1.7, 2.75, -COM + 1.4, 2.5), br: makeRibbon(2.6, -COM + 0.5, -1.7, 2.75, -COM + 1.4, -2.5) };
+var trailC = new THREE.Color(), tvL = new THREE.Vector3(), tvR = new THREE.Vector3();
+function resetTrail() {
+  ribbons.forEach(function (R) {
+    for (var i = 0; i < TRAIL_N; i++) { R.pos[6 * i] = R.pos[6 * i + 3] = dozer.x; R.pos[6 * i + 1] = R.pos[6 * i + 4] = dozer.y; R.pos[6 * i + 2] = R.pos[6 * i + 5] = dozer.z; }
+    R.col.fill(0); R.on = 0;
+  });
+}
+function feedRibbon(R, want, hex, dt) {
+  R.on += clamp(want - R.on, -dt * 2.5, dt * 9);
+  tvL.copy(R.a); dozer.mesh.localToWorld(tvL); tvR.copy(R.b); dozer.mesh.localToWorld(tvR);
+  R.pos.copyWithin(6, 0, (TRAIL_N - 1) * 6);
+  R.pos[0] = tvL.x; R.pos[1] = tvL.y; R.pos[2] = tvL.z; R.pos[3] = tvR.x; R.pos[4] = tvR.y; R.pos[5] = tvR.z;
+  trailC.setHex(hex);
+  for (var i = 0; i < TRAIL_N; i++) {     // white hot at the head, the colour behind it, gone at the tail
+    var t = i / (TRAIL_N - 1), k = (1 - t) * (1 - t) * R.on * 1.7, w = Math.max(0, 1 - t * 7) * 0.8;
+    for (var j = 0; j < 2; j++) { var o = 6 * i + 3 * j; R.col[o] = (trailC.r + w) * k; R.col[o + 1] = (trailC.g + w) * k; R.col[o + 2] = (trailC.b + w) * k; }
   }
-  trailGeo.attributes.position.needsUpdate = true; trailGeo.attributes.color.needsUpdate = true;
+  R.geo.attributes.position.needsUpdate = true; R.geo.attributes.color.needsUpdate = true;
+}
+function energyHex() { return dozer.rail ? dozer.rail.r.col[0] : dozer.boost > 0 && dozer.ground ? 0xff8a1e : PAL.glow; }
+function updateTrail(dt) {
+  var tk = activeTrick(), back = !dozer.ground || dozer.rail || dozer.boost > 0 ? 1 : 0, tips = tk ? 1 : 0, hex = energyHex();
+  dozer.mesh.updateMatrixWorld();
+  feedRibbon(RB.l, back, hex, dt); feedRibbon(RB.r, back, hex, dt);
+  feedRibbon(RB.bl, tips, hex, dt); feedRibbon(RB.br, tips, hex, dt);
+}
+// star flashes: the comic-book burst on a hit, a landing, a trick that lands
+var starTex = (function () {
+  var c = document.createElement("canvas"); c.width = c.height = 128;
+  var g = c.getContext("2d"), i;
+  g.translate(64, 64);
+  var gd = g.createRadialGradient(0, 0, 0, 0, 0, 62); gd.addColorStop(0, "rgba(255,255,255,1)"); gd.addColorStop(0.35, "rgba(255,255,255,0.9)"); gd.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gd; g.beginPath();
+  for (i = 0; i < 16; i++) { var a = i / 16 * 6.283, r = i % 2 ? 13 : i % 4 ? 40 : 62; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  g.closePath(); g.fill();
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(0, 0, 15, 0, 6.283); g.fill();
+  return new THREE.CanvasTexture(c);
+})();
+var flashes = [];
+for (var fi = 0; fi < 14; fi++) {
+  var fs = new THREE.Sprite(new THREE.SpriteMaterial({ map: starTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false }));
+  fs.visible = false; scene.add(fs); flashes.push({ m: fs, t: 1 });
+}
+function flash(x, y, z, size, hex, power) {
+  for (var i = 0; i < flashes.length; i++) if (flashes[i].t >= 1) {
+    var f = flashes[i]; f.t = 0; f.s = size; f.m.position.set(x, y, z); f.m.visible = true;
+    f.m.material.rotation = rr(0, 6.283); f.spin = rr(-3, 3); setGlow(f.m.material, hex, power || 2.2);
+    return;
+  }
+}
+function stepFlashes(dt) {
+  for (var i = 0; i < flashes.length; i++) {
+    var f = flashes[i]; if (f.t >= 1) continue;
+    f.t = Math.min(1, f.t + dt / 0.22);
+    f.m.scale.setScalar(f.s * (0.35 + 0.9 * Math.sqrt(f.t)));
+    f.m.material.opacity = 1 - f.t * f.t; f.m.material.rotation += f.spin * dt;
+    if (f.t >= 1) f.m.visible = false;
+  }
 }
 
 // ---- game state: score, combo, gauge -------------------------------------------------
 var score = 0, timeLeft = ROUND_SECONDS, over = false, overText = "", shake = 0, round = 0;
-var level = 1, gauge = 0, levelFlash = 0, slowT = 0, slowK = 1, fovPunch = 0, popRow = 0;
+var level = 1, gauge = 0, levelFlash = 0, slowT = 0, slowK = 1, fovPunch = 0, popRow = 0, stopT = 0, stopCd = 0, playT = 0;
 var combo = { base: 0, mult: 0, t: 0, list: [], bump: 0 };
-var pend = [], floats = [];
+var pend = [], floats = [], scoreBump = 0, gaugeShown = 0;
 var stats = { tricks: 0, bails: 0, perfects: 0, rides: 0, bestCombo: 0, airMax: 0 };
 
 function slowmo(k, t) { slowK = k; slowT = t; }
+function hitstop(t) { if (stopCd <= 0) { stopT = t; stopCd = 0.2; } }   // the frame holds on a hit, never twice in a row
 function pop(txt, color, big) {           // a callout in the middle of the screen
   floats.push({ screen: true, pop: true, x: 0.5, y: 0.42 - 0.05 * (popRow++ % 3), t: 0, txt: txt, col: color,
     size: big ? 30 : 22, rot: rr(-0.08, 0.08), life: big ? 1.4 : 1.1 });
@@ -1295,12 +1921,14 @@ function addGauge(p) {
   while (level < 10 && gauge >= LEVEL_COST[level + 1]) {
     gauge -= LEVEL_COST[level + 1]; level++;
     levelFlash = 1; shake = Math.min(1.2, shake + 0.4);
-    var hex = TIERS[level].hex;
-    floats.push({ screen: true, pop: true, x: 0.5, y: 0.3, t: 0, big: true, col: hexCss(hex), size: 30, rot: 0, life: 1.8,
+    var hex = tierGlow(level);
+    floats.push({ screen: true, pop: true, x: 0.5, y: 0.3, t: 0, big: true, col: hexCss(hex), size: 32, rot: -0.05, life: 1.8,
       txt: "Level " + level + " · " + TIERS[level].name });
-    spawnRing(dozer.x, dozer.y + 0.3, dozer.z, 0, 1, 0, 22, hex === 0x2a2a30 ? 0xffffff : hex, 0.7);
-    sparkBurst(dozer.x, dozer.y + 1.5, dozer.z, 50, 22, hex === 0x2a2a30 ? 0xffffff : hex, 6);
-    slowmo(0.3, 0.35); fovPunch = 6;
+    spawnRing(dozer.x, dozer.y + 0.3, dozer.z, 0, 1, 0, 22, hex, 0.7);
+    spawnRing(dozer.x, dozer.y + 0.3, dozer.z, 0, 1, 0, 11, 0xffffff, 0.45);
+    sparkBurst(dozer.x, dozer.y + 1.5, dozer.z, 60, 24, hex, 7);
+    flash(dozer.x, dozer.y + 1.6, dozer.z, 16, hex, 2.6);
+    slowmo(0.3, 0.35); fovPunch = 6; DZ.glow = 1.5;
   }
   if (level >= 10) gauge = 0;
 }
@@ -1317,9 +1945,9 @@ function trick(name, pts, color, big) {   // a move: fills the gauge, joins the 
 function bankCombo() {
   if (combo.mult === 0) return;
   var pts = combo.base * combo.mult;
-  score += pts;
+  score += pts; scoreBump = 1;
   if (combo.mult > stats.bestCombo) stats.bestCombo = combo.mult;
-  floats.push({ screen: true, pop: true, x: 0.5, y: 0.22, t: 0, txt: "+" + pts, col: "#ffd34d", size: 26, rot: 0, life: 1.4 });
+  floats.push({ screen: true, pop: true, x: 0.5, y: 0.22, t: 0, txt: "+" + pts, col: "#ffd34d", size: pts >= 2000 ? 34 : 26, rot: rr(-0.06, 0.06), life: 1.4 });
   combo.base = 0; combo.mult = 0; combo.list = [];
 }
 function bail() {
@@ -1329,6 +1957,8 @@ function bail() {
   dozer.stun = BAIL_STUN; dozer.vx *= 0.35; dozer.vy *= 0.35; dozer.vz *= 0.35;
   dozer.air.cur = null; dozer.air.queued = false;
   shake = Math.min(1.4, shake + 0.6);
+  flash(dozer.x, dozer.y + 1, dozer.z, 7, 0xff7a6a, 2); hitstop(0.07);
+  DZ.pitchV -= 3; DZ.rollV += rr(-4, 4);
   for (var k = 0; k < 10; k++) spawnDust(dozer.x + rr(-2, 2), dozer.y + 0.5, dozer.z + rr(-2, 2), rr(-4, 4), rr(1, 3), rr(-4, 4), 0.8, 2.6, 0.9);
 }
 
@@ -1337,13 +1967,15 @@ function newCity() {
   for (var i = 0; i < buildings.length; i++) {
     var b = buildings[i];
     if (b.fall) scene.remove(b.fall.pivot);
-    scene.remove(b.mesh);
+    if (b.mesh) { scene.remove(b.mesh); b.mesh.children.forEach(function (c) { c.geometry.dispose(); }); }
     dropContactShadow(b);
   }
+  for (var pk in PROPS) { PROPS[pk].n = 0; for (var pi = 0; pi < PROPS[pk].cap; pi++) PROPS[pk].mesh.setMatrixAt(pi, ZERO); PROPS[pk].mesh.instanceMatrix.needsUpdate = true; }
   buildings = []; total = 0; flattened = 0;
   grid = []; for (var g = 0; g < GN * GN; g++) grid.push([]);
   genPark();
   shapeGround();
+  drawGround();
   buildParkMeshes();
   buildCity();
   for (var c = 0; c < CHUNK_MAX; c++) { chunks[c].on = false; chunkMesh.setMatrixAt(c, ZERO); }
@@ -1359,6 +1991,9 @@ function newCity() {
   score = 0; timeLeft = ROUND_SECONDS; over = false; level = 1; gauge = 0; levelFlash = 0; slowT = 0;
   combo = { base: 0, mult: 0, t: 0, list: [], bump: 0 };
   pend = []; floats = []; shake = 0; stats = { tricks: 0, bails: 0, perfects: 0, rides: 0, bestCombo: 0, airMax: 0 };
+  cam.x = dozer.x; cam.z = dozer.z; cam.y = dozer.y * 0.7;
+  stopT = 0; playT = 0; hero.k = 1; hero.spin = 0; DZ.roll = DZ.rollV = DZ.pitch = DZ.pitchV = DZ.blade = DZ.bladeV = 0; DZ.a = dozer.a; DZ.vf = 0;
+  pop("Go!", "#ffd84a", true);
   resetTrail();
 }
 
@@ -1368,10 +2003,24 @@ function damage(o, dmg, dx, dz, cause) {
   if (!o.alive) return;
   var k = resist(o);
   o.hp -= dmg / k;
-  o.shake = Math.min(1, o.shake + 0.3 + dmg / k / o.maxHp);
+  o.shake = Math.min(1, o.shake + 0.3 + dmg / k / o.maxHp); o.wob = 1;
   if (o.hp <= 0) destroy(o, dx, dz, cause);
 }
 var CAUSE_NAME = { dozer: "Smash", crush: "Crush", slam: "Slam", fall: "Domino", blast: "Boom", chain: "Debris" };
+function debrisHex(b) { var r = rnd(); return r < 0.18 ? PAL.cap : r < 0.28 ? PAL.glass : b.hex; }   // a block breaks into wall, roof and glass
+var PROP_BITS = { tree: [PAL.leaf[0], PAL.leaf[1], PAL.leaf[2], PAL.leaf[1], PAL.trunk], cone: [PAL.cone, PAL.cone, 0xffffff],
+  barrier: [PAL.barrier, PAL.barrier, PAL.stripe], hedge: [PAL.hedge, PAL.leaf[2], PAL.leaf[0]] };
+var PROP_R = 2.1;                         // how close the dozer must pass to run a prop over
+function popProp(b, dx, dz) {             // a prop bursts where it stands: points, no multiplier
+  b.alive = false; b.prop.mesh.setMatrixAt(b.pi, ZERO); b.prop.mesh.instanceMatrix.needsUpdate = true;
+  if (combo.mult > 0) { combo.base += b.base0; combo.t = COMBO_WINDOW; } else score += b.base0;
+  var bits = PROP_BITS[b.kind], n = b.kind === "cone" ? 4 : 9, dl = Math.sqrt(dx * dx + dz * dz) || 1, sp = Math.min(dl, 30) * 0.55;
+  for (var i = 0; i < n; i++)
+    spawnChunk(b.x + rr(-0.7, 0.7), b.y0 + rr(0.3, b.h), b.z + rr(-0.7, 0.7), dx / dl * sp + rr(-4, 4), rr(4, 11), dz / dl * sp + rr(-4, 4), rr(0.3, 0.65), bits[i % bits.length]);
+  spawnDust(b.x, b.y0 + 0.6, b.z, rr(-1, 1), rr(1, 2), rr(-1, 1), 0.6, 1.9, 0.6);
+  flash(b.x, b.y0 + b.h * 0.6, b.z, 3.4, 0xfff2b0, 1.7);
+  floats.push({ x: b.x, y: b.top + 1, z: b.z, t: 0, txt: "+" + b.base0, col: "#eaffd0", size: 13, life: 0.8 });
+}
 function burst(b, n, dx, dz, push) {
   for (var i = 0; i < n; i++) {
     var x, z;
@@ -1380,11 +2029,16 @@ function burst(b, n, dx, dz, push) {
     var ox = x - b.x, oz = z - b.z, ol = Math.sqrt(ox * ox + oz * oz) || 1, out = rr(2, 7);
     spawnChunk(x, b.y0 + rr(0.4, b.h * 0.8), z,
       ox / ol * out + dx * rr(0, push), rr(2, 8), oz / ol * out + dz * rr(0, push),
-      rr(0.5, 1.3) * (b.h > 8 ? 1.2 : 1), b.hex);
+      rr(0.5, 1.3) * (b.h > 8 ? 1.2 : 1), debrisHex(b));
   }
 }
 function destroy(b, dx, dz, cause) {
+  if (b.prop) { popProp(b, dx, dz); return; }
   b.alive = false; flattened++;
+  var big = Math.sqrt(b.area), direct = cause === "dozer" || cause === "crush" || cause === "slam";
+  flash(b.x, b.y0 + Math.min(b.h, 7) * 0.6, b.z, 5 + big, 0xfff6d0, 2);
+  spawnRing(b.x, b.y0 + 0.25, b.z, 0, 1, 0, 4 + big * 1.5, tierGlow(b.tier), 0.42);
+  if (direct) { hitstop(clamp(0.03 + b.vol / 9000, 0.03, 0.08)); fovPunch = Math.max(fovPunch, 2.5); }
   dropContactShadow(b);
   comboAdd(CAUSE_NAME[cause] || "Smash", b.base0);
   floats.push({ x: b.x, y: b.y0 + Math.min(b.h, 12) + 2, z: b.z, t: 0, txt: "+" + b.base0, col: "#fff3c4", size: 16, life: 1.2 });
@@ -1422,13 +2076,15 @@ function landing(b) {
   var n = clamp(Math.round(len * 2.2), 10, 60);
   for (var k = 0; k < n; k++) {
     var tt = rr(0.5, len), off = rr(-perp, perp), cx = f.px + f.dx * tt + qx * off, cz = f.pz + f.dz * tt + qz * off;
-    spawnChunk(cx, gy(cx, cz) + rr(0.4, f.ext * 2), cz, qx * rr(-5, 5) + f.dx * rr(1, 6), rr(3, 10), qz * rr(-5, 5) + f.dz * rr(1, 6), rr(0.6, 1.5), b.hex);
+    spawnChunk(cx, gy(cx, cz) + rr(0.4, f.ext * 2), cz, qx * rr(-5, 5) + f.dx * rr(1, 6), rr(3, 10), qz * rr(-5, 5) + f.dz * rr(1, 6), rr(0.6, 1.5), debrisHex(b));
   }
   for (var j = 0; j < 14; j++) {
     var t2 = rr(0, len), ddx = f.px + f.dx * t2 + qx * rr(-perp, perp), ddz = f.pz + f.dz * t2 + qz * rr(-perp, perp);
     spawnDust(ddx, gy(ddx, ddz) + 0.6, ddz, qx * rr(-4, 4), rr(1, 3), qz * rr(-4, 4), 1.4, 4.5, 1.4);
   }
   shake = Math.min(1.6, shake + len / 22);
+  spawnRing(f.px + f.dx * len / 2, gy(f.px + f.dx * len / 2, f.pz + f.dz * len / 2) + 0.2, f.pz + f.dz * len / 2, 0, 1, 0, len * 0.8, 0xffffff, 0.4);
+  flash(f.px + f.dx * len * 0.7, b.y0 + 1.5, f.pz + f.dz * len * 0.7, 5 + len * 0.3, 0xfff6d0, 2);
   scene.remove(f.pivot);
 }
 function kickChunks(x, z, r, power, up) {
@@ -1441,7 +2097,8 @@ function kickChunks(x, z, r, power, up) {
 function explode(x, z) {
   var y = gy(x, z);
   spawnBlast(x, y + 1, z, TANK_R * 0.7);
-  sparkBurst(x, y + 1.5, z, 30, 20, 0xffa040, 8);
+  sparkBurst(x, y + 1.5, z, 36, 22, 0xffa040, 8);
+  flash(x, y + 2, z, 15, 0xffc060, 3); spawnRing(x, y + 0.2, z, 0, 1, 0, TANK_R, 0xffa040, 0.5); hitstop(0.08);
   shake = Math.min(1.8, shake + 0.9);
   var list = query(x, z, TANK_R + 6);
   for (var i = 0; i < list.length; i++) {
@@ -1462,8 +2119,9 @@ function explode(x, z) {
 function slam(x, z, imp) {
   var power = imp - LAND_MIN, y = gy(x, z);
   shake = Math.min(1.6, shake + power / 10);
-  spawnBlast(x, y + 0.3, z, LAND_R * 0.8, 0xe8dcc0);
+  spawnBlast(x, y + 0.3, z, LAND_R * 0.8, 0xfff0ff);
   spawnRing(x, y + 0.1, z, 0, 1, 0, LAND_R * 1.4, 0xfff0c8, 0.45);
+  flash(x, y + 0.8, z, 6 + power, 0xfff2b0, 2);
   for (var k = 0; k < 16; k++) {
     var a = k / 16 * 6.283;
     spawnDust(x + Math.cos(a) * 2, y + 0.5, z + Math.sin(a) * 2, Math.cos(a) * rr(6, 10), rr(0.5, 2), Math.sin(a) * rr(6, 10), 1, 2.6, 0.8);
@@ -1542,7 +2200,7 @@ function botInput(dt) {                   // smash what it can, ride a rail, dro
   if (botModeT > 14) { botModeT = 0; botMode = (botMode + 1) % 3; }
   var tx = 0, tz = 0, found = false, bd = 1e9, i;
   if (botMode === 0) for (i = 0; i < buildings.length; i++) {
-    var b = buildings[i]; if (!b.alive || b.tier > level) continue;
+    var b = buildings[i]; if (!b.alive || b.prop || b.tier > level) continue;
     var d = (b.x - dozer.x) * (b.x - dozer.x) + (b.z - dozer.z) * (b.z - dozer.z);
     if (d < bd && d < 4900) { bd = d; tx = b.x; tz = b.z; found = true; }
   }
@@ -1592,6 +2250,9 @@ function finishTrick(mult, label) {
   var A = dozer.air, c = A.cur;
   var pts = c.def.pts * (1 + CHAIN_BONUS * c.k) * mult;
   trick((label ? label + " " : "") + c.def.name, pts, mult < 1 ? "#ffcf7a" : c.k > 0 ? "#7af2ff" : "#c9f27a", c.def.dur >= 1);
+  flash(dozer.x, dozer.y + COM, dozer.z, 5 + 1.5 * c.k, PAL.glow, 1.8);
+  sparkBurst(dozer.x, dozer.y + COM, dozer.z, 10 + 6 * c.k, 13, c.k > 0 ? 0xffe27a : 0xffffff, 2);
+  DZ.glow = Math.min(1.6, DZ.glow + 0.5);
   A.n++; A.lastEnd = A.t; A.cur = null;
 }
 function pressAir() { var A = dozer.air; if (A.cur) A.queued = true; else startTrick(); }
@@ -1606,6 +2267,7 @@ function landVerdict() {                  // the jump is over: what was it worth
     dozer.boost = BOOST_TIME;
     spawnRing(dozer.x, dozer.y + 0.1, dozer.z, dozer.n.x, dozer.n.y, dozer.n.z, 9, 0xffd34d, 0.5);
     sparkBurst(dozer.x, dozer.y + 0.6, dozer.z, 36, 16, 0xffd34d, 4);
+    flash(dozer.x, dozer.y + 1, dozer.z, 11, 0xffe27a, 2.6);
     slowmo(0.35, 0.16); fovPunch = 5; shake = Math.min(1, shake + 0.25);
   }
   if (ok) {
@@ -1668,6 +2330,8 @@ function touchdown(s) {
   if (pit) { dozer.x -= nx * d; dozer.y -= ny * d; dozer.z -= nz * d; } else dozer.y = h;
   dozer.ground = true; dozer.pit = pit;
   dozer.squash = Math.min(0.4, 0.08 + Math.max(0, imp) / 45);
+  DZ.pitchV -= Math.min(5, imp * 0.22); DZ.bladeV -= Math.min(7, imp * 0.4);   // the body dips on its tracks, the blade drops
+  if (imp > 3) for (var ld = 0; ld < 8; ld++) { var la = ld / 8 * 6.283; spawnDust(dozer.x + Math.cos(la) * 1.6, dozer.y + 0.3, dozer.z + Math.sin(la) * 1.6, Math.cos(la) * rr(3, 6), rr(0.3, 1.2), Math.sin(la) * rr(3, 6), 0.5, 1.7, 0.55); }
   var sp = Math.sqrt(dozer.vx * dozer.vx + dozer.vy * dozer.vy + dozer.vz * dozer.vz);
   if (clean && sp > 4) {                  // landed turned: backwards reverts, sideways slides
     var c = (dozer.f.x * dozer.vx + dozer.f.y * dozer.vy + dozer.f.z * dozer.vz) / sp;
@@ -1714,6 +2378,7 @@ function tryCatchRail() {
   railSample(best, bi);
   sparkBurst(RS.px, RS.py, RS.pz, 18, 10, best.col[0], 3);
   spawnRing(RS.px, RS.py, RS.pz, RS.ux, RS.uy, RS.uz, 4, best.col[0], 0.35);
+  flash(RS.px, RS.py + 0.6, RS.pz, 6, best.col[0], 2.2);
   return true;
 }
 function railTrick() {
@@ -1751,6 +2416,7 @@ function stepRail(dt, press) {
     dozer.f.copy(dozer.railF); dozer.n.copy(dozer.railU);
     takeoff("rail", null, 0, 0);
     sparkBurst(dozer.x, dozer.y, dozer.z, 20, 12, r.col[0], 2);
+    flash(dozer.x, dozer.y, dozer.z, 6, r.col[0], 2);
   }
 }
 
@@ -1857,6 +2523,12 @@ function collide(dt) {                    // buildings, track marks and dust
     var b = list[i];
     if (b.fall) continue;
     var h = closest(b, dozer.x, dozer.z);
+    if (b.prop) {                                        // a prop is run over, never run into
+      if (h.d < PROP_R && dozer.y < b.top - 0.2 && dozer.vx * dozer.vx + dozer.vy * dozer.vy + dozer.vz * dozer.vz > 2) {
+        destroy(b, dozer.vx, dozer.vz, "dozer"); dozer.vx *= 0.985; dozer.vz *= 0.985; DZ.bladeV += 2.5;
+      }
+      continue;
+    }
     if (h.d >= DOZER_R) continue;
     if (dozer.y >= b.top - 0.4) continue;
     if (dozer.prevY >= b.top - 0.4 && h.d < 1) {        // came down on the roof
@@ -1877,7 +2549,9 @@ function collide(dt) {                    // buildings, track marks and dust
       b.hitCd = 0.15;
       for (var c = 0; c < 2 + Math.min(8, dmg / rs / 5); c++)
         spawnChunk(cpx + nx * 0.4, chipY + rr(0.5, Math.min(b.h, 4)), cpz + nz * 0.4,
-          nx * rr(3, 8) + rr(-3, 3), rr(2, 6), nz * rr(3, 8) + rr(-3, 3), rr(0.35, 0.8), rs > 1 ? 0x9aa0a6 : b.hex);
+          nx * rr(3, 8) + rr(-3, 3), rr(2, 6), nz * rr(3, 8) + rr(-3, 3), rr(0.35, 0.8), rs > 1 ? 0xb9b0d8 : debrisHex(b));
+      flash(cpx + nx * 0.6, chipY + 1.3, cpz + nz * 0.6, 2.6 + Math.min(4.5, dmg / rs / 7), rs > 1 ? 0xbfd6ff : 0xfff2b0, 2);
+      if (front) { DZ.pitchV -= Math.min(4, closing * 0.14); DZ.bladeV += 5; } else DZ.rollV += (rx * nx + rz * nz) * Math.min(5, closing * 0.2);
       for (var sk = 0; sk < Math.min(14, 3 + dmg / rs / 3); sk++)
         spawnSpark(cpx + nx * 0.4, chipY + rr(0.5, 2), cpz + nz * 0.4, nx * rr(4, 12) + rr(-4, 4), rr(2, 8), nz * rr(4, 12) + rr(-4, 4), rr(0.2, 0.45), rs > 1 ? 0xbfd6ff : 0xffb040);
       if (rs > 1 && b.warnCd <= 0) {
@@ -1909,13 +2583,19 @@ function collide(dt) {                    // buildings, track marks and dust
   if (!lm) dozer.lastMark = lm = { lx: lx, lz: lz, qx: qx, qz: qz };
   var md = (lx - lm.lx) * (lx - lm.lx) + (lz - lm.lz) * (lz - lm.lz);
   if (md > 0.5 || !flat) {
-    if (md < 9 && flat) { var wd = dozer.drift ? 1.1 : 0.75; addMark(lm.lx, lm.lz, lx, lz, wd); addMark(lm.qx, lm.qz, qx, qz, wd); }
+    if (md < 9 && flat) {                              // a drift paints the ground pink, a boost orange
+      var wd = dozer.drift ? 1.1 : 0.75, mk = dozer.drift ? PAL.glow : dozer.boost > 0 ? 0xff8a1e : STYLE.mark;
+      addMark(lm.lx, lm.lz, lx, lz, wd, mk); addMark(lm.qx, lm.qz, qx, qz, wd, mk);
+    }
     lm.lx = lx; lm.lz = lz; lm.qx = qx; lm.qz = qz;
   }
   if (flat && (dozer.drift || dozer.boost > 0) && dustT > 0.035) {
     dustT = 0;
     spawnDust(lx, dozer.y + 0.4, lz, -dozer.vx * 0.1 + rr(-1, 1), rr(0.5, 1.5), -dozer.vz * 0.1 + rr(-1, 1), 0.5, 1.8, 0.7);
     spawnDust(qx, dozer.y + 0.4, qz, -dozer.vx * 0.1 + rr(-1, 1), rr(0.5, 1.5), -dozer.vz * 0.1 + rr(-1, 1), 0.5, 1.8, 0.7);
+    var sh = dozer.drift ? PAL.glow : 0xffb040;
+    spawnSpark(lx, dozer.y + 0.2, lz, -dozer.vx * 0.3 + rr(-3, 3), rr(2, 6), -dozer.vz * 0.3 + rr(-3, 3), rr(0.2, 0.4), sh);
+    spawnSpark(qx, dozer.y + 0.2, qz, -dozer.vx * 0.3 + rr(-3, 3), rr(2, 6), -dozer.vz * 0.3 + rr(-3, 3), rr(0.2, 0.4), sh);
   }
 }
 function stepDozer(dt, press) {
@@ -1980,7 +2660,7 @@ function stepDust(dt) {
     if (p.t >= 1) { p.on = false; dustMesh.setMatrixAt(i, ZERO); continue; }
     p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
     var f = Math.exp(-2 * dt); p.vx *= f; p.vy *= f; p.vz *= f;
-    var s = (p.s0 + (p.s1 - p.s0) * p.t) * (p.t > 0.6 ? (1 - p.t) / 0.4 : 1);
+    var s = (p.s0 + (p.s1 - p.s0) * p.t) * (p.t > 0.6 ? (1 - p.t) / 0.4 : 1) * DUST_SIZE;
     dummy.position.set(p.x, p.y, p.z); dummy.rotation.set(p.t * 2, p.t * 3, 0); dummy.scale.setScalar(s);
     dummy.updateMatrix(); dustMesh.setMatrixAt(i, dummy.matrix);
   }
@@ -1991,10 +2671,15 @@ function stepBuildings(dt) {
     var b = buildings[i];
     b.hitCd -= dt; b.warnCd -= dt;
     if (b.alive) {
-      if (b.shake > 0) {
-        b.shake = Math.max(0, b.shake - dt * 3);
-        var s = b.shake * 0.5;
-        b.mesh.position.set(b.x + rr(-s, s), b.base + b.ht / 2, b.z + rr(-s, s));
+      if (b.shake > 0 || b.wob > 0) {     // a hit shakes a block and makes it wobble like jelly
+        b.shake = Math.max(0, b.shake - dt * 3); b.wob = Math.max(0, b.wob - dt * 2.4);
+        var s = b.shake * 0.5, w = Math.sin(b.wob * 15) * b.wob * 0.07;
+        if (b.prop) placeProp(b, rr(-s, s), rr(-s, s), 1 - 2 * w);
+        else {
+          var bw = b.shape === "box" ? 2 * b.hw : b.r, bd = b.shape === "box" ? 2 * b.hd : b.r;
+          b.mesh.scale.set(bw * (1 + w), b.ht * (1 - w), bd * (1 + w));
+          b.mesh.position.set(b.x + rr(-s, s), b.base + b.ht * (1 - w) / 2, b.z + rr(-s, s));
+        }
       }
       continue;
     }
@@ -2041,6 +2726,7 @@ function step(dt) {
   stepDust(dt);
   stepSparks(dt);
   stepRings(dt);
+  stepFlashes(dt);
   // the combo holds while something is going on, then has a short window
   if (combo.mult > 0 && !over) {
     if (busy()) combo.t = COMBO_WINDOW;
@@ -2051,37 +2737,46 @@ function step(dt) {
 // ---- camera, menu, styles --------------------------------------------------------
 var CAM = CAMS[0];
 var cam = { x: 0, y: 0, z: 0, zf: 1, yaw: -Math.PI / 2 };
+// hero.k blends the play camera (0) with a low one close behind the dozer (1):
+// a round opens on it, skyline and all, and rises; the end comes back down to
+// it and turns around the machine.
+var hero = { k: 1, spin: 0 };
 function placeCamera(dt) {
   var speed = Math.sqrt(dozer.vx * dozer.vx + dozer.vz * dozer.vz), sp3 = Math.sqrt(speed * speed + dozer.vy * dozer.vy);
   var k = 1 - Math.exp(-CAM_SMOOTH * dt);
   if (CAM.yaw === "chase") cam.yaw = wrap(cam.yaw + wrap(dozer.a - cam.yaw) * (1 - Math.exp(-3 * dt)));
-  var fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw), ahead = CAM.ahead || 0;
-  var tx = dozer.x + dozer.vx * CAM_LEAD + fx * ahead, tz = dozer.z + dozer.vz * CAM_LEAD + fz * ahead;
+  var want = over || playT < 0.8 ? 1 : 0;
+  if (CAM.ortho) hero.k = 0; else hero.k += (want - hero.k) * (1 - Math.exp(-(want ? 1.5 : 2.4) * dt));
+  if (over) hero.spin += dt * 0.3;
+  var e = hero.k * hero.k * (3 - 2 * hero.k), yaw = cam.yaw + hero.spin * e;
+  var fx = Math.cos(yaw), fz = Math.sin(yaw), ahead = (CAM.ahead || 0) * (1 - e), lead = CAM_LEAD * (1 - e);
+  var tx = dozer.x + dozer.vx * lead + fx * ahead, tz = dozer.z + dozer.vz * lead + fz * ahead;
   cam.x += (tx - cam.x) * k; cam.z += (tz - cam.z) * k;
   cam.y += (dozer.y * 0.7 - cam.y) * k;
   cam.zf += (1 + Math.min(speed, 32) * CAM_ZOOM - cam.zf) * k * 0.5;
   shake = Math.max(0, shake - dt * 2.2);
   var sx = (Math.random() - 0.5) * shake * 1.6, sz = (Math.random() - 0.5) * shake * 1.6;
-  var back = CAM.back * cam.zf, h = CAM.h * cam.zf;
+  var back = CAM.back * cam.zf * (1 - e) + 19 * e, h = CAM.h * cam.zf * (1 - e) + 7 * e;
   camera.position.set(cam.x - fx * back + sx, cam.y + h, cam.z - fz * back + sz);
-  if (CAM.back < 5) camera.up.set(fx, 0, fz); else camera.up.set(0, 1, 0);
-  camera.lookAt(cam.x + sx, cam.y, cam.z + sz);
+  if (back < 5) camera.up.set(fx, 0, fz); else camera.up.set(0, 1, 0);
+  camera.lookAt(cam.x + sx, cam.y + 3.4 * e, cam.z + sz);
   fovPunch = Math.max(0, fovPunch - dt * 18);
   if (CAM.ortho) {
     var oh = CAM.ortho * cam.zf * (1 + fovPunch * 0.01), aspect = W / H;
     orthoCam.left = -oh * aspect; orthoCam.right = oh * aspect; orthoCam.top = oh; orthoCam.bottom = -oh;
     orthoCam.updateProjectionMatrix();
   } else {                                // speed widens the lens a touch, a big moment kicks it
-    perspCam.fov = CAM.fov * (1 + 0.14 * clamp((sp3 - 20) / 20, 0, 1)) + fovPunch * CAM.fov / 30;
+    perspCam.fov = (CAM.fov * (1 + 0.14 * clamp((sp3 - 20) / 20, 0, 1)) + fovPunch * CAM.fov / 30) * (1 - e) + 56 * e;
     perspCam.updateProjectionMatrix();
   }
   if (scene.fog) {
-    var d = Math.sqrt(back * back + h * h), fk = STYLE.fog.length ? STYLE.fog : [0.75, 1.8];
-    scene.fog.near = d * fk[0]; scene.fog.far = d * fk[1];
+    var d = Math.sqrt(back * back + h * h), fk = STYLE.fogAbs ? null : STYLE.fog.length ? STYLE.fog : [0.75, 1.8];
+    scene.fog.near = fk ? d * fk[0] : STYLE.fogAbs[0]; scene.fog.far = fk ? d * fk[1] : STYLE.fogAbs[1];
   }
   var sp = STYLE.sunPos || [55, 70, 35];
   sun.position.set(cam.x + sp[0], sp[1], cam.z + sp[2]);
   sun.target.position.set(cam.x, 0, cam.z);
+  skyMesh.position.copy(camera.position); cloudGroup.rotation.y += dt * 0.004;
 }
 var menuEl = document.getElementById("menu"), menuOpen = false, camIdx = 0, styleIdx = 0;
 function applyCam(i) {
@@ -2102,13 +2797,15 @@ function applyStyle(i) {
   renderer.toneMappingExposure = STYLE.tone || 1;
   sun.shadow.normalBias = STYLE.lowpoly ? 0.05 : 0;
   matCache = {};
-  scene.traverse(function (o) { if (o.isMesh && (o.userData.hex !== undefined || o.userData.wall)) dress(o); });
+  buildBackdrop();
+  scene.traverse(function (o) { if (restyle(o)) dress(o); });
   buildings.forEach(function (b) { if (b.ao) b.ao.visible = !!STYLE.ao; });
+  aoMat.color.setHex(STYLE.arcade ? 0x2a1650 : 0x241a10);
   chunkMesh.material = makeMat({ color: 0xffffff });
-  dustMesh.material.color.setHex(STYLE.dust); markMesh.material.color.setHex(STYLE.mark);
+  dustMesh.material.color.setHex(STYLE.dust); dustMesh.material.flatShading = !!STYLE.lowpoly;
   buildParkMeshes();
   headlight.visible = !!STYLE.headlight;
-  scene.fog = STYLE.fog ? new THREE.Fog(STYLE.bg, 100, 300) : null;
+  scene.fog = STYLE.fog || STYLE.fogAbs ? new THREE.Fog(STYLE.bg, 100, 300) : null;
   scene.traverse(function (o) { if (o.material) o.material.needsUpdate = true; });
   renderer.setPixelRatio(STYLE.pixel || DPR);
   glCv.style.imageRendering = STYLE.pixel ? "pixelated" : "";
@@ -2139,7 +2836,7 @@ function refreshMenu() {
 
 // ---- draw ----------------------------------------------------------------------
 var showQ = new THREE.Quaternion(), qGoal = new THREE.Quaternion(), qTrick = new THREE.Quaternion(), qA = new THREE.Quaternion();
-var vUp = new THREE.Vector3();
+var vUp = new THREE.Vector3(), vEx = new THREE.Vector3();
 function ease(t) { return t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t); }
 function trickQuat(def, t, out) {         // the trick as a turn on top of the body: whole turns, back where it started
   var e = ease(clamp(t, 0, 1)), TAU = 2 * Math.PI;
@@ -2152,7 +2849,68 @@ function trickQuat(def, t, out) {         // the trick as a turn on top of the b
   return out;
 }
 function activeTrick() { return dozer.rail ? dozer.rail.trick : !dozer.ground ? dozer.air.cur : null; }
-function drawDozer(dt) {
+// the ring under the tracks wears the level's colour: what it matches, it breaks
+var levelRing = (function () {
+  var M = new Merger(), m4 = new THREE.Matrix4();
+  for (var i = 0; i < 8; i++) { var g = new THREE.RingGeometry(3.1, 3.34, 5, 1, i / 8 * 6.283, 0.5); g.rotateX(-Math.PI / 2); M.add(g, m4, 0xffffff); }
+  var m = new THREE.Mesh(M.build(), glowMat(0xffffff, 1.4, { transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+  m.frustumCulled = false; scene.add(m); return m;
+})();
+function spring(o, key, target, K, C, dt) { o[key + "V"] += (-K * (o[key] - target) - C * o[key + "V"]) * dt; o[key] += o[key + "V"] * dt; }
+function animDozer(dt, gdt, tk) {         // dt: real time (the springs, the lights), gdt: game time (the belts)
+  var onGround = dozer.ground && !dozer.rail, sdt = Math.min(dt, 1 / 30);
+  var vf = dozer.rail ? dozer.rail.v : dozer.ground ? dozer.vx * dozer.f.x + dozer.vy * dozer.f.y + dozer.vz * dozer.f.z : DZ.vf * Math.exp(-0.5 * gdt);
+  var live = gdt > 1e-5 && onGround;
+  var yawRate = live ? clamp(wrap(dozer.a - DZ.a) / gdt, -6, 6) : 0, acc = live ? clamp((vf - DZ.vf) / gdt, -70, 70) : 0;
+  DZ.a = dozer.a; DZ.vf = vf;
+  // the belts roll with the ground under them, each side at its own speed in a turn
+  var half = TRK.z * DOZER_SCALE;
+  DZ.phL += (vf - yawRate * half) * gdt / DOZER_SCALE; DZ.phR += (vf + yawRate * half) * gdt / DOZER_SCALE;
+  layTreads();
+  for (var w = 0; w < 4; w++) DZ.wheels[w].rotation.z = -(w < 2 ? DZ.phR : DZ.phL) / 0.47;
+  // the body rocks on its tracks: out of a turn, back under the throttle, forward on a hit
+  spring(DZ, "roll", onGround ? clamp(-yawRate * vf * 0.0045, -0.17, 0.17) : 0, 130, 11, sdt);
+  spring(DZ, "pitch", onGround ? clamp(acc * 0.0045, -0.1, 0.13) : 0, 130, 11, sdt);
+  DZ.roll = clamp(DZ.roll, -0.32, 0.32); DZ.pitch = clamp(DZ.pitch, -0.3, 0.3);
+  DZ.lean.rotation.set(DZ.roll, 0, DZ.pitch);
+  DZ.lean.position.y = 1.3 + Math.sin(hudT * 41) * 0.012 * (0.5 + dozer.throttle);   // the engine
+  // the blade: down to push, up in the air, thrown up through a trick
+  var bladeT = tk ? 0.2 + 0.3 * Math.sin(Math.PI * clamp(tk.t, 0, 1)) : dozer.rail ? 0.22 : !dozer.ground ? 0.3 : dozer.boost > 0 ? -0.07 : 0;
+  spring(DZ, "blade", bladeT, 150, 12, sdt);
+  DZ.blade = clamp(DZ.blade, -0.3, 0.8); DZ.bladeG.rotation.z = DZ.blade;
+  // the glow outline: faint at rest, full in the air, on a rail, in a boost, and with the combo
+  var want = STYLE.outline ? Math.max(!dozer.ground || dozer.rail ? 1 : 0, dozer.boost > 0 ? 0.9 : 0, Math.min(1, combo.mult / 6) * 0.8) : 0;
+  DZ.glow += (want - DZ.glow) * (1 - Math.exp(-(want > DZ.glow ? 12 : 3) * dt));
+  var gv = STYLE.outline ? DZ.glow : 0, eh = energyHex();
+  DZ.hullMat.opacity = clamp(gv, 0, 1); setGlow(DZ.hullMat, eh, 1.3 + 1.5 * Math.min(1, gv));
+  for (var hI = 0; hI < DZ.hulls.length; hI++) DZ.hulls[hI].visible = gv > 0.02;
+  // the beacon flashes while something is going on
+  DZ.beaconT += dt;
+  var lit = (combo.mult >= 3 || dozer.boost > 0 || !dozer.ground) && DZ.beaconT * 5 % 1 < 0.5;
+  setGlow(DZ.beaconMat, lit ? PAL.glow : 0x7a3ff0, lit ? 3.6 : 0.9);
+  // the boost
+  var boosting = dozer.boost > 0;
+  for (var fI = 0; fI < DZ.flames.length; fI++) {
+    var fl = DZ.flames[fI]; fl.visible = boosting;
+    if (boosting) fl.scale.set((1.2 + Math.random() * 1.3) * (fl.userData.r > 0.3 ? 1 : 0.65), fl.userData.r, fl.userData.r);
+  }
+  // the exhaust puffs under the throttle
+  DZ.puffT -= dt;
+  if (onGround && dozer.throttle > 0.1 && DZ.puffT <= 0 && !over) {
+    DZ.puffT = boosting ? 0.04 : 0.11;
+    vEx.set(1.05, 3.75, 0.5); DZ.body.localToWorld(vEx);
+    spawnDust(vEx.x, vEx.y, vEx.z, -dozer.vx * 0.06 + (Math.random() - 0.5), 2.4 + Math.random(), -dozer.vz * 0.06 + (Math.random() - 0.5), 0.12, boosting ? 0.7 : 0.42, 0.5, boosting ? 0xffc890 : 0xb7aee0);
+  }
+  // the level ring
+  var lr = levelRing.material, ringWant = onGround && !over ? 0.75 : 0;
+  lr.opacity += (ringWant - lr.opacity) * (1 - Math.exp(-8 * dt));
+  levelRing.visible = lr.opacity > 0.02;
+  setGlow(lr, tierGlow(level), 1.2 + levelFlash * 2);
+  levelRing.position.set(dozer.x + dozer.n.x * 0.14, dozer.y + dozer.n.y * 0.14, dozer.z + dozer.n.z * 0.14);
+  levelRing.quaternion.setFromUnitVectors(UPY, dozer.n).multiply(qA.setFromAxisAngle(UPY, hudT * 0.8));
+  levelRing.scale.setScalar(1 + levelFlash * 0.5);
+}
+function drawDozer(dt, gdt) {
   if (dozer.rail) bodyQuat(dozer.railF, dozer.railU, qGoal);
   else if (dozer.ground) bodyQuat(dozer.f, dozer.n, qGoal);
   else qGoal.copy(dozer.q);
@@ -2165,73 +2923,101 @@ function drawDozer(dt) {
   var up = COM + hop;
   dozer.mesh.position.set(dozer.x + vUp.x * up, dozer.y + vUp.y * up, dozer.z + vUp.z * up);
   dozer.squash *= Math.exp(-9 * dt);       // squash on landing, stretch on take-off, swell in a trick
-  var sq = dozer.squash, sw = 0.08 * puff;
+  var sq = dozer.squash, sw = 0.1 * puff;
   dozer.mesh.scale.set(1 + 0.6 * sq + sw, 1 - sq + sw, 1 + 0.6 * sq + sw);
-  dozer.flame.visible = dozer.boost > 0;
-  if (dozer.boost > 0) dozer.flame.scale.set(0.9 + Math.random() * 1.2, 0.5, 0.9);
+  animDozer(dt, gdt, tk);
 }
 
+// ---- the HUD: chunky letters in ink, pills, the tier colours --------------------------
 var pv = new THREE.Vector3();
-function txt(s, x, y, size, color, align) {
-  hx.font = "700 " + size + "px system-ui, sans-serif";
+var FONT = '"Arial Rounded MT Bold", "Avenir Next", "Trebuchet MS", system-ui, sans-serif', INK = "#2a1160";
+function txt(s, x, y, size, color, align, italic) {
+  hx.font = (italic ? "italic " : "") + "900 " + size + "px " + FONT;
   hx.textAlign = align || "left";
-  hx.lineWidth = 4; hx.strokeStyle = "rgba(0,0,0,0.6)"; hx.strokeText(s, x, y);
+  hx.lineWidth = Math.max(3, size * 0.27); hx.strokeStyle = INK;
+  hx.strokeText(s, x, y + Math.max(1, size * 0.08));     // the outline again, a little lower: a drop
+  hx.strokeText(s, x, y);
   hx.fillStyle = color || "#fff"; hx.fillText(s, x, y);
 }
+function pill(x, y, w, h, fill, stroke, lw) {
+  var r = Math.min(h / 2, w / 2);
+  hx.beginPath(); hx.moveTo(x + r, y); hx.arcTo(x + w, y, x + w, y + h, r); hx.arcTo(x + w, y + h, x, y + h, r);
+  hx.arcTo(x, y + h, x, y, r); hx.arcTo(x, y, x + w, y, r); hx.closePath();
+  if (fill) { hx.fillStyle = fill; hx.fill(); }
+  if (stroke) { hx.lineWidth = lw || 3; hx.strokeStyle = stroke; hx.stroke(); }
+}
+function comboCol(m) { return m < 3 ? "#ffd84a" : m < 6 ? "#ff9a3a" : m < 10 ? "#ff5aa8" : "#7af2ff"; }
 var hudT = 0;
 function drawHud(fps, dt) {
   hudT += dt;
   hx.setTransform(DPR, 0, 0, DPR, 0, 0);
   hx.clearRect(0, 0, W, H);
   hx.lineJoin = "round";
-  if (levelFlash > 0) { hx.globalAlpha = levelFlash * 0.35; hx.fillStyle = hexCss(TIERS[level].hex); hx.fillRect(0, 0, W, H); hx.globalAlpha = 1; }
+  if (levelFlash > 0) { hx.globalAlpha = levelFlash * 0.35; hx.fillStyle = hexCss(tierGlow(level)); hx.fillRect(0, 0, W, H); hx.globalAlpha = 1; }
 
   // speed lines, past a speed only rails, pit drops and boosts reach
   var sp3 = Math.sqrt(dozer.vx * dozer.vx + dozer.vy * dozer.vy + dozer.vz * dozer.vz);
   if (sp3 > 26) {
-    var la = clamp((sp3 - 26) / 16, 0, 0.55), diag = Math.sqrt(W * W + H * H) / 2;
-    hx.strokeStyle = "rgba(255,255,255," + la + ")"; hx.lineWidth = 2;
+    var la = clamp((sp3 - 26) / 16, 0, 0.6), diag = Math.sqrt(W * W + H * H) / 2;
+    hx.strokeStyle = "rgba(255,255,255," + la + ")"; hx.lineWidth = 2.5; hx.lineCap = "round";
     for (var sl = 0; sl < 22; sl++) {
-      var an = Math.random() * 6.283, r0 = diag * (0.62 + Math.random() * 0.2), r1 = diag * 1.05;
+      var an = Math.random() * 6.283, r0 = diag * (0.6 + Math.random() * 0.2), r1 = diag * 1.05;
       hx.beginPath(); hx.moveTo(W / 2 + Math.cos(an) * r0, H / 2 + Math.sin(an) * r0); hx.lineTo(W / 2 + Math.cos(an) * r1, H / 2 + Math.sin(an) * r1); hx.stroke();
     }
   }
 
-  // the gauge: level badge, the bar toward the next tier, the ten colours
-  var lc = hexCss(TIERS[level].hex);
-  hx.fillStyle = lc; hx.beginPath(); hx.arc(28, 30, 19, 0, 6.283); hx.fill();
-  hx.lineWidth = 3; hx.strokeStyle = "rgba(0,0,0,0.5)"; hx.stroke();
-  txt(String(level), 28, 37, 20, level >= 8 ? "#111" : "#fff", "center");
-  var bx = 56, bw = W - 70, by = 18;
-  hx.fillStyle = "rgba(0,0,0,0.45)"; hx.fillRect(bx, by, bw, 12);
-  if (level < 10) {
-    hx.fillStyle = hexCss(TIERS[level + 1].hex);
-    hx.fillRect(bx, by, bw * clamp(gauge / LEVEL_COST[level + 1], 0, 1), 12);
-  } else { hx.fillStyle = lc; hx.fillRect(bx, by, bw, 12); }
+  // the gauge: the level in its badge, the bar toward the next tier, the ten colours
+  var lc = hexCss(TIERS[level].hex), bx = 60, bw = W - 74, by = 16, bh = 18, k10;
+  var gk = level < 10 ? clamp(gauge / LEVEL_COST[level + 1], 0, 1) : 1;
+  gaugeShown = gk < gaugeShown ? gk : gaugeShown + (gk - gaugeShown) * (1 - Math.exp(-10 * dt)); k10 = gaugeShown;
+  pill(bx, by, bw, bh, "rgba(42,17,96,0.6)", INK, 3);
+  if (k10 > 0.02) {
+    hx.save(); pill(bx, by, bw, bh); hx.clip();
+    hx.fillStyle = level < 10 ? hexCss(TIERS[level + 1].hex) : lc; hx.fillRect(bx, by, bw * k10, bh);
+    hx.fillStyle = "rgba(255,255,255,0.3)"; hx.fillRect(bx, by + 2, bw * k10, bh * 0.36);       // the shine
+    hx.fillStyle = "rgba(255,255,255,0.85)"; hx.fillRect(bx + bw * k10 - 3, by, 3, bh);
+    hx.restore();
+  }
   for (var t = 1; t <= 10; t++) {
-    hx.globalAlpha = t <= level ? 1 : 0.3;
-    hx.fillStyle = hexCss(TIERS[t].hex); hx.fillRect(bx + (t - 1) * 16, by + 18, 12, 10);
+    var cx = bx + 8 + (t - 1) * 15, on = t <= level, cr = t === level ? 6 : 4.5;
+    hx.globalAlpha = on ? 1 : 0.4;
+    hx.beginPath(); hx.arc(cx, by + 33, cr, 0, 6.283); hx.fillStyle = hexCss(TIERS[t].hex); hx.fill();
+    hx.lineWidth = on ? 2 : 1.5; hx.strokeStyle = t === level ? "#fff" : INK; hx.stroke();
     hx.globalAlpha = 1;
   }
-  txt(level < 10 ? "Next: " + TIERS[level + 1].name : "Max level", W - 14, by + 28, 12, "#cfd6dd", "right");
+  txt(level < 10 ? "Next: " + TIERS[level + 1].name : "Max level", W - 14, by + 38, 12, level < 10 ? hexCss(tierGlow(level + 1)) : "#fff", "right");
+  var pulse = 1 + levelFlash * 0.35;
+  hx.beginPath(); hx.arc(30, 30, 22 * pulse, 0, 6.283); hx.fillStyle = INK; hx.fill();
+  hx.beginPath(); hx.arc(30, 29, 19 * pulse, 0, 6.283); hx.fillStyle = lc; hx.fill();
+  hx.lineWidth = 2.5; hx.strokeStyle = "rgba(255,255,255,0.85)"; hx.stroke();
+  txt(String(level), 30, 37, Math.round(21 * pulse), level === 9 || level === 7 ? INK : "#fff", "center");
 
-  txt("Score " + score, 14, 82, 18);
-  txt("Time " + Math.ceil(timeLeft), 14, 102, 15, timeLeft < 15 ? "#ff8a7a" : "#fff");
-  txt(Math.round(fps) + " fps", 14, H - 56, 11, "#9aa4ad");
+  txt("Score", 14, 80, 11, "#d9cdf2");
+  scoreBump = Math.max(0, scoreBump - dt * 3.5);
+  txt(String(score), 14, 104 + 3 * scoreBump, Math.round(26 * (1 + 0.35 * scoreBump)), scoreBump > 0.05 ? "#ffd84a" : "#fff", "left", true);
+  var secs = Math.ceil(timeLeft), low = timeLeft < 15;
+  txt(Math.floor(secs / 60) + ":" + ("0" + secs % 60).slice(-2), 14, 128, low ? Math.round(19 * (1 + 0.12 * Math.sin(hudT * 10))) : 17, low ? "#ff7a6a" : "#ffd84a");
+  txt(Math.round(fps) + " fps", 14, H - 56, 10, "#b9a9ee");
 
   if (combo.mult > 0) {                   // the combo: multiplier, points, the last moves, the window
     combo.bump = Math.max(0, combo.bump - dt * 5);
-    txt("x" + combo.mult, W / 2, 150, Math.round(34 * (1 + 0.35 * combo.bump)), "#ffd34d", "center");
-    txt(String(combo.base), W / 2, 172, 16, "#fff", "center");
-    txt(combo.list.join(" + "), W / 2, 192, 13, "#c9f27a", "center");
-    if (!busy()) { hx.fillStyle = "#ffd34d"; hx.fillRect(W / 2 - 50, 200, 100 * combo.t / COMBO_WINDOW, 4); }
+    var cc = comboCol(combo.mult);
+    hx.save(); hx.translate(W / 2, 168); hx.rotate(-0.07 + 0.05 * Math.sin(hudT * 6) * Math.min(1, combo.mult / 8));
+    txt("x" + combo.mult, 0, 0, Math.round((36 + Math.min(18, combo.mult)) * (1 + 0.4 * combo.bump)), cc, "center", true);
+    hx.restore();
+    txt(String(combo.base), W / 2, 192, 17, "#fff", "center");
+    txt(combo.list.join(" + "), W / 2, 211, 12, "#c9f27a", "center");
+    if (!busy()) {
+      pill(W / 2 - 52, 219, 104, 8, "rgba(42,17,96,0.6)", INK, 2);
+      pill(W / 2 - 50, 221, Math.max(4, 100 * combo.t / COMBO_WINDOW), 4, cc);
+    }
   }
   var tk = activeTrick();
   if (tk) {                               // the trick playing, and how far it has gone
-    txt(tk.def.name + (dozer.air.queued && !dozer.rail ? "  +1" : ""), W / 2, H - 120, 18, "#c9f27a", "center");
+    txt(tk.def.name + (dozer.air.queued && !dozer.rail ? "  +1" : ""), W / 2, H - 122, 19, "#fff", "center", true);
     var tb = clamp(tk.t, 0, 1), safe = !dozer.rail && tb < SKETCHY_AT;
-    hx.fillStyle = "rgba(0,0,0,0.45)"; hx.fillRect(W / 2 - 60, H - 112, 120, 6);
-    hx.fillStyle = safe ? "#ff8a7a" : "#c9f27a"; hx.fillRect(W / 2 - 60, H - 112, 120 * tb, 6);
+    pill(W / 2 - 62, H - 114, 124, 10, "rgba(42,17,96,0.6)", INK, 2);
+    pill(W / 2 - 60, H - 112, Math.max(6, 120 * tb), 6, safe ? "#ff7a6a" : "#9cf25a");
   } else if (!dozer.ground && !dozer.rail && dozer.air.t > 0.05) {
     var rem = predictAir();
     hx.globalAlpha = 0.6 + 0.4 * Math.sin(hudT * 12);
@@ -2240,36 +3026,43 @@ function drawHud(fps, dt) {
   }
   if (dozer.rail) {
     var R = dozer.rail, sg = R.seg >= 0 ? R.r.segs[R.seg].name : "Grind";
-    txt("Rail · " + sg, W / 2, H - 140, 16, "#ff9ad5", "center");
-  } else if (dozer.pit && dozer.ground) txt(dozer.pit.name, W / 2, H - 140, 14, "#ffb35a", "center");
-  if (dozer.boost > 0) txt("Boost", W / 2, H - 86, 15, "#ffb35a", "center");
-  else if (dozer.drift) txt("Drift", W / 2, H - 86, 15, "#a6ecff", "center");
+    txt("Rail · " + sg, W / 2, H - 142, 16, hexCss(R.r.col[0]), "center", true);
+  } else if (dozer.pit && dozer.ground) txt(dozer.pit.name, W / 2, H - 142, 14, "#ffb35a", "center");
+  if (dozer.boost > 0) txt("Boost", W / 2, H - 86, 16, "#ffb35a", "center", true);
+  else if (dozer.drift) txt("Drift", W / 2, H - 86, 16, "#ff8fd0", "center", true);
 
   for (var i = 0; i < floats.length; i++) {
     var f = floats[i], sx2, sy2;
     if (f.screen) { sx2 = f.x * W; sy2 = f.y * H - f.t * 20; }
     else { pv.set(f.x, f.y + f.t * 5, f.z).project(camera); sx2 = (pv.x + 1) / 2 * W; sy2 = (1 - pv.y) / 2 * H; }
-    var life = f.life || 1.2, k = f.pop ? 1 + 0.8 * Math.max(0, 1 - f.t / 0.14) : 1;
+    var life = f.life || 1.2, k = f.pop ? 1 + 0.9 * Math.max(0, 1 - f.t / 0.14) : 1;
     hx.globalAlpha = Math.max(0, 1 - Math.max(0, f.t - life + 0.4) / 0.4);
     hx.save(); hx.translate(sx2, sy2); if (f.rot) hx.rotate(f.rot);
-    txt(f.txt, 0, 0, Math.round((f.size || 16) * k), f.col || "#fff3c4", "center");
+    txt(f.txt, 0, 0, Math.round((f.size || 16) * k), f.col || "#fff3c4", "center", !!f.pop);
     hx.restore();
     hx.globalAlpha = 1;
   }
   if (joy.id >= 0) {
-    hx.strokeStyle = "rgba(255,255,255,0.35)"; hx.lineWidth = 3;
+    hx.strokeStyle = "rgba(255,255,255,0.45)"; hx.lineWidth = 3;
     hx.beginPath(); hx.arc(joy.sx, joy.sy, JOY_R, 0, 6.283); hx.stroke();
-    hx.fillStyle = "rgba(255,255,255,0.45)";
+    hx.fillStyle = "rgba(255,63,164,0.6)";
     hx.beginPath(); hx.arc(joy.x, joy.y, 22, 0, 6.283); hx.fill();
   }
-  txt("Phone: drag drive · tap or 2nd finger: jump, in the air a trick (hold: drift)", W / 2, H - 34, 10, "#cfd6dd", "center");
-  txt("Keys: arrows drive · space jump, in the air a trick · shift drift · M menu", W / 2, H - 18, 10, "#cfd6dd", "center");
+  var hint = over || menuOpen ? 1 : clamp((16 - playT) / 3, 0, 1);       // the controls fade once the round is under way
+  if (hint > 0) {
+    hx.globalAlpha = hint;
+    txt("Phone: drag drive · tap or 2nd finger: jump, in the air a trick (hold: drift)", W / 2, H - 34, 10, "#e6dcff", "center");
+    txt("Keys: arrows drive · space jump, in the air a trick · shift drift · M menu", W / 2, H - 18, 10, "#e6dcff", "center");
+    hx.globalAlpha = 1;
+  }
   if (over) {
-    hx.fillStyle = "rgba(0,0,0,0.55)"; hx.fillRect(0, H / 2 - 90, W, 170);
-    txt(overText, W / 2, H / 2 - 40, 32, "#ffd34d", "center");
-    txt("Score " + score + " · level " + level + " · best combo x" + stats.bestCombo, W / 2, H / 2 - 6, 15, "#fff", "center");
-    txt(flattened + " / " + total + " flattened · " + stats.tricks + " tricks · " + stats.bails + " bails", W / 2, H / 2 + 18, 14, "#cfd6dd", "center");
-    txt("Tap to play again", W / 2, H / 2 + 52, 15, "#cfd6dd", "center");
+    var oy = H * 0.3;                     // above the machine, which the camera is turning around
+    pill(14, oy - 96, W - 28, 176, "rgba(42,17,96,0.86)", "#ffd84a", 3);
+    txt(overText, W / 2, oy - 44, 34, "#ffd84a", "center", true);
+    txt("Score " + score, W / 2, oy - 8, 22, "#fff", "center");
+    txt("Level " + level + " · best combo x" + stats.bestCombo, W / 2, oy + 16, 14, "#e6dcff", "center");
+    txt(flattened + " / " + total + " flattened · " + stats.tricks + " tricks · " + stats.bails + " bails", W / 2, oy + 36, 13, "#e6dcff", "center");
+    txt("Tap to play again", W / 2, oy + 62, 15, "#ff8fd0", "center");
   }
 }
 
@@ -2281,13 +3074,15 @@ function frame(now) {
   var ts = 1;                             // slow motion: a perfect landing, a level, a trick in the air
   if (slowT > 0) { slowT -= rdt; ts = slowK; }
   if (!dozer.ground && !dozer.rail && dozer.air.cur) ts *= TRICK_TIME;
+  stopCd -= rdt;
+  if (stopT > 0) { stopT -= rdt; ts = 0.03; }             // hit-stop: the frame holds on the blow
   var dt = rdt * ts;
-  if (!menuOpen) step(dt);
+  if (!menuOpen) { step(dt); playT += rdt; }
   levelFlash = Math.max(0, levelFlash - rdt * 1.5);
   for (var f = floats.length - 1; f >= 0; f--) { floats[f].t += rdt; if (floats[f].t > (floats[f].life || 1.2)) floats.splice(f, 1); }
-  for (var d = 0; d < railDecals.length; d++) railDecals[d].material.opacity = 0.5 + 0.35 * Math.sin(now / 160 + d);
+  for (var d = 0; d < railDecals.length; d++) { railDecals[d].material.opacity = 0.5 + 0.4 * Math.sin(now / 160 + d); railDecals[d].scale.setScalar(1 + 0.08 * Math.sin(now / 160 + d)); }
   placeCamera(rdt);
-  drawDozer(rdt);
+  drawDozer(rdt, menuOpen ? 0 : dt);
   updateTrail(rdt);
   renderFrame(rdt);
   drawHud(fpsS, rdt);
@@ -2296,7 +3091,7 @@ function frame(now) {
     flattened: flattened, total: total, pits: pits.length, rails: rails.length, fps: Math.round(fpsS),
     x: Math.round(dozer.x), y: +dozer.y.toFixed(1), z: Math.round(dozer.z), ground: dozer.ground, onRail: !!dozer.rail,
     inPit: dozer.pit ? dozer.pit.name : "", trick: activeTrick() ? activeTrick().def.name : "", list: combo.list.join(" + "),
-    t: Math.round(ROUND_SECONDS - timeLeft) };
+    t: Math.round(ROUND_SECONDS - timeLeft), calls: renderer.info.render.calls };
   requestAnimationFrame(frame);
 }
 newCity();

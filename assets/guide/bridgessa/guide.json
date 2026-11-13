@@ -1,0 +1,411 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/bridgessa — do not edit",
+ "slug": "bridgessa",
+ "stamp": "42d4b1bbdb6ba100",
+ "en": {
+  "title": "Bridgessa",
+  "howTo": "Play your two hands to take what your contract demands",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "basics",
+      "title": "Win the tricks",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "You play both hands: yours at the bottom and the dummy at the top.",
+       "The highest card of the suit led wins the trick. Whoever wins it leads the next one."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "basics.en.webp",
+       "w": 420,
+       "h": 400,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "contract",
+      "title": "The contract",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The contract is the number of tricks you must win.",
+       "Every contract can be made, however the hidden cards lie."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "contract.en.webp",
+       "w": 528,
+       "h": 140,
+       "kind": "scene"
+      },
+      "blank": [
+       "node"
+      ]
+     },
+     {
+      "id": "tournee",
+      "title": "The tournée",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each contract you go down on costs a life. The tournée ends when you have none left."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tournee.en.webp",
+       "w": 528,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dummy",
+      "title": "The dummy",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The dummy is your partner's hand, face up. You play its cards too.",
+       "When the dummy wins a trick, it leads the next one. Win with the hand you want to lead from."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dummy.webp",
+       "w": 380,
+       "h": 168,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "defence",
+      "title": "The defence",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The defenders play perfectly. They never give a trick away."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "defence.webp",
+       "w": 340,
+       "h": 168,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "trumps",
+    "label": "Trumps",
+    "pages": [
+     {
+      "id": "trump",
+      "title": "Trumps",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "If you cannot follow suit, the highest trump wins the trick."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "trump.webp",
+       "w": 420,
+       "h": 400,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "notrump",
+      "title": "No trump",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "No suit is trump. Only a card of the suit led can win the trick."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "notrump.webp",
+       "w": 420,
+       "h": 400,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "score",
+    "label": "The score",
+    "pages": [
+     {
+      "id": "points",
+      "title": "What a trick pays",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "A ruff is a trick you win with a trump when you could not follow suit.",
+       "With your partner's help, a finesse is an attempt to win a trick with an intermediate card while a defender still holds a higher card."
+      ],
+      "rows": [
+       [
+        "A trick won",
+        "100",
+        null
+       ],
+       [
+        "A ruff",
+        "+30",
+        null
+       ],
+       [
+        "A finesse",
+        "+50",
+        null
+       ],
+       [
+        "An overtrick",
+        "+150",
+        null
+       ],
+       [
+        "The contract made",
+        "+300",
+        null
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "key": "favours",
+    "label": "Favours",
+    "pages": [
+     {
+      "id": "favours",
+      "title": "Favours",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Pick one favour out of three at the start, then after each contract made. It lasts the whole tournée.",
+       "The rail holds four favours. Some work on their own, the others take a click, once per deal."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "favours.en.webp",
+       "w": 458,
+       "h": 412,
+       "kind": "cut",
+       "alt": "VISION COUNTER Shows how many cards of each suit the defence still holds. COMMON HAND MISTRAL Swap a card of your hand with one of the dummy's, once per deal. USED WITH A CLICK COMMON"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Bridgessa",
+  "howTo": "Joue tes deux mains afin de lever ce que ton contrat exige",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "basics",
+      "title": "Remporter les levées",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Tu diriges les deux mains : la tienne en bas et celle du mort en haut.",
+       "La plus forte carte de la couleur demandée remporte la levée et son vainqueur entame la suivante."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "basics.fr.webp",
+       "w": 420,
+       "h": 399,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "contract",
+      "title": "Le contrat",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le contrat détermine le nombre exact de levées à remporter.",
+       "Chaque contrat est réalisable quelle que soit la disposition des cartes cachées."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "contract.fr.webp",
+       "w": 528,
+       "h": 140,
+       "kind": "scene"
+      },
+      "blank": [
+       "node"
+      ]
+     },
+     {
+      "id": "tournee",
+      "title": "La tournée",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque contrat chuté fait perdre une vie et la tournée s'arrête lorsque tu n'en as plus."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tournee.fr.webp",
+       "w": 528,
+       "h": 270,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "dummy",
+      "title": "Le mort",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le mort est la main visible de ton partenaire dont tu contrôles l'intégralité des cartes.",
+       "Si le mort remporte une levée, il entame la suivante. Choisis judicieusement quelle main doit l'emporter."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "dummy.webp",
+       "w": 380,
+       "h": 168,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "defence",
+      "title": "La défense",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Les défenseurs jouent de manière irréprochable et ne concèdent aucune levée inutilement."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "defence.webp",
+       "w": 340,
+       "h": 168,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "trumps",
+    "label": "Atouts",
+    "pages": [
+     {
+      "id": "trump",
+      "title": "Atouts",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "En l'absence de cartes dans la couleur demandée, l'atout le plus fort remporte la levée."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "trump.webp",
+       "w": 420,
+       "h": 400,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "notrump",
+      "title": "Sans-atout",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Sans aucun atout, seule une carte de la couleur demandée peut remporter la levée."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "notrump.webp",
+       "w": 420,
+       "h": 400,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "score",
+    "label": "Le score",
+    "pages": [
+     {
+      "id": "points",
+      "title": "Valeur des levées",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Une coupe correspond à une levée remportée grâce à un atout lorsqu'il est impossible de fournir à la couleur demandée.",
+       "Grâce à ton partenaire, une impasse consiste à tenter de remporter une levée avec une carte intermédiaire, alors qu'un défenseur possède encore une carte supérieure."
+      ],
+      "rows": [
+       [
+        "Levée gagnée",
+        "100",
+        null
+       ],
+       [
+        "Coupe",
+        "+30",
+        null
+       ],
+       [
+        "Impasse",
+        "+50",
+        null
+       ],
+       [
+        "Levée de mieux",
+        "+150",
+        null
+       ],
+       [
+        "Contrat réussi",
+        "+300",
+        null
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "key": "favours",
+    "label": "Faveurs",
+    "pages": [
+     {
+      "id": "favours",
+      "title": "Faveurs",
+      "eyebrow": null,
+      "lv": 3,
+      "text": [
+       "Sélectionne une Faveur parmi trois en début de tournée puis après chaque contrat réussi.",
+       "Le rail peut accueillir quatre Faveurs : certaines sont passives, d'autres s'activent d'un Clic une fois par donne."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "favours.fr.webp",
+       "w": 458,
+       "h": 412,
+       "kind": "cut",
+       "alt": "VISION COMPTEUR Indique le nombre de cartes restantes de chaque couleur chez les défenseurs. COMMUNE MAIN MISTRAL Échange une carte de ta main avec une carte du mort une fois par donne. S'ACTIVE D'UN SIMPLE CLIC COMMUNE"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

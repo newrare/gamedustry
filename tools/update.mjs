@@ -20,7 +20,8 @@
     - push to itch, or anywhere else outward-facing. `deploy-itch.mjs` is one
       command and it is a decision.
     - reshoot screenshots or covers. Two minutes of headless Chrome per game,
-      and only a human knows whether the look changed.
+      and only a human knows whether the look changed. Same for the pictures
+      of the site's guide pages — their WORDS, though, it refreshes itself.
     - commit, or touch a branch.
 */
 
@@ -66,11 +67,19 @@ function step(label, args) {
 console.log('build');
 step('playables and web sources', ['tools/build/build.mjs']);
 step('site/games.js and the root gallery', ['tools/build/gen-catalogues.mjs']);
+/* The site's guide pages hold no word of their own: assets/guide/<slug>/ is
+   read back out of each game (Game.guide, both languages). Only a game whose
+   game.js or manifest moved is read again — a second of headless Chrome
+   apiece, and nothing at all when no game changed — so a rule edited in a game
+   is the same rule on the site by the end of this run. The PICTURES are not
+   retaken: that is `--shoot`, and it is in the list below. */
+const guides = step("the site's guides, from the games' own", ['tools/build/gen-guides.mjs']);
 
 console.log('verify');
 step('artifacts match their sources', ['tools/build/build.mjs', '--check']);
 step('catalogues are up to date', ['tools/build/gen-catalogues.mjs', '--check']);
 step('creatives are within budget', ['tools/build/check-size.mjs']);
+step('the guides are as old as their games', ['tools/build/gen-guides.mjs', '--check']);
 
 // --- what changed, and therefore what is left ----------------------------
 
@@ -151,6 +160,18 @@ if (!where) {
       '  shoot-store rebuilds the listing images out of the fresh captures — the',
       '  phone gallery, the two desk pictures and the itch cover, in both languages.',
       '  Then upload them on the itch page; there is no API for the gallery.'
+    ].join('\n'));
+  }
+
+  if (games.length) {
+    /* What the refresh above reported: a page with a picture nobody shot. */
+    const unshot = guides.split('\n').filter((l) => /not shot yet/.test(l))
+      .map((l) => l.trim().split(/\s+/)[0]);
+    left.push([
+      "the site's guide pages took the new WORDS on their own; their PICTURES are only retaken on demand:",
+      ...games.map((s) => `    node tools/build/gen-guides.mjs --shoot ${s}`
+        + (unshot.includes(s) ? '      # has pages with no picture yet' : '')),
+      '  Run it when a guide page was added, or when what a page draws changed.'
     ].join('\n'));
   }
 

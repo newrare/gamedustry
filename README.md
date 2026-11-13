@@ -122,7 +122,9 @@ gamedustry/
 │   ├── lib/serve.mjs         ← the lab servers' HTTP plumbing: 127.0.0.1, Host check
 │   ├── build/                ← assemble
 │   │   ├── build.mjs         ← a game: --target=playable|web, --check
-│   │   ├── build-site.mjs    ← site/ + the web builds into dist/site/
+│   │   ├── build-site.mjs    ← site/ + the web builds into dist/site/, every page in /… and /fr/…
+│   │   ├── site-guide.mjs    ← the site's guide pages (/guide/<slug>), from assets/guide/
+│   │   ├── gen-guides.mjs    ← each game's own guide read out of its build → assets/guide/ (--shoot: pictures)
 │   │   ├── gen-catalogues.mjs← the two catalogues, from the manifests
 │   │   ├── extract.mjs       ← the one-shot that split the motor out of the games
 │   │   └── check-size.mjs    ← verify files stay under the size budget
@@ -140,8 +142,6 @@ gamedustry/
 │   │   ├── shoot-screens.mjs ← replay each game headless into assets/image/screen/
 │   │   ├── cut-objects.mjs   ← a sheet of objects → one transparent PNG each
 │   │   │                        (assets/image/master/<slug>-object-*.png → assets/image/object/)
-│   │   ├── shoot-cover.mjs   ← shoot lab/cover-card.html into assets/image/itch/cover/
-│   │   │                        (--play → the 1024x500 Play graphic, assets/image/google/feature/)
 │   │   ├── shoot-store.mjs   ← shoot lab/store-card.html into assets/image/<store>/
 │   │   │                        (the listing images, FR and EN of each)
 │   │   ├── serve-store.mjs   ← the server lab/store-card.html composes over
@@ -367,15 +367,14 @@ a raw capture is a dial on a dark background next to twelve other dials on dark
 backgrounds. `lab/store-card.html` composes the listing images out of a real
 frame of play, the game's own character, two or three of its own objects, its
 logotype and its typeface, with **one punchline in the player's language** over
-it — three formats, two languages, into `assets/image/google/<lang>/` and
+it — four formats, two languages, into `assets/image/google/<lang>/` and
 `assets/image/itch/<lang>/`:
 
 ```bash
 node tools/lab/shoot-screens.mjs radiam      # the raw captures, assets/image/screen/
-node tools/lab/shoot-store.mjs radiam        # phone 1080×1920, desk 1920×1080, thumb 630×500
+node tools/lab/shoot-store.mjs radiam        # phone 1080×1920, desk 1920×1080, itch 630×500, feature 1024×500
 node tools/lab/shoot-store.mjs radiam --format desk --lang fr
 node tools/lab/shoot-store.mjs --lines       # print the copy, shoot nothing
-node tools/lab/shoot-cover.mjs radiam --play   # the Play feature graphic, assets/image/google/feature/
 ```
 
 The punchlines live in `store.copy` in each `manifest.json` and nowhere else —
@@ -471,20 +470,24 @@ the Vercel build command — see
    picture invented for the shot:
    ```bash
    node tools/lab/shoot-screens.mjs            # all games; add a slug to redo one
-   node tools/lab/shoot-screens.mjs --map-only # just the map, -11, nothing renumbered
-   SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera   # what each shot caught
+   node tools/lab/shoot-screens.mjs --map-only # just the map, nothing renumbered
    ```
+
+node tools/lab/shoot-screens.mjs --doors-only # every village door, one shot a tab
+SHOOT_DEBUG=1 node tools/lab/shoot-screens.mjs vipera # what each shot caught
+
+````
 1. Shoot the listing images — `lab/store-card.html` dresses those captures with
-   the game's character, its own objects, its logotype and one punchline per
-   language, in the three shapes a store asks for. `make store` opens it as an
-   editor: three layers, every piece dragged onto the card, a magnetic grid, and
-   a layout that is saved per game and duplicated to the others as the template
-   for its format.
-   ```bash
-   make store                                  # compose one by hand, and save it
-   node tools/lab/shoot-store.mjs              # 13 games, en + fr, all three formats
-   node tools/lab/shoot-store.mjs radiam --format thumb   # just the itch cover
-   ```
+the game's character, its own objects, its logotype and one punchline per
+language, in the four shapes a store asks for. `make store` opens it as an
+editor: three layers, every piece dragged onto the card, a magnetic grid, and
+a layout that is saved per game and duplicated to the others as the template
+for its format.
+```bash
+make store                                  # compose one by hand, and save it
+node tools/lab/shoot-store.mjs              # 13 games, en + fr, all four formats
+node tools/lab/shoot-store.mjs radiam --format itch    # just the itch cover
+````
 
 ## Game catalog
 

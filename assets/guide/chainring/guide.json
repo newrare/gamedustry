@@ -1,0 +1,643 @@
+{
+ "generated": "by tools/build/gen-guides.mjs from games/chainring — do not edit",
+ "slug": "chainring",
+ "stamp": "9c952e93fe36a5d0",
+ "en": {
+  "title": "Chainring",
+  "howTo": "Tap to the beat, at the exact instant the ball hits a light ring. Don't tap the dark rings",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "The basics",
+    "pages": [
+     {
+      "id": "tap",
+      "title": "Click on the beat",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Click the instant the ball touches a ring. The ring glows while your click can count.",
+       "A long flight leaves an empty beat. Clicking on it counts as a miss."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tap.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "timing",
+      "title": "Timing",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clicking off the beat or making a mistake breaks your combo, but costs no extra points."
+      ],
+      "rows": [
+       [
+        "Perfect",
+        "×3",
+        "#ffd43b"
+       ],
+       [
+        "Good",
+        "×2",
+        "#69db7c"
+       ],
+       [
+        "OK",
+        "×1.5",
+        "#4dabf7"
+       ],
+       [
+        "Close",
+        "×1",
+        "#ffa94d"
+       ]
+      ],
+      "pic": {
+       "file": "timing.webp",
+       "w": 480,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Combo and mega bonus",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "The combo multiplies every hit and every mega bonus."
+      ],
+      "rows": [
+       [
+        "Every 5 hits in a row",
+        "+20 × combo",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "combo.en.webp",
+       "w": 520,
+       "h": 120,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "doom",
+      "title": "The spiked ring",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "When the clock runs out, a red spiked ring closes in on the ball.",
+       "No click can stop the spiked ring. Once it reaches the ball, the round is over."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "doom.webp",
+       "w": 320,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "clean",
+      "title": "The third star",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Each stage asks for a score. The third star also limits your misses.",
+       "A bad click, a dark ring clicked or a ring let by is a miss."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "clean.en.webp",
+       "w": 356,
+       "h": 128,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "full",
+      "title": "Full track",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "The last stage of each world lasts its whole track, and asks for a bigger score."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "full.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "neon",
+    "label": "Neon",
+    "pages": [
+     {
+      "id": "rewind",
+      "title": "Rewind ring",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Click a 'rewind' ring like any other ring. Every ring behind it is pushed back out.",
+       "Rewind rings rush back in time for their beat. Trust the music, not your eyes."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rewind.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "amber",
+    "label": "Amber",
+    "pages": [
+     {
+      "id": "sticky",
+      "title": "Sticky ring",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "The ball sticks to a sticky ring and rides the rim, then the ring bursts."
+      ],
+      "rows": [
+       [
+        "The ball lands",
+        "Click",
+        null
+       ],
+       [
+        "2 beats later, the ring bursts",
+        "Click",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "sticky.webp",
+       "w": 340,
+       "h": 306,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "eclipse",
+    "label": "Eclipse",
+    "pages": [
+     {
+      "id": "dark",
+      "title": "Dark ring",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Don't click a dark ring. The ball bounces off it on its own."
+      ],
+      "rows": [
+       [
+        "Left alone",
+        "Perfect",
+        "#ffd43b"
+       ],
+       [
+        "Clicked",
+        "Miss",
+        "#ff6b6b"
+       ]
+      ],
+      "pic": {
+       "file": "dark.webp",
+       "w": 340,
+       "h": 306,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "phantom",
+      "title": "Phantom ring",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "A phantom ring is barely visible as it closes in. It shows its true colour one beat before the ball."
+      ],
+      "rows": [
+       [
+        "Shows bright",
+        "Click",
+        null
+       ],
+       [
+        "Shows dark",
+        "Leave it",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "phantom.webp",
+       "w": 510,
+       "h": 190,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "glacier",
+    "label": "Glacier",
+    "pages": [
+     {
+      "id": "gap",
+      "title": "Mixed ring",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "A mixed ring meets the ball in mid-flight. What counts is the part the ball touches."
+      ],
+      "rows": [
+       [
+        "Bright part",
+        "Click",
+        null
+       ],
+       [
+        "Dark part",
+        "Leave it",
+        null
+       ],
+       [
+        "On a seam",
+        "Either",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gap.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fragile",
+      "title": "Fragile ring",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "A fragile ring is cracked. Two beats before the ball arrives, it either shatters or holds."
+      ],
+      "rows": [
+       [
+        "Holds",
+        "Click",
+        null
+       ],
+       [
+        "Shatters",
+        "Leave it",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "fragile.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "fr": {
+  "title": "Chainring",
+  "howTo": "Tape en rythme, à l'instant précis où la bille touche un anneau clair. Ne frappe pas les anneaux sombres",
+  "chapters": [
+   {
+    "key": "basics",
+    "label": "Les bases",
+    "pages": [
+     {
+      "id": "tap",
+      "title": "Taper en rythme",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Clique au moment précis où la bille touche un anneau. Le cercle brille tant que la fenêtre de frappe est active.",
+       "Une phase de vol prolongée crée une pause dans le rythme. Frapper pendant cet intervalle est comptabilisé comme un raté."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "tap.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "timing",
+      "title": "Précision",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Taper à contre temps ou faire une erreur réinitialise ton combo sans perdre de points supplémentaire."
+      ],
+      "rows": [
+       [
+        "Parfait",
+        "×3",
+        "#ffd43b"
+       ],
+       [
+        "Bien",
+        "×2",
+        "#69db7c"
+       ],
+       [
+        "OK",
+        "×1,5",
+        "#4dabf7"
+       ],
+       [
+        "Presque",
+        "×1",
+        "#ffa94d"
+       ]
+      ],
+      "pic": {
+       "file": "timing.webp",
+       "w": 480,
+       "h": 200,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "combo",
+      "title": "Combo et méga bonus",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Le multiplicateur de Combo s'applique à chaque frappe réussie ainsi qu'à chaque méga bonus."
+      ],
+      "rows": [
+       [
+        "Toutes les 5 frappes réussies",
+        "+20 × combo",
+        "#ffd43b"
+       ]
+      ],
+      "pic": {
+       "file": "combo.fr.webp",
+       "w": 520,
+       "h": 119,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "doom",
+      "title": "L'anneau à pointes",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Lorsque le temps imparti est écoulé, un anneau rouge à pointes se resserre inévitablement sur la bille.",
+       "Aucune frappe ne peut bloquer l'anneau à pointes. Dès qu'il entre en contact avec la bille, la partie prend fin."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "doom.webp",
+       "w": 320,
+       "h": 300,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "clean",
+      "title": "La troisième étoile",
+      "eyebrow": null,
+      "lv": null,
+      "text": [
+       "Chaque stage exige d'atteindre un certain score. L'obtention de la troisième étoile impose en plus un nombre limité de ratés.",
+       "Une frappe imprécise, toucher un anneau sombre ou manquer un anneau compte comme un raté."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "clean.fr.webp",
+       "w": 356,
+       "h": 127,
+       "kind": "cut"
+      }
+     },
+     {
+      "id": "full",
+      "title": "Musique complète",
+      "eyebrow": null,
+      "lv": 6,
+      "text": [
+       "Le stage final de chaque monde s'étend sur l'intégralité du morceau et nécessite un score bien plus élevé."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "full.webp",
+       "w": 500,
+       "h": 300,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "neon",
+    "label": "Néon",
+    "pages": [
+     {
+      "id": "rewind",
+      "title": "Anneau inverse",
+      "eyebrow": null,
+      "lv": 1,
+      "text": [
+       "Frappe l'anneau de 'recul' comme un anneau classique : cela aura pour effet de repousser tous les anneaux situés derrière lui.",
+       "Les anneaux 'retours' reculent vivement pour se caler sur la mesure. Fais confiance à la musique plutôt qu'à ton regard."
+      ],
+      "rows": [],
+      "pic": {
+       "file": "rewind.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "amber",
+    "label": "Ambre",
+    "pages": [
+     {
+      "id": "sticky",
+      "title": "Anneau collant",
+      "eyebrow": null,
+      "lv": 7,
+      "text": [
+       "La bille se fixe sur l'anneau collant et suit sa bordure jusqu'à ce que l'anneau finisse par éclater."
+      ],
+      "rows": [
+       [
+        "Arrivée de la bille",
+        "Taper",
+        null
+       ],
+       [
+        "L'anneau éclate 2 Beats plus tard",
+        "Taper",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "sticky.webp",
+       "w": 340,
+       "h": 306,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "eclipse",
+    "label": "Éclipse",
+    "pages": [
+     {
+      "id": "dark",
+      "title": "Anneau sombre",
+      "eyebrow": null,
+      "lv": 13,
+      "text": [
+       "Ne touche surtout pas à l'anneau sombre : la bille rebondira automatiquement à son contact."
+      ],
+      "rows": [
+       [
+        "Laisser passer",
+        "Parfait",
+        "#ffd43b"
+       ],
+       [
+        "Taper",
+        "Manqué",
+        "#ff6b6b"
+       ]
+      ],
+      "pic": {
+       "file": "dark.webp",
+       "w": 340,
+       "h": 306,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "phantom",
+      "title": "Anneau fantôme",
+      "eyebrow": null,
+      "lv": 16,
+      "text": [
+       "Presque invisible lors de son approche, l'anneau fantôme ne dévoile sa véritable nature qu'un Beat exactement avant l'impact."
+      ],
+      "rows": [
+       [
+        "Révélé clair",
+        "Taper",
+        null
+       ],
+       [
+        "Révélé sombre",
+        "Laisser passer",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "phantom.webp",
+       "w": 510,
+       "h": 190,
+       "kind": "scene"
+      }
+     }
+    ]
+   },
+   {
+    "key": "glacier",
+    "label": "Glacier",
+    "pages": [
+     {
+      "id": "gap",
+      "title": "Anneau mixte",
+      "eyebrow": null,
+      "lv": 19,
+      "text": [
+       "L'anneau mixte croise la bille durant sa trajectoire. Seul compte le segment spécifique en contact avec la bille."
+      ],
+      "rows": [
+       [
+        "Partie claire",
+        "Taper",
+        null
+       ],
+       [
+        "Partie sombre",
+        "Laisser passer",
+        null
+       ],
+       [
+        "Sur une jonction",
+        "Au choix",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "gap.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     },
+     {
+      "id": "fragile",
+      "title": "Anneau fragile",
+      "eyebrow": null,
+      "lv": 22,
+      "text": [
+       "L'anneau fragile présente des fissures : exactement deux Beats avant le contact, soit il se brise, soit il se maintient."
+      ],
+      "rows": [
+       [
+        "L'anneau tient",
+        "Taper",
+        null
+       ],
+       [
+        "L'anneau se brise",
+        "Laisser passer",
+        null
+       ]
+      ],
+      "pic": {
+       "file": "fragile.webp",
+       "w": 500,
+       "h": 266,
+       "kind": "scene"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}
