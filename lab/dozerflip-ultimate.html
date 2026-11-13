@@ -14,7 +14,10 @@
        lab/models/library.js — tracks that run, a blade that lifts, reaches
        and spins — with the air tricks played as dozer-anim plays them
        (crouch, launch, the blade in the air, the landing ring) and the
-       impossible blade's electric arcs, which here are the FURY.
+       impossible blade's electric arcs.
+     - THE DOZER'S EFFECTS (effect-3d.html): grind sparks on a ramp or a
+       rail, a Super Saiyan aura through the FURY, a rocket boost in a dash,
+       magic sparkles on a crystal picked up.
      - ITS COLOURS (lowpoly-direction.html): the Arctic direction, a white
        machine with a red cab, on the scene's arctic palette.
      - THE LIGHT (lowpoly-look.html): three ambiances, one per future biome —
@@ -265,8 +268,22 @@ const TRICKS = [   // the prototype's list and points, dozer-anim's turns (pitch
   { name: "Triple kickflip", dur: 1.0, pts: 360, roll: 3, blade: "bx" },
   { name: "Double backflip", dur: 1.15, pts: 420, pitch: 2 },
   { name: "Rodeo 720", dur: 1.3, pts: 500, yaw: 2, pitch: 1 },
-  { name: "Dozer tornado", dur: 1.6, pts: 650, yaw: 3, roll: 2, blade: "bz" }
+  { name: "Dozer tornado", dur: 1.6, pts: 650, yaw: 3, roll: 2, blade: "bz" },
+  // the impossible ones: dozer-anim's blade clips played in the air (pose: u the trick's 0..1, r eased, p the pose)
+  { name: "Propeller", dur: 0.95, pts: 280, roll: 1, pose: (u, r, p) => { const b = bell(u); p.lift = 0.6 * b; p.reach = 0.9 * b; p.bx = 6 * TAU * r; } },
+  { name: "Windmill", dur: 1.0, pts: 300, pitch: -1, pose: (u, r, p) => { const b = bell(u); p.lift = 0.32 * b; p.reach = 1 * b; p.bz = -4 * TAU * r; } },
+  { name: "Turntable", dur: 0.9, pts: 260, yaw: -1, pose: (u, r, p) => { const b = bell(u); p.lift = 0.3 * b; p.reach = 1.7 * b; p.by = 3 * TAU * r; } },
+  { name: "Blade varial", dur: 0.9, pts: 300, yaw: 1, pose: (u, r, p) => { const b = bell(u); p.lift = 0.4 * b; p.reach = 0.6 * b; p.by = -TAU * r; } },   // the blade stays put, the dozer turns round it
+  { name: "Headbanger", dur: 0.8, pts: 220, roll: 1, pose: (u, r, p) => { const b = bell(u), w = Math.sin(6 * Math.PI * u); p.lift = 0.25 + 0.2 * Math.abs(w); p.tilt = 0.6 * w * b; p.pz = 0.25 * w * b; } },
+  { name: "Superman", dur: 0.75, pts: 240, pose: (u, r, p) => { const b = bell(u); p.reach = 2 * b; p.lift = 0.15 * b; p.pz = -0.45 * b; p.track = -10 * b; } },
+  { name: "Moonwalk 720", dur: 1.2, pts: 420, yaw: -2, pose: (u, r, p) => { p.track = -14 * bell(u); p.lift = 0.5 * bell(u); } },
+  { name: "Barrel buster", dur: 1.35, pts: 480, roll: 2, pitch: 1, pose: (u, r, p) => { const b = bell(u); p.reach = 0.8 * b; p.bx = 2 * TAU * r; } },
+  { name: "Copter", dur: 1.4, need: 0.95, pts: 520, yaw: 1, hover: 0.35,   // the blade lies flat and turns into a rotor: the fall slows
+    pose: (u, r, p) => { const b = smooth(u / 0.15) * (1 - smooth((u - 0.85) / 0.15)); p.lift = 1.35 * b; p.tilt = -1.35 * b; p.reach = 0.6 * b; p.bz = Math.PI / 2 * b; p.by = 14 * TAU * r; } },
+  { name: "Galaxy dozer", dur: 2.0, pts: 900, yaw: 4, roll: 3, pitch: 1,
+    pose: (u, r, p) => { const b = bell(u); p.reach = 1.2 * b; p.bx = 3 * TAU * r; p.by = -2 * TAU * r; p.bz = 2 * TAU * r; p.track = 20 * b; } }
 ];
+function bell(u) { return smooth(u / 0.2) * (1 - smooth((u - 0.8) / 0.2)); }   // in, held, out: a pose that ends where it began
 const RAIL_TRICKS = [
   { name: "Rail hop 360", dur: 0.6, pts: 90, yaw: 1, hop: 1 },
   { name: "Rail kickflip", dur: 0.55, pts: 90, roll: 1, hop: 1 },
@@ -1057,7 +1074,7 @@ function touchBonus() {
     D.boost = Math.max(D.boost, 0.8);
     E.fovKick += 3; E.st = Math.max(E.st, 0.15);
     floatPts(new V3(b.x, b.y + 0.6, b.z), "×" + GS.mult.toFixed(1), "#4fe8ff");
-    sparks(new V3(b.x, b.y, b.z), 14, 7, 0x4fe8ff);
+    fxSparkle(new V3(b.x, b.y, b.z));
   }
 }
 const trackAt = (i) => TR.P.subarray(4 * i, 4 * i + 4);
@@ -1472,8 +1489,8 @@ const headSpot = new THREE.SpotLight(0xffffff, 0, 16, 0.55, 0.7, 2);
 const headPool = lightPool(3.2, 0.03, 0, 1.4, "head", root, 1.6);
 
 // =============================================================================
-// 9. THE JUICE — particles, sprites, rings, ghosts, the trail (juice-3d), the
-//    impossible blade (dozer-anim)
+// 9. THE JUICE — particles, sprites, rings (juice-3d), the impossible blade
+//    (dozer-anim), and the dozer's own effects (lab/effect-3d.html)
 // =============================================================================
 const dummy = new THREE.Object3D();
 class Pool {
@@ -1565,7 +1582,7 @@ class SpritePool {
   }
   spawn(o) {
     const q = this.s[this.next]; this.next = (this.next + 1) % this.s.length;
-    Object.assign(q, { alive: true, age: 0, life: o.life, s0: o.s0, rot: o.rot || 0 });
+    Object.assign(q, { alive: true, age: 0, life: o.life, s0: o.s0, rot: o.rot || 0, aspect: o.aspect || 1 });
     q.pos.copy(o.pos); q.sp.material.map = o.map; q.sp.material.needsUpdate = true;
     q.sp.visible = true; return q;
   }
@@ -1576,12 +1593,13 @@ class SpritePool {
       if (q.age >= q.life) { q.alive = false; q.sp.visible = false; continue; }
       const t = q.age / q.life, a = Math.min(1, q.age / 0.12);
       const s = q.s0 * (a < 1 ? a * 1.3 : 1.3 - 0.3 * Math.min(1, (q.age - 0.12) / 0.1));
-      q.sp.position.copy(q.pos); q.sp.scale.set(s, s, 1);
+      q.sp.position.copy(q.pos); q.sp.scale.set(s, s * q.aspect, 1);
       q.sp.material.rotation = q.rot; q.sp.material.opacity = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
     }
   }
 }
 const S_POW = new SpritePool(6);
+const WHITE = new THREE.Color(0xffffff);
 function pow(word, at, scale, fill, core) { S_POW.spawn({ pos: at, life: 0.7, s0: 1.15 * scale, rot: mr(-0.25, 0.25), map: powTexture(word, fill, core) }); }
 
 const RINGS = Array.from({ length: 6 }, () => {
@@ -1593,38 +1611,6 @@ function ring(pos, r, life = 0.5, color = 0xffffff) {
   const q = RINGS[ringNext]; ringNext = (ringNext + 1) % RINGS.length;
   Object.assign(q, { age: 0, life, r, alive: true }); q.m.position.set(pos.x, pos.y + 0.04, pos.z); q.m.material.color.set(color); q.m.visible = true;
 }
-
-// afterimages: the dozer's shape, flat colour, on its past positions (dash and fury)
-const GHOSTS = 5, HIST = 26, GHOST_STEP = 3;
-const hist = Array.from({ length: HIST }, () => new THREE.Matrix4());
-let histHead = 0;
-const ghosts = [];
-function buildGhosts() {
-  const tmp = model.clone(true), parts = [];
-  tmp.position.set(0, 0, 0); tmp.scale.setScalar(1); tmp.updateMatrixWorld(true);
-  tmp.traverse((o) => {
-    if (!o.isMesh) return;
-    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
-    for (const k of Object.keys(g.attributes)) if (k !== "position") g.deleteAttribute(k);
-    g.morphAttributes = {};
-    parts.push(g.applyMatrix4(o.matrixWorld));
-  });
-  const geo = mergeGeometries(parts);
-  for (let i = 0; i < GHOSTS; i++) {
-    const m = new THREE.MeshBasicMaterial({ color: 0x9fe6ff, transparent: true, opacity: 0, depthWrite: false });
-    const w = new THREE.Mesh(geo, m); w.matrixAutoUpdate = false; w.visible = false; w.userData.mat = m;
-    scene.add(w); ghosts.push(w);
-  }
-}
-// the light trail: two ribbons from the rear corners
-const TN = 22;
-const trailPos = new Float32Array(TN * 6), trailCol = new Float32Array(TN * 6);
-const trailGeo = new THREE.BufferGeometry();
-trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPos, 3).setUsage(THREE.DynamicDrawUsage));
-trailGeo.setAttribute("color", new THREE.BufferAttribute(trailCol, 3).setUsage(THREE.DynamicDrawUsage));
-{ const idx = []; for (let i = 0; i < TN - 1; i++) { const a = 2 * i; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trailGeo.setIndex(idx); }
-const trail = new THREE.Mesh(trailGeo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
-trail.frustumCulled = false; scene.add(trail);
 
 // ---- the impossible blade: electric arcs from the push arms to the blade (dozer-anim)
 const rT = new V3(), rV = new V3(), rSd = new V3();
@@ -1665,6 +1651,401 @@ function arcEnds(a, i, A, B) {
   else { rig.bladePoint(a.u, a.v, A); rig.bladePoint(-a.u * 0.6, -a.v * 0.7, B); }
 }
 const offTurn = (a) => { const r = ((a % TAU) + TAU) % TAU; return Math.min(r, TAU - r); };
+
+// ---- the dozer's own effects, picked in lab/effect-3d.html: grind sparks on a ramp or a
+// rail, a Super Saiyan aura through the fury, a rocket boost in a dash, magic sparkles on a
+// crystal. Three of that page's blocks: camera-facing instanced sprites (round, or stretched
+// along their speed), fresnel shells drawn from the dozer's own geometry (in four pieces, so
+// the aura follows the blade wherever the rig puts it), and the dozer's surface sampled, so a
+// flame or a sparkle is born ON the machine.
+const fcol = (hex, k = 1) => { const c = new THREE.Color(hex); return [c.r * k, c.g * k, c.b * k]; };
+const fr = (x = 1) => (Math.random() * 2 - 1) * x;
+const SPR_VS = `
+attribute vec3 iPos; attribute vec3 iVel; attribute vec4 iCol; attribute vec3 iSz;
+varying vec2 vUv; varying vec4 vCol;
+void main() {
+  vec4 mv = modelViewMatrix * vec4(iPos, 1.0);
+  vec2 d = (modelViewMatrix * vec4(iVel, 0.0)).xy;
+  float L = length(d), st = 1.0;
+  vec2 ax = vec2(cos(iSz.z), sin(iSz.z));
+  if (iSz.y > 0.0 && L > 1e-4) { ax = d / L; st = 1.0 + iSz.y * L; }
+  vec2 ay = vec2(-ax.y, ax.x);
+  mv.xy += ax * (position.x * st - 0.5 * (st - 1.0)) * iSz.x + ay * position.y * iSz.x;
+  gl_Position = projectionMatrix * mv;
+  vUv = uv; vCol = iCol;
+}`;
+const SPR_FS = `
+uniform sampler2D map; varying vec2 vUv; varying vec4 vCol;
+void main() {
+  vec4 t = texture2D(map, vUv);
+  float a = t.a * vCol.a;
+  if (a < 0.004) discard;
+  gl_FragColor = vec4(vCol.rgb * t.rgb, a);
+}`;
+const FX3 = { DM: new V3(), prev: new V3(), C: new V3(), acc: {}, saiyan: 0, rocketT: 0, rocket: 0, sparkleT: 0, grind: 0 };
+class Sprites {
+  constructor(tex, blending, cap, order) {
+    this.cap = cap; this.list = [];
+    const g = new THREE.InstancedBufferGeometry().copy(new THREE.PlaneGeometry(1, 1));
+    const att = (n, k) => { const a = new THREE.InstancedBufferAttribute(new Float32Array(cap * k), k); a.setUsage(THREE.DynamicDrawUsage); g.setAttribute(n, a); return a; };
+    this.aPos = att("iPos", 3); this.aVel = att("iVel", 3); this.aCol = att("iCol", 4); this.aSz = att("iSz", 3);
+    g.instanceCount = 0; this.geo = g;
+    this.mesh = new THREE.Mesh(g, new THREE.ShaderMaterial({ uniforms: { map: { value: tex } }, vertexShader: SPR_VS, fragmentShader: SPR_FS,
+      transparent: true, depthWrite: false, blending }));
+    this.mesh.frustumCulled = false; this.mesh.renderOrder = order; scene.add(this.mesh);
+  }
+  spawn(o) {
+    if (this.list.length >= this.cap) return null;
+    const p = Object.assign({ x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, age: 0, life: 1, s0: 0.2, s1: null, c0: [1, 1, 1], c1: null,
+      a: 1, fin: 0.08, fout: 0.5, drag: 0, g: 0, rot: Math.random() * TAU, vr: 0, st: 0, follow: 0, bounce: 0, floor: -99, tw: 0 }, o);
+    if (p.s1 == null) p.s1 = p.s0;
+    if (p.c1 == null) p.c1 = p.c0;
+    this.list.push(p); return p;
+  }
+  update(dt) {
+    const L = this.list, M = FX3.DM;
+    for (let i = L.length - 1; i >= 0; i--) {
+      const p = L[i];
+      p.age += dt;
+      if (p.age >= p.life) { L[i] = L[L.length - 1]; L.pop(); continue; }
+      if (p.drag) { const k = Math.exp(-p.drag * dt); p.vx *= k; p.vy *= k; p.vz *= k; }
+      p.vy -= p.g * dt;
+      p.x += p.vx * dt + M.x * p.follow; p.y += p.vy * dt + M.y * p.follow; p.z += p.vz * dt + M.z * p.follow;
+      p.rot += p.vr * dt;
+      if (p.bounce && p.y < p.floor) { p.y = p.floor; p.vy = Math.abs(p.vy) * p.bounce; p.vx *= 0.6; p.vz *= 0.6; }
+    }
+  }
+  write() {
+    const L = this.list, P = this.aPos.array, Vv = this.aVel.array, Cc = this.aCol.array, S = this.aSz.array;
+    for (let i = 0; i < L.length; i++) {
+      const p = L[i], u = p.age / p.life, e = 1 - (1 - u) ** 3;
+      let a = p.a * Math.min(1, u / p.fin) * (u < p.fout ? 1 : 1 - (u - p.fout) / (1 - p.fout));
+      if (p.tw) a *= 0.55 + 0.45 * Math.sin(p.age * p.tw + p.rot * 7);
+      P[i * 3] = p.x; P[i * 3 + 1] = p.y; P[i * 3 + 2] = p.z;
+      Vv[i * 3] = p.vx; Vv[i * 3 + 1] = p.vy; Vv[i * 3 + 2] = p.vz;
+      Cc[i * 4] = p.c0[0] + (p.c1[0] - p.c0[0]) * u; Cc[i * 4 + 1] = p.c0[1] + (p.c1[1] - p.c0[1]) * u; Cc[i * 4 + 2] = p.c0[2] + (p.c1[2] - p.c0[2]) * u; Cc[i * 4 + 3] = a;
+      S[i * 3] = p.s0 + (p.s1 - p.s0) * e; S[i * 3 + 1] = p.st; S[i * 3 + 2] = p.rot;
+    }
+    this.geo.instanceCount = L.length;
+    this.aPos.needsUpdate = this.aVel.needsUpdate = this.aCol.needsUpdate = this.aSz.needsUpdate = true;
+  }
+  clear() { this.list.length = 0; }
+}
+function fxTex(size, draw) {
+  const c = document.createElement("canvas"); c.width = c.height = size; draw(c.getContext("2d"), size);
+  return new THREE.CanvasTexture(c);
+}
+const radialTex = (stops) => fxTex(64, (g, s) => {
+  const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  for (const [o, a] of stops) gr.addColorStop(o, `rgba(255,255,255,${a})`);
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+});
+const FX_TEX = {
+  dot: radialTex([[0, 1], [0.25, 0.85], [0.6, 0.25], [1, 0]]),
+  hot: radialTex([[0, 1], [0.14, 1], [0.32, 0.35], [1, 0]]),
+  star: fxTex(128, (g, s) => {
+    const gr = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.12, "rgba(255,255,255,0.5)"); gr.addColorStop(0.35, "rgba(255,255,255,0.08)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, s, s); g.fillStyle = "#fff";
+    for (const r of [0, Math.PI / 2]) {
+      g.save(); g.translate(s / 2, s / 2); g.rotate(r);
+      g.beginPath(); g.moveTo(-s / 2, 0); g.quadraticCurveTo(0, -s * 0.035, s / 2, 0); g.quadraticCurveTo(0, s * 0.035, -s / 2, 0); g.fill();
+      g.restore();
+    }
+  }),
+  puff: fxTex(128, (g, s) => {
+    for (let i = 0; i < 9; i++) {
+      const a = Math.random() * TAU, r = Math.random() * s * 0.16, x = s / 2 + Math.cos(a) * r, y = s / 2 + Math.sin(a) * r, R = s * (0.2 + Math.random() * 0.1);
+      const gr = g.createRadialGradient(x - R * 0.3, y - R * 0.35, R * 0.1, x, y, R);
+      gr.addColorStop(0, "rgba(255,255,255,0.95)"); gr.addColorStop(0.6, "rgba(222,222,226,0.75)"); gr.addColorStop(1, "rgba(200,200,206,0)");
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, TAU); g.fill();
+    }
+  })
+};
+const F_SMOKE = new Sprites(FX_TEX.puff, THREE.NormalBlending, 500, 6);
+const F_GLOW = new Sprites(FX_TEX.dot, THREE.AdditiveBlending, 2500, 7);
+const F_SPARK = new Sprites(FX_TEX.hot, THREE.AdditiveBlending, 1500, 7);
+const F_STAR = new Sprites(FX_TEX.star, THREE.AdditiveBlending, 600, 7);
+const F_SPRITES = [F_SMOKE, F_GLOW, F_SPARK, F_STAR];
+
+// a soft round glow on a quad (a shock diamond, the light on the ground under the aura)
+const GLOWQ_GEO = new THREE.PlaneGeometry(1, 1);
+function glowQuad(col, flat) {
+  const m = new THREE.Mesh(GLOWQ_GEO, new THREE.ShaderMaterial({
+    uniforms: { uCol: { value: new THREE.Vector3().fromArray(col) }, uA: { value: 0 } },
+    vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform vec3 uCol; uniform float uA; varying vec2 vUv;
+      void main() { float d = length(vUv - 0.5) * 2.0; if (d > 1.0) discard; gl_FragColor = vec4(uCol, pow(1.0 - d, 2.2) * uA); }`,
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+  }));
+  if (flat) m.rotation.x = -Math.PI / 2;
+  m.renderOrder = 7; m.frustumCulled = false; m.visible = false; scene.add(m); return m;
+}
+
+// the shells: the dozer drawn again, a little bigger, in a fresnel light
+const SHELL_VS = `
+uniform float uTime, uFlame, uBase;
+varying vec3 vN; varying vec3 vV; varying float vH;
+void main() {
+  vec4 w = modelMatrix * vec4(position, 1.0);
+  vec3 n = normalize(mat3(modelMatrix) * normal);
+  if (uFlame > 0.0) {
+    float h = max(0.0, w.y - uBase);
+    float nz = 0.5 + 0.5 * sin(w.x * 5.3 + uTime * 11.0) * sin(w.z * 4.7 - uTime * 9.0 + w.y * 3.0);
+    w.y += uFlame * nz * min(h, 2.0);
+    w.xz += n.xz * uFlame * 0.35 * nz;
+  }
+  vN = n; vV = cameraPosition - w.xyz; vH = w.y - uBase;
+  gl_Position = projectionMatrix * viewMatrix * w;
+}`;
+const SHELL_FS = `
+uniform vec3 uCol; uniform float uA, uPow, uTime, uBands, uCore;
+varying vec3 vN; varying vec3 vV; varying float vH;
+void main() {
+  float d = abs(dot(normalize(vN), normalize(vV)));
+  float f = pow(1.0 - d, uPow);
+  float b = uBands > 0.0 ? 0.5 + 0.5 * sin(vH * uBands - uTime * 7.0) : 1.0;
+  gl_FragColor = vec4(uCol * (1.0 + 1.6 * f), uA * (uCore + f) * mix(0.45, 1.0, b));
+}`;
+// the dozer as four merged pieces, each in the frame of the node that moves it
+const FXM = { parts: [], surf: [], surfN: [], surfPart: [], n: 0 };
+function mergeUnder(node, skip) {
+  node.updateMatrixWorld(true);
+  const inv = node.matrixWorld.clone().invert(), P = [], N = [], mw = new THREE.Matrix4(), nm = new THREE.Matrix3(), a = new V3(), n = new V3();
+  const add = (geo, mat) => {
+    nm.getNormalMatrix(mat);
+    const pos = geo.attributes.position, nor = geo.attributes.normal, idx = geo.index, cnt = idx ? idx.count : pos.count;
+    for (let i = 0; i < cnt; i++) {
+      const k = idx ? idx.getX(i) : i;
+      a.fromBufferAttribute(pos, k).applyMatrix4(mat); P.push(a.x, a.y, a.z);
+      if (nor) { n.fromBufferAttribute(nor, k).applyMatrix3(nm).normalize(); N.push(n.x, n.y, n.z); } else N.push(0, 1, 0);
+    }
+  };
+  const walk = (o) => {
+    if (o !== node && skip.includes(o)) return;
+    if (o.isMesh && o.visible) {
+      if (o.isInstancedMesh) { const im = new THREE.Matrix4(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, im); add(o.geometry, mw.multiplyMatrices(inv, o.matrixWorld).multiply(im)); } }
+      else add(o.geometry, mw.multiplyMatrices(inv, o.matrixWorld));
+    }
+    for (const c of o.children) walk(c);
+  };
+  walk(node);
+  if (!P.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3));
+  g.setAttribute("normal", new THREE.Float32BufferAttribute(N, 3));
+  return g;
+}
+function buildFx3() {
+  const nodes = [model, rig.arm, rig.mount, rig.spin].filter(Boolean);
+  nodes.forEach((nd, i) => { const g = mergeUnder(nd, nodes.slice(i + 1)); if (g) FXM.parts.push({ node: nd, geo: g }); });
+  // the surface, sampled by area across the pieces
+  const tris = [], A = new V3(), B = new V3(), C = new V3(), e1 = new V3(), e2 = new V3();
+  let tot = 0;
+  FXM.parts.forEach((pt, pi) => {
+    const P = pt.geo.attributes.position.array;
+    for (let t = 0; t < P.length / 9; t++) {
+      A.fromArray(P, t * 9); B.fromArray(P, t * 9 + 3); C.fromArray(P, t * 9 + 6);
+      tot += e1.subVectors(B, A).cross(e2.subVectors(C, A)).length() * 0.5; tris.push([tot, pi, t]);
+    }
+  });
+  const ctr = new V3(); model.updateMatrixWorld(true);
+  new THREE.Box3().setFromObject(model).getCenter(ctr);
+  for (let s = 0; s < 2500; s++) {
+    const r = Math.random() * tot; let lo = 0, hi = tris.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (tris[mid][0] < r) lo = mid + 1; else hi = mid; }
+    const [, pi, t] = tris[lo], P = FXM.parts[pi].geo.attributes.position.array;
+    A.fromArray(P, t * 9); B.fromArray(P, t * 9 + 3); C.fromArray(P, t * 9 + 6);
+    let u = Math.random(), v = Math.random(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
+    const p = A.clone().addScaledVector(e1.subVectors(B, A), u).addScaledVector(e2.subVectors(C, A), v);
+    const nn = e1.subVectors(B, A).cross(e2.subVectors(C, A)).normalize();
+    // a face whose normal points into the body is turned outward
+    const w = p.clone().applyMatrix4(FXM.parts[pi].node.matrixWorld), wn = nn.clone().transformDirection(FXM.parts[pi].node.matrixWorld);
+    if (wn.dot(w.sub(ctr)) < 0) nn.negate();
+    FXM.surf.push(p); FXM.surfN.push(nn); FXM.surfPart.push(pi);
+  }
+  FXM.n = FXM.surf.length;
+  SAIYAN.outer = new Shell({ col: 0xffb81a, pow: 1.4, side: THREE.BackSide, flame: 0.35, bands: 9, k: 1.8 });
+  SAIYAN.inner = new Shell({ col: 0xffd860, pow: 2.4, k: 1.3, core: 0.04 });
+}
+function surfPoint(out, nOut) {
+  const i = Math.floor(Math.random() * FXM.n), m = FXM.parts[FXM.surfPart[i]].node.matrixWorld;
+  out.copy(FXM.surf[i]).applyMatrix4(m);
+  if (nOut) nOut.copy(FXM.surfN[i]).transformDirection(m);
+  return out;
+}
+const _shS = new THREE.Matrix4(), _shT = new THREE.Matrix4();
+class Shell {
+  constructor(o) {
+    this.mat = new THREE.ShaderMaterial({
+      uniforms: { uCol: { value: new THREE.Vector3().fromArray(fcol(o.col, o.k ?? 1.6)) }, uA: { value: 0 }, uPow: { value: o.pow ?? 2 },
+        uTime: { value: 0 }, uFlame: { value: o.flame ?? 0 }, uBase: { value: 0 }, uBands: { value: o.bands ?? 0 }, uCore: { value: o.core ?? 0.1 } },
+      vertexShader: SHELL_VS, fragmentShader: SHELL_FS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: o.side ?? THREE.FrontSide
+    });
+    this.meshes = FXM.parts.map((p) => {
+      const m = new THREE.Mesh(p.geo, this.mat); m.matrixAutoUpdate = false; m.frustumCulled = false; m.renderOrder = 8; m.visible = false;
+      scene.add(m); return m;
+    });
+  }
+  // every piece at its node, scaled about the dozer's middle; alpha 0 hides it
+  sync(scale, alpha) {
+    const on = alpha > 0.005;
+    this.mat.uniforms.uA.value = alpha; this.mat.uniforms.uTime.value = RT; this.mat.uniforms.uBase.value = D.y;
+    _shT.makeTranslation(FX3.C.x, FX3.C.y, FX3.C.z).multiply(_shS.makeScale(scale, scale, scale)).multiply(new THREE.Matrix4().makeTranslation(-FX3.C.x, -FX3.C.y, -FX3.C.z));
+    this.meshes.forEach((m, i) => {
+      m.visible = on; if (!on) return;
+      m.matrix.multiplyMatrices(_shT, FXM.parts[i].node.matrixWorld); m.matrixWorldNeedsUpdate = true;
+    });
+  }
+}
+const fxP = new V3(), fxN = new V3(), fxQ = new V3();
+const emitN = (key, rate, dt, fn) => { FX3.acc[key] = (FX3.acc[key] || 0) + rate * dt; while (FX3.acc[key] >= 1) { FX3.acc[key]--; fn(); } };
+
+// ---- 1. grind sparks: a spray off the contact, a white-hot spot, an orange flicker, a wisp of smoke
+const grindLight = new THREE.PointLight("#ff9a40", 0, 6, 2); scene.add(grindLight);
+function grindSpray(p, back, up, side, floor, dt, key, k = 1) {
+  emitN(key, 150 * k, dt, () => {
+    const d = fxQ.copy(back).addScaledVector(up, 0.3 + Math.random() * 0.7).addScaledVector(side, fr(0.6)).normalize(), sp = 5 + Math.random() * 5;
+    F_SPARK.spawn({ x: p.x, y: p.y, z: p.z, vx: d.x * sp + D.vx * 0.5, vy: d.y * sp + D.vy * 0.3, vz: d.z * sp + D.vz * 0.5, g: 14, drag: 0.8, bounce: 0.35, floor,
+      life: 0.35 + Math.random() * 0.45, s0: 0.1 + Math.random() * 0.05, st: 0.12, c0: fcol(0xfff6d0, 3), c1: fcol(0xff4a10, 2.2), fout: 0.5 });
+  });
+  if (Math.random() < 0.8 * k) F_GLOW.spawn({ x: p.x, y: p.y + 0.05, z: p.z, life: 0.08, s0: 0.35 + Math.random() * 0.15, c0: fcol(0xffd080, 1.6), fin: 0.01, fout: 0.3 });
+  emitN(key + "s", 8 * k, dt, () => F_SMOKE.spawn({ x: p.x, y: p.y + 0.1, z: p.z, vy: 0.8, life: 1, s0: 0.2, s1: 0.8, c0: fcol(0x99918a), a: 0.4, fin: 0.1, fout: 0.3 }));
+}
+function updateGrind(dt) {
+  const sp = Math.hypot(D.vx, D.vy, D.vz);
+  let want = 0;
+  if (D.rail && dt > 0) {   // the bar under the blade
+    want = 1;
+    fxP.set(RS.px, RS.py, RS.pz);
+    grindSpray(fxP, fxN.copy(D.railF).negate(), D.railU, new V3().crossVectors(D.railF, D.railU), groundY(RS.px, RS.pz) + 0.02, dt, "rail");
+    grindLight.position.copy(fxP).addScaledVector(D.railU, 0.3);
+  } else if (D.ground && D.onRamp && sp > 3 && dt > 0) {   // the tracks scraping up a ramp
+    want = 1;
+    const back = new V3(-1, 0, 0).transformDirection(root.matrixWorld), up = D.n, side = new V3(0, 0, 1).transformDirection(root.matrixWorld);
+    for (const s of [-1, 1]) {
+      bodyLocal(-dims.len * 0.45, 0.03, s * dims.wid * 0.42, fxP);
+      grindSpray(fxP, back, up, side, -99, dt, "ramp" + s, 0.7);
+    }
+    bodyLocal(-dims.len * 0.45, 0.3, 0, fxP); grindLight.position.copy(fxP);
+  }
+  FX3.grind += (want - FX3.grind) * Math.min(1, (dt || 0.016) * 12);
+  grindLight.intensity = FX3.grind * (2 + Math.random() * 3);
+}
+
+// ---- 2. Super Saiyan, the fury: a flaming halo round the silhouette, a bright skin, flames
+// licking up off every surface, spikes of light from the ground, pebbles rising, blue crackles
+const SAIYAN = { outer: null, inner: null, arcT: 0, arcLife: 0, pts: Array.from({ length: 12 }, () => new V3()),
+  core: new Ribbon(11, 1), glow: new Ribbon(11, 0.45), light: new THREE.PointLight("#ffc040", 0, 9, 2), disk: glowQuad(fcol(0xffc23a, 1.6), true) };
+SAIYAN.core.mat.color.setRGB(2.5, 3, 4); SAIYAN.glow.mat.color.setRGB(0.4, 0.8, 2.5);
+scene.add(SAIYAN.light);
+function updateSaiyan(dt) {
+  const k = FX3.saiyan += ((GS.fury ? 1 : 0) - FX3.saiyan) * Math.min(1, (dt || 0) * (GS.fury ? 4 : 2.5));
+  SAIYAN.outer.sync(1.15 + 0.03 * Math.sin(RT * 17), 0.6 * k * (0.8 + 0.2 * Math.sin(RT * 31)));
+  SAIYAN.inner.sync(1.03, 0.25 * k);
+  const flat = D.ground && D.n.y > 0.9;
+  SAIYAN.disk.visible = k > 0.01 && flat;
+  SAIYAN.disk.position.set(D.x, D.y + 0.04, D.z); SAIYAN.disk.scale.setScalar(dims.len * 2 * (1 + 0.06 * Math.sin(RT * 9)));
+  SAIYAN.disk.material.uniforms.uA.value = 0.55 * k;
+  SAIYAN.light.position.copy(FX3.C).y += 0.6; SAIYAN.light.intensity = k * (14 + 5 * Math.sin(RT * 23));
+  if (k < 0.01 || dt <= 0) { if (k < 0.01) { SAIYAN.core.mesh.visible = SAIYAN.glow.mesh.visible = false; } return; }
+  emitN("flame", 100 * k, dt, () => {
+    surfPoint(fxP, fxN);
+    F_GLOW.spawn({ x: fxP.x + fxN.x * 0.08, y: fxP.y + fxN.y * 0.08, z: fxP.z + fxN.z * 0.08, vx: fxN.x * 0.6 + fr(0.3), vy: 2.4 + Math.random() * 1.6, vz: fxN.z * 0.6 + fr(0.3),
+      life: 0.3 + Math.random() * 0.25, s0: 0.24 + Math.random() * 0.1, s1: 0.04, st: 0.16, c0: fcol(0xffe9a0, 1.8), c1: fcol(0xff7a10, 1.6), fin: 0.15, follow: 1 });
+  });
+  emitN("spike", 34 * k, dt, () => {
+    const a = Math.random() * TAU, r = dims.len * (0.5 + Math.random() * 0.2);
+    F_GLOW.spawn({ x: D.x + Math.cos(a) * r, y: D.y + 0.1, z: D.z + Math.sin(a) * r, vy: 6 + Math.random() * 3, life: 0.3, s0: 0.45, s1: 0.12, st: 0.35,
+      c0: fcol(0xfff2b0, 3), c1: fcol(0xffa020, 2), follow: 1 });
+  });
+  if (flat) emitN("peb", 6 * k, dt, () => {
+    const a = Math.random() * TAU, r = dims.len * (0.55 + Math.random() * 0.8);
+    P_DEBRIS.spawn({ pos: new V3(D.x + Math.cos(a) * r, D.y + 0.05, D.z + Math.sin(a) * r), vel: new V3(0, 0.5 + Math.random() * 0.7, 0), grav: -0.35,
+      life: 2 + Math.random(), s0: 0.05 + Math.random() * 0.08, spin: 2, col: new THREE.Color(P.dust).multiplyScalar(0.6) });
+  });
+  // a crackle of blue lightning off the body, now and then
+  SAIYAN.arcT -= dt; SAIYAN.arcLife -= dt;
+  if (SAIYAN.arcT <= 0 && k > 0.5) {
+    SAIYAN.arcT = 0.15 + Math.random() * 0.3; SAIYAN.arcLife = 0.1;
+    surfPoint(fxP, fxN); fxP.addScaledVector(fxN, 0.15);
+    const b = fxQ.copy(fxP).add(new V3(fr(0.8), Math.random() * 1 - 0.2, fr(0.8))), len = fxP.distanceTo(b);
+    SAIYAN.pts.forEach((q, i) => {
+      const u = i / 11, s = Math.sin(Math.PI * u);
+      q.lerpVectors(fxP, b, u).addScaledVector(fxN, 0.3 * s);
+      if (i > 0 && i < 11) q.add(new V3(fr(), fr(), fr()).multiplyScalar(0.22 * len * (0.4 + 0.6 * s)));
+    });
+  }
+  const arcOn = SAIYAN.arcLife > 0;
+  SAIYAN.core.mesh.visible = SAIYAN.glow.mesh.visible = arcOn;
+  if (arcOn) { SAIYAN.glow.draw(SAIYAN.pts, 0.28, 1); SAIYAN.core.draw(SAIYAN.pts, 0.06, 1); }
+}
+
+// ---- 3. rocket boost, the dash: two thrusters at the back, a blue-white core turning orange,
+// shock diamonds along the jet, a trail of smoke, an orange glow
+const ROCKET = { light: new THREE.PointLight("#ff9040", 0, 7, 2), dia: Array.from({ length: 6 }, () => glowQuad(fcol(0xbfe8ff, 1.6), false)) };
+scene.add(ROCKET.light);
+function rocketBoost(t) { FX3.rocketT = Math.max(FX3.rocketT, t); }
+function updateRocket(dt, rdt) {
+  FX3.rocketT = Math.max(0, FX3.rocketT - dt);
+  const k = FX3.rocket += ((FX3.rocketT > 0 ? 1 : 0) - FX3.rocket) * Math.min(1, rdt * (FX3.rocketT > 0 ? 20 : 6));
+  const on = k > 0.01;
+  ROCKET.dia.forEach((m) => { m.visible = on; });
+  ROCKET.light.intensity = on ? k * (3 + Math.random() * 2) : 0;
+  if (!on) return;
+  const back = new V3(-1, 0, 0).transformDirection(root.matrixWorld);
+  const noz = [-1, 1].map((s) => bodyLocal(-dims.len * 0.5, dims.h * 0.42, s * dims.wid * 0.25, new V3()));
+  noz.forEach((o, j) => {
+    if (dt > 0) {
+      emitN("rc" + j, 120 * k, dt, () => {
+        const sp = 7 + Math.random() * 3;
+        F_GLOW.spawn({ x: o.x, y: o.y, z: o.z, vx: back.x * sp + fr(0.5) + D.vx, vy: back.y * sp + fr(0.5) + D.vy, vz: back.z * sp + fr(0.5) + D.vz,
+          life: 0.16 + Math.random() * 0.12, s0: 0.24, s1: 0.6, st: 0.03, c0: fcol(0x9cc8ff, 1.8), c1: fcol(0xff6a10, 1.5), fin: 0.02, fout: 0.4 });
+      });
+      emitN("rs" + j, 22 * k, dt, () => {
+        const sp = 4 + Math.random() * 2;
+        F_SMOKE.spawn({ x: o.x + back.x * 1.4, y: o.y + back.y * 1.4, z: o.z + back.z * 1.4, vx: back.x * sp + D.vx * 0.3, vy: back.y * sp + 0.5, vz: back.z * sp + D.vz * 0.3, drag: 2.2,
+          life: 0.8 + Math.random() * 0.4, s0: 0.3, s1: 1.1, c0: fcol(0xd8d4d0), c1: fcol(0x8a8580), a: 0.4, fin: 0.1, fout: 0.3, vr: fr(1) });
+      });
+    }
+    for (let i = 0; i < 3; i++) {
+      const m = ROCKET.dia[j * 3 + i], f = (0.7 + 0.3 * Math.random()) * k * (1 - i * 0.25);
+      m.position.copy(o).addScaledVector(back, 0.35 + i * 0.32); m.quaternion.copy(camera.quaternion);
+      m.scale.setScalar(0.32 * f); m.material.uniforms.uA.value = f;
+    }
+  });
+  ROCKET.light.position.copy(noz[0]).lerp(noz[1], 0.5).addScaledVector(back, 0.6);
+}
+
+// ---- 4. magic sparkles, a crystal picked up: a burst of stars where it was, then glitter
+// twinkling over the dozer for a moment
+const SPARKLE_COLS = [0xffffff, 0xffb8e8, 0xa8f0ff, 0xfff0a0, 0xd0b8ff, 0x4fe8ff];
+function fxSparkle(at) {
+  FX3.sparkleT = 0.9;
+  for (let i = 0; i < 18; i++) {
+    const d = new V3(fr(), Math.random() * 1.2 - 0.2, fr()).normalize(), sp = 2 + Math.random() * 3;
+    F_STAR.spawn({ x: at.x, y: at.y, z: at.z, vx: d.x * sp + D.vx * 0.6, vy: d.y * sp, vz: d.z * sp + D.vz * 0.6, drag: 2, life: 0.5 + Math.random() * 0.4,
+      s0: 0.35 + Math.random() * 0.2, s1: 0.05, c0: fcol(pick2(SPARKLE_COLS), 2.6), tw: 25, vr: fr(2) });
+  }
+}
+function updateSparkle(dt) {
+  if (dt <= 0 || FX3.sparkleT <= 0) return;
+  FX3.sparkleT -= dt;
+  emitN("glit", 70, dt, () => {
+    surfPoint(fxP, fxN); const o = 0.1 + Math.random() * 0.4;
+    F_STAR.spawn({ x: fxP.x + fxN.x * o, y: fxP.y + fxN.y * o, z: fxP.z + fxN.z * o, vx: fr(0.2), vy: Math.random() * 0.4, vz: fr(0.2),
+      life: 0.6 + Math.random() * 0.5, s0: 0.2 + Math.random() * 0.2, s1: 0.05, c0: fcol(pick2(SPARKLE_COLS), 2.6), tw: 25, follow: 1, vr: fr(2) });
+  });
+}
+const pick2 = (a) => a[Math.floor(Math.random() * a.length)];
+
+function updateFx3(dt, rdt) {
+  tumble.getWorldPosition(FX3.C);
+  FX3.DM.subVectors(FX3.C, FX3.prev); if (FX3.DM.lengthSq() > 4) FX3.DM.set(0, 0, 0);   // a reset is not a move
+  FX3.prev.copy(FX3.C);
+  updateGrind(dt); updateSaiyan(dt); updateRocket(dt, rdt); updateSparkle(dt);
+  for (const s of F_SPRITES) { s.update(dt); s.write(); }
+}
 
 // =============================================================================
 // 10. THE GAME STATE
@@ -1760,6 +2141,7 @@ function groundDash() {
   D.dashT = DASH_T; D.dashCd = DASH_T + DASH_CD;
   E.st = 0.35; E.fovKick += 7; E.trauma = Math.min(1, E.trauma + 0.2);
   for (let i = 0; i < 18; i++) dustAt(i % 2 ? 1 : -1, -0.45, 1.4, 1.4);
+  rocketBoost(DASH_T);
   callout("Dash", null, "#9fe6ff", false);
 }
 function airDash() {
@@ -1780,9 +2162,7 @@ function airDash() {
   A.assist = null; A.heading = Math.atan2(dz, dx);
   if (A.cur) { cancelTrick(); }
   E.st = 0.35; E.fovKick += 8; E.trauma = Math.min(1, E.trauma + 0.25);
-  ring(root.position, 2.5, 0.35, 0x9fe6ff);
-  for (let i = 0; i < 14; i++) P_SMOKE.spawn({ pos: root.position.clone().add(new V3(mr(-0.5, 0.5), comY, mr(-0.5, 0.5))), vel: new V3(-dx * mr(2, 5), mr(-1, 1), -dz * mr(2, 5)),
-    life: mr(0.4, 0.7), s0: 0.15, s1: 0.5, drag: 3, col: 0xeef6ff });
+  rocketBoost(0.45);
   callout("Air dash", null, "#9fe6ff", false);
 }
 const KEYMAP = { KeyW: "gas", ArrowUp: "gas", KeyS: "brake", ArrowDown: "brake", KeyA: "left", ArrowLeft: "left", KeyD: "right", ArrowRight: "right" };
@@ -1850,9 +2230,9 @@ function predictAir() {
 }
 function startTrick() {
   const A = D.air, rem = predictAir(), fits = [];
-  for (let i = 1; i < TRICKS.length; i++) if (TRICKS[i].dur + TRICK_MARGIN <= rem && TRICKS[i].name !== A.lastName) fits.push(TRICKS[i]);
+  for (let i = 1; i < TRICKS.length; i++) if ((TRICKS[i].need || TRICKS[i].dur) + TRICK_MARGIN <= rem && TRICKS[i].name !== A.lastName) fits.push(TRICKS[i]);
   fits.sort((a, b) => b.dur - a.dur);
-  const def = fits.length ? fits[Math.floor(Math.random() * Math.min(3, fits.length))] : TRICKS[0];
+  const def = fits.length ? fits[Math.floor(Math.random() * Math.min(4, fits.length))] : TRICKS[0];
   A.cur = { def, t: 0, k: A.n }; A.lastName = def.name;
 }
 function finishTrick(mult, label) {
@@ -1920,7 +2300,7 @@ function stepAir(dt) {
     fT.set(hx * Math.cos(pa), Math.sin(pa), hz * Math.cos(pa)); uT.set(-hx * Math.sin(pa), Math.cos(pa), -hz * Math.sin(pa));
     bodyQuat(fT, uT, tq); D.q.slerp(tq, 1 - Math.exp(-(A.heading != null ? 8 : 2.5) * dt));
   }
-  D.vy -= G * dt;
+  D.vy -= G * (A.cur && A.cur.def.hover ? A.cur.def.hover : 1) * dt;
   const px = D.x, pz = D.z;
   D.x += D.vx * dt; D.y += D.vy * dt; D.z += D.vz * dt;
   if (A.assist && D.y > A.assist.yc - 0.9) {   // held over the lip, whatever the speed along it
@@ -1983,7 +2363,7 @@ function endDrift() {
 function stepGround(dt) {
   const s = surf(D.x, D.y, D.z), kickR = s.ramp && (s.ramp.kind === "bump" || s.ramp.kind === "launch") ? s.ramp : null, onBump = !!(kickR && kickR.kind === "bump");
   const nx = s.nx, ny = s.ny, nz = s.nz, pit = s.pit, kap = s.kap, sphi = s.sphi, ex = s.ex, ez = s.ez;
-  D.n.set(nx, ny, nz); D.pit = pit;
+  D.n.set(nx, ny, nz); D.pit = pit; D.onRamp = !!s.ramp;
   const f = D.f; let fn = f.x * nx + f.y * ny + f.z * nz;
   f.x -= fn * nx; f.y -= fn * ny; f.z -= fn * nz;
   if (f.lengthSq() < 0.04) { f.set(Math.cos(D.a), 0, Math.sin(D.a)); fn = f.dot(D.n); f.addScaledVector(D.n, -fn); }
@@ -2136,8 +2516,6 @@ function stepRail(dt) {
   D.x = RS.px + RS.ux * RAIL_RIDE; D.y = RS.py + RS.uy * RAIL_RIDE; D.z = RS.pz + RS.uz * RAIL_RIDE;
   D.vx = fx * R.v; D.vy = fy * R.v; D.vz = fz * R.v;
   if (RS.uy > 0.5 && fx * fx + fz * fz > 0.09) D.a = Math.atan2(fz, fx);
-  if (Math.random() < dt * 40) P_SPARK.spawn({ pos: new V3(RS.px, RS.py, RS.pz), vel: new V3(-fx * R.v * 0.25 + mr(-3, 3) + RS.ux * mr(1, 3), -fy * R.v * 0.25 + RS.uy * mr(1, 3) + mr(-1, 2), -fz * R.v * 0.25 + mr(-3, 3) + RS.uz * mr(1, 3)),
-    life: mr(0.25, 0.5), s0: 0.04, len: 0.3, grav: 14, col: new THREE.Color(Math.random() < 0.3 ? 0xffffff : 0xffb040).multiplyScalar(2) });
   if (done) {   // the end throws the dozer along the bar
     callout("Grind", "+" + addScore(R.pts), "#c9f27a", false);
     r.cool = RAIL_COOL; D.rail = null;
@@ -2376,7 +2754,6 @@ function emit(dt) {
         life: mr(0.7, 1.1), s0: 0.05, s1: black ? 0.3 : 0.18, drag: 1.5, col: GS.fury ? new THREE.Color(0x3a2a26) : black ? 0x3a3a3e : new THREE.Color(0xd4d7dc).offsetHSL(0, 0, mr(-0.06, 0.04)) });
     }
   }
-  histHead = (histHead + 1) % HIST; hist[histHead].copy(model.matrixWorld);
 }
 
 // =============================================================================
@@ -2388,7 +2765,7 @@ function trickEuler(c, out) {   // a trick's turn on top of the body: whole turn
   return out.set((d.roll || 0) * TAU * r, (d.yaw || 0) * TAU * r, (d.pitch || 0) * TAU * r);
 }
 const tE = new THREE.Euler(0, 0, 0, "YZX");
-const pose = { lift: 0, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0 }, pv = { bx: 0, by: 0, bz: 0 };
+const pose = { lift: 0, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0, px: 0, py: 0, pz: 0, track: 0 }, pv = { bx: 0, by: 0, bz: 0 };
 function applyDozer(dt) {
   root.position.set(D.x, D.y, D.z);
   // the body: the surface's frame on the ground (eased, so a bump never snaps it), the air's quaternion, the rail's frame
@@ -2404,7 +2781,7 @@ function applyDozer(dt) {
   // the trick (or a rail trick), and what is left of a trick cut short easing back
   D.resid.x *= Math.exp(-14 * dt); D.resid.y *= Math.exp(-14 * dt); D.resid.z *= Math.exp(-14 * dt);
   let hopY = 0;
-  Object.assign(pose, { lift: 0.06, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0 });
+  Object.assign(pose, { lift: 0.06, tilt: 0, bx: 0, by: 0, bz: 0, reach: 0, px: 0, py: 0, pz: 0, track: 0 });
   if (D.rail && D.rail.trick) {
     const T = D.rail.trick, d = T.def, r = easeIO(T.t);
     tE.set((d.roll || 0) * TAU * r, (d.yaw || 0) * TAU * r, d.stand ? -0.6 * Math.sin(Math.PI * T.t) : 0);
@@ -2417,8 +2794,9 @@ function applyDozer(dt) {
     if (d.blade === "by") pose.by = -2 * TAU * r;
     if (d.blade === "bx") pose.bx = -3 * TAU * r;
     if (d.blade === "bz") { pose.bz = 3 * TAU * r; pose.reach = 0.8 * Math.sin(Math.PI * c.t); }
+    if (d.pose) d.pose(c.t, r, pose);
   } else tE.set(0, 0, 0);
-  tumble.rotation.set(tE.x + D.resid.x, tE.y + D.resid.y, tE.z + D.resid.z);
+  tumble.rotation.set(tE.x + D.resid.x + pose.px, tE.y + D.resid.y + pose.py, tE.z + D.resid.z + pose.pz);
   hop.position.y += (hopY - hop.position.y) * ease(20, dt);
   // the blade: up in the air (dozer-anim's jump), down and out in a dash, raised in the fury
   if (!D.ground && !D.rail && !(D.air.cur && D.air.cur.def.grab)) pose.lift = Math.max(pose.lift, 0.38 * Math.min(1, D.air.t * 3));
@@ -2430,7 +2808,7 @@ function applyDozer(dt) {
   // the tracks: each its own distance, spinning free in the air
   const ht = rig.halfTrack * DS;
   let sL = D.vf - D.yawRate * ht, sR = D.vf + D.yawRate * ht;
-  if (D.rail) sL = sR = D.rail.v * 0.6; else if (!D.ground) sL = sR = 3;
+  if (D.rail) sL = sR = D.rail.v * 0.6; else if (!D.ground) sL = sR = pose.track || 3;
   const k = 1 - Math.exp(-dt * (D.ground ? 14 : 3));
   D.sL += (sL - D.sL) * k; D.sR += (sR - D.sR) * k;
   D.tL += D.sL * dt / DS; D.tR += D.sR * dt / DS;
@@ -2456,7 +2834,7 @@ function updateMagic(dt) {
   if (dt > 0) m = Math.max(m, sat((Math.abs(pose.bx - pv.bx) + Math.abs(pose.by - pv.by) + Math.abs(pose.bz - pv.bz)) / dt / 1.5));
   m = Math.max(m, sat((Math.abs(pose.tilt) - 0.6) / 0.15), sat((pose.reach - 0.6) / 0.25), sat((pose.lift - 0.75) / 0.15));
   pv.bx = pose.bx; pv.by = pose.by; pv.bz = pose.bz;
-  const target = Math.max(m, GS.fury ? 1 : 0);
+  const target = m;   // the fury wears its own aura now (SAIYAN)
   magic += (target - magic) * Math.min(1, dt * (target > magic ? 14 : 4));
   const on = magic > 0.02, flick = 0.55 + 0.45 * Math.random();
   const glow = GS.fury ? P.fury : "#6fe3ff";
@@ -2778,30 +3156,6 @@ function updatePieces(dt, rdt) {
     const s = q.r * (0.25 + 0.75 * (1 - (1 - t) * (1 - t)));
     q.m.scale.set(s, 1, s); q.m.material.opacity = 0.7 * (1 - t);
   }
-  // afterimages in a dash, a dash in the air, the fury
-  const fast = D.dashT > 0 || GS.fury || (!D.ground && D.air.dashes > 0), dashing = D.dashT > 0 || (!D.ground && D.air.dashes > 0);
-  E.ghost += ((dashing ? 1 : 0) - E.ghost) * ease(dashing ? 10 : 5, rdt);
-  const gc = GS.fury ? P.fury : "#9fe6ff";
-  for (let i = 0; i < ghosts.length; i++) {
-    const g = ghosts[i];
-    g.visible = E.ghost > 0.02;
-    if (!g.visible) continue;
-    g.matrix.copy(hist[(histHead - (i + 1) * GHOST_STEP + HIST * 4) % HIST]); g.matrixWorldNeedsUpdate = true;
-    g.userData.mat.color.set(gc); g.userData.mat.opacity = E.ghost * 0.26 * (1 - i / GHOSTS);
-  }
-  E.trail += ((fast || D.rail ? 1 : 0) - E.trail) * ease(fast ? 8 : 2.5, rdt);
-  if (dt > 0) {
-    trailPos.copyWithin(6, 0, (TN - 1) * 6);
-    const l = bodyLocal(-dims.len * 0.48, dims.h * 0.35, -dims.wid * 0.48, new V3()), r = bodyLocal(-dims.len * 0.48, dims.h * 0.35, dims.wid * 0.48, new V3());
-    trailPos.set([l.x, l.y, l.z, r.x, r.y, r.z], 0);
-  }
-  const tc = new THREE.Color(GS.fury ? P.fury : D.rail ? new THREE.Color(D.rail.r.col[0]) : "#9fe6ff");
-  for (let i = 0; i < TN; i++) {
-    const k = (1 - i / (TN - 1)) ** 2 * E.trail * 0.9;
-    for (let j = 0; j < 2; j++) { const o = 6 * i + 3 * j; trailCol[o] = tc.r * k; trailCol[o + 1] = tc.g * k; trailCol[o + 2] = tc.b * k; }
-  }
-  trail.visible = E.trail > 0.01;
-  trailGeo.attributes.position.needsUpdate = true; trailGeo.attributes.color.needsUpdate = true;
 }
 
 // =============================================================================
@@ -2827,6 +3181,7 @@ function simulate(dt) {
   for (let i = 0; i < n; i++) {
     D.prevY = D.y;
     D.stun = Math.max(0, D.stun - h); D.dashT = Math.max(0, D.dashT - h); D.dashCd = Math.max(0, D.dashCd - h); D.boost = Math.max(0, D.boost - h);
+    D.onRamp = false;
     if (D.rail) stepRail(h); else if (D.ground) stepGround(h); else stepAir(h);
     if (!D.rail) { collide(h); touchArrows(); if (GS.phase === "race") touchBonus(); }
     stepPhase(h);
@@ -2860,7 +3215,7 @@ function frame() {
   if (dt > 0) emit(dt);
   updatePieces(dt, rdt);
   updateMagic(rdt);
-  updateArrows(rdt); updateBonus(rdt);
+  updateArrows(rdt); updateBonus(rdt); updateFx3(dt, rdt);
   updateCamera(dt, rdt);
   updateScreen(rdt);
   // the sun follows the dozer, so its shadows are always sharp round it
@@ -2886,7 +3241,11 @@ function tick(sec) {
   return [GS.phase, D.x.toFixed(2), D.y.toFixed(2), D.z.toFixed(2), D.rail ? "rail" : D.ground ? "ground" : "air", "ny " + D.n.y.toFixed(2), "v " + Math.hypot(D.vx, D.vy, D.vz).toFixed(1),
     A.assist ? "assist" : "", A.cur ? A.cur.def.name + " " + A.cur.t.toFixed(2) : "", "dash " + A.dashes, "score " + GS.score, "gauge " + GS.gauge.toFixed(2), GS.fury ? "FURY" : ""].join(" · ");
 }
-window.__ultimate = { tick, setZoneCam, bumps, BONUS, rails, D, GS, E, cam, IN, startFury, P: () => P, DES, setAmb, press, dashKey, resetCity, skipToZone, placeAt, TR, ARROWS, pits, scene, renderer, ready: () => ready };
+function forceTrick(name) {   // a bench's handle: this trick, now, in the air
+  const def = TRICKS.find((t) => t.name === name); if (!def || D.ground) return false;
+  D.air.cur = { def, t: 0, k: 0 }; D.air.lastName = def.name; return true;
+}
+window.__ultimate = { tick, forceTrick, TRICKS, setZoneCam, bumps, ramps, BONUS, rails, FX3, D, GS, E, cam, IN, startFury, P: () => P, DES, setAmb, press, dashKey, resetCity, skipToZone, placeAt, TR, ARROWS, pits, scene, renderer, ready: () => ready };
 
 // =============================================================================
 // BOOT
@@ -2910,7 +3269,7 @@ Promise.all(NAMES.map((n) => loadKit(n).then((g) => { kit[n] = g.scene; })))
     buildGround(); buildPits(); buildRamps(); buildRails(); buildTrack(); buildBonus();
     buildCity(); buildTiles(); buildParkDecor();
     GS.total = DES.length;
-    buildDozer(); buildGhosts();
+    buildDozer(); buildFx3();
     headSpot.position.set(0.6, 1.0, 0); headSpot.target.position.set(6, 0, 0);
     root.add(headSpot, headSpot.target);
     // what glows and water keep their colours under a biome; the dozer stays clean

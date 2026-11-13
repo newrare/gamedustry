@@ -1400,7 +1400,7 @@
   }
   .demo-chip > svg { width:26px; height:26px; color:var(--accent); }
   .legend-or { font-size:20px; font-weight:800; letter-spacing:2px; color:var(--muted); margin:0 2px; }
-  .legend-does { margin-left:6px; font-size:22px; font-weight:800; letter-spacing:2px; color:var(--text); }
+  .legend-does { margin-left:6px; text-align:center; font-size:22px; font-weight:800; letter-spacing:2px; color:var(--text); }
 
   /* ---- End screen: staggered cinematic reveal ---- */
   #screen-end { justify-content:center; background:rgba(6,7,18,.86); }

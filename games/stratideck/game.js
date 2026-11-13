@@ -2656,6 +2656,10 @@
       if (n._seen !== seen) { n.classList.toggle("seen", seen); n._seen = seen; }
       var dimmed = !!opt.dim;
       if (n._dim !== dimmed) { n.classList.toggle("dim", dimmed); n._dim = dimmed; }
+      /* stunned: the violet is a filter on the NODE, so it covers the card
+         and every badge hanging off it, cut to their own outlines */
+      var stunned = !!(c && c.stun && !opt.down);
+      if (n._stun !== stunned) { n.classList.toggle("stunned", stunned); n._stun = stunned; }
       var shine = opt.shine || 0;
       if (n._shine !== shine) {
         n.classList.toggle("lit", shine > 0);
@@ -2737,16 +2741,16 @@
       Enter.end();
     }
 
-    /* STUNNED, AND IT IS THE SKULL THAT DID IT: a violet veil — a wound's
-       veil says "not this turn", this one "not this battle" — and the skull
-       that stunned it, in the Lucide stroke (assets/motor/lucide/skull.svg)
-       replayed through Path2D like the drop. */
+    /* STUNNED, AND IT IS THE SKULL THAT DID IT: the card turned violet —
+       the `stunned` class (place), a filter on the node so the badges that
+       hang off it are coloured with it — and the skull that stunned it, in
+       the Lucide stroke (assets/motor/lucide/skull.svg) replayed through
+       Path2D like the drop. `w`, `h` and `r` are the card's: the skull is
+       sized off them. */
     var SKULL_PATHS = ["m12.5 17-.5-1-.5 1h1z",
       "M15 22a1 1 0 0 0 1-1v-1a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20v1a1 1 0 0 0 1 1z"];
     var skullShapes = null;
     function drawStun(w, h, r) {
-      roundRect(ctx, -w / 2, -h / 2, w, h, r);
-      ctx.fillStyle = "rgba(34,12,60,.66)"; ctx.fill();
       if (!skullShapes) skullShapes = SKULL_PATHS.map(function (d) { return new Path2D(d); });
       var s = Math.min(w, h) * 0.5 / 24;
       ctx.save();
@@ -2763,22 +2767,24 @@
       ctx.restore();
     }
 
-    /* A WOUND, AND IT IS A DROP OF BLOOD AND A VEIL. The veil is what says the
-       card cannot be sent — a greyed card reads as unavailable in any game —
-       and the drop is what says why. A red cross said the opposite: it is the
-       sign of the medic, not of the hurt. The drop is an SVG path (24-unit
-       box) replayed through Path2D, filled with a lit gradient and a white
-       glint so it reads as liquid rather than as a red pictogram. */
+    /* A WOUND, AND IT IS A DROP OF BLOOD IN THE CARD'S TOP-RIGHT CORNER,
+       hanging a little off it like a sticker. No veil: the officer stays
+       readable, and the drop alone says the card is hurt. A red cross said
+       the opposite: it is the sign of the medic, not of the hurt. The drop is
+       an SVG path (24-unit box) replayed through Path2D, filled with a lit
+       gradient and a white glint so it reads as liquid rather than as a red
+       pictogram. `r` is unused, kept so the call matches drawStun's. */
     var DROP_PATH = "M12 1.5C12 1.5 4.2 10.4 4.2 15.6a7.8 7.8 0 0 0 15.6 0C19.8 10.4 12 1.5 12 1.5z";
     var dropShape = null;
     function drawWound(w, h, r) {
-      roundRect(ctx, -w / 2, -h / 2, w, h, r);
-      ctx.fillStyle = "rgba(8,10,22,.6)"; ctx.fill();
       if (!dropShape) dropShape = new Path2D(DROP_PATH);
-      var s = Math.min(w, h) * 0.46 / 24;
+      var d = Math.min(w, h) * 0.3, s = d / 24;
       ctx.save();
+      ctx.translate(w / 2 - d * 0.3, -h / 2 + d * 0.22);
       ctx.scale(s, s);
       ctx.translate(-12, -13);
+      ctx.fillStyle = "rgba(0,0,0,.45)";
+      ctx.save(); ctx.translate(0.6, 1.4); ctx.fill(dropShape); ctx.restore();
       var g = ctx.createLinearGradient(6, 3, 18, 24);
       g.addColorStop(0, "#ff6b6b"); g.addColorStop(0.55, "#d61f2c"); g.addColorStop(1, "#6e0710");
       ctx.fillStyle = g; ctx.fill(dropShape);
@@ -3635,17 +3641,72 @@
     }
     function gVs() { return gWord(upper(Lang.t("vs"))); }
     function gTilt(n, deg) { n.style.transform = "rotate(" + deg + "deg)"; return n; }
-    /* A card under the veil the table lays on it: the wound's drop, or the
-       skull's stun. The canvas is the table's own drawing, over the card. */
+    /* the loser of a duel: greyed, tipped over, a red cross over it */
+    function gBeaten(n) {
+      var wrap = document.createElement("div");
+      wrap.className = "cd-gbeaten";
+      wrap.appendChild(n);
+      /* the cross goes INSIDE the card, under its badges, so the grade
+         and the tier of the loser stay readable */
+      n.insertAdjacentHTML("beforeend", '<i class="cd-gx"></i>');
+      return wrap;
+    }
+    /* the Deck as the table lays it: three backs, each a step up and right */
+    function gPile(w) {
+      var pile = document.createElement("div"), i;
+      pile.className = "cd-gpile";
+      pile.style.width = (w + 12) + "px"; pile.style.height = (Math.round(w * 1.4) + 12) + "px";
+      for (i = 0; i < 3; i++) {
+        var b = gCard(null, w, "full");
+        b.style.position = "absolute"; b.style.left = (i * 6) + "px"; b.style.top = (12 - i * 6) + "px";
+        pile.appendChild(b);
+      }
+      return pile;
+    }
+    /* the captive of a duel: a chain across the card, from its foot up to a
+       padlock in the corner the wound's drop takes (the Lucide lock,
+       assets/motor/lucide/lock.svg). The links alternate face-on and
+       edge-on, laid along the diagonal in a 100-unit box. */
+    function gChain(x0, y0, x1, y1) {
+      var dx = x1 - x0, dy = y1 - y0, len = Math.sqrt(dx * dx + dy * dy);
+      var ang = Math.atan2(dy, dx) * 180 / Math.PI, step = 11, n = Math.floor(len / step), out = "", i;
+      for (i = 0; i <= n; i++) {
+        var t = (i * step) / len, x = (x0 + dx * t).toFixed(2), y = (y0 + dy * t).toFixed(2);
+        var g = '<g transform="translate(' + x + " " + y + ") rotate(" + ang.toFixed(1) + ')">';
+        if (i % 2 === 0) {
+          out += g + '<rect x="-8" y="-4.5" width="16" height="9" rx="4.5" class="k"/>' +
+                     '<rect x="-8" y="-4.5" width="16" height="9" rx="4.5" class="l"/></g>';
+        } else {
+          out += g + '<rect x="-8" y="-2" width="16" height="4" rx="2" class="e"/></g>';
+        }
+      }
+      return '<svg class="cd-gchain" viewBox="0 0 100 100" preserveAspectRatio="none">' + out + "</svg>";
+    }
+    function gCaptured(n) {
+      var wrap = document.createElement("div");
+      wrap.className = "cd-gcaptured";
+      wrap.appendChild(n);
+      /* the chain goes INSIDE the card, under its badges */
+      n.insertAdjacentHTML("beforeend", gChain(10, 80, 90, 10));
+      wrap.insertAdjacentHTML("beforeend", '<svg class="cd-glock" viewBox="0 0 24 24">' +
+        '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>');
+      return wrap;
+    }
+    /* A card wearing what the table paints over it: the wound's drop, or
+       the skull's stun. The canvas is the table's own drawing, over the card. */
     function gVeil(c, w, kind) {
       var wrap = document.createElement("div");
       wrap.className = "cd-gveil";
-      wrap.appendChild(gCard(c, w, "mid"));
-      var cv = paintPic(w, w, function () {
-        ctx.translate(w / 2, w / 2);
+      var n = gCard(c, w, "mid");
+      if (kind === "stun") n.classList.add("stunned");
+      wrap.appendChild(n);
+      var pad = Math.round(w * 0.15);       // room for the drop hanging off the corner
+      var cv = paintPic(w + pad * 2, w + pad * 2, function () {
+        ctx.translate(w / 2 + pad, w / 2 + pad);
         if (kind === "stun") drawStun(w, w, w * 0.05); else drawWound(w, w, w * 0.05);
       });
       cv.className = "cd-gveil-cv";
+      cv.style.left = cv.style.top = -pad + "px";
       wrap.appendChild(cv);
       return wrap;
     }
@@ -3784,28 +3845,31 @@
           rows: tiers,
           text: Lang.t("Between two equal <b>Grades</b>, the better <b>Tier</b> wins.\n\nSame <b>Grade</b> and same <b>Tier</b>? Then both cards fall together.") },
         { id: "wounds", title: Lang.t("Wounds"),
-          pic: function () { return gBox("", [gVeil({ rank: 7, tier: 1 }, 150, "wound"), gVs(), gCard({ rank: 5, tier: 3 }, 150, "mid", "red")]); },
+          pic: function () { return gBox("", [gVeil({ rank: 7, tier: 1 }, 150, "wound"), gVs(), gBeaten(gCard({ rank: 5, tier: 3 }, 150, "mid", "red"))]); },
           text: Lang.t("When your card beats an enemy of a better <b>Tier</b>, it wins but comes out wounded, and sits out its next turn.\n\nAfter the battle, your wounded card rests in the infirmary. The bigger the <b>Tier</b> gap, the longer it stays in bed.") },
         { id: "standing", title: Lang.t("Captured alive"),
-          pic: function () { return gBox("", [gCard({ rank: 8, tier: 3 }, 150), gVs(), gCard({ rank: 6, tier: 1 }, 150, "mid", "red")]); },
+          pic: function () { return gBox("", [gCard({ rank: 8, tier: 3 }, 150), gVs(), gCaptured(gCard({ rank: 6, tier: 1 }, 150, "mid", "red"))]); },
           text: Lang.t("When your card beats an enemy of a lower <b>Tier</b>, it does not wipe the enemy out but captures him alive.\n\nWin the battle, and you can bring one of those captives back to your prison.") },
         { id: "hand", title: Lang.t("The hand"),
           pic: function () {
             return gBox("tight", [gCard({ rank: 4, tier: 1 }, 84, "tiny"), gCard({ rank: 9, tier: 2 }, 84, "tiny"), gLocked(84), gLocked(84), gLocked(84)]);
           },
-          text: Lang.t("Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot, though.") },
+          text: Lang.t("Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot and takes up a slot needlessly.") },
         { id: "enemy-turn", title: Lang.t("The enemy answers"),
           pic: function () {
             return gBox("", [gCard(null, 130, "mid", "red"), gTilt(gCard(null, 130, "mid", "red"), -5), gCard(null, 130, "mid", "red")]);
           },
-          text: Lang.t("After each of your moves, the red troops may slide a soldier into a cell you have emptied.\n\nThe flag, the traps and the objects never move. A soldier who has moved stays tilted, so you can spot him.") },
+          text: Lang.t("After each of your moves, the red troops may send a soldier into an available slot.\n\nThe flag, the traps and the objects never move. The card of a soldier who has already moved stays slightly tilted, so you can spot it.") },
         { id: "commander", title: Lang.t("The enemy commander"),
           pic: function () { var im = gArt("enemyNeutral", "cd-gfoe"); return im ? gBox("", [im]) : gCard(null, 140, "mid", "red"); },
           text: Lang.t("Tap the enemy commander to see the red troops available at the start of the battle. He tells you the <b>Grades</b>, but never the <b>Tiers</b>.") },
         { id: "table", title: Lang.t("Your troops"),
           pic: function () {
-            var a = gArt("infirmary", "cd-gtent"), b = gArt("prison", "cd-gtent");
-            return a || b ? gBox("", [a, b]) : gBox("", [gCard(null, 110)]);
+            /* the Deck tapped, then what it opens: the cards still standing,
+               and a lost one struck through */
+            var list = gBox("", [gCard({ rank: 8, tier: 2 }, 72, "tiny"), gCard({ rank: 4, tier: 1 }, 72, "tiny"),
+                                 gBeaten(gCard({ rank: 6, tier: 3 }, 72, "tiny"))]);
+            return gBox("", [gPile(96), gWord("›"), list]);
           },
           text: Lang.t("Tap your Deck to see which cards you still have and which ones you have lost.\n\nOnce your Deck and your hand are both empty, the battle is lost.") },
         { id: "score", title: Lang.t("Score"),
@@ -3882,7 +3946,6 @@
     }
 
     function climbPages() {
-      var unlock = (gArmy().defense && gArmy().defense.unlock) || [];
       var pages = [
         { id: "climb", title: Lang.t("The climb"),
           pic: function () { return gArt(CONFIG.bands[0].scene, "cd-gimg") || gBox("", [gCard(null, 120, "mid", "red")]); },
@@ -3905,7 +3968,6 @@
         var lines = [];
         lines.push(fresh.length ? gFill(Lang.t("New in this biome: {list}."), { list: objectNames(fresh) })
                                 : Lang.t("No new object in this biome."));
-        if (unlock[b.k] && unlock[b.k].length) lines.push(gFill(Lang.t("Clear this biome and you can use these in your own defence: {list}."), { list: objectNames(unlock[b.k]) }));
         pages.push({ id: "band-" + (b.k + 1), title: b.name, lv: b.from,
           pic: function () { return gArt(b.scene, "cd-gimg") || gBox("", [gCard(null, 120, "mid", "red")]); },
           text: lines.join("\n\n") });

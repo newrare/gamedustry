@@ -14,6 +14,7 @@
  *                                                      # gestures in design px, a shot after each "shot:"
  *   node tools/lab/shoot-foldiers.mjs 1 --do down:360,700 move:520,420 wait:500 move:430,300 shot:ring up:430,300
  *                                                      # a gesture held between steps (the order ring)
+ *   node tools/lab/shoot-foldiers.mjs 1 --do hover:360,700   # prints the desk cursor over a point
  *   node tools/lab/shoot-foldiers.mjs 1 --query hud=0  # extra url parameters (hud=0: the bare map)
  *
  * Frames land in dist/lab/foldiers/. Serves dist/web over HTTP on its own,
@@ -109,7 +110,8 @@ const ev = async (expr) => { const r = await c.send("Runtime.evaluate", { expres
 // design px → the page's css px: the 720x1280 frame is letterboxed into the viewport.
 async function mouse(type, x, y, buttons) {
   const k = Math.min(VW / 720, VH / 1280), ox = (VW - 720 * k) / 2, oy = (VH - 1280 * k) / 2;
-  await c.send("Input.dispatchMouseEvent", { type, x: ox + x * k, y: oy + y * k, button: "left", buttons: type === "mouseReleased" ? 0 : 1, clickCount: 1 }, sid);
+  const free = type === "mouseReleased" || buttons === 0;
+  await c.send("Input.dispatchMouseEvent", { type, x: ox + x * k, y: oy + y * k, button: free && type === "mouseMoved" ? "none" : "left", buttons: free ? 0 : 1, clickCount: 1 }, sid);
 }
 async function shot(name) {
   const r = await c.send("Page.captureScreenshot", { format: "png" }, sid);
@@ -153,6 +155,10 @@ for (const n of levels) {
     else if (kind === "move") {
       for (let k = 1; k <= 12; k++) { await mouse("mouseMoved", last[0] + (v[0] - last[0]) * k / 12, last[1] + (v[1] - last[1]) * k / 12, 1); await sleep(30); }
       last = v;
+    }
+    else if (kind === "hover") {     // a mouse moved with no button down: prints the cursor the game asks for
+      await mouse("mouseMoved", v[0], v[1], 0); await sleep(150);
+      console.log("  cursor at " + v.join(",") + " → " + JSON.stringify(await ev("document.getElementById('game').style.cursor")));
     }
     else if (kind === "up") { await mouse("mouseReleased", v[0], v[1]); await sleep(400); }
     else if (kind === "drag") {

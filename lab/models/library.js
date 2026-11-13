@@ -1238,6 +1238,81 @@ export const ITEMS = [
       const g = new THREE.Group(); g.add(m); return g;
     }
   },
+  // ---- the village set: the ground a hub's doors stand on (lab/village-3d.html) ----
+  {
+    id: "village-pad", name: "Plaza pad", category: "village", biome: "any", tags: ["ground", "hub"],
+    notes: "A round paved pad with a stone rim, the 3D village's answer to the painted pads a 2D hub stands its houses on. opts.r is its radius.",
+    build(ctx, opts = {}) {
+      const g = new THREE.Group(), r = opts.r || 1.3;
+      const rim = ctx.mesh(new THREE.CylinderGeometry(r + 0.08, r + 0.12, 0.07, 28), 0xb9b3a8);
+      rim.position.y = 0.035; g.add(rim);
+      const top = ctx.mesh(new THREE.CylinderGeometry(r, r, 0.09, 28), 0xd2ccc1);
+      top.position.y = 0.045; g.add(top);
+      // a ring of flagstones inside the rim, so the pad reads as laid rather than poured
+      const n = Math.max(10, Math.round(r * 10));
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * TAU, s = ctx.mesh(bevelBox(0.22, 0.03, 0.14, 0.01), 0xe7e1d5);
+        s.position.set(Math.cos(a) * (r - 0.16), 0.095, Math.sin(a) * (r - 0.16)); s.rotation.y = -a; g.add(s);
+      }
+      return g;
+    }
+  },
+  {
+    id: "village-path", name: "Flagstone path", category: "village", biome: "any", tags: ["ground", "hub"],
+    notes: "Five uneven flat stones along z, 2 long: laid end to end, they lead from one door to the next.",
+    build(ctx) {
+      const g = new THREE.Group();
+      for (let i = 0; i < 5; i++) {
+        const w = rr(ctx, 0.42, 0.6), d = rr(ctx, 0.28, 0.36);
+        const s = ctx.mesh(bevelBox(w, 0.05, d, 0.015), pick(ctx, [0xd2ccc1, 0xb9b3a8, 0xe7e1d5]));
+        s.position.set(rr(ctx, -0.08, 0.08), 0.025, -0.8 + i * 0.4); s.rotation.y = rr(ctx, -0.25, 0.25); g.add(s);
+      }
+      return g;
+    }
+  },
+  {
+    id: "village-lamp", name: "Lamp post", category: "village", biome: "any", tags: ["hub", "light source"],
+    notes: "A post, an arm and a lantern; the lantern is emissive (glow \"lamp\"), so the page lights it by night.",
+    build(ctx) {
+      const g = new THREE.Group();
+      const base = ctx.mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.12, 8), 0x52595d); base.position.y = 0.06; g.add(base);
+      const post = ctx.mesh(new THREE.CylinderGeometry(0.035, 0.045, 1.3, 8), 0x52595d); post.position.y = 0.77; g.add(post);
+      const cap = ctx.mesh(new THREE.ConeGeometry(0.13, 0.12, 6), 0x404040); cap.position.y = 1.62; g.add(cap);
+      const lantern = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 0.18, 6), ctx.glow("lamp"));
+      lantern.position.y = 1.48; g.add(lantern);
+      const frame = ctx.mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 6), 0x404040); frame.position.y = 1.4; g.add(frame);
+      return g;
+    }
+  },
+  {
+    id: "village-fence", name: "Wooden fence", category: "village", biome: "any", tags: ["hub", "border"],
+    notes: "Three posts and two rails, 2 long along x: the edge of a garden or of the island.",
+    build(ctx) {
+      const g = new THREE.Group(), seed = ctx.rnd() * 100;
+      for (const x of [-0.95, 0, 0.95]) {
+        const p = ctx.mesh(jitter(bevelBox(0.09, 0.55, 0.09, 0.015), 0.01, seed + x), 0x8c4b38);
+        p.position.set(x, 0.275, 0); p.rotation.z = rr(ctx, -0.05, 0.05); g.add(p);
+      }
+      for (const y of [0.22, 0.42]) {
+        const r = ctx.mesh(bevelBox(2.05, 0.06, 0.04, 0.012), 0x9b5a45);
+        r.position.set(0, y, 0.05); r.rotation.z = rr(ctx, -0.02, 0.02); g.add(r);
+      }
+      return g;
+    }
+  },
+  {
+    id: "village-flag", name: "Banner pole", category: "village", biome: "any", tags: ["hub"],
+    notes: "A pole with a swallow-tailed banner; opts.color is the banner's colour (the game's accent on a page that has one).",
+    build(ctx, opts = {}) {
+      const g = new THREE.Group();
+      const pole = ctx.mesh(new THREE.CylinderGeometry(0.03, 0.04, 2.2, 8), 0xe7e1d5); pole.position.y = 1.1; g.add(pole);
+      const knob = ctx.mesh(new THREE.SphereGeometry(0.06, 8, 6), 0xf5cb60); knob.position.y = 2.24; g.add(knob);
+      const s = new THREE.Shape(); s.moveTo(0, 0); s.lineTo(0.75, 0); s.lineTo(0.55, -0.22); s.lineTo(0.75, -0.44); s.lineTo(0, -0.44); s.closePath();
+      const banner = ctx.mesh(new THREE.ExtrudeGeometry(s, { depth: 0.02, bevelEnabled: false }), opts.color || 0xdf4043);
+      banner.position.set(0.03, 2.1, -0.01); g.add(banner);
+      return g;
+    }
+  },
   ...HOUSES,
   ...BUILDINGS
 ];

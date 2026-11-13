@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — 3D village</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="all">
+<style>
+/* ===========================================================================
+   LAB — 3D VILLAGE. A game's hub built as a small 3D island instead of a
+   painted backdrop with cut houses on it: the same doors (play, the map, the
+   ranking, the shop, the collection, the daily road, the options, the
+   barracks…), standing as 3D buildings the camera looks down on.
+
+   It is the alternative to `lab/village.html` and `packages/webshell/
+   village.{js,css}`, and it keeps that system's vocabulary on purpose, so a
+   composition made here could one day be read by the same shell:
+
+     a HOUSE is an object with a ROLE — the door it opens. `decor` opens
+              nothing. The role's word is the shell's own (never typed),
+              shouted by this page's copy of the motor's `upper()`, and stands
+              under the house's feet.
+     the HALO is light lying on the ground under a door: it says THIS IS A
+              DOOR, in the game's accent or the house's own colour.
+     the BADGE is the number waiting behind it, and only a number.
+     the PULSE moves the house (`float`, `breath`, `alert`, `fade`) and the
+              LIGHT works its halo (`blink`, `flicker`, `random`) — two fields,
+              each with `every` (how long a turn takes) and `delay` (how late
+              it starts). Both wait for something to be waiting, unless the
+              house says `always`.
+
+   What 3D adds is the CAMERA and the LIGHT. The camera is part of the
+   composition (yaw, pitch, distance, projection, how far a finger may pan
+   it), and it is what makes a village of 3D objects read as one place on a
+   portrait phone: the island is laid out along the camera's depth, not
+   across it. The light is a preset (day, golden hour, dusk, night) that
+   BREATHES warm and cold over a cycle, the 2D village's `life.cycle` — and
+   it lights the houses too, since here they are in the same world.
+
+   Two modes. EDIT places, moves, turns and scales objects on the island
+   (snapped to a 0.25 grid and 15°), and every field of a house is in the
+   inspector. PLAY is the player's view: the composition's camera, a finger
+   pans it, a tap on a door flies the camera to it and opens a mock of the
+   card or view that door leads to.
+
+   The objects are the studio's: the KayKit City pack (assets/model/) and
+   everything made in code in lab/models/library.js — its `village` set (pad,
+   path, lamp, fence, banner) was added for this page.
+
+   It writes nothing: the composition is autosaved per game in this browser
+   (localStorage), and Copy JSON hands it over in the shape a `web.village3d`
+   block of a manifest would take. "From the 2D village" seeds the doors out of
+   the game's own `web.village`, so a game's 3D hub starts from its 2D one.
+
+   Served over HTTP only (make lab): three.js is an ES module, vendored in
+   lab/vendor/three/ and named by the import map below.
+   #game=<slug>&mode=play opens a state.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+
+.col { height:100vh; overflow-y:auto; padding:16px 14px 40px; background:#12121c; }
+#left { flex:0 0 300px; border-right:1px solid #23233a; }
+#right { flex:0 0 320px; border-left:1px solid #23233a; }
+h1 { font-size:16px; }
+p.hint { margin:6px 0 12px; font-weight:500; font-size:12px; color:#8b8ba7; }
+h2 { margin:16px 0 6px; font-size:12px; color:#9c9cba; font-weight:600; display:flex; justify-content:space-between; align-items:center; }
+h2 small { font-weight:500; color:#6f6f8c; }
+input[type=search], select, input[type=text], input[type=number] { width:100%; padding:5px 7px; background:#0b0b12; color:#e8e6f5;
+  border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:3px 9px; border-radius:999px; background:#22223a; border:1px solid #2c2c47; color:#cfd0ea; font-size:11px; cursor:pointer; }
+.chip.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+button { padding:6px 9px; background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:600 12px/1.2 inherit; cursor:pointer; }
+button:hover { border-color:#4a4a72; }
+button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+button.danger { color:#ff8f8f; }
+.btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.btns button { flex:1 1 auto; }
+
+/* one row a knob: a label, the input, its value */
+.row { display:grid; grid-template-columns:96px 1fr 44px; align-items:center; gap:8px; margin:5px 0; font-size:12px; color:#9c9cba; }
+.row.wide { grid-template-columns:96px 1fr; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+.row output { font:500 11px ui-monospace,Menlo,monospace; color:#cfd0ea; text-align:right; }
+.sws { display:flex; gap:5px; align-items:center; }
+.row > * { min-width:0; }
+.sws { flex-wrap:wrap; }
+.sws i { width:17px; height:17px; border-radius:4px; border:2px solid #0006; cursor:pointer; flex:none; }
+.sws i.on { border-color:#fff; }
+.sws input { width:72px; }
+fieldset { min-width:0; border:1px solid #23233a; border-radius:10px; padding:4px 10px 8px; margin-top:10px; }
+legend { padding:0 6px; font-size:11px; color:#7ea6ff; }
+
+/* the palette: one card a model */
+#pal { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:8px; }
+.pc { background:#15151f; border:1px solid #23233a; border-radius:8px; padding:4px; cursor:pointer; }
+.pc.on { border-color:#7ea6ff; box-shadow:0 0 0 1px #7ea6ff; }
+.pc img { width:100%; aspect-ratio:1; display:block; border-radius:5px; background:#1d1d2a; }
+.pc b { display:block; margin-top:2px; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pc small { display:block; font:500 9px ui-monospace,Menlo,monospace; color:#8b8ba7; }
+.pc small.code { color:#ffcf7a; }
+
+/* the doors: what the game has, what is placed */
+.door { display:flex; justify-content:space-between; align-items:center; padding:4px 8px; margin:3px 0; border-radius:7px;
+  background:#15151f; border:1px solid #23233a; font-size:12px; cursor:pointer; }
+.door.miss { border-style:dashed; color:#8b8ba7; cursor:default; }
+.door.sel { border-color:#7ea6ff; }
+.door em { font-style:normal; font:500 11px ui-monospace,Menlo,monospace; color:#7ea6ff; }
+.door.miss em { color:#ff9d6b; }
+.door.extra em { color:#8b8ba7; }
+
+/* ---- the stage: the phone ------------------------------------------------- */
+#stage { flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; background:#0e0e17; }
+#bar { display:flex; gap:6px; align-items:center; padding:10px; flex-wrap:wrap; justify-content:center; }
+#bar .sep { width:1px; height:22px; background:#2c2c47; margin:0 4px; }
+#bar label { display:flex; gap:5px; align-items:center; font-size:12px; color:#9c9cba; }
+#bar input[type=checkbox] { accent-color:#7ea6ff; }
+#phoneWrap { flex:1; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; padding:0 16px 14px; }
+#phone { position:relative; border-radius:28px; overflow:hidden; box-shadow:0 0 0 8px #1b1b28, 0 18px 50px #000a;
+  background:linear-gradient(var(--sky1, #9fd3f0), var(--sky2, #e8f4fb)); }
+#view { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+#ov { position:absolute; left:0; top:0; width:720px; height:1280px; transform-origin:0 0; pointer-events:none; }
+#status { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); padding:4px 10px; border-radius:999px;
+  background:#000a; color:#fff; font-size:11px; white-space:nowrap; pointer-events:none; }
+#status:empty { display:none; }
+
+/* what the shell would draw over the world, in the 720 x 1280 design space */
+.lbl { position:absolute; transform:translate(-50%, 0); padding:4px 14px 5px; border-radius:999px;
+  background:rgba(10, 12, 24, .62); color:#fff; font:700 22px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  letter-spacing:1px; white-space:nowrap; text-shadow:0 2px 0 #0008; }
+.lbl.dim { opacity:.45; }
+.bdg { position:absolute; transform:translate(-50%, -50%); min-width:44px; height:44px; padding:0 10px; border-radius:22px;
+  background:linear-gradient(#ff6b6b, #d6334a); color:#fff; border:3px solid #fff; display:flex; align-items:center; justify-content:center;
+  font:800 24px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; box-shadow:0 4px 0 #0005; }
+#band { position:absolute; left:26px; right:26px; top:26px; height:62px; display:flex; gap:8px; align-items:center; }
+#band span { height:52px; padding:0 14px; display:flex; align-items:center; border-radius:26px; background:rgba(10, 12, 24, .7);
+  color:#fff; font:700 22px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; box-shadow:inset 0 0 0 2px #ffffff22; }
+#band span.grow { flex:1; }
+#card { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5, 6, 14, .55); pointer-events:auto; }
+#card.on { display:flex; }
+#card .box { width:560px; padding:34px 36px 30px; border-radius:30px; background:rgba(22, 24, 42, .92); box-shadow:inset 0 0 0 2px #ffffff22, 0 20px 60px #000a;
+  text-align:center; color:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#card .eb { font-weight:700; font-size:20px; line-height:1; letter-spacing:2px; color:#9c9cba; }
+#card .tt { margin-top:12px; font-weight:800; font-size:46px; line-height:1.05; color:var(--accent, #7ea6ff); }
+#card .bd { margin-top:18px; font-weight:500; font-size:24px; line-height:1.35; color:#d8d8ee; }
+#card .tap { margin-top:26px; font-weight:700; font-size:20px; line-height:1; letter-spacing:2px; color:#9c9cba; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="left" class="col">
+  <h1>3D village</h1>
+  <p class="hint">A game's hub as a small 3D island: the shell's doors as buildings, the camera and the light part of the composition. Pick a model, click the island to drop it.</p>
+  <div class="row wide">Game <select id="game"></select></div>
+  <div class="btns">
+    <button id="bStarter" title="A composed island with every door this game has">Starter</button>
+    <button id="bFrom2d" title="The doors of this game's web.village, laid on the island">From the 2D village</button>
+    <button id="bClear" class="danger">Clear</button>
+  </div>
+  <div class="btns">
+    <button id="bCopy">Copy JSON</button>
+    <button id="bPaste">Paste JSON</button>
+  </div>
+  <h2>Models <small id="palCount"></small></h2>
+  <input id="q" type="search" placeholder="Search a model">
+  <div class="chips" id="cats" style="margin-top:8px"></div>
+  <div id="pal">Loading…</div>
+</div>
+
+<div id="stage">
+  <div id="bar">
+    <button id="mEdit" class="on">Edit</button><button id="mPlay">Play</button>
+    <span class="sep"></span>
+    <label><input id="free" type="checkbox"> Free camera</label>
+    <button id="useView" title="The free camera's view becomes the player's">Use this view</button>
+    <span class="sep"></span>
+    <label><input id="grid" type="checkbox" checked> Grid</label>
+    <label><input id="labels" type="checkbox" checked> Names</label>
+    <label><input id="bandOn" type="checkbox" checked> Wallet band</label>
+    <label>Waiting <select id="sim" style="width:auto"><option value="set">As set</option><option value="none">Nothing</option><option value="all">Everything</option></select></label>
+    <button id="lang">EN</button>
+  </div>
+  <div id="phoneWrap"><div id="phone">
+    <canvas id="view"></canvas>
+    <div id="ov">
+      <div id="band"><span>⌂</span><span>Lv 3</span><span>1 240</span><span>3/20</span><span class="grow">12/90</span><span>!</span></div>
+      <div id="card"><div class="box"><div class="eb"></div><div class="tt"></div><div class="bd"></div><div class="tap"></div></div></div>
+    </div>
+    <div id="status"></div>
+  </div></div>
+</div>
+
+<div id="right" class="col">
+  <div id="insp"></div>
+  <h2>Doors <small id="doorCount"></small></h2>
+  <div id="doors"></div>
+  <p class="hint" style="margin-top:12px">Keys in edit mode: R / Shift+R turns 15°, [ and ] scale, D duplicates, Delete removes, Esc drops the selection, Ctrl+Z undoes.</p>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { ITEMS, PAL, paint, mulberry, weather, setBiome, tufts } from "./models/library.js";
+
+const $ = (id) => document.getElementById(id);
+const TAU = Math.PI * 2, RAD = Math.PI / 180;
+const ASSETS = "../assets/model/";
+const ATLAS_URL = ASSETS + "kaykit-city/citybits_texture.png";
+const SLUGS = ["arcider", "blight", "bouncetry", "bridgessa", "chainring", "echomaze", "foldiers", "gearball", "gelatile", "grudgeon",
+  "holepocalypse", "marshmelt", "orbinity", "parrynormal", "pawko", "radiam", "slipdeck", "spinshock", "stratideck", "triverse", "vipera"];
+
+// ---- the motor's upper(): capitals are a look, and they carry no accent -------------
+function upper(str) {
+  const FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ", TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY", PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+  const shouted = String(str == null ? "" : str).replace(/[a-zß-öø-ÿœ]+/g, (run, at, whole) => {
+    const b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+    return (b >= "0" && b <= "9") || (a >= "0" && a <= "9") ? run : run.toUpperCase();
+  });
+  let out = "";
+  for (const c of shouted) { if (PAIR[c]) { out += PAIR[c]; continue; } const k = FROM.indexOf(c); out += k < 0 ? c : TO.charAt(k); }
+  return out;
+}
+
+// =============================================================================
+// THE DOORS — the shell's roles, their words and what they open
+// =============================================================================
+// The words are the shell's own strings (menu.js, meta.js, levels.js, daily.js,
+// army.js), copied here because a lab page cannot read them out of the build.
+// `badge` says what the number over that house counts, as the 2D village does.
+const ROLES = {
+  play:      { en: "Play", fr: "Jouer", opens: "the round, or the top level of the map (LV.playTop)" },
+  map:       { en: "Levels", fr: "Stages", opens: "the level map (LV.open)", badge: "a board nobody opened" },
+  ranking:   { en: "Leaderboard", fr: "Classement", opens: "the ranking view: records, levels, modes" },
+  shop:      { en: "Shop", fr: "Boutique", opens: "the shop sheet (AL.openShop)", badge: "the copies it would buy back" },
+  album:     { en: "Album", fr: "Album", opens: "the collection and the gumball machine (AL.open)", badge: "the tickets that pull the machine" },
+  daily:     { en: "Daily gift", fr: "Cadeau du jour", opens: "the daily road, as a card over the hub (DL.openRoad)", badge: "today's gift" },
+  options:   { en: "Options", fr: "Options", opens: "the options card" },
+  help:      { en: "Help", fr: "Aide", opens: "the help card" },
+  cards:     { en: "Cards", fr: "Cartes", opens: "the codex, every card of the game (CX.open)" },
+  deck:      { en: "Cards", fr: "Cartes", opens: "the barracks: camp, deck and collection" },
+  infirmary: { en: "Infirmary", fr: "Infirmerie", opens: "the barracks: the wounded" },
+  prison:    { en: "Prison", fr: "Prison", opens: "the barracks: the prisoners" },
+  recruit:   { en: "Command", fr: "Commandement", opens: "the barracks: posts, recruits, missions, register" },
+  defense:   { en: "Defence", fr: "Défense", opens: "the barracks: the defence grid and the last raid" },
+  mode:      { en: "Mode", fr: "Mode", opens: "a mode of web.modes (MENU.startMode)" },
+  decor:     { en: "", fr: "", opens: null }
+};
+const ROLE_MODEL = {
+  play: "code/house-turret", map: "code/building-school", ranking: "code/building-setback", shop: "code/building-shop",
+  album: "code/house-chalet", daily: "code/house-cottage", options: "code/house-cabin", help: "code/house-narrow",
+  cards: "code/building-mansard", deck: "code/building-firestation", infirmary: "code/building-hotel", prison: "code/building-factory",
+  recruit: "code/building-office", defense: "code/building-parking", mode: "code/house-modern"
+};
+// how long one turn of each pulse takes when the house names none
+const EVERY = { float: 3, breath: 2.4, alert: 6, fade: 3, blink: 1.2, flicker: 2, random: 7 };
+
+// what this game's manifest says it has: the doors a hub of it must carry
+let manifest = null, slug = null;
+function doorsOf(man) {
+  const w = (man && man.web) || {}, need = ["play", "ranking", "options"];
+  if (w.levels) need.splice(1, 0, "map");
+  if (w.meta) need.push("shop", "album", "daily");
+  if (w.army) need.push("deck", "infirmary", "prison", "recruit", "defense");
+  return need;
+}
+function accent() { return (manifest && manifest.theme && manifest.theme.accent) || "#7ea6ff"; }
+function accent2() { return (manifest && manifest.theme && manifest.theme.accent2) || "#ffcf7a"; }
+let lang = "en";
+function word(spec) {
+  const r = ROLES[spec.role];
+  if (!r || spec.role === "decor") return "";
+  if (spec.role === "mode") {
+    const key = spec.mode || "classic", copy = manifest && manifest.web && manifest.web.copy && manifest.web.copy[lang];
+    const k = "mode" + key.charAt(0).toUpperCase() + key.slice(1);
+    return (copy && copy[k]) || key;
+  }
+  return r[lang];
+}
+
+// =============================================================================
+// THE MODELS — the kit's files and the library's code, one list
+// =============================================================================
+let entries = [];
+const byId = new Map();
+const atlasTex = new THREE.TextureLoader().load(ATLAS_URL);
+atlasTex.flipY = false; atlasTex.colorSpace = THREE.SRGBColorSpace;
+const GLASS_HEX = new Set([0x2799d3, 0x215a9e, 0x82cbe7, 0x37475a]);
+const mats = {};
+function codeMat(hex, opts) {
+  const key = hex + JSON.stringify(opts || {});
+  if (mats[key]) return mats[key];
+  const m = new THREE.MeshStandardMaterial(Object.assign(PAL[hex] ? { map: atlasTex, roughness: 0.85, metalness: 0 } : { color: hex, roughness: 0.85, metalness: 0 }, opts));
+  if (GLASS_HEX.has(hex)) m.userData.glass = true;         // a window: lit from inside by night
+  return (mats[key] = m);
+}
+const GLOWS = { A: 0x39e6ff, B: 0xb45cff, ember: 0xff6a1a, lamp: 0xffc46b };
+const glowMats = {};
+function glow(k) {
+  if (glowMats[k]) return glowMats[k];
+  const m = new THREE.MeshStandardMaterial({ color: 0x302820, emissive: GLOWS[k] || 0xffffff, emissiveIntensity: 1.6, roughness: 0.3 });
+  m.userData.glow = true;
+  return (glowMats[k] = m);
+}
+const ctxOf = (seed) => ({ mesh: (geo, hex, opts) => new THREE.Mesh(paint(geo, hex), codeMat(hex, opts)), mat: codeMat, glow, rnd: mulberry(seed) });
+const gltf = new GLTFLoader(), gltfCache = {};
+const loadKit = (file) => gltfCache[file] || (gltfCache[file] = gltf.loadAsync(ASSETS + file).then((g) => g.scene));
+async function modelOf(e, seed, opts) {
+  if (e.item) return e.item.build(ctxOf(seed || 1), Object.assign({}, e.item.opts || {}, opts || {}));
+  return (await loadKit(e.file)).clone(true);
+}
+
+// =============================================================================
+// THE WORLD — the island, the water, the light
+// =============================================================================
+const canvas = $("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.setClearColor(0x000000, 0);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xe8f4fb, 30, 80);
+
+const hemi = new THREE.HemisphereLight(0xdfeaff, 0x6b5a48, 0.7);
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
+scene.add(hemi, sun, sun.target);
+{ // a soft sky as the environment, so glass and metal read as such
+  const sky = new THREE.Scene(), m = new THREE.ShaderMaterial({ side: THREE.BackSide,
+    vertexShader: "varying vec3 d; void main() { d = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: "varying vec3 d; void main() { float y = normalize(d).y; vec3 c = y > 0.0 ? mix(vec3(0.85, 0.9, 0.95), vec3(0.45, 0.65, 0.9), y) : vec3(0.42, 0.38, 0.33); gl_FragColor = vec4(c, 1.0); }" });
+  sky.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), m));
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(sky, 0.04).texture; scene.environmentIntensity = 0.6;
+}
+
+const LIGHTS = {
+  day:    { label: "Day", sky1: "#8fcbee", sky2: "#e6f4fb", sun: "#fff1dc", sunI: 2.6, el: 55, az: 140, hemiI: 0.75, ground: "#6b5a48", env: 0.6, glow: 0.3, windows: 0, exposure: 1, water: "#4fa9cc" },
+  golden: { label: "Golden hour", sky1: "#f3a77a", sky2: "#ffe2bd", sun: "#ffb36b", sunI: 2.5, el: 20, az: 235, hemiI: 0.55, ground: "#6b4a38", env: 0.5, glow: 1.0, windows: 0.35, exposure: 1, water: "#4f8fb0" },
+  dusk:   { label: "Dusk", sky1: "#5b4d9c", sky2: "#ee8f98", sun: "#ff9a7a", sunI: 1.2, el: 9, az: 250, hemiI: 0.45, ground: "#40304a", env: 0.35, glow: 2.0, windows: 1.0, exposure: 0.95, water: "#3d5f8f" },
+  night:  { label: "Night", sky1: "#0e1530", sky2: "#2a3a6a", sun: "#9db4ff", sunI: 0.6, el: 42, az: 120, hemiI: 0.3, ground: "#1a2030", env: 0.25, glow: 2.8, windows: 1.6, exposure: 1, water: "#1b2c4f" }
+};
+
+const island = new THREE.Group(); scene.add(island);
+const grassMat = weather(new THREE.MeshStandardMaterial({ color: 0x7db552, roughness: 0.95 }));
+const earthMat = weather(new THREE.MeshStandardMaterial({ color: 0x8c5a3c, roughness: 1 }));
+const waterMat = new THREE.MeshStandardMaterial({ color: 0x4fa9cc, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.92 });
+const water = new THREE.Mesh(new THREE.CircleGeometry(120, 48).rotateX(-Math.PI / 2), waterMat);
+water.position.y = -0.32; water.receiveShadow = true; scene.add(water);
+const foam = new THREE.Mesh(new THREE.RingGeometry(1, 1.06, 72).rotateX(-Math.PI / 2),
+  new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, depthWrite: false }));
+foam.position.y = -0.3; scene.add(foam);
+const gridHelper = new THREE.Group(); scene.add(gridHelper);
+function buildIsland() {
+  island.clear(); gridHelper.clear();
+  const g = comp.ground, R = g.size;
+  const segs = g.shape === "hex" ? 6 : g.shape === "square" ? 4 : 56;
+  const rr = g.shape === "square" ? R * Math.SQRT2 : g.shape === "hex" ? R / Math.cos(Math.PI / 6) : R;
+  const geo = new THREE.CylinderGeometry(rr, rr * 0.9, 0.9, segs, 1);
+  if (g.shape === "square") geo.rotateY(Math.PI / 4);
+  if (g.shape === "hex") geo.rotateY(Math.PI / 6);
+  grassMat.color.set(g.grass); earthMat.color.set(g.earth);
+  const m = new THREE.Mesh(geo, [earthMat, grassMat, earthMat]);
+  m.position.y = -0.45; m.receiveShadow = true; m.castShadow = true; island.add(m);
+  water.visible = foam.visible = g.water;
+  foam.scale.setScalar(rr * 1.04);
+  // one line every half unit: twice the snap, so the grid stays readable
+  const S = 2 * Math.ceil(R * (g.shape === "round" ? 1 : 1.42)), gh = new THREE.GridHelper(S, S * 2, 0xffffff, 0xffffff);
+  gh.material.transparent = true; gh.material.opacity = 0.14; gh.material.depthWrite = false; gh.position.y = 0.012;
+  gridHelper.add(gh);
+  Object.assign(sun.shadow.camera, { left: -R - 4, right: R + 4, top: R + 4, bottom: -R - 4, near: 1, far: 80 });
+  sun.shadow.camera.updateProjectionMatrix();
+}
+
+// the halo: light lying on the ground, a soft disc that fades out at its rim
+const haloTex = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d"), r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  r.addColorStop(0, "rgba(255,255,255,.55)"); r.addColorStop(0.55, "rgba(255,255,255,.4)");
+  r.addColorStop(0.8, "rgba(255,255,255,.22)"); r.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+})();
+const haloGeo = new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2);
+
+// =============================================================================
+// THE COMPOSITION
+// =============================================================================
+// { v, ground, biome, light, camera, houses: [ { id, seed, role, mode, x, y, z, rot,
+//   scale, label, halo: { on, color, size }, badge: { on, dy }, count, notify, every,
+//   delay, light, lightEvery, lightDelay, always } ] } — x / z on the island in the
+// kit's units (a road tile is 2), rot in degrees, a house facing +z at rot 0.
+function blank() {
+  return {
+    v: 1,
+    ground: { shape: "round", size: 9, grass: "#7db552", earth: "#8c5a3c", water: true },
+    biome: { name: "none", amount: 1 },
+    light: { preset: "day", cycle: true, seconds: 120, depth: 0.35 },
+    camera: { projection: "perspective", yaw: 30, pitch: 48, dist: 31, fov: 30, tx: 0, tz: 0, pan: 3, sway: true },
+    houses: []
+  };
+}
+let comp = blank();
+function house(id, role, u, v, extra) {
+  // u / v in the CAMERA's frame (u across the screen, v into it, negative = far), turned into
+  // the island's by the composition's yaw, and the house turned to face the camera
+  const a = comp.camera.yaw * RAD, x = u * Math.cos(a) + v * Math.sin(a), z = -u * Math.sin(a) + v * Math.cos(a);
+  return Object.assign({ id, seed: 1, role, x: +x.toFixed(2), y: 0, z: +z.toFixed(2), rot: comp.camera.yaw, scale: 1,
+    label: role !== "decor", halo: { on: role !== "decor", color: "", size: 1 }, badge: { on: !!(ROLES[role] && ROLES[role].badge), dy: 0.3 },
+    count: role === "daily" ? 1 : role === "album" ? 3 : 0, notify: "", light: "", always: false }, extra || {});
+}
+function starter() {
+  comp = Object.assign(blank(), { ground: comp.ground, light: comp.light, biome: comp.biome });
+  const need = doorsOf(manifest), H = comp.houses;
+  // the doors zig-zag down the island's depth, the round's in the middle, on a pad
+  const slots = [[0, -6.4], [-2.3, -3.6], [2.3, -3.3], [-2.3, 2.2], [2.3, 2.5], [0, 5.2],
+    [-2.9, -6.6], [2.9, -6.4], [-2.6, 5.6], [2.6, 5.8], [-3.2, -0.9], [3.2, -0.6]];
+  const rest = need.filter((r) => r !== "play");
+  H.push(house("code/village-pad", "decor", 0, -0.4, { opts: { r: 1.8 } }));
+  H.push(house(ROLE_MODEL.play, "play", 0, -0.4, { scale: 1.35, notify: "float", always: true, light: "random" }));
+  rest.forEach((role, i) => {
+    const s = slots[i % slots.length];
+    H.push(house("code/village-pad", "decor", s[0], s[1], { opts: { r: 1.25 } }));
+    H.push(house(ROLE_MODEL[role] || "code/house-modern", role, s[0], s[1], role === "daily" ? { notify: "alert" } : role === "album" ? { light: "flicker" } : {}));
+  });
+  // paths from the middle out, lamps beside them
+  for (const s of slots.slice(0, rest.length)) {
+    const len = Math.hypot(s[0], s[1] + 0.4), steps = Math.floor((len - 3) / 2);
+    for (let k = 0; k < steps; k++) {
+      const f = (1.9 + 1 + k * 2) / len, u = s[0] * f, v = -0.4 + (s[1] + 0.4) * f, ang = Math.atan2(s[0], s[1] + 0.4) / RAD;
+      const p = house("code/village-path", "decor", u, v, { seed: k + 3 }); p.rot = comp.camera.yaw + ang; H.push(p);
+    }
+  }
+  H.push(house("code/village-lamp", "decor", -1.4, 1.6, { always: true, light: "flicker", halo: { on: true, color: "#ffc46b", size: 2.2 } }));
+  H.push(house("code/village-lamp", "decor", 1.5, -2.4, { always: true, light: "flicker", lightDelay: 0.7, halo: { on: true, color: "#ffc46b", size: 2.2 } }));
+  H.push(house("code/village-flag", "decor", 1.6, 0.9, { opts: { colorFromAccent: true } }));
+  H.push(house("kaykit-city/bench", "decor", -1.6, -2.2, { rot: comp.camera.yaw + 90 }));
+  // a ring of trees and rocks on the rim, thinned where the camera looks in
+  const rnd = mulberry(11), R = comp.ground.size;
+  for (let k = 0; k < 26; k++) {
+    const a = (k / 26) * TAU + rnd() * 0.2, r = R - 0.8 - rnd() * 1.2, u = Math.sin(a) * r, v = Math.cos(a) * r;
+    if (v > R * 0.55 && Math.abs(u) < R * 0.5) continue;
+    const id = rnd() < 0.15 ? "code/rock-single" : rnd() < 0.5 ? "code/tree-conifer" : "code/tree-round";
+    H.push(house(id, "decor", u, v, { seed: k + 1, rot: rnd() * 360, scale: +(1.1 + rnd() * 0.8).toFixed(2) }));
+  }
+  H.push(house("kaykit-city/bush", "decor", 3.9, 0.9)); H.push(house("kaykit-city/bush", "decor", -4.1, 0.2, { scale: 1.2 }));
+  H.push(house("code/village-fence", "decor", -4.2, 4.6, { rot: comp.camera.yaw + 20 }));
+  H.push(house("code/village-fence", "decor", 4.3, 4.4, { rot: comp.camera.yaw - 20 }));
+}
+// the doors of the game's 2D web.village, laid on the island where the painted hub had them
+function from2d() {
+  const v2 = manifest && manifest.web && manifest.web.village;
+  if (!v2 || !v2.houses) { status("This game has no web.village", 2); return; }
+  comp = Object.assign(blank(), { ground: comp.ground, light: comp.light, biome: comp.biome, camera: comp.camera });
+  const R = comp.ground.size;
+  for (const h of v2.houses) {
+    if (h.role === "decor") continue;
+    const u = (h.x - 360) / 360 * R * 0.45, v = (h.y - 700) / 640 * R * 0.85;
+    const s = house(ROLE_MODEL[h.role] || "code/house-modern", h.role, u, v, {
+      mode: h.mode, notify: h.notify || "", every: h.every, delay: h.delay, light: h.light || "",
+      lightEvery: h.lightEvery, lightDelay: h.lightDelay, always: !!h.always,
+      halo: { on: h.halo !== undefined || h.role !== "decor", color: (h.halo && h.halo.color) || "", size: 1 } });
+    comp.houses.push(house("code/village-pad", "decor", u, v, { opts: { r: 1.25 } }), s);
+  }
+  status("Doors read from web.village: " + comp.houses.filter((h) => h.role !== "decor").length, 2);
+}
+
+// =============================================================================
+// THE HOUSES ON THE ISLAND
+// =============================================================================
+let objs = [], selected = null, placing = null;
+const world = new THREE.Group(); scene.add(world);
+const ov = $("ov");
+
+function own(model) {
+  const list = [];
+  model.traverse((m) => {
+    if (!m.isMesh) return;
+    m.castShadow = true; m.receiveShadow = true;
+    m.material = [].concat(m.material).map((x) => { const c = weather(x.clone()); list.push(c); return c; });
+    if (m.material.length === 1) m.material = m.material[0];
+  });
+  return list;
+}
+async function makeObj(spec) {
+  const e = byId.get(spec.id);
+  if (!e) return null;
+  const opts = Object.assign({}, spec.opts || {});
+  if (opts.colorFromAccent) opts.color = new THREE.Color(accent()).getHex();
+  const model = await modelOf(e, spec.seed, opts);
+  const o = { spec, entry: e, model, node: new THREE.Group(), body: new THREE.Group(), mats: [] };
+  o.mats = own(model);
+  for (const m of o.mats) {                                  // lit for the light it lands in
+    if (m.userData.glow) m.emissiveIntensity = L.glow;
+    if (m.userData.glass) { m.emissive = new THREE.Color(0xffc46b); m.emissiveIntensity = L.windows; }
+  }
+  // the model centred on its footprint, its feet on y = 0: the body turns and swells from there
+  const box = new THREE.Box3().setFromObject(model), c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
+  o.size = size; o.r = Math.max(size.x, size.z) / 2;
+  o.body.add(model); o.node.add(o.body);
+  o.halo = new THREE.Mesh(haloGeo, new THREE.MeshBasicMaterial({ map: haloTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  o.halo.position.y = 0.11; o.halo.renderOrder = 2; o.node.add(o.halo);
+  o.node.userData.rec = o;
+  o.lbl = document.createElement("div"); o.lbl.className = "lbl"; ov.insertBefore(o.lbl, $("band"));
+  o.bdg = document.createElement("div"); o.bdg.className = "bdg"; ov.insertBefore(o.bdg, $("band"));
+  applySpec(o);
+  return o;
+}
+function dropObj(o) { world.remove(o.node); o.lbl.remove(); o.bdg.remove(); }
+function applySpec(o) {
+  const s = o.spec;
+  o.node.position.set(s.x, s.y || 0, s.z);
+  o.node.rotation.y = (s.rot || 0) * RAD;
+  o.node.scale.setScalar(s.scale || 1);
+  const h = s.halo || {};
+  o.halo.visible = !!h.on;
+  o.halo.scale.setScalar(Math.max(0.5, o.r * 1.25) * (h.size || 1));
+  o.halo.material.color.set(h.color || accent());
+  haloBlend(o);
+  const fade = s.notify === "fade";
+  for (const m of o.mats) if (m.transparent !== fade && !m.userData.glow) { m.transparent = fade; m.needsUpdate = true; }
+  o.lbl.textContent = upper(word(s));
+}
+async function rebuildAll() {
+  for (const o of objs) dropObj(o);
+  objs = []; selected = null;
+  buildIsland();
+  const built = await Promise.all(comp.houses.map(makeObj));
+  for (const o of built) if (o) { objs.push(o); world.add(o.node); }
+  applyLight(); dressBiome(); renderSide();
+}
+async function rebuildOne(o) {
+  const i = objs.indexOf(o); if (i < 0) return;
+  dropObj(o);
+  const n = await makeObj(o.spec); objs[i] = n; world.add(n.node);
+  if (selected === o) selected = n;
+  dressBiome(n); renderSide();
+}
+
+// ---- the biome, laid over the island and every house ----------------------------------
+const tuftCtx = { mesh: (geo, hex) => { const m = new THREE.Mesh(paint(geo, hex), weather(codeMat(hex).clone())); return m; } };
+function dressBiome(only) {
+  setBiome(comp.biome.name, comp.biome.amount);
+  for (const o of only ? [only] : objs) {
+    for (const c of o.model.children.filter((c) => c.userData.tuft)) o.model.remove(c);
+    if (comp.biome.name === "none" || o.spec.role === "decor" && /pad|path/.test(o.spec.id)) continue;
+    world.updateMatrixWorld(true);
+    const t = tufts(o.model, comp.biome.name, tuftCtx, comp.biome.amount);
+    if (t) o.model.add(t);
+  }
+}
+
+// ---- the light, and its breath -----------------------------------------------------
+let L = LIGHTS.day;
+// by day a halo is laid over the ground, so its colour reads on a pale pad; once the
+// lamps are lit it is ADDED to it, and glows
+function haloBlend(o) {
+  const b = L.glow > 1.5 ? THREE.AdditiveBlending : THREE.NormalBlending;
+  if (o.halo.material.blending !== b) { o.halo.material.blending = b; o.halo.material.needsUpdate = true; }
+}
+function applyLight() {
+  L = LIGHTS[comp.light.preset] || LIGHTS.day;
+  const ph = $("phone");
+  ph.style.setProperty("--sky1", L.sky1); ph.style.setProperty("--sky2", L.sky2);
+  scene.fog.color.set(L.sky2);
+  hemi.groundColor.set(L.ground); scene.environmentIntensity = L.env;
+  renderer.toneMappingExposure = L.exposure;
+  waterMat.color.set(L.water);
+  const el = L.el * RAD, az = L.az * RAD;
+  sun.position.set(Math.cos(el) * Math.sin(az) * 30, Math.sin(el) * 30, Math.cos(el) * Math.cos(az) * 30);
+  for (const k in glowMats) glowMats[k].emissiveIntensity = L.glow;
+  for (const o of objs) haloBlend(o);
+  world.traverse((m) => {
+    if (!m.isMesh) return;
+    for (const x of [].concat(m.material)) {
+      if (x.userData.glow) x.emissiveIntensity = L.glow;
+      if (x.userData.glass) { x.emissive = new THREE.Color(0xffc46b); x.emissiveIntensity = L.windows; }
+    }
+  });
+}
+const WARM = new THREE.Color("#ffb070"), COLD = new THREE.Color("#a8c4ff"), tmpC = new THREE.Color();
+function breathe(t) {
+  // through its own light, out to warm, back, out to cold: zero twice a cycle
+  const k = comp.light.cycle ? Math.sin(t / (comp.light.seconds || 120) * TAU) * (comp.light.depth || 0.35) : 0;
+  tmpC.set(L.sun).lerp(k > 0 ? WARM : COLD, Math.abs(k));
+  sun.color.copy(tmpC); sun.intensity = L.sunI * (1 + 0.12 * k);
+  hemi.color.set(0xdfeaff).lerp(k > 0 ? WARM : COLD, Math.abs(k) * 0.6); hemi.intensity = L.hemiI * (1 + 0.2 * k);
+}
+
+// =============================================================================
+// THE CAMERA — the player's, and a free one to compose with
+// =============================================================================
+const persp = new THREE.PerspectiveCamera(30, 9 / 16, 0.1, 300);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 300);
+const editCam = new THREE.PerspectiveCamera(30, 9 / 16, 0.1, 300);
+const controls = new OrbitControls(editCam, canvas); controls.enableDamping = true; controls.enabled = false;
+let mode = "edit";
+const pan = new THREE.Vector3(), focus = { k: 0, to: 0, at: new THREE.Vector3(), o: null };
+const camTarget = new THREE.Vector3();
+function playerCam(t) {
+  const c = comp.camera, sway = c.sway ? Math.sin(t / 23 * TAU) * 2.2 : 0;
+  const yaw = (c.yaw + sway) * RAD, pitch = c.pitch * RAD;
+  const k = focus.k * focus.k * (3 - 2 * focus.k);          // smoothstep, for the fly to a door
+  camTarget.set(c.tx, 0, c.tz).add(pan).lerp(focus.at, k * 0.85);
+  const d = c.dist * (1 - 0.38 * k);
+  const off = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)).multiplyScalar(d);
+  const cam = c.projection === "ortho" ? ortho : persp;
+  cam.position.copy(camTarget).add(off); cam.lookAt(camTarget);
+  if (cam === ortho) {
+    const halfH = d * Math.tan(c.fov * RAD / 2), a = canvas.clientWidth / Math.max(1, canvas.clientHeight);
+    Object.assign(ortho, { top: halfH, bottom: -halfH, left: -halfH * a, right: halfH * a });
+    ortho.updateProjectionMatrix();
+  } else if (persp.fov !== c.fov) { persp.fov = c.fov; persp.updateProjectionMatrix(); }
+  return cam;
+}
+function activeCam(t) { return mode === "edit" && $("free").checked ? editCam : playerCam(t); }
+$("free").addEventListener("input", () => {
+  const on = $("free").checked;
+  if (on) { const cam = playerCam(clock); editCam.position.copy(cam.position); editCam.fov = comp.camera.fov; editCam.updateProjectionMatrix(); controls.target.copy(camTarget); controls.update(); }
+  controls.enabled = on && mode === "edit";
+  status(on ? "Free camera: not what the player sees" : "");
+});
+$("useView").onclick = () => {
+  if (!$("free").checked) { status("Turn the free camera on first", 2); return; }
+  touch();
+  const d = editCam.position.clone().sub(controls.target), dist = d.length();
+  Object.assign(comp.camera, { dist: +dist.toFixed(1), pitch: Math.round(Math.asin(d.y / dist) / RAD), yaw: Math.round(Math.atan2(d.x, d.z) / RAD),
+    tx: +controls.target.x.toFixed(2), tz: +controls.target.z.toFixed(2), fov: Math.round(editCam.fov) });
+  pan.set(0, 0, 0); $("free").checked = false; controls.enabled = false; status("Player camera set", 2); renderSide(); save();
+};
+
+// =============================================================================
+// POINTER — edit: place, select, drag; play: pan, tap a door
+// =============================================================================
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+let drag = null, down = null, hover = null;
+function pointer(ev) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, activeCam(clock));
+}
+function groundAt() { const p = new THREE.Vector3(); return ray.ray.intersectPlane(groundPlane, p) ? p : null; }
+function pick(onlyDoors) {
+  const list = objs.filter((o) => !onlyDoors || o.spec.role !== "decor").map((o) => o.body);
+  const hit = ray.intersectObjects(list, true)[0];
+  if (!hit) return null;
+  let n = hit.object; while (n && !n.userData.rec) n = n.parent;
+  return n ? n.userData.rec : null;
+}
+const snap = (v, s) => $("grid").checked ? Math.round(v / s) * s : v;
+canvas.addEventListener("pointerdown", (ev) => {
+  pointer(ev); down = { x: ev.clientX, y: ev.clientY, pan: pan.clone() };
+  if (mode === "play") { canvas.setPointerCapture(ev.pointerId); return; }
+  if (placing) return;
+  const o = pick(false);
+  if (o) {
+    select(o); touch();
+    const g = groundAt() || new THREE.Vector3();
+    drag = { o, dx: o.spec.x - g.x, dz: o.spec.z - g.z };
+    controls.enabled = false; canvas.setPointerCapture(ev.pointerId);
+  }
+});
+canvas.addEventListener("pointermove", (ev) => {
+  pointer(ev);
+  if (mode === "play") {
+    if (down && comp.camera.pan > 0 && !focus.o) {
+      // a finger drags the island under it: along the screen's right and the ground's depth
+      const cam = playerCam(clock), right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0); right.y = 0; right.normalize();
+      const fwd = new THREE.Vector3(-right.z, 0, right.x);
+      const k = comp.camera.dist / canvas.clientHeight * 0.9;
+      pan.copy(down.pan).addScaledVector(right, -(ev.clientX - down.x) * k).addScaledVector(fwd, -(ev.clientY - down.y) * k * 1.4);
+      if (pan.length() > comp.camera.pan) pan.setLength(comp.camera.pan);
+    } else {
+      const o = pick(true); hover = o; canvas.style.cursor = o ? "pointer" : comp.camera.pan > 0 ? "grab" : "default";
+    }
+    return;
+  }
+  const g = groundAt();
+  if (placing && g) {
+    placing.spec.x = snap(g.x, 0.25); placing.spec.z = snap(g.z, 0.25); applySpec(placing);
+  } else if (drag && g) {
+    drag.o.spec.x = +snap(g.x + drag.dx, 0.25).toFixed(2); drag.o.spec.z = +snap(g.z + drag.dz, 0.25).toFixed(2);
+    applySpec(drag.o); syncInspector();
+  } else { hover = pick(false); canvas.style.cursor = hover ? "move" : placing ? "copy" : "default"; }
+});
+canvas.addEventListener("pointerup", (ev) => {
+  const moved = down ? Math.hypot(ev.clientX - down.x, ev.clientY - down.y) : 0;
+  if (mode === "play") {
+    if (moved < 8) { const o = pick(true); if (o) openDoor(o); }
+    down = null; return;
+  }
+  if (placing) { commitPlacing(ev.shiftKey); down = null; return; }
+  if (drag) { drag = null; controls.enabled = $("free").checked; save(); }
+  else if (moved < 5 && !pick(false)) select(null);
+  down = null;
+});
+
+// ---- placing a model from the palette ----------------------------------------------
+async function startPlacing(e) {
+  cancelPlacing();
+  if (mode !== "edit") setMode("edit");
+  const spec = { id: e.id, seed: 1 + Math.floor(Math.random() * 999), role: "decor", x: 0, y: 0, z: 0, rot: comp.camera.yaw, scale: 1, label: false,
+    halo: { on: false, color: "", size: 1 }, badge: { on: false, dy: 0.3 }, count: 0, notify: "", light: "", always: false };
+  if (e.item && e.item.category === "village" && e.item.id === "village-flag") spec.opts = { colorFromAccent: true };
+  const o = await makeObj(spec);
+  if (!o) return;
+  placing = o; world.add(o.node); o.lbl.style.display = "none";
+  status("Click the island to drop " + e.name + " (Shift keeps placing, Esc cancels)");
+  document.querySelectorAll(".pc").forEach((c) => c.classList.toggle("on", c.dataset.id === e.id));
+}
+function cancelPlacing() {
+  if (!placing) return;
+  dropObj(placing); placing = null; status("");
+  document.querySelectorAll(".pc.on").forEach((c) => c.classList.remove("on"));
+}
+function commitPlacing(again) {
+  const o = placing, e = o.entry; placing = null;
+  touch();
+  comp.houses.push(o.spec); objs.push(o); dressBiome(o);
+  select(o); save(); status("");
+  if (again) startPlacing(e); else document.querySelectorAll(".pc.on").forEach((c) => c.classList.remove("on"));
+}
+
+// ---- play: a door flies the camera to it and opens what it opens -----------------------
+function openDoor(o) {
+  focus.o = o; focus.at.set(o.spec.x, 0, o.spec.z); focus.to = 1;
+  const r = ROLES[o.spec.role] || {}, card = $("card");
+  card.querySelector(".eb").textContent = upper(lang === "fr" ? "Porte · " + o.spec.role : "Door · " + o.spec.role);
+  card.querySelector(".tt").textContent = upper(word(o.spec));
+  card.querySelector(".bd").textContent = "Opens " + (r.opens || "nothing") + "." + (r.badge ? " Its badge counts " + r.badge + "." : "");
+  card.querySelector(".tap").textContent = upper(lang === "fr" ? "Touche pour fermer" : "Tap to close");
+  setTimeout(() => { if (focus.o === o) card.classList.add("on"); }, 420);
+}
+$("card").addEventListener("click", () => { $("card").classList.remove("on"); focus.to = 0; focus.o = null; });
+
+// ---- keys ----------------------------------------------------------------------------
+document.addEventListener("keydown", (ev) => {
+  if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  if ((ev.metaKey || ev.ctrlKey) && ev.key.toLowerCase() === "z") { ev.preventDefault(); undo(); return; }
+  if (ev.key === "Escape") { if ($("card").classList.contains("on")) $("card").click(); else if (placing) cancelPlacing(); else select(null); return; }
+  if (mode !== "edit") return;
+  const o = placing || selected; if (!o) return;
+  const k = ev.key;
+  if (k === "r" || k === "R") { if (!placing) touch(); o.spec.rot = ((o.spec.rot || 0) + (ev.shiftKey ? -15 : 15) + 360) % 360; }
+  else if (k === "[" || k === "]") { if (!placing) touch(); o.spec.scale = +Math.max(0.25, Math.min(4, (o.spec.scale || 1) + (k === "]" ? 0.05 : -0.05))).toFixed(2); }
+  else if ((k === "Delete" || k === "Backspace") && !placing) { removeSel(); return; }
+  else if ((k === "d" || k === "D") && !placing) { duplicate(); return; }
+  else return;
+  ev.preventDefault(); applySpec(o); syncInspector(); save();
+});
+function removeSel() {
+  if (!selected) return;
+  touch();
+  const o = selected; select(null);
+  comp.houses.splice(comp.houses.indexOf(o.spec), 1); objs.splice(objs.indexOf(o), 1); dropObj(o);
+  renderSide(); save();
+}
+async function duplicate() {
+  if (!selected) return;
+  touch();
+  const spec = JSON.parse(JSON.stringify(selected.spec)); spec.x += 1; spec.z += 1;
+  comp.houses.push(spec);
+  const o = await makeObj(spec); objs.push(o); world.add(o.node); dressBiome(o); select(o); save();
+}
+
+// ---- undo: a snapshot of the composition before every change ---------------------------
+const undoStack = []; let lastTouch = 0;
+function touch() {
+  const now = performance.now();
+  if (now - lastTouch > 600) { undoStack.push(JSON.stringify(comp)); if (undoStack.length > 60) undoStack.shift(); }
+  lastTouch = now;
+}
+async function undo() {
+  if (!undoStack.length) { status("Nothing to undo", 1.5); return; }
+  comp = JSON.parse(undoStack.pop()); await rebuildAll(); save(); status("Undone", 1);
+}
+
+// ---- saving: per game, in this browser ----------------------------------------------
+let saveT = 0;
+function save() { clearTimeout(saveT); saveT = setTimeout(() => { try { localStorage.setItem("village3d:" + slug, JSON.stringify(comp)); } catch (e) {} }, 300); }
+function load() { try { const s = localStorage.getItem("village3d:" + slug); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+
+// =============================================================================
+// THE SIDE PANELS
+// =============================================================================
+function select(o) {
+  selected = o;
+  renderSide();
+}
+let selBox = new THREE.BoxHelper(undefined, 0xffffff); selBox.visible = false; scene.add(selBox);
+
+// a knob: label, input, live value
+function knob(parent, label, type, get, set, a = {}) {
+  const row = document.createElement("div"); row.className = "row";
+  const lab = document.createElement("span"); lab.textContent = label; row.appendChild(lab);
+  let input, out = document.createElement("output");
+  if (type === "range") {
+    input = document.createElement("input"); input.type = "range"; input.min = a.min; input.max = a.max; input.step = a.step; input.value = get();
+    out.textContent = (a.fmt || String)(get());
+    input.addEventListener("input", () => { touch(); set(+input.value); out.textContent = (a.fmt || String)(+input.value); save(); });
+    input._sync = () => { input.value = get(); out.textContent = (a.fmt || String)(get()); };
+  } else if (type === "select") {
+    input = document.createElement("select");
+    for (const [v, t] of a.options) { const op = document.createElement("option"); op.value = v; op.textContent = t; input.appendChild(op); }
+    input.value = get(); row.classList.add("wide");
+    input.addEventListener("input", () => { touch(); set(input.value); save(); });
+  } else if (type === "check") {
+    input = document.createElement("input"); input.type = "checkbox"; input.checked = !!get(); row.classList.add("wide");
+    input.style.justifySelf = "start";
+    input.addEventListener("input", () => { touch(); set(input.checked); save(); });
+  } else if (type === "text") {
+    input = document.createElement("input"); input.type = "text"; input.value = get() || ""; row.classList.add("wide");
+    input.addEventListener("change", () => { touch(); set(input.value.trim()); save(); });
+  } else if (type === "colour") {
+    // the page's own picker: the game's two accents, a few house colours, a hex
+    input = document.createElement("div"); input.className = "sws"; row.classList.add("wide");
+    const cur = () => get() || "";
+    const draw = () => {
+      input.innerHTML = "";
+      for (const [v, title] of a.swatches()) {
+        const i = document.createElement("i"); i.title = title; i.style.background = v || accent();
+        if (v === cur()) i.className = "on";
+        i.onclick = () => { touch(); set(v); save(); draw(); };
+        input.appendChild(i);
+      }
+      const t = document.createElement("input"); t.type = "text"; t.value = cur(); t.placeholder = a.placeholder || "accent";
+      t.onchange = () => { const v = t.value.trim(); if (!v || /^#[0-9a-f]{6}$/i.test(v)) { touch(); set(v); save(); draw(); } };
+      input.appendChild(t);
+    };
+    draw();
+  }
+  row.appendChild(input);
+  if (type === "range") row.appendChild(out);
+  parent.appendChild(row);
+  return input;
+}
+function group(parent, title) { const f = document.createElement("fieldset"); const l = document.createElement("legend"); l.textContent = title; f.appendChild(l); parent.appendChild(f); return f; }
+const fmtDeg = (v) => Math.round(v) + "°", fmt2 = (v) => (+v).toFixed(2), fmtS = (v) => (+v).toFixed(1) + "s";
+let syncers = [];
+function syncInspector() { for (const s of syncers) s._sync && s._sync(); }
+
+function renderSide() {
+  const box = $("insp"); box.innerHTML = ""; syncers = [];
+  const o = selected;
+  selBox.visible = !!o; if (o) selBox.setFromObject(o.body);
+  o ? renderObject(box, o) : renderScene(box);
+  renderDoors();
+}
+function renderObject(box, o) {
+  const s = o.spec, e = o.entry, apply = () => applySpec(o);
+  box.innerHTML = "<h2>" + e.name + " <small>" + (e.item ? "made in code" : e.packTitle) + "</small></h2>";
+  const btns = document.createElement("div"); btns.className = "btns";
+  btns.innerHTML = "<button data-a='back'>‹ Scene</button>" + (e.item ? "<button data-a='seed'>Reseed</button>" : "") + "<button data-a='dup'>Duplicate</button><button data-a='del' class='danger'>Delete</button>";
+  btns.onclick = (ev) => {
+    const a = ev.target.dataset.a;
+    if (a === "back") select(null);
+    if (a === "seed") { touch(); s.seed = (s.seed || 1) + 1; rebuildOne(o); save(); }
+    if (a === "dup") duplicate();
+    if (a === "del") removeSel();
+  };
+  box.appendChild(btns);
+
+  const door = group(box, "Door");
+  const roles = Object.keys(ROLES).map((r) => [r, r === "decor" ? "decor — opens nothing" : r + (word({ role: r }) ? " — " + word({ role: r }) : "")]);
+  knob(door, "Opens", "select", () => s.role, (v) => {
+    s.role = v; const isDoor = v !== "decor";
+    s.label = isDoor; s.halo = Object.assign(s.halo || {}, { on: isDoor });
+    s.badge = Object.assign(s.badge || { dy: 0.3 }, { on: !!(ROLES[v] && ROLES[v].badge) });
+    apply(); renderSide();
+  }, { options: roles });
+  if (s.role === "mode") knob(door, "Mode key", "text", () => s.mode, (v) => { s.mode = v; apply(); });
+  if (s.role !== "decor") knob(door, "Name", "check", () => s.label, (v) => { s.label = v; });
+
+  const tr = group(box, "Place");
+  const R = comp.ground.size + 2;
+  syncers.push(knob(tr, "Across (x)", "range", () => s.x, (v) => { s.x = v; apply(); }, { min: -R, max: R, step: 0.25, fmt: fmt2 }));
+  syncers.push(knob(tr, "Depth (z)", "range", () => s.z, (v) => { s.z = v; apply(); }, { min: -R, max: R, step: 0.25, fmt: fmt2 }));
+  syncers.push(knob(tr, "Lift (y)", "range", () => s.y || 0, (v) => { s.y = v; apply(); }, { min: 0, max: 8, step: 0.1, fmt: fmt2 }));
+  syncers.push(knob(tr, "Turn", "range", () => s.rot || 0, (v) => { s.rot = v; apply(); }, { min: 0, max: 345, step: 15, fmt: fmtDeg }));
+  syncers.push(knob(tr, "Scale", "range", () => s.scale || 1, (v) => { s.scale = v; apply(); }, { min: 0.25, max: 4, step: 0.05, fmt: fmt2 }));
+
+  const sig = group(box, "Halo · badge");
+  s.halo = s.halo || { on: false, color: "", size: 1 };
+  knob(sig, "Halo", "check", () => s.halo.on, (v) => { s.halo.on = v; apply(); });
+  knob(sig, "Colour", "colour", () => s.halo.color, (v) => { s.halo.color = v; apply(); },
+    { swatches: () => [["", "the game's accent"], [accent2(), "the game's second accent"], ["#ffc46b", "lamp"], ["#ffffff", "white"], ["#7dff9a", "green"], ["#ff6b8b", "pink"]] });
+  knob(sig, "Size", "range", () => s.halo.size || 1, (v) => { s.halo.size = v; apply(); }, { min: 0.4, max: 3, step: 0.05, fmt: fmt2 });
+  s.badge = s.badge || { on: false, dy: 0.3 };
+  knob(sig, "Badge", "check", () => s.badge.on, (v) => { s.badge.on = v; });
+  knob(sig, "Badge height", "range", () => s.badge.dy, (v) => { s.badge.dy = v; }, { min: -1, max: 3, step: 0.05, fmt: fmt2 });
+  knob(sig, "Waiting", "range", () => s.count || 0, (v) => { s.count = v; }, { min: 0, max: 20, step: 1 });
+  if (ROLES[s.role] && ROLES[s.role].badge) { const p = document.createElement("p"); p.className = "hint"; p.style.margin = "4px 0 0"; p.textContent = "The badge counts " + ROLES[s.role].badge + "."; sig.appendChild(p); }
+
+  const pu = group(box, "Pulse · light");
+  knob(pu, "Pulse", "select", () => s.notify || "", (v) => { s.notify = v; apply(); },
+    { options: [["", "none"], ["float", "float — hangs above its light"], ["breath", "breath — swells from its feet"], ["alert", "alert — two hops, a wobble, a rest"], ["fade", "fade — down to a ghost and back"]] });
+  knob(pu, "Every", "range", () => s.every || EVERY[s.notify] || 3, (v) => { s.every = v; }, { min: 0.5, max: 12, step: 0.1, fmt: fmtS });
+  knob(pu, "Delay", "range", () => s.delay || 0, (v) => { s.delay = v; }, { min: 0, max: 6, step: 0.1, fmt: fmtS });
+  knob(pu, "Light", "select", () => s.light || "", (v) => { s.light = v; }, { options: [["", "none"], ["blink", "blink — a hard beat"], ["flicker", "flicker — a failing tube"], ["random", "random — one long uneven cycle"]] });
+  knob(pu, "Light every", "range", () => s.lightEvery || EVERY[s.light] || 2, (v) => { s.lightEvery = v; }, { min: 0.3, max: 12, step: 0.1, fmt: fmtS });
+  knob(pu, "Light delay", "range", () => s.lightDelay || 0, (v) => { s.lightDelay = v; }, { min: 0, max: 6, step: 0.1, fmt: fmtS });
+  knob(pu, "Always", "check", () => s.always, (v) => { s.always = v; });
+  const p = document.createElement("p"); p.className = "hint"; p.style.margin = "4px 0 0";
+  p.textContent = "Pulse and light wait for something waiting behind the door; Always runs them regardless (a beacon, a mill, a lamp).";
+  pu.appendChild(p);
+}
+function renderScene(box) {
+  box.innerHTML = "<h2>Scene <small>select a house to edit it</small></h2>";
+  const g = group(box, "Island");
+  knob(g, "Shape", "select", () => comp.ground.shape, (v) => { comp.ground.shape = v; buildIsland(); }, { options: [["round", "round"], ["hex", "hexagon"], ["square", "square"]] });
+  knob(g, "Radius", "range", () => comp.ground.size, (v) => { comp.ground.size = v; buildIsland(); }, { min: 4, max: 16, step: 0.5, fmt: fmt2 });
+  knob(g, "Grass", "colour", () => comp.ground.grass, (v) => { comp.ground.grass = v || "#7db552"; buildIsland(); },
+    { swatches: () => [["#7db552", "meadow"], ["#5c9c48", "deep green"], ["#a6c86a", "dry grass"], ["#d8c49a", "sand"], ["#e7e1d5", "snow"], ["#6b6f7a", "rock"]], placeholder: "#hex" });
+  knob(g, "Earth", "colour", () => comp.ground.earth, (v) => { comp.ground.earth = v || "#8c5a3c"; buildIsland(); },
+    { swatches: () => [["#8c5a3c", "earth"], ["#6b4a33", "dark earth"], ["#a09992", "stone"], ["#5d5a48", "slate"]], placeholder: "#hex" });
+  knob(g, "Sea around", "check", () => comp.ground.water, (v) => { comp.ground.water = v; buildIsland(); });
+  knob(g, "Biome", "select", () => comp.biome.name, (v) => { comp.biome.name = v; dressBiome(); }, { options: [["none", "none"], ["moss", "moss"], ["snow", "snow"], ["dust", "dust"]] });
+  knob(g, "Strength", "range", () => comp.biome.amount, (v) => { comp.biome.amount = v; dressBiome(); }, { min: 0, max: 1.5, step: 0.05, fmt: fmt2 });
+
+  const l = group(box, "Light");
+  knob(l, "Preset", "select", () => comp.light.preset, (v) => { comp.light.preset = v; applyLight(); }, { options: Object.entries(LIGHTS).map(([k, x]) => [k, x.label]) });
+  knob(l, "Breathes", "check", () => comp.light.cycle, (v) => { comp.light.cycle = v; });
+  knob(l, "Cycle", "range", () => comp.light.seconds, (v) => { comp.light.seconds = v; }, { min: 10, max: 300, step: 5, fmt: (v) => v + "s" });
+  knob(l, "Depth", "range", () => comp.light.depth, (v) => { comp.light.depth = v; }, { min: 0, max: 0.8, step: 0.05, fmt: fmt2 });
+
+  const c = group(box, "Player camera");
+  const cam = comp.camera;
+  knob(c, "Projection", "select", () => cam.projection, (v) => { cam.projection = v; }, { options: [["perspective", "perspective"], ["ortho", "orthographic"]] });
+  knob(c, "Yaw", "range", () => cam.yaw, (v) => { cam.yaw = v; }, { min: -180, max: 180, step: 5, fmt: fmtDeg });
+  knob(c, "Pitch", "range", () => cam.pitch, (v) => { cam.pitch = v; }, { min: 15, max: 89, step: 1, fmt: fmtDeg });
+  knob(c, "Distance", "range", () => cam.dist, (v) => { cam.dist = v; }, { min: 6, max: 60, step: 0.5, fmt: fmt2 });
+  knob(c, "Field of view", "range", () => cam.fov, (v) => { cam.fov = v; }, { min: 10, max: 70, step: 1, fmt: fmtDeg });
+  knob(c, "Aim x", "range", () => cam.tx, (v) => { cam.tx = v; }, { min: -10, max: 10, step: 0.25, fmt: fmt2 });
+  knob(c, "Aim z", "range", () => cam.tz, (v) => { cam.tz = v; }, { min: -10, max: 10, step: 0.25, fmt: fmt2 });
+  knob(c, "Finger pan", "range", () => cam.pan, (v) => { cam.pan = v; pan.set(0, 0, 0); }, { min: 0, max: 10, step: 0.5, fmt: fmt2 });
+  knob(c, "Sway", "check", () => cam.sway, (v) => { cam.sway = v; });
+  const p = document.createElement("p"); p.className = "hint"; p.style.margin = "4px 0 0";
+  p.textContent = "Lay the doors along the camera's depth: a portrait phone sees a long narrow strip of the island. Sway turns the whole view ±2° over 23 s, so the scene is never a still.";
+  c.appendChild(p);
+}
+function renderDoors() {
+  const box = $("doors"); box.innerHTML = "";
+  const need = doorsOf(manifest), placed = objs.filter((o) => o.spec.role !== "decor");
+  let missing = 0;
+  for (const r of need) {
+    const here = placed.filter((o) => o.spec.role === r);
+    if (!here.length) missing++;
+    const d = document.createElement("div");
+    d.className = "door" + (here.length ? "" : " miss") + (here.includes(selected) ? " sel" : "");
+    d.innerHTML = "<span>" + r + " <small style='color:#8b8ba7'>" + (ROLES[r][lang] || "") + "</small></span><em>" + (here.length ? here.length > 1 ? "×" + here.length : "placed" : "missing") + "</em>";
+    if (here.length) d.onclick = () => select(here[(here.indexOf(selected) + 1) % here.length]);
+    box.appendChild(d);
+  }
+  for (const o of placed.filter((o) => !need.includes(o.spec.role))) {
+    const d = document.createElement("div"); d.className = "door extra" + (o === selected ? " sel" : "");
+    d.innerHTML = "<span>" + o.spec.role + "</span><em>not in this game</em>"; d.onclick = () => select(o); box.appendChild(d);
+  }
+  const deco = objs.length - placed.length;
+  $("doorCount").textContent = (need.length - missing) + "/" + need.length + " · " + deco + " decor";
+}
+
+// ---- the palette ------------------------------------------------------------------------
+const palState = { cat: "village", q: "" };
+function renderPalette() {
+  const cats = [...new Set(entries.map((e) => e.category))].sort();
+  const box = $("cats"); box.innerHTML = "";
+  for (const c of ["all", ...cats]) {
+    const s = document.createElement("span"); s.className = "chip" + (palState.cat === c ? " on" : ""); s.textContent = c;
+    s.onclick = () => { palState.cat = c; renderPalette(); }; box.appendChild(s);
+  }
+  const q = palState.q.toLowerCase(), list = entries.filter((e) => (palState.cat === "all" || e.category === palState.cat) &&
+    (!q || (e.name + " " + e.id + " " + e.category).toLowerCase().includes(q)));
+  const pal = $("pal"); pal.innerHTML = "";
+  for (const e of list) {
+    const c = document.createElement("div"); c.className = "pc"; c.dataset.id = e.id; c.title = e.id;
+    c.innerHTML = "<img alt=''><b>" + e.name + "</b><small" + (e.item ? " class='code'" : "") + ">" + (e.item ? "code" : "kit") + " · " + e.category + "</small>";
+    if (e.thumb) c.querySelector("img").src = e.thumb;
+    e.card = c; c.onclick = () => startPlacing(e);
+    pal.appendChild(c);
+  }
+  $("palCount").textContent = list.length + " / " + entries.length;
+}
+$("q").addEventListener("input", (ev) => { palState.q = ev.target.value; renderPalette(); });
+
+// thumbnails, one offscreen renderer, every model once
+const thumbR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+thumbR.setSize(128, 128); thumbR.toneMapping = THREE.ACESFilmicToneMapping;
+const thumbS = new THREE.Scene(), thumbCam = new THREE.PerspectiveCamera(30, 1, 0.01, 200);
+thumbS.add(new THREE.HemisphereLight(0xdfeaff, 0x6b5a48, 1.1));
+{ const d = new THREE.DirectionalLight(0xfff1dc, 2.4); d.position.set(4, 7, 5); thumbS.add(d); }
+async function thumbnail(e) {
+  const o = await modelOf(e, 1, e.item && e.item.id === "village-flag" ? { color: new THREE.Color(accent()).getHex() } : null);
+  thumbS.add(o);
+  const box = new THREE.Box3().setFromObject(o), c = box.getCenter(new THREE.Vector3()), r = Math.max(0.2, box.getSize(new THREE.Vector3()).length() / 2);
+  const dist = r / Math.sin(15 * RAD) * 1.05;
+  thumbCam.position.set(c.x + dist * 0.62, c.y + dist * 0.45, c.z + dist * 0.64); thumbCam.lookAt(c);
+  thumbCam.near = dist / 50; thumbCam.far = dist * 4; thumbCam.updateProjectionMatrix();
+  thumbR.render(thumbS, thumbCam);
+  thumbS.remove(o);
+  return thumbR.domElement.toDataURL("image/png");
+}
+
+// =============================================================================
+// THE FRAME — sizing, the overlay, the loop
+// =============================================================================
+function resize() {
+  const wrap = $("phoneWrap"), H = wrap.clientHeight - 14, W = wrap.clientWidth - 32;
+  let h = H, w = h * 9 / 16; if (w > W) { w = W; h = w * 16 / 9; }
+  const ph = $("phone"); ph.style.width = w + "px"; ph.style.height = h + "px";
+  renderer.setSize(w, h, false);
+  persp.aspect = editCam.aspect = w / h; persp.updateProjectionMatrix(); editCam.updateProjectionMatrix();
+  ov.style.transform = "scale(" + (w / 720) + ")";
+}
+window.addEventListener("resize", resize);
+
+const tmpV = new THREE.Vector3();
+function toDesign(v, cam) { tmpV.copy(v).project(cam); return { x: (tmpV.x + 1) / 2 * 720, y: (1 - tmpV.y) / 2 * 1280, behind: tmpV.z > 1 }; }
+function waitingOf(s) { const sim = $("sim").value; return sim === "none" ? 0 : sim === "all" ? Math.max(1, s.count || 3) : (s.count || 0); }
+function hash(x) { const n = Math.sin(x * 127.1) * 43758.5453; return n - Math.floor(n); }
+
+function animate(o, t, cam) {
+  const s = o.spec, waiting = waitingOf(s), live = s.always || waiting > 0 || o === placing;
+  let y = 0, sx = 1, sy = 1, rz = 0, op = 1;
+  const h = o.size.y;
+  if (live && s.notify) {
+    const every = s.every || EVERY[s.notify], ph = (((t - (s.delay || 0)) / every) % 1 + 1) % 1, tt = ph * every;
+    if (s.notify === "float") y = h * (0.06 + 0.035 * Math.sin(ph * TAU));
+    else if (s.notify === "breath") { const k = 0.5 - 0.5 * Math.cos(ph * TAU); sy = 1 + 0.045 * k; sx = 1 + 0.012 * k; }
+    else if (s.notify === "alert") { if (tt < 0.6) y = h * 0.14 * Math.abs(Math.sin(tt / 0.3 * Math.PI)); if (tt < 1) rz = 0.09 * Math.sin(tt * 26) * (1 - tt); }
+    else if (s.notify === "fade") op = 0.22 + 0.78 * (0.5 + 0.5 * Math.cos(ph * TAU));
+  }
+  o.body.position.y = y; o.body.scale.set(sx, sy, sx); o.body.rotation.z = rz;
+  if (o._op !== op) { for (const m of o.mats) if (!m.userData.glow) m.opacity = op; o._op = op; }
+  // the halo: its own light, worked by the LIGHT field
+  let li = 1;
+  if (live && s.light) {
+    const every = s.lightEvery || EVERY[s.light], ph = (((t - (s.lightDelay || 0)) / every) % 1 + 1) % 1;
+    if (s.light === "blink") li = ph < 0.5 ? 1 : 0.25;
+    else if (s.light === "flicker") { const step = Math.floor(t * 14 + (s.lightDelay || 0) * 31); li = hash(step) < 0.18 ? 0.15 + 0.3 * hash(step + 7) : 0.85 + 0.15 * hash(step + 3); }
+    else if (s.light === "random") li = 0.4 + 0.6 * Math.pow(0.5 + 0.5 * Math.sin(ph * TAU + Math.sin(ph * TAU * 3 + o.spec.x) * 1.4), 1.5);
+  }
+  const boost = (o === hover && mode === "play") || (focus.o === o) ? 1.6 : 1;
+  o.halo.material.opacity = Math.min(1, (o.halo.material.blending === THREE.AdditiveBlending ? 0.85 : 0.95) * li * boost);
+  // the words and the number, where the shell would draw them
+  const scale = s.scale || 1, showLbl = $("labels").checked && s.label && s.role !== "decor" && o !== placing;
+  if (showLbl) {
+    const right = tmpV.setFromMatrixColumn(cam.matrixWorld, 0); right.y = 0;
+    const towards = new THREE.Vector3(-right.z, 0, right.x).normalize().multiplyScalar(-1);
+    const foot = new THREE.Vector3(s.x, s.y || 0, s.z).addScaledVector(towards, -o.r * scale * 0.9);
+    const p = toDesign(foot, cam);
+    o.lbl.style.display = p.behind ? "none" : ""; o.lbl.style.left = p.x + "px"; o.lbl.style.top = (p.y + 6) + "px";
+  } else o.lbl.style.display = "none";
+  const showBdg = s.badge && s.badge.on && waiting > 0 && s.role !== "decor";
+  if (showBdg) {
+    const p = toDesign(new THREE.Vector3(s.x, (s.y || 0) + (h + s.badge.dy) * scale + y * scale, s.z), cam);
+    o.bdg.style.display = p.behind ? "none" : ""; o.bdg.style.left = p.x + "px"; o.bdg.style.top = p.y + "px";
+    o.bdg.textContent = waiting > 99 ? "99+" : waiting;
+  } else o.bdg.style.display = "none";
+}
+
+let clock = 0, last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
+  focus.k += Math.sign(focus.to - focus.k) * Math.min(Math.abs(focus.to - focus.k), dt / 0.45);
+  breathe(clock);
+  const cam = activeCam(clock);
+  if (controls.enabled) controls.update();
+  gridHelper.visible = mode === "edit" && $("grid").checked;
+  foam.material.opacity = 0.3 + 0.15 * Math.sin(clock * 1.3);
+  water.position.y = -0.32 + Math.sin(clock * 0.8) * 0.02;
+  for (const o of objs) animate(o, clock, cam);
+  if (placing) animate(placing, clock, cam);
+  if (selected && mode === "edit") { selBox.setFromObject(selected.body); selBox.visible = true; } else selBox.visible = false;
+  sun.target.position.set(0, 0, 0);
+  renderer.render(scene, cam);
+  requestAnimationFrame(loop);
+}
+
+// ---- the bar ------------------------------------------------------------------------
+function setMode(m) {
+  mode = m; $("mEdit").classList.toggle("on", m === "edit"); $("mPlay").classList.toggle("on", m === "play");
+  cancelPlacing(); pan.set(0, 0, 0); focus.to = 0; focus.o = null; $("card").classList.remove("on");
+  controls.enabled = m === "edit" && $("free").checked;
+  status(m === "play" ? "Play: the player's camera. Drag to pan, tap a door." : "");
+}
+$("mEdit").onclick = () => setMode("edit");
+$("mPlay").onclick = () => setMode("play");
+$("bandOn").addEventListener("input", () => { $("band").style.display = $("bandOn").checked ? "" : "none"; });
+$("lang").onclick = () => { lang = lang === "en" ? "fr" : "en"; $("lang").textContent = lang.toUpperCase(); for (const o of objs) applySpec(o); renderSide(); };
+let statusT = 0;
+function status(msg, secs) { $("status").textContent = msg; clearTimeout(statusT); if (secs) statusT = setTimeout(() => ($("status").textContent = ""), secs * 1000); }
+$("bStarter").onclick = async () => { touch(); starter(); await rebuildAll(); save(); };
+$("bFrom2d").onclick = async () => { touch(); from2d(); await rebuildAll(); save(); };
+$("bClear").onclick = async () => { touch(); comp.houses = []; await rebuildAll(); save(); };
+$("bCopy").onclick = async () => {
+  const txt = JSON.stringify({ village3d: comp }, null, 2);
+  try { await navigator.clipboard.writeText(txt); status("Composition copied (web.village3d)", 2); } catch (e) { prompt("Copy the composition", txt); }
+};
+$("bPaste").onclick = async () => {
+  const txt = prompt("Paste a composition (the JSON Copy JSON gives)");
+  if (!txt) return;
+  try { const j = JSON.parse(txt), c = j.village3d || j; if (!c.houses) throw new Error("no houses"); touch(); comp = Object.assign(blank(), c); await rebuildAll(); save(); }
+  catch (e) { status("Not a composition: " + e.message, 3); }
+};
+
+async function setGame(s) {
+  slug = s; $("game").value = s;
+  try { manifest = await (await fetch("../games/" + s + "/manifest.json")).json(); } catch (e) { manifest = null; }
+  document.documentElement.style.setProperty("--accent", accent());
+  const saved = load();
+  if (saved) comp = Object.assign(blank(), saved); else { comp = blank(); starter(); }
+  undoStack.length = 0;
+  await rebuildAll();
+  const h = new URLSearchParams(location.hash.slice(1)); h.set("game", s); history.replaceState(null, "", "#" + h);
+}
+$("game").addEventListener("input", () => setGame($("game").value));
+
+// ---- boot ----------------------------------------------------------------------------
+async function boot() {
+  for (const s of SLUGS) { const o = document.createElement("option"); o.value = o.textContent = s; $("game").appendChild(o); }
+  const index = await (await fetch(ASSETS + "index.json")).json();
+  for (const it of ITEMS) if (it.category !== "fx")
+    entries.push({ id: "code/" + it.id, name: it.name, category: it.category, item: it });
+  for (const p of index.packs) for (const m of p.models)
+    entries.push({ id: p.pack + "/" + m.name, name: m.name, category: m.category, file: m.file, packTitle: p.title });
+  for (const e of entries) byId.set(e.id, e);
+  renderPalette(); resize();
+  const h = new URLSearchParams(location.hash.slice(1));
+  await setGame(SLUGS.includes(h.get("game")) ? h.get("game") : "chainring");
+  if (h.get("mode") === "play") setMode("play");
+  requestAnimationFrame(loop);
+  window.__v3d = { ready: true, objects: () => objs.length };
+  for (const e of entries) {
+    try { e.thumb = await thumbnail(e); } catch (err) { continue; }
+    if (e.card && e.card.isConnected) e.card.querySelector("img").src = e.thumb;
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+}
+boot().catch((e) => { $("pal").textContent = "Could not load: " + e.message + " (open this page through make lab)"; console.error(e); });
+</script>
+</body>
+</html>

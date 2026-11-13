@@ -56,7 +56,8 @@
                             essay. (`lines`, an array of paragraphs, is the
                             old form and still read.)
                    rows     what a thing pays or costs, as a table rather than
-                            a sentence: [[label, value, colour?]]
+                            a sentence: [[label, value, colour?]] — a value
+                            may be a node (keycaps, a pictogram), set as is
                    lv       the level that first uses it: a page whose level
                             the board has not opened is LOCKED in the contents,
                             titled ??? with the level that opens it — the
@@ -302,13 +303,15 @@
       // So is a value carrying one long word ("Multiplicateur +1"), which in
       // the display face pushes its label off the card.
       for (var w = 0; w < P.rows.length; w++) {
+        if (P.rows[w][1] && P.rows[w][1].nodeType) continue;   // a node sets its own size
         var V = String(P.rows[w][1]);
         if (/[^\s\d.,:%×x+\-\/]{4,}.*\s.*[^\s\d]{3,}/.test(V) || /[^\s\d.,:%×x+\-\/]{9,}/.test(V)) { tb.className += " words"; break; }
       }
       for (var q = 0; q < P.rows.length; q++) {
         var R = P.rows[q], tr = el("div", "gu-tr");
         tr.appendChild(rich("span", "gu-tl", R[0]));
-        var v = text("b", "gu-tv", String(R[1]));
+        var v = R[1] && R[1].nodeType ? el("b", "gu-tv") : text("b", "gu-tv", String(R[1]));
+        if (R[1] && R[1].nodeType) v.appendChild(R[1]);
         if (R[2]) v.style.color = R[2];
         tr.appendChild(v);
         tb.appendChild(tr);

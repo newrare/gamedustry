@@ -1,6 +1,80 @@
 {
  "packs": [
   {
+   "pack": "kaykit-adventurers",
+   "title": "KayKit Adventurers Character Pack 1.0",
+   "author": "Kay Lousberg",
+   "licence": "CC0 1.0",
+   "url": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0",
+   "notes": "rigged characters (Knight, Barbarian, Mage, Rogue), texture and 76 animation clips embedded in each .glb; weapons and shields are meshes of the model; credit optional",
+   "models": [
+    {
+     "name": "Barbarian",
+     "file": "kaykit-adventurers/Barbarian.glb",
+     "category": "Barbarian",
+     "tris": 6543,
+     "verts": 5922,
+     "size": [
+      1.943,
+      3.068,
+      1.264
+     ],
+     "materials": 1,
+     "textures": [
+      "(embedded)"
+     ]
+    },
+    {
+     "name": "Knight",
+     "file": "kaykit-adventurers/Knight.glb",
+     "category": "Knight",
+     "tris": 6952,
+     "verts": 7024,
+     "size": [
+      1.943,
+      3.193,
+      1.254
+     ],
+     "materials": 1,
+     "textures": [
+      "(embedded)"
+     ]
+    },
+    {
+     "name": "Mage",
+     "file": "kaykit-adventurers/Mage.glb",
+     "category": "Mage",
+     "tris": 5683,
+     "verts": 5279,
+     "size": [
+      2.093,
+      3.12,
+      2.094
+     ],
+     "materials": 1,
+     "textures": [
+      "(embedded)"
+     ]
+    },
+    {
+     "name": "Rogue",
+     "file": "kaykit-adventurers/Rogue.glb",
+     "category": "Rogue",
+     "tris": 6377,
+     "verts": 5901,
+     "size": [
+      1.943,
+      3.066,
+      1.659
+     ],
+     "materials": 1,
+     "textures": [
+      "(embedded)"
+     ]
+    }
+   ]
+  },
+  {
    "pack": "kaykit-city",
    "title": "KayKit City Builder Bits 1.0",
    "author": "Kay Lousberg",
@@ -663,6 +737,72 @@
      "textures": [
       "citybits_texture.png"
      ]
+    }
+   ]
+  },
+  {
+   "pack": "kaykit-skeletons",
+   "title": "KayKit Skeletons Character Pack 1.0",
+   "author": "Kay Lousberg",
+   "licence": "CC0 1.0",
+   "url": "https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0",
+   "notes": "rigged characters (Skeleton Warrior, Skeleton Minion), same rig as the adventurers, 95 clips embedded; credit optional",
+   "models": [
+    {
+     "name": "Skeleton_Minion",
+     "file": "kaykit-skeletons/Skeleton_Minion.glb",
+     "category": "Skeleton",
+     "tris": 5288,
+     "verts": 4858,
+     "size": [
+      1.938,
+      2.166,
+      0.912
+     ],
+     "materials": 2,
+     "textures": [
+      "(embedded)"
+     ]
+    },
+    {
+     "name": "Skeleton_Warrior",
+     "file": "kaykit-skeletons/Skeleton_Warrior.glb",
+     "category": "Skeleton",
+     "tris": 5934,
+     "verts": 6117,
+     "size": [
+      1.943,
+      2.166,
+      1.459
+     ],
+     "materials": 2,
+     "textures": [
+      "(embedded)"
+     ]
+    }
+   ]
+  },
+  {
+   "pack": "quaternius-robot",
+   "title": "RobotExpressive",
+   "author": "Tomás Laulhé (Quaternius), glTF by Don McCurdy",
+   "licence": "CC0 1.0",
+   "url": "https://github.com/mrdoob/three.js/tree/r170/examples/models/gltf/RobotExpressive",
+   "notes": "rigged robot with 14 clips and 3 face morph targets, as shipped in the three.js examples",
+   "models": [
+    {
+     "name": "RobotExpressive",
+     "file": "quaternius-robot/RobotExpressive.glb",
+     "category": "RobotExpressive",
+     "tris": 3237,
+     "verts": 7214,
+     "size": [
+      6.619,
+      2.736,
+      0.86
+     ],
+     "materials": 3,
+     "textures": []
     }
    ]
   }

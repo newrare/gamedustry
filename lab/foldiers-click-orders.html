@@ -144,6 +144,24 @@
    Wait. What the hand still holds is what is left to play; what left it is
    on the arrows (tap one: the convoy card). Ring and Sheet stay as presets.
 
+   ROUND 12 — fewer mechanics, more upgrades. Grain, supply lines, relays,
+   generals, drummers, standing orders, rebellions, truces, betrayal,
+   doctrines and the airlift are out: no stage unlocks them any more (their
+   code is still in the page, inert). Their slots now turn up what the
+   player already has: towns +2, veterans and cavalry charge (+1 to a
+   convoy), long guns (a cannon fires two away), heavy shells (−3), rich
+   mines (2 gold), stone forts +2, the capital +3, barracks (+5 a recruit),
+   fast ships (twice as far a tick). Stages 19–21 are the WEATHER: every
+   tick announces one region (two with fronts) for the next Send — snow
+   takes half the troops there, a storm all of them — so the warning is the
+   time to march them out.
+
+   The SPY (stage 14) is a piece: one a camp, on the full region (or the
+   capital). The Red filter shows only what it reads — the orders, the
+   Defend and the reinforcements of the red regions next to its region,
+   each wearing an eye. It owes an order every tick like any piece: Move
+   to a region of yours next door, or Wait.
+
    The full region (the "Full region" button) carries every piece the stage
    can put on one region; "Region content" strips it down. Nothing here ships. Copy
    settings is the panel as JSON.
@@ -483,34 +501,44 @@ body {
     { name: "Recruitment", m: "recruit", n: 20, rule: "A town turns 3 gold into +3 infantry." },
     { name: "Cavalry", m: "cav", n: 21, rule: "Cavalry moves two regions in one tick, through your land or empty land. 4 gold buys 2." },
     { name: "Artillery", m: "cannon", n: 22, rule: "A cannon fires on a neighbour first: −2 troops there." },
-    { name: "Grain", m: "grain", n: 24, rule: "A region feeds 6 troops; above, the grain stock pays 1 grain a troop, or one deserts. A farm makes +3." },
-    { name: "Supply lines", m: "supply", n: 26, rule: "More than 3 regions from a town or a depot: −1 troop a tick. A wagon builds a depot." },
+    { name: "Bigger towns", m: "towns2", n: 24, rule: "A town makes +2 a tick instead of +1." },
+    { name: "Veterans", m: "veterans", n: 26, rule: "A convoy with infantry attacks at +1." },
     { name: "Scouts", m: "scout", n: 28, rule: "A balloon sees two regions around it." },
-    { name: "Spies", m: "spy", n: 29, rule: "Red's orders show as ghost arrows (the Red filter)." },
-    { name: "Relays", m: "relay", n: 31, rule: "A relay (2 gold) on a region a trip leaves, crosses or reaches makes it one tick shorter, by land or by sea." },
-    { name: "Generals", m: "general", n: 32, rule: "A general gives its convoy +1." },
-    { name: "Morale", m: "drummer", n: 34, rule: "A drummer gives its convoy +1." },
-    { name: "Standing orders", m: "standing", n: 36, rule: "A region keeps an order that fires by itself: if attacked call, if lost retake." },
-    { name: "Winter", m: null, n: 38, rule: "Every 6 ticks winter slows the snow and halves output." },
-    { name: "Storms", m: null, n: 40, rule: "A storm closes the sea lanes under it." },
-    { name: "Rebellions", m: "revolt", n: 42, rule: "A region taken less than 3 ticks ago with under 2 troops may revolt." },
+    { name: "Spies", m: "spy", n: 29, rule: "A spy on one of your regions reads the orders of the red regions next to it: ghost arrows, their Defend and their reinforcements (the Red filter). Move it one region a tick, or let it wait." },
+    { name: "Long guns", m: "longguns", n: 31, rule: "A cannon fires two regions away." },
+    { name: "Heavy shells", m: "shells", n: 32, rule: "A cannon shot takes 3 troops instead of 2." },
+    { name: "Rich mines", m: "mines2", n: 34, rule: "A mine pays 2 gold a tick instead of 1." },
+    { name: "Cavalry charge", m: "charge", n: 36, rule: "A convoy with cavalry attacks at +1." },
+    { name: "Snow", m: "snow", n: 38, rule: "Every tick the weather is announced on one region for the next tick. Snow: half the troops there are lost. March them out in time." },
+    { name: "Storms", m: "storm", n: 40, rule: "The weather may also be a storm: every troop left there is lost." },
+    { name: "Weather fronts", m: "fronts", n: 42, rule: "Two regions are announced every tick instead of one." },
     { name: "Wonders", m: null, n: 44, rule: "Hold the wonder 5 ticks to win." },
     { name: "Engineers", m: "engineer", n: 46, rule: "4 gold: a palisade (the region always defends, +1) or a bridge over a river." },
     { name: "Sieges", m: "siege", n: 48, rule: "A siege tower cancels the defender's Defend +1." },
     { name: "A third camp", m: null, n: 50, rule: "The green camp plays against everyone." },
-    { name: "Truces", m: null, n: 54, rule: "An envoy offers a truce for 6 ticks." },
-    { name: "Betrayal", m: null, n: 58, rule: "A truce can be broken, at a cost in morale." },
-    { name: "Doctrines", m: null, n: 62, rule: "Pick one doctrine before the stage." },
-    { name: "Airlift", m: "lift", n: 66, rule: "A troop balloon carries 6 infantry three regions away, over sea or mountain." },
+    { name: "Stone forts", m: "forts2", n: 54, rule: "A fort makes +2 a tick instead of +1." },
+    { name: "Royal capital", m: "capital3", n: 58, rule: "The capital makes +3 a tick instead of +2." },
+    { name: "Barracks", m: "barracks", n: 62, rule: "Recruiting gives +5 infantry for the same 3 gold." },
+    { name: "Fast ships", m: "ships", n: 66, rule: "A fleet sails twice as far a tick." },
     { name: "The Marshals' duel", m: null, n: 70, rule: "Every mechanic on, a mirror map." }
   ];
   const UNLOCK = {};
   STAGES.forEach((st, i) => { if (st.m) UNLOCK[st.m] = i + 1; });
   const has = (m) => S.stage >= (UNLOCK[m] || 99);
+  // the upgrades: a later stage turns up a piece the player already has
+  const shotDmg = () => has("shells") ? 3 : CANNON_DAMAGE;
+  const recruitN = () => has("barracks") ? 5 : RECRUIT_TROOPS;
+  const mineGold = () => has("mines2") ? 2 : 1;
+  const seaLeg = () => has("ships") ? SEA_LEG * 2 : SEA_LEG;
+  // the weather: one region a tick (two with fronts) announced for the next Send
+  const WEATHER = {
+    snow:  { name: "Snow",  text: "Snow next tick: half the troops here are lost" },
+    storm: { name: "Storm", text: "Storm next tick: every troop here is lost" }
+  };
   // what each action and piece waits for
   const ACT_LOCK = { ride: "cav", buycav: "cav", recruit: "recruit", fire: "cannon", ship: "sea", airlift: "lift", scoutMv: "scout",
                      palisade: "engineer", bridge: "engineer", depot: "supply", relay: "relay", standA: "standing", standL: "standing", route: "standing" };
-  const PIECE_LOCK = { cannon: "cannon", lift: "lift", general: "general", drummer: "drummer", siege: "siege", engineer: "engineer", wagon: "supply", scout: "scout" };
+  const PIECE_LOCK = { cannon: "cannon", lift: "lift", general: "general", drummer: "drummer", siege: "siege", engineer: "engineer", wagon: "supply", scout: "scout", spy: "spy" };
 
   // ---- the frame ------------------------------------------------------------
   const FW = 720, FH = 1280, TOP = 196, CX = FW / 2;
@@ -586,6 +614,7 @@ body {
     engineer: { name: "Engineer",      art: "w-engineer", once: true },
     wagon:    { name: "Wagon",         art: "a-wagon",    once: true },
     scout:    { name: "Scout balloon", art: "a-balloon",  once: true },
+    spy:      { name: "Spy",           art: "w-spy",      once: true },
     town:     { name: "Town",          art: "a-town" },
     capital:  { name: "Capital",       art: "a-capital" },
     camp:     { name: "Standing",      art: "a-flag" }
@@ -598,14 +627,14 @@ body {
     ride:     { label: "Ride",              pict: "zap",            t: "ride",   n: true, hint: "Tap a region two steps away, through your land or empty land" },
     airlift:  { label: "Airlift",           pict: "chevrons-up",    t: "lift",   n: true, max: LIFT_MAX, hint: "Tap a region up to three away, over sea or mountain" },
     ship:     { label: "Ship",              pict: "chevrons-right", t: "ship",   n: true, hint: "Tap another harbour: the fleet sails round by sea, one arrow a tick" },
-    fire:     { label: "Fire",              pict: "bomb",           t: "fire",   hint: "Tap a neighbour: −2 troops there, before its convoy goes in" },
+    fire:     { label: "Fire",              pict: "bomb",           t: "fire",   get hint() { return "Tap a " + (has("longguns") ? "region up to two away" : "neighbour") + ": −" + shotDmg() + " troops there, before its convoy goes in"; } },
     join:     { label: "Join a convoy",     pict: "flag",           t: "join",   hint: "Tap the target of one of this region's convoys" },
     go:       { label: "Move",              pict: "chevrons-right", t: "go",     hint: "Tap a neighbour of yours" },
     scoutMv:  { label: "Move",              pict: "eye",            t: "scout",  hint: "Tap a neighbour: the balloon sees two regions around it" },
     bridge:   { label: "Bridge",            pict: "plus",           t: "bridge", cost: WORK_COST, hint: "Tap the region across the river" },
     palisade: { label: "Palisade",          pict: "shield",         self: true, cost: WORK_COST },
     depot:    { label: "Depot",             pict: "flag",           self: true },
-    recruit:  { label: "Recruit +3",        pict: "plus",           self: true, cost: RECRUIT_COST },
+    recruit:  { get label() { return "Recruit +" + recruitN(); }, pict: "plus", self: true, cost: RECRUIT_COST },
     buycav:   { label: "Cavalry +2",        pict: "plus",           self: true, cost: CAV_COST },
     relay:    { label: "Relay",             pict: "flag",           self: true, cost: RELAY_COST },
     standA:   { label: "If attacked, call", pict: "shield",         t: "own",    standing: "A", hint: "Tap the region of yours that reinforces it when it is attacked" },
@@ -618,13 +647,13 @@ body {
   const ACTS_OF = {
     foot: ["march", "defend"], cav: ["march", "ride", "defend"], cannon: ["fire", "go", "wait"], lift: ["airlift", "wait"],
     harbour: ["ship"], general: ["join", "go", "wait"], drummer: ["join", "go", "wait"], siege: ["join", "go", "wait"],
-    engineer: ["palisade", "bridge", "go", "wait"], wagon: ["depot", "join", "go", "wait"], scout: ["scoutMv", "wait"],
+    engineer: ["palisade", "bridge", "go", "wait"], wagon: ["depot", "join", "go", "wait"], scout: ["scoutMv", "wait"], spy: ["go", "wait"],
     town: TOWN_ACTS, capital: TOWN_ACTS, camp: ["relay", "standA", "standL"]
   };
   // how a convoy travels to its target: every kind of target rides one way
   const MODE_OF = { march: "march", fire: "march", go: "march", scout: "march", bridge: "march", join: "march", ride: "ride", lift: "lift", ship: "ship" };
   const MODE_LABEL = { ride: "Ride", lift: "Airlift", ship: "Fleet" };
-  const PIECES = ["cannon", "lift", "general", "drummer", "siege", "engineer", "wagon", "scout"];
+  const PIECES = ["cannon", "lift", "general", "drummer", "siege", "engineer", "wagon", "scout", "spy"];
 
   // ---- the map: a straight-edged Voronoi cut, the game's way -------------------
   const W = 1100, H = 1500;
@@ -634,6 +663,8 @@ body {
   let orders = {}, acts = {}, hold = {};
   // across ticks: the standing orders and levy routes, the levy on the road, the fleets at sea
   let standing = {}, levies = [], fleets = [], roads = [];
+  // the weather announced for the next Send: [{ id, kind }]
+  let weather = [];
   const key = (a, b) => a < b ? a + ":" + b : b + ":" + a;
   function rng(s) {
     s = (s >>> 0) || 1;
@@ -662,7 +693,7 @@ body {
     }
     return { x: x / (3 * a), y: y / (3 * a) };
   }
-  const blankPieces = () => ({ cannon: false, lift: false, general: false, drummer: false, siege: false, engineer: false, wagon: false, scout: false });
+  const blankPieces = () => ({ cannon: false, lift: false, general: false, drummer: false, siege: false, engineer: false, wagon: false, scout: false, spy: false });
   function genMap(s) {
     ANIM = null;
     // as many seeds as the stage wants regions, about three in five end up land
@@ -825,8 +856,8 @@ body {
     R.forEach((r) => { if (!r.capital && !r.city && r.id !== fid && rnd() < 0.1 && has("fort")) r.fort = true; });
     // a few farms: grain for the stock
     R.forEach((r) => { if (!r.capital && !r.fort && rnd() < 0.14 && has("grain")) r.farm = true; });
-    equipFull();
-    orders = {}; acts = {}; hold = {}; standing = {}; levies = []; fleets = []; roads = [];
+    equipFull(); ensureSpy();
+    orders = {}; acts = {}; hold = {}; standing = {}; levies = []; fleets = []; roads = []; weather = [];
     tick = 1; gold = S.gold; grain = 24;
     sel = -1; step = null; openEl = null; openCv = null; logLines = [];
     reserve = S.prod === "reserve" ? incomeOf(BLUE).total : 0;
@@ -843,6 +874,12 @@ body {
     if (S.content === "typical") { r.foot = 7; r.cav = has("cav") ? 2 : 0; r.pc.cannon = has("cannon"); r.city = true; return; }
     r.foot = 9; r.cav = has("cav") ? 4 : 0; r.city = true; r.harbour = has("sea") && onSea(r);
     PIECES.forEach((k) => { r.pc[k] = has(PIECE_LOCK[k]); });
+  }
+  // from the Spies stage on, the camp owns one spy: on the full region, or at the capital
+  function ensureSpy() {
+    if (!has("spy") || R.some((r) => r.owner === BLUE && r.pc.spy)) return;
+    const cap = R.find((r) => r.capital && r.owner === BLUE);
+    if (cap) cap.pc.spy = true;
   }
   const borderOf = (a, b) => borders[key(a, b)] || "";
   // a region whose shore touches the sea (not just the edge of the sheet)
@@ -878,7 +915,7 @@ body {
     // the legs: equal shares of the road, as few as SEA_LEG allows
     let len = 0;
     for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-    const n = Math.max(1, Math.ceil(len / SEA_LEG)), legs = [];
+    const n = Math.max(1, Math.ceil(len / seaLeg())), legs = [];
     for (let l = 0; l < n; l++) legs.push(subLine(pts, l / n, (l + 1) / n));
     return (routeCache[ck] = { pts: pts, len: len, legs: legs });
   }
@@ -899,7 +936,7 @@ body {
   const isNb = (a, b) => adj[a].indexOf(b) >= 0;
   const crossable = (a, b) => borderOf(a, b) !== "mountain";
   // what a region is worth a bell to whoever holds it: capital 2, a town or a fort 1
-  const worthOf = (r) => r.capital ? 2 : (r.city || r.fort) ? 1 : 0;
+  const worthOf = (r) => r.capital ? (has("capital3") ? 3 : 2) : r.city ? (has("towns2") ? 2 : 1) : r.fort ? (has("forts2") ? 2 : 1) : 0;
   const prodOf = (r) => r.owner === NEUTRAL ? 0 : worthOf(r);
   function cavReach(s) {
     const out = {};
@@ -988,7 +1025,11 @@ body {
     switch (t) {
       case "march": return adj[s].filter((j) => crossable(s, j)).concat(R.filter((x) => x.owner === BLUE && x.id !== s && !isNb(s, x.id) && ownPath(s, x.id)).map((x) => x.id));
       case "scout": return adj[s].filter((j) => crossable(s, j));
-      case "fire": return adj[s].filter((j) => crossable(s, j) && R[j].owner !== BLUE);
+      case "fire": {
+        const L = adj[s].filter((j) => crossable(s, j));
+        if (has("longguns")) L.slice().forEach((m) => adj[m].forEach((j) => { if (j !== s && L.indexOf(j) < 0 && crossable(m, j)) L.push(j); }));
+        return L.filter((j) => R[j].owner !== BLUE);
+      }
       case "go": case "own": return adj[s].filter((j) => crossable(s, j) && R[j].owner === BLUE);
       case "ride": return Object.keys(cavReach(s)).map(Number);
       case "lift": return R.filter((x) => x.id !== s && !isNb(s, x.id) && Math.hypot(x.cx - r.cx, x.cy - r.cy) <= LIFT_RANGE).map((x) => x.id);
@@ -1072,17 +1113,20 @@ body {
 
   // ---- the forecast: the game's points ------------------------------------
   // the other regions' cannons that fire on t this bell
-  const otherShots = (s, t) => Object.keys(orders).reduce((a, k) => a + (+k !== s ? orders[k].filter((c) => c.to === t && c.fire).length * CANNON_DAMAGE : 0), 0);
+  const otherShots = (s, t) => Object.keys(orders).reduce((a, k) => a + (+k !== s ? orders[k].filter((c) => c.to === t && c.fire).length * shotDmg() : 0), 0);
   /* The clash: troop for troop. The attack is its troops plus its flat
      modifiers (river −1, general +1, drummer +1); the defence its troops,
      +1 when it holds: red told it to, your Defend, a palisade. A siege
      tower cancels the hold. The bigger side wins and keeps the difference;
      a tie leaves nobody on either side. What the region makes this bell
      never fights: it arrives after the battle. */
-  function attackOf(n, river, pieces) {
+  function attackOf(n, river, pieces, cav) {
     const mods = [];
+    cav = Math.min(n, cav || 0);
     if (!n) return { v: 0, mods: mods };
     if (river) mods.push({ t: "River", v: RIVER_PTS });
+    if (has("veterans") && n > cav) mods.push({ t: "Veterans", v: 1 });
+    if (has("charge") && cav > 0) mods.push({ t: "Charge", v: 1 });
     if (pieces.indexOf("general") >= 0) mods.push({ t: "General", v: GENERAL_PTS });
     if (pieces.indexOf("drummer") >= 0) mods.push({ t: "Drummer", v: DRUM_PTS });
     return { v: Math.max(0, n + mods.reduce((a, x) => a + x.v, 0)), mods: mods };
@@ -1105,21 +1149,21 @@ body {
     const b = R[c.to], foot = c.foot + (ex.foot || 0), cav = c.cav + (ex.cav || 0), n = foot + cav;
     const pieces = c.pieces.concat(ex.pieces || []), fire = c.fire || ex.fire;
     if (b.owner === BLUE) return n ? { col: CAMP[BLUE].base, text: "+" + n } : null;
-    if (!n) return fire ? { col: RISK_COL, text: "−" + CANNON_DAMAGE } : null;
+    if (!n) return fire ? { col: RISK_COL, text: "−" + shotDmg() } : null;
     // red's hold and reinforcements are known only through the spies (the Red filter)
-    const spied = on("red") && b.owner === RED;
+    const seen = b.owner === RED && spied(c.to);
     // the convoys of your other regions on the same target go in with this one
-    let Av = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces).v, N = n, siege = pieces.indexOf("siege") >= 0;
+    let Av = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces, cav).v, N = n, siege = pieces.indexOf("siege") >= 0;
     Object.keys(orders).forEach((k) => {
       if (+k === s) return;
       orders[k].forEach((o) => {
         if (o.to !== c.to || o.mode === "ship" || !(o.foot + o.cav)) return;
-        Av += attackOf(o.foot + o.cav, o.mode === "march" && borderOf(+k, o.to) === "river", o.pieces).v; N += o.foot + o.cav;
+        Av += attackOf(o.foot + o.cav, o.mode === "march" && borderOf(+k, o.to) === "river", o.pieces, o.cav).v; N += o.foot + o.cav;
         if (o.pieces.indexOf("siege") >= 0) siege = true;
       });
     });
-    const m = Math.max(0, b.foot + b.cav - (fire ? CANNON_DAMAGE : 0) - otherShots(s, c.to)) + (spied ? reinfTo(c.to) : 0);
-    const D = defenceOf(m, spied && !!redHold[c.to], siege);
+    const m = Math.max(0, b.foot + b.cav - (fire ? shotDmg() : 0) - otherShots(s, c.to)) + (seen ? reinfTo(c.to) : 0);
+    const D = defenceOf(m, seen && !!redHold[c.to], siege);
     const out = clash(Av, N, D.v, m), text = Av + " vs " + D.v;
     if (out.win) return { col: OK_COL, text: text, win: true, left: out.left };
     if (out.tie) return { col: TIE_COL, text: text };
@@ -1158,10 +1202,10 @@ body {
   const stays = (id) => freeTroops(id) + incoming(id);
   function yieldOf(id) {
     const r = R[id], routed = (standing[id] || {}).R != null && S.route !== "off", a = acts[id] || {};
-    return { troops: prodOf(r) + (a.recruit ? RECRUIT_TROOPS : 0) + (a.buycav ? CAV_COUNT : 0), gold: r.mine ? 1 : 0, routed: routed };
+    return { troops: prodOf(r) + (a.recruit ? recruitN() : 0) + (a.buycav ? CAV_COUNT : 0), gold: r.mine ? mineGold() : 0, routed: routed };
   }
   // what lands in the region itself at the bell: its production stays home only under the local rule
-  const afterBell = (id) => stays(id) + (S.prod === "reserve" ? ((acts[id] || {}).recruit ? RECRUIT_TROOPS : 0) : yieldOf(id).routed ? 0 : yieldOf(id).troops);
+  const afterBell = (id) => stays(id) + (S.prod === "reserve" ? ((acts[id] || {}).recruit ? recruitN() : 0) : yieldOf(id).routed ? 0 : yieldOf(id).troops);
   // the biggest red stack next door, and what it would attack with
   function threatOn(id) {
     let t = null;
@@ -1169,7 +1213,7 @@ body {
       const b = R[j], n = b.foot + b.cav - 1;
       if (b.owner !== RED || !crossable(id, j) || n <= 0) return;
       t = t || { n: 0, att: 0 };
-      t.n += n; t.att += attackOf(n, borderOf(id, j) === "river", []).v;
+      t.n += n; t.att += attackOf(n, borderOf(id, j) === "river", [], b.cav).v;
     });
     return t;
   }
@@ -1195,7 +1239,8 @@ body {
   }
   // the warning: what the region needs looked at, the attacks aside (that is the shield's)
   function alertsOf(id) {
-    const r = R[id], L = [], after = afterBell(id);
+    const r = R[id], L = [], after = afterBell(id), w = weather.find((x) => x.id === id);
+    if (w) L.push({ col: WARN_COL, text: WEATHER[w.kind].text });
     if (has("revolt") && tick - r.takenAt < REVOLT_TICKS && after < 2) L.push({ col: WARN_COL, text: "Revolt risk: taken " + (tick - r.takenAt) + " ticks ago, keep 2 troops" });
     if (has("supply") && supplySteps(id) > SUPPLY_RANGE) L.push({ col: WARN_COL, text: "Out of supply: −1 troop a tick" });
     if (has("grain") && after > GRAIN_FEED && grainDemand() > grain) L.push({ col: WARN_COL, text: "Hungry: the grain runs out, −1 troop a tick" });
@@ -1208,6 +1253,13 @@ body {
      pile up. Red earns and drops its own the same way, every tick. */
   let reserve = 0, redReserve = 0, deploy = {}, redDrop = {}, placeHist = [], placing = false, placeStep = 1, redPlan = [], redHold = {};
   const on = (k) => !!S.f[k] && FILTERS.some((f) => f.k === k && (!f.lock || has(f.lock)));
+  // the red regions the spy reads: every red neighbour of a region of yours where a spy stands
+  function spiedSet() {
+    const out = {};
+    R.forEach((r) => { if (r.owner === BLUE && r.pc.spy) adj[r.id].forEach((j) => { if (R[j].owner === RED) out[j] = true; }); });
+    return out;
+  }
+  const spied = (id) => on("red") && !!spiedSet()[id];
   function stepsFrom(from) {
     const D = R.map(() => Infinity); D[from] = 0;
     const q = [from];
@@ -1269,7 +1321,7 @@ body {
     redHold = {};
     if (S.red !== "on") return [];
     const out = [], busy = {};
-    const threat = (id) => adj[id].reduce((a, j) => R[j].owner === BLUE && crossable(id, j) ? Math.max(a, attackOf(R[j].foot + R[j].cav, borderOf(id, j) === "river", []).v) : a, 0);
+    const threat = (id) => adj[id].reduce((a, j) => R[j].owner === BLUE && crossable(id, j) ? Math.max(a, attackOf(R[j].foot + R[j].cav, borderOf(id, j) === "river", [], R[j].cav).v) : a, 0);
     R.forEach((r) => {
       const n = r.foot + r.cav;
       if (r.owner !== RED || n < 2) return;
@@ -1323,6 +1375,30 @@ body {
     redDeploy();
     redPlan = planRed();
     placing = S.prod === "reserve" && reserve > 0 && S.autoplace === "on";
+    announceWeather();
+  }
+  /* ---- the weather ------------------------------------------------------------
+     From the Snow stage on, every tick announces one region (two with
+     fronts) that the weather hits at the next Send, after the battles and
+     before the output: snow takes half the troops there, a storm all of
+     them. Any camp's region, never a capital, never an empty one: the
+     warning is the time to march the troops out. */
+  function announceWeather() {
+    weather = [];
+    if (!has("snow")) return;
+    const rnd = rng(seed * 7919 + tick * 104729), L = R.filter((r) => !r.capital && r.foot + r.cav > 0);
+    for (let k = has("fronts") ? 2 : 1; k > 0 && L.length; k--) {
+      const r = L.splice(Math.floor(rnd() * L.length), 1)[0];
+      weather.push({ id: r.id, kind: has("storm") && rnd() < 0.5 ? "storm" : "snow" });
+    }
+  }
+  function strikeWeather(log) {
+    weather.forEach((w) => {
+      const r = R[w.id], n = r.foot + r.cav, k = w.kind === "storm" ? n : Math.ceil(n / 2);
+      lose(r, k);
+      log.push(WEATHER[w.kind].name + " on " + r.name + (k ? ": −" + k + ", " + (r.foot + r.cav) + " left" : ": nobody there"));
+    });
+    weather = [];
   }
 
   // ---- giving and changing orders ---------------------------------------------
@@ -1483,6 +1559,7 @@ body {
   }
   // the cards come out of the region: copies fly from it to their place, then the cards show
   function dealCards() {
+    if (sel < 0) return;
     const ur = ui.getBoundingClientRect(), k = ur.height / FH, g = groundOf(sel);
     const cards = Array.from(handEl.querySelectorAll(".hcard")), row = handEl.querySelector(".hrow"), rr = row.getBoundingClientRect();
     cards.forEach((el, i) => {
@@ -1587,7 +1664,7 @@ body {
       rec({ kind: "move", side: BLUE, from: s, to: c.to, n: n, fleet: c.mode === "ship" || c.mode === "road" }, [s, c.to]);
       return;
     }
-    const A = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces), m = b.foot + b.cav;
+    const A = attackOf(n, c.mode === "march" && borderOf(s, c.to) === "river", pieces, cav), m = b.foot + b.cav;
     const D = defenceOf(m, holding(c.to), pieces.indexOf("siege") >= 0);
     const out = clash(A.v, n, D.v, m), was = b.owner, txt = A.v + " vs " + D.v;
     if (out.win) {
@@ -1605,7 +1682,7 @@ body {
   function assault(to, L, log) {
     const b = R[to], foot = L.reduce((a, x) => a + x.foot, 0), cav = L.reduce((a, x) => a + x.cav, 0), n = foot + cav;
     const pieces = L.reduce((a, x) => a.concat(x.pieces), []), A = { v: 0, mods: [] };
-    L.forEach((x) => { const a = attackOf(x.foot + x.cav, x.river, x.pieces); A.v += a.v; A.mods = A.mods.concat(a.mods); });
+    L.forEach((x) => { const a = attackOf(x.foot + x.cav, x.river, x.pieces, x.cav); A.v += a.v; A.mods = A.mods.concat(a.mods); });
     const m = b.foot + b.cav, D = defenceOf(m, holding(to), pieces.indexOf("siege") >= 0);
     const out = clash(A.v, n, D.v, m), was = b.owner, txt = A.v + " vs " + D.v;
     const from = L.length > 1 ? L.length + " regions" : R[L[0].s].name;
@@ -1646,7 +1723,7 @@ body {
       const L = convoysOf(r.id), a = acts[r.id] || {};
       if (r.owner !== BLUE || (!L.length && !Object.keys(a).length)) return;
       log.push("· " + r.name);
-      if (a.recruit) { gold -= RECRUIT_COST; extra[r.id] = (extra[r.id] || 0) + RECRUIT_TROOPS; log.push("Infantry +3"); }
+      if (a.recruit) { gold -= RECRUIT_COST; extra[r.id] = (extra[r.id] || 0) + recruitN(); log.push("Infantry +" + recruitN()); }
       if (a.buycav) { gold -= CAV_COST; r.cav += CAV_COUNT; log.push("Cavalry +2"); }
       if (a.palisade) { gold -= WORK_COST; r.palisade = true; log.push("Palisade built"); }
       if (a.depot) { r.depot = true; log.push("Depot built"); }
@@ -1656,7 +1733,7 @@ body {
         if (c.fire) {
           if (b.owner === BLUE) log.push(no + " the cannon holds fire, " + b.name + " is yours");
           else {
-            const was = b.foot + b.cav; lose(b, CANNON_DAMAGE); log.push(no + " the cannon fires on " + b.name + ", " + was + " → " + (b.foot + b.cav));
+            const was = b.foot + b.cav; lose(b, shotDmg()); log.push(no + " the cannon fires on " + b.name + ", " + was + " → " + (b.foot + b.cav));
             rec({ kind: "fire", side: BLUE, from: r.id, to: c.to, n: was - (b.foot + b.cav) }, [c.to]);
           }
         }
@@ -1717,6 +1794,8 @@ body {
     const redOn = {};
     redGo.forEach((o) => { (redOn[o.to] || (redOn[o.to] = [])).push(o); });
     Object.keys(redOn).forEach((t) => redLand(redOn[t], log));
+    // the weather announced last tick strikes whoever stands there now
+    if (weather.length) { log.push("· Weather"); strikeWeather(log); }
     if (S.prod === "reserve") {
       // the bell's troops go to the reserves; a recruit stays where it was bought
       Object.keys(extra).forEach((k) => { R[k].foot += extra[k]; });
@@ -1756,7 +1835,7 @@ body {
     if (need > grain) { over.forEach((r) => lose(r, 1)); log.push("No grain: " + over.length + " regions lose a troop"); grain = 0; }
     else if (need) { grain -= need; log.push("Grain −" + need + " (" + grain + " left)"); }
     const mines = R.filter((r) => r.owner === BLUE && r.mine).length;
-    if (mines) { gold += mines; log.push("Mines +" + mines + " gold"); }
+    if (mines) { gold += mines * mineGold(); log.push("Mines +" + mines * mineGold() + " gold"); }
     orders = {}; acts = {};
     if (S.hold === "tick") hold = {};
     tick++; sel = -1; step = null; openCv = null; openEl = null; hpick = null; handAnim = -1;
@@ -2171,7 +2250,7 @@ body {
       '>−</button><span class="num">' + n + '</span><button class="round" data-cs="' + pool + '" data-d="1"' + (n >= max ? " disabled" : "") + ">+</button></span>";
     if (c.mode !== "ride" && (c.foot || freeFoot(s) > 0)) h += row("foot", "Infantry", (c.lift ? "by balloon, " + LIFT_MAX + " at most" : c.mode === "ship" ? "by sea" : "") , stepper("foot", c.foot, cvMax(s, c, "foot")));
     if ((c.mode === "march" || c.mode === "ride" || c.mode === "road") && (c.cav || freeCav(s) > 0)) h += row("cav", "Cavalry", "", stepper("cav", c.cav, cvMax(s, c, "cav")));
-    if (c.fire) h += row("cannon", "Cannon", "fires first: −" + CANNON_DAMAGE, '<button class="mini" data-cdrop="fire">×</button>');
+    if (c.fire) h += row("cannon", "Cannon", "fires first: −" + shotDmg(), '<button class="mini" data-cdrop="fire">×</button>');
     if (c.bridge) h += row("engineer", "Bridge", WORK_COST + " gold, ready in 2 ticks", '<button class="mini" data-cdrop="bridge">×</button>');
     c.pieces.forEach((p) => { h += row(p, EL[p].name, "", '<button class="mini" data-cdrop="' + p + '">×</button>'); });
     h += "</div>";
@@ -2588,15 +2667,44 @@ body {
     const h = (r.capital ? 70 : r.city ? 44 : 58) * k, im = IMG[key];
     return { x: s.x - 4 * z, y: s.y - 26 * z + up, w: h * im.naturalWidth / im.naturalHeight, h: h };
   }
+  // the weather announced on a region: a snowflake or a lightning bolt, ringed in the warning's orange
+  function weatherMark(x, y, kind) {
+    const storm = kind === "storm";
+    y += Math.sin(now * 3) * 3;
+    ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.beginPath(); ctx.arc(x + 2, y + 3, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2);
+    ctx.fillStyle = storm ? "#3b4252" : "#eaf4ff"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = WARN_COL; ctx.stroke();
+    ctx.save(); ctx.translate(x, y);
+    if (storm) {
+      ctx.fillStyle = "#ffd23a"; ctx.beginPath();
+      ctx.moveTo(3, -14); ctx.lineTo(-8, 2); ctx.lineTo(-1, 2); ctx.lineTo(-4, 14); ctx.lineTo(8, -3); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.strokeStyle = "#2f7fb5"; ctx.lineWidth = 3; ctx.lineCap = "round";
+      for (let i = 0; i < 3; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 12); ctx.stroke(); }
+    }
+    ctx.restore();
+  }
+  // a red region the spy reads: an eye beside its count
+  function eyeMark(x, y) {
+    disc(x, y, 15, "#8f2a1f");
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = "#f6ecd2"; ctx.beginPath(); ctx.ellipse(0, 0, 10, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#8f2a1f"; ctx.beginPath(); ctx.arc(0, 0, 3.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
   function drawMarks() {
     const z = cam.z;
     R.forEach((r) => {
       const s = scr(r.cx, r.cy), up = r.id === sel ? -9 * z : 0, mine = r.owner === BLUE;
       const ty = r.owner === NEUTRAL ? s.y + 18 * z : s.y + 30 * z + up + 20 * z, total = r.foot + r.cav;
+      const wx = on("warn") && !ANIM ? weather.find((x) => x.id === r.id) : null;
+      if (wx) weatherMark(s.x + 58 * z, s.y - 58 * z + up, wx.kind);
       if (!mine) {
         if (r.owner === RED) chip(s.x, ty, String(total), CAMP[RED].base);
-        if (on("red") && redDrop[r.id]) chip(s.x - 40, ty - 36, "+" + redDrop[r.id], "#8f2a1f");
-        if (on("red") && redHold[r.id] && !ANIM) { shieldMark(s.x + 42, ty, "#8f2a1f"); chip(s.x + 76, ty, "+1", "#8f2a1f"); }
+        const seen = r.owner === RED && spied(r.id);
+        if (seen && !ANIM) eyeMark(s.x - 46, ty);
+        if (seen && redDrop[r.id]) chip(s.x - 40, ty - 36, "+" + redDrop[r.id], "#8f2a1f");
+        if (seen && redHold[r.id] && !ANIM) { shieldMark(s.x + 42, ty, "#8f2a1f"); chip(s.x + 76, ty, "+1", "#8f2a1f"); }
         return;
       }
       // row one: shield, attack, warning
@@ -2628,7 +2736,7 @@ body {
       if (on("prod")) {
         const prod = [], y = yieldOf(r.id);
         if (y.troops) prod.push({ art: "a-infantry-blue", t: "+" + y.troops });
-        if (r.mine) prod.push({ icon: coinIcon, t: "+1" });
+        if (r.mine) prod.push({ icon: coinIcon, t: "+" + mineGold() });
         if (r.farm) prod.push({ icon: grainIcon, t: "+" + FARM_GRAIN });
         if (prod.length) {
           const m = mainAsset(r, s, up);
@@ -2639,8 +2747,9 @@ body {
       if (placing && deploy[r.id]) chip(s.x - W / 2 - 22, ty - 38, "+" + deploy[r.id], "#e0a800");
     });
     // red's plans this tick
-    if (on("red") && !ANIM) redPlan.forEach((o) => {
-      if (R[o.from].owner !== RED) return;
+    const sees = on("red") && !ANIM ? spiedSet() : {};
+    redPlan.forEach((o) => {
+      if (R[o.from].owner !== RED || !sees[o.from]) return;
       const C = curve(groundOf(o.from), groundOf(o.to), -0.12), help = o.kind === "reinf";
       arrow(C, help ? "#e08a7a" : "#c8402f", help ? 4 : 5, [12, 9], "#8f2a1f");
       const m = qpt(C, 0.55); chip(m.x, m.y, (help ? "+" : "") + o.n, "#8f2a1f");
@@ -2809,7 +2918,7 @@ body {
   function noGold(cost) {
     const mines = R.filter((r) => r.owner === BLUE && r.mine).length;
     say("Not enough gold", cost + " gold needed, " + goldLeft() + " in hand. " +
-        (mines ? "Your mines pay " + mines + " a tick. Take another to go faster." : "Take a gold mine: it pays 1 gold a tick."));
+        (mines ? "Your mines pay " + mines * mineGold() + " a tick. Take another to go faster." : "Take a gold mine: it pays " + mineGold() + " gold a tick."));
     mineHint = now + 3;
   }
   function drawMineHint() {
@@ -2887,7 +2996,7 @@ body {
   }
   function set(k, v) {
     S[k] = v; save(); syncPanel();
-    if (k === "content") { equipFull(); delete orders[fullId]; delete acts[fullId]; delete hold[fullId]; delete standing[fullId]; }
+    if (k === "content") { equipFull(); ensureSpy(); delete orders[fullId]; delete acts[fullId]; delete hold[fullId]; delete standing[fullId]; }
     if (k === "gold") gold = v;
     if (k === "zoom") { cam.z = v; camGoal = null; }
     if (k === "menu") openEl = null;
@@ -2952,6 +3061,7 @@ body {
     road: (s, t) => { const r = roadOf(s, t); return r ? { path: r.path, ticks: r.legs.length, relay: r.relay } : null; },
     setGold: (v) => { gold = v; renderUI(); return goldLeft(); },
     relay: (id) => { R[id].relay = true; renderUI(); return true; },
+    weather: () => weather.map((w) => w.kind + "@" + w.id), send: () => { send(); skipAll(); return logLines; },
     note: () => document.getElementById("note").className + "|" + document.getElementById("note").textContent,
     acts: (id, el) => ACTS_OF[el].map((a) => { const st = actState(id, el, a); return a + (st.show ? "" : "-") + (st.poor ? "$" : ""); }),
     state: () => ({ reserve: reserve, placing: placing, redPlan: redPlan.length, tick: tick,

@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers upgrades, works and weather</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS UPGRADES, WORKS AND WEATHER — four things the round knows and the
+   map does not say, each tried in a few looks side by side.
+
+   1. UPGRADES. From stage 11 on, a stage turns up what the player already
+      has (veterans, long guns, heavy shells, a charge, richer towns…,
+      RULE_AT in games/foldiers/game.js). Today a notice says it once
+      ("New: Veterans") and nothing on screen says it again. Tried here: a
+      row of paper stamps over the resources, a column under the HUD, or the
+      stamp worn by the pieces it upgrades — each stamp the piece cropped in
+      a paper disc, a paper arrow pointing up in it (this is an upgrade) and
+      the value on a tag, the upgrade of THIS stage tagged New. A stamp is meant to open its guide page on a tap.
+   2. THE FORECAST. The rosette over a target says "5 vs 4"; the +1 of the
+      veterans, the +1 of a hold, the −1 of a river are inside the numbers
+      and nowhere else (attackParts). Tried: today's, a second line of
+      words, a row of stamps over the rosette (yours left, theirs right, a
+      cancelled one struck), and the sum written out.
+   3. THE ENGINEER'S WORKS. A palisade is a purchase: nothing on the map
+      says one is coming until the bell. Tried: today's, a ghost palisade,
+      the ringed badge Defend and Wait already wear (in the works' gold), and
+      the built palisade. The same for a bridge: the arrow alone, a ghost
+      bridge on the river, the built bridge.
+   4. THE WEATHER. Today: a throbbing rosette over the region, a notice, a
+      line on the region's card. Tried: the rosette with what it will take
+      ("−2"), a cloud hanging over the region, and the region itself marked.
+      Play the bell strikes every cell at once.
+   5. THE WONDER. Not a look but the flow, and a proposal: today a gold
+      "n / 5" chip counts the player's bells in a row and Red's count is
+      never drawn. Tried: the wonder visible from the first tick through
+      the fog and shining, and the chip turned into a tug-of-war GAUGE —
+      yellow in the middle, Blue's five steps on one side, Red's on the
+      other; each bell the holder moves it a step toward its side, an even
+      bell (or nobody's) leaves it, a camp's end wins or loses the stage.
+      Beat by beat in the round's own pieces, and one run bell by bell.
+      Picked and ported into games/foldiers/game.js (wonderG, wonderGauge,
+      wonderGlint, shineAt's rays only).
+
+   The paper generator, the arrows, the tags, the pin and the weather
+   rosette are copied as they are from games/foldiers/game.js; the beads and
+   the ringed badge come from lab/foldiers-arrows.html (shipped). The ground
+   is that page's stand-in. Nothing here ships by itself. Picked and ported
+   into games/foldiers/game.js: the column under the HUD with the up arrow
+   (stamp 56, values, New), the forecast's stamps laid over the pin, the
+   cloud over the region with the loss in its middle, the ringed badge for a
+   palisade AND a bridge (on the river), and the built works bigger, with a
+   gold tag for the tick after.
+   =========================================================================== */
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 300px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#copied { font-size:12px; color:#7ed69a; min-height:18px; margin-top:6px; word-break:break-all; }
+[data-for] { display:none; }
+#upglist { font-size:12px; font-weight:500; color:#8b8ba7; margin-top:6px; }
+
+#stage { flex:1; height:100vh; overflow:auto; padding:20px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+.group { margin-bottom:26px; }
+.group h2 { font-size:14px; color:#7ea6ff; margin:0 0 12px 4px; letter-spacing:.5px; }
+.cells { display:flex; flex-wrap:wrap; gap:18px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.cell canvas { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+.cell .name { font-size:14px; color:#e8e6f5; }
+.cell .what { font-size:12px; font-weight:500; color:#8b8ba7; text-align:center; }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Foldiers · upgrades, works, weather</h1>
+  <p class="hint">What the round knows and the map does not say: the upgrades in force, what a fight adds up, the engineer's works on their way, the weather coming, and how the wonder is won or lost. Several looks of each, side by side.</p>
+
+  <h3>View</h3>
+  <div class="seg" id="view">
+    <button data-v="upg">Upgrades</button><button data-v="fight">Forecast</button><button data-v="works">Works</button><button data-v="wx">Weather</button><button data-v="wonder">Wonder</button>
+  </div>
+
+  <div data-for="upg">
+    <h3>Upgrades in force</h3>
+    <div class="row"><label>At stage <output id="o-lvl"></output></label><input type="range" id="lvl" min="11" max="30" step="1"></div>
+    <div class="row"><label>Stamp size <output id="o-stamp"></output></label><input type="range" id="stamp" min="30" max="56" step="2"></div>
+    <div class="seg" id="vals"><button data-v="1">Values</button><button data-v="0">No values</button></div>
+    <div class="seg" id="isnew" style="margin-top:6px"><button data-v="1">New tag</button><button data-v="0">No tag</button></div>
+    <div class="seg" id="arrow" style="margin-top:6px"><button data-v="1">Up arrow</button><button data-v="0">No arrow</button></div>
+    <div id="upglist"></div>
+  </div>
+
+  <div data-for="wx">
+    <h3>The bell</h3>
+    <div class="btns"><button class="main" id="bell">Play the bell</button></div>
+  </div>
+
+  <div class="btns" style="margin-top:22px"><button id="copy">Copy settings</button></div>
+  <div id="copied"></div>
+</div>
+<div id="stage"></div>
+<script>
+// ---- what the copied game code expects around it ---------------------------
+var view = { dpr: 2 };
+var ctx = null;
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function freeCanvas(cv) { if (cv) { cv.width = 0; cv.height = 0; } return null; }
+var FONT = '"Baloo 2", system-ui, -apple-system, sans-serif';
+function font(size, bold) { return (bold ? "700 " : "500 ") + size + "px " + FONT; }
+
+// ---- the camps and the inks (games/foldiers/game.js) -----------------------
+var NEUTRAL = 0, BLUE = 1, RED = 2, GREEN = 3;
+var CAMP = [
+  { base: "#b9a77d", light: "#d8c79c", dark: "#8a7a55", rgb: [150, 140, 110] },
+  { base: "#2f63c4", light: "#5b8fe0", dark: "#1d3f8a", rgb: [47, 99, 196] },
+  { base: "#d9412f", light: "#ee6a4a", dark: "#a52a1f", rgb: [217, 65, 47] },
+  { base: "#2f9e5a", light: "#5cc283", dark: "#1d6b3c", rgb: [47, 158, 90] }
+];
+var OK_COL = "#2f8f4e", BAD_COL = "#c8402f", RISK_COL = "#d08a12", TIE_COL = "#6d7486", LATER_COL = "#b07a10";
+var PAPER = "#f6ecd2", INK = "#2a2418", IDLE_COL = "#8a94a8", RIVER_INK = "#2f7fb5", SHOT_COL = "#e07a2a";
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE ARROWS (curve, paperArrow,
+//  chevrons, footprints), as they are.
+// ======================================================================
+function curve(a, b, bend, r0, r1) {
+  var dx = b[0] - a[0], dy = b[1] - a[1], c = [(a[0] + b[0]) / 2 - dy * bend, (a[1] + b[1]) / 2 + dx * bend], pts = [];
+  for (var i = 0; i <= 40; i++) {
+    var t = i / 40, u = 1 - t;
+    var p = [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+    if (Math.hypot(p[0] - a[0], p[1] - a[1]) < r0 || Math.hypot(p[0] - b[0], p[1] - b[1]) < r1) continue;
+    pts.push(p);
+  }
+  return pts;
+}
+function paperArrow(pts, C, draft) {
+  var n = pts.length;
+  if (n < 3) return null;
+  var hl = 30, w = 11, hw = 26, L = 0, cum = [0], i;
+  for (i = 1; i < n; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+  var iB = n - 1;
+  while (iB > 1 && L - cum[iB] < hl) iB--;
+  var left = [], mid = [], right = [];
+  for (i = 0; i <= iB; i++) {
+    var p = pts[i], q = pts[Math.min(n - 1, i + 1)], o = pts[Math.max(0, i - 1)];
+    var tx = q[0] - o[0], ty = q[1] - o[1], l = Math.hypot(tx, ty) || 1;
+    tx /= l; ty /= l;
+    left.push([p[0] - ty * w, p[1] + tx * w]); right.push([p[0] + ty * w, p[1] - tx * w]); mid.push(p);
+  }
+  var B2 = pts[iB], Tp = pts[n - 1], dx = Tp[0] - B2[0], dy = Tp[1] - B2[1], dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl;
+  var wl = [B2[0] + nx * hw, B2[1] + ny * hw], wr = [B2[0] - nx * hw, B2[1] - ny * hw];
+  function outline(ox, oy) {
+    ctx.beginPath();
+    left.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0] + ox, pp[1] + oy); });
+    ctx.lineTo(wl[0] + ox, wl[1] + oy); ctx.lineTo(Tp[0] + ox, Tp[1] + oy); ctx.lineTo(wr[0] + ox, wr[1] + oy);
+    for (var k = right.length - 1; k >= 0; k--) ctx.lineTo(right[k][0] + ox, right[k][1] + oy);
+    ctx.closePath();
+  }
+  outline(4, 7); ctx.fillStyle = "rgba(20,30,70,.22)"; ctx.fill();
+  outline(0, 0); ctx.fillStyle = draft ? C.light : C.base; ctx.fill();
+  ctx.beginPath();
+  left.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0], pp[1]); });
+  ctx.lineTo(wl[0], wl[1]); ctx.lineTo(Tp[0], Tp[1]);
+  for (i = mid.length - 1; i >= 0; i--) ctx.lineTo(mid[i][0], mid[i][1]);
+  ctx.closePath(); ctx.fillStyle = draft ? "rgba(255,255,255,.55)" : C.light; ctx.fill();
+  ctx.beginPath(); mid.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0], pp[1]); }); ctx.lineTo(Tp[0], Tp[1]);
+  if (draft) ctx.setLineDash([7, 6]);
+  ctx.lineWidth = 1.6; ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.stroke();
+  ctx.setLineDash([]);
+  outline(0, 0); ctx.lineWidth = 1.4; ctx.strokeStyle = C.dark; ctx.stroke();
+  return Tp;
+}
+function chevrons(pts, C, draft) {
+  if (pts.length < 4) return null;
+  var step = 6;
+  for (var i = 3; i < pts.length - 1; i += step) {
+    var p = pts[i], q = pts[Math.min(pts.length - 1, i + 1)], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+    dx /= l; dy /= l;
+    ctx.beginPath();
+    ctx.moveTo(p[0] - dx * 9 - dy * 13, p[1] - dy * 9 + dx * 13);
+    ctx.lineTo(p[0] + dx * 7, p[1] + dy * 7);
+    ctx.lineTo(p[0] - dx * 9 + dy * 13, p[1] - dy * 9 - dx * 13);
+    ctx.lineTo(p[0] - dx * 3, p[1] - dy * 3);
+    ctx.closePath();
+    ctx.fillStyle = draft ? C.light : C.base; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = C.dark; ctx.stroke();
+  }
+  return pts[pts.length - 1];
+}
+function footprints(pts, C) {
+  for (var i = 2, s = 0; i < pts.length; i += 4, s++) {
+    var p = pts[i], q = pts[Math.min(pts.length - 1, i + 1)], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+    dx /= l; dy /= l;
+    var side = s % 2 ? 1 : -1;
+    ctx.beginPath(); ctx.ellipse(p[0] - dy * 6 * side, p[1] + dx * 6 * side, 5, 3.4, Math.atan2(dy, dx), 0, Math.PI * 2);
+    ctx.fillStyle = C.dark; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  return pts[pts.length - 1];
+}
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE PAPER (LOOK, the generator,
+//  ppSprite, paperOn / paperOff), as it is.
+// ======================================================================
+var LOOK = { tilt: 6, rough: 7, fold: "crumple", depth: 0.8, kink: 0, ear: 10, tape: "clear", tapeSmall: true,
+             grain: 0.5, shadow: 0.5, seed: 19 };
+var PP_BACK = "#e3d2a6", PP_EDGE = "rgba(110,85,40,.28)";
+var PP_TAPE = {
+  masking: { a: "rgba(236,220,172,.9)" },
+  clear: { a: "rgba(255,255,255,.32)", gloss: true }
+};
+var ACT_EARS = [1, 1, 0, 1];
+// What each kind of piece is made of, before the look (the lab's recipeOf).
+var PP_RECIPE = {
+  card:    { sheet: true, earCorner: 2, tape: ["tl", "tr"], tiltK: 0.35, tapeLen: 100 },
+  rtitle:  { sheet: true, earCorner: 3, tape: ["t"], tiltK: 0.6, tapeLen: 80 },
+  send:    { sheet: true, earCorner: 1, tape: ["l", "r"], tiltK: 0.6 },
+  own:     { fold: "diag", tiltK: 1.2 },
+  act:     { fold: LOOK.fold === "accordion" ? "accordion" : LOOK.fold === "none" ? "none" : "diag", ear: Math.min(LOOK.ear, 16), tiltK: 0.8 },
+  chip:    { tape: ["l"], small: true, tapeLen: 40, tiltK: 0.9, notch: 7, edge: "rgba(0,0,0,.25)" },
+  tag:     { fold: LOOK.fold === "none" ? "none" : "tent", tape: ["t"], small: true, tapeLen: 30, tiltK: 1.6 },
+  prod:    { fold: LOOK.fold === "none" ? "none" : "tent", tiltK: 2 },
+  shield:  { shape: "shield", tiltK: 1.4 },
+  threat:  { fold: LOOK.fold === "none" ? "none" : "diag", tape: ["r"], small: true, tapeLen: 30, tiltK: 1.4 },
+  verdict: { notch: 9, fold: LOOK.fold === "none" ? "none" : "diag", tape: ["l"], small: true, tapeLen: 36, tiltK: 1.4 },
+  bub:     { shape: "radial", tiltK: 2, edge: "rgba(0,0,0,.25)" },
+  // the hand's cards and their prices (lab/foldiers-cards.html, D · Origami)
+  hand:    { sheet: true, tiltK: 5 / 6, depth: 0.9 },
+  coin:    { shape: "radial", tiltK: 2, edge: "rgba(0,0,0,.25)" }
+};
+
+function ppRng(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function ppHash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
+function ppLerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+// A colour on the back of the paper: the ink, washed toward white.
+function ppTint(hex, k) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return PP_BACK;
+  var n = parseInt(hex.slice(1), 16);
+  return "rgb(" + [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { return Math.round(v + (255 - v) * k); }).join(",") + ")";
+}
+
+// keep the side of line A->B where cross >= 0 (sign = 1) or <= 0 (sign = -1)
+function ppClip(poly, A, B, sign) {
+  var out = [];
+  function side(p) { return sign * ((B[0] - A[0]) * (p[1] - A[1]) - (B[1] - A[1]) * (p[0] - A[0])); }
+  for (var i = 0; i < poly.length; i++) {
+    var p = poly[i], q = poly[(i + 1) % poly.length], sp = side(p), sq = side(q);
+    if (sp >= 0) out.push(p);
+    if ((sp >= 0) !== (sq >= 0)) out.push(ppLerp(p, q, sp / (sp - sq)));
+  }
+  return out;
+}
+
+/* A sheet: four off-square corners, hand-cut edges, the creases of its
+   fold (whose ends kink the edge out for a mountain, in for a valley), an
+   optional dog-ear and an optional V notch (a ribbon's end). */
+function ppSheet(w, h, o, r) {
+  var J = o.rough;
+  function jit() { return (r() * 2 - 1) * J; }
+  var P = [[jit(), jit()], [w + jit(), jit()], [w + jit(), h + jit()], [jit(), h + jit()]];
+  var kinks = [[], [], [], []], creases = [];
+  // edge e runs P[e] -> P[e+1]; f is the fraction read left->right / top->bottom
+  function tOf(e, f) { return e === 2 || e === 3 ? 1 - f : f; }
+  function crease(e1, f1, e2, f2, mountain) {
+    var id = creases.length, off = (mountain ? 1 : -1) * o.kink * (0.6 + r() * 0.6);
+    kinks[e1].push({ t: tOf(e1, f1), off: off, id: id, end: 0 });
+    kinks[e2].push({ t: tOf(e2, f2), off: off, id: id, end: 1 });
+    creases.push({ a: null, b: null, mountain: mountain });
+  }
+  var i, fold = o.fold;
+  if (fold === "diag") {
+    if (w >= h * 1.3) crease(0, 0.52 + r() * 0.2, 2, 0.34 + r() * 0.2, true);
+    else crease(3, 0.3 + r() * 0.2, 1, 0.5 + r() * 0.2, true);
+  } else if (fold === "tent") {
+    crease(3, 0.46 + r() * 0.1, 1, 0.46 + r() * 0.1, true);
+  } else if (fold === "accordion") {
+    var na = Math.max(1, Math.min(6, Math.round(w / 110)));
+    for (i = 1; i <= na; i++) {
+      var f = i / (na + 1) + (r() - 0.5) * 0.06, slant = (r() - 0.5) * 0.06;
+      crease(0, f + slant, 2, f - slant, i % 2 === 1);
+    }
+  } else if (fold === "cross") {
+    crease(0, 0.46 + r() * 0.08, 2, 0.46 + r() * 0.08, true);
+    if (h > 50) crease(3, 0.44 + r() * 0.12, 1, 0.44 + r() * 0.12, false);
+  }
+  if (o.notch) kinks[1].push({ t: 0.5, off: -o.notch, id: -1 });
+
+  var L = P.map(function (p, k) { var q = P[(k + 1) % 4]; return Math.hypot(q[0] - p[0], q[1] - p[1]); });
+  var ear = -1, d = 0;
+  if (o.ear > 0 && o.earCorner != null) {
+    ear = o.earCorner;
+    d = Math.min(o.ear, 0.42 * Math.min(w, h));
+    if (d < 6) ear = -1;
+  }
+  var out = [], a = null, b = null;
+  for (var e = 0; e < 4; e++) {
+    var u = P[e], v = P[(e + 1) % 4], dx = (v[0] - u[0]) / L[e], dy = (v[1] - u[1]) / L[e], nx = dy, ny = -dx;
+    var t0 = e === ear ? d / L[e] : 0, t1 = (e + 1) % 4 === ear ? 1 - d / L[e] : 1;
+    var n = Math.max(1, Math.round(L[e] / 26)), list = [];
+    for (i = 1; i < n; i++) list.push({ t: i / n, off: (r() * 2 - 1) * J * 0.3 });
+    kinks[e].forEach(function (k) { list.push(k); });
+    list.sort(function (p, q) { return p.t - q.t; });
+    var at = (function (u, v, nx, ny) {
+      return function (t, off) { return [u[0] + (v[0] - u[0]) * t + nx * off, u[1] + (v[1] - u[1]) * t + ny * off]; };
+    })(u, v, nx, ny);
+    if (e === ear) { b = at(t0, 0); out.push(b); } else out.push(u);
+    for (i = 0; i < list.length; i++) {
+      var k = list[i];
+      if (k.t <= t0 + 0.02 || k.t >= t1 - 0.02) {
+        if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = at(k.t, 0);   // still a line, no kink
+        continue;
+      }
+      var p = at(k.t, k.off);
+      if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = p;
+      // a kink is a sharp corner: the points either side stay on the cut
+      if (k.id !== undefined) { out.push(at(k.t - 0.012, 0)); out.push(p); out.push(at(k.t + 0.012, 0)); }
+      else out.push(p);
+    }
+    if ((e + 1) % 4 === ear) { a = at(t1, 0); out.push(a); }
+  }
+  var flap = null;
+  if (ear >= 0 && a && b) {
+    // the corner folded over the line a-b lands inside the sheet
+    var c = P[ear], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] * ab[0] + ab[1] * ab[1];
+    var tt = ((c[0] - a[0]) * ab[0] + (c[1] - a[1]) * ab[1]) / l2, foot = [a[0] + ab[0] * tt, a[1] + ab[1] * tt];
+    flap = [a, b, [2 * foot[0] - c[0], 2 * foot[1] - c[1]]];
+  }
+  return { outline: out, creases: creases.filter(function (c) { return c.a && c.b; }), flap: flap };
+}
+
+/* The facets the creases cut the sheet into: every facet takes the parity
+   of the creases it lies right of, light or dark. Crumple is a jittered
+   grid of triangles instead, each its own tone. */
+function ppFacets(w, h, g, o, r) {
+  var out = [], pad = 60, i, j;
+  if (o.fold === "crumple") {
+    var nx = Math.max(2, Math.round(w / 56)), ny = Math.max(1, Math.round(h / 56)), grid = [];
+    for (j = 0; j <= ny; j++) for (i = 0; i <= nx; i++) {
+      var edge = i === 0 || j === 0 || i === nx || j === ny;
+      grid.push([(i / nx) * w + (edge ? (i === 0 ? -pad : i === nx ? pad : 0) : (r() - 0.5) * w / nx * 0.7),
+                 (j / ny) * h + (edge ? (j === 0 ? -pad : j === ny ? pad : 0) : (r() - 0.5) * h / ny * 0.7)]);
+    }
+    var G = function (i, j) { return grid[j * (nx + 1) + i]; };
+    for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+      var flip = r() < 0.5;
+      var t1 = flip ? [G(i, j), G(i + 1, j), G(i + 1, j + 1)] : [G(i, j), G(i + 1, j), G(i, j + 1)];
+      var t2 = flip ? [G(i, j), G(i + 1, j + 1), G(i, j + 1)] : [G(i + 1, j), G(i + 1, j + 1), G(i, j + 1)];
+      out.push({ poly: t1, tone: r() * 2 - 1, line: true });
+      out.push({ poly: t2, tone: r() * 2 - 1, line: true });
+    }
+    return out;
+  }
+  var regions = [[[-pad, -pad], [w + pad, -pad], [w + pad, h + pad], [-pad, h + pad]]];
+  g.creases.forEach(function (c) {
+    var next = [];
+    regions.forEach(function (p) { [1, -1].forEach(function (s) { var q = ppClip(p, c.a, c.b, s); if (q.length > 2) next.push(q); }); });
+    regions = next;
+  });
+  regions.forEach(function (p) {
+    var cx = 0, cy = 0, par = 0;
+    p.forEach(function (q) { cx += q[0] / p.length; cy += q[1] / p.length; });
+    g.creases.forEach(function (c) { if ((c.b[0] - c.a[0]) * (cy - c.a[1]) - (c.b[1] - c.a[1]) * (cx - c.a[0]) < 0) par++; });
+    out.push({ poly: p, tone: par % 2 ? -1 : 0.7 });
+  });
+  return out;
+}
+
+/* A target's action: a folded paper rosette — an octagon of triangles
+   meeting in the middle, light and dark in turn, on a rim in the colour
+   of the verdict. */
+function ppRadial(w, h, o, r) {
+  var n = 8, cx = w / 2, cy = h / 2, R = w / 2, spin = r() * 0.4, outer = [], inner = [];
+  for (var i = 0; i < n; i++) {
+    var an = spin + (i / n) * Math.PI * 2, k = 1 + (r() * 2 - 1) * o.rough * 0.012;
+    outer.push([cx + Math.cos(an) * R * k, cy + Math.sin(an) * R * k]);
+  }
+  outer.forEach(function (p) { inner.push([cx + (p[0] - cx) * 0.84, cy + (p[1] - cy) * 0.84]); });
+  return {
+    outline: outer, creases: [], flap: null,
+    on: function (g, depth) {
+      outer.forEach(function (p, i) {
+        g.globalAlpha = (i % 2 ? 0.12 : 0.2) * depth; g.fillStyle = i % 2 ? "#000" : "#fff";
+        ppPath(g, [[cx, cy], p, outer[(i + 1) % n]]); g.fill();
+      });
+      g.globalAlpha = 1; g.fillStyle = o.inner; ppPath(g, inner); g.fill();
+      inner.forEach(function (p, i) {
+        g.globalAlpha = (i % 2 ? 0.1 : 0.3) * depth; g.fillStyle = i % 2 ? "#2a1c00" : "#fff";
+        ppPath(g, [[cx, cy], p, inner[(i + 1) % n]]); g.fill();
+        g.globalAlpha = 1; g.lineWidth = 1; g.strokeStyle = "rgba(40,25,0," + 0.16 * depth + ")";
+        g.beginPath(); g.moveTo(cx, cy); g.lineTo(p[0], p[1]); g.stroke();
+      });
+    }
+  };
+}
+
+/* The frontier shield: six points, a crease down the middle. */
+function ppShield(w, h, o, r) {
+  function j() { return (r() * 2 - 1) * o.rough * 0.3; }
+  var P = [[w / 2 + j(), j()], [w + j(), h * 0.18 + j()], [w * 0.92 + j(), h * 0.62], [w / 2 + j(), h + j()], [w * 0.08 + j(), h * 0.62], [j(), h * 0.18 + j()]];
+  return { outline: P, creases: [{ a: P[0], b: P[3] }], flap: null };
+}
+
+/* A strip of tape: a band with torn, zig-zag ends, turned to its angle and
+   returned in the piece's own px (the gloss of a clear tape with it). */
+function ppTapeStrip(cx, cy, tw, th, ang, r) {
+  var teeth = Math.max(3, Math.round(th / 4)), left = [], right = [], i;
+  for (i = 0; i <= teeth; i++) {
+    var y = -th / 2 + (th * i) / teeth;
+    left.push([-tw / 2 + (i % 2 ? 2.5 : 0) + r() * 1.5, y]);
+    right.unshift([tw / 2 - (i % 2 ? 2.5 : 0) - r() * 1.5, y]);
+  }
+  var c = Math.cos(ang * Math.PI / 180), s = Math.sin(ang * Math.PI / 180);
+  function place(list) { return list.map(function (p) { return [cx + p[0] * c - p[1] * s, cy + p[0] * s + p[1] * c]; }); }
+  var gx = -tw / 2 + 4, gy = -th / 2 + 2, gw = tw - 8, gh = th * 0.28;
+  return { poly: place(left.concat(right)), gloss: place([[gx, gy], [gx + gw, gy], [gx + gw, gy + gh], [gx, gy + gh]]) };
+}
+
+function ppPath(g, P, dx) {
+  dx = dx || 0;
+  g.beginPath(); g.moveTo(P[0][0] + dx, P[0][1]);
+  for (var i = 1; i < P.length; i++) g.lineTo(P[i][0] + dx, P[i][1]);
+  g.closePath();
+}
+// A blurred, offset copy of a shape and not the shape: it is drawn far off
+// the canvas and only its shadow is thrown back (the sprite is drawn once).
+function ppShadow(g, P, col, dx, dy, blur, d) {
+  g.save();
+  g.shadowColor = col; g.shadowBlur = blur * 2 * d;
+  g.shadowOffsetX = (dx + 4096) * d; g.shadowOffsetY = dy * d;
+  g.fillStyle = "#000"; ppPath(g, P, -4096); g.fill();
+  g.restore();
+}
+function ppBox(list, m) {
+  var b = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+  list.forEach(function (p) { b.x0 = Math.min(b.x0, p[0]); b.y0 = Math.min(b.y0, p[1]); b.x1 = Math.max(b.x1, p[0]); b.y1 = Math.max(b.y1, p[1]); });
+  b.x0 -= m[0]; b.y0 -= m[1]; b.x1 += m[2]; b.y1 += m[3];
+  return b;
+}
+function ppCanvas(b, d) {
+  var cv = document.createElement("canvas");
+  cv.width = Math.max(1, Math.ceil((b.x1 - b.x0) * d)); cv.height = Math.max(1, Math.ceil((b.y1 - b.y0) * d));
+  var g = cv.getContext("2d");
+  g.setTransform(d, 0, 0, d, -b.x0 * d, -b.y0 * d);
+  return { cv: cv, g: g, x: b.x0, y: b.y0, w: cv.width / d, h: cv.height / d };
+}
+// The feTurbulence of the lab's grain, as one tile of brown specks.
+var PP_GRAIN = null;
+function ppGrain() {
+  if (PP_GRAIN) return PP_GRAIN;
+  var n = 128, cv = document.createElement("canvas");
+  cv.width = cv.height = n;
+  var g = cv.getContext("2d"), im = g.createImageData(n, n), px = im.data, r = ppRng(97);
+  for (var i = 0; i < n * n; i++) {
+    var v = (r() + r() + r()) / 3;
+    px[i * 4] = 89; px[i * 4 + 1] = 64; px[i * 4 + 2] = 26;
+    px[i * 4 + 3] = Math.round(255 * clamp(1.6 * v - 0.55, 0, 1));
+  }
+  g.putImageData(im, 0, 0);
+  return (PP_GRAIN = cv);
+}
+function ppLight(g, w, h) {
+  var lg = g.createLinearGradient(-20, -20, w + 20, h + 20);
+  lg.addColorStop(0, "rgba(255,255,255,.22)"); lg.addColorStop(0.5, "rgba(255,255,255,0)"); lg.addColorStop(1, "rgba(0,0,0,.08)");
+  return lg;
+}
+
+/* One piece, drawn once: the sheet (shadow, paper, facets, creases, light,
+   grain, cut edge, dog-ear) into one canvas, its tape into another. */
+var PP_CACHE = {}, PP_N = 0;
+function ppSprite(kind, key, w, h, opt) {
+  var d = view.dpr || 1, rc = PP_RECIPE[kind], fill = opt && opt.fill, inner = opt && opt.inner;
+  var ec = opt && opt.earCorner != null ? opt.earCorner : rc.earCorner;
+  var id = kind + "|" + key + "|" + w + "x" + h + "|" + (fill || "") + "|" + (inner || "") + "|" + ec + "|" + d;
+  if (PP_CACHE[id]) return PP_CACHE[id];
+  if (PP_N >= 200) {
+    for (var c in PP_CACHE) { freeCanvas(PP_CACHE[c].back.cv); if (PP_CACHE[c].front) freeCanvas(PP_CACHE[c].front.cv); }
+    PP_CACHE = {}; PP_N = 0;
+  }
+  var r = ppRng(ppHash(kind + ":" + key + ":" + LOOK.seed)), o = {}, q;
+  for (q in LOOK) o[q] = LOOK[q];
+  for (q in rc) o[q] = rc[q];
+  if (rc.sheet || !fill) { o.fill = fill || PAPER; o.back = PP_BACK; o.edge = PP_EDGE; }
+  else { o.fill = fill; o.back = ppTint(fill, 0.82); o.edge = rc.edge || "rgba(0,0,0,.22)"; }
+  o.inner = inner || PAPER;
+  o.earCorner = ec == null ? null : ec;
+  if (rc.fold === undefined && o.fold === "crumple" && Math.min(w, h) < 44) o.fold = "tent";
+  if (rc.fold === undefined && o.fold !== "none" && w < 70 && h < 50) o.fold = "tent";
+  var tilt = (r() * 2 - 1) * LOOK.tilt * (rc.tiltK == null ? 1 : rc.tiltK) * Math.PI / 180;
+  var geom = rc.shape === "radial" ? ppRadial(w, h, o, r) : rc.shape === "shield" ? ppShield(w, h, o, r) : ppSheet(w, h, o, r);
+  var sh = LOOK.shadow, depth = rc.depth != null ? rc.depth : LOOK.depth;
+
+  // shadow, then the sheet, then everything that sits ON the paper, clipped to it
+  var B = ppCanvas(ppBox(geom.outline.concat(geom.flap || []), [12, 12, 16, 20]), d), g = B.g;
+  ppShadow(g, geom.outline, "rgba(0,0,0," + (0.15 + 0.3 * sh) + ")", 1 + 2 * sh, 2 + 6 * sh, 2 + 3 * sh, d);
+  g.fillStyle = o.fill; ppPath(g, geom.outline); g.fill();
+  g.save(); ppPath(g, geom.outline); g.clip();
+  if (geom.on) geom.on(g, depth);
+  else {
+    if (o.fold !== "none") ppFacets(w, h, geom, o, r).forEach(function (f) {
+      var t = f.tone * depth;
+      g.globalAlpha = Math.abs(t * (t > 0 ? 0.26 : 0.2));
+      g.fillStyle = t > 0 ? "#fff" : "#2a1c00"; ppPath(g, f.poly); g.fill();
+      if (f.line) { g.lineWidth = 0.8; g.strokeStyle = "rgba(255,255,255," + 0.25 * depth + ")"; g.stroke(); }
+    });
+    g.globalAlpha = 1;
+    geom.creases.forEach(function (c) {
+      g.lineWidth = 1.4; g.strokeStyle = "rgba(40,25,0," + 0.28 * depth + ")";
+      g.beginPath(); g.moveTo(c.a[0], c.a[1]); g.lineTo(c.b[0], c.b[1]); g.stroke();
+      g.lineWidth = 1; g.strokeStyle = "rgba(255,255,255," + 0.6 * depth + ")";
+      g.beginPath(); g.moveTo(c.a[0] + 1.2, c.a[1]); g.lineTo(c.b[0] + 1.2, c.b[1]); g.stroke();
+    });
+  }
+  g.globalAlpha = 1;
+  g.fillStyle = ppLight(g, w, h); g.fillRect(-20, -20, w + 40, h + 40);
+  if (LOOK.grain > 0) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = LOOK.grain * 0.5; g.fillStyle = g.createPattern(ppGrain(), "repeat");
+    g.fillRect(0, 0, B.cv.width, B.cv.height);
+    g.restore();
+  }
+  g.restore();
+  g.lineWidth = 1.2; g.lineJoin = "round"; g.strokeStyle = o.edge; ppPath(g, geom.outline); g.stroke();
+  if (geom.flap) {
+    var F = geom.flap;
+    ppShadow(g, F, "rgba(0,0,0,.28)", -1.5, 2, 1.6, d);
+    g.fillStyle = o.back; ppPath(g, F); g.fill();
+    g.fillStyle = ppLight(g, w, h); g.fill();
+    g.lineWidth = 1.2; g.strokeStyle = "rgba(255,255,255,.7)";
+    g.beginPath(); g.moveTo(F[0][0], F[0][1]); g.lineTo(F[1][0], F[1][1]); g.stroke();
+    g.lineWidth = 1; g.strokeStyle = o.edge; ppPath(g, F); g.stroke();
+  }
+
+  // the tape, in front of the words
+  var front = null, T = PP_TAPE[LOOK.tape];
+  var spots = !T || (rc.small && !LOOK.tapeSmall) ? [] : rc.tape || [];
+  if (spots.length) {
+    var base = rc.tapeLen || Math.max(34, Math.min(104, Math.min(w, h) * 0.9)), strips = [], all = [];
+    spots.forEach(function (spot) {
+      var tw = base * (0.85 + r() * 0.3), th = Math.max(12, tw * 0.3), jt = (r() - 0.5) * 12;
+      var tx = w * (0.42 + r() * 0.16), bx = w * (0.42 + r() * 0.16);
+      var at = { tl: [6, 4, -40], tr: [w - 6, 4, 40], bl: [6, h - 4, 40], br: [w - 6, h - 4, -40],
+                 t: [tx, 0, 0], b: [bx, h, 0], l: [0, h * 0.5, 90], r: [w, h * 0.5, 90] }[spot];
+      var s = ppTapeStrip(at[0], at[1], spot === "l" || spot === "r" ? Math.max(tw * 0.7, h * 0.55) : tw, th, at[2] + jt, r);
+      strips.push(s); all = all.concat(s.poly);
+    });
+    front = ppCanvas(ppBox(all, [4, 4, 6, 7]), d);
+    var tg = front.g;
+    strips.forEach(function (s) {
+      ppShadow(tg, s.poly, "rgba(0,0,0,.18)", 1, 2, 1, d);
+      tg.fillStyle = T.a; ppPath(tg, s.poly); tg.fill();
+      if (T.gloss) {
+        tg.fillStyle = "rgba(255,255,255,.35)"; ppPath(tg, s.gloss); tg.fill();
+        tg.lineWidth = 1; tg.strokeStyle = "rgba(255,255,255,.55)"; ppPath(tg, s.poly); tg.stroke();
+      } else { tg.lineWidth = 1; tg.strokeStyle = "rgba(0,0,0,.08)"; ppPath(tg, s.poly); tg.stroke(); }
+    });
+  }
+  PP_N++;
+  return (PP_CACHE[id] = { tilt: tilt, back: B, front: front, outline: geom.outline });
+}
+
+/* Lay a piece with its top-left at (x, y): it is tilted about its middle,
+   and what is drawn until paperOff() is written ON it, in its own px
+   (0..w, 0..h), under its tape. */
+function paperOn(kind, key, x, y, w, h, opt) {
+  var cx = x + w / 2, cy = y + h / 2;
+  w = Math.ceil(w); h = Math.ceil(h);
+  var S = ppSprite(kind, key, w, h, opt);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(S.tilt); ctx.translate(-w / 2, -h / 2);
+  ctx.drawImage(S.back.cv, S.back.x, S.back.y, S.back.w, S.back.h);
+  return S;
+}
+function paperOff(S) {
+  if (S.front) ctx.drawImage(S.front.cv, S.front.x, S.front.y, S.front.w, S.front.h);
+  ctx.restore();
+}
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE TAGS (tag, plate, chip), the
+//  looped arrow of Defend / Wait (loopIcon) and the spy's eye (eyeMark).
+// ======================================================================
+function tag(x, y, n, camp, key) {
+  ctx.font = font(22, true);
+  var t = String(n), w = Math.max(38, ctx.measureText(t).width + 20), h = 32, ink = camp ? CAMP[camp].base : null;
+  var S = paperOn("tag", key, x - w / 2, y - h / 2, w, h, ink ? { fill: ink } : null);
+  ctx.font = font(22, true); ctx.fillStyle = ink ? "#fff" : INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(t, w / 2, h / 2 + 1);
+  paperOff(S);
+}
+var PLATE_PAD = { chip: [15, 15, 16], verdict: [14, 22, 14], own: [14, 14, 10], prod: [10, 10, 10] };
+function plateW(kind, text, size) {
+  var p = PLATE_PAD[kind];
+  ctx.font = font(size || 20, true);
+  return ctx.measureText(text).width + p[0] + p[1];
+}
+function plate(kind, key, cx, cy, text, bg, fg, size) {
+  size = size || 20;
+  var p = PLATE_PAD[kind], w = plateW(kind, text, size), h = size + p[2];
+  var S = paperOn(kind, key, cx - w / 2, cy - h / 2, w, h, { fill: bg });
+  ctx.font = font(size, true); ctx.fillStyle = fg || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, p[0] + (w - p[0] - p[1]) / 2, h / 2 + 1);
+  paperOff(S);
+  return w;
+}
+function loopIcon(x, y, col) {
+  var S = paperOn("bub", "loop" + col, x - 26, y - 26, 52, 52, { fill: col, inner: PAPER });
+  paperOff(S);
+  ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(x - 9, y + 11); ctx.lineTo(x - 9, y - 1); ctx.arc(x, y - 1, 9, Math.PI, 0); ctx.lineTo(x + 9, y + 9); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + 3, y + 4); ctx.lineTo(x + 9, y + 12); ctx.lineTo(x + 15, y + 4); ctx.stroke();
+  ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+}
+function eyeMark(x, y, col) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = PAPER; ctx.stroke();
+  ctx.fillStyle = PAPER; ctx.beginPath(); ctx.ellipse(x, y, 10, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 3.4, 0, Math.PI * 2); ctx.fill();
+}
+
+// ======================================================================
+//  THE GROUND — a stand-in for the round's paper: regions in shards, the
+//  owner's tissue, a thick ink line where two owners meet.
+// ======================================================================
+var GROUND = {};
+var SHARD_RGB = [[230, 200, 140], [186, 197, 215], [233, 188, 172], [186, 213, 178]];
+var BORDER_RGB = [[150, 128, 85], [47, 99, 196], [217, 65, 47], [47, 158, 90]];
+function hash2(i, j) {
+  var n = Math.imul(i, 374761393) + Math.imul(j, 668265263);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+function ground(sc, R) {
+  var key = sc.id + "|" + R;
+  if (GROUND[key]) return GROUND[key];
+  var W = Math.ceil(sc.w * R), H = Math.ceil(sc.h * R), cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  var g = cv.getContext("2d"), im = g.createImageData(W, H), px = im.data;
+  var reg = new Int16Array(W * H), sh = new Int32Array(W * H), rs = sc.regions, SH = 24, x, y, i, k, r;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    var wx = (x + 0.5) / R, wy = (y + 0.5) / R, at = y * W + x;
+    if (sc.sea && sc.sea(wx, wy)) { reg[at] = -1; continue; }
+    var best = 1e12, bi = 0;
+    for (r = 0; r < rs.length; r++) { var dx = wx - rs[r].x, dy = wy - rs[r].y, d = dx * dx + dy * dy; if (d < best) { best = d; bi = r; } }
+    reg[at] = bi;
+    var ci = Math.floor(wx / SH), cj = Math.floor(wy / SH), bs = 1e12, sid = 0;
+    for (var a = -1; a <= 1; a++) for (var b = -1; b <= 1; b++) {
+      var qi = ci + a, qj = cj + b, sx = (qi + 0.15 + 0.7 * hash2(qi, qj)) * SH, sy = (qj + 0.15 + 0.7 * hash2(qj + 911, qi)) * SH;
+      var e = (wx - sx) * (wx - sx) + (wy - sy) * (wy - sy);
+      if (e < bs) { bs = e; sid = (qi + 512) * 4096 + qj + 512; }
+    }
+    sh[at] = sid;
+  }
+  var band = Math.max(2, Math.round(4 * R)), thin = Math.max(1, Math.round(0.9 * R));
+  function regAt(xx, yy) { return xx < 0 || yy < 0 || xx >= W || yy >= H ? -2 : reg[yy * W + xx]; }
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    i = y * W + x; k = i * 4;
+    var me = reg[i], col;
+    if (me === -1) {
+      var wave = 0.5 + 0.5 * Math.sin(x / R / 9 + Math.sin(y / R / 23) * 3);
+      col = [86 + wave * 10, 168 + wave * 10, 168 + wave * 8];
+      var nearLand = [regAt(x - band, y), regAt(x + band, y), regAt(x, y - band), regAt(x, y + band)].some(function (v) { return v >= 0; });
+      if (nearLand) col = [150, 212, 205];
+    } else {
+      var own = rs[me].owner, base = SHARD_RGB[own], tone = (hash2(sh[i], 7) - 0.5) * 0.12;
+      col = [base[0] * (1 + tone), base[1] * (1 + tone), base[2] * (1 + tone)];
+      if ((x + 1 < W && sh[i + 1] !== sh[i]) || (y + 1 < H && sh[i + W] !== sh[i])) col = [col[0] + 22, col[1] + 22, col[2] + 22];
+      var far = [regAt(x - band, y), regAt(x + band, y), regAt(x, y - band), regAt(x, y + band)];
+      var near = [regAt(x - thin, y), regAt(x + thin, y), regAt(x, y - thin), regAt(x, y + thin)];
+      var rival = far.some(function (v) { return v >= 0 && v !== me && rs[v].owner !== own; });
+      var coast = far.some(function (v) { return v === -1; });
+      var line = near.some(function (v) { return v >= 0 && v !== me; });
+      if (rival && own !== NEUTRAL) col = BORDER_RGB[own].slice();
+      else if (coast) col = [col[0] * 0.8, col[1] * 0.8, col[2] * 0.8];
+      else if (line) col = [col[0] * 0.78, col[1] * 0.78, col[2] * 0.78];
+    }
+    px[k] = col[0]; px[k + 1] = col[1]; px[k + 2] = col[2]; px[k + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  cv.reg = reg;                          // the region of every pixel, for a region's mask (weather)
+  return (GROUND[key] = cv);
+}
+function drawRiver(pts) {
+  if (!pts) return;
+  function path() {
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+  }
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  path(); ctx.lineWidth = 18; ctx.strokeStyle = RIVER_INK; ctx.stroke();
+  path(); ctx.lineWidth = 12; ctx.strokeStyle = "#8fd0ec"; ctx.stroke();
+  path(); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.stroke();
+  ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+}
+
+
+// ---- the bead: a disc cut out of the map's paper, the troop in it ------------
+//  A ring of the camp's paper under a paper disc, the troop printed on the
+//  disc big enough to be cropped by it (a head and shoulders read better
+//  than a whole figure at this size), then everything the paper generator
+//  gives a sheet: a fold across with its two faces, the crease, the light,
+//  the grain, a hand-cut edge and the shadow. Drawn once into a sprite.
+var BEAD_CACHE = {};
+function discPoly(cx, cy, r, n, r0, rng) {
+  var P = [];
+  for (var i = 0; i < n; i++) { var a = r0 + i / n * Math.PI * 2, k = r + (rng() * 2 - 1) * Math.max(0.5, r * 0.035); P.push([cx + Math.cos(a) * k, cy + Math.sin(a) * k]); }
+  return P;
+}
+// The troop, as large as the disc allows to crop it: a figure is set by its height, a wide piece by its width.
+function cropFigure(g, kind, camp, cx, cy, D) {
+  var im = art(kind, camp);
+  if (!im) return false;
+  var wide = im.naturalWidth > im.naturalHeight * 0.9;
+  var h = wide ? D * 1.05 * im.naturalHeight / im.naturalWidth : D * 1.25, w = h * im.naturalWidth / im.naturalHeight;
+  g.drawImage(im, cx - w / 2, cy - h / 2 + (wide ? D * 0.04 : D * 0.16), w, h);
+  return true;
+}
+// A fold across the paper (two faces, a crease), the light and the grain, clipped to P.
+function paperFinish(g, P, cx, cy, R, rng, d) {
+  var an = rng() * Math.PI, ux = Math.cos(an), uy = Math.sin(an);
+  g.save(); ppPath(g, P); g.clip();
+  g.globalAlpha = 0.16; g.fillStyle = "#2a1c00";
+  g.beginPath(); g.moveTo(cx - ux * R * 2, cy - uy * R * 2); g.lineTo(cx + ux * R * 2, cy + uy * R * 2);
+  g.lineTo(cx + ux * R * 2 - uy * R * 2, cy + uy * R * 2 + ux * R * 2); g.lineTo(cx - ux * R * 2 - uy * R * 2, cy - uy * R * 2 + ux * R * 2); g.closePath(); g.fill();
+  g.globalAlpha = 1; g.lineWidth = 1.1; g.strokeStyle = "rgba(40,25,0,.3)";
+  g.beginPath(); g.moveTo(cx - ux * R * 2, cy - uy * R * 2); g.lineTo(cx + ux * R * 2, cy + uy * R * 2); g.stroke();
+  g.lineWidth = 0.8; g.strokeStyle = "rgba(255,255,255,.55)";
+  g.beginPath(); g.moveTo(cx - ux * R * 2 + uy, cy - uy * R * 2 - ux); g.lineTo(cx + ux * R * 2 + uy, cy + uy * R * 2 - ux); g.stroke();
+  g.save(); g.translate(cx - R, cy - R); g.fillStyle = ppLight(g, R * 2, R * 2); g.fillRect(-20, -20, R * 2 + 40, R * 2 + 40); g.restore();
+  if (LOOK.grain > 0) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = LOOK.grain * 0.5; g.fillStyle = g.createPattern(ppGrain(), "repeat");
+    g.fillRect(0, 0, g.canvas.width, g.canvas.height);
+    g.restore();
+  }
+  g.restore();
+}
+function beadSprite(kind, camp, D, opt) {
+  var d = view.dpr, id = [kind, camp, D, d, LOOK.seed, LOOK.grain].join("|");
+  if (BEAD_CACHE[id]) return BEAD_CACHE[id];
+  var rng = ppRng(ppHash(id)), R = D / 2, m = 8, C = CAMP[camp];
+  var cv = ppCanvas({ x0: -R - m, y0: -R - m, x1: R + m + 4, y1: R + m + 6 }, d), g = cv.g;
+  var outer = discPoly(0, 0, R, 22, rng() * 6, rng), inner = discPoly(0, 0, R - Math.max(2.5, D * 0.11), 22, rng() * 6, rng);
+  ppShadow(g, outer, "rgba(20,30,70,.38)", 1.5, 3, 2.2, d);
+  g.fillStyle = C.dark; ppPath(g, outer); g.fill();
+  g.fillStyle = PAPER; ppPath(g, inner); g.fill();
+  g.save(); ppPath(g, inner); g.clip();
+  var ok = GLYPH[kind] ? (GLYPH[kind](g, D), true) : cropFigure(g, kind, camp, 0, 0, D);
+  g.restore();
+  paperFinish(g, outer, 0, 0, R, rng, d);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.3)"; ppPath(g, outer); g.stroke();
+  if (ok) BEAD_CACHE[id] = cv;
+  return cv;
+}
+function bead(kind, camp, x, y, D, key, opt) {
+  if (opt.style === "rosette") {
+    var B = paperOn("bub", key, x - D / 2, y - D / 2, D, D, { fill: CAMP[camp].dark, inner: PAPER });
+    ctx.save(); ctx.beginPath(); ctx.arc(D / 2, D / 2, D * 0.42, 0, Math.PI * 2); ctx.clip();
+    cropFigure(ctx, kind, camp, D / 2, D / 2, D * 0.84);
+    ctx.restore();
+    paperOff(B);
+    return;
+  }
+  var S = beadSprite(kind, camp, D, opt);
+  ctx.drawImage(S.cv, x + S.x, y + S.y, S.w, S.h);
+}
+
+// Defend and Wait: ONE badge — the paper disc of what stays, whose border IS
+// the looped arrow: a strip of the order's colour folded round the disc,
+// open at the top, ending in its head.
+function ringSprite(kind, camp, D, col) {
+  var d = view.dpr, id = ["ring", kind, camp, D, col, d, LOOK.seed, LOOK.grain].join("|");
+  if (BEAD_CACHE[id]) return BEAD_CACHE[id];
+  var rng = ppRng(ppHash(id)), R = D / 2, sw = Math.max(6, D * 0.2), Rc = R - sw * 0.45, hw = sw * 0.95, m = 10;
+  var cv = ppCanvas({ x0: -R - m - hw, y0: -R - m - hw, x1: R + m + hw, y1: R + m + hw + 4 }, d), g = cv.g;
+  var disc = discPoly(0, 0, R - 1, 24, rng() * 6, rng);
+  // the strip: clockwise from just right of the top round to a head that points back at the gap
+  var a0 = -Math.PI / 2 + 0.42, a1 = a0 + Math.PI * 2 - 1.05, ha = 0.5, ro = Rc + sw / 2, ri = Rc - sw / 2, outA = [], inA = [], i, a;
+  for (i = 0; i <= 40; i++) { a = a0 + (a1 - a0) * i / 40; outA.push([Math.cos(a) * ro, Math.sin(a) * ro]); inA.push([Math.cos(a) * ri, Math.sin(a) * ri]); }
+  var strip = outA.concat([[Math.cos(a1) * (Rc + hw), Math.sin(a1) * (Rc + hw)], [Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc], [Math.cos(a1) * (Rc - hw), Math.sin(a1) * (Rc - hw)]], inA.reverse());
+  var mid = [];
+  for (i = 0; i <= 40; i++) { a = a0 + (a1 - a0) * i / 40; mid.push([Math.cos(a) * Rc, Math.sin(a) * Rc]); }
+  var light = outA.concat([[Math.cos(a1) * (Rc + hw), Math.sin(a1) * (Rc + hw)], [Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc]], mid.slice().reverse());
+  // the disc and its troop
+  ppShadow(g, disc, "rgba(20,30,70,.38)", 1.5, 3, 2.2, d);
+  g.fillStyle = PAPER; ppPath(g, disc); g.fill();
+  g.save(); ppPath(g, disc); g.clip();
+  var ok = cropFigure(g, kind, camp, 0, 0, D * 0.86);
+  g.restore();
+  paperFinish(g, disc, 0, 0, R, rng, d);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.25)"; ppPath(g, disc); g.stroke();
+  // the strip, folded along its middle: the outer face lit, a crease, a cut edge
+  ppShadow(g, strip, "rgba(0,0,0,.3)", 1, 2, 1.4, d);
+  g.fillStyle = col; ppPath(g, strip); g.fill();
+  g.fillStyle = "rgba(255,255,255,.28)"; ppPath(g, light); g.fill();
+  g.beginPath(); mid.forEach(function (p, k) { g[k ? "lineTo" : "moveTo"](p[0], p[1]); }); g.lineTo(Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.3)"; g.stroke();
+  paperFinish(g, strip, 0, 0, R + hw, rng, d);
+  g.lineWidth = 1.1; g.lineJoin = "round"; g.strokeStyle = "rgba(0,0,0,.35)"; ppPath(g, strip); g.stroke();
+  if (ok) BEAD_CACHE[id] = cv;
+  return cv;
+}
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — the weather rosette (weatherMark),
+//  the target's pin (floatPin, inkOn), as they are.
+// ======================================================================
+var clock = 0;
+var WX_W = 78;
+function weatherMark(x, y, kind, time) {
+  var storm = kind === "storm", k = 1 + 0.08 * Math.max(0, Math.sin(time * 5));
+  y += Math.sin(time * 3) * 3;
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
+  ctx.globalAlpha = 0.35 + 0.25 * Math.max(0, Math.sin(time * 5));
+  ctx.fillStyle = storm ? BAD_COL : "#e07b12"; ctx.beginPath(); ctx.arc(0, 0, WX_W / 2 + 9, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+  var S = paperOn("bub", "wx" + kind, -WX_W / 2, -WX_W / 2, WX_W, WX_W, { fill: storm ? BAD_COL : "#e07b12", inner: storm ? "#24242c" : "#2f6fb0" });
+  paperOff(S);
+  if (storm) {
+    ctx.fillStyle = "#ffd23a"; ctx.strokeStyle = "#5a3c00"; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.beginPath();
+    ctx.moveTo(5, -24); ctx.lineTo(-14, 3); ctx.lineTo(-2, 3); ctx.lineTo(-7, 24); ctx.lineTo(14, -5); ctx.lineTo(2, -5); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.lineJoin = "miter";
+  } else {
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 4.5; ctx.lineCap = "round";
+    for (var i = 0; i < 3; i++) {
+      ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 20);
+      ctx.moveTo(-6, -15); ctx.lineTo(0, -10); ctx.lineTo(6, -15); ctx.moveTo(-6, 15); ctx.lineTo(0, 10); ctx.lineTo(6, 15); ctx.stroke();
+    }
+    ctx.lineCap = "butt";
+  }
+  ctx.restore();
+}
+function inkOn(col) {
+  var h = col.replace("#", ""), r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 165 ? "#2a1a00" : "#fff";
+}
+// The pin, with `sub` an optional second line (the lab's addition: variant "Second line").
+function floatPin(id, key, x, yBase, text, col, i, sub) {
+  ctx.font = font(26, true);
+  var w = Math.max(104, Math.ceil(ctx.measureText(text).width) + 40), h = sub ? 96 : 68;
+  if (sub) { ctx.font = font(20, true); w = Math.max(w, Math.ceil(ctx.measureText(sub).width) + 36); }
+  var bob = Math.sin(clock * 2.6 + i * 1.3), lift = 26 + 9 * bob, y = yBase - lift - h;
+  var sway = 0.035 * Math.sin(clock * 1.7 + i), k = 1 + 0.035 * Math.sin(clock * 5.2 + i);
+  ctx.save(); ctx.globalAlpha = 0.24 - 0.06 * bob; ctx.fillStyle = "#1a1408";
+  ctx.beginPath(); ctx.ellipse(x, yBase, 30 - 6 * bob, 10 - 2 * bob, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(x, y + h); ctx.rotate(sway); ctx.scale(k, k); ctx.translate(-x, -(y + h));
+  ctx.fillStyle = col; ctx.strokeStyle = PAPER; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x - 13, y + h - 4); ctx.lineTo(x, y + h + 16); ctx.lineTo(x + 13, y + h - 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+  var S = paperOn("act", key, x - w / 2, y, w, h, { fill: col, earCorner: 1 });
+  ctx.font = font(26, true); ctx.fillStyle = inkOn(col); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, w / 2, sub ? 32 : h / 2 + 1, w - 24);
+  if (sub) { ctx.font = font(20, true); ctx.globalAlpha *= 0.92; ctx.fillText(sub, w / 2, 68, w - 20); }
+  paperOff(S);
+  ctx.restore();
+  return { x: x, y: y, w: w, h: h };
+}
+
+// ======================================================================
+//  THE PIECES this page draws (game.js ARMY / WORKS / WORLD / SCENERY)
+// ======================================================================
+var CUT = { capital: ["army", 1], fort: ["army", 2], town: ["army", 3], harbour: ["army", 4], infantry: ["army", 5],
+            cavalry: ["army", 7], cannon: ["army", 9], warship: ["army", 11], watchtower: ["army", 14], balloon: ["army", 15], flag: ["army", 16],
+            spy: ["works", 1], scout: ["works", 2], engineer: ["works", 3], siege: ["works", 7], barracks: ["works", 10],
+            palisade: ["works", 11], bridge: ["works", 12], mine: ["works", 15] };
+var FIXED = { cloud1: "foldiers-world-01", cloud2: "foldiers-world-02", cloud3: "foldiers-world-03", storm: "foldiers-world-04",
+              house: "foldiers-scenery-07", nflag: "foldiers-scenery-08", wonder: "foldiers-world-09" };
+var SHEET_OF = [null, "blue", "red", "green"];
+var TALL = { capital: 70, fort: 58, town: 44, harbour: 46, infantry: 38, cavalry: 42, cannon: 26, warship: 56, watchtower: 54,
+             balloon: 54, flag: 34, spy: 34, scout: 36, engineer: 36, siege: 52, barracks: 40, palisade: 30, bridge: 26, mine: 34,
+             cloud1: 52, cloud2: 44, cloud3: 32, storm: 66, house: 34, nflag: 30, wonder: 66 };
+var IMG = {};
+function art(key, camp) {
+  var name = FIXED[key] || (CUT[key] ? "foldiers-" + CUT[key][0] + "-" + SHEET_OF[camp || BLUE] + "-" + ("0" + CUT[key][1]).slice(-2) : null);
+  if (!name) return null;
+  var im = IMG[name];
+  if (!im) { im = IMG[name] = new Image(); im.src = "../assets/image/object/" + name + ".png"; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+// A figure standing with its feet at (x, y); `grey` for nobody's troops.
+function figure(key, camp, x, y, h, alpha, grey) {
+  var im = art(key, camp);
+  if (!im) return null;
+  var w = h * im.naturalWidth / im.naturalHeight;
+  ctx.save();
+  if (alpha != null) ctx.globalAlpha *= alpha;
+  if (grey) ctx.filter = "grayscale(.85) brightness(1.08)";
+  ctx.drawImage(im, x - w / 2, y - h, w, h);
+  ctx.restore();
+  return { x: x, y: y, w: w, h: h };
+}
+
+// ======================================================================
+//  A SCRAP OF MAP — regions on the stand-in ground, their pieces standing.
+// ======================================================================
+function region(x, y, owner, o) {
+  var r = { x: x, y: y, owner: owner, build: null, foot: 0, cav: 0, pieces: [] };
+  for (var k in o || {}) r[k] = o[k];
+  return r;
+}
+var SPOT = { infantry: [-56, 62], cavalry: [56, 62], pieces: [[86, 4], [-88, 4], [0, 112]] };
+function spot(r, which, k, z) { var s = which === "pieces" ? SPOT.pieces[k % 3] : SPOT[which]; return [r.x + s[0] * z / 1.8, r.y + s[1] * z / 1.8]; }
+// Draws the ground and the pieces; returns where each figure stood, for what is laid over them.
+function drawMap(sc, z, hide, under, noBuild) {
+  hide = hide || {}; noBuild = noBuild || {};
+  ctx.drawImage(ground(sc, view.dpr), 0, 0, sc.w, sc.h);
+  drawRiver(sc.river);
+  if (under) under();                      // laid on the paper, under the pieces
+  var figs = [];
+  sc.regions.forEach(function (r, i) {
+    var camp = r.owner, H = hide[i] || {};
+    if (noBuild[i]) { /* drawn by the caller */ }
+    else if (r.build) figs.push({ k: r.build === "wonder" ? "wonder" : camp ? r.build : "house", camp: camp, x: r.x, y: r.y + 10, h: TALL[r.build] * z * 0.85, reg: i });
+    else figs.push({ k: camp ? "flag" : "nflag", camp: camp, x: r.x + 10, y: r.y + 4, h: TALL.flag * z, reg: i });
+    var fs = spot(r, "infantry", 0, z);
+    if (r.palisade && !H.palisade) figs.push({ k: "palisade", camp: camp || BLUE, x: fs[0] + 8, y: fs[1] - 12, h: TALL.palisade * z, reg: i });
+    if (r.foot && !H.foot) figs.push({ k: "infantry", camp: camp || BLUE, grey: !camp, x: fs[0], y: fs[1], h: TALL.infantry * z, reg: i });
+    if (r.cav && !H.cav) { var cs = spot(r, "cavalry", 0, z); figs.push({ k: "cavalry", camp: camp || BLUE, grey: !camp, x: cs[0], y: cs[1], h: TALL.cavalry * z, reg: i }); }
+    r.pieces.forEach(function (p, k) {
+      if (H[p]) return;
+      var q = spot(r, "pieces", k, z);
+      figs.push({ k: p, camp: camp || BLUE, x: q[0], y: q[1], h: TALL[p] * z * (p === "warship" ? 0.8 : 1), reg: i });
+    });
+  });
+  figs.sort(function (a, b) { return a.y - b.y; });
+  figs.forEach(function (f) { var d = figure(f.k, f.camp, f.x, f.y, f.h, f.alpha, f.grey); if (d) f.w = d.w; });
+  return figs;
+}
+// The dashed line a target is reached by while it is picked (game.js drawPins).
+function pickLine(a, b) {
+  ctx.save(); ctx.globalAlpha = 0.45; ctx.setLineDash([2, 8]); ctx.lineWidth = 3; ctx.strokeStyle = PAPER;
+  ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.restore();
+}
+// A paper tag with a figure on it (a value, New, a loss): centred at (x, y).
+function valueTag(x, y, text, col, key, size) {
+  size = size || 20;
+  ctx.font = font(size, true);
+  var w = Math.max(30, ctx.measureText(text).width + 16), h = size + 8;
+  var S = paperOn("tag", key + text + col, x - w / 2, y - h / 2, w, h, { fill: col });
+  ctx.font = font(size, true); ctx.fillStyle = inkOn(col); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, w / 2, h / 2 + 1);
+  paperOff(S);
+  return w;
+}
+function sprite(S, x, y) { if (S) ctx.drawImage(S.cv, x + S.x, y + S.y, S.w, S.h); }
+
+// ---- the glyph discs: a cause with no piece to show (a river, a hold) ---------
+var GLYPH = {
+  river: function (g, D) {
+    g.strokeStyle = RIVER_INK; g.lineWidth = Math.max(2.5, D * 0.09); g.lineCap = "round";
+    for (var j = -1; j <= 1; j++) {
+      g.beginPath();
+      for (var x = -D * 0.36; x <= D * 0.36; x += 2) { var y = j * D * 0.2 + Math.sin(x / D * 9) * D * 0.06; g[x === -D * 0.36 ? "moveTo" : "lineTo"](x, y); }
+      g.stroke();
+    }
+  },
+  hold: function (g, D) {
+    var s = D * 0.3;
+    g.fillStyle = OK_COL; g.beginPath();
+    g.moveTo(0, -s * 1.1); g.lineTo(s, -s * 0.7); g.lineTo(s * 0.85, s * 0.4); g.lineTo(0, s * 1.15); g.lineTo(-s * 0.85, s * 0.4); g.lineTo(-s, -s * 0.7); g.closePath(); g.fill();
+    g.strokeStyle = "#fff"; g.lineWidth = Math.max(2.5, D * 0.08); g.lineCap = "round";
+    g.beginPath(); g.moveTo(-s * 0.45, 0); g.lineTo(s * 0.45, 0); g.moveTo(0, -s * 0.45); g.lineTo(0, s * 0.45); g.stroke();
+  }
+};
+
+// ======================================================================
+//  1. THE UPGRADES IN FORCE — RULE_AT in game.js, with the guide's titles.
+// ======================================================================
+var UPG = [
+  { key: "towns2", at: 11, piece: "town", val: "+2", name: "Bigger towns", eco: true },
+  { key: "veterans", at: 12, piece: "infantry", val: "+1", name: "Veterans" },
+  { key: "longguns", at: 15, piece: "cannon", val: "2", name: "Long guns" },
+  { key: "shells", at: 16, piece: "cannon", val: "3", name: "Heavy shells" },
+  { key: "mines2", at: 17, piece: "mine", val: "+2", name: "Rich mines", eco: true },
+  { key: "charge", at: 18, piece: "cavalry", val: "+1", name: "Cavalry charge" },
+  { key: "forts2", at: 26, piece: "fort", val: "+2", name: "Stone forts", eco: true },
+  { key: "capital3", at: 27, piece: "capital", val: "+3", name: "Royal capital", eco: true },
+  { key: "barracks", at: 28, piece: "barracks", val: "+5", name: "Barracks", eco: true },
+  { key: "ships", at: 29, piece: "warship", val: "×2", name: "Fast ships" }
+];
+var YIELD_COL = "#2f9e4f", NEW_COL = "#ffc21a";
+function upgradesAt(n) { return UPG.filter(function (u) { return u.at <= n; }); }
+// One stamp: the piece cropped in a paper disc, its value on a tag, New over it when this stage brought it.
+/* The upgrade's arrow: a paper arrow pointing up, folded down its middle
+   (the left face lit), cut out with a paper edge so it reads over the figure. */
+function upArrow(x, y, h, col) {
+  var w = h * 0.78, hw = w / 2, sw = w * 0.2, hh = h * 0.5, top = y - h / 2, bot = y + h / 2;
+  var P = [[x, top], [x + hw, top + hh], [x + sw, top + hh], [x + sw, bot], [x - sw, bot], [x - sw, top + hh], [x - hw, top + hh]];
+  function path() { ctx.beginPath(); P.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.closePath(); }
+  ctx.save();
+  ctx.translate(1.2, 2); path(); ctx.fillStyle = "rgba(20,20,40,.35)"; ctx.fill(); ctx.translate(-1.2, -2);
+  path(); ctx.lineJoin = "round"; ctx.lineWidth = Math.max(3, h * 0.12); ctx.strokeStyle = PAPER; ctx.stroke();
+  ctx.fillStyle = col; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x - hw, top + hh); ctx.lineTo(x - sw, top + hh); ctx.lineTo(x - sw, bot); ctx.lineTo(x, bot); ctx.closePath();
+  ctx.fillStyle = "rgba(255,255,255,.3)"; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bot); ctx.lineWidth = 1; ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.stroke();
+  ctx.restore();
+}
+function stamp(u, x, y, S, opt, newAt) {
+  sprite(beadSprite(u.piece, BLUE, S), x, y);
+  if (opt.arrow) upArrow(x - S * 0.24, y - S * 0.06, S * 0.48, u.eco ? YIELD_COL : CAMP[BLUE].base);
+  if (opt.vals) valueTag(x + S * 0.42, y + S * 0.42, u.val, u.eco ? YIELD_COL : CAMP[BLUE].dark, "v" + u.key);
+  if (opt.isnew && u.at === opt.lvl) {
+    var k = 1 + 0.08 * Math.max(0, Math.sin(clock * 5));
+    ctx.save(); ctx.translate(newAt[0], newAt[1]); ctx.scale(k, k);
+    valueTag(0, 0, "New", NEW_COL, "new");
+    ctx.restore();
+  }
+}
+// The foot of the round, mocked: the reserve, Send, the gold.
+function drawFoot(W, H) {
+  var S = paperOn("act", "res", 24, H - 96, 146, 70, { fill: "#e0a800", earCorner: 0 });
+  ctx.fillStyle = "#2a1a00"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.font = font(20, true); ctx.fillText("Reserve", 73, 23); ctx.font = font(26, true); ctx.fillText("3", 73, 50);
+  paperOff(S);
+  S = paperOn("send", "send", 188, H - 104, 300, 84);
+  ctx.textAlign = "center"; ctx.fillStyle = CAMP[BLUE].dark; ctx.font = font(26, true); ctx.fillText("Send orders", 150, 32);
+  ctx.font = font(20, false); ctx.fillStyle = INK; ctx.fillText("2 orders given", 150, 60);
+  paperOff(S);
+  S = paperOn("act", "gold", 508, H - 96, W - 532, 70, { fill: "#a87a10", earCorner: 0 });
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = font(20, true); ctx.fillText("Gold", (W - 532) / 2, 23);
+  ctx.font = font(26, true); ctx.fillText("12", (W - 532) / 2, 50);
+  paperOff(S);
+}
+var UPG_SC = { id: "upg", w: 720, h: 620, river: null, sea: function (x, y) { return x < 26 + 10 * Math.sin(y / 60); },
+  regions: [
+    region(250, 200, BLUE, { build: "capital", foot: 5, cav: 2, pieces: ["cannon", "barracks"] }),
+    region(560, 250, BLUE, { build: "town", foot: 2, pieces: ["mine"] }),
+    region(470, 20, RED, { foot: 3 }),
+    region(330, 420, BLUE, { build: "fort", foot: 1 })
+  ] };
+var UPG_LOOKS = [
+  ["row", "A row over the foot", "The stamps stand over the resources, newest last; a tap opens the guide's page."],
+  ["column", "A column under the HUD", "Down the left edge, out of the way of the map's middle."],
+  ["pieces", "Worn by the pieces", "No row: the infantry wears its +1, the cannon its range… where the piece is on the map."]
+];
+function drawUpg(look, opt) {
+  var W = UPG_SC.w, H = UPG_SC.h, z = 2, figs = drawMap(UPG_SC, z), list = upgradesAt(opt.lvl), S = opt.stamp;
+  drawFoot(W, H);
+  if (look === "row") {
+    var step = S + 18, x = W - 34 - S / 2 - (list.length - 1) * step, y = H - 140 - S / 2;
+    list.forEach(function (u, i) { stamp(u, x + i * step, y, S, opt, [x + i * step, y - S / 2 - 16]); });
+  } else if (look === "column") {
+    list.forEach(function (u, i) { var y = 30 + S / 2 + i * (S + 16); stamp(u, 34 + S / 2, y, S, opt, [34 + S + 50, y]); });
+  } else {
+    // each upgrade on the pieces of yours it upgrades, its value stacked when a piece has two
+    var worn = {};
+    list.forEach(function (u) {
+      figs.forEach(function (f) {
+        if (f.k !== u.piece || f.camp !== BLUE) return;
+        var id = f.k + f.reg, n = worn[id] = (worn[id] || 0) + 1, w = f.w || f.h * 0.6;
+        var tx = f.x + w * 0.42, ty = f.y - f.h * 0.86 - (n - 1) * 30;
+        if (opt.vals) valueTag(tx, ty, u.val, u.eco ? YIELD_COL : CAMP[BLUE].dark, "w" + u.key);
+        if (opt.arrow) upArrow(tx - 26, ty, 24, u.eco ? YIELD_COL : CAMP[BLUE].base);
+        else sprite(beadSprite(u.piece, BLUE, 26), tx, ty);
+        if (opt.isnew && u.at === opt.lvl) valueTag(tx + 46, ty, "New", NEW_COL, "new");
+      });
+    });
+  }
+}
+
+// ======================================================================
+//  2. THE FORECAST — what a fight adds up, on the target's pin.
+// ======================================================================
+var FIGHTS = [
+  { id: "vet", name: "Veterans against a hold", me: { foot: 4 }, them: { owner: RED, build: "town", foot: 3 },
+    mine: [["infantry", "+1", "veterans"]], theirs: [["hold", "+1", "hold"]], base: [4, 3], col: OK_COL },
+  { id: "charge", name: "A charge across a river", me: { cav: 3 }, them: { owner: NEUTRAL, foot: 2 }, river: true,
+    mine: [["cavalry", "+1", "charge"], ["river", "−1", "river"]], theirs: [], base: [3, 2], col: OK_COL },
+  { id: "siege", name: "A siege tower against a palisade", me: { foot: 3, pieces: ["siege"] }, them: { owner: RED, foot: 4, palisade: true },
+    mine: [["infantry", "+1", "veterans"]], theirs: [["palisade", "+1", "palisade", true]], base: [3, 4], col: TIE_COL }
+];
+var FIGHT_LOOKS = [
+  ["today", "Today", "The two totals and nothing else."],
+  ["words", "Second line", "The totals, and what moved them in words under them."],
+  ["stamps", "Stamps", "Yours left, theirs right, over the pin; a cancelled one struck out."],
+  ["sum", "The sum", "Every term written out: what stands, then what is added."]
+];
+function sumOf(F, side) { var n = F.base[side]; (side ? F.theirs : F.mine).forEach(function (m) { if (!m[3]) n += +m[1].replace("−", "-"); }); return n; }
+function fightScene(F) {
+  var sc = { id: "fight-" + F.id, w: 420, h: 400, sea: null, river: null,
+    regions: [region(100, 300, BLUE, F.me), region(300, 185, F.them.owner, F.them)] };
+  if (F.river) sc.river = riverBetween([100, 300], [300, 185]);
+  return sc;
+}
+function riverBetween(A, B) {
+  var mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, dx = B[1] - A[1], dy = -(B[0] - A[0]), l = Math.hypot(dx, dy), out = [];
+  dx /= l; dy /= l;
+  for (var i = -5; i <= 5; i++) out.push([mx + dx * i * 50 + (i % 2 ? 6 : -6), my + dy * i * 50]);
+  return out;
+}
+function drawFight(F, look, i) {
+  var sc = fightScene(F), z = 1.3;
+  drawMap(sc, z);
+  var a = spot(sc.regions[0], "infantry", 0, z), t = sc.regions[1], g = spot(t, "infantry", 0, z), yBase = g[1] - TALL.infantry * z * 0.5;
+  pickLine([a[0], a[1] - 20], [g[0], yBase]);
+  var text = sumOf(F, 0) + " vs " + sumOf(F, 1), sub = null;
+  if (look === "words") {
+    var w = [];
+    F.mine.concat(F.theirs).forEach(function (m) { w.push(m[3] ? "no " + m[2] : m[1] + " " + m[2]); });
+    sub = w.join(" · ");
+  }
+  if (look === "sum") {
+    var part = function (side) {
+      var s = String(F.base[side]);
+      (side ? F.theirs : F.mine).forEach(function (m) { if (!m[3]) s += m[1]; });
+      return s;
+    };
+    text = part(0) + " vs " + part(1);
+  }
+  var P = floatPin(0, "pin" + F.id + look, g[0], yBase, text, F.col, i, sub);
+  if (look === "stamps") {
+    var D = 34, y = P.y - D / 2 - 18 + Math.sin(clock * 2.6 + i * 1.3) * 0, left = F.mine, right = F.theirs;
+    var span = function (L) { return L.length * (D + 6); };
+    var x0 = g[0] - 14 - span(left) + D / 2 + 6;
+    left.forEach(function (m, j) { cause(m, x0 + j * (D + 6), y, D, BLUE); });
+    var x1 = g[0] + 14 + D / 2;
+    right.forEach(function (m, j) { cause(m, x1 + j * (D + 6), y, D, t.owner || NEUTRAL); });
+  }
+}
+// One cause of a fight: its piece (or glyph) in a disc of the side's ink, its value, struck when cancelled.
+function cause(m, x, y, D, camp) {
+  sprite(beadSprite(m[0], camp || BLUE, D), x, y);
+  valueTag(x + D * 0.36, y + D * 0.36, m[1], m[1][0] === "+" ? OK_COL : BAD_COL, "c" + m[2], 20);
+  if (m[3]) {
+    ctx.strokeStyle = BAD_COL; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x - D * 0.45, y - D * 0.45); ctx.lineTo(x + D * 0.45, y + D * 0.45); ctx.stroke();
+    ctx.lineCap = "butt";
+  }
+}
+
+// ======================================================================
+//  3. THE ENGINEER'S WORKS — a palisade and a bridge, ordered, then built.
+// ======================================================================
+var WORKS_COL = "#c7951a";
+var PAL_SC = { id: "pal", w: 420, h: 360, sea: null, river: null,
+  regions: [region(170, 215, BLUE, { build: "fort", foot: 3, pieces: ["engineer"] }), region(340, 70, RED, { foot: 3 })] };
+var PAL_BUILT = { id: "pal-built", w: 420, h: 360, sea: null, river: null,
+  regions: [region(170, 215, BLUE, { build: "fort", foot: 3, pieces: ["engineer"], palisade: true }), region(340, 70, RED, { foot: 3 })] };
+var BR_SC = { id: "br", w: 420, h: 360, sea: null, river: riverBetween([105, 260], [305, 105]),
+  regions: [region(105, 260, BLUE, { foot: 2, pieces: ["engineer"] }), region(305, 105, NEUTRAL, { foot: 1 })] };
+var BR_BUILT = { id: "br-built", w: 420, h: 360, sea: null, river: riverBetween([105, 260], [305, 105]),
+  regions: [region(105, 260, BLUE, { foot: 2, pieces: ["engineer"] }), region(305, 105, NEUTRAL, { foot: 1 })] };
+var WORKS = [
+  ["pal-today", "Palisade ordered — today", "A purchase: nothing on the map until the bell."],
+  ["pal-ghost", "Palisade ordered — ghost", "The palisade it will be, see-through, where it will stand."],
+  ["pal-ring", "Palisade ordered — ringed badge", "The badge Defend and Wait wear, in the works' gold: the engineer at work."],
+  ["pal-built", "Palisade built", "After the bell: the palisade stands on the troops' ground."],
+  ["br-today", "Bridge ordered — today", "The engineer's dashed arrow over the river (shipped)."],
+  ["br-ghost", "Bridge ordered — ghost", "The same, and the bridge it will be, see-through, on the river."],
+  ["br-built", "Bridge built", "After the bell: the bridge stands on the river, the way is open."]
+];
+function bridgeArrow(sc, z, beadT) {
+  var a = sc.regions[0], b = sc.regions[1];
+  ctx.save(); ctx.scale(z, z);
+  var pts = curve([a.x / z, (a.y - 8) / z], [b.x / z, b.y / z], 0.1, 44, 16);
+  ctx.setLineDash([6, 8]); ctx.lineWidth = 4; ctx.strokeStyle = RIVER_INK;
+  ctx.beginPath(); pts.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.stroke(); ctx.setLineDash([]);
+  arrowHead(pts, RIVER_INK, 16, 10);
+  ctx.restore();
+  var P = pts.map(function (p) { return [p[0] * z, p[1] * z]; }), m = along(P, beadT);
+  sprite(beadSprite("engineer", BLUE, 32), m[0], m[1]);
+}
+function along(P, t) {
+  var L = 0, cum = [0], i;
+  for (i = 1; i < P.length; i++) { L += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); cum.push(L); }
+  for (i = 1; i < P.length; i++) if (cum[i] >= L * t) { var k = (L * t - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1); return [P[i - 1][0] + (P[i][0] - P[i - 1][0]) * k, P[i - 1][1] + (P[i][1] - P[i - 1][1]) * k]; }
+  return P[P.length - 1];
+}
+function arrowHead(pts, col, len, half) {
+  var n = pts.length;
+  if (n < 2) return;
+  var T = pts[n - 1], P = pts[Math.max(0, n - 4)], dx = T[0] - P[0], dy = T[1] - P[1], l = Math.hypot(dx, dy) || 1;
+  dx /= l; dy /= l;
+  var tx = T[0] + dx * len * 0.3, ty = T[1] + dy * len * 0.3, bx = tx - dx * len, by = ty - dy * len;
+  ctx.beginPath(); ctx.moveTo(tx, ty);
+  ctx.lineTo(bx - dy * half, by + dx * half); ctx.lineTo(bx + dx * len * 0.22, by + dy * len * 0.22); ctx.lineTo(bx + dy * half, by - dx * half);
+  ctx.closePath(); ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.stroke();
+}
+// A callout as the round's Pop bonus would set it, mocked as a plate.
+function builtCallout(x, y, text) { plate("verdict", "built" + text, x, y, text, WORKS_COL, "#fff", 22); }
+function drawWorks(id) {
+  var z = 1.7, sc = id === "pal-built" ? PAL_BUILT : id.indexOf("pal") === 0 ? PAL_SC : id === "br-built" ? BR_BUILT : BR_SC;
+  var r = sc.regions[0], ps = spot(r, "infantry", 0, z), mid = [(sc.regions[0].x + sc.regions[1].x) / 2, (sc.regions[0].y + sc.regions[1].y) / 2 + 6];
+  if (id === "pal-ring") {
+    drawMap(sc, z, { 0: { engineer: true } });
+    var q = spot(r, "pieces", 0, z);
+    sprite(ringSprite("palisade", BLUE, Math.round(1.4 * 32), WORKS_COL), q[0], q[1] - 26);
+    return;
+  }
+  drawMap(sc, z);
+  if (id === "pal-ghost") {
+    var bob = Math.sin(clock * 2.2) * 2;
+    ctx.save(); ctx.globalAlpha = 0.5; ctx.setLineDash([5, 6]); ctx.strokeStyle = WORKS_COL; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(ps[0] + 8, ps[1] - 12, 30, 9, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    figure("palisade", BLUE, ps[0] + 8, ps[1] - 12 + bob, TALL.palisade * z, 0.45 + 0.1 * Math.sin(clock * 3));
+  }
+  if (id === "pal-built") builtCallout(r.x, r.y - 80, "Palisade built");
+  if (id === "br-today") bridgeArrow(sc, z, 0.45);
+  if (id === "br-ghost") {
+    bridgeArrow(sc, z, 0.25);
+    figure("bridge", BLUE, mid[0], mid[1] + 8 + Math.sin(clock * 2.2) * 2, TALL.bridge * z * 1.2, 0.45 + 0.1 * Math.sin(clock * 3));
+  }
+  if (id === "br-built") {
+    figure("bridge", BLUE, mid[0], mid[1] + 8, TALL.bridge * z * 1.2);
+    builtCallout(mid[0], mid[1] - 70, "Bridge built");
+  }
+}
+
+// ======================================================================
+//  4. THE WEATHER — snow takes half the troops standing on the region at
+//  the next bell, a storm takes them all (game.js announceWeather).
+// ======================================================================
+function wxScene(kind) {
+  return { id: "wx-" + kind, w: 420, h: 380, sea: null, river: null,
+    regions: [region(215, 225, BLUE, { build: "town", foot: 4 }), region(70, 345, BLUE, { foot: 2 }), region(350, 60, RED, { foot: 3 })] };
+}
+var WX_SC = { snow: wxScene("snow"), storm: wxScene("storm") };
+var WX_LOOKS = [
+  ["today", "Today", "A rosette throbbing over the region, a notice, a line on its card."],
+  ["loss", "Rosette and loss", "The same, and what the bell will take: half the troops, or all."],
+  ["cloud", "A cloud over the region", "The weather itself hangs over the region, its shadow on it, and the loss."],
+  ["mark", "The region marked", "The region frosted or darkened, a small rosette, and the loss."]
+];
+var bellAt = -9, BELL_S = 1.6;
+function lossOf(kind, n) { return kind === "storm" ? n : Math.ceil(n / 2); }
+// The region's mask over the stand-in ground (same raster), filled by `paint`.
+var MASK = {};
+function regionMask(sc, idx, tag, paint) {
+  var R = view.dpr, key = sc.id + "|" + R + "|" + idx + "|" + tag;
+  if (MASK[key]) return MASK[key];
+  var G = ground(sc, R), W = G.width, H = G.height, cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  var g = cv.getContext("2d"), im = g.createImageData(W, H), px = im.data;
+  for (var i = 0; i < W * H; i++) if (G.reg[i] === idx) px[i * 4 + 3] = 255;
+  g.putImageData(im, 0, 0);
+  // the pattern is painted apart and laid ONCE in source-in: stroke by stroke, each would clear the last
+  var P = document.createElement("canvas"); P.width = W; P.height = H;
+  var pg = P.getContext("2d"); pg.setTransform(R, 0, 0, R, 0, 0); paint(pg, sc.w, sc.h);
+  g.globalCompositeOperation = "source-in"; g.drawImage(P, 0, 0);
+  return (MASK[key] = cv);
+}
+function drawWx(kind, look, i) {
+  var sc = WX_SC[kind], z = 1.6, r = sc.regions[0], fs = spot(r, "infantry", 0, z), t = clock - bellAt, striking = t >= 0 && t < BELL_S;
+  var lost = lossOf(kind, r.foot), hitT = kind === "storm" ? 0.32 : 0.75;
+  var hide = striking && t > hitT ? { 0: { foot: true } } : null;
+  var figs = drawMap(sc, z, hide, look === "mark" ? function () { markRegion(sc, kind); } : null);
+  if (striking && t > hitT && t < hitT + 0.4) {
+    var gone = (t - hitT) / 0.4;
+    ctx.save(); ctx.translate(fs[0], fs[1]); ctx.scale(1, 1 - gone * 0.86); figure("infantry", BLUE, 0, 0, TALL.infantry * z, 1 - gone); ctx.restore();
+  }
+  var top = fs[1] - TALL.infantry * z - 18, rx = fs[0] - 4, ry = top - 48;
+  if (look === "mark") {
+    ctx.save(); ctx.translate(rx + 70, ry + 30); ctx.scale(0.62, 0.62); weatherMark(0, 0, kind, clock); ctx.restore();
+    if (!striking) valueTag(rx + 70, ry + 82, "−" + lost, BAD_COL, "loss");
+  } else if (look === "cloud") {
+    var cy = r.y - 120 + Math.sin(clock * 1.25) * 6, ck = kind === "storm" ? "storm" : "cloud1", ch = TALL[ck] * z * 1.5;
+    ctx.save(); ctx.globalAlpha = 0.22; ctx.fillStyle = "#101828";
+    ctx.beginPath(); ctx.ellipse(r.x + 6, r.y + 30, 74, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    if (kind === "snow") flakes(r.x, cy - 10, r.y + 60, 80, 1);
+    else if (Math.sin(clock * 7.3) > 0.97) bolt(r.x + 10, cy, fs[1] - 6, 0.6);
+    figure(ck, BLUE, r.x, cy + ch * 0.5, ch);
+    if (!striking) valueTag(r.x + 74, cy - 20, "−" + lost, BAD_COL, "loss");
+  } else {
+    weatherMark(rx, ry, kind, clock);
+    if (look === "loss" && !striking) valueTag(rx + 52, ry + 30, "−" + lost, BAD_COL, "loss");
+  }
+  if (striking) {
+    if (kind === "storm") {
+      if ((t >= hitT - 0.12 && t < hitT + 0.08) || (t >= hitT + 0.16 && t < hitT + 0.28)) {
+        bolt(fs[0] + 10, 0, fs[1] - 6, 1);
+        ctx.fillStyle = "rgba(255,255,240,.25)"; ctx.fillRect(0, 0, sc.w, sc.h);
+      }
+    } else flakes(r.x, 0, r.y + 80, 140, 3);
+    if (t > hitT) {
+      var u = (t - hitT) / (BELL_S - hitT);
+      ctx.save(); ctx.globalAlpha = 1 - u; ctx.font = font(26, true); ctx.textAlign = "center"; ctx.fillStyle = kind === "storm" ? "#ffd23a" : "#e8f2ff";
+      ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 4;
+      ctx.strokeText("−" + lost, fs[0], fs[1] - TALL.infantry * z - 20 - u * 40); ctx.fillText("−" + lost, fs[0], fs[1] - TALL.infantry * z - 20 - u * 40);
+      ctx.restore();
+    }
+  }
+}
+// The region the weather is coming on, frosted (snow) or darkened (storm), breathing.
+function markRegion(sc, kind) {
+  var M = regionMask(sc, 0, kind, function (g, W, H) {
+    if (kind === "snow") {
+      g.fillStyle = "rgba(255,255,255,.5)"; g.fillRect(0, 0, W, H);
+      g.strokeStyle = "rgba(170,205,240,.7)"; g.lineWidth = 2;
+      for (var x = -H; x < W; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + H, H); g.stroke(); }
+    } else {
+      g.fillStyle = "rgba(30,32,48,.42)"; g.fillRect(0, 0, W, H);
+      g.strokeStyle = "rgba(255,210,58,.45)"; g.lineWidth = 2;
+      for (var y = -W; y < H; y += 18) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y + W * 0.35); g.stroke(); }
+    }
+  });
+  ctx.save(); ctx.globalAlpha = 0.75 + 0.25 * Math.sin(clock * 3); ctx.drawImage(M, 0, 0, sc.w, sc.h); ctx.restore();
+}
+function bolt(x, y0, y1, a) {
+  var pts = [[x + 24, y0]], n = 7;
+  for (var i = 1; i < n; i++) { var f = i / n; pts.push([x + 24 * (1 - f) + (i % 2 ? 1 : -1) * (14 + 6 * Math.sin(i * 7.3)), y0 + (y1 - y0) * f]); }
+  pts.push([x, y1]);
+  ctx.save(); ctx.globalAlpha = a; ctx.lineJoin = "round";
+  [[10, "rgba(255,240,150,.5)"], [5, "#ffd23a"], [2, "#fff"]].forEach(function (s) {
+    ctx.lineWidth = s[0]; ctx.strokeStyle = s[1];
+    ctx.beginPath(); pts.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.stroke();
+  });
+  ctx.restore();
+}
+// Flakes falling from y0 to y1 around x, deterministic in time (no particles to keep).
+function flakes(x, y0, y1, spread, dense) {
+  ctx.save(); ctx.fillStyle = "#fff";
+  for (var i = 0; i < 18 * dense; i++) {
+    var ph = (i * 0.618) % 1, sp = 0.35 + 0.3 * ((i * 0.37) % 1), f = (clock * sp + ph) % 1;
+    var fx = x + (((i * 97) % 200) / 200 - 0.5) * spread * 2 + Math.sin(clock * 2 + i) * 6, fy = y0 + (y1 - y0) * f;
+    ctx.globalAlpha = Math.min(1, (1 - f) * 3) * 0.9;
+    ctx.beginPath(); ctx.arc(fx, fy, 2.2 + (i % 3), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ======================================================================
+//  5. THE WONDER — a PROPOSAL, how a stage with a wonder would play out
+//  with a tug-of-war gauge in place of today's "n / 5" chip (game.js:
+//  rules.wonder, wonderHold, WONDER_HOLD, failReason, drawTags).
+//  The wonder stands on the map from the first tick, through the fog, and
+//  shines. Over it, a gauge: yellow in the middle (nobody), Blue's five
+//  steps on one side, Red's five on the other. At every bell the camp that
+//  holds the region moves it one step toward its own side — Blue pulls back
+//  through the yellow middle and on into blue, a step a bell — and a bell
+//  where the region is nobody's, or where Blue and Red end even on it,
+//  leaves it where it is. The end of a side is that camp's: Blue's wins
+//  the stage, a rival's loses it.
+// ======================================================================
+var WONDER_HOLD = 5, WD_YELLOW = "#f2c230";
+function wonderScene(id, owner, foot) {
+  return { id: "wd-" + id, w: 420, h: 380, sea: null, river: null,
+    regions: [
+      region(92, 300, BLUE, { build: "capital", foot: 4, cav: 1 }),
+      region(220, 206, owner, { build: "wonder", foot: foot }),
+      region(384, 112, RED, { build: "town", foot: 3 })
+    ] };
+}
+var WD_BEATS = [
+  { id: "start", owner: NEUTRAL, foot: 5, g: 0, fog: true, name: "1 · From the first tick",
+    what: "The wonder stands on the map from the start, through the fog, shining. Its gauge rests on the yellow middle: nobody's yet." },
+  { id: "plan", owner: NEUTRAL, foot: 5, g: 0, march: true, name: "2 · Plan — send more than its guard",
+    what: "Its guard is 3 troops plus one every 15 stages (5 at stage 22). Red wants it too: it rates the wonder above any town." },
+  { id: "taken", owner: BLUE, foot: 2, g: 1, step: 1, name: "3 · Bell 1 — Blue takes it",
+    what: "The bell that takes it already counts: the gauge moves one step to Blue's side." },
+  { id: "hold", owner: BLUE, foot: 4, g: 4, step: 1, defend: true, name: "4 · Bells 2 to 4 — Blue holds",
+    what: "Every bell Blue still holds it, one more step toward Blue: 4 of 5." },
+  { id: "tie", owner: BLUE, foot: 0, g: 4, red: true, defend: true, tie: true, name: "5 · Bell 5 — even",
+    what: "Blue and Red end even on the region: the gauge does not move. So does a bell where the region is nobody's." },
+  { id: "back", owner: RED, foot: 2, g: 3, step: -1, name: "6 · Red takes it — the gauge comes back",
+    what: "Every bell Red holds it pulls the gauge one step back toward Red: 4 becomes 3, then 2, 1 and the yellow middle." },
+  { id: "cross", owner: RED, foot: 3, g: -2, step: -1, name: "7 · Past the middle — red",
+    what: "On through the yellow middle the gauge fills red, one step a bell, for as long as Red holds the region." },
+  { id: "won", owner: BLUE, foot: 3, g: 5, verdict: ["Stage won", OK_COL], name: "8 · Blue's end — won",
+    what: "The gauge reaches Blue's end: the stage is won at once. The other two stars: capital never attacked, done within 15 ticks." },
+  { id: "fail", owner: RED, foot: 5, g: -5, verdict: ["A rival held the wonder", BAD_COL], name: "9 · Red's end — lost",
+    what: "It reaches Red's (or Green's) end: the stage is lost. In the endless war it can only lose." }
+];
+var WD_SC = {};
+WD_BEATS.forEach(function (B) { WD_SC[B.id] = wonderScene(B.id, B.owner, B.foot); });
+
+// The shine of a badge to win (game.js shineAt), its rays only: the disc under them is dropped.
+function shineAt(x, y, R, t) {
+  ctx.save(); ctx.translate(x, y);
+  var gl = ctx.createRadialGradient(0, 0, R * 0.15, 0, 0, R);
+  gl.addColorStop(0, "rgba(255,232,140,.85)"); gl.addColorStop(0.6, "rgba(255,206,60,.35)"); gl.addColorStop(1, "rgba(255,196,40,0)");
+  ctx.fillStyle = gl;
+  ctx.rotate(t * 0.6);
+  ctx.beginPath();
+  for (var i = 0; i < 10; i++) { var a = i / 10 * Math.PI * 2; ctx.moveTo(0, 0); ctx.arc(0, 0, R, a, a + Math.PI / 14); ctx.closePath(); }
+  ctx.fill();
+  ctx.restore();
+}
+// The wonder, very bright: the rays behind it, the piece, a glint running up its gold (from the foot of the obelisk, over the plinth).
+function brightWonder(x, y, h) {
+  shineAt(x, y - h * 0.5, h * 1.25, clock);
+  var d = figure("wonder", BLUE, x, y, h);
+  if (!d) return;
+  var t = (clock * 0.7) % 1.6;
+  if (t < 1) {
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.55 * Math.sin(t * Math.PI);
+    var gy = y - h * (0.3 + 0.62 * t), g = ctx.createLinearGradient(0, gy - 14, 0, gy + 14);
+    g.addColorStop(0, "rgba(255,240,180,0)"); g.addColorStop(0.5, "rgba(255,250,220,1)"); g.addColorStop(1, "rgba(255,240,180,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, gy, d.w * 0.32, 14, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* THE GAUGE — a paper strip: Blue's five steps on the left (the side the
+   player's land is on here), the yellow middle, Red's five on the right.
+   Every step is a scrap of paper of its own, cut a little crooked and
+   folded, filled in the camp's ink between the middle and `g`, pale past
+   it. No count written: the filled steps are the count, and nothing says
+   which way it will move next. */
+var GAUGE_W = 184, GAUGE_H = 26;
+// One step: a quad cut a little crooked (seeded), a fold across it, a cut edge.
+function gaugeSlot(x, y, w, h, col, on, key) {
+  var r = ppRng(ppHash(key)), j = function () { return (r() * 2 - 1) * 1.1; };
+  var P = [[x + j(), y + j()], [x + w + j(), y + j()], [x + w + j(), y + h + j()], [x + j(), y + h + j()]];
+  function path() { ctx.beginPath(); P.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.closePath(); }
+  ctx.save();
+  ctx.translate(0.6, 1.2); path(); ctx.fillStyle = "rgba(40,25,0,.22)"; ctx.fill(); ctx.translate(-0.6, -1.2);
+  path(); ctx.fillStyle = on ? col : ppTint(col, 0.74); ctx.fill();
+  ctx.clip();
+  // the fold: one face a shade darker, the crease, a lit line beside it
+  var f = 0.35 + r() * 0.3;
+  ctx.beginPath(); ctx.moveTo(x - 2, y + h * f - 3); ctx.lineTo(x + w + 2, y + h * f + 3); ctx.lineTo(x + w + 2, y + h + 2); ctx.lineTo(x - 2, y + h + 2); ctx.closePath();
+  ctx.fillStyle = on ? "rgba(20,10,0,.16)" : "rgba(20,10,0,.07)"; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 2, y + h * f - 3); ctx.lineTo(x + w + 2, y + h * f + 3);
+  ctx.lineWidth = 0.8; ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.stroke();
+  ctx.restore();
+  path(); ctx.lineWidth = 0.8; ctx.strokeStyle = "rgba(40,25,0,.3)"; ctx.stroke();
+}
+function gaugeAt(cx, cy, g, step, key) {
+  var w = GAUGE_W, h = GAUGE_H, pad = 5, mid = 20, gap = 2, cw = (w - pad * 2 - mid) / 10;
+  var S = paperOn("chip", "gauge" + key, cx - w / 2, cy - h / 2, w, h, { fill: "#efe2bf" });
+  // local coords: 0..w, 0..h
+  function cellX(k) { return k > 0 ? pad + (5 - k) * cw : pad + 5 * cw + mid + (-k - 1) * cw; }
+  for (var k = 1; k <= 5; k++) {
+    [k, -k].forEach(function (s) {
+      var camp = s > 0 ? BLUE : RED, on = s > 0 ? g >= s : g <= s;
+      gaugeSlot(cellX(s) + gap / 2, 4, cw - gap, h - 8, CAMP[camp].base, on, "slot" + key + s);
+    });
+  }
+  // the ends: a camp's end is its goal, a notch of its dark ink
+  ctx.fillStyle = CAMP[BLUE].dark; ctx.fillRect(pad - 3, 3, 2.5, h - 6);
+  ctx.fillStyle = CAMP[RED].dark; ctx.fillRect(w - pad + 0.5, 3, 2.5, h - 6);
+  // the yellow middle
+  var mx = pad + 5 * cw + mid / 2, pulse = g === 0 ? 1 + 0.12 * Math.max(0, Math.sin(clock * 5)) : 1;
+  ctx.save(); ctx.translate(mx, h / 2); ctx.scale(pulse, pulse);
+  ctx.fillStyle = WD_YELLOW; ctx.strokeStyle = "#8a6a1a"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(0, -7.5); ctx.lineTo(7.5, 0); ctx.lineTo(0, 7.5); ctx.lineTo(-7.5, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  paperOff(S);
+}
+function drawWonder(B) {
+  var sc = WD_SC[B.id], z = 1.6, home = sc.regions[0], wd = sc.regions[1], red = sc.regions[2];
+  var hide = { 1: { foot: B.defend || B.fog || !wd.foot } };
+  drawMap(sc, z, hide, null, { 1: true });
+  if (B.fog) {
+    var F = regionMask(sc, 1, "fog", function (g, W, H) {
+      g.fillStyle = "rgba(236,240,246,.82)"; g.fillRect(0, 0, W, H);
+      g.strokeStyle = "rgba(160,170,190,.5)"; g.lineWidth = 2;
+      for (var x = -H; x < W; x += 14) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + H, H); g.stroke(); }
+    });
+    ctx.drawImage(F, 0, 0, sc.w, sc.h);
+  }
+  var wh = TALL.wonder * z * 0.95;
+  brightWonder(wd.x, wd.y + 10, wh);
+  if (B.march) {
+    var pts = curve([home.x + 10, home.y - 30], [wd.x - 6, wd.y + 10], -0.12, 30, 40);
+    paperArrow(pts, CAMP[BLUE]);
+    var m = along(pts, 0.45);
+    sprite(beadSprite("infantry", BLUE, 32), m[0], m[1]);
+    floatPin(0, "wdpin", wd.x + 112, wd.y + 4, "6 vs 5", OK_COL, 0);
+  }
+  if (B.red) {
+    var rp = curve([red.x - 10, red.y + 20], [wd.x + 34, wd.y - 10], 0.15, 30, 40);
+    paperArrow(rp, CAMP[RED]);
+    var rm = along(rp, 0.45);
+    sprite(beadSprite("infantry", RED, 32), rm[0], rm[1]);
+  }
+  if (B.defend) {
+    var fs = spot(wd, "infantry", 0, z), D = 60;
+    sprite(ringSprite("infantry", BLUE, D, OK_COL), fs[0], fs[1] - D * 0.6);
+  }
+  gaugeAt(wd.x - 4, 40, B.g, B.step, B.id);
+  if (B.tie) plate("verdict", "wdtie", wd.x + 92, wd.y + 40, "Even", TIE_COL, "#fff", 22);
+  if (B.verdict) plate("verdict", "wdv" + B.id, sc.w / 2, sc.h - 34, B.verdict[0], B.verdict[1], "#fff", 22);
+}
+// One run, bell by bell: who held the wonder after each bell (0: even) and where the gauge stood.
+var WD_RUN = [BLUE, BLUE, BLUE, BLUE, 0, RED, RED, BLUE, BLUE, BLUE];
+function miniGauge(cx, cy, g) {
+  var cw = 5, mid = 8, w = cw * 10 + mid, x0 = cx - w / 2;
+  for (var k = 1; k <= 5; k++) {
+    ctx.fillStyle = g >= k ? CAMP[BLUE].base : ppTint(CAMP[BLUE].base, 0.72); ctx.fillRect(x0 + (5 - k) * cw, cy - 7, cw - 1, 14);
+    ctx.fillStyle = g <= -k ? CAMP[RED].base : ppTint(CAMP[RED].base, 0.72); ctx.fillRect(x0 + 5 * cw + mid + (k - 1) * cw + 1, cy - 7, cw - 1, 14);
+  }
+  ctx.fillStyle = WD_YELLOW; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+}
+function drawWonderRun() {
+  var W = 860, n = WD_RUN.length, cw = 66, gap = 6, x0 = 112, g = 0, i;
+  ctx.fillStyle = "#e9dcb8"; ctx.fillRect(0, 0, W, 300);
+  ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.fillStyle = INK; ctx.font = font(20, true);
+  ctx.fillText("Held by", 20, 70); ctx.fillText("Gauge", 20, 150); ctx.fillText("Step", 20, 205);
+  for (i = 0; i < n; i++) {
+    var o = WD_RUN[i], x = x0 + i * (cw + gap), cx = x + cw / 2;
+    if (o === BLUE) g = Math.min(WONDER_HOLD, g + 1); else if (o === RED) g = Math.max(-WONDER_HOLD, g - 1);
+    ctx.textAlign = "center"; ctx.fillStyle = INK; ctx.font = font(18, false);
+    ctx.fillText("Bell " + (i + 1), cx, 26);
+    var S = paperOn("tag", "own" + i + o, x + 6, 48, cw - 12, 44, { fill: o ? CAMP[o].base : TIE_COL });
+    if (!o) { ctx.font = font(18, true); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.fillText("even", (cw - 12) / 2, 23); }
+    paperOff(S);
+    miniGauge(cx, 138, g);
+    ctx.font = font(18, true); ctx.textAlign = "center";
+    ctx.fillStyle = g > 0 ? CAMP[BLUE].dark : g < 0 ? CAMP[RED].dark : "#8a6a1a";
+    ctx.fillText(Math.abs(g) + " / 5", cx, 164);
+    ctx.fillStyle = o === BLUE ? CAMP[BLUE].dark : o === RED ? CAMP[RED].dark : "rgba(42,36,24,.5)";
+    ctx.fillText(o === BLUE ? "→ blue" : o === RED ? "→ red" : "holds", cx, 205);
+    if (g === WONDER_HOLD) plate("verdict", "wdrun", cx, 262, "Won", OK_COL, "#fff", 20);
+  }
+  ctx.strokeStyle = "rgba(42,36,24,.25)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(16, 112); ctx.lineTo(W - 16, 112); ctx.moveTo(16, 184); ctx.lineTo(W - 16, 184); ctx.stroke();
+}
+
+// ======================================================================
+//  THE PAGE — one canvas a cell, every cell redrawn each frame (the pins,
+//  the rosettes and the ghosts breathe).
+// ======================================================================
+var DEFAULTS = { view: "upg", lvl: 18, stamp: 48, vals: 1, isnew: 1, arrow: 1 };
+var STORE_KEY = "foldiers-upgrades";
+var S = {};
+(function () {
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { saved = null; }
+  for (var k in DEFAULTS) S[k] = saved && saved[k] !== undefined ? saved[k] : DEFAULTS[k];
+})();
+if (location.hash.length > 1) location.hash.slice(1).split("&").forEach(function (p) {
+  var kv = p.split("="); if (kv.length > 1 && kv[0] in DEFAULTS) S[kv[0]] = isNaN(+kv[1]) ? kv[1] : +kv[1];
+});
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* private window */ } }
+
+var stage = document.getElementById("stage"), CELLS = [];
+function group(title) {
+  var g = document.createElement("div"), h = document.createElement("h2"), c = document.createElement("div");
+  g.className = "group"; h.textContent = title; c.className = "cells";
+  g.appendChild(h); g.appendChild(c); stage.appendChild(g);
+  return c;
+}
+function addCell(box, name, what, w, h, cssW, draw) {
+  var d = document.createElement("div"), cv = document.createElement("canvas");
+  d.className = "cell"; d.appendChild(cv);
+  var n = document.createElement("div"); n.className = "name"; n.textContent = name; d.appendChild(n);
+  var t = document.createElement("div"); t.className = "what"; t.textContent = what; t.style.maxWidth = cssW + "px"; d.appendChild(t);
+  box.appendChild(d);
+  var R = (window.devicePixelRatio || 1) * cssW / w;
+  cv.width = Math.round(w * R); cv.height = Math.round(h * R);
+  cv.style.width = cssW + "px"; cv.style.height = Math.round(cssW * h / w) + "px";
+  CELLS.push({ cv: cv, g: cv.getContext("2d"), R: R, draw: draw });
+}
+function build() {
+  stage.innerHTML = ""; CELLS = [];
+  document.querySelectorAll("[data-for]").forEach(function (el) { el.style.display = el.dataset.for === S.view ? "block" : "none"; });
+  if (S.view === "upg") {
+    var box = group("Upgrades in force at stage " + S.lvl);
+    UPG_LOOKS.forEach(function (L) { addCell(box, L[1], L[2], 720, 620, 460, function () { drawUpg(L[0], S); }); });
+    document.getElementById("upglist").textContent = upgradesAt(S.lvl).map(function (u) { return u.name + " (" + u.at + ")"; }).join(" · ") || "None yet";
+  } else if (S.view === "fight") {
+    FIGHTS.forEach(function (F) {
+      var box = group(F.name);
+      FIGHT_LOOKS.forEach(function (L, i) { addCell(box, L[1], L[2], 420, 400, 320, function () { drawFight(F, L[0], i); }); });
+    });
+  } else if (S.view === "works") {
+    var b1 = group("Palisade"), b2 = group("Bridge");
+    WORKS.forEach(function (W) { addCell(W[0].indexOf("pal") === 0 ? b1 : b2, W[1], W[2], 420, 360, 320, function () { drawWorks(W[0]); }); });
+  } else if (S.view === "wonder") {
+    var wb = group("The wonder's gauge — how a stage with a wonder plays out (stage 22)");
+    WD_BEATS.forEach(function (B) { addCell(wb, B.name, B.what, 420, 380, 320, function () { drawWonder(B); }); });
+    var wr = group("The count, bell by bell");
+    addCell(wr, "One run", "Blue takes it and holds four bells, bell 5 ends even (the gauge holds), Red holds two bells (back to 2), Blue takes it back: Blue's end at bell 10.", 860, 300, 660, drawWonderRun);
+  } else {
+    ["snow", "storm"].forEach(function (kind) {
+      var box = group(kind === "snow" ? "Snow — takes half the troops at the next bell" : "Storm — takes every troop at the next bell");
+      WX_LOOKS.forEach(function (L, i) { addCell(box, L[1], L[2], 420, 380, 320, function () { drawWx(kind, L[0], i); }); });
+    });
+  }
+}
+var t0 = performance.now();
+function frame(now) {
+  clock = (now - t0) / 1000;
+  CELLS.forEach(function (c) {
+    view.dpr = c.R; ctx = c.g;
+    ctx.setTransform(c.R, 0, 0, c.R, 0, 0);
+    ctx.clearRect(0, 0, c.cv.width, c.cv.height);
+    c.draw();
+  });
+  requestAnimationFrame(frame);
+}
+
+// ---- the panel -------------------------------------------------------------
+function seg(id, field, num) {
+  var el = document.getElementById(id);
+  function sync() { [].forEach.call(el.children, function (b) { b.classList.toggle("on", String(S[field]) === b.dataset.v); }); }
+  el.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    S[field] = num ? +b.dataset.v : b.dataset.v; sync(); save(); build();
+  });
+  sync();
+}
+function slider(id, fmt) {
+  var el = document.getElementById(id), out = document.getElementById("o-" + id);
+  function sync() { el.value = S[id]; out.textContent = fmt(S[id]); }
+  el.addEventListener("input", function () { S[id] = +el.value; sync(); save(); build(); });
+  sync();
+}
+seg("view", "view"); seg("vals", "vals", true); seg("isnew", "isnew", true); seg("arrow", "arrow", true);
+slider("lvl", function (v) { return String(v); });
+slider("stamp", function (v) { return v + " px"; });
+document.getElementById("bell").addEventListener("click", function () { bellAt = clock; });
+document.getElementById("copy").addEventListener("click", function () {
+  var txt = JSON.stringify(S);
+  var done = function () { document.getElementById("copied").textContent = "Copied: " + txt; };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function () { document.getElementById("copied").textContent = txt; });
+  else document.getElementById("copied").textContent = txt;
+});
+build();
+requestAnimationFrame(frame);
+// #view=wx&bell rings the bell half a second in (a headless shot of the strike)
+if (/[#&]bell/.test(location.hash)) setTimeout(function () { bellAt = clock; }, 500);
+</script>
+</body>
+</html>

@@ -142,6 +142,20 @@ The game is solo and slow; the clock is the opponent the player feels. **A
 tick is a countdown during which the player plans**; when it ends, the
 couriers leave and everything resolves.
 
+**The player reads one word for it: a TURN** — "turn" in English, "tour"
+in French: `Turn 3 / 15` and `Time 7:43` in the HUD, "at the end of the
+turn" for what resolves. The code and this document keep `tick` and `bell`
+(the moment a tick ends), which never reach the screen. In French the
+pieces that would collide with "le tour" are named apart: the siege tower is
+the *beffroi*, the watchtower the *poste d'observation*.
+
+**The playing area is the BOARD** — "board" in English, "plateau" in
+French — so that in French "carte" means one thing in a round: a CARD, and
+the cards a tapped region deals sit in the player's HAND ("main"). "Map" /
+"Carte" stays the shell's own word for the map of the thirty stages, and a
+level stays a "stage" in both languages, as the shell writes it ("Stage
+réussi !"); "niveau" is the player's xp level. The code keeps `map` / `M`.
+
 - **Orders are drafts until they are sent.** A drawn order shows as its
   arrow; the player can change it, halve it or cancel it as often as they
   like during the tick. Nothing is final before it leaves, and **everything is
@@ -261,17 +275,51 @@ the next thing to try there.
   a paper tag beside them.
 - **The arrows say what an order does**, as in
   [`lab/conquest-ink.html`](../lab/conquest-ink.html), redrawn in paper:
-  - **attack** (and landing) — a folded paper strip, light half, dark half, a
-    crease (the lab's paper arrow);
-  - **move** between own regions — paper chevrons flowing;
-  - **march** over several ticks (courier delay, winter, cavalry) — footprints
-    walking ahead;
+  - **every march** (an attack, a landing, a move between own regions) — one
+    folded paper strip, light half, dark half, a crease (the lab's paper
+    arrow); the chevrons of a move are gone (`lab/foldiers-arrows.html`);
+  - **march** over several ticks (courier delay, winter, cavalry, a fleet) —
+    footprints walking ahead, ending in a head;
+  - the cannon's shot and the engineer's bridge — a dashed line ending in a
+    head;
   - a draft not sent yet — the same arrow, lighter, its crease dashed;
   - a red order revealed by a scout or a spy — the same arrow at half
-    opacity, with the eye;
+    opacity, no eye: what shows it is already on the map;
   - an order over several ticks is drawn **whole on the tick it is given**;
-    on the ticks after it, the route stays as a ghost with the column
-    standing on it, and its tag says when it lands.
+    on the ticks after it, the route stays as a ghost.
+- **An order carries its troops** (`lab/foldiers-arrows.html`). While you
+  plan, a troop or a piece given an order leaves the map and rides on its
+  arrow: one small paper disc for each kind of troop, the figure cropped by
+  it, no count, strung on the shaft at 45 % of its length and slid along it
+  to clear another string. What still stands on a region still owes an
+  order. Defend and Wait put ONE badge in the figure's place: the same disc,
+  its border a looped arrow (green, grey). No count is drawn on a figure and
+  no tag at an arrow's head while you plan: the forecast and the ticks are
+  read on the target's rosette as the order is given.
+- **What the map adds on top** (`lab/foldiers-upgrades.html`):
+  - the **upgrades are won on the map**: every upgrade the stage deals shines
+    as a badge over a region the player does not hold (the piece upgraded in
+    a paper disc, a paper arrow pointing up, the new value on a tag), seeded
+    from next to the player's land to deep in the map, over the fog too,
+    at the heart of its region (the cell farthest from its borders, `spotHome`).
+    Taking that region wins it, for the player only: a rival taking it wins
+    nothing and no rival camp ever plays an upgrade (`hasUp`). The badge flies
+    into the **upgrades' paper**, first of the plates at the foot (upgrades,
+    reserve, Send, gold), which unfolds row by row like an accordion, takes
+    it with bigger badges (the ones still to win as ghosts), and folds itself
+    away 3.5 s later; a tap unfolds it by hand, a tap on a badge, on the map
+    or in the paper, opens its guide page (`gu-upgrades` says how they are won);
+  - the **forecast** on a target's rosette wears what moved it as stamps laid
+    over its top — veterans, a charge, a river on your side, a hold (struck
+    when your siege tower cancels it) on theirs, each with its point;
+  - the **weather** coming is its cloud hanging over the region (the storm's,
+    or a white one shedding flakes), its shadow on the region and the troops
+    it will take pinned in the middle of the cloud;
+  - the **engineer's works**: a palisade ordered is the engineer's ringed
+    badge in the works' gold, a bridge ordered is the same badge standing on
+    the river; once built, the palisade stands big in front of the troops,
+    the bridge on the river, and each wears a gold "built" tag for the tick
+    after the bell.
 - **What the bench (`prototype/conquest-ticks.html`) showed has to be read on
   the map:**
   - **a mountain is a ridge, not a line** — thick, with mountain pieces
@@ -306,16 +354,20 @@ what keeps it apart from the teal sea.
 
 **A terrain has no rule of its own** unless a stage introduces one (the
 mountains of stage 3, the snow of stage 19): it is what the player reads, and
-what makes thirty maps thirty places. **Each band is a biome**, a mix of
-terrains, with its own decor pieces scattered by the map generator:
+what makes thirty maps thirty places. **A stage is one biome**: every
+region of its map is cut from the same paper and scattered from the same
+decor sheet, so the climb reads as a change of place rather than a patchwork.
+The biome is the band's, save in the Whole World, which alternates its two
+new ones stage by stage; the endless war draws one per run (`BANDS` and the
+stage rows' `biome`, `games/foldiers/game.js`):
 
-| band | world (EN / FR)                            | terrains                        |
-| ---- | ------------------------------------------ | ------------------------------- |
-| 1    | The Paper Isles / Les Îles de papier       | meadow, a little forest         |
-| 2    | The Golden Plains / Les Plaines dorées     | wheat, meadow                   |
-| 3    | The Whispering Woods / Les Bois murmurants | forest, meadow                  |
-| 4    | The Frozen North / Le Grand Nord           | snow, forest                    |
-| 5    | The Whole World / Le Monde entier          | desert, jungle, and all of them |
+| band | world (EN / FR)                            | biome of its stages                      |
+| ---- | ------------------------------------------ | ---------------------------------------- |
+| 1    | The Paper Isles / Les Îles de papier       | meadow                                   |
+| 2    | The Golden Plains / Les Plaines dorées     | wheat                                    |
+| 3    | The Whispering Woods / Les Bois murmurants | forest                                   |
+| 4    | The Frozen North / Le Grand Nord           | snow                                     |
+| 5    | The Whole World / Le Monde entier          | desert (25, 27, 29), jungle (26, 28, 30) |
 
 ### 5.3 A map per stage
 
@@ -325,7 +377,7 @@ the regions with their owner, terrain, building and troops, the extras
 (harbours, mines, wonders…), the seed.
 
 - **Generated, then curated.** A generator builds a map from a seed and a
-  short brief — the number of regions, of islands, the biome's terrain mix,
+  short brief — the number of regions, of islands, the stage's biome,
   the start positions, what the stage's mechanic needs (a river, passes, a
   wonder) — and checks it: every region reachable, both capitals at the same
   distance in ticks, no camp starting with more production. The designer
@@ -335,7 +387,7 @@ the regions with their owner, terrain, building and troops, the extras
   regions dragged, owners, terrains and buildings set by a click, *Save* to
   the stage's data. It is the one new lab tool worth building before stage 5.
 - **The decor** (trees, rocks, haystacks, cacti…) is scattered by the
-  generator from the band's decor sheet, on the free land of each terrain,
+  generator from the stage's decor sheet, on the free land of each region,
   never under a building or a unit.
 
 ______________________________________________________________________
@@ -425,44 +477,63 @@ ______________________________________________________________________
 
 ## 8. The thirty stages
 
-**One new mechanic a stage.** Stage 1 is the prototype; every stage after it
-adds one rule, explained by its guide page and named once by
-`Notify.learn`; everything learned stays. ★1 is the main objective (it ends
-and wins the stage), ★2 and ★3 the sub-objectives. *Ticks* is the stage's
+**One new rule a stage.** Stage 1 is the base game of
+`lab/foldiers-click-orders.html` (its round 12); every stage after it adds
+one rule, explained by its guide page and named once by `Notify.learn`;
+everything learned stays. The slots between the new mechanics are
+**upgrades** of what the player already has, and stages 19 to 21 are the
+**weather**, announced one tick ahead. The weather keeps to its land
+(`WEATHER_LAND`): snow falls on snowy land only, a storm breaks anywhere but
+the desert — so past band 4 a jungle map has storms only and a desert map no
+weather at all. ★1 is the main objective (it ends and
+wins the stage), ★2 and ★3 the sub-objectives. *Ticks* is the stage's
 target, the one the score's speed bonus counts against.
 
-| lv  | biome | regions | tick  | ticks | new mechanic       | the rule (starting numbers)                                                                                                       | ★1 main objective                    | ★2                             | ★3                            | guide page    | new pieces            |
-| --- | ----- | ------- | ----- | ----- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------ | ----------------------------- | ------------- | --------------------- |
-| 1   | 1     | 8       | 2:00  | 6     | Orders and ticks   | §2 and §3: draw, edit, Send or the bell, simultaneous resolution, cities +1, capital +2, troop 2 points, defender 3               | take the red capital                 | lose no region                 | finish in 6 ticks             | `gu-orders`   | (sheets done)         |
-| 2   | 1     | 9       | 2:15  | 7     | Forts              | a fort gives each defender +1 point (4 instead of 3)                                                                              | take the fort of Tolen               | take a fort in one tick        | lose no region                | `gu-fort`     | —                     |
-| 3   | 1     | 10      | 2:30  | 8     | Mountains          | a mountain border cannot be crossed; a pass is the only way through                                                               | take the red capital                 | hold both passes at once       | finish in 8 ticks             | `gu-mountain` | —                     |
-| 4   | 1     | 12      | 2:45  | 8     | Rivers and bridges | crossing a river: each attacker counts 1 point less (1 instead of 2); over a bridge, 2                                            | hold both bridges at once            | never attack across open water | take the red capital          | `gu-river`    | bridge (10.1)         |
-| 5   | 1     | 14      | 3:00  | 9     | Sea and harbours   | a harbour ships troops to any other harbour; the fleet lands the next tick                                                        | land on the island and take its city | take two islands               | lose no ship                  | `gu-sea`      | —                     |
-| 6   | 1     | 16      | 3:30  | 10    | Fog of war         | you see only your regions and their neighbours; a watchtower sees two regions away; red troops elsewhere read `?`                 | find and take the hidden capital     | take it before tick 8          | lose no region                | `gu-fog`      | fog clouds (10.5)     |
-| 7   | 2     | 18      | 3:45  | 10    | Gold               | a mine region pays 1 gold a tick to its owner; the HUD counts it                                                                  | hold three mines at once             | hold 15 gold                   | take the red capital          | `gu-gold`     | gold mine (10.1)      |
-| 8   | 2     | 20      | 4:00  | 10    | Recruitment        | tap one of your cities: 3 gold → +3 troops there at the next tick                                                                 | take the red capital                 | recruit in 3 cities            | finish in 10 ticks            | `gu-recruit`  | barracks (10.1)       |
-| 9   | 2     | 21      | 4:15  | 11    | Cavalry            | a cavalry order moves two regions in one tick through your own or empty land; 4 gold → 2 cavalry                                  | take the red capital                 | take two cities in one tick    | a cavalry charge on a capital | `gu-cavalry`  | —                     |
-| 10  | 2     | 22      | 4:30  | 11    | Artillery          | a cannon bombards a neighbour at the start of the tick: −2 troops there; it cannot move and fire in the same tick                 | break the red fortress               | bombard the fortress 3 times   | finish in 11 ticks            | `gu-cannon`   | —                     |
-| 11  | 2     | 24      | 4:45  | 12    | Grain              | a region feeds 6 troops; above, each troop eats 1 grain a tick; without grain, one deserts a tick                                 | hold 25 troops at once               | nobody deserts                 | take the red capital          | `gu-grain`    | farm (10.1)           |
-| 12  | 2     | 26      | 5:00  | 12    | Supply lines       | an army more than 3 regions from a city or a depot loses 1 troop a tick; a wagon builds a depot in 1 tick                         | take the far capital                 | no troop lost to supply        | build two depots              | `gu-supply`   | supply depot (10.1)   |
-| 13  | 3     | 28      | 5:15  | 12    | Scouts             | a balloon reveals two regions around it and the red orders aimed at them, before the tick                                         | take the red capital                 | never surprised by an attack   | finish in 12 ticks            | `gu-scout`    | —                     |
-| 14  | 3     | 29      | 5:30  | 12    | Spies              | 2 gold: the spy shows every red order of the tick as a ghost arrow                                                                | take the red capital                 | lose no region                 | use the spy three times       | `gu-spy`      | spy (10.1)            |
-| 15  | 3     | 31      | 5:45  | 13    | Couriers           | an order to a region more than 4 steps from your capital or a courier post arrives one tick late; it marches as footprints        | take the red capital                 | build two courier posts        | finish in 13 ticks            | `gu-courier`  | courier rider (10.1)  |
-| 16  | 3     | 32      | 6:15  | 13    | Generals           | your general leads one army: +1 point per troop; if its army is beaten he is captured and the bonus is lost                       | capture the red general              | your general never captured    | take the red capital          | `gu-general`  | —                     |
-| 17  | 3     | 34      | 6:30  | 14    | Morale             | a win raises an army's morale (+1 point for the whole army, up to +3), a defeat lowers it; a drummer raises it by one             | take the red capital                 | an army at full morale         | lose no region                | `gu-morale`   | drummer (10.1)        |
-| 18  | 3     | 36      | 6:45  | 14    | Standing orders    | a region can hold one order that fires by itself when its condition is met (`if attacked, reinforce from…`, `if empty, retake`)   | hold the line 12 ticks               | three standing orders fire     | lose no region                | `gu-standing` | —                     |
-| 19  | 4     | 38      | 7:00  | 14    | Winter             | the season turns every 6 ticks; in winter, entering snow or mountain takes a tick more and production is halved                   | take the pass and the city behind it | no move lost to the snow       | finish in 14 ticks            | `gu-winter`   | winter pieces (10.5)  |
-| 20  | 4     | 40      | 7:15  | 15    | Storms             | a storm drifts over the sea; a sea lane under it is closed and a fleet caught in it loses a third                                 | take the islands across the strait   | no fleet caught                | take the red capital          | `gu-storm`    | storm cloud (10.5)    |
-| 21  | 4     | 42      | 7:30  | 15    | Rebellions         | a region taken less than 3 ticks ago with fewer than 2 troops may revolt and turn purple                                          | hold 20 regions at once              | no revolt                      | take the red capital          | `gu-rebels`   | rebel camp (10.5)     |
-| 22  | 4     | 44      | 7:45  | 15    | Wonders            | holding the wonder region 5 ticks in a row wins the stage outright                                                                | hold the wonder 5 ticks              | keep your capital untouched    | finish in 15 ticks            | `gu-wonder`   | wonder (10.5)         |
-| 23  | 4     | 46      | 8:00  | 16    | Engineers          | 4 gold, 2 ticks: build a palisade (+1 point per defender) or a bridge                                                             | take the red capital                 | build three works              | lose no region                | `gu-engineer` | engineer, palisade    |
-| 24  | 4     | 48      | 8:15  | 16    | Sieges             | a capital or a fort can only be attacked from a side where you hold two of its neighbours; a siege tower ignores its walls        | take the walled capital              | a siege in two ticks           | finish in 16 ticks            | `gu-siege`    | siege tower, catapult |
-| 25  | 5     | 50      | 8:30  | 16    | A third camp       | the green camp plays too, against everyone                                                                                        | take both enemy capitals             | green never touches your land  | finish in 16 ticks            | `gu-green`    | green army (10.3)     |
-| 26  | 5     | 54      | 9:00  | 17    | Truces             | an envoy offers a truce: no attack between two camps for 6 ticks; an AI accepts when it is the weaker                             | take the red capital                 | sign two truces                | win during a truce with green | `gu-truce`    | envoy (10.1)          |
-| 27  | 5     | 58      | 9:15  | 18    | Betrayal           | every AI has a temper (loyal, opportunist); a truce can be broken, which costs the breaker one morale everywhere                  | outlast both rivals                  | never betrayed                 | lose no region                | `gu-betrayal` | —                     |
-| 28  | 5     | 62      | 9:30  | 18    | Doctrines          | before the stage, pick one doctrine out of three (Blitz: cavalry +1 region; Bastion: forts +2; Merchant: mines pay 2)             | take the red capital                 | finish in 18 ticks             | win with each doctrine once   | `gu-doctrine` | —                     |
-| 29  | 5     | 66      | 9:45  | 19    | Airlift            | a troop balloon carries up to 6 troops three regions away over sea or mountain, in one tick, seen by everyone                     | take the capital across the sea      | land on the capital itself     | finish in 19 ticks            | `gu-airlift`  | troop balloon (10.1)  |
-| 30  | 5     | 70      | 10:00 | 20    | The Marshals' duel | a mirror map against the Red Marshal: the AI sees through the fog no more, plays the same tick, the same rules, every mechanic on | take the Red Marshal's capital       | lose no region to him          | finish in 20 ticks            | `gu-duel`     | (character art)       |
+The base rules (stage 1): tap a region of yours and it deals its cards (one
+a troop, one a piece, one a purchase); picked cards go to a lit region as
+one CONVOY, three convoys a region at most; every troop and piece owes an
+order (Defend / Wait otherwise). A battle is troop for troop: the bigger
+side keeps the difference, a tie leaves nobody; every modifier is one flat
+point (Defend +1, a river −1), save a fort's walls (+2 to whoever holds
+it, broken by a siege tower). The capital (+2), the towns (+1) and the forts
+(+1) pay into the RESERVE, dropped on any region linked to the capital.
+
+| lv  | biome | regions | tick  | ticks | rule               | what it does                                                                        | ★1 main objective                    | ★2                                 | ★3                             | guide page    |
+| --- | ----- | ------- | ----- | ----- | ------------------ | ----------------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------- | ------------------------------ | ------------- |
+| 1   | 1     | 8       | 2:00  | 6     | Orders and ticks   | the base rules above                                                                | take the red capital                 | lose no region                     | finish in 6 ticks              | `gu-orders`   |
+| 2   | 1     | 9       | 2:15  | 7     | Forts              | a fort's walls add +2 in defence; it pays +1 a tick to the reserve                  | take the fort of Tolen               | take a fort in one tick            | lose no region                 | `gu-fort`     |
+| 3   | 1     | 10      | 2:30  | 8     | Mountains          | a mountain border cannot be crossed; a pass is the only way through                 | take the red capital                 | hold both passes at once           | finish in 8 ticks              | `gu-mountain` |
+| 4   | 1     | 12      | 2:45  | 8     | Rivers and bridges | an attack across a river: −1; over a bridge, no loss                                | take the red capital                 | hold both bridges at once          | never attack across open water | `gu-river`    |
+| 5   | 1     | 14      | 3:00  | 9     | Sea and harbours   | a harbour ships infantry to another harbour, one leg of sea a tick                  | land on the island and take its city | land on the red coast              | lose no fleet                  | `gu-sea`      |
+| 6   | 1     | 16      | 3:30  | 10    | Fog of war         | you see your regions and their neighbours; a watchtower sees two away               | find and take the hidden capital     | take it before tick 8              | lose no region                 | `gu-fog`      |
+| 7   | 2     | 18      | 3:45  | 10    | Gold               | a mine pays 1 gold a tick to its owner                                              | take the red capital                 | hold three mines at once           | hold 15 gold                   | `gu-gold`     |
+| 8   | 2     | 20      | 4:00  | 10    | Recruitment        | a town or the capital: 3 gold → +3 infantry                                         | take the red capital                 | recruit in 3 cities                | finish in 10 ticks             | `gu-recruit`  |
+| 9   | 2     | 21      | 4:15  | 11    | Cavalry            | cavalry rides two regions a tick through own or empty land; 4 gold → 2              | take the red capital                 | take two cities in one tick        | a charge on a capital          | `gu-cav`      |
+| 10  | 2     | 22      | 4:30  | 11    | Artillery          | a cannon fires on a neighbour first: −2 there                                       | break the red fortress               | bombard the fortress 3 times       | finish in 11 ticks             | `gu-cannon`   |
+| 11  | 2     | 24      | 4:45  | 12    | Bigger towns       | upgrade: a town pays +2 a tick                                                      | take the red capital                 | take two cities in one tick        | finish in 12 ticks             | `gu-towns2`   |
+| 12  | 2     | 26      | 5:00  | 12    | Veterans           | upgrade: a convoy with infantry attacks at +1                                       | take the red capital                 | lose no region                     | finish in 12 ticks             | `gu-veterans` |
+| 13  | 3     | 28      | 5:15  | 12    | Scouts             | the scout balloon (a piece) sees two regions around it and the convoys leaving them | take the red capital                 | never surprised by an attack       | finish in 12 ticks             | `gu-scout`    |
+| 14  | 3     | 29      | 5:30  | 12    | Spies              | the spy (a piece) reads the red regions next to its own: convoys, Defend, reserve   | take the red capital                 | lose no region                     | read red on 3 ticks            | `gu-spy`      |
+| 15  | 3     | 31      | 5:45  | 13    | Long guns          | upgrade: a cannon fires two regions away                                            | take the red capital                 | fire the cannon 3 times            | finish in 13 ticks             | `gu-longguns` |
+| 16  | 3     | 32      | 6:15  | 13    | Heavy shells       | upgrade: a shot takes 3 troops                                                      | take the red capital                 | fire the cannon 4 times            | finish in 13 ticks             | `gu-shells`   |
+| 17  | 3     | 34      | 6:30  | 14    | Rich mines         | upgrade: a mine pays 2 gold a tick                                                  | take the red capital                 | hold 20 gold                       | hold three mines               | `gu-mines2`   |
+| 18  | 3     | 36      | 6:45  | 14    | Cavalry charge     | upgrade: a convoy with cavalry attacks at +1                                        | take the red capital                 | a charge on a capital              | finish in 14 ticks             | `gu-charge`   |
+| 19  | 4     | 38      | 7:00  | 14    | Snow               | one region a tick is announced for the next bell; snow takes half its troops        | take the pass and the city behind it | lose no troop to the weather       | finish in 14 ticks             | `gu-snow`     |
+| 20  | 4     | 40      | 7:15  | 15    | Storms             | the announced weather may be a storm: every troop there is lost                     | take the red capital                 | take the islands across the strait | lose no troop to the weather   | `gu-storm`    |
+| 21  | 4     | 42      | 7:30  | 15    | Weather fronts     | two regions announced a tick                                                        | take the red capital                 | hold 20 regions at once            | lose no troop to the weather   | `gu-fronts`   |
+| 22  | 4     | 44      | 7:45  | 15    | Wonders            | pulling the wonder's gauge to your end (5 steps) wins the stage outright            | fill your side of the wonder's gauge | keep your capital untouched        | finish in 15 ticks             | `gu-wonder`   |
+| 23  | 4     | 46      | 8:00  | 16    | Engineers          | 4 gold: a palisade (the region always defends, +1) or a bridge                      | take the red capital                 | build three works                  | lose no region                 | `gu-engineer` |
+| 24  | 4     | 48      | 8:15  | 16    | Sieges             | a siege tower in an attack cancels the defender's Defend, palisade and fort walls   | take the red capital                 | take it within 2 ticks             | finish in 16 ticks             | `gu-siege`    |
+| 25  | 5     | 50      | 8:30  | 16    | A third camp       | the green camp plays too, against everyone                                          | take both enemy capitals             | green never touches your land      | finish in 16 ticks             | `gu-green`    |
+| 26  | 5     | 54      | 9:00  | 17    | Stone forts        | upgrade: a fort pays +2 a tick                                                      | take the red capital                 | take a fort in one tick            | lose no region                 | `gu-forts2`   |
+| 27  | 5     | 58      | 9:15  | 18    | Royal capital      | upgrade: the capital pays +3 a tick                                                 | take the red capital                 | your capital never attacked        | finish in 18 ticks             | `gu-capital3` |
+| 28  | 5     | 62      | 9:30  | 18    | Barracks           | upgrade: 3 gold → +5 infantry                                                       | take the red capital                 | recruit in 3 cities                | hold 40 troops                 | `gu-barracks` |
+| 29  | 5     | 66      | 9:45  | 19    | Fast ships         | upgrade: a fleet sails twice as far a tick                                          | take the red capital                 | land on two islands                | finish in 19 ticks             | `gu-ships`    |
+| 30  | 5     | 70      | 10:00 | 20    | The Marshals' duel | a mirror map against the Red Marshal, every rule on                                 | take the Red Marshal's capital       | lose no region to him              | finish in 20 ticks             | `gu-duel`     |
+
+Removed on 2026-11-11 (the user's cut): grain and farms, supply lines and
+depots, couriers and relays, generals, morale and drummers, standing orders,
+winter, sea storms, rebellions, truces, betrayal, doctrines and the airlift.
 
 **After stage 30**, the star above it starts the endless war: a generated
 world map, every mechanic, three rivals, a best score.
@@ -647,6 +718,14 @@ it, it is written here.
   it (`RULE_AT`), except the wonder (stage 22 and the endless war), the storm
   (the sea stages from 20) and the fair Red Marshal (stage 30). The doctrine is
   picked before stages 28 to 30.
+- **The wonder is a tug of war** (stage 22 and the endless war): it shines on
+  the map from the first tick, through the fog, and wears a gauge — yellow in
+  the middle, the player's five steps on one side, the rivals' five on the
+  other (`wonderG`, −5 to +5). Every bell the region's holder moves it one
+  step its way; a bell where it is nobody's, or where the fight on it ended
+  even, leaves it. The player's end wins the stage, a rival's loses it (in
+  the endless war it can only lose). Chosen in `lab/foldiers-upgrades.html`,
+  view Wonder.
 - **The maps are generated, not yet curated** (`genMap`): a jittered hex
   lattice of seeds, rows from the red capital (top) to the blue one (bottom);
   sea carved as a strait across the middle row with islands in it (stages 5,

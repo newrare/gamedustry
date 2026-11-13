@@ -898,7 +898,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The climb": {
       "text": "La remontée",
@@ -938,7 +938,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -1588,7 +1588,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The climb": {
       "text": "L'ascension",
@@ -1628,7 +1628,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -2418,7 +2418,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The bricks living glass adds count in the wall, so break them too.": {
       "text": "Les briques générées par le verre vivant s'ajoutent au total du mur, donc n'oublie pas de les détruire.",
@@ -2450,7 +2450,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -4020,7 +4020,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The contract": {
       "text": "Le contrat",
@@ -4108,7 +4108,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -4902,7 +4902,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
-      "at": "2026-10-14"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
@@ -4970,7 +4970,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The combo multiplies every hit and every mega bonus.": {
       "text": "Le multiplicateur de Combo s'applique à chaque frappe réussie ainsi qu'à chaque méga bonus.",
@@ -4990,7 +4990,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -5428,7 +5428,7 @@
     },
     "manifest.json:web.copy.fr.strings.Bonus": {
       "text": "Bonus",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Crystal lock": {
       "text": "Verrou de cristal",
@@ -5552,7 +5552,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
-      "at": "2026-10-14"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
@@ -5596,7 +5596,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The crystal": {
       "text": "Le cristal",
@@ -5620,7 +5620,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -5684,17 +5684,377 @@
       "text": "",
       "at": "2026-11-05"
     },
+    "manifest.json:copy.fr.tagline": {
+      "text": "Plonge dans un wargame tactique inspiré des origamis ! À la tête des irréductibles Bleus ou des féroces Rouges, chaque région conquise est une victoire sur le papier. Planifie tes mouvements, trompe ton adversaire et domine le plateau avant que le temps ne s'arrête.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:copy.fr.tags.0": {
+      "text": "Stratégie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:copy.fr.tags.1": {
+      "text": "Conquête",
+      "at": "2026-11-12"
+    },
+    "manifest.json:copy.fr.tags.2": {
+      "text": "Origami",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+1 a turn": {
+      "text": "+1 par tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+1 in defence": {
+      "text": "+1 en défense",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+2 a turn": {
+      "text": "+2 par tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+2 for 4 gold": {
+      "text": "+2 pour 4 or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+3 a turn": {
+      "text": "+3 par tour",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.+3 for 3 gold": {
+      "text": "+3 pour 3 or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+5 for 3 gold": {
+      "text": "+5 pour 3 or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+{n} a turn": {
+      "text": "+{n} par tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.+{n} gold a turn": {
+      "text": "+{n} or par tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.1 more to order": {
+      "text": "Encore 1 ordre à donner",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.1 per troop": {
+      "text": "1 par troupe",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.3 at most": {
+      "text": "3 au plus",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.4 gold": {
+      "text": "4 or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.4 troops": {
+      "text": "4 troupes",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A battle is troop for troop. The bigger side wins and keeps the difference: 1 troop will remain on site for 5 vs 4.\n\nA tie leaves nobody on either side. Two enemy convoys crossing the same border meet halfway.": {
+      "text": "Une bataille se joue troupe contre troupe. Le camp le plus nombreux gagne et garde la différence : il restera donc 1 troupe sur place pour 5 vs 4.\n\nUne égalité ne laisse personne. Deux convois ennemis qui franchissent la même frontière se rencontrent à mi-chemin.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A cannon fires on a neighbour before the troops arrive on the field. Its shot can therefore lead a convoy.": {
+      "text": "Un canon tire sur une région voisine avant que les troupes arrivent sur le terrain. Son tir peut donc ouvrir la voie à un convoi.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A cannon now fires up to two regions away.": {
+      "text": "Un canon tire maintenant jusqu'à deux régions.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A cannon shot now takes three troops.": {
+      "text": "Un tir de canon retire maintenant trois troupes.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A convoy with cavalry attacks with one troop more as a bonus.": {
+      "text": "Un convoi qui possède de la cavalerie attaquera avec une troupe de plus en Bonus.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A convoy with infantry attacks with one troop more as a bonus.": {
+      "text": "Un convoi qui possède de l'infanterie attaquera avec une troupe de plus en Bonus.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A fleet now sails twice as far in a single turn.": {
+      "text": "Une flotte navigue maintenant deux fois plus loin en un seul tour.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A fort defends whoever holds it: its walls add a defense bonus of 2 to the current troops. It also lets you recruit one troop a turn.\n\nBe careful though, as a siege tower in the attack convoy breaks this fort defense.": {
+      "text": "Un fort protège celui qui le tient : ses murs ajoutent un bonus de 2 défenses aux troupes actuelles. Il permet aussi de recruter une troupe par tour.\n\nAttention toutefois car un beffroi dans le convoi d'attaque brise cette défense de fort.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A fort now adds 2 troops a turn to your reserve.": {
+      "text": "Un fort ajoute à ta réserve 2 troupes par tour.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A fort or a town adds one troop a turn to your reserve. A palisade or the Defend action strengthens your current protections.": {
+      "text": "Un fort ou une ville ajoutera à ta réserve une troupe par tour. Une palissade ou l'action 'défendre' renforceront tes protections actuelles.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A harbour can send infantry to any other harbour. The fleet may take several turns to reach its destination.\n\nA troop at sea no longer defends any region on the ground.": {
+      "text": "Un port permet d'envoyer de l'infanterie vers n'importe quel autre port. La flotte peut mettre plusieurs tours avant d'arriver à destination.\n\nUne troupe en mer ne défend plus de région au sol.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A mine now pays 2 gold a turn.": {
+      "text": "Une mine rapporte maintenant 2 or par tour.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A mine pays 1 gold a turn to the region's owner. Gold buys new recruits, cavalry or works.": {
+      "text": "Une mine rapporte 1 or par tour au propriétaire de la région. L'or permet d'acheter de nouvelles recrues, de la cavalerie ou des ouvrages.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A mountain ridge cannot be crossed and only a pass lets you through. Adapt your strategy, keeping in mind that you will have to go around the mountains.": {
+      "text": "Une crête de montagne est infranchissable et seul un col permet de passer. Adapte ta stratégie en tenant compte qu'il faudra contourner les montagnes.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A shining badge on a region is an upgrade. Win the region to get it. This bonus stays active for the whole match.\n\nA rival that takes the region before you does not win this upgrade. So you can always keep attacking it to get the upgrade yourself.\n\nThe upgrade folds away in the paper at the bottom of the screen. Tap it to unfold them, then tap a badge to read its effect.": {
+      "text": "Un badge qui brille sur une région est une amélioration. Gagne la région pour l'obtenir. Ce Bonus restera actif sur toute la partie.\n\nUn rival qui prend la région avant toi ne gagnera pas cette amélioration. Tu peux donc toujours continuer de l'attaquer afin de l'obtenir.\n\nL'amélioration se range dans le papier plié en bas de l'écran. Touche-le pour les déplier. Touche un badge pour lire son effet.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A siege tower joining an attack then cancels the opponent's 'Defend' action and any palisades.": {
+      "text": "Un beffroi qui accompagne une attaque annulera alors l'action 'Défendre' adverse ainsi que les éventuelles palissades.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A siege tower joining an attack then cancels the opponent's defense action: any palisades and a fort's walls.": {
+      "text": "Un beffroi qui accompagne une attaque annulera alors l'action de défense adverse : les éventuelles palissades et murs d'un fort.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A storm at the end of the turn": {
+      "text": "Une tempête à la fin du tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A third camp": {
+      "text": "Un troisième camp",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A tie": {
+      "text": "Égalité",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A town now recruits 2 troops for your reserve every turn.": {
+      "text": "Une ville recrute maintenant 2 troupes pour la réserve à chaque tour.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Across a river": {
+      "text": "À travers une rivière",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.All": {
+      "text": "Toutes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.An attack across a river loses one troop. A bridge will carry it across at full strength.": {
+      "text": "Une attaque à travers une rivière perd une troupe. Un pont la fera passer sans perte.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Artillery": {
+      "text": "Artillerie",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Attack": {
       "text": "Attaque",
       "at": "2026-11-04"
+    },
+    "manifest.json:web.copy.fr.strings.Barracks": {
+      "text": "Casernes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Battles": {
+      "text": "Batailles",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bell": {
+      "text": "Cloche",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bigger towns": {
+      "text": "Villes plus grandes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Blue": {
+      "text": "Bleu",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bombard the fortress {n} times": {
+      "text": "Bombarde la forteresse {n} fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bonus": {
+      "text": "Bonus",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Break the red fortress of {x}": {
+      "text": "Brise la forteresse rouge de {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bridge": {
+      "text": "Pont",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Bridge built": {
+      "text": "Pont bâti",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cannon": {
+      "text": "Canon",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Capital": {
+      "text": "Capitale",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Capital taken!": {
+      "text": "Capitale prise !",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Captured!": {
+      "text": "Prise !",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Card stacks": {
+      "text": "Piles de cartes",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Cavalry": {
+      "text": "Cavalerie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cavalry +{n}": {
+      "text": "Cavalerie +{n}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cavalry charge": {
+      "text": "Charge de cavalerie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cavalry convoy": {
+      "text": "Convoi de cavalerie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cavalry rides 2 regions in a single turn. You recruit it in a town for gold. However, an army can intercept cavalry before it reaches its destination.": {
+      "text": "La cavalerie avance de 2 régions en un seul tour. Elle se recrute en ville contre de l'or. Toutefois, la cavalerie peut être interceptée par une armée avant d'arriver à destination.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Clash": {
+      "text": "Choc",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Close": {
+      "text": "Fermer",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Command {n} troops in a single turn": {
+      "text": "Commande {n} troupes en un seul tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Convoys": {
+      "text": "Les convois",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Convoys a region": {
+      "text": "Convois par région",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Cross the pass and take {x}": {
+      "text": "Franchis le col et prends {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Defeat": {
+      "text": "Défaite",
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Defence": {
       "text": "Défense",
       "at": "2026-10-30"
     },
+    "manifest.json:web.copy.fr.strings.Defend": {
+      "text": "Défendre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Defend and wait": {
+      "text": "Défendre et attendre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Done": {
+      "text": "Fini",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.End of turn": {
+      "text": "Fin du tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Engineer": {
+      "text": "Ingénieur",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Engineers": {
+      "text": "Ingénieurs",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Enter": {
+      "text": "Entrée",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Enter, or Send": {
+      "text": "Entrée ou Envoyer",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Every troop and every piece can receive an order each turn. The card icon on a region tells you that orders are still left to give.\n\nPick troops. Tap a target region to move, attack or defend.\n\nOnce an order is given on the spot, the troop switches to defense or construction. You can cancel this order by tapping the troop's icon.": {
+      "text": "Chaque troupe et chaque pièce peuvent recevoir un ordre par tour. L’icône en forme de cartes sur une région t'indique qu'il reste des ordres à passer.\n\nChoisis des troupes. Touche une région cible soit pour déplacer, attaquer ou défendre.\n\nUne fois un ordre donné sur place, la troupe passe en défense ou construction. Tu peux annuler cet ordre en appuyant sur l'icône de la troupe.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Every turn has a countdown. Press Send to confirm your orders, or they leave as they stand when the available time runs out.\n\nThen all the troops on the board act at the same time: yours and your rivals'.": {
+      "text": "Chaque tour possède un compte à rebours. Touche le bouton Envoyer pour valider tes ordres. Sinon, ils partiront tels quels à la fin du temps disponible.\n\nEnsuite, toutes les troupes du plateau agissent en même temps : les tiennes comme celles de tes rivaux.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Every turn the weather is announced on one region. It will strike at the end of the turn. Snow takes half of the troops present with it.\n\nPull your troops out before it strikes.": {
+      "text": "À chaque tour, la météo est annoncée sur une région. Elle frappera à la fin du tour. La neige emporte avec elle la moitié des troupes présentes.\n\nÉvacue tes troupes avant qu'elle ne frappe.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Falls to {n} rival troops": {
+      "text": "Tombe face à {n} troupes rivales",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Fast ships": {
+      "text": "Navires rapides",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Final score": {
       "text": "Score final",
       "at": "2026-11-05"
+    },
+    "manifest.json:web.copy.fr.strings.Find and take the hidden capital": {
+      "text": "Trouve et prends la capitale cachée",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Finish {n} works": {
+      "text": "Achève {n} chantiers",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Fire the cannon {n} times": {
+      "text": "Tire au canon {n} fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Fog of war": {
+      "text": "Brouillard de guerre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Fort": {
+      "text": "Fort",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Forts": {
+      "text": "Forts",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Fourth card": {
+      "text": "Quatrième carte",
+      "at": "2026-11-13"
     },
     "manifest.json:web.copy.fr.strings.Gold": {
       "text": "Or",
@@ -5704,9 +6064,201 @@
       "text": "Vert",
       "at": "2026-10-23"
     },
+    "manifest.json:web.copy.fr.strings.Green never takes your land": {
+      "text": "Vert ne te prend aucune région",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Harbour": {
+      "text": "Port",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Harbours": {
+      "text": "Ports",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Heavy shells": {
+      "text": "Obus lourds",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Held!": {
+      "text": "Tenue !",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Hold both bridges at once": {
+      "text": "Tiens les deux ponts à la fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Hold both passes at once": {
+      "text": "Tiens les deux cols à la fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Hold {n} gold": {
+      "text": "Amasse {n} or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Hold {n} mines at once": {
+      "text": "Tiens {n} mines à la fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Hold {n} regions at once": {
+      "text": "Tiens {n} régions à la fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Holds against {n}": {
+      "text": "Tient face à {n}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Infantry": {
+      "text": "Infanterie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Infantry convoy": {
+      "text": "Convoi d'infanterie",
+      "at": "2026-11-13"
+    },
     "manifest.json:web.copy.fr.strings.Install now": {
       "text": "Installer",
       "at": "2026-11-05"
+    },
+    "manifest.json:web.copy.fr.strings.Intelligence": {
+      "text": "Renseignement",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Just holds": {
+      "text": "Tient de justesse",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Land on the island and take {x}": {
+      "text": "Débarque sur l'île et prends {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Land on the red coast": {
+      "text": "Débarque sur la côte rouge",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Land on {n} islands": {
+      "text": "Débarque sur {n} îles",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Leaves:": {
+      "text": "Part :",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Long guns": {
+      "text": "Longue portée",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Lose no fleet": {
+      "text": "Ne perds aucune flotte",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Lose no region": {
+      "text": "Ne perds aucune région",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Lose no region to the Red Marshal": {
+      "text": "Ne cède aucune région au Maréchal Rouge",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Lose no troop to the weather": {
+      "text": "Ne perds aucune troupe à cause de la météo",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Marching": {
+      "text": "En marche",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Mine": {
+      "text": "Mine",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Mountains": {
+      "text": "Montagnes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Move the board": {
+      "text": "Déplacer le plateau",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Moving the board": {
+      "text": "Se déplacer sur le plateau",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Neutral": {
+      "text": "Neutre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Never attack across open water": {
+      "text": "N'attaque jamais par la mer",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Never attacked from a hidden region": {
+      "text": "Ne subis pas d'attaque depuis une région masquée",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.New recruits in your towns next turn": {
+      "text": "De nouvelles recrues sur les villes au prochain tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.No gold": {
+      "text": "Pas d'or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.No order was given": {
+      "text": "Aucun ordre donné",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.No rival next door": {
+      "text": "Aucun rival à côté",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Nobody stands here": {
+      "text": "Personne ici",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Not enough gold": {
+      "text": "Pas assez d'or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.On a computer the cursor changes where the board can be grabbed.": {
+      "text": "Sur ordinateur, le curseur change de forme là où le plateau peut être attrapé.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Once an order is given, a convoy is created on the board. This movement as a convoy is shown by an arrow. You can cancel an order by tapping the arrow.\n\nA badge on a building tells you what it will bring in at the end of the turn: often extra recruits or gold.\n\nThe color of the shield icon gives you a prediction of your region's current defense: nothing to fear on green. The region just holds on yellow. Red clearly signals danger.": {
+      "text": "Une fois un ordre passé, un convoi est créer sur le plateau. Ce déplacement en convoi est représenté par une flèche. Tu peux annuler un ordre en appuyant sur la flèche.\n\nUne pastille sur un bâtiment t'indique ce qu'il rapportera à la fin du tour : souvent des recrues supplémentaires ou de l'or.\n\nLa couleur de l’icône du bouclier te donne une prédiction sur la défense actuelle de ta région : rien n'est à craindre en vert. La région tient de justesse au jaune. Le rouge indique clairement un danger.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Once the target region is selected, the order is recorded. The arrow represents the order and the convoy involved.\n\nTap an arrow to cancel this order.": {
+      "text": "Une fois la région cible sélectionnée, l'ordre est enregistré. La flèche représente l'ordre et le convoi impliqué.\n\nTouche une flèche pour annuler cet ordre.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Orders sent": {
+      "text": "Ordres envoyés",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Over 12 troops": {
+      "text": "Plus de 12 troupes",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Over a bridge": {
+      "text": "Par un pont",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Palisade": {
+      "text": "Palissade",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Palisade built": {
+      "text": "Palissade bâtie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Pick a region to use your troops' actions, then confirm your orders": {
+      "text": "Choisis une région pour utiliser les actions de tes troupes puis valide tes ordres",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Play": {
+      "text": "Jouer",
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play again": {
       "text": "Rejouer",
@@ -5716,6 +6268,30 @@
       "text": "Jouer au jeu complet",
       "at": "2026-11-05"
     },
+    "manifest.json:web.copy.fr.strings.Reading the board": {
+      "text": "Lire le plateau",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Rebels": {
+      "text": "Rebelles",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Recruit +{n}": {
+      "text": "Recruter +{n}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Recruit in {n} cities": {
+      "text": "Recrute dans {n} villes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Recruiting now gives 5 infantry for the same amount of gold.": {
+      "text": "Recruter donne maintenant 5 fantassins pour la même somme d'or.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Recruitment": {
+      "text": "Recrutement",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Recruits": {
       "text": "Recrues",
       "at": "2026-11-08"
@@ -5724,21 +6300,1685 @@
       "text": "Rouge",
       "at": "2026-10-23"
     },
+    "manifest.json:web.copy.fr.strings.Regions held": {
+      "text": "Régions tenues",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Regions taken": {
+      "text": "Régions prises",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Reserve": {
+      "text": "Réserve",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Rich mines": {
+      "text": "Mines riches",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Rivals": {
+      "text": "Rivaux",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Rivers": {
+      "text": "Rivières",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Royal capital": {
+      "text": "Capitale royale",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Score": {
       "text": "Score",
       "at": "2026-11-05"
+    },
+    "manifest.json:web.copy.fr.strings.Scout balloon": {
+      "text": "Ballon éclaireur",
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Scouts": {
       "text": "Éclaireurs",
       "at": "2026-10-25"
     },
+    "manifest.json:web.copy.fr.strings.See the whole board": {
+      "text": "Voir tout le plateau",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Send orders": {
+      "text": "Envoyer les ordres",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Send the orders": {
+      "text": "Envoyer les ordres",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Shot": {
+      "text": "Tir",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Siege tower": {
+      "text": "Beffroi",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Sieges": {
+      "text": "Sièges",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Snow": {
+      "text": "Neige",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Snow at the end of the turn": {
+      "text": "De la neige à la fin du tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Snow coming on {x}": {
+      "text": "Neige attendue sur {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Snow on {x}": {
+      "text": "Neige sur {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Spies": {
+      "text": "Espions",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Spread your troops out before the end of the turn": {
+      "text": "Écarte tes troupes avant la fin du tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Spy": {
+      "text": "Espion",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Spy on red's orders for {n} turns": {
+      "text": "Espionne les ordres rouges pendant {n} tours",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Stays:": {
+      "text": "Reste :",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Stone forts": {
+      "text": "Forts de pierre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Storm": {
+      "text": "Tempête",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Storm coming on {x}": {
+      "text": "Tempête attendue sur {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Storm on {x}": {
+      "text": "Tempête sur {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Storms": {
+      "text": "Tempêtes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Supplies": {
+      "text": "Intendance",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take a capital with a cavalry charge": {
+      "text": "Prends une capitale par une charge de cavalerie",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take a fort in a single turn": {
+      "text": "Prends un fort en un seul tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take both enemy capitals": {
+      "text": "Prends les deux capitales ennemies",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take every island across the strait": {
+      "text": "Prends toutes les îles au-delà du détroit",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the Red Marshal's capital": {
+      "text": "Prends la capitale du Maréchal Rouge",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the capital before turn {n}": {
+      "text": "Prends la capitale avant le tour {n}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the far capital": {
+      "text": "Prends la capitale lointaine",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the fort of {x}": {
+      "text": "Prends le fort de {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the red capital": {
+      "text": "Prends la capitale rouge",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take the red capital within {n} turns of the first assault": {
+      "text": "Prends la capitale rouge moins de {n} tours après le premier assaut",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Take {n} cities in one turn": {
+      "text": "Prends {n} villes en un tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Tap one of your regions to see the available actions: a card in your hand. One card per troop, per piece or per purchase.\n\nPick one or more cards. Tap the target region: they go there together as one convoy. A region sends up to three convoys a turn.\n\nTap an arrow to take its order back.": {
+      "text": "Touche une de tes régions pour voir les actions disponible : carte dans ta main. Une carte par troupe, par pièce ou par achat.\n\nChoisis une ou plusieurs cartes. Touche la région cible : elles y partent ensemble, en un seul convoi. Une région envoie jusqu'à trois convois par tour.\n\nTouche une flèche pour annuler son ordre.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Tap one of your regions: the cards of the region's troops come into your hand. One card per troop, per piece or per purchase.\n\nTap a card to activate it or to give an order.": {
+      "text": "Touche une de tes régions : les cartes des troupes de la région arrivent dans ta main. Une carte par troupe, par pièce ou par achat.\n\nTouche une carte pour l'activer ou passer un ordre.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The Frozen North": {
+      "text": "Le Grand Nord",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Golden Plains": {
+      "text": "Les Plaines dorées",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Marshals' duel": {
+      "text": "Le duel des maréchaux",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Paper Isles": {
+      "text": "Les Îles de papier",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Red Marshal lets no opening pass: he attacks as soon as he has the upper hand.": {
+      "text": "Le Maréchal Rouge ne laisse passer aucune occasion : il attaque dès qu'il a l'avantage.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Whispering Woods": {
+      "text": "Les Bois murmurants",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The Whole World": {
+      "text": "Le Monde entier",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The army": {
+      "text": "L'armée",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The basics": {
+      "text": "Les bases",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The bell rang": {
+      "text": "La cloche a sonné",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The board is bigger than the screen. Move it to look around.\n\nA drag only ever moves the board. Select a region of yours to show its details and action cards.": {
+      "text": "Le plateau est plus grand que l'écran. Déplace-le pour regarder autour.\n\nUn glissement ne fait que déplacer le plateau. Sélectionne une de tes régions pour afficher les détails et cartes d'actions.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The fourth card of a stack": {
+      "text": "La quatrième carte d'une pile",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The green camp also plays against red or blue. Your defense abilities are calculated for every rival next door.": {
+      "text": "Le camp vert joue également contre rouge ou bleu. Tes capacités de défense sont calculées pour tous les rivaux voisins.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The land": {
+      "text": "Le terrain",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The reserve": {
+      "text": "La réserve",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The reserve is empty": {
+      "text": "La réserve est vide",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The target": {
+      "text": "La cible",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The turn": {
+      "text": "Le tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The weather": {
+      "text": "La météo",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The weather affects two regions at the same time.": {
+      "text": "La météo intervient sur deux régions en même temps.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The weather can turn into a storm. A storm destroys every troop left in a region.": {
+      "text": "La météo peut se transformer en tempête. Celle-ci détruit toutes les troupes restées sur une région.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The wonder shines on the board from the first turn. Win this region to influence the wonder.\n\nEvery turn you hold the region, the gauge moves one step toward your side. It moves back if your rival holds the region. The gauge doesn't move, or stops moving, if nobody clearly holds the region.\n\nFill the gauge with your color to win. You lose if the opponent fills it.": {
+      "text": "La merveille brille sur le plateau dès le premier tour. Gagne cette région pour agir sur l'influence de la merveille.\n\nChaque tour où tu tiens la région, elle avance d'un cran vers ton coté. Elle recule si ton rival tiens la région. La jauge ne bouge pas ou plus si personne ne possède clairement la région.\n\nRemplis la jauge de ta couleur pour gagner. Tu perds si elle est remplis par l'adversaire.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Tick": {
+      "text": "Tick",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Time": {
+      "text": "Temps",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
       "at": "2026-11-05"
     },
+    "manifest.json:web.copy.fr.strings.Town": {
+      "text": "Ville",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Troops of the same type come as a stack, one card per troop, all numbered.\n\nTap a single card in the stack to pick a batch: the fourth card sends four troops into the battle or convoy. Tap the same card to cancel the batch, or another card to change the number.": {
+      "text": "Les troupes de même type arrivent en pile, une carte par troupe, toutes numérotées.\n\nTouche une seule carte dans la pile pour prendre un lot : la quatrième carte envoie donc quatre troupes dans la bataille ou le convoi. Touche la même carte pour annuler le lot ou bien une autre carte pour changer le nombre.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Turn": {
+      "text": "Tour",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Turns": {
+      "text": "Tours",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Upgrades": {
+      "text": "Améliorations",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Veterans": {
+      "text": "Vétérans",
+      "at": "2026-11-12"
+    },
     "manifest.json:web.copy.fr.strings.Victory!": {
       "text": "Victoire !",
       "at": "2026-11-09"
+    },
+    "manifest.json:web.copy.fr.strings.Wait": {
+      "text": "Attendre",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Weather fronts": {
+      "text": "Fronts météo",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Win a perfect wonder": {
+      "text": "Gagne une merveille parfaite",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Win in {n} turns or fewer": {
+      "text": "Gagne en {n} tours ou moins",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Winning upgrades": {
+      "text": "Gagner des améliorations",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Wonder": {
+      "text": "Merveille",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Wonder lost": {
+      "text": "Merveille perdue",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Wonders": {
+      "text": "Merveilles",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.You can choose a target region when one or more cards are active in your hand.\n\nThe pin over each potential target shows the theoretical result of a battle.": {
+      "text": "Tu peux choisir une région cible lorsqu'une ou plusieurs cartes sont actives dans ta main.\n\nL'étiquette au-dessus de chaque cible potentielle annonce le résultat théorique d'une bataille.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond remains a mystery.": {
+      "text": "Tu ne vois que tes régions et leurs voisines. Un poste d'observation voit à deux régions. Au-delà, tout reste un mystère.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Your balloon reveals the regions within 2 spaces around it. So you can see the rival troops in advance.\n\nMove it strategically to get a good read of the board.": {
+      "text": "Ton ballon permet la découverte des régions à 2 cases aux alentours. Tu peux donc voir les troupes adverses à l'avance.\n\nDéplace-le stratégiquement pour obtenir une bonne lecture du plateau.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your capital and your towns recruit troops into the reserve at the end of every turn.\n\nTap the <b>Reserve</b> button, then a region you own to increase your troops. Lose your capital and the stage is lost.": {
+      "text": "Ta capitale ainsi que tes villes recrutent des troupes en réserve à la fin de chaque tour.\n\nTouche le bouton <b>Réserve</b>, puis une région que tu possèdes pour augmenter tes troupes. Si tu perds ta capitale, le stage est perdu.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your capital fell": {
+      "text": "Ta capitale est tombée",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Your capital is never attacked": {
+      "text": "Ta capitale n'est jamais attaquée",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Your capital lets you recruit 3 extra troops for your reserve each turn.": {
+      "text": "Ta capitale permet de recruter 3 troupes supplémentaires pour ta réserve à chaque tour.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your capital or a town lets you recruit infantry for gold. The recruits arrive after the battles at the end of the turn.": {
+      "text": "Ta capitale ou une ville te permet de recruter de l'infanterie contre de l'or. Les recrues arriveront après la bataille à la fin du tour.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your engineer can build a palisade on the region where he stands. This construction gives you an extra defense bonus. He can also create a bridge over a river next to him.": {
+      "text": "Ton ingénieur peu construire une palissade sur la région où il se trouve. cette construction t'apporte un Bonus de défense supplémentaire. Il peut aussi créer un pont sur une rivière voisine.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your hand": {
+      "text": "Ta main",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your orders leave as they stand": {
+      "text": "Tes ordres partent tels quels",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.Your spy observes the neighboring rival regions. It can note on the board: their convoys, their troops and the upcoming reinforcements.\n\nMove it strategically to get a good view of the terrain.": {
+      "text": "Ton espion observe les régions rivales voisines. Il peut noter sur le plateau : leurs convois, leurs troupes et les futurs renforts.\n\nDéplace-le stratégiquement pour avoir une bonne vision du terrain.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Zoom": {
+      "text": "Zoom",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.double click": {
+      "text": "double clic",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.double tap": {
+      "text": "toucher deux fois",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.drag the board": {
+      "text": "glisser sur le plateau",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.drag, or": {
+      "text": "glisser ou",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.every troop": {
+      "text": "toutes les troupes",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.fort": {
+      "text": "fort",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.half the troops": {
+      "text": "la moitié des troupes",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.harbour": {
+      "text": "port",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.mouse wheel, or": {
+      "text": "molette ou",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.mouse wheel, or + and −": {
+      "text": "molette ou + et −",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.no loss": {
+      "text": "sans perte",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.nobody": {
+      "text": "personne",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.nobody left": {
+      "text": "aucun survivant",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.or Send": {
+      "text": "ou Envoyer",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.palisade": {
+      "text": "palissade",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.pinch with two fingers": {
+      "text": "pincer à deux doigts",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.river": {
+      "text": "rivière",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.the Send button": {
+      "text": "le bouton Envoyer",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.the last card takes them all": {
+      "text": "la dernière les prend toutes",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.watchtower": {
+      "text": "poste d'observation",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{camp} took {x}": {
+      "text": "{camp} prend {x}",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} cavalry": {
+      "text": "{n} cavaliers",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} gold needed": {
+      "text": "Il faut {n} or",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} infantry": {
+      "text": "{n} fantassins",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} more to order": {
+      "text": "Encore {n} ordres à donner",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} troops lost": {
+      "text": "{n} troupes perdues",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.{n} turns": {
+      "text": "{n} tours",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.tagline": {
+      "text": "Donne des ordres à tes <b class=\"w-orders\">troupes</b> avant la fin du <b class=\"w-tick\">tour</b> et conquiers le <b class=\"w-map\">plateau</b>",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.levels.copy.fr": {
+      "text": "Gagne l'étape",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.The wonder shines on the board from the first turn. Win this region to influence the wonder.\n\nEvery turn you hold the region, the gauge moves one step toward your side. It moves back if your rival holds the region. The gauge doesn't move, or stops moving, if nobody clearly holds the region.\n\nFill the gauge with your colour to win. You lose if the opponent fills it.": {
+      "text": "La merveille brille sur le plateau dès le premier tour. Gagne cette région pour agir sur l'influence de la merveille.\n\nChaque tour où tu tiens la région, la jauge avance d'un cran vers ton côté. Elle recule si ton rival tient la région. La jauge ne bouge pas ou plus si personne ne possède clairement la région.\n\nRemplis la jauge de ta couleur pour gagner. Tu perds si elle est remplie par l'adversaire.",
+      "at": "2026-11-12"
+    },
+    "manifest.json:web.copy.fr.strings.A fort defends whoever holds it: its walls add a defence bonus of 2 to the current troops. It also lets you recruit one troop a turn.\n\nBe careful though, as a siege tower in the attack convoy breaks this fort defence.": {
+      "text": "Un fort protège celui qui le tient : ses murs ajoutent un bonus de 2 défenses aux troupes actuelles. Il permet aussi de recruter une troupe par tour.\n\nAttention toutefois, car un beffroi dans le convoi d'attaque brise cette défense de fort.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A siege tower joining an attack then cancels the opponent's defence action: any palisades and a fort's walls.": {
+      "text": "Un beffroi qui accompagne une attaque annulera alors l'action de défense adverse : les éventuelles palissades et murs d'un fort.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Once an order is given, a convoy is created on the board. This movement as a convoy is shown by an arrow. You can cancel an order by tapping the arrow.\n\nA badge on a building tells you what it will bring in at the end of the turn: often extra recruits or gold.\n\nThe colour of the shield icon gives you a prediction of your region's current defence: nothing to fear in green. The region just holds in yellow. Red clearly signals danger.": {
+      "text": "Une fois un ordre passé, un convoi est créé sur le plateau. Ce déplacement en convoi est représenté par une flèche. Tu peux annuler un ordre en appuyant sur la flèche.\n\nUne pastille sur un bâtiment t'indique ce qu'il rapportera à la fin du tour : souvent des recrues supplémentaires ou de l'or.\n\nLa couleur de l'icône du bouclier te donne une prédiction sur la défense actuelle de ta région : rien n'est à craindre en vert. La région tient de justesse en jaune. Le rouge indique clairement un danger.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.The green camp also plays against red or blue. Your defence abilities are calculated for every rival next door.": {
+      "text": "Le camp vert joue également contre rouge ou bleu. Tes capacités de défense sont calculées pour tous les rivaux voisins.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.A shining badge on a region is an upgrade. Win the region to get it. This bonus stays active for the whole game.\n\nA rival that takes the region before you does not win this upgrade. So you can always keep attacking it to get the upgrade yourself.\n\nThe upgrade folds away in the paper at the bottom of the screen. Tap it to unfold it, then tap a badge to read its effect.": {
+      "text": "Un badge qui brille sur une région est une amélioration. Gagne la région pour l'obtenir. Ce Bonus restera actif sur toute la partie.\n\nUn rival qui prend la région avant toi ne gagnera pas cette amélioration. Tu peux donc toujours continuer de l'attaquer afin de l'obtenir.\n\nL'amélioration se range dans le papier plié en bas de l'écran. Touche-le pour le déplier. Touche un badge pour lire son effet.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your engineer can build a palisade on the region where he stands. This construction gives you an extra defence bonus. He can also create a bridge over a river next to him.": {
+      "text": "Ton ingénieur peut construire une palissade sur la région où il se trouve. Cette construction t'apporte un Bonus de défense supplémentaire. Il peut aussi créer un pont sur une rivière voisine.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Your spy observes the neighbouring rival regions. It can note on the board: their convoys, their troops and the upcoming reinforcements.\n\nMove it strategically to get a good view of the terrain.": {
+      "text": "Ton espion observe les régions rivales voisines. Il peut noter sur le plateau : leurs convois, leurs troupes et les futurs renforts.\n\nDéplace-le stratégiquement pour avoir une bonne vision du terrain.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.copy.fr.strings.Every troop and every piece can receive an order each turn. The card icon on a region tells you that orders are still left to give.\n\nPick troops. Tap a target region to move, attack or defend.\n\nOnce an order is given on the spot, the troop switches to defence or construction. You can cancel this order by tapping the troop's icon.": {
+      "text": "Chaque troupe et chaque pièce peuvent recevoir un ordre par tour. L'icône en forme de cartes sur une région t'indique qu'il reste des ordres à passer.\n\nChoisis des troupes. Touche une région cible pour déplacer, attaquer ou défendre.\n\nUne fois un ordre donné sur place, la troupe passe en défense ou construction. Tu peux annuler cet ordre en appuyant sur l'icône de la troupe.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:title": {
+      "text": "Foldiers",
+      "at": "2026-11-13"
+    },
+    "manifest.json:tagline": {
+      "text": "Give your troops their orders before the turn ends and conquer the board",
+      "at": "2026-11-13"
+    },
+    "manifest.json:copy.en.tagline": {
+      "text": "Dive into an origami-inspired tactical wargame! Leading the indomitable Blues or the fierce Reds, every region conquered is a victory on paper. Plan your moves, outwit your opponent and dominate the board before time stops.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:copy.en.tags.0": {
+      "text": "Strategy",
+      "at": "2026-11-13"
+    },
+    "manifest.json:copy.en.tags.1": {
+      "text": "Conquest",
+      "at": "2026-11-13"
+    },
+    "manifest.json:copy.en.tags.2": {
+      "text": "Origami",
+      "at": "2026-11-13"
+    },
+    "manifest.json:description": {
+      "text": "Foldiers is a slow conquest of a world cut out of paper, played in turns against the game. Every region of the board has an owner, a terrain and a number of troops, and every army is a little origami figure standing on it, its count on a badge at its foot. During a turn you tap one of your regions and it deals its cards into your hand: one a troop, one a piece, one a purchase. Pick cards, tap a lit region, and they go there as one convoy, up to three a region. When you press Send, or when time runs out, every convoy of every camp leaves at once and the battles resolve together, troop for troop. Your capital, towns and forts fill a reserve you drop wherever your land reaches. Thirty stages across five worlds — the Paper Isles, the Golden Plains, the Whispering Woods, the Frozen North and the Whole World — add one rule each: forts, mountain passes, rivers and bridges, harbours and fleets, the fog of war, gold mines, recruits, cavalry, artillery, scout balloons, spies, snow and storms announced a turn ahead, wonders, engineers, siege towers and a third camp, with upgrades in between — bigger towns, veterans, long guns, heavy shells, rich mines, cavalry charges, stone forts, a royal capital, barracks and fast ships — until Marshal Pleat meets the Red Marshal in a fair duel. Every stage is won on its objective and pays three stars for two sub-objectives met along the way.",
+      "at": "2026-11-13"
+    },
+    "manifest.json:web.levels.copy.en": {
+      "text": "Win the stage",
+      "at": "2026-11-13"
+    },
+    "game.js:config.title": {
+      "text": "Foldiers",
+      "at": "2026-11-13"
+    },
+    "game.js:config.tagline": {
+      "text": "Give your <b class=\"w-orders\">troops</b> their orders before the <b class=\"w-tick\">turn</b> ends and conquer the <b class=\"w-map\">board</b>",
+      "at": "2026-11-13"
+    },
+    "game.js:config.intro.desk.0": {
+      "text": "Pick a region to use your troops' actions, then confirm your orders",
+      "at": "2026-11-13"
+    },
+    "game.js:config.copy.start": {
+      "text": "Play",
+      "at": "2026-11-13"
+    },
+    "game.js:config.copy.replay": {
+      "text": "Play again",
+      "at": "2026-11-13"
+    },
+    "game.js:config.copy.timeLabel": {
+      "text": "Time",
+      "at": "2026-11-13"
+    },
+    "game.js:config.copy.gameOver": {
+      "text": "Defeat",
+      "at": "2026-11-13"
+    },
+    "game.js:config.copy.victory": {
+      "text": "Victory!",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.falls-to-n-rival-troops": {
+      "text": "Falls to {n} rival troops",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.just-holds": {
+      "text": "Just holds",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.holds-against-n": {
+      "text": "Holds against {n}",
+      "at": "2026-11-13"
+    },
+    "game.js:1582.Lang.t.translated-in-place": {
+      "text": "storm",
+      "at": "2026-11-13"
+    },
+    "game.js:1582.Lang.t.translated-in-place.1": {
+      "text": "Storm coming on {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:1582.Lang.t.translated-in-place.2": {
+      "text": "Snow coming on {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.spread-your-troops-out-befor": {
+      "text": "Spread your troops out before the end of the turn",
+      "at": "2026-11-13"
+    },
+    "game.js:1594.Lang.t.translated-in-place": {
+      "text": "storm",
+      "at": "2026-11-13"
+    },
+    "game.js:1594.Lang.t.translated-in-place.1": {
+      "text": "Storm on {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:1594.Lang.t.translated-in-place.2": {
+      "text": "Snow on {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-troops-lost": {
+      "text": "{n} troops lost",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.your-orders-leave-as-they-st": {
+      "text": "Your orders leave as they stand",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.no-order-was-given": {
+      "text": "No order was given",
+      "at": "2026-11-13"
+    },
+    "game.js:Pop.show.callout.orders-sent": {
+      "text": "Orders sent",
+      "at": "2026-11-13"
+    },
+    "game.js:1688.Pop.text.floating-value": {
+      "text": "−",
+      "at": "2026-11-13"
+    },
+    "game.js:Pop.show.callout.palisade-built": {
+      "text": "Palisade built",
+      "at": "2026-11-13"
+    },
+    "game.js:Pop.show.callout.bridge-built": {
+      "text": "Bridge built",
+      "at": "2026-11-13"
+    },
+    "game.js:1795.Pop.text.floating-value": {
+      "text": "+",
+      "at": "2026-11-13"
+    },
+    "game.js:1796.Pop.show.callout": {
+      "text": "Capital taken!",
+      "at": "2026-11-13"
+    },
+    "game.js:1796.Pop.show.callout.1": {
+      "text": "Captured!",
+      "at": "2026-11-13"
+    },
+    "game.js:Pop.show.callout.held": {
+      "text": "Held!",
+      "at": "2026-11-13"
+    },
+    "game.js:Pop.show.callout.clash": {
+      "text": "Clash",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.camp-took-x": {
+      "text": "{camp} took {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:1889.Lang.t.translated-in-place": {
+      "text": "redCap",
+      "at": "2026-11-13"
+    },
+    "game.js:1889.Lang.t.translated-in-place.1": {
+      "text": "Take the Red Marshal's capital",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.take-the-capital-before-turn": {
+      "text": "Take the capital before turn {n}",
+      "at": "2026-11-13"
+    },
+    "game.js:1894.Lang.t.translated-in-place": {
+      "text": "pass",
+      "at": "2026-11-13"
+    },
+    "game.js:1894.Lang.t.translated-in-place.1": {
+      "text": "Hold both passes at once",
+      "at": "2026-11-13"
+    },
+    "game.js:1894.Lang.t.translated-in-place.2": {
+      "text": "Hold both bridges at once",
+      "at": "2026-11-13"
+    },
+    "game.js:endRound.stat-row-1-label.regions-taken": {
+      "text": "Regions taken",
+      "at": "2026-11-13"
+    },
+    "game.js:endRound.stat-row-2-label.regions-held": {
+      "text": "Regions held",
+      "at": "2026-11-13"
+    },
+    "game.js:endRound.stat-row-3-label.turns": {
+      "text": "Turns",
+      "at": "2026-11-13"
+    },
+    "game.js:1939.endRound.stat-row-3-value": {
+      "text": " / ",
+      "at": "2026-11-13"
+    },
+    "game.js:3127.ctx.fillText.canvas-text": {
+      "text": "+",
+      "at": "2026-11-13"
+    },
+    "game.js:3134.ctx.fillText.canvas-text": {
+      "text": "+",
+      "at": "2026-11-13"
+    },
+    "game.js:3149.Pop.text.floating-value": {
+      "text": "−",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.end-of-turn": {
+      "text": "End of turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-turns": {
+      "text": "{n} turns",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.recruit-n": {
+      "text": "Recruit +{n}",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.cavalry-n": {
+      "text": "Cavalry +{n}",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.palisade": {
+      "text": "Palisade",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-gold-needed": {
+      "text": "{n} gold needed",
+      "at": "2026-11-13"
+    },
+    "game.js:4479.Lang.t.translated-in-place": {
+      "text": "cav",
+      "at": "2026-11-13"
+    },
+    "game.js:4479.Lang.t.translated-in-place.1": {
+      "text": "Cavalry",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.close": {
+      "text": "Close",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.all": {
+      "text": "All",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.no-gold": {
+      "text": "No gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.bridge": {
+      "text": "Bridge",
+      "at": "2026-11-13"
+    },
+    "game.js:5272.ctx.fillText.canvas-text": {
+      "text": "Bonus",
+      "at": "2026-11-13"
+    },
+    "game.js:5274.ctx.fillText.canvas-text": {
+      "text": "/",
+      "at": "2026-11-13"
+    },
+    "game.js:5310.Lang.t.translated-in-place": {
+      "text": "Defend",
+      "at": "2026-11-13"
+    },
+    "game.js:5310.Lang.t.translated-in-place.1": {
+      "text": "Wait",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.marching": {
+      "text": "Marching",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.send-orders": {
+      "text": "Send orders",
+      "at": "2026-11-13"
+    },
+    "game.js:5420.ctx.fillText.canvas-text": {
+      "text": "Done",
+      "at": "2026-11-13"
+    },
+    "game.js:5420.ctx.fillText.canvas-text.1": {
+      "text": "Reserve",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.gold": {
+      "text": "Gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.wonder": {
+      "text": "Wonder",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-a-turn": {
+      "text": "+{n} a turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-gold-a-turn": {
+      "text": "+{n} gold a turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-infantry": {
+      "text": "{n} infantry",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.n-cavalry": {
+      "text": "{n} cavalry",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.stays": {
+      "text": "Stays:",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.leaves": {
+      "text": "Leaves:",
+      "at": "2026-11-13"
+    },
+    "game.js:5484.ctx.fillText.canvas-text": {
+      "text": " | ",
+      "at": "2026-11-13"
+    },
+    "game.js:5484.ctx.fillText.canvas-text.1": {
+      "text": "nobody",
+      "at": "2026-11-13"
+    },
+    "game.js:5489.Lang.t.translated-in-place": {
+      "text": "1 more to order",
+      "at": "2026-11-13"
+    },
+    "game.js:5489.Lang.t.translated-in-place.1": {
+      "text": "{n} more to order",
+      "at": "2026-11-13"
+    },
+    "game.js:5494.Lang.t.translated-in-place": {
+      "text": "storm",
+      "at": "2026-11-13"
+    },
+    "game.js:5494.Lang.t.translated-in-place.1": {
+      "text": "A storm at the end of the turn",
+      "at": "2026-11-13"
+    },
+    "game.js:5494.Lang.t.translated-in-place.2": {
+      "text": "Snow at the end of the turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.no-rival-next-door": {
+      "text": "No rival next door",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.new-recruits-in-your-towns-n": {
+      "text": "New recruits in your towns next turn",
+      "at": "2026-11-13"
+    },
+    "game.js:5701.HUD.setLeft.hud-left-value.1": {
+      "text": " / ",
+      "at": "2026-11-13"
+    },
+    "game.js:HUD.setLeft.hud-left-label.turn": {
+      "text": "Turn",
+      "at": "2026-11-13"
+    },
+    "game.js:HUD.setRight.hud-right-value.x": {
+      "text": "…",
+      "at": "2026-11-13"
+    },
+    "game.js:5815.Lang.t.translated-in-place": {
+      "text": "redCap",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.infantry": {
+      "text": "Infantry",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.cannon": {
+      "text": "Cannon",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.your-hand": {
+      "text": "Your hand",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.tap-one-of-your-regions-the-": {
+      "text": "Tap one of your regions: the cards of the region's troops come into your hand. One card per troop, per piece or per purchase.\n\nTap a card to activate it or to give an order.",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.card-stacks": {
+      "text": "Card stacks",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.troops-of-the-same-type-come": {
+      "text": "Troops of the same type come as a stack, one card per troop, all numbered.\n\nTap a single card in the stack to pick a batch: the fourth card sends four troops into the battle or convoy. Tap the same card to cancel the batch, or another card to change the number.",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.4-troops": {
+      "text": "4 troops",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.the-last-card-takes-them-all": {
+      "text": "the last card takes them all",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.3-at-most": {
+      "text": "3 at most",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.1-in-defence": {
+      "text": "+1 in defence",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.drag-or": {
+      "text": "drag, or",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.mouse-wheel-or": {
+      "text": "mouse wheel, or",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.double-click": {
+      "text": "double click",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.enter": {
+      "text": "Enter",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.or-send": {
+      "text": "or Send",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.drag-the-board": {
+      "text": "drag the board",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.pinch-with-two-fingers": {
+      "text": "pinch with two fingers",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.double-tap": {
+      "text": "double tap",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.the-send-button": {
+      "text": "the Send button",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.on-a-computer-the-cursor-cha": {
+      "text": "On a computer the cursor changes where the board can be grabbed.",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.1-per-troop": {
+      "text": "1 per troop",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.nobody-left": {
+      "text": "nobody left",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.2-a-turn": {
+      "text": "+2 a turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.1-a-turn": {
+      "text": "+1 a turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.the-land": {
+      "text": "The land",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.no-loss": {
+      "text": "no loss",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.the-weather": {
+      "text": "The weather",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.half-the-troops": {
+      "text": "half the troops",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.every-troop": {
+      "text": "every troop",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.supplies": {
+      "text": "Supplies",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.3-for-3-gold": {
+      "text": "+3 for 3 gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.2-for-4-gold": {
+      "text": "+2 for 4 gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.4-gold": {
+      "text": "4 gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.intelligence": {
+      "text": "Intelligence",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.the-army": {
+      "text": "The army",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.upgrades": {
+      "text": "Upgrades",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.3-a-turn": {
+      "text": "+3 a turn",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.5-for-3-gold": {
+      "text": "+5 for 3 gold",
+      "at": "2026-11-13"
+    },
+    "game.js:Lang.t.translated-in-place.rivals": {
+      "text": "Rivals",
+      "at": "2026-11-13"
+    },
+    "game.js:data.neutral.tzy5q": {
+      "text": "Neutral",
+      "at": "2026-11-13"
+    },
+    "game.js:data.blue.yjpt9": {
+      "text": "Blue",
+      "at": "2026-11-13"
+    },
+    "game.js:data.red.376q7": {
+      "text": "Red",
+      "at": "2026-11-13"
+    },
+    "game.js:data.green.3oial": {
+      "text": "Green",
+      "at": "2026-11-13"
+    },
+    "game.js:data.rebels.1laps": {
+      "text": "Rebels",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fort.ykhlz": {
+      "text": "fort",
+      "at": "2026-11-13"
+    },
+    "game.js:data.harbour.eewyz": {
+      "text": "harbour",
+      "at": "2026-11-13"
+    },
+    "game.js:data.palisade.1x45w": {
+      "text": "palisade",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-paper-isles.1a6uq": {
+      "text": "The Paper Isles",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-golden-plains.qalol": {
+      "text": "The Golden Plains",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-whispering-woods.186vz": {
+      "text": "The Whispering Woods",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-frozen-north.14t67": {
+      "text": "The Frozen North",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-whole-world.101dx": {
+      "text": "The Whole World",
+      "at": "2026-11-13"
+    },
+    "game.js:data.river.4ior0": {
+      "text": "river",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-both-enemy-capitals.v2bgm": {
+      "text": "Take both enemy capitals",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-every-island-across-the.dxrdl": {
+      "text": "Take every island across the strait",
+      "at": "2026-11-13"
+    },
+    "game.js:data.lose-no-region.ojs26": {
+      "text": "Lose no region",
+      "at": "2026-11-13"
+    },
+    "game.js:data.win-in-n-turns-or-fewer.42jkg": {
+      "text": "Win in {n} turns or fewer",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-a-fort-in-a-single-turn.176di": {
+      "text": "Take a fort in a single turn",
+      "at": "2026-11-13"
+    },
+    "game.js:data.never-attack-across-open-wat.18xan": {
+      "text": "Never attack across open water",
+      "at": "2026-11-13"
+    },
+    "game.js:data.land-on-n-islands.1xxek": {
+      "text": "Land on {n} islands",
+      "at": "2026-11-13"
+    },
+    "game.js:data.land-on-the-red-coast.vhznx": {
+      "text": "Land on the red coast",
+      "at": "2026-11-13"
+    },
+    "game.js:data.lose-no-fleet.yy9ol": {
+      "text": "Lose no fleet",
+      "at": "2026-11-13"
+    },
+    "game.js:data.hold-n-mines-at-once.xptsi": {
+      "text": "Hold {n} mines at once",
+      "at": "2026-11-13"
+    },
+    "game.js:data.hold-n-gold.846r0": {
+      "text": "Hold {n} gold",
+      "at": "2026-11-13"
+    },
+    "game.js:data.recruit-in-n-cities.1xcap": {
+      "text": "Recruit in {n} cities",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-n-cities-in-one-turn.la6os": {
+      "text": "Take {n} cities in one turn",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-a-capital-with-a-cavalr.1mjew": {
+      "text": "Take a capital with a cavalry charge",
+      "at": "2026-11-13"
+    },
+    "game.js:data.bombard-the-fortress-n-times.1yaid": {
+      "text": "Bombard the fortress {n} times",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fire-the-cannon-n-times.vkevp": {
+      "text": "Fire the cannon {n} times",
+      "at": "2026-11-13"
+    },
+    "game.js:data.command-n-troops-in-a-single.1y2ku": {
+      "text": "Command {n} troops in a single turn",
+      "at": "2026-11-13"
+    },
+    "game.js:data.never-attacked-from-a-hidden.13t42": {
+      "text": "Never attacked from a hidden region",
+      "at": "2026-11-13"
+    },
+    "game.js:data.spy-on-red-s-orders-for-n-tu.1idi9": {
+      "text": "Spy on red's orders for {n} turns",
+      "at": "2026-11-13"
+    },
+    "game.js:data.lose-no-troop-to-the-weather.6yc20": {
+      "text": "Lose no troop to the weather",
+      "at": "2026-11-13"
+    },
+    "game.js:data.hold-n-regions-at-once.ckjp4": {
+      "text": "Hold {n} regions at once",
+      "at": "2026-11-13"
+    },
+    "game.js:data.win-a-perfect-wonder.1pgej": {
+      "text": "Win a perfect wonder",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-capital-is-never-attack.15tvz": {
+      "text": "Your capital is never attacked",
+      "at": "2026-11-13"
+    },
+    "game.js:data.finish-n-works.9gcuc": {
+      "text": "Finish {n} works",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-the-red-capital-within-.143x2": {
+      "text": "Take the red capital within {n} turns of the first assault",
+      "at": "2026-11-13"
+    },
+    "game.js:data.green-never-takes-your-land.v2hq9": {
+      "text": "Green never takes your land",
+      "at": "2026-11-13"
+    },
+    "game.js:data.lose-no-region-to-the-red-ma.1gukq": {
+      "text": "Lose no region to the Red Marshal",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-the-red-capital.1lqv6": {
+      "text": "Take the red capital",
+      "at": "2026-11-13"
+    },
+    "game.js:data.find-and-take-the-hidden-cap.xclul": {
+      "text": "Find and take the hidden capital",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-the-far-capital.1ppnf": {
+      "text": "Take the far capital",
+      "at": "2026-11-13"
+    },
+    "game.js:data.take-the-fort-of-x.15v9s": {
+      "text": "Take the fort of {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:data.land-on-the-island-and-take-.1hwha": {
+      "text": "Land on the island and take {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:data.break-the-red-fortress-of-x.2g3zz": {
+      "text": "Break the red fortress of {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:data.cross-the-pass-and-take-x.vqjqu": {
+      "text": "Cross the pass and take {x}",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-capital-fell.1wkcy": {
+      "text": "Your capital fell",
+      "at": "2026-11-13"
+    },
+    "game.js:data.wonder-lost.1hi70": {
+      "text": "Wonder lost",
+      "at": "2026-11-13"
+    },
+    "game.js:data.watchtower.21rod": {
+      "text": "watchtower",
+      "at": "2026-11-13"
+    },
+    "game.js:data.not-enough-gold.1r14g": {
+      "text": "Not enough gold",
+      "at": "2026-11-13"
+    },
+    "game.js:data.engineer.eocv0": {
+      "text": "Engineer",
+      "at": "2026-11-13"
+    },
+    "game.js:data.siege-tower.118j4": {
+      "text": "Siege tower",
+      "at": "2026-11-13"
+    },
+    "game.js:data.spy.376rc": {
+      "text": "Spy",
+      "at": "2026-11-13"
+    },
+    "game.js:data.scout-balloon.wlj72": {
+      "text": "Scout balloon",
+      "at": "2026-11-13"
+    },
+    "game.js:data.capital.5gcj2": {
+      "text": "Capital",
+      "at": "2026-11-13"
+    },
+    "game.js:data.town.yk3qz": {
+      "text": "Town",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fort.yjsyn": {
+      "text": "Fort",
+      "at": "2026-11-13"
+    },
+    "game.js:data.mine.yjy7l": {
+      "text": "Mine",
+      "at": "2026-11-13"
+    },
+    "game.js:data.harbour.15910": {
+      "text": "Harbour",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-reserve-is-empty.1jpve": {
+      "text": "The reserve is empty",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fourth-card.tyrtn": {
+      "text": "Fourth card",
+      "at": "2026-11-13"
+    },
+    "game.js:data.over-12-troops.jk46q": {
+      "text": "Over 12 troops",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-target.1j48p": {
+      "text": "The target",
+      "at": "2026-11-13"
+    },
+    "game.js:data.you-can-choose-a-target-regi.dodbn": {
+      "text": "You can choose a target region when one or more cards are active in your hand.\n\nThe pin over each potential target shows the theoretical result of a battle.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.convoys.ehewp": {
+      "text": "Convoys",
+      "at": "2026-11-13"
+    },
+    "game.js:data.once-the-target-region-is-se.12fxt": {
+      "text": "Once the target region is selected, the order is recorded. The arrow represents the order and the convoy involved.\n\nTap an arrow to cancel this order.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.convoys-a-region.186jl": {
+      "text": "Convoys a region",
+      "at": "2026-11-13"
+    },
+    "game.js:data.defend-and-wait.h8flw": {
+      "text": "Defend and wait",
+      "at": "2026-11-13"
+    },
+    "game.js:data.every-troop-and-every-piece-.hqo9o": {
+      "text": "Every troop and every piece can receive an order each turn. The card icon on a region tells you that orders are still left to give.\n\nPick troops. Tap a target region to move, attack or defend.\n\nOnce an order is given on the spot, the troop switches to defence or construction. You can cancel this order by tapping the troop's icon.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.moving-the-board.1fdxm": {
+      "text": "Moving the board",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-board-is-bigger-than-the.1ifgw": {
+      "text": "The board is bigger than the screen. Move it to look around.\n\nA drag only ever moves the board. Select a region of yours to show its details and action cards.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.move-the-board.tvhuc": {
+      "text": "Move the board",
+      "at": "2026-11-13"
+    },
+    "game.js:data.zoom.yk8d5": {
+      "text": "Zoom",
+      "at": "2026-11-13"
+    },
+    "game.js:data.see-the-whole-board.1tytd": {
+      "text": "See the whole board",
+      "at": "2026-11-13"
+    },
+    "game.js:data.send-the-orders.1nmvj": {
+      "text": "Send the orders",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-turn.eq5wo": {
+      "text": "The turn",
+      "at": "2026-11-13"
+    },
+    "game.js:data.every-turn-has-a-countdown-p.1iu4r": {
+      "text": "Every turn has a countdown. Press Send to confirm your orders, or they leave as they stand when the available time runs out.\n\nThen all the troops on the board act at the same time: yours and your rivals'.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.battles.1j7lw": {
+      "text": "Battles",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-battle-is-troop-for-troop-.szjdc": {
+      "text": "A battle is troop for troop. The bigger side wins and keeps the difference: 1 troop will remain on site for 5 vs 4.\n\nA tie leaves nobody on either side. Two enemy convoys crossing the same border meet halfway.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.attack.1all4": {
+      "text": "Attack",
+      "at": "2026-11-13"
+    },
+    "game.js:data.defence.t7azu": {
+      "text": "Defence",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-tie.3iiz5": {
+      "text": "A tie",
+      "at": "2026-11-13"
+    },
+    "game.js:data.reading-the-board.120cx": {
+      "text": "Reading the board",
+      "at": "2026-11-13"
+    },
+    "game.js:data.once-an-order-is-given-a-con.175ft": {
+      "text": "Once an order is given, a convoy is created on the board. This movement as a convoy is shown by an arrow. You can cancel an order by tapping the arrow.\n\nA badge on a building tells you what it will bring in at the end of the turn: often extra recruits or gold.\n\nThe colour of the shield icon gives you a prediction of your region's current defence: nothing to fear in green. The region just holds in yellow. Red clearly signals danger.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-reserve.308b4": {
+      "text": "The reserve",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-capital-and-your-towns-.1jxix": {
+      "text": "Your capital and your towns recruit troops into the reserve at the end of every turn.\n\nTap the <b>Reserve</b> button, then a region you own to increase your troops. Lose your capital and the stage is lost.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.forts.3nqvo": {
+      "text": "Forts",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-fort-defends-whoever-holds.1py18": {
+      "text": "A fort defends whoever holds it: its walls add a defence bonus of 2 to the current troops. It also lets you recruit one troop a turn.\n\nBe careful though, as a siege tower in the attack convoy breaks this fort defence.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.mountains.19cqd": {
+      "text": "Mountains",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-mountain-ridge-cannot-be-c.ul8h8": {
+      "text": "A mountain ridge cannot be crossed and only a pass lets you through. Adapt your strategy, keeping in mind that you will have to go around the mountains.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.rivers.1ldyv": {
+      "text": "Rivers",
+      "at": "2026-11-13"
+    },
+    "game.js:data.an-attack-across-a-river-los.okxif": {
+      "text": "An attack across a river loses one troop. A bridge will carry it across at full strength.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.across-a-river.14yx6": {
+      "text": "Across a river",
+      "at": "2026-11-13"
+    },
+    "game.js:data.over-a-bridge.11aub": {
+      "text": "Over a bridge",
+      "at": "2026-11-13"
+    },
+    "game.js:data.harbours.bosms": {
+      "text": "Harbours",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-harbour-can-send-infantry-.17dvv": {
+      "text": "A harbour can send infantry to any other harbour. The fleet may take several turns to reach its destination.\n\nA troop at sea no longer defends any region on the ground.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.wonders.fghae": {
+      "text": "Wonders",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-wonder-shines-on-the-boa.1ir3q": {
+      "text": "The wonder shines on the board from the first turn. Win this region to influence the wonder.\n\nEvery turn you hold the region, the gauge moves one step toward your side. It moves back if your rival holds the region. The gauge doesn't move, or stops moving, if nobody clearly holds the region.\n\nFill the gauge with your colour to win. You lose if the opponent fills it.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.snow.yk2y7": {
+      "text": "Snow",
+      "at": "2026-11-13"
+    },
+    "game.js:data.every-turn-the-weather-is-an.b13y3": {
+      "text": "Every turn the weather is announced on one region. It will strike at the end of the turn. Snow takes half of the troops present with it.\n\nPull your troops out before it strikes.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.storms.1m8w7": {
+      "text": "Storms",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-weather-can-turn-into-a-.gswgh": {
+      "text": "The weather can turn into a storm. A storm destroys every troop left in a region.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.storm.3x13j": {
+      "text": "Storm",
+      "at": "2026-11-13"
+    },
+    "game.js:data.weather-fronts.1pn2w": {
+      "text": "Weather fronts",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-weather-affects-two-regi.16kzz": {
+      "text": "The weather affects two regions at the same time.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-mine-pays-1-gold-a-turn-to.b5pis": {
+      "text": "A mine pays 1 gold a turn to the region's owner. Gold buys new recruits, cavalry or works.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.recruitment.1aqm7": {
+      "text": "Recruitment",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-capital-or-a-town-lets-.k6ute": {
+      "text": "Your capital or a town lets you recruit infantry for gold. The recruits arrive after the battles at the end of the turn.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.recruits.wya1j": {
+      "text": "Recruits",
+      "at": "2026-11-13"
+    },
+    "game.js:data.cavalry-rides-2-regions-in-a.1ecjb": {
+      "text": "Cavalry rides 2 regions in a single turn. You recruit it in a town for gold. However, an army can intercept cavalry before it reaches its destination.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.engineers.1m544": {
+      "text": "Engineers",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-engineer-can-build-a-pa.17sy8": {
+      "text": "Your engineer can build a palisade on the region where he stands. This construction gives you an extra defence bonus. He can also create a bridge over a river next to him.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fog-of-war.12fgt": {
+      "text": "Fog of war",
+      "at": "2026-11-13"
+    },
+    "game.js:data.you-see-only-your-regions-an.2i7t5": {
+      "text": "You see only your regions and their neighbours. A watchtower sees two regions away, and whatever lies beyond remains a mystery.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.scouts.1lww5": {
+      "text": "Scouts",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-balloon-reveals-the-reg.zntyr": {
+      "text": "Your balloon reveals the regions within 2 spaces around it. So you can see the rival troops in advance.\n\nMove it strategically to get a good read of the board.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.spies.3wxv9": {
+      "text": "Spies",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-spy-observes-the-neighb.1vdv2": {
+      "text": "Your spy observes the neighbouring rival regions. It can note on the board: their convoys, their troops and the upcoming reinforcements.\n\nMove it strategically to get a good view of the terrain.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.artillery.16ieg": {
+      "text": "Artillery",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-cannon-fires-on-a-neighbou.fv7hk": {
+      "text": "A cannon fires on a neighbour before the troops arrive on the field. Its shot can therefore lead a convoy.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.shot.yk2t5": {
+      "text": "Shot",
+      "at": "2026-11-13"
+    },
+    "game.js:data.sieges.1m0wm": {
+      "text": "Sieges",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-siege-tower-joining-an-att.laxls": {
+      "text": "A siege tower joining an attack then cancels the opponent's defence action: any palisades and a fort's walls.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.winning-upgrades.17vp6": {
+      "text": "Winning upgrades",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-shining-badge-on-a-region-.1f8j0": {
+      "text": "A shining badge on a region is an upgrade. Win the region to get it. This bonus stays active for the whole game.\n\nA rival that takes the region before you does not win this upgrade. So you can always keep attacking it to get the upgrade yourself.\n\nThe upgrade folds away in the paper at the bottom of the screen. Tap it to unfold it, then tap a badge to read its effect.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.bigger-towns.1x5ds": {
+      "text": "Bigger towns",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-town-now-recruits-2-troops.1dadh": {
+      "text": "A town now recruits 2 troops for your reserve every turn.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.veterans.lsb6z": {
+      "text": "Veterans",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-convoy-with-infantry-attac.1s9pu": {
+      "text": "A convoy with infantry attacks with one troop more as a bonus.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.infantry-convoy.1ke4o": {
+      "text": "Infantry convoy",
+      "at": "2026-11-13"
+    },
+    "game.js:data.long-guns.1yfwg": {
+      "text": "Long guns",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-cannon-now-fires-up-to-two.1ojiy": {
+      "text": "A cannon now fires up to two regions away.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.heavy-shells.mtjkx": {
+      "text": "Heavy shells",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-cannon-shot-now-takes-thre.gfx9a": {
+      "text": "A cannon shot now takes three troops.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.rich-mines.h5c5b": {
+      "text": "Rich mines",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-mine-now-pays-2-gold-a-tur.16iph": {
+      "text": "A mine now pays 2 gold a turn.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.cavalry-charge.119dg": {
+      "text": "Cavalry charge",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-convoy-with-cavalry-attack.176fa": {
+      "text": "A convoy with cavalry attacks with one troop more as a bonus.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.cavalry-convoy.11eli": {
+      "text": "Cavalry convoy",
+      "at": "2026-11-13"
+    },
+    "game.js:data.stone-forts.1e19h": {
+      "text": "Stone forts",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-fort-now-adds-2-troops-a-t.18p47": {
+      "text": "A fort now adds 2 troops a turn to your reserve.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.royal-capital.1yxy8": {
+      "text": "Royal capital",
+      "at": "2026-11-13"
+    },
+    "game.js:data.your-capital-lets-you-recrui.17kc4": {
+      "text": "Your capital lets you recruit 3 extra troops for your reserve each turn.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.barracks.18v0k": {
+      "text": "Barracks",
+      "at": "2026-11-13"
+    },
+    "game.js:data.recruiting-now-gives-5-infan.wx90f": {
+      "text": "Recruiting now gives 5 infantry for the same amount of gold.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.fast-ships.1jyku": {
+      "text": "Fast ships",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-fleet-now-sails-twice-as-f.1fdes": {
+      "text": "A fleet now sails twice as far in a single turn.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.a-third-camp.1dtd8": {
+      "text": "A third camp",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-green-camp-also-plays-ag.127zn": {
+      "text": "The green camp also plays against red or blue. Your defence abilities are calculated for every rival next door.",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-marshals-duel.qkj7e": {
+      "text": "The Marshals' duel",
+      "at": "2026-11-13"
+    },
+    "game.js:data.the-red-marshal-lets-no-open.9i2cq": {
+      "text": "The Red Marshal lets no opening pass: he attacks as soon as he has the upper hand.",
+      "at": "2026-11-13"
     }
   },
   "gearball": {
@@ -7332,7 +9572,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The electric marble": {
       "text": "La bille électrique",
@@ -7428,7 +9668,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Torrent": {
       "text": "Torrent",
@@ -8466,7 +10706,7 @@
     },
     "manifest.json:web.copy.fr.strings.Storm": {
       "text": "Tempête",
-      "at": "2026-10-28"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Swaps the tiles of the two marked cells.": {
       "text": "Intervertit les tuiles des deux cases marquées.",
@@ -8546,7 +10786,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -11412,7 +13652,7 @@
     },
     "manifest.json:web.copy.fr.strings.Bonus": {
       "text": "Bonus",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Bound": {
       "text": "Lié",
@@ -12384,7 +14624,7 @@
     },
     "manifest.json:web.copy.fr.strings.Not enough gold": {
       "text": "Pas assez d'or",
-      "at": "2026-11-04"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Now": {
       "text": "Maintenant",
@@ -12956,7 +15196,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The boat fills": {
       "text": "La barque se remplit",
@@ -13180,7 +15420,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -13208,7 +15448,7 @@
     },
     "manifest.json:web.copy.fr.strings.Turn": {
       "text": "Tour",
-      "at": "2026-11-07"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Turn around": {
       "text": "Se retourner",
@@ -14698,7 +16938,7 @@
     },
     "manifest.json:web.copy.fr.strings.Bonus": {
       "text": "Bonus",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Boom volley": {
       "text": "Salve explosive",
@@ -15270,7 +17510,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The colossus blocks direct shots with its shield and throws golf bags that block the lanes.\n\nLob onto the colossus's head instead. Each ball deals 6 damage.": {
       "text": "Le caddie colosse bloque les tirs directs avec son bouclier et lance des sacs de golf qui bloquent les couloirs.\n\nFais plutôt un lob sur la tête du colosse. Chaque balle fait 6 dégâts.",
@@ -15334,7 +17574,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time freeze": {
       "text": "Temps figé",
@@ -16300,7 +18540,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The core": {
       "text": "Le cœur",
@@ -17086,7 +19326,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The chain": {
       "text": "La chaîne",
@@ -17126,7 +19366,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time for a chain": {
       "text": "Le temps d'une chaîne",
@@ -18220,7 +20460,7 @@
     },
     "manifest.json:web.copy.fr.strings.Bonus": {
       "text": "Bonus",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Bowl over <b>{n}</b> monsters": {
       "text": "Renverse <b>{n}</b> monstres",
@@ -18828,7 +21068,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -20570,7 +22810,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The cards": {
       "text": "Les cartes",
@@ -20618,7 +22858,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -20662,7 +22902,7 @@
     },
     "manifest.json:web.copy.fr.strings.Your hand": {
       "text": "Ta main",
-      "at": "2026-10-29"
+      "at": "2026-11-13"
     },
     "manifest.json:web.copy.fr.strings.x1.1 global multiplier for the game per jackpot ball": {
       "text": "Pour toute la partie, chaque bille du jackpot multiplie le multiplicateur global par 1,1",
@@ -21328,7 +23568,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
-      "at": "2026-10-14"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
@@ -21412,7 +23652,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The chain": {
       "text": "La chaîne",
@@ -21444,7 +23684,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -23470,7 +25710,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The card that ends the hand adds its value to the multiplier": {
       "text": "La dernière carte de la main ajoute sa valeur au multiplicateur",
@@ -23506,7 +25746,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -24212,7 +26452,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
-      "at": "2026-10-14"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
@@ -24292,7 +26532,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The boss hits you": {
       "text": "Impact du Boss",
@@ -26508,6 +28748,10 @@
       "text": "infirmary",
       "at": "2026-11-10"
     },
+    "game.js:3201.ctx.fillText.canvas-text": {
+      "text": "infirmary",
+      "at": "2026-11-13"
+    },
     "game.js:3527.Pop.show.callout-sub": {
       "text": "+",
       "at": "2026-11-10"
@@ -26515,6 +28759,14 @@
     "game.js:3532.Pop.show.callout-sub": {
       "text": "+",
       "at": "2026-11-10"
+    },
+    "game.js:3533.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-11-13"
+    },
+    "game.js:3538.Pop.show.callout-sub": {
+      "text": "+",
+      "at": "2026-11-13"
     },
     "game.js:Lang.t.translated-in-place.1-card-handed-over": {
       "text": "1 card handed over",
@@ -26557,8 +28809,8 @@
       "at": "2026-11-10"
     },
     "game.js:Lang.t.translated-in-place.after-each-of-your-moves-the": {
-      "text": "After each of your moves, the red troops may slide a soldier into a cell you have emptied.\n\nThe flag, the traps and the objects never move. A soldier who has moved stays tilted, so you can spot him.",
-      "at": "2026-11-10"
+      "text": "After each of your moves, the red troops may send a soldier into an available slot.\n\nThe flag, the traps and the objects never move. The card of a soldier who has already moved stays slightly tilted, so you can spot it.",
+      "at": "2026-11-13"
     },
     "game.js:Lang.t.translated-in-place.alive": {
       "text": "Alive",
@@ -26617,8 +28869,8 @@
       "at": "2026-11-10"
     },
     "game.js:Lang.t.translated-in-place.each-time-you-play-a-card-so": {
-      "text": "Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot, though.",
-      "at": "2026-11-10"
+      "text": "Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot and takes up a slot needlessly.",
+      "at": "2026-11-13"
     },
     "game.js:Lang.t.translated-in-place.every-card-is-a-soldier": {
       "text": "Every card is a soldier",
@@ -31216,9 +33468,9 @@
       "text": "Après une victoire, l'une des cartes qui ont servi en bataille, en mission ou à un poste peut monter d'un <b>Rang</b>.",
       "at": "2026-11-10"
     },
-    "manifest.json:web.copy.fr.strings.After each of your moves, the red troops may slide a soldier into a cell you have emptied.\n\nThe flag, the traps and the objects never move. A soldier who has moved stays tilted, so you can spot him.": {
-      "text": "Après chacun de tes coups, les troupes rouges peuvent glisser un soldat dans une case que tu as vidée.\n\nLe drapeau, les pièges et les objets ne bougent jamais. Un soldat qui s'est déplacé reste penché, pour que tu le repères.",
-      "at": "2026-11-09"
+    "manifest.json:web.copy.fr.strings.After each of your moves, the red troops may send a soldier into an available slot.\n\nThe flag, the traps and the objects never move. The card of a soldier who has already moved stays slightly tilted, so you can spot it.": {
+      "text": "Après chacun de tes coups, les troupes rouges peuvent envoyer un soldat dans un emplacement disponible.\n\nLe drapeau, les pièges et les objets ne bougent jamais. La carte d'un soldat qui s'est déjà déplacé reste légèrement penchée pour que tu puisses la repérer.",
+      "at": "2026-11-13"
     },
     "manifest.json:web.copy.fr.strings.Alive": {
       "text": "Vivants",
@@ -31364,9 +33616,9 @@
       "text": "Suffisamment stupide pour se battre contre un épouvantail.",
       "at": "2026-11-10"
     },
-    "manifest.json:web.copy.fr.strings.Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot, though.": {
-      "text": "Chaque fois que tu joues une carte, certaines des autres cartes de ta main repassent sous le paquet.\n\nUne carte blessée ou étourdie garde pourtant sa place.",
-      "at": "2026-11-09"
+    "manifest.json:web.copy.fr.strings.Each time you play a card, some of the other cards in your hand go back under the Deck.\n\nA wounded or stunned card keeps its slot and takes up a slot needlessly.": {
+      "text": "Chaque fois que tu joues une carte, certaines des autres cartes de ta main repassent sous le paquet.\n\nUne carte blessée ou étourdie garde sa place et occupe un emplacement inutilement.",
+      "at": "2026-11-13"
     },
     "manifest.json:web.copy.fr.strings.Enemy camp": {
       "text": "Camp ennemi",
@@ -31746,7 +33998,7 @@
     },
     "manifest.json:web.copy.fr.strings.Spy": {
       "text": "Espion",
-      "at": "2026-10-18"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Still wounded": {
       "text": "Encore blessée",
@@ -31946,7 +34198,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -32888,7 +35140,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The jump": {
       "text": "Le saut",
@@ -32916,7 +35168,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",
@@ -33606,7 +35858,7 @@
     },
     "manifest.json:web.copy.fr.strings.Play": {
       "text": "Jouer",
-      "at": "2026-10-19"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Play the full game": {
       "text": "Jouer au jeu complet",
@@ -33650,7 +35902,7 @@
     },
     "manifest.json:web.copy.fr.strings.The basics": {
       "text": "Les bases",
-      "at": "2026-10-20"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.The eagle": {
       "text": "L'aigle",
@@ -33678,7 +35930,7 @@
     },
     "manifest.json:web.copy.fr.strings.Time": {
       "text": "Temps",
-      "at": "2026-11-05"
+      "at": "2026-11-12"
     },
     "manifest.json:web.copy.fr.strings.Time's up!": {
       "text": "Temps écoulé !",

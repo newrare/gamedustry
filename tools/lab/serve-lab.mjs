@@ -13,6 +13,9 @@
 
     /                 the back office
     /api/labs         what it lists, read off lab/*.html and prototype/*.html
+    /api/labs/tags    the tags an entry may take: all, none and every game
+    /api/labs/edit    POST — rename, refile or retag one entry, written
+                      into the page itself (see `edit` below)
     /events/          tools/lab/serve-events.mjs   (and /events/sound, /events/library, /events/kit, /events/hole-fx)
     /text/            tools/lab/serve-text.mjs
     /store/           tools/lab/serve-store.mjs
@@ -39,7 +42,8 @@
 
   Localhost only, like every lab server: it binds 127.0.0.1 and answers a
   request only when its Host names this machine. Four of these tools write
-  into the repo.
+  into the repo, and so does the back office itself, in one place: the ⋮ of
+  an entry rewrites the three lines of its page that the list is read off.
 */
 
 import fs from 'node:fs';
@@ -48,7 +52,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { HOST, isMain, portArg, listen, json, notFound, sendFile, text } from '../lib/serve.mjs';
+import { HOST, isMain, portArg, listen, json, notFound, sendFile, text, readJson, inside } from '../lib/serve.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const LAB = path.join(ROOT, 'lab');
@@ -182,9 +186,11 @@ function summaryOf(src) {
    A tool whose page is a checklist names its tick, `<meta name="lab-done"
    content="api/done">`, relative to the page: the back office asks it for
    `{ checked, total, done }` and greens the entry once everything is checked.
-   A page of prototype/ may declare the same two, and nothing else: its
-   group is the folder unless it says otherwise, and its file name its name. */
-const GROUPS = ['tools', 'css', 'tests'];
+   A page of prototype/ may declare the same two, plus `<meta name="lab-name">`:
+   its group is the folder unless it says otherwise, and its name the file's
+   unless it names itself (its <title> is not its name — three share one).
+   `lab-game` may also read "all" or "none", the two tags that are no game. */
+const GROUPS = ['tools', 'css', 'tests', 'prototype'];
 const metaOf = (src, name) => (src.match(new RegExp(`<meta name="${name}" content="([^"]*)"`)) || [])[1] || null;
 
 function labs() {
@@ -198,12 +204,13 @@ function labs() {
     const served = toolOf(file);
     const declared = metaOf(src, 'lab-game');
     // A declared tag is kept even before games/<slug>/ exists (parrynormal).
-    const game = declared ||
+    const game = NO_GAME.includes(declared) ? null : declared ||
       slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null;
     const g = metaOf(src, 'lab-group');
     const group = GROUPS.includes(g) ? g : served ? 'tools' : 'other';
     out.push({
       file, title, game, group,
+      tag: game || (NO_GAME.includes(declared) ? declared : 'all'),
       path: 'lab/' + file,
       name: nameOf(title, file),
       summary: summaryOf(src),
@@ -227,11 +234,14 @@ function labs() {
   for (const file of fs.readdirSync(PROTO).sort()) {
     if (!file.endsWith('.html')) continue;
     const src = fs.readFileSync(path.join(PROTO, file), 'utf8');
-    const name = file.replace(/\.html$/, '').replace(/-/g, ' ');
+    const name = metaOf(src, 'lab-name') || file.replace(/\.html$/, '').replace(/-/g, ' ');
     const g = metaOf(src, 'lab-group');
+    const declared = metaOf(src, 'lab-game');
+    const game = NO_GAME.includes(declared) ? null :
+      declared || slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null;
     out.push({
       file, title: '', group: GROUPS.includes(g) ? g : 'prototype',
-      game: metaOf(src, 'lab-game') || slugs.find((s) => file === s + '.html' || file.startsWith(s + '-')) || null,
+      game, tag: game || (NO_GAME.includes(declared) ? declared : 'none'),
       path: 'prototype/' + file,
       name: name.charAt(0).toUpperCase() + name.slice(1),
       summary: protoSummary(src),
@@ -242,6 +252,70 @@ function labs() {
   return out;
 }
 
+// ── what the back office writes ───────────────────────────────────────────
+
+const NO_GAME = ['all', 'none'];
+
+function gameSlugs() {
+  return fs.readdirSync(path.join(ROOT, 'games'))
+    .filter((d) => fs.existsSync(path.join(ROOT, 'games', d, 'manifest.json'))).sort();
+}
+
+/* One `<meta name="…">` of a page set, replaced or taken out (`value` null).
+   A new one goes under the page's other lab metas, or under its <title>, or
+   under its charset — where every page that declares one already has it. */
+function setMeta(src, name, value) {
+  const line = new RegExp(`[ \\t]*<meta name="${name}" content="[^"]*">[ \\t]*\\n?`);
+  const tag = `<meta name="${name}" content="${value}">`;
+  if (line.test(src)) return src.replace(line, value == null ? '' : tag + '\n');
+  if (value == null) return src;
+  const anchors = [/(<meta name="lab-[a-z]+" content="[^"]*">[ \t]*\n)(?![\s\S]*<meta name="lab-)/,
+    /(<title>[^<]*<\/title>[ \t]*\n)/, /(<meta charset="[^"]*">[ \t]*\n)/, /(<head>[ \t]*\n)/];
+  for (const a of anchors) if (a.test(src)) return src.replace(a, `$1${tag}\n`);
+  throw new Error('no <head> to put the meta in');
+}
+
+/* `edit` — the ⋮ of an entry. Each field is written where the list reads it:
+   a lab page's name is the end of its <title> (`Lab — <name>`), a
+   prototype's its `lab-name`; the section is `lab-group`, the tag `lab-game`.
+   A value equal to what the page would be filed as anyway takes the meta out
+   rather than writing the default down. */
+function edit({ path: rel, name, group, tag }) {
+  const entry = labs().find((l) => l.path === rel);
+  if (!entry) throw new Error('no such page: ' + rel);
+  const file = path.join(ROOT, rel);
+  if (!inside(file, LAB) && !inside(file, PROTO)) throw new Error('outside lab/ and prototype/');
+  const proto = rel.startsWith('prototype/');
+  let src = fs.readFileSync(file, 'utf8');
+
+  if (name != null) {
+    name = String(name).replace(/\s+/g, ' ').trim();
+    if (!name) throw new Error('a name cannot be empty');
+    if (/[<>&"]/.test(name)) throw new Error('a name cannot hold < > & or "');
+    if (proto) {
+      const own = path.basename(file, '.html').replace(/-/g, ' ');
+      src = setMeta(src, 'lab-name', name.toLowerCase() === own.toLowerCase() ? null : name);
+    } else {
+      const m = src.match(/<title>([^<]*)<\/title>/);
+      const prefix = m && /\s+—\s+/.test(m[1]) ? m[1].split(/\s+—\s+/)[0] : 'Lab';
+      const title = `<title>${prefix} — ${name}</title>`;
+      src = m ? src.replace(m[0], title) : src.replace(/(<meta charset="[^"]*">[ \t]*\n)/, `$1${title}\n`);
+      if (!src.includes(title)) throw new Error('no <title> to rename');
+    }
+  }
+  if (group != null) {
+    if (!GROUPS.includes(group)) throw new Error('no such section: ' + group);
+    src = setMeta(src, 'lab-group', proto && group === 'prototype' ? null : group);
+  }
+  if (tag != null) {
+    tag = String(tag).trim().toLowerCase();
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(tag)) throw new Error('a tag is all, none or a game slug');
+    src = setMeta(src, 'lab-game', tag === (proto ? 'none' : 'all') ? null : tag);
+  }
+  fs.writeFileSync(file, src);
+  console.log(`  [lab] ${rel}: ${[name != null && 'name', group != null && 'section', tag != null && 'tag'].filter(Boolean).join(', ')} written`);
+}
+
 // ── the request ───────────────────────────────────────────────────────────
 
 export async function handle(req, res, p, url) {
@@ -250,6 +324,13 @@ export async function handle(req, res, p, url) {
     return notFound(res, p);
   }
   if (p === '/api/labs') return json(res, 200, labs());
+  if (p === '/api/labs/tags') return json(res, 200, NO_GAME.concat(gameSlugs()));
+  if (p === '/api/labs/edit') {
+    // JSON only: a cross-site form cannot send it without a preflight.
+    if (req.method !== 'POST' || !/^application\/json/.test(req.headers['content-type'] || '')) return text(res, 405, 'POST json');
+    try { edit(await readJson(req, 4096)); } catch (e) { return json(res, 400, { error: String(e.message || e) }); }
+    return json(res, 200, labs());
+  }
 
   for (const t of TOOLS) {
     const bare = t.mount.slice(0, -1);

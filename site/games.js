@@ -46,11 +46,11 @@ window.GAMES = [
     name: "Foldiers",
     accent: ["#f2b400", "#1f8a96"],
     fr: {
-      tagline: "Commande une armée de papier sur un monde découpé : trace tes ordres, envoie-les avant la fin du tick et toutes les armées bougent en même temps.",
+      tagline: "Plonge dans un wargame tactique inspiré des origamis ! À la tête des irréductibles Bleus ou des féroces Rouges, chaque région conquise est une victoire sur le papier. Planifie tes mouvements, trompe ton adversaire et domine le plateau avant que le temps ne s'arrête.",
       tags: ["Stratégie", "Conquête", "Origami"]
     },
     en: {
-      tagline: "Command a paper army on a world cut out of paper: draw your orders, send them before the tick ends, and every army on the map moves at once.",
+      tagline: "Dive into an origami-inspired tactical wargame! Leading the indomitable Blues or the fierce Reds, every region conquered is a victory on paper. Plan your moves, outwit your opponent and dominate the board before time stops.",
       tags: ["Strategy", "Conquest", "Origami"]
     }
   },

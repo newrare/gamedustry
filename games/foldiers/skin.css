@@ -29,16 +29,24 @@
 
   /* ---- intro: one sentence, and a stage that plays the whole mechanic -----
      The motor's "tap" variant lends its finger. The stage is a scrap of the
-     paper world: a region of yours under the blue tissue (::before), a
-     neutral one across the border (::after), the action it wears once yours
-     is picked up — a paper rosette with a sword (.demo-beam) — the folded
-     arrow an order is (.demo-track), and the Send button at the foot
-     (.demo-target).
+     paper world, and it plays one tick of the game as it is played now:
 
-     One 4.2 s loop, three taps: the finger picks the blue region up, the
-     rosette pops on the neutral one, the finger taps it and the arrow
-     unfolds, then it taps Send; the arrow goes and the neutral region takes
-     the blue tissue. */
+       - a region of yours under the blue tissue (stage ::before) is tapped
+         and deals its CARDS up from the foot (.demo-beam and its two
+         pseudo-elements, a soldier on each);
+       - a card is tapped and lifts, and the floating LABEL pops on the
+         neutral region across the border (.demo-arrow ::before);
+       - the label is tapped: the cards go, the ORDER unfolds — a folded strip
+         of blue paper with the troop riding on it in its paper disc
+         (.demo-track ::before / ::after);
+       - Send comes back at the foot (.demo-target: the yellow plate and its
+         dashed seal, the upgrades' paper left of it as ::after) and is
+         tapped: the arrow goes, the neutral region takes the blue tissue,
+         and the UPGRADE badge shining on it (.demo-arrow ::after) flies into
+         the upgrades' paper.
+
+     One 6.4 s loop, four taps, no word. Every piece is placed in the stage's
+     own px (420 x 270); the finger's tip is at (210, 164) untranslated. */
   .demo-caption { display:none; }
   #intro-tagline { margin-top:20px; font-size:34px; font-weight:800; color:#fbf5e6; }
   #intro-tagline .w-orders { color:#9cc0ff; text-shadow:0 0 18px rgba(91,143,224,.8); }
@@ -54,89 +62,258 @@
   }
   /* your region: meadow paper under the blue tissue, on its cream beach; picked up, it wears a white rim */
   .demo-stage::before {
-    content:""; position:absolute; left:30px; top:112px; width:170px; height:118px;
+    content:""; position:absolute; left:24px; top:88px; width:170px; height:116px;
     border-radius:46% 54% 42% 58% / 52% 44% 56% 48%;
     background:linear-gradient(rgba(47,99,196,.5), rgba(47,99,196,.5)), #b9d27a;
     box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25);
-    animation:demoPick 4.2s ease-in-out infinite;
+    animation:demoPick 6.4s ease-in-out infinite;
   }
   @keyframes demoPick {
-    0%, 10%, 46%, 100% { box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
-    13%, 42% { box-shadow:0 0 0 6px #fffaf0, 0 0 0 9px rgba(255,250,240,.6), 0 10px 16px rgba(0,0,0,.25); }
+    0%, 7%, 50%, 100% { box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
+    9%, 46% { box-shadow:0 0 0 6px #fffaf0, 0 0 0 10px rgba(255,250,240,.7), 0 10px 16px rgba(0,0,0,.25); }
   }
-  /* the neutral region across the border: its tissue lands on the bell */
+  /* the neutral region across the border: its tissue lands once Send is tapped */
   .demo-stage::after {
-    content:""; position:absolute; left:226px; top:26px; width:160px; height:110px;
+    content:""; position:absolute; left:232px; top:22px; width:160px; height:108px;
     border-radius:54% 46% 58% 42% / 46% 56% 44% 54%;
     background:#b9d27a;
     box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25);
-    animation:demoTake 4.2s ease-in-out infinite;
+    animation:demoTake 6.4s ease-in-out infinite;
   }
   @keyframes demoTake {
-    0%, 70% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
-    76%, 92% { background:#7f9ec8; box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
+    0%, 66% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
+    71%, 94% { background:#7f9ec8; box-shadow:0 0 0 6px #f2e0b0, 0 0 0 9px rgba(29,63,138,.5), 0 10px 16px rgba(0,0,0,.25); }
     100% { background:#b9d27a; box-shadow:0 0 0 6px #f2e0b0, 0 10px 16px rgba(0,0,0,.25); }
   }
-  /* the action the neutral region wears: a folded paper rosette, its green rim the verdict */
+
+  /* THE CARDS — three crumpled sheets with a soldier on each, dealt up from the foot */
   .demo-tap .demo-beam {
-    display:block; z-index:2; left:272px; top:34px; bottom:auto; width:64px; height:64px; margin:0;
-    clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); background:#2f8f4e;
-    transform-origin:50% 50%; transform:scale(0);
-    animation:demoAct 4.2s ease-in-out infinite;
+    display:block; z-index:3; left:170px; top:192px; bottom:auto; width:60px; height:84px; margin:0;
+    transform-origin:50% 100%; transform:translateY(110px);
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'%3E%3Cpath d='M33 4V46' stroke='%236b4a2a' stroke-width='2.4'/%3E%3Cpath d='M7 13Q20 1 33 13Z' fill='%231d2f5e'/%3E%3Ccircle cx='20' cy='18' r='6' fill='%23f1c9a0'/%3E%3Crect x='11' y='24' width='18' height='20' rx='3' fill='%232f63c4'/%3E%3Cpath d='M12 25L28 43M28 25L12 43' stroke='%23fffaf0' stroke-width='2.6'/%3E%3Crect x='13' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3Crect x='21.5' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3C/svg%3E") no-repeat 50% 10px/34px 50px, linear-gradient(118deg,#fbf3dc 0 46%,#ecdfbd 54% 100%);
+    border-radius:6px; box-shadow:0 0 0 1.5px rgba(60,40,0,.25), 0 6px 10px rgba(0,0,0,.3);
+    animation:demoDeal 6.4s ease-in-out infinite;
   }
-  .demo-tap .demo-beam::before {
-    content:""; position:absolute; inset:5px; clip-path:polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
-    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232a2418' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m11 19-6-6'/%3E%3Cpath d='m5 21-2-2'/%3E%3Cpath d='m8 16-4 4'/%3E%3Cpath d='M9.5 17.5 21 6V3h-3L6.5 14.5'/%3E%3C/svg%3E") no-repeat center/56%, repeating-conic-gradient(from 22.5deg, #f6ecd2 0 45deg, #e6d6b0 45deg 90deg);
+  .demo-tap .demo-beam::before, .demo-tap .demo-beam::after {
+    content:""; position:absolute; top:6px; width:60px; height:84px; border-radius:6px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'%3E%3Cpath d='M33 4V46' stroke='%236b4a2a' stroke-width='2.4'/%3E%3Cpath d='M7 13Q20 1 33 13Z' fill='%231d2f5e'/%3E%3Ccircle cx='20' cy='18' r='6' fill='%23f1c9a0'/%3E%3Crect x='11' y='24' width='18' height='20' rx='3' fill='%232f63c4'/%3E%3Cpath d='M12 25L28 43M28 25L12 43' stroke='%23fffaf0' stroke-width='2.6'/%3E%3Crect x='13' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3Crect x='21.5' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3C/svg%3E") no-repeat 50% 10px/34px 50px, linear-gradient(118deg,#fbf3dc 0 46%,#ecdfbd 54% 100%);
+    box-shadow:0 0 0 1.5px rgba(60,40,0,.25), 0 6px 10px rgba(0,0,0,.3);
   }
-  @keyframes demoAct {
-    0%, 15% { transform:scale(0); }
-    20% { transform:scale(1.12); }
-    24%, 38% { transform:scale(1); }
-    42% { transform:scale(1.25); }
-    48%, 100% { transform:scale(0); }
+  .demo-tap .demo-beam::before { left:-52px; transform:rotate(-8deg); }
+  .demo-tap .demo-beam::after { left:54px; transform:rotate(8deg); animation:demoCardUp 6.4s ease-in-out infinite; }
+  @keyframes demoDeal {
+    0%, 9% { transform:translateY(110px); }
+    15%, 43% { transform:translateY(0); }
+    50%, 100% { transform:translateY(110px); }
   }
-  /* the order: a folded strip of blue paper, light half over dark half */
+  @keyframes demoCardUp {
+    0%, 24% { transform:rotate(8deg) translateY(0); }
+    27%, 43% { transform:rotate(8deg) translateY(-22px); }
+    48%, 100% { transform:rotate(8deg) translateY(0); }
+  }
+
+  /* THE LABEL and THE BADGE — the arrow node is only a frame for its two pseudo-elements */
+  .demo-tap .demo-arrow {
+    display:block; z-index:2; left:0; top:0; width:0; height:0; margin:0; border:0; animation:none;
+  }
+  /* the floating label on the target, a scrap of cream paper with its check */
+  .demo-tap .demo-arrow::before {
+    content:""; position:absolute; left:250px; top:70px; width:56px; height:40px; border-radius:5px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%232f63c4' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/28px, linear-gradient(100deg,#fffaf0 0 50%,#efe3c2 50% 100%);
+    box-shadow:0 0 0 2px #2f63c4, 0 6px 8px rgba(0,0,0,.3);
+    transform:scale(0) rotate(-5deg);
+    animation:demoLabel 6.4s ease-in-out infinite;
+  }
+  @keyframes demoLabel {
+    0%, 27% { transform:scale(0) rotate(-5deg); }
+    31% { transform:scale(1.15) rotate(-5deg); }
+    33% { transform:scale(1) rotate(-5deg); }
+    36% { transform:scale(1) translateY(-4px) rotate(-5deg); }
+    39% { transform:scale(1.2) rotate(-5deg); }
+    43%, 100% { transform:scale(0) rotate(-5deg); }
+  }
+  /* the upgrade shining on the neutral region: a paper disc, the green arrow up,
+     a breathing gold halo; taken with the region, it flies into the upgrades' paper */
+  .demo-tap .demo-arrow::after {
+    content:""; position:absolute; left:328px; top:30px; width:44px; height:44px; border-radius:50%;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2L22 12H16V22H8V12H2Z' fill='%232f9e4f' stroke='%23f6ecd2' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M12 2L2 12H8V22H12Z' fill='%23fff' opacity='.3'/%3E%3C/svg%3E") no-repeat center/26px, radial-gradient(#fffaf0 0 58%, #f6ecd2 60%);
+    box-shadow:0 0 0 4px #1d3f8a, 0 0 0 7px rgba(255,210,70,.75), 0 0 22px 8px rgba(255,200,40,.6);
+    animation:demoBadge 6.4s ease-in-out infinite;
+  }
+  @keyframes demoBadge {
+    0%, 4% { opacity:0; transform:none; }
+    8%, 18%, 30%, 42%, 54%, 66% { opacity:1; transform:scale(1); }
+    12%, 24%, 36%, 48%, 60%, 70% { opacity:1; transform:scale(1.1); }
+    78% { opacity:1; transform:translate(-150px, 30px) scale(1.35); }
+    86% { opacity:1; transform:translate(-297px, 177px) scale(.7); }
+    88%, 100% { opacity:0; transform:translate(-297px, 177px) scale(.4); }
+  }
+
+  /* THE ORDER — the frame turns, the strip unfolds, the troop rides on it */
   .demo-tap .demo-track {
-    display:block; z-index:2; left:118px; top:150px; right:auto; bottom:auto; width:206px; height:26px; border:0;
-    transform-origin:0 50%; transform:rotate(-24deg) scaleX(0);
-    background:linear-gradient(180deg,#5b8fe0 0 50%,#2f63c4 50% 100%);
-    clip-path:polygon(0 30%, 84% 30%, 84% 0, 100% 50%, 84% 100%, 84% 70%, 0 70%);
-    filter:drop-shadow(3px 5px 0 rgba(10,30,60,.25));
-    animation:demoOrder 4.2s ease-in-out infinite;
+    display:block; z-index:2; left:128px; top:122px; right:auto; bottom:auto; width:142px; height:38px; border:0;
+    transform-origin:0 50%; transform:rotate(-19deg); filter:drop-shadow(3px 5px 0 rgba(10,30,60,.28));
+  }
+  .demo-tap .demo-track::before {
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,#1d3f8a 0 3px,#9cc0ff 3px 50%,#5b8fe0 50% calc(100% - 3px),#1d3f8a calc(100% - 3px));
+    clip-path:polygon(0 20%, 76% 20%, 76% 0, 100% 50%, 76% 100%, 76% 80%, 0 80%);
+    transform-origin:0 50%; transform:scaleX(0);
+    animation:demoOrder 6.4s ease-in-out infinite;
+  }
+  .demo-tap .demo-track::after {
+    content:""; position:absolute; left:40px; top:-1px; width:40px; height:40px; border-radius:50%;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 60'%3E%3Cpath d='M33 4V46' stroke='%236b4a2a' stroke-width='2.4'/%3E%3Cpath d='M7 13Q20 1 33 13Z' fill='%231d2f5e'/%3E%3Ccircle cx='20' cy='18' r='6' fill='%23f1c9a0'/%3E%3Crect x='11' y='24' width='18' height='20' rx='3' fill='%232f63c4'/%3E%3Cpath d='M12 25L28 43M28 25L12 43' stroke='%23fffaf0' stroke-width='2.6'/%3E%3Crect x='13' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3Crect x='21.5' y='44' width='5.5' height='13' fill='%23f6ecd2'/%3E%3C/svg%3E") no-repeat 50% 1px/28px 42px, #fffaf0;
+    box-shadow:0 0 0 3px #1d3f8a, 0 4px 6px rgba(10,30,60,.35);
+    transform:rotate(19deg) scale(0);
+    animation:demoBead 6.4s ease-in-out infinite;
   }
   @keyframes demoOrder {
-    0%, 40% { transform:rotate(-24deg) scaleX(0); opacity:1; }
-    52%, 66% { transform:rotate(-24deg) scaleX(1); opacity:1; }
-    74%, 100% { transform:rotate(-24deg) scaleX(1); opacity:0; }
+    0%, 40% { transform:scaleX(0); opacity:1; }
+    48%, 70% { transform:scaleX(1); opacity:1; }
+    76%, 100% { transform:scaleX(1); opacity:0; }
   }
-  /* Send: a cream paper button with its tick ring */
+  @keyframes demoBead {
+    0%, 46% { transform:rotate(19deg) scale(0); opacity:1; }
+    50% { transform:rotate(19deg) scale(1.2); opacity:1; }
+    53%, 70% { transform:rotate(19deg) scale(1); opacity:1; }
+    76%, 100% { transform:rotate(19deg) scale(1); opacity:0; }
+  }
+
+  /* THE FOOT — Send, a yellow paper plate with its dashed seal and the crane, and
+     the upgrades' paper left of the stage; both step aside while the cards are out */
   .demo-tap .demo-target {
-    display:block; z-index:2; left:auto; right:34px; top:auto; bottom:18px; margin:0; width:76px; height:52px;
-    border:3px solid #1d3f8a; border-radius:26px; background:#f6ecd2; box-shadow:0 6px 0 rgba(10,30,60,.25);
+    display:block; z-index:2; left:auto; right:24px; top:auto; bottom:16px; margin:0; width:122px; height:50px;
+    border:0; border-radius:4px; transform:rotate(-2deg);
+    background:linear-gradient(104deg,#ffd75a 0 52%,#efbd2a 52% 100%);
+    box-shadow:0 0 0 1.5px rgba(90,60,0,.35), 0 6px 8px rgba(0,0,0,.3);
+    animation:demoFoot 6.4s ease-in-out infinite;
   }
   .demo-tap .demo-target::before {
-    content:""; position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px;
-    border-radius:50%; border:4px solid #e2a40c; border-right-color:rgba(29,63,138,.2);
+    content:""; position:absolute; right:14px; top:7px; width:32px; height:32px; border-radius:50%;
+    border:3px dashed #fffaf0; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2 13l9-2 3-7 2 7 6 1-7 2-2 6-3-5z' fill='%23fffaf0' stroke='%239a6a00' stroke-width='1.2' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center/22px;
   }
-  .demo-tap .demo-ripple { border-color:#e2a40c; border-radius:30px; animation:demoSendRip 4.2s ease-out infinite; }
+  .demo-tap .demo-target::after {
+    content:""; position:absolute; left:-252px; top:0; width:58px; height:50px; border-radius:4px;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2L22 12H16V22H8V12H2Z' fill='%232f9e4f' stroke='%23f6ecd2' stroke-width='1.8' stroke-linejoin='round'/%3E%3Cpath d='M12 2L2 12H8V22H12Z' fill='%23fff' opacity='.3'/%3E%3C/svg%3E") no-repeat center/30px, linear-gradient(104deg,#ffd75a 0 52%,#efbd2a 52% 100%);
+    box-shadow:0 0 0 1.5px rgba(90,60,0,.35), 0 6px 8px rgba(0,0,0,.3);
+    animation:demoUpgPop 6.4s ease-out infinite;
+  }
+  @keyframes demoFoot {
+    0%, 8% { opacity:1; transform:rotate(-2deg); }
+    12%, 50% { opacity:0; transform:rotate(-2deg) translateY(30px); }
+    56%, 100% { opacity:1; transform:rotate(-2deg); }
+  }
+  @keyframes demoUpgPop { 0%, 85% { transform:scale(1); } 88% { transform:scale(1.3); } 93%, 100% { transform:scale(1); } }
+  .demo-tap .demo-ripple { border-color:#ffd75a; border-radius:8px; animation:demoSendRip 6.4s ease-out infinite; }
   .demo-tap .demo-ripple.d2 { animation-delay:.15s; }
-  @keyframes demoSendRip { 0%, 61% { transform:scale(.6); opacity:0; } 64% { opacity:.9; } 78%, 100% { transform:scale(1.7); opacity:0; } }
-  /* the finger: pick the region up, tap its action, tap Send */
-  .demo-tap .demo-hand { z-index:3; animation:demoTaps 4.2s ease-in-out infinite; }
+  @keyframes demoSendRip { 0%, 60% { transform:scale(.7); opacity:0; } 62% { opacity:.9; } 74%, 100% { transform:scale(1.5); opacity:0; } }
+
+  /* the finger: tap your region, tap a card, tap the label, tap Send */
+  .demo-tap .demo-hand { z-index:4; animation:demoTaps 6.4s ease-in-out infinite; }
   @keyframes demoTaps {
-    0%   { transform:translate(-95px, 14px); opacity:0; }
-    6%   { transform:translate(-95px, 14px); opacity:1; }
-    10%  { transform:translate(-95px, 18px) scale(.95); opacity:1; }
-    14%  { transform:translate(-95px, 14px); opacity:1; }
-    32%  { transform:translate(94px, -94px); opacity:1; }
-    38%  { transform:translate(94px, -90px) scale(.95); opacity:1; }
-    42%  { transform:translate(94px, -94px); opacity:1; }
-    58%  { transform:translate(118px, 62px); opacity:1; }
-    62%  { transform:translate(118px, 66px) scale(.95); opacity:1; }
-    66%  { transform:translate(118px, 62px); opacity:1; }
-    80%  { transform:translate(118px, 62px); opacity:0; }
-    100% { transform:translate(-95px, 14px); opacity:0; }
+    0%   { transform:translate(-102px, -12px); opacity:0; }
+    4%   { transform:translate(-102px, -12px); opacity:1; }
+    7%   { transform:translate(-102px, -8px) scale(.95); opacity:1; }
+    9%   { transform:translate(-102px, -12px); opacity:1; }
+    20%  { transform:translate(54px, 46px); opacity:1; }
+    24%  { transform:translate(54px, 50px) scale(.95); opacity:1; }
+    26%  { transform:translate(54px, 40px); opacity:1; }
+    35%  { transform:translate(68px, -70px); opacity:1; }
+    38%  { transform:translate(68px, -66px) scale(.95); opacity:1; }
+    40%  { transform:translate(68px, -70px); opacity:1; }
+    56%  { transform:translate(114px, 60px); opacity:1; }
+    60%  { transform:translate(114px, 64px) scale(.95); opacity:1; }
+    62%  { transform:translate(114px, 60px); opacity:1; }
+    70%  { transform:translate(114px, 60px); opacity:0; }
+    100% { transform:translate(-102px, -12px); opacity:0; }
   }
-  /* on a desk the finger is a cursor: it clicks on the action */
-  .demo-tap .demo-hand { --click-dur:4.2s; --click-at:1.6s; }
+  /* on a desk the finger is a cursor: it clicks on the label */
+  .demo-tap .demo-hand { --click-dur:6.4s; --click-at:2.43s; }
   .demo-tap .demo-cursor { top:-24px; }
+
+  /* THE HAND — the cards a region of yours deals (game.js, THE TABLE). Cards
+     only: the groups that do not fit stand as icons down the right edge. */
+  #fold-hand { position:absolute; left:12px; right:12px; bottom:120px; z-index:17; display:none; pointer-events:none; }
+  #fold-hand.on { display:block; }
+  #fold-hand .fh-row { display:flex; align-items:flex-end; padding-top:30px; pointer-events:none; }
+  /* a card is a crumpled sheet drawn by the game (.fh-pp), tilted by its seed */
+  .fh-card {
+    position:relative; flex:0 0 116px; width:116px; height:160px; margin:0; padding:0; box-sizing:border-box;
+    appearance:none; outline:none; cursor:pointer; background:none; border:0; text-align:center;
+    font:700 20px var(--web-font, system-ui, sans-serif); color:#2a2418; pointer-events:auto;
+    transform:rotate(var(--rot, 0deg)); transition:transform .15s; -webkit-tap-highlight-color:transparent;
+  }
+  .fh-card.gap { margin-left:12px; }
+  .fh-card.hascost { z-index:1; }
+  .fh-card .fh-pp { position:absolute; max-width:none; max-height:none; margin:0; pointer-events:none; }
+  .fh-art { position:absolute; left:50%; top:24px; transform:translateX(-50%); max-width:88px; max-height:78px; pointer-events:none; }
+  /* the name on a strip of paper folded at both ends */
+  .fh-nm {
+    position:absolute; left:-5px; right:-5px; bottom:12px; padding:4px 6px 3px; font-size:20px; line-height:1.02; pointer-events:none;
+    transform:rotate(-2.5deg); background:linear-gradient(98deg, #fff7e1 0 48%, #ecdcb4 52% 100%); box-shadow:0 2px 0 rgba(60,40,0,.18);
+    clip-path:polygon(0 0, 100% 0, calc(100% - 6px) 50%, 100% 100%, 0 100%, 6px 50%);
+  }
+  .fh-ord { position:absolute; left:8px; top:1px; font-size:22px; color:#2f63c4; white-space:nowrap; pointer-events:none; }
+  .fh-card.on { transform:translateY(-26px) rotate(var(--rot, 0deg)); }
+  /* the guide's picture of a stack (gu-stack): the hand's own cards, inert */
+  .fh-stackpic { display:flex; align-items:flex-end; justify-content:center; padding:36px 0 8px; pointer-events:none; }
+  .fh-stackpic .fh-card { cursor:default; pointer-events:none; }
+  /* the guide's picture of a hand (gu-orders): the region in hand, its cards dealt over its foot */
+  .fh-handpic { display:flex; flex-direction:column; align-items:center; }
+  .fh-handpic > canvas { max-width:100%; height:auto; }
+  .fh-handpic .fh-stackpic { margin-top:-28px; padding-top:0; }
+  .fh-card.held .fh-art { opacity:.45; }
+  /* the price: a paper rosette hanging off the top-right corner */
+  .fh-cost { position:absolute; right:-14px; top:-14px; width:46px; height:46px; z-index:2; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+  .fh-cost b { position:relative; font-size:22px; line-height:1; }
+  .fh-chk { position:relative; width:24px; height:24px; }
+  /* a card that cannot act: taped shut, its reason under it */
+  .fh-card.off { cursor:not-allowed; }
+  .fh-card.off .fh-art { filter:grayscale(1); opacity:.55; }
+  .fh-card.off .fh-nm { opacity:.6; }
+  /* a purchase made this tick: greyed, its rosette checked; a tap takes it back */
+  .fh-card.done .fh-pp, .fh-card.done .fh-art { filter:grayscale(1); opacity:.6; }
+  .fh-card.done .fh-nm { opacity:.7; }
+  .fh-tape { position:absolute; max-width:none; margin:0; pointer-events:none; z-index:1; }
+  .fh-why {
+    position:absolute; left:50%; top:52%; z-index:3; padding:2px 9px 1px; border-radius:4px; pointer-events:none;
+    transform:translate(-50%, -50%) rotate(-6deg); background:#2a2418; color:#fffaf0; font-size:20px; line-height:1.1; white-space:nowrap;
+  }
+  .fh-bdg {
+    position:absolute; right:-8px; top:-10px; width:38px; height:38px; border-radius:50%; box-sizing:border-box; z-index:2;
+    display:flex; align-items:center; justify-content:center; border:3px solid #fffaf0;
+  }
+  .fh-card.hascost .fh-bdg { right:auto; left:-9px; }
+  .fh-bdg img { width:22px; height:22px; margin:0; }
+  /* the hand's way out: a red scrap of paper over its right end */
+  #fold-hand .fh-close {
+    position:absolute; right:4px; top:-58px; width:76px; height:76px; margin:0; padding:0; border:0; background:none;
+    appearance:none; outline:none; cursor:pointer; pointer-events:auto; z-index:3;
+  }
+  .fh-close .fh-pp { position:absolute; max-width:none; max-height:none; margin:0; pointer-events:none; }
+  .fh-close .fh-x { position:absolute; left:50%; top:50%; width:42px; height:42px; margin:-21px 0 0 -21px; pointer-events:none; }
+  #fold-hand .fh-col { position:absolute; right:0; bottom:0; display:flex; flex-direction:column-reverse; gap:10px; pointer-events:none; }
+  .fh-icon {
+    position:relative; width:68px; height:68px; margin:0; padding:0; box-sizing:border-box; appearance:none; outline:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; pointer-events:auto;
+    background:none; border:0; transform:rotate(var(--rot, 0deg));
+  }
+  /* a crumpled sheet of the same paper as the cards (iconPaper), the picture over it */
+  .fh-icon .fh-pp { position:absolute; max-width:none; max-height:none; margin:0; pointer-events:none; }
+  .fh-icon .fh-ia { position:relative; max-width:50px; max-height:50px; pointer-events:none; }
+  /* the count of a group: a tag of blue paper (countTag), its figure over it */
+  .fh-n {
+    position:absolute; right:-12px; bottom:-10px; z-index:2; display:flex; align-items:center; justify-content:center;
+    color:#fff; font:700 22px var(--web-font, system-ui, sans-serif); line-height:1; pointer-events:none;
+  }
+  .fh-n b { position:relative; text-shadow:0 1px 0 rgba(10,30,70,.5); }
+  /* a purchase the gold cannot pay, still in the column: greyed and taped shut like its card */
+  .fh-icon.off { cursor:not-allowed; }
+  .fh-icon.off .fh-ia { filter:grayscale(1); opacity:.55; }
+  .fh-icon .fh-tape { z-index:1; }
+  .fh-fly { position:absolute; z-index:19; pointer-events:none; }
+
+  /* a guide row read on a keyboard (gu-map): words and the motor's keycaps on one line */
+  .fo-keys { display:inline-flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:6px; font-size:20px; }
+  .fo-keys .legend-key { min-width:36px; height:36px; padding:0 8px; border-radius:8px; font-size:20px; box-shadow:0 3px 0 var(--key-side); }

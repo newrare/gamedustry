@@ -104,6 +104,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 import { ITEMS, PAL, paint, mulberry, weather, setBiome, tufts, WEATHER } from "./models/library.js";
 
 const ASSETS = "../assets/model/";
@@ -142,7 +143,8 @@ function loadKit(e) {
   return gltfCache[e.file] || (gltfCache[e.file] = loader.loadAsync(ASSETS + e.file).then((g) => g.scene));
 }
 async function objectOf(e) {
-  return e.pack === CODE ? buildCode(e, seed) : (await loadKit(e)).clone(true);
+  // a rigged character needs its skeleton cloned with it, or the copy is drawn on the original's bones
+  return e.pack === CODE ? buildCode(e, seed) : SkeletonUtils.clone(await loadKit(e));
 }
 
 // ---- a studio: the same light for every object --------------------------------------

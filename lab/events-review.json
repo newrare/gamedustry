@@ -829,39 +829,20 @@
       "at": "2026-10-26",
       "what": "Pop.show L1667 startResolve()"
     },
-    "082f16678f7e": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3793 regionActions()",
-      "kit": "268d214207"
-    },
-    "082f16678f7e#2": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3796 regionActions()",
-      "kit": "268d214207"
-    },
-    "0d43c75d4dce": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L4474 onDown()",
-      "kit": "1478960a50"
-    },
     "10db75719f10": {
       "at": "2026-10-26",
       "what": "Sound.clip L1867 applyResolve()",
       "kit": "8599ed05d6"
     },
-    "157c1f18d491": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L4484 onDown()",
-      "kit": "3d2ece8316"
-    },
-    "1922ab8ff0f1": {
-      "at": "2026-10-23",
-      "what": "Pop.text L1745 applyResolve()"
-    },
     "1ac0de7ad049": {
       "at": "2026-10-26",
       "what": "Sound.clip L1663 startResolve()",
       "kit": "26b338fe5e"
+    },
+    "1af80eb8b35f": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L5081 upgStep()",
+      "kit": "debd0f5ba1"
     },
     "22b5aacd98a8": {
       "at": "2026-10-26",
@@ -877,31 +858,37 @@
       "kit": "dad1ecf92a"
     },
     "2adab2db8b6a": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L1868 applyResolve()",
+      "at": "2026-11-12",
+      "what": "Sound.clip L1796 applyResolve()",
       "kit": "debd0f5ba1"
     },
     "2fcb20343727": {
       "at": "2026-10-25",
       "what": "Pop.text L1682 applyResolve()"
     },
-    "32145bca5498": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3780 globalActions()",
+    "31825c5c352d": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4138 takeBack()",
+      "kit": "3d2ece8316"
+    },
+    "338501dc4a4d": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4225 giveTo()",
       "kit": "1478960a50"
     },
-    "3b088265d2b2": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L4031 giveOrder()",
-      "kit": "1478960a50"
+    "38f7f2752446": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4148 handNode()",
+      "kit": "3d2ece8316"
     },
-    "46ba3cdfd276": {
-      "at": "2026-10-25",
-      "what": "Pop.show L1899 generalNews()"
+    "4a251edb6582": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L3110 stepFeedback()",
+      "kit": "bc317233d1"
     },
     "4d5aaa8e3b5d": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L1869 applyResolve()",
+      "at": "2026-11-12",
+      "what": "Sound.clip L1774 applyResolve()",
       "kit": "268d214207"
     },
     "5007699335e8": {
@@ -909,32 +896,25 @@
       "what": "Sound.clip L1666 startResolve()",
       "kit": "978d769c5c"
     },
-    "52a5c32adc5a": {
-      "at": "2026-10-25",
-      "what": "Pop.show L1788 applyResolve()"
+    "6c770ca9e2fd": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4008 toggleBuy()",
+      "kit": "3d2ece8316"
     },
-    "55fcee169577": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3804 act()",
+    "7751b42a18d4": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4235 handSelf()",
       "kit": "1478960a50"
     },
-    "59e8d121ce25": {
-      "at": "2026-10-25",
-      "what": "Pop.show L3800 regionActions()"
+    "7f2c60aa2dbb": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4014 toggleBuy()",
+      "kit": "268d214207"
     },
-    "6451d3e2044a": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L1848 applyResolve()",
-      "kit": "bc317233d1"
-    },
-    "6dad3764a2e0": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3831 applyMode()",
-      "kit": "1478960a50"
-    },
-    "901c53cf4065": {
-      "at": "2026-10-25",
-      "what": "Pop.show L1778 applyResolve()"
+    "85242514f459": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L3120 stepFeedback()",
+      "kit": "2d5c728892"
     },
     "915af06c5ac4": {
       "at": "2026-10-26",
@@ -944,32 +924,61 @@
       "at": "2026-10-26",
       "what": "Pop.show L1863 applyResolve()"
     },
-    "a3a0e959a8c9": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L3797 regionActions()",
-      "kit": "1478960a50"
+    "a3edc4963d16": {
+      "at": "2026-11-12",
+      "what": "Pop.text L3112 stepFeedback()"
     },
-    "a5003e9c2c96": {
-      "at": "2026-10-26",
-      "what": "Sound.clip L4015 giveIcon()",
-      "kit": "3d2ece8316"
+    "a47ec9f996fa": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L3118 stepFeedback()",
+      "kit": "2d5c728892"
     },
     "ae5439835a1a": {
       "at": "2026-10-26",
       "what": "Sound.clip L1861 applyResolve()",
       "kit": "f836bb5299"
     },
+    "b1d1c7c587ab": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4576 tapCard()",
+      "kit": "2d5c728892"
+    },
+    "b55e43b4d81a": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L5443 onUp()",
+      "kit": "2d5c728892"
+    },
+    "b55e43b4d81a#2": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L5456 onUp()",
+      "kit": "2d5c728892"
+    },
+    "b8b78b303a48": {
+      "at": "2026-11-12",
+      "what": "Pop.show L1724 applyResolve()"
+    },
     "c1f57f62967c": {
       "at": "2026-10-26",
       "what": "Pop.text L1858 applyResolve()"
     },
-    "c441ade7f0ff": {
-      "at": "2026-10-26",
-      "what": "Pop.show L4473 onDown()"
+    "c4c975158611": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L4527 unhold()",
+      "kit": "3d2ece8316"
     },
-    "c98d4c7e2995": {
-      "at": "2026-10-23",
-      "what": "Pop.show L3763 globalActions()"
+    "ca07873c52ef": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L5189 toggleUpg()",
+      "kit": "2d5c728892"
+    },
+    "e200f3f5dcd5": {
+      "at": "2026-11-12",
+      "what": "Pop.show L1729 applyResolve()"
+    },
+    "e2b3018febaf": {
+      "at": "2026-11-12",
+      "what": "Sound.clip L1567 announceWeather()",
+      "kit": "bc317233d1"
     },
     "f0ced1373352": {
       "at": "2026-10-26",
@@ -3132,6 +3141,11 @@
       "what": "Sound.ui levels.js:978 winBeat()",
       "kit": "8bf1987ab7"
     },
+    "shell-4db8669203": {
+      "at": "2026-11-11",
+      "what": "Sound.ui meta.js:3096 cerSwap()",
+      "kit": "56acbea06d"
+    },
     "shell-4e43fef953": {
       "at": "2026-10-21",
       "what": "Sound.ui meta.js:1707 writeTag()",
@@ -3776,8 +3790,8 @@
       "at": "2026-10-14",
       "what": "Pop.show L1669 resolve()"
     },
-    "ce7e5e6a23dc": {
-      "at": "2026-11-06",
+    "cada9c0b36ab": {
+      "at": "2026-11-11",
       "what": "Pop.show L1692 resolve()"
     },
     "d1673fbe3040": {

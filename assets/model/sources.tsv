@@ -1,2 +1,5 @@
 folder	pack	author	licence	url	notes
 kaykit-city	KayKit City Builder Bits 1.0	Kay Lousberg	CC0 1.0	https://github.com/KayKit-Game-Assets/KayKit-City-Builder-Bits-1.0	glTF folder as shipped, one shared palette texture (citybits_texture.png); credit optional
+kaykit-adventurers	KayKit Adventurers Character Pack 1.0	Kay Lousberg	CC0 1.0	https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0	rigged characters (Knight, Barbarian, Mage, Rogue), texture and 76 animation clips embedded in each .glb; weapons and shields are meshes of the model; credit optional
+kaykit-skeletons	KayKit Skeletons Character Pack 1.0	Kay Lousberg	CC0 1.0	https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0	rigged characters (Skeleton Warrior, Skeleton Minion), same rig as the adventurers, 95 clips embedded; credit optional
+quaternius-robot	RobotExpressive	Tomás Laulhé (Quaternius), glTF by Don McCurdy	CC0 1.0	https://github.com/mrdoob/three.js/tree/r170/examples/models/gltf/RobotExpressive	rigged robot with 14 clips and 3 face morph targets, as shipped in the three.js examples

@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers hand cards</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS HAND CARDS — what the hand of a region looks like: the cards a
+   region of yours deals when it is tapped (infantry and cavalry stacks, the
+   pieces, the purchases of a town), today a flat cream card in
+   games/foldiers/skin.css (THE HAND) built by `renderHand` in game.js.
+
+   Three questions, one page:
+     1. the PAPER — eight looks, each a real piece of paper generated as an
+        SVG from a seed (an off-square outline, a crease and its facets, a
+        dog-ear, tape, grain, a soft shadow): a folded note, a playing card,
+        origami, a postage stamp, a ticket, a kraft tag, an envelope, and the
+        card that ships today (A · Current) as the baseline;
+     2. the COST — whether a card's action spends gold and how much, in six
+        ways (the shipped "3 gold" line, a coin pill in the corner, a stub,
+        a price tag on a string, a wax seal, an ink stamp), with its four
+        states: affordable, too dear (red), conditional (the engineer pays
+        only for a bridge: dashed) and paid this tick (green check);
+     3. the DISABLED card — a card that cannot act (no gold, no target,
+        already played): faded, face down, taped shut, stamped, crumpled,
+        or hatched in pencil, with or without its reason written on it.
+
+   WHAT SHIPS: D · Origami with the paper disc, taped when disabled, its reason
+   shown, too dear = disabled, the selected card lifted with an ink edge
+   (THE HAND in games/foldiers/skin.css, `renderHand` and the recipes "hand"
+   and "coin" of THE PAPER in game.js). The other looks are the record of
+   what it beat.
+
+   Three views: the ROUND (the hand at its real place over a frame of stage 1,
+   playable: pick troops, toggle a purchase and watch the gold), the SHEET
+   (every card and every state in the current look) and ALL STYLES (the same
+   six specimens in every look, which is what a look is chosen on).
+
+   The backdrop is lab/foldiers-hud/map.jpg (a bare frame of stage 1). Words
+   are the game's own, EN and FR, on the house floors: 20 bold for a name or
+   a reason, 22 for a figure, 18 bold for a stamp in capitals. Nothing ships
+   from here: the look picked is ported by hand into THE HAND of
+   games/foldiers/skin.css and `renderHand`; Copy settings is the panel as
+   JSON.
+   =========================================================================== */
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:flex; background:#0b0b12; color:#e8e6f5; overflow:hidden;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+
+/* ---- PANEL ---------------------------------------------------------------- */
+#panel { flex:0 0 300px; padding:20px 18px 40px; background:#12121c; border-right:1px solid #23233a; overflow:auto; }
+#panel h1 { font-size:16px; letter-spacing:1px; text-transform:uppercase; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:16px 0 8px; font-size:12px; letter-spacing:1px; text-transform:uppercase; color:#7ea6ff; }
+.row { margin-bottom:10px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:5px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:6px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1.2 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.seg.col button { flex:1 1 100%; text-align:left; }
+.act { width:100%; margin-top:8px; padding:9px 10px; background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 13px/1 inherit; cursor:pointer; }
+.act.ghost { background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; }
+#note { margin-top:8px; font-size:12px; font-weight:500; color:#8b8ba7; min-height:18px; }
+
+/* ---- STAGE ---------------------------------------------------------------- */
+#stage { flex:1; position:relative; overflow:hidden; }
+#stage.scroll { overflow:auto; }
+#holder { position:absolute; left:0; top:0; transform-origin:0 0; }
+
+/* the round: a 720x1280 frame of stage 1 */
+.fr { position:relative; width:720px; height:1280px; overflow:hidden; background:#5aa0b0; border-radius:28px; box-shadow:0 20px 60px rgba(0,0,0,.6); }
+.fr .bg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.mock { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(40,44,60,.55); border:2px dashed rgba(255,255,255,.35); border-radius:14px; color:rgba(255,255,255,.75);
+  font:700 26px/1 "Baloo 2", sans-serif; }
+.mock small { font-size:18px; opacity:.8; }
+.mock.round { border-radius:50%; }
+.gold-chip { position:absolute; left:26px; top:136px; height:56px; padding:0 18px 0 8px; display:flex; align-items:center; gap:6px;
+  background:#fffaf0; border:3px solid #e2d2a8; border-radius:28px; box-shadow:0 4px 0 rgba(70,52,24,.3);
+  font:700 28px/1 "Baloo 2", sans-serif; color:#2a2418; }
+.gold-chip img { width:42px; height:42px; }
+.gold-chip .of { font-size:22px; color:#8a7a58; }
+.gold-chip .dn { font-size:22px; color:#c0392b; }
+.gold-chip .mb { font-size:22px; color:#b07a10; }
+.region { position:absolute; left:384px; top:870px; width:120px; height:46px; transform:translate(-50%,-50%); border-radius:50%;
+  border:4px dashed #ffd23a; box-shadow:0 0 0 3px rgba(47,99,196,.5); }
+
+/* the hand, where the game puts it (bottom = 1280 - Layout.foot) */
+.hand { position:absolute; left:12px; right:12px; bottom:100px; }
+.hand-row { display:flex; align-items:flex-end; padding-top:30px; }
+
+/* the sheet and the comparison */
+.board { padding:40px 48px 60px; background:#3f7f8c url("foldiers-hud/map.jpg") center/cover; position:relative; }
+.board::before { content:""; position:absolute; inset:0; background:rgba(16,28,36,.35); }
+.board > * { position:relative; }
+.sec { margin:0 0 18px; font:700 15px/1.2 -apple-system,sans-serif; letter-spacing:1px; text-transform:uppercase; color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.6); }
+.specs { display:flex; flex-wrap:wrap; gap:46px 44px; margin-bottom:46px; align-items:flex-end; }
+.spec { display:flex; flex-direction:column; align-items:center; gap:22px; }
+.spec .cap { font:600 13px/1.25 -apple-system,sans-serif; color:#fff; text-align:center; max-width:150px;
+  background:rgba(10,14,24,.6); padding:3px 8px; border-radius:6px; }
+.stackline { display:flex; align-items:flex-end; padding-top:30px; }
+.cmp { display:grid; grid-template-columns:190px repeat(6, 160px); gap:40px 14px; align-items:end; }
+.cmp .lbl { align-self:center; font:700 15px/1.3 -apple-system,sans-serif; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6); cursor:pointer; }
+.cmp .lbl.on { color:#ffd23a; }
+.cmp .lbl small { display:block; font-weight:500; font-size:12px; opacity:.85; }
+.cmp .hd { font:600 13px/1.25 -apple-system,sans-serif; color:#fff; text-align:center; background:rgba(10,14,24,.6); padding:3px 6px; border-radius:6px; align-self:end; }
+.cmp .cell { display:flex; justify-content:center; padding-top:26px; }
+
+/* ===========================================================================
+   THE CARD — 116x160 like the game's. A back SVG (the paper), the art, the
+   name, the index of a stack, the cost, a badge, and a front SVG (tape,
+   hatching) over all of it.
+   =========================================================================== */
+.cd {
+  position:relative; flex:0 0 auto; width:116px; height:160px; margin:0; padding:0; border:0; background:none;
+  appearance:none; outline:none; cursor:pointer; color:#2a2418; text-align:center;
+  font:700 20px/1.02 "Baloo 2", system-ui, sans-serif;
+  transform:rotate(var(--rot, 0deg)); transition:transform .16s; -webkit-tap-highlight-color:transparent;
+}
+.cd.gap { margin-left:12px; }
+.cd.hascost { z-index:2; }
+.cd > svg { position:absolute; left:-30px; top:-30px; width:176px; height:220px; pointer-events:none; overflow:visible; }
+.cd .art { position:absolute; left:50%; top:22px; transform:translateX(-50%); max-width:88px; max-height:78px; pointer-events:none; }
+.cd .nm { position:absolute; left:3px; right:3px; bottom:10px; font-size:20px; pointer-events:none; }
+.cd .nm.caps { font-size:18px; letter-spacing:.3px; }
+.cd .ix { position:absolute; left:8px; top:1px; font-size:22px; color:#2f63c4; pointer-events:none; }
+.cd .ix.b { left:auto; top:auto; right:7px; bottom:0; transform:rotate(180deg); }
+.cd .ix.roundel { left:-9px; top:-9px; width:38px; height:38px; border-radius:50%; background:#2f63c4; color:#fff; border:3px solid #fffaf0;
+  display:flex; align-items:center; justify-content:center; line-height:1; box-shadow:0 2px 3px rgba(0,0,0,.3); }
+.cd.on { transform:translateY(-26px) rotate(var(--rot, 0deg)); }
+.cd .ring, .cd .ink { display:none; }
+.cd.on.sel-ring .ring, .cd.on.sel-ink .ink { display:inline; }
+
+/* the name, dressed by the look */
+.cd .nm.banner { left:-7px; right:-7px; bottom:30px; padding:4px 12px 3px; background:#2f63c4; color:#fff;
+  clip-path:polygon(0 0,100% 0,calc(100% - 9px) 50%,100% 100%,0 100%,9px 50%); }
+.cd .nm.strip { left:-5px; right:-5px; bottom:12px; padding:4px 6px 3px; transform:rotate(-2.5deg);
+  background:linear-gradient(98deg, #fff7e1 0 48%, #ecdcb4 52% 100%); box-shadow:0 2px 0 rgba(60,40,0,.18);
+  clip-path:polygon(0 0,100% 0,calc(100% - 6px) 50%,100% 100%,0 100%,6px 50%); }
+.cd .nm.label { left:8px; right:8px; bottom:12px; padding:3px 3px 2px; background:#fffdf6; border-radius:3px; transform:rotate(-3deg);
+  box-shadow:0 1px 2px rgba(0,0,0,.35); }
+.cd .nm.label.two { left:2px; right:2px; }
+.cd.k-stub .nm { bottom:46px; }
+.cd.k-stub .nm.banner { bottom:46px; }
+.cd.k-stub .art, .cd.k-plain.hascost .art { max-height:64px; top:18px; }
+.cd.k-plain.hascost .nm { bottom:34px; }
+
+/* ---- the cost ---- */
+.cd .pf { z-index:1; }
+.cost { z-index:2; position:absolute; display:flex; align-items:center; justify-content:center; gap:3px; pointer-events:none;
+  color:#6b4a00; font-weight:800; line-height:1; white-space:nowrap; }
+.cost b { font-size:22px; }
+.cost img { display:block; }
+.cost .chk { width:24px; height:24px; }
+.cost.free { color:#2f7a45; }
+.cost.free b { font-size:20px; }
+/* the shipped line: "3 gold" under the name */
+.c-plain { left:0; right:0; bottom:9px; color:#9c7410; font-size:20px; font-weight:700; }
+.c-plain.poor { color:#c0392b; }
+.c-plain.maybe span { border-bottom:2px dashed #b07a10; }
+.c-plain.paid { color:#2f8f4e; text-decoration:line-through; }
+/* a coin pill hanging off the top-right corner */
+.c-coin { right:-14px; top:-14px; height:42px; padding:0 9px 0 3px; border-radius:21px; background:#fff6d8; border:3px solid #e2a40c;
+  box-shadow:0 2px 3px rgba(0,0,0,.3); }
+.c-coin img { width:30px; height:30px; }
+.c-coin.poor { background:#fde3de; border-color:#c0392b; color:#c0392b; }
+.c-coin.maybe { border-style:dashed; background:#fffbec; color:#b07a10; }
+.c-coin.paid { background:#e3f2e6; border-color:#2f8f4e; color:#2f8f4e; }
+.c-coin.free { background:#eaf5ec; border-color:#7fb48e; padding:0 10px; }
+/* a stub torn off along a dashed line */
+.c-stub { left:4px; right:4px; bottom:4px; height:38px; border-top:2px dashed rgba(90,70,30,.45); }
+.c-stub img { width:28px; height:28px; }
+.c-stub.poor { color:#c0392b; }
+.c-stub.maybe b { border-bottom:2px dashed #b07a10; color:#b07a10; }
+.c-stub.paid { color:#2f8f4e; }
+/* a price tag on a string, off the left edge */
+.c-pricetag { left:-22px; top:24px; transform:rotate(-12deg); }
+.c-pricetag .tg { display:flex; align-items:center; gap:2px; height:38px; padding:0 9px 0 16px; background:#fffaf0;
+  clip-path:polygon(12px 0,100% 0,100% 100%,12px 100%,0 50%); filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)); }
+.c-pricetag .tg::before { content:""; position:absolute; left:8px; top:15px; width:7px; height:7px; border-radius:50%; background:#3d3122; }
+.c-pricetag .str { position:absolute; left:6px; top:-18px; width:2px; height:36px; background:#7a5a2a; transform:rotate(-38deg); transform-origin:bottom; }
+.c-pricetag img { width:24px; height:24px; }
+.c-pricetag.poor .tg { background:#fde3de; color:#c0392b; }
+.c-pricetag.maybe .tg { background:repeating-linear-gradient(135deg,#fffaf0 0 6px,#f6e9c4 6px 9px); color:#b07a10; }
+.c-pricetag.paid .tg { background:#e3f2e6; color:#2f8f4e; }
+.c-pricetag.free .tg { background:#eaf5ec; }
+/* a wax seal on the top-right corner */
+.c-seal { right:-14px; top:-14px; width:60px; height:58px; flex-direction:column; gap:0; color:#4a2e00;
+  background:radial-gradient(circle at 36% 30%, #f6cf6b, #d0951f 58%, #93600b);
+  clip-path:polygon(50% 0,63% 6%,78% 4%,86% 16%,98% 26%,96% 42%,100% 56%,92% 70%,90% 86%,74% 92%,60% 100%,46% 95%,30% 99%,18% 88%,6% 80%,4% 64%,0 50%,6% 34%,4% 20%,18% 12%,30% 2%); }
+.c-seal img { width:20px; height:20px; margin-bottom:-2px; }
+.c-seal.poor { background:radial-gradient(circle at 36% 30%, #f07a6a, #c0392b 58%, #7d1c12); color:#fff; }
+.c-seal.maybe { opacity:.8; background:radial-gradient(circle at 36% 30%, #fbe7b3, #e7c069 58%, #b88d2c); }
+.c-seal.paid { background:radial-gradient(circle at 36% 30%, #8fd6a2, #2f8f4e 58%, #17552a); color:#fff; }
+.c-seal.free { background:radial-gradient(circle at 36% 30%, #cfeed7, #7fb48e 58%, #4a7d58); color:#173f22; }
+.c-seal.free b { font-size:18px; }
+/* a folded paper rosette in the top-right corner: eight facets, light and
+   dark in turn, an inner octagon, in a colour read at a glance (what ships:
+   ppRadial, recipe "coin" in games/foldiers/game.js) */
+.c-paper { right:-14px; top:-14px; width:46px; height:46px; color:#2a2418; filter:drop-shadow(1px 3px 2px rgba(30,20,0,.4));
+  --a:#d99a17; --b:#c0850f; --i:#f4c542; --j:#e7b232; }
+.c-paper::before, .c-paper::after { content:""; position:absolute; clip-path:polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%); }
+.c-paper::before { inset:0; background:conic-gradient(from 22.5deg, var(--a) 0 45deg, var(--b) 45deg 90deg, var(--a) 90deg 135deg, var(--b) 135deg 180deg,
+  var(--a) 180deg 225deg, var(--b) 225deg 270deg, var(--a) 270deg 315deg, var(--b) 315deg 360deg); }
+.c-paper::after { inset:4px; background:conic-gradient(from 22.5deg, var(--i) 0 45deg, var(--j) 45deg 90deg, var(--i) 90deg 135deg, var(--j) 135deg 180deg,
+  var(--i) 180deg 225deg, var(--j) 225deg 270deg, var(--i) 270deg 315deg, var(--j) 315deg 360deg); }
+.c-paper b, .c-paper .chk { position:relative; z-index:1; }
+.c-paper.maybe { --i:#fbf3dc; --j:#efe3c4; color:#9c6a08; }
+.c-paper.poor { --a:#b8321f; --b:#9c2918; --i:#e2553f; --j:#d04832; color:#fff; }
+.c-paper.paid { --a:#23753e; --b:#1c6334; --i:#3fa05e; --j:#368f53; color:#fff; }
+.c-paper.free { --a:#7fb48e; --b:#6aa27b; --i:#cfeed7; --j:#bfe2c8; color:#173f22; }
+.c-paper.free b { font-size:18px; }
+/* an ink stamp in the top-right corner */
+.c-inkstamp { right:3px; top:5px; padding:1px 6px; border:3px double #2f63c4; border-radius:5px; color:#2f63c4; transform:rotate(-10deg);
+  mix-blend-mode:multiply; background:rgba(255,255,255,.25); }
+.c-inkstamp img { width:22px; height:22px; }
+.c-inkstamp.poor { border-color:#c0392b; color:#c0392b; }
+.c-inkstamp.maybe { border-style:dashed; border-width:2px; }
+.c-inkstamp.paid { border-color:#2f8f4e; color:#2f8f4e; }
+.c-inkstamp.free { border-color:#2f7a45; color:#2f7a45; }
+.cd .ix.roundel ~ .c-inkstamp { right:3px; }
+
+/* ---- badges (Defend, Wait) ---- */
+.bdg { position:absolute; right:-9px; top:-11px; width:38px; height:38px; border-radius:50%; border:3px solid #fffaf0;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 2px 3px rgba(0,0,0,.3); }
+.bdg svg { width:22px; height:22px; }
+
+/* ---- disabled ---- */
+.cd.off { cursor:not-allowed; }
+.cd.off .art { filter:grayscale(1) opacity(.55); }
+.cd.off .nm, .cd.off .ix { opacity:.6; }
+.cd.off.d-faded { opacity:.5; filter:grayscale(.85); }
+.cd.off.d-faded .art { filter:none; }
+.cd.off.d-crumpled { transform:translateY(10px) rotate(calc(var(--rot, 0deg) * 2)) scale(.94); }
+.cd.off.d-facedown .art, .cd.off.d-facedown .nm, .cd.off.d-facedown .ix { display:none; }
+.cd .ghost { position:absolute; left:50%; top:38px; width:62px; transform:translateX(-50%); filter:grayscale(1) brightness(1.6); opacity:.35; pointer-events:none; }
+.why { position:absolute; left:50%; top:52%; transform:translate(-50%, -50%) rotate(-6deg); padding:2px 9px 1px; border-radius:4px;
+  background:#2a2418; color:#fffaf0; font-size:20px; line-height:1.1; white-space:nowrap; pointer-events:none; z-index:3; }
+.stampx { position:absolute; left:50%; top:52%; transform:translate(-50%,-50%) rotate(-16deg); padding:3px 7px 1px; border:3px solid #c0392b;
+  border-radius:4px; color:#c0392b; font-size:18px; line-height:1.05; white-space:nowrap; mix-blend-mode:multiply;
+  background:rgba(255,240,236,.35); pointer-events:none; z-index:3; }
+</style>
+</head>
+<body>
+
+<aside id="panel">
+  <h1>Foldiers · hand cards</h1>
+  <p class="hint">The cards a region deals. Pick a paper, a way to show the cost, a disabled look. In the round, tap the cards: troops are picked, purchases spend the gold.</p>
+
+  <h3>View</h3>
+  <div class="row"><div class="seg" id="view"></div></div>
+
+  <h3>Paper</h3>
+  <div class="row"><div class="seg col" id="style"></div></div>
+
+  <h3>Cost</h3>
+  <div class="row"><label>Where the price sits</label><div class="seg" id="cost"></div></div>
+  <div class="row"><label>A free card</label><div class="seg" id="free"></div></div>
+  <div class="row"><label>Too dear</label><div class="seg" id="poor"></div></div>
+
+  <h3>Disabled</h3>
+  <div class="row"><div class="seg" id="off"></div></div>
+  <div class="row"><label>Reason written on it</label><div class="seg" id="reason"></div></div>
+
+  <h3>Selected</h3>
+  <div class="row"><div class="seg" id="sel"></div></div>
+
+  <h3>Paper knobs</h3>
+  <div class="row"><label>Tilt <output id="o-tilt"></output></label><input type="range" id="tilt" min="0" max="8" step="0.5"></div>
+  <div class="row"><label>Rough edge <output id="o-rough"></output></label><input type="range" id="rough" min="0" max="10" step="0.5"></div>
+  <div class="row"><label>Fold depth <output id="o-depth"></output></label><input type="range" id="depth" min="0" max="1.5" step="0.05"></div>
+  <div class="row"><label>Grain <output id="o-grain"></output></label><input type="range" id="grain" min="0" max="1" step="0.05"></div>
+  <div class="row"><label>Shadow <output id="o-shadow"></output></label><input type="range" id="shadow" min="0" max="1" step="0.05"></div>
+  <div class="row"><label>Fold</label><div class="seg" id="fold"></div></div>
+  <div class="row"><label>Tape · dog-ear · capitals</label><div class="seg" id="bits"></div></div>
+  <div class="row"><label>Seed <output id="o-seed"></output></label><input type="range" id="seed" min="1" max="60" step="1"></div>
+
+  <h3>Round</h3>
+  <div class="row"><label>Region</label><div class="seg" id="scen"></div></div>
+  <div class="row"><label>Gold in the reserve <output id="o-gold"></output></label><input type="range" id="gold" min="0" max="12" step="1"></div>
+  <div class="row"><label>Language</label><div class="seg" id="lang"></div></div>
+
+  <button class="act" id="copy">Copy settings</button>
+  <button class="act ghost" id="reset">Back to the preset</button>
+  <div id="note"></div>
+</aside>
+
+<main id="stage"><div id="holder"></div></main>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- the motor's upper(), copied from lab/button.html --------------------
+  function upper(str) {
+    var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+    var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+    var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+    var shouted = String(str == null ? "" : str).replace(
+      /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+        var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+        if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+        return run.toUpperCase();
+      });
+    var out = "", i, c, k;
+    for (i = 0; i < shouted.length; i++) {
+      c = shouted.charAt(i);
+      if (PAIR[c]) { out += PAIR[c]; continue; }
+      k = FROM.indexOf(c);
+      out += k < 0 ? c : TO.charAt(k);
+    }
+    return out;
+  }
+
+  // ---- the game's art and words ---------------------------------------------
+  // ARMY / WORKS indices of games/foldiers/game.js, blue camp.
+  const ART = {
+    infantry: "army-blue05", cavalry: "army-blue07", cannon: "army-blue09", balloon: "army-blue15", flag: "army-blue16",
+    spy: "works-blue01", engineer: "works-blue03", siege: "works-blue07", barracks: "works-blue10", palisade: "works-blue11"
+  };
+  const src = (k) => "../assets/image/embed/foldiers-" + ART[k] + ".webp";
+  const COIN = "../assets/image/shell/coin.webp";
+  const WORDS = {
+    en: { infantry: "Infantry", cavalry: "Cavalry", cannon: "Cannon", engineer: "Engineer", spy: "Spy", balloon: "Scout balloon",
+          siege: "Siege tower", recruit: "Recruit +3", buycav: "Cavalry +2", palisade: "Palisade", gold: "{n} gold", free: "Free",
+          noGold: "No gold", noTarget: "No target", used: "Played", tick: "Tick", bell: "Bell" },
+    fr: { infantry: "Infanterie", cavalry: "Cavalerie", cannon: "Canon", engineer: "Ingénieur", spy: "Espion", balloon: "Ballon éclaireur",
+          siege: "Tour de siège", recruit: "Recruter +3", buycav: "Cavalerie +2", palisade: "Palissade", gold: "{n} or", free: "Gratuit",
+          noGold: "Pas d'or", noTarget: "Sans cible", used: "Déjà jouée", tick: "Tour", bell: "Cloche" }
+  };
+  const w = (k) => WORDS[S.lang][k];
+  // what each card costs in gold (game.js: RECRUIT_COST, CAV_COST, WORK_COST)
+  const COST = { recruit: 3, buycav: 4, palisade: 4, engineer: 4 };
+  const BUY_ART = { recruit: "barracks", buycav: "cavalry", palisade: "palisade" };
+
+  // ---- the looks --------------------------------------------------------------
+  const STYLES = {
+    flat:     { name: "A · Current", sub: "the shipped flat card", shape: "round", rad: 12, fill: "#fffaf0", edge: "#e2d2a8", edgeW: 3,
+                back: "#e9dcb8", hard: true, fold: "none", nameAs: "plain", index: "ink",
+                look: { cost: "plain", off: "faded", tilt: 0, rough: 0, depth: 0, grain: 0, shadow: 0.5, fold: "none", tape: false, ear: false, caps: false } },
+    note:     { name: "B · Folded note", sub: "a crease, a dog-ear, tape", shape: "rect", fill: "#f6ecd2", edge: "#c9b58a", edgeW: 1.2,
+                back: "#e4d3a8", nameAs: "plain", index: "ink",
+                look: { cost: "pricetag", off: "taped", tilt: 4, rough: 6, depth: 0.8, grain: 0.5, shadow: 0.5, fold: "diag", tape: true, ear: true, caps: false } },
+    card:     { name: "C · Playing card", sub: "card stock, printed frame, banner", shape: "round", rad: 10, fill: "#fbf7ee", edge: "#cdbf9c", edgeW: 1,
+                back: "#2f63c4", frame: true, nameAs: "banner", index: "both",
+                look: { cost: "coin", off: "facedown", tilt: 1.5, rough: 0, depth: 0, grain: 0.3, shadow: 0.6, fold: "none", tape: false, ear: false, caps: false } },
+    origami:  { name: "D · Origami", sub: "crumpled facets, folded strip", shape: "rect", fill: "#f3e6c6", edge: "#b9a274", edgeW: 1,
+                back: "#dcc79a", nameAs: "strip", index: "ink",
+                look: { cost: "paper", off: "taped", tilt: 5, rough: 7, depth: 0.9, grain: 0.5, shadow: 0.5, fold: "crumple", tape: false, ear: false, caps: false } },
+    stamp:    { name: "E · Postage stamp", sub: "perforated, value in the corner", shape: "stamp", fill: "#fdfaf2", edge: "#d8ccb0", edgeW: 0,
+                back: "#e8dfca", inner: "#dfe9f6", nameAs: "plain", index: "roundel",
+                look: { cost: "inkstamp", off: "stamped", tilt: 3, rough: 0, depth: 0, grain: 0.35, shadow: 0.45, fold: "none", tape: false, ear: false, caps: false } },
+    ticket:   { name: "F · Ticket", sub: "the price on a tear-off stub", shape: "ticket", rad: 8, fill: "#f4e6c2", edge: "#c8b07a", edgeW: 1,
+                back: "#e2cf9e", stub: "#ead6a2", nameAs: "plain", index: "ink",
+                look: { cost: "stub", off: "hatched", tilt: 2, rough: 0, depth: 0, grain: 0.45, shadow: 0.5, fold: "none", tape: false, ear: false, caps: false } },
+    tag:      { name: "G · Kraft tag", sub: "eyelet, string, white label", shape: "tag", fill: "#caa676", edge: "#9c7a48", edgeW: 1,
+                back: "#b38f5f", nameAs: "label", index: "roundel",
+                look: { cost: "coin", off: "faded", tilt: 4, rough: 3, depth: 0.4, grain: 0.7, shadow: 0.5, fold: "none", tape: false, ear: false, caps: false } },
+    envelope: { name: "H · Envelope", sub: "a flap, a wax seal", shape: "envelope", rad: 4, fill: "#efe3c8", edge: "#bfa978", edgeW: 1,
+                back: "#dccba3", nameAs: "plain", index: "ink",
+                look: { cost: "seal", off: "taped", tilt: 3, rough: 2, depth: 0.6, grain: 0.45, shadow: 0.5, fold: "none", tape: false, ear: false, caps: false } }
+  };
+  const COSTS = [["paper", "Paper disc"], ["plain", "Line"], ["coin", "Coin"], ["stub", "Stub"], ["pricetag", "Price tag"], ["seal", "Seal"], ["inkstamp", "Ink stamp"]];
+  const OFFS = [["faded", "Faded"], ["facedown", "Face down"], ["taped", "Taped"], ["stamped", "Stamped"], ["crumpled", "Crumpled"], ["hatched", "Hatched"]];
+
+  // ---- state ------------------------------------------------------------------
+  const KEY = "lab:foldiers-cards";
+  const BASE = { view: "round", style: "origami", lang: "en", gold: 5, scen: "town", seed: 7, free: "none", poor: "off", reason: true, sel: "ink" };
+  let S = Object.assign({}, BASE, STYLES.origami.look);
+  try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && STYLES[saved.style]) S = Object.assign(S, saved); } catch (e) { /* private window */ }
+  // #view=sheet&style=card&lang=fr opens a state (a headless shot, a link)
+  (function () {
+    const q = new URLSearchParams(location.hash.slice(1));
+    if (q.get("style") && STYLES[q.get("style")]) Object.assign(S, STYLES[q.get("style")].look, { style: q.get("style") });
+    ["view", "lang", "scen", "off", "cost", "poor", "free", "sel"].forEach((k) => { if (q.get(k)) S[k] = q.get(k); });
+    if (q.get("gold")) S.gold = +q.get("gold");
+  })();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* ignore */ } }
+
+  // ---- random -----------------------------------------------------------------
+  function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  const pts = (P) => P.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.max(0, Math.min(255, Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k))));
+    return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
+  }
+
+  /* =========================================================================
+     THE PAPER — one SVG per card. A base outline for the shape, its edges cut
+     by hand (rough), a dog-ear folded over the bottom-right corner, the holes
+     a shape punches (perforations, notches, an eyelet) as a mask, the facets
+     of a fold, the grain, and on top the selection ring.
+     ========================================================================= */
+  const CW = 116, CH = 160, PAD = 30;
+  let UID = 0;
+  function roundPts(wd, ht, rad) {
+    if (!rad) return [[0, 0], [wd, 0], [wd, ht], [0, ht]];
+    const P = [], C = [[wd - rad, rad, -90], [wd - rad, ht - rad, 0], [rad, ht - rad, 90], [rad, rad, 180]];
+    C.forEach((c) => { for (let i = 0; i <= 5; i++) { const a = (c[2] + i * 18) * Math.PI / 180; P.push([c[0] + Math.cos(a) * rad, c[1] + Math.sin(a) * rad]); } });
+    // start at the top-left corner's end so the edges run clockwise from the top
+    return P.slice(18).concat(P.slice(0, 18));
+  }
+  function baseShape(st) {
+    if (st.shape === "tag") return [[24, 0], [CW - 24, 0], [CW, 24], [CW, CH], [0, CH], [0, 24]];
+    if (st.shape === "round" || st.shape === "ticket" || st.shape === "envelope") return roundPts(CW, CH, st.rad || 0);
+    return [[0, 0], [CW, 0], [CW, CH], [0, CH]];
+  }
+  // every long edge cut in short runs, every point moved a little by the hand
+  function roughen(P, rough, r) {
+    if (rough <= 0) return P.slice();
+    const out = [];
+    P.forEach((u, i) => {
+      const v = P[(i + 1) % P.length], len = Math.hypot(v[0] - u[0], v[1] - u[1]);
+      const n = Math.max(1, Math.round(len / 20));
+      for (let k = 0; k < n; k++) {
+        const t = k / n, amp = k === 0 ? rough * 0.45 : rough * 0.22;
+        out.push([u[0] + (v[0] - u[0]) * t + (r() * 2 - 1) * amp, u[1] + (v[1] - u[1]) * t + (r() * 2 - 1) * amp]);
+      }
+    });
+    return out;
+  }
+  // the bottom-right corner folded over the line a-b
+  function dogEar(P, e) {
+    const keep = [], lim = CW + CH - e;
+    let cut = -1;
+    P.forEach((p, i) => { if (p[0] + p[1] > lim) { if (cut < 0) cut = keep.length; } else keep.push(p); });
+    if (cut < 0) return { outline: P, flap: null };
+    const a = [CW, CH - e], b = [CW - e, CH];
+    keep.splice(cut, 0, a, b);
+    return { outline: keep, flap: [a, b, [CW - e, CH - e]] };
+  }
+  function clipHalf(poly, a, b, side) {
+    const out = [], f = (p) => side * ((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i], q = poly[(i + 1) % poly.length], fp = f(p), fq = f(q);
+      if (fp >= 0) out.push(p);
+      if ((fp >= 0) !== (fq >= 0)) { const t = fp / (fp - fq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); }
+    }
+    return out;
+  }
+  function facets(fold, depth, r) {
+    const out = [], ext = [[-20, -20], [CW + 20, -20], [CW + 20, CH + 20], [-20, CH + 20]];
+    if (fold === "diag") {
+      const a = [-20, CH * (0.28 + r() * 0.14)], b = [CW + 20, CH * (0.5 + r() * 0.14)];
+      out.push({ poly: clipHalf(ext, a, b, -1), tone: 0.7 }, { poly: clipHalf(ext, a, b, 1), tone: -0.9 });
+      out.crease = [a, b];
+    } else if (fold === "half") {
+      const x = CW * (0.48 + r() * 0.04), a = [x, -20], b = [x + (r() - 0.5) * 6, CH + 20];
+      out.push({ poly: clipHalf(ext, a, b, 1), tone: 0.7 }, { poly: clipHalf(ext, a, b, -1), tone: -0.8 });
+      out.crease = [a, b];
+    } else if (fold === "crumple") {
+      const nx = 3, ny = 4, G = [];
+      for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) {
+        const edge = i === 0 || j === 0 || i === nx || j === ny;
+        G.push([(i / nx) * CW + (edge ? (i === 0 ? -20 : i === nx ? 20 : 0) : (r() - 0.5) * CW / nx * 0.7),
+                (j / ny) * CH + (edge ? (j === 0 ? -20 : j === ny ? 20 : 0) : (r() - 0.5) * CH / ny * 0.7)]);
+      }
+      const g = (i, j) => G[j * (nx + 1) + i];
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const flip = r() < 0.5;
+        const t1 = flip ? [g(i, j), g(i + 1, j), g(i + 1, j + 1)] : [g(i, j), g(i + 1, j), g(i, j + 1)];
+        const t2 = flip ? [g(i, j), g(i + 1, j + 1), g(i, j + 1)] : [g(i + 1, j), g(i + 1, j + 1), g(i, j + 1)];
+        out.push({ poly: t1, tone: r() * 2 - 1, line: true }, { poly: t2, tone: r() * 2 - 1, line: true });
+      }
+    }
+    return out;
+  }
+  function tapeStrip(cx, cy, tw, th, ang, r) {
+    const teeth = Math.max(3, Math.round(th / 4)), L = [], R = [];
+    for (let i = 0; i <= teeth; i++) {
+      const y = -th / 2 + (th * i) / teeth;
+      L.push([-tw / 2 + (i % 2 ? 2.5 : 0) + r() * 1.5, y]);
+      R.unshift([tw / 2 - (i % 2 ? 2.5 : 0) - r() * 1.5, y]);
+    }
+    const poly = pts(L.concat(R));
+    return '<g transform="translate(' + cx.toFixed(1) + "," + cy.toFixed(1) + ") rotate(" + ang.toFixed(1) + ')">' +
+      '<polygon points="' + poly + '" fill="rgba(0,0,0,.14)" transform="translate(1,2)"/>' +
+      '<polygon points="' + poly + '" fill="rgba(238,226,190,.82)"/>' +
+      '<polygon points="' + poly + '" fill="none" stroke="rgba(0,0,0,.08)" stroke-width="1"/></g>';
+  }
+
+  /* The paper of one card: the back SVG (string) and the front SVG (string). */
+  function paper(st, K, c, seedKey) {
+    const r = rng(hash(seedKey + ":" + K.seed)), uid = ++UID;
+    const off = c.off ? K.off : null, down = off === "facedown";
+    let fold = K.fold, depth = K.depth, fill = st.fill;
+    if (off === "crumpled") { fold = "crumple"; depth = Math.max(depth, 1.25); fill = shade(fill, -0.12); }
+    if (down) fill = st.back;
+    let outline = roughen(baseShape(st), K.rough, r), flap = null;
+    if (K.ear && !down) { const d = dogEar(outline, 15 + r() * 7); outline = d.outline; flap = d.flap; }
+    const O = pts(outline);
+    const box = 'width="' + (CW + 2 * PAD) + '" height="' + (CH + 2 * PAD) + '" viewBox="' + -PAD + " " + -PAD + " " + (CW + 2 * PAD) + " " + (CH + 2 * PAD) + '"';
+
+    // the holes the shape punches, as a mask
+    let holes = "";
+    if (st.shape === "stamp") {
+      for (let x = 5; x < CW; x += 11.2) holes += '<circle cx="' + x.toFixed(1) + '" cy="0" r="4.2"/><circle cx="' + x.toFixed(1) + '" cy="' + CH + '" r="4.2"/>';
+      for (let y = 5; y < CH; y += 11.2) holes += '<circle cx="0" cy="' + y.toFixed(1) + '" r="4.2"/><circle cx="' + CW + '" cy="' + y.toFixed(1) + '" r="4.2"/>';
+    }
+    const notchY = CH - 42;
+    if (st.shape === "ticket") holes += '<circle cx="0" cy="' + notchY + '" r="10"/><circle cx="' + CW + '" cy="' + notchY + '" r="10"/>';
+    if (st.shape === "tag") holes += '<circle cx="' + CW / 2 + '" cy="15" r="5.5"/>';
+    const mask = holes ? '<mask id="mk' + uid + '" maskUnits="userSpaceOnUse" x="' + -PAD + '" y="' + -PAD + '" width="' + (CW + 2 * PAD) + '" height="' + (CH + 2 * PAD) + '">' +
+      '<rect x="' + -PAD + '" y="' + -PAD + '" width="' + (CW + 2 * PAD) + '" height="' + (CH + 2 * PAD) + '" fill="#fff"/><g fill="#000">' + holes + "</g></mask>" : "";
+    const M = holes ? ' mask="url(#mk' + uid + ')"' : "";
+
+    let defs = '<clipPath id="cl' + uid + '"><polygon points="' + O + '"/></clipPath>' + mask +
+      '<linearGradient id="lt' + uid + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/>' +
+      '<stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient>';
+    if (K.grain > 0) defs += '<filter id="gr' + uid + '"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="' + (uid % 97) + '"/>' +
+      '<feColorMatrix type="matrix" values="0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .1  0 0 0 1.6 -.55"/></filter>';
+    if (down) defs += '<pattern id="bk' + uid + '" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
+      '<rect width="10" height="10" fill="' + st.back + '"/><rect width="4" height="10" fill="' + (st.back === "#2f63c4" ? "#2a58b0" : shade(st.back, -0.07)) + '"/></pattern>';
+
+    let s = "";
+    // the selection, under the paper: only its outer half shows
+    s += '<g class="ring"><polygon points="' + O + '" fill="none" stroke="#ffd23a" stroke-width="12" stroke-linejoin="round"/>' +
+         '<polygon points="' + O + '" fill="none" stroke="#2f63c4" stroke-width="5" stroke-linejoin="round"/></g>';
+    s += '<g' + M + ">";
+    s += '<polygon points="' + O + '" fill="' + (down ? "url(#bk" + uid + ")" : fill) + '"/>';
+    let on = "";
+    if (!down) {
+      if (st.frame) on += '<rect x="6" y="6" width="' + (CW - 12) + '" height="' + (CH - 12) + '" rx="6" fill="none" stroke="#2f63c4" stroke-width="1.6"/>' +
+        '<rect x="9.5" y="9.5" width="' + (CW - 19) + '" height="' + (CH - 19) + '" rx="4" fill="none" stroke="#2f63c4" stroke-width=".8" opacity=".7"/>';
+      if (st.inner) on += '<rect x="10" y="10" width="' + (CW - 20) + '" height="' + (CH - 56) + '" fill="' + st.inner + '" stroke="rgba(47,99,196,.35)" stroke-width="1"/>';
+      if (st.stub) on += '<rect x="-5" y="' + notchY + '" width="' + (CW + 10) + '" height="' + (CH - notchY + 5) + '" fill="' + st.stub + '"/>' +
+        '<line x1="12" y1="' + notchY + '" x2="' + (CW - 12) + '" y2="' + notchY + '" stroke="rgba(90,70,30,.55)" stroke-width="2" stroke-dasharray="5 4"/>';
+      if (st.shape === "envelope") {
+        const fy = 50 + r() * 6;
+        on += '<line x1="0" y1="' + CH + '" x2="' + CW / 2 + '" y2="' + (CH * 0.56) + '" stroke="rgba(90,70,30,.22)" stroke-width="1.2"/>' +
+              '<line x1="' + CW + '" y1="' + CH + '" x2="' + CW / 2 + '" y2="' + (CH * 0.56) + '" stroke="rgba(90,70,30,.22)" stroke-width="1.2"/>' +
+              '<polygon points="' + pts([[-4, -4], [CW + 4, -4], [CW / 2, fy]]) + '" fill="' + shade(fill, -0.07) + '"/>' +
+              '<polyline points="' + pts([[0, 0], [CW / 2, fy], [CW, 0]]) + '" fill="none" stroke="rgba(90,70,30,.45)" stroke-width="1.2"/>' +
+              '<polyline points="' + pts([[0, 1.5], [CW / 2, fy + 1.5], [CW, 1.5]]) + '" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="1"/>';
+      }
+      if (fold !== "none" && depth > 0) {
+        const F = facets(fold, depth, r);
+        F.forEach((f) => {
+          const t = f.tone * depth;
+          on += '<polygon points="' + pts(f.poly) + '" fill="' + (t > 0 ? "#fff" : "#2a1c00") + '" opacity="' + Math.abs(t * (t > 0 ? 0.26 : 0.2)).toFixed(3) + '"' +
+            (f.line ? ' stroke="rgba(255,255,255,' + (0.25 * depth).toFixed(2) + ')" stroke-width=".8"' : "") + "/>";
+        });
+        if (F.crease) {
+          const a = F.crease[0], b = F.crease[1];
+          on += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" stroke="rgba(40,25,0,' + (0.3 * depth).toFixed(2) + ')" stroke-width="1.4"/>' +
+                '<line x1="' + a[0].toFixed(1) + '" y1="' + (a[1] + 1.3).toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + (b[1] + 1.3).toFixed(1) + '" stroke="rgba(255,255,255,' + (0.6 * depth).toFixed(2) + ')" stroke-width="1"/>';
+        }
+      }
+    }
+    on += '<rect x="-20" y="-20" width="' + (CW + 40) + '" height="' + (CH + 40) + '" fill="url(#lt' + uid + ')"/>';
+    if (K.grain > 0) on += '<rect x="-20" y="-20" width="' + (CW + 40) + '" height="' + (CH + 40) + '" filter="url(#gr' + uid + ')" opacity="' + (K.grain * 0.5).toFixed(2) + '"/>';
+    s += '<g clip-path="url(#cl' + uid + ')">' + on + "</g>";
+    s += '<polygon points="' + O + '" fill="none" stroke="' + (down && st.back === "#2f63c4" ? "#fbf7ee" : st.edge) + '" stroke-width="' + (down && st.back === "#2f63c4" ? 3 : st.edgeW || 0.01) + '" stroke-linejoin="round"/>';
+    s += "</g>";
+    if (st.shape === "tag") s += '<circle cx="' + CW / 2 + '" cy="15" r="7" fill="none" stroke="#c9b27a" stroke-width="3"/>' +
+      '<path d="M' + CW / 2 + ",15 C" + (CW / 2 + 6) + ",-6 " + (CW / 2 + 22) + ",-10 " + (CW / 2 + 30) + ',-26" fill="none" stroke="#7a5a2a" stroke-width="2"/>';
+    if (flap) {
+      s += '<polygon points="' + pts(flap) + '" fill="#000" opacity=".25" transform="translate(-1.5,2)"/>' +
+           '<polygon points="' + pts(flap) + '" fill="' + st.back + '"/>' +
+           '<polygon points="' + pts(flap) + '" fill="url(#lt' + uid + ')"/>' +
+           '<polygon points="' + pts(flap) + '" fill="none" stroke="' + st.edge + '" stroke-width="1"/>';
+    }
+    // the selection drawn as ink on the edge
+    s += '<polygon class="ink" points="' + O + '" fill="none" stroke="#2f63c4" stroke-width="4.5" stroke-linejoin="round"/>';
+
+    const sh = K.shadow;
+    const drop = st.hard ? "drop-shadow(0 6px 0 rgba(70,52,24," + (0.6 * sh).toFixed(2) + "))"
+      : "drop-shadow(" + (1 + 2 * sh).toFixed(1) + "px " + (2 + 6 * sh).toFixed(1) + "px " + (2 + 4 * sh).toFixed(1) + "px rgba(30,20,0," + (0.15 + 0.35 * sh).toFixed(2) + "))";
+    const back = '<svg class="pp" ' + box + ' style="filter:' + drop + '"><defs>' + defs + "</defs>" + s + "</svg>";
+
+    // the front: decorative tape, the taped-shut cross, the pencil hatching
+    let f = "";
+    if (K.tape && !down) f += tapeStrip(CW * (0.4 + r() * 0.2), 0, 44 + r() * 12, 15, (r() - 0.5) * 16, r);
+    if (off === "taped") {
+      f += tapeStrip(CW / 2, CH / 2, 176, 22, 52 + (r() - 0.5) * 6, r) + tapeStrip(CW / 2, CH / 2, 176, 22, -52 + (r() - 0.5) * 6, r);
+    }
+    if (off === "hatched") {
+      f += '<defs><clipPath id="hc' + uid + '"><polygon points="' + O + '"/></clipPath>' +
+        '<pattern id="hp' + uid + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><rect width="7" height="1.6" fill="rgba(60,50,40,.42)"/></pattern></defs>' +
+        '<rect x="0" y="0" width="' + CW + '" height="' + CH + '" fill="url(#hp' + uid + ')" clip-path="url(#hc' + uid + ')"/>';
+    }
+    const front = f ? '<svg class="pf" ' + box + ">" + f + "</svg>" : "";
+    return { back: back, front: front, tilt: (r() * 2 - 1) * K.tilt };
+  }
+
+  // ---- the parts ---------------------------------------------------------------
+  const ICON = {
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    wait: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/></svg>',
+    check: '<svg class="chk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+  };
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function costHTML(c, mode) {
+    const has = c.cost > 0;
+    if (!has && !c.free) return "";
+    const st = c.done ? "paid" : c.poor ? "poor" : c.maybe ? "maybe" : "";
+    if (!has) {
+      if (S.free === "none") return "";
+      const inner = S.free === "word" ? "<b>" + esc(w("free")) + "</b>" : mode === "paper" ? "<b>0</b>" : '<img src="' + COIN + '" alt="" style="opacity:.5"><b>0</b>';
+      if (mode === "plain") return S.free === "word" ? '<span class="cost c-plain free">' + esc(w("free")) + "</span>" : '<span class="cost c-plain free">' + esc(w("gold").replace("{n}", 0)) + "</span>";
+      if (mode === "pricetag") return '<span class="cost c-pricetag free"><i class="str"></i><span class="tg">' + inner + "</span></span>";
+      return '<span class="cost c-' + mode + ' free">' + inner + "</span>";
+    }
+    const coin = c.done ? ICON.check : '<img src="' + COIN + '" alt="">';
+    const fig = "<b>" + c.cost + "</b>";
+    if (mode === "paper") return '<span class="cost c-paper ' + st + '">' + (c.done ? ICON.check : fig) + "</span>";
+    if (mode === "plain") return '<span class="cost c-plain ' + st + '"><span>' + esc(w("gold").replace("{n}", c.cost)) + "</span></span>";
+    if (mode === "pricetag") return '<span class="cost c-pricetag ' + st + '"><i class="str"></i><span class="tg">' + coin + fig + "</span></span>";
+    if (mode === "seal") return '<span class="cost c-seal ' + st + '">' + coin + fig + "</span>";
+    return '<span class="cost c-' + mode + " " + st + '">' + coin + fig + "</span>";
+  }
+
+  /* One card. c = { key, kind, art, name, cost, maybe, free, v, top, on, held, done, poor, off }.
+     st is the look, K the knobs it is drawn with. */
+  function cardHTML(c, st, K, seedKey, extraCls, style) {
+    const P = paper(st, K, c, seedKey);
+    const cm = K.cost, off = c.off ? K.off : null;
+    const cls = ["cd", "k-" + cm, "sel-" + S.sel];
+    if (c.cost > 0 || (c.free && S.free !== "none")) cls.push("hascost");
+    if (c.on) cls.push("on");
+    if (off) cls.push("off", "d-" + off);
+    if (extraCls) cls.push(extraCls);
+    let h = '<button class="' + cls.join(" ") + '" style="--rot:' + P.tilt.toFixed(2) + "deg;" + (style || "") + '" data-k="' + (c.key || "") + '" data-v="' + (c.v || 0) + '">';
+    h += P.back;
+    if (off === "facedown") h += '<img class="ghost" src="' + src("flag") + '" alt="">';
+    h += '<img class="art" src="' + src(c.art) + '" alt="">';
+    if (c.name) {
+      const txt = K.caps ? upper(c.name) : c.name;
+      const two = c.name.length > 11 ? " two" : "";
+      h += '<span class="nm ' + st.nameAs + (K.caps ? " caps" : "") + two + '">' + esc(txt) + "</span>";
+    }
+    if (c.v) {
+      if (st.index === "roundel") h += '<span class="ix roundel">' + c.v + "</span>";
+      else { h += '<span class="ix">' + c.v + "</span>"; if (st.index === "both") h += '<span class="ix b">' + c.v + "</span>"; }
+    }
+    h += costHTML(c, cm);
+    if (c.held === "defend") h += '<span class="bdg" style="background:#2f8f4e">' + ICON.shield + "</span>";
+    if (c.held === "wait") h += '<span class="bdg" style="background:#8a94a8">' + ICON.wait + "</span>";
+    h += P.front;
+    if (off === "stamped") h += '<span class="stampx">' + esc(upper(w(c.off))) + "</span>";
+    else if (off === "facedown" || (off && S.reason)) h += '<span class="why">' + esc(w(c.off)) + "</span>";
+    return h + "</button>";
+  }
+  // the knobs a look is drawn with in the current view
+  function knobs(styleId) {
+    if (styleId === S.style) return S;
+    return Object.assign({}, S, STYLES[styleId].look);
+  }
+  // a stack of n troop cards, the way renderHand lays it out (one card per value, 46 px apart)
+  function stackHTML(kind, n, pick, st, K, opts) {
+    opts = opts || {};
+    let h = "";
+    for (let v = 1; v <= n; v++) {
+      const top = v === n;
+      const c = { key: kind, kind: "troop", art: kind === "cav" ? "cavalry" : "infantry", v: v, on: v <= pick,
+                  name: top ? w(kind === "cav" ? "cavalry" : "infantry") : "", held: top ? opts.held : null, off: opts.off };
+      h += cardHTML(c, st, K, (opts.seed || "") + kind + v, v > 1 ? "" : opts.gap ? "gap" : "", v > 1 ? "margin-left:" + (46 - CW) + "px" : "");
+    }
+    return h;
+  }
+  // affordability, the game's rule: a purchase is too dear when the gold left cannot pay it
+  function priced(c, left) {
+    if (c.cost > 0 && !c.done && left < c.cost) {
+      c.poor = true;
+      if (!c.maybe && S.poor === "off") c.off = c.off || "noGold";
+    }
+    return c;
+  }
+
+  // ---- the views ------------------------------------------------------------------
+  const holder = document.getElementById("holder"), stage = document.getElementById("stage");
+  const SCEN = {
+    town:     { label: "Town", foot: 3, cav: 1, pieces: [], buys: ["recruit", "buycav"] },
+    frontier: { label: "Frontier", foot: 4, cav: 0, pieces: ["cannon", "engineer"], buys: ["palisade"] },
+    mixed:    { label: "States", foot: 2, cav: 0, held: "defend", pieces: ["spy", "balloon"], waits: ["spy"], offs: { balloon: "noTarget" }, buys: ["recruit", "palisade"], pre: ["recruit"] }
+  };
+  let RS = null;   // the round's own state: what is picked and bought
+  function resetRound() {
+    const sc = SCEN[S.scen];
+    RS = { foot: 0, cav: 0, els: [], bought: {} };
+    (sc.pre || []).forEach((k) => { RS.bought[k] = true; });
+  }
+  function spent() { let n = 0; for (const k in RS.bought) if (RS.bought[k]) n += COST[k]; return n; }
+
+  function roundView() {
+    const sc = SCEN[S.scen], st = STYLES[S.style], K = S, left = S.gold - spent();
+    let row = "";
+    let first = true;
+    if (sc.foot) { row += stackHTML("foot", sc.foot, RS.foot, st, K, { held: sc.held, seed: "r" }); first = false; }
+    if (sc.cav) { row += stackHTML("cav", sc.cav, RS.cav, st, K, { gap: !first, seed: "r" }); first = false; }
+    sc.pieces.forEach((k) => {
+      const c = { key: k, kind: "piece", art: k, name: w(k), on: RS.els.indexOf(k) >= 0,
+                  held: (sc.waits || []).indexOf(k) >= 0 && RS.els.indexOf(k) < 0 ? "wait" : null, off: (sc.offs || {})[k] || null };
+      if (k === "engineer") { c.cost = COST.engineer; c.maybe = true; priced(c, left); }
+      else c.free = true;
+      row += cardHTML(c, st, K, "r" + k, first ? "" : "gap"); first = false;
+    });
+    sc.buys.forEach((k) => {
+      const c = priced({ key: "buy-" + k, kind: "buy", art: BUY_ART[k], name: w(k), cost: COST[k], done: !!RS.bought[k] }, left);
+      row += cardHTML(c, st, K, "r" + k, first ? "" : "gap"); first = false;
+    });
+    const eng = RS.els.indexOf("engineer") >= 0;
+    const h = '<div class="fr"><img class="bg" src="foldiers-hud/map.jpg" alt="">' +
+      '<div class="mock" style="left:26px;top:26px;width:94px;height:92px"><small>' + esc(upper(w("tick"))) + '</small>1 / 6</div>' +
+      '<div class="mock" style="left:310px;top:26px;width:100px;height:92px;background:none;border:0;font-size:56px">0</div>' +
+      '<div class="mock" style="right:26px;top:26px;width:94px;height:92px"><small>' + esc(upper(w("bell"))) + '</small>1:57</div>' +
+      '<div class="gold-chip"><img src="' + COIN + '" alt="">' + left + '<span class="of">/ ' + S.gold + "</span>" +
+        (spent() ? '<span class="dn">−' + spent() + "</span>" : "") + (eng ? '<span class="mb">−' + COST.engineer + "?</span>" : "") + "</div>" +
+      '<div class="region"></div>' +
+      '<div class="mock" style="left:26px;top:1192px;width:250px;height:62px;flex-direction:row;gap:14px">1 ★ ★ ★</div>' +
+      [470, 546, 622].map((x) => '<div class="mock round" style="left:' + x + 'px;top:1194px;width:58px;height:58px">·</div>').join("") +
+      '<div class="hand"><div class="hand-row">' + row + "</div></div></div>";
+    return h;
+  }
+
+  // every card and every state, in the current look
+  function sheetView() {
+    const st = STYLES[S.style], K = S;
+    const spec = (c, cap, seed) => '<div class="spec">' + cardHTML(c, st, K, "s" + seed) + '<span class="cap">' + cap + "</span></div>";
+    let h = '<div class="board" style="width:1180px">';
+    h += '<div class="sec">Troops — a stack, one card per troop</div><div class="specs">';
+    h += '<div class="spec"><div class="stackline">' + stackHTML("foot", 4, 2, st, K, { seed: "s" }) + '</div><span class="cap">Infantry ×4, two picked</span></div>';
+    h += '<div class="spec"><div class="stackline">' + stackHTML("cav", 2, 0, st, K, { seed: "s", held: "defend" }) + '</div><span class="cap">Cavalry ×2, on Defend</span></div>';
+    h += '<div class="spec"><div class="stackline">' + stackHTML("foot", 1, 0, st, K, { seed: "t", off: "used" }) + '</div><span class="cap">Infantry, disabled</span></div>';
+    h += "</div>";
+    h += '<div class="sec">Pieces — what an action costs</div><div class="specs">';
+    h += spec({ art: "cannon", name: w("cannon"), free: true }, "Free action", "cannon");
+    h += spec({ art: "siege", name: w("siege"), free: true, on: true }, "Free, selected", "siege");
+    h += spec({ art: "engineer", name: w("engineer"), cost: COST.engineer, maybe: true }, "Costs 4 only for a bridge", "eng");
+    h += spec({ art: "engineer", name: w("engineer"), cost: COST.engineer, maybe: true, poor: true }, "Bridge too dear", "eng2");
+    h += spec({ art: "spy", name: w("spy"), free: true, held: "wait" }, "Free, on Wait", "spy");
+    h += spec({ art: "balloon", name: w("balloon"), free: true, off: "noTarget" }, "Disabled: no target", "balloon");
+    h += "</div>";
+    h += '<div class="sec">Purchases — gold spent this tick</div><div class="specs">';
+    h += spec({ art: "barracks", name: w("recruit"), cost: COST.recruit }, "Affordable", "rec");
+    h += spec({ art: "cavalry", name: w("buycav"), cost: COST.buycav, poor: true, off: S.poor === "off" ? "noGold" : null }, "Too dear", "cav");
+    h += spec({ art: "palisade", name: w("palisade"), cost: COST.palisade, done: true }, "Bought this tick", "pal");
+    h += spec({ art: "barracks", name: w("recruit"), cost: COST.recruit, off: "used" }, "Disabled: played", "rec2");
+    h += "</div></div>";
+    return h;
+  }
+
+  // the same six specimens in every look
+  const CMP = [
+    ["Picked troop", () => ({ art: "infantry", name: w("infantry"), v: 2, on: true })],
+    ["Free piece", () => ({ art: "cannon", name: w("cannon"), free: true })],
+    ["Conditional cost", () => ({ art: "engineer", name: w("engineer"), cost: COST.engineer, maybe: true })],
+    ["Affordable", () => ({ art: "barracks", name: w("recruit"), cost: COST.recruit })],
+    ["Too dear", () => ({ art: "cavalry", name: w("buycav"), cost: COST.buycav, poor: true, off: S.poor === "off" ? "noGold" : null })],
+    ["Disabled", () => ({ art: "balloon", name: w("balloon"), free: true, off: "noTarget" })]
+  ];
+  function compareView() {
+    let h = '<div class="board" style="width:1290px"><div class="cmp"><div></div>' + CMP.map((x) => '<div class="hd">' + x[0] + "</div>").join("");
+    Object.keys(STYLES).forEach((id) => {
+      const st = STYLES[id], K = knobs(id);
+      h += '<div class="lbl' + (id === S.style ? " on" : "") + '" data-style="' + id + '">' + st.name + "<small>" + st.sub + "</small></div>";
+      CMP.forEach((x, i) => { h += '<div class="cell">' + cardHTML(x[1](), st, K, "c" + id + i) + "</div>"; });
+    });
+    return h + "</div></div>";
+  }
+
+  // ---- render and fit ---------------------------------------------------------------
+  function render() {
+    UID = 0;
+    holder.innerHTML = S.view === "round" ? roundView() : S.view === "sheet" ? sheetView() : compareView();
+    fit();
+    syncPanel();
+    save();
+  }
+  function fit() {
+    const W = stage.clientWidth, H = stage.clientHeight;
+    const cw = holder.firstElementChild.offsetWidth, ch = holder.firstElementChild.offsetHeight;
+    let k;
+    if (S.view === "round") { k = Math.min((W - 40) / cw, (H - 40) / ch); stage.classList.remove("scroll"); }
+    else { k = Math.min(1.25, (W - 40) / cw); stage.classList.add("scroll"); }
+    holder.style.transform = "scale(" + k + ")";
+    holder.style.left = Math.max(20, (W - cw * k) / 2) + "px";
+    holder.style.top = S.view === "round" ? Math.max(20, (H - ch * k) / 2) + "px" : "20px";
+    holder.style.height = S.view === "round" ? "" : ch + "px";
+    let pad = document.getElementById("pad");
+    if (!pad) { pad = document.createElement("div"); pad.id = "pad"; pad.style.cssText = "width:1px;pointer-events:none"; stage.appendChild(pad); }
+    pad.style.height = S.view === "round" ? "0" : ch * k + 60 + "px";
+  }
+  window.addEventListener("resize", fit);
+
+  // the round: tap a card the way the game does
+  holder.addEventListener("click", (e) => {
+    const lbl = e.target.closest(".lbl[data-style]");
+    if (lbl) { pickStyle(lbl.getAttribute("data-style")); return; }
+    if (S.view !== "round") return;
+    const b = e.target.closest(".cd");
+    if (!b || b.classList.contains("off")) return;
+    const key = b.getAttribute("data-k"), v = +b.getAttribute("data-v");
+    if (key === "foot" || key === "cav") {
+      const n = SCEN[S.scen][key];
+      RS[key] = RS[key] === v ? v - 1 : v;
+      if (RS[key] > n) RS[key] = n;
+    } else if (key.indexOf("buy-") === 0) {
+      const k = key.slice(4);
+      if (RS.bought[k]) delete RS.bought[k];
+      else if (S.gold - spent() >= COST[k]) RS.bought[k] = true;
+    } else {
+      const i = RS.els.indexOf(key);
+      if (i >= 0) RS.els.splice(i, 1); else RS.els.push(key);
+    }
+    render();
+  });
+
+  // ---- the panel -------------------------------------------------------------------
+  function seg(id, items, get, set) {
+    const el = document.getElementById(id);
+    el.innerHTML = items.map((x) => '<button data-v="' + x[0] + '">' + x[1] + "</button>").join("");
+    el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { set(b.getAttribute("data-v")); render(); } });
+    el._sync = () => { Array.prototype.forEach.call(el.children, (b) => b.classList.toggle("on", get(b.getAttribute("data-v")))); };
+    return el;
+  }
+  const segs = [];
+  segs.push(seg("view", [["round", "Round"], ["sheet", "Sheet"], ["all", "All styles"]], (v) => S.view === v, (v) => { S.view = v; }));
+  segs.push(seg("style", Object.keys(STYLES).map((k) => [k, STYLES[k].name + " — " + STYLES[k].sub]), (v) => S.style === v, (v) => pickStyle(v, true)));
+  segs.push(seg("cost", COSTS, (v) => S.cost === v, (v) => { S.cost = v; }));
+  segs.push(seg("free", [["none", "Nothing"], ["word", "“Free”"], ["zero", "0 coin"]], (v) => S.free === v, (v) => { S.free = v; }));
+  segs.push(seg("poor", [["off", "Disabled"], ["red", "Red price only"]], (v) => S.poor === v, (v) => { S.poor = v; }));
+  segs.push(seg("off", OFFS, (v) => S.off === v, (v) => { S.off = v; }));
+  segs.push(seg("reason", [["1", "Shown"], ["0", "Hidden"]], (v) => S.reason === (v === "1"), (v) => { S.reason = v === "1"; }));
+  segs.push(seg("sel", [["ring", "Lift + ring"], ["ink", "Lift + ink edge"], ["lift", "Lift only"]], (v) => S.sel === v, (v) => { S.sel = v; }));
+  segs.push(seg("fold", [["none", "None"], ["diag", "Crease"], ["half", "Half"], ["crumple", "Crumple"]], (v) => S.fold === v, (v) => { S.fold = v; }));
+  segs.push(seg("bits", [["tape", "Tape"], ["ear", "Dog-ear"], ["caps", "Capitals"]], (v) => !!S[v], (v) => { S[v] = !S[v]; }));
+  segs.push(seg("scen", Object.keys(SCEN).map((k) => [k, SCEN[k].label]), (v) => S.scen === v, (v) => { S.scen = v; resetRound(); S.view = "round"; }));
+  segs.push(seg("lang", [["en", "EN"], ["fr", "FR"]], (v) => S.lang === v, (v) => { S.lang = v; }));
+  function pickStyle(id, fromPanel) {
+    S.style = id;
+    Object.assign(S, STYLES[id].look);
+    if (!fromPanel) render();
+  }
+  ["tilt", "rough", "depth", "grain", "shadow", "seed", "gold"].forEach((k) => {
+    const el = document.getElementById(k);
+    el.addEventListener("input", () => { S[k] = +el.value; if (k === "gold") clampBuys(); render(); });
+  });
+  // gold lowered under what is already bought: the last purchases are given back
+  function clampBuys() { Object.keys(RS.bought).reverse().forEach((k) => { if (spent() > S.gold) delete RS.bought[k]; }); }
+  function syncPanel() {
+    segs.forEach((s) => s._sync());
+    ["tilt", "rough", "depth", "grain", "shadow", "seed", "gold"].forEach((k) => {
+      document.getElementById(k).value = S[k];
+      document.getElementById("o-" + k).textContent = S[k];
+    });
+  }
+  document.getElementById("reset").addEventListener("click", () => { pickStyle(S.style); });
+  document.getElementById("copy").addEventListener("click", () => {
+    const out = { style: S.style };
+    ["cost", "free", "poor", "off", "reason", "sel", "tilt", "rough", "depth", "grain", "shadow", "fold", "tape", "ear", "caps", "seed"].forEach((k) => { out[k] = S[k]; });
+    const txt = JSON.stringify(out, null, 2), note = document.getElementById("note");
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(
+      () => { note.textContent = "Copied."; }, () => { note.textContent = txt; });
+    setTimeout(() => { if (note.textContent === "Copied.") note.textContent = ""; }, 1800);
+  });
+
+  resetRound();
+  if (document.fonts && document.fonts.load) document.fonts.load('700 20px "Baloo 2"').then(render, render);
+  else render();
+})();
+</script>
+</body>
+</html>

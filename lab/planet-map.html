@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Planet map</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   LAB — PLANET MAP. Can the map a player picks a stage on be a WORLD they turn
+   in their hands — a small planet, its biomes painted on it, the stages pinned
+   to its surface and the roads between them — rather than a page they scroll?
+
+   Two references, two ends of one dial: an old over-world globe (a dark sky,
+   red orbit rings, green and red rings round the nodes, straight arcs flown
+   between them) and a painted one (a purple nebula, one biome per region —
+   snow, a volcano, a forest — and islands of the other worlds floating round
+   it). The presets sit along that dial; every layer of it is a knob.
+
+   One seed and one route make one planet, in this order:
+
+     1. ROUTE     the stages and their roads. GENERATE lays the map of record
+                  (docs/LEVELS.md: 30 levels, four forks, two star gates, the
+                  optional level 0 on its dashed spur) on a spiral that climbs
+                  the planet from the south, one row of the climb at a time —
+                  or a plain line of N. Then it is edited by hand (below).
+     2. BIOMES    one region per BAND of the climb, seeded at the middle of
+                  that band's stages, so the road visits the biomes in order
+                  (Warm-up in a meadow, Meltdown on a volcano); a couple of
+                  wild regions fill the far side. A border is a nearest-seed
+                  test on a noise-warped point.
+     3. RELIEF    land wherever the road goes plus noise continents, the rest
+                  is sea; mountains where a biome is rough, a landmark per
+                  biome that has one (a volcano with a lava crater, a snow
+                  peak, a crystal spire) placed as far from the road as its
+                  region allows, and a flat pad under every stage.
+     4. DRESSING  props per biome (trees, pines, cacti, rocks, crystals,
+                  mushrooms) kept off the road, floating islands, orbit rings,
+                  an atmosphere, stars.
+
+   Editing is three modes — SELECT (click a stage, drag it over the surface),
+   ADD (click the ground: a stage linked from the selected one) and LINK
+   (click two stages to link or unlink them). Stages are numbered by the
+   roads themselves (a topological walk that takes the left road of a fork
+   first), so the numbers never need typing. With "Terrain follows route" on,
+   the planet re-grows under every edit. Undo is Cmd/Ctrl+Z; the map is kept
+   in this browser and leaves as JSON (Copy / Download / Import).
+
+   Runs on the vendored three.js through an import map: open it through
+   `make lab`, never over file://.
+   =========================================================================== */
+
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body {
+  display:grid;
+  grid-template-columns: 290px 1fr 300px;
+  background:#0b0b12;
+  color:#e8e6f5;
+  font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  overflow:hidden;
+}
+@media (max-width: 900px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 55vh auto auto; overflow:auto; }
+  #stage { order:-1; }
+}
+
+/* ---------------------------------------------------------------------------
+   PANELS
+   --------------------------------------------------------------------------- */
+.panel {
+  overflow-y:auto;
+  padding:18px 16px 30px;
+  background:#12121c;
+}
+#panel { border-right:1px solid #23233a; }
+#side { border-left:1px solid #23233a; }
+.panel h1 { font-size:16px; letter-spacing:.5px; }
+.panel p.hint { margin:6px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+.panel h2 { margin:18px 0 8px; font-size:12px; color:#9c9cba; letter-spacing:.5px; }
+
+details { border-top:1px solid #23233a; padding:8px 0 4px; }
+details > summary {
+  cursor:pointer; list-style:none; display:flex; justify-content:space-between;
+  font-size:13px; padding:2px 0 6px; color:#e8e6f5;
+}
+details > summary::after { content:"›"; transform:rotate(90deg); color:#6c6c8c; transition:transform .15s; }
+details:not([open]) > summary::after { transform:none; }
+
+.row { margin-bottom:10px; }
+.row label { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#9c9cba; }
+.row label b { color:#e8e6f5; font-variant-numeric:tabular-nums; font-weight:600; }
+.row input[type=range] { width:100%; margin-top:4px; accent-color:#7ea6ff; }
+.row.inline { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.row.inline label { flex:1; }
+.row select, .row input[type=text], .row input[type=number], textarea {
+  width:100%; margin-top:4px; padding:5px 7px;
+  background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px;
+  font:inherit; font-weight:500;
+}
+.row.inline select, .row.inline input[type=number] { width:auto; margin:0; }
+input[type=color] { width:44px; height:24px; border:1px solid #2c2c47; border-radius:6px; background:#0b0b12; padding:1px; cursor:pointer; }
+input[type=checkbox] { accent-color:#7ea6ff; width:16px; height:16px; }
+
+button {
+  padding:7px 10px;
+  background:#7ea6ff; color:#0b0b12; border:0; border-radius:8px;
+  font:700 12px/1 inherit; cursor:pointer;
+}
+button.ghost { background:#1d1d2e; color:#e8e6f5; border:1px solid #2c2c47; }
+button.danger { background:#3a1622; color:#ff9db0; border:1px solid #5a2234; }
+button:hover { filter:brightness(1.12); }
+.btns { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.btns button { flex:1 1 auto; }
+
+.band { display:grid; grid-template-columns: 18px 1fr 98px; gap:6px; align-items:center; margin-bottom:6px; }
+.band i { width:14px; height:14px; border-radius:4px; display:block; }
+.band input, .band select { margin:0 !important; }
+
+/* ---------------------------------------------------------------------------
+   STAGE — the planet, and what floats over it
+   --------------------------------------------------------------------------- */
+#stage { position:relative; overflow:hidden; min-height:300px; background:#000; }
+#view { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+#toolbar {
+  position:absolute; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap;
+  padding:6px; background:rgba(12,12,20,.72); border:1px solid #2c2c47; border-radius:12px;
+  backdrop-filter:blur(6px);
+}
+#toolbar button { background:transparent; color:#cfd0ea; border:1px solid transparent; }
+#toolbar button.on { background:#7ea6ff; color:#0b0b12; }
+#toolbar .sep { width:1px; background:#2c2c47; margin:2px 2px; }
+#toolbar kbd { font:600 10px/1 inherit; opacity:.6; margin-left:4px; }
+#hintbar {
+  position:absolute; left:12px; bottom:12px; right:12px; pointer-events:none;
+  font-weight:500; font-size:12px; color:#c9c9e0; text-shadow:0 1px 3px #000;
+}
+#tip {
+  position:absolute; pointer-events:none; display:none; z-index:2;
+  padding:6px 9px; border-radius:8px; background:rgba(12,12,20,.88); border:1px solid #2c2c47;
+  font-size:12px; white-space:nowrap; transform:translate(14px, 10px);
+}
+#tip small { display:block; color:#9c9cba; font-weight:500; }
+#busy { position:absolute; top:12px; right:14px; font-size:11px; color:#8b8ba7; }
+
+/* ---------------------------------------------------------------------------
+   SIDE — the selected stage, the list, the file
+   --------------------------------------------------------------------------- */
+#insp .empty { color:#6c6c8c; font-weight:500; font-size:12px; }
+.ihead { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.ihead .num {
+  flex:0 0 34px; height:34px; border-radius:50%; display:grid; place-items:center;
+  font-weight:800; color:#14111f;
+}
+.ihead input { flex:1; margin:0 !important; font-weight:700 !important; }
+.stars { display:flex; gap:4px; margin-top:4px; }
+.stars button { flex:1; background:#1d1d2e; color:#6c6c8c; border:1px solid #2c2c47; font-size:14px; padding:5px 0; }
+.stars button.on { color:#ffd34d; border-color:#5a4a1a; }
+.meta { font-size:11px; color:#8b8ba7; font-weight:500; margin:6px 0 10px; }
+.links { display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+.links .ln { display:flex; gap:6px; align-items:center; font-size:12px; }
+.links .ln span { flex:1; }
+.links .ln input { width:62px; padding:3px 5px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; }
+.links .ln button { padding:4px 7px; }
+
+#list { list-style:none; max-height:38vh; overflow-y:auto; border:1px solid #23233a; border-radius:8px; }
+#list li { display:flex; align-items:center; gap:8px; padding:5px 8px; cursor:pointer; border-bottom:1px solid #1a1a28; font-size:12px; }
+#list li:last-child { border-bottom:0; }
+#list li:hover { background:#1a1a2a; }
+#list li.sel { background:#22264a; }
+#list li .dot { flex:0 0 22px; height:22px; border-radius:50%; display:grid; place-items:center; font-size:10px; font-weight:800; color:#14111f; }
+#list li .nm { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#list li .st { color:#ffd34d; font-size:11px; letter-spacing:-1px; }
+#list li .bm { color:#7c7c9c; font-size:11px; font-weight:500; }
+textarea { height:70px; resize:vertical; font:500 11px/1.3 ui-monospace,Menlo,monospace; }
+#toast { margin-top:6px; font-size:11px; color:#8fe3a8; min-height:15px; font-weight:500; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<aside id="panel" class="panel">
+  <h1>Planet map</h1>
+  <p class="hint">The stage map as a small planet: biomes per band of the climb, stages pinned on its surface, roads between them. Drag the space to turn it, wheel to zoom.</p>
+  <div id="controls"></div>
+</aside>
+
+<main id="stage">
+  <canvas id="view"></canvas>
+  <div id="toolbar">
+    <button data-mode="select" class="on">Select<kbd>1</kbd></button>
+    <button data-mode="add">Add<kbd>2</kbd></button>
+    <button data-mode="link">Link<kbd>3</kbd></button>
+    <span class="sep"></span>
+    <button data-act="undo">Undo</button>
+    <button data-act="fit">Fit</button>
+    <button data-act="tour">Tour</button>
+  </div>
+  <div id="busy"></div>
+  <div id="tip"></div>
+  <div id="hintbar"></div>
+</main>
+
+<aside id="side" class="panel">
+  <h2>Selected stage</h2>
+  <div id="insp"></div>
+  <h2>Stages <span id="count"></span></h2>
+  <ol id="list"></ol>
+  <h2>Map file</h2>
+  <div class="btns">
+    <button data-file="copy">Copy JSON</button>
+    <button data-file="download" class="ghost">Download</button>
+    <button data-file="import" class="ghost">Import file</button>
+  </div>
+  <textarea id="paste" placeholder="Paste a map JSON here, then Load"></textarea>
+  <div class="btns">
+    <button data-file="load" class="ghost">Load pasted</button>
+    <button data-file="settings" class="ghost">Copy settings</button>
+    <button data-file="renumber" class="ghost">Renumber</button>
+    <button data-file="reset" class="danger">New map</button>
+  </div>
+  <input type="file" id="file" accept=".json,application/json" hidden>
+  <div id="toast"></div>
+</aside>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { mergeVertices, mergeGeometries as mergeGeoms } from "three/addons/utils/BufferGeometryUtils.js";
+
+/* ===========================================================================
+   1. TOOLS — seeded random, simplex noise, small maths
+   =========================================================================== */
+const D2R = Math.PI / 180;
+const UP = new THREE.Vector3(0, 1, 0);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const smooth = (e0, e1, x) => { const t = clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function mulberry(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// 3D simplex noise (Gustavson), seeded by its permutation table.
+function makeNoise(seed) {
+  const rnd = mulberry(seed * 7919 + 1);
+  const p = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) p[i] = i;
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = p[i]; p[i] = p[j]; p[j] = t; }
+  const perm = new Uint8Array(512), pm12 = new Uint8Array(512);
+  for (let i = 0; i < 512; i++) { perm[i] = p[i & 255]; pm12[i] = perm[i] % 12; }
+  const g = [1,1,0, -1,1,0, 1,-1,0, -1,-1,0, 1,0,1, -1,0,1, 1,0,-1, -1,0,-1, 0,1,1, 0,-1,1, 0,1,-1, 0,-1,-1];
+  const F3 = 1 / 3, G3 = 1 / 6;
+  return function (xin, yin, zin) {
+    const s = (xin + yin + zin) * F3;
+    const i = Math.floor(xin + s), j = Math.floor(yin + s), k = Math.floor(zin + s);
+    const t = (i + j + k) * G3;
+    const x0 = xin - (i - t), y0 = yin - (j - t), z0 = zin - (k - t);
+    let i1, j1, k1, i2, j2, k2;
+    if (x0 >= y0) {
+      if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+      else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+      else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+    } else {
+      if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+      else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+      else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+    }
+    const x1 = x0 - i1 + G3, y1 = y0 - j1 + G3, z1 = z0 - k1 + G3;
+    const x2 = x0 - i2 + 2 * G3, y2 = y0 - j2 + 2 * G3, z2 = z0 - k2 + 2 * G3;
+    const x3 = x0 - 1 + 3 * G3, y3 = y0 - 1 + 3 * G3, z3 = z0 - 1 + 3 * G3;
+    const ii = i & 255, jj = j & 255, kk = k & 255;
+    let n = 0, tt, gi;
+    tt = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+    if (tt > 0) { gi = pm12[ii + perm[jj + perm[kk]]] * 3; tt *= tt; n += tt * tt * (g[gi] * x0 + g[gi + 1] * y0 + g[gi + 2] * z0); }
+    tt = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+    if (tt > 0) { gi = pm12[ii + i1 + perm[jj + j1 + perm[kk + k1]]] * 3; tt *= tt; n += tt * tt * (g[gi] * x1 + g[gi + 1] * y1 + g[gi + 2] * z1); }
+    tt = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+    if (tt > 0) { gi = pm12[ii + i2 + perm[jj + j2 + perm[kk + k2]]] * 3; tt *= tt; n += tt * tt * (g[gi] * x2 + g[gi + 1] * y2 + g[gi + 2] * z2); }
+    tt = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+    if (tt > 0) { gi = pm12[ii + 1 + perm[jj + 1 + perm[kk + 1]]] * 3; tt *= tt; n += tt * tt * (g[gi] * x3 + g[gi + 1] * y3 + g[gi + 2] * z3); }
+    return 32 * n;
+  };
+}
+function fbm(nz, x, y, z, oct) {
+  let a = 1, f = 1, s = 0, w = 0;
+  for (let o = 0; o < oct; o++) { s += nz(x * f, y * f, z * f) * a; w += a; a *= 0.5; f *= 2.03; }
+  return s / w;
+}
+function toVec(lat, lon, out = new THREE.Vector3()) {
+  const a = lat * D2R, o = lon * D2R;
+  return out.set(Math.cos(a) * Math.sin(o), Math.sin(a), Math.cos(a) * Math.cos(o));
+}
+function toLatLon(v) {
+  return { lat: Math.asin(clamp(v.y, -1, 1)) / D2R, lon: Math.atan2(v.x, v.z) / D2R };
+}
+function slerp(a, b, t, out = new THREE.Vector3()) {
+  const d = clamp(a.dot(b), -1, 1), th = Math.acos(d);
+  if (th < 1e-5) return out.copy(a);
+  const s = Math.sin(th), wa = Math.sin((1 - t) * th) / s, wb = Math.sin(t * th) / s;
+  return out.set(a.x * wa + b.x * wb, a.y * wa + b.y * wb, a.z * wa + b.z * wb);
+}
+function randomUnit(rnd, out = new THREE.Vector3()) {
+  const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, r = Math.sqrt(1 - u * u);
+  return out.set(r * Math.cos(th), u, r * Math.sin(th));
+}
+
+/* ===========================================================================
+   2. DATA — biomes, presets, the settings, the map itself
+   =========================================================================== */
+
+// What a region of the planet is made of. `rough` scales the relief (above 1.3
+// it grows ridges), `prop` is what stands on it, `mark` its landmark, `glow`
+// what lights up in the dark (the lava of a crater, a crystal, a mushroom).
+const BIOMES = {
+  meadow:  { name: "Meadow",  low: "#5dbb48", high: "#a4d65c", rock: "#8d7b5a", shore: "#ecd796", rough: 0.8, prop: "tree",     propColor: "#2f8f3a" },
+  forest:  { name: "Forest",  low: "#2c8a42", high: "#4c9e48", rock: "#6a5a44", shore: "#d9c98a", rough: 1.05, prop: "pine",    propColor: "#1d6a34" },
+  desert:  { name: "Desert",  low: "#e3b25a", high: "#f2d08a", rock: "#bb804a", shore: "#f5e0a6", rough: 0.6, prop: "cactus",   propColor: "#5f9a3e" },
+  snow:    { name: "Snow",    low: "#dfe9f3", high: "#ffffff", rock: "#8e9bae", shore: "#cfe0ea", rough: 1.7, prop: "snowpine", propColor: "#3f7a6a", mark: "peak" },
+  volcano: { name: "Volcano", low: "#4b3a46", high: "#6d5056", rock: "#2e2631", shore: "#5c4a4a", rough: 1.35, prop: "rock",    propColor: "#3b3138", mark: "volcano", glow: "#ff6a1a" },
+  crystal: { name: "Crystal", low: "#5a6fd8", high: "#93a6f2", rock: "#3c3f8c", shore: "#bdc8ff", rough: 1.0, prop: "crystal",  propColor: "#7ff0ff", mark: "spire", glow: "#7ff0ff" },
+  swamp:   { name: "Swamp",   low: "#5f7b3b", high: "#7d6c9c", rock: "#4a4259", shore: "#8c9b5c", rough: 0.7, prop: "mushroom", propColor: "#d77bff", glow: "#d77bff" },
+};
+const BIOME_KEYS = Object.keys(BIOMES);
+
+// Stage names, per biome — a proper noun each, so a capital per word.
+const NAMES = {
+  meadow:  ["Clover Hill", "Daisy Steps", "Windmill Rise", "Honey Vale", "Brook Bend", "Lark Field", "Sunny Fold", "Green Gate", "Hay Loft", "Poppy Lane"],
+  forest:  ["Mossy Hollow", "Owl Wood", "Fern Gully", "Old Oak", "Pinecone Path", "Shady Glen", "Root Maze", "Thorn Ring", "Bramble Bank", "Elder Grove"],
+  desert:  ["Dune Sea", "Cactus Pass", "Mirage Well", "Sunbaked Mesa", "Scorpion Ridge", "Dry Creek", "Sandglass", "Copper Canyon", "Camel Rest", "Bone Flats"],
+  snow:    ["Frost Peak", "Icicle Cave", "Polar Gate", "Snowdrift", "Glacier Run", "White Summit", "Yeti Den", "Blizzard Pass", "Crystal Lake", "Aurora Camp"],
+  volcano: ["Ember Ridge", "Ash Field", "Magma Falls", "Cinder Cone", "Smoke Stack", "Obsidian Rim", "Lava Moat", "Sulphur Vent", "Burning Steps", "The Crater"],
+  crystal: ["Prism Cave", "Glass Garden", "Shard Hill", "Echo Geode", "Quartz Bridge", "Gleam Vale", "Mirror Lake", "Crystal Spire", "Facet Field", "Neon Grotto"],
+  swamp:   ["Bog Bend", "Toadstool Ring", "Murk Mire", "Gloom Fen", "Frog Court", "Sludge Pool", "Willow Dip", "Mist Marsh", "Spore Hollow", "Reed Maze"],
+};
+
+const DEFAULT_BANDS = [
+  { name: "Warm-up", biome: "meadow" },
+  { name: "Pressure", biome: "forest" },
+  { name: "Squeeze", biome: "desert" },
+  { name: "Overdrive", biome: "snow" },
+  { name: "Meltdown", biome: "volcano" },
+];
+
+// Everything that is not a look: the planet, the route, the stages.
+const BASE = {
+  seed: 7, detail: 40, ocean: 0.08, relief: 1, warp: 0.28, wild: 2, landR: 0.32, props: 0.6, spin: 0, follow: true,
+  graph: "climb", count: 20, turns: 1.15, latFrom: -58, latTo: 62, forkW: 0.13, jitter: 0.35, zero: true,
+  progress: 9, labelPx: 38, padR: 0.045,
+  bands: DEFAULT_BANDS,
+};
+// The looks. A preset only ever writes these keys.
+const PRESETS = {
+  "Painted": {
+    bgA: "#140b33", bgB: "#5b2fbb", stars: 1200, atmo: "#a27dff", atmoStr: 1.1, sun: 2.6, ambient: 0.75, bloom: 0.35, glow: 1.8,
+    sat: 0.15, light: 0, tint: "#7b5cff", tintAmt: 0.06, seaColor: "#3e6fe2", seaOpacity: 0.82, islands: 4, rings: 0, ringColor: "#d0281e",
+    routeStyle: "tube", routeW: 0.0065, arch: 0, lift: 0.012, routeBright: 1.1, roadColor: "#fff3d2", lockedColor: "#c6b6ff",
+    nodeStyle: "badge", cClear: "#ffd34d", cCurrent: "#ff5fa2", cOpen: "#ffffff", cLocked: "#6e6a8f",
+  },
+  "Retro wire": {
+    bgA: "#000000", bgB: "#07070f", stars: 1600, atmo: "#5fa8ff", atmoStr: 0.6, sun: 2.3, ambient: 0.5, bloom: 0.7, glow: 1.2,
+    sat: -0.35, light: -0.04, tint: "#7a5a3a", tintAmt: 0.25, seaColor: "#1d3f8f", seaOpacity: 0.9, islands: 0, rings: 6, ringColor: "#d0281e",
+    routeStyle: "tube", routeW: 0.004, arch: 0.13, lift: 0.02, routeBright: 1.6, roadColor: "#e8e8f0", lockedColor: "#c0302a",
+    nodeStyle: "ring", cClear: "#34d058", cCurrent: "#ffd200", cOpen: "#34d058", cLocked: "#d0281e",
+  },
+  "Toy": {
+    bgA: "#8fd3ff", bgB: "#ffe3f1", stars: 0, atmo: "#ffffff", atmoStr: 0.7, sun: 2.8, ambient: 1.1, bloom: 0, glow: 0.6,
+    sat: 0.05, light: 0.05, tint: "#ffffff", tintAmt: 0.08, seaColor: "#46c6ff", seaOpacity: 0.86, islands: 3, rings: 0, ringColor: "#ffffff",
+    routeStyle: "tube", routeW: 0.009, arch: 0, lift: 0.014, routeBright: 1, roadColor: "#fff1c9", lockedColor: "#ffffff",
+    nodeStyle: "badge", cClear: "#ffc533", cCurrent: "#ff6b6b", cOpen: "#ffffff", cLocked: "#a5b4c8",
+  },
+  "Night": {
+    bgA: "#02040c", bgB: "#0d1b3a", stars: 2400, atmo: "#3b7bff", atmoStr: 1.4, sun: 1.5, ambient: 0.5, bloom: 1.1, glow: 3.2,
+    sat: -0.1, light: -0.06, tint: "#1b2a6b", tintAmt: 0.35, seaColor: "#0f2a66", seaOpacity: 0.9, islands: 2, rings: 2, ringColor: "#3b7bff",
+    routeStyle: "dots", routeW: 0.006, arch: 0.03, lift: 0.012, routeBright: 2.2, roadColor: "#ffd27a", lockedColor: "#4a5a8a",
+    nodeStyle: "badge", cClear: "#ffd27a", cCurrent: "#5ff2ff", cOpen: "#ffffff", cLocked: "#3a4466",
+  },
+};
+
+let P = Object.assign({ preset: "Painted" }, structuredClone(BASE), PRESETS.Painted);
+let S = { nodes: [], edges: [] };
+let nextId = 1;
+
+// The map of record, docs/LEVELS.md: a line is levels in a row, a fork two
+// roads that rejoin; the SHORT road (the first) carries the gate when there is one.
+const CLIMB = [
+  { line: [1, 2, 3] },
+  { fork: [[4], [5, 6, 7]] },
+  { line: [8, 9] },
+  { fork: [[10, 11], [12, 13, 14, 15]], gate: 14 },
+  { line: [16, 17] },
+  { fork: [[18], [19, 20, 21]], gate: 30 },
+  { line: [22, 23] },
+  { fork: [[24, 25], [26, 27, 28]] },
+  { line: [29, 30] },
+];
+
+/* ===========================================================================
+   3. SCENE
+   =========================================================================== */
+const canvas = document.getElementById("view");
+const stageEl = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 300);
+camera.position.set(0, 0.5, 3.6);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 1.4;
+controls.maxDistance = 9;
+controls.rotateSpeed = 0.55;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x334466, 0.8);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -1.5, right: 1.5, top: 1.5, bottom: -1.5, near: 0.5, far: 12 });
+sun.shadow.bias = -0.0005;
+sun.shadow.normalBias = 0.01;
+scene.add(sun, sun.target);
+
+const planet = new THREE.Group();     // spins: everything ON the planet
+const routeGroup = new THREE.Group();
+const nodesGroup = new THREE.Group();
+const propsGroup = new THREE.Group();
+planet.add(propsGroup, routeGroup, nodesGroup);
+const islands = new THREE.Group();
+const rings = new THREE.Group();
+scene.add(planet, islands, rings);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.55, 1.0);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+// Glow uniform shared by the terrain (its lava faces) — a face's own colour, emitted.
+const uGlow = { value: 1 };
+function emissiveTerrain(mat) {
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uGlow = uGlow;
+    sh.vertexShader = sh.vertexShader
+      .replace("#include <common>", "#include <common>\nattribute float emit;\nvarying float vEmit;")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvEmit = emit;");
+    sh.fragmentShader = sh.fragmentShader
+      .replace("#include <common>", "#include <common>\nvarying float vEmit;\nuniform float uGlow;")
+      .replace("#include <emissivemap_fragment>", "#include <emissivemap_fragment>\ntotalEmissiveRadiance += vColor.rgb * vEmit * uGlow;");
+  };
+  mat.customProgramCacheKey = () => "planet-emit";
+  return mat;
+}
+const terrainMat = emissiveTerrain(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.92, metalness: 0 }));
+let terrain = new THREE.Mesh(new THREE.BufferGeometry(), terrainMat);
+terrain.castShadow = terrain.receiveShadow = true;
+planet.add(terrain);
+
+const oceanMat = new THREE.MeshStandardMaterial({ color: 0x3e6fe2, transparent: true, opacity: 0.82, roughness: 0.6, metalness: 0, flatShading: true });
+let ocean = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 14), oceanMat);
+ocean.receiveShadow = true;
+planet.add(ocean);
+
+// The atmosphere: a rim on the planet and a halo behind it, both additive.
+const atmoUniforms = { uColor: { value: new THREE.Color() }, uStr: { value: 1 } };
+const atmoVert = `varying vec3 vN; varying vec3 vV;
+  void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
+const halo = new THREE.Mesh(new THREE.SphereGeometry(1.2, 64, 48), new THREE.ShaderMaterial({
+  uniforms: atmoUniforms, vertexShader: atmoVert, side: THREE.BackSide, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  fragmentShader: `uniform vec3 uColor; uniform float uStr; varying vec3 vN; varying vec3 vV;
+    void main(){ float d = dot(vN, vV); float a = pow(clamp(-d * 1.75, 0.0, 1.0), 3.0) * uStr; gl_FragColor = vec4(uColor * a, a); }`,
+}));
+const rim = new THREE.Mesh(new THREE.SphereGeometry(1.015, 64, 48), new THREE.ShaderMaterial({
+  uniforms: atmoUniforms, vertexShader: atmoVert, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  fragmentShader: `uniform vec3 uColor; uniform float uStr; varying vec3 vN; varying vec3 vV;
+    void main(){ float f = 1.0 - clamp(dot(vN, vV), 0.0, 1.0); float a = pow(f, 3.2) * uStr * 0.75; gl_FragColor = vec4(uColor * a, a); }`,
+}));
+scene.add(halo, rim);
+
+let starField = null;
+let bgTex = null;
+
+function disposeTree(o) {
+  o.traverse(c => {
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) {
+      const ms = Array.isArray(c.material) ? c.material : [c.material];
+      ms.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+    }
+  });
+}
+function clearGroup(g) {
+  for (const c of [...g.children]) { g.remove(c); disposeTree(c); }
+}
+
+/* ===========================================================================
+   4. THE WORLD — what the surface is at any point
+   =========================================================================== */
+const W = { seeds: [], marks: [], samples: new Float32Array(0), pads: [], nz: null, nz2: null, nz3: null };
+let PAL = {};
+
+function nodeById(id) { return S.nodes.find(n => n.id === id); }
+function vecOf(node, out = new THREE.Vector3()) { return toVec(node.lat, node.lon, out); }
+
+function lookColor(hex) {
+  const c = new THREE.Color(hex), hsl = {};
+  c.getHSL(hsl);
+  c.setHSL(hsl.h, clamp(hsl.s * (1 + P.sat), 0, 1), clamp(hsl.l + P.light, 0, 1));
+  return c.lerp(new THREE.Color(P.tint), P.tintAmt);
+}
+function buildPalette() {
+  PAL = {};
+  for (const k of BIOME_KEYS) {
+    const B = BIOMES[k];
+    PAL[k] = { low: lookColor(B.low), high: lookColor(B.high), rock: lookColor(B.rock), shore: lookColor(B.shore), prop: lookColor(B.propColor) };
+  }
+  PAL.deep = lookColor("#16244e");
+  PAL.lava = new THREE.Color(BIOMES.volcano.glow);
+}
+
+// Region of a point: the nearest seed to the point once noise has bent it.
+function biomeIndex(x, y, z) {
+  const w = P.warp, nz = W.nz3;
+  const wx = x + nz(x * 2.1 + 5.2, y * 2.1, z * 2.1) * w;
+  const wy = y + nz(x * 2.1, y * 2.1 + 9.1, z * 2.1) * w;
+  const wz = z + nz(x * 2.1, y * 2.1, z * 2.1 + 3.7) * w;
+  let best = -9, bi = 0;
+  for (let i = 0; i < W.seeds.length; i++) {
+    const s = W.seeds[i], d = wx * s.x + wy * s.y + wz * s.z;
+    if (d > best) { best = d; bi = i; }
+  }
+  return bi;
+}
+function nearestRouteDot(x, y, z) {
+  const a = W.samples; let md = -1;
+  for (let i = 0; i < a.length; i += 3) { const d = x * a[i] + y * a[i + 1] + z * a[i + 2]; if (d > md) md = d; }
+  return md;
+}
+
+// The height of the ground over the unit sphere at (x, y, z), before the pads.
+const OUT = { h: 0, b: 0, lava: 0 };
+function rawSample(x, y, z, out) {
+  const seeds = W.seeds;
+  // roughness: a soft blend of the regions' own, so a border is never a cliff
+  let best = -9;
+  for (const s of seeds) { const d = x * s.x + y * s.y + z * s.z; if (d > best) best = d; }
+  let sw = 0, rough = 0;
+  for (const s of seeds) { const d = x * s.x + y * s.y + z * s.z, w = Math.exp((d - best) * 14); sw += w; rough += w * BIOMES[s.biome].rough; }
+  rough /= sw;
+  const c = fbm(W.nz, x * 1.5, y * 1.5, z * 1.5, 4);
+  const md = nearestRouteDot(x, y, z);
+  const land = smooth(Math.cos(P.landR), Math.cos(P.landR * 0.35), md);
+  const e = c * 0.75 + land * 0.7 - P.ocean;
+  let h;
+  if (e > 0) {
+    h = e * 0.05 * P.relief * rough + fbm(W.nz2, x * 7, y * 7, z * 7, 3) * 0.012 * P.relief * rough;
+    if (rough > 1.25) {
+      const r = 1 - Math.abs(W.nz2(x * 3.3 + 11, y * 3.3, z * 3.3));
+      h += r * r * r * 0.07 * (rough - 1.1) * Math.min(1, e * 4) * P.relief;
+    }
+  } else {
+    h = Math.max(e * 0.08, -0.06);
+  }
+  let lava = 0;
+  for (const m of W.marks) {
+    const d = x * m.x + y * m.y + z * m.z;
+    if (d <= m.cos) continue;
+    const ang = Math.acos(Math.min(1, d)), k = 1 - ang / m.r;
+    h = Math.max(h, 0) + m.hgt * Math.pow(k, 1.6) * P.relief;
+    if (m.kind === "volcano" && ang < m.r * 0.2) {
+      h -= (1 - ang / (m.r * 0.2)) * m.hgt * 0.38 * P.relief;
+      lava = 1;
+    }
+  }
+  out.h = h; out.lava = lava;
+  return out;
+}
+// …and with the pads: a flat round of ground under every stage.
+function sample(x, y, z, out = OUT) {
+  rawSample(x, y, z, out);
+  const inner = P.padR * 1.15, outer = P.padR * 2.4, co = Math.cos(outer);
+  for (const p of W.pads) {
+    const d = x * p.x + y * p.y + z * p.z;
+    if (d <= co) continue;
+    const t = smooth(outer, inner, Math.acos(Math.min(1, d)));
+    out.h += (p.h - out.h) * t;
+    if (t > 0.4) out.lava = 0;
+  }
+  return out;
+}
+function groundRadius(v) { return 1 + Math.max(sample(v.x, v.y, v.z).h, 0); }
+
+function buildWorld() {
+  const rnd = mulberry(P.seed * 977 + 13);
+  W.nz = makeNoise(P.seed); W.nz2 = makeNoise(P.seed + 101); W.nz3 = makeNoise(P.seed + 202);
+  buildPalette();
+  // the band seeds: the middle of each band's stages
+  W.seeds = [];
+  const v = new THREE.Vector3();
+  for (let b = 0; b < P.bands.length; b++) {
+    const c = new THREE.Vector3(); let k = 0;
+    for (const n of S.nodes) if (n.band === b) { c.add(vecOf(n, v)); k++; }
+    if (!k || c.lengthSq() < 1e-6) randomUnit(rnd, c);
+    c.normalize();
+    W.seeds.push({ x: c.x, y: c.y, z: c.z, biome: P.bands[b].biome, band: b });
+  }
+  // wild regions: the far side gets biomes of its own
+  for (let i = 0; i < P.wild; i++) {
+    let best = null, bestD = 9;
+    for (let t = 0; t < 40; t++) {       // as far as possible from every seed already there
+      const c = randomUnit(rnd);
+      let md = -1; for (const s of W.seeds) md = Math.max(md, c.x * s.x + c.y * s.y + c.z * s.z);
+      if (md < bestD) { bestD = md; best = c; }
+    }
+    W.seeds.push({ x: best.x, y: best.y, z: best.z, biome: BIOME_KEYS[Math.floor(rnd() * BIOME_KEYS.length)], band: -1 });
+  }
+  // the road, sampled every ~0.04 rad, for the land and to keep props off it
+  const pts = [];
+  for (const n of S.nodes) { vecOf(n, v); pts.push(v.x, v.y, v.z); }
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  for (const e of S.edges) {
+    const A = nodeById(e.a), B = nodeById(e.b); if (!A || !B) continue;
+    vecOf(A, a); vecOf(B, b);
+    const steps = Math.max(1, Math.ceil(a.angleTo(b) / 0.04));
+    for (let i = 1; i < steps; i++) { slerp(a, b, i / steps, v); pts.push(v.x, v.y, v.z); }
+  }
+  W.samples = new Float32Array(pts);
+  W.marks = [];
+  W.pads = [];
+  // landmarks, as far from the road as their region allows
+  const MARK = { volcano: { r: 0.21, hgt: 0.13 }, peak: { r: 0.18, hgt: 0.12 }, spire: { r: 0.09, hgt: 0.06 } };
+  W.seeds.forEach((s, si) => {
+    const kind = BIOMES[s.biome].mark; if (!kind) return;
+    const spec = MARK[kind], sv = new THREE.Vector3(s.x, s.y, s.z);
+    let best = null, bestD = 2;
+    for (let t = 0; t < 120; t++) {
+      const c = randomUnit(rnd).multiplyScalar(0.55).add(sv).normalize();
+      if (biomeIndex(c.x, c.y, c.z) !== si) continue;
+      const md = nearestRouteDot(c.x, c.y, c.z);
+      if (md < bestD) { bestD = md; best = c; }
+    }
+    if (!best) return;
+    const clearance = Math.acos(Math.min(1, bestD));
+    const r = Math.min(spec.r, Math.max(0.06, clearance * 0.9));
+    W.marks.push({ x: best.x, y: best.y, z: best.z, kind, r, cos: Math.cos(r), hgt: spec.hgt * (r / spec.r) ** 0.5, biome: s.biome });
+  });
+  // pads: the raw ground at every stage, never under the sea
+  for (const n of S.nodes) {
+    vecOf(n, v);
+    W.pads.push({ x: v.x, y: v.y, z: v.z, h: Math.max(rawSample(v.x, v.y, v.z, OUT).h, 0.012) });
+  }
+}
+
+/* ===========================================================================
+   5. BUILDERS — terrain, props, islands, rings, stars, look
+   =========================================================================== */
+function buildTerrain() {
+  let g = new THREE.IcosahedronGeometry(1, P.detail | 0);
+  g.deleteAttribute("normal"); g.deleteAttribute("uv");
+  g = mergeVertices(g, 1e-5);
+  const pos = g.attributes.position, n = pos.count;
+  const hs = new Float32Array(n), lv = new Uint8Array(n);
+  const v = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    v.fromBufferAttribute(pos, i).normalize();
+    const s = sample(v.x, v.y, v.z);
+    hs[i] = s.h; lv[i] = s.lava;
+    v.multiplyScalar(1 + s.h);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  // carry the per-vertex values through toNonIndexed via attributes
+  g.setAttribute("hh", new THREE.BufferAttribute(hs, 1));
+  g.setAttribute("lv", new THREE.BufferAttribute(Float32Array.from(lv), 1));
+  const f = g.toNonIndexed();
+  g.dispose();
+  const fp = f.attributes.position, fh = f.attributes.hh, fl = f.attributes.lv, fc = fp.count;
+  const col = new Float32Array(fc * 3), emit = new Float32Array(fc);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), m = new THREE.Vector3(), nrm = new THREE.Vector3();
+  const out = new THREE.Color(), rnd = mulberry(P.seed + 5);
+  for (let i = 0; i < fc; i += 3) {
+    a.fromBufferAttribute(fp, i); b.fromBufferAttribute(fp, i + 1); c.fromBufferAttribute(fp, i + 2);
+    m.copy(a).add(b).add(c).normalize();
+    nrm.subVectors(b, a).cross(c.clone().sub(a)).normalize();
+    const slope = Math.abs(nrm.dot(m));
+    const h = (fh.getX(i) + fh.getX(i + 1) + fh.getX(i + 2)) / 3;
+    const lava = fl.getX(i) + fl.getX(i + 1) + fl.getX(i + 2) >= 2;
+    const biome = W.seeds[biomeIndex(m.x, m.y, m.z)].biome, pal = PAL[biome];
+    let e = 0;
+    if (lava) { out.copy(PAL.lava); e = 1; }
+    else if (h < 0) out.copy(pal.shore).lerp(PAL.deep, clamp(-h / 0.035, 0, 1));
+    else if (h < 0.0045) out.copy(pal.shore);
+    else {
+      out.copy(pal.low).lerp(pal.high, clamp(h / 0.07, 0, 1));
+      if (slope < 0.9) out.lerp(pal.rock, clamp((0.9 - slope) / 0.14, 0, 1));
+      if (biome === "snow" && h > 0.05) out.lerp(PAL.snow.high, 0.6);
+    }
+    out.multiplyScalar(0.94 + rnd() * 0.12);
+    for (let k = 0; k < 3; k++) { col[(i + k) * 3] = out.r; col[(i + k) * 3 + 1] = out.g; col[(i + k) * 3 + 2] = out.b; emit[i + k] = e; }
+  }
+  f.deleteAttribute("hh"); f.deleteAttribute("lv");
+  f.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  f.setAttribute("emit", new THREE.BufferAttribute(emit, 1));
+  f.computeVertexNormals();
+  terrain.geometry.dispose();
+  terrain.geometry = f;
+  ocean.geometry.dispose();
+  ocean.geometry = new THREE.IcosahedronGeometry(1, Math.max(8, Math.round(P.detail / 2.5)));
+}
+
+// The props: one InstancedMesh per kind, standing on the ground, off the road.
+// mergeGeometries wants all indexed or none: the props are flat-shaded anyway.
+const mergeGeometries = list => mergeGeoms(list.map(g => g.index ? g.toNonIndexed() : g));
+function propGeometry(kind) {
+  const cone = (r, h, y) => { const g = new THREE.ConeGeometry(r, h, 6); g.translate(0, y + h / 2, 0); return g; };
+  switch (kind) {
+    case "tree": { const g = new THREE.IcosahedronGeometry(0.55, 0); g.translate(0, 0.95, 0); const t = new THREE.CylinderGeometry(0.12, 0.16, 0.5, 5); t.translate(0, 0.25, 0); return mergeGeometries([g, t]); }
+    case "pine": return mergeGeometries([cone(0.5, 0.9, 0.15), cone(0.36, 0.7, 0.7)]);
+    case "snowpine": return mergeGeometries([cone(0.45, 0.85, 0.1), cone(0.32, 0.65, 0.6)]);
+    case "cactus": { const g = new THREE.CylinderGeometry(0.16, 0.18, 1.1, 6); g.translate(0, 0.55, 0); const arm = new THREE.CylinderGeometry(0.1, 0.1, 0.45, 5); arm.translate(0.28, 0.75, 0); const j = new THREE.CylinderGeometry(0.08, 0.08, 0.2, 5); j.rotateZ(Math.PI / 2); j.translate(0.18, 0.55, 0); return mergeGeometries([g, arm, j]); }
+    case "rock": { const g = new THREE.DodecahedronGeometry(0.45, 0); g.scale(1, 0.7, 1); g.translate(0, 0.22, 0); return g; }
+    case "crystal": { const g = new THREE.OctahedronGeometry(0.3, 0); g.scale(1, 2.6, 1); g.translate(0, 0.65, 0); return g; }
+    case "mushroom": { const s = new THREE.CylinderGeometry(0.1, 0.13, 0.5, 6); s.translate(0, 0.25, 0); const c = new THREE.SphereGeometry(0.38, 7, 4, 0, Math.PI * 2, 0, Math.PI / 2); c.translate(0, 0.45, 0); return mergeGeometries([s, c]); }
+  }
+}
+function buildProps() {
+  clearGroup(propsGroup);
+  const rnd = mulberry(P.seed * 31 + 3);
+  const lists = {};
+  const v = new THREE.Vector3(), q = new THREE.Quaternion(), qy = new THREE.Quaternion(), mtx = new THREE.Matrix4(), sc = new THREE.Vector3();
+  const nodeCos = Math.cos(P.padR * 2.6), roadCos = Math.cos(P.padR * 1.3);
+  const put = (kind, x, y, z, s, color) => {
+    v.set(x, y, z);
+    const r = groundRadius(v);
+    q.setFromUnitVectors(UP, v); qy.setFromAxisAngle(UP, rnd() * Math.PI * 2); q.multiply(qy);
+    sc.setScalar(s);
+    mtx.compose(v.clone().multiplyScalar(r - 0.002), q, sc);
+    (lists[kind] = lists[kind] || []).push({ m: mtx.clone(), c: color.clone().multiplyScalar(0.85 + rnd() * 0.3) });
+  };
+  const tries = Math.round(1500 * P.props);
+  for (let i = 0; i < tries; i++) {
+    randomUnit(rnd, v);
+    const s = sample(v.x, v.y, v.z);
+    if (s.h < 0.006 || s.lava) continue;
+    if (nearestRouteDot(v.x, v.y, v.z) > roadCos) continue;
+    let nearNode = false;
+    for (const p of W.pads) if (v.x * p.x + v.y * p.y + v.z * p.z > nodeCos) { nearNode = true; break; }
+    if (nearNode) continue;
+    const biome = W.seeds[biomeIndex(v.x, v.y, v.z)].biome;
+    if (biome === "desert" && rnd() < 0.55) continue;      // a desert is sparse
+    put(BIOMES[biome].prop, v.x, v.y, v.z, 0.018 + rnd() * 0.016, PAL[biome].prop);
+  }
+  // a crystal spire is a cluster of big crystals
+  for (const m of W.marks) if (m.kind === "spire") {
+    const c = new THREE.Vector3(m.x, m.y, m.z);
+    for (let k = 0; k < 7; k++) {
+      const p = randomUnit(rnd).multiplyScalar(k ? m.r * 0.35 : 0).add(c).normalize();
+      put("crystal", p.x, p.y, p.z, (k ? 0.04 : 0.075) * (0.8 + rnd() * 0.4), PAL.crystal.prop);
+    }
+  }
+  for (const kind in lists) {
+    const L = lists[kind];
+    const glows = kind === "crystal" || kind === "mushroom";
+    const mat = new THREE.MeshStandardMaterial({ flatShading: true, roughness: glows ? 0.35 : 0.85 });
+    if (glows) { mat.emissive = PAL[kind === "crystal" ? "crystal" : "swamp"].prop.clone(); mat.emissiveIntensity = P.glow * 0.35; mat.userData.glows = true; }
+    const im = new THREE.InstancedMesh(propGeometry(kind), mat, L.length);
+    L.forEach((it, i) => { im.setMatrixAt(i, it.m); im.setColorAt(i, it.c); });
+    im.castShadow = true; im.receiveShadow = true;
+    propsGroup.add(im);
+  }
+}
+
+// Floating islands: the other worlds, drifting round this one.
+function buildIslands() {
+  clearGroup(islands);
+  const rnd = mulberry(P.seed * 53 + 9);
+  const nz = makeNoise(P.seed + 404);
+  for (let i = 0; i < P.islands; i++) {
+    const biome = i < P.bands.length ? P.bands[P.bands.length - 1 - i].biome : BIOME_KEYS[Math.floor(rnd() * BIOME_KEYS.length)];
+    let g = new THREE.IcosahedronGeometry(1, 2);
+    g.deleteAttribute("normal"); g.deleteAttribute("uv");
+    g = mergeVertices(g, 1e-5);
+    const pos = g.attributes.position, v = new THREE.Vector3();
+    for (let k = 0; k < pos.count; k++) {
+      v.fromBufferAttribute(pos, k);
+      const j = 1 + nz(v.x * 2 + i * 3, v.y * 2, v.z * 2) * 0.22;
+      if (v.y > 0) { v.y = v.y * 0.18 + nz(v.x * 3, 9 + i, v.z * 3) * 0.05; }
+      else { const t = -v.y; v.y = -t * 1.5; v.x *= 1 - t * 0.55; v.z *= 1 - t * 0.55; }
+      v.x *= j; v.z *= j;
+      pos.setXYZ(k, v.x, v.y, v.z);
+    }
+    const f = g.toNonIndexed(); g.dispose();
+    const fp = f.attributes.position, col = new Float32Array(fp.count * 3), c = new THREE.Color();
+    for (let k = 0; k < fp.count; k += 3) {
+      const y = (fp.getY(k) + fp.getY(k + 1) + fp.getY(k + 2)) / 3;
+      if (y > 0.02) c.copy(PAL[biome].low).lerp(PAL[biome].high, rnd() * 0.6);
+      else c.copy(PAL[biome].rock).multiplyScalar(clamp(1 + y * 0.6, 0.35, 1));
+      c.multiplyScalar(0.92 + rnd() * 0.16);
+      for (let q = 0; q < 3; q++) col.set([c.r, c.g, c.b], (k + q) * 3);
+    }
+    f.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    f.computeVertexNormals();
+    const mesh = new THREE.Mesh(f, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9, transparent: true }));
+    const s = 0.06 + rnd() * 0.06;
+    mesh.scale.setScalar(s);
+    mesh.userData = {
+      r: 1.6 + rnd() * 0.45, a: (i / Math.max(1, P.islands)) * Math.PI * 2 + rnd() * 0.6,
+      y: (rnd() * 2 - 1) * 0.75, speed: 0.025 + rnd() * 0.03, bob: rnd() * 6, spinY: (rnd() - 0.5) * 0.3,
+    };
+    islands.add(mesh);
+  }
+}
+
+// Orbit rings: thin great circles round the planet, each on its own tilt.
+function buildRings() {
+  clearGroup(rings);
+  const rnd = mulberry(P.seed * 71 + 1);
+  const col = new THREE.Color(P.ringColor).multiplyScalar(1.4);
+  for (let i = 0; i < P.rings; i++) {
+    const r = 1.1 + rnd() * 0.22;
+    const m = new THREE.Mesh(new THREE.TorusGeometry(r, 0.0032, 5, 220), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.85 }));
+    m.rotation.set(rnd() * Math.PI, rnd() * Math.PI, rnd() * Math.PI);
+    m.userData.spin = (rnd() - 0.5) * 0.12;
+    rings.add(m);
+  }
+}
+
+function buildStars() {
+  if (starField) { scene.remove(starField); disposeTree(starField); starField = null; }
+  if (!P.stars) return;
+  const rnd = mulberry(4242), n = P.stars | 0;
+  const pos = new Float32Array(n * 3), col = new Float32Array(n * 3), v = new THREE.Vector3(), c = new THREE.Color();
+  const tints = ["#ffffff", "#cfe0ff", "#ffe6c4", "#ffd0f0", "#b8c8ff"];
+  for (let i = 0; i < n; i++) {
+    randomUnit(rnd, v).multiplyScalar(60 + rnd() * 40);
+    pos.set([v.x, v.y, v.z], i * 3);
+    c.set(tints[Math.floor(rnd() * tints.length)]).multiplyScalar(0.35 + rnd() ** 3 * 1.4);
+    col.set([c.r, c.g, c.b], i * 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  starField = new THREE.Points(g, new THREE.PointsMaterial({ size: 1.8, sizeAttenuation: false, vertexColors: true, depthWrite: false }));
+  scene.add(starField);
+}
+
+function applyLook() {
+  // the backdrop: a nebula glowing out of the middle of the frame
+  const cv = document.createElement("canvas"); cv.width = cv.height = 512;
+  const g = cv.getContext("2d");
+  g.fillStyle = P.bgA; g.fillRect(0, 0, 512, 512);
+  const rnd = mulberry(P.seed + 17);
+  for (let i = 0; i < 6; i++) {
+    const x = 120 + rnd() * 272, y = 120 + rnd() * 272, r = 140 + rnd() * 160;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, P.bgB + "88"); gr.addColorStop(1, P.bgB + "00");
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  }
+  const gr = g.createRadialGradient(256, 256, 40, 256, 256, 300);
+  gr.addColorStop(0, P.bgB + "99"); gr.addColorStop(1, P.bgB + "00");
+  g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+  if (bgTex) bgTex.dispose();
+  bgTex = new THREE.CanvasTexture(cv);
+  bgTex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = bgTex;
+
+  atmoUniforms.uColor.value.set(P.atmo);
+  atmoUniforms.uStr.value = P.atmoStr;
+  halo.visible = rim.visible = P.atmoStr > 0;
+  sun.intensity = P.sun;
+  hemi.intensity = P.ambient;
+  hemi.color.set("#ffffff"); hemi.groundColor.set(P.bgB);
+  bloom.strength = P.bloom;
+  bloom.enabled = P.bloom > 0;
+  uGlow.value = P.glow;
+  oceanMat.color.copy(lookColor(P.seaColor));
+  oceanMat.opacity = P.seaOpacity;
+  oceanMat.transparent = P.seaOpacity < 1;
+  propsGroup.children.forEach(m => { if (m.material.userData.glows) m.material.emissiveIntensity = P.glow * 0.35; });
+}
+
+/* ===========================================================================
+   6. THE ROUTE — generating it, numbering it, the progress over it
+   =========================================================================== */
+function generateRoute() {
+  const rnd = mulberry(P.seed * 13 + 77);
+  S = { nodes: [], edges: [] };
+  nextId = 1;
+  // the graph: every level its row, its side of a fork and how far up the fork it is
+  const lay = [], links = [];
+  if (P.graph === "climb") {
+    let row = 0, tails = [];
+    for (const sec of CLIMB) {
+      if (sec.line) {
+        for (const n of sec.line) { row++; lay.push({ n, row, side: 0, u: 0 }); tails.forEach(t => links.push([t, n])); tails = [n]; }
+      } else {
+        const m = Math.max(...sec.fork.map(r => r.length)), r0 = row + 1, next = [];
+        sec.fork.forEach((road, si) => {
+          let prev = tails;
+          road.forEach((n, i) => {
+            const rr = road.length === m ? r0 + i : r0 - 1 + Math.round(m * (i + 1) / road.length);
+            lay.push({ n, row: rr, side: si === 0 ? -1 : 1, u: (rr - r0 + 1) / (m + 1) });
+            prev.forEach(t => links.push([t, n, i === 0 && si === 0 ? sec.gate : 0]));
+            prev = [n];
+          });
+          next.push(road[road.length - 1]);
+        });
+        tails = next; row += m;
+      }
+    }
+  } else {
+    for (let n = 1; n <= P.count; n++) { lay.push({ n, row: n, side: 0, u: 0 }); if (n > 1) links.push([n - 1, n]); }
+  }
+  const rows = Math.max(...lay.map(l => l.row));
+  const at = t => toVec(P.latFrom + (P.latTo - P.latFrom) * t, -20 + t * P.turns * 360);
+  const place = (t, side, u) => {
+    const p = at(t);
+    const tan = at(t + 0.004).sub(at(t - 0.004)).normalize();
+    const sideV = new THREE.Vector3().crossVectors(p, tan).normalize();
+    const off = side * P.forkW * Math.sqrt(Math.max(0, Math.sin(Math.PI * u)));
+    p.addScaledVector(sideV, off);
+    // the jitter: a nudge in the tangent plane
+    const j = P.jitter * 0.035;
+    p.addScaledVector(tan, (rnd() * 2 - 1) * j).addScaledVector(sideV, (rnd() * 2 - 1) * j);
+    return p.normalize();
+  };
+  const used = {}, nameFor = biome => {
+    const pool = NAMES[biome]; used[biome] = used[biome] || 0;
+    const k = used[biome]++;
+    return pool[k % pool.length] + (k >= pool.length ? " " + (1 + Math.floor(k / pool.length)) : "");
+  };
+  const byN = {};
+  for (const l of lay) {
+    const t = (l.row - 1) / Math.max(1, rows - 1);
+    const band = Math.min(P.bands.length - 1, Math.floor((l.row - 1) / rows * P.bands.length));
+    const ll = toLatLon(place(t, l.side, l.u));
+    const node = { id: nextId++, n: l.n, name: nameFor(P.bands[band].biome), band, lat: ll.lat, lon: ll.lon, state: "locked", stars: 0 };
+    S.nodes.push(node); byN[l.n] = node;
+  }
+  for (const [a, b, gate] of links) {
+    const e = { a: byN[a].id, b: byN[b].id };
+    if (gate) e.gate = gate;
+    S.edges.push(e);
+  }
+  if (P.zero) {
+    const ll = toLatLon(place(-0.9 / Math.max(1, rows - 1), -1, 0.5).addScaledVector(at(0), 0).normalize());
+    const z = { id: nextId++, n: 0, name: "Training Ground", band: 0, lat: ll.lat, lon: ll.lon, state: "open", stars: 0, zero: true };
+    S.nodes.push(z);
+    S.edges.push({ a: z.id, b: byN[1].id, kind: "spur" });
+  }
+  sortNodes();
+}
+
+function sortNodes() { S.nodes.sort((a, b) => a.n - b.n); }
+
+// Number the stages by the roads: a topological walk that finishes a road
+// before it starts the next one, so the left road of a fork comes first.
+function renumber() {
+  const real = S.nodes.filter(n => !n.zero);
+  const indeg = new Map(real.map(n => [n.id, 0]));
+  const out = new Map(real.map(n => [n.id, []]));
+  for (const e of S.edges) {
+    if (!indeg.has(e.a) || !indeg.has(e.b)) continue;
+    indeg.set(e.b, indeg.get(e.b) + 1);
+    out.get(e.a).push(e.b);
+  }
+  const old = new Map(real.map(n => [n.id, n.n]));
+  const stack = real.filter(n => indeg.get(n.id) === 0).sort((a, b) => b.n - a.n).map(n => n.id);
+  const done = new Set(); let k = 1;
+  while (stack.length) {
+    const id = stack.pop();
+    if (done.has(id)) continue;
+    done.add(id); nodeById(id).n = k++;
+    const kids = out.get(id).slice().sort((a, b) => old.get(b) - old.get(a));
+    for (const c of kids) { indeg.set(c, indeg.get(c) - 1); if (indeg.get(c) === 0) stack.push(c); }
+  }
+  real.filter(n => !done.has(n.id)).sort((a, b) => a.n - b.n).forEach(n => { n.n = k++; });   // a loop
+  for (const n of S.nodes) if (n.zero) n.n = 0;
+  sortNodes();
+}
+
+// The progress slider: everything up to N cleared, the roads out of it open,
+// a gate kept shut while the board has fewer stars than it asks for.
+function applyProgress() {
+  const k = Math.min(P.progress, S.nodes.filter(n => !n.zero).length);
+  const rnd = mulberry(P.seed * 3 + 1);
+  let total = 0;
+  for (const n of S.nodes) {
+    if (n.zero) { n.state = "open"; n.stars = 0; continue; }
+    if (n.n <= k) { n.state = "cleared"; n.stars = rnd() < 0.55 ? 3 : rnd() < 0.7 ? 2 : 1; total += n.stars; }
+    else { n.state = "locked"; n.stars = 0; }
+  }
+  for (const n of S.nodes) {
+    if (n.zero || n.state === "cleared") continue;
+    const ins = S.edges.filter(e => e.b === n.id && e.kind !== "spur");
+    const open = ins.length === 0 ? k === 0 && n.n === 1
+      : ins.some(e => { const a = nodeById(e.a); return a && a.state === "cleared" && (!e.gate || total >= e.gate); });
+    if (open) n.state = "open";
+  }
+  const first = S.nodes.find(n => n.state === "open" && !n.zero);
+  if (first) first.state = "current";
+}
+
+/* ===========================================================================
+   7. ROADS AND STAGES ON THE SURFACE
+   =========================================================================== */
+const pickables = [];
+const nodeObj = new Map();     // id -> group
+let selRing = null;
+
+function stateColor(s) { return s === "cleared" ? P.cClear : s === "current" ? P.cCurrent : s === "open" ? P.cOpen : P.cLocked; }
+function luma(hex) { const c = new THREE.Color(hex); return 0.3 * c.r + 0.59 * c.g + 0.11 * c.b; }
+
+function starPath(g, x, y, r) {
+  g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  g.closePath();
+}
+function padlock(g, x, y, s, color) {
+  g.strokeStyle = color; g.fillStyle = color; g.lineWidth = s * 0.16;
+  g.beginPath(); g.arc(x, y - s * 0.12, s * 0.28, Math.PI, 0); g.stroke();
+  g.fillRect(x - s * 0.42, y - s * 0.12, s * 0.84, s * 0.62);
+}
+// The label of a stage, drawn once into its own canvas (128 x 160).
+function labelTexture(node) {
+  const cv = document.createElement("canvas"); cv.width = 128; cv.height = 160;
+  const g = cv.getContext("2d");
+  const col = stateColor(node.state), dark = "#15122a";
+  const cx = 64, cy = 58, r = 44;
+  const textCol = luma(col) > 0.45 ? dark : "#ffffff";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  if (P.nodeStyle === "badge") {
+    g.strokeStyle = "rgba(255,255,255,.85)"; g.lineWidth = 5;
+    g.beginPath(); g.moveTo(cx, cy + r); g.lineTo(cx, 158); g.stroke();      // the stem down to the pad
+    g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.arc(cx, cy + 5, r, 0, 7); g.fill();
+    if (node.zero) g.setLineDash([10, 7]);
+    g.fillStyle = node.zero ? "rgba(255,255,255,.18)" : col;
+    g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+    g.lineWidth = 7; g.strokeStyle = node.zero ? "#ffffff" : dark; g.stroke();
+    g.setLineDash([]);
+    if (node.state === "current") { g.lineWidth = 5; g.strokeStyle = "#ffffff"; g.beginPath(); g.arc(cx, cy, r + 7, 0, 7); g.stroke(); }
+    if (node.state === "locked") padlock(g, cx, cy, 46, textCol);
+    else { g.fillStyle = node.zero ? "#ffffff" : textCol; g.font = "800 46px -apple-system,Segoe UI,Roboto,sans-serif"; g.fillText(String(node.n), cx, cy + 2); }
+  } else {
+    // ring: the number alone, outlined, over the ring drawn in 3D
+    g.font = "800 50px -apple-system,Segoe UI,Roboto,sans-serif";
+    g.lineWidth = 9; g.strokeStyle = "rgba(0,0,0,.85)"; g.fillStyle = col;
+    const s = node.state === "locked" ? "·" : String(node.n);
+    g.strokeText(s, cx, cy + 20); g.fillText(s, cx, cy + 20);
+  }
+  if (node.state === "cleared") {
+    for (let i = 0; i < 3; i++) {
+      const x = cx + (i - 1) * 30, y = (P.nodeStyle === "badge" ? cy + r : cy + 54) - (i === 1 ? 6 : 0);
+      starPath(g, x, y, 15);
+      g.fillStyle = i < node.stars ? "#ffd34d" : "#3a3550"; g.fill();
+      g.lineWidth = 4; g.strokeStyle = dark; g.stroke();
+    }
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+function gateTexture(gate, shut) {
+  const cv = document.createElement("canvas"); cv.width = 128; cv.height = 56;
+  const g = cv.getContext("2d");
+  g.fillStyle = shut ? "rgba(20,16,40,.9)" : "rgba(255,211,77,.92)";
+  g.beginPath(); g.roundRect(4, 6, 120, 44, 22); g.fill();
+  g.lineWidth = 4; g.strokeStyle = shut ? "#ffd34d" : "#15122a"; g.stroke();
+  g.fillStyle = shut ? "#ffd34d" : "#15122a";
+  g.font = "800 30px -apple-system,Segoe UI,Roboto,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("★ " + gate, 64, 29);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function spriteScale(px) {
+  const h = stageEl.clientHeight || 600;
+  return px * 2 * Math.tan(camera.fov * D2R / 2) / h;
+}
+function sizeLabels() {
+  const s = spriteScale(P.labelPx * 160 / 88);
+  for (const g of nodeObj.values()) { const sp = g.userData.label; sp.scale.set(s * 0.8, s, 1); sp.userData.base = s; }
+  routeGroup.children.forEach(c => { if (c.isSprite) { const k = spriteScale(22); c.scale.set(k * 128 / 56, k, 1); } });
+}
+
+function nodeRadius(node) { const v = vecOf(node); return 1 + Math.max(sample(v.x, v.y, v.z).h, 0); }
+
+function buildNodes() {
+  pickables.length = 0;
+  for (const g of nodeObj.values()) { nodesGroup.remove(g); disposeTree(g); }
+  nodeObj.clear();
+  if (selRing) { selRing.parent && selRing.parent.remove(selRing); disposeTree(selRing); }
+  const r = P.padR;
+  const pr = r * 0.72;     // the pad drawn is smaller than the flat ground cut for it
+  const discGeo = new THREE.CylinderGeometry(pr, pr * 1.1, pr * 0.22, 28); discGeo.translate(0, pr * 0.11, 0);
+  const rimGeo = new THREE.TorusGeometry(pr * 1.02, pr * 0.1, 6, 36); rimGeo.rotateX(Math.PI / 2); rimGeo.translate(0, pr * 0.22, 0);
+  const ringGeo = new THREE.TorusGeometry(r * 1.2, r * 0.1, 6, 40); ringGeo.rotateX(Math.PI / 2); ringGeo.translate(0, r * 0.15, 0);
+  const mats = {};
+  const matFor = s => mats[s] = mats[s] || (P.nodeStyle === "ring"
+    ? new THREE.MeshBasicMaterial({ color: new THREE.Color(stateColor(s)).multiplyScalar(P.routeBright) })
+    : new THREE.MeshStandardMaterial({ color: stateColor(s), emissive: stateColor(s), emissiveIntensity: 0.2, roughness: 0.5 }));
+  const rimMat = new THREE.MeshStandardMaterial({ color: "#1b1730", roughness: 0.6 });
+  const v = new THREE.Vector3();
+  for (const node of S.nodes) {
+    const g = new THREE.Group();
+    vecOf(node, v);
+    g.position.copy(v).multiplyScalar(nodeRadius(node));
+    g.quaternion.setFromUnitVectors(UP, v);
+    let pad;
+    if (P.nodeStyle === "ring") {
+      pad = new THREE.Mesh(ringGeo, matFor(node.state));
+    } else {
+      pad = new THREE.Mesh(discGeo, matFor(node.zero ? "open" : node.state));
+      pad.castShadow = true;
+      const rimM = new THREE.Mesh(rimGeo, rimMat);
+      g.add(rimM);
+    }
+    pad.userData.id = node.id;
+    g.add(pad);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(node), sizeAttenuation: false, transparent: true, depthWrite: false }));
+    sp.center.set(0.5, 0);
+    sp.position.y = r * 0.3;
+    sp.renderOrder = 10;
+    sp.userData.id = node.id;
+    g.add(sp);
+    g.userData = { id: node.id, label: sp };
+    pickables.push(pad, sp);
+    nodesGroup.add(g);
+    nodeObj.set(node.id, g);
+  }
+  selRing = new THREE.Mesh(new THREE.TorusGeometry(r * 1.55, r * 0.09, 6, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true }));
+  selRing.geometry.rotateX(Math.PI / 2);
+  selRing.geometry.translate(0, r * 0.2, 0);
+  attachSel();
+  sizeLabels();
+}
+function attachSel() {
+  if (!selRing) return;
+  if (selRing.parent) selRing.parent.remove(selRing);
+  const g = sel != null && nodeObj.get(sel);
+  if (g) g.add(selRing);
+}
+
+// One road: a great circle from stage to stage, over the ground (and the sea),
+// arched by `arch` in the middle.
+function edgePoints(A, B) {
+  const a = vecOf(A), b = vecOf(B), ang = a.angleTo(b);
+  const n = Math.max(6, Math.ceil(ang / 0.018)), pts = [], v = new THREE.Vector3();
+  const ra = nodeRadius(A), rb = nodeRadius(B);
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    slerp(a, b, t, v);
+    let r = i === 0 ? ra : i === n ? rb : groundRadius(v);
+    r += P.lift * Math.min(1, Math.sin(Math.PI * t) * 6) + P.arch * Math.sin(Math.PI * t) * Math.min(1, ang * 2.5);
+    pts.push(v.clone().multiplyScalar(r));
+  }
+  return pts;
+}
+function buildRoute() {
+  clearGroup(routeGroup);
+  const openCol = new THREE.Color(P.roadColor).multiplyScalar(P.routeBright);
+  const lockCol = new THREE.Color(P.lockedColor);
+  const openMat = new THREE.MeshBasicMaterial({ color: openCol });
+  const dots = [];
+  let total = 0;
+  for (const n of S.nodes) if (n.state === "cleared") total += n.stars;
+  for (const e of S.edges) {
+    const A = nodeById(e.a), B = nodeById(e.b);
+    if (!A || !B) continue;
+    const pts = edgePoints(A, B);
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const locked = A.state === "locked" || B.state === "locked" || e.kind === "spur";
+    if (P.routeStyle === "tube" && !locked) {
+      routeGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curve, pts.length * 2, P.routeW, 6, false), openMat));
+    } else {
+      const len = curve.getLength(), step = P.routeW * (e.kind === "spur" ? 4.5 : 3.4);
+      const sp = curve.getSpacedPoints(Math.max(2, Math.floor(len / step)));
+      const pa = pts[0], pb = pts[pts.length - 1];
+      for (const p of sp) {
+        if (p.distanceTo(pa) < P.padR * 1.1 || p.distanceTo(pb) < P.padR * 1.1) continue;
+        dots.push(p, locked ? lockCol : openCol);
+      }
+    }
+    if (e.gate) {
+      const shut = total < e.gate;
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: gateTexture(e.gate, shut), sizeAttenuation: false, transparent: true, depthWrite: false }));
+      const mid = curve.getPoint(0.5);
+      s.position.copy(mid).multiplyScalar(1 + P.padR * 0.6);
+      s.renderOrder = 9;
+      routeGroup.add(s);
+    }
+  }
+  if (dots.length) {
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(P.routeW * 1.2, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), dots.length / 2);
+    const m = new THREE.Matrix4();
+    for (let i = 0; i < dots.length; i += 2) { m.makeTranslation(dots[i].x, dots[i].y, dots[i].z); im.setMatrixAt(i / 2, m); im.setColorAt(i / 2, dots[i + 1]); }
+    routeGroup.add(im);
+  }
+  sizeLabels();
+}
+
+/* ===========================================================================
+   8. REBUILD — what a change needs, coalesced
+   =========================================================================== */
+const dirty = new Set();
+let dirtyTimer = 0;
+function mark(...keys) {
+  keys.forEach(k => dirty.add(k));
+  clearTimeout(dirtyTimer);
+  const heavy = dirty.has("planet") || dirty.has("gen");
+  if (heavy) document.getElementById("busy").textContent = "building…";
+  dirtyTimer = setTimeout(flush, heavy ? 80 : 0);
+}
+function flush() {
+  const d = new Set(dirty); dirty.clear();
+  const t0 = performance.now();
+  if (d.has("gen")) { generateRoute(); d.add("progress"); d.add("planet"); }
+  if (d.has("progress")) { applyProgress(); d.add("route"); d.add("nodes"); }
+  if (d.has("planet")) { buildWorld(); buildTerrain(); buildProps(); d.add("route"); d.add("nodes"); d.add("islands"); d.add("rings"); d.add("look"); }
+  if (d.has("palette")) { buildPalette(); }
+  if (d.has("islands")) buildIslands();
+  if (d.has("rings")) buildRings();
+  if (d.has("stars")) buildStars();
+  if (d.has("look")) applyLook();
+  if (d.has("route")) buildRoute();
+  if (d.has("nodes")) buildNodes();
+  renderSide();
+  syncProgressMax();
+  save();
+  const ms = performance.now() - t0;
+  document.getElementById("busy").textContent = ms > 30 ? Math.round(ms) + " ms" : "";
+}
+// A map edit: the planet re-grows when it follows the route.
+function edited() { renumber(); mark(P.follow ? "planet" : "route", "nodes"); }
+
+/* ===========================================================================
+   9. PANEL — every knob, built from one table
+   =========================================================================== */
+const SECTIONS = [
+  { title: "Look", open: true, rows: [
+    ["preset", "select", "Preset", { opts: Object.keys(PRESETS) }],
+    ["bgA", "color", "Space", { re: "look" }], ["bgB", "color", "Nebula", { re: "look" }],
+    ["stars", "range", "Stars", { min: 0, max: 3000, step: 100, re: "stars" }],
+    ["atmo", "color", "Atmosphere", { re: "look" }],
+    ["atmoStr", "range", "Atmosphere strength", { min: 0, max: 2.5, step: 0.05, re: "look" }],
+    ["sun", "range", "Sun", { min: 0, max: 5, step: 0.1, re: "look" }],
+    ["ambient", "range", "Ambient", { min: 0, max: 2, step: 0.05, re: "look" }],
+    ["bloom", "range", "Bloom", { min: 0, max: 2, step: 0.05, re: "look" }],
+    ["glow", "range", "Glow (lava, crystals)", { min: 0, max: 5, step: 0.1, re: "look" }],
+    ["sat", "range", "Saturation", { min: -1, max: 1, step: 0.05, re: "planet" }],
+    ["light", "range", "Lightness", { min: -0.3, max: 0.3, step: 0.01, re: "planet" }],
+    ["tint", "color", "Tint", { re: "planet" }],
+    ["tintAmt", "range", "Tint amount", { min: 0, max: 1, step: 0.05, re: "planet" }],
+  ] },
+  { title: "Planet", open: false, rows: [
+    ["seed", "number", "Seed", { re: "planet" }],
+    ["detail", "range", "Facets", { min: 8, max: 64, step: 2, re: "planet" }],
+    ["ocean", "range", "Ocean", { min: 0, max: 0.8, step: 0.02, re: "planet" }],
+    ["seaColor", "color", "Sea", { re: "look" }],
+    ["seaOpacity", "range", "Sea opacity", { min: 0.3, max: 1, step: 0.02, re: "look" }],
+    ["relief", "range", "Relief", { min: 0, max: 2.5, step: 0.05, re: "planet" }],
+    ["warp", "range", "Border warp", { min: 0, max: 0.7, step: 0.02, re: "planet" }],
+    ["wild", "range", "Wild regions", { min: 0, max: 5, step: 1, re: "planet" }],
+    ["landR", "range", "Land round the road", { min: 0.1, max: 0.6, step: 0.02, re: "planet" }],
+    ["props", "range", "Props", { min: 0, max: 1.5, step: 0.05, re: "planet" }],
+    ["islands", "range", "Floating islands", { min: 0, max: 8, step: 1, re: "islands" }],
+    ["rings", "range", "Orbit rings", { min: 0, max: 8, step: 1, re: "rings" }],
+    ["ringColor", "color", "Ring colour", { re: "rings" }],
+    ["spin", "range", "Spin", { min: -0.3, max: 0.3, step: 0.01 }],
+    ["follow", "check", "Terrain follows route", {}],
+  ] },
+  { title: "Biomes", open: false, bands: true },
+  { title: "Route", open: false, rows: [
+    ["graph", "select", "Graph", { opts: [["climb", "Map of record (30, four forks)"], ["line", "A line of N"]], re: "gen" }],
+    ["count", "range", "Levels in the line", { min: 4, max: 60, step: 1, re: "gen" }],
+    ["turns", "range", "Turns round the planet", { min: 0.2, max: 2.5, step: 0.05, re: "gen" }],
+    ["latFrom", "range", "Start latitude", { min: -85, max: 0, step: 1, re: "gen" }],
+    ["latTo", "range", "End latitude", { min: 0, max: 85, step: 1, re: "gen" }],
+    ["forkW", "range", "Fork width", { min: 0, max: 0.35, step: 0.01, re: "gen" }],
+    ["jitter", "range", "Jitter", { min: 0, max: 1.5, step: 0.05, re: "gen" }],
+    ["zero", "check", "Level 0 on its spur", { re: "gen" }],
+    ["regen", "button", "Generate the route again", {}],
+  ] },
+  { title: "Roads and stages", open: true, rows: [
+    ["progress", "range", "Cleared up to", { min: 0, max: 30, step: 1, re: "progress" }],
+    ["nodeStyle", "select", "Stage style", { opts: [["badge", "Badge"], ["ring", "Ring"]], re: "nodes" }],
+    ["labelPx", "range", "Label size (px)", { min: 20, max: 70, step: 1, re: "nodes" }],
+    ["padR", "range", "Pad size", { min: 0.02, max: 0.09, step: 0.005, re: "planet" }],
+    ["routeStyle", "select", "Road style", { opts: [["tube", "Road (dotted when locked)"], ["dots", "Dots"]], re: "route" }],
+    ["routeW", "range", "Road width", { min: 0.002, max: 0.02, step: 0.0005, re: "route" }],
+    ["arch", "range", "Arch", { min: 0, max: 0.4, step: 0.01, re: "route" }],
+    ["lift", "range", "Lift", { min: 0, max: 0.05, step: 0.001, re: "route" }],
+    ["routeBright", "range", "Road brightness", { min: 0.5, max: 4, step: 0.1, re: "route,nodes" }],
+    ["roadColor", "color", "Road", { re: "route" }],
+    ["lockedColor", "color", "Locked road", { re: "route" }],
+    ["cClear", "color", "Cleared", { re: "nodes,route" }],
+    ["cCurrent", "color", "Current", { re: "nodes" }],
+    ["cOpen", "color", "Open", { re: "nodes" }],
+    ["cLocked", "color", "Locked", { re: "nodes" }],
+  ] },
+];
+const inputs = {};
+function fmt(v, step) { return step >= 1 ? String(Math.round(v)) : (+v).toFixed(Math.min(4, String(step).split(".")[1]?.length || 2)); }
+
+function buildPanel() {
+  const root = document.getElementById("controls");
+  root.innerHTML = "";
+  for (const sec of SECTIONS) {
+    const d = document.createElement("details");
+    d.open = sec.open;
+    d.innerHTML = `<summary>${sec.title}</summary>`;
+    if (sec.bands) {
+      const wrap = document.createElement("div");
+      wrap.id = "bands";
+      d.appendChild(wrap);
+    } else for (const [k, type, label, o] of sec.rows) {
+      const row = document.createElement("div");
+      row.className = "row" + (type === "color" || type === "check" ? " inline" : "");
+      if (type === "range") {
+        row.innerHTML = `<label>${label}<b></b></label><input type="range" min="${o.min}" max="${o.max}" step="${o.step}">`;
+      } else if (type === "select") {
+        const opts = o.opts.map(x => Array.isArray(x) ? x : [x, x]).map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+        row.innerHTML = `<label>${label}</label><select>${opts}</select>`;
+      } else if (type === "color") {
+        row.innerHTML = `<label>${label}</label><input type="color">`;
+      } else if (type === "check") {
+        row.innerHTML = `<label>${label}</label><input type="checkbox">`;
+      } else if (type === "number") {
+        row.innerHTML = `<label>${label}</label><div class="btns" style="margin-top:4px"><input type="number" step="1" style="flex:1"><button class="ghost" data-dice>Dice</button></div>`;
+      } else if (type === "button") {
+        row.innerHTML = `<button style="width:100%">${label}</button>`;
+      }
+      d.appendChild(row);
+      const inp = row.querySelector("input,select,button");
+      inputs[k] = { inp, type, o, row };
+      const apply = () => {
+        let v;
+        if (type === "range" || type === "number") v = +inp.value;
+        else if (type === "check") v = inp.checked;
+        else v = inp.value;
+        if (type === "range") row.querySelector("b").textContent = fmt(v, o.step);
+        if (k === "preset") { setPreset(v); return; }
+        if (o.re === "gen") undoOnce(k);
+        P[k] = v;
+        if (k === "graph") inputs.count.row.style.display = v === "line" ? "" : "none";
+        if (o.re) mark(...o.re.split(","));
+        else save();
+      };
+      if (type === "button") inp.onclick = () => { undoPush(); mark("gen"); };
+      else inp.addEventListener(type === "range" || type === "color" ? "input" : "change", apply);
+      const dice = row.querySelector("[data-dice]");
+      if (dice) dice.onclick = () => { inp.value = Math.floor(Math.random() * 9999); apply(); };
+    }
+    root.appendChild(d);
+  }
+  syncPanel();
+}
+function syncPanel() {
+  for (const k in inputs) {
+    const { inp, type, o, row } = inputs[k];
+    if (type === "button") continue;
+    if (type === "check") inp.checked = !!P[k];
+    else inp.value = P[k];
+    if (type === "range") row.querySelector("b").textContent = fmt(P[k], o.step);
+  }
+  inputs.count.row.style.display = P.graph === "line" ? "" : "none";
+  renderBands();
+}
+function syncProgressMax() {
+  const n = S.nodes.filter(x => !x.zero).length, i = inputs.progress;
+  i.inp.max = n;
+  if (P.progress > n) { P.progress = n; }
+  i.inp.value = P.progress;
+  i.row.querySelector("b").textContent = P.progress;
+}
+function renderBands() {
+  const w = document.getElementById("bands");
+  w.innerHTML = P.bands.map((b, i) => `<div class="band"><i style="background:${BIOMES[b.biome].low}"></i>
+    <input type="text" value="${esc(b.name)}" data-band-name="${i}">
+    <select data-band-biome="${i}">${BIOME_KEYS.map(k => `<option value="${k}"${k === b.biome ? " selected" : ""}>${BIOMES[k].name}</option>`).join("")}</select></div>`).join("")
+    + `<p class="hint" style="margin-top:6px">One region per band of the climb, seeded at the middle of its stages.</p>`;
+}
+document.getElementById("controls").addEventListener("change", e => {
+  const t = e.target;
+  if (t.dataset.bandName != null) { P.bands[+t.dataset.bandName].name = t.value; renderSide(); save(); }
+  if (t.dataset.bandBiome != null) { P.bands[+t.dataset.bandBiome].biome = t.value; renderBands(); mark("planet"); }
+});
+function setPreset(name) {
+  P.preset = name;
+  Object.assign(P, PRESETS[name]);
+  syncPanel();
+  mark("planet", "stars");
+}
+
+/* ===========================================================================
+   10. SIDE — the selected stage, the list, the file
+   =========================================================================== */
+let sel = null;
+function bandLabel(b) { const B = P.bands[b]; return B ? `${B.name} · ${BIOMES[B.biome].name}` : "?"; }
+function starsText(n) { return n.state === "cleared" ? "★".repeat(n.stars) + "☆".repeat(3 - n.stars) : ""; }
+
+function renderSide() {
+  const insp = document.getElementById("insp");
+  const node = sel != null && nodeById(sel);
+  if (!node) {
+    insp.innerHTML = `<p class="empty">Click a stage on the planet or in the list. Add mode drops a new one, linked from the selection.</p>`;
+  } else {
+    const outs = S.edges.filter(e => e.a === node.id), ins = S.edges.filter(e => e.b === node.id);
+    const col = stateColor(node.state);
+    insp.innerHTML = `
+      <div class="ihead"><span class="num" style="background:${col};color:${luma(col) > 0.45 ? "#14111f" : "#fff"}">${node.n}</span>
+        <input type="text" id="i-name" value="${esc(node.name)}"></div>
+      <div class="row"><label>Band</label><select id="i-band">${P.bands.map((b, i) => `<option value="${i}"${i === node.band ? " selected" : ""}>${esc(bandLabel(i))}</option>`).join("")}</select></div>
+      <div class="row"><label>State</label><select id="i-state">${["locked", "open", "current", "cleared"].map(s => `<option${s === node.state ? " selected" : ""} value="${s}">${s[0].toUpperCase() + s.slice(1)}</option>`).join("")}</select></div>
+      <div class="row"><label>Stars</label><div class="stars">${[0, 1, 2, 3].map(k => `<button data-stars="${k}" class="${k <= node.stars && k > 0 ? "on" : ""}">${k ? "★".repeat(k) : "None"}</button>`).join("")}</div></div>
+      <div class="meta">Latitude ${node.lat.toFixed(1)}°, longitude ${node.lon.toFixed(1)}°${node.zero ? " · level 0" : ""}</div>
+      <div class="links">
+        ${outs.map(e => `<div class="ln"><span>To ${nodeById(e.b)?.n} · ${esc(nodeById(e.b)?.name || "")}</span>${e.kind === "spur" ? "" : `<input type="number" min="0" placeholder="Gate" title="Stars this road asks for" value="${e.gate || ""}" data-gate="${e.b}">`}<button class="ghost" data-unlink="${e.a}:${e.b}">Unlink</button></div>`).join("")}
+        ${ins.map(e => `<div class="ln"><span>From ${nodeById(e.a)?.n} · ${esc(nodeById(e.a)?.name || "")}</span><button class="ghost" data-unlink="${e.a}:${e.b}">Unlink</button></div>`).join("")}
+      </div>
+      <div class="btns"><button data-act="fly">Fly to</button><button class="danger" data-act="delete">Delete</button></div>`;
+  }
+  const list = document.getElementById("list");
+  list.innerHTML = S.nodes.map(n => {
+    const col = stateColor(n.state);
+    return `<li data-id="${n.id}" class="${n.id === sel ? "sel" : ""}"><span class="dot" style="background:${col};color:${luma(col) > 0.45 ? "#14111f" : "#fff"}">${n.n}</span>
+      <span class="nm">${esc(n.name)}<br><span class="bm">${esc(bandLabel(n.band))}</span></span><span class="st">${starsText(n)}</span></li>`;
+  }).join("");
+  document.getElementById("count").textContent = `(${S.nodes.length})`;
+  const li = list.querySelector("li.sel");
+  if (li) li.scrollIntoView({ block: "nearest" });
+}
+const insp = document.getElementById("insp");
+insp.addEventListener("change", e => {
+  const node = nodeById(sel); if (!node) return;
+  const t = e.target;
+  undoPush();
+  if (t.id === "i-name") { node.name = t.value; renderSide(); save(); return; }
+  if (t.id === "i-band") { node.band = +t.value; mark(P.follow ? "planet" : "nodes"); return; }
+  if (t.id === "i-state") { node.state = t.value; if (t.value !== "cleared") node.stars = 0; else if (!node.stars) node.stars = 3; mark("nodes", "route"); return; }
+  if (t.dataset.gate) { const ed = S.edges.find(x => x.a === node.id && x.b === +t.dataset.gate); if (ed) { const g = +t.value; if (g > 0) ed.gate = g; else delete ed.gate; mark("route"); } }
+});
+insp.addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  const node = nodeById(sel); if (!node) return;
+  if (t.dataset.stars) { undoPush(); node.stars = +t.dataset.stars; node.state = node.stars ? "cleared" : node.state === "cleared" ? "open" : node.state; mark("nodes", "route"); }
+  if (t.dataset.unlink) { undoPush(); const [a, b] = t.dataset.unlink.split(":").map(Number); S.edges = S.edges.filter(x => !(x.a === a && x.b === b)); edited(); }
+  if (t.dataset.act === "fly") flyTo(node);
+  if (t.dataset.act === "delete") deleteNode(node.id);
+});
+document.getElementById("list").addEventListener("click", e => {
+  const li = e.target.closest("li"); if (!li) return;
+  select(+li.dataset.id); flyTo(nodeById(sel));
+});
+
+/* ===========================================================================
+   11. EDITING — select, drag, add, link, delete, undo
+   =========================================================================== */
+let mode = "select", linkFrom = null;
+const undo = [];
+function snapshot() { return JSON.stringify({ S, nextId }); }
+function undoPush(s = snapshot()) { if (undo[undo.length - 1] !== s) undo.push(s); if (undo.length > 60) undo.shift(); }
+// A slider dragged is ONE step back, not one per pixel it moved.
+let undoKey = null, undoAt = 0;
+function undoOnce(k) { const now = performance.now(); if (k !== undoKey || now - undoAt > 1500) undoPush(); undoKey = k; undoAt = now; }
+function undoPop() {
+  const s = undo.pop(); if (!s) { toast("Nothing to undo"); return; }
+  const d = JSON.parse(s); S = d.S; nextId = d.nextId;
+  if (sel != null && !nodeById(sel)) sel = null;
+  mark("planet");
+}
+function select(id) {
+  sel = id;
+  attachSel();
+  renderSide();
+}
+function addNode(v) {
+  undoPush();
+  const from = sel != null && nodeById(sel);
+  const ll = toLatLon(v);
+  const band = from ? from.band : Math.min(P.bands.length - 1, 0);
+  const pool = NAMES[P.bands[band].biome];
+  const node = { id: nextId++, n: 999, name: pool[Math.floor(Math.random() * pool.length)], band, lat: ll.lat, lon: ll.lon, state: from && from.state === "cleared" ? "open" : "locked", stars: 0 };
+  S.nodes.push(node);
+  if (from) S.edges.push({ a: from.id, b: node.id });
+  sel = node.id;
+  edited();
+}
+function toggleLink(a, b) {
+  undoPush();
+  const i = S.edges.findIndex(e => (e.a === a && e.b === b) || (e.a === b && e.b === a));
+  if (i >= 0) { S.edges.splice(i, 1); toast("Unlinked"); }
+  else { S.edges.push({ a, b }); toast("Linked"); }
+  edited();
+}
+function deleteNode(id) {
+  undoPush();
+  const ins = S.edges.filter(e => e.b === id), outs = S.edges.filter(e => e.a === id);
+  S.edges = S.edges.filter(e => e.a !== id && e.b !== id);
+  if (ins.length === 1 && outs.length === 1 && !S.edges.some(e => e.a === ins[0].a && e.b === outs[0].b)) {
+    S.edges.push({ a: ins[0].a, b: outs[0].b });         // heal the chain
+  }
+  S.nodes = S.nodes.filter(n => n.id !== id);
+  if (sel === id) sel = null;
+  edited();
+}
+function setMode(m) {
+  mode = m; linkFrom = null;
+  document.querySelectorAll("#toolbar [data-mode]").forEach(b => b.classList.toggle("on", b.dataset.mode === m));
+  hint();
+}
+function hint(extra) {
+  const H = {
+    select: "Click a stage to select it, drag it to move it over the surface. Double-click flies to it. Drag the space to turn the planet, wheel to zoom.",
+    add: "Click the ground to drop a stage, linked from the selected one. Click a stage to branch from it instead.",
+    link: linkFrom != null ? `Now click the stage to link ${nodeById(linkFrom)?.n} to (or unlink it from).` : "Click two stages to link them, or unlink them if they already are.",
+  };
+  document.getElementById("hintbar").textContent = extra || H[mode];
+}
+document.getElementById("toolbar").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.mode) setMode(b.dataset.mode);
+  if (b.dataset.act === "undo") undoPop();
+  if (b.dataset.act === "fit") fit();
+  if (b.dataset.act === "tour") toggleTour();
+});
+
+// ---- picking ---------------------------------------------------------------
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function pick(ev) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set((ev.clientX - r.left) / r.width * 2 - 1, -(ev.clientY - r.top) / r.height * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hp = ray.intersectObject(terrain, false)[0];
+  const pd = hp ? hp.distance : Infinity;
+  for (const h of ray.intersectObjects(pickables, false)) {
+    if (h.distance > pd + 0.06) continue;
+    if (h.object.isSprite && h.object.material.opacity < 0.3) continue;
+    return { node: h.object.userData.id, planet: hp };
+  }
+  return { node: null, planet: hp };
+}
+function hitToUnit(hit) { return planet.worldToLocal(hit.point.clone()).normalize(); }
+
+let down = null, hoverId = null;
+stageEl.addEventListener("pointerdown", e => {
+  if (e.button !== 0 || e.target !== canvas) return;
+  stopTour();
+  const p = pick(e);
+  down = { x: e.clientX, y: e.clientY, node: p.node, drag: false, snap: null };
+  if (mode === "select" && p.node != null) {
+    controls.enabled = false;
+    down.snap = snapshot();
+    select(p.node);
+  }
+}, { capture: true });
+let moveRaf = 0, lastMove = null;
+window.addEventListener("pointermove", e => {
+  lastMove = e;
+  if (moveRaf) return;
+  moveRaf = requestAnimationFrame(() => { moveRaf = 0; onMove(lastMove); });
+});
+function onMove(e) {
+  const tip = document.getElementById("tip");
+  if (down && down.node != null && mode === "select") {
+    if (!down.drag && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) down.drag = true;
+    if (down.drag) {
+      const p = pick(e);
+      if (p.planet) {
+        const node = nodeById(down.node), ll = toLatLon(hitToUnit(p.planet));
+        node.lat = ll.lat; node.lon = ll.lon;
+        const g = nodeObj.get(node.id), v = vecOf(node);
+        g.position.copy(v).multiplyScalar(nodeRadius(node));
+        g.quaternion.setFromUnitVectors(UP, v);
+        buildRoute();
+      }
+      tip.style.display = "none";
+      return;
+    }
+  }
+  if (down || e.target !== canvas) { tip.style.display = "none"; return; }
+  const p = pick(e);
+  setHover(p.node);
+  if (p.node != null) {
+    const n = nodeById(p.node), r = stageEl.getBoundingClientRect();
+    tip.innerHTML = `${n.n} · ${esc(n.name)}<small>${esc(bandLabel(n.band))} · ${n.state}${n.state === "cleared" ? " " + starsText(n) : ""}</small>`;
+    tip.style.left = (e.clientX - r.left) + "px"; tip.style.top = (e.clientY - r.top) + "px";
+    tip.style.display = "block";
+  } else tip.style.display = "none";
+  canvas.style.cursor = p.node != null ? (mode === "select" ? "grab" : "pointer") : mode === "add" && p.planet ? "crosshair" : "";
+}
+function setHover(id) {
+  if (hoverId === id) return;
+  hoverId = id;
+}
+window.addEventListener("pointerup", e => {
+  if (!down) return;
+  const d = down; down = null;
+  controls.enabled = true;
+  const click = Math.hypot(e.clientX - d.x, e.clientY - d.y) < 5;
+  if (d.drag) { undoPush(d.snap); edited(); return; }
+  if (!click) return;
+  const p = pick(e);
+  if (mode === "select") { if (p.node == null) select(null); }
+  else if (mode === "add") {
+    if (p.node != null) { select(p.node); hint("Branching from stage " + nodeById(p.node).n + ". Click the ground to drop the next one."); }
+    else if (p.planet) addNode(hitToUnit(p.planet));
+  } else if (mode === "link") {
+    if (p.node == null) { linkFrom = null; select(null); }
+    else if (linkFrom == null) { linkFrom = p.node; select(p.node); }
+    else if (p.node !== linkFrom) { toggleLink(linkFrom, p.node); linkFrom = null; select(p.node); }
+    hint();
+  }
+});
+canvas.addEventListener("dblclick", e => { const p = pick(e); if (p.node != null) { select(p.node); flyTo(nodeById(p.node)); } });
+
+window.addEventListener("keydown", e => {
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undoPop(); return; }
+  if (e.key === "1") setMode("select");
+  if (e.key === "2") setMode("add");
+  if (e.key === "3") setMode("link");
+  if (e.key === "Escape") { linkFrom = null; select(null); hint(); }
+  if ((e.key === "Delete" || e.key === "Backspace") && sel != null) { e.preventDefault(); deleteNode(sel); }
+  if (e.key.toLowerCase() === "f" && sel != null) flyTo(nodeById(sel));
+});
+
+/* ===========================================================================
+   12. CAMERA — fly to a stage, fit, the tour
+   =========================================================================== */
+let fly = null;
+function flyTo(node) {
+  if (!node) return;
+  planet.updateMatrixWorld();
+  const g = nodeObj.get(node.id);
+  const to = g ? g.getWorldPosition(new THREE.Vector3()).normalize() : vecOf(node);
+  const dist = clamp(camera.position.length(), 2.4, 3.4);
+  fly = { from: camera.position.clone().normalize(), to, d0: camera.position.length(), d1: dist, t: 0, dur: 0.9 };
+}
+// The whole planet, turned to the stage to play next.
+function fit() {
+  const n = S.nodes.find(x => x.state === "current") || S.nodes[0];
+  planet.updateMatrixWorld();
+  const g = n && nodeObj.get(n.id);
+  const to = g ? g.getWorldPosition(new THREE.Vector3()).normalize() : new THREE.Vector3(0, 0.15, 1).normalize();
+  fly = { from: camera.position.clone().normalize(), to, d0: camera.position.length(), d1: 3.8, t: 0, dur: 0.8 };
+}
+let tour = null;
+function toggleTour() { if (tour) stopTour(); else { tour = { i: 0, t: 99 }; document.querySelector('[data-act="tour"]').classList.add("on"); } }
+function stopTour() { tour = null; document.querySelector('[data-act="tour"]').classList.remove("on"); }
+
+/* ===========================================================================
+   13. FILE — save in this browser, copy, download, import
+   =========================================================================== */
+const KEY = "lab.planetMap.v1";
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ P, S, nextId })); } catch (e) { /* private window */ } }
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (d && d.S && d.P) { P = Object.assign({}, P, d.P); S = d.S; nextId = d.nextId || 1 + Math.max(0, ...S.nodes.map(n => n.id)); return true; }
+  } catch (e) { /* nothing kept */ }
+  return false;
+}
+function mapJSON() {
+  const planetKeys = ["seed", "detail", "ocean", "relief", "warp", "wild", "landR", "padR", "bands"];
+  const planetSettings = {}; planetKeys.forEach(k => planetSettings[k] = P[k]);
+  return JSON.stringify({
+    kind: "planet-map", version: 1, planet: planetSettings,
+    stages: S.nodes.map(n => ({ id: n.id, n: n.n, name: n.name, band: n.band, biome: P.bands[n.band]?.biome, lat: +n.lat.toFixed(3), lon: +n.lon.toFixed(3), state: n.state, stars: n.stars, ...(n.zero ? { zero: true } : {}) })),
+    roads: S.edges.map(e => ({ from: e.a, to: e.b, ...(e.gate ? { gate: e.gate } : {}), ...(e.kind ? { kind: e.kind } : {}) })),
+  }, null, 2);
+}
+function readMap(txt) {
+  const d = JSON.parse(txt);
+  if (d.kind !== "planet-map" || !Array.isArray(d.stages)) throw new Error("not a planet map");
+  undoPush();
+  if (d.planet) Object.assign(P, d.planet);
+  S = {
+    nodes: d.stages.map(s => ({ id: s.id, n: s.n, name: s.name, band: s.band || 0, lat: s.lat, lon: s.lon, state: s.state || "locked", stars: s.stars || 0, ...(s.zero ? { zero: true } : {}) })),
+    edges: (d.roads || []).map(r => ({ a: r.from, b: r.to, ...(r.gate ? { gate: r.gate } : {}), ...(r.kind ? { kind: r.kind } : {}) })),
+  };
+  nextId = 1 + Math.max(0, ...S.nodes.map(n => n.id));
+  sel = null;
+  sortNodes();
+  syncPanel();
+  mark("planet");
+}
+function toast(msg) { const t = document.getElementById("toast"); t.textContent = msg; clearTimeout(toast.t); toast.t = setTimeout(() => t.textContent = "", 2200); }
+function copyText(s, what) {
+  navigator.clipboard.writeText(s).then(() => toast(what + " copied"), () => { document.getElementById("paste").value = s; toast("Clipboard refused: the text is in the box"); });
+}
+document.getElementById("side").addEventListener("click", e => {
+  const b = e.target.closest("[data-file]"); if (!b) return;
+  const f = b.dataset.file;
+  if (f === "copy") copyText(mapJSON(), "Map");
+  if (f === "settings") copyText(JSON.stringify(P, null, 2), "Settings");
+  if (f === "download") {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([mapJSON()], { type: "application/json" }));
+    a.download = "planet-map.json"; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  if (f === "import") document.getElementById("file").click();
+  if (f === "load") { try { readMap(document.getElementById("paste").value); toast("Map loaded"); } catch (err) { toast("Could not read it: " + err.message); } }
+  if (f === "renumber") { undoPush(); renumber(); mark("nodes", "route"); }
+  if (f === "reset") { undoPush(); sel = null; mark("gen"); toast("New map — Undo brings the old one back"); }
+});
+document.getElementById("file").addEventListener("change", async e => {
+  const file = e.target.files[0]; if (!file) return;
+  try { readMap(await file.text()); toast("Map loaded"); } catch (err) { toast("Could not read it: " + err.message); }
+  e.target.value = "";
+});
+
+/* ===========================================================================
+   14. LOOP
+   =========================================================================== */
+function resize() {
+  const w = stageEl.clientWidth, h = stageEl.clientHeight;
+  renderer.setSize(w, h, false);
+  composer.setSize(w, h);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+  sizeLabels();
+}
+new ResizeObserver(resize).observe(stageEl);
+
+const clock = new THREE.Clock();
+const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3(), camDir = new THREE.Vector3();
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  if (P.spin && sel == null && !down && !fly) planet.rotation.y += P.spin * dt;
+  if (fly) {
+    fly.t = Math.min(1, fly.t + dt / fly.dur);
+    const k = fly.t < 0.5 ? 2 * fly.t * fly.t : 1 - Math.pow(-2 * fly.t + 2, 2) / 2;
+    slerp(fly.from, fly.to, k, tmp).normalize();
+    camera.position.copy(tmp.multiplyScalar(fly.d0 + (fly.d1 - fly.d0) * k));
+    camera.lookAt(0, 0, 0);
+    if (fly.t >= 1) fly = null;
+  }
+  if (tour) {
+    tour.t += dt;
+    if (tour.t > 1.5 && !fly && S.nodes.length) {
+      tour.t = 0;
+      const node = S.nodes[tour.i % S.nodes.length]; tour.i++;
+      select(node.id); flyTo(node);
+    }
+  }
+  controls.update();
+  // the sun stands over the viewer's shoulder, so the side we look at is lit
+  sun.position.copy(camera.position).normalize().multiplyScalar(5).add(tmp2.set(-1.6, 2.2, 0).applyQuaternion(camera.quaternion));
+  // islands drift, rings turn
+  for (const m of islands.children) {
+    const u = m.userData, a = u.a + t * u.speed;
+    m.position.set(Math.cos(a) * u.r, u.y + Math.sin(t * 0.8 + u.bob) * 0.03, Math.sin(a) * u.r);
+    m.rotation.y = t * u.spinY;
+    // an island passing between the eye and the planet gets out of the way
+    const d = m.position.distanceTo(camera.position);
+    m.material.opacity = smooth(0.35, 1.0, d);
+    m.material.depthWrite = m.material.opacity > 0.95;   // a ghost must not hide what is behind it
+    m.visible = m.material.opacity > 0.02;
+  }
+  for (const r of rings.children) r.rotation.z += r.userData.spin * dt;
+  // labels fade out as they go round the back
+  camDir.copy(camera.position);
+  for (const g of nodeObj.values()) {
+    g.getWorldPosition(tmp);
+    const nrm = tmp2.copy(tmp).normalize();
+    const f = nrm.dot(tmp.sub(camDir).negate().normalize());
+    const sp = g.userData.label;
+    sp.material.opacity = smooth(-0.02, 0.22, f);
+    const k = g.userData.id === hoverId ? 1.14 : 1;
+    sp.scale.set(sp.userData.base * 0.8 * k, sp.userData.base * k, 1);
+  }
+  if (selRing && selRing.parent) {
+    const s = 1 + Math.sin(t * 5) * 0.08;
+    selRing.scale.set(s, 1, s);
+    selRing.material.opacity = 0.65 + Math.sin(t * 5) * 0.3;
+  }
+  composer.render();
+}
+
+/* ===========================================================================
+   15. BOOT
+   =========================================================================== */
+buildPanel();
+const kept = load();
+syncPanel();
+hint();
+resize();
+if (kept) { renumber(); mark("planet", "stars"); }
+else mark("gen", "stars");
+flush();
+setTimeout(() => {   // the first stage on the climb that is still to play
+  const cur = S.nodes.find(n => n.state === "current") || S.nodes[0];
+  if (cur) { select(cur.id); flyTo(cur); }
+}, 50);
+frame();
+</script>
+</body>
+</html>

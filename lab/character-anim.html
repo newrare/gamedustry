@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — Character animation</title>
+<meta name="lab-group" content="css">
+<style>
+/* ===========================================================================
+   LAB — CHARACTER ANIMATION. Rigged 3D characters, one set of animations
+   written here, and the cameras a game could look at them through.
+
+   The characters are free of rights (assets/model/sources.tsv): four KayKit
+   adventurers and two KayKit skeletons (CC0, Kay Lousberg), the RobotExpressive
+   (CC0, Quaternius), plus the STICKMAN, made in code (lab/models/stickman.js).
+
+   The animations are NOT the packs' clips: twelve of them are written in this
+   page — idle, walk, run, jump, crouch, punch, kick, wave, cheer, dance, hit,
+   knockout — as poses in plain angles (a thigh swung forward, a knee bent, an
+   arm raised out), on a CANONICAL rig, and laid onto each character's own
+   skeleton by a retargeting pass:
+     - every bone of a rig is matched to a canonical key by its name;
+     - a bone's rest direction is corrected so every rig starts from the same
+       pose (arms hanging, legs straight), whatever it was modelled in — the
+       KayKit rigs are in T-pose, the robot in an A-pose;
+     - an angle is applied in the character's own axes (x its left, y up,
+       z forward), never in a bone's local axes, which differ in every file;
+     - the feet are put back on the ground every frame (the lowest contact
+       touches it), so a crouch or a lying body lands whatever the legs'
+       proportions — a chibi knight and a 1.8 m stickman play the same pose.
+   So one animation drives every character, and the pack's own clips stay one
+   click away for comparison (Pack clips).
+
+   Ten cameras: free orbit, turntable, front, three-quarter, side (orthographic,
+   a platformer), behind the shoulder, top-down, isometric (orthographic), low
+   angle, close-up on the face. Lineup puts every character side by side on the
+   same animation.
+
+   Export GLB hands over the stickman with the twelve animations baked as clips.
+   Served over HTTP only (make lab): three.js is vendored in lab/vendor/three/.
+   #char=knight&anim=run&cam=side&t=0.3 opens a state, frozen when t is given.
+   =========================================================================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+#panel { flex:0 0 320px; height:100vh; overflow-y:auto; padding:18px 16px 40px; background:#12121c; border-right:1px solid #23233a; }
+#panel h1 { font-size:16px; }
+#panel p.hint { margin:6px 0 10px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h2 { margin:16px 0 6px; font-size:12px; color:#9c9cba; font-weight:600; }
+/* every group of the panel folds behind a chevron */
+#panel details { margin-top:10px; border-top:1px solid #23233a; padding-top:8px; }
+#panel summary { display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none; font-size:12px; color:#cfd0ea; font-weight:600; user-select:none; }
+#panel summary::-webkit-details-marker { display:none; }
+#panel summary::before { content:""; width:6px; height:6px; border-right:2px solid #7ea6ff; border-bottom:2px solid #7ea6ff; transform:rotate(-45deg); transition:transform .15s; margin:0 2px; }
+#panel details[open] > summary::before { transform:rotate(45deg); }
+#panel summary:hover { color:#fff; }
+#panel details > .body { padding:6px 0 4px; }
+#panel h3 { margin:8px 0 5px; font-size:11px; color:#8b8ba7; font-weight:600; }
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:4px 9px; border-radius:999px; background:#22223a; border:1px solid #2c2c47; color:#cfd0ea; font:600 12px/1.3 inherit; cursor:pointer; }
+.chip:hover { border-color:#4a4a72; }
+.chip.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.chip.dim { opacity:.45; }
+.row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:6px 0; font-size:12px; color:#9c9cba; }
+.row input[type=checkbox] { width:16px; height:16px; accent-color:#7ea6ff; }
+.row input[type=range] { flex:1; accent-color:#7ea6ff; }
+.row output { min-width:42px; text-align:right; font:500 11px ui-monospace,Menlo,monospace; color:#cfd0ea; }
+select { width:100%; padding:6px 8px; background:#0b0b12; color:#e8e6f5; border:1px solid #2c2c47; border-radius:6px; font:inherit; font-size:12px; }
+button.wide { width:100%; margin-top:6px; padding:7px 8px; background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; border-radius:8px; font:600 12px/1.2 inherit; cursor:pointer; }
+button.wide:hover { border-color:#4a4a72; }
+#info { margin-top:8px; font:500 11px/1.5 ui-monospace,Menlo,monospace; color:#8b8ba7; white-space:pre-wrap; }
+#stage { flex:1; position:relative; min-width:0; }
+#view { width:100%; height:100%; display:block; touch-action:none; }
+#hud { position:absolute; left:14px; top:10px; font-size:13px; color:#e8e6f5; text-shadow:0 1px 2px #000; pointer-events:none; }
+#bar { position:absolute; left:14px; right:14px; bottom:12px; display:flex; align-items:center; gap:10px; padding:8px 12px; background:#12121ccc; border:1px solid #23233a; border-radius:10px; }
+#bar button { width:34px; height:28px; border-radius:7px; background:#22223a; color:#e8e6f5; border:1px solid #2c2c47; font:600 14px/1 inherit; cursor:pointer; }
+#bar input[type=range] { flex:1; accent-color:#7ea6ff; }
+#bar output { min-width:84px; text-align:right; font:500 11px ui-monospace,Menlo,monospace; color:#cfd0ea; }
+#loading { position:absolute; inset:0; display:grid; place-items:center; color:#8b8ba7; font-size:13px; pointer-events:none; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "./vendor/three/build/three.module.min.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="panel">
+  <h1>Character animation</h1>
+  <p class="hint">Twelve animations written once on a canonical rig and retargeted onto every character. Free-licence models, plus a stickman made in code.</p>
+
+  <details open><summary>Character</summary><div class="body">
+    <h3>From the library — free-licence models found online</h3>
+    <div class="chips" id="charsLib"></div>
+    <h3>Made from scratch — built in code by Claude</h3>
+    <div class="chips" id="charsCode"></div>
+    <div class="row"><span>Lineup — every character at once</span><input type="checkbox" id="lineup"></div>
+  </div></details>
+
+  <details open><summary>Animation</summary><div class="body">
+    <div class="row"><span>Source</span>
+      <span class="chips"><span class="chip on" data-src="lab">Lab animations</span><span class="chip" data-src="pack">Pack clips</span></span></div>
+    <div class="chips" id="anims"></div>
+    <select id="clips" style="display:none"></select>
+    <div class="row"><span>Speed</span><input type="range" id="speed" min="0.1" max="2" step="0.05" value="1"><output id="speedOut">×1</output></div>
+    <div class="row"><span>Loop (off: back to idle)</span><input type="checkbox" id="loop" checked></div>
+    <div class="row"><span>Crossfade</span><input type="range" id="fade" min="0" max="0.8" step="0.05" value="0.25"><output id="fadeOut">0.25 s</output></div>
+  </div></details>
+
+  <details><summary>Camera</summary><div class="body">
+    <div class="chips" id="cams"></div>
+  </div></details>
+
+  <details><summary>Display</summary><div class="body">
+    <div class="row"><span>Ground scrolls with the stride</span><input type="checkbox" id="scroll" checked></div>
+    <div class="row"><span>Skeleton</span><input type="checkbox" id="skel"></div>
+    <div class="row"><span>Shadows</span><input type="checkbox" id="shadows" checked></div>
+    <div class="row"><span>Arm spread</span><input type="range" id="spread" min="0" max="30" step="1" value="8"><output id="spreadOut">8°</output></div>
+  </div></details>
+
+  <details id="propsBox" style="display:none"><summary>Props held</summary><div class="body">
+    <div class="chips" id="props"></div>
+  </div></details>
+
+  <details><summary>Export</summary><div class="body">
+    <button class="wide" id="export">Export stickman GLB (12 clips baked)</button>
+  </div></details>
+  <div id="info"></div>
+</div>
+<div id="stage">
+  <canvas id="view"></canvas>
+  <div id="hud"></div>
+  <div id="loading">Loading characters…</div>
+  <div id="bar"><button id="play" title="Play / pause (space)">❚❚</button><input type="range" id="time" min="0" max="1" step="0.001" value="0"><output id="timeOut">0.00 s</output></div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
+import { buildStickman } from "./models/stickman.js";
+
+const ASSETS = "../assets/model/";
+const H = 1.8;                         // every character is shown at this height
+const D2R = Math.PI / 180;
+
+// ---------------------------------------------------------------------------
+// 1. The characters
+// ---------------------------------------------------------------------------
+const CHARS = [
+  { id: "stickman", name: "Stickman", code: true, spread: 8 },
+  { id: "knight", name: "Knight", file: "kaykit-adventurers/Knight.glb", spread: 14 },
+  { id: "barbarian", name: "Barbarian", file: "kaykit-adventurers/Barbarian.glb", spread: 14 },
+  { id: "mage", name: "Mage", file: "kaykit-adventurers/Mage.glb", spread: 14 },
+  { id: "rogue", name: "Rogue", file: "kaykit-adventurers/Rogue.glb", spread: 14 },
+  { id: "skeleton", name: "Skeleton warrior", file: "kaykit-skeletons/Skeleton_Warrior.glb", spread: 12 },
+  { id: "minion", name: "Skeleton minion", file: "kaykit-skeletons/Skeleton_Minion.glb", spread: 12 },
+  { id: "robot", name: "Robot", file: "quaternius-robot/RobotExpressive.glb", spread: 16 },
+];
+
+// The canonical rig: key, canonical parent, the bone names it is found under
+// (compared lowercased with everything but letters and digits taken out, so
+// `upperarm.l`, `UpperArm.L` and `upperarmL` are one name).
+const CANON = [
+  ["hips", null, ["hips", "pelvis"]],
+  ["spine", "hips", ["spine", "abdomen", "spine01"]],
+  ["chest", "spine", ["chest", "torso", "spine02", "upperchest"]],
+  ["neck", "chest", ["neck"]],
+  ["head", "neck", ["head"]],
+  ["armL", "chest", ["upperarml", "leftarm", "arml"]],
+  ["foreL", "armL", ["lowerarml", "forearml", "leftforearm"]],
+  ["handL", "foreL", ["wristl", "handl", "lefthand"]],
+  ["armR", "chest", ["upperarmr", "rightarm", "armr"]],
+  ["foreR", "armR", ["lowerarmr", "forearmr", "rightforearm"]],
+  ["handR", "foreR", ["wristr", "handr", "righthand"]],
+  ["legL", "hips", ["upperlegl", "thighl", "leftupleg"]],
+  ["shinL", "legL", ["lowerlegl", "shinl", "calfl", "leftleg"]],
+  ["footL", "shinL", ["footl", "leftfoot"]],
+  ["toesL", "footL", ["toesl", "toel", "lefttoebase"]],
+  ["legR", "hips", ["upperlegr", "thighr", "rightupleg"]],
+  ["shinR", "legR", ["lowerlegr", "shinr", "calfr", "rightleg"]],
+  ["footR", "shinR", ["footr", "rightfoot"]],
+  ["toesR", "footR", ["toesr", "toer", "righttoebase"]],
+];
+const PARENT = Object.fromEntries(CANON.map(([k, p]) => [k, p]));
+const norm = (s) => s.toLowerCase().replace(/_\d+$/, "").replace(/[^a-z0-9]/g, "");
+
+// ---------------------------------------------------------------------------
+// 2. Poses → rotations, in the character's own axes (x left, y up, z forward)
+// ---------------------------------------------------------------------------
+// A pose is a plain object of angles in degrees; a missing field is 0.
+//   hips / spine / chest / neck / head: [bend forward, lean left, turn left]
+//   armL / armR / legL / legR: [swing forward, out from the body, twist]
+//   foreL / foreR: [elbow bend, twist, swing outward]   handL / handR: [flex, twist, side]
+//   shinL / shinR: [knee bend]   footL / footR: [point the toes, roll]   toesL / toesR: [curl]
+//   lift (in hip heights, above the ground), x / z (hip heights), yaw / pitch / roll (the whole body)
+const FIELDS = ["hips", "spine", "chest", "neck", "head", "armL", "armR", "foreL", "foreR", "handL", "handR", "legL", "legR", "shinL", "shinR", "footL", "footR", "toesL", "toesR"];
+const ROOTF = ["lift", "x", "z", "yaw", "pitch", "roll"];
+const E = new THREE.Euler();
+function quatOf(key, v) {
+  const q = new THREE.Quaternion();
+  if (!v) return q;
+  const a = (v[0] || 0) * D2R, b = (v[1] || 0) * D2R, c = (v[2] || 0) * D2R;
+  const L = key.endsWith("L") ? 1 : -1;
+  switch (key) {
+    case "hips": case "spine": case "chest": case "neck": case "head": E.set(a, c, -b, "YXZ"); break;
+    case "armL": case "armR": case "legL": case "legR": E.set(-a, c * L, b * L, "XYZ"); break;
+    case "foreL": case "foreR": E.set(-a, b * L, c * L, "XYZ"); break;
+    case "handL": case "handR": E.set(-a, b * L, c * L, "XYZ"); break;
+    case "shinL": case "shinR": E.set(a, 0, 0); break;
+    case "footL": case "footR": E.set(a, 0, b * L); break;
+    case "toesL": case "toesR": E.set(a, 0, 0); break;
+  }
+  return q.setFromEuler(E);
+}
+// a pose resolved: one quaternion per canonical key and the root numbers — what blends
+function resolve(p) {
+  const D = {};
+  for (const k of FIELDS) D[k] = quatOf(k, p[k]);
+  const root = {};
+  for (const f of ROOTF) root[f] = p[f] || 0;
+  return { D, root };
+}
+function blend(a, b, w) {
+  const D = {}, root = {};
+  for (const k of FIELDS) D[k] = a.D[k].clone().slerp(b.D[k], w);
+  for (const f of ROOTF) root[f] = a.root[f] + (b.root[f] - a.root[f]) * w;
+  return { D, root };
+}
+
+// ---------------------------------------------------------------------------
+// 3. The animations
+// ---------------------------------------------------------------------------
+const ease = (u) => u * u * (3 - 2 * u);
+const sin = Math.sin, cos = Math.cos, max = Math.max, abs = Math.abs, TAU = Math.PI * 2;
+function mix(a, b, u) {               // two partial poses, field by field
+  const out = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const x = a[k], y = b[k];
+    if (typeof x === "number" || typeof y === "number") out[k] = (x || 0) + ((y || 0) - (x || 0)) * u;
+    else { const n = max((x || []).length, (y || []).length), r = []; for (let i = 0; i < n; i++) r.push(((x || [])[i] || 0) + (((y || [])[i] || 0) - ((x || [])[i] || 0)) * u); out[k] = r; }
+  }
+  return out;
+}
+
+function sum(a, b) {
+  const out = Object.assign({}, a);
+  for (const k of Object.keys(b)) {
+    if (typeof b[k] === "number") out[k] = (out[k] || 0) + b[k];
+    else { const x = out[k] || [], r = []; for (let i = 0; i < max(x.length, b[k].length); i++) r.push((x[i] || 0) + (b[k][i] || 0)); out[k] = r; }
+  }
+  return out;
+}
+// keyframes: [[time, pose], ...], eased between, held past the last
+function keys(t, ks) {
+  if (t <= ks[0][0]) return ks[0][1];
+  for (let i = 1; i < ks.length; i++) if (t <= ks[i][0]) {
+    const [t0, a] = ks[i - 1], [t1, b] = ks[i];
+    return mix(a, b, ease((t - t0) / (t1 - t0)));
+  }
+  return ks[ks.length - 1][1];
+}
+const N = {};
+// a fighting stance: left foot forward, the body turned a little to the right, guard up
+const STANCE = { legL: [18, 6, 0], legR: [-14, 6, 0], shinL: [20], shinR: [22], footL: [-2], footR: [8],
+  hips: [0, 0, -18], spine: [6, 0, 6], head: [6, 0, 12], armL: [55, 12, 0], foreL: [115], armR: [45, 18, 0], foreR: [130] };
+const CROUCH = { legL: [55, 6, 0], legR: [55, 6, 0], shinL: [100], shinR: [100], footL: [-45], footR: [-45],
+  spine: [28, 0, 0], head: [-15, 0, 0], armL: [-45, 10, 0], armR: [-45, 10, 0], foreL: [20], foreR: [20] };
+const HURT = { spine: [-22, 0, 8], chest: [-10, 0, 0], head: [-30, 8, 10], armL: [35, 40, 0], armR: [30, 45, 0],
+  foreL: [60], foreR: [50], shinL: [20], shinR: [15], legL: [8, 4, 0], z: -0.12 };
+
+const ANIMS = [
+  { id: "idle", name: "Idle", dur: 3.2, loop: true, pose(t) {
+    const p = TAU * t / this.dur, s = sin(p);
+    return { spine: [3 + 1.2 * s], chest: [1.5 * s], head: [-1 - 2 * s, 0, 5 * sin(p)], hips: [0, 1.5 * cos(p)],
+      armL: [2, 6 + 2 * s], armR: [2, 6 + 2 * s], foreL: [12 + 3 * s], foreR: [12 + 3 * s], legL: [0, 3], legR: [0, 3] };
+  } },
+  { id: "walk", name: "Walk", dur: 1.05, loop: true, speed: 1.6, pose(t) {
+    const p = TAU * t / this.dur, s = sin(p), c = cos(p);
+    const knee = (cc) => 6 + 44 * Math.pow(max(0, cc), 1.6);
+    return { legL: [24 * s, 2], legR: [-24 * s, 2], shinL: [knee(c)], shinR: [knee(-c)],
+      footL: [14 * max(0, -s) - 10 * max(0, s)], footR: [14 * max(0, s) - 10 * max(0, -s)],
+      armL: [-20 * s, 6], armR: [20 * s, 6], foreL: [18 + 8 * max(0, -s)], foreR: [18 + 8 * max(0, s)],
+      hips: [0, 2 * sin(2 * p), -6 * s], chest: [0, 0, 9 * s], spine: [4], head: [-2, 0, -4 * s] };
+  } },
+  { id: "run", name: "Run", dur: 0.62, loop: true, speed: 4.4, pose(t) {
+    const p = TAU * t / this.dur, s = sin(p), c = cos(p);
+    const knee = (cc) => 18 + 92 * Math.pow(max(0, cc), 1.2);
+    return { legL: [10 + 45 * s, 3], legR: [10 - 45 * s, 3], shinL: [knee(c)], shinR: [knee(-c)],
+      footL: [22 * max(0, -s) - 5], footR: [22 * max(0, s) - 5],
+      armL: [10 - 50 * s, 10], armR: [10 + 50 * s, 10], foreL: [88 + 12 * s], foreR: [88 - 12 * s],
+      spine: [14], head: [-10, 0, 0], hips: [0, 0, -10 * s], chest: [0, 0, 15 * s], lift: 0.05 * max(0, sin(2 * p - 1.2)) };
+  } },
+  { id: "jump", name: "Jump", dur: 1.5, loop: false, pose(t) {
+    const launch = { legL: [-5, 4], legR: [-5, 4], footL: [35], footR: [35], spine: [-5], armL: [165, 15], armR: [165, 15], foreL: [10], foreR: [10], head: [-10] };
+    const apex = { legL: [55, 8], legR: [35, 8], shinL: [85], shinR: [65], footL: [20], footR: [20], spine: [10], armL: [130, 40], armR: [130, 40], foreL: [30], foreR: [30] };
+    const fall = { legL: [20, 6], legR: [15, 6], shinL: [30], shinR: [25], footL: [10], footR: [10], armL: [80, 60], armR: [80, 60], foreL: [20], foreR: [20], spine: [5] };
+    const land = { legL: [45, 6], legR: [45, 6], shinL: [85], shinR: [85], footL: [-40], footR: [-40], spine: [22], head: [-10], armL: [35, 20], armR: [35, 20], foreL: [25], foreR: [25] };
+    const p = keys(t, [[0, N], [0.3, CROUCH], [0.42, launch], [0.72, apex], [0.98, fall], [1.06, land], [1.35, N], [1.5, N]]);
+    const u = (t - 0.42) / 0.64;
+    if (u > 0 && u < 1) p.lift = 1.1 * 4 * u * (1 - u);
+    return p;
+  } },
+  { id: "crouch", name: "Crouch", dur: 2.4, loop: true, pose(t) {
+    const s = sin(TAU * t / this.dur);
+    return { legL: [72, 10], legR: [72, 10], shinL: [125], shinR: [125], footL: [-53], footR: [-53],
+      spine: [32 + 1.5 * s], chest: [6], head: [-25 - s], armL: [35, 14], armR: [35, 14], foreL: [55 + 2 * s], foreR: [55 + 2 * s] };
+  } },
+  { id: "punch", name: "Punch", dur: 1.2, loop: true, pose(t) {
+    const jab = Object.assign({}, STANCE, { armL: [88, 4, 0], foreL: [4], spine: [6, 0, -6] });
+    const cross = Object.assign({}, STANCE, { armR: [88, 2, 0], foreR: [4], hips: [0, 0, -4], spine: [8, 0, 28], footR: [25], shinR: [26], head: [6, 0, -14] });
+    return keys(t, [[0, STANCE], [0.1, STANCE], [0.18, jab], [0.28, jab], [0.42, STANCE], [0.55, STANCE], [0.64, cross], [0.76, cross], [0.94, STANCE], [1.2, STANCE]]);
+  } },
+  { id: "kick", name: "Kick", dur: 1.4, loop: true, pose(t) {
+    const chamber = Object.assign({}, STANCE, { legR: [85, 10], shinR: [120], footR: [10], shinL: [16], spine: [0, 0, 6], hips: [0, -4, -10] });
+    const kick = Object.assign({}, chamber, { legR: [88, 8], shinR: [4], footR: [30], spine: [-18, 0, 4], hips: [0, -6, -6], armR: [20, 30], foreR: [90] });
+    return keys(t, [[0, STANCE], [0.15, STANCE], [0.38, chamber], [0.5, kick], [0.64, kick], [0.8, chamber], [1.06, STANCE], [1.4, STANCE]]);
+  } },
+  { id: "wave", name: "Wave", dur: 1.6, loop: true, pose(t) {
+    const p = TAU * t / this.dur, s = sin(2 * p);
+    return { armR: [12, 105, 0], foreR: [10, 0, 45 + 28 * s], handR: [0, 0, 10 * s], head: [-4, -6, -10],
+      spine: [-2, -2, 0], hips: [0, 3, 0], armL: [2, 8], foreL: [12], legL: [0, 4], legR: [0, 2] };
+  } },
+  { id: "cheer", name: "Cheer", dur: 1, loop: true, pose(t) {
+    const p = TAU * t / this.dur, s = sin(p), down = max(0, -s);
+    return { armL: [15, 150 + 8 * s], armR: [15, 150 + 8 * s], foreL: [20 + 15 * s], foreR: [20 + 15 * s], head: [-18], spine: [-8 + 6 * down],
+      legL: [12 * down, 6], legR: [12 * down, 6], shinL: [26 * down], shinR: [26 * down], footL: [-14 * down + 20 * max(0, s)], footR: [-14 * down + 20 * max(0, s)],
+      lift: 0.2 * max(0, s) };
+  } },
+  { id: "dance", name: "Dance", dur: 2, loop: true, pose(t) {
+    const p = TAU * t / this.dur, k = ease(0.5 + 0.5 * sin(p)), bob = (1 - cos(4 * p)) / 2;
+    const knee = 14 + 16 * bob;
+    const up = [30, 145, 0], low = [25, -12, 0];
+    return { hips: [0, 9 * sin(2 * p), 14 * sin(p)], spine: [4, -4 * sin(2 * p), 0], chest: [0, 0, -10 * sin(p)], head: [8 * sin(4 * p), 0, 6 * sin(p)],
+      legL: [knee / 2, 8], legR: [knee / 2, 8], shinL: [knee], shinR: [knee], footL: [-knee / 2], footR: [-knee / 2],
+      armR: mix({ a: low }, { a: up }, k).a, foreR: [70 - 65 * k], armL: mix({ a: up }, { a: [20, 20, 0] }, k).a, foreL: [5 + 80 * k] };
+  } },
+  { id: "hit", name: "Hit", dur: 1.1, loop: false, pose(t) {
+    const fold = { spine: [18, 0, 0], chest: [8], head: [10], armL: [25, 15], armR: [25, 15], foreL: [95], foreR: [95], shinL: [22], shinR: [22], legL: [12, 4], legR: [10, 4], z: -0.16 };
+    return keys(t, [[0, N], [0.08, HURT], [0.32, fold], [0.8, N], [1.1, N]]);
+  } },
+  { id: "knockout", name: "Knockout", dur: 4.2, loop: false, pose(t) {
+    const stagger = Object.assign({}, HURT, { legL: [-10, 6], legR: [20, 6], shinL: [10], shinR: [30], armL: [20, 60], armR: [20, 65], pitch: -15, z: -0.22 });
+    const down = { pitch: -88, armL: [10, 75], armR: [10, 70], foreL: [20], foreR: [25], legL: [8, 10], legR: [4, 12], shinL: [15], shinR: [8], footL: [20], footR: [25], head: [-5], z: -0.25 };
+    const daze = Object.assign({}, down, { head: [-5, 0, 0] });
+    const sit = { pitch: -38, spine: [40], head: [-15], legL: [80, 12], legR: [80, 12], shinL: [120], shinR: [110], footL: [-30], footR: [-30], armL: [-30, 20], armR: [-30, 20], foreL: [20], foreR: [20], z: -0.25 };
+    const p = keys(t, [[0, N], [0.12, HURT], [0.45, stagger], [1.0, down], [2.4, daze], [2.9, sit], [3.4, Object.assign({}, CROUCH, { z: -0.12 })], [3.9, N], [4.2, N]]);
+    if (t > 1.0 && t < 2.4) p.head = [-5, 10 * sin((t - 1) * 9), 25 * sin((t - 1) * 4.5)];   // dizzy
+    return p;
+  } },
+];
+const ANIM = Object.fromEntries(ANIMS.map((a) => [a.id, a]));
+
+// ---------------------------------------------------------------------------
+// 4. The rig: binding a skeleton to the canonical keys, and solving a pose
+// ---------------------------------------------------------------------------
+const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _s = new THREE.Vector3();
+const _m = new THREE.Matrix4();
+
+function bindRig(ch) {
+  const outer = ch.outer, model = ch.model;
+  outer.position.set(0, 0, 0); outer.quaternion.identity(); outer.scale.set(1, 1, 1);
+  outer.updateMatrixWorld(true);
+  const bones = []; model.traverse((o) => { if (o.isBone) bones.push(o); });
+  const byName = new Map(); for (const b of bones) { const k = norm(b.name); if (!byName.has(k)) byName.set(k, b); }
+  const map = {};
+  for (const [key, , cands] of CANON) for (const c of cands) { const b = byName.get(norm(c)); if (b && !Object.values(map).includes(b)) { map[key] = b; break; } }
+  const keyOf = new Map(Object.entries(map).map(([k, b]) => [b, k]));
+
+  // a rigid mesh hanging ABOVE the hips (the robot's torso on its Body bone) rides the chest instead
+  if (map.hips && map.chest) {
+    const above = new Set(); for (let o = map.hips.parent; o; o = o.parent) above.add(o);
+    const move = []; model.traverse((o) => { if ((o.isMesh || (o.isGroup && !o.isBone)) && !o.isSkinnedMesh && above.has(o.parent) && o.parent.isBone) move.push(o); });
+    for (const o of move) map.chest.attach(o);
+    outer.updateMatrixWorld(true);
+  }
+
+  const rest = new Map();
+  for (const b of bones) rest.set(b, { q: b.quaternion.clone(), p: b.position.clone() });
+  const R = {}, P = {};
+  for (const [k, b] of Object.entries(map)) { b.matrixWorld.decompose(_v, _q, _s); R[k] = _q.clone(); P[k] = _v.clone(); }
+
+  // the mapped ancestor a key hangs from
+  const up = (k) => { let p = PARENT[k]; while (p && !map[p]) p = PARENT[p]; return p; };
+  // a bone's rest direction, to its child
+  const childPos = (k, childKey) => {
+    if (map[childKey]) return P[childKey];
+    const kids = map[k].children.filter((c) => c.isBone);
+    if (!kids.length) return null;
+    const c = new THREE.Vector3(); for (const kid of kids) c.add(kid.getWorldPosition(new THREE.Vector3()));
+    return c.divideScalar(kids.length);
+  };
+  const corr = {};
+  const spreadDir = (side) => new THREE.Vector3(side * Math.sin(ch.spread * D2R), -Math.cos(ch.spread * D2R), 0);
+  const TARGET = { armL: ["foreL", () => spreadDir(1)], foreL: ["handL", () => spreadDir(1)], armR: ["foreR", () => spreadDir(-1)], foreR: ["handR", () => spreadDir(-1)],
+    legL: ["shinL", () => new THREE.Vector3(0, -1, 0)], shinL: ["footL", () => new THREE.Vector3(0, -1, 0)],
+    legR: ["shinR", () => new THREE.Vector3(0, -1, 0)], shinR: ["footR", () => new THREE.Vector3(0, -1, 0)] };
+  ch.computeCorr = () => {
+    for (const [k] of CANON) {
+      if (!map[k]) { corr[k] = corr[PARENT[k]] ? corr[PARENT[k]].clone() : new THREE.Quaternion(); continue; }
+      const t = TARGET[k], c = t && childPos(k, t[0]);
+      if (c) corr[k] = new THREE.Quaternion().setFromUnitVectors(c.clone().sub(P[k]).normalize(), t[1]());
+      else corr[k] = PARENT[k] ? corr[PARENT[k]].clone() : new THREE.Quaternion();
+    }
+  };
+  ch.computeCorr();
+
+  // a bone whose real parent is not its canonical one (the robot's legs and feet) is placed by hand
+  const detached = {};
+  for (const [k, b] of Object.entries(map)) {
+    const pk = up(k); if (!pk) continue;
+    let anc = false; for (let o = b.parent; o; o = o.parent) if (o === map[pk]) { anc = true; break; }
+    if (!anc) detached[k] = { pk, off: P[k].clone().sub(P[pk]) };
+  }
+
+  // what touches the ground, and how far its joint stays above it
+  const box = new THREE.Box3().setFromObject(model);
+  const height = box.max.y - box.min.y;
+  const pad = Math.min((box.max.z - box.min.z) * 0.4, height * 0.12);
+  const ankle = Math.min(P.footL ? P.footL.y : Infinity, P.footR ? P.footR.y : Infinity) - box.min.y;
+  const contacts = [];
+  for (const k of ["footL", "footR"]) if (map[k]) contacts.push([map[k], ankle]);
+  for (const k of ["toesL", "toesR"]) if (map[k]) contacts.push([map[k], P[k].y - box.min.y]);
+  for (const k of ["shinL", "shinR"]) if (map[k]) contacts.push([map[k], pad * 0.6]);
+  for (const k of ["hips", "chest", "head"]) if (map[k]) contacts.push([map[k], pad]);
+  for (const k of ["handL", "handR"]) if (map[k]) contacts.push([map[k], pad * 0.4]);
+
+  Object.assign(ch, { bones, map, keyOf, rest, R, P, corr, detached, contacts, height, minY: box.min.y,
+    hipH: (P.hips ? P.hips.y : height * 0.5) - box.min.y, scale: H / height });
+  ch.report = CANON.map(([k]) => k + " ← " + (map[k] ? map[k].name : "—")).join("\n");
+}
+
+const C = {};
+function solve(ch, rp) {
+  const outer = ch.outer, base = { p: outer.position.clone(), q: outer.quaternion.clone(), s: outer.scale.clone() };
+  outer.position.set(0, 0, 0); outer.quaternion.identity(); outer.scale.set(1, 1, 1);
+  outer.updateMatrixWorld(true);
+  for (const [k, p] of CANON) C[k] = p ? C[p].clone().multiply(rp.D[k]) : rp.D[k].clone();
+  for (const b of ch.bones) {
+    const k = ch.keyOf.get(b), r = ch.rest.get(b);
+    if (k) {
+      const W = C[k].clone().multiply(ch.corr[k]).multiply(ch.R[k]);
+      b.parent.matrixWorld.decompose(_v, _q, _s);
+      b.quaternion.copy(_q.invert().multiply(W));
+      const d = ch.detached[k];
+      if (d) {
+        const pb = ch.map[d.pk]; pb.matrixWorld.decompose(_v2, _q2, _s);
+        _v.copy(d.off).applyQuaternion(C[d.pk].clone().multiply(ch.corr[d.pk])).add(_v2);
+        b.position.copy(b.parent.worldToLocal(_v));
+      } else b.position.copy(r.p);
+    } else { b.quaternion.copy(r.q); b.position.copy(r.p); }
+    b.updateWorldMatrix(false, false);
+  }
+  // the ground: the lowest contact, once the whole body is turned, sits on it
+  const rq = new THREE.Quaternion().setFromEuler(new THREE.Euler(rp.root.pitch * D2R, rp.root.yaw * D2R, rp.root.roll * D2R, "YXZ"));
+  let g = -Infinity;
+  for (const [b, clear] of ch.contacts) { b.getWorldPosition(_v).applyQuaternion(rq); g = max(g, ch.minY + clear - _v.y); }
+  outer.position.copy(base.p); outer.quaternion.copy(base.q); outer.scale.copy(base.s);
+  return { rq, y: g + rp.root.lift * ch.hipH };
+}
+function place(ch, rp, solved) {
+  const s = ch.scale;
+  ch.outer.scale.setScalar(s);
+  ch.outer.quaternion.copy(solved.rq);
+  ch.outer.position.set(ch.slotX + rp.root.x * ch.hipH * s, solved.y * s, ch.slotZ + rp.root.z * ch.hipH * s);
+}
+
+// ---------------------------------------------------------------------------
+// 5. The scene
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById("view");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1b1d2b); scene.fog = new THREE.Fog(0x1b1d2b, 22, 60);
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x3a3328, 1.1));
+const sun = new THREE.DirectionalLight(0xfff1dc, 2.6);
+sun.position.set(4, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 0.5, far: 40 });
+scene.add(sun, sun.target);
+const rim = new THREE.DirectionalLight(0x9fb8ff, 0.9); rim.position.set(-5, 4, -6); scene.add(rim);
+
+// the ground: a tiled canvas texture whose offset is the stride
+function groundTex() {
+  const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d");
+  g.fillStyle = "#3b3f55"; g.fillRect(0, 0, 256, 256);
+  g.fillStyle = "#43475f"; g.fillRect(0, 0, 128, 128); g.fillRect(128, 128, 128, 128);
+  g.strokeStyle = "#5a5f7d"; g.lineWidth = 2; g.strokeRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(30, 30);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const gTex = groundTex();
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: gTex, roughness: 0.95 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+const persp = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.05, 200);
+let camera = persp;
+const controls = new OrbitControls(persp, canvas);
+controls.enableDamping = true; controls.target.set(0, 0.9, 0);
+persp.position.set(2.6, 1.6, 4.2);
+
+// ---------------------------------------------------------------------------
+// 6. Cameras
+// ---------------------------------------------------------------------------
+// pos and target are in units of the character's height, around the character (or the lineup)
+const CAMS = [
+  { id: "orbit", name: "Free orbit", pos: [1.45, 0.9, 2.35], target: [0, 0.5, 0], free: true },
+  { id: "turntable", name: "Turntable", pos: [0, 0.75, 2.7], target: [0, 0.5, 0], free: true, spin: true },
+  { id: "front", name: "Front", pos: [0, 0.62, 2.6], target: [0, 0.5, 0] },
+  { id: "three", name: "Three-quarter", pos: [1.7, 0.95, 2.05], target: [0, 0.5, 0] },
+  { id: "side", name: "Side (ortho)", pos: [4, 0.75, 0], target: [0, 0.5, 0], ortho: 0.68 },
+  { id: "shoulder", name: "Behind the shoulder", pos: [-0.75, 1.5, -2.4], target: [0.25, 0.45, 2], follow: true },
+  { id: "top", name: "Top-down", pos: [0, 3.4, 1.5], target: [0, 0, 0] },
+  { id: "iso", name: "Isometric (ortho)", pos: [3, 2.45, 3], target: [0, 0.45, 0], ortho: 0.75 },
+  { id: "low", name: "Low angle", pos: [0.95, 0.08, 1.95], target: [0, 0.6, 0], fov: 50 },
+  { id: "close", name: "Close-up", pos: [0.25, 0.04, 1], target: [0, 0, 0], head: true, fov: 30 },
+];
+let cam = CAMS[0], tween = null, rowZ = false;
+function lineupWidth() { return state.lineup ? (visibleChars().length - 1) * SLOT : 0; }
+function camGoal(c) {
+  const target = new THREE.Vector3(...c.target).multiplyScalar(H);
+  const off = new THREE.Vector3(...c.pos).sub(new THREE.Vector3(...c.target)).multiplyScalar(H);
+  let k = 1;
+  if (state.lineup && !c.head && !c.follow) {
+    // back off until the whole row fits the frame's width
+    // the row as the camera sees it: its width across the view, nothing when looked at end-on
+    const row = abs(off.x) > abs(off.z) * 1.5 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+    const across = Math.sqrt(max(0, 1 - Math.pow(row.dot(off.clone().normalize()), 2)));
+    const half = lineupWidth() / 2 * across + H * 0.8, aspect = persp.aspect || 1;
+    if (c.ortho) k = max(1, half / aspect / (c.ortho * H));
+    else { const hfov = 2 * Math.atan(Math.tan((c.fov || 35) * D2R / 2) * aspect); k = max(1, (half / Math.tan(hfov / 2) + H * 0.3) / off.length()); }
+  }
+  if (!c.ortho) {
+    // backing off keeps the elevation, but a camera looking UP keeps its height (it would sink under the ground)
+    if (c.pos[1] < c.target[1]) { off.x *= k; off.z *= k; } else off.multiplyScalar(k);
+  }
+  const ch = current();
+  if (c.head && ch && ch.map.head) {
+    // framed on the head's own size, so a chibi's big head and the stickman's ball fill the frame alike
+    ch.map.head.getWorldPosition(target);
+    const size = max(0.12, H - target.y);
+    target.y += size * 0.42;
+    off.copy(new THREE.Vector3(...c.pos)).normalize().multiplyScalar(size * 3.6);
+  } else if (c.follow && ch) target.x += ch.outer.position.x;
+  return { pos: target.clone().add(off), target, zoom: c.ortho ? c.ortho * H * k : 0, fov: c.fov || 35 };
+}
+function setCam(id, instant) {
+  cam = CAMS.find((c) => c.id === id) || CAMS[0];
+  if (chars.length) layout();
+  const g = camGoal(cam);
+  const wantOrtho = !!cam.ortho;
+  const next = wantOrtho ? ortho : persp;
+  if (next !== camera) { camera = next; controls.object = camera; instant = true; }
+  if (wantOrtho) { ortho.userData.half = g.zoom; resize(); }
+  persp.fov = g.fov; persp.updateProjectionMatrix();
+  controls.autoRotate = !!cam.spin; controls.autoRotateSpeed = 1.6;
+  controls.enabled = !cam.follow && !cam.head;
+  tween = { from: { p: camera.position.clone(), t: controls.target.clone() }, to: g, t0: performance.now(), dur: instant ? 0 : 600 };
+  document.querySelectorAll("#cams .chip").forEach((e) => e.classList.toggle("on", e.dataset.id === cam.id));
+  writeHash();
+}
+function updateCam() {
+  if (tween) {
+    const u = tween.dur ? Math.min(1, (performance.now() - tween.t0) / tween.dur) : 1, e = ease(u);
+    if (cam.follow || cam.head) tween.to = camGoal(cam);
+    camera.position.lerpVectors(tween.from.p, tween.to.pos, e);
+    controls.target.lerpVectors(tween.from.t, tween.to.target, e);
+    if (u >= 1) tween = null;
+  } else if (cam.follow || cam.head) {
+    const g = camGoal(cam);
+    camera.position.lerp(g.pos, 0.15); controls.target.lerp(g.target, 0.15);
+  }
+  controls.update();
+}
+
+// ---------------------------------------------------------------------------
+// 7. Loading
+// ---------------------------------------------------------------------------
+const SLOT = 1.35;
+const loader = new GLTFLoader();
+const chars = [];
+const state = { char: "stickman", anim: "idle", src: "lab", clip: null, cam: "orbit", lineup: false, playing: true, speed: 1, loop: true, fade: 0.25,
+  scroll: true, skel: false, shadows: true, spread: null, props: new Set() };
+const current = () => chars.find((c) => c.id === state.char);
+
+async function loadChar(def) {
+  const ch = Object.assign({ outer: new THREE.Group(), slotX: 0, slotZ: 0, clips: [] }, def);
+  if (def.code) ch.model = buildStickman();
+  else {
+    const g = await loader.loadAsync(ASSETS + def.file);
+    ch.model = g.scene; ch.clips = g.animations || [];
+    ch.model.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false; } });
+    // the props: rigid meshes held in a hand slot, hidden until picked
+    ch.props = [];
+    ch.model.traverse((o) => { if (o.isObject3D && !o.isBone && o.parent && o.parent.isBone && /handslot/i.test(o.parent.name)) ch.props.push(o); });
+    for (const p of ch.props) p.visible = false;
+  }
+  ch.outer.add(ch.model);
+  scene.add(ch.outer);
+  bindRig(ch);
+  ch.mixer = new THREE.AnimationMixer(ch.model);
+  ch.helper = new THREE.SkeletonHelper(ch.model); ch.helper.visible = false; scene.add(ch.helper);
+  return ch;
+}
+
+// ---------------------------------------------------------------------------
+// 8. Playing
+// ---------------------------------------------------------------------------
+let t = 0, prev = null, scrollZ = 0;
+function animPose(id, time) {
+  const a = ANIM[id];
+  return resolve(a.pose(a.loop || state.loop ? ((time % a.dur) + a.dur) % a.dur : Math.min(time, a.dur)));
+}
+function playAnim(id) {
+  if (state.src === "lab" && state.anim !== id && state.fade > 0) prev = { id: state.anim, t, t0: performance.now() };
+  state.anim = id; t = 0; state.playing = true;
+  document.querySelectorAll("#anims .chip").forEach((e) => e.classList.toggle("on", e.dataset.id === id));
+  writeHash();
+}
+function poseNow() {
+  let rp = animPose(state.anim, t);
+  if (prev) {
+    const w = (performance.now() - prev.t0) / 1000 / state.fade;
+    if (w >= 1) prev = null;
+    else rp = blend(animPose(prev.id, prev.t), rp, ease(w));
+  }
+  return rp;
+}
+function visibleChars() { return state.lineup ? chars : chars.filter((c) => c.id === state.char); }
+function layout() {
+  const vis = visibleChars();
+  chars.forEach((c) => { const on = vis.includes(c); c.outer.visible = on; c.helper.visible = on && state.skel; });
+  // the row runs across the view: along x, or along z for a camera looking down the x axis (the side view)
+  const off = new THREE.Vector3(...cam.pos).sub(new THREE.Vector3(...cam.target));
+  rowZ = abs(off.x) > abs(off.z) * 1.5;
+  vis.forEach((c, i) => { const d = state.lineup ? (i - (vis.length - 1) / 2) * SLOT : 0; c.slotX = rowZ ? 0 : d; c.slotZ = rowZ ? -d : 0; });
+}
+function playClip(name) {
+  const ch = current(); if (!ch) return;
+  const clip = ch.clips.find((c) => c.name === name); if (!clip) return;
+  ch.mixer.stopAllAction();
+  state.clip = name; t = 0;
+  const act = ch.mixer.clipAction(clip); act.reset().play();
+}
+
+const clock = new THREE.Clock();
+function frame() {
+  const dt = Math.min(0.05, clock.getDelta());
+  const a = ANIM[state.anim];
+  if (state.playing) {
+    t += dt * state.speed;
+    if (prev) prev.t += dt * state.speed;
+    if (state.src === "lab" && !a.loop && !state.loop && t > a.dur) playAnim("idle");
+  }
+  if (state.src === "lab") {
+    const rp = poseNow();
+    for (const ch of visibleChars()) place(ch, rp, solve(ch, rp));
+    if (state.scroll && state.playing && a.speed) { const ch = state.lineup ? chars[0] : current(); scrollZ += a.speed * ch.hipH * ch.scale * dt * state.speed; }
+  } else {
+    const ch = current();
+    if (ch) {
+      ch.outer.position.set(0, 0, 0); ch.outer.quaternion.identity(); ch.outer.scale.setScalar(ch.scale);
+      const act = ch.clips.length && state.clip ? ch.mixer.existingAction(ch.clips.find((c) => c.name === state.clip)) : null;
+      if (act) { act.paused = !state.playing; act.timeScale = state.speed; }
+      ch.mixer.update(state.playing ? dt : 0);
+      if (act) t = act.time;
+    }
+  }
+  gTex.offset.y = -scrollZ / 2;          // the ground runs toward -z, under a character walking to +z
+  updateCam();
+  renderer.render(scene, camera);
+  updateBar();
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------------------
+// 9. The panel
+// ---------------------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+function chipList(box, items, on, click) {
+  box.innerHTML = "";
+  for (const it of items) {
+    const e = document.createElement("span"); e.className = "chip" + (it.id === on ? " on" : ""); e.dataset.id = it.id; e.textContent = it.name;
+    e.onclick = () => click(it.id); box.appendChild(e);
+  }
+}
+function curDur() {
+  if (state.src === "lab") return ANIM[state.anim].dur;
+  const ch = current(), c = ch && ch.clips.find((x) => x.name === state.clip); return c ? c.duration : 1;
+}
+function updateBar() {
+  const d = curDur(), tt = state.src === "lab" ? (ANIM[state.anim].loop || state.loop ? t % d : Math.min(t, d)) : t % d;
+  if (!scrubbing) $("time").value = d ? tt / d : 0;
+  $("timeOut").textContent = tt.toFixed(2) + " / " + d.toFixed(2) + " s";
+  $("play").textContent = state.playing ? "❚❚" : "▶";
+  const ch = current();
+  $("hud").textContent = (state.lineup ? "Lineup" : ch ? ch.name : "") + " · " + (state.src === "lab" ? ANIM[state.anim].name : state.clip || "—") + " · " + cam.name;
+}
+let scrubbing = false;
+function refreshChar() {
+  const ch = current();
+  const pick = (id) => { state.char = id; refreshChar(); };
+  chipList($("charsLib"), chars.filter((c) => !c.code), state.char, pick);
+  chipList($("charsCode"), chars.filter((c) => c.code), state.char, pick);
+  layout();
+  // the spread slider follows the character picked
+  if (ch) { $("spread").value = ch.spread; $("spreadOut").textContent = ch.spread + "°"; }
+  // pack clips
+  const sel = $("clips"); sel.innerHTML = "";
+  if (ch && ch.clips.length) for (const c of ch.clips) { const o = document.createElement("option"); o.value = o.textContent = c.name; sel.appendChild(o); }
+  else { const o = document.createElement("option"); o.textContent = "This character has no clips"; sel.appendChild(o); }
+  if (state.src === "pack") { const first = ch && ch.clips.find((c) => /idle/i.test(c.name)) || (ch && ch.clips[0]); if (first) { sel.value = first.name; playClip(first.name); } }
+  // props
+  const props = ch && ch.props || [];
+  $("propsBox").style.display = props.length ? "" : "none";
+  const box = $("props"); box.innerHTML = "";
+  for (const p of props) {
+    const e = document.createElement("span"); e.className = "chip" + (p.visible ? " on" : ""); e.textContent = p.name.replace(/_/g, " ");
+    e.onclick = () => { p.visible = !p.visible; e.classList.toggle("on", p.visible); }; box.appendChild(e);
+  }
+  $("info").textContent = ch ? ch.name + " — " + ch.bones.length + " bones, " + (ch.clips.length ? ch.clips.length + " pack clips" : "no pack clip") + "\n" + ch.report : "";
+  writeHash();
+}
+function setSrc(src) {
+  state.src = src;
+  document.querySelectorAll("[data-src]").forEach((e) => e.classList.toggle("on", e.dataset.src === src));
+  $("anims").style.display = src === "lab" ? "" : "none";
+  $("clips").style.display = src === "pack" ? "" : "none";
+  const ch = current();
+  if (src === "pack") {
+    if (state.lineup) { state.lineup = false; $("lineup").checked = false; layout(); setCam(cam.id); }
+    refreshChar();
+  } else if (ch) { ch.mixer.stopAllAction(); playAnim(state.anim); }
+}
+function writeHash() {
+  if (!ready) return;
+  history.replaceState(null, "", "#char=" + state.char + "&anim=" + state.anim + "&cam=" + cam.id + (state.lineup ? "&lineup=1" : ""));
+}
+let ready = false;
+
+function bindPanel() {
+  chipList($("anims"), ANIMS, state.anim, playAnim);
+  chipList($("cams"), CAMS, cam.id, (id) => setCam(id));
+  document.querySelectorAll("[data-src]").forEach((e) => (e.onclick = () => setSrc(e.dataset.src)));
+  $("clips").onchange = (e) => playClip(e.target.value);
+  $("lineup").onchange = (e) => { state.lineup = e.target.checked; if (state.lineup && state.src === "pack") setSrc("lab"); layout(); setCam(cam.id); };
+  $("speed").oninput = (e) => { state.speed = +e.target.value; $("speedOut").textContent = "×" + state.speed; };
+  $("fade").oninput = (e) => { state.fade = +e.target.value; $("fadeOut").textContent = state.fade + " s"; };
+  $("loop").onchange = (e) => { state.loop = e.target.checked; };
+  $("scroll").onchange = (e) => { state.scroll = e.target.checked; };
+  $("skel").onchange = (e) => { state.skel = e.target.checked; layout(); };
+  $("shadows").onchange = (e) => { renderer.shadowMap.enabled = e.target.checked; scene.traverse((m) => { if (m.material) m.material.needsUpdate = true; }); };
+  $("spread").oninput = (e) => {
+    const ch = current(); if (!ch) return;
+    ch.spread = +e.target.value; $("spreadOut").textContent = ch.spread + "°";
+    // re-measure the correction from the rest pose
+    for (const [b, r] of ch.rest) { b.quaternion.copy(r.q); b.position.copy(r.p); }
+    ch.outer.position.set(0, 0, 0); ch.outer.quaternion.identity(); ch.outer.scale.set(1, 1, 1); ch.outer.updateMatrixWorld(true);
+    ch.computeCorr();
+  };
+  $("play").onclick = () => { state.playing = !state.playing; };
+  $("time").addEventListener("pointerdown", () => { scrubbing = true; state.playing = false; });
+  $("time").addEventListener("pointerup", () => { scrubbing = false; });
+  $("time").oninput = (e) => {
+    const d = curDur(); t = +e.target.value * d; prev = null;
+    if (state.src === "pack") { const ch = current(), c = ch.clips.find((x) => x.name === state.clip); if (c) { ch.mixer.existingAction(c).time = t; ch.mixer.update(0); } }
+  };
+  addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.code === "Space") { e.preventDefault(); state.playing = !state.playing; }
+    const n = parseInt(e.key, 10); if (n >= 1 && n <= 9 && state.src === "lab") playAnim(ANIMS[n - 1].id);
+  });
+  $("export").onclick = exportStickman;
+}
+
+// ---------------------------------------------------------------------------
+// 10. Export: the stickman with every animation baked as a clip
+// ---------------------------------------------------------------------------
+async function exportStickman() {
+  const glb = await bakeStickman();
+  const url = URL.createObjectURL(new Blob([glb], { type: "model/gltf-binary" }));
+  const link = document.createElement("a"); link.href = url; link.download = "stickman.glb"; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function bakeStickman() {
+  const sm = chars.find((c) => c.id === "stickman");
+  const ex = { outer: new THREE.Group(), model: buildStickman(), spread: sm.spread, slotX: 0, slotZ: 0, code: true };
+  ex.outer.add(ex.model); bindRig(ex);
+  const rig = ex.model.getObjectByName("rig");
+  const FPS = 30, clips = [];
+  for (const a of ANIMS) {
+    const n = Math.max(2, Math.round(a.dur * FPS) + 1), times = [];
+    const tracks = new Map();
+    const put = (name, arr) => { if (!tracks.has(name)) tracks.set(name, []); tracks.get(name).push(...arr); };
+    for (let i = 0; i < n; i++) {
+      const tt = Math.min(a.dur, i / FPS); times.push(tt);
+      const rp = resolve(a.pose(tt));
+      const s = solve(ex, rp);
+      for (const b of ex.bones) put(b.name + ".quaternion", b.quaternion.toArray());
+      put("rig.position", [rp.root.x * ex.hipH, s.y, rp.root.z * ex.hipH]);
+      put("rig.quaternion", s.rq.toArray());
+    }
+    const kt = [...tracks].map(([name, v]) => name.endsWith(".position")
+      ? new THREE.VectorKeyframeTrack(name, times, v) : new THREE.QuaternionKeyframeTrack(name, times, v));
+    clips.push(new THREE.AnimationClip(a.name, a.dur, kt));
+  }
+  for (const b of ex.bones) { const r = ex.rest.get(b); b.quaternion.copy(r.q); b.position.copy(r.p); }
+  rig.position.set(0, 0, 0); rig.quaternion.identity();
+  return new GLTFExporter().parseAsync(ex.model, { binary: true, animations: clips });
+}
+// a handle for a headless check: bake, then load the file back and list what it holds
+window.__charLab = { bakeStickman, async check() {
+  const g = await new GLTFLoader().parseAsync(await bakeStickman(), "");
+  let bones = 0; g.scene.traverse((o) => { if (o.isBone) bones++; });
+  return { bones, clips: g.animations.map((a) => a.name + " " + a.duration.toFixed(2) + "s/" + a.tracks.length) };
+} };
+
+// ---------------------------------------------------------------------------
+// 11. Boot
+// ---------------------------------------------------------------------------
+function resize() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false);
+  persp.aspect = w / h; persp.updateProjectionMatrix();
+  const half = ortho.userData.half || H * 0.7;
+  Object.assign(ortho, { left: -half * w / h, right: half * w / h, top: half, bottom: -half }); ortho.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+
+(async function boot() {
+  resize();
+  const hash = Object.fromEntries(location.hash.slice(1).split("&").filter(Boolean).map((kv) => kv.split("=")));
+  for (const def of CHARS) {
+    for (let tries = 0; tries < 3; tries++) {        // a dropped fetch of a 4 MB file is retried, not reported
+      try { chars.push(await loadChar(def)); break; }
+      catch (err) { if (tries === 2) console.warn("could not load", def.file, err); }
+    }
+  }
+  $("loading").remove();
+  if (hash.char && chars.find((c) => c.id === hash.char)) state.char = hash.char;
+  if (hash.anim && ANIM[hash.anim]) state.anim = hash.anim;
+  if (hash.lineup) { state.lineup = true; $("lineup").checked = true; }
+  bindPanel(); refreshChar(); layout();
+  ready = true;
+  setCam(hash.cam || "orbit", true);
+  playAnim(state.anim); prev = null;
+  if (hash.src === "pack") {
+    setSrc("pack");
+    if (hash.clip) { $("clips").value = decodeURIComponent(hash.clip); playClip(decodeURIComponent(hash.clip)); }
+  }
+  if (hash.t !== undefined) {
+    t = +hash.t; state.playing = false;
+    const ch = current(), c = state.src === "pack" && ch.clips.find((x) => x.name === state.clip);
+    if (c) { ch.mixer.existingAction(c).time = t; ch.mixer.update(0); }
+  }
+  frame();
+  if (hash.t !== undefined) { setTimeout(() => (document.body.dataset.ready = "1"), 300); } else document.body.dataset.ready = "1";
+})();
+</script>
+</body>
+</html>

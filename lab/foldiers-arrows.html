@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lab — foldiers order arrows</title>
+<meta name="lab-group" content="css">
+<meta name="lab-game" content="foldiers">
+<style>
+/* ===========================================================================
+   FOLDIERS ORDER ARROWS — every order the round can give, in the look it is
+   drawn in, and the one change tried here: AN ORDER CARRIES ITS TROOPS.
+
+   The problem it answers: past a handful of orders the map reads as a pile.
+   Every figure still stands on its region whether it was given an order or
+   not, every arrow runs out of that crowd, and the eye has to pair each
+   arrow with the figures it moves. So here, once a troop or a piece has an
+   order it LEAVES the map: what is left standing on a region is what still
+   owes an order, and the troops given one ride ON their arrow — one small
+   paper bead a kind of troop (infantry, cavalry, a cannon, a ship…), no
+   count, the troop printed big and cropped by the disc, the disc cut out
+   of the same paper as every tag (fold, crease, grain, hand-cut edge),
+   strung along the shaft around its middle, so the string follows
+   the curve and never sticks out of it. Two strings that would touch slide
+   along their own arrows until they clear each other.
+
+   Round 2 also settles the shapes: ONE folded strip for every march (an
+   attack and a reinforcement alike — the chevrons are gone), a head on the
+   dashed lines (cannon shot, bridge) and on the footprints (road march,
+   fleet, a march under way), so every order says which way it goes. Defend
+   and Wait are one element each: the paper badge of what stays, whose
+   border IS the looped arrow, a folded strip in the order's colour. A
+   rival's plan carries no eye: what shows it is already on the map.
+
+   Three views:
+     - Map: a dense stage, every kind of order on it at once;
+     - Before / after: the map as the round draws it today (figures, counts,
+       chevrons, the loop over the figure) beside the beads;
+     - Catalogue: every kind of order alone on a scrap of map.
+
+   The arrows, the paper generator (ppSheet, ppSprite, paperOn…), the tags,
+   the old loop and the eye are copied as they are from
+   games/foldiers/game.js (THE ARROWS, THE PAPER, THE TAGS). The ground is a
+   stand-in for the round's paper: a Voronoi of regions in shards, tinted by
+   owner. Copy settings is the panel as JSON.
+
+   Nothing here ships by itself. What was picked — paper discs, troops on
+   the arrow only, 45 % along, no lift, 32 px, sliding to clear, no tag at
+   the head, no count on the map — is ported into games/foldiers/game.js as
+   THE ORDER CARRIES ITS TROOPS (orderBeads, beadSprite, ringSprite,
+   holdRing) and in THE ARROWS (one strip, orderHead).
+   =========================================================================== */
+@font-face { font-family:"Baloo 2"; src:url("../assets/motor/font/baloo2.woff2") format("woff2"); font-weight:400 800; }
+
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+  min-height:100vh; display:flex; background:#0b0b12; color:#e8e6f5;
+  font:600 14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+#panel { flex:0 0 300px; padding:22px 20px; background:#12121c; border-right:1px solid #23233a; overflow:auto; max-height:100vh; }
+#panel h1 { font-size:16px; letter-spacing:1px; }
+#panel p.hint { margin:8px 0 14px; font-weight:500; font-size:12px; color:#8b8ba7; }
+#panel h3 { margin:18px 0 10px; font-size:12px; letter-spacing:1px; color:#7ea6ff; }
+.row { margin-bottom:12px; }
+.row > label { display:flex; justify-content:space-between; font-size:12px; color:#9c9cba; margin-bottom:6px; }
+.row > label output { color:#e8e6f5; font-variant-numeric:tabular-nums; }
+.row input[type=range] { width:100%; accent-color:#7ea6ff; }
+.seg { display:flex; flex-wrap:wrap; gap:4px; }
+.seg button { flex:1 1 auto; padding:7px 8px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47;
+  border-radius:7px; font:600 12px/1 inherit; cursor:pointer; }
+.seg button.on { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+.kinds { display:grid; grid-template-columns:1fr 1fr; gap:4px 8px; font-size:12px; color:#c9c9e0; }
+.kinds label { display:flex; gap:6px; align-items:center; cursor:pointer; }
+.kinds input { accent-color:#7ea6ff; }
+.btns { display:flex; gap:6px; margin-top:10px; }
+.btns button { flex:1; padding:8px 10px; background:#1c1c2c; color:#c9c9e0; border:1px solid #2c2c47; border-radius:8px; font:700 12px/1 inherit; cursor:pointer; }
+.btns button.main { background:#7ea6ff; color:#0b0b12; border-color:#7ea6ff; }
+#copied { font-size:12px; color:#7ed69a; min-height:18px; margin-top:6px; }
+
+#stage { flex:1; height:100vh; overflow:auto; display:flex; flex-wrap:wrap; align-content:flex-start; justify-content:center; gap:22px; padding:20px;
+  background-image:linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%),linear-gradient(45deg,#16161f 25%,transparent 25% 75%,#16161f 75%);
+  background-size:32px 32px; background-position:0 0,16px 16px; }
+.cell { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.cell canvas { display:block; border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+.cell .name { font-size:14px; color:#e8e6f5; }
+.cell .what { font-size:12px; font-weight:500; color:#8b8ba7; max-width:380px; text-align:center; }
+</style>
+</head>
+<body>
+<div id="panel">
+  <h1>Foldiers · order arrows</h1>
+  <p class="hint">Every order the round can give, its troops strung on the arrow as small paper beads, one a kind. A troop with an order leaves the map: what still stands on a region still owes one.</p>
+
+  <h3>View</h3>
+  <div class="seg" id="view">
+    <button data-v="map">Map</button><button data-v="compare">Before / after</button><button data-v="cat">Catalogue</button>
+  </div>
+
+  <h3>Troops with an order</h3>
+  <div class="seg" id="hide">
+    <button data-v="1">On the arrow only</button><button data-v="0">Left on the map</button>
+  </div>
+
+  <h3>Badge</h3>
+  <div class="seg" id="style">
+    <button data-v="disc">Paper discs</button><button data-v="rosette">Rosettes</button><button data-v="none">None</button>
+  </div>
+  <div class="row" style="margin-top:12px"><label>Along the arrow <output id="o-t"></output></label><input type="range" id="t" min="0.2" max="0.8" step="0.05"></div>
+  <div class="row"><label>Off the shaft <output id="o-lift"></output></label><input type="range" id="lift" min="0" max="30" step="2"></div>
+  <div class="row"><label>Badge size <output id="o-size"></output></label><input type="range" id="size" min="22" max="48" step="2"></div>
+  <div class="seg" id="slide">
+    <button data-v="1">Slide along to clear</button><button data-v="0">Leave them</button>
+  </div>
+
+  <h3>Counts</h3>
+  <div class="seg" id="head">
+    <button data-v="1">Forecast at the head</button><button data-v="0">No head tag</button>
+  </div>
+  <div class="seg" id="counts" style="margin-top:6px">
+    <button data-v="1">Counts on the map</button><button data-v="0">No counts</button>
+  </div>
+
+  <h3>Map</h3>
+  <div class="row"><label>Zoom <output id="o-z"></output></label><input type="range" id="z" min="1.2" max="2.4" step="0.1"></div>
+  <div class="row"><label>Paper tilt <output id="o-tilt"></output></label><input type="range" id="tilt" min="0" max="12" step="1"></div>
+  <div class="kinds" id="kinds"></div>
+
+  <div class="btns"><button id="reseed">Reseed paper</button><button class="main" id="copy">Copy settings</button></div>
+  <div id="copied"></div>
+</div>
+<div id="stage"></div>
+<script>
+// ---- what the copied game code expects around it ---------------------------
+var view = { dpr: 2 };
+var ctx = null;
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+function freeCanvas(cv) { if (cv) { cv.width = 0; cv.height = 0; } return null; }
+var FONT = '"Baloo 2", system-ui, -apple-system, sans-serif';
+function font(size, bold) { return (bold ? "700 " : "500 ") + size + "px " + FONT; }
+
+// ---- the camps and the inks (games/foldiers/game.js) -----------------------
+var NEUTRAL = 0, BLUE = 1, RED = 2, GREEN = 3;
+var CAMP = [
+  { base: "#b9a77d", light: "#d8c79c", dark: "#8a7a55", rgb: [150, 140, 110] },
+  { base: "#2f63c4", light: "#5b8fe0", dark: "#1d3f8a", rgb: [47, 99, 196] },
+  { base: "#d9412f", light: "#ee6a4a", dark: "#a52a1f", rgb: [217, 65, 47] },
+  { base: "#2f9e5a", light: "#5cc283", dark: "#1d6b3c", rgb: [47, 158, 90] }
+];
+var OK_COL = "#2f8f4e", BAD_COL = "#c8402f", RISK_COL = "#d08a12", TIE_COL = "#6d7486", LATER_COL = "#b07a10";
+var PAPER = "#f6ecd2", INK = "#2a2418", IDLE_COL = "#8a94a8", RIVER_INK = "#2f7fb5", SHOT_COL = "#e07a2a";
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE ARROWS (curve, paperArrow,
+//  chevrons, footprints), as they are.
+// ======================================================================
+function curve(a, b, bend, r0, r1) {
+  var dx = b[0] - a[0], dy = b[1] - a[1], c = [(a[0] + b[0]) / 2 - dy * bend, (a[1] + b[1]) / 2 + dx * bend], pts = [];
+  for (var i = 0; i <= 40; i++) {
+    var t = i / 40, u = 1 - t;
+    var p = [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]];
+    if (Math.hypot(p[0] - a[0], p[1] - a[1]) < r0 || Math.hypot(p[0] - b[0], p[1] - b[1]) < r1) continue;
+    pts.push(p);
+  }
+  return pts;
+}
+function paperArrow(pts, C, draft) {
+  var n = pts.length;
+  if (n < 3) return null;
+  var hl = 30, w = 11, hw = 26, L = 0, cum = [0], i;
+  for (i = 1; i < n; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+  var iB = n - 1;
+  while (iB > 1 && L - cum[iB] < hl) iB--;
+  var left = [], mid = [], right = [];
+  for (i = 0; i <= iB; i++) {
+    var p = pts[i], q = pts[Math.min(n - 1, i + 1)], o = pts[Math.max(0, i - 1)];
+    var tx = q[0] - o[0], ty = q[1] - o[1], l = Math.hypot(tx, ty) || 1;
+    tx /= l; ty /= l;
+    left.push([p[0] - ty * w, p[1] + tx * w]); right.push([p[0] + ty * w, p[1] - tx * w]); mid.push(p);
+  }
+  var B2 = pts[iB], Tp = pts[n - 1], dx = Tp[0] - B2[0], dy = Tp[1] - B2[1], dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl;
+  var wl = [B2[0] + nx * hw, B2[1] + ny * hw], wr = [B2[0] - nx * hw, B2[1] - ny * hw];
+  function outline(ox, oy) {
+    ctx.beginPath();
+    left.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0] + ox, pp[1] + oy); });
+    ctx.lineTo(wl[0] + ox, wl[1] + oy); ctx.lineTo(Tp[0] + ox, Tp[1] + oy); ctx.lineTo(wr[0] + ox, wr[1] + oy);
+    for (var k = right.length - 1; k >= 0; k--) ctx.lineTo(right[k][0] + ox, right[k][1] + oy);
+    ctx.closePath();
+  }
+  outline(4, 7); ctx.fillStyle = "rgba(20,30,70,.22)"; ctx.fill();
+  outline(0, 0); ctx.fillStyle = draft ? C.light : C.base; ctx.fill();
+  ctx.beginPath();
+  left.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0], pp[1]); });
+  ctx.lineTo(wl[0], wl[1]); ctx.lineTo(Tp[0], Tp[1]);
+  for (i = mid.length - 1; i >= 0; i--) ctx.lineTo(mid[i][0], mid[i][1]);
+  ctx.closePath(); ctx.fillStyle = draft ? "rgba(255,255,255,.55)" : C.light; ctx.fill();
+  ctx.beginPath(); mid.forEach(function (pp, ix) { ctx[ix ? "lineTo" : "moveTo"](pp[0], pp[1]); }); ctx.lineTo(Tp[0], Tp[1]);
+  if (draft) ctx.setLineDash([7, 6]);
+  ctx.lineWidth = 1.6; ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.stroke();
+  ctx.setLineDash([]);
+  outline(0, 0); ctx.lineWidth = 1.4; ctx.strokeStyle = C.dark; ctx.stroke();
+  return Tp;
+}
+function chevrons(pts, C, draft) {
+  if (pts.length < 4) return null;
+  var step = 6;
+  for (var i = 3; i < pts.length - 1; i += step) {
+    var p = pts[i], q = pts[Math.min(pts.length - 1, i + 1)], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+    dx /= l; dy /= l;
+    ctx.beginPath();
+    ctx.moveTo(p[0] - dx * 9 - dy * 13, p[1] - dy * 9 + dx * 13);
+    ctx.lineTo(p[0] + dx * 7, p[1] + dy * 7);
+    ctx.lineTo(p[0] - dx * 9 + dy * 13, p[1] - dy * 9 - dx * 13);
+    ctx.lineTo(p[0] - dx * 3, p[1] - dy * 3);
+    ctx.closePath();
+    ctx.fillStyle = draft ? C.light : C.base; ctx.fill();
+    ctx.lineWidth = 1.2; ctx.strokeStyle = C.dark; ctx.stroke();
+  }
+  return pts[pts.length - 1];
+}
+function footprints(pts, C) {
+  for (var i = 2, s = 0; i < pts.length; i += 4, s++) {
+    var p = pts[i], q = pts[Math.min(pts.length - 1, i + 1)], dx = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dx, dy) || 1;
+    dx /= l; dy /= l;
+    var side = s % 2 ? 1 : -1;
+    ctx.beginPath(); ctx.ellipse(p[0] - dy * 6 * side, p[1] + dx * 6 * side, 5, 3.4, Math.atan2(dy, dx), 0, Math.PI * 2);
+    ctx.fillStyle = C.dark; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  return pts[pts.length - 1];
+}
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE PAPER (LOOK, the generator,
+//  ppSprite, paperOn / paperOff), as it is.
+// ======================================================================
+var LOOK = { tilt: 6, rough: 7, fold: "crumple", depth: 0.8, kink: 0, ear: 10, tape: "clear", tapeSmall: true,
+             grain: 0.5, shadow: 0.5, seed: 19 };
+var PP_BACK = "#e3d2a6", PP_EDGE = "rgba(110,85,40,.28)";
+var PP_TAPE = {
+  masking: { a: "rgba(236,220,172,.9)" },
+  clear: { a: "rgba(255,255,255,.32)", gloss: true }
+};
+var ACT_EARS = [1, 1, 0, 1];
+// What each kind of piece is made of, before the look (the lab's recipeOf).
+var PP_RECIPE = {
+  card:    { sheet: true, earCorner: 2, tape: ["tl", "tr"], tiltK: 0.35, tapeLen: 100 },
+  rtitle:  { sheet: true, earCorner: 3, tape: ["t"], tiltK: 0.6, tapeLen: 80 },
+  send:    { sheet: true, earCorner: 1, tape: ["l", "r"], tiltK: 0.6 },
+  own:     { fold: "diag", tiltK: 1.2 },
+  act:     { fold: LOOK.fold === "accordion" ? "accordion" : LOOK.fold === "none" ? "none" : "diag", ear: Math.min(LOOK.ear, 16), tiltK: 0.8 },
+  chip:    { tape: ["l"], small: true, tapeLen: 40, tiltK: 0.9, notch: 7, edge: "rgba(0,0,0,.25)" },
+  tag:     { fold: LOOK.fold === "none" ? "none" : "tent", tape: ["t"], small: true, tapeLen: 30, tiltK: 1.6 },
+  prod:    { fold: LOOK.fold === "none" ? "none" : "tent", tiltK: 2 },
+  shield:  { shape: "shield", tiltK: 1.4 },
+  threat:  { fold: LOOK.fold === "none" ? "none" : "diag", tape: ["r"], small: true, tapeLen: 30, tiltK: 1.4 },
+  verdict: { notch: 9, fold: LOOK.fold === "none" ? "none" : "diag", tape: ["l"], small: true, tapeLen: 36, tiltK: 1.4 },
+  bub:     { shape: "radial", tiltK: 2, edge: "rgba(0,0,0,.25)" },
+  // the hand's cards and their prices (lab/foldiers-cards.html, D · Origami)
+  hand:    { sheet: true, tiltK: 5 / 6, depth: 0.9 },
+  coin:    { shape: "radial", tiltK: 2, edge: "rgba(0,0,0,.25)" }
+};
+
+function ppRng(seed) {
+  var a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function ppHash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
+function ppLerp(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; }
+// A colour on the back of the paper: the ink, washed toward white.
+function ppTint(hex, k) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return PP_BACK;
+  var n = parseInt(hex.slice(1), 16);
+  return "rgb(" + [n >> 16 & 255, n >> 8 & 255, n & 255].map(function (v) { return Math.round(v + (255 - v) * k); }).join(",") + ")";
+}
+
+// keep the side of line A->B where cross >= 0 (sign = 1) or <= 0 (sign = -1)
+function ppClip(poly, A, B, sign) {
+  var out = [];
+  function side(p) { return sign * ((B[0] - A[0]) * (p[1] - A[1]) - (B[1] - A[1]) * (p[0] - A[0])); }
+  for (var i = 0; i < poly.length; i++) {
+    var p = poly[i], q = poly[(i + 1) % poly.length], sp = side(p), sq = side(q);
+    if (sp >= 0) out.push(p);
+    if ((sp >= 0) !== (sq >= 0)) out.push(ppLerp(p, q, sp / (sp - sq)));
+  }
+  return out;
+}
+
+/* A sheet: four off-square corners, hand-cut edges, the creases of its
+   fold (whose ends kink the edge out for a mountain, in for a valley), an
+   optional dog-ear and an optional V notch (a ribbon's end). */
+function ppSheet(w, h, o, r) {
+  var J = o.rough;
+  function jit() { return (r() * 2 - 1) * J; }
+  var P = [[jit(), jit()], [w + jit(), jit()], [w + jit(), h + jit()], [jit(), h + jit()]];
+  var kinks = [[], [], [], []], creases = [];
+  // edge e runs P[e] -> P[e+1]; f is the fraction read left->right / top->bottom
+  function tOf(e, f) { return e === 2 || e === 3 ? 1 - f : f; }
+  function crease(e1, f1, e2, f2, mountain) {
+    var id = creases.length, off = (mountain ? 1 : -1) * o.kink * (0.6 + r() * 0.6);
+    kinks[e1].push({ t: tOf(e1, f1), off: off, id: id, end: 0 });
+    kinks[e2].push({ t: tOf(e2, f2), off: off, id: id, end: 1 });
+    creases.push({ a: null, b: null, mountain: mountain });
+  }
+  var i, fold = o.fold;
+  if (fold === "diag") {
+    if (w >= h * 1.3) crease(0, 0.52 + r() * 0.2, 2, 0.34 + r() * 0.2, true);
+    else crease(3, 0.3 + r() * 0.2, 1, 0.5 + r() * 0.2, true);
+  } else if (fold === "tent") {
+    crease(3, 0.46 + r() * 0.1, 1, 0.46 + r() * 0.1, true);
+  } else if (fold === "accordion") {
+    var na = Math.max(1, Math.min(6, Math.round(w / 110)));
+    for (i = 1; i <= na; i++) {
+      var f = i / (na + 1) + (r() - 0.5) * 0.06, slant = (r() - 0.5) * 0.06;
+      crease(0, f + slant, 2, f - slant, i % 2 === 1);
+    }
+  } else if (fold === "cross") {
+    crease(0, 0.46 + r() * 0.08, 2, 0.46 + r() * 0.08, true);
+    if (h > 50) crease(3, 0.44 + r() * 0.12, 1, 0.44 + r() * 0.12, false);
+  }
+  if (o.notch) kinks[1].push({ t: 0.5, off: -o.notch, id: -1 });
+
+  var L = P.map(function (p, k) { var q = P[(k + 1) % 4]; return Math.hypot(q[0] - p[0], q[1] - p[1]); });
+  var ear = -1, d = 0;
+  if (o.ear > 0 && o.earCorner != null) {
+    ear = o.earCorner;
+    d = Math.min(o.ear, 0.42 * Math.min(w, h));
+    if (d < 6) ear = -1;
+  }
+  var out = [], a = null, b = null;
+  for (var e = 0; e < 4; e++) {
+    var u = P[e], v = P[(e + 1) % 4], dx = (v[0] - u[0]) / L[e], dy = (v[1] - u[1]) / L[e], nx = dy, ny = -dx;
+    var t0 = e === ear ? d / L[e] : 0, t1 = (e + 1) % 4 === ear ? 1 - d / L[e] : 1;
+    var n = Math.max(1, Math.round(L[e] / 26)), list = [];
+    for (i = 1; i < n; i++) list.push({ t: i / n, off: (r() * 2 - 1) * J * 0.3 });
+    kinks[e].forEach(function (k) { list.push(k); });
+    list.sort(function (p, q) { return p.t - q.t; });
+    var at = (function (u, v, nx, ny) {
+      return function (t, off) { return [u[0] + (v[0] - u[0]) * t + nx * off, u[1] + (v[1] - u[1]) * t + ny * off]; };
+    })(u, v, nx, ny);
+    if (e === ear) { b = at(t0, 0); out.push(b); } else out.push(u);
+    for (i = 0; i < list.length; i++) {
+      var k = list[i];
+      if (k.t <= t0 + 0.02 || k.t >= t1 - 0.02) {
+        if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = at(k.t, 0);   // still a line, no kink
+        continue;
+      }
+      var p = at(k.t, k.off);
+      if (k.id >= 0) creases[k.id][k.end ? "b" : "a"] = p;
+      // a kink is a sharp corner: the points either side stay on the cut
+      if (k.id !== undefined) { out.push(at(k.t - 0.012, 0)); out.push(p); out.push(at(k.t + 0.012, 0)); }
+      else out.push(p);
+    }
+    if ((e + 1) % 4 === ear) { a = at(t1, 0); out.push(a); }
+  }
+  var flap = null;
+  if (ear >= 0 && a && b) {
+    // the corner folded over the line a-b lands inside the sheet
+    var c = P[ear], ab = [b[0] - a[0], b[1] - a[1]], l2 = ab[0] * ab[0] + ab[1] * ab[1];
+    var tt = ((c[0] - a[0]) * ab[0] + (c[1] - a[1]) * ab[1]) / l2, foot = [a[0] + ab[0] * tt, a[1] + ab[1] * tt];
+    flap = [a, b, [2 * foot[0] - c[0], 2 * foot[1] - c[1]]];
+  }
+  return { outline: out, creases: creases.filter(function (c) { return c.a && c.b; }), flap: flap };
+}
+
+/* The facets the creases cut the sheet into: every facet takes the parity
+   of the creases it lies right of, light or dark. Crumple is a jittered
+   grid of triangles instead, each its own tone. */
+function ppFacets(w, h, g, o, r) {
+  var out = [], pad = 60, i, j;
+  if (o.fold === "crumple") {
+    var nx = Math.max(2, Math.round(w / 56)), ny = Math.max(1, Math.round(h / 56)), grid = [];
+    for (j = 0; j <= ny; j++) for (i = 0; i <= nx; i++) {
+      var edge = i === 0 || j === 0 || i === nx || j === ny;
+      grid.push([(i / nx) * w + (edge ? (i === 0 ? -pad : i === nx ? pad : 0) : (r() - 0.5) * w / nx * 0.7),
+                 (j / ny) * h + (edge ? (j === 0 ? -pad : j === ny ? pad : 0) : (r() - 0.5) * h / ny * 0.7)]);
+    }
+    var G = function (i, j) { return grid[j * (nx + 1) + i]; };
+    for (j = 0; j < ny; j++) for (i = 0; i < nx; i++) {
+      var flip = r() < 0.5;
+      var t1 = flip ? [G(i, j), G(i + 1, j), G(i + 1, j + 1)] : [G(i, j), G(i + 1, j), G(i, j + 1)];
+      var t2 = flip ? [G(i, j), G(i + 1, j + 1), G(i, j + 1)] : [G(i + 1, j), G(i + 1, j + 1), G(i, j + 1)];
+      out.push({ poly: t1, tone: r() * 2 - 1, line: true });
+      out.push({ poly: t2, tone: r() * 2 - 1, line: true });
+    }
+    return out;
+  }
+  var regions = [[[-pad, -pad], [w + pad, -pad], [w + pad, h + pad], [-pad, h + pad]]];
+  g.creases.forEach(function (c) {
+    var next = [];
+    regions.forEach(function (p) { [1, -1].forEach(function (s) { var q = ppClip(p, c.a, c.b, s); if (q.length > 2) next.push(q); }); });
+    regions = next;
+  });
+  regions.forEach(function (p) {
+    var cx = 0, cy = 0, par = 0;
+    p.forEach(function (q) { cx += q[0] / p.length; cy += q[1] / p.length; });
+    g.creases.forEach(function (c) { if ((c.b[0] - c.a[0]) * (cy - c.a[1]) - (c.b[1] - c.a[1]) * (cx - c.a[0]) < 0) par++; });
+    out.push({ poly: p, tone: par % 2 ? -1 : 0.7 });
+  });
+  return out;
+}
+
+/* A target's action: a folded paper rosette — an octagon of triangles
+   meeting in the middle, light and dark in turn, on a rim in the colour
+   of the verdict. */
+function ppRadial(w, h, o, r) {
+  var n = 8, cx = w / 2, cy = h / 2, R = w / 2, spin = r() * 0.4, outer = [], inner = [];
+  for (var i = 0; i < n; i++) {
+    var an = spin + (i / n) * Math.PI * 2, k = 1 + (r() * 2 - 1) * o.rough * 0.012;
+    outer.push([cx + Math.cos(an) * R * k, cy + Math.sin(an) * R * k]);
+  }
+  outer.forEach(function (p) { inner.push([cx + (p[0] - cx) * 0.84, cy + (p[1] - cy) * 0.84]); });
+  return {
+    outline: outer, creases: [], flap: null,
+    on: function (g, depth) {
+      outer.forEach(function (p, i) {
+        g.globalAlpha = (i % 2 ? 0.12 : 0.2) * depth; g.fillStyle = i % 2 ? "#000" : "#fff";
+        ppPath(g, [[cx, cy], p, outer[(i + 1) % n]]); g.fill();
+      });
+      g.globalAlpha = 1; g.fillStyle = o.inner; ppPath(g, inner); g.fill();
+      inner.forEach(function (p, i) {
+        g.globalAlpha = (i % 2 ? 0.1 : 0.3) * depth; g.fillStyle = i % 2 ? "#2a1c00" : "#fff";
+        ppPath(g, [[cx, cy], p, inner[(i + 1) % n]]); g.fill();
+        g.globalAlpha = 1; g.lineWidth = 1; g.strokeStyle = "rgba(40,25,0," + 0.16 * depth + ")";
+        g.beginPath(); g.moveTo(cx, cy); g.lineTo(p[0], p[1]); g.stroke();
+      });
+    }
+  };
+}
+
+/* The frontier shield: six points, a crease down the middle. */
+function ppShield(w, h, o, r) {
+  function j() { return (r() * 2 - 1) * o.rough * 0.3; }
+  var P = [[w / 2 + j(), j()], [w + j(), h * 0.18 + j()], [w * 0.92 + j(), h * 0.62], [w / 2 + j(), h + j()], [w * 0.08 + j(), h * 0.62], [j(), h * 0.18 + j()]];
+  return { outline: P, creases: [{ a: P[0], b: P[3] }], flap: null };
+}
+
+/* A strip of tape: a band with torn, zig-zag ends, turned to its angle and
+   returned in the piece's own px (the gloss of a clear tape with it). */
+function ppTapeStrip(cx, cy, tw, th, ang, r) {
+  var teeth = Math.max(3, Math.round(th / 4)), left = [], right = [], i;
+  for (i = 0; i <= teeth; i++) {
+    var y = -th / 2 + (th * i) / teeth;
+    left.push([-tw / 2 + (i % 2 ? 2.5 : 0) + r() * 1.5, y]);
+    right.unshift([tw / 2 - (i % 2 ? 2.5 : 0) - r() * 1.5, y]);
+  }
+  var c = Math.cos(ang * Math.PI / 180), s = Math.sin(ang * Math.PI / 180);
+  function place(list) { return list.map(function (p) { return [cx + p[0] * c - p[1] * s, cy + p[0] * s + p[1] * c]; }); }
+  var gx = -tw / 2 + 4, gy = -th / 2 + 2, gw = tw - 8, gh = th * 0.28;
+  return { poly: place(left.concat(right)), gloss: place([[gx, gy], [gx + gw, gy], [gx + gw, gy + gh], [gx, gy + gh]]) };
+}
+
+function ppPath(g, P, dx) {
+  dx = dx || 0;
+  g.beginPath(); g.moveTo(P[0][0] + dx, P[0][1]);
+  for (var i = 1; i < P.length; i++) g.lineTo(P[i][0] + dx, P[i][1]);
+  g.closePath();
+}
+// A blurred, offset copy of a shape and not the shape: it is drawn far off
+// the canvas and only its shadow is thrown back (the sprite is drawn once).
+function ppShadow(g, P, col, dx, dy, blur, d) {
+  g.save();
+  g.shadowColor = col; g.shadowBlur = blur * 2 * d;
+  g.shadowOffsetX = (dx + 4096) * d; g.shadowOffsetY = dy * d;
+  g.fillStyle = "#000"; ppPath(g, P, -4096); g.fill();
+  g.restore();
+}
+function ppBox(list, m) {
+  var b = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+  list.forEach(function (p) { b.x0 = Math.min(b.x0, p[0]); b.y0 = Math.min(b.y0, p[1]); b.x1 = Math.max(b.x1, p[0]); b.y1 = Math.max(b.y1, p[1]); });
+  b.x0 -= m[0]; b.y0 -= m[1]; b.x1 += m[2]; b.y1 += m[3];
+  return b;
+}
+function ppCanvas(b, d) {
+  var cv = document.createElement("canvas");
+  cv.width = Math.max(1, Math.ceil((b.x1 - b.x0) * d)); cv.height = Math.max(1, Math.ceil((b.y1 - b.y0) * d));
+  var g = cv.getContext("2d");
+  g.setTransform(d, 0, 0, d, -b.x0 * d, -b.y0 * d);
+  return { cv: cv, g: g, x: b.x0, y: b.y0, w: cv.width / d, h: cv.height / d };
+}
+// The feTurbulence of the lab's grain, as one tile of brown specks.
+var PP_GRAIN = null;
+function ppGrain() {
+  if (PP_GRAIN) return PP_GRAIN;
+  var n = 128, cv = document.createElement("canvas");
+  cv.width = cv.height = n;
+  var g = cv.getContext("2d"), im = g.createImageData(n, n), px = im.data, r = ppRng(97);
+  for (var i = 0; i < n * n; i++) {
+    var v = (r() + r() + r()) / 3;
+    px[i * 4] = 89; px[i * 4 + 1] = 64; px[i * 4 + 2] = 26;
+    px[i * 4 + 3] = Math.round(255 * clamp(1.6 * v - 0.55, 0, 1));
+  }
+  g.putImageData(im, 0, 0);
+  return (PP_GRAIN = cv);
+}
+function ppLight(g, w, h) {
+  var lg = g.createLinearGradient(-20, -20, w + 20, h + 20);
+  lg.addColorStop(0, "rgba(255,255,255,.22)"); lg.addColorStop(0.5, "rgba(255,255,255,0)"); lg.addColorStop(1, "rgba(0,0,0,.08)");
+  return lg;
+}
+
+/* One piece, drawn once: the sheet (shadow, paper, facets, creases, light,
+   grain, cut edge, dog-ear) into one canvas, its tape into another. */
+var PP_CACHE = {}, PP_N = 0;
+function ppSprite(kind, key, w, h, opt) {
+  var d = view.dpr || 1, rc = PP_RECIPE[kind], fill = opt && opt.fill, inner = opt && opt.inner;
+  var ec = opt && opt.earCorner != null ? opt.earCorner : rc.earCorner;
+  var id = kind + "|" + key + "|" + w + "x" + h + "|" + (fill || "") + "|" + (inner || "") + "|" + ec + "|" + d;
+  if (PP_CACHE[id]) return PP_CACHE[id];
+  if (PP_N >= 200) {
+    for (var c in PP_CACHE) { freeCanvas(PP_CACHE[c].back.cv); if (PP_CACHE[c].front) freeCanvas(PP_CACHE[c].front.cv); }
+    PP_CACHE = {}; PP_N = 0;
+  }
+  var r = ppRng(ppHash(kind + ":" + key + ":" + LOOK.seed)), o = {}, q;
+  for (q in LOOK) o[q] = LOOK[q];
+  for (q in rc) o[q] = rc[q];
+  if (rc.sheet || !fill) { o.fill = fill || PAPER; o.back = PP_BACK; o.edge = PP_EDGE; }
+  else { o.fill = fill; o.back = ppTint(fill, 0.82); o.edge = rc.edge || "rgba(0,0,0,.22)"; }
+  o.inner = inner || PAPER;
+  o.earCorner = ec == null ? null : ec;
+  if (rc.fold === undefined && o.fold === "crumple" && Math.min(w, h) < 44) o.fold = "tent";
+  if (rc.fold === undefined && o.fold !== "none" && w < 70 && h < 50) o.fold = "tent";
+  var tilt = (r() * 2 - 1) * LOOK.tilt * (rc.tiltK == null ? 1 : rc.tiltK) * Math.PI / 180;
+  var geom = rc.shape === "radial" ? ppRadial(w, h, o, r) : rc.shape === "shield" ? ppShield(w, h, o, r) : ppSheet(w, h, o, r);
+  var sh = LOOK.shadow, depth = rc.depth != null ? rc.depth : LOOK.depth;
+
+  // shadow, then the sheet, then everything that sits ON the paper, clipped to it
+  var B = ppCanvas(ppBox(geom.outline.concat(geom.flap || []), [12, 12, 16, 20]), d), g = B.g;
+  ppShadow(g, geom.outline, "rgba(0,0,0," + (0.15 + 0.3 * sh) + ")", 1 + 2 * sh, 2 + 6 * sh, 2 + 3 * sh, d);
+  g.fillStyle = o.fill; ppPath(g, geom.outline); g.fill();
+  g.save(); ppPath(g, geom.outline); g.clip();
+  if (geom.on) geom.on(g, depth);
+  else {
+    if (o.fold !== "none") ppFacets(w, h, geom, o, r).forEach(function (f) {
+      var t = f.tone * depth;
+      g.globalAlpha = Math.abs(t * (t > 0 ? 0.26 : 0.2));
+      g.fillStyle = t > 0 ? "#fff" : "#2a1c00"; ppPath(g, f.poly); g.fill();
+      if (f.line) { g.lineWidth = 0.8; g.strokeStyle = "rgba(255,255,255," + 0.25 * depth + ")"; g.stroke(); }
+    });
+    g.globalAlpha = 1;
+    geom.creases.forEach(function (c) {
+      g.lineWidth = 1.4; g.strokeStyle = "rgba(40,25,0," + 0.28 * depth + ")";
+      g.beginPath(); g.moveTo(c.a[0], c.a[1]); g.lineTo(c.b[0], c.b[1]); g.stroke();
+      g.lineWidth = 1; g.strokeStyle = "rgba(255,255,255," + 0.6 * depth + ")";
+      g.beginPath(); g.moveTo(c.a[0] + 1.2, c.a[1]); g.lineTo(c.b[0] + 1.2, c.b[1]); g.stroke();
+    });
+  }
+  g.globalAlpha = 1;
+  g.fillStyle = ppLight(g, w, h); g.fillRect(-20, -20, w + 40, h + 40);
+  if (LOOK.grain > 0) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = LOOK.grain * 0.5; g.fillStyle = g.createPattern(ppGrain(), "repeat");
+    g.fillRect(0, 0, B.cv.width, B.cv.height);
+    g.restore();
+  }
+  g.restore();
+  g.lineWidth = 1.2; g.lineJoin = "round"; g.strokeStyle = o.edge; ppPath(g, geom.outline); g.stroke();
+  if (geom.flap) {
+    var F = geom.flap;
+    ppShadow(g, F, "rgba(0,0,0,.28)", -1.5, 2, 1.6, d);
+    g.fillStyle = o.back; ppPath(g, F); g.fill();
+    g.fillStyle = ppLight(g, w, h); g.fill();
+    g.lineWidth = 1.2; g.strokeStyle = "rgba(255,255,255,.7)";
+    g.beginPath(); g.moveTo(F[0][0], F[0][1]); g.lineTo(F[1][0], F[1][1]); g.stroke();
+    g.lineWidth = 1; g.strokeStyle = o.edge; ppPath(g, F); g.stroke();
+  }
+
+  // the tape, in front of the words
+  var front = null, T = PP_TAPE[LOOK.tape];
+  var spots = !T || (rc.small && !LOOK.tapeSmall) ? [] : rc.tape || [];
+  if (spots.length) {
+    var base = rc.tapeLen || Math.max(34, Math.min(104, Math.min(w, h) * 0.9)), strips = [], all = [];
+    spots.forEach(function (spot) {
+      var tw = base * (0.85 + r() * 0.3), th = Math.max(12, tw * 0.3), jt = (r() - 0.5) * 12;
+      var tx = w * (0.42 + r() * 0.16), bx = w * (0.42 + r() * 0.16);
+      var at = { tl: [6, 4, -40], tr: [w - 6, 4, 40], bl: [6, h - 4, 40], br: [w - 6, h - 4, -40],
+                 t: [tx, 0, 0], b: [bx, h, 0], l: [0, h * 0.5, 90], r: [w, h * 0.5, 90] }[spot];
+      var s = ppTapeStrip(at[0], at[1], spot === "l" || spot === "r" ? Math.max(tw * 0.7, h * 0.55) : tw, th, at[2] + jt, r);
+      strips.push(s); all = all.concat(s.poly);
+    });
+    front = ppCanvas(ppBox(all, [4, 4, 6, 7]), d);
+    var tg = front.g;
+    strips.forEach(function (s) {
+      ppShadow(tg, s.poly, "rgba(0,0,0,.18)", 1, 2, 1, d);
+      tg.fillStyle = T.a; ppPath(tg, s.poly); tg.fill();
+      if (T.gloss) {
+        tg.fillStyle = "rgba(255,255,255,.35)"; ppPath(tg, s.gloss); tg.fill();
+        tg.lineWidth = 1; tg.strokeStyle = "rgba(255,255,255,.55)"; ppPath(tg, s.poly); tg.stroke();
+      } else { tg.lineWidth = 1; tg.strokeStyle = "rgba(0,0,0,.08)"; ppPath(tg, s.poly); tg.stroke(); }
+    });
+  }
+  PP_N++;
+  return (PP_CACHE[id] = { tilt: tilt, back: B, front: front, outline: geom.outline });
+}
+
+/* Lay a piece with its top-left at (x, y): it is tilted about its middle,
+   and what is drawn until paperOff() is written ON it, in its own px
+   (0..w, 0..h), under its tape. */
+function paperOn(kind, key, x, y, w, h, opt) {
+  var cx = x + w / 2, cy = y + h / 2;
+  w = Math.ceil(w); h = Math.ceil(h);
+  var S = ppSprite(kind, key, w, h, opt);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(S.tilt); ctx.translate(-w / 2, -h / 2);
+  ctx.drawImage(S.back.cv, S.back.x, S.back.y, S.back.w, S.back.h);
+  return S;
+}
+function paperOff(S) {
+  if (S.front) ctx.drawImage(S.front.cv, S.front.x, S.front.y, S.front.w, S.front.h);
+  ctx.restore();
+}
+
+// ======================================================================
+//  COPIED FROM games/foldiers/game.js — THE TAGS (tag, plate, chip), the
+//  looped arrow of Defend / Wait (loopIcon) and the spy's eye (eyeMark).
+// ======================================================================
+function tag(x, y, n, camp, key) {
+  ctx.font = font(22, true);
+  var t = String(n), w = Math.max(38, ctx.measureText(t).width + 20), h = 32, ink = camp ? CAMP[camp].base : null;
+  var S = paperOn("tag", key, x - w / 2, y - h / 2, w, h, ink ? { fill: ink } : null);
+  ctx.font = font(22, true); ctx.fillStyle = ink ? "#fff" : INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(t, w / 2, h / 2 + 1);
+  paperOff(S);
+}
+var PLATE_PAD = { chip: [15, 15, 16], verdict: [14, 22, 14], own: [14, 14, 10], prod: [10, 10, 10] };
+function plateW(kind, text, size) {
+  var p = PLATE_PAD[kind];
+  ctx.font = font(size || 20, true);
+  return ctx.measureText(text).width + p[0] + p[1];
+}
+function plate(kind, key, cx, cy, text, bg, fg, size) {
+  size = size || 20;
+  var p = PLATE_PAD[kind], w = plateW(kind, text, size), h = size + p[2];
+  var S = paperOn(kind, key, cx - w / 2, cy - h / 2, w, h, { fill: bg });
+  ctx.font = font(size, true); ctx.fillStyle = fg || "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, p[0] + (w - p[0] - p[1]) / 2, h / 2 + 1);
+  paperOff(S);
+  return w;
+}
+function loopIcon(x, y, col) {
+  var S = paperOn("bub", "loop" + col, x - 26, y - 26, 52, 52, { fill: col, inner: PAPER });
+  paperOff(S);
+  ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(x - 9, y + 11); ctx.lineTo(x - 9, y - 1); ctx.arc(x, y - 1, 9, Math.PI, 0); ctx.lineTo(x + 9, y + 9); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x + 3, y + 4); ctx.lineTo(x + 9, y + 12); ctx.lineTo(x + 15, y + 4); ctx.stroke();
+  ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+}
+function eyeMark(x, y, col) {
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = PAPER; ctx.stroke();
+  ctx.fillStyle = PAPER; ctx.beginPath(); ctx.ellipse(x, y, 10, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, 3.4, 0, Math.PI * 2); ctx.fill();
+}
+
+// ======================================================================
+//  NEW — the order carries its troops: one small bead a kind of troop,
+//  strung ON the arrow's shaft, no count.
+// ======================================================================
+
+// ---- the pieces: which cell of which sheet (game.js ARMY / WORKS) -----------
+var CUT = { capital: ["army", 1], fort: ["army", 2], town: ["army", 3], harbour: ["army", 4], infantry: ["army", 5],
+            cavalry: ["army", 7], cannon: ["army", 9], warship: ["army", 11], balloon: ["army", 15], flag: ["army", 16],
+            spy: ["works", 1], scout: ["works", 2], engineer: ["works", 3], siege: ["works", 7] };
+var NEUTRAL_CUT = { town: "foldiers-scenery-07", flag: "foldiers-scenery-08" };
+var SHEET_OF = [null, "blue", "red", "green"];
+var TALL = { capital: 70, fort: 58, town: 44, harbour: 46, infantry: 38, cavalry: 42, cannon: 26, warship: 56,
+             balloon: 54, flag: 34, spy: 34, scout: 36, engineer: 36, siege: 52 };
+var IMG = {};
+function art(key, camp) {
+  var name = camp ? "foldiers-" + CUT[key][0] + "-" + SHEET_OF[camp] + "-" + ("0" + CUT[key][1]).slice(-2) : NEUTRAL_CUT[key];
+  if (!name) return null;
+  var im = IMG[name];
+  if (!im) { im = IMG[name] = new Image(); im.onload = later; im.src = "../assets/image/object/" + name + ".png"; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+// The size a figure takes in a box of F high and maxW wide.
+function fit(key, camp, F, maxW) {
+  var im = art(key, camp);
+  if (!im) return [F * 0.7, F];
+  var s = Math.min(F / im.naturalHeight, maxW / im.naturalWidth);
+  return [im.naturalWidth * s, im.naturalHeight * s];
+}
+// A figure standing with its feet at (x, y).
+function figure(key, camp, x, y, h, shadow) {
+  var im = art(key, camp);
+  if (!im) return;
+  var w = h * im.naturalWidth / im.naturalHeight;
+  if (shadow) {
+    ctx.fillStyle = "rgba(30,30,50,.22)";
+    ctx.beginPath(); ctx.ellipse(x, y - 2, w * 0.38, h * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.drawImage(im, x - w / 2, y - h, w, h);
+}
+// A figure centred in a box of side F.
+function figureIn(key, camp, x, y, F) {
+  var f = fit(key, camp, F, F);
+  figure(key, camp, x, y + f[1] / 2, f[1], false);
+}
+
+// ---- the settings ----------------------------------------------------------
+var KINDS = [
+  ["attack", "Attack", "The folded strip, onto a rival's region or a neutral one."],
+  ["move", "Reinforce", "The same strip, onto a region of your own."],
+  ["ride", "Cavalry charge", "The horse rides two regions out, on a wider curve."],
+  ["volley", "Attack and fire", "The strip with its troops, and the cannon on its own dashed shot."],
+  ["fire", "Cannon shot", "The cannon fires alone: orange dashes and a head."],
+  ["bridge", "Bridge", "The engineer throws a bridge: river-blue dashes and a head."],
+  ["road", "Road march", "Footprints and a head: deep into your land, it lands bells later."],
+  ["ship", "Fleet", "Footprints and a head over the sea, out of a harbour."],
+  ["convoy", "Convoy with pieces", "Troops carrying a siege engine, a spy and a scout."],
+  ["defend", "Defend", "One badge: the troop on paper, its border a green looped arrow."],
+  ["wait", "Wait", "One badge: the piece on paper, its border a grey looped arrow."],
+  ["spied", "Rival plan", "A rival's order the spy or the balloon shows, at half strength."],
+  ["transit", "On the way", "A march already under way, and where it lands."]
+];
+var DEFAULTS = { view: "map", hide: 1, style: "disc", t: 0.5, lift: 0, size: 32, slide: 1, head: 0, counts: 0, z: 1.8, tilt: 6, seed: 19, off: [] };
+var STORE_KEY = "foldiers-arrows-2";
+var S = {};
+(function () {
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { saved = null; }
+  for (var k in DEFAULTS) S[k] = saved && saved[k] !== undefined ? saved[k] : DEFAULTS[k];
+})();
+// #view=cat&style=rosette… opens a state (a headless shot, a link)
+if (location.hash.length > 1) location.hash.slice(1).split("&").forEach(function (p) {
+  var kv = p.split("="); if (kv[0] in DEFAULTS && kv[0] !== "off") S[kv[0]] = isNaN(+kv[1]) ? kv[1] : +kv[1];
+});
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(S)); } catch (e) { /* private window */ } }
+
+// ======================================================================
+//  THE SCENES — the dense map, and one scrap per kind of order.
+//  A region: where it is, who owns it, what stands on it. An order:
+//  { kind, camp, from, to, foot, cav, pieces, fire, bridge, head }.
+// ======================================================================
+function region(id, x, y, owner, build, foot, cav, pieces) {
+  return { id: id, x: x, y: y, owner: owner, build: build || null, foot: foot || 0, cav: cav || 0, pieces: pieces || [] };
+}
+var MAP = {
+  id: "map", w: 720, h: 1280,
+  sea: function (x, y) { return x < 58 + 16 * Math.sin(y / 90) + 10 * Math.sin(y / 31); },
+  river: [[470, 805], [530, 790], [590, 802], [650, 786], [720, 796]],
+  regions: [
+    region("B0", 380, 1080, BLUE, "capital", 6, 2, ["cannon"]),
+    region("B1", 175, 935, BLUE, "town", 5),
+    region("B2", 590, 935, BLUE, "fort", 3, 0, ["engineer"]),
+    region("B3", 170, 1175, BLUE, "harbour", 2, 0, ["warship"]),
+    region("B4", 380, 830, BLUE, null, 5, 2, ["cannon", "siege"]),
+    region("B5", 615, 1175, BLUE, "town", 1, 0, ["scout"]),
+    region("N0", 170, 640, NEUTRAL, "town", 1),
+    region("N1", 585, 640, NEUTRAL, null, 2),
+    region("N2", 175, 330, NEUTRAL, "town", 1),
+    region("R0", 390, 560, RED, "fort", 4),
+    region("R1", 400, 330, RED, null, 3),
+    region("R2", 610, 370, RED, "capital", 6, 0, ["cannon"]),
+    region("R3", 400, 120, RED, "town", 2),
+    region("G0", 170, 110, GREEN, "town", 3),
+    region("R4", 630, 130, RED, null, 2)
+  ],
+  orders: [
+    { kind: "volley", from: "B4", to: "R0", foot: 3, cav: 2, pieces: ["siege"], fire: true, head: ["5 vs 4", OK_COL] },
+    { kind: "move", from: "B0", to: "B4", foot: 4 },
+    { kind: "attack", from: "B1", to: "N0", foot: 3, head: ["3 vs 1", OK_COL] },
+    { kind: "ride", from: "B0", to: "N1", cav: 2, head: ["3 vs 2", RISK_COL] },
+    { kind: "bridge", from: "B2", to: "N1", bridge: true, head: ["Bridge", RIVER_INK] },
+    { kind: "ship", from: "B3", to: "N2", foot: 2, pieces: ["warship"], bend: -0.12, head: ["3 ticks", LATER_COL] },
+    { kind: "road", from: "B1", to: "B5", foot: 1, head: ["2 ticks", LATER_COL] },
+    { kind: "defend", at: "B2", foot: 2 },
+    { kind: "wait", at: "B5", pieces: ["scout"] },
+    { kind: "spied", camp: RED, from: "R2", to: "N1", foot: 4 },
+    { kind: "spied", camp: RED, from: "R0", to: "N0", foot: 2 },
+    { kind: "transit", pt: [455, 1125], to: "B5", foot: 2, head: ["Next bell", LATER_COL] },
+    { kind: "fire", from: "B0", to: "B4", fire: true, hidden: true }   // catalogue only (no target in range on this map)
+  ]
+};
+
+// One scrap per kind: a region of yours and the one it reaches.
+function cell(kind) {
+  var A = [90, 300], B = [330, 100], sc = { id: "cell-" + kind, w: 420, h: 380, sea: null, river: null };
+  var me = region("A", A[0], A[1], BLUE, null, 0, 0, []), them = region("B", B[0], B[1], RED, null, 2), o = { kind: kind, from: "A", to: "B" };
+  switch (kind) {
+    case "attack": me.foot = 5; o.foot = 4; o.head = ["4 vs 2", OK_COL]; break;
+    case "move": them.owner = BLUE; them.foot = 1; me.foot = 4; o.foot = 3; break;
+    case "ride": me.foot = 2; me.cav = 2; o.cav = 2; o.head = ["3 vs 2", RISK_COL]; break;
+    case "volley": me.foot = 4; me.pieces = ["cannon"]; o.foot = 3; o.fire = true; o.head = ["3 vs 0", OK_COL]; break;
+    case "fire": me.foot = 2; me.pieces = ["cannon"]; o.fire = true; o.head = ["−2", BAD_COL]; break;
+    case "bridge": them.owner = NEUTRAL; me.foot = 2; me.pieces = ["engineer"]; o.bridge = true; o.head = ["Bridge", RIVER_INK];
+      sc.river = riverBetween(A, B); break;
+    case "road": them.owner = BLUE; them.foot = 0; me.foot = 3; o.foot = 2; o.head = ["2 ticks", LATER_COL]; break;
+    case "ship": them.owner = NEUTRAL; me.build = "harbour"; me.foot = 2; me.pieces = ["warship"]; o.foot = 2; o.pieces = ["warship"];
+      o.head = ["3 ticks", LATER_COL]; sc.sea = seaBetween(A, B); break;
+    case "convoy": me.foot = 4; me.pieces = ["siege", "spy", "scout"]; o.foot = 3; o.pieces = ["siege", "spy", "scout"]; o.head = ["4 vs 3", RISK_COL]; break;
+    case "defend": me.foot = 3; o = { kind: kind, at: "A", foot: 3 }; break;
+    case "wait": me.foot = 1; me.pieces = ["cannon"]; o = { kind: kind, at: "A", pieces: ["cannon"] }; break;
+    case "spied": me.foot = 2; them.foot = 4; o = { kind: kind, camp: RED, from: "B", to: "A", foot: 3, head: ["3 vs 2", BAD_COL] }; break;
+    case "transit": them.owner = BLUE; me.foot = 1; o = { kind: kind, pt: [180, 220], to: "B", foot: 2, head: ["Next bell", LATER_COL] }; break;
+  }
+  sc.regions = [me, them];
+  sc.orders = [o];
+  return sc;
+}
+function seaBetween(A, B) {
+  var dx = B[0] - A[0], dy = B[1] - A[1], l2 = dx * dx + dy * dy;
+  return function (x, y) { var s = ((x - A[0]) * dx + (y - A[1]) * dy) / l2 + 0.03 * Math.sin(x / 13 + y / 17); return s > 0.36 && s < 0.64; };
+}
+function riverBetween(A, B) {
+  var mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, dx = B[1] - A[1], dy = -(B[0] - A[0]), l = Math.hypot(dx, dy), out = [];
+  dx /= l; dy /= l;
+  for (var i = -5; i <= 5; i++) out.push([mx + dx * i * 50 + (i % 2 ? 6 : -6), my + dy * i * 50]);
+  return out;
+}
+
+// ======================================================================
+//  THE GROUND — a stand-in for the round's paper: regions in shards, the
+//  owner's tissue, a thick ink line where two owners meet.
+// ======================================================================
+var GROUND = {};
+var SHARD_RGB = [[230, 200, 140], [186, 197, 215], [233, 188, 172], [186, 213, 178]];
+var BORDER_RGB = [[150, 128, 85], [47, 99, 196], [217, 65, 47], [47, 158, 90]];
+function hash2(i, j) {
+  var n = Math.imul(i, 374761393) + Math.imul(j, 668265263);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+function ground(sc, R) {
+  var key = sc.id + "|" + R;
+  if (GROUND[key]) return GROUND[key];
+  var W = Math.ceil(sc.w * R), H = Math.ceil(sc.h * R), cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  var g = cv.getContext("2d"), im = g.createImageData(W, H), px = im.data;
+  var reg = new Int16Array(W * H), sh = new Int32Array(W * H), rs = sc.regions, SH = 24, x, y, i, k, r;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    var wx = (x + 0.5) / R, wy = (y + 0.5) / R, at = y * W + x;
+    if (sc.sea && sc.sea(wx, wy)) { reg[at] = -1; continue; }
+    var best = 1e12, bi = 0;
+    for (r = 0; r < rs.length; r++) { var dx = wx - rs[r].x, dy = wy - rs[r].y, d = dx * dx + dy * dy; if (d < best) { best = d; bi = r; } }
+    reg[at] = bi;
+    var ci = Math.floor(wx / SH), cj = Math.floor(wy / SH), bs = 1e12, sid = 0;
+    for (var a = -1; a <= 1; a++) for (var b = -1; b <= 1; b++) {
+      var qi = ci + a, qj = cj + b, sx = (qi + 0.15 + 0.7 * hash2(qi, qj)) * SH, sy = (qj + 0.15 + 0.7 * hash2(qj + 911, qi)) * SH;
+      var e = (wx - sx) * (wx - sx) + (wy - sy) * (wy - sy);
+      if (e < bs) { bs = e; sid = (qi + 512) * 4096 + qj + 512; }
+    }
+    sh[at] = sid;
+  }
+  var band = Math.max(2, Math.round(4 * R)), thin = Math.max(1, Math.round(0.9 * R));
+  function regAt(xx, yy) { return xx < 0 || yy < 0 || xx >= W || yy >= H ? -2 : reg[yy * W + xx]; }
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    i = y * W + x; k = i * 4;
+    var me = reg[i], col;
+    if (me === -1) {
+      var wave = 0.5 + 0.5 * Math.sin(x / R / 9 + Math.sin(y / R / 23) * 3);
+      col = [86 + wave * 10, 168 + wave * 10, 168 + wave * 8];
+      var nearLand = [regAt(x - band, y), regAt(x + band, y), regAt(x, y - band), regAt(x, y + band)].some(function (v) { return v >= 0; });
+      if (nearLand) col = [150, 212, 205];
+    } else {
+      var own = rs[me].owner, base = SHARD_RGB[own], tone = (hash2(sh[i], 7) - 0.5) * 0.12;
+      col = [base[0] * (1 + tone), base[1] * (1 + tone), base[2] * (1 + tone)];
+      if ((x + 1 < W && sh[i + 1] !== sh[i]) || (y + 1 < H && sh[i + W] !== sh[i])) col = [col[0] + 22, col[1] + 22, col[2] + 22];
+      var far = [regAt(x - band, y), regAt(x + band, y), regAt(x, y - band), regAt(x, y + band)];
+      var near = [regAt(x - thin, y), regAt(x + thin, y), regAt(x, y - thin), regAt(x, y + thin)];
+      var rival = far.some(function (v) { return v >= 0 && v !== me && rs[v].owner !== own; });
+      var coast = far.some(function (v) { return v === -1; });
+      var line = near.some(function (v) { return v >= 0 && v !== me; });
+      if (rival && own !== NEUTRAL) col = BORDER_RGB[own].slice();
+      else if (coast) col = [col[0] * 0.8, col[1] * 0.8, col[2] * 0.8];
+      else if (line) col = [col[0] * 0.78, col[1] * 0.78, col[2] * 0.78];
+    }
+    px[k] = col[0]; px[k + 1] = col[1]; px[k + 2] = col[2]; px[k + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  return (GROUND[key] = cv);
+}
+function drawRiver(pts) {
+  if (!pts) return;
+  function path() {
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length - 1; i++) {
+      var mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+      ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+  }
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  path(); ctx.lineWidth = 18; ctx.strokeStyle = RIVER_INK; ctx.stroke();
+  path(); ctx.lineWidth = 12; ctx.strokeStyle = "#8fd0ec"; ctx.stroke();
+  path(); ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.stroke();
+  ctx.lineCap = "butt"; ctx.lineJoin = "miter";
+}
+
+// ======================================================================
+//  ONE SCENE — ground, what still stands, the arrows, the beads on them,
+//  the ringed badges of Defend and Wait, the tags at the heads.
+// ======================================================================
+// Where a region's figures stand, at a zoom of 1.8 (the dense map's).
+var SPOT = { infantry: [-56, 62], cavalry: [56, 62], pieces: [[86, 4], [-88, 4], [0, 112]] };
+function spot(r, which, k, z) { var s = which === "pieces" ? SPOT.pieces[k % 3] : SPOT[which]; return [r.x + s[0] * z / 1.8, r.y + s[1] * z / 1.8]; }
+
+// The troops an order carries, in the order its beads run (no count: the kind only).
+function cargo(o) {
+  var out = [];
+  if (o.foot) out.push("infantry");
+  if (o.cav) out.push("cavalry");
+  if (o.fire) out.push("cannon");
+  if (o.bridge) out.push("engineer");
+  (o.pieces || []).forEach(function (p) { out.push(p); });
+  return out;
+}
+function campOf(o) { return o.camp || BLUE; }
+
+// A filled head at the end of a path (world units), for the orders drawn as a line.
+function arrowHead(pts, col, len, half) {
+  var n = pts.length;
+  if (n < 2) return;
+  var T = pts[n - 1], P = pts[Math.max(0, n - 4)], dx = T[0] - P[0], dy = T[1] - P[1], l = Math.hypot(dx, dy) || 1;
+  dx /= l; dy /= l;
+  var tx = T[0] + dx * len * 0.3, ty = T[1] + dy * len * 0.3, bx = tx - dx * len, by = ty - dy * len;
+  ctx.beginPath(); ctx.moveTo(tx, ty);
+  ctx.lineTo(bx - dy * half, by + dx * half); ctx.lineTo(bx + dx * len * 0.22, by + dy * len * 0.22); ctx.lineTo(bx + dy * half, by - dx * half);
+  ctx.closePath();
+  ctx.fillStyle = col; ctx.fill();
+  ctx.lineWidth = 1.2; ctx.strokeStyle = "rgba(0,0,0,.3)"; ctx.stroke();
+}
+function dashed(pts, col) {
+  ctx.setLineDash([6, 8]); ctx.lineWidth = 4; ctx.strokeStyle = col;
+  ctx.beginPath(); pts.forEach(function (p, i) { ctx[i ? "lineTo" : "moveTo"](p[0], p[1]); }); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ---- a path read by its length ---------------------------------------------
+function measure(P) {
+  var cum = [0], L = 0;
+  for (var i = 1; i < P.length; i++) { L += Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]); cum.push(L); }
+  return { P: P, cum: cum, L: L };
+}
+// The point at a length along the path, and the way the path runs there.
+function pointAt(M, s) {
+  var P = M.P, cum = M.cum, i;
+  s = clamp(s, 0, M.L);
+  for (i = 1; i < P.length; i++) if (cum[i] >= s) break;
+  i = Math.min(i, P.length - 1);
+  var k = (s - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1), dx = P[i][0] - P[i - 1][0], dy = P[i][1] - P[i - 1][1], l = Math.hypot(dx, dy) || 1;
+  return [P[i - 1][0] + dx * k, P[i - 1][1] + dy * k, dx / l, dy / l];
+}
+// The beads of one order, strung on its path around a fraction t of its length.
+function string(M, t, n, D, gap, lift) {
+  var span = n * D + (n - 1) * gap, s0 = clamp(M.L * t - span / 2, 0, Math.max(0, M.L - span)), out = [];
+  for (var i = 0; i < n; i++) {
+    var p = pointAt(M, s0 + D / 2 + i * (D + gap)), nx = -p[3], ny = p[2];
+    if (ny > 0) { nx = -nx; ny = -ny; }                      // off the shaft means up the screen
+    out.push([p[0] + nx * lift, p[1] + ny * lift]);
+  }
+  return out;
+}
+function hits(beads, D, placed, boxes) {
+  for (var i = 0; i < beads.length; i++) {
+    var b = beads[i];
+    for (var j = 0; j < placed.length; j++) if (Math.hypot(b[0] - placed[j][0], b[1] - placed[j][1]) < (D + placed[j][2]) / 2 + 3) return true;
+    for (j = 0; j < boxes.length; j++) {
+      var q = boxes[j];
+      if (Math.abs(b[0] - q.x) < q.w / 2 + D / 2 && Math.abs(b[1] - q.y) < q.h / 2 + D / 2) return true;
+    }
+  }
+  return false;
+}
+
+// ---- the bead: a disc cut out of the map's paper, the troop in it ------------
+//  A ring of the camp's paper under a paper disc, the troop printed on the
+//  disc big enough to be cropped by it (a head and shoulders read better
+//  than a whole figure at this size), then everything the paper generator
+//  gives a sheet: a fold across with its two faces, the crease, the light,
+//  the grain, a hand-cut edge and the shadow. Drawn once into a sprite.
+var BEAD_CACHE = {};
+function discPoly(cx, cy, r, n, r0, rng) {
+  var P = [];
+  for (var i = 0; i < n; i++) { var a = r0 + i / n * Math.PI * 2, k = r + (rng() * 2 - 1) * Math.max(0.5, r * 0.035); P.push([cx + Math.cos(a) * k, cy + Math.sin(a) * k]); }
+  return P;
+}
+// The troop, as large as the disc allows to crop it: a figure is set by its height, a wide piece by its width.
+function cropFigure(g, kind, camp, cx, cy, D) {
+  var im = art(kind, camp);
+  if (!im) return false;
+  var wide = im.naturalWidth > im.naturalHeight * 0.9;
+  var h = wide ? D * 1.05 * im.naturalHeight / im.naturalWidth : D * 1.25, w = h * im.naturalWidth / im.naturalHeight;
+  g.drawImage(im, cx - w / 2, cy - h / 2 + (wide ? D * 0.04 : D * 0.16), w, h);
+  return true;
+}
+// A fold across the paper (two faces, a crease), the light and the grain, clipped to P.
+function paperFinish(g, P, cx, cy, R, rng, d) {
+  var an = rng() * Math.PI, ux = Math.cos(an), uy = Math.sin(an);
+  g.save(); ppPath(g, P); g.clip();
+  g.globalAlpha = 0.16; g.fillStyle = "#2a1c00";
+  g.beginPath(); g.moveTo(cx - ux * R * 2, cy - uy * R * 2); g.lineTo(cx + ux * R * 2, cy + uy * R * 2);
+  g.lineTo(cx + ux * R * 2 - uy * R * 2, cy + uy * R * 2 + ux * R * 2); g.lineTo(cx - ux * R * 2 - uy * R * 2, cy - uy * R * 2 + ux * R * 2); g.closePath(); g.fill();
+  g.globalAlpha = 1; g.lineWidth = 1.1; g.strokeStyle = "rgba(40,25,0,.3)";
+  g.beginPath(); g.moveTo(cx - ux * R * 2, cy - uy * R * 2); g.lineTo(cx + ux * R * 2, cy + uy * R * 2); g.stroke();
+  g.lineWidth = 0.8; g.strokeStyle = "rgba(255,255,255,.55)";
+  g.beginPath(); g.moveTo(cx - ux * R * 2 + uy, cy - uy * R * 2 - ux); g.lineTo(cx + ux * R * 2 + uy, cy + uy * R * 2 - ux); g.stroke();
+  g.save(); g.translate(cx - R, cy - R); g.fillStyle = ppLight(g, R * 2, R * 2); g.fillRect(-20, -20, R * 2 + 40, R * 2 + 40); g.restore();
+  if (LOOK.grain > 0) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalAlpha = LOOK.grain * 0.5; g.fillStyle = g.createPattern(ppGrain(), "repeat");
+    g.fillRect(0, 0, g.canvas.width, g.canvas.height);
+    g.restore();
+  }
+  g.restore();
+}
+function beadSprite(kind, camp, D, opt) {
+  var d = view.dpr, id = [kind, camp, D, d, LOOK.seed, LOOK.grain].join("|");
+  if (BEAD_CACHE[id]) return BEAD_CACHE[id];
+  var rng = ppRng(ppHash(id)), R = D / 2, m = 8, C = CAMP[camp];
+  var cv = ppCanvas({ x0: -R - m, y0: -R - m, x1: R + m + 4, y1: R + m + 6 }, d), g = cv.g;
+  var outer = discPoly(0, 0, R, 22, rng() * 6, rng), inner = discPoly(0, 0, R - Math.max(2.5, D * 0.11), 22, rng() * 6, rng);
+  ppShadow(g, outer, "rgba(20,30,70,.38)", 1.5, 3, 2.2, d);
+  g.fillStyle = C.dark; ppPath(g, outer); g.fill();
+  g.fillStyle = PAPER; ppPath(g, inner); g.fill();
+  g.save(); ppPath(g, inner); g.clip();
+  var ok = cropFigure(g, kind, camp, 0, 0, D);
+  g.restore();
+  paperFinish(g, outer, 0, 0, R, rng, d);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.3)"; ppPath(g, outer); g.stroke();
+  if (ok) BEAD_CACHE[id] = cv;
+  return cv;
+}
+function bead(kind, camp, x, y, D, key, opt) {
+  if (opt.style === "rosette") {
+    var B = paperOn("bub", key, x - D / 2, y - D / 2, D, D, { fill: CAMP[camp].dark, inner: PAPER });
+    ctx.save(); ctx.beginPath(); ctx.arc(D / 2, D / 2, D * 0.42, 0, Math.PI * 2); ctx.clip();
+    cropFigure(ctx, kind, camp, D / 2, D / 2, D * 0.84);
+    ctx.restore();
+    paperOff(B);
+    return;
+  }
+  var S = beadSprite(kind, camp, D, opt);
+  ctx.drawImage(S.cv, x + S.x, y + S.y, S.w, S.h);
+}
+
+// Defend and Wait: ONE badge — the paper disc of what stays, whose border IS
+// the looped arrow: a strip of the order's colour folded round the disc,
+// open at the top, ending in its head.
+function ringSprite(kind, camp, D, col) {
+  var d = view.dpr, id = ["ring", kind, camp, D, col, d, LOOK.seed, LOOK.grain].join("|");
+  if (BEAD_CACHE[id]) return BEAD_CACHE[id];
+  var rng = ppRng(ppHash(id)), R = D / 2, sw = Math.max(6, D * 0.2), Rc = R - sw * 0.45, hw = sw * 0.95, m = 10;
+  var cv = ppCanvas({ x0: -R - m - hw, y0: -R - m - hw, x1: R + m + hw, y1: R + m + hw + 4 }, d), g = cv.g;
+  var disc = discPoly(0, 0, R - 1, 24, rng() * 6, rng);
+  // the strip: clockwise from just right of the top round to a head that points back at the gap
+  var a0 = -Math.PI / 2 + 0.42, a1 = a0 + Math.PI * 2 - 1.05, ha = 0.5, ro = Rc + sw / 2, ri = Rc - sw / 2, outA = [], inA = [], i, a;
+  for (i = 0; i <= 40; i++) { a = a0 + (a1 - a0) * i / 40; outA.push([Math.cos(a) * ro, Math.sin(a) * ro]); inA.push([Math.cos(a) * ri, Math.sin(a) * ri]); }
+  var strip = outA.concat([[Math.cos(a1) * (Rc + hw), Math.sin(a1) * (Rc + hw)], [Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc], [Math.cos(a1) * (Rc - hw), Math.sin(a1) * (Rc - hw)]], inA.reverse());
+  var mid = [];
+  for (i = 0; i <= 40; i++) { a = a0 + (a1 - a0) * i / 40; mid.push([Math.cos(a) * Rc, Math.sin(a) * Rc]); }
+  var light = outA.concat([[Math.cos(a1) * (Rc + hw), Math.sin(a1) * (Rc + hw)], [Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc]], mid.slice().reverse());
+  // the disc and its troop
+  ppShadow(g, disc, "rgba(20,30,70,.38)", 1.5, 3, 2.2, d);
+  g.fillStyle = PAPER; ppPath(g, disc); g.fill();
+  g.save(); ppPath(g, disc); g.clip();
+  var ok = cropFigure(g, kind, camp, 0, 0, D * 0.86);
+  g.restore();
+  paperFinish(g, disc, 0, 0, R, rng, d);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.25)"; ppPath(g, disc); g.stroke();
+  // the strip, folded along its middle: the outer face lit, a crease, a cut edge
+  ppShadow(g, strip, "rgba(0,0,0,.3)", 1, 2, 1.4, d);
+  g.fillStyle = col; ppPath(g, strip); g.fill();
+  g.fillStyle = "rgba(255,255,255,.28)"; ppPath(g, light); g.fill();
+  g.beginPath(); mid.forEach(function (p, k) { g[k ? "lineTo" : "moveTo"](p[0], p[1]); }); g.lineTo(Math.cos(a1 + ha) * Rc, Math.sin(a1 + ha) * Rc);
+  g.lineWidth = 1; g.strokeStyle = "rgba(0,0,0,.3)"; g.stroke();
+  paperFinish(g, strip, 0, 0, R + hw, rng, d);
+  g.lineWidth = 1.1; g.lineJoin = "round"; g.strokeStyle = "rgba(0,0,0,.35)"; ppPath(g, strip); g.stroke();
+  if (ok) BEAD_CACHE[id] = cv;
+  return cv;
+}
+var RING_K = 1.4;   // a ringed badge stands alone on its region: a little bigger than a bead
+function ringed(kinds, camp, cx, cy, D, col, key, opt) {
+  var S = ringSprite(kinds[0], camp, D, col);
+  ctx.drawImage(S.cv, cx + S.x, cy + S.y, S.w, S.h);
+}
+
+function drawScene(cv, sc, opt, cssW) {
+  var R = view.dpr = (window.devicePixelRatio || 1) * cssW / sc.w, z = opt.z, byId = {}, D = opt.size;
+  cv.width = Math.round(sc.w * R); cv.height = Math.round(sc.h * R);
+  cv.style.width = cssW + "px"; cv.style.height = Math.round(cssW * sc.h / sc.w) + "px";
+  ctx = cv.getContext("2d");
+  ctx.setTransform(R, 0, 0, R, 0, 0);
+  ctx.drawImage(ground(sc, R), 0, 0, sc.w, sc.h);
+  drawRiver(sc.river);
+  sc.regions.forEach(function (r) { byId[r.id] = r; });
+  var orders = sc.orders.filter(function (o) { return !o.hidden && (sc.id !== "map" || opt.off.indexOf(o.kind) < 0); });
+
+  // ---- what still stands: a troop with an order leaves its region ----------
+  var left = {};
+  sc.regions.forEach(function (r) { left[r.id] = { foot: r.foot, cav: r.cav, pieces: r.pieces.slice() }; });
+  if (opt.hide) orders.forEach(function (o) {
+    var L = left[o.from || o.at];
+    if (!L || o.kind === "transit") return;
+    L.foot -= o.foot || 0; L.cav -= o.cav || 0;
+    cargo(o).forEach(function (k) { var ix = L.pieces.indexOf(k); if (ix >= 0) L.pieces.splice(ix, 1); });
+  });
+  var figs = [], tags = [], guns = {};
+  sc.regions.forEach(function (r) {
+    var L = left[r.id], camp = r.owner;
+    if (r.build) figs.push({ k: r.build, camp: camp, x: r.x, y: r.y + 10, h: TALL[r.build] * z * 0.85 });
+    else if (camp) figs.push({ k: "flag", camp: camp, x: r.x + 10, y: r.y + 4, h: TALL.flag * z });
+    var gi = r.pieces.indexOf("cannon");
+    if (gi >= 0) { var gq = spot(r, "pieces", gi, z); guns[r.id] = [gq[0], gq[1] - TALL.cannon * z * 0.6]; }
+    if (!camp) {
+      if (L.foot > 0 && opt.counts) tags.push({ x: r.x + 44 * z / 1.8, y: r.y + 34 * z / 1.8, n: L.foot, camp: 0, key: "n" + r.id });
+      return;
+    }
+    if (L.foot > 0) {
+      var s = spot(r, "infantry", 0, z);
+      figs.push({ k: "infantry", camp: camp, x: s[0], y: s[1], h: TALL.infantry * z });
+      if (opt.counts) tags.push({ x: s[0] + 24, y: s[1] - 8, n: L.foot, camp: camp, key: "f" + r.id + L.foot });
+    }
+    if (L.cav > 0) {
+      var c = spot(r, "cavalry", 0, z);
+      figs.push({ k: "cavalry", camp: camp, x: c[0], y: c[1], h: TALL.cavalry * z });
+      if (opt.counts) tags.push({ x: c[0] + 30, y: c[1] - 8, n: L.cav, camp: camp, key: "c" + r.id + L.cav });
+    }
+    L.pieces.forEach(function (p, i) {
+      var q = spot(r, "pieces", r.pieces.indexOf(p), z);
+      figs.push({ k: p, camp: camp, x: q[0], y: q[1], h: TALL[p] * z * (p === "warship" ? 0.8 : 1) });
+    });
+  });
+  figs.sort(function (a, b) { return a.y - b.y; });
+  figs.forEach(function (f) { figure(f.k, f.camp, f.x, f.y, f.h, true); });
+  tags.forEach(function (t) { tag(t.x, t.y, t.n, t.camp, t.key); });
+
+  // ---- the arrows (the round's own, in world units scaled by the zoom) -----
+  var strings = [], heads = [], loops = [], rings = [];
+  orders.forEach(function (o, ix) {
+    var camp = campOf(o), C = CAMP[camp], ghost = o.kind === "spied", alpha = ghost ? 0.5 : o.kind === "transit" ? 0.45 : 1;
+    var key = sc.id + ":" + ix;
+    if (o.kind === "defend" || o.kind === "wait") {
+      var r = byId[o.at], col = o.kind === "defend" ? OK_COL : IDLE_COL;
+      var k = o.kind === "defend" ? "infantry" : "pieces", sp = spot(r, k, k === "pieces" ? r.pieces.indexOf(o.pieces[0]) : 0, z);
+      var tall = TALL[o.kind === "defend" ? "infantry" : o.pieces[0]] * z;
+      if (opt.legacy) loops.push({ x: sp[0] + 16, y: sp[1] - tall * 0.92, col: col });
+      else {
+        var hw = RING_K * D / 2 + 14;   // the ring stays inside the frame
+        rings.push({ kinds: cargo(o), camp: camp, x: clamp(sp[0], hw, sc.w - hw), y: opt.hide ? sp[1] - tall * 0.45 : sp[1] - tall - D / 2 - 10, col: col, key: key });
+      }
+      return;
+    }
+    var a = o.pt ? { x: o.pt[0], y: o.pt[1] } : byId[o.from], b = byId[o.to];
+    ctx.save(); ctx.scale(z, z);
+    function W(p) { return [p[0] / z, p[1] / z]; }
+    var path = null, tip = null, shotPath = null;
+    if (o.fire) {
+      var gun = guns[o.from];
+      // beside a convoy the shot is lobbed the other way, an arc clear of the troops' strip
+      var shot = curve(W(gun || [a.x, a.y - 8]), W([b.x, b.y]), o.kind === "fire" ? 0.16 : -0.42, gun ? 18 : 44, 16);
+      shotPath = shot;
+      if (o.kind === "fire") { path = shot; tip = shot[shot.length - 1]; }
+    }
+    if (!path) {
+      var bend = o.bend != null ? o.bend : o.kind === "ride" ? 0.2 : o.kind === "ship" ? 0.28 : o.kind === "transit" ? 0.05 : 0.1;
+      var pts = curve(W([a.x, a.y - 8]), W([b.x, b.y]), bend, o.kind === "transit" ? 10 : 44, 16);
+      ctx.globalAlpha = alpha;
+      if (o.kind === "bridge") {
+        dashed(pts, RIVER_INK);
+        if (!opt.legacy) arrowHead(pts, RIVER_INK, 16, 10);
+        tip = pts[pts.length - 1];
+      } else if (o.kind === "road" || o.kind === "ship" || o.kind === "transit") {
+        tip = footprints(pts, C);
+        if (!opt.legacy) { ctx.globalAlpha = alpha * 0.9; arrowHead(pts, C.dark, 18, 12); }
+      } else if (opt.legacy && b.owner === camp) tip = chevrons(pts, C, !ghost);
+      else tip = paperArrow(pts, C, !ghost);     // one strip for every march: an attack and a reinforcement alike
+      ctx.globalAlpha = 1;
+      path = pts;
+    }
+    // the shot last: its dashes cross over the strip rather than under it
+    if (shotPath) {
+      ctx.globalAlpha = alpha; dashed(shotPath, SHOT_COL);
+      if (!opt.legacy) arrowHead(shotPath, SHOT_COL, 16, 10);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+    path = path.map(function (p) { return [p[0] * z, p[1] * z]; });
+    tip = tip && [tip[0] * z, tip[1] * z];
+    var kinds = cargo(o);
+    // a cannon that FIRES rides on its own dashed shot, never on the troops' strip (it would read as marching)
+    if (o.fire && o.kind !== "fire") kinds = kinds.filter(function (k) { return k !== "cannon"; });
+    strings.push({ o: o, key: key, M: measure(path), kinds: kinds, camp: camp, alpha: ghost ? 0.85 : 1 });
+    if (o.fire && o.kind !== "fire") {
+      strings.push({ o: o, key: key + "s", M: measure(shotPath.map(function (p) { return [p[0] * z, p[1] * z]; })), kinds: ["cannon"], camp: camp, alpha: ghost ? 0.85 : 1,
+                     far: path });
+    }
+    if (tip) heads.push({ o: o, x: o.kind === "transit" ? a.x : tip[0], y: o.kind === "transit" ? a.y + 30 : tip[1], key: key, camp: camp });
+  });
+  loops.forEach(function (l) { loopIcon(l.x, l.y, l.col); });
+
+  // ---- the tags at the heads: measured first, the beads keep off them ------
+  var beadsOn = opt.style !== "none";
+  heads.forEach(function (h) {
+    var o = h.o;
+    h.text = o.head && o.head[0]; h.col = o.head && o.head[1];
+    // the round's spied plan writes its troops at the head
+    if (o.kind === "spied") { h.text = opt.legacy ? String(o.foot) : null; h.col = CAMP[h.camp].dark; }
+    if (!opt.head || !h.text) { h.text = null; return; }
+    h.box = { x: h.x, y: h.y - 26, w: plateW("verdict", h.text, 20) + (o.kind === "spied" ? 30 : 0), h: 34 };
+  });
+
+  // ---- the beads: each string slides along ITS arrow until it is clear ------
+  if (beadsOn) {
+    var placed = [], boxes = heads.filter(function (h) { return h.box; }).map(function (h) { return h.box; });
+    rings.forEach(function (g) { boxes.push({ x: g.x, y: g.y, w: RING_K * D + 14, h: RING_K * D + 14 }); });
+    strings.forEach(function (st) {
+      var tries = opt.slide ? [0, 0.1, -0.1, 0.2, -0.2, 0.3, -0.3] : [0], pick = null;
+      var ts = tries.map(function (d) { return clamp(opt.t + d, 0.12, 0.88); });
+      // a cannon's shot beside its convoy: the bead goes where the dashes stand farthest from the strip
+      if (st.far) {
+        var gap = function (t) {
+          var b = string(st.M, t, 1, D, 0, 0)[0], m = 1e9;
+          st.far.forEach(function (f) { m = Math.min(m, Math.hypot(b[0] - f[0], b[1] - f[1])); });
+          return m;
+        };
+        ts = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.88].sort(function (x, y) { return gap(y) - gap(x); });
+      }
+      for (var i = 0; i < ts.length && !pick; i++) {
+        var B = string(st.M, ts[i], st.kinds.length, D, 2, opt.lift);
+        if (!hits(B, D, placed, boxes)) pick = B;
+      }
+      st.beads = pick || string(st.M, ts[0], st.kinds.length, D, 2, opt.lift);
+      st.beads.forEach(function (b) { placed.push([b[0], b[1], D]); });
+    });
+    strings.forEach(function (st) {
+      ctx.save(); ctx.globalAlpha = st.alpha;
+      st.beads.forEach(function (b, i) { bead(st.kinds[i], st.camp, b[0], b[1], D, st.key + "b" + i, opt); });
+      ctx.restore();
+    });
+    rings.forEach(function (g) { ringed(g.kinds, g.camp, g.x, g.y, Math.round(RING_K * D), g.col, g.key, opt); });
+  }
+  heads.forEach(function (h) {
+    if (!h.text) return;
+    var w = plate("verdict", "h" + h.key + h.text, h.x, h.y - 26, h.text, h.col, "#fff", 20);
+    if (h.o.kind === "spied") eyeMark(h.x - w / 2 - 14, h.y - 26, h.col);
+  });
+}
+
+// ======================================================================
+//  THE PAGE
+// ======================================================================
+var stage = document.getElementById("stage");
+var pending = false;
+function later() { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; render(); }); }
+function opts(over) { var o = {}, k; for (k in S) o[k] = S[k]; for (k in over || {}) o[k] = over[k]; return o; }
+function fitH() { return Math.max(400, window.innerHeight - 40); }
+// The round as it is drawn today: figures on the map, counts, chevrons, the loop over the figure.
+var TODAY = { hide: 0, style: "none", head: 1, counts: 1, legacy: 1 };
+
+function render() {
+  LOOK.tilt = S.tilt;
+  LOOK.seed = S.seed;
+  stage.innerHTML = "";
+  if (S.view === "map") {
+    var c = canvasCell("", "");
+    drawScene(c.cv, MAP, opts(), Math.min(720, fitH() * 720 / 1280, stage.clientWidth - 40));
+  } else if (S.view === "compare") {
+    var room = (stage.clientWidth - 80) / 2, w = Math.min(720, room, (fitH() - 60) * 720 / 1280);
+    var a = canvasCell("Before — the round today", "Every figure stays on its region; the arrow's head says how many go.");
+    drawScene(a.cv, MAP, opts(TODAY), w);
+    var b = canvasCell("After — the order carries its troops", "A troop with an order leaves the map and rides on its arrow.");
+    drawScene(b.cv, MAP, opts(), w);
+  } else {
+    KINDS.forEach(function (k) {
+      var c = canvasCell(k[1], k[2]);
+      drawScene(c.cv, cell(k[0]), opts({ z: 1.3 }), 380);
+    });
+  }
+}
+function canvasCell(name, what) {
+  var d = document.createElement("div"), cv = document.createElement("canvas");
+  d.className = "cell"; d.appendChild(cv);
+  if (name) { var n = document.createElement("div"); n.className = "name"; n.textContent = name; d.appendChild(n); }
+  if (what) { var w = document.createElement("div"); w.className = "what"; w.textContent = what; d.appendChild(w); }
+  stage.appendChild(d);
+  return { cv: cv };
+}
+
+// ---- the panel -------------------------------------------------------------
+function seg(id, field, num) {
+  var el = document.getElementById(id);
+  function sync() { [].forEach.call(el.children, function (b) { b.classList.toggle("on", String(S[field]) === b.dataset.v); }); }
+  el.addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    S[field] = num ? +b.dataset.v : b.dataset.v; sync(); save(); render();
+  });
+  sync();
+}
+function slider(id, fmt, reset) {
+  var el = document.getElementById(id), out = document.getElementById("o-" + id);
+  function sync() { el.value = S[id]; out.textContent = fmt(S[id]); }
+  el.addEventListener("input", function () {
+    S[id] = +el.value; sync(); save();
+    if (reset) { PP_CACHE = {}; PP_N = 0; }
+    render();
+  });
+  sync();
+}
+seg("view", "view"); seg("hide", "hide", true); seg("style", "style"); seg("slide", "slide", true); seg("head", "head", true); seg("counts", "counts", true);
+slider("t", function (v) { return Math.round(v * 100) + " %"; });
+slider("lift", function (v) { return v + " px"; });
+slider("size", function (v) { return v + " px"; });
+slider("z", function (v) { return "×" + v.toFixed(1); });
+slider("tilt", function (v) { return v + "°"; }, true);
+(function () {
+  var box = document.getElementById("kinds"), seen = {};
+  MAP.orders.forEach(function (o) { if (!o.hidden) seen[o.kind] = true; });
+  KINDS.forEach(function (k) {
+    if (!seen[k[0]]) return;
+    var l = document.createElement("label"), i = document.createElement("input");
+    i.type = "checkbox"; i.checked = S.off.indexOf(k[0]) < 0;
+    i.addEventListener("change", function () {
+      S.off = S.off.filter(function (x) { return x !== k[0]; });
+      if (!i.checked) S.off.push(k[0]);
+      save(); render();
+    });
+    l.appendChild(i); l.appendChild(document.createTextNode(k[1])); box.appendChild(l);
+  });
+})();
+document.getElementById("reseed").addEventListener("click", function () {
+  S.seed = (S.seed * 7 + 13) % 997; PP_CACHE = {}; PP_N = 0; BEAD_CACHE = {}; save(); render();
+});
+document.getElementById("copy").addEventListener("click", function () {
+  var txt = JSON.stringify({ style: S.style, hide: !!S.hide, t: S.t, lift: S.lift, size: S.size, slide: !!S.slide, head: !!S.head, counts: !!S.counts, tilt: S.tilt, seed: S.seed });
+  var done = function () { document.getElementById("copied").textContent = "Copied: " + txt; };
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, function () { document.getElementById("copied").textContent = txt; });
+  else document.getElementById("copied").textContent = txt;
+});
+window.addEventListener("resize", later);
+render();
+if (document.fonts) document.fonts.load("700 22px \"Baloo 2\"").then(later, later);
+</script>
+</body>
+</html>

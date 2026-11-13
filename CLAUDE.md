@@ -1978,7 +1978,12 @@ unless it declares a group — the same two metas are the one ceremony a
 prototype carries, and one about no game is tagged `none`. A tool whose page
 is a checklist — the five *Game list* pages — names its tick with
 `<meta name="lab-done" content="api/done">`, and its entry goes green once
-every item of every game is checked (`{ checked, total, done }`). It opens each one in a frame
+every item of every game is checked (`{ checked, total, done }`). **The ⋮ of an
+entry edits those declarations without opening the file** — its name, its
+section, its tag — and writes them back into the page itself
+(`/api/labs/edit`): a lab page's name is the end of its `<title>`, a
+prototype's a `<meta name="lab-name">`, since three prototypes share one
+title; a value equal to the default takes its meta out. It opens each one in a frame
 beside the list; the hash is the
 location, so a reload comes back to the same page. The four tools with a server
 are **proxied under a prefix** — `/events/` (and `/events/library`, `/events/pop`), `/text/`,
@@ -2050,6 +2055,28 @@ edited, is what ships**: the generator is plain polygons, ported onto the
 canvas as THE PAPER of `games/foldiers/game.js` (each piece drawn once into a
 cached canvas, then laid tilted), and its knobs are `LOOK` there — a retune is
 a new *Copy settings* pasted over that object.
+
+`foldiers-arrows.html` is **foldiers' order arrows**: every order the round
+can give, in the round's own arrows and paper (copied from `game.js`), on a
+dense map, before / after, and one scrap per kind. It is where **an order
+carries its troops** was chosen: while you plan, a troop given an order
+leaves the map and rides on its arrow as small paper discs, one a kind, no
+count; Defend and Wait are one badge whose border is the looped arrow. What
+ships is THE ORDER CARRIES ITS TROOPS in `games/foldiers/game.js`.
+
+`foldiers-upgrades.html` is **foldiers' upgrades, works and weather**: what
+the round knows and the map does not say, each tried in a few looks side by
+side, in the same copied paper — the upgrades in force (a row of stamps, a
+column, or worn by the pieces), what a fight adds up on the target's pin, the
+engineer's palisade and bridge on their way (ghost, ringed badge) and built,
+and the weather coming (rosette, its loss, a cloud, the region marked), with
+a button that rings the bell. What ships is ported into `games/foldiers/game.js`:
+the forecast's stamps, the cloud, and the works' ringed badges — the
+column of upgrades has since become badges won on the map and kept in a
+folding paper at the foot. Its fifth view, *Wonder*, is the flow of a stage with a
+wonder, bell by bell, as a proposal: the wonder shining from the first tick
+through the fog, and a tug-of-war gauge over it — yellow in the middle, Blue's
+five steps one side, Red's the other, a step a bell toward whoever holds it.
 
 `lowpoly-look.html` is **the look-dev bench for a 3D game in low poly**, and
 it is where the final render of `prototype/dozerflip.html` is looked for: a
@@ -2131,6 +2158,43 @@ rays never see their quads. Six presets (pixel day and night, golden dusk,
 paper standees, painted, and the flat baseline they are judged against);
 click a cut, then the scene to place it. Same three.js setup as
 `lowpoly-look.html`.
+
+`village-3d.html` is **the 3D village**, the alternative to the painted hub
+of `village.html` (Front): a game's doors — play, the map, the ranking, the
+shop, the album, the daily road, the options, the barracks' five — as 3D
+buildings on a small island, out of the KayKit pack and
+`lab/models/library.js`, whose `village` set (pad, path, lamp, fence, banner)
+was added for it. It keeps the 2D village's vocabulary — a ROLE per house,
+its word the shell's own under its feet, the halo, the badge as a number,
+`notify` and `light` with `every` / `delay` and `always` — and adds what 3D
+owns: the CAMERA is part of the composition (yaw, pitch, distance,
+projection, a finger's pan, a ±2° sway), and the LIGHT is a preset that
+breathes warm and cold. EDIT places objects on a 0.25 grid; PLAY is the
+player's view, where a tap on a door flies the camera to it and opens a mock
+of what it opens. The door list says which of the game's doors (read off its
+manifest) are still missing, *From the 2D village* lays its `web.village`
+doors on the island, and nothing is written to the repo: the composition is
+autosaved per game in the browser and *Copy JSON* hands it over as a
+`web.village3d` block.
+
+`character-anim.html` is **the character animation bench**: rigged characters
+free of rights — four KayKit adventurers, two KayKit skeletons (CC0, Kay
+Lousberg) and Quaternius's RobotExpressive (CC0), in `assets/model/` with
+their rows in `sources.tsv` — plus **the stickman**, a character made in code
+(`lab/models/stickman.js`: a rig of bones in the canonical layout, a rigid
+capsule body). Twelve animations are WRITTEN in the page rather than taken
+from the packs — idle, walk, run, jump, crouch, punch, kick, wave, cheer,
+dance, hit, knockout — as poses in plain angles on a canonical rig, and
+retargeted onto every skeleton: bones matched by name, each rig's rest pose
+corrected to the same one (the KayKit rigs are in T-pose, the robot in an
+A-pose), every angle applied in the character's own axes, and the lowest
+contact put back on the ground each frame, so one pose lands on a chibi and on
+a 1.8 m stickman alike. The packs' own clips are one switch away for
+comparison. Ten cameras (free orbit, turntable, front, three-quarter, side and
+isometric in orthographic, behind the shoulder, top-down, low angle, close-up)
+and a lineup of every character; *Export GLB* hands over the stickman with the
+twelve animations baked as clips. `#char=knight&anim=run&cam=side&t=0.3` opens
+a frozen state for a headless shot.
 
 Last, `level-map.html` is the 30-level map that would sit between the web menu
 and the round — a forking road walked on an invisible 6-column grid (see

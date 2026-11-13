@@ -32,6 +32,12 @@
    the pages are sorted by tag — "all" first, then the games alphabetically,
    "none" last — and by name; each group folds on its heading.
 
+   The ⋮ at the end of an entry edits those declarations without opening the
+   file: its name, its section and its tag, written back into the page by
+   the server (`/api/labs/edit`) — a lab page's name is the end of its
+   <title>, a prototype's its `<meta name="lab-name">`. The list is still
+   read off the pages: nothing is kept here.
+
    The location is the hash — `#/events/`, `#/lab/button.html` — so a reload
    comes back to the same page, and a page that navigates inside the frame
    moves the hash with it.
@@ -91,16 +97,65 @@ body.shut #panel { margin-left:-272px; }
 #list details[open] > summary h2::before { transform:rotate(90deg); }
 #list summary h2 small { font-size:10px; letter-spacing:0; font-weight:500; }
 #list summary:hover h2 { color:var(--ink); }
+#list .row { display:flex; align-items:center; border-radius:6px; }
 #list a {
+  flex:1; min-width:0;
   display:flex; align-items:center; gap:8px;
-  padding:6px 8px; border-radius:6px;
+  padding:6px 2px 6px 8px;
   color:var(--soft); text-decoration:none; font-weight:500;
 }
-#list a:hover { background:#1a1a29; color:var(--ink); }
-#list a.on { background:#1e2340; color:var(--ink); }
+#list .row:hover, #list .row.menu { background:#1a1a29; }
+#list .row:hover a, #list .row.menu a { color:var(--ink); }
+#list .row.on { background:#1e2340; }
+#list .row.on a { color:var(--ink); }
 /* a checklist tool whose every item is checked */
-#list a.done span, .card.done b { color:var(--ok); }
+#list .row.done span, .card.done b { color:var(--ok); }
 #list a span { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ⋮ — the entry's own menu, shown on hover and while it is open */
+#list .more {
+  flex:none; width:20px; height:24px; margin-right:2px;
+  background:none; border:0; border-radius:4px;
+  color:var(--dim); font:700 15px/24px inherit; cursor:pointer;
+  opacity:0;
+}
+#list .row:hover .more, #list .row.menu .more, #list .more:focus-visible { opacity:1; }
+#list .more:hover, #list .row.menu .more { color:var(--ink); background:var(--field); }
+
+#menu {
+  position:fixed; z-index:10; width:232px; padding:8px;
+  background:var(--panel); border:1px solid var(--field); border-radius:8px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  font-weight:500; font-size:13px;
+}
+#menu[hidden] { display:none; }
+#menu h3 { margin:6px 4px 4px; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--dim); }
+#menu h3:first-child { margin-top:0; }
+#menu form { display:flex; gap:6px; }
+#menu input {
+  flex:1; min-width:0; padding:4px 7px;
+  background:var(--bg); color:var(--ink); border:1px solid var(--field); border-radius:6px;
+  font:inherit;
+}
+#menu input:focus { outline:none; border-color:var(--accent); }
+#menu form button {
+  flex:none; padding:0 9px;
+  background:transparent; color:var(--soft); border:1px solid var(--field); border-radius:6px;
+  font:600 12px/24px inherit; cursor:pointer;
+}
+#menu form button:hover { color:var(--ink); border-color:var(--accent); }
+#menu .grp {
+  display:flex; align-items:center; gap:8px; width:100%;
+  padding:5px 6px; border:0; border-radius:5px;
+  background:none; color:var(--soft); font:inherit; text-align:left; cursor:pointer;
+}
+#menu .grp::before { content:""; width:12px; flex:none; text-align:center; }
+#menu .grp.on::before { content:"✓"; color:var(--accent); }
+#menu .grp.on { color:var(--ink); }
+#menu .grp:hover { background:#1a1a29; color:var(--ink); }
+#menu .err { margin:6px 4px 0; color:var(--warn); font-size:12px; }
+#menu .err:empty { display:none; }
+#menu.busy { opacity:.6; pointer-events:none; }
 
 .pill {
   flex:none;
@@ -185,6 +240,17 @@ body.home #home { display:block; }
   <section id="home"></section>
 </main>
 
+<div id="menu" hidden>
+  <h3>Name</h3>
+  <form id="m-name"><input name="v" autocomplete="off" spellcheck="false"><button>Rename</button></form>
+  <h3>Section</h3>
+  <div id="m-groups"></div>
+  <h3>Tag</h3>
+  <form id="m-tag"><input name="v" list="m-tags" autocomplete="off" spellcheck="false" placeholder="all, none or a game"><button>Set</button></form>
+  <datalist id="m-tags"></datalist>
+  <p class="err" id="m-err"></p>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -199,8 +265,8 @@ body.home #home { display:block; }
   }
 
   // A lab page about no game in particular is about all of them; a prototype
-  // about none is about none.
-  function tag(l) { return l.game || (l.path.indexOf("prototype/") === 0 ? "none" : "all"); }
+  // about none is about none. The server says which, a page may declare either.
+  function tag(l) { return l.tag || l.game || (l.path.indexOf("prototype/") === 0 ? "none" : "all"); }
 
   function pills(l) {
     return '<i class="pill' + (l.game ? " game" : "") + '">' + esc(tag(l)) + "</i>";
@@ -236,9 +302,10 @@ body.home #home { display:block; }
       var open = q || !shutGroups[g[2]];
       return '<details data-group="' + esc(g[2]) + '"' + (open ? " open" : "") + "><summary><h2>" + g[0] +
         " <small>" + g[1].length + "</small></h2></summary>" + g[1].map(function (l) {
-        var cls = (cur && cur.url === l.url ? "on " : "") + (isDone(l) ? "done" : "");
-        return '<a href="#' + esc(l.url) + '"' + (cls ? ' class="' + cls.trim() + '"' : "") +
-          ' title="' + esc(doneTip(l) + l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>";
+        var cls = (cur && cur.url === l.url ? " on" : "") + (isDone(l) ? " done" : "") + (menuFor === l.path ? " menu" : "");
+        return '<div class="row' + cls + '"><a href="#' + esc(l.url) + '"' +
+          ' title="' + esc(doneTip(l) + l.summary) + '"><span>' + esc(l.name) + "</span>" + pills(l) + "</a>" +
+          '<button class="more" data-path="' + esc(l.path) + '" title="Rename, move or retag">⋮</button></div>';
       }).join("") + "</details>";
     }).join("") || '<h2>Nothing matches</h2>';
   }
@@ -246,12 +313,93 @@ body.home #home { display:block; }
   // Only a click on a heading is the player's choice: a <details> written open
   // by renderList fires "toggle" too.
   $("list").addEventListener("click", function (e) {
+    var more = e.target.closest(".more");
+    if (more) { e.preventDefault(); return menuFor === more.dataset.path ? closeMenu() : openMenu(more); }
     var s = e.target.closest("summary");
     if (!s || $("filter").value.trim()) return;
     var d = s.parentNode;
     if (d.open) shutGroups[d.dataset.group] = 1; else delete shutGroups[d.dataset.group];
     try { localStorage.setItem("lab:groups", JSON.stringify(shutGroups)); } catch (e2) {}
   });
+
+  /* ⋮ — one menu for every entry, laid beside the button that opened it. Each
+     field is sent on its own and written into the page at once; the answer is
+     the list read again, so what the menu shows next is what the file says. */
+  var menuFor = null, TAGS = null;
+  var entry = function () {
+    return LABS.filter(function (l) { return l.path === menuFor; })[0];
+  };
+
+  function fillMenu() {
+    var l = entry();
+    if (!l) return closeMenu();
+    $("m-name").v.value = l.name;
+    $("m-tag").v.value = tag(l);
+    $("m-groups").innerHTML = GROUPS.filter(function (g) { return g[0] !== "other"; }).map(function (g) {
+      return '<button class="grp' + (l.group === g[0] ? " on" : "") + '" data-group="' + g[0] + '">' + g[1] + "</button>";
+    }).join("");
+  }
+
+  function openMenu(btn) {
+    menuFor = btn.dataset.path;
+    $("m-err").textContent = "";
+    fillMenu();
+    var m = $("menu"), r = btn.getBoundingClientRect();
+    m.hidden = false;
+    m.style.left = Math.round(r.right + 6) + "px";
+    m.style.top = Math.round(Math.max(8, Math.min(r.top - 8, innerHeight - m.offsetHeight - 8))) + "px";
+    renderList();
+    if (!TAGS) fetch("api/labs/tags").then(function (r2) { return r2.json(); }).then(function (t) {
+      TAGS = t;
+      $("m-tags").innerHTML = t.map(function (x) { return '<option value="' + esc(x) + '">'; }).join("");
+    }).catch(function () {});
+  }
+
+  function closeMenu() {
+    if (!menuFor) return;
+    menuFor = null;
+    $("menu").hidden = true;
+    renderList();
+  }
+
+  function save(change) {
+    var m = $("menu");
+    change.path = menuFor;
+    m.classList.add("busy");
+    $("m-err").textContent = "";
+    fetch("api/labs/edit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || r.status); return d; }); })
+      .then(function (list) {
+        LABS = list;
+        fillMenu();
+        route();
+      })
+      .catch(function (e) { $("m-err").textContent = e.message; })
+      .then(function () { m.classList.remove("busy"); });
+  }
+
+  $("m-name").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = this.v.value.trim();
+    if (v && v !== entry().name) save({ name: v });
+  });
+  $("m-tag").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = this.v.value.trim().toLowerCase();
+    if (v && v !== tag(entry())) save({ tag: v });
+  });
+  $("m-groups").addEventListener("click", function (e) {
+    var b = e.target.closest(".grp");
+    if (b && b.dataset.group !== entry().group) save({ group: b.dataset.group });
+  });
+  // A field is replaced rather than edited, and a tag field emptied by the
+  // selection lists every tag its datalist holds.
+  $("menu").addEventListener("focusin", function (e) { if (e.target.tagName === "INPUT") e.target.select(); });
+  document.addEventListener("mousedown", function (e) {
+    if (menuFor && !e.target.closest("#menu, .more")) closeMenu();
+  });
+  $("list").addEventListener("scroll", closeMenu);
+  window.addEventListener("resize", closeMenu);
 
   function renderHome() {
     $("home").innerHTML = groups().map(function (g) {
@@ -329,7 +477,7 @@ body.home #home { display:block; }
     }
   });
 
-  window.addEventListener("hashchange", function () { route(); askDone(); });
+  window.addEventListener("hashchange", function () { closeMenu(); route(); askDone(); });
   $("filter").addEventListener("input", function () { renderList(); if (!location.hash.slice(1)) renderHome(); });
   $("to-home").addEventListener("click", function () { location.hash = ""; });
   $("reload").addEventListener("click", function () {
@@ -344,8 +492,9 @@ body.home #home { display:block; }
   try { if (localStorage.getItem("lab:shut")) document.body.classList.add("shut"); } catch (e) {}
 
   document.addEventListener("keydown", function (e) {
+    if (menuFor && e.key === "Escape") { closeMenu(); return; }
     if (e.target.tagName === "INPUT") {
-      if (e.key === "Escape") { e.target.value = ""; e.target.blur(); renderList(); renderHome(); }
+      if (e.target.id === "filter" && e.key === "Escape") { e.target.value = ""; e.target.blur(); renderList(); renderHome(); }
       return;
     }
     if (e.key === "/") { e.preventDefault(); if (document.body.classList.contains("shut")) toggle(); $("filter").focus(); }

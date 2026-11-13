@@ -534,11 +534,11 @@ const DECLARED = {
   // foldiers
   'foldiers:OBJ': ['level', 'objective'], 'foldiers:objText': ['level', 'objective'], 'foldiers:stageText': ['level', 'objective'],
   'foldiers:TAKE_TEXT': ['level', 'objective'], 'foldiers:STAGES': ['level', 'stage mechanic'],
-  'foldiers:regionActions': ['panel', 'region card'], 'foldiers:actionChoices': ['panel', 'region card'], 'foldiers:WHO': ['panel', 'camp name'],
-  'foldiers:MODE_TEXT': ['panel', 'order hint'], 'foldiers:verdict': ['canvas', 'order preview'], 'foldiers:drawArrows': ['canvas', 'order arrows'],
-  'foldiers:drawSend': ['canvas', 'send button'], 'foldiers:drawTags': ['canvas', 'region tags'], 'foldiers:resourceList': ['hud', 'resources'],
-  'foldiers:why': ['notice', 'refusal'], 'foldiers:DOCTRINES': ['item', 'doctrine'], 'foldiers:failReason': ['end', 'end title'],
-  'foldiers:NATURE': ['world', 'terrain'],
+  'foldiers:WHO': ['panel', 'camp name'], 'foldiers:BUY': ['panel', 'hand card'], 'foldiers:PIECE_NAME': ['panel', 'hand card'],
+  'foldiers:groupsOf': ['panel', 'hand card'], 'foldiers:renderHand': ['panel', 'hand card'], 'foldiers:shieldOf': ['canvas', 'region tags'],
+  'foldiers:ticksText': ['canvas', 'order arrows'], 'foldiers:drawArrows': ['canvas', 'order arrows'], 'foldiers:drawPins': ['canvas', 'order arrows'],
+  'foldiers:drawSend': ['canvas', 'send button'], 'foldiers:drawReserve': ['canvas', 'send button'], 'foldiers:drawTags': ['canvas', 'region tags'],
+  'foldiers:resourceList': ['hud', 'resources'], 'foldiers:drawResource': ['hud', 'resources'], 'foldiers:drawInfo': ['canvas', 'region card'], 'foldiers:failReason': ['end', 'end title'], 'foldiers:NATURE': ['world', 'terrain'],
   // gelatile
   'gelatile:records': ['menu', 'ranking, modes tab'], 'gelatile:doMove': ['callout', 'merge'], 'gelatile:goalText': ['level', 'objective'],
   // grudgeon
@@ -570,8 +570,7 @@ const DECLARED = {
   // triverse
   'triverse:pushBand': ['callout', 'band'],
   // functions whose locals hold the words (no table to name)
-  'foldiers:classify': ['notice', 'refusal'], 'foldiers:partsText': ['info', 'attack parts'], 'foldiers:attackParts': ['info', 'attack parts'],
-  'foldiers:defParts': ['info', 'attack parts'], 'foldiers:tryMap': ['info', 'attack parts'], 'foldiers:FIELD': ['info', 'attack parts'],
+  'foldiers:tryMap': ['info', 'attack parts'], 'foldiers:FIELD': ['info', 'attack parts'],
   'grudgeon:openShop': ['panel', 'shop'], 'grudgeon:waresNode': ['panel', 'shop'], 'grudgeon:openEvent': ['menu', 'tap line'],
   'grudgeon:basePlan': ['panel', 'fight action'], 'grudgeon:alt': ['panel', 'fight choice'],
   'slipdeck:opDone': ['canvas', 'score count'],

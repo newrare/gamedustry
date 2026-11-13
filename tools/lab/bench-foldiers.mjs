@@ -25,8 +25,7 @@ const SEEDS = +(process.argv[2] || 3);
 const ONLY = process.argv[3] ? process.argv[3].split(",").map(Number) : null;
 let src = readFileSync(SRC, "utf8");
 src = src.replace("    return { reset: reset, update: update,",
-  "    globalThis.__F = { S: function () { return { regions: regions, orders: orders, cavOrders: cavOrders, phase: phase, won: won, lost: lost, tick: tick, M: M, stat: stat, gold: gold, rules: rules, acts: acts, row: row, score: score, latch: latch, GEO: GEO, pickDoctrine: pickDoctrine }; }, setPick: function (v) { pickDoctrine = v; doctrine = v ? '' : 'blitz'; }, setDoc: function (d) { doctrine = d; pickDoctrine = false; }, classify: classify, forecast: forecast, verdict: verdict, startResolve: startResolve, applyResolve: applyResolve, finish: finish, tallyNow: tallyNow, objNow: objNow, owns: owns, genMap: genMap, STAGES: STAGES, fitZoom: fitZoom, setRng: function (s) { rng = makeRng(s); }, adj: function () { return adj; }, regionActions: regionActions, mult: mult, defParts: defParts, ATK: typeof ATTACK_PTS === 'undefined' ? 1 : ATTACK_PTS, cavReach: cavReach, isNb: isNb, canCross: canCross };\n    return { reset: reset, update: update,");
-
+  "    globalThis.__F = { S: function () { return { regions: regions, orders: orders, acts: acts, reserve: reserve, phase: phase, won: won, lost: lost, tick: tick, M: M, stat: stat, gold: gold, rules: rules, row: row, score: score, latch: latch, GEO: GEO }; }, startResolve: startResolve, applyResolve: applyResolve, finish: finish, tallyNow: tallyNow, objNow: objNow, owns: owns, genMap: genMap, STAGES: STAGES, fitZoom: fitZoom, setRng: function (s) { rng = makeRng(s); }, adj: function () { return adj; }, cavReach: cavReach, isNb: isNb, canCross: canCross, targetsBy: targetsBy, modeFor: modeFor, newConvoy: newConvoy, freeFoot: freeFoot, freeCav: freeCav, goldLeft: goldLeft, canPlace: canPlace, placeReserve: placeReserve, holdsNow: holdsNow };\n    return { reset: reset, update: update,");
 function noop() {}
 const ctx2d = new Proxy({}, { get: (t, k) => k === "createImageData" ? (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) })
   : k === "measureText" ? (s) => ({ width: String(s).length * 11 }) : k === "getImageData" ? (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) })
@@ -61,39 +60,47 @@ function goalOf(s) {
 }
 function pilot(careful) {
   const s = F.S(), R = s.regions, adj = F.adj();
-  if (s.pickDoctrine) F.setDoc("blitz");
-  R.forEach((r) => { if (r.owner === 1 && s.rules.recruit && (r.city || r.capital) && s.gold[1] >= 3) { s.gold[1] -= 3; s.acts.push({ kind: "recruit", at: r.id }); s.stat.recruit[r.id] = true; } });
   const goal = goalOf(s);
-  // what a region must keep: enough to hold against its enemy neighbours
-  const keepOf = (r) => Math.ceil(adj[r.id].reduce((t, n) => t + (R[n].owner > 1 && R[n].owner !== 4 ? R[n].troops : 0), 0) / 1.5) + (r.capital ? 1 : 0);
   // steps to the goal, through any land a column can cross
   const dist = {}; const q = [goal]; dist[goal] = 0;
   while (q.length) { const c = q.shift(); adj[c].forEach((n) => { if (dist[n] == null && F.canCross(c, n)) { dist[n] = dist[c] + 1; q.push(n); } }); }
+  // the reserve lands on the region of yours closest to the goal
+  const drop = R.filter((r) => F.canPlace(r.id)).sort((a, b) => (dist[a.id] ?? 99) - (dist[b.id] ?? 99))[0];
+  if (drop && s.reserve[1] > 0) F.placeReserve(drop.id, s.reserve[1]);
+  R.forEach((r) => { if (r.owner === 1 && s.rules.recruit && (r.city || r.capital) && F.goldLeft() >= 3) (s.acts[r.id] = s.acts[r.id] || {}).recruit = true; });
+  // what a region must keep: enough to hold against its enemy neighbours
+  const keepOf = (r) => Math.ceil(adj[r.id].reduce((t, n) => t + (R[n].owner > 1 ? R[n].troops : 0), 0) / 1.5) + (r.capital ? 1 : 0);
+  const free = (n) => F.freeFoot(n) + F.freeCav(n);
+  const send = (from, to, n, mode) => {
+    const r = R[from], c = F.newConvoy(to, mode || F.modeFor(from, to, "march"));
+    c.cav = mode === "ship" ? 0 : Math.min(F.freeCav(from), n); c.foot = Math.min(n - c.cav, F.freeFoot(from));
+    if (r.cannon && F.targetsBy(from, "fire", 1).indexOf(to) >= 0 && R[to].owner !== 1) c.fire = true;
+    if (c.foot + c.cav > 0 || c.fire) (s.orders[from] = s.orders[from] || []).push(c);
+  };
   const used = {};
-  const reach = (n, t) => { const c = F.classify(n, t, null, 1); return c.ok && !c.eta; };
+  const reach = (n, t) => F.targetsBy(n, "march", 1).indexOf(t) >= 0 && F.isNb(n, t);
   const cands = R.filter((t) => t.owner !== 1 && adj[t.id].some((n) => R[n].owner === 1 && reach(n, t.id)));
   cands.sort((a, b) => (dist[a.id] == null ? 99 : dist[a.id]) - (dist[b.id] == null ? 99 : dist[b.id]) || a.troops - b.troops);
   for (const t of cands) {
-    const k = F.mult(F.defParts(t.id, t.owner, t.general)) / F.ATK;   // in attacking troops
-    const need = t.troops * k * (careful ? 1.3 : 1.08) + 0.6 + (t.capital ? 2 : 0);
-    const src = adj[t.id].filter((n) => R[n].owner === 1 && !used[n] && R[n].troops > 1 && reach(n, t.id));
-    src.sort((a, b) => R[b].troops - R[a].troops);
+    const need = (t.troops + (t.palisade || t.owner > 1 ? 1 : 0)) * (careful ? 1.3 : 1.08) + 1 + (t.capital ? 2 : 0);
+    const src = adj[t.id].filter((n) => R[n].owner === 1 && !used[n] && free(n) > 1 && reach(n, t.id));
+    src.sort((a, b) => free(b) - free(a));
     let sum = 0; const pick = [];
-    for (const n of src) { if (sum >= need) break; sum += R[n].troops - (R[n].capital ? keepOf(R[n]) : 0); pick.push(n); }
+    for (const n of src) { if (sum >= need) break; sum += free(n) - (R[n].capital ? keepOf(R[n]) : 0); pick.push(n); }
     if (sum < need) continue;
-    pick.forEach((n) => { used[n] = true; s.orders[n] = { to: t.id, frac: 1, kind: "move" }; });
+    pick.forEach((n) => { used[n] = true; send(n, t.id, free(n) - (R[n].capital ? keepOf(R[n]) : 0)); });
   }
   // overseas: a full harbour ships to the nearest harbour of the goal's side
   if (dist[s.M.roles.blueCap] == null || R[s.M.roles.blueCap].comp !== R[goal].comp) {
-    R.filter((r) => r.owner === 1 && r.harbour && !used[r.id] && r.troops >= 6).forEach((h) => {
+    R.filter((r) => r.owner === 1 && r.harbour && !used[r.id] && F.freeFoot(r.id) >= 6).forEach((h) => {
       const dst = R.filter((t) => t.harbour && t.owner !== 1 && t.comp !== h.comp).sort((a, b) => (dist[a.id] ?? 99) - (dist[b.id] ?? 99) || a.troops - b.troops)[0];
-      if (dst && F.classify(h.id, dst.id, null, 1).ok) { used[h.id] = true; s.orders[h.id] = { to: dst.id, frac: 1, kind: "fleet" }; }
+      if (dst) { used[h.id] = true; send(h.id, dst.id, F.freeFoot(h.id), "ship"); }
     });
   }
   // the rest marches toward the goal, a step a tick, leaving one behind
   const front = (r) => adj[r.id].some((n) => R[n].owner > 1);
   R.forEach((r) => {
-    if (r.owner !== 1 || used[r.id] || r.troops < 2 || front(r)) return;
+    if (r.owner !== 1 || used[r.id] || free(r.id) < 2 || front(r)) return;
     let best = -1;
     adj[r.id].forEach((n) => { if (R[n].owner === 1 && F.canCross(r.id, n) && dist[n] != null && (best < 0 || dist[n] < dist[best])) best = n; });
     if (best < 0 || (dist[best] ?? 99) >= (dist[r.id] ?? 99)) {
@@ -103,8 +110,8 @@ function pilot(careful) {
       adj[r.id].forEach((n) => { if (R[n].owner === 1 && F.canCross(r.id, n) && (best < 0 || Math.hypot(R[n].cx - hb[0].cx, R[n].cy - hb[0].cy) < Math.hypot(R[best].cx - hb[0].cx, R[best].cy - hb[0].cy))) best = n; });
       if (best < 0 || r.harbour) return;
     }
-    const go = r.troops - Math.max(1, keepOf(r));
-    if (go > 0) s.orders[r.id] = { to: best, n: go, frac: 1, kind: "move" };
+    const go = free(r.id) - Math.max(1, keepOf(r));
+    if (go > 0) send(r.id, best, go, "march");
   });
 }
 
