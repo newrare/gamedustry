@@ -892,6 +892,25 @@
     }
   },
   "itch": {
+    "user": "newrare",
+    "project": "foldiers",
+    "channel": "html5",
+    "tags": [
+      "strategy",
+      "turn-based",
+      "turn-based-strategy",
+      "war",
+      "paper",
+      "singleplayer",
+      "2d",
+      "casual"
+    ],
+    "viewport": [
+      450,
+      800
+    ],
+    "mobileFriendly": true,
+    "cta": false,
     "page": {
       "art": {
         "showcase": {
