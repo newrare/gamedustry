@@ -189,7 +189,109 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            10,
+            3,
+            7
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker11"
+          ]
+        },
+        "hands": [
+          "card-queen",
+          "card-king",
+          "sticker16"
+        ],
+        "favours": [
+          "favour-points01",
+          "favour-rule01",
+          "favour-survive01"
+        ],
+        "riviera": [
+          "home06",
+          "home08",
+          "home04"
+        ]
+      },
+      "en": {
+        "hook": "Bridge, minus the bidding.",
+        "pitch": [
+          "Bridge played under the Riviera sun. Skip straight to the card play and outwit a defence that never gives a trick away.",
+          "Every level is a puzzle with a way through, if you spot the <b>finesse</b>, the ruff or the entry. And when it gets tough, cheat a little."
+        ],
+        "sections": [
+          {
+            "key": "hands",
+            "title": "Play both hands",
+            "text": [
+              "You are always the declarer. Your hand is at the bottom, your partner's dummy lies face up at the top, and both are yours to play.",
+              "Every level is a short ending of a few cards, the way a bridge column sets a problem."
+            ]
+          },
+          {
+            "key": "favours",
+            "title": "Forty favours",
+            "text": [
+              "Pick one favour out of three at the start of a tournée and after every contract you make. It stays with you to the end."
+            ],
+            "list": [
+              [
+                "Vision",
+                "shows what is hidden."
+              ],
+              [
+                "Hand",
+                "changes the cards you hold."
+              ],
+              [
+                "Rule",
+                "bends a rule, once."
+              ],
+              [
+                "Points",
+                "multiplies the score."
+              ],
+              [
+                "Safety",
+                "saves a life."
+              ],
+              [
+                "Defence",
+                "shakes the defenders."
+              ]
+            ]
+          },
+          {
+            "key": "riviera",
+            "title": "The Riviera",
+            "text": [
+              "Thirty levels carry you from the beach and the lagoon to the terrace, the olive grove and the lantern square, one more card at a time."
+            ],
+            "list": [
+              [
+                "A tournée",
+                "is a few deals with three lives, and a contract that goes down costs one."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, take both hands and make that contract."
+      }
+    }
   },
   "web": {
     "copy": {

@@ -201,7 +201,81 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            4,
+            7,
+            12
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-06"
+          ]
+        },
+        "machine": [
+          "decor-02",
+          "decor-07",
+          "decor-09"
+        ],
+        "spark": [
+          "sticker19",
+          "card-tesla",
+          "card-live-wire"
+        ],
+        "upgrade": [
+          "card-torrent",
+          "card-shield",
+          "card-master-key"
+        ]
+      },
+      "en": {
+        "hook": "Keep the infernal machine running.",
+        "pitch": [
+          "Marbles pour onto chrome rails, race through loops, spirals and tubes, and fall into glowing arrivals. You are the one who keeps it all moving.",
+          "Open the gates in time, follow the electric marble and send your Combo through the roof."
+        ],
+        "sections": [
+          {
+            "key": "machine",
+            "title": "A living machine",
+            "text": [
+              "Every loop, spiral, jump and booster pays a few points, and every staircase rings a note at each ledge.",
+              "Thirty machines in five biomes, from one switch and two arrivals to six switches, six gates and six arrivals."
+            ]
+          },
+          {
+            "key": "spark",
+            "title": "Chase the spark",
+            "text": [
+              "Gates lock at random. Tap one to open it, and the Dynamo lights up.",
+              "One marble is electric, and you can always follow it. Tap an arrival to move the blue socket under it, and every point you score is multiplied by a <b>Combo</b> with no top."
+            ]
+          },
+          {
+            "key": "upgrade",
+            "title": "Pick an upgrade",
+            "text": [
+              "Catch the electric marble at a charged socket and the machine pauses to deal you two upgrade cards.",
+              "Pick one. It might help you, add points, or bring a bonus with a risk."
+            ],
+            "list": [
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, watch the marbles pour and keep the machine running."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.gearball",

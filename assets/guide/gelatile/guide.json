@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/gelatile — do not edit",
  "slug": "gelatile",
- "stamp": "6b3873b0efd4eea6",
+ "stamp": "2d076413d2b9594c",
  "en": {
   "title": "Gelatile",
   "howTo": "Swipe to merge identical tiles to reach your goal",

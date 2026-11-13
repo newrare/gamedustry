@@ -201,7 +201,102 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            9,
+            6,
+            5
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "mark01"
+          ]
+        },
+        "keep": [
+          "card-king",
+          "card-queen",
+          "decor-01"
+        ],
+        "jokers": [
+          "joker05",
+          "joker30",
+          "joker34"
+        ],
+        "collect": [
+          "sticker08",
+          "home02",
+          "mark04"
+        ]
+      },
+      "en": {
+        "hook": "Poker, one swipe at a time.",
+        "pitch": [
+          "A counted deck deals one card at a time onto the felt. Flick it right to keep it, flick it left to bin it, and build the best Poker hand you can.",
+          "There is no timer. The deck is the clock, and every card you bin is a card no hand will ever get."
+        ],
+        "sections": [
+          {
+            "key": "keep",
+            "title": "Keep or bin",
+            "text": [
+              "Every card is a small bet. Keep the one that makes your pair and bin the one that spoils it.",
+              "Cards you bin drop their chips into a <b>pot</b>, and every paid hand takes a share of it."
+            ]
+          },
+          {
+            "key": "jokers",
+            "title": "Cheat with Jokers",
+            "text": [
+              "Paid hands fill a gauge, and a full gauge deals you two <b>Jokers</b> to choose from. The one you take stays for the whole run."
+            ],
+            "list": [
+              [
+                "Four fingers",
+                "makes flushes and straights with one card less."
+              ],
+              [
+                "Rewind",
+                "gives you back the last card you binned."
+              ],
+              [
+                "Called shot",
+                "boosts your multiplier if you call the hand and make it."
+              ],
+              [
+                "Golden bin",
+                "pays chips for every card you throw away."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Keep coming back",
+            "list": [
+              [
+                "30 levels",
+                "three stars on each, and a new idea every few levels."
+              ],
+              [
+                "Special cards",
+                "gold, wild, glass, lucky, cursed and veiled ones shake up a hand."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, take a seat at the felt and swipe."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.slipdeck",

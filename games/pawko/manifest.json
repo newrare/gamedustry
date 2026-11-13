@@ -219,7 +219,105 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            2,
+            5,
+            7
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker18"
+          ]
+        },
+        "play": [
+          "sticker20",
+          "sticker10",
+          "home02"
+        ],
+        "cards": [
+          "sticker15",
+          "home05",
+          "sticker13"
+        ],
+        "jackpot": [
+          "sticker16",
+          "home06",
+          "sticker19"
+        ]
+      },
+      "en": {
+        "hook": "Pachinko luck, card-game brains.",
+        "pitch": [
+          "A pachinko board, a hand of cards and a lucky cat. Drag a card onto the board and a wave of balls rains down from wherever you let go.",
+          "Every point is multiplied, so find the right combination and watch the multiplier run away with your score."
+        ],
+        "sections": [
+          {
+            "key": "play",
+            "title": "Play your cards",
+            "text": [
+              "Five waves of balls, and before each one you choose where it falls. Pick the right card for the right spot.",
+              "Every peg and every exit pays its points times the <b>global multiplier</b>, so a good wave can go through the roof."
+            ]
+          },
+          {
+            "key": "cards",
+            "title": "Fifty cards",
+            "text": [
+              "Four kinds of card, and they love to be combined."
+            ],
+            "list": [
+              [
+                "Peg cards",
+                "turn the board into fire, ice, bumpers, magnets, bombs and more for the rest of the game."
+              ],
+              [
+                "Wave cards",
+                "fatten, freeze, burn, charge or double a single wave."
+              ],
+              [
+                "Charms",
+                "stay for the whole game and grow, from a pyromaniac to a domino of bombs."
+              ],
+              [
+                "Tricks",
+                "copy the last card you played, or bring it back."
+              ]
+            ]
+          },
+          {
+            "key": "jackpot",
+            "title": "Hit the jackpot",
+            "text": [
+              "Thirty levels from the Lobby to the Jackpot. Every level up to the twelfth brings four new cards."
+            ],
+            "list": [
+              [
+                "Plain brass",
+                "every board opens plain, and your cards make it blaze."
+              ],
+              [
+                "20 stickers",
+                "lucky cat faces, a paw chest and a lucky fish, won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "The endless run",
+                "opens once all 90 stars are yours."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, pick a card and let the balls fall."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.pawko",

@@ -292,7 +292,106 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            7,
+            6,
+            11
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "foe-onryo01"
+          ]
+        },
+        "dungeon": [
+          "home01",
+          "home08",
+          "items09"
+        ],
+        "fights": [
+          "foe-kappa01",
+          "foe-oni01",
+          "foe-jinmenken01"
+        ],
+        "heroes": [
+          "hero-kenji01",
+          "hero-akane01",
+          "head04"
+        ]
+      },
+      "en": {
+        "hook": "Every half-open door hides a nightmare.",
+        "pitch": [
+          "Walk a haunted dungeon one lit room at a time. Behind every door waits a <b>Yokai</b>, a merchant, an altar or a surprise.",
+          "Thirty levels, from a high school after dark to the gate of Yomi. Read every move the Yokai make, and exorcise them one by one."
+        ],
+        "sections": [
+          {
+            "key": "dungeon",
+            "title": "Open every door",
+            "text": [
+              "The way down is a map that lights up one room at a time. Behind each door waits a Yokai, a wandering merchant, an altar of blessings, a strange encounter or a hidden bonus.",
+              "Every step burns a candle. When the dark catches you, the rooms keep their secrets and the Yokai grow stronger."
+            ]
+          },
+          {
+            "key": "fights",
+            "title": "Read the fight",
+            "text": [
+              "Fights run on a timeline you can read. The Yokai shows its next turns ahead, with its target and its damage, so nothing hits you by surprise.",
+              "Each of the twenty Yokai bends the fight by a rule out of its legend."
+            ],
+            "list": [
+              [
+                "Hanako-san",
+                "knock three times."
+              ],
+              [
+                "Jinmenken",
+                "leave the stray dog alone."
+              ],
+              [
+                "Kappa",
+                "spill its dish."
+              ],
+              [
+                "Oni",
+                "never strike it the same way twice."
+              ]
+            ]
+          },
+          {
+            "key": "heroes",
+            "title": "Four heroes",
+            "text": [
+              "Each haunted place sends one hero down alone. The others wait in its rooms, ready to join you and learn new scrolls, fight after fight."
+            ],
+            "list": [
+              [
+                "Akane",
+                "the shrine maiden."
+              ],
+              [
+                "Kenji",
+                "the kendo captain."
+              ],
+              [
+                "Yuki",
+                "the onmyoji."
+              ],
+              [
+                "Haru",
+                "the occult photographer."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, light your lantern and open the first door."
+      }
+    }
   },
   "web": {
     "copy": {

@@ -290,7 +290,105 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            11,
+            8,
+            4
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "item03"
+          ]
+        },
+        "weave": [
+          "peak02",
+          "item01",
+          "decor-03"
+        ],
+        "biomes": [
+          "lightning05",
+          "trap-peak03",
+          "lava05"
+        ],
+        "grow": [
+          "item06",
+          "item05",
+          "item04"
+        ]
+      },
+      "en": {
+        "hook": "One tap. One hungry viper.",
+        "pitch": [
+          "Vipera races up an endless burrow and never stops. Every tap changes her direction, so a rhythm of taps weaves her through the thorns.",
+          "Eat eggs to grow longer and faster, and dodge everything the burrow throws at you. Every hit costs a life."
+        ],
+        "sections": [
+          {
+            "key": "weave",
+            "title": "Tap to weave",
+            "text": [
+              "Walls only push Vipera back, at no cost, so find your rhythm. The best players even slip between two close thorns.",
+              "Every egg makes her grow and score, and a chain of eggs pays more and more."
+            ]
+          },
+          {
+            "key": "biomes",
+            "title": "Five biomes",
+            "text": [
+              "Thirty levels walk you through all five, with three stars to win on each."
+            ],
+            "list": [
+              [
+                "Jungle",
+                "thorns everywhere, but there is always a way through."
+              ],
+              [
+                "Swamp",
+                "drifting logs, and fireflies that help you collect eggs."
+              ],
+              [
+                "Temple",
+                "spike traps and lightning that can strike twice in a row."
+              ],
+              [
+                "Volcano",
+                "geysers, falling rocks and fire traps."
+              ],
+              [
+                "Lair",
+                "an eagle whose shadow shows where it will strike."
+              ]
+            ]
+          },
+          {
+            "key": "grow",
+            "title": "Grow and evolve",
+            "text": [
+              "The longer Vipera gets, the faster she goes. At full length she grows an <b>armour</b> that takes one hit for her."
+            ],
+            "list": [
+              [
+                "Rainbow egg",
+                "gives her a rainbow armour at once."
+              ],
+              [
+                "Amber",
+                "grows her to just short of full length."
+              ],
+              [
+                "Idol",
+                "makes every point count double."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, find your rhythm and slither."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.vipera",

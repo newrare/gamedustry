@@ -493,7 +493,106 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            11,
+            8,
+            12
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker09"
+          ]
+        },
+        "shots": [
+          "walker01",
+          "boomer01",
+          "sticker01"
+        ],
+        "hole": [
+          "kind01",
+          "ball10",
+          "ball08"
+        ],
+        "bosses": [
+          "boss-greenkeeper01",
+          "boss-king01",
+          "boss-yeti01"
+        ]
+      },
+      "en": {
+        "hook": "Fore! The zombies are coming.",
+        "pitch": [
+          "A zombie horde is shambling down the fairway, and all you have is a bag of five golf balls. Roll them, lob them and watch the dead bowl each other over.",
+          "Sink a ball in the hole and a toxic shockwave wipes the field."
+        ],
+        "sections": [
+          {
+            "key": "shots",
+            "title": "Roll or lob",
+            "text": [
+              "Roll a ball up the grass and it ricochets off the fences, knocking zombies into each other like billiard balls.",
+              "Lob one over the horde and it drops right on their heads."
+            ]
+          },
+          {
+            "key": "hole",
+            "title": "Blast the horde",
+            "text": [
+              "The hole hides among the zombies. Roll a ball in slowly enough and it fires a <b>toxic shockwave</b> that wipes most of the field.",
+              "Or aim for a coloured flag, which wins back a lost flag and loads special balls."
+            ],
+            "list": [
+              [
+                "Special balls",
+                "explosive, multiball, piercing, homing, fire, ice and more."
+              ],
+              [
+                "Supers",
+                "every knockout charges them, from a rain of balls to a golf cart charging up the busiest lane."
+              ],
+              [
+                "Combos",
+                "chain your knockouts and the points climb."
+              ]
+            ]
+          },
+          {
+            "key": "bosses",
+            "title": "Five bosses",
+            "text": [
+              "Thirty levels across five courses, and a boss waiting at the end of each one."
+            ],
+            "list": [
+              [
+                "Greenkeeper",
+                "rides in on his mower."
+              ],
+              [
+                "Caddie Colossus",
+                "blocks your shots and throws golf bags."
+              ],
+              [
+                "Bog Giant",
+                "knock him into a pond."
+              ],
+              [
+                "Yeti",
+                "fire hurts him twice as much."
+              ],
+              [
+                "Zombie King",
+                "sends skull balls back at your tee."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b> and send the first ball down the fairway."
+      }
+    }
   },
   "web": {
     "font": "russoone",

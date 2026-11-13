@@ -29,7 +29,9 @@
   not answer yet — push the site first.
 
   Output: dist/itch-page/<slug>.en.html, plus the theme settings to type into
-  the editor, printed.
+  the editor, printed — and <slug>.preview.html beside it, the same
+  description over the page background with the pictures read off disk, to
+  open in a browser before anything is pushed.
 */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -132,6 +134,22 @@ function pageColour(slug) {
   return '#' + Array.from(r.stdout.subarray(0, 3)).map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 
+/* The description as the page will show it, before the site serves a byte
+   of it: local pictures, the background, a 960 px column. Lato is itch's
+   default face, so the text is close to what itch draws. */
+function previewOf(slug, html) {
+  const local = html.replace(new RegExp(`${SITE}/image/games/${slug}/itch-([\\w-]+)\\.webp`, 'g'),
+    (_, n) => `../../assets/image/itch/${slug}-${n}.webp`);
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${slug} itch preview</title><style>
+body { margin: 0; background: ${pageColour(slug) || '#05050c'} url(../../assets/image/itch/${slug}-background.jpg) no-repeat fixed 50% 0;
+  color: #eef0ff; font: 16px/1.6 Lato, Helvetica, sans-serif; }
+.col { max-width: 960px; margin: 0 auto; padding: 20px 16px 80px; }
+.col img { max-width: 100%; height: auto; } a { color: #4bf5ff; } hr { border: 0; height: 1px; background: rgba(238,240,255,.25); }
+</style></head><body><div class="col">
+${local}</div></body></html>
+`;
+}
+
 async function probe(list) {
   const bad = [];
   await Promise.all([...new Set(list)].map(async (u) => {
@@ -158,6 +176,7 @@ for (const slug of slugs) {
   const { m, html } = await build(slug);
   const out = path.join(OUT, `${slug}.${LANG}.html`);
   await writeFile(out, html);
+  await writeFile(path.join(OUT, `${slug}.preview.html`), previewOf(slug, html));
   const theme = m.theme || {};
   console.log(`\n${slug}  →  ${path.relative(ROOT, out)}  (${Math.round(html.length / 1024)} KB)`);
   console.log('  theme editor:');

@@ -156,7 +156,110 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            3,
+            5,
+            9
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker18"
+          ]
+        },
+        "swipe": [
+          "sticker12",
+          "decor-14",
+          "arrow16"
+        ],
+        "power": [
+          "sticker19",
+          "sticker15",
+          "sticker14"
+        ],
+        "biomes": [
+          "home03",
+          "home06",
+          "home04"
+        ]
+      },
+      "en": {
+        "hook": "Three ropes of light. One fast arrow.",
+        "pitch": [
+          "Three glowing ropes run up the void, curling into loops and crossing each other. Swipe to hop your arrow from one rope to the next.",
+          "Gems and power-ups pay, mines and traps cost. Chain gems into a combo and see how far the run can take you."
+        ],
+        "sections": [
+          {
+            "key": "swipe",
+            "title": "Swipe and jump",
+            "text": [
+              "Swipe left or right to change rope, swipe up to jump. You can even switch rope in mid-air.",
+              "Holes and lasers pass under you, but <b>mines</b> are far too tall to jump."
+            ]
+          },
+          {
+            "key": "power",
+            "title": "Power-ups",
+            "list": [
+              [
+                "Shield",
+                "takes one crash for you."
+              ],
+              [
+                "Magnet",
+                "pulls in the gems of all three ropes."
+              ],
+              [
+                "Ghost",
+                "lets you slip through mines, traps and lasers."
+              ],
+              [
+                "Score x2",
+                "pays double on every gem, combo and loop."
+              ],
+              [
+                "Slow down",
+                "brings you back to the level's starting speed."
+              ]
+            ]
+          },
+          {
+            "key": "biomes",
+            "title": "Five biomes",
+            "text": [
+              "Thirty levels bring the dangers in one at a time, with three stars to win on each."
+            ],
+            "list": [
+              [
+                "Neon",
+                "springboards throw you onto the next rope."
+              ],
+              [
+                "Prism",
+                "lasers cross all three ropes and mines blink."
+              ],
+              [
+                "Storm",
+                "holes open in the ropes."
+              ],
+              [
+                "Comets",
+                "comets race down a rope and pendulums swing between two."
+              ],
+              [
+                "Fusion",
+                "sparks run along a rope before it goes live."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, put your thumb on the glass and swipe."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.triverse",

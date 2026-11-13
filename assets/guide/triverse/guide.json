@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/triverse — do not edit",
  "slug": "triverse",
- "stamp": "588c1156a7a0c290",
+ "stamp": "6940d7350f6b67ab",
  "en": {
   "title": "Triverse",
   "howTo": "Swipe to jump from path to path",

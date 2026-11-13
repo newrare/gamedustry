@@ -193,9 +193,16 @@ function sectionPage(m, font, title, pics) {
   var band = bandEl.getBoundingClientRect();
   var L = band.left - st.left, R = band.right - st.left, T = band.top - st.top, B = band.bottom - st.top;
   var SLOTS = [[L + 14, B + 14, 132, -11], [R - 14, B + 14, 132, 9], [L + (R - L) * 0.72, T + 18, 86, 14]];
+  /* An end piece reaches into the band's padding and no further: a wide one
+     (a comet, a fan of cards) is pushed outwards until it clears the title. */
+  var REACH = 78;
   for (var i = 0; i < SLOTS.length; i++) {
     var el = document.getElementById('p' + i); if (!el) break;
     put(el, SLOTS[i][0], SLOTS[i][1], SLOTS[i][2], SLOTS[i][3]);
+    if (i > 1) continue;
+    var w = el.offsetWidth;
+    var cx = i === 0 ? Math.min(SLOTS[i][0], L + REACH - w / 2) : Math.max(SLOTS[i][0], R - REACH + w / 2);
+    el.style.left = (cx - w / 2) + 'px';
   }`;
   return pageOf(m, font, w, body, script);
 }

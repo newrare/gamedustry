@@ -155,7 +155,104 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            4,
+            6,
+            7
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-05"
+          ]
+        },
+        "fork": [
+          "sticker24",
+          "sticker18",
+          "sticker12"
+        ],
+        "rivals": [
+          "sticker14",
+          "sticker09",
+          "sticker07"
+        ],
+        "climb": [
+          "home02",
+          "home06",
+          "decor-21"
+        ]
+      },
+      "en": {
+        "hook": "Start last. Fight for the flag.",
+        "pitch": [
+          "You start dead last on a bending neon highway. Hold the left or right of the screen to lean, dodge the traps and climb the board one overtake at a time.",
+          "A line across the tarmac marks every Check Point. Fall short of the rank it asks for and you are out."
+        ],
+        "sections": [
+          {
+            "key": "fork",
+            "title": "Speed or safety",
+            "text": [
+              "Every so often the tarmac forks. One branch has the charge cells that refill your shield, the other has <b>Boosters</b>, often guarded by mines."
+            ]
+          },
+          {
+            "key": "rivals",
+            "title": "Meet the rivals",
+            "text": [
+              "A craft's colour tells you how it drives, long before you reach it."
+            ],
+            "list": [
+              [
+                "Scouts",
+                "green craft that get out of your way."
+              ],
+              [
+                "Drones",
+                "blue craft that drive straight ahead, blind to you."
+              ],
+              [
+                "Stalkers",
+                "yellow craft that steer into you."
+              ],
+              [
+                "Marshals",
+                "red craft that block your line."
+              ],
+              [
+                "Rams",
+                "violet craft that come straight for you."
+              ]
+            ]
+          },
+          {
+            "key": "climb",
+            "title": "Dusk to night",
+            "text": [
+              "Thirty levels take you from Dusk through Day, Mist and Overcast to Night, where every hazard and every pilot comes at once."
+            ],
+            "list": [
+              [
+                "Three stars",
+                "one for the distance, two for the flag, three for crossing it first."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, hold a side of the screen and chase the flag."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.arcider",

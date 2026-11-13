@@ -645,7 +645,105 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            7,
+            2,
+            10
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-01"
+          ]
+        },
+        "parry": [
+          "sticker17",
+          "sticker15",
+          "sticker08"
+        ],
+        "supers": [
+          "super01",
+          "super07",
+          "super02"
+        ],
+        "lands": [
+          "zombie01",
+          "skeleton01",
+          "vampire01"
+        ]
+      },
+      "en": {
+        "hook": "Parry the Halloween horde.",
+        "pitch": [
+          "One little witch, one spinning magic shield and a night full of monsters. Parry your own magic balls to push the horde back across five haunted lands.",
+          "Throw back every monster that comes too close, and watch a thrown giant bowl over the rest."
+        ],
+        "sections": [
+          {
+            "key": "parry",
+            "title": "Parry and throw",
+            "text": [
+              "Turn the shield with the dial under your thumb and bounce your magic balls out into the monsters. Hit one with the white notch for a <b>Perfect</b> parry that pays more.",
+              "A monster that touches the shield slides far away. Throw one hard enough and it <b>bowls over</b> the others."
+            ]
+          },
+          {
+            "key": "supers",
+            "title": "Cast your supers",
+            "text": [
+              "Pick your supers before each stage, then fire them at just the right moment."
+            ],
+            "list": [
+              [
+                "Lightning",
+                "strikes the three monsters nearest the witch."
+              ],
+              [
+                "Freeze",
+                "slows the whole world for a few seconds."
+              ],
+              [
+                "Fire Rain",
+                "six fireballs fall on the monsters."
+              ],
+              [
+                "Pickups",
+                "any ball can grab them. A star widens the shield and a candle throws flames."
+              ]
+            ]
+          },
+          {
+            "key": "lands",
+            "title": "Five haunted lands",
+            "text": [
+              "Thirty stages from the haunted forest to the dragon's throne, with nineteen monsters and a few tricks up their sleeves."
+            ],
+            "list": [
+              [
+                "Zombie",
+                "very slow, very tough, and it may climb back out of its tombstone."
+              ],
+              [
+                "Skeleton",
+                "falls apart, then pulls itself together."
+              ],
+              [
+                "Vampire",
+                "blinks from one side to the other, a little closer each time."
+              ],
+              [
+                "Dragon",
+                "spits fireballs, and you can send them right back."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, grab your shield and push back the night."
+      }
+    }
   },
   "web": {
     "font": "bungee",

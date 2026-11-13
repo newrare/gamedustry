@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/stratideck — do not edit",
  "slug": "stratideck",
- "stamp": "34a8fe9080ab7987",
+ "stamp": "88bd57a40b65b61a",
  "en": {
   "title": "Stratideck",
   "howTo": "Drag one of your blue cards onto a red enemy tile.",

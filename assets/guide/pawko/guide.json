@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/pawko — do not edit",
  "slug": "pawko",
- "stamp": "2a28433e273c7171",
+ "stamp": "ab95435a181927a8",
  "en": {
   "title": "Pawko",
   "howTo": "Drag a card onto the board to drop a wave of balls",

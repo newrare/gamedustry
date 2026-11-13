@@ -151,7 +151,106 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            4,
+            2,
+            10
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker16"
+          ]
+        },
+        "echo": [
+          "ball13",
+          "decor-bolt-03",
+          "sticker15"
+        ],
+        "mazes": [
+          "sticker20",
+          "sticker19",
+          "sticker11"
+        ],
+        "read": [
+          "sticker13",
+          "sticker14",
+          "home06"
+        ]
+      },
+      "en": {
+        "hook": "Memorise the maze. Then it goes dark.",
+        "pitch": [
+          "An electric labyrinth lights up for a heartbeat, then everything goes out. Fire pulses into the dark and read the walls in the echoes.",
+          "Only one door leads out. The rest are dead ends."
+        ],
+        "sections": [
+          {
+            "key": "echo",
+            "title": "Echo in the dark",
+            "text": [
+              "In the dark, a wall only shows where a pulse strikes it, then fades. Drag to aim, let go to fire, and read the maze in the <b>echoes</b>.",
+              "Each door is a one-way flap that drops shut behind your pulse."
+            ]
+          },
+          {
+            "key": "mazes",
+            "title": "Sneaky mazes",
+            "text": [
+              "Five kinds of maze, and each one adds a new way to get lost."
+            ],
+            "list": [
+              [
+                "Dark maze",
+                "just the maze, its doors and one exit."
+              ],
+              [
+                "False exits",
+                "look just like the true one but swallow your pulse."
+              ],
+              [
+                "Crystal lock",
+                "a bar seals every exit until you break the crystal."
+              ],
+              [
+                "Live fence",
+                "a gap moves from door to door in a fixed order."
+              ],
+              [
+                "Full surge",
+                "spot the true exit, then break the crystal before you go for it."
+              ]
+            ]
+          },
+          {
+            "key": "read",
+            "title": "Perfect read",
+            "text": [
+              "Fewer pulses, bigger score. Escape on the first shot and the maze pays you the most.",
+              "Out of pulses and still inside? The maze lights up one last time to show you the answer."
+            ],
+            "list": [
+              [
+                "30 stages",
+                "from the dark maze to the full surge."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, turn the sound up and aim into the dark."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.echomaze",

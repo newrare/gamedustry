@@ -148,7 +148,104 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            1,
+            6,
+            5
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker03"
+          ]
+        },
+        "pop": [
+          "sticker20",
+          "sticker19",
+          "sticker15"
+        ],
+        "rainbow": [
+          "decor-01",
+          "decor-03",
+          "bubble13"
+        ],
+        "realms": [
+          "home05",
+          "home06",
+          "home02"
+        ]
+      },
+      "en": {
+        "hook": "Pop faster than the blight.",
+        "pitch": [
+          "Drag to aim, release to fire, and burst the wall before the blight eats it. Colourful clusters pop one bubble at a time, and a rainbow can turn the tables.",
+          "There is no clock, only the rot. Every few seconds it reaches one more bubble."
+        ],
+        "sections": [
+          {
+            "key": "pop",
+            "title": "Pop and drop",
+            "text": [
+              "Match three and the cluster bursts one bubble at a time, each pop scoring on its own.",
+              "Cut away what holds a group to the ceiling and the whole group falls. Keep popping and your <b>Combo</b> climbs up to ×6."
+            ],
+            "list": [
+              [
+                "Swap",
+                "the loaded bubble for the next one, for free."
+              ]
+            ]
+          },
+          {
+            "key": "rainbow",
+            "title": "Rainbow cure",
+            "text": [
+              "A rainbow bubble is a joker. In the wall it takes the colour that fits, and it can join two groups into one match.",
+              "Fired into the rot, it gives bubbles their colour back, and the more rot there is, the <b>stronger</b> the cure."
+            ],
+            "list": [
+              [
+                "A rotten bubble",
+                "never pops, and cutting it off only makes the rot break out somewhere else."
+              ]
+            ]
+          },
+          {
+            "key": "realms",
+            "title": "Five realms",
+            "text": [
+              "Thirty levels climb through five realms, and the walls get cleverer on the way."
+            ],
+            "list": [
+              [
+                "Marsh",
+                "the first walls start clean, with just two colours."
+              ],
+              [
+                "Ruins",
+                "walls draw shapes, from diamonds to lattices, rings and crosses."
+              ],
+              [
+                "Gorge",
+                "most walls start with two outbreaks of rot."
+              ],
+              [
+                "Castle",
+                "new shapes to spot, like an arrow and cherries."
+              ],
+              [
+                "Throne",
+                "from level 26, every wall starts with three outbreaks."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, drag to aim and pop that wall."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.blight",

@@ -351,7 +351,106 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            9,
+            4,
+            7
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "cast-red-09-s",
+            "decor-03"
+          ]
+        },
+        "grid": [
+          "cast-blue-01-s",
+          "item-skull",
+          "item-straw"
+        ],
+        "tier": [
+          "cast-blue-10-s",
+          "cast-red-10-s",
+          "piece-08"
+        ],
+        "camp": [
+          "home07",
+          "home09",
+          "home05"
+        ]
+      },
+      "en": {
+        "hook": "Outsmart an army you cannot see.",
+        "pitch": [
+          "The red troops wait on a grid, every card face down. Drag one of your own onto an enemy, watch it turn over and let two numbers decide the fight.",
+          "Win a battle and you can take a prisoner, who changes sides in time. Between battles, a camp full of unique officers is yours to run."
+        ],
+        "sections": [
+          {
+            "key": "grid",
+            "title": "Read the grid",
+            "text": [
+              "Only the last card you turned over stays face up, so bluff, remember and pick your fights. Straw men, fences, rocks, forests, skulls and books hide on the battlefield too, and each one needs the right soldier to break it."
+            ],
+            "list": [
+              [
+                "Spy",
+                "can quietly defeat a Marshal."
+              ],
+              [
+                "Sapper",
+                "is the only card that clears a trap."
+              ],
+              [
+                "Scout",
+                "reveals a hidden card without fighting it."
+              ]
+            ]
+          },
+          {
+            "key": "tier",
+            "title": "Grade, then Tier",
+            "text": [
+              "The higher <b>Grade</b> wins. When Grades match, the better <b>Tier</b> breaks the tie, and only two cards that match on both fall together.",
+              "Beat a better card and yours limps away <b>wounded</b>. Beat a plainly weaker one and you can march a <b>prisoner</b> off to your camp."
+            ]
+          },
+          {
+            "key": "camp",
+            "title": "Run your camp",
+            "text": [
+              "Between battles, the village is where your army lives. Every card is a <b>unique officer</b>, and your camp never holds the same one twice."
+            ],
+            "list": [
+              [
+                "Recruits",
+                "turn up at the recruiting tent with every Grade on offer."
+              ],
+              [
+                "Prison",
+                "captives change sides if you give them time."
+              ],
+              [
+                "Missions",
+                "send a squad away and wait for its report."
+              ],
+              [
+                "Defence",
+                "set your flag and your cards before the red army raids you."
+              ],
+              [
+                "30 levels",
+                "from the Outpost to the Citadel."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, turn over your first card and lead the charge."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.stratideck",

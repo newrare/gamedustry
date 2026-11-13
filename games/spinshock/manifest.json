@@ -147,7 +147,102 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            8,
+            2,
+            12
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-04"
+          ]
+        },
+        "impact": [
+          "decor-10",
+          "decor-01",
+          "home02"
+        ],
+        "rivals": [
+          "sticker16",
+          "sticker17",
+          "sticker14"
+        ],
+        "collect": [
+          "sticker11",
+          "home06",
+          "home05"
+        ]
+      },
+      "en": {
+        "hook": "Time your tap. Blast them away.",
+        "pitch": [
+          "Your top spins in a glowing battle dish while rival tops charge in. Tap on the impact and a shockwave sends them flying into the electric walls.",
+          "Every hit costs you spin and every shockwave winds it back up. Keep it turning and become the king of the arena."
+        ],
+        "sections": [
+          {
+            "key": "impact",
+            "title": "Tap on impact",
+            "text": [
+              "Tap just before a rival hits you. The closer to the impact, the more it pays, and a gold ring means a <b>perfect</b>.",
+              "Hit after hit, your <b>combo</b> climbs. One wave can catch several tops, and a double or triple shock wins you extra spin."
+            ]
+          },
+          {
+            "key": "rivals",
+            "title": "Know your rivals",
+            "text": [
+              "Each colour moves its own way and shrugs off something different. At the end of the road waits a <b>boss</b> that only a perfect tap can hurt."
+            ],
+            "list": [
+              [
+                "Blue",
+                "stops, charges and dashes at you."
+              ],
+              [
+                "Yellow",
+                "saws its way in and ignores the other tops."
+              ],
+              [
+                "Red",
+                "flies one straight line and blows up on whatever it touches."
+              ],
+              [
+                "Black",
+                "hands shell points back to the others."
+              ],
+              [
+                "Purple",
+                "splits in two when it breaks."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Keep coming back",
+            "list": [
+              [
+                "30 levels",
+                "across five dishes, three stars on each."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, find the rhythm and tap on impact."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.spinshock",

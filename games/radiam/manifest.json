@@ -244,7 +244,109 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            4,
+            8,
+            11
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "ball-rainbow-01"
+          ]
+        },
+        "chain": [
+          "sticker15",
+          "decor-ball-01",
+          "ball-red-05"
+        ],
+        "beads": [
+          "sticker20",
+          "decor-gear-02",
+          "ball-rainbow-11"
+        ],
+        "eclipse": [
+          "sticker19",
+          "home03",
+          "sticker17"
+        ]
+      },
+      "en": {
+        "hook": "Line up three, chain the explosions.",
+        "pitch": [
+          "Three rings turn around one hub, full of shiny coloured beads. Drag a ring, line up three beads of one colour and they pop.",
+          "One good move can keep paying long after you let go, because the beads that fly in can pop on their own."
+        ],
+        "sections": [
+          {
+            "key": "chain",
+            "title": "Chain the pops",
+            "text": [
+              "Pop several rays in one move and everything it pays is multiplied. Pop the next ray within a second and your <b>combo</b> climbs, up to x8.",
+              "Rays that would pay light up while you turn, so you never move blind."
+            ]
+          },
+          {
+            "key": "beads",
+            "title": "Special beads",
+            "text": [
+              "Big moves earn special beads, and no level carries them all."
+            ],
+            "list": [
+              [
+                "Nova",
+                "a joker that matches any colour, then clears every bead of its colour."
+              ],
+              [
+                "Bomb",
+                "clears the whole dial, ring after ring."
+              ],
+              [
+                "Fire",
+                "pops the two rays either side of it too."
+              ],
+              [
+                "Laser",
+                "fires a beam across the dial."
+              ],
+              [
+                "Ice",
+                "the one you do not want. It freezes its ring."
+              ]
+            ]
+          },
+          {
+            "key": "eclipse",
+            "title": "Race the eclipse",
+            "text": [
+              "Ink rises over the dial from the bottom and covers the rays it reaches. Reach the level score before it covers them all."
+            ],
+            "list": [
+              [
+                "30 levels",
+                "in five worlds, from the Atelier to the Circuit, with three stars on each."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "The endless run",
+                "opens once all 90 stars are yours."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, turn a ring and set off the first explosion."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.radiam",

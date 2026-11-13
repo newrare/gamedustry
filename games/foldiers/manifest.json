@@ -890,5 +890,120 @@
         }
       }
     }
+  },
+  "itch": {
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            1,
+            6,
+            11
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "army-blue01"
+          ]
+        },
+        "orders": [
+          "army-blue07",
+          "army-red07",
+          "army-blue09"
+        ],
+        "worlds": [
+          "world05",
+          "world06",
+          "world09"
+        ],
+        "collect": [
+          "sticker14",
+          "sticker13",
+          "sticker02"
+        ]
+      },
+      "en": {
+        "hook": "Conquer a world made of paper.",
+        "pitch": [
+          "Little origami armies march across a diorama cut out of paper, and every order is yours. Plan your convoys, press Send, and watch every camp move at once.",
+          "Blues against Reds, one turn at a time. Keep your capital safe and take the board."
+        ],
+        "sections": [
+          {
+            "key": "orders",
+            "title": "Send your orders",
+            "text": [
+              "Pick your troops, choose a target and an arrow appears on the board. When you press <b>Send</b>, every convoy of every camp leaves at once.",
+              "Battles are settled troop for troop, so the bigger side wins."
+            ],
+            "list": [
+              [
+                "Cavalry",
+                "rides two regions in a single turn."
+              ],
+              [
+                "Cannons",
+                "fire before the troops arrive."
+              ],
+              [
+                "Scout balloons",
+                "show what the fog hides."
+              ]
+            ]
+          },
+          {
+            "key": "worlds",
+            "title": "Five paper worlds",
+            "text": [
+              "Thirty stages across five worlds, and each stage brings a new rule to learn."
+            ],
+            "list": [
+              [
+                "Paper Isles",
+                "forts, mountain passes, rivers and harbours."
+              ],
+              [
+                "Golden Plains",
+                "gold mines, recruits, cavalry and cannons."
+              ],
+              [
+                "Whispering Woods",
+                "scout balloons and spies."
+              ],
+              [
+                "Frozen North",
+                "snow and storms, announced a turn ahead."
+              ],
+              [
+                "Whole World",
+                "a third camp joins in, and the Red Marshal waits at the end."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Keep conquering",
+            "list": [
+              [
+                "30 stages",
+                "up to three stars each."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "An endless war",
+                "past stage 30, with every rule at once."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, tap a region and send your first orders."
+      }
+    }
   }
 }

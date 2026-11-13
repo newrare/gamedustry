@@ -872,7 +872,112 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            6,
+            1,
+            11
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-17"
+          ]
+        },
+        "climb": [
+          "sticker14",
+          "decor-05",
+          "decor-01"
+        ],
+        "worlds": [
+          "sticker18",
+          "decor-18",
+          "sticker16"
+        ],
+        "collect": [
+          "sticker13",
+          "home06",
+          "sticker15"
+        ]
+      },
+      "en": {
+        "hook": "Hop the rocks before you toast.",
+        "pitch": [
+          "A little marshmallow, a lake of rising lava and rocks raining from above. Tap to fling yourself onto the next one and keep climbing.",
+          "Every hit toasts the marshmallow a shade browner, from white to charred. How high can you get before the lava catches up?"
+        ],
+        "sections": [
+          {
+            "key": "climb",
+            "title": "Fling and climb",
+            "text": [
+              "One tap flings the marshmallow at your finger, and it sticks to the first rock it meets. Rocks melt when they reach the lava, so every landing is a launch.",
+              "<b>Hold your finger</b> to slow time and line up the jump. Land high on fresh rocks and the <b>combo</b> grows."
+            ],
+            "list": [
+              [
+                "S'mores",
+                "catch the biscuits and chocolates that fall, and win lives back."
+              ]
+            ]
+          },
+          {
+            "key": "worlds",
+            "title": "Five fiery worlds",
+            "text": [
+              "Five worlds of six levels, each bringing a new way to read the rocks."
+            ],
+            "list": [
+              [
+                "Caldera",
+                "fireballs that throw you off after a beat, and lava that surges."
+              ],
+              [
+                "Frozen sulphur",
+                "ice rocks throw you skyward and magnet crystals catch you mid-air."
+              ],
+              [
+                "Geysers",
+                "steam lifts you up, lava bubbles carry you and a serpent leaps out of the lava."
+              ],
+              [
+                "Fault lines",
+                "rocks that split, crumble to dust or blow up."
+              ],
+              [
+                "The core",
+                "everything the lava has, up to the Cataclysm."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Collect them all",
+            "list": [
+              [
+                "30 levels",
+                "three stars on each, the third for a clean climb."
+              ],
+              [
+                "20 stickers",
+                "marshmallow faces, hot rocks and a fire ball, won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "The endless run",
+                "opens once all 90 stars are yours."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, grab the first rock and climb before the lava does."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.marshmelt",

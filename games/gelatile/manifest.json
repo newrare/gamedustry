@@ -155,7 +155,97 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            5,
+            12,
+            9
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker19"
+          ]
+        },
+        "merge": [
+          "sticker17",
+          "sticker18",
+          "sticker02"
+        ],
+        "powers": [
+          "sticker05",
+          "sticker12",
+          "sticker16"
+        ],
+        "modes": [
+          "decor-01",
+          "home02",
+          "home04"
+        ]
+      },
+      "en": {
+        "hook": "Squish, merge, reach 2048.",
+        "pitch": [
+          "Swipe to slide every jelly, and watch twin tiles stamp into bigger ones. Gold at 128, rainbow at 2048.",
+          "It looks sweet, and then the traps arrive. Fireballs and bolts aim at the grid, and you have one move to decide who lands there."
+        ],
+        "sections": [
+          {
+            "key": "merge",
+            "title": "Swipe and merge",
+            "text": [
+              "Swipe, and every jelly slides as far as it goes. Two twins that meet stamp into their sum.",
+              "From 128 a tile gets a <b>golden</b> edge, and from 2048 it shines rainbow."
+            ]
+          },
+          {
+            "key": "powers",
+            "title": "Wild powers",
+            "text": [
+              "Fourteen powers join the board one at a time, across five biomes: a bubble bath, a jungle lodge, a crystal cave, rice terraces and a coconut beach."
+            ],
+            "list": [
+              [
+                "Tile powers",
+                "freeze, petrify, ghost or hide a tile for five moves."
+              ],
+              [
+                "Targets",
+                "mark cells of the grid and strike right after your next move."
+              ],
+              [
+                "Sides",
+                "a side of the board can turn into a portal or lock shut."
+              ]
+            ]
+          },
+          {
+            "key": "modes",
+            "title": "Three modes",
+            "text": [
+              "Climb the map, or just play for the score. And twenty stickers wait to be collected, from a Rubber Duck to a Rainbow 2048."
+            ],
+            "list": [
+              [
+                "30 levels",
+                "each one asks for a bigger tile, from 128 up to 2048."
+              ],
+              [
+                "Classic",
+                "the bathroom with no powers. Play until no move is left."
+              ],
+              [
+                "Fast",
+                "reach 2048 as fast as you can."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b> and swipe your first jellies together."
+      }
+    }
   },
   "web": {
     "font": "baloo2",

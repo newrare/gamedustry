@@ -255,7 +255,116 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            3,
+            1,
+            5
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "decor-14"
+          ]
+        },
+        "chain": [
+          "sticker17",
+          "sticker18",
+          "sticker20"
+        ],
+        "space": [
+          "sticker13",
+          "sticker14",
+          "decor-13"
+        ],
+        "collect": [
+          "sticker03",
+          "home05",
+          "sticker06"
+        ]
+      },
+      "en": {
+        "hook": "Snap gravity, fling the comet.",
+        "pitch": [
+          "A comet circles a tiny planet, its dust tail trailing behind. Tap at the right moment and it breaks free, flying straight on to the next one.",
+          "It is billiards on a galactic scale. Chain the planets without a mistake and watch your combo build."
+        ],
+        "sections": [
+          {
+            "key": "chain",
+            "title": "Chain the orbits",
+            "text": [
+              "A faint dotted line shows where the comet will fly if you tap now.",
+              "Catch the next planet in time and your <b>Combo</b> grows. The longer the chain, the hotter the comet burns."
+            ],
+            "list": [
+              [
+                "Small planets",
+                "pay more than big ones."
+              ],
+              [
+                "Supernova",
+                "from a chain of x3, a golden planet may appear. Reach it and the comet hops on its own."
+              ]
+            ]
+          },
+          {
+            "key": "space",
+            "title": "Deep space",
+            "text": [
+              "Thirty levels across five regions, each with its own strange physics."
+            ],
+            "list": [
+              [
+                "Inner system",
+                "blue nebulae slow the comet to a crawl and orange ones speed it up."
+              ],
+              [
+                "Moons",
+                "a moon circles its planet, so time your tap. Skim past one for a score boost."
+              ],
+              [
+                "Pulsars",
+                "shields make the comet bounce and repulsors let you bank a shot."
+              ],
+              [
+                "Black hole",
+                "it swings the comet round and flings it at a planet, no tap needed."
+              ],
+              [
+                "Rift",
+                "all four edges are open. Fly out of one and come back through the opposite one."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Collect them all",
+            "list": [
+              [
+                "30 levels",
+                "three stars on each."
+              ],
+              [
+                "20 stickers",
+                "smiling planets, comets and a whole galaxy, won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "The endless run",
+                "opens once all 90 stars are yours."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, wait for the right moment and tap."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.orbinity",

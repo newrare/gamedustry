@@ -283,7 +283,113 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            2,
+            5,
+            11
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker13"
+          ]
+        },
+        "trap": [
+          "button-off-01",
+          "button-on-01",
+          "ball24"
+        ],
+        "power": [
+          "sticker16",
+          "ball28",
+          "decor-ball-34"
+        ],
+        "glass": [
+          "brick-rainbow-01",
+          "sticker20",
+          "sticker17"
+        ]
+      },
+      "en": {
+        "hook": "Aim true, then tap to trap the ball.",
+        "pitch": [
+          "Coloured glass and banks of switches float over a lake of lava. Drag to aim, with a dotted sight showing the next five bounces, and the ball smashes every pane it touches.",
+          "Then comes the trick. Tap, and the dark switches light up and turn solid, so the ball bounces off them instead of flying past."
+        ],
+        "sections": [
+          {
+            "key": "trap",
+            "title": "Tap to trap",
+            "text": [
+              "Tap while the ball is flying and every dark switch lights up and turns solid.",
+              "Tap as the ball enters a closed pocket and it stays shut in with the bricks, running faster and <b>eating</b> the whole room."
+            ]
+          },
+          {
+            "key": "power",
+            "title": "Power bricks",
+            "text": [
+              "Break the right brick and the wall starts breaking itself."
+            ],
+            "list": [
+              [
+                "Blasts",
+                "clear a whole line or column."
+              ],
+              [
+                "Bomb",
+                "takes the eight bricks around it with it."
+              ],
+              [
+                "Multiball",
+                "releases extra balls."
+              ],
+              [
+                "Big ball",
+                "grows the ball that broke it."
+              ],
+              [
+                "Fireball",
+                "burns through the glass for five seconds."
+              ],
+              [
+                "Magnet",
+                "pulls nearby bricks into the ball for five seconds."
+              ]
+            ]
+          },
+          {
+            "key": "glass",
+            "title": "Living glass",
+            "text": [
+              "Thirty levels take you through five biomes, from the lava fields to the furnace core, and each one brings glass that fights back."
+            ],
+            "list": [
+              [
+                "Warp glass",
+                "jumps to a free spot every three seconds."
+              ],
+              [
+                "Split glass",
+                "bursts into new glass around it."
+              ],
+              [
+                "Seed glass",
+                "grows a new brick beside it every second."
+              ],
+              [
+                "Shield glass",
+                "hides behind a shield that comes and goes, so wait for the right moment."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, line up your shot and tap."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.bouncetry",
