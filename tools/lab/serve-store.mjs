@@ -21,7 +21,7 @@
                               screens / art / decor / object cuts it owns
     GET  /api/next            the names the next save would take
     PUT  /api/preset          save (or delete) one composition
-    POST /api/save            write the composed image into assets/image/<store>/<lang>/
+    POST /api/save            write the composed image into assets/image/google/<lang>/ or assets/image/itch/
 
   It builds nothing and watches nothing: the pictures are already on disk, and
   what the page composes is what the page can draw. Everything it writes lands
@@ -145,7 +145,8 @@ function writePreset(key, comp) {
    Three things it has to get right:
      · BOTH LANGUAGES SHARE THE NUMBER. en/<slug>-05.jpg and fr/<slug>-05.jpg
        have to be the same composition, so a number taken in either folder is
-       taken in both.
+       taken in both. itch has no language folder: its images carry no text,
+       so assets/image/itch/ holds one of each.
      · A `multi` IS ALLOCATED IN ONE GO — three consecutive numbers, because
        the three panels are one picture cut at the seams and the gallery sorts
        them by that number.
@@ -155,13 +156,18 @@ function writePreset(key, comp) {
 
    It only reads: asking twice changes nothing, which is what lets the page
    show the next name while a card is being composed. */
+/* Where a store's images live: google keeps one folder per language, itch
+   one folder for both. */
+function storeDirs(store) {
+  return store === 'itch' ? [path.join(STORE_DIR, 'itch')]
+    : ['en', 'fr'].map((lang) => path.join(STORE_DIR, store, lang));
+}
+
 function nextNames(slug, format, count) {
   const store = format === 'itch' ? 'itch' : 'google';
   const taken = new Set();
-  for (const lang of ['en', 'fr']) {
-    for (const f of ls(path.join(STORE_DIR, store, lang))) {
-      taken.add(f.replace(/\.(jpe?g|png)$/i, ''));
-    }
+  for (const dir of storeDirs(store)) {
+    for (const f of ls(dir)) taken.add(f.replace(/\.(jpe?g|png)$/i, ''));
   }
 
   const names = [];
@@ -234,7 +240,12 @@ export async function handle(req, res, p, url) {
     /* JPEG, always: 182 pictures of painted artwork over a capture is 34 MB
        as JPEG and 450 MB as PNG, and a store listing has no use for a
        lossless one — see docs/ASSETS.md. */
-    const out = path.join(STORE_DIR, /-itch(-\d+)?$/.test(name) ? 'itch' : 'google', lang, name + '.jpg');
+    const itch = /-itch(-\d+)?$/.test(name);
+    /* itch is language-free: the English cut is the one kept, the French
+       twin a save always sends is dropped. */
+    if (itch && lang !== 'en') return json(res, 200, { ok: true, skipped: true });
+    const out = itch ? path.join(STORE_DIR, 'itch', name + '.jpg')
+      : path.join(STORE_DIR, 'google', lang, name + '.jpg');
     /* A slot is written once. The name came from /api/next, so a collision
        here means two saves raced or a stale page asked — either way the
        picture on disk is somebody's and is not overwritten. */

@@ -26,3 +26,15 @@ lab/events-clips/
 # game. Made again by that command; only the composition is a source.
 promo/*/assets/
 promo/*/renders/
+# A generic promo plays promo/_template/index.html: its index.html and its
+# HyperFrames project files are copied in on every run, so only its
+# promo.json is a source. echomaze's composition is its own.
+promo/*/index.html
+promo/*/hyperframes.json
+promo/*/package.json
+promo/*/meta.json
+!promo/_template/index.html
+!promo/echomaze/index.html
+!promo/echomaze/hyperframes.json
+!promo/echomaze/package.json
+!promo/echomaze/meta.json

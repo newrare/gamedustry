@@ -1,7 +1,7 @@
 {
   "slug": "parrynormal",
   "title": "Parrynormal",
-  "version": "2.8.7",
+  "version": "2.8.8",
   "tagline": "Turn the shield to parry the balls and throw the monsters back",
   "order": 210,
   "draft": false,
@@ -574,6 +574,58 @@
     }
   },
   "description": "Parrynormal is the remake of Magic Shield Brick, turned into an arcade tower defense. A little witch stands in the middle of the screen with an arc of shield around her. On a phone the shield is steered with a dial at the bottom of the screen, so the thumb never covers the action; on a desk it points at the mouse. She launches her own blue magic balls, parries them back out into the monsters and throws back every monster that comes too close; a monster thrown hard bowls over the ones it meets. Pickups float on the field and any ball takes them: a star grows the shield, a pumpkin blasts, a candle becomes a turret, a web a slowing zone. A knocked-out zombie leaves a tombstone that may let it climb back out. Before each stage the player picks the supers to take in (lightning, freeze, shockwave, full moon, fire rain and more), fired from buttons beside the dial. Thirty stages across five biomes, from the haunted forest to the dragon's throne, nineteen monsters with their own tricks, babies, giants and moods, then an endless run.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Magic shield",
+            "line": "<b>Parry</b> your own balls"
+          },
+          {
+            "kicker": "Halloween horde",
+            "line": "Push back the <b>monsters</b>"
+          },
+          {
+            "kicker": "Powers",
+            "line": "Pumpkins, candles and <b>webs</b>"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "Little witch",
+            "line": "Mind the <b>night</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Bouclier magique",
+            "line": "<b>Renvoie</b> tes propres balles"
+          },
+          {
+            "kicker": "Horde d'Halloween",
+            "line": "Repousse les <b>monstres</b>"
+          },
+          {
+            "kicker": "Pouvoirs",
+            "line": "Citrouilles, bougies et <b>toiles</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "Petite sorcière",
+            "line": "Attention de <b>nuit</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "parrynormal",

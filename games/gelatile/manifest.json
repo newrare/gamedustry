@@ -84,6 +84,58 @@
     }
   },
   "description": "Gelatile is a merge puzzle on a 4x4 board of jelly tiles. Swipe to slide every tile one way: two twins that meet stamp into their sum, and from 128 up a tile turns gold, then rainbow. Each of the thirty levels asks for one tile, from 128 to 2048, starting from a board already laid out in a corner, with a par of moves for the second star and a bonus for the third. Fourteen powers join the board one at a time across five biomes - a bubble bath, a jungle lodge, a crystal cave, rice terraces and a coconut beach. Tile powers freeze, petrify, ghost or hide a tile for five moves. Targets mark cells of the grid and strike after your next move, so you choose which tile lands there. And a side of the board can turn into a portal or lock shut.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Merge",
+            "line": "Fuse the <b>twin</b> jellies"
+          },
+          {
+            "kicker": "Powers",
+            "line": "A twist in every <b>biome</b>"
+          },
+          {
+            "kicker": "Traps",
+            "line": "Outsmart the <b>targets</b>"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "2048",
+            "line": "Reach the <b>top</b> tile"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Fusion",
+            "line": "Fusionne les gelées <b>jumelles</b>"
+          },
+          {
+            "kicker": "Pouvoirs",
+            "line": "Une surprise par <b>biome</b>"
+          },
+          {
+            "kicker": "Pièges",
+            "line": "Déjoue les <b>cibles</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "2048",
+            "line": "Atteins la tuile <b>ultime</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "gelatile",

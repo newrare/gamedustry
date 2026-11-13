@@ -221,6 +221,58 @@
     }
   },
   "description": "Grudgeon is a dungeon crawler steeped in Japanese urban legends. Each haunted place sends one hero down alone — Akane the shrine maiden, Kenji the kendo captain, Yuki the onmyoji or Haru the occult photographer — while the others wait in its rooms, ready to join and to learn new scrolls fight after fight. The way down is a map that lights up one room at a time: every room you open reveals the corridors around it, and behind each door waits a Yokai, a wandering merchant, an altar of blessings, a strange encounter or a hidden bonus. The map is walked, and every hero carries a candle: each step burns one per hero, so four heroes are the stronger party and the first one the dark catches — at the hour of the ox the rooms keep their secrets and the Yokai grow stronger. Each haunted place adds its own twist to the walk: fire doors that only open one way and seals a seal-breaker opens, Yokai that wander the corridors with their next move shown and ambush the party they reach, and a party split in two groups, the one next door joining a fight late. Fights run on a timeline you can read: every action has a weight, the Yokai shows its next turns ahead with their target and their damage, a strike on its weakness gives your hero one more action, and each of the twenty Yokai bends the fight by a rule out of its legend — knock three times, leave the stray dog alone, spill the kappa's dish, never strike the oni the same way twice. Thirty levels across five haunted places, from a high school after dark to the gate of Yomi, bring the Yokai in one at a time and change what is asked: exorcise, earn gold, find the way out, defeat the master of the place.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Japanese horror",
+            "line": "Every door hides a <b>Yokai</b>"
+          },
+          {
+            "kicker": "Dungeon crawler",
+            "line": "Explore the <b>cursed</b> rooms"
+          },
+          {
+            "kicker": "Turn-based",
+            "line": "<b>Tactical</b> fights"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "Four heroes",
+            "line": "Build your <b>party</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Horreur japonaise",
+            "line": "Chaque porte cache un <b>Yokai</b>"
+          },
+          {
+            "kicker": "Dungeon Crawler",
+            "line": "Explore les salles <b>maudites</b>"
+          },
+          {
+            "kicker": "Tour par tour",
+            "line": "Combats <b>tactiques</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "Quatre héros",
+            "line": "Forme ton <b>équipe</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "grudgeon",

@@ -161,6 +161,8 @@
       startColours: 4,               // hues in play at the start...
       colourUpAt: 22,                // ...the second the fifth joins a CLASSIC round
       colourUpLevel: 10,             // ...and the level it joins an eclipse one
+      colourUpEvery: 3,              // ...then one more every 3 levels (a board
+                                     // that opens on 3 hues has two to add)
 
       /* Supers. A move that pays two rays at once, or a chain reaching x4,
          upgrades one of the refills already flying in: two rays / x4 give a
@@ -1885,6 +1887,14 @@
           sp = SPEC[POOL[i]];
           if (sp && sp.tier === 1) keys.push(POOL[i]);
         }
+      // ...and the other way round: a pool of big specials alone (levels 5, 7,
+      // 9) pays its small beats — the charge, a double ray, a x4 chain — in
+      // the level's own big ones, or they would earn nothing at all.
+      if (!keys.length && tier === 1)
+        for (i = 0; i < POOL.length; i++) {
+          sp = SPEC[POOL[i]];
+          if (sp && sp.tier === 2) keys.push(POOL[i]);
+        }
       if (!keys.length) return false;
       for (i = 0; i < flyers.length; i++) if (!(flyers[i].colour & SUPER)) cand.push(i);
       if (!cand.length) return false;
@@ -2198,8 +2208,12 @@
 
       // The eclipse has levels, so the newcomer is scheduled on one; a CLASSIC
       // round never reaches level 10 in 40 seconds and keeps its stopwatch.
+      // One newcomer per threshold: a board that opened on three hues gets its
+      // fourth at colourUpLevel and its fifth colourUpEvery levels later,
+      // never two on consecutive frames.
       if (palette.length < D.colours.length &&
-          (Eclipse.on ? Eclipse.level() >= D.colourUpLevel
+          (Eclipse.on ? Eclipse.level() >= D.colourUpLevel +
+                          (palette.length - D.startColours) * D.colourUpEvery
                       : Round.elapsed() >= D.colourUpAt)) addColour();
 
       // The clock is out: wait for the dial, then play the machine out.
@@ -3221,7 +3235,7 @@
               [T("A whole ring emptied"), T("Three rays won back")] ], text: T("Ink rises over the dial from the bottom. A ray under the ink can no longer pop.\n\nReach the level's score before the ink covers every ray.") },
             { id: "inklevel", title: T("The ink speeds up"), pic: function () { return dialPic(1, { ink: 8 }); },
               text: T("Every 10 rays popped, the level goes up and the ink rises faster.") },
-            { id: "colour", title: T("A new colour"), pic: huesPic, text: T("The dial starts with four colours. The fifth joins once the ink reaches level 10.") }
+            { id: "colour", title: T("A new colour"), pic: huesPic, text: T("The game starts with 3 to 5 different colours, depending on the level. A missing colour joins once the dial reaches level 10, and the next one 3 levels later.") }
           ] },
           { key: "atelier", label: T("Atelier"), pages: [
             specPage("charge", 1, "Charge bead", 1 | CHARGE, function (rs) {

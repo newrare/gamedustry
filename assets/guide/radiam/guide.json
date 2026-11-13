@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/radiam — do not edit",
  "slug": "radiam",
- "stamp": "9c2970287832cc22",
+ "stamp": "8be8b1417667bce4",
  "en": {
   "title": "Radiam",
   "howTo": "Turn one or more rings to line up three beads on one ray",
@@ -159,7 +159,7 @@
       "eyebrow": null,
       "lv": null,
       "text": [
-       "The dial starts with four colours. The fifth joins once the ink reaches level 10."
+       "The game starts with 3 to 5 different colours, depending on the level. A missing colour joins once the dial reaches level 10, and the next one 3 levels later."
       ],
       "rows": [],
       "pic": {
@@ -493,7 +493,7 @@
       "eyebrow": null,
       "lv": null,
       "text": [
-       "Le cadran débute avec quatre couleurs puis une cinquième s'ajoute lorsque l'encre atteint le niveau 10."
+       "Le jeu débute entre 3 à 5 couleurs différentes selon le niveau. Une couleur manquante s'ajoute lorsque le cadran atteint le niveau 10, puis la suivante 3 niveaux plus tard."
       ],
       "rows": [],
       "pic": {

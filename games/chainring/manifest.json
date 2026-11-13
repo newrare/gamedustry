@@ -150,7 +150,106 @@
       800
     ],
     "mobileFriendly": true,
-    "cta": false
+    "cta": false,
+    "page": {
+      "art": {
+        "showcase": {
+          "shots": [
+            1,
+            6,
+            4
+          ],
+          "front": "character-happy",
+          "pieces": [
+            "sticker16"
+          ]
+        },
+        "beat": [
+          "sticker18",
+          "decor-06",
+          "sticker16"
+        ],
+        "worlds": [
+          "decor-01",
+          "decor-16",
+          "decor-12"
+        ],
+        "collect": [
+          "sticker02",
+          "home06",
+          "sticker19"
+        ]
+      },
+      "en": {
+        "hook": "Five worlds, five tracks, one tap.",
+        "pitch": [
+          "A glowing ball bounces inside rings that close in on the music. Tap the instant it lands and the whole screen answers you.",
+          "Miss once, and the combo you built for a minute is gone."
+        ],
+        "sections": [
+          {
+            "key": "beat",
+            "title": "Feel the beat",
+            "text": [
+              "Every ring arrives on a beat of the track. Play with your ears and your thumb follows.",
+              "A <b>Perfect</b> pays triple, and every five hits in a row drops a <b>mega bonus</b> that your combo multiplies."
+            ]
+          },
+          {
+            "key": "worlds",
+            "title": "Five worlds",
+            "text": [
+              "Each world brings its own track and its own trick ring."
+            ],
+            "list": [
+              [
+                "Neon",
+                "rewind rings throw the others back out."
+              ],
+              [
+                "Amber",
+                "sticky rings hold the ball on their rim."
+              ],
+              [
+                "Eclipse",
+                "dark rings must be left alone, and phantoms hide their colour."
+              ],
+              [
+                "Glacier",
+                "mixed rings and fragile ones that may shatter."
+              ],
+              [
+                "Nova",
+                "all of it at once."
+              ]
+            ]
+          },
+          {
+            "key": "collect",
+            "title": "Keep coming back",
+            "list": [
+              [
+                "30 stages",
+                "three stars on each, the third for a clean run."
+              ],
+              [
+                "20 stickers",
+                "won on the map or out of the gumball machine."
+              ],
+              [
+                "A daily gift",
+                "waiting for you every day."
+              ],
+              [
+                "The endless run",
+                "opens once all 90 stars are yours."
+              ]
+            ]
+          }
+        ],
+        "outro": "Press <b>Run game</b>, turn the sound up and tap."
+      }
+    }
   },
   "android": {
     "appId": "com.newrare.chainring",

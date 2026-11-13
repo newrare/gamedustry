@@ -51,6 +51,42 @@
    house or a building takes a lot of hits (a dash does more) — props, trees
    and cars break any time.
 
+   THE COMBO (the prototype's rule): every trick and every building brought
+   down adds its points to the combo and one to its multiplier. It holds while
+   something is going on (in the air, on a rail, in a drift, on a pool's wall),
+   then has a few seconds on flat ground to get another move before it is
+   banked: points x multiplier. A bail loses it.
+
+   THE PARK IS LINES. Every exit is aimed at an entry, so a run is a circuit:
+   the ring (south bar, west loop, into the north-west pool, its arrow onto the
+   north bar, thrown onto the plateau, off it onto the east spiral, the
+   south-east jump, back along the south lane) and two inner lines out of the
+   half-pipe (its west arrow onto the kicker and the north bar, its east arrow
+   into the bowl, the bowl's arrow up onto the plateau). Chevrons on the
+   ground run from each exit to the next entry.
+
+   HEIGHTS: a hill climbed at speed, hollows (the pools), a plateau with no way
+   up but a good jump, and platforms floating over it, landed on from above and
+   passed through from below.
+
+   WHAT STANDS ON FEET COMES DOWN: in the fury, hitting a rail's trusses or a
+   kicker's legs wrecks the whole thing.
+
+   THE COLLECTION: the five letters of the word Dozer and twelve gears, on the heights,
+   at the top of a good jump, at the bottom of a pool — and inside buildings,
+   which have to come down first (a glint on the roof gives one away). The
+   five letters start a fury.
+
+   THE EDGE of the zone is an invisible wall and an electric bumper: touching
+   it throws the dozer back in, and the arc is only seen on the hit. A pylon
+   stands at each corner and lights up as the dozer nears a wall.
+
+   THE LOOK is the prototype's Arcade direction, the first ambiance: a
+   saturated blue sky with clouds and a skyline, purple asphalt and yellow
+   lines, orange ramps with hazard lips, candy rails on trusses, a yellow
+   machine with a violet cab, a pink glow in the air. It is the kit's palette
+   texture repainted cell by cell, so kit and code change together.
+
    Space: on the ground, jump (a short crouch first); in the air, a trick that
    fits the air time left. Twice quickly on the ground: a DASH (the charge);
    twice quickly in the air: an AIR DASH, out by the nearest lip over a pool
@@ -58,7 +94,7 @@
 
    The one panel is the ambiance. Served over HTTP only (make lab): three.js
    is an ES module, vendored in lab/vendor/three/ and named by the import map.
-   ?amb=0|1|2 opens an ambiance, ?seed=N another park, ?skip=1 the zone at once.
+   ?amb=0..3 opens an ambiance, ?seed=N another city and decor, ?skip=1 the zone at once.
    =========================================================================== */
 * { box-sizing:border-box; margin:0; padding:0; }
 html, body { height:100%; }
@@ -93,31 +129,51 @@ body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e
 #vig { inset:0; opacity:0; box-shadow:inset 0 0 110px 26px var(--vig, #ff5a2a); }
 #flash { inset:0; opacity:0; background:#fff; }
 
-/* ---- the HUD ---------------------------------------------------------------- */
-#score { left:16px; top:14px; color:#fff; text-shadow:0 2px 6px rgba(0,0,0,.55); }
-#score b { display:block; font-size:30px; line-height:1.05; font-variant-numeric:tabular-nums; letter-spacing:.5px; }
-#score span { display:block; font-weight:600; font-size:13px; opacity:.85; }
-#gauge { left:50%; bottom:22px; width:62%; height:30px; transform:translateX(-50%); }
-#gauge .bar { position:absolute; left:0; right:0; bottom:0; height:14px; border-radius:8px; background:rgba(10,14,30,.55);
-  border:2px solid rgba(255,255,255,.75); overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.35); }
-#gauge .bar i { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:6px;
-  background:linear-gradient(90deg, #6fe3ff, #b78cff); transition:background .3s; }
-#gauge label { position:absolute; left:0; right:0; bottom:16px; text-align:center; font-size:13px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.6); }
+/* ---- the HUD: chunky italic lettering with an ink outline, pills ---------------- */
+#frame { --ink:#2a1650; --f:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+.ink { -webkit-text-stroke:5px var(--ink); paint-order:stroke fill; }
+#score { left:14px; top:12px; color:#fff; }
+#score b { display:block; font:italic 900 32px/1.05 var(--f); font-variant-numeric:tabular-nums; letter-spacing:.5px;
+  -webkit-text-stroke:6px var(--ink); paint-order:stroke fill; transform-origin:0 50%; }
+#score span { display:inline-block; margin-top:5px; padding:2px 9px; border-radius:10px; background:rgba(42,22,80,.72); font-weight:700; font-size:12px; color:#f1eaff; }
+#items { right:12px; top:12px; text-align:right; }
+#letters { display:flex; gap:3px; justify-content:flex-end; }
+#letters i { width:22px; height:24px; border-radius:6px; background:rgba(42,22,80,.6); color:rgba(255,255,255,.28); border:2px solid rgba(255,255,255,.22);
+  font:italic 900 15px/20px var(--f); text-align:center; transition:transform .25s; }
+#letters i.on { color:var(--ink); background:var(--c, #ffd84a); border-color:#fff; transform:rotate(-6deg) scale(1.1); box-shadow:0 0 10px var(--c, #ffd84a); }
+#gears { display:inline-block; margin-top:6px; padding:2px 9px 2px 7px; border-radius:10px; background:rgba(42,22,80,.72); font-weight:800; font-size:12px; color:#ffe27a; }
+#gears::before { content:""; display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; border:3px dotted #ffd84a; vertical-align:-2px; }
+#combo { left:0; right:0; top:11%; text-align:center; opacity:0; transition:opacity .25s; }
+#combo.on { opacity:1; }
+#combo b { display:inline-block; font:italic 900 44px/1 var(--f); color:#ffd84a; -webkit-text-stroke:7px var(--ink); paint-order:stroke fill; }
+#combo span { display:block; margin-top:2px; font:italic 900 19px/1.1 var(--f); color:#fff; -webkit-text-stroke:5px var(--ink); paint-order:stroke fill; font-variant-numeric:tabular-nums; }
+#combo em { display:block; margin-top:3px; font:italic 700 12px/1.2 var(--f); color:#d8ffb0; text-shadow:0 1px 3px rgba(20,8,50,.9); }
+#combo u { display:block; width:110px; height:6px; margin:5px auto 0; border-radius:4px; background:rgba(42,22,80,.7); overflow:hidden; }
+#combo u s { display:block; height:100%; width:0; border-radius:4px; background:#ffd84a; }
+#gauge { left:50%; bottom:20px; width:66%; height:40px; transform:translateX(-50%); }
+#gauge .bar { position:absolute; left:0; right:0; bottom:0; height:18px; border-radius:11px; background:rgba(42,22,80,.78);
+  border:3px solid #fff; overflow:hidden; box-shadow:0 3px 0 rgba(42,22,80,.55); }
+#gauge .bar i { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:8px;
+  background:linear-gradient(90deg, #5fe0ff, #b78cff); transition:background .3s; }
+#gauge label { position:absolute; left:0; right:0; bottom:23px; text-align:center; font:italic 900 15px/1 var(--f); color:#fff;
+  -webkit-text-stroke:4px var(--ink); paint-order:stroke fill; }
 #gauge.full .bar i { background:linear-gradient(90deg, #ffe066, #ff9a3a); }
-#gauge.fury .bar { border-color:#ffd166; animation:fury-pulse .35s ease-in-out infinite alternate; }
-#gauge.fury .bar i { background:linear-gradient(90deg, #ff3a2a, #ffb02a); }
-@keyframes fury-pulse { to { box-shadow:0 0 18px 4px rgba(255,120,40,.85); } }
+#gauge.full .bar { animation:full-pulse .5s ease-in-out infinite alternate; }
+#gauge.fury .bar { border-color:#ffe27a; animation:fury-pulse .35s ease-in-out infinite alternate; }
+#gauge.fury .bar i { background:linear-gradient(90deg, #ff3a6a, #ffb02a); }
+@keyframes fury-pulse { to { box-shadow:0 0 18px 5px rgba(255,120,60,.9); } }
+@keyframes full-pulse { to { box-shadow:0 0 12px 3px rgba(255,216,74,.8); transform:scale(1.03); } }
 
-#callouts { left:0; right:0; top:22%; display:flex; flex-direction:column; align-items:center; gap:4px; }
-.co { text-align:center; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.6); animation:co-in .16s ease-out; transition:opacity .35s, transform .35s; }
-.co b { display:block; font-size:24px; font-weight:800; line-height:1.1; }
-.co.big b { font-size:34px; }
-.co span { display:block; font-size:15px; font-weight:700; opacity:.92; }
-.co.out { opacity:0; transform:translateY(-14px); }
-@keyframes co-in { from { transform:scale(.6); opacity:0; } 70% { transform:scale(1.08); } }
-.fp { position:absolute; transform:translate(-50%, -50%); font-size:17px; font-weight:800; color:#fff; text-shadow:0 2px 5px rgba(0,0,0,.6); white-space:nowrap; }
-#notice { left:50%; bottom:64px; transform:translateX(-50%); padding:5px 12px; border-radius:9px; background:rgba(10,12,24,.7);
-  color:#fff; font-size:13px; font-weight:600; white-space:nowrap; opacity:0; transition:opacity .3s; }
+#callouts { left:0; right:0; top:27%; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.co { text-align:center; color:#fff; animation:co-in .18s cubic-bezier(.3,1.6,.5,1); transition:opacity .35s, transform .35s; transform:rotate(-3deg); }
+.co b { display:block; font:italic 900 25px/1.1 var(--f); -webkit-text-stroke:5px var(--ink); paint-order:stroke fill; }
+.co.big b { font-size:36px; -webkit-text-stroke-width:7px; }
+.co span { display:block; font:italic 800 15px/1.2 var(--f); -webkit-text-stroke:4px var(--ink); paint-order:stroke fill; }
+.co.out { opacity:0; transform:translateY(-16px) rotate(-3deg); }
+@keyframes co-in { from { transform:scale(.4) rotate(-10deg); opacity:0; } }
+.fp { position:absolute; transform:translate(-50%, -50%); font:italic 900 18px/1 var(--f); color:#fff; -webkit-text-stroke:4px var(--ink); paint-order:stroke fill; white-space:nowrap; }
+#notice { left:50%; bottom:70px; transform:translateX(-50%); padding:5px 12px; border-radius:11px; background:rgba(42,22,80,.82);
+  color:#fff; font-size:13px; font-weight:700; white-space:nowrap; opacity:0; transition:opacity .3s; }
 #notice.on { opacity:1; }
 #loading { inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:30px; color:#cfd0ea; font-size:14px; background:#10131c; }
 </style>
@@ -138,6 +194,8 @@ body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e
     <div class="ov" id="flash"></div>
     <div class="ov" id="floats"></div>
     <div class="ov" id="score"><b id="scoreN">0</b><span id="scoreSub"></span></div>
+    <div class="ov" id="items"><div id="letters"></div><span id="gears">0 / 12</span></div>
+    <div class="ov" id="combo"><b id="comboN"></b><span id="comboPts"></span><em id="comboList"></em><u><s id="comboBar"></s></u></div>
     <div class="ov" id="callouts"></div>
     <div class="ov" id="notice"></div>
     <div class="ov" id="gauge"><label id="gaugeTxt">Super</label><div class="bar"><i id="gaugeFill"></i></div></div>
@@ -147,7 +205,7 @@ body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e
 
 <div id="side">
   <h1>Dozerflip ultimate</h1>
-  <p class="hint">Half a minute of race, then the zone. Tricks charge the super gauge; full, the dozer goes into fury and the city comes down. Outside the fury, a building takes many hits.</p>
+  <p class="hint">Half a minute of race, then the zone. Tricks build a combo and charge the super gauge; full, the dozer goes into fury and the city comes down. The park is lines: follow the chevrons from an exit to the next entry. Five letters and twelve gears are hidden on the heights, over the jumps and inside buildings.</p>
   <h2>Ambiance</h2>
   <div class="chips" id="amb"></div>
   <h2>Zone camera</h2>
@@ -162,7 +220,9 @@ body { display:flex; height:100vh; overflow:hidden; background:#0b0b12; color:#e
     <div>In a pool: drive into the arrow to be thrown out</div>
     <div>Gauge full: the next dash on the ground starts the fury</div>
     <div>Race: each bonus is a push, and +0.1 to the multiplier of every point</div>
-    <div><kbd>Shift</kbd> dash · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> ambiance · <kbd>C</kbd> zone camera</div>
+    <div>In fury: hit the feet of a rail or a kicker to wreck it</div>
+    <div>The edge of the zone is an electric bumper</div>
+    <div><kbd>Shift</kbd> dash · <kbd>1</kbd>–<kbd>4</kbd> ambiance · <kbd>C</kbd> zone camera</div>
     <div><kbd>R</kbd> restart the level · <kbd>N</kbd> skip the race</div>
   </div>
   <h2>Touch</h2>
@@ -225,10 +285,11 @@ const GAUGE_K = 1 / 900, FURY_TIME = 10;
 // what breaks
 const HP = { building: 160, house: 80, car: 18, tree: 6, prop: 1, crystal: 1 };
 const PTS = { building: 800, house: 500, car: 150, tree: 40, prop: 30, crystal: 60 };
+const CAUSE = { building: "Demolition", house: "House down", car: "Car crush" };
 const FURY_PTS = 3, DASH_DMG = 1.8, BLADE_MULT = 1.6, SIDE_MULT = 0.7, MIN_IMPACT = 2.5, RESTITUTION = 0.35, GRIND_DPS = 14;
 // rails: the prototype's recipes, scaled
-const RK = 0.45, RAIL_DS = 0.16, RAIL_START_H = 0.36, RAIL_CATCH = 1.1, RAIL_RIDE = 0.12;
-const RAIL_MIN = 8, RAIL_MAX = 19, RAIL_G = 8, RAIL_PUSH = 2.4, RAIL_COOL = 0.8, RAIL_COUNT = 4;
+const RK = 0.45, RAIL_DS = 0.16, RAIL_START_H = 0.36, RAIL_CATCH = 1.1, RAIL_RIDE = 0.16;
+const RAIL_MIN = 8, RAIL_MAX = 19, RAIL_G = 8, RAIL_PUSH = 2.4, RAIL_COOL = 0.8, RAIL_TUBE = 0.13;
 // the camera: juice-3d's chase in the race, the prototype's top-down view in the zone (its numbers x 0.45)
 const CAM_FOV = 60, CAM_D = 6.2, CAM_H = 3.1;
 const TOP = { lead: 0.45, zoom: 0.016, blend: 1.6 };
@@ -254,8 +315,21 @@ const LAUNCH_LEN = 7, LAUNCH_H = 2.6, LAUNCH_KICK = 8, LAUNCH_V = 13;
 const BONUS_STEP = 0.1, BONUS_PUSH = 3, BONUS_R = 1.5, BONUS_GAP = 26;
 const ARROW_VY = 15, ARROW_VH = 5, ARROW_R = 1.5, ARROW_W = 0.5, ARROW_CD = 1.2, ARROW_PTS = 40;
 // the world
-const WX = 29.5, WZ0 = -45.5, WZ1 = 39.5;
-const PLAZA = { x0: -26, x1: 26, z0: -42, z1: -2 };
+const WX = 29.5, WZ0 = -61.5, WZ1 = 39.5;
+const PLAZA = { x0: -26, x1: 26, z0: -58, z1: -2 };
+// the combo: every move adds its points and one to the multiplier; banked after a moment on flat ground
+const COMBO_WINDOW = 2.6;
+// the collection: the five letters and the gears
+// (capitals are a look, not a spelling: the word is written once, and its tokens shout it)
+const upper = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+const WORD = "Dozer", LET = upper(WORD), LETTER_COLS = ["#ff5aa8", "#ffd84a", "#5fe0ff", "#9cf05a", "#ff9a3a"];
+const GEAR_PTS = 250, LETTER_PTS = 600, WORD_PTS = 5000, GEARS_PTS = 4000, ITEM_R = 1.3;
+// the edge of the zone: an electric bumper, and the pylons that warn of it
+const BUMPER_V = 15, BUMPER_NEAR = 10, ZAP_LIFE = 0.34;
+// what stands on feet, and comes down in the fury
+const FOOT_R = 0.5, WRECK_PTS = { rail: 700, kicker: 400 };
+// a floating platform is landed on from above, passed through from below
+const PLAT_STEP = 0.45, PLAT_T = 0.5;
 
 const TRICKS = [   // the prototype's list and points, dozer-anim's turns (pitch +1 = nose up = backflip)
   { name: "Nose grab", dur: 0.36, pts: 40, grab: 1 },
@@ -303,12 +377,33 @@ const BASE = {
   windowGlow: 0, windowColor: "#ffcf7a", windowShare: 0.6, lampGlow: 0, lampColor: "#ffd08a",
   neonGlow: 0.2, crystalGlow: 0.6, crystalA: "#39e6ff", crystalB: "#b45cff", emberGlow: 0.4, emberColor: "#ff6a1a",
   lightInt: 0, headlights: false, poolInt: 0, bloom: 0.12, bloomRadius: 0.4, bloomThreshold: 1.0,
-  rimColor: "#9fd0ff", rimStr: 0, rimPow: 3, biome: "none"
+  rimColor: "#9fd0ff", rimStr: 0, rimPow: 3, biome: "none",
+  // the machine's colours, the palette's cells repainted (column,row -> colour), the backdrop, the paint on the ground
+  dozer: "arctic", cells: null, arcade: false, line: "rgba(255,255,255,0.75)", flow: "rgba(255,255,255,0.55)", glow: "#6fe3ff", hemiSky: null
 };
 const KIT_PAL = { palHue: 0, palSat: 1, palVal: 0, palGrad: 1, palWarm: 0 };
 const NIGHT = { ...KIT_PAL, aoIntensity: 0.9, windowShare: 0.6, lightInt: 1, poolInt: 1.2, headlights: true };
+// the Arcade direction on the kit's palette texture: each cell takes a colour and keeps its own gradient
+const ARCADE_CELLS = {
+  "0,0": "#3b2470", "1,0": "#f6f2ff", "2,0": "#d6cdf4", "3,0": "#7a6da6", "4,0": "#625694", "5,0": "#f5483b", "7,0": "#ff8f2e",
+  "0,1": "#9be2ff", "1,1": "#3b9bff", "2,1": "#3f6cf2", "3,1": "#ffd22e", "4,1": "#f5483b", "5,1": "#ff7ab8", "6,1": "#b9a8ee", "7,1": "#9a55f2",
+  "0,2": "#a8e83c", "1,2": "#2fd9de", "2,2": "#5fd84a", "3,2": "#2fb85a", "5,2": "#f3efff", "7,2": "#ff5aa8"
+};
 const AMBS = [
-  { name: "Arctic · blue hour", note: "The default: snow on every roof, a white machine with a red cab, the lights coming on.",
+  { name: "Arcade · skate city", note: "The default: a saturated sky, purple asphalt, orange ramps, a yellow machine with a violet cab.",
+    arcade: true, dozer: "arcade", cells: ARCADE_CELLS,
+    sunAz: 222, sunEl: 50, sunColor: "#fff0d2", sunInt: 2.5,
+    skyTop: "#1846e0", skyHorizon: "#9be2ff", groundColor: "#c9b6f4", hemiSky: "#f2eeff", envInt: 0.4, hemiInt: 1.25,
+    shadowRadius: 3, aoIntensity: 0.65, fogNear: 4.5, fogFar: 15, tiltBand: 0.18, tiltSoft: 0.4, tiltBlur: 1.6,
+    tone: "neutral", exposure: 1.0, saturation: 1.08, contrast: 1.04, warmth: 0, lift: "#3a2a8a", liftAmt: 0.05, vignette: 0.16,
+    palHue: 0, palSat: 1.1, palVal: 0, palGrad: 0.75, palWarm: 0, roughness: 0.8,
+    windowGlow: 0.35, windowColor: "#bfeaff", windowShare: 0.5, lampGlow: 1.2, lampColor: "#fff2c0", neonGlow: 0.45,
+    crystalGlow: 1.8, crystalA: "#39e6ff", crystalB: "#ff5aa8", emberGlow: 1.6, emberColor: "#ff7a1a",
+    bloom: 0.5, bloomRadius: 0.55, bloomThreshold: 0.92, rimColor: "#ffb0e0", rimStr: 0.1, rimPow: 3,
+    ground: "#74c552", plaza: "#6e629f", joint: "rgba(30,14,80,0.2)", earth: "#9a8dcc",
+    poolLow: "#f0782a", poolHigh: "#ffdcaa", dust: "#fff3ff", fury: "#ff5a3a", road: "#6e629f",
+    line: "#ffd84a", flow: "rgba(255,216,74,0.9)", glow: "#ff3fa4" },
+  { name: "Arctic · blue hour", note: "Snow on every roof, a white machine with a red cab, the lights coming on.",
     ...NIGHT, sunAz: 230, sunEl: 4, sunColor: "#9ab0ff", sunInt: 0.6,
     skyTop: "#1d3a7a", skyHorizon: "#8fa5d8", groundColor: "#2a2a40", envInt: 0.5, hemiInt: 0.1,
     shadowRadius: 4, fogNear: 1.5, fogFar: 5, tiltBand: 0.1, tiltSoft: 0.3, tiltBlur: 2.5,
@@ -339,12 +434,16 @@ const AMBS = [
     ground: "#4a3c38", plaza: "#7a6a64", joint: "rgba(20,10,8,0.35)", earth: "#5a3020",
     poolLow: "#c8502a", poolHigh: "#8a7a72", dust: "#7a6a66", fury: "#ffb02a", road: "#3a302e" }
 ].map((a) => Object.assign({}, BASE, a));
-let ambIdx = clamp(+(qs.get("amb") ?? (() => { try { return localStorage.getItem("dozerflipUltimate:amb") || 0; } catch (e) { return 0; } })()), 0, AMBS.length - 1) | 0;
+let ambIdx = clamp(+(qs.get("amb") ?? (() => { try { return localStorage.getItem("dozerflipUltimate2:amb") || 0; } catch (e) { return 0; } })()), 0, AMBS.length - 1) | 0;
 let P = AMBS[ambIdx];
 
-// the Arctic direction on the machine (lowpoly-direction): role hex -> colour
-const ARCTIC = { 0xf2b22a: "#eef2f5", 0xe0a020: "#d23c3c", 0x2a2a2e: "#26313d", 0x8a8f96: "#9db0c2",
-  0x37475a: "#5fb8de", 0x1d1d1d: "#d23c3c", 0xf7f8f9: "#fff6e6" };
+// the machine's colours, by the role the library gives each part (blade and edge: the blade's own)
+const DOZER_LOOK = {
+  arctic: { body: "#eef2f5", trim: "#d23c3c", dark: "#26313d", metal: "#9db0c2", glass: "#5fb8de", accent: "#d23c3c",
+    blade: "#eef2f5", edge: "#9db0c2", beacon: "#ff3a2a", lamp: "#fff6e6" },
+  arcade: { body: "#ffc21f", trim: "#ff8a1e", dark: "#3b2470", metal: "#b9a8ee", glass: "#7a45f0", accent: "#fff0a0",
+    blade: "#e2dcf6", edge: "#ffc21f", beacon: "#c05cff", lamp: "#ffffff" }
+};
 
 // =============================================================================
 // 3. RENDERER, SKY, LIGHTS
@@ -402,6 +501,53 @@ function rebuildSky() {
   scene.environment = envRT.texture;
   skyDome.visible = true;
 }
+// ---- the Arcade's backdrop: clouds, a skyline in the haze, loops on the horizon (only that ambiance shows it)
+const backdrop = new THREE.Group(); backdrop.visible = false; scene.add(backdrop);
+const clouds = new THREE.Group(); backdrop.add(clouds);
+function buildBackdrop() {
+  const r3 = mulberry(77), q = (a, b) => a + (b - a) * r3();
+  // clouds: a few flattened lumps each, one mesh
+  const lumps = [], puff = new THREE.IcosahedronGeometry(1, 0);
+  for (let c = 0; c < 26; c++) {
+    const a = q(0, TAU), d = q(70, 185), cx = Math.cos(a) * d, cz = Math.sin(a) * d - 10, cy = q(26, 58), s = q(5, 11);
+    for (let k = 0, n = 3 + Math.floor(q(0, 3)); k < n; k++)
+      lumps.push(puff.clone().scale(s * q(0.7, 1.3), s * q(0.32, 0.5), s * q(0.6, 1)).rotateY(q(0, TAU)).translate(cx + (k - n / 2) * s * 0.8, cy + q(-1, 1), cz + q(-s, s) * 0.4));
+  }
+  clouds.add(new THREE.Mesh(mergeGeometries(lumps), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xaec8ff, emissiveIntensity: 0.55, flatShading: true })));
+  // the skyline: towers, a white slab on each, two bands of windows
+  const N = 120, box = new THREE.BoxGeometry(1, 1, 1), cols = [0xf5483b, 0x9a55f2, 0x3f6cf2, 0xff5aa8, 0xff8f2e, 0x2fd9de].map((h) => new THREE.Color(h));
+  const body = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ flatShading: true }), N);
+  const caps = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: 0xf6f2ff, flatShading: true }), N);
+  const wins = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: 0xbfeaff, emissive: 0x9be2ff, emissiveIntensity: 0.35 }), N * 2);
+  let n = 0, tries = 0;
+  while (n < N && tries++ < 3000) {
+    const a = q(0, TAU), d = q(86, 150), x = Math.cos(a) * d, z = Math.sin(a) * d - 10;
+    if (trackDist(x, z, 6) < 18) continue;
+    const w = q(7, 13), dp = q(7, 13), h = q(12, 40) * (d > 118 ? 1.25 : 1);
+    dummy.rotation.set(0, q(0, TAU), 0);
+    dummy.position.set(x, h / 2 - 0.3, z); dummy.scale.set(w, h, dp); dummy.updateMatrix(); body.setMatrixAt(n, dummy.matrix); body.setColorAt(n, cols[Math.floor(q(0, cols.length))]);
+    dummy.position.y = h; dummy.scale.set(w + 1, 1.4, dp + 1); dummy.updateMatrix(); caps.setMatrixAt(n, dummy.matrix);
+    for (let k = 0; k < 2; k++) { dummy.position.y = h * (0.42 + 0.3 * k); dummy.scale.set(w + 0.15, h * 0.1, dp + 0.15); dummy.updateMatrix(); wins.setMatrixAt(2 * n + k, dummy.matrix); }
+    n++;
+  }
+  body.count = caps.count = n; wins.count = 2 * n;
+  dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
+  for (const m of [body, caps, wins]) m.frustumCulled = false;
+  backdrop.add(body, caps, wins);
+  // loops on the horizon: candy stripes on a pair of trusses
+  for (const [x, z, ry, R, ci] of [[-60, -34, 0.5, 11, 0], [58, -20, -0.8, 9, 1], [12, -98, 0.1, 13, 4], [-52, 30, 1.1, 8, 2]]) {
+    if (trackDist(x, z, 6) < 16) continue;
+    const tg = new THREE.TorusGeometry(R, R * 0.085, 8, 48), ps = tg.attributes.position, col = [], ca = new THREE.Color(RAIL_COLS[ci][0]), cb = new THREE.Color(0xffffff);
+    for (let i = 0; i < ps.count; i++) { const an = Math.atan2(ps.getY(i), ps.getX(i)), c = Math.floor((an + Math.PI) / TAU * 24) % 2 ? ca : cb; col.push(c.r, c.g, c.b); }
+    tg.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    const loop = new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ vertexColors: true }));
+    loop.position.set(x, R + 1.5, z); loop.rotation.y = ry;
+    const legs = [];
+    for (const sg of [-1, 1]) for (const k of [-1, 1]) legs.push(beam(new V3(sg * R * 0.5, -R * 0.866, 0), new V3(sg * R * 0.8, -R - 1.5, k * R * 0.35), R * 0.07));
+    loop.add(new THREE.Mesh(mergeGeometries(legs), new THREE.MeshLambertMaterial({ color: TRUSS_COLS[ci % 2], flatShading: true })));
+    backdrop.add(loop);
+  }
+}
 
 // =============================================================================
 // 4. ONE PALETTE — the kit's texture, regraded, sampled by kit and code alike
@@ -437,13 +583,22 @@ function regradePalette() {
     mean.push([R / n, Gg / n, B / n]);
   }
   const hue = P.palHue / 360, sa = P.palSat, val = P.palVal, grad = P.palGrad, warm = P.palWarm;
+  // a cell repainted: the target's hue and saturation, its lightness moved by the cell's own gradient
+  const tgt = [], tc = new THREE.Color();
+  for (let k = 0; k < 32; k++) {
+    const hex = P.cells && P.cells[(k % 8) + "," + Math.floor(k / 8)];
+    if (!hex) { tgt.push(null); continue; }
+    tc.set(hex).convertLinearToSRGB();
+    tgt.push([rgb2hsl(tc.r, tc.g, tc.b), rgb2hsl(mean[k][0] / 255, mean[k][1] / 255, mean[k][2] / 255)[2]]);
+  }
   for (let y = 0; y < H; y++) {
     const row = Math.min(3, Math.floor(y / ch));
     for (let x = 0; x < W; x++) {
-      const i = (y * W + x) * 4, m = mean[row * 8 + Math.min(7, Math.floor(x / cw))];
+      const cell = row * 8 + Math.min(7, Math.floor(x / cw)), i = (y * W + x) * 4, m = mean[cell], T = tgt[cell];
       const r0 = (m[0] + (src[i] - m[0]) * grad) / 255, g0 = (m[1] + (src[i + 1] - m[1]) * grad) / 255, b0 = (m[2] + (src[i + 2] - m[2]) * grad) / 255;
       const hsl = rgb2hsl(clamp(r0, 0, 1), clamp(g0, 0, 1), clamp(b0, 0, 1));
-      const c = hsl2rgb(hsl[0] + hue, clamp(hsl[1] * sa, 0, 1), clamp(hsl[2] + val, 0, 1));
+      const c = T ? hsl2rgb(T[0][0], clamp(T[0][1] * sa, 0, 1), clamp(T[0][2] + (hsl[2] - T[1]) * 0.8 + val, 0.04, 0.97))
+        : hsl2rgb(hsl[0] + hue, clamp(hsl[1] * sa, 0, 1), clamp(hsl[2] + val, 0, 1));
       d[i] = clamp(c[0] * (1 + warm) * 255, 0, 255); d[i + 1] = clamp(c[1] * 255, 0, 255); d[i + 2] = clamp(c[2] * (1 - warm) * 255, 0, 255); d[i + 3] = src[i + 3];
     }
   }
@@ -533,10 +688,27 @@ const shadowy = (o, cast = true, receive = true) => { o.traverse((m) => { if (m.
 // from h0 to h1 over its length, vertical sides. A BUMP is the jump: a round
 // mound, concave from the ground to a steep rim round a small flat top, so it
 // is taken from any side and throws the dozer up wherever it comes from.
-const pits = [], ramps = [], bumps = [];
-function addBump(x, z, rb, rt, h) { const b = { x, z, rb, rt, h, kind: "bump" }; bumps.push(b); return b; }
-function bumpH(b, r) { if (r <= b.rt) return b.h; const u = (b.rb - r) / (b.rb - b.rt); return b.h * u * u; }
-function bumpSlope(b, r) { return r <= b.rt ? 0 : 2 * b.h * (b.rb - r) / ((b.rb - b.rt) * (b.rb - b.rt)); }   // -dh/dr
+// THE HEIGHTS are the same three shapes: a HILL is a bump with an S for a slope
+// (climbed at speed, no kick, an air off its crest); a PLATEAU is a ramp with a
+// flat top (a box: walls on every side, no way up but a jump); a KICKER is a
+// ramp on legs that throws the dozer off its top. A PLATFORM floats: it is a
+// floor only for what comes down onto it.
+const pits = [], ramps = [], bumps = [], plats = [];
+function addBump(x, z, rb, rt, h, kind = "bump") { const b = { x, z, rb, rt, h, kind }; bumps.push(b); return b; }
+function bumpH(b, r) {
+  if (r <= b.rt) return b.h;
+  const u = (b.rb - r) / (b.rb - b.rt);
+  return b.kind === "hill" ? b.h * u * u * (3 - 2 * u) : b.h * u * u;
+}
+function bumpSlope(b, r) {   // -dh/dr
+  if (r <= b.rt) return 0;
+  const w = b.rb - b.rt, u = (b.rb - r) / w;
+  return b.kind === "hill" ? 6 * b.h * u * (1 - u) / w : 2 * b.h * u / w;
+}
+const addBox = (x0, x1, z0, z1, h) => addRamp(x0, (z0 + z1) / 2, 1, 0, x1 - x0, (z1 - z0) / 2, h, h, 0, "mesa");
+const addKicker = (x, z, dx, dz, len, hw, h) => addRamp(x, z, dx, dz, len, hw, 0, h, 0, "kicker");
+function addPlat(x, z, hw, hd, y) { const p = { x, z, hw, hd, y, kind: "plat" }; plats.push(p); return p; }
+const scrapes = (r) => !!r && (r.kind === "bump" || r.kind === "kicker" || r.kind === "launch");   // tracks grinding up a slope
 function addPit(ax, az, bx, bz, F, R) {
   const dx = bx - ax, dz = bz - az, len = Math.hypot(dx, dz);
   const p = { ax, az, bx, bz, len, ux: len > 0.01 ? dx / len : 1, uz: len > 0.01 ? dz / len : 0, F, R, yc: 0, y0: -R };
@@ -569,14 +741,17 @@ function pitH(p, r) {
   const w = Math.min(r - p.F, p.R);
   return p.y0 + p.R - Math.sqrt(Math.max(0, p.R * p.R - w * w));
 }
-// the height of what is under (x, z), ramps included — for the camera and the props
-function groundY(x, z) {
+// the height of what is under (x, z), ramps included — for the camera and the props;
+// with a height y, the platforms under it count too (where a fall from y ends)
+function groundY(x, z, y) {
   const p = pitAt(x, z); let h = p ? pitH(p, PL.r) : 0;
   for (const b of bumps) { const r = Math.hypot(x - b.x, z - b.z); if (r < b.rb) h = Math.max(h, bumpH(b, r)); }
   for (const r of ramps) {
+    if (r.dead) continue;
     const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
     if (u >= 0 && u <= r.len && Math.abs(l) <= r.hw) h = Math.max(h, r.h0 + r.k * u);
   }
+  if (y != null) for (const q of plats) if (Math.abs(x - q.x) <= q.hw && Math.abs(z - q.z) <= q.hd && y >= q.y - PLAT_STEP) h = Math.max(h, q.y);
   return h;
 }
 // the surface under a point: how far above it (d), its normal, a pit wall's curvature
@@ -613,6 +788,18 @@ function pitSurf(x, y, z) {
   S.h = 0; S.nx = 0; S.ny = 1; S.nz = 0; S.d = y; S.kap = 0; S.sphi = 0;
 }
 function surf(x, y, z) {
+  surfBase(x, y, z);
+  if (S.blocked) return S;
+  // a platform: under the dozer's feet, or under a fall — never over a climb
+  if (!D.ground && D.vy > 1.5) return S;
+  for (const q of plats) {
+    if (Math.abs(x - q.x) > q.hw || Math.abs(z - q.z) > q.hd || y < q.y - PLAT_STEP || q.y < S.h) continue;
+    S.h = q.y; S.d = y - q.y; S.nx = 0; S.ny = 1; S.nz = 0; S.pit = null; S.kap = 0; S.sphi = 0; S.ramp = q;
+    return S;
+  }
+  return S;
+}
+function surfBase(x, y, z) {
   pitSurf(x, y, z);
   for (const b of bumps) {
     const dx = x - b.x, dz = z - b.z, r = Math.hypot(dx, dz);
@@ -625,6 +812,7 @@ function surf(x, y, z) {
     return S;
   }
   for (const r of ramps) {
+    if (r.dead) continue;
     const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
     if (u < 0 || u > r.len || Math.abs(l) > r.hw) continue;
     const h = r.h0 + r.k * u;
@@ -687,19 +875,22 @@ RailBuilder.prototype.Ro = function (deg, L) {
   for (let i = 0; i < n; i++) { this.p.addScaledVector(this.f, L / n); this.u.applyAxisAngle(this.f, a / n); this.push(); }
   return this;
 };
-const RAIL_RECIPES = [
-  (b, s) => { b.S(7).Pi(12, 18).S(5).Pi(-12, 18).S(3).seg("Loop", 320).Pi(360, 6.5, 3.8 * s).end().S(5).Pi(40, 12); },
-  (b, s) => { b.S(6).Pi(14, 16).Pi(-14, 16).seg("Loop", 300).Pi(360, 5.5, 3.4 * s).end().S(3)
-    .seg("Loop", 300).Pi(360, 5.5, 3.4 * s).end().S(4).Pi(45, 10); },
-  (b, s) => { b.S(6).Pi(16, 12).seg("Spiral", 380).Y(540 * s, 7).end().Pi(-16, 12).S(2)
-    .seg("Barrel roll", 220).Ro(360 * s, 15).end().Pi(-8, 20).S(4).Pi(42, 10); },
-  (b, s) => { b.S(6).Pi(22, 16).S(8).Pi(-22, 16).seg("Barrel roll", 220).Ro(-360 * s, 14).end().S(3)
-    .Y(90 * s, 11).S(4).seg("Corkscrew", 240).Ro(360 * s, 12).end().Pi(30, 10); },
-  (b, s) => { b.S(6).Pi(10, 14).Pi(-10, 14).Y(60 * s, 12).seg("Corkscrew", 240).Ro(360 * s, 12).end()
-    .Y(-120 * s, 12).seg("Corkscrew", 240).Ro(-360 * s, 12).end().Y(60 * s, 12).Pi(38, 10); }
+// THE PARK'S BARS. Each one starts where something throws the dozer and ends aimed
+// at what takes it next (x, z, heading in degrees: 0 east, -90 north, 180 west).
+const RAIL_PLAN = [
+  { name: "South bar", x: -5, z: -4, yaw: 180, col: 2,       // off the entrance, a hook north onto the west loop
+    make: (b) => b.S(5).Pi(22, 9).Pi(-22, 9).S(6).seg("Hook", 120).Y(90, 22).end().Pi(30, 10) },
+  { name: "West loop", x: -23, z: -22, yaw: -90, col: 0,     // thrown at the north-west pool
+    make: (b) => b.S(6).Pi(12, 18).S(5).Pi(-12, 18).S(3).seg("Loop", 320).Pi(360, 6.5, -3.8).end().S(5).Pi(40, 12) },
+  { name: "North bar", x: -8, z: -54, yaw: 0, col: 1,        // off the pool's arrow, two loops, thrown onto the plateau
+    make: (b) => b.S(6).Pi(14, 16).Pi(-14, 16).seg("Loop", 300).Pi(360, 5.5, 3.4).end().S(3)
+      .seg("Loop", 300).Pi(360, 5.5, 3.4).end().S(4).Pi(45, 10) },
+  { name: "East spiral", x: 24.5, z: -41, yaw: 90, col: 4,   // off the plateau, down to the south-east jump
+    make: (b) => b.S(6).Pi(16, 12).seg("Spiral", 380).Y(360, 6).end().Pi(-16, 12).S(2).Pi(-22, 12).S(7).Pi(22, 12).S(2).Pi(40, 10) }
 ];
 const rails = [];
-const RAIL_COLS = [[0xff3d8b, 0xffffff], [0x2ee6ff, 0x1b2a6b], [0xffd400, 0x26262a], [0x7cff4f, 0x14532d], [0xb26bff, 0xffffff]];
+const RAIL_COLS = [[0xff3d8b, 0xffffff], [0x2ee6ff, 0xffffff], [0xffd400, 0xffffff], [0x7cff4f, 0xffffff], [0xb26bff, 0xffffff]];
+const TRUSS_COLS = [0x3f5fe8, 0x6a4ce0];
 function nearPit(x, z, m) { for (const p of pits) if (pitR(p, x, z) < p.F + p.R + m) return true; return false; }
 function nearRamp(x, z, m) {
   for (const b of bumps) if (Math.hypot(x - b.x, z - b.z) < b.rb + m) return true;
@@ -707,34 +898,20 @@ function nearRamp(x, z, m) {
     const px = x - r.x, pz = z - r.z, u = px * r.dx + pz * r.dz, l = -px * r.dz + pz * r.dx;
     if (u > -m && u < r.len + m && Math.abs(l) < r.hw + m) return true;
   }
+  for (const q of plats) if (Math.abs(x - q.x) < q.hw + m && Math.abs(z - q.z) < q.hd + m) return true;
   return false;
 }
-function railOk(b) {
+function railBox(b) {
   const P_ = b.P, n = P_.length / 3;
   let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
-  for (let i = 0; i < n; i++) {
-    const x = P_[3 * i], y = P_[3 * i + 1], z = P_[3 * i + 2];
-    if (Math.abs(x) > WX - 2 || z < WZ0 + 2 || z > -2 || y > 16) return false;
-    if (y < 0.2) return false;
-    if (y < 5 && nearPit(x, z, 1.6)) return false;
-    if (y < 4 && nearRamp(x, z, 2)) return false;
-    if (y < 4 && Math.hypot(x - PARK_SPOT.x, z - PARK_SPOT.z) < 6) return false;
-    x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-  }
-  for (const r of rails) {
-    if (x1 < r.x0 - 3 || x0 > r.x1 + 3 || z1 < r.z0 - 3 || z0 > r.z1 + 3) continue;
-    for (let i = 0; i < n; i += 3) for (let j = 0; j < r.n; j += 3) {
-      const dx = P_[3 * i] - r.P[3 * j], dy = P_[3 * i + 1] - r.P[3 * j + 1], dz = P_[3 * i + 2] - r.P[3 * j + 2];
-      if (dx * dx + dy * dy + dz * dz < 6) return false;
-    }
-  }
+  for (let i = 0; i < n; i++) { x0 = Math.min(x0, P_[3 * i]); x1 = Math.max(x1, P_[3 * i]); z0 = Math.min(z0, P_[3 * i + 2]); z1 = Math.max(z1, P_[3 * i + 2]); }
   b.box = [x0, x1, z0, z1];
-  return true;
+  return b;
 }
 function makeRail(b, cols) {
   const n = b.T.length;
   return { P: Float32Array.from(b.P), F: Float32Array.from(b.F), U: Float32Array.from(b.U), T: Int16Array.from(b.T),
-    n, len: (n - 1) * RAIL_DS, segs: b.segs, pillars: b.pillars, col: cols, cool: 0,
+    n, len: (n - 1) * RAIL_DS, segs: b.segs, pillars: b.pillars, col: cols, cool: 0, dead: false, fall: null, group: null, feet: [],
     x0: b.box[0], x1: b.box[1], z0: b.box[2], z1: b.box[3] };
 }
 const RS = { px: 0, py: 0, pz: 0, fx: 0, fy: 0, fz: 0, ux: 0, uy: 0, uz: 0 };
@@ -754,61 +931,136 @@ const START = { x: 0, z: 36, yaw: -Math.PI / 2 };     // moved to the corridor's
 const PARK_SPOT = { x: 0, z: -4 };                     // kept clear of rails
 const ZONE_IN = { x: 0, z: 36, yaw: -Math.PI / 2 };    // where ?skip=1 and N drop the dozer
 const ARROWS = [];
+const FLOW = [];          // chevrons on the ground: a line from each exit to the next entry
+const SPOTS = { letters: [], gears: [], hosts: [] };   // where the collection hangs
 function layoutPark() {
-  // the pools; each one's way out is an arrow standing off the wall, halfway up it, on the plaza's side
-  const pool = addPit(-14, -30, -14, -30, 3, 3);
-  const pipe = addPit(-9, -13, 7, -13, 1.8, 3);
-  const bowl = addPit(14, -33, 14, -28, 2.4, 3);
-  // (ax, az): the point of the pool's axis it stands out from; (dx, dz): out, toward the lip
-  const arrow = (p, ax, az, dx, dz) => {
+  // the hollows; each one's way out is an arrow standing off the wall, halfway up it, aimed at what comes next
+  const pool = addPit(-22.5, -53, -22.5, -53, 2.5, 3);
+  const pipe = addPit(-6, -13, 6, -13, 1.8, 3);
+  const bowl = addPit(5.5, -36, 5.5, -31, 2.4, 3);
+  // (ax, az): the point of the pool's axis it stands out from; (dx, dz): out, toward the lip;
+  // vh, vy: its own throw, where the usual one would fall short of what it is aimed at
+  const arrow = (p, ax, az, dx, dz, vh = ARROW_VH, vy = ARROW_VY) => {
     const l = Math.hypot(dx, dz); dx /= l; dz /= l;
     const w = p.R * ARROW_W, r = p.F + w, sp = w / p.R, cp = Math.sqrt(1 - sp * sp);
     const sx = ax + dx * r, sy = p.y0 + p.R * (1 - cp), sz = az + dz * r, nx = -dx * sp, ny = cp, nz = -dz * sp;
-    ARROWS.push({ p, dx, dz, sx, sy, sz, nx, ny, nz, x: sx + nx * 0.8, y: sy + ny * 0.8, z: sz + nz * 0.8, lean: Math.asin(sp), cd: 0, t: rnd() * 5, g: null });
+    ARROWS.push({ p, dx, dz, vh, vy, sx, sy, sz, nx, ny, nz, x: sx + nx * 0.8, y: sy + ny * 0.8, z: sz + nz * 0.8, lean: Math.asin(sp), cd: 0, t: rnd() * 5, g: null });
   };
-  arrow(pool, -14, -30, 1, 0);
-  arrow(pipe, -9, -13, -1, 0);      // the half-pipe: one up each end wall, out along its axis, never in the way across it
-  arrow(pipe, 7, -13, 1, 0);
-  arrow(bowl, 14, -30.5, -1, 0);
-  // jumps on the plaza
-  addBump(-3, -24, 3.4, 0.7, 1.6);
-  addBump(4, -38, 3.4, 0.7, 1.6);
-  addBump(-20, -6, 3.2, 0.7, 1.5);
-  addBump(20, -8, 3.2, 0.7, 1.5);
-  // the rails: a recipe dropped at a seeded spot and heading, kept if it fits
-  let tries = 0;
-  while (rails.length < RAIL_COUNT && tries++ < 3000) {
-    const x = rr(-WX + 3, WX - 3), z = rr(WZ0 + 3, -3);
-    if (nearPit(x, z, 2.5) || nearRamp(x, z, 2)) continue;
-    const yaw = Math.floor(rr(0, 8)) * Math.PI / 4 + rr(-0.2, 0.2);
-    const b = new RailBuilder(x, RAIL_START_H, z, yaw);
-    RAIL_RECIPES[(rails.length * 2 + Math.floor(tries / 300)) % RAIL_RECIPES.length](b, rnd() < 0.5 ? 1 : -1);   // a different recipe each
-    if (railOk(b)) rails.push(makeRail(b, RAIL_COLS[rails.length % RAIL_COLS.length]));
+  arrow(pool, -22.5, -53, 1, -0.1);        // east, onto the north bar
+  arrow(pipe, -5, -13, 0, -1);             // north, up the kicker
+  arrow(pipe, 5, -13, 0, -1);              // north, into the bowl
+  arrow(bowl, 5.5, -36, 0.5, -0.87, 10, 19.5);  // north-north-east, a long high throw: up onto the plateau
+  // the jumps: inside the south bar's hook, where the east spiral lands (and on into the city),
+  // under the plateau (the way up from the ground, at speed), and under the east platform
+  addBump(-15, -10, 3.0, 0.7, 1.5);
+  addBump(24, -9, 3.2, 0.7, 1.5);
+  addBump(15, -42, 3.2, 0.7, 1.6);
+  addBump(16, -20, 3.0, 0.7, 1.5);
+  // the heights: a hill climbed at speed, a plateau with no way up but a jump, platforms over both
+  addBump(-13.5, -31, 5.8, 1.3, 3.0, "hill");
+  addBox(9, WX, WZ0, -46.5, 2.0);
+  addPlat(20.5, -56, 3.2, 2.4, 3.4);       // off the plateau with a jump
+  addPlat(26, -50.5, 2.4, 2.6, 4.9);       // off the first one
+  addPlat(16, -24.4, 2.2, 2.4, 3.0);       // off the east jump, taken north at full speed
+  // the kickers, on legs: one on the half-pipe's west line, one on the avenue into the park
+  addKicker(-5, -24, 0, -1, 5, 1.6, 1.8);
+  addKicker(0, 10.5, 0, -1, 5, 1.5, 1.7);
+  // the bars
+  for (const q of RAIL_PLAN) {
+    const b = new RailBuilder(q.x, RAIL_START_H, q.z, q.yaw * Math.PI / 180);
+    q.make(b);
+    const r = makeRail(railBox(b), RAIL_COLS[q.col]); r.name = q.name; rails.push(r);
   }
+  // the lines
+  const F = (...pts) => FLOW.push(pts);
+  F([0, -1.6], [0, -7.6]);                     // the entrance, into the half-pipe
+  F([-1.2, -3.4], [-4.2, -4]);                 // ... or west, onto the south bar
+  F([-22.9, -17.4], [-23, -21.2]);             // the south bar's throw, onto the west loop
+  F([-24.7, -40], [-24.3, -46.8]);             // the west loop's throw, into the pool
+  F([-16.6, -53.6], [-8.8, -54]);              // the pool's arrow, onto the north bar
+  F([24.5, -45.4], [24.5, -41.8]);             // off the plateau, onto the east spiral
+  F([24.5, -21.4], [24.2, -13]);               // the spiral's throw, over the south-east jump and into the city
+  F([19, -5], [11, -4.3], [4, -4.1]);          // the south lane, back to the entrance
+  F([16, -7], [16, -16.4]);                    // off the south lane, the jump onto the east platform
+  F([-5, -19.2], [-5, -23.6]);                 // the half-pipe's west arrow, up the kicker
+  F([-5, -37], [-5, -49.8]);                   // the kicker's throw, across the north bar
+  F([5, -19.2], [5, -25.2]);                   // the half-pipe's east arrow, into the bowl
+  F([15, -34], [15, -38.4]);                   // the jump under the plateau, taken north
+  F([8.3, -42.4], [9.8, -45.4]);               // the bowl's arrow, up onto the plateau
+  F([0, 16], [0, 11.2]);                       // the avenue, up its kicker
+  // the collection: letters where a good run ends, gears on the way
+  const loop = rails[1]; let it = 0;
+  for (let i = 0; i < loop.n; i++) if (loop.P[3 * i + 1] > loop.P[3 * it + 1]) it = i;
+  SPOTS.letters = [
+    [-13.5, 4.0, -31],                                                 // D: the hill's top
+    [26, 5.9, -50.5],                                                  // O: the highest platform
+    [loop.P[3 * it], loop.P[3 * it + 1] - 0.75, loop.P[3 * it + 2]],   // Z: the top of the west loop, upside down
+    null,                                                              // E: inside a building (SPOTS.hosts)
+    [-5, 4.3, -33]                                                     // R: the top of the kicker's flight
+  ];
+  SPOTS.gears = [
+    [-22.5, -2, -53], [5.5, -2, -33.5], [0, -2, -13],                  // the bottom of each hollow
+    [-15, 4.2, -10], [24, 4.3, -9],                                    // over the jumps
+    [16, 4.0, -24.4], [20.5, 4.4, -56], [27.5, 3.0, -59.4],            // the platforms, the plateau's far corner
+    [27.6, 1.0, 34.2]                                                  // behind the city's last block
+  ];
+  SPOTS.hosts = [[6, 22, "letter"], [-18, 10, "gear"], [16, 30, "gear"], [-10, 34, "gear"]];   // inside what stands nearest
 }
 
 // ---- the ground: one picture for the plaza and the snow (or grass), holes for the pools and the city
-const GX0 = -40, GX1 = 40, GZ0 = -56, GZ1 = 0;
-const groundCv = document.createElement("canvas"); groundCv.width = 1024; groundCv.height = Math.round(1024 * (GZ1 - GZ0) / (GX1 - GX0));
-const groundTex = new THREE.CanvasTexture(groundCv); groundTex.colorSpace = THREE.SRGBColorSpace; groundTex.anisotropy = 8;
+const GX0 = -40, GX1 = 40, GZ0 = -72, GZ1 = 0;
+const groundCv = document.createElement("canvas"); groundCv.width = 2048; groundCv.height = Math.round(2048 * (GZ1 - GZ0) / (GX1 - GX0));
+const groundTex = new THREE.CanvasTexture(groundCv); groundTex.colorSpace = THREE.SRGBColorSpace; groundTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 1 });
 const farMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
 function drawGround() {
-  const g = groundCv.getContext("2d"), k = groundCv.width / (GX1 - GX0);
+  const g = groundCv.getContext("2d"), k = groundCv.width / (GX1 - GX0), cw = groundCv.width, ch = groundCv.height;
   const X = (x) => (x - GX0) * k, Z = (z) => (z - GZ0) * k;
-  g.fillStyle = P.ground; g.fillRect(0, 0, groundCv.width, groundCv.height);
+  g.fillStyle = P.ground; g.fillRect(0, 0, cw, ch);
   const r2 = mulberry(5);
   for (let i = 0; i < 260; i++) {
-    const x = r2() * groundCv.width, y = r2() * groundCv.height, rad = 8 + r2() * 40, dark = r2() < 0.5;
+    const x = r2() * cw, y = r2() * ch, rad = (0.6 + r2() * 3.2) * k, dark = r2() < 0.5;
     const gr = g.createRadialGradient(x, y, 0, x, y, rad);
     gr.addColorStop(0, dark ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.08)"); gr.addColorStop(1, "rgba(0,0,0,0)");
     g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
   }
-  g.fillStyle = P.plaza; g.fillRect(X(PLAZA.x0), Z(PLAZA.z0), (PLAZA.x1 - PLAZA.x0) * k, (PLAZA.z1 - PLAZA.z0) * k);
-  g.strokeStyle = P.joint; g.lineWidth = 1.5;
-  for (let s = PLAZA.x0; s <= PLAZA.x1; s += 3) { g.beginPath(); g.moveTo(X(s), Z(PLAZA.z0)); g.lineTo(X(s), Z(PLAZA.z1)); g.stroke(); }
-  for (let s = PLAZA.z0; s <= PLAZA.z1; s += 3) { g.beginPath(); g.moveTo(X(PLAZA.x0), Z(s)); g.lineTo(X(PLAZA.x1), Z(s)); g.stroke(); }
-  for (let i = 0; i < 1400; i++) { g.fillStyle = r2() < 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)"; g.fillRect(X(rr2(r2, PLAZA.x0, PLAZA.x1)), Z(rr2(r2, PLAZA.z0, PLAZA.z1)), 2, 2); }
+  if (P.arcade) {   // a mown lawn
+    g.fillStyle = "rgba(255,255,255,0.07)";
+    for (let x = GX0; x < GX1; x += 3) g.fillRect(X(x), 0, 1.5 * k, ch);
+  }
+  const px = X(PLAZA.x0), pz = Z(PLAZA.z0), pw = (PLAZA.x1 - PLAZA.x0) * k, ph = (PLAZA.z1 - PLAZA.z0) * k;
+  g.fillStyle = P.plaza; g.fillRect(px, pz, pw, ph);
+  if (P.arcade) {   // light lying on the asphalt: warm pools down the lanes, cool ones between
+    g.save(); g.beginPath(); g.rect(px, pz, pw, ph); g.clip();
+    for (let i = 0; i < 34; i++) {
+      const x = X(rr2(r2, PLAZA.x0, PLAZA.x1)), y = Z(rr2(r2, PLAZA.z0, PLAZA.z1)), rad = (4 + r2() * 6) * k, warm = i % 3 !== 0;
+      const gr = g.createRadialGradient(x, y, 0, x, y, rad);
+      gr.addColorStop(0, warm ? "rgba(255,170,150,0.20)" : "rgba(110,150,255,0.20)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+    }
+    g.restore();
+  }
+  g.strokeStyle = P.joint; g.lineWidth = 0.1 * k;
+  for (let s = PLAZA.x0; s <= PLAZA.x1; s += 4) { g.beginPath(); g.moveTo(X(s), Z(PLAZA.z0)); g.lineTo(X(s), Z(PLAZA.z1)); g.stroke(); }
+  for (let s = PLAZA.z0; s <= PLAZA.z1; s += 4) { g.beginPath(); g.moveTo(X(PLAZA.x0), Z(s)); g.lineTo(X(PLAZA.x1), Z(s)); g.stroke(); }
+  for (let i = 0; i < 2600; i++) { g.fillStyle = r2() < 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)"; g.fillRect(X(rr2(r2, PLAZA.x0, PLAZA.x1)), Z(rr2(r2, PLAZA.z0, PLAZA.z1)), 0.14 * k, 0.14 * k); }
+  // the plaza's edge
+  g.strokeStyle = P.line; g.lineWidth = 0.22 * k; g.strokeRect(px + 0.7 * k, pz + 0.7 * k, pw - 1.4 * k, ph - 1.4 * k);
+  // the lines: chevrons from each exit to the next entry
+  g.strokeStyle = P.flow; g.lineWidth = 0.2 * k; g.lineCap = "round"; g.lineJoin = "round";
+  for (const line of FLOW) for (let s = 0; s < line.length - 1; s++) {
+    const [ax, az] = line[s], [bx, bz] = line[s + 1];
+    if (az > 0) continue;                       // south of the park the road is the kit's
+    const len = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.round(len / 1.5)), dx = (bx - ax) / len, dz = (bz - az) / len;
+    for (let i = 0; i < n; i++) {
+      const u = (i + 0.5) / n, cx = ax + (bx - ax) * u, cz = az + (bz - az) * u;
+      g.beginPath();
+      g.moveTo(X(cx - dx * 0.3 - dz * 0.6), Z(cz - dz * 0.3 + dx * 0.6));
+      g.lineTo(X(cx + dx * 0.35), Z(cz + dz * 0.35));
+      g.lineTo(X(cx - dx * 0.3 + dz * 0.6), Z(cz - dz * 0.3 - dx * 0.6));
+      g.stroke();
+    }
+  }
   groundTex.needsUpdate = true;
   farMat.color.set(P.ground);
 }
@@ -838,8 +1090,52 @@ function buildGround() {
   far.position.y = -0.24; far.receiveShadow = true; scene.add(far);
   drawGround();
 }
+// ---- what is painted by the ambiance: a sheet is a mesh whose vertices each hold a place
+// (0..1) between two of the ambiance's colours — the pools, the jumps, the hill, the plateau
+const sheets = [];
+function sheetMesh(g, ts, lo, hi, opts) {   // ts: a number per vertex, or a function of its position
+  const pos = g.attributes.position;
+  if (typeof ts === "function") { const f = ts; ts = []; for (let i = 0; i < pos.count; i++) ts.push(sat(f(pos.getX(i), pos.getY(i), pos.getZ(i)))); }
+  g.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(pos.count * 3), 3));
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, flatShading: true, roughness: 0.9 }, opts)));
+  m.material.userData.noWeather = true;
+  sheets.push({ g, ts, lo, hi });
+  return m;
+}
+function paintSheets() {
+  const a = new THREE.Color(), b = new THREE.Color(), c = new THREE.Color();
+  for (const s of sheets) {
+    a.set(P[s.lo]); b.set(P[s.hi]);
+    const col = s.g.attributes.color;
+    for (let i = 0; i < s.ts.length; i++) { c.copy(a).lerp(b, smooth(s.ts[i] * 1.4 - 0.2)); col.setXYZ(i, c.r, c.g, c.b); }
+    col.needsUpdate = true;
+  }
+}
+const hazardTex = (() => {     // yellow and ink, on the lip of everything that throws
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const g = c.getContext("2d"); g.fillStyle = "#ffd22e"; g.fillRect(0, 0, 64, 64);
+  g.fillStyle = "#2a1650";
+  for (let i = -64; i < 128; i += 32) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 16, 0); g.lineTo(i + 16 + 64, 64); g.lineTo(i + 64, 64); g.closePath(); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  return t;
+})();
+const hazardMat = new THREE.MeshStandardMaterial({ map: hazardTex, roughness: 0.7, side: THREE.DoubleSide }); hazardMat.userData.noWeather = true;
+// a strip between two outlines (lists of [x, y, z]), its picture running along it
+function stripGeo(inner, outer, closed, every = 1.4) {
+  const pos = [], uv = [], idx = [], n = inner.length;
+  let run = 0;
+  for (let k = 0; k < n; k++) {
+    if (k) run += Math.hypot(inner[k][0] - inner[k - 1][0], inner[k][2] - inner[k - 1][2], inner[k][1] - inner[k - 1][1]);
+    pos.push(...inner[k], ...outer[k]); uv.push(run / every, 0, run / every, 1);
+  }
+  for (let k = 0; k < n - 1; k++) { const a = 2 * k; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  if (closed) { const a = 2 * (n - 1); idx.push(a, 0, a + 1, a + 1, 0, 1); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return g;
+}
 // the pools: rings of the outline at each (offset, y) of the profile, painted bottom to top
-const poolSheets = [];
 function buildPits() {
   for (const p of pits) {
     const ring = lipRing(p), prof = [[0, p.y0, 0], [p.F, p.y0, 0.04]];
@@ -853,17 +1149,16 @@ function buildPits() {
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(posA, 3));
-    g.setAttribute("color", new THREE.Float32BufferAttribute(new Float32Array(posA.length), 3));
     g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9, side: THREE.DoubleSide }));
-    m.material.userData.noWeather = true; m.receiveShadow = true; scene.add(m);
-    poolSheets.push({ g, ts });
-    // the coping: a metal tube round the lip
-    const lip = lipRing(p, p.F + p.R + 0.04).map((a) => new V3(a[0], 0.05, a[1]));
-    const cope = pmesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lip, true), lip.length * 2, 0.09, 6, true), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
+    const m = sheetMesh(g, ts, "poolLow", "poolHigh", { side: THREE.DoubleSide });
+    m.receiveShadow = true; scene.add(m);
+    // the lip: a hazard band on the deck round it, and the coping, a metal tube
+    const e = p.F + p.R, band = new THREE.Mesh(stripGeo(lipRing(p, e + 0.1).map((a) => [a[0], 0.012, a[1]]), lipRing(p, e + 0.75).map((a) => [a[0], 0.012, a[1]]), true), hazardMat);
+    band.receiveShadow = true; scene.add(band);
+    const lip = lipRing(p, e + 0.04).map((a) => new V3(a[0], 0.05, a[1]));
+    const cope = pmesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(lip, true), lip.length * 2, 0.1, 6, true), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
     scene.add(shadowy(cope));
   }
-  paintPools();
   buildArrows();
 }
 // the way out of a pool: a fat arrow floating over the floor, pointing over the lip, and its glow
@@ -909,38 +1204,71 @@ function touchArrows() {
     const A = D.air;
     if (A.cur) cancelTrick();
     A.assist = null; A.heading = Math.atan2(a.dz, a.dx); A.dashes = 0;
-    D.vx = a.dx * ARROW_VH; D.vz = a.dz * ARROW_VH; D.vy = ARROW_VY;
+    D.vx = a.dx * a.vh; D.vz = a.dz * a.vh; D.vy = a.vy;
     D.f.set(a.dx, 0, a.dz); bodyQuat(D.f, UP, D.q);
     trick("Launch", ARROW_PTS, "#ffd23a");
     E.st = 0.3; E.fovKick += 6; E.trauma = Math.min(1, E.trauma + 0.25); slowmo(0.5, 0.12);
     ring(new V3(a.sx, a.sy, a.sz), 3, 0.45, 0xffc23a);
     sparks(new V3(a.x, a.y, a.z), 24, 10, 0xffd23a);
+    starFlash(new V3(a.x, a.y, a.z), 2.4, 0xffd23a);
     return;
   }
 }
-function paintPools() {
-  const a = new THREE.Color(P.poolLow), b = new THREE.Color(P.poolHigh), c = new THREE.Color();
-  for (const s of poolSheets) {
-    const col = s.g.attributes.color;
-    for (let i = 0; i < s.ts.length; i++) { c.copy(a).lerp(b, smooth(s.ts[i] * 1.4 - 0.2)); col.setXYZ(i, c.r, c.g, c.b); }
-    col.needsUpdate = true;
-  }
-}
-// the ramps: a wedge, its top a plane, its sides and back vertical
+// the jumps and the hill: a profile turned round its axis
+const rimMat = new THREE.MeshStandardMaterial({ color: 0xffd22e, emissive: 0xffb81a, emissiveIntensity: 0.6, roughness: 0.4 }); rimMat.userData.noWeather = true;
 function buildBumps() {
   for (const b of bumps) {
-    const prof = [new THREE.Vector2(0, b.h), new THREE.Vector2(b.rt, b.h)];
-    for (let k = 1; k <= 10; k++) { const r = b.rt + (b.rb - b.rt) * k / 10; prof.push(new THREE.Vector2(r, bumpH(b, r))); }
-    const m = pmesh(new THREE.LatheGeometry(prof, 28), 0xd9d2c4, { flatShading: true });
+    const hill = b.kind === "hill", steps = hill ? 14 : 10, prof = [];
+    for (let k = steps; k >= 1; k--) { const r = b.rt + (b.rb - b.rt) * k / steps; prof.push(new THREE.Vector2(r, bumpH(b, r))); }
+    prof.push(new THREE.Vector2(b.rt, b.h), new THREE.Vector2(0, b.h));     // from the foot up: the faces look out
+    const m = sheetMesh(new THREE.LatheGeometry(prof, hill ? 26 : 28), (x, y) => y / b.h, hill ? "ground" : "poolLow", hill ? "earth" : "poolHigh");
     m.position.set(b.x, 0.005, b.z); scene.add(shadowy(m));
-    const lip = pmesh(new THREE.TorusGeometry(b.rt, 0.07, 6, 28).rotateX(Math.PI / 2), 0xc9ced4, { roughness: 0.35, metalness: 0.6 });
+    if (hill) continue;
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(b.rt, 0.08, 6, 28).rotateX(Math.PI / 2), rimMat);
     lip.position.set(b.x, b.h + 0.02, b.z); scene.add(shadowy(lip));
+    const foot = new THREE.Mesh(stripGeo(Array.from({ length: 33 }, (_, i) => [b.x + Math.cos(i / 32 * TAU) * (b.rb - 0.05), 0.014, b.z + Math.sin(i / 32 * TAU) * (b.rb - 0.05)]),
+      Array.from({ length: 33 }, (_, i) => [b.x + Math.cos(i / 32 * TAU) * (b.rb + 0.5), 0.014, b.z + Math.sin(i / 32 * TAU) * (b.rb + 0.5)]), false), hazardMat);
+    foot.receiveShadow = true; scene.add(foot);
   }
 }
+// the ramps: the race's wedge; the plateau, a block; the kickers, a deck on legs
+const KICKERS = [];
 function buildRamps() {
   buildBumps();
   for (const r of ramps) {
     const W = (u, l, y) => new V3(r.x + r.dx * u - r.dz * l, y, r.z + r.dz * u + r.dx * l);
+    if (r.kind === "mesa") {
+      const h = r.h1, g = new THREE.BoxGeometry(r.len, h, 2 * r.hw).translate(r.len / 2, h / 2, 0), nr = g.attributes.normal, ps = g.attributes.position, ts = [];
+      for (let i = 0; i < ps.count; i++) ts.push(nr.getY(i) > 0.5 ? 1 : 0.5 * ps.getY(i) / h);
+      const m = sheetMesh(g, ts, "earth", "plaza");
+      m.position.set(r.x, 0, r.z); m.rotation.y = -Math.atan2(r.dz, r.dx); scene.add(shadowy(m));
+      // a hazard band under the rim, on the faces that look into the park
+      const c = [W(0, -r.hw, 0), W(0, r.hw, 0), W(r.len, r.hw, 0)].map((v) => [v.x, 0, v.z]);
+      const band = new THREE.Mesh(stripGeo(c.map((v) => [v[0], h - 0.42, v[2]]), c.map((v) => [v[0], h - 0.02, v[2]]), false, 0.9), hazardMat);
+      band.position.set(-0.012, 0, 0.012); scene.add(band);
+      continue;
+    }
+    if (r.kind === "kicker") {
+      const grp = new THREE.Group(), sl = Math.atan2(r.h1, r.len), L = Math.hypot(r.len, r.h1), yaw = -Math.atan2(r.dz, r.dx);
+      // the deck: a slab laid along the slope
+      const dg = new THREE.BoxGeometry(L, 0.14, 2 * r.hw).translate(L / 2, -0.07, 0);
+      dg.applyMatrix4(new THREE.Matrix4().makeRotationZ(sl)).applyMatrix4(new THREE.Matrix4().makeRotationY(yaw)).translate(r.x, 0, r.z);
+      grp.add(shadowy(sheetMesh(dg, (x, y) => y / r.h1, "poolLow", "poolHigh")));
+      // its lip, and the legs under it
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 2 * r.hw + 0.12), rimMat); lip.position.copy(W(r.len - 0.12, 0, r.h1 + 0.02)); lip.rotation.set(0, yaw, sl);
+      grp.add(shadowy(lip));
+      const bars = [];
+      for (const sg of [-1, 1]) {
+        const l = sg * (r.hw - 0.12), at = (u) => W(u, l, Math.max(0, r.k * u - 0.14));
+        for (const u of [r.len * 0.42, r.len * 0.72, r.len - 0.1]) bars.push(beam(W(u, l, 0), at(u), 0.14));
+        bars.push(beam(W(r.len * 0.42, l, 0), at(r.len * 0.72), 0.08), beam(W(r.len * 0.72, l, 0), at(r.len - 0.1), 0.08));
+      }
+      bars.push(beam(W(r.len - 0.1, -r.hw + 0.12, r.h1 * 0.5), W(r.len - 0.1, r.hw - 0.12, r.h1 * 0.5), 0.09), beam(W(r.len - 0.1, -r.hw + 0.12, 0.1), W(r.len - 0.1, r.hw - 0.12, r.h1 - 0.3), 0.08));
+      grp.add(shadowy(new THREE.Mesh(mergeGeometries(bars), flatMat(TRUSS_COLS[KICKERS.length % 2], { flatShading: true }))));
+      scene.add(grp); r.group = grp; r.name = "Kicker"; r.cx = r.x + r.dx * r.len * 0.6; r.cz = r.z + r.dz * r.len * 0.6;
+      KICKERS.push(r);
+      continue;
+    }
     const a0 = W(0, -r.hw, r.h0), a1 = W(0, r.hw, r.h0), b0 = W(r.len, -r.hw, r.h1), b1 = W(r.len, r.hw, r.h1);
     const c0 = W(r.len, -r.hw, r.base), c1 = W(r.len, r.hw, r.base), d0 = W(0, -r.hw, r.base), d1 = W(0, r.hw, r.base);
     const tris = [a0, b1, b0, a0, a1, b1, b0, b1, c1, b0, c1, c0, a0, b0, c0, a0, c0, d0, a1, c1, b1, a1, d1, c1];
@@ -952,16 +1280,47 @@ function buildRamps() {
     e.position.copy(e0); e.rotation.y = -Math.atan2(r.dz, r.dx); scene.add(shadowy(e));
   }
 }
+// the platforms: a slab with a hazard edge, held up by two jets and their light on the ground
+const jetMat = new THREE.MeshBasicMaterial({ color: 0x9cf0ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+const jets = [];
+function buildPlats() {
+  for (const q of plats) {
+    const grp = new THREE.Group(); grp.position.set(q.x, q.y, q.z); scene.add(grp);
+    const slab = sheetMesh(bevelBox(2 * q.hw, PLAT_T, 2 * q.hd, 0.08).translate(0, -PLAT_T / 2, 0), (x, y) => 1 + y / PLAT_T, "earth", "plaza");
+    grp.add(shadowy(slab));
+    const c = [[-q.hw, -q.hd], [q.hw, -q.hd], [q.hw, q.hd], [-q.hw, q.hd], [-q.hw, -q.hd]];
+    const band = new THREE.Mesh(stripGeo(c.map((v) => [v[0] * 1.004, -0.34, v[1] * 1.004]), c.map((v) => [v[0] * 1.004, -0.06, v[1] * 1.004]), false, 0.7), hazardMat);
+    grp.add(band);
+    for (const sx of [-1, 1]) {
+      const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.28, 0.5, 8), flatMat(TRUSS_COLS[1], { flatShading: true })); pod.position.set(sx * q.hw * 0.5, -PLAT_T - 0.25, 0);
+      const jet = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.1, 8).rotateX(Math.PI).translate(0, -0.55, 0), jetMat); jet.position.set(sx * q.hw * 0.5, -PLAT_T - 0.5, 0);
+      grp.add(shadowy(pod), jet); jets.push(jet);
+    }
+    const disc = new THREE.Mesh(new THREE.PlaneGeometry(q.hw * 3.4, q.hd * 3.4).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: poolTex, color: 0x4fd8ff, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }));
+    disc.position.set(q.x, groundY(q.x, q.z) + 0.04, q.z); disc.renderOrder = 2; scene.add(disc);
+  }
+}
 let railMats = [];
+// what a rail or a kicker stands on: hit in the fury, the whole thing comes down
+const FEET = [];
+const beamQ = new THREE.Quaternion(), beamD = new V3();
+function beam(a, b, w) {     // a square bar from a to b
+  beamD.subVectors(b, a); const len = Math.max(1e-3, beamD.length());
+  const g = new THREE.BoxGeometry(w, len, w);
+  g.applyQuaternion(beamQ.setFromUnitVectors(UP, beamD.multiplyScalar(1 / len)));
+  return g.translate((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2);
+}
 function buildRails() {
-  for (const r of rails) {
-    const rad = 0.09, seg = 6, pos = [], col = [], idx = [], ca = new THREE.Color(r.col[0]), cb = new THREE.Color(r.col[1]);
-    const side = new V3(), f = new V3(), u = new V3();
+  rails.forEach((r, ri) => {
+    const grp = new THREE.Group(); r.group = grp; scene.add(grp);
+    const rad = RAIL_TUBE, seg = 8, pos = [], col = [], idx = [], ca = new THREE.Color(r.col[0]), cb = new THREE.Color(r.col[1]);
+    const side = new V3(), f = new V3(), u = new V3(), a = new V3(), b = new V3();
     for (let i = 0; i < r.n; i++) {
       f.set(r.F[3 * i], r.F[3 * i + 1], r.F[3 * i + 2]); u.set(r.U[3 * i], r.U[3 * i + 1], r.U[3 * i + 2]); side.crossVectors(f, u).normalize();
-      const c = Math.floor(i * RAIL_DS / 0.35) % 2 ? cb : ca;
+      const c = Math.floor(i * RAIL_DS / 0.5) % 2 ? cb : ca;
       for (let k = 0; k < seg; k++) {
-        const a = k / seg * TAU, cx = Math.cos(a) * rad, sx = Math.sin(a) * rad;
+        const an = k / seg * TAU, cx = Math.cos(an) * rad, sx = Math.sin(an) * rad;
         pos.push(r.P[3 * i] + u.x * cx + side.x * sx, r.P[3 * i + 1] + u.y * cx + side.y * sx, r.P[3 * i + 2] + u.z * cx + side.z * sx);
         col.push(c.r, c.g, c.b);
       }
@@ -974,28 +1333,292 @@ function buildRails() {
     g.setIndex(idx); g.computeVertexNormals();
     const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, emissive: r.col[0], emissiveIntensity: 0 });
     mat.userData.noWeather = true; railMats.push(mat);
-    scene.add(shadowy(new THREE.Mesh(g, mat)));
-    // posts where nothing of the rail runs under them, a pillar in a spiral
-    let lastPost = -99;
-    for (let i = 8; i < r.n; i++) {
+    grp.add(shadowy(new THREE.Mesh(g, mat)));
+    // the trusses: an A-frame under every stretch that runs upright with nothing of the bar below it
+    const bars = [], foot = (x, z, top, rad2) => {      // a stand too low to be hit from the side is no foot: the bar's own way in stays safe
+      if (top - groundY(x, z) < 0.8) return;
+      const ft = { x, z, top, r: rad2, o: r }; r.feet.push(ft); FEET.push(ft);
+    };
+    const frame = (x, y, z, sx, sz, sp, w) => {     // two legs from (x, y, z) splayed along (sx, sz), a pad under each, a tie between
+      const gy = groundY(x, z);
+      for (const sg of [-1, 1]) {
+        a.set(x, y, z); b.set(x + sx * sp * sg, gy, z + sz * sp * sg);
+        bars.push(beam(a, b, w), new THREE.BoxGeometry(w * 3, 0.07, w * 3).translate(b.x, gy + 0.035, b.z));
+      }
+      if (y - gy > 1.1) { const hh = gy + (y - gy) * 0.45, t = sp * 0.55; a.set(x - sx * t, hh, z - sz * t); b.set(x + sx * t, hh, z + sz * t); bars.push(beam(a, b, w * 0.7)); }
+      foot(x, z, y, FOOT_R + sp * 0.5);
+    };
+    let last = -99;
+    for (let i = 6; i < r.n - 2; i++) {
       const x = r.P[3 * i], y = r.P[3 * i + 1], z = r.P[3 * i + 2];
-      if (r.U[3 * i + 1] < 0.8 || y < 0.25 || i - lastPost < 9) continue;
+      if (r.U[3 * i + 1] < 0.8 || y - groundY(x, z) < 0.3 || i - last < 16) continue;
       let clear = true;
-      for (let j = 0; j < r.n && clear; j += 2) if (j !== i && Math.hypot(r.P[3 * j] - x, r.P[3 * j + 2] - z) < 0.45 && r.P[3 * j + 1] < y - 0.3) clear = false;
+      for (let j = 0; j < r.n && clear; j += 2) if (j !== i && Math.hypot(r.P[3 * j] - x, r.P[3 * j + 2] - z) < 0.5 && r.P[3 * j + 1] < y - 0.3) clear = false;
       if (!clear) continue;
-      lastPost = i;
-      const post = pmesh(bevelBox(0.08, y, 0.08, 0.015), 0x55595f); post.position.set(x, y / 2, z); scene.add(shadowy(post));
+      last = i;
+      const fh = Math.hypot(r.F[3 * i], r.F[3 * i + 2]) || 1, top = y - rad * 0.6;
+      frame(x, top, z, -r.F[3 * i + 2] / fh, r.F[3 * i] / fh, 0.2 + 0.2 * (top - groundY(x, z)), 0.1);
     }
+    // a loop hangs from a gantry over its top
+    r.segs.forEach((sg, k) => {
+      if (sg.name !== "Loop") return;
+      let it = -1, i0 = -1;
+      for (let i = 0; i < r.n; i++) if (r.T[i] === k) { if (i0 < 0) i0 = i; if (it < 0 || r.P[3 * i + 1] > r.P[3 * it + 1]) it = i; }
+      if (it < 0) return;
+      const fh = Math.hypot(r.F[3 * i0], r.F[3 * i0 + 2]) || 1, sx = -r.F[3 * i0 + 2] / fh, sz = r.F[3 * i0] / fh;
+      const x = r.P[3 * it], y = r.P[3 * it + 1] + 0.3, z = r.P[3 * it + 2];
+      a.set(x - sx * 1.1, y, z - sz * 1.1); b.set(x + sx * 1.1, y, z + sz * 1.1); bars.push(beam(a, b, 0.16));
+      for (const s2 of [-1, 1]) {
+        a.set(x + sx * 1.1 * s2, y, z + sz * 1.1 * s2); b.set(x + sx * 2.0 * s2, 0, z + sz * 2.0 * s2); bars.push(beam(a, b, 0.16));
+        bars.push(new THREE.BoxGeometry(0.5, 0.08, 0.5).translate(b.x, 0.04, b.z));
+        foot(b.x, b.z, y, FOOT_R + 0.2);
+      }
+    });
+    if (bars.length) grp.add(shadowy(new THREE.Mesh(mergeGeometries(bars), flatMat(TRUSS_COLS[ri % 2], { flatShading: true }))));
     for (const pl of r.pillars) {
-      const h = pl.top - 0.2, pil = pmesh(jitter(new THREE.CylinderGeometry(0.22, 0.28, h, 7), 0.004, 3), 0x55595f);
-      pil.position.set(pl.x, h / 2, pl.z); scene.add(shadowy(pil));
+      const h = pl.top - 0.2, pil = new THREE.Mesh(jitter(new THREE.CylinderGeometry(0.22, 0.3, h, 7), 0.004, 3), flatMat(TRUSS_COLS[ri % 2], { flatShading: true }));
+      pil.position.set(pl.x, h / 2, pl.z); grp.add(shadowy(pil));
+      foot(pl.x, pl.z, pl.top, 0.7);
     }
     // the way in: a ring on the ground at its start
-    const ringM = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.95, 28).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: r.col[0], transparent: true, opacity: 0.85, depthWrite: false }));
-    ringM.position.set(r.P[0] - r.F[0] * 0.6, 0.02, r.P[2] - r.F[2] * 0.6); ringM.renderOrder = 1; scene.add(ringM);
+    const ringM = new THREE.Mesh(new THREE.RingGeometry(0.75, 0.98, 28).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: r.col[0], transparent: true, opacity: 0.9, depthWrite: false }));
+    ringM.position.set(r.P[0] - r.F[0] * 0.6, 0.02, r.P[2] - r.F[2] * 0.6); ringM.renderOrder = 1; grp.add(ringM);
+    r.cx = (r.x0 + r.x1) / 2; r.cz = (r.z0 + r.z1) / 2;
+  });
+}
+
+// ---- what stands on feet comes down in the fury: a rail and its trusses, a kicker and its legs
+let footCd = 0, saidFeet = false;
+function touchFeet() {
+  for (const ft of FEET) {
+    if (ft.o.dead) continue;
+    const dx = D.x - ft.x, dz = D.z - ft.z, rr0 = D_R * 0.8 + ft.r;
+    if (dx * dx + dz * dz > rr0 * rr0 || D.y > ft.top - 0.2) continue;
+    if (GS.fury) { wreck(ft.o); return; }
+    if (footCd > 0 || Math.hypot(D.vx, D.vz) < 4) continue;
+    footCd = 1.2;                              // outside the fury a truss only rings
+    sparks(new V3(ft.x, D.y + 0.5, ft.z), 8, 6, 0xbfd6ff);
+    if (!saidFeet) { saidFeet = true; notice("In the fury, hitting these feet brings the whole rail down"); }
   }
 }
+function wreck(o) {
+  if (o.dead) return;
+  o.dead = true; o.fall = { t: 0, burst: 0, tilt: mr(-0.5, 0.5) };
+  const rail = !!o.P, at = new V3(o.cx, 0, o.cz);
+  const got = comboAdd(rail ? "Rail wrecked" : "Kicker wrecked", WRECK_PTS[rail ? "rail" : "kicker"] * (GS.fury ? FURY_PTS : 1));
+  callout(rail ? o.name + " wrecked" : "Kicker wrecked", "+" + got, "#ff9ad5", true);
+  pow("Crash!", new V3(D.x, D.y + 2.2, D.z), 1.2, "#ff9ad5", "#ff3fa4");
+  ring(new V3(D.x, D.y, D.z), 7, 0.55, 0xff9ad5); starFlash(new V3(D.x, D.y + 1, D.z), 4, 0xff9ad5);
+  E.trauma = Math.min(1, E.trauma + 0.6); E.hitStop = Math.max(E.hitStop, 0.09); E.flash = Math.max(E.flash, 0.4); E.fovKick -= 3;
+  GS.wrecked++;
+  if (D.rail && D.rail.r === o) { D.rail = null; D.f.copy(D.railF); D.n.copy(D.railU); takeoff("rail", null, 0, 0); }
+  return at;
+}
+const wreckables = () => rails.concat(KICKERS);
+function updateWrecks(dt) {
+  footCd = Math.max(0, footCd - dt);
+  for (const o of wreckables()) {
+    if (!o.fall) continue;
+    const F = o.fall, g = o.group, rail = !!o.P; F.t += dt;
+    const u = F.t / 0.9, e = u * u;
+    g.position.y = -(rail ? 7 : 2.2) * e; g.rotation.z = F.tilt * 0.25 * e; g.rotation.x = F.tilt * 0.18 * e;
+    g.position.x = Math.sin(RT * 60) * 0.08 * (1 - u); g.position.z = Math.sin(RT * 47) * 0.08 * (1 - u);
+    // it comes apart along its length: debris, dust and sparks in bursts
+    while (F.burst < 7 && F.t > F.burst * 0.1) {
+      F.burst++;
+      for (let c = 0; c < 10; c++) {
+        let x, y, z, hex;
+        if (rail) { const i = Math.floor(Math.random() * o.n); x = o.P[3 * i]; y = o.P[3 * i + 1] * (1 - e * 0.6); z = o.P[3 * i + 2]; hex = Math.random() < 0.5 ? o.col[0] : 0xf2f2f2; }
+        else { const t = Math.random(); x = o.x + o.dx * o.len * t + mr(-1, 1) * o.hw; y = o.k * o.len * t * (1 - e); z = o.z + o.dz * o.len * t + mr(-1, 1) * o.hw; hex = Math.random() < 0.5 ? 0xf0782a : 0x3f5fe8; }
+        P_DEBRIS.spawn({ pos: new V3(x, Math.max(0.2, y), z), vel: new V3(mr(-4, 4), mr(2, 7), mr(-4, 4)), life: mr(0.9, 1.5), s0: mr(0.1, 0.24), grav: 22, bounce: 0.35,
+          spin: mr(-12, 12), shrink: false, col: hex, floor: groundY(x, z) });
+        if (c < 4) P_DUST.spawn({ pos: new V3(x, 0.3, z), vel: new V3(mr(-2, 2), mr(0.5, 2), mr(-2, 2)), life: mr(0.7, 1.1), s0: 0.2, s1: mr(0.5, 0.9), drag: 2, col: new THREE.Color(P.dust).offsetHSL(0, 0, mr(-0.08, 0)) });
+      }
+    }
+    if (u >= 1) { g.visible = false; o.fall = null; }
+  }
+}
+function resetWrecks() {
+  for (const o of wreckables()) { o.dead = false; o.fall = null; o.group.visible = true; o.group.position.set(0, 0, 0); o.group.rotation.set(0, 0, 0); }
+}
+
+// ---- the edge of the zone: four pylons, and a bumper nobody sees until it is touched
+const PYLONS = [];
+function buildPylons() {
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const x = sx * (WX + 1.2), z = sz < 0 ? WZ0 - 1.2 : WZ1 + 1.2, g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1b2a6b, emissive: 0x4fd8ff, emissiveIntensity: 0.1, roughness: 0.3, flatShading: true });
+    mat.userData.noWeather = true;
+    const base = pmesh(bevelBox(1.5, 0.5, 1.5, 0.08), 0x55595f); base.position.y = 0.25; g.add(base);
+    for (let k = 0; k < 6; k++) {       // a striped mast
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3 - k * 0.02, 0.32 - k * 0.02, 1, 8), flatMat(k % 2 ? 0xf2f2f2 : 0x3b2470, { flatShading: true }));
+      s.position.y = 1 + k; g.add(s);
+    }
+    for (let k = 0; k < 3; k++) { const c = new THREE.Mesh(new THREE.TorusGeometry(0.62 - k * 0.1, 0.09, 6, 16).rotateX(Math.PI / 2), mat); c.position.y = 5.0 + k * 0.7; g.add(c); }
+    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), mat); ball.position.y = 7.4; g.add(ball);
+    g.position.set(x, 0, z); scene.add(shadowy(g));
+    const disc = new THREE.Mesh(new THREE.PlaneGeometry(9, 9).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: poolTex, color: 0x4fd8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+    disc.position.set(x, 0.05, z); disc.renderOrder = 2; scene.add(disc);
+    PYLONS.push({ x, z, sx, sz, mat, disc, glow: 0, top: new V3(x, 7.4, z), t: rnd() * 9 });
+  }
+}
+// the arc: strands of lightning along the wall where it was touched, and one to each of its pylons
+const ZAP = { t: 0, next: 0, wall: "", strands: [] };
+function buildZap() {
+  for (let i = 0; i < 5; i++) ZAP.strands.push({ glow: new Ribbon(18, 0.5), core: new Ribbon(18, 1), a: new V3(), b: new V3(),
+    pts: Array.from({ length: 19 }, () => new V3()), w: i < 3 ? 1 : 0.7 });
+  for (const s of ZAP.strands) { s.glow.mat.color.setRGB(0.4, 1.6, 3.2); s.core.mat.color.setRGB(2.6, 3, 3.4); }
+}
+function zap(x, y, z, nx, nz, wall) {
+  ZAP.t = ZAP_LIFE; ZAP.next = 0; ZAP.wall = wall;
+  const tx = -nz, tz = nx, y0 = Math.max(groundY(x, z), y);
+  [[7, 0.35], [5, 1.15], [3.2, 1.95]].forEach(([L, h], i) => { ZAP.strands[i].a.set(x - tx * L, y0 + h, z - tz * L); ZAP.strands[i].b.set(x + tx * L, y0 + h, z + tz * L); });
+  const ends = PYLONS.filter((p) => wall === "w" ? p.sx < 0 : wall === "e" ? p.sx > 0 : wall === "n" ? p.sz < 0 : p.sz > 0);
+  ends.forEach((p, i) => { ZAP.strands[3 + i].a.set(x, y0 + 1.1, z); ZAP.strands[3 + i].b.copy(p.top); });
+}
+function updateEdge(rdt) {
+  const on = GS.phase === "zone";
+  // how near each wall is: 1 against it, 0 past BUMPER_NEAR
+  const near = { w: sat(1 - (D.x + WX) / BUMPER_NEAR), e: sat(1 - (WX - D.x) / BUMPER_NEAR), n: sat(1 - (D.z - WZ0) / BUMPER_NEAR), s: GS.sealed ? sat(1 - (WZ1 - D.z) / BUMPER_NEAR) : 0 };
+  const hot = ZAP.t > 0 ? ZAP.wall : "";
+  for (const p of PYLONS) {
+    const a = p.sx < 0 ? "w" : "e", b = p.sz < 0 ? "n" : "s";
+    const want = on ? Math.max(near[a], near[b], hot === a || hot === b ? 1.6 : 0) : 0;
+    p.glow += (want - p.glow) * ease(want > p.glow ? 10 : 3, rdt);
+    const fl = 0.75 + 0.25 * Math.sin(RT * 31 + p.t);
+    p.mat.emissiveIntensity = 0.08 + p.glow * 3.4 * fl;
+    p.disc.material.opacity = Math.min(1, p.glow * 0.6 * fl);
+    if (p.glow > 0.3 && Math.random() < p.glow * rdt * 16) P_SPARK.spawn({ pos: p.top.clone().add(new V3(mr(-0.6, 0.6), mr(-2.4, 0.4), mr(-0.6, 0.6))), vel: new V3(mr(-2, 2), mr(-1, 2), mr(-2, 2)),
+      life: 0.25, s0: 0.04, len: 0.3, grav: 4, col: new THREE.Color(0x6fe3ff).multiplyScalar(2.4) });
+  }
+  ZAP.t -= rdt;
+  const live = ZAP.t > 0, k = sat(ZAP.t / ZAP_LIFE);
+  if (live && (ZAP.next -= rdt) <= 0) {
+    ZAP.next = 0.035;
+    for (const s of ZAP.strands) {
+      const len = s.a.distanceTo(s.b), amp = Math.min(1.4, 0.25 + len * 0.035);
+      for (let i = 0; i <= 18; i++) { const u = i / 18, e = Math.sin(Math.PI * u); s.pts[i].lerpVectors(s.a, s.b, u); s.pts[i].x += fr(amp) * e; s.pts[i].y += fr(amp) * e; s.pts[i].z += fr(amp) * e; }
+    }
+  }
+  for (const s of ZAP.strands) {
+    s.glow.mesh.visible = s.core.mesh.visible = live;
+    if (!live) continue;
+    const fl = k * (0.6 + 0.4 * Math.random());
+    s.glow.draw(s.pts, 0.5 * s.w, fl); s.core.draw(s.pts, 0.1 * s.w, fl);
+  }
+}
+// the wall's inward normal (nx, nz): thrown back in, never slower than the bumper's own speed, nose first
+function bumper(nx, nz, wall) {
+  const vn = D.vx * nx + D.vz * nz, back = Math.max(-vn, BUMPER_V);
+  D.vx += (back - vn) * nx; D.vz += (back - vn) * nz;
+  if (D.ground) {
+    const fn = D.f.x * nx + D.f.z * nz;
+    if (fn < 0) { D.f.x -= 2 * fn * nx; D.f.z -= 2 * fn * nz; D.f.normalize(); D.a = Math.atan2(D.f.z, D.f.x); }
+    D.drift = false; D.slideT = 0;
+  } else D.air.heading = Math.atan2(D.vz, D.vx);
+  D.boost = Math.max(D.boost, 0.6);
+  if (ZAP.t > ZAP_LIFE - 0.12) return;       // one arc a touch
+  const at = new V3(D.x - nx * dims.wid * 0.5, D.y + 0.7, D.z - nz * dims.wid * 0.5);
+  zap(at.x, D.y, at.z, nx, nz, wall);
+  sparks(at, 34, 13, 0x6fe3ff); starFlash(at, 4.5, 0x8fe8ff);
+  if (D.ground) ring(new V3(D.x, D.y, D.z), 5, 0.4, 0x6fe3ff);
+  E.trauma = Math.min(1, E.trauma + 0.45); E.hitStop = Math.max(E.hitStop, 0.05); E.flash = Math.max(E.flash, 0.14); E.fovKick += 6; E.jv += 4; E.st = 0.3;
+  callout("Zap!", null, "#8fe8ff", false);
+}
+
+// ---- the collection: gears and the five letters, some of them inside what has to come down first
+const ITEMS = [];
+const gearMat = new THREE.MeshStandardMaterial({ color: "#ffb81a", emissive: "#ff9a1a", emissiveIntensity: 1.1, roughness: 0.3, metalness: 0.3, flatShading: true });
+gearMat.userData.noWeather = true;
+let gearMesh = null, GEAR_N = 0;
+function buildItems() {
+  // a gear: eight teeth round a hub
+  const sh = new THREE.Shape(), teeth = 8;
+  for (let i = 0; i < teeth * 4; i++) { const a = (i - 0.5) / (teeth * 4) * TAU, r = i % 4 < 2 ? 0.64 : 0.46; sh[i ? "lineTo" : "moveTo"](Math.cos(a) * r, Math.sin(a) * r); }
+  sh.closePath(); sh.holes.push(new THREE.Path().absarc(0, 0, 0.2, 0, TAU, true));
+  const gearGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.14, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 1, curveSegments: 8 }).translate(0, 0, -0.07);
+  const hostOf = (x, z, used) => {
+    let best = null, bd = 1e9;
+    for (const d of DES) { if ((d.kind !== "building" && d.kind !== "house") || used.has(d)) continue; const q = Math.hypot(d.cx - x, d.cz - z); if (q < bd) { bd = q; best = d; } }
+    used.add(best); return best;
+  };
+  const used = new Set(), hidden = SPOTS.hosts.map(([x, z, kind]) => ({ kind, host: hostOf(x, z, used) }));
+  const add = (kind, p, host, ch) => ITEMS.push({ kind, ch, x: host ? host.cx : p[0], y: host ? 1.3 : p[1], z: host ? host.cz : p[2], host, taken: false, shown: !host, pop: host ? 0 : 1, t: rnd() * 6, m: null });
+  SPOTS.gears.forEach((p) => add("gear", p, null));
+  hidden.filter((h) => h.kind === "gear").forEach((h) => add("gear", null, h.host));
+  GEAR_N = ITEMS.length;
+  gearMesh = new THREE.InstancedMesh(gearGeo, gearMat, GEAR_N); gearMesh.castShadow = true; gearMesh.frustumCulled = false; scene.add(gearMesh);
+  // a letter: a token with its face on both sides
+  const rimGeo = new THREE.CylinderGeometry(0.66, 0.66, 0.18, 24).rotateX(Math.PI / 2), faceGeo = new THREE.CircleGeometry(0.6, 24);
+  for (let i = 0; i < WORD.length; i++) {
+    const tex = canvasTex(128, 128, (g) => {
+      g.fillStyle = LETTER_COLS[i]; g.beginPath(); g.arc(64, 64, 64, 0, TAU); g.fill();
+      g.lineWidth = 9; g.strokeStyle = "#ffffff"; g.beginPath(); g.arc(64, 64, 54, 0, TAU); g.stroke();
+      g.font = "italic 900 84px -apple-system,Segoe UI,Roboto,sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.lineWidth = 12; g.strokeStyle = "#2a1650"; g.lineJoin = "round"; g.strokeText(LET[i], 62, 68); g.fillStyle = "#ffffff"; g.fillText(LET[i], 62, 68);
+    });
+    const fm = new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0.7, roughness: 0.4 }); fm.userData.noWeather = true;
+    const rm = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: LETTER_COLS[i], emissiveIntensity: 1.2, roughness: 0.4 }); rm.userData.noWeather = true;
+    const grp = new THREE.Group(), f1 = new THREE.Mesh(faceGeo, fm), f2 = new THREE.Mesh(faceGeo, fm);
+    f1.position.z = 0.095; f2.position.z = -0.095; f2.rotation.y = Math.PI;
+    grp.add(new THREE.Mesh(rimGeo, rm), f1, f2); scene.add(shadowy(grp, true, false));
+    const h = SPOTS.letters[i] ? null : hidden.find((q) => q.kind === "letter");
+    add("letter", SPOTS.letters[i], h ? h.host : null, i);
+    ITEMS[ITEMS.length - 1].m = grp;
+  }
+  const row = $("letters");
+  for (let i = 0; i < WORD.length; i++) { const el = document.createElement("i"); el.textContent = LET[i]; el.style.setProperty("--c", LETTER_COLS[i]); row.appendChild(el); }
+}
+function updateItems(rdt) {
+  let gi = 0;
+  for (const it of ITEMS) {
+    it.t += rdt;
+    if (it.host && !it.shown) {
+      if (!it.host.alive && !it.host.fall) {             // what hid it is down: out it comes
+        it.shown = true; it.pop = 0;
+        fxSparkle(new V3(it.x, it.y, it.z)); starFlash(new V3(it.x, it.y, it.z), 3, 0xfff0a0);
+        callout(it.kind === "gear" ? "A gear!" : "A letter!", "it was inside", "#ffe27a", false);
+      } else if (it.host.alive && Math.random() < rdt * 1.1) {   // a glint on the roof gives it away
+        const h = it.host;
+        F_STAR.spawn({ x: h.x0 + Math.random() * (h.x1 - h.x0), y: h.top + 0.25, z: h.z0 + Math.random() * (h.z1 - h.z0), vy: 0.5, life: 0.55, s0: 0.75, s1: 0.1, c0: fcol(0xfff0a0, 2.8), tw: 22, vr: fr(2) });
+      }
+    }
+    const want = it.shown && !it.taken ? 1 : 0;
+    it.pop += (want - it.pop) * ease(want ? 9 : 16, rdt);
+    const s = it.pop * (1 + 0.08 * Math.sin(it.t * 7)), y = it.y + 0.14 * Math.sin(it.t * 2.6);
+    if (it.kind === "gear") {
+      dummy.position.set(it.x, y, it.z); dummy.rotation.set(0, it.t * 2.4, 0.25); dummy.scale.setScalar(Math.max(1e-4, s)); dummy.updateMatrix();
+      gearMesh.setMatrixAt(gi++, dummy.matrix);
+    } else { it.m.position.set(it.x, y, it.z); it.m.rotation.y = it.t * 1.8; it.m.scale.setScalar(Math.max(1e-4, s * 1.25)); it.m.visible = it.pop > 0.01; }
+    if (!want) continue;
+    // taken by the body, wherever the rig has put it (hanging under a loop included)
+    const dx = FX3.C.x - it.x, dy = FX3.C.y - it.y, dz = FX3.C.z - it.z;
+    if (ready && GS.phase !== "count" && dx * dx + dy * dy + dz * dz < ITEM_R * ITEM_R) takeItem(it);
+  }
+  gearMesh.instanceMatrix.needsUpdate = true;
+}
+function takeItem(it) {
+  it.taken = true;
+  const at = new V3(it.x, it.y, it.z);
+  fxSparkle(at); E.fovKick += 3; E.st = Math.max(E.st, 0.15);
+  if (it.kind === "gear") {
+    GS.gears++; starFlash(at, 3, 0xffd84a);
+    trick("Gear " + GS.gears + " / " + GEAR_N, GEAR_PTS, "#ffd84a");
+    if (GS.gears === GEAR_N) trick("Every gear", GEARS_PTS, "#ffd84a", true);
+    return;
+  }
+  GS.letters |= 1 << it.ch; starFlash(at, 4.5, new THREE.Color(LETTER_COLS[it.ch]).getHex());
+  trick("Letter " + LET[it.ch], LETTER_PTS, LETTER_COLS[it.ch], true);
+  slowmo(0.4, 0.18);
+  if (GS.letters !== (1 << WORD.length) - 1) return;
+  // the word: a fury, on the house
+  trick(WORD + "!", WORD_PTS, "#ff5aa8", true);
+  E.flash = Math.max(E.flash, 0.5);
+  if (GS.fury) GS.furyT = FURY_TIME; else { GS.gauge = 1; GS.saidFull = false; startFury(); }
+}
+function resetItems() { for (const it of ITEMS) { it.taken = false; it.shown = !it.host; it.pop = it.host ? 0 : 1; } GS.gears = 0; GS.letters = 0; }
 
 // =============================================================================
 // 7b. THE RACE — a walled corridor of turns, from the start line to the zone's gate
@@ -1090,8 +1713,8 @@ function drawRoad() {       // one picture across the road and 4 units along it:
   const g = roadCv.getContext("2d"), r2 = mulberry(9);
   g.fillStyle = P.road; g.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 300; i++) { g.fillStyle = r2() < 0.5 ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)"; g.fillRect(r2() * 128, r2() * 128, 2, 2); }
-  g.fillStyle = "rgba(255,255,255,0.85)"; g.fillRect(6, 0, 3, 128); g.fillRect(119, 0, 3, 128);
-  g.fillStyle = "rgba(255,255,255,0.55)"; g.fillRect(62, 0, 4, 60);
+  g.fillStyle = P.line; g.globalAlpha = 0.9; g.fillRect(6, 0, 3, 128); g.fillRect(119, 0, 3, 128);
+  g.globalAlpha = 0.6; g.fillRect(62, 0, 4, 60); g.globalAlpha = 1;
   roadTex.needsUpdate = true;
 }
 const checkTex = canvasTexOnce(64, 16, (g) => { for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? "#1c1b26" : "#f4f4f4"; g.fillRect(i * 4, j * 4, 4, 4); } });
@@ -1344,7 +1967,7 @@ function buildCity() {
       if (name === "road_straight" && need.some((d) => { const ni = i + DIRS[d][0], nj = j + DIRS[d][1]; return Object.keys(DIRS).filter((e) => isRoad(ni + DIRS[e][0], nj + DIRS[e][1])).length >= 3; })) name = "road_straight_crossing";
       addTile(name, x, z, th);
       // parked cars in the lanes, never on a junction
-      if (need.length === 2 && rnd() < 0.3) {
+      if (need.length === 2 && rnd() < 0.3 && !nearRamp(x, z, 2.5)) {
         const ew = need.includes("E"), lane = rnd() < 0.5 ? 1 : -1, car = pick(CARS);
         if (ew) prop(car, x + rr(-0.8, 0.8), z + lane * 0.9, lane > 0 ? Math.PI / 2 : -Math.PI / 2, "car");
         else prop(car, x - lane * 0.9, z + rr(-0.8, 0.8), lane > 0 ? 0 : Math.PI, "car");
@@ -1398,7 +2021,7 @@ function buildParkDecor() {
     tree(x, z, KS * rr(1.0, 1.6)); n++;
   }
   for (let k = 0; k < 90; k++) {
-    const a = rr(0, TAU), x = clamp(Math.cos(a) * 60, -38, 38) + rr(-3, 3), z = clamp(Math.sin(a) * 60, -54, 46) + rr(-3, 3);
+    const a = rr(0, TAU), x = clamp(Math.cos(a) * 60, -38, 38) + rr(-3, 3), z = clamp(Math.sin(a) * 76 - 10, -70, 46) + rr(-3, 3);
     if (Math.abs(x) < WX + 2 && z > WZ0 - 2 && z < WZ1 + 2) continue;
     if (trackDist(x, z) < TRACK_HW + 2) continue;
     tree(x, z, KS * rr(1.2, 2.2), null);
@@ -1418,7 +2041,7 @@ function buildParkDecor() {
     crystalMats[k] = new THREE.MeshStandardMaterial({ color: 0x223040, emissive: 0xffffff, emissiveIntensity: 1, flatShading: true, roughness: 0.15, metalness: 0.1 });
     crystalMats[k].userData.noWeather = true;
   }
-  for (const [x, z, k] of [[-27.5, -43, "A"], [27.5, -43, "B"], [-27.5, -4, "B"], [27.5, -4, "A"], [0, -44, "A"]]) {
+  for (const [x, z, k] of [[-27.6, -42, "A"], [27.6, -30, "B"], [-27.6, -4, "B"], [27.6, -4, "A"], [0, -59.6, "A"]]) {
     const g = item("crystal-cluster").build(LIB, { key: k, n: 7 });
     g.position.set(x, 0, z); g.scale.setScalar(KS * 1.3); scene.add(shadowy(g, true, false));
     const pl = lightPool(x, 0.03, z, 3, "crystal" + k);
@@ -1439,27 +2062,34 @@ function buildParkDecor() {
 const root = new THREE.Group(), lean = new THREE.Group(), hop = new THREE.Group(), tumble = new THREE.Group(), offs = new THREE.Group(), squash = new THREE.Group();
 root.add(lean); lean.add(hop); hop.add(tumble); tumble.add(offs); offs.add(squash); scene.add(root);
 tumble.rotation.order = "YZX";
-const dmats = new Map();
+const dmats = new Map(), DOZER_MATS = [];
 const lampMat = new THREE.MeshStandardMaterial({ color: "#fff6e6", emissive: "#ffe2a8", emissiveIntensity: 0.4, roughness: 0.3 });
 const beaconMat = new THREE.MeshStandardMaterial({ color: "#ff3a2a", emissive: "#ff2a1a", emissiveIntensity: 0, flatShading: true });
 for (const m of [lampMat, beaconMat]) m.userData.noWeather = true;
+// a part's material is its role's (the library names it by a hex); an ambiance repaints the roles
+const ROLE_OF = { 0xf2b22a: "body", 0xe0a020: "trim", 0x2a2a2e: "dark", 0x8a8f96: "metal", 0x37475a: "glass", 0x1d1d1d: "accent" };
+function dozerMat(slot, opt = {}) {
+  const key = slot + "|" + (opt.roughness ?? "") + "|" + (opt.metalness ?? "");
+  let m = dmats.get(key);
+  if (!m) {
+    const glass = slot === "glass";
+    m = new THREE.MeshStandardMaterial({ roughness: glass ? 0.2 : opt.roughness ?? 0.7, metalness: glass ? 0.15 : opt.metalness ?? 0, flatShading: true });
+    m.userData.noWeather = true; m.userData.slot = slot; dmats.set(key, m); DOZER_MATS.push(m);
+  }
+  return m;
+}
 const DLIB = {
   mesh(geo, hex, opt = {}) {
-    let m;
-    if (hex === 0xf7f8f9) m = lampMat;
-    else {
-      const key = hex + "|" + (opt.roughness ?? "") + "|" + (opt.metalness ?? "");
-      m = dmats.get(key);
-      if (!m) {
-        const glass = hex === 0x37475a;
-        m = new THREE.MeshStandardMaterial({ color: ARCTIC[hex] || hex, roughness: glass ? 0.2 : opt.roughness ?? 0.7, metalness: glass ? 0.15 : opt.metalness ?? 0, flatShading: true });
-        m.userData.noWeather = true; dmats.set(key, m);
-      }
-    }
-    const mesh = new THREE.Mesh(geo, m); mesh.castShadow = mesh.receiveShadow = true; return mesh;
+    const mesh = new THREE.Mesh(geo, hex === 0xf7f8f9 ? lampMat : dozerMat(ROLE_OF[hex] || "body", opt));
+    mesh.castShadow = mesh.receiveShadow = true; return mesh;
   },
   glow: () => lampMat, rnd: Math.random
 };
+function paintDozer() {
+  const L = DOZER_LOOK[P.dozer] || DOZER_LOOK.arctic;
+  for (const m of DOZER_MATS) m.color.set(L[m.userData.slot]);
+  lampMat.color.set(L.lamp); beaconMat.color.set(L.beacon); beaconMat.emissive.set(L.beacon);
+}
 let model = null, rig = null, comY = 0.5, exhaustPt = null;
 const dims = { len: 2.2, wid: 1, h: 1.1 };
 const armMats = [];
@@ -1476,11 +2106,19 @@ function buildDozer() {
   tumble.position.y = comY; offs.position.y = -comY;
   exhaustPt = model.userData.exhaust ? model.userData.exhaust.clone() : null;
   model.traverse((m) => { if (m.isMesh && m.userData.part === "beacon") m.material = beaconMat; });
+  // the blade's own colours: its plate, and the frame round it (the side plates, the cutting edge)
+  let plate = true;
+  rig.spin.traverse((m) => {
+    if (!m.isMesh || m.material === lampMat) return;
+    const role = m.userData.role, slot = role === "body" ? (plate ? "blade" : "edge") : role === "metal" ? "edge" : null;
+    if (role === "body") plate = false;
+    if (slot) m.material = dozerMat(slot, { roughness: m.material.roughness, metalness: m.material.metalness });
+  });
   // the arm and the blade wear their own copies: they glow alone in the fury
   const copies = new Map();
   rig.arm.traverse((m) => {
     if (!m.isMesh || !m.material.emissive || m.material === lampMat) return;
-    if (!copies.has(m.material)) { const c = m.material.clone(); copies.set(m.material, c); armMats.push(c); }
+    if (!copies.has(m.material)) { const c = m.material.clone(); copies.set(m.material, c); armMats.push(c); DOZER_MATS.push(c); }
     m.material = copies.get(m.material);
   });
 }
@@ -1632,6 +2270,19 @@ class Ribbon {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)];
       rT.subVectors(b, a); rV.subVectors(camera.position, pts[i]); rSd.crossVectors(rT, rV).normalize();
       const w = width * (0.35 + 0.65 * Math.sin(Math.PI * i / n)) / 2, c = bright;
+      pos.setXYZ(i * 2, pts[i].x + rSd.x * w, pts[i].y + rSd.y * w, pts[i].z + rSd.z * w);
+      pos.setXYZ(i * 2 + 1, pts[i].x - rSd.x * w, pts[i].y - rSd.y * w, pts[i].z - rSd.z * w);
+      colA.setXYZ(i * 2, c, c, c); colA.setXYZ(i * 2 + 1, c, c, c);
+    }
+    pos.needsUpdate = colA.needsUpdate = true;
+  }
+  trail(pts, width, bright) {     // a tail: full at its head, thinned and dimmed to nothing at its end
+    const pos = this.mesh.geometry.attributes.position, colA = this.mesh.geometry.attributes.color, n = this.n;
+    for (let i = 0; i <= n; i++) {
+      const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)], u = i / n;
+      rT.subVectors(b, a); rV.subVectors(camera.position, pts[i]); rSd.crossVectors(rT, rV);
+      if (rSd.lengthSq() < 1e-10) rSd.set(0, 1, 0); else rSd.normalize();
+      const w = width * (1 - 0.75 * u) / 2, c = bright * (1 - u) * (1 - u);
       pos.setXYZ(i * 2, pts[i].x + rSd.x * w, pts[i].y + rSd.y * w, pts[i].z + rSd.z * w);
       pos.setXYZ(i * 2 + 1, pts[i].x - rSd.x * w, pts[i].y - rSd.y * w, pts[i].z - rSd.z * w);
       colA.setXYZ(i * 2, c, c, c); colA.setXYZ(i * 2 + 1, c, c, c);
@@ -2038,6 +2689,41 @@ function updateSparkle(dt) {
   });
 }
 const pick2 = (a) => a[Math.floor(Math.random() * a.length)];
+// a star that opens and goes: on a hit, a pick-up, a perfect landing
+function starFlash(at, size, hex) {
+  F_STAR.spawn({ x: at.x, y: at.y, z: at.z, life: 0.32, s0: size * 0.3, s1: size, c0: fcol(hex, 3), c1: fcol(hex, 1.2), fin: 0.04, fout: 0.3, vr: fr(3) });
+  F_GLOW.spawn({ x: at.x, y: at.y, z: at.z, life: 0.2, s0: size * 0.4, s1: size * 0.8, c0: fcol(0xffffff, 1.6), fin: 0.02, fout: 0.2 });
+}
+
+// ---- 5. the Arcade's own: a glow round the silhouette while something is going on (in the
+// air, on a rail, in a boost, with the combo), and two ribbons off the back of the tracks
+const AURA = { shell: null, k: 0, trail: 0, L: null, R: null, col: new THREE.Color() };
+const TRAIL_N = 22;
+const comboCol = (m) => m < 3 ? "#ffd84a" : m < 6 ? "#ff9a3a" : m < 10 ? "#ff5aa8" : "#7af2ff";
+function buildAura() {
+  AURA.shell = new Shell({ col: 0xff3fa4, pow: 1.5, side: THREE.BackSide, k: 1.5, core: 0.16 });
+  for (const key of ["L", "R"]) AURA[key] = { rib: new Ribbon(TRAIL_N, 0.9), pts: Array.from({ length: TRAIL_N + 1 }, () => new V3()), live: false };
+}
+function updateAura(dt, rdt) {
+  const busy = !D.ground || !!D.rail, c = AURA.col.set(CB.mult >= 3 ? comboCol(CB.mult) : P.glow);
+  const want = GS.fury ? 0 : Math.max(busy ? 1 : 0, D.boost > 0 || D.dashT > 0 ? 0.85 : 0, Math.min(1, CB.mult / 6) * 0.7);   // the fury wears its own
+  AURA.k += (want - AURA.k) * ease(want > AURA.k ? 12 : 4, rdt);
+  AURA.shell.mat.uniforms.uCol.value.set(c.r * 1.5, c.g * 1.5, c.b * 1.5);
+  AURA.shell.sync(1.07 + 0.015 * Math.sin(RT * 12), 0.5 * AURA.k);
+  // the ribbons: fed while the dozer flies, grinds, dashes or drifts
+  const tw = busy || D.dashT > 0 || D.drift || D.boost > 0 ? 1 : 0;
+  AURA.trail += (tw - AURA.trail) * ease(tw ? 14 : 5, rdt);
+  if (GS.fury) c.set(0xffc23a);
+  for (const [key, sg] of [["L", -1], ["R", 1]]) {
+    const T = AURA[key], head = bodyLocal(-dims.len * 0.46, dims.h * 0.3, sg * dims.wid * 0.44, fxP);
+    if (!T.live || head.distanceToSquared(T.pts[0]) > 36) { for (const q of T.pts) q.copy(head); T.live = true; }   // a reset is not a streak
+    if (dt > 0) for (let i = TRAIL_N; i > 0; i--) T.pts[i].copy(T.pts[i - 1]);
+    T.pts[0].copy(head);
+    const on = AURA.trail > 0.02;
+    T.rib.mesh.visible = on;
+    if (on) { T.rib.mat.color.copy(c).multiplyScalar(1.7); T.rib.trail(T.pts, 0.55, AURA.trail); }
+  }
+}
 
 function updateFx3(dt, rdt) {
   tumble.getWorldPosition(FX3.C);
@@ -2058,10 +2744,12 @@ const D = {
   air: { t: 0, cur: null, queued: false, lastEnd: -9, n: 0, kind: "", assist: null, rLock: 0, turn: 0, turnRate: 0, lastName: "", dashes: 0, heading: null, taps: 0, lastTap: -9 },
   resid: new THREE.Euler(0, 0, 0, "YZX"), landT: 9, pitch: 0, roll: 0
 };
-const GS = { score: 0, gauge: 0, fury: false, furyT: 0, destroyed: 0, total: 0, noticeCd: 0,
+const GS = { score: 0, gauge: 0, fury: false, furyT: 0, destroyed: 0, total: 0, noticeCd: 0, gears: 0, letters: 0, wrecked: 0,
   phase: "count", countT: COUNT_T, raceT: 0, saidFull: false, mult: 1, bonus: 0, sealed: true };   // phase: count, race, zone
+// the combo: what it has added up, its multiplier, the time it has left on flat ground, its last moves
+const CB = { base: 0, mult: 0, t: 0, list: [], bump: 0, best: 0 };
 const E = { sq: 0, st: 0, jp: 0, jv: 0, trauma: 0, fovKick: 0, flash: 0, vig: 0, ghost: 0, trail: 0, slowK: 1, slowT: 0, slowTo: 1, hitStop: 0,
-  dustAcc: 0, smokeAcc: 0 };
+  dustAcc: 0, smokeAcc: 0, scoreBump: 0 };
 const IN = { gas: 0, brake: 0, left: 0, right: 0, touch: false, touchSteer: 0 };
 let RT = 0;
 
@@ -2104,15 +2792,37 @@ function startFury() {
   E.flash = 0.6; E.trauma = Math.min(1, E.trauma + 0.5); E.fovKick += 6; slowmo(0.35, 0.25);
   ring(root.position, 6, 0.6, 0xffb02a);
   sparks(root.position.clone().setY(D.y + 1), 50, 14, 0xffd34d);
+  starFlash(root.position.clone().setY(D.y + 1), 7, 0xffc23a);
 }
 function endFury() {
   GS.fury = false; GS.furyT = 0; GS.gauge = 0;
   callout("Fury over", "charge the gauge again", "#cfe6ff", false);
 }
-function addScore(pts) { const v = Math.round(pts * GS.mult); GS.score += v; return v; }   // the race's multiplier, on every point
+// a move joins the combo: its points (times the race's multiplier) and one more on the combo's own
+function comboAdd(name, pts) {
+  pts = Math.round(pts * GS.mult);
+  CB.base += pts; CB.mult++; CB.t = COMBO_WINDOW; CB.bump = 1;
+  CB.list.push(name); if (CB.list.length > 4) CB.list.shift();
+  return pts;
+}
+// points that are no move (a bin, a bush, a tree): they ride a live combo, or go straight to the score
+function comboFeed(pts) {
+  pts = Math.round(pts * GS.mult);
+  if (CB.mult > 0) { CB.base += pts; CB.t = COMBO_WINDOW; } else { GS.score += pts; E.scoreBump = Math.max(E.scoreBump, 0.4); }
+  return pts;
+}
+const comboBusy = () => !D.ground || !!D.rail || D.drift || !!(D.pit && D.n.y < 0.9);
+function bankCombo() {
+  if (!CB.mult) return;
+  const pts = CB.base * CB.mult;
+  GS.score += pts; E.scoreBump = 1; CB.best = Math.max(CB.best, CB.mult);
+  if (CB.mult >= 2) callout("Combo ×" + CB.mult, "+" + pts.toLocaleString("en"), comboCol(CB.mult), CB.mult >= 6);
+  CB.base = 0; CB.mult = 0; CB.list = [];
+}
+function loseCombo() { CB.base = 0; CB.mult = 0; CB.list = []; }
 function trick(name, pts, color, big) {
   pts = Math.round(pts);
-  const got = addScore(pts); addGauge(pts);
+  const got = comboAdd(name, pts); addGauge(pts);
   callout(name, "+" + got, color || "#ffffff", big);
 }
 function slowmo(k, t) { E.slowTo = k; E.slowT = t; }
@@ -2174,7 +2884,7 @@ addEventListener("keydown", (e) => {
   else if (e.code === "KeyR") resetCity();
   else if (e.code === "KeyN") skipToZone();
   else if (e.code === "KeyC") setZoneCam(zcIdx + 1);
-  else if (e.code === "Digit1" || e.code === "Digit2" || e.code === "Digit3") setAmb(+e.code.slice(5) - 1);
+  else if (/^Digit[1-4]$/.test(e.code)) setAmb(+e.code.slice(5) - 1);
 });
 addEventListener("keyup", (e) => { if (KEYMAP[e.code]) IN[KEYMAP[e.code]] = 0; });
 addEventListener("pointerup", () => { if (document.activeElement && document.activeElement.tagName === "BUTTON") document.activeElement.blur(); });
@@ -2224,7 +2934,7 @@ function takeoff(kind, pit, ex, ez) {
   if (kind === "ollie" || kind === "pit") for (let i = 0; i < 10; i++) dustAt(i % 2 ? 1 : -1, -0.4, 1.6);
 }
 function predictAir() {
-  const A = D.air, h = A.assist ? A.assist.yc - 0.4 : Math.max(groundY(D.x, D.z), groundY(D.x + D.vx * 0.4, D.z + D.vz * 0.4));
+  const A = D.air, h = A.assist ? A.assist.yc - 0.4 : Math.max(groundY(D.x, D.z, D.y), groundY(D.x + D.vx * 0.4, D.z + D.vz * 0.4, D.y));
   const dy = D.y - h;
   return (D.vy + Math.sqrt(Math.max(0, D.vy * D.vy + 2 * G * dy))) / G;
 }
@@ -2254,7 +2964,7 @@ function landVerdict() {
   } else if (A.n > 0 && A.t - A.lastEnd <= PERFECT_WINDOW) {
     trick("Perfect landing", PERFECT_PTS, "#ffd34d", true);
     D.boost = 1.2;
-    ring(root.position, 5, 0.5, 0xffd34d);
+    ring(root.position, 5, 0.5, 0xffd34d); starFlash(root.position.clone().setY(D.y + 0.6), 5, 0xffd34d);
     sparks(root.position.clone().setY(D.y + 0.4), 30, 10, 0xffd34d);
     slowmo(0.35, 0.16); E.fovKick += 5; E.trauma = Math.min(1, E.trauma + 0.25);
   }
@@ -2269,7 +2979,8 @@ function bail() {
   const c = D.air.cur;
   trickEuler(c, D.resid); D.resid.x = wrapA(D.resid.x); D.resid.y = wrapA(D.resid.y); D.resid.z = wrapA(D.resid.z);
   D.stun = BAIL_STUN; GS.gauge = Math.max(0, GS.gauge - 0.08);
-  callout("Bail", "the trick was not over", "#ff6a5a", true);
+  callout(CB.mult ? "Bail · combo lost" : "Bail", "the trick was not over", "#ff6a5a", true);
+  loseCombo(); starFlash(root.position.clone().setY(D.y + 0.8), 3.5, 0xff6a5a);
   E.trauma = Math.min(1, E.trauma + 0.45); E.jv += 5;
 }
 function stepAir(dt) {
@@ -2313,7 +3024,10 @@ function stepAir(dt) {
   if (uT.y > 0.5 && bF.x * bF.x + bF.z * bF.z > 0.09) D.a = Math.atan2(bF.z, bF.x);
   if (tryCatchRail()) return;
   const s = surf(D.x, D.y, D.z);
-  if (s.blocked) { D.x = px; D.z = pz; D.vx *= -0.2; D.vz *= -0.2; return; }
+  if (s.blocked) {
+    if (GS.fury && s.ramp.kind === "kicker") { wreck(s.ramp); return; }
+    D.x = px; D.z = pz; D.vx *= -0.2; D.vz *= -0.2; return;
+  }
   if (s.d <= 0) touchdown(s);
 }
 function touchdown(s) {
@@ -2357,13 +3071,13 @@ function touchdown(s) {
 }
 function endDrift() {
   if (D.driftT > 0.5) D.boost = 1.2 * Math.min(1, D.driftT / 1.5);
-  if (D.driftPts >= 15) callout("Drift", "+" + addScore(D.driftPts), "#a6ecff", false);
+  if (D.driftPts >= 15) callout("Drift", "+" + comboAdd("Drift", D.driftPts), "#a6ecff", false);
   D.driftT = 0; D.driftPts = 0;
 }
 function stepGround(dt) {
-  const s = surf(D.x, D.y, D.z), kickR = s.ramp && (s.ramp.kind === "bump" || s.ramp.kind === "launch") ? s.ramp : null, onBump = !!(kickR && kickR.kind === "bump");
+  const s = surf(D.x, D.y, D.z), kickR = scrapes(s.ramp) ? s.ramp : null, onBump = !!(kickR && kickR.kind === "bump");
   const nx = s.nx, ny = s.ny, nz = s.nz, pit = s.pit, kap = s.kap, sphi = s.sphi, ex = s.ex, ez = s.ez;
-  D.n.set(nx, ny, nz); D.pit = pit; D.onRamp = !!s.ramp;
+  D.n.set(nx, ny, nz); D.pit = pit; D.onRamp = scrapes(s.ramp);
   const f = D.f; let fn = f.x * nx + f.y * ny + f.z * nz;
   f.x -= fn * nx; f.y -= fn * ny; f.z -= fn * nz;
   if (f.lengthSq() < 0.04) { f.set(Math.cos(D.a), 0, Math.sin(D.a)); fn = f.dot(D.n); f.addScaledVector(D.n, -fn); }
@@ -2426,12 +3140,19 @@ function stepGround(dt) {
   D.x += vx * dt; D.y += vy * dt; D.z += vz * dt;
   if (tryCatchRail()) return;
   const s2 = surf(D.x, D.y, D.z);
-  if (s2.blocked) {   // into the side of a ramp: a wall
+  if (s2.blocked) {   // into the side of a ramp, a kicker or the plateau: a wall
     D.x = px; D.z = pz; D.y -= vy * dt;
-    const r = s2.ramp, lx = -r.dz, lz = r.dx, side = ((px - r.x) * lx + (pz - r.z) * lz) > 0 ? 1 : -1;
-    const along = Math.abs(((px - r.x) * r.dx + (pz - r.z) * r.dz) - r.len) < 0.4;
-    const ox = along ? r.dx : lx * side, oz = along ? r.dz : lz * side, vo = D.vx * ox + D.vz * oz;
+    const r = s2.ramp;
+    if (GS.fury && r.kind === "kicker") { wreck(r); return; }     // its legs go, and it with them
+    // out by the face it came through: a side, the back (the high end), a block's front
+    const u = (px - r.x) * r.dx + (pz - r.z) * r.dz, l = -(px - r.x) * r.dz + (pz - r.z) * r.dx;
+    let ox, oz;
+    if (Math.abs(l) > r.hw) { const sg = l > 0 ? 1 : -1; ox = -r.dz * sg; oz = r.dx * sg; }
+    else if (u >= r.len) { ox = r.dx; oz = r.dz; }
+    else { ox = -r.dx; oz = -r.dz; }
+    const vo = D.vx * ox + D.vz * oz;
     if (vo < 0) { D.vx -= (1 + RESTITUTION) * vo * ox; D.vz -= (1 + RESTITUTION) * vo * oz; E.trauma = Math.min(1, E.trauma + 0.15); }
+    if (r.kind === "kicker" && vo < -4 && footCd <= 0) { footCd = 1.2; sparks(new V3(D.x, D.y + 0.5, D.z), 8, 6, 0xbfd6ff); if (!saidFeet) { saidFeet = true; notice("In the fury, hitting these feet brings the whole kicker down"); } }
     return;
   }
   if (pit && ny < 0.5 && s2.pit !== pit && !s2.ramp) { takeoff("pit", pit, ex, ez); return; }   // over the lip: launched
@@ -2461,7 +3182,7 @@ function bumpLaunch(r) {     // thrown high: the slope's own speed, plus a kick
     E.fovKick += 8; E.st = 0.3; E.trauma = Math.min(1, E.trauma + 0.3); slowmo(0.55, 0.3);
     return;
   }
-  if (Math.hypot(D.vx, D.vy, D.vz) > 4) { D.vy += BUMP_KICK; E.fovKick += 4; E.st = 0.2; }
+  if (Math.hypot(D.vx, D.vy, D.vz) > 4) { D.vy += BUMP_KICK; E.fovKick += 4; E.st = 0.2; ring(new V3(D.x, D.y, D.z), 3.2, 0.35, 0xffd84a); }
 }
 
 // ---- rails: caught, ridden to the end, thrown
@@ -2470,7 +3191,7 @@ function tryCatchRail() {
   if (sp2 < 4) return false;
   let best = null, bi = 0, bd = RAIL_CATCH * RAIL_CATCH;
   for (const r of rails) {
-    if (r.cool > 0 || D.x < r.x0 - 2 || D.x > r.x1 + 2 || D.z < r.z0 - 2 || D.z > r.z1 + 2) continue;
+    if (r.dead || r.cool > 0 || D.x < r.x0 - 2 || D.x > r.x1 + 2 || D.z < r.z0 - 2 || D.z > r.z1 + 2) continue;
     for (let i = 0; i < r.n; i++) {
       const dx = r.P[3 * i] - D.x, dz = r.P[3 * i + 2] - D.z, d2 = dx * dx + dz * dz;
       if (d2 >= bd) continue;
@@ -2492,7 +3213,7 @@ function tryCatchRail() {
   D.rail = { r: best, s: bi, dir, v: clamp(Math.abs(fdot), RAIL_MIN, RAIL_MAX), pts: 0, seg: best.T[bi], got: {}, trick: null };
   D.ground = false; D.drift = false; D.crouch = 0;
   railSample(best, bi);
-  sparks(new V3(RS.px, RS.py, RS.pz), 18, 8, best.col[0]);
+  sparks(new V3(RS.px, RS.py, RS.pz), 18, 8, best.col[0]); starFlash(new V3(RS.px, RS.py + 0.3, RS.pz), 2.6, best.col[0]);
   return true;
 }
 function railTrick() { const R = D.rail; if (!R.trick) R.trick = { def: RAIL_TRICKS[Math.floor(Math.random() * RAIL_TRICKS.length)], t: 0 }; }
@@ -2517,7 +3238,7 @@ function stepRail(dt) {
   D.vx = fx * R.v; D.vy = fy * R.v; D.vz = fz * R.v;
   if (RS.uy > 0.5 && fx * fx + fz * fz > 0.09) D.a = Math.atan2(fz, fx);
   if (done) {   // the end throws the dozer along the bar
-    callout("Grind", "+" + addScore(R.pts), "#c9f27a", false);
+    callout("Grind", "+" + comboAdd("Grind", R.pts), "#c9f27a", false);
     r.cool = RAIL_COOL; D.rail = null;
     if (R.trick) R.trick = null;
     D.f.copy(D.railF); D.n.copy(D.railU);
@@ -2539,6 +3260,7 @@ function closest(b, x, z) {
   cp.x = px; cp.z = pz; cp.nx = dx / d; cp.nz = dz / d; cp.d = d; return cp;
 }
 function collide(dt) {
+  touchFeet();
   const fx = Math.cos(D.a), fz = Math.sin(D.a);
   const list = query(D.x, D.z, D_R + 4);
   for (let i = 0; i < list.length; i++) {
@@ -2591,6 +3313,7 @@ function hit(b, dmg, h, cause) {
   for (let c = 0; c < chips; c++) P_DEBRIS.spawn({ pos: new V3(h.x + h.nx * 0.3, y + mr(0.4, Math.min(b.top, 3)), h.z + h.nz * 0.3), vel: new V3(h.nx * mr(3, 7) + mr(-3, 3), mr(2, 6), h.nz * mr(3, 7) + mr(-3, 3)),
     life: mr(0.8, 1.4), s0: mr(0.12, 0.26), grav: 22, bounce: 0.35, spin: mr(-12, 12), shrink: false, col: b.hex, floor: groundY(h.x, h.z) });
   sparks(new V3(h.x, y + 0.8, h.z), Math.min(16, 4 + dmg / 4), 9, b.hp > 0 ? 0xbfd6ff : 0xffb040);
+  starFlash(new V3(h.x, y + 0.9, h.z), 1.6 + Math.min(2, dmg / 30), 0xfff2c0);
   E.trauma = Math.min(1, E.trauma + Math.min(0.5, dmg / 120)); E.jv += 2; E.st = -0.25;
   if (b.hp <= 0) { destroy(b, D.vx, D.vz, cause); return; }
   crack(b);
@@ -2603,7 +3326,7 @@ function kick(b, h) {
   b.alive = false; b.fly = { t: 0, v: new V3(D.vx * 0.8 + mr(-2, 2) - h.nx * 2, mr(4, 8) + (GS.fury ? 4 : 0), D.vz * 0.8 + mr(-2, 2) - h.nz * 2),
     w: new V3(mr(-8, 8), mr(-6, 6), mr(-8, 8)) };
   if (b.pool) b.pool.visible = false;
-  const pts = addScore(b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
+  const pts = comboFeed(b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
   floatPts(new V3(b.cx, b.top + 0.5, b.cz), "+" + pts, GS.fury ? P.fury : "#ffffff");
   if (b.kind === "crystal") sparks(new V3(b.cx, 1, b.cz), 30, 9, b.crystal === "A" ? 0x39e6ff : 0xb45cff);
   else for (let c = 0; c < 6; c++) P_DEBRIS.spawn({ pos: new V3(b.cx, mr(0.2, 0.8), b.cz), vel: new V3(mr(-4, 4), mr(2, 6), mr(-4, 4)), life: mr(0.6, 1), s0: mr(0.08, 0.16), grav: 22, bounce: 0.35, spin: mr(-12, 12), shrink: false, col: 0x8e8a83 });
@@ -2613,8 +3336,9 @@ function kick(b, h) {
 function destroy(b, dx, dz, cause) {
   if (!b.alive) return;
   b.alive = false; b.fall = { t: 0, dx: dx || 0, dz: dz || 0, tilt: mr(-0.25, 0.25), y0: b.obj.position.y, burst: 0 };
-  const pts = addScore(b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
+  const pts = comboAdd(CAUSE[b.kind] || "Smash", b.pts * (GS.fury ? FURY_PTS : 1)); GS.destroyed++;
   const top = new V3(b.cx, b.top * 0.6, b.cz);
+  starFlash(top, b.kind === "car" ? 3.5 : 6, GS.fury ? 0xffc23a : 0xffffff);
   floatPts(top.clone().setY(b.top + 1), "+" + pts, GS.fury ? P.fury : "#ffffff");
   pow(b.kind === "car" ? "Crash!" : GS.fury ? "Boom!" : "Bam!", top.clone().setY(b.top + 0.5), b.kind === "car" ? 0.9 : 1.3);
   ring(new V3(b.cx, 0, b.cz), Math.max(b.x1 - b.x0, b.z1 - b.z0) * 1.1, 0.5);
@@ -2628,8 +3352,9 @@ function updateDestruction(dt) {
     b.hitCd -= dt; b.warnCd -= dt;
     if (b.shake > 0 && !b.fall && !b.fly) {
       b.shake = Math.max(0, b.shake - dt * 3);
-      const s = b.shake * 0.08;
+      const s = b.shake * 0.08, w = b.shake * b.shake * 0.06 * Math.sin(RT * 26);     // it shakes, and it wobbles like jelly
       b.obj.position.set(b.home.p.x + Math.sin(RT * 61) * s, b.home.p.y, b.home.p.z + Math.sin(RT * 47) * s);
+      b.obj.scale.set(b.home.s.x * (1 + w), b.home.s.y * (1 - 1.4 * w), b.home.s.z * (1 + w));
     }
     if (b.fall) {
       const F = b.fall; F.t += dt;
@@ -2710,8 +3435,9 @@ function resetCity() {   // the level again: the city rebuilt, the dozer back on
       b.rubble = null;
     }
   }
-  GS.score = 0; GS.destroyed = 0; GS.gauge = 0; GS.fury = false; GS.furyT = 0; GS.saidFull = false; GS.mult = 1; GS.bonus = 0;
+  GS.score = 0; GS.destroyed = 0; GS.gauge = 0; GS.fury = false; GS.furyT = 0; GS.saidFull = false; GS.mult = 1; GS.bonus = 0; GS.wrecked = 0;
   for (const b of BONUS) b.taken = false;
+  loseCombo(); resetWrecks(); resetItems();
   placeAt(START, "count");
   applyGlow();
 }
@@ -2926,6 +3652,11 @@ function updateCamera(dt, rdt) {
     if (Math.abs(camera.far - far) > 1) { camera.far = far; camera.updateProjectionMatrix(); }
     skyDome.scale.setScalar(far * 0.85 / 200);
   }
+  if (OV.on) {
+    camera.position.set(OV.x, OV.h, OV.z); camera.up.set(0, 0, -1); camera.lookAt(OV.x, 0, OV.z); camera.up.set(0, 1, 0);
+    camera.fov = 40; camera.far = OV.h + 200; camera.updateProjectionMatrix(); cam.fov = 40;
+    scene.fog.near = OV.h + 100; scene.fog.far = OV.h + 400; skyDome.scale.setScalar(OV.h / 100 + 1);
+  }
 }
 
 // =============================================================================
@@ -3050,7 +3781,7 @@ function applyGlow() {
   RIM.uRimColor.value.set(P.rimColor); RIM.uRimStr.value = P.rimStr; RIM.uRimPow.value = P.rimPow;
 }
 function applyAmbiance() {
-  hemi.color.set(P.skyTop); hemi.groundColor.set(P.groundColor); hemi.intensity = P.hemiInt;
+  hemi.color.set(P.hemiSky || P.skyTop); hemi.groundColor.set(P.groundColor); hemi.intensity = P.hemiInt;
   sun.color.set(P.sunColor); sun.intensity = P.sunInt; sun.shadow.radius = P.shadowRadius; sun.shadow.blurSamples = 16;
   scene.environmentIntensity = P.envInt;
   renderer.toneMapping = TONES[P.tone]; renderer.toneMappingExposure = P.exposure;
@@ -3061,7 +3792,8 @@ function applyAmbiance() {
   skyMat.fog = false;
   // one roughness for everything lit, kit and code
   scene.traverse((o) => { if (o.isMesh) [].concat(o.material).forEach((m) => { if (m.isMeshStandardMaterial && !m.metalness && !m.emissiveIntensity && !m.vertexColors && !m.userData.noWeather) m.roughness = P.roughness; }); });
-  regradePalette(); drawGround(); drawRoad(); paintPools();
+  regradePalette(); drawGround(); drawRoad(); paintSheets(); paintDozer();
+  backdrop.visible = !!P.arcade;
   setBiome(P.biome, 1);
   document.documentElement.style.setProperty("--vig", P.fury);
   frameEl.style.setProperty("--vig", P.fury);
@@ -3087,7 +3819,7 @@ function setZoneCam(i) {
 setZoneCam(zcIdx);
 function setAmb(i) {
   ambIdx = clamp(i, 0, AMBS.length - 1); P = AMBS[ambIdx];
-  try { localStorage.setItem("dozerflipUltimate:amb", ambIdx); } catch (e) {}
+  try { localStorage.setItem("dozerflipUltimate2:amb", ambIdx); } catch (e) {}
   if (ready) applyAmbiance(); else ambBtns.forEach((b, k) => b.classList.toggle("on", k === ambIdx));
 }
 
@@ -3112,8 +3844,25 @@ function floatPts(at, text, color) {
 let noticeT = 0;
 function notice(text) { noticeEl.textContent = text; noticeEl.classList.add("on"); noticeT = 2.4; }
 const proj = new V3();
+const hud = { letters: -1, gears: -1 };
 function updateHud(rdt) {
+  E.scoreBump = Math.max(0, E.scoreBump - rdt * 4);
   $("scoreN").textContent = GS.score.toLocaleString("en");
+  $("scoreN").style.transform = `rotate(-3deg) scale(${(1 + 0.3 * E.scoreBump).toFixed(3)})`;
+  // the combo: its multiplier, what it holds, its last moves, the window it has left
+  $("combo").classList.toggle("on", CB.mult > 0);
+  if (CB.mult > 0) {
+    CB.bump = Math.max(0, CB.bump - rdt * 5);
+    const cc = comboCol(CB.mult), n = $("comboN");
+    n.textContent = "×" + CB.mult; n.style.color = cc;
+    n.style.transform = `rotate(${(-5 + 3 * Math.sin(RT * 6) * Math.min(1, CB.mult / 8)).toFixed(2)}deg) scale(${((1 + Math.min(0.5, CB.mult * 0.03)) * (1 + 0.4 * CB.bump)).toFixed(3)})`;
+    $("comboPts").textContent = CB.base.toLocaleString("en");
+    $("comboList").textContent = CB.list.join(" + ");
+    $("comboBar").style.width = (comboBusy() ? 100 : 100 * sat(CB.t / COMBO_WINDOW)).toFixed(0) + "%"; $("comboBar").style.background = cc;
+  }
+  // the collection
+  if (hud.letters !== GS.letters) { hud.letters = GS.letters; [...$("letters").children].forEach((el, i) => el.classList.toggle("on", !!(GS.letters >> i & 1))); }
+  if (hud.gears !== GS.gears) { hud.gears = GS.gears; $("gears").textContent = GS.gears + " / " + GEAR_N; }
   $("scoreSub").textContent = (GS.phase === "zone" ? GS.destroyed + " / " + GS.total + " destroyed"
     : "Race " + GS.raceT.toFixed(1) + " s · " + Math.round(100 * clamp(TR.s / TR.len, 0, 1)) + " %") + " · ×" + GS.mult.toFixed(1);
   const g = $("gauge");
@@ -3186,15 +3935,18 @@ function simulate(dt) {
     if (!D.rail) { collide(h); touchArrows(); if (GS.phase === "race") touchBonus(); }
     stepPhase(h);
     if (GS.phase !== "zone") { trackStep(); continue; }
-    // the zone's edge
-    if (D.x < -WX) { D.x = -WX; D.vx = Math.abs(D.vx) * RESTITUTION; }
-    if (D.x > WX) { D.x = WX; D.vx = -Math.abs(D.vx) * RESTITUTION; }
-    if (D.z < WZ0) { D.z = WZ0; D.vz = Math.abs(D.vz) * RESTITUTION; }
     // the south edge closes behind the dozer once it is in (it arrives over it, from the ramp)
     if (!GS.sealed && D.z < WZ1 - 1) GS.sealed = true;
-    if (GS.sealed && D.z > WZ1) { D.z = WZ1; D.vz = -Math.abs(D.vz) * RESTITUTION; }
+    if (D.rail) continue;
+    // the zone's edge: a wall nobody sees, and a bumper that throws the dozer back in
+    if (D.x < -WX) { D.x = -WX; bumper(1, 0, "w"); }
+    else if (D.x > WX) { D.x = WX; bumper(-1, 0, "e"); }
+    if (D.z < WZ0) { D.z = WZ0; bumper(0, 1, "n"); }
+    else if (GS.sealed && D.z > WZ1) { D.z = WZ1; bumper(0, -1, "s"); }
   }
   for (const r of rails) r.cool = Math.max(0, r.cool - dt);
+  // the combo holds while something is going on, then has its window on flat ground
+  if (CB.mult > 0) { if (comboBusy()) CB.t = COMBO_WINDOW; else if ((CB.t -= dt) <= 0) bankCombo(); }
   if (GS.fury) { GS.furyT -= dt; GS.gauge = Math.max(0, GS.furyT / FURY_TIME); if (GS.furyT <= 0) endFury(); }
 }
 function frame() {
@@ -3210,12 +3962,15 @@ function frame() {
   E.slowK += (slowWant - E.slowK) * ease(slowWant < E.slowK ? 14 : 8, rdt);
   let dt = rdt * E.slowK;
   if (E.hitStop > 0) { E.hitStop -= rdt; dt = 0; }
-  if (dt > 0) { simulate(dt); updateDestruction(dt); }
+  if (dt > 0) { simulate(dt); updateDestruction(dt); updateWrecks(dt); }
   applyDozer(dt);
   if (dt > 0) emit(dt);
   updatePieces(dt, rdt);
   updateMagic(rdt);
   updateArrows(rdt); updateBonus(rdt); updateFx3(dt, rdt);
+  updateAura(dt, rdt); updateItems(rdt); updateEdge(rdt);
+  for (const j of jets) j.scale.set(1, 0.8 + 0.25 * Math.sin(RT * 31 + j.position.x) + 0.1 * Math.random(), 1);
+  clouds.rotation.y += rdt * 0.003;
   updateCamera(dt, rdt);
   updateScreen(rdt);
   // the sun follows the dozer, so its shadows are always sharp round it
@@ -3236,16 +3991,21 @@ function frame() {
 }
 // a bench's handle: the simulation stepped by hand at 60 Hz, no frame drawn
 function tick(sec) {
-  for (let i = 0, n = Math.round(sec * 60); i < n; i++) { RT += 1 / 60; simulate(1 / 60); updateDestruction(1 / 60); applyDozer(1 / 60); updateCamera(1 / 60, 1 / 60); }
+  for (let i = 0, n = Math.round(sec * 60); i < n; i++) { RT += 1 / 60; simulate(1 / 60); updateDestruction(1 / 60); updateWrecks(1 / 60); applyDozer(1 / 60); tumble.getWorldPosition(FX3.C); updateItems(1 / 60); updateCamera(1 / 60, 1 / 60); }
   const A = D.air;
   return [GS.phase, D.x.toFixed(2), D.y.toFixed(2), D.z.toFixed(2), D.rail ? "rail" : D.ground ? "ground" : "air", "ny " + D.n.y.toFixed(2), "v " + Math.hypot(D.vx, D.vy, D.vz).toFixed(1),
-    A.assist ? "assist" : "", A.cur ? A.cur.def.name + " " + A.cur.t.toFixed(2) : "", "dash " + A.dashes, "score " + GS.score, "gauge " + GS.gauge.toFixed(2), GS.fury ? "FURY" : ""].join(" · ");
+    A.assist ? "assist" : "", A.cur ? A.cur.def.name + " " + A.cur.t.toFixed(2) : "", "dash " + A.dashes, "score " + GS.score, "combo " + CB.base + " x" + CB.mult, "gauge " + GS.gauge.toFixed(2),
+    "gears " + GS.gears + " letters " + GS.letters.toString(2), GS.fury ? "FURY" : ""].join(" · ");
 }
 function forceTrick(name) {   // a bench's handle: this trick, now, in the air
   const def = TRICKS.find((t) => t.name === name); if (!def || D.ground) return false;
   D.air.cur = { def, t: 0, k: 0 }; D.air.lastName = def.name; return true;
 }
-window.__ultimate = { tick, forceTrick, TRICKS, setZoneCam, bumps, ramps, BONUS, rails, FX3, D, GS, E, cam, IN, startFury, P: () => P, DES, setAmb, press, dashKey, resetCity, skipToZone, placeAt, TR, ARROWS, pits, scene, renderer, ready: () => ready };
+// a bench's handle: the camera straight down over (x, z) from h, north up, the fog pushed away (h = 0 hands it back)
+const OV = { on: false, x: 0, z: 0, h: 0 };
+const overview = (x, z, h) => { Object.assign(OV, { on: h > 0, x, z, h }); cam.top.ready = false; };
+window.__ultimate = { tick, forceTrick, TRICKS, setZoneCam, bumps, ramps, plats, BONUS, rails, FEET, ITEMS, PYLONS, CB, FX3, D, GS, E, cam, IN, startFury, P: () => P, DES, setAmb, press, dashKey, resetCity,
+  skipToZone, placeAt, TR, ARROWS, pits, scene, renderer, overview, wreck, bumper, takeItem, bankCombo, ready: () => ready };
 
 // =============================================================================
 // BOOT
@@ -3263,13 +4023,13 @@ const loadKit = (n, tries = 4) => loader.loadAsync(KIT + n + ".gltf")
 Promise.all(NAMES.map((n) => loadKit(n).then((g) => { kit[n] = g.scene; })))
   .then(() => {
     kit.base.traverse((m) => { if (m.isMesh && m.material.map && !atlasImg) readAtlas(m.material.map.image); });
-    for (const n in kit) kit[n].traverse((m) => { if (m.isMesh && m.material.map) m.material.map = atlasTex; });
+    for (const n in kit) kit[n].traverse((m) => { if (m.isMesh && m.material.isMeshStandardMaterial) m.material.map = atlasTex; });   // one palette, even where a model's own copy failed to load
     buildMasks();
     layoutPark(); layoutTrack();
-    buildGround(); buildPits(); buildRamps(); buildRails(); buildTrack(); buildBonus();
-    buildCity(); buildTiles(); buildParkDecor();
+    buildGround(); buildPits(); buildRamps(); buildPlats(); buildRails(); buildTrack(); buildBonus();
+    buildCity(); buildTiles(); buildParkDecor(); buildPylons(); buildZap(); buildItems(); buildBackdrop();
     GS.total = DES.length;
-    buildDozer(); buildFx3();
+    buildDozer(); buildFx3(); buildAura();
     headSpot.position.set(0.6, 1.0, 0); headSpot.target.position.set(6, 0, 0);
     root.add(headSpot, headSpot.target);
     // what glows and water keep their colours under a biome; the dozer stays clean

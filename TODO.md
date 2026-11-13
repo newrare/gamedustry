@@ -94,132 +94,34 @@ ______________________________________________________________________
 
 ## The games — content pass
 
-- [ ] MAIN — **proofread and validate every text, every game.** Every word a
-  player reads, EN and FR: the listing copy, the intro sentence, the HUD, the
-  round, the end screen, the level objective, the stickers, the game's
-  `web.copy` overrides. **`make text`** is the desk (`lab/game-text.html`): one
-  column per language, grouped by screen, Apply writes it back and rebuilds.
-
-- [ ] CODE — **check the `Pop` messages, every game.**
-  Every score gain, combo and celebration beat goes through `Pop.show`, and
-  every event, refusal and first-time mechanic through `Notify` (`say`, `learn`); the words, the styles and when they
-  fire were written game by game and have never been read side by side. Check
-  they say something, that two callouts never stack on the same beat, and that
-  the FR strings exist in `web.copy.fr.strings` (`make text` prints what is
-  untranslated). **`make events` is the bench for this pass**: every beat of a
-  game listed off its own source and fired inside its own build
-  (`lab/game-events-message.html`) — and a re-styled callout is written back
-  into `game.js` by **Apply**, so the pass is read, heard and landed in one
-  place. A word the game builds at runtime is still changed by hand: apply
-  refuses it rather than paste the bench's stand-in.
-
-- [ ] MAIN — **play the gallery's pace on a real climb.** The album's
-  GALLERY tab (docs/META.md, section 3b) is priced off a modelled player
-  (`node tools/lab/sim-economy.mjs --gallery`); check on two or three games
-  that the paintings fill at about the pace of the stars, and move
-  `GALLERY_ROUNDS` (tools/lib/economy.mjs) or the curve in
-  `packages/webshell/meta.js` (section 4b) if they do not.
-
-- [ ] CODE — **gameplay bugs the guide pass found** (left as they were; the
-  guide says what the code does):
-
-  - echomaze — `cols` lerps 10 → 16 rounded, so it is odd on many levels:
-    `MOUTHS = cols / mouthW` is fractional, the last surge mouth is one cell
-    wide and `hSolid[hI(rows, cols)]` writes past the array;
-  - radiam — a stage that opens on 3 colours gets its 4th and 5th on two frames
-    in a row at ink level 10; on stages whose pool is only big specials (5, 7,
-    9\) the charge meter, double rays and x4 chains earn nothing;
-  - arcider — the first stalker is on level 7, not the 6 `foeUnlock` says, and
-    `play.forkBombs` is not gated by `ladder.unlock.bomb` (mines on level 4);
-    `mixHex` is defined twice;
-  - grudgeon — a ware's `Pop` draws under the shop card's veil (z 16 < 30);
-  - shell — under the dev force, a missed objective still shows NEXT on the
-    end screen (seen on grudgeon 29).
-
-- [ ] MAIN — **grudgeon's solo start: playtest the bench's tuning**
-  (v0.11.1). A blind pilot (random rooms, no rule scrolls, never guards), 12
-  seeds x 30 levels, put the solo start level with the old party of four
-  holding every scroll: 237 levels won of 360 against 230. It took
-  `BY_PARTY` (a lone hero meets 30% of a yokai's health and 45% of its
-  blows), each hero arriving with their first scroll (`KIT`), Yuki at 76
-  health / 7 defence with Foxfire first. The masters (6, 12, 18, 24, 30) and
-  the way-out stages 10, 22 and 28 stay hard for the pilot, as they were
-  before.
-  In the drowned village, steps 1–2 have no split at all (one hero cannot
-  split).
-
-- [ ] MAIN — **pawko's refusals are silent**: `refuse(word)` computes "Keep
-  it for the last wave", "No card played yet"… but its `Notify.say` was taken
-  out in 190cee8. Under the word rule a refused action is a notice — put it
-  back, or confirm it stays a shake and a sound.
-
-- [ ] CODE — **guide pictures under the type floor**: gearball's upgrade cards
-  (250 px) and slipdeck's jokers (240 px) are drawn smaller than authored, so
-  their own text falls to ~15–18 px. One card at full size per page, or a
-  picture without the card's prose.
-
-- [ ] CODE — **check the sfx, every game.** Every key is mapped to a variant
-  of the house kit (`assets/audio/kit/`), each cut to the file and length its
-  old clip had: first guesses, to be heard in the game. **`make events`** is
-  the bench — the sound tab lists every clip and kit variant with every line
-  that plays it, its volume and its pitch, and Apply writes a change back.
-  Review each mapping by ear (the levelling moved most game sounds 3–8 dB
-  against their old clips), give a second or third take at `/kit` to the
-  variants worth it, and give a cue to the callouts that still fire with none
-  under them. Echomaze's `map` is a hand-built echo train and stays a clip:
-  never re-cut it. Still open after that: a `Notify.say` plays no sound of its
-  own, and the library lacks marble-on-marble clacks, a marble rolling on wood
-  or metal, short pinball pins and bumpers, a gacha capsule popping open, a
-  game-show buzzer and a real snake hiss.
-
-- [ ] MAIN — **listen to every game's beds looped on the bar** (`seam`,
-  2026-10-17): validated on holepocalypse, then rolled out to the seventeen
-  others and the template. Every window's length was re-measured with
-  `tools/lab/loop-points.mjs` (most moved by a bar or two; bridgessa's tempo
-  was wrong) and every playable re-cut one seam early. Let a level of each
-  biome and the menu run past their first loop, chainring's five beds
-  included.
-
-- [ ] PLAYTEST — **gearball 2.12.0: slower, shorter, and the switches move
-  only for the electric marble.** The Combo is the uncapped multiplier on the
-  Dynamo (ten notches a step, every module pays). The pace was cut (PACE in
-  game.js, shifts 2 → 5 min, 7 → 5 hearts) until a pilot tapping every 1.2 to
-  2.5 s lasts every shift to level 16 and one in two at level 24; objectives
-  8 000 → 16 000 put its first star at 7–10 runs in 10, the third rare.
-  `roundScore` 40 500. A switch now flips only once the ELECTRIC marble has
-  passed, so its route reads whole as it sets off — the user's idea, to be
-  tried. Play L1, L12, L24: is it fair, and does the electric read well?
-
-- [ ] MAIN — **the stars, every game: one easy, three near-flawless.** The
-  meaning is fixed in [docs/LEVELS.md](docs/LEVELS.md) (*The objective, and the
-  stars*) and the motor has the two knobs (`web.levels.stars`,
-  `web.levels.faults` + `Game.levelFaults()`). Done on 2026-10-17, untested by
-  a human: chainring (misses), gearball (objective ×0.4, hearts 7→4, ≤1→2
-  hearts lost), bouncetry (60 % / 90 % / a clear within par 5→3), marshmelt
-  (`[1, 2, 3]`, ≤1→0 hit), arcider (difficulty squeezed to 0.15→0.70 of its
-  span), echomaze (the gate, and the pulses it cost). Play each one and say
-  what is too easy or too hard; then the other eleven, whose mistakes are
-  already counted in most of them (vipera `bites`, triverse lives, slipdeck
-  `busts`, spinshock `crashes`, bridgessa deals down, grudgeon `fell`).
-
-- [ ] AUTO — **update the screenshots, every game.** `make shots GAME=<slug>`
-  (`tools/lab/shoot-screens.mjs`) reshoots `assets/image/screen/`; the site
-  picks them up on its next build (`make check && make site`).
-
-- [ ] MAIN — **update the itch.io pages and the store images, every game.**
-  `make itch` (`deploy-itch.mjs --all`) uploads the builds; butler cannot touch
-  the page around them, so the title, copy, tags, cover and screenshots are
-  updated by hand on itch (`node tools/publish/store-meta.mjs --game=<slug>`
-  prints the copy). The images: compose each game's card in `make store`, then
+- [ ] MAIN — **update the itch.io pages, every game on itch.** `make itch`
+  (`deploy-itch.mjs --all`) uploads the builds — the last ones online date
+  from 2026-09-17 to 2026-10-07 — but butler cannot touch the page around
+  them: the title, the description (complete it), the tags, the cover and the
+  screenshots are updated by hand on itch
+  (`node tools/publish/store-meta.mjs --game=<slug>` prints the copy). The
+  images: compose each game's card in `make store`, then
   `node tools/lab/shoot-store.mjs <slug>` — the phone gallery
   `assets/image/google/<lang>/<slug>-NN.jpg` (1080×1920), the tablet pair
   `-desk-NN.jpg` (1920×1080), the itch cover (630×500) and the 1024×500
-  feature graphic (`shoot-cover.mjs <slug> --play`), FR and EN.
+  feature graphic (`shoot-cover.mjs <slug> --play`), FR and EN. On itch
+  today (`butler status newrare/<slug>`, 2026-11-13): arcider, blight,
+  bouncetry, chainring, echomaze, gearball, marshmelt, orbinity, radiam,
+  slipdeck, spinshock, triverse, vipera.
 
-- [ ] MAIN — **put the latest games on itch.io.** A page is created by hand
+- [ ] MAIN — **put the missing games on itch.io.** A page is created by hand
   (butler cannot create one), its `itch.user` / `itch.project` match the
   manifest, then `node tools/publish/deploy-itch.mjs --game=<slug>` and tick
-  *played in the browser* on the new upload.
+  *played in the browser* on the new upload. No page yet (2026-11-13):
+
+  - [ ] bridgessa
+  - [ ] grudgeon
+  - [ ] pawko
+  - [ ] stratideck
+  - [ ] gelatile — parked game
+  - [ ] holepocalypse — parked game
+  - [ ] parrynormal — parked game
+  - [ ] foldiers — parked game, and its manifest has no `itch` block yet
 
 - [ ] CODE — **an online leaderboard, every game.** Phase 5 of
   `packages/meta`. Until then the ranking view reads the player's own save
@@ -332,11 +234,11 @@ that moves the per-game odds; the portfolio only multiplies them.
   logged for the mix) and plays only what a pilot plays: `echomaze` has one,
   the other games do not. A pilot is a hook inside the Game module, like
   `GAME_PILOT` in `shoot-screens.mjs`, playing the round a promo wants to show
-- [ ] CODE — **motion-design promo videos, made with HyperFrames, for the
-  other games.** `echomaze` is done: `promo/echomaze/` (composition +
+- [ ] CODE — **a motion-design promo video for every game**, made with
+  HyperFrames. `echomaze` is done: `promo/echomaze/` (composition +
   `promo.json`), rendered by `node tools/lab/promo.mjs echomaze` to
-  `dist/promo/echomaze-{en,fr}.mp4`. One per game, the game's own shots, art,
-  music and sound as its only inputs
+  `dist/promo/echomaze-{en,fr}.mp4`. One per game, FR and EN, the game's own
+  shots, art, music and sound as its only inputs
 - [ ] MAIN — **review the echomaze promo and post it** — TikTok first, then
   Shorts and Reels
 - [ ] MAIN — **write the clip recipe down once**: 15–30 s, vertical, the most

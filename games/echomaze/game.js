@@ -1895,7 +1895,14 @@
        four seams. A playable, and the endless run above level 30, have no `d`
        and ride the first band. */
     var LEVEL_D = null;
-    function applyLevel(d) { LEVEL_D = (d == null) ? null : d; }
+    /* The map lerps `cols` 10 -> 16 and rounds it, so it lands on odd counts
+       too; the board is cut into mouths of mouthW cells, so the count is
+       snapped to a whole number of mouths (an odd one gave a half mouth and
+       a write past the end of hSolid). */
+    function applyLevel(d) {
+      LEVEL_D = (d == null) ? null : d;
+      C.cols = Math.max(C.mouthW, Math.round(C.cols / C.mouthW) * C.mouthW);
+    }
     function bandFor() {
       var b = C.bands;
       if (LEVEL_D == null || !CONFIG.level) return b[0];

@@ -308,6 +308,58 @@
     }
   },
   "description": "Foldiers is a slow conquest of a world cut out of paper, played in turns against the game. Every region of the board has an owner, a terrain and a number of troops, and every army is a little origami figure standing on it, its count on a badge at its foot. During a turn you tap one of your regions and it deals its cards into your hand: one a troop, one a piece, one a purchase. Pick cards, tap a lit region, and they go there as one convoy, up to three a region. When you press Send, or when time runs out, every convoy of every camp leaves at once and the battles resolve together, troop for troop. Your capital, towns and forts fill a reserve you drop wherever your land reaches. Thirty stages across five worlds — the Paper Isles, the Golden Plains, the Whispering Woods, the Frozen North and the Whole World — add one rule each: forts, mountain passes, rivers and bridges, harbours and fleets, the fog of war, gold mines, recruits, cavalry, artillery, scout balloons, spies, snow and storms announced a turn ahead, wonders, engineers, siege towers and a third camp, with upgrades in between — bigger towns, veterans, long guns, heavy shells, rich mines, cavalry charges, stone forts, a royal capital, barracks and fast ships — until Marshal Pleat meets the Red Marshal in a fair duel. Every stage is won on its objective and pays three stars for two sub-objectives met along the way.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Origami",
+            "line": "A world made of <b>paper</b>"
+          },
+          {
+            "kicker": "Strategy",
+            "line": "Plan your <b>orders</b>"
+          },
+          {
+            "kicker": "Conquest",
+            "line": "Take every <b>region</b>"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "Blues against Reds",
+            "line": "Outwit your <b>opponent</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Origami",
+            "line": "Un monde de <b>papier</b>"
+          },
+          {
+            "kicker": "Stratégie",
+            "line": "Planifie tes <b>ordres</b>"
+          },
+          {
+            "kicker": "Conquête",
+            "line": "Prends chaque <b>région</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "Bleus contre Rouges",
+            "line": "Trompe ton <b>adversaire</b>"
+          }
+        ]
+      }
+    }
+  },
   "web": {
     "font": "baloo2",
     "music": "foldiers.mp3",

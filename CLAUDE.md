@@ -1278,7 +1278,8 @@ The two rules that hold this together:
   line is picked by number out of the manifest and **never typed**, and one
   Save writes the card in both languages. Saved as a layout in
   `lab/store-presets.json` and written straight into
-  `assets/image/<store>/{en,fr}/` (`make store`);
+  `assets/image/google/{en,fr}/` and `assets/image/itch/` — one language,
+  itch's images carry no text (`make store`);
   `tools/lab/shoot-store.mjs`
   is the batch, and it shoots a game with its saved layout when it has one. See
   [docs/ASSETS.md](docs/ASSETS.md#the-listing-images-come-from-assetsimagegoogle-and-assetsimageitch).

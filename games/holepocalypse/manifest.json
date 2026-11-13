@@ -1,7 +1,7 @@
 {
   "slug": "holepocalypse",
   "title": "Holepocalypse",
-  "version": "0.7.15",
+  "version": "0.7.16",
   "tagline": "Fling golf balls at a zombie horde and roll one into the hole to blast them all",
   "order": 170,
   "draft": false,
@@ -422,6 +422,58 @@
     }
   },
   "description": "Holepocalypse is golf against a zombie horde. The dead shamble down the fairway toward your tee, and you stand them off with a bag of five golf balls. Start your touch in the blue band around the tee to roll a ball up the grass — it ricochets off the fences and knocks zombies into each other like billiard balls, chaining knockouts — or in the orange band to lob it over the horde and drop it on their heads. Every ball that comes to rest goes back into the bag on its own. The hole hides among them: roll a ball in slowly enough and it fires a toxic shockwave that wipes most of the field — or aim for a coloured flag instead, which wins back a lost flag and loads special balls: explosive, multiball, piercing, homing, fire, ice and more. Every knockout charges two supers, from a rain of balls to a golf cart charging up the busiest lane. Thirty levels across five courses — a country club, desert links, a bayou, frozen links and a graveyard green — bring bunkers, whirlpools that swallow a zombie you knock back into them, ice where the pile-ups slide, graves the dead rise from, seven kinds of zombie and five bosses, from the Greenkeeper on his mower to the Zombie King driving skull balls back at your tee.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Golf vs Zombies",
+            "line": "<b>Swing</b> at the horde"
+          },
+          {
+            "kicker": "Ricochets",
+            "line": "Bowl the zombies <b>over</b>"
+          },
+          {
+            "kicker": "Powers",
+            "line": "Sink it for a <b>shockwave</b>"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "Tower Defense",
+            "line": "Defend your <b>zone</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Golf vs Zombies",
+            "line": "<b>Swing</b> sur la horde"
+          },
+          {
+            "kicker": "Ricochets",
+            "line": "Renverse les <b>zombies</b>"
+          },
+          {
+            "kicker": "Pouvoirs",
+            "line": "Vise le trou pour une <b>onde de choc</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "Tower Defense",
+            "line": "Défends ta <b>zone</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "holepocalypse",

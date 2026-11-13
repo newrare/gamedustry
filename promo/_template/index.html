@@ -1,0 +1,355 @@
+<!doctype html>
+<!--
+  THE PROMO TEMPLATE — a game's TikTok / Shorts / Reels clip, 1080×1920, 13 s.
+
+  A HyperFrames composition shared by every game whose promo/<slug>/promo.json
+  says "template": "generic". tools/lab/promo.mjs copies it to
+  promo/<slug>/index.html with the game's sound effects written between the
+  sfx markers, and gathers everything it plays into promo/<slug>/assets/:
+  the shots, the stills, the artwork, the font, the music, and promo.js — the
+  words and the colours. Edit THIS file, never a generated copy: the next run
+  overwrites it. echomaze has its own composition (promo/echomaze/index.html).
+
+  Not a word of it is written here. The five captions are the game's store
+  lines (manifest.json → store.copy.<lang>.lines, the ones the listing images
+  print), the end card's sentence is the intro tagline (CONFIG.tagline and
+  web.copy.fr.tagline), the band names are web.levels.bands. The only strings
+  this template owns are the call and the address.
+
+  The beat sheet:
+
+    0.0  the five bands flash by                             line 1 (the hook)
+    0.5  the real round, played by the game's pilot
+    2.15                                                     line 2
+    4.0                                                      line 3
+    5.85 the payoff: rings out of the middle                 line 5
+    7.4  four bands, four worlds, their names                line 4 (30 levels)
+    9.2  the logotype, the hero, the sentence, the call      end card
+
+  Text is written in normal case and shouted by upper(), the house way:
+  capitals carry no accent.
+-->
+<html lang="en" data-resolution="portrait"
+      data-composition-variables='[{"id":"lang","type":"string","label":"Language","default":"en"}]'>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="assets/promo.js"></script>
+    <style>
+      @font-face {
+        font-family: "PromoFace";
+        src: url("assets/font.woff2") format("woff2");
+        font-weight: 400 900;
+      }
+      :root {
+        --ink: #04060b;
+        --accent: #7ef9ff;
+        --accent2: #4ade80;
+        --white: #ffffff;
+        --fw: 800;
+        --glow: 0 0 18px rgba(255, 255, 255, 0.35);
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px; overflow: hidden;
+        background: var(--ink);
+        font-family: "PromoFace", sans-serif;
+        font-weight: var(--fw);
+        color: var(--white);
+      }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--ink); }
+      .clip { position: absolute; inset: 0; }
+      .cover { width: 100%; height: 100%; object-fit: cover; }
+      b { color: var(--accent); font-weight: inherit; }
+
+      /* --- type ---------------------------------------------------------- */
+      .block { position: absolute; left: 60px; right: 60px; text-align: center; }
+      .kick {
+        display: inline-block; padding: 10px 26px 12px; border-radius: 999px;
+        font-size: 40px; letter-spacing: 0.08em; line-height: 1.1; color: var(--ink);
+        background: var(--accent);
+        box-shadow: 0 6px 0 rgba(0, 0, 0, 0.45), 0 0 34px var(--accent-a);
+      }
+      .line {
+        display: block; margin-top: 18px; line-height: 1.04; letter-spacing: 0.01em;
+        text-wrap: balance;
+        text-shadow: 0 7px 0 rgba(0, 0, 0, 0.6), 0 0 26px rgba(0, 0, 0, 0.55);
+      }
+      .plate {
+        display: inline-block; padding: 26px 36px 30px; border-radius: 30px;
+        background: rgba(4, 6, 11, 0.74); border: 4px solid var(--accent);
+        box-shadow: 0 0 40px var(--accent-a), inset 0 0 30px var(--accent-b);
+      }
+      .plate .line { margin-top: 14px; text-shadow: 0 5px 0 rgba(0, 0, 0, 0.6); }
+
+      /* --- the round ----------------------------------------------------- */
+      #scrim-run {
+        background: linear-gradient(180deg, rgba(4, 6, 11, 0.55) 0%, rgba(4, 6, 11, 0) 26%,
+          rgba(4, 6, 11, 0) 54%, rgba(4, 6, 11, 0.5) 82%, rgba(4, 6, 11, 0.7) 100%);
+      }
+      #hook { top: 250px; }
+      /* a line over a live board sits on its own dark ground, whatever the
+         game draws under it (blight's bubble wall) */
+      #hook .plate { padding: 24px 34px 30px; }
+      #payoff-veil {
+        background: radial-gradient(ellipse 72% 26% at 50% 800px, rgba(4, 6, 11, 0.82), rgba(4, 6, 11, 0.55) 55%, rgba(4, 6, 11, 0) 100%);
+      }
+      .cap { top: 1150px; }
+      #payoff { top: 640px; }
+      #payoff .line { text-shadow: 0 9px 0 rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-a), 0 0 110px var(--accent-b); }
+      .ring {
+        position: absolute; left: 540px; top: 860px; width: 40px; height: 40px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%; border: 10px solid var(--accent);
+        box-shadow: 0 0 34px var(--accent-a), inset 0 0 30px var(--accent-b);
+      }
+      #flash { background: #ffffff; }
+
+      /* --- the bands ----------------------------------------------------- */
+      #scrim-levels {
+        background: linear-gradient(180deg, rgba(4, 6, 11, 0.88) 0%, rgba(4, 6, 11, 0.3) 34%,
+          rgba(4, 6, 11, 0.3) 60%, rgba(4, 6, 11, 0.85) 100%);
+      }
+      #levels { top: 190px; }
+      #levels .big { display: block; font-size: 330px; line-height: 1.02;
+        text-shadow: 0 12px 0 rgba(0, 0, 0, 0.55), 0 0 60px var(--accent-a); }
+      #levels .word { display: block; line-height: 1.05; text-wrap: balance;
+        text-shadow: 0 7px 0 rgba(0, 0, 0, 0.6); }
+      #levels-sub { top: 1000px; }
+      .band { top: 1330px; }
+      .band .kick { font-size: 46px; background: var(--white); }
+
+      /* --- the end card -------------------------------------------------- */
+      #scrim-end {
+        background: linear-gradient(180deg, rgba(4, 6, 11, 0.5) 0%, rgba(4, 6, 11, 0.08) 34%,
+          rgba(4, 6, 11, 0.55) 62%, rgba(4, 6, 11, 0.92) 82%, rgba(4, 6, 11, 0.97) 100%);
+      }
+      /* Everything that is read stands above y 1640: under it, TikTok lays
+         its own caption and the sound line over the video. */
+      #logo { position: absolute; left: 110px; width: 860px; top: 120px; height: 440px; object-fit: contain; }
+      #hero { position: absolute; left: 230px; width: 620px; top: 520px; height: 620px; object-fit: contain;
+        object-position: 50% 100%; }
+      #tagline { top: 1170px; left: 90px; right: 90px; line-height: 1.12; text-wrap: balance;
+        text-shadow: 0 5px 0 rgba(0, 0, 0, 0.6); }
+      #cta { position: absolute; left: 0; right: 0; top: 1410px; text-align: center; }
+      #cta .pill {
+        display: inline-block; padding: 24px 54px 28px; border-radius: 999px;
+        font-size: 54px; letter-spacing: 0.03em; color: var(--ink);
+        background: linear-gradient(180deg, var(--white), var(--accent) 55%, var(--accent2));
+        box-shadow: 0 10px 0 rgba(0, 0, 0, 0.5), 0 0 50px var(--accent-a);
+      }
+      #url { top: 1560px; font-size: 40px; letter-spacing: 0.18em; color: var(--accent);
+        text-shadow: 0 3px 0 rgba(0, 0, 0, 0.6); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="13" data-width="1080" data-height="1920">
+
+      <!-- 1. HOOK: the five bands flash by, then the round -->
+      <img id="flash-2" class="clip cover" src="assets/band-2.jpg" data-start="0" data-duration="0.1" data-track-index="0" />
+      <img id="flash-3" class="clip cover" src="assets/band-3.jpg" data-start="0.1" data-duration="0.1" data-track-index="0" />
+      <img id="flash-4" class="clip cover" src="assets/band-4.jpg" data-start="0.2" data-duration="0.1" data-track-index="0" />
+      <img id="flash-5" class="clip cover" src="assets/band-5.jpg" data-start="0.3" data-duration="0.1" data-track-index="0" />
+      <img id="flash-1" class="clip cover" src="assets/band-1.jpg" data-start="0.4" data-duration="0.1" data-track-index="0" />
+      <video id="run" class="clip cover" src="assets/run.mp4" muted playsinline
+             data-start="0.5" data-duration="6.9" data-track-index="0"></video>
+      <div id="scrim-run" class="clip" data-start="0" data-duration="7.4" data-track-index="1"></div>
+      <div id="flash" class="clip" data-start="0.5" data-duration="0.3" data-track-index="4"></div>
+
+      <div id="c-hook" class="clip" data-start="0" data-duration="2.0" data-track-index="3">
+        <div id="hook" class="block" data-layout-allow-overlap><span class="plate">
+          <span class="kick" data-copy="hook.kicker"></span>
+          <span class="line" data-copy="hook.line" data-size="92,60"></span>
+        </span></div>
+      </div>
+      <div id="c-cap1" class="clip" data-start="2.15" data-duration="1.7" data-track-index="3">
+        <div class="block cap"><span class="plate">
+          <span class="kick" data-copy="cap1.kicker"></span>
+          <span class="line" data-copy="cap1.line" data-size="78,54"></span>
+        </span></div>
+      </div>
+      <div id="c-cap2" class="clip" data-start="4.0" data-duration="1.7" data-track-index="3">
+        <div class="block cap"><span class="plate">
+          <span class="kick" data-copy="cap2.kicker"></span>
+          <span class="line" data-copy="cap2.line" data-size="78,54"></span>
+        </span></div>
+      </div>
+      <div id="c-payoff" class="clip" data-start="5.85" data-duration="1.55" data-track-index="3">
+        <div id="payoff-veil" class="clip"></div>
+        <div class="ring" id="ring-a"></div>
+        <div class="ring" id="ring-b"></div>
+        <div id="payoff" class="block" data-layout-allow-overlap>
+          <span class="kick" data-copy="payoff.kicker"></span>
+          <span class="line" data-copy="payoff.line" data-size="128,76"></span>
+        </div>
+      </div>
+
+      <!-- 2. THIRTY LEVELS: four bands, their names -->
+      <img id="lv-2" class="clip cover" src="assets/band-2.jpg" data-start="7.4" data-duration="0.45" data-track-index="0" />
+      <img id="lv-3" class="clip cover" src="assets/band-3.jpg" data-start="7.85" data-duration="0.45" data-track-index="0" />
+      <img id="lv-4" class="clip cover" src="assets/band-4.jpg" data-start="8.3" data-duration="0.45" data-track-index="0" />
+      <img id="lv-5" class="clip cover" src="assets/band-5.jpg" data-start="8.75" data-duration="0.45" data-track-index="0" />
+      <div id="scrim-levels" class="clip" data-start="7.4" data-duration="1.8" data-track-index="1"></div>
+      <div id="levels-card" class="clip" data-start="7.4" data-duration="1.8" data-track-index="3">
+        <div id="levels" class="block" data-layout-allow-overlap>
+          <span class="big" data-copy="levels.figure" data-layout-allow-overlap></span>
+          <span class="word" data-copy="levels.word" data-size="96,56" data-layout-allow-overlap></span>
+        </div>
+        <div id="levels-sub" class="block"><span class="plate"><span class="line" style="margin-top:0" data-copy="levels.line" data-size="70,50"></span></span></div>
+      </div>
+      <div id="b-2" class="clip" data-start="7.4" data-duration="0.45" data-track-index="5"><div class="block band"><span class="kick" data-copy="band.1"></span></div></div>
+      <div id="b-3" class="clip" data-start="7.85" data-duration="0.45" data-track-index="5"><div class="block band"><span class="kick" data-copy="band.2"></span></div></div>
+      <div id="b-4" class="clip" data-start="8.3" data-duration="0.45" data-track-index="5"><div class="block band"><span class="kick" data-copy="band.3"></span></div></div>
+      <div id="b-5" class="clip" data-start="8.75" data-duration="0.45" data-track-index="5"><div class="block band"><span class="kick" data-copy="band.4"></span></div></div>
+
+      <!-- 3. END CARD -->
+      <img id="end-bg" class="clip cover" src="assets/background.jpg" data-start="9.2" data-duration="3.8" data-track-index="0" />
+      <div id="scrim-end" class="clip" data-start="9.2" data-duration="3.8" data-track-index="1"></div>
+      <div id="end" class="clip" data-start="9.2" data-duration="3.8" data-track-index="3">
+        <img id="hero" src="assets/character-happy.png" />
+        <img id="logo" src="assets/title.png" />
+        <div id="tagline" class="block" data-copy="tagline" data-size="58,44"></div>
+        <div id="cta"><span class="pill" data-copy="cta"></span></div>
+        <div id="url" class="block" data-copy="url" data-case="as-is"></div>
+      </div>
+
+      <!-- the music: the loudest 13 s of the game's own track, unless promo.json names one -->
+      <audio id="music" src="assets/music.mp3" data-start="0" data-duration="13" data-track-index="8"
+             data-volume="0.8" data-fade-out="0.8"></audio>
+
+      <!-- the game's own sound, laid back from the shot's log by tools/lab/promo.mjs -->
+      <!-- sfx:begin -->
+      <!-- sfx:end -->
+    </div>
+
+    <script>
+      /* Capitals, the house way (lab/button.html): accents come off, and a
+         lowercase run glued to a digit is left alone. Markup is kept: only
+         the text between the tags is shouted. */
+      function upperText(str) {
+        var FROM = "ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝŸ";
+        var TO = "AAAAAACEEEEIIIINOOOOOOUUUUYY";
+        var PAIR = { "Æ": "AE", "Œ": "OE", "ß": "SS" };
+        var shouted = String(str == null ? "" : str).replace(
+          /[a-zß-öø-ÿœ]+/g, function (run, at, whole) {
+            var b = at > 0 ? whole.charAt(at - 1) : "", a = whole.charAt(at + run.length);
+            if ((b >= "0" && b <= "9") || (a >= "0" && a <= "9")) return run;
+            return run.toUpperCase();
+          });
+        var out = "", i, c, k;
+        for (i = 0; i < shouted.length; i++) {
+          c = shouted.charAt(i);
+          if (PAIR[c]) { out += PAIR[c]; continue; }
+          k = FROM.indexOf(c);
+          out += k < 0 ? c : TO.charAt(k);
+        }
+        return out;
+      }
+      function upper(html) {
+        return String(html).split(/(<[^>]*>)/).map(function (part) {
+          return part.charAt(0) === "<" ? part : upperText(part);
+        }).join("");
+      }
+      function rgba(hex, a) {
+        var n = parseInt(hex.slice(1), 16);
+        return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+      }
+
+      var P = window.PROMO;
+      var vars = (window.__hyperframes && window.__hyperframes.getVariables) ? window.__hyperframes.getVariables() : {};
+      var lang = P.copy[vars.lang] ? vars.lang : "en";
+      var COPY = P.copy[lang];
+      document.documentElement.lang = lang;
+
+      var root = document.documentElement.style;
+      root.setProperty("--accent", P.theme.accent);
+      root.setProperty("--accent2", P.theme.accent2 || P.theme.accent);
+      root.setProperty("--accent-a", rgba(P.theme.accent, 0.6));
+      root.setProperty("--accent-b", rgba(P.theme.accent, 0.25));
+      root.setProperty("--fw", String(P.font.heavy));
+
+      /* "30 levels" is set as a figure over its words when it opens on one. */
+      var lv = COPY.levels.kicker, m = /^(\d+)\s+(.*)$/.exec(lv);
+      COPY["levels.figure"] = m ? m[1] : "";
+      COPY["levels.word"] = m ? m[2] : lv;
+      COPY["levels.line"] = COPY.levels.line;
+      ["hook", "cap1", "cap2", "payoff"].forEach(function (k) {
+        COPY[k + ".kicker"] = COPY[k].kicker;
+        COPY[k + ".line"] = COPY[k].line;
+      });
+      (COPY.bands || []).forEach(function (b, i) { COPY["band." + i] = b; });
+
+      /* A line is sized on its length, the screen never on the type: from the
+         size it is drawn for down to its floor, then it wraps. */
+      function plain(s) { return String(s).replace(/<[^>]*>/g, ""); }
+      Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function (el) {
+        var s = COPY[el.getAttribute("data-copy")];
+        if (!s) { el.style.display = "none"; return; }
+        el.innerHTML = el.getAttribute("data-case") === "as-is" ? s : upper(s);
+        var size = el.getAttribute("data-size");
+        if (size) {
+          var mm = size.split(","), max = +mm[0], min = +mm[1], n = plain(s).length;
+          el.style.fontSize = Math.round(Math.max(min, Math.min(max, max * 15 / Math.max(15, n)))) + "px";
+        }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll(".kick"), function (el) {
+        var n = plain(el.textContent).length;
+        if (n > 22) el.style.fontSize = Math.max(30, Math.round(40 * 22 / n)) + "px";
+      });
+      /* A band with no name hides its chip; so does a figure nobody wrote. */
+      if (!COPY["levels.figure"]) document.querySelector("#levels .big").style.display = "none";
+
+      var tl = gsap.timeline({ paused: true });
+
+      // 1. the hook: each band punches in, then the round hits with a flash
+      ["#flash-2", "#flash-3", "#flash-4", "#flash-5", "#flash-1"].forEach(function (id, i) {
+        tl.fromTo(id, { scale: 1.2 }, { scale: 1.06, duration: 0.1, ease: "power2.out" }, i * 0.1);
+      });
+      tl.fromTo("#flash", { opacity: 0.85 }, { opacity: 0, duration: 0.3, ease: "power2.out" }, 0.5);
+      tl.fromTo("#run", { scale: 1.08 }, { scale: 1, duration: 0.5, ease: "power2.out" }, 0.5);
+      tl.fromTo("#hook .line", { scale: 1.7, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.28, ease: "back.out(2.2)" }, 0);
+      tl.fromTo("#hook .kick", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 0.2);
+      tl.to("#hook", { opacity: 0, y: -30, duration: 0.2, ease: "power2.in" }, 1.8);
+
+      // the round's captions
+      [["#c-cap1", 2.15], ["#c-cap2", 4.0]].forEach(function (c) {
+        tl.fromTo(c[0] + " .plate", { y: 70, opacity: 0, scale: 0.88 }, { y: 0, opacity: 1, scale: 1, duration: 0.26, ease: "back.out(2)" }, c[1]);
+        tl.fromTo(c[0] + " .kick", { scale: 0.6 }, { scale: 1, duration: 0.3, ease: "back.out(3)" }, c[1] + 0.12);
+        tl.to(c[0] + " .plate", { opacity: 0, y: -30, duration: 0.2, ease: "power2.in" }, c[1] + 1.5);
+      });
+
+      // the payoff: rings out of the middle, the line slams and breathes
+      tl.fromTo("#payoff .line", { scale: 0.3, opacity: 0, rotation: -5 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.35, ease: "back.out(2.6)" }, 5.85);
+      tl.fromTo("#payoff .kick", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 6.05);
+      tl.fromTo("#payoff-veil", { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power2.out" }, 5.85);
+      tl.fromTo("#ring-a", { width: 40, height: 40, opacity: 1 }, { width: 1400, height: 1400, opacity: 0, duration: 0.85, ease: "power2.out" }, 5.85);
+      tl.fromTo("#ring-b", { width: 40, height: 40, opacity: 1 }, { width: 950, height: 950, opacity: 0, duration: 0.85, ease: "power2.out" }, 6.0);
+      tl.to("#payoff .line", { scale: 1.08, duration: 0.5, yoyo: true, repeat: 1, ease: "sine.inOut" }, 6.25);
+
+      // 2. the bands: every one zooms, the figure stamps on the first
+      ["#lv-2", "#lv-3", "#lv-4", "#lv-5"].forEach(function (id, i) {
+        tl.fromTo(id, { scale: 1.25 }, { scale: 1.08, duration: 0.45, ease: "power2.out" }, 7.4 + i * 0.45);
+      });
+      ["#b-2", "#b-3", "#b-4", "#b-5"].forEach(function (id, i) {
+        tl.fromTo(id + " .kick", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.18, ease: "back.out(2.5)" }, 7.4 + i * 0.45);
+      });
+      tl.fromTo("#levels", { scale: 2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" }, 7.4);
+      tl.fromTo("#levels-sub", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.3, ease: "power3.out" }, 7.65);
+
+      // 3. the end card
+      tl.fromTo("#end-bg", { scale: 1.15 }, { scale: 1.02, duration: 3.8, ease: "power1.out" }, 9.2);
+      tl.fromTo("#logo", { scale: 0.4, opacity: 0, y: -40 }, { scale: 1, opacity: 1, y: 0, duration: 0.5, ease: "back.out(1.9)" }, 9.25);
+      tl.fromTo("#hero", { y: 260, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "back.out(1.4)" }, 9.45);
+      tl.to("#hero", { y: -14, duration: 0.9, yoyo: true, repeat: 3, ease: "sine.inOut" }, 10.0);
+      tl.fromTo("#tagline", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 9.85);
+      tl.fromTo("#cta .pill", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2.4)" }, 10.15);
+      tl.to("#cta .pill", { scale: 1.07, duration: 0.35, yoyo: true, repeat: 5, ease: "sine.inOut" }, 10.6);
+      tl.fromTo("#url", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 10.45);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

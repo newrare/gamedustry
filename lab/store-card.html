@@ -58,8 +58,8 @@
 
    SAVE writes the image itself, at shipped size, into the store the format
    belongs to — assets/image/google/<lang>/ for the phone, desk and multi
-   pictures and the feature graphic, assets/image/itch/<lang>/ for the
-   630x500 cover —
+   pictures and the feature graphic, assets/image/itch/ for the
+   630x500 cover (one language, the English) —
    the folder the store upload reads. It writes BOTH LANGUAGES every time: the
    composition is the same picture in EN and FR, only the manifest line under
    it changes, so there is no language to pick and no half-shot listing. A
@@ -2205,6 +2205,8 @@ function savePanels(slug) {
     try {
       LANGS.forEach(function (lang) {
         state.lang = lang;
+        /* itch's images carry one language, the English. */
+        if (state.format === "itch" && lang !== "en") return;
         for (var i = 0; i < panels(); i++) {
           shots.push({ lang: lang, name: names[i], data: exportDataURI(i) });
         }
@@ -2226,7 +2228,7 @@ function savePanels(slug) {
 }
 
 function saidWrote(list) {
-  return list.map(function (r) { return "wrote " + r.path + " (" + r.kb + " KB)"; }).join(" · ");
+  return list.filter(function (r) { return !r.skipped; }).map(function (r) { return "wrote " + r.path + " (" + r.kb + " KB)"; }).join(" · ");
 }
 
 function saveImage() {

@@ -879,7 +879,9 @@ carries (which is how the batch shoot hands the copy over); and Save is off, bec
 and cannot be exported. The page says so, in red, at the top of its panel.
 
 Output is `assets/image/google/<lang>/<slug>-NN.jpg`, `-desk-NN.jpg` and
-`-feature.jpg`, and `assets/image/itch/<lang>/<slug>-itch.jpg`
+`-feature.jpg`, and `assets/image/itch/<slug>-itch.jpg` — **itch has no
+language folder**: its images are pictures without text, so one English cut
+serves both (the composer and the batch write the EN one and skip the FR)
 — **JPEG like `assets/image/screen/`**, because 182 pictures of painted artwork over a
 capture is 34 MB as JPEG and 450 MB as PNG. The composer writes nothing else;
 `--png` is a flag of the batch shoot, for a piece that has to stay lossless. `node tools/publish/store-meta.mjs --game=<slug> --play --lang=fr` names the set it should be uploaded with.
@@ -932,6 +934,40 @@ other string about a game lives — `games/<slug>/manifest.json`:
 
 The block reaches no build: `store` is listing copy, so a game's `version` does
 not move when it changes.
+
+### The itch page itself: background, banner, description
+
+The studio's itch account has no custom CSS, so a page is dressed from the
+theme editor alone: the page background is the game's desk scene, the main
+column's background alpha is set to 0 (*More options*) so the description
+stands straight on it. Three tools make
+everything that goes into that form:
+
+```bash
+node tools/lab/itch-art.mjs [<slug>]              # → assets/image/itch/<slug>-background.jpg
+node tools/lab/itch-banners.mjs [<slug>]          # → assets/image/itch/<slug>-showcase.webp, -section-<key>.webp
+node tools/publish/itch-page.mjs --game=<slug>    # → dist/itch-page/<slug>.en.html, + the theme settings
+```
+
+`-background.jpg` is `-background-desk.png` at 2560x1440 (itch shows a
+background at its own size, there is no "cover"), softened, vignetted and
+veiled in black by a MEASURED amount: the veil brings the scene's bright areas
+(the 90th percentile of luma) down to 0.24, so a night scene keeps its colour
+(chainring, 0.25) and a sunny one is pulled down hard (gelatile, 0.75).
+
+**The description sells the game, it does not teach it**: picture, a few
+lines, picture, a few lines, and the rules stay in the guide it links to. Its
+words live in `itch.page` of the manifest, in English (the itch page has one
+language) — `hook`, `pitch`, `sections` (`key`, `title`, `text`, `list`) and
+`outro` — and its pictures are composed out of the game's own pieces:
+`itch.page.art.showcase` fans three captures behind the character, and
+`itch.page.art.<key>` names the two or three pieces (embed roles: `sticker16`,
+`decor-06`, `home06`) stuck on a section's neon band, whose title is set in the
+game's typeface. They are transparent WebP, and the site build copies them to
+`image/games/<slug>/itch-*.webp`, which is the URL the description points at —
+so the site has to be pushed before the HTML is pasted; `itch-page.mjs` probes
+every URL and says which ones newrare.app does not serve yet. Everything here
+is committed beside the covers.
 
 ## Type comes from `assets/motor/font/` — web target only
 

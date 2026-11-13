@@ -403,6 +403,18 @@ async function main() {
     const hasScene = existsSync(scene);
     if (hasScene) await cp(scene, path.join(imgDir, 'backdrop.webp'));
 
+    /* The banners of the game's itch description (tools/lab/itch-banners.mjs):
+       itch takes an image by URL, and this is the public place they live —
+       image/games/<slug>/itch-showcase.webp, itch-section-<key>.webp. */
+    const itchDir = path.join(ROOT, 'assets', 'image', 'itch');
+    if (existsSync(itchDir)) {
+      for (const f of await readdir(itchDir)) {
+        if (f.startsWith(slug + '-') && /-(showcase|section-[\w-]+)\.webp$/.test(f)) {
+          await cp(path.join(itchDir, f), path.join(imgDir, 'itch-' + f.slice(slug.length + 1)));
+        }
+      }
+    }
+
     // Screenshots are renumbered 01.jpg, 02.jpg… so the page can build the
     // list from a count instead of shipping filenames.
     const shots = await screensFor(slug);

@@ -1,7 +1,7 @@
 {
   "slug": "radiam",
   "title": "Radiam",
-  "version": "1.6.15",
+  "version": "1.6.17",
   "tagline": "Turn one or more rings to line up three beads on one ray",
   "order": 110,
   "draft": false,
@@ -346,7 +346,7 @@
           "Pop a laser bead's ray and a beam crosses the dial. The opposite ray pops too.": "Éclate le rayon d'une bille laser pour déclencher un faisceau traversant qui détruit le rayon situé à l'opposé.",
           "Pop a slow bead's ray and the ink slows right down.": "Éclate le rayon d'une bille sablier pour réduire considérablement la vitesse de progression de l'encre.",
           "Every 10 rays popped, the level goes up and the ink rises faster.": "Tous les 10 rayons éclatés, le niveau d'encre augmente et accélère.",
-          "The dial starts with four colours. The fifth joins once the ink reaches level 10.": "Le cadran débute avec quatre couleurs puis une cinquième s'ajoute lorsque l'encre atteint le niveau 10."
+          "The game starts with 3 to 5 different colours, depending on the level. A missing colour joins once the dial reaches level 10, and the next one 3 levels later.": "Le jeu débute entre 3 à 5 couleurs différentes selon le niveau. Une couleur manquante s'ajoute lorsque le cadran atteint le niveau 10, puis la suivante 3 niveaux plus tard."
         }
       }
     },

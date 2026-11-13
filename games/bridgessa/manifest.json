@@ -120,6 +120,58 @@
     }
   },
   "description": "Bridge without the bidding. You are always the declarer: South, your hand at the foot of the screen, and North, the dummy, face up at the top — both hands are yours to play. West and East defend, and West leads. Every trick is real bridge: follow suit, the highest card of the suit led wins unless a trump falls, the winner leads the next one. A level is an ending rather than a full deal, two to seven cards a hand, the way a bridge column sets a problem. The climb adds a card at a time, so a newcomer learns the rules one by one while a bridge player meets the puzzles they already love. The contract is read off the deal by a double-dummy solver, the defence is played by that same solver and never gives a trick away, and past the first levels the obvious line of cashing your top cards always fails: there is a finesse, a ruff or an entry to find. A level is a tournée of two to five deals with three lives, a contract gone down costing one. It opens on a pick and every contract made deals another: one of Bridgessa's forty favours out of three, kept to the end of the tournée — what is hidden shown, a card changed, a rule bent once, the score multiplied, a life saved, the defence shaken. They arrive one or two a level, from level 3 to level 28, and the tournée's score is what the stars are cut on.",
+  "store": {
+    "copy": {
+      "en": {
+        "lines": [
+          {
+            "kicker": "Bridge",
+            "line": "Play <b>both</b> hands"
+          },
+          {
+            "kicker": "No bidding",
+            "line": "Straight to the <b>card play</b>"
+          },
+          {
+            "kicker": "Favours",
+            "line": "Cheat to turn the <b>deal</b> around"
+          },
+          {
+            "kicker": "30 levels",
+            "line": "<b>Rising</b> difficulty"
+          },
+          {
+            "kicker": "Ruthless defence",
+            "line": "Outsmart the <b>defenders</b>"
+          }
+        ]
+      },
+      "fr": {
+        "lines": [
+          {
+            "kicker": "Bridge",
+            "line": "Joue les <b>deux</b> mains"
+          },
+          {
+            "kicker": "Sans enchères",
+            "line": "Directement au <b>jeu de la carte</b>"
+          },
+          {
+            "kicker": "Faveurs",
+            "line": "Triche pour renverser la <b>donne</b>"
+          },
+          {
+            "kicker": "30 stages",
+            "line": "Difficulté <b>progressive</b>"
+          },
+          {
+            "kicker": "Défense impitoyable",
+            "line": "Déjoue les <b>défenseurs</b>"
+          }
+        ]
+      }
+    }
+  },
   "itch": {
     "user": "newrare",
     "project": "bridgessa",

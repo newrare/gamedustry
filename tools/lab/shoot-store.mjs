@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/* Shoot the store listing images of every game into assets/image/<store>/<lang>/.
+/* Shoot the store listing images of every game into assets/image/google/<lang>/
+ * and assets/image/itch/.
  *
  * Four formats, one composition (lab/store-card.html), one punchline written
  * over each of them in the player's language:
@@ -57,7 +58,8 @@ var GAMES_DIR = path.join(ROOT, "games");
 /* The two destinations: `phone` and `desk` are cut to what Play asks for and
    land in assets/image/google/<lang>/ — itch reuses the phone gallery rather
    than having its own size — like the 1024x500 `feature` graphic; the 630x500
-   `itch` cover lands in assets/image/itch/<lang>/. */
+   `itch` cover lands in assets/image/itch/, in English only — itch keeps
+   no language folder. */
 var OUT_DIR = path.join(ROOT, "assets", "image");
 function storeOf(format) { return format === "itch" ? "itch" : "google"; }
 var CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
@@ -462,7 +464,9 @@ for (var s = 0; s < slugs.length; s++) {
     for (var j = 0; j < jobs.length; j++) {
       var job = jobs[j];
       var why = whyNot(slug, job);
-      var out = path.join(OUT_DIR, storeOf(job.format), lang, job.out + EXT);
+      if (job.format === "itch" && lang !== "en") continue;
+      var out = job.format === "itch" ? path.join(OUT_DIR, "itch", job.out + EXT)
+        : path.join(OUT_DIR, storeOf(job.format), lang, job.out + EXT);
       if (why) {
         console.error("skip  " + path.relative(ROOT, out) + ": " + why);
         skipped++;

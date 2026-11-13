@@ -330,6 +330,1856 @@
           "w": 236
         }
       ]
+    },
+    "__template/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "logo",
+          "w": 500,
+          "op": 1,
+          "rot": 0,
+          "cx": 320,
+          "cy": 240
+        }
+      ]
+    },
+    "radiam/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 310,
+          "cy": 130
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 170,
+          "cy": 280
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 540,
+          "cy": 230,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 450,
+          "cy": 300,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 360,
+          "cy": 370,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 0,
+          "cx": 230,
+          "cy": 10,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 5,
+          "cx": 30,
+          "cy": 120,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 8,
+          "cx": 30,
+          "cy": 470,
+          "w": 181
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 2,
+          "cx": 80,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 2,
+          "cx": 570,
+          "cy": 500,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 2,
+          "cx": 620,
+          "cy": 10,
+          "w": 124
+        }
+      ]
+    },
+    "arcider/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 240,
+          "op": 1,
+          "rot": 0,
+          "cx": 160,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "race",
+          "ref": 12,
+          "cx": 33.284379172229634,
+          "cy": 49.9332443257677,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "race",
+          "ref": 19,
+          "cx": 597.7970627503339,
+          "cy": 13.164218958611457,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "race",
+          "ref": 14,
+          "cx": 550.2136181575434,
+          "cy": 478.72496662216287,
+          "w": 72
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ship",
+          "ref": 10,
+          "cx": 471.80907877169557,
+          "cy": 382.47663551401865,
+          "w": 78
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ship",
+          "ref": 11,
+          "cx": 537.2363150867824,
+          "cy": 184.57276368491318,
+          "w": 72
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ship",
+          "ref": 10,
+          "cx": 461.5353805073432,
+          "cy": 8.83845126835783,
+          "w": 63
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ship",
+          "ref": 0,
+          "cx": 180.90120160213615,
+          "cy": 12.082777036048114,
+          "w": 64
+        }
+      ]
+    },
+    "blight/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 240,
+          "op": 1,
+          "rot": 0,
+          "cx": 140,
+          "cy": 380
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 11.234979973297754,
+          "cy": 5.554072096128181,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 17,
+          "cx": 582.6568758344459,
+          "cy": 490.6208277703605,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 3,
+          "cx": 438.2843791722296,
+          "cy": 131.58210947930573,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 4,
+          "cx": 386.9158878504673,
+          "cy": 47.770360480640875,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 4,
+          "cx": 490.1935914552737,
+          "cy": 45.60747663551405,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 313.785046728972,
+          "cy": 150.00667556742326
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bubble",
+          "ref": 18,
+          "cx": 535.0734312416556,
+          "cy": 148.88518024032044,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 8,
+          "cx": 492.8971962616822,
+          "cy": 471.15487316421894,
+          "w": 124
+        }
+      ]
+    },
+    "bouncetry/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 280,
+          "op": 1,
+          "rot": 0,
+          "cx": 140,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 4,
+          "cx": 568.5981308411215,
+          "cy": 458.177570093458,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "brick",
+          "ref": 1,
+          "cx": 380,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "brick",
+          "ref": 2,
+          "cx": 500,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "brick",
+          "ref": 2,
+          "cx": 260,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "brick",
+          "ref": 1,
+          "cx": 380,
+          "cy": 100,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "brick",
+          "ref": 2,
+          "cx": 380,
+          "cy": 160,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 320,
+          "cy": 120
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball",
+          "ref": 33,
+          "cx": 20,
+          "cy": 60,
+          "w": 124
+        }
+      ]
+    },
+    "bridgessa/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 140,
+          "cy": 380
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 460,
+          "cy": 300,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 15,
+          "cx": 560,
+          "cy": 480,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "favour-foe",
+          "ref": 1,
+          "cx": 340,
+          "cy": 300,
+          "w": 124
+        }
+      ]
+    },
+    "chainring/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 260,
+          "op": 1,
+          "rot": 0,
+          "cx": 160,
+          "cy": 400
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ring",
+          "ref": 17,
+          "cx": 460,
+          "cy": 320,
+          "w": 263
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ring",
+          "ref": 9,
+          "cx": 460,
+          "cy": 280,
+          "w": 60
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ring",
+          "ref": 15,
+          "cx": 40,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 17,
+          "cx": 160,
+          "cy": 160,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        }
+      ]
+    },
+    "echomaze/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 580,
+          "cy": 20,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 340,
+          "cy": 360,
+          "w": 60
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 0,
+          "cy": 20,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 6,
+          "cx": 440,
+          "cy": 220,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 15,
+          "cx": 480,
+          "cy": 280,
+          "w": 60
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 6,
+          "cx": 360,
+          "cy": 320,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 18,
+          "cx": 180,
+          "cy": 100,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 13,
+          "cx": 480,
+          "cy": 140,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "electrical",
+          "ref": 9,
+          "cx": 320,
+          "cy": 480,
+          "w": 124
+        }
+      ]
+    },
+    "foldiers/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 460,
+          "cy": 180,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "army-blue",
+          "ref": 4,
+          "cx": 540,
+          "cy": 460,
+          "w": 40
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "army-blue",
+          "ref": 7,
+          "cx": 580,
+          "cy": 160,
+          "w": 40
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "army-red",
+          "ref": 14,
+          "cx": 20,
+          "cy": 60,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "army-blue",
+          "ref": 8,
+          "cx": 540,
+          "cy": 140,
+          "w": 60
+        }
+      ]
+    },
+    "gearball/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 0,
+          "cx": 20,
+          "cy": 40,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 3,
+          "cx": 600,
+          "cy": 140,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 4,
+          "cx": 580,
+          "cy": 20,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "tube",
+          "ref": 0,
+          "cx": 0,
+          "cy": 460,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 9,
+          "cx": 80,
+          "cy": 480,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "gear",
+          "ref": 5,
+          "cx": 160,
+          "cy": 0,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "card-two",
+          "ref": 7,
+          "cx": 480,
+          "cy": 420,
+          "w": 80
+        }
+      ]
+    },
+    "gelatile/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 580,
+          "cy": 480,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 20,
+          "cy": 20,
+          "w": 60
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 17,
+          "cx": 315,
+          "cy": 250,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 16,
+          "cx": 315.13351134846465,
+          "cy": 349.72630173564755,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 19,
+          "cx": 426.45527369826436,
+          "cy": 248.6448598130841,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "sticker",
+          "ref": 13,
+          "cx": 424.2256341789052,
+          "cy": 349.4926568758344,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "decor",
+          "ref": 7,
+          "cx": 632.4032042723632,
+          "cy": 331.10814419225636,
+          "w": 73
+        }
+      ]
+    },
+    "grudgeon/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 262,
+          "op": 1,
+          "rot": 0,
+          "cx": 145.67423230974632,
+          "cy": 359.4659546061415
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 512.9639519359147,
+          "cy": 78.5981308411215,
+          "w": 103
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "items",
+          "ref": 3,
+          "cx": 550.2136181575434,
+          "cy": 484.1321762349799,
+          "w": 73
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "home",
+          "ref": 2,
+          "cx": 169.54606141522027,
+          "cy": 38.5781041388518,
+          "w": 101
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "items",
+          "ref": 14,
+          "cx": 605.3671562082777,
+          "cy": 445.20026702269695,
+          "w": 68
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "spells",
+          "ref": 10,
+          "cx": 14.359145527369819,
+          "cy": 12.623497997329807,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "spells",
+          "ref": 9,
+          "cx": 569.6795727636849,
+          "cy": 400.3204272363151,
+          "w": 124
+        }
+      ]
+    },
+    "holepocalypse/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 242,
+          "op": 1,
+          "rot": 0,
+          "cx": 115.93457943925233,
+          "cy": 273.4913217623498
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 11.775700934579447,
+          "cy": 484.6328437917223,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "walker",
+          "ref": 1,
+          "cx": 356.63551401869165,
+          "cy": 237.02269692923903,
+          "w": 43
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "runner",
+          "ref": 5,
+          "cx": 307.4299065420561,
+          "cy": 273.2510013351135,
+          "w": 52
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "boomer",
+          "ref": 0,
+          "cx": 344.73965287049396,
+          "cy": 351.6555407209613,
+          "w": 63
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 2,
+          "cx": 613.4779706275034,
+          "cy": 476.5620827770361,
+          "w": 67
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "boomer",
+          "ref": 14,
+          "cx": 72.21628838451272,
+          "cy": 488.4579439252336,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "boomer",
+          "ref": 15,
+          "cx": 444.23230974632844,
+          "cy": 60.747663551401814,
+          "w": 43
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "decor",
+          "ref": 1,
+          "cx": -0.24032042723631264,
+          "cy": 377.6101468624833,
+          "w": 82
+        }
+      ]
+    },
+    "marshmelt/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 245,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 474.03204272363155,
+          "cy": 236.48865153538054,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 584.6395193591455,
+          "cy": 83.71161548731644,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 353.5113484646195,
+          "cy": 453.8117489986648,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 2,
+          "cx": 336.62883845126834,
+          "cy": 51.01468624833112,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "rock",
+          "ref": 1,
+          "cx": 15.98130841121494,
+          "cy": 154.29238985313754,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "rock-bomb",
+          "ref": 0,
+          "cx": 612.3965287049399,
+          "cy": 474.39919893190915,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "rock-classic-a",
+          "ref": 16,
+          "cx": 8.95193591455272,
+          "cy": 509.54606141522027,
+          "w": 124
+        }
+      ]
+    },
+    "orbinity/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "inner-planet",
+          "ref": 3,
+          "cx": 589.1455273698264,
+          "cy": 403.5647530040053,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "lunar-planet",
+          "ref": 4,
+          "cx": 35.44726301735648,
+          "cy": 103.46461949265691,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "asteroid",
+          "ref": 4,
+          "cx": -11.054739652870467,
+          "cy": 452.2296395193591,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 22,
+          "kind": "cut",
+          "sheet": "planet",
+          "ref": 18,
+          "cx": 381.5086782376502,
+          "cy": 312.72363150867824,
+          "w": 124
+        }
+      ]
+    },
+    "parrynormal/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 540,
+          "cy": 230,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "skeleton",
+          "ref": 1,
+          "cx": 452.3431241655541,
+          "cy": 302.9906542056074,
+          "w": 79,
+          "flip": true
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "spider",
+          "ref": 10,
+          "cx": 14.359145527369847,
+          "cy": 65.61415220293728,
+          "w": 107
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 5,
+          "cx": 599.9599465954607,
+          "cy": 436.0080106809079,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 28,
+          "kind": "decor",
+          "ref": 3,
+          "cx": 612.3965287049399,
+          "cy": 81.83578104138854,
+          "w": 77
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "extra",
+          "ref": 6,
+          "cx": 468.56475300400535,
+          "cy": 149.96662216288382,
+          "w": 65
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "jack",
+          "ref": 15,
+          "cx": 97.63017356475297,
+          "cy": 28.30440587449931,
+          "w": 85
+        }
+      ]
+    },
+    "pawko/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 179.8392857142857,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 8,
+          "cx": 422.0627503337784,
+          "cy": 368.95861148197594,
+          "w": 49
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 3,
+          "cx": 601.0413885180241,
+          "cy": 465.7476635514019,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 19,
+          "cx": 490.1935914552737,
+          "cy": 385.18024032042723,
+          "w": 67
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 28,
+          "cx": 24.092122830440587,
+          "cy": 20.73431241655544,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 36,
+          "cx": 20.847797062750388,
+          "cy": 88.86515353805063,
+          "w": 72
+        }
+      ]
+    },
+    "slipdeck/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 228,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 376.2283044058745
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-blue",
+          "ref": 11,
+          "cx": 503.7716955941255,
+          "cy": 292.7236315086782,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 24.452603471295134,
+          "cy": 74.51935914552737,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 460.0333778371162,
+          "cy": 481.388518024032,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "joker-two",
+          "ref": 7,
+          "cx": 603.7449933244327,
+          "cy": 466.8291054739653,
+          "w": 124
+        }
+      ]
+    },
+    "spinshock/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 248,
+          "op": 1,
+          "rot": 0,
+          "cx": 153.78504672897196,
+          "cy": 359.4659546061415
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 1,
+          "cx": 523.1775700934579,
+          "cy": 291.63551401869165,
+          "w": 78
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "decor",
+          "ref": 2,
+          "cx": 318.78504672897196,
+          "cy": 401.40186915887847,
+          "w": 61
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "spin",
+          "ref": 2,
+          "cx": 22.469959946595466,
+          "cy": 48.311081441922596,
+          "w": 124
+        }
+      ]
+    },
+    "stratideck/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-phone-02"
+      },
+      "items": [
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "cast-blue-09",
+          "ref": 2,
+          "cx": 570.2202937249666,
+          "cy": 264.05874499332435,
+          "w": 124
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 262,
+          "op": 1,
+          "rot": 0,
+          "cx": 146.21495327102804,
+          "cy": 367.5767690253671
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 493.7983978638183,
+          "cy": 337.8504672897196,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-rainbow",
+          "ref": 0,
+          "cx": 407.58344459279044,
+          "cy": 412.716955941255,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "cast-red-02",
+          "ref": 1,
+          "cx": 33.28437917222962,
+          "cy": 58.04405874499332,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "other",
+          "ref": 21,
+          "cx": 615.6408544726302,
+          "cy": 26.14152202937254,
+          "w": 124
+        }
+      ]
+    },
+    "triverse/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 292,
+          "op": 1,
+          "rot": 0,
+          "cx": 153.2443257676902,
+          "cy": 345.94793057409885
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "arrow",
+          "ref": 25,
+          "cx": 525.8811748998664,
+          "cy": 419.78638184245654,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "arrow",
+          "ref": 26,
+          "cx": 519.9332443257676,
+          "cy": 237.02269692923898,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "arrow",
+          "ref": 27,
+          "cx": 525.3404539385847,
+          "cy": 360.8477970627503,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 38,
+          "kind": "cut",
+          "sheet": "arrow",
+          "ref": 13,
+          "cx": 496.68224299065423,
+          "cy": 367.3364485981308,
+          "w": 63
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "arrow",
+          "ref": 31,
+          "cx": 6.2483311081442,
+          "cy": 29.926568758344487,
+          "w": 124
+        }
+      ]
+    },
+    "vipera/itch": {
+      "ground": {
+        "kind": "art",
+        "ref": 13,
+        "bright": 72,
+        "scrim": "left",
+        "scrimK": 100,
+        "role": "background-home"
+      },
+      "items": [
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bank-lair",
+          "ref": 5,
+          "cx": 506.4152202937249,
+          "cy": 329.4859813084113,
+          "w": 62
+        },
+        {
+          "kind": "face",
+          "ref": 0,
+          "w": 256,
+          "op": 1,
+          "rot": 0,
+          "cx": 150,
+          "cy": 340
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "ball-green",
+          "ref": 18,
+          "cx": 455.40720961281704,
+          "cy": 295.6742323097463,
+          "w": 124
+        },
+        {
+          "kind": "logo",
+          "w": 300,
+          "op": 1,
+          "rot": 0,
+          "cx": 314.8664886515354,
+          "cy": 132.16288384512686
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bank-jungle",
+          "ref": 2,
+          "cx": 619.9666221628838,
+          "cy": 4.512683578104117,
+          "w": 124
+        },
+        {
+          "op": 1,
+          "rot": 0,
+          "kind": "cut",
+          "sheet": "bank-lair",
+          "ref": 2,
+          "cx": 3.5447263017356647,
+          "cy": 14.2456608811749,
+          "w": 124
+        }
+      ]
     }
   }
 }

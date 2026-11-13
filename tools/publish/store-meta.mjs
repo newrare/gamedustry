@@ -125,7 +125,7 @@ function section(title, body) {
    it is also where the file lives: the phone gallery and the wide `desk`
    pictures are cut to Play's specs and sit in assets/image/google/<lang>/,
    and so is the 1024x500 `feature` graphic; the 630x500 itch cover is in
-   assets/image/itch/<lang>/. itch reuses the phone gallery — Play is what
+   assets/image/itch/ (no language folder). itch reuses the phone gallery — Play is what
    dictates its size.
 
    Everything here falls back: a game whose store images have not been shot
@@ -133,13 +133,14 @@ function section(title, body) {
    them. */
 function dressed(slug, kind) {
   const store = kind === 'itch' ? 'itch' : 'google';
-  const dir = path.join(ROOT, 'assets', 'image', store, lang);
+  const sub = store === 'itch' ? 'itch' : store + '/' + lang;
+  const dir = path.join(ROOT, 'assets', 'image', sub);
   if (!existsSync(dir)) return [];
   const re = kind === 'desk' ? new RegExp('^' + slug + '-desk-\\d+\\.(jpg|png)$')
     : kind === 'itch' || kind === 'feature' ? new RegExp('^' + slug + '-' + kind + '\\.(jpg|png)$')
     : new RegExp('^' + slug + '-\\d+\\.(jpg|png)$');
   return readdirSync(dir).filter((f) => re.test(f)).sort()
-    .map((f) => 'assets/image/' + store + '/' + lang + '/' + f);
+    .map((f) => 'assets/image/' + sub + '/' + f);
 }
 
 function imageLine(rel, note) {
@@ -159,7 +160,7 @@ function images(slug) {
 
   const out = [
     '**Cover image** (required, 630×500 — itch crops it to 315×250 in a grid)',
-    imageLine(cover || `assets/image/itch/${lang}/${slug}-itch.jpg`,
+    imageLine(cover || `assets/image/itch/${slug}-itch.jpg`,
       `compose it in \`make store\` (format itch) or \`node tools/lab/shoot-store.mjs ${slug} --format itch\``),
     '',
     '**Screenshots**, in this order — itch shows them in a gallery under the',

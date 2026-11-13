@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/echomaze — do not edit",
  "slug": "echomaze",
- "stamp": "b45733f726766248",
+ "stamp": "064de73d19ef0bf7",
  "en": {
   "title": "Echomaze",
   "howTo": "Find and aim the right way through the maze to the exit",

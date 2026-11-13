@@ -2020,7 +2020,10 @@
   /* See `nextLevel` on the published object below for why it is `+ 1` and
      for the three ways it comes back 0. */
   function nextLevel() {
-    if (!last) return 0;
+    /* A missed objective has no way on, whatever the board has opened: the
+       dev force (canPlay) and a replay of a level cleared before both have
+       the next level open, and NEXT must still stay hidden after a miss. */
+    if (!last || !last.cleared) return 0;
     var n = last.level + 1;
     if (n > LEVELS) return 0;
     return canPlay(n) ? n : 0;
@@ -2181,7 +2184,8 @@
 
        It is 0 rather than a number in the three cases where there is no way
        on: no level was played at all (a free round, a mode), the round did
-       not clear its objective so the next one is still shut (`canPlay`), or
+       not clear its objective (`last.cleared`, even where the next one is
+       open — a replay, or the dev force), or
        the level just finished was the LAST. Level 31 is the endless star and
        it belongs to the map — a board finished at 90/90 is a screen to be
        shown, not a round to be dropped into. menu.js hides the button on 0,

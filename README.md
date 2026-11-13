@@ -367,8 +367,8 @@ a raw capture is a dial on a dark background next to twelve other dials on dark
 backgrounds. `lab/store-card.html` composes the listing images out of a real
 frame of play, the game's own character, two or three of its own objects, its
 logotype and its typeface, with **one punchline in the player's language** over
-it — four formats, two languages, into `assets/image/google/<lang>/` and
-`assets/image/itch/<lang>/`:
+it — four formats, two languages, into `assets/image/google/<lang>/`, and
+`assets/image/itch/` for itch, which keeps no language folder:
 
 ```bash
 node tools/lab/shoot-screens.mjs radiam      # the raw captures, assets/image/screen/

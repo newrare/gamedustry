@@ -1020,7 +1020,7 @@
          exactly one thing the player has not met. */
       u = LAD.unlock;
       if (n < u.wall)  T.wallFrom = 2;      // over 1: a row never becomes a wall
-      if (n < u.bomb)  T.bombChance = 0;
+      if (n < u.bomb)  { T.bombChance = 0; T.forkBombs = 0; }  // the fork's mines too
       if (n < u.ramp)  T.rampChance = 0;
       if (n < u.solid) T.rampSolid = 0;     // a ramp wall always keeps its gate
     }
@@ -1722,6 +1722,15 @@
       }
       rest.sort(function (a, b) { return b.r - a.r; });
       for (i = 0; i < left; i++) cnt[rest[i % rest.length].i]++;
+      /* A temperament on its unlock level has a share too thin to round up to
+         a craft (the stalker's 0.04 at level 6), so it would first show a
+         level late: every unlocked one gets at least one, taken from the
+         biggest count. */
+      if (lv) for (i = 0; i < cnt.length; i++) {
+        if (cnt[i] || !share[i]) continue;
+        for (j = 0, v = 0; j < cnt.length; j++) if (cnt[j] > cnt[v]) v = j;
+        if (cnt[v] > 1) { cnt[v]--; cnt[i]++; }
+      }
       for (i = 0; i < cnt.length; i++) for (j = 0; j < cnt[i]; j++) out.push(i);
       return out;
     }
@@ -3807,13 +3816,7 @@
     // most of a run.
     var SHIELD_TIERS = ["#7cf9ff", "#5cffb0", "#c6ff4f", "#ffb347", "#ff2d55"];
 
-    function hex2(n) { var s = (n | 0).toString(16); return s.length < 2 ? "0" + s : s; }
-    function mixHex(a, b, t) {
-      var x = parseInt(a.slice(1), 16), y = parseInt(b.slice(1), 16);
-      return "#" + hex2(((x >> 16) & 255) + ((((y >> 16) & 255) - ((x >> 16) & 255)) * t))
-                 + hex2(((x >> 8) & 255)  + ((((y >> 8) & 255)  - ((x >> 8) & 255))  * t))
-                 + hex2((x & 255)         + (((y & 255)         - (x & 255))         * t));
-    }
+    // (mixHex is the one defined with the rails, above)
     /* Curved rather than linear, exactly the way the top in games/spinshock cools
        down: the warm half of the ramp is reserved for a hull that is genuinely in
        trouble, so a shield at 60% still reads green — one hit taken — and only a

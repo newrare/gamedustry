@@ -14,9 +14,13 @@
    That is the difference with shoot-screens.mjs, whose driver steps the
    simulation itself and therefore lets the DOM run on its own time.
 
-   What is played is the game's PILOT, a hook written inside its Game module
-   (the same trick as shoot-screens' GAME_PILOT): it sees the board, so it
-   plays the round a promo wants to show rather than a blind one.
+   What is played is the game's PILOT. A game with a promo pilot of its own
+   (PILOT below, a hook written inside its Game module) plays the round a
+   promo wants to show rather than a blind one; every other game is played by
+   the store screenshots' pilot (tools/lab/pilots.mjs) — its own GAME_PILOT
+   where it has one, the generic player for its demo type otherwise. The
+   round's entrance is skipped unless --enter asks for it: a promo cuts
+   straight to play.
 
    The sound is not recorded — WebAudio renders on the wall clock. Every
    `Sound.clip` / `Sound.ui` call is LOGGED with its frame instead, and the
@@ -26,10 +30,12 @@
      node tools/lab/shoot-clip.mjs echomaze                    # → dist/clip/echomaze/
      node tools/lab/shoot-clip.mjs echomaze --seconds 24 --level 3 --seed 7
      node tools/lab/shoot-clip.mjs echomaze --out promo/echomaze/assets --no-build
+     node tools/lab/shoot-clip.mjs vipera --level 7 --seconds 3 --enter
 */
 
 import { spawn, spawnSync } from "node:child_process";
 import { reap, sweep, reportSweep } from "./chrome.mjs";
+import { pageScripts, injectGamePilot } from "./pilots.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -54,6 +60,7 @@ var seed = +opt("seed", 1);
 var lang = opt("lang", "en");
 var outDir = path.resolve(ROOT, opt("out", "dist/clip/" + slug));
 var build = argv.indexOf("--no-build") < 0;
+var enter = argv.indexOf("--enter") >= 0;
 
 /* The pilots. `anchor` is the text the hook is written in front of, inside the
    game's script block; `js` publishes `window.__PILOT.tick(frame)`, called once
@@ -95,9 +102,9 @@ var PILOT = {
     `
   }
 };
-if (!slug || !PILOT[slug]) {
-  console.error("usage: node tools/lab/shoot-clip.mjs <slug> [--seconds 20] [--level 1] [--seed 1]"
-    + "\n  slugs with a pilot: " + Object.keys(PILOT).join(" "));
+if (!slug || !fs.existsSync(path.join(ROOT, "games", slug, "manifest.json"))) {
+  console.error("usage: node tools/lab/shoot-clip.mjs <slug> [--seconds 20] [--level 1] [--seed 1] [--enter]"
+    + "\n  slugs with a promo pilot: " + Object.keys(PILOT).join(" ") + " (the others play the screenshots' pilot)");
   process.exit(1);
 }
 
@@ -112,12 +119,14 @@ var SEED_JS = `<script>
 })();
 </script>`;
 
-var CTLS_CSS = `<style>#web-ctls, #lv-hud, #lv-log { display: none !important; }</style>`;
+/* The web round's own chrome is not the game: its foot bar, the star pill,
+   the "!" log and the notices (a "New: …" over a promo reads as a pop-up). */
+var CTLS_CSS = `<style>#web-ctls, #lv-hud, #lv-log, #nt-layer { display: none !important; }</style>`;
 
 /* Inside the motor's IIFE: a handle, and the sound log. */
 var HOOK_JS = `
   window.__H = { startGame: startGame, Input: Input, Layout: Layout, CONFIG: CONFIG,
-                 state: function () { return State; } };
+                 Beat: Beat, Enter: Enter, state: function () { return State; } };
   window.__SFX = [];
   (function () {
     var clip = Sound.clip, ui = Sound.ui;
@@ -143,6 +152,7 @@ var DRIVER_JS = `<script>
 (function () {
   var q = new URLSearchParams(location.search);
   var LEVEL = parseInt(q.get("level"), 10) || 0;
+  var ENTER = q.get("enter") === "1";
   var started = false, t0 = 0, ticks = 0;
   window.__T = function () { return (performance.now() - t0) / 1000; };
   window.__go = function () {
@@ -150,6 +160,7 @@ var DRIVER_JS = `<script>
     if (LEVEL && window.__LV) window.__LV.arm(LEVEL);
     t0 = performance.now();
     H.startGame();
+    if (!ENTER && H.Enter.active && H.Enter.active()) H.Enter.skip();
     started = true;
   };
   /* The pilot counts in 1/60 s steps of the page's clock, whatever the rate
@@ -160,7 +171,12 @@ var DRIVER_JS = `<script>
     var due = Math.floor(window.__T() * 60);
     while (ticks < due) {
       ticks++;
-      if (window.__PILOT && window.__H.state() === "playing") window.__PILOT.tick(window.__H);
+      if (window.__H.state() !== "playing") {
+        if (window.__ENDED == null) window.__ENDED = window.__T();   // when the round stopped being played
+        continue;
+      }
+      if (window.__PILOT) window.__PILOT.tick(window.__H);
+      else if (window.__pilot) window.__pilot(window.__H, ticks);
     }
   }
   requestAnimationFrame(tick);
@@ -174,16 +190,19 @@ function prepare(tmpDir) {
   if (close < 0) throw new Error(slug + ": no IIFE close");
   src = src.slice(0, close) + HOOK_JS + src.slice(close);
 
-  var at = src.indexOf(PILOT[slug].anchor);
-  if (at < 0 || at > src.indexOf("</script>")) throw new Error(slug + ": no pilot anchor");
-  src = src.slice(0, at) + PILOT[slug].js + "\n    " + src.slice(at);
+  var own = PILOT[slug];
+  if (own) {
+    var at = src.indexOf(own.anchor);
+    if (at < 0 || at > src.indexOf("</script>")) throw new Error(slug + ": no pilot anchor");
+    src = src.slice(0, at) + own.js + "\n    " + src.slice(at);
+  } else src = injectGamePilot(src, slug);
 
   var head = src.indexOf("<head>");
   src = src.slice(0, head + 6) + "\n" + SEED_JS + "\n" + CTLS_CSS + src.slice(head + 6);
 
   var lv = src.indexOf("window.__LEVELS__ = {");
   if (lv >= 0) src = src.slice(0, lv) + LV_HOOK_JS + "  " + src.slice(lv);
-  src = src.replace("</body>", DRIVER_JS + "\n</body>");
+  src = src.replace("</body>", (own ? "" : pageScripts(slug)) + DRIVER_JS + "\n</body>");
 
   var out = path.join(tmpDir, slug + ".html");
   fs.writeFileSync(out, src);
@@ -273,7 +292,7 @@ await client.send("Emulation.setDeviceMetricsOverride",
 
 var file = prepare(tmpDir);
 await client.send("Page.navigate",
-  { url: "file://" + file + "?first=0&seed=" + seed + "&level=" + level + "&lang=" + lang }, sid);
+  { url: "file://" + file + "?first=0&seed=" + seed + "&level=" + level + "&lang=" + lang + (enter ? "&enter=1" : "") }, sid);
 
 // Loading runs on the wall clock: wait for the title screen to stand.
 for (var i = 0; ; i++) {
@@ -302,6 +321,7 @@ process.stdout.write("\n");
 var state = await evaluate(client, sid, "window.__H.state()");
 var sfx = await evaluate(client, sid, "JSON.stringify(window.__SFX)");
 var clock = await evaluate(client, sid, "window.__T()");
+var ended = await evaluate(client, sid, "window.__ENDED == null ? null : window.__ENDED");
 client.close();
 chrome.child.kill("SIGKILL");
 
@@ -317,7 +337,8 @@ var events = JSON.parse(sfx).map(function (e) {
   return { t: +e.t.toFixed(3), kind: e.kind, name: e.name, vol: e.vol, rate: e.rate };
 });
 fs.writeFileSync(path.join(outDir, "events.json"), JSON.stringify(
-  { slug: slug, level: level, seed: seed, fps: fps, seconds: seconds, endState: state, clock: +clock.toFixed(3), events: events },
+  { slug: slug, level: level, seed: seed, fps: fps, seconds: seconds, endState: state, clock: +clock.toFixed(3),
+    endedAt: ended == null ? null : +ended.toFixed(3), events: events },
   null, 2) + "\n");
 await sleep(300);
 fs.rmSync(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
