@@ -192,10 +192,10 @@
       "casual",
       "singleplayer",
       "2d",
-      "cards",
       "poker",
       "high-score"
     ],
+    "genre": "Card Game",
     "viewport": [
       450,
       800

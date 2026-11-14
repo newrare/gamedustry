@@ -278,7 +278,6 @@
     "project": "grudgeon",
     "channel": "html5",
     "tags": [
-      "rpg",
       "dungeon-crawler",
       "turn-based",
       "horror",
@@ -287,6 +286,7 @@
       "singleplayer",
       "2d"
     ],
+    "genre": "Role Playing",
     "viewport": [
       450,
       800

@@ -337,15 +337,14 @@
     "project": "stratideck",
     "channel": "html5",
     "tags": [
-      "strategy",
       "casual",
       "singleplayer",
       "2d",
-      "cards",
       "card-game",
       "turn-based",
       "high-score"
     ],
+    "genre": "Strategy",
     "viewport": [
       450,
       800

@@ -177,13 +177,13 @@
     "project": "bridgessa",
     "channel": "html5",
     "tags": [
-      "cards",
       "bridge",
       "puzzle",
       "singleplayer",
       "2d",
       "casual"
     ],
+    "genre": "Card Game",
     "viewport": [
       450,
       800

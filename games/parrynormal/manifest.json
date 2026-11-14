@@ -637,9 +637,9 @@
       "casual",
       "singleplayer",
       "2d",
-      "mobile",
       "witch"
     ],
+    "genre": "Action",
     "viewport": [
       450,
       800

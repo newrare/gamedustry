@@ -146,10 +146,10 @@
       "singleplayer",
       "2d",
       "endless",
-      "racing",
       "neon",
       "high-score"
     ],
+    "genre": "Racing",
     "viewport": [
       450,
       800

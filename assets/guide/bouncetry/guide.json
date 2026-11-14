@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/bouncetry — do not edit",
  "slug": "bouncetry",
- "stamp": "10dedab59bfd8e36",
+ "stamp": "470606ae1e5207f0",
  "en": {
   "title": "Bouncetry",
   "howTo": "One tap turns the switches on and traps the ball with the bricks",

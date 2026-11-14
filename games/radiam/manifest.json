@@ -234,11 +234,11 @@
       "casual",
       "singleplayer",
       "2d",
-      "puzzle",
       "relaxing",
       "colorful",
       "high-score"
     ],
+    "genre": "Puzzle",
     "viewport": [
       450,
       800

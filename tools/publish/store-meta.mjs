@@ -204,9 +204,17 @@ function render(m) {
     'pushed automatically, because itch has no public API for a page.',
     '',
     section('Title', m.title || m.slug),
-    section('Short description (EN)', en.tagline || m.tagline),
-    section('Short description (FR)', fr.tagline),
+    /* itch's "Short description or tagline" is the one line a browse grid
+       prints under the cover: the punchy hook of the itch page
+       (`itch.page.en.hook`), not the site card's two-sentence tagline. The
+       itch page is written in English, so there is no French one. */
+    section('Short description or tagline', (m.itch && m.itch.page && m.itch.page.en && m.itch.page.en.hook)
+      || en.tagline || m.tagline),
     section('Description', description(m)),
+    /* The genre is a classification of itch's metadata tab, and a tag that
+       repeats it (or the "Mobile friendly" box, or a synonym of another
+       tag) is wasted — itch's quality guidelines, #tags. */
+    section('Genre', (m.itch && m.itch.genre) || 'No `itch.genre` in the manifest — add it there, once.'),
     section('Tags', tagLine(m)),
     section('Images', images(slug)),
     section('Embed', [

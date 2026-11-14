@@ -141,7 +141,6 @@
     "project": "gelatile",
     "channel": "html5",
     "tags": [
-      "puzzle",
       "casual",
       "singleplayer",
       "2d",
@@ -150,6 +149,7 @@
       "relaxing",
       "high-score"
     ],
+    "genre": "Puzzle",
     "viewport": [
       450,
       800

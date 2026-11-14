@@ -485,9 +485,9 @@
       "physics",
       "casual",
       "singleplayer",
-      "2d",
-      "mobile"
+      "2d"
     ],
+    "genre": "Action",
     "viewport": [
       450,
       800

@@ -140,11 +140,11 @@
       "casual",
       "singleplayer",
       "2d",
-      "rhythm",
       "music",
       "one-button",
       "high-score"
     ],
+    "genre": "Rhythm",
     "viewport": [
       450,
       800

@@ -1,7 +1,7 @@
 {
  "generated": "by tools/build/gen-guides.mjs from games/chainring — do not edit",
  "slug": "chainring",
- "stamp": "850e68135bded424",
+ "stamp": "7964ccc5e193058e",
  "en": {
   "title": "Chainring",
   "howTo": "Tap to the beat, at the exact instant the ball hits a light ring. Don't tap the dark rings",
